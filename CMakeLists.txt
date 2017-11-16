@@ -1,28 +1,37 @@
+# (C) Copyright 2017 UCAR.
+#
+# This software is licensed under the terms of the Apache Licence Version 2.0
+# which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+
 ################################################################################
 # IODA
 ################################################################################
 
-cmake_minimum_required( VERSION 2.8.4 FATAL_ERROR )
+cmake_minimum_required( VERSION 3.3.2 FATAL_ERROR )
 
 project( ioda C CXX Fortran )
 
-set( CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH} )
+set( CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake;${CMAKE_MODULE_PATH} )
 
 set( ECBUILD_DEFAULT_BUILD_TYPE Release )
 set( ENABLE_OS_TESTS           OFF CACHE BOOL "Disable OS tests" FORCE )
 set( ENABLE_LARGE_FILE_SUPPORT OFF CACHE BOOL "Disable testing of large file support" FORCE )
+set( ENABLE_MPI ON CACHE BOOL "Compile with MPI" )
 
 include( ecbuild_system NO_POLICY_SCOPE )
 
 ecbuild_requires_macro_version( 2.5 )
 
 ################################################################################
-# IODA project
+# Project
 ################################################################################
 
 ecbuild_declare_project()
 
 ecbuild_enable_fortran( REQUIRED )
+ecbuild_add_cxx11_flags()
+
+set( UFO_LINKER_LANGUAGE Fortran )
 
 ################################################################################
 # Dependencies
@@ -55,8 +64,6 @@ endforeach()
 ################################################################################
 # Sources
 ################################################################################
-
-set( IODA_LINKER_LANGUAGE Fortran )
 
 include( ioda_compiler_flags )
 include_directories( ${IODA_INCLUDE_DIRS} ${IODA_EXTRA_INCLUDE_DIRS} )
