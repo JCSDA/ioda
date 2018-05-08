@@ -42,6 +42,10 @@ set( NETCDF_F90 ON CACHE BOOL "Compile with Fortran NetCDF" )
 find_package( NetCDF REQUIRED )
 include_directories( ${NETCDF_INCLUDE_DIR} )
 
+# fckit
+ecbuild_use_package( PROJECT fckit VERSION 0.4.1 REQUIRED )
+include_directories( ${FCKIT_INCLUDE_DIRS} )
+
 ################################################################################
 # Export package info
 ################################################################################
