@@ -12,12 +12,9 @@ use string_f_c_mod
 use config_mod
 use datetime_mod
 use duration_mod
-use ufo_geovals_mod
-use ufo_geovals_mod_c, only : ufo_geovals_registry
 use ioda_locs_mod
 use ioda_locs_mod_c, only : ioda_locs_registry
 use ioda_obs_vectors
-use ufo_vars_mod
 use ioda_obs_seaicethick_mod
 use fckit_log_module, only : fckit_log
 use kinds
