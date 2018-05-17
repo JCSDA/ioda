@@ -48,9 +48,10 @@ void Locations::print(std::ostream & os) const {
     ioda_locs_coords_f90(keyLoc_,i,lat,lon);
     oops::Log::debug() << std::setprecision(2) << "lat = " << lat
 		       << ", lon = " << lon << std::endl;  
+  }
 }
 
 // -----------------------------------------------------------------------------
 
-}  // namespace UFO
+}  // namespace ioda
 

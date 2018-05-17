@@ -94,9 +94,9 @@ integer(c_int), intent(in) :: key
 integer(c_int), intent(in) :: idx
 real(c_double), intent(inout) :: mylat,mylon
 
-type(ufo_locs), pointer :: self
+type(ioda_locs), pointer :: self
 
-call ufo_locs_registry%get(key,self)
+call ioda_locs_registry%get(key,self)
 mylat = self%lat(idx)
 mylon = self%lon(idx)
 
