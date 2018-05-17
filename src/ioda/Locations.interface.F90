@@ -85,6 +85,22 @@ call ioda_locs_registry%get(key,self)
 kobs = self%nlocs
 
 end subroutine ioda_locs_nobs_c
+! ------------------------------------------------------------------------------
+
+subroutine ioda_locs_coords_c(key,idx,mylat,mylon) bind(c,name='ioda_locs_coords_f90')
+
+implicit none
+integer(c_int), intent(in) :: key
+integer(c_int), intent(in) :: idx
+real(c_double), intent(inout) :: mylat,mylon
+
+type(ufo_locs), pointer :: self
+
+call ufo_locs_registry%get(key,self)
+mylat = self%lat(idx)
+mylon = self%lon(idx)
+
+end subroutine ioda_locs_coords_c
 
 ! ------------------------------------------------------------------------------
 
