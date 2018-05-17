@@ -38,11 +38,11 @@ endforeach(FILENAME)
 
 #####################################################################
 
-#ecbuild_add_test( TARGET  test_ioda_locations
-#                  BOOST
-#                  SOURCES mains/TestLocations.cc
-#                  ARGS    "testinput/iodatest.json"
-#                  LIBS    ioda )
+ecbuild_add_test( TARGET  test_ioda_locations
+                  BOOST
+                  SOURCES mains/TestLocations.cc
+                  ARGS    "testinput/iodatest.json"
+                  LIBS    ioda )
 
 ecbuild_add_test( TARGET test_ioda_observationspace
                   BOOST
