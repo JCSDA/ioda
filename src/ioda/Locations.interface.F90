@@ -97,8 +97,8 @@ real(c_double), intent(inout) :: mylat,mylon
 type(ioda_locs), pointer :: self
 
 call ioda_locs_registry%get(key,self)
-mylat = self%lat(idx)
-mylon = self%lon(idx)
+mylat = self%lat(idx+1)
+mylon = self%lon(idx+1)
 
 end subroutine ioda_locs_coords_c
 
