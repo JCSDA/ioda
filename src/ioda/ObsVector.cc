@@ -7,7 +7,7 @@
 
 #include <math.h>
 
-#include "util/Logger.h"
+#include "oops/util/Logger.h"
 
 #include "ObsVector.h"
 #include "ObsSpace.h"

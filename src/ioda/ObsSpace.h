@@ -13,9 +13,9 @@
 #include <string>
 
 #include "oops/interface/ObsSpaceBase.h"
-#include "util/DateTime.h"
-#include "util/Logger.h"
-#include "util/Printable.h"
+#include "oops/util/DateTime.h"
+#include "oops/util/Logger.h"
+#include "oops/util/Printable.h"
 
 #include "Fortran.h"
 
