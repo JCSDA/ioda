@@ -126,6 +126,20 @@ extern "C" {
   void ioda_obsdb_stericheight_get_f90(const F90odb &, const int &, const char *, const F90ovec &);
 
 // -----------------------------------------------------------------------------  
+//  Observation Handler (for temperature profiles)
+// -----------------------------------------------------------------------------
+
+  void ioda_obsdb_insitutemperature_setup_f90(F90odb &, const eckit::Configuration * const *);
+  void ioda_obsdb_insitutemperature_delete_f90(F90odb &);
+  void ioda_obsdb_insitutemperature_getlocations_f90(const F90odb &,
+                                  const util::DateTime * const *,
+                                  const util::DateTime * const *,
+                                  F90locs &);
+  void ioda_obsdb_insitutemperature_generate_f90(const F90odb &, const eckit::Configuration * const *,
+                              const util::DateTime * const *,
+                              const util::DateTime * const *);
+  void ioda_obsdb_insitutemperature_nobs_f90(const F90odb &, int &);
+  void ioda_obsdb_insitutemperature_get_f90(const F90odb &, const int &, const char *, const F90ovec &);
 
 // -----------------------------------------------------------------------------
 //  Observation Handler (for AOD)
