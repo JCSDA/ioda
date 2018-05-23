@@ -134,7 +134,7 @@ extern "C" {
   void ioda_obsdb_insitutemperature_getlocations_f90(const F90odb &,
                                   const util::DateTime * const *,
                                   const util::DateTime * const *,
-                                  F90locs &);
+				  F90locs &);
   void ioda_obsdb_insitutemperature_generate_f90(const F90odb &, const eckit::Configuration * const *,
                               const util::DateTime * const *,
                               const util::DateTime * const *);

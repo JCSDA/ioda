@@ -12,12 +12,9 @@ use string_f_c_mod
 use config_mod
 use datetime_mod
 use duration_mod
-use ufo_geovals_mod
-use ufo_geovals_mod_c, only : ufo_geovals_registry
 use ioda_locs_mod
 use ioda_locs_mod_c, only : ioda_locs_registry
 use ioda_obs_vectors
-use ufo_vars_mod
 use ioda_obs_insitutemperature_mod
 use fckit_log_module, only : fckit_log
 use kinds
@@ -56,7 +53,7 @@ type(ioda_obs_insitutemperature), pointer :: self
 character(len=max_string)  :: fin
 character(len=max_string)  :: MyObsType
 character(len=255) :: record
-
+!!$
 if (config_element_exists(c_conf,"ObsData.ObsDataIn")) then
   fin  = config_get_string(c_conf,max_string,"ObsData.ObsDataIn.obsfile")
 else
@@ -86,7 +83,7 @@ integer(c_int), intent(inout) :: c_key_locs
 type(ioda_obs_insitutemperature), pointer :: self
 type(datetime) :: t1, t2
 type(ioda_locs), pointer :: locs
-
+!!$
 call ioda_obs_insitutemperature_registry%get(c_key_self, self)
 call c_f_datetime(c_t1, t1)
 call c_f_datetime(c_t2, t2)
@@ -111,7 +108,7 @@ type(ioda_obs_insitutemperature), pointer :: self
 type(datetime) :: t1, t2
 integer :: nobs
 real :: lat, lon1, lon2
-
+!!$
 call ioda_obs_insitutemperature_registry%get(c_key_self, self)
 call c_f_datetime(c_t1, t1)
 call c_f_datetime(c_t2, t2)
@@ -132,7 +129,7 @@ implicit none
 integer(c_int), intent(in) :: c_key_self
 integer(c_int), intent(inout) :: kobs
 type(ioda_obs_insitutemperature), pointer :: self
-
+!!$
 call ioda_obs_insitutemperature_registry%get(c_key_self, self)
 kobs = self%nobs
 
