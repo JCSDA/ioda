@@ -20,7 +20,7 @@ set( ENABLE_MPI ON CACHE BOOL "Compile with MPI" )
 
 include( ecbuild_system NO_POLICY_SCOPE )
 
-ecbuild_requires_macro_version( 2.5 )
+ecbuild_requires_macro_version( 2.7 )
 
 ################################################################################
 # Project
@@ -43,6 +43,11 @@ find_package( Boost ${Boost_MINIMUM_VERSION} REQUIRED
               COMPONENTS unit_test_framework )
 include_directories( ${Boost_INCLUDE_DIR} )
 
+# NetCDF
+set( NETCDF_F90 ON CACHE BOOL "Compile with Fortran NetCDF" )
+find_package( NetCDF REQUIRED )
+include_directories( ${NETCDF_INCLUDE_DIR} )
+
 # oops
 ecbuild_use_package( PROJECT oops VERSION 0.2.1 REQUIRED )
 include_directories( ${OOPS_INCLUDE_DIRS} )
@@ -52,7 +57,7 @@ link_directories( ${oops_BASE_DIR}/lib )
 # Export package info
 ################################################################################
 
-list( APPEND IODA_TPLS oops )
+list( APPEND IODA_TPLS NetCDF oops )
 
 set( IODA_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR}/src
                        ${CMAKE_Fortran_MODULE_DIRECTORY} )

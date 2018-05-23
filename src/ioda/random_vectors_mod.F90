@@ -29,7 +29,7 @@ subroutine random_c(kk, pp) bind(C,name='random_f')
   use, intrinsic :: iso_c_binding
   implicit none
   integer(c_int), intent(in) :: kk
-  real(kind=c_double), intent(out) :: pp
+  real(kind=c_double), intent(out) :: pp(*)
 ! The line below:
 ! real(kind=c_double), intent(out) :: pp(:)
 ! would not work because then fortran passes an array descriptor
@@ -51,7 +51,7 @@ real(kind=c_double) :: zz(size(xx))
 integer(c_int) :: nn
 
 nn = size(xx)
-call random_c(nn, zz(1))
+if (size(zz) > 0) call random_c(nn, zz(1))
 xx(:)=zz(:)
 
 end subroutine random_vector_1
@@ -66,7 +66,7 @@ real(kind=c_double) :: zz(size(xx))
 integer(c_int) :: nn
 
 nn = size(xx)
-call random_c(nn, zz(1))
+if (size(zz) > 0) call random_c(nn, zz(1))
 xx = reshape(zz, shape(xx))
 
 end subroutine random_vector_2
@@ -81,7 +81,7 @@ real(kind=c_double) :: zz(size(xx))
 integer(c_int) :: nn
 
 nn = size(xx)
-call random_c(nn, zz(1))
+if (size(zz) > 0) call random_c(nn, zz(1))
 xx = reshape(zz, shape(xx))
 
 end subroutine random_vector_3
