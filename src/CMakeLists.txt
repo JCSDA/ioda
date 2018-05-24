@@ -89,6 +89,9 @@ ioda/marine/stericheight/ioda_obs_stericheight_mod.F90
 # Marine: Insitu temperature
 ioda/marine/insitutemperature/ObsSpace.InsituTemperature.interface.F90
 ioda/marine/insitutemperature/ioda_obs_insitutemperature_mod.F90
+# Marine: Sea-ice fraction
+ioda/marine/seasurfacetemp/ObsSpace.SeaSurfaceTemp.interface.F90
+ioda/marine/seasurfacetemp/ioda_obs_seasurfacetemp_mod.F90
 # Constituents: AOD
 ioda/constituents/aod/ObsSpace.Aod.interface.F90
 ioda/constituents/aod/ioda_obs_aod_mod.F90
