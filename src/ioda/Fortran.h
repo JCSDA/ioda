@@ -49,6 +49,7 @@ extern "C" {
   void ioda_locs_create_f90(F90locs &, const int  &, const double *, const double *);
   void ioda_locs_delete_f90(F90locs &);
   void ioda_locs_nobs_f90(const F90locs &, int &);
+  void ioda_locs_coords_f90(const F90locs &, int &, double &, double &);
 
 // -----------------------------------------------------------------------------
 //  Observation Handler (for radiosondes)
