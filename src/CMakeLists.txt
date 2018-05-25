@@ -54,6 +54,9 @@ ncdiag/netcdf_unlimdims.F90
 ncdiag/read_diag.f90
 ncdiag/read_aod_diag.f90
 
+#Marine read/write
+ncdiag/marine/m_diag_marine_conv_mod.F90
+
 ioda/Fortran.h
 ioda/ObsSpace.cc
 ioda/ObsSpace.h
@@ -83,11 +86,16 @@ ioda/marine/seaicethickness/ioda_obs_seaicethick_mod.F90
 # Marine: Steric height
 ioda/marine/stericheight/ObsSpace.StericHeight.interface.F90
 ioda/marine/stericheight/ioda_obs_stericheight_mod.F90
+# Marine: Insitu temperature
+ioda/marine/insitutemperature/ObsSpace.InsituTemperature.interface.F90
+ioda/marine/insitutemperature/ioda_obs_insitutemperature_mod.F90
 # Constituents: AOD
 ioda/constituents/aod/ObsSpace.Aod.interface.F90
 ioda/constituents/aod/ioda_obs_aod_mod.F90
 
 )
+
+
 
 message(STATUS ${ioda_src_files})
 ecbuild_add_library( TARGET   ioda
