@@ -139,7 +139,7 @@ self%val    = tao_tracer(:)%Observation
 self%lon    = tao_tracer(:)%Longitude
 self%lat    = tao_tracer(:)%Latitude
 self%time   = tao_tracer(:)%Time
-self%err    = 0.1
+self%err    = 0.01
 self%qcflag = 1
 
 do iobs = 1, nobs

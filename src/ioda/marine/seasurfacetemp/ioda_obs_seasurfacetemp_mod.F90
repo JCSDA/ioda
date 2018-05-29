@@ -82,19 +82,14 @@ real, intent(in) :: lat, lon1, lon2
 integer :: i
 
 call ioda_obs_seasurfacetemp_setup(self, nobs)
-
-print *, "Giving in to the dark side."
-stop 1
-! self%seasurfacetemp(:) = 0.0
-! self%seasurfacetemp_err(:) = 0.1
-! !call random_number(self%seasurfacetemp(:))
-! self%qc(:)      = 1.
-
-! self%lat(:)     = lat
-! do i = 1, nobs
-!   self%lon(i) = lon1 + (i-1)*(lon2-lon1)/(nobs-1)
-! enddo
-
+self%nobs=nobs
+ self%qc(:)= 1
+ self%sst(:) = 25.0
+ self%sst_err(:) = 0.1
+ self%lat(:)     = lat
+ do i = 1, nobs
+   self%lon(i) = lon1 + (i-1)*(lon2-lon1)/(nobs-1)
+ enddo
 ! print *, 'in random:', self%nobs, self%lon, self%lat
 
 end subroutine ioda_obs_seasurfacetemp_generate
@@ -189,8 +184,9 @@ do j = 1, nj
          qci = qci + 1
          self%lat(qci) = tmp_lat(i,j)
          self%lon(qci) = tmp_lon(i,j)      
-         self%sst(qci) = tmp_sst(i,j)-tmp_sst(i,j)
+         self%sst(qci) = tmp_sst(i,j)-273.15-tmp_bias(i,j)
          self%sst_err(qci) = tmp_err(i,j)
+         write(601,*)self%lon(qci),self%lat(qci),self%sst(qci)         
       end if
    end do
 end do

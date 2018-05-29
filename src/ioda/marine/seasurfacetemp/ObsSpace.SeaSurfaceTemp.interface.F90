@@ -163,8 +163,6 @@ type(ioda_obs_seasurfacetemp), pointer :: self
 type(obs_vector), pointer :: ovec
 character(len=lcol) :: col
 
-print *,'.................................in ioda_obsdbsic_get'
-
 call ioda_obs_seasurfacetemp_registry%get(c_key_self, self)
 call ioda_obs_vect_registry%get(c_key_ovec,ovec)
 !call c_f_string(c_req, req)
@@ -175,13 +173,10 @@ call ioda_obs_vect_registry%get(c_key_ovec,ovec)
 
 ovec%nobs = self%nobs
 if (c_col(5)//c_col(6)=='rr') then
-   ovec%values = 0.1 !self%surfacetemp_err
-!   print *, self%surfacetemp_err
+   ovec%values = self%sst_err
 else
-   ovec%values = 0.1 !TODO self%icefrac
+   ovec%values = self%sst
 end if
-
-print *,'................................. out of ioda_obsdbsic_get'
 
 end subroutine ioda_obsdb_seasurfacetemp_get_c
 
