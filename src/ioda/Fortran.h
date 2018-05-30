@@ -52,30 +52,16 @@ extern "C" {
   void ioda_locs_coords_f90(const F90locs &, int &, double &, double &);
 
 // -----------------------------------------------------------------------------
-//  Observation Handler (for radiosondes)
+//  Observation Handler
 // -----------------------------------------------------------------------------
-
-  void ioda_obsdb_radiosonde_setup_f90(F90odb &, const eckit::Configuration * const *);
-  void ioda_obsdb_radiosonde_delete_f90(F90odb &);
-  void ioda_obsdb_radiosonde_getlocations_f90(const F90odb &,const util::DateTime * const *,
-                                             const util::DateTime * const *,F90locs &);
-  void ioda_obsdb_radiosonde_generate_f90(const F90odb &, const eckit::Configuration * const *,
-                                         const util::DateTime * const *,const util::DateTime * const *);
-  void ioda_obsdb_radiosonde_nobs_f90(const F90odb &, int &);
-  void ioda_obsdb_radiosonde_get_f90(const F90odb &, const int &, const char *, const F90ovec &);
-
-// -----------------------------------------------------------------------------
-//  Observation Handler (for radiances)
-// -----------------------------------------------------------------------------
-
-  void ioda_obsdb_radiance_setup_f90(F90odb &, const eckit::Configuration * const *);
-  void ioda_obsdb_radiance_delete_f90(F90odb &);
-  void ioda_obsdb_radiance_getlocations_f90(const F90odb &,const util::DateTime * const *,
-                                           const util::DateTime * const *,F90locs &);
-  void ioda_obsdb_radiance_generate_f90(const F90odb &, const eckit::Configuration * const *,
-                                       const util::DateTime * const *,const util::DateTime * const *);
-  void ioda_obsdb_radiance_nobs_f90(const F90odb &, int &);
-  void ioda_obsdb_radiance_get_f90(const F90odb &, const int &, const char *, const F90ovec &);
+  void ioda_obsdb_setup_f90(F90odb &, const eckit::Configuration * const *);
+  void ioda_obsdb_delete_f90(F90odb &);
+  void ioda_obsdb_nobs_f90(const F90odb &, int &);
+  void ioda_obsdb_getlocations_f90(const F90odb &,const util::DateTime * const *,
+                                   const util::DateTime * const *,F90locs &);
+  void ioda_obsdb_generate_f90(const F90odb &, const eckit::Configuration * const *,
+                               const util::DateTime * const *,const util::DateTime * const *);
+  void ioda_obsdb_get_f90(const F90odb &, const int &, const char *, const F90ovec &);
 
 // -----------------------------------------------------------------------------
 //  Observation Handler (for sea ice)
@@ -141,22 +127,6 @@ extern "C" {
                               const util::DateTime * const *);
   void ioda_obsdb_insitutemperature_nobs_f90(const F90odb &, int &);
   void ioda_obsdb_insitutemperature_get_f90(const F90odb &, const int &, const char *, const F90ovec &);
-
-// -----------------------------------------------------------------------------
-//  Observation Handler (for AOD)
-// -----------------------------------------------------------------------------
-
-  void ioda_obsdb_aod_setup_f90(F90odb &, const eckit::Configuration * const *);
-  void ioda_obsdb_aod_delete_f90(F90odb &);
-  void ioda_obsdb_aod_getlocations_f90(const F90odb &,
-                                  const util::DateTime * const *,
-                                  const util::DateTime * const *,
-                                  F90locs &);
-  void ioda_obsdb_aod_generate_f90(const F90odb &, const eckit::Configuration * const *,
-                              const util::DateTime * const *,
-                              const util::DateTime * const *);
-  void ioda_obsdb_aod_nobs_f90(const F90odb &, int &);
-  void ioda_obsdb_aod_get_f90(const F90odb &, const int &, const char *, const F90ovec &);
 
 // -----------------------------------------------------------------------------
 //  Observation Vectors
