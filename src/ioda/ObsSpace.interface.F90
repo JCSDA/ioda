@@ -245,8 +245,10 @@ enddo
 ! file. Need to revisit this in the future and come up with a better
 ! solution.
 if (trim(vname) .eq. "ObsErr") then
+  call ioda_obsvec_setup(TmpOvec, self%nobs)
   call ioda_obsdb_var_to_ovec(self, TmpOvec, "Errinv_Input")
   ovec%values = 1.0_kind_real / TmpOvec%values
+  call ioda_obsvec_delete(TmpOvec)
 else
   call ioda_obsdb_var_to_ovec(self, ovec, vname)
 endif

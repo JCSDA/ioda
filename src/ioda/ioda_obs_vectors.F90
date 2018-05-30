@@ -17,7 +17,7 @@ use fckit_mpi_module
 
 implicit none
 private
-public :: obs_vector, obsvec_setup
+public :: obs_vector, ioda_obsvec_setup, ioda_obsvec_delete
 public :: ioda_obs_vect_registry
 
 ! ------------------------------------------------------------------------------
@@ -55,13 +55,13 @@ call ioda_obs_vect_registry%init()
 call ioda_obs_vect_registry%add(c_key_self)
 call ioda_obs_vect_registry%get(c_key_self,self)
 iobs = c_nobs
-call obsvec_setup(self, iobs)
+call ioda_obsvec_setup(self, iobs)
 
 end subroutine ioda_obsvec_setup_c
 
 ! ------------------------------------------------------------------------------
 
-subroutine obsvec_setup(self, kobs)
+subroutine ioda_obsvec_setup(self, kobs)
 implicit none
 type(obs_vector), intent(inout) :: self
 integer, intent(in) :: kobs
@@ -70,7 +70,7 @@ self%nobs=kobs
 if (allocated(self%values)) deallocate(self%values)
 allocate(self%values(self%nobs))
 
-end subroutine obsvec_setup
+end subroutine ioda_obsvec_setup
 
 ! ------------------------------------------------------------------------------
 
@@ -97,10 +97,20 @@ integer(c_int), intent(inout) :: c_key_self
 type(obs_vector), pointer :: self
 
 call ioda_obs_vect_registry%get(c_key_self,self)
-deallocate(self%values)
+call ioda_obsvec_delete(self)
 call ioda_obs_vect_registry%remove(c_key_self)
 
 end subroutine ioda_obsvec_delete_c
+
+! ------------------------------------------------------------------------------
+
+subroutine ioda_obsvec_delete(self)
+implicit none
+type(obs_vector), intent(inout) :: self
+
+if (allocated(self%values)) deallocate(self%values)
+
+end subroutine ioda_obsvec_delete
 
 ! ------------------------------------------------------------------------------
 subroutine ioda_obsvec_assign_c(c_key_self, c_key_rhs) bind(c,name='ioda_obsvec_assign_f90')
