@@ -186,7 +186,7 @@ do j = 1, nj
          self%lon(qci) = tmp_lon(i,j)      
          self%sst(qci) = tmp_sst(i,j)-273.15-tmp_bias(i,j)
          self%sst_err(qci) = tmp_err(i,j)
-         write(601,*)self%lon(qci),self%lat(qci),self%sst(qci)         
+         write(601,*)self%lon(qci),self%lat(qci),self%sst(qci)
       end if
    end do
 end do
