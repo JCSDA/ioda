@@ -94,22 +94,29 @@ character(len=*),parameter:: myname = "ioda_obsdb_getlocs"
 character(len=255) :: record
 integer :: failed
 type(ioda_obs_var), pointer :: vptr
+integer :: istep
 
 !Setup ioda locations
 call ioda_locs_setup(locs, self%nlocs)
 
+
+! Assume that obs are organized with the first location going with the
+! first nobs/nlocs obs, the second location going with the next nobs/nlocs
+! obs, etc. 
+istep = self%nobs / self%nlocs 
+
 !Copy locations keeping track of success/failure
 failed=0
 call ioda_obsdb_getvar(self, "Longitude", vptr)
-if(failed==0 .and. size(vptr%vals)==self%nobs) then
-  locs%lon = vptr%vals
+if(failed==0 .and. size(vptr%vals(1:self%nobs:istep))==self%nlocs) then
+  locs%lon = vptr%vals(1:self%nobs:istep)
 else
   failed=1
 endif
 
 call ioda_obsdb_getvar(self, "Latitude", vptr)
-if(failed==0 .and. size(vptr%vals) ==self%nobs) then
-  locs%lat = vptr%vals
+if(failed==0 .and. size(vptr%vals(1:self%nobs:istep)) ==self%nlocs) then
+  locs%lat = vptr%vals(1:self%nobs:istep)
 else
   failed=2
 endif
@@ -120,8 +127,8 @@ if ((trim(self%obstype) .eq. "Radiance") .or. &
 else
   call ioda_obsdb_getvar(self, "Time", vptr)
 endif
-if(failed==0 .and. size(vptr%vals) == self%nobs) then
-  locs%time = vptr%vals
+if(failed==0 .and. size(vptr%vals(1:self%nobs:istep)) == self%nlocs) then
+  locs%time = vptr%vals(1:self%nobs:istep)
 else
   failed=3
 endif

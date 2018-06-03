@@ -61,12 +61,14 @@ character(len=max_string)  :: fin
 character(len=max_string)  :: MyObsType
 character(len=255) :: record
 integer :: gnobs
+integer :: gnobsd
 integer :: nobs
 integer, allocatable :: dist_indx(:)
 integer :: nlocs
 integer :: nchans
 integer :: iunit
 type(random_distribution) :: ran_dist
+integer :: ds, n, nn
 
 ! Get the obs type
 MyObsType = trim(config_get_string(c_conf,max_string,"ObsType"))
@@ -76,19 +78,34 @@ if (config_element_exists(c_conf,"ObsData.ObsDataIn")) then
   call nc_diag_read_init(fin, iunit)
   gnobs = nc_diag_read_get_dim(iunit, 'nobs')
 
+  ! For radiance, nlocs is nobs / nchans
+  if (trim(MyObsType) .eq. "Radiance") then
+    nchans = nc_diag_read_get_dim(iunit, 'nchans')
+    gnobsd = gnobs / nchans
+  else
+    gnobsd = gnobs
+  endif
+
   ! Apply the random distribution, which yeilds nobs and the indices for selecting
   ! observations out of the file.
-  ran_dist = random_distribution(gnobs)
+  ran_dist = random_distribution(gnobsd)
   nobs = ran_dist%nobs_pe()
   allocate(dist_indx(nobs))
   dist_indx = ran_dist%indx
 
-  ! For radiance, nlocs is nobs / nchans
+  nlocs = nobs
+
+  ! add channel offset for radiance
   if (trim(MyObsType) .eq. "Radiance") then
-    nchans = nc_diag_read_get_dim(iunit, 'nchans')
-    nlocs = nobs / nchans
-  else
-    nlocs = nobs
+     ds = 1+(dist_indx(1)-1)*nchans
+     deallocate(dist_indx)
+     allocate(dist_indx(nobs*nchans))
+     nn = 0
+     do n = 1,nobs*nchans
+       dist_indx(n) = ds + nn
+       nn = nn + 1
+     enddo
+     nobs = nobs*nchans
   endif
 
   call nc_diag_read_close(fin)
