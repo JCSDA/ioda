@@ -26,7 +26,6 @@ list( APPEND ioda_test_data
   diag_viirs_ges.2015081000_dbl_subset.nc4  
   amsua_n19_obs.nc4
   diag_t_01_wprofiles.nc4
-  seaice_obs.nc
 )
 
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Data)
@@ -47,7 +46,6 @@ foreach(FILENAME ${marine_obs})
            ${CMAKE_CURRENT_SOURCE_DIR}/${FILENAME}    
            ${CMAKE_CURRENT_BINARY_DIR}/Data/${filename} )
 endforeach(FILENAME)
-
 
 #####################################################################
 

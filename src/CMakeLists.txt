@@ -60,6 +60,7 @@ ncdiag/marine/m_diag_marine_conv_mod.F90
 ioda/Fortran.h
 ioda/ObsSpace.cc
 ioda/ObsSpace.h
+ioda/ObsSpace.interface.F90
 ioda/ObsVector.cc
 ioda/ObsVector.h
 ioda/Locations.cc
@@ -67,16 +68,12 @@ ioda/Locations.h
 ioda/Locations.interface.F90
 ioda/ioda_locs_mod.F90
 ioda/ioda_obs_vectors.F90
+ioda/ioda_obsvar_mod.F90
+ioda/ioda_obsdb_mod.F90
 ioda/random_f.cc
 ioda/random_f.h
 ioda/random_vectors_mod.F90
 
-# Atmos: Radiosondes
-ioda/atmosphere/radiosonde/ObsSpace.Radiosonde.interface.F90
-ioda/atmosphere/radiosonde/ioda_obs_radiosonde_mod.F90
-# Atmos: Radiances
-ioda/atmosphere/radiance/ObsSpace.Radiance.interface.F90
-ioda/atmosphere/radiance/ioda_obs_radiance_mod.F90
 # Marine: Sea-ice fraction
 ioda/marine/seaicefraction/ObsSpace.SeaIceFraction.interface.F90
 ioda/marine/seaicefraction/ioda_obs_seaicefrac_mod.F90
@@ -89,9 +86,10 @@ ioda/marine/stericheight/ioda_obs_stericheight_mod.F90
 # Marine: Insitu temperature
 ioda/marine/insitutemperature/ObsSpace.InsituTemperature.interface.F90
 ioda/marine/insitutemperature/ioda_obs_insitutemperature_mod.F90
-# Marine: Sea-ice fraction
+# Marine: Sea surface temperature
 ioda/marine/seasurfacetemp/ObsSpace.SeaSurfaceTemp.interface.F90
 ioda/marine/seasurfacetemp/ioda_obs_seasurfacetemp_mod.F90
+
 # Constituents: AOD
 ioda/constituents/aod/ObsSpace.Aod.interface.F90
 ioda/constituents/aod/ioda_obs_aod_mod.F90
