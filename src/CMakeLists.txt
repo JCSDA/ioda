@@ -83,6 +83,9 @@ ioda/marine/seaicethickness/ioda_obs_seaicethick_mod.F90
 # Marine: Steric height
 ioda/marine/stericheight/ObsSpace.StericHeight.interface.F90
 ioda/marine/stericheight/ioda_obs_stericheight_mod.F90
+# Marine: Absolute Dynamic Topography
+ioda/marine/adt/ObsSpace.ADT.interface.F90
+ioda/marine/adt/ioda_obs_adt_mod.F90
 # Marine: Insitu temperature
 ioda/marine/insitutemperature/ObsSpace.InsituTemperature.interface.F90
 ioda/marine/insitutemperature/ioda_obs_insitutemperature_mod.F90
