@@ -144,6 +144,21 @@ extern "C" {
   void ioda_obsdb_seasurfacetemp_nobs_f90(const F90odb &, int &);
   void ioda_obsdb_seasurfacetemp_get_f90(const F90odb &, const int &, const char *, const F90ovec &);
 
+//  Observation Handler (for adt)
+// -----------------------------------------------------------------------------
+
+  void ioda_obsdb_adt_setup_f90(F90odb &, const eckit::Configuration * const *);
+  void ioda_obsdb_adt_delete_f90(F90odb &);
+  void ioda_obsdb_adt_getlocations_f90(const F90odb &,
+                                  const util::DateTime * const *,
+                                  const util::DateTime * const *,
+				  F90locs &);
+  void ioda_obsdb_adt_generate_f90(const F90odb &, const eckit::Configuration * const *,
+                              const util::DateTime * const *,
+                              const util::DateTime * const *);
+  void ioda_obsdb_adt_nobs_f90(const F90odb &, int &);
+  void ioda_obsdb_adt_get_f90(const F90odb &, const int &, const char *, const F90ovec &);  
+
 // -----------------------------------------------------------------------------
 //  Observation Vectors
 // -----------------------------------------------------------------------------

@@ -157,9 +157,19 @@ qc = 1
 !!$      qc(i)=0
 !!$   end if
 !!$end do
-where ( (tmp_sic(1,1,:).gt.1.0).or.(tmp_sic(1,1,:).lt.0.0))
-   qc=0
+
+!where ( (tmp_sic(1,1,:).gt.1.0) )!.or.(tmp_sic(1,1,:).lt.0.0))
+!   qc=0
+!end where
+
+where ( (tmp_sic(1,1,:).lt.0.0 ) )
+   tmp_sic(1,1,:)=0.0
 end where
+
+!where ( abs(tmp_lat).lt.50.0 )
+!   qc=0
+!end where
+
 qcnobs = sum(qc)
 self%nobs = qcnobs
 
