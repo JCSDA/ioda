@@ -142,7 +142,7 @@ print *,qcnobs, nobs
 call ioda_obs_stericheight_setup(self, qcnobs)
 
 qci = 0
-do i = 1, nobs
+do i = 1, qcnobs
    if ( qc(i).eq.1 ) then
       qci = qci + 1
       self%lat(qci) = lat(i)*1e-6      
@@ -157,8 +157,6 @@ end do
 self%madt = 0.0
 self%qc = 1
 deallocate(lon, lat, ssh, qc, mdt)
-
-print *, 'in read: ', self%nobs, nobs
 
 end subroutine ioda_obs_stericheight_read
 

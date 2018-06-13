@@ -46,6 +46,7 @@ foreach(FILENAME ${marine_obs})
            ${CMAKE_CURRENT_SOURCE_DIR}/${FILENAME}    
            ${CMAKE_CURRENT_BINARY_DIR}/Data/${filename} )
 endforeach(FILENAME)
+
 #####################################################################
 
 ecbuild_add_test( TARGET  test_ioda_locations

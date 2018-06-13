@@ -89,7 +89,9 @@ ioda/marine/adt/ioda_obs_adt_mod.F90
 # Marine: Insitu temperature
 ioda/marine/insitutemperature/ObsSpace.InsituTemperature.interface.F90
 ioda/marine/insitutemperature/ioda_obs_insitutemperature_mod.F90
-
+# Marine: Sea surface temperature
+ioda/marine/seasurfacetemp/ObsSpace.SeaSurfaceTemp.interface.F90
+ioda/marine/seasurfacetemp/ioda_obs_seasurfacetemp_mod.F90
 )
 
 

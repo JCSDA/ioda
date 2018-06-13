@@ -139,11 +139,11 @@ self%val    = tao_tracer(:)%Observation
 self%lon    = tao_tracer(:)%Longitude
 self%lat    = tao_tracer(:)%Latitude
 self%time   = tao_tracer(:)%Time
-self%err    = 0.1
+self%err    = 0.01
 self%qcflag = 1
 
 do iobs = 1, nobs
-   write(401,*)self%lon(iobs),self%lat(iobs),self%val(iobs)
+   write(401,*)self%lon(iobs),self%lat(iobs),self%val(iobs),self%depth(iobs)
 end do
 
 end subroutine ioda_obs_insitutemperature_read
