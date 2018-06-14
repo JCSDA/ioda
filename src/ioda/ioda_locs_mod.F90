@@ -10,6 +10,7 @@ module ioda_locs_mod
 
 use ioda_obs_vectors
 use kinds
+use type_distribution, only: random_distribution
 
 implicit none
 private
@@ -29,18 +30,48 @@ end type ioda_locs
 contains
 ! ------------------------------------------------------------------------------
 
-subroutine ioda_locs_create(self, nlocs, lats, lons)
+subroutine ioda_locs_create(self, nlocs, lats, lons, rdist)
 implicit none
 type(ioda_locs), intent(inout) :: self
 integer, intent(in)           :: nlocs
 real(kind_real), intent(in) :: lats(nlocs)
 real(kind_real), intent(in) :: lons(nlocs)
+integer, intent(in)         :: rdist
+
+type(random_distribution) :: ran_dist
+integer, allocatable :: dist_indx(:)
+real(kind_real), allocatable, dimension(:) :: latsr, lonsr, timer
+integer :: n
 
 self%nlocs = nlocs
 allocate(self%lat(nlocs), self%lon(nlocs), self%time(nlocs))
 self%lat(:) = lats(:)
 self%lon(:) = lons(:)
 self%time(:) = 0.0
+
+ran_dist = random_distribution(self%nlocs)
+dist_indx = ran_dist%indx
+
+if (rdist == 1) then
+
+  !Redistribute randomly
+  self%nlocs = ran_dist%nobs_pe()
+  allocate(latsr(self%nlocs), lonsr(self%nlocs), timer(self%nlocs))
+  do n = 1,self%nlocs
+    latsr(n) =  self%lat(dist_indx(n))
+    lonsr(n) =  self%lon(dist_indx(n))
+    timer(n) = self%time(dist_indx(n))
+  enddo
+  deallocate(self%lat, self%lon, self%time)
+  
+  allocate(self%lat(self%nlocs), self%lon(self%nlocs), self%time(self%nlocs))
+  self%lat(:) = latsr(:)
+  self%lon(:) = lonsr(:)
+  self%time(:) = 0.0
+
+  deallocate(latsr, lonsr, timer)
+
+endif
 
 end subroutine ioda_locs_create
 

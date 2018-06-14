@@ -38,6 +38,8 @@ Locations::Locations(const eckit::Configuration & conf) {
   ASSERT(lats.size() == lons.size());
   int nloc = lats.size();
 
+  int rdist = 0;
+
   if (conf.has("Nrandom")) {
 
     int Nrandom = conf.getInt("Nrandom");
@@ -64,9 +66,12 @@ Locations::Locations(const eckit::Configuration & conf) {
     
     nloc += Nrandom;
     
+    if (conf.has("Rdist")) {
+      rdist = conf.getInt("Rdist");
+    }
   } 
 
-  ioda_locs_create_f90(keyLoc_, nloc, &lats[0], &lons[0]);
+  ioda_locs_create_f90(keyLoc_, nloc, &lats[0], &lons[0], rdist);
 
 }
 
@@ -89,7 +94,7 @@ int Locations::nobs() const {
 void Locations::print(std::ostream & os) const {
   int nobs;
   ioda_locs_nobs_f90(keyLoc_, nobs);
-  os << "Locations: " << nobs << " locations";
+  os << "Locations: " << nobs << " locations: ";
 
   // Write lat and lon to debug stream
   double lat, lon;
