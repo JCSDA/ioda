@@ -35,13 +35,14 @@ contains
 
 ! ------------------------------------------------------------------------------
 
-subroutine ioda_locs_create_c(key, klocs, klats, klons) bind(c,name='ioda_locs_create_f90')
+subroutine ioda_locs_create_c(key, klocs, klats, klons, rdist) bind(c,name='ioda_locs_create_f90')
 
 implicit none
 integer(c_int), intent(inout) :: key
 integer(c_int), intent(in) :: klocs
 real(c_double), intent(in) :: klats(klocs)
 real(c_double), intent(in) :: klons(klocs)
+integer(c_int), intent(in) :: rdist
 
 type(ioda_locs), pointer :: self
 real(kind_real) :: lats(klocs)
@@ -54,7 +55,7 @@ call ioda_locs_registry%get(key, self)
 lats(:) = klats(:)
 lons(:) = klons(:)
 
-call ioda_locs_create(self, klocs, lats, lons)
+call ioda_locs_create(self, klocs, lats, lons, rdist)
 
 end subroutine ioda_locs_create_c
 
