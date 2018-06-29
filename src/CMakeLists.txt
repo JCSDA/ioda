@@ -91,17 +91,31 @@ ioda/marine/insitutemperature/ioda_obs_insitutemperature_mod.F90
 
 if (HAVE_ODB)
   file (MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/ddl)
-  add_custom_command ( OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/ddl/queries.sql
-                       COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/src/odb/queries.sql ${CMAKE_CURRENT_BINARY_DIR}/ddl/queries.sql
-                     )
-  add_custom_command ( OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/ddl/OOPS.ddl
-                       COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/src/odb/OOPS.ddl ${CMAKE_CURRENT_BINARY_DIR}/ddl/OOPS.ddl
-                     )
-  add_custom_command ( OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/ddl/OOPS.c ${CMAKE_CURRENT_BINARY_DIR}/ddl/OOPS.h ${CMAKE_CURRENT_BINARY_DIR}/ddl/OOPS_Sstatic.c ${CMAKE_CURRENT_BINARY_DIR}/ddl/OOPS_T_body.c ${CMAKE_CURRENT_BINARY_DIR}/ddl/OOPS_T_desc.c ${CMAKE_CURRENT_BINARY_DIR}/ddl/OOPS_T_hdr.c ${CMAKE_CURRENT_BINARY_DIR}/ddl/_odb_glue.c ${CMAKE_CURRENT_BINARY_DIR}/ddl/OOPS_query.c
-                       COMMAND . ${ODB_PATH}/bin/use_odb.sh && unset ODB_COMPILER_FLAGS && ${CMAKE_SOURCE_DIR}/src/odb/OpsScr_sql2c
-                       DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/ddl/OOPS.ddl ${CMAKE_CURRENT_BINARY_DIR}/ddl/queries.sql ${CMAKE_SOURCE_DIR}/src/odb/OpsScr_sql2c
-                       WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/ddl"
-                     )
+  if ("${CMAKE_PROJECT_NAME}" STREQUAL "ioda")
+    add_custom_command ( OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/ddl/queries.sql
+                         COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/src/odb/queries.sql ${CMAKE_CURRENT_BINARY_DIR}/ddl/queries.sql
+                       )
+    add_custom_command ( OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/ddl/OOPS.ddl
+                         COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/src/odb/OOPS.ddl ${CMAKE_CURRENT_BINARY_DIR}/ddl/OOPS.ddl
+                       )
+    add_custom_command ( OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/ddl/OOPS.c ${CMAKE_CURRENT_BINARY_DIR}/ddl/OOPS.h ${CMAKE_CURRENT_BINARY_DIR}/ddl/OOPS_Sstatic.c ${CMAKE_CURRENT_BINARY_DIR}/ddl/OOPS_T_body.c ${CMAKE_CURRENT_BINARY_DIR}/ddl/OOPS_T_desc.c ${CMAKE_CURRENT_BINARY_DIR}/ddl/OOPS_T_hdr.c ${CMAKE_CURRENT_BINARY_DIR}/ddl/_odb_glue.c ${CMAKE_CURRENT_BINARY_DIR}/ddl/OOPS_query.c
+                         COMMAND . ${ODB_PATH}/bin/use_odb.sh && unset ODB_COMPILER_FLAGS && ${CMAKE_SOURCE_DIR}/src/odb/OpsScr_sql2c
+                         DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/ddl/OOPS.ddl ${CMAKE_CURRENT_BINARY_DIR}/ddl/queries.sql ${CMAKE_SOURCE_DIR}/src/odb/OpsScr_sql2c
+                         WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/ddl"
+                       )
+  else ("${CMAKE_PROJECT_NAME}" STREQUAL "ioda")
+    add_custom_command ( OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/ddl/queries.sql
+                         COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/ioda/src/odb/queries.sql ${CMAKE_CURRENT_BINARY_DIR}/ddl/queries.sql
+                       )
+    add_custom_command ( OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/ddl/OOPS.ddl
+                         COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/ioda/src/odb/OOPS.ddl ${CMAKE_CURRENT_BINARY_DIR}/ddl/OOPS.ddl
+                       )
+    add_custom_command ( OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/ddl/OOPS.c ${CMAKE_CURRENT_BINARY_DIR}/ddl/OOPS.h ${CMAKE_CURRENT_BINARY_DIR}/ddl/OOPS_Sstatic.c ${CMAKE_CURRENT_BINARY_DIR}/ddl/OOPS_T_body.c ${CMAKE_CURRENT_BINARY_DIR}/ddl/OOPS_T_desc.c ${CMAKE_CURRENT_BINARY_DIR}/ddl/OOPS_T_hdr.c ${CMAKE_CURRENT_BINARY_DIR}/ddl/_odb_glue.c ${CMAKE_CURRENT_BINARY_DIR}/ddl/OOPS_query.c
+                         COMMAND . ${ODB_PATH}/bin/use_odb.sh && unset ODB_COMPILER_FLAGS && ${CMAKE_SOURCE_DIR}/ioda/src/odb/OpsScr_sql2c
+                         DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/ddl/OOPS.ddl ${CMAKE_CURRENT_BINARY_DIR}/ddl/queries.sql ${CMAKE_SOURCE_DIR}/ioda/src/odb/OpsScr_sql2c
+                         WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/ddl"
+                       )
+  endif ("${CMAKE_PROJECT_NAME}" STREQUAL "ioda")
   list(APPEND oops_src_files ${CMAKE_CURRENT_BINARY_DIR}/ddl/OOPS.c ${CMAKE_CURRENT_BINARY_DIR}/ddl/OOPS.h ${CMAKE_CURRENT_BINARY_DIR}/ddl/OOPS_Sstatic.c ${CMAKE_CURRENT_BINARY_DIR}/ddl/OOPS_T_body.c ${CMAKE_CURRENT_BINARY_DIR}/ddl/OOPS_T_desc.c ${CMAKE_CURRENT_BINARY_DIR}/ddl/OOPS_T_hdr.c ${CMAKE_CURRENT_BINARY_DIR}/ddl/_odb_glue.c ${CMAKE_CURRENT_BINARY_DIR}/ddl/OOPS_query.c )
 endif (HAVE_ODB)
 
