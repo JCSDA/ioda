@@ -155,58 +155,6 @@ end subroutine ioda_obs_adt_read
 
 ! ------------------------------------------------------------------------------
 
-!!$subroutine ioda_obs_adt_read(filename, self)
-!!$use nc_diag_read_mod, only: nc_diag_read_get_var, nc_diag_read_get_dim
-!!$use nc_diag_read_mod, only: nc_diag_read_init, nc_diag_read_close
-!!$implicit none
-!!$character(max_string), intent(in)   :: filename
-!!$type(ioda_obs_adt), intent(inout) :: self
-!!$
-!!$integer :: iunit, nobs, i
-!!$real, dimension(:), allocatable :: field
-!!$real, dimension(:), allocatable :: field_int
-!!$
-!!$call ioda_obs_adt_delete(self)
-!!$
-!!$call nc_diag_read_init(filename, iunit)
-!!$nobs = nc_diag_read_get_dim(iunit,'nobs')
-!!$print *,'nobs:',nobs
-!!$self%nobs = nobs
-!!$
-!!$allocate(field(nobs))
-!!$allocate(field_int(nobs))
-!!$allocate(self%lon(nobs), self%lat(nobs), self%adt(nobs))
-!!$allocate(self%adt_err(nobs))
-!!$
-!!$call nc_diag_read_get_var(iunit, "lat", field_int)
-!!$self%lat = field_int
-!!$call nc_diag_read_get_var(iunit, "lon", field_int)
-!!$self%lon = field_int
-!!$call nc_diag_read_get_var(iunit, "adt_unfiltered", field)
-!!$self%adt = field
-!!$call nc_diag_read_close(filename)
-!!$self%adt_err = 0.01
-!!$
-!!$! Open netcdf file and read dimensions
-!!$call nc_diag_read_init(filename, iunit)
-!!$nt = nc_diag_read_get_dim(iunit,'time')
-!!$nobs = nt
-!!$allocate(lon(nobs), lat(nobs), ssh(nobs), qc(nobs), mdt(nobs))
-!!$call nc_diag_read_get_var(iunit, "lat", lat)
-!!$call nc_diag_read_get_var(iunit, "lon", lon)
-!!$call nc_diag_read_get_var(iunit, "ssha", ssh)
-!!$call nc_diag_read_get_var(iunit, "mean_topography", mdt)
-!!$call nc_diag_read_close(filename)
-!!$
-!!$
-!!$do i=1,nobs
-!!$   write(301,*)self%lon(i),self%lat(i),self%adt(i)
-!!$!   print *,'obs is',i,self%lon(i),self%lat(i),self%adt(i)
-!!$end do
-!!$end subroutine ioda_obs_adt_read
-
-! ------------------------------------------------------------------------------
-
 subroutine ioda_obs_adt_getlocs(self, locs)
 use ioda_locs_mod
 implicit none
