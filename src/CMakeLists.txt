@@ -148,6 +148,10 @@ ecbuild_add_library( TARGET   ioda
                      LINKER_LANGUAGE ${IODA_LINKER_LANGUAGE}
                     )
 
+if (HAVE_ODB_API)
+  set_target_properties (ioda PROPERTIES COMPILE_DEFINITIONS "HAVE_ODB_API")
+endif (HAVE_ODB_API)
+
 if (HAVE_ODB)
 
   ecbuild_add_executable( TARGET  netcdf_to_odb
