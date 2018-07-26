@@ -77,6 +77,7 @@ void ObsSpace::getdb(const std::string & col, int & keyData) const {
 // -----------------------------------------------------------------------------
 
 void ObsSpace::putdb(const std::string & col, const int & keyData) const {
+  ioda_obsdb_put_f90(keyOspace_, col.size(), col.c_str(), keyData);
   oops::Log::trace() << "In putdb obsname = " << std::endl;
 }
 

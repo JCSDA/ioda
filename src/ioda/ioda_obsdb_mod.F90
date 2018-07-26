@@ -12,6 +12,7 @@ use kinds
 use ioda_obsvar_mod
 use ioda_obs_vectors
 use fckit_log_module, only : fckit_log
+use fckit_mpi_module
 
 implicit none
 private
@@ -23,6 +24,7 @@ public ioda_obsdb_delete
 public ioda_obsdb_getlocs
 public ioda_obsdb_generate
 public ioda_obsdb_var_to_ovec
+public ioda_obsdb_putvar
 
 ! ------------------------------------------------------------------------------
 
@@ -37,6 +39,8 @@ type :: ioda_obsdb
 
   character(len=max_string) :: filename
 
+  character(len=max_string) :: fileout
+
   type(ioda_obs_variables) :: obsvars  !< observation variables
 end type ioda_obsdb
 
@@ -44,7 +48,7 @@ contains
 
 ! ------------------------------------------------------------------------------
 
-subroutine ioda_obsdb_setup(self, gnobs, nobs, dist_indx, nlocs, filename, obstype)
+subroutine ioda_obsdb_setup(self, gnobs, nobs, dist_indx, nlocs, filename, fileout, obstype)
 implicit none
 type(ioda_obsdb), intent(inout) :: self
 integer, intent(in) :: gnobs
@@ -52,6 +56,7 @@ integer, intent(in) :: nobs
 integer, intent(in) :: dist_indx(:)
 integer, intent(in) :: nlocs
 character(len=*), intent(in) :: filename
+character(len=*), intent(in) :: fileout
 character(len=*), intent(in) :: obstype
 
 self%gnobs     = gnobs
@@ -60,6 +65,7 @@ allocate(self%dist_indx(nobs))
 self%dist_indx = dist_indx
 self%nlocs     = nlocs
 self%filename  = filename
+self%fileout   = fileout
 self%obstype   = obstype
 call self%obsvars%setup()
 
@@ -221,6 +227,98 @@ end subroutine ioda_obsdb_getvar
 
 ! ------------------------------------------------------------------------------
 
+subroutine ioda_obsdb_putvar(self, vname, ovec)
+
+use netcdf
+use ioda_locs_mod
+
+implicit none
+
+type(ioda_obsdb), intent(in) :: self
+character(len=*), intent(in) :: vname
+type(obs_vector), intent(in) :: ovec
+
+type(ioda_locs)              :: locs
+type(fckit_mpi_comm)         :: comm
+character(len=max_string)    :: fileout
+character(len=10)            :: cproc
+logical                      :: lfileout
+integer       :: ncid,dimid_1d(1),dimid_nobs
+integer       :: ncid_lat, ncid_lon,ncid_vname
+
+comm = fckit_mpi_comm("world")
+write(cproc,fmt='(i4.4)') comm%rank()
+
+call ioda_obsdb_getlocs(self, locs)
+
+if (self%fileout(len_trim(self%fileout)-3:len_trim(self%fileout)) == ".nc4" .or. &
+    self%fileout(len_trim(self%fileout)-3:len_trim(self%fileout)) == ".nc") then
+
+   fileout = trim(self%fileout)//'_'//trim(adjustl(cproc))
+   write(*,*)'putdb : netcdf format, filename=', fileout
+   inquire(file=trim(fileout), exist=lfileout)
+
+   if (.not. lfileout) then
+      call check(nf90_create(trim(fileout),nf90_noclobber,ncid))
+   else
+      call check(nf90_open(trim(fileout),nf90_write,ncid))
+      call check(nf90_redef(ncid))
+   end if
+
+   if (vname .eq. 'ombg') then
+      call check(nf90_def_dim(ncid,trim(self%obstype)//'_nobs',self%nobs, dimid_nobs))
+      dimid_1d = (/ dimid_nobs /)
+      call check(nf90_def_var(ncid,trim(self%obstype)//"_Lat",nf90_double,dimid_1d,ncid_lat))
+      call check(nf90_def_var(ncid,trim(self%obstype)//"_Lon",nf90_double,dimid_1d,ncid_lon))
+   else
+      call check(nf90_inq_dimid(ncid,trim(self%obstype)//'_nobs', dimid_nobs))
+      dimid_1d = (/ dimid_nobs /)
+   end if
+
+   call check(nf90_def_var(ncid,trim(self%obstype)//"_"//trim(vname),nf90_double,dimid_1d,ncid_vname))
+   call check(nf90_enddef(ncid))
+
+!  avoid write duplicate (do not write lat and lon when vname is oman).
+   if (vname .eq. 'ombg') then
+      call check(nf90_put_var(ncid,ncid_lat,locs%lat))
+      call check(nf90_put_var(ncid,ncid_lon,locs%lon))
+   end if
+
+   call check(nf90_put_var(ncid,ncid_vname,ovec%values))
+
+   call check(nf90_close(ncid))
+
+else if (self%fileout(len_trim(self%fileout)-3:len_trim(self%fileout)) == ".odb") then
+
+   write(*,*) 'putdb: odb2 format'
+
+else
+
+   write(*,*) 'putdb: no output'
+
+endif
+
+end subroutine ioda_obsdb_putvar
+
+! ------------------------------------------------------------------------------
+
+subroutine check(status)
+
+use netcdf, only: nf90_noerr, nf90_strerror
+
+implicit none
+
+integer, intent ( in) :: status
+
+if(status /= nf90_noerr) then
+   print *, trim(nf90_strerror(status))
+   stop 2
+end if
+
+end subroutine check
+
+! ------------------------------------------------------------------------------
+
 subroutine ioda_obsdb_generate(self, gnobs, nobs, dist_indx, nlocs, obstype, lat, lon1, lon2)
 implicit none
 type(ioda_obsdb), intent(inout) :: self
@@ -237,7 +335,7 @@ type(ioda_obs_var), pointer :: vptr
 character(len=max_string) :: vname
 
 ! 4th argument is the filename containing obs values, which is not used for this method.
-call ioda_obsdb_setup(self, gnobs, nobs, dist_indx, nlocs, "", obstype)
+call ioda_obsdb_setup(self, gnobs, nobs, dist_indx, nlocs, "", "", obstype)
 
 ! Create variables and generate the values specified by the arguments.
 vname = "Latitude" 

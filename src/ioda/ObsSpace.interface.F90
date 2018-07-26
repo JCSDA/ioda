@@ -58,6 +58,7 @@ type(c_ptr), intent(in)       :: c_conf !< configuration
 
 type(ioda_obsdb), pointer :: self
 character(len=max_string)  :: fin
+character(len=max_string)  :: fout
 character(len=max_string)  :: MyObsType
 character(len=255) :: record
 integer :: gnobs
@@ -122,11 +123,16 @@ endif
 write(record,*) 'ioda_obsdb_setup_c: ', trim(MyObsType), ' file in =',trim(fin)
 call fckit_log%info(record)
 
+if (config_element_exists(c_conf,"ObsData.ObsDataOut")) then
+   fout = config_get_string(c_conf,max_string,"ObsData.ObsDataOut.obsfile")
+endif
+
+
 call ioda_obsdb_registry%init()
 call ioda_obsdb_registry%add(c_key_self)
 call ioda_obsdb_registry%get(c_key_self, self)
 
-call ioda_obsdb_setup(self, gnobs, nobs, dist_indx, nlocs, fin, MyObsType) 
+call ioda_obsdb_setup(self, gnobs, nobs, dist_indx, nlocs, fin, fout, MyObsType)
 
 deallocate(dist_indx)
 
@@ -271,5 +277,33 @@ else
 endif
 
 end subroutine ioda_obsdb_get_c
+
+! ------------------------------------------------------------------------------
+
+subroutine ioda_obsdb_put_c(c_key_self, lcol, c_col, c_key_ovec) bind(c,name='ioda_obsdb_put_f90')
+implicit none
+integer(c_int), intent(in) :: c_key_self
+integer(c_int), intent(in) :: lcol
+character(kind=c_char,len=1), intent(in) :: c_col(lcol+1)
+integer(c_int), intent(in) :: c_key_ovec
+
+type(ioda_obsdb), pointer :: self
+type(obs_vector), pointer :: ovec
+
+character(len=lcol) :: vname
+integer             :: i
+
+call ioda_obsdb_registry%get(c_key_self, self)
+call ioda_obs_vect_registry%get(c_key_ovec,ovec)
+
+ovec%nobs = self%nobs
+! Copy C character array to Fortran string
+do i = 1, lcol
+  vname(i:i) = c_col(i)
+enddo
+
+call ioda_obsdb_putvar(self, vname, ovec)
+
+end subroutine ioda_obsdb_put_c
 
 end module ioda_obsdb_mod_c
