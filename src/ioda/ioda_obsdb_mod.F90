@@ -8,10 +8,15 @@
 
 module ioda_obsdb_mod
 
+use iso_c_binding
 use kinds
 use ioda_obsvar_mod
 use ioda_obs_vectors
 use fckit_log_module, only : fckit_log
+#ifdef HAVE_ODB_API
+use odb_helper_mod, only: &
+  count_query_results
+#endif
 
 implicit none
 private
@@ -38,6 +43,9 @@ type :: ioda_obsdb
   character(len=max_string) :: filename
 
   type(ioda_obs_variables) :: obsvars  !< observation variables
+#ifdef HAVE_ODB
+  real(kind=c_double), allocatable :: odb_data(:,:)
+#endif
 end type ioda_obsdb
 
 contains
@@ -149,6 +157,13 @@ end subroutine ioda_obsdb_getlocs
 
 subroutine ioda_obsdb_getvar(self, vname, vptr)
 
+#ifdef HAVE_ODB_API
+
+use odb_helper_mod, only: get_vars
+use mpi, only: mpi_comm_rank, mpi_comm_size, mpi_comm_world, mpi_init, mpi_finalize
+
+#endif
+
 use nc_diag_read_mod, only: nc_diag_read_init
 use nc_diag_read_mod, only: nc_diag_read_get_dim
 use nc_diag_read_mod, only: nc_diag_read_check_var
@@ -173,6 +188,7 @@ real(kind_real), allocatable :: field1d(:)
 real(kind_real), allocatable :: field2d(:,:)
 real(kind_real), allocatable :: extract1d(:)
 real(kind_real), allocatable :: extract2d(:,:)
+integer :: input_file_type
 
 ! Look for the variable. If it is already present, vptr will be
 ! pointing to it. If not, vptr will not be associated, and we
@@ -182,39 +198,77 @@ call self%obsvars%get_node(vname, vptr)
 if (.not.associated(vptr)) then
   call self%obsvars%add_node(vname, vptr)
 
-  ! Open the file, and do some checks
-  call nc_diag_read_init(self%filename, iunit)
+write(0, '(a,a)') "in ioda_obsdb_getvar, trim(self % filaneme ) = ", trim(self % filename)
 
-  ! Does the variable exist?
-  if (.not.nc_diag_read_check_var(iunit, vname)) then
-    write(err_msg,*) 'ioda_obsdb_getvar: var ', trim(vname), ' does not exist'
-    call abor1_ftn(trim(err_msg))
-  endif
+  if (self % filename(len_trim(self % filename)-3:len_trim(self % filename)) == ".nc4" .or. &
+      self % filename(len_trim(self % filename)-3:len_trim(self % filename)) == ".nc") then
+    input_file_type = 0
+  else if (self % filename(len_trim(self % filename)-3:len_trim(self % filename)) == ".odb") then
+    input_file_type = 1
+  else
+    input_file_type = 2
+  end if
+
+  select case (input_file_type)
+    case (0)
+
+      ! Open the file, and do some checks
+      call nc_diag_read_init(self%filename, iunit)
+
+      ! Does the variable exist?
+      if (.not.nc_diag_read_check_var(iunit, vname)) then
+        write(err_msg,*) 'ioda_obsdb_getvar: var ', trim(vname), ' does not exist'
+        call abor1_ftn(trim(err_msg))
+      endif
  
-  ! Get the dimension sizes of the variable and use these to allocate
-  ! the storage for the variable.
-  call nc_diag_read_get_var_dims(iunit, vname, ndims, dimsizes)
+      ! Get the dimension sizes of the variable and use these to allocate
+      ! the storage for the variable.
+      call nc_diag_read_get_var_dims(iunit, vname, ndims, dimsizes)
 
-  if (ndims .gt. 1) then
-    write(err_msg,*) 'ioda_obsdb_getvar: var ', trim(vname), ' must have rank = 1'
-    call abor1_ftn(trim(err_msg))
-  endif
+      if (ndims .gt. 1) then
+        write(err_msg,*) 'ioda_obsdb_getvar: var ', trim(vname), ' must have rank = 1'
+        call abor1_ftn(trim(err_msg))
+      endif
 
-  if (dimsizes(1) .ne. self%gnobs) then
-    write(err_msg,*) 'ioda_obsdb_getvar: var ', trim(vname), ' size (', dimsizes(1), ') must equal gnobs (', self%gnobs, ')'
-    call abor1_ftn(trim(err_msg))
-  endif
+      if (dimsizes(1) .ne. self%gnobs) then
+        write(err_msg,*) 'ioda_obsdb_getvar: var ', trim(vname), ' size (', dimsizes(1), ') must equal gnobs (', self%gnobs, ')'
+        call abor1_ftn(trim(err_msg))
+      endif
 
-  ! The dimensionality of the variables in the netcdf file match what we want in the obsdb.
-  vptr%nobs = self%nobs
-  allocate(vptr%vals(vptr%nobs))
+      ! The dimensionality of the variables in the netcdf file match what we want in the obsdb.
+      vptr%nobs = self%nobs
+      allocate(vptr%vals(vptr%nobs))
 
-  allocate(field1d(dimsizes(1)))
-  call nc_diag_read_get_var(iunit, vname, field1d)
-  vptr%vals = field1d(self%dist_indx)
-  deallocate(field1d)
+      allocate(field1d(dimsizes(1)))
+      call nc_diag_read_get_var(iunit, vname, field1d)
+      vptr%vals = field1d(self%dist_indx)
+      deallocate(field1d)
 
-  call nc_diag_read_close(self%filename)
+      call nc_diag_read_close(self%filename)
+
+    case (1)
+
+#ifdef HAVE_ODB_API
+      select case (vname)
+        case ("Latitude")
+          call get_vars (self % filename, ["lat"], "entryno = 1", field2d)
+        case ("Longitude")
+          call get_vars (self % filename, ["lon"], "entryno = 1", field2d)
+        case ("Time")
+         call get_vars (self % filename, ["time"], "entryno = 1", field2d)
+      end select
+      vptr%nobs = size(field2d,dim=2)
+      allocate(vptr%vals(vptr%nobs))
+      vptr % vals(:) = field2d(1,:)
+#endif
+
+    case (2)
+
+#ifdef HAVE_ODB
+#endif
+
+  end select
+
 endif
 
 end subroutine ioda_obsdb_getvar

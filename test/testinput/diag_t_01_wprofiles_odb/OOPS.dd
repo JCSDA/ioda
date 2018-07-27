@@ -1,0 +1,29 @@
+43 0.000 1
+20180621 152722
+20180621 152722
+19700101 000000
+1
+3
+1 @desc -1
+2 @hdr -1
+3 @body -1
+@desc 4
+  yyyymmdd:andate@desc  0
+  hhmmss:antime@desc  0
+  linkoffset_t:LINKOFFSET(hdr)@desc  0
+  linklen_t:LINKLEN(hdr)@desc  0
+@hdr 7
+  pk1int:seqno@hdr  0
+  yyyymmdd:date@hdr  0
+  hhmmss:time@hdr  0
+  pk9real:lat@hdr  0
+  pk9real:lon@hdr  0
+  linkoffset_t:LINKOFFSET(body)@hdr  0
+  linklen_t:LINKLEN(body)@hdr  0
+@body 4
+  pk1int:varno@body  0
+  pk9real:obsvalue@body  0
+  pk1int:entryno@body  0
+  pk9real:vertco_reference_1@body  0
+1
+$mdi 2147483647

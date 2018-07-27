@@ -19,6 +19,22 @@ use ioda_obs_vectors
 use type_distribution, only: random_distribution
 use fckit_log_module, only : fckit_log
 use kinds
+#ifdef HAVE_ODB_API
+use odb_helper_mod, only: &
+  count_query_results
+#endif
+
+#ifdef HAVE_ODB
+use odb, only: &
+  odb_cancel,  &
+  odb_close,   &
+  odb_open,    &
+  odb_select
+
+use odbgetput, only: &
+  odb_get,           &
+  odb_addview
+#endif
 
 implicit none
 private
@@ -47,6 +63,11 @@ contains
 
 subroutine ioda_obsdb_setup_c(c_key_self, c_conf) bind(c,name='ioda_obsdb_setup_f90')
 
+#ifdef HAVE_ODB_API
+use odb_helper_mod, only: &
+  count_query_results
+#endif
+
 use nc_diag_read_mod, only: nc_diag_read_get_dim
 use nc_diag_read_mod, only: nc_diag_read_init
 use nc_diag_read_mod, only: nc_diag_read_close
@@ -69,46 +90,112 @@ integer :: nchans
 integer :: iunit
 type(random_distribution) :: ran_dist
 integer :: ds, n, nn
+integer :: input_file_type
+
+#ifdef HAVE_ODB
+integer :: rc, handle, num_pools, num_rows, num_cols
+interface
+  function setenv (envname, envval, overwrite) bind (c, name = "setenv")
+    use, intrinsic :: iso_c_binding, only: &
+      c_char,                              &
+      c_int
+    character(kind=c_char)     :: envname(*)
+    character(kind=c_char)     :: envval(*)
+    integer(kind=c_int), value :: overwrite
+    integer(kind=c_int)        :: setenv
+  end function setenv
+end interface
+#endif
 
 ! Get the obs type
 MyObsType = trim(config_get_string(c_conf,max_string,"ObsType"))
 
 if (config_element_exists(c_conf,"ObsData.ObsDataIn")) then
   fin  = config_get_string(c_conf,max_string,"ObsData.ObsDataIn.obsfile")
-  call nc_diag_read_init(fin, iunit)
-  gnobs = nc_diag_read_get_dim(iunit, 'nobs')
-
-  ! For radiance, nlocs is nobs / nchans
-  if (trim(MyObsType) .eq. "Radiance") then
-    nchans = nc_diag_read_get_dim(iunit, 'nchans')
-    gnobsd = gnobs / nchans
+write(0, '(a,a)') "in ioda_obsdb_setup_c, trim(fin) = ", trim(fin)
+  if (fin(len_trim(fin)-3:len_trim(fin)) == ".nc4" .or. &
+      fin(len_trim(fin)-3:len_trim(fin)) == ".nc") then
+    input_file_type = 0
+  else if (fin(len_trim(fin)-3:len_trim(fin)) == ".odb") then
+    input_file_type = 1
   else
-    gnobsd = gnobs
-  endif
+    input_file_type = 2
+  end if
 
-  ! Apply the random distribution, which yeilds nobs and the indices for selecting
-  ! observations out of the file.
-  ran_dist = random_distribution(gnobsd)
-  nobs = ran_dist%nobs_pe()
-  allocate(dist_indx(nobs))
-  dist_indx = ran_dist%indx
+   select case (input_file_type)
+    case (0)
 
-  nlocs = nobs
+      call nc_diag_read_init(fin, iunit)
+      gnobs = nc_diag_read_get_dim(iunit, 'nobs')
 
-  ! add channel offset for radiance
-  if (trim(MyObsType) .eq. "Radiance") then
-     ds = 1+(dist_indx(1)-1)*nchans
-     deallocate(dist_indx)
-     allocate(dist_indx(nobs*nchans))
-     nn = 0
-     do n = 1,nobs*nchans
-       dist_indx(n) = ds + nn
-       nn = nn + 1
-     enddo
-     nobs = nobs*nchans
-  endif
+      ! For radiance, nlocs is nobs / nchans
+      if (trim(MyObsType) .eq. "Radiance") then
+        nchans = nc_diag_read_get_dim(iunit, 'nchans')
+        gnobsd = gnobs / nchans
+      else
+        gnobsd = gnobs
+      endif
 
-  call nc_diag_read_close(fin)
+      ! Apply the random distribution, which yeilds nobs and the indices for selecting
+      ! observations out of the file.
+      ran_dist = random_distribution(gnobsd)
+      nobs = ran_dist%nobs_pe()
+      allocate(dist_indx(nobs))
+      dist_indx = ran_dist%indx
+
+      nlocs = nobs
+
+      ! add channel offset for radiance
+      if (trim(MyObsType) .eq. "Radiance") then
+         ds = 1+(dist_indx(1)-1)*nchans
+         deallocate(dist_indx)
+         allocate(dist_indx(nobs*nchans))
+         nn = 0
+         do n = 1,nobs*nchans
+           dist_indx(n) = ds + nn
+           nn = nn + 1
+         enddo
+         nobs = nobs*nchans
+      endif
+
+      call nc_diag_read_close(fin)
+
+    case (1)
+
+#ifdef HAVE_ODB_API
+
+      call count_query_results (fin, 'select seqno from "' // trim(fin) // '" where entryno = 1;', nobs)
+      gnobs = nobs
+      nlocs = nobs
+      allocate (dist_indx(nobs))
+      dist_indx(:) = [(/(n, n = 1,nobs)/)]
+
+#endif
+
+    case (2)
+
+#ifdef HAVE_ODB
+
+      rc = setenv ("ODB_SRCPATH_OOPS" // c_null_char, trim (fin) // c_null_char, 1_c_int)
+      rc = setenv ("ODB_DATAPATH_OOPS" // c_null_char, trim (fin) // c_null_char, 1_c_int)
+      rc = setenv ("IOASSIGN" // c_null_char, trim (fin) // '/IOASSIGN' // c_null_char, 1_c_int)
+      handle = odb_open ("OOPS", "OLD", num_pools)
+      rc = odb_addview (handle, "query", abort = .false.)
+      rc = odb_select (handle, "query", num_rows, num_cols)
+      allocate (self % odb_data(num_rows,0:num_cols))
+      rc = odb_get (handle, "query", self % odb_data, num_rows)
+      rc = odb_cancel (handle, "query")
+      rc = odb_close (handle)
+      nobs = size(self % odb_data,dim=1)
+      gnobs = nobs
+      nlocs = nobs
+      allocate (dist_indx(nobs))
+      dist_indx(:) = [(/(n, n = 1,nobs)/)]
+
+#endif
+
+  end select
+
 else
   fin  = ""
   gnobs = 0
@@ -127,8 +214,6 @@ call ioda_obsdb_registry%add(c_key_self)
 call ioda_obsdb_registry%get(c_key_self, self)
 
 call ioda_obsdb_setup(self, gnobs, nobs, dist_indx, nlocs, fin, MyObsType) 
-
-deallocate(dist_indx)
 
 end subroutine ioda_obsdb_setup_c
 
