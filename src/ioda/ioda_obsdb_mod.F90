@@ -234,7 +234,9 @@ type(ioda_obsdb), intent(in) :: self
 character(len=*), intent(in) :: vname
 type(obs_vector), intent(in) :: ovec
 
-type(ioda_obs_var), pointer :: vptr
+type(ioda_obs_var), pointer  :: vptr
+character(len=*),parameter   :: myname = "ioda_obsdb_putvar"
+character(len=255)           :: record
 
 call self%obsvars%get_node(vname, vptr)
 if (.not.associated(vptr)) then
@@ -243,7 +245,8 @@ if (.not.associated(vptr)) then
   allocate(vptr%vals(vptr%nobs))
   vptr%vals = ovec%values 
 else
-  write(record,*) 'this column already exists'
+  write(record,*) myname,' var= ', trim(vname), ':this column already exists'
+  call fckit_log%info(record)
 endif
 
 end subroutine ioda_obsdb_putvar
