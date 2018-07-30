@@ -28,6 +28,7 @@ public ioda_obsdb_delete
 public ioda_obsdb_getlocs
 public ioda_obsdb_generate
 public ioda_obsdb_var_to_ovec
+public ioda_obsdb_putvar
 
 ! ------------------------------------------------------------------------------
 
@@ -42,6 +43,8 @@ type :: ioda_obsdb
 
   character(len=max_string) :: filename
 
+  character(len=max_string) :: fileout
+
   type(ioda_obs_variables) :: obsvars  !< observation variables
 #ifdef HAVE_ODB
   real(kind=c_double), allocatable :: odb_data(:,:)
@@ -52,7 +55,7 @@ contains
 
 ! ------------------------------------------------------------------------------
 
-subroutine ioda_obsdb_setup(self, gnobs, nobs, dist_indx, nlocs, filename, obstype)
+subroutine ioda_obsdb_setup(self, gnobs, nobs, dist_indx, nlocs, filename, fileout, obstype)
 implicit none
 type(ioda_obsdb), intent(inout) :: self
 integer, intent(in) :: gnobs
@@ -60,6 +63,7 @@ integer, intent(in) :: nobs
 integer, intent(in) :: dist_indx(:)
 integer, intent(in) :: nlocs
 character(len=*), intent(in) :: filename
+character(len=*), intent(in) :: fileout
 character(len=*), intent(in) :: obstype
 
 self%gnobs     = gnobs
@@ -68,6 +72,7 @@ allocate(self%dist_indx(nobs))
 self%dist_indx = dist_indx
 self%nlocs     = nlocs
 self%filename  = filename
+self%fileout   = fileout
 self%obstype   = obstype
 call self%obsvars%setup()
 
@@ -275,6 +280,33 @@ end subroutine ioda_obsdb_getvar
 
 ! ------------------------------------------------------------------------------
 
+subroutine ioda_obsdb_putvar(self, vname, ovec)
+
+implicit none
+
+type(ioda_obsdb), intent(in) :: self
+character(len=*), intent(in) :: vname
+type(obs_vector), intent(in) :: ovec
+
+type(ioda_obs_var), pointer  :: vptr
+character(len=*),parameter   :: myname = "ioda_obsdb_putvar"
+character(len=255)           :: record
+
+call self%obsvars%get_node(vname, vptr)
+if (.not.associated(vptr)) then
+  call self%obsvars%add_node(vname, vptr)
+  vptr%nobs = self%nobs
+  allocate(vptr%vals(vptr%nobs))
+  vptr%vals = ovec%values 
+else
+  write(record,*) myname,' var= ', trim(vname), ':this column already exists'
+  call fckit_log%info(record)
+endif
+
+end subroutine ioda_obsdb_putvar
+
+! ------------------------------------------------------------------------------
+
 subroutine ioda_obsdb_generate(self, gnobs, nobs, dist_indx, nlocs, obstype, lat, lon1, lon2)
 implicit none
 type(ioda_obsdb), intent(inout) :: self
@@ -291,7 +323,7 @@ type(ioda_obs_var), pointer :: vptr
 character(len=max_string) :: vname
 
 ! 4th argument is the filename containing obs values, which is not used for this method.
-call ioda_obsdb_setup(self, gnobs, nobs, dist_indx, nlocs, "", obstype)
+call ioda_obsdb_setup(self, gnobs, nobs, dist_indx, nlocs, "", "", obstype)
 
 ! Create variables and generate the values specified by the arguments.
 vname = "Latitude" 
