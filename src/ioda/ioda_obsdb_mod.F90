@@ -84,6 +84,9 @@ subroutine ioda_obsdb_delete(self)
 implicit none
 type(ioda_obsdb), intent(inout) :: self
 
+call ioda_obsdb_dump(self)
+call ioda_obsdb_write(self)
+
 self%gnobs = 0
 self%nobs  = 0
 if (allocated(self%dist_indx)) deallocate(self%dist_indx)
@@ -364,6 +367,17 @@ call ioda_obsdb_getvar(self, vname, vptr)
 ovec%values = vptr%vals
 
 end subroutine ioda_obsdb_var_to_ovec
+
+! ------------------------------------------------------------------------------
+
+subroutine ioda_obsdb_write(self)
+implicit none
+type(ioda_obsdb), intent(in) :: self
+type(ioda_obs_var), pointer :: vptr
+
+
+
+end subroutine ioda_obsdb_write
 
 ! ------------------------------------------------------------------------------
 
