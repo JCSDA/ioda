@@ -13,6 +13,7 @@ use kinds
 use ioda_obsvar_mod
 use ioda_obs_vectors
 use fckit_log_module, only : fckit_log
+use fckit_mpi_module
 #ifdef HAVE_ODB_API
 use odb_helper_mod, only: &
   count_query_results
@@ -83,6 +84,8 @@ end subroutine ioda_obsdb_setup
 subroutine ioda_obsdb_delete(self)
 implicit none
 type(ioda_obsdb), intent(inout) :: self
+
+call ioda_obsdb_write(self)
 
 self%gnobs = 0
 self%nobs  = 0
@@ -367,6 +370,83 @@ end subroutine ioda_obsdb_var_to_ovec
 
 ! ------------------------------------------------------------------------------
 
+subroutine ioda_obsdb_write(self)
+use netcdf
+implicit none
+
+type(ioda_obsdb), intent(in) :: self
+
+type(ioda_obs_var), pointer  :: vptr
+type(fckit_mpi_comm)         :: comm
+character(len=max_string)    :: fileout
+character(len=10)            :: cproc
+logical                      :: lfileout
+character(len=*),parameter   :: myname = "ioda_obsdb_write"
+character(len=255)           :: record
+integer                      :: i,ncid,dimid_1d(1),dimid_nobs
+integer, allocatable         :: ncid_var(:)
+
+comm = fckit_mpi_comm("world")
+write(cproc,fmt='(i4.4)') comm%rank()
+
+fileout = trim(self%fileout)//'_'//trim(adjustl(cproc))
+
+if (self%fileout(len_trim(self%fileout)-3:len_trim(self%fileout)) == ".nc4" .or. &
+    self%fileout(len_trim(self%fileout)-3:len_trim(self%fileout)) == ".nc") then
+
+   write(record,*) myname, ':write diag in netcdf, filename=', trim(fileout)
+   call fckit_log%info(record)
+
+   inquire(file=trim(fileout), exist=lfileout)
+
+   if (.not. lfileout) then
+      call check(nf90_create(trim(fileout),nf90_noclobber,ncid))
+   else
+      call check(nf90_open(trim(fileout),nf90_write,ncid))
+      call check(nf90_redef(ncid))
+   end if
+
+   call check(nf90_def_dim(ncid,trim(self%obstype)//'_nobs',self%nobs, dimid_nobs))
+   dimid_1d = (/ dimid_nobs /)
+
+   i = 0
+   allocate(ncid_var(self%obsvars%n_nodes))
+   vptr => self%obsvars%head
+   do while (associated(vptr))
+      i = i + 1
+      call check(nf90_def_var(ncid,trim(vptr%vname)//'_'//trim(self%obstype),nf90_double,dimid_1d,ncid_var(i)))
+      vptr => vptr%next
+   enddo
+
+   call check(nf90_enddef(ncid))
+
+   i = 0
+   vptr => self%obsvars%head
+   do while (associated(vptr))
+      i = i + 1
+      call check(nf90_put_var(ncid,ncid_var(i),vptr%vals))
+      vptr => vptr%next
+   enddo
+
+   call check(nf90_close(ncid))
+   deallocate(ncid_var)
+
+else if (self%fileout(len_trim(self%fileout)-3:len_trim(self%fileout)) == ".odb") then
+
+   write(record,*) myname, ':write diag in odb2, filename=', trim(fileout)
+   call fckit_log%info(record)
+
+else
+
+   write(record,*) myname, ':no output'
+   call fckit_log%info(record)
+
+endif
+
+end subroutine ioda_obsdb_write
+
+! ------------------------------------------------------------------------------
+
 subroutine ioda_obsdb_dump(self)
   implicit none
 
@@ -395,5 +475,21 @@ subroutine ioda_obsdb_dump(self)
   print*, "DEBUG: ioda_obsdb_dump:"
 
 end subroutine ioda_obsdb_dump
+
+! ------------------------------------------------------------------------------
+subroutine check(status)
+
+use netcdf, only: nf90_noerr, nf90_strerror
+
+implicit none
+
+integer, intent ( in) :: status
+
+if(status /= nf90_noerr) then
+   print *, trim(nf90_strerror(status))
+   stop 2
+end if
+
+end subroutine check
 
 end module ioda_obsdb_mod
