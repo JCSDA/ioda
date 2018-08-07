@@ -443,8 +443,6 @@ else
 
 endif
 
-print*, "jban test ioda_obsdb_write"
-
 end subroutine ioda_obsdb_write
 
 ! ------------------------------------------------------------------------------
