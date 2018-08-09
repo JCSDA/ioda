@@ -326,6 +326,7 @@ end subroutine ioda_obsdb_generate_c
 ! ------------------------------------------------------------------------------
 
 subroutine ioda_obsdb_get_c(c_key_self, lcol, c_col, c_key_ovec) bind(c,name='ioda_obsdb_get_f90')  
+use gnssro_mod_obserr, only : refractivity_err_gsi
 implicit none
 integer(c_int), intent(in) :: c_key_self
 integer(c_int), intent(in) :: lcol
@@ -338,7 +339,9 @@ type(obs_vector), pointer :: ovec
 character(len=lcol) :: vname
 integer :: i
 
-type(obs_vector) :: TmpOvec
+type(obs_vector)             :: TmpOvec, TmpOvec1
+logical                      :: GlobalModel
+real(kind_real), allocatable :: obsErr(:)
 
 call ioda_obsdb_registry%get(c_key_self, self)
 call ioda_obs_vect_registry%get(c_key_ovec,ovec)
@@ -357,6 +360,25 @@ if (trim(vname) .eq. "ObsErr") then
   call ioda_obsdb_var_to_ovec(self, TmpOvec, "Errinv_Input")
   ovec%values = 1.0_kind_real / TmpOvec%values
   call ioda_obsvec_delete(TmpOvec)
+!!!!!!!!! calculate refractivity observation error using the GSI method!!!!!!!!!!!!!!
+elseif (trim(vname) .eq. "GnssroRef_GSI_global" .or. trim(vname) .eq. "GnssroRef_GSI_regional") then
+  if (trim(vname).eq."GnssroRef_GSI_global") then
+    GlobalModel = .true.
+  else
+    GlobalModel = .false.
+  end if
+  call ioda_obsvec_setup(TmpOvec,  self%nobs)
+  call ioda_obsvec_setup(TmpOvec1, self%nobs)
+  call ioda_obsdb_var_to_ovec(self, TmpOvec, "Latitude")
+  call ioda_obsdb_var_to_ovec(self, TmpOvec1, "HEIT")
+
+  allocate(obsErr(self%nobs))
+  obsErr = 0.0_kind_real
+  call refractivity_err_gsi(TmpOvec%values,TmpOvec1%values,self%nobs,GlobalModel,obsErr)
+  ovec%values = obsErr
+  call ioda_obsvec_delete(TmpOvec)
+  call ioda_obsvec_delete(TmpOvec1)
+  deallocate(obsErr)
 else
   call ioda_obsdb_var_to_ovec(self, ovec, vname)
 endif
