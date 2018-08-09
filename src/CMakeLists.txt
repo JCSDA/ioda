@@ -86,7 +86,8 @@ ioda/marine/stericheight/ioda_obs_stericheight_mod.F90
 # Marine: Insitu temperature
 ioda/marine/insitutemperature/ObsSpace.InsituTemperature.interface.F90
 ioda/marine/insitutemperature/ioda_obs_insitutemperature_mod.F90
-
+# GNSSRO observation error
+ioda/gnssro_mod_obserr.F90
 )
 
 if (HAVE_ODB)
