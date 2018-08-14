@@ -8,7 +8,7 @@ list( APPEND ioda_test_input
   testinput/iodatest.json
   testinput/iodatest_odb.json
   testinput/iodatest_odb1.json
-  testinput/iodatest_writenc.json
+  testinput/iodatest_obsspace.json
 )
 
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/testinput)
@@ -17,6 +17,8 @@ foreach(FILENAME ${ioda_test_input})
            ${CMAKE_CURRENT_SOURCE_DIR}/${FILENAME}
            ${CMAKE_CURRENT_BINARY_DIR}/${FILENAME} )
 endforeach(FILENAME)
+
+file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/testoutput)
 
 # Add files to cmake resources
 ecbuild_add_resources( TARGET ioda_test_scripts
@@ -41,6 +43,7 @@ foreach(FILENAME ${ioda_test_data})
            ${CMAKE_CURRENT_BINARY_DIR}/Data/${FILENAME} )
 endforeach(FILENAME)
 
+
 #####################################################################
 
 ecbuild_add_test( TARGET  test_ioda_locations
@@ -61,10 +64,10 @@ ecbuild_add_test( TARGET test_ioda_obsvector
                   ARGS "testinput/iodatest.json"
                   LIBS    ioda )
 
-ecbuild_add_test( TARGET test_ioda_observationspace_write
+ecbuild_add_test( TARGET test_ioda_obsspace
                   BOOST
-                  SOURCES mains/TestObservationSpace.cc
-                  ARGS "testinput/iodatest_writenc.json"
+                  SOURCES mains/TestObsSpace.cc
+                  ARGS "testinput/iodatest_obsspace.json"
                   LIBS    ioda )
 
 if (HAVE_ODB_API)

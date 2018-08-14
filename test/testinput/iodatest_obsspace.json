@@ -35,7 +35,7 @@
             "obsfile": "Data/diag_t_01_wprofiles.nc4"
           },
             "ObsDataOut": {
-              "obsfile": "diagout.nc4"
+              "obsfile": "testoutput/diagout.nc4"
           }
         }
       },
