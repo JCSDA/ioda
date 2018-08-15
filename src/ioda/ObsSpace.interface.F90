@@ -18,6 +18,7 @@ use ioda_locs_mod_c, only : ioda_locs_registry
 use ioda_obs_vectors
 use type_distribution, only: random_distribution
 use fckit_log_module, only : fckit_log
+use fckit_mpi_module
 use kinds
 #ifdef HAVE_ODB_API
 use odb_helper_mod, only: &
@@ -78,9 +79,16 @@ integer(c_int), intent(inout) :: c_key_self
 type(c_ptr), intent(in)       :: c_conf !< configuration
 
 type(ioda_obsdb), pointer :: self
-character(len=max_string)  :: fin
-character(len=max_string)  :: fout
-character(len=max_string)  :: MyObsType
+character(len=max_string) :: fin
+character(len=max_string) :: fout
+character(len=max_string) :: cfg_fout
+character(len=max_string) :: cfg_clobber
+logical                   :: clobber
+logical                   :: fout_exists
+type(fckit_mpi_comm)      :: comm
+character(len=10)         :: cproc
+integer                   :: ppos
+character(len=max_string) :: MyObsType
 character(len=255) :: record
 integer :: gnobs
 integer :: gnobsd
@@ -113,7 +121,6 @@ MyObsType = trim(config_get_string(c_conf,max_string,"ObsType"))
 
 if (config_element_exists(c_conf,"ObsData.ObsDataIn")) then
   fin  = config_get_string(c_conf,max_string,"ObsData.ObsDataIn.obsfile")
-write(0, '(a,a)') "in ioda_obsdb_setup_c, trim(fin) = ", trim(fin)
   if (fin(len_trim(fin)-3:len_trim(fin)) == ".nc4" .or. &
       fin(len_trim(fin)-3:len_trim(fin)) == ".nc") then
     input_file_type = 0
@@ -210,8 +217,61 @@ endif
 write(record,*) 'ioda_obsdb_setup_c: ', trim(MyObsType), ' file in =',trim(fin)
 call fckit_log%info(record)
 
+! Check to see if an output file has been requested. If so, check to see if the
+! user is attempting to overwrite an existing file. By default disallow this action.
+! Provide a "clobber" element so that the user can deliberately overwrite the output
+! file. This check is here in the constructor so that the user gets notified that they
+! are trying to overwrite a file at the onset of the program execution (as opposed to
+! after a program executes for a long time).
+
 if (config_element_exists(c_conf,"ObsData.ObsDataOut")) then
-   fout = config_get_string(c_conf,max_string,"ObsData.ObsDataOut.obsfile")
+   cfg_fout = config_get_string(c_conf,max_string,"ObsData.ObsDataOut.obsfile")
+   cfg_clobber = config_get_string(c_conf,max_string,"ObsData.ObsDataOut.clobber")
+
+   ! Tag the process rank onto the end of the file name so that multi processes won't
+   ! collide with each other. Place the process rank number right before the file
+   ! extension.
+
+   ! get the process rank number
+   comm = fckit_mpi_comm("world")
+   write(cproc,fmt='(i4.4)') comm%rank()
+
+   ! Find the left-most dot in the file name, and use that to pick off the file name
+   ! and file extension.
+   ppos = scan(trim(cfg_fout), '.', BACK=.true.)
+   if (ppos > 0) then
+      ! found a file extension
+      fout = cfg_fout(1:ppos-1) // '_' // trim(adjustl(cproc)) // trim(cfg_fout(ppos:))
+   else
+      ! no file extension
+      fout = trim(cfg_fout) // '_' // trim(adjustl(cproc))
+   endif 
+
+   ! Convert the clobber spec (string) to a logical value. Accept "True", "true", 
+   ! "T" and "t" for a .true. value.
+   clobber = ((trim(cfg_clobber) .eq. "True") .or. &
+              (trim(cfg_clobber) .eq. "true") .or. &
+              (trim(cfg_clobber) .eq. "T") .or. &
+              (trim(cfg_clobber) .eq. "t"))
+
+   ! Check to see if user is trying to overwrite an existing file without specify
+   ! that this is okay.
+   inquire(file=trim(fout), exist=fout_exists)
+   if (fout_exists) then
+      if (clobber) then
+         ! Okay to overwrite
+         write(record,*) 'ioda_obsdb_setup_c: WARNING: Overwriting output file: ', trim(fout)
+         call fckit_log%info(record)
+      else
+         ! Not okay to overwrite
+         write(record,*) 'ioda_obsdb_setup_c: ERROR: Attempting to overwrite existing file: ', trim(fout)
+         call fckit_log%info(record)
+         write(record,*) 'ioda_obsdb_setup_c: INFO: Set "clobber" to "T" in configuration file to allow overwrite'
+         call fckit_log%info(record)
+         call abor1_ftn('')
+      endif
+   endif
+
 endif
 
 

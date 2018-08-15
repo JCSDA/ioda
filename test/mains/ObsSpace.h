@@ -22,6 +22,7 @@
 #include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
+#include "ioda/IodaTrait.h"
 #include "ioda/ObsSpace.h"
 #include "oops/runs/Test.h"
 #include "test/interface/ObsTestsFixture.h"
@@ -31,8 +32,8 @@ namespace test {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL> void testConstructor() {
-  typedef ObsTestsFixture<MODEL> Test_;
+void testConstructor() {
+  typedef ObsTestsFixture<ioda::IodaTrait> Test_;
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     BOOST_CHECK_EQUAL(Test_::obspace()[jj].windowStart(), Test_::tbgn());
@@ -42,17 +43,17 @@ template <typename MODEL> void testConstructor() {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL> class ObsSpace : public oops::Test {
+class ObsSpace : public oops::Test {
  public:
   ObsSpace() {}
   virtual ~ObsSpace() {}
  private:
-  std::string testid() const {return "test::ObsSpace<" + MODEL::name() + ">";}
+  std::string testid() const {return "test::ObsSpace<ioda::IodaTrait>";}
 
   void register_tests() const {
     boost::unit_test::test_suite * ts = BOOST_TEST_SUITE("ObsSpace");
 
-    ts->add(BOOST_TEST_CASE(&testConstructor<MODEL>));
+    ts->add(BOOST_TEST_CASE(&testConstructor));
 
     boost::unit_test::framework::master_test_suite().add(ts);
   }
