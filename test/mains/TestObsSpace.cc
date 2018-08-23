@@ -9,7 +9,7 @@
  */
 
 #include "oops/runs/Run.h"
-#include "ObsSpace.h"
+#include "../ioda/ObsSpace.h"
 
 int main(int argc,  char ** argv) {
   oops::Run run(argc, argv);
