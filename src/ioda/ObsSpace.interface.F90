@@ -358,7 +358,10 @@ if (trim(vname) .eq. "ObsErr") then
   ovec%values = 1.0_kind_real / TmpOvec%values
   call ioda_obsvec_delete(TmpOvec)
 else
-  call ioda_obsdb_var_to_ovec(self, ovec, vname)
+  call ioda_obsvec_setup(TmpOvec, self%nobs)
+  call ioda_obsdb_var_to_ovec(self, TmpOvec, vname)
+  ovec%values = TmpOvec%values
+  call ioda_obsvec_delete(TmpOvec)
 endif
 
 end subroutine ioda_obsdb_get_c
