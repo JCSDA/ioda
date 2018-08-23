@@ -1,0 +1,55 @@
+{
+  "test_framework_runtime_config": "--log_level=test_suite",
+  "window_begin": "2015-08-09T21:00:00Z",
+  "window_end": "2015-08-10T03:00:00Z",
+  "Variables": {
+     "nvars": "1",
+     "variables": ["testvar"]
+  },
+  "Locations": {
+    "lats": [45.0, 40.0],
+    "lons": [0.0, -100.0]
+  },
+  "Observations": {
+    "ObsTypes": [
+      {
+        "ObsType": "Aod",
+        "ObsData": {
+          "ObsDataIn": {
+            "obsfile": "Data/diag_viirs_ges.2015081000_dbl_subset.nc4"
+          }
+        }
+      },
+      {
+        "ObsType": "Radiance",
+        "ObsData": {
+          "ObsDataIn": {
+            "obsfile": "Data/amsua_n19_obs.nc4"
+          }
+        }
+      },
+      {
+        "ObsType": "Radiosonde",
+        "ObsData": {
+          "ObsDataIn": {
+            "obsfile": "Data/diag_t_01_wprofiles.nc4"
+          },
+            "ObsDataOut": {
+              "obsfile": "testoutput/diagout.nc4",
+              "clobber": "T"
+          }
+        }
+      },
+      {
+        "ObsType": "SeaIceFraction",
+        "ObsData": {
+          "ObsDataIn": {
+            "obsfile": "Data/seaice_obs-2018-04-15.nc"
+          }
+        }
+      }
+
+    ]
+  }
+}
+
