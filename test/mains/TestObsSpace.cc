@@ -13,7 +13,7 @@
 
 int main(int argc,  char ** argv) {
   oops::Run run(argc, argv);
-  test::ObsSpace tests;
+  ioda::test::ObsSpace tests;
   run.execute(tests);
   return 0;
 };

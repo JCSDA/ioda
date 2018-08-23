@@ -28,12 +28,13 @@
 #include "test/interface/ObsTestsFixture.h"
 #include "test/TestEnvironment.h"
 
+namespace ioda {
 namespace test {
 
 // -----------------------------------------------------------------------------
 
 void testConstructor() {
-  typedef ObsTestsFixture<ioda::IodaTrait> Test_;
+  typedef ::test::ObsTestsFixture<ioda::IodaTrait> Test_;
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     BOOST_CHECK_EQUAL(Test_::obspace()[jj].windowStart(), Test_::tbgn());
@@ -62,5 +63,6 @@ class ObsSpace : public oops::Test {
 // -----------------------------------------------------------------------------
 
 }  // namespace test
+}  // namespace ioda
 
 #endif  // TEST_INTERFACE_OBSSPACE_H_
