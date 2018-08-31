@@ -4,9 +4,9 @@
 ! This software is licensed under the terms of the Apache Licence Version 2.0
 ! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
 
-!> Fortran module handling observation locations
+!> Fortran module handling adt observation space
 
-module ioda_obs_stericheight_mod
+module ioda_obs_adt_mod
 
 use kinds
 
@@ -14,99 +14,90 @@ implicit none
 private
 integer, parameter :: max_string=800
 
-public ioda_obs_stericheight
-public ioda_obs_stericheight_setup, ioda_obs_stericheight_delete
-public ioda_obs_stericheight_read, ioda_obs_stericheight_generate
-public ioda_obs_stericheight_getlocs
+public ioda_obs_adt
+public ioda_obs_adt_setup, ioda_obs_adt_delete
+public ioda_obs_adt_read, ioda_obs_adt_generate
+public ioda_obs_adt_getlocs
 
 ! ------------------------------------------------------------------------------
 
 !> Fortran derived type to hold observation locations
-type :: ioda_obs_stericheight
+type :: ioda_obs_adt
   integer :: nobs
   real(kind_real), allocatable, dimension(:) :: lat      !< latitude
   real(kind_real), allocatable, dimension(:) :: lon      !< longitude
-  real(kind_real), allocatable, dimension(:) :: adt      !< ADT
-  real(kind_real), allocatable, dimension(:) :: adt_err  !< ADT error  
-  real(kind_real), allocatable, dimension(:) :: madt     !< Mean ADT
-  integer,         allocatable, dimension(:) :: qc       !< QC flag (from file?)
-end type ioda_obs_stericheight
+  real(kind_real), allocatable, dimension(:) :: adt  !< adt 
+  real(kind_real), allocatable, dimension(:) :: adt_err  !< adt 
+end type ioda_obs_adt
 
 ! ------------------------------------------------------------------------------
 contains
 
 ! ------------------------------------------------------------------------------
 
-subroutine ioda_obs_stericheight_setup(self, nobs)
+subroutine ioda_obs_adt_setup(self, nobs)
 implicit none
 
-type(ioda_obs_stericheight), intent(inout) :: self
+type(ioda_obs_adt), intent(inout) :: self
 integer, intent(in) :: nobs
 
-call ioda_obs_stericheight_delete(self)
+call ioda_obs_adt_delete(self)
 
 self%nobs = nobs
 allocate(self%lat(nobs), self%lon(nobs))
-allocate(self%adt(nobs), self%madt(nobs), self%adt_err(nobs))
-allocate(self%qc(nobs))
+allocate(self%adt(nobs),self%adt_err(nobs))
 self%lat = 0.
 self%lon = 0.
 self%adt = 0.
-self%madt  = 0.
-self%adt_err  = 0.
-self%qc = 0
+self%adt_err = 0.
 
-end subroutine ioda_obs_stericheight_setup
+end subroutine ioda_obs_adt_setup
 
 ! ------------------------------------------------------------------------------
 
-subroutine ioda_obs_stericheight_delete(self)
+subroutine ioda_obs_adt_delete(self)
 implicit none
-type(ioda_obs_stericheight), intent(inout) :: self
+type(ioda_obs_adt), intent(inout) :: self
 
 self%nobs = 0
 if (allocated(self%lat)) deallocate(self%lat)
 if (allocated(self%lon)) deallocate(self%lon)
 if (allocated(self%adt)) deallocate(self%adt)
 if (allocated(self%adt_err)) deallocate(self%adt_err)
-if (allocated(self%madt))  deallocate(self%madt)
-if (allocated(self%qc))  deallocate(self%qc)
 
-end subroutine ioda_obs_stericheight_delete
+end subroutine ioda_obs_adt_delete
 
 ! ------------------------------------------------------------------------------
 
-subroutine ioda_obs_stericheight_generate(self, nobs, lat, lon1, lon2)
+subroutine ioda_obs_adt_generate(self, nobs, lat, lon1, lon2)
 implicit none
-type(ioda_obs_stericheight), intent(inout) :: self
+type(ioda_obs_adt), intent(inout) :: self
 integer, intent(in) :: nobs
 real, intent(in) :: lat, lon1, lon2
 
 integer :: i
 
-call ioda_obs_stericheight_setup(self, nobs)
+call ioda_obs_adt_setup(self, nobs)
 
-self%adt(:) = 0.0
+self%adt(:) = 3.0
 self%adt_err(:) = 0.1
-self%madt(:)  = 0.
-self%qc(:)      = 1.
 
 self%lat(:)     = lat
 do i = 1, nobs
   self%lon(i) = lon1 + (i-1)*(lon2-lon1)/(nobs-1)
 enddo
 
-end subroutine ioda_obs_stericheight_generate
+end subroutine ioda_obs_adt_generate
 
 ! ------------------------------------------------------------------------------
 
-subroutine ioda_obs_stericheight_read(filename, self)
+subroutine ioda_obs_adt_read(filename, self)
 use nc_diag_read_mod, only: nc_diag_read_get_var, nc_diag_read_get_dim
 use nc_diag_read_mod, only: nc_diag_read_init, nc_diag_read_close
 use ncd_kinds, only: i_short
 implicit none
 character(max_string), intent(in)   :: filename
-type(ioda_obs_stericheight), intent(inout) :: self
+type(ioda_obs_adt), intent(inout) :: self
 
 integer :: iunit, nt, nr, nc, nobs, qcnobs
 integer(i_short), allocatable, dimension(:)    :: ssh
@@ -116,7 +107,7 @@ integer, allocatable, dimension(:)    :: lon, lat, mdt
 integer :: i, qci
 real :: undef = -99999.9
 
-call ioda_obs_stericheight_delete(self)
+call ioda_obs_adt_delete(self)
 
 ! open netcdf file and read dimensions
 call nc_diag_read_init(filename, iunit)
@@ -139,10 +130,10 @@ self%nobs = qcnobs
 print *,qcnobs, nobs
 
 ! allocate geovals structure
-call ioda_obs_stericheight_setup(self, qcnobs)
+call ioda_obs_adt_setup(self, qcnobs)
 
 qci = 0
-do i = 1, qcnobs
+do i = 1, nobs
    if ( qc(i).eq.1 ) then
       qci = qci + 1
       self%lat(qci) = lat(i)*1e-6      
@@ -150,22 +141,24 @@ do i = 1, qcnobs
       if (self%lon(qci)>80.0) self%lon(qci) = self%lon(qci) - 360.0
       self%adt(qci) = ssh(i)*0.001 + mdt(i)*0.0001
       self%adt_err(qci) = 0.1
-      write(101,*)self%lon(qci),self%lat(qci),self%adt(qci)
+      write(701,*)self%lon(qci),self%lat(qci),self%adt(qci)
    end if
 end do
 
-self%madt = 0.0
-self%qc = 1
+!self%madt = 0.0
+!self%qc = 1
 deallocate(lon, lat, ssh, qc, mdt)
 
-end subroutine ioda_obs_stericheight_read
+print *, 'in read: ', self%nobs, nobs
+
+end subroutine ioda_obs_adt_read
 
 ! ------------------------------------------------------------------------------
 
-subroutine ioda_obs_stericheight_getlocs(self, locs)
+subroutine ioda_obs_adt_getlocs(self, locs)
 use ioda_locs_mod
 implicit none
-type(ioda_obs_stericheight), intent(in) :: self
+type(ioda_obs_adt), intent(in) :: self
 type(ioda_locs), intent(inout) :: locs
 
 call ioda_locs_setup(locs, self%nobs)
@@ -173,8 +166,8 @@ locs%lat = self%lat
 locs%lon = self%lon
 locs%time = 0.
 
-end subroutine ioda_obs_stericheight_getlocs
+end subroutine ioda_obs_adt_getlocs
 
 ! ------------------------------------------------------------------------------
 
-end module ioda_obs_stericheight_mod
+end module ioda_obs_adt_mod
