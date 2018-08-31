@@ -16,7 +16,6 @@
 #include "oops/util/Logger.h"
 
 #include "Locations.h"
-//#include "ObsVector.h"
 
 namespace ioda {
 // -----------------------------------------------------------------------------
@@ -37,7 +36,11 @@ ObsSpace::ObsSpace(const eckit::Configuration & config,
   else if (obsname_ == "SeaIceThickness")
     ioda_obsdb_seaicethick_setup_f90(keyOspace_, &configc);
   else if (obsname_ == "InsituTemperature")
-    ioda_obsdb_insitutemperature_setup_f90(keyOspace_, &configc);  
+    ioda_obsdb_insitutemperature_setup_f90(keyOspace_, &configc);
+  else if (obsname_ == "SeaSurfaceTemp")
+    ioda_obsdb_seasurfacetemp_setup_f90(keyOspace_, &configc);  
+  else if (obsname_ == "ADT")
+    ioda_obsdb_adt_setup_f90(keyOspace_, &configc);    
   else
     ioda_obsdb_setup_f90(keyOspace_, &configc);
 
@@ -54,7 +57,11 @@ ObsSpace::~ObsSpace() {
   else if (obsname_ == "SeaIceThickness")
     ioda_obsdb_seaicethick_delete_f90(keyOspace_);
   else if (obsname_ == "InsituTemperature")
-    ioda_obsdb_insitutemperature_delete_f90(keyOspace_);  
+    ioda_obsdb_insitutemperature_delete_f90(keyOspace_);
+  else if (obsname_ == "SeaSurfaceTemp")
+    ioda_obsdb_seasurfacetemp_delete_f90(keyOspace_);  
+  else if (obsname_ == "ADT")
+    ioda_obsdb_adt_delete_f90(keyOspace_);    
   else
     ioda_obsdb_delete_f90(keyOspace_);
 }
@@ -63,13 +70,17 @@ ObsSpace::~ObsSpace() {
 
 void ObsSpace::getdb(const std::string & col, int & keyData) const {
   if (obsname_ == "StericHeight")
-    ioda_obsdb_stericheight_get_f90(keyOspace_, col.size(), col.c_str(), keyData);      
+    ioda_obsdb_stericheight_get_f90(keyOspace_, col.size(), col.c_str(), keyData);
   else if (obsname_ == "SeaIceFraction")
     ioda_obsdb_seaice_get_f90(keyOspace_, col.size(), col.c_str(), keyData);
   else if (obsname_ == "SeaIceThickness")
     ioda_obsdb_seaicethick_get_f90(keyOspace_, col.size(), col.c_str(), keyData);  
   else if (obsname_ == "InsituTemperature")
-    ioda_obsdb_insitutemperature_get_f90(keyOspace_, col.size(), col.c_str(), keyData);  
+    ioda_obsdb_insitutemperature_get_f90(keyOspace_, col.size(), col.c_str(), keyData);
+  else if (obsname_ == "SeaSurfaceTemp")
+    ioda_obsdb_seasurfacetemp_get_f90(keyOspace_, col.size(), col.c_str(), keyData);  
+  else if (obsname_ == "ADT")
+    ioda_obsdb_adt_get_f90(keyOspace_, col.size(), col.c_str(), keyData);  
   else
     ioda_obsdb_get_f90(keyOspace_, col.size(), col.c_str(), keyData);
 }
@@ -94,7 +105,11 @@ Locations * ObsSpace::locations(const util::DateTime & t1, const util::DateTime 
   else if (obsname_ == "SeaIceThickness")
     ioda_obsdb_seaicethick_getlocations_f90(keyOspace_, &p1, &p2, keylocs);
   else if (obsname_ == "InsituTemperature")
-    ioda_obsdb_insitutemperature_getlocations_f90(keyOspace_, &p1, &p2, keylocs);  
+    ioda_obsdb_insitutemperature_getlocations_f90(keyOspace_, &p1, &p2, keylocs);
+  else if (obsname_ == "SeaSurfaceTemp")
+    ioda_obsdb_seasurfacetemp_getlocations_f90(keyOspace_, &p1, &p2, keylocs);    
+  else if (obsname_ == "ADT")
+    ioda_obsdb_adt_getlocations_f90(keyOspace_, &p1, &p2, keylocs);    
   else
     ioda_obsdb_getlocations_f90(keyOspace_, &p1, &p2, keylocs);
 
@@ -112,7 +127,11 @@ int ObsSpace::nobs() const {
   else if (obsname_ == "SeaIceThickness")
     ioda_obsdb_seaicethick_nobs_f90(keyOspace_, n);
   else if (obsname_ == "InsituTemperature")
-    ioda_obsdb_insitutemperature_nobs_f90(keyOspace_, n);  
+    ioda_obsdb_insitutemperature_nobs_f90(keyOspace_, n);
+  else if (obsname_ == "SeaSurfaceTemp")
+    ioda_obsdb_seasurfacetemp_nobs_f90(keyOspace_, n);    
+  else if (obsname_ == "ADT")
+    ioda_obsdb_adt_nobs_f90(keyOspace_, n);    
   else
     ioda_obsdb_nobs_f90(keyOspace_, n);
 
@@ -133,7 +152,11 @@ void ObsSpace::generateDistribution(const eckit::Configuration & conf) {
   else if (obsname_ == "SeaIceThickness")
     ioda_obsdb_seaicethick_generate_f90(keyOspace_, &configc, &p1, &p2);
   else if (obsname_ == "InsituTemperature")
-    ioda_obsdb_insitutemperature_generate_f90(keyOspace_, &configc, &p1, &p2);  
+    ioda_obsdb_insitutemperature_generate_f90(keyOspace_, &configc, &p1, &p2);
+  else if (obsname_ == "SeaSurfaceTemp")
+    ioda_obsdb_seasurfacetemp_generate_f90(keyOspace_, &configc, &p1, &p2);    
+  else if (obsname_ == "ADT")
+    ioda_obsdb_adt_generate_f90(keyOspace_, &configc, &p1, &p2);    
   else
     ioda_obsdb_generate_f90(keyOspace_, &configc, &p1, &p2);
 

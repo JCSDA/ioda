@@ -43,6 +43,17 @@ foreach(FILENAME ${ioda_test_data})
            ${CMAKE_CURRENT_BINARY_DIR}/Data/${FILENAME} )
 endforeach(FILENAME)
 
+# Link to UFO Marine obs
+list( APPEND marine_obs
+  ../../ufo/test/testinput/marineobs/seaice_obs-2018-04-15.nc
+)
+file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Data)
+foreach(FILENAME ${marine_obs})
+     get_filename_component(filename ${FILENAME} NAME )
+     execute_process( COMMAND ${CMAKE_COMMAND} -E create_symlink
+           ${CMAKE_CURRENT_SOURCE_DIR}/${FILENAME}    
+           ${CMAKE_CURRENT_BINARY_DIR}/Data/${filename} )
+endforeach(FILENAME)
 
 #####################################################################
 
