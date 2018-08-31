@@ -8,10 +8,15 @@
 
 module ioda_obsdb_mod
 
+use iso_c_binding
 use kinds
 use ioda_obsvar_mod
 use ioda_obs_vectors
 use fckit_log_module, only : fckit_log
+#ifdef HAVE_ODB_API
+use odb_helper_mod, only: &
+  count_query_results
+#endif
 
 implicit none
 private
@@ -23,6 +28,7 @@ public ioda_obsdb_delete
 public ioda_obsdb_getlocs
 public ioda_obsdb_generate
 public ioda_obsdb_var_to_ovec
+public ioda_obsdb_putvar
 
 ! ------------------------------------------------------------------------------
 
@@ -37,14 +43,19 @@ type :: ioda_obsdb
 
   character(len=max_string) :: filename
 
+  character(len=max_string) :: fileout
+
   type(ioda_obs_variables) :: obsvars  !< observation variables
+#ifdef HAVE_ODB
+  real(kind=c_double), allocatable :: odb_data(:,:)
+#endif
 end type ioda_obsdb
 
 contains
 
 ! ------------------------------------------------------------------------------
 
-subroutine ioda_obsdb_setup(self, gnobs, nobs, dist_indx, nlocs, filename, obstype)
+subroutine ioda_obsdb_setup(self, gnobs, nobs, dist_indx, nlocs, filename, fileout, obstype)
 implicit none
 type(ioda_obsdb), intent(inout) :: self
 integer, intent(in) :: gnobs
@@ -52,6 +63,7 @@ integer, intent(in) :: nobs
 integer, intent(in) :: dist_indx(:)
 integer, intent(in) :: nlocs
 character(len=*), intent(in) :: filename
+character(len=*), intent(in) :: fileout
 character(len=*), intent(in) :: obstype
 
 self%gnobs     = gnobs
@@ -60,6 +72,7 @@ allocate(self%dist_indx(nobs))
 self%dist_indx = dist_indx
 self%nlocs     = nlocs
 self%filename  = filename
+self%fileout   = fileout
 self%obstype   = obstype
 call self%obsvars%setup()
 
@@ -70,6 +83,8 @@ end subroutine ioda_obsdb_setup
 subroutine ioda_obsdb_delete(self)
 implicit none
 type(ioda_obsdb), intent(inout) :: self
+
+call ioda_obsdb_write(self)
 
 self%gnobs = 0
 self%nobs  = 0
@@ -149,6 +164,13 @@ end subroutine ioda_obsdb_getlocs
 
 subroutine ioda_obsdb_getvar(self, vname, vptr)
 
+#ifdef HAVE_ODB_API
+
+use odb_helper_mod, only: get_vars
+use mpi, only: mpi_comm_rank, mpi_comm_size, mpi_comm_world, mpi_init, mpi_finalize
+
+#endif
+
 use nc_diag_read_mod, only: nc_diag_read_init
 use nc_diag_read_mod, only: nc_diag_read_get_dim
 use nc_diag_read_mod, only: nc_diag_read_check_var
@@ -173,6 +195,7 @@ real(kind_real), allocatable :: field1d(:)
 real(kind_real), allocatable :: field2d(:,:)
 real(kind_real), allocatable :: extract1d(:)
 real(kind_real), allocatable :: extract2d(:,:)
+integer :: input_file_type
 
 ! Look for the variable. If it is already present, vptr will be
 ! pointing to it. If not, vptr will not be associated, and we
@@ -182,42 +205,107 @@ call self%obsvars%get_node(vname, vptr)
 if (.not.associated(vptr)) then
   call self%obsvars%add_node(vname, vptr)
 
-  ! Open the file, and do some checks
-  call nc_diag_read_init(self%filename, iunit)
+write(0, '(a,a)') "in ioda_obsdb_getvar, trim(self % filaneme ) = ", trim(self % filename)
 
-  ! Does the variable exist?
-  if (.not.nc_diag_read_check_var(iunit, vname)) then
-    write(err_msg,*) 'ioda_obsdb_getvar: var ', trim(vname), ' does not exist'
-    call abor1_ftn(trim(err_msg))
-  endif
+  if (self % filename(len_trim(self % filename)-3:len_trim(self % filename)) == ".nc4" .or. &
+      self % filename(len_trim(self % filename)-3:len_trim(self % filename)) == ".nc") then
+    input_file_type = 0
+  else if (self % filename(len_trim(self % filename)-3:len_trim(self % filename)) == ".odb") then
+    input_file_type = 1
+  else
+    input_file_type = 2
+  end if
+
+  select case (input_file_type)
+    case (0)
+
+      ! Open the file, and do some checks
+      call nc_diag_read_init(self%filename, iunit)
+
+      ! Does the variable exist?
+      if (.not.nc_diag_read_check_var(iunit, vname)) then
+        write(err_msg,*) 'ioda_obsdb_getvar: var ', trim(vname), ' does not exist'
+        call abor1_ftn(trim(err_msg))
+      endif
  
-  ! Get the dimension sizes of the variable and use these to allocate
-  ! the storage for the variable.
-  call nc_diag_read_get_var_dims(iunit, vname, ndims, dimsizes)
+      ! Get the dimension sizes of the variable and use these to allocate
+      ! the storage for the variable.
+      call nc_diag_read_get_var_dims(iunit, vname, ndims, dimsizes)
 
-  if (ndims .gt. 1) then
-    write(err_msg,*) 'ioda_obsdb_getvar: var ', trim(vname), ' must have rank = 1'
-    call abor1_ftn(trim(err_msg))
-  endif
+      if (ndims .gt. 1) then
+        write(err_msg,*) 'ioda_obsdb_getvar: var ', trim(vname), ' must have rank = 1'
+        call abor1_ftn(trim(err_msg))
+      endif
 
-  if (dimsizes(1) .ne. self%gnobs) then
-    write(err_msg,*) 'ioda_obsdb_getvar: var ', trim(vname), ' size (', dimsizes(1), ') must equal gnobs (', self%gnobs, ')'
-    call abor1_ftn(trim(err_msg))
-  endif
+      if (dimsizes(1) .ne. self%gnobs) then
+        write(err_msg,*) 'ioda_obsdb_getvar: var ', trim(vname), ' size (', dimsizes(1), ') must equal gnobs (', self%gnobs, ')'
+        call abor1_ftn(trim(err_msg))
+      endif
 
-  ! The dimensionality of the variables in the netcdf file match what we want in the obsdb.
-  vptr%nobs = self%nobs
-  allocate(vptr%vals(vptr%nobs))
+      ! The dimensionality of the variables in the netcdf file match what we want in the obsdb.
+      vptr%nobs = self%nobs
+      allocate(vptr%vals(vptr%nobs))
 
-  allocate(field1d(dimsizes(1)))
-  call nc_diag_read_get_var(iunit, vname, field1d)
-  vptr%vals = field1d(self%dist_indx)
-  deallocate(field1d)
+      allocate(field1d(dimsizes(1)))
+      call nc_diag_read_get_var(iunit, vname, field1d)
+      vptr%vals = field1d(self%dist_indx)
+      deallocate(field1d)
 
-  call nc_diag_read_close(self%filename)
+      call nc_diag_read_close(self%filename)
+
+    case (1)
+
+#ifdef HAVE_ODB_API
+      select case (vname)
+        case ("Latitude")
+          call get_vars (self % filename, ["lat"], "entryno = 1", field2d)
+        case ("Longitude")
+          call get_vars (self % filename, ["lon"], "entryno = 1", field2d)
+        case ("Time")
+         call get_vars (self % filename, ["time"], "entryno = 1", field2d)
+      end select
+      vptr%nobs = size(field2d,dim=2)
+      allocate(vptr%vals(vptr%nobs))
+      vptr % vals(:) = field2d(1,:)
+#endif
+
+    case (2)
+
+#ifdef HAVE_ODB
+#endif
+
+  end select
+
 endif
 
 end subroutine ioda_obsdb_getvar
+
+! ------------------------------------------------------------------------------
+
+subroutine ioda_obsdb_putvar(self, vname, ovec)
+
+implicit none
+
+type(ioda_obsdb), intent(in) :: self
+character(len=*), intent(in) :: vname
+type(obs_vector), intent(in) :: ovec
+
+type(ioda_obs_var), pointer  :: vptr
+character(len=*),parameter   :: myname = "ioda_obsdb_putvar"
+character(len=255)           :: record
+
+call self%obsvars%get_node(vname, vptr)
+if (.not.associated(vptr)) then
+  call self%obsvars%add_node(vname, vptr)
+  vptr%nobs = self%nobs
+  allocate(vptr%vals(vptr%nobs))
+  vptr%vals = ovec%values 
+else
+  write(record,*) myname,' var= ', trim(vname), ':this column already exists'
+  call fckit_log%info(record)
+endif
+
+end subroutine ioda_obsdb_putvar
 
 ! ------------------------------------------------------------------------------
 
@@ -237,7 +325,7 @@ type(ioda_obs_var), pointer :: vptr
 character(len=max_string) :: vname
 
 ! 4th argument is the filename containing obs values, which is not used for this method.
-call ioda_obsdb_setup(self, gnobs, nobs, dist_indx, nlocs, "", obstype)
+call ioda_obsdb_setup(self, gnobs, nobs, dist_indx, nlocs, "", "", obstype)
 
 ! Create variables and generate the values specified by the arguments.
 vname = "Latitude" 
@@ -281,6 +369,68 @@ end subroutine ioda_obsdb_var_to_ovec
 
 ! ------------------------------------------------------------------------------
 
+subroutine ioda_obsdb_write(self)
+use netcdf
+implicit none
+
+type(ioda_obsdb), intent(in) :: self
+
+type(ioda_obs_var), pointer  :: vptr
+character(len=*),parameter   :: myname = "ioda_obsdb_write"
+character(len=255)           :: record
+integer                      :: i,ncid,dimid_1d(1),dimid_nobs
+integer, allocatable         :: ncid_var(:)
+
+
+
+if (self%fileout(len_trim(self%fileout)-3:len_trim(self%fileout)) == ".nc4" .or. &
+    self%fileout(len_trim(self%fileout)-3:len_trim(self%fileout)) == ".nc") then
+
+   write(record,*) myname, ':write diag in netcdf, filename=', trim(self%fileout)
+   call fckit_log%info(record)
+
+   call check('nf90_create', nf90_create(trim(self%fileout),nf90_hdf5,ncid))
+   call check('nf90_def_dim', nf90_def_dim(ncid,trim(self%obstype)//'_nobs',self%nobs, dimid_nobs))
+   dimid_1d = (/ dimid_nobs /)
+
+   i = 0
+   allocate(ncid_var(self%obsvars%n_nodes))
+   vptr => self%obsvars%head
+   do while (associated(vptr))
+      i = i + 1
+      call check('nf90_def_var', nf90_def_var(ncid,trim(vptr%vname)//'_'//trim(self%obstype),nf90_double,dimid_1d,ncid_var(i)))
+      vptr => vptr%next
+   enddo
+
+   call check('nf90_enddef', nf90_enddef(ncid))
+
+   i = 0
+   vptr => self%obsvars%head
+   do while (associated(vptr))
+      i = i + 1
+      call check('nf90_put_var', nf90_put_var(ncid,ncid_var(i),vptr%vals))
+      vptr => vptr%next
+   enddo
+
+   call check('nf90_close', nf90_close(ncid))
+   deallocate(ncid_var)
+
+else if (self%fileout(len_trim(self%fileout)-3:len_trim(self%fileout)) == ".odb") then
+
+   write(record,*) myname, ':write diag in odb2, filename=', trim(self%fileout)
+   call fckit_log%info(record)
+
+else
+
+   write(record,*) myname, ':no output'
+   call fckit_log%info(record)
+
+endif
+
+end subroutine ioda_obsdb_write
+
+! ------------------------------------------------------------------------------
+
 subroutine ioda_obsdb_dump(self)
   implicit none
 
@@ -309,5 +459,22 @@ subroutine ioda_obsdb_dump(self)
   print*, "DEBUG: ioda_obsdb_dump:"
 
 end subroutine ioda_obsdb_dump
+
+! ------------------------------------------------------------------------------
+subroutine check(action, status)
+
+use netcdf, only: nf90_noerr, nf90_strerror
+
+implicit none
+
+integer, intent (in) :: status
+character (len=*), intent (in) :: action
+
+if(status /= nf90_noerr) then
+   print *, "During action: ", trim(action), ", received error: ", trim(nf90_strerror(status))
+   stop 2
+end if
+
+end subroutine check
 
 end module ioda_obsdb_mod
