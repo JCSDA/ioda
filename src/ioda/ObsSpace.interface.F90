@@ -18,7 +18,24 @@ use ioda_locs_mod_c, only : ioda_locs_registry
 use ioda_obs_vectors
 use type_distribution, only: random_distribution
 use fckit_log_module, only : fckit_log
+use fckit_mpi_module
 use kinds
+#ifdef HAVE_ODB_API
+use odb_helper_mod, only: &
+  count_query_results
+#endif
+
+#ifdef HAVE_ODB
+use odb, only: &
+  odb_cancel,  &
+  odb_close,   &
+  odb_open,    &
+  odb_select
+
+use odbgetput, only: &
+  odb_get,           &
+  odb_addview
+#endif
 
 implicit none
 private
@@ -47,6 +64,11 @@ contains
 
 subroutine ioda_obsdb_setup_c(c_key_self, c_conf) bind(c,name='ioda_obsdb_setup_f90')
 
+#ifdef HAVE_ODB_API
+use odb_helper_mod, only: &
+  count_query_results
+#endif
+
 use nc_diag_read_mod, only: nc_diag_read_get_dim
 use nc_diag_read_mod, only: nc_diag_read_init
 use nc_diag_read_mod, only: nc_diag_read_close
@@ -57,8 +79,16 @@ integer(c_int), intent(inout) :: c_key_self
 type(c_ptr), intent(in)       :: c_conf !< configuration
 
 type(ioda_obsdb), pointer :: self
-character(len=max_string)  :: fin
-character(len=max_string)  :: MyObsType
+character(len=max_string) :: fin
+character(len=max_string) :: fout
+character(len=max_string) :: cfg_fout
+character(len=max_string) :: cfg_clobber
+logical                   :: clobber
+logical                   :: fout_exists
+type(fckit_mpi_comm)      :: comm
+character(len=10)         :: cproc
+integer                   :: ppos
+character(len=max_string) :: MyObsType
 character(len=255) :: record
 integer :: gnobs
 integer :: gnobsd
@@ -69,46 +99,111 @@ integer :: nchans
 integer :: iunit
 type(random_distribution) :: ran_dist
 integer :: ds, n, nn
+integer :: input_file_type
+
+#ifdef HAVE_ODB
+integer :: rc, handle, num_pools, num_rows, num_cols
+interface
+  function setenv (envname, envval, overwrite) bind (c, name = "setenv")
+    use, intrinsic :: iso_c_binding, only: &
+      c_char,                              &
+      c_int
+    character(kind=c_char)     :: envname(*)
+    character(kind=c_char)     :: envval(*)
+    integer(kind=c_int), value :: overwrite
+    integer(kind=c_int)        :: setenv
+  end function setenv
+end interface
+#endif
 
 ! Get the obs type
 MyObsType = trim(config_get_string(c_conf,max_string,"ObsType"))
 
 if (config_element_exists(c_conf,"ObsData.ObsDataIn")) then
   fin  = config_get_string(c_conf,max_string,"ObsData.ObsDataIn.obsfile")
-  call nc_diag_read_init(fin, iunit)
-  gnobs = nc_diag_read_get_dim(iunit, 'nobs')
-
-  ! For radiance, nlocs is nobs / nchans
-  if (trim(MyObsType) .eq. "Radiance") then
-    nchans = nc_diag_read_get_dim(iunit, 'nchans')
-    gnobsd = gnobs / nchans
+  if (fin(len_trim(fin)-3:len_trim(fin)) == ".nc4" .or. &
+      fin(len_trim(fin)-3:len_trim(fin)) == ".nc") then
+    input_file_type = 0
+  else if (fin(len_trim(fin)-3:len_trim(fin)) == ".odb") then
+    input_file_type = 1
   else
-    gnobsd = gnobs
-  endif
+    input_file_type = 2
+  end if
 
-  ! Apply the random distribution, which yeilds nobs and the indices for selecting
-  ! observations out of the file.
-  ran_dist = random_distribution(gnobsd)
-  nobs = ran_dist%nobs_pe()
-  allocate(dist_indx(nobs))
-  dist_indx = ran_dist%indx
+   select case (input_file_type)
+    case (0)
 
-  nlocs = nobs
+      call nc_diag_read_init(fin, iunit)
+      gnobs = nc_diag_read_get_dim(iunit, 'nobs')
 
-  ! add channel offset for radiance
-  if (trim(MyObsType) .eq. "Radiance") then
-     ds = 1+(dist_indx(1)-1)*nchans
-     deallocate(dist_indx)
-     allocate(dist_indx(nobs*nchans))
-     nn = 0
-     do n = 1,nobs*nchans
-       dist_indx(n) = ds + nn
-       nn = nn + 1
-     enddo
-     nobs = nobs*nchans
-  endif
+      ! For radiance, nlocs is nobs / nchans
+      if (trim(MyObsType) .eq. "Radiance") then
+        nchans = nc_diag_read_get_dim(iunit, 'nchans')
+        gnobsd = gnobs / nchans
+      else
+        gnobsd = gnobs
+      endif
 
-  call nc_diag_read_close(fin)
+      ! Apply the random distribution, which yeilds nobs and the indices for selecting
+      ! observations out of the file.
+      ran_dist = random_distribution(gnobsd)
+      nobs = ran_dist%nobs_pe()
+      allocate(dist_indx(nobs))
+      dist_indx = ran_dist%indx
+
+      nlocs = nobs
+
+      ! add channel offset for radiance
+      if (trim(MyObsType) .eq. "Radiance") then
+         ds = 1+(dist_indx(1)-1)*nchans
+         deallocate(dist_indx)
+         allocate(dist_indx(nobs*nchans))
+         nn = 0
+         do n = 1,nobs*nchans
+           dist_indx(n) = ds + nn
+           nn = nn + 1
+         enddo
+         nobs = nobs*nchans
+      endif
+
+      call nc_diag_read_close(fin)
+
+    case (1)
+
+#ifdef HAVE_ODB_API
+
+      call count_query_results (fin, 'select seqno from "' // trim(fin) // '" where entryno = 1;', nobs)
+      gnobs = nobs
+      nlocs = nobs
+      allocate (dist_indx(nobs))
+      dist_indx(:) = [(/(n, n = 1,nobs)/)]
+
+#endif
+
+    case (2)
+
+#ifdef HAVE_ODB
+
+      rc = setenv ("ODB_SRCPATH_OOPS" // c_null_char, trim (fin) // c_null_char, 1_c_int)
+      rc = setenv ("ODB_DATAPATH_OOPS" // c_null_char, trim (fin) // c_null_char, 1_c_int)
+      rc = setenv ("IOASSIGN" // c_null_char, trim (fin) // '/IOASSIGN' // c_null_char, 1_c_int)
+      handle = odb_open ("OOPS", "OLD", num_pools)
+      rc = odb_addview (handle, "query", abort = .false.)
+      rc = odb_select (handle, "query", num_rows, num_cols)
+      allocate (self % odb_data(num_rows,0:num_cols))
+      rc = odb_get (handle, "query", self % odb_data, num_rows)
+      rc = odb_cancel (handle, "query")
+      rc = odb_close (handle)
+      nobs = size(self % odb_data,dim=1)
+      gnobs = nobs
+      nlocs = nobs
+      allocate (dist_indx(nobs))
+      dist_indx(:) = [(/(n, n = 1,nobs)/)]
+
+#endif
+
+  end select
+
 else
   fin  = ""
   gnobs = 0
@@ -122,13 +217,69 @@ endif
 write(record,*) 'ioda_obsdb_setup_c: ', trim(MyObsType), ' file in =',trim(fin)
 call fckit_log%info(record)
 
+! Check to see if an output file has been requested. If so, check to see if the
+! user is attempting to overwrite an existing file. By default disallow this action.
+! Provide a "clobber" element so that the user can deliberately overwrite the output
+! file. This check is here in the constructor so that the user gets notified that they
+! are trying to overwrite a file at the onset of the program execution (as opposed to
+! after a program executes for a long time).
+
+if (config_element_exists(c_conf,"ObsData.ObsDataOut")) then
+   cfg_fout = config_get_string(c_conf,max_string,"ObsData.ObsDataOut.obsfile")
+   cfg_clobber = config_get_string(c_conf,max_string,"ObsData.ObsDataOut.clobber")
+
+   ! Tag the process rank onto the end of the file name so that multi processes won't
+   ! collide with each other. Place the process rank number right before the file
+   ! extension.
+
+   ! get the process rank number
+   comm = fckit_mpi_comm("world")
+   write(cproc,fmt='(i4.4)') comm%rank()
+
+   ! Find the left-most dot in the file name, and use that to pick off the file name
+   ! and file extension.
+   ppos = scan(trim(cfg_fout), '.', BACK=.true.)
+   if (ppos > 0) then
+      ! found a file extension
+      fout = cfg_fout(1:ppos-1) // '_' // trim(adjustl(cproc)) // trim(cfg_fout(ppos:))
+   else
+      ! no file extension
+      fout = trim(cfg_fout) // '_' // trim(adjustl(cproc))
+   endif 
+
+   ! Convert the clobber spec (string) to a logical value. Accept "True", "true", 
+   ! "T" and "t" for a .true. value.
+   clobber = ((trim(cfg_clobber) .eq. "True") .or. &
+              (trim(cfg_clobber) .eq. "true") .or. &
+              (trim(cfg_clobber) .eq. "T") .or. &
+              (trim(cfg_clobber) .eq. "t"))
+
+   ! Check to see if user is trying to overwrite an existing file without specify
+   ! that this is okay.
+   inquire(file=trim(fout), exist=fout_exists)
+   if (fout_exists) then
+      if (clobber) then
+         ! Okay to overwrite
+         write(record,*) 'ioda_obsdb_setup_c: WARNING: Overwriting output file: ', trim(fout)
+         call fckit_log%info(record)
+      else
+         ! Not okay to overwrite
+         write(record,*) 'ioda_obsdb_setup_c: ERROR: Attempting to overwrite existing file: ', trim(fout)
+         call fckit_log%info(record)
+         write(record,*) 'ioda_obsdb_setup_c: INFO: Set "clobber" to "T" in configuration file to allow overwrite'
+         call fckit_log%info(record)
+         call abor1_ftn('')
+      endif
+   endif
+
+endif
+
+
 call ioda_obsdb_registry%init()
 call ioda_obsdb_registry%add(c_key_self)
 call ioda_obsdb_registry%get(c_key_self, self)
 
-call ioda_obsdb_setup(self, gnobs, nobs, dist_indx, nlocs, fin, MyObsType) 
-
-deallocate(dist_indx)
+call ioda_obsdb_setup(self, gnobs, nobs, dist_indx, nlocs, fin, fout, MyObsType)
 
 end subroutine ioda_obsdb_setup_c
 
@@ -267,9 +418,40 @@ if (trim(vname) .eq. "ObsErr") then
   ovec%values = 1.0_kind_real / TmpOvec%values
   call ioda_obsvec_delete(TmpOvec)
 else
-  call ioda_obsdb_var_to_ovec(self, ovec, vname)
+  call ioda_obsvec_setup(TmpOvec, self%nobs)
+  call ioda_obsdb_var_to_ovec(self, TmpOvec, vname)
+  ovec%values = TmpOvec%values
+  call ioda_obsvec_delete(TmpOvec)
 endif
 
 end subroutine ioda_obsdb_get_c
+
+! ------------------------------------------------------------------------------
+
+subroutine ioda_obsdb_put_c(c_key_self, lcol, c_col, c_key_ovec) bind(c,name='ioda_obsdb_put_f90')
+implicit none
+integer(c_int), intent(in) :: c_key_self
+integer(c_int), intent(in) :: lcol
+character(kind=c_char,len=1), intent(in) :: c_col(lcol+1)
+integer(c_int), intent(in) :: c_key_ovec
+
+type(ioda_obsdb), pointer :: self
+type(obs_vector), pointer :: ovec
+
+character(len=lcol) :: vname
+integer             :: i
+
+call ioda_obsdb_registry%get(c_key_self, self)
+call ioda_obs_vect_registry%get(c_key_ovec,ovec)
+
+ovec%nobs = self%nobs
+! Copy C character array to Fortran string
+do i = 1, lcol
+  vname(i:i) = c_col(i)
+enddo
+
+call ioda_obsdb_putvar(self, vname, ovec)
+
+end subroutine ioda_obsdb_put_c
 
 end module ioda_obsdb_mod_c
