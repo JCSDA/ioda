@@ -84,8 +84,7 @@ type(ioda_obsdb), pointer :: self
 character(len=max_string) :: fin
 character(len=max_string) :: fout
 character(len=max_string) :: cfg_fout
-character(len=max_string) :: cfg_clobber
-logical                   :: clobber
+logical                   :: in_a_test
 logical                   :: fout_exists
 type(fckit_mpi_comm)      :: comm
 character(len=10)         :: cproc
@@ -248,15 +247,13 @@ write(record,*) 'ioda_obsdb_setup_c: ', trim(MyObsType), ' file in =',trim(fin)
 call fckit_log%info(record)
 
 ! Check to see if an output file has been requested. If so, check to see if the
-! user is attempting to overwrite an existing file. By default disallow this action.
-! Provide a "clobber" element so that the user can deliberately overwrite the output
-! file. This check is here in the constructor so that the user gets notified that they
-! are trying to overwrite a file at the onset of the program execution (as opposed to
-! after a program executes for a long time).
-
+! user is attempting to overwrite an existing file. The rule is that if we are
+! running a test, then allow the overwrite; if we are running in production mode,
+! then disallow the overwrite. The configuration will have had a special mark
+! (called "TestInProgress") added to it in the case of running a test.
 if (config_element_exists(c_conf,"ObsData.ObsDataOut")) then
    cfg_fout = config_get_string(c_conf,max_string,"ObsData.ObsDataOut.obsfile")
-   cfg_clobber = config_get_string(c_conf,max_string,"ObsData.ObsDataOut.clobber")
+   in_a_test = config_element_exists(c_conf, "TestInProgress")
 
    ! Tag the process rank onto the end of the file name so that multi processes won't
    ! collide with each other. Place the process rank number right before the file
@@ -277,26 +274,17 @@ if (config_element_exists(c_conf,"ObsData.ObsDataOut")) then
       fout = trim(cfg_fout) // '_' // trim(adjustl(cproc))
    endif 
 
-   ! Convert the clobber spec (string) to a logical value. Accept "True", "true", 
-   ! "T" and "t" for a .true. value.
-   clobber = ((trim(cfg_clobber) .eq. "True") .or. &
-              (trim(cfg_clobber) .eq. "true") .or. &
-              (trim(cfg_clobber) .eq. "T") .or. &
-              (trim(cfg_clobber) .eq. "t"))
-
    ! Check to see if user is trying to overwrite an existing file without specify
    ! that this is okay.
    inquire(file=trim(fout), exist=fout_exists)
    if (fout_exists) then
-      if (clobber) then
+      if (in_a_test) then
          ! Okay to overwrite
          write(record,*) 'ioda_obsdb_setup_c: WARNING: Overwriting output file: ', trim(fout)
          call fckit_log%info(record)
       else
          ! Not okay to overwrite
          write(record,*) 'ioda_obsdb_setup_c: ERROR: Attempting to overwrite existing file: ', trim(fout)
-         call fckit_log%info(record)
-         write(record,*) 'ioda_obsdb_setup_c: INFO: Set "clobber" to "T" in configuration file to allow overwrite'
          call fckit_log%info(record)
          call abor1_ftn('')
       endif
