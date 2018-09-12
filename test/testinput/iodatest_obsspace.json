@@ -24,7 +24,7 @@
         "ObsType": "Radiance",
         "ObsData": {
           "ObsDataIn": {
-            "obsfile": "Data/amsua_n19_obs.nc4"
+            "obsfile": "Data/amsua_obs_n19_2018041500_m.nc4"
           }
         }
       },
@@ -32,7 +32,7 @@
         "ObsType": "Radiosonde",
         "ObsData": {
           "ObsDataIn": {
-            "obsfile": "Data/diag_t_01_wprofiles.nc4"
+            "obsfile": "Data/sondes_obs_2018041500_m.nc4"
           },
             "ObsDataOut": {
               "obsfile": "testoutput/diagout.nc4",
@@ -44,7 +44,7 @@
         "ObsType": "SeaIceFraction",
         "ObsData": {
           "ObsDataIn": {
-            "obsfile": "Data/seaice_obs-2018-04-15.nc"
+            "obsfile": "Data/seaice_obs-2018-04-15.nc4"
           }
         }
       }

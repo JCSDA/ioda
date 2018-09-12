@@ -70,6 +70,7 @@ ioda/ioda_locs_mod.F90
 ioda/ioda_obs_vectors.F90
 ioda/ioda_obsvar_mod.F90
 ioda/ioda_obsdb_mod.F90
+ioda/ioda_utils_mod.F90
 ioda/random_f.cc
 ioda/random_f.h
 ioda/random_vectors_mod.F90

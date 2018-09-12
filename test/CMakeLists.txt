@@ -28,30 +28,30 @@ ecbuild_add_resources( TARGET ioda_test_scripts
 
 # Create Data directory for test data and symlink files
 list( APPEND ioda_test_data
-  diag_viirs_ges.2015081000_dbl_subset.nc4  
-  amsua_n19_obs.nc4
-  diag_t_01_wprofiles.nc4
-  diag_t_01_wprofiles.odb
-  diag_t_01_wprofiles_odb
-  seaice_obs-2018-04-15.nc
+  atmosphere/aircraft_obs_2018041500_m.nc4
+  atmosphere/aircraft_obs_2018041500_s.nc4
+  atmosphere/amsua_obs_n19_2018041500_m.nc4
+  atmosphere/amsua_obs_n19_2018041500_s.nc4
+  atmosphere/sondes_obs_2018041500_m.nc4
+  atmosphere/sondes_obs_2018041500_s.nc4
+  atmosphere/diag_t_obs_01_wprofiles.odb
+  atmosphere/diag_t_obs_01_wprofiles_odb
+
+  constituents/diag_viirs_ges.2015081000_dbl_subset.nc4
+
+  marine/Jason-3-2018-04-15.nc
+  marine/cryosat2-2018-04-15.nc
+  marine/sea-ice-con-l2.nc
+  marine/seaice_obs-2018-04-15.nc4
+  marine/sst_obs-2018-04-15.nc4
+  marine/t0n156e_dy_obs.nc
 )
 
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Data)
 foreach(FILENAME ${ioda_test_data})
+    get_filename_component(filename ${FILENAME} NAME )
     execute_process( COMMAND ${CMAKE_COMMAND} -E create_symlink
            ${CMAKE_CURRENT_SOURCE_DIR}/testinput/${FILENAME}
-           ${CMAKE_CURRENT_BINARY_DIR}/Data/${FILENAME} )
-endforeach(FILENAME)
-
-# Link to UFO Marine obs
-list( APPEND marine_obs
-  ../../ufo/test/testinput/marineobs/seaice_obs-2018-04-15.nc
-)
-file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Data)
-foreach(FILENAME ${marine_obs})
-     get_filename_component(filename ${FILENAME} NAME )
-     execute_process( COMMAND ${CMAKE_COMMAND} -E create_symlink
-           ${CMAKE_CURRENT_SOURCE_DIR}/${FILENAME}    
            ${CMAKE_CURRENT_BINARY_DIR}/Data/${filename} )
 endforeach(FILENAME)
 
