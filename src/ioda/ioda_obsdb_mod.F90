@@ -34,10 +34,11 @@ public ioda_obsdb_putvar
 
 !> Fortran derived type to hold a set of observation variables
 type :: ioda_obsdb
-  integer :: gnobs                     !< total number of observations
+  integer :: fvlen                     !< length of vectors in the input file
   integer :: nobs                      !< number of observations for this process
   integer :: nlocs                     !< number of locations for this process
-  integer, allocatable :: dist_indx(:) !< indices of observations for this process
+  integer :: nvars                     !< number of variables
+  integer, allocatable :: dist_indx(:) !< indices to select elements from input file vectors
 
   character(len=max_string) :: obstype
 
@@ -55,22 +56,24 @@ contains
 
 ! ------------------------------------------------------------------------------
 
-subroutine ioda_obsdb_setup(self, gnobs, nobs, dist_indx, nlocs, filename, fileout, obstype)
+subroutine ioda_obsdb_setup(self, fvlen, nobs, dist_indx, nlocs, nvars, filename, fileout, obstype)
 implicit none
 type(ioda_obsdb), intent(inout) :: self
-integer, intent(in) :: gnobs
+integer, intent(in) :: fvlen
 integer, intent(in) :: nobs
 integer, intent(in) :: dist_indx(:)
 integer, intent(in) :: nlocs
+integer, intent(in) :: nvars
 character(len=*), intent(in) :: filename
 character(len=*), intent(in) :: fileout
 character(len=*), intent(in) :: obstype
 
-self%gnobs     = gnobs
+self%fvlen     = fvlen
 self%nobs      = nobs
 allocate(self%dist_indx(nobs))
 self%dist_indx = dist_indx
 self%nlocs     = nlocs
+self%nvars     = nvars
 self%filename  = filename
 self%fileout   = fileout
 self%obstype   = obstype
@@ -86,10 +89,11 @@ type(ioda_obsdb), intent(inout) :: self
 
 call ioda_obsdb_write(self)
 
-self%gnobs = 0
+self%fvlen = 0
 self%nobs  = 0
 if (allocated(self%dist_indx)) deallocate(self%dist_indx)
 self%nlocs  = 0
+self%nvars  = 0
 self%filename = ""
 self%obstype = ""
 
@@ -120,43 +124,41 @@ call ioda_locs_setup(locs, self%nlocs)
 ! obs, etc. 
 istep = self%nobs / self%nlocs 
 
-!Copy locations keeping track of success/failure
-failed=0
-call ioda_obsdb_getvar(self, "Longitude", vptr)
-if(failed==0 .and. size(vptr%vals(1:self%nobs:istep))==self%nlocs) then
+if ((trim(self%obstype) .eq. "Radiance") .or. &
+    (trim(self%obstype) .eq. "Radiosonde") .or. &
+    (trim(self%obstype) .eq. "Aircraft")) then
+  call ioda_obsdb_getvar(self, "longitude", vptr)
+  locs%lon = vptr%vals
+else
+  call ioda_obsdb_getvar(self, "Longitude", vptr)
   locs%lon = vptr%vals(1:self%nobs:istep)
-else
-  failed=1
-endif
-
-call ioda_obsdb_getvar(self, "Latitude", vptr)
-if(failed==0 .and. size(vptr%vals(1:self%nobs:istep)) ==self%nlocs) then
-  locs%lat = vptr%vals(1:self%nobs:istep)
-else
-  failed=2
 endif
 
 if ((trim(self%obstype) .eq. "Radiance") .or. &
-    (trim(self%obstype) .eq. "Aod")) then
-  call ioda_obsdb_getvar(self, "Obs_Time", vptr)
+    (trim(self%obstype) .eq. "Radiosonde") .or. &
+    (trim(self%obstype) .eq. "Aircraft")) then
+  call ioda_obsdb_getvar(self, "latitude", vptr)
+  locs%lat = vptr%vals
 else
-  call ioda_obsdb_getvar(self, "Time", vptr)
-endif
-if(failed==0 .and. size(vptr%vals(1:self%nobs:istep)) == self%nlocs) then
-  locs%time = vptr%vals(1:self%nobs:istep)
-else
-  failed=3
+  call ioda_obsdb_getvar(self, "Latitude", vptr)
+  locs%lat = vptr%vals(1:self%nobs:istep)
 endif
 
-!Record success/failure
-if(failed==0)then
-  write(record,*) myname,': allocated/assinged obs-data'
-  call fckit_log%info(record)
+if ((trim(self%obstype) .eq. "Radiance") .or. &
+    (trim(self%obstype) .eq. "Radiosonde") .or. &
+    (trim(self%obstype) .eq. "Aircraft")) then
+  call ioda_obsdb_getvar(self, "time", vptr)
+  locs%time = vptr%vals
+elseif (trim(self%obstype) .eq. "Aod") then
+  call ioda_obsdb_getvar(self, "Obs_Time", vptr)
+  locs%time = vptr%vals(1:self%nobs:istep)
 else
-  write(record,*) myname,': failed allocation/assignment of obs-data, ier: ', failed
-  call fckit_log%info(record)
-  call abor1_ftn(myname//" failed")
+  call ioda_obsdb_getvar(self, "Time", vptr)
+  locs%time = vptr%vals(1:self%nobs:istep)
 endif
+
+write(record,*) myname,': allocated/assinged obs-data'
+call fckit_log%info(record)
 
 end subroutine ioda_obsdb_getlocs
 
@@ -171,10 +173,12 @@ use mpi, only: mpi_comm_rank, mpi_comm_size, mpi_comm_world, mpi_init, mpi_final
 
 #endif
 
+use netcdf, only: NF90_FLOAT, NF90_DOUBLE
 use nc_diag_read_mod, only: nc_diag_read_init
 use nc_diag_read_mod, only: nc_diag_read_get_dim
 use nc_diag_read_mod, only: nc_diag_read_check_var
 use nc_diag_read_mod, only: nc_diag_read_get_var_dims
+use nc_diag_read_mod, only: nc_diag_read_get_var_type
 use nc_diag_read_mod, only: nc_diag_read_get_var
 use nc_diag_read_mod, only: nc_diag_read_close
 
@@ -191,11 +195,12 @@ integer :: j
 integer :: iflat
 integer :: ndims
 integer, allocatable :: dimsizes(:)
-real(kind_real), allocatable :: field1d(:)
-real(kind_real), allocatable :: field2d(:,:)
-real(kind_real), allocatable :: extract1d(:)
-real(kind_real), allocatable :: extract2d(:,:)
+real, allocatable :: field1d_sngl(:)
+real, allocatable :: field2d_sngl(:,:)
+real(kind_real), allocatable :: field1d_dbl(:)
+real(kind_real), allocatable :: field2d_dbl(:,:)
 integer :: input_file_type
+integer :: vartype
 
 ! Look for the variable. If it is already present, vptr will be
 ! pointing to it. If not, vptr will not be associated, and we
@@ -204,8 +209,6 @@ integer :: input_file_type
 call self%obsvars%get_node(vname, vptr)
 if (.not.associated(vptr)) then
   call self%obsvars%add_node(vname, vptr)
-
-write(0, '(a,a)') "in ioda_obsdb_getvar, trim(self % filaneme ) = ", trim(self % filename)
 
   if (self % filename(len_trim(self % filename)-3:len_trim(self % filename)) == ".nc4" .or. &
       self % filename(len_trim(self % filename)-3:len_trim(self % filename)) == ".nc") then
@@ -232,13 +235,16 @@ write(0, '(a,a)') "in ioda_obsdb_getvar, trim(self % filaneme ) = ", trim(self %
       ! the storage for the variable.
       call nc_diag_read_get_var_dims(iunit, vname, ndims, dimsizes)
 
+      ! Determine the data type (single vs double precision)
+      vartype = nc_diag_read_get_var_type(iunit, vname)
+
       if (ndims .gt. 1) then
         write(err_msg,*) 'ioda_obsdb_getvar: var ', trim(vname), ' must have rank = 1'
         call abor1_ftn(trim(err_msg))
       endif
 
-      if (dimsizes(1) .ne. self%gnobs) then
-        write(err_msg,*) 'ioda_obsdb_getvar: var ', trim(vname), ' size (', dimsizes(1), ') must equal gnobs (', self%gnobs, ')'
+      if (dimsizes(1) .ne. self%fvlen) then
+        write(err_msg,*) 'ioda_obsdb_getvar: var ', trim(vname), ' size (', dimsizes(1), ') must equal fvlen (', self%fvlen, ')'
         call abor1_ftn(trim(err_msg))
       endif
 
@@ -246,10 +252,17 @@ write(0, '(a,a)') "in ioda_obsdb_getvar, trim(self % filaneme ) = ", trim(self %
       vptr%nobs = self%nobs
       allocate(vptr%vals(vptr%nobs))
 
-      allocate(field1d(dimsizes(1)))
-      call nc_diag_read_get_var(iunit, vname, field1d)
-      vptr%vals = field1d(self%dist_indx)
-      deallocate(field1d)
+      if (vartype == NF90_DOUBLE) then
+        allocate(field1d_dbl(dimsizes(1)))
+        call nc_diag_read_get_var(iunit, vname, field1d_dbl)
+        vptr%vals = field1d_dbl(self%dist_indx)
+        deallocate(field1d_dbl)
+      elseif (vartype == NF90_FLOAT) then
+        allocate(field1d_sngl(dimsizes(1)))
+        call nc_diag_read_get_var(iunit, vname, field1d_sngl)
+        vptr%vals = field1d_sngl(self%dist_indx)
+        deallocate(field1d_sngl)
+      endif
 
       call nc_diag_read_close(self%filename)
 
@@ -258,15 +271,15 @@ write(0, '(a,a)') "in ioda_obsdb_getvar, trim(self % filaneme ) = ", trim(self %
 #ifdef HAVE_ODB_API
       select case (vname)
         case ("Latitude")
-          call get_vars (self % filename, ["lat"], "entryno = 1", field2d)
+          call get_vars (self % filename, ["lat"], "entryno = 1", field2d_dbl)
         case ("Longitude")
-          call get_vars (self % filename, ["lon"], "entryno = 1", field2d)
+          call get_vars (self % filename, ["lon"], "entryno = 1", field2d_dbl)
         case ("Time")
-         call get_vars (self % filename, ["time"], "entryno = 1", field2d)
+         call get_vars (self % filename, ["time"], "entryno = 1", field2d_dbl)
       end select
-      vptr%nobs = size(field2d,dim=2)
+      vptr%nobs = size(field2d_dbl,dim=2)
       allocate(vptr%vals(vptr%nobs))
-      vptr % vals(:) = field2d(1,:)
+      vptr % vals(:) = field2d_dbl(1,:)
 #endif
 
     case (2)
@@ -309,13 +322,14 @@ end subroutine ioda_obsdb_putvar
 
 ! ------------------------------------------------------------------------------
 
-subroutine ioda_obsdb_generate(self, gnobs, nobs, dist_indx, nlocs, obstype, lat, lon1, lon2)
+subroutine ioda_obsdb_generate(self, fvlen, nobs, dist_indx, nlocs, nvars, obstype, lat, lon1, lon2)
 implicit none
 type(ioda_obsdb), intent(inout) :: self
-integer, intent(in) :: gnobs
+integer, intent(in) :: fvlen
 integer, intent(in) :: nobs
 integer, intent(in) :: dist_indx(:)
 integer, intent(in) :: nlocs
+integer, intent(in) :: nvars
 character(len=*) :: obstype
 real, intent(in) :: lat, lon1, lon2
 
@@ -325,7 +339,7 @@ type(ioda_obs_var), pointer :: vptr
 character(len=max_string) :: vname
 
 ! 4th argument is the filename containing obs values, which is not used for this method.
-call ioda_obsdb_setup(self, gnobs, nobs, dist_indx, nlocs, "", "", obstype)
+call ioda_obsdb_setup(self, fvlen, nobs, dist_indx, nlocs, nvars, "", "", obstype)
 
 ! Create variables and generate the values specified by the arguments.
 vname = "Latitude" 
@@ -438,9 +452,10 @@ subroutine ioda_obsdb_dump(self)
 
   type(ioda_obs_var), pointer :: vptr
 
-  print*, "DEBUG: ioda_obsdb_dump: gnobs: ", self%gnobs
+  print*, "DEBUG: ioda_obsdb_dump: fvlen: ", self%fvlen
   print*, "DEBUG: ioda_obsdb_dump: nobs: ", self%nobs
   print*, "DEBUG: ioda_obsdb_dump: nlocs: ", self%nlocs
+  print*, "DEBUG: ioda_obsdb_dump: nvars: ", self%nvars
   print*, "DEBUG: ioda_obsdb_dump: obstype: ", trim(self%obstype)
   print*, "DEBUG: ioda_obsdb_dump: filename: ", trim(self%filename)
 

@@ -73,6 +73,8 @@ use nc_diag_read_mod, only: nc_diag_read_get_dim
 use nc_diag_read_mod, only: nc_diag_read_init
 use nc_diag_read_mod, only: nc_diag_read_close
 
+use ioda_utils_mod, only: ioda_deselect_missing_values
+
 implicit none
 
 integer(c_int), intent(inout) :: c_key_self
@@ -90,12 +92,12 @@ character(len=10)         :: cproc
 integer                   :: ppos
 character(len=max_string) :: MyObsType
 character(len=255) :: record
-integer :: gnobs
-integer :: gnobsd
-integer :: nobs
+integer :: fvlen
 integer, allocatable :: dist_indx(:)
+integer, allocatable :: miss_indx(:)
+integer :: nobs
 integer :: nlocs
-integer :: nchans
+integer :: nvars
 integer :: iunit
 type(random_distribution) :: ran_dist
 integer :: ds, n, nn
@@ -130,40 +132,68 @@ if (config_element_exists(c_conf,"ObsData.ObsDataIn")) then
     input_file_type = 2
   end if
 
-   select case (input_file_type)
+  ! For now, just reading in one variable, will read this from the input file eventually.
+  !
+  ! For radiance, there are 12 channels of data (channels 7, 8 and 14 were not assimilated
+  ! into the GSI run for April 15, 2018 00Z). The brightness_temperature obs data is actually
+  ! not used at this point. However, the CRTM always creates an hofx with 15 channels, and it
+  ! needs the nobs value to be set as if all 15 channels of the obs data are present. We still
+  ! need to decide how to handle missing channels in obs data, so to get things going for
+  ! now set nvars to 15 for Radiance. Note that when we come to the point where we do want
+  ! to read in the brightness temperature, we will need to address how to handle missing
+  ! channels.
+  nvars = 1 
+  if (trim(MyObsType) .eq. "Radiance") nvars = 15
+
+  select case (input_file_type)
     case (0)
 
       call nc_diag_read_init(fin, iunit)
-      gnobs = nc_diag_read_get_dim(iunit, 'nobs')
 
-      ! For radiance, nlocs is nobs / nchans
-      if (trim(MyObsType) .eq. "Radiance") then
-        nchans = nc_diag_read_get_dim(iunit, 'nchans')
-        gnobsd = gnobs / nchans
+      ! Get the length of the vectors in the input file
+      if ((trim(MyObsType) .eq. "Radiance") .or. &
+          (trim(MyObsType) .eq. "Radiosonde") .or. &
+          (trim(MyObsType) .eq. "Aircraft")) then
+        fvlen = nc_diag_read_get_dim(iunit, 'nlocs')
       else
-        gnobsd = gnobs
+        fvlen = nc_diag_read_get_dim(iunit, 'nobs')
       endif
 
-      ! Apply the random distribution, which yeilds nobs and the indices for selecting
-      ! observations out of the file.
-      ran_dist = random_distribution(gnobsd)
-      nobs = ran_dist%nobs_pe()
-      allocate(dist_indx(nobs))
-      dist_indx = ran_dist%indx
+      ! Apply the random distribution, which yields the size and indices that
+      ! are to be selected by this process element out of the file.
+      ran_dist = random_distribution(fvlen)
+      if ((trim(MyObsType) .eq. "Radiance") .or. &
+          (trim(MyObsType) .eq. "Radiosonde") .or. &
+          (trim(MyObsType) .eq. "Aircraft")) then
+        nlocs = ran_dist%nobs_pe()
+        allocate(dist_indx(nlocs))
+        dist_indx = ran_dist%indx
 
-      nlocs = nobs
+        nobs = nvars * nlocs
+      else
+        nobs = ran_dist%nobs_pe()
+        allocate(dist_indx(nobs))
+        dist_indx = ran_dist%indx
 
-      ! add channel offset for radiance
-      if (trim(MyObsType) .eq. "Radiance") then
-         ds = 1+(dist_indx(1)-1)*nchans
-         deallocate(dist_indx)
-         allocate(dist_indx(nobs*nchans))
-         nn = 0
-         do n = 1,nobs*nchans
-           dist_indx(n) = ds + nn
-           nn = nn + 1
-         enddo
-         nobs = nobs*nchans
+        nlocs = nobs
+      endif
+
+      ! Read in a variable and check for missing values. Adjust the nobs, nlocs values
+      ! and dist_index accordingly.
+      if ((trim(MyObsType) .eq. "Radiosonde") .or. &
+          (trim(MyObsType) .eq. "Aircraft")) then
+        call ioda_deselect_missing_values(iunit, "air_temperature", dist_indx, miss_indx)
+
+        ! Reallocate dist_indx and copy miss_indx in. This should skip over missing values
+        ! from the file.
+        nlocs = size(miss_indx)
+        deallocate(dist_indx)
+        allocate(dist_indx(nlocs))
+        dist_indx = miss_indx
+
+        nobs = nvars * nlocs
+
+        deallocate(miss_indx)
       endif
 
       call nc_diag_read_close(fin)
@@ -173,7 +203,7 @@ if (config_element_exists(c_conf,"ObsData.ObsDataIn")) then
 #ifdef HAVE_ODB_API
 
       call count_query_results (fin, 'select seqno from "' // trim(fin) // '" where entryno = 1;', nobs)
-      gnobs = nobs
+      fvlen = nobs
       nlocs = nobs
       allocate (dist_indx(nobs))
       dist_indx(:) = [(/(n, n = 1,nobs)/)]
@@ -195,7 +225,7 @@ if (config_element_exists(c_conf,"ObsData.ObsDataIn")) then
       rc = odb_cancel (handle, "query")
       rc = odb_close (handle)
       nobs = size(self % odb_data,dim=1)
-      gnobs = nobs
+      fvlen = nobs
       nlocs = nobs
       allocate (dist_indx(nobs))
       dist_indx(:) = [(/(n, n = 1,nobs)/)]
@@ -206,7 +236,7 @@ if (config_element_exists(c_conf,"ObsData.ObsDataIn")) then
 
 else
   fin  = ""
-  gnobs = 0
+  fvlen = 0
   nobs = 0
   nlocs = 0
   ! Create a dummy index array
@@ -233,7 +263,7 @@ if (config_element_exists(c_conf,"ObsData.ObsDataOut")) then
    ! extension.
 
    ! get the process rank number
-   comm = fckit_mpi_comm("world")
+   comm = fckit_mpi_comm()
    write(cproc,fmt='(i4.4)') comm%rank()
 
    ! Find the left-most dot in the file name, and use that to pick off the file name
@@ -279,7 +309,7 @@ call ioda_obsdb_registry%init()
 call ioda_obsdb_registry%add(c_key_self)
 call ioda_obsdb_registry%get(c_key_self, self)
 
-call ioda_obsdb_setup(self, gnobs, nobs, dist_indx, nlocs, fin, fout, MyObsType)
+call ioda_obsdb_setup(self, fvlen, nobs, dist_indx, nlocs, nvars, fin, fout, MyObsType)
 
 end subroutine ioda_obsdb_setup_c
 
@@ -344,10 +374,11 @@ type(c_ptr), intent(in)       :: c_t1, c_t2
 
 type(ioda_obsdb), pointer :: self
 type(datetime) :: t1, t2
-integer :: gnobs
+integer :: fvlen
 integer :: nobs
 integer,allocatable :: dist_indx(:)
 integer :: nlocs
+integer :: nvars
 character(len=max_string)  :: MyObsType
 character(len=255) :: record
 real :: lat, lon1, lon2
@@ -357,27 +388,30 @@ call ioda_obsdb_registry%get(c_key_self, self)
 call c_f_datetime(c_t1, t1)
 call c_f_datetime(c_t2, t2)
 
-gnobs = config_get_int(c_conf, "nobs")
+fvlen = config_get_int(c_conf, "nobs")
 lat  = config_get_real(c_conf, "lat")
 lon1 = config_get_real(c_conf, "lon1")
 lon2 = config_get_real(c_conf, "lon2")
 
 ! Apply the random distribution, which yeilds nobs and the indices for selecting
 ! observations out of the file.
-ran_dist = random_distribution(gnobs)
+ran_dist = random_distribution(fvlen)
 nobs = ran_dist%nobs_pe()
 allocate(dist_indx(nobs))
 dist_indx = ran_dist%indx
 
-! For now, set gnobs and nlocs equal to nobs. This may need to change for some obs types.
+! For now, set fvlen and nlocs equal to nobs. This may need to change for some obs types.
 nlocs = nobs
+
+! For now, set nvars to one.
+nvars = 1
 
 ! Record obs type
 MyObsType = trim(config_get_string(c_conf,max_string,"ObsType"))
 write(record,*) 'ioda_obsdb_generate_c: ', trim(MyObsType)
 call fckit_log%info(record)
 
-call ioda_obsdb_generate(self, gnobs, nobs, dist_indx, nlocs, MyObsType, lat, lon1, lon2)
+call ioda_obsdb_generate(self, fvlen, nobs, dist_indx, nlocs, nvars, MyObsType, lat, lon1, lon2)
 
 deallocate(dist_indx)
 
