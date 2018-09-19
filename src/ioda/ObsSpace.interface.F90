@@ -84,7 +84,6 @@ type(ioda_obsdb), pointer :: self
 character(len=max_string) :: fin
 character(len=max_string) :: fout
 character(len=max_string) :: cfg_fout
-logical                   :: in_a_test
 logical                   :: fout_exists
 type(fckit_mpi_comm)      :: comm
 character(len=10)         :: cproc
@@ -246,14 +245,9 @@ endif
 write(record,*) 'ioda_obsdb_setup_c: ', trim(MyObsType), ' file in =',trim(fin)
 call fckit_log%info(record)
 
-! Check to see if an output file has been requested. If so, check to see if the
-! user is attempting to overwrite an existing file. The rule is that if we are
-! running a test, then allow the overwrite; if we are running in production mode,
-! then disallow the overwrite. The configuration will have had a special mark
-! (called "TestInProgress") added to it in the case of running a test.
+! Check to see if an output file has been requested.
 if (config_element_exists(c_conf,"ObsData.ObsDataOut")) then
    cfg_fout = config_get_string(c_conf,max_string,"ObsData.ObsDataOut.obsfile")
-   in_a_test = config_element_exists(c_conf, "TestInProgress")
 
    ! Tag the process rank onto the end of the file name so that multi processes won't
    ! collide with each other. Place the process rank number right before the file
@@ -274,20 +268,12 @@ if (config_element_exists(c_conf,"ObsData.ObsDataOut")) then
       fout = trim(cfg_fout) // '_' // trim(adjustl(cproc))
    endif 
 
-   ! Check to see if user is trying to overwrite an existing file without specify
-   ! that this is okay.
+   ! Check to see if user is trying to overwrite an existing file. For now always allow 
+   ! the overwrite, but issue a warning if we are about to clobber an existing file.
    inquire(file=trim(fout), exist=fout_exists)
    if (fout_exists) then
-      if (in_a_test) then
-         ! Okay to overwrite
-         write(record,*) 'ioda_obsdb_setup_c: WARNING: Overwriting output file: ', trim(fout)
-         call fckit_log%info(record)
-      else
-         ! Not okay to overwrite
-         write(record,*) 'ioda_obsdb_setup_c: ERROR: Attempting to overwrite existing file: ', trim(fout)
-         call fckit_log%info(record)
-         call abor1_ftn('')
-      endif
+      write(record,*) 'ioda_obsdb_setup_c: WARNING: Overwriting output file: ', trim(fout)
+      call fckit_log%info(record)
    endif
 
 endif
