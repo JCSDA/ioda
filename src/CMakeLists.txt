@@ -60,7 +60,11 @@ ncdiag/marine/m_diag_marine_conv_mod.F90
 ioda/Fortran.h
 ioda/ObsSpace.cc
 ioda/ObsSpace.h
-ioda/ObsSpace.interface.F90
+ioda/ObsSpaceFactory.cc
+ioda/ObsSpaceFactory.h
+ioda/ObsSpaceFort.cc
+ioda/ObsSpaceFort.h
+ioda/ObsSpaceFort.interface.F90
 ioda/ObsVector.cc
 ioda/ObsVector.h
 ioda/Locations.cc
