@@ -13,6 +13,7 @@ use config_mod
 use datetime_mod
 use duration_mod
 use ioda_obsdb_mod
+use ioda_obsvar_mod
 use ioda_locs_mod
 use ioda_locs_mod_c, only : ioda_locs_registry
 use ioda_obs_vectors
@@ -461,5 +462,36 @@ enddo
 call ioda_obsdb_putvar(self, vname, ovec)
 
 end subroutine ioda_obsdb_put_c
+
+! ------------------------------------------------------------------------------
+
+subroutine ioda_obsdb_get_mdata_c(c_key_self, lcol, c_col, c_data_ptr) bind(c,name='ioda_obsdb_get_mdata_f90')  
+implicit none
+integer(c_int), intent(in) :: c_key_self
+integer(c_int), intent(in) :: lcol
+character(kind=c_char,len=1), intent(in) :: c_col(lcol+1)
+type(c_ptr), intent(out)   :: c_data_ptr
+
+type(ioda_obsdb), pointer :: self
+type(ioda_obs_var), pointer :: vptr
+
+character(len=lcol) :: vname
+integer :: i
+
+call ioda_obsdb_registry%get(c_key_self, self)
+
+! Copy C character array to Fortran string
+do i = 1, lcol
+  vname(i:i) = c_col(i)
+enddo
+
+print*, "DEBUG: get_mdata_c: vname: ", trim(vname)
+
+call ioda_obsdb_getvar(self, vname, vptr)
+print*, "DEBUG: get_mdata_c: vptr: ", vptr%vals(1:10)
+!c_data_ptr = c_loc(vptr%vals)
+print*, "DEBUG: get_mdata_c: end: "
+
+end subroutine ioda_obsdb_get_mdata_c
 
 end module ioda_obsdb_mod_c

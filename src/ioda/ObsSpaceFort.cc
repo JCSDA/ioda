@@ -16,17 +16,18 @@
 #include "oops/util/Logger.h"
 
 #include "Locations.h"
+#include "ObsVector.h"
 
 namespace ioda {
 // -----------------------------------------------------------------------------
 // Maker for the ObsSpaceFactory
-static ObsSpaceMaker<ObsSpaceFort> makerObsSpaceFort("ObsSpaceFort");
+static ObsSpaceMaker<ObsSpaceFort> makerObsSpaceFort_("ObsSpaceFort");
 
 
 // -----------------------------------------------------------------------------
 ObsSpaceFort::ObsSpaceFort(const eckit::Configuration & config,
                    const util::DateTime & bgn, const util::DateTime & end)
-  : oops::ObsSpaceFortBase(config, bgn, end), winbgn_(bgn), winend_(end)
+  : ObsSpaceBase(config, bgn, end), winbgn_(bgn), winend_(end)
 {
   oops::Log::trace() << "ioda::ObsSpaceFort config  = " << config << std::endl;
 
@@ -87,6 +88,28 @@ void ObsSpaceFort::getdb(const std::string & col, int & keyData) const {
     ioda_obsdb_adt_get_f90(keyOspace_, col.size(), col.c_str(), keyData);  
   else
     ioda_obsdb_get_f90(keyOspace_, col.size(), col.c_str(), keyData);
+}
+
+// -----------------------------------------------------------------------------
+
+double * ObsSpaceFort::get_mdata(const std::string & Vname) const {
+    double * Vdata;
+//  if (obsname_ == "StericHeight")
+//    ioda_obsdb_stericheight_get_f90(keyOspace_, Vname.size(), Vname.c_str(), Vdata);
+//  else if (obsname_ == "SeaIceFraction")
+//    ioda_obsdb_seaice_get_f90(keyOspace_, Vname.size(), Vname.c_str(), Vdata);
+//  else if (obsname_ == "SeaIceThickness")
+//    ioda_obsdb_seaicethick_get_f90(keyOspace_, Vname.size(), Vname.c_str(), Vdata);
+//  else if (obsname_ == "InsituTemperature")
+//    ioda_obsdb_insitutemperature_get_f90(keyOspace_, Vname.size(), Vname.c_str(), Vdata);
+//  else if (obsname_ == "SeaSurfaceTemp")
+//    ioda_obsdb_seasurfacetemp_get_f90(keyOspace_, Vname.size(), Vname.c_str(), Vdata);
+//  else if (obsname_ == "ADT")
+//    ioda_obsdb_adt_get_f90(keyOspace_, Vname.size(), Vname.c_str());  
+//  else
+    ioda_obsdb_get_mdata_f90(keyOspace_, Vname.size(), Vname.c_str(), Vdata);
+
+    return Vdata;
 }
 
 // -----------------------------------------------------------------------------

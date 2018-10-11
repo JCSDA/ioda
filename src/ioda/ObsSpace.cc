@@ -7,12 +7,9 @@
 
 #include "eckit/config/Configuration.h"
 
-#include "oops/interface/ObsSpaceBase.h"
 
 #include "ioda/ObsSpace.h"
-#include "ioda/ObsVector.h"
-
-#include "ioda/ObsSpaceFactory.h"
+#include "ioda/ObsSpaceBase.h"
 
 namespace ioda {
 
@@ -36,13 +33,43 @@ const util::DateTime & ObsSpace::windowEnd() const {
 }
 
 // -----------------------------------------------------------------------------
-Locations * ObsSpace::locations(const util::DateTime & t1, const util::DateTime & t2) const {
+const eckit::Configuration & ObsSpace::config() const {
+  return ospace_->config();
+}
+
+// -----------------------------------------------------------------------------
+Locations* ObsSpace::locations(const util::DateTime & t1, const util::DateTime & t2) const {
   return ospace_->locations(t1, t2);
 }
 
 // -----------------------------------------------------------------------------
 void ObsSpace::generateDistribution(const eckit::Configuration & conf) {
   ospace_->generateDistribution(conf);
+}
+
+// -----------------------------------------------------------------------------
+const std::string & ObsSpace::obsname() const {
+  return ospace_->obsname();
+}
+
+// -----------------------------------------------------------------------------
+int ObsSpace::nobs() const {
+  return ospace_->nobs();
+}
+
+// -----------------------------------------------------------------------------
+void ObsSpace::getdb(const std::string & col, int & keyData) const {
+  return ospace_->getdb(col, keyData);
+}
+
+// -----------------------------------------------------------------------------
+void ObsSpace::putdb(const std::string & col, const int & keyData) const {
+  return ospace_->putdb(col, keyData);
+}
+
+// -----------------------------------------------------------------------------
+double * ObsSpace::get_mdata(const std::string & Vname) const {
+  return ospace_->get_mdata(Vname);
 }
 
 // -----------------------------------------------------------------------------
@@ -53,7 +80,7 @@ void ObsSpace::printJo(const ObsVector & dy, const ObsVector & grad) {
 
 // -----------------------------------------------------------------------------
 void ObsSpace::print(std::ostream & os) const {
-  ospace_->print(os);
+  os << *ospace_;
 }
 
 // -----------------------------------------------------------------------------
