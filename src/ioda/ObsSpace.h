@@ -13,6 +13,10 @@
 
 #include "oops/util/Printable.h"
 
+#include "ioda/ObsSpaceBase.h"
+#include "ioda/Locations.h"
+#include "ioda/ObsVector.h"
+
 // Forward declarations
 namespace eckit {
   class Configuration;
@@ -21,6 +25,7 @@ namespace eckit {
 namespace ioda {
   class Locations;
   class ObsVector;
+  class ObsSpaceBase;
 
 // -----------------------------------------------------------------------------
 
@@ -36,14 +41,23 @@ class ObsSpace : public util::Printable,
   const util::DateTime & windowEnd() const;
 
   // Others
-  Locations * locations(const util::DateTime &, const util::DateTime &) const;
+  const eckit::Configuration & config() const;
+  Locations* locations(const util::DateTime &, const util::DateTime &) const;
   void generateDistribution(const eckit::Configuration &);
   void printJo(const ObsVector &, const ObsVector &);
+
+  const std::string & obsname() const;
+  int nobs() const;
+
+  void getdb(const std::string &, int &) const;
+  void putdb(const std::string &, const int &) const;
+
+  double * get_mdata(const std::string &) const;
 
  private:
   void print(std::ostream &) const;
 
-  boost::scoped_ptr<oops::ObsSpaceBase> ospace_;
+  boost::scoped_ptr<ObsSpaceBase> ospace_;
 
 };
 

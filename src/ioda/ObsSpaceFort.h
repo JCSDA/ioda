@@ -12,10 +12,11 @@
 #include <ostream>
 #include <string>
 
-#include "oops/interface/ObsSpaceBase.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
 #include "oops/util/Printable.h"
+
+#include "ioda/ObsSpaceBase.h"
 
 #include "Fortran.h"
 
@@ -29,7 +30,7 @@ namespace ioda {
   class ObsVector;
 
 /// Wrapper around ObsHelpQG, mostly to hide the factory
-class ObsSpaceFort : public oops::ObsSpaceBase {
+class ObsSpaceFort : public ObsSpaceBase {
 
  public:
   ObsSpaceFort(const eckit::Configuration &, const util::DateTime &, const util::DateTime &);
@@ -37,8 +38,9 @@ class ObsSpaceFort : public oops::ObsSpaceBase {
   ~ObsSpaceFort();
 
   void getdb(const std::string &, int &) const;
-
   void putdb(const std::string &, const int &) const; 
+
+  double * get_mdata(const std::string &) const;
 
   Locations * locations(const util::DateTime &, const util::DateTime &) const;
 

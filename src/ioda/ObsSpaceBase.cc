@@ -10,7 +10,7 @@
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/Logger.h"
 #include "oops/util/DateTime.h"
-#include "ioda/ObsSpaceFactory.h"
+#include "ioda/ObsSpaceBase.h"
 
 namespace ioda {
 
@@ -26,16 +26,23 @@ ObsSpaceFactory::ObsSpaceFactory(const std::string & name) {
 
 // -----------------------------------------------------------------------------
 
-oops::ObsSpaceBase * ObsSpaceFactory::create(const eckit::Configuration & conf,
+ObsSpaceBase * ObsSpaceFactory::create(const eckit::Configuration & conf,
                         const util::DateTime & bgn, const util::DateTime & end ) {
   oops::Log::trace() << "ObsSpaceBase::create starting" << std::endl;
-  const std::string id = conf.getString("ObsType");
+  const std::string ObsType = conf.getString("ObsType");
+  std::string id;
+  if (ObsType == "Radiosonde") {
+    id = "ObsSpaceFort";
+    }
+  else {
+    id = "ObsSpaceFort";
+    }
   typename std::map<std::string, ObsSpaceFactory*>::iterator jloc = getMakers().find(id);
   if (jloc == getMakers().end()) {
     oops::Log::error() << id << " does not exist in ufo::ObsSpaceFactory." << std::endl;
     ABORT("Element does not exist in ufo::ObsSpaceFactory.");
   }
-  oops::ObsSpaceBase * ptr = jloc->second->make(conf, bgn, end);
+  ObsSpaceBase * ptr = jloc->second->make(conf, bgn, end);
   oops::Log::trace() << "ObsSpaceBase::create done" << std::endl;
   return ptr;
 }

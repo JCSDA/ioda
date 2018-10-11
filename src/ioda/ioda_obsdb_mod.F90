@@ -28,6 +28,7 @@ public ioda_obsdb_delete
 public ioda_obsdb_getlocs
 public ioda_obsdb_generate
 public ioda_obsdb_var_to_ovec
+public ioda_obsdb_getvar
 public ioda_obsdb_putvar
 
 ! ------------------------------------------------------------------------------
