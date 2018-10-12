@@ -58,6 +58,11 @@ int ObsSpace::nobs() const {
 }
 
 // -----------------------------------------------------------------------------
+int ObsSpace::nlocs() const {
+  return ospace_->nlocs();
+}
+
+// -----------------------------------------------------------------------------
 void ObsSpace::getdb(const std::string & col, int & keyData) const {
   return ospace_->getdb(col, keyData);
 }
@@ -68,9 +73,9 @@ void ObsSpace::putdb(const std::string & col, const int & keyData) const {
 }
 
 // -----------------------------------------------------------------------------
-void ObsSpace::get_mdata(const std::string & Vname, double Vdata[],
+void ObsSpace::getvar(const std::string & Vname, double Vdata[],
                          const int Vsize) const {
-  return ospace_->get_mdata(Vname, Vdata, Vsize);
+  return ospace_->getvar(Vname, Vdata, Vsize);
 }
 
 // -----------------------------------------------------------------------------

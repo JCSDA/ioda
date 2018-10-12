@@ -16,7 +16,8 @@ implicit none
 
 private
 public obsspace_get_nobs
-public obsspace_get_mdata
+public obsspace_get_nlocs
+public obsspace_get_var
 
 #include "obsspace_interface.h"
 
@@ -24,7 +25,7 @@ public obsspace_get_mdata
 contains
 !-------------------------------------------------------------------------------
 
-!>  Return the number of observational locations
+!>  Return the number of observations
 
 integer function obsspace_get_nobs(c_dom)
     implicit none
@@ -35,9 +36,20 @@ end function obsspace_get_nobs
 
 !-------------------------------------------------------------------------------
 
+!>  Return the number of observational locations
+
+integer function obsspace_get_nlocs(c_dom)
+    implicit none
+    type(c_ptr), intent(in) :: c_dom
+
+    obsspace_get_nlocs = c_obsspace_get_nlocs(c_dom)
+end function obsspace_get_nlocs
+
+!-------------------------------------------------------------------------------
+
 !> Get a metadata variable
 
-subroutine obsspace_get_mdata(c_dom, vdata, vname, vsize)
+subroutine obsspace_get_var(c_dom, vdata, vname, vsize)
      implicit none
 
      type(c_ptr), intent(in) :: c_dom
@@ -50,12 +62,12 @@ subroutine obsspace_get_mdata(c_dom, vdata, vname, vsize)
      ! Convert fortran string to c string (null terminated)
      call f_c_string(vname, c_vname)
 
-     ! Call the interface to access the get_mdata method in ObsSpace
-     call c_obsspace_get_mdata(c_dom, c_vname, vdata, vsize)
+     ! Call the interface to access the getvar method in ObsSpace
+     call c_obsspace_get_var(c_dom, c_vname, vdata, vsize)
 
      ! Clean up - the f_c_string routine allocated c_vname
      deallocate(c_vname)
-end subroutine obsspace_get_mdata
+end subroutine obsspace_get_var
 
 !-------------------------------------------------------------------------------
 

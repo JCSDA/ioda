@@ -17,10 +17,16 @@ int obsspace_get_nobs_f(const ObsSpace & obss) {
 
 // -----------------------------------------------------------------------------
 
-void obsspace_get_mdata_f(const ObsSpace & obss, const char vname[],
+int obsspace_get_nlocs_f(const ObsSpace & obss) {
+    return obss.nlocs();
+}
+
+// -----------------------------------------------------------------------------
+
+void obsspace_get_var_f(const ObsSpace & obss, const char vname[],
                double Vdata[], const int Vsize) {
     std::string Vname(vname);
-    return obss.get_mdata(Vname, Vdata, Vsize);
+    return obss.getvar(Vname, Vdata, Vsize);
 }
 
 // -----------------------------------------------------------------------------

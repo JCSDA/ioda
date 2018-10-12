@@ -48,11 +48,12 @@ class ObsSpace : public util::Printable,
 
   const std::string & obsname() const;
   int nobs() const;
+  int nlocs() const;
 
   void getdb(const std::string &, int &) const;
   void putdb(const std::string &, const int &) const;
 
-  void get_mdata(const std::string &, double [], const int) const;
+  void getvar(const std::string &, double [], const int) const;
 
  private:
   void print(std::ostream &) const;
