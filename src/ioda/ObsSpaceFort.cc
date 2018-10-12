@@ -92,7 +92,7 @@ void ObsSpaceFort::getdb(const std::string & col, int & keyData) const {
 
 // -----------------------------------------------------------------------------
 
-void ObsSpaceFort::get_mdata(const std::string & Vname, double Vdata[],
+void ObsSpaceFort::getvar(const std::string & Vname, double Vdata[],
                              const int Vsize) const {
 //  if (obsname_ == "StericHeight")
 //    ioda_obsdb_stericheight_get_f90(keyOspace_, Vname.size(), Vname.c_str(), Vdata);
@@ -107,7 +107,7 @@ void ObsSpaceFort::get_mdata(const std::string & Vname, double Vdata[],
 //  else if (obsname_ == "ADT")
 //    ioda_obsdb_adt_get_f90(keyOspace_, Vname.size(), Vname.c_str());  
 //  else
-    ioda_obsdb_get_mdata_f90(keyOspace_, Vname.size(), Vname.c_str(), Vdata, Vsize);
+    ioda_obsdb_getvar_f90(keyOspace_, Vname.size(), Vname.c_str(), Vdata, Vsize);
 }
 
 // -----------------------------------------------------------------------------
@@ -159,6 +159,28 @@ int ObsSpaceFort::nobs() const {
     ioda_obsdb_adt_nobs_f90(keyOspace_, n);    
   else
     ioda_obsdb_nobs_f90(keyOspace_, n);
+
+  return n;
+}
+
+// -----------------------------------------------------------------------------
+
+int ObsSpaceFort::nlocs() const {
+  int n;
+//  if (obsname_ == "StericHeight")
+//    ioda_obsdb_stericheight_nlocs_f90(keyOspace_, n);  
+//  else if (obsname_ == "SeaIceFraction")
+//    ioda_obsdb_seaice_nlocs_f90(keyOspace_, n);
+//  else if (obsname_ == "SeaIceThickness")
+//    ioda_obsdb_seaicethick_nlocs_f90(keyOspace_, n);
+//  else if (obsname_ == "InsituTemperature")
+//    ioda_obsdb_insitutemperature_nlocs_f90(keyOspace_, n);
+//  else if (obsname_ == "SeaSurfaceTemp")
+//    ioda_obsdb_seasurfacetemp_nlocs_f90(keyOspace_, n);    
+//  else if (obsname_ == "ADT")
+//    ioda_obsdb_adt_nlocs_f90(keyOspace_, n);    
+//  else
+    ioda_obsdb_nlocs_f90(keyOspace_, n);
 
   return n;
 }

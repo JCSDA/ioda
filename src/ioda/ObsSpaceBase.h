@@ -55,11 +55,12 @@ class ObsSpaceBase : public oops::ObsSpaceBase {
   //virtual void putobs(const std::string &, const ObsVector &) const = 0;
   virtual const std::string & obsname() const = 0;
   virtual int nobs() const = 0;
+  virtual int nlocs() const = 0;
 
   virtual void getdb(const std::string &, int &) const = 0;
   virtual void putdb(const std::string &, const int &) const = 0;
 
-  virtual void get_mdata(const std::string &, double [], const int) const = 0;
+  virtual void getvar(const std::string &, double [], const int) const = 0;
 
 };
 

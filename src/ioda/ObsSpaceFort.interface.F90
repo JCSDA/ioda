@@ -317,6 +317,20 @@ end subroutine ioda_obsdb_nobs_c
 
 ! ------------------------------------------------------------------------------
 
+subroutine ioda_obsdb_nlocs_c(c_key_self, klocs) bind(c,name='ioda_obsdb_nlocs_f90')
+implicit none
+integer(c_int), intent(in) :: c_key_self
+integer(c_int), intent(inout) :: klocs
+type(ioda_obsdb), pointer :: self
+
+call ioda_obsdb_registry%get(c_key_self, self)
+
+klocs = self%nlocs
+
+end subroutine ioda_obsdb_nlocs_c
+
+! ------------------------------------------------------------------------------
+
 subroutine ioda_obsdb_getlocations_c(c_key_self, c_t1, c_t2, c_key_locs) bind(c,name='ioda_obsdb_getlocations_f90')
 implicit none
 integer(c_int), intent(in)    :: c_key_self
@@ -465,7 +479,7 @@ end subroutine ioda_obsdb_put_c
 
 ! ------------------------------------------------------------------------------
 
-subroutine ioda_obsdb_get_mdata_c(c_key_self, lcol, c_col, vdata, vsize) bind(c,name='ioda_obsdb_get_mdata_f90')  
+subroutine ioda_obsdb_getvar_c(c_key_self, lcol, c_col, vdata, vsize) bind(c,name='ioda_obsdb_getvar_f90')  
 implicit none
 integer(c_int), intent(in) :: c_key_self
 integer(c_int), intent(in) :: lcol
@@ -489,6 +503,6 @@ enddo
 call ioda_obsdb_getvar(self, vname, vptr)
 vdata(1:vsize) = vptr%vals(1:vsize)
 
-end subroutine ioda_obsdb_get_mdata_c
+end subroutine ioda_obsdb_getvar_c
 
 end module ioda_obsdb_mod_c

@@ -40,7 +40,7 @@ class ObsSpaceFort : public ObsSpaceBase {
   void getdb(const std::string &, int &) const;
   void putdb(const std::string &, const int &) const; 
 
-  void get_mdata(const std::string &, double [], const int) const;
+  void getvar(const std::string &, double [], const int) const;
 
   Locations * locations(const util::DateTime &, const util::DateTime &) const;
 
@@ -51,6 +51,7 @@ class ObsSpaceFort : public ObsSpaceBase {
   const util::DateTime & windowEnd() const {return winend_;}
 
   int nobs() const;
+  int nlocs() const;
 
   int & toFortran() {return keyOspace_;}
   const int & toFortran() const {return keyOspace_;}
