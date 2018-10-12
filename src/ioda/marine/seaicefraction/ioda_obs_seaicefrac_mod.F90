@@ -18,6 +18,7 @@ public ioda_obs_seaicefrac
 public ioda_obs_seaicefrac_setup, ioda_obs_seaicefrac_delete
 public ioda_obs_seaicefrac_read, ioda_obs_seaicefrac_generate
 public ioda_obs_seaicefrac_getlocs
+public ioda_obs_seaicefrac_copy_var
 
 ! ------------------------------------------------------------------------------
 
@@ -213,5 +214,33 @@ locs%time = 0.
 end subroutine ioda_obs_seaicefrac_getlocs
 
 ! ------------------------------------------------------------------------------
+
+subroutine ioda_obs_seaicefrac_copy_var(self, vname, vdata, vsize)
+  implicit none
+
+  type(ioda_obs_seaicefrac), intent(in) :: self
+  character(len=*), intent(in)          :: vname
+  real(kind_real), intent(out)          :: vdata(vsize)
+  integer, intent(in)                   :: vsize
+
+  character(max_string) :: err_msg
+
+  if (trim(vname) .eq. "latitude") then
+    vdata = self%lat
+  elseif (trim(vname) .eq. "longitude") then
+    vdata = self%lon
+  elseif (trim(vname) .eq. "icefrac") then
+    vdata = self%icefrac
+  elseif (trim(vname) .eq. "icefrac_err") then
+    vdata = self%icefrac_err
+  elseif (trim(vname) .eq. "icetmp") then
+    vdata = self%icetmp
+  else
+    write(err_msg,*) 'ioda_obs_seaicefrac_copy_var: Unrecognized variable name: ', trim(vname)
+    call abor1_ftn(trim(err_msg))
+  endif
+
+end subroutine ioda_obs_seaicefrac_copy_var
+
 
 end module ioda_obs_seaicefrac_mod

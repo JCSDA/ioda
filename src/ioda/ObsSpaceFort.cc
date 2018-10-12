@@ -94,19 +94,19 @@ void ObsSpaceFort::getdb(const std::string & col, int & keyData) const {
 
 void ObsSpaceFort::getvar(const std::string & Vname, double Vdata[],
                              const int Vsize) const {
-//  if (obsname_ == "StericHeight")
-//    ioda_obsdb_stericheight_get_f90(keyOspace_, Vname.size(), Vname.c_str(), Vdata);
-//  else if (obsname_ == "SeaIceFraction")
-//    ioda_obsdb_seaice_get_f90(keyOspace_, Vname.size(), Vname.c_str(), Vdata);
-//  else if (obsname_ == "SeaIceThickness")
-//    ioda_obsdb_seaicethick_get_f90(keyOspace_, Vname.size(), Vname.c_str(), Vdata);
-//  else if (obsname_ == "InsituTemperature")
-//    ioda_obsdb_insitutemperature_get_f90(keyOspace_, Vname.size(), Vname.c_str(), Vdata);
+  if (obsname_ == "StericHeight")
+    ioda_obsdb_stericheight_getvar_f90(keyOspace_, Vname.size(), Vname.c_str(), Vdata, Vsize);
+  else if (obsname_ == "SeaIceFraction")
+    ioda_obsdb_seaice_getvar_f90(keyOspace_, Vname.size(), Vname.c_str(), Vdata, Vsize);
+  else if (obsname_ == "SeaIceThickness")
+    ioda_obsdb_seaicethick_getvar_f90(keyOspace_, Vname.size(), Vname.c_str(), Vdata, Vsize);
+  else if (obsname_ == "InsituTemperature")
+    ioda_obsdb_insitutemperature_getvar_f90(keyOspace_, Vname.size(), Vname.c_str(), Vdata, Vsize);
 //  else if (obsname_ == "SeaSurfaceTemp")
-//    ioda_obsdb_seasurfacetemp_get_f90(keyOspace_, Vname.size(), Vname.c_str(), Vdata);
-//  else if (obsname_ == "ADT")
-//    ioda_obsdb_adt_get_f90(keyOspace_, Vname.size(), Vname.c_str());  
-//  else
+//    ioda_obsdb_seasurfacetemp_getvar_f90(keyOspace_, Vname.size(), Vname.c_str(), Vdata, Vsize);
+  else if (obsname_ == "ADT")
+    ioda_obsdb_adt_getvar_f90(keyOspace_, Vname.size(), Vname.c_str(), Vdata, Vsize);  
+  else
     ioda_obsdb_getvar_f90(keyOspace_, Vname.size(), Vname.c_str(), Vdata, Vsize);
 }
 

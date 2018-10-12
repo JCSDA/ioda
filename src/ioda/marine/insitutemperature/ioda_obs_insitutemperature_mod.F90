@@ -18,6 +18,7 @@ public ioda_obs_insitutemperature
 public ioda_obs_insitutemperature_setup, ioda_obs_insitutemperature_delete
 public ioda_obs_insitutemperature_read, ioda_obs_insitutemperature_generate
 public ioda_obs_insitutemperature_getlocs
+public ioda_obs_insitutemperature_copy_var
 
 ! ------------------------------------------------------------------------------
 
@@ -164,5 +165,37 @@ locs%time = self%time
 end subroutine ioda_obs_insitutemperature_getlocs
 
 ! ------------------------------------------------------------------------------
+
+subroutine ioda_obs_insitutemperature_copy_var(self, vname, vdata, vsize)
+  implicit none
+
+  type(ioda_obs_insitutemperature), intent(in) :: self
+  character(len=*), intent(in)                 :: vname
+  real(kind_real), intent(out)                 :: vdata(vsize)
+  integer, intent(in)                          :: vsize
+
+  character(max_string) :: err_msg
+
+  if (trim(vname) .eq. "latitude") then
+    vdata = self%lat
+  elseif (trim(vname) .eq. "longitude") then
+    vdata = self%lon
+  elseif (trim(vname) .eq. "depth") then
+    vdata = self%depth
+  elseif (trim(vname) .eq. "time") then
+    vdata = self%time
+  elseif (trim(vname) .eq. "in_situ_temperature") then
+    vdata = self%val
+  elseif (trim(vname) .eq. "in_situ_temperature_err") then
+    vdata = self%err
+  elseif (trim(vname) .eq. "qcflag") then
+    vdata = self%qcflag
+  else
+    write(err_msg,*) 'ioda_obs_insitutemperature_copy_var: Unrecognized variable name: ', trim(vname)
+    call abor1_ftn(trim(err_msg))
+  endif
+
+end subroutine ioda_obs_insitutemperature_copy_var
+
 
 end module ioda_obs_insitutemperature_mod
