@@ -18,6 +18,7 @@ public ioda_obs_stericheight
 public ioda_obs_stericheight_setup, ioda_obs_stericheight_delete
 public ioda_obs_stericheight_read, ioda_obs_stericheight_generate
 public ioda_obs_stericheight_getlocs
+public ioda_obs_stericheight_copy_var
 
 ! ------------------------------------------------------------------------------
 
@@ -174,6 +175,35 @@ locs%lon = self%lon
 locs%time = 0.
 
 end subroutine ioda_obs_stericheight_getlocs
+
+! ------------------------------------------------------------------------------
+
+subroutine ioda_obs_stericheight_copy_var(self, vname, vdata, vsize)
+  implicit none
+
+  type(ioda_obs_stericheight), intent(in) :: self
+  character(len=*), intent(in)            :: vname
+  real(kind_real), intent(out)            :: vdata(vsize)
+  integer, intent(in)                     :: vsize
+
+  character(max_string) :: err_msg
+
+  if (trim(vname) .eq. "latitude") then
+    vdata = self%lat
+  elseif (trim(vname) .eq. "longitude") then
+    vdata = self%lon
+  elseif (trim(vname) .eq. "adt") then
+    vdata = self%adt
+  elseif (trim(vname) .eq. "adt_err") then
+    vdata = self%adt_err
+  elseif (trim(vname) .eq. "madt") then
+    vdata = self%madt
+  else
+    write(err_msg,*) 'ioda_obs_stericheight_copy_var: Unrecognized variable name: ', trim(vname)
+    call abor1_ftn(trim(err_msg))
+  endif
+
+end subroutine ioda_obs_stericheight_copy_var
 
 ! ------------------------------------------------------------------------------
 
