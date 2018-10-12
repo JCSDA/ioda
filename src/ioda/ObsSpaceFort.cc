@@ -92,8 +92,8 @@ void ObsSpaceFort::getdb(const std::string & col, int & keyData) const {
 
 // -----------------------------------------------------------------------------
 
-double * ObsSpaceFort::get_mdata(const std::string & Vname) const {
-    double * Vdata;
+void ObsSpaceFort::get_mdata(const std::string & Vname, double Vdata[],
+                             const int Vsize) const {
 //  if (obsname_ == "StericHeight")
 //    ioda_obsdb_stericheight_get_f90(keyOspace_, Vname.size(), Vname.c_str(), Vdata);
 //  else if (obsname_ == "SeaIceFraction")
@@ -107,9 +107,7 @@ double * ObsSpaceFort::get_mdata(const std::string & Vname) const {
 //  else if (obsname_ == "ADT")
 //    ioda_obsdb_adt_get_f90(keyOspace_, Vname.size(), Vname.c_str());  
 //  else
-    ioda_obsdb_get_mdata_f90(keyOspace_, Vname.size(), Vname.c_str(), Vdata);
-
-    return Vdata;
+    ioda_obsdb_get_mdata_f90(keyOspace_, Vname.size(), Vname.c_str(), Vdata, Vsize);
 }
 
 // -----------------------------------------------------------------------------

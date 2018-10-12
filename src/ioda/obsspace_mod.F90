@@ -37,23 +37,20 @@ end function obsspace_get_nobs
 
 !> Get a metadata variable
 
-subroutine obsspace_get_mdata(c_dom, vdata, vname)
+subroutine obsspace_get_mdata(c_dom, vdata, vname, vsize)
      implicit none
 
      type(c_ptr), intent(in) :: c_dom
-     real(kind=c_double) :: vdata(*)
+     real(kind=c_double) :: vdata(vsize)
      character(len=*), intent(in) :: vname
+     integer(kind=c_int), value :: vsize
 
-     integer(kind=c_int) :: vsize
      character(kind=c_char, len=1), allocatable :: c_vname(:)
 
      ! Convert fortran string to c string (null terminated)
      call f_c_string(vname, c_vname)
-print*, "DEBUG: obsspace_get_mdata: vname, c_vname: ", vname, ", ", c_vname
-print*, "DEBUG: obsspace_get_mdata: c_vname(1:5): ", c_vname(1:5)
 
-     ! Get the pointer to an array in C++, then convert to Fortran array
-     vsize = size(vdata)
+     ! Call the interface to access the get_mdata method in ObsSpace
      call c_obsspace_get_mdata(c_dom, c_vname, vdata, vsize)
 
      ! Clean up - the f_c_string routine allocated c_vname

@@ -465,12 +465,13 @@ end subroutine ioda_obsdb_put_c
 
 ! ------------------------------------------------------------------------------
 
-subroutine ioda_obsdb_get_mdata_c(c_key_self, lcol, c_col, c_data_ptr) bind(c,name='ioda_obsdb_get_mdata_f90')  
+subroutine ioda_obsdb_get_mdata_c(c_key_self, lcol, c_col, vdata, vsize) bind(c,name='ioda_obsdb_get_mdata_f90')  
 implicit none
 integer(c_int), intent(in) :: c_key_self
 integer(c_int), intent(in) :: lcol
 character(kind=c_char,len=1), intent(in) :: c_col(lcol+1)
-type(c_ptr), intent(out)   :: c_data_ptr
+real(kind=c_double), intent(out) :: vdata(vsize)
+integer(c_int), value, intent(in) :: vsize
 
 type(ioda_obsdb), pointer :: self
 type(ioda_obs_var), pointer :: vptr
@@ -485,12 +486,8 @@ do i = 1, lcol
   vname(i:i) = c_col(i)
 enddo
 
-print*, "DEBUG: get_mdata_c: vname: ", trim(vname)
-
 call ioda_obsdb_getvar(self, vname, vptr)
-print*, "DEBUG: get_mdata_c: vptr: ", vptr%vals(1:10)
-!c_data_ptr = c_loc(vptr%vals)
-print*, "DEBUG: get_mdata_c: end: "
+vdata(1:vsize) = vptr%vals(1:vsize)
 
 end subroutine ioda_obsdb_get_mdata_c
 

@@ -18,7 +18,7 @@ namespace ioda {
 
 extern "C" {
     int obsspace_get_nobs_f(const ObsSpace & obss);
-    const double * obsspace_get_mdata_f(const ObsSpace & obss, const char *);
+    void obsspace_get_mdata_f(const ObsSpace & obss, const char [], double [], const int);
 }
 
 }  // namespace ioda

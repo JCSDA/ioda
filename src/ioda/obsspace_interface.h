@@ -17,7 +17,7 @@ integer(kind=c_int) function c_obsspace_get_nobs(dom) bind(C,name='obsspace_get_
   type(c_ptr), value :: dom
 end function c_obsspace_get_nobs
 
-function c_obsspace_get_mdata(dom, vname, vdata, vsize) &
+subroutine c_obsspace_get_mdata(dom, vname, vdata, vsize) &
          bind(C,name='obsspace_get_mdata_f')
   use, intrinsic :: iso_c_binding
   implicit none
@@ -26,9 +26,9 @@ function c_obsspace_get_mdata(dom, vname, vdata, vsize) &
 
   type(c_ptr), value :: dom
   character(kind=c_char,len=1), dimension(*) :: vname
-  real(kind=c_double) :: vdata(*)
-  integer(kind=c_int) :: vsize
-end function c_obsspace_get_mdata
+  real(kind=c_double) :: vdata(vsize)
+  integer(kind=c_int), value :: vsize
+end subroutine c_obsspace_get_mdata
 
 !-------------------------------------------------------------------------------
 end interface

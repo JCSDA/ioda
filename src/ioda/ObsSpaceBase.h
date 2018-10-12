@@ -59,7 +59,7 @@ class ObsSpaceBase : public oops::ObsSpaceBase {
   virtual void getdb(const std::string &, int &) const = 0;
   virtual void putdb(const std::string &, const int &) const = 0;
 
-  virtual double * get_mdata(const std::string &) const = 0;
+  virtual void get_mdata(const std::string &, double [], const int) const = 0;
 
 };
 
