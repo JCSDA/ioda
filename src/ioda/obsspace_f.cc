@@ -17,11 +17,9 @@ int obsspace_get_nobs_f(const ObsSpace & obss) {
 
 // -----------------------------------------------------------------------------
 
-const double * obsspace_get_mdata_f(const ObsSpace & obss, const char vname[],
-               double Vdata[], const int * Vsize) {
-std::cout << "DEBUG: obsspace_get_mdata_f: vname, vsize: " << vname << ", " << vsize << std::endl;
+void obsspace_get_mdata_f(const ObsSpace & obss, const char vname[],
+               double Vdata[], const int Vsize) {
     std::string Vname(vname);
-std::cout << "DEBUG: obsspace_get_mdata_f: Vname: " << Vname << std::endl;
     return obss.get_mdata(Vname, Vdata, Vsize);
 }
 

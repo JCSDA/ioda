@@ -64,7 +64,8 @@ extern "C" {
                                const util::DateTime * const *,const util::DateTime * const *);
   void ioda_obsdb_get_f90(const F90odb &, const int &, const char *, const F90ovec &);
   void ioda_obsdb_put_f90(const F90odb &, const int &, const char *, const F90ovec &);
-  void ioda_obsdb_get_mdata_f90(const F90odb &, const int &, const char *, double *);
+  void ioda_obsdb_get_mdata_f90(const F90odb &, const int &, const char *,
+                                double [], const int);
 
 // -----------------------------------------------------------------------------
 //  Observation Handler (for sea ice)

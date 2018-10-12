@@ -52,7 +52,7 @@ class ObsSpace : public util::Printable,
   void getdb(const std::string &, int &) const;
   void putdb(const std::string &, const int &) const;
 
-  double * get_mdata(const std::string &) const;
+  void get_mdata(const std::string &, double [], const int) const;
 
  private:
   void print(std::ostream &) const;

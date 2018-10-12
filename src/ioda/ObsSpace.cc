@@ -68,8 +68,9 @@ void ObsSpace::putdb(const std::string & col, const int & keyData) const {
 }
 
 // -----------------------------------------------------------------------------
-double * ObsSpace::get_mdata(const std::string & Vname) const {
-  return ospace_->get_mdata(Vname);
+void ObsSpace::get_mdata(const std::string & Vname, double Vdata[],
+                         const int Vsize) const {
+  return ospace_->get_mdata(Vname, Vdata, Vsize);
 }
 
 // -----------------------------------------------------------------------------
