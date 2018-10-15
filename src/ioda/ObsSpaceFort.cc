@@ -102,8 +102,8 @@ void ObsSpaceFort::getvar(const std::string & Vname, double Vdata[],
     ioda_obsdb_seaicethick_getvar_f90(keyOspace_, Vname.size(), Vname.c_str(), Vdata, Vsize);
   else if (obsname_ == "InsituTemperature")
     ioda_obsdb_insitutemperature_getvar_f90(keyOspace_, Vname.size(), Vname.c_str(), Vdata, Vsize);
-//  else if (obsname_ == "SeaSurfaceTemp")
-//    ioda_obsdb_seasurfacetemp_getvar_f90(keyOspace_, Vname.size(), Vname.c_str(), Vdata, Vsize);
+  else if (obsname_ == "SeaSurfaceTemp")
+    ioda_obsdb_seasurfacetemp_getvar_f90(keyOspace_, Vname.size(), Vname.c_str(), Vdata, Vsize);
   else if (obsname_ == "ADT")
     ioda_obsdb_adt_getvar_f90(keyOspace_, Vname.size(), Vname.c_str(), Vdata, Vsize);  
   else
