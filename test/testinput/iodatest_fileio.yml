@@ -1,0 +1,116 @@
+---
+test_framework_runtime_config: "--log_level=test_suite"
+window_begin: "2015-08-09T21:00:00Z"
+window_end: "2015-08-10T03:00:00Z"
+
+ObsTypes: 
+  - ObsType: "Radiosonde"
+    Input:
+      filename: "Data/sondes_obs_2018041500_m.nc4"
+      variables:
+         - "latitude"
+         - "longitude"
+         - "time"
+      metadata:
+        nobs: 1140
+        nlocs: 285
+        nrecs: 5
+        nvars: 4
+        # The following norms correspond to the list of variables above. The
+        # values are the square root of the sum of the squares of each value
+        # in the corresponding variable.
+        norms:
+          - 653.343
+          - 132.331
+          - 12.2881
+        tolerance: 1.0e-3
+      datetime:
+        dnorm: 3.40684e08
+        tnorm: 3.27117e06
+        tolerance:  1.0e-3
+    Output:
+      filename: "testoutput/diagout_sonde.nc4"
+      variables:
+         - "air_pressure"
+         - "air_temperature"
+      metadata:
+        nobs: 1140
+        nlocs: 285
+        nrecs: 5
+        nvars: 4
+
+  - ObsType: "Aircraft"
+    Input:
+      filename: "Data/aircraft_obs_2018041500_m.nc4"
+      variables:
+         - "latitude"
+         - "longitude"
+         - "time"
+      metadata:
+        nobs: 3056
+        nlocs: 764
+        nrecs: 5
+        nvars: 4
+        norms:
+          - 1031.00
+          - 7279.84
+          - 46.6343
+        tolerance: 1.0e-3
+      datetime:
+        dnorm: 5.57797e+08
+        tnorm: 4.11271e+06
+        tolerance:  1.0e-3
+    Output:
+      filename: "testoutput/diagout_arcft.nc4"
+      variables:
+         - "air_pressure"
+         - "air_temperature"
+      metadata:
+        nobs: 3056
+        nlocs: 764
+        nrecs: 5
+        nvars: 4
+
+  - ObsType: "Radiance"
+    Input:
+      filename: "Data/amsua_obs_n19_2018041500_m.nc4"
+      variables:
+         - "latitude"
+         - "longitude"
+         - "time"
+      metadata:
+        nobs: 900
+        nlocs: 75
+        nrecs: 75
+        nvars: 12
+        norms:
+          - 387.617
+          - 1584.60
+          - 14.8836
+        tolerance: 1.0e-3
+      datetime:
+        dnorm: 1.74767e+08
+        tnorm: 1.38325e+06
+        tolerance:  1.0e-3
+
+  - ObsType: "AOD"
+    Input:
+      filename: "Data/diag_viirs_ges.2015081000_dbl_subset.nc4"
+      variables:
+         - "Latitude"
+         - "Longitude"
+         - "Obs_Time"
+      metadata:
+        nobs: 1100
+        nlocs: 100
+        nrecs: 100
+        nvars: 11
+        norms:
+          - 2338.76
+          - 2349.22
+          - 65.3707
+        tolerance: 1.0e-3
+      datetime:
+        dnorm: 6.68331e+08
+        tnorm: 7.35551e+06
+        tolerance:  1.0e-3

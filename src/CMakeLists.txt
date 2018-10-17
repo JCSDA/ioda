@@ -74,6 +74,12 @@ ioda/ioda_utils_mod.F90
 ioda/random_f.cc
 ioda/random_f.h
 ioda/random_vectors_mod.F90
+fileio/IodaIO.cc
+fileio/IodaIO.h
+fileio/IodaIOfactory.cc
+fileio/IodaIOfactory.h
+fileio/NetcdfIO.cc
+fileio/NetcdfIO.h
 
 # Marine: Sea-ice fraction
 ioda/marine/seaicefraction/ObsSpace.SeaIceFraction.interface.F90
