@@ -9,6 +9,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_odb.json
   testinput/iodatest_odb1.json
   testinput/iodatest_obsspace.json
+  testinput/iodatest_fileio.yml
 )
 
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/testinput)
@@ -79,6 +80,12 @@ ecbuild_add_test( TARGET test_ioda_obsspace
                   BOOST
                   SOURCES mains/TestObsSpace.cc
                   ARGS "testinput/iodatest_obsspace.json"
+                  LIBS    ioda )
+
+ecbuild_add_test( TARGET test_ioda_fileio
+                  BOOST
+                  SOURCES mains/TestIodaIO.cc
+                  ARGS "testinput/iodatest_fileio.yml"
                   LIBS    ioda )
 
 if (HAVE_ODB_API)
