@@ -47,6 +47,22 @@ include_directories( ${Boost_INCLUDE_DIR} )
 set( NETCDF_F90 ON CACHE BOOL "Compile with Fortran NetCDF" )
 find_package( NetCDF REQUIRED )
 include_directories( ${NETCDF_INCLUDE_DIR} )
+# Normally, you enable C++ netcdf using:
+#    set ( NETCDF_CXX ON )
+#
+# But this doesn't work with the ecbuild FindNetCDF.cmake. Copying this script and
+# making fixes can work, but you need to keep doing this for every repository that
+# wants to link with the netcdf libraries. Or you can place a fixed copy of the script
+# in every bundle. Either way it gets messy.
+#
+# An alternative is to simply append the C++ netcdf library to the list of netcdf
+# libraries to use for the build. This is easier, but the Mac gets the C++ library
+# in a file named differently than that on Linux systems.
+if (APPLE)
+  list( APPEND NETCDF_LIBRARIES netcdf-cxx4 )
+else()
+  list( APPEND NETCDF_LIBRARIES netcdf_c++4 )
+endif()
 
 # eckit
 ecbuild_use_package( PROJECT eckit VERSION 0.18.0 REQUIRED )
