@@ -67,7 +67,7 @@ IodaIO* IodaIOfactory::Create(const std::string & FileName, const std::string & 
     return new ioda::OdbApiIO(FileName, FileMode, Nlocs, Nobs, Nrecs, Nvars);
 #else
     oops::Log::error() << "ioda::IodaIO::Create: ODB API not implemented: " << FileName << std::endl;
-    oops::Log::error() << "ioda::IodaIO::Create: Try re-runing ecbuild with -DENABLE_ODB_API=1 and -DODB_API_PATH=path_to_odb options: " << FileName << std::endl;
+    oops::Log::error() << "ioda::IodaIO::Create: Try re-runing ecbuild with -DENABLE_ODB_API=1 and -DODB_API_PATH=path_to_odb options" << std::endl;
     ABORT("ioda::Ioda::Create: Rebuild with ODB API enabled");
 #endif
     }
