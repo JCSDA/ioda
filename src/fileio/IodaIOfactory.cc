@@ -8,9 +8,14 @@
 #include <string>
 
 #include "oops/util/Logger.h"
+#include "oops/util/abor1_cpp.h"
 
 #include "fileio/IodaIOfactory.h"
 #include "fileio/NetcdfIO.h"
+
+#ifdef HAVE_ODB_API
+#include "fileio/OdbApiIO.h"
+#endif
 
 namespace ioda {
 
@@ -57,12 +62,19 @@ IodaIO* IodaIOfactory::Create(const std::string & FileName, const std::string & 
   if ((FileSuffix == "nc4") || (FileSuffix == "nc")) {
     return new ioda::NetcdfIO(FileName, FileMode, Nlocs, Nobs, Nrecs, Nvars);
     }
-  //else if (FileSuffix == "odb") {
-  //  return new ioda::OdbIO(FileName, FileMode);
-  //  }
+  else if (FileSuffix == "odb") {
+#ifdef HAVE_ODB_API
+    return new ioda::OdbApiIO(FileName, FileMode, Nlocs, Nobs, Nrecs, Nvars);
+#else
+    oops::Log::error() << "ioda::IodaIO::Create: ODB API not implemented: " << FileName << std::endl;
+    oops::Log::error() << "ioda::IodaIO::Create: Try re-runing ecbuild with -DENABLE_ODB_API=1 and -DODB_API_PATH=path_to_odb options: " << FileName << std::endl;
+    ABORT("ioda::Ioda::Create: Rebuild with ODB API enabled");
+#endif
+    }
   else {
     oops::Log::error() << "ioda::IodaIO::Create: Unrecognized file suffix: " << FileName << std::endl;
     oops::Log::error() << "ioda::IodaIO::Create:   suffix must be one of: .nc4, .nc" << std::endl;
+    ABORT("ioda::Ioda::Create: Unrecognized file suffix");
     return NULL;
     }
 }
