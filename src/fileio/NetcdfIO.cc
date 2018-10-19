@@ -75,6 +75,12 @@ NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
     ABORT("Unrecognized file mode for NetcdfIO constructor");
     }
 
+  // Abort if open failed
+  if (ncfile_->isNull()) {
+    oops::Log::error() << __func__ << ": Unable to open file '" << fname_ << "' in mode: " << fmode_ << std::endl;
+    ABORT("Unable to open file");
+  }
+
   // When in read mode, the constructor is responsible for setting
   // the data members nlocs_, nobs_, nrecs_ and nvars_.
   //
@@ -156,6 +162,11 @@ void NetcdfIO::ReadVar(const std::string & VarName, int* VarData) {
   oops::Log::trace() << __func__ << " VarName: " << VarName << std::endl;
 
   netCDF::NcVar ncvar_ = ncfile_->getVar(VarName);
+  if (ncvar_.isNull()) {
+    oops::Log::error() << __func__ << ": Netcdf dataset not found: " << VarName << std::endl;
+    ABORT("Variable not found in file");
+  }
+
   ncvar_.getVar(VarData);
   }
 
@@ -166,6 +177,11 @@ void NetcdfIO::ReadVar(const std::string & VarName, float* VarData) {
   oops::Log::trace() << __func__ << " VarName: " << VarName << std::endl;
 
   netCDF::NcVar ncvar_ = ncfile_->getVar(VarName);
+  if (ncvar_.isNull()) {
+    oops::Log::error() << __func__ << ": Netcdf dataset not found: " << VarName << std::endl;
+    ABORT("Variable not found in file");
+  }
+
   ncvar_.getVar(VarData);
   }
 
@@ -176,6 +192,11 @@ void NetcdfIO::ReadVar(const std::string & VarName, double* VarData) {
   oops::Log::trace() << __func__ << " VarName: " << VarName << std::endl;
 
   netCDF::NcVar ncvar_ = ncfile_->getVar(VarName);
+  if (ncvar_.isNull()) {
+    oops::Log::error() << __func__ << ": Netcdf dataset not found: " << VarName << std::endl;
+    ABORT("Variable not found in file");
+  }
+
   ncvar_.getVar(VarData);
   }
 
