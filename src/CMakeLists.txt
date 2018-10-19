@@ -175,3 +175,10 @@ if (HAVE_ODB)
                       )
 endif (HAVE_ODB)
 
+# coding norms check
+ecbuild_add_test( TARGET ioda_coding_norms
+                  TYPE SCRIPT
+                  COMMAND cpplint.py
+                  ARGS --quiet --recursive ${CMAKE_CURRENT_SOURCE_DIR}
+                  WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/bin )
+
