@@ -10,6 +10,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_odb1.json
   testinput/iodatest_obsspace.json
   testinput/iodatest_fileio.yml
+  testinput/iodatest_fileio_odb_api.yml
 )
 
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/testinput)
@@ -106,6 +107,12 @@ ecbuild_add_test( TARGET test_ioda_obsvector_odb
                   BOOST
                   SOURCES mains/TestObsVector.cc
                   ARGS "testinput/iodatest_odb.json"
+                  LIBS    ioda )
+
+ecbuild_add_test( TARGET test_ioda_fileio_odb_api
+                  BOOST
+                  SOURCES mains/TestIodaIO.cc
+                  ARGS "testinput/iodatest_fileio_odb_api.yml"
                   LIBS    ioda )
 
 endif (HAVE_ODB_API)

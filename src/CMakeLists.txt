@@ -143,6 +143,8 @@ if (HAVE_ODB_API)
 
   list( APPEND ioda_src_files
   odb_api/odb_helper_mod.F90
+  fileio/OdbApiIO.cc
+  fileio/OdbApiIO.h
   )
 
   ecbuild_add_executable( TARGET  netcdf_to_odb2
