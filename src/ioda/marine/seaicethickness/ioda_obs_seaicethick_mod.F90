@@ -18,6 +18,7 @@ public ioda_obs_seaicethick
 public ioda_obs_seaicethick_setup, ioda_obs_seaicethick_delete
 public ioda_obs_seaicethick_read, ioda_obs_seaicethick_generate
 public ioda_obs_seaicethick_getlocs
+public ioda_obs_seaicethick_copy_var
 
 ! ------------------------------------------------------------------------------
 
@@ -47,10 +48,12 @@ call ioda_obs_seaicethick_delete(self)
 self%nobs = nobs
 allocate(self%lat(nobs), self%lon(nobs))
 allocate(self%icethick(nobs),self%icethick_err(nobs))
+allocate(self%freeboard(nobs))
 self%lat = 0.
 self%lon = 0.
 self%icethick = 0.
 self%icethick_err = 0.
+self%freeboard = 0.
 
 end subroutine ioda_obs_seaicethick_setup
 
@@ -65,6 +68,7 @@ if (allocated(self%lat)) deallocate(self%lat)
 if (allocated(self%lon)) deallocate(self%lon)
 if (allocated(self%icethick)) deallocate(self%icethick)
 if (allocated(self%icethick_err)) deallocate(self%icethick_err)
+if (allocated(self%freeboard)) deallocate(self%freeboard)
 
 end subroutine ioda_obs_seaicethick_delete
 
@@ -143,5 +147,32 @@ locs%time = 0.
 end subroutine ioda_obs_seaicethick_getlocs
 
 ! ------------------------------------------------------------------------------
+
+subroutine ioda_obs_seaicethick_copy_var(self, vname, vdata, vsize)
+  implicit none
+
+  type(ioda_obs_seaicethick), intent(in) :: self
+  character(len=*), intent(in)           :: vname
+  real(kind_real), intent(out)           :: vdata(vsize)
+  integer, intent(in)                    :: vsize
+
+  character(max_string) :: err_msg
+
+  if (trim(vname) .eq. "latitude") then
+    vdata = self%lat
+  elseif (trim(vname) .eq. "longitude") then
+    vdata = self%lon
+  elseif (trim(vname) .eq. "icethick") then
+    vdata = self%icethick
+  elseif (trim(vname) .eq. "icethick_err") then
+    vdata = self%icethick_err
+  elseif (trim(vname) .eq. "freeboard") then
+    vdata = self%freeboard
+  else
+    write(err_msg,*) 'ioda_obs_seaicethick_copy_var: Unrecognized variable name: ', trim(vname)
+    call abor1_ftn(trim(err_msg))
+  endif
+
+end subroutine ioda_obs_seaicethick_copy_var
 
 end module ioda_obs_seaicethick_mod
