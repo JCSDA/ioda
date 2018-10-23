@@ -5,8 +5,8 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#ifndef UFO_OBSSPACE_H_
-#define UFO_OBSSPACE_H_
+#ifndef IODA_OBSSPACE_H_
+#define IODA_OBSSPACE_H_
 
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
@@ -66,4 +66,4 @@ class ObsSpace : public util::Printable,
 
 }  // namespace ioda
 
-#endif  // UFO_OBSSPACE_H_
+#endif  // IODA_OBSSPACE_H_
