@@ -5,6 +5,8 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
  */
 
+#include "oops/util/Logger.h"
+
 #include "Locations.h"
 #include "Fortran.h"
 #include <random>

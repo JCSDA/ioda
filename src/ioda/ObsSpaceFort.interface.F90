@@ -13,6 +13,7 @@ use config_mod
 use datetime_mod
 use duration_mod
 use ioda_obsdb_mod
+use ioda_obsvar_mod
 use ioda_locs_mod
 use ioda_locs_mod_c, only : ioda_locs_registry
 use ioda_obs_vectors
@@ -316,6 +317,20 @@ end subroutine ioda_obsdb_nobs_c
 
 ! ------------------------------------------------------------------------------
 
+subroutine ioda_obsdb_nlocs_c(c_key_self, klocs) bind(c,name='ioda_obsdb_nlocs_f90')
+implicit none
+integer(c_int), intent(in) :: c_key_self
+integer(c_int), intent(inout) :: klocs
+type(ioda_obsdb), pointer :: self
+
+call ioda_obsdb_registry%get(c_key_self, self)
+
+klocs = self%nlocs
+
+end subroutine ioda_obsdb_nlocs_c
+
+! ------------------------------------------------------------------------------
+
 subroutine ioda_obsdb_getlocations_c(c_key_self, c_t1, c_t2, c_key_locs) bind(c,name='ioda_obsdb_getlocations_f90')
 implicit none
 integer(c_int), intent(in)    :: c_key_self
@@ -461,5 +476,33 @@ enddo
 call ioda_obsdb_putvar(self, vname, ovec)
 
 end subroutine ioda_obsdb_put_c
+
+! ------------------------------------------------------------------------------
+
+subroutine ioda_obsdb_getvar_c(c_key_self, lcol, c_col, vdata, vsize) bind(c,name='ioda_obsdb_getvar_f90')  
+implicit none
+integer(c_int), intent(in) :: c_key_self
+integer(c_int), intent(in) :: lcol
+character(kind=c_char,len=1), intent(in) :: c_col(lcol+1)
+real(kind=c_double), intent(out) :: vdata(vsize)
+integer(c_int), value, intent(in) :: vsize
+
+type(ioda_obsdb), pointer :: self
+type(ioda_obs_var), pointer :: vptr
+
+character(len=lcol) :: vname
+integer :: i
+
+call ioda_obsdb_registry%get(c_key_self, self)
+
+! Copy C character array to Fortran string
+do i = 1, lcol
+  vname(i:i) = c_col(i)
+enddo
+
+call ioda_obsdb_getvar(self, vname, vptr)
+vdata(1:vsize) = vptr%vals(1:vsize)
+
+end subroutine ioda_obsdb_getvar_c
 
 end module ioda_obsdb_mod_c
