@@ -11,6 +11,7 @@
 #include <ostream>
 #include <string>
 
+#include "Fortran.h"
 #include "ObsSpace.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
