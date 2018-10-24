@@ -5,26 +5,30 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
  */
 
-#include <limits>
+#include "ioda/ObsVector.h"
+
 #include <math.h>
+#include <limits>
 #include <random>
 
 #include "eckit/mpi/Comm.h"
-#include "oops/util/Logger.h"
 #include "oops/util/abor1_cpp.h"
+#include "oops/util/Logger.h"
 
-#include "constants.h"
-#include "ObsVector.h"
-#include "ObsSpace.h"
+#include "ioda/constants.h"
+#include "ioda/ObsSpace.h"
 
 namespace ioda {
 // -----------------------------------------------------------------------------
 ObsVector::ObsVector(const ObsSpace & obsdb) : obsdb_(obsdb), values_(obsdb_.nobs()) {
-  oops::Log::debug() << "ObsVector constructed with " << values_.size() << " elements." << std::endl;
+  oops::Log::debug() << "ObsVector constructed with " << values_.size()
+                     << " elements." << std::endl;
 }
 // -----------------------------------------------------------------------------
-ObsVector::ObsVector(const ObsVector & other, const bool copy) : obsdb_(other.obsdb_), values_(obsdb_.nobs()) {
-  oops::Log::debug() << "ObsVector copy constructed with " << values_.size() << " elements." << std::endl;
+ObsVector::ObsVector(const ObsVector & other, const bool copy)
+  : obsdb_(other.obsdb_), values_(obsdb_.nobs()) {
+  oops::Log::debug() << "ObsVector copy constructed with " << values_.size()
+                     << " elements." << std::endl;
   if (copy) values_ = other.values_;
 }
 // -----------------------------------------------------------------------------
@@ -188,4 +192,4 @@ void ObsVector::print(std::ostream & os) const {
 }
 // -----------------------------------------------------------------------------
 
-}  // namespace ioda 
+}  // namespace ioda

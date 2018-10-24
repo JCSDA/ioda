@@ -6,11 +6,12 @@
  */
 
 #include <iostream>
+#include <string>
 
-#include "oops/util/Logger.h"
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/datetime_f.h"
 #include "oops/util/Duration.h"
+#include "oops/util/Logger.h"
 
 #include "fileio/OdbApiIO.h"
 
@@ -18,7 +19,7 @@
 // Implementation of IodaIO for ODB API.
 ////////////////////////////////////////////////////////////////////////
 
-// This way of logging errors is taken from the ODB API C Example code. May 
+// This way of logging errors is taken from the ODB API C Example code. May
 // want to modify.
 #define checkRC(return_code, message, db_) { \
     if (return_code != ODBQL_OK) { \
@@ -50,7 +51,6 @@ namespace ioda {
 OdbApiIO::OdbApiIO(const std::string & FileName, const std::string & FileMode,
                    const std::size_t & Nlocs, const std::size_t & Nobs,
                    const std::size_t & Nrecs, const std::size_t & Nvars) {
-
   // Set the data members to the file name, file mode and provide a trace message.
   fname_ = FileName;
   fmode_ = FileMode;
@@ -67,44 +67,40 @@ OdbApiIO::OdbApiIO(const std::string & FileName, const std::string & FileMode,
   odbql_stmt *res = nullptr;
   int rc = ODBQL_OK;
   int i, column, number_of_columns;
-  
+
   if (fmode_ == "r") {
-    //int i, column, number_of_columns;
-    //long long number_of_rows = 0, number_of_rows_in_current_dataset = 0;
+    // int i, column, number_of_columns;
+    // long long number_of_rows = 0, number_of_rows_in_current_dataset = 0;
     odbql_stmt *res;
 
-    //Uncomment code below if _db is later changed to unique_ptr
-    //odbql *temp_db; 
-    //rc = odbql_open(fname_.c_str(), &temp_db);
+    // Uncomment code below if _db is later changed to unique_ptr
+    // odbql *temp_db;
+    // rc = odbql_open(fname_.c_str(), &temp_db);
     rc = odbql_open(fname_.c_str(), &db_);
-    if (rc != ODBQL_OK) { 
-      std::string errmsg = "OdbApi constructor cannot open file: " + fname_ 
+    if (rc != ODBQL_OK) {
+      std::string errmsg = "OdbApi constructor cannot open file: " + fname_
         + ". Return code: " + std::to_string(rc);
       oops::Log::error() << __func__ << ": " << errmsg << std::endl; \
       ABORT(errmsg);
       }
-    //db_.reset(temp_db);
-    }
-  else if (fmode_ == "w") {
+    // db_.reset(temp_db);
+    } else if (fmode_ == "w") {
     oops::Log::error() << __func__ << ": Unimplemented FileMode: " << fmode_ << std::endl;
     ABORT("Unimplemented file mode 'w' for OdbApiIO constructor");
-    }
-  else if (fmode_ == "W") {
+  } else if (fmode_ == "W") {
     oops::Log::error() << __func__ << ": Unimplemented FileMode: " << fmode_ << std::endl;
     ABORT("Unimplemented file mode 'W' for OdbApiIO constructor");
-    }
-  else {
+  } else {
     oops::Log::error() << __func__ << ": Unrecognized FileMode: " << fmode_ << std::endl;
     oops::Log::error() << __func__ << ":   Must use one of: 'r', 'w', 'W'" << std::endl;
     ABORT("Unrecognized file mode for OdbApiIO constructor");
-    }
+  }
 
   // When in read mode, the constructor is responsible for setting
   // the data members nlocs_, nobs_, nrecs_ and nvars_.
   //
 
   if (fmode_ == "r") {
-
       /* Current code is for radiosonde data only and makes the following big
          assumptions about the format of the ODB API database file:
              * one location per row
@@ -116,33 +112,36 @@ OdbApiIO::OdbApiIO(const std::string & FileName, const std::string & FileMode,
 
       std::string sqlstmt = "SELECT count(*) FROM '" + fname_ + "';";
       oops::Log::trace() << __func__ << " sql statement:  " << sqlstmt << std::endl;
-      
-      rc = odbql_prepare_v2(db_, sqlstmt.c_str(), -1, &res, 0); 
-      checkRC(rc, "Failed to prepare statement to count records.", db_); 
-      //number_of_columns = odbql_column_count(res);
-      //int columnType = odbql_column_type(res, 0);
-      //oops::Log::trace() << __func__ << " number of columns: " << std::to_string(number_of_columns) << std::endl;
-      //oops::Log::trace() << __func__ << " column type: " << std::to_string(columnType) << std::endl;
 
-      rc = odbql_step(res); 
-      //oops::Log::trace() << __func__ << " return code from odbql_step: " << std::to_string(rc) << std::endl;
+      rc = odbql_prepare_v2(db_, sqlstmt.c_str(), -1, &res, 0);
+      checkRC(rc, "Failed to prepare statement to count records.", db_);
+      // number_of_columns = odbql_column_count(res);
+      // int columnType = odbql_column_type(res, 0);
+      // oops::Log::trace() << __func__ << " number of columns: "
+      //                    << std::to_string(number_of_columns) << std::endl;
+      // oops::Log::trace() << __func__ << " column type: " << std::to_string(columnType)
+      //                    << std::endl;
+
+      rc = odbql_step(res);
+      // oops::Log::trace() << __func__ << " return code from odbql_step: "
+      //                    << std::to_string(rc) << std::endl;
       if (rc == ODBQL_ROW) {
-	odbql_value* pv = odbql_column_value(res, 0);
-	if (pv != 0) {
+        odbql_value* pv = odbql_column_value(res, 0);
+        if (pv != 0) {
           nlocs_ = odbql_value_double(pv);
-          oops::Log::trace() << __func__ << " nlocs_ set to: " << std::to_string(nlocs_) << std::endl;
-	  }
-	else {
-	  oops::Log::error() << __func__ << " unexpected pv null. " << std::endl;
-	  }
-	}
+          oops::Log::trace() << __func__ << " nlocs_ set to: "
+                             << std::to_string(nlocs_) << std::endl;
+        } else {
+          oops::Log::error() << __func__ << " unexpected pv null. " << std::endl;
+        }
+      }
 
       rc = odbql_finalize(res);
-      checkRC(rc, "odbql_finalize failed.", db_); 
+      checkRC(rc, "odbql_finalize failed.", db_);
       res = nullptr;
 
-      nrecs_ = nlocs_; //Assumption for now
-      nvars_ = 1; //Hardcoded for now
+      nrecs_ = nlocs_;  // Assumption for now
+      nvars_ = 1;  // Hardcoded for now
       nobs_ = nlocs_ * nvars_;
     }
 /*
@@ -163,9 +162,9 @@ OdbApiIO::~OdbApiIO() {
   oops::Log::trace() << __func__ << " fname_: " << fname_ << std::endl;
   if (db_ != nullptr) {
     // Uncomment code below if we can later make db_ a unique_ptr
-    //int rc = odbql_close(db_.get());
-    //checkRC(rc, "odbql_close failed", db_.get());
-    //db_.reset();
+    // int rc = odbql_close(db_.get());
+    // checkRC(rc, "odbql_close failed", db_.get());
+    // db_.reset();
     int rc = odbql_close(db_);
     checkRC(rc, "odbql_close failed", db_);
     db_ = nullptr;
@@ -185,7 +184,6 @@ OdbApiIO::~OdbApiIO() {
  */
 template <class T>
 void OdbApiIO::ReadVarTemplate(const std::string & VarName, T* VarData) {
-
   oops::Log::trace() << __func__ << " VarName: " << VarName << std::endl;
   int rc;
   odbql_stmt *res = nullptr;
@@ -193,18 +191,19 @@ void OdbApiIO::ReadVarTemplate(const std::string & VarName, T* VarData) {
   std::string sql = "SELECT " + VarName + " FROM '" + fname_ + "';";
   oops::Log::trace() << __func__ << " sql: " << sql << std::endl;
 
-  rc = odbql_prepare_v2(db_, sql.c_str(), -1, &res, 0); 
+  rc = odbql_prepare_v2(db_, sql.c_str(), -1, &res, 0);
   if (rc != ODBQL_OK) {
     std::string errorString = "ODB ERROR: error when preparing SQL statemtnt: " +
        sql;
     oops::Log::error() << __func__ << ": " << errorString << std::endl;
     res = nullptr;
-    ABORT(errorString); //No way to return errors to ReadVar caller, so we have to just abort.
+    ABORT(errorString);  // No way to return errors to ReadVar caller,
+                         // so we have to just abort.
     }
 
   int columnType = odbql_column_type(res, 0);
   /* if (columnType != expectedType) {
-    //TODO: review if this is the desired behavior for this situation.
+    // TODO(sv): review if this is the desired behavior for this situation.
     std::string errorString = "WARNING: Data type for '" + VarName + "' in file " +
       fname_ + " does not match the type of the allocated memory. Requires cast.";
     oops::Log::error() << __func__ << ": " << errorString << std::endl;
@@ -219,33 +218,33 @@ void OdbApiIO::ReadVarTemplate(const std::string & VarName, T* VarData) {
           std::string errorString = "ODB ERROR: unexpected NULL in a column of file: " + fname_;
           oops::Log::error() << __func__ << errorString << std::endl;
           odbql_finalize(res);
-          ABORT(errorString); //No way to return errors to ReadVar caller, so we have to just abort.
-          } 
-          /*if (RetrieveColValPtr(res, 0, &pv)) {
-              VarData[index] = odbql_value_int(pv);
-              index++;
+          ABORT(errorString);  // No way to return errors to ReadVar caller,
+                               // so we have to just abort.
+          }
+          /* if (RetrieveColValPtr(res, 0, &pv)) {
+               VarData[index] = odbql_value_int(pv);
+               index++;
             }*/
-        }
-      else {
-        oops::Log::error() << __func__ << ": odbql_step returned unimplemented code: " << 
+      } else {
+        oops::Log::error() << __func__ << ": odbql_step returned unimplemented code: " <<
            std::to_string(rc) << " in file " << fname_ << std::endl;
         odbql_finalize(res);
         ABORT("Encountered unimplemented odbql_step return code.");
-        }
+      }
 
-        //put the value in the return array
-        //We cast it to the right type for the array and hope the caller
-        //got the type right.
+        // put the value in the return array
+        // We cast it to the right type for the array and hope the caller
+        // got the type right.
       switch (columnType) {
           case ODBQL_INTEGER:
             VarData[index] = (T)odbql_value_int(pv);
             break;
           case ODBQL_FLOAT:
-            //TODO: Possible overflow or truncation happening here if T is int or float
+            // TODO(sv): Possible overflow or truncation happening here if T is int or float
             VarData[index] = (T)odbql_value_double(pv);
             break;
           default:
-            std::string errorString = "Unimplemented data type for '" + 
+            std::string errorString = "Unimplemented data type for '" +
               VarName + "' in file " + fname_;
             oops::Log::error() << __func__ << ": " << errorString << std::endl;
             odbql_finalize(res);
@@ -256,16 +255,15 @@ void OdbApiIO::ReadVarTemplate(const std::string & VarName, T* VarData) {
       index++;
     }
   oops::Log::trace() << __func__ << "finished sql: " << sql << std::endl;
-    //TODO: Validate that we came to the end of the table data and filled up the array 
+    // TODO(sv): Validate that we came to the end of the table data and filled up the array
   rc = odbql_finalize(res);
-  checkRC(rc, "odbql_finalize failed.", db_); 
+  checkRC(rc, "odbql_finalize failed.", db_);
   res = nullptr;
 }
 
 // -----------------------------------------------------------------------------
 
 void OdbApiIO::ReadVar(const std::string & VarName, int* VarData) {
-
   oops::Log::trace() << __func__ << " VarName: " << VarName << std::endl;
   ReadVarTemplate<int>(VarName, VarData);
 }
@@ -273,7 +271,6 @@ void OdbApiIO::ReadVar(const std::string & VarName, int* VarData) {
 // -----------------------------------------------------------------------------
 
 void OdbApiIO::ReadVar(const std::string & VarName, float* VarData) {
-
   oops::Log::trace() << __func__ << " VarName: " << VarName << std::endl;
   ReadVarTemplate<float>(VarName, VarData);
 }
@@ -281,7 +278,6 @@ void OdbApiIO::ReadVar(const std::string & VarName, float* VarData) {
 // -----------------------------------------------------------------------------
 
 void OdbApiIO::ReadVar(const std::string & VarName, double* VarData) {
-
   oops::Log::trace() << __func__ << " VarName: " << VarName << std::endl;
   ReadVarTemplate<double>(VarName, VarData);
 }
@@ -289,7 +285,6 @@ void OdbApiIO::ReadVar(const std::string & VarName, double* VarData) {
 // -----------------------------------------------------------------------------
 
 void OdbApiIO::WriteVar(const std::string & VarName, int* VarData) {
-
   oops::Log::trace() << __func__ << " VarName: " << VarName << std::endl;
 /*
   netCDF::NcVar ncvar_ = ncfile_->getVar(VarName);
@@ -303,7 +298,6 @@ void OdbApiIO::WriteVar(const std::string & VarName, int* VarData) {
 // -----------------------------------------------------------------------------
 
 void OdbApiIO::WriteVar(const std::string & VarName, float* VarData) {
-
   oops::Log::trace() << __func__ << " VarName: " << VarName << std::endl;
 
 /*  netCDF::NcVar ncvar_ = ncfile_->getVar(VarName);
@@ -317,7 +311,6 @@ void OdbApiIO::WriteVar(const std::string & VarName, float* VarData) {
 // -----------------------------------------------------------------------------
 
 void OdbApiIO::WriteVar(const std::string & VarName, double* VarData) {
-
   oops::Log::trace() << __func__ << " VarName: " << VarName << std::endl;
 
   /*netCDF::NcVar ncvar_ = ncfile_->getVar(VarName);
@@ -331,7 +324,6 @@ void OdbApiIO::WriteVar(const std::string & VarName, double* VarData) {
 // -----------------------------------------------------------------------------
 
 void OdbApiIO::ReadDateTime(int* VarDate, int* VarTime) {
-
   oops::Log::trace() << __func__ << std::endl;
 
   // Right now we have to hard-code the names of the date/time columns.
@@ -345,9 +337,7 @@ void OdbApiIO::ReadDateTime(int* VarDate, int* VarTime) {
 // -----------------------------------------------------------------------------
 
 void OdbApiIO::print(std::ostream & os) const {
-
   os << "OdbApi: In " << __FILE__ << " @ " << __LINE__ << std::endl;
-
 }
 
 

@@ -5,8 +5,8 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#ifndef IODA_IODAIOFACTORY_H_
-#define IODA_IODAIOFACTORY_H_
+#ifndef FILEIO_IODAIOFACTORY_H_
+#define FILEIO_IODAIOFACTORY_H_
 
 #include <string>
 
@@ -31,19 +31,17 @@ namespace ioda {
  */
 
 class IodaIOfactory {
-
  public:
-   IodaIOfactory() { };
-   ~IodaIOfactory() { };
+  IodaIOfactory() { }
+  ~IodaIOfactory() { }
 
-   // Factory methods
-   static ioda::IodaIO* Create(const std::string & FileName, const std::string & FileMode);
-   static ioda::IodaIO* Create(const std::string & FileName, const std::string & FileMode,
-                               const std::size_t & Nlocs, const std::size_t & Nobs,
-                               const std::size_t & Nrecs, const std::size_t & Nvars);
-
+  // Factory methods
+  static ioda::IodaIO* Create(const std::string & FileName, const std::string & FileMode);
+  static ioda::IodaIO* Create(const std::string & FileName, const std::string & FileMode,
+                              const std::size_t & Nlocs, const std::size_t & Nobs,
+                              const std::size_t & Nrecs, const std::size_t & Nvars);
 };
 
 }  // namespace ioda
 
-#endif  // IODA_IODAIOFACTORY_H_
+#endif  // FILEIO_IODAIOFACTORY_H_
