@@ -14,7 +14,6 @@ use datetime_mod
 use duration_mod
 use ioda_locs_mod
 use ioda_locs_mod_c, only : ioda_locs_registry
-use ioda_obs_vectors
 use ioda_obs_stericheight_mod
 use fckit_log_module, only : fckit_log
 use kinds
@@ -151,34 +150,24 @@ end subroutine ioda_obsdb_stericheight_delete_c
 
 ! ------------------------------------------------------------------------------
 
-subroutine ioda_obsdb_stericheight_get_c(c_key_self, lcol, c_col, c_key_ovec) bind(c,name='ioda_obsdb_stericheight_get_f90')
-use  ioda_obs_stericheight_mod
+subroutine ioda_obsdb_stericheight_get_c(c_key_self, c_tname, c_tname_size, c_tdata, c_tdata_size) bind(c,name='ioda_obsdb_stericheight_get_f90')  
 implicit none
 integer(c_int), intent(in) :: c_key_self
-integer(c_int), intent(in) :: lcol
-character(kind=c_char,len=1), intent(in) :: c_col(lcol+1)
-integer(c_int), intent(in) :: c_key_ovec
+integer(c_int), intent(in) :: c_tname_size
+character(kind=c_char,len=1), intent(in) :: c_tname(c_tname_size+1)
+integer(c_int), intent(in) :: c_tdata_size
+real(c_double), intent(out) :: c_tdata(c_tdata_size)
 
 type(ioda_obs_stericheight), pointer :: self
-type(obs_vector), pointer :: ovec
-character(len=lcol) :: col
 
 call ioda_obs_stericheight_registry%get(c_key_self, self)
-call ioda_obs_vect_registry%get(c_key_ovec,ovec)
-!call c_f_string(c_req, req)
-!call c_f_string(c_col, col)
 
-!call obs_get(self, trim(req), trim(col), ovec)
-
-
-ovec%nobs = self%nobs
-if (c_col(5)//c_col(6)=='rr') then
-   ovec%values = 0.1 !self%icefrac_err
+if (c_tname(5)//c_tname(6)=='rr') then
+   c_tdata = 0.1 !self%icefrac_err
 !   print *, self%icefrac_err
 else
-   ovec%values = self%adt
+   c_tdata = self%adt
 end if
-
 
 end subroutine ioda_obsdb_stericheight_get_c
 

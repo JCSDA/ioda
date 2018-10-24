@@ -63,7 +63,7 @@ subroutine obsspace_get_var(c_dom, vdata, vname, vsize)
      call f_c_string(vname, c_vname)
 
      ! Call the interface to access the getvar method in ObsSpace
-     call c_obsspace_get_var(c_dom, c_vname, vdata, vsize)
+     call c_obsspace_get_var(c_dom, c_vname, vsize, vdata)
 
      ! Clean up - the f_c_string routine allocated c_vname
      deallocate(c_vname)

@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2018 UCAR
+ * (C) Copyright 2017 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -8,14 +8,17 @@
 #ifndef IODA_OBSSPACE_H_
 #define IODA_OBSSPACE_H_
 
-#include <boost/noncopyable.hpp>
-#include <boost/scoped_ptr.hpp>
+#include <map>
+#include <ostream>
+#include <string>
 
+#include "eckit/mpi/Comm.h"
+#include "oops/interface/ObsSpaceBase.h"
+#include "oops/util/DateTime.h"
+#include "oops/util/Logger.h"
 #include "oops/util/Printable.h"
 
-#include "ioda/ObsSpaceBase.h"
-#include "ioda/Locations.h"
-#include "ioda/ObsVector.h"
+#include "Fortran.h"
 
 // Forward declarations
 namespace eckit {
@@ -25,44 +28,49 @@ namespace eckit {
 namespace ioda {
   class Locations;
   class ObsVector;
-  class ObsSpaceBase;
 
-// -----------------------------------------------------------------------------
+/// Wrapper around ObsHelpQG, mostly to hide the factory
+class ObsSpace : public oops::ObsSpaceBase {
 
-class ObsSpace : public util::Printable,
-                    private boost::noncopyable {
  public:
-  // Constructor, Destructor
   ObsSpace(const eckit::Configuration &, const util::DateTime &, const util::DateTime &);
+  ObsSpace(const ObsSpace &);
   ~ObsSpace();
 
-  // Assimilation window
-  const util::DateTime & windowStart() const;
-  const util::DateTime & windowEnd() const;
+  void getObsVector(const std::string &, std::vector<double> &) const;
+  void putObsVector(const std::string &, const std::vector<double> &) const; 
 
-  // Others
-  const eckit::Configuration & config() const;
-  Locations* locations(const util::DateTime &, const util::DateTime &) const;
+  void getvar(const std::string &, const int, double []) const;
+
+  Locations * locations(const util::DateTime &, const util::DateTime &) const;
+
   void generateDistribution(const eckit::Configuration &);
-  void printJo(const ObsVector &, const ObsVector &);
 
-  const std::string & obsname() const;
+  const std::string & obsname() const {return obsname_;}
+  const util::DateTime & windowStart() const {return winbgn_;}
+  const util::DateTime & windowEnd() const {return winend_;}
+
+  const eckit::mpi::Comm & comm() const {return commMPI_;}
   int nobs() const;
   int nlocs() const;
 
-  void getdb(const std::string &, int &) const;
-  void putdb(const std::string &, const int &) const;
+  int & toFortran() {return keyOspace_;}
+  const int & toFortran() const {return keyOspace_;}
 
-  void getvar(const std::string &, double [], const int) const;
+  void printJo(const ObsVector &, const ObsVector &);
 
  private:
   void print(std::ostream &) const;
 
-  boost::scoped_ptr<ObsSpaceBase> ospace_;
+  ObsSpace & operator= (const ObsSpace &);
+  std::string obsname_;
+  const util::DateTime winbgn_;
+  const util::DateTime winend_;
+  F90odb keyOspace_;
+  const eckit::mpi::Comm & commMPI_;
 
+  static std::map < std::string, int > theObsFileCount_;
 };
-
-// -----------------------------------------------------------------------------
 
 }  // namespace ioda
 

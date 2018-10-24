@@ -12,21 +12,21 @@ namespace ioda {
 // -----------------------------------------------------------------------------
 
 int obsspace_get_nobs_f(const ObsSpace & obss) {
-    return obss.nobs();
+  return obss.nobs();
 }
 
 // -----------------------------------------------------------------------------
 
 int obsspace_get_nlocs_f(const ObsSpace & obss) {
-    return obss.nlocs();
+  return obss.nlocs();
 }
 
 // -----------------------------------------------------------------------------
 
 void obsspace_get_var_f(const ObsSpace & obss, const char vname[],
-               double Vdata[], const int Vsize) {
-    std::string Vname(vname);
-    return obss.getvar(Vname, Vdata, Vsize);
+                        const int Vsize, double Vdata[]) {
+  std::string Vname(vname);
+  return obss.getvar(Vname, Vsize, Vdata);
 }
 
 // -----------------------------------------------------------------------------
