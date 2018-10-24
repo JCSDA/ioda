@@ -72,7 +72,6 @@ ioda/ioda_obsdb_mod.F90
 ioda/ioda_utils_mod.F90
 ioda/obsspace_f.cc
 ioda/obsspace_f.h
-ioda/obsspace_interface.h
 ioda/obsspace_mod.F90
 ioda/random_f.cc
 ioda/random_f.h
@@ -185,4 +184,11 @@ if (HAVE_ODB)
                        LINKER_LANGUAGE ${IODA_LINKER_LANGUAGE}
                       )
 endif (HAVE_ODB)
+
+# coding norms check
+ecbuild_add_test( TARGET ioda_coding_norms
+                  TYPE SCRIPT
+                  COMMAND cpplint.py
+                  ARGS --quiet --recursive ${CMAKE_CURRENT_SOURCE_DIR}
+                  WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/bin )
 

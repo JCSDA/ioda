@@ -5,8 +5,8 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#ifndef IODA_IODAIO_H_
-#define IODA_IODAIO_H_
+#ifndef FILEIO_IODAIO_H_
+#define FILEIO_IODAIO_H_
 
 #include <string>
 
@@ -67,57 +67,55 @@ namespace ioda {
  */
 
 class IodaIO : public util::Printable {
-
  public:
-   virtual ~IodaIO() = 0;
+    virtual ~IodaIO() = 0;
 
-   // Methods provided by subclasses
-   virtual void ReadVar(const std::string & VarName, int* VarData) = 0;
-   virtual void ReadVar(const std::string & VarName, float* VarData) = 0;
-   virtual void ReadVar(const std::string & VarName, double* VarData) = 0;
+    // Methods provided by subclasses
+    virtual void ReadVar(const std::string & VarName, int* VarData) = 0;
+    virtual void ReadVar(const std::string & VarName, float* VarData) = 0;
+    virtual void ReadVar(const std::string & VarName, double* VarData) = 0;
 
-   virtual void WriteVar(const std::string & VarName, int* VarData) = 0; 
-   virtual void WriteVar(const std::string & VarName, float* VarData) = 0; 
-   virtual void WriteVar(const std::string & VarName, double* VarData) = 0; 
+    virtual void WriteVar(const std::string & VarName, int* VarData) = 0;
+    virtual void WriteVar(const std::string & VarName, float* VarData) = 0;
+    virtual void WriteVar(const std::string & VarName, double* VarData) = 0;
 
-   virtual void ReadDateTime(int* VarDate, int* VarTime)= 0;
+    virtual void ReadDateTime(int* VarDate, int* VarTime)= 0;
 
-   // Methods inherited from base class
-   std::string fname() const;
-   std::string fmode() const;
+    // Methods inherited from base class
+    std::string fname() const;
+    std::string fmode() const;
 
-   std::size_t nlocs();
-   std::size_t nobs();
-   std::size_t nrecs();
-   std::size_t nvars();
+    std::size_t nlocs();
+    std::size_t nobs();
+    std::size_t nrecs();
+    std::size_t nvars();
 
  protected:
-   // Methods provided by subclasses
+    // Methods provided by subclasses
 
-   // Methods inherited from base class
+    // Methods inherited from base class
 
-   // Data members
+    // Data members
 
-   /*! \brief file name */
-   std::string fname_;
+    /*! \brief file name */
+    std::string fname_;
 
-   /*! \brief file mode ("r" -> read, "w" -> overwrite, "W" -> create and write) */
-   std::string fmode_;
+    /*! \brief file mode ("r" -> read, "w" -> overwrite, "W" -> create and write) */
+    std::string fmode_;
 
-   /*! \brief number of unique locations */
-   std::size_t nlocs_;
+    /*! \brief number of unique locations */
+    std::size_t nlocs_;
 
-   /*! \brief number of unique observations */
-   std::size_t nobs_;
+    /*! \brief number of unique observations */
+    std::size_t nobs_;
 
-   /*! \brief number of unique records */
-   std::size_t nrecs_;
+    /*! \brief number of unique records */
+    std::size_t nrecs_;
 
-   /*! \brief number of unique variables */
-   std::size_t nvars_;
-  
+    /*! \brief number of unique variables */
+    std::size_t nvars_;
 };
 
 }  // namespace ioda
 
-#endif  // IODA_IODAIO_H_
+#endif  // FILEIO_IODAIO_H_

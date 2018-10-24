@@ -5,7 +5,9 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
  */
 
-#include "obsspace_f.h"
+#include "ioda/obsspace_f.h"
+
+#include <string>
 
 namespace ioda {
 

@@ -5,10 +5,11 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#include "ObsSpace.h"
+#include "ioda/ObsSpace.h"
 
 #include <map>
 #include <string>
+#include <vector>
 
 #include "eckit/config/Configuration.h"
 
@@ -75,11 +76,14 @@ void ObsSpace::getObsVector(const std::string & name, std::vector<double> & vec)
   else if (obsname_ == "SeaIceFraction")
     ioda_obsdb_seaice_get_f90(keyOspace_, name.c_str(), name.size(), vec.data(), vec.size());
   else if (obsname_ == "SeaIceThickness")
-    ioda_obsdb_seaicethick_get_f90(keyOspace_, name.c_str(), name.size(), vec.data(), vec.size());
+    ioda_obsdb_seaicethick_get_f90(keyOspace_, name.c_str(), name.size(),
+                                   vec.data(), vec.size());
   else if (obsname_ == "InsituTemperature")
-    ioda_obsdb_insitutemperature_get_f90(keyOspace_, name.c_str(), name.size(), vec.data(), vec.size());
+    ioda_obsdb_insitutemperature_get_f90(keyOspace_, name.c_str(), name.size(),
+                                         vec.data(), vec.size());
   else if (obsname_ == "SeaSurfaceTemp")
-    ioda_obsdb_seasurfacetemp_get_f90(keyOspace_, name.c_str(), name.size(), vec.data(), vec.size());
+    ioda_obsdb_seasurfacetemp_get_f90(keyOspace_, name.c_str(), name.size(),
+                                      vec.data(), vec.size());
   else if (obsname_ == "ADT")
     ioda_obsdb_adt_get_f90(keyOspace_, name.c_str(), name.size(), vec.data(), vec.size());
   else
@@ -107,7 +111,7 @@ void ObsSpace::getvar(const std::string & name, const int vsize, double vdata[])
 //  else if (obsname_ == "SeaSurfaceTemp")
 //    ioda_obsdb_seasurfacetemp_getvar_f90(keyOspace_, name.size(), name.c_str(), vdata, vsize);
 //  else if (obsname_ == "ADT")
-//    ioda_obsdb_adt_getvar_f90(keyOspace_, name.size(), name.c_str(), vdata, vsize);  
+//    ioda_obsdb_adt_getvar_f90(keyOspace_, name.size(), name.c_str(), vdata, vsize);
 //  else
     ioda_obsdb_getvar_f90(keyOspace_, name.size(), name.c_str(), vsize, vdata);
 }
@@ -187,7 +191,6 @@ void ObsSpace::generateDistribution(const eckit::Configuration & conf) {
     ioda_obsdb_adt_generate_f90(keyOspace_, &configc, &p1, &p2);
   else
     ioda_obsdb_generate_f90(keyOspace_, &configc, &p1, &p2);
-
 }
 
 // -----------------------------------------------------------------------------
