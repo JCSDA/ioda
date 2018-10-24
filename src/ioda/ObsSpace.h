@@ -11,6 +11,7 @@
 #include <map>
 #include <ostream>
 #include <string>
+#include <vector>
 
 #include "eckit/mpi/Comm.h"
 #include "oops/interface/ObsSpaceBase.h"
@@ -31,16 +32,15 @@ namespace ioda {
 
 /// Wrapper around ObsHelpQG, mostly to hide the factory
 class ObsSpace : public oops::ObsSpaceBase {
-
  public:
   ObsSpace(const eckit::Configuration &, const util::DateTime &, const util::DateTime &);
   ObsSpace(const ObsSpace &);
   ~ObsSpace();
 
   void getObsVector(const std::string &, std::vector<double> &) const;
-  void putObsVector(const std::string &, const std::vector<double> &) const; 
+  void putObsVector(const std::string &, const std::vector<double> &) const;
 
-  void getvar(const std::string &, const int, double []) const;
+  void getvar(const std::string &, const int, double[]) const;
 
   Locations * locations(const util::DateTime &, const util::DateTime &) const;
 

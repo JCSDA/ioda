@@ -5,8 +5,8 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
  */
 
-#ifndef QG_MODEL_RANDOM_F_H_
-#define QG_MODEL_RANDOM_F_H_
+#ifndef IODA_RANDOM_F_H_
+#define IODA_RANDOM_F_H_
 
 namespace qg {
 extern "C" {
@@ -14,4 +14,4 @@ extern "C" {
 }
 }  // namespace qg
 
-#endif  // QG_MODEL_RANDOM_F_H_
+#endif  // IODA_RANDOM_F_H_

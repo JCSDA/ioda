@@ -59,13 +59,13 @@ extern "C" {
   void ioda_obsdb_delete_f90(F90odb &);
   void ioda_obsdb_nobs_f90(const F90odb &, int &);
   void ioda_obsdb_nlocs_f90(const F90odb &, int &);
-  void ioda_obsdb_getlocations_f90(const F90odb &,const util::DateTime * const *,
-                                   const util::DateTime * const *,F90locs &);
+  void ioda_obsdb_getlocations_f90(const F90odb &, const util::DateTime * const *,
+                                   const util::DateTime * const *, F90locs &);
   void ioda_obsdb_generate_f90(const F90odb &, const eckit::Configuration * const *,
-                               const util::DateTime * const *,const util::DateTime * const *);
-  void ioda_obsdb_get_f90(const F90odb &, const int &, const char *, const int &, double []);
-  void ioda_obsdb_put_f90(const F90odb &, const int &, const char *, const int &, const double []);
-  void ioda_obsdb_getvar_f90(const F90odb &, const int &, const char *, const int &, double []);
+                               const util::DateTime * const *, const util::DateTime * const *);
+  void ioda_obsdb_get_f90(const F90odb &, const int &, const char *, const int &, double[]);
+  void ioda_obsdb_put_f90(const F90odb &, const int &, const char *, const int &, const double[]);
+  void ioda_obsdb_getvar_f90(const F90odb &, const int &, const char *, const int &, double[]);
 
 // -----------------------------------------------------------------------------
 //  Observation Handler (for sea ice)
@@ -81,7 +81,7 @@ extern "C" {
                               const util::DateTime * const *,
                               const util::DateTime * const *);
   void ioda_obsdb_seaice_nobs_f90(const F90odb &, int &);
-  void ioda_obsdb_seaice_get_f90(const F90odb &, const char *, const int &, double [], const int &);
+  void ioda_obsdb_seaice_get_f90(const F90odb &, const char *, const int &, double[], const int &);
 
 // -----------------------------------------------------------------------------
 //  Observation Handler (for sea ice thickness)
@@ -97,8 +97,8 @@ extern "C" {
                               const util::DateTime * const *,
                               const util::DateTime * const *);
   void ioda_obsdb_seaicethick_nobs_f90(const F90odb &, int &);
-  void ioda_obsdb_seaicethick_get_f90(const F90odb &, const char *, const int &, double [], const int &);
-
+  void ioda_obsdb_seaicethick_get_f90(const F90odb &, const char *, const int &,
+                                      double[], const int &);
 
 // -----------------------------------------------------------------------------
 //  Observation Handler (for steric height)
@@ -114,9 +114,10 @@ extern "C" {
                               const util::DateTime * const *,
                               const util::DateTime * const *);
   void ioda_obsdb_stericheight_nobs_f90(const F90odb &, int &);
-  void ioda_obsdb_stericheight_get_f90(const F90odb &, const char *, const int &, double [], const int &);
+  void ioda_obsdb_stericheight_get_f90(const F90odb &, const char *, const int &,
+                                       double[], const int &);
 
-// -----------------------------------------------------------------------------  
+// -----------------------------------------------------------------------------
 //  Observation Handler (for temperature profiles)
 // -----------------------------------------------------------------------------
 
@@ -124,15 +125,16 @@ extern "C" {
   void ioda_obsdb_insitutemperature_delete_f90(F90odb &);
   void ioda_obsdb_insitutemperature_getlocations_f90(const F90odb &,
                                   const util::DateTime * const *,
-                                  const util::DateTime * const *,
-				  F90locs &);
-  void ioda_obsdb_insitutemperature_generate_f90(const F90odb &, const eckit::Configuration * const *,
+                                  const util::DateTime * const *, F90locs &);
+  void ioda_obsdb_insitutemperature_generate_f90(const F90odb &,
+                              const eckit::Configuration * const *,
                               const util::DateTime * const *,
                               const util::DateTime * const *);
   void ioda_obsdb_insitutemperature_nobs_f90(const F90odb &, int &);
-  void ioda_obsdb_insitutemperature_get_f90(const F90odb &, const char *, const int &, double [], const int &);
+  void ioda_obsdb_insitutemperature_get_f90(const F90odb &, const char *, const int &,
+                                            double[], const int &);
 
-// -----------------------------------------------------------------------------  
+// -----------------------------------------------------------------------------
 //  Observation Handler (for sea surface temperature)
 // -----------------------------------------------------------------------------
 
@@ -140,13 +142,13 @@ extern "C" {
   void ioda_obsdb_seasurfacetemp_delete_f90(F90odb &);
   void ioda_obsdb_seasurfacetemp_getlocations_f90(const F90odb &,
                                   const util::DateTime * const *,
-                                  const util::DateTime * const *,
-				  F90locs &);
+                                  const util::DateTime * const *, F90locs &);
   void ioda_obsdb_seasurfacetemp_generate_f90(const F90odb &, const eckit::Configuration * const *,
                               const util::DateTime * const *,
                               const util::DateTime * const *);
   void ioda_obsdb_seasurfacetemp_nobs_f90(const F90odb &, int &);
-  void ioda_obsdb_seasurfacetemp_get_f90(const F90odb &, const char *, const int &, double [], const int &);
+  void ioda_obsdb_seasurfacetemp_get_f90(const F90odb &, const char *, const int &,
+                                         double[], const int &);
 
 //  Observation Handler (for adt)
 // -----------------------------------------------------------------------------
@@ -155,15 +157,14 @@ extern "C" {
   void ioda_obsdb_adt_delete_f90(F90odb &);
   void ioda_obsdb_adt_getlocations_f90(const F90odb &,
                                   const util::DateTime * const *,
-                                  const util::DateTime * const *,
-				  F90locs &);
+                                  const util::DateTime * const *, F90locs &);
   void ioda_obsdb_adt_generate_f90(const F90odb &, const eckit::Configuration * const *,
                               const util::DateTime * const *,
                               const util::DateTime * const *);
   void ioda_obsdb_adt_nobs_f90(const F90odb &, int &);
-  void ioda_obsdb_adt_get_f90(const F90odb &, const char *, const int &, double [], const int &);
+  void ioda_obsdb_adt_get_f90(const F90odb &, const char *, const int &, double[], const int &);
 
-// -----------------------------------------------------------------------------  
+// -----------------------------------------------------------------------------
 
 }  // extern C
 

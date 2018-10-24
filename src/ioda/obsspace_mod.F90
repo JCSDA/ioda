@@ -19,7 +19,7 @@ public obsspace_get_nobs
 public obsspace_get_nlocs
 public obsspace_get_var
 
-#include "obsspace_interface.h"
+#include "obsspace_interface.f"
 
 !-------------------------------------------------------------------------------
 contains
