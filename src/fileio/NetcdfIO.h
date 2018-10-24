@@ -8,8 +8,6 @@
 #ifndef IODA_NETCDFIO_H_
 #define IODA_NETCDFIO_H_
 
-#include "ncFile.h"
-
 #include "oops/util/ObjectCounter.h"
 
 #include "fileio/IodaIO.h"
