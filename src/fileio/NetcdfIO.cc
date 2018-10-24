@@ -7,7 +7,7 @@
 
 #include "fileio/NetcdfIO.h"
 
-#include <netcdf>
+#include <netcdf.h>
 
 #include <iostream>
 #include <memory>
