@@ -8,7 +8,6 @@
 
 module ioda_locs_mod
 
-use ioda_obs_vectors
 use kinds
 use type_distribution, only: random_distribution
 
