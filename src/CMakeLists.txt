@@ -72,7 +72,6 @@ ioda/ioda_obsdb_mod.F90
 ioda/ioda_utils_mod.F90
 ioda/obsspace_f.cc
 ioda/obsspace_f.h
-ioda/obsspace_interface.h
 ioda/obsspace_mod.F90
 ioda/random_f.cc
 ioda/random_f.h

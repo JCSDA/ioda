@@ -5,11 +5,15 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
  */
 
+#include "ioda/Locations.h"
+
+#include <memory>
+#include <random>
+#include <vector>
+
 #include "oops/util/Logger.h"
 
-#include "Locations.h"
-#include "Fortran.h"
-#include <random>
+#include "ioda/Fortran.h"
 
 namespace ioda {
 
@@ -43,7 +47,6 @@ Locations::Locations(const eckit::Configuration & conf) {
   int rdist = 0;
 
   if (conf.has("Nrandom")) {
-
     int Nrandom = conf.getInt("Nrandom");
 
     std::unique_ptr<std::mt19937> generator;
@@ -59,22 +62,20 @@ Locations::Locations(const eckit::Configuration & conf) {
 
     // random latitudes range from -90 to 90 degrees
     // random longitudes range from 0 to 360 degrees
-    std::vector<double> xx(Nrandom,0.0);
+    std::vector<double> xx(Nrandom, 0.0);
     for (size_t jj=0; jj < Nrandom; ++jj) xx[jj] = distribution(*generator);
-    lats.insert(lats.end(), xx.begin(), xx.end()); 
-    for (size_t jj=0; jj < Nrandom; ++jj) xx[jj] = 2.0*distribution(*generator)
-					           + 180.0;
-    lons.insert(lons.end(), xx.begin(), xx.end()); 
-    
+    lats.insert(lats.end(), xx.begin(), xx.end());
+    for (size_t jj=0; jj < Nrandom; ++jj) xx[jj] = 2.0*distribution(*generator) + 180.0;
+    lons.insert(lons.end(), xx.begin(), xx.end());
+
     nloc += Nrandom;
-    
+
     if (conf.has("Rdist")) {
       rdist = conf.getInt("Rdist");
     }
-  } 
+  }
 
   ioda_locs_create_f90(keyLoc_, nloc, &lats[0], &lons[0], rdist);
-
 }
 
 // -----------------------------------------------------------------------------
@@ -102,9 +103,9 @@ void Locations::print(std::ostream & os) const {
   double lat, lon;
 
   for (int i=0; i < nobs; ++i) {
-    ioda_locs_coords_f90(keyLoc_,i,lat,lon);
-    oops::Log::debug() << "obs " << i << ": " << std::setprecision(2) << std::fixed 
-		       << "lat = " << lat << ", lon = " << lon << std::endl;  
+    ioda_locs_coords_f90(keyLoc_, i, lat, lon);
+    oops::Log::debug() << "obs " << i << ": " << std::setprecision(2) << std::fixed
+                       << "lat = " << lat << ", lon = " << lon << std::endl;
   }
 }
 

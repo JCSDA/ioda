@@ -5,8 +5,10 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#ifndef IODA_ODBAPIIO_H_
-#define IODA_ODBAPIIO_H_
+#ifndef FILEIO_ODBAPIIO_H_
+#define FILEIO_ODBAPIIO_H_
+
+#include <string>
 
 #include "odb_api/odbql.h"
 
@@ -34,68 +36,67 @@ namespace ioda {
  */
 class OdbApiIO : public IodaIO,
                  private util::ObjectCounter<OdbApiIO> {
-
  public:
-   /*!
-    * \brief classname method for object counter
-    *
-    * \details This method is supplied for the ObjectCounter base class.
-    *          It defines a name to identify an object of this class
-    *          for reporting by OOPS.
-    */
-   static const std::string classname() {return "ioda::OdbApiIO";}
+  /*!
+   * \brief classname method for object counter
+   *
+   * \details This method is supplied for the ObjectCounter base class.
+   *          It defines a name to identify an object of this class
+   *          for reporting by OOPS.
+   */
+  static const std::string classname() {return "ioda::OdbApiIO";}
 
-   OdbApiIO(const std::string & FileName, const std::string & FileMode,
-            const std::size_t & Nlocs, const std::size_t & Nobs,
-            const std::size_t & Nrecs, const std::size_t & Nvars);
-   ~OdbApiIO();
+  OdbApiIO(const std::string & FileName, const std::string & FileMode,
+           const std::size_t & Nlocs, const std::size_t & Nobs,
+           const std::size_t & Nrecs, const std::size_t & Nvars);
+  ~OdbApiIO();
 
-   void ReadVar(const std::string & VarName, int* VarData);
-   void ReadVar(const std::string & VarName, float* VarData);
-   void ReadVar(const std::string & VarName, double* VarData);
+  void ReadVar(const std::string & VarName, int* VarData);
+  void ReadVar(const std::string & VarName, float* VarData);
+  void ReadVar(const std::string & VarName, double* VarData);
 
-   void WriteVar(const std::string & VarName, int* VarData);
-   void WriteVar(const std::string & VarName, float* VarData);
-   void WriteVar(const std::string & VarName, double* VarData);
+  void WriteVar(const std::string & VarName, int* VarData);
+  void WriteVar(const std::string & VarName, float* VarData);
+  void WriteVar(const std::string & VarName, double* VarData);
 
-   void ReadDateTime(int* VarDate, int* VarTime);
+  void ReadDateTime(int* VarDate, int* VarTime);
 
  private:
-   // For the oops::Printable base class
-   void print(std::ostream & os) const;
+  // For the oops::Printable base class
+  void print(std::ostream & os) const;
 
-   //int CreateReadVarSQL(const std::string & VarName, int expectedType, odbql_stmt **res);
-   //int RetrieveColValPtr(odbql_stmt* res, int col, odbql_value **ppv); 
-   template <class T>
-   void ReadVarTemplate(const std::string & VarName, T* VarData);
+  // int CreateReadVarSQL(const std::string & VarName, int expectedType, odbql_stmt **res);
+  // int RetrieveColValPtr(odbql_stmt* res, int col, odbql_value **ppv);
+  template <class T>
+  void ReadVarTemplate(const std::string & VarName, T* VarData);
 
 
-   // Data members
-   /*!
-    * \brief pointer to odbql object
-    *
-    * \details This data member is a pointer to a odbql type. The
-    *          odbql type is returned by the odbql_open function and
-    *          is used by all following odb api functions to interact with 
-    *          the odb api file.
-    */
-   odbql *db_ = nullptr;
-   //TODO:Maybe better to use unique_ptr, but causes compiler error of 
-   //"incomplete type 'odbql'"
-   //std::unique_ptr<odbql> db_;
-   
-   /*!
-    * \brief pointer to odbql_stmt object used for selecting a single variable
-    *
-    * \details Rather than create a new odbql_stmt for every call to one of the
-    *          ReadVar methods, we create a parameterized statement once for
-    *          the OdbApiIO object. It is finalized in the class destructor.
-    *
-    *          On second thought, not sure about thread-safety of this approach. TABLE FOR NOW
-    */
-   //odbql_stmt *readvar_sql_ = nullptr;
+  // Data members
+  /*!
+   * \brief pointer to odbql object
+   *
+   * \details This data member is a pointer to a odbql type. The
+   *          odbql type is returned by the odbql_open function and
+   *          is used by all following odb api functions to interact with 
+   *          the odb api file.
+   */
+  odbql *db_ = nullptr;
+  // TODO(sv) Maybe better to use unique_ptr, but causes compiler error of
+  // "incomplete type 'odbql'"
+  // std::unique_ptr<odbql> db_;
+
+  /*!
+   * \brief pointer to odbql_stmt object used for selecting a single variable
+   *
+   * \details Rather than create a new odbql_stmt for every call to one of the
+   *          ReadVar methods, we create a parameterized statement once for
+   *          the OdbApiIO object. It is finalized in the class destructor.
+   *
+   *          On second thought, not sure about thread-safety of this approach. TABLE FOR NOW
+   */
+  // odbql_stmt *readvar_sql_ = nullptr;
 };
 
 }  // namespace ioda
 
-#endif  // IODA_ODBAPIIO_H_
+#endif  // FILEIO_ODBAPIIO_H_

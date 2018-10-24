@@ -7,8 +7,8 @@
 
 #include <string>
 
-#include "oops/util/Logger.h"
 #include "oops/util/abor1_cpp.h"
+#include "oops/util/Logger.h"
 
 #include "fileio/IodaIOfactory.h"
 #include "fileio/NetcdfIO.h"
@@ -53,30 +53,32 @@ IodaIO* IodaIOfactory::Create(const std::string & FileName, const std::string & 
   Spos = FileName.find_last_of(".");
   if (Spos == FileName.npos) {
     FileSuffix = "";
-    }
-  else {
+  } else {
     FileSuffix = FileName.substr(Spos+1);
-    }
+  }
 
   // Create the appropriate object depending on the file suffix
   if ((FileSuffix == "nc4") || (FileSuffix == "nc")) {
     return new ioda::NetcdfIO(FileName, FileMode, Nlocs, Nobs, Nrecs, Nvars);
-    }
-  else if (FileSuffix == "odb") {
+  } else if (FileSuffix == "odb") {
 #ifdef HAVE_ODB_API
     return new ioda::OdbApiIO(FileName, FileMode, Nlocs, Nobs, Nrecs, Nvars);
 #else
-    oops::Log::error() << "ioda::IodaIO::Create: ODB API not implemented: " << FileName << std::endl;
-    oops::Log::error() << "ioda::IodaIO::Create: Try re-runing ecbuild with -DENABLE_ODB_API=1 and -DODB_API_PATH=path_to_odb options" << std::endl;
+    oops::Log::error() << "ioda::IodaIO::Create: ODB API not implemented: "
+                       << FileName << std::endl;
+    oops::Log::error() << "ioda::IodaIO::Create: Try re-runing ecbuild with "
+                       << " -DENABLE_ODB_API=1 and -DODB_API_PATH=path_to_odb options"
+                       << std::endl;
     ABORT("ioda::Ioda::Create: Rebuild with ODB API enabled");
 #endif
-    }
-  else {
-    oops::Log::error() << "ioda::IodaIO::Create: Unrecognized file suffix: " << FileName << std::endl;
-    oops::Log::error() << "ioda::IodaIO::Create:   suffix must be one of: .nc4, .nc" << std::endl;
+  } else {
+    oops::Log::error() << "ioda::IodaIO::Create: Unrecognized file suffix: "
+                       << FileName << std::endl;
+    oops::Log::error() << "ioda::IodaIO::Create:   suffix must be one of: .nc4, .nc"
+                       << std::endl;
     ABORT("ioda::Ioda::Create: Unrecognized file suffix");
     return NULL;
-    }
+  }
 }
 
 }  // namespace ioda

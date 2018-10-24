@@ -10,6 +10,7 @@
 
 #include <ostream>
 #include <string>
+#include <vector>
 
 #include "Fortran.h"
 #include "oops/util/ObjectCounter.h"

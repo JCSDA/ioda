@@ -27,4 +27,4 @@ struct IodaTrait {
 
 }  // namespace ioda
 
-#endif  // IODA_UFOTRAIT_H_
+#endif  // IODA_IODATRAIT_H_
