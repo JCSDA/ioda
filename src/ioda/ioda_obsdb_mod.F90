@@ -11,7 +11,6 @@ module ioda_obsdb_mod
 use iso_c_binding
 use kinds
 use ioda_obsvar_mod
-use ioda_obs_vectors
 use fckit_log_module, only : fckit_log
 #ifdef HAVE_ODB_API
 use odb_helper_mod, only: &
@@ -28,8 +27,8 @@ public ioda_obsdb_delete
 public ioda_obsdb_getlocs
 public ioda_obsdb_generate
 public ioda_obsdb_var_to_ovec
-public ioda_obsdb_getvar
-public ioda_obsdb_putvar
+public ioda_obsdb_get_vec
+public ioda_obsdb_put_vec
 
 ! ------------------------------------------------------------------------------
 
@@ -296,30 +295,49 @@ end subroutine ioda_obsdb_getvar
 
 ! ------------------------------------------------------------------------------
 
-subroutine ioda_obsdb_putvar(self, vname, ovec)
+subroutine ioda_obsdb_get_vec(self, vname, vdata)
+use ioda_locs_mod
+implicit none
+type(ioda_obsdb), intent(in) :: self
+character(len=*), intent(in) :: vname
+real(kind_real), intent(out) :: vdata(:)
+
+character(len=*),parameter:: myname = "ioda_obsdb_get_vec"
+character(len=255) :: record
+type(ioda_obs_var), pointer :: vptr
+
+call ioda_obsdb_getvar(self, vname, vptr)
+
+vdata = vptr%vals
+
+end subroutine ioda_obsdb_get_vec
+
+! ------------------------------------------------------------------------------
+
+subroutine ioda_obsdb_put_vec(self, vname, vdata)
 
 implicit none
 
 type(ioda_obsdb), intent(in) :: self
 character(len=*), intent(in) :: vname
-type(obs_vector), intent(in) :: ovec
+real(kind_real), intent(in)  :: vdata(:)
 
-type(ioda_obs_var), pointer  :: vptr
-character(len=*),parameter   :: myname = "ioda_obsdb_putvar"
-character(len=255)           :: record
+type(ioda_obs_var), pointer :: vptr
+character(len=*),parameter  :: myname = "ioda_obsdb_put_vec"
+character(len=255)          :: record
 
 call self%obsvars%get_node(vname, vptr)
 if (.not.associated(vptr)) then
   call self%obsvars%add_node(vname, vptr)
   vptr%nobs = self%nobs
   allocate(vptr%vals(vptr%nobs))
-  vptr%vals = ovec%values 
+  vptr%vals = vdata 
 else
   write(record,*) myname,' var= ', trim(vname), ':this column already exists'
-  call fckit_log%info(record)
+  call abor1_ftn(record)
 endif
 
-end subroutine ioda_obsdb_putvar
+end subroutine ioda_obsdb_put_vec
 
 ! ------------------------------------------------------------------------------
 
@@ -369,7 +387,7 @@ subroutine ioda_obsdb_var_to_ovec(self, ovec, vname)
 use ioda_locs_mod
 implicit none
 type(ioda_obsdb), intent(in) :: self
-type(obs_vector), intent(out) :: ovec
+real(kind=kind_real), intent(inout) :: ovec(:)
 character(len=*), intent(in) :: vname
 
 character(len=*),parameter:: myname = "ioda_obsdb_var_to_ovec"
@@ -378,7 +396,7 @@ type(ioda_obs_var), pointer :: vptr
 
 call ioda_obsdb_getvar(self, vname, vptr)
 
-ovec%values = vptr%vals
+ovec(:) = vptr%vals(:)
 
 end subroutine ioda_obsdb_var_to_ovec
 
