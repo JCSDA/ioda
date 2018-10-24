@@ -82,6 +82,12 @@ ioda/obsspace_mod.F90
 ioda/random_f.cc
 ioda/random_f.h
 ioda/random_vectors_mod.F90
+fileio/IodaIO.cc
+fileio/IodaIO.h
+fileio/IodaIOfactory.cc
+fileio/IodaIOfactory.h
+fileio/NetcdfIO.cc
+fileio/NetcdfIO.h
 
 # Marine: Sea-ice fraction
 ioda/marine/seaicefraction/ObsSpace.SeaIceFraction.interface.F90
@@ -145,6 +151,8 @@ if (HAVE_ODB_API)
 
   list( APPEND ioda_src_files
   odb_api/odb_helper_mod.F90
+  fileio/OdbApiIO.cc
+  fileio/OdbApiIO.h
   )
 
   ecbuild_add_executable( TARGET  netcdf_to_odb2
