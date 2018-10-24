@@ -14,7 +14,6 @@ use datetime_mod
 use duration_mod
 use ioda_locs_mod
 use ioda_locs_mod_c, only : ioda_locs_registry
-use ioda_obs_vectors
 use ioda_obs_insitutemperature_mod
 use fckit_log_module, only : fckit_log
 use kinds
@@ -150,25 +149,22 @@ end subroutine ioda_obsdb_insitutemperature_delete_c
 
 ! ------------------------------------------------------------------------------
 
-subroutine ioda_obsdb_insitutemperature_get_c(c_key_self, lcol, c_col, c_key_ovec) bind(c,name='ioda_obsdb_insitutemperature_get_f90')  
+subroutine ioda_obsdb_insitutemperature_get_c(c_key_self, c_tname, c_tname_size, c_tdata, c_tdata_size) bind(c,name='ioda_obsdb_insitutemperature_get_f90')  
 implicit none
 integer(c_int), intent(in) :: c_key_self
-integer(c_int), intent(in) :: lcol
-character(kind=c_char,len=1), intent(in) :: c_col(lcol+1)
-integer(c_int), intent(in) :: c_key_ovec
+integer(c_int), intent(in) :: c_tname_size
+character(kind=c_char,len=1), intent(in) :: c_tname(c_tname_size+1)
+integer(c_int), intent(in) :: c_tdata_size
+real(c_double), intent(out) :: c_tdata(c_tdata_size)
 
 type(ioda_obs_insitutemperature), pointer :: self
-type(obs_vector), pointer :: ovec
-character(len=lcol) :: col 
 
 call ioda_obs_insitutemperature_registry%get(c_key_self, self)
-call ioda_obs_vect_registry%get(c_key_ovec,ovec)
 
-ovec%nobs = self%nobs
-if (c_col(5)//c_col(6)=='rr') then
-   ovec%values = self%err
+if (c_tname(5)//c_tname(6)=='rr') then
+   c_tdata = self%err
 else
-   ovec%values = self%val
+   c_tdata = self%val
 end if
 
 end subroutine ioda_obsdb_insitutemperature_get_c

@@ -63,10 +63,9 @@ extern "C" {
                                    const util::DateTime * const *,F90locs &);
   void ioda_obsdb_generate_f90(const F90odb &, const eckit::Configuration * const *,
                                const util::DateTime * const *,const util::DateTime * const *);
-  void ioda_obsdb_get_f90(const F90odb &, const int &, const char *, const F90ovec &);
-  void ioda_obsdb_put_f90(const F90odb &, const int &, const char *, const F90ovec &);
-  void ioda_obsdb_getvar_f90(const F90odb &, const int &, const char *,
-                                double [], const int);
+  void ioda_obsdb_get_f90(const F90odb &, const int &, const char *, const int &, double []);
+  void ioda_obsdb_put_f90(const F90odb &, const int &, const char *, const int &, const double []);
+  void ioda_obsdb_getvar_f90(const F90odb &, const int &, const char *, const int &, double []);
 
 // -----------------------------------------------------------------------------
 //  Observation Handler (for sea ice)
@@ -82,9 +81,7 @@ extern "C" {
                               const util::DateTime * const *,
                               const util::DateTime * const *);
   void ioda_obsdb_seaice_nobs_f90(const F90odb &, int &);
-  void ioda_obsdb_seaice_get_f90(const F90odb &, const int &, const char *, const F90ovec &);
-  void ioda_obsdb_seaice_getvar_f90(const F90odb &, const int &, const char *,
-                                    double [], const int);
+  void ioda_obsdb_seaice_get_f90(const F90odb &, const char *, const int &, double [], const int &);
 
 // -----------------------------------------------------------------------------
 //  Observation Handler (for sea ice thickness)
@@ -100,9 +97,7 @@ extern "C" {
                               const util::DateTime * const *,
                               const util::DateTime * const *);
   void ioda_obsdb_seaicethick_nobs_f90(const F90odb &, int &);
-  void ioda_obsdb_seaicethick_get_f90(const F90odb &, const int &, const char *, const F90ovec &);  
-  void ioda_obsdb_seaicethick_getvar_f90(const F90odb &, const int &, const char *,
-                                         double [], const int);
+  void ioda_obsdb_seaicethick_get_f90(const F90odb &, const char *, const int &, double [], const int &);
 
 
 // -----------------------------------------------------------------------------
@@ -119,9 +114,7 @@ extern "C" {
                               const util::DateTime * const *,
                               const util::DateTime * const *);
   void ioda_obsdb_stericheight_nobs_f90(const F90odb &, int &);
-  void ioda_obsdb_stericheight_get_f90(const F90odb &, const int &, const char *, const F90ovec &);
-  void ioda_obsdb_stericheight_getvar_f90(const F90odb &, const int &, const char *,
-                                          double [], const int);
+  void ioda_obsdb_stericheight_get_f90(const F90odb &, const char *, const int &, double [], const int &);
 
 // -----------------------------------------------------------------------------  
 //  Observation Handler (for temperature profiles)
@@ -137,9 +130,7 @@ extern "C" {
                               const util::DateTime * const *,
                               const util::DateTime * const *);
   void ioda_obsdb_insitutemperature_nobs_f90(const F90odb &, int &);
-  void ioda_obsdb_insitutemperature_get_f90(const F90odb &, const int &, const char *, const F90ovec &);
-  void ioda_obsdb_insitutemperature_getvar_f90(const F90odb &, const int &, const char *,
-                                               double [], const int);
+  void ioda_obsdb_insitutemperature_get_f90(const F90odb &, const char *, const int &, double [], const int &);
 
 // -----------------------------------------------------------------------------  
 //  Observation Handler (for sea surface temperature)
@@ -155,10 +146,7 @@ extern "C" {
                               const util::DateTime * const *,
                               const util::DateTime * const *);
   void ioda_obsdb_seasurfacetemp_nobs_f90(const F90odb &, int &);
-  void ioda_obsdb_seasurfacetemp_get_f90(const F90odb &, const int &, const char *,
-                                         const F90ovec &);
-  void ioda_obsdb_seasurfacetemp_getvar_f90(const F90odb &, const int &, const char *,
-                                            double [], const int);
+  void ioda_obsdb_seasurfacetemp_get_f90(const F90odb &, const char *, const int &, double [], const int &);
 
 //  Observation Handler (for adt)
 // -----------------------------------------------------------------------------
@@ -173,30 +161,7 @@ extern "C" {
                               const util::DateTime * const *,
                               const util::DateTime * const *);
   void ioda_obsdb_adt_nobs_f90(const F90odb &, int &);
-  void ioda_obsdb_adt_get_f90(const F90odb &, const int &, const char *, const F90ovec &);  
-  void ioda_obsdb_adt_getvar_f90(const F90odb &, const int &, const char *,
-                                 double [], const int);
-
-// -----------------------------------------------------------------------------
-//  Observation Vectors
-// -----------------------------------------------------------------------------
-  void ioda_obsvec_setup_f90(F90ovec &, const F90odb &);
-  void ioda_obsvec_clone_f90(const F90ovec &, F90ovec &);
-  void ioda_obsvec_delete_f90(F90ovec &);
-
-  void ioda_obsvec_assign_f90(const F90ovec &, const F90ovec &);
-  void ioda_obsvec_zero_f90(const F90ovec &);
-  void ioda_obsvec_mul_scal_f90(const F90ovec &, const double &);
-  void ioda_obsvec_add_f90(const F90ovec &, const F90ovec &);
-  void ioda_obsvec_sub_f90(const F90ovec &, const F90ovec &);
-  void ioda_obsvec_mul_f90(const F90ovec &, const F90ovec &);
-  void ioda_obsvec_div_f90(const F90ovec &, const F90ovec &);
-  void ioda_obsvec_axpy_f90(const F90ovec &, const double &, const F90ovec &);
-  void ioda_obsvec_invert_f90(const F90ovec &);
-  void ioda_obsvec_random_f90(const F90ovec &);
-  void ioda_obsvec_dotprod_f90(const F90ovec &, const F90ovec &, double &);
-  void ioda_obsvec_minmaxavg_f90(const F90ovec &, double &, double &, double &);
-  void ioda_obsvec_nobs_f90(const F90ovec &, int &);
+  void ioda_obsdb_adt_get_f90(const F90odb &, const char *, const int &, double [], const int &);
 
 // -----------------------------------------------------------------------------  
 
