@@ -5,125 +5,187 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
  */
 
+#include <limits>
 #include <math.h>
+#include <random>
 
+#include "eckit/mpi/Comm.h"
 #include "oops/util/Logger.h"
+#include "oops/util/abor1_cpp.h"
 
+#include "constants.h"
 #include "ObsVector.h"
 #include "ObsSpace.h"
-#include "Fortran.h"
 
 namespace ioda {
 // -----------------------------------------------------------------------------
-ObsVector::ObsVector(const ObsSpace & obsdb)
-  : obsdb_(obsdb), keyOvec_(0)
-{
-  int nobs = obsdb_.nobs();
-  ioda_obsvec_setup_f90(keyOvec_, nobs);
+ObsVector::ObsVector(const ObsSpace & obsdb) : obsdb_(obsdb), values_(obsdb_.nobs()) {
+  oops::Log::debug() << "ObsVector constructed with " << values_.size() << " elements." << std::endl;
 }
 // -----------------------------------------------------------------------------
-ObsVector::ObsVector(const ObsVector & other, const bool copy)
-  : obsdb_(other.obsdb_), keyOvec_(0) {
-  ioda_obsvec_clone_f90(other.keyOvec_, keyOvec_);
-  if (copy) {
-    ioda_obsvec_assign_f90(keyOvec_, other.keyOvec_);
-  } else {
-    ioda_obsvec_zero_f90(keyOvec_);
-  }
+ObsVector::ObsVector(const ObsVector & other, const bool copy) : obsdb_(other.obsdb_), values_(obsdb_.nobs()) {
+  oops::Log::debug() << "ObsVector copy constructed with " << values_.size() << " elements." << std::endl;
+  if (copy) values_ = other.values_;
 }
 // -----------------------------------------------------------------------------
 ObsVector::~ObsVector() {
-  ioda_obsvec_delete_f90(keyOvec_);
 }
 // -----------------------------------------------------------------------------
 ObsVector & ObsVector::operator= (const ObsVector & rhs) {
-  const int keyOvecRhs = rhs.keyOvec_;
-  ioda_obsvec_assign_f90(keyOvec_, keyOvecRhs);
+  values_ = rhs.values_;
   return *this;
 }
 // -----------------------------------------------------------------------------
 ObsVector & ObsVector::operator*= (const double & zz) {
-  ioda_obsvec_mul_scal_f90(keyOvec_, zz);
+  for (size_t jj = 0; jj < values_.size() ; ++jj) {
+    if (values_[jj] != missing_value) {
+      values_[jj] = zz * values_[jj];
+    }
+  }
   return *this;
 }
 // -----------------------------------------------------------------------------
 ObsVector & ObsVector::operator+= (const ObsVector & rhs) {
-  const int keyOvecRhs = rhs.keyOvec_;
-  ioda_obsvec_add_f90(keyOvec_, keyOvecRhs);
+  const size_t nn = values_.size();
+  ASSERT(rhs.values_.size() == nn);
+  for (size_t jj = 0; jj < nn ; ++jj) {
+    if (values_[jj] == missing_value || rhs.values_[jj] == missing_value) {
+      values_[jj] = missing_value;
+    } else {
+      values_[jj] += rhs.values_[jj];
+    }
+  }
   return *this;
 }
 // -----------------------------------------------------------------------------
 ObsVector & ObsVector::operator-= (const ObsVector & rhs) {
-  const int keyOvecRhs = rhs.keyOvec_;
-  ioda_obsvec_sub_f90(keyOvec_, keyOvecRhs);
+  const size_t nn = values_.size();
+  ASSERT(rhs.values_.size() == nn);
+  for (size_t jj = 0; jj < nn ; ++jj) {
+    if (values_[jj] == missing_value || rhs.values_[jj] == missing_value) {
+      values_[jj] = missing_value;
+    } else {
+      values_[jj] -= rhs.values_[jj];
+    }
+  }
   return *this;
 }
 // -----------------------------------------------------------------------------
 ObsVector & ObsVector::operator*= (const ObsVector & rhs) {
-  const int keyOvecRhs = rhs.keyOvec_;
-  ioda_obsvec_mul_f90(keyOvec_, keyOvecRhs);
+  const size_t nn = values_.size();
+  ASSERT(rhs.values_.size() == nn);
+  for (size_t jj = 0; jj < nn ; ++jj) {
+    if (values_[jj] == missing_value || rhs.values_[jj] == missing_value) {
+      values_[jj] = missing_value;
+    } else {
+      values_[jj] *= rhs.values_[jj];
+    }
+  }
   return *this;
 }
 // -----------------------------------------------------------------------------
 ObsVector & ObsVector::operator/= (const ObsVector & rhs) {
-  const int keyOvecRhs = rhs.keyOvec_;
-  ioda_obsvec_div_f90(keyOvec_, keyOvecRhs);
+  const size_t nn = values_.size();
+  ASSERT(rhs.values_.size() == nn);
+  for (size_t jj = 0; jj < nn ; ++jj) {
+    if (values_[jj] == missing_value || rhs.values_[jj] == missing_value) {
+      values_[jj] = missing_value;
+    } else {
+      values_[jj] /= rhs.values_[jj];
+    }
+  }
   return *this;
 }
 // -----------------------------------------------------------------------------
 void ObsVector::zero() {
-  ioda_obsvec_zero_f90(keyOvec_);
+  for (size_t jj = 0; jj < values_.size() ; ++jj) {
+    values_[jj] = 0.0;
+  }
 }
 // -----------------------------------------------------------------------------
 void ObsVector::axpy(const double & zz, const ObsVector & rhs) {
-  const int keyOvecRhs = rhs.keyOvec_;
-  ioda_obsvec_axpy_f90(keyOvec_, zz, keyOvecRhs);
+  const size_t nn = values_.size();
+  ASSERT(rhs.values_.size() == nn);
+  for (size_t jj = 0; jj < nn ; ++jj) {
+    if (values_[jj] == missing_value || rhs.values_[jj] == missing_value) {
+      values_[jj] = missing_value;
+    } else {
+      values_[jj] += zz * rhs.values_[jj];
+    }
+  }
 }
 // -----------------------------------------------------------------------------
 void ObsVector::invert() {
-  ioda_obsvec_invert_f90(keyOvec_);
+  for (size_t jj = 0; jj < values_.size() ; ++jj) {
+    if (values_[jj] != missing_value) {
+      values_[jj] = 1.0 / values_[jj];
+    }
+  }
 }
 // -----------------------------------------------------------------------------
 void ObsVector::random() {
-  ioda_obsvec_random_f90(keyOvec_);
+  static std::mt19937 generator(1);
+  static std::normal_distribution<double> distribution(0.0, 1.0);
+  for (size_t jj = 0; jj < values_.size() ; ++jj) {
+    values_[jj] = distribution(generator);
+  }
 }
 // -----------------------------------------------------------------------------
 double ObsVector::dot_product_with(const ObsVector & other) const {
-  const int keyOvecOther = other.keyOvec_;
-  double zz;
-  ioda_obsvec_dotprod_f90(keyOvec_, keyOvecOther, zz);
+  const size_t nn = values_.size();
+  ASSERT(other.values_.size() == nn);
+  double zz = 0.0;
+  for (size_t jj = 0; jj < nn ; ++jj) {
+    if (values_[jj] != missing_value && other.values_[jj] != missing_value) {
+      zz += values_[jj] * other.values_[jj];
+    }
+  }
+  obsdb_.comm().allReduceInPlace(zz, eckit::mpi::sum());
   return zz;
 }
 // -----------------------------------------------------------------------------
 double ObsVector::rms() const {
-  double zz;
-  ioda_obsvec_dotprod_f90(keyOvec_, keyOvec_, zz);
-  int iobs;
-  ioda_obsvec_nobs_f90(keyOvec_, iobs);
-  zz = sqrt(zz/iobs);
-  return zz;
+  double zrms = 0.0;
+  int nobs = 0;
+  for (size_t jj = 0; jj < values_.size() ; ++jj) {
+    if (values_[jj] != missing_value) {
+      zrms += values_[jj] * values_[jj];
+      ++nobs;
+    }
+  }
+  obsdb_.comm().allReduceInPlace(zrms, eckit::mpi::sum());
+  obsdb_.comm().allReduceInPlace(nobs, eckit::mpi::sum());
+  if (nobs > 0) zrms = sqrt(zrms / static_cast<double>(nobs));
+  return zrms;
 }
 // -----------------------------------------------------------------------------
 void ObsVector::read(const std::string & name) {
-  obsdb_.getdb(name, keyOvec_);
+  obsdb_.getObsVector(name, values_);
 }
 // -----------------------------------------------------------------------------
 void ObsVector::save(const std::string & name) const {
-  obsdb_.putdb(name, keyOvec_);
+  obsdb_.putObsVector(name, values_);
 }
 // -----------------------------------------------------------------------------
 void ObsVector::print(std::ostream & os) const {
-  double zmin, zmax, zavg;
-  ioda_obsvec_minmaxavg_f90(keyOvec_, zmin, zmax, zavg);
-  os << obsdb_.obsname() << " nobs= " << size()
-     << " Min=" << zmin << ", Max=" << zmax << ", Average=" << zavg;
+  double zmin = std::numeric_limits<double>::max();
+  double zmax = std::numeric_limits<double>::lowest();
+  double zrms = 0.0;
+  int nobs = 0;
+  for (size_t jj = 0; jj < values_.size() ; ++jj) {
+    if (values_[jj] != missing_value) {
+      if (values_[jj] < zmin) zmin = values_[jj];
+      if (values_[jj] > zmax) zmax = values_[jj];
+      zrms += values_[jj] * values_[jj];
+      ++nobs;
+    }
+    obsdb_.comm().allReduceInPlace(zmin, eckit::mpi::min());
+    obsdb_.comm().allReduceInPlace(zmax, eckit::mpi::max());
+    obsdb_.comm().allReduceInPlace(zrms, eckit::mpi::sum());
+    obsdb_.comm().allReduceInPlace(nobs, eckit::mpi::sum());
+    if (nobs > 0) zrms = sqrt(zrms / static_cast<double>(nobs));
+  }
 }
 // -----------------------------------------------------------------------------
-unsigned int ObsVector::size() const {
-  int iobs;
-  ioda_obsvec_nobs_f90(keyOvec_, iobs);
-  unsigned int nobs(iobs);
-  return nobs;
-}
-// -----------------------------------------------------------------------------
+
 }  // namespace ioda 

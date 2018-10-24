@@ -24,8 +24,7 @@ integer(kind=c_int) function c_obsspace_get_nlocs(dom) bind(C,name='obsspace_get
   type(c_ptr), value :: dom
 end function c_obsspace_get_nlocs
 
-subroutine c_obsspace_get_var(dom, vname, vdata, vsize) &
-         bind(C,name='obsspace_get_var_f')
+subroutine c_obsspace_get_var(dom, vname, vsize, vdata) bind(C,name='obsspace_get_var_f')
   use, intrinsic :: iso_c_binding
   implicit none
 
@@ -33,8 +32,8 @@ subroutine c_obsspace_get_var(dom, vname, vdata, vsize) &
 
   type(c_ptr), value :: dom
   character(kind=c_char,len=1), dimension(*) :: vname
-  real(kind=c_double) :: vdata(vsize)
   integer(kind=c_int), value :: vsize
+  real(kind=c_double) :: vdata(vsize)
 end subroutine c_obsspace_get_var
 
 !-------------------------------------------------------------------------------

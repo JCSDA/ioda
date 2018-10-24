@@ -13,10 +13,8 @@ use config_mod
 use datetime_mod
 use duration_mod
 use ioda_obsdb_mod
-use ioda_obsvar_mod
 use ioda_locs_mod
 use ioda_locs_mod_c, only : ioda_locs_registry
-use ioda_obs_vectors
 use type_distribution, only: random_distribution
 use fckit_log_module, only : fckit_log
 use fckit_mpi_module
@@ -408,101 +406,106 @@ end subroutine ioda_obsdb_generate_c
 
 ! ------------------------------------------------------------------------------
 
-subroutine ioda_obsdb_get_c(c_key_self, lcol, c_col, c_key_ovec) bind(c,name='ioda_obsdb_get_f90')  
+subroutine ioda_obsdb_getvar_c(c_key_self, c_name_size, c_name, c_vec_size, c_vec) bind(c,name='ioda_obsdb_getvar_f90')  
 implicit none
 integer(c_int), intent(in) :: c_key_self
-integer(c_int), intent(in) :: lcol
-character(kind=c_char,len=1), intent(in) :: c_col(lcol+1)
-integer(c_int), intent(in) :: c_key_ovec
+integer(c_int), intent(in) :: c_name_size
+character(kind=c_char,len=1), intent(in) :: c_name(c_name_size+1)
+integer(c_int), intent(in) :: c_vec_size
+real(c_double), intent(out) :: c_vec(c_vec_size)
 
 type(ioda_obsdb), pointer :: self
-type(obs_vector), pointer :: ovec
+real(kind_real), allocatable :: vdata(:)
 
-character(len=lcol) :: vname
+character(len=c_name_size) :: vname
 integer :: i
 
-type(obs_vector) :: TmpOvec
-
 call ioda_obsdb_registry%get(c_key_self, self)
-call ioda_obs_vect_registry%get(c_key_ovec,ovec)
 
-ovec%nobs = self%nobs
 ! Copy C character array to Fortran string
-do i = 1, lcol
-  vname(i:i) = c_col(i)
+do i = 1, c_name_size
+  vname(i:i) = c_name(i)
 enddo
 
 ! Quick hack for dealing with inverted observation error values in the netcdf
-! file. Need to revisit this in the future and come up with a better
-! solution.
+! file. Need to revisit this in the future and come up with a better solution.
+allocate(vdata(c_vec_size))
+call ioda_obsdb_get_vec(self, vname, vdata)
+
 if (trim(vname) .eq. "ObsErr") then
-  call ioda_obsvec_setup(TmpOvec, self%nobs)
-  call ioda_obsdb_var_to_ovec(self, TmpOvec, "Errinv_Input")
-  ovec%values = 1.0_kind_real / TmpOvec%values
-  call ioda_obsvec_delete(TmpOvec)
+  c_vec = 1.0_kind_real / vdata
 else
-  call ioda_obsvec_setup(TmpOvec, self%nobs)
-  call ioda_obsdb_var_to_ovec(self, TmpOvec, vname)
-  ovec%values = TmpOvec%values
-  call ioda_obsvec_delete(TmpOvec)
+  c_vec = vdata
 endif
+
+deallocate(vdata)
+
+end subroutine ioda_obsdb_getvar_c
+
+! ------------------------------------------------------------------------------
+
+subroutine ioda_obsdb_get_c(c_key_self, c_name_size, c_name, c_vec_size, c_vec) bind(c,name='ioda_obsdb_get_f90')  
+implicit none
+integer(c_int), intent(in) :: c_key_self
+integer(c_int), intent(in) :: c_name_size
+character(kind=c_char,len=1), intent(in) :: c_name(c_name_size+1)
+integer(c_int), intent(in) :: c_vec_size
+real(c_double), intent(out) :: c_vec(c_vec_size)
+
+type(ioda_obsdb), pointer :: self
+real(kind_real), allocatable :: vdata(:)
+
+character(len=c_name_size) :: vname
+integer :: i
+
+call ioda_obsdb_registry%get(c_key_self, self)
+
+! Copy C character array to Fortran string
+do i = 1, c_name_size
+  vname(i:i) = c_name(i)
+enddo
+
+! Quick hack for dealing with inverted observation error values in the netcdf
+! file. Need to revisit this in the future and come up with a better solution.
+allocate(vdata(c_vec_size))
+call ioda_obsdb_get_vec(self, vname, vdata)
+
+if (trim(vname) .eq. "ObsErr") then
+  c_vec = 1.0_kind_real / vdata
+else
+  c_vec = vdata
+endif
+
+deallocate(vdata)
 
 end subroutine ioda_obsdb_get_c
 
 ! ------------------------------------------------------------------------------
 
-subroutine ioda_obsdb_put_c(c_key_self, lcol, c_col, c_key_ovec) bind(c,name='ioda_obsdb_put_f90')
+subroutine ioda_obsdb_put_c(c_key_self, c_name_size, c_name, c_vec_size, c_vec) bind(c,name='ioda_obsdb_put_f90')
 implicit none
 integer(c_int), intent(in) :: c_key_self
-integer(c_int), intent(in) :: lcol
-character(kind=c_char,len=1), intent(in) :: c_col(lcol+1)
-integer(c_int), intent(in) :: c_key_ovec
+integer(c_int), intent(in) :: c_name_size
+character(kind=c_char,len=1), intent(in) :: c_name(c_name_size+1)
+integer(c_int), intent(in) :: c_vec_size
+real(c_double), intent(in) :: c_vec(c_vec_size)
 
 type(ioda_obsdb), pointer :: self
-type(obs_vector), pointer :: ovec
 
-character(len=lcol) :: vname
-integer             :: i
-
-call ioda_obsdb_registry%get(c_key_self, self)
-call ioda_obs_vect_registry%get(c_key_ovec,ovec)
-
-ovec%nobs = self%nobs
-! Copy C character array to Fortran string
-do i = 1, lcol
-  vname(i:i) = c_col(i)
-enddo
-
-call ioda_obsdb_putvar(self, vname, ovec)
-
-end subroutine ioda_obsdb_put_c
-
-! ------------------------------------------------------------------------------
-
-subroutine ioda_obsdb_getvar_c(c_key_self, lcol, c_col, vdata, vsize) bind(c,name='ioda_obsdb_getvar_f90')  
-implicit none
-integer(c_int), intent(in) :: c_key_self
-integer(c_int), intent(in) :: lcol
-character(kind=c_char,len=1), intent(in) :: c_col(lcol+1)
-real(kind=c_double), intent(out) :: vdata(vsize)
-integer(c_int), value, intent(in) :: vsize
-
-type(ioda_obsdb), pointer :: self
-type(ioda_obs_var), pointer :: vptr
-
-character(len=lcol) :: vname
+character(len=c_name_size) :: vname
 integer :: i
 
 call ioda_obsdb_registry%get(c_key_self, self)
 
 ! Copy C character array to Fortran string
-do i = 1, lcol
-  vname(i:i) = c_col(i)
+do i = 1, c_name_size
+  vname(i:i) = c_name(i)
 enddo
 
-call ioda_obsdb_getvar(self, vname, vptr)
-vdata(1:vsize) = vptr%vals(1:vsize)
+call ioda_obsdb_put_vec(self, vname, c_vec)
 
-end subroutine ioda_obsdb_getvar_c
+end subroutine ioda_obsdb_put_c
+
+! ------------------------------------------------------------------------------
 
 end module ioda_obsdb_mod_c

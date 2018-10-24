@@ -18,8 +18,14 @@
 namespace ioda {
   class ObsSpace;
 
-// -----------------------------------------------------------------------------
-/// ObsVector class to handle vectors in observation space for IODA.
+//-----------------------------------------------------------------------------
+/*! \brief ObsVector class to handle vectors in observation space for IODA
+ *
+ *  \details This class holds observation vector data. Examples of an obs vector
+ *           are the y vector and the H(x) vector. The methods of this class
+ *           that implement vector operations (e.g., bitwise add, bitwise subtract,
+ *           dot product) are capable of handling missing values in the obs data.
+ */
 
 class ObsVector : public util::Printable,
                   private util::ObjectCounter<ObsVector> {
@@ -44,10 +50,10 @@ class ObsVector : public util::Printable,
   double dot_product_with(const ObsVector &) const;
   double rms() const;
 
-  unsigned int size() const;
+  std::size_t size() const {return values_.size();}
 
-  int & toFortran() {return keyOvec_;}
-  const int & toFortran() const {return keyOvec_;}
+  const double & toFortran() const {return values_[0];}
+  double & toFortran() {return values_[0];}
 
 // I/O
   void read(const std::string &);
@@ -56,8 +62,11 @@ class ObsVector : public util::Printable,
  private:
   void print(std::ostream &) const;
 
+  /*! \brief Associate ObsSpace object */
   const ObsSpace & obsdb_;
-  F90ovec keyOvec_;
+
+  /*! \brief Vector data */
+  std::vector<double> values_;
 };
 // -----------------------------------------------------------------------------
 
