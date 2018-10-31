@@ -122,7 +122,6 @@ if (config_element_exists(c_conf,"ObsData.ObsDataIn")) then
   fin  = config_get_string(c_conf,max_string,"ObsData.ObsDataIn.obsfile")
   input_file_type = ioda_obsdb_get_ftype(fin)
 
-print*, "DEBUG: input file name and type: ", trim(fin), input_file_type
   ! For now, just assimilating one variable, so set nvars to 1 by default.
   !
   ! For radiance, there are 12 channels of data (channels 7, 8 and 14 were not assimilated
