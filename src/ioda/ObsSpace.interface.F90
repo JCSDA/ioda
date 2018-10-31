@@ -121,7 +121,7 @@ MyObsType = trim(config_get_string(c_conf,max_string,"ObsType"))
 if (config_element_exists(c_conf,"ObsData.ObsDataIn")) then
   fin  = config_get_string(c_conf,max_string,"ObsData.ObsDataIn.obsfile")
   if (fin(len_trim(fin)-3:len_trim(fin)) == ".nc4" .or. &
-      fin(len_trim(fin)-3:len_trim(fin)) == ".nc") then
+      fin(len_trim(fin)-2:len_trim(fin)) == ".nc") then
     input_file_type = 0
   else if (fin(len_trim(fin)-3:len_trim(fin)) == ".odb") then
     input_file_type = 1
@@ -138,9 +138,10 @@ if (config_element_exists(c_conf,"ObsData.ObsDataIn")) then
   ! need to decide how to handle missing channels in obs data, so to get things going for
   ! now set nvars to 15 for Radiance. Note that when we come to the point where we do want
   ! to read in the brightness temperature, we will need to address how to handle missing
-  ! channels.
+  ! channels. Ditto for AOD obs type, where AOD obs (VIIRS) has 11 channels.
   nvars = 1 
   if (trim(MyObsType) .eq. "Radiance") nvars = 15
+  if (trim(MyObsType) .eq. "Aod") nvars = 11
 
   select case (input_file_type)
     case (0)
@@ -148,32 +149,15 @@ if (config_element_exists(c_conf,"ObsData.ObsDataIn")) then
       call nc_diag_read_init(fin, iunit)
 
       ! Get the length of the vectors in the input file
-      if ((trim(MyObsType) .eq. "Radiance") .or. &
-          (trim(MyObsType) .eq. "Radiosonde") .or. &
-          (trim(MyObsType) .eq. "Aircraft")) then
-        fvlen = nc_diag_read_get_dim(iunit, 'nlocs')
-      else
-        fvlen = nc_diag_read_get_dim(iunit, 'nobs')
-      endif
+      fvlen = nc_diag_read_get_dim(iunit, 'nlocs')
 
       ! Apply the random distribution, which yields the size and indices that
       ! are to be selected by this process element out of the file.
-      ran_dist = random_distribution(fvlen)
-      if ((trim(MyObsType) .eq. "Radiance") .or. &
-          (trim(MyObsType) .eq. "Radiosonde") .or. &
-          (trim(MyObsType) .eq. "Aircraft")) then
-        nlocs = ran_dist%nobs_pe()
-        allocate(dist_indx(nlocs))
-        dist_indx = ran_dist%indx
-
-        nobs = nvars * nlocs
-      else
-        nobs = ran_dist%nobs_pe()
-        allocate(dist_indx(nobs))
-        dist_indx = ran_dist%indx
-
-        nlocs = nobs
-      endif
+      ran_dist = random_distribution(fvlen)        
+      nlocs = ran_dist%nobs_pe()
+      allocate(dist_indx(nlocs))
+      dist_indx = ran_dist%indx
+      nobs = nvars * nlocs
 
       ! Read in a variable and check for missing values. Adjust the nobs, nlocs values
       ! and dist_index accordingly.
@@ -241,7 +225,7 @@ else
   dist_indx(1) = -1
 endif
 
-write(record,*) 'ioda_obsdb_setup_c: ', trim(MyObsType), ' file in =',trim(fin)
+write(record,*) 'ioda_obsdb_setup_c: ', trim(MyObsType), ' file in = ',trim(fin)
 call fckit_log%info(record)
 
 ! Check to see if an output file has been requested.
@@ -276,7 +260,6 @@ if (config_element_exists(c_conf,"ObsData.ObsDataOut")) then
    endif
 
 endif
-
 
 call ioda_obsdb_registry%init()
 call ioda_obsdb_registry%add(c_key_self)

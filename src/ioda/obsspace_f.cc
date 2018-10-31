@@ -24,13 +24,57 @@ int obsspace_get_nlocs_f(const ObsSpace & obss) {
 }
 
 // -----------------------------------------------------------------------------
-
-void obsspace_get_var_f(const ObsSpace & obss, const char vname[],
-                        const int Vsize, double Vdata[]) {
-  std::string Vname(vname);
-  return obss.getvar(Vname, Vsize, Vdata);
+void obsspace_get_int32_f(const ObsSpace & obss, const char * group,
+                          const char * vname, size_t & length, int32_t* vec) {
+  // obss.get_db(std::string(group), std::string(vname), length, vec);
+  ASSERT(length == obss.nlocs());
 }
 
+// -----------------------------------------------------------------------------
+void obsspace_get_int64_f(const ObsSpace & obss, const char * group,
+                          const char * vname, std::size_t & length, int64_t* vec) {
+  // obss.get_db(std::string(group), std::string(vname), length, vec);
+  ASSERT(length == obss.nlocs());
+}
+
+// -----------------------------------------------------------------------------
+void obsspace_get_real32_f(const ObsSpace & obss, const char * group,
+                           const char * vname, std::size_t & length, float* vec) {
+  // obss.get_db(std::string(group), std::string(vname), length, vec);
+  ASSERT(length == obss.nlocs());
+}
+
+// -----------------------------------------------------------------------------
+void obsspace_get_real64_f(const ObsSpace & obss, const char * group,
+                           const char * vname, std::size_t & length, double* vec) {
+  obss.get_db(std::string(group), std::string(vname), length, vec);
+  ASSERT(length == obss.nlocs());
+}
+
+// -----------------------------------------------------------------------------
+void obsspace_put_int32_f(ObsSpace & obss, const char * group, const char * vname,
+                          const std::size_t & length, int32_t* vec) {
+  // obss.put_db(std::string(group), std::string(vname), length, vec);
+  ASSERT(length == obss.nlocs());
+}
+// -----------------------------------------------------------------------------
+void obsspace_put_int64_f(ObsSpace & obss, const char * group, const char * vname,
+                          const std::size_t & length, int64_t* vec) {
+  // obss.put_db(std::string(group), std::string(vname), length, vec);
+  ASSERT(length == obss.nlocs());
+}
+// -----------------------------------------------------------------------------
+void obsspace_put_real32_f(ObsSpace & obss, const char * group, const char * vname,
+                           const std::size_t & length, float* vec) {
+  // obss.put_db(std::string(group), std::string(vname), length, vec);
+  ASSERT(length == obss.nlocs());
+}
+// -----------------------------------------------------------------------------
+void obsspace_put_real64_f(ObsSpace & obss, const char * group, const char * vname,
+                           const std::size_t & length, double* vec) {
+  // obss.put_db(std::string(group), std::string(vname), length, vec);
+  ASSERT(length == obss.nlocs());
+}
 // -----------------------------------------------------------------------------
 
 }  // namespace ioda

@@ -5,11 +5,13 @@
 
 # Create Data directory for test input config and symlink all files
 list( APPEND ioda_test_input
-  testinput/iodatest.json
+  testinput/iodatest.yml
   testinput/iodatest_odb.json
   testinput/iodatest_odb1.json
   testinput/iodatest_obsspace.json
   testinput/iodatest_fileio.yml
+  testinput/iodatest_marine_fileio.yml
+  testinput/iodatest_marine_obsspace.yml  
   testinput/iodatest_fileio_odb_api.yml
 )
 
@@ -40,13 +42,13 @@ list( APPEND ioda_test_data
   atmosphere/diag_t_obs_01_wprofiles_odb
 
   constituents/diag_viirs_ges.2015081000_dbl_subset.nc4
+  constituents/aod_obs_2015081000_m.nc4
 
-  marine/Jason-3-2018-04-15.nc
+  marine/Jason-2-2018-04-15.nc
+  marine/profile_2018-04-15.nc
   marine/cryosat2-2018-04-15.nc
-  marine/sea-ice-con-l2.nc
-  marine/seaice_obs-2018-04-15.nc4
+  marine/icec-2018-04-15.nc
   marine/sst_obs-2018-04-15.nc4
-  marine/t0n156e_dy_obs.nc
 )
 
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Data)
@@ -62,19 +64,19 @@ endforeach(FILENAME)
 ecbuild_add_test( TARGET  test_ioda_locations
                   BOOST
                   SOURCES mains/TestLocations.cc
-                  ARGS    "testinput/iodatest.json"
+                  ARGS    "testinput/iodatest.yml"
                   LIBS    ioda )
 
 ecbuild_add_test( TARGET test_ioda_observationspace
                   BOOST
                   SOURCES mains/TestObservationSpace.cc
-                  ARGS "testinput/iodatest.json"
+                  ARGS "testinput/iodatest.yml"
                   LIBS    ioda )
 
 ecbuild_add_test( TARGET test_ioda_obsvector
                   BOOST
                   SOURCES mains/TestObsVector.cc
-                  ARGS "testinput/iodatest.json"
+                  ARGS "testinput/iodatest.yml"
                   LIBS    ioda )
 
 ecbuild_add_test( TARGET test_ioda_obsspace
@@ -83,10 +85,23 @@ ecbuild_add_test( TARGET test_ioda_obsspace
                   ARGS "testinput/iodatest_obsspace.json"
                   LIBS    ioda )
 
+ecbuild_add_test( TARGET test_ioda_marine_obsspace
+                  BOOST
+                  SOURCES mains/TestObsSpace.cc
+                  ARGS "testinput/iodatest_marine_obsspace.yml"
+                  LIBS    ioda )
+
+		
 ecbuild_add_test( TARGET test_ioda_fileio
                   BOOST
                   SOURCES mains/TestIodaIO.cc
                   ARGS "testinput/iodatest_fileio.yml"
+                  LIBS    ioda )
+
+ecbuild_add_test( TARGET test_ioda_marine_fileio
+                  BOOST
+                  SOURCES mains/TestIodaIO.cc
+                  ARGS "testinput/iodatest_marine_fileio.yml"
                   LIBS    ioda )
 
 if (HAVE_ODB_API)

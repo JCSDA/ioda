@@ -133,12 +133,7 @@ void testReadVar() {
     varnames = obstypes[i].getStringVector("Input.variables");
     ExpectedVnorms = obstypes[i].getFloatVector("Input.metadata.norms");
     Tol = obstypes[i].getFloat("Input.metadata.tolerance");
-    if (TestObsType == "AOD") {
-      Vsize = TestIO->nobs();
-      }
-    else {
-      Vsize = TestIO->nlocs();
-      }
+    Vsize = TestIO->nlocs();
     TestVarData.reset(new float[Vsize]);
     for(std::size_t j = 0; j < varnames.size(); ++j) {
       TestIO->ReadVar(varnames[j], TestVarData.get());
@@ -267,12 +262,7 @@ void testReadDateTime() {
     TestIO.reset(ioda::IodaIOfactory::Create(FileName, "r"));
 
     // Read in data from the file and check values.
-    if (TestObsType == "AOD") {
-      Vsize = TestIO->nobs();
-      }
-    else {
-      Vsize = TestIO->nlocs();
-      }
+    Vsize = TestIO->nlocs();
     TestVarDate.reset(new int[Vsize]);
     TestVarTime.reset(new int[Vsize]);
     TestIO->ReadDateTime(TestVarDate.get(), TestVarTime.get());
