@@ -120,16 +120,10 @@ MyObsType = trim(config_get_string(c_conf,max_string,"ObsType"))
 
 if (config_element_exists(c_conf,"ObsData.ObsDataIn")) then
   fin  = config_get_string(c_conf,max_string,"ObsData.ObsDataIn.obsfile")
-  if (fin(len_trim(fin)-3:len_trim(fin)) == ".nc4" .or. &
-      fin(len_trim(fin)-2:len_trim(fin)) == ".nc") then
-    input_file_type = 0
-  else if (fin(len_trim(fin)-3:len_trim(fin)) == ".odb") then
-    input_file_type = 1
-  else
-    input_file_type = 2
-  end if
+  input_file_type = ioda_obsdb_get_ftype(fin)
 
-  ! For now, just reading in one variable, will read this from the input file eventually.
+print*, "DEBUG: input file name and type: ", trim(fin), input_file_type
+  ! For now, just assimilating one variable, so set nvars to 1 by default.
   !
   ! For radiance, there are 12 channels of data (channels 7, 8 and 14 were not assimilated
   ! into the GSI run for April 15, 2018 00Z). The brightness_temperature obs data is actually
