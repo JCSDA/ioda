@@ -118,44 +118,19 @@ integer :: istep
 !Setup ioda locations
 call ioda_locs_setup(locs, self%nlocs)
 
-
 ! Assume that obs are organized with the first location going with the
 ! first nobs/nlocs obs, the second location going with the next nobs/nlocs
 ! obs, etc. 
 istep = self%nobs / self%nlocs 
 
-if ((trim(self%obstype) .eq. "Radiance") .or. &
-    (trim(self%obstype) .eq. "Radiosonde") .or. &
-    (trim(self%obstype) .eq. "Aircraft")) then
-  call ioda_obsdb_getvar(self, "longitude", vptr)
-  locs%lon = vptr%vals
-else
-  call ioda_obsdb_getvar(self, "Longitude", vptr)
-  locs%lon = vptr%vals(1:self%nobs:istep)
-endif
+call ioda_obsdb_getvar(self, "longitude", vptr)
+locs%lon = vptr%vals
 
-if ((trim(self%obstype) .eq. "Radiance") .or. &
-    (trim(self%obstype) .eq. "Radiosonde") .or. &
-    (trim(self%obstype) .eq. "Aircraft")) then
-  call ioda_obsdb_getvar(self, "latitude", vptr)
-  locs%lat = vptr%vals
-else
-  call ioda_obsdb_getvar(self, "Latitude", vptr)
-  locs%lat = vptr%vals(1:self%nobs:istep)
-endif
+call ioda_obsdb_getvar(self, "latitude", vptr)
+locs%lat = vptr%vals
 
-if ((trim(self%obstype) .eq. "Radiance") .or. &
-    (trim(self%obstype) .eq. "Radiosonde") .or. &
-    (trim(self%obstype) .eq. "Aircraft")) then
-  call ioda_obsdb_getvar(self, "time", vptr)
-  locs%time = vptr%vals
-elseif (trim(self%obstype) .eq. "Aod") then
-  call ioda_obsdb_getvar(self, "Obs_Time", vptr)
-  locs%time = vptr%vals(1:self%nobs:istep)
-else
-  call ioda_obsdb_getvar(self, "Time", vptr)
-  locs%time = vptr%vals(1:self%nobs:istep)
-endif
+call ioda_obsdb_getvar(self, "time", vptr)
+locs%time = vptr%vals
 
 write(record,*) myname,': allocated/assinged obs-data'
 call fckit_log%info(record)
@@ -211,7 +186,7 @@ if (.not.associated(vptr)) then
   call self%obsvars%add_node(vname, vptr)
 
   if (self % filename(len_trim(self % filename)-3:len_trim(self % filename)) == ".nc4" .or. &
-      self % filename(len_trim(self % filename)-3:len_trim(self % filename)) == ".nc") then
+      self % filename(len_trim(self % filename)-2:len_trim(self % filename)) == ".nc") then
     input_file_type = 0
   else if (self % filename(len_trim(self % filename)-3:len_trim(self % filename)) == ".odb") then
     input_file_type = 1

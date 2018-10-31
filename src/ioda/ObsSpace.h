@@ -40,9 +40,7 @@ class ObsSpace : public oops::ObsSpaceBase {
   void getObsVector(const std::string &, std::vector<double> &) const;
   void putObsVector(const std::string &, const std::vector<double> &) const;
 
-  void getvar(const std::string &, const int, double[]) const;
-
-  Locations * locations(const util::DateTime &, const util::DateTime &) const;
+  Locations * locations(const util::DateTime &, const util::DateTime &) const;  // to be removed
 
   void generateDistribution(const eckit::Configuration &);
 
@@ -50,13 +48,22 @@ class ObsSpace : public oops::ObsSpaceBase {
   const util::DateTime & windowStart() const {return winbgn_;}
   const util::DateTime & windowEnd() const {return winend_;}
 
-  const eckit::mpi::Comm & comm() const {return commMPI_;}
   int nobs() const;
   int nlocs() const;
 
-  int & toFortran() {return keyOspace_;}
-  const int & toFortran() const {return keyOspace_;}
+  template <typename T>
+  void get_db(const std::string & group, const std::string & name,
+              const size_t & vsize, T* vdata) const {
+    ioda_obsdb_getvar_f90(keyOspace_, name.size(), name.c_str(), static_cast<int>(vsize), vdata);
+  }
 
+  template <typename T>
+  void put_db(const std::string & group, const std::string & name,
+              const size_t & vsize, T* vdata) const {
+    ioda_obsdb_putvar_f90(keyOspace_, name.size(), name.c_str(), static_cast<int>(vsize), vdata);
+  }
+
+  const eckit::mpi::Comm & comm() const {return commMPI_;}
   void printJo(const ObsVector &, const ObsVector &);
 
  private:

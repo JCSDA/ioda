@@ -24,18 +24,101 @@ integer(kind=c_int) function c_obsspace_get_nlocs(dom) bind(C,name='obsspace_get
   type(c_ptr), value :: dom
 end function c_obsspace_get_nlocs
 
-subroutine c_obsspace_get_var(dom, vname, vsize, vdata) bind(C,name='obsspace_get_var_f')
-  use, intrinsic :: iso_c_binding
+!-------------------------------------------------------------------------------
+! get data from ObsSpace
+
+subroutine c_obsspace_get_int32(obss, group, vname, length, vect) &
+              & bind(C,name='obsspace_get_int32_f')
+  use, intrinsic :: iso_c_binding, only : c_ptr,c_char,c_size_t,c_int32_t
   implicit none
+  type(c_ptr), value :: obss
+  character(kind=c_char, len=1), intent(in) :: group(*)
+  character(kind=c_char, len=1), intent(in) :: vname(*)
+  integer(c_size_t), intent(in) :: length
+  integer(c_int32_t), intent(inout) :: vect(length)
+end subroutine c_obsspace_get_int32
+  
+subroutine c_obsspace_get_int64(obss, group, vname, length, vect) &
+              & bind(C,name='obsspace_get_int64_f')
+  use, intrinsic :: iso_c_binding, only : c_ptr,c_char,c_size_t,c_int64_t
+  implicit none
+  type(c_ptr), value :: obss
+  character(kind=c_char, len=1), intent(in) :: group(*)
+  character(kind=c_char, len=1), intent(in) :: vname(*)
+  integer(c_size_t), intent(in) :: length
+  integer(c_int64_t), intent(inout) :: vect(length)
+end subroutine c_obsspace_get_int64
+  
+subroutine c_obsspace_get_real32(obss, group, vname, length, vect) &
+              & bind(C,name='obsspace_get_real32_f')
+  use, intrinsic :: iso_c_binding, only : c_ptr,c_char,c_size_t,c_float
+  implicit none
+  type(c_ptr), value :: obss
+  character(kind=c_char, len=1), intent(in) :: group(*)
+  character(kind=c_char, len=1), intent(in) :: vname(*)
+  integer(c_size_t), intent(in) :: length
+  real(c_float), intent(inout) :: vect(length)
+end subroutine c_obsspace_get_real32
+  
+subroutine c_obsspace_get_real64(obss, group, vname, length, vect) &
+              & bind(C,name='obsspace_get_real64_f')
+  use, intrinsic :: iso_c_binding, only : c_ptr,c_char,c_size_t,c_double
+  implicit none
+  type(c_ptr), value :: obss
+  character(kind=c_char, len=1), intent(in) :: group(*)
+  character(kind=c_char, len=1), intent(in) :: vname(*)
+  integer(c_size_t), intent(in) :: length
+  real(c_double), intent(inout) :: vect(length)
+end subroutine c_obsspace_get_real64
+  
+!-------------------------------------------------------------------------------
+! store data in ObsSpace
 
-  type(c_ptr) :: result_ptr
+subroutine c_obsspace_put_int32(obss, group, vname, length, vect) &
+              & bind(C,name='obsspace_put_int32_f')
+  use, intrinsic :: iso_c_binding, only : c_ptr,c_char,c_size_t,c_int32_t
+  implicit none
+  type(c_ptr), value :: obss
+  character(kind=c_char, len=1), intent(in) :: group(*)
+  character(kind=c_char, len=1), intent(in) :: vname(*)
+  integer(c_size_t), intent(in) :: length
+  integer(c_int32_t), intent(in) :: vect(length)
+end subroutine c_obsspace_put_int32
 
-  type(c_ptr), value :: dom
-  character(kind=c_char,len=1), dimension(*) :: vname
-  integer(kind=c_int), value :: vsize
-  real(kind=c_double) :: vdata(vsize)
-end subroutine c_obsspace_get_var
+subroutine c_obsspace_put_int64(obss, group, vname, length, vect) &
+              & bind(C,name='obsspace_put_int64_f')
+  use, intrinsic :: iso_c_binding, only : c_ptr,c_char,c_size_t,c_int64_t
+  implicit none
+  type(c_ptr), value :: obss
+  character(kind=c_char, len=1), intent(in) :: group(*)
+  character(kind=c_char, len=1), intent(in) :: vname(*)
+  integer(c_size_t), intent(in) :: length
+  integer(c_int64_t), intent(in) :: vect(length)
+end subroutine c_obsspace_put_int64
+
+subroutine c_obsspace_put_real32(obss, group, vname, length, vect) &
+              & bind(C,name='obsspace_put_real32_f')
+  use, intrinsic :: iso_c_binding, only : c_ptr,c_char,c_size_t,c_float
+  implicit none
+  type(c_ptr), value :: obss
+  character(kind=c_char, len=1), intent(in) :: group(*)
+  character(kind=c_char, len=1), intent(in) :: vname(*)
+  integer(c_size_t), intent(in) :: length
+  real(c_float), intent(in) :: vect(length)
+end subroutine c_obsspace_put_real32
+
+subroutine c_obsspace_put_real64(obss, group, vname, length, vect) &
+              & bind(C,name='obsspace_put_real64_f')
+  use, intrinsic :: iso_c_binding, only : c_ptr,c_char,c_size_t,c_double
+  implicit none
+  type(c_ptr), value :: obss
+  character(kind=c_char, len=1), intent(in) :: group(*)
+  character(kind=c_char, len=1), intent(in) :: vname(*)
+  integer(c_size_t), intent(in) :: length
+  real(c_double), intent(in) :: vect(length)
+end subroutine c_obsspace_put_real64
 
 !-------------------------------------------------------------------------------
 end interface
 !-------------------------------------------------------------------------------
+

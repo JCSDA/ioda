@@ -54,9 +54,6 @@ ncdiag/netcdf_unlimdims.F90
 ncdiag/read_diag.f90
 ncdiag/read_aod_diag.f90
 
-#Marine read/write
-ncdiag/marine/m_diag_marine_conv_mod.F90
-
 ioda/Fortran.h
 ioda/ObsSpace.cc
 ioda/ObsSpace.h
@@ -82,25 +79,6 @@ fileio/IodaIOfactory.cc
 fileio/IodaIOfactory.h
 fileio/NetcdfIO.cc
 fileio/NetcdfIO.h
-
-# Marine: Sea-ice fraction
-ioda/marine/seaicefraction/ObsSpace.SeaIceFraction.interface.F90
-ioda/marine/seaicefraction/ioda_obs_seaicefrac_mod.F90
-# Marine: Sea-ice thickness
-ioda/marine/seaicethickness/ObsSpace.SeaIceThickness.interface.F90
-ioda/marine/seaicethickness/ioda_obs_seaicethick_mod.F90
-# Marine: Steric height
-ioda/marine/stericheight/ObsSpace.StericHeight.interface.F90
-ioda/marine/stericheight/ioda_obs_stericheight_mod.F90
-# Marine: Absolute Dynamic Topography
-ioda/marine/adt/ObsSpace.ADT.interface.F90
-ioda/marine/adt/ioda_obs_adt_mod.F90
-# Marine: Insitu temperature
-ioda/marine/insitutemperature/ObsSpace.InsituTemperature.interface.F90
-ioda/marine/insitutemperature/ioda_obs_insitutemperature_mod.F90
-# Marine: Sea surface temperature
-ioda/marine/seasurfacetemp/ObsSpace.SeaSurfaceTemp.interface.F90
-ioda/marine/seasurfacetemp/ioda_obs_seasurfacetemp_mod.F90
 )
 
 if (HAVE_ODB)

@@ -16,7 +16,7 @@
         "ObsType": "Aod",
         "ObsData": {
           "ObsDataIn": {
-            "obsfile": "Data/diag_viirs_ges.2015081000_dbl_subset.nc4"
+            "obsfile": "Data/aod_obs_2015081000_m.nc4"
           }
         }
       },
@@ -38,16 +38,7 @@
               "obsfile": "testoutput/diagout.nc4"
           }
         }
-      },
-      {
-        "ObsType": "SeaIceFraction",
-        "ObsData": {
-          "ObsDataIn": {
-            "obsfile": "Data/seaice_obs-2018-04-15.nc4"
-          }
-        }
       }
-
     ]
   }
 }

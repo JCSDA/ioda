@@ -183,12 +183,14 @@ void ObsVector::print(std::ostream & os) const {
       zrms += values_[jj] * values_[jj];
       ++nobs;
     }
-    obsdb_.comm().allReduceInPlace(zmin, eckit::mpi::min());
-    obsdb_.comm().allReduceInPlace(zmax, eckit::mpi::max());
-    obsdb_.comm().allReduceInPlace(zrms, eckit::mpi::sum());
-    obsdb_.comm().allReduceInPlace(nobs, eckit::mpi::sum());
-    if (nobs > 0) zrms = sqrt(zrms / static_cast<double>(nobs));
   }
+  obsdb_.comm().allReduceInPlace(zmin, eckit::mpi::min());
+  obsdb_.comm().allReduceInPlace(zmax, eckit::mpi::max());
+  obsdb_.comm().allReduceInPlace(zrms, eckit::mpi::sum());
+  obsdb_.comm().allReduceInPlace(nobs, eckit::mpi::sum());
+  if (nobs > 0) zrms = sqrt(zrms / static_cast<double>(nobs));
+  os << obsdb_.obsname() << " nobs= " << nobs << " Min="
+     << zmin << ", Max=" << zmax << ", Average=" << zrms;
 }
 // -----------------------------------------------------------------------------
 
