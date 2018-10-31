@@ -19,23 +19,38 @@ Observations:
     ObsData:
       ObsDataIn:
         obsfile: Data/Jason-2-2018-04-15.nc
+        metadata:
+          nobs:  160607
+          nlocs: 160607
 
   - ObsType: InsituTemperature
     ObsData:
       ObsDataIn:
         obsfile: Data/profile_2018-04-15.nc
+        metadata:
+          nobs:  20032
+          nlocs: 20032
 
   - ObsType: SeaSurfaceTemp
     ObsData:
       ObsDataIn:
         obsfile: Data/sst_obs-2018-04-15.nc4
+        metadata:
+          nobs:  223966
+          nlocs: 223966
 
   - ObsType: SeaIceFraction
     ObsData:
       ObsDataIn:
         obsfile: Data/icec-2018-04-15.nc
+        metadata:
+          nobs:  71558
+          nlocs: 71558
 
   - ObsType: SeaIceThickness
     ObsData:
       ObsDataIn:
         obsfile: Data/cryosat2-2018-04-15.nc
+        metadata:
+          nobs:  8065
+          nlocs: 8065

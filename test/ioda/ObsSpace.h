@@ -36,9 +36,27 @@ namespace test {
 void testConstructor() {
   typedef ::test::ObsTestsFixture<ioda::IodaTrait> Test_;
 
+  int Nobs;
+  int Nlocs;
+
+  int ExpectedNobs;
+  int ExpectedNlocs;
+
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     BOOST_CHECK_EQUAL(Test_::obspace()[jj].windowStart(), Test_::tbgn());
     BOOST_CHECK_EQUAL(Test_::obspace()[jj].windowEnd(),   Test_::tend());
+
+    // Get the numbers of observations (nobs) and locations (nlocs) from the obspace object
+    Nobs = Test_::obspace()[jj].observationspace().nobs();
+    Nlocs = Test_::obspace()[jj].observationspace().nlocs();
+
+    // Get the expected nobs and nlocs from the obspace object's configuration
+    const eckit::Configuration & Conf(Test_::obspace()[jj].observationspace().config());
+    ExpectedNobs  = Conf.getInt("ObsData.ObsDataIn.metadata.nobs");
+    ExpectedNlocs = Conf.getInt("ObsData.ObsDataIn.metadata.nlocs");
+
+    BOOST_CHECK_EQUAL(ExpectedNobs, Nobs);
+    BOOST_CHECK_EQUAL(ExpectedNlocs, Nlocs);
   }
 }
 
