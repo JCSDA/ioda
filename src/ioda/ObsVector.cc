@@ -171,6 +171,17 @@ void ObsVector::save(const std::string & name) const {
   obsdb_.putObsVector(name, values_);
 }
 // -----------------------------------------------------------------------------
+unsigned int ObsVector::nobs() const {
+  int nobs = 0;
+  for (size_t jj = 0; jj < values_.size() ; ++jj) {
+    if (values_[jj] != missing_value) {
+      ++nobs;
+    }
+  }
+  obsdb_.comm().allReduceInPlace(nobs, eckit::mpi::sum());
+  return nobs;
+}
+// -----------------------------------------------------------------------------
 void ObsVector::print(std::ostream & os) const {
   double zmin = std::numeric_limits<double>::max();
   double zmax = std::numeric_limits<double>::lowest();
