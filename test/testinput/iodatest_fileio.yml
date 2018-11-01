@@ -93,6 +93,28 @@ ObsTypes:
         tnorm: 1.45496e+06
         tolerance:  1.0e-3
 
+  - ObsType: "Radiance"
+    Input:
+      filename: "Data/smap_L1B_2018041500.nc4"
+      variables:
+         - "latitude"
+         - "longitude"
+         - "time"
+      metadata:
+        nobs: 4
+        nlocs: 187739
+        nrecs: 1
+        nvars: 4
+        norms:
+          - 384.023
+          - 1511.79
+          - 14.8752
+        tolerance: 1.0e-3
+      datetime:
+        dnorm: 1.74767e+08
+        tnorm: 1.45496e+06
+        tolerance:  1.0e-3
+
   - ObsType: "Aod"
     Input:
       filename: "Data/aod_obs_2015081000_m.nc4"
