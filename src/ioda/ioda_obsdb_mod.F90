@@ -103,34 +103,89 @@ end subroutine ioda_obsdb_delete
 
 ! ------------------------------------------------------------------------------
 
-subroutine ioda_obsdb_getlocs(self, locs)
+subroutine ioda_obsdb_getlocs(self, locs, t1, t2)
 use ioda_locs_mod
+use datetime_mod
+use duration_mod
 implicit none
-type(ioda_obsdb), intent(in) :: self
-type(ioda_locs), intent(inout) :: locs
+type(ioda_obsdb), intent(in)    :: self
+type(ioda_locs),  intent(inout) :: locs
+type(datetime),   intent(in)    :: t1, t2
 
 character(len=*),parameter:: myname = "ioda_obsdb_getlocs"
 character(len=255) :: record
 integer :: failed
 type(ioda_obs_var), pointer :: vptr
 integer :: istep
-
-!Setup ioda locations
-call ioda_locs_setup(locs, self%nlocs)
+integer :: ilocs, i
+integer, dimension(:), allocatable :: indx
+real(kind_real), dimension(:), allocatable :: time, lon, lat
+type(duration), dimension(:), allocatable :: dt
+type(datetime), dimension(:), allocatable :: t
+type(datetime) :: reftime
+  
+character(21) :: tstr, tstr2
 
 ! Assume that obs are organized with the first location going with the
 ! first nobs/nlocs obs, the second location going with the next nobs/nlocs
-! obs, etc. 
-istep = self%nobs / self%nlocs 
+! obs, etc.
+istep = self%nobs / self%nlocs
+
+! Local copies pre binning
+allocate(time(self%nlocs), lon(self%nlocs), lat(self%nlocs))
+allocate(indx(self%nlocs))
 
 call ioda_obsdb_getvar(self, "longitude", vptr)
-locs%lon = vptr%vals
+lon = vptr%vals
 
 call ioda_obsdb_getvar(self, "latitude", vptr)
-locs%lat = vptr%vals
+lat = vptr%vals
 
 call ioda_obsdb_getvar(self, "time", vptr)
-locs%time = vptr%vals
+time = vptr%vals
+
+
+allocate(dt(self%nlocs), t(self%nlocs))
+
+!Time coming from file is integer representing distance to time in file name
+!Use hardcoded date for now but needs to come from ObsSpace somehow.
+!AS: not going to fix it for now, will wait for either suggestions or new IODA.
+call datetime_create("2018-04-15T00:00:00Z", reftime)
+
+call datetime_to_string(reftime, tstr)
+
+do i = 1, self%nlocs
+  dt(i) = int(3600*time(i))
+  t(i) = reftime
+  call datetime_update(t(i), dt(i))
+enddo
+
+call datetime_to_string(t1,tstr)
+call datetime_to_string(t2,tstr2)
+
+! Find number of locations in this timeframe
+ilocs = 0
+do i = 1, self%nlocs
+  if (t(i) > t1 .and. t(i) <= t2) then
+    ilocs = ilocs + 1
+    indx(ilocs) = i
+    call datetime_to_string(t(i),tstr)
+  endif
+enddo
+
+deallocate(dt, t)
+
+!Setup ioda locations
+call ioda_locs_setup(locs, ilocs)
+do i = 1, ilocs
+  locs%lon(i)  = lon(indx(i))
+  locs%lat(i)  = lat(indx(i))
+  locs%time(i) = time(indx(i))
+enddo
+locs%indx = indx(1:ilocs)
+
+deallocate(time, lon, lat)
+deallocate(indx)
 
 write(record,*) myname,': allocated/assinged obs-data'
 call fckit_log%info(record)
