@@ -1,0 +1,27 @@
+{
+  "test_framework_runtime_config": "--log_level=test_suite",
+  "window_begin": "2015-08-09T21:00:00Z",
+  "window_end": "2015-08-10T03:00:00Z",
+  "Variables": {
+     "nvars": "1",
+     "variables": ["testvar"]
+  },
+  "Locations": {
+    "lats": [45.0, 40.0],
+    "lons": [0.0, -100.0]
+  },
+  "Observations": {
+    "ObsTypes": [
+ {
+        "ObsType": "Radiance",
+        "ObsData": {
+          "ObsDataIn": {
+            "obsfile":
+  "/Data/smap_L1B_2018041500.nc4"
+          }
+        }
+      }
+      ]
+      }
+
+}
