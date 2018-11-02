@@ -39,8 +39,8 @@ void testConstructor() {
 
   ioda::ObsSpace * Odb;
 
-  int Nobs;
-  int Nlocs;
+  std::size_t Nobs;
+  std::size_t Nlocs;
 
   int ExpectedNobs;
   int ExpectedNlocs;
@@ -72,7 +72,7 @@ void testGetObsVector() {
 
   ioda::ObsSpace * Odb;
 
-  int Nlocs;
+  std::size_t Nlocs;
 
   double Vnorm;
   double Tol;
@@ -116,12 +116,12 @@ void testPutObsVector() {
 
   ioda::ObsSpace * Odb;
 
-  int Nlocs;
+  std::size_t Nlocs;
 
   int VecSum;
   int ExpectedVecSum;
 
-  std::string VarName("DummyVar");
+  std::string VarName("DummyVector");
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
 
@@ -161,6 +161,100 @@ void testPutObsVector() {
 
 // -----------------------------------------------------------------------------
 
+void testGetDb() {
+  typedef ::test::ObsTestsFixture<ioda::IodaTrait> Test_;
+
+  ioda::ObsSpace * Odb;
+
+  std::size_t Nlocs;
+
+  double Vnorm;
+  double Tol;
+
+  std::vector<std::string> VarNames;
+  std::vector<double> ExpectedVnorms;
+
+  for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
+
+    // Set up a pointer to the ObsSpace object for convenience
+    Odb = &(Test_::obspace()[jj].observationspace());
+
+    // Read in the variable names and expected norm values from the configuration
+    const eckit::Configuration & Conf(Odb->config());
+    VarNames = Conf.getStringVector("ObsData.ObsDataIn.TestData.variables");
+    ExpectedVnorms = Conf.getDoubleVector("ObsData.ObsDataIn.TestData.norms");
+    Tol = Conf.getDouble("ObsData.ObsDataIn.TestData.tolerance");
+
+    Nlocs = Odb->nlocs();
+    for (std::size_t i = 0; i < VarNames.size(); ++i) {
+      // Read in the table, calculate the norm and compare with the expected norm.
+      std::vector<double> TestVec(Nlocs);
+      Odb->get_db<double>("MetaData", VarNames[i], Nlocs, TestVec.data());
+
+      // Calculate the norm of the vector
+      Vnorm = 0.0;
+      for (std::size_t j = 0; j < Nlocs; ++j) {
+        Vnorm += pow(TestVec[j], 2.0);
+      }
+      Vnorm = sqrt(Vnorm);
+
+      BOOST_CHECK_CLOSE(Vnorm, ExpectedVnorms[i], Tol);
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+
+void testPutDb() {
+  typedef ::test::ObsTestsFixture<ioda::IodaTrait> Test_;
+
+  ioda::ObsSpace * Odb;
+
+  std::size_t Nlocs;
+
+  int VecSum;
+  int ExpectedVecSum;
+
+  std::string VarName("DummyRow");
+
+  for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
+
+    // Set up a pointer to the ObsSpace object for convenience
+    Odb = &(Test_::obspace()[jj].observationspace());
+
+    // Create a dummy vector to put into the database
+    // Load up the vector with contrived data, put the vector then
+    // get the vector and see if the contrived data made it through.
+    Nlocs = Odb->nlocs();
+    std::vector<double> TestVec(Nlocs);
+
+    ExpectedVecSum = 0;
+    for (std::size_t i = 0; i < Nlocs; ++i) {
+      TestVec[i] = double(i);
+      ExpectedVecSum += i;
+    }
+
+    // Put the vector into the database
+    Odb->put_db<double>("MetaData", VarName, Nlocs, TestVec.data());
+
+    // Wipe out the data in the test vector, then load it from the database.
+    for (std::size_t i = 0; i < Nlocs; ++i) {
+      TestVec[i] = -1.0;
+    }
+    Odb->get_db<double>("MetaData", VarName, Nlocs, TestVec.data());
+
+    // Calculated the sum in the vector and compare to the expected sum
+    VecSum = 0;
+    for (std::size_t i = 0; i < Nlocs; ++i) {
+      VecSum += int(TestVec[i]);
+    }
+
+    BOOST_CHECK_EQUAL(VecSum, ExpectedVecSum);
+  }
+}
+
+// -----------------------------------------------------------------------------
+
 class ObsSpace : public oops::Test {
  public:
   ObsSpace() {}
@@ -174,6 +268,8 @@ class ObsSpace : public oops::Test {
     ts->add(BOOST_TEST_CASE(&testConstructor));
     ts->add(BOOST_TEST_CASE(&testGetObsVector));
     ts->add(BOOST_TEST_CASE(&testPutObsVector));
+    ts->add(BOOST_TEST_CASE(&testGetDb));
+    ts->add(BOOST_TEST_CASE(&testPutDb));
 
     boost::unit_test::framework::master_test_suite().add(ts);
   }
