@@ -22,6 +22,17 @@ Observations:
         metadata:
           nobs:  160607
           nlocs: 160607
+        TestData:
+          variables:
+            - "latitude"
+            - "longitude"
+            - "time"
+          norms:
+            - 16692.109207962403
+            - 89252.131593209342
+            - 0.0
+          tolerance:
+            - 1.0e-12
 
   - ObsType: InsituTemperature
     ObsData:
@@ -30,6 +41,17 @@ Observations:
         metadata:
           nobs:  20032
           nlocs: 20032
+        TestData:
+          variables:
+            - "latitude"
+            - "longitude"
+            - "time"
+          norms:
+            - 2099.3040007141944
+            - 2936.1572889138492
+            - 3935.0783982025059
+          tolerance:
+            - 1.0e-12
 
   - ObsType: SeaSurfaceTemp
     ObsData:
@@ -38,6 +60,17 @@ Observations:
         metadata:
           nobs:  223966
           nlocs: 223966
+        TestData:
+          variables:
+            - "latitude"
+            - "longitude"
+            - "time"
+          norms:
+            - 14497.263538159166
+            - 61789.896501727279
+            - 0.0
+          tolerance:
+            - 1.0e-12
 
   - ObsType: SeaIceFraction
     ObsData:
@@ -46,6 +79,17 @@ Observations:
         metadata:
           nobs:  71558
           nlocs: 71558
+        TestData:
+          variables:
+            - "latitude"
+            - "longitude"
+            - "time"
+          norms:
+            - 19778.589152003486
+            - 57917.351481173151
+            - 0.0
+          tolerance:
+            - 1.0e-12
 
   - ObsType: SeaIceThickness
     ObsData:
@@ -54,3 +98,14 @@ Observations:
         metadata:
           nobs:  8065
           nlocs: 8065
+        TestData:
+          variables:
+            - "latitude"
+            - "longitude"
+            - "time"
+          norms:
+            - 7581.3030036861646
+            - 13972.379294774455
+            - 0.0
+          tolerance:
+            - 1.0e-12

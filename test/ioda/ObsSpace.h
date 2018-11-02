@@ -12,6 +12,7 @@
 #define TEST_INTERFACE_OBSSPACE_H_
 
 #include <string>
+#include <cmath>
 
 #define BOOST_TEST_NO_MAIN
 #define BOOST_TEST_ALTERNATIVE_INIT_API
@@ -36,6 +37,8 @@ namespace test {
 void testConstructor() {
   typedef ::test::ObsTestsFixture<ioda::IodaTrait> Test_;
 
+  ioda::ObsSpace * Odb;
+
   int Nobs;
   int Nlocs;
 
@@ -46,17 +49,63 @@ void testConstructor() {
     BOOST_CHECK_EQUAL(Test_::obspace()[jj].windowStart(), Test_::tbgn());
     BOOST_CHECK_EQUAL(Test_::obspace()[jj].windowEnd(),   Test_::tend());
 
+    Odb = &(Test_::obspace()[jj].observationspace());
+
     // Get the numbers of observations (nobs) and locations (nlocs) from the obspace object
-    Nobs = Test_::obspace()[jj].observationspace().nobs();
-    Nlocs = Test_::obspace()[jj].observationspace().nlocs();
+    Nobs = Odb->nobs();
+    Nlocs = Odb->nlocs();
 
     // Get the expected nobs and nlocs from the obspace object's configuration
-    const eckit::Configuration & Conf(Test_::obspace()[jj].observationspace().config());
+    const eckit::Configuration & Conf(Odb->config());
     ExpectedNobs  = Conf.getInt("ObsData.ObsDataIn.metadata.nobs");
     ExpectedNlocs = Conf.getInt("ObsData.ObsDataIn.metadata.nlocs");
 
-    BOOST_CHECK_EQUAL(ExpectedNobs, Nobs);
-    BOOST_CHECK_EQUAL(ExpectedNlocs, Nlocs);
+    BOOST_CHECK_EQUAL(Nobs, ExpectedNobs);
+    BOOST_CHECK_EQUAL(Nlocs, ExpectedNlocs);
+  }
+}
+
+// -----------------------------------------------------------------------------
+
+void testGetObsVector() {
+  typedef ::test::ObsTestsFixture<ioda::IodaTrait> Test_;
+
+  ioda::ObsSpace * Odb;
+
+  int Nlocs;
+
+  double Vnorm;
+  double Tol;
+
+  std::vector<std::string> VarNames;
+  std::vector<double> ExpectedVnorms;
+
+  for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
+
+    // Set up a pointer to the ObsSpace object for convenience
+    Odb = &(Test_::obspace()[jj].observationspace());
+
+    // Read in the variable names and expected norm values from the configuration
+    const eckit::Configuration & Conf(Odb->config());
+    VarNames = Conf.getStringVector("ObsData.ObsDataIn.TestData.variables");
+    ExpectedVnorms = Conf.getDoubleVector("ObsData.ObsDataIn.TestData.norms");
+    Tol = Conf.getDouble("ObsData.ObsDataIn.TestData.tolerance");
+
+    Nlocs = Odb->nlocs();
+    for (std::size_t i = 0; i < VarNames.size(); ++i) {
+      // Read in the table, calculate the norm and compare with the expected norm.
+      std::vector<double> TestVec(Nlocs);
+      Odb->getObsVector(VarNames[i], TestVec);
+
+      // Calculate the norm of the vector
+      Vnorm = 0.0;
+      for (std::size_t j = 0; j < Nlocs; ++j) {
+        Vnorm += pow(TestVec[j], 2.0);
+      }
+      Vnorm = sqrt(Vnorm);
+
+      BOOST_CHECK_CLOSE(Vnorm, ExpectedVnorms[i], Tol);
+    }
   }
 }
 
@@ -73,6 +122,7 @@ class ObsSpace : public oops::Test {
     boost::unit_test::test_suite * ts = BOOST_TEST_SUITE("ObsSpace");
 
     ts->add(BOOST_TEST_CASE(&testConstructor));
+    ts->add(BOOST_TEST_CASE(&testGetObsVector));
 
     boost::unit_test::framework::master_test_suite().add(ts);
   }
