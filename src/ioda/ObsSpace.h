@@ -38,7 +38,7 @@ class ObsSpace : public oops::ObsSpaceBase {
   ~ObsSpace();
 
   void getObsVector(const std::string &, std::vector<double> &) const;
-  void putObsVector(const std::string &, const std::vector<double> &) const;
+  void putObsVector(const std::string &, const std::vector<double> &);
 
   Locations * locations(const util::DateTime &, const util::DateTime &) const;  // to be removed
 

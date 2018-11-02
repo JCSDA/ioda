@@ -20,7 +20,7 @@
 
 namespace ioda {
 // -----------------------------------------------------------------------------
-ObsVector::ObsVector(const ObsSpace & obsdb) : obsdb_(obsdb), values_(obsdb_.nobs()) {
+ObsVector::ObsVector(ObsSpace & obsdb) : obsdb_(obsdb), values_(obsdb_.nobs()) {
   oops::Log::debug() << "ObsVector constructed with " << values_.size()
                      << " elements." << std::endl;
 }

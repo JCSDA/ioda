@@ -33,7 +33,7 @@ class ObsVector : public util::Printable,
  public:
   static const std::string classname() {return "ioda::ObsVector";}
 
-  explicit ObsVector(const ObsSpace &);
+  explicit ObsVector(ObsSpace &);
   ObsVector(const ObsVector &, const bool copy = true);
   ~ObsVector();
 
@@ -65,7 +65,7 @@ class ObsVector : public util::Printable,
   void print(std::ostream &) const;
 
   /*! \brief Associate ObsSpace object */
-  const ObsSpace & obsdb_;
+  ObsSpace & obsdb_;
 
   /*! \brief Vector data */
   std::vector<double> values_;
