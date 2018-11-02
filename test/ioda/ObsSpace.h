@@ -111,6 +111,56 @@ void testGetObsVector() {
 
 // -----------------------------------------------------------------------------
 
+void testPutObsVector() {
+  typedef ::test::ObsTestsFixture<ioda::IodaTrait> Test_;
+
+  ioda::ObsSpace * Odb;
+
+  int Nlocs;
+
+  int VecSum;
+  int ExpectedVecSum;
+
+  std::string VarName("DummyVar");
+
+  for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
+
+    // Set up a pointer to the ObsSpace object for convenience
+    Odb = &(Test_::obspace()[jj].observationspace());
+
+    // Create a dummy vector to put into the database
+    // Load up the vector with contrived data, put the vector then
+    // get the vector and see if the contrived data made it through.
+    Nlocs = Odb->nlocs();
+    std::vector<double> TestVec(Nlocs);
+
+    ExpectedVecSum = 0;
+    for (std::size_t i = 0; i < Nlocs; ++i) {
+      TestVec[i] = double(i);
+      ExpectedVecSum += i;
+    }
+
+    // Put the vector into the database
+    Odb->putObsVector(VarName, TestVec);
+
+    // Wipe out the data in the test vector, then load it from the database.
+    for (std::size_t i = 0; i < Nlocs; ++i) {
+      TestVec[i] = -1.0;
+    }
+    Odb->getObsVector(VarName, TestVec);
+
+    // Calculated the sum in the vector and compare to the expected sum
+    VecSum = 0;
+    for (std::size_t i = 0; i < Nlocs; ++i) {
+      VecSum += int(TestVec[i]);
+    }
+
+    BOOST_CHECK_EQUAL(VecSum, ExpectedVecSum);
+  }
+}
+
+// -----------------------------------------------------------------------------
+
 class ObsSpace : public oops::Test {
  public:
   ObsSpace() {}
@@ -123,6 +173,7 @@ class ObsSpace : public oops::Test {
 
     ts->add(BOOST_TEST_CASE(&testConstructor));
     ts->add(BOOST_TEST_CASE(&testGetObsVector));
+    ts->add(BOOST_TEST_CASE(&testPutObsVector));
 
     boost::unit_test::framework::master_test_suite().add(ts);
   }
