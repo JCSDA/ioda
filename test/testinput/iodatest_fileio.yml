@@ -102,7 +102,7 @@ ObsTypes:
          - "time"
       metadata:
         nobs: 4
-        nlocs: 187739
+        nlocs: 186638
         nrecs: 1
         nvars: 4
         norms:
