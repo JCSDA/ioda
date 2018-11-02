@@ -51,7 +51,6 @@ void ObsSpace::getObsVector(const std::string & name, std::vector<double> & vec)
 
 void ObsSpace::putObsVector(const std::string & name, const std::vector<double> & vec) {
   ioda_obsdb_put_f90(keyOspace_, name.size(), name.c_str(), vec.size(), vec.data());
-  oops::Log::trace() << "ObsSpace::putObsVector obsname = " << std::endl;
 }
 
 // -----------------------------------------------------------------------------

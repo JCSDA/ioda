@@ -65,7 +65,6 @@ extern "C" {
                                const util::DateTime * const *, const util::DateTime * const *);
   void ioda_obsdb_get_f90(const F90odb &, const int &, const char *, const int &, double[]);
   void ioda_obsdb_put_f90(const F90odb &, const int &, const char *, const int &, const double[]);
-  void ioda_obsdb_getvar_f90(const F90odb &, const int &, const char *, const int &, double[]);
 
 // -----------------------------------------------------------------------------
 

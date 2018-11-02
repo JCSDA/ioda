@@ -382,44 +382,6 @@ end subroutine ioda_obsdb_generate_c
 
 ! ------------------------------------------------------------------------------
 
-subroutine ioda_obsdb_getvar_c(c_key_self, c_name_size, c_name, c_vec_size, c_vec) bind(c,name='ioda_obsdb_getvar_f90')  
-implicit none
-integer(c_int), intent(in) :: c_key_self
-integer(c_int), intent(in) :: c_name_size
-character(kind=c_char,len=1), intent(in) :: c_name(c_name_size+1)
-integer(c_int), intent(in) :: c_vec_size
-real(c_double), intent(out) :: c_vec(c_vec_size)
-
-type(ioda_obsdb), pointer :: self
-real(kind_real), allocatable :: vdata(:)
-
-character(len=c_name_size) :: vname
-integer :: i
-
-call ioda_obsdb_registry%get(c_key_self, self)
-
-! Copy C character array to Fortran string
-do i = 1, c_name_size
-  vname(i:i) = c_name(i)
-enddo
-
-! Quick hack for dealing with inverted observation error values in the netcdf
-! file. Need to revisit this in the future and come up with a better solution.
-allocate(vdata(c_vec_size))
-call ioda_obsdb_get_vec(self, vname, vdata)
-
-if (trim(vname) .eq. "ObsErr") then
-  c_vec = 1.0_kind_real / vdata
-else
-  c_vec = vdata
-endif
-
-deallocate(vdata)
-
-end subroutine ioda_obsdb_getvar_c
-
-! ------------------------------------------------------------------------------
-
 subroutine ioda_obsdb_get_c(c_key_self, c_name_size, c_name, c_vec_size, c_vec) bind(c,name='ioda_obsdb_get_f90')  
 implicit none
 integer(c_int), intent(in) :: c_key_self
