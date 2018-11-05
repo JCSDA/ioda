@@ -120,16 +120,9 @@ MyObsType = trim(config_get_string(c_conf,max_string,"ObsType"))
 
 if (config_element_exists(c_conf,"ObsData.ObsDataIn")) then
   fin  = config_get_string(c_conf,max_string,"ObsData.ObsDataIn.obsfile")
-  if (fin(len_trim(fin)-3:len_trim(fin)) == ".nc4" .or. &
-      fin(len_trim(fin)-2:len_trim(fin)) == ".nc") then
-    input_file_type = 0
-  else if (fin(len_trim(fin)-3:len_trim(fin)) == ".odb") then
-    input_file_type = 1
-  else
-    input_file_type = 2
-  end if
+  input_file_type = ioda_obsdb_get_ftype(fin)
 
-  ! For now, just reading in one variable, will read this from the input file eventually.
+  ! For now, just assimilating one variable, so set nvars to 1 by default.
   !
   ! For radiance, there are 12 channels of data (channels 7, 8 and 14 were not assimilated
   ! into the GSI run for April 15, 2018 00Z). The brightness_temperature obs data is actually
@@ -386,44 +379,6 @@ call ioda_obsdb_generate(self, fvlen, nobs, dist_indx, nlocs, nvars, MyObsType, 
 deallocate(dist_indx)
 
 end subroutine ioda_obsdb_generate_c
-
-! ------------------------------------------------------------------------------
-
-subroutine ioda_obsdb_getvar_c(c_key_self, c_name_size, c_name, c_vec_size, c_vec) bind(c,name='ioda_obsdb_getvar_f90')  
-implicit none
-integer(c_int), intent(in) :: c_key_self
-integer(c_int), intent(in) :: c_name_size
-character(kind=c_char,len=1), intent(in) :: c_name(c_name_size+1)
-integer(c_int), intent(in) :: c_vec_size
-real(c_double), intent(out) :: c_vec(c_vec_size)
-
-type(ioda_obsdb), pointer :: self
-real(kind_real), allocatable :: vdata(:)
-
-character(len=c_name_size) :: vname
-integer :: i
-
-call ioda_obsdb_registry%get(c_key_self, self)
-
-! Copy C character array to Fortran string
-do i = 1, c_name_size
-  vname(i:i) = c_name(i)
-enddo
-
-! Quick hack for dealing with inverted observation error values in the netcdf
-! file. Need to revisit this in the future and come up with a better solution.
-allocate(vdata(c_vec_size))
-call ioda_obsdb_get_vec(self, vname, vdata)
-
-if (trim(vname) .eq. "ObsErr") then
-  c_vec = 1.0_kind_real / vdata
-else
-  c_vec = vdata
-endif
-
-deallocate(vdata)
-
-end subroutine ioda_obsdb_getvar_c
 
 ! ------------------------------------------------------------------------------
 

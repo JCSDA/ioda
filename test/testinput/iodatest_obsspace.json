@@ -16,7 +16,24 @@
         "ObsType": "Aod",
         "ObsData": {
           "ObsDataIn": {
-            "obsfile": "Data/aod_obs_2015081000_m.nc4"
+            "obsfile": "Data/aod_obs_2015081000_m.nc4",
+            "metadata" : {
+               "nobs"  : "1100",
+               "nlocs" : "100"
+             },
+             "TestData" : {
+                "variables" : [
+                   "latitude",
+                   "longitude",
+                   "time"
+                ],
+                "norms" : [
+                   705.16387945407985,
+                   708.31583550296693,
+                   19.71001561616707
+                ],
+                "tolerance" : 1.0e-12
+             }
           }
         }
       },
@@ -24,7 +41,24 @@
         "ObsType": "Radiance",
         "ObsData": {
           "ObsDataIn": {
-            "obsfile": "Data/amsua_obs_n19_2018041500_m.nc4"
+            "obsfile": "Data/amsua_obs_n19_2018041500_m.nc4",
+            "metadata" : {
+               "nobs"  : "1125",
+               "nlocs" : "75"
+             },
+             "TestData" : {
+                "variables" : [
+                   "latitude",
+                   "longitude",
+                   "time"
+                ],
+                "norms" : [
+                   384.02339697102406,
+                   1511.7891494709127,
+                   14.875211647465489
+                ],
+                "tolerance" : 1.0e-12
+             }
           }
         }
       },
@@ -32,7 +66,24 @@
         "ObsType": "Radiosonde",
         "ObsData": {
           "ObsDataIn": {
-            "obsfile": "Data/sondes_obs_2018041500_m.nc4"
+            "obsfile": "Data/sondes_obs_2018041500_m.nc4",
+            "metadata" : {
+               "nobs"  : "1049",
+               "nlocs" : "1049"
+             },
+             "TestData" : {
+                "variables" : [
+                   "latitude",
+                   "longitude",
+                   "time"
+                ],
+                "norms" : [
+                   1550.6192767073974,
+                   213.32314091331665,
+                   24.14030479590506
+                ],
+                "tolerance" : 1.0e-12
+             }
           },
             "ObsDataOut": {
               "obsfile": "testoutput/diagout.nc4"

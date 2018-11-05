@@ -24,6 +24,7 @@ integer, parameter :: max_string=800
 public ioda_obsdb
 public ioda_obsdb_setup
 public ioda_obsdb_delete
+public ioda_obsdb_get_ftype
 public ioda_obsdb_getlocs
 public ioda_obsdb_generate
 public ioda_obsdb_var_to_ovec
@@ -57,7 +58,14 @@ contains
 ! ------------------------------------------------------------------------------
 
 subroutine ioda_obsdb_setup(self, fvlen, nobs, dist_indx, nlocs, nvars, filename, fileout, obstype)
+
+use nc_diag_read_mod, only: nc_diag_read_init
+use nc_diag_read_mod, only: nc_diag_read_close
+use ncdr_vars, only: nc_diag_read_noid_get_var_names
+use ncdr_vars, only: nc_diag_read_ret_var_dims
+
 implicit none
+
 type(ioda_obsdb), intent(inout) :: self
 integer, intent(in) :: fvlen
 integer, intent(in) :: nobs
@@ -67,6 +75,16 @@ integer, intent(in) :: nvars
 character(len=*), intent(in) :: filename
 character(len=*), intent(in) :: fileout
 character(len=*), intent(in) :: obstype
+
+integer :: input_file_type
+integer :: iunit
+character(len=:), allocatable :: var_list(:)
+logical, allocatable :: var_select(:)
+integer :: file_nvars
+integer :: var_list_item_len
+integer :: i
+integer(selected_int_kind(8)), allocatable :: dim_sizes(:)
+type(ioda_obs_var), pointer :: vptr
 
 self%fvlen     = fvlen
 self%nobs      = nobs
@@ -78,6 +96,59 @@ self%filename  = filename
 self%fileout   = fileout
 self%obstype   = obstype
 call self%obsvars%setup()
+
+input_file_type = ioda_obsdb_get_ftype(self%filename)
+select case (input_file_type)
+ case (0)
+  ! We want the new C++ ObsSpace to read in the contents of the input file
+  ! during the constructor. For testing purposes, do that now using the 
+  ! ioda_obsdb_getvar interface. The ioda_obsdb_getvar interface opens the file,
+  ! so at this point construct a list of variable names to read in, then close
+  ! the file, and then read in the variables using ioda_obsdb_getvar.
+  call nc_diag_read_init(self%filename, iunit)
+
+  call nc_diag_read_noid_get_var_names(num_vars=file_nvars, var_name_mlen=var_list_item_len)
+  allocate(character(var_list_item_len)::var_list(file_nvars))
+  call nc_diag_read_noid_get_var_names(var_names=var_list)
+
+  allocate(var_select(file_nvars))
+  do i = 1, file_nvars
+    ! Only read in the 1D (vector) arrays that match the fvlen size
+    dim_sizes = nc_diag_read_ret_var_dims(trim(var_list(i)))
+    var_select(i) = (size(dim_sizes) .eq. 1) .and. (dim_sizes(1) .eq. fvlen)
+    deallocate(dim_sizes)
+  enddo
+
+  call nc_diag_read_close(self%filename)
+
+ case (1)
+
+  file_nvars = 3
+  var_list_item_len = 80
+  allocate(character(var_list_item_len)::var_list(file_nvars))
+  allocate(var_select(file_nvars))
+
+  var_list(1) = "latitude"
+  var_list(2) = "longitude"
+  var_list(3) = "time"
+
+  var_select(1) = .true.
+  var_select(2) = .true.
+  var_select(2) = .true.
+
+ case (2)
+
+endselect
+
+! Read in the selected file variables
+do i = 1, file_nvars
+  if (var_select(i)) then
+    call ioda_obsdb_getvar(self, trim(var_list(i)), vptr)
+  endif
+enddo
+
+deallocate(var_list)
+deallocate(var_select)
 
 end subroutine ioda_obsdb_setup
 
@@ -203,7 +274,7 @@ use mpi, only: mpi_comm_rank, mpi_comm_size, mpi_comm_world, mpi_init, mpi_final
 
 #endif
 
-use netcdf, only: NF90_FLOAT, NF90_DOUBLE
+use netcdf, only: NF90_FLOAT, NF90_DOUBLE, NF90_INT
 use nc_diag_read_mod, only: nc_diag_read_init
 use nc_diag_read_mod, only: nc_diag_read_get_dim
 use nc_diag_read_mod, only: nc_diag_read_check_var
@@ -227,6 +298,8 @@ integer :: ndims
 integer, allocatable :: dimsizes(:)
 real, allocatable :: field1d_sngl(:)
 real, allocatable :: field2d_sngl(:,:)
+integer, allocatable :: field1d_int(:)
+integer, allocatable :: field2d_int(:,:)
 real(kind_real), allocatable :: field1d_dbl(:)
 real(kind_real), allocatable :: field2d_dbl(:,:)
 integer :: input_file_type
@@ -240,15 +313,7 @@ call self%obsvars%get_node(vname, vptr)
 if (.not.associated(vptr)) then
   call self%obsvars%add_node(vname, vptr)
 
-  if (self % filename(len_trim(self % filename)-3:len_trim(self % filename)) == ".nc4" .or. &
-      self % filename(len_trim(self % filename)-2:len_trim(self % filename)) == ".nc") then
-    input_file_type = 0
-  else if (self % filename(len_trim(self % filename)-3:len_trim(self % filename)) == ".odb") then
-    input_file_type = 1
-  else
-    input_file_type = 2
-  end if
-
+  input_file_type = ioda_obsdb_get_ftype(self%filename)
   select case (input_file_type)
     case (0)
 
@@ -292,7 +357,14 @@ if (.not.associated(vptr)) then
         call nc_diag_read_get_var(iunit, vname, field1d_sngl)
         vptr%vals = field1d_sngl(self%dist_indx)
         deallocate(field1d_sngl)
+      elseif (vartype == NF90_INT) then
+        allocate(field1d_int(dimsizes(1)))
+        call nc_diag_read_get_var(iunit, vname, field1d_int)
+        vptr%vals = field1d_int(self%dist_indx)
+        deallocate(field1d_int)
       endif
+
+      deallocate(dimsizes)
 
       call nc_diag_read_close(self%filename)
 
@@ -300,11 +372,11 @@ if (.not.associated(vptr)) then
 
 #ifdef HAVE_ODB_API
       select case (vname)
-        case ("Latitude")
+        case ("latitude")
           call get_vars (self % filename, ["lat"], "entryno = 1", field2d_dbl)
-        case ("Longitude")
+        case ("longitude")
           call get_vars (self % filename, ["lon"], "entryno = 1", field2d_dbl)
-        case ("Time")
+        case ("time")
          call get_vars (self % filename, ["time"], "entryno = 1", field2d_dbl)
       end select
       vptr%nobs = size(field2d_dbl,dim=2)
@@ -391,7 +463,7 @@ character(len=max_string) :: vname
 call ioda_obsdb_setup(self, fvlen, nobs, dist_indx, nlocs, nvars, "", "", obstype)
 
 ! Create variables and generate the values specified by the arguments.
-vname = "Latitude" 
+vname = "latitude" 
 call self%obsvars%get_node(vname, vptr)
 if (.not.associated(vptr)) then
   call self%obsvars%add_node(vname, vptr)
@@ -399,7 +471,7 @@ endif
 vptr%nobs = self%nobs
 vptr%vals = lat
 
-vname = "Longitude" 
+vname = "longitude" 
 call self%obsvars%get_node(vname, vptr)
 if (.not.associated(vptr)) then
   call self%obsvars%add_node(vname, vptr)
@@ -540,5 +612,26 @@ if(status /= nf90_noerr) then
 end if
 
 end subroutine check
+
+! ------------------------------------------------------------------------------
+function ioda_obsdb_get_ftype(fname) result(ftype)
+  implicit none
+
+  character(len=*), intent(in) :: fname
+  integer :: ftype
+
+  ! result goes into ftype
+  !   0 - netcdf
+  !   1 - ODB API
+  !   2 - ODB
+  if (fname(len_trim(fname)-3:len_trim(fname)) == ".nc4" .or. &
+      fname(len_trim(fname)-2:len_trim(fname)) == ".nc") then
+    ftype = 0
+  elseif (fname(len_trim(fname)-3:len_trim(fname)) == ".odb") then
+    ftype = 1
+  else
+    ftype = 2
+  endif
+end function ioda_obsdb_get_ftype
 
 end module ioda_obsdb_mod

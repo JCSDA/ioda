@@ -72,7 +72,7 @@ void obsspace_put_real32_f(ObsSpace & obss, const char * group, const char * vna
 // -----------------------------------------------------------------------------
 void obsspace_put_real64_f(ObsSpace & obss, const char * group, const char * vname,
                            const std::size_t & length, double* vec) {
-  // obss.put_db(std::string(group), std::string(vname), length, vec);
+  obss.put_db(std::string(group), std::string(vname), length, vec);
   ASSERT(length == obss.nlocs());
 }
 // -----------------------------------------------------------------------------
