@@ -23,6 +23,7 @@ type :: ioda_locs
   real(kind_real), allocatable, dimension(:) :: lat     !< latitude
   real(kind_real), allocatable, dimension(:) :: lon     !< longitude
   real(kind_real), allocatable, dimension(:) :: time    !< obs-time
+  integer,         allocatable, dimension(:) :: indx    !< indices of locations in the full [geovals] array
 end type ioda_locs
 
 ! ------------------------------------------------------------------------------
@@ -44,9 +45,13 @@ integer :: n
 
 self%nlocs = nlocs
 allocate(self%lat(nlocs), self%lon(nlocs), self%time(nlocs))
+allocate(self%indx(nlocs))
 self%lat(:) = lats(:)
 self%lon(:) = lons(:)
 self%time(:) = 0.0
+do n = 1, self%nlocs
+  self%indx(n) = n
+enddo
 
 ran_dist = random_distribution(self%nlocs)
 dist_indx = ran_dist%indx
@@ -61,12 +66,16 @@ if (rdist == 1) then
     lonsr(n) =  self%lon(dist_indx(n))
     timer(n) = self%time(dist_indx(n))
   enddo
-  deallocate(self%lat, self%lon, self%time)
+  deallocate(self%lat, self%lon, self%time, self%indx)
   
-  allocate(self%lat(self%nlocs), self%lon(self%nlocs), self%time(self%nlocs))
+  allocate(self%lat(self%nlocs), self%lon(self%nlocs), self%time(self%nlocs), self%indx(self%nlocs))
   self%lat(:) = latsr(:)
   self%lon(:) = lonsr(:)
   self%time(:) = 0.0
+
+  do n = 1, self%nlocs
+    self%indx(n) = n
+  enddo
 
   deallocate(latsr, lonsr, timer)
 
@@ -84,10 +93,11 @@ integer, intent(in)           :: nlocs
 call ioda_locs_delete(self)
 
 self%nlocs = nlocs
-allocate(self%lat(nlocs), self%lon(nlocs), self%time(nlocs))
+allocate(self%lat(nlocs), self%lon(nlocs), self%time(nlocs), self%indx(nlocs))
 self%lat(:) = 0.0
 self%lon(:) = 0.0
 self%time(:) = 0.0
+self%indx(:) = 0
 
 end subroutine ioda_locs_setup
 
@@ -101,6 +111,7 @@ self%nlocs = 0
 if (allocated(self%lat)) deallocate(self%lat)
 if (allocated(self%lon)) deallocate(self%lon)
 if (allocated(self%time)) deallocate(self%time)
+if (allocated(self%indx)) deallocate(self%indx)
 
 end subroutine ioda_locs_delete
 

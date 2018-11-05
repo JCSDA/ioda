@@ -323,7 +323,7 @@ call ioda_locs_registry%init()
 call ioda_locs_registry%add(c_key_locs)
 call ioda_locs_registry%get(c_key_locs,locs)
 
-call ioda_obsdb_getlocs(self, locs)
+call ioda_obsdb_getlocs(self, locs, t1, t2)
 
 end subroutine ioda_obsdb_getlocations_c
 
