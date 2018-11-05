@@ -40,7 +40,7 @@
         "ObsType": "SeaIceFraction",
         "ObsData": {
           "ObsDataIn": {
-            "obsfile": "Data/seaice_obs-2018-04-15.nc4"
+            "obsfile": "Data/icec-2018-04-15.nc"
           }
         }
       }
