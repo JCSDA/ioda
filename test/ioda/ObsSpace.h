@@ -117,9 +117,7 @@ void testPutObsVector() {
   ioda::ObsSpace * Odb;
 
   std::size_t Nlocs;
-
-  int VecSum;
-  int ExpectedVecSum;
+  bool VecMatch;
 
   std::string VarName("DummyVector");
 
@@ -133,29 +131,23 @@ void testPutObsVector() {
     // get the vector and see if the contrived data made it through.
     Nlocs = Odb->nlocs();
     std::vector<double> TestVec(Nlocs);
+    std::vector<double> ExpectedVec(Nlocs);
 
-    ExpectedVecSum = 0;
     for (std::size_t i = 0; i < Nlocs; ++i) {
-      TestVec[i] = double(i);
-      ExpectedVecSum += i;
+      ExpectedVec[i] = double(i);
     }
 
-    // Put the vector into the database
-    Odb->putObsVector(VarName, TestVec);
-
-    // Wipe out the data in the test vector, then load it from the database.
-    for (std::size_t i = 0; i < Nlocs; ++i) {
-      TestVec[i] = -1.0;
-    }
+    // Put the vector into the database. Then read the vector back from the database
+    // and compare to the original
+    Odb->putObsVector(VarName, ExpectedVec);
     Odb->getObsVector(VarName, TestVec);
 
-    // Calculated the sum in the vector and compare to the expected sum
-    VecSum = 0;
+    VecMatch = true;
     for (std::size_t i = 0; i < Nlocs; ++i) {
-      VecSum += int(TestVec[i]);
+      VecMatch = VecMatch && (int(ExpectedVec[i]) == int(TestVec[i]));
     }
 
-    BOOST_CHECK_EQUAL(VecSum, ExpectedVecSum);
+    BOOST_CHECK(VecMatch);
   }
 }
 
@@ -211,9 +203,7 @@ void testPutDb() {
   ioda::ObsSpace * Odb;
 
   std::size_t Nlocs;
-
-  int VecSum;
-  int ExpectedVecSum;
+  bool VecMatch;
 
   std::string VarName("DummyRow");
 
@@ -227,29 +217,23 @@ void testPutDb() {
     // get the vector and see if the contrived data made it through.
     Nlocs = Odb->nlocs();
     std::vector<double> TestVec(Nlocs);
+    std::vector<double> ExpectedVec(Nlocs);
 
-    ExpectedVecSum = 0;
     for (std::size_t i = 0; i < Nlocs; ++i) {
-      TestVec[i] = double(i);
-      ExpectedVecSum += i;
+      ExpectedVec[i] = double(i);
     }
 
-    // Put the vector into the database
-    Odb->put_db<double>("MetaData", VarName, Nlocs, TestVec.data());
-
-    // Wipe out the data in the test vector, then load it from the database.
-    for (std::size_t i = 0; i < Nlocs; ++i) {
-      TestVec[i] = -1.0;
-    }
+    // Put the vector into the database. Then read the vector back from the database
+    // and compare to the original
+    Odb->put_db<double>("MetaData", VarName, Nlocs, ExpectedVec.data());
     Odb->get_db<double>("MetaData", VarName, Nlocs, TestVec.data());
 
-    // Calculated the sum in the vector and compare to the expected sum
-    VecSum = 0;
+    VecMatch = true;
     for (std::size_t i = 0; i < Nlocs; ++i) {
-      VecSum += int(TestVec[i]);
+      VecMatch = VecMatch && (int(ExpectedVec[i]) == int(TestVec[i]));
     }
 
-    BOOST_CHECK_EQUAL(VecSum, ExpectedVecSum);
+    BOOST_CHECK(VecMatch);
   }
 }
 

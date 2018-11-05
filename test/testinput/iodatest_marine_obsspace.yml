@@ -39,17 +39,17 @@ Observations:
       ObsDataIn:
         obsfile: Data/profile_2018-04-15.nc
         metadata:
-          nobs:  20032
-          nlocs: 20032
+          nobs:  918
+          nlocs: 918
         TestData:
           variables:
             - "latitude"
             - "longitude"
             - "time"
           norms:
-            - 2099.3040007141944
-            - 2936.1572889138492
-            - 3935.0783982025059
+            - 732.46544677303257
+            - 3530.8881463212083
+            - 0.0
           tolerance:
             - 1.0e-12
 
@@ -66,8 +66,8 @@ Observations:
             - "longitude"
             - "time"
           norms:
-            - 14497.263538159166
-            - 61789.896501727279
+            - 14497.263539590736
+            - 61789.896508356105
             - 0.0
           tolerance:
             - 1.0e-12
