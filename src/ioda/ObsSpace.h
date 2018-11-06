@@ -30,7 +30,7 @@ namespace ioda {
   class Locations;
   class ObsVector;
 
-/// Wrapper around ObsHelpQG, mostly to hide the factory
+/// Observation Space
 class ObsSpace : public oops::ObsSpaceBase {
  public:
   ObsSpace(const eckit::Configuration &, const util::DateTime &, const util::DateTime &);
@@ -40,14 +40,6 @@ class ObsSpace : public oops::ObsSpaceBase {
   void getObsVector(const std::string &, std::vector<double> &) const;
   void putObsVector(const std::string &, const std::vector<double> &) const;
 
-  Locations * locations(const util::DateTime &, const util::DateTime &) const;  // to be removed
-
-  void generateDistribution(const eckit::Configuration &);
-
-  const std::string & obsname() const {return obsname_;}
-  const util::DateTime & windowStart() const {return winbgn_;}
-  const util::DateTime & windowEnd() const {return winend_;}
-
   int nobs() const;
   int nlocs() const;
 
@@ -56,8 +48,16 @@ class ObsSpace : public oops::ObsSpaceBase {
   void put_db(const std::string &, const std::string &, const std::size_t &, const int[]) const;
   void put_db(const std::string &, const std::string &, const std::size_t &, const double[]) const;
 
+  const std::string & obsname() const {return obsname_;}
+  const util::DateTime & windowStart() const {return winbgn_;}
+  const util::DateTime & windowEnd() const {return winend_;}
   const eckit::mpi::Comm & comm() const {return commMPI_;}
-  void printJo(const ObsVector &, const ObsVector &);
+
+  void generateDistribution(const eckit::Configuration &);
+
+  void printJo(const ObsVector &, const ObsVector &);  // to be removed
+
+  Locations * locations(const util::DateTime &, const util::DateTime &) const;  // to be removed
 
  private:
   void print(std::ostream &) const;
