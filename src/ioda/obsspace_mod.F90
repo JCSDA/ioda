@@ -66,21 +66,22 @@ end function obsspace_get_nlocs
 
 !> Get a variable from the ObsSapce database
 
-subroutine obsspace_get_db_int32(obss, group, vname, length, vect)
+subroutine obsspace_get_db_int32(obss, group, vname, vect)
     implicit none
     type(c_ptr), value, intent(in) :: obss
     character(len=*), intent(in) :: group
     character(len=*), intent(in) :: vname
-    integer(c_int), intent(in) :: length
-    integer(c_int32_t), intent(inout) :: vect(length)
+    integer(c_int32_t), intent(inout) :: vect(:)
 
     character(kind=c_char,len=1), allocatable :: c_group(:), c_vname(:)
+    integer(c_size_t) :: length
 
     !  Translate query from Fortran string to C++ char[].
     call f_c_string(group, c_group)
     call f_c_string(vname, c_vname)
+    length = size(vect)
 
-    call c_obsspace_get_int32(obss, c_group, c_vname, int(length,c_size_t), vect)
+    call c_obsspace_get_int32(obss, c_group, c_vname, length, vect)
 
     deallocate(c_group, c_vname)
 
@@ -91,21 +92,22 @@ end subroutine obsspace_get_db_int32
 
 !> Get a variable from the ObsSapce database
 
-subroutine obsspace_get_db_int64(obss, group, vname, length, vect)
+subroutine obsspace_get_db_int64(obss, group, vname, vect)
     implicit none
     type(c_ptr), value, intent(in) :: obss
     character(len=*), intent(in) :: group
     character(len=*), intent(in) :: vname
-    integer(c_int), intent(in) :: length
-    integer(c_int64_t), intent(inout) :: vect(length)
+    integer(c_int64_t), intent(inout) :: vect(:)
 
     character(kind=c_char,len=1), allocatable :: c_group(:), c_vname(:)
+    integer(c_size_t) :: length
 
     !  Translate query from Fortran string to C++ char[].
     call f_c_string(group, c_group)
     call f_c_string(vname, c_vname)
+    length = size(vect)
 
-    call c_obsspace_get_int64(obss, c_group, c_vname, int(length,c_size_t), vect)
+    call c_obsspace_get_int64(obss, c_group, c_vname, length, vect)
 
     deallocate(c_group, c_vname)
 
@@ -115,21 +117,22 @@ end subroutine obsspace_get_db_int64
 
 !> Get a variable from the ObsSapce database
 
-subroutine obsspace_get_db_real32(obss, group, vname, length, vect)
+subroutine obsspace_get_db_real32(obss, group, vname, vect)
     implicit none
     type(c_ptr), value, intent(in) :: obss
     character(len=*), intent(in) :: group
     character(len=*), intent(in) :: vname
-    integer(c_int), intent(in) :: length
-    real(c_float), intent(inout) :: vect(length)
+    real(c_float), intent(inout) :: vect(:)
 
     character(kind=c_char,len=1), allocatable :: c_group(:), c_vname(:)
+    integer(c_size_t) :: length
 
     !  Translate query from Fortran string to C++ char[].
     call f_c_string(group, c_group)
     call f_c_string(vname, c_vname)
+    length = size(vect)
 
-    call c_obsspace_get_real32(obss, c_group, c_vname, int(length,c_size_t), vect)
+    call c_obsspace_get_real32(obss, c_group, c_vname, length, vect)
 
     deallocate(c_group, c_vname)
 
@@ -139,21 +142,22 @@ end subroutine obsspace_get_db_real32
 
 !> Get a variable from the ObsSapce database
 
-subroutine obsspace_get_db_real64(obss, group, vname, length, vect)
+subroutine obsspace_get_db_real64(obss, group, vname, vect)
     implicit none
     type(c_ptr), value, intent(in) :: obss
     character(len=*), intent(in) :: group
     character(len=*), intent(in) :: vname
-    integer(c_int), intent(in) :: length
-    real(c_double), intent(inout) :: vect(length)
+    real(c_double), intent(inout) :: vect(:)
 
     character(kind=c_char,len=1), allocatable :: c_group(:), c_vname(:)
+    integer(c_size_t) :: length
 
     !  Translate query from Fortran string to C++ char[].
     call f_c_string(group, c_group)
     call f_c_string(vname, c_vname)
+    length = size(vect)
 
-    call c_obsspace_get_real64(obss, c_group, c_vname, int(length,c_size_t), vect)
+    call c_obsspace_get_real64(obss, c_group, c_vname, length, vect)
 
     deallocate(c_group, c_vname)
 
@@ -163,19 +167,20 @@ end subroutine obsspace_get_db_real64
 
 !>  Store a vector in ObsSpace database
 
-subroutine obsspace_put_db_int32(obss, group, vname, length, vect)
+subroutine obsspace_put_db_int32(obss, group, vname, vect)
     implicit none
     type(c_ptr), intent(inout) :: obss
     character(len=*), intent(in) :: group
     character(len=*), intent(in) :: vname
-    integer(c_size_t), intent(in) :: length
-    integer(c_int32_t), intent(in) :: vect(length)
+    integer(c_int32_t), intent(in) :: vect(:)
 
     character(kind=c_char,len=1), allocatable :: c_group(:), c_vname(:)
+    integer(c_size_t) :: length
 
     !  Translate query from Fortran string to C++ char[].
     call f_c_string(group, c_group)
     call f_c_string(vname, c_vname)
+    length = size(vect)
 
     call c_obsspace_put_int32(obss, c_group, c_vname, length, vect)
 
@@ -187,19 +192,20 @@ end subroutine obsspace_put_db_int32
 
 !>  Store a vector in ObsSpace database
 
-subroutine obsspace_put_db_int64(obss, group, vname, length, vect)
+subroutine obsspace_put_db_int64(obss, group, vname, vect)
     implicit none
     type(c_ptr), intent(inout) :: obss
     character(len=*), intent(in) :: group
     character(len=*), intent(in) :: vname
-    integer(c_size_t), intent(in) :: length
-    integer(c_int64_t), intent(in) :: vect(length)
+    integer(c_int64_t), intent(in) :: vect(:)
 
     character(kind=c_char,len=1), allocatable :: c_group(:), c_vname(:)
+    integer(c_size_t) :: length
 
     !  Translate query from Fortran string to C++ char[].
     call f_c_string(group, c_group)
     call f_c_string(vname, c_vname)
+    length = size(vect)
 
     call c_obsspace_put_int64(obss, c_group, c_vname, length, vect)
 
@@ -211,19 +217,20 @@ end subroutine obsspace_put_db_int64
 
 !>  Store a vector in ObsSpace database
 
-subroutine obsspace_put_db_real32(obss, group, vname, length, vect)
+subroutine obsspace_put_db_real32(obss, group, vname, vect)
     implicit none
     type(c_ptr), intent(inout) :: obss
     character(len=*), intent(in) :: group
     character(len=*), intent(in) :: vname
-    integer(c_size_t), intent(in) :: length
-    real(c_float), intent(in) :: vect(length)
+    real(c_float), intent(in) :: vect(:)
 
     character(kind=c_char,len=1), allocatable :: c_group(:), c_vname(:)
+    integer(c_size_t) :: length
 
     !  Translate query from Fortran string to C++ char[].
     call f_c_string(group, c_group)
     call f_c_string(vname, c_vname)
+    length = size(vect)
 
     call c_obsspace_put_real32(obss, c_group, c_vname, length, vect)
 
@@ -235,19 +242,20 @@ end subroutine obsspace_put_db_real32
 
 !>  Store a vector in ObsSpace database
 
-subroutine obsspace_put_db_real64(obss, group, vname, length, vect)
+subroutine obsspace_put_db_real64(obss, group, vname, vect)
     implicit none
     type(c_ptr), intent(inout) :: obss
     character(len=*), intent(in) :: group
     character(len=*), intent(in) :: vname
-    integer(c_size_t), intent(in) :: length
-    real(c_double), intent(in) :: vect(length)
+    real(c_double), intent(in) :: vect(:)
 
     character(kind=c_char,len=1), allocatable :: c_group(:), c_vname(:)
+    integer(c_size_t) :: length
 
     !  Translate query from Fortran string to C++ char[].
     call f_c_string(group, c_group)
     call f_c_string(vname, c_vname)
+    length = size(vect)
 
     call c_obsspace_put_real64(obss, c_group, c_vname, length, vect)
 

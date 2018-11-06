@@ -382,7 +382,38 @@ end subroutine ioda_obsdb_generate_c
 
 ! ------------------------------------------------------------------------------
 
-subroutine ioda_obsdb_get_c(c_key_self, c_name_size, c_name, c_vec_size, c_vec) bind(c,name='ioda_obsdb_get_f90')  
+subroutine ioda_obsdb_geti_c(c_key_self, c_name_size, c_name, c_vec_size, c_vec) bind(c,name='ioda_obsdb_geti_f90')
+implicit none
+integer(c_int), intent(in) :: c_key_self
+integer(c_int), intent(in) :: c_name_size
+character(kind=c_char,len=1), intent(in) :: c_name(c_name_size+1)
+integer(c_int), intent(in) :: c_vec_size
+integer(c_int), intent(out) :: c_vec(c_vec_size)
+
+type(ioda_obsdb), pointer :: self
+real(kind_real), allocatable :: vdata(:)
+
+character(len=c_name_size) :: vname
+integer :: jj
+
+call ioda_obsdb_registry%get(c_key_self, self)
+
+! Copy C character array to Fortran string
+do jj = 1, c_name_size
+  vname(jj:jj) = c_name(jj)
+enddo
+
+allocate(vdata(c_vec_size))
+call ioda_obsdb_get_vec(self, vname, vdata)
+
+c_vec(:) = nint(vdata(:), c_int)
+deallocate(vdata)
+
+end subroutine ioda_obsdb_geti_c
+
+! ------------------------------------------------------------------------------
+
+subroutine ioda_obsdb_getd_c(c_key_self, c_name_size, c_name, c_vec_size, c_vec) bind(c,name='ioda_obsdb_getd_f90')
 implicit none
 integer(c_int), intent(in) :: c_key_self
 integer(c_int), intent(in) :: c_name_size
@@ -416,11 +447,41 @@ endif
 
 deallocate(vdata)
 
-end subroutine ioda_obsdb_get_c
+end subroutine ioda_obsdb_getd_c
 
 ! ------------------------------------------------------------------------------
 
-subroutine ioda_obsdb_put_c(c_key_self, c_name_size, c_name, c_vec_size, c_vec) bind(c,name='ioda_obsdb_put_f90')
+subroutine ioda_obsdb_puti_c(c_key_self, c_name_size, c_name, c_vec_size, c_vec) bind(c,name='ioda_obsdb_puti_f90')
+implicit none
+integer(c_int), intent(in) :: c_key_self
+integer(c_int), intent(in) :: c_name_size
+character(kind=c_char,len=1), intent(in) :: c_name(c_name_size+1)
+integer(c_int), intent(in) :: c_vec_size
+integer(c_int), intent(in) :: c_vec(c_vec_size)
+
+type(ioda_obsdb), pointer :: self
+real(kind_real), allocatable :: vdata(:)
+
+character(len=c_name_size) :: vname
+integer :: jj
+
+call ioda_obsdb_registry%get(c_key_self, self)
+
+! Copy C character array to Fortran string
+do jj = 1, c_name_size
+  vname(jj:jj) = c_name(jj)
+enddo
+
+allocate(vdata(c_vec_size))
+vdata(:) = c_vec(:)
+call ioda_obsdb_put_vec(self, vname, vdata)
+deallocate(vdata)
+
+end subroutine ioda_obsdb_puti_c
+
+! ------------------------------------------------------------------------------
+
+subroutine ioda_obsdb_putd_c(c_key_self, c_name_size, c_name, c_vec_size, c_vec) bind(c,name='ioda_obsdb_putd_f90')
 implicit none
 integer(c_int), intent(in) :: c_key_self
 integer(c_int), intent(in) :: c_name_size
@@ -442,7 +503,7 @@ enddo
 
 call ioda_obsdb_put_vec(self, vname, c_vec)
 
-end subroutine ioda_obsdb_put_c
+end subroutine ioda_obsdb_putd_c
 
 ! ------------------------------------------------------------------------------
 

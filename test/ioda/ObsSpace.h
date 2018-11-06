@@ -181,7 +181,7 @@ void testGetDb() {
     for (std::size_t i = 0; i < VarNames.size(); ++i) {
       // Read in the table, calculate the norm and compare with the expected norm.
       std::vector<double> TestVec(Nlocs);
-      Odb->get_db<double>("MetaData", VarNames[i], Nlocs, TestVec.data());
+      Odb->get_db("MetaData", VarNames[i], Nlocs, TestVec.data());
 
       // Calculate the norm of the vector
       Vnorm = 0.0;
@@ -225,8 +225,8 @@ void testPutDb() {
 
     // Put the vector into the database. Then read the vector back from the database
     // and compare to the original
-    Odb->put_db<double>("MetaData", VarName, Nlocs, ExpectedVec.data());
-    Odb->get_db<double>("MetaData", VarName, Nlocs, TestVec.data());
+    Odb->put_db("MetaData", VarName, Nlocs, ExpectedVec.data());
+    Odb->get_db("MetaData", VarName, Nlocs, TestVec.data());
 
     VecMatch = true;
     for (std::size_t i = 0; i < Nlocs; ++i) {
