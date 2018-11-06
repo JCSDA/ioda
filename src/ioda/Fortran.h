@@ -63,8 +63,10 @@ extern "C" {
                                    const util::DateTime * const *, F90locs &);
   void ioda_obsdb_generate_f90(const F90odb &, const eckit::Configuration * const *,
                                const util::DateTime * const *, const util::DateTime * const *);
-  void ioda_obsdb_get_f90(const F90odb &, const int &, const char *, const int &, double[]);
-  void ioda_obsdb_put_f90(const F90odb &, const int &, const char *, const int &, const double[]);
+  void ioda_obsdb_geti_f90(const F90odb &, const int &, const char *, const int &, int32_t[]);
+  void ioda_obsdb_getd_f90(const F90odb &, const int &, const char *, const int &, double[]);
+  void ioda_obsdb_puti_f90(const F90odb &, const int &, const char *, const int &, const int32_t[]);
+  void ioda_obsdb_putd_f90(const F90odb &, const int &, const char *, const int &, const double[]);
 
 // -----------------------------------------------------------------------------
 

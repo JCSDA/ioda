@@ -51,17 +51,10 @@ class ObsSpace : public oops::ObsSpaceBase {
   int nobs() const;
   int nlocs() const;
 
-  template <typename T>
-  void get_db(const std::string & group, const std::string & name,
-              const size_t & vsize, T* vdata) const {
-    ioda_obsdb_get_f90(keyOspace_, name.size(), name.c_str(), static_cast<int>(vsize), vdata);
-  }
-
-  template <typename T>
-  void put_db(const std::string & group, const std::string & name,
-              const size_t & vsize, T* vdata) const {
-    ioda_obsdb_put_f90(keyOspace_, name.size(), name.c_str(), static_cast<int>(vsize), vdata);
-  }
+  void get_db(const std::string &, const std::string &, const std::size_t &, int[]) const;
+  void get_db(const std::string &, const std::string &, const std::size_t &, double[]) const;
+  void put_db(const std::string &, const std::string &, const std::size_t &, const int[]) const;
+  void put_db(const std::string &, const std::string &, const std::size_t &, const double[]) const;
 
   const eckit::mpi::Comm & comm() const {return commMPI_;}
   void printJo(const ObsVector &, const ObsVector &);
