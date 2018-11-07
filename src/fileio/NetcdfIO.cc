@@ -320,7 +320,7 @@ void NetcdfIO::ReadDateTime(int* VarDate, int* VarTime) {
   // Look for "time" and "Obs_Time" for the time variable.
   if (nc_inq_varid(ncid_, "time", &nc_varid_) != NC_NOERR) {
     ErrorMsg = "NetcdfIO::ReadDateTime: Unable to find time variable: time OR Obs_Time";
-    CheckNcCall(nc_inq_varid(ncid_, "Obs_Time", &nc_varid_), ErrorMsg);
+    CheckNcCall(nc_inq_varid(ncid_, "time@MetaData", &nc_varid_), ErrorMsg);
   }
 
   int dimid_;
