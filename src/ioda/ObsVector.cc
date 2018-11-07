@@ -164,11 +164,11 @@ double ObsVector::rms() const {
 }
 // -----------------------------------------------------------------------------
 void ObsVector::read(const std::string & name) {
-  obsdb_.getObsVector(name, values_);
+  //obsdb_.getObsVector(name, values_);
 }
 // -----------------------------------------------------------------------------
 void ObsVector::save(const std::string & name) const {
-  obsdb_.putObsVector(name, values_);
+  //obsdb_.putObsVector(name, values_);
 }
 // -----------------------------------------------------------------------------
 unsigned int ObsVector::nobs() const {

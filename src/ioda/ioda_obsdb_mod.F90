@@ -19,7 +19,7 @@ use odb_helper_mod, only: &
 
 implicit none
 private
-integer, parameter :: max_string=800
+integer, parameter :: max_string=512
 
 public ioda_obsdb
 public ioda_obsdb_setup
@@ -42,12 +42,12 @@ type :: ioda_obsdb
   integer, allocatable :: dist_indx(:) !< indices to select elements from input file vectors
 
   character(len=max_string) :: obstype
-
   character(len=max_string) :: filename
-
   character(len=max_string) :: fileout
+  character(len=max_string), allocatable :: assim_vars(:)
 
   type(ioda_obs_variables) :: obsvars  !< observation variables
+
 #ifdef HAVE_ODB
   real(kind=c_double), allocatable :: odb_data(:,:)
 #endif
