@@ -53,6 +53,8 @@ class ObsSpace : public oops::ObsSpaceBase {
   const util::DateTime & windowEnd() const {return winend_;}
   const eckit::mpi::Comm & comm() const {return commMPI_;}
 
+  static double missingValue() {return missingvalue_;}
+
   void generateDistribution(const eckit::Configuration &);
 
   void printJo(const ObsVector &, const ObsVector &);  // to be removed
@@ -62,6 +64,7 @@ class ObsSpace : public oops::ObsSpaceBase {
  private:
   void print(std::ostream &) const;
 
+  static const double missingvalue_;
   ObsSpace & operator= (const ObsSpace &);
   std::string obsname_;
   const util::DateTime winbgn_;

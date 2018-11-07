@@ -21,6 +21,8 @@
 
 namespace ioda {
 // -----------------------------------------------------------------------------
+const double ObsSpace::missingvalue_ = -9.9999e+299;
+// -----------------------------------------------------------------------------
 
 ObsSpace::ObsSpace(const eckit::Configuration & config,
                    const util::DateTime & bgn, const util::DateTime & end)
