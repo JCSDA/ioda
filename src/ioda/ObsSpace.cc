@@ -32,7 +32,7 @@ ObsSpace::ObsSpace(const eckit::Configuration & config,
 
   const eckit::Configuration * configc = &config;
   obsname_ = config.getString("ObsType");
-  ioda_obsdb_setup_f90(keyOspace_, &configc);
+  ioda_obsdb_setup_f90(keyOspace_, &configc, missingvalue_);
 
   oops::Log::trace() << "ioda::ObsSpace contructed name = " << obsname_ << std::endl;
 }
@@ -122,7 +122,7 @@ void ObsSpace::generateDistribution(const eckit::Configuration & conf) {
 
   const util::DateTime * p1 = &winbgn_;
   const util::DateTime * p2 = &winend_;
-  ioda_obsdb_generate_f90(keyOspace_, &configc, &p1, &p2);
+  ioda_obsdb_generate_f90(keyOspace_, &configc, &p1, &p2, missingvalue_);
 }
 
 // -----------------------------------------------------------------------------
