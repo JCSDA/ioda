@@ -24,6 +24,11 @@ integer(kind=c_int) function c_obsspace_get_nlocs(dom) bind(C,name='obsspace_get
   type(c_ptr), value :: dom
 end function c_obsspace_get_nlocs
 
+real(kind=c_double) function c_obspace_missing_value() bind(C,name='obspace_missing_value_f')
+  use, intrinsic :: iso_c_binding
+  implicit none
+end function c_obspace_missing_value
+
 !-------------------------------------------------------------------------------
 ! get data from ObsSpace
 

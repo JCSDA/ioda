@@ -19,6 +19,7 @@ public obsspace_get_nobs
 public obsspace_get_nlocs
 public obsspace_get_db
 public obsspace_put_db
+public obspace_missing_value
 
 #include "obsspace_interface.f"
 
@@ -45,10 +46,10 @@ contains
 !>  Return the number of observations
 
 integer function obsspace_get_nobs(c_dom)
-    implicit none
-    type(c_ptr), intent(in) :: c_dom
+  implicit none
+  type(c_ptr), intent(in) :: c_dom
 
-    obsspace_get_nobs = c_obsspace_get_nobs(c_dom)
+  obsspace_get_nobs = c_obsspace_get_nobs(c_dom)
 end function obsspace_get_nobs
 
 !-------------------------------------------------------------------------------
@@ -61,6 +62,15 @@ integer function obsspace_get_nlocs(c_dom)
 
   obsspace_get_nlocs = c_obsspace_get_nlocs(c_dom)
 end function obsspace_get_nlocs
+
+!-------------------------------------------------------------------------------
+
+!>  Return the missing value indicator
+
+real(c_double) function obspace_missing_value()
+  implicit none
+  obspace_missing_value = c_obspace_missing_value()
+end function obspace_missing_value
 
 !-------------------------------------------------------------------------------
 
