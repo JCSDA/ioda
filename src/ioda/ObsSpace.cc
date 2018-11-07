@@ -56,22 +56,46 @@ void ObsSpace::putObsVector(const std::string & name, const std::vector<double> 
 // -----------------------------------------------------------------------------
 void ObsSpace::get_db(const std::string & group, const std::string & name,
                       const std::size_t & vsize, int vdata[]) const {
-  ioda_obsdb_geti_f90(keyOspace_, name.size(), name.c_str(), static_cast<int>(vsize), vdata);
+  std::string db_name;
+  if (group.size() == 0) {
+    db_name = name;
+  } else {
+    db_name = name + "@" + group;
+  }
+  ioda_obsdb_geti_f90(keyOspace_, db_name.size(), db_name.c_str(), static_cast<int>(vsize), vdata);
 }
 // -----------------------------------------------------------------------------
 void ObsSpace::get_db(const std::string & group, const std::string & name,
                       const std::size_t & vsize, double vdata[]) const {
-  ioda_obsdb_getd_f90(keyOspace_, name.size(), name.c_str(), static_cast<int>(vsize), vdata);
+  std::string db_name;
+  if (group.size() == 0) {
+    db_name = name;
+  } else {
+    db_name = name + "@" + group;
+  }
+  ioda_obsdb_getd_f90(keyOspace_, db_name.size(), db_name.c_str(), static_cast<int>(vsize), vdata);
 }
 // -----------------------------------------------------------------------------
 void ObsSpace::put_db(const std::string & group, const std::string & name,
                       const std::size_t & vsize, const int vdata[]) const {
-  ioda_obsdb_puti_f90(keyOspace_, name.size(), name.c_str(), static_cast<int>(vsize), vdata);
+  std::string db_name;
+  if (group.size() == 0) {
+    db_name = name;
+  } else {
+    db_name = name + "@" + group;
+  }
+  ioda_obsdb_puti_f90(keyOspace_, db_name.size(), db_name.c_str(), static_cast<int>(vsize), vdata);
 }
 // -----------------------------------------------------------------------------
 void ObsSpace::put_db(const std::string & group, const std::string & name,
                       const std::size_t & vsize, const double vdata[]) const {
-  ioda_obsdb_putd_f90(keyOspace_, name.size(), name.c_str(), static_cast<int>(vsize), vdata);
+  std::string db_name;
+  if (group.size() == 0) {
+    db_name = name;
+  } else {
+    db_name = name + "@" + group;
+  }
+  ioda_obsdb_putd_f90(keyOspace_, db_name.size(), db_name.c_str(), static_cast<int>(vsize), vdata);
 }
 // -----------------------------------------------------------------------------
 
