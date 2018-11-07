@@ -57,6 +57,9 @@ class ObsVector : public util::Printable,
   const double & toFortran() const {return values_[0];}
   double & toFortran() {return values_[0];}
 
+  std::vector<std::string> varnames() { return varnames_; }
+  std::size_t nvars() { return nvars_; }
+
 // I/O
   void read(const std::string &);
   void save(const std::string &) const;
@@ -67,11 +70,16 @@ class ObsVector : public util::Printable,
   /*! \brief Associate ObsSpace object */
   const ObsSpace & obsdb_;
 
-  /*! \brief Variable names constituting an Obs Vector */
+  /*! \brief Number of variables */
+  std::size_t nvars_;
+
+  /*! \brief Variable names */
   std::vector<std::string> varnames_;
 
   /*! \brief Vector data */
   std::vector<double> values_;
+
+  /*! \brief Missing data mark */
   const double missing_;
 };
 // -----------------------------------------------------------------------------

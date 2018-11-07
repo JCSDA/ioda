@@ -37,8 +37,8 @@ class ObsSpace : public oops::ObsSpaceBase {
   ObsSpace(const ObsSpace &);
   ~ObsSpace();
 
-  int nobs() const;
-  int nlocs() const;
+  std::size_t nobs() const;
+  std::size_t nlocs() const;
 
   void get_db(const std::string &, const std::string &, const std::size_t &, int[]) const;
   void get_db(const std::string &, const std::string &, const std::size_t &, double[]) const;

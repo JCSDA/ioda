@@ -21,6 +21,7 @@
 
 #include <boost/scoped_ptr.hpp>
 
+#include "eckit/config/LocalConfiguration.h"
 #include "ioda/IodaTrait.h"
 #include "ioda/ObsSpace.h"
 #include "ioda/ObsVector.h"
@@ -90,6 +91,64 @@ void testNotZero() {
 
 // -----------------------------------------------------------------------------
 
+void testRead() {
+  typedef ::test::ObsTestsFixture<ioda::IodaTrait>  Test_;
+  typedef ioda::ObsVector  ObsVector_;
+
+  ioda::ObsSpace * Odb;
+  double Rms;
+  double ExpectedRms;
+  double Tol;
+
+  for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
+    Odb = &(Test_::obspace()[jj].observationspace());
+    boost::scoped_ptr<ObsVector_> ov(new ObsVector_(*Odb));
+
+    // Grab the expected RMS value and tolerance from the obsdb_ configuration.
+    const eckit::Configuration & Conf(Odb->config());
+    ExpectedRms = Conf.getDouble("ObsData.ObsDataIn.rms_equiv");
+    Tol = Conf.getDouble("ObsData.ObsDataIn.tolerance");
+
+    // Read in a vector and check contents with norm function.
+    ov->read("ObsValue");
+    Rms = ov->rms();
+    
+    BOOST_CHECK_CLOSE(Rms, ExpectedRms, Tol);
+  }
+}
+
+// -----------------------------------------------------------------------------
+
+void testSave() {
+  typedef ::test::ObsTestsFixture<ioda::IodaTrait>  Test_;
+  typedef ioda::ObsVector  ObsVector_;
+
+  ioda::ObsSpace * Odb;
+  double Rms;
+  double ExpectedRms;
+
+  for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
+    Odb = &(Test_::obspace()[jj].observationspace());
+    boost::scoped_ptr<ObsVector_> ov_orig(new ObsVector_(*Odb));
+
+    // Read in a vector and save the rms value. Then write the vector into a
+    // test group, read it out of the test group and compare the rms of the
+    // vector read out of the test group with that of the original.
+    ov_orig->read("ObsValue");
+    ExpectedRms = ov_orig->rms();
+    ov_orig->save("ObsTestValue");
+
+    boost::scoped_ptr<ObsVector_> ov_test(new ObsVector_(*ov_orig));
+    ov_test->zero();
+    ov_test->read("ObsTestValue");
+    Rms = ov_test->rms();
+    
+    BOOST_CHECK_CLOSE(Rms, ExpectedRms, 1.0e-12);
+  }
+}
+
+// -----------------------------------------------------------------------------
+
 class ObsVector : public oops::Test {
  public:
   ObsVector() {}
@@ -103,6 +162,8 @@ class ObsVector : public oops::Test {
     ts->add(BOOST_TEST_CASE(&testConstructor));
     ts->add(BOOST_TEST_CASE(&testCopyConstructor));
     ts->add(BOOST_TEST_CASE(&testNotZero));
+    ts->add(BOOST_TEST_CASE(&testRead));
+    ts->add(BOOST_TEST_CASE(&testSave));
 
     boost::unit_test::framework::master_test_suite().add(ts);
   }
