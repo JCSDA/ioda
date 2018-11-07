@@ -22,6 +22,10 @@ int obsspace_get_nlocs_f(const ObsSpace & obss) {
   return obss.nlocs();
 }
 // -----------------------------------------------------------------------------
+double obspace_missing_value_f() {
+  return ObsSpace::missingValue();
+}
+// -----------------------------------------------------------------------------
 void obsspace_get_int32_f(const ObsSpace & obss, const char * group, const char * vname,
                           const std::size_t & length, int32_t* vec) {
   ASSERT(length >= obss.nlocs());
