@@ -11,6 +11,7 @@
 #include <limits>
 #include <random>
 
+#include "eckit/config/LocalConfiguration.h"
 #include "eckit/mpi/Comm.h"
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/Logger.h"
@@ -20,15 +21,29 @@
 namespace ioda {
 // -----------------------------------------------------------------------------
 ObsVector::ObsVector(const ObsSpace & obsdb)
-  : obsdb_(obsdb), values_(obsdb_.nobs()), missing_(ObsSpace::missingValue()) {
-  oops::Log::debug() << "ObsVector constructed with " << values_.size()
+  : obsdb_(obsdb), missing_(ObsSpace::missingValue()) {
+  // For now, get the variable names from the ObsSpace configuration
+  const eckit::Configuration & OdbConf(obsdb_.config());
+  oops::Log::debug() << "ObsVector: Obsdb configuration: " << OdbConf << std::endl;
+  varnames_ = OdbConf.getStringVector("ObsData.ObsDataIn.variables");
+  nvars_ = varnames_.size();
+
+  values_.resize(obsdb_.nlocs() * nvars_);
+  oops::Log::debug() << "ObsVector constructed with " << nvars_
+                     << " variables resulting in " << values_.size()
                      << " elements." << std::endl;
 }
 // -----------------------------------------------------------------------------
 ObsVector::ObsVector(const ObsVector & other, const bool copy)
-  : obsdb_(other.obsdb_), values_(obsdb_.nobs()), missing_(other.missing_) {
-  oops::Log::debug() << "ObsVector copy constructed with " << values_.size()
+  : obsdb_(other.obsdb_), missing_(other.missing_) {
+  varnames_ = other.varnames_;
+  nvars_ = varnames_.size();
+
+  values_.resize(obsdb_.nlocs() * nvars_);
+  oops::Log::debug() << "ObsVector constructed with " << nvars_
+                     << " variables resulting in " << values_.size()
                      << " elements." << std::endl;
+
   if (copy) values_ = other.values_;
 }
 // -----------------------------------------------------------------------------
@@ -164,11 +179,44 @@ double ObsVector::rms() const {
 }
 // -----------------------------------------------------------------------------
 void ObsVector::read(const std::string & name) {
-  // obsdb_.getObsVector(name, values_);
+  oops::Log::trace() << "ObsVector::read, name = " <<  name << std::endl;
+
+  // Read in the variables stored in varnames_ from the group given by "name".
+  //
+  // We want to construct the vector in the order of all variable values for the
+  // first location, then all variable values for the second location, etc. This
+  // means that a single variable gets its values spread out across the vector
+  // in intervals the size of nvars_, and that the starting point for each variable
+  // in the vector is given by the index of the variable name in varnames_.
+  std::size_t Nlocs = obsdb_.nlocs();
+  std::size_t ivec;
+  for (std::size_t i = 0; i < nvars_; ++i) {
+    std::vector<double> TmpVar(Nlocs);
+    obsdb_.get_db(name, varnames_[i], Nlocs, TmpVar.data());
+
+    for (std::size_t j = 0; j < TmpVar.size(); ++j) {
+      ivec = i + (j * nvars_);
+      values_[ivec] = TmpVar[j];
+    }
+  }
 }
 // -----------------------------------------------------------------------------
 void ObsVector::save(const std::string & name) const {
-  // obsdb_.putObsVector(name, values_);
+  oops::Log::trace() << "ObsVector::save, name = " <<  name << std::endl;
+
+  // As noted in the read method, the order is all variables at the first location,
+  // then all variables at the next location, etc.
+  std::size_t Nlocs = obsdb_.nlocs();
+  std::size_t ivec;
+  for (std::size_t i = 0; i < nvars_; ++i) {
+    std::vector<double> TmpVar(Nlocs);
+    for (std::size_t j = 0; j < TmpVar.size(); ++j) {
+      ivec = i + (j * nvars_);
+      TmpVar[j] = values_[ivec];
+    }
+
+    obsdb_.put_db(name, varnames_[i], Nlocs, TmpVar.data());
+  }
 }
 // -----------------------------------------------------------------------------
 unsigned int ObsVector::nobs() const {

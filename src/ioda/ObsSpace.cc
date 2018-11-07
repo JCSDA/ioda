@@ -100,7 +100,7 @@ Locations * ObsSpace::locations(const util::DateTime & t1, const util::DateTime 
 
 // -----------------------------------------------------------------------------
 
-int ObsSpace::nobs() const {
+std::size_t ObsSpace::nobs() const {
   int n;
   ioda_obsdb_nobs_f90(keyOspace_, n);
 
@@ -109,7 +109,7 @@ int ObsSpace::nobs() const {
 
 // -----------------------------------------------------------------------------
 
-int ObsSpace::nlocs() const {
+std::size_t ObsSpace::nlocs() const {
   int n;
   ioda_obsdb_nlocs_f90(keyOspace_, n);
   return n;
