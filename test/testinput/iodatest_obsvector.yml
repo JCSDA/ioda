@@ -1,0 +1,25 @@
+---
+test_framework_runtime_config: "--log_level=test_suite"
+window_begin: '2015-08-09T21:00:00Z'
+window_end: '2015-08-10T03:00:00Z'
+Variables:
+  nvars: '1'
+  variables:
+  - testvar
+Locations:
+  lats:
+  - 45
+  - 40
+  lons:
+  - 0
+  - -100
+Observations:
+  ObsTypes:
+  - ObsType: Radiosonde
+    ObsData:
+      ObsDataIn:
+        obsfile: Data/sondes_obs_2018041500_m.nc4
+        variables:
+          - air_temperature
+          - specific_humidity
+

@@ -9,6 +9,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_odb.json
   testinput/iodatest_odb1.json
   testinput/iodatest_obsspace.json
+  testinput/iodatest_obsvector.yml
   testinput/iodatest_fileio.yml
   testinput/iodatest_marine_fileio.yml
   testinput/iodatest_marine_obsspace.yml  
@@ -73,10 +74,16 @@ ecbuild_add_test( TARGET test_ioda_observationspace
                   ARGS "testinput/iodatest.yml"
                   LIBS    ioda )
 
-ecbuild_add_test( TARGET test_ioda_obsvector
+ecbuild_add_test( TARGET test_ioda_oops_obsvector
                   BOOST
                   SOURCES mains/TestObsVector.cc
                   ARGS "testinput/iodatest.yml"
+                  LIBS    ioda )
+
+ecbuild_add_test( TARGET test_ioda_obsvector
+                  BOOST
+                  SOURCES mains/TestIodaObsVector.cc
+                  ARGS "testinput/iodatest_obsvector.yml"
                   LIBS    ioda )
 
 ecbuild_add_test( TARGET test_ioda_obsspace

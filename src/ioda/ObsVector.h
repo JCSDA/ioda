@@ -67,6 +67,9 @@ class ObsVector : public util::Printable,
   /*! \brief Associate ObsSpace object */
   const ObsSpace & obsdb_;
 
+  /*! \brief Variable names constituting an Obs Vector */
+  std::vector<std::string> varnames_;
+
   /*! \brief Vector data */
   std::vector<double> values_;
   const double missing_;
