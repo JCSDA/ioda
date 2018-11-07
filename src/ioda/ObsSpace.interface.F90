@@ -152,24 +152,6 @@ if (config_element_exists(c_conf,"ObsData.ObsDataIn")) then
       dist_indx = ran_dist%indx
       nobs = nvars * nlocs
 
-      ! Read in a variable and check for missing values. Adjust the nobs, nlocs values
-      ! and dist_index accordingly.
-      if ((trim(MyObsType) .eq. "Radiosonde") .or. &
-          (trim(MyObsType) .eq. "Aircraft")) then
-        call ioda_deselect_missing_values(iunit, "air_temperature", dist_indx, miss_indx)
-
-        ! Reallocate dist_indx and copy miss_indx in. This should skip over missing values
-        ! from the file.
-        nlocs = size(miss_indx)
-        deallocate(dist_indx)
-        allocate(dist_indx(nlocs))
-        dist_indx = miss_indx
-
-        nobs = nvars * nlocs
-
-        deallocate(miss_indx)
-      endif
-
       call nc_diag_read_close(fin)
 
     case (1)
