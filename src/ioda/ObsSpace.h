@@ -37,9 +37,6 @@ class ObsSpace : public oops::ObsSpaceBase {
   ObsSpace(const ObsSpace &);
   ~ObsSpace();
 
-  void getObsVector(const std::string &, std::vector<double> &) const;
-  void putObsVector(const std::string &, const std::vector<double> &) const;
-
   int nobs() const;
   int nlocs() const;
 
