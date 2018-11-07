@@ -44,7 +44,8 @@ type :: ioda_obsdb
   character(len=max_string) :: obstype
   character(len=max_string) :: filename
   character(len=max_string) :: fileout
-  character(len=max_string), allocatable :: assim_vars(:)
+
+  real(c_double) :: missing_value
 
   type(ioda_obs_variables) :: obsvars  !< observation variables
 
@@ -57,7 +58,7 @@ contains
 
 ! ------------------------------------------------------------------------------
 
-subroutine ioda_obsdb_setup(self, fvlen, nobs, dist_indx, nlocs, nvars, filename, fileout, obstype)
+subroutine ioda_obsdb_setup(self, fvlen, nobs, dist_indx, nlocs, nvars, filename, fileout, obstype, missing_value)
 
 use nc_diag_read_mod, only: nc_diag_read_init
 use nc_diag_read_mod, only: nc_diag_read_close
@@ -75,6 +76,7 @@ integer, intent(in) :: nvars
 character(len=*), intent(in) :: filename
 character(len=*), intent(in) :: fileout
 character(len=*), intent(in) :: obstype
+real(c_double), intent(in)   :: missing_value
 
 integer :: input_file_type
 integer :: iunit
@@ -86,15 +88,16 @@ integer :: i
 integer(selected_int_kind(8)), allocatable :: dim_sizes(:)
 type(ioda_obs_var), pointer :: vptr
 
-self%fvlen     = fvlen
-self%nobs      = nobs
+self%fvlen         = fvlen
+self%nobs          = nobs
 allocate(self%dist_indx(nobs))
-self%dist_indx = dist_indx
-self%nlocs     = nlocs
-self%nvars     = nvars
-self%filename  = filename
-self%fileout   = fileout
-self%obstype   = obstype
+self%dist_indx     = dist_indx
+self%nlocs         = nlocs
+self%nvars         = nvars
+self%filename      = filename
+self%fileout       = fileout
+self%obstype       = obstype
+self%missing_value = missing_value
 call self%obsvars%setup()
 
 input_file_type = ioda_obsdb_get_ftype(self%filename)
@@ -391,6 +394,12 @@ if (.not.associated(vptr)) then
 
   end select
 
+  ! Check for missing values and replace with the ObsSpace missing value mark
+  do i = 1, size(vptr%vals)
+    if (vptr%vals(i) > 1.0e08) then
+      vptr%vals(i) = self%missing_value
+    endif
+  enddo
 endif
 
 end subroutine ioda_obsdb_getvar
@@ -443,7 +452,7 @@ end subroutine ioda_obsdb_put_vec
 
 ! ------------------------------------------------------------------------------
 
-subroutine ioda_obsdb_generate(self, fvlen, nobs, dist_indx, nlocs, nvars, obstype, lat, lon1, lon2)
+subroutine ioda_obsdb_generate(self, fvlen, nobs, dist_indx, nlocs, nvars, obstype, missing_value, lat, lon1, lon2)
 implicit none
 type(ioda_obsdb), intent(inout) :: self
 integer, intent(in) :: fvlen
@@ -452,6 +461,7 @@ integer, intent(in) :: dist_indx(:)
 integer, intent(in) :: nlocs
 integer, intent(in) :: nvars
 character(len=*) :: obstype
+real(c_double) :: missing_value
 real, intent(in) :: lat, lon1, lon2
 
 character(len=*),parameter :: myname = "ioda_obsdb_generate"
@@ -460,7 +470,7 @@ type(ioda_obs_var), pointer :: vptr
 character(len=max_string) :: vname
 
 ! 4th argument is the filename containing obs values, which is not used for this method.
-call ioda_obsdb_setup(self, fvlen, nobs, dist_indx, nlocs, nvars, "", "", obstype)
+call ioda_obsdb_setup(self, fvlen, nobs, dist_indx, nlocs, nvars, "", "", obstype, missing_value)
 
 ! Create variables and generate the values specified by the arguments.
 vname = "latitude" 
