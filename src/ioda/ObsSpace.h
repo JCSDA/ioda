@@ -30,7 +30,7 @@ namespace ioda {
   class Locations;
   class ObsVector;
 
-/// Wrapper around ObsHelpQG, mostly to hide the factory
+/// Observation Space
 class ObsSpace : public oops::ObsSpaceBase {
  public:
   ObsSpace(const eckit::Configuration &, const util::DateTime &, const util::DateTime &);
@@ -40,35 +40,31 @@ class ObsSpace : public oops::ObsSpaceBase {
   void getObsVector(const std::string &, std::vector<double> &) const;
   void putObsVector(const std::string &, const std::vector<double> &) const;
 
-  Locations * locations(const util::DateTime &, const util::DateTime &) const;  // to be removed
+  int nobs() const;
+  int nlocs() const;
 
-  void generateDistribution(const eckit::Configuration &);
+  void get_db(const std::string &, const std::string &, const std::size_t &, int[]) const;
+  void get_db(const std::string &, const std::string &, const std::size_t &, double[]) const;
+  void put_db(const std::string &, const std::string &, const std::size_t &, const int[]) const;
+  void put_db(const std::string &, const std::string &, const std::size_t &, const double[]) const;
 
   const std::string & obsname() const {return obsname_;}
   const util::DateTime & windowStart() const {return winbgn_;}
   const util::DateTime & windowEnd() const {return winend_;}
-
-  int nobs() const;
-  int nlocs() const;
-
-  template <typename T>
-  void get_db(const std::string & group, const std::string & name,
-              const size_t & vsize, T* vdata) const {
-    ioda_obsdb_getvar_f90(keyOspace_, name.size(), name.c_str(), static_cast<int>(vsize), vdata);
-  }
-
-  template <typename T>
-  void put_db(const std::string & group, const std::string & name,
-              const size_t & vsize, T* vdata) const {
-    ioda_obsdb_putvar_f90(keyOspace_, name.size(), name.c_str(), static_cast<int>(vsize), vdata);
-  }
-
   const eckit::mpi::Comm & comm() const {return commMPI_;}
-  void printJo(const ObsVector &, const ObsVector &);
+
+  static double missingValue() {return missingvalue_;}
+
+  void generateDistribution(const eckit::Configuration &);
+
+  void printJo(const ObsVector &, const ObsVector &);  // to be removed
+
+  Locations * locations(const util::DateTime &, const util::DateTime &) const;  // to be removed
 
  private:
   void print(std::ostream &) const;
 
+  static const double missingvalue_;
   ObsSpace & operator= (const ObsSpace &);
   std::string obsname_;
   const util::DateTime winbgn_;

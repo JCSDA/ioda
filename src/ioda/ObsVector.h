@@ -69,6 +69,7 @@ class ObsVector : public util::Printable,
 
   /*! \brief Vector data */
   std::vector<double> values_;
+  const double missing_;
 };
 // -----------------------------------------------------------------------------
 

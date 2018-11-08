@@ -43,26 +43,26 @@ ObsTypes:
          - "longitude"
          - "time"
       metadata:
-        nlocs: 20032
-        nobs: 20032
+        nlocs: 918
+        nobs: 918
         nrecs: 1
         nvars: 1
         norms:
-          - 2099.30347
-          - 2936.15356
-          - 3935.07837
+          - 732.465759
+          - 3530.88818
+          - 0.0
         tolerance: 1.0e-3
       datetime:
-        dnorm: 2.85651456e+09
-        tnorm: 2.02156800e+07
+        dnorm: 611439296
+        tnorm: 0
         tolerance:  1.0e-3
     Output:
       filename: "testoutput/diagout_profile.nc4"
       variables:
          - "insitu_temperature"
       metadata:
-        nobs: 20032
-        nlocs: 20032
+        nobs: 918
+        nlocs: 918
         nrecs: 1
         nvars: 1
 
