@@ -106,9 +106,9 @@ ObsTypes:
         nrecs: 186638
         nvars: 4
         norms:
-          - 38.023
-          - 151.79
-          - 1.8752
+          - 23024.5918
+          - 37538.7969
+          - 2.49375474e+11
         tolerance: 1.0e-3
       datetime:
         dnorm: 8.4257152e+09
