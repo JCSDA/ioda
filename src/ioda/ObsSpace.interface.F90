@@ -88,6 +88,7 @@ type(fckit_mpi_comm)      :: comm
 character(len=10)         :: cproc
 integer                   :: ppos
 character(len=max_string) :: MyObsType
+character(len=max_string), allocatable :: varnames(:)
 character(len=255) :: record
 integer :: fvlen
 integer, allocatable :: dist_indx(:)
@@ -132,7 +133,15 @@ if (config_element_exists(c_conf,"ObsData.ObsDataIn")) then
   ! now set nvars to 15 for Radiance. Note that when we come to the point where we do want
   ! to read in the brightness temperature, we will need to address how to handle missing
   ! channels. Ditto for AOD obs type, where AOD obs (VIIRS) has 11 channels.
-  nvars = 1 
+  nvars = 1
+  if (config_element_exists(c_conf,"Variables")) then
+     varnames = config_get_string_vector(c_conf, max_string, "Variables")
+     nvars = size(varnames)
+  else
+    ! In the future, every observation type shoould have the vnames
+    allocate(varnames(1))
+    varnames = (/""/)
+  endif
   if (trim(MyObsType) .eq. "Radiance") nvars = 15
   if (trim(MyObsType) .eq. "Aod") nvars = 11
 
@@ -258,7 +267,9 @@ call ioda_obsdb_registry%init()
 call ioda_obsdb_registry%add(c_key_self)
 call ioda_obsdb_registry%get(c_key_self, self)
 
-call ioda_obsdb_setup(self, fvlen, nobs, dist_indx, nlocs, nvars, fin, fout, MyObsType)
+call ioda_obsdb_setup(self, fvlen, nobs, dist_indx, nlocs, nvars, varnames, fin, fout, MyObsType)
+
+if (allocated(varnames)) deallocate(varnames)
 
 end subroutine ioda_obsdb_setup_c
 

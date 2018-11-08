@@ -93,11 +93,11 @@ module ioda_utils_mod
     ! Read the vector and count up the missing values so that a size
     ! can be determined for the output indx vector.
     mcount = 0
-    do i = 1, size(in_index)
-      if (var1d(in_index(i)) .ge. missing_value) then
-        mcount = mcount + 1
-      endif
-    enddo
+    !do i = 1, size(in_index)
+    !  if (var1d(in_index(i)) .ge. missing_value) then
+    !    mcount = mcount + 1
+    !  endif
+    !enddo
     mlen = size(in_index) - mcount
 
     ! Allocate the output index vector and go through the test vector again
@@ -106,10 +106,10 @@ module ioda_utils_mod
 
     imiss = 0
     do i = 1, size(in_index)
-      if (var1d(in_index(i)) .lt. missing_value) then
+      !if (var1d(in_index(i)) .lt. missing_value) then
         imiss = imiss + 1
         out_index(imiss) = in_index(i)
-      endif
+      !endif
     enddo
 
     deallocate(var1d)
