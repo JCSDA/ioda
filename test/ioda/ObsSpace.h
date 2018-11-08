@@ -1,11 +1,8 @@
 /*
- * (C) Copyright 2009-2016 ECMWF.
+ * (C) Copyright 2018 UCAR
  * 
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
- * granted to it by virtue of its status as an intergovernmental organisation nor
- * does it submit to any jurisdiction.
  */
 
 #ifndef TEST_INTERFACE_OBSSPACE_H_
@@ -26,39 +23,59 @@
 #include "ioda/IodaTrait.h"
 #include "ioda/ObsSpace.h"
 #include "oops/runs/Test.h"
-#include "test/interface/ObsTestsFixture.h"
-#include "test/TestEnvironment.h"
+#include "oops/../test/TestEnvironment.h"
 
 namespace ioda {
 namespace test {
 
 // -----------------------------------------------------------------------------
 
+class ObsSpaceTestFixture : private boost::noncopyable {
+ public:
+  static ioda::ObsSpace & obspace(const std::size_t ii) {
+    return *getInstance().ospaces_.at(ii);
+  }
+  static std::size_t size() {return getInstance().ospaces_.size();}
+
+ private:
+  static ObsSpaceTestFixture & getInstance() {
+    static ObsSpaceTestFixture theObsSpaceTestFixture;
+    return theObsSpaceTestFixture;
+  }
+
+  ObsSpaceTestFixture(): ospaces_() {
+    util::DateTime bgn(::test::TestEnvironment::config().getString("window_begin"));
+    util::DateTime end(::test::TestEnvironment::config().getString("window_end"));
+
+    const eckit::LocalConfiguration obsconf(::test::TestEnvironment::config(), "Observations");
+    std::vector<eckit::LocalConfiguration> conf;
+    obsconf.get("ObsTypes", conf);
+
+    for (std::size_t jj = 0; jj < conf.size(); ++jj) {
+      boost::shared_ptr<ioda::ObsSpace> tmp(new ioda::ObsSpace(conf[jj], bgn, end));
+      ospaces_.push_back(tmp);
+    }
+  }
+
+  ~ObsSpaceTestFixture() {}
+
+  std::vector<boost::shared_ptr<ioda::ObsSpace> > ospaces_;
+};
+
+// -----------------------------------------------------------------------------
+
 void testConstructor() {
-  typedef ::test::ObsTestsFixture<ioda::IodaTrait> Test_;
+  typedef ObsSpaceTestFixture Test_;
 
-  ioda::ObsSpace * Odb;
-
-  std::size_t Nobs;
-  std::size_t Nlocs;
-
-  int ExpectedNobs;
-  int ExpectedNlocs;
-
-  for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    BOOST_CHECK_EQUAL(Test_::obspace()[jj].windowStart(), Test_::tbgn());
-    BOOST_CHECK_EQUAL(Test_::obspace()[jj].windowEnd(),   Test_::tend());
-
-    Odb = &(Test_::obspace()[jj].observationspace());
-
+  for (std::size_t jj = 0; jj < Test_::size(); ++jj) {
     // Get the numbers of observations (nobs) and locations (nlocs) from the obspace object
-    Nobs = Odb->nobs();
-    Nlocs = Odb->nlocs();
+    std::size_t Nobs = Test_::obspace(jj).nobs();
+    std::size_t Nlocs = Test_::obspace(jj).nlocs();
 
     // Get the expected nobs and nlocs from the obspace object's configuration
-    const eckit::Configuration & Conf(Odb->config());
-    ExpectedNobs  = Conf.getInt("ObsData.ObsDataIn.metadata.nobs");
-    ExpectedNlocs = Conf.getInt("ObsData.ObsDataIn.metadata.nlocs");
+    const eckit::Configuration & Conf(Test_::obspace(jj).config());
+    int ExpectedNobs  = Conf.getInt("ObsData.ObsDataIn.metadata.nobs");
+    int ExpectedNlocs = Conf.getInt("ObsData.ObsDataIn.metadata.nlocs");
 
     BOOST_CHECK_EQUAL(Nobs, ExpectedNobs);
     BOOST_CHECK_EQUAL(Nlocs, ExpectedNlocs);
@@ -68,7 +85,7 @@ void testConstructor() {
 // -----------------------------------------------------------------------------
 
 void testGetDb() {
-  typedef ::test::ObsTestsFixture<ioda::IodaTrait> Test_;
+  typedef ObsSpaceTestFixture Test_;
 
   ioda::ObsSpace * Odb;
 
@@ -83,10 +100,9 @@ void testGetDb() {
 
   std::string Gname;
 
-  for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-
+  for (std::size_t jj = 0; jj < Test_::size(); ++jj) {
     // Set up a pointer to the ObsSpace object for convenience
-    Odb = &(Test_::obspace()[jj].observationspace());
+    Odb = &(Test_::obspace(jj));
 
     // Read in the variable names and expected norm values from the configuration
     const eckit::Configuration & Conf(Odb->config());
@@ -120,7 +136,7 @@ void testGetDb() {
 // -----------------------------------------------------------------------------
 
 void testPutDb() {
-  typedef ::test::ObsTestsFixture<ioda::IodaTrait> Test_;
+  typedef ObsSpaceTestFixture Test_;
 
   ioda::ObsSpace * Odb;
 
@@ -129,10 +145,10 @@ void testPutDb() {
 
   std::string VarName("DummyRow");
 
-  for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
+  for (std::size_t jj = 0; jj < Test_::size(); ++jj) {
 
     // Set up a pointer to the ObsSpace object for convenience
-    Odb = &(Test_::obspace()[jj].observationspace());
+    Odb = &(Test_::obspace(jj));
 
     // Create a dummy vector to put into the database
     // Load up the vector with contrived data, put the vector then
