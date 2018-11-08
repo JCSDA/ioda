@@ -41,6 +41,32 @@
         "ObsType": "Radiance",
         "ObsData": {
           "ObsDataIn": {
+            "obsfile": "Data/smap_L1B_2018041500.nc4",
+            "metadata" : {
+               "nobs"  : "746552",
+               "nlocs" : "186638"
+             },
+             "TestData" : {
+                "variables" : [
+                   "latitude",
+                   "longitude",
+                   "time"
+                ],
+                "norms" : [
+                   23024.5918,
+                   37538.7969,
+                   2.49375474e+11
+                ],
+                "tolerance" : 1.0e-12
+             }
+          }
+        }
+      },
+
+      {
+        "ObsType": "Radiance",
+        "ObsData": {
+          "ObsDataIn": {
             "obsfile": "Data/amsua_obs_n19_2018041500_m.nc4",
             "metadata" : {
                "nobs"  : "1125",
