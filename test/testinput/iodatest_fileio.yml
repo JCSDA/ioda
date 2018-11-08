@@ -101,18 +101,18 @@ ObsTypes:
          - "longitude"
          - "time"
       metadata:
-        nobs: 4
+        nobs: 746552
         nlocs: 186638
-        nrecs: 1
+        nrecs: 186638
         nvars: 4
         norms:
-          - 384.023
-          - 1511.79
-          - 14.8752
+          - 38.023
+          - 151.79
+          - 1.8752
         tolerance: 1.0e-3
       datetime:
-        dnorm: 1.74767e+08
-        tnorm: 1.45496e+06
+        dnorm: 8.4257152e+09
+        tnorm: 88375440
         tolerance:  1.0e-3
 
   - ObsType: "Aod"
