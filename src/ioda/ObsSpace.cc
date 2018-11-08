@@ -88,7 +88,7 @@ void ObsSpace::put_db(const std::string & group, const std::string & name,
 }
 // -----------------------------------------------------------------------------
 
-Locations * ObsSpace::locations(const util::DateTime & t1, const util::DateTime & t2) const {
+Locations * ObsSpace::getLocations(const util::DateTime & t1, const util::DateTime & t2) const {
   const util::DateTime * p1 = &t1;
   const util::DateTime * p2 = &t2;
   int keylocs;
