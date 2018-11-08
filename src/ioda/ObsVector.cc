@@ -21,6 +21,9 @@ namespace ioda {
 // -----------------------------------------------------------------------------
 ObsVector::ObsVector(const ObsSpace & obsdb)
   : obsdb_(obsdb), values_(obsdb_.nobs()), missing_(ObsSpace::missingValue()) {
+  // Initialize values_ to missing_value
+  for (size_t jj = 0; jj < values_.size() ; ++jj)
+      values_[jj] = missing_;
   oops::Log::debug() << "ObsVector constructed with " << values_.size()
                      << " elements." << std::endl;
 }
@@ -152,7 +155,7 @@ double ObsVector::rms() const {
   double zrms = 0.0;
   int nobs = 0;
   for (size_t jj = 0; jj < values_.size() ; ++jj) {
-    if (values_[jj] != missing_) {
+    if ( values_[jj] != missing_ ) {
       zrms += values_[jj] * values_[jj];
       ++nobs;
     }
@@ -204,5 +207,4 @@ void ObsVector::print(std::ostream & os) const {
      << zmin << ", Max=" << zmax << ", Average=" << zrms;
 }
 // -----------------------------------------------------------------------------
-
 }  // namespace ioda

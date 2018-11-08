@@ -8,6 +8,7 @@
 #include "ioda/obsspace_f.h"
 
 #include <string>
+#include <vector>
 
 #include "ObsSpace.h"
 
@@ -20,6 +21,23 @@ int obsspace_get_nobs_f(const ObsSpace & obss) {
 // -----------------------------------------------------------------------------
 int obsspace_get_nlocs_f(const ObsSpace & obss) {
   return obss.nlocs();
+}
+// -----------------------------------------------------------------------------
+int obsspace_get_nvars_f(const ObsSpace & obss) {
+    return obss.nvars();
+}
+// -----------------------------------------------------------------------------
+int obsspace_get_vnames_element_length_f(const ObsSpace & obss,
+                                     const int & index) {
+  const std::vector < std::string > data(obss.vnames());
+  return data[index-1].length();
+}
+// -----------------------------------------------------------------------------
+void obsspace_get_vnames_element_f(const ObsSpace & obss,
+                               const int & index, char output[]) {
+  const std::vector < std::string > data(obss.vnames());
+  size_t lendata = data[index-1].size();
+  strncpy(output, data[index-1].c_str(), lendata);
 }
 // -----------------------------------------------------------------------------
 double obspace_missing_value_f() {

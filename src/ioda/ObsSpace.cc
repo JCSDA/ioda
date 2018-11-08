@@ -21,7 +21,7 @@
 
 namespace ioda {
 // -----------------------------------------------------------------------------
-const double ObsSpace::missingvalue_ = -9.9999e+299;
+const double ObsSpace::missingvalue_ = 9.9999e+37;
 // -----------------------------------------------------------------------------
 
 ObsSpace::ObsSpace(const eckit::Configuration & config,
@@ -32,6 +32,17 @@ ObsSpace::ObsSpace(const eckit::Configuration & config,
 
   const eckit::Configuration * configc = &config;
   obsname_ = config.getString("ObsType");
+
+  // Read in the variable names to be assimilated
+  // Now, only Radiosonde and Aircraft need this. should revisit to make
+  // it more general
+  try {
+    vnames_ = config.getStringVector("Variables");
+    nvars_ = vnames_.size();
+  } catch (const std::exception& e) {
+    oops::Log::debug() << "No Variables block is found" << std::endl;
+  }
+
   ioda_obsdb_setup_f90(keyOspace_, &configc);
 
   oops::Log::trace() << "ioda::ObsSpace contructed name = " << obsname_ << std::endl;
@@ -101,6 +112,18 @@ int ObsSpace::nlocs() const {
   int n;
   ioda_obsdb_nlocs_f90(keyOspace_, n);
   return n;
+}
+
+// -----------------------------------------------------------------------------
+
+int ObsSpace::nvars() const {
+  return nvars_;
+}
+
+// -----------------------------------------------------------------------------
+
+std::vector<std::string> ObsSpace::vnames() const {
+  return vnames_;
 }
 
 // -----------------------------------------------------------------------------
