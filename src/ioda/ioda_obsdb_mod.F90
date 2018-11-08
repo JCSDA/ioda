@@ -209,13 +209,28 @@ istep = self%nobs / self%nlocs
 allocate(time(self%nlocs), lon(self%nlocs), lat(self%nlocs))
 allocate(indx(self%nlocs))
 
-call ioda_obsdb_getvar(self, "longitude", vptr)
+if ((trim(self%obstype) .eq. "Radiosonde") .or. &
+    (trim(self%obstype) .eq. "Aircraft")) then
+  call ioda_obsdb_getvar(self, "longitude@MetaData", vptr)
+else
+  call ioda_obsdb_getvar(self, "longitude", vptr)
+endif
 lon = vptr%vals
 
-call ioda_obsdb_getvar(self, "latitude", vptr)
+if ((trim(self%obstype) .eq. "Radiosonde") .or. &
+    (trim(self%obstype) .eq. "Aircraft")) then
+  call ioda_obsdb_getvar(self, "latitude@MetaData", vptr)
+else
+  call ioda_obsdb_getvar(self, "latitude", vptr)
+endif
 lat = vptr%vals
 
-call ioda_obsdb_getvar(self, "time", vptr)
+if ((trim(self%obstype) .eq. "Radiosonde") .or. &
+    (trim(self%obstype) .eq. "Aircraft")) then
+  call ioda_obsdb_getvar(self, "time@MetaData", vptr)
+else
+  call ioda_obsdb_getvar(self, "time", vptr)
+endif
 time = vptr%vals
 
 
