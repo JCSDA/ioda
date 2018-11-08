@@ -19,23 +19,93 @@ Observations:
     ObsData:
       ObsDataIn:
         obsfile: Data/Jason-2-2018-04-15.nc
+        metadata:
+          nobs:  160607
+          nlocs: 160607
+        TestData:
+          variables:
+            - "latitude"
+            - "longitude"
+            - "time"
+          norms:
+            - 16692.109207962403
+            - 89252.131593209342
+            - 0.0
+          tolerance:
+            - 1.0e-12
 
   - ObsType: InsituTemperature
     ObsData:
       ObsDataIn:
         obsfile: Data/profile_2018-04-15.nc
+        metadata:
+          nobs:  918
+          nlocs: 918
+        TestData:
+          variables:
+            - "latitude"
+            - "longitude"
+            - "time"
+          norms:
+            - 732.46544677303257
+            - 3530.8881463212083
+            - 0.0
+          tolerance:
+            - 1.0e-12
 
   - ObsType: SeaSurfaceTemp
     ObsData:
       ObsDataIn:
         obsfile: Data/sst_obs-2018-04-15.nc4
+        metadata:
+          nobs:  223966
+          nlocs: 223966
+        TestData:
+          variables:
+            - "latitude"
+            - "longitude"
+            - "time"
+          norms:
+            - 14497.263539590736
+            - 61789.896508356105
+            - 0.0
+          tolerance:
+            - 1.0e-12
 
   - ObsType: SeaIceFraction
     ObsData:
       ObsDataIn:
         obsfile: Data/icec-2018-04-15.nc
+        metadata:
+          nobs:  71558
+          nlocs: 71558
+        TestData:
+          variables:
+            - "latitude"
+            - "longitude"
+            - "time"
+          norms:
+            - 19778.589152003486
+            - 57917.351481173151
+            - 0.0
+          tolerance:
+            - 1.0e-12
 
   - ObsType: SeaIceThickness
     ObsData:
       ObsDataIn:
         obsfile: Data/cryosat2-2018-04-15.nc
+        metadata:
+          nobs:  8065
+          nlocs: 8065
+        TestData:
+          variables:
+            - "latitude"
+            - "longitude"
+            - "time"
+          norms:
+            - 7581.3030036861646
+            - 13972.379294774455
+            - 0.0
+          tolerance:
+            - 1.0e-12
