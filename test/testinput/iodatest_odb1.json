@@ -28,7 +28,7 @@
           }
         }
       },
-     {
+      {
         "ObsType": "Radiance",
         "ObsData": {
           "ObsDataIn": {
