@@ -85,7 +85,7 @@ ecbuild_add_test( TARGET test_ioda_obsvector
 ecbuild_add_test( TARGET test_ioda_obsspace
                   BOOST
                   SOURCES mains/TestObsSpace.cc
-                  ARGS "testinput/iodatest_obsspace.json"
+                  ARGS "testinput/iodatest_obsspace.yml"
                   LIBS    ioda )
 
 ecbuild_add_test( TARGET test_ioda_marine_obsspace
