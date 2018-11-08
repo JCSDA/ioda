@@ -161,7 +161,7 @@ double ObsVector::rms() const {
   double zrms = 0.0;
   int nobs = 0;
   for (size_t jj = 0; jj < values_.size() ; ++jj) {
-    if (values_[jj] != missing_) {
+    if ((values_[jj] != missing_) && !(abs(values_[jj]) > 1.0e20)) {
       zrms += values_[jj] * values_[jj];
       ++nobs;
     }
