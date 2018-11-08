@@ -8,7 +8,8 @@ list( APPEND ioda_test_input
   testinput/iodatest.yml
   testinput/iodatest_odb.json
   testinput/iodatest_odb1.json
-  testinput/iodatest_obsspace.json
+  #testinput/iodatest_obsspace.json
+  testinput/iodatest_obsspace.yml
   testinput/iodatest_fileio.yml
   testinput/iodatest_marine_fileio.yml
   testinput/iodatest_marine_obsspace.yml  
