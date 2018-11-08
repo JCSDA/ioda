@@ -27,7 +27,6 @@
 #include "ioda/ObsVector.h"
 #include "oops/runs/Test.h"
 #include "oops/util/dot_product.h"
-#include "test/interface/ObsTestsFixture.h"
 #include "test/TestEnvironment.h"
 
 namespace ioda {
@@ -35,12 +34,50 @@ namespace test {
 
 // -----------------------------------------------------------------------------
 
+class ObsVecTestFixture : private boost::noncopyable {
+  typedef ioda::ObsSpace ObsSpace_;
+
+ public:
+  static std::vector<boost::shared_ptr<ObsSpace_> > & obspace() {return getInstance().ospaces_;}
+  static oops::Variables & observed(const std::size_t ii) {return getInstance().observed_.at(ii);}
+
+ private:
+  static ObsVecTestFixture& getInstance() {
+    static ObsVecTestFixture theObsVecTestFixture;
+    return theObsVecTestFixture;
+  }
+
+  ObsVecTestFixture(): ospaces_() {
+    util::DateTime bgn((::test::TestEnvironment::config().getString("window_begin")));
+    util::DateTime end((::test::TestEnvironment::config().getString("window_end")));
+
+    const eckit::LocalConfiguration obsconf(::test::TestEnvironment::config(), "Observations");
+    std::vector<eckit::LocalConfiguration> conf;
+    obsconf.get("ObsTypes", conf);
+
+    for (std::size_t jj = 0; jj < conf.size(); ++jj) {
+      boost::shared_ptr<ObsSpace_> tmp(new ObsSpace_(conf[jj], bgn, end));
+      ospaces_.push_back(tmp);
+      eckit::LocalConfiguration ObsDataInConf;
+      conf[jj].get("ObsData.ObsDataIn", ObsDataInConf);
+      observed_.push_back(oops::Variables(ObsDataInConf));
+    }
+  }
+
+  ~ObsVecTestFixture() {}
+
+  std::vector<boost::shared_ptr<ObsSpace_> > ospaces_;
+  std::vector<oops::Variables> observed_;
+};
+
+// -----------------------------------------------------------------------------
+
 void testConstructor() {
-  typedef ::test::ObsTestsFixture<ioda::IodaTrait>  Test_;
+  typedef ObsVecTestFixture Test_;
   typedef ioda::ObsVector  ObsVector_;
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    boost::scoped_ptr<ObsVector_> ov(new ObsVector_(Test_::obspace()[jj].observationspace()));
+    boost::scoped_ptr<ObsVector_> ov(new ObsVector_(*Test_::obspace()[jj], Test_::observed(jj)));
     BOOST_CHECK(ov.get());
 
     ov.reset();
@@ -51,11 +88,11 @@ void testConstructor() {
 // -----------------------------------------------------------------------------
 
 void testCopyConstructor() {
-  typedef ::test::ObsTestsFixture<ioda::IodaTrait>  Test_;
+  typedef ObsVecTestFixture Test_;
   typedef ioda::ObsVector  ObsVector_;
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    boost::scoped_ptr<ObsVector_> ov(new ObsVector_(Test_::obspace()[jj].observationspace()));
+    boost::scoped_ptr<ObsVector_> ov(new ObsVector_(*Test_::obspace()[jj], Test_::observed(jj)));
 
     boost::scoped_ptr<ObsVector_> other(new ObsVector_(*ov));
     BOOST_CHECK(other.get());
@@ -70,12 +107,12 @@ void testCopyConstructor() {
 // -----------------------------------------------------------------------------
 
 void testNotZero() {
-  typedef ::test::ObsTestsFixture<ioda::IodaTrait>  Test_;
+  typedef ObsVecTestFixture Test_;
   typedef ioda::ObsVector  ObsVector_;
   const double zero = 0.0;
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    ObsVector_ ov(Test_::obspace()[jj].observationspace());
+    ObsVector_ ov(*Test_::obspace()[jj], Test_::observed(jj));
 
     ov.random();
 
@@ -92,7 +129,7 @@ void testNotZero() {
 // -----------------------------------------------------------------------------
 
 void testRead() {
-  typedef ::test::ObsTestsFixture<ioda::IodaTrait>  Test_;
+  typedef ObsVecTestFixture Test_;
   typedef ioda::ObsVector  ObsVector_;
 
   ioda::ObsSpace * Odb;
@@ -101,8 +138,8 @@ void testRead() {
   double Tol;
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    Odb = &(Test_::obspace()[jj].observationspace());
-    boost::scoped_ptr<ObsVector_> ov(new ObsVector_(*Odb));
+    Odb = Test_::obspace()[jj].get();
+    boost::scoped_ptr<ObsVector_> ov(new ObsVector_(*Odb, Test_::observed(jj)));
 
     // Grab the expected RMS value and tolerance from the obsdb_ configuration.
     const eckit::Configuration & Conf(Odb->config());
@@ -120,7 +157,7 @@ void testRead() {
 // -----------------------------------------------------------------------------
 
 void testSave() {
-  typedef ::test::ObsTestsFixture<ioda::IodaTrait>  Test_;
+  typedef ObsVecTestFixture Test_;
   typedef ioda::ObsVector  ObsVector_;
 
   ioda::ObsSpace * Odb;
@@ -128,8 +165,8 @@ void testSave() {
   double ExpectedRms;
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    Odb = &(Test_::obspace()[jj].observationspace());
-    boost::scoped_ptr<ObsVector_> ov_orig(new ObsVector_(*Odb));
+    Odb = Test_::obspace()[jj].get();
+    boost::scoped_ptr<ObsVector_> ov_orig(new ObsVector_(*Odb, Test_::observed(jj)));
 
     // Read in a vector and save the rms value. Then write the vector into a
     // test group, read it out of the test group and compare the rms of the

@@ -56,7 +56,8 @@ class ObsSpace : public oops::ObsSpaceBase {
 
   void printJo(const ObsVector &, const ObsVector &);  // to be removed
 
-  Locations * locations(const util::DateTime &, const util::DateTime &) const;  // to be removed
+// TODO(YT): remove getLocations (renamed for now to avoid old calls)
+  Locations * getLocations(const util::DateTime &, const util::DateTime &) const;
 
  private:
   void print(std::ostream &) const;

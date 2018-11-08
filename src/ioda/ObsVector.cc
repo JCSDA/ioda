@@ -13,6 +13,7 @@
 
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/mpi/Comm.h"
+#include "oops/base/Variables.h"
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/Logger.h"
 
@@ -20,14 +21,9 @@
 
 namespace ioda {
 // -----------------------------------------------------------------------------
-ObsVector::ObsVector(const ObsSpace & obsdb)
-  : obsdb_(obsdb), missing_(ObsSpace::missingValue()) {
-  // For now, get the variable names from the ObsSpace configuration
-  const eckit::Configuration & OdbConf(obsdb_.config());
-  oops::Log::debug() << "ObsVector: Obsdb configuration: " << OdbConf << std::endl;
-  varnames_ = OdbConf.getStringVector("ObsData.ObsDataIn.variables");
-  nvars_ = varnames_.size();
-
+ObsVector::ObsVector(const ObsSpace & obsdb, const oops::Variables & vars)
+  : obsdb_(obsdb), missing_(ObsSpace::missingValue()), obsvars_(vars) {
+  nvars_ = obsvars_.variables().size();
   values_.resize(obsdb_.nlocs() * nvars_);
   oops::Log::debug() << "ObsVector constructed with " << nvars_
                      << " variables resulting in " << values_.size()
@@ -35,10 +31,8 @@ ObsVector::ObsVector(const ObsSpace & obsdb)
 }
 // -----------------------------------------------------------------------------
 ObsVector::ObsVector(const ObsVector & other, const bool copy)
-  : obsdb_(other.obsdb_), missing_(other.missing_) {
-  varnames_ = other.varnames_;
-  nvars_ = varnames_.size();
-
+  : obsdb_(other.obsdb_), missing_(other.missing_), obsvars_(other.obsvars_) {
+  nvars_ = obsvars_.variables().size();
   values_.resize(obsdb_.nlocs() * nvars_);
   oops::Log::debug() << "ObsVector constructed with " << nvars_
                      << " variables resulting in " << values_.size()
@@ -181,7 +175,7 @@ double ObsVector::rms() const {
 void ObsVector::read(const std::string & name) {
   oops::Log::trace() << "ObsVector::read, name = " <<  name << std::endl;
 
-  // Read in the variables stored in varnames_ from the group given by "name".
+  // Read in the variables stored in obsvars_ from the group given by "name".
   //
   // We want to construct the vector in the order of all variable values for the
   // first location, then all variable values for the second location, etc. This
@@ -192,7 +186,7 @@ void ObsVector::read(const std::string & name) {
   std::size_t ivec;
   for (std::size_t i = 0; i < nvars_; ++i) {
     std::vector<double> TmpVar(Nlocs);
-    obsdb_.get_db(name, varnames_[i], Nlocs, TmpVar.data());
+    obsdb_.get_db(name, obsvars_.variables()[i], Nlocs, TmpVar.data());
 
     for (std::size_t j = 0; j < TmpVar.size(); ++j) {
       ivec = i + (j * nvars_);
@@ -215,7 +209,7 @@ void ObsVector::save(const std::string & name) const {
       TmpVar[j] = values_[ivec];
     }
 
-    obsdb_.put_db(name, varnames_[i], Nlocs, TmpVar.data());
+    obsdb_.put_db(name, obsvars_.variables()[i], Nlocs, TmpVar.data());
   }
 }
 // -----------------------------------------------------------------------------
