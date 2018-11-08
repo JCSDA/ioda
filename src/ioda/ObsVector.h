@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "Fortran.h"
+#include "oops/base/Variables.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
 
@@ -33,7 +34,7 @@ class ObsVector : public util::Printable,
  public:
   static const std::string classname() {return "ioda::ObsVector";}
 
-  explicit ObsVector(const ObsSpace &);
+  ObsVector(const ObsSpace &, const oops::Variables &);
   ObsVector(const ObsVector &, const bool copy = true);
   ~ObsVector();
 
@@ -70,6 +71,7 @@ class ObsVector : public util::Printable,
   /*! \brief Vector data */
   std::vector<double> values_;
   const double missing_;
+  oops::Variables obsvars_;
 };
 // -----------------------------------------------------------------------------
 
