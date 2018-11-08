@@ -12,6 +12,7 @@
 #include <random>
 
 #include "eckit/mpi/Comm.h"
+#include "oops/base/Variables.h"
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/Logger.h"
 
@@ -19,14 +20,16 @@
 
 namespace ioda {
 // -----------------------------------------------------------------------------
-ObsVector::ObsVector(const ObsSpace & obsdb)
-  : obsdb_(obsdb), values_(obsdb_.nobs()), missing_(ObsSpace::missingValue()) {
+ObsVector::ObsVector(const ObsSpace & obsdb, const oops::Variables & vars)
+  : obsdb_(obsdb), values_(obsdb_.nobs()),
+    missing_(ObsSpace::missingValue()), obsvars_(vars) {
   oops::Log::debug() << "ObsVector constructed with " << values_.size()
                      << " elements." << std::endl;
 }
 // -----------------------------------------------------------------------------
 ObsVector::ObsVector(const ObsVector & other, const bool copy)
-  : obsdb_(other.obsdb_), values_(obsdb_.nobs()), missing_(other.missing_) {
+  : obsdb_(other.obsdb_), values_(obsdb_.nobs()),
+    missing_(other.missing_), obsvars_(other.obsvars_) {
   oops::Log::debug() << "ObsVector copy constructed with " << values_.size()
                      << " elements." << std::endl;
   if (copy) values_ = other.values_;
@@ -164,10 +167,12 @@ double ObsVector::rms() const {
 }
 // -----------------------------------------------------------------------------
 void ObsVector::read(const std::string & name) {
+  oops::Log::warning() << "ObsVector::read should be reading " << obsvars_ << std::endl;
   obsdb_.getObsVector(name, values_);
 }
 // -----------------------------------------------------------------------------
 void ObsVector::save(const std::string & name) const {
+  oops::Log::warning() << "ObsVector::save should be saving " << obsvars_ << std::endl;
   obsdb_.putObsVector(name, values_);
 }
 // -----------------------------------------------------------------------------
