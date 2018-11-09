@@ -19,9 +19,6 @@ namespace ioda {
 extern "C" {
   int obsspace_get_nobs_f(const ObsSpace &);
   int obsspace_get_nlocs_f(const ObsSpace &);
-  int obsspace_get_nvars_f(const ObsSpace &);
-  void obsspace_get_vnames_element_f(const ObsSpace &, const int &, char output[]);
-  int obsspace_get_vnames_element_length_f(const ObsSpace &, const int &);
   double obspace_missing_value_f();
 
   void obsspace_get_int32_f(const ObsSpace &, const char *, const char *,

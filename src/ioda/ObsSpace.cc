@@ -130,18 +130,6 @@ std::size_t ObsSpace::nlocs() const {
 
 // -----------------------------------------------------------------------------
 
-std::size_t ObsSpace::nvars() const {
-  return nvars_;
-}
-
-// -----------------------------------------------------------------------------
-
-std::vector<std::string> ObsSpace::vnames() const {
-  return vnames_;
-}
-
-// -----------------------------------------------------------------------------
-
 void ObsSpace::generateDistribution(const eckit::Configuration & conf) {
   const eckit::Configuration * configc = &conf;
 

@@ -39,8 +39,6 @@ class ObsSpace : public oops::ObsSpaceBase {
 
   std::size_t nobs() const;
   std::size_t nlocs() const;
-  std::size_t nvars() const;
-  std::vector<std::string> vnames() const;
 
   void get_db(const std::string &, const std::string &, const std::size_t &, int[]) const;
   void get_db(const std::string &, const std::string &, const std::size_t &, double[]) const;
@@ -75,12 +73,6 @@ class ObsSpace : public oops::ObsSpaceBase {
   const eckit::mpi::Comm & commMPI_;
 
   static std::map < std::string, int > theObsFileCount_;
-
-  /*! \brief number of variables */
-  std::size_t nvars_;
-
-  /*! \brief variable names list */
-  std::vector<std::string> vnames_;
 };
 
 }  // namespace ioda

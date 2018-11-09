@@ -19,8 +19,6 @@ public obsspace_get_nobs
 public obsspace_get_nlocs
 public obsspace_get_db
 public obsspace_put_db
-public obsspace_get_nvars
-public obsspace_get_vnames
 public obspace_missing_value
 
 #include "obsspace_interface.f"
@@ -266,58 +264,6 @@ subroutine obsspace_put_db_real64(obss, group, vname, vect)
 
   deallocate(c_group, c_vname)
 end subroutine obsspace_put_db_real64
-
-!-------------------------------------------------------------------------------
-
-!>  Return the number of observational variables 
-
-integer function obsspace_get_nvars(c_dom)
-    implicit none
-    type(c_ptr), intent(in) :: c_dom
-
-    obsspace_get_nvars = c_obsspace_get_nvars(c_dom)
-end function obsspace_get_nvars
-
-!-------------------------------------------------------------------------------
-
-!>  Return the names of observational vectors 
-
-function obsspace_get_vnames(c_dom, length)
-  implicit none
-  type(c_ptr), intent(in) :: c_dom
-  integer, intent(in) :: length
-  character(len=length), allocatable ::  obsspace_get_vnames(:)
-
-  character(kind=c_char,len=1), allocatable :: c_data(:)
-  integer :: nchars, ndim, ii
-
-  ! Call C++ to obtain the dimension of vnames
-  ndim = obsspace_get_nvars(c_dom)
-  if (ndim>0) then
-    allocate(obsspace_get_vnames(ndim))
-  else
-    call abor1_ftn('obsspace_get_vnames: nvars < 0')
-  endif
-
-  ! Call C++ to process the query the vnames element one by one
-  do ii = 1, ndim
-    nchars = c_obsspace_get_vnames_element_length(c_dom, ii)
-    if (nchars > length) &
-      call abor1_ftn('obsspace_get_vnames: return argument too short')
-
-    if (nchars>0) then
-      allocate(c_data(nchars+1))
-      call c_obsspace_get_vnames_element(c_dom, ii, c_data)
-      call c_f_string(c_data, obsspace_get_vnames(ii))
-      deallocate(c_data)
-    else
-      call abor1_ftn('obsspace_get_vnames: element not found')
-    endif
-  enddo
-
-  if (allocated(c_data)) deallocate(c_data)
-
-end function obsspace_get_vnames
 
 !-------------------------------------------------------------------------------
 
