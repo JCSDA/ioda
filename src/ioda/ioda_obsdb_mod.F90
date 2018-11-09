@@ -11,7 +11,6 @@ module ioda_obsdb_mod
 use iso_c_binding
 use kinds
 use ioda_obsvar_mod
-use obsspace_mod, only: obspace_missing_value
 use fckit_log_module, only : fckit_log
 #ifdef HAVE_ODB_API
 use odb_helper_mod, only: &
@@ -41,7 +40,6 @@ type :: ioda_obsdb
   integer :: nobs                      !< number of observations for this process
   integer :: nlocs                     !< number of locations for this process
   integer :: nvars                     !< number of variables
-  character(len=max_string), allocatable :: varnames(:) !< list of variables names
   integer, allocatable :: dist_indx(:) !< indices to select elements from input file vectors
 
   character(len=max_string) :: obstype
@@ -63,7 +61,7 @@ contains
 
 ! ------------------------------------------------------------------------------
 
-subroutine ioda_obsdb_setup(self, fvlen, nobs, dist_indx, nlocs, nvars, varnames, filename, fileout, obstype, missing_value)
+subroutine ioda_obsdb_setup(self, fvlen, nobs, dist_indx, nlocs, nvars, filename, fileout, obstype, missing_value)
 
 use nc_diag_read_mod, only: nc_diag_read_init
 use nc_diag_read_mod, only: nc_diag_read_close
@@ -78,7 +76,6 @@ integer, intent(in) :: nobs
 integer, intent(in) :: dist_indx(:)
 integer, intent(in) :: nlocs
 integer, intent(in) :: nvars
-character(len=*), intent(in) :: varnames(:)
 character(len=*), intent(in) :: filename
 character(len=*), intent(in) :: fileout
 character(len=*), intent(in) :: obstype
@@ -104,7 +101,6 @@ allocate(self%dist_indx(nobs))
 self%dist_indx     = dist_indx
 self%nlocs         = nlocs
 self%nvars         = nvars
-allocate(self%varnames(nvars))
 self%filename      = filename
 self%fileout       = fileout
 self%obstype       = obstype
@@ -544,7 +540,7 @@ integer :: i
 type(ioda_obs_var), pointer :: vptr
 character(len=max_string) :: vname
 
-call ioda_obsdb_setup(self, fvlen, nobs, dist_indx, nlocs, nvars, (/""/), "", "", obstype, missing_value)
+call ioda_obsdb_setup(self, fvlen, nobs, dist_indx, nlocs, nvars, "", "", obstype, missing_value)
 
 ! Create variables and generate the values specified by the arguments.
 vname = "latitude" 

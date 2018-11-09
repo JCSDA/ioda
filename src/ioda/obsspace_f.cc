@@ -8,7 +8,6 @@
 #include "ioda/obsspace_f.h"
 
 #include <string>
-#include <vector>
 
 #include "ObsSpace.h"
 

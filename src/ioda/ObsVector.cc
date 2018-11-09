@@ -258,7 +258,6 @@ void ObsVector::print(std::ostream & os) const {
   double zmax = std::numeric_limits<double>::lowest();
   double zrms = 0.0;
   int nobs = 0;
-  std::cout << "I am Xin Zhang Checking " << missing_ << std::endl;
   for (size_t jj = 0; jj < values_.size() ; ++jj) {
     if (values_[jj] != missing_) {
       if (values_[jj] < zmin) zmin = values_[jj];

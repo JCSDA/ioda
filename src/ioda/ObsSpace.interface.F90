@@ -87,7 +87,6 @@ type(fckit_mpi_comm)      :: comm
 character(len=10)         :: cproc
 integer                   :: ppos
 character(len=max_string) :: MyObsType
-character(len=max_string), allocatable :: varnames(:)
 character(len=255) :: record
 integer :: fvlen
 integer, allocatable :: dist_indx(:)
@@ -240,9 +239,7 @@ call ioda_obsdb_registry%init()
 call ioda_obsdb_registry%add(c_key_self)
 call ioda_obsdb_registry%get(c_key_self, self)
 
-call ioda_obsdb_setup(self, fvlen, nobs, dist_indx, nlocs, nvars, varnames, fin, fout, MyObsType, c_missing_value)
-
-if (allocated(varnames)) deallocate(varnames)
+call ioda_obsdb_setup(self, fvlen, nobs, dist_indx, nlocs, nvars, fin, fout, MyObsType, c_missing_value)
 
 end subroutine ioda_obsdb_setup_c
 
