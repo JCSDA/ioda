@@ -47,6 +47,8 @@ class ObsSpace : public oops::ObsSpaceBase {
   void put_db(const std::string &, const std::string &, const std::size_t &, const int[]) const;
   void put_db(const std::string &, const std::string &, const std::size_t &, const double[]) const;
 
+  bool has(const std::string &, const std::string &) const;
+
   const std::string & obsname() const {return obsname_;}
   const util::DateTime & windowStart() const {return winbgn_;}
   const util::DateTime & windowEnd() const {return winend_;}

@@ -185,17 +185,29 @@ void ObsVector::read(const std::string & name) {
   // means that a single variable gets its values spread out across the vector
   // in intervals the size of nvars_, and that the starting point for each variable
   // in the vector is given by the index of the variable name in varnames_.
-  std::size_t Nlocs = obsdb_.nlocs();
-  std::size_t ivec;
+  std::size_t nlocs = obsdb_.nlocs();
+  std::vector<double> TmpVar(nlocs);
   for (std::size_t i = 0; i < nvars_; ++i) {
-    std::vector<double> TmpVar(Nlocs);
-    obsdb_.get_db(name, obsvars_.variables()[i], Nlocs, TmpVar.data());
+    obsdb_.get_db(name, obsvars_.variables()[i], nlocs, TmpVar.data());
 
-    for (std::size_t j = 0; j < TmpVar.size(); ++j) {
-      ivec = i + (j * nvars_);
+    for (std::size_t j = 0; j < nlocs; ++j) {
+      std::size_t ivec = i + (j * nvars_);
       values_[ivec] = TmpVar[j];
     }
   }
+}
+// -----------------------------------------------------------------------------
+bool ObsVector::tryRead(const std::string & name) {
+  oops::Log::trace() << "ObsVector::tryRead, name = " <<  name << std::endl;
+
+  bool exists = (nvars_ > 0);
+  for (std::size_t jj = 0; jj < nvars_; ++jj) {
+    exists = exists && obsdb_.has(name, obsvars_.variables()[jj]);
+  }
+
+  if (exists) this->read(name);
+
+  return exists;
 }
 // -----------------------------------------------------------------------------
 void ObsVector::save(const std::string & name) const {
@@ -213,6 +225,20 @@ void ObsVector::save(const std::string & name) const {
     }
 
     obsdb_.put_db(name, obsvars_.variables()[i], Nlocs, TmpVar.data());
+  }
+}
+// -----------------------------------------------------------------------------
+void ObsVector::applyQC(const std::string & qcflag) {
+  oops::Log::trace() << "ObsVector::applyQC" << std::endl;
+
+  std::vector<int> qc(obsdb_.nlocs());
+  for (std::size_t jv = 0; jv < nvars_; ++jv) {
+    if (obsdb_.has(qcflag, obsvars_.variables()[jv])) {
+      obsdb_.get_db(qcflag, obsvars_.variables()[jv], obsdb_.nlocs(), qc.data());
+      for (size_t jj = 0; jj < values_.size() ; ++jj) {
+        if (qc.at(jj) != 0) values_[jj] = missing_;
+      }
+    }
   }
 }
 // -----------------------------------------------------------------------------
