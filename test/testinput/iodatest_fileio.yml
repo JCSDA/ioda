@@ -8,9 +8,9 @@ ObsTypes:
     Input:
       filename: "Data/sondes_obs_2018041500_m.nc4"
       variables:
-         - "latitude"
-         - "longitude"
-         - "time"
+         - "latitude@MetaData"
+         - "longitude@MetaData"
+         - "time@MetaData"
       metadata:
         nobs: 9100
         nlocs: 2275
@@ -43,9 +43,9 @@ ObsTypes:
     Input:
       filename: "Data/aircraft_obs_2018041500_m.nc4"
       variables:
-         - "latitude"
-         - "longitude"
-         - "time"
+         - "latitude@MetaData"
+         - "longitude@MetaData"
+         - "time@MetaData"
       metadata:
         nobs: 7468
         nlocs: 1867
