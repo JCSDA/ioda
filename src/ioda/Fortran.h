@@ -68,6 +68,7 @@ extern "C" {
   void ioda_obsdb_getd_f90(const F90odb &, const int &, const char *, const int &, double[]);
   void ioda_obsdb_puti_f90(const F90odb &, const int &, const char *, const int &, const int32_t[]);
   void ioda_obsdb_putd_f90(const F90odb &, const int &, const char *, const int &, const double[]);
+  void ioda_obsdb_has_f90(const F90odb &, const int &, const char *, int &);
 
 // -----------------------------------------------------------------------------
 

@@ -40,6 +40,7 @@ contains
   procedure :: add_node => add_node_
   procedure :: get_node => get_node_
   procedure :: remove_node => remove_node_
+  procedure :: has => has_
 end type ioda_obs_variables
 
 contains
@@ -101,6 +102,25 @@ subroutine get_node_(self, vname, ptr)
     current => current%next
   enddo
 end subroutine get_node_
+
+!> Check if group is present
+integer function has_(self, vname)
+  implicit none
+  class (ioda_obs_variables), intent(in) :: self
+  character(len=*), intent(in) :: vname
+
+  type (ioda_obs_var), pointer :: current
+
+  has_ = 0
+  current => self%head
+  do while (associated(current))
+    if (trim(vname) .eq. trim(current%vname)) then
+      has_ = 1
+      exit
+    endif
+    current => current%next
+  enddo
+end function has_
 
 !> Remove an element from the linked list
 subroutine remove_node_(self, vname)

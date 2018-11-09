@@ -492,4 +492,29 @@ end subroutine ioda_obsdb_putd_c
 
 ! ------------------------------------------------------------------------------
 
+subroutine ioda_obsdb_has_c(c_key_self, c_name_size, c_name, ihave) bind(c,name='ioda_obsdb_has_f90')
+implicit none
+integer(c_int), intent(in) :: c_key_self
+integer(c_int), intent(in) :: c_name_size
+character(kind=c_char,len=1), intent(in) :: c_name(c_name_size+1)
+integer(c_int), intent(inout) :: ihave
+
+type(ioda_obsdb), pointer :: self
+
+character(len=c_name_size) :: vname
+integer :: jj
+
+call ioda_obsdb_registry%get(c_key_self, self)
+
+! Copy C character array to Fortran string
+do jj = 1, c_name_size
+  vname(jj:jj) = c_name(jj)
+enddo
+
+ihave = ioda_obsdb_has(self, vname)
+
+end subroutine ioda_obsdb_has_c
+
+! ------------------------------------------------------------------------------
+
 end module ioda_obsdb_mod_c

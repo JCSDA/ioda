@@ -89,6 +89,18 @@ void ObsSpace::put_db(const std::string & group, const std::string & name,
   ioda_obsdb_putd_f90(keyOspace_, db_name.size(), db_name.c_str(), static_cast<int>(vsize), vdata);
 }
 // -----------------------------------------------------------------------------
+bool ObsSpace::has(const std::string & group, const std::string & name) const {
+  int ii;
+  std::string db_name;
+  if (group.size() == 0) {
+    db_name = name;
+  } else {
+    db_name = name + "@" + group;
+  }
+  ioda_obsdb_has_f90(keyOspace_, db_name.size(), db_name.c_str(), ii);
+  return ii;
+}
+// -----------------------------------------------------------------------------
 
 Locations * ObsSpace::getLocations(const util::DateTime & t1, const util::DateTime & t2) const {
   const util::DateTime * p1 = &t1;
