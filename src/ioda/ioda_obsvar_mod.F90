@@ -18,7 +18,7 @@ use kinds
 
 implicit none
 
-integer, parameter :: IODA_OBSVAR_MAXSTRLEN = 80
+integer, parameter :: IODA_OBSVAR_MAXSTRLEN = 256
 
 !> observation variable
 type :: ioda_obs_var
