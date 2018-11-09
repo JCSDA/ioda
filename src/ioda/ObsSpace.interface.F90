@@ -61,7 +61,7 @@ contains
 
 ! ------------------------------------------------------------------------------
 
-subroutine ioda_obsdb_setup_c(c_key_self, c_conf) bind(c,name='ioda_obsdb_setup_f90')
+subroutine ioda_obsdb_setup_c(c_key_self, c_conf, c_missing_value) bind(c,name='ioda_obsdb_setup_f90')
 
 #ifdef HAVE_ODB_API
 use odb_helper_mod, only: &
@@ -72,12 +72,11 @@ use nc_diag_read_mod, only: nc_diag_read_get_dim
 use nc_diag_read_mod, only: nc_diag_read_init
 use nc_diag_read_mod, only: nc_diag_read_close
 
-use ioda_utils_mod, only: ioda_deselect_missing_values
-
 implicit none
 
 integer(c_int), intent(inout) :: c_key_self
 type(c_ptr), intent(in)       :: c_conf !< configuration
+real(c_double), intent(in)    :: c_missing_value
 
 type(ioda_obsdb), pointer :: self
 character(len=max_string) :: fin
@@ -160,24 +159,6 @@ if (config_element_exists(c_conf,"ObsData.ObsDataIn")) then
       allocate(dist_indx(nlocs))
       dist_indx = ran_dist%indx
       nobs = nvars * nlocs
-
-      ! Read in a variable and check for missing values. Adjust the nobs, nlocs values
-      ! and dist_index accordingly.
-      if ((trim(MyObsType) .eq. "Radiosonde") .or. &
-          (trim(MyObsType) .eq. "Aircraft")) then
-        call ioda_deselect_missing_values(iunit, "air_temperature", dist_indx, miss_indx)
-
-        ! Reallocate dist_indx and copy miss_indx in. This should skip over missing values
-        ! from the file.
-        nlocs = size(miss_indx)
-        deallocate(dist_indx)
-        allocate(dist_indx(nlocs))
-        dist_indx = miss_indx
-
-        nobs = nvars * nlocs
-
-        deallocate(miss_indx)
-      endif
 
       call nc_diag_read_close(fin)
 
@@ -267,7 +248,7 @@ call ioda_obsdb_registry%init()
 call ioda_obsdb_registry%add(c_key_self)
 call ioda_obsdb_registry%get(c_key_self, self)
 
-call ioda_obsdb_setup(self, fvlen, nobs, dist_indx, nlocs, nvars, varnames, fin, fout, MyObsType)
+call ioda_obsdb_setup(self, fvlen, nobs, dist_indx, nlocs, nvars, varnames, fin, fout, MyObsType, c_missing_value)
 
 if (allocated(varnames)) deallocate(varnames)
 
@@ -340,11 +321,12 @@ end subroutine ioda_obsdb_getlocations_c
 
 ! ------------------------------------------------------------------------------
 
-subroutine ioda_obsdb_generate_c(c_key_self, c_conf, c_t1, c_t2) bind(c,name='ioda_obsdb_generate_f90')
+subroutine ioda_obsdb_generate_c(c_key_self, c_conf, c_t1, c_t2, c_missing_value) bind(c,name='ioda_obsdb_generate_f90')
 implicit none
 integer(c_int), intent(inout) :: c_key_self
 type(c_ptr), intent(in)       :: c_conf !< configuration
 type(c_ptr), intent(in)       :: c_t1, c_t2
+real(c_double), intent(in)    :: c_missing_value
 
 type(ioda_obsdb), pointer :: self
 type(datetime) :: t1, t2
@@ -385,7 +367,7 @@ MyObsType = trim(config_get_string(c_conf,max_string,"ObsType"))
 write(record,*) 'ioda_obsdb_generate_c: ', trim(MyObsType)
 call fckit_log%info(record)
 
-call ioda_obsdb_generate(self, fvlen, nobs, dist_indx, nlocs, nvars, MyObsType, lat, lon1, lon2)
+call ioda_obsdb_generate(self, fvlen, nobs, dist_indx, nlocs, nvars, MyObsType, c_missing_value, lat, lon1, lon2)
 
 deallocate(dist_indx)
 
