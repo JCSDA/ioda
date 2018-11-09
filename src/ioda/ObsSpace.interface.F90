@@ -133,14 +133,6 @@ if (config_element_exists(c_conf,"ObsData.ObsDataIn")) then
   ! to read in the brightness temperature, we will need to address how to handle missing
   ! channels. Ditto for AOD obs type, where AOD obs (VIIRS) has 11 channels.
   nvars = 1
-  if (config_element_exists(c_conf,"Variables")) then
-     varnames = config_get_string_vector(c_conf, max_string, "Variables")
-     nvars = size(varnames)
-  else
-    ! In the future, every observation type shoould have the vnames
-    allocate(varnames(1))
-    varnames = (/""/)
-  endif
   if (trim(MyObsType) .eq. "Radiance") nvars = 15
   if (trim(MyObsType) .eq. "Aod") nvars = 11
 
