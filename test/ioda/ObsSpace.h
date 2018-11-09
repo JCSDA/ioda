@@ -143,7 +143,7 @@ void testPutDb() {
   std::size_t Nlocs;
   bool VecMatch;
 
-  std::string VarName("DummyRow");
+  std::string VarName("DummyVar");
 
   for (std::size_t jj = 0; jj < Test_::size(); ++jj) {
 
@@ -177,6 +177,61 @@ void testPutDb() {
 
 // -----------------------------------------------------------------------------
 
+void testWriteableGroup() {
+  typedef ObsSpaceTestFixture Test_;
+
+  ioda::ObsSpace * Odb;
+
+  std::size_t Nlocs;
+  bool VecMatch;
+
+  std::string VarName("DummyVar");
+
+  for (std::size_t jj = 0; jj < Test_::size(); ++jj) {
+
+    // Set up a pointer to the ObsSpace object for convenience
+    Odb = &(Test_::obspace(jj));
+
+    // Create a dummy vector to put into the database
+    // All rows read from the input file should be read only.
+    // All rows added since the read of the input file should be writeable.
+    Nlocs = Odb->nlocs();
+    std::vector<double> TestVec(Nlocs);
+    std::vector<double> ExpectedVec(Nlocs);
+
+    for (std::size_t i = 0; i < Nlocs; ++i) {
+      ExpectedVec[i] = double(i);
+    }
+
+    // Put the vector into the database. Then read the vector back from the database
+    // and compare to the original
+    Odb->put_db("TestGroup", VarName, Nlocs, ExpectedVec.data());
+    Odb->get_db("TestGroup", VarName, Nlocs, TestVec.data());
+
+    VecMatch = true;
+    for (std::size_t i = 0; i < Nlocs; ++i) {
+      VecMatch = VecMatch && (int(ExpectedVec[i]) == int(TestVec[i]));
+    }
+    BOOST_CHECK(VecMatch);
+
+    // Now update the vector with the original multiplied by 2.
+    for (std::size_t i = 0; i < Nlocs; ++i) {
+      ExpectedVec[i] = ExpectedVec[i] * 2;
+    }
+
+    Odb->put_db("TestGroup", VarName, Nlocs, ExpectedVec.data());
+    Odb->get_db("TestGroup", VarName, Nlocs, TestVec.data());
+    
+    VecMatch = true;
+    for (std::size_t i = 0; i < Nlocs; ++i) {
+      VecMatch = VecMatch && (int(ExpectedVec[i]) == int(TestVec[i]));
+    }
+    BOOST_CHECK(VecMatch);
+  }
+}
+
+// -----------------------------------------------------------------------------
+
 class ObsSpace : public oops::Test {
  public:
   ObsSpace() {}
@@ -190,6 +245,7 @@ class ObsSpace : public oops::Test {
     ts->add(BOOST_TEST_CASE(&testConstructor));
     ts->add(BOOST_TEST_CASE(&testGetDb));
     ts->add(BOOST_TEST_CASE(&testPutDb));
+    ts->add(BOOST_TEST_CASE(&testWriteableGroup));
 
     boost::unit_test::framework::master_test_suite().add(ts);
   }
