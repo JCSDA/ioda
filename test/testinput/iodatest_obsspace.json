@@ -22,6 +22,11 @@
                "nlocs" : "100"
              },
              "TestData" : {
+                "groups" : [
+                   "NoGroup",
+                   "NoGroup",
+                   "NoGroup"
+                ],
                 "variables" : [
                    "latitude",
                    "longitude",
@@ -72,6 +77,11 @@
                "nlocs" : "75"
              },
              "TestData" : {
+                "groups" : [
+                   "NoGroup",
+                   "NoGroup",
+                   "NoGroup"
+                ],
                 "variables" : [
                    "latitude",
                    "longitude",
@@ -93,19 +103,24 @@
           "ObsDataIn": {
             "obsfile": "Data/sondes_obs_2018041500_m.nc4",
             "metadata" : {
-               "nobs"  : "1049",
-               "nlocs" : "1049"
+               "nobs"  : "2275",
+               "nlocs" : "2275"
              },
              "TestData" : {
+                "groups" : [
+                   "MetaData",
+                   "MetaData",
+                   "MetaData"
+                ],
                 "variables" : [
                    "latitude",
                    "longitude",
                    "time"
                 ],
                 "norms" : [
-                   1550.6192767073974,
-                   213.32314091331665,
-                   24.14030479590506
+                   2282.5215982838258,
+                   326.09527165569659,
+                   32.886225568782997
                 ],
                 "tolerance" : 1.0e-12
              }

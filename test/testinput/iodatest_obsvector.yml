@@ -1,0 +1,48 @@
+---
+test_framework_runtime_config: "--log_level=test_suite"
+window_begin: '2015-08-09T21:00:00Z'
+window_end: '2015-08-10T03:00:00Z'
+Variables:
+  nvars: '1'
+  variables:
+  - testvar
+Locations:
+  lats:
+  - 45
+  - 40
+  lons:
+  - 0
+  - -100
+Observations:
+  ObsTypes:
+  - ObsType: Radiosonde_1var
+    ObsData:
+      ObsDataIn:
+        obsfile: Data/sondes_obs_2018041500_m.nc4
+        variables:
+          - air_temperature
+        rms_equiv: 242.47090122494583
+        tolerance: 1.0e-12
+
+  - ObsType: Radiosonde_2vars
+    ObsData:
+      ObsDataIn:
+        obsfile: Data/sondes_obs_2018041500_m.nc4
+        variables:
+          - air_temperature
+          - specific_humidity
+        rms_equiv: 171.98649312112931
+        tolerance: 1.0e-12
+
+  - ObsType: Radiosonde_4vars
+    ObsData:
+      ObsDataIn:
+        obsfile: Data/sondes_obs_2018041500_m.nc4
+        variables:
+          - air_temperature
+          - specific_humidity
+          - eastward_wind
+          - northward_wind
+        rms_equiv: 106.9693370342373
+        tolerance: 1.0e-12
+
