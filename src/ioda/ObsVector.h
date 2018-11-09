@@ -60,9 +60,11 @@ class ObsVector : public util::Printable,
 
   std::vector<std::string> varnames() { return obsvars_.variables(); }
   std::size_t nvars() { return nvars_; }
+  void applyQC(const std::string &);
 
 // I/O
-  void read(const std::string &);
+  void read(const std::string &);     // Fails if name not found
+  bool tryRead(const std::string &);  // Returns false if name not found
   void save(const std::string &) const;
 
  private:
