@@ -37,12 +37,9 @@ class ObsSpace : public oops::ObsSpaceBase {
   ObsSpace(const ObsSpace &);
   ~ObsSpace();
 
-  void getObsVector(const std::string &, std::vector<double> &) const;
-  void putObsVector(const std::string &, const std::vector<double> &) const;
-
-  int nobs() const;
-  int nlocs() const;
-  int nvars() const;
+  std::size_t nobs() const;
+  std::size_t nlocs() const;
+  std::size_t nvars() const;
   std::vector<std::string> vnames() const;
 
   void get_db(const std::string &, const std::string &, const std::size_t &, int[]) const;
