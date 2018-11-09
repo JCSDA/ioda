@@ -30,6 +30,7 @@ public ioda_obsdb_generate
 public ioda_obsdb_var_to_ovec
 public ioda_obsdb_get_vec
 public ioda_obsdb_put_vec
+public ioda_obsdb_has
 
 ! ------------------------------------------------------------------------------
 
@@ -440,6 +441,18 @@ end subroutine ioda_obsdb_get_vec
 
 ! ------------------------------------------------------------------------------
 
+integer function ioda_obsdb_has(self, vname)
+use ioda_locs_mod
+implicit none
+type(ioda_obsdb), intent(in) :: self
+character(len=*), intent(in) :: vname
+
+ioda_obsdb_has = self%obsvars%has(vname)
+
+end function ioda_obsdb_has
+
+! ------------------------------------------------------------------------------
+
 subroutine ioda_obsdb_put_vec(self, vname, vdata)
 
 implicit none
@@ -658,5 +671,6 @@ function ioda_obsdb_get_ftype(fname) result(ftype)
     ftype = 2
   endif
 end function ioda_obsdb_get_ftype
+! ------------------------------------------------------------------------------
 
 end module ioda_obsdb_mod
