@@ -131,7 +131,7 @@ if (config_element_exists(c_conf,"ObsData.ObsDataIn")) then
   ! now set nvars to 15 for Radiance. Note that when we come to the point where we do want
   ! to read in the brightness temperature, we will need to address how to handle missing
   ! channels. Ditto for AOD obs type, where AOD obs (VIIRS) has 11 channels.
-  nvars = 1 
+  nvars = 1
   if (trim(MyObsType) .eq. "Radiance") nvars = 15
   if (trim(MyObsType) .eq. "Aod") nvars = 11
 

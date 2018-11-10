@@ -535,7 +535,6 @@ integer :: i
 type(ioda_obs_var), pointer :: vptr
 character(len=max_string) :: vname
 
-! 4th argument is the filename containing obs values, which is not used for this method.
 call ioda_obsdb_setup(self, fvlen, nobs, dist_indx, nlocs, nvars, "", "", obstype, missing_value)
 
 ! Create variables and generate the values specified by the arguments.
