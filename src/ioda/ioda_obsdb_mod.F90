@@ -415,11 +415,6 @@ if (.not.associated(vptr)) then
         deallocate(field1d_int)
       endif
 
-      ! set the missing value equal to IODA missing_value
-      if (vartype == NF90_DOUBLE .or. vartype == NF90_FLOAT ) then
-        where(vptr%vals > 1.0e08) vptr%vals = self%missing_value
-      endif
-
       deallocate(dimsizes)
 
       call nc_diag_read_close(self%filename)

@@ -25,9 +25,6 @@ ObsVector::ObsVector(const ObsSpace & obsdb, const oops::Variables & vars)
   : obsdb_(obsdb), missing_(ObsSpace::missingValue()), obsvars_(vars) {
   nvars_ = obsvars_.variables().size();
   values_.resize(obsdb_.nlocs() * nvars_);
-  // Initialize values_ to missing_value
-  for (size_t jj = 0; jj < values_.size() ; ++jj)
-      values_[jj] = missing_;
   oops::Log::debug() << "ObsVector constructed with " << nvars_
                      << " variables resulting in " << values_.size()
                      << " elements." << std::endl;
