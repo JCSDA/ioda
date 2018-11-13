@@ -50,6 +50,8 @@ type :: ioda_obsdb
 
   type(ioda_obs_variables) :: obsvars  !< observation variables
 
+  character(len=max_string), allocatable :: read_only_groups(:)
+
 #ifdef HAVE_ODB
   real(kind=c_double), allocatable :: odb_data(:,:)
 #endif
@@ -88,6 +90,10 @@ integer :: var_list_item_len
 integer :: i
 integer(selected_int_kind(8)), allocatable :: dim_sizes(:)
 type(ioda_obs_var), pointer :: vptr
+
+character(len=max_string) :: gname
+character(len=max_string) :: prev_gname
+integer :: ngroups
 
 self%fvlen         = fvlen
 self%nobs          = nobs
@@ -145,9 +151,34 @@ select case (input_file_type)
 endselect
 
 ! Read in the selected file variables
+prev_gname = ""
+ngroups = 0
 do i = 1, file_nvars
   if (var_select(i)) then
     call ioda_obsdb_getvar(self, trim(var_list(i)), vptr)
+
+    ! Extract the group name, and count up the unique number of groups
+    call extract_group_name(var_list(i), gname)
+    if (trim(prev_gname) .ne. trim(gname)) then
+      ngroups = ngroups + 1
+      prev_gname = gname
+    endif
+  endif
+enddo
+
+! Loop through the var_list again and store the unique groups name in the data member
+allocate(self%read_only_groups(ngroups))
+prev_gname = ""
+ngroups = 0
+do i = 1, file_nvars
+  if (var_select(i)) then
+    ! Extract the group name, and record the unique number of groups
+    call extract_group_name(var_list(i), gname)
+    if (trim(prev_gname) .ne. trim(gname)) then
+      ngroups = ngroups + 1
+      self%read_only_groups(ngroups) = gname
+      prev_gname = gname
+    endif
   endif
 enddo
 
@@ -167,6 +198,7 @@ call ioda_obsdb_write(self)
 self%fvlen = 0
 self%nobs  = 0
 if (allocated(self%dist_indx)) deallocate(self%dist_indx)
+if (allocated(self%read_only_groups)) deallocate(self%read_only_groups)
 self%nlocs  = 0
 self%nvars  = 0
 self%filename = ""
@@ -472,8 +504,14 @@ if (.not.associated(vptr)) then
   allocate(vptr%vals(vptr%nobs))
   vptr%vals = vdata 
 else
-  write(record,*) myname,' var= ', trim(vname), ':this column already exists'
-  call abor1_ftn(record)
+  if (is_read_only(self, vname)) then
+    write(record,*) myname, ': ERROR: Cannot write into a read only group: ', trim(vname)
+    call abor1_ftn(record)
+  else
+    write(record,*) myname, ': WARNING: Updating an existing group: ', trim(vname)
+    call fckit_log%info(record)
+    vptr%vals = vdata
+  endif
 endif
 
 end subroutine ioda_obsdb_put_vec
@@ -497,7 +535,6 @@ integer :: i
 type(ioda_obs_var), pointer :: vptr
 character(len=max_string) :: vname
 
-! 4th argument is the filename containing obs values, which is not used for this method.
 call ioda_obsdb_setup(self, fvlen, nobs, dist_indx, nlocs, nvars, "", "", obstype, missing_value)
 
 ! Create variables and generate the values specified by the arguments.
@@ -590,12 +627,12 @@ if (self%fileout(len_trim(self%fileout)-3:len_trim(self%fileout)) == ".nc4" .or.
 
 else if (self%fileout(len_trim(self%fileout)-3:len_trim(self%fileout)) == ".odb") then
 
-   write(record,*) myname, ':write diag in odb2, filename=', trim(self%fileout)
+   write(record,*) myname, ': write diag in odb2, filename=', trim(self%fileout)
    call fckit_log%info(record)
 
 else
 
-   write(record,*) myname, ':no output'
+   write(record,*) myname, ': no output'
    call fckit_log%info(record)
 
 endif
@@ -671,6 +708,45 @@ function ioda_obsdb_get_ftype(fname) result(ftype)
     ftype = 2
   endif
 end function ioda_obsdb_get_ftype
+
+! ------------------------------------------------------------------------------
+subroutine extract_group_name(vname, gname)
+  implicit none
+
+  character(len=*), intent(in)    :: vname
+  character(len=*), intent(inout) :: gname
+
+  integer :: gindex
+
+  ! The group name is the suffix after a '@' character.
+  gindex = index(vname, "@")
+  if (gindex .ne. 0) then
+    gname = vname(gindex+1:)
+  else
+    gname = "GroupUndefined"
+  endif
+
+end subroutine extract_group_name
+
+! ------------------------------------------------------------------------------
+logical function is_read_only(self, vname)
+  implicit none
+
+  type(ioda_obsdb), intent(in) :: self
+  character(len=*), intent(in)    :: vname
+
+  character(len=max_string) :: gname
+  integer :: i
+
+  ! check to see if gname exists in the read only list
+  call extract_group_name(vname, gname)
+  is_read_only = .false.
+  do i = 1, size(self%read_only_groups)
+    is_read_only = is_read_only .or. (trim(gname) .eq. trim(self%read_only_groups(i)))
+  enddo
+
+end function is_read_only
+
 ! ------------------------------------------------------------------------------
 
 end module ioda_obsdb_mod
