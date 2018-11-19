@@ -593,8 +593,6 @@ integer, allocatable         :: ncid_var(:)
 integer                      :: input_file_type
 
 
-print*, "DEBUG: write: self%fileout: ", trim(self%fileout)
-
 if (trim(self%fileout) .ne. "") then
   input_file_type = ioda_obsdb_get_ftype(trim(self%fileout))
   select case (input_file_type)
