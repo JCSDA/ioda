@@ -144,7 +144,7 @@ select case (input_file_type)
 
   var_select(1) = .true.
   var_select(2) = .true.
-  var_select(2) = .true.
+  var_select(3) = .true.
 
  case (2)
 
@@ -590,51 +590,55 @@ character(len=*),parameter   :: myname = "ioda_obsdb_write"
 character(len=255)           :: record
 integer                      :: i,ncid,dimid_1d(1),dimid_nobs
 integer, allocatable         :: ncid_var(:)
+integer                      :: input_file_type
 
 
+print*, "DEBUG: write: self%fileout: ", trim(self%fileout)
 
-if (self%fileout(len_trim(self%fileout)-3:len_trim(self%fileout)) == ".nc4" .or. &
-    self%fileout(len_trim(self%fileout)-3:len_trim(self%fileout)) == ".nc") then
+if (trim(self%fileout) .ne. "") then
+  input_file_type = ioda_obsdb_get_ftype(trim(self%fileout))
+  select case (input_file_type)
+   case (0)
+    write(record,*) myname, ':write diag in netcdf, filename=', trim(self%fileout)
+    call fckit_log%info(record)
 
-   write(record,*) myname, ':write diag in netcdf, filename=', trim(self%fileout)
-   call fckit_log%info(record)
+    call check('nf90_create', nf90_create(trim(self%fileout),nf90_hdf5,ncid))
+    call check('nf90_def_dim', nf90_def_dim(ncid,trim(self%obstype)//'_nobs',self%nobs, dimid_nobs))
+    dimid_1d = (/ dimid_nobs /)
 
-   call check('nf90_create', nf90_create(trim(self%fileout),nf90_hdf5,ncid))
-   call check('nf90_def_dim', nf90_def_dim(ncid,trim(self%obstype)//'_nobs',self%nobs, dimid_nobs))
-   dimid_1d = (/ dimid_nobs /)
+    i = 0
+    allocate(ncid_var(self%obsvars%n_nodes))
+    vptr => self%obsvars%head
+    do while (associated(vptr))
+       i = i + 1
+       call check('nf90_def_var', nf90_def_var(ncid,trim(vptr%vname)//'_'//trim(self%obstype),nf90_double,dimid_1d,ncid_var(i)))
+       vptr => vptr%next
+    enddo
 
-   i = 0
-   allocate(ncid_var(self%obsvars%n_nodes))
-   vptr => self%obsvars%head
-   do while (associated(vptr))
-      i = i + 1
-      call check('nf90_def_var', nf90_def_var(ncid,trim(vptr%vname)//'_'//trim(self%obstype),nf90_double,dimid_1d,ncid_var(i)))
-      vptr => vptr%next
-   enddo
+    call check('nf90_enddef', nf90_enddef(ncid))
 
-   call check('nf90_enddef', nf90_enddef(ncid))
+    i = 0
+    vptr => self%obsvars%head
+    do while (associated(vptr))
+       i = i + 1
+       call check('nf90_put_var', nf90_put_var(ncid,ncid_var(i),vptr%vals))
+       vptr => vptr%next
+    enddo
 
-   i = 0
-   vptr => self%obsvars%head
-   do while (associated(vptr))
-      i = i + 1
-      call check('nf90_put_var', nf90_put_var(ncid,ncid_var(i),vptr%vals))
-      vptr => vptr%next
-   enddo
+    call check('nf90_close', nf90_close(ncid))
+    deallocate(ncid_var)
 
-   call check('nf90_close', nf90_close(ncid))
-   deallocate(ncid_var)
+   case (1)
+    write(record,*) myname, ': write diag in odb2 format, filename=', trim(self%fileout)
+    call fckit_log%info(record)
 
-else if (self%fileout(len_trim(self%fileout)-3:len_trim(self%fileout)) == ".odb") then
-
-   write(record,*) myname, ': write diag in odb2, filename=', trim(self%fileout)
-   call fckit_log%info(record)
-
+   case (2)
+     write(record,*) myname, ': write diag in odb1 format, filename=', trim(self%fileout)
+     call fckit_log%info(record)
+  endselect
 else
-
-   write(record,*) myname, ': no output'
-   call fckit_log%info(record)
-
+  write(record,*) myname, ': no output'
+  call fckit_log%info(record)
 endif
 
 end subroutine ioda_obsdb_write
