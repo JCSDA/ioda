@@ -17,7 +17,7 @@
         "ObsData": {
           "ObsDataIn": {
             "obsfile": "Data/aod_obs_2015081000_m.nc4",
-            "variables": [ "latitide", "longitude", "time" ]
+            "variables": [ "latitude", "longitude", "time" ]
           }
         }
       },
@@ -26,7 +26,7 @@
         "ObsData": {
           "ObsDataIn": {
             "obsfile": "Data/amsua_obs_n19_2018041500_m.nc4",
-            "variables": [ "latitide", "longitude", "time" ]
+            "variables": [ "latitude", "longitude", "time" ]
           }
         }
       },
@@ -44,7 +44,7 @@
         "ObsData": {
           "ObsDataIn": {
             "obsfile": "Data/icec-2018-04-15.nc",
-            "variables": [ "latitide", "longitude", "time" ]
+            "variables": [ "latitude", "longitude", "time" ]
           }
         }
       }
