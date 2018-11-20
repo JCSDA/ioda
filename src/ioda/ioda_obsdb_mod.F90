@@ -144,7 +144,7 @@ select case (input_file_type)
 
   var_select(1) = .true.
   var_select(2) = .true.
-  var_select(2) = .true.
+  var_select(3) = .true.
 
  case (2)
 
