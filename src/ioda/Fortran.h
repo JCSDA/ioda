@@ -55,7 +55,9 @@ extern "C" {
 // -----------------------------------------------------------------------------
 //  Observation Handler
 // -----------------------------------------------------------------------------
-  void ioda_obsdb_setup_f90(F90odb &, const eckit::Configuration * const *, const double &);
+  void ioda_obsdb_setup_f90(F90odb &, const eckit::Configuration * const *,
+                            const util::DateTime * const *, const util::DateTime * const *,
+                            const double &);
   void ioda_obsdb_delete_f90(F90odb &);
   void ioda_obsdb_nobs_f90(const F90odb &, int &);
   void ioda_obsdb_nlocs_f90(const F90odb &, int &);
