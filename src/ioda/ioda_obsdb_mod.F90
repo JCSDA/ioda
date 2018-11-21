@@ -181,7 +181,16 @@ endselect
 call ioda_obsdb_getvar(self, trim(time_vname), vptr)
 
 allocate(tw_indx(self%nlocs))
-call ioda_obsdb_gen_tw_indx(self, vptr%vals, tw_indx, tw_nlocs)
+if (input_file_type .eq. 0) then
+  call ioda_obsdb_gen_tw_indx(self, vptr%vals, tw_indx, tw_nlocs)
+else
+  ! For now, fake it and take all of the observation values. This will get fixed
+  ! later on with the C++ ObsSpace implementation.
+  tw_nlocs = self%nlocs
+  do i = 1, self%nlocs
+    tw_indx(i) = i
+  enddo
+endif
 
 if (tw_nlocs .eq. 0) then
   write(err_msg,*) 'ioda_obsdb_setup: all observations fall outside timing window'
