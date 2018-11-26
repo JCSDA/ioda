@@ -117,6 +117,8 @@ end interface
 ! Get the obs type
 MyObsType = trim(config_get_string(c_conf,max_string,"ObsType"))
 
+fin = ""
+fout = ""
 if (config_element_exists(c_conf,"ObsData.ObsDataIn")) then
   fin  = config_get_string(c_conf,max_string,"ObsData.ObsDataIn.obsfile")
   input_file_type = ioda_obsdb_get_ftype(fin)
