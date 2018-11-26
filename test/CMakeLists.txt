@@ -9,11 +9,16 @@ list( APPEND ioda_test_input
   testinput/iodatest_odb.json
   testinput/iodatest_odb1.json
   testinput/iodatest_obsspace.json
+<<<<<<< HEAD
+  #testinput/iodatest_obsspace.yml
+=======
   testinput/iodatest_obsvector.yml
+>>>>>>> origin
   testinput/iodatest_fileio.yml
   testinput/iodatest_marine_fileio.yml
   testinput/iodatest_marine_obsspace.yml  
   testinput/iodatest_fileio_odb_api.yml
+  testinput/ioda_smap.json
 )
 
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/testinput)
@@ -41,6 +46,7 @@ list( APPEND ioda_test_data
   atmosphere/sondes_obs_2018041500_s.nc4
   atmosphere/diag_t_obs_01_wprofiles.odb
   atmosphere/diag_t_obs_01_wprofiles_odb
+  atmosphere/smap_L1B_2018041500.nc4
 
   constituents/diag_viirs_ges.2015081000_dbl_subset.nc4
   constituents/aod_obs_2015081000_m.nc4
