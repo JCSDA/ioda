@@ -12,7 +12,7 @@ use iso_c_binding
 use kinds
 use ioda_obsvar_mod
 use datetime_mod
-use duration_mod
+use twindow_utils_mod
 use fckit_log_module, only : fckit_log
 #ifdef HAVE_ODB_API
 use odb_helper_mod, only: &
@@ -182,7 +182,8 @@ call ioda_obsdb_getvar(self, trim(time_vname), vptr)
 
 allocate(tw_indx(self%nlocs))
 if (input_file_type .eq. 0) then
-  call ioda_obsdb_gen_tw_indx(self, vptr%vals, tw_indx, tw_nlocs)
+  call gen_twindow_index(self%refdate, self%t1, self%t2, self%nlocs, &
+                         vptr%vals, tw_indx, tw_nlocs)
 else
   ! For now, fake it and take all of the observation values. This will get fixed
   ! later on with the C++ ObsSpace implementation.
@@ -299,24 +300,15 @@ character(len=*),parameter:: myname = "ioda_obsdb_getlocs"
 character(len=255) :: record
 integer :: failed
 type(ioda_obs_var), pointer :: vptr
-integer :: istep
-integer :: ilocs, i
-integer, dimension(:), allocatable :: indx
+integer :: i
+integer :: tw_nlocs
+integer, dimension(:), allocatable :: tw_indx
 real(kind_real), dimension(:), allocatable :: time, lon, lat
-type(duration), dimension(:), allocatable :: dt
-type(datetime), dimension(:), allocatable :: t
-type(datetime) :: reftime
   
 character(21) :: tstr, tstr2
 
-! Assume that obs are organized with the first location going with the
-! first nobs/nlocs obs, the second location going with the next nobs/nlocs
-! obs, etc.
-istep = self%nobs / self%nlocs
-
 ! Local copies pre binning
 allocate(time(self%nlocs), lon(self%nlocs), lat(self%nlocs))
-allocate(indx(self%nlocs))
 
 if ((trim(self%obstype) .eq. "Radiosonde") .or. &
     (trim(self%obstype) .eq. "Aircraft")) then
@@ -342,48 +334,21 @@ else
 endif
 time = vptr%vals
 
-
-allocate(dt(self%nlocs), t(self%nlocs))
-
-!Time coming from file is integer representing distance to time in file name
-!Use hardcoded date for now but needs to come from ObsSpace somehow.
-!AS: not going to fix it for now, will wait for either suggestions or new IODA.
-call datetime_create("2018-04-15T00:00:00Z", reftime)
-
-call datetime_to_string(reftime, tstr)
-
-do i = 1, self%nlocs
-  dt(i) = int(3600*time(i))
-  t(i) = reftime
-  call datetime_update(t(i), dt(i))
-enddo
-
-call datetime_to_string(t1,tstr)
-call datetime_to_string(t2,tstr2)
-
-! Find number of locations in this timeframe
-ilocs = 0
-do i = 1, self%nlocs
-  if (t(i) > t1 .and. t(i) <= t2) then
-    ilocs = ilocs + 1
-    indx(ilocs) = i
-    call datetime_to_string(t(i),tstr)
-  endif
-enddo
-
-deallocate(dt, t)
+! Generate the timing window indices
+allocate(tw_indx(self%nlocs))
+call gen_twindow_index(self%refdate, t1, t2, self%nlocs, time, tw_indx, tw_nlocs)
 
 !Setup ioda locations
-call ioda_locs_setup(locs, ilocs)
-do i = 1, ilocs
-  locs%lon(i)  = lon(indx(i))
-  locs%lat(i)  = lat(indx(i))
-  locs%time(i) = time(indx(i))
+call ioda_locs_setup(locs, tw_nlocs)
+do i = 1, tw_nlocs
+  locs%lon(i)  = lon(tw_indx(i))
+  locs%lat(i)  = lat(tw_indx(i))
+  locs%time(i) = time(tw_indx(i))
 enddo
-locs%indx = indx(1:ilocs)
+locs%indx = tw_indx(1:tw_nlocs)
 
 deallocate(time, lon, lat)
-deallocate(indx)
+deallocate(tw_indx)
 
 write(record,*) myname,': allocated/assinged obs-data'
 call fckit_log%info(record)
@@ -832,42 +797,5 @@ logical function is_read_only(self, vname)
 end function is_read_only
 
 ! ------------------------------------------------------------------------------
-subroutine ioda_obsdb_gen_tw_indx(self, time_offset, tw_indx, tw_nlocs)
-  implicit none
-
-  type(ioda_obsdb), intent(in)              :: self
-  real(kind_real), dimension(:), intent(in) :: time_offset
-  integer, dimension(:), intent(out)        :: tw_indx
-  integer, intent(out)                      :: tw_nlocs
-
-  integer :: i
-
-  type(duration), dimension(:), allocatable :: dt
-  type(datetime), dimension(:), allocatable :: t
-
-  ! Convert the refdate, time offset pairs to an absolute time that
-  ! can be compared to the timing window edges.
-  allocate(dt(self%nlocs))
-  allocate(t(self%nlocs))
-
-  do i = 1, self%nlocs
-    dt(i) = int(3600*time_offset(i))
-    t(i) = self%refdate
-    call datetime_update(t(i), dt(i))
-  enddo
-
-  ! Find number of locations in this timeframe
-  tw_nlocs = 0
-  do i = 1, self%nlocs
-    if (t(i) > self%t1 .and. t(i) <= self%t2) then
-      tw_nlocs = tw_nlocs + 1
-      tw_indx(tw_nlocs) = i
-    endif
-  enddo
-
-  deallocate(dt)
-  deallocate(t)
-
-end subroutine ioda_obsdb_gen_tw_indx
 
 end module ioda_obsdb_mod

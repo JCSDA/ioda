@@ -72,6 +72,7 @@ ioda/obsspace_mod.F90
 ioda/random_f.cc
 ioda/random_f.h
 ioda/random_vectors_mod.F90
+ioda/twindow_utils_mod.F90
 fileio/IodaIO.cc
 fileio/IodaIO.h
 fileio/IodaIOfactory.cc
