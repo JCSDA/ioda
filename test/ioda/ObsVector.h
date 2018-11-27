@@ -132,23 +132,21 @@ void testRead() {
   typedef ObsVecTestFixture Test_;
   typedef ioda::ObsVector  ObsVector_;
 
-  ioda::ObsSpace * Odb;
-  double Rms;
-  double ExpectedRms;
-  double Tol;
+  const eckit::LocalConfiguration obsconf(::test::TestEnvironment::config(), "Observations");
+  std::vector<eckit::LocalConfiguration> conf;
+  obsconf.get("ObsTypes", conf);
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    Odb = Test_::obspace()[jj].get();
+    ioda::ObsSpace * Odb = Test_::obspace()[jj].get();
     boost::scoped_ptr<ObsVector_> ov(new ObsVector_(*Odb, Test_::observed(jj)));
 
     // Grab the expected RMS value and tolerance from the obsdb_ configuration.
-    const eckit::Configuration & Conf(Odb->config());
-    ExpectedRms = Conf.getDouble("ObsData.ObsDataIn.rms_equiv");
-    Tol = Conf.getDouble("ObsData.ObsDataIn.tolerance");
+    double ExpectedRms = conf[jj].getDouble("ObsData.ObsDataIn.rms_equiv");
+    double Tol = conf[jj].getDouble("ObsData.ObsDataIn.tolerance");
 
     // Read in a vector and check contents with norm function.
     ov->read("ObsValue");
-    Rms = ov->rms();
+    double Rms = ov->rms();
     
     BOOST_CHECK_CLOSE(Rms, ExpectedRms, Tol);
   }

@@ -67,15 +67,18 @@ class ObsSpaceTestFixture : private boost::noncopyable {
 void testConstructor() {
   typedef ObsSpaceTestFixture Test_;
 
+  const eckit::LocalConfiguration obsconf(::test::TestEnvironment::config(), "Observations");
+  std::vector<eckit::LocalConfiguration> conf;
+  obsconf.get("ObsTypes", conf);
+
   for (std::size_t jj = 0; jj < Test_::size(); ++jj) {
     // Get the numbers of observations (nobs) and locations (nlocs) from the obspace object
     std::size_t Nobs = Test_::obspace(jj).nobs();
     std::size_t Nlocs = Test_::obspace(jj).nlocs();
 
     // Get the expected nobs and nlocs from the obspace object's configuration
-    const eckit::Configuration & Conf(Test_::obspace(jj).config());
-    int ExpectedNobs  = Conf.getInt("ObsData.ObsDataIn.metadata.nobs");
-    int ExpectedNlocs = Conf.getInt("ObsData.ObsDataIn.metadata.nlocs");
+    int ExpectedNobs  = conf[jj].getInt("ObsData.ObsDataIn.metadata.nobs");
+    int ExpectedNlocs = conf[jj].getInt("ObsData.ObsDataIn.metadata.nlocs");
 
     BOOST_CHECK_EQUAL(Nobs, ExpectedNobs);
     BOOST_CHECK_EQUAL(Nlocs, ExpectedNlocs);
@@ -87,42 +90,33 @@ void testConstructor() {
 void testGetDb() {
   typedef ObsSpaceTestFixture Test_;
 
-  ioda::ObsSpace * Odb;
-
-  std::size_t Nlocs;
-
-  double Vnorm;
-  double Tol;
-
-  std::vector<std::string> GroupNames;
-  std::vector<std::string> VarNames;
-  std::vector<double> ExpectedVnorms;
-
-  std::string Gname;
+  const eckit::LocalConfiguration obsconf(::test::TestEnvironment::config(), "Observations");
+  std::vector<eckit::LocalConfiguration> conf;
+  obsconf.get("ObsTypes", conf);
 
   for (std::size_t jj = 0; jj < Test_::size(); ++jj) {
     // Set up a pointer to the ObsSpace object for convenience
-    Odb = &(Test_::obspace(jj));
+    ioda::ObsSpace * Odb = &(Test_::obspace(jj));
+    const eckit::LocalConfiguration dataconf(conf[jj], "ObsData.ObsDataIn.TestData");
 
     // Read in the variable names and expected norm values from the configuration
-    const eckit::Configuration & Conf(Odb->config());
-    GroupNames = Conf.getStringVector("ObsData.ObsDataIn.TestData.groups");
-    VarNames = Conf.getStringVector("ObsData.ObsDataIn.TestData.variables");
-    ExpectedVnorms = Conf.getDoubleVector("ObsData.ObsDataIn.TestData.norms");
-    Tol = Conf.getDouble("ObsData.ObsDataIn.TestData.tolerance");
+    std::vector<std::string> GroupNames = dataconf.getStringVector("groups");
+    std::vector<std::string> VarNames = dataconf.getStringVector("variables");
+    std::vector<double> ExpectedVnorms = dataconf.getDoubleVector("norms");
+    double Tol = dataconf.getDouble("tolerance");
 
-    Nlocs = Odb->nlocs();
+    std::size_t Nlocs = Odb->nlocs();
     for (std::size_t i = 0; i < VarNames.size(); ++i) {
       // Read in the table, calculate the norm and compare with the expected norm.
       std::vector<double> TestVec(Nlocs);
-      Gname = GroupNames[i];
+      std::string Gname = GroupNames[i];
       if (Gname == "NoGroup") {
         Gname = "";
       }
       Odb->get_db(Gname, VarNames[i], Nlocs, TestVec.data());
 
       // Calculate the norm of the vector
-      Vnorm = 0.0;
+      double Vnorm = 0.0;
       for (std::size_t j = 0; j < Nlocs; ++j) {
         Vnorm += pow(TestVec[j], 2.0);
       }
@@ -138,22 +132,17 @@ void testGetDb() {
 void testPutDb() {
   typedef ObsSpaceTestFixture Test_;
 
-  ioda::ObsSpace * Odb;
-
-  std::size_t Nlocs;
-  bool VecMatch;
-
   std::string VarName("DummyVar");
 
   for (std::size_t jj = 0; jj < Test_::size(); ++jj) {
 
     // Set up a pointer to the ObsSpace object for convenience
-    Odb = &(Test_::obspace(jj));
+    ioda::ObsSpace * Odb = &(Test_::obspace(jj));
 
     // Create a dummy vector to put into the database
     // Load up the vector with contrived data, put the vector then
     // get the vector and see if the contrived data made it through.
-    Nlocs = Odb->nlocs();
+    std::size_t Nlocs = Odb->nlocs();
     std::vector<double> TestVec(Nlocs);
     std::vector<double> ExpectedVec(Nlocs);
 
@@ -166,7 +155,7 @@ void testPutDb() {
     Odb->put_db("MetaData", VarName, Nlocs, ExpectedVec.data());
     Odb->get_db("MetaData", VarName, Nlocs, TestVec.data());
 
-    VecMatch = true;
+    bool VecMatch = true;
     for (std::size_t i = 0; i < Nlocs; ++i) {
       VecMatch = VecMatch && (int(ExpectedVec[i]) == int(TestVec[i]));
     }
@@ -180,22 +169,17 @@ void testPutDb() {
 void testWriteableGroup() {
   typedef ObsSpaceTestFixture Test_;
 
-  ioda::ObsSpace * Odb;
-
-  std::size_t Nlocs;
-  bool VecMatch;
-
   std::string VarName("DummyVar");
 
   for (std::size_t jj = 0; jj < Test_::size(); ++jj) {
 
     // Set up a pointer to the ObsSpace object for convenience
-    Odb = &(Test_::obspace(jj));
+    ioda::ObsSpace * Odb = &(Test_::obspace(jj));
 
     // Create a dummy vector to put into the database
     // All rows read from the input file should be read only.
     // All rows added since the read of the input file should be writeable.
-    Nlocs = Odb->nlocs();
+    std::size_t Nlocs = Odb->nlocs();
     std::vector<double> TestVec(Nlocs);
     std::vector<double> ExpectedVec(Nlocs);
 
@@ -208,7 +192,7 @@ void testWriteableGroup() {
     Odb->put_db("TestGroup", VarName, Nlocs, ExpectedVec.data());
     Odb->get_db("TestGroup", VarName, Nlocs, TestVec.data());
 
-    VecMatch = true;
+    bool VecMatch = true;
     for (std::size_t i = 0; i < Nlocs; ++i) {
       VecMatch = VecMatch && (int(ExpectedVec[i]) == int(TestVec[i]));
     }
