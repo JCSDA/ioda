@@ -61,7 +61,7 @@ contains
 
 ! ------------------------------------------------------------------------------
 
-subroutine ioda_obsdb_setup_c(c_key_self, c_conf, c_missing_value) bind(c,name='ioda_obsdb_setup_f90')
+subroutine ioda_obsdb_setup_c(c_key_self, c_conf, c_t1, c_t2, c_missing_value) bind(c,name='ioda_obsdb_setup_f90')
 
 #ifdef HAVE_ODB_API
 use odb_helper_mod, only: &
@@ -70,12 +70,15 @@ use odb_helper_mod, only: &
 
 use nc_diag_read_mod, only: nc_diag_read_get_dim
 use nc_diag_read_mod, only: nc_diag_read_init
+use nc_diag_read_mod, only: nc_diag_read_get_global_attr
 use nc_diag_read_mod, only: nc_diag_read_close
 
 implicit none
 
 integer(c_int), intent(inout) :: c_key_self
 type(c_ptr), intent(in)       :: c_conf !< configuration
+type(c_ptr), intent(in)       :: c_t1
+type(c_ptr), intent(in)       :: c_t2
 real(c_double), intent(in)    :: c_missing_value
 
 type(ioda_obsdb), pointer :: self
@@ -90,7 +93,6 @@ character(len=max_string) :: MyObsType
 character(len=255) :: record
 integer :: fvlen
 integer, allocatable :: dist_indx(:)
-integer, allocatable :: miss_indx(:)
 integer :: nobs
 integer :: nlocs
 integer :: nvars
@@ -98,6 +100,10 @@ integer :: iunit
 type(random_distribution) :: ran_dist
 integer :: ds, n, nn
 integer :: input_file_type
+type(datetime) :: t1
+type(datetime) :: t2
+type(datetime) :: refdate
+integer :: date_time_attr
 
 #ifdef HAVE_ODB
 integer :: rc, handle, num_pools, num_rows, num_cols
@@ -125,14 +131,8 @@ if (config_element_exists(c_conf,"ObsData.ObsDataIn")) then
 
   ! For now, just assimilating one variable, so set nvars to 1 by default.
   !
-  ! For radiance, there are 12 channels of data (channels 7, 8 and 14 were not assimilated
-  ! into the GSI run for April 15, 2018 00Z). The brightness_temperature obs data is actually
-  ! not used at this point. However, the CRTM always creates an hofx with 15 channels, and it
-  ! needs the nobs value to be set as if all 15 channels of the obs data are present. We still
-  ! need to decide how to handle missing channels in obs data, so to get things going for
-  ! now set nvars to 15 for Radiance. Note that when we come to the point where we do want
-  ! to read in the brightness temperature, we will need to address how to handle missing
-  ! channels. Ditto for AOD obs type, where AOD obs (VIIRS) has 11 channels.
+  ! The CRTM expects 15 channels for AMSU-A (Radiance) and 11 channels for AOD. Each
+  ! channel is being treated as a separate variable.
   nvars = 1
   if (trim(MyObsType) .eq. "Radiance") nvars = 15
   if (trim(MyObsType) .eq. "Aod") nvars = 11
@@ -153,6 +153,14 @@ if (config_element_exists(c_conf,"ObsData.ObsDataIn")) then
       dist_indx = ran_dist%indx
       nobs = nvars * nlocs
 
+      ! Read in the date_time attribute, and convert to a datetime object
+      call nc_diag_read_get_global_attr(iunit, "date_time", date_time_attr)
+
+      ! Create the datetime object with a dummy date, then set it from the
+      ! date_time attribute.
+      call datetime_create("1000-01-01T00:00:00Z", refdate)
+      call datetime_from_ifs(refdate, date_time_attr/100, 0)
+
       call nc_diag_read_close(fin)
 
     case (1)
@@ -164,6 +172,9 @@ if (config_element_exists(c_conf,"ObsData.ObsDataIn")) then
       nlocs = nobs
       allocate (dist_indx(nobs))
       dist_indx(:) = [(/(n, n = 1,nobs)/)]
+
+      ! Hardwire the refdate, for now, to that in the input file
+      call datetime_create("2016-03-04T00:00:00Z", refdate)
 
 #endif
 
@@ -186,6 +197,9 @@ if (config_element_exists(c_conf,"ObsData.ObsDataIn")) then
       nlocs = nobs
       allocate (dist_indx(nobs))
       dist_indx(:) = [(/(n, n = 1,nobs)/)]
+
+      ! Hardwire the refdate, for now, to that in the input file
+      call datetime_create("2016-03-04T00:00:00Z", refdate)
 
 #endif
 
@@ -241,7 +255,13 @@ call ioda_obsdb_registry%init()
 call ioda_obsdb_registry%add(c_key_self)
 call ioda_obsdb_registry%get(c_key_self, self)
 
-call ioda_obsdb_setup(self, fvlen, nobs, dist_indx, nlocs, nvars, fin, fout, MyObsType, c_missing_value)
+! Modify dist_indx to exclude any selected obs if that obs is outside the timing window.
+call c_f_datetime(c_t1, t1)
+call c_f_datetime(c_t2, t2)
+call ioda_obsdb_setup(self, fvlen, nobs, dist_indx, nlocs, nvars, refdate, t1, t2, &
+                      fin, fout, MyObsType, c_missing_value)
+
+deallocate(dist_indx)
 
 end subroutine ioda_obsdb_setup_c
 
@@ -321,6 +341,7 @@ real(c_double), intent(in)    :: c_missing_value
 
 type(ioda_obsdb), pointer :: self
 type(datetime) :: t1, t2
+type(datetime) :: refdate
 integer :: fvlen
 integer :: nobs
 integer,allocatable :: dist_indx(:)
@@ -334,6 +355,8 @@ type(random_distribution) :: ran_dist
 call ioda_obsdb_registry%get(c_key_self, self)
 call c_f_datetime(c_t1, t1)
 call c_f_datetime(c_t2, t2)
+! Hardwire the refdate, for now
+call datetime_create("2018-04-15T00:00:00Z", refdate)
 
 fvlen = config_get_int(c_conf, "nobs")
 lat  = config_get_real(c_conf, "lat")
@@ -358,7 +381,8 @@ MyObsType = trim(config_get_string(c_conf,max_string,"ObsType"))
 write(record,*) 'ioda_obsdb_generate_c: ', trim(MyObsType)
 call fckit_log%info(record)
 
-call ioda_obsdb_generate(self, fvlen, nobs, dist_indx, nlocs, nvars, MyObsType, c_missing_value, lat, lon1, lon2)
+call ioda_obsdb_generate(self, fvlen, nobs, dist_indx, nlocs, nvars, refdate, t1, t2, &
+                         MyObsType, c_missing_value, lat, lon1, lon2)
 
 deallocate(dist_indx)
 
@@ -513,7 +537,5 @@ enddo
 ihave = ioda_obsdb_has(self, vname)
 
 end subroutine ioda_obsdb_has_c
-
-! ------------------------------------------------------------------------------
 
 end module ioda_obsdb_mod_c
