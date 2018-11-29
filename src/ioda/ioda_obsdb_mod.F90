@@ -11,6 +11,8 @@ module ioda_obsdb_mod
 use iso_c_binding
 use kinds
 use ioda_obsvar_mod
+use datetime_mod
+use twindow_utils_mod
 use fckit_log_module, only : fckit_log
 #ifdef HAVE_ODB_API
 use odb_helper_mod, only: &
@@ -48,6 +50,10 @@ type :: ioda_obsdb
 
   real(c_double) :: missing_value
 
+  type(datetime) :: refdate
+  type(datetime) :: t1
+  type(datetime) :: t2
+
   type(ioda_obs_variables) :: obsvars  !< observation variables
 
   character(len=max_string), allocatable :: read_only_groups(:)
@@ -61,7 +67,8 @@ contains
 
 ! ------------------------------------------------------------------------------
 
-subroutine ioda_obsdb_setup(self, fvlen, nobs, dist_indx, nlocs, nvars, filename, fileout, obstype, missing_value)
+subroutine ioda_obsdb_setup(self, fvlen, nobs, dist_indx, nlocs, nvars, refdate, t1, t2, &
+                            filename, fileout, obstype, missing_value)
 
 use nc_diag_read_mod, only: nc_diag_read_init
 use nc_diag_read_mod, only: nc_diag_read_close
@@ -76,6 +83,9 @@ integer, intent(in) :: nobs
 integer, intent(in) :: dist_indx(:)
 integer, intent(in) :: nlocs
 integer, intent(in) :: nvars
+type(datetime)      :: refdate
+type(datetime)      :: t1
+type(datetime)      :: t2
 character(len=*), intent(in) :: filename
 character(len=*), intent(in) :: fileout
 character(len=*), intent(in) :: obstype
@@ -91,16 +101,25 @@ integer :: i
 integer(selected_int_kind(8)), allocatable :: dim_sizes(:)
 type(ioda_obs_var), pointer :: vptr
 
+character(len=max_string) :: time_vname
+integer, allocatable      :: tw_indx(:)
+integer                   :: tw_nlocs
+
 character(len=max_string) :: gname
 character(len=max_string) :: prev_gname
 integer :: ngroups
 
+character(len=max_string) :: err_msg
+
 self%fvlen         = fvlen
 self%nobs          = nobs
-allocate(self%dist_indx(nobs))
+allocate(self%dist_indx(nlocs))
 self%dist_indx     = dist_indx
 self%nlocs         = nlocs
 self%nvars         = nvars
+self%refdate       = refdate
+self%t1            = t1
+self%t2            = t2
 self%filename      = filename
 self%fileout       = fileout
 self%obstype       = obstype
@@ -127,6 +146,9 @@ select case (input_file_type)
     dim_sizes = nc_diag_read_ret_var_dims(trim(var_list(i)))
     var_select(i) = (size(dim_sizes) .eq. 1) .and. (dim_sizes(1) .eq. fvlen)
     deallocate(dim_sizes)
+
+    ! Record the time variable name
+    if (var_list(i)(1:4) .eq. 'time') time_vname = var_list(i)
   enddo
 
   call nc_diag_read_close(self%filename)
@@ -146,9 +168,66 @@ select case (input_file_type)
   var_select(2) = .true.
   var_select(3) = .true.
 
+  time_vname = "time"
+
  case (2)
 
 endselect
+
+! Filter out the obs that fall outside the timing window. At this point, the obs variable
+! structure has been setup (allocated) as if all obs within the file fall inside the
+! timing window. If there are obs that fall outside the timing window, then the nlocs, nobs,
+! dist_indx, and obs variables data members need to be re-sized (re-allocated).
+call ioda_obsdb_getvar(self, trim(time_vname), vptr)
+
+allocate(tw_indx(self%nlocs))
+if (input_file_type .eq. 0) then
+  call gen_twindow_index(self%refdate, self%t1, self%t2, self%nlocs, &
+                         vptr%vals, tw_indx, tw_nlocs)
+else
+  ! For now, fake it and take all of the observation values. This will get fixed
+  ! later on with the C++ ObsSpace implementation.
+  tw_nlocs = self%nlocs
+  do i = 1, self%nlocs
+    tw_indx(i) = i
+  enddo
+endif
+
+if (tw_nlocs .eq. 0) then
+  write(err_msg,*) 'ioda_obsdb_setup: all observations fall outside timing window'
+  call abor1_ftn(trim(err_msg))
+endif
+
+if (tw_nlocs .ne. self%nlocs) then
+  ! Some obs fall outside the window, so need to re-size data members, plus re-assign
+  ! the distribution index.
+
+  ! Adjust nlocs, nobs according to tw_nlocs
+  self%nlocs = tw_nlocs
+  self%nobs = self%nvars * self%nlocs
+
+  ! self%dist_indx was just initialized from the input argument dist_indx. Reallocate
+  ! self%dist_indx and assign from dist_indx using the indicies contained in tw_indx.
+  !
+  ! tw_indx contains the indices in the time data vector where the time fell inside the
+  ! timing window. dist_index contains the indices of the vector in the input file
+  ! that were selected during MPI distribution. If you have more than one process
+  ! element, then these indices will not be contiguous. Therefore you need to use tw_indx
+  ! to select the indices from dist_indx to get the correct indices for reading out of the
+  ! input file. 
+  deallocate(self%dist_indx)
+  allocate(self%dist_indx(self%nlocs))
+  do i = 1, self%nlocs
+    self%dist_indx(i) = dist_indx(tw_indx(i))
+  enddo
+
+  ! The self%obsvars structure has the wrong sized time variable contained inside. This
+  ! needs to be destructed and then re-constructed using the correct sizes.
+  call self%obsvars%delete()
+  call self%obsvars%setup()
+endif
+
+deallocate(tw_indx)
 
 ! Read in the selected file variables
 prev_gname = ""
@@ -212,8 +291,6 @@ end subroutine ioda_obsdb_delete
 
 subroutine ioda_obsdb_getlocs(self, locs, t1, t2)
 use ioda_locs_mod
-use datetime_mod
-use duration_mod
 implicit none
 type(ioda_obsdb), intent(in)    :: self
 type(ioda_locs),  intent(inout) :: locs
@@ -223,24 +300,15 @@ character(len=*),parameter:: myname = "ioda_obsdb_getlocs"
 character(len=255) :: record
 integer :: failed
 type(ioda_obs_var), pointer :: vptr
-integer :: istep
-integer :: ilocs, i
-integer, dimension(:), allocatable :: indx
+integer :: i
+integer :: tw_nlocs
+integer, dimension(:), allocatable :: tw_indx
 real(kind_real), dimension(:), allocatable :: time, lon, lat
-type(duration), dimension(:), allocatable :: dt
-type(datetime), dimension(:), allocatable :: t
-type(datetime) :: reftime
   
 character(21) :: tstr, tstr2
 
-! Assume that obs are organized with the first location going with the
-! first nobs/nlocs obs, the second location going with the next nobs/nlocs
-! obs, etc.
-istep = self%nobs / self%nlocs
-
 ! Local copies pre binning
 allocate(time(self%nlocs), lon(self%nlocs), lat(self%nlocs))
-allocate(indx(self%nlocs))
 
 if ((trim(self%obstype) .eq. "Radiosonde") .or. &
     (trim(self%obstype) .eq. "Aircraft")) then
@@ -266,48 +334,21 @@ else
 endif
 time = vptr%vals
 
-
-allocate(dt(self%nlocs), t(self%nlocs))
-
-!Time coming from file is integer representing distance to time in file name
-!Use hardcoded date for now but needs to come from ObsSpace somehow.
-!AS: not going to fix it for now, will wait for either suggestions or new IODA.
-call datetime_create("2018-04-15T00:00:00Z", reftime)
-
-call datetime_to_string(reftime, tstr)
-
-do i = 1, self%nlocs
-  dt(i) = int(3600*time(i))
-  t(i) = reftime
-  call datetime_update(t(i), dt(i))
-enddo
-
-call datetime_to_string(t1,tstr)
-call datetime_to_string(t2,tstr2)
-
-! Find number of locations in this timeframe
-ilocs = 0
-do i = 1, self%nlocs
-  if (t(i) > t1 .and. t(i) <= t2) then
-    ilocs = ilocs + 1
-    indx(ilocs) = i
-    call datetime_to_string(t(i),tstr)
-  endif
-enddo
-
-deallocate(dt, t)
+! Generate the timing window indices
+allocate(tw_indx(self%nlocs))
+call gen_twindow_index(self%refdate, t1, t2, self%nlocs, time, tw_indx, tw_nlocs)
 
 !Setup ioda locations
-call ioda_locs_setup(locs, ilocs)
-do i = 1, ilocs
-  locs%lon(i)  = lon(indx(i))
-  locs%lat(i)  = lat(indx(i))
-  locs%time(i) = time(indx(i))
+call ioda_locs_setup(locs, tw_nlocs)
+do i = 1, tw_nlocs
+  locs%lon(i)  = lon(tw_indx(i))
+  locs%lat(i)  = lat(tw_indx(i))
+  locs%time(i) = time(tw_indx(i))
 enddo
-locs%indx = indx(1:ilocs)
+locs%indx = tw_indx(1:tw_nlocs)
 
 deallocate(time, lon, lat)
-deallocate(indx)
+deallocate(tw_indx)
 
 write(record,*) myname,': allocated/assinged obs-data'
 call fckit_log%info(record)
@@ -518,7 +559,9 @@ end subroutine ioda_obsdb_put_vec
 
 ! ------------------------------------------------------------------------------
 
-subroutine ioda_obsdb_generate(self, fvlen, nobs, dist_indx, nlocs, nvars, obstype, missing_value, lat, lon1, lon2)
+subroutine ioda_obsdb_generate(self, fvlen, nobs, dist_indx, nlocs, nvars, refdate, t1, t2, &
+                               obstype, missing_value, lat, lon1, lon2)
+
 implicit none
 type(ioda_obsdb), intent(inout) :: self
 integer, intent(in) :: fvlen
@@ -526,6 +569,9 @@ integer, intent(in) :: nobs
 integer, intent(in) :: dist_indx(:)
 integer, intent(in) :: nlocs
 integer, intent(in) :: nvars
+type(datetime)      :: refdate
+type(datetime)      :: t1
+type(datetime)      :: t2
 character(len=*) :: obstype
 real(c_double) :: missing_value
 real, intent(in) :: lat, lon1, lon2
@@ -535,7 +581,8 @@ integer :: i
 type(ioda_obs_var), pointer :: vptr
 character(len=max_string) :: vname
 
-call ioda_obsdb_setup(self, fvlen, nobs, dist_indx, nlocs, nvars, "", "", obstype, missing_value)
+call ioda_obsdb_setup(self, fvlen, nobs, dist_indx, nlocs, nvars, refdate, t1, t2, &
+                      "", "", obstype, missing_value)
 
 ! Create variables and generate the values specified by the arguments.
 vname = "latitude" 

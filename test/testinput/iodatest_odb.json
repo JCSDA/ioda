@@ -1,7 +1,7 @@
 {
   "test_framework_runtime_config": "--log_level=test_suite",
-  "window_begin": "2015-08-09T21:00:00Z",
-  "window_end": "2015-08-10T03:00:00Z",
+  "window_begin": "2018-04-14T21:00:00Z",
+  "window_end": "2018-04-15T03:00:00Z",
   "Variables": {
      "nvars": "1",
      "variables": ["testvar"]
@@ -16,7 +16,8 @@
         "ObsType": "Aod",
         "ObsData": {
           "ObsDataIn": {
-            "obsfile": "Data/aod_obs_2015081000_m.nc4"
+            "obsfile": "Data/aod_obs_2018041500_m.nc4",
+            "variables": [ "latitude", "longitude", "time" ]
           }
         }
       },
@@ -24,7 +25,8 @@
         "ObsType": "Radiance",
         "ObsData": {
           "ObsDataIn": {
-            "obsfile": "Data/amsua_obs_n19_2018041500_m.nc4"
+            "obsfile": "Data/amsua_obs_n19_2018041500_m.nc4",
+            "variables": [ "latitude", "longitude", "time" ]
           }
         }
       },
@@ -40,7 +42,8 @@
         "ObsType": "Radiosonde",
         "ObsData": {
           "ObsDataIn": {
-            "obsfile": "Data/diag_t_obs_01_wprofiles.odb"
+            "obsfile": "Data/diag_t_obs_01_wprofiles.odb",
+            "variables": [ "air_temperature" ]
           }
         }
       },
@@ -48,7 +51,8 @@
         "ObsType": "SeaIceFraction",
         "ObsData": {
           "ObsDataIn": {
-            "obsfile": "Data/icec-2018-04-15.nc"
+            "obsfile": "Data/icec-2018-04-15.nc",
+            "variables": [ "latitude", "longitude", "time" ]
           }
         }
       }
