@@ -46,10 +46,10 @@
         "ObsType": "Radiance",
         "ObsData": {
           "ObsDataIn": {
-            "obsfile": "Data/smap_L1B_2018041500.nc4",
+            "obsfile": "Data/smap_obs_2018041500.nc4",
             "metadata" : {
-               "nobs"  : "2799570",
-               "nlocs" : "186638"
+               "nobs"  : "60",
+               "nlocs" : "15"
              },
              "TestData" : {
                 "variables" : [
