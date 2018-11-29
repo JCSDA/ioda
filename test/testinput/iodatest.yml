@@ -27,7 +27,7 @@ Observations:
   - ObsType: Radiance
     ObsData:
       ObsDataIn:
-        obsfile: Data/smap_L1B_2018041500.nc4 
+        obsfile: Data/smap_obs_2018041500.nc4 
 
   - ObsType: Radiosonde
     ObsData:

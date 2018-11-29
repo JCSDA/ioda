@@ -95,15 +95,15 @@ ObsTypes:
 
   - ObsType: "Radiance"
     Input:
-      filename: "Data/smap_L1B_2018041500.nc4"
+      filename: "Data/smap_obs_2018041500.nc4"
       variables:
          - "latitude"
          - "longitude"
          - "time"
       metadata:
-        nobs: 746552
-        nlocs: 186638
-        nrecs: 186638
+        nobs:60
+        nlocs: 15
+        nrecs: 15
         nvars: 4
         norms:
           - 23024.5918
