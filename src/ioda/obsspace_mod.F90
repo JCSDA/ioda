@@ -74,7 +74,11 @@ logical function obsspace_has(c_dom, group, vname)
   character(len=*), intent(in) :: group
   character(len=*), intent(in) :: vname
 
-  obsspace_has = c_obsspace_has(c_dom, group, vname)
+  character(kind=c_char,len=1), allocatable :: c_group(:), c_vname(:)
+
+  call f_c_string(group, c_group)
+  call f_c_string(vname, c_vname)
+  obsspace_has = c_obsspace_has(c_dom, c_group, c_vname)
 end function obsspace_has
 
 !-------------------------------------------------------------------------------
