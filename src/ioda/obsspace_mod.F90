@@ -19,6 +19,7 @@ public obsspace_get_nobs
 public obsspace_get_nlocs
 public obsspace_get_db
 public obsspace_put_db
+public obsspace_has
 public obspace_missing_value
 
 #include "obsspace_interface.f"
@@ -62,6 +63,19 @@ integer function obsspace_get_nlocs(c_dom)
 
   obsspace_get_nlocs = c_obsspace_get_nlocs(c_dom)
 end function obsspace_get_nlocs
+
+!-------------------------------------------------------------------------------
+
+!>  Return true if variable exists in database
+
+logical function obsspace_has(c_dom, group, vname)
+  implicit none
+  type(c_ptr), intent(in)      :: c_dom
+  character(len=*), intent(in) :: group
+  character(len=*), intent(in) :: vname
+
+  obsspace_has = c_obsspace_has(c_dom, group, vname)
+end function obsspace_has
 
 !-------------------------------------------------------------------------------
 
