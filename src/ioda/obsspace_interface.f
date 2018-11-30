@@ -24,6 +24,15 @@ integer(kind=c_int) function c_obsspace_get_nlocs(dom) bind(C,name='obsspace_get
   type(c_ptr), value :: dom
 end function c_obsspace_get_nlocs
 
+logical(kind=c_bool) function c_obsspace_has(dom, group, vname) bind(C,name='obsspace_has_f')
+  use, intrinsic :: iso_c_binding
+  implicit none
+
+  type(c_ptr), value                        :: dom
+  character(kind=c_char, len=1), intent(in) :: group(*)
+  character(kind=c_char, len=1), intent(in) :: vname(*)
+end function c_obsspace_has
+
 real(kind=c_double) function c_obspace_missing_value() bind(C,name='obspace_missing_value_f')
   use, intrinsic :: iso_c_binding
   implicit none
