@@ -12,7 +12,7 @@
 
 !> Initialize the linked list
 subroutine init_(self)
- class(registry_t) :: self
+ class(registry_t), intent(inout) :: self
 
  !set count to zero and allocate the head of the list
  if(.not.self%l_init.or..not.associated(self%head)) then
@@ -25,8 +25,8 @@ end subroutine
 
 !> Add element to the linked list
 subroutine add_(self,key)
- class(registry_t) :: self
- integer           :: key
+ class(registry_t), intent(inout) :: self
+ integer, intent(inout)           :: key
 
  type(node_t), pointer :: next
 ! type(node_t), pointer :: current
@@ -46,8 +46,8 @@ end subroutine
 
 !> Fetch element of the linked list by key
 subroutine get_(self,key,ptr)
- class(registry_t)           :: self
- integer                     :: key
+ class(registry_t), intent(in) :: self
+ integer, intent(in)           :: key
  type (LISTED_TYPE), pointer :: ptr
 
  type(node_t), pointer :: next
@@ -69,8 +69,8 @@ end subroutine
 
 !> Remove element of the linked list
 subroutine remove_(self,key)
- class(registry_t) :: self
- integer           :: key
+ class(registry_t), intent(inout) :: self
+ integer, intent(inout)           :: key
 
  type(node_t), pointer :: prev
  type(node_t), pointer :: next
@@ -101,7 +101,7 @@ end subroutine
 
 !> Finalize the linked list, deallocate all nodes
 subroutine finalize_(self)
- class(registry_t) :: self
+ class(registry_t), intent(inout) :: self
  type(node_t), pointer :: current
  type(node_t), pointer :: next
 
