@@ -15,9 +15,8 @@
 
 #include "oops/parallel/mpi/mpi.h"
 #include "oops/util/abor1_cpp.h"
+#include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
-
-#include "Locations.h"
 
 namespace ioda {
 // -----------------------------------------------------------------------------
@@ -45,7 +44,10 @@ ObsSpace::ObsSpace(const eckit::Configuration & config,
 ObsSpace::~ObsSpace() {
   ioda_obsdb_delete_f90(keyOspace_);
 }
-
+// -----------------------------------------------------------------------------
+void ObsSpace::get_db(util::DateTime & refdate) const {
+  ioda_obsdb_getrefdate_f90(keyOspace_, refdate);
+}
 // -----------------------------------------------------------------------------
 void ObsSpace::get_db(const std::string & group, const std::string & name,
                       const std::size_t & vsize, int vdata[]) const {
@@ -102,17 +104,6 @@ bool ObsSpace::has(const std::string & group, const std::string & name) const {
   ioda_obsdb_has_f90(keyOspace_, db_name.size(), db_name.c_str(), ii);
   return ii;
 }
-// -----------------------------------------------------------------------------
-
-Locations * ObsSpace::getLocations(const util::DateTime & t1, const util::DateTime & t2) const {
-  const util::DateTime * p1 = &t1;
-  const util::DateTime * p2 = &t2;
-  int keylocs;
-  ioda_obsdb_getlocations_f90(keyOspace_, &p1, &p2, keylocs);
-
-  return new Locations(keylocs);
-}
-
 // -----------------------------------------------------------------------------
 
 std::size_t ObsSpace::nobs() const {

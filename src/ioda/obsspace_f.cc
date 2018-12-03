@@ -10,6 +10,7 @@
 #include <string>
 
 #include "ObsSpace.h"
+#include "oops/util/DateTime.h"
 
 namespace ioda {
 
@@ -24,6 +25,10 @@ int obsspace_get_nlocs_f(const ObsSpace & obss) {
 // -----------------------------------------------------------------------------
 double obspace_missing_value_f() {
   return ObsSpace::missingValue();
+}
+// -----------------------------------------------------------------------------
+void obsspace_get_refdate_f(const ObsSpace & obss, util::DateTime & refdate) {
+  obss.get_db(refdate);
 }
 // -----------------------------------------------------------------------------
 void obsspace_get_int32_f(const ObsSpace & obss, const char * group, const char * vname,

@@ -11,12 +11,14 @@ module obsspace_mod
 use, intrinsic :: iso_c_binding
 use kinds
 use string_f_c_mod
+use datetime_mod
 
 implicit none
 
 private
 public obsspace_get_nobs
 public obsspace_get_nlocs
+public obsspace_get_refdate
 public obsspace_get_db
 public obsspace_put_db
 public obspace_missing_value
@@ -71,6 +73,39 @@ real(c_double) function obspace_missing_value()
   implicit none
   obspace_missing_value = c_obspace_missing_value()
 end function obspace_missing_value
+
+!-------------------------------------------------------------------------------
+
+!> Return refdate from the ObsSapce database
+
+type(datetime) function obsspace_get_refdate(c_dom)
+  implicit none
+  type(c_ptr), value, intent(in) :: c_dom
+
+  type(datetime) :: refdate
+  type(c_ptr)    :: c_refdate
+
+  call c_obsspace_get_refdate(c_dom, c_refdate)
+
+  call c_f_datetime(c_refdate, refdate)
+
+  obsspace_get_refdate = refdate
+end function obsspace_get_refdate
+
+
+!> Get refdate from the ObsSapce database
+
+!subroutine obsspace_get_refdate(obss, refdate)
+!  implicit none
+!  type(c_ptr), value, intent(in) :: obss
+!  type(datetime), intent(out) :: refdate
+!
+!  type(c_ptr) :: c_refdate
+!
+!  call c_obsspace_get_refdate(obss, c_refdate)
+!
+!  call c_f_datetime(c_refdate, refdate)
+!end subroutine obsspace_get_refdate
 
 !-------------------------------------------------------------------------------
 
