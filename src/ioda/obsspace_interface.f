@@ -10,6 +10,8 @@
 interface
 !-------------------------------------------------------------------------------
 
+!use datetime_mod
+
 integer(kind=c_int) function c_obsspace_get_nobs(dom) bind(C,name='obsspace_get_nobs_f')
   use, intrinsic :: iso_c_binding
   implicit none
@@ -29,8 +31,23 @@ real(kind=c_double) function c_obspace_missing_value() bind(C,name='obspace_miss
   implicit none
 end function c_obspace_missing_value
 
+!type(datetime) function c_obsspace_get_refdate(dom) &
+!              & bind(C,name='obsspace_get_refdate_f')
+!  use, intrinsic :: iso_c_binding, only : c_ptr
+!  implicit none
+!  type(c_ptr), value :: dom
+!end function c_obsspace_get_refdate
+
 !-------------------------------------------------------------------------------
 ! get data from ObsSpace
+
+subroutine c_obsspace_get_refdate(obss, c_refdate) &
+              & bind(C,name='obsspace_get_refdate_f')
+  use, intrinsic :: iso_c_binding, only : c_ptr
+  implicit none
+  type(c_ptr), value :: obss
+  type(c_ptr), intent(out) :: c_refdate
+end subroutine c_obsspace_get_refdate
 
 subroutine c_obsspace_get_int32(obss, group, vname, length, vect) &
               & bind(C,name='obsspace_get_int32_f')

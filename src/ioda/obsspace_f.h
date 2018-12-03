@@ -9,6 +9,7 @@
 #define IODA_OBSSPACE_F_H_
 
 #include "ObsSpace.h"
+#include "oops/util/DateTime.h"
 
 // -----------------------------------------------------------------------------
 // These functions provide a Fortran-callable interface to ObsSpace.
@@ -20,6 +21,8 @@ extern "C" {
   int obsspace_get_nobs_f(const ObsSpace &);
   int obsspace_get_nlocs_f(const ObsSpace &);
   double obspace_missing_value_f();
+
+  void obsspace_get_refdate_f(const ObsSpace &, util::DateTime &);
 
   void obsspace_get_int32_f(const ObsSpace &, const char *, const char *,
                             const std::size_t &, int32_t*);
