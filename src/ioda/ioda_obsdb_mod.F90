@@ -18,6 +18,7 @@ use fckit_log_module, only : fckit_log
 use odb_helper_mod, only: &
   count_query_results
 #endif
+use obsspace_mod, only : obsspace_get_db
 
 implicit none
 private
@@ -289,10 +290,11 @@ end subroutine ioda_obsdb_delete
 
 ! ------------------------------------------------------------------------------
 
-subroutine ioda_obsdb_getlocs(self, locs, t1, t2)
+subroutine ioda_obsdb_getlocs(self, c_obsspace, locs, t1, t2)
 use ioda_locs_mod
 implicit none
 type(ioda_obsdb), intent(in)    :: self
+type(c_ptr), value, intent(in)    :: c_obsspace
 type(ioda_locs),  intent(inout) :: locs
 type(datetime),   intent(in)    :: t1, t2
 
@@ -312,27 +314,24 @@ allocate(time(self%nlocs), lon(self%nlocs), lat(self%nlocs))
 
 if ((trim(self%obstype) .eq. "Radiosonde") .or. &
     (trim(self%obstype) .eq. "Aircraft")) then
-  call ioda_obsdb_getvar(self, "longitude@MetaData", vptr)
+  call obsspace_get_db(c_obsspace, "MetaData", "longitude", lon)
 else
-  call ioda_obsdb_getvar(self, "longitude", vptr)
+  call obsspace_get_db(c_obsspace, "", "longitude", lon)
 endif
-lon = vptr%vals
 
 if ((trim(self%obstype) .eq. "Radiosonde") .or. &
     (trim(self%obstype) .eq. "Aircraft")) then
-  call ioda_obsdb_getvar(self, "latitude@MetaData", vptr)
+  call obsspace_get_db(c_obsspace, "MetaData", "latitude", lat)
 else
-  call ioda_obsdb_getvar(self, "latitude", vptr)
+  call obsspace_get_db(c_obsspace, "", "latitude", lat)
 endif
-lat = vptr%vals
 
 if ((trim(self%obstype) .eq. "Radiosonde") .or. &
     (trim(self%obstype) .eq. "Aircraft")) then
-  call ioda_obsdb_getvar(self, "time@MetaData", vptr)
+  call obsspace_get_db(c_obsspace, "MetaData", "time", time)
 else
-  call ioda_obsdb_getvar(self, "time", vptr)
+  call obsspace_get_db(c_obsspace, "", "time", time)
 endif
-time = vptr%vals
 
 ! Generate the timing window indices
 allocate(tw_indx(self%nlocs))

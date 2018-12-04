@@ -34,7 +34,7 @@ class ObsVector : public util::Printable,
  public:
   static const std::string classname() {return "ioda::ObsVector";}
 
-  ObsVector(const ObsSpace &, const oops::Variables &);
+  ObsVector(ObsSpace &, const oops::Variables &);
   ObsVector(const ObsVector &, const bool copy = true);
   ~ObsVector();
 
@@ -65,13 +65,13 @@ class ObsVector : public util::Printable,
 // I/O
   void read(const std::string &);     // Fails if name not found
   bool tryRead(const std::string &);  // Returns false if name not found
-  void save(const std::string &) const;
+  void save(const std::string &);
 
  private:
   void print(std::ostream &) const;
 
   /*! \brief Associate ObsSpace object */
-  const ObsSpace & obsdb_;
+  ObsSpace & obsdb_;
 
   /*! \brief Number of variables */
   std::size_t nvars_;

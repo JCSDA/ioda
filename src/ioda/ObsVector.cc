@@ -21,7 +21,7 @@
 
 namespace ioda {
 // -----------------------------------------------------------------------------
-ObsVector::ObsVector(const ObsSpace & obsdb, const oops::Variables & vars)
+ObsVector::ObsVector(ObsSpace & obsdb, const oops::Variables & vars)
   : obsdb_(obsdb), missing_(ObsSpace::missingValue()), obsvars_(vars) {
   nvars_ = obsvars_.variables().size();
   values_.resize(obsdb_.nlocs() * nvars_);
@@ -207,7 +207,7 @@ bool ObsVector::tryRead(const std::string & name) {
   return exists;
 }
 // -----------------------------------------------------------------------------
-void ObsVector::save(const std::string & name) const {
+void ObsVector::save(const std::string & name) {
   oops::Log::trace() << "ObsVector::save, name = " <<  name << std::endl;
 
   // As noted in the read method, the order is all variables at the first location,

@@ -54,6 +54,8 @@ ncdiag/netcdf_unlimdims.F90
 ncdiag/read_diag.f90
 ncdiag/read_aod_diag.f90
 
+ioda/Distribution.cc
+ioda/Distribution.h
 ioda/Fortran.h
 ioda/ObsSpace.cc
 ioda/ObsSpace.h
@@ -66,6 +68,8 @@ ioda/Locations.interface.F90
 ioda/ioda_locs_mod.F90
 ioda/ioda_obsvar_mod.F90
 ioda/ioda_obsdb_mod.F90
+ioda/MultiIndexContainer.cc
+ioda/MultiIndexContainer.h
 ioda/obsspace_f.cc
 ioda/obsspace_f.h
 ioda/obsspace_mod.F90

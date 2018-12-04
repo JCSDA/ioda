@@ -19,6 +19,10 @@ namespace util {
 }
 
 namespace ioda {
+  class ObsSpace;
+}
+
+namespace ioda {
 
 // Locations key type
 typedef int F90locs;
@@ -61,7 +65,8 @@ extern "C" {
   void ioda_obsdb_delete_f90(F90odb &);
   void ioda_obsdb_nobs_f90(const F90odb &, int &);
   void ioda_obsdb_nlocs_f90(const F90odb &, int &);
-  void ioda_obsdb_getlocations_f90(const F90odb &, const util::DateTime * const *,
+  void ioda_obsdb_getlocations_f90(const F90odb &, const ioda::ObsSpace *,
+                                   const util::DateTime * const *,
                                    const util::DateTime * const *, F90locs &);
   void ioda_obsdb_generate_f90(const F90odb &, const eckit::Configuration * const *,
                                const util::DateTime * const *, const util::DateTime * const *,
