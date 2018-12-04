@@ -29,8 +29,10 @@ namespace ioda {
  *          by reading metadata from the input file.
  */
 
-IodaIO* IodaIOfactory::Create(const std::string & FileName, const std::string & FileMode) {
-  return Create(FileName, FileMode, 0, 0, 0, 0);
+IodaIO* IodaIOfactory::Create(const std::string & FileName, const std::string & FileMode,
+                              const util::DateTime & bgn, const util::DateTime & end,
+                              const double & MissingValue) {
+  return Create(FileName, FileMode, bgn, end, MissingValue, 0, 0, 0, 0);
 }
 
 //-------------------------------------------------------------------------------------
@@ -44,8 +46,10 @@ IodaIO* IodaIOfactory::Create(const std::string & FileName, const std::string & 
  */
 
 IodaIO* IodaIOfactory::Create(const std::string & FileName, const std::string & FileMode,
-                              const std::size_t & Nlocs, const std::size_t & Nobs,
-                              const std::size_t & Nrecs, const std::size_t & Nvars) {
+                              const util::DateTime & bgn, const util::DateTime & end,
+                              const double & MissingValue, const std::size_t & Nlocs,
+                              const std::size_t & Nobs, const std::size_t & Nrecs,
+                              const std::size_t & Nvars) {
   std::size_t Spos;
   std::string FileSuffix;
 
@@ -59,10 +63,11 @@ IodaIO* IodaIOfactory::Create(const std::string & FileName, const std::string & 
 
   // Create the appropriate object depending on the file suffix
   if ((FileSuffix == "nc4") || (FileSuffix == "nc")) {
-    return new ioda::NetcdfIO(FileName, FileMode, Nlocs, Nobs, Nrecs, Nvars);
+    return new ioda::NetcdfIO(FileName, FileMode, bgn, end, MissingValue, Nlocs,
+                              Nobs, Nrecs, Nvars);
   } else if (FileSuffix == "odb") {
 #ifdef HAVE_ODB_API
-    return new ioda::OdbApiIO(FileName, FileMode, Nlocs, Nobs, Nrecs, Nvars);
+    return new ioda::OdbApiIO(FileName, bgn, end, FileMode, Nlocs, Nobs, Nrecs, Nvars);
 #else
     oops::Log::error() << "ioda::IodaIO::Create: ODB API not implemented: "
                        << FileName << std::endl;

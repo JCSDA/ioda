@@ -7,11 +7,16 @@
 
 #include <string>
 
+#include "oops/parallel/mpi/mpi.h"
 #include "oops/util/Logger.h"
 
 #include "fileio/IodaIO.h"
 
 namespace ioda {
+// -----------------------------------------------------------------------------
+
+IodaIO::IodaIO(): commMPI_(oops::mpi::comm()) { }
+
 // -----------------------------------------------------------------------------
 
 IodaIO::~IodaIO() { }
@@ -71,6 +76,15 @@ std::size_t IodaIO::nrecs() {
 
 std::size_t IodaIO::nvars() {
   return nvars_;
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns the list of VALID variables in the obs data.
+ */
+
+std::vector<std::tuple<std::string, std::string>> * const IodaIO::varlist() {
+  return &vname_group_;
 }
 
 }  // namespace ioda

@@ -9,7 +9,12 @@
 #define FILEIO_IODAIO_H_
 
 #include <string>
+#include <tuple>
+#include <vector>
 
+#include "eckit/mpi/Comm.h"
+
+#include "ioda/Distribution.h"
 #include "oops/util/Printable.h"
 
 // Forward declarations
@@ -59,6 +64,7 @@ namespace ioda {
  *         * nobs_
  *         * nrecs_
  *         * nvars_
+ *         * vname_group_type_
  *
  *       If in read mode, metadata from the input file are used to set the data members
  *       If in write mode, the data members are set from the constructor arguments 
@@ -68,6 +74,7 @@ namespace ioda {
 
 class IodaIO : public util::Printable {
  public:
+    IodaIO();
     virtual ~IodaIO() = 0;
 
     // Methods provided by subclasses
@@ -89,6 +96,7 @@ class IodaIO : public util::Printable {
     std::size_t nobs();
     std::size_t nrecs();
     std::size_t nvars();
+    std::vector<std::tuple<std::string, std::string>> * const varlist();
 
  protected:
     // Methods provided by subclasses
@@ -103,8 +111,11 @@ class IodaIO : public util::Printable {
     /*! \brief file mode ("r" -> read, "w" -> overwrite, "W" -> create and write) */
     std::string fmode_;
 
-    /*! \brief number of unique locations */
+    /*! \brief number of unique locations in domain*/
     std::size_t nlocs_;
+
+    /*! \brief number of unique locations in file*/
+    std::size_t nfvlen_;
 
     /*! \brief number of unique observations */
     std::size_t nobs_;
@@ -114,6 +125,18 @@ class IodaIO : public util::Printable {
 
     /*! \brief number of unique variables */
     std::size_t nvars_;
+
+    /*! \brief MPI communicator */
+    const eckit::mpi::Comm & commMPI_;
+
+    /*! \brief This missing value will be used to fill the missing data slots. */
+    double missingvalue_;
+
+    /*! \brief Distribution among processors */
+    Distribution dist_;
+
+    /*! \brief Variable Name : Group Name : Type Name */
+    std::vector<std::tuple<std::string, std::string>> vname_group_;
 };
 
 }  // namespace ioda

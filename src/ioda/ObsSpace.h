@@ -13,6 +13,8 @@
 #include <string>
 #include <vector>
 
+#include <boost/any.hpp>
+
 #include "eckit/mpi/Comm.h"
 #include "oops/base/ObsSpaceBase.h"
 #include "oops/util/DateTime.h"
@@ -20,6 +22,7 @@
 #include "oops/util/Printable.h"
 
 #include "Fortran.h"
+#include "MultiIndexContainer.h"
 
 // Forward declarations
 namespace eckit {
@@ -40,10 +43,10 @@ class ObsSpace : public oops::ObsSpaceBase {
   std::size_t nobs() const;
   std::size_t nlocs() const;
 
-  void get_db(const std::string &, const std::string &, const std::size_t &, int[]) const;
-  void get_db(const std::string &, const std::string &, const std::size_t &, double[]) const;
-  void put_db(const std::string &, const std::string &, const std::size_t &, const int[]) const;
-  void put_db(const std::string &, const std::string &, const std::size_t &, const double[]) const;
+  template <typename T>
+  void get_db(const std::string &, const std::string &, const std::size_t &, T[]) const;
+  template <typename T>
+  void put_db(const std::string &, const std::string &, const std::size_t &, const T[]);
 
   bool has(const std::string &, const std::string &) const;
 
@@ -73,6 +76,21 @@ class ObsSpace : public oops::ObsSpaceBase {
   const eckit::mpi::Comm & commMPI_;
 
   static std::map < std::string, int > theObsFileCount_;
+
+  /*! \brief number of observation values on this domain */
+  std::size_t nobs_;
+
+  /*! \brief number of locations on this domain */
+  std:: size_t nlocs_;
+
+  /*! \brief number of variables */
+  std::size_t nvars_;
+
+  /*! \brief filename and path of output */
+  std::string fileout_;
+
+  /*! \brief Multi-index container */
+  ObsSpaceContainer database_;
 };
 
 }  // namespace ioda

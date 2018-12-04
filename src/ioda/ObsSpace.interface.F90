@@ -308,9 +308,10 @@ end subroutine ioda_obsdb_nlocs_c
 
 ! ------------------------------------------------------------------------------
 
-subroutine ioda_obsdb_getlocations_c(c_key_self, c_t1, c_t2, c_key_locs) bind(c,name='ioda_obsdb_getlocations_f90')
+subroutine ioda_obsdb_getlocations_c(c_key_self, c_obsspace, c_t1, c_t2, c_key_locs) bind(c,name='ioda_obsdb_getlocations_f90')
 implicit none
 integer(c_int), intent(in)    :: c_key_self
+type(c_ptr), value, intent(in):: c_obsspace
 type(c_ptr), intent(in)       :: c_t1, c_t2
 integer(c_int), intent(inout) :: c_key_locs
 
@@ -326,7 +327,7 @@ call ioda_locs_registry%init()
 call ioda_locs_registry%add(c_key_locs)
 call ioda_locs_registry%get(c_key_locs,locs)
 
-call ioda_obsdb_getlocs(self, locs, t1, t2)
+call ioda_obsdb_getlocs(self, c_obsspace, locs, t1, t2)
 
 end subroutine ioda_obsdb_getlocations_c
 

@@ -78,7 +78,7 @@
           "ObsDataIn": {
             "obsfile": "Data/sondes_obs_2018041500_m.nc4",
             "metadata" : {
-               "nobs"  : "2275",
+               "nobs"  : "9100",
                "nlocs" : "2275"
              },
              "TestData" : {
@@ -100,9 +100,9 @@
                 "tolerance" : 1.0e-12
              }
           },
-            "ObsDataOut": {
-              "obsfile": "testoutput/diagout.nc4"
-          }
+         "ObsDataOut": {
+            "obsfile": "testoutput/diagout.nc4"
+         }
         }
       }
     ]

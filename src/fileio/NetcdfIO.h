@@ -12,6 +12,7 @@
 #include <string>
 
 #include "fileio/IodaIO.h"
+#include "oops/util/DateTime.h"
 #include "oops/util/ObjectCounter.h"
 
 
@@ -46,8 +47,10 @@ class NetcdfIO : public IodaIO,
   static const std::string classname() {return "ioda::NetcdfIO";}
 
   NetcdfIO(const std::string & FileName, const std::string & FileMode,
-           const std::size_t & Nlocs, const std::size_t & Nobs,
-           const std::size_t & Nrecs, const std::size_t & Nvars);
+           const util::DateTime & bgn, const util::DateTime & end,
+           const double & MissingValue, const std::size_t & Nlocs,
+           const std::size_t & Nobs, const std::size_t & Nrecs,
+           const std::size_t & Nvars);
   ~NetcdfIO();
 
   void ReadVar(const std::string & VarName, int* VarData);
@@ -147,6 +150,16 @@ class NetcdfIO : public IodaIO,
    *        in the opened netcdf file.
    */
   int nc_attid_;
+
+  /*!
+   * \brief This number is the threshold to tell the missing value
+   */
+  static const double missingthreshold_;
+
+  /*!
+   * \brief Reference datetime in NetCDF file
+   */
+  util::DateTime reference_datetime_;
 };
 
 }  // namespace ioda

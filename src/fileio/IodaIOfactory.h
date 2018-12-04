@@ -11,6 +11,7 @@
 #include <string>
 
 #include "fileio/IodaIO.h"
+#include "oops/util/DateTime.h"
 
 namespace ioda {
 
@@ -36,10 +37,14 @@ class IodaIOfactory {
   ~IodaIOfactory() { }
 
   // Factory methods
-  static ioda::IodaIO* Create(const std::string & FileName, const std::string & FileMode);
   static ioda::IodaIO* Create(const std::string & FileName, const std::string & FileMode,
-                              const std::size_t & Nlocs, const std::size_t & Nobs,
-                              const std::size_t & Nrecs, const std::size_t & Nvars);
+                              const util::DateTime & bgn, const util::DateTime & end,
+                              const double & MissingValue);
+  static ioda::IodaIO* Create(const std::string & FileName, const std::string & FileMode,
+                              const util::DateTime & bgn, const util::DateTime & end,
+                              const double & MissingValue, const std::size_t & Nlocs,
+                              const std::size_t & Nobs, const std::size_t & Nrecs,
+                              const std::size_t & Nvars);
 };
 
 }  // namespace ioda

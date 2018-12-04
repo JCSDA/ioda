@@ -15,6 +15,7 @@
 
 #include "oops/parallel/mpi/mpi.h"
 #include "oops/util/abor1_cpp.h"
+#include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
 
 #include "Locations.h"
@@ -26,12 +27,54 @@ const double ObsSpace::missingvalue_ = -9.9999e+299;
 
 ObsSpace::ObsSpace(const eckit::Configuration & config,
                    const util::DateTime & bgn, const util::DateTime & end)
-  : oops::ObsSpaceBase(config, bgn, end), winbgn_(bgn), winend_(end), commMPI_(oops::mpi::comm())
+  : oops::ObsSpaceBase(config, bgn, end), winbgn_(bgn), winend_(end),
+    commMPI_(oops::mpi::comm()), database_(config)
 {
   oops::Log::trace() << "ioda::ObsSpace config  = " << config << std::endl;
 
   const eckit::Configuration * configc = &config;
   obsname_ = config.getString("ObsType");
+
+  // Open the file for input
+  auto filename = config.getString("ObsData.ObsDataIn.obsfile");
+  oops::Log::trace() << obsname_ << " file in = " << filename << std::endl;
+
+  database_.CreateFromFile(filename, "r", bgn, end, missingvalue_);
+
+  // Set the number of locations ,variables and number of observation points
+  nlocs_ = database_.fileio.get()->nlocs();
+  nvars_ = database_.fileio.get()->nvars();
+  nobs_ = nvars_ * nlocs_;
+
+  // Load in all VALID variables
+  database_.LoadData();
+
+  // Check to see if an output file has been requested.
+  if (config.has("ObsData.ObsDataOut.obsfile")) {
+    auto filename = config.getString("ObsData.ObsDataOut.obsfile");
+
+    // Find the left-most dot in the file name, and use that to pick off the file name
+    // and file extension.
+    auto found = filename.find_last_of(".");
+    if (found == std::string::npos)
+      found = filename.length();
+
+    // Get the process rank number and format it
+    std::ostringstream ss;
+    ss << "_" << std::setw(4) << std::setfill('0') << commMPI_.rank();
+
+    // Construct the output file name
+    fileout_ = filename.insert(found, ss.str());
+
+    // Check to see if user is trying to overwrite an existing file. For now always allow
+    // the overwrite, but issue a warning if we are about to clobber an existing file.
+    std::ifstream infile(fileout_);
+    if (infile.good())
+      oops::Log::warning() << "ioda::ObsSpace WARNING: Overwriting output file "
+                           << fileout_ << std::endl;
+  } else {
+    oops::Log::debug() << "ioda::ObsSpace output file is not required " << std::endl;
+  }
 
   const util::DateTime * p1 = &winbgn_;
   const util::DateTime * p2 = &winend_;
@@ -47,60 +90,34 @@ ObsSpace::~ObsSpace() {
 }
 
 // -----------------------------------------------------------------------------
+template <typename T>
 void ObsSpace::get_db(const std::string & group, const std::string & name,
-                      const std::size_t & vsize, int vdata[]) const {
-  std::string db_name;
-  if (group.size() == 0) {
-    db_name = name;
-  } else {
-    db_name = name + "@" + group;
-  }
-  ioda_obsdb_geti_f90(keyOspace_, db_name.size(), db_name.c_str(), static_cast<int>(vsize), vdata);
+                      const size_t & vsize, T vdata[]) const {
+  database_.get_var<T>(group, name, vsize, vdata);
 }
+
+template void ObsSpace::get_db<int>(const std::string & group, const std::string & name,
+                                    const size_t & vsize, int vdata[]) const;
+
+template void ObsSpace::get_db<double>(const std::string & group, const std::string & name,
+                                       const size_t & vsize, double vdata[]) const;
+
 // -----------------------------------------------------------------------------
-void ObsSpace::get_db(const std::string & group, const std::string & name,
-                      const std::size_t & vsize, double vdata[]) const {
-  std::string db_name;
-  if (group.size() == 0) {
-    db_name = name;
-  } else {
-    db_name = name + "@" + group;
-  }
-  ioda_obsdb_getd_f90(keyOspace_, db_name.size(), db_name.c_str(), static_cast<int>(vsize), vdata);
-}
-// -----------------------------------------------------------------------------
+template <typename T>
 void ObsSpace::put_db(const std::string & group, const std::string & name,
-                      const std::size_t & vsize, const int vdata[]) const {
-  std::string db_name;
-  if (group.size() == 0) {
-    db_name = name;
-  } else {
-    db_name = name + "@" + group;
-  }
-  ioda_obsdb_puti_f90(keyOspace_, db_name.size(), db_name.c_str(), static_cast<int>(vsize), vdata);
+                      const std::size_t & vsize, const T vdata[]) {
+  database_.put_var<T>(group, name, vsize, vdata);
 }
-// -----------------------------------------------------------------------------
-void ObsSpace::put_db(const std::string & group, const std::string & name,
-                      const std::size_t & vsize, const double vdata[]) const {
-  std::string db_name;
-  if (group.size() == 0) {
-    db_name = name;
-  } else {
-    db_name = name + "@" + group;
-  }
-  ioda_obsdb_putd_f90(keyOspace_, db_name.size(), db_name.c_str(), static_cast<int>(vsize), vdata);
-}
+
+template void ObsSpace::put_db<int>(const std::string & group, const std::string & name,
+                                    const size_t & vsize, const int vdata[]);
+
+template void ObsSpace::put_db<double>(const std::string & group, const std::string & name,
+                                    const size_t & vsize, const double vdata[]);
+
 // -----------------------------------------------------------------------------
 bool ObsSpace::has(const std::string & group, const std::string & name) const {
-  int ii;
-  std::string db_name;
-  if (group.size() == 0) {
-    db_name = name;
-  } else {
-    db_name = name + "@" + group;
-  }
-  ioda_obsdb_has_f90(keyOspace_, db_name.size(), db_name.c_str(), ii);
-  return ii;
+  return (database_.has(group, name));
 }
 // -----------------------------------------------------------------------------
 
@@ -108,7 +125,7 @@ Locations * ObsSpace::getLocations(const util::DateTime & t1, const util::DateTi
   const util::DateTime * p1 = &t1;
   const util::DateTime * p2 = &t2;
   int keylocs;
-  ioda_obsdb_getlocations_f90(keyOspace_, &p1, &p2, keylocs);
+  ioda_obsdb_getlocations_f90(keyOspace_, this, &p1, &p2, keylocs);
 
   return new Locations(keylocs);
 }
@@ -116,18 +133,13 @@ Locations * ObsSpace::getLocations(const util::DateTime & t1, const util::DateTi
 // -----------------------------------------------------------------------------
 
 std::size_t ObsSpace::nobs() const {
-  int n;
-  ioda_obsdb_nobs_f90(keyOspace_, n);
-
-  return n;
+  return nobs_;
 }
 
 // -----------------------------------------------------------------------------
 
 std::size_t ObsSpace::nlocs() const {
-  int n;
-  ioda_obsdb_nlocs_f90(keyOspace_, n);
-  return n;
+  return nlocs_;
 }
 
 // -----------------------------------------------------------------------------
