@@ -155,7 +155,7 @@ select case (input_file_type)
 
  case (1)
 
-  file_nvars = 3
+  file_nvars = 4
   var_list_item_len = 80
   allocate(character(var_list_item_len)::var_list(file_nvars))
   allocate(var_select(file_nvars))
@@ -163,10 +163,12 @@ select case (input_file_type)
   var_list(1) = "latitude"
   var_list(2) = "longitude"
   var_list(3) = "time"
+  var_list(4) = "air_temperature"
 
   var_select(1) = .true.
   var_select(2) = .true.
   var_select(3) = .true.
+  var_select(4) = .true.
 
   time_vname = "time"
 
@@ -396,12 +398,17 @@ if (.not.associated(vptr)) then
 
 #ifdef HAVE_ODB_API
       select case (vname)
-        case ("latitude")
+        case ("latitude", "latitude@MetaData")
           call get_vars (self % filename, ["lat"], "entryno = 1", field2d_dbl)
-        case ("longitude")
+        case ("longitude", "longitude@MetaData")
           call get_vars (self % filename, ["lon"], "entryno = 1", field2d_dbl)
-        case ("time")
+        case ("time", "time@MetaData")
          call get_vars (self % filename, ["time"], "entryno = 1", field2d_dbl)
+        case ("air_temperature", "air_temperature@ObsValue")
+         call get_vars (self % filename, ["obsvalue"], "entryno = 1", field2d_dbl)
+        case default
+         write(err_msg,*) 'ioda_odbsdb_getvar: ERROR: Unrecognized ODB variable: ', trim(vname)
+         call abor1_ftn(trim(err_msg))
       end select
       vptr%nobs = size(field2d_dbl,dim=2)
       allocate(vptr%vals(vptr%nobs))

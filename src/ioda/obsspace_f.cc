@@ -23,6 +23,10 @@ int obsspace_get_nlocs_f(const ObsSpace & obss) {
   return obss.nlocs();
 }
 // -----------------------------------------------------------------------------
+bool obsspace_has_f(const ObsSpace & obss, const char * group, const char * vname) {
+  return obss.has(std::string(group), std::string(vname));
+}
+// -----------------------------------------------------------------------------
 double obspace_missing_value_f() {
   return ObsSpace::missingValue();
 }
