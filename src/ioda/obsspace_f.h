@@ -20,6 +20,7 @@ namespace ioda {
 extern "C" {
   int obsspace_get_nobs_f(const ObsSpace &);
   int obsspace_get_nlocs_f(const ObsSpace &);
+  bool obsspace_has_f(const ObsSpace &, const char *, const char *);
   double obspace_missing_value_f();
 
   void obsspace_get_refdate_f(const ObsSpace &, util::DateTime &);
