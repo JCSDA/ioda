@@ -28,7 +28,7 @@ double obspace_missing_value_f() {
 }
 // -----------------------------------------------------------------------------
 void obsspace_get_refdate_f(const ObsSpace & obss, util::DateTime & refdate) {
-  obss.get_db(refdate);
+  obss.get_refdate(refdate);
 }
 // -----------------------------------------------------------------------------
 void obsspace_get_int32_f(const ObsSpace & obss, const char * group, const char * vname,

@@ -45,7 +45,7 @@ ObsSpace::~ObsSpace() {
   ioda_obsdb_delete_f90(keyOspace_);
 }
 // -----------------------------------------------------------------------------
-void ObsSpace::get_db(util::DateTime & refdate) const {
+void ObsSpace::get_refdate(util::DateTime & refdate) const {
   ioda_obsdb_getrefdate_f90(keyOspace_, refdate);
 }
 // -----------------------------------------------------------------------------
