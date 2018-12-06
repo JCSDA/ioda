@@ -50,9 +50,10 @@ const double NetcdfIO::missingthreshold_ = 1.0e08;
 
 NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
                    const util::DateTime & bgn, const util::DateTime & end,
-                   const double & MissingValue, const std::size_t & Nlocs,
-                   const std::size_t & Nobs, const std::size_t & Nrecs,
-                   const std::size_t & Nvars) {
+                   const double & MissingValue, const eckit::mpi::Comm & comm,
+                   const std::size_t & Nlocs, const std::size_t & Nobs,
+                   const std::size_t & Nrecs, const std::size_t & Nvars)
+                   : IodaIO(comm) {
   int retval_;
 
   // Set the data members to the file name, file mode and provide a trace message.

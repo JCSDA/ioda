@@ -118,7 +118,7 @@ class ObsSpaceContainer: public util::Printable {
      /*! \brief Open file*/
      void CreateFromFile(const std::string & filename, const std::string & mode,
                          const util::DateTime & bgn, const util::DateTime & end,
-                         const double & missingvalue);
+                         const double & missingvalue, const eckit::mpi::Comm & comm);
 
      /*! \brief Load VALID variables from file to container */
      void LoadData();

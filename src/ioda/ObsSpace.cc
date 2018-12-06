@@ -39,7 +39,7 @@ ObsSpace::ObsSpace(const eckit::Configuration & config,
   auto filename = config.getString("ObsData.ObsDataIn.obsfile");
   oops::Log::trace() << obsname_ << " file in = " << filename << std::endl;
 
-  database_.CreateFromFile(filename, "r", bgn, end, missingvalue_);
+  database_.CreateFromFile(filename, "r", bgn, end, missingvalue_, commMPI_);
 
   // Set the number of locations ,variables and number of observation points
   nlocs_ = database_.fileio.get()->nlocs();

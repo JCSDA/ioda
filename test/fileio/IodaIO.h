@@ -22,6 +22,7 @@
 #include <boost/noncopyable.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
+#include "oops/parallel/mpi/mpi.h"
 #include "oops/runs/Test.h"
 #include "oops/util/Logger.h"
 #include "test/TestEnvironment.h"
@@ -64,7 +65,7 @@ void testConstructor() {
     oops::Log::debug() << "IodaIO::ObsType: " << TestObsType << std::endl;
 
     FileName = obstypes[i].getString("Input.filename");
-    TestIO.reset(ioda::IodaIOfactory::Create(FileName, "r", bgn, end, missingvalue));
+    TestIO.reset(ioda::IodaIOfactory::Create(FileName, "r", bgn, end, missingvalue, oops::mpi::comm()));
     BOOST_CHECK(TestIO.get());
 
     // Constructor in read mode is also responsible for setting nobs and nlocs
@@ -89,7 +90,7 @@ void testConstructor() {
       ExpectedNrecs = obstypes[i].getInt("Output.metadata.nrecs");
       ExpectedNvars = obstypes[i].getInt("Output.metadata.nvars");
 
-      TestIO.reset(ioda::IodaIOfactory::Create(FileName, "W", bgn, end, missingvalue,
+      TestIO.reset(ioda::IodaIOfactory::Create(FileName, "W", bgn, end, missingvalue, oops::mpi::comm(),
                                                ExpectedNlocs, ExpectedNobs, ExpectedNrecs, ExpectedNvars));
       BOOST_CHECK(TestIO.get());
 
@@ -132,7 +133,7 @@ void testReadVar() {
     oops::Log::debug() << "IodaIO::ObsType: " << TestObsType << std::endl;
 
     FileName = obstypes[i].getString("Input.filename");
-    TestIO.reset(ioda::IodaIOfactory::Create(FileName, "r", bgn, end, missingvalue));
+    TestIO.reset(ioda::IodaIOfactory::Create(FileName, "r", bgn, end, missingvalue, oops::mpi::comm()));
 
     // Read in data from the file and check values.
     varnames = obstypes[i].getStringVector("Input.variables");
@@ -194,7 +195,8 @@ void testWriteVar() {
       Nobs = obstypes[i].getInt("Output.metadata.nobs");
       Nrecs = obstypes[i].getInt("Output.metadata.nrecs");
       Nvars = obstypes[i].getInt("Output.metadata.nvars");
-      TestIO.reset(ioda::IodaIOfactory::Create(FileName, "W", bgn, end, missingvalue, Nlocs, Nobs, Nrecs, Nvars));
+      TestIO.reset(ioda::IodaIOfactory::Create(FileName, "W", bgn, end, missingvalue, oops::mpi::comm(),
+                                               Nlocs, Nobs, Nrecs, Nvars));
 
       // Try writing contrived data into the output file
       varnames = obstypes[i].getStringVector("Output.variables");
@@ -211,7 +213,7 @@ void testWriteVar() {
         }
 
       // open the file we just created and see if it contains what we just wrote into it
-      TestIO.reset(ioda::IodaIOfactory::Create(FileName, "r", bgn, end, missingvalue));
+      TestIO.reset(ioda::IodaIOfactory::Create(FileName, "r", bgn, end, missingvalue, oops::mpi::comm()));
 
       TestNlocs = TestIO->nlocs();
       TestNobs  = TestIO->nobs();
@@ -264,7 +266,7 @@ void testReadDateTime() {
     oops::Log::debug() << "IodaIO::ObsType: " << TestObsType << std::endl;
 
     FileName = obstypes[i].getString("Input.filename");
-    TestIO.reset(ioda::IodaIOfactory::Create(FileName, "r", bgn, end, missingvalue));
+    TestIO.reset(ioda::IodaIOfactory::Create(FileName, "r", bgn, end, missingvalue, oops::mpi::comm()));
 
     // Read in data from the file and check values.
     Vsize = TestIO->nlocs();
