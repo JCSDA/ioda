@@ -238,6 +238,47 @@ NetcdfIO::~NetcdfIO() {
  * \param[out] VarData Pointer to memory that will receive the file data
  */
 
+void NetcdfIO::ReadVar_any(const std::string & VarName, boost::any * VarData) {
+  oops::Log::trace() << __func__ << " VarName: " << VarName << std::endl;
+
+  std::string ErrorMsg;
+  nc_type vartype;
+
+  ErrorMsg = "NetcdfIO::ReadVar_any: Netcdf dataset not found: " + VarName;
+  CheckNcCall(nc_inq_varid(ncid_, VarName.c_str(), &nc_varid_), ErrorMsg);
+
+  CheckNcCall(nc_inq_vartype(ncid_, nc_varid_, &vartype), ErrorMsg);
+
+  ErrorMsg = "NetcdfIO::ReadVar_any: Unable to read dataset: " + VarName;
+  switch (vartype) {
+    case NC_INT: {
+      std::unique_ptr<int[]> iData{new int[nfvlen_]};
+      CheckNcCall(nc_get_var_int(ncid_, nc_varid_, iData.get()), ErrorMsg);
+      for (std::size_t ii = 0; ii < nlocs_; ++ii)
+        VarData[ii] = static_cast<int>(iData.get()[dist_.distribution()[ii]]);
+      break;
+    }
+    case NC_FLOAT: {
+      std::unique_ptr<float[]> rData{new float[nfvlen_]};
+      CheckNcCall(nc_get_var_float(ncid_, nc_varid_, rData.get()), ErrorMsg);
+      for (std::size_t ii = 0; ii < nlocs_; ++ii) /* Force float to double */
+        VarData[ii] = static_cast<double>(rData.get()[dist_.distribution()[ii]]);
+      break;
+    }
+    case NC_DOUBLE: {
+      std::unique_ptr<double[]> dData{new double[nfvlen_]};
+      CheckNcCall(nc_get_var_double(ncid_, nc_varid_, dData.get()), ErrorMsg);
+      for (std::size_t ii = 0; ii < nlocs_; ++ii)
+        VarData[ii] = static_cast<double>(dData.get()[dist_.distribution()[ii]]);
+      break;
+    }
+    default:
+      oops::Log::warning() <<  "NetcdfIO::ReadVar_any: Unable to read dataset: "
+                           << " VarName: " << VarName << " with NetCDF type :"
+                           << vartype << std::endl;
+  }
+}
+
 void NetcdfIO::ReadVar(const std::string & VarName, int* VarData) {
   oops::Log::trace() << __func__ << " VarName: " << VarName << std::endl;
 
