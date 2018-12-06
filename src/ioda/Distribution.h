@@ -21,7 +21,7 @@ class Distribution{
  public:
      Distribution() {}
      ~Distribution() {}
-     void random_distribution(const eckit::mpi::Comm & comm, const int & gnlocs);
+     void round_robin_distribution(const eckit::mpi::Comm & comm, const int & gnlocs);
      const std::vector<int> & distribution() const {return indx_;}
      void erase(const std::size_t &);
      const std::size_t size() const {return indx_.size();}

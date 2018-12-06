@@ -140,9 +140,9 @@ NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
       nrecs_ = nlocs_;
     }
 
-    // Apply the random distribution, which yields the size and indices that
+    // Apply the round-robin distribution, which yields the size and indices that
     // are to be selected by this process element out of the file.
-    dist_.random_distribution(commMPI_, nfvlen_);
+    dist_.round_robin_distribution(commMPI_, nfvlen_);
 
     // How many variables should be read in ?
     std::string ErrorMsg;
@@ -249,27 +249,26 @@ void NetcdfIO::ReadVar_any(const std::string & VarName, boost::any * VarData) {
 
   CheckNcCall(nc_inq_vartype(ncid_, nc_varid_, &vartype), ErrorMsg);
 
-  ErrorMsg = "NetcdfIO::ReadVar_any: Unable to read dataset: " + VarName;
   switch (vartype) {
     case NC_INT: {
       std::unique_ptr<int[]> iData{new int[nfvlen_]};
-      CheckNcCall(nc_get_var_int(ncid_, nc_varid_, iData.get()), ErrorMsg);
-      for (std::size_t ii = 0; ii < nlocs_; ++ii)
-        VarData[ii] = static_cast<int>(iData.get()[dist_.distribution()[ii]]);
+      ReadVar(VarName.c_str(), iData.get());
+      for (std::size_t ii = 0; ii < dist_.distribution().size(); ++ii)
+        VarData[ii] = iData.get()[dist_.distribution()[ii]];
       break;
     }
     case NC_FLOAT: {
       std::unique_ptr<float[]> rData{new float[nfvlen_]};
-      CheckNcCall(nc_get_var_float(ncid_, nc_varid_, rData.get()), ErrorMsg);
-      for (std::size_t ii = 0; ii < nlocs_; ++ii) /* Force float to double */
+      ReadVar(VarName.c_str(), rData.get());
+      for (std::size_t ii = 0; ii < dist_.distribution().size(); ++ii) /* Force float to double */
         VarData[ii] = static_cast<double>(rData.get()[dist_.distribution()[ii]]);
       break;
     }
     case NC_DOUBLE: {
       std::unique_ptr<double[]> dData{new double[nfvlen_]};
-      CheckNcCall(nc_get_var_double(ncid_, nc_varid_, dData.get()), ErrorMsg);
-      for (std::size_t ii = 0; ii < nlocs_; ++ii)
-        VarData[ii] = static_cast<double>(dData.get()[dist_.distribution()[ii]]);
+      ReadVar(VarName.c_str(), dData.get());
+      for (std::size_t ii = 0; ii < dist_.distribution().size(); ++ii)
+        VarData[ii] = dData.get()[dist_.distribution()[ii]];
       break;
     }
     default:
@@ -287,11 +286,8 @@ void NetcdfIO::ReadVar(const std::string & VarName, int* VarData) {
   ErrorMsg = "NetcdfIO::ReadVar: Netcdf dataset not found: " + VarName;
   CheckNcCall(nc_inq_varid(ncid_, VarName.c_str(), &nc_varid_), ErrorMsg);
 
-  std::unique_ptr<int[]> Data{new int[nfvlen_]};
   ErrorMsg = "NetcdfIO::ReadVar: Unable to read dataset: " + VarName;
-  CheckNcCall(nc_get_var_int(ncid_, nc_varid_, Data.get()), ErrorMsg);
-  for (std::size_t ii = 0; ii < nlocs_; ++ii)
-    VarData[ii] = Data.get()[dist_.distribution()[ii]];
+  CheckNcCall(nc_get_var_int(ncid_, nc_varid_, VarData), ErrorMsg);
 }
 
 // -----------------------------------------------------------------------------
@@ -304,15 +300,8 @@ void NetcdfIO::ReadVar(const std::string & VarName, float* VarData) {
   ErrorMsg = "NetcdfIO::ReadVar: Netcdf dataset not found: " + VarName;
   CheckNcCall(nc_inq_varid(ncid_, VarName.c_str(), &nc_varid_), ErrorMsg);
 
-  std::unique_ptr<float[]> Data{new float[nfvlen_]};
   ErrorMsg = "NetcdfIO::ReadVar: Unable to read dataset: " + VarName;
-  CheckNcCall(nc_get_var_float(ncid_, nc_varid_, Data.get()), ErrorMsg);
-
-  for (std::size_t ii = 0; ii < nlocs_; ++ii) {
-    VarData[ii] = Data.get()[dist_.distribution()[ii]];
-    if (static_cast<double>(VarData[ii]) > missingthreshold_)
-      VarData[ii] = static_cast<float>(missingvalue_);
-  }
+  CheckNcCall(nc_get_var_float(ncid_, nc_varid_, VarData), ErrorMsg);
 }
 
 // -----------------------------------------------------------------------------
@@ -325,15 +314,8 @@ void NetcdfIO::ReadVar(const std::string & VarName, double* VarData) {
   ErrorMsg = "NetcdfIO::ReadVar: Netcdf dataset not found: " + VarName;
   CheckNcCall(nc_inq_varid(ncid_, VarName.c_str(), &nc_varid_), ErrorMsg);
 
-  std::unique_ptr<double[]> Data{new double[nfvlen_]};
   ErrorMsg = "NetcdfIO::ReadVar: Unable to read dataset: " + VarName;
-  CheckNcCall(nc_get_var_double(ncid_, nc_varid_, Data.get()), ErrorMsg);
-
-  for (std::size_t ii = 0; ii < nlocs_; ++ii) {
-    VarData[ii] = Data.get()[dist_.distribution()[ii]];
-    if (VarData[ii] > missingthreshold_)
-      VarData[ii] = missingvalue_;
-  }
+  CheckNcCall(nc_get_var_double(ncid_, nc_varid_, VarData), ErrorMsg);
 }
 
 // -----------------------------------------------------------------------------

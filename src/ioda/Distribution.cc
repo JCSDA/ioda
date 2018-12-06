@@ -14,7 +14,7 @@ namespace ioda {
 
 // -----------------------------------------------------------------------------
 
-void Distribution::random_distribution(const eckit::mpi::Comm & comm, const int & gnlocs) {
+void Distribution::round_robin_distribution(const eckit::mpi::Comm & comm, const int & gnlocs) {
     nproc_ = comm.size();
     myproc_ = comm.rank();
 
