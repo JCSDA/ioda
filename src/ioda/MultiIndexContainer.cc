@@ -21,10 +21,10 @@ namespace ioda {
 // -----------------------------------------------------------------------------
   void ObsSpaceContainer::CreateFromFile(const std::string & filename, const std::string & mode,
                                          const util::DateTime & bgn, const util::DateTime & end,
-                                         const double & missingvalue) {
+                                         const double & missingvalue, const eckit::mpi::Comm & commMPI) {
     oops::Log::trace() << "ioda::ObsSpaceContainer opening file: " << filename << std::endl;
 
-    fileio.reset(ioda::IodaIOfactory::Create(filename, mode, bgn, end, missingvalue));
+    fileio.reset(ioda::IodaIOfactory::Create(filename, mode, bgn, end, missingvalue, commMPI));
     vectors_.reserve(fileio->nvars()*10);
 
     oops::Log::trace() << "ioda::ObsSpaceContainer opening file ends " << std::endl;

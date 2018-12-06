@@ -48,9 +48,9 @@ class NetcdfIO : public IodaIO,
 
   NetcdfIO(const std::string & FileName, const std::string & FileMode,
            const util::DateTime & bgn, const util::DateTime & end,
-           const double & MissingValue, const std::size_t & Nlocs,
-           const std::size_t & Nobs, const std::size_t & Nrecs,
-           const std::size_t & Nvars);
+           const double & MissingValue, const eckit::mpi::Comm & comm,
+           const std::size_t & Nlocs, const std::size_t & Nobs,
+           const std::size_t & Nrecs, const std::size_t & Nvars);
   ~NetcdfIO();
 
   void ReadVar(const std::string & VarName, int* VarData);

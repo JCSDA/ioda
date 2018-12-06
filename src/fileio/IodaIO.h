@@ -74,7 +74,7 @@ namespace ioda {
 
 class IodaIO : public util::Printable {
  public:
-    IodaIO();
+    IodaIO(const eckit::mpi::Comm &);
     virtual ~IodaIO() = 0;
 
     // Methods provided by subclasses
