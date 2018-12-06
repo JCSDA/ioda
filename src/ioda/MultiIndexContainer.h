@@ -132,9 +132,9 @@ class ObsSpaceContainer: public util::Printable {
      // -----------------------------------------------------------------------------
 
      /*! \brief Inquire the vector of record from container*/
-     template <typename T>
+     template <typename Type>
      void get_var(const std::string & group, const std::string & name,
-                  const std::size_t vsize, T vdata[]) const {
+                  const std::size_t vsize, Type vdata[]) const {
        std::string gname(group);
        if (group.size() <= 0)
          gname = "GroupUndefined";
@@ -142,7 +142,7 @@ class ObsSpaceContainer: public util::Printable {
        if (has(gname, name)) {
          auto var = DataContainer.find(boost::make_tuple(gname, name));
          for (std::size_t ii = 0; ii < vsize; ++ii) {
-           vdata[ii] = boost::any_cast<T>(var->data.get()[ii]);
+           vdata[ii] = boost::any_cast<Type>(var->data.get()[ii]);
          }
        } else {
          std::string ErrorMsg = "DataContainer::get_var: " + name + "@" + gname +" is not found";
@@ -153,9 +153,9 @@ class ObsSpaceContainer: public util::Printable {
      // -----------------------------------------------------------------------------
 
      /*! \brief Insert/Update the vector of record to container*/
-     template <typename T>
+     template <typename Type>
      void put_var(const std::string & group, const std::string & name,
-                  const std::size_t vsize, const T vdata[]) {
+                  const std::size_t vsize, const Type vdata[]) {
        std::string gname(group);
        if (group.size() <= 0)
          gname = "GroupUndefined";
@@ -168,7 +168,7 @@ class ObsSpaceContainer: public util::Printable {
        } else {
          std::unique_ptr<boost::any[]> vect{ new boost::any[vsize] };
          for (std::size_t ii = 0; ii < vsize; ++ii) {
-           vect.get()[ii] = static_cast<T>(vdata[ii]);
+           vect.get()[ii] = static_cast<Type>(vdata[ii]);
          }
          vectors_.push_back(std::move(vect));
          std::size_t indx = vectors_.size() - 1;
@@ -180,7 +180,7 @@ class ObsSpaceContainer: public util::Printable {
      // -----------------------------------------------------------------------------
 
      /*! \brief read the vector of record from file*/
-     template <typename T>
+     template <typename Type>
      void read_var(const std::string & group, const std::string & name) {
        std::size_t vsize{fileio->nlocs()};
        std::string gname(group);
@@ -188,7 +188,7 @@ class ObsSpaceContainer: public util::Printable {
          gname = "GroupUndefined";
 
        // Allocate temporary memory
-       std::unique_ptr<T[]> FileData(new T[vsize]);
+       std::unique_ptr<Type[]> FileData(new Type[vsize]);
        // Read the data
        std::string db_name = name;
        if (group.size() > 0)
@@ -197,7 +197,7 @@ class ObsSpaceContainer: public util::Printable {
        // Allocate memory
        std::unique_ptr<boost::any[]> vect{ new boost::any[vsize] };
        for (std::size_t ii = 0; ii < vsize; ++ii) {
-         vect.get()[ii] = static_cast<T>(FileData.get()[ii]);
+         vect.get()[ii] = static_cast<Type>(FileData.get()[ii]);
        }
        // Push to a smart vector to keep the memory alive
        vectors_.push_back(std::move(vect));

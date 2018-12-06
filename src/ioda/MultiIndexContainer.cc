@@ -5,8 +5,6 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-// #include <typeinfo>
-
 #include "ioda/MultiIndexContainer.h"
 
 namespace ioda {
@@ -21,7 +19,8 @@ namespace ioda {
 // -----------------------------------------------------------------------------
   void ObsSpaceContainer::CreateFromFile(const std::string & filename, const std::string & mode,
                                          const util::DateTime & bgn, const util::DateTime & end,
-                                         const double & missingvalue, const eckit::mpi::Comm & commMPI) {
+                                         const double & missingvalue,
+                                        const eckit::mpi::Comm & commMPI) {
     oops::Log::trace() << "ioda::ObsSpaceContainer opening file: " << filename << std::endl;
 
     fileio.reset(ioda::IodaIOfactory::Create(filename, mode, bgn, end, missingvalue, commMPI));

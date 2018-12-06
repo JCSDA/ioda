@@ -75,6 +75,7 @@ IodaIO* IodaIOfactory::Create(const std::string & FileName, const std::string & 
                        << " -DENABLE_ODB_API=1 and -DODB_API_PATH=path_to_odb options"
                        << std::endl;
     ABORT("ioda::Ioda::Create: Rebuild with ODB API enabled");
+    return NULL;
 #endif
   } else {
     oops::Log::error() << "ioda::IodaIO::Create: Unrecognized file suffix: "
