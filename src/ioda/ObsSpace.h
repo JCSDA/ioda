@@ -43,10 +43,10 @@ class ObsSpace : public oops::ObsSpaceBase {
   std::size_t nobs() const;
   std::size_t nlocs() const;
 
-  template <typename T>
-  void get_db(const std::string &, const std::string &, const std::size_t &, T[]) const;
-  template <typename T>
-  void put_db(const std::string &, const std::string &, const std::size_t &, const T[]);
+  template <typename Type>
+  void get_db(const std::string &, const std::string &, const std::size_t &, Type[]) const;
+  template <typename Type>
+  void put_db(const std::string &, const std::string &, const std::size_t &, const Type[]);
 
   bool has(const std::string &, const std::string &) const;
 

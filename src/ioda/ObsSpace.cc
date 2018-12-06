@@ -36,7 +36,7 @@ ObsSpace::ObsSpace(const eckit::Configuration & config,
   obsname_ = config.getString("ObsType");
 
   // Open the file for input
-  auto filename = config.getString("ObsData.ObsDataIn.obsfile");
+  std::string filename = config.getString("ObsData.ObsDataIn.obsfile");
   oops::Log::trace() << obsname_ << " file in = " << filename << std::endl;
 
   database_.CreateFromFile(filename, "r", bgn, end, missingvalue_, commMPI_);
@@ -51,11 +51,11 @@ ObsSpace::ObsSpace(const eckit::Configuration & config,
 
   // Check to see if an output file has been requested.
   if (config.has("ObsData.ObsDataOut.obsfile")) {
-    auto filename = config.getString("ObsData.ObsDataOut.obsfile");
+    std::string filename = config.getString("ObsData.ObsDataOut.obsfile");
 
     // Find the left-most dot in the file name, and use that to pick off the file name
     // and file extension.
-    auto found = filename.find_last_of(".");
+    std::size_t found = filename.find_last_of(".");
     if (found == std::string::npos)
       found = filename.length();
 
@@ -90,10 +90,10 @@ ObsSpace::~ObsSpace() {
 }
 
 // -----------------------------------------------------------------------------
-template <typename T>
+template <typename Type>
 void ObsSpace::get_db(const std::string & group, const std::string & name,
-                      const size_t & vsize, T vdata[]) const {
-  database_.get_var<T>(group, name, vsize, vdata);
+                      const size_t & vsize, Type vdata[]) const {
+  database_.get_var<Type>(group, name, vsize, vdata);
 }
 
 template void ObsSpace::get_db<int>(const std::string & group, const std::string & name,
@@ -103,10 +103,10 @@ template void ObsSpace::get_db<double>(const std::string & group, const std::str
                                        const size_t & vsize, double vdata[]) const;
 
 // -----------------------------------------------------------------------------
-template <typename T>
+template <typename Type>
 void ObsSpace::put_db(const std::string & group, const std::string & name,
-                      const std::size_t & vsize, const T vdata[]) {
-  database_.put_var<T>(group, name, vsize, vdata);
+                      const std::size_t & vsize, const Type vdata[]) {
+  database_.put_var<Type>(group, name, vsize, vdata);
 }
 
 template void ObsSpace::put_db<int>(const std::string & group, const std::string & name,

@@ -74,7 +74,7 @@ namespace ioda {
 
 class IodaIO : public util::Printable {
  public:
-    IodaIO(const eckit::mpi::Comm &);
+    explicit IodaIO(const eckit::mpi::Comm &);
     virtual ~IodaIO() = 0;
 
     // Methods provided by subclasses
@@ -135,7 +135,7 @@ class IodaIO : public util::Printable {
     /*! \brief Distribution among processors */
     Distribution dist_;
 
-    /*! \brief Variable Name : Group Name : Type Name */
+    /*! \brief Variable Name : Group Name */
     std::vector<std::tuple<std::string, std::string>> vname_group_;
 };
 
