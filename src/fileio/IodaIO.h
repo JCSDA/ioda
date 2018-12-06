@@ -12,6 +12,8 @@
 #include <tuple>
 #include <vector>
 
+#include <boost/any.hpp>
+
 #include "eckit/mpi/Comm.h"
 
 #include "ioda/Distribution.h"
@@ -78,6 +80,8 @@ class IodaIO : public util::Printable {
     virtual ~IodaIO() = 0;
 
     // Methods provided by subclasses
+    virtual void ReadVar_any(const std::string & VarName, boost::any * VarData) = 0;
+
     virtual void ReadVar(const std::string & VarName, int* VarData) = 0;
     virtual void ReadVar(const std::string & VarName, float* VarData) = 0;
     virtual void ReadVar(const std::string & VarName, double* VarData) = 0;

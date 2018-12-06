@@ -120,6 +120,9 @@ class ObsSpaceContainer: public util::Printable {
                          const util::DateTime & bgn, const util::DateTime & end,
                          const double & missingvalue, const eckit::mpi::Comm & comm);
 
+     /*! \brief read the vector of record from file*/
+     void read_var(const std::string & group, const std::string & name);
+
      /*! \brief Load VALID variables from file to container */
      void LoadData();
 
@@ -175,35 +178,6 @@ class ObsSpaceContainer: public util::Printable {
          ASSERT(indx+1 <= fileio->nvars()*10);
          DataContainer.insert({gname, name, vsize, vectors_[indx]});
        }
-     }
-
-     // -----------------------------------------------------------------------------
-
-     /*! \brief read the vector of record from file*/
-     template <typename Type>
-     void read_var(const std::string & group, const std::string & name) {
-       std::size_t vsize{fileio->nlocs()};
-       std::string gname(group);
-       if (group.size() <= 0)
-         gname = "GroupUndefined";
-
-       // Allocate temporary memory
-       std::unique_ptr<Type[]> FileData(new Type[vsize]);
-       // Read the data
-       std::string db_name = name;
-       if (group.size() > 0)
-          db_name = name + "@" + group;
-       fileio->ReadVar(db_name, FileData.get());
-       // Allocate memory
-       std::unique_ptr<boost::any[]> vect{ new boost::any[vsize] };
-       for (std::size_t ii = 0; ii < vsize; ++ii) {
-         vect.get()[ii] = static_cast<Type>(FileData.get()[ii]);
-       }
-       // Push to a smart vector to keep the memory alive
-       vectors_.push_back(std::move(vect));
-       std::size_t indx = vectors_.size() - 1;
-       ASSERT(indx+1 <= fileio->nvars()*10);
-       DataContainer.insert({gname, name, vsize, vectors_[indx]});
      }
 
      // -----------------------------------------------------------------------------

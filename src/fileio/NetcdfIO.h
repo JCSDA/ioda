@@ -11,6 +11,8 @@
 
 #include <string>
 
+#include <boost/any.hpp>
+
 #include "fileio/IodaIO.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/ObjectCounter.h"
@@ -52,6 +54,8 @@ class NetcdfIO : public IodaIO,
            const std::size_t & Nlocs, const std::size_t & Nobs,
            const std::size_t & Nrecs, const std::size_t & Nvars);
   ~NetcdfIO();
+
+  void ReadVar_any(const std::string & VarName, boost::any * VarData);
 
   void ReadVar(const std::string & VarName, int* VarData);
   void ReadVar(const std::string & VarName, float* VarData);
