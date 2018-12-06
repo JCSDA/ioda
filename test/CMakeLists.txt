@@ -43,7 +43,7 @@ list( APPEND ioda_test_data
   atmosphere/sondes_obs_2018041500_s.nc4
   atmosphere/diag_t_obs_01_wprofiles.odb
   atmosphere/diag_t_obs_01_wprofiles_odb
-  atmosphere/smap_L1B_2018041500.nc4
+  atmosphere/smap_obs_2018041500.nc4
 
   constituents/diag_viirs_ges.2015081000_dbl_subset.nc4
   constituents/aod_obs_2015081000_m.nc4

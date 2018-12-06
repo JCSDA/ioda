@@ -106,13 +106,13 @@ ObsTypes:
         nrecs: 15
         nvars: 4
         norms:
-          - 23024.5918
-          - 37538.7969
-          - 2.49375474e+11
+          - 320.125183
+          - 477.936768
+          - 1.09626949
         tolerance: 1.0e-3
       datetime:
-        dnorm: 8.4257152e+09
-        tnorm: 88375440
+        dnorm: 78158416
+        tnorm: 6421.40625
         tolerance:  1.0e-3
 
   - ObsType: "Aod"
