@@ -50,14 +50,18 @@ class ObsSpaceContainer: public util::Printable {
          std::string group; /*!< Group name: such as ObsValue, HofX, MetaData, ObsErr etc. */
          std::string name;  /*!< Variable name */
          std::size_t size;  /*!< Array size */
-         std::unique_ptr<boost::any[]> & data; /*!< Smart pointer to array */
+         std::unique_ptr<boost::any[]> data; /*!< Smart pointer to array */
 
          // Constructors
          record(
           const std::string & group_, const std::string & name_, const std::size_t & size_,
                 std::unique_ptr<boost::any[]> & data_):
-          group(group_), name(name_), size(size_), data(data_)
-          {}
+          group(group_), name(name_), size(size_)
+          {
+            data.reset(new boost::any[size]);
+            for (std::size_t ii = 0; ii < size; ++ii)
+              data.get()[ii] = data_.get()[ii];
+          }
 
          // -----------------------------------------------------------------------------
 
@@ -145,7 +149,8 @@ class ObsSpaceContainer: public util::Printable {
          } else {
            if (typeInput != typeOutput)
              oops::Log::warning() << "DataContainer::get_var: inconsistent type :"
-                                  << std::string(typeInput.name()) + "@ container vs. "
+                                  << " name@group: " << name << "@" << group << " "
+                                  << std::string(typeInput.name()) + " @ container vs. "
                                   << std::string(typeOutput.name()) + " @ output" << std::endl;
            for (std::size_t ii = 0; ii < vsize; ++ii)
              vdata[ii] = boost::any_cast<Type>(var->data.get()[ii]);
@@ -171,10 +176,7 @@ class ObsSpaceContainer: public util::Printable {
          std::unique_ptr<boost::any[]> vect{ new boost::any[vsize] };
          for (std::size_t ii = 0; ii < vsize; ++ii)
            vect.get()[ii] = static_cast<Type>(vdata[ii]);
-         vectors_.push_back(std::move(vect));
-         std::size_t indx = vectors_.size() - 1;
-         ASSERT(indx+1 <= nvars_*10);
-         DataContainer.insert({group, name, vsize, vectors_[indx]});
+         DataContainer.insert({group, name, vsize, vect});
        }
      }
 
@@ -184,20 +186,17 @@ class ObsSpaceContainer: public util::Printable {
      /*! \brief container instance */
      record_set DataContainer;
 
-     /*! \brief Memory for MultiIndex Container */
-     std::vector<std::unique_ptr<boost::any[]>> vectors_;
-
      /*! \brief file IO object of input */
      std::unique_ptr<ioda::IodaIO> fileio_;
-
-     /*! \brief read the vector of record from file*/
-     void read_var(const std::string & group, const std::string & name);
 
      /*! \brief number of locations on this PE */
      std::size_t nlocs_;
 
      /*! \brief number of observational variables */
      std::size_t nvars_;
+
+     /*! \brief read the vector of record from file*/
+     void read_var(const std::string & group, const std::string & name);
 
      /*! \brief Print */
      void print(std::ostream &) const;

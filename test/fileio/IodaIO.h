@@ -249,7 +249,7 @@ void testReadDateTime() {
   std::string TestObsType;
   std::unique_ptr<ioda::IodaIO> TestIO;
   std::size_t Vsize;
-  std::unique_ptr<int[]> TestVarDate;
+  std::unique_ptr<uint64_t[]> TestVarDate;
   std::unique_ptr<int[]> TestVarTime;
   float Dnorm;
   float Tnorm;
@@ -270,7 +270,7 @@ void testReadDateTime() {
 
     // Read in data from the file and check values.
     Vsize = TestIO->nlocs();
-    TestVarDate.reset(new int[Vsize]);
+    TestVarDate.reset(new uint64_t[Vsize]);
     TestVarTime.reset(new int[Vsize]);
     TestIO->ReadDateTime(TestVarDate.get(), TestVarTime.get());
 

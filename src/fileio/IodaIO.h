@@ -90,7 +90,7 @@ class IodaIO : public util::Printable {
     virtual void WriteVar(const std::string & VarName, float* VarData) = 0;
     virtual void WriteVar(const std::string & VarName, double* VarData) = 0;
 
-    virtual void ReadDateTime(int* VarDate, int* VarTime)= 0;
+    virtual void ReadDateTime(uint64_t* VarDate, int* VarTime)= 0;
 
     // Methods inherited from base class
     std::string fname() const;
