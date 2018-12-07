@@ -112,25 +112,22 @@ class ObsSpaceContainer: public util::Printable {
 
      // -----------------------------------------------------------------------------
 
-     /*! \brief container instance */
-     record_set DataContainer;
-
-     /*! \brief Open file*/
+     /*! \brief Initialize from file*/
      void CreateFromFile(const std::string & filename, const std::string & mode,
                          const util::DateTime & bgn, const util::DateTime & end,
                          const double & missingvalue, const eckit::mpi::Comm & comm);
 
-     /*! \brief read the vector of record from file*/
-     void read_var(const std::string & group, const std::string & name);
-
      /*! \brief Load VALID variables from file to container */
      void LoadData();
 
-     /*! \brief file IO object of input */
-     std::unique_ptr<ioda::IodaIO> fileio;
-
      /*! \brief Check the availability of record in container*/
      bool has(const std::string & group, const std::string & name) const;
+
+     /*! \brief Return the number of locations on this PE*/
+     std::size_t nlocs() const {return nlocs_;}
+
+     /*! \brief Return the number of observational variables*/
+     std::size_t nvars() const {return nvars_;}
 
      // -----------------------------------------------------------------------------
 
@@ -138,12 +135,8 @@ class ObsSpaceContainer: public util::Printable {
      template <typename Type>
      void get_var(const std::string & group, const std::string & name,
                   const std::size_t vsize, Type vdata[]) const {
-       std::string gname(group);
-       if (group.size() <= 0)
-         gname = "GroupUndefined";
-
-       if (has(gname, name)) {
-         auto var = DataContainer.find(boost::make_tuple(gname, name));
+       if (has(group, name)) {
+         auto var = DataContainer.find(boost::make_tuple(group, name));
          const std::type_info & typeInput = var->data.get()->type();
          const std::type_info & typeOutput = typeid(Type);
          if ((typeInput == typeid(float)) && (typeOutput == typeid(double))) {
@@ -158,7 +151,7 @@ class ObsSpaceContainer: public util::Printable {
              vdata[ii] = boost::any_cast<Type>(var->data.get()[ii]);
          }
        } else {
-         std::string ErrorMsg = "DataContainer::get_var: " + name + "@" + gname +" is not found";
+         std::string ErrorMsg = "DataContainer::get_var: " + name + "@" + group +" is not found";
          ABORT(ErrorMsg);
        }
      }
@@ -169,40 +162,45 @@ class ObsSpaceContainer: public util::Printable {
      template <typename Type>
      void put_var(const std::string & group, const std::string & name,
                   const std::size_t vsize, const Type vdata[]) {
-       std::string gname(group);
-       if (group.size() <= 0)
-         gname = "GroupUndefined";
-
-       if (has(gname, name)) {
-         auto var = DataContainer.find(boost::make_tuple(gname, name));
+       if (has(group, name)) {
+         auto var = DataContainer.find(boost::make_tuple(group, name));
          oops::Log::debug() << *var << std::endl;
          for (std::size_t ii = 0; ii < vsize; ++ii)
            var->data.get()[ii] = vdata[ii];
        } else {
          std::unique_ptr<boost::any[]> vect{ new boost::any[vsize] };
-         for (std::size_t ii = 0; ii < vsize; ++ii) {
+         for (std::size_t ii = 0; ii < vsize; ++ii)
            vect.get()[ii] = static_cast<Type>(vdata[ii]);
-         }
          vectors_.push_back(std::move(vect));
          std::size_t indx = vectors_.size() - 1;
-         ASSERT(indx+1 <= fileio->nvars()*10);
-         DataContainer.insert({gname, name, vsize, vectors_[indx]});
+         ASSERT(indx+1 <= nvars_*10);
+         DataContainer.insert({group, name, vsize, vectors_[indx]});
        }
      }
 
      // -----------------------------------------------------------------------------
 
  private:
+     /*! \brief container instance */
+     record_set DataContainer;
+
      /*! \brief Memory for MultiIndex Container */
      std::vector<std::unique_ptr<boost::any[]>> vectors_;
 
+     /*! \brief file IO object of input */
+     std::unique_ptr<ioda::IodaIO> fileio_;
+
+     /*! \brief read the vector of record from file*/
+     void read_var(const std::string & group, const std::string & name);
+
+     /*! \brief number of locations on this PE */
+     std::size_t nlocs_;
+
+     /*! \brief number of observational variables */
+     std::size_t nvars_;
+
      /*! \brief Print */
-     void print(std::ostream & os) const {
-         auto & var = DataContainer.get<ObsSpaceContainer::by_name>();
-        os << "ObsSpace Multi.Index Container for IODA" << "\n";
-        for (auto iter = var.begin(); iter != var.end(); ++iter)
-            os << iter->name << "@" << iter->group << "\n";
-     }
+     void print(std::ostream &) const;
 };
 
 }  // namespace ioda

@@ -42,8 +42,8 @@ ObsSpace::ObsSpace(const eckit::Configuration & config,
   database_.CreateFromFile(filename, "r", bgn, end, missingvalue_, commMPI_);
 
   // Set the number of locations ,variables and number of observation points
-  nlocs_ = database_.fileio.get()->nlocs();
-  nvars_ = database_.fileio.get()->nvars();
+  nlocs_ = database_.nlocs();
+  nvars_ = database_.nvars();
   nobs_ = nvars_ * nlocs_;
 
   // Load in all VALID variables
@@ -93,7 +93,10 @@ ObsSpace::~ObsSpace() {
 template <typename Type>
 void ObsSpace::get_db(const std::string & group, const std::string & name,
                       const size_t & vsize, Type vdata[]) const {
-  database_.get_var<Type>(group, name, vsize, vdata);
+  std::string gname(group);
+  if (group.size() <= 0)
+    gname = "GroupUndefined";
+  database_.get_var<Type>(gname, name, vsize, vdata);
 }
 
 template void ObsSpace::get_db<int>(const std::string & group, const std::string & name,
@@ -106,7 +109,10 @@ template void ObsSpace::get_db<double>(const std::string & group, const std::str
 template <typename Type>
 void ObsSpace::put_db(const std::string & group, const std::string & name,
                       const std::size_t & vsize, const Type vdata[]) {
-  database_.put_var<Type>(group, name, vsize, vdata);
+  std::string gname(group);
+  if (group.size() <= 0)
+    gname = "GroupUndefined";
+  database_.put_var<Type>(gname, name, vsize, vdata);
 }
 
 template void ObsSpace::put_db<int>(const std::string & group, const std::string & name,

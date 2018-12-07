@@ -181,9 +181,9 @@ NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
       // Read in time offset vector
       if ((nc_inq_varid(ncid_, "time", &nc_varid_) == NC_NOERR) ||
           (nc_inq_varid(ncid_, "time@MetaData", &nc_varid_) == NC_NOERR)) {
-        std::unique_ptr<double[]> time{new double[nfvlen_]};
+        std::unique_ptr<float[]> time{new float[nfvlen_]};
         ErrorMsg = "NetcdfIO::NetcdfIO: Unable to read dataset: time";
-        CheckNcCall(nc_get_var_double(ncid_, nc_varid_, time.get()), ErrorMsg);
+        CheckNcCall(nc_get_var_float(ncid_, nc_varid_, time.get()), ErrorMsg);
 
         // Calculate the date and time and filter out the obs. outside of window
         util::DateTime dt;
