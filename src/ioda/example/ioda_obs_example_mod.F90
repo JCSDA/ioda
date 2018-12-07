@@ -20,7 +20,6 @@ integer, parameter :: max_string=800
 public ioda_obs_example
 public ioda_obs_example_setup, ioda_obs_example_delete
 public ioda_obs_example_read, ioda_obs_example_generate
-public ioda_obs_example_getlocs
 
 ! ------------------------------------------------------------------------------
 
