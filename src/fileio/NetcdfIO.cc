@@ -261,14 +261,14 @@ void NetcdfIO::ReadVar_any(const std::string & VarName, boost::any * VarData) {
       std::unique_ptr<float[]> rData{new float[nfvlen_]};
       ReadVar(VarName.c_str(), rData.get());
       for (std::size_t ii = 0; ii < dist_.distribution().size(); ++ii) /* Force float to double */
-        VarData[ii] = static_cast<double>(rData.get()[dist_.distribution()[ii]]);
+        VarData[ii] = rData.get()[dist_.distribution()[ii]];
       break;
     }
     case NC_DOUBLE: {
       std::unique_ptr<double[]> dData{new double[nfvlen_]};
       ReadVar(VarName.c_str(), dData.get());
       for (std::size_t ii = 0; ii < dist_.distribution().size(); ++ii)
-        VarData[ii] = dData.get()[dist_.distribution()[ii]];
+        VarData[ii] = static_cast<float>(dData.get()[dist_.distribution()[ii]]);
       break;
     }
     default:

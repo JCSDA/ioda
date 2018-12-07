@@ -99,9 +99,6 @@ void ObsSpace::get_db(const std::string & group, const std::string & name,
 template void ObsSpace::get_db<int>(const std::string & group, const std::string & name,
                                     const size_t & vsize, int vdata[]) const;
 
-template void ObsSpace::get_db<float>(const std::string & group, const std::string & name,
-                                      const size_t & vsize, float vdata[]) const;
-
 template void ObsSpace::get_db<double>(const std::string & group, const std::string & name,
                                        const size_t & vsize, double vdata[]) const;
 
@@ -114,9 +111,6 @@ void ObsSpace::put_db(const std::string & group, const std::string & name,
 
 template void ObsSpace::put_db<int>(const std::string & group, const std::string & name,
                                     const size_t & vsize, const int vdata[]);
-
-template void ObsSpace::put_db<float>(const std::string & group, const std::string & name,
-                                      const size_t & vsize, const float vdata[]);
 
 template void ObsSpace::put_db<double>(const std::string & group, const std::string & name,
                                        const size_t & vsize, const double vdata[]);
