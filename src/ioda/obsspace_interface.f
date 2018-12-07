@@ -40,13 +40,6 @@ real(kind=c_double) function c_obspace_missing_value() bind(C,name='obspace_miss
   implicit none
 end function c_obspace_missing_value
 
-!type(datetime) function c_obsspace_get_refdate(dom) &
-!              & bind(C,name='obsspace_get_refdate_f')
-!  use, intrinsic :: iso_c_binding, only : c_ptr
-!  implicit none
-!  type(c_ptr), value :: dom
-!end function c_obsspace_get_refdate
-
 !-------------------------------------------------------------------------------
 ! get data from ObsSpace
 
