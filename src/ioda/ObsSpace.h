@@ -27,7 +27,6 @@ namespace eckit {
 }
 
 namespace ioda {
-//  class Locations;
   class ObsVector;
 
 /// Observation Space

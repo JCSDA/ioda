@@ -15,8 +15,6 @@ use string_f_c_mod
 use config_mod
 use datetime_mod
 use duration_mod
-!use ioda_locs_mod
-!use ioda_locs_mod_c, only : ioda_locs_registry
 use ioda_obs_vectors
 use ioda_obs_example_mod
 use fckit_log_module, only : fckit_log
@@ -74,32 +72,6 @@ if (trim(fin) /= "") then
 endif
 
 end subroutine ioda_obsdb_example_setup_c
-
-! ------------------------------------------------------------------------------
-!
-!subroutine ioda_obsdb_example_getlocations_c(c_key_self, c_t1, c_t2, c_key_locs) bind(c,name='ioda_obsdb_example_getlocations_f90')
-!implicit none
-!integer(c_int), intent(in)    :: c_key_self
-!type(c_ptr), intent(in)       :: c_t1, c_t2
-!integer(c_int), intent(inout) :: c_key_locs
-!
-!type(ioda_obs_example), pointer :: self
-!type(datetime) :: t1, t2
-!type(ioda_locs), pointer :: locs
-!
-!call ioda_obs_example_registry%get(c_key_self, self)
-!call c_f_datetime(c_t1, t1)
-!call c_f_datetime(c_t2, t2)
-!
-!call ioda_locs_registry%init()
-!call ioda_locs_registry%add(c_key_locs)
-!call ioda_locs_registry%get(c_key_locs,locs)
-!
-!! TODO: replace with the call to your Fortran routine for getting locations of obs
-!!       (defined in ioda_obs_<your_obs_space_name>_mod.F90)
-!call ioda_obs_example_getlocs(self, locs)
-!
-!end subroutine ioda_obsdb_example_getlocations_c
 
 ! ------------------------------------------------------------------------------
 
