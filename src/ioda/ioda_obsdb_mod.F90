@@ -27,7 +27,6 @@ public ioda_obsdb
 public ioda_obsdb_setup
 public ioda_obsdb_delete
 public ioda_obsdb_get_ftype
-!public ioda_obsdb_getlocs
 public ioda_obsdb_generate
 public ioda_obsdb_var_to_ovec
 public ioda_obsdb_get_vec

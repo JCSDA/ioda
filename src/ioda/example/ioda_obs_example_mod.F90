@@ -72,16 +72,6 @@ type(ioda_obs_example), intent(inout), target :: self
 
 end subroutine ioda_obs_example_read
 
-!! ------------------------------------------------------------------------------
-!! TODO: replace the below function with your obsspace get locations function
-!subroutine ioda_obs_example_getlocs(self, locs)
-!use ioda_locs_mod
-!implicit none
-!type(ioda_obs_example), intent(in) :: self
-!type(ioda_locs), intent(inout) :: locs
-!
-!end subroutine ioda_obs_example_getlocs
-
 ! ------------------------------------------------------------------------------
 
 end module ioda_obs_example_mod
