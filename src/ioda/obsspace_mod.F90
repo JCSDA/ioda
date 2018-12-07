@@ -110,21 +110,6 @@ type(datetime) function obsspace_get_refdate(c_dom)
   obsspace_get_refdate = refdate
 end function obsspace_get_refdate
 
-
-!> Get refdate from the ObsSapce database
-
-!subroutine obsspace_get_refdate(obss, refdate)
-!  implicit none
-!  type(c_ptr), value, intent(in) :: obss
-!  type(datetime), intent(out) :: refdate
-!
-!  type(c_ptr) :: c_refdate
-!
-!  call c_obsspace_get_refdate(obss, c_refdate)
-!
-!  call c_f_datetime(c_refdate, refdate)
-!end subroutine obsspace_get_refdate
-
 !-------------------------------------------------------------------------------
 
 !> Get a variable from the ObsSapce database
