@@ -26,14 +26,13 @@ namespace ioda {
     fileio_.reset(ioda::IodaIOfactory::Create(filename, mode, bgn, end, missingvalue, commMPI));
     nlocs_ = fileio_->nlocs();
     nvars_ = fileio_->nvars();
-    vectors_.reserve(nvars_*10);
 
     oops::Log::trace() << "ioda::ObsSpaceContainer opening file ends " << std::endl;
   }
 // -----------------------------------------------------------------------------
 
   void ObsSpaceContainer::read_var(const std::string & group, const std::string & name) {
-    std::size_t vsize{nlocs_};
+    std::size_t vsize(nlocs_);
     std::string gname(group);
     std::string db_name(name);
     if (group.size() > 0)
@@ -41,15 +40,9 @@ namespace ioda {
     else
        gname = "GroupUndefined";
 
-    // Allocate memory
     std::unique_ptr<boost::any[]> vect{new boost::any[vsize]};
     fileio_->ReadVar_any(db_name, vect.get());
-
-    // Push to a smart vector to keep the memory alive
-    vectors_.push_back(std::move(vect));
-    std::size_t indx = vectors_.size() - 1;
-    ASSERT(indx+1 <= nvars_*10);
-    DataContainer.insert({gname, name, vsize, vectors_[indx]});
+    DataContainer.insert({gname, name, vsize, vect});
   }
 
 // -----------------------------------------------------------------------------

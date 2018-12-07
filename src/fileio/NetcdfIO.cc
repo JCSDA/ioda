@@ -278,6 +278,8 @@ void NetcdfIO::ReadVar_any(const std::string & VarName, boost::any * VarData) {
   }
 }
 
+// -----------------------------------------------------------------------------
+
 void NetcdfIO::ReadVar(const std::string & VarName, int* VarData) {
   oops::Log::trace() << __func__ << " VarName: " << VarName << std::endl;
 
@@ -405,7 +407,7 @@ void NetcdfIO::WriteVar(const std::string & VarName, double* VarData) {
  * \param[out] VarTime Time portion of the timestamp values (hhmmss)
  */
 
-void NetcdfIO::ReadDateTime(int* VarDate, int* VarTime) {
+void NetcdfIO::ReadDateTime(uint64_t* VarDate, int* VarTime) {
   int Year;
   int Month;
   int Day;

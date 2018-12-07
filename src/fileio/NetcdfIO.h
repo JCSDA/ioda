@@ -65,7 +65,7 @@ class NetcdfIO : public IodaIO,
   void WriteVar(const std::string & VarName, float* VarData);
   void WriteVar(const std::string & VarName, double* VarData);
 
-  void ReadDateTime(int* VarDate, int* VarTime);
+  void ReadDateTime(uint64_t* VarDate, int* VarTime);
 
  private:
   // For the oops::Printable base class
