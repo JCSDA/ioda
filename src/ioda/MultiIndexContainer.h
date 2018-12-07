@@ -147,19 +147,15 @@ class ObsSpaceContainer: public util::Printable {
          const std::type_info & typeInput = var->data.get()->type();
          const std::type_info & typeOutput = typeid(Type);
          if ((typeInput == typeid(float)) && (typeOutput == typeid(double))) {
-           for (std::size_t ii = 0; ii < vsize; ++ii) {
+           for (std::size_t ii = 0; ii < vsize; ++ii)
              vdata[ii] = static_cast<Type>(boost::any_cast<float>(var->data.get()[ii]));
-           }
          } else {
-           if (typeInput != typeOutput) {
-             std::string ErrorMsg = "DataContainer::get_var: inconsistent type :" +
-                                    std::string(typeInput.name()) + "@ container vs. " +
-                                    std::string(typeOutput.name()) + " @ output";
-             ABORT(ErrorMsg);
-           }
-           for (std::size_t ii = 0; ii < vsize; ++ii) {
+           if (typeInput != typeOutput)
+             oops::Log::warning() << "DataContainer::get_var: inconsistent type :"
+                                  << std::string(typeInput.name()) + "@ container vs. "
+                                  << std::string(typeOutput.name()) + " @ output" << std::endl;
+           for (std::size_t ii = 0; ii < vsize; ++ii)
              vdata[ii] = boost::any_cast<Type>(var->data.get()[ii]);
-           }
          }
        } else {
          std::string ErrorMsg = "DataContainer::get_var: " + name + "@" + gname +" is not found";
