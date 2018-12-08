@@ -68,8 +68,6 @@ ioda/Locations.interface.F90
 ioda/ioda_locs_mod.F90
 ioda/ioda_obsvar_mod.F90
 ioda/ioda_obsdb_mod.F90
-ioda/MultiIndexContainer.cc
-ioda/MultiIndexContainer.h
 ioda/obsspace_f.cc
 ioda/obsspace_f.h
 ioda/obsspace_mod.F90
@@ -77,6 +75,8 @@ ioda/random_f.cc
 ioda/random_f.h
 ioda/random_vectors_mod.F90
 ioda/twindow_utils_mod.F90
+database/MultiIndexContainer.cc
+database/MultiIndexContainer.h
 fileio/IodaIO.cc
 fileio/IodaIO.h
 fileio/IodaIOfactory.cc
