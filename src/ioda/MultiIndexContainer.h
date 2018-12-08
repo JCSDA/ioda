@@ -46,14 +46,14 @@ class ObsSpaceContainer: public util::Printable {
 
      struct by_group {};
      struct by_name {};
-     struct record {
+     struct Record {
          std::string group; /*!< Group name: such as ObsValue, HofX, MetaData, ObsErr etc. */
          std::string name;  /*!< Variable name */
          std::size_t size;  /*!< Array size */
          std::unique_ptr<boost::any[]> data; /*!< Smart pointer to array */
 
          // Constructors
-         record(
+         Record(
           const std::string & group_, const std::string & name_, const std::size_t & size_,
                 std::unique_ptr<boost::any[]> & data_):
           group(group_), name(name_), size(size_)
@@ -65,7 +65,7 @@ class ObsSpaceContainer: public util::Printable {
 
          // -----------------------------------------------------------------------------
 
-         friend std::ostream& operator<<(std::ostream & os, const record & v) {
+         friend std::ostream& operator<<(std::ostream & os, const Record & v) {
              os << v.group << ", " << v.name << ": { ";
              for (std::size_t i=0; i != std::min(v.size, static_cast<std::size_t>(10)); ++i) {
                 if (v.data[i].type() == typeid(int)) {
@@ -87,28 +87,28 @@ class ObsSpaceContainer: public util::Printable {
 
      // -----------------------------------------------------------------------------
 
-     using record_set = multi_index_container<
-         record,
+     using Record_set = multi_index_container<
+         Record,
          indexed_by<
              ordered_unique<
                 composite_key<
-                    record,
-                    member<record, std::string, &record::group>,
-                    member<record, std::string, &record::name>
+                    Record,
+                    member<Record, std::string, &Record::group>,
+                    member<Record, std::string, &Record::name>
                 >
              >,
-             // non-unique as there are many records under group
+             // non-unique as there are many Records under group
              ordered_non_unique<
                 tag<by_group>,
                 member<
-                    record, std::string, &record::group
+                    Record, std::string, &Record::group
                 >
              >,
-             // non-unique as there are records with the same name in different group
+             // non-unique as there are Records with the same name in different group
              ordered_non_unique<
                 tag<by_name>,
                 member<
-                    record, std::string, &record::name
+                    Record, std::string, &Record::name
                 >
             >
          >
@@ -124,7 +124,7 @@ class ObsSpaceContainer: public util::Printable {
      /*! \brief Load VALID variables from file to container */
      void LoadData();
 
-     /*! \brief Check the availability of record in container*/
+     /*! \brief Check the availability of Record in container*/
      bool has(const std::string & group, const std::string & name) const;
 
      /*! \brief Return the number of locations on this PE*/
@@ -135,7 +135,7 @@ class ObsSpaceContainer: public util::Printable {
 
      // -----------------------------------------------------------------------------
 
-     /*! \brief Inquire the vector of record from container*/
+     /*! \brief Inquire the vector of Record from container*/
      template <typename Type>
      void get_var(const std::string & group, const std::string & name,
                   const std::size_t vsize, Type vdata[]) const {
@@ -163,7 +163,7 @@ class ObsSpaceContainer: public util::Printable {
 
      // -----------------------------------------------------------------------------
 
-     /*! \brief Insert/Update the vector of record to container*/
+     /*! \brief Insert/Update the vector of Record to container*/
      template <typename Type>
      void put_var(const std::string & group, const std::string & name,
                   const std::size_t vsize, const Type vdata[]) {
@@ -184,7 +184,7 @@ class ObsSpaceContainer: public util::Printable {
 
  private:
      /*! \brief container instance */
-     record_set DataContainer;
+     Record_set DataContainer;
 
      /*! \brief file IO object of input */
      std::unique_ptr<ioda::IodaIO> fileio_;
@@ -195,7 +195,7 @@ class ObsSpaceContainer: public util::Printable {
      /*! \brief number of observational variables */
      std::size_t nvars_;
 
-     /*! \brief read the vector of record from file*/
+     /*! \brief read the vector of Record from file*/
      void read_var(const std::string & group, const std::string & name);
 
      /*! \brief Print */
