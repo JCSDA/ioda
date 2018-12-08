@@ -21,8 +21,8 @@
 #include "oops/util/Logger.h"
 #include "oops/util/Printable.h"
 
+#include "database/MultiIndexContainer.h"
 #include "Fortran.h"
-#include "MultiIndexContainer.h"
 
 // Forward declarations
 namespace eckit {
