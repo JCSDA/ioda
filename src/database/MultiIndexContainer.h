@@ -58,13 +58,8 @@ class ObsSpaceContainer: public util::Printable {
          // Constructors
          Record(
           const std::string & group, const std::string & name, const std::size_t & size,
-                std::unique_ptr<boost::any[]> & data_):
-          Texture(group, name), size(size)
-          {
-            data.reset(new boost::any[size]);
-            for (std::size_t ii = 0; ii < size; ++ii)
-              data.get()[ii] = data_.get()[ii];
-          }
+                std::unique_ptr<boost::any[]> & d)
+          : Texture(group, name), size(size), data(std::move(d)) {}
 
          // -----------------------------------------------------------------------------
 
