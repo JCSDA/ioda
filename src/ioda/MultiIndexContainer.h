@@ -46,17 +46,20 @@ class ObsSpaceContainer: public util::Printable {
 
      struct by_group {};
      struct by_name {};
-     struct Record {
+     struct Texture {
          std::string group; /*!< Group name: such as ObsValue, HofX, MetaData, ObsErr etc. */
          std::string name;  /*!< Variable name */
+         Texture(const std::string & group, const std::string & name): group(group), name(name){}
+     };
+     struct Record : public Texture {
          std::size_t size;  /*!< Array size */
          std::unique_ptr<boost::any[]> data; /*!< Smart pointer to array */
 
          // Constructors
          Record(
-          const std::string & group_, const std::string & name_, const std::size_t & size_,
+          const std::string & group, const std::string & name, const std::size_t & size,
                 std::unique_ptr<boost::any[]> & data_):
-          group(group_), name(name_), size(size_)
+          Texture(group, name), size(size)
           {
             data.reset(new boost::any[size]);
             for (std::size_t ii = 0; ii < size; ++ii)
@@ -93,22 +96,22 @@ class ObsSpaceContainer: public util::Printable {
              ordered_unique<
                 composite_key<
                     Record,
-                    member<Record, std::string, &Record::group>,
-                    member<Record, std::string, &Record::name>
+                    member<Texture, std::string, &Texture::group>,
+                    member<Texture, std::string, &Texture::name>
                 >
              >,
              // non-unique as there are many Records under group
              ordered_non_unique<
                 tag<by_group>,
                 member<
-                    Record, std::string, &Record::group
+                    Texture, std::string, &Texture::group
                 >
              >,
              // non-unique as there are Records with the same name in different group
              ordered_non_unique<
                 tag<by_name>,
                 member<
-                    Record, std::string, &Record::name
+                    Texture, std::string, &Texture::name
                 >
             >
          >
