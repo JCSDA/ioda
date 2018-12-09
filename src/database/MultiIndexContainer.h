@@ -135,7 +135,7 @@ class ObsSpaceContainer: public util::Printable {
 
      /*! \brief Inquire the vector of Record from container*/
      template <typename Type>
-     void get_var(const std::string & group, const std::string & name,
+     void inquire(const std::string & group, const std::string & name,
                   const std::size_t vsize, Type vdata[]) const {
        if (has(group, name)) {
          auto var = DataContainer.find(boost::make_tuple(group, name));
@@ -146,7 +146,7 @@ class ObsSpaceContainer: public util::Printable {
              vdata[ii] = static_cast<Type>(boost::any_cast<float>(var->data.get()[ii]));
          } else {
            if (typeInput != typeOutput)
-             oops::Log::warning() << "DataContainer::get_var: inconsistent type :"
+             oops::Log::warning() << "DataContainer::inquire: inconsistent type :"
                                   << " name@group: " << name << "@" << group << " "
                                   << std::string(typeInput.name()) + " @ container vs. "
                                   << std::string(typeOutput.name()) + " @ output" << std::endl;
@@ -154,7 +154,7 @@ class ObsSpaceContainer: public util::Printable {
              vdata[ii] = boost::any_cast<Type>(var->data.get()[ii]);
          }
        } else {
-         std::string ErrorMsg = "DataContainer::get_var: " + name + "@" + group +" is not found";
+         std::string ErrorMsg = "DataContainer::inquire: " + name + "@" + group +" is not found";
          ABORT(ErrorMsg);
        }
      }
@@ -163,11 +163,10 @@ class ObsSpaceContainer: public util::Printable {
 
      /*! \brief Insert/Update the vector of Record to container*/
      template <typename Type>
-     void put_var(const std::string & group, const std::string & name,
+     void insert(const std::string & group, const std::string & name,
                   const std::size_t vsize, const Type vdata[]) {
        if (has(group, name)) {
          auto var = DataContainer.find(boost::make_tuple(group, name));
-         oops::Log::debug() << *var << std::endl;
          for (std::size_t ii = 0; ii < vsize; ++ii)
            var->data.get()[ii] = vdata[ii];
        } else {
