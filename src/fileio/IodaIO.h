@@ -16,7 +16,7 @@
 
 #include "eckit/mpi/Comm.h"
 
-#include "ioda/Distribution.h"
+#include "distribution/Distribution.h"
 #include "oops/util/Printable.h"
 
 // Forward declarations
@@ -137,7 +137,7 @@ class IodaIO : public util::Printable {
     double missingvalue_;
 
     /*! \brief Distribution among processors */
-    Distribution dist_;
+    Distribution * dist_;
 
     /*! \brief Variable Name : Group Name */
     std::vector<std::tuple<std::string, std::string>> vname_group_;
