@@ -28,7 +28,6 @@ public ioda_obsdb
 public ioda_obsdb_setup
 public ioda_obsdb_delete
 public ioda_obsdb_get_ftype
-public ioda_obsdb_getlocs
 public ioda_obsdb_generate
 public ioda_obsdb_var_to_ovec
 public ioda_obsdb_get_vec
@@ -292,72 +291,6 @@ end subroutine ioda_obsdb_delete
 
 ! ------------------------------------------------------------------------------
 
-subroutine ioda_obsdb_getlocs(self, c_obsspace, locs, t1, t2)
-use ioda_locs_mod
-implicit none
-type(ioda_obsdb), intent(in)    :: self
-type(c_ptr), value, intent(in)    :: c_obsspace
-type(ioda_locs),  intent(inout) :: locs
-type(datetime),   intent(in)    :: t1, t2
-
-character(len=*),parameter:: myname = "ioda_obsdb_getlocs"
-character(len=255) :: record
-integer :: failed
-type(ioda_obs_var), pointer :: vptr
-integer :: i
-integer :: tw_nlocs
-integer, dimension(:), allocatable :: tw_indx
-real(kind_real), dimension(:), allocatable :: time, lon, lat
-  
-character(21) :: tstr, tstr2
-
-! Local copies pre binning
-allocate(time(self%nlocs), lon(self%nlocs), lat(self%nlocs))
-
-if ((trim(self%obstype) .eq. "Radiosonde") .or. &
-    (trim(self%obstype) .eq. "Aircraft")) then
-  call obsspace_get_db(c_obsspace, "MetaData", "longitude", lon)
-else
-  call obsspace_get_db(c_obsspace, "", "longitude", lon)
-endif
-
-if ((trim(self%obstype) .eq. "Radiosonde") .or. &
-    (trim(self%obstype) .eq. "Aircraft")) then
-  call obsspace_get_db(c_obsspace, "MetaData", "latitude", lat)
-else
-  call obsspace_get_db(c_obsspace, "", "latitude", lat)
-endif
-
-if ((trim(self%obstype) .eq. "Radiosonde") .or. &
-    (trim(self%obstype) .eq. "Aircraft")) then
-  call obsspace_get_db(c_obsspace, "MetaData", "time", time)
-else
-  call obsspace_get_db(c_obsspace, "", "time", time)
-endif
-
-! Generate the timing window indices
-allocate(tw_indx(self%nlocs))
-call gen_twindow_index(self%refdate, t1, t2, self%nlocs, time, tw_indx, tw_nlocs)
-
-!Setup ioda locations
-call ioda_locs_setup(locs, tw_nlocs)
-do i = 1, tw_nlocs
-  locs%lon(i)  = lon(tw_indx(i))
-  locs%lat(i)  = lat(tw_indx(i))
-  locs%time(i) = time(tw_indx(i))
-enddo
-locs%indx = tw_indx(1:tw_nlocs)
-
-deallocate(time, lon, lat)
-deallocate(tw_indx)
-
-write(record,*) myname,': allocated/assinged obs-data'
-call fckit_log%info(record)
-
-end subroutine ioda_obsdb_getlocs
-
-! ------------------------------------------------------------------------------
-
 subroutine ioda_obsdb_getvar(self, vname, vptr)
 
 #ifdef HAVE_ODB_API
@@ -502,7 +435,6 @@ end subroutine ioda_obsdb_getvar
 ! ------------------------------------------------------------------------------
 
 subroutine ioda_obsdb_get_vec(self, vname, vdata)
-use ioda_locs_mod
 implicit none
 type(ioda_obsdb), intent(in) :: self
 character(len=*), intent(in) :: vname
@@ -521,7 +453,6 @@ end subroutine ioda_obsdb_get_vec
 ! ------------------------------------------------------------------------------
 
 integer function ioda_obsdb_has(self, vname)
-use ioda_locs_mod
 implicit none
 type(ioda_obsdb), intent(in) :: self
 character(len=*), intent(in) :: vname
@@ -614,7 +545,6 @@ end subroutine ioda_obsdb_generate
 ! ------------------------------------------------------------------------------
 
 subroutine ioda_obsdb_var_to_ovec(self, ovec, vname)
-use ioda_locs_mod
 implicit none
 type(ioda_obsdb), intent(in) :: self
 real(kind=kind_real), intent(inout) :: ovec(:)

@@ -18,8 +18,6 @@
 #include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
 
-#include "Locations.h"
-
 namespace ioda {
 // -----------------------------------------------------------------------------
 const double ObsSpace::missingvalue_ = -9.9999e+299;
@@ -88,7 +86,10 @@ ObsSpace::ObsSpace(const eckit::Configuration & config,
 ObsSpace::~ObsSpace() {
   ioda_obsdb_delete_f90(keyOspace_);
 }
-
+// -----------------------------------------------------------------------------
+void ObsSpace::get_refdate(util::DateTime & refdate) const {
+  ioda_obsdb_getrefdate_f90(keyOspace_, refdate);
+}
 // -----------------------------------------------------------------------------
 template <typename Type>
 void ObsSpace::get_db(const std::string & group, const std::string & name,
@@ -125,17 +126,6 @@ template void ObsSpace::put_db<double>(const std::string & group, const std::str
 bool ObsSpace::has(const std::string & group, const std::string & name) const {
   return (database_.has(group, name));
 }
-// -----------------------------------------------------------------------------
-
-Locations * ObsSpace::getLocations(const util::DateTime & t1, const util::DateTime & t2) const {
-  const util::DateTime * p1 = &t1;
-  const util::DateTime * p2 = &t2;
-  int keylocs;
-  ioda_obsdb_getlocations_f90(keyOspace_, this, &p1, &p2, keylocs);
-
-  return new Locations(keylocs);
-}
-
 // -----------------------------------------------------------------------------
 
 std::size_t ObsSpace::nobs() const {

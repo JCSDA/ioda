@@ -30,7 +30,6 @@ namespace eckit {
 }
 
 namespace ioda {
-  class Locations;
   class ObsVector;
 
 /// Observation Space
@@ -47,6 +46,7 @@ class ObsSpace : public oops::ObsSpaceBase {
   void get_db(const std::string &, const std::string &, const std::size_t &, Type[]) const;
   template <typename Type>
   void put_db(const std::string &, const std::string &, const std::size_t &, const Type[]);
+  void get_refdate(util::DateTime &) const;
 
   bool has(const std::string &, const std::string &) const;
 
@@ -60,9 +60,6 @@ class ObsSpace : public oops::ObsSpaceBase {
   void generateDistribution(const eckit::Configuration &);
 
   void printJo(const ObsVector &, const ObsVector &);  // to be removed
-
-// TODO(YT): remove getLocations (renamed for now to avoid old calls)
-  Locations * getLocations(const util::DateTime &, const util::DateTime &) const;
 
  private:
   void print(std::ostream &) const;
