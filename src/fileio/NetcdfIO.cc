@@ -144,7 +144,7 @@ NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
     // Apply the round-robin distribution, which yields the size and indices that
     // are to be selected by this process element out of the file.
     DistributionFactory * distFactory;
-    dist_ = distFactory->createDistribution("roundrobin");
+    dist_.reset(distFactory->createDistribution("roundrobin"));
     dist_->distribution(commMPI_, nfvlen_);
 
     // How many variables should be read in ?
@@ -242,8 +242,6 @@ NetcdfIO::~NetcdfIO() {
  */
 
 void NetcdfIO::ReadVar_any(const std::string & VarName, boost::any * VarData) {
-  oops::Log::trace() << __func__ << " VarName: " << VarName << std::endl;
-
   std::string ErrorMsg;
   nc_type vartype;
 

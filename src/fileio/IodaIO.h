@@ -8,6 +8,7 @@
 #ifndef FILEIO_IODAIO_H_
 #define FILEIO_IODAIO_H_
 
+#include <memory>
 #include <string>
 #include <tuple>
 #include <vector>
@@ -137,7 +138,7 @@ class IodaIO : public util::Printable {
     double missingvalue_;
 
     /*! \brief Distribution among processors */
-    Distribution * dist_;
+    std::unique_ptr<Distribution> dist_;
 
     /*! \brief Variable Name : Group Name */
     std::vector<std::tuple<std::string, std::string>> vname_group_;
