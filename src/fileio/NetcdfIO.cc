@@ -192,7 +192,7 @@ NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
         util::DateTime dt;
         for (std::size_t ii = 0; ii < nfvlen_; ++ii) {
           dt = reference_datetime_ + util::Duration(static_cast<int>(time.get()[ii] * 3600));
-          if ((dt < bgn) || (dt >= end))
+          if ((dt <= bgn) || (dt > end))
             dist_->erase(ii);
         }
       } else {
