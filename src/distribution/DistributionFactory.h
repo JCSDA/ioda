@@ -18,7 +18,7 @@ namespace ioda {
 
 class DistributionFactory {
  public:
-    Distribution * createDistribution(const std::string & type);
+    Distribution * createDistribution(const std::string & method);
 };
 
 // ---------------------------------------------------------------------
