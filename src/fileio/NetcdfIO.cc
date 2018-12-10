@@ -14,6 +14,7 @@
 #include <string>
 #include <typeinfo>
 
+#include "distribution/DistributionFactory.h"
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/datetime_f.h"
 #include "oops/util/Duration.h"
@@ -78,7 +79,7 @@ NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
     retval_ = nc_create(fname_.c_str(), NC_CLOBBER|NC_NETCDF4, &ncid_);
   } else {
     oops::Log::error() << __func__ << ": Unrecognized FileMode: " << fmode_ << std::endl;
-    oops::Log::error() << __func__ << ":   Must use one of: 'r', 'w', 'W'" << std::endl;
+    oops::Log::error() << __func__ << ": Must use one of: 'r', 'w', 'W'" << std::endl;
     ABORT("Unrecognized file mode for NetcdfIO constructor");
   }
 
@@ -142,7 +143,9 @@ NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
 
     // Apply the round-robin distribution, which yields the size and indices that
     // are to be selected by this process element out of the file.
-    dist_.round_robin_distribution(commMPI_, nfvlen_);
+    DistributionFactory * distFactory;
+    dist_ = distFactory->createDistribution("roundrobin");
+    dist_->distribution(commMPI_, nfvlen_);
 
     // How many variables should be read in ?
     std::string ErrorMsg;
@@ -190,7 +193,7 @@ NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
         for (std::size_t ii = 0; ii < nfvlen_; ++ii) {
           dt = reference_datetime_ + util::Duration(static_cast<int>(time.get()[ii] * 3600));
           if ((dt < bgn) || (dt >= end))
-            dist_.erase(ii);
+            dist_->erase(ii);
         }
       } else {
         oops::Log::debug() << "NetcdfIO::NetcdfIO : not found: time " << std::endl;
@@ -199,7 +202,7 @@ NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
       oops::Log::debug() << "NetcdfIO::NetcdfIO : not found: reference date_time " << std::endl;
     }
 
-    nlocs_ = dist_.size();
+    nlocs_ = dist_->size();
   }
 
   // When in write mode, create dimensions in the output file based on
@@ -253,22 +256,22 @@ void NetcdfIO::ReadVar_any(const std::string & VarName, boost::any * VarData) {
     case NC_INT: {
       std::unique_ptr<int[]> iData{new int[nfvlen_]};
       ReadVar(VarName.c_str(), iData.get());
-      for (std::size_t ii = 0; ii < dist_.distribution().size(); ++ii)
-        VarData[ii] = iData.get()[dist_.distribution()[ii]];
+      for (std::size_t ii = 0; ii < dist_->index().size(); ++ii)
+        VarData[ii] = iData.get()[dist_->index()[ii]];
       break;
     }
     case NC_FLOAT: {
       std::unique_ptr<float[]> rData{new float[nfvlen_]};
       ReadVar(VarName.c_str(), rData.get());
-      for (std::size_t ii = 0; ii < dist_.distribution().size(); ++ii) /* Force float to double */
-        VarData[ii] = rData.get()[dist_.distribution()[ii]];
+      for (std::size_t ii = 0; ii < dist_->index().size(); ++ii) /* Force float to double */
+        VarData[ii] = rData.get()[dist_->index()[ii]];
       break;
     }
     case NC_DOUBLE: {
       std::unique_ptr<double[]> dData{new double[nfvlen_]};
       ReadVar(VarName.c_str(), dData.get());
-      for (std::size_t ii = 0; ii < dist_.distribution().size(); ++ii)
-        VarData[ii] = static_cast<float>(dData.get()[dist_.distribution()[ii]]);
+      for (std::size_t ii = 0; ii < dist_->index().size(); ++ii)
+        VarData[ii] = static_cast<float>(dData.get()[dist_->index()[ii]]);
       break;
     }
     default:
