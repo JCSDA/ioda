@@ -53,13 +53,14 @@ class ObsVector : public util::Printable,
   double rms() const;
 
   std::size_t size() const {return values_.size();}  // Size of vector in local memory
-  unsigned int nobs() const;  // Number of active observations (without missing values)
+  unsigned int nobs() const;  // Number of active observations (missing values not included)
 
   const double & toFortran() const {return values_[0];}
   double & toFortran() {return values_[0];}
 
-  std::vector<std::string> varnames() { return obsvars_.variables(); }
-  std::size_t nvars() { return nvars_; }
+  const oops::Variables & varnames() const {return obsvars_;}
+  std::size_t nvars() const {return nvars_;}
+  std::size_t nlocs() const {return nlocs_;}
   void mask(const ObsVector &);
 
 // I/O
@@ -72,11 +73,12 @@ class ObsVector : public util::Printable,
   /*! \brief Associate ObsSpace object */
   const ObsSpace & obsdb_;
 
-  /*! \brief Number of variables */
-  std::size_t nvars_;
-
   /*! \brief Variables */
   oops::Variables obsvars_;
+
+  /*! \brief Number of variables */
+  std::size_t nvars_;
+  std::size_t nlocs_;
 
   /*! \brief Vector data */
   std::vector<double> values_;

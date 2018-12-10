@@ -22,22 +22,20 @@
 namespace ioda {
 // -----------------------------------------------------------------------------
 ObsVector::ObsVector(const ObsSpace & obsdb, const oops::Variables & vars)
-  : obsdb_(obsdb), missing_(ObsSpace::missingValue()), obsvars_(vars) {
-  nvars_ = obsvars_.variables().size();
-  values_.resize(obsdb_.nlocs() * nvars_);
+  : obsdb_(obsdb), obsvars_(vars), nvars_(obsvars_.variables().size()),
+    nlocs_(obsdb_.nlocs()), values_(nlocs_ * nvars_),
+    missing_(ObsSpace::missingValue()) {
   oops::Log::debug() << "ObsVector constructed with " << nvars_
                      << " variables resulting in " << values_.size()
                      << " elements." << std::endl;
 }
 // -----------------------------------------------------------------------------
 ObsVector::ObsVector(const ObsVector & other, const bool copy)
-  : obsdb_(other.obsdb_), missing_(other.missing_), obsvars_(other.obsvars_) {
-  nvars_ = obsvars_.variables().size();
-  values_.resize(obsdb_.nlocs() * nvars_);
+  : obsdb_(other.obsdb_), obsvars_(other.obsvars_), nvars_(other.nvars_),
+    nlocs_(other.nlocs_), values_(nlocs_ * nvars_), missing_(other.missing_) {
   oops::Log::debug() << "ObsVector constructed with " << nvars_
                      << " variables resulting in " << values_.size()
                      << " elements." << std::endl;
-
   if (copy) values_ = other.values_;
 }
 // -----------------------------------------------------------------------------
