@@ -24,8 +24,6 @@ namespace ioda {
 
 namespace ioda {
 
-// Locations key type
-typedef int F90locs;
 // Goms key type
 typedef int F90goms;
 // Observation vector key type
@@ -48,15 +46,6 @@ typedef int F90obias;
 extern "C" {
 
 // -----------------------------------------------------------------------------
-//  Locations
-// -----------------------------------------------------------------------------
-  void ioda_locs_create_f90(F90locs &, const int  &, const double *,
-                            const double *, const int  &);
-  void ioda_locs_delete_f90(F90locs &);
-  void ioda_locs_nobs_f90(const F90locs &, int &);
-  void ioda_locs_coords_f90(const F90locs &, int &, double &, double &);
-
-// -----------------------------------------------------------------------------
 //  Observation Handler
 // -----------------------------------------------------------------------------
   void ioda_obsdb_setup_f90(F90odb &, const eckit::Configuration * const *,
@@ -65,9 +54,7 @@ extern "C" {
   void ioda_obsdb_delete_f90(F90odb &);
   void ioda_obsdb_nobs_f90(const F90odb &, int &);
   void ioda_obsdb_nlocs_f90(const F90odb &, int &);
-  void ioda_obsdb_getlocations_f90(const F90odb &, const ioda::ObsSpace *,
-                                   const util::DateTime * const *,
-                                   const util::DateTime * const *, F90locs &);
+  void ioda_obsdb_getrefdate_f90(const F90odb &, util::DateTime &);
   void ioda_obsdb_generate_f90(const F90odb &, const eckit::Configuration * const *,
                                const util::DateTime * const *, const util::DateTime * const *,
                                const double &);

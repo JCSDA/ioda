@@ -64,12 +64,6 @@ endforeach(FILENAME)
 
 #####################################################################
 
-ecbuild_add_test( TARGET  test_ioda_locations
-                  BOOST
-                  SOURCES mains/TestLocations.cc
-                  ARGS    "testinput/iodatest.yml"
-                  LIBS    ioda )
-
 ecbuild_add_test( TARGET test_ioda_observationspace
                   BOOST
                   SOURCES mains/TestObservationSpace.cc
@@ -115,12 +109,6 @@ ecbuild_add_test( TARGET test_ioda_marine_fileio
 
 if (HAVE_ODB_API)
 
-ecbuild_add_test( TARGET  test_ioda_locations_odb
-                  BOOST
-                  SOURCES mains/TestLocations.cc
-                  ARGS    "testinput/iodatest_odb.json"
-                  LIBS    ioda )
-
 ecbuild_add_test( TARGET test_ioda_observationspace_odb
                   BOOST
                   SOURCES mains/TestObservationSpace.cc
@@ -148,12 +136,6 @@ ecbuild_add_test( TARGET test_ioda_fileio_odb_api
 endif (HAVE_ODB_API)
 
 if (HAVE_ODB)
-
-ecbuild_add_test( TARGET  test_ioda_locations_odb1
-                  BOOST
-                  SOURCES mains/TestLocations.cc
-                  ARGS    "testinput/iodatest_odb1.json"
-                  LIBS    ioda )
 
 ecbuild_add_test( TARGET test_ioda_observationspace_odb1
                   BOOST

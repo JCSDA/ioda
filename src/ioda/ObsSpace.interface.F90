@@ -13,8 +13,6 @@ use config_mod
 use datetime_mod
 use duration_mod
 use ioda_obsdb_mod
-use ioda_locs_mod
-use ioda_locs_mod_c, only : ioda_locs_registry
 use type_distribution, only: random_distribution
 use fckit_log_module, only : fckit_log
 use fckit_mpi_module
@@ -308,28 +306,18 @@ end subroutine ioda_obsdb_nlocs_c
 
 ! ------------------------------------------------------------------------------
 
-subroutine ioda_obsdb_getlocations_c(c_key_self, c_obsspace, c_t1, c_t2, c_key_locs) bind(c,name='ioda_obsdb_getlocations_f90')
+subroutine ioda_obsdb_getrefdate_c(c_key_self, c_refdate) &
+           bind(c,name='ioda_obsdb_getrefdate_f90')
 implicit none
-integer(c_int), intent(in)    :: c_key_self
-type(c_ptr), value, intent(in):: c_obsspace
-type(c_ptr), intent(in)       :: c_t1, c_t2
-integer(c_int), intent(inout) :: c_key_locs
-
-type(ioda_obsdb), pointer :: self
-type(datetime) :: t1, t2
-type(ioda_locs), pointer :: locs
+integer(c_int), intent(in) :: c_key_self
+type(c_ptr), intent(out)   :: c_refdate
+type(ioda_obsdb), pointer  :: self
 
 call ioda_obsdb_registry%get(c_key_self, self)
-call c_f_datetime(c_t1, t1)
-call c_f_datetime(c_t2, t2)
 
-call ioda_locs_registry%init()
-call ioda_locs_registry%add(c_key_locs)
-call ioda_locs_registry%get(c_key_locs,locs)
+call f_c_datetime(self%refdate, c_refdate)
 
-call ioda_obsdb_getlocs(self, c_obsspace, locs, t1, t2)
-
-end subroutine ioda_obsdb_getlocations_c
+end subroutine ioda_obsdb_getrefdate_c
 
 ! ------------------------------------------------------------------------------
 
