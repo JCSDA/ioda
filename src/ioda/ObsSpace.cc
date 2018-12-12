@@ -44,9 +44,6 @@ ObsSpace::ObsSpace(const eckit::Configuration & config,
   nvars_ = database_.nvars();
   nobs_ = nvars_ * nlocs_;
 
-  // Load in all VALID variables
-  database_.LoadData();
-
   // Check to see if an output file has been requested.
   if (config.has("ObsData.ObsDataOut.obsfile")) {
     std::string filename = config.getString("ObsData.ObsDataOut.obsfile");
