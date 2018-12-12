@@ -6,6 +6,8 @@
  */
 
 #include "database/MultiIndexContainer.h"
+#include "fileio/IodaIO.h"
+#include "fileio/IodaIOfactory.h"
 
 namespace ioda {
 // -----------------------------------------------------------------------------
@@ -23,38 +25,30 @@ namespace ioda {
                                          const eckit::mpi::Comm & commMPI) {
     oops::Log::trace() << "ioda::ObsSpaceContainer opening file: " << filename << std::endl;
 
-    fileio_.reset(ioda::IodaIOfactory::Create(filename, mode, bgn, end, missingvalue, commMPI));
-    nlocs_ = fileio_->nlocs();
-    nvars_ = fileio_->nvars();
+    std::unique_ptr<ioda::IodaIO> fileio
+      {ioda::IodaIOfactory::Create(filename, mode, bgn, end, missingvalue, commMPI)};
+    nlocs_ = fileio->nlocs();
+    nvars_ = fileio->nvars();
 
+    // Load all valid variables
+    std::unique_ptr<boost::any[]> vect;
+    std::string group, name, db_name;
+
+    for (auto iter = (fileio->varlist())->begin(); iter != (fileio->varlist())->end(); ++iter) {
+      // Revisit here, improve the readability
+      group = std::get<1>(*iter);
+      name = std::get<0>(*iter);
+      db_name = name;
+      if (group.size() > 0)
+        db_name = name + "@" + group;
+      else
+        group = "GroupUndefined";
+      vect.reset(new boost::any[nlocs_]);
+      fileio->ReadVar_any(db_name, vect.get());
+      DataContainer.insert({group, name, nlocs_, vect});
+    }
     oops::Log::trace() << "ioda::ObsSpaceContainer opening file ends " << std::endl;
   }
-// -----------------------------------------------------------------------------
-
-  void ObsSpaceContainer::read_var(const std::string & group, const std::string & name) {
-    std::size_t vsize(nlocs_);
-    std::string gname(group);
-    std::string db_name(name);
-    if (group.size() > 0)
-       db_name = name + "@" + group;
-    else
-       gname = "GroupUndefined";
-
-    std::unique_ptr<boost::any[]> vect{new boost::any[vsize]};
-    fileio_->ReadVar_any(db_name, vect.get());
-    DataContainer.insert({gname, name, vsize, vect});
-  }
-
-// -----------------------------------------------------------------------------
-
-  void ObsSpaceContainer::LoadData() {
-    oops::Log::trace() << "ioda::ObsSpaceContainer loading data starts " << std::endl;
-    for (auto iter = (fileio_->varlist())->begin(); iter != (fileio_->varlist())->end(); ++iter) {
-      read_var(std::get<1>(*iter), std::get<0>(*iter));
-    }
-    oops::Log::trace() << "ioda::ObsSpaceContainer loading data ends " << std::endl;
-  }
-
 // -----------------------------------------------------------------------------
 
 bool ObsSpaceContainer::has(const std::string & group, const std::string & name) const {

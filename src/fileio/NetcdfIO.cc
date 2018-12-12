@@ -28,7 +28,7 @@
 namespace ioda {
 
 // -----------------------------------------------------------------------------
-const double NetcdfIO::missingthreshold_ = 1.0e08;
+static const double missingthreshold_ = 1.0e08;
 // -----------------------------------------------------------------------------
 /*!
  * \details This constructor will open the netcdf file. If opening in read

@@ -156,11 +156,6 @@ class NetcdfIO : public IodaIO,
   int nc_attid_;
 
   /*!
-   * \brief This number is the threshold to tell the missing value
-   */
-  static const double missingthreshold_;
-
-  /*!
    * \brief Reference datetime in NetCDF file
    */
   util::DateTime reference_datetime_;

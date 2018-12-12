@@ -23,10 +23,10 @@
 #include <boost/multi_index_container.hpp>
 #include <boost/range/iterator_range.hpp>
 
-#include "fileio/IodaIO.h"
-#include "fileio/IodaIOfactory.h"
+#include "eckit/mpi/Comm.h"
 
 #include "oops/util/abor1_cpp.h"
+#include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
 #include "oops/util/Printable.h"
 
@@ -183,9 +183,6 @@ class ObsSpaceContainer: public util::Printable {
  private:
      /*! \brief container instance */
      Record_set DataContainer;
-
-     /*! \brief file IO object of input */
-     std::unique_ptr<ioda::IodaIO> fileio_;
 
      /*! \brief number of locations on this PE */
      std::size_t nlocs_;
