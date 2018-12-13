@@ -13,8 +13,6 @@
 #include <string>
 #include <vector>
 
-#include <boost/any.hpp>
-
 #include "eckit/mpi/Comm.h"
 #include "oops/base/ObsSpaceBase.h"
 #include "oops/util/DateTime.h"
