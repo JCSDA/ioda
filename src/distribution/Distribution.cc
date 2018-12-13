@@ -6,7 +6,6 @@
  */
 
 #include <algorithm>
-#include <iostream>
 
 #include "distribution/Distribution.h"
 
@@ -18,9 +17,7 @@ Distribution::~Distribution() {}
 // -----------------------------------------------------------------------------
 
 void Distribution::erase(const std::size_t & index) {
-  auto spos = std::find(indx_.begin(), indx_.end(), index);
-  if (spos != indx_.end())
-    indx_.erase(spos);
+    indx_.erase(std::remove(indx_.begin(), indx_.end(), index), indx_.end());
 }
 
 // -----------------------------------------------------------------------------
