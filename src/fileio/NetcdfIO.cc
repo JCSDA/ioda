@@ -28,7 +28,7 @@
 namespace ioda {
 
 // -----------------------------------------------------------------------------
-static const double missingthreshold_ = 1.0e08;
+static const double missingthreshold = 1.0e08;
 // -----------------------------------------------------------------------------
 /*!
  * \details This constructor will open the netcdf file. If opening in read
@@ -163,41 +163,43 @@ NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
       CheckNcCall(nc_inq_var(ncid_, varid, name, &rh_type, &ndimsp, dimids, 0), ErrorMsg);
       // Here is how to define the VALID variables
       if ((ndimsp == 1) && (dimids[0] == nlocs_id_)) {
-        std::size_t Spos;
         std::string vname{name};
-        Spos = vname.find("@");
-        if (Spos == vname.npos) {
-          vname_group_.push_back(std::make_tuple(vname.substr(0, Spos), ""));
-        } else {
-          vname_group_.push_back(std::make_tuple(vname.substr(0, Spos), vname.substr(Spos+1)));
-        }
+        std::string gname{""};
+        std::size_t Spos = vname.find("@");
+        if (Spos != vname.npos)
+          gname = vname.substr(Spos+1);
+        vname_group_.push_back(std::make_tuple(vname.substr(0, Spos), gname));
+
+        // Hack for date and time
+        std::size_t found = vname.find("time");
+        if ((found != std::string::npos) && (found == 0))
+          vname_group_.push_back(std::make_tuple("date", gname));
       }
     }
 
-    // Read in the reference date and time
+    // Calculate the date and time and filter out the obs. outside of window
     if (nc_inq_attid(ncid_, NC_GLOBAL, "date_time", &nc_varid_) == NC_NOERR) {
-      int datetime;
-      ErrorMsg = "NetcdfIO::NetcdfIO: Unable to read reference datetime from this netCDF dataset";
-      CheckNcCall(nc_get_att_int(ncid_, NC_GLOBAL, "date_time", &datetime), ErrorMsg);
-      datetime_setints_f(& reference_datetime_, datetime/100, datetime%100);
+      int Year, Month, Day, Hour, Minute, Second;
+      std::unique_ptr<util::DateTime[]> datetime{new util::DateTime[nfvlen_]};
+      ReadDateTime(datetime.get());
 
-      // Read in time offset vector
-      if ((nc_inq_varid(ncid_, "time", &nc_varid_) == NC_NOERR) ||
-          (nc_inq_varid(ncid_, "time@MetaData", &nc_varid_) == NC_NOERR)) {
-        std::unique_ptr<float[]> time{new float[nfvlen_]};
-        ErrorMsg = "NetcdfIO::NetcdfIO: Unable to read dataset: time";
-        CheckNcCall(nc_get_var_float(ncid_, nc_varid_, time.get()), ErrorMsg);
-
-        // Calculate the date and time and filter out the obs. outside of window
-        util::DateTime dt;
-        for (std::size_t ii = 0; ii < nfvlen_; ++ii) {
-          dt = reference_datetime_ + util::Duration(static_cast<int>(time.get()[ii] * 3600));
-          if ((dt <= bgn) || (dt > end))
-            dist_->erase(ii);
+      std::vector<std::size_t> toberemoved;
+      for (std::size_t ii = 0; ii < dist_->size(); ++ii) {
+        if ((datetime.get()[dist_->index()[ii]] >  bgn) &&
+            (datetime.get()[dist_->index()[ii]] <= end)) {
+          datetime.get()[dist_->index()[ii]].toYYYYMMDDhhmmss(Year, Month, Day,
+                                                              Hour, Minute, Second);
+          date_.push_back(Year*10000 + Month*100 + Day);
+          time_.push_back(Hour*10000 + Minute*100 + Second);
+        } else {
+          toberemoved.push_back(ii);
         }
-      } else {
-        oops::Log::debug() << "NetcdfIO::NetcdfIO : not found: time " << std::endl;
       }
+      for (std::size_t ii = 0; ii < toberemoved.size(); ++ii)
+        dist_->erase(toberemoved[ii]);
+
+      ASSERT(date_.size() == dist_->size());
+
     } else {
       oops::Log::debug() << "NetcdfIO::NetcdfIO : not found: reference date_time " << std::endl;
     }
@@ -245,6 +247,23 @@ void NetcdfIO::ReadVar_any(const std::string & VarName, boost::any * VarData) {
   std::string ErrorMsg;
   nc_type vartype;
 
+  // For datetime, it is already calculated in constructor
+  std::size_t found = VarName.find("date");
+  if ((found != std::string::npos) && (found == 0)) {
+    ASSERT(date_.size() == dist_->size());
+    for (std::size_t ii = 0; ii < dist_->size(); ++ii)
+        VarData[ii] = date_[ii];
+    return;
+  }
+
+  found = VarName.find("time");
+  if ((found != std::string::npos) && (found == 0)) {
+    ASSERT(time_.size() == dist_->size());
+    for (std::size_t ii = 0; ii < dist_->size(); ++ii)
+        VarData[ii] = time_[ii];
+    return;
+  }
+
   ErrorMsg = "NetcdfIO::ReadVar_any: Netcdf dataset not found: " + VarName;
   CheckNcCall(nc_inq_varid(ncid_, VarName.c_str(), &nc_varid_), ErrorMsg);
 
@@ -254,22 +273,31 @@ void NetcdfIO::ReadVar_any(const std::string & VarName, boost::any * VarData) {
     case NC_INT: {
       std::unique_ptr<int[]> iData{new int[nfvlen_]};
       ReadVar(VarName.c_str(), iData.get());
-      for (std::size_t ii = 0; ii < dist_->index().size(); ++ii)
+      for (std::size_t ii = 0; ii < dist_->size(); ++ii)
         VarData[ii] = iData.get()[dist_->index()[ii]];
       break;
     }
     case NC_FLOAT: {
       std::unique_ptr<float[]> rData{new float[nfvlen_]};
       ReadVar(VarName.c_str(), rData.get());
-      for (std::size_t ii = 0; ii < dist_->index().size(); ++ii) /* Force float to double */
+      for (std::size_t ii = 0; ii < dist_->size(); ++ii) {
         VarData[ii] = rData.get()[dist_->index()[ii]];
+        if (boost::any_cast<float>(VarData[ii]) > missingthreshold) {
+          VarData[ii] = static_cast<float>(missingvalue_);
+        }
+      }
       break;
     }
     case NC_DOUBLE: {
       std::unique_ptr<double[]> dData{new double[nfvlen_]};
       ReadVar(VarName.c_str(), dData.get());
-      for (std::size_t ii = 0; ii < dist_->index().size(); ++ii)
+      for (std::size_t ii = 0; ii < dist_->size(); ++ii) {
+        /* Force double to float */
         VarData[ii] = static_cast<float>(dData.get()[dist_->index()[ii]]);
+        if (boost::any_cast<float>(VarData[ii]) > missingthreshold) {
+          VarData[ii] = static_cast<float>(missingvalue_);
+        }
+      }
       break;
     }
     default:
@@ -461,6 +489,52 @@ void NetcdfIO::ReadDateTime(uint64_t* VarDate, int* VarTime) {
 
     VarDate[i] = Year*10000 + Month*100 + Day;
     VarTime[i] = Hour*10000 + Minute*100 + Second;
+    }
+  }
+
+// -----------------------------------------------------------------------------
+
+void NetcdfIO::ReadDateTime(util::DateTime VarDateTime[]) {
+  std::string ErrorMsg;
+
+  oops::Log::trace() << __func__ << std::endl;
+
+  // Read in the date_time attribute which is in the form: yyyymmddhh
+  // Convert the date_time to a Datetime object.
+  int dtvals_;
+  ErrorMsg = "NetcdfIO::ReadDateTime: Unable to read attribute: date_time";
+  CheckNcCall(nc_get_att_int(ncid_, NC_GLOBAL, "date_time", &dtvals_), ErrorMsg);
+
+  util::DateTime refdt_;
+  datetime_setints_f(&refdt_, dtvals_/100, dtvals_%100);
+
+  // Read in the time variable and convert to a Duration object. Time is an
+  // offset from the date_time attribute. This fits in nicely with a Duration
+  // object.
+  // Look for "time" and "Obs_Time" for the time variable.
+  if (nc_inq_varid(ncid_, "time", &nc_varid_) != NC_NOERR) {
+    ErrorMsg = "NetcdfIO::ReadDateTime: Unable to find time variable: time OR Obs_Time";
+    CheckNcCall(nc_inq_varid(ncid_, "time@MetaData", &nc_varid_), ErrorMsg);
+  }
+
+  int dimid_;
+  std::unique_ptr<float[]> OffsetTime;
+  std::size_t vsize_;
+
+  ErrorMsg = "NetcdfIO::ReadDateTime: Unable to find dimension of time variable";
+  CheckNcCall(nc_inq_vardimid(ncid_, nc_varid_, &dimid_), ErrorMsg);
+
+  ErrorMsg = "NetcdfIO::ReadDateTime: Unable to find size of dimension of time variable";
+  CheckNcCall(nc_inq_dimlen(ncid_, dimid_, &vsize_), ErrorMsg);
+
+  OffsetTime.reset(new float[vsize_]);
+  ErrorMsg = "NetcdfIO::ReadDateTime: Unable to read time variable: ";
+  CheckNcCall(nc_get_var_float(ncid_, nc_varid_, OffsetTime.get()), ErrorMsg);
+
+  // Combine the refdate with the offset time, and convert to yyyymmdd and
+  // hhmmss values.
+  for (std::size_t i = 0; i < vsize_; ++i) {
+    VarDateTime[i] = refdt_ + util::Duration(static_cast<int>(OffsetTime.get()[i] * 3600));
     }
   }
 

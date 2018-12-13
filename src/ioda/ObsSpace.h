@@ -46,7 +46,6 @@ class ObsSpace : public oops::ObsSpaceBase {
   void get_db(const std::string &, const std::string &, const std::size_t &, Type[]) const;
   template <typename Type>
   void put_db(const std::string &, const std::string &, const std::size_t &, const Type[]);
-  void get_refdate(util::DateTime &) const;
 
   bool has(const std::string &, const std::string &) const;
 

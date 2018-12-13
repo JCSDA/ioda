@@ -71,22 +71,14 @@ ObsSpace::ObsSpace(const eckit::Configuration & config,
     oops::Log::debug() << "ioda::ObsSpace output file is not required " << std::endl;
   }
 
-  const util::DateTime * p1 = &winbgn_;
-  const util::DateTime * p2 = &winend_;
-  ioda_obsdb_setup_f90(keyOspace_, &configc, &p1, &p2, missingvalue_);
-
   oops::Log::trace() << "ioda::ObsSpace contructed name = " << obsname_ << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 ObsSpace::~ObsSpace() {
-  ioda_obsdb_delete_f90(keyOspace_);
 }
-// -----------------------------------------------------------------------------
-void ObsSpace::get_refdate(util::DateTime & refdate) const {
-  ioda_obsdb_getrefdate_f90(keyOspace_, refdate);
-}
+
 // -----------------------------------------------------------------------------
 template <typename Type>
 void ObsSpace::get_db(const std::string & group, const std::string & name,
