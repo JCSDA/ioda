@@ -183,26 +183,28 @@ NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
       std::unique_ptr<util::DateTime[]> datetime{new util::DateTime[nfvlen_]};
       ReadDateTime(datetime.get());
 
-      std::vector<std::size_t> toberemoved;
+      std::vector<std::size_t> to_be_removed;
+      std::size_t index;
       for (std::size_t ii = 0; ii < dist_->size(); ++ii) {
-        if ((datetime.get()[dist_->index()[ii]] >  bgn) &&
-            (datetime.get()[dist_->index()[ii]] <= end)) {
-          datetime.get()[dist_->index()[ii]].toYYYYMMDDhhmmss(Year, Month, Day,
-                                                              Hour, Minute, Second);
+        index = dist_->index()[ii];
+        if ((datetime.get()[index] >  bgn) &&
+            (datetime.get()[index] <= end)) {  // Inside time window
+          datetime.get()[index].toYYYYMMDDhhmmss(Year, Month, Day,
+                                                 Hour, Minute, Second);
           date_.push_back(Year*10000 + Month*100 + Day);
           time_.push_back(Hour*10000 + Minute*100 + Second);
-        } else {
-          toberemoved.push_back(ii);
+        } else {  // Outside of time window
+          to_be_removed.push_back(index);
         }
       }
-      for (std::size_t ii = 0; ii < toberemoved.size(); ++ii)
-        dist_->erase(toberemoved[ii]);
+      for (std::size_t ii = 0; ii < to_be_removed.size(); ++ii)
+        dist_->erase(to_be_removed[ii]);
 
       ASSERT(date_.size() == dist_->size());
 
     } else {
       oops::Log::debug() << "NetcdfIO::NetcdfIO : not found: reference date_time " << std::endl;
-    }
+    }  // end of constructing the date and time
 
     nlocs_ = dist_->size();
   }
