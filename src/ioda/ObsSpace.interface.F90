@@ -306,21 +306,6 @@ end subroutine ioda_obsdb_nlocs_c
 
 ! ------------------------------------------------------------------------------
 
-subroutine ioda_obsdb_getrefdate_c(c_key_self, c_refdate) &
-           bind(c,name='ioda_obsdb_getrefdate_f90')
-implicit none
-integer(c_int), intent(in) :: c_key_self
-type(c_ptr), intent(out)   :: c_refdate
-type(ioda_obsdb), pointer  :: self
-
-call ioda_obsdb_registry%get(c_key_self, self)
-
-call f_c_datetime(self%refdate, c_refdate)
-
-end subroutine ioda_obsdb_getrefdate_c
-
-! ------------------------------------------------------------------------------
-
 subroutine ioda_obsdb_generate_c(c_key_self, c_conf, c_t1, c_t2, c_missing_value) bind(c,name='ioda_obsdb_generate_f90')
 implicit none
 integer(c_int), intent(inout) :: c_key_self

@@ -10,6 +10,7 @@
 
 
 #include <string>
+#include <vector>
 
 #include <boost/any.hpp>
 
@@ -66,6 +67,7 @@ class NetcdfIO : public IodaIO,
   void WriteVar(const std::string & VarName, double* VarData);
 
   void ReadDateTime(uint64_t* VarDate, int* VarTime);
+  void ReadDateTime(util::DateTime[]);
 
  private:
   // For the oops::Printable base class
@@ -156,9 +158,14 @@ class NetcdfIO : public IodaIO,
   int nc_attid_;
 
   /*!
-   * \brief Reference datetime in NetCDF file
+   * \brief date (YYMMDD) in NetCDF file
    */
-  util::DateTime reference_datetime_;
+  std::vector<int> date_;
+
+  /*!
+   * \brief time (HHMMSS) in NetCDF file
+   */
+  std::vector<int> time_;
 };
 
 }  // namespace ioda

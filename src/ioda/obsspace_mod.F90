@@ -18,7 +18,6 @@ implicit none
 private
 public obsspace_get_nobs
 public obsspace_get_nlocs
-public obsspace_get_refdate
 public obsspace_get_db
 public obsspace_put_db
 public obsspace_has
@@ -91,24 +90,6 @@ real(c_double) function obspace_missing_value()
   implicit none
   obspace_missing_value = c_obspace_missing_value()
 end function obspace_missing_value
-
-!-------------------------------------------------------------------------------
-
-!> Return refdate from the ObsSapce database
-
-type(datetime) function obsspace_get_refdate(c_dom)
-  implicit none
-  type(c_ptr), value, intent(in) :: c_dom
-
-  type(datetime) :: refdate
-  type(c_ptr)    :: c_refdate
-
-  call c_obsspace_get_refdate(c_dom, c_refdate)
-
-  call c_f_datetime(c_refdate, refdate)
-
-  obsspace_get_refdate = refdate
-end function obsspace_get_refdate
 
 !-------------------------------------------------------------------------------
 
