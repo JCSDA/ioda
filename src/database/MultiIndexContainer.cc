@@ -58,13 +58,6 @@ bool ObsSpaceContainer::has(const std::string & group, const std::string & varia
 
 // -----------------------------------------------------------------------------
 
-bool ObsSpaceContainer::has_group(const std::string & group) const {
-  auto & var = DataContainer.get<ObsSpaceContainer::by_group>();
-  return (var.begin() != var.end());
-}
-
-// -----------------------------------------------------------------------------
-
 void ObsSpaceContainer::print(std::ostream & os) const {
   auto & var = DataContainer.get<ObsSpaceContainer::by_variable>();
   os << "ObsSpace Multi.Index Container for IODA" << "\n";
