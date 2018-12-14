@@ -45,7 +45,8 @@ namespace ioda {
         group = "GroupUndefined";
       vect.reset(new boost::any[nlocs_]);
       fileio->ReadVar_any(db_name, vect.get());
-      DataContainer.insert({group, variable, nlocs_, vect});
+      // All records read from file are read-only
+      DataContainer.insert({group, variable, "r", nlocs_, vect});
     }
     oops::Log::trace() << "ioda::ObsSpaceContainer opening file ends " << std::endl;
   }
