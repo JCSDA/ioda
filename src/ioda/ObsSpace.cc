@@ -12,11 +12,12 @@
 #include <vector>
 
 #include "eckit/config/Configuration.h"
-
 #include "oops/parallel/mpi/mpi.h"
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
+
+#include "distribution/DistributionFactory.h"
 
 namespace ioda {
 // -----------------------------------------------------------------------------
@@ -129,11 +130,40 @@ std::size_t ObsSpace::nlocs() const {
 // -----------------------------------------------------------------------------
 
 void ObsSpace::generateDistribution(const eckit::Configuration & conf) {
-  const eckit::Configuration * configc = &conf;
+  int fvlen  = conf.getInt("nobs");
+  float lat  = conf.getFloat("lat");
+  float lon1 = conf.getFloat("lon1");
+  float lon2 = conf.getFloat("lon2");
 
-  const util::DateTime * p1 = &winbgn_;
-  const util::DateTime * p2 = &winend_;
-  ioda_obsdb_generate_f90(keyOspace_, &configc, &p1, &p2, missingvalue_);
+  // Apply the round-robin distribution, which yields the size and indices that
+  // are to be selected by this process element out of the file.
+  DistributionFactory * distFactory;
+  Distribution * dist{distFactory->createDistribution("roundrobin")};
+  dist->distribution(comm(), fvlen);
+  int nobs = dist->size();
+
+  // For now, set nlocs equal to nobs. This may need to change for some obs types.
+  int nlocs = nobs;
+
+  // For now, set nvars to one.
+  int nvars = 1;
+
+  // Record obs type
+  std::string MyObsType = conf.getString("ObsType");
+  oops::Log::info() << __func__ << " : " << MyObsType << std::endl;
+
+  // Create variables and generate the values specified by the arguments.
+  std::unique_ptr<double[]> latitude {new double[nlocs]};
+  for (std::size_t ii = 0; ii<nobs; ++ii) {
+    latitude.get()[ii] = static_cast<double>(lat);
+  }
+  put_db("", "latitude", nlocs, latitude.get());
+
+  std::unique_ptr<double[]> longitude {new double[nlocs]};
+  for (std::size_t ii = 0; ii<nobs; ++ii) {
+    longitude.get()[ii] = static_cast<double>(lon1 + (ii-1)*(lon2-lon1)/(nobs-1));
+  }
+  put_db("", "longitude", nlocs, longitude.get());
 }
 
 // -----------------------------------------------------------------------------
