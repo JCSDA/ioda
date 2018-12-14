@@ -152,12 +152,13 @@ class ObsSpaceContainer: public util::Printable {
                                   << " From double to int on " << group << "-" << name << std::endl;
             for (std::size_t ii = 0; ii < vsize; ++ii)
               vdata[ii] = static_cast<int>(boost::any_cast<double>(var->data.get()[ii]));
+         } else if ((typeInput == typeid(int)) && (typeOutput == typeid(double))) {
+             oops::Log::warning() << " DataContainer::inquire: inconsistent type : "
+                                  << " From int to double on " << group << "-" << name << std::endl;
+            for (std::size_t ii = 0; ii < vsize; ++ii)
+              vdata[ii] = static_cast<double>(boost::any_cast<int>(var->data.get()[ii]));
          } else {
-           if (typeInput != typeOutput)
-             oops::Log::warning() << "DataContainer::inquire: inconsistent type :"
-                                  << " name@group: " << name << "@" << group << " "
-                                  << std::string(typeInput.name()) + " @ container vs. "
-                                  << std::string(typeOutput.name()) + " @ output" << std::endl;
+           ASSERT(typeInput == typeOutput);
            for (std::size_t ii = 0; ii < vsize; ++ii)
              vdata[ii] = boost::any_cast<Type>(var->data.get()[ii]);
          }
