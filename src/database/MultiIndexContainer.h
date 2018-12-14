@@ -113,9 +113,6 @@ class ObsSpaceContainer: public util::Printable {
      /*! \brief Check the availability of Record with group and variable in container*/
      bool has(const std::string & group, const std::string & variable) const;
 
-     /*! \brief Check the availability of the group in container*/
-     bool has_group(const std::string & group) const;
-
      /*! \brief Return the number of uniqure observation locations on this PE*/
      std::size_t nlocs() const {return nlocs_;}
 
