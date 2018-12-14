@@ -32,37 +32,44 @@ namespace ioda {
 
     // Load all valid variables
     std::unique_ptr<boost::any[]> vect;
-    std::string group, name, db_name;
+    std::string group, variable, db_name;
 
     for (auto iter = (fileio->varlist())->begin(); iter != (fileio->varlist())->end(); ++iter) {
       // Revisit here, improve the readability
       group = std::get<1>(*iter);
-      name = std::get<0>(*iter);
-      db_name = name;
+      variable = std::get<0>(*iter);
+      db_name = variable;
       if (group.size() > 0)
-        db_name = name + "@" + group;
+        db_name = variable + "@" + group;
       else
         group = "GroupUndefined";
       vect.reset(new boost::any[nlocs_]);
       fileio->ReadVar_any(db_name, vect.get());
-      DataContainer.insert({group, name, nlocs_, vect});
+      DataContainer.insert({group, variable, nlocs_, vect});
     }
     oops::Log::trace() << "ioda::ObsSpaceContainer opening file ends " << std::endl;
   }
 // -----------------------------------------------------------------------------
 
-bool ObsSpaceContainer::has(const std::string & group, const std::string & name) const {
-  auto var = DataContainer.find(boost::make_tuple(group, name));
+bool ObsSpaceContainer::has(const std::string & group, const std::string & variable) const {
+  auto var = DataContainer.find(boost::make_tuple(group, variable));
   return (var != DataContainer.end());
 }
 
 // -----------------------------------------------------------------------------
 
+bool ObsSpaceContainer::has_group(const std::string & group) const {
+  auto & var = DataContainer.get<ObsSpaceContainer::by_group>();
+  return (var.begin() != var.end());
+}
+
+// -----------------------------------------------------------------------------
+
 void ObsSpaceContainer::print(std::ostream & os) const {
-  auto & var = DataContainer.get<ObsSpaceContainer::by_name>();
+  auto & var = DataContainer.get<ObsSpaceContainer::by_variable>();
   os << "ObsSpace Multi.Index Container for IODA" << "\n";
   for (auto iter = var.begin(); iter != var.end(); ++iter)
-    os << iter->name << "@" << iter->group << "\n";
+    os << iter->variable << " @ " << iter->group << "\n";
 }
 
 // -----------------------------------------------------------------------------
