@@ -30,7 +30,6 @@ ObsSpace::ObsSpace(const eckit::Configuration & config,
 {
   oops::Log::trace() << "ioda::ObsSpace config  = " << config << std::endl;
 
-  const eckit::Configuration * configc = &config;
   obsname_ = config.getString("ObsType");
 
   // Open the file for input
