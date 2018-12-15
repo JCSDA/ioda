@@ -87,6 +87,7 @@ class IodaIO : public util::Printable {
     virtual void ReadVar(const std::string & VarName, float* VarData) = 0;
     virtual void ReadVar(const std::string & VarName, double* VarData) = 0;
 
+    virtual void WriteVar_any(const std::string & VarName, boost::any * VarData) = 0;
     virtual void WriteVar(const std::string & VarName, int* VarData) = 0;
     virtual void WriteVar(const std::string & VarName, float* VarData) = 0;
     virtual void WriteVar(const std::string & VarName, double* VarData) = 0;
@@ -97,10 +98,11 @@ class IodaIO : public util::Printable {
     std::string fname() const;
     std::string fmode() const;
 
-    std::size_t nlocs();
-    std::size_t nobs();
-    std::size_t nrecs();
-    std::size_t nvars();
+    std::size_t nlocs() const;
+    std::size_t nobs() const;
+    std::size_t nrecs() const;
+    std::size_t nvars() const;
+    const eckit::mpi::Comm & comm() const {return commMPI_;}
     std::vector<std::tuple<std::string, std::string>> * const varlist();
 
  protected:

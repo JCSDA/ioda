@@ -11,7 +11,12 @@
 
 namespace ioda {
 // -----------------------------------------------------------------------------
-  ObsSpaceContainer::ObsSpaceContainer(const eckit::Configuration & config) {
+  ObsSpaceContainer::ObsSpaceContainer(const eckit::Configuration & config,
+                                       const util::DateTime & bgn,
+                                       const util::DateTime & end,
+                                       const eckit::mpi::Comm & commMPI,
+                                       const double missingvalue)
+        : winbgn_(bgn), winend_(end), commMPI_(commMPI), missingvalue_(missingvalue) {
     oops::Log::trace() << "ioda::ObsSpaceContainer Constructor starts " << std::endl;
   }
 // -----------------------------------------------------------------------------
@@ -60,8 +65,15 @@ bool ObsSpaceContainer::has(const std::string & group, const std::string & varia
 // -----------------------------------------------------------------------------
 
 void ObsSpaceContainer::dump(const std::string & file_name) const {
-  // std::unique_ptr<ioda::IodaIO> fileio
-  //     {ioda::IodaIOfactory::Create(file_name, "W", NULL, NULL, NULL, NULL)};
+  // Open the file for output
+  std::unique_ptr<ioda::IodaIO> fileio
+    {ioda::IodaIOfactory::Create(file_name, "W", windowStart(), windowEnd(), missingValue(),
+    comm(), nlocs(), 0, 0, nvars())};  //  Not sure nrecs and nobs are useful
+
+  // List all records and write out the every record
+  auto & var = DataContainer.get<ObsSpaceContainer::by_variable>();
+  for (auto iter = var.begin(); iter != var.end(); ++iter)
+    fileio->WriteVar_any(iter->variable + "@" + iter->group, iter->data.get());
 }
 
 // -----------------------------------------------------------------------------

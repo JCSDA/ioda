@@ -62,6 +62,7 @@ class NetcdfIO : public IodaIO,
   void ReadVar(const std::string & VarName, float* VarData);
   void ReadVar(const std::string & VarName, double* VarData);
 
+  void WriteVar_any(const std::string & VarName, boost::any * VarData);
   void WriteVar(const std::string & VarName, int* VarData);
   void WriteVar(const std::string & VarName, float* VarData);
   void WriteVar(const std::string & VarName, double* VarData);

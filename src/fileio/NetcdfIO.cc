@@ -15,6 +15,7 @@
 #include <typeinfo>
 
 #include "distribution/DistributionFactory.h"
+#include "oops/parallel/mpi/mpi.h"
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/datetime_f.h"
 #include "oops/util/Duration.h"
@@ -51,10 +52,10 @@ static const double missingthreshold = 1.0e08;
 
 NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
                    const util::DateTime & bgn, const util::DateTime & end,
-                   const double & MissingValue, const eckit::mpi::Comm & comm,
+                   const double & MissingValue, const eckit::mpi::Comm & commMPI,
                    const std::size_t & Nlocs, const std::size_t & Nobs,
                    const std::size_t & Nrecs, const std::size_t & Nvars)
-                   : IodaIO(comm) {
+                   : IodaIO(commMPI) {
   int retval_;
 
   // Set the data members to the file name, file mode and provide a trace message.
@@ -145,7 +146,7 @@ NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
     // are to be selected by this process element out of the file.
     DistributionFactory * distFactory;
     dist_.reset(distFactory->createDistribution("roundrobin"));
-    dist_->distribution(commMPI_, nfvlen_);
+    dist_->distribution(comm(), nfvlen_);
 
     // How many variables should be read in ?
     std::string ErrorMsg;
@@ -365,6 +366,31 @@ void NetcdfIO::ReadVar(const std::string & VarName, double* VarData) {
  * \param[in]  VarData Pointer to memory that will be written into the file
  */
 
+void NetcdfIO::WriteVar_any(const std::string & VarName, boost::any * VarData) {
+  const std::type_info & typeInput = VarData->type();
+
+  if (typeInput == typeid(int)) {
+    std::unique_ptr<int[]> iData{new int[nlocs()]};
+    for (std::size_t ii = 0; ii < nlocs(); ++ii)
+      iData.get()[ii] = boost::any_cast<int>(VarData[ii]);
+    WriteVar(VarName.c_str(), iData.get());
+  } else if (typeInput == typeid(float)) {
+    std::unique_ptr<float[]> fData{new float[nlocs()]};
+    for (std::size_t ii = 0; ii < nlocs(); ++ii)
+      fData.get()[ii] = boost::any_cast<float>(VarData[ii]);
+    WriteVar(VarName.c_str(), fData.get());
+  } else if (typeInput == typeid(double)) {
+    std::unique_ptr<double[]> dData{new double[nlocs()]};
+    for (std::size_t ii = 0; ii < nlocs(); ++ii)
+      dData.get()[ii] = boost::any_cast<double>(VarData[ii]);
+    WriteVar(VarName.c_str(), dData.get());
+  } else {
+      oops::Log::warning() <<  "NetcdfIO::WriteVar_any: Unable to write dataset: "
+                           << " VarName: " << VarName << " with NetCDF type :"
+                           << typeInput.name() << std::endl;
+  }
+}
+
 void NetcdfIO::WriteVar(const std::string & VarName, int* VarData) {
   oops::Log::trace() << __func__ << " VarName: " << VarName << std::endl;
 
@@ -373,7 +399,7 @@ void NetcdfIO::WriteVar(const std::string & VarName, int* VarData) {
   if (nc_inq_varid(ncid_, VarName.c_str(), &nc_varid_) != NC_NOERR) {
     // Var does not exist, so create it
     ErrorMsg = "NetcdfIO::WriteVar: Unable to create variable dataset: " + VarName;
-    CheckNcCall(nc_def_var(ncid_, VarName.c_str(), NC_FLOAT, 1, &nlocs_id_, &nc_varid_), ErrorMsg);
+    CheckNcCall(nc_def_var(ncid_, VarName.c_str(), NC_INT, 1, &nlocs_id_, &nc_varid_), ErrorMsg);
   }
 
   ErrorMsg = "NetcdfIO::WriteVar: Unable to write dataset: " + VarName;
@@ -407,7 +433,7 @@ void NetcdfIO::WriteVar(const std::string & VarName, double* VarData) {
   if (nc_inq_varid(ncid_, VarName.c_str(), &nc_varid_) != NC_NOERR) {
     // Var does not exist, so create it
     ErrorMsg = "NetcdfIO::WriteVar: Unable to create variable dataset: " + VarName;
-    CheckNcCall(nc_def_var(ncid_, VarName.c_str(), NC_FLOAT, 1, &nlocs_id_, &nc_varid_), ErrorMsg);
+    CheckNcCall(nc_def_var(ncid_, VarName.c_str(), NC_DOUBLE, 1, &nlocs_id_, &nc_varid_), ErrorMsg);
   }
 
   ErrorMsg = "NetcdfIO::WriteVar: Unable to write dataset: " + VarName;
