@@ -43,10 +43,10 @@ namespace ioda {
         db_name = variable + "@" + group;
       else
         group = "GroupUndefined";
-      vect.reset(new boost::any[nlocs_]);
+      vect.reset(new boost::any[nlocs()]);
       fileio->ReadVar_any(db_name, vect.get());
       // All records read from file are read-only
-      DataContainer.insert({group, variable, "r", nlocs_, vect});
+      DataContainer.insert({group, variable, "r", nlocs(), vect});
     }
     oops::Log::trace() << "ioda::ObsSpaceContainer opening file ends " << std::endl;
   }
@@ -55,6 +55,13 @@ namespace ioda {
 bool ObsSpaceContainer::has(const std::string & group, const std::string & variable) const {
   auto var = DataContainer.find(boost::make_tuple(group, variable));
   return (var != DataContainer.end());
+}
+
+// -----------------------------------------------------------------------------
+
+void ObsSpaceContainer::dump(const std::string & file_name) const {
+  // std::unique_ptr<ioda::IodaIO> fileio
+  //     {ioda::IodaIOfactory::Create(file_name, "W", NULL, NULL, NULL, NULL)};
 }
 
 // -----------------------------------------------------------------------------
