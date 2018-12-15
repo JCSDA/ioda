@@ -20,7 +20,6 @@
 #include "oops/util/Printable.h"
 
 #include "database/MultiIndexContainer.h"
-#include "Fortran.h"
 
 // Forward declarations
 namespace eckit {
