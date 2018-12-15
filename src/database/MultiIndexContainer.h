@@ -119,6 +119,9 @@ class ObsSpaceContainer: public util::Printable {
      /*! \brief Return the number of observational variables*/
      std::size_t nvars() const {return nvars_;}
 
+     /*! \brief Dump the contents of database to file*/
+     void dump(const std::string & file_name) const;
+
      // -----------------------------------------------------------------------------
 
      /*! \brief Inquire the vector of Record from container*/
@@ -133,19 +136,19 @@ class ObsSpaceContainer: public util::Printable {
          if ((typeInput == typeid(float)) && (typeOutput == typeid(double))) {
            oops::Log::warning() << " DataContainer::inquire: inconsistent type : "
                                 << " From float to double on "
-                                << variable << " : " << group << std::endl;
+                                << variable << " @ " << group << std::endl;
            for (std::size_t ii = 0; ii < vsize; ++ii)
              vdata[ii] = static_cast<double>(boost::any_cast<float>(var->data.get()[ii]));
          } else if ((typeInput == typeid(double)) && (typeOutput == typeid(int))) {
              oops::Log::warning() << " DataContainer::inquire: inconsistent type : "
                                   << " From double to int on "
-                                  << variable << " : " << group << std::endl;
+                                  << variable << " @ " << group << std::endl;
             for (std::size_t ii = 0; ii < vsize; ++ii)
               vdata[ii] = static_cast<int>(boost::any_cast<double>(var->data.get()[ii]));
          } else if ((typeInput == typeid(int)) && (typeOutput == typeid(double))) {
              oops::Log::warning() << " DataContainer::inquire: inconsistent type : "
                                   << " From int to double on "
-                                  << variable << " : " << group << std::endl;
+                                  << variable << " @ " << group << std::endl;
             for (std::size_t ii = 0; ii < vsize; ++ii)
               vdata[ii] = static_cast<double>(boost::any_cast<int>(var->data.get()[ii]));
          } else {  // For most of the cases, the in/out types should be the same
@@ -155,7 +158,7 @@ class ObsSpaceContainer: public util::Printable {
          }
        } else {  // Required record is not found
          std::string ErrorMsg =
-                "DataContainer::inquire: " + variable + " : " + group +" is not found";
+                "DataContainer::inquire: " + variable + " @ " + group +" is not found";
          ABORT(ErrorMsg);
        }
      }

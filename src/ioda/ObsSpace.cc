@@ -8,6 +8,7 @@
 #include "ioda/ObsSpace.h"
 
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -37,12 +38,12 @@ ObsSpace::ObsSpace(const eckit::Configuration & config,
   std::string filename = config.getString("ObsData.ObsDataIn.obsfile");
   oops::Log::trace() << obsname_ << " file in = " << filename << std::endl;
 
-  database_.CreateFromFile(filename, "r", bgn, end, missingValue(), commMPI_);
+  database().CreateFromFile(filename, "r", windowStart(), windowEnd(), missingValue(), comm());
 
   // Set the number of locations ,variables and number of observation points
-  nlocs_ = database_.nlocs();
-  nvars_ = database_.nvars();
-  nobs_ = nvars_ * nlocs_;
+  nlocs_ = database().nlocs();
+  nvars_ = database().nvars();
+  nobs_ = nvars() * nlocs();
 
   // Check to see if an output file has been requested.
   if (config.has("ObsData.ObsDataOut.obsfile")) {
@@ -56,27 +57,33 @@ ObsSpace::ObsSpace(const eckit::Configuration & config,
 
     // Get the process rank number and format it
     std::ostringstream ss;
-    ss << "_" << std::setw(4) << std::setfill('0') << commMPI_.rank();
+    ss << "_" << std::setw(4) << std::setfill('0') << comm().rank();
 
     // Construct the output file name
     fileout_ = filename.insert(found, ss.str());
 
     // Check to see if user is trying to overwrite an existing file. For now always allow
     // the overwrite, but issue a warning if we are about to clobber an existing file.
-    std::ifstream infile(fileout_);
+    std::ifstream infile(fileout());
     if (infile.good())
       oops::Log::warning() << "ioda::ObsSpace WARNING: Overwriting output file "
-                           << fileout_ << std::endl;
+                           << fileout() << std::endl;
   } else {
     oops::Log::debug() << "ioda::ObsSpace output file is not required " << std::endl;
   }
 
-  oops::Log::trace() << "ioda::ObsSpace contructed name = " << obsname_ << std::endl;
+  oops::Log::trace() << "ioda::ObsSpace contructed name = " << obsname() << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 ObsSpace::~ObsSpace() {
+  if (fileout().size() != 0) {
+    oops::Log::info() << obsname() << ": dump out the database to " << fileout() << std::endl;
+    database().dump(fileout());
+  } else {
+    oops::Log::info() << obsname() << " :  no output" << std::endl;
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -129,6 +136,12 @@ std::size_t ObsSpace::nlocs() const {
 
 // -----------------------------------------------------------------------------
 
+std::size_t ObsSpace::nvars() const {
+  return nvars_;
+}
+
+// -----------------------------------------------------------------------------
+
 void ObsSpace::generateDistribution(const eckit::Configuration & conf) {
   int fvlen  = conf.getInt("nobs");
   float lat  = conf.getFloat("lat");
@@ -150,17 +163,17 @@ void ObsSpace::generateDistribution(const eckit::Configuration & conf) {
 
   // Record obs type
   std::string MyObsType = conf.getString("ObsType");
-  oops::Log::info() << __func__ << " : " << MyObsType << std::endl;
+  oops::Log::info() << obsname() << " : " << MyObsType << std::endl;
 
   // Create variables and generate the values specified by the arguments.
   std::unique_ptr<double[]> latitude {new double[nlocs]};
-  for (std::size_t ii = 0; ii<nobs; ++ii) {
+  for (std::size_t ii = 0; ii < nobs; ++ii) {
     latitude.get()[ii] = static_cast<double>(lat);
   }
   put_db("", "latitude", nlocs, latitude.get());
 
   std::unique_ptr<double[]> longitude {new double[nlocs]};
-  for (std::size_t ii = 0; ii<nobs; ++ii) {
+  for (std::size_t ii = 0; ii < nobs; ++ii) {
     longitude.get()[ii] = static_cast<double>(lon1 + (ii-1)*(lon2-lon1)/(nobs-1));
   }
   put_db("", "longitude", nlocs, longitude.get());

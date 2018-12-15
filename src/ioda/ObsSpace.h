@@ -39,6 +39,7 @@ class ObsSpace : public oops::ObsSpaceBase {
 
   std::size_t nobs() const;
   std::size_t nlocs() const;
+  std::size_t nvars() const;
 
   template <typename Type>
   void get_db(const std::string &, const std::string &, const std::size_t &, Type[]) const;
@@ -54,6 +55,10 @@ class ObsSpace : public oops::ObsSpaceBase {
 
   static double missingValue() {return missingvalue_;}
 
+  const std::string & fileout() const {return fileout_;}
+
+  ObsSpaceContainer & database() {return database_;}
+
   void generateDistribution(const eckit::Configuration &);
 
   void printJo(const ObsVector &, const ObsVector &);  // to be removed
@@ -66,7 +71,6 @@ class ObsSpace : public oops::ObsSpaceBase {
   std::string obsname_;
   const util::DateTime winbgn_;
   const util::DateTime winend_;
-  F90odb keyOspace_;
   const eckit::mpi::Comm & commMPI_;
 
   static std::map < std::string, int > theObsFileCount_;
