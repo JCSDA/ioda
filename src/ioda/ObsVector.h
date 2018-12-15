@@ -12,7 +12,6 @@
 #include <string>
 #include <vector>
 
-#include "Fortran.h"
 #include "oops/base/Variables.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
