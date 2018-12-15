@@ -44,7 +44,7 @@ std::string IodaIO::fmode() const {
  * \details This method returns the number of unique locations in the obs data.
  */
 
-std::size_t IodaIO::nlocs() {
+std::size_t IodaIO::nlocs() const {
   return nlocs_;
 }
 
@@ -53,7 +53,7 @@ std::size_t IodaIO::nlocs() {
  * \details This method returns the number of unique observations in the obs data.
  */
 
-std::size_t IodaIO::nobs() {
+std::size_t IodaIO::nobs() const {
   return nobs_;
 }
 
@@ -65,7 +65,7 @@ std::size_t IodaIO::nobs() {
  *          radiosonde obs data.
  */
 
-std::size_t IodaIO::nrecs() {
+std::size_t IodaIO::nrecs() const {
   return nrecs_;
 }
 
@@ -74,7 +74,7 @@ std::size_t IodaIO::nrecs() {
  * \details This method returns the number of unique variables in the obs data.
  */
 
-std::size_t IodaIO::nvars() {
+std::size_t IodaIO::nvars() const {
   return nvars_;
 }
 

@@ -42,7 +42,8 @@ namespace ioda {
 
 class ObsSpaceContainer: public util::Printable {
  public:
-     explicit ObsSpaceContainer(const eckit::Configuration &);
+     ObsSpaceContainer(const eckit::Configuration &, const util::DateTime &,
+                       const util::DateTime &, const eckit::mpi::Comm &, const double);
      ~ObsSpaceContainer();
 
      struct by_group {};     // Index by group name
@@ -119,8 +120,20 @@ class ObsSpaceContainer: public util::Printable {
      /*! \brief Return the number of observational variables*/
      std::size_t nvars() const {return nvars_;}
 
+     /*! \brief Return the left boundary of time window*/
+     const util::DateTime & windowStart() const {return winbgn_;}
+
+     /*! \brief Return the right boundary of time window*/
+     const util::DateTime & windowEnd() const {return winend_;}
+
+     /*! \brief Return the MPI comminicator*/
+     const eckit::mpi::Comm & comm() const {return commMPI_;}
+
      /*! \brief Dump the contents of database to file*/
      void dump(const std::string & file_name) const;
+
+     /*! \brief Return the missing value used by database*/
+     const double missingValue() const {return missingvalue_;}
 
      // -----------------------------------------------------------------------------
 
@@ -208,6 +221,18 @@ class ObsSpaceContainer: public util::Printable {
 
      /*! \brief number of observational variables */
      std::size_t nvars_;
+
+     /*! \brief  */
+     const util::DateTime winbgn_;
+
+     /*! \brief Right boundary of time window */
+     const util::DateTime winend_;
+
+     /*! \brief MPI communicator */
+     const eckit::mpi::Comm & commMPI_;
+
+     /*! \brief missing value used by database */
+     const double missingvalue_;
 
      /*! \brief Print */
      void print(std::ostream &) const;
