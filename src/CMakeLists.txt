@@ -60,10 +60,6 @@ ioda/ObsSpace.h
 ioda/ObsSpace.interface.F90
 ioda/ObsVector.cc
 ioda/ObsVector.h
-ioda/Locations.cc
-ioda/Locations.h
-ioda/Locations.interface.F90
-ioda/ioda_locs_mod.F90
 ioda/ioda_obsvar_mod.F90
 ioda/ioda_obsdb_mod.F90
 ioda/obsspace_f.cc

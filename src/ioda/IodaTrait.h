@@ -10,8 +10,6 @@
 
 #include <string>
 
-
-#include "ioda/Locations.h"
 #include "ioda/ObsSpace.h"
 #include "ioda/ObsVector.h"
 
@@ -20,7 +18,6 @@ namespace ioda {
 struct IodaTrait {
   static std::string name() {return "IODA";}
 
-  typedef ioda::Locations          Locations;
   typedef ioda::ObsSpace           ObsSpace;
   typedef ioda::ObsVector          ObsVector;
 };

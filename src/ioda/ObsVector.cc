@@ -22,22 +22,20 @@
 namespace ioda {
 // -----------------------------------------------------------------------------
 ObsVector::ObsVector(const ObsSpace & obsdb, const oops::Variables & vars)
-  : obsdb_(obsdb), missing_(ObsSpace::missingValue()), obsvars_(vars) {
-  nvars_ = obsvars_.variables().size();
-  values_.resize(obsdb_.nlocs() * nvars_);
+  : obsdb_(obsdb), obsvars_(vars), nvars_(obsvars_.variables().size()),
+    nlocs_(obsdb_.nlocs()), values_(nlocs_ * nvars_),
+    missing_(ObsSpace::missingValue()) {
   oops::Log::debug() << "ObsVector constructed with " << nvars_
                      << " variables resulting in " << values_.size()
                      << " elements." << std::endl;
 }
 // -----------------------------------------------------------------------------
 ObsVector::ObsVector(const ObsVector & other, const bool copy)
-  : obsdb_(other.obsdb_), missing_(other.missing_), obsvars_(other.obsvars_) {
-  nvars_ = obsvars_.variables().size();
-  values_.resize(obsdb_.nlocs() * nvars_);
+  : obsdb_(other.obsdb_), obsvars_(other.obsvars_), nvars_(other.nvars_),
+    nlocs_(other.nlocs_), values_(nlocs_ * nvars_), missing_(other.missing_) {
   oops::Log::debug() << "ObsVector constructed with " << nvars_
                      << " variables resulting in " << values_.size()
                      << " elements." << std::endl;
-
   if (copy) values_ = other.values_;
 }
 // -----------------------------------------------------------------------------
@@ -183,28 +181,15 @@ void ObsVector::read(const std::string & name) {
   // in intervals the size of nvars_, and that the starting point for each variable
   // in the vector is given by the index of the variable name in varnames_.
   std::size_t nlocs = obsdb_.nlocs();
-  std::vector<double> TmpVar(nlocs);
+  std::vector<double> tmp(nlocs);
   for (std::size_t i = 0; i < nvars_; ++i) {
-    obsdb_.get_db(name, obsvars_.variables()[i], nlocs, TmpVar.data());
+    obsdb_.get_db(name, obsvars_.variables()[i], nlocs, tmp.data());
 
     for (std::size_t j = 0; j < nlocs; ++j) {
       std::size_t ivec = i + (j * nvars_);
-      values_[ivec] = TmpVar[j];
+      values_[ivec] = tmp[j];
     }
   }
-}
-// -----------------------------------------------------------------------------
-bool ObsVector::tryRead(const std::string & name) {
-  oops::Log::trace() << "ObsVector::tryRead, name = " <<  name << std::endl;
-
-  bool exists = (nvars_ > 0);
-  for (std::size_t jj = 0; jj < nvars_; ++jj) {
-    exists = exists && obsdb_.has(name, obsvars_.variables()[jj]);
-  }
-
-  if (exists) this->read(name);
-
-  return exists;
 }
 // -----------------------------------------------------------------------------
 void ObsVector::save(const std::string & name) const {
@@ -212,30 +197,24 @@ void ObsVector::save(const std::string & name) const {
 
   // As noted in the read method, the order is all variables at the first location,
   // then all variables at the next location, etc.
-  std::size_t Nlocs = obsdb_.nlocs();
+  std::size_t nlocs = obsdb_.nlocs();
   std::size_t ivec;
   for (std::size_t i = 0; i < nvars_; ++i) {
-    std::vector<double> TmpVar(Nlocs);
-    for (std::size_t j = 0; j < TmpVar.size(); ++j) {
+    std::vector<double> tmp(nlocs);
+    for (std::size_t j = 0; j < tmp.size(); ++j) {
       ivec = i + (j * nvars_);
-      TmpVar[j] = values_[ivec];
+      tmp[j] = values_[ivec];
     }
 
-    obsdb_.put_db(name, obsvars_.variables()[i], Nlocs, TmpVar.data());
+    obsdb_.put_db(name, obsvars_.variables()[i], nlocs, tmp.data());
   }
 }
 // -----------------------------------------------------------------------------
-void ObsVector::applyQC(const std::string & qcflag) {
-  oops::Log::trace() << "ObsVector::applyQC" << std::endl;
-
-  std::vector<int> qc(obsdb_.nlocs());
-  for (std::size_t jv = 0; jv < nvars_; ++jv) {
-    if (obsdb_.has(qcflag, obsvars_.variables()[jv])) {
-      obsdb_.get_db(qcflag, obsvars_.variables()[jv], obsdb_.nlocs(), qc.data());
-      for (size_t jj = 0; jj < values_.size() ; ++jj) {
-        if (qc.at(jj) != 0) values_[jj] = missing_;
-      }
-    }
+void ObsVector::mask(const ObsVector & flags) {
+  oops::Log::trace() << "ObsVector::mask" << std::endl;
+  ASSERT(values_.size() == flags.values_.size());
+  for (size_t jj = 0; jj < values_.size() ; ++jj) {
+    if (flags.values_[jj] > 0.01) values_[jj] = missing_;
   }
 }
 // -----------------------------------------------------------------------------
