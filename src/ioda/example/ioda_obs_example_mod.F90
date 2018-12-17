@@ -20,7 +20,6 @@ integer, parameter :: max_string=800
 public ioda_obs_example
 public ioda_obs_example_setup, ioda_obs_example_delete
 public ioda_obs_example_read, ioda_obs_example_generate
-public ioda_obs_example_getlocs
 
 ! ------------------------------------------------------------------------------
 
@@ -71,16 +70,6 @@ character(max_string), intent(in)   :: filename
 type(ioda_obs_example), intent(inout), target :: self
 
 end subroutine ioda_obs_example_read
-
-! ------------------------------------------------------------------------------
-! TODO: replace the below function with your obsspace get locations function
-subroutine ioda_obs_example_getlocs(self, locs)
-use ioda_locs_mod
-implicit none
-type(ioda_obs_example), intent(in) :: self
-type(ioda_locs), intent(inout) :: locs
-
-end subroutine ioda_obs_example_getlocs
 
 ! ------------------------------------------------------------------------------
 
