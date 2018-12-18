@@ -10,8 +10,12 @@
 
 
 #include <string>
+#include <vector>
+
+#include <boost/any.hpp>
 
 #include "fileio/IodaIO.h"
+#include "oops/util/DateTime.h"
 #include "oops/util/ObjectCounter.h"
 
 
@@ -46,19 +50,25 @@ class NetcdfIO : public IodaIO,
   static const std::string classname() {return "ioda::NetcdfIO";}
 
   NetcdfIO(const std::string & FileName, const std::string & FileMode,
+           const util::DateTime & bgn, const util::DateTime & end,
+           const double & MissingValue, const eckit::mpi::Comm & comm,
            const std::size_t & Nlocs, const std::size_t & Nobs,
            const std::size_t & Nrecs, const std::size_t & Nvars);
   ~NetcdfIO();
+
+  void ReadVar_any(const std::string & VarName, boost::any * VarData);
 
   void ReadVar(const std::string & VarName, int* VarData);
   void ReadVar(const std::string & VarName, float* VarData);
   void ReadVar(const std::string & VarName, double* VarData);
 
+  void WriteVar_any(const std::string & VarName, boost::any * VarData);
   void WriteVar(const std::string & VarName, int* VarData);
   void WriteVar(const std::string & VarName, float* VarData);
   void WriteVar(const std::string & VarName, double* VarData);
 
-  void ReadDateTime(int* VarDate, int* VarTime);
+  void ReadDateTime(uint64_t* VarDate, int* VarTime);
+  void ReadDateTime(util::DateTime[]);
 
  private:
   // For the oops::Printable base class
@@ -147,6 +157,16 @@ class NetcdfIO : public IodaIO,
    *        in the opened netcdf file.
    */
   int nc_attid_;
+
+  /*!
+   * \brief date (YYMMDD) in NetCDF file
+   */
+  std::vector<int> date_;
+
+  /*!
+   * \brief time (HHMMSS) in NetCDF file
+   */
+  std::vector<int> time_;
 };
 
 }  // namespace ioda
