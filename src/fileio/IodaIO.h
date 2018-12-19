@@ -8,8 +8,16 @@
 #ifndef FILEIO_IODAIO_H_
 #define FILEIO_IODAIO_H_
 
+#include <memory>
 #include <string>
+#include <tuple>
+#include <vector>
 
+#include <boost/any.hpp>
+
+#include "eckit/mpi/Comm.h"
+
+#include "distribution/Distribution.h"
 #include "oops/util/Printable.h"
 
 // Forward declarations
@@ -59,6 +67,7 @@ namespace ioda {
  *         * nobs_
  *         * nrecs_
  *         * nvars_
+ *         * vname_group_type_
  *
  *       If in read mode, metadata from the input file are used to set the data members
  *       If in write mode, the data members are set from the constructor arguments 
@@ -68,27 +77,33 @@ namespace ioda {
 
 class IodaIO : public util::Printable {
  public:
+    explicit IodaIO(const eckit::mpi::Comm &);
     virtual ~IodaIO() = 0;
 
     // Methods provided by subclasses
+    virtual void ReadVar_any(const std::string & VarName, boost::any * VarData) = 0;
+
     virtual void ReadVar(const std::string & VarName, int* VarData) = 0;
     virtual void ReadVar(const std::string & VarName, float* VarData) = 0;
     virtual void ReadVar(const std::string & VarName, double* VarData) = 0;
 
+    virtual void WriteVar_any(const std::string & VarName, boost::any * VarData) = 0;
     virtual void WriteVar(const std::string & VarName, int* VarData) = 0;
     virtual void WriteVar(const std::string & VarName, float* VarData) = 0;
     virtual void WriteVar(const std::string & VarName, double* VarData) = 0;
 
-    virtual void ReadDateTime(int* VarDate, int* VarTime)= 0;
+    virtual void ReadDateTime(uint64_t* VarDate, int* VarTime)= 0;
 
     // Methods inherited from base class
     std::string fname() const;
     std::string fmode() const;
 
-    std::size_t nlocs();
-    std::size_t nobs();
-    std::size_t nrecs();
-    std::size_t nvars();
+    std::size_t nlocs() const;
+    std::size_t nobs() const;
+    std::size_t nrecs() const;
+    std::size_t nvars() const;
+    const eckit::mpi::Comm & comm() const {return commMPI_;}
+    std::vector<std::tuple<std::string, std::string>> * const varlist();
 
  protected:
     // Methods provided by subclasses
@@ -103,8 +118,11 @@ class IodaIO : public util::Printable {
     /*! \brief file mode ("r" -> read, "w" -> overwrite, "W" -> create and write) */
     std::string fmode_;
 
-    /*! \brief number of unique locations */
+    /*! \brief number of unique locations in domain*/
     std::size_t nlocs_;
+
+    /*! \brief number of unique locations in file*/
+    std::size_t nfvlen_;
 
     /*! \brief number of unique observations */
     std::size_t nobs_;
@@ -114,6 +132,18 @@ class IodaIO : public util::Printable {
 
     /*! \brief number of unique variables */
     std::size_t nvars_;
+
+    /*! \brief MPI communicator */
+    const eckit::mpi::Comm & commMPI_;
+
+    /*! \brief This missing value will be used to fill the missing data slots. */
+    double missingvalue_;
+
+    /*! \brief Distribution among processors */
+    std::unique_ptr<Distribution> dist_;
+
+    /*! \brief Variable Name : Group Name */
+    std::vector<std::tuple<std::string, std::string>> vname_group_;
 };
 
 }  // namespace ioda
