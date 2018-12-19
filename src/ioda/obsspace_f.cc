@@ -31,10 +31,6 @@ double obspace_missing_value_f() {
   return ObsSpace::missingValue();
 }
 // -----------------------------------------------------------------------------
-void obsspace_get_refdate_f(const ObsSpace & obss, util::DateTime & refdate) {
-  obss.get_refdate(refdate);
-}
-// -----------------------------------------------------------------------------
 void obsspace_get_int32_f(const ObsSpace & obss, const char * group, const char * vname,
                           const std::size_t & length, int32_t* vec) {
   ASSERT(length >= obss.nlocs());

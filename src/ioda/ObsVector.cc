@@ -21,7 +21,7 @@
 
 namespace ioda {
 // -----------------------------------------------------------------------------
-ObsVector::ObsVector(const ObsSpace & obsdb, const oops::Variables & vars)
+ObsVector::ObsVector(ObsSpace & obsdb, const oops::Variables & vars)
   : obsdb_(obsdb), obsvars_(vars), nvars_(obsvars_.variables().size()),
     nlocs_(obsdb_.nlocs()), values_(nlocs_ * nvars_),
     missing_(ObsSpace::missingValue()) {
