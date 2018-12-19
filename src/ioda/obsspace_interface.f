@@ -43,14 +43,6 @@ end function c_obspace_missing_value
 !-------------------------------------------------------------------------------
 ! get data from ObsSpace
 
-subroutine c_obsspace_get_refdate(obss, c_refdate) &
-              & bind(C,name='obsspace_get_refdate_f')
-  use, intrinsic :: iso_c_binding, only : c_ptr
-  implicit none
-  type(c_ptr), value :: obss
-  type(c_ptr), intent(out) :: c_refdate
-end subroutine c_obsspace_get_refdate
-
 subroutine c_obsspace_get_int32(obss, group, vname, length, vect) &
               & bind(C,name='obsspace_get_int32_f')
   use, intrinsic :: iso_c_binding, only : c_ptr,c_char,c_size_t,c_int32_t

@@ -23,8 +23,6 @@ extern "C" {
   bool obsspace_has_f(const ObsSpace &, const char *, const char *);
   double obspace_missing_value_f();
 
-  void obsspace_get_refdate_f(const ObsSpace &, util::DateTime &);
-
   void obsspace_get_int32_f(const ObsSpace &, const char *, const char *,
                             const std::size_t &, int32_t*);
   void obsspace_get_int64_f(const ObsSpace &, const char *, const char *,
