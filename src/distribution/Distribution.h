@@ -30,7 +30,7 @@ class Distribution {
      void erase(const std::size_t &);
 
      /*! \brief Rank of this processing element */
-     const std::size_t size() const {return indx_.size();}
+     std::size_t size() const {return indx_.size();}
 
  protected:
      /*! \brief Index of location array being assigned to this processing element */
