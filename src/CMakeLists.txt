@@ -54,14 +54,10 @@ ncdiag/netcdf_unlimdims.F90
 ncdiag/read_diag.f90
 ncdiag/read_aod_diag.f90
 
-ioda/Fortran.h
 ioda/ObsSpace.cc
 ioda/ObsSpace.h
-ioda/ObsSpace.interface.F90
 ioda/ObsVector.cc
 ioda/ObsVector.h
-ioda/ioda_obsvar_mod.F90
-ioda/ioda_obsdb_mod.F90
 ioda/obsspace_f.cc
 ioda/obsspace_f.h
 ioda/obsspace_mod.F90
@@ -69,6 +65,17 @@ ioda/random_f.cc
 ioda/random_f.h
 ioda/random_vectors_mod.F90
 ioda/twindow_utils_mod.F90
+
+database/MultiIndexContainer.cc
+database/MultiIndexContainer.h
+
+distribution/Distribution.cc
+distribution/Distribution.h
+distribution/DistributionFactory.cc
+distribution/DistributionFactory.h
+distribution/RoundRobin.cc
+distribution/RoundRobin.h
+
 fileio/IodaIO.cc
 fileio/IodaIO.h
 fileio/IodaIOfactory.cc

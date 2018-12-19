@@ -26,15 +26,12 @@ Observations:
           groups:
             - "NoGroup"
             - "NoGroup"
-            - "NoGroup"
           variables:
             - "latitude"
             - "longitude"
-            - "time"
           norms:
             - 16692.109207962403
             - 89252.131593209342
-            - 0.0
           tolerance:
             - 1.0e-12
 
@@ -49,15 +46,12 @@ Observations:
           groups:
             - "NoGroup"
             - "NoGroup"
-            - "NoGroup"
           variables:
             - "latitude"
             - "longitude"
-            - "time"
           norms:
             - 732.46544677303257
             - 3530.8881463212083
-            - 0.0
           tolerance:
             - 1.0e-12
 
@@ -72,15 +66,12 @@ Observations:
           groups:
             - "NoGroup"
             - "NoGroup"
-            - "NoGroup"
           variables:
             - "latitude"
             - "longitude"
-            - "time"
           norms:
             - 14497.263538159166
             - 61789.896501727279
-            - 0.0
           tolerance:
             - 1.0e-12
 
@@ -95,15 +86,12 @@ Observations:
           groups:
             - "NoGroup"
             - "NoGroup"
-            - "NoGroup"
           variables:
             - "latitude"
             - "longitude"
-            - "time"
           norms:
             - 19778.589152003486
             - 57917.351481173151
-            - 0.0
           tolerance:
             - 1.0e-12
 
@@ -118,14 +106,11 @@ Observations:
           groups:
             - "NoGroup"
             - "NoGroup"
-            - "NoGroup"
           variables:
             - "latitude"
             - "longitude"
-            - "time"
           norms:
             - 7581.3030036861646
             - 13972.379294774455
-            - 0.0
           tolerance:
             - 1.0e-12
