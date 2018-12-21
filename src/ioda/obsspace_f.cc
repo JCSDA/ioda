@@ -10,6 +10,7 @@
 #include <string>
 
 #include "ObsSpace.h"
+#include "ioda/missingValue.h"
 #include "oops/util/DateTime.h"
 
 namespace ioda {
@@ -28,7 +29,7 @@ bool obsspace_has_f(const ObsSpace & obss, const char * group, const char * vnam
 }
 // -----------------------------------------------------------------------------
 double obspace_missing_value_f() {
-  return ObsSpace::missingValue();
+  return missingValue<double>();
 }
 // -----------------------------------------------------------------------------
 void obsspace_get_int32_f(const ObsSpace & obss, const char * group, const char * vname,

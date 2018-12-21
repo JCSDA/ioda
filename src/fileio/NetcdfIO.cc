@@ -15,6 +15,7 @@
 #include <typeinfo>
 
 #include "distribution/DistributionFactory.h"
+#include "ioda/missingValue.h"
 #include "oops/parallel/mpi/mpi.h"
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/datetime_f.h"
@@ -52,7 +53,7 @@ static const double missingthreshold = 1.0e08;
 
 NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
                    const util::DateTime & bgn, const util::DateTime & end,
-                   const double & MissingValue, const eckit::mpi::Comm & commMPI,
+                   const eckit::mpi::Comm & commMPI,
                    const std::size_t & Nlocs, const std::size_t & Nobs,
                    const std::size_t & Nrecs, const std::size_t & Nvars)
                    : IodaIO(commMPI) {
@@ -65,7 +66,6 @@ NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
   nobs_  = Nobs;
   nrecs_ = Nrecs;
   nvars_ = Nvars;
-  missingvalue_ = MissingValue;
   oops::Log::trace() << __func__ << " fname_: " << fname_ << " fmode_: " << fmode_ << std::endl;
 
   // Open the file. The fmode_ values that are recognized are:
@@ -285,8 +285,8 @@ void NetcdfIO::ReadVar_any(const std::string & VarName, boost::any * VarData) {
       ReadVar(VarName.c_str(), rData.get());
       for (std::size_t ii = 0; ii < dist_->size(); ++ii) {
         VarData[ii] = rData.get()[dist_->index()[ii]];
-        if (boost::any_cast<float>(VarData[ii]) > missingthreshold) {
-          VarData[ii] = static_cast<float>(missingvalue_);
+        if (boost::any_cast<float>(VarData[ii]) > missingthreshold) {  // not safe enough
+          VarData[ii] = missingValue<float>();
         }
       }
       break;
@@ -297,8 +297,8 @@ void NetcdfIO::ReadVar_any(const std::string & VarName, boost::any * VarData) {
       for (std::size_t ii = 0; ii < dist_->size(); ++ii) {
         /* Force double to float */
         VarData[ii] = static_cast<float>(dData.get()[dist_->index()[ii]]);
-        if (boost::any_cast<float>(VarData[ii]) > missingthreshold) {
-          VarData[ii] = static_cast<float>(missingvalue_);
+        if (boost::any_cast<float>(VarData[ii]) > missingthreshold) {  // not safe enough
+          VarData[ii] = missingValue<double>();
         }
       }
       break;
