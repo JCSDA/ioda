@@ -298,7 +298,7 @@ void NetcdfIO::ReadVar_any(const std::string & VarName, boost::any * VarData) {
         /* Force double to float */
         VarData[ii] = static_cast<float>(dData.get()[dist_->index()[ii]]);
         if (boost::any_cast<float>(VarData[ii]) > missingthreshold) {  // not safe enough
-          VarData[ii] = missingValue<double>();
+          VarData[ii] = missingValue<float>();
         }
       }
       break;
