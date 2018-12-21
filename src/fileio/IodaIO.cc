@@ -83,7 +83,7 @@ std::size_t IodaIO::nvars() const {
  * \details This method returns the list of VALID variables in the obs data.
  */
 
-std::vector<std::tuple<std::string, std::string>> * const IodaIO::varlist() {
+std::vector<std::tuple<std::string, std::string>> * IodaIO::varlist() {
   return &vname_group_;
 }
 

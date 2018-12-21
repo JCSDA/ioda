@@ -145,9 +145,9 @@ class ObsSpaceContainer: public util::Printable {
          const std::type_info & typeOutput = typeid(Type);
 
          if ((typeInput == typeid(float)) && (typeOutput == typeid(double))) {
-           oops::Log::warning() << " DataContainer::inquire: inconsistent type : "
-                                << " From float to double on "
-                                << variable << " @ " << group << std::endl;
+           oops::Log::debug() << " DataContainer::inquire: inconsistent type : "
+                              << " From float to double on "
+                              << variable << " @ " << group << std::endl;
            for (std::size_t ii = 0; ii < vsize; ++ii) {
              float zz = boost::any_cast<float>(var->data.get()[ii]);
              if (zz == missingValue<float>()) {
@@ -157,9 +157,9 @@ class ObsSpaceContainer: public util::Printable {
              }
            }
          } else if ((typeInput == typeid(double)) && (typeOutput == typeid(int))) {
-             oops::Log::warning() << " DataContainer::inquire: inconsistent type : "
-                                  << " From double to int on "
-                                  << variable << " @ " << group << std::endl;
+             oops::Log::debug() << " DataContainer::inquire: inconsistent type : "
+                                << " From double to int on "
+                                << variable << " @ " << group << std::endl;
            for (std::size_t ii = 0; ii < vsize; ++ii) {
              double zz = boost::any_cast<double>(var->data.get()[ii]);
              if (zz == missingValue<double>()) {
@@ -169,9 +169,9 @@ class ObsSpaceContainer: public util::Printable {
              }
            }
          } else if ((typeInput == typeid(int)) && (typeOutput == typeid(double))) {
-             oops::Log::warning() << " DataContainer::inquire: inconsistent type : "
-                                  << " From int to double on "
-                                  << variable << " @ " << group << std::endl;
+             oops::Log::debug() << " DataContainer::inquire: inconsistent type : "
+                                << " From int to double on "
+                                << variable << " @ " << group << std::endl;
            for (std::size_t ii = 0; ii < vsize; ++ii) {
              int zz = boost::any_cast<int>(var->data.get()[ii]);
              if (zz == missingValue<int>()) {
