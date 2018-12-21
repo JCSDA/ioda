@@ -21,15 +21,14 @@
 #include "distribution/DistributionFactory.h"
 
 namespace ioda {
-// -----------------------------------------------------------------------------
-const double ObsSpace::missingvalue_ = -9.9999e+37;
+
 // -----------------------------------------------------------------------------
 
 ObsSpace::ObsSpace(const eckit::Configuration & config,
                    const util::DateTime & bgn, const util::DateTime & end)
   : oops::ObsSpaceBase(config, bgn, end),
     winbgn_(bgn), winend_(end), commMPI_(oops::mpi::comm()),
-    database_(config, bgn, end, commMPI_, missingValue())
+    database_(config, bgn, end, commMPI_)
 {
   oops::Log::trace() << "ioda::ObsSpace config  = " << config << std::endl;
 
@@ -39,11 +38,11 @@ ObsSpace::ObsSpace(const eckit::Configuration & config,
   std::string filename = config.getString("ObsData.ObsDataIn.obsfile");
   oops::Log::trace() << obsname_ << " file in = " << filename << std::endl;
 
-  database().CreateFromFile(filename, "r", windowStart(), windowEnd(), missingValue(), comm());
+  database_.CreateFromFile(filename, "r", windowStart(), windowEnd(), comm());
 
   // Set the number of locations ,variables and number of observation points
-  nlocs_ = database().nlocs();
-  nvars_ = database().nvars();
+  nlocs_ = database_.nlocs();
+  nvars_ = database_.nvars();
   nobs_ = nvars() * nlocs();
 
   // Check to see if an output file has been requested.
@@ -65,10 +64,10 @@ ObsSpace::ObsSpace(const eckit::Configuration & config,
 
     // Check to see if user is trying to overwrite an existing file. For now always allow
     // the overwrite, but issue a warning if we are about to clobber an existing file.
-    std::ifstream infile(fileout());
+    std::ifstream infile(fileout_);
     if (infile.good())
       oops::Log::warning() << "ioda::ObsSpace WARNING: Overwriting output file "
-                           << fileout() << std::endl;
+                           << fileout_ << std::endl;
   } else {
     oops::Log::debug() << "ioda::ObsSpace output file is not required " << std::endl;
   }
@@ -79,47 +78,56 @@ ObsSpace::ObsSpace(const eckit::Configuration & config,
 // -----------------------------------------------------------------------------
 
 ObsSpace::~ObsSpace() {
-  if (fileout().size() != 0) {
-    oops::Log::info() << obsname() << ": dump out the database to " << fileout() << std::endl;
-    database().dump(fileout());
+  if (fileout_.size() != 0) {
+    oops::Log::info() << obsname() << ": dump out the database to " << fileout_ << std::endl;
+    database_.dump(fileout_);
   } else {
     oops::Log::info() << obsname() << " :  no output" << std::endl;
   }
 }
 
 // -----------------------------------------------------------------------------
-template <typename Type>
+
+template <typename DATATYPE>
 void ObsSpace::get_db(const std::string & group, const std::string & name,
-                      const size_t & vsize, Type vdata[]) const {
+                      const size_t & vsize, DATATYPE vdata[]) const {
   std::string gname(group);
   if (group.size() <= 0)
     gname = "GroupUndefined";
-  database_.inquire<Type>(gname, name, vsize, vdata);
+  database_.inquire<DATATYPE>(gname, name, vsize, vdata);
 }
 
 template void ObsSpace::get_db<int>(const std::string & group, const std::string & name,
                                     const size_t & vsize, int vdata[]) const;
 
+template void ObsSpace::get_db<float>(const std::string & group, const std::string & name,
+                                      const size_t & vsize, float vdata[]) const;
+
 template void ObsSpace::get_db<double>(const std::string & group, const std::string & name,
                                        const size_t & vsize, double vdata[]) const;
 
 // -----------------------------------------------------------------------------
-template <typename Type>
+
+template <typename DATATYPE>
 void ObsSpace::put_db(const std::string & group, const std::string & name,
-                      const std::size_t & vsize, const Type vdata[]) {
+                      const std::size_t & vsize, const DATATYPE vdata[]) {
   std::string gname(group);
   if (group.size() <= 0)
     gname = "GroupUndefined";
-  database_.insert<Type>(gname, name, vsize, vdata);
+  database_.insert<DATATYPE>(gname, name, vsize, vdata);
 }
 
 template void ObsSpace::put_db<int>(const std::string & group, const std::string & name,
                                     const size_t & vsize, const int vdata[]);
 
+template void ObsSpace::put_db<float>(const std::string & group, const std::string & name,
+                                      const size_t & vsize, const float vdata[]);
+
 template void ObsSpace::put_db<double>(const std::string & group, const std::string & name,
                                        const size_t & vsize, const double vdata[]);
 
 // -----------------------------------------------------------------------------
+
 bool ObsSpace::has(const std::string & group, const std::string & name) const {
   return (database_.has(group, name));
 }

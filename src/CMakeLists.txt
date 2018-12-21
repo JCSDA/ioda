@@ -54,6 +54,7 @@ ncdiag/netcdf_unlimdims.F90
 ncdiag/read_diag.f90
 ncdiag/read_aod_diag.f90
 
+ioda/missingValue.h
 ioda/ObsSpace.cc
 ioda/ObsSpace.h
 ioda/ObsVector.cc

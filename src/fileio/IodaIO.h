@@ -136,9 +136,6 @@ class IodaIO : public util::Printable {
     /*! \brief MPI communicator */
     const eckit::mpi::Comm & commMPI_;
 
-    /*! \brief This missing value will be used to fill the missing data slots. */
-    double missingvalue_;
-
     /*! \brief Distribution among processors */
     std::unique_ptr<Distribution> dist_;
 
