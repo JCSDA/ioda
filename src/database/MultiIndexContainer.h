@@ -25,6 +25,7 @@
 
 #include "eckit/mpi/Comm.h"
 
+#include "ioda/missingValue.h"
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
@@ -43,7 +44,7 @@ namespace ioda {
 class ObsSpaceContainer: public util::Printable {
  public:
      ObsSpaceContainer(const eckit::Configuration &, const util::DateTime &,
-                       const util::DateTime &, const eckit::mpi::Comm &, const double);
+                       const util::DateTime &, const eckit::mpi::Comm &);
      ~ObsSpaceContainer();
 
      struct by_group {};     // Index by group name
@@ -106,7 +107,7 @@ class ObsSpaceContainer: public util::Printable {
      /*! \brief Initialize from file*/
      void CreateFromFile(const std::string & filename, const std::string & mode,
                          const util::DateTime & bgn, const util::DateTime & end,
-                         const double & missingvalue, const eckit::mpi::Comm & comm);
+                         const eckit::mpi::Comm & comm);
 
      /*! \brief Load VALID variables from file to container */
      void LoadData();
@@ -132,9 +133,6 @@ class ObsSpaceContainer: public util::Printable {
      /*! \brief Dump the contents of database to file*/
      void dump(const std::string & file_name) const;
 
-     /*! \brief Return the missing value used by database*/
-     const double missingValue() const {return missingvalue_;}
-
      // -----------------------------------------------------------------------------
 
      /*! \brief Inquire the vector of Record from container*/
@@ -150,24 +148,43 @@ class ObsSpaceContainer: public util::Printable {
            oops::Log::warning() << " DataContainer::inquire: inconsistent type : "
                                 << " From float to double on "
                                 << variable << " @ " << group << std::endl;
-           for (std::size_t ii = 0; ii < vsize; ++ii)
-             vdata[ii] = static_cast<double>(boost::any_cast<float>(var->data.get()[ii]));
+           for (std::size_t ii = 0; ii < vsize; ++ii) {
+             float zz = boost::any_cast<float>(var->data.get()[ii]);
+             if (zz == missingValue<float>()) {
+               vdata[ii] = missingValue<double>();
+             } else {
+               vdata[ii] = static_cast<double>(zz);
+             }
+           }
          } else if ((typeInput == typeid(double)) && (typeOutput == typeid(int))) {
              oops::Log::warning() << " DataContainer::inquire: inconsistent type : "
                                   << " From double to int on "
                                   << variable << " @ " << group << std::endl;
-            for (std::size_t ii = 0; ii < vsize; ++ii)
-              vdata[ii] = static_cast<int>(boost::any_cast<double>(var->data.get()[ii]));
+           for (std::size_t ii = 0; ii < vsize; ++ii) {
+             double zz = boost::any_cast<double>(var->data.get()[ii]);
+             if (zz == missingValue<double>()) {
+               vdata[ii] = missingValue<int>();
+             } else {
+               vdata[ii] = static_cast<int>(zz);
+             }
+           }
          } else if ((typeInput == typeid(int)) && (typeOutput == typeid(double))) {
              oops::Log::warning() << " DataContainer::inquire: inconsistent type : "
                                   << " From int to double on "
                                   << variable << " @ " << group << std::endl;
-            for (std::size_t ii = 0; ii < vsize; ++ii)
-              vdata[ii] = static_cast<double>(boost::any_cast<int>(var->data.get()[ii]));
+           for (std::size_t ii = 0; ii < vsize; ++ii) {
+             int zz = boost::any_cast<int>(var->data.get()[ii]);
+             if (zz == missingValue<int>()) {
+               vdata[ii] = missingValue<double>();
+             } else {
+               vdata[ii] = static_cast<double>(zz);
+             }
+           }
          } else {  // For most of the cases, the in/out types should be the same
            ASSERT(typeInput == typeOutput);
-           for (std::size_t ii = 0; ii < vsize; ++ii)
+           for (std::size_t ii = 0; ii < vsize; ++ii) {
              vdata[ii] = boost::any_cast<Type>(var->data.get()[ii]);
+           }
          }
        } else {  // Required record is not found
          std::string ErrorMsg =
@@ -181,7 +198,7 @@ class ObsSpaceContainer: public util::Printable {
      /*! \brief Insert/Update the vector of Record to container*/
      template <typename Type>
      void insert(const std::string & group, const std::string & variable,
-                  const std::size_t vsize, const Type vdata[]) {
+                 const std::size_t vsize, const Type vdata[]) {
        if (has(group, variable)) {  // Found the required record in database
          auto var = DataContainer.find(boost::make_tuple(group, variable));
 
@@ -196,15 +213,20 @@ class ObsSpaceContainer: public util::Printable {
             ABORT(ErrorMsg);
          }
 
+         const std::type_info & typeStore = var->data.get()->type();
+         const std::type_info & typeInput = typeid(Type);
+
          // Update the record
-         for (std::size_t ii = 0; ii < vsize; ++ii)
+         for (std::size_t ii = 0; ii < vsize; ++ii) {
+           if (vdata[ii] == missingValue<Type>()) ASSERT(typeInput == typeStore);
            var->data.get()[ii] = vdata[ii];
+         }
 
        } else {  // The required record in not in database, update the database
          std::unique_ptr<boost::any[]> vect{ new boost::any[vsize] };
 
          for (std::size_t ii = 0; ii < vsize; ++ii)
-           vect.get()[ii] = static_cast<Type>(vdata[ii]);
+           vect.get()[ii] = vdata[ii];
 
          DataContainer.insert({group, variable, vsize, vect});
        }
@@ -230,9 +252,6 @@ class ObsSpaceContainer: public util::Printable {
 
      /*! \brief MPI communicator */
      const eckit::mpi::Comm & commMPI_;
-
-     /*! \brief missing value used by database */
-     const double missingvalue_;
 
      /*! \brief Print */
      void print(std::ostream &) const;

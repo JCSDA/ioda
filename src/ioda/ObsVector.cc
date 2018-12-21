@@ -13,6 +13,7 @@
 
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/mpi/Comm.h"
+#include "ioda/missingValue.h"
 #include "oops/base/Variables.h"
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/Logger.h"
@@ -24,7 +25,7 @@ namespace ioda {
 ObsVector::ObsVector(ObsSpace & obsdb, const oops::Variables & vars)
   : obsdb_(obsdb), obsvars_(vars), nvars_(obsvars_.variables().size()),
     nlocs_(obsdb_.nlocs()), values_(nlocs_ * nvars_),
-    missing_(ObsSpace::missingValue()) {
+    missing_(missingValue<double>()) {
   oops::Log::debug() << "ObsVector constructed with " << nvars_
                      << " variables resulting in " << values_.size()
                      << " elements." << std::endl;
