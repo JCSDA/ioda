@@ -10,8 +10,6 @@
 interface
 !-------------------------------------------------------------------------------
 
-!use datetime_mod
-
 integer(kind=c_int) function c_obsspace_get_nobs(dom) bind(C,name='obsspace_get_nobs_f')
   use, intrinsic :: iso_c_binding
   implicit none
