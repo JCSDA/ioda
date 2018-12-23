@@ -128,7 +128,10 @@ template void ObsSpace::put_db<double>(const std::string & group, const std::str
 // -----------------------------------------------------------------------------
 
 bool ObsSpace::has(const std::string & group, const std::string & name) const {
-  return (database_.has(group, name));
+  if (name == "datetime")
+    return (database_.has(group, name));
+  else
+    return (database_.has(group, "date") && database_.has(group, "time"));
 }
 // -----------------------------------------------------------------------------
 
