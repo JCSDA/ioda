@@ -94,7 +94,7 @@ void ObsSpace::get_db(const std::string & group, const std::string & name,
   std::string gname(group);
   if (group.size() <= 0)
     gname = "GroupUndefined";
-  database_.inquire<DATATYPE>(gname, name, vsize, vdata);
+  database_.inquire(gname, name, vsize, vdata);
 }
 
 template void ObsSpace::get_db<int>(const std::string & group, const std::string & name,
@@ -105,6 +105,9 @@ template void ObsSpace::get_db<float>(const std::string & group, const std::stri
 
 template void ObsSpace::get_db<double>(const std::string & group, const std::string & name,
                                        const size_t & vsize, double vdata[]) const;
+
+template void ObsSpace::get_db<util::DateTime>(const std::string & group, const std::string & name,
+                                               const size_t & vsize, util::DateTime vdata[]) const;
 
 // -----------------------------------------------------------------------------
 
