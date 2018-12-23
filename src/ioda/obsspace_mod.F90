@@ -32,6 +32,7 @@ interface obsspace_get_db
   module procedure obsspace_get_db_int64
   module procedure obsspace_get_db_real32
   module procedure obsspace_get_db_real64
+  module procedure obsspace_get_db_datetime
 end interface
    
 interface obsspace_put_db
@@ -187,6 +188,40 @@ subroutine obsspace_get_db_real64(obss, group, vname, vect)
 
   deallocate(c_group, c_vname)
 end subroutine obsspace_get_db_real64
+
+!-------------------------------------------------------------------------------
+
+!> Get datetime from the ObsSapce database
+
+subroutine obsspace_get_db_datetime(obss, group, vname, vect)
+  implicit none
+  type(c_ptr), value, intent(in) :: obss
+  character(len=*), intent(in) :: group
+  character(len=*), intent(in) :: vname
+  type(datetime), intent(inout) :: vect(:)
+
+  integer(c_size_t) :: length, i
+  integer(c_int32_t), dimension(:), allocatable :: date
+  integer(c_int32_t), dimension(:), allocatable :: time
+  character(len=20) :: fstring
+
+  length = size(vect)
+
+  allocate(date(length), time(length))
+  call obsspace_get_db(obss, group, "date", date)
+  call obsspace_get_db(obss, group, "time", time)
+
+  ! Constrct datatime based on date and time
+  do i = 1, length
+    write(fstring, "(i4.4, a, i2.2, a, i2.2, a, i2.2, a, i2.2, a, i2.2, a)") &
+          date(i)/10000, '-', MOD(date(i), 10000)/100, '-', MOD(MOD(date(i), 10000), 100), 'T', &
+          time(i)/10000, ':', MOD(time(i), 10000)/100, ':', MOD(MOD(time(i), 10000), 100), 'Z'
+    call datetime_create(fstring, vect(i))
+  enddo
+
+  ! Clean up
+  deallocate(date, time)
+end subroutine obsspace_get_db_datetime
 
 !-------------------------------------------------------------------------------
 
