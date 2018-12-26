@@ -14,9 +14,8 @@ namespace ioda {
   ObsSpaceContainer::ObsSpaceContainer(const eckit::Configuration & config,
                                        const util::DateTime & bgn,
                                        const util::DateTime & end,
-                                       const eckit::mpi::Comm & commMPI,
-                                       const double missingvalue)
-        : winbgn_(bgn), winend_(end), commMPI_(commMPI), missingvalue_(missingvalue) {
+                                       const eckit::mpi::Comm & commMPI)
+        : winbgn_(bgn), winend_(end), commMPI_(commMPI) {
     oops::Log::trace() << "ioda::ObsSpaceContainer Constructor starts " << std::endl;
   }
 // -----------------------------------------------------------------------------
@@ -26,12 +25,11 @@ namespace ioda {
 // -----------------------------------------------------------------------------
   void ObsSpaceContainer::CreateFromFile(const std::string & filename, const std::string & mode,
                                          const util::DateTime & bgn, const util::DateTime & end,
-                                         const double & missingvalue,
                                          const eckit::mpi::Comm & commMPI) {
     oops::Log::trace() << "ioda::ObsSpaceContainer opening file: " << filename << std::endl;
 
     std::unique_ptr<ioda::IodaIO> fileio
-      {ioda::IodaIOfactory::Create(filename, mode, bgn, end, missingvalue, commMPI)};
+      {ioda::IodaIOfactory::Create(filename, mode, bgn, end, commMPI)};
     nlocs_ = fileio->nlocs();
     nvars_ = fileio->nvars();
 
@@ -67,7 +65,7 @@ bool ObsSpaceContainer::has(const std::string & group, const std::string & varia
 void ObsSpaceContainer::dump(const std::string & file_name) const {
   // Open the file for output
   std::unique_ptr<ioda::IodaIO> fileio
-    {ioda::IodaIOfactory::Create(file_name, "W", windowStart(), windowEnd(), missingValue(),
+    {ioda::IodaIOfactory::Create(file_name, "W", windowStart(), windowEnd(),
     comm(), nlocs(), 0, 0, nvars())};  //  Not sure nrecs and nobs are useful
 
   // List all records and write out the every record

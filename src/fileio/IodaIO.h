@@ -103,7 +103,7 @@ class IodaIO : public util::Printable {
     std::size_t nrecs() const;
     std::size_t nvars() const;
     const eckit::mpi::Comm & comm() const {return commMPI_;}
-    std::vector<std::tuple<std::string, std::string>> * const varlist();
+    std::vector<std::tuple<std::string, std::string>> * varlist();
 
  protected:
     // Methods provided by subclasses
@@ -135,9 +135,6 @@ class IodaIO : public util::Printable {
 
     /*! \brief MPI communicator */
     const eckit::mpi::Comm & commMPI_;
-
-    /*! \brief This missing value will be used to fill the missing data slots. */
-    double missingvalue_;
 
     /*! \brief Distribution among processors */
     std::unique_ptr<Distribution> dist_;
