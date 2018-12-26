@@ -40,10 +40,10 @@ class ObsSpace : public oops::ObsSpaceBase {
   std::size_t nlocs() const;
   std::size_t nvars() const;
 
-  template <typename Type>
-  void get_db(const std::string &, const std::string &, const std::size_t &, Type[]) const;
-  template <typename Type>
-  void put_db(const std::string &, const std::string &, const std::size_t &, const Type[]);
+  template <typename DATATYPE>
+  void get_db(const std::string &, const std::string &, const std::size_t &, DATATYPE[]) const;
+  template <typename DATATYPE>
+  void put_db(const std::string &, const std::string &, const std::size_t &, const DATATYPE[]);
 
   bool has(const std::string &, const std::string &) const;
 
@@ -52,12 +52,6 @@ class ObsSpace : public oops::ObsSpaceBase {
   const util::DateTime & windowEnd() const {return winend_;}
   const eckit::mpi::Comm & comm() const {return commMPI_;}
 
-  static double missingValue() {return missingvalue_;}
-
-  const std::string & fileout() const {return fileout_;}
-
-  ObsSpaceContainer & database() {return database_;}
-
   void generateDistribution(const eckit::Configuration &);
 
   void printJo(const ObsVector &, const ObsVector &);  // to be removed
@@ -65,7 +59,6 @@ class ObsSpace : public oops::ObsSpaceBase {
  private:
   void print(std::ostream &) const;
 
-  static const double missingvalue_;
   ObsSpace & operator= (const ObsSpace &);
   std::string obsname_;
   const util::DateTime winbgn_;
