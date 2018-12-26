@@ -166,8 +166,8 @@ if (HAVE_ODB)
                       )
 endif (HAVE_ODB)
 
-ecbuild_add_executable( TARGET  gsidiag_bin2txt.x
-                        SOURCES ncdiag/gsidiag_bin2txt.f90
+ecbuild_add_executable( TARGET  gsidiag_bin2nc4.x
+                        SOURCES ncdiag/gsidiag_bin2nc4.f90
                         LIBS    ioda
                       )
 
