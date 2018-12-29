@@ -12,12 +12,12 @@
 #include <string>
 #include <vector>
 
+#include "ioda/ObsSpace.h"
 #include "oops/base/Variables.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
 
 namespace ioda {
-  class ObsSpace;
 
 //-----------------------------------------------------------------------------
 /*! \brief ObsVector class to handle vectors in observation space for IODA
@@ -57,6 +57,7 @@ class ObsVector : public util::Printable,
   const double & toFortran() const {return values_[0];}
   double & toFortran() {return values_[0];}
 
+  const std::string & obstype() const {return obsdb_.obsname();}
   const oops::Variables & varnames() const {return obsvars_;}
   std::size_t nvars() const {return nvars_;}
   std::size_t nlocs() const {return nlocs_;}

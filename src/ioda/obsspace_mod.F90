@@ -21,7 +21,6 @@ public obsspace_get_nlocs
 public obsspace_get_db
 public obsspace_put_db
 public obsspace_has
-public obspace_missing_value
 
 #include "obsspace_interface.f"
 
@@ -81,15 +80,6 @@ logical function obsspace_has(c_dom, group, vname)
   call f_c_string(vname, c_vname)
   obsspace_has = c_obsspace_has(c_dom, c_group, c_vname)
 end function obsspace_has
-
-!-------------------------------------------------------------------------------
-
-!>  Return the missing value indicator
-
-real(c_double) function obspace_missing_value()
-  implicit none
-  obspace_missing_value = c_obspace_missing_value()
-end function obspace_missing_value
 
 !-------------------------------------------------------------------------------
 
