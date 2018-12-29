@@ -25,10 +25,10 @@
 
 #include "eckit/mpi/Comm.h"
 
-#include "ioda/missingValue.h"
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
+#include "oops/util/missingValues.h"
 #include "oops/util/Printable.h"
 
 using boost::multi_index::composite_key;
@@ -139,6 +139,9 @@ class ObsSpaceContainer: public util::Printable {
      template <typename Type>
      void inquire(const std::string & group, const std::string & variable,
                   const std::size_t vsize, Type vdata[]) const {
+       const float  fmiss = util::missingValue(fmiss);
+       const double dmiss = util::missingValue(dmiss);
+       const int    imiss = util::missingValue(imiss);
        if (has(group, variable)) {  // Found the required record in database
          auto var = DataContainer.find(boost::make_tuple(group, variable));
          const std::type_info & typeInput = var->data.get()->type();
@@ -150,8 +153,8 @@ class ObsSpaceContainer: public util::Printable {
                               << variable << " @ " << group << std::endl;
            for (std::size_t ii = 0; ii < vsize; ++ii) {
              float zz = boost::any_cast<float>(var->data.get()[ii]);
-             if (zz == missingValue<float>()) {
-               vdata[ii] = missingValue<double>();
+             if (zz == fmiss) {
+               vdata[ii] = dmiss;
              } else {
                vdata[ii] = static_cast<double>(zz);
              }
@@ -162,8 +165,8 @@ class ObsSpaceContainer: public util::Printable {
                                 << variable << " @ " << group << std::endl;
            for (std::size_t ii = 0; ii < vsize; ++ii) {
              double zz = boost::any_cast<double>(var->data.get()[ii]);
-             if (zz == missingValue<double>()) {
-               vdata[ii] = missingValue<int>();
+             if (zz == dmiss) {
+               vdata[ii] = imiss;
              } else {
                vdata[ii] = static_cast<int>(zz);
              }
@@ -174,8 +177,8 @@ class ObsSpaceContainer: public util::Printable {
                                 << variable << " @ " << group << std::endl;
            for (std::size_t ii = 0; ii < vsize; ++ii) {
              int zz = boost::any_cast<int>(var->data.get()[ii]);
-             if (zz == missingValue<int>()) {
-               vdata[ii] = missingValue<double>();
+             if (zz == imiss) {
+               vdata[ii] = dmiss;
              } else {
                vdata[ii] = static_cast<double>(zz);
              }
@@ -199,6 +202,7 @@ class ObsSpaceContainer: public util::Printable {
      template <typename Type>
      void insert(const std::string & group, const std::string & variable,
                  const std::size_t vsize, const Type vdata[]) {
+       const Type tmiss = util::missingValue(tmiss);
        if (has(group, variable)) {  // Found the required record in database
          auto var = DataContainer.find(boost::make_tuple(group, variable));
 
@@ -218,7 +222,7 @@ class ObsSpaceContainer: public util::Printable {
 
          // Update the record
          for (std::size_t ii = 0; ii < vsize; ++ii) {
-           if (vdata[ii] == missingValue<Type>()) ASSERT(typeInput == typeStore);
+           if (vdata[ii] == tmiss) ASSERT(typeInput == typeStore);
            var->data.get()[ii] = vdata[ii];
          }
 

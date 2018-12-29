@@ -15,13 +15,12 @@
 #include <typeinfo>
 
 #include "distribution/DistributionFactory.h"
-#include "ioda/missingValue.h"
 #include "oops/parallel/mpi/mpi.h"
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/datetime_f.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
-
+#include "oops/util/missingValues.h"
 
 ////////////////////////////////////////////////////////////////////////
 // Implementation of IodaIO for netcdf.
@@ -249,8 +248,10 @@ NetcdfIO::~NetcdfIO() {
 void NetcdfIO::ReadVar_any(const std::string & VarName, boost::any * VarData) {
   std::string ErrorMsg;
   nc_type vartype;
+  const float fmiss = util::missingValue(fmiss);
 
   // For datetime, it is already calculated in constructor
+  //  Could be missing date/time values as well
   std::size_t found = VarName.find("date");
   if ((found != std::string::npos) && (found == 0)) {
     ASSERT(date_.size() == dist_->size());
@@ -274,6 +275,7 @@ void NetcdfIO::ReadVar_any(const std::string & VarName, boost::any * VarData) {
 
   switch (vartype) {
     case NC_INT: {
+//    Could be missing int values as well
       std::unique_ptr<int[]> iData{new int[nfvlen_]};
       ReadVar(VarName.c_str(), iData.get());
       for (std::size_t ii = 0; ii < dist_->size(); ++ii)
@@ -286,7 +288,7 @@ void NetcdfIO::ReadVar_any(const std::string & VarName, boost::any * VarData) {
       for (std::size_t ii = 0; ii < dist_->size(); ++ii) {
         VarData[ii] = rData.get()[dist_->index()[ii]];
         if (boost::any_cast<float>(VarData[ii]) > missingthreshold) {  // not safe enough
-          VarData[ii] = missingValue<float>();
+          VarData[ii] = fmiss;
         }
       }
       break;
@@ -298,7 +300,7 @@ void NetcdfIO::ReadVar_any(const std::string & VarName, boost::any * VarData) {
         /* Force double to float */
         VarData[ii] = static_cast<float>(dData.get()[dist_->index()[ii]]);
         if (boost::any_cast<float>(VarData[ii]) > missingthreshold) {  // not safe enough
-          VarData[ii] = missingValue<float>();
+          VarData[ii] = fmiss;
         }
       }
       break;
