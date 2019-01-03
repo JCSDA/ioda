@@ -485,7 +485,7 @@ void NetcdfIO::ReadDateTime(uint64_t* VarDate, int* VarTime) {
   CheckNcCall(nc_get_att_int(ncid_, NC_GLOBAL, "date_time", &dtvals_), ErrorMsg);
 
   util::DateTime refdt_;
-  datetime_setints_f(&refdt_, dtvals_/100, dtvals_%100);
+  datetime_setints_f(&refdt_, dtvals_/100, dtvals_%100 * 3600);
 
   // Read in the time variable and convert to a Duration object. Time is an
   // offset from the date_time attribute. This fits in nicely with a Duration
@@ -536,7 +536,7 @@ void NetcdfIO::ReadDateTime(util::DateTime VarDateTime[]) {
   CheckNcCall(nc_get_att_int(ncid_, NC_GLOBAL, "date_time", &dtvals_), ErrorMsg);
 
   util::DateTime refdt_;
-  datetime_setints_f(&refdt_, dtvals_/100, dtvals_%100);
+  datetime_setints_f(&refdt_, dtvals_/100, dtvals_%100 * 3600);
 
   // Read in the time variable and convert to a Duration object. Time is an
   // offset from the date_time attribute. This fits in nicely with a Duration
