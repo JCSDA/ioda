@@ -8,7 +8,6 @@
 #include "database/MultiIndexContainer.h"
 #include "fileio/IodaIO.h"
 #include "fileio/IodaIOfactory.h"
-#include "oops/util/missingValues.h"
 
 namespace ioda {
 // -----------------------------------------------------------------------------

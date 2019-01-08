@@ -28,6 +28,7 @@
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
+#include "oops/util/missingValues.h"
 #include "oops/util/Printable.h"
 
 using boost::multi_index::composite_key;
