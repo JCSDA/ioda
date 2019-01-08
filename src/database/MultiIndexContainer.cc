@@ -8,6 +8,7 @@
 #include "database/MultiIndexContainer.h"
 #include "fileio/IodaIO.h"
 #include "fileio/IodaIOfactory.h"
+#include "oops/util/missingValues.h"
 
 namespace ioda {
 // -----------------------------------------------------------------------------
@@ -57,17 +58,23 @@ namespace ioda {
 
   void ObsSpaceContainer::inquire(const std::string & group, const std::string & variable,
                                   const std::size_t vsize, double vdata[]) const {
+    // Obtain the missing values
+    const float  fmiss = util::missingValue(fmiss);
+    const double dmiss = util::missingValue(dmiss);
+    const int    imiss = util::missingValue(imiss);
+
     if (has(group, variable)) {  // Found the required record in database
       auto var = DataContainer.find(boost::make_tuple(group, variable));
       const std::type_info & typeInput = var->data.get()->type();
+
       if (typeInput == typeid(float)) {
         oops::Log::debug() << " DataContainer::inquire: inconsistent type : "
                            << " From float to double on "
                            << variable << " @ " << group << std::endl;
         for (std::size_t ii = 0; ii < vsize; ++ii) {
           float zz = boost::any_cast<float>(var->data.get()[ii]);
-          if (zz == missingValue<float>()) {
-            vdata[ii] = missingValue<double>();
+          if (zz == fmiss) {
+            vdata[ii] = dmiss;
           } else {
             vdata[ii] = static_cast<double>(zz);
           }
@@ -78,8 +85,8 @@ namespace ioda {
                              << variable << " @ " << group << std::endl;
           for (std::size_t ii = 0; ii < vsize; ++ii) {
             int zz = boost::any_cast<int>(var->data.get()[ii]);
-            if (zz == missingValue<int>()) {
-              vdata[ii] = missingValue<double>();
+            if (zz == imiss) {
+              vdata[ii] = dmiss;
             } else {
               vdata[ii] = static_cast<double>(zz);
             }
@@ -89,6 +96,7 @@ namespace ioda {
         for (std::size_t ii = 0; ii < vsize; ++ii)
           vdata[ii] = boost::any_cast<double>(var->data.get()[ii]);
       }
+
     } else {  // Required record is not found
       std::string ErrorMsg =
              "DataContainer::inquire: " + variable + " @ " + group +" is not found";
@@ -113,17 +121,22 @@ namespace ioda {
 
   void ObsSpaceContainer::inquire(const std::string & group, const std::string & variable,
                                   const std::size_t vsize, int vdata[]) const {
+    // Obtain the missing values
+    const double dmiss = util::missingValue(dmiss);
+    const int    imiss = util::missingValue(imiss);
+
     if (has(group, variable)) {  // Found the required record in database
       auto var = DataContainer.find(boost::make_tuple(group, variable));
       const std::type_info & typeInput = var->data.get()->type();
+
       if (typeInput == typeid(double)) {
           oops::Log::debug() << " DataContainer::inquire: inconsistent type : "
                              << " From double to int on "
                              << variable << " @ " << group << std::endl;
           for (std::size_t ii = 0; ii < vsize; ++ii) {
             double zz = boost::any_cast<double>(var->data.get()[ii]);
-            if (zz == missingValue<double>()) {
-              vdata[ii] = missingValue<int>();
+            if (zz == dmiss) {
+              vdata[ii] = imiss;
             } else {
               vdata[ii] = static_cast<int>(zz);
             }

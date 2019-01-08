@@ -17,10 +17,10 @@
 
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/mpi/Comm.h"
-#include "ioda/missingValue.h"
 #include "ioda/ObsSpace.h"
 #include "oops/base/Variables.h"
 #include "oops/util/Logger.h"
+#include "oops/util/missingValues.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
 
@@ -45,7 +45,9 @@ class ObsDataVector: public util::Printable,
   unsigned int nobs() const;  // Number of active observations (without missing values)
   const DATATYPE & operator[](const std::size_t ii) const {return values_.at(ii);}
   DATATYPE & operator[](const std::size_t ii) {return values_.at(ii);}
+  const std::string & obstype() const {return obsdb_.obsname();}
 
+  void read(const std::string &);
   void save(const std::string & name = "") const;
 
  private:
@@ -85,16 +87,22 @@ ObsDataVector<DATATYPE> & ObsDataVector<DATATYPE>::operator= (const ObsDataVecto
 }
 // -----------------------------------------------------------------------------
 template <typename DATATYPE>
+void ObsDataVector<DATATYPE>::read(const std::string & group) {
+  ASSERT(group != "");
+  obsdb_.get_db(group, var_, values_.size(), values_.data());
+}
+// -----------------------------------------------------------------------------
+template <typename DATATYPE>
 void ObsDataVector<DATATYPE>::save(const std::string & name) const {
-  std::string table = grp_;
-  if (name != "") table = name;
-  ASSERT(table != "");
-  obsdb_.put_db(table, var_, values_.size(), values_.data());
+  std::string group = grp_;
+  if (name != "") group = name;
+  ASSERT(group != "");
+  obsdb_.put_db(group, var_, values_.size(), values_.data());
 }
 // -----------------------------------------------------------------------------
 template <typename DATATYPE>
 unsigned int ObsDataVector<DATATYPE>::nobs() const {
-  const DATATYPE missing = missingValue<DATATYPE>();
+  const DATATYPE missing = util::missingValue(missing);
   int nobs = 0;
   for (size_t jj = 0; jj < values_.size() ; ++jj) {
     if (values_[jj] != missing) ++nobs;
@@ -105,7 +113,7 @@ unsigned int ObsDataVector<DATATYPE>::nobs() const {
 // -----------------------------------------------------------------------------
 template <typename DATATYPE>
 void ObsDataVector<DATATYPE>::print(std::ostream & os) const {
-  const DATATYPE missing = missingValue<DATATYPE>();
+  const DATATYPE missing = util::missingValue(missing);
   DATATYPE zmin = std::numeric_limits<DATATYPE>::max();
   DATATYPE zmax = std::numeric_limits<DATATYPE>::lowest();
   int nobs = 0;
