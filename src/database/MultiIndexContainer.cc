@@ -183,8 +183,14 @@ namespace ioda {
 // -----------------------------------------------------------------------------
 
   bool ObsSpaceContainer::has(const std::string & group, const std::string & variable) const {
-    auto var = DataContainer.find(boost::make_tuple(group, variable));
-    return (var != DataContainer.end());
+    if (variable == "datetime") {
+      auto var0 = DataContainer.find(boost::make_tuple(group, "date"));
+      auto var1 = DataContainer.find(boost::make_tuple(group, "time"));
+      return (var0 != DataContainer.end() && var1 != DataContainer.end());
+    } else {
+      auto var = DataContainer.find(boost::make_tuple(group, variable));
+      return (var != DataContainer.end());
+    }
   }
 
 // -----------------------------------------------------------------------------
