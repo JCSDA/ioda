@@ -136,65 +136,14 @@ class ObsSpaceContainer: public util::Printable {
      // -----------------------------------------------------------------------------
 
      /*! \brief Inquire the vector of Record from container*/
-     template <typename Type>
      void inquire(const std::string & group, const std::string & variable,
-                  const std::size_t vsize, Type vdata[]) const {
-       const float  fmiss = util::missingValue(fmiss);
-       const double dmiss = util::missingValue(dmiss);
-       const int    imiss = util::missingValue(imiss);
-       if (has(group, variable)) {  // Found the required record in database
-         auto var = DataContainer.find(boost::make_tuple(group, variable));
-         const std::type_info & typeInput = var->data.get()->type();
-         const std::type_info & typeOutput = typeid(Type);
-
-         if ((typeInput == typeid(float)) && (typeOutput == typeid(double))) {
-           oops::Log::debug() << " DataContainer::inquire: inconsistent type : "
-                              << " From float to double on "
-                              << variable << " @ " << group << std::endl;
-           for (std::size_t ii = 0; ii < vsize; ++ii) {
-             float zz = boost::any_cast<float>(var->data.get()[ii]);
-             if (zz == fmiss) {
-               vdata[ii] = dmiss;
-             } else {
-               vdata[ii] = static_cast<double>(zz);
-             }
-           }
-         } else if ((typeInput == typeid(double)) && (typeOutput == typeid(int))) {
-             oops::Log::debug() << " DataContainer::inquire: inconsistent type : "
-                                << " From double to int on "
-                                << variable << " @ " << group << std::endl;
-           for (std::size_t ii = 0; ii < vsize; ++ii) {
-             double zz = boost::any_cast<double>(var->data.get()[ii]);
-             if (zz == dmiss) {
-               vdata[ii] = imiss;
-             } else {
-               vdata[ii] = static_cast<int>(zz);
-             }
-           }
-         } else if ((typeInput == typeid(int)) && (typeOutput == typeid(double))) {
-             oops::Log::debug() << " DataContainer::inquire: inconsistent type : "
-                                << " From int to double on "
-                                << variable << " @ " << group << std::endl;
-           for (std::size_t ii = 0; ii < vsize; ++ii) {
-             int zz = boost::any_cast<int>(var->data.get()[ii]);
-             if (zz == imiss) {
-               vdata[ii] = dmiss;
-             } else {
-               vdata[ii] = static_cast<double>(zz);
-             }
-           }
-         } else {  // For most of the cases, the in/out types should be the same
-           ASSERT(typeInput == typeOutput);
-           for (std::size_t ii = 0; ii < vsize; ++ii) {
-             vdata[ii] = boost::any_cast<Type>(var->data.get()[ii]);
-           }
-         }
-       } else {  // Required record is not found
-         std::string ErrorMsg =
-                "DataContainer::inquire: " + variable + " @ " + group +" is not found";
-         ABORT(ErrorMsg);
-       }
-     }
+                  const std::size_t vsize, double vdata[]) const;
+     void inquire(const std::string & group, const std::string & variable,
+                  const std::size_t vsize, float vdata[]) const;
+     void inquire(const std::string & group, const std::string & variable,
+                  const std::size_t vsize, int vdata[]) const;
+     void inquire(const std::string & group, const std::string & variable,
+                  const std::size_t vsize, util::DateTime vdata[]) const;
 
      // -----------------------------------------------------------------------------
 
