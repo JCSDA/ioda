@@ -15,7 +15,6 @@ list( APPEND ioda_test_input
   testinput/iodatest_marine_fileio.yml
   testinput/iodatest_marine_obsspace.yml  
   testinput/iodatest_fileio_odb_api.yml
-  testinput/ioda_smap.json
 )
 
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/testinput)

@@ -106,19 +106,30 @@ void testGetDb() {
     double Tol = dataconf.getDouble("tolerance");
 
     std::size_t Nlocs = Odb->nlocs();
+    std::vector<double> TestVec(Nlocs);
+    std::vector<util::DateTime> TestTime(Nlocs);
     for (std::size_t i = 0; i < VarNames.size(); ++i) {
       // Read in the table, calculate the norm and compare with the expected norm.
-      std::vector<double> TestVec(Nlocs);
       std::string Gname = GroupNames[i];
       if (Gname == "NoGroup") {
         Gname = "";
       }
-      Odb->get_db(Gname, VarNames[i], Nlocs, TestVec.data());
 
-      // Calculate the norm of the vector
       double Vnorm = 0.0;
-      for (std::size_t j = 0; j < Nlocs; ++j) {
-        Vnorm += pow(TestVec[j], 2.0);
+      if (VarNames[i] == "datetime") {
+        Odb->get_db(Gname, VarNames[i], Nlocs, TestTime.data());
+  
+        // Calculate the norm of the datetime hash value
+        for (std::size_t j = 0; j < Nlocs; ++j) {
+          Vnorm += pow(static_cast<double>(util::hash_value(TestTime[j])), 2.0);
+        }
+      } else {
+        Odb->get_db(Gname, VarNames[i], Nlocs, TestVec.data());
+
+        // Calculate the norm of the vector
+        for (std::size_t j = 0; j < Nlocs; ++j) {
+          Vnorm += pow(TestVec[j], 2.0);
+        }
       }
       Vnorm = sqrt(Vnorm);
 

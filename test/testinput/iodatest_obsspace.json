@@ -24,15 +24,18 @@
              "TestData" : {
                 "groups" : [
                    "NoGroup",
+                   "NoGroup",
                    "NoGroup"
                 ],
                 "variables" : [
                    "latitude",
-                   "longitude"
+                   "longitude",
+                   "datetime"
                 ],
                 "norms" : [
                    692.59370160322135,
-                   674.93611992667638
+                   674.93611992667638,
+                   602928820.6358676
                 ],
                 "tolerance" : 1.0e-12
              }
@@ -76,15 +79,18 @@
              "TestData" : {
                 "groups" : [
                    "NoGroup",
+                   "NoGroup",
                    "NoGroup"
                 ],
                 "variables" : [
                    "latitude",
-                   "longitude"
+                   "longitude",
+                   "datetime"
                 ],
                 "norms" : [
                    384.02339697102406,
-                   1511.7891494709127
+                   1511.7891494709127,
+                   532637616.94571877
                 ],
                 "tolerance" : 1.0e-12
              }
@@ -103,15 +109,18 @@
              "TestData" : {
                 "groups" : [
                    "MetaData",
+                   "MetaData",
                    "MetaData"
                 ],
                 "variables" : [
                    "latitude",
-                   "longitude"
+                   "longitude",
+                   "datetime"
                 ],
                 "norms" : [
                    2282.5215982838258,
-                   326.09527165569659
+                   326.09527165569659,
+                   2934049947.9321499
                 ],
                 "tolerance" : 1.0e-12
              }
