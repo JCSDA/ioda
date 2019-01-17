@@ -78,9 +78,9 @@
              },
              "TestData" : {
                 "groups" : [
-                   "NoGroup",
-                   "NoGroup",
-                   "NoGroup"
+                   "MetaData",
+                   "MetaData",
+                   "MetaData"
                 ],
                 "variables" : [
                    "latitude",
@@ -90,7 +90,7 @@
                 "norms" : [
                    384.02339697102406,
                    1511.7891494709127,
-                   532637616.94571877
+                   532637617.75600338
                 ],
                 "tolerance" : 1.0e-12
              }
