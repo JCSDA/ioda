@@ -248,7 +248,7 @@ void ObsVector::print(std::ostream & os) const {
   obsdb_.comm().allReduceInPlace(nobs, eckit::mpi::sum());
   if (nobs > 0) zrms = sqrt(zrms / static_cast<double>(nobs));
   os << obsdb_.obsname() << " nobs= " << nobs << " Min="
-     << zmin << ", Max=" << zmax << ", Average=" << zrms << std::endl;
+     << zmin << ", Max=" << zmax << ", RMS=" << zrms << std::endl;
 }
 // -----------------------------------------------------------------------------
 }  // namespace ioda
