@@ -21,7 +21,7 @@ Observations:
         obsfile: Data/sondes_obs_2018041500_m.nc4
         variables:
           - air_temperature
-        rms_equiv: 242.47090122494583
+        rms_equiv: 215.813393658623
         tolerance: 1.0e-12
 
   - ObsType: Radiosonde_2vars
@@ -31,7 +31,7 @@ Observations:
         variables:
           - air_temperature
           - specific_humidity
-        rms_equiv: 171.98649312112931
+        rms_equiv: 175.100547361903
         tolerance: 1.0e-12
 
   - ObsType: Radiosonde_4vars
@@ -43,6 +43,6 @@ Observations:
           - specific_humidity
           - eastward_wind
           - northward_wind
-        rms_equiv: 106.9693370342373
+        rms_equiv: 129.419005354608
         tolerance: 1.0e-12
 
