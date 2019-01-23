@@ -12,21 +12,21 @@ ObsTypes:
          - "longitude@MetaData"
          - "time@MetaData"
       metadata:
-        nobs: 9100
-        nlocs: 2275
-        nrecs: 24
+        nobs: 524
+        nlocs: 131
+        nrecs: 4
         nvars: 4
         # The following norms correspond to the list of variables above. The
         # values are the square root of the sum of the squares of each value
         # in the corresponding variable.
         norms:
-          - 2282.52
-          - 326.095
-          - 32.8862
+          - 757.56
+          - 1282.69
+          - 4.9349
         tolerance: 1.0e-3
       datetime:
-        dnorm: 9.62543e08
-        tnorm: 9.19358e06
+        dnorm: 2.309753e08
+        tnorm: 1.428455e06
         tolerance:  1.0e-3
     Output:
       filename: "testoutput/diagout_sonde.nc4"
@@ -34,9 +34,9 @@ ObsTypes:
          - "air_pressure"
          - "air_temperature"
       metadata:
-        nobs: 9100
-        nlocs: 2275
-        nrecs: 24
+        nobs: 524
+        nlocs: 131
+        nrecs: 4
         nvars: 4
 
   - ObsType: "Aircraft"
@@ -47,18 +47,18 @@ ObsTypes:
          - "longitude@MetaData"
          - "time@MetaData"
       metadata:
-        nobs: 7468
-        nlocs: 1867
-        nrecs: 30
+        nobs: 1468
+        nlocs: 367
+        nrecs: 4
         nvars: 4
         norms:
-          - 618.842
-          - 4547.66
-          - 68.1040
+          - 950.318
+          - 4450.95
+          - 34.6836
         tolerance: 1.0e-3
       datetime:
-        dnorm: 8.71974e+08
-        tnorm: 6.52498e+06
+        dnorm: 3.86601e+08
+        tnorm: 2.92766e+06
         tolerance:  1.0e-3
     Output:
       filename: "testoutput/diagout_arcft.nc4"
@@ -66,9 +66,9 @@ ObsTypes:
          - "air_pressure"
          - "air_temperature"
       metadata:
-        nobs: 7468
-        nlocs: 1867
-        nrecs: 30
+        nobs: 1468
+        nlocs: 367
+        nrecs: 4
         nvars: 4
 
   - ObsType: "Radiance"
