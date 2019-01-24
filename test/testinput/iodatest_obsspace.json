@@ -24,15 +24,18 @@
              "TestData" : {
                 "groups" : [
                    "NoGroup",
+                   "NoGroup",
                    "NoGroup"
                 ],
                 "variables" : [
                    "latitude",
-                   "longitude"
+                   "longitude",
+                   "datetime"
                 ],
                 "norms" : [
                    692.59370160322135,
-                   674.93611992667638
+                   674.93611992667638,
+                   602928820.6358676
                 ],
                 "tolerance" : 1.0e-12
              }
@@ -50,16 +53,19 @@
              },
              "TestData" : {
                 "groups" : [
-                   "NoGroup",
-                   "NoGroup"
+                   "MetaData",
+                   "MetaData",
+                   "MetaData"
                 ],
                 "variables" : [
                    "latitude",
-                   "longitude"
+                   "longitude",
+                   "datetime"
                 ],
                 "norms" : [
                    384.02339697102406,
-                   1511.7891494709127
+                   1511.7891494709127,
+                   532637617.75600338
                 ],
                 "tolerance" : 1.0e-12
              }
@@ -72,21 +78,24 @@
           "ObsDataIn": {
             "obsfile": "Data/sondes_obs_2018041500_m.nc4",
             "metadata" : {
-               "nobs"  : "9100",
-               "nlocs" : "2275"
+               "nobs"  : "524",
+               "nlocs" : "131"
              },
              "TestData" : {
                 "groups" : [
+                   "MetaData",
                    "MetaData",
                    "MetaData"
                 ],
                 "variables" : [
                    "latitude",
-                   "longitude"
+                   "longitude",
+                   "datetime"
                 ],
                 "norms" : [
-                   2282.5215982838258,
-                   326.09527165569659
+                   757.55982302113819,
+                   1282.68940922515,
+                   703680982.365153
                 ],
                 "tolerance" : 1.0e-12
              }

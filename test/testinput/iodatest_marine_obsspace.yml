@@ -33,7 +33,7 @@ Observations:
             - 16692.109207962403
             - 89252.131593209342
           tolerance:
-            - 1.0e-12
+            - 1.0e-11
 
   - ObsType: InsituTemperature
     ObsData:
@@ -73,7 +73,7 @@ Observations:
             - 14497.263538159166
             - 61789.896501727279
           tolerance:
-            - 1.0e-12
+            - 1.0e-11
 
   - ObsType: SeaIceFraction
     ObsData:

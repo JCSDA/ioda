@@ -20,7 +20,7 @@
 #include "oops/util/datetime_f.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
-
+#include "oops/util/missingValues.h"
 
 ////////////////////////////////////////////////////////////////////////
 // Implementation of IodaIO for netcdf.
@@ -52,7 +52,7 @@ static const double missingthreshold = 1.0e08;
 
 NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
                    const util::DateTime & bgn, const util::DateTime & end,
-                   const double & MissingValue, const eckit::mpi::Comm & commMPI,
+                   const eckit::mpi::Comm & commMPI,
                    const std::size_t & Nlocs, const std::size_t & Nobs,
                    const std::size_t & Nrecs, const std::size_t & Nvars)
                    : IodaIO(commMPI) {
@@ -65,7 +65,6 @@ NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
   nobs_  = Nobs;
   nrecs_ = Nrecs;
   nvars_ = Nvars;
-  missingvalue_ = MissingValue;
   oops::Log::trace() << __func__ << " fname_: " << fname_ << " fmode_: " << fmode_ << std::endl;
 
   // Open the file. The fmode_ values that are recognized are:
@@ -249,8 +248,10 @@ NetcdfIO::~NetcdfIO() {
 void NetcdfIO::ReadVar_any(const std::string & VarName, boost::any * VarData) {
   std::string ErrorMsg;
   nc_type vartype;
+  const float fmiss = util::missingValue(fmiss);
 
   // For datetime, it is already calculated in constructor
+  //  Could be missing date/time values as well
   std::size_t found = VarName.find("date");
   if ((found != std::string::npos) && (found == 0)) {
     ASSERT(date_.size() == dist_->size());
@@ -274,6 +275,7 @@ void NetcdfIO::ReadVar_any(const std::string & VarName, boost::any * VarData) {
 
   switch (vartype) {
     case NC_INT: {
+//    Could be missing int values as well
       std::unique_ptr<int[]> iData{new int[nfvlen_]};
       ReadVar(VarName.c_str(), iData.get());
       for (std::size_t ii = 0; ii < dist_->size(); ++ii)
@@ -285,8 +287,8 @@ void NetcdfIO::ReadVar_any(const std::string & VarName, boost::any * VarData) {
       ReadVar(VarName.c_str(), rData.get());
       for (std::size_t ii = 0; ii < dist_->size(); ++ii) {
         VarData[ii] = rData.get()[dist_->index()[ii]];
-        if (boost::any_cast<float>(VarData[ii]) > missingthreshold) {
-          VarData[ii] = static_cast<float>(missingvalue_);
+        if (boost::any_cast<float>(VarData[ii]) > missingthreshold) {  // not safe enough
+          VarData[ii] = fmiss;
         }
       }
       break;
@@ -297,8 +299,8 @@ void NetcdfIO::ReadVar_any(const std::string & VarName, boost::any * VarData) {
       for (std::size_t ii = 0; ii < dist_->size(); ++ii) {
         /* Force double to float */
         VarData[ii] = static_cast<float>(dData.get()[dist_->index()[ii]]);
-        if (boost::any_cast<float>(VarData[ii]) > missingthreshold) {
-          VarData[ii] = static_cast<float>(missingvalue_);
+        if (boost::any_cast<float>(VarData[ii]) > missingthreshold) {  // not safe enough
+          VarData[ii] = fmiss;
         }
       }
       break;
@@ -483,7 +485,7 @@ void NetcdfIO::ReadDateTime(uint64_t* VarDate, int* VarTime) {
   CheckNcCall(nc_get_att_int(ncid_, NC_GLOBAL, "date_time", &dtvals_), ErrorMsg);
 
   util::DateTime refdt_;
-  datetime_setints_f(&refdt_, dtvals_/100, dtvals_%100);
+  datetime_setints_f(&refdt_, dtvals_/100, dtvals_%100 * 3600);
 
   // Read in the time variable and convert to a Duration object. Time is an
   // offset from the date_time attribute. This fits in nicely with a Duration
@@ -534,7 +536,7 @@ void NetcdfIO::ReadDateTime(util::DateTime VarDateTime[]) {
   CheckNcCall(nc_get_att_int(ncid_, NC_GLOBAL, "date_time", &dtvals_), ErrorMsg);
 
   util::DateTime refdt_;
-  datetime_setints_f(&refdt_, dtvals_/100, dtvals_%100);
+  datetime_setints_f(&refdt_, dtvals_/100, dtvals_%100 * 3600);
 
   // Read in the time variable and convert to a Duration object. Time is an
   // offset from the date_time attribute. This fits in nicely with a Duration
