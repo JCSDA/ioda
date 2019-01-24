@@ -21,7 +21,6 @@ public obsspace_get_nlocs
 public obsspace_get_db
 public obsspace_put_db
 public obsspace_has
-public obspace_missing_value
 
 #include "obsspace_interface.f"
 
@@ -32,6 +31,7 @@ interface obsspace_get_db
   module procedure obsspace_get_db_int64
   module procedure obsspace_get_db_real32
   module procedure obsspace_get_db_real64
+  module procedure obsspace_get_db_datetime
 end interface
    
 interface obsspace_put_db
@@ -81,15 +81,6 @@ logical function obsspace_has(c_dom, group, vname)
   call f_c_string(vname, c_vname)
   obsspace_has = c_obsspace_has(c_dom, c_group, c_vname)
 end function obsspace_has
-
-!-------------------------------------------------------------------------------
-
-!>  Return the missing value indicator
-
-real(c_double) function obspace_missing_value()
-  implicit none
-  obspace_missing_value = c_obspace_missing_value()
-end function obspace_missing_value
 
 !-------------------------------------------------------------------------------
 
@@ -187,6 +178,40 @@ subroutine obsspace_get_db_real64(obss, group, vname, vect)
 
   deallocate(c_group, c_vname)
 end subroutine obsspace_get_db_real64
+
+!-------------------------------------------------------------------------------
+
+!> Get datetime from the ObsSapce database
+
+subroutine obsspace_get_db_datetime(obss, group, vname, vect)
+  implicit none
+  type(c_ptr), value, intent(in) :: obss
+  character(len=*), intent(in) :: group
+  character(len=*), intent(in) :: vname
+  type(datetime), intent(inout) :: vect(:)
+
+  integer(c_size_t) :: length, i
+  integer(c_int32_t), dimension(:), allocatable :: date
+  integer(c_int32_t), dimension(:), allocatable :: time
+  character(len=20) :: fstring
+
+  length = size(vect)
+
+  allocate(date(length), time(length))
+  call obsspace_get_db(obss, group, "date", date)
+  call obsspace_get_db(obss, group, "time", time)
+
+  ! Constrct datatime based on date and time
+  do i = 1, length
+    write(fstring, "(i4.4, a, i2.2, a, i2.2, a, i2.2, a, i2.2, a, i2.2, a)") &
+          date(i)/10000, '-', MOD(date(i), 10000)/100, '-', MOD(MOD(date(i), 10000), 100), 'T', &
+          time(i)/10000, ':', MOD(time(i), 10000)/100, ':', MOD(MOD(time(i), 10000), 100), 'Z'
+    call datetime_create(fstring, vect(i))
+  enddo
+
+  ! Clean up
+  deallocate(date, time)
+end subroutine obsspace_get_db_datetime
 
 !-------------------------------------------------------------------------------
 

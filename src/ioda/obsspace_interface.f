@@ -10,8 +10,6 @@
 interface
 !-------------------------------------------------------------------------------
 
-!use datetime_mod
-
 integer(kind=c_int) function c_obsspace_get_nobs(dom) bind(C,name='obsspace_get_nobs_f')
   use, intrinsic :: iso_c_binding
   implicit none
@@ -34,11 +32,6 @@ logical(kind=c_bool) function c_obsspace_has(dom, group, vname) bind(C,name='obs
   character(kind=c_char, len=1), intent(in) :: group(*)
   character(kind=c_char, len=1), intent(in) :: vname(*)
 end function c_obsspace_has
-
-real(kind=c_double) function c_obspace_missing_value() bind(C,name='obspace_missing_value_f')
-  use, intrinsic :: iso_c_binding
-  implicit none
-end function c_obspace_missing_value
 
 !-------------------------------------------------------------------------------
 ! get data from ObsSpace
