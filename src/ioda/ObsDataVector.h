@@ -46,6 +46,8 @@ class ObsDataVector: public util::Printable,
   const DATATYPE & operator[](const std::size_t ii) const {return values_.at(ii);}
   DATATYPE & operator[](const std::size_t ii) {return values_.at(ii);}
   const std::string & obstype() const {return obsdb_.obsname();}
+  const std::vector<DATATYPE> & values() const {return values_;}
+  std::vector<DATATYPE> & values() {return values_;}
 
   void read(const std::string &);
   void save(const std::string & name = "") const;
