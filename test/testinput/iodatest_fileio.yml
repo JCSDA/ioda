@@ -47,18 +47,18 @@ ObsTypes:
          - "longitude@MetaData"
          - "time@MetaData"
       metadata:
-        nobs: 1468
-        nlocs: 367
+        nobs: 1832
+        nlocs: 458
         nrecs: 4
         nvars: 4
         norms:
-          - 950.318
-          - 4450.95
-          - 34.6836
+          - 766.082
+          - 5399.037
+          - 33.197
         tolerance: 1.0e-3
       datetime:
-        dnorm: 3.86601e+08
-        tnorm: 2.92766e+06
+        dnorm: 4.31879e+08
+        tnorm: 3.70899e+06
         tolerance:  1.0e-3
     Output:
       filename: "testoutput/diagout_arcft.nc4"
@@ -66,8 +66,8 @@ ObsTypes:
          - "air_pressure"
          - "air_temperature"
       metadata:
-        nobs: 1468
-        nlocs: 367
+        nobs: 1832
+        nlocs: 458
         nrecs: 4
         nvars: 4
 
