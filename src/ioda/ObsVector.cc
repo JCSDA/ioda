@@ -9,7 +9,6 @@
 
 #include <math.h>
 #include <limits>
-#include <random>
 
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/mpi/Comm.h"
@@ -18,6 +17,7 @@
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/Logger.h"
 #include "oops/util/missingValues.h"
+#include "oops/util/Random.h"
 
 namespace ioda {
 // -----------------------------------------------------------------------------
@@ -135,10 +135,9 @@ void ObsVector::invert() {
 }
 // -----------------------------------------------------------------------------
 void ObsVector::random() {
-  static std::mt19937 generator(1);
-  static std::normal_distribution<double> distribution(0.0, 1.0);
+  util::NormalDistribution<double> x(values_.size(), 0.0, 1.0, 1);
   for (size_t jj = 0; jj < values_.size() ; ++jj) {
-    values_[jj] = distribution(generator);
+    values_[jj] = x[jj];
   }
 }
 // -----------------------------------------------------------------------------
