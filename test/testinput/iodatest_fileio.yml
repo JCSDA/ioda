@@ -95,7 +95,7 @@ ObsTypes:
 
   - ObsType: "Aod"
     Input:
-      filename: "Data/aod_obs_2015081000_m.nc4"
+      filename: "Data/aod_obs_2018041500_m.nc4"
       variables:
          - "latitude"
          - "longitude"
@@ -111,6 +111,6 @@ ObsTypes:
           - 19.7100
         tolerance: 1.0e-3
       datetime:
-        dnorm: 2.01508e+08
+        dnorm: 2.01804e+08
         tnorm: 2.21777e+06
         tolerance:  1.0e-3
