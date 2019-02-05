@@ -62,7 +62,6 @@ ioda/ObsVector.h
 ioda/obsspace_f.cc
 ioda/obsspace_f.h
 ioda/obsspace_mod.F90
-ioda/twindow_utils_mod.F90
 
 database/MultiIndexContainer.cc
 database/MultiIndexContainer.h
@@ -163,6 +162,16 @@ if (HAVE_ODB)
                        LINKER_LANGUAGE ${IODA_LINKER_LANGUAGE}
                       )
 endif (HAVE_ODB)
+
+ecbuild_add_executable( TARGET  gsidiag_aod_bin2nc4.x
+                        SOURCES ncdiag/gsidiag_aod_bin2nc4.f90
+                        LIBS    ioda
+                      )
+
+ecbuild_add_executable( TARGET  gsiprofiles_bin2nc4.x
+                        SOURCES ncdiag/gsiprofiles_bin2nc4.f90
+                        LIBS    ioda
+                      )
 
 # coding norms check
 ecbuild_add_test( TARGET ioda_coding_norms
