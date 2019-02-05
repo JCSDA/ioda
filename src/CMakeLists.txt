@@ -164,6 +164,16 @@ if (HAVE_ODB)
                       )
 endif (HAVE_ODB)
 
+ecbuild_add_executable( TARGET  gsidiag_aod_bin2nc4.x
+                        SOURCES ncdiag/gsidiag_aod_bin2nc4.f90
+                        LIBS    ioda
+                      )
+
+ecbuild_add_executable( TARGET  gsiprofiles_bin2nc4.x
+                        SOURCES ncdiag/gsiprofiles_bin2nc4.f90
+                        LIBS    ioda
+                      )
+
 # coding norms check
 ecbuild_add_test( TARGET ioda_coding_norms
                   TYPE SCRIPT
