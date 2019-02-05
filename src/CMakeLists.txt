@@ -62,7 +62,6 @@ ioda/ObsVector.h
 ioda/obsspace_f.cc
 ioda/obsspace_f.h
 ioda/obsspace_mod.F90
-ioda/twindow_utils_mod.F90
 
 database/MultiIndexContainer.cc
 database/MultiIndexContainer.h
