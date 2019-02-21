@@ -18,14 +18,14 @@
           "ObsDataIn": {
             "obsfile": "Data/aod_obs_2018041500_m.nc4",
             "metadata" : {
-               "nobs"  : "1056",
-               "nlocs" : "96"
+               "nobs"  : "100",
+               "nlocs" : "100"
              },
              "TestData" : {
                 "groups" : [
-                   "NoGroup",
-                   "NoGroup",
-                   "NoGroup"
+                   "MetaData",
+                   "MetaData",
+                   "MetaData"
                 ],
                 "variables" : [
                    "latitude",
@@ -33,8 +33,8 @@
                    "datetime"
                 ],
                 "norms" : [
-                   692.59370160322135,
-                   674.93611992667638,
+		   705.16387945407985
+                   708.31583550296693
                    602928820.6358676
                 ],
                 "tolerance" : 1.0e-12
