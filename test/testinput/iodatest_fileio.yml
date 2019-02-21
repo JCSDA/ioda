@@ -101,18 +101,39 @@ ObsTypes:
          - "longitude@MetaData"
          - "time@MetaData"
       metadata:
-        nobs:180
+        nobs: 180
         nlocs: 45
         nrecs: 45
         nvars: 4
         norms:
-          - 320.125183
-          - 477.936768
-          - 1.09626949
+          - 529.307068
+          - 1103.61707
+          - 1.901775
         tolerance: 1.0e-3
       datetime:
-        dnorm: 78158416
-        tnorm: 6421.40625
+        dnorm: 135374336
+        tnorm: 11294.7354
+        tolerance:  1.0e-3
+  - ObsType: "Radiance"
+    Input:
+      filename: "Data/gmi_obs_gpm_2018041500_m.nc4"
+      variables:
+         - "latitude@MetaData"
+         - "longitude@MetaData"
+         - "time@MetaData"
+      metadata:
+        nobs: 975
+        nlocs: 75
+        nrecs: 75
+        nvars: 13
+        norms:
+          - 526.830322
+          - 367.976013
+          - 12.860713
+        tolerance: 1.0e-3
+      datetime:
+        dnorm: 174767536
+        tnorm: 1211441.88
         tolerance:  1.0e-3
 
   - ObsType: "Aod"
