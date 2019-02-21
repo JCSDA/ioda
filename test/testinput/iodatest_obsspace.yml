@@ -61,11 +61,35 @@ Observations:
    time
       norms: 
        - 
-   23024.591799999998
+   529.30712749376073
        - 
-   37538.796900000001
+   1103.6169010759827
        - 
-   249375474000
+   11294.735853485021
+      tolerance: 1e-12
+  -
+   ObsType: Radiance
+   ObsData:
+    ObsDataIn:
+     obsfile: "Data/gmi_obs__gpm_2018041500_m.nc4"
+     metadata:
+      nobs: 975
+      nlocs: 75
+     TestData:
+      variables:
+       -
+   latitude
+       -
+   longitude
+       -
+   time
+      norms:
+       -
+   526.83022956365323
+       -
+   367.9760257366043
+       -
+   1211441.9400313825
       tolerance: 1e-12
   - 
    ObsType: Radiance

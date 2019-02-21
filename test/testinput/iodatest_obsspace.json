@@ -52,15 +52,50 @@
                "nlocs" : "45"
              },
              "TestData" : {
+	        "groups" : [
+                   "MetaData",
+                   "MetaData",
+                   "MetaData"
+                ],
                 "variables" : [
                    "latitude",
                    "longitude",
                    "time"
                 ],
                 "norms" : [
-                   23024.753809394708,
-                   37539.077496413665,
-                   249284158567.7106
+                   529.30712749376073,
+                   1103.6169010759827,
+                   11294.735853485021
+                ],
+                "tolerance" : 1.0e-12
+             }
+          }
+        }
+      },
+      {
+        "ObsType": "Radiance",
+        "ObsData": {
+          "ObsDataIn": {
+            "obsfile": "Data/gmi_obs_gpm_2018041500_m.nc4",
+            "metadata" : {
+               "nobs"  : "975",
+               "nlocs" : "75"
+             },
+             "TestData" : {
+                "groups" : [
+                   "MetaData",
+                   "MetaData",
+                   "MetaData"
+                ],
+                "variables" : [
+                   "latitude",
+                   "longitude",
+                   "time"
+                ],
+                "norms" : [
+                   526.83022956365323,
+                   367.9760257366043,
+                   1211441.9400313825
                 ],
                 "tolerance" : 1.0e-12
              }
