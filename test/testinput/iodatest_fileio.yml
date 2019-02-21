@@ -97,20 +97,20 @@ ObsTypes:
     Input:
       filename: "Data/aod_obs_2018041500_m.nc4"
       variables:
-         - "latitude"
-         - "longitude"
-         - "time"
+         - "latitude@MetaData"
+         - "longitude@MetaData"
+         - "time@MetaData"
       metadata:
-        nobs: 1100
+        nobs: 100
         nlocs: 100
         nrecs: 100
-        nvars: 11
+        nvars: 1
         norms:
-          - 705.164
-          - 708.316
-          - 19.7100
+          - 384.023
+          - 1511.79
+          - 14.8752
         tolerance: 1.0e-3
       datetime:
-        dnorm: 2.01804e+08
-        tnorm: 2.21777e+06
+        dnorm: 201804096
+        tnorm: 1680628.88
         tolerance:  1.0e-3
