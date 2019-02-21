@@ -47,10 +47,10 @@ Observations:
    ObsType: Radiance
    ObsData: 
     ObsDataIn: 
-     obsfile: "Data/smap_obs_2018041500.nc4"
+     obsfile: "Data/smap_obs_2018041500_m.nc4"
      metadata: 
-      nobs: 60
-      nlocs: 15
+      nobs: 180
+      nlocs: 45
      TestData: 
       variables: 
        - 
