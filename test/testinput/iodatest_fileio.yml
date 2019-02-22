@@ -12,7 +12,6 @@ ObsTypes:
          - "longitude@MetaData"
          - "time@MetaData"
       metadata:
-        nobs: 524
         nlocs: 131
         nrecs: 4
         nvars: 4
@@ -34,7 +33,6 @@ ObsTypes:
          - "air_pressure"
          - "air_temperature"
       metadata:
-        nobs: 524
         nlocs: 131
         nrecs: 4
         nvars: 4
@@ -47,7 +45,6 @@ ObsTypes:
          - "longitude@MetaData"
          - "time@MetaData"
       metadata:
-        nobs: 1832
         nlocs: 458
         nrecs: 4
         nvars: 4
@@ -66,7 +63,6 @@ ObsTypes:
          - "air_pressure"
          - "air_temperature"
       metadata:
-        nobs: 1832
         nlocs: 458
         nrecs: 4
         nvars: 4
@@ -79,7 +75,6 @@ ObsTypes:
          - "longitude@MetaData"
          - "time@MetaData"
       metadata:
-        nobs: 1125
         nlocs: 75
         nrecs: 75
         nvars: 15
@@ -101,7 +96,6 @@ ObsTypes:
          - "longitude"
          - "time"
       metadata:
-        nobs: 1100
         nlocs: 100
         nrecs: 100
         nvars: 11

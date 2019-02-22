@@ -18,7 +18,6 @@
           "ObsDataIn": {
             "obsfile": "Data/aod_obs_2018041500_m.nc4",
             "metadata" : {
-               "nobs"  : "1056",
                "nlocs" : "96"
              },
              "TestData" : {
@@ -48,7 +47,6 @@
           "ObsDataIn": {
             "obsfile": "Data/amsua_obs_n19_2018041500_m.nc4",
             "metadata" : {
-               "nobs"  : "1125",
                "nlocs" : "75"
              },
              "TestData" : {
@@ -78,7 +76,6 @@
           "ObsDataIn": {
             "obsfile": "Data/sondes_obs_2018041500_m.nc4",
             "metadata" : {
-               "nobs"  : "524",
                "nlocs" : "131"
              },
              "TestData" : {
