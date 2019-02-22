@@ -42,7 +42,6 @@ namespace ioda {
  *
  *   nlocs: number of locations (length of each variable)
  *   nvars: number of variables
- *   nobs:  number of observations (equal to nlocs * nvars)
  *   nrecs: number of records
  *
  * A record is an atomic unit that is to stay intact when distributing
@@ -50,7 +49,7 @@ namespace ioda {
  *
  * Older netcdf files have either a single variable, or have multiple variables
  * (satellite channels, eg) flattened out into a single variable. These
- * vectors are nobs long. Locations will be repeated in the case of multiple
+ * vectors are nchans * nlocs long. Locations will be repeated in the case of multiple
  * variables so the ObsSpace constructor (client of this class) needs to
  * reshape these vectors into a set of variables that correspond to the new
  * file format above.
@@ -64,7 +63,6 @@ namespace ioda {
  *         constructor via a call to the factory method Create in the class IodaIOfactory.
  *    2. The following data members are set according to the file mode
  *         * nlocs_
- *         * nobs_
  *         * nrecs_
  *         * nvars_
  *         * vname_group_type_
@@ -99,7 +97,6 @@ class IodaIO : public util::Printable {
     std::string fmode() const;
 
     std::size_t nlocs() const;
-    std::size_t nobs() const;
     std::size_t nrecs() const;
     std::size_t nvars() const;
     const eckit::mpi::Comm & comm() const {return commMPI_;}
@@ -123,9 +120,6 @@ class IodaIO : public util::Printable {
 
     /*! \brief number of unique locations in file*/
     std::size_t nfvlen_;
-
-    /*! \brief number of unique observations */
-    std::size_t nobs_;
 
     /*! \brief number of unique records */
     std::size_t nrecs_;

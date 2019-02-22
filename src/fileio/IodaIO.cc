@@ -50,15 +50,6 @@ std::size_t IodaIO::nlocs() const {
 
 // -----------------------------------------------------------------------------
 /*!
- * \details This method returns the number of unique observations in the obs data.
- */
-
-std::size_t IodaIO::nobs() const {
-  return nobs_;
-}
-
-// -----------------------------------------------------------------------------
-/*!
  * \details This method returns the number of unique recoreds in the obs data.
  *          A record is an atomic unit that will remain intact during distribution
  *          across multiple process elements. An example is a single sounding in
