@@ -33,7 +33,7 @@ static const double missingthreshold = 1.0e08;
 // -----------------------------------------------------------------------------
 /*!
  * \details This constructor will open the netcdf file. If opening in read
- *          mode, the parameters nlocs, nobs, nrecs and nvars will be set
+ *          mode, the parameters nlocs, nrecs and nvars will be set
  *          by querying the size of dimensions of the same names in the input
  *          file. If opening in write mode, the parameters will be set from the
  *          same named arguements to this constructor.
@@ -42,7 +42,6 @@ static const double missingthreshold = 1.0e08;
  * \param[in]  FileMode "r" for read, "w" for overwrite to an existing file
  *                      and "W" for create and write to a new file.
  * \param[in]  Nlocs Number of unique locations in the obs data.
- * \param[in]  Nobs  Number of unique observations in the obs data.
  * \param[in]  Nrecs Number of unique records in the obs data. Records are
  *                   atomic units that will remain intact when obs are
  *                   distributed across muliple process elements. A single
@@ -53,16 +52,18 @@ static const double missingthreshold = 1.0e08;
 NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
                    const util::DateTime & bgn, const util::DateTime & end,
                    const eckit::mpi::Comm & commMPI,
-                   const std::size_t & Nlocs, const std::size_t & Nobs,
-                   const std::size_t & Nrecs, const std::size_t & Nvars)
+                   const std::size_t & Nlocs, const std::size_t & Nrecs,
+                   const std::size_t & Nvars)
                    : IodaIO(commMPI) {
   int retval_;
+  std::size_t nobs_;
+  int nobs_id_;
+  bool have_nobs_;
 
   // Set the data members to the file name, file mode and provide a trace message.
   fname_ = FileName;
   fmode_ = FileMode;
   nlocs_ = Nlocs;
-  nobs_  = Nobs;
   nrecs_ = Nrecs;
   nvars_ = Nvars;
   oops::Log::trace() << __func__ << " fname_: " << fname_ << " fmode_: " << fmode_ << std::endl;
@@ -91,7 +92,7 @@ NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
   }
 
   // When in read mode, the constructor is responsible for setting
-  // the data members nlocs_, nobs_, nrecs_, nvars_ and varlist_.
+  // the data members nlocs_, nrecs_, nvars_ and varlist_.
   //
   // The old files have nobs and optionally nchans.
   //   If nchans is present, nvars = nchans
@@ -99,7 +100,7 @@ NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
   //   Then:
   //     nlocs = nobs / nvars
   //
-  // The new files have nlocs, nobs, nrecs, nvars.
+  // The new files have nlocs, nrecs, nvars.
   //
   // The way to tell if you have a new file versus and old file is that
   // only the new files have a dimension named nrecs.
@@ -210,12 +211,10 @@ NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
   }
 
   // When in write mode, create dimensions in the output file based on
-  // nlocs_, nobs_, nrecs_, nvars_.
+  // nlocs_, nrecs_, nvars_.
   if ((fmode_ == "W") || (fmode_ == "w")) {
     retval_ = nc_def_dim(ncid_, "nlocs", Nlocs, &nlocs_id_);
     have_nlocs_ = (retval_ == NC_NOERR);
-    retval_ = nc_def_dim(ncid_, "nobs",  Nobs,  &nobs_id_);
-    have_nobs_ = (retval_ == NC_NOERR);
     retval_ = nc_def_dim(ncid_, "nrecs", Nrecs, &nrecs_id_);
     have_nrecs_ = (retval_ == NC_NOERR);
     retval_ = nc_def_dim(ncid_, "nvars", Nvars, &nvars_id_);

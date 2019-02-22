@@ -199,7 +199,7 @@ namespace ioda {
     // Open the file for output
     std::unique_ptr<ioda::IodaIO> fileio
       {ioda::IodaIOfactory::Create(file_name, "W", windowStart(), windowEnd(),
-      comm(), nlocs(), 0, 0, nvars())};  //  Not sure nrecs and nobs are useful
+      comm(), nlocs(), 0, nvars())};  //  Not sure nrecs are useful
 
     // List all records and write out the every record
     auto & var = DataContainer.get<ObsSpaceContainer::by_variable>();
