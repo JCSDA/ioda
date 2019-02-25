@@ -38,7 +38,7 @@ namespace ioda {
  * number of variables. Each variable is a 1D vector that is nlocs long.
  * Variables can contain missing values.
  *
- * There are four dimensions defined in the file:
+ * There are three dimensions defined in the file:
  *
  *   nlocs: number of locations (length of each variable)
  *   nvars: number of variables
@@ -46,13 +46,6 @@ namespace ioda {
  *
  * A record is an atomic unit that is to stay intact when distributing
  * observations across multiple processes.
- *
- * Older netcdf files have either a single variable, or have multiple variables
- * (satellite channels, eg) flattened out into a single variable. These
- * vectors are nchans * nlocs long. Locations will be repeated in the case of multiple
- * variables so the ObsSpace constructor (client of this class) needs to
- * reshape these vectors into a set of variables that correspond to the new
- * file format above.
  *
  * For now, limit the write interface to writing 1D vectors that are nlocs
  * in length. This may be too restrictive, so we should revisit this in the future.

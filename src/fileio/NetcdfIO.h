@@ -105,40 +105,10 @@ class NetcdfIO : public IodaIO,
   int nrecs_id_;
 
   /*!
-   * \brief This data member holds the netcdf id of the "nchans" dimension
-   *        in the opened netcdf file.
-   */
-  int nchans_id_;
-
-  /*!
    * \brief This data member holds the netcdf id of the current dataset (variable)
    *        in the opened netcdf file.
    */
   int nc_varid_;
-
-  /*!
-   * \brief This data member is a flag that indicates the existence of the
-   *        "nlocs" dimension in the opened netcdf file.
-   */
-  bool have_nlocs_;
-
-  /*!
-   * \brief This data member is a flag that indicates the existence of the
-   *        "nvars" dimension in the opened netcdf file.
-   */
-  bool have_nvars_;
-
-  /*!
-   * \brief This data member is a flag that indicates the existence of the
-   *        "nrecs" dimension in the opened netcdf file.
-   */
-  bool have_nrecs_;
-
-  /*!
-   * \brief This data member is a flag that indicates the existence of the
-   *        "nchans" dimension in the opened netcdf file.
-   */
-  bool have_nchans_;
 
   /*!
    * \brief This data member holds the netcdf id of the current attribute
