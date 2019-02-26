@@ -15,10 +15,6 @@
 namespace ioda {
 
 // -----------------------------------------------------------------------------
-int obsspace_get_nobs_f(const ObsSpace & obss) {
-  return obss.nobs();
-}
-// -----------------------------------------------------------------------------
 int obsspace_get_nlocs_f(const ObsSpace & obss) {
   return obss.nlocs();
 }

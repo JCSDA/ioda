@@ -43,7 +43,6 @@ ObsSpace::ObsSpace(const eckit::Configuration & config,
   // Set the number of locations ,variables and number of observation points
   nlocs_ = database_.nlocs();
   nvars_ = database_.nvars();
-  nobs_ = nvars() * nlocs();
 
   // Check to see if an output file has been requested.
   if (config.has("ObsData.ObsDataOut.obsfile")) {
@@ -132,12 +131,6 @@ bool ObsSpace::has(const std::string & group, const std::string & name) const {
 }
 // -----------------------------------------------------------------------------
 
-std::size_t ObsSpace::nobs() const {
-  return nobs_;
-}
-
-// -----------------------------------------------------------------------------
-
 std::size_t ObsSpace::nlocs() const {
   return nlocs_;
 }
@@ -161,10 +154,7 @@ void ObsSpace::generateDistribution(const eckit::Configuration & conf) {
   DistributionFactory * distFactory;
   Distribution * dist{distFactory->createDistribution("roundrobin")};
   dist->distribution(comm(), fvlen);
-  int nobs = dist->size();
-
-  // For now, set nlocs equal to nobs. This may need to change for some obs types.
-  int nlocs = nobs;
+  int nlocs = dist->size();
 
   // For now, set nvars to one.
   int nvars = 1;
@@ -175,14 +165,14 @@ void ObsSpace::generateDistribution(const eckit::Configuration & conf) {
 
   // Create variables and generate the values specified by the arguments.
   std::unique_ptr<double[]> latitude {new double[nlocs]};
-  for (std::size_t ii = 0; ii < nobs; ++ii) {
+  for (std::size_t ii = 0; ii < nlocs; ++ii) {
     latitude.get()[ii] = static_cast<double>(lat);
   }
   put_db("", "latitude", nlocs, latitude.get());
 
   std::unique_ptr<double[]> longitude {new double[nlocs]};
-  for (std::size_t ii = 0; ii < nobs; ++ii) {
-    longitude.get()[ii] = static_cast<double>(lon1 + (ii-1)*(lon2-lon1)/(nobs-1));
+  for (std::size_t ii = 0; ii < nlocs; ++ii) {
+    longitude.get()[ii] = static_cast<double>(lon1 + (ii-1)*(lon2-lon1)/(nlocs-1));
   }
   put_db("", "longitude", nlocs, longitude.get());
 }
