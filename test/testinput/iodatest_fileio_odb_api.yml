@@ -12,7 +12,6 @@ ObsTypes:
          - "lon@odb"
          - "obsvalue@odb"
       metadata:
-        nobs: 915 
         nlocs: 915
         nrecs: 915
         nvars: 1

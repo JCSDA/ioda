@@ -47,10 +47,8 @@ void testConstructor() {
   std::unique_ptr<ioda::IodaIO> TestIO;
 
   std::size_t Nlocs;
-  std::size_t Nobs;
   std::size_t Nrecs;
   std::size_t Nvars;
-  std::size_t ExpectedNobs;
   std::size_t ExpectedNlocs;
   std::size_t ExpectedNrecs;
   std::size_t ExpectedNvars;
@@ -69,37 +67,31 @@ void testConstructor() {
 
     // Constructor in read mode is also responsible for setting nobs and nlocs
     ExpectedNlocs = obstypes[i].getInt("Input.metadata.nlocs");
-    ExpectedNobs = obstypes[i].getInt("Input.metadata.nobs");
     ExpectedNrecs = obstypes[i].getInt("Input.metadata.nrecs");
     ExpectedNvars = obstypes[i].getInt("Input.metadata.nvars");
     Nlocs = TestIO->nlocs();
-    Nobs = TestIO->nobs();
     Nrecs = TestIO->nrecs();
     Nvars = TestIO->nvars();
 
     BOOST_CHECK_EQUAL(ExpectedNlocs, Nlocs);
-    BOOST_CHECK_EQUAL(ExpectedNobs, Nobs);
     BOOST_CHECK_EQUAL(ExpectedNrecs, Nrecs);
     BOOST_CHECK_EQUAL(ExpectedNvars, Nvars);
 
     if (obstypes[i].has("Output.filename")) {
       FileName = obstypes[i].getString("Output.filename");
       ExpectedNlocs = obstypes[i].getInt("Output.metadata.nlocs");
-      ExpectedNobs = obstypes[i].getInt("Output.metadata.nobs");
       ExpectedNrecs = obstypes[i].getInt("Output.metadata.nrecs");
       ExpectedNvars = obstypes[i].getInt("Output.metadata.nvars");
 
       TestIO.reset(ioda::IodaIOfactory::Create(FileName, "W", bgn, end, oops::mpi::comm(),
-                                               ExpectedNlocs, ExpectedNobs, ExpectedNrecs, ExpectedNvars));
+                                               ExpectedNlocs, ExpectedNrecs, ExpectedNvars));
       BOOST_CHECK(TestIO.get());
 
       Nlocs = TestIO->nlocs();
-      Nobs = TestIO->nobs();
       Nrecs = TestIO->nrecs();
       Nvars = TestIO->nvars();
 
       BOOST_CHECK_EQUAL(ExpectedNlocs, Nlocs);
-      BOOST_CHECK_EQUAL(ExpectedNobs, Nobs);
       BOOST_CHECK_EQUAL(ExpectedNrecs, Nrecs);
       BOOST_CHECK_EQUAL(ExpectedNvars, Nvars);
       }
@@ -166,13 +158,11 @@ void testWriteVar() {
   std::string TestObsType;
   std::unique_ptr<ioda::IodaIO> TestIO;
   std::size_t Nlocs;
-  std::size_t Nobs;
   std::size_t Nrecs;
   std::size_t Nvars;
   std::unique_ptr<float[]> TestVarData;
 
   std::size_t TestNlocs;
-  std::size_t TestNobs;
   std::size_t TestNrecs;
   std::size_t TestNvars;
 
@@ -191,11 +181,10 @@ void testWriteVar() {
     if (obstypes[i].has("Output.filename")) {
       FileName = obstypes[i].getString("Output.filename");
       Nlocs = obstypes[i].getInt("Output.metadata.nlocs");
-      Nobs = obstypes[i].getInt("Output.metadata.nobs");
       Nrecs = obstypes[i].getInt("Output.metadata.nrecs");
       Nvars = obstypes[i].getInt("Output.metadata.nvars");
       TestIO.reset(ioda::IodaIOfactory::Create(FileName, "W", bgn, end, oops::mpi::comm(),
-                                               Nlocs, Nobs, Nrecs, Nvars));
+                                               Nlocs, Nrecs, Nvars));
 
       // Try writing contrived data into the output file
       varnames = obstypes[i].getStringVector("Output.variables");
@@ -215,12 +204,10 @@ void testWriteVar() {
       TestIO.reset(ioda::IodaIOfactory::Create(FileName, "r", bgn, end, oops::mpi::comm()));
 
       TestNlocs = TestIO->nlocs();
-      TestNobs  = TestIO->nobs();
       TestNrecs = TestIO->nrecs();
       TestNvars = TestIO->nvars();
 
       BOOST_CHECK_EQUAL(TestNlocs, Nlocs);
-      BOOST_CHECK_EQUAL(TestNobs, Nobs);
       BOOST_CHECK_EQUAL(TestNrecs, Nrecs);
       BOOST_CHECK_EQUAL(TestNvars, Nvars);
 
