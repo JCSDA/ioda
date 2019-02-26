@@ -16,7 +16,6 @@ use datetime_mod
 implicit none
 
 private
-public obsspace_get_nobs
 public obsspace_get_nlocs
 public obsspace_get_db
 public obsspace_put_db
@@ -43,17 +42,6 @@ end interface
 
 !-------------------------------------------------------------------------------
 contains
-!-------------------------------------------------------------------------------
-
-!>  Return the number of observations
-
-integer function obsspace_get_nobs(c_dom)
-  implicit none
-  type(c_ptr), intent(in) :: c_dom
-
-  obsspace_get_nobs = c_obsspace_get_nobs(c_dom)
-end function obsspace_get_nobs
-
 !-------------------------------------------------------------------------------
 
 !>  Return the number of observational locations

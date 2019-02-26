@@ -36,7 +36,6 @@ class ObsSpace : public oops::ObsSpaceBase {
   ObsSpace(const ObsSpace &);
   ~ObsSpace();
 
-  std::size_t nobs() const;
   std::size_t nlocs() const;
   std::size_t nvars() const;
 
@@ -66,9 +65,6 @@ class ObsSpace : public oops::ObsSpaceBase {
   const eckit::mpi::Comm & commMPI_;
 
   static std::map < std::string, int > theObsFileCount_;
-
-  /*! \brief number of observation values on this domain */
-  std::size_t nobs_;
 
   /*! \brief number of locations on this domain */
   std:: size_t nlocs_;
