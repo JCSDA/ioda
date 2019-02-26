@@ -33,7 +33,7 @@ static const double missingthreshold = 1.0e08;
 // -----------------------------------------------------------------------------
 /*!
  * \details This constructor will open the netcdf file. If opening in read
- *          mode, the parameters nlocs, nobs, nrecs and nvars will be set
+ *          mode, the parameters nlocs, nrecs and nvars will be set
  *          by querying the size of dimensions of the same names in the input
  *          file. If opening in write mode, the parameters will be set from the
  *          same named arguements to this constructor.
@@ -42,7 +42,6 @@ static const double missingthreshold = 1.0e08;
  * \param[in]  FileMode "r" for read, "w" for overwrite to an existing file
  *                      and "W" for create and write to a new file.
  * \param[in]  Nlocs Number of unique locations in the obs data.
- * \param[in]  Nobs  Number of unique observations in the obs data.
  * \param[in]  Nrecs Number of unique records in the obs data. Records are
  *                   atomic units that will remain intact when obs are
  *                   distributed across muliple process elements. A single
@@ -53,16 +52,16 @@ static const double missingthreshold = 1.0e08;
 NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
                    const util::DateTime & bgn, const util::DateTime & end,
                    const eckit::mpi::Comm & commMPI,
-                   const std::size_t & Nlocs, const std::size_t & Nobs,
-                   const std::size_t & Nrecs, const std::size_t & Nvars)
+                   const std::size_t & Nlocs, const std::size_t & Nrecs,
+                   const std::size_t & Nvars)
                    : IodaIO(commMPI) {
   int retval_;
+  std::string ErrorMsg;
 
   // Set the data members to the file name, file mode and provide a trace message.
   fname_ = FileName;
   fmode_ = FileMode;
   nlocs_ = Nlocs;
-  nobs_  = Nobs;
   nrecs_ = Nrecs;
   nvars_ = Nvars;
   oops::Log::trace() << __func__ << " fname_: " << fname_ << " fmode_: " << fmode_ << std::endl;
@@ -91,55 +90,25 @@ NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
   }
 
   // When in read mode, the constructor is responsible for setting
-  // the data members nlocs_, nobs_, nrecs_, nvars_ and varlist_.
+  // the data members nlocs_, nrecs_, nvars_ and varlist_.
   //
-  // The old files have nobs and optionally nchans.
-  //   If nchans is present, nvars = nchans
-  //   If nchans is not present, nvars = 1
-  //   Then:
-  //     nlocs = nobs / nvars
-  //
-  // The new files have nlocs, nobs, nrecs, nvars.
-  //
-  // The way to tell if you have a new file versus and old file is that
-  // only the new files have a dimension named nrecs.
+  // The files have nlocs, nrecs, nvars.
   //
   // The way to collect the VALID variable names is controlled by developers.
   //
 
   if (fmode_ == "r") {
     // First, check what dimensions we have in the file.
-    retval_ = nc_inq_dimid(ncid_, "nrecs", &nrecs_id_);
-    have_nrecs_ = (retval_ == NC_NOERR);
-    retval_ = nc_inq_dimid(ncid_, "nobs", &nobs_id_);
-    have_nobs_ = (retval_ == NC_NOERR);
-    retval_ = nc_inq_dimid(ncid_, "nlocs", &nlocs_id_);
-    have_nlocs_ = (retval_ == NC_NOERR);
-    retval_ = nc_inq_dimid(ncid_, "nvars", &nvars_id_);
-    have_nvars_ = (retval_ == NC_NOERR);
+    ErrorMsg = "NetcdfIO::NetcdfIO: Unable to read dimension: nrecs";
+    CheckNcCall(nc_inq_dimid(ncid_, "nrecs", &nrecs_id_), ErrorMsg);
+    ErrorMsg = "NetcdfIO::NetcdfIO: Unable to read dimension: nlocs";
+    CheckNcCall(nc_inq_dimid(ncid_, "nlocs", &nlocs_id_), ErrorMsg);
+    ErrorMsg = "NetcdfIO::NetcdfIO: Unable to read dimension: nvars";
+    CheckNcCall(nc_inq_dimid(ncid_, "nvars", &nvars_id_), ErrorMsg);
 
-    retval_ = nc_inq_dimid(ncid_, "nchans", &nchans_id_);
-    have_nchans_ = (retval_ == NC_NOERR);
-
-    if (have_nrecs_) {
-      // nrecs is present --> new file
-      nc_inq_dimlen(ncid_, nlocs_id_, &nfvlen_);
-      nc_inq_dimlen(ncid_, nobs_id_,  &nobs_);
-      nc_inq_dimlen(ncid_, nrecs_id_, &nrecs_);
-      nc_inq_dimlen(ncid_, nvars_id_, &nvars_);
-    } else {
-      // nrecs is not present --> old file
-      nc_inq_dimlen(ncid_, nobs_id_, &nobs_);
-
-      if (have_nchans_) {
-        nc_inq_dimlen(ncid_, nchans_id_, &nvars_);
-      } else {
-        nvars_ = 1;
-      }
-
-      nfvlen_ = nobs_ / nvars_;
-      nrecs_ = nlocs_;
-    }
+    nc_inq_dimlen(ncid_, nlocs_id_, &nfvlen_);
+    nc_inq_dimlen(ncid_, nrecs_id_, &nrecs_);
+    nc_inq_dimlen(ncid_, nvars_id_, &nvars_);
 
     // Apply the round-robin distribution, which yields the size and indices that
     // are to be selected by this process element out of the file.
@@ -148,7 +117,6 @@ NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
     dist_->distribution(comm(), nfvlen_);
 
     // How many variables should be read in ?
-    std::string ErrorMsg;
     int nvarsp;
     ErrorMsg = "NetcdfIO::NetcdfIO: Unable to read number of variables";
     CheckNcCall(nc_inq_nvars(ncid_, &nvarsp), ErrorMsg);
@@ -210,16 +178,14 @@ NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
   }
 
   // When in write mode, create dimensions in the output file based on
-  // nlocs_, nobs_, nrecs_, nvars_.
+  // nlocs_, nrecs_, nvars_.
   if ((fmode_ == "W") || (fmode_ == "w")) {
-    retval_ = nc_def_dim(ncid_, "nlocs", Nlocs, &nlocs_id_);
-    have_nlocs_ = (retval_ == NC_NOERR);
-    retval_ = nc_def_dim(ncid_, "nobs",  Nobs,  &nobs_id_);
-    have_nobs_ = (retval_ == NC_NOERR);
-    retval_ = nc_def_dim(ncid_, "nrecs", Nrecs, &nrecs_id_);
-    have_nrecs_ = (retval_ == NC_NOERR);
-    retval_ = nc_def_dim(ncid_, "nvars", Nvars, &nvars_id_);
-    have_nvars_ = (retval_ == NC_NOERR);
+    ErrorMsg = "NetcdfIO::NetcdfIO: Unable to create dimension: nlocs";
+    CheckNcCall(nc_def_dim(ncid_, "nlocs", Nlocs, &nlocs_id_), ErrorMsg);
+    ErrorMsg = "NetcdfIO::NetcdfIO: Unable to create dimension: nrecs";
+    CheckNcCall(nc_def_dim(ncid_, "nrecs", Nrecs, &nrecs_id_), ErrorMsg);
+    ErrorMsg = "NetcdfIO::NetcdfIO: Unable to create dimension: nvars";
+    CheckNcCall(nc_def_dim(ncid_, "nvars", Nvars, &nvars_id_), ErrorMsg);
     }
   }
 

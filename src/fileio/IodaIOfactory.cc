@@ -24,7 +24,7 @@ namespace ioda {
  * \brief Instantiate a IodaIO object in read mode
  *
  * \details This method will instantiate an object of a IodaIO subclass. This method is
- *          intended to be used when opening a file in a read mode. The Nlocs, Nobs, Nrecs
+ *          intended to be used when opening a file in a read mode. The Nlocs, Nrecs
  *          and Nvars parameters are set to zero which is okay since these will be set
  *          by reading metadata from the input file.
  */
@@ -32,7 +32,7 @@ namespace ioda {
 IodaIO* IodaIOfactory::Create(const std::string & FileName, const std::string & FileMode,
                               const util::DateTime & bgn, const util::DateTime & end,
                               const eckit::mpi::Comm & comm) {
-  return Create(FileName, FileMode, bgn, end, comm, 0, 0, 0, 0);
+  return Create(FileName, FileMode, bgn, end, comm, 0, 0, 0);
 }
 
 //-------------------------------------------------------------------------------------
@@ -40,7 +40,7 @@ IodaIO* IodaIOfactory::Create(const std::string & FileName, const std::string & 
  * \brief Instantiate a IodaIO object in write mode
  *
  * \details This method will instantiate an object of a IodaIO subclass. This method is
- *          intended to be used when opening a file in a write mode. The Nlocs, Nobs, Nrecs
+ *          intended to be used when opening a file in a write mode. The Nlocs, Nrecs
  *          and Nvars parameters are set by the caller in this case. These parameters will
  *          subsequently be used to set metadata in the output file.
  */
@@ -48,8 +48,8 @@ IodaIO* IodaIOfactory::Create(const std::string & FileName, const std::string & 
 IodaIO* IodaIOfactory::Create(const std::string & FileName, const std::string & FileMode,
                               const util::DateTime & bgn, const util::DateTime & end,
                               const eckit::mpi::Comm & comm,
-                              const std::size_t & Nlocs, const std::size_t & Nobs,
-                              const std::size_t & Nrecs, const std::size_t & Nvars) {
+                              const std::size_t & Nlocs, const std::size_t & Nrecs,
+                              const std::size_t & Nvars) {
   std::size_t Spos;
   std::string FileSuffix;
 
@@ -64,10 +64,10 @@ IodaIO* IodaIOfactory::Create(const std::string & FileName, const std::string & 
   // Create the appropriate object depending on the file suffix
   if ((FileSuffix == "nc4") || (FileSuffix == "nc")) {
     return new ioda::NetcdfIO(FileName, FileMode, bgn, end, comm,
-                              Nlocs, Nobs, Nrecs, Nvars);
+                              Nlocs, Nrecs, Nvars);
   } else if (FileSuffix == "odb") {
 #ifdef HAVE_ODB_API
-    return new ioda::OdbApiIO(FileName, bgn, end, FileMode, Nlocs, Nobs, Nrecs, Nvars);
+    return new ioda::OdbApiIO(FileName, bgn, end, FileMode, Nlocs, Nrecs, Nvars);
 #else
     oops::Log::error() << "ioda::IodaIO::Create: ODB API not implemented: "
                        << FileName << std::endl;
