@@ -72,15 +72,12 @@ void testConstructor() {
   obsconf.get("ObsTypes", conf);
 
   for (std::size_t jj = 0; jj < Test_::size(); ++jj) {
-    // Get the numbers of observations (nobs) and locations (nlocs) from the obspace object
-    std::size_t Nobs = Test_::obspace(jj).nobs();
+    // Get the numbers of locations (nlocs) from the obspace object
     std::size_t Nlocs = Test_::obspace(jj).nlocs();
 
-    // Get the expected nobs and nlocs from the obspace object's configuration
-    int ExpectedNobs  = conf[jj].getInt("ObsData.ObsDataIn.metadata.nobs");
+    // Get the expected nlocs from the obspace object's configuration
     int ExpectedNlocs = conf[jj].getInt("ObsData.ObsDataIn.metadata.nlocs");
 
-    BOOST_CHECK_EQUAL(Nobs, ExpectedNobs);
     BOOST_CHECK_EQUAL(Nlocs, ExpectedNlocs);
   }
 }

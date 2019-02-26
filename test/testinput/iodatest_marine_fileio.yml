@@ -13,7 +13,6 @@ ObsTypes:
          - "time"
       metadata:
         nlocs: 160607
-        nobs: 160607
         nrecs: 1
         nvars: 1
         norms:
@@ -30,7 +29,6 @@ ObsTypes:
       variables:
          - "obs_absolute_dynamic_topography"
       metadata:
-        nobs: 160607
         nlocs: 160607
         nrecs: 1
         nvars: 1
@@ -44,7 +42,6 @@ ObsTypes:
          - "time"
       metadata:
         nlocs: 918
-        nobs: 918
         nrecs: 1
         nvars: 1
         norms:
@@ -61,7 +58,6 @@ ObsTypes:
       variables:
          - "insitu_temperature"
       metadata:
-        nobs: 918
         nlocs: 918
         nrecs: 1
         nvars: 1
@@ -75,7 +71,6 @@ ObsTypes:
          - "time"
       metadata:
         nlocs: 223966
-        nobs: 223966
         nrecs: 1
         nvars: 1
         norms:
@@ -92,7 +87,6 @@ ObsTypes:
       variables:
          - "obs_sst"
       metadata:
-        nobs: 223966
         nlocs: 223966
         nrecs: 1
         nvars: 1
@@ -106,7 +100,6 @@ ObsTypes:
          - "time"
       metadata:
         nlocs: 71558
-        nobs: 71558
         nrecs: 1
         nvars: 1
         norms:
@@ -123,7 +116,6 @@ ObsTypes:
       variables:
          - "obs_sea_ice_concentration"
       metadata:
-        nobs: 71558
         nlocs: 71558
         nrecs: 1
         nvars: 1
@@ -137,7 +129,6 @@ ObsTypes:
          - "time"
       metadata:
         nlocs: 8065
-        nobs: 8065
         nrecs: 1
         nvars: 1
         norms:
@@ -154,7 +145,6 @@ ObsTypes:
       variables:
          - "obs_sea_ice_concentration"
       metadata:
-        nobs: 8065
         nlocs: 8065
         nrecs: 1
         nvars: 1

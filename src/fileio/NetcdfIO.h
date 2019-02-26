@@ -52,8 +52,8 @@ class NetcdfIO : public IodaIO,
   NetcdfIO(const std::string & FileName, const std::string & FileMode,
            const util::DateTime & bgn, const util::DateTime & end,
            const eckit::mpi::Comm & comm,
-           const std::size_t & Nlocs, const std::size_t & Nobs,
-           const std::size_t & Nrecs, const std::size_t & Nvars);
+           const std::size_t & Nlocs, const std::size_t & Nrecs,
+           const std::size_t & Nvars);
   ~NetcdfIO();
 
   void ReadVar_any(const std::string & VarName, boost::any * VarData);
@@ -99,58 +99,16 @@ class NetcdfIO : public IodaIO,
   int nvars_id_;
 
   /*!
-   * \brief This data member holds the netcdf id of the "nobs" dimension
-   *        in the opened netcdf file.
-   */
-  int nobs_id_;
-
-  /*!
    * \brief This data member holds the netcdf id of the "nrecs" dimension
    *        in the opened netcdf file.
    */
   int nrecs_id_;
 
   /*!
-   * \brief This data member holds the netcdf id of the "nchans" dimension
-   *        in the opened netcdf file.
-   */
-  int nchans_id_;
-
-  /*!
    * \brief This data member holds the netcdf id of the current dataset (variable)
    *        in the opened netcdf file.
    */
   int nc_varid_;
-
-  /*!
-   * \brief This data member is a flag that indicates the existence of the
-   *        "nlocs" dimension in the opened netcdf file.
-   */
-  bool have_nlocs_;
-
-  /*!
-   * \brief This data member is a flag that indicates the existence of the
-   *        "nvars" dimension in the opened netcdf file.
-   */
-  bool have_nvars_;
-
-  /*!
-   * \brief This data member is a flag that indicates the existence of the
-   *        "nobs" dimension in the opened netcdf file.
-   */
-  bool have_nobs_;
-
-  /*!
-   * \brief This data member is a flag that indicates the existence of the
-   *        "nrecs" dimension in the opened netcdf file.
-   */
-  bool have_nrecs_;
-
-  /*!
-   * \brief This data member is a flag that indicates the existence of the
-   *        "nchans" dimension in the opened netcdf file.
-   */
-  bool have_nchans_;
 
   /*!
    * \brief This data member holds the netcdf id of the current attribute

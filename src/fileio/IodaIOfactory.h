@@ -43,8 +43,8 @@ class IodaIOfactory {
   static ioda::IodaIO* Create(const std::string & FileName, const std::string & FileMode,
                               const util::DateTime & bgn, const util::DateTime & end,
                               const eckit::mpi::Comm & comm,
-                              const std::size_t & Nlocs, const std::size_t & Nobs,
-                              const std::size_t & Nrecs, const std::size_t & Nvars);
+                              const std::size_t & Nlocs, const std::size_t & Nrecs,
+                              const std::size_t & Nvars);
 };
 
 }  // namespace ioda
