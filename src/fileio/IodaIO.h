@@ -27,6 +27,9 @@ namespace eckit {
 
 namespace ioda {
 
+// typedefs
+typedef std::vector<std::tuple<std::string, std::string, std::string>> VarListType;
+
 /*!
  * \brief File access class for IODA
  *
@@ -93,7 +96,7 @@ class IodaIO : public util::Printable {
     std::size_t nrecs() const;
     std::size_t nvars() const;
     const eckit::mpi::Comm & comm() const {return commMPI_;}
-    std::vector<std::tuple<std::string, std::string, std::string>> * varlist();
+    VarListType * varlist();
 
  protected:
     // Methods provided by subclasses
@@ -127,7 +130,7 @@ class IodaIO : public util::Printable {
     std::unique_ptr<Distribution> dist_;
 
     /*! \brief Variable Name : Group Name */
-    std::vector<std::tuple<std::string, std::string, std::string>> vname_group_type_;
+    VarListType vname_group_type_;
 };
 
 }  // namespace ioda

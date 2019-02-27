@@ -30,6 +30,9 @@ namespace eckit {
 
 namespace ioda {
 
+// typedefs
+typedef std::vector<std::tuple<std::string, std::size_t>> DimListType;
+
 /*! \brief Implementation of IodaIO for netcdf.
  *
  * \details The NetcdfIO class defines the constructor and methods for
@@ -105,16 +108,9 @@ class NetcdfIO : public IodaIO,
   int nrecs_id_;
 
   /*!
-   * \brief This data member holds the netcdf id of the current dataset (variable)
-   *        in the opened netcdf file.
+   * \brief dim_list_ dimension information from the input file
    */
-  int nc_varid_;
-
-  /*!
-   * \brief This data member holds the netcdf id of the current attribute
-   *        in the opened netcdf file.
-   */
-  int nc_attid_;
+  DimListType dim_list_;
 
   /*!
    * \brief date (YYMMDD) in NetCDF file
