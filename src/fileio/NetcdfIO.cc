@@ -117,7 +117,7 @@ NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
 
       if (strcmp(NcName, "nlocs") == 0) {
         nlocs_id_ = i;
-        //nlocs_ = NcSize; // Use this when distribution is moved outside
+        // nlocs_ = NcSize; // Use this when distribution is moved outside
         nfvlen_ = NcSize;
       } else if (strcmp(NcName, "nrecs") == 0) {
         nrecs_id_ = i;
