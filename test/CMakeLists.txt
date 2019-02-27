@@ -43,7 +43,6 @@ list( APPEND ioda_test_data
   atmosphere/diag_t_obs_01_wprofiles.odb
   atmosphere/diag_t_obs_01_wprofiles_odb
 
-  atmosphere/aod_obs_2015081000_m.nc4
   atmosphere/aod_obs_2018041500_m.nc4
 
   marine/Jason-2-2018-04-15.nc
