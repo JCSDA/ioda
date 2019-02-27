@@ -116,32 +116,39 @@ NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
     dist_.reset(distFactory->createDistribution("roundrobin"));
     dist_->distribution(comm(), nfvlen_);
 
-    // How many variables should be read in ?
-    int nvarsp;
-    ErrorMsg = "NetcdfIO::NetcdfIO: Unable to read number of variables";
-    CheckNcCall(nc_inq_nvars(ncid_, &nvarsp), ErrorMsg);
-
     // Walk through the variables and determine the VALID variables
-    for (std::size_t varid=0; varid < nvarsp; ++varid) {
-      char name[NC_MAX_NAME+1];
-      int ndimsp;
-      int dimids[NC_MAX_VAR_DIMS];
-      nc_type rh_type;
-      ErrorMsg = "NetcdfIO::NetcdfIO: Unable to read variable of varid: " + std::to_string(varid);
-      CheckNcCall(nc_inq_var(ncid_, varid, name, &rh_type, &ndimsp, dimids, 0), ErrorMsg);
-      // Here is how to define the VALID variables
-      if ((ndimsp == 1) && (dimids[0] == nlocs_id_)) {
-        std::string vname{name};
+    int nc_nvars;
+    ErrorMsg = "NetcdfIO::NetcdfIO: Unable to read number of variables";
+    CheckNcCall(nc_inq_nvars(ncid_, &nc_nvars), ErrorMsg);
+
+    for (std::size_t ivar=0; ivar < nc_nvars; ++ivar) {
+      char nc_vname[NC_MAX_NAME+1];
+      int nc_ndims;
+      int nc_dim_ids[NC_MAX_VAR_DIMS];
+      nc_type nc_dtype;
+      char nc_dtype_name[NC_MAX_NAME+1];
+      std::size_t nc_dtype_size;
+
+      ErrorMsg = "NetcdfIO::NetcdfIO: Unable to read variable number: " + std::to_string(ivar);
+      CheckNcCall(nc_inq_var(ncid_, ivar, nc_vname, &nc_dtype, &nc_ndims, nc_dim_ids, 0), ErrorMsg);
+      ErrorMsg = "NetcdfIO::NetcdfIO: Unable to look up type name";
+      CheckNcCall(nc_inq_type(ncid_, nc_dtype, nc_dtype_name, &nc_dtype_size), ErrorMsg);
+
+      // VALID variable is one with only one dimension which is the nlocs dimension
+      if ((nc_ndims == 1) && (nc_dim_ids[0] == nlocs_id_)) {
+        std::string vname{nc_vname};
         std::string gname{""};
         std::size_t Spos = vname.find("@");
-        if (Spos != vname.npos)
+        if (Spos != vname.npos) {
           gname = vname.substr(Spos+1);
-        vname_group_.push_back(std::make_tuple(vname.substr(0, Spos), gname));
+          vname = vname.substr(0, Spos);
+        }
+        vname_group_type_.push_back(std::make_tuple(vname, gname, nc_dtype_name));
 
         // Hack for date and time
         std::size_t found = vname.find("time");
         if ((found != std::string::npos) && (found == 0))
-          vname_group_.push_back(std::make_tuple("date", gname));
+          vname_group_type_.push_back(std::make_tuple("date", gname, nc_dtype_name));
       }
     }
 
