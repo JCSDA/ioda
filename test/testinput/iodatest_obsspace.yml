@@ -20,20 +20,20 @@ Observations:
       ObsDataIn:
         obsfile: "Data/aod_obs_2018041500_m.nc4"
         metadata:
-          nlocs: 96
+          nlocs: 100
         TestData:
           groups:
-            - "NoGroup"
-            - "NoGroup"
-            - "NoGroup"
+            - "MetaData"
+            - "MetaData"
+            - "MetaData"
           variables:
             - "latitude"
             - "longitude"
             - "datetime"
           norms:
-            - 692.59370160322135
-            - 674.93611992667638
-            - 602928820.6358676
+            - 353.11505923005967
+            - 1981.4147543887036
+            - 614979984.02482653
           tolerance:
             - 1.0e-12
 
