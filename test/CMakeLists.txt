@@ -42,8 +42,9 @@ list( APPEND ioda_test_data
   atmosphere/sondes_obs_2018041500_s.nc4
   atmosphere/diag_t_obs_01_wprofiles.odb
   atmosphere/diag_t_obs_01_wprofiles_odb
+  atmosphere/smap_obs_2018041500_m.nc4
+  atmosphere/gmi_obs_gpm_2018041500_m.nc4
 
-  atmosphere/aod_obs_2015081000_m.nc4
   atmosphere/aod_obs_2018041500_m.nc4
 
   marine/Jason-2-2018-04-15.nc

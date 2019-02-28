@@ -20,20 +20,20 @@ Observations:
       ObsDataIn:
         obsfile: "Data/aod_obs_2018041500_m.nc4"
         metadata:
-          nlocs: 96
+          nlocs: 100
         TestData:
           groups:
-            - "NoGroup"
-            - "NoGroup"
-            - "NoGroup"
+            - "MetaData"
+            - "MetaData"
+            - "MetaData"
           variables:
             - "latitude"
             - "longitude"
             - "datetime"
           norms:
-            - 692.59370160322135
-            - 674.93611992667638
-            - 602928820.6358676
+            - 353.11505923005967
+            - 1981.4147543887036
+            - 614979984.02482653
           tolerance:
             - 1.0e-12
 
@@ -56,6 +56,50 @@ Observations:
             - 384.02339697102406
             - 1511.7891494709127
             - 532637617.75600338
+          tolerance:
+            - 1.0e-12
+
+  - ObsType: "Radiance"
+    ObsData:
+      ObsDataIn:
+        obsfile: "Data/smap_obs_2018041500_m.nc4"
+        metadata:
+          nlocs: 45
+        TestData:
+          groups:
+            - "MetaData"
+            - "MetaData"
+            - "MetaData"
+          variables:
+            - "latitude"
+            - "longitude"
+            - "datetime"
+          norms:
+            - 529.30712749376073
+            - 1103.6169010759827
+            - 412263537.27883768
+          tolerance:
+            - 1.0e-12
+
+  - ObsType: "Radiance"
+    ObsData:
+      ObsDataIn:
+        obsfile: "Data/gmi_obs_gpm_2018041500_m.nc4"
+        metadata:
+          nlocs: 75
+        TestData:
+          groups:
+            - "MetaData"
+            - "MetaData"
+            - "MetaData"
+          variables:
+            - "latitude"
+            - "longitude"
+            - "datetime"
+          norms:
+            - 526.83022956365323
+            - 367.9760257366043
+            - 532517611.31432515
           tolerance:
             - 1.0e-12
 
@@ -82,4 +126,3 @@ Observations:
             - 1.0e-12
       ObsDataOut:
         obsfile: "testoutput/diagout.nc4"
-
