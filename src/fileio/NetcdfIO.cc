@@ -152,22 +152,42 @@ NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
       ErrorMsg = "NetcdfIO::NetcdfIO: Unable to look up type name";
       CheckNcCall(nc_inq_type(ncid_, nc_dtype, nc_dtype_name, &nc_dtype_size), ErrorMsg);
 
+      std::vector<int> NcDimSizes;
+      for (std::size_t j = 0; j < nc_ndims; j++) {
+          NcDimSizes.push_back(std::get<1>(dim_list_[nc_dim_ids[j]]));
+      }
+
+      std::cout << "DEBUG: varlist: nc_vname: " << nc_vname << std::endl;
+
       // VALID variable is one with only one dimension which is the nlocs dimension
       if ((nc_ndims == 1) && (nc_dim_ids[0] == nlocs_id_)) {
         std::string vname{nc_vname};
-        std::string gname{""};
+        std::string gname{"GroupUndefined"};
         std::size_t Spos = vname.find("@");
         if (Spos != vname.npos) {
           gname = vname.substr(Spos+1);
           vname = vname.substr(0, Spos);
         }
-        vname_group_type_.push_back(std::make_tuple(vname, gname, nc_dtype_name));
+        std::cout << "DEBUG: put into map: vname, gname: " << vname << ", "
+                  << gname << std::endl;
+        var_info_[vname].gname = gname;
+        var_info_[vname].dtype = nc_dtype_name;
+        var_info_[vname].shape = NcDimSizes;
 
         // Hack for date and time
         std::size_t found = vname.find("time");
-        if ((found != std::string::npos) && (found == 0))
-          vname_group_type_.push_back(std::make_tuple("date", gname, nc_dtype_name));
+        if ((found != std::string::npos) && (found == 0)) {
+          var_info_["date"].gname = gname;
+          var_info_["date"].dtype = nc_dtype_name;
+          var_info_["date"].shape = NcDimSizes;
+        }
       }
+    }
+
+    for (VarInfoMap::const_iterator iter = var_info_.begin(); iter != var_info_.end(); iter++) {
+      std::cout << "DEBUG: var list: vname, gname, dtype, shape: " << iter->first
+                << ", " << iter->second.gname << ", " << iter->second.dtype << ", "
+                << iter->second.shape << std::endl;
     }
 
     // Calculate the date and time and filter out the obs. outside of window

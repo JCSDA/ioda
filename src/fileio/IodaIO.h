@@ -8,9 +8,9 @@
 #ifndef FILEIO_IODAIO_H_
 #define FILEIO_IODAIO_H_
 
+#include <map>
 #include <memory>
 #include <string>
-#include <tuple>
 #include <vector>
 
 #include <boost/any.hpp>
@@ -28,7 +28,16 @@ namespace eckit {
 namespace ioda {
 
 // typedefs
-typedef std::vector<std::tuple<std::string, std::string, std::string>> VarListType;
+
+// Map keyed by variable name whose values are structs holding information related
+// each variable. Information includes group name, data type and shape.
+typedef struct {
+        std::string gname;
+        std::string dtype;
+        std::vector<int> shape;
+        } VarInfoRec;
+
+typedef std::map<std::string, VarInfoRec> VarInfoMap;
 
 /*!
  * \brief File access class for IODA
@@ -96,7 +105,7 @@ class IodaIO : public util::Printable {
     std::size_t nrecs() const;
     std::size_t nvars() const;
     const eckit::mpi::Comm & comm() const {return commMPI_;}
-    VarListType * varlist();
+    VarInfoMap * varlist();
 
  protected:
     // Methods provided by subclasses
@@ -130,7 +139,7 @@ class IodaIO : public util::Printable {
     std::unique_ptr<Distribution> dist_;
 
     /*! \brief Variable Name : Group Name */
-    VarListType vname_group_type_;
+    VarInfoMap var_info_;
 };
 
 }  // namespace ioda
