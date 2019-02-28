@@ -88,23 +88,66 @@ ObsTypes:
         tnorm: 1.45496e+06
         tolerance:  1.0e-3
 
+  - ObsType: "Radiance"
+    Input:
+      filename: "Data/smap_obs_2018041500_m.nc4"
+      variables:
+         - "latitude@MetaData"
+         - "longitude@MetaData"
+         - "time@MetaData"
+      metadata:
+        nobs: 180
+        nlocs: 45
+        nrecs: 45
+        nvars: 4
+        norms:
+          - 529.307068
+          - 1103.61707
+          - 1.901775
+        tolerance: 1.0e-3
+      datetime:
+        dnorm: 135374336
+        tnorm: 11294.7354
+        tolerance:  1.0e-3
+  - ObsType: "Radiance"
+    Input:
+      filename: "Data/gmi_obs_gpm_2018041500_m.nc4"
+      variables:
+         - "latitude@MetaData"
+         - "longitude@MetaData"
+         - "time@MetaData"
+      metadata:
+        nobs: 975
+        nlocs: 75
+        nrecs: 75
+        nvars: 13
+        norms:
+          - 526.830322
+          - 367.976013
+          - 12.860713
+        tolerance: 1.0e-3
+      datetime:
+        dnorm: 174767536
+        tnorm: 1211441.88
+        tolerance:  1.0e-3
+
   - ObsType: "Aod"
     Input:
       filename: "Data/aod_obs_2018041500_m.nc4"
       variables:
-         - "latitude"
-         - "longitude"
-         - "time"
+         - "latitude@MetaData"
+         - "longitude@MetaData"
+         - "time@MetaData"
       metadata:
         nlocs: 100
         nrecs: 100
-        nvars: 11
+        nvars: 1
         norms:
-          - 705.164
-          - 708.316
-          - 19.7100
+          - 353.115021
+          - 1981.41492
+          - 14.1863384
         tolerance: 1.0e-3
       datetime:
-        dnorm: 2.01804e+08
-        tnorm: 2.21777e+06
+        dnorm: 201804096
+        tnorm: 1581849.12
         tolerance:  1.0e-3
