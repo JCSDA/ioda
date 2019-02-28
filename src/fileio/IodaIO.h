@@ -29,15 +29,15 @@ namespace ioda {
 
 // typedefs
 
-// Map keyed by variable name whose values are structs holding information related
-// each variable. Information includes group name, data type and shape.
+// Container for information about a variable. Use a nested map structure with the group
+// name for the key in the outer nest, and the variable name for the key in the inner
+// nest. Information that is recorded is the variable data type and shape.
 typedef struct {
-        std::string gname;
         std::string dtype;
         std::vector<int> shape;
         } VarInfoRec;
-
 typedef std::map<std::string, VarInfoRec> VarInfoMap;
+typedef std::map<std::string, VarInfoMap> GroupVarInfoMap;
 
 /*!
  * \brief File access class for IODA
@@ -105,7 +105,7 @@ class IodaIO : public util::Printable {
     std::size_t nrecs() const;
     std::size_t nvars() const;
     const eckit::mpi::Comm & comm() const {return commMPI_;}
-    VarInfoMap * varlist();
+    GroupVarInfoMap * group_var_info();
 
  protected:
     // Methods provided by subclasses
@@ -139,7 +139,7 @@ class IodaIO : public util::Printable {
     std::unique_ptr<Distribution> dist_;
 
     /*! \brief Variable Name : Group Name */
-    VarInfoMap var_info_;
+    GroupVarInfoMap grp_var_info_;
 };
 
 }  // namespace ioda
