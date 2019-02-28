@@ -37,9 +37,9 @@ namespace ioda {
     std::unique_ptr<boost::any[]> vect;
     std::string group, variable, db_name;
 
-    for (GroupVarInfoMap::const_iterator igrp = (fileio->group_var_info())->begin();
-         igrp != (fileio->group_var_info())->end(); ++igrp) {
-      for (VarInfoMap::const_iterator ivar = igrp->second.begin();
+    for (IodaIO::const_group_iter igrp = fileio->const_group_begin();
+         igrp != fileio->const_group_end(); ++igrp) {
+      for (IodaIO::const_var_iter ivar = igrp->second.begin();
            ivar != igrp->second.end(); ++ivar) {
         // Revisit here, improve the readability
         group = igrp->first;

@@ -27,18 +27,6 @@ namespace eckit {
 
 namespace ioda {
 
-// typedefs
-
-// Container for information about a variable. Use a nested map structure with the group
-// name for the key in the outer nest, and the variable name for the key in the inner
-// nest. Information that is recorded is the variable data type and shape.
-typedef struct {
-        std::string dtype;
-        std::vector<int> shape;
-        } VarInfoRec;
-typedef std::map<std::string, VarInfoRec> VarInfoMap;
-typedef std::map<std::string, VarInfoMap> GroupVarInfoMap;
-
 /*!
  * \brief File access class for IODA
  *
@@ -79,6 +67,19 @@ typedef std::map<std::string, VarInfoMap> GroupVarInfoMap;
  */
 
 class IodaIO : public util::Printable {
+ protected:
+    // typedefs - these need to defined here before the public typedefs that use them
+
+    // Container for information about a variable. Use a nested map structure with the group
+    // name for the key in the outer nest, and the variable name for the key in the inner
+    // nest. Information that is recorded is the variable data type and shape.
+    typedef struct {
+      std::string dtype;
+      std::vector<int> shape;
+    } VarInfoRec;
+    typedef std::map<std::string, VarInfoRec> VarInfoMap;
+    typedef std::map<std::string, VarInfoMap> GroupVarInfoMap;
+
  public:
     explicit IodaIO(const eckit::mpi::Comm &);
     virtual ~IodaIO() = 0;
@@ -105,7 +106,17 @@ class IodaIO : public util::Printable {
     std::size_t nrecs() const;
     std::size_t nvars() const;
     const eckit::mpi::Comm & comm() const {return commMPI_;}
-    GroupVarInfoMap * group_var_info();
+
+    // iterators for walking through GroupVarInfoMap
+    typedef GroupVarInfoMap::iterator group_iter;
+    typedef GroupVarInfoMap::const_iterator const_group_iter;
+    group_iter group_begin() { return grp_var_info_.begin(); }
+    group_iter group_end()   { return grp_var_info_.end(); }
+    const_group_iter const_group_begin() { return grp_var_info_.begin(); }
+    const_group_iter const_group_end()   { return grp_var_info_.end(); }
+
+    typedef VarInfoMap::iterator var_iter;
+    typedef VarInfoMap::const_iterator const_var_iter;
 
  protected:
     // Methods provided by subclasses
