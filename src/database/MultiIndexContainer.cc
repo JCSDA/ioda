@@ -37,19 +37,22 @@ namespace ioda {
     std::unique_ptr<boost::any[]> vect;
     std::string group, variable, db_name;
 
-    for (VarInfoMap::const_iterator iter = (fileio->varlist())->begin();
-         iter != (fileio->varlist())->end(); ++iter) {
-      // Revisit here, improve the readability
-      variable = iter->first;
-      group = iter->second.gname;
-      db_name = variable;
-      if (group.compare("GroupUndefined") != 0) {
+    for (GroupVarInfoMap::const_iterator igrp = (fileio->group_var_info())->begin();
+         igrp != (fileio->group_var_info())->end(); ++igrp) {
+      for (VarInfoMap::const_iterator ivar = igrp->second.begin();
+           ivar != igrp->second.end(); ++ivar) {
+        // Revisit here, improve the readability
+        group = igrp->first;
+        variable = ivar->first;
+        db_name = variable;
+        if (group.compare("GroupUndefined") != 0) {
         db_name = variable + "@" + group;
+        }
+        vect.reset(new boost::any[nlocs()]);
+        fileio->ReadVar_any(db_name, vect.get());
+        // All records read from file are read-only
+        DataContainer.insert({group, variable, "r", nlocs(), vect});
       }
-      vect.reset(new boost::any[nlocs()]);
-      fileio->ReadVar_any(db_name, vect.get());
-      // All records read from file are read-only
-      DataContainer.insert({group, variable, "r", nlocs(), vect});
     }
     oops::Log::trace() << "ioda::ObsSpaceContainer opening file ends " << std::endl;
   }
