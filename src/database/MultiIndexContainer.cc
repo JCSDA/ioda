@@ -37,15 +37,15 @@ namespace ioda {
     std::unique_ptr<boost::any[]> vect;
     std::string group, variable, db_name;
 
-    for (auto iter = (fileio->varlist())->begin(); iter != (fileio->varlist())->end(); ++iter) {
+    for (VarInfoMap::const_iterator iter = (fileio->varlist())->begin();
+         iter != (fileio->varlist())->end(); ++iter) {
       // Revisit here, improve the readability
-      group = std::get<1>(*iter);
-      variable = std::get<0>(*iter);
+      variable = iter->first;
+      group = iter->second.gname;
       db_name = variable;
-      if (group.size() > 0)
+      if (group.compare("GroupUndefined") != 0) {
         db_name = variable + "@" + group;
-      else
-        group = "GroupUndefined";
+      }
       vect.reset(new boost::any[nlocs()]);
       fileio->ReadVar_any(db_name, vect.get());
       // All records read from file are read-only

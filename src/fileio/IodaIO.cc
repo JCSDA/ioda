@@ -74,8 +74,8 @@ std::size_t IodaIO::nvars() const {
  * \details This method returns the list of VALID variables in the obs data.
  */
 
-VarListType * IodaIO::varlist() {
-  return &vname_group_type_;
+VarInfoMap * IodaIO::varlist() {
+  return &var_info_;
 }
 
 }  // namespace ioda
