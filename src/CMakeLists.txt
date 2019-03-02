@@ -11,8 +11,8 @@ ioda/obsspace_f.cc
 ioda/obsspace_f.h
 ioda/obsspace_mod.F90
 
-database/MultiIndexContainer.cc
-database/MultiIndexContainer.h
+database/ObsSpaceContainer.cc
+database/ObsSpaceContainer.h
 
 distribution/Distribution.cc
 distribution/Distribution.h

@@ -85,18 +85,10 @@ class IodaIO : public util::Printable {
     virtual ~IodaIO() = 0;
 
     // Methods provided by subclasses
-    virtual void ReadVar_any(const std::string & VarName, boost::any * VarData) = 0;
+    virtual void ReadVar(const std::string & VarName, boost::any * VarData) = 0;
+    virtual void WriteVar(const std::string & VarName, boost::any * VarData) = 0;
 
-    virtual void ReadVar(const std::string & VarName, int* VarData) = 0;
-    virtual void ReadVar(const std::string & VarName, float* VarData) = 0;
-    virtual void ReadVar(const std::string & VarName, double* VarData) = 0;
-
-    virtual void WriteVar_any(const std::string & VarName, boost::any * VarData) = 0;
-    virtual void WriteVar(const std::string & VarName, int* VarData) = 0;
-    virtual void WriteVar(const std::string & VarName, float* VarData) = 0;
-    virtual void WriteVar(const std::string & VarName, double* VarData) = 0;
-
-    virtual void ReadDateTime(uint64_t* VarDate, int* VarTime)= 0;
+    virtual void ReadDateTime(uint64_t * VarDate, int * VarTime)= 0;
 
     // Methods inherited from base class
     std::string fname() const;
@@ -107,16 +99,17 @@ class IodaIO : public util::Printable {
     std::size_t nvars() const;
     const eckit::mpi::Comm & comm() const {return commMPI_;}
 
-    // iterators for walking through GroupVarInfoMap
-    typedef GroupVarInfoMap::iterator group_iter;
-    typedef GroupVarInfoMap::const_iterator const_group_iter;
-    group_iter group_begin() { return grp_var_info_.begin(); }
-    group_iter group_end()   { return grp_var_info_.end(); }
-    const_group_iter const_group_begin() { return grp_var_info_.begin(); }
-    const_group_iter const_group_end()   { return grp_var_info_.end(); }
+    // Access at the group level to the GroupVarInfoMap
+    typedef GroupVarInfoMap::const_iterator GroupIter;
+    GroupIter group_begin();
+    GroupIter group_end();
+    std::string group_name(GroupIter);
 
-    typedef VarInfoMap::iterator var_iter;
-    typedef VarInfoMap::const_iterator const_var_iter;
+    // Access at the variable level to the GroupVarInfoMap
+    typedef VarInfoMap::const_iterator VarIter;
+    VarIter var_begin(GroupIter);
+    VarIter var_end(GroupIter);
+    std::string var_name(VarIter);
 
  protected:
     // Methods provided by subclasses

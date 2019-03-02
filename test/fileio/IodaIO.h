@@ -13,6 +13,7 @@
 
 #include <string>
 #include <cmath>
+#include <typeinfo>
 
 #define BOOST_TEST_NO_MAIN
 #define BOOST_TEST_ALTERNATIVE_INIT_API
@@ -20,6 +21,8 @@
 #include <boost/test/unit_test.hpp>
 
 #include <boost/noncopyable.hpp>
+
+#include <boost/any.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/parallel/mpi/mpi.h"
@@ -111,7 +114,7 @@ void testReadVar() {
   std::string TestObsType;
   std::unique_ptr<ioda::IodaIO> TestIO;
   std::size_t Vsize;
-  std::unique_ptr<float[]> TestVarData;
+  std::unique_ptr<boost::any[]> TestVarData;
   float Vnorm;
   float Tol;
 
@@ -131,14 +134,19 @@ void testReadVar() {
     ExpectedVnorms = obstypes[i].getFloatVector("Input.metadata.norms");
     Tol = obstypes[i].getFloat("Input.metadata.tolerance");
     Vsize = TestIO->nlocs();
-    TestVarData.reset(new float[Vsize]);
+    TestVarData.reset(new boost::any[Vsize]);
     for(std::size_t j = 0; j < varnames.size(); ++j) {
       TestIO->ReadVar(varnames[j], TestVarData.get());
 
+      const std::type_info & TestVarDtype = TestVarData.get()->type();
       // Compute the vector length TestVarData and compare with config values
       Vnorm = 0.0;
       for(std::size_t k = 0; k < Vsize; ++k) {
-        Vnorm += pow(TestVarData.get()[k], 2.0);
+        if (TestVarDtype == typeid(int)) {
+          Vnorm += pow(static_cast<double>(boost::any_cast<int>(TestVarData.get()[k])), 2.0);
+        } else if (TestVarDtype == typeid(float)) {
+          Vnorm += pow(boost::any_cast<float>(TestVarData.get()[k]), 2.0);
+        }
         }
       Vnorm = sqrt(Vnorm);
 
@@ -160,7 +168,7 @@ void testWriteVar() {
   std::size_t Nlocs;
   std::size_t Nrecs;
   std::size_t Nvars;
-  std::unique_ptr<float[]> TestVarData;
+  std::unique_ptr<boost::any[]> TestVarData;
 
   std::size_t TestNlocs;
   std::size_t TestNrecs;
@@ -188,7 +196,7 @@ void testWriteVar() {
 
       // Try writing contrived data into the output file
       varnames = obstypes[i].getStringVector("Output.variables");
-      TestVarData.reset(new float[Nlocs]);
+      TestVarData.reset(new boost::any[Nlocs]);
       ExpectedSum = 0;
       for (std::size_t j = 0; j < Nlocs; ++j) {
         TestVarData.get()[j] = float(j);
@@ -215,7 +223,7 @@ void testWriteVar() {
       for(std::size_t j = 0; j < varnames.size(); ++j) {
         TestIO->ReadVar(varnames[j], TestVarData.get());
         for(std::size_t k = 0; k < Nlocs; ++k) {
-          VarSum += int(TestVarData.get()[k]);
+          VarSum += int(boost::any_cast<float>(TestVarData.get()[k]));
           }
         }
 

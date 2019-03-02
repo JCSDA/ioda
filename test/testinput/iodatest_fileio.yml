@@ -21,7 +21,7 @@ ObsTypes:
         norms:
           - 757.56
           - 1282.69
-          - 4.9349
+          - 1428455.25
         tolerance: 1.0e-3
       datetime:
         dnorm: 2.309753e08
@@ -51,7 +51,7 @@ ObsTypes:
         norms:
           - 766.082
           - 5399.037
-          - 33.197
+          - 3708995.75
         tolerance: 1.0e-3
       datetime:
         dnorm: 4.31879e+08
@@ -81,7 +81,7 @@ ObsTypes:
         norms:
           - 384.023
           - 1511.79
-          - 14.8752
+          - 1454963.25
         tolerance: 1.0e-3
       datetime:
         dnorm: 1.74767e+08
@@ -103,7 +103,7 @@ ObsTypes:
         norms:
           - 529.307068
           - 1103.61707
-          - 1.901775
+          - 11294.7354
         tolerance: 1.0e-3
       datetime:
         dnorm: 135374336
@@ -124,7 +124,7 @@ ObsTypes:
         norms:
           - 526.830322
           - 367.976013
-          - 12.860713
+          - 1211441.88
         tolerance: 1.0e-3
       datetime:
         dnorm: 174767536
@@ -145,7 +145,7 @@ ObsTypes:
         norms:
           - 353.115021
           - 1981.41492
-          - 14.1863384
+          - 1581849.12
         tolerance: 1.0e-3
       datetime:
         dnorm: 201804096

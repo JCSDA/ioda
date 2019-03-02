@@ -19,7 +19,7 @@
 #include "oops/util/Logger.h"
 #include "oops/util/Printable.h"
 
-#include "database/MultiIndexContainer.h"
+#include "database/ObsSpaceContainer.h"
 
 // Forward declarations
 namespace eckit {
@@ -63,8 +63,6 @@ class ObsSpace : public oops::ObsSpaceBase {
   const util::DateTime winbgn_;
   const util::DateTime winend_;
   const eckit::mpi::Comm & commMPI_;
-
-  static std::map < std::string, int > theObsFileCount_;
 
   /*! \brief number of locations on this domain */
   std:: size_t nlocs_;

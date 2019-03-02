@@ -245,7 +245,7 @@ NetcdfIO::~NetcdfIO() {
  * \brief Read data from netcdf file to memory
  *
  * \details The three ReadVar methods are the same with the exception of the
- *          datatype that is being read (integer, float, double). It is the
+ *          datatype that is being read (integer, float, char). It is the
  *          caller's responsibility to allocate memory to hold the data being
  *          read. The caller then passes a pointer to that memory for the VarData
  *          argument.
@@ -254,7 +254,7 @@ NetcdfIO::~NetcdfIO() {
  * \param[out] VarData Pointer to memory that will receive the file data
  */
 
-void NetcdfIO::ReadVar_any(const std::string & VarName, boost::any * VarData) {
+void NetcdfIO::ReadVar(const std::string & VarName, boost::any * VarData) {
   std::string ErrorMsg;
   nc_type vartype;
   int nc_varid_;
@@ -281,20 +281,22 @@ void NetcdfIO::ReadVar_any(const std::string & VarName, boost::any * VarData) {
   ErrorMsg = "NetcdfIO::ReadVar_any: Netcdf dataset not found: " + VarName;
   CheckNcCall(nc_inq_varid(ncid_, VarName.c_str(), &nc_varid_), ErrorMsg);
 
+  ErrorMsg = "NetcdfIO::ReadVar: Unable to determine variable data type: " + VarName;
   CheckNcCall(nc_inq_vartype(ncid_, nc_varid_, &vartype), ErrorMsg);
 
+  ErrorMsg = "NetcdfIO::ReadVar: Unable to read dataset: " + VarName;
   switch (vartype) {
     case NC_INT: {
 //    Could be missing int values as well
       std::unique_ptr<int[]> iData{new int[nfvlen_]};
-      ReadVar(VarName.c_str(), iData.get());
+      CheckNcCall(nc_get_var_int(ncid_, nc_varid_, iData.get()), ErrorMsg);
       for (std::size_t ii = 0; ii < dist_->size(); ++ii)
         VarData[ii] = iData.get()[dist_->index()[ii]];
       break;
     }
     case NC_FLOAT: {
       std::unique_ptr<float[]> rData{new float[nfvlen_]};
-      ReadVar(VarName.c_str(), rData.get());
+      CheckNcCall(nc_get_var_float(ncid_, nc_varid_, rData.get()), ErrorMsg);
       for (std::size_t ii = 0; ii < dist_->size(); ++ii) {
         VarData[ii] = rData.get()[dist_->index()[ii]];
         if (boost::any_cast<float>(VarData[ii]) > missingthreshold) {  // not safe enough
@@ -305,7 +307,7 @@ void NetcdfIO::ReadVar_any(const std::string & VarName, boost::any * VarData) {
     }
     case NC_DOUBLE: {
       std::unique_ptr<double[]> dData{new double[nfvlen_]};
-      ReadVar(VarName.c_str(), dData.get());
+      CheckNcCall(nc_get_var_double(ncid_, nc_varid_, dData.get()), ErrorMsg);
       for (std::size_t ii = 0; ii < dist_->size(); ++ii) {
         /* Force double to float */
         VarData[ii] = static_cast<float>(dData.get()[dist_->index()[ii]]);
@@ -323,56 +325,11 @@ void NetcdfIO::ReadVar_any(const std::string & VarName, boost::any * VarData) {
 }
 
 // -----------------------------------------------------------------------------
-
-void NetcdfIO::ReadVar(const std::string & VarName, int* VarData) {
-  oops::Log::trace() << __func__ << " VarName: " << VarName << std::endl;
-
-  std::string ErrorMsg;
-  int nc_varid_;
-
-  ErrorMsg = "NetcdfIO::ReadVar: Netcdf dataset not found: " + VarName;
-  CheckNcCall(nc_inq_varid(ncid_, VarName.c_str(), &nc_varid_), ErrorMsg);
-
-  ErrorMsg = "NetcdfIO::ReadVar: Unable to read dataset: " + VarName;
-  CheckNcCall(nc_get_var_int(ncid_, nc_varid_, VarData), ErrorMsg);
-}
-
-// -----------------------------------------------------------------------------
-
-void NetcdfIO::ReadVar(const std::string & VarName, float* VarData) {
-  oops::Log::trace() << __func__ << " VarName: " << VarName << std::endl;
-
-  std::string ErrorMsg;
-  int nc_varid_;
-
-  ErrorMsg = "NetcdfIO::ReadVar: Netcdf dataset not found: " + VarName;
-  CheckNcCall(nc_inq_varid(ncid_, VarName.c_str(), &nc_varid_), ErrorMsg);
-
-  ErrorMsg = "NetcdfIO::ReadVar: Unable to read dataset: " + VarName;
-  CheckNcCall(nc_get_var_float(ncid_, nc_varid_, VarData), ErrorMsg);
-}
-
-// -----------------------------------------------------------------------------
-
-void NetcdfIO::ReadVar(const std::string & VarName, double* VarData) {
-  oops::Log::trace() << __func__ << " VarName: " << VarName << std::endl;
-
-  std::string ErrorMsg;
-  int nc_varid_;
-
-  ErrorMsg = "NetcdfIO::ReadVar: Netcdf dataset not found: " + VarName;
-  CheckNcCall(nc_inq_varid(ncid_, VarName.c_str(), &nc_varid_), ErrorMsg);
-
-  ErrorMsg = "NetcdfIO::ReadVar: Unable to read dataset: " + VarName;
-  CheckNcCall(nc_get_var_double(ncid_, nc_varid_, VarData), ErrorMsg);
-}
-
-// -----------------------------------------------------------------------------
 /*!
  * \brief Write data from memory to netcdf file
  *
  * \details The three WriteVar methods are the same with the exception of the
- *          datatype that is being written (integer, float, double). It is the
+ *          datatype that is being written (integer, float, char). It is the
  *          caller's responsibility to allocate and assign memory to the data
  *          that are to be written. The caller then passes a pointer to that
  *          memory for the VarData argument.
@@ -381,82 +338,51 @@ void NetcdfIO::ReadVar(const std::string & VarName, double* VarData) {
  * \param[in]  VarData Pointer to memory that will be written into the file
  */
 
-void NetcdfIO::WriteVar_any(const std::string & VarName, boost::any * VarData) {
+void NetcdfIO::WriteVar(const std::string & VarName, boost::any * VarData) {
+  std::string ErrorMsg;
   const std::type_info & typeInput = VarData->type();
+  nc_type NcVarType;
+  int nc_varid_;
 
+  // Limit types to int, float and double for now
   if (typeInput == typeid(int)) {
+    NcVarType = NC_INT;
+  } else if (typeInput == typeid(float)) {
+    NcVarType = NC_FLOAT;
+  } else if (typeInput == typeid(double)) {
+    NcVarType = NC_DOUBLE;
+  } else {
+    oops::Log::warning() <<  "NetcdfIO::WriteVar_any: Unable to write dataset: "
+                         << " VarName: " << VarName << " with NetCDF type :"
+                         << typeInput.name() << std::endl;
+  }
+
+  // If var doesn't exist in the file, then create it
+  if (nc_inq_varid(ncid_, VarName.c_str(), &nc_varid_) != NC_NOERR) {
+    ErrorMsg = "NetcdfIO::WriteVar: Unable to create variable dataset: " + VarName;
+    CheckNcCall(nc_def_var(ncid_, VarName.c_str(), NcVarType, 1, &nlocs_id_, &nc_varid_),
+                ErrorMsg);
+  }
+
+  // Write the data into the file according to type
+  ErrorMsg = "NetcdfIO::WriteVar: Unable to write dataset: " + VarName;
+  if (NcVarType == NC_INT) {
     std::unique_ptr<int[]> iData{new int[nlocs()]};
     for (std::size_t ii = 0; ii < nlocs(); ++ii)
       iData.get()[ii] = boost::any_cast<int>(VarData[ii]);
-    WriteVar(VarName.c_str(), iData.get());
-  } else if (typeInput == typeid(float)) {
+    CheckNcCall(nc_put_var_int(ncid_, nc_varid_, iData.get()), ErrorMsg);
+  } else if (NcVarType == NC_FLOAT) {
     std::unique_ptr<float[]> fData{new float[nlocs()]};
     for (std::size_t ii = 0; ii < nlocs(); ++ii)
       fData.get()[ii] = boost::any_cast<float>(VarData[ii]);
-    WriteVar(VarName.c_str(), fData.get());
-  } else if (typeInput == typeid(double)) {
+    CheckNcCall(nc_put_var_float(ncid_, nc_varid_, fData.get()), ErrorMsg);
+  } else if (NcVarType == NC_DOUBLE) {
     std::unique_ptr<double[]> dData{new double[nlocs()]};
     for (std::size_t ii = 0; ii < nlocs(); ++ii)
       dData.get()[ii] = boost::any_cast<double>(VarData[ii]);
-    WriteVar(VarName.c_str(), dData.get());
-  } else {
-      oops::Log::warning() <<  "NetcdfIO::WriteVar_any: Unable to write dataset: "
-                           << " VarName: " << VarName << " with NetCDF type :"
-                           << typeInput.name() << std::endl;
+    CheckNcCall(nc_put_var_double(ncid_, nc_varid_, dData.get()), ErrorMsg);
   }
 }
-
-void NetcdfIO::WriteVar(const std::string & VarName, int* VarData) {
-  oops::Log::trace() << __func__ << " VarName: " << VarName << std::endl;
-
-  std::string ErrorMsg;
-  int nc_varid_;
-
-  if (nc_inq_varid(ncid_, VarName.c_str(), &nc_varid_) != NC_NOERR) {
-    // Var does not exist, so create it
-    ErrorMsg = "NetcdfIO::WriteVar: Unable to create variable dataset: " + VarName;
-    CheckNcCall(nc_def_var(ncid_, VarName.c_str(), NC_INT, 1, &nlocs_id_, &nc_varid_), ErrorMsg);
-  }
-
-  ErrorMsg = "NetcdfIO::WriteVar: Unable to write dataset: " + VarName;
-  CheckNcCall(nc_put_var_int(ncid_, nc_varid_, VarData), ErrorMsg);
-  }
-
-// -----------------------------------------------------------------------------
-
-void NetcdfIO::WriteVar(const std::string & VarName, float* VarData) {
-  oops::Log::trace() << __func__ << " VarName: " << VarName << std::endl;
-
-  std::string ErrorMsg;
-  int nc_varid_;
-
-  if (nc_inq_varid(ncid_, VarName.c_str(), &nc_varid_) != NC_NOERR) {
-    // Var does not exist, so create it
-    ErrorMsg = "NetcdfIO::WriteVar: Unable to create variable dataset: " + VarName;
-    CheckNcCall(nc_def_var(ncid_, VarName.c_str(), NC_FLOAT, 1, &nlocs_id_, &nc_varid_), ErrorMsg);
-  }
-
-  ErrorMsg = "NetcdfIO::WriteVar: Unable to write dataset: " + VarName;
-  CheckNcCall(nc_put_var_float(ncid_, nc_varid_, VarData), ErrorMsg);
-  }
-
-// -----------------------------------------------------------------------------
-
-void NetcdfIO::WriteVar(const std::string & VarName, double* VarData) {
-  oops::Log::trace() << __func__ << " VarName: " << VarName << std::endl;
-
-  std::string ErrorMsg;
-  int nc_varid_;
-
-  if (nc_inq_varid(ncid_, VarName.c_str(), &nc_varid_) != NC_NOERR) {
-    // Var does not exist, so create it
-    ErrorMsg = "NetcdfIO::WriteVar: Unable to create variable dataset: " + VarName;
-    CheckNcCall(nc_def_var(ncid_, VarName.c_str(), NC_DOUBLE, 1, &nlocs_id_, &nc_varid_), ErrorMsg);
-  }
-
-  ErrorMsg = "NetcdfIO::WriteVar: Unable to write dataset: " + VarName;
-  CheckNcCall(nc_put_var_double(ncid_, nc_varid_, VarData), ErrorMsg);
-  }
 
 // -----------------------------------------------------------------------------
 /*!
@@ -482,7 +408,7 @@ void NetcdfIO::WriteVar(const std::string & VarName, double* VarData) {
  * \param[out] VarTime Time portion of the timestamp values (hhmmss)
  */
 
-void NetcdfIO::ReadDateTime(uint64_t* VarDate, int* VarTime) {
+void NetcdfIO::ReadDateTime(uint64_t * VarDate, int * VarTime) {
   int Year;
   int Month;
   int Day;
