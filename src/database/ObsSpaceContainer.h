@@ -5,8 +5,8 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#ifndef DATABASE_MULTIINDEXCONTAINER_H_
-#define DATABASE_MULTIINDEXCONTAINER_H_
+#ifndef DATABASE_OBSSPACECONTAINER_H_
+#define DATABASE_OBSSPACECONTAINER_H_
 
 #include <algorithm>
 #include <iostream>
@@ -212,4 +212,4 @@ class ObsSpaceContainer: public util::Printable {
 
 }  // namespace ioda
 
-#endif  // DATABASE_MULTIINDEXCONTAINER_H_
+#endif  // DATABASE_OBSSPACECONTAINER_H_

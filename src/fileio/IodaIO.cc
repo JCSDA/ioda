@@ -69,4 +69,64 @@ std::size_t IodaIO::nvars() const {
   return nvars_;
 }
 
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns the begin iterator for the groups contained
+ *          in the group, variable information map.
+ */
+
+IodaIO::GroupIter IodaIO::group_begin() {
+  return grp_var_info_.begin();
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns the end iterator for the groups contained
+ *          in the group, variable information map.
+ */
+
+IodaIO::GroupIter IodaIO::group_end() {
+  return grp_var_info_.end();
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns the group name for the current iteration
+ *          in the group, variable information map.
+ */
+
+std::string IodaIO::group_name(IodaIO::GroupIter igrp) {
+  return igrp->first;
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns the begin iterator for the variables, of a
+ *          particular group, contained in the group, variable information map.
+ */
+
+IodaIO::VarIter IodaIO::var_begin(GroupIter igrp) {
+  return igrp->second.begin();
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns the end iterator for the variables, of a
+ *          particular group, contained in the group, variable information map.
+ */
+
+IodaIO::VarIter IodaIO::var_end(GroupIter igrp) {
+  return igrp->second.end();
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns the variable name for the current iteration
+ *          in the group, variable information map.
+ */
+
+std::string IodaIO::var_name(IodaIO::VarIter ivar) {
+  return ivar->first;
+}
+
 }  // namespace ioda

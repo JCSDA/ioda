@@ -8,7 +8,6 @@
 #ifndef FILEIO_NETCDFIO_H_
 #define FILEIO_NETCDFIO_H_
 
-
 #include <string>
 #include <tuple>
 #include <vector>
@@ -60,25 +59,17 @@ class NetcdfIO : public IodaIO,
            const std::size_t & Nvars);
   ~NetcdfIO();
 
-  void ReadVar_any(const std::string & VarName, boost::any * VarData);
+  void ReadVar(const std::string & VarName, boost::any * VarData);
+  void WriteVar(const std::string & VarName, boost::any * VarData);
 
-  void ReadVar(const std::string & VarName, int* VarData);
-  void ReadVar(const std::string & VarName, float* VarData);
-  void ReadVar(const std::string & VarName, double* VarData);
-
-  void WriteVar_any(const std::string & VarName, boost::any * VarData);
-  void WriteVar(const std::string & VarName, int* VarData);
-  void WriteVar(const std::string & VarName, float* VarData);
-  void WriteVar(const std::string & VarName, double* VarData);
-
-  void ReadDateTime(uint64_t* VarDate, int* VarTime);
-  void ReadDateTime(util::DateTime[]);
+  void ReadDateTime(uint64_t * VarDate, int * VarTime);
+  void ReadDateTime(util::DateTime VarDateTime[]);
 
  private:
   // For the oops::Printable base class
   void print(std::ostream & os) const;
 
-  void CheckNcCall(int, std::string &);
+  void CheckNcCall(int RetCode, std::string & ErrorMsg);
 
   // Data members
   /*!

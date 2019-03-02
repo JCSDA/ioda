@@ -5,7 +5,7 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#include "database/MultiIndexContainer.h"
+#include "database/ObsSpaceContainer.h"
 #include "fileio/IodaIO.h"
 #include "fileio/IodaIOfactory.h"
 
@@ -37,19 +37,19 @@ namespace ioda {
     std::unique_ptr<boost::any[]> vect;
     std::string group, variable, db_name;
 
-    for (IodaIO::const_group_iter igrp = fileio->const_group_begin();
-         igrp != fileio->const_group_end(); ++igrp) {
-      for (IodaIO::const_var_iter ivar = igrp->second.begin();
-           ivar != igrp->second.end(); ++ivar) {
+    for (IodaIO::GroupIter igrp = fileio->group_begin();
+                           igrp != fileio->group_end(); ++igrp) {
+      for (IodaIO::VarIter ivar = fileio->var_begin(igrp);
+                           ivar != fileio->var_end(igrp); ++ivar) {
         // Revisit here, improve the readability
-        group = igrp->first;
-        variable = ivar->first;
+        group = fileio->group_name(igrp);
+        variable = fileio->var_name(ivar);
         db_name = variable;
         if (group.compare("GroupUndefined") != 0) {
         db_name = variable + "@" + group;
         }
         vect.reset(new boost::any[nlocs()]);
-        fileio->ReadVar_any(db_name, vect.get());
+        fileio->ReadVar(db_name, vect.get());
         // All records read from file are read-only
         DataContainer.insert({group, variable, "r", nlocs(), vect});
       }
@@ -207,7 +207,7 @@ namespace ioda {
     // List all records and write out the every record
     auto & var = DataContainer.get<ObsSpaceContainer::by_variable>();
     for (auto iter = var.begin(); iter != var.end(); ++iter)
-      fileio->WriteVar_any(iter->variable + "@" + iter->group, iter->data.get());
+      fileio->WriteVar(iter->variable + "@" + iter->group, iter->data.get());
   }
 
 // -----------------------------------------------------------------------------
