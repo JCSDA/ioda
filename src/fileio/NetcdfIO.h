@@ -53,14 +53,14 @@ class NetcdfIO : public IodaIO,
   static const std::string classname() {return "ioda::NetcdfIO";}
 
   NetcdfIO(const std::string & FileName, const std::string & FileMode,
-           const util::DateTime & bgn, const util::DateTime & end,
-           const eckit::mpi::Comm & comm,
            const std::size_t & Nlocs, const std::size_t & Nrecs,
            const std::size_t & Nvars);
   ~NetcdfIO();
 
-  void ReadVar(const std::string & VarName, boost::any * VarData);
-  void WriteVar(const std::string & VarName, boost::any * VarData);
+  void ReadVar(const std::string & GroupName, const std::string & VarName,
+               boost::any * VarData);
+  void WriteVar(const std::string & GroupName, const std::string & VarName,
+               boost::any * VarData);
 
   void ReadDateTime(uint64_t * VarDate, int * VarTime);
   void ReadDateTime(util::DateTime VarDateTime[]);

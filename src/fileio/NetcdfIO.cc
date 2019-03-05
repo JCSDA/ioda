@@ -50,11 +50,8 @@ static const double missingthreshold = 1.0e08;
  */
 
 NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
-                   const util::DateTime & bgn, const util::DateTime & end,
-                   const eckit::mpi::Comm & commMPI,
                    const std::size_t & Nlocs, const std::size_t & Nrecs,
-                   const std::size_t & Nvars)
-                   : IodaIO(commMPI) {
+                   const std::size_t & Nvars) {
   int retval_;
   std::string ErrorMsg;
 
@@ -117,8 +114,7 @@ NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
 
       if (strcmp(NcName, "nlocs") == 0) {
         nlocs_id_ = i;
-        // nlocs_ = NcSize; // Use this when distribution is moved outside
-        nfvlen_ = NcSize;
+        nlocs_ = NcSize;
       } else if (strcmp(NcName, "nrecs") == 0) {
         nrecs_id_ = i;
         nrecs_ = NcSize;
@@ -128,11 +124,11 @@ NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
       }
     }
 
-    // Apply the round-robin distribution, which yields the size and indices that
-    // are to be selected by this process element out of the file.
-    DistributionFactory * distFactory;
-    dist_.reset(distFactory->createDistribution("roundrobin"));
-    dist_->distribution(comm(), nfvlen_);
+//    // Apply the round-robin distribution, which yields the size and indices that
+//    // are to be selected by this process element out of the file.
+//    DistributionFactory * distFactory;
+//    dist_.reset(distFactory->createDistribution("roundrobin"));
+//    dist_->distribution(comm(), nfvlen_);
 
     // Walk through the variables and determine the VALID variables
     int nc_nvars;
@@ -188,36 +184,36 @@ NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
       }
     }
 
-    // Calculate the date and time and filter out the obs. outside of window
-    if (nc_inq_attid(ncid_, NC_GLOBAL, "date_time", NULL) == NC_NOERR) {
-      int Year, Month, Day, Hour, Minute, Second;
-      std::unique_ptr<util::DateTime[]> datetime{new util::DateTime[nfvlen_]};
-      ReadDateTime(datetime.get());
-
-      std::vector<std::size_t> to_be_removed;
-      std::size_t index;
-      for (std::size_t ii = 0; ii < dist_->size(); ++ii) {
-        index = dist_->index()[ii];
-        if ((datetime.get()[index] >  bgn) &&
-            (datetime.get()[index] <= end)) {  // Inside time window
-          datetime.get()[index].toYYYYMMDDhhmmss(Year, Month, Day,
-                                                 Hour, Minute, Second);
-          date_.push_back(Year*10000 + Month*100 + Day);
-          time_.push_back(Hour*10000 + Minute*100 + Second);
-        } else {  // Outside of time window
-          to_be_removed.push_back(index);
-        }
-      }
-      for (std::size_t ii = 0; ii < to_be_removed.size(); ++ii)
-        dist_->erase(to_be_removed[ii]);
-
-      ASSERT(date_.size() == dist_->size());
-
-    } else {
-      oops::Log::debug() << "NetcdfIO::NetcdfIO : not found: reference date_time " << std::endl;
-    }  // end of constructing the date and time
-
-    nlocs_ = dist_->size();
+//    // Calculate the date and time and filter out the obs. outside of window
+//    if (nc_inq_attid(ncid_, NC_GLOBAL, "date_time", NULL) == NC_NOERR) {
+//      int Year, Month, Day, Hour, Minute, Second;
+//      std::unique_ptr<util::DateTime[]> datetime{new util::DateTime[nfvlen_]};
+//      ReadDateTime(datetime.get());
+//
+//      std::vector<std::size_t> to_be_removed;
+//      std::size_t index;
+//      for (std::size_t ii = 0; ii < dist_->size(); ++ii) {
+//        index = dist_->index()[ii];
+//        if ((datetime.get()[index] >  bgn) &&
+//            (datetime.get()[index] <= end)) {  // Inside time window
+//          datetime.get()[index].toYYYYMMDDhhmmss(Year, Month, Day,
+//                                                 Hour, Minute, Second);
+//          date_.push_back(Year*10000 + Month*100 + Day);
+//          time_.push_back(Hour*10000 + Minute*100 + Second);
+//        } else {  // Outside of time window
+//          to_be_removed.push_back(index);
+//        }
+//      }
+//      for (std::size_t ii = 0; ii < to_be_removed.size(); ++ii)
+//        dist_->erase(to_be_removed[ii]);
+//
+//      ASSERT(date_.size() == dist_->size());
+//
+//    } else {
+//      oops::Log::debug() << "NetcdfIO::NetcdfIO : not found: reference date_time " << std::endl;
+//    }  // end of constructing the date and time
+//
+//    nlocs_ = dist_->size();
   }
 
   // When in write mode, create dimensions in the output file based on
@@ -254,51 +250,62 @@ NetcdfIO::~NetcdfIO() {
  * \param[out] VarData Pointer to memory that will receive the file data
  */
 
-void NetcdfIO::ReadVar(const std::string & VarName, boost::any * VarData) {
+void NetcdfIO::ReadVar(const std::string & GroupName, const std::string & VarName,
+                       boost::any * VarData) {
   std::string ErrorMsg;
   nc_type vartype;
   int nc_varid_;
   const float fmiss = util::missingValue(fmiss);
+  std::string NcVarName;
 
-  // For datetime, it is already calculated in constructor
-  //  Could be missing date/time values as well
-  std::size_t found = VarName.find("date");
-  if ((found != std::string::npos) && (found == 0)) {
-    ASSERT(date_.size() == dist_->size());
-    for (std::size_t ii = 0; ii < dist_->size(); ++ii)
-        VarData[ii] = date_[ii];
-    return;
+//  // For datetime, it is already calculated in constructor
+//  //  Could be missing date/time values as well
+//  std::size_t found = VarName.find("date");
+//  if ((found != std::string::npos) && (found == 0)) {
+//    ASSERT(date_.size() == nlocs_);
+//    for (std::size_t ii = 0; ii < nlocs_; ++ii)
+//        VarData[ii] = date_[ii];
+//    return;
+//  }
+
+//  found = VarName.find("time");
+//  if ((found != std::string::npos) && (found == 0)) {
+//std::cout << "DEBUG: time.size(), nlocs_: " << time_.size() << ", " << nlocs_ << std::endl;
+//    ASSERT(time_.size() == nlocs_);
+//    for (std::size_t ii = 0; ii < nlocs_; ++ii)
+//        VarData[ii] = time_[ii];
+//    return;
+//  }
+
+  if (GroupName.compare("GroupUndefined") == 0) {
+    // No suffix in file variable name
+    NcVarName = VarName;
+  } else {
+    // File variable has suffix with group name
+    NcVarName = VarName + "@" + GroupName;
   }
 
-  found = VarName.find("time");
-  if ((found != std::string::npos) && (found == 0)) {
-    ASSERT(time_.size() == dist_->size());
-    for (std::size_t ii = 0; ii < dist_->size(); ++ii)
-        VarData[ii] = time_[ii];
-    return;
-  }
+  ErrorMsg = "NetcdfIO::ReadVar: Netcdf dataset not found: " + NcVarName;
+  CheckNcCall(nc_inq_varid(ncid_, NcVarName.c_str(), &nc_varid_), ErrorMsg);
 
-  ErrorMsg = "NetcdfIO::ReadVar_any: Netcdf dataset not found: " + VarName;
-  CheckNcCall(nc_inq_varid(ncid_, VarName.c_str(), &nc_varid_), ErrorMsg);
-
-  ErrorMsg = "NetcdfIO::ReadVar: Unable to determine variable data type: " + VarName;
+  ErrorMsg = "NetcdfIO::ReadVar: Unable to determine variable data type: " + NcVarName;
   CheckNcCall(nc_inq_vartype(ncid_, nc_varid_, &vartype), ErrorMsg);
 
-  ErrorMsg = "NetcdfIO::ReadVar: Unable to read dataset: " + VarName;
+  ErrorMsg = "NetcdfIO::ReadVar: Unable to read dataset: " + NcVarName;
   switch (vartype) {
     case NC_INT: {
 //    Could be missing int values as well
-      std::unique_ptr<int[]> iData{new int[nfvlen_]};
+      std::unique_ptr<int[]> iData{new int[nlocs_]};
       CheckNcCall(nc_get_var_int(ncid_, nc_varid_, iData.get()), ErrorMsg);
-      for (std::size_t ii = 0; ii < dist_->size(); ++ii)
-        VarData[ii] = iData.get()[dist_->index()[ii]];
+      for (std::size_t ii = 0; ii < nlocs_; ++ii)
+        VarData[ii] = iData.get()[ii];
       break;
     }
     case NC_FLOAT: {
-      std::unique_ptr<float[]> rData{new float[nfvlen_]};
+      std::unique_ptr<float[]> rData{new float[nlocs_]};
       CheckNcCall(nc_get_var_float(ncid_, nc_varid_, rData.get()), ErrorMsg);
-      for (std::size_t ii = 0; ii < dist_->size(); ++ii) {
-        VarData[ii] = rData.get()[dist_->index()[ii]];
+      for (std::size_t ii = 0; ii < nlocs_; ++ii) {
+        VarData[ii] = rData.get()[ii];
         if (boost::any_cast<float>(VarData[ii]) > missingthreshold) {  // not safe enough
           VarData[ii] = fmiss;
         }
@@ -306,11 +313,11 @@ void NetcdfIO::ReadVar(const std::string & VarName, boost::any * VarData) {
       break;
     }
     case NC_DOUBLE: {
-      std::unique_ptr<double[]> dData{new double[nfvlen_]};
+      std::unique_ptr<double[]> dData{new double[nlocs_]};
       CheckNcCall(nc_get_var_double(ncid_, nc_varid_, dData.get()), ErrorMsg);
-      for (std::size_t ii = 0; ii < dist_->size(); ++ii) {
+      for (std::size_t ii = 0; ii < nlocs_; ++ii) {
         /* Force double to float */
-        VarData[ii] = static_cast<float>(dData.get()[dist_->index()[ii]]);
+        VarData[ii] = static_cast<float>(dData.get()[ii]);
         if (boost::any_cast<float>(VarData[ii]) > missingthreshold) {  // not safe enough
           VarData[ii] = fmiss;
         }
@@ -318,8 +325,8 @@ void NetcdfIO::ReadVar(const std::string & VarName, boost::any * VarData) {
       break;
     }
     default:
-      oops::Log::warning() <<  "NetcdfIO::ReadVar_any: Unable to read dataset: "
-                           << " VarName: " << VarName << " with NetCDF type :"
+      oops::Log::warning() <<  "NetcdfIO::ReadVar: Unable to read dataset: "
+                           << " VarName: " << NcVarName << " with NetCDF type :"
                            << vartype << std::endl;
   }
 }
@@ -338,11 +345,19 @@ void NetcdfIO::ReadVar(const std::string & VarName, boost::any * VarData) {
  * \param[in]  VarData Pointer to memory that will be written into the file
  */
 
-void NetcdfIO::WriteVar(const std::string & VarName, boost::any * VarData) {
+void NetcdfIO::WriteVar(const std::string & GroupName, const std::string & VarName,
+                        boost::any * VarData) {
   std::string ErrorMsg;
   const std::type_info & typeInput = VarData->type();
   nc_type NcVarType;
   int nc_varid_;
+  std::string NcVarName;
+
+  if (GroupName.compare("GroupUndefined") != 0) {
+    NcVarName = VarName + "@" + GroupName;
+  } else {
+    NcVarName = VarName;
+  }
 
   // Limit types to int, float and double for now
   if (typeInput == typeid(int)) {
@@ -352,20 +367,20 @@ void NetcdfIO::WriteVar(const std::string & VarName, boost::any * VarData) {
   } else if (typeInput == typeid(double)) {
     NcVarType = NC_DOUBLE;
   } else {
-    oops::Log::warning() <<  "NetcdfIO::WriteVar_any: Unable to write dataset: "
-                         << " VarName: " << VarName << " with NetCDF type :"
+    oops::Log::warning() <<  "NetcdfIO::WriteVar: Unable to write dataset: "
+                         << " VarName: " << NcVarName << " with NetCDF type :"
                          << typeInput.name() << std::endl;
   }
 
   // If var doesn't exist in the file, then create it
-  if (nc_inq_varid(ncid_, VarName.c_str(), &nc_varid_) != NC_NOERR) {
-    ErrorMsg = "NetcdfIO::WriteVar: Unable to create variable dataset: " + VarName;
-    CheckNcCall(nc_def_var(ncid_, VarName.c_str(), NcVarType, 1, &nlocs_id_, &nc_varid_),
+  if (nc_inq_varid(ncid_, NcVarName.c_str(), &nc_varid_) != NC_NOERR) {
+    ErrorMsg = "NetcdfIO::WriteVar: Unable to create variable dataset: " + NcVarName;
+    CheckNcCall(nc_def_var(ncid_, NcVarName.c_str(), NcVarType, 1, &nlocs_id_, &nc_varid_),
                 ErrorMsg);
   }
 
   // Write the data into the file according to type
-  ErrorMsg = "NetcdfIO::WriteVar: Unable to write dataset: " + VarName;
+  ErrorMsg = "NetcdfIO::WriteVar: Unable to write dataset: " + NcVarName;
   if (NcVarType == NC_INT) {
     std::unique_ptr<int[]> iData{new int[nlocs()]};
     for (std::size_t ii = 0; ii < nlocs(); ++ii)

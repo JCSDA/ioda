@@ -44,7 +44,7 @@ namespace ioda {
 class ObsSpaceContainer: public util::Printable {
  public:
      ObsSpaceContainer(const eckit::Configuration &, const util::DateTime &,
-                       const util::DateTime &, const eckit::mpi::Comm &);
+                       const util::DateTime &);
      ~ObsSpaceContainer();
 
      struct by_group {};     // Index by group name
@@ -104,13 +104,18 @@ class ObsSpaceContainer: public util::Printable {
 
      // -----------------------------------------------------------------------------
 
-     /*! \brief Initialize from file*/
-     void CreateFromFile(const std::string & filename, const std::string & mode,
-                         const util::DateTime & bgn, const util::DateTime & end,
-                         const eckit::mpi::Comm & comm);
+     // Access to iterators
+//     typedef Record_set::index<ObsSpaceContainer::by_variable>::type VarIndex;
+//     typedef VarIndex::iterator VarIter;
 
-     /*! \brief Load VALID variables from file to container */
-     void LoadData();
+     /*! \brief Access to database */
+     Record_set * container() { return & DataContainer; }
+
+//     /*! \brief Variables iterator begin */
+//     VarIter var_begin();
+//
+//     /*! \brief Variables iterator end */
+//     VarIter var_end();
 
      /*! \brief Check the availability of Record with group and variable in container*/
      bool has(const std::string & group, const std::string & variable) const;
@@ -126,12 +131,6 @@ class ObsSpaceContainer: public util::Printable {
 
      /*! \brief Return the right boundary of time window*/
      const util::DateTime & windowEnd() const {return winend_;}
-
-     /*! \brief Return the MPI comminicator*/
-     const eckit::mpi::Comm & comm() const {return commMPI_;}
-
-     /*! \brief Dump the contents of database to file*/
-     void dump(const std::string & file_name) const;
 
      // -----------------------------------------------------------------------------
 
@@ -191,6 +190,9 @@ class ObsSpaceContainer: public util::Printable {
      /*! \brief container instance */
      Record_set DataContainer;
 
+//     /*! \brief variable index for iterator */
+//     VarIndex & var_index_;
+
      /*! \brief number of locations on this PE */
      std::size_t nlocs_;
 
@@ -202,9 +204,6 @@ class ObsSpaceContainer: public util::Printable {
 
      /*! \brief Right boundary of time window */
      const util::DateTime winend_;
-
-     /*! \brief MPI communicator */
-     const eckit::mpi::Comm & commMPI_;
 
      /*! \brief Print */
      void print(std::ostream &) const;

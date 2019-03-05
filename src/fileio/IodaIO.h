@@ -81,12 +81,13 @@ class IodaIO : public util::Printable {
     typedef std::map<std::string, VarInfoMap> GroupVarInfoMap;
 
  public:
-    explicit IodaIO(const eckit::mpi::Comm &);
     virtual ~IodaIO() = 0;
 
     // Methods provided by subclasses
-    virtual void ReadVar(const std::string & VarName, boost::any * VarData) = 0;
-    virtual void WriteVar(const std::string & VarName, boost::any * VarData) = 0;
+    virtual void ReadVar(const std::string & GroupName, const std::string & VarName,
+                         boost::any * VarData) = 0;
+    virtual void WriteVar(const std::string & GroupName, const std::string & VarName,
+                          boost::any * VarData) = 0;
 
     virtual void ReadDateTime(uint64_t * VarDate, int * VarTime)= 0;
 
@@ -97,7 +98,6 @@ class IodaIO : public util::Printable {
     std::size_t nlocs() const;
     std::size_t nrecs() const;
     std::size_t nvars() const;
-    const eckit::mpi::Comm & comm() const {return commMPI_;}
 
     // Access at the group level to the GroupVarInfoMap
     typedef GroupVarInfoMap::const_iterator GroupIter;
@@ -124,23 +124,14 @@ class IodaIO : public util::Printable {
     /*! \brief file mode ("r" -> read, "w" -> overwrite, "W" -> create and write) */
     std::string fmode_;
 
-    /*! \brief number of unique locations in domain*/
+    /*! \brief number of unique locations */
     std::size_t nlocs_;
-
-    /*! \brief number of unique locations in file*/
-    std::size_t nfvlen_;
 
     /*! \brief number of unique records */
     std::size_t nrecs_;
 
     /*! \brief number of unique variables */
     std::size_t nvars_;
-
-    /*! \brief MPI communicator */
-    const eckit::mpi::Comm & commMPI_;
-
-    /*! \brief Distribution among processors */
-    std::unique_ptr<Distribution> dist_;
 
     /*! \brief Variable Name : Group Name */
     GroupVarInfoMap grp_var_info_;

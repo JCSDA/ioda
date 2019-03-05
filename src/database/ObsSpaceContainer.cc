@@ -6,56 +6,25 @@
  */
 
 #include "database/ObsSpaceContainer.h"
-#include "fileio/IodaIO.h"
-#include "fileio/IodaIOfactory.h"
 
 namespace ioda {
+
 // -----------------------------------------------------------------------------
+
   ObsSpaceContainer::ObsSpaceContainer(const eckit::Configuration & config,
-                                       const util::DateTime & bgn,
-                                       const util::DateTime & end,
-                                       const eckit::mpi::Comm & commMPI)
-        : winbgn_(bgn), winend_(end), commMPI_(commMPI) {
+                                       const util::DateTime & bgn, const util::DateTime & end)
+        : winbgn_(bgn), winend_(end) {
+//        : winbgn_(bgn), winend_(end),
+//          var_index_(DataContainer.get<by_variable>()) {
     oops::Log::trace() << "ioda::ObsSpaceContainer Constructor starts " << std::endl;
   }
+
 // -----------------------------------------------------------------------------
+
   ObsSpaceContainer::~ObsSpaceContainer() {
     oops::Log::trace() << "ioda::ObsSpaceContainer deconstructed " << std::endl;
   }
-// -----------------------------------------------------------------------------
-  void ObsSpaceContainer::CreateFromFile(const std::string & filename, const std::string & mode,
-                                         const util::DateTime & bgn, const util::DateTime & end,
-                                         const eckit::mpi::Comm & commMPI) {
-    oops::Log::trace() << "ioda::ObsSpaceContainer opening file: " << filename << std::endl;
 
-    std::unique_ptr<ioda::IodaIO> fileio
-      {ioda::IodaIOfactory::Create(filename, mode, bgn, end, commMPI)};
-    nlocs_ = fileio->nlocs();
-    nvars_ = fileio->nvars();
-
-    // Load all valid variables
-    std::unique_ptr<boost::any[]> vect;
-    std::string group, variable, db_name;
-
-    for (IodaIO::GroupIter igrp = fileio->group_begin();
-                           igrp != fileio->group_end(); ++igrp) {
-      for (IodaIO::VarIter ivar = fileio->var_begin(igrp);
-                           ivar != fileio->var_end(igrp); ++ivar) {
-        // Revisit here, improve the readability
-        group = fileio->group_name(igrp);
-        variable = fileio->var_name(ivar);
-        db_name = variable;
-        if (group.compare("GroupUndefined") != 0) {
-        db_name = variable + "@" + group;
-        }
-        vect.reset(new boost::any[nlocs()]);
-        fileio->ReadVar(db_name, vect.get());
-        // All records read from file are read-only
-        DataContainer.insert({group, variable, "r", nlocs(), vect});
-      }
-    }
-    oops::Log::trace() << "ioda::ObsSpaceContainer opening file ends " << std::endl;
-  }
 // -----------------------------------------------------------------------------
 
   void ObsSpaceContainer::inquire(const std::string & group, const std::string & variable,
@@ -184,6 +153,19 @@ namespace ioda {
   }
 
 // -----------------------------------------------------------------------------
+//
+//ObsSpaceContainer::VarIter ObsSpaceContainer::var_begin() { 
+//  var_index_ = DataContainer.get<by_variable>();
+//  return var_index_.begin();
+//}
+
+// -----------------------------------------------------------------------------
+
+//ObsSpaceContainer::VarIter ObsSpaceContainer::var_end() { 
+//  return var_index_.end();
+//}
+
+// -----------------------------------------------------------------------------
 
   bool ObsSpaceContainer::has(const std::string & group, const std::string & variable) const {
     if (variable == "datetime") {
@@ -194,20 +176,6 @@ namespace ioda {
       auto var = DataContainer.find(boost::make_tuple(group, variable));
       return (var != DataContainer.end());
     }
-  }
-
-// -----------------------------------------------------------------------------
-
-  void ObsSpaceContainer::dump(const std::string & file_name) const {
-    // Open the file for output
-    std::unique_ptr<ioda::IodaIO> fileio
-      {ioda::IodaIOfactory::Create(file_name, "W", windowStart(), windowEnd(),
-      comm(), nlocs(), 0, nvars())};  //  Not sure nrecs are useful
-
-    // List all records and write out the every record
-    auto & var = DataContainer.get<ObsSpaceContainer::by_variable>();
-    for (auto iter = var.begin(); iter != var.end(); ++iter)
-      fileio->WriteVar(iter->variable + "@" + iter->group, iter->data.get());
   }
 
 // -----------------------------------------------------------------------------
