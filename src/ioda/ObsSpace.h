@@ -20,6 +20,7 @@
 #include "oops/util/Printable.h"
 
 #include "database/ObsSpaceContainer.h"
+#include "distribution/Distribution.h"
 
 // Forward declarations
 namespace eckit {
@@ -59,6 +60,14 @@ class ObsSpace : public oops::ObsSpaceBase {
   void print(std::ostream &) const;
 
   ObsSpace & operator= (const ObsSpace &);
+
+  /*! \brief Initialize database from file*/
+  void InitFromFile(const std::string & filename, const std::string & mode,
+                    const util::DateTime &, const util::DateTime &);
+
+  /*! \brief Save the contents of database to file*/
+  void SaveToFile(const std::string & file_name) const;
+
   std::string obsname_;
   const util::DateTime winbgn_;
   const util::DateTime winend_;
@@ -72,6 +81,9 @@ class ObsSpace : public oops::ObsSpaceBase {
 
   /*! \brief filename and path of output */
   std::string fileout_;
+
+  /*! \brief Distribution among processors */
+  std::unique_ptr<Distribution> dist_;
 
   /*! \brief Multi-index container */
   ObsSpaceContainer database_;

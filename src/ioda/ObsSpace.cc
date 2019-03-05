@@ -19,6 +19,8 @@
 #include "oops/util/Logger.h"
 
 #include "distribution/DistributionFactory.h"
+#include "fileio/IodaIO.h"
+#include "fileio/IodaIOfactory.h"
 
 namespace ioda {
 
@@ -28,7 +30,7 @@ ObsSpace::ObsSpace(const eckit::Configuration & config,
                    const util::DateTime & bgn, const util::DateTime & end)
   : oops::ObsSpaceBase(config, bgn, end),
     winbgn_(bgn), winend_(end), commMPI_(oops::mpi::comm()),
-    database_(config, bgn, end, commMPI_)
+    database_(config, bgn, end)
 {
   oops::Log::trace() << "ioda::ObsSpace config  = " << config << std::endl;
 
@@ -38,7 +40,7 @@ ObsSpace::ObsSpace(const eckit::Configuration & config,
   std::string filename = config.getString("ObsData.ObsDataIn.obsfile");
   oops::Log::trace() << obsname_ << " file in = " << filename << std::endl;
 
-  database_.CreateFromFile(filename, "r", windowStart(), windowEnd(), comm());
+  InitFromFile(filename, "r", windowStart(), windowEnd());
 
   // Set the number of locations ,variables and number of observation points
   nlocs_ = database_.nlocs();
@@ -78,8 +80,8 @@ ObsSpace::ObsSpace(const eckit::Configuration & config,
 
 ObsSpace::~ObsSpace() {
   if (fileout_.size() != 0) {
-    oops::Log::info() << obsname() << ": dump out the database to " << fileout_ << std::endl;
-    database_.dump(fileout_);
+    oops::Log::info() << obsname() << ": save database to " << fileout_ << std::endl;
+    SaveToFile(fileout_);
   } else {
     oops::Log::info() << obsname() << " :  no output" << std::endl;
   }
@@ -182,6 +184,50 @@ void ObsSpace::generateDistribution(const eckit::Configuration & conf) {
 void ObsSpace::print(std::ostream & os) const {
   os << "ObsSpace::print not implemented";
 }
+
+// -----------------------------------------------------------------------------
+
+  void ObsSpace::InitFromFile(const std::string & filename, const std::string & mode,
+                              const util::DateTime &, const util::DateTime &) {
+    oops::Log::trace() << "ioda::ObsSpace opening file: " << filename << std::endl;
+
+    std::unique_ptr<IodaIO> fileio {ioda::IodaIOfactory::Create(filename, mode)};
+    nlocs_ = fileio->nlocs();
+    nvars_ = fileio->nvars();
+
+    // Load all valid variables
+    std::unique_ptr<boost::any[]> vect;
+    std::string group, variable;
+
+    for (IodaIO::GroupIter igrp = fileio->group_begin();
+                           igrp != fileio->group_end(); ++igrp) {
+      for (IodaIO::VarIter ivar = fileio->var_begin(igrp);
+                           ivar != fileio->var_end(igrp); ++ivar) {
+        // Revisit here, improve the readability
+        group = fileio->group_name(igrp);
+        variable = fileio->var_name(ivar);
+        vect.reset(new boost::any[nlocs()]);
+        fileio->ReadVar(group, variable, vect.get());
+        // All records read from file are read-only
+        database_.container()->insert({group, variable, "r", nlocs(), vect});
+      }
+    }
+    oops::Log::trace() << "ioda::ObsSpaceContainer opening file ends " << std::endl;
+  }
+
+// -----------------------------------------------------------------------------
+
+  void ObsSpace::SaveToFile(const std::string & file_name) const {
+    // Open the file for output
+    std::unique_ptr<IodaIO> fileio
+      {ioda::IodaIOfactory::Create(file_name, "W", nlocs(), 0, nvars())};
+
+    // List all records and write out the every record
+//    for (ObsSpaceContainer::VarIter iter = database_.var_begin();
+//         iter != database_.var_end(); ++iter) {
+//      fileio->WriteVar(iter->group, iter->variable, iter->data.get());
+//    }
+  }
 
 // -----------------------------------------------------------------------------
 

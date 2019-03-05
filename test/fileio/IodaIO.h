@@ -36,8 +36,19 @@
 namespace ioda {
 namespace test {
 
-const util::DateTime bgn(1972, 3, 8, 0, 0, 0);
-const util::DateTime end(2092, 3, 8, 0, 0, 0);
+// -----------------------------------------------------------------------------
+
+void ExtractGrpVarName(const std::string & GrpVarName, std::string & GroupName,
+                       std::string & VarName) {
+  std::size_t Spos = GrpVarName.find("@");
+  if (Spos != GrpVarName.npos) {
+    GroupName = GrpVarName.substr(Spos+1);
+    VarName = GrpVarName.substr(0, Spos);
+  } else {
+    GroupName = "GroupUndefined";
+    VarName = GrpVarName;
+  }
+}
 
 // -----------------------------------------------------------------------------
 
@@ -65,7 +76,7 @@ void testConstructor() {
     oops::Log::debug() << "IodaIO::ObsType: " << TestObsType << std::endl;
 
     FileName = obstypes[i].getString("Input.filename");
-    TestIO.reset(ioda::IodaIOfactory::Create(FileName, "r", bgn, end, oops::mpi::comm()));
+    TestIO.reset(ioda::IodaIOfactory::Create(FileName, "r"));
     BOOST_CHECK(TestIO.get());
 
     // Constructor in read mode is also responsible for setting nobs and nlocs
@@ -86,8 +97,8 @@ void testConstructor() {
       ExpectedNrecs = obstypes[i].getInt("Output.metadata.nrecs");
       ExpectedNvars = obstypes[i].getInt("Output.metadata.nvars");
 
-      TestIO.reset(ioda::IodaIOfactory::Create(FileName, "W", bgn, end, oops::mpi::comm(),
-                                               ExpectedNlocs, ExpectedNrecs, ExpectedNvars));
+      TestIO.reset(ioda::IodaIOfactory::Create(FileName, "W", ExpectedNlocs,
+                                               ExpectedNrecs, ExpectedNvars));
       BOOST_CHECK(TestIO.get());
 
       Nlocs = TestIO->nlocs();
@@ -107,7 +118,7 @@ void testReadVar() {
   const eckit::LocalConfiguration conf(::test::TestEnvironment::config());
 
   std::vector<eckit::LocalConfiguration> obstypes;
-  std::vector<std::string> varnames;
+  std::vector<std::string> GrpVarNames;
   std::vector<float> ExpectedVnorms;
 
   std::string FileName;
@@ -127,16 +138,21 @@ void testReadVar() {
     oops::Log::debug() << "IodaIO::ObsType: " << TestObsType << std::endl;
 
     FileName = obstypes[i].getString("Input.filename");
-    TestIO.reset(ioda::IodaIOfactory::Create(FileName, "r", bgn, end, oops::mpi::comm()));
+    TestIO.reset(ioda::IodaIOfactory::Create(FileName, "r"));
 
     // Read in data from the file and check values.
-    varnames = obstypes[i].getStringVector("Input.variables");
+    GrpVarNames = obstypes[i].getStringVector("Input.variables");
     ExpectedVnorms = obstypes[i].getFloatVector("Input.metadata.norms");
     Tol = obstypes[i].getFloat("Input.metadata.tolerance");
     Vsize = TestIO->nlocs();
     TestVarData.reset(new boost::any[Vsize]);
-    for(std::size_t j = 0; j < varnames.size(); ++j) {
-      TestIO->ReadVar(varnames[j], TestVarData.get());
+    for(std::size_t j = 0; j < GrpVarNames.size(); ++j) {
+      // Split out variable and group names
+      std::string VarName;
+      std::string GroupName;
+      ExtractGrpVarName(GrpVarNames[j], GroupName, VarName);
+
+      TestIO->ReadVar(GroupName, VarName, TestVarData.get());
 
       const std::type_info & TestVarDtype = TestVarData.get()->type();
       // Compute the vector length TestVarData and compare with config values
@@ -160,7 +176,7 @@ void testReadVar() {
 void testWriteVar() {
   const eckit::LocalConfiguration conf(::test::TestEnvironment::config());
   std::vector<eckit::LocalConfiguration> obstypes;
-  std::vector<std::string> varnames;
+  std::vector<std::string> GrpVarNames;
 
   std::string FileName;
   std::string TestObsType;
@@ -191,25 +207,28 @@ void testWriteVar() {
       Nlocs = obstypes[i].getInt("Output.metadata.nlocs");
       Nrecs = obstypes[i].getInt("Output.metadata.nrecs");
       Nvars = obstypes[i].getInt("Output.metadata.nvars");
-      TestIO.reset(ioda::IodaIOfactory::Create(FileName, "W", bgn, end, oops::mpi::comm(),
-                                               Nlocs, Nrecs, Nvars));
+      TestIO.reset(ioda::IodaIOfactory::Create(FileName, "W", Nlocs, Nrecs, Nvars));
 
       // Try writing contrived data into the output file
-      varnames = obstypes[i].getStringVector("Output.variables");
+      GrpVarNames = obstypes[i].getStringVector("Output.variables");
       TestVarData.reset(new boost::any[Nlocs]);
       ExpectedSum = 0;
       for (std::size_t j = 0; j < Nlocs; ++j) {
         TestVarData.get()[j] = float(j);
         ExpectedSum += j;
         }
-      ExpectedSum *= varnames.size();
+      ExpectedSum *= GrpVarNames.size();
 
-      for(std::size_t j = 0; j < varnames.size(); ++j) {
-        TestIO->WriteVar(varnames[j], TestVarData.get());
+      for(std::size_t j = 0; j < GrpVarNames.size(); ++j) {
+        std::string VarName;
+        std::string GroupName;
+        ExtractGrpVarName(GrpVarNames[j], GroupName, VarName);
+
+        TestIO->WriteVar(GroupName, VarName, TestVarData.get());
         }
 
       // open the file we just created and see if it contains what we just wrote into it
-      TestIO.reset(ioda::IodaIOfactory::Create(FileName, "r", bgn, end, oops::mpi::comm()));
+      TestIO.reset(ioda::IodaIOfactory::Create(FileName, "r"));
 
       TestNlocs = TestIO->nlocs();
       TestNrecs = TestIO->nrecs();
@@ -220,8 +239,12 @@ void testWriteVar() {
       BOOST_CHECK_EQUAL(TestNvars, Nvars);
 
       VarSum = 0;
-      for(std::size_t j = 0; j < varnames.size(); ++j) {
-        TestIO->ReadVar(varnames[j], TestVarData.get());
+      for(std::size_t j = 0; j < GrpVarNames.size(); ++j) {
+        std::string VarName;
+        std::string GroupName;
+        ExtractGrpVarName(GrpVarNames[j], GroupName, VarName);
+
+        TestIO->ReadVar(GroupName, VarName, TestVarData.get());
         for(std::size_t k = 0; k < Nlocs; ++k) {
           VarSum += int(boost::any_cast<float>(TestVarData.get()[k]));
           }
@@ -260,7 +283,7 @@ void testReadDateTime() {
     oops::Log::debug() << "IodaIO::ObsType: " << TestObsType << std::endl;
 
     FileName = obstypes[i].getString("Input.filename");
-    TestIO.reset(ioda::IodaIOfactory::Create(FileName, "r", bgn, end, oops::mpi::comm()));
+    TestIO.reset(ioda::IodaIOfactory::Create(FileName, "r"));
 
     // Read in data from the file and check values.
     Vsize = TestIO->nlocs();
