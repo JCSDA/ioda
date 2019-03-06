@@ -98,7 +98,7 @@ void testDistribution() {
     for (std::size_t i = 0; i < TestDist->size(); i++) {
       Index[i] = TestDist->index()[i];
     }
-    BOOST_CHECK(Index == ExpectedIndex);
+    BOOST_CHECK_EQUAL(Index, ExpectedIndex);
   }
 }
 

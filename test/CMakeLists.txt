@@ -13,6 +13,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsvector_odb.yml
   testinput/iodatest_fileio.yml
   testinput/iodatest_distribution.yml
+  testinput/iodatest_obsspace_container.yml
   testinput/iodatest_marine_fileio.yml
   testinput/iodatest_marine_obsspace.yml  
   testinput/iodatest_fileio_odb_api.yml
@@ -88,6 +89,12 @@ ecbuild_add_test( TARGET test_ioda_distribution
                   MPI     4
                   SOURCES mains/TestDistribution.cc
                   ARGS "testinput/iodatest_distribution.yml"
+                  LIBS    ioda )
+
+ecbuild_add_test( TARGET test_ioda_obsspacecontainer
+                  BOOST
+                  SOURCES mains/TestObsSpaceContainer.cc
+                  ARGS "testinput/iodatest_obsspace_container.yml"
                   LIBS    ioda )
 
 ecbuild_add_test( TARGET test_ioda_obsspace
