@@ -43,8 +43,8 @@ ObsSpace::ObsSpace(const eckit::Configuration & config,
   InitFromFile(filename, "r", windowStart(), windowEnd());
 
   // Set the number of locations ,variables and number of observation points
-  nlocs_ = database_.nlocs();
-  nvars_ = database_.nvars();
+  //nlocs_ = database_.nlocs();
+  //nvars_ = database_.nvars();
 
   // Check to see if an output file has been requested.
   if (config.has("ObsData.ObsDataOut.obsfile")) {
@@ -217,16 +217,20 @@ void ObsSpace::print(std::ostream & os) const {
 
 // -----------------------------------------------------------------------------
 
-  void ObsSpace::SaveToFile(const std::string & file_name) const {
+  void ObsSpace::SaveToFile(const std::string & file_name) {
     // Open the file for output
     std::unique_ptr<IodaIO> fileio
       {ioda::IodaIOfactory::Create(file_name, "W", nlocs(), 0, nvars())};
 
     // List all records and write out the every record
-//    for (ObsSpaceContainer::VarIter iter = database_.var_begin();
-//         iter != database_.var_end(); ++iter) {
-//      fileio->WriteVar(iter->group, iter->variable, iter->data.get());
-//    }
+    for (ObsSpaceContainer::VarIter iter = database_.var_iter_begin();
+         iter != database_.var_iter_end(); ++iter) {
+std::cout << "DEBUG: SaveToFile: gname, vname, data: " << database_.var_iter_gname(iter)
+          << ", " << database_.var_iter_vname(iter) 
+          << ", " << database_.var_iter_data(iter) << std::endl;
+      fileio->WriteVar(database_.var_iter_gname(iter),
+                       database_.var_iter_vname(iter), database_.var_iter_data(iter));
+    }
   }
 
 // -----------------------------------------------------------------------------

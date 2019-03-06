@@ -105,17 +105,26 @@ class ObsSpaceContainer: public util::Printable {
      // -----------------------------------------------------------------------------
 
      // Access to iterators
-//     typedef Record_set::index<ObsSpaceContainer::by_variable>::type VarIndex;
-//     typedef VarIndex::iterator VarIter;
+     typedef Record_set::index<ObsSpaceContainer::by_variable>::type VarIndex;
+     typedef VarIndex::iterator VarIter;
 
      /*! \brief Access to database */
      Record_set * container() { return & DataContainer; }
 
-//     /*! \brief Variables iterator begin */
-//     VarIter var_begin();
-//
-//     /*! \brief Variables iterator end */
-//     VarIter var_end();
+     /*! \brief Variables iterator begin */
+     VarIter var_iter_begin();
+
+     /*! \brief Variables iterator end */
+     VarIter var_iter_end();
+
+     /*! \brief Variables iterator variable name */
+     std::string var_iter_vname(VarIter);
+
+     /*! \brief Variables iterator group name */
+     std::string var_iter_gname(VarIter);
+
+     /*! \brief Variables iterator data */
+     boost::any * var_iter_data(VarIter);
 
      /*! \brief Check the availability of Record with group and variable in container*/
      bool has(const std::string & group, const std::string & variable) const;
@@ -189,9 +198,6 @@ class ObsSpaceContainer: public util::Printable {
  private:
      /*! \brief container instance */
      Record_set DataContainer;
-
-//     /*! \brief variable index for iterator */
-//     VarIndex & var_index_;
 
      /*! \brief number of locations on this PE */
      std::size_t nlocs_;

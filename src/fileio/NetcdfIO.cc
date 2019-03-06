@@ -165,12 +165,12 @@ NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
         grp_var_info_[gname][vname].dtype = nc_dtype_name;
         grp_var_info_[gname][vname].shape = NcDimSizes;
 
-        // Hack for date and time
-        std::size_t found = vname.find("time");
-        if ((found != std::string::npos) && (found == 0)) {
-          grp_var_info_[gname]["date"].dtype = nc_dtype_name;
-          grp_var_info_[gname]["date"].shape = NcDimSizes;
-        }
+//        // Hack for date and time
+//        std::size_t found = vname.find("time");
+//        if ((found != std::string::npos) && (found == 0)) {
+//          grp_var_info_[gname]["date"].dtype = nc_dtype_name;
+//          grp_var_info_[gname]["date"].shape = NcDimSizes;
+//        }
       }
     }
 

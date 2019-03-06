@@ -66,7 +66,7 @@ class ObsSpace : public oops::ObsSpaceBase {
                     const util::DateTime &, const util::DateTime &);
 
   /*! \brief Save the contents of database to file*/
-  void SaveToFile(const std::string & file_name) const;
+  void SaveToFile(const std::string & file_name);
 
   std::string obsname_;
   const util::DateTime winbgn_;
