@@ -43,8 +43,8 @@ ObsSpace::ObsSpace(const eckit::Configuration & config,
   InitFromFile(filename, "r", windowStart(), windowEnd());
 
   // Set the number of locations ,variables and number of observation points
-  //nlocs_ = database_.nlocs();
-  //nvars_ = database_.nvars();
+//  nlocs_ = database_.nlocs();
+//  nvars_ = database_.nvars();
 
   // Check to see if an output file has been requested.
   if (config.has("ObsData.ObsDataOut.obsfile")) {
@@ -207,7 +207,7 @@ void ObsSpace::print(std::ostream & os) const {
         group = fileio->group_name(igrp);
         variable = fileio->var_name(ivar);
         vect.reset(new boost::any[nlocs()]);
-        fileio->ReadVar(group, variable, vect.get());
+//        fileio->ReadVar(group, variable, vect.get());
         // All records read from file are read-only
         database_.container()->insert({group, variable, "r", nlocs(), vect});
       }
@@ -226,10 +226,10 @@ void ObsSpace::print(std::ostream & os) const {
     for (ObsSpaceContainer::VarIter iter = database_.var_iter_begin();
          iter != database_.var_iter_end(); ++iter) {
 std::cout << "DEBUG: SaveToFile: gname, vname, data: " << database_.var_iter_gname(iter)
-          << ", " << database_.var_iter_vname(iter) 
+          << ", " << database_.var_iter_vname(iter)
           << ", " << database_.var_iter_data(iter) << std::endl;
-      fileio->WriteVar(database_.var_iter_gname(iter),
-                       database_.var_iter_vname(iter), database_.var_iter_data(iter));
+//      fileio->WriteVar(database_.var_iter_gname(iter),
+//                       database_.var_iter_vname(iter), database_.var_iter_data(iter));
     }
   }
 

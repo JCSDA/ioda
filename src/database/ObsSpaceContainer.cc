@@ -152,33 +152,33 @@ namespace ioda {
 
 // -----------------------------------------------------------------------------
 
-ObsSpaceContainer::VarIter ObsSpaceContainer::var_iter_begin() { 
+ObsSpaceContainer::VarIter ObsSpaceContainer::var_iter_begin() {
   VarIndex & var_index_ = DataContainer.get<by_variable>();
   return var_index_.begin();
 }
 
 // -----------------------------------------------------------------------------
 
-ObsSpaceContainer::VarIter ObsSpaceContainer::var_iter_end() { 
+ObsSpaceContainer::VarIter ObsSpaceContainer::var_iter_end() {
   VarIndex & var_index_ = DataContainer.get<by_variable>();
   return var_index_.end();
 }
 
 // -----------------------------------------------------------------------------
 
-std::string ObsSpaceContainer::var_iter_vname(ObsSpaceContainer::VarIter var_iter) { 
+std::string ObsSpaceContainer::var_iter_vname(ObsSpaceContainer::VarIter var_iter) {
   return var_iter->variable;
 }
 
 // -----------------------------------------------------------------------------
 
-std::string ObsSpaceContainer::var_iter_gname(ObsSpaceContainer::VarIter var_iter) { 
+std::string ObsSpaceContainer::var_iter_gname(ObsSpaceContainer::VarIter var_iter) {
   return var_iter->group;
 }
 
 // -----------------------------------------------------------------------------
 
-boost::any * ObsSpaceContainer::var_iter_data(ObsSpaceContainer::VarIter var_iter) { 
+boost::any * ObsSpaceContainer::var_iter_data(ObsSpaceContainer::VarIter var_iter) {
   return var_iter->data.get();
 }
 
