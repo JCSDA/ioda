@@ -40,7 +40,7 @@ namespace ioda {
  *
  * There are three dimensions defined in the file:
  *
- *   nlocs: number of locations (length of each variable)
+ *   nlocs: number of locations
  *   nvars: number of variables
  *   nrecs: number of records
  *
@@ -58,7 +58,7 @@ namespace ioda {
  *         * nlocs_
  *         * nrecs_
  *         * nvars_
- *         * vname_group_type_
+ *         * group_var_info_
  *
  *       If in read mode, metadata from the input file are used to set the data members
  *       If in write mode, the data members are set from the constructor arguments 
@@ -85,9 +85,9 @@ class IodaIO : public util::Printable {
 
     // Methods provided by subclasses
     virtual void ReadVar(const std::string & GroupName, const std::string & VarName,
-                         boost::any * VarData) = 0;
+                         std::vector<int> VarShape, boost::any * VarData) = 0;
     virtual void WriteVar(const std::string & GroupName, const std::string & VarName,
-                          boost::any * VarData) = 0;
+                          std::vector<int> VarShape, boost::any * VarData) = 0;
 
     virtual void ReadDateTime(uint64_t * VarDate, int * VarTime)= 0;
 

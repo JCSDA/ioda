@@ -145,6 +145,7 @@ void testReadVar() {
     ExpectedVnorms = obstypes[i].getFloatVector("Input.metadata.norms");
     Tol = obstypes[i].getFloat("Input.metadata.tolerance");
     Vsize = TestIO->nlocs();
+    std::vector<int> VarShape(1, Vsize);
     TestVarData.reset(new boost::any[Vsize]);
     for(std::size_t j = 0; j < GrpVarNames.size(); ++j) {
       // Split out variable and group names
@@ -152,7 +153,7 @@ void testReadVar() {
       std::string GroupName;
       ExtractGrpVarName(GrpVarNames[j], GroupName, VarName);
 
-      TestIO->ReadVar(GroupName, VarName, TestVarData.get());
+      TestIO->ReadVar(GroupName, VarName, VarShape, TestVarData.get());
 
       const std::type_info & TestVarDtype = TestVarData.get()->type();
       // Compute the vector length TestVarData and compare with config values
@@ -211,6 +212,7 @@ void testWriteVar() {
 
       // Try writing contrived data into the output file
       GrpVarNames = obstypes[i].getStringVector("Output.variables");
+      std::vector<int> VarShape(1, Nlocs);
       TestVarData.reset(new boost::any[Nlocs]);
       ExpectedSum = 0;
       for (std::size_t j = 0; j < Nlocs; ++j) {
@@ -224,7 +226,7 @@ void testWriteVar() {
         std::string GroupName;
         ExtractGrpVarName(GrpVarNames[j], GroupName, VarName);
 
-        TestIO->WriteVar(GroupName, VarName, TestVarData.get());
+        TestIO->WriteVar(GroupName, VarName, VarShape, TestVarData.get());
         }
 
       // open the file we just created and see if it contains what we just wrote into it
@@ -244,7 +246,7 @@ void testWriteVar() {
         std::string GroupName;
         ExtractGrpVarName(GrpVarNames[j], GroupName, VarName);
 
-        TestIO->ReadVar(GroupName, VarName, TestVarData.get());
+        TestIO->ReadVar(GroupName, VarName, VarShape, TestVarData.get());
         for(std::size_t k = 0; k < Nlocs; ++k) {
           VarSum += int(boost::any_cast<float>(TestVarData.get()[k]));
           }

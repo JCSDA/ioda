@@ -1,0 +1,41 @@
+---
+test_framework_runtime_config: "--log_level=test_suite"
+window_begin: "2018-04-14T21:00:00Z"
+window_end: "2018-04-15T03:00:00Z"
+
+Containers:
+  - Container: "Sondes"
+    InData:
+      filename: "Data/sondes_obs_2018041500_m.nc4"
+      nlocs: 131
+      nvars: 4
+
+      group: "ObsValue"
+      variable: "air_temperature"
+      type: "float"
+      norm: 2470.09741
+      tolerance: 1.0e-3
+
+  - Container: "AMSU-A"
+    InData:
+      filename: "Data/amsua_obs_n19_2018041500_m.nc4"
+      nlocs: 75
+      nvars: 15
+
+      group: "MetaData"
+      variable: "latitude"
+      type: "float"
+      norm: 387.226105
+      tolerance: 1.0e-3
+
+  - Container: "AOD"
+    InData:
+      filename: "Data/aod_obs_2018041500_m.nc4"
+      nlocs: 100
+      nvars: 1
+
+      group: "PreQC"
+      variable: "aerosol_optical_depth_4"
+      type: "integer"
+      norm: 19.6778755
+      tolerance: 1.0e-3

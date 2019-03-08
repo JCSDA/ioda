@@ -87,7 +87,7 @@ NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
   }
 
   // When in read mode, the constructor is responsible for setting
-  // the data members nlocs_, nrecs_, nvars_ and varlist_.
+  // the data members nlocs_, nrecs_, nvars_ and grp_var_info_.
   //
   // The files have nlocs, nrecs, nvars.
   //
@@ -124,13 +124,7 @@ NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
       }
     }
 
-//    // Apply the round-robin distribution, which yields the size and indices that
-//    // are to be selected by this process element out of the file.
-//    DistributionFactory * distFactory;
-//    dist_.reset(distFactory->createDistribution("roundrobin"));
-//    dist_->distribution(comm(), nfvlen_);
-
-    // Walk through the variables and determine the VALID variables
+    // Walk through the variables and record the group and variable information
     int nc_nvars;
     ErrorMsg = "NetcdfIO::NetcdfIO: Unable to read number of variables";
     CheckNcCall(nc_inq_nvars(ncid_, &nc_nvars), ErrorMsg);
@@ -153,25 +147,15 @@ NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
           NcDimSizes.push_back(std::get<1>(dim_list_[nc_dim_ids[j]]));
       }
 
-      // VALID variable is one with only one dimension which is the nlocs dimension
-      if ((nc_ndims == 1) && (nc_dim_ids[0] == nlocs_id_)) {
-        std::string vname{nc_vname};
-        std::string gname{"GroupUndefined"};
-        std::size_t Spos = vname.find("@");
-        if (Spos != vname.npos) {
-          gname = vname.substr(Spos+1);
-          vname = vname.substr(0, Spos);
-        }
-        grp_var_info_[gname][vname].dtype = nc_dtype_name;
-        grp_var_info_[gname][vname].shape = NcDimSizes;
-
-//        // Hack for date and time
-//        std::size_t found = vname.find("time");
-//        if ((found != std::string::npos) && (found == 0)) {
-//          grp_var_info_[gname]["date"].dtype = nc_dtype_name;
-//          grp_var_info_[gname]["date"].shape = NcDimSizes;
-//        }
+      std::string vname{nc_vname};
+      std::string gname{"GroupUndefined"};
+      std::size_t Spos = vname.find("@");
+      if (Spos != vname.npos) {
+        gname = vname.substr(Spos+1);
+        vname = vname.substr(0, Spos);
       }
+      grp_var_info_[gname][vname].dtype = nc_dtype_name;
+      grp_var_info_[gname][vname].shape = NcDimSizes;
     }
 
     for (GroupVarInfoMap::const_iterator igrp = grp_var_info_.begin();
@@ -183,37 +167,6 @@ NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
                   << ivar->second.shape << std::endl;
       }
     }
-
-//    // Calculate the date and time and filter out the obs. outside of window
-//    if (nc_inq_attid(ncid_, NC_GLOBAL, "date_time", NULL) == NC_NOERR) {
-//      int Year, Month, Day, Hour, Minute, Second;
-//      std::unique_ptr<util::DateTime[]> datetime{new util::DateTime[nfvlen_]};
-//      ReadDateTime(datetime.get());
-//
-//      std::vector<std::size_t> to_be_removed;
-//      std::size_t index;
-//      for (std::size_t ii = 0; ii < dist_->size(); ++ii) {
-//        index = dist_->index()[ii];
-//        if ((datetime.get()[index] >  bgn) &&
-//            (datetime.get()[index] <= end)) {  // Inside time window
-//          datetime.get()[index].toYYYYMMDDhhmmss(Year, Month, Day,
-//                                                 Hour, Minute, Second);
-//          date_.push_back(Year*10000 + Month*100 + Day);
-//          time_.push_back(Hour*10000 + Minute*100 + Second);
-//        } else {  // Outside of time window
-//          to_be_removed.push_back(index);
-//        }
-//      }
-//      for (std::size_t ii = 0; ii < to_be_removed.size(); ++ii)
-//        dist_->erase(to_be_removed[ii]);
-//
-//      ASSERT(date_.size() == dist_->size());
-//
-//    } else {
-//      oops::Log::debug() << "NetcdfIO::NetcdfIO : not found: reference date_time " << std::endl;
-//    }  // end of constructing the date and time
-//
-//    nlocs_ = dist_->size();
   }
 
   // When in write mode, create dimensions in the output file based on
@@ -251,31 +204,31 @@ NetcdfIO::~NetcdfIO() {
  */
 
 void NetcdfIO::ReadVar(const std::string & GroupName, const std::string & VarName,
-                       boost::any * VarData) {
+                       std::vector<int> VarShape, boost::any * VarData) {
   std::string ErrorMsg;
   nc_type vartype;
   int nc_varid_;
   const float fmiss = util::missingValue(fmiss);
   std::string NcVarName;
 
-//  // For datetime, it is already calculated in constructor
-//  //  Could be missing date/time values as well
-//  std::size_t found = VarName.find("date");
-//  if ((found != std::string::npos) && (found == 0)) {
-//    ASSERT(date_.size() == nlocs_);
-//    for (std::size_t ii = 0; ii < nlocs_; ++ii)
-//        VarData[ii] = date_[ii];
-//    return;
-//  }
-
-//  found = VarName.find("time");
-//  if ((found != std::string::npos) && (found == 0)) {
-//std::cout << "DEBUG: time.size(), nlocs_: " << time_.size() << ", " << nlocs_ << std::endl;
-//    ASSERT(time_.size() == nlocs_);
-//    for (std::size_t ii = 0; ii < nlocs_; ++ii)
-//        VarData[ii] = time_[ii];
-//    return;
-//  }
+//   // For datetime, it is already calculated in constructor
+//   //  Could be missing date/time values as well
+//   std::size_t found = VarName.find("date");
+//   if ((found != std::string::npos) && (found == 0)) {
+//     ASSERT(date_.size() == nlocs_);
+//     for (std::size_t ii = 0; ii < nlocs_; ++ii)
+//         VarData[ii] = date_[ii];
+//     return;
+//   }
+//
+//   found = VarName.find("time");
+//   if ((found != std::string::npos) && (found == 0)) {
+// std::cout << "DEBUG: time.size(), nlocs_: " << time_.size() << ", " << nlocs_ << std::endl;
+//     ASSERT(time_.size() == nlocs_);
+//     for (std::size_t ii = 0; ii < nlocs_; ++ii)
+//         VarData[ii] = time_[ii];
+//     return;
+//   }
 
   if (GroupName.compare("GroupUndefined") == 0) {
     // No suffix in file variable name
@@ -346,7 +299,7 @@ void NetcdfIO::ReadVar(const std::string & GroupName, const std::string & VarNam
  */
 
 void NetcdfIO::WriteVar(const std::string & GroupName, const std::string & VarName,
-                        boost::any * VarData) {
+                        std::vector<int> VarShape, boost::any * VarData) {
   std::string ErrorMsg;
   const std::type_info & typeInput = VarData->type();
   nc_type NcVarType;

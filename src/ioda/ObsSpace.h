@@ -9,6 +9,7 @@
 #define IODA_OBSSPACE_H_
 
 #include <map>
+#include <memory>
 #include <ostream>
 #include <string>
 #include <vector>
