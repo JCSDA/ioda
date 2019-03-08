@@ -67,6 +67,9 @@ namespace ioda {
  */
 
 class IodaIO : public util::Printable {
+ public:
+    typedef std::vector<std::size_t> VarDimList;
+
  protected:
     // typedefs - these need to defined here before the public typedefs that use them
 
@@ -75,7 +78,7 @@ class IodaIO : public util::Printable {
     // nest. Information that is recorded is the variable data type and shape.
     typedef struct {
       std::string dtype;
-      std::vector<int> shape;
+      VarDimList shape;
     } VarInfoRec;
     typedef std::map<std::string, VarInfoRec> VarInfoMap;
     typedef std::map<std::string, VarInfoMap> GroupVarInfoMap;
@@ -85,9 +88,9 @@ class IodaIO : public util::Printable {
 
     // Methods provided by subclasses
     virtual void ReadVar(const std::string & GroupName, const std::string & VarName,
-                         std::vector<int> VarShape, boost::any * VarData) = 0;
+                         VarDimList VarShape, boost::any * VarData) = 0;
     virtual void WriteVar(const std::string & GroupName, const std::string & VarName,
-                          std::vector<int> VarShape, boost::any * VarData) = 0;
+                          VarDimList VarShape, boost::any * VarData) = 0;
 
     virtual void ReadDateTime(uint64_t * VarDate, int * VarTime)= 0;
 
@@ -99,17 +102,23 @@ class IodaIO : public util::Printable {
     std::size_t nrecs() const;
     std::size_t nvars() const;
 
-    // Access at the group level to the GroupVarInfoMap
+    // Group level iterator
     typedef GroupVarInfoMap::const_iterator GroupIter;
     GroupIter group_begin();
     GroupIter group_end();
     std::string group_name(GroupIter);
 
-    // Access at the variable level to the GroupVarInfoMap
+    // Variable level iterator
     typedef VarInfoMap::const_iterator VarIter;
     VarIter var_begin(GroupIter);
     VarIter var_end(GroupIter);
     std::string var_name(VarIter);
+
+    // Access to variable information
+    std::string var_dtype(VarIter);
+    std::string var_dtype(std::string &, std::string &);
+    VarDimList var_shape(VarIter);
+    VarDimList var_shape(std::string &, std::string &);
 
  protected:
     // Methods provided by subclasses

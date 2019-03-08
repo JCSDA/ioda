@@ -7,6 +7,7 @@ ObsTypes:
   - ObsType: "Radiosonde"
     Input:
       filename: "Data/sondes_obs_2018041500_m.nc4"
+      nvars_in_file: 53
       variables:
          - "latitude@MetaData"
          - "longitude@MetaData"
@@ -40,6 +41,7 @@ ObsTypes:
   - ObsType: "Aircraft"
     Input:
       filename: "Data/aircraft_obs_2018041500_m.nc4"
+      nvars_in_file: 105
       variables:
          - "latitude@MetaData"
          - "longitude@MetaData"
@@ -70,6 +72,7 @@ ObsTypes:
   - ObsType: "Radiance"
     Input:
       filename: "Data/amsua_obs_n19_2018041500_m.nc4"
+      nvars_in_file: 170
       variables:
          - "latitude@MetaData"
          - "longitude@MetaData"
@@ -91,6 +94,7 @@ ObsTypes:
   - ObsType: "Radiance"
     Input:
       filename: "Data/smap_obs_2018041500_m.nc4"
+      nvars_in_file: 202
       variables:
          - "latitude@MetaData"
          - "longitude@MetaData"
@@ -112,6 +116,7 @@ ObsTypes:
   - ObsType: "Radiance"
     Input:
       filename: "Data/gmi_obs_gpm_2018041500_m.nc4"
+      nvars_in_file: 261
       variables:
          - "latitude@MetaData"
          - "longitude@MetaData"
@@ -134,6 +139,7 @@ ObsTypes:
   - ObsType: "Aod"
     Input:
       filename: "Data/aod_obs_2018041500_m.nc4"
+      nvars_in_file: 279
       variables:
          - "latitude@MetaData"
          - "longitude@MetaData"

@@ -126,4 +126,44 @@ std::string IodaIO::var_name(IodaIO::VarIter ivar) {
   return ivar->first;
 }
 
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns the variable data type for the current iteration
+ *          in the group, variable information map.
+ */
+
+std::string IodaIO::var_dtype(IodaIO::VarIter ivar) {
+  return ivar->second.dtype;
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns the variable data type for the current iteration
+ *          in the group, variable information map.
+ */
+
+std::string IodaIO::var_dtype(std::string & GroupName, std::string & VarName) {
+  return grp_var_info_[GroupName][VarName].dtype;
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns the variable shape for the current iteration
+ *          in the group, variable information map.
+ */
+
+IodaIO::VarDimList IodaIO::var_shape(IodaIO::VarIter ivar) {
+  return ivar->second.shape;
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns the variable shape for the current iteration
+ *          in the group, variable information map.
+ */
+
+IodaIO::VarDimList IodaIO::var_shape(std::string & GroupName, std::string & VarName) {
+  return grp_var_info_[GroupName][VarName].shape;
+}
+
 }  // namespace ioda

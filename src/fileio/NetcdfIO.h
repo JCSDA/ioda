@@ -58,9 +58,9 @@ class NetcdfIO : public IodaIO,
   ~NetcdfIO();
 
   void ReadVar(const std::string & GroupName, const std::string & VarName,
-               std::vector<int> VarShape, boost::any * VarData);
+               VarDimList VarShape, boost::any * VarData);
   void WriteVar(const std::string & GroupName, const std::string & VarName,
-               std::vector<int> VarShape, boost::any * VarData);
+               VarDimList VarShape, boost::any * VarData);
 
   void ReadDateTime(uint64_t * VarDate, int * VarTime);
   void ReadDateTime(util::DateTime VarDateTime[]);
