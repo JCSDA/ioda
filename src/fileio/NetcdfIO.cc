@@ -98,16 +98,16 @@ NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
     int NcNdims;
     int NcNvars;
     int NcNatts;
-    char NcName[MAX_NC_NAME];
-    std::size_t NcSize;
 
     // Find counts of objects in the file
     ErrorMsg = "NetcdfIO::NetcdfIO: Unable to read file object counts";
     CheckNcCall(nc_inq(ncid_, &NcNdims, &NcNvars, &NcNatts, NULL), ErrorMsg);
 
-    // Record dimension information. Record the dimension id numbers and sizes
-    // for nlocs, nrecs and nvars.
+    // Record the dimension id numbers and sizes in the dim_list_ container.
+    // Save nlocs, nrecs and nvars in data members.
     for (std::size_t i = 0; i < NcNdims; i++) {
+      char NcName[MAX_NC_NAME];
+      std::size_t NcSize;
       ErrorMsg = "NetcdfIO::NetcdfIO: Unable to read dimension number: " + std::to_string(i);
       CheckNcCall(nc_inq_dim(ncid_, i, NcName, &NcSize), ErrorMsg);
       dim_list_.push_back(std::make_tuple(NcName, NcSize));
@@ -125,47 +125,47 @@ NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
     }
 
     // Walk through the variables and record the group and variable information
-    int nc_nvars;
-    ErrorMsg = "NetcdfIO::NetcdfIO: Unable to read number of variables";
-    CheckNcCall(nc_inq_nvars(ncid_, &nc_nvars), ErrorMsg);
-
-    for (std::size_t ivar=0; ivar < nc_nvars; ++ivar) {
-      char nc_vname[NC_MAX_NAME+1];
-      int nc_ndims;
-      int nc_dim_ids[NC_MAX_VAR_DIMS];
-      nc_type nc_dtype;
-      char nc_dtype_name[NC_MAX_NAME+1];
-      std::size_t nc_dtype_size;
-
+    for (std::size_t ivar=0; ivar < NcNvars; ++ivar) {
+      // nc variable dimension and type information
+      char NcVname[NC_MAX_NAME+1];
+      nc_type NcDtype;
+      int NcNdims;
+      int NcDimIds[NC_MAX_VAR_DIMS];
       ErrorMsg = "NetcdfIO::NetcdfIO: Unable to read variable number: " + std::to_string(ivar);
-      CheckNcCall(nc_inq_var(ncid_, ivar, nc_vname, &nc_dtype, &nc_ndims, nc_dim_ids, 0), ErrorMsg);
+      CheckNcCall(nc_inq_var(ncid_, ivar, NcVname, &NcDtype, &NcNdims, NcDimIds, 0), ErrorMsg);
+
+      // nc type name
+      char NcDtypeName[NC_MAX_NAME+1];
+      std::size_t NcDtypeSize;
       ErrorMsg = "NetcdfIO::NetcdfIO: Unable to look up type name";
-      CheckNcCall(nc_inq_type(ncid_, nc_dtype, nc_dtype_name, &nc_dtype_size), ErrorMsg);
+      CheckNcCall(nc_inq_type(ncid_, NcDtype, NcDtypeName, &NcDtypeSize), ErrorMsg);
 
-      std::vector<int> NcDimSizes;
-      for (std::size_t j = 0; j < nc_ndims; j++) {
-          NcDimSizes.push_back(std::get<1>(dim_list_[nc_dim_ids[j]]));
+      // If the data type is "char" and number of dimensions is 2, it means that there
+      // is a 2D character array which is how netcdf stores a vector of strings. Make
+      // this appear to be a vector of strings to the client so the client can allocate
+      // memory properly.
+      if ((strcmp(NcDtypeName, "char") == 0) and (NcNdims == 2)) {
+        // Have a netcdf char array which is representing a vector of strings.
+        strcpy(NcDtypeName,"string");
+        NcNdims = 1;
       }
 
-      std::string vname{nc_vname};
-      std::string gname{"GroupUndefined"};
-      std::size_t Spos = vname.find("@");
-      if (Spos != vname.npos) {
-        gname = vname.substr(Spos+1);
-        vname = vname.substr(0, Spos);
+      // Collect the sizes for dimensions from the dim_list_ container.
+      VarDimList NcDimSizes;
+      for (std::size_t j = 0; j < NcNdims; j++) {
+          NcDimSizes.push_back(std::get<1>(dim_list_[NcDimIds[j]]));
       }
-      grp_var_info_[gname][vname].dtype = nc_dtype_name;
-      grp_var_info_[gname][vname].shape = NcDimSizes;
-    }
 
-    for (GroupVarInfoMap::const_iterator igrp = grp_var_info_.begin();
-                                         igrp != grp_var_info_.end(); igrp++) {
-      for (VarInfoMap::const_iterator ivar = igrp->second.begin();
-                                      ivar != igrp->second.end(); ivar++) {
-        std::cout << "DEBUG: var list: gname, vname, dtype, shape: " << igrp->first
-                  << ", " << ivar->first << ", " << ivar->second.dtype << ", "
-                  << ivar->second.shape << std::endl;
+      // Record the variable info in the grp_var_into_ container.
+      std::string VarName{NcVname};
+      std::string GroupName{"GroupUndefined"};
+      std::size_t Spos = VarName.find("@");
+      if (Spos != VarName.npos) {
+        GroupName = VarName.substr(Spos+1);
+        VarName = VarName.substr(0, Spos);
       }
+      grp_var_info_[GroupName][VarName].dtype = NcDtypeName;
+      grp_var_info_[GroupName][VarName].shape = NcDimSizes;
     }
   }
 
@@ -204,31 +204,12 @@ NetcdfIO::~NetcdfIO() {
  */
 
 void NetcdfIO::ReadVar(const std::string & GroupName, const std::string & VarName,
-                       std::vector<int> VarShape, boost::any * VarData) {
+                       VarDimList VarShape, boost::any * VarData) {
   std::string ErrorMsg;
   nc_type vartype;
   int nc_varid_;
   const float fmiss = util::missingValue(fmiss);
   std::string NcVarName;
-
-//   // For datetime, it is already calculated in constructor
-//   //  Could be missing date/time values as well
-//   std::size_t found = VarName.find("date");
-//   if ((found != std::string::npos) && (found == 0)) {
-//     ASSERT(date_.size() == nlocs_);
-//     for (std::size_t ii = 0; ii < nlocs_; ++ii)
-//         VarData[ii] = date_[ii];
-//     return;
-//   }
-//
-//   found = VarName.find("time");
-//   if ((found != std::string::npos) && (found == 0)) {
-// std::cout << "DEBUG: time.size(), nlocs_: " << time_.size() << ", " << nlocs_ << std::endl;
-//     ASSERT(time_.size() == nlocs_);
-//     for (std::size_t ii = 0; ii < nlocs_; ++ii)
-//         VarData[ii] = time_[ii];
-//     return;
-//   }
 
   if (GroupName.compare("GroupUndefined") == 0) {
     // No suffix in file variable name
@@ -299,7 +280,7 @@ void NetcdfIO::ReadVar(const std::string & GroupName, const std::string & VarNam
  */
 
 void NetcdfIO::WriteVar(const std::string & GroupName, const std::string & VarName,
-                        std::vector<int> VarShape, boost::any * VarData) {
+                        VarDimList VarShape, boost::any * VarData) {
   std::string ErrorMsg;
   const std::type_info & typeInput = VarData->type();
   nc_type NcVarType;

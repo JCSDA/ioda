@@ -114,6 +114,46 @@ void testConstructor() {
 
 // -----------------------------------------------------------------------------
 
+void testGrpVarIter() {
+  const eckit::LocalConfiguration conf(::test::TestEnvironment::config());
+  std::vector<eckit::LocalConfiguration> obstypes;
+
+  std::string FileName;
+  std::string TestObsType;
+  std::unique_ptr<ioda::IodaIO> TestIO;
+
+  // Walk through the different ObsTypes and try out the group variable iterators.
+  conf.get("ObsTypes", obstypes);
+  for (std::size_t i = 0; i < obstypes.size(); ++i) {
+    oops::Log::debug() << "IodaIO::ObsTypes: conf" << obstypes[i] << std::endl;
+
+    TestObsType = obstypes[i].getString("ObsType");
+    oops::Log::debug() << "IodaIO::ObsType: " << TestObsType << std::endl;
+
+    FileName = obstypes[i].getString("Input.filename");
+    TestIO.reset(ioda::IodaIOfactory::Create(FileName, "r"));
+    BOOST_CHECK(TestIO.get());
+
+    // Test the iterators by walking through the entire list of variables
+    // and check the count of variables (total number in the file) with the
+    // expected count.
+    std::size_t VarCount;
+    std::size_t ExpectedVarCount = obstypes[i].getInt("Input.nvars_in_file");
+    for (IodaIO::GroupIter igrp = TestIO->group_begin();
+                           igrp != TestIO->group_end(); igrp++) {
+      std::string GroupName = TestIO->group_name(igrp);
+
+      for (IodaIO::VarIter ivar = TestIO->var_begin(igrp);
+                           ivar != TestIO->var_end(igrp); ivar++) {
+        VarCount++;
+      }
+    }
+    BOOST_CHECK_EQUAL(VarCount, ExpectedVarCount);
+  }
+}
+
+// -----------------------------------------------------------------------------
+
 void testReadVar() {
   const eckit::LocalConfiguration conf(::test::TestEnvironment::config());
 
@@ -145,7 +185,7 @@ void testReadVar() {
     ExpectedVnorms = obstypes[i].getFloatVector("Input.metadata.norms");
     Tol = obstypes[i].getFloat("Input.metadata.tolerance");
     Vsize = TestIO->nlocs();
-    std::vector<int> VarShape(1, Vsize);
+    IodaIO::VarDimList VarShape(1, Vsize);
     TestVarData.reset(new boost::any[Vsize]);
     for(std::size_t j = 0; j < GrpVarNames.size(); ++j) {
       // Split out variable and group names
@@ -212,7 +252,7 @@ void testWriteVar() {
 
       // Try writing contrived data into the output file
       GrpVarNames = obstypes[i].getStringVector("Output.variables");
-      std::vector<int> VarShape(1, Nlocs);
+      IodaIO::VarDimList VarShape{ Nlocs };
       TestVarData.reset(new boost::any[Nlocs]);
       ExpectedSum = 0;
       for (std::size_t j = 0; j < Nlocs; ++j) {
@@ -325,6 +365,7 @@ class IodaIO : public oops::Test {
     boost::unit_test::test_suite * ts = BOOST_TEST_SUITE("IodaIO");
 
     ts->add(BOOST_TEST_CASE(&testConstructor));
+    ts->add(BOOST_TEST_CASE(&testGrpVarIter));
     ts->add(BOOST_TEST_CASE(&testReadVar));
     ts->add(BOOST_TEST_CASE(&testWriteVar));
     ts->add(BOOST_TEST_CASE(&testReadDateTime));
