@@ -75,17 +75,17 @@ ObsTypes:
          - "longitude@MetaData"
          - "time@MetaData"
       metadata:
-        nlocs: 75
-        nrecs: 75
+        nlocs: 100
+        nrecs: 100
         nvars: 15
         norms:
-          - 384.023
-          - 1511.79
-          - 14.8752
+          - 451.465
+          - 1829.81
+          - 17.8632
         tolerance: 1.0e-3
       datetime:
-        dnorm: 1.74767e+08
-        tnorm: 1.45496e+06
+        dnorm: 201804096
+        tnorm: 1615322
         tolerance:  1.0e-3
 
   - ObsType: "Radiance"
