@@ -129,10 +129,12 @@ NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
       // nc variable dimension and type information
       char NcVname[NC_MAX_NAME+1];
       nc_type NcDtype;
+      int NcVarId;
       int NcNdims;
       int NcDimIds[NC_MAX_VAR_DIMS];
-      ErrorMsg = "NetcdfIO::NetcdfIO: Unable to read variable number: " + std::to_string(ivar);
+      ErrorMsg = "NetcdfIO::NetcdfIO: Unable to read information for variable number: " + std::to_string(ivar);
       CheckNcCall(nc_inq_var(ncid_, ivar, NcVname, &NcDtype, &NcNdims, NcDimIds, 0), ErrorMsg);
+      CheckNcCall(nc_inq_varid(ncid_, NcVname, &NcVarId), ErrorMsg);
 
       // nc type name
       char NcDtypeName[NC_MAX_NAME+1];
@@ -140,18 +142,8 @@ NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
       ErrorMsg = "NetcdfIO::NetcdfIO: Unable to look up type name";
       CheckNcCall(nc_inq_type(ncid_, NcDtype, NcDtypeName, &NcDtypeSize), ErrorMsg);
 
-      // If the data type is "char" and number of dimensions is 2, it means that there
-      // is a 2D character array which is how netcdf stores a vector of strings. Make
-      // this appear to be a vector of strings to the client so the client can allocate
-      // memory properly.
-      if ((strcmp(NcDtypeName, "char") == 0) and (NcNdims == 2)) {
-        // Have a netcdf char array which is representing a vector of strings.
-        strcpy(NcDtypeName,"string");
-        NcNdims = 1;
-      }
-
       // Collect the sizes for dimensions from the dim_list_ container.
-      VarDimList NcDimSizes;
+      std::vector<std::size_t> NcDimSizes;
       for (std::size_t j = 0; j < NcNdims; j++) {
           NcDimSizes.push_back(std::get<1>(dim_list_[NcDimIds[j]]));
       }
@@ -164,9 +156,24 @@ NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
         GroupName = VarName.substr(Spos+1);
         VarName = VarName.substr(0, Spos);
       }
+      grp_var_info_[GroupName][VarName].var_id = NcVarId;
       grp_var_info_[GroupName][VarName].dtype = NcDtypeName;
       grp_var_info_[GroupName][VarName].shape = NcDimSizes;
     }
+
+    for (IodaIO::GroupIter igrp = grp_var_info_.begin();
+                           igrp != grp_var_info_.end(); igrp++) {
+      std::string GroupName = igrp->first;
+      for (IodaIO::VarIter ivar = grp_var_info_[GroupName].begin();
+                           ivar != grp_var_info_[GroupName].end(); ivar++) {
+        std::string VarName = ivar->first;
+        std::cout << "DEBUG: grp_var_info_: " << GroupName << ", " << VarName << ", "
+                  << grp_var_info_[GroupName][VarName].var_id << ", "
+                  << grp_var_info_[GroupName][VarName].dtype << ", "
+                  << grp_var_info_[GroupName][VarName].shape << std::endl;
+      }
+    }
+
   }
 
   // When in write mode, create dimensions in the output file based on
@@ -204,13 +211,31 @@ NetcdfIO::~NetcdfIO() {
  */
 
 void NetcdfIO::ReadVar(const std::string & GroupName, const std::string & VarName,
-                       VarDimList VarShape, boost::any * VarData) {
-  std::string ErrorMsg;
-  nc_type vartype;
-  int nc_varid_;
-  const float fmiss = util::missingValue(fmiss);
-  std::string NcVarName;
+                       int * VarData) {
+  //ReadVar_helper<int>(GroupName, VarName, VarData);
+}
 
+void NetcdfIO::ReadVar(const std::string & GroupName, const std::string & VarName,
+                       float * VarData) {
+  // Read in the variable values
+  std::string ErrorMsg = "NetcdfIO::ReadVar: Unable to read netcdf variable: " + 
+                          GetNcVarName(GroupName, VarName);
+  CheckNcCall(nc_get_var_float(ncid_, grp_var_info_[GroupName][VarName].var_id, VarData),
+              ErrorMsg);
+
+  // Add in the missing data marks.
+  const float missing_value = util::missingValue(missing_value);
+}
+
+void NetcdfIO::ReadVar(const std::string & GroupName, const std::string & VarName,
+                       char * VarData) {
+  //ReadVar_helper<char>(GroupName, VarName, VarData);
+}
+
+std::string NetcdfIO::GetNcVarName(const std::string & GroupName, const std::string & VarName) {
+  // Construct the variable name found in the file. If group name is "GroupUndefined",
+  // then the file variable name does not include the "@GroupName" suffix.
+  std::string NcVarName;
   if (GroupName.compare("GroupUndefined") == 0) {
     // No suffix in file variable name
     NcVarName = VarName;
@@ -219,50 +244,7 @@ void NetcdfIO::ReadVar(const std::string & GroupName, const std::string & VarNam
     NcVarName = VarName + "@" + GroupName;
   }
 
-  ErrorMsg = "NetcdfIO::ReadVar: Netcdf dataset not found: " + NcVarName;
-  CheckNcCall(nc_inq_varid(ncid_, NcVarName.c_str(), &nc_varid_), ErrorMsg);
-
-  ErrorMsg = "NetcdfIO::ReadVar: Unable to determine variable data type: " + NcVarName;
-  CheckNcCall(nc_inq_vartype(ncid_, nc_varid_, &vartype), ErrorMsg);
-
-  ErrorMsg = "NetcdfIO::ReadVar: Unable to read dataset: " + NcVarName;
-  switch (vartype) {
-    case NC_INT: {
-//    Could be missing int values as well
-      std::unique_ptr<int[]> iData{new int[nlocs_]};
-      CheckNcCall(nc_get_var_int(ncid_, nc_varid_, iData.get()), ErrorMsg);
-      for (std::size_t ii = 0; ii < nlocs_; ++ii)
-        VarData[ii] = iData.get()[ii];
-      break;
-    }
-    case NC_FLOAT: {
-      std::unique_ptr<float[]> rData{new float[nlocs_]};
-      CheckNcCall(nc_get_var_float(ncid_, nc_varid_, rData.get()), ErrorMsg);
-      for (std::size_t ii = 0; ii < nlocs_; ++ii) {
-        VarData[ii] = rData.get()[ii];
-        if (boost::any_cast<float>(VarData[ii]) > missingthreshold) {  // not safe enough
-          VarData[ii] = fmiss;
-        }
-      }
-      break;
-    }
-    case NC_DOUBLE: {
-      std::unique_ptr<double[]> dData{new double[nlocs_]};
-      CheckNcCall(nc_get_var_double(ncid_, nc_varid_, dData.get()), ErrorMsg);
-      for (std::size_t ii = 0; ii < nlocs_; ++ii) {
-        /* Force double to float */
-        VarData[ii] = static_cast<float>(dData.get()[ii]);
-        if (boost::any_cast<float>(VarData[ii]) > missingthreshold) {  // not safe enough
-          VarData[ii] = fmiss;
-        }
-      }
-      break;
-    }
-    default:
-      oops::Log::warning() <<  "NetcdfIO::ReadVar: Unable to read dataset: "
-                           << " VarName: " << NcVarName << " with NetCDF type :"
-                           << vartype << std::endl;
-  }
+  return NcVarName;
 }
 
 // -----------------------------------------------------------------------------
@@ -280,11 +262,27 @@ void NetcdfIO::ReadVar(const std::string & GroupName, const std::string & VarNam
  */
 
 void NetcdfIO::WriteVar(const std::string & GroupName, const std::string & VarName,
-                        VarDimList VarShape, boost::any * VarData) {
+                        int * VarData) {
+  WriteVar_helper<int>(GroupName, VarName, VarData);
+}
+
+void NetcdfIO::WriteVar(const std::string & GroupName, const std::string & VarName,
+                        float * VarData) {
+  WriteVar_helper<float>(GroupName, VarName, VarData);
+}
+
+void NetcdfIO::WriteVar(const std::string & GroupName, const std::string & VarName,
+                        char * VarData) {
+  WriteVar_helper<char>(GroupName, VarName, VarData);
+}
+
+template <typename DataType>
+void NetcdfIO::WriteVar_helper(const std::string & GroupName, const std::string & VarName,
+                        DataType * VarData) {
   std::string ErrorMsg;
-  const std::type_info & typeInput = VarData->type();
+  const std::type_info & typeInput = typeid(DataType);
   nc_type NcVarType;
-  int nc_varid_;
+  int NcVarId;
   std::string NcVarName;
 
   if (GroupName.compare("GroupUndefined") != 0) {
@@ -307,9 +305,9 @@ void NetcdfIO::WriteVar(const std::string & GroupName, const std::string & VarNa
   }
 
   // If var doesn't exist in the file, then create it
-  if (nc_inq_varid(ncid_, NcVarName.c_str(), &nc_varid_) != NC_NOERR) {
+  if (nc_inq_varid(ncid_, NcVarName.c_str(), &NcVarId) != NC_NOERR) {
     ErrorMsg = "NetcdfIO::WriteVar: Unable to create variable dataset: " + NcVarName;
-    CheckNcCall(nc_def_var(ncid_, NcVarName.c_str(), NcVarType, 1, &nlocs_id_, &nc_varid_),
+    CheckNcCall(nc_def_var(ncid_, NcVarName.c_str(), NcVarType, 1, &nlocs_id_, &NcVarId),
                 ErrorMsg);
   }
 
@@ -319,17 +317,17 @@ void NetcdfIO::WriteVar(const std::string & GroupName, const std::string & VarNa
     std::unique_ptr<int[]> iData{new int[nlocs()]};
     for (std::size_t ii = 0; ii < nlocs(); ++ii)
       iData.get()[ii] = boost::any_cast<int>(VarData[ii]);
-    CheckNcCall(nc_put_var_int(ncid_, nc_varid_, iData.get()), ErrorMsg);
+    CheckNcCall(nc_put_var_int(ncid_, NcVarId, iData.get()), ErrorMsg);
   } else if (NcVarType == NC_FLOAT) {
     std::unique_ptr<float[]> fData{new float[nlocs()]};
     for (std::size_t ii = 0; ii < nlocs(); ++ii)
       fData.get()[ii] = boost::any_cast<float>(VarData[ii]);
-    CheckNcCall(nc_put_var_float(ncid_, nc_varid_, fData.get()), ErrorMsg);
+    CheckNcCall(nc_put_var_float(ncid_, NcVarId, fData.get()), ErrorMsg);
   } else if (NcVarType == NC_DOUBLE) {
     std::unique_ptr<double[]> dData{new double[nlocs()]};
     for (std::size_t ii = 0; ii < nlocs(); ++ii)
       dData.get()[ii] = boost::any_cast<double>(VarData[ii]);
-    CheckNcCall(nc_put_var_double(ncid_, nc_varid_, dData.get()), ErrorMsg);
+    CheckNcCall(nc_put_var_double(ncid_, NcVarId, dData.get()), ErrorMsg);
   }
 }
 

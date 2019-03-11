@@ -152,7 +152,7 @@ std::string IodaIO::var_dtype(std::string & GroupName, std::string & VarName) {
  *          in the group, variable information map.
  */
 
-IodaIO::VarDimList IodaIO::var_shape(IodaIO::VarIter ivar) {
+std::vector<std::size_t> IodaIO::var_shape(IodaIO::VarIter ivar) {
   return ivar->second.shape;
 }
 
@@ -162,7 +162,7 @@ IodaIO::VarDimList IodaIO::var_shape(IodaIO::VarIter ivar) {
  *          in the group, variable information map.
  */
 
-IodaIO::VarDimList IodaIO::var_shape(std::string & GroupName, std::string & VarName) {
+std::vector<std::size_t> IodaIO::var_shape(std::string & GroupName, std::string & VarName) {
   return grp_var_info_[GroupName][VarName].shape;
 }
 

@@ -58,7 +58,7 @@ namespace ioda {
  *         * nlocs_
  *         * nrecs_
  *         * nvars_
- *         * group_var_info_
+ *         * grp_var_info_
  *
  *       If in read mode, metadata from the input file are used to set the data members
  *       If in write mode, the data members are set from the constructor arguments 
@@ -67,9 +67,6 @@ namespace ioda {
  */
 
 class IodaIO : public util::Printable {
- public:
-    typedef std::vector<std::size_t> VarDimList;
-
  protected:
     // typedefs - these need to defined here before the public typedefs that use them
 
@@ -78,7 +75,8 @@ class IodaIO : public util::Printable {
     // nest. Information that is recorded is the variable data type and shape.
     typedef struct {
       std::string dtype;
-      VarDimList shape;
+      std::size_t var_id;
+      std::vector<std::size_t> shape;
     } VarInfoRec;
     typedef std::map<std::string, VarInfoRec> VarInfoMap;
     typedef std::map<std::string, VarInfoMap> GroupVarInfoMap;
@@ -88,9 +86,18 @@ class IodaIO : public util::Printable {
 
     // Methods provided by subclasses
     virtual void ReadVar(const std::string & GroupName, const std::string & VarName,
-                         VarDimList VarShape, boost::any * VarData) = 0;
+                         int * VarData) = 0;
+    virtual void ReadVar(const std::string & GroupName, const std::string & VarName,
+                         float * VarData) = 0;
+    virtual void ReadVar(const std::string & GroupName, const std::string & VarName,
+                         char * VarData) = 0;
+
     virtual void WriteVar(const std::string & GroupName, const std::string & VarName,
-                          VarDimList VarShape, boost::any * VarData) = 0;
+                          int * VarData) = 0;
+    virtual void WriteVar(const std::string & GroupName, const std::string & VarName,
+                          float * VarData) = 0;
+    virtual void WriteVar(const std::string & GroupName, const std::string & VarName,
+                          char * VarData) = 0;
 
     virtual void ReadDateTime(uint64_t * VarDate, int * VarTime)= 0;
 
@@ -117,8 +124,8 @@ class IodaIO : public util::Printable {
     // Access to variable information
     std::string var_dtype(VarIter);
     std::string var_dtype(std::string &, std::string &);
-    VarDimList var_shape(VarIter);
-    VarDimList var_shape(std::string &, std::string &);
+    std::vector<std::size_t> var_shape(VarIter);
+    std::vector<std::size_t> var_shape(std::string &, std::string &);
 
  protected:
     // Methods provided by subclasses
