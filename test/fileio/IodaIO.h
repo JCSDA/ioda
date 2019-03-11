@@ -164,8 +164,6 @@ void testReadVar() {
   std::string FileName;
   std::string TestObsType;
   std::unique_ptr<ioda::IodaIO> TestIO;
-  std::size_t Vsize;
-  std::unique_ptr<boost::any[]> TestVarData;
   float Vnorm;
   float Tol;
 
@@ -184,30 +182,26 @@ void testReadVar() {
     GrpVarNames = obstypes[i].getStringVector("Input.variables");
     ExpectedVnorms = obstypes[i].getFloatVector("Input.metadata.norms");
     Tol = obstypes[i].getFloat("Input.metadata.tolerance");
-    Vsize = TestIO->nlocs();
-    IodaIO::VarDimList VarShape(1, Vsize);
-    TestVarData.reset(new boost::any[Vsize]);
     for(std::size_t j = 0; j < GrpVarNames.size(); ++j) {
       // Split out variable and group names
       std::string VarName;
       std::string GroupName;
       ExtractGrpVarName(GrpVarNames[j], GroupName, VarName);
 
-      TestIO->ReadVar(GroupName, VarName, VarShape, TestVarData.get());
+      std::vector<std::size_t> VarShape = TestIO->var_shape(GroupName, VarName);
+      std::size_t Vsize = VarShape[0];
+      std::unique_ptr<float[]> TestVarData(new float[Vsize]);
+      TestIO->ReadVar(GroupName, VarName, TestVarData.get());
 
-      const std::type_info & TestVarDtype = TestVarData.get()->type();
       // Compute the vector length TestVarData and compare with config values
       Vnorm = 0.0;
       for(std::size_t k = 0; k < Vsize; ++k) {
-        if (TestVarDtype == typeid(int)) {
-          Vnorm += pow(static_cast<double>(boost::any_cast<int>(TestVarData.get()[k])), 2.0);
-        } else if (TestVarDtype == typeid(float)) {
-          Vnorm += pow(boost::any_cast<float>(TestVarData.get()[k]), 2.0);
-        }
-        }
+        Vnorm += pow(static_cast<double>(TestVarData.get()[k]), 2.0);
+      }
       Vnorm = sqrt(Vnorm);
 
       BOOST_CHECK_CLOSE(Vnorm, ExpectedVnorms[j], Tol);
+      TestVarData.reset(NULL);
       }
     }
   }
@@ -225,7 +219,6 @@ void testWriteVar() {
   std::size_t Nlocs;
   std::size_t Nrecs;
   std::size_t Nvars;
-  std::unique_ptr<boost::any[]> TestVarData;
 
   std::size_t TestNlocs;
   std::size_t TestNrecs;
@@ -252,11 +245,11 @@ void testWriteVar() {
 
       // Try writing contrived data into the output file
       GrpVarNames = obstypes[i].getStringVector("Output.variables");
-      IodaIO::VarDimList VarShape{ Nlocs };
-      TestVarData.reset(new boost::any[Nlocs]);
+      std::vector<std::size_t> VarShape{ Nlocs };
+      std::unique_ptr<float[]> TestWriteData(new float[Nlocs]);
       ExpectedSum = 0;
       for (std::size_t j = 0; j < Nlocs; ++j) {
-        TestVarData.get()[j] = float(j);
+        TestWriteData.get()[j] = float(j);
         ExpectedSum += j;
         }
       ExpectedSum *= GrpVarNames.size();
@@ -266,7 +259,7 @@ void testWriteVar() {
         std::string GroupName;
         ExtractGrpVarName(GrpVarNames[j], GroupName, VarName);
 
-        TestIO->WriteVar(GroupName, VarName, VarShape, TestVarData.get());
+        TestIO->WriteVar(GroupName, VarName, TestWriteData.get());
         }
 
       // open the file we just created and see if it contains what we just wrote into it
@@ -286,9 +279,12 @@ void testWriteVar() {
         std::string GroupName;
         ExtractGrpVarName(GrpVarNames[j], GroupName, VarName);
 
-        TestIO->ReadVar(GroupName, VarName, VarShape, TestVarData.get());
+        std::vector<std::size_t> VarShape = TestIO->var_shape(GroupName, VarName);
+        std::size_t Vsize = VarShape[0];
+        std::unique_ptr<float[]> TestReadData(new float[Vsize]);
+        TestIO->ReadVar(GroupName, VarName, TestReadData.get());
         for(std::size_t k = 0; k < Nlocs; ++k) {
-          VarSum += int(boost::any_cast<float>(TestVarData.get()[k]));
+          VarSum += int(TestReadData.get()[k]);
           }
         }
 

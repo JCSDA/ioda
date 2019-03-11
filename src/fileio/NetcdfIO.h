@@ -57,10 +57,13 @@ class NetcdfIO : public IodaIO,
            const std::size_t & Nvars);
   ~NetcdfIO();
 
-  void ReadVar(const std::string & GroupName, const std::string & VarName,
-               VarDimList VarShape, boost::any * VarData);
-  void WriteVar(const std::string & GroupName, const std::string & VarName,
-               VarDimList VarShape, boost::any * VarData);
+  void ReadVar(const std::string & GroupName, const std::string & VarName, int * VarData);
+  void ReadVar(const std::string & GroupName, const std::string & VarName, float * VarData);
+  void ReadVar(const std::string & GroupName, const std::string & VarName, char * VarData);
+
+  void WriteVar(const std::string & GroupName, const std::string & VarName, int * VarData);
+  void WriteVar(const std::string & GroupName, const std::string & VarName, float * VarData);
+  void WriteVar(const std::string & GroupName, const std::string & VarName, char * VarData);
 
   void ReadDateTime(uint64_t * VarDate, int * VarTime);
   void ReadDateTime(util::DateTime VarDateTime[]);
@@ -70,6 +73,12 @@ class NetcdfIO : public IodaIO,
   void print(std::ostream & os) const;
 
   void CheckNcCall(int RetCode, std::string & ErrorMsg);
+
+  std::string GetNcVarName(const std::string & GroupName, const std::string & VarName);
+
+  template <typename DataType>
+  void WriteVar_helper(const std::string & GroupName, const std::string & VarName,
+                       DataType * VarData);
 
   // Data members
   /*!
@@ -104,15 +113,6 @@ class NetcdfIO : public IodaIO,
    */
   DimListType dim_list_;
 
-  /*!
-   * \brief date (YYMMDD) in NetCDF file
-   */
-  std::vector<int> date_;
-
-  /*!
-   * \brief time (HHMMSS) in NetCDF file
-   */
-  std::vector<int> time_;
 };
 
 }  // namespace ioda
