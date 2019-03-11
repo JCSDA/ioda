@@ -69,7 +69,7 @@ ObsTypes:
 
   - ObsType: "Radiance"
     Input:
-      filename: "Data/amsua_obs_n19_2018041500_m.nc4"
+      filename: "Data/amsua_n19_obs_2018041500_m.nc4"
       variables:
          - "latitude@MetaData"
          - "longitude@MetaData"
