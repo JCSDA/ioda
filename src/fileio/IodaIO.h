@@ -77,6 +77,7 @@ class IodaIO : public util::Printable {
       std::string dtype;
       std::size_t var_id;
       std::vector<std::size_t> shape;
+      std::size_t size;
     } VarInfoRec;
     typedef std::map<std::string, VarInfoRec> VarInfoMap;
     typedef std::map<std::string, VarInfoMap> GroupVarInfoMap;
@@ -86,18 +87,18 @@ class IodaIO : public util::Printable {
 
     // Methods provided by subclasses
     virtual void ReadVar(const std::string & GroupName, const std::string & VarName,
-                         int * VarData) = 0;
+                         const int & VarSize, int * VarData) = 0;
     virtual void ReadVar(const std::string & GroupName, const std::string & VarName,
-                         float * VarData) = 0;
+                         const int & VarSize, float * VarData) = 0;
     virtual void ReadVar(const std::string & GroupName, const std::string & VarName,
-                         char * VarData) = 0;
+                         const int & VarSize, char * VarData) = 0;
 
     virtual void WriteVar(const std::string & GroupName, const std::string & VarName,
-                          int * VarData) = 0;
+                          const int & VarSize, int * VarData) = 0;
     virtual void WriteVar(const std::string & GroupName, const std::string & VarName,
-                          float * VarData) = 0;
+                          const int & VarSize, float * VarData) = 0;
     virtual void WriteVar(const std::string & GroupName, const std::string & VarName,
-                          char * VarData) = 0;
+                          const int & VarSize, char * VarData) = 0;
 
     virtual void ReadDateTime(uint64_t * VarDate, int * VarTime)= 0;
 
@@ -126,6 +127,8 @@ class IodaIO : public util::Printable {
     std::string var_dtype(std::string &, std::string &);
     std::vector<std::size_t> var_shape(VarIter);
     std::vector<std::size_t> var_shape(std::string &, std::string &);
+    std::size_t var_size(VarIter);
+    std::size_t var_size(std::string &, std::string &);
 
  protected:
     // Methods provided by subclasses
