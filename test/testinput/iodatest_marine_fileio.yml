@@ -8,9 +8,9 @@ ObsTypes:
     Input:
       filename: "Data/Jason-2-2018-04-15.nc"
       variables:
-         - "latitude"
-         - "longitude"
-         - "time"
+         - "latitude@MetaData"
+         - "longitude@MetaData"
+         - "time@MetaData"
       metadata:
         nlocs: 160607
         nrecs: 1
@@ -37,9 +37,9 @@ ObsTypes:
     Input:
       filename: "Data/profile_2018-04-15.nc"
       variables:
-         - "latitude"
-         - "longitude"
-         - "time"
+         - "latitude@MetaData"
+         - "longitude@MetaData"
+         - "time@MetaData"
       metadata:
         nlocs: 918
         nrecs: 1
@@ -56,7 +56,7 @@ ObsTypes:
     Output:
       filename: "testoutput/diagout_profile.nc4"
       variables:
-         - "insitu_temperature"
+         - "sea_water_temperature"
       metadata:
         nlocs: 918
         nrecs: 1
@@ -66,9 +66,9 @@ ObsTypes:
     Input:
       filename: "Data/sst_obs-2018-04-15.nc4"
       variables:
-         - "latitude"
-         - "longitude"
-         - "time"
+         - "latitude@MetaData"
+         - "longitude@MetaData"
+         - "time@MetaData"
       metadata:
         nlocs: 223966
         nrecs: 1
@@ -95,9 +95,9 @@ ObsTypes:
     Input:
       filename: "Data/icec-2018-04-15.nc"
       variables:
-         - "latitude"
-         - "longitude"
-         - "time"
+         - "latitude@MetaData"
+         - "longitude@MetaData"
+         - "time@MetaData"
       metadata:
         nlocs: 71558
         nrecs: 1
@@ -124,9 +124,9 @@ ObsTypes:
     Input:
       filename: "Data/cryosat2-2018-04-15.nc"
       variables:
-         - "latitude"
-         - "longitude"
-         - "time"
+         - "latitude@MetaData"
+         - "longitude@MetaData"
+         - "time@MetaData"
       metadata:
         nlocs: 8065
         nrecs: 1
