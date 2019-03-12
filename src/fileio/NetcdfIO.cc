@@ -7,9 +7,10 @@
 
 #include "fileio/NetcdfIO.h"
 
-#include <netcdf.h>
+#include "netcdf.h"
 
 #include <iostream>
+#include <cmath>
 #include <memory>
 #include <string>
 #include <typeinfo>
@@ -144,8 +145,10 @@ NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
 
       // Collect the sizes for dimensions from the dim_list_ container.
       std::vector<std::size_t> NcDimSizes;
+      std::size_t NcVarSize = 1;
       for (std::size_t j = 0; j < NcNdims; j++) {
           NcDimSizes.push_back(std::get<1>(dim_list_[NcDimIds[j]]));
+          NcVarSize *= NcDimSizes[j];
       }
 
       // Record the variable info in the grp_var_into_ container.
@@ -159,6 +162,7 @@ NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
       grp_var_info_[GroupName][VarName].var_id = NcVarId;
       grp_var_info_[GroupName][VarName].dtype = NcDtypeName;
       grp_var_info_[GroupName][VarName].shape = NcDimSizes;
+      grp_var_info_[GroupName][VarName].size = NcVarSize;
     }
 
     for (IodaIO::GroupIter igrp = grp_var_info_.begin();
@@ -170,7 +174,8 @@ NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
         std::cout << "DEBUG: grp_var_info_: " << GroupName << ", " << VarName << ", "
                   << grp_var_info_[GroupName][VarName].var_id << ", "
                   << grp_var_info_[GroupName][VarName].dtype << ", "
-                  << grp_var_info_[GroupName][VarName].shape << std::endl;
+                  << grp_var_info_[GroupName][VarName].shape << ", "
+                  << grp_var_info_[GroupName][VarName].size << std::endl;
       }
     }
 
@@ -206,45 +211,75 @@ NetcdfIO::~NetcdfIO() {
  *          read. The caller then passes a pointer to that memory for the VarData
  *          argument.
  *
- * \param[in]  VarName Name of dataset in the netcdf file
+ * \param[in]  GroupName Name of ObsSpace group (ObsValue, ObsError, MetaData, etc.)
+ * \param[in]  VarName Name of ObsSpace variable
+ * \param[in]  VarSize Number of elements that have been allocated for VarData
  * \param[out] VarData Pointer to memory that will receive the file data
  */
 
 void NetcdfIO::ReadVar(const std::string & GroupName, const std::string & VarName,
-                       int * VarData) {
-  //ReadVar_helper<int>(GroupName, VarName, VarData);
+                       const int & VarSize, int * VarData) {
+  ReadVar_helper<int>(GroupName, VarName, VarSize, VarData);
 }
 
 void NetcdfIO::ReadVar(const std::string & GroupName, const std::string & VarName,
-                       float * VarData) {
-  // Read in the variable values
-  std::string ErrorMsg = "NetcdfIO::ReadVar: Unable to read netcdf variable: " + 
-                          GetNcVarName(GroupName, VarName);
-  CheckNcCall(nc_get_var_float(ncid_, grp_var_info_[GroupName][VarName].var_id, VarData),
-              ErrorMsg);
-
-  // Add in the missing data marks.
-  const float missing_value = util::missingValue(missing_value);
+                       const int & VarSize, float * VarData) {
+  ReadVar_helper<float>(GroupName, VarName, VarSize, VarData);
 }
 
 void NetcdfIO::ReadVar(const std::string & GroupName, const std::string & VarName,
-                       char * VarData) {
-  //ReadVar_helper<char>(GroupName, VarName, VarData);
+                       const int & VarSize, char * VarData) {
+  ReadVar_helper<char>(GroupName, VarName, VarSize, VarData);
 }
 
-std::string NetcdfIO::GetNcVarName(const std::string & GroupName, const std::string & VarName) {
-  // Construct the variable name found in the file. If group name is "GroupUndefined",
-  // then the file variable name does not include the "@GroupName" suffix.
-  std::string NcVarName;
-  if (GroupName.compare("GroupUndefined") == 0) {
-    // No suffix in file variable name
-    NcVarName = VarName;
+template <typename DataType>
+void NetcdfIO::ReadVar_helper(const std::string & GroupName, const std::string & VarName,
+                              const int & VarSize, DataType * VarData) {
+  std::string NcVarName = GetNcVarName(GroupName, VarName);
+  std::string NcVarType = grp_var_info_[GroupName][VarName].dtype;
+
+  // Read in the variable values. The netcdf interface has a generic get var (nc_get_var)
+  // routine, but calling this interface causes a crash to occur. There also exist type
+  // specific get var routines (nc_get_var_int, nc_get_var_float, etc.). These work okay,
+  // but the compile fails when VarData comes in as a int pointer, and you VarData to the
+  // nc_get_var_float routine which expects a float pointer. This situation is resolved
+  // by putting in casts to the expected pointer type.
+  //
+  // Normally, forcing the pointer to be the expected type is a dangerous practice,
+  // but in this case it is controlled well. The if statment below ensures that the
+  // casting is appropriate for the given type that is being read. For example, checking
+  // that VarType is "int" occurs only in the case where VarData is an int *.
+  //
+  // Note in the if statment below, nc_get_var_float handles the conversion from
+  // double to float in the case where the netcdf variable is type double.
+  //
+  const std::type_info & VarType = typeid(DataType); // this matches type of VarData
+  int NcVarId = grp_var_info_[GroupName][VarName].var_id;
+  std::string ErrorMsg = "NetcdfIO::ReadVar: Unable to read netcdf variable: " + NcVarName;
+  if (VarType == typeid(int)) {
+    CheckNcCall(nc_get_var_int(ncid_, NcVarId, (int *) VarData), ErrorMsg);
+  } else if (VarType == typeid(float)) {
+    CheckNcCall(nc_get_var_float(ncid_, NcVarId, (float *) VarData), ErrorMsg);
+  } else if (VarType == typeid(char)) {
+    CheckNcCall(nc_get_var_text(ncid_, NcVarId, (char *) VarData), ErrorMsg);
   } else {
-    // File variable has suffix with group name
-    NcVarName = VarName + "@" + GroupName;
+    oops::Log::warning() <<  "NetcdfIO::ReadVar: Unable to read dataset: "
+                         << " VarName: " << NcVarName << " with NetCDF type :"
+                         << NcVarType << std::endl;
   }
 
-  return NcVarName;
+  // Add in the missing data marks.
+  if ((VarType == typeid(int)) or (VarType == typeid(float))) {
+    const DataType missing_value = util::missingValue(missing_value);
+    for (std::size_t i = 0; i < VarSize; i++) {
+      // For now use a large number as an indicator of a missing value. This is not
+      // as safe as it should be. In the future, use the netcdf default fill value
+      // as the missing value indicator.
+      if (abs(VarData[i]) > missingthreshold) {
+        VarData[i] = missing_value;
+      }
+    }
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -257,30 +292,32 @@ std::string NetcdfIO::GetNcVarName(const std::string & GroupName, const std::str
  *          that are to be written. The caller then passes a pointer to that
  *          memory for the VarData argument.
  *
- * \param[in]  VarName Name of dataset in the netcdf file
+ * \param[in]  GroupName Name of ObsSpace group (ObsValue, ObsError, MetaData, etc.)
+ * \param[in]  VarName Name of ObsSpace variable
+ * \param[in]  VarSize Number of elements that have been allocated for VarData
  * \param[in]  VarData Pointer to memory that will be written into the file
  */
 
 void NetcdfIO::WriteVar(const std::string & GroupName, const std::string & VarName,
-                        int * VarData) {
-  WriteVar_helper<int>(GroupName, VarName, VarData);
+                        const int & VarSize, int * VarData) {
+  WriteVar_helper<int>(GroupName, VarName, VarSize, VarData);
 }
 
 void NetcdfIO::WriteVar(const std::string & GroupName, const std::string & VarName,
-                        float * VarData) {
-  WriteVar_helper<float>(GroupName, VarName, VarData);
+                        const int & VarSize, float * VarData) {
+  WriteVar_helper<float>(GroupName, VarName, VarSize, VarData);
 }
 
 void NetcdfIO::WriteVar(const std::string & GroupName, const std::string & VarName,
-                        char * VarData) {
-  WriteVar_helper<char>(GroupName, VarName, VarData);
+                        const int & VarSize, char * VarData) {
+  WriteVar_helper<char>(GroupName, VarName, VarSize, VarData);
 }
 
 template <typename DataType>
 void NetcdfIO::WriteVar_helper(const std::string & GroupName, const std::string & VarName,
-                        DataType * VarData) {
+                               const int & VarSize, DataType * VarData) {
   std::string ErrorMsg;
-  const std::type_info & typeInput = typeid(DataType);
+  const std::type_info & VarType = typeid(DataType);
   nc_type NcVarType;
   int NcVarId;
   std::string NcVarName;
@@ -292,16 +329,16 @@ void NetcdfIO::WriteVar_helper(const std::string & GroupName, const std::string 
   }
 
   // Limit types to int, float and double for now
-  if (typeInput == typeid(int)) {
+  if (VarType == typeid(int)) {
     NcVarType = NC_INT;
-  } else if (typeInput == typeid(float)) {
+  } else if (VarType == typeid(float)) {
     NcVarType = NC_FLOAT;
-  } else if (typeInput == typeid(double)) {
+  } else if (VarType == typeid(double)) {
     NcVarType = NC_DOUBLE;
   } else {
     oops::Log::warning() <<  "NetcdfIO::WriteVar: Unable to write dataset: "
                          << " VarName: " << NcVarName << " with NetCDF type :"
-                         << typeInput.name() << std::endl;
+                         << VarType.name() << std::endl;
   }
 
   // If var doesn't exist in the file, then create it
@@ -490,6 +527,23 @@ void NetcdfIO::CheckNcCall(int RetCode, std::string & ErrorMsg) {
     oops::Log::error() << ErrorMsg << " (" << RetCode << ")" << std::endl;
     ABORT(ErrorMsg);
   }
+}
+
+// -----------------------------------------------------------------------------
+
+std::string NetcdfIO::GetNcVarName(const std::string & GroupName, const std::string & VarName) {
+  // Construct the variable name found in the file. If group name is "GroupUndefined",
+  // then the file variable name does not include the "@GroupName" suffix.
+  std::string NcVarName;
+  if (GroupName.compare("GroupUndefined") == 0) {
+    // No suffix in file variable name
+    NcVarName = VarName;
+  } else {
+    // File variable has suffix with group name
+    NcVarName = VarName + "@" + GroupName;
+  }
+
+  return NcVarName;
 }
 
 }  // namespace ioda

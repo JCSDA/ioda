@@ -54,6 +54,8 @@ list( APPEND ioda_test_data
   marine/cryosat2-2018-04-15.nc
   marine/icec-2018-04-15.nc
   marine/sst_obs-2018-04-15.nc4
+
+  testfiles/fileio.nc4
 )
 
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Data)

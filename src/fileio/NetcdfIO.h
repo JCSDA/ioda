@@ -57,13 +57,19 @@ class NetcdfIO : public IodaIO,
            const std::size_t & Nvars);
   ~NetcdfIO();
 
-  void ReadVar(const std::string & GroupName, const std::string & VarName, int * VarData);
-  void ReadVar(const std::string & GroupName, const std::string & VarName, float * VarData);
-  void ReadVar(const std::string & GroupName, const std::string & VarName, char * VarData);
+  void ReadVar(const std::string & GroupName, const std::string & VarName,
+               const int & VarSize, int * VarData);
+  void ReadVar(const std::string & GroupName, const std::string & VarName,
+               const int & VarSize, float * VarData);
+  void ReadVar(const std::string & GroupName, const std::string & VarName,
+               const int & VarSize, char * VarData);
 
-  void WriteVar(const std::string & GroupName, const std::string & VarName, int * VarData);
-  void WriteVar(const std::string & GroupName, const std::string & VarName, float * VarData);
-  void WriteVar(const std::string & GroupName, const std::string & VarName, char * VarData);
+  void WriteVar(const std::string & GroupName, const std::string & VarName,
+                const int & VarSize, int * VarData);
+  void WriteVar(const std::string & GroupName, const std::string & VarName,
+                const int & VarSize, float * VarData);
+  void WriteVar(const std::string & GroupName, const std::string & VarName,
+                const int & VarSize, char * VarData);
 
   void ReadDateTime(uint64_t * VarDate, int * VarTime);
   void ReadDateTime(util::DateTime VarDateTime[]);
@@ -77,8 +83,12 @@ class NetcdfIO : public IodaIO,
   std::string GetNcVarName(const std::string & GroupName, const std::string & VarName);
 
   template <typename DataType>
+  void ReadVar_helper(const std::string & GroupName, const std::string & VarName,
+                      const int & VarSize, DataType * VarData);
+
+  template <typename DataType>
   void WriteVar_helper(const std::string & GroupName, const std::string & VarName,
-                       DataType * VarData);
+                       const int & VarSize, DataType * VarData);
 
   // Data members
   /*!
