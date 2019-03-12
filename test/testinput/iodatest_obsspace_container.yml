@@ -37,5 +37,5 @@ Containers:
       group: "PreQC"
       variable: "aerosol_optical_depth_4"
       type: "integer"
-      norm: 19.6778755
+      norm: 21.311676
       tolerance: 1.0e-3
