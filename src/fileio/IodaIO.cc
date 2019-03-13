@@ -166,24 +166,4 @@ std::vector<std::size_t> IodaIO::var_shape(std::string & GroupName, std::string 
   return grp_var_info_[GroupName][VarName].shape;
 }
 
-// -----------------------------------------------------------------------------
-/*!
- * \details This method returns the variable size for the current iteration
- *          in the group, variable information map.
- */
-
-std::size_t IodaIO::var_size(IodaIO::VarIter ivar) {
-  return ivar->second.size;
-}
-
-// -----------------------------------------------------------------------------
-/*!
- * \details This method returns the variable size for the current iteration
- *          in the group, variable information map.
- */
-
-std::size_t IodaIO::var_size(std::string & GroupName, std::string & VarName) {
-  return grp_var_info_[GroupName][VarName].size;
-}
-
 }  // namespace ioda

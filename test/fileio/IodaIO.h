@@ -186,9 +186,12 @@ void testReadVar() {
     ExtractGrpVarName(GrpVarNames[i], GroupName, VarName);
 
     // Get decriptions of variable
-    std::vector<std::size_t> VarShape = TestIO->var_shape(GroupName, VarName);
-    std::size_t VarSize = TestIO->var_size(GroupName, VarName);
     std::string VarType = TestIO->var_dtype(GroupName, VarName);
+    std::vector<std::size_t> VarShape = TestIO->var_shape(GroupName, VarName);
+    std::size_t VarSize = 1;
+    for (std::size_t j = 0; j < VarShape.size(); j++) {
+      VarSize *= VarShape[j];
+    }
 
     std::cout << "DEBUG: Group, Var: " << GroupName << ", "
               << VarName << ", "
@@ -201,20 +204,20 @@ void testReadVar() {
     float Tolerance = conf.getFloat("TestInput.tolerance");
     if (VarType.compare("int") == 0) {
       std::vector<int> TestVarData(VarSize, 0);
-      TestIO->ReadVar(GroupName, VarName, VarSize, TestVarData.data());
+      TestIO->ReadVar(GroupName, VarName, VarShape, TestVarData.data());
       std::vector<int> ExpectedVarData = conf.getIntVector(ExpectedVarDataName);
       BOOST_CHECK_EQUAL_COLLECTIONS(TestVarData.begin(), TestVarData.end(),
                                     ExpectedVarData.begin(), ExpectedVarData.end());
     } else if ((VarType.compare("float") == 0) or (VarType.compare("double") == 0)) {
       std::vector<float> TestVarData(VarSize, 0.0);
-      TestIO->ReadVar(GroupName, VarName, VarSize, TestVarData.data());
+      TestIO->ReadVar(GroupName, VarName, VarShape, TestVarData.data());
       std::vector<float> ExpectedVarData = conf.getFloatVector(ExpectedVarDataName);
       for (std::size_t j = 0; j < TestVarData.size(); j++) {
         BOOST_CHECK_CLOSE(TestVarData[j], ExpectedVarData[j], Tolerance);
       }
     } else if (VarType.compare("char") == 0) {
       std::unique_ptr<char[]> TestVarData(new char[VarSize]);
-      TestIO->ReadVar(GroupName, VarName, VarSize, TestVarData.get());
+      TestIO->ReadVar(GroupName, VarName, VarShape, TestVarData.get());
       std::vector<std::string> TestStrings =
                                CharArrayToStringVector(TestVarData.get(), VarShape);
       std::vector<std::string> ExpectedVarData = conf.getStringVector(ExpectedVarDataName);
@@ -275,10 +278,9 @@ void testWriteVar() {
       for(std::size_t j = 0; j < GrpVarNames.size(); ++j) {
         std::string VarName;
         std::string GroupName;
-        int VarSize = Nlocs;
         ExtractGrpVarName(GrpVarNames[j], GroupName, VarName);
 
-        TestIO->WriteVar(GroupName, VarName, VarSize, TestWriteData.get());
+        TestIO->WriteVar(GroupName, VarName, VarShape, TestWriteData.get());
         }
 
       // open the file we just created and see if it contains what we just wrote into it
@@ -301,7 +303,7 @@ void testWriteVar() {
         std::vector<std::size_t> VarShape = TestIO->var_shape(GroupName, VarName);
         std::size_t VarSize = VarShape[0];
         std::unique_ptr<float[]> TestReadData(new float[VarSize]);
-        TestIO->ReadVar(GroupName, VarName, VarSize, TestReadData.get());
+        TestIO->ReadVar(GroupName, VarName, VarShape, TestReadData.get());
         for(std::size_t k = 0; k < Nlocs; ++k) {
           VarSum += int(TestReadData.get()[k]);
           }

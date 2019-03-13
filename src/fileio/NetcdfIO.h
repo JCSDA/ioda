@@ -58,18 +58,18 @@ class NetcdfIO : public IodaIO,
   ~NetcdfIO();
 
   void ReadVar(const std::string & GroupName, const std::string & VarName,
-               const int & VarSize, int * VarData);
+               const std::vector<std::size_t> & VarShape, int * VarData);
   void ReadVar(const std::string & GroupName, const std::string & VarName,
-               const int & VarSize, float * VarData);
+               const std::vector<std::size_t> & VarShape, float * VarData);
   void ReadVar(const std::string & GroupName, const std::string & VarName,
-               const int & VarSize, char * VarData);
+               const std::vector<std::size_t> & VarShape, char * VarData);
 
   void WriteVar(const std::string & GroupName, const std::string & VarName,
-                const int & VarSize, int * VarData);
+                const std::vector<std::size_t> & VarShape, int * VarData);
   void WriteVar(const std::string & GroupName, const std::string & VarName,
-                const int & VarSize, float * VarData);
+                const std::vector<std::size_t> & VarShape, float * VarData);
   void WriteVar(const std::string & GroupName, const std::string & VarName,
-                const int & VarSize, char * VarData);
+                const std::vector<std::size_t> & VarShape, char * VarData);
 
   void ReadDateTime(uint64_t * VarDate, int * VarTime);
   void ReadDateTime(util::DateTime VarDateTime[]);
@@ -80,15 +80,15 @@ class NetcdfIO : public IodaIO,
 
   void CheckNcCall(int RetCode, std::string & ErrorMsg);
 
-  std::string GetNcVarName(const std::string & GroupName, const std::string & VarName);
+  std::string FormNcVarName(const std::string & GroupName, const std::string & VarName);
 
   template <typename DataType>
   void ReadVar_helper(const std::string & GroupName, const std::string & VarName,
-                      const int & VarSize, DataType * VarData);
+                      const std::vector<std::size_t> & VarShape, DataType * VarData);
 
   template <typename DataType>
   void WriteVar_helper(const std::string & GroupName, const std::string & VarName,
-                       const int & VarSize, DataType * VarData);
+                       const std::vector<std::size_t> & VarShape, DataType * VarData);
 
   // Data members
   /*!
