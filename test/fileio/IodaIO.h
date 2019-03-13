@@ -166,13 +166,10 @@ void testReadVar() {
 
   std::vector<eckit::LocalConfiguration> obstypes;
   std::vector<std::string> GrpVarNames;
-  std::vector<float> ExpectedVnorms;
 
   std::string FileName;
   std::string TestObsType;
   std::unique_ptr<ioda::IodaIO> TestIO;
-  float Vnorm;
-  float Tol;
 
   FileName = conf.getString("TestInput.filename");
   TestIO.reset(ioda::IodaIOfactory::Create(FileName, "r"));
@@ -192,12 +189,6 @@ void testReadVar() {
     for (std::size_t j = 0; j < VarShape.size(); j++) {
       VarSize *= VarShape[j];
     }
-
-    std::cout << "DEBUG: Group, Var: " << GroupName << ", "
-              << VarName << ", "
-              << VarType << ", "
-              << VarShape << ", "
-              << VarSize << std::endl;
 
     // Read and check the variable contents
     std::string ExpectedVarDataName = "TestInput.var" + std::to_string(i);
@@ -231,88 +222,120 @@ void testReadVar() {
 
 void testWriteVar() {
   const eckit::LocalConfiguration conf(::test::TestEnvironment::config());
-  std::vector<eckit::LocalConfiguration> obstypes;
-  std::vector<std::string> GrpVarNames;
-
-  std::string FileName;
-  std::string TestObsType;
   std::unique_ptr<ioda::IodaIO> TestIO;
-  std::size_t Nlocs;
-  std::size_t Nrecs;
-  std::size_t Nvars;
 
-  std::size_t TestNlocs;
-  std::size_t TestNrecs;
-  std::size_t TestNvars;
+  // Try writing contrived data into the output file. One of each data type, and size.
+  std::string FileName = conf.getString("TestOutput.filename");
+  std::size_t ExpectedNlocs = conf.getInt("TestOutput.nlocs");
+  std::size_t ExpectedNrecs = conf.getInt("TestOutput.nrecs");
+  std::size_t ExpectedNvars = conf.getInt("TestOutput.nvars");
+  TestIO.reset(ioda::IodaIOfactory::Create(FileName, "W", ExpectedNlocs,
+                                           ExpectedNrecs, ExpectedNvars));
 
-  int VarSum;
-  int ExpectedSum;
-
-  // Walk through the different ObsTypes and try constructing with the files.
-  conf.get("ObsTypes", obstypes);
-  for (std::size_t i = 0; i < obstypes.size(); ++i) {
-    oops::Log::debug() << "IodaIO::ObsTypes: conf" << obstypes[i] << std::endl;
-
-    TestObsType = obstypes[i].getString("ObsType");
-    oops::Log::debug() << "IodaIO::ObsType: " << TestObsType << std::endl;
-
-    // Not all of the tests have output files
-    if (obstypes[i].has("Output.filename")) {
-      FileName = obstypes[i].getString("Output.filename");
-      Nlocs = obstypes[i].getInt("Output.metadata.nlocs");
-      Nrecs = obstypes[i].getInt("Output.metadata.nrecs");
-      Nvars = obstypes[i].getInt("Output.metadata.nvars");
-      TestIO.reset(ioda::IodaIOfactory::Create(FileName, "W", Nlocs, Nrecs, Nvars));
-
-      // Try writing contrived data into the output file
-      GrpVarNames = obstypes[i].getStringVector("Output.variables");
-      std::vector<std::size_t> VarShape{ Nlocs };
-      std::unique_ptr<float[]> TestWriteData(new float[Nlocs]);
-      ExpectedSum = 0;
-      for (std::size_t j = 0; j < Nlocs; ++j) {
-        TestWriteData.get()[j] = float(j);
-        ExpectedSum += j;
-        }
-      ExpectedSum *= GrpVarNames.size();
-
-      for(std::size_t j = 0; j < GrpVarNames.size(); ++j) {
-        std::string VarName;
-        std::string GroupName;
-        ExtractGrpVarName(GrpVarNames[j], GroupName, VarName);
-
-        TestIO->WriteVar(GroupName, VarName, VarShape, TestWriteData.get());
-        }
-
-      // open the file we just created and see if it contains what we just wrote into it
-      TestIO.reset(ioda::IodaIOfactory::Create(FileName, "r"));
-
-      TestNlocs = TestIO->nlocs();
-      TestNrecs = TestIO->nrecs();
-      TestNvars = TestIO->nvars();
-
-      BOOST_CHECK_EQUAL(TestNlocs, Nlocs);
-      BOOST_CHECK_EQUAL(TestNrecs, Nrecs);
-      BOOST_CHECK_EQUAL(TestNvars, Nvars);
-
-      VarSum = 0;
-      for(std::size_t j = 0; j < GrpVarNames.size(); ++j) {
-        std::string VarName;
-        std::string GroupName;
-        ExtractGrpVarName(GrpVarNames[j], GroupName, VarName);
-
-        std::vector<std::size_t> VarShape = TestIO->var_shape(GroupName, VarName);
-        std::size_t VarSize = VarShape[0];
-        std::unique_ptr<float[]> TestReadData(new float[VarSize]);
-        TestIO->ReadVar(GroupName, VarName, VarShape, TestReadData.get());
-        for(std::size_t k = 0; k < Nlocs; ++k) {
-          VarSum += int(TestReadData.get()[k]);
-          }
-        }
-
-      BOOST_CHECK_EQUAL(VarSum, ExpectedSum);
-      }
-    }
+  // Float data
+  std::vector<float> ExpectedFloatData(ExpectedNlocs, 0.0);
+  for (std::size_t i = 0; i < ExpectedNlocs; ++i) {
+    ExpectedFloatData[i] = float(i) + 0.5;
   }
+  std::vector<std::size_t> FloatVarShape{ ExpectedNlocs };
+  std::string FloatGrpName = "MetaData";
+  std::string FloatVarName = "test_float";
+  TestIO->WriteVar(FloatGrpName, FloatVarName, FloatVarShape, ExpectedFloatData.data());
+
+  // Int data
+  std::vector<int> ExpectedIntData(ExpectedNvars, 0);
+  for (std::size_t i = 0; i < ExpectedNvars; ++i) {
+    ExpectedIntData[i] = i * 2;
+  }
+  std::vector<std::size_t> IntVarShape{ ExpectedNvars };
+  std::string IntGrpName = "VarMetaData";
+  std::string IntVarName = "test_int";
+  TestIO->WriteVar(IntGrpName, IntVarName, IntVarShape, ExpectedIntData.data());
+
+  // Char data
+  std::string TempString;
+  std::unique_ptr<char[]> ExpectedCharData(new char[ExpectedNrecs * 5]);
+  TempString = "HelloWorld";
+  for (std::size_t i = 0; i < TempString.size(); i++) {
+    ExpectedCharData.get()[i] = TempString[i];
+  }
+  std::vector<std::size_t> CharVarShape{ ExpectedNrecs, 5 };
+  std::string CharGrpName = "RecMetaData";
+  std::string CharVarName = "test_char";
+  TestIO->WriteVar(CharGrpName, CharVarName, CharVarShape, ExpectedCharData.get());
+
+  // Try char data with same string size
+  std::unique_ptr<char[]> ExpectedChar2Data(new char[ExpectedNvars * 5]);
+  TempString = "12345aaaaa67890bbbbbABCDE";
+  for (std::size_t i = 0; i < TempString.size(); i++) {
+    ExpectedChar2Data.get()[i] = TempString[i];
+  }
+  std::vector<std::size_t> Char2VarShape{ ExpectedNvars, 5 };
+  std::string Char2GrpName = "VarMetaData";
+  std::string Char2VarName = "test_char2";
+  TestIO->WriteVar(Char2GrpName, Char2VarName, Char2VarShape, ExpectedChar2Data.get());
+
+  // Try char data with different shape
+  std::unique_ptr<char[]> ExpectedChar3Data(new char[ExpectedNrecs * 10]);
+  TempString = "abcdefghij1234567890";
+  for (std::size_t i = 0; i < TempString.size(); i++) {
+    ExpectedChar3Data.get()[i] = TempString[i];
+  }
+  std::vector<std::size_t> Char3VarShape{ ExpectedNrecs, 10 };
+  std::string Char3GrpName = "RecMetaData";
+  std::string Char3VarName = "test_char3";
+  TestIO->WriteVar(Char3GrpName, Char3VarName, Char3VarShape, ExpectedChar3Data.get());
+
+  // open the file we just created and see if it contains what we just wrote into it
+  TestIO.reset(ioda::IodaIOfactory::Create(FileName, "r"));
+
+  std::size_t TestNlocs = TestIO->nlocs();
+  std::size_t TestNrecs = TestIO->nrecs();
+  std::size_t TestNvars = TestIO->nvars();
+
+  BOOST_CHECK_EQUAL(TestNlocs, ExpectedNlocs);
+  BOOST_CHECK_EQUAL(TestNrecs, ExpectedNrecs);
+  BOOST_CHECK_EQUAL(TestNvars, ExpectedNvars);
+
+  float Tolerance = conf.getFloat("TestInput.tolerance");
+  std::vector<float> TestFloatData(ExpectedNlocs, 0.0);
+  TestIO->ReadVar(FloatGrpName, FloatVarName, FloatVarShape, TestFloatData.data());
+  for (std::size_t i = 0; i < ExpectedNlocs; i++) {
+    BOOST_CHECK_CLOSE(TestFloatData[i], ExpectedFloatData[i], Tolerance);
+  }
+
+  std::vector<int> TestIntData(ExpectedNvars, 0);
+  TestIO->ReadVar(IntGrpName, IntVarName, IntVarShape, TestIntData.data());
+  BOOST_CHECK_EQUAL_COLLECTIONS(TestIntData.begin(), TestIntData.end(),
+                                ExpectedIntData.begin(), ExpectedIntData.end());
+
+  std::unique_ptr<char[]> TestCharData(new char[ExpectedNrecs * 5]);
+  TestIO->ReadVar(CharGrpName, CharVarName, CharVarShape, TestCharData.get());
+  std::vector<std::string> TestStrings =
+          CharArrayToStringVector(TestCharData.get(), CharVarShape);
+  std::vector<std::string> ExpectedStrings =
+          CharArrayToStringVector(ExpectedCharData.get(), CharVarShape);
+  BOOST_CHECK_EQUAL_COLLECTIONS(TestStrings.begin(), TestStrings.end(),
+                                ExpectedStrings.begin(), ExpectedStrings.end());
+
+  std::unique_ptr<char[]> TestChar2Data(new char[ExpectedNvars * 5]);
+  TestIO->ReadVar(Char2GrpName, Char2VarName, Char2VarShape, TestChar2Data.get());
+  std::vector<std::string> TestStrings2 =
+          CharArrayToStringVector(TestChar2Data.get(), Char2VarShape);
+  std::vector<std::string> ExpectedStrings2 =
+          CharArrayToStringVector(ExpectedChar2Data.get(), Char2VarShape);
+  BOOST_CHECK_EQUAL_COLLECTIONS(TestStrings2.begin(), TestStrings2.end(),
+                                ExpectedStrings2.begin(), ExpectedStrings2.end());
+
+  std::unique_ptr<char[]> TestChar3Data(new char[ExpectedNrecs * 10]);
+  TestIO->ReadVar(Char3GrpName, Char3VarName, Char3VarShape, TestChar3Data.get());
+  std::vector<std::string> TestStrings3 =
+          CharArrayToStringVector(TestChar3Data.get(), Char3VarShape);
+  std::vector<std::string> ExpectedStrings3 =
+          CharArrayToStringVector(ExpectedChar3Data.get(), Char3VarShape);
+  BOOST_CHECK_EQUAL_COLLECTIONS(TestStrings3.begin(), TestStrings3.end(),
+                                ExpectedStrings3.begin(), ExpectedStrings3.end());
+}
 
 // -----------------------------------------------------------------------------
 
@@ -384,7 +407,7 @@ class IodaIO : public oops::Test {
     ts->add(BOOST_TEST_CASE(&testConstructor));
     ts->add(BOOST_TEST_CASE(&testGrpVarIter));
     ts->add(BOOST_TEST_CASE(&testReadVar));
-    //ts->add(BOOST_TEST_CASE(&testWriteVar));
+    ts->add(BOOST_TEST_CASE(&testWriteVar));
     //ts->add(BOOST_TEST_CASE(&testReadDateTime));
 
     boost::unit_test::framework::master_test_suite().add(ts);
