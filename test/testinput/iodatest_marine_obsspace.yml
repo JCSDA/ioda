@@ -23,8 +23,8 @@ Observations:
           nlocs: 160607
         TestData:
           groups:
-            - "NoGroup"
-            - "NoGroup"
+            - "MetaData"
+            - "MetaData"
           variables:
             - "latitude"
             - "longitude"
@@ -42,8 +42,8 @@ Observations:
           nlocs: 918
         TestData:
           groups:
-            - "NoGroup"
-            - "NoGroup"
+            - "MetaData"
+            - "MetaData"
           variables:
             - "latitude"
             - "longitude"
@@ -61,8 +61,8 @@ Observations:
           nlocs: 223966
         TestData:
           groups:
-            - "NoGroup"
-            - "NoGroup"
+            - "MetaData"
+            - "MetaData"
           variables:
             - "latitude"
             - "longitude"
@@ -80,8 +80,8 @@ Observations:
           nlocs: 71558
         TestData:
           groups:
-            - "NoGroup"
-            - "NoGroup"
+            - "MetaData"
+            - "MetaData"
           variables:
             - "latitude"
             - "longitude"
@@ -99,8 +99,8 @@ Observations:
           nlocs: 8065
         TestData:
           groups:
-            - "NoGroup"
-            - "NoGroup"
+            - "MetaData"
+            - "MetaData"
           variables:
             - "latitude"
             - "longitude"
