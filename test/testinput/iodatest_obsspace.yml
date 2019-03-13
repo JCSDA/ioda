@@ -40,9 +40,9 @@ Observations:
   - ObsType: "Radiance"
     ObsData:
       ObsDataIn:
-        obsfile: "Data/amsua_obs_n19_2018041500_m.nc4"
+        obsfile: "Data/amsua_n19_obs_2018041500_m.nc4"
         metadata:
-          nlocs: 75
+          nlocs: 100
         TestData:
           groups:
             - "MetaData"
@@ -53,9 +53,9 @@ Observations:
             - "longitude"
             - "datetime"
           norms:
-            - 384.02339697102406
-            - 1511.7891494709127
-            - 532637617.75600338
+            - 451.46510296606738
+            - 1829.8089509492747
+            - 615005382.90166008
           tolerance:
             - 1.0e-12
 
