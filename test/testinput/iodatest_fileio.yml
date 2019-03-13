@@ -26,5 +26,6 @@ TestInput:
 TestOutput:
   filename: "testoutput/fileio_out.nc4"
   nlocs: 10
-  nrecs: 20
-  nvars: 30
+  nrecs: 2
+  nvars: 5
+  tolerance: 1.0e-3

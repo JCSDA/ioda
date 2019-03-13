@@ -8,8 +8,8 @@
 #ifndef FILEIO_NETCDFIO_H_
 #define FILEIO_NETCDFIO_H_
 
+#include <map>
 #include <string>
-#include <tuple>
 #include <vector>
 
 #include <boost/any.hpp>
@@ -31,7 +31,8 @@ namespace eckit {
 namespace ioda {
 
 // typedefs
-typedef std::vector<std::tuple<std::string, std::size_t>> DimListType;
+typedef std::vector<std::size_t> DimIdToSizeType;
+typedef std::map<std::string, std::size_t> DimNameToIdType;
 
 /*! \brief Implementation of IodaIO for netcdf.
  *
@@ -82,6 +83,10 @@ class NetcdfIO : public IodaIO,
 
   std::string FormNcVarName(const std::string & GroupName, const std::string & VarName);
 
+  void CreateNcDim(const std::string DimName, const std::size_t DimSize);
+
+  int GetStringDimBySize(const std::size_t DimSize);
+
   template <typename DataType>
   void ReadVar_helper(const std::string & GroupName, const std::string & VarName,
                       const std::vector<std::size_t> & VarShape, DataType * VarData);
@@ -101,28 +106,20 @@ class NetcdfIO : public IodaIO,
   int ncid_;
 
   /*!
-   * \brief This data member holds the netcdf id of the "nlocs" dimension
-   *        in the opened netcdf file.
+   * \brief This data member holds dimension sizes indexed by dimension id number
    */
-  int nlocs_id_;
+  DimIdToSizeType dim_id_to_size_;
 
   /*!
-   * \brief This data member holds the netcdf id of the "nvars" dimension
-   *        in the opened netcdf file.
+   * \brief This data member holds dimension id numbers indexed by dimension name
    */
-  int nvars_id_;
+  DimNameToIdType dim_name_to_id_;
 
   /*!
-   * \brief This data member holds the netcdf id of the "nrecs" dimension
-   *        in the opened netcdf file.
+   * \brief This data member holds dimension id numbers indexed by dimension name
+   *        for extra dimensions needed for character arrays
    */
-  int nrecs_id_;
-
-  /*!
-   * \brief dim_list_ dimension information from the input file
-   */
-  DimListType dim_list_;
-
+  DimNameToIdType string_dims_;
 };
 
 }  // namespace ioda
