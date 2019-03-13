@@ -18,14 +18,14 @@ Containers:
 
   - Container: "AMSU-A"
     InData:
-      filename: "Data/amsua_obs_n19_2018041500_m.nc4"
-      nlocs: 75
+      filename: "Data/amsua_n19_obs_2018041500_m.nc4"
+      nlocs: 100
       nvars: 15
 
       group: "MetaData"
       variable: "latitude"
       type: "float"
-      norm: 387.226105
+      norm: 454.192535
       tolerance: 1.0e-3
 
   - Container: "AOD"
@@ -37,5 +37,5 @@ Containers:
       group: "PreQC"
       variable: "aerosol_optical_depth_4"
       type: "integer"
-      norm: 19.6778755
+      norm: 21.311676
       tolerance: 1.0e-3
