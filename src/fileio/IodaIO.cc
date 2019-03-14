@@ -8,6 +8,7 @@
 #include <string>
 
 #include "oops/parallel/mpi/mpi.h"
+#include "oops/util/abor1_cpp.h"
 #include "oops/util/Logger.h"
 
 #include "fileio/IodaIO.h"
@@ -138,12 +139,30 @@ std::string IodaIO::var_dtype(IodaIO::VarIter ivar) {
 
 // -----------------------------------------------------------------------------
 /*!
- * \details This method returns the variable data type for the current iteration
- *          in the group, variable information map.
+ * \details This method returns the variable data type for the group name, variable
+ *          name combination in the group, variable information map.
  */
 
 std::string IodaIO::var_dtype(std::string & GroupName, std::string & VarName) {
-  return grp_var_info_[GroupName][VarName].dtype;
+  std::string ErrorMsg;
+  GroupIter igrp = grp_var_info_.find(GroupName);
+  if (igrp == grp_var_info_.end()) {
+    // GroupName doesn't exist
+    ErrorMsg = "Group name is not avaliable: " + GroupName;
+    oops::Log::error() << ErrorMsg << std::endl;
+    ABORT(ErrorMsg);
+  }
+
+  VarIter ivar = igrp->second.find(VarName);
+  if (ivar == igrp->second.end()) {
+    // VarName doesn't exist
+    ErrorMsg = "Group name, variable name combination is not available: " +
+                 GroupName + ", " + VarName;
+    oops::Log::error() << ErrorMsg << std::endl;
+    ABORT(ErrorMsg);
+  }
+
+  return ivar->second.dtype;
 }
 
 // -----------------------------------------------------------------------------
@@ -158,12 +177,30 @@ std::vector<std::size_t> IodaIO::var_shape(IodaIO::VarIter ivar) {
 
 // -----------------------------------------------------------------------------
 /*!
- * \details This method returns the variable shape for the current iteration
- *          in the group, variable information map.
+ * \details This method returns the variable shape for the group name, variable name
+ *          combination in the group, variable information map.
  */
 
 std::vector<std::size_t> IodaIO::var_shape(std::string & GroupName, std::string & VarName) {
-  return grp_var_info_[GroupName][VarName].shape;
+  std::string ErrorMsg;
+  GroupIter igrp = grp_var_info_.find(GroupName);
+  if (igrp == grp_var_info_.end()) {
+    // GroupName doesn't exist
+    ErrorMsg = "Group name is not available: " + GroupName;
+    oops::Log::error() << ErrorMsg << std::endl;
+    ABORT(ErrorMsg);
+  }
+
+  VarIter ivar = igrp->second.find(VarName);
+  if (ivar == igrp->second.end()) {
+    // VarName doesn't exist
+    ErrorMsg = "Group name, variable name combination is not avaiable: " +
+                 GroupName + ", " + VarName;
+    oops::Log::error() << ErrorMsg << std::endl;
+    ABORT(ErrorMsg);
+  }
+
+  return ivar->second.shape;
 }
 
 }  // namespace ioda

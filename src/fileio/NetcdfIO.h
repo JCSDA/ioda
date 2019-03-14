@@ -106,6 +106,22 @@ class NetcdfIO : public IodaIO,
   int ncid_;
 
   /*!
+   * \brief offset time flag
+   *
+   * \details This data member is a flag indicating the existence of the
+   *          offset time variable in the netcdf file.
+   */
+  bool have_offset_time_;
+
+  /*!
+   * \brief date time flag
+   *
+   * \details This data member is a flag indicating the existence of the
+   *          date_time variable in the netcdf file.
+   */
+  bool have_date_time_;
+
+  /*!
    * \brief This data member holds dimension sizes indexed by dimension id number
    */
   DimIdToSizeType dim_id_to_size_;

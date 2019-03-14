@@ -62,6 +62,8 @@ NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
   nlocs_ = Nlocs;
   nrecs_ = Nrecs;
   nvars_ = Nvars;
+  have_offset_time_ = false;
+  have_date_time_ = false;
   oops::Log::trace() << __func__ << " fname_: " << fname_ << " fmode_: " << fmode_ << std::endl;
 
   // Open the file. The fmode_ values that are recognized are:
@@ -121,12 +123,32 @@ NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
       }
     }
 
-    // Walk through the variables and record the group and variable information
+    // Walk through the variables and record the group and variable information. For
+    // now, want to support both date_time strings and ref, offset time so that
+    // we can incrementally update the files to date_time strings. Accomplish this
+    // by making sure that only the date_time variable appears in the grp_var_info_
+    // map.
+    //
+    //    offset time is variable "time@MetaData"
+    //    date_time string is variable "date_time@MetaData"
+    //
+    //    offset time           date_time         grp_var_info_     read action
+    //    in the file           in the file       entry
+    //
+    //        N                     N             nothing            nothing
+    //        N                     Y             date_time          read directly into var
+    //        Y                     N             date_time          convert ref, offset
+    //                                                               to date_time string
+    //        Y                     Y             date_time          read directly into var
+
+    int NcVarId;
+    have_date_time_ = (nc_inq_varid(ncid_, "date_time@MetaData", &NcVarId) == NC_NOERR);
+    have_offset_time_ = (nc_inq_varid(ncid_, "time@MetaData", &NcVarId) == NC_NOERR);
+
     for (std::size_t ivar=0; ivar < NcNvars; ++ivar) {
       // nc variable dimension and type information
       char NcVname[NC_MAX_NAME+1];
       nc_type NcDtype;
-      int NcVarId;
       int NcNdims;
       int NcDimIds[NC_MAX_VAR_DIMS];
       ErrorMsg = "NetcdfIO::NetcdfIO: Unable to read information for variable number: " +
@@ -147,6 +169,7 @@ NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
       }
 
       // Record the variable info in the grp_var_into_ container.
+      int OffsetTimeVarId;
       std::string VarName{NcVname};
       std::string GroupName{"GroupUndefined"};
       std::size_t Spos = VarName.find("@");
@@ -154,9 +177,39 @@ NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
         GroupName = VarName.substr(Spos+1);
         VarName = VarName.substr(0, Spos);
       }
-      grp_var_info_[GroupName][VarName].var_id = NcVarId;
-      grp_var_info_[GroupName][VarName].dtype = NcDtypeName;
-      grp_var_info_[GroupName][VarName].shape = NcDimSizes;
+
+      // If offset time exists, substitute the date_time specs for the offset time specs.
+      if (VarName.compare("time") == 0) {
+        // If we have date_time in the file, just let those specs get entered when
+        // date_time is encountered. Otherwise, replace the offset time specs
+        // with the expected date_time specs. The reader later on will do the
+        // conversion.
+        if (! have_date_time_) {
+          // Replace offset time with date_time specs. We want the offset time
+          // variable id, but with the character array specs for after the
+          // conversion.
+          NcDimSizes.push_back(20);  // date_time strings are 20 character long
+          grp_var_info_[GroupName]["date_time"].var_id = NcVarId;
+          grp_var_info_[GroupName]["date_time"].dtype = "char";
+          grp_var_info_[GroupName]["date_time"].shape = NcDimSizes;
+        }
+      } else {
+        // enter var specs into grp_var_info_ map
+        grp_var_info_[GroupName][VarName].var_id = NcVarId;
+        grp_var_info_[GroupName][VarName].dtype = NcDtypeName;
+        grp_var_info_[GroupName][VarName].shape = NcDimSizes;
+      }
+    }
+
+    std::cout << "DEBUG: have_offset_time_, HaveDateTime : " << have_offset_time_ << ", "
+              << have_date_time_ << std::endl;
+
+    for (GroupIter igrp = group_begin(); igrp != group_end(); igrp++) {
+      for (VarIter ivar = var_begin(igrp); ivar != var_end(igrp); ivar++) {
+        std::cout << "DEBUG: " << igrp->first << ", " << ivar->first << ", "
+                  << ivar->second.var_id << ", " << ivar->second.dtype << ", "
+                  << ivar->second.shape << std::endl;
+      }
     }
   }
 
@@ -238,6 +291,7 @@ void NetcdfIO::ReadVar_helper(const std::string & GroupName, const std::string &
   } else if (VarType == typeid(float)) {
     CheckNcCall(nc_get_var_float(ncid_, NcVarId, reinterpret_cast<float *>(VarData)), ErrorMsg);
   } else if (VarType == typeid(char)) {
+    if (VarName.compare("date_time") == 0)
     CheckNcCall(nc_get_var_text(ncid_, NcVarId, reinterpret_cast<char *>(VarData)), ErrorMsg);
   } else {
     oops::Log::warning() <<  "NetcdfIO::ReadVar: Unable to read dataset: "
