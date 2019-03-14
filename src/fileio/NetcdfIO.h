@@ -72,9 +72,6 @@ class NetcdfIO : public IodaIO,
   void WriteVar(const std::string & GroupName, const std::string & VarName,
                 const std::vector<std::size_t> & VarShape, char * VarData);
 
-  void ReadDateTime(uint64_t * VarDate, int * VarTime);
-  void ReadDateTime(util::DateTime VarDateTime[]);
-
  private:
   // For the oops::Printable base class
   void print(std::ostream & os) const;
@@ -86,6 +83,8 @@ class NetcdfIO : public IodaIO,
   void CreateNcDim(const std::string DimName, const std::size_t DimSize);
 
   int GetStringDimBySize(const std::size_t DimSize);
+
+  void ReadConvertDateTime(std::string GroupName, std::string VarName, char * VarData);
 
   template <typename DataType>
   void ReadVar_helper(const std::string & GroupName, const std::string & VarName,
