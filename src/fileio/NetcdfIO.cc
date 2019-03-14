@@ -18,7 +18,7 @@
 #include "distribution/DistributionFactory.h"
 #include "oops/parallel/mpi/mpi.h"
 #include "oops/util/abor1_cpp.h"
-#include "oops/util/datetime_f.h"
+#include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
 #include "oops/util/missingValues.h"
@@ -184,7 +184,7 @@ NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
         // date_time is encountered. Otherwise, replace the offset time specs
         // with the expected date_time specs. The reader later on will do the
         // conversion.
-        if (! have_date_time_) {
+        if (!have_date_time_) {
           // Replace offset time with date_time specs. We want the offset time
           // variable id, but with the character array specs for after the
           // conversion.
@@ -198,17 +198,6 @@ NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
         grp_var_info_[GroupName][VarName].var_id = NcVarId;
         grp_var_info_[GroupName][VarName].dtype = NcDtypeName;
         grp_var_info_[GroupName][VarName].shape = NcDimSizes;
-      }
-    }
-
-    std::cout << "DEBUG: have_offset_time_, HaveDateTime : " << have_offset_time_ << ", "
-              << have_date_time_ << std::endl;
-
-    for (GroupIter igrp = group_begin(); igrp != group_end(); igrp++) {
-      for (VarIter ivar = var_begin(igrp); ivar != var_end(igrp); ivar++) {
-        std::cout << "DEBUG: " << igrp->first << ", " << ivar->first << ", "
-                  << ivar->second.var_id << ", " << ivar->second.dtype << ", "
-                  << ivar->second.shape << std::endl;
       }
     }
   }
@@ -291,8 +280,22 @@ void NetcdfIO::ReadVar_helper(const std::string & GroupName, const std::string &
   } else if (VarType == typeid(float)) {
     CheckNcCall(nc_get_var_float(ncid_, NcVarId, reinterpret_cast<float *>(VarData)), ErrorMsg);
   } else if (VarType == typeid(char)) {
-    if (VarName.compare("date_time") == 0)
-    CheckNcCall(nc_get_var_text(ncid_, NcVarId, reinterpret_cast<char *>(VarData)), ErrorMsg);
+    // If reading in date_time, then need to check if we need to convert ref, offset form
+    // to date_time strings. If we got here, we either have date_time in the file or
+    // we've got offset time in the file.
+    if (VarName.compare("date_time") == 0) {
+      if (have_date_time_) {
+        // date_time exists in the file, simply read it it.
+        CheckNcCall(nc_get_var_text(ncid_, NcVarId, reinterpret_cast<char *>(VarData)), ErrorMsg);
+      } else {
+        // date_time does not exist in the file, read in offset time and convert to
+        // date_time strings.
+        ReadConvertDateTime(GroupName, VarName, reinterpret_cast<char *>(VarData));
+      }
+    } else {
+      // All other variables beside date_time
+      CheckNcCall(nc_get_var_text(ncid_, NcVarId, reinterpret_cast<char *>(VarData)), ErrorMsg);
+    }
   } else {
     oops::Log::warning() <<  "NetcdfIO::ReadVar: Unable to read dataset: "
                          << " VarName: " << NcVarName << " with NetCDF type :"
@@ -427,134 +430,6 @@ void NetcdfIO::WriteVar_helper(const std::string & GroupName, const std::string 
 
 // -----------------------------------------------------------------------------
 /*!
- * \brief Read and format the date, time values
- *
- * \details This method will read in the date and time information (timestamp)
- *          from the netcdf file, and convert them into a convenient format for
- *          usage by the JEDI system. Currently, the netcdf files contain an
- *          attribute called "date_time" that holds the analysis time for
- *          the obs data in the format yyyymmddhh. For example April 15, 2018
- *          at 00Z is recorded as 2018041500. The netcdf file also contains
- *          a time variable (float) which is the offset from the date_time
- *          value in hours. This method will convert the date time information to two
- *          integer vectors. The first is the date (yyyymmdd) and the second
- *          is the time (hhmmss). With the above date_time example combined
- *          with a time value of -3.5 (hours), the resulting date and time entries
- *          in the output vectors will be date = 20180414 and time = 233000.
- *
- *          Eventually, the yyyymmdd and hhmmss values can be recorded in the
- *          netcdf file as thier own datasets and this method could be removed.
- *
- * \param[out] VarDate Date portion of the timestamp values (yyyymmdd)
- * \param[out] VarTime Time portion of the timestamp values (hhmmss)
- */
-
-void NetcdfIO::ReadDateTime(uint64_t * VarDate, int * VarTime) {
-  int Year;
-  int Month;
-  int Day;
-  int Hour;
-  int Minute;
-  int Second;
-
-  std::string ErrorMsg;
-
-  oops::Log::trace() << __func__ << std::endl;
-
-  // Read in the date_time attribute which is in the form: yyyymmddhh
-  // Convert the date_time to a Datetime object.
-  int dtvals_;
-  ErrorMsg = "NetcdfIO::ReadDateTime: Unable to read attribute: date_time";
-  CheckNcCall(nc_get_att_int(ncid_, NC_GLOBAL, "date_time", &dtvals_), ErrorMsg);
-
-  util::DateTime refdt_;
-  datetime_setints_f(&refdt_, dtvals_/100, dtvals_%100 * 3600);
-
-  // Read in the time variable and convert to a Duration object. Time is an
-  // offset from the date_time attribute. This fits in nicely with a Duration
-  // object.
-  // Look for "time" and "Obs_Time" for the time variable.
-  int nc_varid_;
-  if (nc_inq_varid(ncid_, "time", &nc_varid_) != NC_NOERR) {
-    ErrorMsg = "NetcdfIO::ReadDateTime: Unable to find time variable: time OR Obs_Time";
-    CheckNcCall(nc_inq_varid(ncid_, "time@MetaData", &nc_varid_), ErrorMsg);
-  }
-
-  int dimid_;
-  std::unique_ptr<float[]> OffsetTime;
-  std::size_t vsize_;
-
-  ErrorMsg = "NetcdfIO::ReadDateTime: Unable to find dimension of time variable";
-  CheckNcCall(nc_inq_vardimid(ncid_, nc_varid_, &dimid_), ErrorMsg);
-
-  ErrorMsg = "NetcdfIO::ReadDateTime: Unable to find size of dimension of time variable";
-  CheckNcCall(nc_inq_dimlen(ncid_, dimid_, &vsize_), ErrorMsg);
-
-  OffsetTime.reset(new float[vsize_]);
-  ErrorMsg = "NetcdfIO::ReadDateTime: Unable to read time variable: ";
-  CheckNcCall(nc_get_var_float(ncid_, nc_varid_, OffsetTime.get()), ErrorMsg);
-
-  // Combine the refdate with the offset time, and convert to yyyymmdd and
-  // hhmmss values.
-  std::unique_ptr<util::DateTime> dt_(new util::DateTime[vsize_]);
-  for (std::size_t i = 0; i < vsize_; ++i) {
-    dt_.get()[i] = refdt_ + util::Duration(static_cast<int>(OffsetTime.get()[i] * 3600));
-    dt_.get()[i].toYYYYMMDDhhmmss(Year, Month, Day, Hour, Minute, Second);
-
-    VarDate[i] = Year*10000 + Month*100 + Day;
-    VarTime[i] = Hour*10000 + Minute*100 + Second;
-    }
-  }
-
-// -----------------------------------------------------------------------------
-
-void NetcdfIO::ReadDateTime(util::DateTime VarDateTime[]) {
-  std::string ErrorMsg;
-
-  oops::Log::trace() << __func__ << std::endl;
-
-  // Read in the date_time attribute which is in the form: yyyymmddhh
-  // Convert the date_time to a Datetime object.
-  int dtvals_;
-  ErrorMsg = "NetcdfIO::ReadDateTime: Unable to read attribute: date_time";
-  CheckNcCall(nc_get_att_int(ncid_, NC_GLOBAL, "date_time", &dtvals_), ErrorMsg);
-
-  util::DateTime refdt_;
-  datetime_setints_f(&refdt_, dtvals_/100, dtvals_%100 * 3600);
-
-  // Read in the time variable and convert to a Duration object. Time is an
-  // offset from the date_time attribute. This fits in nicely with a Duration
-  // object.
-  // Look for "time" and "Obs_Time" for the time variable.
-  int nc_varid_;
-  if (nc_inq_varid(ncid_, "time", &nc_varid_) != NC_NOERR) {
-    ErrorMsg = "NetcdfIO::ReadDateTime: Unable to find time variable: time OR Obs_Time";
-    CheckNcCall(nc_inq_varid(ncid_, "time@MetaData", &nc_varid_), ErrorMsg);
-  }
-
-  int dimid_;
-  std::unique_ptr<float[]> OffsetTime;
-  std::size_t vsize_;
-
-  ErrorMsg = "NetcdfIO::ReadDateTime: Unable to find dimension of time variable";
-  CheckNcCall(nc_inq_vardimid(ncid_, nc_varid_, &dimid_), ErrorMsg);
-
-  ErrorMsg = "NetcdfIO::ReadDateTime: Unable to find size of dimension of time variable";
-  CheckNcCall(nc_inq_dimlen(ncid_, dimid_, &vsize_), ErrorMsg);
-
-  OffsetTime.reset(new float[vsize_]);
-  ErrorMsg = "NetcdfIO::ReadDateTime: Unable to read time variable: ";
-  CheckNcCall(nc_get_var_float(ncid_, nc_varid_, OffsetTime.get()), ErrorMsg);
-
-  // Combine the refdate with the offset time, and convert to yyyymmdd and
-  // hhmmss values.
-  for (std::size_t i = 0; i < vsize_; ++i) {
-    VarDateTime[i] = refdt_ + util::Duration(static_cast<int>(OffsetTime.get()[i] * 3600));
-    }
-  }
-
-// -----------------------------------------------------------------------------
-/*!
  * \brief print method for stream output
  *
  * \details This method is supplied for the Printable base class. It defines
@@ -631,6 +506,47 @@ int NetcdfIO::GetStringDimBySize(const std::size_t DimSize) {
   }
 
   return DimId;
+}
+
+// -----------------------------------------------------------------------------
+void NetcdfIO::ReadConvertDateTime(std::string GroupName, std::string VarName, char * VarData) {
+  // Read in the reference date from the date_time attribute and the offset
+  // time from the time variable and convert to date_time strings.
+  int NcVarId = grp_var_info_[GroupName][VarName].var_id;
+  std::vector<std::size_t> VarShape = grp_var_info_[GroupName][VarName].shape;
+
+  // Read in the date_time attribute and convert to a DateTime object.
+  int RefDateAttr;
+  std::string ErrorMsg;
+  ErrorMsg = "NetcdfIO::ReadDateTime: Unable to read attribute: date_time";
+  CheckNcCall(nc_get_att_int(ncid_, NC_GLOBAL, "date_time", &RefDateAttr), ErrorMsg);
+
+  int Year = RefDateAttr / 1000000;
+  int TempInt = RefDateAttr % 1000000;
+  int Month = TempInt / 10000;
+  TempInt = TempInt % 10000;
+  int Day = TempInt / 100;
+  int Hour = TempInt % 100;
+  util::DateTime RefDate(Year, Month, Day, Hour, 0, 0);
+
+  // Read in the time variable.
+  std::vector <float> OffsetTime(VarShape[0], 0.0);
+  ErrorMsg = "NetcdfIO::ReadDateTime: Unable to read variable: time@" + GroupName;
+  CheckNcCall(nc_get_var_float(ncid_, NcVarId, OffsetTime.data()), ErrorMsg);
+
+  // Convert offset time to a Duration and add to RefDate. Then use DateTime to
+  // output an ISO 8601 date_time string, and place that string into VarData.
+  util::DateTime ObsDateTime;
+  std::string ObsDtString;
+  std::size_t ichar = 0;
+  for (std::size_t i = 0; i < VarShape[0]; ++i) {
+    ObsDateTime = RefDate + util::Duration(round(OffsetTime[i] * 3600));
+    ObsDtString = ObsDateTime.toString();
+    for (std::size_t j = 0; j < ObsDtString.size(); j++) {
+        VarData[ichar] = ObsDtString[j];
+        ichar++;
+    }
+  }
 }
 
 }  // namespace ioda

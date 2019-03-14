@@ -99,8 +99,6 @@ class IodaIO : public util::Printable {
     virtual void WriteVar(const std::string & GroupName, const std::string & VarName,
                           const std::vector<std::size_t> & VarShape, char * VarData) = 0;
 
-    virtual void ReadDateTime(uint64_t * VarDate, int * VarTime)= 0;
-
     // Methods inherited from base class
     std::string fname() const;
     std::string fmode() const;

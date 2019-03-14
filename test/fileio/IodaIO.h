@@ -344,61 +344,6 @@ void testWriteVar() {
 
 // -----------------------------------------------------------------------------
 
-void testReadDateTime() {
-  const eckit::LocalConfiguration conf(::test::TestEnvironment::config());
-
-  std::vector<eckit::LocalConfiguration> obstypes;
-
-  std::string FileName;
-  std::string TestObsType;
-  std::unique_ptr<ioda::IodaIO> TestIO;
-  std::size_t VarSize;
-  std::unique_ptr<uint64_t[]> TestVarDate;
-  std::unique_ptr<int[]> TestVarTime;
-  float Dnorm;
-  float Tnorm;
-  float ExpectedDnorm;
-  float ExpectedTnorm;
-  float Tol;
-
-  // Walk through the different ObsTypes and try constructing with the files.
-  conf.get("ObsTypes", obstypes);
-  for (std::size_t i = 0; i < obstypes.size(); ++i) {
-    oops::Log::debug() << "IodaIO::ObsTypes: conf" << obstypes[i] << std::endl;
-
-    TestObsType = obstypes[i].getString("ObsType");
-    oops::Log::debug() << "IodaIO::ObsType: " << TestObsType << std::endl;
-
-    FileName = obstypes[i].getString("Input.filename");
-    TestIO.reset(ioda::IodaIOfactory::Create(FileName, "r"));
-
-    // Read in data from the file and check values.
-    VarSize = TestIO->nlocs();
-    TestVarDate.reset(new uint64_t[VarSize]);
-    TestVarTime.reset(new int[VarSize]);
-    TestIO->ReadDateTime(TestVarDate.get(), TestVarTime.get());
-
-    // Compute the vector length TestVarData and compare with config values
-    Dnorm = 0.0;
-    Tnorm = 0.0;
-    for(std::size_t k = 0; k < VarSize; ++k) {
-      Dnorm += pow(float(TestVarDate.get()[k]), 2.0);
-      Tnorm += pow(float(TestVarTime.get()[k]), 2.0);
-      }
-    Dnorm = sqrt(Dnorm);
-    Tnorm = sqrt(Tnorm);
-
-    ExpectedDnorm = obstypes[i].getFloat("Input.datetime.dnorm");
-    ExpectedTnorm = obstypes[i].getFloat("Input.datetime.tnorm");
-    Tol = obstypes[i].getFloat("Input.datetime.tolerance");
-
-    BOOST_CHECK_CLOSE(Dnorm, ExpectedDnorm, Tol);
-    BOOST_CHECK_CLOSE(Tnorm, ExpectedTnorm, Tol);
-    }
-  }
-
-// -----------------------------------------------------------------------------
-
 class IodaIO : public oops::Test {
  public:
   IodaIO() {}
@@ -413,7 +358,6 @@ class IodaIO : public oops::Test {
     ts->add(BOOST_TEST_CASE(&testGrpVarIter));
     ts->add(BOOST_TEST_CASE(&testReadVar));
     ts->add(BOOST_TEST_CASE(&testWriteVar));
-    //ts->add(BOOST_TEST_CASE(&testReadDateTime));
 
     boost::unit_test::framework::master_test_suite().add(ts);
   }
