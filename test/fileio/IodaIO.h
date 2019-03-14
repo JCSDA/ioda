@@ -276,14 +276,19 @@ void testWriteVar() {
   TestIO->WriteVar(Char2GrpName, Char2VarName, Char2VarShape, ExpectedChar2Data.get());
 
   // Try char data with different shape
-  std::unique_ptr<char[]> ExpectedChar3Data(new char[ExpectedNrecs * 10]);
-  TempString = "abcdefghij1234567890";
+  std::unique_ptr<char[]> ExpectedChar3Data(new char[ExpectedNlocs * 20]);
+  std::vector<std::string> Dates = {
+    "2018-04-15T00:00:00Z", "2018-04-15T00:00:30Z", "2018-04-15T00:01:00Z",
+    "2018-04-15T00:01:30Z", "2018-04-15T00:02:00Z", "2018-04-15T00:02:30Z",
+    "2018-04-15T00:03:00Z", "2018-04-15T00:03:30Z" };
+  TempString = Dates[0] + Dates[1] + Dates[2] + Dates[3] + Dates[4] + Dates[5] +
+               Dates[6] + Dates[7];
   for (std::size_t i = 0; i < TempString.size(); i++) {
     ExpectedChar3Data.get()[i] = TempString[i];
   }
-  std::vector<std::size_t> Char3VarShape{ ExpectedNrecs, 10 };
-  std::string Char3GrpName = "RecMetaData";
-  std::string Char3VarName = "test_char3";
+  std::vector<std::size_t> Char3VarShape{ ExpectedNlocs, 20 };
+  std::string Char3GrpName = "MetaData";
+  std::string Char3VarName = "date_time";
   TestIO->WriteVar(Char3GrpName, Char3VarName, Char3VarShape, ExpectedChar3Data.get());
 
   // open the file we just created and see if it contains what we just wrote into it
@@ -327,7 +332,7 @@ void testWriteVar() {
   BOOST_CHECK_EQUAL_COLLECTIONS(TestStrings2.begin(), TestStrings2.end(),
                                 ExpectedStrings2.begin(), ExpectedStrings2.end());
 
-  std::unique_ptr<char[]> TestChar3Data(new char[ExpectedNrecs * 10]);
+  std::unique_ptr<char[]> TestChar3Data(new char[ExpectedNlocs * 20]);
   TestIO->ReadVar(Char3GrpName, Char3VarName, Char3VarShape, TestChar3Data.get());
   std::vector<std::string> TestStrings3 =
           CharArrayToStringVector(TestChar3Data.get(), Char3VarShape);
