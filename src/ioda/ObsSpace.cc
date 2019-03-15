@@ -114,7 +114,7 @@ template <typename DATATYPE>
 void ObsSpace::put_db(const std::string & group, const std::string & name,
                       const std::size_t & vsize, const DATATYPE vdata[]) {
   std::string gname = (group.size() <= 0)? "GroupUndefined" : group;
-  database_.insert<DATATYPE>(gname, name, vsize, vdata);
+  // database_.insert<DATATYPE>(gname, name, vsize, vdata);
 }
 
 template void ObsSpace::put_db<int>(const std::string & group, const std::string & name,
@@ -209,7 +209,7 @@ void ObsSpace::print(std::ostream & os) const {
         vect.reset(new boost::any[nlocs()]);
 //        fileio->ReadVar(group, variable, vect.get());
         // All records read from file are read-only
-        database_.container()->insert({group, variable, "r", nlocs(), vect});
+//        database_.container()->insert({group, variable, "r", nlocs(), vect});
       }
     }
     oops::Log::trace() << "ioda::ObsSpaceContainer opening file ends " << std::endl;
@@ -223,14 +223,14 @@ void ObsSpace::print(std::ostream & os) const {
       {ioda::IodaIOfactory::Create(file_name, "W", nlocs(), 0, nvars())};
 
     // List all records and write out the every record
-    for (ObsSpaceContainer::VarIter iter = database_.var_iter_begin();
-         iter != database_.var_iter_end(); ++iter) {
-std::cout << "DEBUG: SaveToFile: gname, vname, data: " << database_.var_iter_gname(iter)
-          << ", " << database_.var_iter_vname(iter)
-          << ", " << database_.var_iter_data(iter) << std::endl;
+//    for (ObsSpaceContainer::VarIter iter = database_.var_iter_begin();
+//         iter != database_.var_iter_end(); ++iter) {
+// std::cout << "DEBUG: SaveToFile: gname, vname, data: " << database_.var_iter_gname(iter)
+//           << ", " << database_.var_iter_vname(iter)
+//           << ", " << database_.var_iter_data(iter) << std::endl;
 //      fileio->WriteVar(database_.var_iter_gname(iter),
 //                       database_.var_iter_vname(iter), database_.var_iter_data(iter));
-    }
+//    }
   }
 
 // -----------------------------------------------------------------------------

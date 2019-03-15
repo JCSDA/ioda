@@ -23,6 +23,67 @@ namespace ioda {
 
 // -----------------------------------------------------------------------------
 
+void ObsSpaceContainer::StoreToDb(const std::string & GroupName, const std::string & VarName,
+               const std::vector<std::size_t> VarShape, const int * VarData) {
+  StoreToDb_helper<int>(GroupName, VarName, VarShape, VarData);
+}
+
+void ObsSpaceContainer::StoreToDb(const std::string & GroupName, const std::string & VarName,
+               const std::vector<std::size_t> VarShape, const float * VarData) {
+  StoreToDb_helper<float>(GroupName, VarName, VarShape, VarData);
+}
+
+void ObsSpaceContainer::StoreToDb(const std::string & GroupName, const std::string & VarName,
+           const std::vector<std::size_t> VarShape, const std::vector<std::string> VarData) {
+  // Kludge to get by for now.
+  std::unique_ptr<char> CharData(new char[VarShape[0]]);
+  StoreToDb_helper<char>(GroupName, VarName, VarShape, CharData.get());
+}
+
+template <typename DataType>
+void ObsSpaceContainer::StoreToDb_helper(const std::string & GroupName,
+          const std::string & VarName, const std::vector<std::size_t> VarShape,
+          const DataType * VarData) {
+  const DataType tmiss = util::missingValue(tmiss);
+  const std::type_info & VarType = typeid(DataType);
+  std::size_t VarSize = 1;
+  for (std::size_t i = 0; i < VarShape.size(); i++) {
+    VarSize *= VarShape[i];
+  }
+
+  // Search for VarRecord with GroupName, VarName combination
+  VarRecord_set::iterator Var = DataContainer.find(boost::make_tuple(GroupName, VarName));
+  if (Var != DataContainer.end()) {
+    // Found the required record in database
+    // Check if attempting to update a read only VarRecord
+    if (Var->mode.compare("r") == 0) {
+      std::string ErrorMsg =
+                  "ObsSpaceContainer::StoreInDb: trying to overwrite a read-only record : "
+                  + VarName + " : " + GroupName;
+      ABORT(ErrorMsg);
+    }
+
+    // Update the record
+      const std::type_info & typeStore = Var->data.get()->type();
+      const std::type_info & typeInput = typeid(DataType);
+      for (std::size_t ii = 0; ii < VarSize; ++ii) {
+        if (VarData[ii] == tmiss) ASSERT(typeInput == typeStore);
+        Var->data.get()[ii] = VarData[ii];
+      }
+
+  } else {
+    // The required record in not in database, update the database
+    std::unique_ptr<boost::any[]> vect{ new boost::any[VarSize] };
+
+    for (std::size_t ii = 0; ii < VarSize; ++ii)
+      vect.get()[ii] = VarData[ii];
+
+      DataContainer.insert({GroupName, VarName, VarType, VarShape, VarSize, vect});
+  }
+}
+
+// -----------------------------------------------------------------------------
+
   void ObsSpaceContainer::inquire(const std::string & group, const std::string & variable,
                                   const std::size_t vsize, double vdata[]) const {
     // Obtain the missing values
@@ -176,8 +237,26 @@ std::string ObsSpaceContainer::var_iter_gname(ObsSpaceContainer::VarIter var_ite
 
 // -----------------------------------------------------------------------------
 
-boost::any * ObsSpaceContainer::var_iter_data(ObsSpaceContainer::VarIter var_iter) {
-  return var_iter->data.get();
+std::string ObsSpaceContainer::var_iter_mode(ObsSpaceContainer::VarIter var_iter) {
+  return var_iter->mode;
+}
+
+// -----------------------------------------------------------------------------
+
+const std::type_info & ObsSpaceContainer::var_iter_type(ObsSpaceContainer::VarIter var_iter) {
+  return var_iter->type;
+}
+
+// -----------------------------------------------------------------------------
+
+std::size_t ObsSpaceContainer::var_iter_size(ObsSpaceContainer::VarIter var_iter) {
+  return var_iter->size;
+}
+
+// -----------------------------------------------------------------------------
+
+std::vector<std::size_t> ObsSpaceContainer::var_iter_shape(ObsSpaceContainer::VarIter var_iter) {
+  return var_iter->shape;
 }
 
 // -----------------------------------------------------------------------------
