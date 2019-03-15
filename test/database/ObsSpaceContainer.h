@@ -37,95 +37,59 @@ namespace test {
 
 void testConstructor() {
   const eckit::LocalConfiguration conf(::test::TestEnvironment::config());
-  util::DateTime bgn(conf.getString("window_begin"));
-  util::DateTime end(conf.getString("window_end"));
 
-  std::vector<eckit::LocalConfiguration> containers;
-
-  std::string TestContainerName;
   std::unique_ptr<ioda::ObsSpaceContainer> TestContainer;
 
-  // Walk through the different distribution types and try constructing.
-  conf.get("Containers", containers);
-  for (std::size_t i = 0; i < containers.size(); ++i) {
-    oops::Log::debug() << "ObsSpaceContainer::DistributionTypes: conf"
-                       << containers[i] << std::endl;
+  // Try constructing and destructing
+  TestContainer.reset(new ioda::ObsSpaceContainer());
+  BOOST_CHECK(TestContainer.get());
 
-    TestContainerName = containers[i].getString("Container");
-    oops::Log::debug() << "ObsSpaceContainer::DistType: " << TestContainerName << std::endl;
-
-    // Instantiate a container
-    TestContainer.reset(new ioda::ObsSpaceContainer(conf, bgn, end));
-    BOOST_CHECK(TestContainer.get());
-    }
+  TestContainer.reset();
+  BOOST_CHECK(!TestContainer.get());
   }
 
 // -----------------------------------------------------------------------------
 
-void testInsertInquire() {
+void testStoreLoad() {
   const eckit::LocalConfiguration conf(::test::TestEnvironment::config());
-  util::DateTime bgn(conf.getString("window_begin"));
-  util::DateTime end(conf.getString("window_end"));
 
-  std::vector<eckit::LocalConfiguration> containers;
-
-  std::string TestContainerName;
   std::unique_ptr<ioda::ObsSpaceContainer> TestContainer;
 
-  std::string FileName;
-  std::size_t Nlocs;
-  std::size_t Nvars;
-  std::size_t ExpectedNlocs;
-  std::size_t ExpectedNvars;
+  // Instantiate a container
+  TestContainer.reset(new ioda::ObsSpaceContainer());
+  BOOST_CHECK(TestContainer.get());
 
-  // Walk through the different distribution types and try loading (insert) data
-  // into the container, and extracting (inquire) data from the container.
-  conf.get("Containers", containers);
-  for (std::size_t i = 0; i < containers.size(); ++i) {
-    oops::Log::debug() << "ObsSpaceContainer::DistributionTypes: conf"
-                       << containers[i] << std::endl;
+  // Try storing the variables from the YAML into the container, then load them
+  // from the containter into new variables, and then check that they match.
+  std::vector<std::string> Variables = conf.getStringVector("TestStoreLoad.variables");
+  std::vector<std::string> Groups = conf.getStringVector("TestStoreLoad.groups");
+  std::vector<std::string> DataTypes = conf.getStringVector("TestStoreLoad.datatypes");
 
-    TestContainerName = containers[i].getString("Container");
-    oops::Log::debug() << "ObsSpaceContainer::DistType: " << TestContainerName << std::endl;
+  for(std::size_t i = 0; i < Variables.size(); i++) {
+    std::string VarName = Variables[i];
+    std::string GroupName = Groups[i];
+    std::string VarType = DataTypes[i];
 
-    // Instantiate a container
-    TestContainer.reset(new ioda::ObsSpaceContainer(conf, bgn, end));
-    BOOST_CHECK(TestContainer.get());
-
-    // Read in data and place in the container
-    FileName = containers[i].getString("InData.filename");
-    ExpectedNlocs = containers[i].getInt("InData.nlocs");
-    ExpectedNvars = containers[i].getInt("InData.nvars");
-
-//    TestContainer->CreateFromFile(FileName, "r", bgn, end);
-    Nlocs = TestContainer->nlocs();
-    Nvars = TestContainer->nvars();
-    
-    BOOST_CHECK_EQUAL(Nlocs, ExpectedNlocs);
-    BOOST_CHECK_EQUAL(Nvars, ExpectedNvars);
-
-    std::string GroupName = containers[i].getString("InData.group");
-    std::string VarName = containers[i].getString("InData.variable");
-    std::string VarType = containers[i].getString("InData.type");
-    float ExpectedVnorm = containers[i].getFloat("InData.norm");
-    float Tolerance = containers[i].getFloat("InData.tolerance");
-
-    float Vnorm;
-    if (VarType.compare("float") == 0) {
-      std::vector<float> VarData(Nlocs);
-      TestContainer->inquire(GroupName, VarName, Nlocs, VarData.data());
-      for (std::size_t j = 0; j < Nlocs; j++) {
-        Vnorm += pow(VarData[j], 2.0);
-      }
-    } else if (VarType.compare("integer") == 0) {
-      std::vector<int> VarData(Nlocs);
-      TestContainer->inquire(GroupName, VarName, Nlocs, VarData.data());
-      for (std::size_t j = 0; j < Nlocs; j++) {
-        Vnorm += pow(float(VarData[j]), 2.0);
-      }
+    // Read the var values from the config file. The ith variable has its values
+    // in the sub-keyword "var" + i. Eg. when i = 0, then read var0, i = 1 read var1, etc.
+    std::string ConfVarValues = "TestStoreLoad.var" + std::to_string(i);
+    if (VarType.compare("int") == 0) {
+      std::vector<int> StoreData = conf.getIntVector(ConfVarValues);
+      std::cout << "DEBUG: G, V, Type, Vals: " << GroupName << ", " << VarName << ", "
+                << VarType << ", " << StoreData << std::endl;
+    } else if (VarType.compare("float") == 0) {
+      std::vector<float> StoreData = conf.getFloatVector(ConfVarValues);
+      std::cout << "DEBUG: G, V, Type, Vals: " << GroupName << ", " << VarName << ", "
+                << VarType << ", " << StoreData << std::endl;
+    } else if (VarType.compare("string") == 0) {
+      std::vector<std::string> StoreData = conf.getStringVector(ConfVarValues);
+      std::cout << "DEBUG: G, V, Type, Vals: " << GroupName << ", " << VarName << ", "
+                << VarType << ", " << StoreData << std::endl;
+    } else {
+      oops::Log::debug() << "test::ObsSpaceContainer::testStoreLoad: "
+                         << "container only supports data types int, float and string."
+                         << std::endl;
     }
-    Vnorm = sqrt(Vnorm);
-    BOOST_CHECK_CLOSE(Vnorm, ExpectedVnorm, Tolerance);
   }
 }
 
@@ -142,7 +106,8 @@ class ObsSpaceContainer : public oops::Test {
     boost::unit_test::test_suite * ts = BOOST_TEST_SUITE("ObsSpaceContainer");
 
     ts->add(BOOST_TEST_CASE(&testConstructor));
-//    ts->add(BOOST_TEST_CASE(&testInsertInquire));
+    ts->add(BOOST_TEST_CASE(&testStoreLoad));
+//    ts->add(BOOST_TEST_CASE(&testGrpVarIter));
 
     boost::unit_test::framework::master_test_suite().add(ts);
   }

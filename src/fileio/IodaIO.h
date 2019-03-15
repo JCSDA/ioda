@@ -13,8 +13,6 @@
 #include <string>
 #include <vector>
 
-#include <boost/any.hpp>
-
 #include "eckit/mpi/Comm.h"
 
 #include "distribution/Distribution.h"
