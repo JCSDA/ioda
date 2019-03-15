@@ -11,9 +11,7 @@ namespace ioda {
 
 // -----------------------------------------------------------------------------
 
-  ObsSpaceContainer::ObsSpaceContainer(const eckit::Configuration & config,
-                                       const util::DateTime & bgn, const util::DateTime & end)
-        : winbgn_(bgn), winend_(end) {
+  ObsSpaceContainer::ObsSpaceContainer() {
     oops::Log::trace() << "ioda::ObsSpaceContainer Constructor starts " << std::endl;
   }
 

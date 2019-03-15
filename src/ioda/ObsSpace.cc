@@ -30,7 +30,7 @@ ObsSpace::ObsSpace(const eckit::Configuration & config,
                    const util::DateTime & bgn, const util::DateTime & end)
   : oops::ObsSpaceBase(config, bgn, end),
     winbgn_(bgn), winend_(end), commMPI_(oops::mpi::comm()),
-    database_(config, bgn, end)
+    database_()
 {
   oops::Log::trace() << "ioda::ObsSpace config  = " << config << std::endl;
 

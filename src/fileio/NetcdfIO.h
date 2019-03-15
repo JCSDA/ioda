@@ -12,8 +12,6 @@
 #include <string>
 #include <vector>
 
-#include <boost/any.hpp>
-
 #include "fileio/IodaIO.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/ObjectCounter.h"

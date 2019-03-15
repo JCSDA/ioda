@@ -43,8 +43,7 @@ namespace ioda {
 
 class ObsSpaceContainer: public util::Printable {
  public:
-     ObsSpaceContainer(const eckit::Configuration &, const util::DateTime &,
-                       const util::DateTime &);
+     ObsSpaceContainer();
      ~ObsSpaceContainer();
 
      struct by_group {};     // Index by group name
