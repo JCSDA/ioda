@@ -13,6 +13,7 @@
 #include <memory>
 #include <string>
 #include <tuple>
+#include <typeinfo>
 #include <utility>
 #include <vector>
 
@@ -42,73 +43,90 @@ using boost::multi_index::tag;
 namespace ioda {
 
 class ObsSpaceContainer: public util::Printable {
- public:
-     ObsSpaceContainer();
-     ~ObsSpaceContainer();
+ private:
+     // --------------------------------------------------------------------------------
+     // Following is the definition of multi index structure used for observation
+     // data storage. There are three sections.
+     //
+     // The first declares dummy structs that are used to give names to the multi index
+     // indexing methods (third section). Without these you need to use numbers and then
+     // the order you declare the indexing methods becomes tied to these numbers.
+     //
+     // The second section declares the struct that will be the element struct that the
+     // multi index structure manages. The struct elements that are the keys for the
+     // multi index structure are declared first by convention.
+     //
+     // The third section declares the multi index structure which manages the set of
+     // elements defined in the second section. The multi index structure is where the
+     // manner of access and organization of the set of elements is defined.
 
-     struct by_group {};     // Index by group name
-     struct by_variable {};  // Index by variable name
+     // Section 1: dummy structs for naming indexing methods
+     struct by_group {};              // Index by group name
+     struct by_variable {};           // Index by variable name
 
-     struct Texture {  // Record texture
+     // Section 2: element struct managed by the multi index structure
+     struct VarRecord {
+         // Keys
          std::string group;           /*!< Group name: ObsValue, HofX, MetaData, ObsErr etc. */
          std::string variable;        /*!< Variable name */
-         std::string mode;            /*!< Read & write mode : 'r' or 'rw'*/
 
-         Texture(const std::string & group, const std::string & variable,
-                 const std::string & mode)
-            : group(group), variable(variable), mode(mode){}
-     };  // end of record texture defition
+         // Attributes
+         std::string mode;                  /*!< Read & write mode : 'r' or 'rw'*/
+         const std::type_info & type;       /*!< Type of data */
+         std::size_t size;                  /*!< Total size of data */
+         std::vector<std::size_t> shape;    /*!< Shape of data */
 
-     struct Record : public Texture {  // Record
-         std::size_t size;                    /*!< Vector size */
+         // Data
          std::unique_ptr<boost::any[]> data;  /*!< Smart pointer to vector */
 
          // Constructor with default read & write mode : "rw"
-         Record(const std::string & group, const std::string & variable,
-                const std::size_t & size, std::unique_ptr<boost::any[]> & vect)
-            : Texture(group, variable, "rw"),
-              size(size), data(std::move(vect)) {}
+         VarRecord(const std::string & group, const std::string & variable,
+                const std::type_info & type,
+                const std::vector<std::size_t> & shape, const std::size_t & size,
+                std::unique_ptr<boost::any[]> & vect)
+            : group(group), variable(variable), mode("rw"), type(type),
+              shape(shape), size(size), data(std::move(vect)) {}
 
          // Constructor with passed read & write mode
-         Record(const std::string & group, const std::string & variable,
-                const std::string & mode,  const std::size_t & size,
-                std::unique_ptr<boost::any[]> & vect)
-            : Texture(group, variable, mode),
-              size(size), data(std::move(vect)) {}
-     };  // end of Record definition
+         VarRecord(const std::string & group, const std::string & variable,
+                   const std::string & mode, const std::type_info & type,
+                   const std::vector<std::size_t> & shape,
+                   const std::size_t & size, std::unique_ptr<boost::any[]> & vect)
+            : group(group), variable(variable), mode(mode), type(type),
+              shape(shape), size(size), data(std::move(vect)) {}
+     };  // end of VarRecord definition
 
-     // -----------------------------------------------------------------------------
-     using Record_set = multi_index_container<
-         Record,
+     // Section 3: indexing methods, organization of elements
+     using VarRecord_set = multi_index_container<
+         VarRecord,
          indexed_by<
              ordered_unique<
                 composite_key<
-                    Record,
-                    member<Texture, std::string, &Texture::group>,
-                    member<Texture, std::string, &Texture::variable>
+                    VarRecord,
+                    member<VarRecord, std::string, &VarRecord::group>,
+                    member<VarRecord, std::string, &VarRecord::variable>
                 >
              >,
-             // non-unique as there are many Records under group
+             // non-unique as there are many VarRecords under group
              ordered_non_unique<
                 tag<by_group>,
-                member<Texture, std::string, &Texture::group>
+                member<VarRecord, std::string, &VarRecord::group>
              >,
-             // non-unique as there are Records with the same name in different group
+             // non-unique as there are VarRecords with the same name in different group
              ordered_non_unique<
                 tag<by_variable>,
-                member<Texture, std::string, &Texture::variable>
+                member<VarRecord, std::string, &VarRecord::variable>
              >
          >
      >;
 
-     // -----------------------------------------------------------------------------
+ public:
+     ObsSpaceContainer();
+     ~ObsSpaceContainer();
 
      // Access to iterators
-     typedef Record_set::index<ObsSpaceContainer::by_variable>::type VarIndex;
+     typedef VarRecord_set::index<ObsSpaceContainer::by_variable>::type VarIndex;
      typedef VarIndex::iterator VarIter;
-
-     /*! \brief Access to database */
-     Record_set * container() { return & DataContainer; }
 
      /*! \brief Variables iterator begin */
      VarIter var_iter_begin();
@@ -122,10 +140,19 @@ class ObsSpaceContainer: public util::Printable {
      /*! \brief Variables iterator group name */
      std::string var_iter_gname(VarIter);
 
-     /*! \brief Variables iterator data */
-     boost::any * var_iter_data(VarIter);
+     /*! \brief Variables iterator mode */
+     std::string var_iter_mode(VarIter);
 
-     /*! \brief Check the availability of Record with group and variable in container*/
+     /*! \brief Variables iterator type */
+     const std::type_info & var_iter_type(VarIter);
+
+     /*! \brief Variables iterator size */
+     std::size_t var_iter_size(VarIter);
+
+     /*! \brief Variables iterator shape */
+     std::vector<std::size_t> var_iter_shape(VarIter);
+
+     /*! \brief Check the availability of VarRecord with group and variable in container*/
      bool has(const std::string & group, const std::string & variable) const;
 
      /*! \brief Return the number of uniqure observation locations on this PE*/
@@ -134,15 +161,9 @@ class ObsSpaceContainer: public util::Printable {
      /*! \brief Return the number of observational variables*/
      std::size_t nvars() const {return nvars_;}
 
-     /*! \brief Return the left boundary of time window*/
-     const util::DateTime & windowStart() const {return winbgn_;}
-
-     /*! \brief Return the right boundary of time window*/
-     const util::DateTime & windowEnd() const {return winend_;}
-
      // -----------------------------------------------------------------------------
 
-     /*! \brief Inquire the vector of Record from container*/
+     /*! \brief Inquire the vector of VarRecord from container*/
      void inquire(const std::string & group, const std::string & variable,
                   const std::size_t vsize, double vdata[]) const;
      void inquire(const std::string & group, const std::string & variable,
@@ -154,61 +175,29 @@ class ObsSpaceContainer: public util::Printable {
 
      // -----------------------------------------------------------------------------
 
-     /*! \brief Insert/Update the vector of Record to container*/
-     template <typename Type>
-     void insert(const std::string & group, const std::string & variable,
-                 const std::size_t vsize, const Type vdata[]) {
-       const Type tmiss = util::missingValue(tmiss);
-       if (has(group, variable)) {  // Found the required record in database
-         auto var = DataContainer.find(boost::make_tuple(group, variable));
-
-         // Check if there is "w" or "W" in the read & write mode
-         std::string mode = var->mode;
-         std::transform(mode.begin(), mode.end(), mode.begin(), ::tolower);
-         std::size_t found = mode.find("w");
-         if (found == std::string::npos) {  // It is read-only
-            std::string ErrorMsg =
-                "DataContainer::Insert/Update: trying to overwrite an read-only record : "
-                + variable + " : " + group;
-            ABORT(ErrorMsg);
-         }
-
-         const std::type_info & typeStore = var->data.get()->type();
-         const std::type_info & typeInput = typeid(Type);
-
-         // Update the record
-         for (std::size_t ii = 0; ii < vsize; ++ii) {
-           if (vdata[ii] == tmiss) ASSERT(typeInput == typeStore);
-           var->data.get()[ii] = vdata[ii];
-         }
-
-       } else {  // The required record in not in database, update the database
-         std::unique_ptr<boost::any[]> vect{ new boost::any[vsize] };
-
-         for (std::size_t ii = 0; ii < vsize; ++ii)
-           vect.get()[ii] = vdata[ii];
-
-         DataContainer.insert({group, variable, vsize, vect});
-       }
-     }
-
-     // -----------------------------------------------------------------------------
+     /*! \brief Store VarData into the container*/
+     void StoreToDb(const std::string & GroupName, const std::string & VarName,
+                    const std::vector<std::size_t> VarShape, const int * VarData);
+     void StoreToDb(const std::string & GroupName, const std::string & VarName,
+                    const std::vector<std::size_t> VarShape, const float * VarData);
+     void StoreToDb(const std::string & GroupName, const std::string & VarName,
+                    const std::vector<std::size_t> VarShape,
+                    const std::vector<std::string> VarData);
 
  private:
+     /*! \brief helper function to StoreToDb */
+     template <typename DataType>
+     void StoreToDb_helper(const std::string & GroupName, const std::string & VarName,
+                      const std::vector<std::size_t> VarShape, const DataType * VarData);
+
      /*! \brief container instance */
-     Record_set DataContainer;
+     VarRecord_set DataContainer;
 
      /*! \brief number of locations on this PE */
      std::size_t nlocs_;
 
      /*! \brief number of observational variables */
      std::size_t nvars_;
-
-     /*! \brief  */
-     const util::DateTime winbgn_;
-
-     /*! \brief Right boundary of time window */
-     const util::DateTime winend_;
 
      /*! \brief Print */
      void print(std::ostream &) const;

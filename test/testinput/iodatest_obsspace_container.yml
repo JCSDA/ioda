@@ -6,7 +6,7 @@ window_end: "2018-04-15T03:00:00Z"
 TestStoreLoad:
   variables:
     - "test_int"
-    - "test_group"
+    - "test_float"
     - "test_string"
   groups:
     - "IntGroup"
