@@ -24,28 +24,31 @@ namespace ioda {
 // -----------------------------------------------------------------------------
 
 void ObsSpaceContainer::StoreToDb(const std::string & GroupName, const std::string & VarName,
-               const std::vector<std::size_t> VarShape, const int * VarData) {
+               const std::vector<std::size_t> & VarShape, const int * VarData) {
   StoreToDb_helper<int>(GroupName, VarName, VarShape, VarData);
 }
 
 void ObsSpaceContainer::StoreToDb(const std::string & GroupName, const std::string & VarName,
-               const std::vector<std::size_t> VarShape, const float * VarData) {
+               const std::vector<std::size_t> & VarShape, const float * VarData) {
   StoreToDb_helper<float>(GroupName, VarName, VarShape, VarData);
 }
 
 void ObsSpaceContainer::StoreToDb(const std::string & GroupName, const std::string & VarName,
-           const std::vector<std::size_t> VarShape, const std::vector<std::string> VarData) {
-  // Kludge to get by for now.
-  std::unique_ptr<char> CharData(new char[VarShape[0]]);
-  StoreToDb_helper<char>(GroupName, VarName, VarShape, CharData.get());
+           const std::vector<std::size_t> & VarShape, const std::string * VarData) {
+  StoreToDb_helper<std::string>(GroupName, VarName, VarShape, VarData);
+}
+
+void ObsSpaceContainer::StoreToDb(const std::string & GroupName, const std::string & VarName,
+           const std::vector<std::size_t> & VarShape, const util::DateTime * VarData) {
+  StoreToDb_helper<util::DateTime>(GroupName, VarName, VarShape, VarData);
 }
 
 template <typename DataType>
 void ObsSpaceContainer::StoreToDb_helper(const std::string & GroupName,
-          const std::string & VarName, const std::vector<std::size_t> VarShape,
+          const std::string & VarName, const std::vector<std::size_t> & VarShape,
           const DataType * VarData) {
-  const DataType tmiss = util::missingValue(tmiss);
   const std::type_info & VarType = typeid(DataType);
+  // Calculate the total number of elements
   std::size_t VarSize = 1;
   for (std::size_t i = 0; i < VarShape.size(); i++) {
     VarSize *= VarShape[i];
@@ -64,15 +67,12 @@ void ObsSpaceContainer::StoreToDb_helper(const std::string & GroupName,
     }
 
     // Update the record
-      const std::type_info & typeStore = Var->data.get()->type();
-      const std::type_info & typeInput = typeid(DataType);
       for (std::size_t ii = 0; ii < VarSize; ++ii) {
-        if (VarData[ii] == tmiss) ASSERT(typeInput == typeStore);
         Var->data.get()[ii] = VarData[ii];
       }
 
   } else {
-    // The required record in not in database, update the database
+    // The required record is not in database, update the database
     std::unique_ptr<boost::any[]> vect{ new boost::any[VarSize] };
 
     for (std::size_t ii = 0; ii < VarSize; ++ii)
