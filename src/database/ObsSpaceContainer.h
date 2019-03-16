@@ -177,18 +177,19 @@ class ObsSpaceContainer: public util::Printable {
 
      /*! \brief Store VarData into the container*/
      void StoreToDb(const std::string & GroupName, const std::string & VarName,
-                    const std::vector<std::size_t> VarShape, const int * VarData);
+                    const std::vector<std::size_t> & VarShape, const int * VarData);
      void StoreToDb(const std::string & GroupName, const std::string & VarName,
-                    const std::vector<std::size_t> VarShape, const float * VarData);
+                    const std::vector<std::size_t> & VarShape, const float * VarData);
      void StoreToDb(const std::string & GroupName, const std::string & VarName,
-                    const std::vector<std::size_t> VarShape,
-                    const std::vector<std::string> VarData);
+                    const std::vector<std::size_t> & VarShape, const std::string * VarData);
+     void StoreToDb(const std::string & GroupName, const std::string & VarName,
+                    const std::vector<std::size_t> & VarShape, const util::DateTime * VarData);
 
  private:
      /*! \brief helper function to StoreToDb */
      template <typename DataType>
      void StoreToDb_helper(const std::string & GroupName, const std::string & VarName,
-                      const std::vector<std::size_t> VarShape, const DataType * VarData);
+                      const std::vector<std::size_t> & VarShape, const DataType * VarData);
 
      /*! \brief container instance */
      VarRecord_set DataContainer;

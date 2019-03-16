@@ -67,15 +67,14 @@ void testGrpVarIter() {
   std::vector<std::string> Groups = conf.getStringVector("TestStoreLoad.groups");
   std::vector<std::string> DataTypes = conf.getStringVector("TestStoreLoad.datatypes");
 
-  typedef std::tuple<std::string, std::string, std::string> VarDescrip;
+  typedef std::tuple<std::string, std::string, std::string, std::vector<std::size_t>> VarDescrip;
   std::set<VarDescrip> VarInfo;
 
   for(std::size_t i = 0; i < Variables.size(); i++) {
     std::string VarName = Variables[i];
     std::string GroupName = Groups[i];
     std::string VarTypeName = DataTypes[i];
-
-    VarInfo.emplace(std::make_tuple(GroupName, VarName, VarTypeName));
+    std::vector<std::size_t> VarShape(1, 0);
 
     // Read the var values from the config file. The ith variable has its values
     // in the sub-keyword "var" + i. Eg. when i = 0, then read var0, i = 1 read var1, etc.
@@ -83,35 +82,32 @@ void testGrpVarIter() {
     std::string ConfVarValues = "TestStoreLoad.var" + std::to_string(i);
     if (VarTypeName.compare("int") == 0) {
       std::vector<int> StoreData = conf.getIntVector(ConfVarValues);
-      std::cout << "DEBUG: G, V, Type, Vals: " << GroupName << ", " << VarName << ", "
-                << VarTypeName << ", " << StoreData << std::endl;
-
-      std::vector<std::size_t> VarShape(1, StoreData.size());
+      VarShape[0] = StoreData.size();
       TestContainer->StoreToDb(GroupName, VarName, VarShape, StoreData.data());
     } else if (VarTypeName.compare("float") == 0) {
       std::vector<float> StoreData = conf.getFloatVector(ConfVarValues);
-      std::cout << "DEBUG: G, V, Type, Vals: " << GroupName << ", " << VarName << ", "
-                << VarTypeName << ", " << StoreData << std::endl;
-
-      std::vector<std::size_t> VarShape(1, StoreData.size());
+      VarShape[0] = StoreData.size();
       TestContainer->StoreToDb(GroupName, VarName, VarShape, StoreData.data());
     } else if (VarTypeName.compare("string") == 0) {
       std::vector<std::string> StoreData = conf.getStringVector(ConfVarValues);
-      std::cout << "DEBUG: G, V, Type, Vals: " << GroupName << ", " << VarName << ", "
-                << VarTypeName << ", " << StoreData << std::endl;
-
-      std::vector<std::size_t> VarShape(1, StoreData.size());
-      TestContainer->StoreToDb(GroupName, VarName, VarShape, StoreData);
+      VarShape[0] = StoreData.size();
+      TestContainer->StoreToDb(GroupName, VarName, VarShape, StoreData.data());
+    } else if (VarTypeName.compare("date_time") == 0) {
+      std::vector<std::string> TempStoreData = conf.getStringVector(ConfVarValues);
+      std::vector<util::DateTime> StoreData(TempStoreData.size());
+      for (std::size_t j = 0; j < TempStoreData.size(); j++) {
+        util::DateTime TempDateTime(TempStoreData[j]);
+        StoreData[j] = TempDateTime;
+      }
+      VarShape[0] = StoreData.size();
+      TestContainer->StoreToDb(GroupName, VarName, VarShape, StoreData.data());
     } else {
       oops::Log::debug() << "test::ObsSpaceContainer::testGrpVarIter: "
                          << "container only supports data types int, float and string."
                          << std::endl;
     }
-  }
 
-  for (std::set<VarDescrip>::iterator idesc = VarInfo.begin(); idesc != VarInfo.end(); idesc++) {
-    std::cout << "DEBUG: VarInfo: G, V, T: " << std::get<0>(*idesc) << ", "
-              << std::get<1>(*idesc) << ", " << std::get<2>(*idesc) << std::endl;
+    VarInfo.emplace(std::make_tuple(GroupName, VarName, VarTypeName, VarShape));
   }
 
   // Walk through the container using the group, var iterators and check if all of
@@ -124,17 +120,14 @@ void testGrpVarIter() {
       TestVarTypeName = "int";
     } else if (TestContainer->var_iter_type(ivar) == typeid(float)) {
       TestVarTypeName = "float";
-    } else if (TestContainer->var_iter_type(ivar) == typeid(char)) {
+    } else if (TestContainer->var_iter_type(ivar) == typeid(std::string)) {
       TestVarTypeName = "string";
+    } else if (TestContainer->var_iter_type(ivar) == typeid(util::DateTime)) {
+      TestVarTypeName = "date_time";
     }
     TestVarInfo.emplace(std::make_tuple(TestContainer->var_iter_gname(ivar),
-                 TestContainer->var_iter_vname(ivar), TestVarTypeName));
-  }
-
-  for (std::set<VarDescrip>::iterator idesc = TestVarInfo.begin();
-                                      idesc != TestVarInfo.end(); idesc++) {
-    std::cout << "DEBUG: TestVarInfo: G, V, T: " << std::get<0>(*idesc) << ", "
-              << std::get<1>(*idesc) << ", " << std::get<2>(*idesc) << std::endl;
+                 TestContainer->var_iter_vname(ivar), TestVarTypeName,
+                 TestContainer->var_iter_shape(ivar)));
   }
 
   BOOST_CHECK(TestVarInfo == VarInfo);
@@ -168,16 +161,10 @@ void testStoreLoad() {
     std::string ConfVarValues = "TestStoreLoad.var" + std::to_string(i);
     if (VarTypeName.compare("int") == 0) {
       std::vector<int> StoreData = conf.getIntVector(ConfVarValues);
-      std::cout << "DEBUG: G, V, Type, Vals: " << GroupName << ", " << VarName << ", "
-                << VarTypeName << ", " << StoreData << std::endl;
     } else if (VarTypeName.compare("float") == 0) {
       std::vector<float> StoreData = conf.getFloatVector(ConfVarValues);
-      std::cout << "DEBUG: G, V, Type, Vals: " << GroupName << ", " << VarName << ", "
-                << VarTypeName << ", " << StoreData << std::endl;
     } else if (VarTypeName.compare("string") == 0) {
       std::vector<std::string> StoreData = conf.getStringVector(ConfVarValues);
-      std::cout << "DEBUG: G, V, Type, Vals: " << GroupName << ", " << VarName << ", "
-                << VarTypeName << ", " << StoreData << std::endl;
     } else {
       oops::Log::debug() << "test::ObsSpaceContainer::testStoreLoad: "
                          << "container only supports data types int, float and string."
