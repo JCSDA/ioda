@@ -3,7 +3,7 @@ test_framework_runtime_config: "--log_level=test_suite"
 window_begin: "2018-04-14T21:00:00Z"
 window_end: "2018-04-15T03:00:00Z"
 Variables:
-   nvars: 1
+   nvars: 281
    variables:
    - "testvar"
 Locations:
@@ -56,6 +56,28 @@ Observations:
             - 451.46510296606738
             - 1829.8089509492747
             - 615005382.90166008
+          tolerance:
+            - 1.0e-12
+
+  - ObsType: "Radiance"
+    ObsData:
+      ObsDataIn:
+        obsfile: "Data/airs_aqua_obs_2018041500_m.nc4"
+        metadata:
+          nlocs: 100
+        TestData:
+          groups:
+            - "MetaData"
+            - "MetaData"
+            - "MetaData"
+          variables:
+            - "latitude"
+            - "longitude"
+            - "datetime"
+          norms:
+            - 490.8703099362815
+            - 2000.1424097904787
+            - 615017295.92605221
           tolerance:
             - 1.0e-12
 
