@@ -90,6 +90,27 @@ ObsTypes:
 
   - ObsType: "Radiance"
     Input:
+      filename: "Data/atms_npp_obs_2018041500_m.nc4"
+      variables:
+         - "latitude@MetaData"
+         - "longitude@MetaData"
+         - "time@MetaData"
+      metadata:
+        nlocs: 100
+        nrecs: 100
+        nvars: 22
+        norms:
+          - 405.976532
+          - 1936.96973 
+          - 16.6223087
+        tolerance: 1.0e-3
+      datetime:
+        dnorm: 201804096
+        tnorm: 1612350.62
+        tolerance:  1.0e-3
+
+  - ObsType: "Radiance"
+    Input:
       filename: "Data/smap_obs_2018041500_m.nc4"
       variables:
          - "latitude@MetaData"
