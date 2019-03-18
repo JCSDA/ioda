@@ -61,6 +61,8 @@ class NetcdfIO : public IodaIO,
   void ReadVar(const std::string & GroupName, const std::string & VarName,
                const std::vector<std::size_t> & VarShape, float * VarData);
   void ReadVar(const std::string & GroupName, const std::string & VarName,
+               const std::vector<std::size_t> & VarShape, double * VarData);
+  void ReadVar(const std::string & GroupName, const std::string & VarName,
                const std::vector<std::size_t> & VarShape, char * VarData);
 
   void WriteVar(const std::string & GroupName, const std::string & VarName,

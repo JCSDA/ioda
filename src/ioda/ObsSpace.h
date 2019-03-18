@@ -69,6 +69,18 @@ class ObsSpace : public oops::ObsSpaceBase {
   /*! \brief Save the contents of database to file*/
   void SaveToFile(const std::string & file_name);
 
+  /*! \brief Convert char array to vector of strings */
+  std::vector<std::string> CharArrayToStringVector(const char * CharData,
+                              const std::vector<std::size_t> & CharShape);
+
+  /*! \brief Determine the shape appropriate for a character array given a vector of strings */
+  std::vector<std::size_t> CharShapeFromStringVector(
+                              const std::vector<std::string> & StringVector);
+
+  /*! \brief Convert vector of strings to char array */
+  void StringVectorToCharArray(const std::vector<std::string> & StringVector,
+                               const std::vector<std::size_t> & CharShape, char * CharData);
+
   std::string obsname_;
   const util::DateTime winbgn_;
   const util::DateTime winend_;
@@ -82,9 +94,6 @@ class ObsSpace : public oops::ObsSpaceBase {
 
   /*! \brief filename and path of output */
   std::string fileout_;
-
-  /*! \brief Distribution among processors */
-  std::unique_ptr<Distribution> dist_;
 
   /*! \brief Multi-index container */
   ObsSpaceContainer database_;
