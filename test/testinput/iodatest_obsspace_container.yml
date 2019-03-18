@@ -25,7 +25,7 @@ Containers:
       group: "MetaData"
       variable: "latitude"
       type: "float"
-      norm: 454.192535
+      norm: 462.268799 
       tolerance: 1.0e-3
 
   - Container: "AOD"
@@ -37,5 +37,5 @@ Containers:
       group: "PreQC"
       variable: "aerosol_optical_depth_4"
       type: "integer"
-      norm: 21.311676
+      norm: 21.5004368 
       tolerance: 1.0e-3
