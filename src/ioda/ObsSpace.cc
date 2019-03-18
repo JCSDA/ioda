@@ -93,7 +93,7 @@ template <typename DATATYPE>
 void ObsSpace::get_db(const std::string & group, const std::string & name,
                       const size_t & vsize, DATATYPE vdata[]) const {
   std::string gname = (group.size() <= 0)? "GroupUndefined" : group;
-  database_.inquire(gname, name, vsize, vdata);
+  //database_.inquire(gname, name, vsize, vdata);
 }
 
 template void ObsSpace::get_db<int>(const std::string & group, const std::string & name,
