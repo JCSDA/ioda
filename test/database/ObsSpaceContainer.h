@@ -155,18 +155,56 @@ void testStoreLoad() {
     std::string VarName = Variables[i];
     std::string GroupName = Groups[i];
     std::string VarTypeName = DataTypes[i];
+    std::vector<std::size_t> VarShape(1, 0);
 
     // Read the var values from the config file. The ith variable has its values
     // in the sub-keyword "var" + i. Eg. when i = 0, then read var0, i = 1 read var1, etc.
+    const std::type_info & VarType = typeid(void);
     std::string ConfVarValues = "TestStoreLoad.var" + std::to_string(i);
     if (VarTypeName.compare("int") == 0) {
-      std::vector<int> StoreData = conf.getIntVector(ConfVarValues);
+      std::vector<int> ExpectedIntData = conf.getIntVector(ConfVarValues);
+      VarShape[0] = ExpectedIntData.size();
+      TestContainer->StoreToDb(GroupName, VarName, VarShape, ExpectedIntData.data());
+
+      std::vector<int> TestIntData(ExpectedIntData.size(), 0);
+      TestContainer->LoadFromDb(GroupName, VarName, VarShape, TestIntData.data());
+      BOOST_CHECK_EQUAL_COLLECTIONS(TestIntData.begin(), TestIntData.end(),
+               ExpectedIntData.begin(), ExpectedIntData.end());
     } else if (VarTypeName.compare("float") == 0) {
-      std::vector<float> StoreData = conf.getFloatVector(ConfVarValues);
+      std::vector<float> ExpectedFloatData = conf.getFloatVector(ConfVarValues);
+      VarShape[0] = ExpectedFloatData.size();
+      TestContainer->StoreToDb(GroupName, VarName, VarShape, ExpectedFloatData.data());
+
+      std::vector<float> TestFloatData(ExpectedFloatData.size(), 0.0);
+      TestContainer->LoadFromDb(GroupName, VarName, VarShape, TestFloatData.data());
+      BOOST_CHECK_EQUAL_COLLECTIONS(TestFloatData.begin(), TestFloatData.end(),
+               ExpectedFloatData.begin(), ExpectedFloatData.end());
     } else if (VarTypeName.compare("string") == 0) {
-      std::vector<std::string> StoreData = conf.getStringVector(ConfVarValues);
+      std::vector<std::string> ExpectedStringData = conf.getStringVector(ConfVarValues);
+      VarShape[0] = ExpectedStringData.size();
+      TestContainer->StoreToDb(GroupName, VarName, VarShape, ExpectedStringData.data());
+
+      std::vector<std::string> TestStringData(ExpectedStringData.size(), "xx");
+      TestContainer->LoadFromDb(GroupName, VarName, VarShape, TestStringData.data());
+      BOOST_CHECK_EQUAL_COLLECTIONS(TestStringData.begin(), TestStringData.end(),
+               ExpectedStringData.begin(), ExpectedStringData.end());
+    } else if (VarTypeName.compare("date_time") == 0) {
+      std::vector<std::string> DtStrings = conf.getStringVector(ConfVarValues);
+      std::vector<util::DateTime> ExpectedDateTimeData(DtStrings.size());
+      for (std::size_t j = 0; j < DtStrings.size(); j++) {
+        util::DateTime TempDateTime(DtStrings[j]);
+        ExpectedDateTimeData[j] = TempDateTime;
+      }
+      VarShape[0] = ExpectedDateTimeData.size();
+      TestContainer->StoreToDb(GroupName, VarName, VarShape, ExpectedDateTimeData.data());
+
+      util::DateTime TempDt("0000-01-01T00:00:00Z");
+      std::vector<util::DateTime> TestDateTimeData(ExpectedDateTimeData.size(), TempDt);
+      TestContainer->LoadFromDb(GroupName, VarName, VarShape, TestDateTimeData.data());
+      BOOST_CHECK_EQUAL_COLLECTIONS(TestDateTimeData.begin(), TestDateTimeData.end(),
+               ExpectedDateTimeData.begin(), ExpectedDateTimeData.end());
     } else {
-      oops::Log::debug() << "test::ObsSpaceContainer::testStoreLoad: "
+      oops::Log::debug() << "test::ObsSpaceContainer::testGrpVarIter: "
                          << "container only supports data types int, float and string."
                          << std::endl;
     }
@@ -185,8 +223,8 @@ class ObsSpaceContainer : public oops::Test {
   void register_tests() const {
     boost::unit_test::test_suite * ts = BOOST_TEST_SUITE("ObsSpaceContainer");
 
-    ts->add(BOOST_TEST_CASE(&testGrpVarIter));
     ts->add(BOOST_TEST_CASE(&testConstructor));
+    ts->add(BOOST_TEST_CASE(&testGrpVarIter));
     ts->add(BOOST_TEST_CASE(&testStoreLoad));
 
     boost::unit_test::framework::master_test_suite().add(ts);

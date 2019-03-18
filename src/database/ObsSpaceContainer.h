@@ -163,15 +163,15 @@ class ObsSpaceContainer: public util::Printable {
 
      // -----------------------------------------------------------------------------
 
-     /*! \brief Inquire the vector of VarRecord from container*/
-     void inquire(const std::string & group, const std::string & variable,
-                  const std::size_t vsize, double vdata[]) const;
-     void inquire(const std::string & group, const std::string & variable,
-                  const std::size_t vsize, float vdata[]) const;
-     void inquire(const std::string & group, const std::string & variable,
-                  const std::size_t vsize, int vdata[]) const;
-     void inquire(const std::string & group, const std::string & variable,
-                  const std::size_t vsize, util::DateTime vdata[]) const;
+     /*! \brief Load VarData from the container*/
+     void LoadFromDb(const std::string & GroupName, const std::string & VarName,
+                  const std::vector<std::size_t> & VarShape, int * VarData);
+     void LoadFromDb(const std::string & GroupName, const std::string & VarName,
+                  const std::vector<std::size_t> & VarShape, float * VarData);
+     void LoadFromDb(const std::string & GroupName, const std::string & VarName,
+                  const std::vector<std::size_t> & VarShape, std::string * VarData);
+     void LoadFromDb(const std::string & GroupName, const std::string & VarName,
+                  const std::vector<std::size_t> & VarShape, util::DateTime * VarData);
 
      // -----------------------------------------------------------------------------
 
@@ -186,7 +186,12 @@ class ObsSpaceContainer: public util::Printable {
                     const std::vector<std::size_t> & VarShape, const util::DateTime * VarData);
 
  private:
-     /*! \brief helper function to StoreToDb */
+     /*! \brief helper function for LoadFromDb */
+     template <typename DataType>
+     void LoadFromDb_helper(const std::string & GroupName, const std::string & VarName,
+                      const std::vector<std::size_t> & VarShape, DataType * VarData);
+
+     /*! \brief helper function for StoreToDb */
      template <typename DataType>
      void StoreToDb_helper(const std::string & GroupName, const std::string & VarName,
                       const std::vector<std::size_t> & VarShape, const DataType * VarData);
