@@ -247,6 +247,11 @@ void NetcdfIO::ReadVar(const std::string & GroupName, const std::string & VarNam
 }
 
 void NetcdfIO::ReadVar(const std::string & GroupName, const std::string & VarName,
+                       const std::vector<std::size_t> & VarShape, double * VarData) {
+  ReadVar_helper<double>(GroupName, VarName, VarShape, VarData);
+}
+
+void NetcdfIO::ReadVar(const std::string & GroupName, const std::string & VarName,
                        const std::vector<std::size_t> & VarShape, char * VarData) {
   ReadVar_helper<char>(GroupName, VarName, VarShape, VarData);
 }
@@ -279,6 +284,9 @@ void NetcdfIO::ReadVar_helper(const std::string & GroupName, const std::string &
     CheckNcCall(nc_get_var_int(ncid_, NcVarId, reinterpret_cast<int *>(VarData)), ErrorMsg);
   } else if (VarType == typeid(float)) {
     CheckNcCall(nc_get_var_float(ncid_, NcVarId, reinterpret_cast<float *>(VarData)), ErrorMsg);
+  } else if (VarType == typeid(double)) {
+    CheckNcCall(nc_get_var_double(ncid_, NcVarId, reinterpret_cast<double *>(VarData)),
+                ErrorMsg);
   } else if (VarType == typeid(char)) {
     // If reading in date_time, then need to check if we need to convert ref, offset form
     // to date_time strings. If we got here, we either have date_time in the file or

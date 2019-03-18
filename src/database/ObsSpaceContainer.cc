@@ -119,7 +119,7 @@ void ObsSpaceContainer::LoadFromDb_helper(const std::string & GroupName,
       VarSize *= VarShape[i];
     }
 
-    // Copy the elements into the output 
+    // Copy the elements into the output
     for (std::size_t i = 0; i < VarSize; i++) {
       VarData[i] = boost::any_cast<DataType>(Var->data.get()[i]);
     }

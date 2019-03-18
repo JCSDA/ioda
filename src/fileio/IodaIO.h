@@ -88,6 +88,8 @@ class IodaIO : public util::Printable {
     virtual void ReadVar(const std::string & GroupName, const std::string & VarName,
                          const std::vector<std::size_t> & VarShape, float * VarData) = 0;
     virtual void ReadVar(const std::string & GroupName, const std::string & VarName,
+                         const std::vector<std::size_t> & VarShape, double * VarData) = 0;
+    virtual void ReadVar(const std::string & GroupName, const std::string & VarName,
                          const std::vector<std::size_t> & VarShape, char * VarData) = 0;
 
     virtual void WriteVar(const std::string & GroupName, const std::string & VarName,

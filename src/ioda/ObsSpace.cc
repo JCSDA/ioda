@@ -36,15 +36,11 @@ ObsSpace::ObsSpace(const eckit::Configuration & config,
 
   obsname_ = config.getString("ObsType");
 
-  // Open the file for input
+  // Open the file and read in variables from the file into the database.
   std::string filename = config.getString("ObsData.ObsDataIn.obsfile");
   oops::Log::trace() << obsname_ << " file in = " << filename << std::endl;
 
   InitFromFile(filename, "r", windowStart(), windowEnd());
-
-  // Set the number of locations ,variables and number of observation points
-//  nlocs_ = database_.nlocs();
-//  nvars_ = database_.nvars();
 
   // Check to see if an output file has been requested.
   if (config.has("ObsData.ObsDataOut.obsfile")) {
@@ -79,12 +75,14 @@ ObsSpace::ObsSpace(const eckit::Configuration & config,
 // -----------------------------------------------------------------------------
 
 ObsSpace::~ObsSpace() {
+  oops::Log::trace() << "ioda::ObsSpace destructor begin" << std::endl;
   if (fileout_.size() != 0) {
     oops::Log::info() << obsname() << ": save database to " << fileout_ << std::endl;
     SaveToFile(fileout_);
   } else {
     oops::Log::info() << obsname() << " :  no output" << std::endl;
   }
+  oops::Log::trace() << "ioda::ObsSpace destructor end" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -93,7 +91,7 @@ template <typename DATATYPE>
 void ObsSpace::get_db(const std::string & group, const std::string & name,
                       const size_t & vsize, DATATYPE vdata[]) const {
   std::string gname = (group.size() <= 0)? "GroupUndefined" : group;
-  //database_.inquire(gname, name, vsize, vdata);
+  // database_.inquire(gname, name, vsize, vdata);
 }
 
 template void ObsSpace::get_db<int>(const std::string & group, const std::string & name,
@@ -191,25 +189,129 @@ void ObsSpace::print(std::ostream & os) const {
                               const util::DateTime &, const util::DateTime &) {
     oops::Log::trace() << "ioda::ObsSpace opening file: " << filename << std::endl;
 
+    // Open the file for reading and record nlocs and nvars from the file.
     std::unique_ptr<IodaIO> fileio {ioda::IodaIOfactory::Create(filename, mode)};
-    nlocs_ = fileio->nlocs();
+    std::size_t file_nlocs_ = fileio->nlocs();
     nvars_ = fileio->nvars();
+std::cout << "DEBUG: InitFromFile: file_nlocs_, nvars_: " << file_nlocs_ << ", "
+          << nvars_ << std::endl;
 
-    // Load all valid variables
-    std::unique_ptr<boost::any[]> vect;
-    std::string group, variable;
+    // Create the MPI distribution
+    DistributionFactory * DistFactory;
+    std::unique_ptr<Distribution> dist_(DistFactory->createDistribution("roundrobin"));
+    dist_->distribution(commMPI_, file_nlocs_);
+std::cout << "DEBUG: InitFromFile: dist_ size: " << dist_->size() << std::endl;
 
+    // Read in the date_time values and filter out any variables outside the
+    // timing window.
+    std::unique_ptr<char[]> dt_char_array_(new char[file_nlocs_ * 20]);
+    std::vector<std::size_t> dt_shape_{ file_nlocs_, 20 };
+    fileio->ReadVar("MetaData", "date_time", dt_shape_, dt_char_array_.get());
+    std::vector<std::string> dt_strings_ =
+             CharArrayToStringVector(dt_char_array_.get(), dt_shape_);
+
+    std::vector<std::size_t> to_be_removed;
+    std::size_t index;
+    for (std::size_t ii = 0; ii < dist_->size(); ++ii) {
+      index = dist_->index()[ii];
+      util::DateTime test_dt_(dt_strings_[index]);
+      if ((test_dt_ <= winbgn_) || (test_dt_ > winend_)) {
+        // Outside of the DA time window
+std::cout << "DEBUG: InitFromFile: outside time window: " << dt_strings_[ii] << std::endl;
+        to_be_removed.push_back(index);
+      }
+    }
+
+    for (std::size_t ii = 0; ii < to_be_removed.size(); ++ii) {
+      dist_->erase(to_be_removed[ii]);
+    }
+
+    nlocs_ = dist_->size();
+
+std::cout << "DEBUG: InitFromFile: dist_ size after window check: " << dist_->size() << std::endl;
+
+    // Read in all variables from the file and store them into the database.
     for (IodaIO::GroupIter igrp = fileio->group_begin();
                            igrp != fileio->group_end(); ++igrp) {
       for (IodaIO::VarIter ivar = fileio->var_begin(igrp);
                            ivar != fileio->var_end(igrp); ++ivar) {
         // Revisit here, improve the readability
-        group = fileio->group_name(igrp);
-        variable = fileio->var_name(ivar);
-        vect.reset(new boost::any[nlocs()]);
-//        fileio->ReadVar(group, variable, vect.get());
-        // All records read from file are read-only
-//        database_.container()->insert({group, variable, "r", nlocs(), vect});
+        std::string GroupName = fileio->group_name(igrp);
+        std::string VarName = fileio->var_name(ivar);
+        std::string VarType = fileio->var_dtype(ivar);
+        std::vector<std::size_t> VarShape = fileio->var_shape(ivar);
+        std::size_t VarSize = 1;
+        for (std::size_t i = 0; i < VarShape.size(); i++) {
+          VarSize *= VarShape[i];
+        }
+std::cout << "DEBUG: InitFromFile: GroupName, VarName, VarType, VarShape, VarSize: "
+          << GroupName << ", " << VarName << ", " << VarType << ", " << VarShape << ", "
+          << VarSize << std::endl;
+
+        // Read the variable from the file and transfer it to the database.
+        if (VarType.compare("int") == 0) {
+          std::unique_ptr<int> FileData(new int[VarSize]);
+          fileio->ReadVar(GroupName, VarName, VarShape, FileData.get());
+          database_.StoreToDb(GroupName, VarName, VarShape, FileData.get());
+        } else if (VarType.compare("float") == 0) {
+          std::unique_ptr<float> FileData(new float[VarSize]);
+          fileio->ReadVar(GroupName, VarName, VarShape, FileData.get());
+          database_.StoreToDb(GroupName, VarName, VarShape, FileData.get());
+        } else if (VarType.compare("double") == 0) {
+          // Convert double to float before storing into the database. The double
+          // missing value needs to be changed to a float missing value.
+          oops::Log::debug() << " ObsSpace::InitFromFile: inconsistent type : "
+                             << " From double to float on "
+                             << VarName << " @ " << GroupName << std::endl;
+          std::unique_ptr<double> FileData(new double[VarSize]);
+          fileio->ReadVar(GroupName, VarName, VarShape, FileData.get());
+          std::unique_ptr<float> DbData(new float[VarSize]);
+
+          // Convert the missing marks
+          const float fmiss = util::missingValue(fmiss);
+          const double dmiss = util::missingValue(dmiss);
+          for (std::size_t j = 0; j < VarSize; j++) {
+            if (FileData.get()[j] == dmiss) {
+              DbData.get()[j] = fmiss;
+            } else {
+              DbData.get()[j] = static_cast<float>(FileData.get()[j]);
+            }
+          }
+
+          database_.StoreToDb(GroupName, VarName, VarShape, DbData.get());
+        } else if (VarType.compare("char") == 0) {
+          // Convert the char array to a vector of strings. If we are working
+          // on the variable "date_time", then convert the strings to DateTime
+          // objects.
+          std::unique_ptr<char[]> FileData(new char[VarSize]);
+          fileio->ReadVar(GroupName, VarName, VarShape, FileData.get());
+          std::vector<std::string> StringData =
+                 CharArrayToStringVector(FileData.get(), VarShape);
+          std::vector<std::size_t> AdjVarShape;
+          std::size_t AdjVarSize = 1;
+          for (std::size_t j = 0; j < (VarShape.size()-1); j++) {
+            AdjVarShape.push_back(VarShape[j]);
+            AdjVarSize *= VarShape[j];
+          }
+
+          if (VarName.compare("date_time") == 0) {
+            std::vector<util::DateTime> DtData(AdjVarSize);
+            for (std::size_t j = 0; j < AdjVarSize; j++) {
+              util::DateTime TempDt(StringData[j]);
+              DtData[j] = TempDt;
+            }
+            database_.StoreToDb(GroupName, VarName, AdjVarShape, DtData.data());
+          } else {
+            database_.StoreToDb(GroupName, VarName, AdjVarShape, StringData.data());
+          }
+        } else {
+          oops::Log::warning() << "ioda::IodaIO::InitFromFile: Unrecognized data type: "
+                               << VarType << std::endl;
+          oops::Log::warning() << "  File IO Currently supports data types int, float and char."
+                               << std::endl;
+          oops::Log::warning() << "  Skipping read of " << VarName << " @ " << GroupName
+                               << " from the input file." << std::endl;
+        }
       }
     }
     oops::Log::trace() << "ioda::ObsSpaceContainer opening file ends " << std::endl;
@@ -223,15 +325,110 @@ void ObsSpace::print(std::ostream & os) const {
       {ioda::IodaIOfactory::Create(file_name, "W", nlocs(), 0, nvars())};
 
     // List all records and write out the every record
-//    for (ObsSpaceContainer::VarIter iter = database_.var_iter_begin();
-//         iter != database_.var_iter_end(); ++iter) {
-// std::cout << "DEBUG: SaveToFile: gname, vname, data: " << database_.var_iter_gname(iter)
-//           << ", " << database_.var_iter_vname(iter)
-//           << ", " << database_.var_iter_data(iter) << std::endl;
-//      fileio->WriteVar(database_.var_iter_gname(iter),
-//                       database_.var_iter_vname(iter), database_.var_iter_data(iter));
-//    }
+    for (ObsSpaceContainer::VarIter ivar = database_.var_iter_begin();
+      ivar != database_.var_iter_end(); ++ivar) {
+      std::string GroupName = database_.var_iter_gname(ivar);
+      std::string VarName = database_.var_iter_vname(ivar);
+      const std::type_info & VarType = database_.var_iter_type(ivar);
+      std::vector<std::size_t> VarShape = database_.var_iter_shape(ivar);
+      std::size_t VarSize = database_.var_iter_size(ivar);
+ std::cout << "DEBUG: SaveToFile: GroupName, VarName, VarType, VarShape, VarSize : " 
+           << GroupName << ", " << VarName << ", " << VarType.name() << ", "
+           << VarShape << ", " << VarSize << std::endl;
+
+      if (VarType == typeid(int)) {
+        std::unique_ptr<int> VarData(new int[VarSize]);
+        database_.LoadFromDb(GroupName, VarName, VarShape, VarData.get());
+        fileio->WriteVar(GroupName, VarName, VarShape, VarData.get());
+      } else if (VarType == typeid(float)) {
+        std::unique_ptr<float> VarData(new float[VarSize]);
+        database_.LoadFromDb(GroupName, VarName, VarShape, VarData.get());
+        fileio->WriteVar(GroupName, VarName, VarShape, VarData.get());
+      } else if (VarType == typeid(std::string)) {
+        std::vector<std::string> VarData(VarSize, "");
+        database_.LoadFromDb(GroupName, VarName, VarShape, VarData.data());
+
+        // Get the shape needed for the character array, which will be a 2D array.
+        // The total number of char elelments will be CharShape[0] * CharShape[1].
+        std::vector<std::size_t> CharShape = CharShapeFromStringVector(VarData);
+std::cout << "DEBUG: SaveToFile: VarData: " << VarData << std::endl;
+std::cout << "DEBUG: SaveToFile: VarShape, CharShape: " << VarShape << ", " << CharShape << std::endl;
+        std::unique_ptr<char> CharData(new char[CharShape[0] * CharShape[1]]);
+        StringVectorToCharArray(VarData, CharShape, CharData.get());
+        fileio->WriteVar(GroupName, VarName, CharShape, CharData.get());
+      } else if (VarType == typeid(util::DateTime)) {
+      } else {
+        oops::Log::warning() << "ioda::IodaIO::SaveToFile: Unrecognized data type: "
+                             << VarType.name() << std::endl;
+        oops::Log::warning() << "  ObsSpaceContainer currently supports data types "
+                             << "int, float and char." << std::endl;
+        oops::Log::warning() << "  Skipping save of " << VarName << " @ " << GroupName
+                             << " from the input file." << std::endl;
+      }
+    }
   }
+
+// -----------------------------------------------------------------------------
+
+std::vector<std::string> ObsSpace::CharArrayToStringVector(const char * CharData,
+                                            const std::vector<std::size_t> & CharShape) {
+  // CharShape[0] is the number of strings
+  // CharShape[1] is the length of each string
+  std::size_t Nstrings = CharShape[0];
+  std::size_t StrLength = CharShape[1];
+
+  std::vector<std::string> StringVector(Nstrings, "");
+  for (std::size_t i = 0; i < Nstrings; i++) {
+    // Copy characters for i-th string into a char vector
+    std::vector<char> CharVector(StrLength, ' ');
+    for (std::size_t j = 0; j < StrLength; j++) {
+      CharVector[j] = CharData[(i*StrLength) + j];
+    }
+
+    // Convert the char vector to a single string. Any trailing white space will be
+    // included in the string, so strip off the trailing white space.
+    std::string String(CharVector.begin(), CharVector.end());
+    String.erase(String.find_last_not_of(" \t\n\r\f\v") + 1);
+    StringVector[i] = String;
+  }
+
+  return StringVector;
+}
+
+// -----------------------------------------------------------------------------
+
+std::vector<std::size_t> ObsSpace::CharShapeFromStringVector(
+                                  const std::vector<std::string> & StringVector) {
+  std::size_t MaxStrLen = 0;
+  for (std::size_t i = 0; i < StringVector.size(); i++) {
+    std::size_t StrSize = StringVector[i].size();
+    if (StrSize > MaxStrLen) {
+      MaxStrLen = StrSize;
+    }
+  }
+
+  std::vector<std::size_t> Shape{ StringVector.size(), MaxStrLen };
+  return Shape;
+}
+
+// -----------------------------------------------------------------------------
+
+void ObsSpace::StringVectorToCharArray(const std::vector<std::string> & StringVector,
+                             const std::vector<std::size_t> & CharShape, char * CharData) {
+  // CharShape[0] is the number of strings, and CharShape[1] is the maximum
+  // string lenghth. Walk through the string vector, copy the string and fill
+  // with white space at the ends of strings if necessary.
+  for (std::size_t i = 0; i < CharShape[0]; i++) {
+    for (std::size_t j = 0; j < CharShape[1]; i++) {
+      std::size_t ichar = (i * CharShape[1]) + j;
+      if (j < StringVector[i].size()) {
+        CharData[ichar] = StringVector[i].data()[j];
+      } else {
+        CharData[ichar] = ' ';
+      }
+    }
+  }
+}
 
 // -----------------------------------------------------------------------------
 
