@@ -53,6 +53,7 @@ list( APPEND ioda_test_data
   atmosphere/gmi_obs_gpm_2018041500_m.nc4
 
   atmosphere/aod_obs_2018041500_m.nc4
+  atmosphere/iasi_metop-a_obs_2018041500_m.nc4
 
   atmosphere/sndrd1_g15_obs_2018041500_m.nc4
   atmosphere/sndrd2_g15_obs_2018041500_m.nc4

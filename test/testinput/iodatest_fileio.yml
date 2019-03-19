@@ -321,3 +321,24 @@ ObsTypes:
         dnorm: 201804096
         tnorm: 1581849.12
         tolerance:  1.0e-3
+
+  - ObsType: "Radiance"
+    Input:
+      filename: "Data/iasi_metop-a_obs_2018041500_m.nc4"
+      variables:
+         - "latitude@MetaData"
+         - "longitude@MetaData"
+         - "time@MetaData"
+      metadata:
+        nlocs: 100
+        nrecs: 100
+        nvars: 616
+        norms:
+          - 451.375916
+          - 2309.354491
+          - 16.5375195
+        tolerance: 1.0e-3
+      datetime:
+        dnorm: 201804096
+        tnorm: 1525655
+        tolerance: 1.0e-3

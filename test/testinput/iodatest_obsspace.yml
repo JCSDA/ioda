@@ -301,5 +301,28 @@ Observations:
             - 703680982.365153
           tolerance:
             - 1.0e-12
+
+  - ObsType: "Radiance"
+    ObsData:
+      ObsDataIn:
+        obsfile: "Data/iasi_metop-a_obs_2018041500_m.nc4"
+        metadata:
+          nlocs: 100
+        TestData:
+          groups:
+            - "MetaData"
+            - "MetaData"
+            - "MetaData"
+          variables:
+            - "latitude"
+            - "longitude"
+            - "datetime"
+          norms:
+            - 451.37596843968998
+            - 2309.35421112641
+            - 614958488.139210
+          tolerance:
+            - 1.0e-12
+
       ObsDataOut:
         obsfile: "testoutput/diagout.nc4"
