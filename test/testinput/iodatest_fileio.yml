@@ -90,6 +90,26 @@ ObsTypes:
 
   - ObsType: "Radiance"
     Input:
+      filename: "Data/seviri_m08_obs_2018041500_m.nc4"
+      variables:
+         - "latitude@MetaData"
+         - "longitude@MetaData"
+         - "time@MetaData"
+      metadata:
+        nlocs: 100
+        nrecs: 100
+        nvars: 8
+        norms:
+          - 260.792
+          - 1402.78
+          - 20.2299
+        tolerance: 1.0e-3
+      datetime:
+        dnorm: 201804096
+        tnorm: 1920375.75
+
+  - ObsType: "Radiance"
+    Input:
       filename: "Data/sndrd1_g15_obs_2018041500_m.nc4"
       variables:
          - "latitude@MetaData"
@@ -191,6 +211,7 @@ ObsTypes:
       datetime:
         dnorm: 201804096
         tnorm: 1639900.62
+>>>>>>> develop-emc-codesprint
         tolerance:  1.0e-3
 
   - ObsType: "Radiance"
