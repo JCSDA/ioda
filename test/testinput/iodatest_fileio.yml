@@ -109,6 +109,26 @@ ObsTypes:
         tnorm: 1920375.75
         tolerance:  1.0e-3
 
+  - ObsType: "Radiance"
+    Input:
+      filename: "Data/hirs4_metop-a_obs_2018041500_m.nc4"
+      variables:
+         - "latitude@MetaData"
+         - "longitude@MetaData"
+         - "time@MetaData"
+      metadata:
+        nlocs: 100
+        nrecs: 100
+        nvars: 19
+        norms:
+         - 463.537628
+         - 2372.42188
+         - 18.1009731
+        tolerance: 1.0e-12
+      datetime:
+        dnorm: 201804096
+        tnorm: 1783022.88
+        tolerance:  1.0e-3
 
   - ObsType: "Radiance"
     Input:

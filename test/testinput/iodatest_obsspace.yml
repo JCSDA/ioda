@@ -151,6 +151,29 @@ Observations:
   - ObsType: "Radiance"
     ObsData:
       ObsDataIn:
+        obsfile: "Data/hirs4_metop-a_obs_2018041500_m.nc4"
+        metadata:
+          nlocs: 100
+        TestData:
+          groups:
+            - "MetaData"
+            - "MetaData"
+            - "MetaData"
+          variables:
+            - "latitude"
+            - "longitude"
+            - "time"
+          norms:
+            - 463.53764083315809
+            - 2372.4218162800416
+            - 1783022.7733388601
+          tolerance:
+            - 1.0e-12
+
+
+  - ObsType: "Radiance"
+    ObsData:
+      ObsDataIn:
         obsfile: "Data/smap_obs_2018041500_m.nc4"
         metadata:
           nlocs: 45
