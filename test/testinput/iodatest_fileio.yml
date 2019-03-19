@@ -107,6 +107,7 @@ ObsTypes:
       datetime:
         dnorm: 201804096
         tnorm: 1920375.75
+        tolerance:  1.0e-3
 
   - ObsType: "Radiance"
     Input:
