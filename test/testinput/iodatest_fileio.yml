@@ -90,27 +90,6 @@ ObsTypes:
 
   - ObsType: "Radiance"
     Input:
-      filename: "Data/airs_aqua_obs_2018041500_m.nc4"
-      variables:
-         - "latitude@MetaData"
-         - "longitude@MetaData"
-         - "time@MetaData"
-      metadata:
-        nlocs: 100
-        nrecs: 100
-        nvars: 281
-        norms:
-          - 490.8703099362815
-          - 2000.1424097904787
-          - 17.4266319
-        tolerance: 1.0e-3
-      datetime:
-        dnorm: 201804096
-        tnorm: 1639900.62
-        tolerance:  1.0e-3
-
-- ObsType: "Radiance"
-    Input:
       filename: "Data/sndrd1_g15_obs_2018041500_m.nc4"
       variables:
          - "latitude@MetaData"
@@ -195,6 +174,27 @@ ObsTypes:
 
   - ObsType: "Radiance"
     Input:
+      filename: "Data/airs_aqua_obs_2018041500_m.nc4"
+      variables:
+         - "latitude@MetaData"
+         - "longitude@MetaData"
+         - "time@MetaData"
+      metadata:
+        nlocs: 100
+        nrecs: 100
+        nvars: 281
+        norms:
+          - 490.8703099362815
+          - 2000.1424097904787
+          - 17.4266319
+        tolerance: 1.0e-3
+      datetime:
+        dnorm: 201804096
+        tnorm: 1639900.62
+        tolerance:  1.0e-3
+
+  - ObsType: "Radiance"
+    Input:
       filename: "Data/smap_obs_2018041500_m.nc4"
       variables:
          - "latitude@MetaData"
@@ -214,6 +214,7 @@ ObsTypes:
         dnorm: 135374336
         tnorm: 11294.7354
         tolerance:  1.0e-3
+
   - ObsType: "Radiance"
     Input:
       filename: "Data/gmi_obs_gpm_2018041500_m.nc4"

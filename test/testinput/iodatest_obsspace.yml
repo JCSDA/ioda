@@ -62,28 +62,6 @@ Observations:
   - ObsType: "Radiance"
     ObsData:
       ObsDataIn:
-        obsfile: "Data/airs_aqua_obs_2018041500_m.nc4"
-        metadata:
-          nlocs: 100
-        TestData:
-          groups:
-            - "MetaData"
-            - "MetaData"
-            - "MetaData"
-          variables:
-            - "latitude"
-            - "longitude"
-            - "datetime"
-          norms:
-            - 490.8703099362815
-            - 2000.1424097904787
-            - 615017295.92605221
-          tolerance:
-            - 1.0e-12
-
-  - ObsType: "Radiance"
-    ObsData:
-      ObsDataIn:
         obsfile: "Data/smap_obs_2018041500_m.nc4"
         metadata:
           nlocs: 45
@@ -210,6 +188,28 @@ Observations:
             - 299.11454636959382
             - 2143.9262845371709 
             - 615009925.86408103
+          tolerance:
+            - 1.0e-12
+
+  - ObsType: "Radiance"
+    ObsData:
+      ObsDataIn:
+        obsfile: "Data/airs_aqua_obs_2018041500_m.nc4"
+        metadata:
+          nlocs: 100
+        TestData:
+          groups:
+            - "MetaData"
+            - "MetaData"
+            - "MetaData"
+          variables:
+            - "latitude"
+            - "longitude"
+            - "datetime"
+          norms:
+            - 490.8703099362815
+            - 2000.1424097904787
+            - 615017295.92605221
           tolerance:
             - 1.0e-12
 
