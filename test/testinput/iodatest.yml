@@ -42,6 +42,26 @@ Observations:
   - ObsType: Radiance
     ObsData:
       ObsDataIn:
+        obsfile: Data/sndrd1_g15_obs_2018041500_m.nc4
+
+  - ObsType: Radiance
+    ObsData:
+      ObsDataIn:
+        obsfile: Data/sndrd2_g15_obs_2018041500_m.nc4
+
+  - ObsType: Radiance
+    ObsData:
+      ObsDataIn:
+        obsfile: Data/sndrd3_g15_obs_2018041500_m.nc4
+
+  - ObsType: Radiance
+    ObsData:
+      ObsDataIn:
+        obsfile: Data/sndrd4_g15_obs_2018041500_m.nc4
+
+  - ObsType: Radiance
+    ObsData:
+      ObsDataIn:
         obsfile: Data/airs_aqua_obs_2018041500_m.nc4
 
   # Marine obs
