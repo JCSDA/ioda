@@ -90,11 +90,7 @@ ObsTypes:
 
   - ObsType: "Radiance"
     Input:
-<<<<<<< HEAD
-      filename: "Data/cris-fsr_npp_obs_2018041500_m.nc4"
-=======
       filename: "Data/seviri_m08_obs_2018041500_m.nc4"
->>>>>>> develop-emc-codesprint
       variables:
          - "latitude@MetaData"
          - "longitude@MetaData"
@@ -102,17 +98,6 @@ ObsTypes:
       metadata:
         nlocs: 100
         nrecs: 100
-<<<<<<< HEAD
-        nvars: 431
-        norms:
-          - 449.036
-          - 2042.75
-          - 16.2718
-        tolerance: 1.0e-3
-      datetime:
-        dnorm: 201804096
-        tnorm: 1570399
-=======
         nvars: 8
         norms:
           - 260.792
@@ -122,7 +107,28 @@ ObsTypes:
       datetime:
         dnorm: 201804096
         tnorm: 1920375.75
->>>>>>> develop-emc-codesprint
+        tolerance:  1.0e-3
+
+
+  - ObsType: "Radiance"
+    Input:
+      filename: "Data/cris-fsr_npp_obs_2018041500_m.nc4"
+      variables:
+         - "latitude@MetaData"
+         - "longitude@MetaData"
+         - "time@MetaData"
+      metadata:
+        nlocs: 100
+        nrecs: 100
+        nvars: 431
+        norms:
+          - 449.036
+          - 2042.75
+          - 16.2718
+        tolerance: 1.0e-3
+      datetime:
+        dnorm: 201804096
+        tnorm: 1570399
         tolerance:  1.0e-3
 
   - ObsType: "Radiance"
