@@ -19,11 +19,22 @@ Observations:
     ObsData:
       ObsDataIn:
         obsfile: Data/aod_obs_2018041500_m.nc4
+
   - ObsType: Radiance
     ObsData:
       ObsDataIn:
         obsfile: Data/amsua_n19_obs_2018041500_m.nc4
- 
+
+  - ObsType: Radiance
+    ObsData:
+      ObsDataIn:
+        obsfile: Data/cris-fsr_npp_obs_2018041500_m.nc4
+
+  - ObsType: Radiance
+    ObsData:
+      ObsDataIn:
+        obsfile: Data/atms_npp_obs_2018041500_m.nc4
+
   - ObsType: Radiance
     ObsData:
       ObsDataIn:
@@ -38,6 +49,41 @@ Observations:
     ObsData:
       ObsDataIn:
         obsfile: Data/gmi_obs_gpm_2018041500_m.nc4
+
+  - ObsType: Radiance
+    ObsData:
+      ObsDataIn:
+        obsfile: Data/mhs_n19_obs_2018041500_m.nc4
+
+  - ObsType: Radiance
+    ObsData:
+      ObsDataIn:      
+        obsfile: Data/seviri_m08_obs_2018041500_m.nc4
+
+  - ObsType: Radiance
+    ObsData:
+      ObsDataIn:
+        obsfile: Data/sndrd1_g15_obs_2018041500_m.nc4
+
+  - ObsType: Radiance
+    ObsData:
+      ObsDataIn:
+        obsfile: Data/sndrd2_g15_obs_2018041500_m.nc4
+
+  - ObsType: Radiance
+    ObsData:
+      ObsDataIn:
+        obsfile: Data/sndrd3_g15_obs_2018041500_m.nc4
+
+  - ObsType: Radiance
+    ObsData:
+      ObsDataIn:
+        obsfile: Data/sndrd4_g15_obs_2018041500_m.nc4
+
+  - ObsType: Radiance
+    ObsData:
+      ObsDataIn:
+        obsfile: Data/airs_aqua_obs_2018041500_m.nc4
 
   - ObsType: Radiosonde
     ObsData:
@@ -65,3 +111,8 @@ Observations:
     ObsData:
       ObsDataIn:
         obsfile: Data/cryosat2-2018-04-15.nc
+
+  - ObsType: Radiance
+    ObsData:
+      ObsDataIn:
+        obsfile: Data/iasi_metop-a_obs_2018041500_m.nc4
