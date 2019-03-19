@@ -27,7 +27,7 @@ Observations:
   - ObsType: Radiance
     ObsData:
       ObsDataIn:
-        obsfile: ../../../ioda/test/testinput/atmosphere/hirs4_metop-a_obs_2018041500_m.nc4
+        obsfile: Data/hirs4_metop-a_obs_2018041500_m.nc4
  
   - ObsType: Radiance
     ObsData:

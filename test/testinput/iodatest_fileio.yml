@@ -90,7 +90,7 @@ ObsTypes:
 
   - ObsType: "Radiance"
     Input:
-      filename: "../../../ioda/test/testinput/atmosphere/hirs4_metop-a_obs_2018041500_m.nc4"
+      filename: "Data/hirs4_metop-a_obs_2018041500_m.nc4"
       variables:
          - "latitude@MetaData"
          - "longitude@MetaData"

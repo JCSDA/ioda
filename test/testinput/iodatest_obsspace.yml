@@ -62,7 +62,7 @@ Observations:
   - ObsType: "Radiance"
     ObsData:
       ObsDataIn:
-        obsfile: "../../../ioda/test/testinput/atmosphere/hirs4_metop-b_obs_2018041500_m.nc4"
+        obsfile: "Data/hirs4_metop-b_obs_2018041500_m.nc4"
         metadata:
           nlocs: 100
         TestData:
