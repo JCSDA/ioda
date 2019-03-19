@@ -40,6 +40,12 @@ list( APPEND ioda_test_data
   atmosphere/aircraft_obs_2018041500_s.nc4
   atmosphere/amsua_n19_obs_2018041500_m.nc4
   atmosphere/amsua_n19_obs_2018041500_s.nc4
+  atmosphere/mhs_n19_obs_2018041500_m.nc4
+  atmosphere/atms_npp_obs_2018041500_m.nc4
+  atmosphere/cris-fsr_npp_obs_2018041500_m.nc4
+  atmosphere/seviri_m08_obs_2018041500_m.nc4
+  atmosphere/airs_aqua_obs_2018041500_m.nc4
+  atmosphere/airs_aqua_obs_2018041500_s.nc4
   atmosphere/sondes_obs_2018041500_m.nc4
   atmosphere/sondes_obs_2018041500_s.nc4
   atmosphere/diag_t_obs_01_wprofiles.odb
@@ -49,6 +55,11 @@ list( APPEND ioda_test_data
 
   atmosphere/aod_obs_2018041500_m.nc4
   atmosphere/hirs4_metop-a_obs_2018041500_m.nc4  
+  atmosphere/iasi_metop-a_obs_2018041500_m.nc4
+  atmosphere/sndrd1_g15_obs_2018041500_m.nc4
+  atmosphere/sndrd2_g15_obs_2018041500_m.nc4
+  atmosphere/sndrd3_g15_obs_2018041500_m.nc4
+  atmosphere/sndrd4_g15_obs_2018041500_m.nc4
 
   marine/Jason-2-2018-04-15.nc
   marine/profile_2018-04-15.nc
