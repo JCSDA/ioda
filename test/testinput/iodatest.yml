@@ -28,8 +28,13 @@ Observations:
   - ObsType: Radiance
     ObsData:
       ObsDataIn:
+        obsfile: Data/cris-fsr_npp_obs_2018041500_m.nc4
+
+  - ObsType: Radiance
+    ObsData:
+      ObsDataIn:
         obsfile: Data/atms_npp_obs_2018041500_m.nc4
- 
+
   - ObsType: Radiance
     ObsData:
       ObsDataIn:
