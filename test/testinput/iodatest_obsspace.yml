@@ -81,6 +81,29 @@ Observations:
           tolerance:
             - 1.0e-12
 
+
+  - ObsType: "Radiance"
+    ObsData:
+      ObsDataIn:
+        obsfile: "Data/cris-fsr_npp_obs_2018041500_m.nc4"
+        metadata:
+          nlocs: 100
+        TestData:
+          groups:
+            - "MetaData"
+            - "MetaData"
+            - "MetaData"
+          variables:
+            - "latitude"
+            - "longitude"
+            - "datetime"
+          norms:
+            - 449.03626468721183
+            - 2042.7501297209276
+            - 614978332.32979035
+          tolerance:
+            - 1.0e-12
+
   - ObsType: "Radiance"
     ObsData:
       ObsDataIn:
