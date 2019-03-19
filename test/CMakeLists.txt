@@ -40,6 +40,8 @@ list( APPEND ioda_test_data
   atmosphere/aircraft_obs_2018041500_s.nc4
   atmosphere/amsua_n19_obs_2018041500_m.nc4
   atmosphere/amsua_n19_obs_2018041500_s.nc4
+  atmosphere/airs_aqua_obs_2018041500_m.nc4
+  atmosphere/airs_aqua_obs_2018041500_s.nc4
   atmosphere/sondes_obs_2018041500_m.nc4
   atmosphere/sondes_obs_2018041500_s.nc4
   atmosphere/diag_t_obs_01_wprofiles.odb

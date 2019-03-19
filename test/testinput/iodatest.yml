@@ -54,6 +54,11 @@ Observations:
       ObsDataIn:
         obsfile: Data/sndrd4_g15_obs_2018041500_m.nc4
 
+  - ObsType: Radiance
+    ObsData:
+      ObsDataIn:
+        obsfile: Data/airs_aqua_obs_2018041500_m.nc4
+
   - ObsType: Radiosonde
     ObsData:
       ObsDataIn:
