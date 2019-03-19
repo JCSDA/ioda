@@ -42,12 +42,23 @@ class ObsSpace : public oops::ObsSpaceBase {
   std::size_t nrecs() const;
   std::size_t nvars() const;
 
-  template <typename DATATYPE>
-  void get_db(const std::string &, const std::string &, const std::size_t &, DATATYPE[]) const;
-  template <typename DATATYPE>
-  void put_db(const std::string &, const std::string &, const std::size_t &, const DATATYPE[]);
-
   bool has(const std::string &, const std::string &) const;
+
+  void get_db(const std::string & group, const std::string & name,
+              const size_t & vsize, int vdata[]) const;
+  void get_db(const std::string & group, const std::string & name,
+              const size_t & vsize, float vdata[]) const;
+  void get_db(const std::string & group, const std::string & name,
+              const size_t & vsize, double vdata[]) const;
+  void get_db(const std::string & group, const std::string & name,
+              const size_t & vsize, util::DateTime vdata[]) const;
+
+  void put_db(const std::string & group, const std::string & name,
+              const size_t & vsize, const int vdata[]);
+  void put_db(const std::string & group, const std::string & name,
+              const size_t & vsize, const float vdata[]);
+  void put_db(const std::string & group, const std::string & name,
+              const size_t & vsize, const double vdata[]);
 
   const std::string & obsname() const {return obsname_;}
   const util::DateTime & windowStart() const {return winbgn_;}
@@ -62,6 +73,16 @@ class ObsSpace : public oops::ObsSpaceBase {
   void print(std::ostream &) const;
 
   ObsSpace & operator= (const ObsSpace &);
+
+  /*! \brief Helper function for public get_db */
+  template <typename DATATYPE>
+  void get_db_helper(const std::string &, const std::string &,
+                     const std::size_t &, DATATYPE[]) const;
+
+  /*! \brief Helper function for public put_db */
+  template <typename DATATYPE>
+  void put_db_helper(const std::string &, const std::string &,
+                     const std::size_t &, const DATATYPE[]);
 
   /*! \brief Initialize database from file*/
   void InitFromFile(const std::string & filename, const std::string & mode,

@@ -87,42 +87,82 @@ ObsSpace::~ObsSpace() {
 
 // -----------------------------------------------------------------------------
 
-template <typename DATATYPE>
 void ObsSpace::get_db(const std::string & group, const std::string & name,
-                      const size_t & vsize, DATATYPE vdata[]) const {
-  std::string gname = (group.size() <= 0)? "GroupUndefined" : group;
-  // database_.inquire(gname, name, vsize, vdata);
+                      const size_t & vsize, int vdata[]) const {
+  get_db_helper<int>(group, name, vsize, vdata);
 }
 
-template void ObsSpace::get_db<int>(const std::string & group, const std::string & name,
-                                    const size_t & vsize, int vdata[]) const;
+void ObsSpace::get_db(const std::string & group, const std::string & name,
+                      const size_t & vsize, float vdata[]) const {
+  get_db_helper<float>(group, name, vsize, vdata);
+}
 
-template void ObsSpace::get_db<float>(const std::string & group, const std::string & name,
-                                      const size_t & vsize, float vdata[]) const;
+void ObsSpace::get_db(const std::string & group, const std::string & name,
+                      const size_t & vsize, double vdata[]) const {
+  // load the float values from the database and convert to double
+  std::unique_ptr<float> FloatData(new float[vsize]);
+  get_db_helper<float>(group, name, vsize, FloatData.get());
 
-template void ObsSpace::get_db<double>(const std::string & group, const std::string & name,
-                                       const size_t & vsize, double vdata[]) const;
+  const float fmiss = util::missingValue(fmiss);
+  const double dmiss = util::missingValue(dmiss);
+  for (std::size_t i = 0; i < vsize; i++) {
+    if (FloatData.get()[i] == fmiss) {
+      vdata[i] = dmiss;
+    } else {
+      vdata[i] = static_cast<double>(FloatData.get()[i]);
+    }
+  }
+}
 
-template void ObsSpace::get_db<util::DateTime>(const std::string & group, const std::string & name,
-                                               const size_t & vsize, util::DateTime vdata[]) const;
+void ObsSpace::get_db(const std::string & group, const std::string & name,
+                      const size_t & vsize, util::DateTime vdata[]) const {
+  get_db_helper<util::DateTime>(group, name, vsize, vdata);
+}
+
+template <typename DATATYPE>
+void ObsSpace::get_db_helper(const std::string & group, const std::string & name,
+                             const size_t & vsize, DATATYPE vdata[]) const {
+  std::string gname = (group.size() <= 0)? "GroupUndefined" : group;
+  std::vector<std::size_t> vshape(1, vsize);
+  database_.LoadFromDb(gname, name, vshape, &vdata[0]);
+}
 
 // -----------------------------------------------------------------------------
 
-template <typename DATATYPE>
 void ObsSpace::put_db(const std::string & group, const std::string & name,
-                      const std::size_t & vsize, const DATATYPE vdata[]) {
-  std::string gname = (group.size() <= 0)? "GroupUndefined" : group;
-  // database_.insert<DATATYPE>(gname, name, vsize, vdata);
+                      const size_t & vsize, const int vdata[]) {
+  put_db_helper<int>(group, name, vsize, vdata);
 }
 
-template void ObsSpace::put_db<int>(const std::string & group, const std::string & name,
-                                    const size_t & vsize, const int vdata[]);
+void ObsSpace::put_db(const std::string & group, const std::string & name,
+                      const size_t & vsize, const float vdata[]) {
+  put_db_helper<float>(group, name, vsize, vdata);
+}
 
-template void ObsSpace::put_db<float>(const std::string & group, const std::string & name,
-                                      const size_t & vsize, const float vdata[]);
+void ObsSpace::put_db(const std::string & group, const std::string & name,
+                      const size_t & vsize, const double vdata[]) {
+  // convert to float, then load into the database
+  std::unique_ptr<float> FloatData(new float[vsize]);
 
-template void ObsSpace::put_db<double>(const std::string & group, const std::string & name,
-                                       const size_t & vsize, const double vdata[]);
+  const float fmiss = util::missingValue(fmiss);
+  const double dmiss = util::missingValue(dmiss);
+  for (std::size_t i = 0; i < vsize; i++) {
+    if (vdata[i] == dmiss) {
+      FloatData.get()[i] = fmiss;
+    } else {
+      FloatData.get()[i] = static_cast<float>(vdata[i]);
+    }
+  }
+  put_db_helper<float>(group, name, vsize, FloatData.get());
+}
+
+template <typename DATATYPE>
+void ObsSpace::put_db_helper(const std::string & group, const std::string & name,
+                             const std::size_t & vsize, const DATATYPE vdata[]) {
+  std::string gname = (group.size() <= 0)? "GroupUndefined" : group;
+  std::vector<std::size_t> vshape(1, vsize);
+  database_.StoreToDb(gname, name, vshape, &vdata[0]);
+}
 
 // -----------------------------------------------------------------------------
 

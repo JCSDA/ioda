@@ -14,7 +14,6 @@ list( APPEND ioda_test_input
   testinput/iodatest_fileio.yml
   testinput/iodatest_distribution.yml
   testinput/iodatest_obsspace_container.yml
-  testinput/iodatest_marine_fileio.yml
   testinput/iodatest_marine_obsspace.yml  
   testinput/iodatest_fileio_odb_api.yml
 )
@@ -110,18 +109,11 @@ ecbuild_add_test( TARGET test_ioda_marine_obsspace
                   SOURCES mains/TestObsSpace.cc
                   ARGS "testinput/iodatest_marine_obsspace.yml"
                   LIBS    ioda )
-
 		
 ecbuild_add_test( TARGET test_ioda_fileio
                   BOOST
                   SOURCES mains/TestIodaIO.cc
                   ARGS "testinput/iodatest_fileio.yml"
-                  LIBS    ioda )
-
-ecbuild_add_test( TARGET test_ioda_marine_fileio
-                  BOOST
-                  SOURCES mains/TestIodaIO.cc
-                  ARGS "testinput/iodatest_marine_fileio.yml"
                   LIBS    ioda )
 
 if (HAVE_ODB_API)

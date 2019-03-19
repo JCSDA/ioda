@@ -165,13 +165,13 @@ class ObsSpaceContainer: public util::Printable {
 
      /*! \brief Load VarData from the container*/
      void LoadFromDb(const std::string & GroupName, const std::string & VarName,
-                  const std::vector<std::size_t> & VarShape, int * VarData);
+                  const std::vector<std::size_t> & VarShape, int * VarData) const;
      void LoadFromDb(const std::string & GroupName, const std::string & VarName,
-                  const std::vector<std::size_t> & VarShape, float * VarData);
+                  const std::vector<std::size_t> & VarShape, float * VarData) const;
      void LoadFromDb(const std::string & GroupName, const std::string & VarName,
-                  const std::vector<std::size_t> & VarShape, std::string * VarData);
+                  const std::vector<std::size_t> & VarShape, std::string * VarData) const;
      void LoadFromDb(const std::string & GroupName, const std::string & VarName,
-                  const std::vector<std::size_t> & VarShape, util::DateTime * VarData);
+                  const std::vector<std::size_t> & VarShape, util::DateTime * VarData) const;
 
      // -----------------------------------------------------------------------------
 
@@ -189,7 +189,7 @@ class ObsSpaceContainer: public util::Printable {
      /*! \brief helper function for LoadFromDb */
      template <typename DataType>
      void LoadFromDb_helper(const std::string & GroupName, const std::string & VarName,
-                      const std::vector<std::size_t> & VarShape, DataType * VarData);
+                      const std::vector<std::size_t> & VarShape, DataType * VarData) const;
 
      /*! \brief helper function for StoreToDb */
      template <typename DataType>
