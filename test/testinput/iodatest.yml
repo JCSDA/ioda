@@ -63,7 +63,6 @@ Observations:
     ObsData:
       ObsDataIn:
         obsfile: Data/airs_aqua_obs_2018041500_m.nc4
->>>>>>> develop-emc-codesprint
 
   - ObsType: Radiosonde
     ObsData:
