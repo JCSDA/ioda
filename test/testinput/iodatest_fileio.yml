@@ -211,7 +211,6 @@ ObsTypes:
       datetime:
         dnorm: 201804096
         tnorm: 1639900.62
->>>>>>> develop-emc-codesprint
         tolerance:  1.0e-3
 
   - ObsType: "Radiance"
