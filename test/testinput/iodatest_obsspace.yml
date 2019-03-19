@@ -29,11 +29,9 @@ Observations:
           variables:
             - "latitude"
             - "longitude"
-            - "datetime"
           norms:
             - 353.11505923005967
             - 1981.4147543887036
-            - 614979984.02482653
           tolerance:
             - 1.0e-12
 
@@ -51,11 +49,9 @@ Observations:
           variables:
             - "latitude"
             - "longitude"
-            - "datetime"
           norms:
             - 451.46510296606738
             - 1829.8089509492747
-            - 615005382.90166008
           tolerance:
             - 1.0e-12
 
@@ -73,11 +69,9 @@ Observations:
           variables:
             - "latitude"
             - "longitude"
-            - "datetime"
           norms:
             - 529.30712749376073
             - 1103.6169010759827
-            - 412263537.27883768
           tolerance:
             - 1.0e-12
 
@@ -95,11 +89,9 @@ Observations:
           variables:
             - "latitude"
             - "longitude"
-            - "datetime"
           norms:
             - 526.83022956365323
             - 367.9760257366043
-            - 532517611.31432515
           tolerance:
             - 1.0e-12
 
@@ -117,11 +109,9 @@ Observations:
           variables:
             - "latitude"
             - "longitude"
-            - "datetime"
           norms:
             - 757.55982302113819
             - 1282.68940922515
-            - 703680982.365153
           tolerance:
             - 1.0e-12
       ObsDataOut:

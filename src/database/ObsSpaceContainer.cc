@@ -86,29 +86,29 @@ void ObsSpaceContainer::StoreToDb_helper(const std::string & GroupName,
 // -----------------------------------------------------------------------------
 
 void ObsSpaceContainer::LoadFromDb(const std::string & GroupName, const std::string & VarName,
-               const std::vector<std::size_t> & VarShape, int * VarData) {
+               const std::vector<std::size_t> & VarShape, int * VarData) const {
   LoadFromDb_helper<int>(GroupName, VarName, VarShape, VarData);
 }
 
 void ObsSpaceContainer::LoadFromDb(const std::string & GroupName, const std::string & VarName,
-               const std::vector<std::size_t> & VarShape, float * VarData) {
+               const std::vector<std::size_t> & VarShape, float * VarData) const {
   LoadFromDb_helper<float>(GroupName, VarName, VarShape, VarData);
 }
 
 void ObsSpaceContainer::LoadFromDb(const std::string & GroupName, const std::string & VarName,
-           const std::vector<std::size_t> & VarShape, std::string * VarData) {
+           const std::vector<std::size_t> & VarShape, std::string * VarData) const {
   LoadFromDb_helper<std::string>(GroupName, VarName, VarShape, VarData);
 }
 
 void ObsSpaceContainer::LoadFromDb(const std::string & GroupName, const std::string & VarName,
-           const std::vector<std::size_t> & VarShape, util::DateTime * VarData) {
+           const std::vector<std::size_t> & VarShape, util::DateTime * VarData) const {
   LoadFromDb_helper<util::DateTime>(GroupName, VarName, VarShape, VarData);
 }
 
 template <typename DataType>
 void ObsSpaceContainer::LoadFromDb_helper(const std::string & GroupName,
               const std::string & VarName, const std::vector<std::size_t> & VarShape,
-              DataType * VarData) {
+              DataType * VarData) const {
   if (has(GroupName, VarName)) {
     // Found the required record in the database
     VarRecord_set::iterator Var = DataContainer.find(boost::make_tuple(GroupName, VarName));
