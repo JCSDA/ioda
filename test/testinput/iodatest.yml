@@ -24,11 +24,6 @@ Observations:
       ObsDataIn:
         obsfile: Data/amsua_n19_obs_2018041500_m.nc4
  
-  - ObsType: Radiosonde
-    ObsData:
-      ObsDataIn:
-        obsfile: Data/sondes_obs_2018041500_m.nc4
-
   - ObsType: Radiance
     ObsData:
       ObsDataIn:
@@ -63,6 +58,11 @@ Observations:
     ObsData:
       ObsDataIn:
         obsfile: Data/airs_aqua_obs_2018041500_m.nc4
+
+  - ObsType: Radiosonde
+    ObsData:
+      ObsDataIn:
+        obsfile: Data/sondes_obs_2018041500_m.nc4
 
   # Marine obs
   - ObsType: ADT
