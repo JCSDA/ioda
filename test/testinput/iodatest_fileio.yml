@@ -100,13 +100,13 @@ ObsTypes:
         nrecs: 100
         nvars: 8
         norms:
-          - 451.465
-          - 1829.81
-          - 17.8632
+          - 260.792
+          - 1402.78
+          - 20.2299
         tolerance: 1.0e-3
       datetime:
         dnorm: 201804096
-        tnorm: 1615322
+        tnorm: 1920375.75
         tolerance:  1.0e-3
 
   - ObsType: "Radiance"
