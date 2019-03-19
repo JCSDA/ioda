@@ -37,6 +37,11 @@ Observations:
   - ObsType: Radiance
     ObsData:
       ObsDataIn:
+        obsfile: Data/seviri_m08_obs_2018041500_m.nc4
+
+  - ObsType: Radiance
+    ObsData:
+      ObsDataIn:
         obsfile: Data/sndrd1_g15_obs_2018041500_m.nc4
 
   - ObsType: Radiance
@@ -58,6 +63,7 @@ Observations:
     ObsData:
       ObsDataIn:
         obsfile: Data/airs_aqua_obs_2018041500_m.nc4
+>>>>>>> develop-emc-codesprint
 
   - ObsType: Radiosonde
     ObsData:
