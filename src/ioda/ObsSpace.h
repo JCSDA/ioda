@@ -39,6 +39,7 @@ class ObsSpace : public oops::ObsSpaceBase {
   ~ObsSpace();
 
   std::size_t nlocs() const;
+  std::size_t nrecs() const;
   std::size_t nvars() const;
 
   template <typename DATATYPE>
@@ -91,6 +92,9 @@ class ObsSpace : public oops::ObsSpaceBase {
 
   /*! \brief number of variables */
   std::size_t nvars_;
+
+  /*! \brief number of records */
+  std::size_t nrecs_;
 
   /*! \brief filename and path of output */
   std::string fileout_;
