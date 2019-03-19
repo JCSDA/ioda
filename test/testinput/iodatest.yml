@@ -101,3 +101,8 @@ Observations:
     ObsData:
       ObsDataIn:
         obsfile: Data/cryosat2-2018-04-15.nc
+
+  - ObsType: Radiance
+    ObsData:
+      ObsDataIn:
+        obsfile: Data/iasi_metop-a_obs_2018041500_m.nc4
