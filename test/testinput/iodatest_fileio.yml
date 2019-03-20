@@ -15,7 +15,7 @@ TestInput:
     - "test_float@FloatGroup"
     - "test_double@DoubleGroup"
     - "test_string@CharGroup"
-    - "date_time@MetaData"
+    - "datetime@MetaData"
   var0: [ 2, 4, 6, 8, -2147483643 ]
   var1: [ 1.5, -3.3688e+38, 3.4 ]
   var2: [ 1.5, 2.7 ] 

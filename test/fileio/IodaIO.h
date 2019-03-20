@@ -288,7 +288,7 @@ void testWriteVar() {
   }
   std::vector<std::size_t> Char3VarShape{ ExpectedNlocs, 20 };
   std::string Char3GrpName = "MetaData";
-  std::string Char3VarName = "date_time";
+  std::string Char3VarName = "datetime";
   TestIO->WriteVar(Char3GrpName, Char3VarName, Char3VarShape, ExpectedChar3Data.get());
 
   // open the file we just created and see if it contains what we just wrote into it

@@ -124,25 +124,25 @@ NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
     }
 
     // Walk through the variables and record the group and variable information. For
-    // now, want to support both date_time strings and ref, offset time so that
-    // we can incrementally update the files to date_time strings. Accomplish this
-    // by making sure that only the date_time variable appears in the grp_var_info_
+    // now, want to support both datetime strings and ref, offset time so that
+    // we can incrementally update the files to datetime strings. Accomplish this
+    // by making sure that only the datetime variable appears in the grp_var_info_
     // map.
     //
     //    offset time is variable "time@MetaData"
-    //    date_time string is variable "date_time@MetaData"
+    //    datetime string is variable "datetime@MetaData"
     //
-    //    offset time           date_time         grp_var_info_     read action
+    //    offset time           datetime         grp_var_info_     read action
     //    in the file           in the file       entry
     //
     //        N                     N             nothing            nothing
-    //        N                     Y             date_time          read directly into var
-    //        Y                     N             date_time          convert ref, offset
-    //                                                               to date_time string
-    //        Y                     Y             date_time          read directly into var
+    //        N                     Y             datetime          read directly into var
+    //        Y                     N             datetime          convert ref, offset
+    //                                                               to datetime string
+    //        Y                     Y             datetime          read directly into var
 
     int NcVarId;
-    have_date_time_ = (nc_inq_varid(ncid_, "date_time@MetaData", &NcVarId) == NC_NOERR);
+    have_date_time_ = (nc_inq_varid(ncid_, "datetime@MetaData", &NcVarId) == NC_NOERR);
     have_offset_time_ = (nc_inq_varid(ncid_, "time@MetaData", &NcVarId) == NC_NOERR);
 
     for (std::size_t ivar=0; ivar < NcNvars; ++ivar) {
@@ -178,20 +178,20 @@ NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
         VarName = VarName.substr(0, Spos);
       }
 
-      // If offset time exists, substitute the date_time specs for the offset time specs.
+      // If offset time exists, substitute the datetime specs for the offset time specs.
       if (VarName.compare("time") == 0) {
-        // If we have date_time in the file, just let those specs get entered when
-        // date_time is encountered. Otherwise, replace the offset time specs
-        // with the expected date_time specs. The reader later on will do the
+        // If we have datetime in the file, just let those specs get entered when
+        // datetime is encountered. Otherwise, replace the offset time specs
+        // with the expected datetime specs. The reader later on will do the
         // conversion.
         if (!have_date_time_) {
-          // Replace offset time with date_time specs. We want the offset time
+          // Replace offset time with datetime specs. We want the offset time
           // variable id, but with the character array specs for after the
           // conversion.
-          NcDimSizes.push_back(20);  // date_time strings are 20 character long
-          grp_var_info_[GroupName]["date_time"].var_id = NcVarId;
-          grp_var_info_[GroupName]["date_time"].dtype = "char";
-          grp_var_info_[GroupName]["date_time"].shape = NcDimSizes;
+          NcDimSizes.push_back(20);  // datetime strings are 20 character long
+          grp_var_info_[GroupName]["datetime"].var_id = NcVarId;
+          grp_var_info_[GroupName]["datetime"].dtype = "char";
+          grp_var_info_[GroupName]["datetime"].shape = NcDimSizes;
         }
       } else {
         // enter var specs into grp_var_info_ map
@@ -288,20 +288,20 @@ void NetcdfIO::ReadVar_helper(const std::string & GroupName, const std::string &
     CheckNcCall(nc_get_var_double(ncid_, NcVarId, reinterpret_cast<double *>(VarData)),
                 ErrorMsg);
   } else if (VarType == typeid(char)) {
-    // If reading in date_time, then need to check if we need to convert ref, offset form
-    // to date_time strings. If we got here, we either have date_time in the file or
+    // If reading in datetime, then need to check if we need to convert ref, offset form
+    // to datetime strings. If we got here, we either have datetime in the file or
     // we've got offset time in the file.
-    if (VarName.compare("date_time") == 0) {
+    if (VarName.compare("datetime") == 0) {
       if (have_date_time_) {
-        // date_time exists in the file, simply read it it.
+        // datetime exists in the file, simply read it it.
         CheckNcCall(nc_get_var_text(ncid_, NcVarId, reinterpret_cast<char *>(VarData)), ErrorMsg);
       } else {
-        // date_time does not exist in the file, read in offset time and convert to
-        // date_time strings.
+        // datetime does not exist in the file, read in offset time and convert to
+        // datetime strings.
         ReadConvertDateTime(GroupName, VarName, reinterpret_cast<char *>(VarData));
       }
     } else {
-      // All other variables beside date_time
+      // All other variables beside datetime
       CheckNcCall(nc_get_var_text(ncid_, NcVarId, reinterpret_cast<char *>(VarData)), ErrorMsg);
     }
   } else {
@@ -543,7 +543,7 @@ void NetcdfIO::ReadConvertDateTime(std::string GroupName, std::string VarName, c
   CheckNcCall(nc_get_var_float(ncid_, NcVarId, OffsetTime.data()), ErrorMsg);
 
   // Convert offset time to a Duration and add to RefDate. Then use DateTime to
-  // output an ISO 8601 date_time string, and place that string into VarData.
+  // output an ISO 8601 datetime string, and place that string into VarData.
   util::DateTime ObsDateTime;
   std::string ObsDtString;
   std::size_t ichar = 0;

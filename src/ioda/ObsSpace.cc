@@ -102,16 +102,7 @@ void ObsSpace::get_db(const std::string & group, const std::string & name,
   // load the float values from the database and convert to double
   std::unique_ptr<float> FloatData(new float[vsize]);
   get_db_helper<float>(group, name, vsize, FloatData.get());
-
-  const float fmiss = util::missingValue(fmiss);
-  const double dmiss = util::missingValue(dmiss);
-  for (std::size_t i = 0; i < vsize; i++) {
-    if (FloatData.get()[i] == fmiss) {
-      vdata[i] = dmiss;
-    } else {
-      vdata[i] = static_cast<double>(FloatData.get()[i]);
-    }
-  }
+  ConvertVarType<float, double>(FloatData.get(), &vdata[0], vsize);
 }
 
 void ObsSpace::get_db(const std::string & group, const std::string & name,
@@ -143,16 +134,7 @@ void ObsSpace::put_db(const std::string & group, const std::string & name,
                       const size_t & vsize, const double vdata[]) {
   // convert to float, then load into the database
   std::unique_ptr<float> FloatData(new float[vsize]);
-
-  const float fmiss = util::missingValue(fmiss);
-  const double dmiss = util::missingValue(dmiss);
-  for (std::size_t i = 0; i < vsize; i++) {
-    if (vdata[i] == dmiss) {
-      FloatData.get()[i] = fmiss;
-    } else {
-      FloatData.get()[i] = static_cast<float>(vdata[i]);
-    }
-  }
+  ConvertVarType<double, float>(&vdata[0], FloatData.get(), vsize);
   put_db_helper<float>(group, name, vsize, FloatData.get());
 }
 
@@ -237,20 +219,20 @@ void ObsSpace::print(std::ostream & os) const {
 
     // Open the file for reading and record nlocs and nvars from the file.
     std::unique_ptr<IodaIO> fileio {ioda::IodaIOfactory::Create(filename, mode)};
-    std::size_t file_nlocs_ = fileio->nlocs();
+    file_nlocs_ = fileio->nlocs();
     nvars_ = fileio->nvars();
     nrecs_ = fileio->nrecs();
 
     // Create the MPI distribution
     DistributionFactory * DistFactory;
-    std::unique_ptr<Distribution> dist_(DistFactory->createDistribution("roundrobin"));
+    dist_.reset(DistFactory->createDistribution("roundrobin"));
     dist_->distribution(commMPI_, file_nlocs_);
 
-    // Read in the date_time values and filter out any variables outside the
+    // Read in the datetime values and filter out any variables outside the
     // timing window.
     std::unique_ptr<char[]> dt_char_array_(new char[file_nlocs_ * 20]);
     std::vector<std::size_t> dt_shape_{ file_nlocs_, 20 };
-    fileio->ReadVar("MetaData", "date_time", dt_shape_, dt_char_array_.get());
+    fileio->ReadVar("MetaData", "datetime", dt_shape_, dt_char_array_.get());
     std::vector<std::string> dt_strings_ =
              CharArrayToStringVector(dt_char_array_.get(), dt_shape_);
 
@@ -276,10 +258,14 @@ void ObsSpace::print(std::ostream & os) const {
                            igrp != fileio->group_end(); ++igrp) {
       for (IodaIO::VarIter ivar = fileio->var_begin(igrp);
                            ivar != fileio->var_end(igrp); ++ivar) {
-        // Revisit here, improve the readability
         std::string GroupName = fileio->group_name(igrp);
         std::string VarName = fileio->var_name(ivar);
         std::string VarType = fileio->var_dtype(ivar);
+
+        // VarShape, VarSize hold dimension sizes from file.
+        // AdjVarShape, AdjVarSize hold dimension sizes needed when the
+        // fisrt dimension is nlocs in size. Ie, all variables with nlocs
+        // as the first dimension need to be distributed across that dimension.
         std::vector<std::size_t> VarShape = fileio->var_shape(ivar);
         std::size_t VarSize = 1;
         for (std::size_t i = 0; i < VarShape.size(); i++) {
@@ -290,49 +276,56 @@ void ObsSpace::print(std::ostream & os) const {
         if (VarType.compare("int") == 0) {
           std::unique_ptr<int> FileData(new int[VarSize]);
           fileio->ReadVar(GroupName, VarName, VarShape, FileData.get());
-          database_.StoreToDb(GroupName, VarName, VarShape, FileData.get());
+
+          std::unique_ptr<int> IndexedData;
+          std::vector<std::size_t> IndexedShape;
+          std::size_t IndexedSize;
+          ApplyDistIndex<int>(FileData, VarShape, IndexedData, IndexedShape, IndexedSize);
+          database_.StoreToDb(GroupName, VarName, IndexedShape, IndexedData.get());
         } else if (VarType.compare("float") == 0) {
           std::unique_ptr<float> FileData(new float[VarSize]);
           fileio->ReadVar(GroupName, VarName, VarShape, FileData.get());
-          database_.StoreToDb(GroupName, VarName, VarShape, FileData.get());
+
+          std::unique_ptr<float> IndexedData;
+          std::vector<std::size_t> IndexedShape;
+          std::size_t IndexedSize;
+          ApplyDistIndex<float>(FileData, VarShape, IndexedData, IndexedShape, IndexedSize);
+          database_.StoreToDb(GroupName, VarName, IndexedShape, IndexedData.get());
         } else if (VarType.compare("double") == 0) {
-          // Convert double to float before storing into the database. The double
-          // missing value needs to be changed to a float missing value.
-          oops::Log::debug() << " ObsSpace::InitFromFile: inconsistent type : "
-                             << " From double to float on "
-                             << VarName << " @ " << GroupName << std::endl;
+          // Convert double to float before storing into the database.
           std::unique_ptr<double> FileData(new double[VarSize]);
           fileio->ReadVar(GroupName, VarName, VarShape, FileData.get());
-          std::unique_ptr<float> DbData(new float[VarSize]);
 
-          // Convert the missing marks
-          const float fmiss = util::missingValue(fmiss);
-          const double dmiss = util::missingValue(dmiss);
-          for (std::size_t j = 0; j < VarSize; j++) {
-            if (FileData.get()[j] == dmiss) {
-              DbData.get()[j] = fmiss;
-            } else {
-              DbData.get()[j] = static_cast<float>(FileData.get()[j]);
-            }
-          }
+          std::unique_ptr<double> IndexedData;
+          std::vector<std::size_t> IndexedShape;
+          std::size_t IndexedSize;
+          ApplyDistIndex<double>(FileData, VarShape, IndexedData, IndexedShape, IndexedSize);
 
-          database_.StoreToDb(GroupName, VarName, VarShape, DbData.get());
+          std::unique_ptr<float> DbData(new float[IndexedSize]);
+          ConvertVarType<double, float>(IndexedData.get(), DbData.get(), IndexedSize);
+          database_.StoreToDb(GroupName, VarName, IndexedShape, DbData.get());
         } else if (VarType.compare("char") == 0) {
           // Convert the char array to a vector of strings. If we are working
-          // on the variable "date_time", then convert the strings to DateTime
+          // on the variable "datetime", then convert the strings to DateTime
           // objects.
-          std::unique_ptr<char[]> FileData(new char[VarSize]);
+          std::unique_ptr<char> FileData(new char[VarSize]);
           fileio->ReadVar(GroupName, VarName, VarShape, FileData.get());
+
+          std::unique_ptr<char> IndexedData;
+          std::vector<std::size_t> IndexedShape;
+          std::size_t IndexedSize;
+          ApplyDistIndex<char>(FileData, VarShape, IndexedData, IndexedShape, IndexedSize);
+
           std::vector<std::string> StringData =
-                 CharArrayToStringVector(FileData.get(), VarShape);
+                 CharArrayToStringVector(IndexedData.get(), IndexedShape);
           std::vector<std::size_t> AdjVarShape;
           std::size_t AdjVarSize = 1;
-          for (std::size_t j = 0; j < (VarShape.size()-1); j++) {
-            AdjVarShape.push_back(VarShape[j]);
-            AdjVarSize *= VarShape[j];
+          for (std::size_t j = 0; j < (IndexedShape.size()-1); j++) {
+            AdjVarShape.push_back(IndexedShape[j]);
+            AdjVarSize *= IndexedShape[j];
           }
 
-          if (VarName.compare("date_time") == 0) {
+          if (VarName.compare("datetime") == 0) {
             std::vector<util::DateTime> DtData(AdjVarSize);
             for (std::size_t j = 0; j < AdjVarSize; j++) {
               util::DateTime TempDt(StringData[j]);
@@ -473,6 +466,94 @@ void ObsSpace::StringVectorToCharArray(const std::vector<std::string> & StringVe
         CharData[ichar] = ' ';
       }
     }
+  }
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename FromType, typename ToType>
+void ObsSpace::ConvertVarType(const FromType * FromVar, ToType * ToVar,
+                              const std::size_t & VarSize) const {
+  std::string FromTypeName = typeid(FromType).name();
+  std::string ToTypeName = typeid(ToType).name();
+  // It is assumed that the caller has allocated memory for both input and output
+  // variables.
+  //
+  // Allow the following type changes:
+  //      float to double
+  //      double to float
+  //
+  // In any type change, the missing values need to be switched.
+  if ((typeid(FromType) == typeid(float)) && (typeid(ToType) == typeid(double))) {
+    // float to double
+    const float fmiss = util::missingValue(fmiss);
+    const double dmiss = util::missingValue(dmiss);
+    for (std::size_t i = 0; i < VarSize; i++) {
+      if (FromVar[i] == fmiss) {
+        ToVar[i] = dmiss;
+      } else {
+        ToVar[i] = static_cast<double>(FromVar[i]);
+      }
+    }
+  } else if ((typeid(FromType) == typeid(double)) && (typeid(ToType) == typeid(float))) {
+    // double to float
+    const float fmiss = util::missingValue(fmiss);
+    const double dmiss = util::missingValue(dmiss);
+    for (std::size_t i = 0; i < VarSize; i++) {
+      if (FromVar[i] == dmiss) {
+        ToVar[i] = fmiss;
+      } else {
+        ToVar[i] = static_cast<float>(FromVar[i]);
+      }
+    }
+  } else {
+    std::string ErrorMsg = "Unsupported variable data type conversion: " +
+       FromTypeName + " to " + ToTypeName;
+    ABORT(ErrorMsg);
+  }
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename VarType>
+void ObsSpace::ApplyDistIndex(std::unique_ptr<VarType> & FullData,
+                              const std::vector<std::size_t> & FullShape,
+                              std::unique_ptr<VarType> & IndexedData,
+                              std::vector<std::size_t> & IndexedShape,
+                              std::size_t & IndexedSize) {
+  IndexedShape = FullShape;
+  IndexedSize = 1;
+  // Apply the distribution index only when the first dimension size (FullShape[0])
+  // is equal to file_nlocs_. Ie, only apply the index to obs data (values, errors
+  // and QC marks) and metadata related to the obs data.
+  if (FullShape[0] == file_nlocs_) {
+    // Need to compute the new Shape and size. Keep track of the number of items
+    // between each element of the first dimension (IndexIncrement). IndexIncrement
+    // will define the space between each element of the first dimension, which will
+    // be general no matter how many dimensions in the variable.
+    IndexedShape[0] = nlocs_;
+    std::size_t IndexIncrement = 1;
+    for (std::size_t i = 0; i < IndexedShape.size(); i++) {
+      IndexedSize *= IndexedShape[i];
+      if (i > 0) {
+        IndexIncrement *= IndexedShape[i];
+      }
+    }
+
+    IndexedData.reset(new VarType[IndexedSize]);
+    for (std::size_t i = 0; i < IndexedShape[0]; i++) {
+      for (std::size_t j = 0; j < IndexIncrement; j++) {
+        std::size_t isrc = (dist_->index()[i] * IndexIncrement) + j;
+        std::size_t idest = (i * IndexIncrement) + j;
+        IndexedData.get()[idest] = FullData.get()[isrc];
+      }
+    }
+  } else {
+    // Transfer the full data pointer to the indexed data pointer
+    for (std::size_t i = 0; i < IndexedShape.size(); i++) {
+      IndexedSize *= IndexedShape[i];
+    }
+    IndexedData.reset(FullData.release());
   }
 }
 

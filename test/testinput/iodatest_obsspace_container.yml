@@ -8,7 +8,7 @@ TestStoreLoad:
     - "test_int"
     - "test_float"
     - "test_string"
-    - "test_date_time"
+    - "test_datetime"
   groups:
     - "IntGroup"
     - "FloatGroup"
@@ -18,7 +18,7 @@ TestStoreLoad:
     - "int"
     - "float"
     - "string"
-    - "date_time"
+    - "datetime"
   var0: [ 1, 2, 3, 4, 5 ]
   var1: [ 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5 ]
   var2: [ "Hello", "World", "ABC", "12345" ]
