@@ -103,13 +103,28 @@ class ObsSpace : public oops::ObsSpaceBase {
   void StringVectorToCharArray(const std::vector<std::string> & StringVector,
                                const std::vector<std::size_t> & CharShape, char * CharData);
 
+  /*! \brief Convert variable between data types */
+  template<typename FromType, typename ToType>
+  void ConvertVarType(const FromType * FromVar, ToType * ToVar,
+                      const std::size_t & VarSize) const;
+
+  /*! \brief Apply the distribution index to the variable */
+  template<typename VarType>
+  void ApplyDistIndex(std::unique_ptr<VarType> & FullData,
+                      const std::vector<std::size_t> & FullShape,
+                      std::unique_ptr<VarType> & IndexedData,
+                      std::vector<std::size_t> & IndexedShape, std::size_t & IndexedSize);
+
   std::string obsname_;
   const util::DateTime winbgn_;
   const util::DateTime winend_;
   const eckit::mpi::Comm & commMPI_;
 
+  /*! \brief number of locations in the input file */
+  std::size_t file_nlocs_;
+
   /*! \brief number of locations on this domain */
-  std:: size_t nlocs_;
+  std::size_t nlocs_;
 
   /*! \brief number of variables */
   std::size_t nvars_;
@@ -119,6 +134,9 @@ class ObsSpace : public oops::ObsSpaceBase {
 
   /*! \brief filename and path of output */
   std::string fileout_;
+
+  /*! \brief MPI distribution object */
+  std::unique_ptr<Distribution> dist_;
 
   /*! \brief Multi-index container */
   ObsSpaceContainer database_;

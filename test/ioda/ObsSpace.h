@@ -113,20 +113,11 @@ void testGetDb() {
       }
 
       double Vnorm = 0.0;
-      if (VarNames[i] == "datetime") {
-        Odb->get_db(Gname, VarNames[i], Nlocs, TestTime.data());
-  
-        // Calculate the norm of the datetime hash value
-        for (std::size_t j = 0; j < Nlocs; ++j) {
-          Vnorm += pow(static_cast<double>(util::hash_value(TestTime[j])), 2.0);
-        }
-      } else {
-        Odb->get_db(Gname, VarNames[i], Nlocs, TestVec.data());
+      Odb->get_db(Gname, VarNames[i], Nlocs, TestVec.data());
 
-        // Calculate the norm of the vector
-        for (std::size_t j = 0; j < Nlocs; ++j) {
-          Vnorm += pow(TestVec[j], 2.0);
-        }
+      // Calculate the norm of the vector
+      for (std::size_t j = 0; j < Nlocs; ++j) {
+        Vnorm += pow(TestVec[j], 2.0);
       }
       Vnorm = sqrt(Vnorm);
 

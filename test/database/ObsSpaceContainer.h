@@ -92,7 +92,7 @@ void testGrpVarIter() {
       std::vector<std::string> StoreData = conf.getStringVector(ConfVarValues);
       VarShape[0] = StoreData.size();
       TestContainer->StoreToDb(GroupName, VarName, VarShape, StoreData.data());
-    } else if (VarTypeName.compare("date_time") == 0) {
+    } else if (VarTypeName.compare("datetime") == 0) {
       std::vector<std::string> TempStoreData = conf.getStringVector(ConfVarValues);
       std::vector<util::DateTime> StoreData(TempStoreData.size());
       for (std::size_t j = 0; j < TempStoreData.size(); j++) {
@@ -123,7 +123,7 @@ void testGrpVarIter() {
     } else if (TestContainer->var_iter_type(ivar) == typeid(std::string)) {
       TestVarTypeName = "string";
     } else if (TestContainer->var_iter_type(ivar) == typeid(util::DateTime)) {
-      TestVarTypeName = "date_time";
+      TestVarTypeName = "datetime";
     }
     TestVarInfo.emplace(std::make_tuple(TestContainer->var_iter_gname(ivar),
                  TestContainer->var_iter_vname(ivar), TestVarTypeName,
@@ -188,7 +188,7 @@ void testStoreLoad() {
       TestContainer->LoadFromDb(GroupName, VarName, VarShape, TestStringData.data());
       BOOST_CHECK_EQUAL_COLLECTIONS(TestStringData.begin(), TestStringData.end(),
                ExpectedStringData.begin(), ExpectedStringData.end());
-    } else if (VarTypeName.compare("date_time") == 0) {
+    } else if (VarTypeName.compare("datetime") == 0) {
       std::vector<std::string> DtStrings = conf.getStringVector(ConfVarValues);
       std::vector<util::DateTime> ExpectedDateTimeData(DtStrings.size());
       for (std::size_t j = 0; j < DtStrings.size(); j++) {
