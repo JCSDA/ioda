@@ -120,10 +120,13 @@ class IodaIO : public util::Printable {
     std::string var_name(VarIter);
 
     // Access to variable information
+    bool grp_var_exist(const std::string &, const std::string &);
     std::string var_dtype(VarIter);
-    std::string var_dtype(std::string &, std::string &);
+    std::string var_dtype(const std::string &, const std::string &);
     std::vector<std::size_t> var_shape(VarIter);
-    std::vector<std::size_t> var_shape(std::string &, std::string &);
+    std::vector<std::size_t> var_shape(const std::string &, const std::string &);
+    std::size_t var_id(VarIter);
+    std::size_t var_id(const std::string &, const std::string &);
 
  protected:
     // Methods provided by subclasses

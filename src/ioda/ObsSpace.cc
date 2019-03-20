@@ -232,7 +232,17 @@ void ObsSpace::print(std::ostream & os) const {
     // timing window.
     std::unique_ptr<char[]> dt_char_array_(new char[file_nlocs_ * 20]);
     std::vector<std::size_t> dt_shape_{ file_nlocs_, 20 };
-    fileio->ReadVar("MetaData", "datetime", dt_shape_, dt_char_array_.get());
+    // Look for datetime@MetaData first, then datetime@GroupUndefined
+    std::string DtGroupName = "MetaData";
+    std::string DtVarName = "datetime";
+    if (!fileio->grp_var_exist(DtGroupName, DtVarName)) {
+      DtGroupName = "GroupUndefined";
+      if (!fileio->grp_var_exist(DtGroupName, DtVarName)) {
+        std::string ErrorMsg = "ObsSpace::InitFromFile: datetime information is not available";
+        ABORT(ErrorMsg);
+      }
+    }
+    fileio->ReadVar(DtGroupName, DtVarName, dt_shape_, dt_char_array_.get());
     std::vector<std::string> dt_strings_ =
              CharArrayToStringVector(dt_char_array_.get(), dt_shape_);
 

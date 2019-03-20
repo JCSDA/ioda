@@ -260,7 +260,7 @@ template <typename DataType>
 void NetcdfIO::ReadVar_helper(const std::string & GroupName, const std::string & VarName,
                               const std::vector<std::size_t> & VarShape, DataType * VarData) {
   std::string NcVarName = FormNcVarName(GroupName, VarName);
-  std::string NcVarType = grp_var_info_[GroupName][VarName].dtype;
+  std::string NcVarType = var_dtype(GroupName, VarName);
 
   // Read in the variable values. The netcdf interface has a generic get var (nc_get_var)
   // routine, but calling this interface causes a crash to occur. There also exist type
@@ -278,7 +278,7 @@ void NetcdfIO::ReadVar_helper(const std::string & GroupName, const std::string &
   // double to float in the case where the netcdf variable is type double.
 
   const std::type_info & VarType = typeid(DataType);  // this matches type of VarData
-  int NcVarId = grp_var_info_[GroupName][VarName].var_id;
+  int NcVarId = var_id(GroupName, VarName);
   std::string ErrorMsg = "NetcdfIO::ReadVar: Unable to read netcdf variable: " + NcVarName;
   if (VarType == typeid(int)) {
     CheckNcCall(nc_get_var_int(ncid_, NcVarId, reinterpret_cast<int *>(VarData)), ErrorMsg);
@@ -520,8 +520,8 @@ int NetcdfIO::GetStringDimBySize(const std::size_t DimSize) {
 void NetcdfIO::ReadConvertDateTime(std::string GroupName, std::string VarName, char * VarData) {
   // Read in the reference date from the date_time attribute and the offset
   // time from the time variable and convert to date_time strings.
-  int NcVarId = grp_var_info_[GroupName][VarName].var_id;
-  std::vector<std::size_t> VarShape = grp_var_info_[GroupName][VarName].shape;
+  int NcVarId = var_id(GroupName, VarName);
+  std::vector<std::size_t> VarShape = var_shape(GroupName, VarName);
 
   // Read in the date_time attribute and convert to a DateTime object.
   int RefDateAttr;
