@@ -121,7 +121,25 @@ void ObsSpaceContainer::LoadFromDb_helper(const std::string & GroupName,
 
     // Copy the elements into the output
     for (std::size_t i = 0; i < VarSize; i++) {
-      VarData[i] = boost::any_cast<DataType>(Var->data.get()[i]);
+      try {
+        VarData[i] = boost::any_cast<DataType>(Var->data.get()[i]);
+      }
+      catch (boost::bad_any_cast &e) {
+        std::string ErrorMsg = "ObsSpaceContainer::LoadFromDb: bad cast for: " +
+                    VarName + " @ " + GroupName;
+        oops::Log::error() << ErrorMsg << std::endl;
+
+        std::string TypeName = Var->data.get()->type().name();
+        ErrorMsg = "ObsSpaceContainer::LoadFromDb: From type: " + TypeName;
+        oops::Log::error() << ErrorMsg << std::endl;
+
+        TypeName = typeid(DataType).name();
+        ErrorMsg = "ObsSpaceContainer::LoadFromDb: To type: " + TypeName;
+        oops::Log::error() << ErrorMsg << std::endl;
+
+        ErrorMsg = "ObsSpaceContainer::LoadFromDb: bad cast";
+        ABORT(ErrorMsg);
+      }
     }
   } else {
     // Required record is not in the database
