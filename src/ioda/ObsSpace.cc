@@ -506,6 +506,50 @@ void ObsSpace::ConvertVarType(const FromType * FromVar, ToType * ToVar,
         ToVar[i] = static_cast<float>(FromVar[i]);
       }
     }
+  } else if ((typeid(FromType) == typeid(float)) && (typeid(ToType) == typeid(int))) {
+    // float to int
+    const float fmiss = util::missingValue(fmiss);
+    const int imiss = util::missingValue(imiss);
+    for (std::size_t i = 0; i < VarSize; i++) {
+      if (FromVar[i] == fmiss) {
+        ToVar[i] = imiss;
+      } else {
+        ToVar[i] = static_cast<int>(FromVar[i]);
+      }
+    }
+  } else if ((typeid(FromType) == typeid(int)) && (typeid(ToType) == typeid(float))) {
+    // float to int
+    const float fmiss = util::missingValue(fmiss);
+    const int imiss = util::missingValue(imiss);
+    for (std::size_t i = 0; i < VarSize; i++) {
+      if (FromVar[i] == imiss) {
+        ToVar[i] = fmiss;
+      } else {
+        ToVar[i] = static_cast<float>(FromVar[i]);
+      }
+    }
+  } else if ((typeid(FromType) == typeid(double)) && (typeid(ToType) == typeid(int))) {
+    // float to int
+    const double dmiss = util::missingValue(dmiss);
+    const int imiss = util::missingValue(imiss);
+    for (std::size_t i = 0; i < VarSize; i++) {
+      if (FromVar[i] == dmiss) {
+        ToVar[i] = imiss;
+      } else {
+        ToVar[i] = static_cast<int>(FromVar[i]);
+      }
+    }
+  } else if ((typeid(FromType) == typeid(int)) && (typeid(ToType) == typeid(double))) {
+    // float to int
+    const double dmiss = util::missingValue(dmiss);
+    const int imiss = util::missingValue(imiss);
+    for (std::size_t i = 0; i < VarSize; i++) {
+      if (FromVar[i] == imiss) {
+        ToVar[i] = dmiss;
+      } else {
+        ToVar[i] = static_cast<double>(FromVar[i]);
+      }
+    }
   } else {
     std::string ErrorMsg = "Unsupported variable data type conversion: " +
        FromTypeName + " to " + ToTypeName;
