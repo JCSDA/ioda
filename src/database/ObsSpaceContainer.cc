@@ -130,11 +130,11 @@ void ObsSpaceContainer::LoadFromDb_helper(const std::string & GroupName,
         oops::Log::error() << ErrorMsg << std::endl;
 
         std::string TypeName = Var->data.get()->type().name();
-        ErrorMsg = "ObsSpaceContainer::LoadFromDb: From type: " + TypeName;
+        ErrorMsg = "ObsSpaceContainer::LoadFromDb: database type: " + TypeName;
         oops::Log::error() << ErrorMsg << std::endl;
 
         TypeName = typeid(DataType).name();
-        ErrorMsg = "ObsSpaceContainer::LoadFromDb: To type: " + TypeName;
+        ErrorMsg = "ObsSpaceContainer::LoadFromDb: cast type: " + TypeName;
         oops::Log::error() << ErrorMsg << std::endl;
 
         ErrorMsg = "ObsSpaceContainer::LoadFromDb: bad cast";
