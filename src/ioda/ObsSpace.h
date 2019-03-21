@@ -124,6 +124,9 @@ class ObsSpace : public oops::ObsSpaceBase {
   /*! \brief Determine the desired database variable type */
   std::string DesiredVarType(std::string & GroupName, std::string & FileVarType);
 
+  /*! \brief print out meaningful names for different data types */
+  std::string TypeIdName(const std::type_info & TypeId) const;
+
   std::string obsname_;
   const util::DateTime winbgn_;
   const util::DateTime winend_;
@@ -152,7 +155,6 @@ class ObsSpace : public oops::ObsSpaceBase {
 
   /*! \brief Multi-index container */
   ObsSpaceContainer database_;
-
 };
 
 }  // namespace ioda

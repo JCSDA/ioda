@@ -284,9 +284,6 @@ void ObsSpace::print(std::ostream & os) const {
 
         // Get the desired data type for the database.
         std::string DbVarType = DesiredVarType(GroupName, FileVarType);
-std::cout << "DEBUG: InitFromFile: G, V, Shape, Size, FileVarType DbVarType: "
-          << GroupName << ", " << VarName << ", " << VarShape << ", "
-          << VarSize << ", " << FileVarType << " --> " << DbVarType << std::endl;
 
         // Read the variable from the file and transfer it to the database.
         if (FileVarType.compare("int") == 0) {
@@ -495,8 +492,8 @@ void ObsSpace::StringVectorToCharArray(const std::vector<std::string> & StringVe
 template<typename FromType, typename ToType>
 void ObsSpace::ConvertVarType(const FromType * FromVar, ToType * ToVar,
                               const std::size_t & VarSize) const {
-  std::string FromTypeName = typeid(FromType).name();
-  std::string ToTypeName = typeid(ToType).name();
+  std::string FromTypeName = TypeIdName(typeid(FromType));
+  std::string ToTypeName = TypeIdName(typeid(ToType));
   // It is assumed that the caller has allocated memory for both input and output
   // variables.
   //
@@ -585,12 +582,16 @@ void ObsSpace::ConvertStoreFileVar(const std::string & GroupName, const std::str
                    const std::vector<std::size_t> & VarShape, const std::size_t & VarSize,
                    const FileType * VarData) {
   // Print a warning so we know to fix this, and convert the data.
-  oops::Log::warning() << "ObsSpace::StoreFileVar: input file contains "
-                       << "unexpeted data type:" << std::endl
+  std::string FileTypeName = TypeIdName(typeid(FileType));
+  std::string DbTypeName = TypeIdName(typeid(DbType));
+  oops::Log::warning() << "ObsSpace::StoreFileVar: WARNING: input file contains "
+                       << "unexpected data type." << std::endl
                        << "  Input file: " << filein_ << std::endl
                        << "  Variable: " << VarName << " @ " << GroupName << std::endl
-                       << "  Type in file: " << typeid(FileType).name() << std::endl
-                       << "  Expected type: " << typeid(DbType).name() << std::endl;
+                       << "  Type in file: " << FileTypeName << std::endl
+                       << "  Expected type: " << DbTypeName << std::endl
+                       << "Converting data, including missing marks, from "
+                       << FileTypeName << " to " << DbTypeName << std::endl << std::endl;
 
   std::unique_ptr<DbType> DbData(new DbType[VarSize]);
   ConvertVarType<FileType, DbType>(VarData, DbData.get(), VarSize);
@@ -657,6 +658,27 @@ std::string ObsSpace::DesiredVarType(std::string & GroupName, std::string & File
   }
 
   return DbVarType;
+}
+
+// -----------------------------------------------------------------------------
+
+std::string ObsSpace::TypeIdName(const std::type_info & TypeId) const {
+  std::string TypeName;
+  if (TypeId == typeid(int)) {
+    TypeName = "integer";
+  } else if (TypeId == typeid(float)) {
+    TypeName = "float";
+  } else if (TypeId == typeid(double)) {
+    TypeName = "double";
+  } else if (TypeId == typeid(std::string)) {
+    TypeName = "string";
+  } else if (TypeId == typeid(util::DateTime)) {
+    TypeName = "DateTime";
+  } else {
+    TypeName = TypeId.name();
+  }
+
+  return TypeName;
 }
 
 // -----------------------------------------------------------------------------
