@@ -108,12 +108,21 @@ class ObsSpace : public oops::ObsSpaceBase {
   void ConvertVarType(const FromType * FromVar, ToType * ToVar,
                       const std::size_t & VarSize) const;
 
+  /*! \brief Convert variable from file and store into database */
+  template<typename FileType, typename DbType>
+  void ConvertStoreFileVar(const std::string & GroupName, const std::string & VarName,
+                    const std::vector<std::size_t> & VarShape, const std::size_t & VarSize,
+                    const FileType * VarData);
+
   /*! \brief Apply the distribution index to the variable */
   template<typename VarType>
   void ApplyDistIndex(std::unique_ptr<VarType> & FullData,
                       const std::vector<std::size_t> & FullShape,
                       std::unique_ptr<VarType> & IndexedData,
                       std::vector<std::size_t> & IndexedShape, std::size_t & IndexedSize);
+
+  /*! \brief Determine the desired database variable type */
+  std::string DesiredVarType(std::string & GroupName, std::string & FileVarType);
 
   std::string obsname_;
   const util::DateTime winbgn_;
@@ -132,7 +141,10 @@ class ObsSpace : public oops::ObsSpaceBase {
   /*! \brief number of records */
   std::size_t nrecs_;
 
-  /*! \brief filename and path of output */
+  /*! \brief path to input file */
+  std::string filein_;
+
+  /*! \brief path to output file */
   std::string fileout_;
 
   /*! \brief MPI distribution object */
@@ -140,6 +152,7 @@ class ObsSpace : public oops::ObsSpaceBase {
 
   /*! \brief Multi-index container */
   ObsSpaceContainer database_;
+
 };
 
 }  // namespace ioda
