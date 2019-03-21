@@ -165,6 +165,44 @@ ObsSpaceContainer::VarIter ObsSpaceContainer::var_iter_end() {
 
 // -----------------------------------------------------------------------------
 
+ObsSpaceContainer::DbIter ObsSpaceContainer::find(
+                       const std::string & group, const std::string & variable) const {
+    DbIter var = DataContainer.find(boost::make_tuple(group, variable));
+    return var;
+}
+
+// -----------------------------------------------------------------------------
+
+ObsSpaceContainer::DbIter ObsSpaceContainer::begin() const {
+    return DataContainer.begin();
+}
+
+// -----------------------------------------------------------------------------
+
+ObsSpaceContainer::DbIter ObsSpaceContainer::end() const {
+    return DataContainer.end();
+}
+
+// -----------------------------------------------------------------------------
+
+const std::type_info & ObsSpaceContainer::dtype(const DbIter Idb) const {
+    return Idb->type;
+}
+
+// -----------------------------------------------------------------------------
+
+const std::type_info & ObsSpaceContainer::dtype(const std::string & group,
+                                                const std::string & variable) const {
+    DbIter Var = DataContainer.find(boost::make_tuple(group, variable));
+    if (Var == DataContainer.end()) {
+      return typeid(void);
+    } else {
+      return Var->type;
+    }
+}
+
+// -----------------------------------------------------------------------------
+
 std::string ObsSpaceContainer::var_iter_vname(ObsSpaceContainer::VarIter var_iter) {
   return var_iter->variable;
 }
@@ -202,7 +240,7 @@ std::vector<std::size_t> ObsSpaceContainer::var_iter_shape(ObsSpaceContainer::Va
 // -----------------------------------------------------------------------------
 
   bool ObsSpaceContainer::has(const std::string & group, const std::string & variable) const {
-    auto var = DataContainer.find(boost::make_tuple(group, variable));
+    DbIter var = find(group, variable);
     return (var != DataContainer.end());
   }
 

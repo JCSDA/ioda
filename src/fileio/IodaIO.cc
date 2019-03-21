@@ -151,7 +151,7 @@ bool IodaIO::grp_var_exist(const std::string & GroupName, const std::string & Va
   GroupIter igrp = grp_var_info_.find(GroupName);
   GroupExists = !(igrp == grp_var_info_.end());
   if (!GroupExists) {
-    std::string ErrorMsg = "Group name is not avaliable: " + GroupName;
+    std::string ErrorMsg = "Group name is not available: " + GroupName;
     oops::Log::error() << ErrorMsg << std::endl;
   }
 
