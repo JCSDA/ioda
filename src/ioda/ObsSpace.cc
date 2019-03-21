@@ -37,10 +37,10 @@ ObsSpace::ObsSpace(const eckit::Configuration & config,
   obsname_ = config.getString("ObsType");
 
   // Open the file and read in variables from the file into the database.
-  std::string filename = config.getString("ObsData.ObsDataIn.obsfile");
-  oops::Log::trace() << obsname_ << " file in = " << filename << std::endl;
+  filein_ = config.getString("ObsData.ObsDataIn.obsfile");
+  oops::Log::trace() << obsname_ << " file in = " << filein_ << std::endl;
 
-  InitFromFile(filename, "r", windowStart(), windowEnd());
+  InitFromFile(filein_, "r", windowStart(), windowEnd());
 
   // Check to see if an output file has been requested.
   if (config.has("ObsData.ObsDataOut.obsfile")) {
@@ -270,7 +270,7 @@ void ObsSpace::print(std::ostream & os) const {
                            ivar != fileio->var_end(igrp); ++ivar) {
         std::string GroupName = fileio->group_name(igrp);
         std::string VarName = fileio->var_name(ivar);
-        std::string VarType = fileio->var_dtype(ivar);
+        std::string FileVarType = fileio->var_dtype(ivar);
 
         // VarShape, VarSize hold dimension sizes from file.
         // AdjVarShape, AdjVarSize hold dimension sizes needed when the
@@ -282,8 +282,14 @@ void ObsSpace::print(std::ostream & os) const {
           VarSize *= VarShape[i];
         }
 
+        // Get the desired data type for the database.
+        std::string DbVarType = DesiredVarType(GroupName, FileVarType);
+std::cout << "DEBUG: InitFromFile: G, V, Shape, Size, FileVarType DbVarType: "
+          << GroupName << ", " << VarName << ", " << VarShape << ", "
+          << VarSize << ", " << FileVarType << " --> " << DbVarType << std::endl;
+
         // Read the variable from the file and transfer it to the database.
-        if (VarType.compare("int") == 0) {
+        if (FileVarType.compare("int") == 0) {
           std::unique_ptr<int> FileData(new int[VarSize]);
           fileio->ReadVar(GroupName, VarName, VarShape, FileData.get());
 
@@ -292,7 +298,7 @@ void ObsSpace::print(std::ostream & os) const {
           std::size_t IndexedSize;
           ApplyDistIndex<int>(FileData, VarShape, IndexedData, IndexedShape, IndexedSize);
           database_.StoreToDb(GroupName, VarName, IndexedShape, IndexedData.get());
-        } else if (VarType.compare("float") == 0) {
+        } else if (FileVarType.compare("float") == 0) {
           std::unique_ptr<float> FileData(new float[VarSize]);
           fileio->ReadVar(GroupName, VarName, VarShape, FileData.get());
 
@@ -300,8 +306,14 @@ void ObsSpace::print(std::ostream & os) const {
           std::vector<std::size_t> IndexedShape;
           std::size_t IndexedSize;
           ApplyDistIndex<float>(FileData, VarShape, IndexedData, IndexedShape, IndexedSize);
-          database_.StoreToDb(GroupName, VarName, IndexedShape, IndexedData.get());
-        } else if (VarType.compare("double") == 0) {
+
+          if (DbVarType.compare("int") == 0) {
+            ConvertStoreFileVar<float, int>(GroupName, VarName, IndexedShape,
+                                       IndexedSize, IndexedData.get());
+          } else {
+            database_.StoreToDb(GroupName, VarName, IndexedShape, IndexedData.get());
+          }
+        } else if (FileVarType.compare("double") == 0) {
           // Convert double to float before storing into the database.
           std::unique_ptr<double> FileData(new double[VarSize]);
           fileio->ReadVar(GroupName, VarName, VarShape, FileData.get());
@@ -311,10 +323,9 @@ void ObsSpace::print(std::ostream & os) const {
           std::size_t IndexedSize;
           ApplyDistIndex<double>(FileData, VarShape, IndexedData, IndexedShape, IndexedSize);
 
-          std::unique_ptr<float> DbData(new float[IndexedSize]);
-          ConvertVarType<double, float>(IndexedData.get(), DbData.get(), IndexedSize);
-          database_.StoreToDb(GroupName, VarName, IndexedShape, DbData.get());
-        } else if (VarType.compare("char") == 0) {
+          ConvertStoreFileVar<double, float>(GroupName, VarName, IndexedShape,
+                                       IndexedSize, IndexedData.get());
+        } else if (FileVarType.compare("char") == 0) {
           // Convert the char array to a vector of strings. If we are working
           // on the variable "datetime", then convert the strings to DateTime
           // objects.
@@ -346,8 +357,8 @@ void ObsSpace::print(std::ostream & os) const {
             database_.StoreToDb(GroupName, VarName, AdjVarShape, StringData.data());
           }
         } else {
-          oops::Log::warning() << "ioda::IodaIO::InitFromFile: Unrecognized data type: "
-                               << VarType << std::endl;
+          oops::Log::warning() << "ioda::IodaIO::InitFromFile: Unrecognized file data type: "
+                               << FileVarType << std::endl;
           oops::Log::warning() << "  File IO Currently supports data types int, float and char."
                                << std::endl;
           oops::Log::warning() << "  Skipping read of " << VarName << " @ " << GroupName
@@ -569,6 +580,25 @@ void ObsSpace::ConvertVarType(const FromType * FromVar, ToType * ToVar,
 
 // -----------------------------------------------------------------------------
 
+template<typename FileType, typename DbType>
+void ObsSpace::ConvertStoreFileVar(const std::string & GroupName, const std::string & VarName,
+                   const std::vector<std::size_t> & VarShape, const std::size_t & VarSize,
+                   const FileType * VarData) {
+  // Print a warning so we know to fix this, and convert the data.
+  oops::Log::warning() << "ObsSpace::StoreFileVar: input file contains "
+                       << "unexpeted data type:" << std::endl
+                       << "  Input file: " << filein_ << std::endl
+                       << "  Variable: " << VarName << " @ " << GroupName << std::endl
+                       << "  Type in file: " << typeid(FileType).name() << std::endl
+                       << "  Expected type: " << typeid(DbType).name() << std::endl;
+
+  std::unique_ptr<DbType> DbData(new DbType[VarSize]);
+  ConvertVarType<FileType, DbType>(VarData, DbData.get(), VarSize);
+  database_.StoreToDb(GroupName, VarName, VarShape, DbData.get());
+}
+
+// -----------------------------------------------------------------------------
+
 template<typename VarType>
 void ObsSpace::ApplyDistIndex(std::unique_ptr<VarType> & FullData,
                               const std::vector<std::size_t> & FullShape,
@@ -609,6 +639,24 @@ void ObsSpace::ApplyDistIndex(std::unique_ptr<VarType> & FullData,
     }
     IndexedData.reset(FullData.release());
   }
+}
+
+// -----------------------------------------------------------------------------
+
+std::string ObsSpace::DesiredVarType(std::string & GroupName, std::string & FileVarType) {
+  // By default, make the DbVarType equal to the FileVarType
+  // Exceptions are:
+  //   Force the group "PreQC" to an integer type.
+  //   Force double to float.
+  std::string DbVarType = FileVarType;
+
+  if (GroupName.compare("PreQC") == 0) {
+    DbVarType = "int";
+  } else if (FileVarType.compare("double") == 0) {
+    DbVarType = "float";
+  }
+
+  return DbVarType;
 }
 
 // -----------------------------------------------------------------------------
