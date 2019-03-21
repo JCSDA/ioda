@@ -67,57 +67,48 @@ endforeach(FILENAME)
 #####################################################################
 
 ecbuild_add_test( TARGET test_ioda_observationspace
-                  BOOST
                   SOURCES mains/TestObservationSpace.cc
                   ARGS "testinput/iodatest.yml"
                   LIBS    ioda )
 
 ecbuild_add_test( TARGET test_ioda_oops_obsvector
-                  BOOST
                   SOURCES mains/TestObsVector.cc
                   ARGS "testinput/iodatest_obsvector.yml"
                   LIBS    ioda )
 
 ecbuild_add_test( TARGET test_ioda_obsvector
-                  BOOST
                   SOURCES mains/TestIodaObsVector.cc
                   ARGS "testinput/iodatest_obsvector.yml"
                   LIBS    ioda )
 
 ecbuild_add_test( TARGET test_ioda_distribution
-                  BOOST
                   MPI     4
                   SOURCES mains/TestDistribution.cc
                   ARGS "testinput/iodatest_distribution.yml"
                   LIBS    ioda )
 
 ecbuild_add_test( TARGET test_ioda_obsspacecontainer
-                  BOOST
                   SOURCES mains/TestObsSpaceContainer.cc
                   ARGS "testinput/iodatest_obsspace_container.yml"
                   LIBS    ioda )
 
 ecbuild_add_test( TARGET test_ioda_obsspace
-                  BOOST
                   SOURCES mains/TestObsSpace.cc
                   ARGS "testinput/iodatest_obsspace.yml"
                   LIBS    ioda )
 
 ecbuild_add_test( TARGET test_ioda_marine_obsspace
-                  BOOST
                   SOURCES mains/TestObsSpace.cc
                   ARGS "testinput/iodatest_marine_obsspace.yml"
                   LIBS    ioda )
 
 		
 ecbuild_add_test( TARGET test_ioda_fileio
-                  BOOST
                   SOURCES mains/TestIodaIO.cc
                   ARGS "testinput/iodatest_fileio.yml"
                   LIBS    ioda )
 
 ecbuild_add_test( TARGET test_ioda_marine_fileio
-                  BOOST
                   SOURCES mains/TestIodaIO.cc
                   ARGS "testinput/iodatest_marine_fileio.yml"
                   LIBS    ioda )
@@ -125,25 +116,21 @@ ecbuild_add_test( TARGET test_ioda_marine_fileio
 if (HAVE_ODB_API)
 
 ecbuild_add_test( TARGET test_ioda_observationspace_odb
-                  BOOST
                   SOURCES mains/TestObservationSpace.cc
                   ARGS "testinput/iodatest_odb.json"
                   LIBS    ioda )
 
 ecbuild_add_test( TARGET test_ioda_oops_obsvector_odb
-                  BOOST
                   SOURCES mains/TestObsVector.cc
                   ARGS "testinput/iodatest_odb.json"
                   LIBS    ioda )
 
 ecbuild_add_test( TARGET test_ioda_obsvector_odb
-                  BOOST
                   SOURCES mains/TestIodaObsVector.cc
                   ARGS "testinput/iodatest_obsvector_odb.yml"
                   LIBS    ioda )
 
 ecbuild_add_test( TARGET test_ioda_fileio_odb_api
-                  BOOST
                   SOURCES mains/TestIodaIO.cc
                   ARGS "testinput/iodatest_fileio_odb_api.yml"
                   LIBS    ioda )
@@ -153,13 +140,11 @@ endif (HAVE_ODB_API)
 if (HAVE_ODB)
 
 ecbuild_add_test( TARGET test_ioda_observationspace_odb1
-                  BOOST
                   SOURCES mains/TestObservationSpace.cc
                   ARGS "testinput/iodatest_odb1.json"
                   LIBS    ioda OOPS )
 
 ecbuild_add_test( TARGET test_ioda_obsvector_odb1
-                  BOOST
                   SOURCES mains/TestObsVector.cc
                   ARGS "testinput/iodatest_odb1.json"
                   LIBS    ioda OOPS )
