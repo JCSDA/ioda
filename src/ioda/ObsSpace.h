@@ -74,15 +74,17 @@ class ObsSpace : public oops::ObsSpaceBase {
 
   ObsSpace & operator= (const ObsSpace &);
 
-  /*! \brief Helper function for public get_db */
-  template <typename DATATYPE>
-  void get_db_helper(const std::string &, const std::string &,
-                     const std::size_t &, DATATYPE[]) const;
+  /*! \brief Convert variable from file and store into database */
+  template<typename VarType, typename DbType>
+  void ConvertStoreToDb(const std::string & GroupName, const std::string & VarName,
+                    const std::vector<std::size_t> & VarShape, const std::size_t & VarSize,
+                    const VarType * VarData);
 
-  /*! \brief Helper function for public put_db */
-  template <typename DATATYPE>
-  void put_db_helper(const std::string &, const std::string &,
-                     const std::size_t &, const DATATYPE[]);
+  /*! \brief Load variable from database and convert */
+  template<typename DbType, typename VarType>
+  void LoadFromDbConvert(const std::string & GroupName, const std::string & VarName,
+                    const std::vector<std::size_t> & VarShape, const std::size_t & VarSize,
+                    const VarType * VarData) const;
 
   /*! \brief Initialize database from file*/
   void InitFromFile(const std::string & filename, const std::string & mode,
@@ -107,12 +109,6 @@ class ObsSpace : public oops::ObsSpaceBase {
   template<typename FromType, typename ToType>
   void ConvertVarType(const FromType * FromVar, ToType * ToVar,
                       const std::size_t & VarSize) const;
-
-  /*! \brief Convert variable from file and store into database */
-  template<typename FileType, typename DbType>
-  void ConvertStoreFileVar(const std::string & GroupName, const std::string & VarName,
-                    const std::vector<std::size_t> & VarShape, const std::size_t & VarSize,
-                    const FileType * VarData);
 
   /*! \brief Apply the distribution index to the variable */
   template<typename VarType>

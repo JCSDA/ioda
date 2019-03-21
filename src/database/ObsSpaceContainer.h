@@ -127,12 +127,28 @@ class ObsSpaceContainer: public util::Printable {
      // Access to iterators
      typedef VarRecord_set::index<ObsSpaceContainer::by_variable>::type VarIndex;
      typedef VarIndex::iterator VarIter;
+     typedef VarRecord_set::iterator DbIter;
 
      /*! \brief Variables iterator begin */
      VarIter var_iter_begin();
 
      /*! \brief Variables iterator end */
      VarIter var_iter_end();
+
+     /*! \brief find group, variable combination */
+     DbIter find(const std::string &, const std::string &) const;
+
+     /*! \brief begin marker for group, variable iterator */
+     DbIter begin() const;
+
+     /*! \brief end marker for group, variable iterator */
+     DbIter end() const;
+
+     /*! \brief data type for entry indicated by group, variable iterator */
+     const std::type_info & dtype(const DbIter) const;
+
+     /*! \brief data type for entry group, variable */
+     const std::type_info & dtype(const std::string &, const std::string &) const;
 
      /*! \brief Variables iterator variable name */
      std::string var_iter_vname(VarIter);

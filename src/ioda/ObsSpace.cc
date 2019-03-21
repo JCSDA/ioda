@@ -89,61 +89,86 @@ ObsSpace::~ObsSpace() {
 
 void ObsSpace::get_db(const std::string & group, const std::string & name,
                       const size_t & vsize, int vdata[]) const {
-  get_db_helper<int>(group, name, vsize, vdata);
-}
-
-void ObsSpace::get_db(const std::string & group, const std::string & name,
-                      const size_t & vsize, float vdata[]) const {
-  get_db_helper<float>(group, name, vsize, vdata);
-}
-
-void ObsSpace::get_db(const std::string & group, const std::string & name,
-                      const size_t & vsize, double vdata[]) const {
-  // load the float values from the database and convert to double
-  std::unique_ptr<float> FloatData(new float[vsize]);
-  get_db_helper<float>(group, name, vsize, FloatData.get());
-  ConvertVarType<float, double>(FloatData.get(), &vdata[0], vsize);
-}
-
-void ObsSpace::get_db(const std::string & group, const std::string & name,
-                      const size_t & vsize, util::DateTime vdata[]) const {
-  get_db_helper<util::DateTime>(group, name, vsize, vdata);
-}
-
-template <typename DATATYPE>
-void ObsSpace::get_db_helper(const std::string & group, const std::string & name,
-                             const size_t & vsize, DATATYPE vdata[]) const {
   std::string gname = (group.size() <= 0)? "GroupUndefined" : group;
   std::vector<std::size_t> vshape(1, vsize);
   database_.LoadFromDb(gname, name, vshape, &vdata[0]);
 }
 
+void ObsSpace::get_db(const std::string & group, const std::string & name,
+                      const size_t & vsize, float vdata[]) const {
+  std::string gname = (group.size() <= 0)? "GroupUndefined" : group;
+  std::vector<std::size_t> vshape(1, vsize);
+  database_.LoadFromDb(gname, name, vshape, &vdata[0]);
+}
+
+void ObsSpace::get_db(const std::string & group, const std::string & name,
+                      const size_t & vsize, double vdata[]) const {
+  std::string gname = (group.size() <= 0)? "GroupUndefined" : group;
+  std::vector<std::size_t> vshape(1, vsize);
+  // load the float values from the database and convert to double
+  std::unique_ptr<float> FloatData(new float[vsize]);
+  database_.LoadFromDb(gname, name, vshape, FloatData.get());
+  ConvertVarType<float, double>(FloatData.get(), &vdata[0], vsize);
+}
+
+void ObsSpace::get_db(const std::string & group, const std::string & name,
+                      const size_t & vsize, util::DateTime vdata[]) const {
+  std::string gname = (group.size() <= 0)? "GroupUndefined" : group;
+  std::vector<std::size_t> vshape(1, vsize);
+  database_.LoadFromDb(gname, name, vshape, &vdata[0]);
+}
+
+//template <typename DATATYPE>
+//void ObsSpace::get_db_helper(const std::string & group, const std::string & name,
+//                             const size_t & vsize, DATATYPE vdata[]) const {
+//
+//  const std::type_info & VarType = typeid(DATATYPE);
+//  const std::type_info & DbType = database_.dtype(gname, name);
+//  if (DbType == typeid(void)) {
+//    std::string ErrorMsg = "ObsSpace::get_db: " + name + " @ " + gname +
+//                           " not found in database.";
+//    ABORT(ErrorMsg);
+//  } else {
+//    // Check for type mis-match between var type and the type of the database
+//    // entry. If a conversion is necessary, do it and issue a warning so this
+//    // situation can be fixed.
+//    if (VarType == DbType) {
+//      database_.LoadFromDb(gname, name, vshape, &vdata[0]);
+//    } else {
+//      if (DbType == typeid(int)) {
+//        LoadFromDbConvert<int, DATATYPE>(gname, name, vshape, vsize, &vdata[0]);
+//      } else {
+//        // Let the bad cast check catch this one.
+//        database_.LoadFromDb(gname, name, vshape, &vdata[0]);
+//      }
+//    }
+//  }
+//}
+
 // -----------------------------------------------------------------------------
 
 void ObsSpace::put_db(const std::string & group, const std::string & name,
                       const size_t & vsize, const int vdata[]) {
-  put_db_helper<int>(group, name, vsize, vdata);
+  std::string gname = (group.size() <= 0)? "GroupUndefined" : group;
+  std::vector<std::size_t> vshape(1, vsize);
+  database_.StoreToDb(gname, name, vshape, &vdata[0]);
 }
 
 void ObsSpace::put_db(const std::string & group, const std::string & name,
                       const size_t & vsize, const float vdata[]) {
-  put_db_helper<float>(group, name, vsize, vdata);
+  std::string gname = (group.size() <= 0)? "GroupUndefined" : group;
+  std::vector<std::size_t> vshape(1, vsize);
+  database_.StoreToDb(gname, name, vshape, &vdata[0]);
 }
 
 void ObsSpace::put_db(const std::string & group, const std::string & name,
                       const size_t & vsize, const double vdata[]) {
+  std::string gname = (group.size() <= 0)? "GroupUndefined" : group;
+  std::vector<std::size_t> vshape(1, vsize);
   // convert to float, then load into the database
   std::unique_ptr<float> FloatData(new float[vsize]);
   ConvertVarType<double, float>(&vdata[0], FloatData.get(), vsize);
-  put_db_helper<float>(group, name, vsize, FloatData.get());
-}
-
-template <typename DATATYPE>
-void ObsSpace::put_db_helper(const std::string & group, const std::string & name,
-                             const std::size_t & vsize, const DATATYPE vdata[]) {
-  std::string gname = (group.size() <= 0)? "GroupUndefined" : group;
-  std::vector<std::size_t> vshape(1, vsize);
-  database_.StoreToDb(gname, name, vshape, &vdata[0]);
+  database_.StoreToDb(gname, name, vshape, FloatData.get());
 }
 
 // -----------------------------------------------------------------------------
@@ -305,7 +330,7 @@ void ObsSpace::print(std::ostream & os) const {
           ApplyDistIndex<float>(FileData, VarShape, IndexedData, IndexedShape, IndexedSize);
 
           if (DbVarType.compare("int") == 0) {
-            ConvertStoreFileVar<float, int>(GroupName, VarName, IndexedShape,
+            ConvertStoreToDb<float, int>(GroupName, VarName, IndexedShape,
                                        IndexedSize, IndexedData.get());
           } else {
             database_.StoreToDb(GroupName, VarName, IndexedShape, IndexedData.get());
@@ -320,7 +345,7 @@ void ObsSpace::print(std::ostream & os) const {
           std::size_t IndexedSize;
           ApplyDistIndex<double>(FileData, VarShape, IndexedData, IndexedShape, IndexedSize);
 
-          ConvertStoreFileVar<double, float>(GroupName, VarName, IndexedShape,
+          ConvertStoreToDb<double, float>(GroupName, VarName, IndexedShape,
                                        IndexedSize, IndexedData.get());
         } else if (FileVarType.compare("char") == 0) {
           // Convert the char array to a vector of strings. If we are working
@@ -577,25 +602,48 @@ void ObsSpace::ConvertVarType(const FromType * FromVar, ToType * ToVar,
 
 // -----------------------------------------------------------------------------
 
-template<typename FileType, typename DbType>
-void ObsSpace::ConvertStoreFileVar(const std::string & GroupName, const std::string & VarName,
+template<typename VarType, typename DbType>
+void ObsSpace::ConvertStoreToDb(const std::string & GroupName, const std::string & VarName,
                    const std::vector<std::size_t> & VarShape, const std::size_t & VarSize,
-                   const FileType * VarData) {
-  // Print a warning so we know to fix this, and convert the data.
-  std::string FileTypeName = TypeIdName(typeid(FileType));
+                   const VarType * VarData) {
+  // Print a warning so we know to fix this situation
+  std::string VarTypeName = TypeIdName(typeid(VarType));
   std::string DbTypeName = TypeIdName(typeid(DbType));
-  oops::Log::warning() << "ObsSpace::StoreFileVar: WARNING: input file contains "
+  oops::Log::warning() << "ObsSpace::ConvertStoreToDb: WARNING: input file contains "
                        << "unexpected data type." << std::endl
                        << "  Input file: " << filein_ << std::endl
                        << "  Variable: " << VarName << " @ " << GroupName << std::endl
-                       << "  Type in file: " << FileTypeName << std::endl
+                       << "  Type in file: " << VarTypeName << std::endl
                        << "  Expected type: " << DbTypeName << std::endl
                        << "Converting data, including missing marks, from "
-                       << FileTypeName << " to " << DbTypeName << std::endl << std::endl;
+                       << VarTypeName << " to " << DbTypeName << std::endl << std::endl;
 
   std::unique_ptr<DbType> DbData(new DbType[VarSize]);
-  ConvertVarType<FileType, DbType>(VarData, DbData.get(), VarSize);
+  ConvertVarType<VarType, DbType>(VarData, DbData.get(), VarSize);
   database_.StoreToDb(GroupName, VarName, VarShape, DbData.get());
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename DbType, typename VarType>
+void ObsSpace::LoadFromDbConvert(const std::string & GroupName, const std::string & VarName,
+                   const std::vector<std::size_t> & VarShape, const std::size_t & VarSize,
+                   const VarType * VarData) const {
+  // Print a warning so we know to fix this situation
+  std::string VarTypeName = TypeIdName(typeid(VarType));
+  std::string DbTypeName = TypeIdName(typeid(DbType));
+  oops::Log::warning() << "ObsSpace::LoadFromDbConvert: WARNING: Variable type does not "
+                       << "match that of the database entry." << std::endl
+                       << "  Input file: " << filein_ << std::endl
+                       << "  Variable: " << VarName << " @ " << GroupName << std::endl
+                       << "  Type of variable: " << VarTypeName << std::endl
+                       << "  Type of database entry: " << DbTypeName << std::endl
+                       << "Converting data, including missing marks, from "
+                       << DbTypeName << " to " << VarTypeName << std::endl << std::endl;
+
+  std::unique_ptr<DbType> DbData(new DbType[VarSize]);
+  database_.LoadFromDb(GroupName, VarName, VarShape, DbData.get());
+  ConvertVarType<DbType, VarType>(DbData.get(), VarData, VarSize);
 }
 
 // -----------------------------------------------------------------------------
