@@ -141,7 +141,7 @@ void ObsSpaceContainer::LoadFromDb_helper(const std::string & GroupName,
 
         oops::Log::error() << boost::stacktrace::stacktrace() << std::endl;
 
-        std::string ErrorMsg = "ObsSpaceContainer::LoadFromDb: bad cast";
+        std::string ErrorMsg = "ObsSpaceContainer::LoadFromDb: type mismatch";
         ABORT(ErrorMsg);
       }
     }

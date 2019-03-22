@@ -89,6 +89,46 @@ ObsSpace::~ObsSpace() {
 }
 
 // -----------------------------------------------------------------------------
+// NOTES CONCERNING THE get_db methods below.
+//
+// What we want to end up with is deliberate conversion between double outside
+// IODA to float in the ObsSpaceContainer database. This is done to save memory
+// space because it is not necessary to store data with double precision.
+//
+// Given that, we want the structure of the get_db methods below to eventually
+// look like that of the put_db methods. That is the overloaded functions of
+// get_db simply call the templated get_db_helper method, ecexpt a float to double
+// conversion is done in the get_db double case, and the get_db_helper method
+// is a three-liner that just calls database_.LoadFromDb directly.
+//
+// Currently, we have some cases of the wrong data types trying to load from the
+// database, such as trying to put QC marks (integers stored in the database)
+// into a double in an ObsVector. To deal with this we've got checks for the
+// proper data types in the get_db_helper method that will issue warnings if
+// the variable we are trying to load into has a type that does not match the
+// corresponding entry in the database. In these cases, after the warning is
+// issued, a conversion is done including getting the missing value marks
+// converted properly.
+//
+// The idea is to get all of these warnings that come up fixed, and once that
+// is done, we will turn any mismatched types into an error and the program
+// will abort. When we hit this point we should change the code in
+// get_db_helper to:
+//
+//     std::string gname = (group.size() <= 0)? "GroupUndefined" : group;
+//     std::vector<std::size_t> vshape(1, vsize);
+//     database_.LoadFromDb(gname, name, vshape, &vdata[0]);
+//
+// I.e., make get_db_helper analogous to put_db_helper. Then we can get rid
+// of the template specialization for the util::DateTime type. And we can
+// allow the boost::bad_any_cast catch routine in ObsSpaceContainer.cc handle
+// the type check (and abort if the types don't match).
+//
+// Note that when a variable is a double and the database has an int, this
+// code is doing two conversions and is therefore inefficient. This is okay
+// for now because once the variable type not matching the database type
+// issues will be fixed we will eliminate one of the conversions.
+// -----------------------------------------------------------------------------
 
 void ObsSpace::get_db(const std::string & group, const std::string & name,
                       const size_t & vsize, int vdata[]) const {
@@ -472,16 +512,14 @@ void ObsSpace::ConvertStoreToDb(const std::string & GroupName, const std::string
   // Print a warning so we know to fix this situation
   std::string VarTypeName = TypeIdName(typeid(VarType));
   std::string DbTypeName = TypeIdName(typeid(DbType));
-  if (comm().rank() == 0) {
-    oops::Log::warning() << "ObsSpace::ConvertStoreToDb: WARNING: input file contains "
-                         << "unexpected data type." << std::endl
-                         << "  Input file: " << filein_ << std::endl
-                         << "  Variable: " << VarName << " @ " << GroupName << std::endl
-                         << "  Type in file: " << VarTypeName << std::endl
-                         << "  Expected type: " << DbTypeName << std::endl
-                         << "Converting data, including missing marks, from "
-                         << VarTypeName << " to " << DbTypeName << std::endl << std::endl;
-  }
+  oops::Log::warning() << "ObsSpace::ConvertStoreToDb: WARNING: input file contains "
+                       << "unexpected data type." << std::endl
+                       << "  Input file: " << filein_ << std::endl
+                       << "  Variable: " << VarName << " @ " << GroupName << std::endl
+                       << "  Type in file: " << VarTypeName << std::endl
+                       << "  Expected type: " << DbTypeName << std::endl
+                       << "Converting data, including missing marks, from "
+                       << VarTypeName << " to " << DbTypeName << std::endl << std::endl;
 
   std::unique_ptr<DbType> DbData(new DbType[VarSize]);
   ConvertVarType<VarType, DbType>(VarData, DbData.get(), VarSize);
@@ -497,18 +535,16 @@ void ObsSpace::LoadFromDbConvert(const std::string & GroupName, const std::strin
   // Print a warning so we know to fix this situation
   std::string VarTypeName = TypeIdName(typeid(VarType));
   std::string DbTypeName = TypeIdName(typeid(DbType));
-  if (comm().rank() == 0) {
-    oops::Log::warning() << "ObsSpace::LoadFromDbConvert: WARNING: Variable type does not "
-                         << "match that of the database entry." << std::endl
-                         << "  Input file: " << filein_ << std::endl
-                         << "  Variable: " << VarName << " @ " << GroupName << std::endl
-                         << "  Type of variable: " << VarTypeName << std::endl
-                         << "  Type of database entry: " << DbTypeName << std::endl
-                         << "Converting data, including missing marks, from "
-                         << DbTypeName << " to " << VarTypeName << std::endl << std::endl;
-    oops::Log::warning() << "ObsSpace::LoadFromDbConvert: STACKTRACE:" << std::endl
-                         << boost::stacktrace::stacktrace() << std::endl;
-  }
+  oops::Log::warning() << "ObsSpace::LoadFromDbConvert: WARNING: Variable type does not "
+                       << "match that of the database entry." << std::endl
+                       << "  Input file: " << filein_ << std::endl
+                       << "  Variable: " << VarName << " @ " << GroupName << std::endl
+                       << "  Type of variable: " << VarTypeName << std::endl
+                       << "  Type of database entry: " << DbTypeName << std::endl
+                       << "Converting data, including missing marks, from "
+                       << DbTypeName << " to " << VarTypeName << std::endl << std::endl;
+  oops::Log::warning() << "ObsSpace::LoadFromDbConvert: STACKTRACE:" << std::endl
+                       << boost::stacktrace::stacktrace() << std::endl;
 
   std::unique_ptr<DbType> DbData(new DbType[VarSize]);
   database_.LoadFromDb(GroupName, VarName, VarShape, DbData.get());
