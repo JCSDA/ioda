@@ -18,6 +18,9 @@
 #include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
 
+#define BOOST_STACKTRACE_GNU_SOURCE_NOT_REQUIRED
+#include <boost/stacktrace.hpp>
+
 #include "distribution/DistributionFactory.h"
 #include "fileio/IodaIO.h"
 #include "fileio/IodaIOfactory.h"
@@ -89,86 +92,96 @@ ObsSpace::~ObsSpace() {
 
 void ObsSpace::get_db(const std::string & group, const std::string & name,
                       const size_t & vsize, int vdata[]) const {
-  std::string gname = (group.size() <= 0)? "GroupUndefined" : group;
-  std::vector<std::size_t> vshape(1, vsize);
-  database_.LoadFromDb(gname, name, vshape, &vdata[0]);
+  get_db_helper<int>(group, name, vsize, vdata);
 }
 
 void ObsSpace::get_db(const std::string & group, const std::string & name,
                       const size_t & vsize, float vdata[]) const {
-  std::string gname = (group.size() <= 0)? "GroupUndefined" : group;
-  std::vector<std::size_t> vshape(1, vsize);
-  database_.LoadFromDb(gname, name, vshape, &vdata[0]);
+  get_db_helper<float>(group, name, vsize, vdata);
 }
 
 void ObsSpace::get_db(const std::string & group, const std::string & name,
                       const size_t & vsize, double vdata[]) const {
-  std::string gname = (group.size() <= 0)? "GroupUndefined" : group;
-  std::vector<std::size_t> vshape(1, vsize);
   // load the float values from the database and convert to double
   std::unique_ptr<float> FloatData(new float[vsize]);
-  database_.LoadFromDb(gname, name, vshape, FloatData.get());
+  get_db_helper<float>(group, name, vsize, FloatData.get());
   ConvertVarType<float, double>(FloatData.get(), &vdata[0], vsize);
 }
 
 void ObsSpace::get_db(const std::string & group, const std::string & name,
                       const size_t & vsize, util::DateTime vdata[]) const {
+  get_db_helper<util::DateTime>(group, name, vsize, vdata);
+}
+
+template <typename DATATYPE>
+void ObsSpace::get_db_helper(const std::string & group, const std::string & name,
+                             const size_t & vsize, DATATYPE vdata[]) const {
+  std::string gname = (group.size() <= 0)? "GroupUndefined" : group;
+  std::vector<std::size_t> vshape(1, vsize);
+
+  // Check to see if the requested variable type matches the type stored in
+  // the database. If these are different, issue warnings and do the conversion.
+  const std::type_info & VarType = typeid(DATATYPE);
+  const std::type_info & DbType = database_.dtype(gname, name);
+  if (DbType == typeid(void)) {
+    std::string ErrorMsg = "ObsSpace::get_db: " + name + " @ " + gname +
+                           " not found in database.";
+    ABORT(ErrorMsg);
+  } else {
+    // Check for type mis-match between var type and the type of the database
+    // entry. If a conversion is necessary, do it and issue a warning so this
+    // situation can be fixed.
+    if (VarType == DbType) {
+      database_.LoadFromDb(gname, name, vshape, &vdata[0]);
+    } else {
+      if (DbType == typeid(int)) {
+        // Trying to load int into something else
+        LoadFromDbConvert<int, DATATYPE>(gname, name, vshape, vsize, &vdata[0]);
+      } else if (DbType == typeid(float)) {
+        // Trying to load float into something else
+        LoadFromDbConvert<float, DATATYPE>(gname, name, vshape, vsize, &vdata[0]);
+      } else {
+        // Let the bad cast check catch this one.
+        database_.LoadFromDb(gname, name, vshape, &vdata[0]);
+      }
+    }
+  }
+}
+
+template <>
+void ObsSpace::get_db_helper<util::DateTime>(const std::string & group,
+         const std::string & name, const size_t & vsize, util::DateTime vdata[]) const {
   std::string gname = (group.size() <= 0)? "GroupUndefined" : group;
   std::vector<std::size_t> vshape(1, vsize);
   database_.LoadFromDb(gname, name, vshape, &vdata[0]);
 }
 
-//template <typename DATATYPE>
-//void ObsSpace::get_db_helper(const std::string & group, const std::string & name,
-//                             const size_t & vsize, DATATYPE vdata[]) const {
-//
-//  const std::type_info & VarType = typeid(DATATYPE);
-//  const std::type_info & DbType = database_.dtype(gname, name);
-//  if (DbType == typeid(void)) {
-//    std::string ErrorMsg = "ObsSpace::get_db: " + name + " @ " + gname +
-//                           " not found in database.";
-//    ABORT(ErrorMsg);
-//  } else {
-//    // Check for type mis-match between var type and the type of the database
-//    // entry. If a conversion is necessary, do it and issue a warning so this
-//    // situation can be fixed.
-//    if (VarType == DbType) {
-//      database_.LoadFromDb(gname, name, vshape, &vdata[0]);
-//    } else {
-//      if (DbType == typeid(int)) {
-//        LoadFromDbConvert<int, DATATYPE>(gname, name, vshape, vsize, &vdata[0]);
-//      } else {
-//        // Let the bad cast check catch this one.
-//        database_.LoadFromDb(gname, name, vshape, &vdata[0]);
-//      }
-//    }
-//  }
-//}
-
 // -----------------------------------------------------------------------------
 
 void ObsSpace::put_db(const std::string & group, const std::string & name,
                       const size_t & vsize, const int vdata[]) {
-  std::string gname = (group.size() <= 0)? "GroupUndefined" : group;
-  std::vector<std::size_t> vshape(1, vsize);
-  database_.StoreToDb(gname, name, vshape, &vdata[0]);
+  put_db_helper<int>(group, name, vsize, vdata);
 }
 
 void ObsSpace::put_db(const std::string & group, const std::string & name,
                       const size_t & vsize, const float vdata[]) {
-  std::string gname = (group.size() <= 0)? "GroupUndefined" : group;
-  std::vector<std::size_t> vshape(1, vsize);
-  database_.StoreToDb(gname, name, vshape, &vdata[0]);
+  put_db_helper<float>(group, name, vsize, vdata);
 }
 
 void ObsSpace::put_db(const std::string & group, const std::string & name,
                       const size_t & vsize, const double vdata[]) {
-  std::string gname = (group.size() <= 0)? "GroupUndefined" : group;
-  std::vector<std::size_t> vshape(1, vsize);
   // convert to float, then load into the database
   std::unique_ptr<float> FloatData(new float[vsize]);
   ConvertVarType<double, float>(&vdata[0], FloatData.get(), vsize);
-  database_.StoreToDb(gname, name, vshape, FloatData.get());
+  put_db_helper<float>(group, name, vsize, FloatData.get());
+}
+
+template <typename DATATYPE>
+void ObsSpace::put_db_helper(const std::string & group, const std::string & name,
+                             const std::size_t & vsize, const DATATYPE vdata[]) {
+  std::string gname = (group.size() <= 0)? "GroupUndefined" : group;
+  std::vector<std::size_t> vshape(1, vsize);
+  database_.StoreToDb(gname, name, vshape, &vdata[0]);
 }
 
 // -----------------------------------------------------------------------------
@@ -452,156 +465,6 @@ void ObsSpace::print(std::ostream & os) const {
 
 // -----------------------------------------------------------------------------
 
-std::vector<std::string> ObsSpace::CharArrayToStringVector(const char * CharData,
-                                            const std::vector<std::size_t> & CharShape) {
-  // CharShape[0] is the number of strings
-  // CharShape[1] is the length of each string
-  std::size_t Nstrings = CharShape[0];
-  std::size_t StrLength = CharShape[1];
-
-  std::vector<std::string> StringVector(Nstrings, "");
-  for (std::size_t i = 0; i < Nstrings; i++) {
-    // Copy characters for i-th string into a char vector
-    std::vector<char> CharVector(StrLength, ' ');
-    for (std::size_t j = 0; j < StrLength; j++) {
-      CharVector[j] = CharData[(i*StrLength) + j];
-    }
-
-    // Convert the char vector to a single string. Any trailing white space will be
-    // included in the string, so strip off the trailing white space.
-    std::string String(CharVector.begin(), CharVector.end());
-    String.erase(String.find_last_not_of(" \t\n\r\f\v") + 1);
-    StringVector[i] = String;
-  }
-
-  return StringVector;
-}
-
-// -----------------------------------------------------------------------------
-
-std::vector<std::size_t> ObsSpace::CharShapeFromStringVector(
-                                  const std::vector<std::string> & StringVector) {
-  std::size_t MaxStrLen = 0;
-  for (std::size_t i = 0; i < StringVector.size(); i++) {
-    std::size_t StrSize = StringVector[i].size();
-    if (StrSize > MaxStrLen) {
-      MaxStrLen = StrSize;
-    }
-  }
-
-  std::vector<std::size_t> Shape{ StringVector.size(), MaxStrLen };
-  return Shape;
-}
-
-// -----------------------------------------------------------------------------
-
-void ObsSpace::StringVectorToCharArray(const std::vector<std::string> & StringVector,
-                             const std::vector<std::size_t> & CharShape, char * CharData) {
-  // CharShape[0] is the number of strings, and CharShape[1] is the maximum
-  // string lenghth. Walk through the string vector, copy the string and fill
-  // with white space at the ends of strings if necessary.
-  for (std::size_t i = 0; i < CharShape[0]; i++) {
-    for (std::size_t j = 0; j < CharShape[1]; j++) {
-      std::size_t ichar = (i * CharShape[1]) + j;
-      if (j < StringVector[i].size()) {
-        CharData[ichar] = StringVector[i].data()[j];
-      } else {
-        CharData[ichar] = ' ';
-      }
-    }
-  }
-}
-
-// -----------------------------------------------------------------------------
-
-template<typename FromType, typename ToType>
-void ObsSpace::ConvertVarType(const FromType * FromVar, ToType * ToVar,
-                              const std::size_t & VarSize) const {
-  std::string FromTypeName = TypeIdName(typeid(FromType));
-  std::string ToTypeName = TypeIdName(typeid(ToType));
-  // It is assumed that the caller has allocated memory for both input and output
-  // variables.
-  //
-  // Allow the following type changes:
-  //      float to double
-  //      double to float
-  //
-  // In any type change, the missing values need to be switched.
-  if ((typeid(FromType) == typeid(float)) && (typeid(ToType) == typeid(double))) {
-    // float to double
-    const float fmiss = util::missingValue(fmiss);
-    const double dmiss = util::missingValue(dmiss);
-    for (std::size_t i = 0; i < VarSize; i++) {
-      if (FromVar[i] == fmiss) {
-        ToVar[i] = dmiss;
-      } else {
-        ToVar[i] = static_cast<double>(FromVar[i]);
-      }
-    }
-  } else if ((typeid(FromType) == typeid(double)) && (typeid(ToType) == typeid(float))) {
-    // double to float
-    const float fmiss = util::missingValue(fmiss);
-    const double dmiss = util::missingValue(dmiss);
-    for (std::size_t i = 0; i < VarSize; i++) {
-      if (FromVar[i] == dmiss) {
-        ToVar[i] = fmiss;
-      } else {
-        ToVar[i] = static_cast<float>(FromVar[i]);
-      }
-    }
-  } else if ((typeid(FromType) == typeid(float)) && (typeid(ToType) == typeid(int))) {
-    // float to int
-    const float fmiss = util::missingValue(fmiss);
-    const int imiss = util::missingValue(imiss);
-    for (std::size_t i = 0; i < VarSize; i++) {
-      if (FromVar[i] == fmiss) {
-        ToVar[i] = imiss;
-      } else {
-        ToVar[i] = static_cast<int>(FromVar[i]);
-      }
-    }
-  } else if ((typeid(FromType) == typeid(int)) && (typeid(ToType) == typeid(float))) {
-    // float to int
-    const float fmiss = util::missingValue(fmiss);
-    const int imiss = util::missingValue(imiss);
-    for (std::size_t i = 0; i < VarSize; i++) {
-      if (FromVar[i] == imiss) {
-        ToVar[i] = fmiss;
-      } else {
-        ToVar[i] = static_cast<float>(FromVar[i]);
-      }
-    }
-  } else if ((typeid(FromType) == typeid(double)) && (typeid(ToType) == typeid(int))) {
-    // float to int
-    const double dmiss = util::missingValue(dmiss);
-    const int imiss = util::missingValue(imiss);
-    for (std::size_t i = 0; i < VarSize; i++) {
-      if (FromVar[i] == dmiss) {
-        ToVar[i] = imiss;
-      } else {
-        ToVar[i] = static_cast<int>(FromVar[i]);
-      }
-    }
-  } else if ((typeid(FromType) == typeid(int)) && (typeid(ToType) == typeid(double))) {
-    // float to int
-    const double dmiss = util::missingValue(dmiss);
-    const int imiss = util::missingValue(imiss);
-    for (std::size_t i = 0; i < VarSize; i++) {
-      if (FromVar[i] == imiss) {
-        ToVar[i] = dmiss;
-      } else {
-        ToVar[i] = static_cast<double>(FromVar[i]);
-      }
-    }
-  } else {
-    std::string ErrorMsg = "Unsupported variable data type conversion: " +
-       FromTypeName + " to " + ToTypeName;
-    ABORT(ErrorMsg);
-  }
-}
-
-// -----------------------------------------------------------------------------
-
 template<typename VarType, typename DbType>
 void ObsSpace::ConvertStoreToDb(const std::string & GroupName, const std::string & VarName,
                    const std::vector<std::size_t> & VarShape, const std::size_t & VarSize,
@@ -609,14 +472,16 @@ void ObsSpace::ConvertStoreToDb(const std::string & GroupName, const std::string
   // Print a warning so we know to fix this situation
   std::string VarTypeName = TypeIdName(typeid(VarType));
   std::string DbTypeName = TypeIdName(typeid(DbType));
-  oops::Log::warning() << "ObsSpace::ConvertStoreToDb: WARNING: input file contains "
-                       << "unexpected data type." << std::endl
-                       << "  Input file: " << filein_ << std::endl
-                       << "  Variable: " << VarName << " @ " << GroupName << std::endl
-                       << "  Type in file: " << VarTypeName << std::endl
-                       << "  Expected type: " << DbTypeName << std::endl
-                       << "Converting data, including missing marks, from "
-                       << VarTypeName << " to " << DbTypeName << std::endl << std::endl;
+  if (comm().rank() == 0) {
+    oops::Log::warning() << "ObsSpace::ConvertStoreToDb: WARNING: input file contains "
+                         << "unexpected data type." << std::endl
+                         << "  Input file: " << filein_ << std::endl
+                         << "  Variable: " << VarName << " @ " << GroupName << std::endl
+                         << "  Type in file: " << VarTypeName << std::endl
+                         << "  Expected type: " << DbTypeName << std::endl
+                         << "Converting data, including missing marks, from "
+                         << VarTypeName << " to " << DbTypeName << std::endl << std::endl;
+  }
 
   std::unique_ptr<DbType> DbData(new DbType[VarSize]);
   ConvertVarType<VarType, DbType>(VarData, DbData.get(), VarSize);
@@ -628,18 +493,22 @@ void ObsSpace::ConvertStoreToDb(const std::string & GroupName, const std::string
 template<typename DbType, typename VarType>
 void ObsSpace::LoadFromDbConvert(const std::string & GroupName, const std::string & VarName,
                    const std::vector<std::size_t> & VarShape, const std::size_t & VarSize,
-                   const VarType * VarData) const {
+                   VarType * VarData) const {
   // Print a warning so we know to fix this situation
   std::string VarTypeName = TypeIdName(typeid(VarType));
   std::string DbTypeName = TypeIdName(typeid(DbType));
-  oops::Log::warning() << "ObsSpace::LoadFromDbConvert: WARNING: Variable type does not "
-                       << "match that of the database entry." << std::endl
-                       << "  Input file: " << filein_ << std::endl
-                       << "  Variable: " << VarName << " @ " << GroupName << std::endl
-                       << "  Type of variable: " << VarTypeName << std::endl
-                       << "  Type of database entry: " << DbTypeName << std::endl
-                       << "Converting data, including missing marks, from "
-                       << DbTypeName << " to " << VarTypeName << std::endl << std::endl;
+  if (comm().rank() == 0) {
+    oops::Log::warning() << "ObsSpace::LoadFromDbConvert: WARNING: Variable type does not "
+                         << "match that of the database entry." << std::endl
+                         << "  Input file: " << filein_ << std::endl
+                         << "  Variable: " << VarName << " @ " << GroupName << std::endl
+                         << "  Type of variable: " << VarTypeName << std::endl
+                         << "  Type of database entry: " << DbTypeName << std::endl
+                         << "Converting data, including missing marks, from "
+                         << DbTypeName << " to " << VarTypeName << std::endl << std::endl;
+    oops::Log::warning() << "ObsSpace::LoadFromDbConvert: STACKTRACE:" << std::endl
+                         << boost::stacktrace::stacktrace() << std::endl;
+  }
 
   std::unique_ptr<DbType> DbData(new DbType[VarSize]);
   database_.LoadFromDb(GroupName, VarName, VarShape, DbData.get());
@@ -710,23 +579,42 @@ std::string ObsSpace::DesiredVarType(std::string & GroupName, std::string & File
 
 // -----------------------------------------------------------------------------
 
-std::string ObsSpace::TypeIdName(const std::type_info & TypeId) const {
-  std::string TypeName;
-  if (TypeId == typeid(int)) {
-    TypeName = "integer";
-  } else if (TypeId == typeid(float)) {
-    TypeName = "float";
-  } else if (TypeId == typeid(double)) {
-    TypeName = "double";
-  } else if (TypeId == typeid(std::string)) {
-    TypeName = "string";
-  } else if (TypeId == typeid(util::DateTime)) {
-    TypeName = "DateTime";
-  } else {
-    TypeName = TypeId.name();
-  }
+template<typename FromType, typename ToType>
+void ObsSpace::ConvertVarType(const FromType * FromVar, ToType * ToVar,
+                              const std::size_t & VarSize) const {
+  std::string FromTypeName = TypeIdName(typeid(FromType));
+  std::string ToTypeName = TypeIdName(typeid(ToType));
+  const FromType FromMiss = util::missingValue(FromMiss);
+  const ToType ToMiss = util::missingValue(ToMiss);
 
-  return TypeName;
+  // It is assumed that the caller has allocated memory for both input and output
+  // variables.
+  //
+  // In any type change, the missing values need to be switched.
+  //
+  // Allow type changes between numeric types (int, float, double). These can
+  // be handled with the standard conversions.
+  bool FromTypeOkay = ((typeid(FromType) == typeid(int)) ||
+                       (typeid(FromType) == typeid(float)) ||
+                       (typeid(FromType) == typeid(double)));
+
+  bool ToTypeOkay = ((typeid(ToType) == typeid(int)) ||
+                     (typeid(ToType) == typeid(float)) ||
+                     (typeid(ToType) == typeid(double)));
+
+  if (FromTypeOkay && ToTypeOkay) {
+    for (std::size_t i = 0; i < VarSize; i++) {
+      if (FromVar[i] == FromMiss) {
+        ToVar[i] = ToMiss;
+      } else {
+        ToVar[i] = FromVar[i];
+      }
+    }
+  } else {
+    std::string ErrorMsg = "Unsupported variable data type conversion: " +
+       FromTypeName + " to " + ToTypeName;
+    ABORT(ErrorMsg);
+  }
 }
 
 // -----------------------------------------------------------------------------

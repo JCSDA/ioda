@@ -7,6 +7,11 @@
 
 #include "database/ObsSpaceContainer.h"
 
+#include "utils/IodaUtils.h"
+
+#define BOOST_STACKTRACE_GNU_SOURCE_NOT_REQUIRED
+#include <boost/stacktrace.hpp>
+
 namespace ioda {
 
 // -----------------------------------------------------------------------------
@@ -125,19 +130,18 @@ void ObsSpaceContainer::LoadFromDb_helper(const std::string & GroupName,
         VarData[i] = boost::any_cast<DataType>(Var->data.get()[i]);
       }
       catch (boost::bad_any_cast &e) {
-        std::string ErrorMsg = "ObsSpaceContainer::LoadFromDb: bad cast for: " +
-                    VarName + " @ " + GroupName;
-        oops::Log::error() << ErrorMsg << std::endl;
+        std::string DbTypeName = Var->data.get()->type().name();
+        std::string VarTypeName = typeid(DataType).name();
 
-        std::string TypeName = Var->data.get()->type().name();
-        ErrorMsg = "ObsSpaceContainer::LoadFromDb: database type: " + TypeName;
-        oops::Log::error() << ErrorMsg << std::endl;
+        oops::Log::error() << "ObsSpaceContainer::LoadFromDb: ERROR: Variable type "
+            << "and database entry type do not match." << std::endl
+            << "  Variable @ Group name: " << VarName << " @ " << GroupName << std::endl
+            << "  Database entry type: " << DbTypeName << std::endl
+            << "  Variable type: " << VarTypeName << std::endl;
 
-        TypeName = typeid(DataType).name();
-        ErrorMsg = "ObsSpaceContainer::LoadFromDb: cast type: " + TypeName;
-        oops::Log::error() << ErrorMsg << std::endl;
+        oops::Log::error() << boost::stacktrace::stacktrace() << std::endl;
 
-        ErrorMsg = "ObsSpaceContainer::LoadFromDb: bad cast";
+        std::string ErrorMsg = "ObsSpaceContainer::LoadFromDb: bad cast";
         ABORT(ErrorMsg);
       }
     }

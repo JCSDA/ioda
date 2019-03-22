@@ -27,6 +27,9 @@ fileio/IodaIOfactory.cc
 fileio/IodaIOfactory.h
 fileio/NetcdfIO.cc
 fileio/NetcdfIO.h
+
+utils/IodaUtils.cc
+utils/IodaUtils.h
 )
 
 if (HAVE_ODB)
