@@ -19,6 +19,7 @@
 #include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
 #include "oops/util/Printable.h"
+#include "utils/IodaUtils.h"
 
 #include "database/ObsSpaceContainer.h"
 #include "distribution/Distribution.h"
@@ -74,58 +75,56 @@ class ObsSpace : public oops::ObsSpaceBase {
 
   ObsSpace & operator= (const ObsSpace &);
 
-  /*! \brief Convert variable from file and store into database */
-  template<typename VarType, typename DbType>
-  void ConvertStoreToDb(const std::string & GroupName, const std::string & VarName,
-                    const std::vector<std::size_t> & VarShape, const std::size_t & VarSize,
-                    const VarType * VarData);
-
-  /*! \brief Load variable from database and convert */
-  template<typename DbType, typename VarType>
-  void LoadFromDbConvert(const std::string & GroupName, const std::string & VarName,
-                    const std::vector<std::size_t> & VarShape, const std::size_t & VarSize,
-                    const VarType * VarData) const;
-
-  /*! \brief Initialize database from file*/
+  // Initialize the database from the input file
   void InitFromFile(const std::string & filename, const std::string & mode,
                     const util::DateTime &, const util::DateTime &);
 
-  /*! \brief Save the contents of database to file*/
-  void SaveToFile(const std::string & file_name);
-
-  /*! \brief Convert char array to vector of strings */
-  std::vector<std::string> CharArrayToStringVector(const char * CharData,
-                              const std::vector<std::size_t> & CharShape);
-
-  /*! \brief Determine the shape appropriate for a character array given a vector of strings */
-  std::vector<std::size_t> CharShapeFromStringVector(
-                              const std::vector<std::string> & StringVector);
-
-  /*! \brief Convert vector of strings to char array */
-  void StringVectorToCharArray(const std::vector<std::string> & StringVector,
-                               const std::vector<std::size_t> & CharShape, char * CharData);
-
-  /*! \brief Convert variable between data types */
-  template<typename FromType, typename ToType>
-  void ConvertVarType(const FromType * FromVar, ToType * ToVar,
-                      const std::size_t & VarSize) const;
-
-  /*! \brief Apply the distribution index to the variable */
   template<typename VarType>
   void ApplyDistIndex(std::unique_ptr<VarType> & FullData,
                       const std::vector<std::size_t> & FullShape,
                       std::unique_ptr<VarType> & IndexedData,
                       std::vector<std::size_t> & IndexedShape, std::size_t & IndexedSize);
 
-  /*! \brief Determine the desired database variable type */
   std::string DesiredVarType(std::string & GroupName, std::string & FileVarType);
 
-  /*! \brief print out meaningful names for different data types */
-  std::string TypeIdName(const std::type_info & TypeId) const;
+  // Convert variable data types including the missing value marks
+  template<typename FromType, typename ToType>
+  void ConvertVarType(const FromType * FromVar, ToType * ToVar,
+                      const std::size_t & VarSize) const;
 
+  // Dump the database into the output file
+  void SaveToFile(const std::string & file_name);
+
+  // Methods for tranferring data from the database into a variable.
+  template <typename DATATYPE>
+  void get_db_helper(const std::string &, const std::string &,
+                     const std::size_t &, DATATYPE[]) const;
+
+  template<typename DbType, typename VarType>
+  void LoadFromDbConvert(const std::string & GroupName, const std::string & VarName,
+                    const std::vector<std::size_t> & VarShape, const std::size_t & VarSize,
+                    VarType * VarData) const;
+
+  // Methods for tranferring data from a variable into the database.
+  template <typename DATATYPE>
+  void put_db_helper(const std::string &, const std::string &,
+                     const std::size_t &, const DATATYPE[]);
+
+  template<typename VarType, typename DbType>
+  void ConvertStoreToDb(const std::string & GroupName, const std::string & VarName,
+                    const std::vector<std::size_t> & VarShape, const std::size_t & VarSize,
+                    const VarType * VarData);
+
+  /*! \brief name of obs space */
   std::string obsname_;
+
+  /*! \brief Beginning of DA timing window */
   const util::DateTime winbgn_;
+
+  /*! \brief End of DA timing window */
   const util::DateTime winend_;
+
+  /*! \brief MPI communicator */
   const eckit::mpi::Comm & commMPI_;
 
   /*! \brief number of locations in the input file */
@@ -152,6 +151,11 @@ class ObsSpace : public oops::ObsSpaceBase {
   /*! \brief Multi-index container */
   ObsSpaceContainer database_;
 };
+
+/*! \brief Specialized (for DateTime type) helper function for public get_db */
+template <>
+void ObsSpace::get_db_helper<util::DateTime>(const std::string &, const std::string &,
+                                             const std::size_t &, util::DateTime[]) const;
 
 }  // namespace ioda
 
