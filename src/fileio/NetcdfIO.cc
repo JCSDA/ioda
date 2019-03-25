@@ -7,13 +7,13 @@
 
 #include "fileio/NetcdfIO.h"
 
-#include <netcdf>
-
 #include <cmath>
 #include <iostream>
 #include <memory>
 #include <string>
 #include <typeinfo>
+
+#include "netcdf"
 
 #include "distribution/DistributionFactory.h"
 #include "oops/parallel/mpi/mpi.h"
