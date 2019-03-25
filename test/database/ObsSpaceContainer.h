@@ -28,8 +28,6 @@
 
 #include "database/MultiIndexContainer.h"
 
-using eckit::types::is_approximately_equal; 
-
 namespace ioda {
 namespace test {
 
@@ -127,7 +125,7 @@ void testInsertInquire() {
       }
     }
     Vnorm = sqrt(Vnorm);
-    EXPECT(is_approximately_equal(Vnorm, ExpectedVnorm, Tolerance));
+    EXPECT(oops::is_close(Vnorm, ExpectedVnorm, Tolerance));
   }
 }
 

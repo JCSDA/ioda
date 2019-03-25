@@ -27,8 +27,6 @@
 #include "oops/util/dot_product.h"
 #include "test/TestEnvironment.h"
 
-using eckit::types::is_approximately_equal;
-
 namespace ioda {
 namespace test {
 
@@ -148,7 +146,7 @@ void testRead() {
     ov->read("ObsValue");
     double Rms = ov->rms();
     
-    EXPECT(is_approximately_equal(Rms, ExpectedRms, Tol));
+    EXPECT(oops::is_close(Rms, ExpectedRms, Tol));
   }
 }
 
@@ -178,7 +176,7 @@ void testSave() {
     ov_test->read("ObsTestValue");
     Rms = ov_test->rms();
     
-    EXPECT(is_approximately_equal(Rms, ExpectedRms, 1.0e-12));
+    EXPECT(oops::is_close(Rms, ExpectedRms, 1.0e-12));
   }
 }
 

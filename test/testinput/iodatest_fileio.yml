@@ -22,11 +22,11 @@ ObsTypes:
           - 757.56
           - 1282.69
           - 4.9349
-        tolerance: 1.0e-3
+        tolerance: 1.0e-5
       datetime:
         dnorm: 2.309753e08
         tnorm: 1.428455e06
-        tolerance:  1.0e-3
+        tolerance:  1.0e-5
     Output:
       filename: "testoutput/diagout_sonde.nc4"
       variables:
@@ -52,11 +52,11 @@ ObsTypes:
           - 766.082
           - 5399.037
           - 33.197
-        tolerance: 1.0e-3
+        tolerance: 1.0e-5
       datetime:
         dnorm: 4.31879e+08
         tnorm: 3.70899e+06
-        tolerance:  1.0e-3
+        tolerance:  1.0e-5
     Output:
       filename: "testoutput/diagout_arcft.nc4"
       variables:
@@ -82,11 +82,11 @@ ObsTypes:
           - 451.465
           - 1829.81
           - 17.8632
-        tolerance: 1.0e-3
+        tolerance: 1.0e-5
       datetime:
         dnorm: 201804096
         tnorm: 1615322
-        tolerance:  1.0e-3
+        tolerance:  1.0e-5
 
   - ObsType: "Radiance"
     Input:
@@ -104,11 +104,11 @@ ObsTypes:
           - 529.307068
           - 1103.61707
           - 1.901775
-        tolerance: 1.0e-3
+        tolerance: 1.0e-5
       datetime:
         dnorm: 135374336
         tnorm: 11294.7354
-        tolerance:  1.0e-3
+        tolerance:  1.0e-5
   - ObsType: "Radiance"
     Input:
       filename: "Data/gmi_obs_gpm_2018041500_m.nc4"
@@ -125,11 +125,11 @@ ObsTypes:
           - 526.830322
           - 367.976013
           - 12.860713
-        tolerance: 1.0e-3
+        tolerance: 1.0e-5
       datetime:
         dnorm: 174767536
         tnorm: 1211441.88
-        tolerance:  1.0e-3
+        tolerance:  1.0e-5
 
   - ObsType: "Aod"
     Input:
@@ -146,8 +146,8 @@ ObsTypes:
           - 353.115021
           - 1981.41492
           - 14.1863384
-        tolerance: 1.0e-3
+        tolerance: 1.0e-5
       datetime:
         dnorm: 201804096
         tnorm: 1581849.12
-        tolerance:  1.0e-3
+        tolerance:  1.0e-5

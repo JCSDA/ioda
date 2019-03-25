@@ -28,8 +28,6 @@
 #include "fileio/IodaIO.h"
 #include "fileio/IodaIOfactory.h"
 
-using eckit::types::is_approximately_equal;
-
 namespace ioda {
 namespace test {
 
@@ -142,7 +140,7 @@ void testReadVar() {
         }
       Vnorm = sqrt(Vnorm);
 
-      EXPECT(is_approximately_equal(Vnorm, ExpectedVnorms[j], Tol));
+      EXPECT(oops::is_close(Vnorm, ExpectedVnorms[j], Tol));
       }
     }
   }
@@ -274,8 +272,8 @@ void testReadDateTime() {
     ExpectedTnorm = obstypes[i].getFloat("Input.datetime.tnorm");
     Tol = obstypes[i].getFloat("Input.datetime.tolerance");
 
-    EXPECT(is_approximately_equal(Dnorm, ExpectedDnorm, Tol));
-    EXPECT(is_approximately_equal(Tnorm, ExpectedTnorm, Tol));
+    EXPECT(oops::is_close(Dnorm, ExpectedDnorm, Tol));
+    EXPECT(oops::is_close(Tnorm, ExpectedTnorm, Tol));
     }
   }
 

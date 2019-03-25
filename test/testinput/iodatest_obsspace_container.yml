@@ -14,7 +14,7 @@ Containers:
       variable: "air_temperature"
       type: "float"
       norm: 2470.09741
-      tolerance: 1.0e-3
+      tolerance: 1.0e-5
 
   - Container: "AMSU-A"
     InData:
@@ -26,7 +26,7 @@ Containers:
       variable: "latitude"
       type: "float"
       norm: 454.192535
-      tolerance: 1.0e-3
+      tolerance: 1.0e-5
 
   - Container: "AOD"
     InData:
@@ -38,4 +38,4 @@ Containers:
       variable: "aerosol_optical_depth_4"
       type: "integer"
       norm: 21.311676
-      tolerance: 1.0e-3
+      tolerance: 1.0e-5
