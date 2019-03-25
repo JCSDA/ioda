@@ -23,8 +23,6 @@
 #include "oops/runs/Test.h"
 #include "oops/../test/TestEnvironment.h"
 
-using eckit::types::is_approximately_equal;
-
 namespace ioda {
 namespace test {
 
@@ -130,7 +128,7 @@ void testGetDb() {
       }
       Vnorm = sqrt(Vnorm);
 
-      EXPECT(is_approximately_equal(Vnorm, ExpectedVnorms[i], Tol));
+      EXPECT(oops::is_close(Vnorm, ExpectedVnorms[i], Tol));
     }
   }
 }

@@ -35,7 +35,7 @@ Observations:
             - 1981.4147543887036
             - 614979984.02482653
           tolerance:
-            - 1.0e-12
+            - 1.0e-14
 
   - ObsType: "Radiance"
     ObsData:
@@ -57,7 +57,7 @@ Observations:
             - 1829.8089509492747
             - 615005382.90166008
           tolerance:
-            - 1.0e-12
+            - 1.0e-14
 
   - ObsType: "Radiance"
     ObsData:
@@ -79,7 +79,7 @@ Observations:
             - 1103.6169010759827
             - 412263537.27883768
           tolerance:
-            - 1.0e-12
+            - 1.0e-14
 
   - ObsType: "Radiance"
     ObsData:
@@ -101,7 +101,7 @@ Observations:
             - 367.9760257366043
             - 532517611.31432515
           tolerance:
-            - 1.0e-12
+            - 1.0e-14
 
   - ObsType: "Radiosonde"
     ObsData:
@@ -123,6 +123,6 @@ Observations:
             - 1282.68940922515
             - 703680982.365153
           tolerance:
-            - 1.0e-12
+            - 1.0e-14
       ObsDataOut:
         obsfile: "testoutput/diagout.nc4"

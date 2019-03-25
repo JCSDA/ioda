@@ -22,5 +22,5 @@ Observations:
         variables:
           - air_temperature
         rms_equiv: 253.99474245220819
-        tolerance: 1.0e-12
+        tolerance: 1.0e-14
 
