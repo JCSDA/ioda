@@ -22,8 +22,8 @@ ObsTypes:
           - 1482.50846
           - 6515.80756
           - 7683.07856
-        tolerance: 1.0e-3
+        tolerance: 1.0e-5
       datetime:
         dnorm: 6.098283689e+08
         tnorm: 1.66962248e+06
-        tolerance:  1.0e-3
+        tolerance:  1.0e-5
