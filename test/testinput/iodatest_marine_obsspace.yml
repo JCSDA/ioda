@@ -32,7 +32,7 @@ Observations:
             - 16692.109207962403
             - 89252.131593209342
           tolerance:
-            - 1.0e-11
+            - 1.0e-13
 
   - ObsType: InsituTemperature
     ObsData:
@@ -51,7 +51,7 @@ Observations:
             - 732.46544677303257
             - 3530.8881463212083
           tolerance:
-            - 1.0e-12
+            - 1.0e-14
 
   - ObsType: SeaSurfaceTemp
     ObsData:
@@ -70,7 +70,7 @@ Observations:
             - 14497.263538159166
             - 61789.896501727279
           tolerance:
-            - 1.0e-11
+            - 1.0e-13
 
   - ObsType: SeaIceFraction
     ObsData:
@@ -89,7 +89,7 @@ Observations:
             - 19778.589152003486
             - 57917.351481173151
           tolerance:
-            - 1.0e-12
+            - 1.0e-14
 
   - ObsType: SeaIceThickness
     ObsData:
@@ -108,4 +108,4 @@ Observations:
             - 7581.3030036861646
             - 13972.379294774455
           tolerance:
-            - 1.0e-12
+            - 1.0e-14

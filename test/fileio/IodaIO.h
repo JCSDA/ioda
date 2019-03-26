@@ -14,14 +14,12 @@
 #include <string>
 #include <cmath>
 
-#define BOOST_TEST_NO_MAIN
-#define BOOST_TEST_ALTERNATIVE_INIT_API
-#define BOOST_TEST_DYN_LINK
-#include <boost/test/unit_test.hpp>
+#define ECKIT_TESTING_SELF_REGISTER_CASES 0
 
 #include <boost/noncopyable.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
+#include "eckit/testing/Test.h"
 #include "oops/parallel/mpi/mpi.h"
 #include "oops/runs/Test.h"
 #include "oops/util/Logger.h"
@@ -63,7 +61,7 @@ void testConstructor() {
 
     FileName = obstypes[i].getString("Input.filename");
     TestIO.reset(ioda::IodaIOfactory::Create(FileName, "r", bgn, end, oops::mpi::comm()));
-    BOOST_CHECK(TestIO.get());
+    EXPECT(TestIO.get());
 
     // Constructor in read mode is also responsible for setting nobs and nlocs
     ExpectedNlocs = obstypes[i].getInt("Input.metadata.nlocs");
@@ -73,9 +71,9 @@ void testConstructor() {
     Nrecs = TestIO->nrecs();
     Nvars = TestIO->nvars();
 
-    BOOST_CHECK_EQUAL(ExpectedNlocs, Nlocs);
-    BOOST_CHECK_EQUAL(ExpectedNrecs, Nrecs);
-    BOOST_CHECK_EQUAL(ExpectedNvars, Nvars);
+    EXPECT(ExpectedNlocs == Nlocs);
+    EXPECT(ExpectedNrecs == Nrecs);
+    EXPECT(ExpectedNvars == Nvars);
 
     if (obstypes[i].has("Output.filename")) {
       FileName = obstypes[i].getString("Output.filename");
@@ -85,15 +83,15 @@ void testConstructor() {
 
       TestIO.reset(ioda::IodaIOfactory::Create(FileName, "W", bgn, end, oops::mpi::comm(),
                                                ExpectedNlocs, ExpectedNrecs, ExpectedNvars));
-      BOOST_CHECK(TestIO.get());
+      EXPECT(TestIO.get());
 
       Nlocs = TestIO->nlocs();
       Nrecs = TestIO->nrecs();
       Nvars = TestIO->nvars();
 
-      BOOST_CHECK_EQUAL(ExpectedNlocs, Nlocs);
-      BOOST_CHECK_EQUAL(ExpectedNrecs, Nrecs);
-      BOOST_CHECK_EQUAL(ExpectedNvars, Nvars);
+      EXPECT(ExpectedNlocs == Nlocs);
+      EXPECT(ExpectedNrecs == Nrecs);
+      EXPECT(ExpectedNvars == Nvars);
       }
     }
   }
@@ -142,7 +140,7 @@ void testReadVar() {
         }
       Vnorm = sqrt(Vnorm);
 
-      BOOST_CHECK_CLOSE(Vnorm, ExpectedVnorms[j], Tol);
+      EXPECT(oops::is_close(Vnorm, ExpectedVnorms[j], Tol));
       }
     }
   }
@@ -207,9 +205,9 @@ void testWriteVar() {
       TestNrecs = TestIO->nrecs();
       TestNvars = TestIO->nvars();
 
-      BOOST_CHECK_EQUAL(TestNlocs, Nlocs);
-      BOOST_CHECK_EQUAL(TestNrecs, Nrecs);
-      BOOST_CHECK_EQUAL(TestNvars, Nvars);
+      EXPECT(TestNlocs == Nlocs);
+      EXPECT(TestNrecs == Nrecs);
+      EXPECT(TestNvars == Nvars);
 
       VarSum = 0;
       for(std::size_t j = 0; j < varnames.size(); ++j) {
@@ -219,7 +217,7 @@ void testWriteVar() {
           }
         }
 
-      BOOST_CHECK_EQUAL(VarSum, ExpectedSum);
+      EXPECT(VarSum == ExpectedSum);
       }
     }
   }
@@ -274,8 +272,8 @@ void testReadDateTime() {
     ExpectedTnorm = obstypes[i].getFloat("Input.datetime.tnorm");
     Tol = obstypes[i].getFloat("Input.datetime.tolerance");
 
-    BOOST_CHECK_CLOSE(Dnorm, ExpectedDnorm, Tol);
-    BOOST_CHECK_CLOSE(Tnorm, ExpectedTnorm, Tol);
+    EXPECT(oops::is_close(Dnorm, ExpectedDnorm, Tol));
+    EXPECT(oops::is_close(Tnorm, ExpectedTnorm, Tol));
     }
   }
 
@@ -289,14 +287,16 @@ class IodaIO : public oops::Test {
   std::string testid() const {return "test::IodaIO";}
 
   void register_tests() const {
-    boost::unit_test::test_suite * ts = BOOST_TEST_SUITE("IodaIO");
+    std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
-    ts->add(BOOST_TEST_CASE(&testConstructor));
-    ts->add(BOOST_TEST_CASE(&testReadVar));
-    ts->add(BOOST_TEST_CASE(&testWriteVar));
-    ts->add(BOOST_TEST_CASE(&testReadDateTime));
-
-    boost::unit_test::framework::master_test_suite().add(ts);
+    ts.emplace_back(CASE("fileio/IodaIO/testConstructor")
+      { testConstructor; });
+    ts.emplace_back(CASE("fileio/IodaIO/testReadVar")
+      { testReadVar; });
+    ts.emplace_back(CASE("fileio/IodaIO/testWriteVar")
+      { testWriteVar; });
+    ts.emplace_back(CASE("fileio/IodaIO/testReadDateTime")
+      { testReadDateTime; });
   }
 };
 

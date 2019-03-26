@@ -11,15 +11,13 @@
 #include <string>
 #include <cmath>
 
-#define BOOST_TEST_NO_MAIN
-#define BOOST_TEST_ALTERNATIVE_INIT_API
-#define BOOST_TEST_DYN_LINK
-#include <boost/test/unit_test.hpp>
+#define ECKIT_TESTING_SELF_REGISTER_CASES 0
 
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
+#include "eckit/testing/Test.h"
 #include "ioda/IodaTrait.h"
 #include "ioda/ObsSpace.h"
 #include "oops/runs/Test.h"
@@ -78,7 +76,7 @@ void testConstructor() {
     // Get the expected nlocs from the obspace object's configuration
     int ExpectedNlocs = conf[jj].getInt("ObsData.ObsDataIn.metadata.nlocs");
 
-    BOOST_CHECK_EQUAL(Nlocs, ExpectedNlocs);
+    EXPECT(Nlocs == ExpectedNlocs);
   }
 }
 
@@ -130,7 +128,7 @@ void testGetDb() {
       }
       Vnorm = sqrt(Vnorm);
 
-      BOOST_CHECK_CLOSE(Vnorm, ExpectedVnorms[i], Tol);
+      EXPECT(oops::is_close(Vnorm, ExpectedVnorms[i], Tol));
     }
   }
 }
@@ -168,7 +166,7 @@ void testPutDb() {
       VecMatch = VecMatch && (int(ExpectedVec[i]) == int(TestVec[i]));
     }
 
-    BOOST_CHECK(VecMatch);
+    EXPECT(VecMatch);
   }
 }
 
@@ -204,7 +202,7 @@ void testWriteableGroup() {
     for (std::size_t i = 0; i < Nlocs; ++i) {
       VecMatch = VecMatch && (int(ExpectedVec[i]) == int(TestVec[i]));
     }
-    BOOST_CHECK(VecMatch);
+    EXPECT(VecMatch);
 
     // Now update the vector with the original multiplied by 2.
     for (std::size_t i = 0; i < Nlocs; ++i) {
@@ -218,7 +216,7 @@ void testWriteableGroup() {
     for (std::size_t i = 0; i < Nlocs; ++i) {
       VecMatch = VecMatch && (int(ExpectedVec[i]) == int(TestVec[i]));
     }
-    BOOST_CHECK(VecMatch);
+    EXPECT(VecMatch);
   }
 }
 
@@ -232,14 +230,16 @@ class ObsSpace : public oops::Test {
   std::string testid() const {return "test::ObsSpace<ioda::IodaTrait>";}
 
   void register_tests() const {
-    boost::unit_test::test_suite * ts = BOOST_TEST_SUITE("ObsSpace");
+    std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
-    ts->add(BOOST_TEST_CASE(&testConstructor));
-    ts->add(BOOST_TEST_CASE(&testGetDb));
-    ts->add(BOOST_TEST_CASE(&testPutDb));
-    ts->add(BOOST_TEST_CASE(&testWriteableGroup));
-
-    boost::unit_test::framework::master_test_suite().add(ts);
+    ts.emplace_back(CASE("ioda/ObsSpace/testConstructor")
+      { testConstructor; });
+    ts.emplace_back(CASE("ioda/ObsSpace/testGetDb")
+      { testGetDb; });
+    ts.emplace_back(CASE("ioda/ObsSpace/testPutDb")
+      { testPutDb; });
+    ts.emplace_back(CASE("ioda/ObsSpace/testWriteableGroup")
+      { testWriteableGroup; });
   }
 };
 
