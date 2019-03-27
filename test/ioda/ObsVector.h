@@ -193,15 +193,15 @@ class ObsVector : public oops::Test {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
      ts.emplace_back(CASE("ioda/ObsVector/testConstructor")
-      { testConstructor; });
+      { testConstructor(); });
      ts.emplace_back(CASE("ioda/ObsVector/testCopyConstructor")
-      { testCopyConstructor; });
+      { testCopyConstructor(); });
      ts.emplace_back(CASE("ioda/ObsVector/testNotZero")
-      { testNotZero; }); 
+      { testNotZero(); }); 
      ts.emplace_back(CASE("ioda/ObsVector/testRead")
-      { testRead; });  
+      { testRead(); });  
      ts.emplace_back(CASE("ioda/ObsVector/testSave")
-      { testSave; });  
+      { testSave(); });  
   }
 };
 

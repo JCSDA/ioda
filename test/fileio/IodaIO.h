@@ -50,7 +50,6 @@ void testConstructor() {
   std::size_t ExpectedNlocs;
   std::size_t ExpectedNrecs;
   std::size_t ExpectedNvars;
-
   // Walk through the different ObsTypes and try constructing with the files.
   conf.get("ObsTypes", obstypes);
   for (std::size_t i = 0; i < obstypes.size(); ++i) {
@@ -290,13 +289,13 @@ class IodaIO : public oops::Test {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
     ts.emplace_back(CASE("fileio/IodaIO/testConstructor")
-      { testConstructor; });
+      { testConstructor(); });
     ts.emplace_back(CASE("fileio/IodaIO/testReadVar")
-      { testReadVar; });
+      { testReadVar(); });
     ts.emplace_back(CASE("fileio/IodaIO/testWriteVar")
-      { testWriteVar; });
+      { testWriteVar(); });
     ts.emplace_back(CASE("fileio/IodaIO/testReadDateTime")
-      { testReadDateTime; });
+      { testReadDateTime(); });
   }
 };
 
