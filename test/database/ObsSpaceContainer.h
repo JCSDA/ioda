@@ -16,15 +16,13 @@
 #include <tuple>
 #include <typeinfo>
 
-#define BOOST_TEST_NO_MAIN
-#define BOOST_TEST_ALTERNATIVE_INIT_API
-#define BOOST_TEST_DYN_LINK
-#include <boost/test/unit_test.hpp>
+#define ECKIT_TESTING_SELF_REGISTER_CASES 0
 
 #include <boost/noncopyable.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/mpi/Comm.h"
+#include "eckit/testing/Test.h"
 #include "oops/parallel/mpi/mpi.h"
 #include "oops/runs/Test.h"
 #include "oops/util/Logger.h"
@@ -44,10 +42,10 @@ void testConstructor() {
 
   // Try constructing and destructing
   TestContainer.reset(new ioda::ObsSpaceContainer());
-  BOOST_CHECK(TestContainer.get());
+  EXPECT(TestContainer.get());
 
   TestContainer.reset();
-  BOOST_CHECK(!TestContainer.get());
+  EXPECT(!TestContainer.get());
   }
 
 // -----------------------------------------------------------------------------
@@ -59,7 +57,7 @@ void testGrpVarIter() {
 
   // Instantiate a container
   TestContainer.reset(new ioda::ObsSpaceContainer());
-  BOOST_CHECK(TestContainer.get());
+  EXPECT(TestContainer.get());
 
   // Try storing the variables from the YAML into the container, then load them
   // from the containter into new variables, and then check that they match.
@@ -130,7 +128,7 @@ void testGrpVarIter() {
                  TestContainer->var_iter_shape(ivar)));
   }
 
-  BOOST_CHECK(TestVarInfo == VarInfo);
+  EXPECT(TestVarInfo == VarInfo);
 }
 
 
@@ -143,7 +141,7 @@ void testStoreLoad() {
 
   // Instantiate a container
   TestContainer.reset(new ioda::ObsSpaceContainer());
-  BOOST_CHECK(TestContainer.get());
+  EXPECT(TestContainer.get());
 
   // Try storing the variables from the YAML into the container, then load them
   // from the containter into new variables, and then check that they match.
@@ -168,8 +166,9 @@ void testStoreLoad() {
 
       std::vector<int> TestIntData(ExpectedIntData.size(), 0);
       TestContainer->LoadFromDb(GroupName, VarName, VarShape, TestIntData.data());
-      BOOST_CHECK_EQUAL_COLLECTIONS(TestIntData.begin(), TestIntData.end(),
-               ExpectedIntData.begin(), ExpectedIntData.end());
+      for(std::size_t j = 0; j < TestIntData.size(); j++) {
+        EXPECT(TestIntData[j] == ExpectedIntData[j]);
+      }
     } else if (VarTypeName.compare("float") == 0) {
       std::vector<float> ExpectedFloatData = conf.getFloatVector(ConfVarValues);
       VarShape[0] = ExpectedFloatData.size();
@@ -177,8 +176,9 @@ void testStoreLoad() {
 
       std::vector<float> TestFloatData(ExpectedFloatData.size(), 0.0);
       TestContainer->LoadFromDb(GroupName, VarName, VarShape, TestFloatData.data());
-      BOOST_CHECK_EQUAL_COLLECTIONS(TestFloatData.begin(), TestFloatData.end(),
-               ExpectedFloatData.begin(), ExpectedFloatData.end());
+      for(std::size_t j = 0; j < TestFloatData.size(); j++) {
+        EXPECT(TestFloatData[j] == ExpectedFloatData[j]);
+      }
     } else if (VarTypeName.compare("string") == 0) {
       std::vector<std::string> ExpectedStringData = conf.getStringVector(ConfVarValues);
       VarShape[0] = ExpectedStringData.size();
@@ -186,8 +186,9 @@ void testStoreLoad() {
 
       std::vector<std::string> TestStringData(ExpectedStringData.size(), "xx");
       TestContainer->LoadFromDb(GroupName, VarName, VarShape, TestStringData.data());
-      BOOST_CHECK_EQUAL_COLLECTIONS(TestStringData.begin(), TestStringData.end(),
-               ExpectedStringData.begin(), ExpectedStringData.end());
+      for(std::size_t j = 0; j < TestStringData.size(); j++) {
+        EXPECT(TestStringData[j] == ExpectedStringData[j]);
+      }
     } else if (VarTypeName.compare("datetime") == 0) {
       std::vector<std::string> DtStrings = conf.getStringVector(ConfVarValues);
       std::vector<util::DateTime> ExpectedDateTimeData(DtStrings.size());
@@ -201,8 +202,9 @@ void testStoreLoad() {
       util::DateTime TempDt("0000-01-01T00:00:00Z");
       std::vector<util::DateTime> TestDateTimeData(ExpectedDateTimeData.size(), TempDt);
       TestContainer->LoadFromDb(GroupName, VarName, VarShape, TestDateTimeData.data());
-      BOOST_CHECK_EQUAL_COLLECTIONS(TestDateTimeData.begin(), TestDateTimeData.end(),
-               ExpectedDateTimeData.begin(), ExpectedDateTimeData.end());
+      for(std::size_t j = 0; j < TestDateTimeData.size(); j++) {
+        EXPECT(TestDateTimeData[j] == ExpectedDateTimeData[j]);
+      }
     } else {
       oops::Log::debug() << "test::ObsSpaceContainer::testGrpVarIter: "
                          << "container only supports data types int, float and string."
@@ -221,13 +223,14 @@ class ObsSpaceContainer : public oops::Test {
   std::string testid() const {return "test::ObsSpaceContainer";}
 
   void register_tests() const {
-    boost::unit_test::test_suite * ts = BOOST_TEST_SUITE("ObsSpaceContainer");
+    std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
-    ts->add(BOOST_TEST_CASE(&testConstructor));
-    ts->add(BOOST_TEST_CASE(&testGrpVarIter));
-    ts->add(BOOST_TEST_CASE(&testStoreLoad));
-
-    boost::unit_test::framework::master_test_suite().add(ts);
+    ts.emplace_back(CASE("database/ObsSpaceContainer/testConstructor")
+      { testConstructor; });
+    ts.emplace_back(CASE("database/ObsSpaceContainer/testGrpVarIter")
+      { testGrpVarIter; });
+    ts.emplace_back(CASE("database/ObsSpaceContainer/testStoreLoad")
+      { testStoreLoad; });
   }
 };
 
