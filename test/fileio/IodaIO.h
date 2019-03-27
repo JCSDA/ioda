@@ -15,16 +15,14 @@
 #include <cmath>
 #include <typeinfo>
 
-#define BOOST_TEST_NO_MAIN
-#define BOOST_TEST_ALTERNATIVE_INIT_API
-#define BOOST_TEST_DYN_LINK
-#include <boost/test/unit_test.hpp>
+#define ECKIT_TESTING_SELF_REGISTER_CASES 0
 
 #include <boost/noncopyable.hpp>
 
 #include <boost/any.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
+#include "eckit/testing/Test.h"
 #include "oops/parallel/mpi/mpi.h"
 #include "oops/runs/Test.h"
 #include "oops/util/Logger.h"
@@ -95,7 +93,7 @@ void testConstructor() {
   // Contructor in read mode
   FileName = conf.getString("TestInput.filename");
   TestIO.reset(ioda::IodaIOfactory::Create(FileName, "r"));
-  BOOST_CHECK(TestIO.get());
+  EXPECT(TestIO.get());
 
   // Constructor in read mode is also responsible for setting nobs and nlocs
   ExpectedNlocs = conf.getInt("TestInput.nlocs");
@@ -106,9 +104,9 @@ void testConstructor() {
   Nrecs = TestIO->nrecs();
   Nvars = TestIO->nvars();
 
-  BOOST_CHECK_EQUAL(ExpectedNlocs, Nlocs);
-  BOOST_CHECK_EQUAL(ExpectedNrecs, Nrecs);
-  BOOST_CHECK_EQUAL(ExpectedNvars, Nvars);
+  EXPECT(ExpectedNlocs == Nlocs);
+  EXPECT(ExpectedNrecs == Nrecs);
+  EXPECT(ExpectedNvars == Nvars);
 
   // Constructor in write mode
   FileName = conf.getString("TestOutput.filename");
@@ -119,15 +117,15 @@ void testConstructor() {
 
   TestIO.reset(ioda::IodaIOfactory::Create(FileName, "W", ExpectedNlocs,
                                            ExpectedNrecs, ExpectedNvars));
-  BOOST_CHECK(TestIO.get());
+  EXPECT(TestIO.get());
 
   Nlocs = TestIO->nlocs();
   Nrecs = TestIO->nrecs();
   Nvars = TestIO->nvars();
 
-  BOOST_CHECK_EQUAL(ExpectedNlocs, Nlocs);
-  BOOST_CHECK_EQUAL(ExpectedNrecs, Nrecs);
-  BOOST_CHECK_EQUAL(ExpectedNvars, Nvars);
+  EXPECT(ExpectedNlocs == Nlocs);
+  EXPECT(ExpectedNrecs == Nrecs);
+  EXPECT(ExpectedNvars == Nvars);
   }
 
 // -----------------------------------------------------------------------------
@@ -142,7 +140,7 @@ void testGrpVarIter() {
   // Constructor in read mode will generate a group variable container.
   FileName = conf.getString("TestInput.filename");
   TestIO.reset(ioda::IodaIOfactory::Create(FileName, "r"));
-  BOOST_CHECK(TestIO.get());
+  EXPECT(TestIO.get());
 
   // Test the iterators by walking through the entire list of variables
   // and check the count of variables (total number in the file) with the
@@ -156,7 +154,7 @@ void testGrpVarIter() {
       VarCount++;
     }
   }
-  BOOST_CHECK_EQUAL(VarCount, ExpectedVarCount);
+  EXPECT(VarCount == ExpectedVarCount);
 }
 
 // -----------------------------------------------------------------------------
@@ -197,14 +195,15 @@ void testReadVar() {
       std::vector<int> TestVarData(VarSize, 0);
       TestIO->ReadVar(GroupName, VarName, VarShape, TestVarData.data());
       std::vector<int> ExpectedVarData = conf.getIntVector(ExpectedVarDataName);
-      BOOST_CHECK_EQUAL_COLLECTIONS(TestVarData.begin(), TestVarData.end(),
-                                    ExpectedVarData.begin(), ExpectedVarData.end());
+      for (std::size_t j = 0; j < TestVarData.size(); j++) {
+        EXPECT(TestVarData[j] == ExpectedVarData[j]);
+      }
     } else if ((VarType.compare("float") == 0) or (VarType.compare("double") == 0)) {
       std::vector<float> TestVarData(VarSize, 0.0);
       TestIO->ReadVar(GroupName, VarName, VarShape, TestVarData.data());
       std::vector<float> ExpectedVarData = conf.getFloatVector(ExpectedVarDataName);
       for (std::size_t j = 0; j < TestVarData.size(); j++) {
-        BOOST_CHECK_CLOSE(TestVarData[j], ExpectedVarData[j], Tolerance);
+        EXPECT(oops::is_close(TestVarData[j], ExpectedVarData[j], Tolerance));
       }
     } else if (VarType.compare("char") == 0) {
       std::unique_ptr<char[]> TestVarData(new char[VarSize]);
@@ -212,8 +211,9 @@ void testReadVar() {
       std::vector<std::string> TestStrings =
                                CharArrayToStringVector(TestVarData.get(), VarShape);
       std::vector<std::string> ExpectedVarData = conf.getStringVector(ExpectedVarDataName);
-      BOOST_CHECK_EQUAL_COLLECTIONS(TestStrings.begin(), TestStrings.end(),
-                                    ExpectedVarData.begin(), ExpectedVarData.end());
+      for (std::size_t j = 0; j < TestStrings.size(); j++) {
+        EXPECT(TestStrings[j] == ExpectedVarData[j]);
+      }
     }
   }
 }
@@ -298,21 +298,22 @@ void testWriteVar() {
   std::size_t TestNrecs = TestIO->nrecs();
   std::size_t TestNvars = TestIO->nvars();
 
-  BOOST_CHECK_EQUAL(TestNlocs, ExpectedNlocs);
-  BOOST_CHECK_EQUAL(TestNrecs, ExpectedNrecs);
-  BOOST_CHECK_EQUAL(TestNvars, ExpectedNvars);
+  EXPECT(TestNlocs == ExpectedNlocs);
+  EXPECT(TestNrecs == ExpectedNrecs);
+  EXPECT(TestNvars == ExpectedNvars);
 
   float Tolerance = conf.getFloat("TestInput.tolerance");
   std::vector<float> TestFloatData(ExpectedNlocs, 0.0);
   TestIO->ReadVar(FloatGrpName, FloatVarName, FloatVarShape, TestFloatData.data());
   for (std::size_t i = 0; i < ExpectedNlocs; i++) {
-    BOOST_CHECK_CLOSE(TestFloatData[i], ExpectedFloatData[i], Tolerance);
+    EXPECT(oops::is_close(TestFloatData[i], ExpectedFloatData[i], Tolerance));
   }
 
   std::vector<int> TestIntData(ExpectedNvars, 0);
   TestIO->ReadVar(IntGrpName, IntVarName, IntVarShape, TestIntData.data());
-  BOOST_CHECK_EQUAL_COLLECTIONS(TestIntData.begin(), TestIntData.end(),
-                                ExpectedIntData.begin(), ExpectedIntData.end());
+  for (std::size_t i = 0; i < TestIntData.size(); i++) {
+    EXPECT(TestIntData[i] == ExpectedIntData[i]);
+  }
 
   std::unique_ptr<char[]> TestCharData(new char[ExpectedNrecs * 5]);
   TestIO->ReadVar(CharGrpName, CharVarName, CharVarShape, TestCharData.get());
@@ -320,8 +321,9 @@ void testWriteVar() {
           CharArrayToStringVector(TestCharData.get(), CharVarShape);
   std::vector<std::string> ExpectedStrings =
           CharArrayToStringVector(ExpectedCharData.get(), CharVarShape);
-  BOOST_CHECK_EQUAL_COLLECTIONS(TestStrings.begin(), TestStrings.end(),
-                                ExpectedStrings.begin(), ExpectedStrings.end());
+  for (std::size_t i = 0; i < TestStrings.size(); i++) {
+    EXPECT(TestStrings[i] == ExpectedStrings[i]);
+  }
 
   std::unique_ptr<char[]> TestChar2Data(new char[ExpectedNvars * 5]);
   TestIO->ReadVar(Char2GrpName, Char2VarName, Char2VarShape, TestChar2Data.get());
@@ -329,8 +331,9 @@ void testWriteVar() {
           CharArrayToStringVector(TestChar2Data.get(), Char2VarShape);
   std::vector<std::string> ExpectedStrings2 =
           CharArrayToStringVector(ExpectedChar2Data.get(), Char2VarShape);
-  BOOST_CHECK_EQUAL_COLLECTIONS(TestStrings2.begin(), TestStrings2.end(),
-                                ExpectedStrings2.begin(), ExpectedStrings2.end());
+  for (std::size_t i = 0; i < TestStrings2.size(); i++) {
+    EXPECT(TestStrings2[i] == ExpectedStrings2[i]);
+  }
 
   std::unique_ptr<char[]> TestChar3Data(new char[ExpectedNlocs * 20]);
   TestIO->ReadVar(Char3GrpName, Char3VarName, Char3VarShape, TestChar3Data.get());
@@ -338,8 +341,9 @@ void testWriteVar() {
           CharArrayToStringVector(TestChar3Data.get(), Char3VarShape);
   std::vector<std::string> ExpectedStrings3 =
           CharArrayToStringVector(ExpectedChar3Data.get(), Char3VarShape);
-  BOOST_CHECK_EQUAL_COLLECTIONS(TestStrings3.begin(), TestStrings3.end(),
-                                ExpectedStrings3.begin(), ExpectedStrings3.end());
+  for (std::size_t i = 0; i < TestStrings3.size(); i++) {
+    EXPECT(TestStrings3[i] == ExpectedStrings3[i]);
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -352,14 +356,16 @@ class IodaIO : public oops::Test {
   std::string testid() const {return "test::IodaIO";}
 
   void register_tests() const {
-    boost::unit_test::test_suite * ts = BOOST_TEST_SUITE("IodaIO");
+    std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
-    ts->add(BOOST_TEST_CASE(&testConstructor));
-    ts->add(BOOST_TEST_CASE(&testGrpVarIter));
-    ts->add(BOOST_TEST_CASE(&testReadVar));
-    ts->add(BOOST_TEST_CASE(&testWriteVar));
-
-    boost::unit_test::framework::master_test_suite().add(ts);
+    ts.emplace_back(CASE("fileio/IodaIO/testConstructor")
+      { testConstructor; });
+    ts.emplace_back(CASE("fileio/IodaIO/testGrpVarIter")
+      { testGrpVarIter; });
+    ts.emplace_back(CASE("fileio/IodaIO/testReadVar")
+      { testReadVar; });
+    ts.emplace_back(CASE("fileio/IodaIO/testWriteVar")
+      { testWriteVar; });
   }
 };
 
