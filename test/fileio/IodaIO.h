@@ -203,6 +203,9 @@ void testReadVar() {
       TestIO->ReadVar(GroupName, VarName, VarShape, TestVarData.data());
       std::vector<float> ExpectedVarData = conf.getFloatVector(ExpectedVarDataName);
       for (std::size_t j = 0; j < TestVarData.size(); j++) {
+        std::cout << "DEBUG: testReadVar: j, tol, test, expected: " << j << ", "
+                  << Tolerance << ", "
+                  << double(TestVarData[j]) << ", " << double(ExpectedVarData[j]) << std::endl;
         EXPECT(oops::is_close(TestVarData[j], ExpectedVarData[j], Tolerance));
       }
     } else if (VarType.compare("char") == 0) {
@@ -359,13 +362,13 @@ class IodaIO : public oops::Test {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
     ts.emplace_back(CASE("fileio/IodaIO/testConstructor")
-      { testConstructor; });
+      { testConstructor(); });
     ts.emplace_back(CASE("fileio/IodaIO/testGrpVarIter")
-      { testGrpVarIter; });
+      { testGrpVarIter(); });
     ts.emplace_back(CASE("fileio/IodaIO/testReadVar")
-      { testReadVar; });
+      { testReadVar(); });
     ts.emplace_back(CASE("fileio/IodaIO/testWriteVar")
-      { testWriteVar; });
+      { testWriteVar(); });
   }
 };
 

@@ -224,13 +224,13 @@ class ObsSpace : public oops::Test {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
     ts.emplace_back(CASE("ioda/ObsSpace/testConstructor")
-      { testConstructor; });
+      { testConstructor(); });
     ts.emplace_back(CASE("ioda/ObsSpace/testGetDb")
-      { testGetDb; });
+      { testGetDb(); });
     ts.emplace_back(CASE("ioda/ObsSpace/testPutDb")
-      { testPutDb; });
+      { testPutDb(); });
     ts.emplace_back(CASE("ioda/ObsSpace/testWriteableGroup")
-      { testWriteableGroup; });
+      { testWriteableGroup(); });
   }
 };
 

@@ -27,4 +27,3 @@ TestOutput:
   nlocs: 8
   nrecs: 2
   nvars: 5
-  tolerance: 1.0e-5
