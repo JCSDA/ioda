@@ -226,11 +226,11 @@ class ObsSpaceContainer : public oops::Test {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
     ts.emplace_back(CASE("database/ObsSpaceContainer/testConstructor")
-      { testConstructor; });
+      { testConstructor(); });
     ts.emplace_back(CASE("database/ObsSpaceContainer/testGrpVarIter")
-      { testGrpVarIter; });
+      { testGrpVarIter(); });
     ts.emplace_back(CASE("database/ObsSpaceContainer/testStoreLoad")
-      { testStoreLoad; });
+      { testStoreLoad(); });
   }
 };
 
