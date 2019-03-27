@@ -113,9 +113,9 @@ class Distribution : public oops::Test {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
     ts.emplace_back(CASE("distribution/Distribution/testConstructor")
-      { testConstructor; });
+      { testConstructor(); });
     ts.emplace_back(CASE("distribution/Distribution/testDistribution")
-      { testDistribution; });
+      { testDistribution(); });
   }
 };
 
