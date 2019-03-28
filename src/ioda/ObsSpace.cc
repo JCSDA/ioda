@@ -493,7 +493,7 @@ void ObsSpace::print(std::ostream & os) const {
         StringVectorToCharArray(StringVector, CharShape, CharData.get());
         fileio->WriteVar(GroupName, VarName, CharShape, CharData.get());
       } else {
-        oops::Log::warning() << "ioda::IodaIO::SaveToFile: Unrecognized data type: "
+        oops::Log::warning() << "ObsSpace::SaveToFile: Unrecognized data type: "
                              << VarType.name() << std::endl;
         oops::Log::warning() << "  ObsSpaceContainer currently supports data types "
                              << "int, float and char." << std::endl;

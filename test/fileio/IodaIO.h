@@ -203,9 +203,6 @@ void testReadVar() {
       TestIO->ReadVar(GroupName, VarName, VarShape, TestVarData.data());
       std::vector<float> ExpectedVarData = conf.getFloatVector(ExpectedVarDataName);
       for (std::size_t j = 0; j < TestVarData.size(); j++) {
-        std::cout << "DEBUG: testReadVar: j, tol, test, expected: " << j << ", "
-                  << Tolerance << ", "
-                  << double(TestVarData[j]) << ", " << double(ExpectedVarData[j]) << std::endl;
         EXPECT(oops::is_close(TestVarData[j], ExpectedVarData[j], Tolerance));
       }
     } else if (VarType.compare("char") == 0) {

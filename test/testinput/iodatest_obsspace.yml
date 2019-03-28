@@ -25,7 +25,6 @@ Observations:
           groups:
             - "MetaData"
             - "MetaData"
-            - "MetaData"
           variables:
             - "latitude"
             - "longitude"
@@ -43,7 +42,6 @@ Observations:
           nlocs: 100
         TestData:
           groups:
-            - "MetaData"
             - "MetaData"
             - "MetaData"
           variables:
@@ -65,7 +63,6 @@ Observations:
           groups:
             - "MetaData"
             - "MetaData"
-            - "MetaData"
           variables:
             - "latitude"
             - "longitude"
@@ -83,7 +80,6 @@ Observations:
           nlocs: 75
         TestData:
           groups:
-            - "MetaData"
             - "MetaData"
             - "MetaData"
           variables:
@@ -105,7 +101,6 @@ Observations:
           groups:
             - "MetaData"
             - "MetaData"
-            - "MetaData"
           variables:
             - "latitude"
             - "longitude"
@@ -117,22 +112,3 @@ Observations:
       ObsDataOut:
         obsfile: "testoutput/diagout.nc4"
 
-  - ObsType: "Read_File_Written_By_Ioda"
-    ObsData:
-      ObsDataIn:
-        obsfile: "testoutput/diagout_0000.nc4"
-        metadata:
-          nlocs: 131
-        TestData:
-          groups:
-            - "MetaData"
-            - "MetaData"
-            - "MetaData"
-          variables:
-            - "latitude"
-            - "longitude"
-          norms:
-            - 757.55982302113819
-            - 1282.68940922515
-          tolerance:
-            - 1.0e-12
