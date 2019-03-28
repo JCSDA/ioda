@@ -9,6 +9,7 @@
 #define UTILS_IODAUTILS_H_
 
 #include <string>
+#include <typeinfo>
 #include <vector>
 
 namespace ioda {
