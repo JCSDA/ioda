@@ -60,14 +60,13 @@ void obsspace_get_datetime_f(const ObsSpace & obss, const char * group, const ch
 
   // Convert to date and time values. The DateTime utilities can return year, month,
   // day, hour, minute second.
+  int year;
+  int month;
+  int day;
+  int hour;
+  int minute;
+  int second;
   for (std::size_t i = 0; i < length; i++) {
-    int year;
-    int month;
-    int day;
-    int hour;
-    int minute;
-    int second;
-
     dt_vect[i].toYYYYMMDDhhmmss(year, month, day, hour, minute, second);
     date[i] = (year * 10000) + (month * 100) + day;
     time[i] = (hour * 10000) + (minute * 100) + second;
