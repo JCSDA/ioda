@@ -13,7 +13,7 @@ Containers:
       group: "ObsValue"
       variable: "air_temperature"
       type: "float"
-      norm: 2470.09741
+      norm: 2470.10
       tolerance: 1.0e-5
 
   - Container: "AMSU-A"
@@ -25,7 +25,7 @@ Containers:
       group: "MetaData"
       variable: "latitude"
       type: "float"
-      norm: 454.192535
+      norm: 451.465
       tolerance: 1.0e-5
 
   - Container: "AOD"
@@ -37,5 +37,5 @@ Containers:
       group: "PreQC"
       variable: "aerosol_optical_depth_4"
       type: "integer"
-      norm: 21.311676
+      norm: 0.00000
       tolerance: 1.0e-5
