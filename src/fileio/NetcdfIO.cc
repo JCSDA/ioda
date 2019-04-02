@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2017 UCAR
+ * (C) Copyright 2017-2019 UCAR
  * 
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
@@ -223,8 +223,8 @@ NetcdfIO::~NetcdfIO() {
 /*!
  * \brief Read data from netcdf file to memory
  *
- * \details The three ReadVar methods are the same with the exception of the
- *          datatype that is being read (integer, float, char). It is the
+ * \details The four ReadVar methods are the same with the exception of the
+ *          datatype that is being read (integer, float, double, char). It is the
  *          caller's responsibility to allocate memory to hold the data being
  *          read. The caller then passes a pointer to that memory for the VarData
  *          argument.
@@ -255,6 +255,19 @@ void NetcdfIO::ReadVar(const std::string & GroupName, const std::string & VarNam
   ReadVar_helper<char>(GroupName, VarName, VarShape, VarData);
 }
 
+/*!
+ * \brief Helper method for ReadVar
+ *
+ * \details This method fills in the code for the four overloaded ReadVar functions. 
+ *          This method handles calling the proper netcdf get_var method, and the
+ *          replacement of netcdf missing data marks with the IODA missing data marks.
+ *
+ * \param[in]  GroupName Name of ObsSpace group (ObsValue, ObsError, MetaData, etc.)
+ * \param[in]  VarName Name of ObsSpace variable
+ * \param[in]  VarShape Dimension sizes of variable
+ * \param[out] VarData Pointer to memory that will receive the file data
+ */
+
 template <typename DataType>
 void NetcdfIO::ReadVar_helper(const std::string & GroupName, const std::string & VarName,
                               const std::vector<std::size_t> & VarShape, DataType * VarData) {
@@ -264,17 +277,14 @@ void NetcdfIO::ReadVar_helper(const std::string & GroupName, const std::string &
   // Read in the variable values. The netcdf interface has a generic get var (nc_get_var)
   // routine, but calling this interface causes a crash to occur. There also exist type
   // specific get var routines (nc_get_var_int, nc_get_var_float, etc.). These work okay,
-  // but the compile fails when VarData comes in as a int pointer, and you VarData to the
+  // but the compile fails when VarData comes in as a int pointer, and you give VarData to the
   // nc_get_var_float routine which expects a float pointer. This situation is resolved
   // by putting in casts to the expected pointer type.
   //
   // Normally, forcing the pointer to be the expected type is a dangerous practice,
   // but in this case it is controlled well. The if statment below ensures that the
   // casting is appropriate for the given type that is being read. For example, checking
-  // that VarType is "int" occurs only in the case where VarData is an int *.
-  //
-  // Note in the if statment below, nc_get_var_float handles the conversion from
-  // double to float in the case where the netcdf variable is type double.
+  // that VarType is "int" only matches in the case where VarData is an int *.
 
   const std::type_info & VarType = typeid(DataType);  // this matches type of VarData
   int NcVarId = var_id(GroupName, VarName);
@@ -360,6 +370,20 @@ void NetcdfIO::WriteVar(const std::string & GroupName, const std::string & VarNa
                         const std::vector<std::size_t> & VarShape, char * VarData) {
   WriteVar_helper<char>(GroupName, VarName, VarShape, VarData);
 }
+
+/*!
+ * \brief Helper method for WriteVar
+ *
+ * \details This method fills in the code for the four overloaded WriteVar functions. 
+ *          This method handles calling the proper netcdf put_var method, and the
+ *          creation of a netcdf variable in the case that the requested variable
+ *          does not exist in the output file.
+ *
+ * \param[in]  GroupName Name of ObsSpace group (ObsValue, ObsError, MetaData, etc.)
+ * \param[in]  VarName Name of ObsSpace variable
+ * \param[in]  VarShape Dimension sizes of variable
+ * \param[out] VarData Pointer to memory that will receive the file data
+ */
 
 template <typename DataType>
 void NetcdfIO::WriteVar_helper(const std::string & GroupName, const std::string & VarName,
@@ -469,6 +493,18 @@ void NetcdfIO::CheckNcCall(int RetCode, std::string & ErrorMsg) {
 }
 
 // -----------------------------------------------------------------------------
+/*!
+ * \brief form the netcdf variable name
+ *
+ * \details This method will construct the name of the variable in the netcdf
+ *           file from the given GroupName and VarName arguments. The netcdf
+ *           variable name is typically "VarName@GroupName". When GroupName
+ *           is "GroupUndefined", then the netcdf variable name is simply set
+ *           equal to VarName (no @GroupName suffix).
+ *
+ * \param[in] GroupName Name of group in ObsSpace database
+ * \param[in] VarName Name of variable in ObsSpace database
+ */
 
 std::string NetcdfIO::FormNcVarName(const std::string & GroupName, const std::string & VarName) {
   // Construct the variable name found in the file. If group name is "GroupUndefined",
@@ -486,6 +522,17 @@ std::string NetcdfIO::FormNcVarName(const std::string & GroupName, const std::st
 }
 
 // -----------------------------------------------------------------------------
+/*!
+ * \brief create a dimension in the netcdf file
+ *
+ * \details This method will create a dimension in the output netcdf file using
+ *          the name given by DimName and the size given by DimSize. This method
+ *          also records the dimension name and size for downstream use in the
+ *          WriteVar methods.
+ *
+ * \param[in] DimName Name of netcdf dimension
+ * \param[in] DimSize Size of netcdf dimension
+ */
 
 void NetcdfIO::CreateNcDim(const std::string DimName, const std::size_t DimSize) {
   int NcDimId;
@@ -495,6 +542,25 @@ void NetcdfIO::CreateNcDim(const std::string DimName, const std::size_t DimSize)
 }
 
 // -----------------------------------------------------------------------------
+/*!
+ * \brief allocate a dimension for writing a character array
+ *
+ * \details This method is used for setting up dimensions for a writing a 
+ *          character array in the output netcdf file. A character array is
+ *          how a vector of strings is represented in netcdf. In order to
+ *          minimize storage, this method is part of a scheme to always create
+ *          the smallest character array necessary (the first dimension matches
+ *          the size of the string vector, the second dimension matches the
+ *          maximum string size in that vector). First, the existing dimensions
+ *          that have already been allocated for character arrays are checked
+ *          and if a match occurs that dimension id is returned. Otherwise, a
+ *          new dimension of the size DimSize is created in the output netcdf file
+ *          and that new dimension id is returned. New dimensions are named
+ *          "nstringN" where N is set to DimSize.
+ *
+ * \param[in] DimSize Size of netcdf dimension
+ */
+
 int NetcdfIO::GetStringDimBySize(const std::size_t DimSize) {
   // Form the name of the dimension by appending DimSize on the end of
   // the string "nstring".
@@ -516,6 +582,24 @@ int NetcdfIO::GetStringDimBySize(const std::size_t DimSize) {
 }
 
 // -----------------------------------------------------------------------------
+/*!
+ * \brief read date and time information from the input netcdf file
+ *
+ * \details This method will read date and time information from the input netcdf
+ *          file and convert that information to absolute date time strings in the
+ *          ISO 8601 format. The date and time information in the input file is
+ *          represented as an attribute called "date_time" that contains a reference
+ *          date and time, and a float variable called "time@MetaData" that contains
+ *          offset time values relative to the date_time attribute. The date_time attribute
+ *          is an integer or string in the format, YYYYMMDDHH (year, month, day, hour).
+ *          The time variable is the offest in units of hours. This is a placeholder
+ *          function that will be removed once all input files have been converted to
+ *          store absolute date time information in ISO 8601 strings.
+ *
+ * \param[in] GroupName Name of group in ObsSpace database
+ * \param[in] VarName Name of variable in ObsSpace database
+ * \param[out] VarData Character array where ISO 8601 date time strings will be placed
+ */
 void NetcdfIO::ReadConvertDateTime(std::string GroupName, std::string VarName, char * VarData) {
   // Read in the reference date from the date_time attribute and the offset
   // time from the time variable and convert to date_time strings.

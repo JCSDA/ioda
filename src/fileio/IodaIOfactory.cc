@@ -27,6 +27,10 @@ namespace ioda {
  *          intended to be used when opening a file in a read mode. The Nlocs, Nrecs
  *          and Nvars parameters are set to zero which is okay since these will be set
  *          by reading metadata from the input file.
+ *
+ * \param[in] FileName Path to the obs file
+ * \param[in] FileMode Mode in which to open the obs file, "r" for read, "w" for overwrite
+ *            and existing file and "W" for create and write to a new file
  */
 
 IodaIO* IodaIOfactory::Create(const std::string & FileName, const std::string & FileMode) {
@@ -41,6 +45,13 @@ IodaIO* IodaIOfactory::Create(const std::string & FileName, const std::string & 
  *          intended to be used when opening a file in a write mode. The Nlocs, Nrecs
  *          and Nvars parameters are set by the caller in this case. These parameters will
  *          subsequently be used to set metadata in the output file.
+ *
+ * \param[in] Nlocs Number of unique locations
+ * \param[in] Nrecs Number of unique records
+ * \param[in] Nvars Number of unique observation variables
+ * \param[in] FileName Path to the obs file
+ * \param[in] FileMode Mode in which to open the obs file, "r" for read, "w" for overwrite
+ *            and existing file and "W" for create and write to a new file
  */
 
 IodaIO* IodaIOfactory::Create(const std::string & FileName, const std::string & FileMode,

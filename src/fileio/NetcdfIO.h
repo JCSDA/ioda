@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2017 UCAR
+ * (C) Copyright 2017-2019 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -34,8 +34,8 @@ typedef std::map<std::string, std::size_t> DimNameToIdType;
 
 /*! \brief Implementation of IodaIO for netcdf.
  *
- * \details The NetcdfIO class defines the constructor and methods for
- *          the abstract class IodaIO.
+ * \details The NetcdfIO class defines the constructor and methods for netcdf
+ *          file access. These fill in the abstract base class IodaIO methods.
  *
  * \author Stephen Herbener (JCSDA)
  */
@@ -121,18 +121,24 @@ class NetcdfIO : public IodaIO,
   bool have_date_time_;
 
   /*!
-   * \brief This data member holds dimension sizes indexed by dimension id number
+   * \brief dimension id to size map
+   *
+   * \details This data member holds dimension sizes indexed by dimension id number
    */
   DimIdToSizeType dim_id_to_size_;
 
   /*!
-   * \brief This data member holds dimension id numbers indexed by dimension name
+   * \brief dimension name to id map
+   *
+   * \details This data member holds dimension id numbers indexed by dimension name
    */
   DimNameToIdType dim_name_to_id_;
 
   /*!
-   * \brief This data member holds dimension id numbers indexed by dimension name
-   *        for extra dimensions needed for character arrays
+   * \brief dimension name to id map for auxillary dimensions
+   *
+   * \details This data member holds dimension id numbers indexed by dimension name
+   *          for extra dimensions needed for character arrays
    */
   DimNameToIdType string_dims_;
 };

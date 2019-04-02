@@ -15,7 +15,14 @@
 namespace ioda {
 
 // ---------------------------------------------------------------------
-
+/*!
+ * \brief class for distributing obs across multiple process elements
+ *
+ * \details This Distribution class is a base class where various subclasses of
+ *          this class define different methods for distributing obs.
+ *
+ * \author Xin Zhang (JCSDA)
+ */
 class Distribution {
  public:
     virtual ~Distribution() = 0;

@@ -41,7 +41,21 @@ using boost::multi_index::ordered_unique;
 using boost::multi_index::tag;
 
 namespace ioda {
-
+/*!
+ * \brief Obs container class for IODA
+ *
+ * \details This class provides a container to hold obs data in memory for use by the
+ *          ObsSpace class. The container is a Boost Multi Index container (header-only
+ *          implementation from Boost) which essentially creates indexing structures 
+ *          that point to a set of C structs. Each structure holds the keys that identify
+ *          that structure and the data the are associated with those keys. There are two
+ *          keys, group and variable, which identify each struct. The group corresponds
+ *          to collections of variables such as "ObsValue", "ObsError", "PreQC" and
+ *          "MetaData". The variables are individual quantities such as "air_temperature"
+ *          and "brightness_temperature".
+ *
+ * \author Xin Zhang (JCSDA)
+ */
 class ObsSpaceContainer: public util::Printable {
  private:
      // --------------------------------------------------------------------------------
@@ -65,16 +79,24 @@ class ObsSpaceContainer: public util::Printable {
      struct by_variable {};           // Index by variable name
 
      // Section 2: element struct managed by the multi index structure
+     /*!
+      * \brief elemental struct of the obs container
+      *
+      * \details This struct represents a single entry in the obs container. It contains
+      *          both the keys that identify the entry and the data held in this entry.
+      */
      struct VarRecord {
          // Keys
-         std::string group;           /*!< Group name: ObsValue, HofX, MetaData, ObsErr etc. */
-         std::string variable;        /*!< Variable name */
+         std::string group;     /*!< Group name: ObsValue, HofX, MetaData, ObsErr etc. */
+         std::string variable;  /*!< Variable name */
 
          // Attributes
-         std::string mode;                  /*!< Read & write mode : 'r' or 'rw'*/
-         const std::type_info & type;       /*!< Type of data */
-         std::size_t size;                  /*!< Total size of data */
-         std::vector<std::size_t> shape;    /*!< Shape of data */
+         std::string mode;                /*!< Read & write mode : 'r' or 'rw'*/
+         const std::type_info & type;     /*!< Type of data */
+         std::size_t size;                /*!< Total size of data */
+         std::vector<std::size_t> shape;  /*!< Shape of data */
+             /*!< Note that shape holds the dimension sizes and size is the product */
+             /*!< of these dimension sizes. */
 
          // Data
          std::unique_ptr<boost::any[]> data;  /*!< Smart pointer to vector */
@@ -97,6 +119,18 @@ class ObsSpaceContainer: public util::Printable {
      };  // end of VarRecord definition
 
      // Section 3: indexing methods, organization of elements
+     /*!
+      * \brief Multi Index container for obs data
+      *
+      * \details This typedef defines the indexing structure of the obs data container.
+      *          The primary index is a composite key (tuple) consisting of the group
+      *          and variable names. The iterator of the container itself uses this
+      *          primary index, as well as the typical container methods such as find
+      *          and insert. Two more secondary indexes are provided, one by group and the
+      *          other by variable. These secondary indexes have their own iterators
+      *          associated with them. See the boost::multiindex documentation for more
+      *          details.
+      */
      using VarRecord_set = multi_index_container<
          VarRecord,
          indexed_by<
@@ -125,50 +159,47 @@ class ObsSpaceContainer: public util::Printable {
      ~ObsSpaceContainer();
 
      // Access to iterators
+     /*!
+      * \brief index by variable
+      *
+      * \details This typedef defines the index mechanism that allows access to the
+      *          obs container through the secondary indexing by variable.
+      */
      typedef VarRecord_set::index<ObsSpaceContainer::by_variable>::type VarIndex;
+
+     /*!
+      * \brief variable iterator
+      *
+      * \details This typedef defines an iterator that can walk through the obs container
+      *          by variable. It utilizes the secondary indexing by variable.
+      */
      typedef VarIndex::iterator VarIter;
+
+     /*!
+      * \brief container iterator
+      *
+      * \details This typedef defines an iterator that can walk through the obs container
+      *          using the primary indexing (by group and variable). 
+      */
      typedef VarRecord_set::iterator DbIter;
 
-     /*! \brief Variables iterator begin */
      VarIter var_iter_begin();
-
-     /*! \brief Variables iterator end */
      VarIter var_iter_end();
 
-     /*! \brief find group, variable combination */
-     DbIter find(const std::string &, const std::string &) const;
-
-     /*! \brief begin marker for group, variable iterator */
-     DbIter begin() const;
-
-     /*! \brief end marker for group, variable iterator */
-     DbIter end() const;
-
-     /*! \brief data type for entry indicated by group, variable iterator */
-     const std::type_info & dtype(const DbIter) const;
-
-     /*! \brief data type for entry group, variable */
-     const std::type_info & dtype(const std::string &, const std::string &) const;
-
-     /*! \brief Variables iterator variable name */
      std::string var_iter_vname(VarIter);
-
-     /*! \brief Variables iterator group name */
      std::string var_iter_gname(VarIter);
-
-     /*! \brief Variables iterator mode */
      std::string var_iter_mode(VarIter);
-
-     /*! \brief Variables iterator type */
      const std::type_info & var_iter_type(VarIter);
-
-     /*! \brief Variables iterator size */
      std::size_t var_iter_size(VarIter);
-
-     /*! \brief Variables iterator shape */
      std::vector<std::size_t> var_iter_shape(VarIter);
 
-     /*! \brief Check the availability of VarRecord with group and variable in container*/
+     DbIter find(const std::string &, const std::string &) const;
+     DbIter begin() const;
+     DbIter end() const;
+
+     const std::type_info & dtype(const DbIter) const;
+     const std::type_info & dtype(const std::string &, const std::string &) const;
+
      bool has(const std::string & group, const std::string & variable) const;
 
      /*! \brief Return the number of uniqure observation locations on this PE*/
@@ -179,7 +210,6 @@ class ObsSpaceContainer: public util::Printable {
 
      // -----------------------------------------------------------------------------
 
-     /*! \brief Load VarData from the container*/
      void LoadFromDb(const std::string & GroupName, const std::string & VarName,
                   const std::vector<std::size_t> & VarShape, int * VarData) const;
      void LoadFromDb(const std::string & GroupName, const std::string & VarName,
@@ -191,7 +221,6 @@ class ObsSpaceContainer: public util::Printable {
 
      // -----------------------------------------------------------------------------
 
-     /*! \brief Store VarData into the container*/
      void StoreToDb(const std::string & GroupName, const std::string & VarName,
                     const std::vector<std::size_t> & VarShape, const int * VarData);
      void StoreToDb(const std::string & GroupName, const std::string & VarName,
@@ -202,17 +231,15 @@ class ObsSpaceContainer: public util::Printable {
                     const std::vector<std::size_t> & VarShape, const util::DateTime * VarData);
 
  private:
-     /*! \brief helper function for LoadFromDb */
      template <typename DataType>
      void LoadFromDb_helper(const std::string & GroupName, const std::string & VarName,
                       const std::vector<std::size_t> & VarShape, DataType * VarData) const;
 
-     /*! \brief helper function for StoreToDb */
      template <typename DataType>
      void StoreToDb_helper(const std::string & GroupName, const std::string & VarName,
                       const std::vector<std::size_t> & VarShape, const DataType * VarData);
 
-     /*! \brief container instance */
+     /*! \brief obs container instance */
      VarRecord_set DataContainer;
 
      /*! \brief number of locations on this PE */

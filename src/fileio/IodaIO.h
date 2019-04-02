@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2017 UCAR
+ * (C) Copyright 2017-2019 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -45,10 +45,7 @@ namespace ioda {
  * A record is an atomic unit that is to stay intact when distributing
  * observations across multiple processes.
  *
- * For now, limit the write interface to writing 1D vectors that are nlocs
- * in length. This may be too restrictive, so we should revisit this in the future.
- *
- * The constructor that you fill in a subclass is responsible for:
+ * The constructor that you fill in with a subclass is responsible for:
  *    1. Open the file
  *         The file name and mode (read, write) is passed in to the subclass
  *         constructor via a call to the factory method Create in the class IodaIOfactory.
@@ -60,6 +57,7 @@ namespace ioda {
  *
  *       If in read mode, metadata from the input file are used to set the data members
  *       If in write mode, the data members are set from the constructor arguments 
+ *       (grp_var_info_ is not used in the write mode case).
  *
  * \author Stephen Herbener (JCSDA)
  */
@@ -76,7 +74,25 @@ class IodaIO : public util::Printable {
       std::size_t var_id;
       std::vector<std::size_t> shape;
     } VarInfoRec;
+
+    /*!
+     * \brief variable information map
+     *
+     * \details This typedef is part of the group-variable map which is a nested map
+     *          containing information about the variables in the input file (see
+     *          GroupVarInfoMap typedef for details).
+     */
     typedef std::map<std::string, VarInfoRec> VarInfoMap;
+
+    /*!
+     * \brief group-variable information map
+     *
+     * \details This typedef is defining the group-variable map which is a nested map
+     *          containing information about the variables in the input file.
+     *          This map is keyed first by group name, then by variable name and is
+     *          used to pass information to the caller so that the caller can iterate
+     *          through the contents of the input file.
+     */
     typedef std::map<std::string, VarInfoMap> GroupVarInfoMap;
 
  public:
@@ -108,12 +124,24 @@ class IodaIO : public util::Printable {
     std::size_t nvars() const;
 
     // Group level iterator
+    /*!
+     * \brief group-variable map, group iterator
+     *
+     * \details This typedef is defining the iterator for the group key in the
+     *          group-variable map. See the GrpVarInfoMap typedef for details.
+     */
     typedef GroupVarInfoMap::const_iterator GroupIter;
     GroupIter group_begin();
     GroupIter group_end();
     std::string group_name(GroupIter);
 
     // Variable level iterator
+    /*!
+     * \brief group-variable map, variable iterator
+     *
+     * \details This typedef is defining the iterator for the variable key in the
+     *          group-variable map. See the GrpVarInfoMap typedef for details.
+     */
     typedef VarInfoMap::const_iterator VarIter;
     VarIter var_begin(GroupIter);
     VarIter var_end(GroupIter);
@@ -135,22 +163,39 @@ class IodaIO : public util::Printable {
 
     // Data members
 
-    /*! \brief file name */
+    /*!
+     * \brief file name
+     */
     std::string fname_;
 
-    /*! \brief file mode ("r" -> read, "w" -> overwrite, "W" -> create and write) */
+    /*!
+     * \brief file mode
+     *
+     * \details File modes that are accepted are: "r" -> read, "w" -> overwrite,
+                and "W" -> create and write.
+     */
     std::string fmode_;
 
-    /*! \brief number of unique locations */
+    /*!
+     * \brief number of unique locations
+     */
     std::size_t nlocs_;
 
-    /*! \brief number of unique records */
+    /*!
+     * \brief number of unique records
+     */
     std::size_t nrecs_;
 
-    /*! \brief number of unique variables */
+    /*!
+     * \brief number of unique variables
+     */
     std::size_t nvars_;
 
-    /*! \brief Variable Name : Group Name */
+    /*!
+     * \brief group-varialble information map
+     *
+     * \details See the GrpVarInfoMap typedef for details.
+     */
     GroupVarInfoMap grp_var_info_;
 };
 
