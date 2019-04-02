@@ -110,7 +110,7 @@ void testInsertInquire() {
     float ExpectedVnorm = containers[i].getFloat("InData.norm");
     float Tolerance = containers[i].getFloat("InData.tolerance");
 
-    float Vnorm;
+    float Vnorm = 0.0;
     if (VarType.compare("float") == 0) {
       std::vector<float> VarData(Nlocs);
       TestContainer->inquire(GroupName, VarName, Nlocs, VarData.data());
