@@ -209,7 +209,17 @@ class ObsSpaceContainer: public util::Printable {
      std::size_t nvars() const {return nvars_;}
 
      // -----------------------------------------------------------------------------
-
+     // LoadFromDb - load data from the obs container into VarData
+     //
+     // The overloaded style of interface is currently being used so that this interface is
+     // consistent with the interfaces of ObsSpace and IodaIO.
+     //
+     // Using the overloaded method style of interface (as opposed to a templated
+     // interface) was done to restrict the allowed data types to only those of
+     // the overloaded interfaces. If a new type is to be added, you have to deliberately
+     // change the interface, update the code in the templated helper, etc. If the interface
+     // itself were templated, then you could just call the interface with your new type
+     // and it may or may not work.
      void LoadFromDb(const std::string & GroupName, const std::string & VarName,
                   const std::vector<std::size_t> & VarShape, int * VarData) const;
      void LoadFromDb(const std::string & GroupName, const std::string & VarName,
@@ -220,7 +230,10 @@ class ObsSpaceContainer: public util::Printable {
                   const std::vector<std::size_t> & VarShape, util::DateTime * VarData) const;
 
      // -----------------------------------------------------------------------------
-
+     // StorToDb - store data from VarData into the obs container
+     //
+     // See notes above for LoadToDb regarding why the interfaced consists of overloaded
+     // methods instead of a templated method.
      void StoreToDb(const std::string & GroupName, const std::string & VarName,
                     const std::vector<std::size_t> & VarShape, const int * VarData);
      void StoreToDb(const std::string & GroupName, const std::string & VarName,

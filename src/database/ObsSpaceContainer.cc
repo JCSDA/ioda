@@ -35,10 +35,6 @@ namespace ioda {
  *          caller needs to allocate and assign the memory that the VarData parameter
  *          points to.
  *
- * Note that the overloaded function style of interface with explicit data types is
- * being used to accommodate the bindings for the ObsSpace Fortran interface. Otherwise,
- * a templated interface could be used instead.
- *
  * \param[in] GroupName Name of container group (ObsValue, ObsError, MetaData, etc.)
  * \param[in] VarName Name of container variable
  * \param[in] VarShape Dimension sizes of variable
@@ -124,10 +120,6 @@ void ObsSpaceContainer::StoreToDb_helper(const std::string & GroupName,
  * \details The following four LoadFromDb methods are the same except for the data type
  *          of the data that is being stored (integer, float, string, DateTime). The
  *          caller needs to allocate the memory that the VarData parameter points to.
- *
- * Note that the overloaded function style of interface with explicit data types is
- * being used to accommodate the bindings for the ObsSpace Fortran interface. Otherwise,
- * a templated interface could be used instead.
  *
  * \param[in] GroupName Name of container group (ObsValue, ObsError, MetaData, etc.)
  * \param[in] VarName Name of container variable
