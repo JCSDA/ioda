@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2017 UCAR
+ * (C) Copyright 2017-2019 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -33,9 +33,27 @@ namespace ioda {
   class ObsVector;
 
 /// Observation Space
+/*!
+ * \brief Observation space class for IODA
+ *
+ * \details This class handles the memory store of observation data. It handles the transfer
+ *          of data between memory and files, the distribution of obs data across multiple
+ *          process elements, the filtering out of obs data that is outside the DA timing
+ *          window, the transfer of data between UFO, OOPS and IODA, and data type
+ *          conversion that is "missing value aware".
+ *
+ * During the DA run, all data transfers are done in memory. The only time file I/O is
+ * invoked is during the constructor (read from the file into the obs container) and
+ * optionally during the the destructor (write from obs container into the file).
+ *
+ * \author Stephen Herbener, Xin Zhang (JCSDA)
+ */
 class ObsSpace : public oops::ObsSpaceBase {
  public:
   ObsSpace(const eckit::Configuration &, const util::DateTime &, const util::DateTime &);
+  /*!
+   * \details Copy constructor for an ObsSpace object.
+   */
   ObsSpace(const ObsSpace &);
   ~ObsSpace();
 
@@ -61,9 +79,13 @@ class ObsSpace : public oops::ObsSpaceBase {
   void put_db(const std::string & group, const std::string & name,
               const size_t & vsize, const double vdata[]);
 
+  /*! \details This method will return the name of the obs type being stored */
   const std::string & obsname() const {return obsname_;}
+  /*! \details This method will return the start of the DA timing window */
   const util::DateTime & windowStart() const {return winbgn_;}
+  /*! \details This method will return the end of the DA timing window */
   const util::DateTime & windowEnd() const {return winend_;}
+  /*! \details This method will return the associated MPI communicator */
   const eckit::mpi::Comm & comm() const {return commMPI_;}
 
   void generateDistribution(const eckit::Configuration &);
@@ -76,8 +98,7 @@ class ObsSpace : public oops::ObsSpaceBase {
   ObsSpace & operator= (const ObsSpace &);
 
   // Initialize the database from the input file
-  void InitFromFile(const std::string & filename, const std::string & mode,
-                    const util::DateTime &, const util::DateTime &);
+  void InitFromFile(const std::string & filename);
 
   template<typename VarType>
   void ApplyDistIndex(std::unique_ptr<VarType> & FullData,
