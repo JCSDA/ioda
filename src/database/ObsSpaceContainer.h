@@ -107,7 +107,7 @@ class ObsSpaceContainer: public util::Printable {
                 const std::vector<std::size_t> & shape, const std::size_t & size,
                 std::unique_ptr<boost::any[]> & vect)
             : group(group), variable(variable), mode("rw"), type(type),
-              shape(shape), size(size), data(std::move(vect)) {}
+              size(size), shape(shape), data(std::move(vect)) {}
 
          // Constructor with passed read & write mode
          VarRecord(const std::string & group, const std::string & variable,
@@ -115,7 +115,7 @@ class ObsSpaceContainer: public util::Printable {
                    const std::vector<std::size_t> & shape,
                    const std::size_t & size, std::unique_ptr<boost::any[]> & vect)
             : group(group), variable(variable), mode(mode), type(type),
-              shape(shape), size(size), data(std::move(vect)) {}
+              size(size), shape(shape), data(std::move(vect)) {}
      };  // end of VarRecord definition
 
      // Section 3: indexing methods, organization of elements
