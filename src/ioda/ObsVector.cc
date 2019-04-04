@@ -33,7 +33,7 @@ ObsVector::ObsVector(ObsSpace & obsdb, const oops::Variables & vars)
 ObsVector::ObsVector(const ObsVector & other, const bool copy)
   : obsdb_(other.obsdb_), obsvars_(other.obsvars_), nvars_(other.nvars_),
     nlocs_(other.nlocs_), values_(nlocs_ * nvars_), missing_(other.missing_) {
-  oops::Log::debug() << "ObsVector constructed with " << nvars_
+  oops::Log::debug() << "ObsVector copy constructed with " << nvars_
                      << " variables resulting in " << values_.size()
                      << " elements." << std::endl;
   if (copy) values_ = other.values_;
