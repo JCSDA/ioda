@@ -37,12 +37,8 @@ class IodaIOfactory {
   ~IodaIOfactory() { }
 
   // Factory methods
+  static ioda::IodaIO* Create(const std::string & FileName, const std::string & FileMode);
   static ioda::IodaIO* Create(const std::string & FileName, const std::string & FileMode,
-                              const util::DateTime & bgn, const util::DateTime & end,
-                              const eckit::mpi::Comm & comm);
-  static ioda::IodaIO* Create(const std::string & FileName, const std::string & FileMode,
-                              const util::DateTime & bgn, const util::DateTime & end,
-                              const eckit::mpi::Comm & comm,
                               const std::size_t & Nlocs, const std::size_t & Nrecs,
                               const std::size_t & Nvars);
 };

@@ -13,10 +13,13 @@
 
 #include <string>
 #include <cmath>
+#include <typeinfo>
 
 #define ECKIT_TESTING_SELF_REGISTER_CASES 0
 
 #include <boost/noncopyable.hpp>
+
+#include <boost/any.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/testing/Test.h"
@@ -31,17 +34,53 @@
 namespace ioda {
 namespace test {
 
-const util::DateTime bgn(1972, 3, 8, 0, 0, 0);
-const util::DateTime end(2092, 3, 8, 0, 0, 0);
+// -----------------------------------------------------------------------------
+
+void ExtractGrpVarName(const std::string & GrpVarName, std::string & GroupName,
+                       std::string & VarName) {
+  std::size_t Spos = GrpVarName.find("@");
+  if (Spos != GrpVarName.npos) {
+    GroupName = GrpVarName.substr(Spos+1);
+    VarName = GrpVarName.substr(0, Spos);
+  } else {
+    GroupName = "GroupUndefined";
+    VarName = GrpVarName;
+  }
+}
+
+// -----------------------------------------------------------------------------
+
+std::vector<std::string> CharArrayToStringVector(const char * VarData,
+                                                 const std::vector<std::size_t> VarShape) {
+  // VarShape[0] is the number of strings
+  // VarShape[1] is the length of each string
+  std::size_t Nstrings = VarShape[0];
+  std::size_t StrLength = VarShape[1];
+
+  std::vector<std::string> StringVector(Nstrings,"");
+  for (std::size_t i = 0; i < Nstrings; i++) {
+    // Copy characters for i-th string into a char vector
+    std::vector<char> CharVector(StrLength, ' ');
+    for (std::size_t j = 0; j < StrLength; j++) {
+      CharVector[j] = VarData[(i*StrLength) + j];
+    }
+
+    // Convert the char vector to a single string. Any trailing white space will be
+    // included in the string, so strip off the trailing white space.
+    std::string String(CharVector.begin(), CharVector.end());
+    String.erase(String.find_last_not_of(" \t\n\r\f\v") + 1);
+    StringVector[i] = String;
+  }
+
+  return StringVector;
+}
 
 // -----------------------------------------------------------------------------
 
 void testConstructor() {
   const eckit::LocalConfiguration conf(::test::TestEnvironment::config());
-  std::vector<eckit::LocalConfiguration> obstypes;
 
   std::string FileName;
-  std::string TestObsType;
   std::unique_ptr<ioda::IodaIO> TestIO;
 
   std::size_t Nlocs;
@@ -50,50 +89,73 @@ void testConstructor() {
   std::size_t ExpectedNlocs;
   std::size_t ExpectedNrecs;
   std::size_t ExpectedNvars;
-  // Walk through the different ObsTypes and try constructing with the files.
-  conf.get("ObsTypes", obstypes);
-  for (std::size_t i = 0; i < obstypes.size(); ++i) {
-    oops::Log::debug() << "IodaIO::ObsTypes: conf" << obstypes[i] << std::endl;
 
-    TestObsType = obstypes[i].getString("ObsType");
-    oops::Log::debug() << "IodaIO::ObsType: " << TestObsType << std::endl;
+  // Contructor in read mode
+  FileName = conf.getString("TestInput.filename");
+  TestIO.reset(ioda::IodaIOfactory::Create(FileName, "r"));
+  EXPECT(TestIO.get());
 
-    FileName = obstypes[i].getString("Input.filename");
-    TestIO.reset(ioda::IodaIOfactory::Create(FileName, "r", bgn, end, oops::mpi::comm()));
-    EXPECT(TestIO.get());
+  // Constructor in read mode is also responsible for setting nobs and nlocs
+  ExpectedNlocs = conf.getInt("TestInput.nlocs");
+  ExpectedNrecs = conf.getInt("TestInput.nrecs");
+  ExpectedNvars = conf.getInt("TestInput.nvars");
 
-    // Constructor in read mode is also responsible for setting nobs and nlocs
-    ExpectedNlocs = obstypes[i].getInt("Input.metadata.nlocs");
-    ExpectedNrecs = obstypes[i].getInt("Input.metadata.nrecs");
-    ExpectedNvars = obstypes[i].getInt("Input.metadata.nvars");
-    Nlocs = TestIO->nlocs();
-    Nrecs = TestIO->nrecs();
-    Nvars = TestIO->nvars();
+  Nlocs = TestIO->nlocs();
+  Nrecs = TestIO->nrecs();
+  Nvars = TestIO->nvars();
 
-    EXPECT(ExpectedNlocs == Nlocs);
-    EXPECT(ExpectedNrecs == Nrecs);
-    EXPECT(ExpectedNvars == Nvars);
+  EXPECT(ExpectedNlocs == Nlocs);
+  EXPECT(ExpectedNrecs == Nrecs);
+  EXPECT(ExpectedNvars == Nvars);
 
-    if (obstypes[i].has("Output.filename")) {
-      FileName = obstypes[i].getString("Output.filename");
-      ExpectedNlocs = obstypes[i].getInt("Output.metadata.nlocs");
-      ExpectedNrecs = obstypes[i].getInt("Output.metadata.nrecs");
-      ExpectedNvars = obstypes[i].getInt("Output.metadata.nvars");
+  // Constructor in write mode
+  FileName = conf.getString("TestOutput.filename");
 
-      TestIO.reset(ioda::IodaIOfactory::Create(FileName, "W", bgn, end, oops::mpi::comm(),
-                                               ExpectedNlocs, ExpectedNrecs, ExpectedNvars));
-      EXPECT(TestIO.get());
+  ExpectedNlocs = conf.getInt("TestOutput.nlocs");
+  ExpectedNrecs = conf.getInt("TestOutput.nrecs");
+  ExpectedNvars = conf.getInt("TestOutput.nvars");
 
-      Nlocs = TestIO->nlocs();
-      Nrecs = TestIO->nrecs();
-      Nvars = TestIO->nvars();
+  TestIO.reset(ioda::IodaIOfactory::Create(FileName, "W", ExpectedNlocs,
+                                           ExpectedNrecs, ExpectedNvars));
+  EXPECT(TestIO.get());
 
-      EXPECT(ExpectedNlocs == Nlocs);
-      EXPECT(ExpectedNrecs == Nrecs);
-      EXPECT(ExpectedNvars == Nvars);
-      }
+  Nlocs = TestIO->nlocs();
+  Nrecs = TestIO->nrecs();
+  Nvars = TestIO->nvars();
+
+  EXPECT(ExpectedNlocs == Nlocs);
+  EXPECT(ExpectedNrecs == Nrecs);
+  EXPECT(ExpectedNvars == Nvars);
+  }
+
+// -----------------------------------------------------------------------------
+
+void testGrpVarIter() {
+  const eckit::LocalConfiguration conf(::test::TestEnvironment::config());
+  std::vector<eckit::LocalConfiguration> obstypes;
+
+  std::string FileName;
+  std::unique_ptr<ioda::IodaIO> TestIO;
+
+  // Constructor in read mode will generate a group variable container.
+  FileName = conf.getString("TestInput.filename");
+  TestIO.reset(ioda::IodaIOfactory::Create(FileName, "r"));
+  EXPECT(TestIO.get());
+
+  // Test the iterators by walking through the entire list of variables
+  // and check the count of variables (total number in the file) with the
+  // expected count.
+  std::size_t VarCount = 0;
+  std::size_t ExpectedVarCount = conf.getInt("TestInput.nvars_in_file");
+  for (IodaIO::GroupIter igrp = TestIO->group_begin(); igrp != TestIO->group_end(); igrp++) {
+    std::string GroupName = TestIO->group_name(igrp);
+
+    for (IodaIO::VarIter ivar = TestIO->var_begin(igrp); ivar != TestIO->var_end(igrp); ivar++) {
+      VarCount++;
     }
   }
+  EXPECT(VarCount == ExpectedVarCount);
+}
 
 // -----------------------------------------------------------------------------
 
@@ -101,180 +163,188 @@ void testReadVar() {
   const eckit::LocalConfiguration conf(::test::TestEnvironment::config());
 
   std::vector<eckit::LocalConfiguration> obstypes;
-  std::vector<std::string> varnames;
-  std::vector<float> ExpectedVnorms;
+  std::vector<std::string> GrpVarNames;
 
   std::string FileName;
   std::string TestObsType;
   std::unique_ptr<ioda::IodaIO> TestIO;
-  std::size_t Vsize;
-  std::unique_ptr<float[]> TestVarData;
-  float Vnorm;
-  float Tol;
 
-  // Walk through the different ObsTypes and try constructing with the files.
-  conf.get("ObsTypes", obstypes);
-  for (std::size_t i = 0; i < obstypes.size(); ++i) {
-    oops::Log::debug() << "IodaIO::ObsTypes: conf" << obstypes[i] << std::endl;
+  FileName = conf.getString("TestInput.filename");
+  TestIO.reset(ioda::IodaIOfactory::Create(FileName, "r"));
 
-    TestObsType = obstypes[i].getString("ObsType");
-    oops::Log::debug() << "IodaIO::ObsType: " << TestObsType << std::endl;
+  // Read in data from the file and check values.
+  GrpVarNames = conf.getStringVector("TestInput.variables");
+  for(std::size_t i = 0; i < GrpVarNames.size(); ++i) {
+    // Split out variable and group names
+    std::string VarName;
+    std::string GroupName;
+    ExtractGrpVarName(GrpVarNames[i], GroupName, VarName);
 
-    FileName = obstypes[i].getString("Input.filename");
-    TestIO.reset(ioda::IodaIOfactory::Create(FileName, "r", bgn, end, oops::mpi::comm()));
+    // Get decriptions of variable
+    std::string VarType = TestIO->var_dtype(GroupName, VarName);
+    std::vector<std::size_t> VarShape = TestIO->var_shape(GroupName, VarName);
+    std::size_t VarSize = 1;
+    for (std::size_t j = 0; j < VarShape.size(); j++) {
+      VarSize *= VarShape[j];
+    }
 
-    // Read in data from the file and check values.
-    varnames = obstypes[i].getStringVector("Input.variables");
-    ExpectedVnorms = obstypes[i].getFloatVector("Input.metadata.norms");
-    Tol = obstypes[i].getFloat("Input.metadata.tolerance");
-    Vsize = TestIO->nlocs();
-    TestVarData.reset(new float[Vsize]);
-    for(std::size_t j = 0; j < varnames.size(); ++j) {
-      TestIO->ReadVar(varnames[j], TestVarData.get());
-
-      // Compute the vector length TestVarData and compare with config values
-      Vnorm = 0.0;
-      for(std::size_t k = 0; k < Vsize; ++k) {
-        Vnorm += pow(TestVarData.get()[k], 2.0);
-        }
-      Vnorm = sqrt(Vnorm);
-
-      EXPECT(oops::is_close(Vnorm, ExpectedVnorms[j], Tol));
+    // Read and check the variable contents
+    std::string ExpectedVarDataName = "TestInput.var" + std::to_string(i);
+    float Tolerance = conf.getFloat("TestInput.tolerance");
+    if (VarType.compare("int") == 0) {
+      std::vector<int> TestVarData(VarSize, 0);
+      TestIO->ReadVar(GroupName, VarName, VarShape, TestVarData.data());
+      std::vector<int> ExpectedVarData = conf.getIntVector(ExpectedVarDataName);
+      for (std::size_t j = 0; j < TestVarData.size(); j++) {
+        EXPECT(TestVarData[j] == ExpectedVarData[j]);
+      }
+    } else if ((VarType.compare("float") == 0) or (VarType.compare("double") == 0)) {
+      std::vector<float> TestVarData(VarSize, 0.0);
+      TestIO->ReadVar(GroupName, VarName, VarShape, TestVarData.data());
+      std::vector<float> ExpectedVarData = conf.getFloatVector(ExpectedVarDataName);
+      for (std::size_t j = 0; j < TestVarData.size(); j++) {
+        EXPECT(oops::is_close(TestVarData[j], ExpectedVarData[j], Tolerance));
+      }
+    } else if (VarType.compare("char") == 0) {
+      std::unique_ptr<char[]> TestVarData(new char[VarSize]);
+      TestIO->ReadVar(GroupName, VarName, VarShape, TestVarData.get());
+      std::vector<std::string> TestStrings =
+                               CharArrayToStringVector(TestVarData.get(), VarShape);
+      std::vector<std::string> ExpectedVarData = conf.getStringVector(ExpectedVarDataName);
+      for (std::size_t j = 0; j < TestStrings.size(); j++) {
+        EXPECT(TestStrings[j] == ExpectedVarData[j]);
       }
     }
   }
+}
 
 // -----------------------------------------------------------------------------
 
 void testWriteVar() {
   const eckit::LocalConfiguration conf(::test::TestEnvironment::config());
-  std::vector<eckit::LocalConfiguration> obstypes;
-  std::vector<std::string> varnames;
-
-  std::string FileName;
-  std::string TestObsType;
   std::unique_ptr<ioda::IodaIO> TestIO;
-  std::size_t Nlocs;
-  std::size_t Nrecs;
-  std::size_t Nvars;
-  std::unique_ptr<float[]> TestVarData;
 
-  std::size_t TestNlocs;
-  std::size_t TestNrecs;
-  std::size_t TestNvars;
+  // Try writing contrived data into the output file. One of each data type, and size.
+  std::string FileName = conf.getString("TestOutput.filename");
+  std::size_t ExpectedNlocs = conf.getInt("TestOutput.nlocs");
+  std::size_t ExpectedNrecs = conf.getInt("TestOutput.nrecs");
+  std::size_t ExpectedNvars = conf.getInt("TestOutput.nvars");
+  TestIO.reset(ioda::IodaIOfactory::Create(FileName, "W", ExpectedNlocs,
+                                           ExpectedNrecs, ExpectedNvars));
 
-  int VarSum;
-  int ExpectedSum;
+  // Float data
+  std::vector<float> ExpectedFloatData(ExpectedNlocs, 0.0);
+  for (std::size_t i = 0; i < ExpectedNlocs; ++i) {
+    ExpectedFloatData[i] = float(i) + 0.5;
+  }
+  std::vector<std::size_t> FloatVarShape{ ExpectedNlocs };
+  std::string FloatGrpName = "MetaData";
+  std::string FloatVarName = "test_float";
+  TestIO->WriteVar(FloatGrpName, FloatVarName, FloatVarShape, ExpectedFloatData.data());
 
-  // Walk through the different ObsTypes and try constructing with the files.
-  conf.get("ObsTypes", obstypes);
-  for (std::size_t i = 0; i < obstypes.size(); ++i) {
-    oops::Log::debug() << "IodaIO::ObsTypes: conf" << obstypes[i] << std::endl;
+  // Int data
+  std::vector<int> ExpectedIntData(ExpectedNvars, 0);
+  for (std::size_t i = 0; i < ExpectedNvars; ++i) {
+    ExpectedIntData[i] = i * 2;
+  }
+  std::vector<std::size_t> IntVarShape{ ExpectedNvars };
+  std::string IntGrpName = "VarMetaData";
+  std::string IntVarName = "test_int";
+  TestIO->WriteVar(IntGrpName, IntVarName, IntVarShape, ExpectedIntData.data());
 
-    TestObsType = obstypes[i].getString("ObsType");
-    oops::Log::debug() << "IodaIO::ObsType: " << TestObsType << std::endl;
+  // Char data
+  std::string TempString;
+  std::unique_ptr<char[]> ExpectedCharData(new char[ExpectedNrecs * 5]);
+  TempString = "HelloWorld";
+  for (std::size_t i = 0; i < TempString.size(); i++) {
+    ExpectedCharData.get()[i] = TempString[i];
+  }
+  std::vector<std::size_t> CharVarShape{ ExpectedNrecs, 5 };
+  std::string CharGrpName = "RecMetaData";
+  std::string CharVarName = "test_char";
+  TestIO->WriteVar(CharGrpName, CharVarName, CharVarShape, ExpectedCharData.get());
 
-    // Not all of the tests have output files
-    if (obstypes[i].has("Output.filename")) {
-      FileName = obstypes[i].getString("Output.filename");
-      Nlocs = obstypes[i].getInt("Output.metadata.nlocs");
-      Nrecs = obstypes[i].getInt("Output.metadata.nrecs");
-      Nvars = obstypes[i].getInt("Output.metadata.nvars");
-      TestIO.reset(ioda::IodaIOfactory::Create(FileName, "W", bgn, end, oops::mpi::comm(),
-                                               Nlocs, Nrecs, Nvars));
+  // Try char data with same string size
+  std::unique_ptr<char[]> ExpectedChar2Data(new char[ExpectedNvars * 5]);
+  TempString = "12345aaaaa67890bbbbbABCDE";
+  for (std::size_t i = 0; i < TempString.size(); i++) {
+    ExpectedChar2Data.get()[i] = TempString[i];
+  }
+  std::vector<std::size_t> Char2VarShape{ ExpectedNvars, 5 };
+  std::string Char2GrpName = "VarMetaData";
+  std::string Char2VarName = "test_char2";
+  TestIO->WriteVar(Char2GrpName, Char2VarName, Char2VarShape, ExpectedChar2Data.get());
 
-      // Try writing contrived data into the output file
-      varnames = obstypes[i].getStringVector("Output.variables");
-      TestVarData.reset(new float[Nlocs]);
-      ExpectedSum = 0;
-      for (std::size_t j = 0; j < Nlocs; ++j) {
-        TestVarData.get()[j] = float(j);
-        ExpectedSum += j;
-        }
-      ExpectedSum *= varnames.size();
+  // Try char data with different shape
+  std::unique_ptr<char[]> ExpectedChar3Data(new char[ExpectedNlocs * 20]);
+  std::vector<std::string> Dates = {
+    "2018-04-15T00:00:00Z", "2018-04-15T00:00:30Z", "2018-04-15T00:01:00Z",
+    "2018-04-15T00:01:30Z", "2018-04-15T00:02:00Z", "2018-04-15T00:02:30Z",
+    "2018-04-15T00:03:00Z", "2018-04-15T00:03:30Z" };
+  TempString = Dates[0] + Dates[1] + Dates[2] + Dates[3] + Dates[4] + Dates[5] +
+               Dates[6] + Dates[7];
+  for (std::size_t i = 0; i < TempString.size(); i++) {
+    ExpectedChar3Data.get()[i] = TempString[i];
+  }
+  std::vector<std::size_t> Char3VarShape{ ExpectedNlocs, 20 };
+  std::string Char3GrpName = "MetaData";
+  std::string Char3VarName = "datetime";
+  TestIO->WriteVar(Char3GrpName, Char3VarName, Char3VarShape, ExpectedChar3Data.get());
 
-      for(std::size_t j = 0; j < varnames.size(); ++j) {
-        TestIO->WriteVar(varnames[j], TestVarData.get());
-        }
+  // open the file we just created and see if it contains what we just wrote into it
+  TestIO.reset(ioda::IodaIOfactory::Create(FileName, "r"));
 
-      // open the file we just created and see if it contains what we just wrote into it
-      TestIO.reset(ioda::IodaIOfactory::Create(FileName, "r", bgn, end, oops::mpi::comm()));
+  std::size_t TestNlocs = TestIO->nlocs();
+  std::size_t TestNrecs = TestIO->nrecs();
+  std::size_t TestNvars = TestIO->nvars();
 
-      TestNlocs = TestIO->nlocs();
-      TestNrecs = TestIO->nrecs();
-      TestNvars = TestIO->nvars();
+  EXPECT(TestNlocs == ExpectedNlocs);
+  EXPECT(TestNrecs == ExpectedNrecs);
+  EXPECT(TestNvars == ExpectedNvars);
 
-      EXPECT(TestNlocs == Nlocs);
-      EXPECT(TestNrecs == Nrecs);
-      EXPECT(TestNvars == Nvars);
-
-      VarSum = 0;
-      for(std::size_t j = 0; j < varnames.size(); ++j) {
-        TestIO->ReadVar(varnames[j], TestVarData.get());
-        for(std::size_t k = 0; k < Nlocs; ++k) {
-          VarSum += int(TestVarData.get()[k]);
-          }
-        }
-
-      EXPECT(VarSum == ExpectedSum);
-      }
-    }
+  float Tolerance = conf.getFloat("TestInput.tolerance");
+  std::vector<float> TestFloatData(ExpectedNlocs, 0.0);
+  TestIO->ReadVar(FloatGrpName, FloatVarName, FloatVarShape, TestFloatData.data());
+  for (std::size_t i = 0; i < ExpectedNlocs; i++) {
+    EXPECT(oops::is_close(TestFloatData[i], ExpectedFloatData[i], Tolerance));
   }
 
-// -----------------------------------------------------------------------------
-
-void testReadDateTime() {
-  const eckit::LocalConfiguration conf(::test::TestEnvironment::config());
-
-  std::vector<eckit::LocalConfiguration> obstypes;
-
-  std::string FileName;
-  std::string TestObsType;
-  std::unique_ptr<ioda::IodaIO> TestIO;
-  std::size_t Vsize;
-  std::unique_ptr<uint64_t[]> TestVarDate;
-  std::unique_ptr<int[]> TestVarTime;
-  float Dnorm;
-  float Tnorm;
-  float ExpectedDnorm;
-  float ExpectedTnorm;
-  float Tol;
-
-  // Walk through the different ObsTypes and try constructing with the files.
-  conf.get("ObsTypes", obstypes);
-  for (std::size_t i = 0; i < obstypes.size(); ++i) {
-    oops::Log::debug() << "IodaIO::ObsTypes: conf" << obstypes[i] << std::endl;
-
-    TestObsType = obstypes[i].getString("ObsType");
-    oops::Log::debug() << "IodaIO::ObsType: " << TestObsType << std::endl;
-
-    FileName = obstypes[i].getString("Input.filename");
-    TestIO.reset(ioda::IodaIOfactory::Create(FileName, "r", bgn, end, oops::mpi::comm()));
-
-    // Read in data from the file and check values.
-    Vsize = TestIO->nlocs();
-    TestVarDate.reset(new uint64_t[Vsize]);
-    TestVarTime.reset(new int[Vsize]);
-    TestIO->ReadDateTime(TestVarDate.get(), TestVarTime.get());
-
-    // Compute the vector length TestVarData and compare with config values
-    Dnorm = 0.0;
-    Tnorm = 0.0;
-    for(std::size_t k = 0; k < Vsize; ++k) {
-      Dnorm += pow(float(TestVarDate.get()[k]), 2.0);
-      Tnorm += pow(float(TestVarTime.get()[k]), 2.0);
-      }
-    Dnorm = sqrt(Dnorm);
-    Tnorm = sqrt(Tnorm);
-
-    ExpectedDnorm = obstypes[i].getFloat("Input.datetime.dnorm");
-    ExpectedTnorm = obstypes[i].getFloat("Input.datetime.tnorm");
-    Tol = obstypes[i].getFloat("Input.datetime.tolerance");
-
-    EXPECT(oops::is_close(Dnorm, ExpectedDnorm, Tol));
-    EXPECT(oops::is_close(Tnorm, ExpectedTnorm, Tol));
-    }
+  std::vector<int> TestIntData(ExpectedNvars, 0);
+  TestIO->ReadVar(IntGrpName, IntVarName, IntVarShape, TestIntData.data());
+  for (std::size_t i = 0; i < TestIntData.size(); i++) {
+    EXPECT(TestIntData[i] == ExpectedIntData[i]);
   }
+
+  std::unique_ptr<char[]> TestCharData(new char[ExpectedNrecs * 5]);
+  TestIO->ReadVar(CharGrpName, CharVarName, CharVarShape, TestCharData.get());
+  std::vector<std::string> TestStrings =
+          CharArrayToStringVector(TestCharData.get(), CharVarShape);
+  std::vector<std::string> ExpectedStrings =
+          CharArrayToStringVector(ExpectedCharData.get(), CharVarShape);
+  for (std::size_t i = 0; i < TestStrings.size(); i++) {
+    EXPECT(TestStrings[i] == ExpectedStrings[i]);
+  }
+
+  std::unique_ptr<char[]> TestChar2Data(new char[ExpectedNvars * 5]);
+  TestIO->ReadVar(Char2GrpName, Char2VarName, Char2VarShape, TestChar2Data.get());
+  std::vector<std::string> TestStrings2 =
+          CharArrayToStringVector(TestChar2Data.get(), Char2VarShape);
+  std::vector<std::string> ExpectedStrings2 =
+          CharArrayToStringVector(ExpectedChar2Data.get(), Char2VarShape);
+  for (std::size_t i = 0; i < TestStrings2.size(); i++) {
+    EXPECT(TestStrings2[i] == ExpectedStrings2[i]);
+  }
+
+  std::unique_ptr<char[]> TestChar3Data(new char[ExpectedNlocs * 20]);
+  TestIO->ReadVar(Char3GrpName, Char3VarName, Char3VarShape, TestChar3Data.get());
+  std::vector<std::string> TestStrings3 =
+          CharArrayToStringVector(TestChar3Data.get(), Char3VarShape);
+  std::vector<std::string> ExpectedStrings3 =
+          CharArrayToStringVector(ExpectedChar3Data.get(), Char3VarShape);
+  for (std::size_t i = 0; i < TestStrings3.size(); i++) {
+    EXPECT(TestStrings3[i] == ExpectedStrings3[i]);
+  }
+}
 
 // -----------------------------------------------------------------------------
 
@@ -290,12 +360,12 @@ class IodaIO : public oops::Test {
 
     ts.emplace_back(CASE("fileio/IodaIO/testConstructor")
       { testConstructor(); });
+    ts.emplace_back(CASE("fileio/IodaIO/testGrpVarIter")
+      { testGrpVarIter(); });
     ts.emplace_back(CASE("fileio/IodaIO/testReadVar")
       { testReadVar(); });
     ts.emplace_back(CASE("fileio/IodaIO/testWriteVar")
       { testWriteVar(); });
-    ts.emplace_back(CASE("fileio/IodaIO/testReadDateTime")
-      { testReadDateTime(); });
   }
 };
 
