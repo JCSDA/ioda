@@ -22,7 +22,7 @@ Observations:
         variables:
           - air_temperature
         rms_equiv: 215.813393658623
-        tolerance: 1.0e-12
+        tolerance: 1.0e-14
 
   - ObsType: Radiosonde_2vars
     ObsData:
@@ -32,7 +32,7 @@ Observations:
           - air_temperature
           - specific_humidity
         rms_equiv: 175.100547361903
-        tolerance: 1.0e-12
+        tolerance: 1.0e-14
 
   - ObsType: Radiosonde_4vars
     ObsData:
@@ -44,5 +44,5 @@ Observations:
           - eastward_wind
           - northward_wind
         rms_equiv: 129.419005354608
-        tolerance: 1.0e-12
+        tolerance: 1.0e-14
 
