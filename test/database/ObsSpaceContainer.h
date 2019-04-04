@@ -14,15 +14,13 @@
 #include <string>
 #include <cmath>
 
-#define BOOST_TEST_NO_MAIN
-#define BOOST_TEST_ALTERNATIVE_INIT_API
-#define BOOST_TEST_DYN_LINK
-#include <boost/test/unit_test.hpp>
+#define ECKIT_TESTING_SELF_REGISTER_CASES 0
 
 #include <boost/noncopyable.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/mpi/Comm.h"
+#include "eckit/testing/Test.h"
 #include "oops/parallel/mpi/mpi.h"
 #include "oops/runs/Test.h"
 #include "oops/util/Logger.h"
@@ -57,7 +55,7 @@ void testConstructor() {
 
     // Instantiate a container
     TestContainer.reset(new ioda::ObsSpaceContainer(conf, bgn, end, mpi_comm));
-    BOOST_CHECK(TestContainer.get());
+    EXPECT(TestContainer.get());
     }
   }
 
@@ -92,7 +90,7 @@ void testInsertInquire() {
 
     // Instantiate a container
     TestContainer.reset(new ioda::ObsSpaceContainer(conf, bgn, end, mpi_comm));
-    BOOST_CHECK(TestContainer.get());
+    EXPECT(TestContainer.get());
 
     // Read in data and place in the container
     FileName = containers[i].getString("InData.filename");
@@ -103,8 +101,8 @@ void testInsertInquire() {
     Nlocs = TestContainer->nlocs();
     Nvars = TestContainer->nvars();
     
-    BOOST_CHECK_EQUAL(Nlocs, ExpectedNlocs);
-    BOOST_CHECK_EQUAL(Nvars, ExpectedNvars);
+    EXPECT(Nlocs == ExpectedNlocs);
+    EXPECT(Nvars == ExpectedNvars);
 
     std::string GroupName = containers[i].getString("InData.group");
     std::string VarName = containers[i].getString("InData.variable");
@@ -112,7 +110,7 @@ void testInsertInquire() {
     float ExpectedVnorm = containers[i].getFloat("InData.norm");
     float Tolerance = containers[i].getFloat("InData.tolerance");
 
-    float Vnorm = 0;
+    float Vnorm = 0.0;
     if (VarType.compare("float") == 0) {
       std::vector<float> VarData(Nlocs);
       TestContainer->inquire(GroupName, VarName, Nlocs, VarData.data());
@@ -127,7 +125,7 @@ void testInsertInquire() {
       }
     }
     Vnorm = sqrt(Vnorm);
-    BOOST_CHECK_CLOSE(Vnorm, ExpectedVnorm, Tolerance);
+    EXPECT(oops::is_close(Vnorm, ExpectedVnorm, Tolerance));
   }
 }
 
@@ -141,12 +139,12 @@ class ObsSpaceContainer : public oops::Test {
   std::string testid() const {return "test::ObsSpaceContainer";}
 
   void register_tests() const {
-    boost::unit_test::test_suite * ts = BOOST_TEST_SUITE("ObsSpaceContainer");
+    std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
-    ts->add(BOOST_TEST_CASE(&testConstructor));
-    ts->add(BOOST_TEST_CASE(&testInsertInquire));
-
-    boost::unit_test::framework::master_test_suite().add(ts);
+    ts.emplace_back(CASE("database/ObsSpaceContainer/testConstructor")
+      { testConstructor(); });
+    ts.emplace_back(CASE("database/ObsSpaceContainer/testInsertInquire")
+      { testInsertInquire(); });
   }
 };
 

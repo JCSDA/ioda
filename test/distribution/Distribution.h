@@ -14,15 +14,13 @@
 #include <string>
 #include <cmath>
 
-#define BOOST_TEST_NO_MAIN
-#define BOOST_TEST_ALTERNATIVE_INIT_API
-#define BOOST_TEST_DYN_LINK
-#include <boost/test/unit_test.hpp>
+#define ECKIT_TESTING_SELF_REGISTER_CASES 0
 
 #include <boost/noncopyable.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/mpi/Comm.h"
+#include "eckit/testing/Test.h"
 #include "oops/parallel/mpi/mpi.h"
 #include "oops/runs/Test.h"
 #include "oops/util/Logger.h"
@@ -55,7 +53,7 @@ void testConstructor() {
 
     DistName = dist_types[i].getString("Specs.dist_name");
     TestDist.reset(DistFactory->createDistribution(DistName));
-    BOOST_CHECK(TestDist.get());
+    EXPECT(TestDist.get());
     }
   }
 
@@ -83,7 +81,7 @@ void testDistribution() {
 
     DistName = dist_types[i].getString("Specs.dist_name");
     TestDist.reset(DistFactory->createDistribution(DistName));
-    BOOST_CHECK(TestDist.get());
+    EXPECT(TestDist.get());
 
     // Read the specs from the YAML
     std::size_t Nrecs = dist_types[i].getInt("Specs.nrecs");
@@ -98,7 +96,7 @@ void testDistribution() {
     for (std::size_t i = 0; i < TestDist->size(); i++) {
       Index[i] = TestDist->index()[i];
     }
-    BOOST_CHECK_EQUAL(Index, ExpectedIndex);
+    EXPECT(Index == ExpectedIndex);
   }
 }
 
@@ -112,12 +110,12 @@ class Distribution : public oops::Test {
   std::string testid() const {return "test::Distribution";}
 
   void register_tests() const {
-    boost::unit_test::test_suite * ts = BOOST_TEST_SUITE("Distribution");
+    std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
-    ts->add(BOOST_TEST_CASE(&testConstructor));
-    ts->add(BOOST_TEST_CASE(&testDistribution));
-
-    boost::unit_test::framework::master_test_suite().add(ts);
+    ts.emplace_back(CASE("distribution/Distribution/testConstructor")
+      { testConstructor(); });
+    ts.emplace_back(CASE("distribution/Distribution/testDistribution")
+      { testDistribution(); });
   }
 };
 

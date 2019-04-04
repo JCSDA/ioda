@@ -19,11 +19,11 @@ ObsTypes:
           - 16691.8828
           - 89251.125
           - 0.0
-        tolerance: 1.0e-3
+        tolerance: 1.0e-5
       datetime:
         dnorm: 8.09342669e+09
         tnorm: 0.0
-        tolerance:  1.0e-3
+        tolerance:  1.0e-5
     Output:
       filename: "testoutput/diagout_adt.nc4"
       variables:
@@ -48,11 +48,11 @@ ObsTypes:
           - 732.465759
           - 3530.88818
           - 0.0
-        tolerance: 1.0e-3
+        tolerance: 1.0e-5
       datetime:
         dnorm: 611439296
         tnorm: 0
-        tolerance:  1.0e-3
+        tolerance:  1.0e-5
     Output:
       filename: "testoutput/diagout_profile.nc4"
       variables:
@@ -77,11 +77,11 @@ ObsTypes:
           - 14496.9854
           - 61789.7734
           - 0.0
-        tolerance: 1.0e-3
+        tolerance: 1.0e-5
       datetime:
         dnorm: 9.5513856e+09
         tnorm: 0.0
-        tolerance:  1.0e-3
+        tolerance:  1.0e-5
     Output:
       filename: "testoutput/diagout_sst.nc4"
       variables:
@@ -106,11 +106,11 @@ ObsTypes:
           - 19777.5156
           - 57917.0898
           - 0.0
-        tolerance: 1.0e-3
+        tolerance: 1.0e-5
       datetime:
         dnorm: 5.39656192e+09
         tnorm: 0.0
-        tolerance:  1.0e-3
+        tolerance:  1.0e-5
     Output:
       filename: "testoutput/diagout_sic.nc4"
       variables:
@@ -135,11 +135,11 @@ ObsTypes:
           - 7581.30908
           - 13972.3623
           - 0.0
-        tolerance: 1.0e-3
+        tolerance: 1.0e-5
       datetime:
         dnorm: 1.81237133e+09
         tnorm: 0.0
-        tolerance:  1.0e-3
+        tolerance:  1.0e-5
     Output:
       filename: "testoutput/diagout_sit.nc4"
       variables:

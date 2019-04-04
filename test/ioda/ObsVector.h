@@ -14,14 +14,12 @@
 #include <string>
 #include <vector>
 
-#define BOOST_TEST_NO_MAIN
-#define BOOST_TEST_ALTERNATIVE_INIT_API
-#define BOOST_TEST_DYN_LINK
-#include <boost/test/unit_test.hpp>
+#define ECKIT_TESTING_SELF_REGISTER_CASES 0  
 
 #include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
+#include "eckit/testing/Test.h"
 #include "ioda/IodaTrait.h"
 #include "ioda/ObsSpace.h"
 #include "ioda/ObsVector.h"
@@ -78,10 +76,10 @@ void testConstructor() {
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     boost::scoped_ptr<ObsVector_> ov(new ObsVector_(*Test_::obspace()[jj], Test_::observed(jj)));
-    BOOST_CHECK(ov.get());
+    EXPECT(ov.get());
 
     ov.reset();
-    BOOST_CHECK(!ov.get());
+    EXPECT(!ov.get());
   }
 }
 
@@ -95,12 +93,12 @@ void testCopyConstructor() {
     boost::scoped_ptr<ObsVector_> ov(new ObsVector_(*Test_::obspace()[jj], Test_::observed(jj)));
 
     boost::scoped_ptr<ObsVector_> other(new ObsVector_(*ov));
-    BOOST_CHECK(other.get());
+    EXPECT(other.get());
 
     other.reset();
-    BOOST_CHECK(!other.get());
+    EXPECT(!other.get());
 
-    BOOST_CHECK(ov.get());
+    EXPECT(ov.get());
   }
 }
 
@@ -117,12 +115,12 @@ void testNotZero() {
     ov.random();
 
     const double ovov2 = dot_product(ov, ov);
-    BOOST_CHECK(ovov2 > zero);
+    EXPECT(ovov2 > zero);
 
     ov.zero();
 
     const double zz = dot_product(ov, ov);
-    BOOST_CHECK(zz == zero);
+    EXPECT(zz == zero);
   }
 }
 
@@ -148,7 +146,7 @@ void testRead() {
     ov->read("ObsValue");
     double Rms = ov->rms();
     
-    BOOST_CHECK_CLOSE(Rms, ExpectedRms, Tol);
+    EXPECT(oops::is_close(Rms, ExpectedRms, Tol));
   }
 }
 
@@ -178,7 +176,7 @@ void testSave() {
     ov_test->read("ObsTestValue");
     Rms = ov_test->rms();
     
-    BOOST_CHECK_CLOSE(Rms, ExpectedRms, 1.0e-12);
+    EXPECT(oops::is_close(Rms, ExpectedRms, 1.0e-12));
   }
 }
 
@@ -192,15 +190,18 @@ class ObsVector : public oops::Test {
   std::string testid() const {return "test::ObsVector<ioda::IodaTrait>";}
 
   void register_tests() const {
-    boost::unit_test::test_suite * ts = BOOST_TEST_SUITE("ObsVector");
+    std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
-    ts->add(BOOST_TEST_CASE(&testConstructor));
-    ts->add(BOOST_TEST_CASE(&testCopyConstructor));
-    ts->add(BOOST_TEST_CASE(&testNotZero));
-    ts->add(BOOST_TEST_CASE(&testRead));
-    ts->add(BOOST_TEST_CASE(&testSave));
-
-    boost::unit_test::framework::master_test_suite().add(ts);
+     ts.emplace_back(CASE("ioda/ObsVector/testConstructor")
+      { testConstructor(); });
+     ts.emplace_back(CASE("ioda/ObsVector/testCopyConstructor")
+      { testCopyConstructor(); });
+     ts.emplace_back(CASE("ioda/ObsVector/testNotZero")
+      { testNotZero(); }); 
+     ts.emplace_back(CASE("ioda/ObsVector/testRead")
+      { testRead(); });  
+     ts.emplace_back(CASE("ioda/ObsVector/testSave")
+      { testSave(); });  
   }
 };
 

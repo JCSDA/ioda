@@ -13,8 +13,8 @@ Containers:
       group: "ObsValue"
       variable: "air_temperature"
       type: "float"
-      norm: 2470.09741
-      tolerance: 1.0e-3
+      norm: 2470.10
+      tolerance: 1.0e-5
 
   - Container: "AMSU-A"
     InData:
@@ -37,5 +37,5 @@ Containers:
       group: "PreQC"
       variable: "aerosol_optical_depth_4"
       type: "integer"
-      norm: 0.0
-      tolerance: 1.0e-3
+      norm: 0.00000
+      tolerance: 1.0e-5
