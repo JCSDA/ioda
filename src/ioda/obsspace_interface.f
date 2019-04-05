@@ -73,6 +73,18 @@ subroutine c_obsspace_get_real64(obss, group, vname, length, vect) &
   real(c_double), intent(inout) :: vect(length)
 end subroutine c_obsspace_get_real64
   
+subroutine c_obsspace_get_datetime(obss, group, vname, length, date, time) &
+              & bind(C,name='obsspace_get_datetime_f')
+  use, intrinsic :: iso_c_binding, only : c_ptr,c_char,c_size_t,c_int32_t
+  implicit none
+  type(c_ptr), value :: obss
+  character(kind=c_char, len=1), intent(in) :: group(*)
+  character(kind=c_char, len=1), intent(in) :: vname(*)
+  integer(c_size_t), intent(in) :: length
+  integer(c_int32_t), intent(inout) :: date(length)
+  integer(c_int32_t), intent(inout) :: time(length)
+end subroutine c_obsspace_get_datetime
+  
 !-------------------------------------------------------------------------------
 ! store data in ObsSpace
 

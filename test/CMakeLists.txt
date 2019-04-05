@@ -14,7 +14,6 @@ list( APPEND ioda_test_input
   testinput/iodatest_fileio.yml
   testinput/iodatest_distribution.yml
   testinput/iodatest_obsspace_container.yml
-  testinput/iodatest_marine_fileio.yml
   testinput/iodatest_marine_obsspace.yml  
   testinput/iodatest_fileio_odb_api.yml
 )
@@ -66,6 +65,8 @@ list( APPEND ioda_test_data
   marine/cryosat2-2018-04-15.nc
   marine/icec-2018-04-15.nc
   marine/sst_obs-2018-04-15.nc4
+
+  testfiles/fileio.nc4
 )
 
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Data)
@@ -113,16 +114,10 @@ ecbuild_add_test( TARGET test_ioda_marine_obsspace
                   SOURCES mains/TestObsSpace.cc
                   ARGS "testinput/iodatest_marine_obsspace.yml"
                   LIBS    ioda )
-
 		
 ecbuild_add_test( TARGET test_ioda_fileio
                   SOURCES mains/TestIodaIO.cc
                   ARGS "testinput/iodatest_fileio.yml"
-                  LIBS    ioda )
-
-ecbuild_add_test( TARGET test_ioda_marine_fileio
-                  SOURCES mains/TestIodaIO.cc
-                  ARGS "testinput/iodatest_marine_fileio.yml"
                   LIBS    ioda )
 
 if (HAVE_ODB_API)
