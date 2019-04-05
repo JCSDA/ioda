@@ -29,6 +29,8 @@ extern "C" {
                              const std::size_t &, float*);
   void obsspace_get_real64_f(const ObsSpace &, const char *, const char *,
                              const std::size_t &, double*);
+  void obsspace_get_datetime_f(const ObsSpace &, const char *, const char *,
+                               const std::size_t &, int32_t*, int32_t*);
 
   void obsspace_put_int32_f(ObsSpace &, const char *, const char *,
                             const std::size_t &, int32_t*);
