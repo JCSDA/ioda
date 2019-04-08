@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2017 UCAR
+ * (C) Copyright 2017-2019 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -16,6 +16,19 @@ namespace ioda {
 RoundRobin::~RoundRobin() {}
 
 // -----------------------------------------------------------------------------
+/*!
+ * \brief Round-robin distribution
+ *
+ * \details This method distributes observations according to a round-robin scheme.
+ *          The round-robin scheme simply selects all locations where the modulus of
+ *          the locations index relative to the number of process elements equals
+ *          the rank of the process element we are running on. This does a good job
+ *          of distributing the observations evenly across processors which optimizes
+ *          the load balancing.
+ *
+ * \param[in] comm The eckit MPI communicator object for this run
+ * \param[in] gnlocs The total number of locations from the input obs file
+ */
 void RoundRobin::distribution(const eckit::mpi::Comm & comm, const std::size_t gnlocs) {
     // Round-Robin distributing the global total locations among comm.
     std::size_t nproc = comm.size();

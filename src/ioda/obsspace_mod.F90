@@ -179,15 +179,17 @@ subroutine obsspace_get_db_datetime(obss, group, vname, vect)
   type(datetime), intent(inout) :: vect(:)
 
   integer(c_size_t) :: length, i
+  character(kind=c_char,len=1), allocatable :: c_group(:), c_vname(:)
   integer(c_int32_t), dimension(:), allocatable :: date
   integer(c_int32_t), dimension(:), allocatable :: time
   character(len=20) :: fstring
 
+  call f_c_string(group, c_group)
+  call f_c_string(vname, c_vname)
   length = size(vect)
 
   allocate(date(length), time(length))
-  call obsspace_get_db(obss, group, "date", date)
-  call obsspace_get_db(obss, group, "time", time)
+  call c_obsspace_get_datetime(obss, c_group, c_vname, length, date, time)
 
   ! Constrct datatime based on date and time
   do i = 1, length
