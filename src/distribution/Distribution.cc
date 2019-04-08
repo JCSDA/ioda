@@ -15,7 +15,12 @@ namespace ioda {
 Distribution::~Distribution() {}
 
 // -----------------------------------------------------------------------------
-
+/*!
+ * \details This method will remove a particular index from the vector of indexes.
+ *
+ * \param index This is the entry number that is to be removed from the distribution
+ *              index vector.
+ */
 void Distribution::erase(const std::size_t & index) {
     indx_.erase(std::remove(indx_.begin(), indx_.end(), index), indx_.end());
 }
