@@ -390,6 +390,15 @@ void NetcdfIO::WriteVar_helper(const std::string & GroupName, const std::string 
                                const std::vector<std::size_t> & VarShape, DataType * VarData) {
   std::string NcVarName = FormNcVarName(GroupName, VarName);
   const std::type_info & VarType = typeid(DataType);
+  int imiss = util::missingValue(imiss);
+  int NcFillInt = NC_FILL_INT;
+  float fmiss = util::missingValue(fmiss);
+  float NcFillFloat = NC_FILL_FLOAT;
+
+  std::size_t VarSize = 1;
+  for (std::size_t i = 0; i < VarShape.size(); i++) {
+    VarSize *= VarShape[i];
+  }
 
   // For now and in order to keep the IodaIO class file type agnostic, infer the
   // dimensions from GroupName and VarShape. This is not a great way to
@@ -451,8 +460,18 @@ void NetcdfIO::WriteVar_helper(const std::string & GroupName, const std::string 
   // Write the data into the file according to type
   ErrorMsg = "NetcdfIO::WriteVar: Unable to write dataset: " + NcVarName;
   if (VarType == typeid(int)) {
+    for (std::size_t i = 0; i < VarSize; i++) {
+      if (VarData[i] == imiss) {
+        VarData[i] = NcFillInt;
+      }
+    }
     CheckNcCall(nc_put_var_int(ncid_, NcVarId, reinterpret_cast<int *>(VarData)), ErrorMsg);
   } else if (VarType == typeid(float)) {
+    for (std::size_t i = 0; i < VarSize; i++) {
+      if (VarData[i] == fmiss) {
+        VarData[i] = NcFillFloat;
+      }
+    }
     CheckNcCall(nc_put_var_float(ncid_, NcVarId, reinterpret_cast<float *>(VarData)), ErrorMsg);
   } else if (VarType == typeid(char)) {
     CheckNcCall(nc_put_var_text(ncid_, NcVarId, reinterpret_cast<char *>(VarData)), ErrorMsg);
