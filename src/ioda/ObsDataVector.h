@@ -14,7 +14,6 @@
 #include <string>
 #include <vector>
 
-#include "eckit/config/LocalConfiguration.h"
 #include "eckit/mpi/Comm.h"
 #include "ioda/ObsSpace.h"
 #include "oops/base/Variables.h"
@@ -34,48 +33,58 @@ class ObsDataVector: public util::Printable,
  public:
   static const std::string classname() {return "ioda::ObsDataVector";}
 
-  ObsDataVector(ObsSpace &, const std::string &, const std::string & grp = "");
+  ObsDataVector(ObsSpace &, const oops::Variables &);
   ObsDataVector(const ObsDataVector &);
   ~ObsDataVector();
 
   ObsDataVector & operator= (const ObsDataVector &);
 
-  std::size_t size() const {return values_.size();}  // Size of vector in local memory
-  unsigned int nobs() const;  // Number of active observations (without missing values)
-  const DATATYPE & operator[](const std::size_t ii) const {return values_.at(ii);}
-  DATATYPE & operator[](const std::size_t ii) {return values_.at(ii);}
-  const std::string & obstype() const {return obsdb_.obsname();}
-  const std::vector<DATATYPE> & values() const {return values_;}
-  std::vector<DATATYPE> & values() {return values_;}
+  void zero();
 
   void read(const std::string &);
-  void save(const std::string & name = "") const;
+  void save(const std::string &) const;
+
+// Used by UFO but not by OOPS
+  std::size_t size() const {return values_.size();}  // Size of vector in local memory
+//  unsigned int nobs() const;  // Number of active observations (without missing values)
+  const DATATYPE & operator[](const std::size_t ii) const {return values_.at(ii);}
+  DATATYPE & operator[](const std::size_t ii) {return values_.at(ii);}
+//  const std::string & obstype() const {return obsdb_.obsname();}
+//  const std::vector<DATATYPE> & values() const {return values_;}
+//  std::vector<DATATYPE> & values() {return values_;}
 
  private:
   void print(std::ostream &) const;
 
   ObsSpace & obsdb_;
-  std::string var_;
-  std::string grp_;
+  oops::Variables obsvars_;
+  std::size_t nvars_;
+  std::size_t nlocs_;
   std::vector<DATATYPE> values_;
+  const DATATYPE missing_;
 };
 
 // -----------------------------------------------------------------------------
 template <typename DATATYPE>
-ObsDataVector<DATATYPE>::ObsDataVector(ObsSpace & obsdb, const std::string & var,
-                                       const std::string & grp)
-  : obsdb_(obsdb), var_(var), grp_(grp), values_(obsdb_.nlocs())
-{
-  oops::Log::debug() << "ObsDataVector " << var_ << ", group = " << grp_ << std::endl;
-  if (grp_ != "") obsdb_.get_db(grp_, var_, values_.size(), values_.data());
-  oops::Log::trace() << "ObsDataVector constructor done" << std::endl;
+ObsDataVector<DATATYPE>::ObsDataVector(ObsSpace & obsdb, const oops::Variables & vars)
+  : obsdb_(obsdb), obsvars_(vars), nvars_(obsvars_.size()),
+    nlocs_(obsdb_.nlocs()), values_(nlocs_ * nvars_),
+    missing_(util::missingValue(missing_)) {
+  oops::Log::trace() << "ObsDataVector constructed" << std::endl;
+  oops::Log::debug() << "ObsDataVector constructed with " << nvars_
+                     << " variables resulting in " << values_.size()
+                     << " elements." << std::endl;
 }
 // -----------------------------------------------------------------------------
 template <typename DATATYPE>
 ObsDataVector<DATATYPE>::ObsDataVector(const ObsDataVector & other)
-  : obsdb_(other.obsdb_), var_(other.var_), grp_(other.grp_), values_(other.values_)
-{
-  oops::Log::trace() << "ObsDataVector copied " << var_ << ", group = " << grp_ << std::endl;
+  : obsdb_(other.obsdb_), obsvars_(other.obsvars_), nvars_(other.nvars_),
+    nlocs_(other.nlocs_), values_(nlocs_ * nvars_), missing_(other.missing_) {
+  oops::Log::trace() << "ObsDataVector copied" << std::endl;
+  oops::Log::debug() << "ObsVector copy constructed with " << nvars_
+                     << " variables resulting in " << values_.size()
+                     << " elements." << std::endl;
+  values_ = other.values_;
 }
 // -----------------------------------------------------------------------------
 template <typename DATATYPE>
@@ -88,29 +97,52 @@ ObsDataVector<DATATYPE> & ObsDataVector<DATATYPE>::operator= (const ObsDataVecto
 }
 // -----------------------------------------------------------------------------
 template <typename DATATYPE>
-void ObsDataVector<DATATYPE>::read(const std::string & group) {
-  ASSERT(group != "");
-  obsdb_.get_db(group, var_, values_.size(), values_.data());
+void ObsDataVector<DATATYPE>::zero() {
+  for (size_t jj = 0; jj < values_.size(); ++jj) {
+    values_.at(jj) = static_cast<DATATYPE>(0);
+  }
+}
+// -----------------------------------------------------------------------------
+template <typename DATATYPE>
+void ObsDataVector<DATATYPE>::read(const std::string & name) {
+  oops::Log::trace() << "ObsVector::read, name = " <<  name << std::endl;
+  std::size_t nlocs = obsdb_.nlocs();
+  std::vector<DATATYPE> tmp(nlocs);
+  for (std::size_t i = 0; i < nvars_; ++i) {
+    obsdb_.get_db(name, obsvars_.variables()[i], nlocs, tmp.data());
+
+    for (std::size_t j = 0; j < nlocs; ++j) {
+      std::size_t ivec = i + (j * nvars_);
+      values_[ivec] = tmp[j];
+    }
+  }
 }
 // -----------------------------------------------------------------------------
 template <typename DATATYPE>
 void ObsDataVector<DATATYPE>::save(const std::string & name) const {
-  std::string group = grp_;
-  if (name != "") group = name;
-  ASSERT(group != "");
-  obsdb_.put_db(group, var_, values_.size(), values_.data());
+  oops::Log::trace() << "ObsVector::save, name = " <<  name << std::endl;
+  std::size_t nlocs = obsdb_.nlocs();
+  std::size_t ivec;
+  for (std::size_t i = 0; i < nvars_; ++i) {
+    std::vector<DATATYPE> tmp(nlocs);
+    for (std::size_t j = 0; j < tmp.size(); ++j) {
+      ivec = i + (j * nvars_);
+      tmp[j] = values_[ivec];
+    }
+    obsdb_.put_db(name, obsvars_.variables()[i], nlocs, tmp.data());
+  }
 }
 // -----------------------------------------------------------------------------
-template <typename DATATYPE>
-unsigned int ObsDataVector<DATATYPE>::nobs() const {
-  const DATATYPE missing = util::missingValue(missing);
-  int nobs = 0;
-  for (size_t jj = 0; jj < values_.size() ; ++jj) {
-    if (values_[jj] != missing) ++nobs;
-  }
-  obsdb_.comm().allReduceInPlace(nobs, eckit::mpi::sum());
-  return nobs;
-}
+//  template <typename DATATYPE>
+//  unsigned int ObsDataVector<DATATYPE>::nobs() const {
+//    const DATATYPE missing = util::missingValue(missing);
+//    int nobs = 0;
+//    for (size_t jj = 0; jj < values_.size() ; ++jj) {
+//      if (values_[jj] != missing) ++nobs;
+//    }
+//    obsdb_.comm().allReduceInPlace(nobs, eckit::mpi::sum());
+//    return nobs;
+//  }
 // -----------------------------------------------------------------------------
 template <typename DATATYPE>
 void ObsDataVector<DATATYPE>::print(std::ostream & os) const {
