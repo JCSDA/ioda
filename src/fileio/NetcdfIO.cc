@@ -599,14 +599,15 @@ int NetcdfIO::GetStringDimBySize(const std::size_t DimSize) {
 
   // Look for this dimension in the string dims map
   int DimId;
-  DimNameToIdType::iterator istr = string_dims_.find(DimName);
-  if (istr == string_dims_.end()) {
+  DimIter istr = dim_info_.find(DimName);
+  if (istr == dim_info_.end()) {
     // Not found so create the dimension and get the id
     std::string ErrorMsg = "NetcdfIO::NetcdfIO: Unable to create dimension: " + DimName;
     CheckNcCall(nc_def_dim(ncid_, DimName.c_str(), DimSize, &DimId), ErrorMsg);
-    string_dims_[DimName] = DimId;
+    dim_info_[DimName].id = DimId;
+    dim_info_[DimName].size = DimSize;
   } else {
-    DimId = istr->second;
+    DimId = istr->second.id;
   }
 
   return DimId;
