@@ -12,6 +12,7 @@
 #include <string>
 #include <vector>
 
+#include "ioda/ObsDataVector.h"
 #include "ioda/ObsSpace.h"
 #include "oops/base/Variables.h"
 #include "oops/util/ObjectCounter.h"
@@ -61,7 +62,7 @@ class ObsVector : public util::Printable,
   const oops::Variables & varnames() const {return obsvars_;}
   std::size_t nvars() const {return nvars_;}
   std::size_t nlocs() const {return nlocs_;}
-  void mask(const ObsVector &);
+  void mask(const ObsDataVector<int> &);
 
 // I/O
   void read(const std::string &);
