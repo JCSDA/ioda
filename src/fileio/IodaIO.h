@@ -99,9 +99,9 @@ class IodaIO : public util::Printable {
     // Container for information about a dimension. Holds dimension id and size.
     typedef struct {
       std::size_t size;
-      int         id;
+      int id;
     } DimInfoRec;
- 
+
     /*!
      * \brief dimension information map
      *
