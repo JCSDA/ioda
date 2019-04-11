@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2017 UCAR
+ * (C) Copyright 2017-2019 UCAR
  * 
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
@@ -8,14 +8,12 @@
 #include <string>
 
 #include "oops/parallel/mpi/mpi.h"
+#include "oops/util/abor1_cpp.h"
 #include "oops/util/Logger.h"
 
 #include "fileio/IodaIO.h"
 
 namespace ioda {
-// -----------------------------------------------------------------------------
-
-IodaIO::IodaIO(const eckit::mpi::Comm & comm): commMPI_(comm) { }
 
 // -----------------------------------------------------------------------------
 
@@ -71,11 +69,204 @@ std::size_t IodaIO::nvars() const {
 
 // -----------------------------------------------------------------------------
 /*!
- * \details This method returns the list of VALID variables in the obs data.
+ * \details This method returns the begin iterator for the groups contained
+ *          in the group, variable information map.
  */
 
-std::vector<std::tuple<std::string, std::string>> * IodaIO::varlist() {
-  return &vname_group_;
+IodaIO::GroupIter IodaIO::group_begin() {
+  return grp_var_info_.begin();
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns the end iterator for the groups contained
+ *          in the group, variable information map.
+ */
+
+IodaIO::GroupIter IodaIO::group_end() {
+  return grp_var_info_.end();
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns the group name for the current iteration
+ *          in the group, variable information map.
+ *
+ * \param[in] igrp Group iterator for GrpVarInfoMap
+ */
+
+std::string IodaIO::group_name(IodaIO::GroupIter igrp) {
+  return igrp->first;
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns the begin iterator for the variables, of a
+ *          particular group, contained in the group, variable information map.
+ *
+ * \param[in] igrp Group iterator for GrpVarInfoMap
+ */
+
+IodaIO::VarIter IodaIO::var_begin(GroupIter igrp) {
+  return igrp->second.begin();
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns the end iterator for the variables, of a
+ *          particular group, contained in the group, variable information map.
+ *
+ * \param[in] igrp Group iterator for GrpVarInfoMap
+ */
+
+IodaIO::VarIter IodaIO::var_end(GroupIter igrp) {
+  return igrp->second.end();
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns the variable name for the current iteration
+ *          in the group, variable information map.
+ *
+ * \param[in] ivar Variable iterator for GrpVarInfoMap
+ */
+
+std::string IodaIO::var_name(IodaIO::VarIter ivar) {
+  return ivar->first;
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns the variable data type for the current iteration
+ *          in the group, variable information map.
+ *
+ * \param[in] ivar Variable iterator for GrpVarInfoMap
+ */
+
+std::string IodaIO::var_dtype(IodaIO::VarIter ivar) {
+  return ivar->second.dtype;
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns the variable data type for the current iteration
+ *          in the group, variable information map.
+ *
+ * \param[in] GroupName Group key for GrpVarInfoMap
+ * \param[in] VarName Variable key for GrpVarInfoMap
+ */
+
+bool IodaIO::grp_var_exist(const std::string & GroupName, const std::string & VarName) {
+  bool GroupExists = false;
+  bool VarExists = false;
+
+  // Check for group, and if group exists check for the variable
+  GroupIter igrp = grp_var_info_.find(GroupName);
+  GroupExists = !(igrp == grp_var_info_.end());
+  if (!GroupExists) {
+    std::string ErrorMsg = "Group name is not available: " + GroupName;
+    oops::Log::error() << ErrorMsg << std::endl;
+  }
+
+  if (GroupExists) {
+    VarIter ivar = igrp->second.find(VarName);
+    VarExists = !(ivar == igrp->second.end());
+    if (!VarExists) {
+      std::string ErrorMsg = "Group name, variable name combination is not available: " +
+                   GroupName + ", " + VarName;
+      oops::Log::error() << ErrorMsg << std::endl;
+    }
+  }
+
+  return GroupExists & VarExists;
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns the variable data type for the group name, variable
+ *          name combination in the group, variable information map.
+ *
+ * \param[in] GroupName Group key for GrpVarInfoMap
+ * \param[in] VarName Variable key for GrpVarInfoMap
+ */
+
+std::string IodaIO::var_dtype(const std::string & GroupName, const std::string & VarName) {
+  if (!grp_var_exist(GroupName, VarName)) {
+    std::string ErrorMsg = "Group name, variable name combination is not available: " +
+                            GroupName + ", " + VarName;
+    ABORT(ErrorMsg);
+  }
+
+  GroupIter igrp = grp_var_info_.find(GroupName);
+  VarIter ivar = igrp->second.find(VarName);
+  return ivar->second.dtype;
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns the variable shape for the current iteration
+ *          in the group, variable information map.
+ *
+ * \param[in] ivar Variable iterator for GrpVarInfoMap
+ */
+
+std::vector<std::size_t> IodaIO::var_shape(IodaIO::VarIter ivar) {
+  return ivar->second.shape;
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns the variable shape for the group name, variable name
+ *          combination in the group, variable information map.
+ *
+ * \param[in] GroupName Group key for GrpVarInfoMap
+ * \param[in] VarName Variable key for GrpVarInfoMap
+ */
+
+std::vector<std::size_t> IodaIO::var_shape(const std::string & GroupName,
+                                           const std::string & VarName) {
+  if (!grp_var_exist(GroupName, VarName)) {
+    std::string ErrorMsg = "Group name, variable name combination is not available: " +
+                            GroupName + ", " + VarName;
+    ABORT(ErrorMsg);
+  }
+
+  GroupIter igrp = grp_var_info_.find(GroupName);
+  VarIter ivar = igrp->second.find(VarName);
+  return ivar->second.shape;
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns the variable id for the current iteration
+ *          in the group, variable information map.
+ *
+ * \param[in] ivar Variable iterator for GrpVarInfoMap
+ */
+
+std::size_t IodaIO::var_id(IodaIO::VarIter ivar) {
+  return ivar->second.var_id;
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns the variable id for the group name, variable
+ *          name combination in the group, variable information map.
+ *
+ * \param[in] GroupName Group key for GrpVarInfoMap
+ * \param[in] VarName Variable key for GrpVarInfoMap
+ */
+
+std::size_t IodaIO::var_id(const std::string & GroupName, const std::string & VarName) {
+  if (!grp_var_exist(GroupName, VarName)) {
+    std::string ErrorMsg = "Group name, variable name combination is not available: " +
+                            GroupName + ", " + VarName;
+    ABORT(ErrorMsg);
+  }
+
+  GroupIter igrp = grp_var_info_.find(GroupName);
+  VarIter ivar = igrp->second.find(VarName);
+  return ivar->second.var_id;
 }
 
 }  // namespace ioda
