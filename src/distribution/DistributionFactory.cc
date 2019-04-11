@@ -12,7 +12,16 @@
 
 namespace ioda {
 // -----------------------------------------------------------------------------
-
+/*!
+ * \brief create a Distribution object
+ *
+ * \details This method creates a Distribution object from a specified subclass
+ *          of the Distribution base class. The purpose of instantiating a subclass
+ *          is to get access to a particular method of distributing obs across
+ *          multiple process elements.
+ *
+ * \param[in] method Name of the method of distribution of obs.
+ */
 Distribution * DistributionFactory::createDistribution(const std::string & method) {
   if (boost::iequals(method, "RoundRobin"))
     return new RoundRobin;

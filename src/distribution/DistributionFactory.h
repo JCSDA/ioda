@@ -15,7 +15,15 @@
 namespace ioda {
 
 // ---------------------------------------------------------------------
-
+/*!
+ * \brief Factory class to instantiate objects of Distribution subclasses
+ *
+ * \details This class provides a create method to instantiate a Distribution object
+ *          containing a method for a particular manner in which to distribute obs
+ *          across multiple process elements.
+ *
+ * \author Xin Zhang (JCSDA)
+ */
 class DistributionFactory {
  public:
     Distribution * createDistribution(const std::string & method);

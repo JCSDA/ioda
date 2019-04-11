@@ -33,7 +33,7 @@ ObsVector::ObsVector(ObsSpace & obsdb, const oops::Variables & vars)
 ObsVector::ObsVector(const ObsVector & other, const bool copy)
   : obsdb_(other.obsdb_), obsvars_(other.obsvars_), nvars_(other.nvars_),
     nlocs_(other.nlocs_), values_(nlocs_ * nvars_), missing_(other.missing_) {
-  oops::Log::debug() << "ObsVector constructed with " << nvars_
+  oops::Log::debug() << "ObsVector copy constructed with " << nvars_
                      << " variables resulting in " << values_.size()
                      << " elements." << std::endl;
   if (copy) values_ = other.values_;
@@ -209,11 +209,11 @@ void ObsVector::save(const std::string & name) const {
   }
 }
 // -----------------------------------------------------------------------------
-void ObsVector::mask(const ObsVector & flags) {
+void ObsVector::mask(const ObsDataVector<int> & flags) {
   oops::Log::trace() << "ObsVector::mask" << std::endl;
-  ASSERT(values_.size() == flags.values_.size());
+  ASSERT(values_.size() == flags.size());
   for (size_t jj = 0; jj < values_.size() ; ++jj) {
-    if (flags.values_[jj] > 0.01) values_[jj] = missing_;
+    if (flags[jj] > 0) values_[jj] = missing_;
   }
 }
 // -----------------------------------------------------------------------------

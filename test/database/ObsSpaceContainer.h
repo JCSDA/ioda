@@ -11,8 +11,10 @@
 #ifndef TEST_INTERFACE_OBSSPACE_H_
 #define TEST_INTERFACE_OBSSPACE_H_
 
-#include <string>
 #include <cmath>
+#include <string>
+#include <tuple>
+#include <typeinfo>
 
 #define ECKIT_TESTING_SELF_REGISTER_CASES 0
 
@@ -26,7 +28,7 @@
 #include "oops/util/Logger.h"
 #include "test/TestEnvironment.h"
 
-#include "database/MultiIndexContainer.h"
+#include "database/ObsSpaceContainer.h"
 
 namespace ioda {
 namespace test {
@@ -35,97 +37,179 @@ namespace test {
 
 void testConstructor() {
   const eckit::LocalConfiguration conf(::test::TestEnvironment::config());
-  util::DateTime bgn(conf.getString("window_begin"));
-  util::DateTime end(conf.getString("window_end"));
-  eckit::mpi::Comm & mpi_comm = eckit::mpi::comm();
 
-  std::vector<eckit::LocalConfiguration> containers;
-
-  std::string TestContainerName;
   std::unique_ptr<ioda::ObsSpaceContainer> TestContainer;
 
-  // Walk through the different distribution types and try constructing.
-  conf.get("Containers", containers);
-  for (std::size_t i = 0; i < containers.size(); ++i) {
-    oops::Log::debug() << "ObsSpaceContainer::DistributionTypes: conf"
-                       << containers[i] << std::endl;
+  // Try constructing and destructing
+  TestContainer.reset(new ioda::ObsSpaceContainer());
+  EXPECT(TestContainer.get());
 
-    TestContainerName = containers[i].getString("Container");
-    oops::Log::debug() << "ObsSpaceContainer::DistType: " << TestContainerName << std::endl;
-
-    // Instantiate a container
-    TestContainer.reset(new ioda::ObsSpaceContainer(conf, bgn, end, mpi_comm));
-    EXPECT(TestContainer.get());
-    }
+  TestContainer.reset();
+  EXPECT(!TestContainer.get());
   }
 
 // -----------------------------------------------------------------------------
 
-void testInsertInquire() {
+void testGrpVarIter() {
   const eckit::LocalConfiguration conf(::test::TestEnvironment::config());
-  util::DateTime bgn(conf.getString("window_begin"));
-  util::DateTime end(conf.getString("window_end"));
-  eckit::mpi::Comm & mpi_comm = eckit::mpi::comm();
 
-  std::vector<eckit::LocalConfiguration> containers;
-
-  std::string TestContainerName;
   std::unique_ptr<ioda::ObsSpaceContainer> TestContainer;
 
-  std::string FileName;
-  std::size_t Nlocs;
-  std::size_t Nvars;
-  std::size_t ExpectedNlocs;
-  std::size_t ExpectedNvars;
+  // Instantiate a container
+  TestContainer.reset(new ioda::ObsSpaceContainer());
+  EXPECT(TestContainer.get());
 
-  // Walk through the different distribution types and try loading (insert) data
-  // into the container, and extracting (inquire) data from the container.
-  conf.get("Containers", containers);
-  for (std::size_t i = 0; i < containers.size(); ++i) {
-    oops::Log::debug() << "ObsSpaceContainer::DistributionTypes: conf"
-                       << containers[i] << std::endl;
+  // Try storing the variables from the YAML into the container, then load them
+  // from the containter into new variables, and then check that they match.
+  std::vector<std::string> Variables = conf.getStringVector("TestStoreLoad.variables");
+  std::vector<std::string> Groups = conf.getStringVector("TestStoreLoad.groups");
+  std::vector<std::string> DataTypes = conf.getStringVector("TestStoreLoad.datatypes");
 
-    TestContainerName = containers[i].getString("Container");
-    oops::Log::debug() << "ObsSpaceContainer::DistType: " << TestContainerName << std::endl;
+  typedef std::tuple<std::string, std::string, std::string, std::vector<std::size_t>> VarDescrip;
+  std::set<VarDescrip> VarInfo;
 
-    // Instantiate a container
-    TestContainer.reset(new ioda::ObsSpaceContainer(conf, bgn, end, mpi_comm));
-    EXPECT(TestContainer.get());
+  for(std::size_t i = 0; i < Variables.size(); i++) {
+    std::string VarName = Variables[i];
+    std::string GroupName = Groups[i];
+    std::string VarTypeName = DataTypes[i];
+    std::vector<std::size_t> VarShape(1, 0);
 
-    // Read in data and place in the container
-    FileName = containers[i].getString("InData.filename");
-    ExpectedNlocs = containers[i].getInt("InData.nlocs");
-    ExpectedNvars = containers[i].getInt("InData.nvars");
-
-    TestContainer->CreateFromFile(FileName, "r", bgn, end, mpi_comm);
-    Nlocs = TestContainer->nlocs();
-    Nvars = TestContainer->nvars();
-    
-    EXPECT(Nlocs == ExpectedNlocs);
-    EXPECT(Nvars == ExpectedNvars);
-
-    std::string GroupName = containers[i].getString("InData.group");
-    std::string VarName = containers[i].getString("InData.variable");
-    std::string VarType = containers[i].getString("InData.type");
-    float ExpectedVnorm = containers[i].getFloat("InData.norm");
-    float Tolerance = containers[i].getFloat("InData.tolerance");
-
-    float Vnorm = 0.0;
-    if (VarType.compare("float") == 0) {
-      std::vector<float> VarData(Nlocs);
-      TestContainer->inquire(GroupName, VarName, Nlocs, VarData.data());
-      for (std::size_t j = 0; j < Nlocs; j++) {
-        Vnorm += pow(VarData[j], 2.0);
+    // Read the var values from the config file. The ith variable has its values
+    // in the sub-keyword "var" + i. Eg. when i = 0, then read var0, i = 1 read var1, etc.
+    const std::type_info & VarType = typeid(void);
+    std::string ConfVarValues = "TestStoreLoad.var" + std::to_string(i);
+    if (VarTypeName.compare("int") == 0) {
+      std::vector<int> StoreData = conf.getIntVector(ConfVarValues);
+      VarShape[0] = StoreData.size();
+      TestContainer->StoreToDb(GroupName, VarName, VarShape, StoreData.data());
+    } else if (VarTypeName.compare("float") == 0) {
+      std::vector<float> StoreData = conf.getFloatVector(ConfVarValues);
+      VarShape[0] = StoreData.size();
+      TestContainer->StoreToDb(GroupName, VarName, VarShape, StoreData.data());
+    } else if (VarTypeName.compare("string") == 0) {
+      std::vector<std::string> StoreData = conf.getStringVector(ConfVarValues);
+      VarShape[0] = StoreData.size();
+      TestContainer->StoreToDb(GroupName, VarName, VarShape, StoreData.data());
+    } else if (VarTypeName.compare("datetime") == 0) {
+      std::vector<std::string> TempStoreData = conf.getStringVector(ConfVarValues);
+      std::vector<util::DateTime> StoreData(TempStoreData.size());
+      for (std::size_t j = 0; j < TempStoreData.size(); j++) {
+        util::DateTime TempDateTime(TempStoreData[j]);
+        StoreData[j] = TempDateTime;
       }
-    } else if (VarType.compare("integer") == 0) {
-      std::vector<int> VarData(Nlocs);
-      TestContainer->inquire(GroupName, VarName, Nlocs, VarData.data());
-      for (std::size_t j = 0; j < Nlocs; j++) {
-        Vnorm += pow(float(VarData[j]), 2.0);
-      }
+      VarShape[0] = StoreData.size();
+      TestContainer->StoreToDb(GroupName, VarName, VarShape, StoreData.data());
+    } else {
+      oops::Log::debug() << "test::ObsSpaceContainer::testGrpVarIter: "
+                         << "container only supports data types int, float and string."
+                         << std::endl;
     }
-    Vnorm = sqrt(Vnorm);
-    EXPECT(oops::is_close(Vnorm, ExpectedVnorm, Tolerance));
+
+    VarInfo.emplace(std::make_tuple(GroupName, VarName, VarTypeName, VarShape));
+  }
+
+  // Walk through the container using the group, var iterators and check if all of
+  // the expected GroupName, VarName combinations got in.
+  std::set<VarDescrip> TestVarInfo;
+  for (ObsSpaceContainer::VarIter ivar = TestContainer->var_iter_begin();
+            ivar != TestContainer->var_iter_end(); ivar++) {
+    std::string TestVarTypeName("void");
+    if (TestContainer->var_iter_type(ivar) == typeid(int)) {
+      TestVarTypeName = "int";
+    } else if (TestContainer->var_iter_type(ivar) == typeid(float)) {
+      TestVarTypeName = "float";
+    } else if (TestContainer->var_iter_type(ivar) == typeid(std::string)) {
+      TestVarTypeName = "string";
+    } else if (TestContainer->var_iter_type(ivar) == typeid(util::DateTime)) {
+      TestVarTypeName = "datetime";
+    }
+    TestVarInfo.emplace(std::make_tuple(TestContainer->var_iter_gname(ivar),
+                 TestContainer->var_iter_vname(ivar), TestVarTypeName,
+                 TestContainer->var_iter_shape(ivar)));
+  }
+
+  EXPECT(TestVarInfo == VarInfo);
+}
+
+
+// -----------------------------------------------------------------------------
+
+void testStoreLoad() {
+  const eckit::LocalConfiguration conf(::test::TestEnvironment::config());
+
+  std::unique_ptr<ioda::ObsSpaceContainer> TestContainer;
+
+  // Instantiate a container
+  TestContainer.reset(new ioda::ObsSpaceContainer());
+  EXPECT(TestContainer.get());
+
+  // Try storing the variables from the YAML into the container, then load them
+  // from the containter into new variables, and then check that they match.
+  std::vector<std::string> Variables = conf.getStringVector("TestStoreLoad.variables");
+  std::vector<std::string> Groups = conf.getStringVector("TestStoreLoad.groups");
+  std::vector<std::string> DataTypes = conf.getStringVector("TestStoreLoad.datatypes");
+
+  for(std::size_t i = 0; i < Variables.size(); i++) {
+    std::string VarName = Variables[i];
+    std::string GroupName = Groups[i];
+    std::string VarTypeName = DataTypes[i];
+    std::vector<std::size_t> VarShape(1, 0);
+
+    // Read the var values from the config file. The ith variable has its values
+    // in the sub-keyword "var" + i. Eg. when i = 0, then read var0, i = 1 read var1, etc.
+    const std::type_info & VarType = typeid(void);
+    std::string ConfVarValues = "TestStoreLoad.var" + std::to_string(i);
+    if (VarTypeName.compare("int") == 0) {
+      std::vector<int> ExpectedIntData = conf.getIntVector(ConfVarValues);
+      VarShape[0] = ExpectedIntData.size();
+      TestContainer->StoreToDb(GroupName, VarName, VarShape, ExpectedIntData.data());
+
+      std::vector<int> TestIntData(ExpectedIntData.size(), 0);
+      TestContainer->LoadFromDb(GroupName, VarName, VarShape, TestIntData.data());
+      for(std::size_t j = 0; j < TestIntData.size(); j++) {
+        EXPECT(TestIntData[j] == ExpectedIntData[j]);
+      }
+    } else if (VarTypeName.compare("float") == 0) {
+      std::vector<float> ExpectedFloatData = conf.getFloatVector(ConfVarValues);
+      VarShape[0] = ExpectedFloatData.size();
+      TestContainer->StoreToDb(GroupName, VarName, VarShape, ExpectedFloatData.data());
+
+      std::vector<float> TestFloatData(ExpectedFloatData.size(), 0.0);
+      TestContainer->LoadFromDb(GroupName, VarName, VarShape, TestFloatData.data());
+      for(std::size_t j = 0; j < TestFloatData.size(); j++) {
+        EXPECT(TestFloatData[j] == ExpectedFloatData[j]);
+      }
+    } else if (VarTypeName.compare("string") == 0) {
+      std::vector<std::string> ExpectedStringData = conf.getStringVector(ConfVarValues);
+      VarShape[0] = ExpectedStringData.size();
+      TestContainer->StoreToDb(GroupName, VarName, VarShape, ExpectedStringData.data());
+
+      std::vector<std::string> TestStringData(ExpectedStringData.size(), "xx");
+      TestContainer->LoadFromDb(GroupName, VarName, VarShape, TestStringData.data());
+      for(std::size_t j = 0; j < TestStringData.size(); j++) {
+        EXPECT(TestStringData[j] == ExpectedStringData[j]);
+      }
+    } else if (VarTypeName.compare("datetime") == 0) {
+      std::vector<std::string> DtStrings = conf.getStringVector(ConfVarValues);
+      std::vector<util::DateTime> ExpectedDateTimeData(DtStrings.size());
+      for (std::size_t j = 0; j < DtStrings.size(); j++) {
+        util::DateTime TempDateTime(DtStrings[j]);
+        ExpectedDateTimeData[j] = TempDateTime;
+      }
+      VarShape[0] = ExpectedDateTimeData.size();
+      TestContainer->StoreToDb(GroupName, VarName, VarShape, ExpectedDateTimeData.data());
+
+      util::DateTime TempDt("0000-01-01T00:00:00Z");
+      std::vector<util::DateTime> TestDateTimeData(ExpectedDateTimeData.size(), TempDt);
+      TestContainer->LoadFromDb(GroupName, VarName, VarShape, TestDateTimeData.data());
+      for(std::size_t j = 0; j < TestDateTimeData.size(); j++) {
+        EXPECT(TestDateTimeData[j] == ExpectedDateTimeData[j]);
+      }
+    } else {
+      oops::Log::debug() << "test::ObsSpaceContainer::testGrpVarIter: "
+                         << "container only supports data types int, float and string."
+                         << std::endl;
+    }
   }
 }
 
@@ -143,8 +227,10 @@ class ObsSpaceContainer : public oops::Test {
 
     ts.emplace_back(CASE("database/ObsSpaceContainer/testConstructor")
       { testConstructor(); });
-    ts.emplace_back(CASE("database/ObsSpaceContainer/testInsertInquire")
-      { testInsertInquire(); });
+    ts.emplace_back(CASE("database/ObsSpaceContainer/testGrpVarIter")
+      { testGrpVarIter(); });
+    ts.emplace_back(CASE("database/ObsSpaceContainer/testStoreLoad")
+      { testStoreLoad(); });
   }
 };
 

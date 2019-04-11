@@ -2,6 +2,7 @@ include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
 
 list( APPEND ioda_src_files
 
+ioda/ObsDataRows.h
 ioda/ObsDataVector.h
 ioda/ObsSpace.cc
 ioda/ObsSpace.h
@@ -11,8 +12,8 @@ ioda/obsspace_f.cc
 ioda/obsspace_f.h
 ioda/obsspace_mod.F90
 
-database/MultiIndexContainer.cc
-database/MultiIndexContainer.h
+database/ObsSpaceContainer.cc
+database/ObsSpaceContainer.h
 
 distribution/Distribution.cc
 distribution/Distribution.h
@@ -27,6 +28,9 @@ fileio/IodaIOfactory.cc
 fileio/IodaIOfactory.h
 fileio/NetcdfIO.cc
 fileio/NetcdfIO.h
+
+utils/IodaUtils.cc
+utils/IodaUtils.h
 )
 
 if (HAVE_ODB)
