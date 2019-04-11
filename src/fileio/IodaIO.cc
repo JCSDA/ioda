@@ -269,4 +269,117 @@ std::size_t IodaIO::var_id(const std::string & GroupName, const std::string & Va
   return ivar->second.var_id;
 }
 
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns the dimension name given a dimension iterator.
+ *
+ * \param[in] idim Dimension iterator
+ */
+
+std::string IodaIO::dim_name(IodaIO::DimIter idim) {
+  return idim->first;
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns the dimension id given a dimension iterator.
+ *
+ * \param[in] idim Dimension iterator
+ */
+
+int IodaIO::dim_id(IodaIO::DimIter idim) {
+  return idim->second.id;
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns the dimension size given a dimension iterator.
+ *
+ * \param[in] idim Dimension iterator
+ */
+
+std::size_t IodaIO::dim_size(IodaIO::DimIter idim) {
+  return idim->second.size;
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns the dimension size given a dimension id.
+ *
+ * \param[in] id Dimension id
+ */
+
+std::size_t IodaIO::dim_id_size(const int & id) {
+  DimIter idim;
+  for (idim = dim_info_.begin(); idim != dim_info_.end(); idim++) {
+    if (id == idim->second.id) {
+      break;
+    }
+  }
+
+  if (idim == dim_info_.end()) {
+    std::string ErrorMsg = "IodaIO::dim_id_size: Dimension id does not exist: " + id;
+    ABORT(ErrorMsg);
+  }
+
+  return idim->second.size;
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns the dimension name given a dimension id.
+ *
+ * \param[in] id Dimension id
+ */
+
+std::string IodaIO::dim_id_name(const int & id) {
+  DimIter idim;
+  for (idim = dim_info_.begin(); idim != dim_info_.end(); idim++) {
+    if (id == idim->second.id) {
+      break;
+    }
+  }
+
+  if (idim == dim_info_.end()) {
+    std::string ErrorMsg = "IodaIO::dim_id_size: Dimension id does not exist: " + id;
+    ABORT(ErrorMsg);
+  }
+
+  return idim->first;
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns the dimension size given a dimension name.
+ *
+ * \param[in] name Dimension name
+ */
+
+std::size_t IodaIO::dim_name_size(const std::string & name) {
+  DimIter idim = dim_info_.find(name);
+  if (idim == dim_info_.end()) {
+    std::string ErrorMsg = "IodaIO::dim_id_size: Dimension name does not exist: " + name;
+    ABORT(ErrorMsg);
+  }
+
+  return idim->second.size;
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns the dimension id given a dimension name.
+ *
+ * \param[in] name Dimension name
+ */
+
+int IodaIO::dim_name_id(const std::string & name) {
+  DimIter idim = dim_info_.find(name);
+  if (idim == dim_info_.end()) {
+    std::string ErrorMsg = "IodaIO::dim_id_size: Dimension name does not exist: " + name;
+    ABORT(ErrorMsg);
+  }
+
+  return idim->second.id;
+}
+
 }  // namespace ioda
