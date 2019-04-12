@@ -123,16 +123,6 @@ NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
       }
     }
 
-    for (DimInfoMap::iterator idim = dim_info_.begin(); idim != dim_info_.end(); idim++) {
-      std::cout << "DEBUG: dim_info_: name, size, id: " << dim_name(idim) << ", "
-                << dim_size(idim) << ", " << dim_id(idim) << std::endl;
-    }
-
-    for (int i = 0; i < NcNdims; i++) {
-      std::cout << "DEBUG: dim_info_: find id: i: " << i << " -> " << dim_id_name(i) << ", "
-                << dim_id_size(i) << std::endl;
-    }
-
     // Walk through the variables and record the group and variable information. For
     // now, want to support both datetime strings and ref, offset time so that
     // we can incrementally update the files to datetime strings. Accomplish this
