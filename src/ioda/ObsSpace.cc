@@ -444,9 +444,9 @@ void ObsSpace::InitFromFile(const std::string & filename) {
   // Look for datetime@MetaData first, then datetime@GroupUndefined
   std::string DtGroupName = "MetaData";
   std::string DtVarName = "datetime";
-  if (!fileio->grp_var_exist(DtGroupName, DtVarName)) {
+  if (!fileio->grp_var_exists(DtGroupName, DtVarName)) {
     DtGroupName = "GroupUndefined";
-    if (!fileio->grp_var_exist(DtGroupName, DtVarName)) {
+    if (!fileio->grp_var_exists(DtGroupName, DtVarName)) {
       std::string ErrorMsg = "ObsSpace::InitFromFile: datetime information is not available";
       ABORT(ErrorMsg);
     }

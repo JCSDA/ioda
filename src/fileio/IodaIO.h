@@ -163,7 +163,7 @@ class IodaIO : public util::Printable {
     std::string var_name(VarIter);
 
     // Access to variable information
-    bool grp_var_exist(const std::string &, const std::string &);
+    bool grp_var_exists(const std::string &, const std::string &);
     std::string var_dtype(VarIter);
     std::string var_dtype(const std::string &, const std::string &);
     std::vector<std::size_t> var_shape(VarIter);
@@ -173,6 +173,7 @@ class IodaIO : public util::Printable {
 
     // Access to dimension information
     typedef DimInfoMap::const_iterator DimIter;
+    bool dim_exists(const std::string &);
 
     std::string dim_name(DimIter);
     int         dim_id(DimIter);
