@@ -587,17 +587,18 @@ int NetcdfIO::GetStringDimBySize(const std::size_t DimSize) {
   // the string "nstring".
   std::string DimName = "nstring" + std::to_string(DimSize);
 
-  // Look for this dimension in the string dims map
+  // If the dimenision exists simply return the id, otherwise create the dimension
+  // and return the new dimension's id.
   int DimId;
-  DimIter istr = dim_info_.find(DimName);
-  if (istr == dim_info_.end()) {
+  if (dim_exists(DimName)) {
+    // Found so simply return the id
+    DimId = dim_name_id(DimName);
+  } else {
     // Not found so create the dimension and get the id
     std::string ErrorMsg = "NetcdfIO::NetcdfIO: Unable to create dimension: " + DimName;
     CheckNcCall(nc_def_dim(ncid_, DimName.c_str(), DimSize, &DimId), ErrorMsg);
     dim_info_[DimName].id = DimId;
     dim_info_[DimName].size = DimSize;
-  } else {
-    DimId = istr->second.id;
   }
 
   return DimId;
