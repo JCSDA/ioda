@@ -354,7 +354,7 @@ std::string IodaIO::dim_id_name(const int & id) {
   }
 
   if (idim == dim_info_.end()) {
-    std::string ErrorMsg = "IodaIO::dim_id_size: Dimension id does not exist: " + id;
+    std::string ErrorMsg = "IodaIO::dim_id_name: Dimension id does not exist: " + id;
     ABORT(ErrorMsg);
   }
 
@@ -370,7 +370,7 @@ std::string IodaIO::dim_id_name(const int & id) {
 
 std::size_t IodaIO::dim_name_size(const std::string & name) {
   if (!dim_exists(name)) {
-    std::string ErrorMsg = "IodaIO::dim_id_size: Dimension name does not exist: " + name;
+    std::string ErrorMsg = "IodaIO::dim_name_size: Dimension name does not exist: " + name;
     ABORT(ErrorMsg);
   }
 
@@ -386,7 +386,7 @@ std::size_t IodaIO::dim_name_size(const std::string & name) {
 
 int IodaIO::dim_name_id(const std::string & name) {
   if (!dim_exists(name)) {
-    std::string ErrorMsg = "IodaIO::dim_id_size: Dimension name does not exist: " + name;
+    std::string ErrorMsg = "IodaIO::dim_name_id: Dimension name does not exist: " + name;
     ABORT(ErrorMsg);
   }
 
