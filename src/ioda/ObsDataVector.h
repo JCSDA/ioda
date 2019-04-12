@@ -40,6 +40,7 @@ class ObsDataVector: public util::Printable,
   ObsDataVector & operator= (const ObsDataVector &);
 
   void zero();
+  void mask(const ObsDataVector<int> &);
 
   void read(const std::string &);
   void save(const std::string &) const;
@@ -100,6 +101,15 @@ template <typename DATATYPE>
 void ObsDataVector<DATATYPE>::zero() {
   for (size_t jj = 0; jj < values_.size(); ++jj) {
     values_.at(jj) = static_cast<DATATYPE>(0);
+  }
+}
+// -----------------------------------------------------------------------------
+template <typename DATATYPE>
+void ObsDataVector<DATATYPE>::mask(const ObsDataVector<int> & flags) {
+  const DATATYPE missing = util::missingValue(missing);
+  ASSERT(values_.size() == flags.size());
+  for (size_t jj = 0; jj < values_.size() ; ++jj) {
+    if (flags[jj] > 0) values_[jj] = missing_;
   }
 }
 // -----------------------------------------------------------------------------
