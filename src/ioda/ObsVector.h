@@ -53,6 +53,8 @@ class ObsVector : public util::Printable,
   double rms() const;
 
   std::size_t size() const {return values_.size();}  // Size of vector in local memory
+  const double & operator[](const std::size_t ii) const {return values_.at(ii);}
+  double & operator[](const std::size_t ii) {return values_.at(ii);}
   unsigned int nobs() const;  // Number of active observations (missing values not included)
 
   const double & toFortran() const {return values_[0];}
