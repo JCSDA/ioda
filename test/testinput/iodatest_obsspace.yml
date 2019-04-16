@@ -48,10 +48,10 @@ Observations:
             - "latitude"
             - "longitude"
           norms:
-            - 451.46510296606738
-            - 1829.8089509492747
+            - 443.609523849 
+            - 1827.99182793 
           tolerance:
-            - 1.0e-14
+            - 1.0e-11
 
   - ObsType: "Radiance"
     ObsData:
