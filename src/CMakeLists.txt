@@ -4,6 +4,7 @@ list( APPEND ioda_src_files
 
 ioda/ObsDataRows.h
 ioda/ObsDataVector.h
+ioda/ObsDataVector.cc
 ioda/ObsSpace.cc
 ioda/ObsSpace.h
 ioda/ObsVector.cc
