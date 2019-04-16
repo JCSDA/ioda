@@ -15,13 +15,16 @@ namespace ioda {
 bool compareFlags(const ObsDataVector<int> & first, const ObsDataVector<int> & second) {
   oops::Log::trace() << "compareFlags starting" << std::endl;
   bool same = true;
-  ASSERT(first.size() == second.size());
-  for (std::size_t i = 0; i < first.size(); ++i) {
-    if (first[i] != 0 && second[i] == 0) {
-      same = false;
-    }
-    if (first[i] == 0 && second[i] != 0) {
-      same = false;
+  ASSERT(first.nvars() == second.nvars());
+  ASSERT(first.nlocs() == second.nlocs());
+  for (size_t i = 0; i < first.nvars(); ++i) {
+    for (size_t j = 0; j < first.nlocs(); ++j) {
+      if (first[i][j] != 0 && second[i][j] == 0) {
+        same = false;
+      }
+      if (first[i][j] == 0 && second[i][j] != 0) {
+        same = false;
+      }
     }
   }
   oops::Log::trace() << "compareFlags done" << std::endl;
@@ -32,8 +35,10 @@ bool compareFlags(const ObsDataVector<int> & first, const ObsDataVector<int> & s
 size_t numZero(const ObsDataVector<int> & data) {
   oops::Log::trace() << "numZero starting" << std::endl;
   size_t nzero = 0;
-  for (std::size_t i = 0; i < data.size(); ++i) {
-    if (data[i] == 0) nzero++;
+  for (size_t i = 0; i < data.nvars(); ++i) {
+    for (size_t j = 0; j < data.nlocs(); ++j) {
+      if (data[i][j] == 0) nzero++;
+    }
   }
   oops::Log::trace() << "numZero done" << std::endl;
   return nzero;
