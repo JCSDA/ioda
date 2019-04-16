@@ -2,7 +2,6 @@ include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
 
 list( APPEND ioda_src_files
 
-ioda/ObsDataRows.h
 ioda/ObsDataVector.h
 ioda/ObsDataVector.cc
 ioda/ObsSpace.cc
