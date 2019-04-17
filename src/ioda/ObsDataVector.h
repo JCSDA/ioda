@@ -89,6 +89,12 @@ class ObsDataVector: public util::Printable,
 };
 
 // -----------------------------------------------------------------------------
+bool compareFlags(const ObsDataVector<int> &, const ObsDataVector<int> &);
+
+// -----------------------------------------------------------------------------
+size_t numZero(const ObsDataVector<int> &);
+
+// -----------------------------------------------------------------------------
 template <typename DATATYPE>
 ObsDataVector<DATATYPE>::ObsDataVector(ObsSpace & obsdb, const oops::Variables & vars,
                                        const std::string & grp)
