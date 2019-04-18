@@ -28,10 +28,6 @@ namespace eckit {
 
 namespace ioda {
 
-// typedefs
-typedef std::vector<std::size_t> DimIdToSizeType;
-typedef std::map<std::string, std::size_t> DimNameToIdType;
-
 /*! \brief Implementation of IodaIO for netcdf.
  *
  * \details The NetcdfIO class defines the constructor and methods for netcdf
@@ -119,28 +115,6 @@ class NetcdfIO : public IodaIO,
    *          date_time variable in the netcdf file.
    */
   bool have_date_time_;
-
-  /*!
-   * \brief dimension id to size map
-   *
-   * \details This data member holds dimension sizes indexed by dimension id number
-   */
-  DimIdToSizeType dim_id_to_size_;
-
-  /*!
-   * \brief dimension name to id map
-   *
-   * \details This data member holds dimension id numbers indexed by dimension name
-   */
-  DimNameToIdType dim_name_to_id_;
-
-  /*!
-   * \brief dimension name to id map for auxillary dimensions
-   *
-   * \details This data member holds dimension id numbers indexed by dimension name
-   *          for extra dimensions needed for character arrays
-   */
-  DimNameToIdType string_dims_;
 };
 
 }  // namespace ioda
