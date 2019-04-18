@@ -211,18 +211,20 @@ void ObsVector::save(const std::string & name) const {
 // -----------------------------------------------------------------------------
 void ObsVector::mask(const ObsDataVector<int> & flags) {
   oops::Log::trace() << "ObsVector::mask" << std::endl;
-  ASSERT(values_.size() == flags.size());
-  for (size_t jj = 0; jj < values_.size() ; ++jj) {
-    if (flags[jj] > 0) values_[jj] = missing_;
+  ASSERT(values_.size() == flags.nvars() * flags.nlocs());
+  size_t ii = 0;
+  for (size_t jv = 0; jv < flags.nvars(); ++jv) {
+    for (size_t jj = 0; jj < flags.nlocs(); ++jj) {
+      if (flags[jv][jj] > 0) values_[ii] = missing_;
+      ++ii;
+    }
   }
 }
 // -----------------------------------------------------------------------------
 unsigned int ObsVector::nobs() const {
   int nobs = 0;
   for (size_t jj = 0; jj < values_.size() ; ++jj) {
-    if (values_[jj] != missing_) {
-      ++nobs;
-    }
+    if (values_[jj] != missing_) ++nobs;
   }
   obsdb_.comm().allReduceInPlace(nobs, eckit::mpi::sum());
   return nobs;
