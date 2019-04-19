@@ -166,8 +166,8 @@ class ObsSpace : public oops::ObsSpaceBase {
   /*! \brief path to output file */
   std::string fileout_;
 
-  /*! \brief MPI distribution object */
-  std::unique_ptr<Distribution> dist_;
+  /*! \brief indexes of locations to extract from the input obs file */
+  std::vector<std::size_t> indx_;
 
   /*! \brief Multi-index container */
   ObsSpaceContainer database_;

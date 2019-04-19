@@ -156,7 +156,7 @@ std::string IodaIO::var_dtype(IodaIO::VarIter ivar) {
  * \param[in] VarName Variable key for GrpVarInfoMap
  */
 
-bool IodaIO::grp_var_exist(const std::string & GroupName, const std::string & VarName) {
+bool IodaIO::grp_var_exists(const std::string & GroupName, const std::string & VarName) {
   bool GroupExists = false;
   bool VarExists = false;
 
@@ -191,7 +191,7 @@ bool IodaIO::grp_var_exist(const std::string & GroupName, const std::string & Va
  */
 
 std::string IodaIO::var_dtype(const std::string & GroupName, const std::string & VarName) {
-  if (!grp_var_exist(GroupName, VarName)) {
+  if (!grp_var_exists(GroupName, VarName)) {
     std::string ErrorMsg = "Group name, variable name combination is not available: " +
                             GroupName + ", " + VarName;
     ABORT(ErrorMsg);
@@ -225,7 +225,7 @@ std::vector<std::size_t> IodaIO::var_shape(IodaIO::VarIter ivar) {
 
 std::vector<std::size_t> IodaIO::var_shape(const std::string & GroupName,
                                            const std::string & VarName) {
-  if (!grp_var_exist(GroupName, VarName)) {
+  if (!grp_var_exists(GroupName, VarName)) {
     std::string ErrorMsg = "Group name, variable name combination is not available: " +
                             GroupName + ", " + VarName;
     ABORT(ErrorMsg);
@@ -258,7 +258,7 @@ std::size_t IodaIO::var_id(IodaIO::VarIter ivar) {
  */
 
 std::size_t IodaIO::var_id(const std::string & GroupName, const std::string & VarName) {
-  if (!grp_var_exist(GroupName, VarName)) {
+  if (!grp_var_exists(GroupName, VarName)) {
     std::string ErrorMsg = "Group name, variable name combination is not available: " +
                             GroupName + ", " + VarName;
     ABORT(ErrorMsg);
@@ -267,6 +267,130 @@ std::size_t IodaIO::var_id(const std::string & GroupName, const std::string & Va
   GroupIter igrp = grp_var_info_.find(GroupName);
   VarIter ivar = igrp->second.find(VarName);
   return ivar->second.var_id;
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns a flag indicating the existence of the given
+ *          dimension name. True indicates the dimension exists, false
+ *          indicates the dimension does not exist.
+ *
+ * \param[in] name Dimension name
+ */
+
+bool IodaIO::dim_exists(const std::string & name) {
+  return (dim_info_.find(name) != dim_info_.end());
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns the dimension name given a dimension iterator.
+ *
+ * \param[in] idim Dimension iterator
+ */
+
+std::string IodaIO::dim_name(IodaIO::DimIter idim) {
+  return idim->first;
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns the dimension id given a dimension iterator.
+ *
+ * \param[in] idim Dimension iterator
+ */
+
+int IodaIO::dim_id(IodaIO::DimIter idim) {
+  return idim->second.id;
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns the dimension size given a dimension iterator.
+ *
+ * \param[in] idim Dimension iterator
+ */
+
+std::size_t IodaIO::dim_size(IodaIO::DimIter idim) {
+  return idim->second.size;
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns the dimension size given a dimension id.
+ *
+ * \param[in] id Dimension id
+ */
+
+std::size_t IodaIO::dim_id_size(const int & id) {
+  DimIter idim;
+  for (idim = dim_info_.begin(); idim != dim_info_.end(); idim++) {
+    if (id == idim->second.id) {
+      break;
+    }
+  }
+
+  if (idim == dim_info_.end()) {
+    std::string ErrorMsg = "IodaIO::dim_id_size: Dimension id does not exist: " + id;
+    ABORT(ErrorMsg);
+  }
+
+  return idim->second.size;
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns the dimension name given a dimension id.
+ *
+ * \param[in] id Dimension id
+ */
+
+std::string IodaIO::dim_id_name(const int & id) {
+  DimIter idim;
+  for (idim = dim_info_.begin(); idim != dim_info_.end(); idim++) {
+    if (id == idim->second.id) {
+      break;
+    }
+  }
+
+  if (idim == dim_info_.end()) {
+    std::string ErrorMsg = "IodaIO::dim_id_name: Dimension id does not exist: " + id;
+    ABORT(ErrorMsg);
+  }
+
+  return idim->first;
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns the dimension size given a dimension name.
+ *
+ * \param[in] name Dimension name
+ */
+
+std::size_t IodaIO::dim_name_size(const std::string & name) {
+  if (!dim_exists(name)) {
+    std::string ErrorMsg = "IodaIO::dim_name_size: Dimension name does not exist: " + name;
+    ABORT(ErrorMsg);
+  }
+
+  return dim_info_.find(name)->second.size;
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns the dimension id given a dimension name.
+ *
+ * \param[in] name Dimension name
+ */
+
+int IodaIO::dim_name_id(const std::string & name) {
+  if (!dim_exists(name)) {
+    std::string ErrorMsg = "IodaIO::dim_name_id: Dimension name does not exist: " + name;
+    ABORT(ErrorMsg);
+  }
+
+  return dim_info_.find(name)->second.id;
 }
 
 }  // namespace ioda
