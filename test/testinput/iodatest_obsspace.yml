@@ -67,8 +67,8 @@ Observations:
             - "latitude"
             - "longitude"
           norms:
-            - 9436.08014227
-            - 47574.2386826
+            - 558.238937361
+            - 137.162692422
           tolerance:
             - 1.0e-11
 
