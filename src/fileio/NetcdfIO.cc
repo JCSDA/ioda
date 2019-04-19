@@ -104,14 +104,15 @@ NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
     ErrorMsg = "NetcdfIO::NetcdfIO: Unable to read file object counts";
     CheckNcCall(nc_inq(ncid_, &NcNdims, &NcNvars, &NcNatts, NULL), ErrorMsg);
 
-    // Record the dimension sizes in the dim_id_to_size_ container.
+    // Record the dimension ids and sizes in the dim_info_ container.
     // Save nlocs, nrecs and nvars in data members.
     for (std::size_t i = 0; i < NcNdims; i++) {
       char NcName[MAX_NC_NAME];
       std::size_t NcSize;
       ErrorMsg = "NetcdfIO::NetcdfIO: Unable to read dimension number: " + std::to_string(i);
       CheckNcCall(nc_inq_dim(ncid_, i, NcName, &NcSize), ErrorMsg);
-      dim_id_to_size_.push_back(NcSize);
+      dim_info_[NcName].size = NcSize;
+      dim_info_[NcName].id = i;
 
       if (strcmp(NcName, "nlocs") == 0) {
         nlocs_ = NcSize;
@@ -161,10 +162,10 @@ NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
       ErrorMsg = "NetcdfIO::NetcdfIO: Unable to look up type name";
       CheckNcCall(nc_inq_type(ncid_, NcDtype, NcDtypeName, &NcDtypeSize), ErrorMsg);
 
-      // Collect the sizes for dimensions from the dim_id_to_size_ container.
+      // Collect the sizes for dimensions from the dim_info_ container.
       std::vector<std::size_t> NcDimSizes;
       for (std::size_t j = 0; j < NcNdims; j++) {
-          NcDimSizes.push_back(dim_id_to_size_[NcDimIds[j]]);
+          NcDimSizes.push_back(dim_id_size(NcDimIds[j]));
       }
 
       // Record the variable info in the grp_var_into_ container.
@@ -390,6 +391,15 @@ void NetcdfIO::WriteVar_helper(const std::string & GroupName, const std::string 
                                const std::vector<std::size_t> & VarShape, DataType * VarData) {
   std::string NcVarName = FormNcVarName(GroupName, VarName);
   const std::type_info & VarType = typeid(DataType);
+  int imiss = util::missingValue(imiss);
+  int NcFillInt = NC_FILL_INT;
+  float fmiss = util::missingValue(fmiss);
+  float NcFillFloat = NC_FILL_FLOAT;
+
+  std::size_t VarSize = 1;
+  for (std::size_t i = 0; i < VarShape.size(); i++) {
+    VarSize *= VarShape[i];
+  }
 
   // For now and in order to keep the IodaIO class file type agnostic, infer the
   // dimensions from GroupName and VarShape. This is not a great way to
@@ -411,13 +421,13 @@ void NetcdfIO::WriteVar_helper(const std::string & GroupName, const std::string 
   // Form the dimension id list.
   std::vector<int> NcDimIds;
   if (GroupName.compare("MetaData") == 0) {
-    NcDimIds.push_back(dim_name_to_id_["nlocs"]);
+    NcDimIds.push_back(dim_name_id("nlocs"));
   } else if (GroupName.compare("VarMetaData") == 0) {
-    NcDimIds.push_back(dim_name_to_id_["nvars"]);
+    NcDimIds.push_back(dim_name_id("nvars"));
   } else if (GroupName.compare("RecMetaData") == 0) {
-    NcDimIds.push_back(dim_name_to_id_["nrecs"]);
+    NcDimIds.push_back(dim_name_id("nrecs"));
   } else {
-    NcDimIds.push_back(dim_name_to_id_["nlocs"]);
+    NcDimIds.push_back(dim_name_id("nlocs"));
   }
 
   if (VarType == typeid(char)) {
@@ -451,8 +461,18 @@ void NetcdfIO::WriteVar_helper(const std::string & GroupName, const std::string 
   // Write the data into the file according to type
   ErrorMsg = "NetcdfIO::WriteVar: Unable to write dataset: " + NcVarName;
   if (VarType == typeid(int)) {
+    for (std::size_t i = 0; i < VarSize; i++) {
+      if (VarData[i] == imiss) {
+        VarData[i] = NcFillInt;
+      }
+    }
     CheckNcCall(nc_put_var_int(ncid_, NcVarId, reinterpret_cast<int *>(VarData)), ErrorMsg);
   } else if (VarType == typeid(float)) {
+    for (std::size_t i = 0; i < VarSize; i++) {
+      if (VarData[i] == fmiss) {
+        VarData[i] = NcFillFloat;
+      }
+    }
     CheckNcCall(nc_put_var_float(ncid_, NcVarId, reinterpret_cast<float *>(VarData)), ErrorMsg);
   } else if (VarType == typeid(char)) {
     CheckNcCall(nc_put_var_text(ncid_, NcVarId, reinterpret_cast<char *>(VarData)), ErrorMsg);
@@ -538,7 +558,8 @@ void NetcdfIO::CreateNcDim(const std::string DimName, const std::size_t DimSize)
   int NcDimId;
   std::string ErrorMsg = "NetcdfIO::NetcdfIO: Unable to create dimension: " + DimName;
   CheckNcCall(nc_def_dim(ncid_, DimName.c_str(), DimSize, &NcDimId), ErrorMsg);
-  dim_name_to_id_[DimName] = NcDimId;
+  dim_info_[DimName].size = DimSize;
+  dim_info_[DimName].id = NcDimId;
 }
 
 // -----------------------------------------------------------------------------
@@ -566,16 +587,18 @@ int NetcdfIO::GetStringDimBySize(const std::size_t DimSize) {
   // the string "nstring".
   std::string DimName = "nstring" + std::to_string(DimSize);
 
-  // Look for this dimension in the string dims map
+  // If the dimenision exists simply return the id, otherwise create the dimension
+  // and return the new dimension's id.
   int DimId;
-  DimNameToIdType::iterator istr = string_dims_.find(DimName);
-  if (istr == string_dims_.end()) {
+  if (dim_exists(DimName)) {
+    // Found so simply return the id
+    DimId = dim_name_id(DimName);
+  } else {
     // Not found so create the dimension and get the id
     std::string ErrorMsg = "NetcdfIO::NetcdfIO: Unable to create dimension: " + DimName;
     CheckNcCall(nc_def_dim(ncid_, DimName.c_str(), DimSize, &DimId), ErrorMsg);
-    string_dims_[DimName] = DimId;
-  } else {
-    DimId = istr->second;
+    dim_info_[DimName].id = DimId;
+    dim_info_[DimName].size = DimSize;
   }
 
   return DimId;

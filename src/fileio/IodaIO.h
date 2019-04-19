@@ -73,6 +73,7 @@ class IodaIO : public util::Printable {
       std::string dtype;
       std::size_t var_id;
       std::vector<std::size_t> shape;
+      std::vector<std::string> dim_names;
     } VarInfoRec;
 
     /*!
@@ -94,6 +95,20 @@ class IodaIO : public util::Printable {
      *          through the contents of the input file.
      */
     typedef std::map<std::string, VarInfoMap> GroupVarInfoMap;
+
+    // Container for information about a dimension. Holds dimension id and size.
+    typedef struct {
+      std::size_t size;
+      int id;
+    } DimInfoRec;
+
+    /*!
+     * \brief dimension information map
+     *
+     * \details This typedef is dimension information map which containes
+     *          information about the dimensions of the variables.
+     */
+    typedef std::map<std::string, DimInfoRec> DimInfoMap;
 
  public:
     virtual ~IodaIO() = 0;
@@ -148,13 +163,27 @@ class IodaIO : public util::Printable {
     std::string var_name(VarIter);
 
     // Access to variable information
-    bool grp_var_exist(const std::string &, const std::string &);
+    bool grp_var_exists(const std::string &, const std::string &);
     std::string var_dtype(VarIter);
     std::string var_dtype(const std::string &, const std::string &);
     std::vector<std::size_t> var_shape(VarIter);
     std::vector<std::size_t> var_shape(const std::string &, const std::string &);
     std::size_t var_id(VarIter);
     std::size_t var_id(const std::string &, const std::string &);
+
+    // Access to dimension information
+    typedef DimInfoMap::const_iterator DimIter;
+    bool dim_exists(const std::string &);
+
+    std::string dim_name(DimIter);
+    int         dim_id(DimIter);
+    std::size_t dim_size(DimIter);
+
+    std::size_t dim_id_size(const int &);
+    std::string dim_id_name(const int &);
+
+    std::size_t dim_name_size(const std::string &);
+    int         dim_name_id(const std::string &);
 
  protected:
     // Methods provided by subclasses
@@ -192,11 +221,16 @@ class IodaIO : public util::Printable {
     std::size_t nvars_;
 
     /*!
-     * \brief group-varialble information map
+     * \brief group-variable information map
      *
      * \details See the GrpVarInfoMap typedef for details.
      */
     GroupVarInfoMap grp_var_info_;
+
+    /*!
+     * \brief dimension information map
+     */
+    DimInfoMap dim_info_;
 };
 
 }  // namespace ioda
