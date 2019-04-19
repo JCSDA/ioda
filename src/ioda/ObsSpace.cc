@@ -432,6 +432,7 @@ void ObsSpace::InitFromFile(const std::string & filename) {
   nrecs_ = fileio->nrecs();
 
   // Create the MPI distribution
+  std::unique_ptr<Distribution> dist_;
   DistributionFactory * DistFactory;
   dist_.reset(DistFactory->createDistribution("roundrobin"));
   dist_->distribution(commMPI_, file_nlocs_);
@@ -443,9 +444,9 @@ void ObsSpace::InitFromFile(const std::string & filename) {
   // Look for datetime@MetaData first, then datetime@GroupUndefined
   std::string DtGroupName = "MetaData";
   std::string DtVarName = "datetime";
-  if (!fileio->grp_var_exist(DtGroupName, DtVarName)) {
+  if (!fileio->grp_var_exists(DtGroupName, DtVarName)) {
     DtGroupName = "GroupUndefined";
-    if (!fileio->grp_var_exist(DtGroupName, DtVarName)) {
+    if (!fileio->grp_var_exists(DtGroupName, DtVarName)) {
       std::string ErrorMsg = "ObsSpace::InitFromFile: datetime information is not available";
       ABORT(ErrorMsg);
     }
@@ -454,22 +455,17 @@ void ObsSpace::InitFromFile(const std::string & filename) {
   std::vector<std::string> dt_strings_ =
            CharArrayToStringVector(dt_char_array_.get(), dt_shape_);
 
-  std::vector<std::size_t> to_be_removed;
   std::size_t index;
   for (std::size_t ii = 0; ii < dist_->size(); ++ii) {
     index = dist_->index()[ii];
     util::DateTime test_dt_(dt_strings_[index]);
-    if ((test_dt_ <= winbgn_) || (test_dt_ > winend_)) {
-      // Outside of the DA time window
-      to_be_removed.push_back(index);
+    if ((test_dt_ > winbgn_) && (test_dt_ <= winend_)) {
+      // Inside the DA time window, keep this index
+      indx_.push_back(index);
     }
   }
 
-  for (std::size_t ii = 0; ii < to_be_removed.size(); ++ii) {
-    dist_->erase(to_be_removed[ii]);
-  }
-
-  nlocs_ = dist_->size();
+  nlocs_ = indx_.size();
 
   // Read in all variables from the file and store them into the database.
   for (IodaIO::GroupIter igrp = fileio->group_begin();
@@ -756,7 +752,7 @@ void ObsSpace::ApplyDistIndex(std::unique_ptr<VarType> & FullData,
     IndexedData.reset(new VarType[IndexedSize]);
     for (std::size_t i = 0; i < IndexedShape[0]; i++) {
       for (std::size_t j = 0; j < IndexIncrement; j++) {
-        std::size_t isrc = (dist_->index()[i] * IndexIncrement) + j;
+        std::size_t isrc = (indx_[i] * IndexIncrement) + j;
         std::size_t idest = (i * IndexIncrement) + j;
         IndexedData.get()[idest] = FullData.get()[isrc];
       }
