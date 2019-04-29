@@ -14,6 +14,7 @@
 #include <string>
 #include <vector>
 
+#include <boost/math/special_functions/fpclassify.hpp>
 #include "eckit/mpi/Comm.h"
 #include "ioda/ObsSpace.h"
 #include "oops/base/Variables.h"
@@ -126,7 +127,7 @@ ObsDataVector<DATATYPE>::ObsDataVector(ObsSpace & obsdb, const std::string & var
 template <typename DATATYPE>
 ObsDataVector<DATATYPE>::ObsDataVector(const ObsDataVector & other)
   : obsdb_(other.obsdb_), obsvars_(other.obsvars_), nvars_(other.nvars_),
-    nlocs_(other.nlocs_), rows_(other.rows_), missing_(other.missing_) {
+    nlocs_(other.nlocs_), rows_(other.rows_), missing_(util::missingValue(missing_)) {
   oops::Log::trace() << "ObsDataVector copied" << std::endl;
 }
 // -----------------------------------------------------------------------------
@@ -167,19 +168,52 @@ void ObsDataVector<DATATYPE>::mask(const ObsDataVector<int> & flags) {
 // -----------------------------------------------------------------------------
 template <typename DATATYPE>
 void ObsDataVector<DATATYPE>::read(const std::string & name) {
-  oops::Log::trace() << "ObsVector::read, name = " <<  name << std::endl;
+  oops::Log::trace() << "ObsDataVector::read, name = " << name << std::endl;
+  const DATATYPE missing = util::missingValue(missing);
   std::vector<DATATYPE> tmp(nlocs_);
-  for (size_t jv = 0; jv < nvars_; ++jv) {
-    obsdb_.get_db(name, obsvars_.variables()[jv], nlocs_, tmp.data());
-    for (size_t jj = 0; jj < nlocs_; ++jj) {
-      rows_.at(jv).at(jj) = tmp.at(jj);
+
+// Hack for PreQC, needs to be removed
+  if (name == "PreQC") {
+    for (size_t jv = 0; jv < nvars_; ++jv) {
+      if (obsdb_.has(name, obsvars_.variables()[jv])) {
+        oops::Log::debug() << "ioda::ObsDataVector: "
+                           << obsvars_.variables()[jv] << " reading " << name << std::endl;
+        obsdb_.get_db(name, obsvars_.variables()[jv], nlocs_, tmp.data());
+        for (size_t jj = 0; jj < nlocs_; ++jj) {
+//        The following should be dealt with when reading the file
+          if (boost::math::isfinite(tmp.at(jj)) && std::abs(tmp.at(jj)) < std::abs(missing)) {
+            rows_.at(jv).at(jj) = tmp.at(jj);
+          } else {
+            rows_.at(jv).at(jj) = missing;
+          }
+        }
+      } else {
+        oops::Log::warning() << "ioda::ObsDataVector WARNING: "
+                             << obsvars_.variables()[jv] << " missing " << name << std::endl;
+        for (size_t jj = 0; jj < nlocs_; ++jj) {
+          rows_.at(jv).at(jj) = 0;
+        }
+      }
+    }
+  } else {
+//  No hack otherwise, only this should remain
+    for (size_t jv = 0; jv < nvars_; ++jv) {
+      obsdb_.get_db(name, obsvars_.variables()[jv], nlocs_, tmp.data());
+      for (size_t jj = 0; jj < nlocs_; ++jj) {
+//      The following should be dealt with when reading the file
+        if (boost::math::isfinite(tmp.at(jj)) && std::abs(tmp.at(jj)) < std::abs(missing)) {
+          rows_.at(jv).at(jj) = tmp.at(jj);
+        } else {
+          rows_.at(jv).at(jj) = missing;
+        }
+      }
     }
   }
 }
 // -----------------------------------------------------------------------------
 template <typename DATATYPE>
 void ObsDataVector<DATATYPE>::save(const std::string & name) const {
-  oops::Log::trace() << "ObsVector::save, name = " <<  name << std::endl;
+  oops::Log::trace() << "ObsDataVector::save, name = " << name << std::endl;
   std::vector<DATATYPE> tmp(nlocs_);
   for (size_t jv = 0; jv < nvars_; ++jv) {
     for (size_t jj = 0; jj < nlocs_; ++jj) {
@@ -203,10 +237,11 @@ void ObsDataVector<DATATYPE>::save(const std::string & name) const {
 template <typename DATATYPE>
 void ObsDataVector<DATATYPE>::print(std::ostream & os) const {
   const DATATYPE missing = util::missingValue(missing);
-  DATATYPE zmin = std::numeric_limits<DATATYPE>::max();
-  DATATYPE zmax = std::numeric_limits<DATATYPE>::lowest();
-  int nobs = 0;
   for (size_t jv = 0; jv < nvars_; ++jv) {
+    DATATYPE zmin = std::numeric_limits<DATATYPE>::max();
+    DATATYPE zmax = std::numeric_limits<DATATYPE>::lowest();
+    int nobs = 0;
+    int nloc = nlocs_;
     for (size_t jj = 0; jj < nlocs_; ++jj) {
       DATATYPE zz = rows_.at(jv).at(jj);
       if (zz != missing) {
@@ -215,12 +250,13 @@ void ObsDataVector<DATATYPE>::print(std::ostream & os) const {
         ++nobs;
       }
     }
+    obsdb_.comm().allReduceInPlace(zmin, eckit::mpi::min());
+    obsdb_.comm().allReduceInPlace(zmax, eckit::mpi::max());
+    obsdb_.comm().allReduceInPlace(nobs, eckit::mpi::sum());
+    obsdb_.comm().allReduceInPlace(nloc, eckit::mpi::sum());
+    os << obsdb_.obsname() << " " << obsvars_[jv] << " nlocs = " << nloc
+       << ", nobs= " << nobs << " Min=" << zmin << ", Max=" << zmax << std::endl;
   }
-  obsdb_.comm().allReduceInPlace(zmin, eckit::mpi::min());
-  obsdb_.comm().allReduceInPlace(zmax, eckit::mpi::max());
-  obsdb_.comm().allReduceInPlace(nobs, eckit::mpi::sum());
-  os << obsdb_.obsname() << " nobs= " << nobs
-     << " Min=" << zmin << ", Max=" << zmax << std::endl;
 }
 // -----------------------------------------------------------------------------
 }  // namespace ioda
