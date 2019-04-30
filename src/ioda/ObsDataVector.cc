@@ -12,6 +12,7 @@
 namespace ioda {
 
 // -----------------------------------------------------------------------------
+
 bool compareFlags(const ObsDataVector<int> & first, const ObsDataVector<int> & second) {
   oops::Log::trace() << "compareFlags starting" << std::endl;
   bool same = true;
@@ -32,6 +33,7 @@ bool compareFlags(const ObsDataVector<int> & first, const ObsDataVector<int> & s
 }
 
 // -----------------------------------------------------------------------------
+
 size_t numZero(const ObsDataVector<int> & data) {
   oops::Log::trace() << "numZero starting" << std::endl;
   size_t nzero = 0;
@@ -43,5 +45,7 @@ size_t numZero(const ObsDataVector<int> & data) {
   oops::Log::trace() << "numZero done" << std::endl;
   return nzero;
 }
+
+// -----------------------------------------------------------------------------
 
 }  // namespace ioda
