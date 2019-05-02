@@ -48,7 +48,7 @@ Observations:
   - ObsType: Radiance
     ObsData:
       ObsDataIn:
-        obsfile: Data/gmi_obs_gpm_2018041500_m.nc4
+        obsfile: Data/gmi_gpm_obs_2018041500_m.nc4
 
   - ObsType: Radiance
     ObsData:
