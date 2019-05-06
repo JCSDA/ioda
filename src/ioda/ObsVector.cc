@@ -169,8 +169,8 @@ double ObsVector::rms() const {
   return zrms;
 }
 // -----------------------------------------------------------------------------
-void ObsVector::read(const std::string & name) {
-  oops::Log::trace() << "ObsVector::read, name = " <<  name << std::endl;
+void ObsVector::read(const std::string & name, const bool fail_if_missing) {
+  oops::Log::trace() << "ObsVector::read, name = " << name << std::endl;
 
   // Read in the variables stored in obsvars_ from the group given by "name".
   //
@@ -179,33 +179,36 @@ void ObsVector::read(const std::string & name) {
   // means that a single variable gets its values spread out across the vector
   // in intervals the size of nvars_, and that the starting point for each variable
   // in the vector is given by the index of the variable name in varnames_.
+
   std::size_t nlocs = obsdb_.nlocs();
   std::vector<double> tmp(nlocs);
-  for (std::size_t i = 0; i < nvars_; ++i) {
-    obsdb_.get_db(name, obsvars_.variables()[i], nlocs, tmp.data());
+  for (std::size_t jv = 0; jv < nvars_; ++jv) {
+    if (fail_if_missing || obsdb_.has(name, obsvars_.variables()[jv])) {
+      obsdb_.get_db(name, obsvars_.variables()[jv], nlocs, tmp.data());
 
-    for (std::size_t j = 0; j < nlocs; ++j) {
-      std::size_t ivec = i + (j * nvars_);
-      values_[ivec] = tmp[j];
+      for (std::size_t jj = 0; jj < nlocs; ++jj) {
+        std::size_t ivec = jv + (jj * nvars_);
+        values_[ivec] = tmp[jj];
+      }
     }
   }
 }
 // -----------------------------------------------------------------------------
 void ObsVector::save(const std::string & name) const {
-  oops::Log::trace() << "ObsVector::save, name = " <<  name << std::endl;
+  oops::Log::trace() << "ObsVector::save, name = " << name << std::endl;
 
   // As noted in the read method, the order is all variables at the first location,
   // then all variables at the next location, etc.
   std::size_t nlocs = obsdb_.nlocs();
   std::size_t ivec;
-  for (std::size_t i = 0; i < nvars_; ++i) {
+  for (std::size_t jv = 0; jv < nvars_; ++jv) {
     std::vector<double> tmp(nlocs);
-    for (std::size_t j = 0; j < tmp.size(); ++j) {
-      ivec = i + (j * nvars_);
-      tmp[j] = values_[ivec];
+    for (std::size_t jj = 0; jj < tmp.size(); ++jj) {
+      ivec = jv + (jj * nvars_);
+      tmp[jj] = values_[ivec];
     }
 
-    obsdb_.put_db(name, obsvars_.variables()[i], nlocs, tmp.data());
+    obsdb_.put_db(name, obsvars_.variables()[jv], nlocs, tmp.data());
   }
 }
 // -----------------------------------------------------------------------------

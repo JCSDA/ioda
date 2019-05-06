@@ -67,7 +67,7 @@ class ObsVector : public util::Printable,
   void mask(const ObsDataVector<int> &);
 
 // I/O
-  void read(const std::string &);
+  void read(const std::string &, const bool fail_if_missing = true);
   void save(const std::string &) const;
 
  private:
