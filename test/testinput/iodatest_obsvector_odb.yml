@@ -15,8 +15,8 @@ Locations:
   - -100
 Observations:
   ObsTypes:
-  - ObsType: Radiosonde_1var
-    ObsData:
+  - ObsSpace:
+      name: Radiosonde_1var
       ObsDataIn:
         obsfile: Data/diag_t_obs_01_wprofiles.odb
         variables:

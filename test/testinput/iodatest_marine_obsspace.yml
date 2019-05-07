@@ -15,8 +15,8 @@ Locations:
   - -100
 Observations:
   ObsTypes:
-  - ObsType: ADT
-    ObsData:
+  - ObsSpace:
+      name: ADT
       ObsDataIn:
         obsfile: Data/Jason-2-2018-04-15.nc
         metadata:
@@ -34,8 +34,8 @@ Observations:
           tolerance:
             - 1.0e-13
 
-  - ObsType: InsituTemperature
-    ObsData:
+  - ObsSpace:
+      name: InsituTemperature
       ObsDataIn:
         obsfile: Data/profile_2018-04-15.nc
         metadata:
@@ -53,8 +53,8 @@ Observations:
           tolerance:
             - 1.0e-14
 
-  - ObsType: SeaSurfaceTemp
-    ObsData:
+  - ObsSpace:
+      name: SeaSurfaceTemp
       ObsDataIn:
         obsfile: Data/sst_obs-2018-04-15.nc4
         metadata:
@@ -72,8 +72,8 @@ Observations:
           tolerance:
             - 1.0e-13
 
-  - ObsType: SeaIceFraction
-    ObsData:
+  - ObsSpace:
+      name: SeaIceFraction
       ObsDataIn:
         obsfile: Data/icec-2018-04-15.nc
         metadata:
@@ -91,8 +91,8 @@ Observations:
           tolerance:
             - 1.0e-14
 
-  - ObsType: SeaIceThickness
-    ObsData:
+  - ObsSpace:
+      name: SeaIceThickness
       ObsDataIn:
         obsfile: Data/cryosat2-2018-04-15.nc
         metadata:
