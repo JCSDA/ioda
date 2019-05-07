@@ -50,10 +50,10 @@ class ObsDataVector: public util::Printable,
  public:
   static const std::string classname() {return "ioda::ObsDataVector";}
 
-  ObsDataVector(ObsSpace &, const oops::Variables &, const std::string & grp = "",
-                const bool zero_if_missing = false);
-  ObsDataVector(ObsSpace &, const std::string &, const std::string & grp = "",
-                const bool zero_if_missing = false);
+  ObsDataVector(ObsSpace &, const oops::Variables &,
+                const std::string & grp = "", const bool fail = true);
+  ObsDataVector(ObsSpace &, const std::string &,
+                const std::string & grp = "", const bool fail = true);
   ObsDataVector(const ObsDataVector &);
   ~ObsDataVector();
 
@@ -62,7 +62,7 @@ class ObsDataVector: public util::Printable,
   void zero();
   void mask(const ObsDataVector<int> &);
 
-  void read(const std::string &, const bool fail_if_missing = true);
+  void read(const std::string &, const bool fail = true);  // only used in GNSSRO QC
   void save(const std::string &) const;
 
 // Methods below are used by UFO but not by OOPS
@@ -98,7 +98,7 @@ size_t numZero(const ObsDataVector<int> &);
 // -----------------------------------------------------------------------------
 template <typename DATATYPE>
 ObsDataVector<DATATYPE>::ObsDataVector(ObsSpace & obsdb, const oops::Variables & vars,
-                                       const std::string & grp, const bool zero_if_missing)
+                                       const std::string & grp, const bool fail)
   : obsdb_(obsdb), obsvars_(vars), nvars_(obsvars_.size()),
     nlocs_(obsdb_.nlocs()), rows_(nvars_),
     missing_(util::missingValue(missing_))
@@ -107,20 +107,20 @@ ObsDataVector<DATATYPE>::ObsDataVector(ObsSpace & obsdb, const oops::Variables &
   for (size_t jj = 0; jj < nvars_; ++jj) {
     rows_[jj].resize(nlocs_);
   }
-  if (!grp.empty()) this->read(grp, !zero_if_missing);
+  if (!grp.empty()) this->read(grp, fail);
   oops::Log::trace() << "ObsDataVector::ObsDataVector done" << std::endl;
 }
 // -----------------------------------------------------------------------------
 template <typename DATATYPE>
 ObsDataVector<DATATYPE>::ObsDataVector(ObsSpace & obsdb, const std::string & var,
-                                       const std::string & grp, const bool zero_if_missing)
+                                       const std::string & grp, const bool fail)
   : obsdb_(obsdb), obsvars_(std::vector<std::string>(1, var)), nvars_(1),
     nlocs_(obsdb_.nlocs()), rows_(1),
     missing_(util::missingValue(missing_))
 {
   oops::Log::trace() << "ObsDataVector::ObsDataVector start" << std::endl;
   rows_[0].resize(nlocs_);
-  if (!grp.empty()) this->read(grp, !zero_if_missing);
+  if (!grp.empty()) this->read(grp, fail);
   oops::Log::trace() << "ObsDataVector::ObsDataVector done" << std::endl;
 }
 // -----------------------------------------------------------------------------
@@ -167,13 +167,13 @@ void ObsDataVector<DATATYPE>::mask(const ObsDataVector<int> & flags) {
 }
 // -----------------------------------------------------------------------------
 template <typename DATATYPE>
-void ObsDataVector<DATATYPE>::read(const std::string & name, const bool fail_if_missing) {
+void ObsDataVector<DATATYPE>::read(const std::string & name, const bool fail) {
   oops::Log::trace() << "ObsDataVector::read, name = " << name << std::endl;
   const DATATYPE missing = util::missingValue(missing);
   std::vector<DATATYPE> tmp(nlocs_);
 
   for (size_t jv = 0; jv < nvars_; ++jv) {
-    if (fail_if_missing || obsdb_.has(name, obsvars_.variables()[jv])) {
+    if (fail || obsdb_.has(name, obsvars_.variables()[jv])) {
       obsdb_.get_db(name, obsvars_.variables()[jv], nlocs_, tmp.data());
       for (size_t jj = 0; jj < nlocs_; ++jj) {
 //      The following should be dealt with when reading the file

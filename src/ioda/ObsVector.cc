@@ -21,21 +21,19 @@
 
 namespace ioda {
 // -----------------------------------------------------------------------------
-ObsVector::ObsVector(ObsSpace & obsdb, const oops::Variables & vars)
+ObsVector::ObsVector(ObsSpace & obsdb, const oops::Variables & vars,
+                     const std::string & name, const bool fail)
   : obsdb_(obsdb), obsvars_(vars), nvars_(obsvars_.variables().size()),
     nlocs_(obsdb_.nlocs()), values_(nlocs_ * nvars_),
     missing_(util::missingValue(missing_)) {
-  oops::Log::debug() << "ObsVector constructed with " << nvars_
-                     << " variables resulting in " << values_.size()
-                     << " elements." << std::endl;
+  oops::Log::trace() << "ObsVector::ObsVector " << name << std::endl;
+  if (!name.empty()) this->read(name, fail);
 }
 // -----------------------------------------------------------------------------
 ObsVector::ObsVector(const ObsVector & other, const bool copy)
   : obsdb_(other.obsdb_), obsvars_(other.obsvars_), nvars_(other.nvars_),
     nlocs_(other.nlocs_), values_(nlocs_ * nvars_), missing_(other.missing_) {
-  oops::Log::debug() << "ObsVector copy constructed with " << nvars_
-                     << " variables resulting in " << values_.size()
-                     << " elements." << std::endl;
+  oops::Log::trace() << "ObsVector copied " << copy << std::endl;
   if (copy) values_ = other.values_;
 }
 // -----------------------------------------------------------------------------
@@ -169,7 +167,7 @@ double ObsVector::rms() const {
   return zrms;
 }
 // -----------------------------------------------------------------------------
-void ObsVector::read(const std::string & name, const bool fail_if_missing) {
+void ObsVector::read(const std::string & name, const bool fail) {
   oops::Log::trace() << "ObsVector::read, name = " << name << std::endl;
 
   // Read in the variables stored in obsvars_ from the group given by "name".
@@ -183,7 +181,7 @@ void ObsVector::read(const std::string & name, const bool fail_if_missing) {
   std::size_t nlocs = obsdb_.nlocs();
   std::vector<double> tmp(nlocs);
   for (std::size_t jv = 0; jv < nvars_; ++jv) {
-    if (fail_if_missing || obsdb_.has(name, obsvars_.variables()[jv])) {
+    if (fail || obsdb_.has(name, obsvars_.variables()[jv])) {
       obsdb_.get_db(name, obsvars_.variables()[jv], nlocs, tmp.data());
 
       for (std::size_t jj = 0; jj < nlocs; ++jj) {
