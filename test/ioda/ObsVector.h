@@ -54,10 +54,11 @@ class ObsVecTestFixture : private boost::noncopyable {
     obsconf.get("ObsTypes", conf);
 
     for (std::size_t jj = 0; jj < conf.size(); ++jj) {
-      boost::shared_ptr<ObsSpace_> tmp(new ObsSpace_(conf[jj], bgn, end));
+      eckit::LocalConfiguration obsconf(conf[jj], "ObsSpace");
+      boost::shared_ptr<ObsSpace_> tmp(new ObsSpace_(obsconf, bgn, end));
       ospaces_.push_back(tmp);
       eckit::LocalConfiguration ObsDataInConf;
-      conf[jj].get("ObsData.ObsDataIn", ObsDataInConf);
+      obsconf.get("ObsDataIn", ObsDataInConf);
       observed_.push_back(oops::Variables(ObsDataInConf));
     }
   }
@@ -138,8 +139,8 @@ void testRead() {
     ioda::ObsSpace * Odb = Test_::obspace()[jj].get();
 
     // Grab the expected RMS value and tolerance from the obsdb_ configuration.
-    double ExpectedRms = conf[jj].getDouble("ObsData.ObsDataIn.rms_equiv");
-    double Tol = conf[jj].getDouble("ObsData.ObsDataIn.tolerance");
+    double ExpectedRms = conf[jj].getDouble("ObsSpace.ObsDataIn.rms_equiv");
+    double Tol = conf[jj].getDouble("ObsSpace.ObsDataIn.tolerance");
 
     // Read in a vector and check contents with norm function.
     boost::scoped_ptr<ObsVector_> ov(new ObsVector_(*Odb, Test_::observed(jj), "ObsValue"));
