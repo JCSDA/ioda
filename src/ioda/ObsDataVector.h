@@ -176,12 +176,7 @@ void ObsDataVector<DATATYPE>::read(const std::string & name, const bool fail) {
     if (fail || obsdb_.has(name, obsvars_.variables()[jv])) {
       obsdb_.get_db(name, obsvars_.variables()[jv], nlocs_, tmp.data());
       for (size_t jj = 0; jj < nlocs_; ++jj) {
-//      The following should be dealt with when reading the file
-        if (boost::math::isfinite(tmp.at(jj)) && std::abs(tmp.at(jj)) < std::abs(missing)) {
-          rows_.at(jv).at(jj) = tmp.at(jj);
-        } else {
-          rows_.at(jv).at(jj) = missing;
-        }
+        rows_.at(jv).at(jj) = tmp.at(jj);
       }
     }
   }
