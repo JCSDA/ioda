@@ -46,17 +46,17 @@ ObsSpace::ObsSpace(const eckit::Configuration & config,
 {
   oops::Log::trace() << "ioda::ObsSpace config  = " << config << std::endl;
 
-  obsname_ = config.getString("ObsType");
+  obsname_ = config.getString("name");
 
   // Open the file and read in variables from the file into the database.
-  filein_ = config.getString("ObsData.ObsDataIn.obsfile");
+  filein_ = config.getString("ObsDataIn.obsfile");
   oops::Log::trace() << obsname_ << " file in = " << filein_ << std::endl;
 
   InitFromFile(filein_);
 
   // Check to see if an output file has been requested.
-  if (config.has("ObsData.ObsDataOut.obsfile")) {
-    std::string filename = config.getString("ObsData.ObsDataOut.obsfile");
+  if (config.has("ObsDataOut.obsfile")) {
+    std::string filename = config.getString("ObsDataOut.obsfile");
 
     // Find the left-most dot in the file name, and use that to pick off the file name
     // and file extension.
