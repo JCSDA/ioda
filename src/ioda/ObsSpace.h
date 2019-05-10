@@ -101,9 +101,9 @@ class ObsSpace : public oops::ObsSpaceBase {
   void InitFromFile(const std::string & filename);
 
   template<typename VarType>
-  void ApplyDistIndex(std::unique_ptr<VarType> & FullData,
+  void ApplyDistIndex(std::unique_ptr<VarType[]> & FullData,
                       const std::vector<std::size_t> & FullShape,
-                      std::unique_ptr<VarType> & IndexedData,
+                      std::unique_ptr<VarType[]> & IndexedData,
                       std::vector<std::size_t> & IndexedShape, std::size_t & IndexedSize);
 
   std::string DesiredVarType(std::string & GroupName, std::string & FileVarType);

@@ -15,8 +15,8 @@ Locations:
   - -100.0
 Observations:
   ObsTypes:
-  - ObsType: "Aod"
-    ObsData:
+  - ObsSpace:
+      name: "Aod"
       ObsDataIn:
         obsfile: "Data/aod_obs_2018041500_m.nc4"
         metadata:
@@ -34,8 +34,8 @@ Observations:
           tolerance:
             - 1.0e-14
 
-  - ObsType: "Radiance"
-    ObsData:
+  - ObsSpace:
+      name: "Radiance"
       ObsDataIn:
         obsfile: "Data/amsua_n19_obs_2018041500_m.nc4"
         metadata:
@@ -53,8 +53,8 @@ Observations:
           tolerance:
             - 1.0e-11
 
-  - ObsType: "Radiance"
-    ObsData:
+  - ObsSpace:
+      name: "Radiance"
       ObsDataIn:
         obsfile: "Data/smap_obs_2018041500_m.nc4"
         metadata:
@@ -72,12 +72,12 @@ Observations:
           tolerance:
             - 1.0e-11
 
-  - ObsType: "Radiance"
-    ObsData:
+  - ObsSpace:
+      name: "Radiance"
       ObsDataIn:
-        obsfile: "Data/gmi_obs_gpm_2018041500_m.nc4"
+        obsfile: "Data/gmi_gpm_obs_2018041500_m.nc4"
         metadata:
-          nlocs: 75
+          nlocs: 12
         TestData:
           groups:
             - "MetaData"
@@ -86,13 +86,13 @@ Observations:
             - "latitude"
             - "longitude"
           norms:
-            - 526.830229564
-            - 367.9760257366043
+            - 211.00380053756118
+            - 172.29837728971688
           tolerance:
             - 1.0e-11
 
-  - ObsType: "Radiosonde"
-    ObsData:
+  - ObsSpace:
+      name: "Radiosonde"
       ObsDataIn:
         obsfile: "Data/sondes_obs_2018041500_m.nc4"
         metadata:

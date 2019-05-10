@@ -7,8 +7,9 @@
 
 #include "fileio/NetcdfIO.h"
 
+#include <math.h>
 #include <netcdf.h>
-#include <cmath>
+
 #include <iostream>
 #include <memory>
 #include <string>
@@ -325,16 +326,18 @@ void NetcdfIO::ReadVar_helper(const std::string & GroupName, const std::string &
   for (std::size_t i = 0; i < VarShape.size(); i++) {
     VarSize *= VarShape[i];
   }
-  if ((VarType == typeid(int)) || (VarType == typeid(float))) {
+  if ((VarType == typeid(int)) || (VarType == typeid(float)) || (VarType == typeid(double))) {
     const DataType missing_value = util::missingValue(missing_value);
     for (std::size_t i = 0; i < VarSize; i++) {
       // For now use a large number as an indicator of a missing value. This is not
       // as safe as it should be. In the future, use the netcdf default fill value
       // as the missing value indicator.
       //
+      // Convert invalid numerical values (nan, inf, -inf) to missing values.
+      //
       // The fabs() function will convert integers and floats to double, then
       // take the absolute value, then return the double result.
-      if (fabs(VarData[i]) > missingthreshold) {
+      if (fabs(VarData[i]) > missingthreshold || isinf(VarData[i]) || isnan(VarData[i])) {
         VarData[i] = missing_value;
       }
     }
