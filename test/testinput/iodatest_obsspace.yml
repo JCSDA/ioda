@@ -111,4 +111,23 @@ Observations:
             - 1.0e-11
       ObsDataOut:
         obsfile: "testoutput/diagout.nc4"
-
+ 
+  - ObsType: "LAOD"
+    ObsData:
+      ObsDataIn:
+        obsfile: "Data/geos_aod_obs_2018041500_m.nc4"
+        metadata:
+          nlocs: 100
+        TestData:
+          groups:
+            - "MetaData"
+            - "MetaData"
+          variables:
+            - "latitude"
+            - "longitude"
+          norms:
+            - 757.55982302113819
+            - 1282.68940922515
+          tolerance:
+            - 1.0e-11
+   
