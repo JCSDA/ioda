@@ -7,8 +7,8 @@ TestInput:
   filename: "Data/fileio.nc4"
   nvars_in_file: 5
   nlocs: 5
-  nrecs: 2
-  nvars: 3
+  nrecs: 4
+  nvars: 6
   variables:
     - "test_int@IntGroup"
     - "test_float@FloatGroup"
@@ -16,8 +16,8 @@ TestInput:
     - "test_string@CharGroup"
     - "datetime@MetaData"
   var0: [ 2, 4, 6, 8, -2147483643 ]
-  var1: [ 1.5, -3.3688e+38, 3.4 ]
-  var2: [ 1.5, 2.7 ] 
+  var1: [ 1.5, -3.3688e+38, 3.4, -3.3688e+38, -3.3688e+38, -3.3688e+38 ]
+  var2: [ 1.5, 2.7, -3.3688e+38, -3.3688e+38 ] 
   var3: [ "01234567", "ABCDEFGH", "01234", "Hello", "World" ]
   var4: [ "2018-04-14T23:41:59Z", "2018-04-14T23:42:07Z", "2018-04-14T23:44:28Z", "2018-04-14T23:46:20Z", "2018-04-14T23:48:15Z" ]
   tolerance: 1.0e-5

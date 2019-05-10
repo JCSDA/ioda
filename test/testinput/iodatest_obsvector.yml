@@ -15,8 +15,8 @@ Locations:
   - -100
 Observations:
   ObsTypes:
-  - ObsType: Radiosonde_1var
-    ObsData:
+  - ObsSpace:
+      name: Radiosonde_1var
       ObsDataIn:
         obsfile: Data/sondes_obs_2018041500_m.nc4
         variables:
@@ -24,8 +24,8 @@ Observations:
         rms_equiv: 215.813393658623
         tolerance: 1.0e-14
 
-  - ObsType: Radiosonde_2vars
-    ObsData:
+  - ObsSpace:
+      name: Radiosonde_2vars
       ObsDataIn:
         obsfile: Data/sondes_obs_2018041500_m.nc4
         variables:
@@ -34,8 +34,8 @@ Observations:
         rms_equiv: 175.100547361903
         tolerance: 1.0e-14
 
-  - ObsType: Radiosonde_4vars
-    ObsData:
+  - ObsSpace:
+      name: Radiosonde_4vars
       ObsDataIn:
         obsfile: Data/sondes_obs_2018041500_m.nc4
         variables:

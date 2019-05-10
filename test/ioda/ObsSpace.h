@@ -50,7 +50,8 @@ class ObsSpaceTestFixture : private boost::noncopyable {
     obsconf.get("ObsTypes", conf);
 
     for (std::size_t jj = 0; jj < conf.size(); ++jj) {
-      boost::shared_ptr<ioda::ObsSpace> tmp(new ioda::ObsSpace(conf[jj], bgn, end));
+      eckit::LocalConfiguration obsconf(conf[jj], "ObsSpace");
+      boost::shared_ptr<ioda::ObsSpace> tmp(new ioda::ObsSpace(obsconf, bgn, end));
       ospaces_.push_back(tmp);
     }
   }
@@ -74,7 +75,7 @@ void testConstructor() {
     std::size_t Nlocs = Test_::obspace(jj).nlocs();
 
     // Get the expected nlocs from the obspace object's configuration
-    int ExpectedNlocs = conf[jj].getInt("ObsData.ObsDataIn.metadata.nlocs");
+    int ExpectedNlocs = conf[jj].getInt("ObsSpace.ObsDataIn.metadata.nlocs");
 
     EXPECT(Nlocs == ExpectedNlocs);
   }
@@ -92,7 +93,7 @@ void testGetDb() {
   for (std::size_t jj = 0; jj < Test_::size(); ++jj) {
     // Set up a pointer to the ObsSpace object for convenience
     ioda::ObsSpace * Odb = &(Test_::obspace(jj));
-    const eckit::LocalConfiguration dataconf(conf[jj], "ObsData.ObsDataIn.TestData");
+    const eckit::LocalConfiguration dataconf(conf[jj], "ObsSpace.ObsDataIn.TestData");
 
     // Read in the variable names and expected norm values from the configuration
     std::vector<std::string> GroupNames = dataconf.getStringVector("groups");

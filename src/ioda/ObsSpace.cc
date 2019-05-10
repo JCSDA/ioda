@@ -46,17 +46,17 @@ ObsSpace::ObsSpace(const eckit::Configuration & config,
 {
   oops::Log::trace() << "ioda::ObsSpace config  = " << config << std::endl;
 
-  obsname_ = config.getString("ObsType");
+  obsname_ = config.getString("name");
 
   // Open the file and read in variables from the file into the database.
-  filein_ = config.getString("ObsData.ObsDataIn.obsfile");
+  filein_ = config.getString("ObsDataIn.obsfile");
   oops::Log::trace() << obsname_ << " file in = " << filein_ << std::endl;
 
   InitFromFile(filein_);
 
   // Check to see if an output file has been requested.
-  if (config.has("ObsData.ObsDataOut.obsfile")) {
-    std::string filename = config.getString("ObsData.ObsDataOut.obsfile");
+  if (config.has("ObsDataOut.obsfile")) {
+    std::string filename = config.getString("ObsDataOut.obsfile");
 
     // Find the left-most dot in the file name, and use that to pick off the file name
     // and file extension.
@@ -170,7 +170,7 @@ void ObsSpace::get_db(const std::string & group, const std::string & name,
 void ObsSpace::get_db(const std::string & group, const std::string & name,
                       const size_t & vsize, double vdata[]) const {
   // load the float values from the database and convert to double
-  std::unique_ptr<float> FloatData(new float[vsize]);
+  std::unique_ptr<float[]> FloatData(new float[vsize]);
   get_db_helper<float>(group, name, vsize, FloatData.get());
   ConvertVarType<float, double>(FloatData.get(), &vdata[0], vsize);
 }
@@ -282,7 +282,7 @@ void ObsSpace::put_db(const std::string & group, const std::string & name,
 void ObsSpace::put_db(const std::string & group, const std::string & name,
                       const size_t & vsize, const double vdata[]) {
   // convert to float, then load into the database
-  std::unique_ptr<float> FloatData(new float[vsize]);
+  std::unique_ptr<float[]> FloatData(new float[vsize]);
   ConvertVarType<double, float>(&vdata[0], FloatData.get(), vsize);
   put_db_helper<float>(group, name, vsize, FloatData.get());
 }
@@ -491,19 +491,19 @@ void ObsSpace::InitFromFile(const std::string & filename) {
 
       // Read the variable from the file and transfer it to the database.
       if (FileVarType.compare("int") == 0) {
-        std::unique_ptr<int> FileData(new int[VarSize]);
+        std::unique_ptr<int[]> FileData(new int[VarSize]);
         fileio->ReadVar(GroupName, VarName, VarShape, FileData.get());
 
-        std::unique_ptr<int> IndexedData;
+        std::unique_ptr<int[]> IndexedData;
         std::vector<std::size_t> IndexedShape;
         std::size_t IndexedSize;
         ApplyDistIndex<int>(FileData, VarShape, IndexedData, IndexedShape, IndexedSize);
         database_.StoreToDb(GroupName, VarName, IndexedShape, IndexedData.get());
       } else if (FileVarType.compare("float") == 0) {
-        std::unique_ptr<float> FileData(new float[VarSize]);
+        std::unique_ptr<float[]> FileData(new float[VarSize]);
         fileio->ReadVar(GroupName, VarName, VarShape, FileData.get());
 
-        std::unique_ptr<float> IndexedData;
+        std::unique_ptr<float[]> IndexedData;
         std::vector<std::size_t> IndexedShape;
         std::size_t IndexedSize;
         ApplyDistIndex<float>(FileData, VarShape, IndexedData, IndexedShape, IndexedSize);
@@ -516,10 +516,10 @@ void ObsSpace::InitFromFile(const std::string & filename) {
         }
       } else if (FileVarType.compare("double") == 0) {
         // Convert double to float before storing into the database.
-        std::unique_ptr<double> FileData(new double[VarSize]);
+        std::unique_ptr<double[]> FileData(new double[VarSize]);
         fileio->ReadVar(GroupName, VarName, VarShape, FileData.get());
 
-        std::unique_ptr<double> IndexedData;
+        std::unique_ptr<double[]> IndexedData;
         std::vector<std::size_t> IndexedShape;
         std::size_t IndexedSize;
         ApplyDistIndex<double>(FileData, VarShape, IndexedData, IndexedShape, IndexedSize);
@@ -530,10 +530,10 @@ void ObsSpace::InitFromFile(const std::string & filename) {
         // Convert the char array to a vector of strings. If we are working
         // on the variable "datetime", then convert the strings to DateTime
         // objects.
-        std::unique_ptr<char> FileData(new char[VarSize]);
+        std::unique_ptr<char[]> FileData(new char[VarSize]);
         fileio->ReadVar(GroupName, VarName, VarShape, FileData.get());
 
-        std::unique_ptr<char> IndexedData;
+        std::unique_ptr<char[]> IndexedData;
         std::vector<std::size_t> IndexedShape;
         std::size_t IndexedSize;
         ApplyDistIndex<char>(FileData, VarShape, IndexedData, IndexedShape, IndexedSize);
@@ -594,11 +594,11 @@ void ObsSpace::SaveToFile(const std::string & file_name) {
     std::size_t VarSize = database_.var_iter_size(ivar);
 
     if (VarType == typeid(int)) {
-      std::unique_ptr<int> VarData(new int[VarSize]);
+      std::unique_ptr<int[]> VarData(new int[VarSize]);
       database_.LoadFromDb(GroupName, VarName, VarShape, VarData.get());
       fileio->WriteVar(GroupName, VarName, VarShape, VarData.get());
     } else if (VarType == typeid(float)) {
-      std::unique_ptr<float> VarData(new float[VarSize]);
+      std::unique_ptr<float[]> VarData(new float[VarSize]);
       database_.LoadFromDb(GroupName, VarName, VarShape, VarData.get());
       fileio->WriteVar(GroupName, VarName, VarShape, VarData.get());
     } else if (VarType == typeid(std::string)) {
@@ -608,7 +608,7 @@ void ObsSpace::SaveToFile(const std::string & file_name) {
       // Get the shape needed for the character array, which will be a 2D array.
       // The total number of char elelments will be CharShape[0] * CharShape[1].
       std::vector<std::size_t> CharShape = CharShapeFromStringVector(VarData);
-      std::unique_ptr<char> CharData(new char[CharShape[0] * CharShape[1]]);
+      std::unique_ptr<char[]> CharData(new char[CharShape[0] * CharShape[1]]);
       StringVectorToCharArray(VarData, CharShape, CharData.get());
       fileio->WriteVar(GroupName, VarName, CharShape, CharData.get());
     } else if (VarType == typeid(util::DateTime)) {
@@ -622,7 +622,7 @@ void ObsSpace::SaveToFile(const std::string & file_name) {
         StringVector[i] = VarData[i].toString();
       }
       std::vector<std::size_t> CharShape = CharShapeFromStringVector(StringVector);
-      std::unique_ptr<char> CharData(new char[CharShape[0] * CharShape[1]]);
+      std::unique_ptr<char[]> CharData(new char[CharShape[0] * CharShape[1]]);
       StringVectorToCharArray(StringVector, CharShape, CharData.get());
       fileio->WriteVar(GroupName, VarName, CharShape, CharData.get());
     } else {
@@ -667,7 +667,7 @@ void ObsSpace::ConvertStoreToDb(const std::string & GroupName, const std::string
                        << "Converting data, including missing marks, from "
                        << VarTypeName << " to " << DbTypeName << std::endl << std::endl;
 
-  std::unique_ptr<DbType> DbData(new DbType[VarSize]);
+  std::unique_ptr<DbType[]> DbData(new DbType[VarSize]);
   ConvertVarType<VarType, DbType>(VarData, DbData.get(), VarSize);
   database_.StoreToDb(GroupName, VarName, VarShape, DbData.get());
 }
@@ -705,7 +705,7 @@ void ObsSpace::LoadFromDbConvert(const std::string & GroupName, const std::strin
   oops::Log::warning() << "ObsSpace::LoadFromDbConvert: STACKTRACE:" << std::endl
                        << boost::stacktrace::stacktrace() << std::endl;
 
-  std::unique_ptr<DbType> DbData(new DbType[VarSize]);
+  std::unique_ptr<DbType[]> DbData(new DbType[VarSize]);
   database_.LoadFromDb(GroupName, VarName, VarShape, DbData.get());
   ConvertVarType<DbType, VarType>(DbData.get(), VarData, VarSize);
 }
@@ -725,9 +725,9 @@ void ObsSpace::LoadFromDbConvert(const std::string & GroupName, const std::strin
  * \param[out] IndexedSize  Total number of elements in IndexedData
  */
 template<typename VarType>
-void ObsSpace::ApplyDistIndex(std::unique_ptr<VarType> & FullData,
+void ObsSpace::ApplyDistIndex(std::unique_ptr<VarType[]> & FullData,
                               const std::vector<std::size_t> & FullShape,
-                              std::unique_ptr<VarType> & IndexedData,
+                              std::unique_ptr<VarType[]> & IndexedData,
                               std::vector<std::size_t> & IndexedShape,
                               std::size_t & IndexedSize) {
   IndexedShape = FullShape;

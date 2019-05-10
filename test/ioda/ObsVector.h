@@ -54,10 +54,11 @@ class ObsVecTestFixture : private boost::noncopyable {
     obsconf.get("ObsTypes", conf);
 
     for (std::size_t jj = 0; jj < conf.size(); ++jj) {
-      boost::shared_ptr<ObsSpace_> tmp(new ObsSpace_(conf[jj], bgn, end));
+      eckit::LocalConfiguration obsconf(conf[jj], "ObsSpace");
+      boost::shared_ptr<ObsSpace_> tmp(new ObsSpace_(obsconf, bgn, end));
       ospaces_.push_back(tmp);
       eckit::LocalConfiguration ObsDataInConf;
-      conf[jj].get("ObsData.ObsDataIn", ObsDataInConf);
+      obsconf.get("ObsDataIn", ObsDataInConf);
       observed_.push_back(oops::Variables(ObsDataInConf));
     }
   }
@@ -136,14 +137,13 @@ void testRead() {
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     ioda::ObsSpace * Odb = Test_::obspace()[jj].get();
-    boost::scoped_ptr<ObsVector_> ov(new ObsVector_(*Odb, Test_::observed(jj)));
 
     // Grab the expected RMS value and tolerance from the obsdb_ configuration.
-    double ExpectedRms = conf[jj].getDouble("ObsData.ObsDataIn.rms_equiv");
-    double Tol = conf[jj].getDouble("ObsData.ObsDataIn.tolerance");
+    double ExpectedRms = conf[jj].getDouble("ObsSpace.ObsDataIn.rms_equiv");
+    double Tol = conf[jj].getDouble("ObsSpace.ObsDataIn.tolerance");
 
     // Read in a vector and check contents with norm function.
-    ov->read("ObsValue");
+    boost::scoped_ptr<ObsVector_> ov(new ObsVector_(*Odb, Test_::observed(jj), "ObsValue"));
     double Rms = ov->rms();
     
     EXPECT(oops::is_close(Rms, ExpectedRms, Tol));
@@ -162,18 +162,15 @@ void testSave() {
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     Odb = Test_::obspace()[jj].get();
-    boost::scoped_ptr<ObsVector_> ov_orig(new ObsVector_(*Odb, Test_::observed(jj)));
 
     // Read in a vector and save the rms value. Then write the vector into a
     // test group, read it out of the test group and compare the rms of the
     // vector read out of the test group with that of the original.
-    ov_orig->read("ObsValue");
+    boost::scoped_ptr<ObsVector_> ov_orig(new ObsVector_(*Odb, Test_::observed(jj), "ObsValue"));
     ExpectedRms = ov_orig->rms();
-    ov_orig->save("ObsTestValue");
+    ov_orig->save("ObsTest");
 
-    boost::scoped_ptr<ObsVector_> ov_test(new ObsVector_(*ov_orig));
-    ov_test->zero();
-    ov_test->read("ObsTestValue");
+    boost::scoped_ptr<ObsVector_> ov_test(new ObsVector_(*Odb, Test_::observed(jj), "ObsTest"));
     Rms = ov_test->rms();
     
     EXPECT(oops::is_close(Rms, ExpectedRms, 1.0e-12));
