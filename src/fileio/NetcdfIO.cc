@@ -338,7 +338,7 @@ void NetcdfIO::ReadVar_helper(const std::string & GroupName, const std::string &
       //
       // The fabs() function will convert integers and floats to double, then
       // take the absolute value, then return the double result.
-      if (fabs(VarData[i]) > missingthreshold || boost::math::isinf(VarData[i]) 
+      if (fabs(VarData[i]) > missingthreshold || boost::math::isinf(VarData[i])
                                               || boost::math::isnan(VarData[i])) {
         VarData[i] = missing_value;
       }
