@@ -15,6 +15,7 @@
 #include <string>
 #include <typeinfo>
 
+#include <boost/math/special_functions/fpclassify.hpp>
 #include "distribution/DistributionFactory.h"
 #include "oops/parallel/mpi/mpi.h"
 #include "oops/util/abor1_cpp.h"
@@ -337,7 +338,8 @@ void NetcdfIO::ReadVar_helper(const std::string & GroupName, const std::string &
       //
       // The fabs() function will convert integers and floats to double, then
       // take the absolute value, then return the double result.
-      if (fabs(VarData[i]) > missingthreshold || isinf(VarData[i]) || isnan(VarData[i])) {
+      if (fabs(VarData[i]) > missingthreshold || boost::math::isinf(VarData[i]) 
+                                              || boost::math::isnan(VarData[i])) {
         VarData[i] = missing_value;
       }
     }
