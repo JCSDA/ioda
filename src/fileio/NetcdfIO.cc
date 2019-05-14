@@ -86,7 +86,7 @@ NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
   // Abort if open failed
   if (retval_ != NC_NOERR) {
     oops::Log::error() << __func__ << ": Unable to open file '" << fname_
-                       << "' in mode: " << fmode_ << std::endl;
+                       << "' in mode: " << fmode_ << " [NetCDF error: \"" << nc_strerror(retval_) <<"\"]"<<std::endl;
     ABORT("Unable to open file");
   }
 
