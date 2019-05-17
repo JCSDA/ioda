@@ -54,9 +54,6 @@ static const double missingthreshold = 1.0e08;
 NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
                    const std::size_t & Nlocs, const std::size_t & Nrecs,
                    const std::size_t & Nvars) {
-  int retval_;
-  std::string ErrorMsg;
-
   // Set the data members to the file name, file mode and provide a trace message.
   fname_ = FileName;
   fmode_ = FileMode;
@@ -71,24 +68,18 @@ NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
   //    "r" - read
   //    "w" - write, disallow overriting an existing file
   //    "W" - write, allow overwriting an existing file
+  std::string ErrorMsg = "NetcdfIO::NetcdfIO: Unable to open file: '" + fname_ +
+                         "' in mode: " + fmode_;
   if (fmode_ == "r") {
-    retval_ = nc_open(fname_.c_str(), NC_NOWRITE, &ncid_);
+    CheckNcCall(nc_open(fname_.c_str(), NC_NOWRITE, &ncid_), ErrorMsg);
   } else if (fmode_ == "w") {
-    retval_ = nc_create(fname_.c_str(), NC_NOCLOBBER|NC_NETCDF4, &ncid_);
+    CheckNcCall(nc_create(fname_.c_str(), NC_NOCLOBBER|NC_NETCDF4, &ncid_), ErrorMsg);
   } else if (fmode_ == "W") {
-    retval_ = nc_create(fname_.c_str(), NC_CLOBBER|NC_NETCDF4, &ncid_);
+    CheckNcCall(nc_create(fname_.c_str(), NC_CLOBBER|NC_NETCDF4, &ncid_), ErrorMsg);
   } else {
-    oops::Log::error() << __func__ << ": Unrecognized FileMode: " << fmode_ << std::endl;
-    oops::Log::error() << __func__ << ": Must use one of: 'r', 'w', 'W'" << std::endl;
+    oops::Log::error() << "NetcdfIO::NetcdfIO: Unrecognized FileMode: " << fmode_ << std::endl;
+    oops::Log::error() << "NetcdfIO::NetcdfIO: Must use one of: 'r', 'w', 'W'" << std::endl;
     ABORT("Unrecognized file mode for NetcdfIO constructor");
-  }
-
-  // Abort if open failed
-  if (retval_ != NC_NOERR) {
-    oops::Log::error() << __func__ << ": Unable to open file '" << fname_
-                       << "' in mode: " << fmode_
-                       << " [NetCDF error: '" << nc_strerror(retval_) << "']" << std::endl;
-    ABORT("Unable to open file");
   }
 
   // When in read mode, the constructor is responsible for setting
@@ -513,7 +504,8 @@ void NetcdfIO::print(std::ostream & os) const {
 
 void NetcdfIO::CheckNcCall(int RetCode, std::string & ErrorMsg) {
   if (RetCode != NC_NOERR) {
-    oops::Log::error() << ErrorMsg << " (" << RetCode << ")" << std::endl;
+    oops::Log::error() << ErrorMsg << " [NetCDF message: '"
+                       << nc_strerror(RetCode) << "']" << std::endl;
     ABORT(ErrorMsg);
   }
 }
