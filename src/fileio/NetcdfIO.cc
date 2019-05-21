@@ -283,36 +283,8 @@ void NetcdfIO::ReadVar_helper(const std::string & GroupName, const std::string &
 
   const std::type_info & VarType = typeid(DataType);  // this matches type of VarData
   int NcVarId = var_id(GroupName, VarName);
-  std::string ErrorMsg = "NetcdfIO::ReadVar: Unable to read netcdf variable: " + NcVarName;
-  if (VarType == typeid(int)) {
-    CheckNcCall(nc_get_var_int(ncid_, NcVarId, reinterpret_cast<int *>(VarData)), ErrorMsg);
-  } else if (VarType == typeid(float)) {
-    CheckNcCall(nc_get_var_float(ncid_, NcVarId, reinterpret_cast<float *>(VarData)), ErrorMsg);
-  } else if (VarType == typeid(double)) {
-    CheckNcCall(nc_get_var_double(ncid_, NcVarId, reinterpret_cast<double *>(VarData)),
-                ErrorMsg);
-  } else if (VarType == typeid(char)) {
-    // If reading in datetime, then need to check if we need to convert ref, offset form
-    // to datetime strings. If we got here, we either have datetime in the file or
-    // we've got offset time in the file.
-    if (VarName.compare("datetime") == 0) {
-      if (have_date_time_) {
-        // datetime exists in the file, simply read it it.
-        CheckNcCall(nc_get_var_text(ncid_, NcVarId, reinterpret_cast<char *>(VarData)), ErrorMsg);
-      } else {
-        // datetime does not exist in the file, read in offset time and convert to
-        // datetime strings.
-        ReadConvertDateTime(GroupName, VarName, reinterpret_cast<char *>(VarData));
-      }
-    } else {
-      // All other variables beside datetime
-      CheckNcCall(nc_get_var_text(ncid_, NcVarId, reinterpret_cast<char *>(VarData)), ErrorMsg);
-    }
-  } else {
-    oops::Log::warning() <<  "NetcdfIO::ReadVar: Unable to read dataset: "
-                         << " VarName: " << NcVarName << " with NetCDF type :"
-                         << NcVarType << std::endl;
-  }
+  DataType NcFillValue;
+  ReadNcVarFill(NcVarId, NcVarName, VarData, NcFillValue);
 
   // Add in the missing data marks.
   std::size_t VarSize = 1;
@@ -321,6 +293,7 @@ void NetcdfIO::ReadVar_helper(const std::string & GroupName, const std::string &
   }
   if ((VarType == typeid(int)) || (VarType == typeid(float)) || (VarType == typeid(double))) {
     const DataType missing_value = util::missingValue(missing_value);
+    bool UsingLargeNumForMissing = false;
     for (std::size_t i = 0; i < VarSize; i++) {
       // For now use a large number as an indicator of a missing value. This is not
       // as safe as it should be. In the future, use the netcdf default fill value
@@ -330,11 +303,139 @@ void NetcdfIO::ReadVar_helper(const std::string & GroupName, const std::string &
       //
       // The fabs() function will convert integers and floats to double, then
       // take the absolute value, then return the double result.
-      if (fabs(VarData[i]) > missingthreshold || boost::math::isinf(VarData[i])
-                                              || boost::math::isnan(VarData[i])) {
+      if (VarData[i] == NcFillValue || boost::math::isinf(VarData[i])
+                                    || boost::math::isnan(VarData[i])) {
+        VarData[i] = missing_value;
+      } else if (fabs(VarData[i]) > missingthreshold) {
+        UsingLargeNumForMissing = true;
         VarData[i] = missing_value;
       }
     }
+    if (UsingLargeNumForMissing) {
+      oops::Log::warning() << "ioda::NetcdfIO::ReadVar: WARNING: using large number "
+            << "to represent missing values instead of netcdf fill value " << std::endl
+            << "  Input file: " << fname_ << std::endl
+            << "  Variable: " << NcVarName << std::endl << std::endl;
+    }
+  }
+}
+
+/*!
+ * \brief Read integer variable and fill value from netcdf file
+ *
+ * \details This method reads the variable data and fill value from the input netcdf file
+ *          for integer variables.
+ *
+ * \param[in]  VarId Id number of netcdf variable
+ * \param[in]  VarName Name of netcdf variable
+ * \param[out] VarData Pointer to memory that will receive the file data
+ * \param[out] FillValue Pointer to memory that will receive the fill value
+ */
+
+void NetcdfIO::ReadNcVarFill(const int & VarId, const std::string & VarName,
+                             int * VarData, int & FillValue) {
+  std::string ErrorMsg = "NetcdfIO::ReadVar: Unable to read netcdf variable: " + VarName;
+  CheckNcCall(nc_get_var_int(ncid_, VarId, VarData), ErrorMsg);
+
+  if (NcAttrExists(VarId, "_FillValue")) {
+    ErrorMsg = "NetcdfIO::ReadVar: cannot read _FillValue attribute for variable: " + VarName;
+    CheckNcCall(nc_get_att_int(ncid_, VarId, "_FillValue", &FillValue), ErrorMsg);
+  } else {
+    FillValue = NC_FILL_INT;
+  }
+}
+
+/*!
+ * \brief Read float variable and fill value from netcdf file
+ *
+ * \details This method reads the variable data and fill value from the input netcdf file
+ *          for float variables.
+ *
+ * \param[in]  VarId Id number of netcdf variable
+ * \param[in]  VarName Name of netcdf variable
+ * \param[out] VarData Pointer to memory that will receive the file data
+ * \param[out] FillValue Pointer to memory that will receive the fill value
+ */
+
+void NetcdfIO::ReadNcVarFill(const int & VarId, const std::string & VarName,
+                             float * VarData, float & FillValue) {
+  std::string ErrorMsg = "NetcdfIO::ReadVar: Unable to read netcdf variable: " + VarName;
+  CheckNcCall(nc_get_var_float(ncid_, VarId, VarData), ErrorMsg);
+
+  if (NcAttrExists(VarId, "_FillValue")) {
+    ErrorMsg = "NetcdfIO::ReadVar: cannot read _FillValue attribute for variable: " + VarName;
+    CheckNcCall(nc_get_att_float(ncid_, VarId, "_FillValue", &FillValue), ErrorMsg);
+  } else {
+    FillValue = NC_FILL_FLOAT;
+  }
+}
+
+/*!
+ * \brief Read double variable and fill value from netcdf file
+ *
+ * \details This method reads the variable data and fill value from the input netcdf file
+ *          for double variables.
+ *
+ * \param[in]  VarId Id number of netcdf variable
+ * \param[in]  VarName Name of netcdf variable
+ * \param[out] VarData Pointer to memory that will receive the file data
+ * \param[out] FillValue Pointer to memory that will receive the fill value
+ */
+
+void NetcdfIO::ReadNcVarFill(const int & VarId, const std::string & VarName,
+                             double * VarData, double & FillValue) {
+  std::string ErrorMsg = "NetcdfIO::ReadVar: Unable to read netcdf variable: " + VarName;
+  CheckNcCall(nc_get_var_double(ncid_, VarId, VarData), ErrorMsg);
+
+  if (NcAttrExists(VarId, "_FillValue")) {
+    ErrorMsg = "NetcdfIO::ReadVar: cannot read _FillValue attribute for variable: " + VarName;
+    CheckNcCall(nc_get_att_double(ncid_, VarId, "_FillValue", &FillValue), ErrorMsg);
+  } else {
+    FillValue = NC_FILL_DOUBLE;
+  }
+}
+
+/*!
+ * \brief Read character variable and fill value from netcdf file
+ *
+ * \details This method reads the variable data and fill value from the input netcdf file
+ *          for character variables.
+ *
+ * \param[in]  VarId Id number of netcdf variable
+ * \param[in]  VarName Name of netcdf variable
+ * \param[out] VarData Pointer to memory that will receive the file data
+ * \param[out] FillValue Pointer to memory that will receive the fill value
+ */
+
+void NetcdfIO::ReadNcVarFill(const int & VarId, const std::string & VarName,
+                             char * VarData, char & FillValue) {
+  // If reading in datetime, then need to check if we need to convert ref, offset form
+  // to datetime strings. If we got here, we either have datetime in the file or
+  // we've got offset time in the file.
+  std::size_t spos = VarName.find("@");
+  std::string Vname = VarName.substr(0, spos);
+  std::string Gname = VarName.substr(spos+1);
+
+  std::string ErrorMsg = "NetcdfIO::ReadVar: Unable to read netcdf variable: " + VarName;
+  if (Vname.compare("datetime") == 0) {
+    if (have_date_time_) {
+    // datetime exists in the file, simply read it it.
+    CheckNcCall(nc_get_var_text(ncid_, VarId, VarData), ErrorMsg);
+    } else {
+    // datetime does not exist in the file, read in offset time and convert to
+    // datetime strings.
+      ReadConvertDateTime(Gname, Vname, VarData);
+    }
+  } else {
+  // All other variables beside datetime
+  CheckNcCall(nc_get_var_text(ncid_, VarId, VarData), ErrorMsg);
+  }
+
+  if (NcAttrExists(VarId, "_FillValue")) {
+    ErrorMsg = "NetcdfIO::ReadVar: cannot read _FillValue attribute for variable: " + VarName;
+    CheckNcCall(nc_get_att_text(ncid_, VarId, "_FillValue", &FillValue), ErrorMsg);
+  } else {
+    FillValue = NC_FILL_CHAR;
   }
 }
 
@@ -440,7 +541,7 @@ void NetcdfIO::WriteVar_helper(const std::string & GroupName, const std::string 
   } else if (VarType == typeid(char)) {
     NcVarType = NC_CHAR;
   } else {
-    oops::Log::warning() <<  "NetcdfIO::WriteVar: Unable to write dataset: "
+    oops::Log::warning() << "NetcdfIO::WriteVar: Unable to write dataset: "
                          << " VarName: " << NcVarName << " with data type :"
                          << VarType.name() << std::endl;
   }
@@ -508,6 +609,24 @@ void NetcdfIO::CheckNcCall(int RetCode, std::string & ErrorMsg) {
                        << nc_strerror(RetCode) << "']" << std::endl;
     ABORT(ErrorMsg);
   }
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \brief Check existence of netcdf attribute.
+ *
+ * \details This method will check to see if a netcdf exists in the
+ *          input netcdf file. This can be used to check for existence
+ *          of group and variable attributes.
+ *
+ * \param[in] AttrOwnerId Id number of owner of the attribute
+ * \param[in] AttrName Name attribute
+ */
+
+bool NetcdfIO::NcAttrExists(const int & AttrOwnerId, const std::string & AttrName) {
+  nc_type AttrType;
+  std::size_t AttrLen;
+  return (nc_inq_att(ncid_, AttrOwnerId, AttrName.c_str() , &AttrType, &AttrLen) == NC_NOERR);
 }
 
 // -----------------------------------------------------------------------------
