@@ -433,7 +433,6 @@ void ObsSpace::InitFromFile(const std::string & filename) {
   nrecs_ = fileio->nrecs();
 
   // Create the MPI distribution
-  DistributionFactory * DistFactory;
   dist_->distribution(commMPI_, file_nlocs_);
 
   // Read in the datetime values and filter out any variables outside the

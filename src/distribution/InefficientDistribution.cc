@@ -26,10 +26,8 @@ InefficientDistribution::~InefficientDistribution() {}
  */
 void InefficientDistribution::distribution(const eckit::mpi::Comm & comm,
                                            const std::size_t gnlocs) {
-  std::size_t myproc = comm.rank();
   indx_.resize(gnlocs);
   std::iota(indx_.begin(), indx_.end(), 0);
-  oops::Log::info() << myproc << " indx: " << indx_ << std::endl;
 }
 
 // -----------------------------------------------------------------------------
