@@ -27,3 +27,14 @@ DistributionTypes:
       index1: [ 1, 5, 9 ]
       index2: [ 2, 6 ]
       index3: [ 3, 7 ]
+
+  - DistType: "Inefficient 4"
+    Specs:
+      dist_name: "InefficientDistribution"
+      nrecs: 4
+      index0: [ 0, 1, 2, 3 ]
+      index1: [ 0, 1, 2, 3 ]
+      index2: [ 0, 1, 2, 3 ]
+      index3: [ 0, 1, 2, 3 ]
+
+       
