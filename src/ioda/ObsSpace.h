@@ -160,6 +160,9 @@ class ObsSpace : public oops::ObsSpaceBase {
   /*! \brief number of records */
   std::size_t nrecs_;
 
+  /*! \brief number of file variable data type warnings */
+  std::size_t nwarns_fdtype_;
+
   /*! \brief path to input file */
   std::string filein_;
 
