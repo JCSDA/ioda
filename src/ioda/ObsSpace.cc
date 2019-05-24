@@ -47,6 +47,7 @@ ObsSpace::ObsSpace(const eckit::Configuration & config,
   oops::Log::trace() << "ioda::ObsSpace config  = " << config << std::endl;
 
   obsname_ = config.getString("name");
+  nwarns_fdtype_ = 0;
 
   // Open the file and read in variables from the file into the database.
   filein_ = config.getString("ObsDataIn.obsfile");
@@ -656,18 +657,15 @@ template<typename VarType, typename DbType>
 void ObsSpace::ConvertStoreToDb(const std::string & GroupName, const std::string & VarName,
                    const std::vector<std::size_t> & VarShape, const std::size_t & VarSize,
                    const VarType * VarData) {
-  // Print a warning so we know to fix this situation
+  // Print a warning so we know to fix this situation. Limit the warnings to one per
+  // ObsSpace instantiation (roughly one per file).
   std::string VarTypeName = TypeIdName(typeid(VarType));
   std::string DbTypeName = TypeIdName(typeid(DbType));
-  if (commMPI_.rank() == 0) {
+  nwarns_fdtype_++;
+  if ((commMPI_.rank() == 0) && (nwarns_fdtype_ == 1)) {
     oops::Log::warning() << "ObsSpace::ConvertStoreToDb: WARNING: input file contains "
-                         << "unexpected data type." << std::endl
-                         << "  Input file: " << filein_ << std::endl
-                         << "  Variable: " << VarName << " @ " << GroupName << std::endl
-                         << "  Type in file: " << VarTypeName << std::endl
-                         << "  Expected type: " << DbTypeName << std::endl
-                         << "Converting data, including missing marks, from "
-                         << VarTypeName << " to " << DbTypeName << std::endl << std::endl;
+                         << "unexpected data type: " << VarTypeName << std::endl
+                         << "  Input file: " << filein_ << std::endl << std::endl;
   }
 
   std::unique_ptr<DbType[]> DbData(new DbType[VarSize]);
