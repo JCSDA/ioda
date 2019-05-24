@@ -74,6 +74,8 @@ class NetcdfIO : public IodaIO,
 
   void CheckNcCall(int RetCode, std::string & ErrorMsg);
 
+  bool NcAttrExists(const int & AttrOwnerId, const std::string & AttrName);
+
   std::string FormNcVarName(const std::string & GroupName, const std::string & VarName);
 
   void CreateNcDim(const std::string DimName, const std::size_t DimSize);
@@ -85,6 +87,15 @@ class NetcdfIO : public IodaIO,
   template <typename DataType>
   void ReadVar_helper(const std::string & GroupName, const std::string & VarName,
                       const std::vector<std::size_t> & VarShape, DataType * VarData);
+
+  void ReadNcVarFill(const int & VarId, const std::string & VarName, int * VarData,
+                     int & FillValue);
+  void ReadNcVarFill(const int & VarId, const std::string & VarName, float * VarData,
+                     float & FillValue);
+  void ReadNcVarFill(const int & VarId, const std::string & VarName, double * VarData,
+                     double & FillValue);
+  void ReadNcVarFill(const int & VarId, const std::string & VarName, char * VarData,
+                     char & FillValue);
 
   template <typename DataType>
   void WriteVar_helper(const std::string & GroupName, const std::string & VarName,
