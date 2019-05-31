@@ -172,8 +172,8 @@ class ObsSpace : public oops::ObsSpaceBase {
   /*! \brief Multi-index container */
   ObsSpaceContainer database_;
 
-  /*! \brief Observation Distribution */
-  std::unique_ptr<Distribution> dist_;
+  /*! \brief Distribution type */
+  std::string distname_;
 };
 
 /*! \brief Specialized (for DateTime type) helper function for public get_db */
