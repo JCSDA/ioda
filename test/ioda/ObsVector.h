@@ -11,12 +11,11 @@
 #ifndef TEST_INTERFACE_OBSVECTOR_H_
 #define TEST_INTERFACE_OBSVECTOR_H_
 
+#include <memory>
 #include <string>
 #include <vector>
 
 #define ECKIT_TESTING_SELF_REGISTER_CASES 0  
-
-#include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/testing/Test.h"
@@ -76,7 +75,7 @@ void testConstructor() {
   typedef ioda::ObsVector  ObsVector_;
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    boost::scoped_ptr<ObsVector_> ov(new ObsVector_(*Test_::obspace()[jj], Test_::observed(jj)));
+    std::unique_ptr<ObsVector_> ov(new ObsVector_(*Test_::obspace()[jj], Test_::observed(jj)));
     EXPECT(ov.get());
 
     ov.reset();
@@ -91,9 +90,9 @@ void testCopyConstructor() {
   typedef ioda::ObsVector  ObsVector_;
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    boost::scoped_ptr<ObsVector_> ov(new ObsVector_(*Test_::obspace()[jj], Test_::observed(jj)));
+    std::unique_ptr<ObsVector_> ov(new ObsVector_(*Test_::obspace()[jj], Test_::observed(jj)));
 
-    boost::scoped_ptr<ObsVector_> other(new ObsVector_(*ov));
+    std::unique_ptr<ObsVector_> other(new ObsVector_(*ov));
     EXPECT(other.get());
 
     other.reset();
@@ -143,7 +142,7 @@ void testRead() {
     double Tol = conf[jj].getDouble("ObsSpace.ObsDataIn.tolerance");
 
     // Read in a vector and check contents with norm function.
-    boost::scoped_ptr<ObsVector_> ov(new ObsVector_(*Odb, Test_::observed(jj), "ObsValue"));
+    std::unique_ptr<ObsVector_> ov(new ObsVector_(*Odb, Test_::observed(jj), "ObsValue"));
     double Rms = ov->rms();
     
     EXPECT(oops::is_close(Rms, ExpectedRms, Tol));
@@ -166,11 +165,11 @@ void testSave() {
     // Read in a vector and save the rms value. Then write the vector into a
     // test group, read it out of the test group and compare the rms of the
     // vector read out of the test group with that of the original.
-    boost::scoped_ptr<ObsVector_> ov_orig(new ObsVector_(*Odb, Test_::observed(jj), "ObsValue"));
+    std::unique_ptr<ObsVector_> ov_orig(new ObsVector_(*Odb, Test_::observed(jj), "ObsValue"));
     ExpectedRms = ov_orig->rms();
     ov_orig->save("ObsTest");
 
-    boost::scoped_ptr<ObsVector_> ov_test(new ObsVector_(*Odb, Test_::observed(jj), "ObsTest"));
+    std::unique_ptr<ObsVector_> ov_test(new ObsVector_(*Odb, Test_::observed(jj), "ObsTest"));
     Rms = ov_test->rms();
     
     EXPECT(oops::is_close(Rms, ExpectedRms, 1.0e-12));
