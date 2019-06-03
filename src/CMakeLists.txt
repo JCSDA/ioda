@@ -19,6 +19,8 @@ distribution/Distribution.cc
 distribution/Distribution.h
 distribution/DistributionFactory.cc
 distribution/DistributionFactory.h
+distribution/InefficientDistribution.cc
+distribution/InefficientDistribution.h
 distribution/RoundRobin.cc
 distribution/RoundRobin.h
 
