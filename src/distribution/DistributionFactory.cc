@@ -8,6 +8,7 @@
 #include <boost/algorithm/string.hpp>
 
 #include "distribution/DistributionFactory.h"
+#include "distribution/InefficientDistribution.h"
 #include "distribution/RoundRobin.h"
 
 namespace ioda {
@@ -25,6 +26,8 @@ namespace ioda {
 Distribution * DistributionFactory::createDistribution(const std::string & method) {
   if (boost::iequals(method, "RoundRobin"))
     return new RoundRobin;
+  else if (boost::iequals(method, "InefficientDistribution"))
+    return new InefficientDistribution;
   else
     return NULL;
 }
