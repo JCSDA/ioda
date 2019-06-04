@@ -48,6 +48,7 @@ ObsSpace::ObsSpace(const eckit::Configuration & config,
 
   obsname_ = config.getString("name");
   nwarns_fdtype_ = 0;
+  distname_ = config.getString("distribution", "RoundRobin");
 
   // Open the file and read in variables from the file into the database.
   filein_ = config.getString("ObsDataIn.obsfile");
@@ -378,7 +379,7 @@ void ObsSpace::generateDistribution(const eckit::Configuration & conf) {
   // Apply the round-robin distribution, which yields the size and indices that
   // are to be selected by this process element out of the file.
   DistributionFactory * distFactory;
-  Distribution * dist{distFactory->createDistribution("roundrobin")};
+  Distribution * dist{distFactory->createDistribution(distname_)};
   dist->distribution(comm(), fvlen);
   int nlocs = dist->size();
 
@@ -436,7 +437,7 @@ void ObsSpace::InitFromFile(const std::string & filename) {
   // Create the MPI distribution
   std::unique_ptr<Distribution> dist_;
   DistributionFactory * DistFactory;
-  dist_.reset(DistFactory->createDistribution("roundrobin"));
+  dist_.reset(DistFactory->createDistribution(distname_));
   dist_->distribution(commMPI_, file_nlocs_);
 
   // Read in the datetime values and filter out any variables outside the
