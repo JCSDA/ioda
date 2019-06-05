@@ -47,6 +47,7 @@ ObsSpace::ObsSpace(const eckit::Configuration & config,
   oops::Log::trace() << "ioda::ObsSpace config  = " << config << std::endl;
 
   obsname_ = config.getString("name");
+  nwarns_fdtype_ = 0;
   distname_ = config.getString("distribution", "RoundRobin");
 
   // Open the file and read in variables from the file into the database.
@@ -75,9 +76,10 @@ ObsSpace::ObsSpace(const eckit::Configuration & config,
     // Check to see if user is trying to overwrite an existing file. For now always allow
     // the overwrite, but issue a warning if we are about to clobber an existing file.
     std::ifstream infile(fileout_);
-    if (infile.good())
-      oops::Log::warning() << "ioda::ObsSpace WARNING: Overwriting output file "
-                           << fileout_ << std::endl;
+    if (infile.good() && (commMPI_.rank() == 0)) {
+        oops::Log::warning() << "ioda::ObsSpace WARNING: Overwriting output file "
+                             << fileout_ << std::endl;
+      }
   } else {
     oops::Log::debug() << "ioda::ObsSpace output file is not required " << std::endl;
   }
@@ -558,7 +560,7 @@ void ObsSpace::InitFromFile(const std::string & filename) {
         } else {
           database_.StoreToDb(GroupName, VarName, AdjVarShape, StringData.data());
         }
-      } else {
+      } else if (commMPI_.rank() == 0) {
         oops::Log::warning() << "ioda::IodaIO::InitFromFile: Unrecognized file data type: "
                              << FileVarType << std::endl;
         oops::Log::warning() << "  File IO Currently supports data types int, float and char."
@@ -626,7 +628,7 @@ void ObsSpace::SaveToFile(const std::string & file_name) {
       std::unique_ptr<char[]> CharData(new char[CharShape[0] * CharShape[1]]);
       StringVectorToCharArray(StringVector, CharShape, CharData.get());
       fileio->WriteVar(GroupName, VarName, CharShape, CharData.get());
-    } else {
+    } else if (commMPI_.rank() == 0) {
       oops::Log::warning() << "ObsSpace::SaveToFile: Unrecognized data type: "
                            << VarType.name() << std::endl;
       oops::Log::warning() << "  ObsSpaceContainer currently supports data types "
@@ -656,17 +658,16 @@ template<typename VarType, typename DbType>
 void ObsSpace::ConvertStoreToDb(const std::string & GroupName, const std::string & VarName,
                    const std::vector<std::size_t> & VarShape, const std::size_t & VarSize,
                    const VarType * VarData) {
-  // Print a warning so we know to fix this situation
+  // Print a warning so we know to fix this situation. Limit the warnings to one per
+  // ObsSpace instantiation (roughly one per file).
   std::string VarTypeName = TypeIdName(typeid(VarType));
   std::string DbTypeName = TypeIdName(typeid(DbType));
-  oops::Log::warning() << "ObsSpace::ConvertStoreToDb: WARNING: input file contains "
-                       << "unexpected data type." << std::endl
-                       << "  Input file: " << filein_ << std::endl
-                       << "  Variable: " << VarName << " @ " << GroupName << std::endl
-                       << "  Type in file: " << VarTypeName << std::endl
-                       << "  Expected type: " << DbTypeName << std::endl
-                       << "Converting data, including missing marks, from "
-                       << VarTypeName << " to " << DbTypeName << std::endl << std::endl;
+  nwarns_fdtype_++;
+  if ((commMPI_.rank() == 0) && (nwarns_fdtype_ == 1)) {
+    oops::Log::warning() << "ObsSpace::ConvertStoreToDb: WARNING: input file contains "
+                         << "unexpected data type: " << VarTypeName << std::endl
+                         << "  Input file: " << filein_ << std::endl << std::endl;
+  }
 
   std::unique_ptr<DbType[]> DbData(new DbType[VarSize]);
   ConvertVarType<VarType, DbType>(VarData, DbData.get(), VarSize);
@@ -695,16 +696,18 @@ void ObsSpace::LoadFromDbConvert(const std::string & GroupName, const std::strin
   // Print a warning so we know to fix this situation
   std::string VarTypeName = TypeIdName(typeid(VarType));
   std::string DbTypeName = TypeIdName(typeid(DbType));
-  oops::Log::warning() << "ObsSpace::LoadFromDbConvert: WARNING: Variable type does not "
-                       << "match that of the database entry." << std::endl
-                       << "  Input file: " << filein_ << std::endl
-                       << "  Variable: " << VarName << " @ " << GroupName << std::endl
-                       << "  Type of variable: " << VarTypeName << std::endl
-                       << "  Type of database entry: " << DbTypeName << std::endl
-                       << "Converting data, including missing marks, from "
-                       << DbTypeName << " to " << VarTypeName << std::endl << std::endl;
-  oops::Log::warning() << "ObsSpace::LoadFromDbConvert: STACKTRACE:" << std::endl
-                       << boost::stacktrace::stacktrace() << std::endl;
+  if (commMPI_.rank() == 0) {
+    oops::Log::warning() << "ObsSpace::LoadFromDbConvert: WARNING: Variable type does not "
+                         << "match that of the database entry." << std::endl
+                         << "  Input file: " << filein_ << std::endl
+                         << "  Variable: " << VarName << " @ " << GroupName << std::endl
+                         << "  Type of variable: " << VarTypeName << std::endl
+                         << "  Type of database entry: " << DbTypeName << std::endl
+                         << "Converting data, including missing marks, from "
+                         << DbTypeName << " to " << VarTypeName << std::endl << std::endl;
+    oops::Log::warning() << "ObsSpace::LoadFromDbConvert: STACKTRACE:" << std::endl
+                         << boost::stacktrace::stacktrace() << std::endl;
+  }
 
   std::unique_ptr<DbType[]> DbData(new DbType[VarSize]);
   database_.LoadFromDb(GroupName, VarName, VarShape, DbData.get());
