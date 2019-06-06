@@ -42,13 +42,17 @@ ObsSpace::ObsSpace(const eckit::Configuration & config,
                    const util::DateTime & bgn, const util::DateTime & end)
   : oops::ObsSpaceBase(config, bgn, end),
     winbgn_(bgn), winend_(end), commMPI_(oops::mpi::comm()),
-    database_()
+    database_(), obsvars_()
 {
   oops::Log::trace() << "ioda::ObsSpace config  = " << config << std::endl;
 
   obsname_ = config.getString("name");
   nwarns_fdtype_ = 0;
   distname_ = config.getString("distribution", "RoundRobin");
+
+  eckit::LocalConfiguration varconfig(config, "simulate");
+  obsvars_ = oops::Variables(varconfig);
+  oops::Log::info() << obsname_ << " vars: " << obsvars_;
 
   // Open the file and read in variables from the file into the database.
   filein_ = config.getString("ObsDataIn.obsfile");

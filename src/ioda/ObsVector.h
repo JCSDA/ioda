@@ -34,9 +34,9 @@ class ObsVector : public util::Printable,
  public:
   static const std::string classname() {return "ioda::ObsVector";}
 
-  ObsVector(ObsSpace &, const oops::Variables &,
+  ObsVector(ObsSpace &,
             const std::string & name = "", const bool fail = true);
-  ObsVector(const ObsVector &, const bool copy = true);
+  ObsVector(const ObsVector &);
   ~ObsVector();
 
   ObsVector & operator = (const ObsVector &);
