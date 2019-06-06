@@ -36,7 +36,6 @@ class ObsVecTestFixture : private boost::noncopyable {
 
  public:
   static std::vector<boost::shared_ptr<ObsSpace_> > & obspace() {return getInstance().ospaces_;}
-  static oops::Variables & observed(const std::size_t ii) {return getInstance().observed_.at(ii);}
 
  private:
   static ObsVecTestFixture& getInstance() {
@@ -58,14 +57,12 @@ class ObsVecTestFixture : private boost::noncopyable {
       ospaces_.push_back(tmp);
       eckit::LocalConfiguration ObsDataInConf;
       obsconf.get("ObsDataIn", ObsDataInConf);
-      observed_.push_back(oops::Variables(ObsDataInConf));
     }
   }
 
   ~ObsVecTestFixture() {}
 
   std::vector<boost::shared_ptr<ObsSpace_> > ospaces_;
-  std::vector<oops::Variables> observed_;
 };
 
 // -----------------------------------------------------------------------------
@@ -75,7 +72,7 @@ void testConstructor() {
   typedef ioda::ObsVector  ObsVector_;
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    std::unique_ptr<ObsVector_> ov(new ObsVector_(*Test_::obspace()[jj], Test_::observed(jj)));
+    std::unique_ptr<ObsVector_> ov(new ObsVector_(*Test_::obspace()[jj]));
     EXPECT(ov.get());
 
     ov.reset();
@@ -90,7 +87,7 @@ void testCopyConstructor() {
   typedef ioda::ObsVector  ObsVector_;
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    std::unique_ptr<ObsVector_> ov(new ObsVector_(*Test_::obspace()[jj], Test_::observed(jj)));
+    std::unique_ptr<ObsVector_> ov(new ObsVector_(*Test_::obspace()[jj]));
 
     std::unique_ptr<ObsVector_> other(new ObsVector_(*ov));
     EXPECT(other.get());
@@ -110,7 +107,7 @@ void testNotZero() {
   const double zero = 0.0;
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    ObsVector_ ov(*Test_::obspace()[jj], Test_::observed(jj));
+    ObsVector_ ov(*Test_::obspace()[jj]);
 
     ov.random();
 
@@ -142,7 +139,7 @@ void testRead() {
     double Tol = conf[jj].getDouble("ObsSpace.ObsDataIn.tolerance");
 
     // Read in a vector and check contents with norm function.
-    std::unique_ptr<ObsVector_> ov(new ObsVector_(*Odb, Test_::observed(jj), "ObsValue"));
+    std::unique_ptr<ObsVector_> ov(new ObsVector_(*Odb, "ObsValue"));
     double Rms = ov->rms();
     
     EXPECT(oops::is_close(Rms, ExpectedRms, Tol));
@@ -165,11 +162,11 @@ void testSave() {
     // Read in a vector and save the rms value. Then write the vector into a
     // test group, read it out of the test group and compare the rms of the
     // vector read out of the test group with that of the original.
-    std::unique_ptr<ObsVector_> ov_orig(new ObsVector_(*Odb, Test_::observed(jj), "ObsValue"));
+    std::unique_ptr<ObsVector_> ov_orig(new ObsVector_(*Odb, "ObsValue"));
     ExpectedRms = ov_orig->rms();
     ov_orig->save("ObsTest");
 
-    std::unique_ptr<ObsVector_> ov_test(new ObsVector_(*Odb, Test_::observed(jj), "ObsTest"));
+    std::unique_ptr<ObsVector_> ov_test(new ObsVector_(*Odb, "ObsTest"));
     Rms = ov_test->rms();
     
     EXPECT(oops::is_close(Rms, ExpectedRms, 1.0e-12));
