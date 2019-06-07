@@ -16,6 +16,7 @@
 
 #include "eckit/mpi/Comm.h"
 #include "oops/base/ObsSpaceBase.h"
+#include "oops/base/Variables.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
 #include "oops/util/Printable.h"
@@ -92,6 +93,8 @@ class ObsSpace : public oops::ObsSpaceBase {
 
   void printJo(const ObsVector &, const ObsVector &);  // to be removed
 
+  const oops::Variables & obsvariables() const {return obsvars_;}
+
  private:
   void print(std::ostream &) const;
 
@@ -160,6 +163,9 @@ class ObsSpace : public oops::ObsSpaceBase {
   /*! \brief number of records */
   std::size_t nrecs_;
 
+  /*! \brief number of file variable data type warnings */
+  std::size_t nwarns_fdtype_;
+
   /*! \brief path to input file */
   std::string filein_;
 
@@ -171,6 +177,12 @@ class ObsSpace : public oops::ObsSpaceBase {
 
   /*! \brief Multi-index container */
   ObsSpaceContainer database_;
+
+  /*! \brief Observation "variables" to be simulated */
+  oops::Variables obsvars_;
+
+  /*! \brief Distribution type */
+  std::string distname_;
 };
 
 /*! \brief Specialized (for DateTime type) helper function for public get_db */
