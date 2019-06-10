@@ -16,6 +16,7 @@ Observations:
   ObsTypes:
   - ObsSpace:
       name: ADT
+      simulate:
       ObsDataIn:
         obsfile: Data/Jason-2-2018-04-15.nc
         metadata:
@@ -35,6 +36,7 @@ Observations:
 
   - ObsSpace:
       name: InsituTemperature
+      simulate:
       ObsDataIn:
         obsfile: Data/profile_2018-04-15.nc
         metadata:
@@ -54,6 +56,7 @@ Observations:
 
   - ObsSpace:
       name: SeaSurfaceTemp
+      simulate:
       ObsDataIn:
         obsfile: Data/sst_obs-2018-04-15.nc4
         metadata:
@@ -73,6 +76,7 @@ Observations:
 
   - ObsSpace:
       name: SeaIceFraction
+      simulate:
       ObsDataIn:
         obsfile: Data/icec-2018-04-15.nc
         metadata:
@@ -92,6 +96,7 @@ Observations:
 
   - ObsSpace:
       name: SeaIceThickness
+      simulate:
       ObsDataIn:
         obsfile: Data/cryosat2-2018-04-15.nc
         metadata:
