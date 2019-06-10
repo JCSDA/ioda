@@ -49,8 +49,8 @@ Observations:
             - "latitude"
             - "longitude"
           norms:
-            - 443.609523849 
-            - 1827.99182793 
+            - 409.1680977381946 
+            - 1692.2904921861784 
           tolerance:
             - 1.0e-11
 
@@ -100,7 +100,7 @@ Observations:
       ObsDataIn:
         obsfile: "Data/sondes_obs_2018041500_m.nc4"
         metadata:
-          nlocs: 131
+          nlocs: 1103
         TestData:
           groups:
             - "MetaData"
@@ -109,8 +109,8 @@ Observations:
             - "latitude"
             - "longitude"
           norms:
-            - 757.55982302113819
-            - 1282.68940922515
+            - 1473.5555906564771
+            - 6029.8862111334147
           tolerance:
             - 1.0e-11
       ObsDataOut:
