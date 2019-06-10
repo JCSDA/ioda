@@ -21,20 +21,21 @@
 
 namespace ioda {
 // -----------------------------------------------------------------------------
-ObsVector::ObsVector(ObsSpace & obsdb, const oops::Variables & vars,
+ObsVector::ObsVector(ObsSpace & obsdb,
                      const std::string & name, const bool fail)
-  : obsdb_(obsdb), obsvars_(vars), nvars_(obsvars_.variables().size()),
-    nlocs_(obsdb_.nlocs()), values_(nlocs_ * nvars_),
+  : obsdb_(obsdb), obsvars_(obsdb.obsvariables()),
+    nvars_(obsvars_.variables().size()), nlocs_(obsdb_.nlocs()),
+    values_(nlocs_ * nvars_),
     missing_(util::missingValue(missing_)) {
   oops::Log::trace() << "ObsVector::ObsVector " << name << std::endl;
   if (!name.empty()) this->read(name, fail);
 }
 // -----------------------------------------------------------------------------
-ObsVector::ObsVector(const ObsVector & other, const bool copy)
+ObsVector::ObsVector(const ObsVector & other)
   : obsdb_(other.obsdb_), obsvars_(other.obsvars_), nvars_(other.nvars_),
     nlocs_(other.nlocs_), values_(nlocs_ * nvars_), missing_(other.missing_) {
-  oops::Log::trace() << "ObsVector copied " << copy << std::endl;
-  if (copy) values_ = other.values_;
+  values_ = other.values_;
+  oops::Log::trace() << "ObsVector copied " << std::endl;
 }
 // -----------------------------------------------------------------------------
 ObsVector::~ObsVector() {
