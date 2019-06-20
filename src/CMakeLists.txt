@@ -19,6 +19,8 @@ distribution/Distribution.cc
 distribution/Distribution.h
 distribution/DistributionFactory.cc
 distribution/DistributionFactory.h
+distribution/InefficientDistribution.cc
+distribution/InefficientDistribution.h
 distribution/RoundRobin.cc
 distribution/RoundRobin.h
 
@@ -86,7 +88,6 @@ if (HAVE_ODB_API)
 
 endif (HAVE_ODB_API)
 
-message(STATUS ${ioda_src_files})
 ecbuild_add_library( TARGET   ioda
                      SOURCES  ${ioda_src_files}
                      LIBS     oops ${IODA_EXTRA_LIBRARIES}
@@ -105,8 +106,6 @@ if (HAVE_ODB)
                           LIBS    ${IODA_EXTRA_LIBRARIES}
                        )
 
-
-  message(STATUS ${oops_src_files})
   ecbuild_add_library( TARGET   OOPS
                        SOURCES  ${oops_src_files}
                        LIBS     ${ODB_LIBRARY_odb}
