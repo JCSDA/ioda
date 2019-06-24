@@ -21,7 +21,7 @@ Observations:
           - air_temperature
       ObsDataIn:
         obsfile: Data/sondes_obs_2018041500_m.nc4
-        rms_equiv: 215.813393658623
+        rms_equiv: 216.91619057593934 
         tolerance: 1.0e-14
 
   - ObsSpace:
@@ -32,7 +32,7 @@ Observations:
           - specific_humidity
       ObsDataIn:
         obsfile: Data/sondes_obs_2018041500_m.nc4
-        rms_equiv: 175.100547361903
+        rms_equiv: 124.96816071306155 
         tolerance: 1.0e-14
 
   - ObsSpace:
@@ -45,6 +45,6 @@ Observations:
           - northward_wind
       ObsDataIn:
         obsfile: Data/sondes_obs_2018041500_m.nc4
-        rms_equiv: 129.419005354608
+        rms_equiv: 71.324181693818431 
         tolerance: 1.0e-14
 
