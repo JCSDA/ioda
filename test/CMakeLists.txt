@@ -63,7 +63,6 @@ list( APPEND ioda_test_data
 
   atmosphere/sfc_obs_2018041500_m.nc4
   atmosphere/sfc_uv_obs_2018041500_m.nc4
-  atmosphere/sfc_q_obs_2018041500_m.nc4
   atmosphere/sfc_tsen_obs_2018041500_m.nc4
 
   marine/Jason-2-2018-04-15.nc
