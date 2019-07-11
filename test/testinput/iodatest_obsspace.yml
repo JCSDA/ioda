@@ -116,3 +116,25 @@ Observations:
       ObsDataOut:
         obsfile: "testoutput/diagout.nc4"
 
+  - ObsSpace:
+      name: "Synthetic"
+      simulate:
+      Generate:
+        nobs: 10   # generate 10 obs
+        lat: 0     # with lat=0 for all of them
+        lon1: 0    # and lon ranging from 0-10.
+        lon2: 10
+        metadata:
+          nlocs: 10
+        TestData:
+          groups:
+            - "MetaData"
+            - "MetaData"
+          variables:
+            - "latitude"
+            - "longitude"
+          norms:
+            - 0.0
+            - 18.75771455181502
+          tolerance:
+            - 1.0e-11
