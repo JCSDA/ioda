@@ -11,15 +11,19 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <iomanip>
+#include <fstream>
+
+#define BOOST_STACKTRACE_GNU_SOURCE_NOT_REQUIRED
+#include <boost/stacktrace.hpp>
 
 #include "eckit/config/Configuration.h"
+
 #include "oops/parallel/mpi/mpi.h"
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
 
-#define BOOST_STACKTRACE_GNU_SOURCE_NOT_REQUIRED
-#include <boost/stacktrace.hpp>
 
 #include "distribution/DistributionFactory.h"
 #include "fileio/IodaIO.h"
