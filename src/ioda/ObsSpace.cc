@@ -52,13 +52,24 @@ ObsSpace::ObsSpace(const eckit::Configuration & config,
 
   eckit::LocalConfiguration varconfig(config, "simulate");
   obsvars_ = oops::Variables(varconfig);
-  oops::Log::info() << obsname_ << " vars: " << obsvars_;
+  oops::Log::info() << obsname_ << " vars: " << obsvars_ << std::endl;
 
-  // Open the file and read in variables from the file into the database.
-  filein_ = config.getString("ObsDataIn.obsfile");
-  oops::Log::trace() << obsname_ << " file in = " << filein_ << std::endl;
-
-  InitFromFile(filein_);
+  // Initialize the obs space container
+  if (config.has("ObsDataIn")) {
+    // Initialize the container from an input obs file
+    filein_ = config.getString("ObsDataIn.obsfile");
+    oops::Log::trace() << obsname_ << " file in = " << filein_ << std::endl;
+    InitFromFile(filein_);
+  } else if (config.has("Generate")) {
+    // Initialize the container from the generateDistribution method
+    eckit::LocalConfiguration genconfig(config, "Generate");
+    generateDistribution(genconfig);
+  } else {
+    // Error - must have one of ObsDataIn or Generate
+    std::string ErrorMsg =
+      "ObsSpace::ObsSpace: Must use one of 'ObsDataIn' or 'Generate' in the YAML configuration.";
+    ABORT(ErrorMsg);
+  }
 
   // Check to see if an output file has been requested.
   if (config.has("ObsDataOut.obsfile")) {
@@ -385,27 +396,24 @@ void ObsSpace::generateDistribution(const eckit::Configuration & conf) {
   DistributionFactory * distFactory;
   Distribution * dist{distFactory->createDistribution(distname_)};
   dist->distribution(comm(), fvlen);
-  int nlocs = dist->size();
 
-  // For now, set nvars to one.
-  int nvars = 1;
-
-  // Record obs type
-  std::string MyObsType = conf.getString("ObsType");
-  oops::Log::info() << obsname() << " : " << MyObsType << std::endl;
+  // Need to set nrecs_, nlocs_, nvars_ data members as part of constructor function.
+  nlocs_ = dist->size();  // locations are selected by distribution
+  nvars_ = 2;             // latitude and longitude
+  nrecs_ = nlocs_;
 
   // Create variables and generate the values specified by the arguments.
-  std::unique_ptr<double[]> latitude {new double[nlocs]};
-  for (std::size_t ii = 0; ii < nlocs; ++ii) {
-    latitude.get()[ii] = static_cast<double>(lat);
+  std::unique_ptr<float[]> latitude {new float[nlocs_]};
+  for (std::size_t ii = 0; ii < nlocs_; ++ii) {
+    latitude.get()[ii] = lat;
   }
-  put_db("", "latitude", nlocs, latitude.get());
+  put_db("MetaData", "latitude", nlocs_, latitude.get());
 
-  std::unique_ptr<double[]> longitude {new double[nlocs]};
-  for (std::size_t ii = 0; ii < nlocs; ++ii) {
-    longitude.get()[ii] = static_cast<double>(lon1 + (ii-1)*(lon2-lon1)/(nlocs-1));
+  std::unique_ptr<float[]> longitude {new float[nlocs_]};
+  for (std::size_t ii = 0; ii < nlocs_; ++ii) {
+    longitude.get()[ii] = lon1 + (dist->index()[ii])*(lon2-lon1)/(fvlen-1);
   }
-  put_db("", "longitude", nlocs, longitude.get());
+  put_db("MetaData", "longitude", nlocs_, longitude.get());
 }
 
 // -----------------------------------------------------------------------------
