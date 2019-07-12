@@ -16,8 +16,8 @@
 
 #include <boost/math/special_functions/fpclassify.hpp>
 
-#include "eckit/mpi/Comm.h"
 #include "eckit/exception/Exceptions.h"
+#include "eckit/mpi/Comm.h"
 
 #include "oops/base/Variables.h"
 #include "oops/util/Logger.h"
