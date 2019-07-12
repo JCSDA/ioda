@@ -70,19 +70,12 @@ void testConstructor() {
   std::vector<eckit::LocalConfiguration> conf;
   obsconf.get("ObsTypes", conf);
 
-  int ExpectedNlocs;
-
   for (std::size_t jj = 0; jj < Test_::size(); ++jj) {
     // Get the numbers of locations (nlocs) from the obspace object
     std::size_t Nlocs = Test_::obspace(jj).nlocs();
 
     // Get the expected nlocs from the obspace object's configuration
-    // Have either ObsDataIn or Generate keywords in config.
-    if (conf[jj].has("ObsSpace.ObsDataIn")) {
-      ExpectedNlocs = conf[jj].getInt("ObsSpace.ObsDataIn.metadata.nlocs");
-    } else if (conf[jj].has("ObsSpace.Generate")) {
-      ExpectedNlocs = conf[jj].getInt("ObsSpace.Generate.metadata.nlocs");
-    }
+    int ExpectedNlocs = conf[jj].getInt("ObsSpace.TestData.nlocs");
 
     EXPECT(Nlocs == ExpectedNlocs);
   }
@@ -97,22 +90,16 @@ void testGetDb() {
   std::vector<eckit::LocalConfiguration> conf;
   obsconf.get("ObsTypes", conf);
 
-  std::unique_ptr<eckit::LocalConfiguration> dataconf;
-
   for (std::size_t jj = 0; jj < Test_::size(); ++jj) {
     // Set up a pointer to the ObsSpace object for convenience
     ioda::ObsSpace * Odb = &(Test_::obspace(jj));
-    if (conf[jj].has("ObsSpace.ObsDataIn")) {
-      dataconf.reset(new eckit::LocalConfiguration(conf[jj], "ObsSpace.ObsDataIn.TestData"));
-    } else if (conf[jj].has("ObsSpace.Generate")) {
-      dataconf.reset(new eckit::LocalConfiguration(conf[jj], "ObsSpace.Generate.TestData"));
-    }
+    const eckit::LocalConfiguration dataconf(conf[jj], "ObsSpace.TestData");
 
     // Read in the variable names and expected norm values from the configuration
-    std::vector<std::string> GroupNames = dataconf->getStringVector("groups");
-    std::vector<std::string> VarNames = dataconf->getStringVector("variables");
-    std::vector<double> ExpectedVnorms = dataconf->getDoubleVector("norms");
-    double Tol = dataconf->getDouble("tolerance");
+    std::vector<std::string> GroupNames = dataconf.getStringVector("groups");
+    std::vector<std::string> VarNames = dataconf.getStringVector("variables");
+    std::vector<double> ExpectedVnorms = dataconf.getDoubleVector("norms");
+    double Tol = dataconf.getDouble("tolerance");
 
     std::size_t Nlocs = Odb->nlocs();
     std::vector<double> TestVec(Nlocs);

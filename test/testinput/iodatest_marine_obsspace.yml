@@ -19,97 +19,92 @@ Observations:
       simulate:
       ObsDataIn:
         obsfile: Data/Jason-2-2018-04-15.nc
-        metadata:
-          nlocs: 160607
-        TestData:
-          groups:
-            - "MetaData"
-            - "MetaData"
-          variables:
-            - "latitude"
-            - "longitude"
-          norms:
-            - 16692.109207962403
-            - 89252.131593209342
-          tolerance:
-            - 1.0e-13
+      TestData:
+        nlocs: 160607
+        groups:
+          - "MetaData"
+          - "MetaData"
+        variables:
+          - "latitude"
+          - "longitude"
+        norms:
+          - 16692.109207962403
+          - 89252.131593209342
+        tolerance:
+          - 1.0e-13
 
   - ObsSpace:
       name: InsituTemperature
       simulate:
       ObsDataIn:
         obsfile: Data/profile_2018-04-15.nc
-        metadata:
-          nlocs: 918
-        TestData:
-          groups:
-            - "MetaData"
-            - "MetaData"
-          variables:
-            - "latitude"
-            - "longitude"
-          norms:
-            - 732.46544677303257
-            - 3530.8881463212083
-          tolerance:
-            - 1.0e-14
+      TestData:
+        nlocs: 918
+        groups:
+          - "MetaData"
+          - "MetaData"
+        variables:
+          - "latitude"
+          - "longitude"
+        norms:
+          - 732.46544677303257
+          - 3530.8881463212083
+        tolerance:
+          - 1.0e-14
 
   - ObsSpace:
       name: SeaSurfaceTemp
       simulate:
       ObsDataIn:
         obsfile: Data/sst_obs-2018-04-15.nc4
-        metadata:
-          nlocs: 223966
-        TestData:
-          groups:
-            - "MetaData"
-            - "MetaData"
-          variables:
-            - "latitude"
-            - "longitude"
-          norms:
-            - 14497.263538159166
-            - 61789.896501727279
-          tolerance:
-            - 1.0e-13
+      TestData:
+        nlocs: 223966
+        groups:
+          - "MetaData"
+          - "MetaData"
+        variables:
+          - "latitude"
+          - "longitude"
+        norms:
+          - 14497.263538159166
+          - 61789.896501727279
+        tolerance:
+          - 1.0e-13
 
   - ObsSpace:
       name: SeaIceFraction
       simulate:
       ObsDataIn:
         obsfile: Data/icec-2018-04-15.nc
-        metadata:
-          nlocs: 71558
-        TestData:
-          groups:
-            - "MetaData"
-            - "MetaData"
-          variables:
-            - "latitude"
-            - "longitude"
-          norms:
-            - 19778.589152003486
-            - 57917.351481173151
-          tolerance:
-            - 1.0e-14
+      TestData:
+        nlocs: 71558
+        groups:
+          - "MetaData"
+          - "MetaData"
+        variables:
+          - "latitude"
+          - "longitude"
+        norms:
+          - 19778.589152003486
+          - 57917.351481173151
+        tolerance:
+          - 1.0e-14
 
   - ObsSpace:
       name: SeaIceThickness
       simulate:
       ObsDataIn:
         obsfile: Data/cryosat2-2018-04-15.nc
-        metadata:
-          nlocs: 8065
-        TestData:
-          groups:
-            - "MetaData"
-            - "MetaData"
-          variables:
-            - "latitude"
-            - "longitude"
-          norms:
-            - 7581.3030036861646
-            - 13972.379294774455
-          tolerance:
-            - 1.0e-14
+      TestData:
+        nlocs: 8065
+        groups:
+          - "MetaData"
+          - "MetaData"
+        variables:
+          - "latitude"
+          - "longitude"
+        norms:
+          - 7581.3030036861646
+          - 13972.379294774455
+        tolerance:
+          - 1.0e-14
