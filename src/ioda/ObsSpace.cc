@@ -16,7 +16,9 @@
 #include "oops/parallel/mpi/mpi.h"
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/DateTime.h"
+#include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
+#include "oops/util/Random.h"
 
 #define BOOST_STACKTRACE_GNU_SOURCE_NOT_REQUIRED
 #include <boost/stacktrace.hpp>
@@ -411,24 +413,33 @@ void ObsSpace::generateDistribution(const eckit::Configuration & conf) {
   // time for each location. Just copy the window end time which will
   // fit inside the window regardless of the begin time. (inside the window
   // is defined as: begin < ObsTime <= end).
-  std::unique_ptr<util::DateTime[]> obs_datetimes {new util::DateTime[nlocs_]};
+  util::Duration WindowDuration(this->windowEnd() - this->windowStart());
+  double DaWindowLen = double(WindowDuration.toSeconds());
+
+  // Create a list of random values between 0 and 1. Currently the filter for time stamps
+  // on obs values is: windowStart < ObsTime <= windowEnd. Just to be safe, clip off the
+  // edges of the interval so we don't get time stamps equal to the start or end time.
+  util::UniformDistribution<double> RanVals0to1(nlocs_, 0.001, 0.999);
+
+  std::vector<util::DateTime> obs_datetimes(nlocs_);
   for (std::size_t ii = 0; ii < nlocs_; ++ii) {
-    obs_datetimes[ii] = this->windowEnd();
+    util::Duration OffsetDt(int64_t(RanVals0to1[ii] * DaWindowLen));
+    obs_datetimes[ii] = this->windowStart() + OffsetDt;
   }
-  put_db("MetaData", "datetime", nlocs_, obs_datetimes.get());
+  put_db("MetaData", "datetime", nlocs_, obs_datetimes.data());
 
   // Create lat and lon variables and generate the values specified by the arguments.
-  std::unique_ptr<float[]> latitude {new float[nlocs_]};
+  std::vector<float> latitude(nlocs_);
   for (std::size_t ii = 0; ii < nlocs_; ++ii) {
-    latitude.get()[ii] = lat;
+    latitude[ii] = lat;
   }
-  put_db("MetaData", "latitude", nlocs_, latitude.get());
+  put_db("MetaData", "latitude", nlocs_, latitude.data());
 
-  std::unique_ptr<float[]> longitude {new float[nlocs_]};
+  std::vector<float> longitude(nlocs_);
   for (std::size_t ii = 0; ii < nlocs_; ++ii) {
-    longitude.get()[ii] = lon1 + (dist->index()[ii])*(lon2-lon1)/(fvlen-1);
+    longitude[ii] = lon1 + (dist->index()[ii])*(lon2-lon1)/(fvlen-1);
   }
-  put_db("MetaData", "longitude", nlocs_, longitude.get());
+  put_db("MetaData", "longitude", nlocs_, longitude.data());
 }
 
 // -----------------------------------------------------------------------------
