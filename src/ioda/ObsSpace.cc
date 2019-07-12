@@ -409,12 +409,9 @@ void ObsSpace::generateDistribution(const eckit::Configuration & conf) {
   nvars_ = 2;             // latitude and longitude
   nrecs_ = nlocs_;
 
-  // Create a dummy time that fits inside the DA timing window, and use this
-  // time for each location. Just copy the window end time which will
-  // fit inside the window regardless of the begin time. (inside the window
-  // is defined as: begin < ObsTime <= end).
+  // Create random dummy times that fit inside the DA timing window.
   util::Duration WindowDuration(this->windowEnd() - this->windowStart());
-  double DaWindowLen = double(WindowDuration.toSeconds());
+  double DaWindowLen = static_cast<double>(WindowDuration.toSeconds());
 
   // Create a list of random values between 0 and 1. Currently the filter for time stamps
   // on obs values is: windowStart < ObsTime <= windowEnd. Just to be safe, clip off the
