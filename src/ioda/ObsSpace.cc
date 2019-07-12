@@ -305,6 +305,11 @@ void ObsSpace::put_db(const std::string & group, const std::string & name,
   put_db_helper<float>(group, name, vsize, FloatData.get());
 }
 
+void ObsSpace::put_db(const std::string & group, const std::string & name,
+                      const size_t & vsize, const util::DateTime vdata[]) {
+  put_db_helper<util::DateTime>(group, name, vsize, vdata);
+}
+
 /*!
  * \brief Helper method for put_db
  *
@@ -402,7 +407,17 @@ void ObsSpace::generateDistribution(const eckit::Configuration & conf) {
   nvars_ = 2;             // latitude and longitude
   nrecs_ = nlocs_;
 
-  // Create variables and generate the values specified by the arguments.
+  // Create a dummy time that fits inside the DA timing window, and use this
+  // time for each location. Just copy the window end time which will
+  // fit inside the window regardless of the begin time. (inside the window
+  // is defined as: begin < ObsTime <= end).
+  std::unique_ptr<util::DateTime[]> obs_datetimes {new util::DateTime[nlocs_]};
+  for (std::size_t ii = 0; ii < nlocs_; ++ii) {
+    obs_datetimes[ii] = this->windowEnd();
+  }
+  put_db("MetaData", "datetime", nlocs_, obs_datetimes.get());
+
+  // Create lat and lon variables and generate the values specified by the arguments.
   std::unique_ptr<float[]> latitude {new float[nlocs_]};
   for (std::size_t ii = 0; ii < nlocs_; ++ii) {
     latitude.get()[ii] = lat;

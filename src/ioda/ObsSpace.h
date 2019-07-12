@@ -79,6 +79,8 @@ class ObsSpace : public oops::ObsSpaceBase {
               const size_t & vsize, const float vdata[]);
   void put_db(const std::string & group, const std::string & name,
               const size_t & vsize, const double vdata[]);
+  void put_db(const std::string & group, const std::string & name,
+              const size_t & vsize, const util::DateTime vdata[]);
 
   /*! \details This method will return the name of the obs type being stored */
   const std::string & obsname() const {return obsname_;}

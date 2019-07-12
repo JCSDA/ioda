@@ -132,3 +132,5 @@ Observations:
           - 18.75771455181502
         tolerance:
           - 1.0e-11
+      ObsDataOut:
+        obsfile: "testoutput/ospace.generate.nc4"
