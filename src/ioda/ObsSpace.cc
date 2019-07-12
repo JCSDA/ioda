@@ -7,12 +7,12 @@
 
 #include "ioda/ObsSpace.h"
 
+#include <fstream>
+#include <iomanip>
 #include <map>
 #include <memory>
 #include <string>
 #include <vector>
-#include <iomanip>
-#include <fstream>
 
 #define BOOST_STACKTRACE_GNU_SOURCE_NOT_REQUIRED
 #include <boost/stacktrace.hpp>
