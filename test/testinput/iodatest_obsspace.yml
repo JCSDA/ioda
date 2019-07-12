@@ -116,9 +116,11 @@ Observations:
       simulate:
       Generate:
         nobs: 10   # generate 10 obs
-        lat: 0     # with lat=0 for all of them
+        lat1: 0    # with lat ranging form 0-10.
+        lat2: 10   # 
         lon1: 0    # and lon ranging from 0-10.
         lon2: 10
+        random_seed: 29837
       TestData:
         nlocs: 10
         groups:
@@ -128,8 +130,8 @@ Observations:
           - "latitude"
           - "longitude"
         norms:
-          - 0.0
-          - 18.75771455181502
+          - 20.339408406768506
+          - 21.049584423915757
         tolerance:
           - 1.0e-11
       ObsDataOut:
