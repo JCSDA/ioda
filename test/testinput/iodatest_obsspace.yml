@@ -128,12 +128,15 @@ Observations:
         groups:
           - "MetaData"
           - "MetaData"
+          - "ObsError"
         variables:
           - "latitude"
           - "longitude"
+          - "air_temperature"
         norms:
           - 20.339408406768506
           - 21.049584423915757
+          - 3.1622776601683795
         tolerance:
           - 1.0e-11
       ObsDataOut:
