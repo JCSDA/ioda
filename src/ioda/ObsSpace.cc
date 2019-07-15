@@ -443,15 +443,15 @@ void ObsSpace::generateDistribution(const eckit::Configuration & conf) {
   util::Duration WindowDuration(this->windowEnd() - this->windowStart());
   float TimeRange = static_cast<float>(WindowDuration.toSeconds());
 
-  // Generate obs error
-  const float err = conf.getFloat("obs_error");
+  // Read obs errors (one for each variable)
+  const std::vector<float> err = conf.getFloatVector("obs_errors");
+  ASSERT(nvars_ == err.size());
 
   // Create vectors for lat, lon, time, fill them with random values
   // inside their respective ranges, and put results into the obs container.
   std::vector<float> latitude(nlocs_);
   std::vector<float> longitude(nlocs_);
   std::vector<util::DateTime> obs_datetimes(nlocs_);
-  std::vector<float> obserr(nlocs_);
 
   util::Duration DurZero(0);
   util::Duration DurOneSec(1);
@@ -470,13 +470,13 @@ void ObsSpace::generateDistribution(const eckit::Configuration & conf) {
       OffsetDt = DurOneSec;
     }
     obs_datetimes[ii] = this->windowStart() + OffsetDt;
-    obserr[ii] = err;
   }
 
   put_db("MetaData", "datetime", nlocs_, obs_datetimes.data());
   put_db("MetaData", "latitude", nlocs_, latitude.data());
   put_db("MetaData", "longitude", nlocs_, longitude.data());
   for (std::size_t ivar = 0; ivar < nvars_; ++ivar) {
+    std::vector<float> obserr(nlocs_, err[ivar]);
     put_db("ObsError", obsvars_[ivar], nlocs_, obserr.data());
   }
 }
