@@ -114,6 +114,7 @@ Observations:
   - ObsSpace:
       name: "Synthetic"
       simulate:
+        variables: [air_temperature]
       Generate:
         nobs: 10   # generate 10 obs
         lat1: 0    # with lat ranging form 0-10.
@@ -121,17 +122,21 @@ Observations:
         lon1: 0    # and lon ranging from 0-10.
         lon2: 10
         random_seed: 29837
+        obs_error: 1.0
       TestData:
         nlocs: 10
         groups:
           - "MetaData"
           - "MetaData"
+          - "ObsError"
         variables:
           - "latitude"
           - "longitude"
+          - "air_temperature"
         norms:
           - 20.339408406768506
           - 21.049584423915757
+          - 3.1622776601683795
         tolerance:
           - 1.0e-11
       ObsDataOut:
