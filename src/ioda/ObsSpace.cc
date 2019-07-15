@@ -432,17 +432,10 @@ void ObsSpace::generateDistribution(const eckit::Configuration & conf) {
   // Create a list of random values between 0 and 1 to be used for genearting
   // random lat, lon and time vaules.
   //
-  // Currently the filter for time stamps on obs values is:
-  //
-  //     windowStart < ObsTime <= windowEnd
-  //
-  // Just to be safe, clip off the edges of the interval so we don't get values equal to
-  // the start or end of the interval.
-  //
   // Use different seeds for lat and lon so that in the case where lat and lon ranges
   // are the same, you get a different sequences for lat compared to lon.
-  util::UniformDistribution<float> RanVals(nlocs_, 0.001, 0.999, ran_seed);
-  util::UniformDistribution<float> RanVals2(nlocs_, 0.001, 0.999, ran_seed+1);
+  util::UniformDistribution<float> RanVals(nlocs_, 0.0, 1.0, ran_seed);
+  util::UniformDistribution<float> RanVals2(nlocs_, 0.0, 1.0, ran_seed+1);
 
   // Form the ranges val2-val for lat, lon, time
   float LatRange = lat2 - lat1;
@@ -460,10 +453,22 @@ void ObsSpace::generateDistribution(const eckit::Configuration & conf) {
   std::vector<util::DateTime> obs_datetimes(nlocs_);
   std::vector<float> obserr(nlocs_);
 
+  util::Duration DurZero(0);
+  util::Duration DurOneSec(1);
   for (std::size_t ii = 0; ii < nlocs_; ++ii) {
     latitude[ii] = lat1 + (RanVals[ii] * LatRange);
     longitude[ii] = lon1 + (RanVals2[ii] * LonRange);
+
+    // Currently the filter for time stamps on obs values is:
+    //
+    //     windowStart < ObsTime <= windowEnd
+    //
+    // If we get a zero OffsetDt, then change it to 1 second so that the observation
+    // will remain inside the timing window.
     util::Duration OffsetDt(static_cast<int64_t>(RanVals[ii] * TimeRange));
+    if (OffsetDt == DurZero) {
+      OffsetDt = DurOneSec;
+    }
     obs_datetimes[ii] = this->windowStart() + OffsetDt;
     obserr[ii] = err;
   }
