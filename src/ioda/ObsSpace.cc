@@ -18,6 +18,7 @@
 #include <boost/stacktrace.hpp>
 
 #include "eckit/config/Configuration.h"
+#include "eckit/exception/Exceptions.h"
 
 #include "oops/parallel/mpi/mpi.h"
 #include "oops/util/abor1_cpp.h"
@@ -25,7 +26,6 @@
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
 #include "oops/util/Random.h"
-
 
 #include "distribution/DistributionFactory.h"
 #include "fileio/IodaIO.h"
