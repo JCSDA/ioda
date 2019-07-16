@@ -75,7 +75,7 @@ void testConstructor() {
     std::size_t Nlocs = Test_::obspace(jj).nlocs();
 
     // Get the expected nlocs from the obspace object's configuration
-    int ExpectedNlocs = conf[jj].getInt("ObsSpace.ObsDataIn.metadata.nlocs");
+    int ExpectedNlocs = conf[jj].getInt("ObsSpace.TestData.nlocs");
 
     EXPECT(Nlocs == ExpectedNlocs);
   }
@@ -93,7 +93,7 @@ void testGetDb() {
   for (std::size_t jj = 0; jj < Test_::size(); ++jj) {
     // Set up a pointer to the ObsSpace object for convenience
     ioda::ObsSpace * Odb = &(Test_::obspace(jj));
-    const eckit::LocalConfiguration dataconf(conf[jj], "ObsSpace.ObsDataIn.TestData");
+    const eckit::LocalConfiguration dataconf(conf[jj], "ObsSpace.TestData");
 
     // Read in the variable names and expected norm values from the configuration
     std::vector<std::string> GroupNames = dataconf.getStringVector("groups");
@@ -103,7 +103,6 @@ void testGetDb() {
 
     std::size_t Nlocs = Odb->nlocs();
     std::vector<double> TestVec(Nlocs);
-    std::vector<util::DateTime> TestTime(Nlocs);
     for (std::size_t i = 0; i < VarNames.size(); ++i) {
       // Read in the table, calculate the norm and compare with the expected norm.
       std::string Gname = GroupNames[i];
