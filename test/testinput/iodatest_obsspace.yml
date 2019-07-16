@@ -19,100 +19,128 @@ Observations:
       simulate:
       ObsDataIn:
         obsfile: "Data/aod_obs_2018041500_m.nc4"
-        metadata:
-          nlocs: 100
-        TestData:
-          groups:
-            - "MetaData"
-            - "MetaData"
-          variables:
-            - "latitude"
-            - "longitude"
-          norms:
-            - 353.11505923005967
-            - 1981.4147543887036
-          tolerance:
-            - 1.0e-14
+      TestData:
+        nlocs: 100
+        groups:
+          - "MetaData"
+          - "MetaData"
+        variables:
+          - "latitude"
+          - "longitude"
+        norms:
+          - 353.11505923005967
+          - 1981.4147543887036
+        tolerance:
+          - 1.0e-14
 
   - ObsSpace:
       name: "Radiance"
       simulate:
       ObsDataIn:
         obsfile: "Data/amsua_n19_obs_2018041500_m.nc4"
-        metadata:
-          nlocs: 100
-        TestData:
-          groups:
-            - "MetaData"
-            - "MetaData"
-          variables:
-            - "latitude"
-            - "longitude"
-          norms:
-            - 432.95617402805823 
-            - 1661.1529210392009 
-          tolerance:
-            - 1.0e-11
+      TestData:
+        nlocs: 100
+        groups:
+          - "MetaData"
+          - "MetaData"
+        variables:
+          - "latitude"
+          - "longitude"
+        norms:
+          - 432.95617402805823 
+          - 1661.1529210392009 
+        tolerance:
+          - 1.0e-11
 
   - ObsSpace:
       name: "Radiance"
       simulate:
       ObsDataIn:
         obsfile: "Data/smap_obs_2018041500_m.nc4"
-        metadata:
-          nlocs: 45
-        TestData:
-          groups:
-            - "MetaData"
-            - "MetaData"
-          variables:
-            - "latitude"
-            - "longitude"
-          norms:
-            - 558.238937361
-            - 137.162692422
-          tolerance:
-            - 1.0e-11
+      TestData:
+        nlocs: 45
+        groups:
+          - "MetaData"
+          - "MetaData"
+        variables:
+          - "latitude"
+          - "longitude"
+        norms:
+          - 558.238937361
+          - 137.162692422
+        tolerance:
+          - 1.0e-11
 
   - ObsSpace:
       name: "Radiance"
       simulate:
       ObsDataIn:
         obsfile: "Data/gmi_gpm_obs_2018041500_m.nc4"
-        metadata:
-          nlocs: 12
-        TestData:
-          groups:
-            - "MetaData"
-            - "MetaData"
-          variables:
-            - "latitude"
-            - "longitude"
-          norms:
-            - 211.00380053756118
-            - 172.29837728971688
-          tolerance:
-            - 1.0e-11
+      TestData:
+        nlocs: 12
+        groups:
+          - "MetaData"
+          - "MetaData"
+        variables:
+          - "latitude"
+          - "longitude"
+        norms:
+          - 211.00380053756118
+          - 172.29837728971688
+        tolerance:
+          - 1.0e-11
 
   - ObsSpace:
       name: "Radiosonde"
       simulate:
       ObsDataIn:
         obsfile: "Data/sondes_obs_2018041500_m.nc4"
-        metadata:
-          nlocs: 973
-        TestData:
-          groups:
-            - "MetaData"
-            - "MetaData"
-          variables:
-            - "latitude"
-            - "longitude"
-          norms:
-            - 1253.8638436269134
-            - 6065.6117026835063
-          tolerance:
-            - 1.0e-11
+      TestData:
+        nlocs: 973
+        groups:
+          - "MetaData"
+          - "MetaData"
+        variables:
+          - "latitude"
+          - "longitude"
+        norms:
+          - 1253.8638436269134
+          - 6065.6117026835063
+        tolerance:
+          - 1.0e-11
       ObsDataOut:
         obsfile: "testoutput/diagout.nc4"
 
+  - ObsSpace:
+      name: "Synthetic"
+      simulate:
+        variables: [air_temperature, eastward_wind]
+      Generate:
+        nobs: 10   # generate 10 obs
+        lat1: 0    # with lat ranging form 0-10.
+        lat2: 10   # 
+        lon1: 0    # and lon ranging from 0-10.
+        lon2: 10
+        random_seed: 29837
+        obs_errors: [1.0, 2.0]
+      TestData:
+        nlocs: 10
+        groups:
+          - "MetaData"
+          - "MetaData"
+          - "ObsError"
+          - "ObsError"
+        variables:
+          - "latitude"
+          - "longitude"
+          - "air_temperature"
+          - "eastward_wind"
+        norms:
+          - 20.349321770437683
+          - 21.063312039377447
+          - 3.1622776601683795
+          - 6.32455532034
+        tolerance:
+          - 1.0e-11
+      ObsDataOut:
+        obsfile: "testoutput/ospace.generate.nc4"
