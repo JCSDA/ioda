@@ -22,7 +22,9 @@
 #include "oops/parallel/mpi/mpi.h"
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/DateTime.h"
+#include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
+#include "oops/util/Random.h"
 
 
 #include "distribution/DistributionFactory.h"
@@ -56,13 +58,24 @@ ObsSpace::ObsSpace(const eckit::Configuration & config,
 
   eckit::LocalConfiguration varconfig(config, "simulate");
   obsvars_ = oops::Variables(varconfig);
-  oops::Log::info() << obsname_ << " vars: " << obsvars_;
+  oops::Log::info() << obsname_ << " vars: " << obsvars_ << std::endl;
 
-  // Open the file and read in variables from the file into the database.
-  filein_ = config.getString("ObsDataIn.obsfile");
-  oops::Log::trace() << obsname_ << " file in = " << filein_ << std::endl;
-
-  InitFromFile(filein_);
+  // Initialize the obs space container
+  if (config.has("ObsDataIn")) {
+    // Initialize the container from an input obs file
+    filein_ = config.getString("ObsDataIn.obsfile");
+    oops::Log::trace() << obsname_ << " file in = " << filein_ << std::endl;
+    InitFromFile(filein_);
+  } else if (config.has("Generate")) {
+    // Initialize the container from the generateDistribution method
+    eckit::LocalConfiguration genconfig(config, "Generate");
+    generateDistribution(genconfig);
+  } else {
+    // Error - must have one of ObsDataIn or Generate
+    std::string ErrorMsg =
+      "ObsSpace::ObsSpace: Must use one of 'ObsDataIn' or 'Generate' in the YAML configuration.";
+    ABORT(ErrorMsg);
+  }
 
   // Check to see if an output file has been requested.
   if (config.has("ObsDataOut.obsfile")) {
@@ -298,6 +311,11 @@ void ObsSpace::put_db(const std::string & group, const std::string & name,
   put_db_helper<float>(group, name, vsize, FloatData.get());
 }
 
+void ObsSpace::put_db(const std::string & group, const std::string & name,
+                      const size_t & vsize, const util::DateTime vdata[]) {
+  put_db_helper<util::DateTime>(group, name, vsize, vdata);
+}
+
 /*!
  * \brief Helper method for put_db
  *
@@ -370,46 +388,101 @@ std::size_t ObsSpace::nvars() const {
 // -----------------------------------------------------------------------------
 /*!
  * \details This method will generate a set of latitudes and longitudes of which
- *          can be used for testing without reading in an obs file. A single latitude
- *          value, two longitude values, and the number of locations (nobs keyword) are
- *          specified in the configuration given by the conf parameter. Evenly spaced
- *          locations along the given latitude and between the two longitudes are
- *          generated and stored in the obs container as meta data.
+ *          can be used for testing without reading in an obs file. Two latitude
+ *          values, two longitude values, the number of locations (nobs keyword)
+ *          and an optional random seed are specified in the configuration given
+ *          by the conf parameter. Random locations between the two latitudes and
+ *          two longitudes are generated and stored in the obs container as meta data.
+ *          Random time stamps that fall inside the given timing window (which is
+ *          specified in the configuration file) are alos generated and stored
+ *          in the obs container as meta data.
  *
  * \param[in] conf ECKIT configuration segment built from an input configuration file.
  */
 void ObsSpace::generateDistribution(const eckit::Configuration & conf) {
   int fvlen  = conf.getInt("nobs");
-  float lat  = conf.getFloat("lat");
+  float lat1 = conf.getFloat("lat1");
+  float lat2 = conf.getFloat("lat2");
   float lon1 = conf.getFloat("lon1");
   float lon2 = conf.getFloat("lon2");
+
+  // Make the random_seed keyword optional. Can spec it for testing to get repeatable
+  // values, and the user doesn't have to spec it if they want subsequent runs to
+  // use different random sequences.
+  unsigned int ran_seed;
+  if (conf.has("random_seed")) {
+    ran_seed = conf.getInt("random_seed");
+  } else {
+    ran_seed = std::time(0);  // based on the current date/time.
+  }
 
   // Apply the round-robin distribution, which yields the size and indices that
   // are to be selected by this process element out of the file.
   DistributionFactory * distFactory;
   Distribution * dist{distFactory->createDistribution(distname_)};
   dist->distribution(comm(), fvlen);
-  int nlocs = dist->size();
 
-  // For now, set nvars to one.
-  int nvars = 1;
+  // Need to set nrecs_, nlocs_, nvars_ data members as part of constructor function.
+  nlocs_ = dist->size();  // locations are selected by distribution
+  nvars_ = obsvars_.size();         // variables specified in simulate section
+  nrecs_ = nlocs_;
 
-  // Record obs type
-  std::string MyObsType = conf.getString("ObsType");
-  oops::Log::info() << obsname() << " : " << MyObsType << std::endl;
+  // Use the following formula to generate random lat, lon and time values.
+  //
+  //   val = val1 + (random_number_between_0_and_1 * (val2-val1))
+  //
+  // where val2 > val1.
+  //
+  // Create a list of random values between 0 and 1 to be used for genearting
+  // random lat, lon and time vaules.
+  //
+  // Use different seeds for lat and lon so that in the case where lat and lon ranges
+  // are the same, you get a different sequences for lat compared to lon.
+  util::UniformDistribution<float> RanVals(nlocs_, 0.0, 1.0, ran_seed);
+  util::UniformDistribution<float> RanVals2(nlocs_, 0.0, 1.0, ran_seed+1);
 
-  // Create variables and generate the values specified by the arguments.
-  std::unique_ptr<double[]> latitude {new double[nlocs]};
-  for (std::size_t ii = 0; ii < nlocs; ++ii) {
-    latitude.get()[ii] = static_cast<double>(lat);
+  // Form the ranges val2-val for lat, lon, time
+  float LatRange = lat2 - lat1;
+  float LonRange = lon2 - lon1;
+  util::Duration WindowDuration(this->windowEnd() - this->windowStart());
+  float TimeRange = static_cast<float>(WindowDuration.toSeconds());
+
+  // Read obs errors (one for each variable)
+  const std::vector<float> err = conf.getFloatVector("obs_errors");
+  ASSERT(nvars_ == err.size());
+
+  // Create vectors for lat, lon, time, fill them with random values
+  // inside their respective ranges, and put results into the obs container.
+  std::vector<float> latitude(nlocs_);
+  std::vector<float> longitude(nlocs_);
+  std::vector<util::DateTime> obs_datetimes(nlocs_);
+
+  util::Duration DurZero(0);
+  util::Duration DurOneSec(1);
+  for (std::size_t ii = 0; ii < nlocs_; ++ii) {
+    latitude[ii] = lat1 + (RanVals[ii] * LatRange);
+    longitude[ii] = lon1 + (RanVals2[ii] * LonRange);
+
+    // Currently the filter for time stamps on obs values is:
+    //
+    //     windowStart < ObsTime <= windowEnd
+    //
+    // If we get a zero OffsetDt, then change it to 1 second so that the observation
+    // will remain inside the timing window.
+    util::Duration OffsetDt(static_cast<int64_t>(RanVals[ii] * TimeRange));
+    if (OffsetDt == DurZero) {
+      OffsetDt = DurOneSec;
+    }
+    obs_datetimes[ii] = this->windowStart() + OffsetDt;
   }
-  put_db("", "latitude", nlocs, latitude.get());
 
-  std::unique_ptr<double[]> longitude {new double[nlocs]};
-  for (std::size_t ii = 0; ii < nlocs; ++ii) {
-    longitude.get()[ii] = static_cast<double>(lon1 + (ii-1)*(lon2-lon1)/(nlocs-1));
+  put_db("MetaData", "datetime", nlocs_, obs_datetimes.data());
+  put_db("MetaData", "latitude", nlocs_, latitude.data());
+  put_db("MetaData", "longitude", nlocs_, longitude.data());
+  for (std::size_t ivar = 0; ivar < nvars_; ++ivar) {
+    std::vector<float> obserr(nlocs_, err[ivar]);
+    put_db("ObsError", obsvars_[ivar], nlocs_, obserr.data());
   }
-  put_db("", "longitude", nlocs, longitude.get());
 }
 
 // -----------------------------------------------------------------------------
