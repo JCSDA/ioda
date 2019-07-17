@@ -10,8 +10,11 @@
 #include <string>
 #include <vector>
 
-#include "ObsSpace.h"
+#include "eckit/exception/Exceptions.h"
+
 #include "oops/util/DateTime.h"
+
+#include "ioda/ObsSpace.h"
 
 namespace ioda {
 
