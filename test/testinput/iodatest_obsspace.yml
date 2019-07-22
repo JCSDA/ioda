@@ -96,7 +96,7 @@ Observations:
       ObsDataIn:
         obsfile: "Data/sondes_obs_2018041500_m.nc4"
       TestData:
-        nlocs: 973
+        nlocs: 974
         groups:
           - "MetaData"
           - "MetaData"
@@ -104,8 +104,8 @@ Observations:
           - "latitude"
           - "longitude"
         norms:
-          - 1253.8638436269134
-          - 6065.6117026835063
+          - 1254.66336565038
+          - 6076.2659622388919
         tolerance:
           - 1.0e-11
       ObsDataOut:
