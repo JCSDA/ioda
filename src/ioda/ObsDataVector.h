@@ -8,20 +8,24 @@
 #ifndef IODA_OBSDATAVECTOR_H_
 #define IODA_OBSDATAVECTOR_H_
 
-#include <math.h>
+#include <cmath>
 #include <limits>
 #include <ostream>
 #include <string>
 #include <vector>
 
 #include <boost/math/special_functions/fpclassify.hpp>
+
+#include "eckit/exception/Exceptions.h"
 #include "eckit/mpi/Comm.h"
-#include "ioda/ObsSpace.h"
+
 #include "oops/base/Variables.h"
 #include "oops/util/Logger.h"
 #include "oops/util/missingValues.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
+
+#include "ioda/ObsSpace.h"
 
 namespace ioda {
 
