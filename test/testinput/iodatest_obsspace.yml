@@ -16,7 +16,7 @@ Observations:
   ObsTypes:
 
   - ObsSpace:
-      name: "LAOD"
+      name: "AOD"
       ObsDataIn:
         obsfile: "Data/geos_aod_obs_2018041500_m.nc4"
         metadata:
