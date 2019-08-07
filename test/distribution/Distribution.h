@@ -53,7 +53,12 @@ void testConstructor() {
     oops::Log::debug() << "Distribution::DistType: " << TestDistType << std::endl;
 
     DistName = dist_types[i].getString("Specs.dist_name");
-    TestDist.reset(DistFactory->createDistribution(MpiComm, 0, DistName));
+    if (dist_types[i].has("Specs.obs_grouping")) {
+      std::vector<std::size_t> Groups = dist_types[i].getUnsignedVector("Specs.obs_grouping");
+      TestDist.reset(DistFactory->createDistribution(MpiComm, 0, DistName, Groups));
+    } else {
+      TestDist.reset(DistFactory->createDistribution(MpiComm, 0, DistName));
+    }
     EXPECT(TestDist.get());
     }
   }
@@ -80,9 +85,14 @@ void testDistribution() {
     TestDistType = dist_types[i].getString("DistType");
     oops::Log::debug() << "Distribution::DistType: " << TestDistType << std::endl;
 
-    std::size_t Nrecs = dist_types[i].getInt("Specs.nrecs");
+    std::size_t Nlocs = dist_types[i].getInt("Specs.nlocs");
     DistName = dist_types[i].getString("Specs.dist_name");
-    TestDist.reset(DistFactory->createDistribution(MpiComm, Nrecs, DistName));
+    if (dist_types[i].has("Specs.obs_grouping")) {
+      std::vector<std::size_t> Groups = dist_types[i].getUnsignedVector("Specs.obs_grouping");
+      TestDist.reset(DistFactory->createDistribution(MpiComm, Nlocs, DistName, Groups));
+    } else {
+      TestDist.reset(DistFactory->createDistribution(MpiComm, Nlocs, DistName));
+    }
     EXPECT(TestDist.get());
 
     // Expected results are listed in "Specs.index" with the MPI rank number

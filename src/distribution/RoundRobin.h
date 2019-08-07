@@ -28,8 +28,14 @@ namespace ioda {
 class RoundRobin: public Distribution {
  public:
      RoundRobin(const eckit::mpi::Comm & Comm, const std::size_t Nlocs);
+     RoundRobin(const eckit::mpi::Comm & Comm, const std::size_t Nlocs,
+                const std::vector<std::size_t> & Groups);
      ~RoundRobin();
      void distribution();
+
+ private:
+     /*! \brief Groups numbers for observation locations */
+     std::vector<std::size_t> group_numbers_;
 };
 
 }  // namespace ioda
