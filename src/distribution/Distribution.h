@@ -25,16 +25,14 @@ namespace ioda {
  */
 class Distribution {
  public:
+    Distribution(const eckit::mpi::Comm & Comm, const std::size_t Nlocs);
     virtual ~Distribution() = 0;
 
      /*! \brief Calculate the local array index based on the MPI communicator */
-     virtual void distribution(const eckit::mpi::Comm &, const std::size_t gnlocs) = 0;
+     virtual void distribution() = 0;
 
      /*! \brief Return the index */
      const std::vector<std::size_t> & index() const {return indx_;}
-
-     /*! \brief Erase the item from indx_*/
-     void erase(const std::size_t &);
 
      /*! \brief Rank of this processing element */
      std::size_t size() const {return indx_.size();}
@@ -42,6 +40,12 @@ class Distribution {
  protected:
      /*! \brief Index of location array being assigned to this processing element */
      std::vector<std::size_t> indx_;
+
+     /*! \brief Total number of observation locations */
+     const std::size_t nlocs_;
+
+     /*! \brief Local MPI communicator */
+     const eckit::mpi::Comm & comm_;
 };
 
 }  // namespace ioda

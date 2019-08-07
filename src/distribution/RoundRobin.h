@@ -27,8 +27,9 @@ namespace ioda {
  */
 class RoundRobin: public Distribution {
  public:
+     RoundRobin(const eckit::mpi::Comm & Comm, const std::size_t Nlocs);
      ~RoundRobin();
-     void distribution(const eckit::mpi::Comm &, const std::size_t gnlocs);
+     void distribution();
 };
 
 }  // namespace ioda

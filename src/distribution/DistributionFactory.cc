@@ -5,8 +5,6 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#include <boost/algorithm/string.hpp>
-
 #include "distribution/DistributionFactory.h"
 #include "distribution/InefficientDistribution.h"
 #include "distribution/RoundRobin.h"
@@ -23,11 +21,12 @@ namespace ioda {
  *
  * \param[in] method Name of the method of distribution of obs.
  */
-Distribution * DistributionFactory::createDistribution(const std::string & method) {
-  if (boost::iequals(method, "RoundRobin"))
-    return new RoundRobin;
-  else if (boost::iequals(method, "InefficientDistribution"))
-    return new InefficientDistribution;
+Distribution * DistributionFactory::createDistribution(const eckit::mpi::Comm & Comm,
+                                    const std::size_t Gnlocs, const std::string & Method) {
+  if (Method == "RoundRobin")
+    return new RoundRobin(Comm, Gnlocs);
+  else if (Method == "InefficientDistribution")
+    return new InefficientDistribution(Comm, Gnlocs);
   else
     return NULL;
 }

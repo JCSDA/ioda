@@ -12,7 +12,7 @@ window_end: "2015-08-10T03:00:00Z"
 DistributionTypes: 
   - DistType: "Round Robin 8"
     Specs:
-      dist_name: "roundrobin"
+      dist_name: "RoundRobin"
       nrecs: 8
       index0: [ 0, 4 ]
       index1: [ 1, 5 ]
@@ -21,7 +21,7 @@ DistributionTypes:
 
   - DistType: "Round Robin 10"
     Specs:
-      dist_name: "roundrobin"
+      dist_name: "RoundRobin"
       nrecs: 10
       index0: [ 0, 4, 8 ]
       index1: [ 1, 5, 9 ]
