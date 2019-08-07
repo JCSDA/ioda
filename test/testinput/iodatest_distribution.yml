@@ -13,7 +13,7 @@ DistributionTypes:
   - DistType: "Round Robin 8"
     Specs:
       dist_name: "RoundRobin"
-      nrecs: 8
+      nlocs: 8
       index0: [ 0, 4 ]
       index1: [ 1, 5 ]
       index2: [ 2, 6 ]
@@ -22,7 +22,7 @@ DistributionTypes:
   - DistType: "Round Robin 10"
     Specs:
       dist_name: "RoundRobin"
-      nrecs: 10
+      nlocs: 10
       index0: [ 0, 4, 8 ]
       index1: [ 1, 5, 9 ]
       index2: [ 2, 6 ]
@@ -31,10 +31,19 @@ DistributionTypes:
   - DistType: "Inefficient 4"
     Specs:
       dist_name: "InefficientDistribution"
-      nrecs: 4
+      nlocs: 4
       index0: [ 0, 1, 2, 3 ]
       index1: [ 0, 1, 2, 3 ]
       index2: [ 0, 1, 2, 3 ]
       index3: [ 0, 1, 2, 3 ]
 
-       
+  - DistType: "Round Robin Grouping 20"
+    Specs:
+      dist_name: "RoundRobin"
+      nlocs: 20
+      obs_grouping: [ 0, 0, 1, 1, 1, 2, 3, 3, 3, 3, 4, 5, 6, 7, 8, 8, 8, 9, 9, 10 ]
+      index0: [ 0, 1, 10, 14, 15, 16 ]
+      index1: [ 2, 3, 4, 11, 17, 18 ]
+      index2: [ 5, 12, 19 ]
+      index3: [ 6, 7, 8, 9, 13 ]
+

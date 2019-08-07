@@ -9,6 +9,7 @@
 #define DISTRIBUTION_DISTRIBUTIONFACTORY_H_
 
 #include <string>
+#include <vector>
 
 #include "distribution/Distribution.h"
 
@@ -27,7 +28,7 @@ namespace ioda {
 class DistributionFactory {
  public:
     Distribution * createDistribution(const eckit::mpi::Comm & Comm, const std::size_t Gnlocs,
-                                      const std::string & Method);
+                   const std::string & Method, const std::vector<std::size_t> & Groups = { });
 };
 
 // ---------------------------------------------------------------------
