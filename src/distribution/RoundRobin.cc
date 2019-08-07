@@ -10,10 +10,21 @@
 
 #include "distribution/RoundRobin.h"
 
+#include "oops/util/Logger.h"
+
 namespace ioda {
 // -----------------------------------------------------------------------------
 
-RoundRobin::~RoundRobin() {}
+RoundRobin::RoundRobin(const eckit::mpi::Comm & Comm, const std::size_t Nlocs) :
+      Distribution(Comm, Nlocs) {
+  oops::Log::trace() << "RoundRobin constructed" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+RoundRobin::~RoundRobin() {
+  oops::Log::trace() << "RoundRobin destructed" << std::endl;
+}
 
 // -----------------------------------------------------------------------------
 /*!
@@ -25,15 +36,12 @@ RoundRobin::~RoundRobin() {}
  *          the rank of the process element we are running on. This does a good job
  *          of distributing the observations evenly across processors which optimizes
  *          the load balancing.
- *
- * \param[in] comm The eckit MPI communicator object for this run
- * \param[in] gnlocs The total number of locations from the input obs file
  */
-void RoundRobin::distribution(const eckit::mpi::Comm & comm, const std::size_t gnlocs) {
+void RoundRobin::distribution() {
     // Round-Robin distributing the global total locations among comm.
-    std::size_t nproc = comm.size();
-    std::size_t myproc = comm.rank();
-    for (std::size_t ii = 0; ii < gnlocs; ++ii)
+    std::size_t nproc = comm_.size();
+    std::size_t myproc = comm_.rank();
+    for (std::size_t ii = 0; ii < nlocs_; ++ii)
         if (ii % nproc == myproc) {
             indx_.push_back(ii);
         }

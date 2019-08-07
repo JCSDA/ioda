@@ -37,6 +37,7 @@ namespace test {
 void testConstructor() {
   const eckit::LocalConfiguration conf(::test::TestEnvironment::config());
   std::vector<eckit::LocalConfiguration> dist_types;
+  eckit::mpi::Comm & MpiComm = eckit::mpi::comm();
 
   std::string TestDistType;
   std::string DistName;
@@ -46,13 +47,13 @@ void testConstructor() {
   // Walk through the different distribution types and try constructing.
   conf.get("DistributionTypes", dist_types);
   for (std::size_t i = 0; i < dist_types.size(); ++i) {
-    oops::Log::debug() << "Distribution::DistributionTypes: conf" << dist_types[i] << std::endl;
+    oops::Log::debug() << "Distribution::DistributionTypes: conf: " << dist_types[i] << std::endl;
 
     TestDistType = dist_types[i].getString("DistType");
     oops::Log::debug() << "Distribution::DistType: " << TestDistType << std::endl;
 
     DistName = dist_types[i].getString("Specs.dist_name");
-    TestDist.reset(DistFactory->createDistribution(DistName));
+    TestDist.reset(DistFactory->createDistribution(MpiComm, 0, DistName));
     EXPECT(TestDist.get());
     }
   }
@@ -79,19 +80,18 @@ void testDistribution() {
     TestDistType = dist_types[i].getString("DistType");
     oops::Log::debug() << "Distribution::DistType: " << TestDistType << std::endl;
 
+    std::size_t Nrecs = dist_types[i].getInt("Specs.nrecs");
     DistName = dist_types[i].getString("Specs.dist_name");
-    TestDist.reset(DistFactory->createDistribution(DistName));
+    TestDist.reset(DistFactory->createDistribution(MpiComm, Nrecs, DistName));
     EXPECT(TestDist.get());
 
-    // Read the specs from the YAML
-    std::size_t Nrecs = dist_types[i].getInt("Specs.nrecs");
     // Expected results are listed in "Specs.index" with the MPI rank number
     // appended on the end.
     std::string MyIndexName = "Specs.index" + std::to_string(MyRank);
     std::vector<int> ExpectedIndex = dist_types[i].getIntVector(MyIndexName);
 
     // Form the distribution
-    TestDist->distribution(MpiComm, Nrecs);
+    TestDist->distribution();
     std::vector<int> Index(TestDist->size());
     for (std::size_t i = 0; i < TestDist->size(); i++) {
       Index[i] = TestDist->index()[i];

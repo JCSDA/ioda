@@ -419,8 +419,8 @@ void ObsSpace::generateDistribution(const eckit::Configuration & conf) {
   // Apply the round-robin distribution, which yields the size and indices that
   // are to be selected by this process element out of the file.
   DistributionFactory * distFactory;
-  Distribution * dist{distFactory->createDistribution(distname_)};
-  dist->distribution(comm(), fvlen);
+  Distribution * dist{distFactory->createDistribution(comm(), fvlen, distname_)};
+  dist->distribution();
 
   // Need to set nrecs_, nlocs_, nvars_ data members as part of constructor function.
   nlocs_ = dist->size();  // locations are selected by distribution
@@ -518,8 +518,8 @@ void ObsSpace::InitFromFile(const std::string & filename) {
   // Create the MPI distribution
   std::unique_ptr<Distribution> dist_;
   DistributionFactory * DistFactory;
-  dist_.reset(DistFactory->createDistribution(distname_));
-  dist_->distribution(commMPI_, file_nlocs_);
+  dist_.reset(DistFactory->createDistribution(commMPI_, file_nlocs_, distname_));
+  dist_->distribution();
 
   // Read in the datetime values and filter out any variables outside the
   // timing window.
