@@ -185,6 +185,9 @@ class ObsSpace : public oops::ObsSpaceBase {
 
   /*! \brief Distribution type */
   std::string distname_;
+
+  /*! \brief Variable that indicates location grouping */
+  std::string obs_group_var_;
 };
 
 /*! \brief Specialized (for DateTime type) helper function for public get_db */
