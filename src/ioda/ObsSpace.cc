@@ -63,6 +63,7 @@ ObsSpace::ObsSpace(const eckit::Configuration & config,
   // Initialize the obs space container
   if (config.has("ObsDataIn")) {
     // Initialize the container from an input obs file
+    obs_group_var_ = congfig.getString("ObsDataIn.obsgroup", "");
     filein_ = config.getString("ObsDataIn.obsfile");
     oops::Log::trace() << obsname_ << " file in = " << filein_ << std::endl;
     InitFromFile(filein_);
