@@ -11,6 +11,7 @@
 #include <iomanip>
 #include <map>
 #include <memory>
+#include <numeric>
 #include <string>
 #include <vector>
 
@@ -28,7 +29,6 @@
 #include "oops/util/Random.h"
 
 #include "distribution/DistributionFactory.h"
-#include "fileio/IodaIO.h"
 #include "fileio/IodaIOfactory.h"
 
 namespace ioda {
@@ -63,7 +63,9 @@ ObsSpace::ObsSpace(const eckit::Configuration & config,
   // Initialize the obs space container
   if (config.has("ObsDataIn")) {
     // Initialize the container from an input obs file
-    obs_group_var_ = congfig.getString("ObsDataIn.obsgroup", "");
+    obs_grouping_.resize(2);
+    obs_grouping_.at(0) = config.getString("ObsDataIn.obsgrouping.group", "");
+    obs_grouping_.at(1) = config.getString("ObsDataIn.obsgrouping.variable", "");
     filein_ = config.getString("ObsDataIn.obsfile");
     oops::Log::trace() << obsname_ << " file in = " << filein_ << std::endl;
     InitFromFile(filein_);
@@ -517,9 +519,16 @@ void ObsSpace::InitFromFile(const std::string & filename) {
   nrecs_ = fileio->nrecs();
 
   // Create the MPI distribution
+  std::vector<std::size_t> Groups(file_nlocs_);
+  GenGroupNumbers(fileio, Groups);
+  for (std::size_t igrp = 0; igrp < Groups.size(); igrp++) {
+    std::cout << "DEBUG: igrp, Groups[igrp]: " << igrp << " -> "
+              << Groups[igrp] << std::endl;
+  }
+
   std::unique_ptr<Distribution> dist_;
   DistributionFactory * DistFactory;
-  dist_.reset(DistFactory->createDistribution(commMPI_, file_nlocs_, distname_));
+  dist_.reset(DistFactory->createDistribution(commMPI_, file_nlocs_, distname_, Groups));
   dist_->distribution();
 
   // Read in the datetime values and filter out any variables outside the
@@ -653,6 +662,39 @@ void ObsSpace::InitFromFile(const std::string & filename) {
     }
   }
   oops::Log::trace() << "ioda::ObsSpaceContainer opening file ends " << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method will save the contents of the obs container into the
+ *          given file. Currently, all variables in the obs container are written
+ *          into the file. This may change in the future where we can select which
+ *          variables we want saved.
+ *
+ * \param[in] file_name Path to output obs file.
+ */
+void ObsSpace::GenGroupNumbers(const std::unique_ptr<IodaIO> & Fid,
+                               std::vector<std::size_t> & Groups) {
+  // Collect the group and variable names that came from the configuration
+  std::string GroupName = obs_grouping_[0];
+  std::string VarName = obs_grouping_[1];
+
+  // Construct the group numbers
+  if (VarName.empty()) {
+    // Grouping is not specified, so place 0..(nlocs_-1) in the Groups vector.
+    // This effectively disables grouping (each location is a separate group).
+    std::cout << "DEBUG: GenGroupNumbers: Grouping disabled" << std::endl;
+    std::iota(Groups.begin(), Groups.end(), 0);
+  } else {
+    // Grouping is based on GroupName, VarName. Read in the variable and make
+    // two passes through the values. First pass is to determine the unique
+    // values of which group numbers will be assigned 0..(number_of_unique_vals-1).
+    // Second pass is to generate the group numbers in the same order as the
+    // values occur in the variable read in.
+    std::string FileVarType = Fid->var_dtype(GroupName, VarName);
+    std::cout << "DEBUG: GenGroupNumbers: Groups based on: GroupName, VarName: "
+              << GroupName << ", " << VarName << " (" << FileVarType << ")" << std::endl;
+  }
 }
 
 // -----------------------------------------------------------------------------

@@ -144,3 +144,28 @@ Observations:
           - 1.0e-11
       ObsDataOut:
         obsfile: "testoutput/ospace.generate.nc4"
+
+  - ObsSpace:
+      name: "Radiosonde with grouping"
+      simulate:
+      ObsDataIn:
+        obsfile: "Data/sondes_obs_2018041500_m.nc4"
+        obsgrouping:
+          group: "MetaData"
+          variable: "station_id"
+      TestData:
+        nlocs: 974
+        groups:
+          - "MetaData"
+          - "MetaData"
+        variables:
+          - "latitude"
+          - "longitude"
+        norms:
+          - 1254.66336565038
+          - 6076.2659622388919
+        tolerance:
+          - 1.0e-11
+      ObsDataOut:
+        obsfile: "testoutput/diagout_with_groups.nc4"
+
