@@ -8,6 +8,7 @@
 #include "ioda/ObsSpace.h"
 
 #include <fstream>
+#include <functional>
 #include <iomanip>
 #include <map>
 #include <memory>
@@ -691,9 +692,46 @@ void ObsSpace::GenGroupNumbers(const std::unique_ptr<IodaIO> & Fid,
     // values of which group numbers will be assigned 0..(number_of_unique_vals-1).
     // Second pass is to generate the group numbers in the same order as the
     // values occur in the variable read in.
-    std::string FileVarType = Fid->var_dtype(GroupName, VarName);
+    std::string VarType = Fid->var_dtype(GroupName, VarName);
+    std::vector<std::size_t> VarShape = Fid->var_shape(GroupName, VarName);
+    std::size_t VarSize =
+      std::accumulate(VarShape.begin(), VarShape.end(), 1, std::multiplies<std::size_t>());
     std::cout << "DEBUG: GenGroupNumbers: Groups based on: GroupName, VarName: "
-              << GroupName << ", " << VarName << " (" << FileVarType << ")" << std::endl;
+              << GroupName << ", " << VarName << " (" << VarType
+              << ", " << VarShape << ", " << VarSize << ")" << std::endl;
+
+    if (VarType == "int") {
+      std::unique_ptr<int[]> FileData(new int[VarSize]);
+      Fid->ReadVar(GroupName, VarName, VarShape, FileData.get());
+    } else if (VarType == "float") {
+      std::unique_ptr<float[]> FileData(new float[VarSize]);
+      Fid->ReadVar(GroupName, VarName, VarShape, FileData.get());
+    } else if (VarType == "char") {
+      std::unique_ptr<char[]> FileData(new char[VarSize]);
+      Fid->ReadVar(GroupName, VarName, VarShape, FileData.get());
+      std::vector<std::string> StringData = CharArrayToStringVector(FileData.get(), VarShape);
+
+      // Form a map from StringData values to group number.
+      // First, collect all of the unique key values. Then go back and fill in the
+      // values in the map with numbers going from 0 to number_of_unique_values-1.
+      std::map<std::string, std::size_t> ValueToGroupNum;
+      for (std::size_t i = 0; i < StringData.size(); i++) {
+        ValueToGroupNum[StringData[i]] = 0;
+      }
+
+      std::size_t Gnum = 0;
+      for (std::map<std::string, std::size_t>::iterator imap = ValueToGroupNum.begin();
+           imap != ValueToGroupNum.end(); ++imap) {
+        ValueToGroupNum[imap->first] = Gnum;
+        Gnum++;
+      }
+
+      // Use the map to translate the StringData values into their associated group
+      // numbers
+      for (std::size_t i = 0; i < StringData.size(); i++) {
+        Groups[i] = ValueToGroupNum[StringData[i]];
+      }
+    }
   }
 }
 
