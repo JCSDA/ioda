@@ -24,6 +24,7 @@
 
 #include "database/ObsSpaceContainer.h"
 #include "distribution/Distribution.h"
+#include "fileio/IodaIO.h"
 
 // Forward declarations
 namespace eckit {
@@ -104,6 +105,8 @@ class ObsSpace : public oops::ObsSpaceBase {
 
   // Initialize the database from the input file
   void InitFromFile(const std::string & filename);
+  void GenGroupNumbers(const std::unique_ptr<IodaIO> & Fid,
+                       std::vector<std::size_t> & Groups);
 
   template<typename VarType>
   void ApplyDistIndex(std::unique_ptr<VarType[]> & FullData,
@@ -186,8 +189,9 @@ class ObsSpace : public oops::ObsSpaceBase {
   /*! \brief Distribution type */
   std::string distname_;
 
-  /*! \brief Variable that indicates location grouping */
-  std::string obs_group_var_;
+  /*! \brief Variable that location grouping is based upon */
+  // element zero is group name, element 1 is variable name
+  std::vector<std::string> obs_grouping_;
 };
 
 /*! \brief Specialized (for DateTime type) helper function for public get_db */
