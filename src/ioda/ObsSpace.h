@@ -107,6 +107,9 @@ class ObsSpace : public oops::ObsSpaceBase {
   void InitFromFile(const std::string & filename);
   void GenGroupNumbers(const std::unique_ptr<IodaIO> & Fid,
                        std::vector<std::size_t> & Groups);
+  template<typename DATATYPE>
+  void GenGnumsFromVar(const std::vector<DATATYPE> & VarData,
+                       std::vector<std::size_t> & Groups);
 
   template<typename VarType>
   void ApplyDistIndex(std::unique_ptr<VarType[]> & FullData,

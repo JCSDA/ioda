@@ -701,37 +701,56 @@ void ObsSpace::GenGroupNumbers(const std::unique_ptr<IodaIO> & Fid,
               << ", " << VarShape << ", " << VarSize << ")" << std::endl;
 
     if (VarType == "int") {
-      std::unique_ptr<int[]> FileData(new int[VarSize]);
-      Fid->ReadVar(GroupName, VarName, VarShape, FileData.get());
+      std::vector<int> FileData(VarSize);
+      Fid->ReadVar(GroupName, VarName, VarShape, FileData.data());
+      GenGnumsFromVar<int>(FileData, Groups);
     } else if (VarType == "float") {
-      std::unique_ptr<float[]> FileData(new float[VarSize]);
-      Fid->ReadVar(GroupName, VarName, VarShape, FileData.get());
+      std::vector<float> FileData(VarSize);
+      Fid->ReadVar(GroupName, VarName, VarShape, FileData.data());
+      GenGnumsFromVar<float>(FileData, Groups);
     } else if (VarType == "char") {
-      std::unique_ptr<char[]> FileData(new char[VarSize]);
-      Fid->ReadVar(GroupName, VarName, VarShape, FileData.get());
-      std::vector<std::string> StringData = CharArrayToStringVector(FileData.get(), VarShape);
-
-      // Form a map from StringData values to group number.
-      // First, collect all of the unique key values. Then go back and fill in the
-      // values in the map with numbers going from 0 to number_of_unique_values-1.
-      std::map<std::string, std::size_t> ValueToGroupNum;
-      for (std::size_t i = 0; i < StringData.size(); i++) {
-        ValueToGroupNum[StringData[i]] = 0;
-      }
-
-      std::size_t Gnum = 0;
-      for (std::map<std::string, std::size_t>::iterator imap = ValueToGroupNum.begin();
-           imap != ValueToGroupNum.end(); ++imap) {
-        ValueToGroupNum[imap->first] = Gnum;
-        Gnum++;
-      }
-
-      // Use the map to translate the StringData values into their associated group
-      // numbers
-      for (std::size_t i = 0; i < StringData.size(); i++) {
-        Groups[i] = ValueToGroupNum[StringData[i]];
-      }
+      std::vector<char> FileData(VarSize);
+      Fid->ReadVar(GroupName, VarName, VarShape, FileData.data());
+      std::vector<std::string> StringData = CharArrayToStringVector(FileData.data(), VarShape);
+      GenGnumsFromVar<std::string>(StringData, Groups);
     }
+  }
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method will generate a set of unique group numbers that go
+ *          in sequence from 0 to number_of_unique_values-1. All of the unique
+ *          values in VarData are extracted and assigned a unique group number.
+ *
+ * \param[in] VarData Vector of variable data.
+ * \param[out] Groups Vector of group numbers.
+ */
+template<typename DATATYPE>
+void ObsSpace::GenGnumsFromVar(const std::vector<DATATYPE> & VarData,
+                               std::vector<std::size_t> & Groups) {
+  typedef std::map<DATATYPE, std::size_t> VGMap;
+  typedef typename VGMap::iterator VGMapIter;
+  // Form a map from VarData values to group number.
+  //
+  // First, collect all of the unique key values. Then go back and fill in the
+  // values in the map with numbers going from 0 to number_of_unique_values-1.
+  VGMap ValueToGroupNum;
+  for (std::size_t i = 0; i < VarData.size(); i++) {
+    ValueToGroupNum[VarData[i]] = 0;
+  }
+
+  std::size_t Gnum = 0;
+  for (VGMapIter imap = ValueToGroupNum.begin();
+                 imap != ValueToGroupNum.end(); ++imap) {
+    ValueToGroupNum[imap->first] = Gnum;
+    Gnum++;
+  }
+
+  // Use the map to translate the VarData values into their associated group
+  // numbers
+  for (std::size_t i = 0; i < VarData.size(); i++) {
+    Groups[i] = ValueToGroupNum[VarData[i]];
   }
 }
 
