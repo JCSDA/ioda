@@ -34,6 +34,9 @@ class Distribution {
      /*! \brief Return the index vector that indicates the distribution */
      const std::vector<std::size_t> & index() const {return indx_;}
 
+     /*! \brief Return the record number associated with the index */
+     const std::vector<std::size_t> & recnum() const {return recnums_;}
+
      /*! \brief Return number of locations in the distribution */
      std::size_t nlocs() const {return nlocs_;}
 
@@ -46,6 +49,9 @@ class Distribution {
  protected:
      /*! \brief Index of location array being assigned to this processing element */
      std::vector<std::size_t> indx_;
+
+     /*! \brief Index of location array being assigned to this processing element */
+     std::vector<std::size_t> recnums_;
 
      /*! \brief Total number of observation locations */
      const std::size_t gnlocs_;

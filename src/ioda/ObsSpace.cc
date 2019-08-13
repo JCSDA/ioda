@@ -517,7 +517,6 @@ void ObsSpace::InitFromFile(const std::string & filename) {
   std::unique_ptr<IodaIO> fileio {ioda::IodaIOfactory::Create(filename, "r")};
   file_nlocs_ = fileio->nlocs();
   nvars_ = fileio->nvars();
-  nrecs_ = fileio->nrecs();
 
   // Create the MPI distribution
   std::vector<std::size_t> Groups(file_nlocs_);
@@ -561,6 +560,7 @@ void ObsSpace::InitFromFile(const std::string & filename) {
   }
 
   nlocs_ = indx_.size();
+  nrecs_ = dist_->nrecs();
 
   // Read in all variables from the file and store them into the database.
   for (IodaIO::GroupIter igrp = fileio->group_begin();

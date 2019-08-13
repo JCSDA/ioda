@@ -16,8 +16,9 @@ namespace ioda {
 
 Distribution::Distribution(const eckit::mpi::Comm & Comm, const std::size_t Gnlocs) :
     comm_(Comm), gnlocs_(Gnlocs), nlocs_(0), nrecs_(0) {
-  // clear out the index vector
+  // clear out the index and record numbers vectors
   indx_.clear();
+  recnums_.clear();
 
   oops::Log::trace() << "Distribution constructed" << std::endl;
 }
