@@ -113,6 +113,12 @@ ecbuild_add_test( TARGET test_ioda_obsspace
                   ARGS "testinput/iodatest_obsspace.yml"
                   LIBS    ioda )
 
+ecbuild_add_test( TARGET test_ioda_obsspace_mpi
+                  MPI     2
+                  SOURCES mains/TestObsSpace.cc
+                  ARGS "testinput/iodatest_obsspace.yml"
+                  LIBS    ioda )
+
 ecbuild_add_test( TARGET test_ioda_marine_obsspace
                   SOURCES mains/TestObsSpace.cc
                   ARGS "testinput/iodatest_marine_obsspace.yml"

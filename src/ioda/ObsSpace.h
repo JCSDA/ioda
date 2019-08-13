@@ -183,6 +183,9 @@ class ObsSpace : public oops::ObsSpaceBase {
   /*! \brief indexes of locations to extract from the input obs file */
   std::vector<std::size_t> indx_;
 
+  /*! \brief record numbers associated with the location indexes */
+  std::vector<std::size_t> recnums_;
+
   /*! \brief Multi-index container */
   ObsSpaceContainer database_;
 
