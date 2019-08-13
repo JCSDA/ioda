@@ -25,14 +25,20 @@ namespace ioda {
  */
 class Distribution {
  public:
-    Distribution(const eckit::mpi::Comm & Comm, const std::size_t Nlocs);
+    Distribution(const eckit::mpi::Comm & Comm, const std::size_t Gnlocs);
     virtual ~Distribution() = 0;
 
      /*! \brief Calculate the local array index based on the MPI communicator */
      virtual void distribution() = 0;
 
-     /*! \brief Return the index */
+     /*! \brief Return the index vector that indicates the distribution */
      const std::vector<std::size_t> & index() const {return indx_;}
+
+     /*! \brief Return number of locations in the distribution */
+     std::size_t nlocs() const {return nlocs_;}
+
+     /*! \brief Return number of records in the distribution */
+     std::size_t nrecs() const {return nrecs_;}
 
      /*! \brief Rank of this processing element */
      std::size_t size() const {return indx_.size();}
@@ -42,7 +48,13 @@ class Distribution {
      std::vector<std::size_t> indx_;
 
      /*! \brief Total number of observation locations */
-     const std::size_t nlocs_;
+     const std::size_t gnlocs_;
+
+     /*! \brief Number of observation locations in the distribution */
+     std::size_t nlocs_;
+
+     /*! \brief Number of observation records in the distribution */
+     std::size_t nrecs_;
 
      /*! \brief Local MPI communicator */
      const eckit::mpi::Comm & comm_;

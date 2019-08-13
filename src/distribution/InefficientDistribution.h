@@ -28,7 +28,7 @@ namespace ioda {
  */
 class InefficientDistribution: public Distribution {
  public:
-     InefficientDistribution(const eckit::mpi::Comm & Comm, const std::size_t Nlocs);
+     InefficientDistribution(const eckit::mpi::Comm & Comm, const std::size_t Gnlocs);
      ~InefficientDistribution();
      void distribution();
 };

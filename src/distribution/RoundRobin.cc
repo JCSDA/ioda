@@ -17,20 +17,21 @@ namespace ioda {
 // -----------------------------------------------------------------------------
 
 // Constructor with default obs grouping
-RoundRobin::RoundRobin(const eckit::mpi::Comm & Comm, const std::size_t Nlocs) :
-      Distribution(Comm, Nlocs) {
-  // This constructor treats every location as a separate group (ie, no grouping).
-  // To accomplish this, fill the group_number vector with the values 0..(Nlocs-1).
-  group_numbers_.resize(nlocs_);
-  std::iota(group_numbers_.begin(), group_numbers_.end(), 0);
-
+RoundRobin::RoundRobin(const eckit::mpi::Comm & Comm, const std::size_t Gnlocs) :
+      Distribution(Comm, Gnlocs) {
+  // This constructor treats every location as a separate record (ie, no grouping).
+  // To accomplish this, fill the group_number vector with the values 0..(Gnlocs-1).
+  record_numbers_.resize(gnlocs_);
+  std::iota(record_numbers_.begin(), record_numbers_.end(), 0);
   oops::Log::trace() << "RoundRobin(comm, nlocs) constructed" << std::endl;
 }
 
 // Constructor with specified obs grouping
-RoundRobin::RoundRobin(const eckit::mpi::Comm & Comm, const std::size_t Nlocs,
-                       const std::vector<std::size_t> & Groups) :
-      Distribution(Comm, Nlocs), group_numbers_(Groups) {
+// The record numbers go from 0 to nrecs_-1 in the Records array, so the last
+// entry in the array is equal to nrecs_-1.
+RoundRobin::RoundRobin(const eckit::mpi::Comm & Comm, const std::size_t Gnlocs,
+                       const std::vector<std::size_t> & Records) :
+      Distribution(Comm, Gnlocs), record_numbers_(Records) {
   oops::Log::trace() << "RoundRobin(comm, nlocs, groups) constructed" << std::endl;
 }
 
@@ -55,14 +56,19 @@ void RoundRobin::distribution() {
     // Round-Robin distributing the global total locations among comm.
     std::size_t nproc = comm_.size();
     std::size_t myproc = comm_.rank();
-    for (std::size_t ii = 0; ii < nlocs_; ++ii) {
-        if (group_numbers_[ii] % nproc == myproc) {
+    for (std::size_t ii = 0; ii < gnlocs_; ++ii) {
+        if (record_numbers_[ii] % nproc == myproc) {
             indx_.push_back(ii);
         }
     }
 
-    oops::Log::debug() << __func__ << " : " << indx_.size() <<
-        " locations being allocated to processor with round-robin method : " << myproc<< std::endl;
+    // The number of locations in this distribution will be equal to the size of
+    // the indx_ vector.
+    nlocs_ = indx_.size();
+
+    oops::Log::debug() << __func__ << " : " << nlocs_ <<
+        " locations being allocated to processor with round-robin method : "
+        << myproc<< std::endl;
 }
 
 // -----------------------------------------------------------------------------

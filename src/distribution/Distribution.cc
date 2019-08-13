@@ -14,8 +14,8 @@
 namespace ioda {
 // -----------------------------------------------------------------------------
 
-Distribution::Distribution(const eckit::mpi::Comm & Comm, const std::size_t Nlocs) :
-    comm_(Comm), nlocs_(Nlocs) {
+Distribution::Distribution(const eckit::mpi::Comm & Comm, const std::size_t Gnlocs) :
+    comm_(Comm), gnlocs_(Gnlocs), nlocs_(0), nrecs_(0) {
   // clear out the index vector
   indx_.clear();
 

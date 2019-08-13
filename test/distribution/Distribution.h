@@ -80,28 +80,44 @@ void testDistribution() {
   // Walk through the different distribution types and try constructing.
   conf.get("DistributionTypes", dist_types);
   for (std::size_t i = 0; i < dist_types.size(); ++i) {
-    oops::Log::debug() << "Distribution::DistributionTypes: conf" << dist_types[i] << std::endl;
+    oops::Log::debug() << "Distribution::DistributionTypes: conf: "
+                       << dist_types[i] << std::endl;
 
     TestDistType = dist_types[i].getString("DistType");
     oops::Log::debug() << "Distribution::DistType: " << TestDistType << std::endl;
 
-    std::size_t Nlocs = dist_types[i].getInt("Specs.nlocs");
+    std::size_t Gnlocs = dist_types[i].getInt("Specs.gnlocs");
     DistName = dist_types[i].getString("Specs.dist_name");
     if (dist_types[i].has("Specs.obs_grouping")) {
       std::vector<std::size_t> Groups = dist_types[i].getUnsignedVector("Specs.obs_grouping");
-      TestDist.reset(DistFactory->createDistribution(MpiComm, Nlocs, DistName, Groups));
+      TestDist.reset(DistFactory->createDistribution(MpiComm, Gnlocs, DistName, Groups));
     } else {
-      TestDist.reset(DistFactory->createDistribution(MpiComm, Nlocs, DistName));
+      TestDist.reset(DistFactory->createDistribution(MpiComm, Gnlocs, DistName));
     }
     EXPECT(TestDist.get());
 
     // Expected results are listed in "Specs.index" with the MPI rank number
     // appended on the end.
-    std::string MyIndexName = "Specs.index" + std::to_string(MyRank);
-    std::vector<int> ExpectedIndex = dist_types[i].getIntVector(MyIndexName);
+    std::string MyRankCfgName = "Specs.rank" + std::to_string(MyRank);
+    eckit::LocalConfiguration MyRankConfig = dist_types[i].getSubConfiguration(MyRankCfgName);
+    oops::Log::debug() << "Distribution::DistributionTypes: " 
+                       << MyRankCfgName << ": " << MyRankConfig << std::endl;
 
-    // Form the distribution
+    std::size_t ExpectedNlocs = MyRankConfig.getUnsigned("nlocs");
+    std::size_t ExpectedNrecs = MyRankConfig.getUnsigned("nrecs");
+    std::vector<int> ExpectedIndex = MyRankConfig.getIntVector("index");
+
+    // Form the distribution - this method will set nlocs and nrecs.
     TestDist->distribution();
+
+    // Check the location and record counts
+    std::size_t Nlocs = TestDist->nlocs();
+    std::size_t Nrecs = TestDist->nrecs();
+    std::cout << "DEBUG: Nlocs, ExpectedNlocs: " << Nlocs << ", " << ExpectedNlocs << std::endl;
+    std::cout << "DEBUG: Nrecs, ExpectedNrecs: " << Nrecs << ", " << ExpectedNrecs << std::endl;
+    EXPECT(Nlocs == ExpectedNlocs);
+    EXPECT(Nrecs == ExpectedNrecs);
+
     std::vector<int> Index(TestDist->size());
     for (std::size_t i = 0; i < TestDist->size(); i++) {
       Index[i] = TestDist->index()[i];

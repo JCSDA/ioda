@@ -17,8 +17,8 @@
 namespace ioda {
 // -----------------------------------------------------------------------------
 InefficientDistribution::InefficientDistribution(const eckit::mpi::Comm & Comm,
-                                                 const std::size_t Nlocs) :
-      Distribution(Comm, Nlocs) {
+                                                 const std::size_t Gnlocs) :
+      Distribution(Comm, Gnlocs) {
   oops::Log::trace() << "InefficientDistribution constructed" << std::endl;
 }
 
@@ -38,8 +38,13 @@ InefficientDistribution::~InefficientDistribution() {
  * \param[in] gnlocs The total number of locations from the input obs file
  */
 void InefficientDistribution::distribution() {
-  indx_.resize(nlocs_);
+  indx_.resize(gnlocs_);
   std::iota(indx_.begin(), indx_.end(), 0);
+
+  // The number of locations will equal the number of global locations,
+  // and the number of records will equal the number of locations (no grouping)
+  nlocs_ = gnlocs_;
+  nrecs_ = nlocs_;
 }
 
 // -----------------------------------------------------------------------------
