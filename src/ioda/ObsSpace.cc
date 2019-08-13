@@ -426,10 +426,16 @@ void ObsSpace::generateDistribution(const eckit::Configuration & conf) {
   Distribution * dist{distFactory->createDistribution(comm(), fvlen, distname_)};
   dist->distribution();
 
-  // Need to set nrecs_, nlocs_, nvars_ data members as part of constructor function.
-  nlocs_ = dist->size();  // locations are selected by distribution
-  nvars_ = obsvars_.size();         // variables specified in simulate section
+  // Need to set nrecs_, nlocs_, nvars_, indx_ and recnums_ data members
+  // as part of constructor function.
+  //
+  nlocs_ = dist->size();      // locations are selected by distribution
+  nvars_ = obsvars_.size();   // variables specified in simulate section
   nrecs_ = nlocs_;
+  for (std::size_t ii = 0; ii < dist->size(); ii++) {
+    indx_.push_back(dist->index()[ii]);
+    recnums_.push_back(dist->recnum()[ii]);
+  }
 
   // Use the following formula to generate random lat, lon and time values.
   //
@@ -442,8 +448,23 @@ void ObsSpace::generateDistribution(const eckit::Configuration & conf) {
   //
   // Use different seeds for lat and lon so that in the case where lat and lon ranges
   // are the same, you get a different sequences for lat compared to lon.
-  util::UniformDistribution<float> RanVals(nlocs_, 0.0, 1.0, ran_seed);
-  util::UniformDistribution<float> RanVals2(nlocs_, 0.0, 1.0, ran_seed+1);
+  //
+  // Have rank 0 generate the full length random sequences, and then
+  // broadcast these to the other ranks. This ensures that every rank
+  // contains the same random sequences. If all ranks generated their
+  // own sequences, which they could do, the sequences between ranks
+  // would be different in the case where random_seed is not specified.
+  std::vector<float> RanVals(fvlen, 0.0);
+  std::vector<float> RanVals2(fvlen, 0.0);
+  if (comm().rank() == 0) {
+    util::UniformDistribution<float> RanUD(fvlen, 0.0, 1.0, ran_seed);
+    util::UniformDistribution<float> RanUD2(fvlen, 0.0, 1.0, ran_seed+1);
+
+    RanVals = RanUD.data();
+    RanVals2 = RanUD2.data();
+  }
+  comm().broadcast(RanVals, 0);
+  comm().broadcast(RanVals2, 0);
 
   // Form the ranges val2-val for lat, lon, time
   float LatRange = lat2 - lat1;
@@ -464,8 +485,9 @@ void ObsSpace::generateDistribution(const eckit::Configuration & conf) {
   util::Duration DurZero(0);
   util::Duration DurOneSec(1);
   for (std::size_t ii = 0; ii < nlocs_; ++ii) {
-    latitude[ii] = lat1 + (RanVals[ii] * LatRange);
-    longitude[ii] = lon1 + (RanVals2[ii] * LonRange);
+    std::size_t index = indx_[ii];
+    latitude[ii] = lat1 + (RanVals[index] * LatRange);
+    longitude[ii] = lon1 + (RanVals2[index] * LonRange);
 
     // Currently the filter for time stamps on obs values is:
     //
@@ -473,7 +495,7 @@ void ObsSpace::generateDistribution(const eckit::Configuration & conf) {
     //
     // If we get a zero OffsetDt, then change it to 1 second so that the observation
     // will remain inside the timing window.
-    util::Duration OffsetDt(static_cast<int64_t>(RanVals[ii] * TimeRange));
+    util::Duration OffsetDt(static_cast<int64_t>(RanVals[index] * TimeRange));
     if (OffsetDt == DurZero) {
       OffsetDt = DurOneSec;
     }
@@ -521,10 +543,6 @@ void ObsSpace::InitFromFile(const std::string & filename) {
   // Create the MPI distribution
   std::vector<std::size_t> Groups(file_nlocs_);
   GenGroupNumbers(fileio, Groups);
-  for (std::size_t igrp = 0; igrp < Groups.size(); igrp++) {
-    std::cout << "DEBUG: igrp, Groups[igrp]: " << igrp << " -> "
-              << Groups[igrp] << std::endl;
-  }
 
   std::unique_ptr<Distribution> dist_;
   DistributionFactory * DistFactory;
@@ -550,17 +568,25 @@ void ObsSpace::InitFromFile(const std::string & filename) {
            CharArrayToStringVector(dt_char_array_.get(), dt_shape_);
 
   std::size_t index;
+  std::size_t recnum;
+  std::size_t prev_recnum = -1;
+  nrecs_ = 0;
   for (std::size_t ii = 0; ii < dist_->size(); ++ii) {
     index = dist_->index()[ii];
+    recnum = dist_->recnum()[ii];
     util::DateTime test_dt_(dt_strings_[index]);
     if ((test_dt_ > winbgn_) && (test_dt_ <= winend_)) {
       // Inside the DA time window, keep this index
+      // and associated record number
       indx_.push_back(index);
+      recnums_.push_back(recnum);
+      if (prev_recnum != recnum) {
+        nrecs_++;
+        prev_recnum = recnum;
+      }
     }
   }
-
   nlocs_ = indx_.size();
-  nrecs_ = dist_->nrecs();
 
   // Read in all variables from the file and store them into the database.
   for (IodaIO::GroupIter igrp = fileio->group_begin();
@@ -684,7 +710,6 @@ void ObsSpace::GenGroupNumbers(const std::unique_ptr<IodaIO> & Fid,
   if (VarName.empty()) {
     // Grouping is not specified, so place 0..(nlocs_-1) in the Groups vector.
     // This effectively disables grouping (each location is a separate group).
-    std::cout << "DEBUG: GenGroupNumbers: Grouping disabled" << std::endl;
     std::iota(Groups.begin(), Groups.end(), 0);
   } else {
     // Grouping is based on GroupName, VarName. Read in the variable and make
@@ -696,9 +721,6 @@ void ObsSpace::GenGroupNumbers(const std::unique_ptr<IodaIO> & Fid,
     std::vector<std::size_t> VarShape = Fid->var_shape(GroupName, VarName);
     std::size_t VarSize =
       std::accumulate(VarShape.begin(), VarShape.end(), 1, std::multiplies<std::size_t>());
-    std::cout << "DEBUG: GenGroupNumbers: Groups based on: GroupName, VarName: "
-              << GroupName << ", " << VarName << " (" << VarType
-              << ", " << VarShape << ", " << VarSize << ")" << std::endl;
 
     if (VarType == "int") {
       std::vector<int> FileData(VarSize);
