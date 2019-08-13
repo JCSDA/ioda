@@ -105,7 +105,10 @@ void testDistribution() {
 
     std::size_t ExpectedNlocs = MyRankConfig.getUnsigned("nlocs");
     std::size_t ExpectedNrecs = MyRankConfig.getUnsigned("nrecs");
-    std::vector<int> ExpectedIndex = MyRankConfig.getIntVector("index");
+    std::vector<std::size_t> ExpectedIndex = 
+                                 MyRankConfig.getUnsignedVector("index");
+    std::vector<std::size_t> ExpectedRecnums =
+                                 MyRankConfig.getUnsignedVector("recnums");
 
     // Form the distribution - this method will set nlocs and nrecs.
     TestDist->distribution();
@@ -113,16 +116,21 @@ void testDistribution() {
     // Check the location and record counts
     std::size_t Nlocs = TestDist->nlocs();
     std::size_t Nrecs = TestDist->nrecs();
-    std::cout << "DEBUG: Nlocs, ExpectedNlocs: " << Nlocs << ", " << ExpectedNlocs << std::endl;
-    std::cout << "DEBUG: Nrecs, ExpectedNrecs: " << Nrecs << ", " << ExpectedNrecs << std::endl;
     EXPECT(Nlocs == ExpectedNlocs);
     EXPECT(Nrecs == ExpectedNrecs);
 
-    std::vector<int> Index(TestDist->size());
+    // Check the resulting index and recnum vectors
+    std::vector<std::size_t> Index(TestDist->size());
     for (std::size_t i = 0; i < TestDist->size(); i++) {
       Index[i] = TestDist->index()[i];
     }
     EXPECT(Index == ExpectedIndex);
+
+    std::vector<std::size_t> Recnums(TestDist->size());
+    for (std::size_t i = 0; i < TestDist->size(); i++) {
+      Recnums[i] = TestDist->recnum()[i];
+    }
+    EXPECT(Recnums == ExpectedRecnums);
   }
 }
 

@@ -56,9 +56,16 @@ void RoundRobin::distribution() {
     // Round-Robin distributing the global total locations among comm.
     std::size_t nproc = comm_.size();
     std::size_t myproc = comm_.rank();
+    std::size_t prev_rec_num = -1;
+    nrecs_ = 0;
     for (std::size_t ii = 0; ii < gnlocs_; ++ii) {
         if (record_numbers_[ii] % nproc == myproc) {
             indx_.push_back(ii);
+            recnums_.push_back(record_numbers_[ii]);
+            if (prev_rec_num != record_numbers_[ii]) {
+              nrecs_++;
+              prev_rec_num = record_numbers_[ii];
+            }
         }
     }
 
