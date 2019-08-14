@@ -58,7 +58,7 @@ Observations:
       ObsDataIn:
         obsfile: Data/sst_obs-2018-04-15.nc4
       TestData:
-        nlocs: 223966
+        nlocs: 200
         groups:
           - "MetaData"
           - "MetaData"
@@ -66,8 +66,8 @@ Observations:
           - "latitude"
           - "longitude"
         norms:
-          - 14497.263538159166
-          - 61789.896501727279
+          - 943.46741129348698
+          - 1206.468598455715
         tolerance:
           - 1.0e-13
 
