@@ -587,6 +587,7 @@ void ObsSpace::InitFromFile(const std::string & filename) {
     }
   }
   nlocs_ = indx_.size();
+  nrecs_ = nlocs_;
 
   // Read in all variables from the file and store them into the database.
   for (IodaIO::GroupIter igrp = fileio->group_begin();
