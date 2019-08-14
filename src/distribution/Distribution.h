@@ -21,6 +21,14 @@ namespace ioda {
  * \details This Distribution class is a base class where various subclasses of
  *          this class define different methods for distributing obs.
  *
+ *          The Distribution constructor sets the comm_ and gnlocs_ data members
+ *          in this class, clears the indx_ and recnums_ vector data memebers,
+ *          and zeros out the nlocs_ and nrecs_ data memebers. The constructors
+ *          for each subclass need to call the Distribution constructor, but leave
+ *          the indx_, recnums_, nlocs_ and nrecs_ data members alone. Rather, the
+ *          distribution() method for each subclass is responsible for setting the 
+ *          indx_, recnums_, nlocs_ and nrecs_ data members.
+ *
  * \author Xin Zhang (JCSDA)
  */
 class Distribution {

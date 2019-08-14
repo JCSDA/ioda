@@ -27,8 +27,6 @@ RoundRobin::RoundRobin(const eckit::mpi::Comm & Comm, const std::size_t Gnlocs) 
 }
 
 // Constructor with specified obs grouping
-// The record numbers go from 0 to nrecs_-1 in the Records array, so the last
-// entry in the array is equal to nrecs_-1.
 RoundRobin::RoundRobin(const eckit::mpi::Comm & Comm, const std::size_t Gnlocs,
                        const std::vector<std::size_t> & Records) :
       Distribution(Comm, Gnlocs), record_numbers_(Records) {
