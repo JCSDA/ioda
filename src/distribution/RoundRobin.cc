@@ -7,13 +7,37 @@
 
 #include <algorithm>
 #include <iostream>
+#include <numeric>
 
 #include "distribution/RoundRobin.h"
+
+#include "oops/util/Logger.h"
 
 namespace ioda {
 // -----------------------------------------------------------------------------
 
-RoundRobin::~RoundRobin() {}
+// Constructor with default obs grouping
+RoundRobin::RoundRobin(const eckit::mpi::Comm & Comm, const std::size_t Gnlocs) :
+      Distribution(Comm, Gnlocs) {
+  // This constructor treats every location as a separate record (ie, no grouping).
+  // To accomplish this, fill the group_number vector with the values 0..(Gnlocs-1).
+  record_numbers_.resize(gnlocs_);
+  std::iota(record_numbers_.begin(), record_numbers_.end(), 0);
+  oops::Log::trace() << "RoundRobin(comm, nlocs) constructed" << std::endl;
+}
+
+// Constructor with specified obs grouping
+RoundRobin::RoundRobin(const eckit::mpi::Comm & Comm, const std::size_t Gnlocs,
+                       const std::vector<std::size_t> & Records) :
+      Distribution(Comm, Gnlocs), record_numbers_(Records) {
+  oops::Log::trace() << "RoundRobin(comm, nlocs, groups) constructed" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+RoundRobin::~RoundRobin() {
+  oops::Log::trace() << "RoundRobin destructed" << std::endl;
+}
 
 // -----------------------------------------------------------------------------
 /*!
@@ -25,21 +49,31 @@ RoundRobin::~RoundRobin() {}
  *          the rank of the process element we are running on. This does a good job
  *          of distributing the observations evenly across processors which optimizes
  *          the load balancing.
- *
- * \param[in] comm The eckit MPI communicator object for this run
- * \param[in] gnlocs The total number of locations from the input obs file
  */
-void RoundRobin::distribution(const eckit::mpi::Comm & comm, const std::size_t gnlocs) {
+void RoundRobin::distribution() {
     // Round-Robin distributing the global total locations among comm.
-    std::size_t nproc = comm.size();
-    std::size_t myproc = comm.rank();
-    for (std::size_t ii = 0; ii < gnlocs; ++ii)
-        if (ii % nproc == myproc) {
+    std::size_t nproc = comm_.size();
+    std::size_t myproc = comm_.rank();
+    std::size_t prev_rec_num = -1;
+    nrecs_ = 0;
+    for (std::size_t ii = 0; ii < gnlocs_; ++ii) {
+        if (record_numbers_[ii] % nproc == myproc) {
             indx_.push_back(ii);
+            recnums_.push_back(record_numbers_[ii]);
+            if (prev_rec_num != record_numbers_[ii]) {
+              nrecs_++;
+              prev_rec_num = record_numbers_[ii];
+            }
         }
+    }
 
-    oops::Log::debug() << __func__ << " : " << indx_.size() <<
-        " locations being allocated to processor with round-robin method : " << myproc<< std::endl;
+    // The number of locations in this distribution will be equal to the size of
+    // the indx_ vector.
+    nlocs_ = indx_.size();
+
+    oops::Log::debug() << __func__ << " : " << nlocs_ <<
+        " locations being allocated to processor with round-robin method : "
+        << myproc<< std::endl;
 }
 
 // -----------------------------------------------------------------------------

@@ -9,20 +9,24 @@
 
 #include "distribution/Distribution.h"
 
+#include "oops/util/Logger.h"
+
 namespace ioda {
 // -----------------------------------------------------------------------------
 
-Distribution::~Distribution() {}
+Distribution::Distribution(const eckit::mpi::Comm & Comm, const std::size_t Gnlocs) :
+    comm_(Comm), gnlocs_(Gnlocs), nlocs_(0), nrecs_(0) {
+  // clear out the index and record numbers vectors
+  indx_.clear();
+  recnums_.clear();
+
+  oops::Log::trace() << "Distribution constructed" << std::endl;
+}
 
 // -----------------------------------------------------------------------------
-/*!
- * \details This method will remove a particular index from the vector of indexes.
- *
- * \param index This is the entry number that is to be removed from the distribution
- *              index vector.
- */
-void Distribution::erase(const std::size_t & index) {
-    indx_.erase(std::remove(indx_.begin(), indx_.end(), index), indx_.end());
+
+Distribution::~Distribution() {
+  oops::Log::trace() << "Distribtion destructed" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
