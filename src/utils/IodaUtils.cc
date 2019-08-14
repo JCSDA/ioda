@@ -50,8 +50,15 @@ std::vector<std::string> CharArrayToStringVector(const char * CharData,
 
     // Convert the char vector to a single string. Any trailing white space will be
     // included in the string, so strip off the trailing white space.
+    //
+    // In order to include null characters in the white space list, the (char *, size_t)
+    // form of the string constructor needs to be used. The size_t (2nd) argument says
+    // how many characters to use from the "buffer" (1st argument). If the (char *) form
+    // of the string constructor is use, the null character terminates the string and only
+    // those characters leading up to the null are used.
+    std::string WhiteSpace(" \t\n\r\f\v\0", 7);
     std::string String(CharVector.begin(), CharVector.end());
-    String.erase(String.find_last_not_of(" \t\n\r\f\v") + 1);
+    String.erase(String.find_last_not_of(WhiteSpace) + 1, std::string::npos);
     StringVector[i] = String;
   }
 
