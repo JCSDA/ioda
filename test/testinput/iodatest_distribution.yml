@@ -6,35 +6,108 @@ window_end: "2015-08-10T03:00:00Z"
 # the number of PE is the ecbuild_add_test in the ../CMakeLists.txt file,
 # then the expected indices below need to change accordingly.
 #
-# The test is coded so that the keyword "index" + (MPI Rank Number) is read from this
-# file to get the expected result. If you are MPI rank 0, then you read "index0"
-# from this file; MPI rank 1, read "index1"; etc.
+# The test is coded so that the keyword "rank" + (MPI Rank Number) is used from this
+# file to get the expected result. If you are MPI rank 0, then you read the keywords
+# under "rank0:" from this file; MPI rank 1, keywords from "rank1:"; etc.
 DistributionTypes: 
   - DistType: "Round Robin 8"
     Specs:
-      dist_name: "roundrobin"
-      nrecs: 8
-      index0: [ 0, 4 ]
-      index1: [ 1, 5 ]
-      index2: [ 2, 6 ]
-      index3: [ 3, 7 ]
+      dist_name: "RoundRobin"
+      gnlocs: 8
+      rank0:
+        nlocs: 2
+        nrecs: 2
+        index: [ 0, 4 ]
+        recnums: [ 0, 4 ]
+      rank1:
+        nlocs: 2
+        nrecs: 2
+        index: [ 1, 5 ]
+        recnums: [ 1, 5 ]
+      rank2:
+        nlocs: 2
+        nrecs: 2
+        index: [ 2, 6 ]
+        recnums: [ 2, 6 ]
+      rank3:
+        nlocs: 2
+        nrecs: 2
+        index: [ 3, 7 ]
+        recnums: [ 3, 7 ]
 
   - DistType: "Round Robin 10"
     Specs:
-      dist_name: "roundrobin"
-      nrecs: 10
-      index0: [ 0, 4, 8 ]
-      index1: [ 1, 5, 9 ]
-      index2: [ 2, 6 ]
-      index3: [ 3, 7 ]
+      dist_name: "RoundRobin"
+      gnlocs: 10
+      rank0:
+        nlocs: 3
+        nrecs: 3
+        index: [ 0, 4, 8 ]
+        recnums: [ 0, 4, 8 ]
+      rank1:
+        nlocs: 3
+        nrecs: 3
+        index: [ 1, 5, 9 ]
+        recnums: [ 1, 5, 9 ]
+      rank2:
+        nlocs: 2
+        nrecs: 2
+        index: [ 2, 6 ]
+        recnums: [ 2, 6 ]
+      rank3:
+        nlocs: 2
+        nrecs: 2
+        index: [ 3, 7 ]
+        recnums: [ 3, 7 ]
 
   - DistType: "Inefficient 4"
     Specs:
       dist_name: "InefficientDistribution"
-      nrecs: 4
-      index0: [ 0, 1, 2, 3 ]
-      index1: [ 0, 1, 2, 3 ]
-      index2: [ 0, 1, 2, 3 ]
-      index3: [ 0, 1, 2, 3 ]
+      gnlocs: 4
+      rank0:
+        nlocs: 4
+        nrecs: 4
+        index: [ 0, 1, 2, 3 ]
+        recnums: [ 0, 1, 2, 3 ]
+      rank1:
+        nlocs: 4
+        nrecs: 4
+        index: [ 0, 1, 2, 3 ]
+        recnums: [ 0, 1, 2, 3 ]
+      rank2:
+        nlocs: 4
+        nrecs: 4
+        index: [ 0, 1, 2, 3 ]
+        recnums: [ 0, 1, 2, 3 ]
+      rank3:
+        nlocs: 4
+        nrecs: 4
+        index: [ 0, 1, 2, 3 ]
+        recnums: [ 0, 1, 2, 3 ]
 
-       
+  - DistType: "Round Robin Grouping 20"
+    Specs:
+      dist_name: "RoundRobin"
+      gnlocs: 20
+      obs_grouping: [ 0, 0, 1, 1, 1, 2, 3, 3, 3, 3, 4, 5, 6, 7, 8, 8, 8, 9, 9, 10 ]
+      rank0:
+        nlocs: 6
+        nrecs: 3
+        index: [ 0, 1, 10, 14, 15, 16 ]
+        recnums: [ 0, 0, 4, 8, 8, 8 ]
+      rank1:
+        nlocs: 6
+        nrecs: 3
+        index: [ 2, 3, 4, 11, 17, 18 ]
+        recnums: [ 1, 1, 1, 5, 9, 9 ]
+      rank2:
+        nlocs: 3
+        nrecs: 3
+        index: [ 5, 12, 19 ]
+        recnums: [ 2, 6, 10 ]
+      rank3:
+        nlocs: 5
+        nrecs: 2
+        index: [ 6, 7, 8, 9, 13 ]
+        recnums: [ 3, 3, 3, 3, 7 ]
+
