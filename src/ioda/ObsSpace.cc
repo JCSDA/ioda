@@ -404,7 +404,7 @@ std::size_t ObsSpace::nvars() const {
  * \param[in] conf ECKIT configuration segment built from an input configuration file.
  */
 void ObsSpace::generateDistribution(const eckit::Configuration & conf) {
-  int fvlen  = conf.getInt("nobs");
+  gnlocs_  = conf.getInt("nobs");
   float lat1 = conf.getFloat("lat1");
   float lat2 = conf.getFloat("lat2");
   float lon1 = conf.getFloat("lon1");
@@ -420,17 +420,19 @@ void ObsSpace::generateDistribution(const eckit::Configuration & conf) {
     ran_seed = std::time(0);  // based on the current date/time.
   }
 
+  // number of variables specified in simulate section
+  nvars_ = obsvars_.size();
+
   // Apply the round-robin distribution, which yields the size and indices that
   // are to be selected by this process element out of the file.
   DistributionFactory * distFactory;
-  Distribution * dist{distFactory->createDistribution(comm(), fvlen, distname_)};
+  Distribution * dist{distFactory->createDistribution(comm(), gnlocs_, distname_)};
   dist->distribution();
 
   // Need to set nrecs_, nlocs_, nvars_, indx_ and recnums_ data members
   // as part of constructor function.
   //
   nlocs_ = dist->size();      // locations are selected by distribution
-  nvars_ = obsvars_.size();   // variables specified in simulate section
   nrecs_ = nlocs_;
   for (std::size_t ii = 0; ii < dist->size(); ii++) {
     indx_.push_back(dist->index()[ii]);
@@ -454,11 +456,11 @@ void ObsSpace::generateDistribution(const eckit::Configuration & conf) {
   // contains the same random sequences. If all ranks generated their
   // own sequences, which they could do, the sequences between ranks
   // would be different in the case where random_seed is not specified.
-  std::vector<float> RanVals(fvlen, 0.0);
-  std::vector<float> RanVals2(fvlen, 0.0);
+  std::vector<float> RanVals(gnlocs_, 0.0);
+  std::vector<float> RanVals2(gnlocs_, 0.0);
   if (comm().rank() == 0) {
-    util::UniformDistribution<float> RanUD(fvlen, 0.0, 1.0, ran_seed);
-    util::UniformDistribution<float> RanUD2(fvlen, 0.0, 1.0, ran_seed+1);
+    util::UniformDistribution<float> RanUD(gnlocs_, 0.0, 1.0, ran_seed);
+    util::UniformDistribution<float> RanUD2(gnlocs_, 0.0, 1.0, ran_seed+1);
 
     RanVals = RanUD.data();
     RanVals2 = RanUD2.data();
@@ -537,22 +539,22 @@ void ObsSpace::InitFromFile(const std::string & filename) {
 
   // Open the file for reading and record nlocs and nvars from the file.
   std::unique_ptr<IodaIO> fileio {ioda::IodaIOfactory::Create(filename, "r")};
-  file_nlocs_ = fileio->nlocs();
+  gnlocs_ = fileio->nlocs();
   nvars_ = fileio->nvars();
 
   // Create the MPI distribution
-  std::vector<std::size_t> Groups(file_nlocs_);
-  GenGroupNumbers(fileio, Groups);
+  std::vector<std::size_t> Records(gnlocs_);
+  GenRecordNumbers(fileio, Records);
 
   std::unique_ptr<Distribution> dist_;
   DistributionFactory * DistFactory;
-  dist_.reset(DistFactory->createDistribution(commMPI_, file_nlocs_, distname_, Groups));
+  dist_.reset(DistFactory->createDistribution(commMPI_, gnlocs_, distname_, Records));
   dist_->distribution();
 
   // Read in the datetime values and filter out any variables outside the
   // timing window.
-  std::unique_ptr<char[]> dt_char_array_(new char[file_nlocs_ * 20]);
-  std::vector<std::size_t> dt_shape_{ file_nlocs_, 20 };
+  std::unique_ptr<char[]> dt_char_array_(new char[gnlocs_ * 20]);
+  std::vector<std::size_t> dt_shape_{ gnlocs_, 20 };
   // Look for datetime@MetaData first, then datetime@GroupUndefined
   std::string DtGroupName = "MetaData";
   std::string DtVarName = "datetime";
@@ -701,17 +703,17 @@ void ObsSpace::InitFromFile(const std::string & filename) {
  *
  * \param[in] file_name Path to output obs file.
  */
-void ObsSpace::GenGroupNumbers(const std::unique_ptr<IodaIO> & Fid,
-                               std::vector<std::size_t> & Groups) {
+void ObsSpace::GenRecordNumbers(const std::unique_ptr<IodaIO> & Fid,
+                                std::vector<std::size_t> & Records) {
   // Collect the group and variable names that came from the configuration
   std::string GroupName = obs_grouping_[0];
   std::string VarName = obs_grouping_[1];
 
   // Construct the group numbers
   if (VarName.empty()) {
-    // Grouping is not specified, so place 0..(nlocs_-1) in the Groups vector.
+    // Grouping is not specified, so place 0..(nlocs_-1) in the Records vector.
     // This effectively disables grouping (each location is a separate group).
-    std::iota(Groups.begin(), Groups.end(), 0);
+    std::iota(Records.begin(), Records.end(), 0);
   } else {
     // Grouping is based on GroupName, VarName. Read in the variable and make
     // two passes through the values. First pass is to determine the unique
@@ -726,16 +728,16 @@ void ObsSpace::GenGroupNumbers(const std::unique_ptr<IodaIO> & Fid,
     if (VarType == "int") {
       std::vector<int> FileData(VarSize);
       Fid->ReadVar(GroupName, VarName, VarShape, FileData.data());
-      GenGnumsFromVar<int>(FileData, Groups);
+      GenRnumsFromVar<int>(FileData, Records);
     } else if (VarType == "float") {
       std::vector<float> FileData(VarSize);
       Fid->ReadVar(GroupName, VarName, VarShape, FileData.data());
-      GenGnumsFromVar<float>(FileData, Groups);
+      GenRnumsFromVar<float>(FileData, Records);
     } else if (VarType == "char") {
       std::vector<char> FileData(VarSize);
       Fid->ReadVar(GroupName, VarName, VarShape, FileData.data());
       std::vector<std::string> StringData = CharArrayToStringVector(FileData.data(), VarShape);
-      GenGnumsFromVar<std::string>(StringData, Groups);
+      GenRnumsFromVar<std::string>(StringData, Records);
     }
   }
 }
@@ -747,11 +749,11 @@ void ObsSpace::GenGroupNumbers(const std::unique_ptr<IodaIO> & Fid,
  *          values in VarData are extracted and assigned a unique group number.
  *
  * \param[in] VarData Vector of variable data.
- * \param[out] Groups Vector of group numbers.
+ * \param[out] Records Vector of group numbers.
  */
 template<typename DATATYPE>
-void ObsSpace::GenGnumsFromVar(const std::vector<DATATYPE> & VarData,
-                               std::vector<std::size_t> & Groups) {
+void ObsSpace::GenRnumsFromVar(const std::vector<DATATYPE> & VarData,
+                               std::vector<std::size_t> & Records) {
   typedef std::map<DATATYPE, std::size_t> VGMap;
   typedef typename VGMap::iterator VGMapIter;
   // Form a map from VarData values to group number.
@@ -773,7 +775,7 @@ void ObsSpace::GenGnumsFromVar(const std::vector<DATATYPE> & VarData,
   // Use the map to translate the VarData values into their associated group
   // numbers
   for (std::size_t i = 0; i < VarData.size(); i++) {
-    Groups[i] = ValueToGroupNum[VarData[i]];
+    Records[i] = ValueToGroupNum[VarData[i]];
   }
 }
 
@@ -941,9 +943,9 @@ void ObsSpace::ApplyDistIndex(std::unique_ptr<VarType[]> & FullData,
   IndexedShape = FullShape;
   IndexedSize = 1;
   // Apply the distribution index only when the first dimension size (FullShape[0])
-  // is equal to file_nlocs_. Ie, only apply the index to obs data (values, errors
+  // is equal to gnlocs_. Ie, only apply the index to obs data (values, errors
   // and QC marks) and metadata related to the obs data.
-  if (FullShape[0] == file_nlocs_) {
+  if (FullShape[0] == gnlocs_) {
     // Need to compute the new Shape and size. Keep track of the number of items
     // between each element of the first dimension (IndexIncrement). IndexIncrement
     // will define the space between each element of the first dimension, which will
