@@ -105,11 +105,11 @@ class ObsSpace : public oops::ObsSpaceBase {
 
   // Initialize the database from the input file
   void InitFromFile(const std::string & filename);
-  void GenGroupNumbers(const std::unique_ptr<IodaIO> & Fid,
-                       std::vector<std::size_t> & Groups);
+  void GenRecordNumbers(const std::unique_ptr<IodaIO> & Fid,
+                        std::vector<std::size_t> & Records);
   template<typename DATATYPE>
-  void GenGnumsFromVar(const std::vector<DATATYPE> & VarData,
-                       std::vector<std::size_t> & Groups);
+  void GenRnumsFromVar(const std::vector<DATATYPE> & VarData,
+                       std::vector<std::size_t> & Records);
 
   template<typename VarType>
   void ApplyDistIndex(std::unique_ptr<VarType[]> & FullData,
@@ -159,8 +159,8 @@ class ObsSpace : public oops::ObsSpaceBase {
   /*! \brief MPI communicator */
   const eckit::mpi::Comm & commMPI_;
 
-  /*! \brief number of locations in the input file */
-  std::size_t file_nlocs_;
+  /*! \brief total number of locations */
+  std::size_t gnlocs_;
 
   /*! \brief number of locations on this domain */
   std::size_t nlocs_;
