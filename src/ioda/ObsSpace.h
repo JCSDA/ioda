@@ -105,11 +105,13 @@ class ObsSpace : public oops::ObsSpaceBase {
 
   // Initialize the database from the input file
   void InitFromFile(const std::string & filename);
-  void GenRecordNumbers(const std::unique_ptr<IodaIO> & Fid,
+  void GenMpiDistribution(const std::unique_ptr<IodaIO> & FileIO);
+  void GenRecordNumbers(const std::unique_ptr<IodaIO> & FileIO,
                         std::vector<std::size_t> & Records);
   template<typename DATATYPE>
   void GenRnumsFromVar(const std::vector<DATATYPE> & VarData,
                        std::vector<std::size_t> & Records);
+  void ApplyTimingWindow(const std::unique_ptr<IodaIO> & FileIO);
 
   template<typename VarType>
   void ApplyDistIndex(std::unique_ptr<VarType[]> & FullData,
