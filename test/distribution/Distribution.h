@@ -120,14 +120,14 @@ void testDistribution() {
     EXPECT(Nrecs == ExpectedNrecs);
 
     // Check the resulting index and recnum vectors
-    std::vector<std::size_t> Index(TestDist->size());
-    for (std::size_t i = 0; i < TestDist->size(); i++) {
+    std::vector<std::size_t> Index(TestDist->nlocs());
+    for (std::size_t i = 0; i < TestDist->nlocs(); i++) {
       Index[i] = TestDist->index()[i];
     }
     EXPECT(Index == ExpectedIndex);
 
-    std::vector<std::size_t> Recnums(TestDist->size());
-    for (std::size_t i = 0; i < TestDist->size(); i++) {
+    std::vector<std::size_t> Recnums(TestDist->nlocs());
+    for (std::size_t i = 0; i < TestDist->nlocs(); i++) {
       Recnums[i] = TestDist->recnum()[i];
     }
     EXPECT(Recnums == ExpectedRecnums);

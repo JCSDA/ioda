@@ -13,6 +13,7 @@
 #include <map>
 #include <memory>
 #include <numeric>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -423,21 +424,11 @@ void ObsSpace::generateDistribution(const eckit::Configuration & conf) {
   // number of variables specified in simulate section
   nvars_ = obsvars_.size();
 
-  // Apply the round-robin distribution, which yields the size and indices that
-  // are to be selected by this process element out of the file.
-  DistributionFactory * distFactory;
-  Distribution * dist{distFactory->createDistribution(comm(), gnlocs_, distname_)};
-  dist->distribution();
-
-  // Need to set nrecs_, nlocs_, nvars_, indx_ and recnums_ data members
-  // as part of constructor function.
-  //
-  nlocs_ = dist->size();      // locations are selected by distribution
-  nrecs_ = nlocs_;
-  for (std::size_t ii = 0; ii < dist->size(); ii++) {
-    indx_.push_back(dist->index()[ii]);
-    recnums_.push_back(dist->recnum()[ii]);
-  }
+  // Create the MPI Distribution
+  // The default constructor for std::unique_ptr generates a null ptr which
+  // can be tested in GenMpiDistribution.
+  std::unique_ptr<IodaIO> NoIO;
+  GenMpiDistribution(NoIO);
 
   // Use the following formula to generate random lat, lon and time values.
   //
@@ -543,53 +534,11 @@ void ObsSpace::InitFromFile(const std::string & filename) {
   nvars_ = fileio->nvars();
 
   // Create the MPI distribution
-  std::vector<std::size_t> Records(gnlocs_);
-  GenRecordNumbers(fileio, Records);
+  GenMpiDistribution(fileio);
 
-  std::unique_ptr<Distribution> dist_;
-  DistributionFactory * DistFactory;
-  dist_.reset(DistFactory->createDistribution(commMPI_, gnlocs_, distname_, Records));
-  dist_->distribution();
-
-  // Read in the datetime values and filter out any variables outside the
-  // timing window.
-  std::unique_ptr<char[]> dt_char_array_(new char[gnlocs_ * 20]);
-  std::vector<std::size_t> dt_shape_{ gnlocs_, 20 };
-  // Look for datetime@MetaData first, then datetime@GroupUndefined
-  std::string DtGroupName = "MetaData";
-  std::string DtVarName = "datetime";
-  if (!fileio->grp_var_exists(DtGroupName, DtVarName)) {
-    DtGroupName = "GroupUndefined";
-    if (!fileio->grp_var_exists(DtGroupName, DtVarName)) {
-      std::string ErrorMsg = "ObsSpace::InitFromFile: datetime information is not available";
-      ABORT(ErrorMsg);
-    }
-  }
-  fileio->ReadVar(DtGroupName, DtVarName, dt_shape_, dt_char_array_.get());
-  std::vector<std::string> dt_strings_ =
-           CharArrayToStringVector(dt_char_array_.get(), dt_shape_);
-
-  std::size_t index;
-  std::size_t recnum;
-  std::size_t prev_recnum = -1;
-  nrecs_ = 0;
-  for (std::size_t ii = 0; ii < dist_->size(); ++ii) {
-    index = dist_->index()[ii];
-    recnum = dist_->recnum()[ii];
-    util::DateTime test_dt_(dt_strings_[index]);
-    if ((test_dt_ > winbgn_) && (test_dt_ <= winend_)) {
-      // Inside the DA time window, keep this index
-      // and associated record number
-      indx_.push_back(index);
-      recnums_.push_back(recnum);
-      if (prev_recnum != recnum) {
-        nrecs_++;
-        prev_recnum = recnum;
-      }
-    }
-  }
-  nlocs_ = indx_.size();
-  nrecs_ = nlocs_;
+  // Reject observations that fall outside the DA timing window. Do this by removing
+  // any locations from indx_ and recnums_ that fall outside the window.
+  ApplyTimingWindow(fileio);
 
   // Read in all variables from the file and store them into the database.
   for (IodaIO::GroupIter igrp = fileio->group_begin();
@@ -696,14 +645,54 @@ void ObsSpace::InitFromFile(const std::string & filename) {
 
 // -----------------------------------------------------------------------------
 /*!
- * \details This method will save the contents of the obs container into the
- *          given file. Currently, all variables in the obs container are written
- *          into the file. This may change in the future where we can select which
- *          variables we want saved.
+ * \details This method generates an list of indices with their corresponding
+ *          record numbers, where the indices denote which locations are to be
+ *          read into this process element.
  *
- * \param[in] file_name Path to output obs file.
+ *          This routine sets up record grouping, and is also responsible for
+ *          setting the nrecs_, nlocs_, indx_ and recnums_ data members.
+ *
+ * \param[in] FileIO File id (pointer to IodaIO object)
  */
-void ObsSpace::GenRecordNumbers(const std::unique_ptr<IodaIO> & Fid,
+void ObsSpace::GenMpiDistribution(const std::unique_ptr<IodaIO> & FileIO) {
+  // Apply the MPI distribution. If we are initializing from a file (FileIO is
+  // not null), then generate records numbers based on the specified variable
+  // in the input file. Otherwise, use default grouping.
+  std::unique_ptr<DistributionFactory> distFactory;
+  std::unique_ptr<Distribution> dist;
+  if (FileIO) {
+    // Grouping based on variable in the input file.
+    std::vector<std::size_t> Records(gnlocs_);
+    GenRecordNumbers(FileIO, Records);
+    dist.reset(distFactory->createDistribution(comm(), gnlocs_, distname_, Records));
+  } else {
+    // Default grouping (every location is a separate record)
+    dist.reset(distFactory->createDistribution(comm(), gnlocs_, distname_));
+  }
+  dist->distribution();
+
+  // The Distribution::distribution() method calculates data needed for
+  // the nrecs_, nlocs_, indx_ and recnums_ data members.
+  nlocs_ = dist->nlocs();
+  nrecs_ = dist->nrecs();
+  indx_ = dist->index();
+  recnums_ = dist->recnum();
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method calculates the record numbers according to the specs in
+ *          the YAML file. If the specification of a variable that denotes the
+ *          grouping is present, then that variable is read from the input file
+ *          and the records numbers are based on the unique values in that variable.
+ *          If the specification is not present, then the record numbers are set
+ *          to 0..(nlocs-1) which makes each location a separate record effectively
+ *          disabling grouping.
+ *
+ * \param[in] FileIO File id (pointer to IodaIO object)
+ * \param[out] Records Vector of record numbers
+ */
+void ObsSpace::GenRecordNumbers(const std::unique_ptr<IodaIO> & FileIO,
                                 std::vector<std::size_t> & Records) {
   // Collect the group and variable names that came from the configuration
   std::string GroupName = obs_grouping_[0];
@@ -711,7 +700,7 @@ void ObsSpace::GenRecordNumbers(const std::unique_ptr<IodaIO> & Fid,
 
   // Construct the group numbers
   if (VarName.empty()) {
-    // Grouping is not specified, so place 0..(nlocs_-1) in the Records vector.
+    // Grouping is not specified, so place 0..(nlocs-1) in the Records vector.
     // This effectively disables grouping (each location is a separate group).
     std::iota(Records.begin(), Records.end(), 0);
   } else {
@@ -720,22 +709,22 @@ void ObsSpace::GenRecordNumbers(const std::unique_ptr<IodaIO> & Fid,
     // values of which group numbers will be assigned 0..(number_of_unique_vals-1).
     // Second pass is to generate the group numbers in the same order as the
     // values occur in the variable read in.
-    std::string VarType = Fid->var_dtype(GroupName, VarName);
-    std::vector<std::size_t> VarShape = Fid->var_shape(GroupName, VarName);
+    std::string VarType = FileIO->var_dtype(GroupName, VarName);
+    std::vector<std::size_t> VarShape = FileIO->var_shape(GroupName, VarName);
     std::size_t VarSize =
       std::accumulate(VarShape.begin(), VarShape.end(), 1, std::multiplies<std::size_t>());
 
     if (VarType == "int") {
       std::vector<int> FileData(VarSize);
-      Fid->ReadVar(GroupName, VarName, VarShape, FileData.data());
+      FileIO->ReadVar(GroupName, VarName, VarShape, FileData.data());
       GenRnumsFromVar<int>(FileData, Records);
     } else if (VarType == "float") {
       std::vector<float> FileData(VarSize);
-      Fid->ReadVar(GroupName, VarName, VarShape, FileData.data());
+      FileIO->ReadVar(GroupName, VarName, VarShape, FileData.data());
       GenRnumsFromVar<float>(FileData, Records);
     } else if (VarType == "char") {
       std::vector<char> FileData(VarSize);
-      Fid->ReadVar(GroupName, VarName, VarShape, FileData.data());
+      FileIO->ReadVar(GroupName, VarName, VarShape, FileData.data());
       std::vector<std::string> StringData = CharArrayToStringVector(FileData.data(), VarShape);
       GenRnumsFromVar<std::string>(StringData, Records);
     }
@@ -777,6 +766,60 @@ void ObsSpace::GenRnumsFromVar(const std::vector<DATATYPE> & VarData,
   for (std::size_t i = 0; i < VarData.size(); i++) {
     Records[i] = ValueToGroupNum[VarData[i]];
   }
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method will save the contents of the obs container into the
+ *          given file. Currently, all variables in the obs container are written
+ *          into the file. This may change in the future where we can select which
+ *          variables we want saved.
+ *
+ * \param[in] file_name Path to output obs file.
+ */
+void ObsSpace::ApplyTimingWindow(const std::unique_ptr<IodaIO> & FileIO) {
+  // Read in the datetime values and filter out any variables outside the
+  // timing window.
+  std::unique_ptr<char[]> DtCharArray(new char[gnlocs_ * 20]);
+  std::vector<std::size_t> DtShape{ gnlocs_, 20 };
+
+  // Look for datetime@MetaData first, then datetime@GroupUndefined
+  std::string DtGroupName = "MetaData";
+  std::string DtVarName = "datetime";
+  if (!FileIO->grp_var_exists(DtGroupName, DtVarName)) {
+    DtGroupName = "GroupUndefined";
+    if (!FileIO->grp_var_exists(DtGroupName, DtVarName)) {
+      std::string ErrorMsg = "ObsSpace::InitFromFile: datetime information is not available";
+      ABORT(ErrorMsg);
+    }
+  }
+  FileIO->ReadVar(DtGroupName, DtVarName, DtShape, DtCharArray.get());
+  std::vector<std::string> DtStrings =
+           CharArrayToStringVector(DtCharArray.get(), DtShape);
+
+  std::size_t Index;
+  std::size_t RecNum;
+  std::set<std::size_t> UniqueRecNums;
+  std::vector<std::size_t> NewIndices;
+  std::vector<std::size_t> NewRecNums;
+  for (std::size_t ii = 0; ii < nlocs_; ++ii) {
+    Index = indx_[ii];
+    RecNum = recnums_[ii];
+    util::DateTime TestDt(DtStrings[Index]);
+    if ((TestDt > winbgn_) && (TestDt <= winend_)) {
+      // Inside the DA time window, keep this index
+      // and associated record number
+      NewIndices.push_back(Index);
+      NewRecNums.push_back(RecNum);
+      UniqueRecNums.insert(RecNum);
+    }
+  }
+
+  // Save adjusted counts, etc.
+  nlocs_ = NewIndices.size();
+  nrecs_ = UniqueRecNums.size();
+  indx_ = NewIndices;
+  recnums_ = NewRecNums;
 }
 
 // -----------------------------------------------------------------------------
