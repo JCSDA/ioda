@@ -21,6 +21,7 @@ Observations:
         obsfile: "Data/aod_obs_2018041500_m.nc4"
       TestData:
         nlocs: 100
+        nrecs: 100
         groups:
           - "MetaData"
           - "MetaData"
@@ -40,6 +41,7 @@ Observations:
         obsfile: "Data/amsua_n19_obs_2018041500_m.nc4"
       TestData:
         nlocs: 100
+        nrecs: 100
         groups:
           - "MetaData"
           - "MetaData"
@@ -59,6 +61,7 @@ Observations:
         obsfile: "Data/smap_obs_2018041500_m.nc4"
       TestData:
         nlocs: 45
+        nrecs: 45
         groups:
           - "MetaData"
           - "MetaData"
@@ -78,6 +81,7 @@ Observations:
         obsfile: "Data/gmi_gpm_obs_2018041500_m.nc4"
       TestData:
         nlocs: 12
+        nrecs: 12
         groups:
           - "MetaData"
           - "MetaData"
@@ -97,6 +101,7 @@ Observations:
         obsfile: "Data/sondes_obs_2018041500_m.nc4"
       TestData:
         nlocs: 974
+        nrecs: 974
         groups:
           - "MetaData"
           - "MetaData"
@@ -125,6 +130,7 @@ Observations:
         obs_errors: [1.0, 2.0]
       TestData:
         nlocs: 10
+        nrecs: 10
         groups:
           - "MetaData"
           - "MetaData"
@@ -155,6 +161,7 @@ Observations:
           variable: "station_id"
       TestData:
         nlocs: 974
+        nrecs: 36
         groups:
           - "MetaData"
           - "MetaData"
@@ -168,4 +175,29 @@ Observations:
           - 1.0e-11
       ObsDataOut:
         obsfile: "testoutput/diagout_with_groups.nc4"
+
+  - ObsSpace:
+      name: "Radiosonde with grouping and tw filtering"
+      simulate:
+      ObsDataIn:
+        obsfile: "Data/sondes_obs_2018041500_m_twfilt.nc4"
+        obsgrouping:
+          group: "MetaData"
+          variable: "station_id"
+      TestData:
+        nlocs: 968
+        nrecs: 31
+        groups:
+          - "MetaData"
+          - "MetaData"
+        variables:
+          - "latitude"
+          - "longitude"
+        norms:
+          - 1252.0139923322768
+          - 6065.3117664336605
+        tolerance:
+          - 1.0e-11
+      ObsDataOut:
+        obsfile: "testoutput/diagout_with_groups_twfilt.nc4"
 

@@ -70,6 +70,7 @@ list( APPEND ioda_test_data
   marine/sst_obs-2018-04-15.nc4
 
   testfiles/fileio.nc4
+  testfiles/sondes_obs_2018041500_m_twfilt.nc4
 )
 
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Data)

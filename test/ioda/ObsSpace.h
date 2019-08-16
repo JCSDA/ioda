@@ -73,12 +73,16 @@ void testConstructor() {
   for (std::size_t jj = 0; jj < Test_::size(); ++jj) {
     // Get the numbers of locations (nlocs) from the obspace object
     std::size_t Nlocs = Test_::obspace(jj).nlocs();
+    std::size_t Nrecs = Test_::obspace(jj).nrecs();
     Test_::obspace(jj).comm().allReduceInPlace(Nlocs, eckit::mpi::sum());
+    Test_::obspace(jj).comm().allReduceInPlace(Nrecs, eckit::mpi::sum());
 
     // Get the expected nlocs from the obspace object's configuration
-    int ExpectedNlocs = conf[jj].getInt("ObsSpace.TestData.nlocs");
+    std::size_t ExpectedNlocs = conf[jj].getUnsigned("ObsSpace.TestData.nlocs");
+    std::size_t ExpectedNrecs = conf[jj].getUnsigned("ObsSpace.TestData.nrecs");
 
     EXPECT(Nlocs == ExpectedNlocs);
+    EXPECT(Nrecs == ExpectedNrecs);
   }
 }
 
