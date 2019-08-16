@@ -21,6 +21,7 @@ Observations:
         obsfile: Data/Jason-2-2018-04-15.nc
       TestData:
         nlocs: 160607
+        nrecs: 160607
         groups:
           - "MetaData"
           - "MetaData"
@@ -40,6 +41,7 @@ Observations:
         obsfile: Data/profile_2018-04-15.nc
       TestData:
         nlocs: 918
+        nrecs: 918
         groups:
           - "MetaData"
           - "MetaData"
@@ -59,6 +61,7 @@ Observations:
         obsfile: Data/sst_obs-2018-04-15.nc4
       TestData:
         nlocs: 200
+        nrecs: 200
         groups:
           - "MetaData"
           - "MetaData"
@@ -78,6 +81,7 @@ Observations:
         obsfile: Data/icec-2018-04-15.nc
       TestData:
         nlocs: 71558
+        nrecs: 71558
         groups:
           - "MetaData"
           - "MetaData"
@@ -97,6 +101,7 @@ Observations:
         obsfile: Data/cryosat2-2018-04-15.nc
       TestData:
         nlocs: 8065
+        nrecs: 8065
         groups:
           - "MetaData"
           - "MetaData"
