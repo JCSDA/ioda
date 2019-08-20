@@ -65,9 +65,7 @@ ObsSpace::ObsSpace(const eckit::Configuration & config,
   // Initialize the obs space container
   if (config.has("ObsDataIn")) {
     // Initialize the container from an input obs file
-    obs_grouping_.resize(2);
-    obs_grouping_.at(0) = config.getString("ObsDataIn.obsgrouping.group", "");
-    obs_grouping_.at(1) = config.getString("ObsDataIn.obsgrouping.variable", "");
+    obs_grouping_ = config.getString("ObsDataIn.obsgrouping", "");
     filein_ = config.getString("ObsDataIn.obsfile");
     oops::Log::trace() << obsname_ << " file in = " << filein_ << std::endl;
     InitFromFile(filein_);
@@ -693,8 +691,8 @@ void ObsSpace::GenMpiDistribution(const std::unique_ptr<IodaIO> & FileIO) {
 void ObsSpace::GenRecordNumbers(const std::unique_ptr<IodaIO> & FileIO,
                                 std::vector<std::size_t> & Records) const {
   // Collect the group and variable names that came from the configuration
-  std::string GroupName = obs_grouping_[0];
-  std::string VarName = obs_grouping_[1];
+  std::string GroupName = "MetaData";
+  std::string VarName = obs_grouping_;
 
   // Construct the group numbers
   if (VarName.empty()) {

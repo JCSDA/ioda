@@ -199,8 +199,7 @@ class ObsSpace : public oops::ObsSpaceBase {
   std::string distname_;
 
   /*! \brief Variable that location grouping is based upon */
-  // element zero is group name, element 1 is variable name
-  std::vector<std::string> obs_grouping_;
+  std::string obs_grouping_;
 };
 
 /*! \brief Specialized (for DateTime type) helper function for public get_db */
