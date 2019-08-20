@@ -156,9 +156,7 @@ Observations:
       simulate:
       ObsDataIn:
         obsfile: "Data/sondes_obs_2018041500_m.nc4"
-        obsgrouping:
-          group: "MetaData"
-          variable: "station_id"
+        obsgrouping: "station_id"
       TestData:
         nlocs: 974
         nrecs: 36
@@ -181,9 +179,7 @@ Observations:
       simulate:
       ObsDataIn:
         obsfile: "Data/sondes_obs_2018041500_m_twfilt.nc4"
-        obsgrouping:
-          group: "MetaData"
-          variable: "station_id"
+        obsgrouping: "station_id"
       TestData:
         nlocs: 968
         nrecs: 31
