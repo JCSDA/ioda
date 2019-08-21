@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <iostream>
 #include <numeric>
+#include <set>
 
 #include "distribution/RoundRobin.h"
 
@@ -54,22 +55,19 @@ void RoundRobin::distribution() {
     // Round-Robin distributing the global total locations among comm.
     std::size_t nproc = comm_.size();
     std::size_t myproc = comm_.rank();
-    std::size_t prev_rec_num = -1;
-    nrecs_ = 0;
+    std::set<std::size_t> unique_recnums;
     for (std::size_t ii = 0; ii < gnlocs_; ++ii) {
         if (record_numbers_[ii] % nproc == myproc) {
             indx_.push_back(ii);
             recnums_.push_back(record_numbers_[ii]);
-            if (prev_rec_num != record_numbers_[ii]) {
-              nrecs_++;
-              prev_rec_num = record_numbers_[ii];
-            }
+            unique_recnums.insert(record_numbers_[ii]);
         }
     }
 
     // The number of locations in this distribution will be equal to the size of
-    // the indx_ vector.
+    // the indx_ vector. nrecs_ is simply the number of unique record numbers selected.
     nlocs_ = indx_.size();
+    nrecs_ = unique_recnums.size();
 
     oops::Log::debug() << __func__ << " : " << nlocs_ <<
         " locations being allocated to processor with round-robin method : "
