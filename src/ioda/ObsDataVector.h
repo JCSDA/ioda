@@ -72,6 +72,7 @@ class ObsDataVector: public util::Printable,
 // Methods below are used by UFO but not by OOPS
   size_t nvars() const {return nvars_;}  // Size in (local) memory
   size_t nlocs() const {return nlocs_;}  // Size in (local) memory
+  bool has(const std::string & vargrp) const {return obsvars_.has(vargrp);}
 
   const ObsDataRow<DATATYPE> & operator[](const size_t ii) const {return rows_.at(ii);}
   ObsDataRow<DATATYPE> & operator[](const size_t ii) {return rows_.at(ii);}
@@ -81,6 +82,7 @@ class ObsDataVector: public util::Printable,
   ObsDataRow<DATATYPE> & operator[](const std::string var) {return rows_.at(obsvars_.find(var));}
 
   const std::string & obstype() const {return obsdb_.obsname();}
+  const oops::Variables & varnames() const {return obsvars_;}
 
  private:
   void print(std::ostream &) const;
