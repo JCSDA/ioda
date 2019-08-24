@@ -390,6 +390,24 @@ std::size_t ObsSpace::nvars() const {
 
 // -----------------------------------------------------------------------------
 /*!
+ * \details This method returns a reference to the record number vector
+ *          data member. This is for read only access.
+ */
+const std::vector<std::size_t> & ObsSpace::recnum() const {
+  return recnums_;
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns a reference to the index vector
+ *          data member. This is for read only access.
+ */
+const std::vector<std::size_t> & ObsSpace::index() const {
+  return indx_;
+}
+
+// -----------------------------------------------------------------------------
+/*!
  * \details This method will generate a set of latitudes and longitudes of which
  *          can be used for testing without reading in an obs file. Two latitude
  *          values, two longitude values, the number of locations (nobs keyword)
