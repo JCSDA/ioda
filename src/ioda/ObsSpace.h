@@ -62,7 +62,8 @@ class ObsSpace : public oops::ObsSpaceBase {
   std::size_t nlocs() const;
   std::size_t nrecs() const;
   std::size_t nvars() const;
-  const std::vector<std::size_t> & recnum() const {return recnums_;}
+  const std::vector<std::size_t> & recnum() const;
+  const std::vector<std::size_t> & index() const;
 
   bool has(const std::string &, const std::string &) const;
 
