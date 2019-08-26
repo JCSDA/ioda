@@ -23,6 +23,32 @@ int obsspace_get_nlocs_f(const ObsSpace & obss) {
   return obss.nlocs();
 }
 // -----------------------------------------------------------------------------
+int obsspace_get_nrecs_f(const ObsSpace & obss) {
+  return obss.nrecs();
+}
+// -----------------------------------------------------------------------------
+int obsspace_get_nvars_f(const ObsSpace & obss) {
+  return obss.nvars();
+}
+// -----------------------------------------------------------------------------
+void obsspace_get_recnum_f(const ObsSpace & obss,
+                          const std::size_t & length, std::size_t * recnum) {
+  ASSERT(length >= obss.nlocs());
+  for (std::size_t i = 0; i < length; i++) {
+    recnum[i] = obss.recnum()[i];
+  }
+}
+// -----------------------------------------------------------------------------
+void obsspace_get_index_f(const ObsSpace & obss,
+                          const std::size_t & length, std::size_t * index) {
+  ASSERT(length >= obss.nlocs());
+  for (std::size_t i = 0; i < length; i++) {
+    // Fortran array indices start at 1, whereas C indices start at 0.
+    // Add 1 to each index value as it is handed off from C to Fortran.
+    index[i] = obss.index()[i] + 1;
+  }
+}
+// -----------------------------------------------------------------------------
 bool obsspace_has_f(const ObsSpace & obss, const char * group, const char * vname) {
   return obss.has(std::string(group), std::string(vname));
 }
