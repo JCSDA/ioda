@@ -17,6 +17,10 @@ implicit none
 
 private
 public obsspace_get_nlocs
+public obsspace_get_nrecs
+public obsspace_get_nvars
+public obsspace_get_recnum
+public obsspace_get_index
 public obsspace_get_db
 public obsspace_put_db
 public obsspace_has
@@ -52,6 +56,52 @@ integer function obsspace_get_nlocs(c_dom)
 
   obsspace_get_nlocs = c_obsspace_get_nlocs(c_dom)
 end function obsspace_get_nlocs
+
+!-------------------------------------------------------------------------------
+!>  Return the number of observational records (profiles)
+
+integer function obsspace_get_nrecs(c_dom)
+  implicit none
+  type(c_ptr), intent(in) :: c_dom
+
+  obsspace_get_nrecs = c_obsspace_get_nrecs(c_dom)
+end function obsspace_get_nrecs
+
+!-------------------------------------------------------------------------------
+!>  Return the number of observational variables
+
+integer function obsspace_get_nvars(c_dom)
+  implicit none
+  type(c_ptr), intent(in) :: c_dom
+
+  obsspace_get_nvars = c_obsspace_get_nvars(c_dom)
+end function obsspace_get_nvars
+
+!-------------------------------------------------------------------------------
+!>  Get the record number vector
+subroutine obsspace_get_recnum(obss, recnum)
+  implicit none
+  type(c_ptr), intent(in)          :: obss
+  integer(c_size_t), intent(inout) :: recnum(:)
+
+  integer(c_size_t) :: length
+
+  length = size(recnum)
+  call c_obsspace_get_recnum(obss, length, recnum)
+end subroutine obsspace_get_recnum
+
+!-------------------------------------------------------------------------------
+!>  Get the index vector
+subroutine obsspace_get_index(obss, indx)
+  implicit none
+  type(c_ptr), intent(in)          :: obss
+  integer(c_size_t), intent(inout) :: indx(:)
+
+  integer(c_size_t) :: length
+
+  length = size(indx)
+  call c_obsspace_get_index(obss, length, indx)
+end subroutine obsspace_get_index
 
 !-------------------------------------------------------------------------------
 
