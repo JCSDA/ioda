@@ -31,19 +31,7 @@ namespace ioda {
 
 //-----------------------------------------------------------------------------
 
-template<typename DATATYPE>
-class ObsDataRow {
- public:
-  ObsDataRow() : values_() {}
-  explicit ObsDataRow(const size_t nn) : values_(nn) {}
-  void resize(const size_t nn) {values_.resize(nn);}
-  const DATATYPE & operator[](const size_t ii) const {return values_.at(ii);}
-  DATATYPE & operator[](const size_t ii) {return values_.at(ii);}
-  const DATATYPE & at(const size_t ii) const {return values_.at(ii);}
-  DATATYPE & at(const size_t ii) {return values_.at(ii);}
- private:
-  std::vector<DATATYPE> values_;
-};
+template <typename DATATYPE> using ObsDataRow = std::vector<DATATYPE>;
 
 //-----------------------------------------------------------------------------
 //! ObsDataVector<DATATYPE> handles vectors of data of type DATATYPE in observation space
