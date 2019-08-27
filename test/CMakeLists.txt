@@ -61,6 +61,8 @@ list( APPEND ioda_test_data
   atmosphere/sndrd3_g15_obs_2018041500_m.nc4
   atmosphere/sndrd4_g15_obs_2018041500_m.nc4
 
+  atmosphere/ssmis_f18_obs_2018041500_m.nc4
+
   atmosphere/sfc_obs_2018041500_m.nc4
 
   marine/Jason-2-2018-04-15.nc
@@ -70,6 +72,7 @@ list( APPEND ioda_test_data
   marine/sst_obs-2018-04-15.nc4
 
   testfiles/fileio.nc4
+  testfiles/sondes_obs_2018041500_m_twfilt.nc4
 )
 
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Data)
@@ -109,6 +112,12 @@ ecbuild_add_test( TARGET test_ioda_obsspacecontainer
                   LIBS    ioda )
 
 ecbuild_add_test( TARGET test_ioda_obsspace
+                  SOURCES mains/TestObsSpace.cc
+                  ARGS "testinput/iodatest_obsspace.yml"
+                  LIBS    ioda )
+
+ecbuild_add_test( TARGET test_ioda_obsspace_mpi
+                  MPI     2
                   SOURCES mains/TestObsSpace.cc
                   ARGS "testinput/iodatest_obsspace.yml"
                   LIBS    ioda )

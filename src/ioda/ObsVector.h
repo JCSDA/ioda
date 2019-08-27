@@ -66,6 +66,7 @@ class ObsVector : public util::Printable,
   std::size_t nvars() const {return nvars_;}
   std::size_t nlocs() const {return nlocs_;}
   void mask(const ObsDataVector<int> &);
+  bool has(const std::string & var) const {return obsvars_.has(var);}
 
 // I/O
   void save(const std::string &) const;

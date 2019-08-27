@@ -5,8 +5,6 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#include <boost/algorithm/string.hpp>
-
 #include "distribution/DistributionFactory.h"
 #include "distribution/InefficientDistribution.h"
 #include "distribution/RoundRobin.h"
@@ -21,15 +19,25 @@ namespace ioda {
  *          is to get access to a particular method of distributing obs across
  *          multiple process elements.
  *
- * \param[in] method Name of the method of distribution of obs.
+ * \param[in] Comm Local MPI communicator
+ * \param[in] Gnlocs Total number of locations (before distribution)
+ * \param[in] Method Name of the method of distribution of obs.
+ * \param[in] Records Observation grouping by locations.
  */
-Distribution * DistributionFactory::createDistribution(const std::string & method) {
-  if (boost::iequals(method, "RoundRobin"))
-    return new RoundRobin;
-  else if (boost::iequals(method, "InefficientDistribution"))
-    return new InefficientDistribution;
-  else
+Distribution * DistributionFactory::createDistribution(const eckit::mpi::Comm & Comm,
+                                    const std::size_t Gnlocs, const std::string & Method,
+                                    const std::vector<std::size_t> & Records) {
+  if (Method == "RoundRobin") {
+    if (Records.size() == 0) {
+      return new RoundRobin(Comm, Gnlocs);
+    } else {
+      return new RoundRobin(Comm, Gnlocs, Records);
+    }
+  } else if (Method == "InefficientDistribution") {
+    return new InefficientDistribution(Comm, Gnlocs);
+  } else {
     return NULL;
+  }
 }
 
 // -----------------------------------------------------------------------------
