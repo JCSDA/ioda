@@ -11,11 +11,22 @@
 #include <iostream>
 #include <numeric>
 
+#include "oops/util/Logger.h"
+
 
 namespace ioda {
 // -----------------------------------------------------------------------------
+InefficientDistribution::InefficientDistribution(const eckit::mpi::Comm & Comm,
+                                                 const std::size_t Gnlocs) :
+      Distribution(Comm, Gnlocs) {
+  oops::Log::trace() << "InefficientDistribution constructed" << std::endl;
+}
 
-InefficientDistribution::~InefficientDistribution() {}
+// -----------------------------------------------------------------------------
+
+InefficientDistribution::~InefficientDistribution() {
+  oops::Log::trace() << "InefficientDistribution destructed" << std::endl;
+}
 
 // -----------------------------------------------------------------------------
 /*!
@@ -26,10 +37,17 @@ InefficientDistribution::~InefficientDistribution() {}
  * \param[in] comm The eckit MPI communicator object for this run
  * \param[in] gnlocs The total number of locations from the input obs file
  */
-void InefficientDistribution::distribution(const eckit::mpi::Comm & comm,
-                                           const std::size_t gnlocs) {
-  indx_.resize(gnlocs);
+void InefficientDistribution::distribution() {
+  indx_.resize(gnlocs_);
   std::iota(indx_.begin(), indx_.end(), 0);
+
+  recnums_.resize(gnlocs_);
+  std::iota(recnums_.begin(), recnums_.end(), 0);
+
+  // The number of locations will equal the number of global locations,
+  // and the number of records will equal the number of locations (no grouping)
+  nlocs_ = gnlocs_;
+  nrecs_ = nlocs_;
 }
 
 // -----------------------------------------------------------------------------
