@@ -58,8 +58,8 @@ class ObsVector : public util::Printable,
   double & operator[](const std::size_t ii) {return values_.at(ii);}
   unsigned int nobs() const;  // Number of active observations (missing values not included)
 
-  const double & toFortran() const {return values_[0];}
-  double & toFortran() {return values_[0];}
+  const double & toFortran() const;
+  double & toFortran();
 
   const std::string & obstype() const {return obsdb_.obsname();}
   const oops::Variables & varnames() const {return obsvars_;}
