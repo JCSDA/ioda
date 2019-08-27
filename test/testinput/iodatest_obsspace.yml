@@ -156,7 +156,10 @@ Observations:
       simulate:
       ObsDataIn:
         obsfile: "Data/sondes_obs_2018041500_m.nc4"
-        obsgrouping: "station_id"
+        obsgrouping:
+          group_variable: "station_id"
+          sort_variable: "air_pressure"
+          sort_order: "descending"
       TestData:
         nlocs: 974
         nrecs: 36
@@ -179,7 +182,8 @@ Observations:
       simulate:
       ObsDataIn:
         obsfile: "Data/sondes_obs_2018041500_m_twfilt.nc4"
-        obsgrouping: "station_id"
+        obsgrouping:
+          group_variable: "station_id"
       TestData:
         nlocs: 968
         nrecs: 31

@@ -7,6 +7,7 @@
 
 #include "ioda/ObsSpace.h"
 
+#include <algorithm>
 #include <fstream>
 #include <functional>
 #include <iomanip>
@@ -15,6 +16,7 @@
 #include <numeric>
 #include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 #define BOOST_STACKTRACE_GNU_SOURCE_NOT_REQUIRED
@@ -65,10 +67,21 @@ ObsSpace::ObsSpace(const eckit::Configuration & config,
   // Initialize the obs space container
   if (config.has("ObsDataIn")) {
     // Initialize the container from an input obs file
-    obs_grouping_ = config.getString("ObsDataIn.obsgrouping", "");
+    obs_group_variable_ = config.getString("ObsDataIn.obsgrouping.group_variable", "");
+    obs_sort_variable_ = config.getString("ObsDataIn.obsgrouping.sort_variable", "");
+    obs_sort_order_ = config.getString("ObsDataIn.obsgrouping.sort_order", "ascending");
+    if ((obs_sort_order_ != "ascending") && (obs_sort_order_ != "descending")) {
+      std::string ErrMsg =
+        std::string("ObsSpace::ObsSpace: Must use one of 'ascending' or 'descending' ") +
+        std::string("for the 'sort_order:' YAML configuration keyword.");
+      ABORT(ErrMsg);
+    }
     filein_ = config.getString("ObsDataIn.obsfile");
     oops::Log::trace() << obsname_ << " file in = " << filein_ << std::endl;
     InitFromFile(filein_);
+    if (obs_sort_variable_ != "") {
+      BuildSortedObsGroups();
+    }
   } else if (config.has("Generate")) {
     // Initialize the container from the generateDistribution method
     eckit::LocalConfiguration genconfig(config, "Generate");
@@ -710,7 +723,7 @@ void ObsSpace::GenRecordNumbers(const std::unique_ptr<IodaIO> & FileIO,
                                 std::vector<std::size_t> & Records) const {
   // Collect the group and variable names that came from the configuration
   std::string GroupName = "MetaData";
-  std::string VarName = obs_grouping_;
+  std::string VarName = obs_group_variable_;
 
   // Construct the group numbers
   if (VarName.empty()) {
@@ -834,6 +847,62 @@ void ObsSpace::ApplyTimingWindow(const std::unique_ptr<IodaIO> & FileIO) {
   nrecs_ = UniqueRecNums.size();
   indx_ = NewIndices;
   recnums_ = NewRecNums;
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method will construct a data structure that holds the
+ *          location order within each group sorted by the values of
+ *          the specified sort variable.
+ */
+void ObsSpace::BuildSortedObsGroups() {
+  typedef std::map<std::size_t, std::vector<std::pair<float, std::size_t>>> TmpRecIdxMap;
+  typedef TmpRecIdxMap::iterator TmpRecIdxIter;
+
+  // Get the sort variable from the data store, and convert to a vector of floats.
+  std::vector<float> SortValues(nlocs_);
+  if (obs_sort_variable_ == "datetime") {
+    std::vector<util::DateTime> Dates(nlocs_);
+    get_db("MetaData", obs_sort_variable_, nlocs_, Dates.data());
+    for (std::size_t iloc = 0; iloc < Dates.size(); iloc++) {
+      SortValues[iloc] = (Dates[iloc] - Dates[0]).toSeconds();
+    }
+  } else {
+    get_db("MetaData", obs_sort_variable_, nlocs_, SortValues.data());
+  }
+
+  // Construct a temporary structure to do the sorting, then transfer the results
+  // to the data member recidx_.
+  TmpRecIdxMap TmpRecIdx;
+  for (size_t iloc = 0; iloc < nlocs_; iloc++) {
+    TmpRecIdx[recnums_[iloc]].push_back(std::make_pair(SortValues[iloc], iloc));
+  }
+
+  for (TmpRecIdxIter irec = TmpRecIdx.begin(); irec != TmpRecIdx.end(); ++irec) {
+    if (obs_sort_order_ == "ascending") {
+      sort(irec->second.begin(), irec->second.end());
+    } else {
+      // Use a lambda function to access the std::pair greater-than operator to
+      // implement a descending order sort.
+      sort(irec->second.begin(), irec->second.end(),
+           [](const std::pair<float, std::size_t> & p1,
+              const std::pair<float, std::size_t> & p2){ return(p1 > p2); } );
+    }
+  }
+
+  // Copy indexing to the recidx_ data member.
+  for (TmpRecIdxIter irec = TmpRecIdx.begin(); irec != TmpRecIdx.end(); ++irec) {
+    recidx_[irec->first].resize(irec->second.size());
+    for (std::size_t iloc = 0; iloc < irec->second.size(); iloc++) {
+      recidx_[irec->first][iloc] = irec->second[iloc].second;
+    }
+  }
+
+  for (RecIdxIter irec = recidx_.begin(); irec != recidx_.end(); ++irec) {
+    for (std::size_t i = 0; i < irec->second.size(); i++) {
+      std::cout << "DEBUG: RANK" << commMPI_.rank() << ": recidx_: " << irec->first << ", " << i << ", " << irec->second[i] << " (" << SortValues[irec->second[i]] << ")" << std::endl;
+    }
+  }
 }
 
 // -----------------------------------------------------------------------------

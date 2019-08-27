@@ -52,6 +52,9 @@ namespace ioda {
  */
 class ObsSpace : public oops::ObsSpaceBase {
  public:
+  typedef std::map<std::size_t, std::vector<std::size_t>> RecIdxMap;
+  typedef RecIdxMap::iterator RecIdxIter;
+
   ObsSpace(const eckit::Configuration &, const util::DateTime &, const util::DateTime &);
   /*!
    * \details Copy constructor for an ObsSpace object.
@@ -114,6 +117,7 @@ class ObsSpace : public oops::ObsSpaceBase {
   static void GenRnumsFromVar(const std::vector<DATATYPE> & VarData,
                               std::vector<std::size_t> & Records);
   void ApplyTimingWindow(const std::unique_ptr<IodaIO> & FileIO);
+  void BuildSortedObsGroups();
 
   template<typename VarType>
   void ApplyDistIndex(std::unique_ptr<VarType[]> & FullData,
@@ -191,6 +195,9 @@ class ObsSpace : public oops::ObsSpaceBase {
   /*! \brief record numbers associated with the location indexes */
   std::vector<std::size_t> recnums_;
 
+  /*! \brief profile ordering */
+  RecIdxMap recidx_;
+
   /*! \brief Multi-index container */
   ObsSpaceContainer database_;
 
@@ -201,7 +208,13 @@ class ObsSpace : public oops::ObsSpaceBase {
   std::string distname_;
 
   /*! \brief Variable that location grouping is based upon */
-  std::string obs_grouping_;
+  std::string obs_group_variable_;
+
+  /*! \brief Variable that location group sorting is based upon */
+  std::string obs_sort_variable_;
+
+  /*! \brief Sort order for obs grouping */
+  std::string obs_sort_order_;
 };
 
 /*! \brief Specialized (for DateTime type) helper function for public get_db */
