@@ -16,6 +16,7 @@ use datetime_mod
 implicit none
 
 private
+public obsspace_get_gnlocs
 public obsspace_get_nlocs
 public obsspace_get_nrecs
 public obsspace_get_nvars
@@ -48,7 +49,18 @@ end interface
 contains
 !-------------------------------------------------------------------------------
 
-!>  Return the number of observational locations
+!>  Return the number of observational locations in the input obs file
+
+integer function obsspace_get_gnlocs(c_dom)
+  implicit none
+  type(c_ptr), intent(in) :: c_dom
+
+  obsspace_get_gnlocs = c_obsspace_get_gnlocs(c_dom)
+end function obsspace_get_gnlocs
+
+!-------------------------------------------------------------------------------
+
+!>  Return the number of observational locations in this ObsSpace object
 
 integer function obsspace_get_nlocs(c_dom)
   implicit none

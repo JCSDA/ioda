@@ -59,6 +59,7 @@ class ObsSpace : public oops::ObsSpaceBase {
   ObsSpace(const ObsSpace &);
   ~ObsSpace();
 
+  std::size_t gnlocs() const;
   std::size_t nlocs() const;
   std::size_t nrecs() const;
   std::size_t nvars() const;
