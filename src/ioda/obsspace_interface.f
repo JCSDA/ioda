@@ -10,6 +10,13 @@
 interface
 !-------------------------------------------------------------------------------
 
+integer(kind=c_int) function c_obsspace_get_gnlocs(dom) bind(C,name='obsspace_get_gnlocs_f')
+  use, intrinsic :: iso_c_binding
+  implicit none
+
+  type(c_ptr), value :: dom
+end function c_obsspace_get_gnlocs
+
 integer(kind=c_int) function c_obsspace_get_nlocs(dom) bind(C,name='obsspace_get_nlocs_f')
   use, intrinsic :: iso_c_binding
   implicit none

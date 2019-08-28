@@ -356,6 +356,19 @@ void ObsSpace::put_db_helper(const std::string & group, const std::string & name
 bool ObsSpace::has(const std::string & group, const std::string & name) const {
   return database_.has(group, name);
 }
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns the number of unique locations in the input
+ *          obs file. Note that nlocs from the obs container may be smaller
+ *          than nlocs from the input obs file due to the removal of obs outside
+ *          the DA timing window and/or due to distribution of obs across
+ *          multiple process elements.
+ */
+std::size_t ObsSpace::gnlocs() const {
+  return gnlocs_;
+}
+
 // -----------------------------------------------------------------------------
 /*!
  * \details This method returns the number of unique locations in the obs
