@@ -421,6 +421,83 @@ const std::vector<std::size_t> & ObsSpace::index() const {
 
 // -----------------------------------------------------------------------------
 /*!
+ * \details This method returns the begin iterator associated with the
+ *          recidx_ data member.
+ */
+const ObsSpace::RecIdxIter ObsSpace::recidx_begin() const {
+  return recidx_.begin();
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns the end iterator associated with the
+ *          recidx_ data member.
+ */
+const ObsSpace::RecIdxIter ObsSpace::recidx_end() const {
+  return recidx_.end();
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns a boolean value indicating whether the
+ *          given record number exists in the recidx_ data member.
+ */
+const bool ObsSpace::recidx_has(const std::size_t RecNum) const {
+  RecIdxIter irec = recidx_.find(RecNum);
+  return (irec != recidx_.end());
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns the current record number, pointed to by the
+ *          given iterator, from the recidx_ data member.
+ */
+const std::size_t ObsSpace::recidx_recnum(const RecIdxIter & Irec) const {
+  return Irec->first;
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns the current vector, pointed to by the
+ *          given iterator, from the recidx_ data member.
+ */
+const std::vector<std::size_t> & ObsSpace::recidx_vector(const RecIdxIter & Irec) const {
+  return Irec->second;
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns the current vector, pointed to by the
+ *          given iterator, from the recidx_ data member.
+ */
+const std::vector<std::size_t> & ObsSpace::recidx_vector(const std::size_t RecNum) const {
+  RecIdxIter Irec = recidx_.find(RecNum);
+  if (Irec == recidx_.end()) {
+    std::string ErrMsg =
+      "ObsSpace::recidx_vector: Record number, " + std::to_string(RecNum) +
+      ", does not exist in record index map.";
+    ABORT(ErrMsg);
+  }
+  return Irec->second;
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns the all of the record numbers from the
+ *          recidx_ data member (ie, all the key values) in a vector.
+ */
+std::vector<std::size_t> ObsSpace::recidx_all_recnums() const {
+  std::vector<std::size_t> RecNums(nrecs_);
+  std::size_t recnum = 0;
+  for (RecIdxIter Irec = recidx_.begin(); Irec != recidx_.end(); ++Irec) {
+    RecNums[recnum] = Irec->first;
+    recnum++;
+  }
+  return RecNums;
+}
+
+// -----------------------------------------------------------------------------
+/*!
  * \details This method will generate a set of latitudes and longitudes of which
  *          can be used for testing without reading in an obs file. Two latitude
  *          values, two longitude values, the number of locations (nobs keyword)
@@ -895,12 +972,6 @@ void ObsSpace::BuildSortedObsGroups() {
     recidx_[irec->first].resize(irec->second.size());
     for (std::size_t iloc = 0; iloc < irec->second.size(); iloc++) {
       recidx_[irec->first][iloc] = irec->second[iloc].second;
-    }
-  }
-
-  for (RecIdxIter irec = recidx_.begin(); irec != recidx_.end(); ++irec) {
-    for (std::size_t i = 0; i < irec->second.size(); i++) {
-      std::cout << "DEBUG: RANK" << commMPI_.rank() << ": recidx_: " << irec->first << ", " << i << ", " << irec->second[i] << " (" << SortValues[irec->second[i]] << ")" << std::endl;
     }
   }
 }

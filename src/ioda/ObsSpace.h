@@ -53,7 +53,7 @@ namespace ioda {
 class ObsSpace : public oops::ObsSpaceBase {
  public:
   typedef std::map<std::size_t, std::vector<std::size_t>> RecIdxMap;
-  typedef RecIdxMap::iterator RecIdxIter;
+  typedef RecIdxMap::const_iterator RecIdxIter;
 
   ObsSpace(const eckit::Configuration &, const util::DateTime &, const util::DateTime &);
   /*!
@@ -87,6 +87,14 @@ class ObsSpace : public oops::ObsSpaceBase {
               const std::size_t vsize, const double vdata[]);
   void put_db(const std::string & group, const std::string & name,
               const std::size_t vsize, const util::DateTime vdata[]);
+
+  const RecIdxIter recidx_begin() const;
+  const RecIdxIter recidx_end() const;
+  const bool recidx_has(const std::size_t RecNum) const;
+  const std::size_t recidx_recnum(const RecIdxIter & Irec) const;
+  const std::vector<std::size_t> & recidx_vector(const RecIdxIter & Irec) const;
+  const std::vector<std::size_t> & recidx_vector(const std::size_t RecNum) const;
+  std::vector<std::size_t> recidx_all_recnums() const;
 
   /*! \details This method will return the name of the obs type being stored */
   const std::string & obsname() const {return obsname_;}
