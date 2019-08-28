@@ -637,7 +637,6 @@ void ObsSpace::InitFromFile(const std::string & filename) {
   // Open the file for reading and record nlocs and nvars from the file.
   std::unique_ptr<IodaIO> fileio {ioda::IodaIOfactory::Create(filename, "r")};
   gnlocs_ = fileio->nlocs();
-  nvars_ = fileio->nvars();
 
   // Create the MPI distribution
   GenMpiDistribution(fileio);
@@ -647,13 +646,19 @@ void ObsSpace::InitFromFile(const std::string & filename) {
   ApplyTimingWindow(fileio);
 
   // Read in all variables from the file and store them into the database.
+  nvars_ = 0;
   for (IodaIO::GroupIter igrp = fileio->group_begin();
                          igrp != fileio->group_end(); ++igrp) {
+    std::string GroupName = fileio->group_name(igrp);
     for (IodaIO::VarIter ivar = fileio->var_begin(igrp);
                          ivar != fileio->var_end(igrp); ++ivar) {
-      std::string GroupName = fileio->group_name(igrp);
       std::string VarName = fileio->var_name(ivar);
       std::string FileVarType = fileio->var_dtype(ivar);
+
+      // nvars_ is equal to the number of variables in the ObsValue group
+      if (GroupName == "ObsValue") {
+        nvars_++;
+      }
 
       // VarShape, VarSize hold dimension sizes from file.
       // AdjVarShape, AdjVarSize hold dimension sizes needed when the
