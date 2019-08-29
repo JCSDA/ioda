@@ -232,6 +232,24 @@ unsigned int ObsVector::nobs() const {
   return nobs;
 }
 // -----------------------------------------------------------------------------
+const double & ObsVector::toFortran() const {
+  if (values_.empty()) {
+    std::string ErrMsg =
+        "ObsVector::toFortran: Cannot pass empty vector to Fortran routines";
+    ABORT(ErrMsg);
+  }
+  return values_[0];
+}
+// -----------------------------------------------------------------------------
+double & ObsVector::toFortran() {
+  if (values_.empty()) {
+    std::string ErrMsg =
+        "ObsVector::toFortran: Cannot pass empty vector to Fortran routines";
+    ABORT(ErrMsg);
+  }
+  return values_[0];
+}
+// -----------------------------------------------------------------------------
 void ObsVector::print(std::ostream & os) const {
   double zmin = std::numeric_limits<double>::max();
   double zmax = std::numeric_limits<double>::lowest();
