@@ -946,7 +946,7 @@ void ObsSpace::BuildSortedObsGroups() {
   if (obs_sort_variable_ == "datetime") {
     std::vector<util::DateTime> Dates(nlocs_);
     get_db("MetaData", obs_sort_variable_, nlocs_, Dates.data());
-    for (std::size_t iloc = 0; iloc < Dates.size(); iloc++) {
+    for (std::size_t iloc = 0; iloc < nlocs_; iloc++) {
       SortValues[iloc] = (Dates[iloc] - Dates[0]).toSeconds();
     }
   } else {
