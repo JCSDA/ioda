@@ -52,6 +52,9 @@ namespace ioda {
  */
 class ObsSpace : public oops::ObsSpaceBase {
  public:
+  typedef std::map<std::size_t, std::vector<std::size_t>> RecIdxMap;
+  typedef RecIdxMap::const_iterator RecIdxIter;
+
   ObsSpace(const eckit::Configuration &, const util::DateTime &, const util::DateTime &);
   /*!
    * \details Copy constructor for an ObsSpace object.
@@ -85,6 +88,14 @@ class ObsSpace : public oops::ObsSpaceBase {
   void put_db(const std::string & group, const std::string & name,
               const std::size_t vsize, const util::DateTime vdata[]);
 
+  const RecIdxIter recidx_begin() const;
+  const RecIdxIter recidx_end() const;
+  const bool recidx_has(const std::size_t RecNum) const;
+  const std::size_t recidx_recnum(const RecIdxIter & Irec) const;
+  const std::vector<std::size_t> & recidx_vector(const RecIdxIter & Irec) const;
+  const std::vector<std::size_t> & recidx_vector(const std::size_t RecNum) const;
+  std::vector<std::size_t> recidx_all_recnums() const;
+
   /*! \details This method will return the name of the obs type being stored */
   const std::string & obsname() const {return obsname_;}
   /*! \details This method will return the start of the DA timing window */
@@ -114,6 +125,7 @@ class ObsSpace : public oops::ObsSpaceBase {
   static void GenRnumsFromVar(const std::vector<DATATYPE> & VarData,
                               std::vector<std::size_t> & Records);
   void ApplyTimingWindow(const std::unique_ptr<IodaIO> & FileIO);
+  void BuildSortedObsGroups();
 
   template<typename VarType>
   void ApplyDistIndex(std::unique_ptr<VarType[]> & FullData,
@@ -191,6 +203,9 @@ class ObsSpace : public oops::ObsSpaceBase {
   /*! \brief record numbers associated with the location indexes */
   std::vector<std::size_t> recnums_;
 
+  /*! \brief profile ordering */
+  RecIdxMap recidx_;
+
   /*! \brief Multi-index container */
   ObsSpaceContainer database_;
 
@@ -201,7 +216,13 @@ class ObsSpace : public oops::ObsSpaceBase {
   std::string distname_;
 
   /*! \brief Variable that location grouping is based upon */
-  std::string obs_grouping_;
+  std::string obs_group_variable_;
+
+  /*! \brief Variable that location group sorting is based upon */
+  std::string obs_sort_variable_;
+
+  /*! \brief Sort order for obs grouping */
+  std::string obs_sort_order_;
 };
 
 /*! \brief Specialized (for DateTime type) helper function for public get_db */
