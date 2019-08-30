@@ -7,6 +7,7 @@
 
 #include "ioda/ObsSpace.h"
 
+#include <algorithm>
 #include <fstream>
 #include <functional>
 #include <iomanip>
@@ -15,6 +16,7 @@
 #include <numeric>
 #include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 #define BOOST_STACKTRACE_GNU_SOURCE_NOT_REQUIRED
@@ -65,10 +67,21 @@ ObsSpace::ObsSpace(const eckit::Configuration & config,
   // Initialize the obs space container
   if (config.has("ObsDataIn")) {
     // Initialize the container from an input obs file
-    obs_grouping_ = config.getString("ObsDataIn.obsgrouping", "");
+    obs_group_variable_ = config.getString("ObsDataIn.obsgrouping.group_variable", "");
+    obs_sort_variable_ = config.getString("ObsDataIn.obsgrouping.sort_variable", "");
+    obs_sort_order_ = config.getString("ObsDataIn.obsgrouping.sort_order", "ascending");
+    if ((obs_sort_order_ != "ascending") && (obs_sort_order_ != "descending")) {
+      std::string ErrMsg =
+        std::string("ObsSpace::ObsSpace: Must use one of 'ascending' or 'descending' ") +
+        std::string("for the 'sort_order:' YAML configuration keyword.");
+      ABORT(ErrMsg);
+    }
     filein_ = config.getString("ObsDataIn.obsfile");
     oops::Log::trace() << obsname_ << " file in = " << filein_ << std::endl;
     InitFromFile(filein_);
+    if (obs_sort_variable_ != "") {
+      BuildSortedObsGroups();
+    }
   } else if (config.has("Generate")) {
     // Initialize the container from the generateDistribution method
     eckit::LocalConfiguration genconfig(config, "Generate");
@@ -408,6 +421,83 @@ const std::vector<std::size_t> & ObsSpace::index() const {
 
 // -----------------------------------------------------------------------------
 /*!
+ * \details This method returns the begin iterator associated with the
+ *          recidx_ data member.
+ */
+const ObsSpace::RecIdxIter ObsSpace::recidx_begin() const {
+  return recidx_.begin();
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns the end iterator associated with the
+ *          recidx_ data member.
+ */
+const ObsSpace::RecIdxIter ObsSpace::recidx_end() const {
+  return recidx_.end();
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns a boolean value indicating whether the
+ *          given record number exists in the recidx_ data member.
+ */
+const bool ObsSpace::recidx_has(const std::size_t RecNum) const {
+  RecIdxIter irec = recidx_.find(RecNum);
+  return (irec != recidx_.end());
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns the current record number, pointed to by the
+ *          given iterator, from the recidx_ data member.
+ */
+const std::size_t ObsSpace::recidx_recnum(const RecIdxIter & Irec) const {
+  return Irec->first;
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns the current vector, pointed to by the
+ *          given iterator, from the recidx_ data member.
+ */
+const std::vector<std::size_t> & ObsSpace::recidx_vector(const RecIdxIter & Irec) const {
+  return Irec->second;
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns the current vector, pointed to by the
+ *          given iterator, from the recidx_ data member.
+ */
+const std::vector<std::size_t> & ObsSpace::recidx_vector(const std::size_t RecNum) const {
+  RecIdxIter Irec = recidx_.find(RecNum);
+  if (Irec == recidx_.end()) {
+    std::string ErrMsg =
+      "ObsSpace::recidx_vector: Record number, " + std::to_string(RecNum) +
+      ", does not exist in record index map.";
+    ABORT(ErrMsg);
+  }
+  return Irec->second;
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns the all of the record numbers from the
+ *          recidx_ data member (ie, all the key values) in a vector.
+ */
+std::vector<std::size_t> ObsSpace::recidx_all_recnums() const {
+  std::vector<std::size_t> RecNums(nrecs_);
+  std::size_t recnum = 0;
+  for (RecIdxIter Irec = recidx_.begin(); Irec != recidx_.end(); ++Irec) {
+    RecNums[recnum] = Irec->first;
+    recnum++;
+  }
+  return RecNums;
+}
+
+// -----------------------------------------------------------------------------
+/*!
  * \details This method will generate a set of latitudes and longitudes of which
  *          can be used for testing without reading in an obs file. Two latitude
  *          values, two longitude values, the number of locations (nobs keyword)
@@ -547,7 +637,6 @@ void ObsSpace::InitFromFile(const std::string & filename) {
   // Open the file for reading and record nlocs and nvars from the file.
   std::unique_ptr<IodaIO> fileio {ioda::IodaIOfactory::Create(filename, "r")};
   gnlocs_ = fileio->nlocs();
-  nvars_ = fileio->nvars();
 
   // Create the MPI distribution
   GenMpiDistribution(fileio);
@@ -557,13 +646,19 @@ void ObsSpace::InitFromFile(const std::string & filename) {
   ApplyTimingWindow(fileio);
 
   // Read in all variables from the file and store them into the database.
+  nvars_ = 0;
   for (IodaIO::GroupIter igrp = fileio->group_begin();
                          igrp != fileio->group_end(); ++igrp) {
+    std::string GroupName = fileio->group_name(igrp);
     for (IodaIO::VarIter ivar = fileio->var_begin(igrp);
                          ivar != fileio->var_end(igrp); ++ivar) {
-      std::string GroupName = fileio->group_name(igrp);
       std::string VarName = fileio->var_name(ivar);
       std::string FileVarType = fileio->var_dtype(ivar);
+
+      // nvars_ is equal to the number of variables in the ObsValue group
+      if (GroupName == "ObsValue") {
+        nvars_++;
+      }
 
       // VarShape, VarSize hold dimension sizes from file.
       // AdjVarShape, AdjVarSize hold dimension sizes needed when the
@@ -710,7 +805,7 @@ void ObsSpace::GenRecordNumbers(const std::unique_ptr<IodaIO> & FileIO,
                                 std::vector<std::size_t> & Records) const {
   // Collect the group and variable names that came from the configuration
   std::string GroupName = "MetaData";
-  std::string VarName = obs_grouping_;
+  std::string VarName = obs_group_variable_;
 
   // Construct the group numbers
   if (VarName.empty()) {
@@ -834,6 +929,56 @@ void ObsSpace::ApplyTimingWindow(const std::unique_ptr<IodaIO> & FileIO) {
   nrecs_ = UniqueRecNums.size();
   indx_ = NewIndices;
   recnums_ = NewRecNums;
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method will construct a data structure that holds the
+ *          location order within each group sorted by the values of
+ *          the specified sort variable.
+ */
+void ObsSpace::BuildSortedObsGroups() {
+  typedef std::map<std::size_t, std::vector<std::pair<float, std::size_t>>> TmpRecIdxMap;
+  typedef TmpRecIdxMap::iterator TmpRecIdxIter;
+
+  // Get the sort variable from the data store, and convert to a vector of floats.
+  std::vector<float> SortValues(nlocs_);
+  if (obs_sort_variable_ == "datetime") {
+    std::vector<util::DateTime> Dates(nlocs_);
+    get_db("MetaData", obs_sort_variable_, nlocs_, Dates.data());
+    for (std::size_t iloc = 0; iloc < nlocs_; iloc++) {
+      SortValues[iloc] = (Dates[iloc] - Dates[0]).toSeconds();
+    }
+  } else {
+    get_db("MetaData", obs_sort_variable_, nlocs_, SortValues.data());
+  }
+
+  // Construct a temporary structure to do the sorting, then transfer the results
+  // to the data member recidx_.
+  TmpRecIdxMap TmpRecIdx;
+  for (size_t iloc = 0; iloc < nlocs_; iloc++) {
+    TmpRecIdx[recnums_[iloc]].push_back(std::make_pair(SortValues[iloc], iloc));
+  }
+
+  for (TmpRecIdxIter irec = TmpRecIdx.begin(); irec != TmpRecIdx.end(); ++irec) {
+    if (obs_sort_order_ == "ascending") {
+      sort(irec->second.begin(), irec->second.end());
+    } else {
+      // Use a lambda function to access the std::pair greater-than operator to
+      // implement a descending order sort.
+      sort(irec->second.begin(), irec->second.end(),
+           [](const std::pair<float, std::size_t> & p1,
+              const std::pair<float, std::size_t> & p2){ return(p1 > p2); } );
+    }
+  }
+
+  // Copy indexing to the recidx_ data member.
+  for (TmpRecIdxIter irec = TmpRecIdx.begin(); irec != TmpRecIdx.end(); ++irec) {
+    recidx_[irec->first].resize(irec->second.size());
+    for (std::size_t iloc = 0; iloc < irec->second.size(); iloc++) {
+      recidx_[irec->first][iloc] = irec->second[iloc].second;
+    }
+  }
 }
 
 // -----------------------------------------------------------------------------
