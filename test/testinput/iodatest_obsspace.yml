@@ -22,6 +22,7 @@ Observations:
       TestData:
         nlocs: 100
         nrecs: 100
+        nvars: 1
         groups:
           - "MetaData"
           - "MetaData"
@@ -42,6 +43,7 @@ Observations:
       TestData:
         nlocs: 100
         nrecs: 100
+        nvars: 15
         groups:
           - "MetaData"
           - "MetaData"
@@ -62,6 +64,7 @@ Observations:
       TestData:
         nlocs: 45
         nrecs: 45
+        nvars: 4
         groups:
           - "MetaData"
           - "MetaData"
@@ -82,6 +85,7 @@ Observations:
       TestData:
         nlocs: 12
         nrecs: 12
+        nvars: 13
         groups:
           - "MetaData"
           - "MetaData"
@@ -102,6 +106,7 @@ Observations:
       TestData:
         nlocs: 974
         nrecs: 974
+        nvars: 5
         groups:
           - "MetaData"
           - "MetaData"
@@ -131,6 +136,7 @@ Observations:
       TestData:
         nlocs: 10
         nrecs: 10
+        nvars: 2
         groups:
           - "MetaData"
           - "MetaData"
@@ -156,10 +162,14 @@ Observations:
       simulate:
       ObsDataIn:
         obsfile: "Data/sondes_obs_2018041500_m.nc4"
-        obsgrouping: "station_id"
+        obsgrouping:
+          group_variable: "station_id"
+          sort_variable: "air_pressure"
+          sort_order: "descending"
       TestData:
         nlocs: 974
         nrecs: 36
+        nvars: 5
         groups:
           - "MetaData"
           - "MetaData"
@@ -179,10 +189,12 @@ Observations:
       simulate:
       ObsDataIn:
         obsfile: "Data/sondes_obs_2018041500_m_twfilt.nc4"
-        obsgrouping: "station_id"
+        obsgrouping:
+          group_variable: "station_id"
       TestData:
         nlocs: 968
         nrecs: 31
+        nvars: 5
         groups:
           - "MetaData"
           - "MetaData"

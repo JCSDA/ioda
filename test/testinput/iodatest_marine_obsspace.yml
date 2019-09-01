@@ -22,6 +22,7 @@ Observations:
       TestData:
         nlocs: 160607
         nrecs: 160607
+        nvars: 1
         groups:
           - "MetaData"
           - "MetaData"
@@ -42,6 +43,7 @@ Observations:
       TestData:
         nlocs: 918
         nrecs: 918
+        nvars: 1
         groups:
           - "MetaData"
           - "MetaData"
@@ -62,6 +64,7 @@ Observations:
       TestData:
         nlocs: 200
         nrecs: 200
+        nvars: 1
         groups:
           - "MetaData"
           - "MetaData"
@@ -82,6 +85,7 @@ Observations:
       TestData:
         nlocs: 71558
         nrecs: 71558
+        nvars: 1
         groups:
           - "MetaData"
           - "MetaData"
@@ -102,6 +106,7 @@ Observations:
       TestData:
         nlocs: 8065
         nrecs: 8065
+        nvars: 2
         groups:
           - "MetaData"
           - "MetaData"
