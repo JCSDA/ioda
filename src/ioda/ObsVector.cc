@@ -269,7 +269,15 @@ void ObsVector::print(std::ostream & os) const {
   obsdb_.comm().allReduceInPlace(nobs, eckit::mpi::sum());
   if (nobs > 0) zrms = sqrt(zrms / static_cast<double>(nobs));
   os << obsdb_.obsname() << " nobs= " << nobs << " Min="
-     << zmin << ", Max=" << zmax << ", RMS=" << zrms << std::endl;
+     << zmin << ", Max=" << zmax << ", RMS=" << zrms << ", size =" << values_.size() << std::endl;
+
+  if (values_.size() >= 5) {
+    os << obsdb_.obsname() << " obs ";
+    for (int i = 0; i < 5; ++i) {
+      os << i  << " = " << values_[i];
+    }
+    os << std::endl;
+  }
 }
 // -----------------------------------------------------------------------------
 }  // namespace ioda
