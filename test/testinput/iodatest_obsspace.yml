@@ -18,7 +18,7 @@ Observations:
   - ObsSpace:
       name: "AOD"
       ObsDataIn:
-        obsfile: "Data/geos_c360_aod_obs_2018041500_m.nc4"
+        obsfile: "Data/geos_aod_obs_2018041500_m.nc4"
         metadata:
           nlocs: 100
         TestData:
