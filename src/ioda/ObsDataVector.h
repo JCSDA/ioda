@@ -31,19 +31,7 @@ namespace ioda {
 
 //-----------------------------------------------------------------------------
 
-template<typename DATATYPE>
-class ObsDataRow {
- public:
-  ObsDataRow() : values_() {}
-  explicit ObsDataRow(const size_t nn) : values_(nn) {}
-  void resize(const size_t nn) {values_.resize(nn);}
-  const DATATYPE & operator[](const size_t ii) const {return values_.at(ii);}
-  DATATYPE & operator[](const size_t ii) {return values_.at(ii);}
-  const DATATYPE & at(const size_t ii) const {return values_.at(ii);}
-  DATATYPE & at(const size_t ii) {return values_.at(ii);}
- private:
-  std::vector<DATATYPE> values_;
-};
+template <typename DATATYPE> using ObsDataRow = std::vector<DATATYPE>;
 
 //-----------------------------------------------------------------------------
 //! ObsDataVector<DATATYPE> handles vectors of data of type DATATYPE in observation space
@@ -72,6 +60,7 @@ class ObsDataVector: public util::Printable,
 // Methods below are used by UFO but not by OOPS
   size_t nvars() const {return nvars_;}  // Size in (local) memory
   size_t nlocs() const {return nlocs_;}  // Size in (local) memory
+  bool has(const std::string & vargrp) const {return obsvars_.has(vargrp);}
 
   const ObsDataRow<DATATYPE> & operator[](const size_t ii) const {return rows_.at(ii);}
   ObsDataRow<DATATYPE> & operator[](const size_t ii) {return rows_.at(ii);}
@@ -81,6 +70,7 @@ class ObsDataVector: public util::Printable,
   ObsDataRow<DATATYPE> & operator[](const std::string var) {return rows_.at(obsvars_.find(var));}
 
   const std::string & obstype() const {return obsdb_.obsname();}
+  const oops::Variables & varnames() const {return obsvars_;}
 
  private:
   void print(std::ostream &) const;

@@ -10,6 +10,13 @@
 interface
 !-------------------------------------------------------------------------------
 
+integer(kind=c_int) function c_obsspace_get_gnlocs(dom) bind(C,name='obsspace_get_gnlocs_f')
+  use, intrinsic :: iso_c_binding
+  implicit none
+
+  type(c_ptr), value :: dom
+end function c_obsspace_get_gnlocs
+
 integer(kind=c_int) function c_obsspace_get_nlocs(dom) bind(C,name='obsspace_get_nlocs_f')
   use, intrinsic :: iso_c_binding
   implicit none
@@ -17,6 +24,38 @@ integer(kind=c_int) function c_obsspace_get_nlocs(dom) bind(C,name='obsspace_get
   type(c_ptr), value :: dom
 end function c_obsspace_get_nlocs
 
+integer(kind=c_int) function c_obsspace_get_nrecs(dom) bind(C,name='obsspace_get_nrecs_f')
+  use, intrinsic :: iso_c_binding
+  implicit none
+
+  type(c_ptr), value :: dom
+end function c_obsspace_get_nrecs
+
+integer(kind=c_int) function c_obsspace_get_nvars(dom) bind(C,name='obsspace_get_nvars_f')
+  use, intrinsic :: iso_c_binding
+  implicit none
+
+  type(c_ptr), value :: dom
+end function c_obsspace_get_nvars
+
+subroutine c_obsspace_get_recnum(obss, length, recnum) &
+              & bind(C,name='obsspace_get_recnum_f')
+  use, intrinsic :: iso_c_binding, only : c_ptr, c_size_t
+  implicit none
+  type(c_ptr), value               :: obss
+  integer(c_size_t), intent(in)    :: length
+  integer(c_size_t), intent(inout) :: recnum(length)
+end subroutine c_obsspace_get_recnum
+  
+subroutine c_obsspace_get_index(obss, length, indx) &
+              & bind(C,name='obsspace_get_index_f')
+  use, intrinsic :: iso_c_binding, only : c_ptr, c_size_t
+  implicit none
+  type(c_ptr), value               :: obss
+  integer(c_size_t), intent(in)    :: length
+  integer(c_size_t), intent(inout) :: indx(length)
+end subroutine c_obsspace_get_index
+  
 logical(kind=c_bool) function c_obsspace_has(dom, group, vname) bind(C,name='obsspace_has_f')
   use, intrinsic :: iso_c_binding
   implicit none

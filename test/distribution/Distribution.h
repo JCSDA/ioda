@@ -37,6 +37,7 @@ namespace test {
 void testConstructor() {
   const eckit::LocalConfiguration conf(::test::TestEnvironment::config());
   std::vector<eckit::LocalConfiguration> dist_types;
+  eckit::mpi::Comm & MpiComm = eckit::mpi::comm();
 
   std::string TestDistType;
   std::string DistName;
@@ -46,13 +47,18 @@ void testConstructor() {
   // Walk through the different distribution types and try constructing.
   conf.get("DistributionTypes", dist_types);
   for (std::size_t i = 0; i < dist_types.size(); ++i) {
-    oops::Log::debug() << "Distribution::DistributionTypes: conf" << dist_types[i] << std::endl;
+    oops::Log::debug() << "Distribution::DistributionTypes: conf: " << dist_types[i] << std::endl;
 
     TestDistType = dist_types[i].getString("DistType");
     oops::Log::debug() << "Distribution::DistType: " << TestDistType << std::endl;
 
     DistName = dist_types[i].getString("Specs.dist_name");
-    TestDist.reset(DistFactory->createDistribution(DistName));
+    if (dist_types[i].has("Specs.obs_grouping")) {
+      std::vector<std::size_t> Groups = dist_types[i].getUnsignedVector("Specs.obs_grouping");
+      TestDist.reset(DistFactory->createDistribution(MpiComm, 0, DistName, Groups));
+    } else {
+      TestDist.reset(DistFactory->createDistribution(MpiComm, 0, DistName));
+    }
     EXPECT(TestDist.get());
     }
   }
@@ -74,29 +80,57 @@ void testDistribution() {
   // Walk through the different distribution types and try constructing.
   conf.get("DistributionTypes", dist_types);
   for (std::size_t i = 0; i < dist_types.size(); ++i) {
-    oops::Log::debug() << "Distribution::DistributionTypes: conf" << dist_types[i] << std::endl;
+    oops::Log::debug() << "Distribution::DistributionTypes: conf: "
+                       << dist_types[i] << std::endl;
 
     TestDistType = dist_types[i].getString("DistType");
     oops::Log::debug() << "Distribution::DistType: " << TestDistType << std::endl;
 
+    std::size_t Gnlocs = dist_types[i].getInt("Specs.gnlocs");
     DistName = dist_types[i].getString("Specs.dist_name");
-    TestDist.reset(DistFactory->createDistribution(DistName));
+    if (dist_types[i].has("Specs.obs_grouping")) {
+      std::vector<std::size_t> Groups = dist_types[i].getUnsignedVector("Specs.obs_grouping");
+      TestDist.reset(DistFactory->createDistribution(MpiComm, Gnlocs, DistName, Groups));
+    } else {
+      TestDist.reset(DistFactory->createDistribution(MpiComm, Gnlocs, DistName));
+    }
     EXPECT(TestDist.get());
 
-    // Read the specs from the YAML
-    std::size_t Nrecs = dist_types[i].getInt("Specs.nrecs");
     // Expected results are listed in "Specs.index" with the MPI rank number
     // appended on the end.
-    std::string MyIndexName = "Specs.index" + std::to_string(MyRank);
-    std::vector<int> ExpectedIndex = dist_types[i].getIntVector(MyIndexName);
+    std::string MyRankCfgName = "Specs.rank" + std::to_string(MyRank);
+    eckit::LocalConfiguration MyRankConfig = dist_types[i].getSubConfiguration(MyRankCfgName);
+    oops::Log::debug() << "Distribution::DistributionTypes: " 
+                       << MyRankCfgName << ": " << MyRankConfig << std::endl;
 
-    // Form the distribution
-    TestDist->distribution(MpiComm, Nrecs);
-    std::vector<int> Index(TestDist->size());
-    for (std::size_t i = 0; i < TestDist->size(); i++) {
+    std::size_t ExpectedNlocs = MyRankConfig.getUnsigned("nlocs");
+    std::size_t ExpectedNrecs = MyRankConfig.getUnsigned("nrecs");
+    std::vector<std::size_t> ExpectedIndex = 
+                                 MyRankConfig.getUnsignedVector("index");
+    std::vector<std::size_t> ExpectedRecnums =
+                                 MyRankConfig.getUnsignedVector("recnums");
+
+    // Form the distribution - this method will set nlocs and nrecs.
+    TestDist->distribution();
+
+    // Check the location and record counts
+    std::size_t Nlocs = TestDist->nlocs();
+    std::size_t Nrecs = TestDist->nrecs();
+    EXPECT(Nlocs == ExpectedNlocs);
+    EXPECT(Nrecs == ExpectedNrecs);
+
+    // Check the resulting index and recnum vectors
+    std::vector<std::size_t> Index(TestDist->nlocs());
+    for (std::size_t i = 0; i < TestDist->nlocs(); i++) {
       Index[i] = TestDist->index()[i];
     }
     EXPECT(Index == ExpectedIndex);
+
+    std::vector<std::size_t> Recnums(TestDist->nlocs());
+    for (std::size_t i = 0; i < TestDist->nlocs(); i++) {
+      Recnums[i] = TestDist->recnum()[i];
+    }
+    EXPECT(Recnums == ExpectedRecnums);
   }
 }
 

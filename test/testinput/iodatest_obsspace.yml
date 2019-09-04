@@ -42,6 +42,8 @@ Observations:
         obsfile: "Data/aod_obs_2018041500_m.nc4"
       TestData:
         nlocs: 100
+        nrecs: 100
+        nvars: 1
         groups:
           - "MetaData"
           - "MetaData"
@@ -61,6 +63,8 @@ Observations:
         obsfile: "Data/amsua_n19_obs_2018041500_m.nc4"
       TestData:
         nlocs: 100
+        nrecs: 100
+        nvars: 15
         groups:
           - "MetaData"
           - "MetaData"
@@ -80,6 +84,8 @@ Observations:
         obsfile: "Data/smap_obs_2018041500_m.nc4"
       TestData:
         nlocs: 45
+        nrecs: 45
+        nvars: 4
         groups:
           - "MetaData"
           - "MetaData"
@@ -99,6 +105,8 @@ Observations:
         obsfile: "Data/gmi_gpm_obs_2018041500_m.nc4"
       TestData:
         nlocs: 12
+        nrecs: 12
+        nvars: 13
         groups:
           - "MetaData"
           - "MetaData"
@@ -117,7 +125,9 @@ Observations:
       ObsDataIn:
         obsfile: "Data/sondes_obs_2018041500_m.nc4"
       TestData:
-        nlocs: 973
+        nlocs: 974
+        nrecs: 974
+        nvars: 5
         groups:
           - "MetaData"
           - "MetaData"
@@ -125,8 +135,8 @@ Observations:
           - "latitude"
           - "longitude"
         norms:
-          - 1253.8638436269134
-          - 6065.6117026835063
+          - 1254.66336565038
+          - 6076.2659622388919
         tolerance:
           - 1.0e-11
       ObsDataOut:
@@ -146,6 +156,8 @@ Observations:
         obs_errors: [1.0, 2.0]
       TestData:
         nlocs: 10
+        nrecs: 10
+        nvars: 2
         groups:
           - "MetaData"
           - "MetaData"
@@ -165,4 +177,56 @@ Observations:
           - 1.0e-11
       ObsDataOut:
         obsfile: "testoutput/ospace.generate.nc4"
+
+  - ObsSpace:
+      name: "Radiosonde with grouping"
+      simulate:
+      ObsDataIn:
+        obsfile: "Data/sondes_obs_2018041500_m.nc4"
+        obsgrouping:
+          group_variable: "station_id"
+          sort_variable: "air_pressure"
+          sort_order: "descending"
+      TestData:
+        nlocs: 974
+        nrecs: 36
+        nvars: 5
+        groups:
+          - "MetaData"
+          - "MetaData"
+        variables:
+          - "latitude"
+          - "longitude"
+        norms:
+          - 1254.66336565038
+          - 6076.2659622388919
+        tolerance:
+          - 1.0e-11
+      ObsDataOut:
+        obsfile: "testoutput/diagout_with_groups.nc4"
+
+  - ObsSpace:
+      name: "Radiosonde with grouping and tw filtering"
+      simulate:
+      ObsDataIn:
+        obsfile: "Data/sondes_obs_2018041500_m_twfilt.nc4"
+        obsgrouping:
+          group_variable: "station_id"
+      TestData:
+        nlocs: 968
+        nrecs: 31
+        nvars: 5
+        groups:
+          - "MetaData"
+          - "MetaData"
+        variables:
+          - "latitude"
+          - "longitude"
+        norms:
+          - 1252.0139923322768
+          - 6065.3117664336605
+        tolerance:
+          - 1.0e-11
+      ObsDataOut:
+        obsfile: "testoutput/diagout_with_groups_twfilt.nc4"
 
