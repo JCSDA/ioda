@@ -7,11 +7,16 @@
 
 #include "ioda/ObsSpace.h"
 
+#include <algorithm>
 #include <fstream>
+#include <functional>
 #include <iomanip>
 #include <map>
 #include <memory>
+#include <numeric>
+#include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 #define BOOST_STACKTRACE_GNU_SOURCE_NOT_REQUIRED
@@ -28,7 +33,6 @@
 #include "oops/util/Random.h"
 
 #include "distribution/DistributionFactory.h"
-#include "fileio/IodaIO.h"
 #include "fileio/IodaIOfactory.h"
 
 namespace ioda {
@@ -63,9 +67,21 @@ ObsSpace::ObsSpace(const eckit::Configuration & config,
   // Initialize the obs space container
   if (config.has("ObsDataIn")) {
     // Initialize the container from an input obs file
+    obs_group_variable_ = config.getString("ObsDataIn.obsgrouping.group_variable", "");
+    obs_sort_variable_ = config.getString("ObsDataIn.obsgrouping.sort_variable", "");
+    obs_sort_order_ = config.getString("ObsDataIn.obsgrouping.sort_order", "ascending");
+    if ((obs_sort_order_ != "ascending") && (obs_sort_order_ != "descending")) {
+      std::string ErrMsg =
+        std::string("ObsSpace::ObsSpace: Must use one of 'ascending' or 'descending' ") +
+        std::string("for the 'sort_order:' YAML configuration keyword.");
+      ABORT(ErrMsg);
+    }
     filein_ = config.getString("ObsDataIn.obsfile");
     oops::Log::trace() << obsname_ << " file in = " << filein_ << std::endl;
     InitFromFile(filein_);
+    if (obs_sort_variable_ != "") {
+      BuildSortedObsGroups();
+    }
   } else if (config.has("Generate")) {
     // Initialize the container from the generateDistribution method
     eckit::LocalConfiguration genconfig(config, "Generate");
@@ -182,17 +198,17 @@ ObsSpace::~ObsSpace() {
  */
 
 void ObsSpace::get_db(const std::string & group, const std::string & name,
-                      const size_t & vsize, int vdata[]) const {
+                      const std::size_t vsize, int vdata[]) const {
   get_db_helper<int>(group, name, vsize, vdata);
 }
 
 void ObsSpace::get_db(const std::string & group, const std::string & name,
-                      const size_t & vsize, float vdata[]) const {
+                      const std::size_t vsize, float vdata[]) const {
   get_db_helper<float>(group, name, vsize, vdata);
 }
 
 void ObsSpace::get_db(const std::string & group, const std::string & name,
-                      const size_t & vsize, double vdata[]) const {
+                      const std::size_t vsize, double vdata[]) const {
   // load the float values from the database and convert to double
   std::unique_ptr<float[]> FloatData(new float[vsize]);
   get_db_helper<float>(group, name, vsize, FloatData.get());
@@ -200,7 +216,7 @@ void ObsSpace::get_db(const std::string & group, const std::string & name,
 }
 
 void ObsSpace::get_db(const std::string & group, const std::string & name,
-                      const size_t & vsize, util::DateTime vdata[]) const {
+                      const std::size_t vsize, util::DateTime vdata[]) const {
   get_db_helper<util::DateTime>(group, name, vsize, vdata);
 }
 
@@ -225,7 +241,7 @@ void ObsSpace::get_db(const std::string & group, const std::string & name,
 
 template <typename DATATYPE>
 void ObsSpace::get_db_helper(const std::string & group, const std::string & name,
-                             const size_t & vsize, DATATYPE vdata[]) const {
+                             const std::size_t vsize, DATATYPE vdata[]) const {
   std::string gname = (group.size() <= 0)? "GroupUndefined" : group;
   std::vector<std::size_t> vshape(1, vsize);
 
@@ -272,7 +288,7 @@ void ObsSpace::get_db_helper(const std::string & group, const std::string & name
  */
 template <>
 void ObsSpace::get_db_helper<util::DateTime>(const std::string & group,
-         const std::string & name, const size_t & vsize, util::DateTime vdata[]) const {
+         const std::string & name, const std::size_t vsize, util::DateTime vdata[]) const {
   std::string gname = (group.size() <= 0)? "GroupUndefined" : group;
   std::vector<std::size_t> vshape(1, vsize);
   database_.LoadFromDb(gname, name, vshape, &vdata[0]);
@@ -294,17 +310,17 @@ void ObsSpace::get_db_helper<util::DateTime>(const std::string & group,
  */
 
 void ObsSpace::put_db(const std::string & group, const std::string & name,
-                      const size_t & vsize, const int vdata[]) {
+                      const std::size_t vsize, const int vdata[]) {
   put_db_helper<int>(group, name, vsize, vdata);
 }
 
 void ObsSpace::put_db(const std::string & group, const std::string & name,
-                      const size_t & vsize, const float vdata[]) {
+                      const std::size_t vsize, const float vdata[]) {
   put_db_helper<float>(group, name, vsize, vdata);
 }
 
 void ObsSpace::put_db(const std::string & group, const std::string & name,
-                      const size_t & vsize, const double vdata[]) {
+                      const std::size_t vsize, const double vdata[]) {
   // convert to float, then load into the database
   std::unique_ptr<float[]> FloatData(new float[vsize]);
   ConvertVarType<double, float>(&vdata[0], FloatData.get(), vsize);
@@ -312,7 +328,7 @@ void ObsSpace::put_db(const std::string & group, const std::string & name,
 }
 
 void ObsSpace::put_db(const std::string & group, const std::string & name,
-                      const size_t & vsize, const util::DateTime vdata[]) {
+                      const std::size_t vsize, const util::DateTime vdata[]) {
   put_db_helper<util::DateTime>(group, name, vsize, vdata);
 }
 
@@ -337,7 +353,7 @@ void ObsSpace::put_db(const std::string & group, const std::string & name,
 
 template <typename DATATYPE>
 void ObsSpace::put_db_helper(const std::string & group, const std::string & name,
-                             const std::size_t & vsize, const DATATYPE vdata[]) {
+                             const std::size_t vsize, const DATATYPE vdata[]) {
   std::string gname = (group.size() <= 0)? "GroupUndefined" : group;
   std::vector<std::size_t> vshape(1, vsize);
   database_.StoreToDb(gname, name, vshape, &vdata[0]);
@@ -353,6 +369,19 @@ void ObsSpace::put_db_helper(const std::string & group, const std::string & name
 bool ObsSpace::has(const std::string & group, const std::string & name) const {
   return database_.has(group, name);
 }
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns the number of unique locations in the input
+ *          obs file. Note that nlocs from the obs container may be smaller
+ *          than nlocs from the input obs file due to the removal of obs outside
+ *          the DA timing window and/or due to distribution of obs across
+ *          multiple process elements.
+ */
+std::size_t ObsSpace::gnlocs() const {
+  return gnlocs_;
+}
+
 // -----------------------------------------------------------------------------
 /*!
  * \details This method returns the number of unique locations in the obs
@@ -387,6 +416,101 @@ std::size_t ObsSpace::nvars() const {
 
 // -----------------------------------------------------------------------------
 /*!
+ * \details This method returns a reference to the record number vector
+ *          data member. This is for read only access.
+ */
+const std::vector<std::size_t> & ObsSpace::recnum() const {
+  return recnums_;
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns a reference to the index vector
+ *          data member. This is for read only access.
+ */
+const std::vector<std::size_t> & ObsSpace::index() const {
+  return indx_;
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns the begin iterator associated with the
+ *          recidx_ data member.
+ */
+const ObsSpace::RecIdxIter ObsSpace::recidx_begin() const {
+  return recidx_.begin();
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns the end iterator associated with the
+ *          recidx_ data member.
+ */
+const ObsSpace::RecIdxIter ObsSpace::recidx_end() const {
+  return recidx_.end();
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns a boolean value indicating whether the
+ *          given record number exists in the recidx_ data member.
+ */
+const bool ObsSpace::recidx_has(const std::size_t RecNum) const {
+  RecIdxIter irec = recidx_.find(RecNum);
+  return (irec != recidx_.end());
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns the current record number, pointed to by the
+ *          given iterator, from the recidx_ data member.
+ */
+const std::size_t ObsSpace::recidx_recnum(const RecIdxIter & Irec) const {
+  return Irec->first;
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns the current vector, pointed to by the
+ *          given iterator, from the recidx_ data member.
+ */
+const std::vector<std::size_t> & ObsSpace::recidx_vector(const RecIdxIter & Irec) const {
+  return Irec->second;
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns the current vector, pointed to by the
+ *          given iterator, from the recidx_ data member.
+ */
+const std::vector<std::size_t> & ObsSpace::recidx_vector(const std::size_t RecNum) const {
+  RecIdxIter Irec = recidx_.find(RecNum);
+  if (Irec == recidx_.end()) {
+    std::string ErrMsg =
+      "ObsSpace::recidx_vector: Record number, " + std::to_string(RecNum) +
+      ", does not exist in record index map.";
+    ABORT(ErrMsg);
+  }
+  return Irec->second;
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns the all of the record numbers from the
+ *          recidx_ data member (ie, all the key values) in a vector.
+ */
+std::vector<std::size_t> ObsSpace::recidx_all_recnums() const {
+  std::vector<std::size_t> RecNums(nrecs_);
+  std::size_t recnum = 0;
+  for (RecIdxIter Irec = recidx_.begin(); Irec != recidx_.end(); ++Irec) {
+    RecNums[recnum] = Irec->first;
+    recnum++;
+  }
+  return RecNums;
+}
+
+// -----------------------------------------------------------------------------
+/*!
  * \details This method will generate a set of latitudes and longitudes of which
  *          can be used for testing without reading in an obs file. Two latitude
  *          values, two longitude values, the number of locations (nobs keyword)
@@ -400,7 +524,7 @@ std::size_t ObsSpace::nvars() const {
  * \param[in] conf ECKIT configuration segment built from an input configuration file.
  */
 void ObsSpace::generateDistribution(const eckit::Configuration & conf) {
-  int fvlen  = conf.getInt("nobs");
+  gnlocs_  = conf.getInt("nobs");
   float lat1 = conf.getFloat("lat1");
   float lat2 = conf.getFloat("lat2");
   float lon1 = conf.getFloat("lon1");
@@ -416,16 +540,14 @@ void ObsSpace::generateDistribution(const eckit::Configuration & conf) {
     ran_seed = std::time(0);  // based on the current date/time.
   }
 
-  // Apply the round-robin distribution, which yields the size and indices that
-  // are to be selected by this process element out of the file.
-  DistributionFactory * distFactory;
-  Distribution * dist{distFactory->createDistribution(distname_)};
-  dist->distribution(comm(), fvlen);
+  // number of variables specified in simulate section
+  nvars_ = obsvars_.size();
 
-  // Need to set nrecs_, nlocs_, nvars_ data members as part of constructor function.
-  nlocs_ = dist->size();  // locations are selected by distribution
-  nvars_ = obsvars_.size();         // variables specified in simulate section
-  nrecs_ = nlocs_;
+  // Create the MPI Distribution
+  // The default constructor for std::unique_ptr generates a null ptr which
+  // can be tested in GenMpiDistribution.
+  std::unique_ptr<IodaIO> NoIO;
+  GenMpiDistribution(NoIO);
 
   // Use the following formula to generate random lat, lon and time values.
   //
@@ -438,8 +560,23 @@ void ObsSpace::generateDistribution(const eckit::Configuration & conf) {
   //
   // Use different seeds for lat and lon so that in the case where lat and lon ranges
   // are the same, you get a different sequences for lat compared to lon.
-  util::UniformDistribution<float> RanVals(nlocs_, 0.0, 1.0, ran_seed);
-  util::UniformDistribution<float> RanVals2(nlocs_, 0.0, 1.0, ran_seed+1);
+  //
+  // Have rank 0 generate the full length random sequences, and then
+  // broadcast these to the other ranks. This ensures that every rank
+  // contains the same random sequences. If all ranks generated their
+  // own sequences, which they could do, the sequences between ranks
+  // would be different in the case where random_seed is not specified.
+  std::vector<float> RanVals(gnlocs_, 0.0);
+  std::vector<float> RanVals2(gnlocs_, 0.0);
+  if (comm().rank() == 0) {
+    util::UniformDistribution<float> RanUD(gnlocs_, 0.0, 1.0, ran_seed);
+    util::UniformDistribution<float> RanUD2(gnlocs_, 0.0, 1.0, ran_seed+1);
+
+    RanVals = RanUD.data();
+    RanVals2 = RanUD2.data();
+  }
+  comm().broadcast(RanVals, 0);
+  comm().broadcast(RanVals2, 0);
 
   // Form the ranges val2-val for lat, lon, time
   float LatRange = lat2 - lat1;
@@ -459,9 +596,10 @@ void ObsSpace::generateDistribution(const eckit::Configuration & conf) {
 
   util::Duration DurZero(0);
   util::Duration DurOneSec(1);
-  for (std::size_t ii = 0; ii < nlocs_; ++ii) {
-    latitude[ii] = lat1 + (RanVals[ii] * LatRange);
-    longitude[ii] = lon1 + (RanVals2[ii] * LonRange);
+  for (std::size_t ii = 0; ii < nlocs_; ii++) {
+    std::size_t index = indx_[ii];
+    latitude[ii] = lat1 + (RanVals[index] * LatRange);
+    longitude[ii] = lon1 + (RanVals2[index] * LonRange);
 
     // Currently the filter for time stamps on obs values is:
     //
@@ -469,7 +607,7 @@ void ObsSpace::generateDistribution(const eckit::Configuration & conf) {
     //
     // If we get a zero OffsetDt, then change it to 1 second so that the observation
     // will remain inside the timing window.
-    util::Duration OffsetDt(static_cast<int64_t>(RanVals[ii] * TimeRange));
+    util::Duration OffsetDt(static_cast<int64_t>(RanVals[index] * TimeRange));
     if (OffsetDt == DurZero) {
       OffsetDt = DurOneSec;
     }
@@ -479,7 +617,7 @@ void ObsSpace::generateDistribution(const eckit::Configuration & conf) {
   put_db("MetaData", "datetime", nlocs_, obs_datetimes.data());
   put_db("MetaData", "latitude", nlocs_, latitude.data());
   put_db("MetaData", "longitude", nlocs_, longitude.data());
-  for (std::size_t ivar = 0; ivar < nvars_; ++ivar) {
+  for (std::size_t ivar = 0; ivar < nvars_; ivar++) {
     std::vector<float> obserr(nlocs_, err[ivar]);
     put_db("ObsError", obsvars_[ivar], nlocs_, obserr.data());
   }
@@ -511,70 +649,43 @@ void ObsSpace::InitFromFile(const std::string & filename) {
 
   // Open the file for reading and record nlocs and nvars from the file.
   std::unique_ptr<IodaIO> fileio {ioda::IodaIOfactory::Create(filename, "r")};
-  file_nlocs_ = fileio->nlocs();
-  nvars_ = fileio->nvars();
-  nrecs_ = fileio->nrecs();
+  gnlocs_ = fileio->nlocs();
 
   // Create the MPI distribution
-  std::unique_ptr<Distribution> dist_;
-  DistributionFactory * DistFactory;
-  dist_.reset(DistFactory->createDistribution(distname_));
-  dist_->distribution(commMPI_, file_nlocs_);
+  GenMpiDistribution(fileio);
 
-  // Read in the datetime values and filter out any variables outside the
-  // timing window.
-  std::unique_ptr<char[]> dt_char_array_(new char[file_nlocs_ * 20]);
-  std::vector<std::size_t> dt_shape_{ file_nlocs_, 20 };
-  // Look for datetime@MetaData first, then datetime@GroupUndefined
-  std::string DtGroupName = "MetaData";
-  std::string DtVarName = "datetime";
-  if (!fileio->grp_var_exists(DtGroupName, DtVarName)) {
-    DtGroupName = "GroupUndefined";
-    if (!fileio->grp_var_exists(DtGroupName, DtVarName)) {
-      std::string ErrorMsg = "ObsSpace::InitFromFile: datetime information is not available";
-      ABORT(ErrorMsg);
-    }
-  }
-  fileio->ReadVar(DtGroupName, DtVarName, dt_shape_, dt_char_array_.get());
-  std::vector<std::string> dt_strings_ =
-           CharArrayToStringVector(dt_char_array_.get(), dt_shape_);
-
-  std::size_t index;
-  for (std::size_t ii = 0; ii < dist_->size(); ++ii) {
-    index = dist_->index()[ii];
-    util::DateTime test_dt_(dt_strings_[index]);
-    if ((test_dt_ > winbgn_) && (test_dt_ <= winend_)) {
-      // Inside the DA time window, keep this index
-      indx_.push_back(index);
-    }
-  }
-
-  nlocs_ = indx_.size();
+  // Reject observations that fall outside the DA timing window. Do this by removing
+  // any locations from indx_ and recnums_ that fall outside the window.
+  ApplyTimingWindow(fileio);
 
   // Read in all variables from the file and store them into the database.
+  nvars_ = 0;
   for (IodaIO::GroupIter igrp = fileio->group_begin();
                          igrp != fileio->group_end(); ++igrp) {
+    std::string GroupName = fileio->group_name(igrp);
     for (IodaIO::VarIter ivar = fileio->var_begin(igrp);
                          ivar != fileio->var_end(igrp); ++ivar) {
-      std::string GroupName = fileio->group_name(igrp);
       std::string VarName = fileio->var_name(ivar);
       std::string FileVarType = fileio->var_dtype(ivar);
+
+      // nvars_ is equal to the number of variables in the ObsValue group
+      if (GroupName == "ObsValue") {
+        nvars_++;
+      }
 
       // VarShape, VarSize hold dimension sizes from file.
       // AdjVarShape, AdjVarSize hold dimension sizes needed when the
       // fisrt dimension is nlocs in size. Ie, all variables with nlocs
       // as the first dimension need to be distributed across that dimension.
       std::vector<std::size_t> VarShape = fileio->var_shape(ivar);
-      std::size_t VarSize = 1;
-      for (std::size_t i = 0; i < VarShape.size(); i++) {
-        VarSize *= VarShape[i];
-      }
+      std::size_t VarSize =
+        std::accumulate(VarShape.begin(), VarShape.end(), 1, std::multiplies<std::size_t>());
 
       // Get the desired data type for the database.
       std::string DbVarType = DesiredVarType(GroupName, FileVarType);
 
       // Read the variable from the file and transfer it to the database.
-      if (FileVarType.compare("int") == 0) {
+      if (FileVarType == "int") {
         std::unique_ptr<int[]> FileData(new int[VarSize]);
         fileio->ReadVar(GroupName, VarName, VarShape, FileData.get());
 
@@ -583,7 +694,7 @@ void ObsSpace::InitFromFile(const std::string & filename) {
         std::size_t IndexedSize;
         ApplyDistIndex<int>(FileData, VarShape, IndexedData, IndexedShape, IndexedSize);
         database_.StoreToDb(GroupName, VarName, IndexedShape, IndexedData.get());
-      } else if (FileVarType.compare("float") == 0) {
+      } else if (FileVarType == "float") {
         std::unique_ptr<float[]> FileData(new float[VarSize]);
         fileio->ReadVar(GroupName, VarName, VarShape, FileData.get());
 
@@ -592,13 +703,13 @@ void ObsSpace::InitFromFile(const std::string & filename) {
         std::size_t IndexedSize;
         ApplyDistIndex<float>(FileData, VarShape, IndexedData, IndexedShape, IndexedSize);
 
-        if (DbVarType.compare("int") == 0) {
+        if (DbVarType == "int") {
           ConvertStoreToDb<float, int>(GroupName, VarName, IndexedShape,
                                      IndexedSize, IndexedData.get());
         } else {
           database_.StoreToDb(GroupName, VarName, IndexedShape, IndexedData.get());
         }
-      } else if (FileVarType.compare("double") == 0) {
+      } else if (FileVarType == "double") {
         // Convert double to float before storing into the database.
         std::unique_ptr<double[]> FileData(new double[VarSize]);
         fileio->ReadVar(GroupName, VarName, VarShape, FileData.get());
@@ -610,7 +721,7 @@ void ObsSpace::InitFromFile(const std::string & filename) {
 
         ConvertStoreToDb<double, float>(GroupName, VarName, IndexedShape,
                                      IndexedSize, IndexedData.get());
-      } else if (FileVarType.compare("char") == 0) {
+      } else if (FileVarType == "char") {
         // Convert the char array to a vector of strings. If we are working
         // on the variable "datetime", then convert the strings to DateTime
         // objects.
@@ -631,7 +742,7 @@ void ObsSpace::InitFromFile(const std::string & filename) {
           AdjVarSize *= IndexedShape[j];
         }
 
-        if (VarName.compare("datetime") == 0) {
+        if (VarName == "datetime") {
           std::vector<util::DateTime> DtData(AdjVarSize);
           for (std::size_t j = 0; j < AdjVarSize; j++) {
             util::DateTime TempDt(StringData[j]);
@@ -652,6 +763,235 @@ void ObsSpace::InitFromFile(const std::string & filename) {
     }
   }
   oops::Log::trace() << "ioda::ObsSpaceContainer opening file ends " << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method generates an list of indices with their corresponding
+ *          record numbers, where the indices denote which locations are to be
+ *          read into this process element.
+ *
+ *          This routine sets up record grouping, and is also responsible for
+ *          setting the nrecs_, nlocs_, indx_ and recnums_ data members.
+ *
+ * \param[in] FileIO File id (pointer to IodaIO object)
+ */
+void ObsSpace::GenMpiDistribution(const std::unique_ptr<IodaIO> & FileIO) {
+  // Apply the MPI distribution. If we are initializing from a file (FileIO is
+  // not null), then generate records numbers based on the specified variable
+  // in the input file. Otherwise, use default grouping.
+  std::unique_ptr<DistributionFactory> distFactory;
+  std::unique_ptr<Distribution> dist;
+  if (FileIO) {
+    // Grouping based on variable in the input file.
+    std::vector<std::size_t> Records(gnlocs_);
+    GenRecordNumbers(FileIO, Records);
+    dist.reset(distFactory->createDistribution(comm(), gnlocs_, distname_, Records));
+  } else {
+    // Default grouping (every location is a separate record)
+    dist.reset(distFactory->createDistribution(comm(), gnlocs_, distname_));
+  }
+  dist->distribution();
+
+  // The Distribution::distribution() method calculates data needed for
+  // the nrecs_, nlocs_, indx_ and recnums_ data members.
+  nlocs_ = dist->nlocs();
+  nrecs_ = dist->nrecs();
+  indx_ = dist->index();
+  recnums_ = dist->recnum();
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method calculates the record numbers according to the specs in
+ *          the YAML file. If the specification of a variable that denotes the
+ *          grouping is present, then that variable is read from the input file
+ *          and the records numbers are based on the unique values in that variable.
+ *          If the specification is not present, then the record numbers are set
+ *          to 0..(nlocs-1) which makes each location a separate record effectively
+ *          disabling grouping.
+ *
+ * \param[in] FileIO File id (pointer to IodaIO object)
+ * \param[out] Records Vector of record numbers
+ */
+void ObsSpace::GenRecordNumbers(const std::unique_ptr<IodaIO> & FileIO,
+                                std::vector<std::size_t> & Records) const {
+  // Collect the group and variable names that came from the configuration
+  std::string GroupName = "MetaData";
+  std::string VarName = obs_group_variable_;
+
+  // Construct the group numbers
+  if (VarName.empty()) {
+    // Grouping is not specified, so place 0..(nlocs-1) in the Records vector.
+    // This effectively disables grouping (each location is a separate group).
+    std::iota(Records.begin(), Records.end(), 0);
+  } else {
+    // Grouping is based on GroupName, VarName. Read in the variable and make
+    // two passes through the values. First pass is to determine the unique
+    // values of which group numbers will be assigned 0..(number_of_unique_vals-1).
+    // Second pass is to generate the group numbers in the same order as the
+    // values occur in the variable read in.
+    std::string VarType = FileIO->var_dtype(GroupName, VarName);
+    std::vector<std::size_t> VarShape = FileIO->var_shape(GroupName, VarName);
+    std::size_t VarSize =
+      std::accumulate(VarShape.begin(), VarShape.end(), 1, std::multiplies<std::size_t>());
+
+    if (VarType == "int") {
+      std::vector<int> FileData(VarSize);
+      FileIO->ReadVar(GroupName, VarName, VarShape, FileData.data());
+      GenRnumsFromVar<int>(FileData, Records);
+    } else if (VarType == "float") {
+      std::vector<float> FileData(VarSize);
+      FileIO->ReadVar(GroupName, VarName, VarShape, FileData.data());
+      GenRnumsFromVar<float>(FileData, Records);
+    } else if (VarType == "char") {
+      std::vector<char> FileData(VarSize);
+      FileIO->ReadVar(GroupName, VarName, VarShape, FileData.data());
+      std::vector<std::string> StringData = CharArrayToStringVector(FileData.data(), VarShape);
+      GenRnumsFromVar<std::string>(StringData, Records);
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method will generate a set of unique group numbers that go
+ *          in sequence from 0 to number_of_unique_values-1. All of the unique
+ *          values in VarData are extracted and assigned a unique group number.
+ *
+ * \param[in] VarData Vector of variable data.
+ * \param[out] Records Vector of group numbers.
+ */
+template<typename DATATYPE>
+void ObsSpace::GenRnumsFromVar(const std::vector<DATATYPE> & VarData,
+                               std::vector<std::size_t> & Records) {
+  typedef std::map<DATATYPE, std::size_t> VGMap;
+  typedef typename VGMap::iterator VGMapIter;
+  // Form a map from VarData values to group number.
+  //
+  // First, collect all of the unique key values. Then go back and fill in the
+  // values in the map with numbers going from 0 to number_of_unique_values-1.
+  VGMap ValueToGroupNum;
+  for (std::size_t i = 0; i < VarData.size(); i++) {
+    ValueToGroupNum[VarData[i]] = 0;
+  }
+
+  std::size_t Gnum = 0;
+  for (VGMapIter imap = ValueToGroupNum.begin();
+                 imap != ValueToGroupNum.end(); ++imap) {
+    ValueToGroupNum[imap->first] = Gnum;
+    Gnum++;
+  }
+
+  // Use the map to translate the VarData values into their associated group
+  // numbers
+  for (std::size_t i = 0; i < VarData.size(); i++) {
+    Records[i] = ValueToGroupNum[VarData[i]];
+  }
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method will save the contents of the obs container into the
+ *          given file. Currently, all variables in the obs container are written
+ *          into the file. This may change in the future where we can select which
+ *          variables we want saved.
+ *
+ * \param[in] file_name Path to output obs file.
+ */
+void ObsSpace::ApplyTimingWindow(const std::unique_ptr<IodaIO> & FileIO) {
+  // Read in the datetime values and filter out any variables outside the
+  // timing window.
+  std::unique_ptr<char[]> DtCharArray(new char[gnlocs_ * 20]);
+  std::vector<std::size_t> DtShape{ gnlocs_, 20 };
+
+  // Look for datetime@MetaData first, then datetime@GroupUndefined
+  std::string DtGroupName = "MetaData";
+  std::string DtVarName = "datetime";
+  if (!FileIO->grp_var_exists(DtGroupName, DtVarName)) {
+    DtGroupName = "GroupUndefined";
+    if (!FileIO->grp_var_exists(DtGroupName, DtVarName)) {
+      std::string ErrorMsg = "ObsSpace::InitFromFile: datetime information is not available";
+      ABORT(ErrorMsg);
+    }
+  }
+  FileIO->ReadVar(DtGroupName, DtVarName, DtShape, DtCharArray.get());
+  std::vector<std::string> DtStrings =
+           CharArrayToStringVector(DtCharArray.get(), DtShape);
+
+  std::size_t Index;
+  std::size_t RecNum;
+  std::set<std::size_t> UniqueRecNums;
+  std::vector<std::size_t> NewIndices;
+  std::vector<std::size_t> NewRecNums;
+  for (std::size_t ii = 0; ii < nlocs_; ii++) {
+    Index = indx_[ii];
+    RecNum = recnums_[ii];
+    util::DateTime TestDt(DtStrings[Index]);
+    if ((TestDt > winbgn_) && (TestDt <= winend_)) {
+      // Inside the DA time window, keep this index
+      // and associated record number
+      NewIndices.push_back(Index);
+      NewRecNums.push_back(RecNum);
+      UniqueRecNums.insert(RecNum);
+    }
+  }
+
+  // Save adjusted counts, etc.
+  nlocs_ = NewIndices.size();
+  nrecs_ = UniqueRecNums.size();
+  indx_ = NewIndices;
+  recnums_ = NewRecNums;
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method will construct a data structure that holds the
+ *          location order within each group sorted by the values of
+ *          the specified sort variable.
+ */
+void ObsSpace::BuildSortedObsGroups() {
+  typedef std::map<std::size_t, std::vector<std::pair<float, std::size_t>>> TmpRecIdxMap;
+  typedef TmpRecIdxMap::iterator TmpRecIdxIter;
+
+  // Get the sort variable from the data store, and convert to a vector of floats.
+  std::vector<float> SortValues(nlocs_);
+  if (obs_sort_variable_ == "datetime") {
+    std::vector<util::DateTime> Dates(nlocs_);
+    get_db("MetaData", obs_sort_variable_, nlocs_, Dates.data());
+    for (std::size_t iloc = 0; iloc < nlocs_; iloc++) {
+      SortValues[iloc] = (Dates[iloc] - Dates[0]).toSeconds();
+    }
+  } else {
+    get_db("MetaData", obs_sort_variable_, nlocs_, SortValues.data());
+  }
+
+  // Construct a temporary structure to do the sorting, then transfer the results
+  // to the data member recidx_.
+  TmpRecIdxMap TmpRecIdx;
+  for (size_t iloc = 0; iloc < nlocs_; iloc++) {
+    TmpRecIdx[recnums_[iloc]].push_back(std::make_pair(SortValues[iloc], iloc));
+  }
+
+  for (TmpRecIdxIter irec = TmpRecIdx.begin(); irec != TmpRecIdx.end(); ++irec) {
+    if (obs_sort_order_ == "ascending") {
+      sort(irec->second.begin(), irec->second.end());
+    } else {
+      // Use a lambda function to access the std::pair greater-than operator to
+      // implement a descending order sort.
+      sort(irec->second.begin(), irec->second.end(),
+           [](const std::pair<float, std::size_t> & p1,
+              const std::pair<float, std::size_t> & p2){ return(p1 > p2); } );
+    }
+  }
+
+  // Copy indexing to the recidx_ data member.
+  for (TmpRecIdxIter irec = TmpRecIdx.begin(); irec != TmpRecIdx.end(); ++irec) {
+    recidx_[irec->first].resize(irec->second.size());
+    for (std::size_t iloc = 0; iloc < irec->second.size(); iloc++) {
+      recidx_[irec->first][iloc] = irec->second[iloc].second;
+    }
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -737,7 +1077,7 @@ void ObsSpace::SaveToFile(const std::string & file_name) {
  */
 template<typename VarType, typename DbType>
 void ObsSpace::ConvertStoreToDb(const std::string & GroupName, const std::string & VarName,
-                   const std::vector<std::size_t> & VarShape, const std::size_t & VarSize,
+                   const std::vector<std::size_t> & VarShape, const std::size_t VarSize,
                    const VarType * VarData) {
   // Print a warning so we know to fix this situation. Limit the warnings to one per
   // ObsSpace instantiation (roughly one per file).
@@ -772,7 +1112,7 @@ void ObsSpace::ConvertStoreToDb(const std::string & GroupName, const std::string
  */
 template<typename DbType, typename VarType>
 void ObsSpace::LoadFromDbConvert(const std::string & GroupName, const std::string & VarName,
-                   const std::vector<std::size_t> & VarShape, const std::size_t & VarSize,
+                   const std::vector<std::size_t> & VarShape, const std::size_t VarSize,
                    VarType * VarData) const {
   // Print a warning so we know to fix this situation
   std::string VarTypeName = TypeIdName(typeid(VarType));
@@ -814,13 +1154,13 @@ void ObsSpace::ApplyDistIndex(std::unique_ptr<VarType[]> & FullData,
                               const std::vector<std::size_t> & FullShape,
                               std::unique_ptr<VarType[]> & IndexedData,
                               std::vector<std::size_t> & IndexedShape,
-                              std::size_t & IndexedSize) {
+                              std::size_t & IndexedSize) const {
   IndexedShape = FullShape;
   IndexedSize = 1;
   // Apply the distribution index only when the first dimension size (FullShape[0])
-  // is equal to file_nlocs_. Ie, only apply the index to obs data (values, errors
+  // is equal to gnlocs_. Ie, only apply the index to obs data (values, errors
   // and QC marks) and metadata related to the obs data.
-  if (FullShape[0] == file_nlocs_) {
+  if (FullShape[0] == gnlocs_) {
     // Need to compute the new Shape and size. Keep track of the number of items
     // between each element of the first dimension (IndexIncrement). IndexIncrement
     // will define the space between each element of the first dimension, which will
@@ -869,9 +1209,9 @@ std::string ObsSpace::DesiredVarType(std::string & GroupName, std::string & File
   //   Force double to float.
   std::string DbVarType = FileVarType;
 
-  if (GroupName.compare("PreQC") == 0) {
+  if (GroupName == "PreQC") {
     DbVarType = "int";
-  } else if (FileVarType.compare("double") == 0) {
+  } else if (FileVarType == "double") {
     DbVarType = "float";
   }
 
@@ -892,7 +1232,7 @@ std::string ObsSpace::DesiredVarType(std::string & GroupName, std::string & File
  */
 template<typename FromType, typename ToType>
 void ObsSpace::ConvertVarType(const FromType * FromVar, ToType * ToVar,
-                              const std::size_t & VarSize) const {
+                              const std::size_t VarSize) {
   std::string FromTypeName = TypeIdName(typeid(FromType));
   std::string ToTypeName = TypeIdName(typeid(ToType));
   const FromType FromMiss = util::missingValue(FromMiss);

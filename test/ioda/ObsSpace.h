@@ -73,11 +73,19 @@ void testConstructor() {
   for (std::size_t jj = 0; jj < Test_::size(); ++jj) {
     // Get the numbers of locations (nlocs) from the obspace object
     std::size_t Nlocs = Test_::obspace(jj).nlocs();
+    std::size_t Nrecs = Test_::obspace(jj).nrecs();
+    std::size_t Nvars = Test_::obspace(jj).nvars();
+    Test_::obspace(jj).comm().allReduceInPlace(Nlocs, eckit::mpi::sum());
+    Test_::obspace(jj).comm().allReduceInPlace(Nrecs, eckit::mpi::sum());
 
     // Get the expected nlocs from the obspace object's configuration
-    int ExpectedNlocs = conf[jj].getInt("ObsSpace.TestData.nlocs");
+    std::size_t ExpectedNlocs = conf[jj].getUnsigned("ObsSpace.TestData.nlocs");
+    std::size_t ExpectedNrecs = conf[jj].getUnsigned("ObsSpace.TestData.nrecs");
+    std::size_t ExpectedNvars = conf[jj].getUnsigned("ObsSpace.TestData.nvars");
 
     EXPECT(Nlocs == ExpectedNlocs);
+    EXPECT(Nrecs == ExpectedNrecs);
+    EXPECT(Nvars == ExpectedNvars);
   }
 }
 
@@ -117,6 +125,7 @@ void testGetDb() {
       for (std::size_t j = 0; j < Nlocs; ++j) {
         Vnorm += pow(TestVec[j], 2.0);
       }
+      Test_::obspace(jj).comm().allReduceInPlace(Vnorm, eckit::mpi::sum());
       Vnorm = sqrt(Vnorm);
 
       EXPECT(oops::is_close(Vnorm, ExpectedVnorms[i], Tol));

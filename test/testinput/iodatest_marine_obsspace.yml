@@ -21,6 +21,8 @@ Observations:
         obsfile: Data/Jason-2-2018-04-15.nc
       TestData:
         nlocs: 160607
+        nrecs: 160607
+        nvars: 1
         groups:
           - "MetaData"
           - "MetaData"
@@ -40,6 +42,8 @@ Observations:
         obsfile: Data/profile_2018-04-15.nc
       TestData:
         nlocs: 918
+        nrecs: 918
+        nvars: 1
         groups:
           - "MetaData"
           - "MetaData"
@@ -58,7 +62,9 @@ Observations:
       ObsDataIn:
         obsfile: Data/sst_obs-2018-04-15.nc4
       TestData:
-        nlocs: 223966
+        nlocs: 200
+        nrecs: 200
+        nvars: 1
         groups:
           - "MetaData"
           - "MetaData"
@@ -66,8 +72,8 @@ Observations:
           - "latitude"
           - "longitude"
         norms:
-          - 14497.263538159166
-          - 61789.896501727279
+          - 943.46741129348698
+          - 1206.468598455715
         tolerance:
           - 1.0e-13
 
@@ -78,6 +84,8 @@ Observations:
         obsfile: Data/icec-2018-04-15.nc
       TestData:
         nlocs: 71558
+        nrecs: 71558
+        nvars: 1
         groups:
           - "MetaData"
           - "MetaData"
@@ -97,6 +105,8 @@ Observations:
         obsfile: Data/cryosat2-2018-04-15.nc
       TestData:
         nlocs: 8065
+        nrecs: 8065
+        nvars: 2
         groups:
           - "MetaData"
           - "MetaData"
