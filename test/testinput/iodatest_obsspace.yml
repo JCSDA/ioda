@@ -15,26 +15,7 @@ Locations:
 Observations:
   ObsTypes:
 
-  - ObsSpace:
-      name: "AOD"
-      ObsDataIn:
-        obsfile: "Data/geos_aod_obs_2018041500_m.nc4"
-        metadata:
-          nlocs: 100
-        TestData:
-          groups:
-            - "MetaData"
-            - "MetaData"
-          variables:
-            - "latitude"
-            - "longitude"
-          norms:
-            - 567.50799717405448
-            - 1793.4023157882853
-          tolerance:
-            - 1.0e-11
-    
-
+ 
   - ObsSpace:
       name: "Aod"
       simulate:
@@ -229,4 +210,27 @@ Observations:
           - 1.0e-11
       ObsDataOut:
         obsfile: "testoutput/diagout_with_groups_twfilt.nc4"
+
+
+  - ObsSpace:
+      name: "AOD"
+      simulate:
+      ObsDataIn:
+        obsfile: "Data/geos_aod_obs_2018041500_m.nc4"
+      TestData:
+          nlocs: 100
+          nrecs: 100
+          nvars: 1 
+          groups:
+            - "MetaData"
+            - "MetaData"
+          variables:
+            - "latitude"
+            - "longitude"
+          norms:
+            - 567.88380247048008
+            - 1793.5631154126893
+          tolerance:
+            - 1.0e-11
+    
 
