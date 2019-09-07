@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2017 UCAR
+ * (C) Copyright 2017-2019 UCAR
  * 
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
@@ -19,10 +19,22 @@
 namespace ioda {
 
 // -----------------------------------------------------------------------------
+const ObsSpace * obsspace_construct_f(const eckit::Configuration * conf,
+                                      const util::DateTime * begin,
+                                      const util::DateTime * end) {
+  return new ObsSpace(*conf, *begin, *end);
+}
+
+// -----------------------------------------------------------------------------
+void obsspace_destruct_f(ObsSpace * obss) {
+  ASSERT(obss != nullptr);
+  delete obss;
+}
+
+// -----------------------------------------------------------------------------
 int obsspace_get_gnlocs_f(const ObsSpace & obss) {
   return obss.gnlocs();
 }
-// -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
 int obsspace_get_nlocs_f(const ObsSpace & obss) {
   return obss.nlocs();
