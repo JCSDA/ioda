@@ -1,2 +1,25 @@
 ---
-test: 4
+window_begin: 2018-04-14T21:00:00Z
+window_end: 2018-04-15T03:00:00Z
+Observations:
+  ObsTypes:
+  - ObsSpace:
+      name: Radiosonde
+      simulate:
+      ObsDataIn:
+        obsfile: Data/sondes_obs_2018041500_m.nc4
+      TestData:
+        nlocs: 974
+        nrecs: 974
+        nvars: 5
+        groups:
+          - "MetaData"
+          - "MetaData"
+        variables:
+          - "latitude"
+          - "longitude"
+        norms:
+          - 1254.66336565038
+          - 6076.2659622388919
+        tolerance:
+          - 1.0e-11

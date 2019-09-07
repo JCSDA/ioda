@@ -14,13 +14,13 @@ type(c_ptr) function c_obsspace_construct(conf, tbegin, tend) bind(C, name='obss
   use, intrinsic :: iso_c_binding
   implicit none
 
-  type(c_ptr) :: conf, tbegin, tend
+  type(c_ptr), value :: conf, tbegin, tend
 end function c_obsspace_construct
 
 subroutine c_obsspace_destruct(obss) bind(C, name='obsspace_destruct_f')
   use, intrinsic :: iso_c_binding
   implicit none
-  type(c_ptr) :: obss
+  type(c_ptr), value :: obss
 end subroutine c_obsspace_destruct
 
 integer(kind=c_int) function c_obsspace_get_gnlocs(dom) bind(C,name='obsspace_get_gnlocs_f')

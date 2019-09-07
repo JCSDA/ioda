@@ -22,6 +22,9 @@ namespace ioda {
 const ObsSpace * obsspace_construct_f(const eckit::Configuration * conf,
                                       const util::DateTime * begin,
                                       const util::DateTime * end) {
+  oops::Log::info() << "conf:" << *conf << std::endl;
+  oops::Log::info() << "begin: " << *begin << std::endl;
+  oops::Log::info() << "end: " << *end << std::endl;
   return new ObsSpace(*conf, *begin, *end);
 }
 
@@ -29,6 +32,7 @@ const ObsSpace * obsspace_construct_f(const eckit::Configuration * conf,
 void obsspace_destruct_f(ObsSpace * obss) {
   ASSERT(obss != nullptr);
   delete obss;
+  oops::Log::info() << "in C++, just deleted obss; returning" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

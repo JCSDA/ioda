@@ -31,15 +31,38 @@ TEST(test_c_obsspace_construct)
   use fckit_configuration_module
   use fckit_pathname_module, only : fckit_pathname
   use fckit_module
+  use datetime_mod
+  use obsspace_mod
   implicit none
-
+  include '../../oops/src/oops/util/datetime.intfb.h'
   character(len=:), allocatable :: filename
   type(fckit_configuration) :: config
+  type(fckit_configuration), allocatable :: obsconfigs(:)
+  type(fckit_configuration) :: obsconfig
+  character(kind=c_char,len=:), allocatable :: winbgnstr
+  character(kind=c_char,len=:), allocatable :: winendstr
+!  type(datetime) :: winbgn, winend
+  type(c_ptr) :: winbgn, winend
+  type(c_ptr) :: obsspace
 
   call fckit_resource("-config", "", filename)
   config = fckit_YAMLConfiguration(fckit_pathname(filename))
-  print *, config.has("test")
-  print *, "i am writing in c_obsspace_construct test"
+  call config.get_or_die("window_begin", winbgnstr)
+  call config.get_or_die("window_end", winendstr)
+!  call datetime_create(winbgnstr, winbgn)
+!  call datetime_create(winendstr, winend)
+  winbgn = c_datetime_construct(winbgnstr)
+  winend = c_datetime_construct(winendstr)
+
+  print *, "window: ", winbgnstr, " - ", winendstr
+  call config.get_or_die("Observations.ObsTypes", obsconfigs)
+  print *, "there are ", size(obsconfigs), " obstypes"
+  call obsconfigs(1).get_or_die("ObsSpace", obsconfig)
+  obsspace =  obsspace_construct(obsconfig, winbgn, winend)
+  call obsspace_destruct(obsspace)
+  print *, "testing if I can still print something"
+  obsspace = c_null_ptr
+
 END_TEST
 
 END_TESTSUITE
