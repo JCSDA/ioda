@@ -65,7 +65,7 @@ TEST(test_c_obsspace_construct)
   obsspace =  obsspace_construct(obsconfig, winbgn, winend)
   nlocs = obsspace_get_nlocs(obsspace)
   print *, "nlocs: ", nlocs
-!  call obsspace_destruct(obsspace)
+  call obsspace_destruct(obsspace)
   print *, "testing if I can still print something"
 !  obsspace = c_null_ptr
 
