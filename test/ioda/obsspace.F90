@@ -24,6 +24,8 @@ TESTSUITE_INIT
 END_TESTSUITE_INIT
 
 TESTSUITE_FINALIZE
+  use fckit_module
+  call fckit_main%final()
 END_TESTSUITE_FINALIZE
 
 !> Test c_obsspace_construct
@@ -44,9 +46,11 @@ TEST(test_c_obsspace_construct)
 !  type(datetime) :: winbgn, winend
   type(c_ptr) :: winbgn, winend
   type(c_ptr) :: obsspace
+  integer     :: nlocs
 
   call fckit_resource("-config", "", filename)
-  config = fckit_YAMLConfiguration(fckit_pathname(filename))
+  config = fckit_YAMLConfiguration(fckit_pathname("testinput/iodatest_obsspace_fortran.yml"))
+!filename))
   call config.get_or_die("window_begin", winbgnstr)
   call config.get_or_die("window_end", winendstr)
 !  call datetime_create(winbgnstr, winbgn)
@@ -59,9 +63,11 @@ TEST(test_c_obsspace_construct)
   print *, "there are ", size(obsconfigs), " obstypes"
   call obsconfigs(1).get_or_die("ObsSpace", obsconfig)
   obsspace =  obsspace_construct(obsconfig, winbgn, winend)
-  call obsspace_destruct(obsspace)
+  nlocs = obsspace_get_nlocs(obsspace)
+  print *, "nlocs: ", nlocs
+!  call obsspace_destruct(obsspace)
   print *, "testing if I can still print something"
-  obsspace = c_null_ptr
+!  obsspace = c_null_ptr
 
 END_TEST
 

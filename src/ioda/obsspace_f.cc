@@ -19,7 +19,7 @@
 namespace ioda {
 
 // -----------------------------------------------------------------------------
-const ObsSpace * obsspace_construct_f(const eckit::Configuration * conf,
+ObsSpace * obsspace_construct_f(const eckit::Configuration * conf,
                                       const util::DateTime * begin,
                                       const util::DateTime * end) {
   oops::Log::info() << "conf:" << *conf << std::endl;
@@ -40,8 +40,8 @@ int obsspace_get_gnlocs_f(const ObsSpace & obss) {
   return obss.gnlocs();
 }
 // -----------------------------------------------------------------------------
-int obsspace_get_nlocs_f(const ObsSpace & obss) {
-  return obss.nlocs();
+int obsspace_get_nlocs_f(const ObsSpace * obss) {
+  return obss->nlocs();
 }
 // -----------------------------------------------------------------------------
 int obsspace_get_nrecs_f(const ObsSpace & obss) {
