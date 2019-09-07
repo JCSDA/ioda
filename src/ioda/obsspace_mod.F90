@@ -52,11 +52,13 @@ contains
 !-------------------------------------------------------------------------------
 
 type(c_ptr) function obsspace_construct(c_conf, c_tbegin, c_tend)
+  use fckit_configuration_module, only: fckit_configuration
+  use datetime_mod, only: datetime
   implicit none
-  type(c_ptr), intent(in) :: c_conf
+  type(fckit_configuration), intent(in) :: c_conf
   type(c_ptr), intent(in) :: c_tbegin, c_tend
 
-  obsspace_construct = c_obsspace_construct(c_conf, c_tbegin, c_tend)
+  obsspace_construct = c_obsspace_construct(c_conf%c_ptr(), c_tbegin, c_tend)
 end function obsspace_construct
 
 subroutine obsspace_destruct(c_obss)
@@ -64,6 +66,8 @@ subroutine obsspace_destruct(c_obss)
   type(c_ptr), intent(inout) :: c_obss
 
   call c_obsspace_destruct(c_obss)
+  c_obss = c_null_ptr
+  print *, "called c_obsspace_destruct, returning from obsspace_mod: obsspace_destruct"
 end subroutine obsspace_destruct
 
 !>  Return the number of observational locations in the input obs file
