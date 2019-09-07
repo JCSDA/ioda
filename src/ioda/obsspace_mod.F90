@@ -16,6 +16,8 @@ use datetime_mod
 implicit none
 
 private
+public obsspace_construct
+public obsspace_destruct
 public obsspace_get_gnlocs
 public obsspace_get_nlocs
 public obsspace_get_nrecs
@@ -48,6 +50,21 @@ end interface
 !-------------------------------------------------------------------------------
 contains
 !-------------------------------------------------------------------------------
+
+type(c_ptr) function obsspace_construct(c_conf, c_tbegin, c_tend)
+  implicit none
+  type(c_ptr), intent(in) :: c_conf
+  type(c_ptr), intent(in) :: c_tbegin, c_tend
+
+  obsspace_construct = c_obsspace_construct(c_conf, c_tbegin, c_tend)
+end function obsspace_construct
+
+subroutine obsspace_destruct(c_obss)
+  implicit none
+  type(c_ptr), intent(inout) :: c_obss
+
+  call c_obsspace_destruct(c_obss)
+end subroutine obsspace_destruct
 
 !>  Return the number of observational locations in the input obs file
 

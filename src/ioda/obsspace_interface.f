@@ -1,5 +1,5 @@
 !
-! (C) Copyright 2017 UCAR
+! (C) Copyright 2017-2019 UCAR
 !
 ! This software is licensed under the terms of the Apache Licence Version 2.0
 ! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -9,6 +9,19 @@
 !-------------------------------------------------------------------------------
 interface
 !-------------------------------------------------------------------------------
+
+type(c_ptr) function c_obsspace_construct(conf, tbegin, tend) bind(C, name='obsspace_construct_f')
+  use, intrinsic :: iso_c_binding
+  implicit none
+
+  type(c_ptr) :: conf, tbegin, tend
+end function c_obsspace_construct
+
+subroutine c_obsspace_destruct(obss) bind(C, name='obsspace_destruct_f')
+  use, intrinsic :: iso_c_binding
+  implicit none
+  type(c_ptr) :: obss
+end subroutine c_obsspace_destruct
 
 integer(kind=c_int) function c_obsspace_get_gnlocs(dom) bind(C,name='obsspace_get_gnlocs_f')
   use, intrinsic :: iso_c_binding
