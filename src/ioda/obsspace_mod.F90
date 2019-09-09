@@ -61,53 +61,54 @@ type(c_ptr) function obsspace_construct(c_conf, c_tbegin, c_tend)
   obsspace_construct = c_obsspace_construct(c_conf%c_ptr(), c_tbegin, c_tend)
 end function obsspace_construct
 
+!-------------------------------------------------------------------------------
+
 subroutine obsspace_destruct(c_obss)
   implicit none
   type(c_ptr), intent(inout) :: c_obss
 
   call c_obsspace_destruct(c_obss)
   c_obss = c_null_ptr
-  print *, "called c_obsspace_destruct, returning from obsspace_mod: obsspace_destruct"
 end subroutine obsspace_destruct
 
+!-------------------------------------------------------------------------------
 !>  Return the number of observational locations in the input obs file
 
-integer function obsspace_get_gnlocs(c_dom)
+integer function obsspace_get_gnlocs(c_obss)
   implicit none
-  type(c_ptr), intent(in) :: c_dom
+  type(c_ptr), intent(in) :: c_obss
 
-  obsspace_get_gnlocs = c_obsspace_get_gnlocs(c_dom)
+  obsspace_get_gnlocs = c_obsspace_get_gnlocs(c_obss)
 end function obsspace_get_gnlocs
 
 !-------------------------------------------------------------------------------
-
 !>  Return the number of observational locations in this ObsSpace object
 
-integer function obsspace_get_nlocs(c_dom)
+integer function obsspace_get_nlocs(c_obss)
   implicit none
-  type(c_ptr), intent(in) :: c_dom
+  type(c_ptr), intent(in) :: c_obss
 
-  obsspace_get_nlocs = c_obsspace_get_nlocs(c_dom)
+  obsspace_get_nlocs = c_obsspace_get_nlocs(c_obss)
 end function obsspace_get_nlocs
 
 !-------------------------------------------------------------------------------
 !>  Return the number of observational records (profiles)
 
-integer function obsspace_get_nrecs(c_dom)
+integer function obsspace_get_nrecs(c_obss)
   implicit none
-  type(c_ptr), intent(in) :: c_dom
+  type(c_ptr), intent(in) :: c_obss
 
-  obsspace_get_nrecs = c_obsspace_get_nrecs(c_dom)
+  obsspace_get_nrecs = c_obsspace_get_nrecs(c_obss)
 end function obsspace_get_nrecs
 
 !-------------------------------------------------------------------------------
 !>  Return the number of observational variables
 
-integer function obsspace_get_nvars(c_dom)
+integer function obsspace_get_nvars(c_obss)
   implicit none
-  type(c_ptr), intent(in) :: c_dom
+  type(c_ptr), intent(in) :: c_obss
 
-  obsspace_get_nvars = c_obsspace_get_nvars(c_dom)
+  obsspace_get_nvars = c_obsspace_get_nvars(c_obss)
 end function obsspace_get_nvars
 
 !-------------------------------------------------------------------------------
@@ -140,9 +141,9 @@ end subroutine obsspace_get_index
 
 !>  Return true if variable exists in database
 
-logical function obsspace_has(c_dom, group, vname)
+logical function obsspace_has(c_obss, group, vname)
   implicit none
-  type(c_ptr), intent(in)      :: c_dom
+  type(c_ptr), intent(in)      :: c_obss
   character(len=*), intent(in) :: group
   character(len=*), intent(in) :: vname
 
@@ -150,7 +151,7 @@ logical function obsspace_has(c_dom, group, vname)
 
   call f_c_string(group, c_group)
   call f_c_string(vname, c_vname)
-  obsspace_has = c_obsspace_has(c_dom, c_group, c_vname)
+  obsspace_has = c_obsspace_has(c_obss, c_group, c_vname)
 end function obsspace_has
 
 !-------------------------------------------------------------------------------

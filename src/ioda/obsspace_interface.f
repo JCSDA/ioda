@@ -23,32 +23,32 @@ subroutine c_obsspace_destruct(obss) bind(C, name='obsspace_destruct_f')
   type(c_ptr), value :: obss
 end subroutine c_obsspace_destruct
 
-integer(kind=c_int) function c_obsspace_get_gnlocs(dom) bind(C,name='obsspace_get_gnlocs_f')
+integer(kind=c_int) function c_obsspace_get_gnlocs(obss) bind(C,name='obsspace_get_gnlocs_f')
   use, intrinsic :: iso_c_binding
   implicit none
 
-  type(c_ptr), value :: dom
+  type(c_ptr), value :: obss
 end function c_obsspace_get_gnlocs
 
-integer(kind=c_int) function c_obsspace_get_nlocs(dom) bind(C,name='obsspace_get_nlocs_f')
+integer(kind=c_int) function c_obsspace_get_nlocs(obss) bind(C,name='obsspace_get_nlocs_f')
   use, intrinsic :: iso_c_binding
   implicit none
 
-  type(c_ptr), value :: dom
+  type(c_ptr), value :: obss
 end function c_obsspace_get_nlocs
 
-integer(kind=c_int) function c_obsspace_get_nrecs(dom) bind(C,name='obsspace_get_nrecs_f')
+integer(kind=c_int) function c_obsspace_get_nrecs(obss) bind(C,name='obsspace_get_nrecs_f')
   use, intrinsic :: iso_c_binding
   implicit none
 
-  type(c_ptr), value :: dom
+  type(c_ptr), value :: obss
 end function c_obsspace_get_nrecs
 
-integer(kind=c_int) function c_obsspace_get_nvars(dom) bind(C,name='obsspace_get_nvars_f')
+integer(kind=c_int) function c_obsspace_get_nvars(obss) bind(C,name='obsspace_get_nvars_f')
   use, intrinsic :: iso_c_binding
   implicit none
 
-  type(c_ptr), value :: dom
+  type(c_ptr), value :: obss
 end function c_obsspace_get_nvars
 
 subroutine c_obsspace_get_recnum(obss, length, recnum) &
@@ -69,11 +69,11 @@ subroutine c_obsspace_get_index(obss, length, indx) &
   integer(c_size_t), intent(inout) :: indx(length)
 end subroutine c_obsspace_get_index
   
-logical(kind=c_bool) function c_obsspace_has(dom, group, vname) bind(C,name='obsspace_has_f')
+logical(kind=c_bool) function c_obsspace_has(obss, group, vname) bind(C,name='obsspace_has_f')
   use, intrinsic :: iso_c_binding
   implicit none
 
-  type(c_ptr), value                        :: dom
+  type(c_ptr), value                        :: obss
   character(kind=c_char, len=1), intent(in) :: group(*)
   character(kind=c_char, len=1), intent(in) :: vname(*)
 end function c_obsspace_has
