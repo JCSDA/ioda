@@ -8,15 +8,7 @@
 
 #include <fckit/fctest.h>
 
-module ObsSpaceTestFixture
-  use, intrinsic :: iso_c_binding
-  
-  implicit none
-  
-  type(c_ptr) :: ptr = c_null_ptr
-end module
-
-TESTSUITE_WITH_FIXTURE(obsspace_f, ObsSpaceTestFixture)
+TESTSUITE(obsspace_fortran)
 
 TESTSUITE_INIT
   use fckit_module
@@ -34,13 +26,14 @@ TESTSUITE_FINALIZE
   call liboops_finalise()
 END_TESTSUITE_FINALIZE
 
-!> Test c_obsspace_construct
-TEST(test_c_obsspace_construct)
+!> Test obsspace_construct
+TEST(test_obsspace_construct)
   use fckit_configuration_module
   use fckit_pathname_module, only : fckit_pathname
   use fckit_module
   use datetime_mod
   use obsspace_mod
+  use, intrinsic :: iso_c_binding
   implicit none
 
   character(len=:), allocatable :: filename
@@ -57,18 +50,21 @@ TEST(test_c_obsspace_construct)
   integer :: nvars, nvars_ref
   integer :: iobstype
 
+  !> initialize winbgn, winend, get config
   call fckit_resource("-config", "", filename)
-  config = fckit_YAMLConfiguration(fckit_pathname("testinput/iodatest_obsspace_fortran.yml"))
-!filename))
+  config = fckit_YAMLConfiguration(fckit_pathname(filename))
   call config.get_or_die("window_begin", winbgnstr)
   call config.get_or_die("window_end", winendstr)
   call datetime_create(winbgnstr, winbgn)
   call datetime_create(winendstr, winend)
+  !> allocate all ObsSpaces
   call config.get_or_die("Observations.ObsTypes", obsconfigs)
   allocate(obsspace(size(obsconfigs)))
   do iobstype = 1, size(obsconfigs)
     call obsconfigs(iobstype).get_or_die("ObsSpace", obsconfig)
+    !> construct obsspace
     obsspace(iobstype) = obsspace_construct(obsconfig, winbgn, winend)
+    !> test if nlocs and nvars are the same as reference
     nlocs = obsspace_get_nlocs(obsspace(iobstype))
     nvars = obsspace_get_nvars(obsspace(iobstype))
     call obsconfig.get_or_die("TestData.nlocs", nlocs_ref)
@@ -76,9 +72,11 @@ TEST(test_c_obsspace_construct)
     CHECK(nlocs == nlocs_ref)
     CHECK(nvars == nvars_ref)
   enddo
+  !> destruct all obsspaces
   do iobstype = 1, size(obsspace)
     call obsspace_destruct(obsspace(iobstype))
   enddo
+  deallocate(obsspace)
 
 END_TEST
 
