@@ -20,12 +20,18 @@ TESTSUITE_WITH_FIXTURE(obsspace_f, ObsSpaceTestFixture)
 
 TESTSUITE_INIT
   use fckit_module
+  use liboops_mod
+
+  call liboops_initialise()
   call fckit_main%init()
 END_TESTSUITE_INIT
 
 TESTSUITE_FINALIZE
   use fckit_module
+  use liboops_mod
+
   call fckit_main%final()
+  call liboops_finalise()
 END_TESTSUITE_FINALIZE
 
 !> Test c_obsspace_construct
@@ -43,7 +49,6 @@ TEST(test_c_obsspace_construct)
   character(kind=c_char,len=:), allocatable :: winbgnstr
   character(kind=c_char,len=:), allocatable :: winendstr
   type(datetime) :: winbgn, winend
-  type(c_ptr) :: winbgn, winend
   type(c_ptr) :: obsspace
   integer     :: nlocs
 
