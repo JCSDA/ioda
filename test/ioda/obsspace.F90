@@ -53,22 +53,22 @@ TEST(test_obsspace_construct)
   !> initialize winbgn, winend, get config
   call fckit_resource("-config", "", filename)
   config = fckit_YAMLConfiguration(fckit_pathname(filename))
-  call config.get_or_die("window_begin", winbgnstr)
-  call config.get_or_die("window_end", winendstr)
+  call config%get_or_die("window_begin", winbgnstr)
+  call config%get_or_die("window_end", winendstr)
   call datetime_create(winbgnstr, winbgn)
   call datetime_create(winendstr, winend)
   !> allocate all ObsSpaces
-  call config.get_or_die("Observations.ObsTypes", obsconfigs)
+  call config%get_or_die("Observations.ObsTypes", obsconfigs)
   allocate(obsspace(size(obsconfigs)))
   do iobstype = 1, size(obsconfigs)
-    call obsconfigs(iobstype).get_or_die("ObsSpace", obsconfig)
+    call obsconfigs(iobstype)%get_or_die("ObsSpace", obsconfig)
     !> construct obsspace
     obsspace(iobstype) = obsspace_construct(obsconfig, winbgn, winend)
     !> test if nlocs and nvars are the same as reference
     nlocs = obsspace_get_nlocs(obsspace(iobstype))
     nvars = obsspace_get_nvars(obsspace(iobstype))
-    call obsconfig.get_or_die("TestData.nlocs", nlocs_ref)
-    call obsconfig.get_or_die("TestData.nvars", nvars_ref)
+    call obsconfig%get_or_die("TestData.nlocs", nlocs_ref)
+    call obsconfig%get_or_die("TestData.nvars", nvars_ref)
     CHECK(nlocs == nlocs_ref)
     CHECK(nvars == nvars_ref)
   enddo
