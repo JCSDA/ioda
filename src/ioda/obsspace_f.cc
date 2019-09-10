@@ -124,7 +124,7 @@ void obsspace_get_datetime_f(const ObsSpace * obss, const char * group, const ch
 // -----------------------------------------------------------------------------
 void obsspace_put_int32_f(ObsSpace * obss, const char * group, const char * vname,
                           const std::size_t & length, int32_t* vec) {
-  ASSERT(length == obss.nlocs());
+  ASSERT(length == obss->nlocs());
   obss->put_db(std::string(group), std::string(vname), length, vec);
 }
 // -----------------------------------------------------------------------------
