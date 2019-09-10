@@ -42,15 +42,20 @@ TEST(test_c_obsspace_construct)
   use datetime_mod
   use obsspace_mod
   implicit none
+
   character(len=:), allocatable :: filename
   type(fckit_configuration) :: config
   type(fckit_configuration), allocatable :: obsconfigs(:)
   type(fckit_configuration) :: obsconfig
+
   character(kind=c_char,len=:), allocatable :: winbgnstr
   character(kind=c_char,len=:), allocatable :: winendstr
   type(datetime) :: winbgn, winend
-  type(c_ptr) :: obsspace
-  integer     :: nlocs
+
+  type(c_ptr), allocatable, dimension(:) :: obsspace
+  integer :: nlocs, nlocs_ref
+  integer :: nvars, nvars_ref
+  integer :: iobstype
 
   call fckit_resource("-config", "", filename)
   config = fckit_YAMLConfiguration(fckit_pathname("testinput/iodatest_obsspace_fortran.yml"))
@@ -59,16 +64,21 @@ TEST(test_c_obsspace_construct)
   call config.get_or_die("window_end", winendstr)
   call datetime_create(winbgnstr, winbgn)
   call datetime_create(winendstr, winend)
-  print *, "window: ", winbgnstr, " - ", winendstr
   call config.get_or_die("Observations.ObsTypes", obsconfigs)
-  print *, "there are ", size(obsconfigs), " obstypes"
-  call obsconfigs(1).get_or_die("ObsSpace", obsconfig)
-  obsspace =  obsspace_construct(obsconfig, winbgn, winend)
-  nlocs = obsspace_get_nlocs(obsspace)
-  print *, "nlocs: ", nlocs
-  call obsspace_destruct(obsspace)
-  print *, "testing if I can still print something"
-!  obsspace = c_null_ptr
+  allocate(obsspace(size(obsconfigs)))
+  do iobstype = 1, size(obsconfigs)
+    call obsconfigs(iobstype).get_or_die("ObsSpace", obsconfig)
+    obsspace(iobstype) = obsspace_construct(obsconfig, winbgn, winend)
+    nlocs = obsspace_get_nlocs(obsspace(iobstype))
+    nvars = obsspace_get_nvars(obsspace(iobstype))
+    call obsconfig.get_or_die("TestData.nlocs", nlocs_ref)
+    call obsconfig.get_or_die("TestData.nvars", nvars_ref)
+    CHECK(nlocs == nlocs_ref)
+    CHECK(nvars == nvars_ref)
+  enddo
+  do iobstype = 1, size(obsspace)
+    call obsspace_destruct(obsspace(iobstype))
+  enddo
 
 END_TEST
 
