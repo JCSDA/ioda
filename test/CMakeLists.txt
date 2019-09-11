@@ -176,7 +176,7 @@ endif (HAVE_ODB)
 if( HAVE_FCTEST )
 add_fctest( TARGET  test_ioda_obsspace_fortran
             SOURCES ioda/obsspace.F90
-            ARGS    -config testinput/iodatest_obsspace_fortran.yml
+            ARGS    --config testinput/iodatest_obsspace_fortran.yml
             CONDITION HAVE_FCTEST
             LIBS    ioda )
 endif()

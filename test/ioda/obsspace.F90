@@ -51,7 +51,7 @@ TEST(test_obsspace_construct)
   integer :: iobstype
 
   !> initialize winbgn, winend, get config
-  call fckit_resource("-config", "", filename)
+  call fckit_resource("--config", "", filename)
   config = fckit_YAMLConfiguration(fckit_pathname(filename))
   call config%get_or_die("window_begin", winbgnstr)
   call config%get_or_die("window_end", winendstr)
