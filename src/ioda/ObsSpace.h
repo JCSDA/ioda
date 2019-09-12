@@ -91,8 +91,8 @@ class ObsSpace : public oops::ObsSpaceBase {
 
   const RecIdxIter recidx_begin() const;
   const RecIdxIter recidx_end() const;
-  const bool recidx_has(const std::size_t RecNum) const;
-  const std::size_t recidx_recnum(const RecIdxIter & Irec) const;
+  bool recidx_has(const std::size_t RecNum) const;
+  std::size_t recidx_recnum(const RecIdxIter & Irec) const;
   const std::vector<std::size_t> & recidx_vector(const RecIdxIter & Irec) const;
   const std::vector<std::size_t> & recidx_vector(const std::size_t RecNum) const;
   std::vector<std::size_t> recidx_all_recnums() const;
