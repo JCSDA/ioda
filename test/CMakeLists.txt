@@ -16,6 +16,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsspace_container.yml
   testinput/iodatest_marine_obsspace.yml  
   testinput/iodatest_fileio_odb_api.yml
+  testinput/iodatest_obsspace_fortran.yml
 )
 
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/testinput)
@@ -171,4 +172,12 @@ ecbuild_add_test( TARGET test_ioda_obsvector_odb1
                   LIBS    ioda OOPS )
 
 endif (HAVE_ODB)
+
+if( HAVE_FCTEST )
+add_fctest( TARGET  test_ioda_obsspace_fortran
+            SOURCES ioda/obsspace.F90
+            ARGS    --config testinput/iodatest_obsspace_fortran.yml
+            CONDITION HAVE_FCTEST
+            LIBS    ioda )
+endif()
 

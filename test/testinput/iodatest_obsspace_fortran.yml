@@ -1,0 +1,46 @@
+---
+window_begin: 2018-04-14T21:00:00Z
+window_end: 2018-04-15T03:00:00Z
+Observations:
+  ObsTypes:
+  - ObsSpace:
+      name: Radiosonde
+      simulate:
+      ObsDataIn:
+        obsfile: Data/sondes_obs_2018041500_m.nc4
+      TestData:
+        nlocs: 974
+        nrecs: 974
+        nvars: 5
+        groups:
+          - "MetaData"
+          - "MetaData"
+        variables:
+          - "latitude"
+          - "longitude"
+        norms:
+          - 1254.66336565038
+          - 6076.2659622388919
+        tolerance:
+          - 1.0e-11
+  - ObsSpace:
+      name: "Radiance"
+      simulate:
+      ObsDataIn:
+        obsfile: "Data/amsua_n19_obs_2018041500_m.nc4"
+      TestData:
+        nlocs: 100
+        nrecs: 100
+        nvars: 15
+        groups:
+          - "MetaData"
+          - "MetaData"
+        variables:
+          - "latitude"
+          - "longitude"
+        norms:
+          - 432.95617402805823
+          - 1661.1529210392009
+        tolerance:
+          - 1.0e-11
+

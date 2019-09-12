@@ -455,7 +455,7 @@ const ObsSpace::RecIdxIter ObsSpace::recidx_end() const {
  * \details This method returns a boolean value indicating whether the
  *          given record number exists in the recidx_ data member.
  */
-const bool ObsSpace::recidx_has(const std::size_t RecNum) const {
+bool ObsSpace::recidx_has(const std::size_t RecNum) const {
   RecIdxIter irec = recidx_.find(RecNum);
   return (irec != recidx_.end());
 }
@@ -465,7 +465,7 @@ const bool ObsSpace::recidx_has(const std::size_t RecNum) const {
  * \details This method returns the current record number, pointed to by the
  *          given iterator, from the recidx_ data member.
  */
-const std::size_t ObsSpace::recidx_recnum(const RecIdxIter & Irec) const {
+std::size_t ObsSpace::recidx_recnum(const RecIdxIter & Irec) const {
   return Irec->first;
 }
 
