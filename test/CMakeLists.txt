@@ -179,6 +179,7 @@ add_fctest( TARGET  test_ioda_obsspace_fortran
             SOURCES ioda/obsspace.F90
             ARGS    --config testinput/iodatest_obsspace_fortran.yml
             CONDITION HAVE_FCTEST
+            LINKER_LANGUAGE Fortran
             LIBS    ioda )
 endif()
 
