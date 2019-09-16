@@ -11,7 +11,7 @@
 #include <string>
 
 #include "ioda/ObsDataVector.h"
-#include "ioda/ObsSpace.h"
+#include "ioda/ObsSpaceView.h"
 #include "ioda/ObsVector.h"
 
 namespace ioda {
@@ -19,7 +19,7 @@ namespace ioda {
 struct IodaTrait {
   static std::string name() {return "IODA";}
 
-  typedef ioda::ObsSpace           ObsSpace;
+  typedef ioda::ObsSpaceView       ObsSpace;
   typedef ioda::ObsVector          ObsVector;
   template <typename DATATYPE> using ObsDataVector = ioda::ObsDataVector<DATATYPE>;
 };
