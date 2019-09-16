@@ -6,6 +6,8 @@ ioda/ObsDataVector.h
 ioda/ObsDataVector.cc
 ioda/ObsSpace.cc
 ioda/ObsSpace.h
+ioda/ObsSpaceView.cc
+ioda/ObsSpaceView.h
 ioda/ObsVector.cc
 ioda/ObsVector.h
 ioda/obsspace_f.cc
