@@ -102,8 +102,7 @@ class ObsSpaceView : public oops::ObsSpaceBase {
   void print(std::ostream &) const;
 
   std::shared_ptr<ObsSpace> obsspace_;
-  //std::vector<int> localobs_;
-
+  // std::vector<int> localobs_;
 };
 
 }  // namespace ioda

@@ -267,7 +267,7 @@ void ObsSpaceView::generateDistribution(const eckit::Configuration & conf) {
  *          stream. It simply prints a dummy message for now.
  */
 void ObsSpaceView::print(std::ostream & os) const {
-  os << obsspace_;
+  os << *obsspace_;
 }
 
 
