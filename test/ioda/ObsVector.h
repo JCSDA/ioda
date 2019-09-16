@@ -20,7 +20,7 @@
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/testing/Test.h"
 #include "ioda/IodaTrait.h"
-#include "ioda/ObsSpace.h"
+#include "ioda/ObsSpaceView.h"
 #include "ioda/ObsVector.h"
 #include "oops/runs/Test.h"
 #include "oops/util/dot_product.h"
@@ -32,7 +32,7 @@ namespace test {
 // -----------------------------------------------------------------------------
 
 class ObsVecTestFixture : private boost::noncopyable {
-  typedef ioda::ObsSpace ObsSpace_;
+  typedef ioda::ObsSpaceView ObsSpace_;
 
  public:
   static std::vector<boost::shared_ptr<ObsSpace_> > & obspace() {return getInstance().ospaces_;}
@@ -132,7 +132,7 @@ void testRead() {
   obsconf.get("ObsTypes", conf);
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    ioda::ObsSpace * Odb = Test_::obspace()[jj].get();
+    ioda::ObsSpaceView * Odb = Test_::obspace()[jj].get();
 
     // Grab the expected RMS value and tolerance from the obsdb_ configuration.
     double ExpectedRms = conf[jj].getDouble("ObsSpace.ObsDataIn.rms_equiv");
@@ -152,7 +152,7 @@ void testSave() {
   typedef ObsVecTestFixture Test_;
   typedef ioda::ObsVector  ObsVector_;
 
-  ioda::ObsSpace * Odb;
+  ioda::ObsSpaceView * Odb;
   double Rms;
   double ExpectedRms;
 

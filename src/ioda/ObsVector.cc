@@ -12,7 +12,7 @@
 
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/mpi/Comm.h"
-#include "ioda/ObsSpace.h"
+#include "ioda/ObsSpaceView.h"
 #include "oops/base/Variables.h"
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/Logger.h"
@@ -21,7 +21,7 @@
 
 namespace ioda {
 // -----------------------------------------------------------------------------
-ObsVector::ObsVector(ObsSpace & obsdb,
+ObsVector::ObsVector(ObsSpaceView & obsdb,
                      const std::string & name, const bool fail)
   : obsdb_(obsdb), obsvars_(obsdb.obsvariables()),
     nvars_(obsvars_.variables().size()), nlocs_(obsdb_.nlocs()),
