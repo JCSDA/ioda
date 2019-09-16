@@ -19,7 +19,7 @@
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/testing/Test.h"
 #include "ioda/IodaTrait.h"
-#include "ioda/ObsSpace.h"
+#include "ioda/ObsSpaceView.h"
 #include "oops/runs/Test.h"
 #include "oops/../test/TestEnvironment.h"
 
@@ -30,7 +30,7 @@ namespace test {
 
 class ObsSpaceTestFixture : private boost::noncopyable {
  public:
-  static ioda::ObsSpace & obspace(const std::size_t ii) {
+  static ioda::ObsSpaceView & obspace(const std::size_t ii) {
     return *getInstance().ospaces_.at(ii);
   }
   static std::size_t size() {return getInstance().ospaces_.size();}
@@ -51,14 +51,14 @@ class ObsSpaceTestFixture : private boost::noncopyable {
 
     for (std::size_t jj = 0; jj < conf.size(); ++jj) {
       eckit::LocalConfiguration obsconf(conf[jj], "ObsSpace");
-      boost::shared_ptr<ioda::ObsSpace> tmp(new ioda::ObsSpace(obsconf, bgn, end));
+      boost::shared_ptr<ioda::ObsSpaceView> tmp(new ioda::ObsSpaceView(obsconf, bgn, end));
       ospaces_.push_back(tmp);
     }
   }
 
   ~ObsSpaceTestFixture() {}
 
-  std::vector<boost::shared_ptr<ioda::ObsSpace> > ospaces_;
+  std::vector<boost::shared_ptr<ioda::ObsSpaceView> > ospaces_;
 };
 
 // -----------------------------------------------------------------------------
@@ -100,7 +100,7 @@ void testGetDb() {
 
   for (std::size_t jj = 0; jj < Test_::size(); ++jj) {
     // Set up a pointer to the ObsSpace object for convenience
-    ioda::ObsSpace * Odb = &(Test_::obspace(jj));
+    ioda::ObsSpaceView * Odb = &(Test_::obspace(jj));
     const eckit::LocalConfiguration dataconf(conf[jj], "ObsSpace.TestData");
 
     // Read in the variable names and expected norm values from the configuration
@@ -143,7 +143,7 @@ void testPutDb() {
   for (std::size_t jj = 0; jj < Test_::size(); ++jj) {
 
     // Set up a pointer to the ObsSpace object for convenience
-    ioda::ObsSpace * Odb = &(Test_::obspace(jj));
+    ioda::ObsSpaceView * Odb = &(Test_::obspace(jj));
 
     // Create a dummy vector to put into the database
     // Load up the vector with contrived data, put the vector then
@@ -180,7 +180,7 @@ void testWriteableGroup() {
   for (std::size_t jj = 0; jj < Test_::size(); ++jj) {
 
     // Set up a pointer to the ObsSpace object for convenience
-    ioda::ObsSpace * Odb = &(Test_::obspace(jj));
+    ioda::ObsSpaceView * Odb = &(Test_::obspace(jj));
 
     // Create a dummy vector to put into the database
     // All rows read from the input file should be read only.
