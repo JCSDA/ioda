@@ -14,41 +14,41 @@
 
 #include "oops/util/DateTime.h"
 
-#include "ioda/ObsSpace.h"
+#include "ioda/ObsSpaceView.h"
 
 namespace ioda {
 
 // -----------------------------------------------------------------------------
-const ObsSpace * obsspace_construct_f(const eckit::Configuration * conf,
+const ObsSpaceView * obsspace_construct_f(const eckit::Configuration * conf,
                                       const util::DateTime * begin,
                                       const util::DateTime * end) {
-  return new ObsSpace(*conf, *begin, *end);
+  return new ObsSpaceView(*conf, *begin, *end);
 }
 
 // -----------------------------------------------------------------------------
-void obsspace_destruct_f(ObsSpace * obss) {
+void obsspace_destruct_f(ObsSpaceView * obss) {
   ASSERT(obss != nullptr);
   delete obss;
 }
 
 // -----------------------------------------------------------------------------
-int obsspace_get_gnlocs_f(const ObsSpace & obss) {
+int obsspace_get_gnlocs_f(const ObsSpaceView & obss) {
   return obss.gnlocs();
 }
 // -----------------------------------------------------------------------------
-int obsspace_get_nlocs_f(const ObsSpace & obss) {
+int obsspace_get_nlocs_f(const ObsSpaceView & obss) {
   return obss.nlocs();
 }
 // -----------------------------------------------------------------------------
-int obsspace_get_nrecs_f(const ObsSpace & obss) {
+int obsspace_get_nrecs_f(const ObsSpaceView & obss) {
   return obss.nrecs();
 }
 // -----------------------------------------------------------------------------
-int obsspace_get_nvars_f(const ObsSpace & obss) {
+int obsspace_get_nvars_f(const ObsSpaceView & obss) {
   return obss.nvars();
 }
 // -----------------------------------------------------------------------------
-void obsspace_get_recnum_f(const ObsSpace & obss,
+void obsspace_get_recnum_f(const ObsSpaceView & obss,
                            const std::size_t & length, std::size_t * recnum) {
   ASSERT(length >= obss.nlocs());
   for (std::size_t i = 0; i < length; i++) {
@@ -56,7 +56,7 @@ void obsspace_get_recnum_f(const ObsSpace & obss,
   }
 }
 // -----------------------------------------------------------------------------
-void obsspace_get_index_f(const ObsSpace & obss,
+void obsspace_get_index_f(const ObsSpaceView & obss,
                           const std::size_t & length, std::size_t * index) {
   ASSERT(length >= obss.nlocs());
   for (std::size_t i = 0; i < length; i++) {
@@ -66,35 +66,35 @@ void obsspace_get_index_f(const ObsSpace & obss,
   }
 }
 // -----------------------------------------------------------------------------
-bool obsspace_has_f(const ObsSpace & obss, const char * group, const char * vname) {
+bool obsspace_has_f(const ObsSpaceView & obss, const char * group, const char * vname) {
   return obss.has(std::string(group), std::string(vname));
 }
 // -----------------------------------------------------------------------------
-void obsspace_get_int32_f(const ObsSpace & obss, const char * group, const char * vname,
+void obsspace_get_int32_f(const ObsSpaceView & obss, const char * group, const char * vname,
                           const std::size_t & length, int32_t* vec) {
   ASSERT(length >= obss.nlocs());
   obss.get_db(std::string(group), std::string(vname), length, vec);
 }
 // -----------------------------------------------------------------------------
-void obsspace_get_int64_f(const ObsSpace & obss, const char * group, const char * vname,
+void obsspace_get_int64_f(const ObsSpaceView & obss, const char * group, const char * vname,
                           const std::size_t & length, int64_t* vec) {
   ASSERT(length >= obss.nlocs());
 //  obss.get_db(std::string(group), std::string(vname), length, vec);
 }
 // -----------------------------------------------------------------------------
-void obsspace_get_real32_f(const ObsSpace & obss, const char * group, const char * vname,
+void obsspace_get_real32_f(const ObsSpaceView & obss, const char * group, const char * vname,
                            const std::size_t & length, float* vec) {
   ASSERT(length >= obss.nlocs());
 //  obss.get_db(std::string(group), std::string(vname), length, vec);
 }
 // -----------------------------------------------------------------------------
-void obsspace_get_real64_f(const ObsSpace & obss, const char * group, const char * vname,
+void obsspace_get_real64_f(const ObsSpaceView & obss, const char * group, const char * vname,
                            const std::size_t & length, double* vec) {
   ASSERT(length >= obss.nlocs());
   obss.get_db(std::string(group), std::string(vname), length, vec);
 }
 // -----------------------------------------------------------------------------
-void obsspace_get_datetime_f(const ObsSpace & obss, const char * group, const char * vname,
+void obsspace_get_datetime_f(const ObsSpaceView & obss, const char * group, const char * vname,
                              const std::size_t & length, int32_t* date, int32_t* time) {
   ASSERT(length >= obss.nlocs());
 
@@ -119,25 +119,25 @@ void obsspace_get_datetime_f(const ObsSpace & obss, const char * group, const ch
   }
 }
 // -----------------------------------------------------------------------------
-void obsspace_put_int32_f(ObsSpace & obss, const char * group, const char * vname,
+void obsspace_put_int32_f(ObsSpaceView & obss, const char * group, const char * vname,
                           const std::size_t & length, int32_t* vec) {
   ASSERT(length == obss.nlocs());
   obss.put_db(std::string(group), std::string(vname), length, vec);
 }
 // -----------------------------------------------------------------------------
-void obsspace_put_int64_f(ObsSpace & obss, const char * group, const char * vname,
+void obsspace_put_int64_f(ObsSpaceView & obss, const char * group, const char * vname,
                           const std::size_t & length, int64_t* vec) {
   ASSERT(length == obss.nlocs());
 //  obss.put_db(std::string(group), std::string(vname), length, vec);
 }
 // -----------------------------------------------------------------------------
-void obsspace_put_real32_f(ObsSpace & obss, const char * group, const char * vname,
+void obsspace_put_real32_f(ObsSpaceView & obss, const char * group, const char * vname,
                            const std::size_t & length, float* vec) {
   ASSERT(length == obss.nlocs());
 //  obss.put_db(std::string(group), std::string(vname), length, vec);
 }
 // -----------------------------------------------------------------------------
-void obsspace_put_real64_f(ObsSpace & obss, const char * group, const char * vname,
+void obsspace_put_real64_f(ObsSpaceView & obss, const char * group, const char * vname,
                            const std::size_t & length, double* vec) {
   ASSERT(length == obss.nlocs());
   obss.put_db(std::string(group), std::string(vname), length, vec);
