@@ -14,6 +14,10 @@
 #include <string>
 #include <vector>
 
+#include "eckit/container/KDTree.h"
+#include "eckit/geometry/Point2.h"
+#include "eckit/geometry/Point3.h"
+#include "eckit/geometry/UnitSphere.h"
 #include "eckit/mpi/Comm.h"
 #include "oops/base/ObsSpaceBase.h"
 #include "oops/base/Variables.h"
@@ -54,6 +58,11 @@ class ObsData : public oops::ObsSpaceBase {
  public:
   typedef std::map<std::size_t, std::vector<std::size_t>> RecIdxMap;
   typedef RecIdxMap::const_iterator RecIdxIter;
+  struct TreeTrait {
+      typedef eckit::geometry::Point3 Point;
+      typedef double                  Payload;
+  };
+  typedef eckit::KDTreeMemory<TreeTrait> KDTree;
 
   ObsData(const eckit::Configuration &, const util::DateTime &, const util::DateTime &);
   /*!
@@ -88,6 +97,8 @@ class ObsData : public oops::ObsSpaceBase {
               const std::size_t vsize, const double vdata[]);
   void put_db(const std::string & group, const std::string & name,
               const std::size_t vsize, const util::DateTime vdata[]);
+
+  std::shared_ptr<KDTree> getKDTree();
 
   const RecIdxIter recidx_begin() const;
   const RecIdxIter recidx_end() const;
@@ -127,6 +138,7 @@ class ObsData : public oops::ObsSpaceBase {
                               std::vector<std::size_t> & Records);
   void ApplyTimingWindow(const std::unique_ptr<IodaIO> & FileIO);
   void BuildSortedObsGroups();
+  void createKDTree();
 
   template<typename VarType>
   void ApplyDistIndex(std::unique_ptr<VarType[]> & FullData,
@@ -176,6 +188,9 @@ class ObsData : public oops::ObsSpaceBase {
 
   /*! \brief MPI communicator */
   const eckit::mpi::Comm & commMPI_;
+
+  /*! \brief KD Tree */
+  std::shared_ptr<KDTree> kd_;
 
   /*! \brief total number of locations */
   std::size_t gnlocs_;
