@@ -25,7 +25,7 @@
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
 
-#include "ioda/ObsSpaceView.h"
+#include "ioda/ObsSpace.h"
 
 namespace ioda {
 
@@ -42,9 +42,9 @@ class ObsDataVector: public util::Printable,
  public:
   static const std::string classname() {return "ioda::ObsDataVector";}
 
-  ObsDataVector(ObsSpaceView &, const oops::Variables &,
+  ObsDataVector(ObsSpace &, const oops::Variables &,
                 const std::string & grp = "", const bool fail = true);
-  ObsDataVector(ObsSpaceView &, const std::string &,
+  ObsDataVector(ObsSpace &, const std::string &,
                 const std::string & grp = "", const bool fail = true);
   ObsDataVector(const ObsDataVector &);
   ~ObsDataVector();
@@ -75,7 +75,7 @@ class ObsDataVector: public util::Printable,
  private:
   void print(std::ostream &) const;
 
-  ObsSpaceView & obsdb_;
+  ObsSpace & obsdb_;
   oops::Variables obsvars_;
   size_t nvars_;
   size_t nlocs_;
@@ -91,7 +91,7 @@ size_t numZero(const ObsDataVector<int> &);
 
 // -----------------------------------------------------------------------------
 template <typename DATATYPE>
-ObsDataVector<DATATYPE>::ObsDataVector(ObsSpaceView & obsdb, const oops::Variables & vars,
+ObsDataVector<DATATYPE>::ObsDataVector(ObsSpace & obsdb, const oops::Variables & vars,
                                        const std::string & grp, const bool fail)
   : obsdb_(obsdb), obsvars_(vars), nvars_(obsvars_.size()),
     nlocs_(obsdb_.nlocs()), rows_(nvars_),
@@ -106,7 +106,7 @@ ObsDataVector<DATATYPE>::ObsDataVector(ObsSpaceView & obsdb, const oops::Variabl
 }
 // -----------------------------------------------------------------------------
 template <typename DATATYPE>
-ObsDataVector<DATATYPE>::ObsDataVector(ObsSpaceView & obsdb, const std::string & var,
+ObsDataVector<DATATYPE>::ObsDataVector(ObsSpace & obsdb, const std::string & var,
                                        const std::string & grp, const bool fail)
   : obsdb_(obsdb), obsvars_(std::vector<std::string>(1, var)), nvars_(1),
     nlocs_(obsdb_.nlocs()), rows_(1),

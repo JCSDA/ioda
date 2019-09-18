@@ -13,7 +13,7 @@
 #include <vector>
 
 #include "ioda/ObsDataVector.h"
-#include "ioda/ObsSpaceView.h"
+#include "ioda/ObsSpace.h"
 #include "oops/base/Variables.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
@@ -34,7 +34,7 @@ class ObsVector : public util::Printable,
  public:
   static const std::string classname() {return "ioda::ObsVector";}
 
-  ObsVector(ObsSpaceView &,
+  ObsVector(ObsSpace &,
             const std::string & name = "", const bool fail = true);
   ObsVector(const ObsVector &);
   ~ObsVector();
@@ -76,7 +76,7 @@ class ObsVector : public util::Printable,
   void read(const std::string &, const bool fail = true);
 
   /*! \brief Associate ObsSpace object */
-  ObsSpaceView & obsdb_;
+  ObsSpace & obsdb_;
 
   /*! \brief Variables */
   oops::Variables obsvars_;
