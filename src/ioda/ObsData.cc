@@ -49,7 +49,7 @@ namespace ioda {
  * \param[in] end    DateTime object holding the end of the DA timing window
  */
 ObsData::ObsData(const eckit::Configuration & config,
-                   const util::DateTime & bgn, const util::DateTime & end)
+                 const util::DateTime & bgn, const util::DateTime & end)
   : oops::ObsSpaceBase(config, bgn, end),
     config_(config),
     winbgn_(bgn), winend_(end), commMPI_(oops::mpi::comm()),
