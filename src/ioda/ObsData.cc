@@ -51,6 +51,7 @@ namespace ioda {
 ObsData::ObsData(const eckit::Configuration & config,
                    const util::DateTime & bgn, const util::DateTime & end)
   : oops::ObsSpaceBase(config, bgn, end),
+    config_(config),
     winbgn_(bgn), winend_(end), commMPI_(oops::mpi::comm()),
     database_(), obsvars_()
 {
@@ -279,7 +280,7 @@ void ObsData::get_db_helper(const std::string & group, const std::string & name,
  *
  * \details This method fills in the code for the get_db methods that is transferring
  *          DateTime data. This is here because there isn't a way to convert between
- *          numeric data and DateTime objects. 
+ *          numeric data and DateTime objects.
  *
  * \param[in]  group Name of container group (ObsValue, ObsError, MetaData, etc.)
  * \param[in]  name  Name of container variable
@@ -1139,7 +1140,7 @@ void ObsData::LoadFromDbConvert(const std::string & GroupName, const std::string
 /*!
  * \details This method applys the distribution index on data read from the input obs file.
  *          This method will allocate the memory for the IndexedData pointer since it
- *          is also calculating the shape and size of the IndexedData memory. 
+ *          is also calculating the shape and size of the IndexedData memory.
  *          It is expected that when this method is called that the distribution index will
  *          have the process element and DA timing window effects accounted for.
  *

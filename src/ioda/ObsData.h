@@ -34,9 +34,9 @@ namespace eckit {
 namespace ioda {
   class ObsVector;
 
-/// Observation Space
+/// Observation Data
 /*!
- * \brief Observation space class for IODA
+ * \brief Observation data class for IODA
  *
  * \details This class handles the memory store of observation data. It handles the transfer
  *          of data between memory and files, the distribution of obs data across multiple
@@ -99,6 +99,8 @@ class ObsData : public oops::ObsSpaceBase {
 
   /*! \details This method will return the name of the obs type being stored */
   const std::string & obsname() const {return obsname_;}
+  /*! \details This method will return the handle to the configuration */
+  const eckit::Configuration & getConfig() const {return config_;}
   /*! \details This method will return the start of the DA timing window */
   const util::DateTime & windowStart() const {return winbgn_;}
   /*! \details This method will return the end of the DA timing window */
@@ -167,6 +169,9 @@ class ObsData : public oops::ObsSpaceBase {
 
   /*! \brief name of obs space */
   std::string obsname_;
+
+  /*! \brief Configuration file */
+  const eckit::LocalConfiguration config_;
 
   /*! \brief Beginning of DA timing window */
   const util::DateTime winbgn_;
