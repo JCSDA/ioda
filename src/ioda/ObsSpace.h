@@ -14,6 +14,10 @@
 #include <string>
 #include <vector>
 
+#include "eckit/geometry/Point2.h"
+#include "eckit/geometry/Point3.h"
+#include "eckit/geometry/UnitSphere.h"
+
 #include "ioda/ObsData.h"
 #include "oops/base/ObsSpaceBase.h"
 #include "oops/base/Variables.h"
@@ -34,7 +38,7 @@ class ObsSpace : public oops::ObsSpaceBase {
   typedef RecIdxMap::const_iterator RecIdxIter;
 
   ObsSpace(const eckit::Configuration &, const util::DateTime &, const util::DateTime &);
-  ObsSpace(const ObsSpace &, const eckit::geometry::Point3 &,
+  ObsSpace(const ObsSpace &, const eckit::geometry::Point2 &,
            const double &, const int &);
   /*!
    * \details Copy constructor for an ObsSpace object.
@@ -79,6 +83,8 @@ class ObsSpace : public oops::ObsSpaceBase {
 
   /*! \details This method will return the name of the obs type being stored */
   const std::string & obsname() const {return obsspace_->obsname();}
+  /*! \details This method will return the handle to the configuration */
+  const eckit::Configuration & getConfig() const {return obsspace_->getConfig();}
   /*! \details This method will return the start of the DA timing window */
   const util::DateTime & windowStart() const {return obsspace_->windowStart();}
   /*! \details This method will return the end of the DA timing window */
@@ -95,8 +101,12 @@ class ObsSpace : public oops::ObsSpaceBase {
  private:
   void print(std::ostream &) const;
 
-  std::shared_ptr<ObsData> obsspace_;
   // std::vector<int> localobs_;
+  std::shared_ptr<ObsData> obsspace_;
+  eckit::geometry::Point2 searchPoint_;
+  double searchDist_;
+  int searchMaxNobs_;
+
 };
 
 }  // namespace ioda

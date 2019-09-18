@@ -1319,7 +1319,7 @@ std::shared_ptr<ObsData::KDTree> ObsData::getKDTree() {
 if (kd_ == NULL)
 createKDTree();
 return kd_;
-
+}
 // -----------------------------------------------------------------------------
 
 }  // namespace ioda
