@@ -37,8 +37,20 @@ ObsSpace::ObsSpace(const eckit::Configuration & config,
                    const util::DateTime & bgn, const util::DateTime & end)
   : oops::ObsSpaceBase(config, bgn, end),
     obsspace_ (new ObsData(config, bgn, end))
+{
+  oops::Log::trace() << "Initializing ioda::ObsSpace" << std::endl;
+}
 
-  {}
+ObsSpace::ObsSpace(const ObsSpace & os,
+                   const eckit::geometry::Point2 & point,
+                   const double & dist,
+                   const int & nobs)
+  : oops::ObsSpaceBase(os.getConfig(), os.windowStart(), os.windowEnd()),
+    obsspace_(os.obsspace_), searchPoint_(point), searchDist_(dist), searchMaxNobs_(nobs)
+{
+  oops::Log::trace() << "Initializing ioda::ObsSpace for LocalObs" << std::endl;
+}
+
 // -----------------------------------------------------------------------------
 /*!
  * \details Destructor for an ObsSpace object. This destructor will clean up the ObsSpace
