@@ -46,9 +46,29 @@ ObsSpace::ObsSpace(const ObsSpace & os,
                    const double & dist,
                    const int & nobs)
   : oops::ObsSpaceBase(os.getConfig(), os.windowStart(), os.windowEnd()),
-    obsspace_(os.obsspace_), searchPoint_(point), searchDist_(dist), searchMaxNobs_(nobs)
+    obsspace_(os.obsspace_), refPoint_(point), searchDist_(dist), searchMaxNobs_(nobs)
 {
   oops::Log::trace() << "Initializing ioda::ObsSpace for LocalObs" << std::endl;
+
+  std::size_t nlocs_ = obsspace_->nlocs();
+  std::vector<float> lats_(nlocs_);
+  std::vector<float> lons_(nlocs_);
+
+  eckit::geometry::Point3 refPointxyz_;
+  eckit::geometry::Point3 searchPointxyz_;
+
+  eckit::geometry::UnitSphere::convertSphericalToCartesian(refPoint_, refPointxyz_);
+
+  // Get latitudes and longitudes of all observations.
+  this -> get_db("MetaData", "longitude", nlocs_, lons_.data());
+  this -> get_db("MetaData", "latitude",  nlocs_, lats_.data());
+
+  for (std::size_t jj=0; jj<nlocs_; ++jj){
+    eckit::geometry::Point2 searchPoint_(lons_[jj], lats_[jj]);
+    eckit::geometry::UnitSphere::convertSphericalToCartesian(searchPoint_, searchPointxyz_);
+
+
+  }
 }
 
 // -----------------------------------------------------------------------------
