@@ -10,6 +10,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <numeric>
 
 #include "eckit/config/Configuration.h"
 
@@ -36,9 +37,11 @@ namespace ioda {
 ObsSpace::ObsSpace(const eckit::Configuration & config,
                    const util::DateTime & bgn, const util::DateTime & end)
   : oops::ObsSpaceBase(config, bgn, end),
-    obsspace_ (new ObsData(config, bgn, end))
+    obsspace_(new ObsData(config, bgn, end)),
+    localobs_(obsspace_->nlocs())
 {
   oops::Log::trace() << "Initializing ioda::ObsSpace" << std::endl;
+  std::iota(localobs_.begin(), localobs_.end(), 0);
 }
 
 ObsSpace::ObsSpace(const ObsSpace & os,
@@ -46,7 +49,9 @@ ObsSpace::ObsSpace(const ObsSpace & os,
                    const double & dist,
                    const int & nobs)
   : oops::ObsSpaceBase(os.getConfig(), os.windowStart(), os.windowEnd()),
-    obsspace_(os.obsspace_), refPoint_(point), searchDist_(dist), searchMaxNobs_(nobs)
+    obsspace_(os.obsspace_),
+    localobs_(),
+    refPoint_(point), searchDist_(dist), searchMaxNobs_(nobs)
 {
   oops::Log::trace() << "Initializing ioda::ObsSpace for LocalObs" << std::endl;
 
@@ -63,11 +68,21 @@ ObsSpace::ObsSpace(const ObsSpace & os,
   this -> get_db("MetaData", "longitude", nlocs_, lons_.data());
   this -> get_db("MetaData", "latitude",  nlocs_, lats_.data());
 
+  double localDist;
+  double dx;
   for (std::size_t jj=0; jj<nlocs_; ++jj){
     eckit::geometry::Point2 searchPoint_(lons_[jj], lats_[jj]);
     eckit::geometry::UnitSphere::convertSphericalToCartesian(searchPoint_, searchPointxyz_);
 
+    localDist = 0;
+    for (std::size_t dd=0; dd<3; ++dd){
+      dx = refPointxyz_[dd] - searchPointxyz_[dd];
+      localDist += dx * dx;
+    }
 
+    if ( std::sqrt(localDist) <= searchDist_ ){
+        localobs_.push_back(jj);
+    }
   }
 }
 
