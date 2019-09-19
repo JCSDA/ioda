@@ -40,50 +40,51 @@ ObsSpace::ObsSpace(const eckit::Configuration & config,
     obsspace_(new ObsData(config, bgn, end)),
     localobs_(obsspace_->nlocs()), isLocal_(false)
 {
-  oops::Log::trace() << "Initializing ioda::ObsSpace" << std::endl;
+  oops::Log::trace() << "ioda::ObsSpaces starting" << std::endl;
   std::iota(localobs_.begin(), localobs_.end(), 0);
+  oops::Log::trace() << "ioda::ObsSpace done" << std::endl;
 }
 
 ObsSpace::ObsSpace(const ObsSpace & os,
-                   const eckit::geometry::Point2 & point,
-                   const double & dist,
-                   const int & nobs)
+                   const eckit::geometry::Point2 & refPoint,
+                   const double & searchDist,
+                   const int & searchMaxNobs)
   : oops::ObsSpaceBase(os.getConfig(), os.windowStart(), os.windowEnd()),
     obsspace_(os.obsspace_),
-    localobs_(), isLocal_(true),
-    refPoint_(point), searchDist_(dist), searchMaxNobs_(nobs)
+    localobs_(), isLocal_(true)
 {
-  oops::Log::trace() << "Initializing ioda::ObsSpace for LocalObs" << std::endl;
+  oops::Log::trace() << "ioda::ObsSpace for LocalObs starting" << std::endl;
 
-  std::size_t nlocs_ = obsspace_->nlocs();
-  std::vector<float> lats_(nlocs_);
-  std::vector<float> lons_(nlocs_);
+  std::size_t nlocs = obsspace_->nlocs();
+  std::vector<float> lats(nlocs);
+  std::vector<float> lons(nlocs);
 
-  eckit::geometry::Point3 refPointxyz_;
-  eckit::geometry::Point3 searchPointxyz_;
+  eckit::geometry::Point3 refPointxyz;
+  eckit::geometry::Point3 searchPointxyz;
 
-  eckit::geometry::UnitSphere::convertSphericalToCartesian(refPoint_, refPointxyz_);
+  eckit::geometry::UnitSphere::convertSphericalToCartesian(refPoint, refPointxyz);
 
   // Get latitudes and longitudes of all observations.
-  this -> get_db("MetaData", "longitude", nlocs_, lons_.data());
-  this -> get_db("MetaData", "latitude",  nlocs_, lats_.data());
+  obsspace_ -> get_db("MetaData", "longitude", nlocs, lons.data());
+  obsspace_ -> get_db("MetaData", "latitude",  nlocs, lats.data());
 
   double localDist;
   double dx;
-  for (unsigned int jj = 0; jj < nlocs_; ++jj) {
-    eckit::geometry::Point2 searchPoint_(lons_[jj], lats_[jj]);
-    eckit::geometry::UnitSphere::convertSphericalToCartesian(searchPoint_, searchPointxyz_);
+  for (unsigned int jj = 0; jj < nlocs; ++jj) {
+    eckit::geometry::Point2 searchPoint(lons[jj], lats[jj]);
+    eckit::geometry::UnitSphere::convertSphericalToCartesian(searchPoint, searchPointxyz);
 
     localDist = 0;
     for (unsigned int dd = 0; dd < 3; ++dd) {
-      dx = refPointxyz_[dd] - searchPointxyz_[dd];
+      dx = refPointxyz[dd] - searchPointxyz[dd];
       localDist += dx * dx;
     }
 
-    if ( std::sqrt(localDist) <= searchDist_ ) {
+    if ( std::sqrt(localDist) <= searchDist ) {
         localobs_.push_back(jj);
     }
   }
+  oops::Log::trace() << "ioda::ObsSpace for LocalObs done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -95,15 +96,16 @@ ObsSpace::ObsSpace(const ObsSpace & os,
  *          ObsSpace object.
  */
 ObsSpace::~ObsSpace() {
+  oops::Log::trace() << "ioda::~ObsSpace done" << std::endl;
 }
 
 void ObsSpace::get_db(const std::string & group, const std::string & name,
                       const std::size_t vsize, int vdata[]) const {
   if ( isLocal_ ) {
-    std::vector<int> vdata_(obsspace_ -> nlocs());
-    obsspace_->get_db(group, name, vdata_.size(), vdata_.data());
-    for (unsigned int ii = 0; ii <= localobs_.size(); ++ii) {
-      vdata[ii] = vdata_[localobs_[ii]];
+    std::vector<int> vdataTmp(obsspace_ -> nlocs());
+    obsspace_->get_db(group, name, vdataTmp.size(), vdataTmp.data());
+    for (unsigned int ii = 0; ii < localobs_.size(); ++ii) {
+      vdata[ii] = vdataTmp[localobs_[ii]];
     }
   } else {
     obsspace_->get_db(group, name, vsize, vdata);
@@ -113,10 +115,10 @@ void ObsSpace::get_db(const std::string & group, const std::string & name,
 void ObsSpace::get_db(const std::string & group, const std::string & name,
                       const std::size_t vsize, float vdata[]) const {
   if ( isLocal_ ) {
-    std::vector<float> vdata_(obsspace_->nlocs());
-    obsspace_->get_db(group, name, vdata_.size(), vdata_.data());
-    for (unsigned int ii = 0; ii <= localobs_.size(); ++ii) {
-      vdata[ii] = vdata_[localobs_[ii]];
+    std::vector<float> vdataTmp(obsspace_->nlocs());
+    obsspace_->get_db(group, name, vdataTmp.size(), vdataTmp.data());
+    for (unsigned int ii = 0; ii < localobs_.size(); ++ii) {
+      vdata[ii] = vdataTmp[localobs_[ii]];
     }
   } else {
     obsspace_->get_db(group, name, vsize, vdata);
@@ -126,10 +128,10 @@ void ObsSpace::get_db(const std::string & group, const std::string & name,
 void ObsSpace::get_db(const std::string & group, const std::string & name,
                       const std::size_t vsize, double vdata[]) const {
   if ( isLocal_ ) {
-    std::vector<double> vdata_(obsspace_->nlocs());
-    obsspace_->get_db(group, name, vdata_.size(), vdata_.data());
-    for (unsigned int ii = 0; ii <= localobs_.size(); ++ii) {
-      vdata[ii] = vdata_[localobs_[ii]];
+    std::vector<double> vdataTmp(obsspace_->nlocs());
+    obsspace_->get_db(group, name, vdataTmp.size(), vdataTmp.data());
+    for (unsigned int ii = 0; ii < localobs_.size(); ++ii) {
+      vdata[ii] = vdataTmp[localobs_[ii]];
     }
   } else {
     obsspace_->get_db(group, name, vsize, vdata);
@@ -139,10 +141,10 @@ void ObsSpace::get_db(const std::string & group, const std::string & name,
 void ObsSpace::get_db(const std::string & group, const std::string & name,
                       const std::size_t vsize, util::DateTime vdata[]) const {
   if ( isLocal_ ) {
-    std::vector<util::DateTime> vdata_(obsspace_->nlocs());
-    obsspace_->get_db(group, name, vdata_.size(), vdata_.data());
-    for (unsigned int ii = 0; ii <= localobs_.size(); ++ii) {
-      vdata[ii] = vdata_[localobs_[ii]];
+    std::vector<util::DateTime> vdataTmp(obsspace_->nlocs());
+    obsspace_->get_db(group, name, vdataTmp.size(), vdataTmp.data());
+    for (unsigned int ii = 0; ii < localobs_.size(); ++ii) {
+      vdata[ii] = vdataTmp[localobs_[ii]];
     }
   } else {
     obsspace_->get_db(group, name, vsize, vdata);
