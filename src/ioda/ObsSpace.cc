@@ -50,7 +50,7 @@ ObsSpace::ObsSpace(const ObsSpace & os,
                    const int & nobs)
   : oops::ObsSpaceBase(os.getConfig(), os.windowStart(), os.windowEnd()),
     obsspace_(os.obsspace_),
-    localobs_(),
+    localobs_(), isLocal_(true),
     refPoint_(point), searchDist_(dist), searchMaxNobs_(nobs)
 {
   oops::Log::trace() << "Initializing ioda::ObsSpace for LocalObs" << std::endl;
@@ -99,22 +99,54 @@ ObsSpace::~ObsSpace() {
 
 void ObsSpace::get_db(const std::string & group, const std::string & name,
                       const std::size_t vsize, int vdata[]) const {
-  obsspace_->get_db(group, name, vsize, vdata);
+  if ( isLocal_ ) {
+    int vdata_[obsspace_->nlocs()];
+    obsspace_->get_db(group, name, obsspace_->nlocs(), vdata_);
+    for (unsigned int ii = 0; ii <= localobs_.size(); ++ii) {
+      vdata[ii] = vdata_[localobs_[ii]];
+    }
+  } else {
+    obsspace_->get_db(group, name, vsize, vdata);
+  }
 }
 
 void ObsSpace::get_db(const std::string & group, const std::string & name,
                       const std::size_t vsize, float vdata[]) const {
-  obsspace_->get_db(group, name, vsize, vdata);
+  if ( isLocal_ ) {
+    float vdata_[obsspace_->nlocs()];
+    obsspace_->get_db(group, name, obsspace_->nlocs(), vdata_);
+    for (unsigned int ii = 0; ii <= localobs_.size(); ++ii) {
+      vdata[ii] = vdata_[localobs_[ii]];
+    }
+  } else {
+    obsspace_->get_db(group, name, vsize, vdata);
+  }
 }
 
 void ObsSpace::get_db(const std::string & group, const std::string & name,
                       const std::size_t vsize, double vdata[]) const {
-  obsspace_->get_db(group, name, vsize, vdata);
+  if ( isLocal_ ) {
+    double vdata_[obsspace_->nlocs()];
+    obsspace_->get_db(group, name, obsspace_->nlocs(), vdata_);
+    for (unsigned int ii = 0; ii <= localobs_.size(); ++ii) {
+      vdata[ii] = vdata_[localobs_[ii]];
+    }
+  } else {
+    obsspace_->get_db(group, name, vsize, vdata);
+  }
 }
 
 void ObsSpace::get_db(const std::string & group, const std::string & name,
                       const std::size_t vsize, util::DateTime vdata[]) const {
-  obsspace_->get_db(group, name, vsize, vdata);
+  if ( isLocal_ ) {
+    util::DateTime vdata_[obsspace_->nlocs()];
+    obsspace_->get_db(group, name, obsspace_->nlocs(), vdata_);
+    for (unsigned int ii = 0; ii <= localobs_.size(); ++ii) {
+      vdata[ii] = vdata_[localobs_[ii]];
+    }
+  } else {
+    obsspace_->get_db(group, name, vsize, vdata);
+  }
 }
 
 void ObsSpace::put_db(const std::string & group, const std::string & name,
@@ -169,7 +201,11 @@ std::size_t ObsSpace::gnlocs() const {
  *          multiple process elements.
  */
 std::size_t ObsSpace::nlocs() const {
-  return obsspace_->nlocs();
+  if ( isLocal_ ) {
+    return localobs_.size();
+  } else {
+    return obsspace_->nlocs();
+  }
 }
 
 // -----------------------------------------------------------------------------
