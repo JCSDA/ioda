@@ -89,6 +89,40 @@ void testConstructor() {
   }
 }
 
+void testConstructor_local() {
+  typedef ObsSpaceTestFixture Test_;
+
+  const eckit::LocalConfiguration obsconf(::test::TestEnvironment::config(), "Observations");
+  const eckit::LocalConfiguration localobsconf(obsconf, "Localization");
+  std::vector<eckit::LocalConfiguration> conf;
+  obsconf.get("ObsTypes", conf);
+
+  double distance = localobsconf.getDouble("distance");
+  double lonpt = localobsconf.getDouble("lonRefPoint");
+  double latpt = localobsconf.getDouble("latRefPoint");
+  int max_nobs = localobsconf.getInt("max_nobs");
+  eckit::geometry::Point2 refPoint(lonpt, latpt);
+
+  for (std::size_t jj = 0; jj < Test_::size(); ++jj) {
+    // Create local obsspace object
+    ObsSpace obsspace_local(Test_::obspace(jj), refPoint, distance, max_nobs);
+    // Get the numbers of locations (nlocs) from the local obspace object
+    std::size_t Nlocs = obsspace_local.nlocs();
+    oops::Log::info() << "Nlocs" << Nlocs << std::endl;
+    //std::vector<float> loclats(Nlocs);
+    //std::vector<float> loclons(Nlocs);
+    //obsspace_local.get_db("MetaData", "latitude", Nlocs, loclats.data());
+    //obsspace_local.get_db("MetaData", "longitude", Nlocs, loclons.data());
+
+    obsspace_local.comm().allReduceInPlace(Nlocs, eckit::mpi::sum());
+
+    // Get the expected nlocs from the obspace object's configuration
+    std::size_t ExpectedNlocs = conf[jj].getUnsigned("ObsSpace.TestData.nlocs_local");
+
+    EXPECT(Nlocs == ExpectedNlocs);
+  }
+}
+
 // -----------------------------------------------------------------------------
 
 void testGetDb() {
@@ -232,14 +266,16 @@ class ObsSpace : public oops::Test {
   void register_tests() const {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
-    ts.emplace_back(CASE("ioda/ObsSpace/testConstructor")
-      { testConstructor(); });
-    ts.emplace_back(CASE("ioda/ObsSpace/testGetDb")
-      { testGetDb(); });
-    ts.emplace_back(CASE("ioda/ObsSpace/testPutDb")
-      { testPutDb(); });
-    ts.emplace_back(CASE("ioda/ObsSpace/testWriteableGroup")
-      { testWriteableGroup(); });
+//  ts.emplace_back(CASE("ioda/ObsSpace/testConstructor")
+//    { testConstructor(); });
+    ts.emplace_back(CASE("ioda/ObsSpace/testConstructor_local")
+      { testConstructor_local(); });
+//  ts.emplace_back(CASE("ioda/ObsSpace/testGetDb")
+//    { testGetDb(); });
+//  ts.emplace_back(CASE("ioda/ObsSpace/testPutDb")
+//    { testPutDb(); });
+//  ts.emplace_back(CASE("ioda/ObsSpace/testWriteableGroup")
+//    { testWriteableGroup(); });
   }
 };
 
