@@ -42,7 +42,6 @@ ObsSpace::ObsSpace(const eckit::Configuration & config,
 {
   oops::Log::trace() << "Initializing ioda::ObsSpace" << std::endl;
   std::iota(localobs_.begin(), localobs_.end(), 0);
-
 }
 
 ObsSpace::ObsSpace(const ObsSpace & os,
