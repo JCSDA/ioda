@@ -102,7 +102,7 @@ class ObsSpace : public oops::ObsSpaceBase {
   void print(std::ostream &) const;
 
   std::shared_ptr<ObsData> obsspace_;
-  std::vector<int> localobs_;
+  std::vector<std::size_t> localobs_;
   eckit::geometry::Point2 refPoint_;
   double searchDist_;
   int searchMaxNobs_;
