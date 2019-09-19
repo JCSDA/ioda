@@ -106,7 +106,7 @@ class ObsSpace : public oops::ObsSpaceBase {
   eckit::geometry::Point2 refPoint_;
   double searchDist_;
   int searchMaxNobs_;
-  bool isLocal;
+  bool isLocal_;
 };
 
 }  // namespace ioda
