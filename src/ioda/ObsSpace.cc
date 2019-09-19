@@ -8,9 +8,9 @@
 #include "ioda/ObsSpace.h"
 
 #include <memory>
+#include <numeric>
 #include <string>
 #include <vector>
-#include <numeric>
 
 #include "eckit/config/Configuration.h"
 
@@ -38,10 +38,11 @@ ObsSpace::ObsSpace(const eckit::Configuration & config,
                    const util::DateTime & bgn, const util::DateTime & end)
   : oops::ObsSpaceBase(config, bgn, end),
     obsspace_(new ObsData(config, bgn, end)),
-    localobs_(obsspace_->nlocs())
+    localobs_(obsspace_->nlocs()), isLocal_(false)
 {
   oops::Log::trace() << "Initializing ioda::ObsSpace" << std::endl;
   std::iota(localobs_.begin(), localobs_.end(), 0);
+
 }
 
 ObsSpace::ObsSpace(const ObsSpace & os,
@@ -70,17 +71,17 @@ ObsSpace::ObsSpace(const ObsSpace & os,
 
   double localDist;
   double dx;
-  for (std::size_t jj=0; jj<nlocs_; ++jj){
+  for (unsigned int jj = 0; jj < nlocs_; ++jj) {
     eckit::geometry::Point2 searchPoint_(lons_[jj], lats_[jj]);
     eckit::geometry::UnitSphere::convertSphericalToCartesian(searchPoint_, searchPointxyz_);
 
     localDist = 0;
-    for (std::size_t dd=0; dd<3; ++dd){
+    for (unsigned int dd = 0; dd < 3; ++dd) {
       dx = refPointxyz_[dd] - searchPointxyz_[dd];
       localDist += dx * dx;
     }
 
-    if ( std::sqrt(localDist) <= searchDist_ ){
+    if ( std::sqrt(localDist) <= searchDist_ ) {
         localobs_.push_back(jj);
     }
   }
