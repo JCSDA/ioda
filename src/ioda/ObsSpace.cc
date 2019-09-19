@@ -100,8 +100,8 @@ ObsSpace::~ObsSpace() {
 void ObsSpace::get_db(const std::string & group, const std::string & name,
                       const std::size_t vsize, int vdata[]) const {
   if ( isLocal_ ) {
-    int vdata_[obsspace_->nlocs()];
-    obsspace_->get_db(group, name, obsspace_->nlocs(), vdata_);
+    std::vector<int> vdata_(obsspace_ -> nlocs());
+    obsspace_->get_db(group, name, vdata_.size(), vdata_.data());
     for (unsigned int ii = 0; ii <= localobs_.size(); ++ii) {
       vdata[ii] = vdata_[localobs_[ii]];
     }
@@ -113,8 +113,8 @@ void ObsSpace::get_db(const std::string & group, const std::string & name,
 void ObsSpace::get_db(const std::string & group, const std::string & name,
                       const std::size_t vsize, float vdata[]) const {
   if ( isLocal_ ) {
-    float vdata_[obsspace_->nlocs()];
-    obsspace_->get_db(group, name, obsspace_->nlocs(), vdata_);
+    std::vector<float> vdata_(obsspace_->nlocs());
+    obsspace_->get_db(group, name, vdata_.size(), vdata_.data());
     for (unsigned int ii = 0; ii <= localobs_.size(); ++ii) {
       vdata[ii] = vdata_[localobs_[ii]];
     }
@@ -126,8 +126,8 @@ void ObsSpace::get_db(const std::string & group, const std::string & name,
 void ObsSpace::get_db(const std::string & group, const std::string & name,
                       const std::size_t vsize, double vdata[]) const {
   if ( isLocal_ ) {
-    double vdata_[obsspace_->nlocs()];
-    obsspace_->get_db(group, name, obsspace_->nlocs(), vdata_);
+    std::vector<double> vdata_(obsspace_->nlocs());
+    obsspace_->get_db(group, name, vdata_.size(), vdata_.data());
     for (unsigned int ii = 0; ii <= localobs_.size(); ++ii) {
       vdata[ii] = vdata_[localobs_[ii]];
     }
@@ -139,8 +139,8 @@ void ObsSpace::get_db(const std::string & group, const std::string & name,
 void ObsSpace::get_db(const std::string & group, const std::string & name,
                       const std::size_t vsize, util::DateTime vdata[]) const {
   if ( isLocal_ ) {
-    util::DateTime vdata_[obsspace_->nlocs()];
-    obsspace_->get_db(group, name, obsspace_->nlocs(), vdata_);
+    std::vector<util::DateTime> vdata_(obsspace_->nlocs());
+    obsspace_->get_db(group, name, vdata_.size(), vdata_.data());
     for (unsigned int ii = 0; ii <= localobs_.size(); ++ii) {
       vdata[ii] = vdata_[localobs_[ii]];
     }
