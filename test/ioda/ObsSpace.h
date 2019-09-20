@@ -74,6 +74,7 @@ void testConstructor() {
     // Get the numbers of locations (nlocs) from the obspace object
     std::size_t Nlocs = Test_::obspace(jj).nlocs();
     std::size_t Nrecs = Test_::obspace(jj).nrecs();
+    oops::Log::info() << "Nrecs = " << Nrecs << std::endl;
     std::size_t Nvars = Test_::obspace(jj).nvars();
     Test_::obspace(jj).comm().allReduceInPlace(Nlocs, eckit::mpi::sum());
     Test_::obspace(jj).comm().allReduceInPlace(Nrecs, eckit::mpi::sum());
@@ -82,6 +83,7 @@ void testConstructor() {
     std::size_t ExpectedNlocs = conf[jj].getUnsigned("ObsSpace.TestData.nlocs");
     std::size_t ExpectedNrecs = conf[jj].getUnsigned("ObsSpace.TestData.nrecs");
     std::size_t ExpectedNvars = conf[jj].getUnsigned("ObsSpace.TestData.nvars");
+    oops::Log::info() << "Expected Nrecs = " << ExpectedNrecs << std::endl;
 
     EXPECT(Nlocs == ExpectedNlocs);
     EXPECT(Nrecs == ExpectedNrecs);
@@ -93,32 +95,25 @@ void testConstructor_local() {
   typedef ObsSpaceTestFixture Test_;
 
   const eckit::LocalConfiguration obsconf(::test::TestEnvironment::config(), "Observations");
-  const eckit::LocalConfiguration localobsconf(obsconf, "Localization");
   std::vector<eckit::LocalConfiguration> conf;
   obsconf.get("ObsTypes", conf);
 
-  double distance = localobsconf.getDouble("distance");
-  double lonpt = localobsconf.getDouble("lonRefPoint");
-  double latpt = localobsconf.getDouble("latRefPoint");
-  int max_nobs = localobsconf.getInt("max_nobs");
-  eckit::geometry::Point2 refPoint(lonpt, latpt);
 
   for (std::size_t jj = 0; jj < Test_::size(); ++jj) {
+    double distance = conf[jj].getDouble("ObsSpace.Localization.distance");
+    double lonpt = conf[jj].getDouble("ObsSpace.Localization.lonRefPoint");
+    double latpt = conf[jj].getDouble("ObsSpace.Localization.latRefPoint");
+    int max_nobs = conf[jj].getInt("ObsSpace.Localization.max_nobs");
+    eckit::geometry::Point2 refPoint(lonpt, latpt);
     // Create local obsspace object
     ObsSpace obsspace_local(Test_::obspace(jj), refPoint, distance, max_nobs);
     // Get the numbers of locations (nlocs) from the local obspace object
     std::size_t Nlocs = obsspace_local.nlocs();
-    oops::Log::info() << "Nlocs found = " << Nlocs << std::endl;
-    //std::vector<float> loclats(Nlocs);
-    //std::vector<float> loclons(Nlocs);
-    //obsspace_local.get_db("MetaData", "latitude", Nlocs, loclats.data());
-    //obsspace_local.get_db("MetaData", "longitude", Nlocs, loclons.data());
-
+    oops::Log::info() << "Nlocs_local = " << Nlocs << std::endl;
     obsspace_local.comm().allReduceInPlace(Nlocs, eckit::mpi::sum());
-
     // Get the expected nlocs from the obspace object's configuration
     std::size_t ExpectedNlocs = conf[jj].getUnsigned("ObsSpace.TestData.nlocs_local");
-
+    oops::Log::info() << "Expected Nlocs_local = " << ExpectedNlocs << std::endl;
     EXPECT(Nlocs == ExpectedNlocs);
   }
 }
@@ -266,16 +261,16 @@ class ObsSpace : public oops::Test {
   void register_tests() const {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
-  ts.emplace_back(CASE("ioda/ObsSpace/testConstructor")
-    { testConstructor(); });
+    ts.emplace_back(CASE("ioda/ObsSpace/testConstructor")
+      { testConstructor(); });
     ts.emplace_back(CASE("ioda/ObsSpace/testConstructor_local")
       { testConstructor_local(); });
-  ts.emplace_back(CASE("ioda/ObsSpace/testGetDb")
-    { testGetDb(); });
-  ts.emplace_back(CASE("ioda/ObsSpace/testPutDb")
-    { testPutDb(); });
-  ts.emplace_back(CASE("ioda/ObsSpace/testWriteableGroup")
-    { testWriteableGroup(); });
+    ts.emplace_back(CASE("ioda/ObsSpace/testGetDb")
+      { testGetDb(); });
+    ts.emplace_back(CASE("ioda/ObsSpace/testPutDb")
+      { testPutDb(); });
+    ts.emplace_back(CASE("ioda/ObsSpace/testWriteableGroup")
+      { testWriteableGroup(); });
   }
 };
 
