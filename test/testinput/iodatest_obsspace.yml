@@ -13,9 +13,10 @@ Locations:
   - 0.0
   - -100.0
 Observations:
-  Localization:
+  _: &localization
     distance: 0.35
     max_nobs: -1
+    searchMethod: "brute_force"
     lonRefPoint: 0.
     latRefPoint: 90.
   ObsTypes:
@@ -25,6 +26,7 @@ Observations:
       simulate:
       ObsDataIn:
         obsfile: "Data/aod_obs_2018041500_m.nc4"
+      Localization: *localization
       TestData:
         nlocs: 100
         nrecs: 100
@@ -48,6 +50,7 @@ Observations:
       simulate:
       ObsDataIn:
         obsfile: "Data/amsua_n19_obs_2018041500_m.nc4"
+      Localization: *localization
       TestData:
         nlocs: 100
         nlocs_local: 4
@@ -71,6 +74,7 @@ Observations:
       simulate:
       ObsDataIn:
         obsfile: "Data/smap_obs_2018041500_m.nc4"
+      Localization: *localization
       TestData:
         nlocs: 45
         nlocs_local: 0
@@ -94,6 +98,7 @@ Observations:
       simulate:
       ObsDataIn:
         obsfile: "Data/gmi_gpm_obs_2018041500_m.nc4"
+      Localization: *localization
       TestData:
         nlocs: 12
         nlocs_local: 0
@@ -117,6 +122,7 @@ Observations:
       simulate:
       ObsDataIn:
         obsfile: "Data/sondes_obs_2018041500_m.nc4"
+      Localization: *localization
       TestData:
         nlocs: 974
         nlocs_local: 97
@@ -149,6 +155,7 @@ Observations:
         lon2: 10
         random_seed: 29837
         obs_errors: [1.0, 2.0]
+      Localization: *localization
       TestData:
         nlocs: 10
         nlocs_local: 0
@@ -184,6 +191,7 @@ Observations:
           group_variable: "station_id"
           sort_variable: "air_pressure"
           sort_order: "descending"
+      Localization: *localization
       TestData:
         nlocs: 974
         nlocs_local: 97
@@ -211,6 +219,7 @@ Observations:
         obsfile: "Data/sondes_obs_2018041500_m_twfilt.nc4"
         obsgrouping:
           group_variable: "station_id"
+      Localization: *localization
       TestData:
         nlocs: 968
         nlocs_local: 97
