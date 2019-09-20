@@ -1,8 +1,8 @@
 /*
  * (C) Copyright 2018 UCAR
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
 #ifndef TEST_INTERFACE_OBSSPACE_H_
@@ -108,7 +108,7 @@ void testConstructor_local() {
     ObsSpace obsspace_local(Test_::obspace(jj), refPoint, distance, max_nobs);
     // Get the numbers of locations (nlocs) from the local obspace object
     std::size_t Nlocs = obsspace_local.nlocs();
-    oops::Log::info() << "Nlocs" << Nlocs << std::endl;
+    oops::Log::info() << "Nlocs found = " << Nlocs << std::endl;
     //std::vector<float> loclats(Nlocs);
     //std::vector<float> loclons(Nlocs);
     //obsspace_local.get_db("MetaData", "latitude", Nlocs, loclats.data());
@@ -245,7 +245,7 @@ void testWriteableGroup() {
 
     Odb->put_db("TestGroup", VarName, Nlocs, ExpectedVec.data());
     Odb->get_db("TestGroup", VarName, Nlocs, TestVec.data());
-    
+
     VecMatch = true;
     for (std::size_t i = 0; i < Nlocs; ++i) {
       VecMatch = VecMatch && (int(ExpectedVec[i]) == int(TestVec[i]));
@@ -266,16 +266,16 @@ class ObsSpace : public oops::Test {
   void register_tests() const {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
-//  ts.emplace_back(CASE("ioda/ObsSpace/testConstructor")
-//    { testConstructor(); });
+  ts.emplace_back(CASE("ioda/ObsSpace/testConstructor")
+    { testConstructor(); });
     ts.emplace_back(CASE("ioda/ObsSpace/testConstructor_local")
       { testConstructor_local(); });
-//  ts.emplace_back(CASE("ioda/ObsSpace/testGetDb")
-//    { testGetDb(); });
-//  ts.emplace_back(CASE("ioda/ObsSpace/testPutDb")
-//    { testPutDb(); });
-//  ts.emplace_back(CASE("ioda/ObsSpace/testWriteableGroup")
-//    { testWriteableGroup(); });
+  ts.emplace_back(CASE("ioda/ObsSpace/testGetDb")
+    { testGetDb(); });
+  ts.emplace_back(CASE("ioda/ObsSpace/testPutDb")
+    { testPutDb(); });
+  ts.emplace_back(CASE("ioda/ObsSpace/testWriteableGroup")
+    { testWriteableGroup(); });
   }
 };
 
