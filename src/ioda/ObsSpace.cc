@@ -55,6 +55,9 @@ ObsSpace::ObsSpace(const ObsSpace & os,
 {
   oops::Log::trace() << "ioda::ObsSpace for LocalObs starting" << std::endl;
 
+  const eckit::LocalConfiguration config = os.getConfig();
+  const std::string searchMethod = "brute_force";  //  hard-wired for now!
+
   std::size_t nlocs = obsspace_->nlocs();
   std::vector<float> lats(nlocs);
   std::vector<float> lons(nlocs);
@@ -68,22 +71,31 @@ ObsSpace::ObsSpace(const ObsSpace & os,
   obsspace_ -> get_db("MetaData", "longitude", nlocs, lons.data());
   obsspace_ -> get_db("MetaData", "latitude",  nlocs, lats.data());
 
-  double localDist;
-  double dx;
-  for (unsigned int jj = 0; jj < nlocs; ++jj) {
-    eckit::geometry::Point2 searchPoint(lons[jj], lats[jj]);
-    eckit::geometry::UnitSphere::convertSphericalToCartesian(searchPoint, searchPointxyz);
+  if ( searchMethod == "brute_force" ) {
+    oops::Log::trace() << "ioda::ObsSpace searching via brute force" << std::endl;
+    double localDist;
+    double dx;
+    for (unsigned int jj = 0; jj < nlocs; ++jj) {
+      eckit::geometry::Point2 searchPoint(lons[jj], lats[jj]);
+      eckit::geometry::UnitSphere::convertSphericalToCartesian(searchPoint, searchPointxyz);
 
-    localDist = 0;
-    for (unsigned int dd = 0; dd < 3; ++dd) {
-      dx = refPointxyz[dd] - searchPointxyz[dd];
-      localDist += dx * dx;
-    }
+      localDist = 0;
+      for (unsigned int dd = 0; dd < 3; ++dd) {
+        dx = refPointxyz[dd] - searchPointxyz[dd];
+        localDist += dx * dx;
+      }
 
-    if ( std::sqrt(localDist) <= searchDist ) {
-        localobs_.push_back(jj);
+      if ( std::sqrt(localDist) <= searchDist ) {
+          localobs_.push_back(jj);
+      }
     }
+  } else {
+    oops::Log::trace() << "ioda::ObsSpace searching via Kdtree" << std::endl;
+
+    std::shared_ptr<ObsData::KDTree> kd = obsspace_ -> getKDTree();
+
   }
+
   oops::Log::trace() << "ioda::ObsSpace for LocalObs done" << std::endl;
 }
 
