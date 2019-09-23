@@ -16,6 +16,7 @@ Observations:
   _: &localization
     distance: 0.5
     max_nobs: -1
+    searchMethod: "brute_force"
     lonRefPoint: 0.
     latRefPoint: 90.
   ObsTypes:
@@ -73,7 +74,7 @@ Observations:
       simulate:
       ObsDataIn:
         obsfile: Data/sst_obs-2018-04-15.nc4
-     Localization: *localization
+      Localization: *localization
       TestData:
         nlocs: 200
         nlocs_local: 3
@@ -97,7 +98,7 @@ Observations:
       simulate:
       ObsDataIn:
         obsfile: Data/icec-2018-04-15.nc
-     Localization: *localization
+      Localization: *localization
       TestData:
         nlocs: 71558
         nlocs_local: 3
@@ -121,7 +122,7 @@ Observations:
       simulate:
       ObsDataIn:
         obsfile: Data/cryosat2-2018-04-15.nc
-     Localization: *localization
+      Localization: *localization
       TestData:
         nlocs: 8065
         nlocs_local: 3
