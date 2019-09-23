@@ -22,7 +22,6 @@ Observations:
   ObsTypes:
   - ObsSpace:
       name: ADT
-      distribution: "InefficientDistribution"
       simulate:
       ObsDataIn:
         obsfile: Data/Jason-2-2018-04-15.nc
@@ -46,7 +45,6 @@ Observations:
 
   - ObsSpace:
       name: InsituTemperature
-      distribution: "InefficientDistribution"
       simulate:
       ObsDataIn:
         obsfile: Data/profile_2018-04-15.nc
@@ -70,7 +68,6 @@ Observations:
 
   - ObsSpace:
       name: SeaSurfaceTemp
-      distribution: "InefficientDistribution"
       simulate:
       ObsDataIn:
         obsfile: Data/sst_obs-2018-04-15.nc4
@@ -94,7 +91,6 @@ Observations:
 
   - ObsSpace:
       name: SeaIceFraction
-      distribution: "InefficientDistribution"
       simulate:
       ObsDataIn:
         obsfile: Data/icec-2018-04-15.nc
@@ -118,7 +114,6 @@ Observations:
 
   - ObsSpace:
       name: SeaIceThickness
-      distribution: "InefficientDistribution"
       simulate:
       ObsDataIn:
         obsfile: Data/cryosat2-2018-04-15.nc

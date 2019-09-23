@@ -22,7 +22,6 @@ Observations:
   ObsTypes:
   - ObsSpace:
       name: "Aod"
-      distribution: "InefficientDistribution"
       simulate:
       ObsDataIn:
         obsfile: "Data/aod_obs_2018041500_m.nc4"
@@ -46,7 +45,6 @@ Observations:
 
   - ObsSpace:
       name: "Radiance"
-      distribution: "InefficientDistribution"
       simulate:
       ObsDataIn:
         obsfile: "Data/amsua_n19_obs_2018041500_m.nc4"
@@ -70,7 +68,6 @@ Observations:
 
   - ObsSpace:
       name: "Radiance"
-      distribution: "InefficientDistribution"
       simulate:
       ObsDataIn:
         obsfile: "Data/smap_obs_2018041500_m.nc4"
@@ -94,7 +91,6 @@ Observations:
 
   - ObsSpace:
       name: "Radiance"
-      distribution: "InefficientDistribution"
       simulate:
       ObsDataIn:
         obsfile: "Data/gmi_gpm_obs_2018041500_m.nc4"
@@ -118,7 +114,6 @@ Observations:
 
   - ObsSpace:
       name: "Radiosonde"
-      distribution: "InefficientDistribution"
       simulate:
       ObsDataIn:
         obsfile: "Data/sondes_obs_2018041500_m.nc4"
@@ -144,7 +139,6 @@ Observations:
 
   - ObsSpace:
       name: "Synthetic"
-      distribution: "InefficientDistribution"
       simulate:
         variables: [air_temperature, eastward_wind]
       Generate:
@@ -183,7 +177,6 @@ Observations:
 
   - ObsSpace:
       name: "Radiosonde with grouping"
-#      distribution: "InefficientDistribution"
       simulate:
       ObsDataIn:
         obsfile: "Data/sondes_obs_2018041500_m.nc4"
@@ -213,7 +206,6 @@ Observations:
 
   - ObsSpace:
       name: "Radiosonde with grouping and tw filtering"
-#      distribution: "InefficientDistribution"
       simulate:
       ObsDataIn:
         obsfile: "Data/sondes_obs_2018041500_m_twfilt.nc4"
