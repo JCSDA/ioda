@@ -74,7 +74,6 @@ void testConstructor() {
     // Get the numbers of locations (nlocs) from the obspace object
     std::size_t Nlocs = Test_::obspace(jj).nlocs();
     std::size_t Nrecs = Test_::obspace(jj).nrecs();
-    oops::Log::info() << "Nrecs = " << Nrecs << std::endl;
     std::size_t Nvars = Test_::obspace(jj).nvars();
     Test_::obspace(jj).comm().allReduceInPlace(Nlocs, eckit::mpi::sum());
     Test_::obspace(jj).comm().allReduceInPlace(Nrecs, eckit::mpi::sum());
@@ -83,7 +82,6 @@ void testConstructor() {
     std::size_t ExpectedNlocs = conf[jj].getUnsigned("ObsSpace.TestData.nlocs");
     std::size_t ExpectedNrecs = conf[jj].getUnsigned("ObsSpace.TestData.nrecs");
     std::size_t ExpectedNvars = conf[jj].getUnsigned("ObsSpace.TestData.nvars");
-    oops::Log::info() << "Expected Nrecs = " << ExpectedNrecs << std::endl;
 
     EXPECT(Nlocs == ExpectedNlocs);
     EXPECT(Nrecs == ExpectedNrecs);
@@ -98,7 +96,6 @@ void testConstructor_local() {
   std::vector<eckit::LocalConfiguration> conf;
   obsconf.get("ObsTypes", conf);
 
-
   for (std::size_t jj = 0; jj < Test_::size(); ++jj) {
     double distance = conf[jj].getDouble("ObsSpace.Localization.distance");
     double lonpt = conf[jj].getDouble("ObsSpace.Localization.lonRefPoint");
@@ -109,11 +106,11 @@ void testConstructor_local() {
     ObsSpace obsspace_local(Test_::obspace(jj), refPoint, distance, max_nobs);
     // Get the numbers of locations (nlocs) from the local obspace object
     std::size_t Nlocs = obsspace_local.nlocs();
-    oops::Log::info() << "Nlocs_local = " << Nlocs << std::endl;
+    oops::Log::trace() << "Nlocs_local = " << Nlocs << std::endl;
     obsspace_local.comm().allReduceInPlace(Nlocs, eckit::mpi::sum());
     // Get the expected nlocs from the obspace object's configuration
     std::size_t ExpectedNlocs = conf[jj].getUnsigned("ObsSpace.TestData.nlocs_local");
-    oops::Log::info() << "Expected Nlocs_local = " << ExpectedNlocs << std::endl;
+    oops::Log::trace() << "Expected Nlocs_local = " << ExpectedNlocs << std::endl;
     EXPECT(Nlocs == ExpectedNlocs);
   }
 }
