@@ -47,34 +47,35 @@ ObsSpace::ObsSpace(const eckit::Configuration & config,
 
 ObsSpace::ObsSpace(const ObsSpace & os,
                    const eckit::geometry::Point2 & refPoint,
-                   const double & searchDist,
-                   const int & searchMaxNobs)
+                   const double & dist,
+                   const int & nobs)
   : oops::ObsSpaceBase(os.getConfig(), os.windowStart(), os.windowEnd()),
     obsspace_(os.obsspace_),
-    localobs_(), isLocal_(true)
+    localobs_(), isLocal_(true),
+    searchDist_(dist), searchMaxNobs_(nobs)
 {
   oops::Log::trace() << "ioda::ObsSpace for LocalObs starting" << std::endl;
 
   const eckit::LocalConfiguration config = os.getConfig();
   const std::string searchMethod = "brute_force";  //  hard-wired for now!
 
-  std::size_t nlocs = obsspace_->nlocs();
-  std::vector<float> lats(nlocs);
-  std::vector<float> lons(nlocs);
-
   eckit::geometry::Point3 refPointxyz;
-  eckit::geometry::Point3 searchPointxyz;
-
   eckit::geometry::UnitSphere::convertSphericalToCartesian(refPoint, refPointxyz);
-
-  // Get latitudes and longitudes of all observations.
-  obsspace_ -> get_db("MetaData", "longitude", nlocs, lons.data());
-  obsspace_ -> get_db("MetaData", "latitude",  nlocs, lats.data());
 
   if ( searchMethod == "brute_force" ) {
     oops::Log::trace() << "ioda::ObsSpace searching via brute force" << std::endl;
+
+    std::size_t nlocs = obsspace_->nlocs();
+    std::vector<float> lats(nlocs);
+    std::vector<float> lons(nlocs);
+
+    // Get latitudes and longitudes of all observations.
+    obsspace_ -> get_db("MetaData", "longitude", nlocs, lons.data());
+    obsspace_ -> get_db("MetaData", "latitude",  nlocs, lats.data());
+
     double localDist;
     double dx;
+    eckit::geometry::Point3 searchPointxyz;
     for (unsigned int jj = 0; jj < nlocs; ++jj) {
       eckit::geometry::Point2 searchPoint(lons[jj], lats[jj]);
       eckit::geometry::UnitSphere::convertSphericalToCartesian(searchPoint, searchPointxyz);
@@ -85,15 +86,18 @@ ObsSpace::ObsSpace(const ObsSpace & os,
         localDist += dx * dx;
       }
 
-      if ( std::sqrt(localDist) <= searchDist ) {
+      if ( std::sqrt(localDist) <= searchDist_ ) {
           localobs_.push_back(jj);
       }
     }
   } else {
     oops::Log::trace() << "ioda::ObsSpace searching via Kdtree" << std::endl;
 
+    std::string ErrMsg =
+      std::string("ioda::ObsSpace search via Kdtree not implemented,") +
+      std::string("use 'brute_force' for 'searchMethod:' YAML configuration keyword.");
+    ABORT(ErrMsg);
     std::shared_ptr<ObsData::KDTree> kd = obsspace_ -> getKDTree();
-
   }
 
   oops::Log::trace() << "ioda::ObsSpace for LocalObs done" << std::endl;
