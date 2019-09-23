@@ -15,8 +15,6 @@
 #include <vector>
 
 #include "eckit/geometry/Point2.h"
-#include "eckit/geometry/Point3.h"
-#include "eckit/geometry/UnitSphere.h"
 
 #include "ioda/ObsData.h"
 #include "oops/base/ObsSpaceBase.h"

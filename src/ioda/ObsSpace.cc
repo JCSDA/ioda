@@ -13,6 +13,8 @@
 #include <vector>
 
 #include "eckit/config/Configuration.h"
+#include "eckit/geometry/Point3.h"
+#include "eckit/geometry/UnitSphere.h"
 
 #include "ioda/ObsData.h"
 
@@ -97,7 +99,7 @@ ObsSpace::ObsSpace(const ObsSpace & os,
       std::string("ioda::ObsSpace search via Kdtree not implemented,") +
       std::string("use 'brute_force' for 'searchMethod:' YAML configuration keyword.");
     ABORT(ErrMsg);
-    std::shared_ptr<ObsData::KDTree> kd = obsspace_ -> getKDTree();
+    // std::shared_ptr<ObsData::KDTree> kd = obsspace_ -> getKDTree();
   }
 
   oops::Log::trace() << "ioda::ObsSpace for LocalObs done" << std::endl;
