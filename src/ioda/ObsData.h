@@ -98,7 +98,7 @@ class ObsData : public oops::ObsSpaceBase {
   void put_db(const std::string & group, const std::string & name,
               const std::size_t vsize, const util::DateTime vdata[]);
 
-  KDTree & getKDTree();
+  const KDTree & getKDTree();
 
   const RecIdxIter recidx_begin() const;
   const RecIdxIter recidx_end() const;
