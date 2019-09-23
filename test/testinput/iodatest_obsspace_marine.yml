@@ -77,7 +77,7 @@ Observations:
       Localization: *localization
       TestData:
         nlocs: 200
-        nlocs_local: 3
+        nlocs_local: 0
         nrecs: 200
         nvars: 1
         groups:
@@ -101,7 +101,7 @@ Observations:
       Localization: *localization
       TestData:
         nlocs: 71558
-        nlocs_local: 3
+        nlocs_local: 41135
         nrecs: 71558
         nvars: 1
         groups:
@@ -125,7 +125,7 @@ Observations:
       Localization: *localization
       TestData:
         nlocs: 8065
-        nlocs_local: 3
+        nlocs_local: 8065
         nrecs: 8065
         nvars: 2
         groups:
