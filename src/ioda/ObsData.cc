@@ -1314,10 +1314,14 @@ void ObsData::createKDTree() {
  * \details This method returns the KDTree class member that can be used
  *          for searching for local obs when creating an ObsSpace.
  */
-ObsData::KDTree & ObsData::getKDTree() {
-  // Create the KDTree if it doesn't yet exist
-  if (kd_ == NULL)
-    createKDTree();
+const ObsData::KDTree & ObsData::getKDTree() const {
+  // Make sure KDTree has been created
+  if (kd_ == NULL) {
+    std::string ErrMsg =
+      std::string("ObsData::getKDTree: KDTree object does not exist") +
+      std::string("call ObsData::createKDTree() to create KDTree. Abort!");
+    ABORT(ErrMsg);
+  }
 
   return * kd_;
 }

@@ -98,7 +98,8 @@ class ObsData : public oops::ObsSpaceBase {
   void put_db(const std::string & group, const std::string & name,
               const std::size_t vsize, const util::DateTime vdata[]);
 
-  KDTree & getKDTree();
+  void createKDTree();
+  const KDTree & getKDTree() const;
 
   const RecIdxIter recidx_begin() const;
   const RecIdxIter recidx_end() const;
@@ -140,7 +141,6 @@ class ObsData : public oops::ObsSpaceBase {
                               std::vector<std::size_t> & Records);
   void ApplyTimingWindow(const std::unique_ptr<IodaIO> & FileIO);
   void BuildSortedObsGroups();
-  void createKDTree();
 
   template<typename VarType>
   void ApplyDistIndex(std::unique_ptr<VarType[]> & FullData,
