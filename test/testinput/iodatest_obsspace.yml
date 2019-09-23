@@ -183,7 +183,7 @@ Observations:
 
   - ObsSpace:
       name: "Radiosonde with grouping"
-      distribution: "InefficientDistribution"
+#      distribution: "InefficientDistribution"
       simulate:
       ObsDataIn:
         obsfile: "Data/sondes_obs_2018041500_m.nc4"
@@ -213,7 +213,7 @@ Observations:
 
   - ObsSpace:
       name: "Radiosonde with grouping and tw filtering"
-      distribution: "InefficientDistribution"
+#      distribution: "InefficientDistribution"
       simulate:
       ObsDataIn:
         obsfile: "Data/sondes_obs_2018041500_m_twfilt.nc4"
