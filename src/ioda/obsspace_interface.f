@@ -51,6 +51,15 @@ integer(kind=c_int) function c_obsspace_get_nvars(obss) bind(C,name='obsspace_ge
   type(c_ptr), value :: obss
 end function c_obsspace_get_nvars
 
+subroutine c_obsspace_get_comm(obss, lcname, cname) bind(C,name='obsspace_get_comm_f')
+  use, intrinsic :: iso_c_binding
+  implicit none
+
+  type(c_ptr), value :: obss
+  integer(c_int),intent(inout) :: lcname                  !< Communicator name length
+  character(kind=c_char,len=1), intent(inout) :: cname(*) !< Communicator name
+end subroutine c_obsspace_get_comm
+
 subroutine c_obsspace_get_recnum(obss, length, recnum) &
               & bind(C,name='obsspace_get_recnum_f')
   use, intrinsic :: iso_c_binding, only : c_ptr, c_size_t
@@ -59,7 +68,7 @@ subroutine c_obsspace_get_recnum(obss, length, recnum) &
   integer(c_size_t), intent(in)    :: length
   integer(c_size_t), intent(inout) :: recnum(length)
 end subroutine c_obsspace_get_recnum
-  
+
 subroutine c_obsspace_get_index(obss, length, indx) &
               & bind(C,name='obsspace_get_index_f')
   use, intrinsic :: iso_c_binding, only : c_ptr, c_size_t
@@ -68,7 +77,7 @@ subroutine c_obsspace_get_index(obss, length, indx) &
   integer(c_size_t), intent(in)    :: length
   integer(c_size_t), intent(inout) :: indx(length)
 end subroutine c_obsspace_get_index
-  
+
 logical(kind=c_bool) function c_obsspace_has(obss, group, vname) bind(C,name='obsspace_has_f')
   use, intrinsic :: iso_c_binding
   implicit none
@@ -91,7 +100,7 @@ subroutine c_obsspace_get_int32(obss, group, vname, length, vect) &
   integer(c_size_t), intent(in) :: length
   integer(c_int32_t), intent(inout) :: vect(length)
 end subroutine c_obsspace_get_int32
-  
+
 subroutine c_obsspace_get_int64(obss, group, vname, length, vect) &
               & bind(C,name='obsspace_get_int64_f')
   use, intrinsic :: iso_c_binding, only : c_ptr,c_char,c_size_t,c_int64_t
@@ -102,7 +111,7 @@ subroutine c_obsspace_get_int64(obss, group, vname, length, vect) &
   integer(c_size_t), intent(in) :: length
   integer(c_int64_t), intent(inout) :: vect(length)
 end subroutine c_obsspace_get_int64
-  
+
 subroutine c_obsspace_get_real32(obss, group, vname, length, vect) &
               & bind(C,name='obsspace_get_real32_f')
   use, intrinsic :: iso_c_binding, only : c_ptr,c_char,c_size_t,c_float
@@ -113,7 +122,7 @@ subroutine c_obsspace_get_real32(obss, group, vname, length, vect) &
   integer(c_size_t), intent(in) :: length
   real(c_float), intent(inout) :: vect(length)
 end subroutine c_obsspace_get_real32
-  
+
 subroutine c_obsspace_get_real64(obss, group, vname, length, vect) &
               & bind(C,name='obsspace_get_real64_f')
   use, intrinsic :: iso_c_binding, only : c_ptr,c_char,c_size_t,c_double
@@ -124,7 +133,7 @@ subroutine c_obsspace_get_real64(obss, group, vname, length, vect) &
   integer(c_size_t), intent(in) :: length
   real(c_double), intent(inout) :: vect(length)
 end subroutine c_obsspace_get_real64
-  
+
 subroutine c_obsspace_get_datetime(obss, group, vname, length, date, time) &
               & bind(C,name='obsspace_get_datetime_f')
   use, intrinsic :: iso_c_binding, only : c_ptr,c_char,c_size_t,c_int32_t
@@ -136,7 +145,7 @@ subroutine c_obsspace_get_datetime(obss, group, vname, length, date, time) &
   integer(c_int32_t), intent(inout) :: date(length)
   integer(c_int32_t), intent(inout) :: time(length)
 end subroutine c_obsspace_get_datetime
-  
+
 !-------------------------------------------------------------------------------
 ! store data in ObsSpace
 
@@ -187,4 +196,3 @@ end subroutine c_obsspace_put_real64
 !-------------------------------------------------------------------------------
 end interface
 !-------------------------------------------------------------------------------
-

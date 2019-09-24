@@ -55,7 +55,8 @@ class ObsData : public oops::ObsSpaceBase {
   typedef std::map<std::size_t, std::vector<std::size_t>> RecIdxMap;
   typedef RecIdxMap::const_iterator RecIdxIter;
 
-  ObsData(const eckit::Configuration &, const util::DateTime &, const util::DateTime &);
+  ObsData(const eckit::Configuration &, const eckit::mpi::Comm &,
+          const util::DateTime &, const util::DateTime &);
   /*!
    * \details Copy constructor for an ObsData object.
    */
@@ -175,7 +176,7 @@ class ObsData : public oops::ObsSpaceBase {
   const util::DateTime winend_;
 
   /*! \brief MPI communicator */
-  const eckit::mpi::Comm & commMPI_;
+  const eckit::mpi::Comm & commMPI_;  // problem with const, CG
 
   /*! \brief total number of locations */
   std::size_t gnlocs_;
