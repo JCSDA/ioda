@@ -14,6 +14,8 @@
 #include <string>
 #include <vector>
 
+#include "eckit/mpi/Comm.h"
+
 #include "ioda/ObsData.h"
 #include "oops/base/ObsSpaceBase.h"
 #include "oops/base/Variables.h"
@@ -33,7 +35,8 @@ class ObsSpace : public oops::ObsSpaceBase {
   typedef std::map<std::size_t, std::vector<std::size_t>> RecIdxMap;
   typedef RecIdxMap::const_iterator RecIdxIter;
 
-  ObsSpace(const eckit::Configuration &, const util::DateTime &, const util::DateTime &);
+  ObsSpace(const eckit::Configuration &, const eckit::mpi::Comm &,
+           const util::DateTime &, const util::DateTime &);
   /*!
    * \details Copy constructor for an ObsSpace object.
    */
@@ -82,7 +85,7 @@ class ObsSpace : public oops::ObsSpaceBase {
   /*! \details This method will return the end of the DA timing window */
   const util::DateTime & windowEnd() const {return obsspace_->windowEnd();}
   /*! \details This method will return the associated MPI communicator */
-  const eckit::mpi::Comm & comm() const {return obsspace_->comm();}
+  const eckit::mpi::Comm & comm() const {return obsspace_->comm();}  // problem with const, CG
 
   void generateDistribution(const eckit::Configuration &);
 

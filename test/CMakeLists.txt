@@ -14,7 +14,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_fileio.yml
   testinput/iodatest_distribution.yml
   testinput/iodatest_obsspace_container.yml
-  testinput/iodatest_marine_obsspace.yml  
+  testinput/iodatest_marine_obsspace.yml
   testinput/iodatest_fileio_odb_api.yml
   testinput/iodatest_obsspace_fortran.yml
 )
@@ -58,7 +58,7 @@ list( APPEND ioda_test_data
   atmosphere/gnssro_obs_2018041500_l.nc4
 
   atmosphere/aod_obs_2018041500_m.nc4
-  atmosphere/hirs4_metop-a_obs_2018041500_m.nc4  
+  atmosphere/hirs4_metop-a_obs_2018041500_m.nc4
   atmosphere/iasi_metop-a_obs_2018041500_m.nc4
   atmosphere/sndrd1_g15_obs_2018041500_m.nc4
   atmosphere/sndrd2_g15_obs_2018041500_m.nc4
@@ -130,7 +130,7 @@ ecbuild_add_test( TARGET test_ioda_marine_obsspace
                   SOURCES mains/TestObsSpace.cc
                   ARGS "testinput/iodatest_marine_obsspace.yml"
                   LIBS    ioda )
-		
+
 ecbuild_add_test( TARGET test_ioda_fileio
                   SOURCES mains/TestIodaIO.cc
                   ARGS "testinput/iodatest_fileio.yml"
@@ -182,4 +182,3 @@ add_fctest( TARGET  test_ioda_obsspace_fortran
             LINKER_LANGUAGE Fortran
             LIBS    ioda )
 endif()
-

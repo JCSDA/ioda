@@ -1,8 +1,8 @@
 /*
  * (C) Copyright 2018 UCAR
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
 #ifndef TEST_INTERFACE_OBSSPACE_H_
@@ -51,7 +51,8 @@ class ObsSpaceTestFixture : private boost::noncopyable {
 
     for (std::size_t jj = 0; jj < conf.size(); ++jj) {
       eckit::LocalConfiguration obsconf(conf[jj], "ObsSpace");
-      boost::shared_ptr<ioda::ObsSpace> tmp(new ioda::ObsSpace(obsconf, bgn, end));
+      boost::shared_ptr<ioda::ObsSpace> tmp(new ioda::ObsSpace(obsconf, eckit::mpi::comm(),
+                                                               bgn, end));
       ospaces_.push_back(tmp);
     }
   }
@@ -211,7 +212,7 @@ void testWriteableGroup() {
 
     Odb->put_db("TestGroup", VarName, Nlocs, ExpectedVec.data());
     Odb->get_db("TestGroup", VarName, Nlocs, TestVec.data());
-    
+
     VecMatch = true;
     for (std::size_t i = 0; i < Nlocs; ++i) {
       VecMatch = VecMatch && (int(ExpectedVec[i]) == int(TestVec[i]));
