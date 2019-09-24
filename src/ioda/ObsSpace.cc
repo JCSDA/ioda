@@ -53,8 +53,7 @@ ObsSpace::ObsSpace(const ObsSpace & os,
                    const int & nobs)
   : oops::ObsSpaceBase(os.obsspace_->getConfig(), os.windowStart(), os.windowEnd()),
     obsspace_(os.obsspace_),
-    localobs_(), isLocal_(true),
-    searchDist_(dist), searchMaxNobs_(nobs)
+    localobs_(), isLocal_(true)
 {
   oops::Log::trace() << "ioda::ObsSpace for LocalObs starting" << std::endl;
 
@@ -87,7 +86,7 @@ ObsSpace::ObsSpace(const ObsSpace & os,
         localDist += dx * dx;
       }
 
-      if ( std::sqrt(localDist) <= searchDist_ ) {
+      if ( std::sqrt(localDist) <= dist ) {
           localobs_.push_back(jj);
       }
     }
