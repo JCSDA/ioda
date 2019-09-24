@@ -81,8 +81,6 @@ class ObsSpace : public oops::ObsSpaceBase {
 
   /*! \details This method will return the name of the obs type being stored */
   const std::string & obsname() const {return obsspace_->obsname();}
-  /*! \details This method will return the handle to the configuration */
-  const eckit::Configuration & getConfig() const {return obsspace_->getConfig();}
   /*! \details This method will return the start of the DA timing window */
   const util::DateTime & windowStart() const {return obsspace_->windowStart();}
   /*! \details This method will return the end of the DA timing window */
