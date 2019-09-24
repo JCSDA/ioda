@@ -51,14 +51,13 @@ ObsSpace::ObsSpace(const ObsSpace & os,
                    const eckit::geometry::Point2 & refPoint,
                    const double & dist,
                    const int & nobs)
-  : oops::ObsSpaceBase(os.getConfig(), os.windowStart(), os.windowEnd()),
+  : oops::ObsSpaceBase(os.obsspace_->getConfig(), os.windowStart(), os.windowEnd()),
     obsspace_(os.obsspace_),
     localobs_(), isLocal_(true),
     searchDist_(dist), searchMaxNobs_(nobs)
 {
   oops::Log::trace() << "ioda::ObsSpace for LocalObs starting" << std::endl;
 
-  const eckit::LocalConfiguration config = os.getConfig();
   const std::string searchMethod = "brute_force";  //  hard-wired for now!
 
   eckit::geometry::Point3 refPointxyz;
