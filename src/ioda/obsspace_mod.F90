@@ -128,11 +128,13 @@ subroutine obsspace_get_comm(obss, f_comm)
   integer :: lcname
   character(kind=c_char,len=1) :: cname(101)
   character(len=100) :: name
+  character(len=:), allocatable :: name_comm
 
   call c_obsspace_get_comm(obss, lcname, cname)
   call c_f_string(cname, name)
-  f_comm = fckit_mpi_comm(trim(name))
 
+  name_comm = name(1:lcname)
+  f_comm = fckit_mpi_comm(name_comm)
 end subroutine obsspace_get_comm
 
 !-------------------------------------------------------------------------------
