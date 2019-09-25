@@ -13,14 +13,22 @@ Locations:
   - 0
   - -100
 Observations:
+  _: &localization
+    distance: 3.35e6
+    max_nobs: -1
+    searchMethod: "brute_force"
+    lonRefPoint: 0.
+    latRefPoint: 90.
   ObsTypes:
   - ObsSpace:
       name: ADT
       simulate:
       ObsDataIn:
         obsfile: Data/Jason-2-2018-04-15.nc
+      Localization: *localization
       TestData:
         nlocs: 160607
+        nlocs_local: 1930
         nrecs: 160607
         nvars: 1
         groups:
@@ -40,8 +48,10 @@ Observations:
       simulate:
       ObsDataIn:
         obsfile: Data/profile_2018-04-15.nc
+      Localization: *localization
       TestData:
         nlocs: 918
+        nlocs_local: 0
         nrecs: 918
         nvars: 1
         groups:
@@ -61,8 +71,10 @@ Observations:
       simulate:
       ObsDataIn:
         obsfile: Data/sst_obs-2018-04-15.nc4
+      Localization: *localization
       TestData:
         nlocs: 200
+        nlocs_local: 0
         nrecs: 200
         nvars: 1
         groups:
@@ -82,8 +94,10 @@ Observations:
       simulate:
       ObsDataIn:
         obsfile: Data/icec-2018-04-15.nc
+      Localization: *localization
       TestData:
         nlocs: 71558
+        nlocs_local: 41757
         nrecs: 71558
         nvars: 1
         groups:
@@ -103,8 +117,10 @@ Observations:
       simulate:
       ObsDataIn:
         obsfile: Data/cryosat2-2018-04-15.nc
+      Localization: *localization
       TestData:
         nlocs: 8065
+        nlocs_local: 8065
         nrecs: 8065
         nvars: 2
         groups:

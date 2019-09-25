@@ -49,8 +49,9 @@ namespace ioda {
  * \param[in] end    DateTime object holding the end of the DA timing window
  */
 ObsData::ObsData(const eckit::Configuration & config,
-                   const util::DateTime & bgn, const util::DateTime & end)
+                 const util::DateTime & bgn, const util::DateTime & end)
   : oops::ObsSpaceBase(config, bgn, end),
+    config_(config),
     winbgn_(bgn), winend_(end), commMPI_(oops::mpi::comm()),
     database_(), obsvars_()
 {
@@ -279,7 +280,7 @@ void ObsData::get_db_helper(const std::string & group, const std::string & name,
  *
  * \details This method fills in the code for the get_db methods that is transferring
  *          DateTime data. This is here because there isn't a way to convert between
- *          numeric data and DateTime objects. 
+ *          numeric data and DateTime objects.
  *
  * \param[in]  group Name of container group (ObsValue, ObsError, MetaData, etc.)
  * \param[in]  name  Name of container variable
@@ -1139,7 +1140,7 @@ void ObsData::LoadFromDbConvert(const std::string & GroupName, const std::string
 /*!
  * \details This method applys the distribution index on data read from the input obs file.
  *          This method will allocate the memory for the IndexedData pointer since it
- *          is also calculating the shape and size of the IndexedData memory. 
+ *          is also calculating the shape and size of the IndexedData memory.
  *          It is expected that when this method is called that the distribution index will
  *          have the process element and DA timing window effects accounted for.
  *
@@ -1232,7 +1233,7 @@ std::string ObsData::DesiredVarType(std::string & GroupName, std::string & FileV
  */
 template<typename FromType, typename ToType>
 void ObsData::ConvertVarType(const FromType * FromVar, ToType * ToVar,
-                              const std::size_t VarSize) {
+                             const std::size_t VarSize) {
   std::string FromTypeName = TypeIdName(typeid(FromType));
   std::string ToTypeName = TypeIdName(typeid(ToType));
   const FromType FromMiss = util::missingValue(FromMiss);
@@ -1276,7 +1277,50 @@ void ObsData::ConvertVarType(const FromType * FromVar, ToType * ToVar,
 void ObsData::printJo(const ObsVector & dy, const ObsVector & grad) {
   oops::Log::info() << "ObsData::printJo not implemented" << std::endl;
 }
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method creates a private KDTree class member that can be used
+ *          for searching for local obs to create an ObsSpace.
+ */
+void ObsData::createKDTree() {
+  // Initialize KDTree class member
+  kd_ = std::shared_ptr<ObsData::KDTree> ( new KDTree() );
+  // Define lats,lons
+  std::vector<float> lats(nlocs_);
+  std::vector<float> lons(nlocs_);
 
+  // Get latitudes and longitudes of all observations.
+  this -> get_db("MetaData", "longitude", nlocs_, lons.data());
+  this -> get_db("MetaData", "latitude", nlocs_, lats.data());
+
+  // Define points list from lat/lon values
+  typedef KDTree::PointType Point;
+  std::vector<KDTree::Value> points;
+  for (unsigned int i = 0; i < nlocs_; i++) {
+    eckit::geometry::Point2 lonlat(lons[i], lats[i]);
+    Point xyz = Point();
+    // FIXME: get geometry from yaml, for now assume spherical.
+    eckit::geometry::UnitSphere::convertSphericalToCartesian(lonlat, xyz);
+    double index = static_cast<double>(i);
+    KDTree::Value v(xyz, index);
+    points.push_back(v);
+  }
+
+  // Create KDTree class member from points list.
+  kd_->build(points.begin(), points.end());
+}
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns the KDTree class member that can be used
+ *          for searching for local obs when creating an ObsSpace.
+ */
+const ObsData::KDTree & ObsData::getKDTree() {
+  // Create the KDTree if it doesn't yet exist
+  if (kd_ == NULL)
+    createKDTree();
+
+  return * kd_;
+}
 // -----------------------------------------------------------------------------
 
 }  // namespace ioda
