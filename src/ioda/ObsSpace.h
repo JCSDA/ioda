@@ -17,7 +17,6 @@
 #include "eckit/geometry/Point2.h"
 
 #include "ioda/ObsData.h"
-#include "oops/base/ObsSpaceBase.h"
 #include "oops/base/Variables.h"
 #include "oops/util/DateTime.h"
 
@@ -30,8 +29,9 @@ namespace ioda {
   class ObsVector;
 
 /// Observation Space View
-class ObsSpace : public oops::ObsSpaceBase {
+class ObsSpace : public util::Printable {
  public:
+  static const std::string classname() {return "ioda::ObsSpace";}
   typedef std::map<std::size_t, std::vector<std::size_t>> RecIdxMap;
   typedef RecIdxMap::const_iterator RecIdxIter;
 

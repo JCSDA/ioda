@@ -16,8 +16,6 @@
 #include "eckit/geometry/Point3.h"
 #include "eckit/geometry/UnitSphere.h"
 
-#include "ioda/ObsData.h"
-
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
@@ -38,8 +36,7 @@ namespace ioda {
  */
 ObsSpace::ObsSpace(const eckit::Configuration & config,
                    const util::DateTime & bgn, const util::DateTime & end)
-  : oops::ObsSpaceBase(config, bgn, end),
-    obsspace_(new ObsData(config, bgn, end)),
+  : obsspace_(new ObsData(config, bgn, end)),
     localobs_(obsspace_->nlocs()), isLocal_(false)
 {
   oops::Log::trace() << "ioda::ObsSpaces starting" << std::endl;
@@ -51,8 +48,7 @@ ObsSpace::ObsSpace(const ObsSpace & os,
                    const eckit::geometry::Point2 & refPoint,
                    const double & dist,
                    const int & nobs)
-  : oops::ObsSpaceBase(os.obsspace_->getConfig(), os.windowStart(), os.windowEnd()),
-    obsspace_(os.obsspace_),
+  : obsspace_(os.obsspace_),
     localobs_(), isLocal_(true)
 {
   oops::Log::trace() << "ioda::ObsSpace for LocalObs starting" << std::endl;
