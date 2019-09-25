@@ -8,12 +8,13 @@
 #include "ioda/ObsSpace.h"
 
 #include <memory>
+#include <numeric>
 #include <string>
 #include <vector>
 
 #include "eckit/config/Configuration.h"
-
-#include "ioda/ObsData.h"
+#include "eckit/geometry/Point3.h"
+#include "eckit/geometry/UnitSphere.h"
 
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/DateTime.h"
@@ -35,10 +36,54 @@ namespace ioda {
  */
 ObsSpace::ObsSpace(const eckit::Configuration & config,
                    const util::DateTime & bgn, const util::DateTime & end)
-  : oops::ObsSpaceBase(config, bgn, end),
-    obsspace_ (new ObsData(config, bgn, end))
+  : obsspace_(new ObsData(config, bgn, end)),
+    localobs_(obsspace_->nlocs()), isLocal_(false)
+{
+  oops::Log::trace() << "ioda::ObsSpaces starting" << std::endl;
+  std::iota(localobs_.begin(), localobs_.end(), 0);
+  oops::Log::trace() << "ioda::ObsSpace done" << std::endl;
+}
 
-  {}
+ObsSpace::ObsSpace(const ObsSpace & os,
+                   const eckit::geometry::Point2 & refPoint,
+                   const double & dist,
+                   const int & nobs)
+  : obsspace_(os.obsspace_),
+    localobs_(), isLocal_(true)
+{
+  oops::Log::trace() << "ioda::ObsSpace for LocalObs starting" << std::endl;
+
+  const std::string searchMethod = "brute_force";  //  hard-wired for now!
+
+  if ( searchMethod == "brute_force" ) {
+    oops::Log::trace() << "ioda::ObsSpace searching via brute force" << std::endl;
+
+    std::size_t nlocs = obsspace_->nlocs();
+    std::vector<float> lats(nlocs);
+    std::vector<float> lons(nlocs);
+
+    // Get latitudes and longitudes of all observations.
+    obsspace_ -> get_db("MetaData", "longitude", nlocs, lons.data());
+    obsspace_ -> get_db("MetaData", "latitude",  nlocs, lats.data());
+
+    const double radiusEarth = 6.371e6;
+    for (unsigned int jj = 0; jj < nlocs; ++jj) {
+      eckit::geometry::Point2 searchPoint(lons[jj], lats[jj]);
+      double localDist = eckit::geometry::Sphere::distance(radiusEarth, refPoint, searchPoint);
+      if ( localDist < dist ) localobs_.push_back(jj);
+    }
+  } else {
+    oops::Log::trace() << "ioda::ObsSpace searching via KDTree" << std::endl;
+
+    std::string ErrMsg =
+      std::string("ioda::ObsSpace search via KDTree not implemented,") +
+      std::string("use 'brute_force' for 'searchMethod:' YAML configuration keyword.");
+    ABORT(ErrMsg);
+  }
+
+  oops::Log::trace() << "ioda::ObsSpace for LocalObs done" << std::endl;
+}
+
 // -----------------------------------------------------------------------------
 /*!
  * \details Destructor for an ObsSpace object. This destructor will clean up the ObsSpace
@@ -48,26 +93,59 @@ ObsSpace::ObsSpace(const eckit::Configuration & config,
  *          ObsSpace object.
  */
 ObsSpace::~ObsSpace() {
+  oops::Log::trace() << "ioda::~ObsSpace done" << std::endl;
 }
 
 void ObsSpace::get_db(const std::string & group, const std::string & name,
                       const std::size_t vsize, int vdata[]) const {
-  obsspace_->get_db(group, name, vsize, vdata);
+  if ( isLocal_ ) {
+    std::vector<int> vdataTmp(obsspace_ -> nlocs());
+    obsspace_->get_db(group, name, vdataTmp.size(), vdataTmp.data());
+    for (unsigned int ii = 0; ii < localobs_.size(); ++ii) {
+      vdata[ii] = vdataTmp[localobs_[ii]];
+    }
+  } else {
+    obsspace_->get_db(group, name, vsize, vdata);
+  }
 }
 
 void ObsSpace::get_db(const std::string & group, const std::string & name,
                       const std::size_t vsize, float vdata[]) const {
-  obsspace_->get_db(group, name, vsize, vdata);
+  if ( isLocal_ ) {
+    std::vector<float> vdataTmp(obsspace_->nlocs());
+    obsspace_->get_db(group, name, vdataTmp.size(), vdataTmp.data());
+    for (unsigned int ii = 0; ii < localobs_.size(); ++ii) {
+      vdata[ii] = vdataTmp[localobs_[ii]];
+    }
+  } else {
+    obsspace_->get_db(group, name, vsize, vdata);
+  }
 }
 
 void ObsSpace::get_db(const std::string & group, const std::string & name,
                       const std::size_t vsize, double vdata[]) const {
-  obsspace_->get_db(group, name, vsize, vdata);
+  if ( isLocal_ ) {
+    std::vector<double> vdataTmp(obsspace_->nlocs());
+    obsspace_->get_db(group, name, vdataTmp.size(), vdataTmp.data());
+    for (unsigned int ii = 0; ii < localobs_.size(); ++ii) {
+      vdata[ii] = vdataTmp[localobs_[ii]];
+    }
+  } else {
+    obsspace_->get_db(group, name, vsize, vdata);
+  }
 }
 
 void ObsSpace::get_db(const std::string & group, const std::string & name,
                       const std::size_t vsize, util::DateTime vdata[]) const {
-  obsspace_->get_db(group, name, vsize, vdata);
+  if ( isLocal_ ) {
+    std::vector<util::DateTime> vdataTmp(obsspace_->nlocs());
+    obsspace_->get_db(group, name, vdataTmp.size(), vdataTmp.data());
+    for (unsigned int ii = 0; ii < localobs_.size(); ++ii) {
+      vdata[ii] = vdataTmp[localobs_[ii]];
+    }
+  } else {
+    obsspace_->get_db(group, name, vsize, vdata);
+  }
 }
 
 void ObsSpace::put_db(const std::string & group, const std::string & name,
@@ -122,7 +200,11 @@ std::size_t ObsSpace::gnlocs() const {
  *          multiple process elements.
  */
 std::size_t ObsSpace::nlocs() const {
-  return obsspace_->nlocs();
+  if ( isLocal_ ) {
+    return localobs_.size();
+  } else {
+    return obsspace_->nlocs();
+  }
 }
 
 // -----------------------------------------------------------------------------
