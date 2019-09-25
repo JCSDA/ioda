@@ -14,7 +14,7 @@ Locations:
   - -100
 Observations:
   _: &localization
-    distance: 0.5
+    distance: 3.35e6
     max_nobs: -1
     searchMethod: "brute_force"
     lonRefPoint: 0.
@@ -28,7 +28,7 @@ Observations:
       Localization: *localization
       TestData:
         nlocs: 160607
-        nlocs_local: 1511
+        nlocs_local: 1930
         nrecs: 160607
         nvars: 1
         groups:
@@ -97,7 +97,7 @@ Observations:
       Localization: *localization
       TestData:
         nlocs: 71558
-        nlocs_local: 41135
+        nlocs_local: 41757
         nrecs: 71558
         nvars: 1
         groups:

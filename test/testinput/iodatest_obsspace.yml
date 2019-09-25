@@ -14,7 +14,7 @@ Locations:
   - -100.0
 Observations:
   _: &localization
-    distance: 0.35
+    distance: 3.35e6
     max_nobs: -1
     searchMethod: "brute_force"
     lonRefPoint: 0.
@@ -29,7 +29,7 @@ Observations:
       TestData:
         nlocs: 100
         nrecs: 100
-        nlocs_local: 3
+        nlocs_local: 11
         nvars: 1
         groups:
           - "MetaData"
@@ -51,7 +51,7 @@ Observations:
       Localization: *localization
       TestData:
         nlocs: 100
-        nlocs_local: 4
+        nlocs_local: 10
         nrecs: 100
         nvars: 15
         groups:
@@ -120,7 +120,7 @@ Observations:
       Localization: *localization
       TestData:
         nlocs: 974
-        nlocs_local: 97
+        nlocs_local: 110
         nrecs: 974
         nvars: 5
         groups:
@@ -187,7 +187,7 @@ Observations:
       Localization: *localization
       TestData:
         nlocs: 974
-        nlocs_local: 97
+        nlocs_local: 110
         nrecs: 36
         nvars: 5
         groups:
@@ -214,7 +214,7 @@ Observations:
       Localization: *localization
       TestData:
         nlocs: 968
-        nlocs_local: 97
+        nlocs_local: 109
         nrecs: 31
         nvars: 5
         groups:
@@ -230,4 +230,3 @@ Observations:
           - 1.0e-11
       ObsDataOut:
         obsfile: "testoutput/diagout_with_groups_twfilt.nc4"
-
