@@ -14,6 +14,10 @@
 #include <string>
 #include <vector>
 
+#include "eckit/container/KDTree.h"
+#include "eckit/geometry/Point2.h"
+#include "eckit/geometry/Point3.h"
+#include "eckit/geometry/UnitSphere.h"
 #include "eckit/mpi/Comm.h"
 #include "oops/base/ObsSpaceBase.h"
 #include "oops/base/Variables.h"
@@ -34,9 +38,9 @@ namespace eckit {
 namespace ioda {
   class ObsVector;
 
-/// Observation Space
+/// Observation Data
 /*!
- * \brief Observation space class for IODA
+ * \brief Observation data class for IODA
  *
  * \details This class handles the memory store of observation data. It handles the transfer
  *          of data between memory and files, the distribution of obs data across multiple
@@ -54,6 +58,11 @@ class ObsData : public oops::ObsSpaceBase {
  public:
   typedef std::map<std::size_t, std::vector<std::size_t>> RecIdxMap;
   typedef RecIdxMap::const_iterator RecIdxIter;
+  struct TreeTrait {
+      typedef eckit::geometry::Point3 Point;
+      typedef double                  Payload;
+  };
+  typedef eckit::KDTreeMemory<TreeTrait> KDTree;
 
   ObsData(const eckit::Configuration &, const eckit::mpi::Comm &,
           const util::DateTime &, const util::DateTime &);
@@ -90,6 +99,8 @@ class ObsData : public oops::ObsSpaceBase {
   void put_db(const std::string & group, const std::string & name,
               const std::size_t vsize, const util::DateTime vdata[]);
 
+  const KDTree & getKDTree();
+
   const RecIdxIter recidx_begin() const;
   const RecIdxIter recidx_end() const;
   bool recidx_has(const std::size_t RecNum) const;
@@ -100,6 +111,8 @@ class ObsData : public oops::ObsSpaceBase {
 
   /*! \details This method will return the name of the obs type being stored */
   const std::string & obsname() const {return obsname_;}
+  /*! \details This method will return the handle to the configuration */
+  const eckit::Configuration & getConfig() const {return config_;}
   /*! \details This method will return the start of the DA timing window */
   const util::DateTime & windowStart() const {return winbgn_;}
   /*! \details This method will return the end of the DA timing window */
@@ -128,6 +141,7 @@ class ObsData : public oops::ObsSpaceBase {
                               std::vector<std::size_t> & Records);
   void ApplyTimingWindow(const std::unique_ptr<IodaIO> & FileIO);
   void BuildSortedObsGroups();
+  void createKDTree();
 
   template<typename VarType>
   void ApplyDistIndex(std::unique_ptr<VarType[]> & FullData,
@@ -169,6 +183,9 @@ class ObsData : public oops::ObsSpaceBase {
   /*! \brief name of obs space */
   std::string obsname_;
 
+  /*! \brief Configuration file */
+  const eckit::LocalConfiguration config_;
+
   /*! \brief Beginning of DA timing window */
   const util::DateTime winbgn_;
 
@@ -177,6 +194,9 @@ class ObsData : public oops::ObsSpaceBase {
 
   /*! \brief MPI communicator */
   const eckit::mpi::Comm & commMPI_;  // problem with const, CG
+
+  /*! \brief KD Tree */
+  std::shared_ptr<KDTree> kd_;
 
   /*! \brief total number of locations */
   std::size_t gnlocs_;

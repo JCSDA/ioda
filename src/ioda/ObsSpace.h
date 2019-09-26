@@ -14,10 +14,10 @@
 #include <string>
 #include <vector>
 
+#include "eckit/geometry/Point2.h"
 #include "eckit/mpi/Comm.h"
 
 #include "ioda/ObsData.h"
-#include "oops/base/ObsSpaceBase.h"
 #include "oops/base/Variables.h"
 #include "oops/util/DateTime.h"
 
@@ -30,13 +30,15 @@ namespace ioda {
   class ObsVector;
 
 /// Observation Space View
-class ObsSpace : public oops::ObsSpaceBase {
+class ObsSpace : public util::Printable {
  public:
+  static const std::string classname() {return "ioda::ObsSpace";}
   typedef std::map<std::size_t, std::vector<std::size_t>> RecIdxMap;
   typedef RecIdxMap::const_iterator RecIdxIter;
 
-  ObsSpace(const eckit::Configuration &, const eckit::mpi::Comm &,
-           const util::DateTime &, const util::DateTime &);
+  ObsSpace(const eckit::Configuration &, const eckit::mpi::Comm &, const util::DateTime &, const util::DateTime &);
+  ObsSpace(const ObsSpace &, const eckit::geometry::Point2 &,
+           const double &, const int &);
   /*!
    * \details Copy constructor for an ObsSpace object.
    */
@@ -97,7 +99,8 @@ class ObsSpace : public oops::ObsSpaceBase {
   void print(std::ostream &) const;
 
   std::shared_ptr<ObsData> obsspace_;
-  // std::vector<int> localobs_;
+  std::vector<std::size_t> localobs_;
+  bool isLocal_;
 };
 
 }  // namespace ioda
