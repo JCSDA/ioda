@@ -13,15 +13,23 @@ Locations:
   - 0.0
   - -100.0
 Observations:
+  _: &localization
+    distance: 3.35e6
+    max_nobs: -1
+    searchMethod: "brute_force"
+    lonRefPoint: 0.
+    latRefPoint: 90.
   ObsTypes:
   - ObsSpace:
       name: "Aod"
       simulate:
       ObsDataIn:
         obsfile: "Data/aod_obs_2018041500_m.nc4"
+      Localization: *localization
       TestData:
         nlocs: 100
         nrecs: 100
+        nlocs_local: 11
         nvars: 1
         groups:
           - "MetaData"
@@ -40,8 +48,10 @@ Observations:
       simulate:
       ObsDataIn:
         obsfile: "Data/amsua_n19_obs_2018041500_m.nc4"
+      Localization: *localization
       TestData:
         nlocs: 100
+        nlocs_local: 10
         nrecs: 100
         nvars: 15
         groups:
@@ -51,8 +61,8 @@ Observations:
           - "latitude"
           - "longitude"
         norms:
-          - 432.95617402805823 
-          - 1661.1529210392009 
+          - 432.95617402805823
+          - 1661.1529210392009
         tolerance:
           - 1.0e-11
 
@@ -61,8 +71,10 @@ Observations:
       simulate:
       ObsDataIn:
         obsfile: "Data/smap_obs_2018041500_m.nc4"
+      Localization: *localization
       TestData:
         nlocs: 45
+        nlocs_local: 0
         nrecs: 45
         nvars: 4
         groups:
@@ -82,8 +94,10 @@ Observations:
       simulate:
       ObsDataIn:
         obsfile: "Data/gmi_gpm_obs_2018041500_m.nc4"
+      Localization: *localization
       TestData:
         nlocs: 12
+        nlocs_local: 0
         nrecs: 12
         nvars: 13
         groups:
@@ -103,8 +117,10 @@ Observations:
       simulate:
       ObsDataIn:
         obsfile: "Data/sondes_obs_2018041500_m.nc4"
+      Localization: *localization
       TestData:
         nlocs: 974
+        nlocs_local: 110
         nrecs: 974
         nvars: 5
         groups:
@@ -128,13 +144,15 @@ Observations:
       Generate:
         nobs: 10   # generate 10 obs
         lat1: 0    # with lat ranging form 0-10.
-        lat2: 10   # 
+        lat2: 10   #
         lon1: 0    # and lon ranging from 0-10.
         lon2: 10
         random_seed: 29837
         obs_errors: [1.0, 2.0]
+      Localization: *localization
       TestData:
         nlocs: 10
+        nlocs_local: 0
         nrecs: 10
         nvars: 2
         groups:
@@ -166,8 +184,10 @@ Observations:
           group_variable: "station_id"
           sort_variable: "air_pressure"
           sort_order: "descending"
+      Localization: *localization
       TestData:
         nlocs: 974
+        nlocs_local: 110
         nrecs: 36
         nvars: 5
         groups:
@@ -191,8 +211,10 @@ Observations:
         obsfile: "Data/sondes_obs_2018041500_m_twfilt.nc4"
         obsgrouping:
           group_variable: "station_id"
+      Localization: *localization
       TestData:
         nlocs: 968
+        nlocs_local: 109
         nrecs: 31
         nvars: 5
         groups:
@@ -208,4 +230,3 @@ Observations:
           - 1.0e-11
       ObsDataOut:
         obsfile: "testoutput/diagout_with_groups_twfilt.nc4"
-
