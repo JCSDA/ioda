@@ -14,8 +14,9 @@ list( APPEND ioda_test_input
   testinput/iodatest_fileio.yml
   testinput/iodatest_distribution.yml
   testinput/iodatest_obsspace_container.yml
-  testinput/iodatest_marine_obsspace.yml  
+  testinput/iodatest_obsspace_marine.yml
   testinput/iodatest_fileio_odb_api.yml
+  testinput/iodatest_obsspace_fortran.yml
 )
 
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/testinput)
@@ -48,6 +49,7 @@ list( APPEND ioda_test_data
   atmosphere/airs_aqua_obs_2018041500_s.nc4
   atmosphere/sondes_obs_2018041500_m.nc4
   atmosphere/sondes_obs_2018041500_s.nc4
+  atmosphere/sondes_obs_2018041500_vs.nc4
   atmosphere/diag_t_obs_01_wprofiles.odb
   atmosphere/diag_t_obs_01_wprofiles_odb
   atmosphere/smap_obs_2018041500_m.nc4
@@ -56,7 +58,7 @@ list( APPEND ioda_test_data
   atmosphere/gnssro_obs_2018041500_l.nc4
 
   atmosphere/aod_obs_2018041500_m.nc4
-  atmosphere/hirs4_metop-a_obs_2018041500_m.nc4  
+  atmosphere/hirs4_metop-a_obs_2018041500_m.nc4
   atmosphere/iasi_metop-a_obs_2018041500_m.nc4
   atmosphere/sndrd1_g15_obs_2018041500_m.nc4
   atmosphere/sndrd2_g15_obs_2018041500_m.nc4
@@ -86,89 +88,136 @@ foreach(FILENAME ${ioda_test_data})
 endforeach(FILENAME)
 
 #####################################################################
+# Add executables frequently used in tests
 
-ecbuild_add_test( TARGET test_ioda_observationspace
-                  SOURCES mains/TestObservationSpace.cc
-                  ARGS "testinput/iodatest.yml"
-                  LIBS    ioda )
+ecbuild_add_executable( TARGET  test_ObservationSpace.x
+                        SOURCES mains/TestObservationSpace.cc
+                        LIBS    ioda
+                       )
 
-ecbuild_add_test( TARGET test_ioda_oops_obsvector
-                  SOURCES mains/TestObsVector.cc
-                  ARGS "testinput/iodatest_obsvector.yml"
-                  LIBS    ioda )
+ecbuild_add_executable( TARGET  test_ObsSpace.x
+                        SOURCES mains/TestObsSpace.cc
+                        LIBS    ioda
+                       )
 
-ecbuild_add_test( TARGET test_ioda_obsvector
-                  SOURCES mains/TestIodaObsVector.cc
-                  ARGS "testinput/iodatest_obsvector.yml"
-                  LIBS    ioda )
+ecbuild_add_executable( TARGET  test_IodaIO.x
+                        SOURCES mains/TestIodaIO.cc
+                        LIBS    ioda
+                       )
 
-ecbuild_add_test( TARGET test_ioda_distribution
+ecbuild_add_executable( TARGET  test_IodaDistribution.x
+                        SOURCES mains/TestDistribution.cc
+                        LIBS    ioda
+                       )
+
+ecbuild_add_executable( TARGET  test_ObsSpaceContainer.x
+                        SOURCES mains/TestObsSpaceContainer.cc
+                        LIBS    ioda
+                       )
+
+ecbuild_add_executable( TARGET  test_ObsVector.x
+                        SOURCES mains/TestObsVector.cc
+                        LIBS    ioda
+                       )
+
+ecbuild_add_executable( TARGET  test_IodaObsVector.x
+                        SOURCES mains/TestIodaObsVector.cc
+                        LIBS    ioda
+                       )
+
+#####################################################################
+
+ecbuild_add_test( TARGET  test_ioda_observationspace
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/test_ObservationSpace.x
+                  ARGS    "testinput/iodatest.yml"
+                  DEPENDS test_ObservationSpace.x )
+
+ecbuild_add_test( TARGET  test_ioda_oops_obsvector
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/test_ObsVector.x
+                  ARGS    "testinput/iodatest_obsvector.yml"
+                  DEPENDS test_ObsVector.x )
+
+ecbuild_add_test( TARGET  test_ioda_obsvector
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/test_IodaObsVector.x
+                  ARGS    "testinput/iodatest_obsvector.yml"
+                  DEPENDS test_IodaObsVector.x )
+
+ecbuild_add_test( TARGET  test_ioda_distribution
                   MPI     4
-                  SOURCES mains/TestDistribution.cc
-                  ARGS "testinput/iodatest_distribution.yml"
-                  LIBS    ioda )
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/test_IodaDistribution.x
+                  ARGS    "testinput/iodatest_distribution.yml"
+                  DEPENDS test_IodaDistribution.x )
 
-ecbuild_add_test( TARGET test_ioda_obsspacecontainer
-                  SOURCES mains/TestObsSpaceContainer.cc
-                  ARGS "testinput/iodatest_obsspace_container.yml"
-                  LIBS    ioda )
+ecbuild_add_test( TARGET  test_ioda_obsspacecontainer
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/test_ObsSpaceContainer.x
+                  ARGS    "testinput/iodatest_obsspace_container.yml"
+                  DEPENDS test_ObsSpaceContainer.x )
 
-ecbuild_add_test( TARGET test_ioda_obsspace
-                  SOURCES mains/TestObsSpace.cc
-                  ARGS "testinput/iodatest_obsspace.yml"
-                  LIBS    ioda )
+ecbuild_add_test( TARGET  test_ioda_obsspace
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/test_ObsSpace.x
+                  ARGS    "testinput/iodatest_obsspace.yml"
+                  DEPENDS test_ObsSpace.x )
 
-ecbuild_add_test( TARGET test_ioda_obsspace_mpi
+ecbuild_add_test( TARGET  test_ioda_obsspace_mpi
                   MPI     2
-                  SOURCES mains/TestObsSpace.cc
-                  ARGS "testinput/iodatest_obsspace.yml"
-                  LIBS    ioda )
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/test_ObsSpace.x
+                  ARGS    "testinput/iodatest_obsspace.yml"
+                  DEPENDS test_ObsSpace.x )
 
-ecbuild_add_test( TARGET test_ioda_marine_obsspace
-                  SOURCES mains/TestObsSpace.cc
-                  ARGS "testinput/iodatest_marine_obsspace.yml"
-                  LIBS    ioda )
-		
-ecbuild_add_test( TARGET test_ioda_fileio
-                  SOURCES mains/TestIodaIO.cc
-                  ARGS "testinput/iodatest_fileio.yml"
-                  LIBS    ioda )
+ecbuild_add_test( TARGET  test_ioda_obsspace_marine
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/test_ObsSpace.x
+                  ARGS    "testinput/iodatest_obsspace_marine.yml"
+                  DEPENDS test_ObsSpace.x )
+
+ecbuild_add_test( TARGET  test_ioda_fileio
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/test_IodaIO.x
+                  ARGS    "testinput/iodatest_fileio.yml"
+                  DEPENDS test_IodaIO.x )
 
 if (HAVE_ODB_API)
 
-ecbuild_add_test( TARGET test_ioda_observationspace_odb
-                  SOURCES mains/TestObservationSpace.cc
-                  ARGS "testinput/iodatest_odb.json"
-                  LIBS    ioda )
+ecbuild_add_test( TARGET  test_ioda_observationspace_odb
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/test_ObservationSpace.x
+                  ARGS    "testinput/iodatest_odb.json"
+                  DEPENDS test_ObservationSpace.x )
 
-ecbuild_add_test( TARGET test_ioda_oops_obsvector_odb
-                  SOURCES mains/TestObsVector.cc
-                  ARGS "testinput/iodatest_odb.json"
-                  LIBS    ioda )
+ecbuild_add_test( TARGET  test_ioda_oops_obsvector_odb
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/test_ObsVector.x
+                  ARGS    "testinput/iodatest_odb.json"
+                  DEPENDS test_ObsVector.x )
 
-ecbuild_add_test( TARGET test_ioda_obsvector_odb
-                  SOURCES mains/TestIodaObsVector.cc
-                  ARGS "testinput/iodatest_obsvector_odb.yml"
-                  LIBS    ioda )
+ecbuild_add_test( TARGET  test_ioda_obsvector_odb
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/test_IodaObsVector.x
+                  ARGS    "testinput/iodatest_obsvector_odb.yml"
+                  DEPENDS test_IodaObsVector.x )
 
-ecbuild_add_test( TARGET test_ioda_fileio_odb_api
-                  SOURCES mains/TestIodaIO.cc
-                  ARGS "testinput/iodatest_fileio_odb_api.yml"
-                  LIBS    ioda )
+ecbuild_add_test( TARGET  test_ioda_fileio_odb_api
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/test_IodaIO.x
+                  ARGS    "testinput/iodatest_fileio_odb_api.yml"
+                  DEPENDS test_IodaIO.x )
 
 endif (HAVE_ODB_API)
 
 if (HAVE_ODB)
 
-ecbuild_add_test( TARGET test_ioda_observationspace_odb1
-                  SOURCES mains/TestObservationSpace.cc
-                  ARGS "testinput/iodatest_odb1.json"
-                  LIBS    ioda OOPS )
+ecbuild_add_test( TARGET  test_ioda_observationspace_odb1
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/test_ObservationSpace.x
+                  ARGS    "testinput/iodatest_odb1.json"
+                  DEPENDS test_ObservationSpace.x )
 
-ecbuild_add_test( TARGET test_ioda_obsvector_odb1
-                  SOURCES mains/TestObsVector.cc
-                  ARGS "testinput/iodatest_odb1.json"
-                  LIBS    ioda OOPS )
+ecbuild_add_test( TARGET  test_ioda_oops_obsvector_odb1
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/test_ObsVector.x
+                  ARGS    "testinput/iodatest_odb1.json"
+                  DEPENDS test_ObsVector.x )
 
 endif (HAVE_ODB)
+
+if( HAVE_FCTEST )
+add_fctest( TARGET  test_ioda_obsspace_fortran
+            SOURCES ioda/obsspace.F90
+            ARGS    --config testinput/iodatest_obsspace_fortran.yml
+            CONDITION HAVE_FCTEST
+            LINKER_LANGUAGE Fortran
+            LIBS    ioda )
+endif()
 

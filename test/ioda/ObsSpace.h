@@ -1,8 +1,8 @@
 /*
  * (C) Copyright 2018 UCAR
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
 #ifndef TEST_INTERFACE_OBSSPACE_H_
@@ -86,6 +86,32 @@ void testConstructor() {
     EXPECT(Nlocs == ExpectedNlocs);
     EXPECT(Nrecs == ExpectedNrecs);
     EXPECT(Nvars == ExpectedNvars);
+  }
+}
+
+void testConstructor_local() {
+  typedef ObsSpaceTestFixture Test_;
+
+  const eckit::LocalConfiguration obsconf(::test::TestEnvironment::config(), "Observations");
+  std::vector<eckit::LocalConfiguration> conf;
+  obsconf.get("ObsTypes", conf);
+
+  for (std::size_t jj = 0; jj < Test_::size(); ++jj) {
+    double distance = conf[jj].getDouble("ObsSpace.Localization.distance");
+    double lonpt = conf[jj].getDouble("ObsSpace.Localization.lonRefPoint");
+    double latpt = conf[jj].getDouble("ObsSpace.Localization.latRefPoint");
+    int max_nobs = conf[jj].getInt("ObsSpace.Localization.max_nobs");
+    eckit::geometry::Point2 refPoint(lonpt, latpt);
+    // Create local obsspace object
+    ObsSpace obsspace_local(Test_::obspace(jj), refPoint, distance, max_nobs);
+    // Get the numbers of locations (nlocs) from the local obspace object
+    std::size_t Nlocs = obsspace_local.nlocs();
+    oops::Log::debug() << "Nlocs_local = " << Nlocs << std::endl;
+    obsspace_local.comm().allReduceInPlace(Nlocs, eckit::mpi::sum());
+    // Get the expected nlocs from the obspace object's configuration
+    std::size_t ExpectedNlocs = conf[jj].getUnsigned("ObsSpace.TestData.nlocs_local");
+    oops::Log::debug() << "Expected Nlocs_local = " << ExpectedNlocs << std::endl;
+    EXPECT(Nlocs == ExpectedNlocs);
   }
 }
 
@@ -211,7 +237,7 @@ void testWriteableGroup() {
 
     Odb->put_db("TestGroup", VarName, Nlocs, ExpectedVec.data());
     Odb->get_db("TestGroup", VarName, Nlocs, TestVec.data());
-    
+
     VecMatch = true;
     for (std::size_t i = 0; i < Nlocs; ++i) {
       VecMatch = VecMatch && (int(ExpectedVec[i]) == int(TestVec[i]));
@@ -234,6 +260,8 @@ class ObsSpace : public oops::Test {
 
     ts.emplace_back(CASE("ioda/ObsSpace/testConstructor")
       { testConstructor(); });
+    ts.emplace_back(CASE("ioda/ObsSpace/testConstructor_local")
+      { testConstructor_local(); });
     ts.emplace_back(CASE("ioda/ObsSpace/testGetDb")
       { testGetDb(); });
     ts.emplace_back(CASE("ioda/ObsSpace/testPutDb")

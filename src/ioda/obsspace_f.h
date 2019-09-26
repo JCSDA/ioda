@@ -18,6 +18,9 @@
 namespace ioda {
 
 extern "C" {
+  const ObsSpace * obsspace_construct_f(const eckit::Configuration *, const util::DateTime *,
+                                        const util::DateTime *);
+  void obsspace_destruct_f(ObsSpace *);
   int obsspace_get_gnlocs_f(const ObsSpace &);
   int obsspace_get_nlocs_f(const ObsSpace &);
   int obsspace_get_nrecs_f(const ObsSpace &);
