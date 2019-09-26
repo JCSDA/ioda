@@ -107,6 +107,16 @@ ObsData::ObsData(const eckit::Configuration & config, const eckit::mpi::Comm & c
     std::ostringstream ss;
     ss << "_" << std::setw(4) << std::setfill('0') << this->comm().rank();
 
+    // Get the member if in EDA case
+    if (config.has("member")) {
+      const int mymember = config.getInt("member");
+      std::ostringstream mm;
+      mm << "_" << std::setw(3) << std::setfill('0') << mymember;
+      // Construct the output file name
+      fileout_ = filename.insert(found, mm.str());
+      found += 4;
+    }
+
     // Construct the output file name
     fileout_ = filename.insert(found, ss.str());
 
