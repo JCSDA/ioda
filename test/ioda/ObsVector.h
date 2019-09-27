@@ -18,11 +18,11 @@
 #define ECKIT_TESTING_SELF_REGISTER_CASES 0
 
 #include "eckit/config/LocalConfiguration.h"
-#include "eckit/mpi/Comm.h"
 #include "eckit/testing/Test.h"
 #include "ioda/IodaTrait.h"
 #include "ioda/ObsSpace.h"
 #include "ioda/ObsVector.h"
+#include "oops/parallel/mpi/mpi.h"
 #include "oops/runs/Test.h"
 #include "oops/util/dot_product.h"
 #include "test/TestEnvironment.h"
@@ -54,7 +54,7 @@ class ObsVecTestFixture : private boost::noncopyable {
 
     for (std::size_t jj = 0; jj < conf.size(); ++jj) {
       eckit::LocalConfiguration obsconf(conf[jj], "ObsSpace");
-      boost::shared_ptr<ObsSpace_> tmp(new ObsSpace_(obsconf, eckit::mpi::comm(), bgn, end));
+      boost::shared_ptr<ObsSpace_> tmp(new ObsSpace_(obsconf, oops::mpi::comm(), bgn, end));
       ospaces_.push_back(tmp);
       eckit::LocalConfiguration ObsDataInConf;
       obsconf.get("ObsDataIn", ObsDataInConf);
