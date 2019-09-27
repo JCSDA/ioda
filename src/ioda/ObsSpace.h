@@ -88,7 +88,7 @@ class ObsSpace : public util::Printable {
   /*! \details This method will return the end of the DA timing window */
   const util::DateTime & windowEnd() const {return obsspace_->windowEnd();}
   /*! \details This method will return the associated MPI communicator */
-  const eckit::mpi::Comm & comm() const {return obsspace_->comm();}  // problem with const, CG
+  const eckit::mpi::Comm & comm() const {return obsspace_->comm();}
 
   void generateDistribution(const eckit::Configuration &);
 

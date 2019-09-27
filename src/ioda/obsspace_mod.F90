@@ -116,7 +116,7 @@ integer function obsspace_get_nvars(c_obss)
 end function obsspace_get_nvars
 
 !-------------------------------------------------------------------------------
-!>  Return the name and length of obsspace communicator
+!>  Return the name and name length of obsspace communicator
 subroutine obsspace_get_comm(obss, f_comm)
   use fckit_mpi_module, only: fckit_mpi_comm
   use string_f_c_mod

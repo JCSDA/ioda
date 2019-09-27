@@ -9,7 +9,7 @@
 #define IODA_OBSSPACE_F_H_
 
 #include "ObsSpace.h"
-#include "eckit/mpi/Comm.h"
+#include "oops/parallel/mpi/mpi.h"
 #include "oops/util/DateTime.h"
 
 // -----------------------------------------------------------------------------

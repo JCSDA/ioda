@@ -193,7 +193,7 @@ class ObsData : public oops::ObsSpaceBase {
   const util::DateTime winend_;
 
   /*! \brief MPI communicator */
-  const eckit::mpi::Comm & commMPI_;  // problem with const, CG
+  const eckit::mpi::Comm & commMPI_;
 
   /*! \brief KD Tree */
   std::shared_ptr<KDTree> kd_;
