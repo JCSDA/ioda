@@ -107,7 +107,7 @@ phases:
       - sed -i 's/BRANCH develop  UPDATE//' CMakeLists.txt
       - sed -i 's/BRANCH develop//' CMakeLists.txt
 
- build:
+  build:
     commands:
       - echo Executing build phase
       ## cannot source /etc/bash.bashrc so copy what's there for jscdauser
