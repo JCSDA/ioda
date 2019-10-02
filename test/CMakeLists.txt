@@ -9,6 +9,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_odb.json
   testinput/iodatest_odb1.json
   testinput/iodatest_obsspace.yml
+  testinput/iodatest_localobsspace.yml
   testinput/iodatest_obsvector.yml
   testinput/iodatest_obsvector_odb.yml
   testinput/iodatest_fileio.yml
@@ -100,6 +101,11 @@ ecbuild_add_executable( TARGET  test_ObsSpace.x
                         LIBS    ioda
                        )
 
+ecbuild_add_executable( TARGET  test_LocalObsSpace.x
+                        SOURCES mains/TestLocalObsSpace.cc
+                        LIBS    ioda
+                       )
+
 ecbuild_add_executable( TARGET  test_IodaIO.x
                         SOURCES mains/TestIodaIO.cc
                         LIBS    ioda
@@ -157,6 +163,11 @@ ecbuild_add_test( TARGET  test_ioda_obsspace
                   COMMAND ${CMAKE_BINARY_DIR}/bin/test_ObsSpace.x
                   ARGS    "testinput/iodatest_obsspace.yml"
                   DEPENDS test_ObsSpace.x )
+
+ecbuild_add_test( TARGET  test_ioda_localobsspace
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/test_LocalObsSpace.x
+                  ARGS    "testinput/iodatest_localobsspace.yml"
+                  DEPENDS test_LocalObsSpace.x )
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_mpi
                   MPI     2
