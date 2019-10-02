@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "eckit/geometry/Point2.h"
+#include "eckit/mpi/Comm.h"
 
 #include "ioda/ObsData.h"
 #include "oops/base/Variables.h"
@@ -35,7 +36,8 @@ class ObsSpace : public util::Printable {
   typedef std::map<std::size_t, std::vector<std::size_t>> RecIdxMap;
   typedef RecIdxMap::const_iterator RecIdxIter;
 
-  ObsSpace(const eckit::Configuration &, const util::DateTime &, const util::DateTime &);
+  ObsSpace(const eckit::Configuration &, const eckit::mpi::Comm &,
+           const util::DateTime &, const util::DateTime &);
   ObsSpace(const ObsSpace &, const eckit::geometry::Point2 &,
            const double &, const int &);
   /*!
