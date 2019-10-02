@@ -220,4 +220,3 @@ add_fctest( TARGET  test_ioda_obsspace_fortran
             LINKER_LANGUAGE Fortran
             LIBS    ioda )
 endif()
-
