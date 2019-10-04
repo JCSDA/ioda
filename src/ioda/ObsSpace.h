@@ -94,6 +94,7 @@ class ObsSpace : public util::Printable {
   void printJo(const ObsVector &, const ObsVector &);  // to be removed
 
   const oops::Variables & obsvariables() const {return obsspace_->obsvariables();}
+  bool isDistributed() const { return obsspace_->distribution()->isDistributed(); }
 
  private:
   void print(std::ostream &) const;

@@ -124,6 +124,7 @@ class ObsData : public oops::ObsSpaceBase {
   void printJo(const ObsVector &, const ObsVector &);  // to be removed
 
   const oops::Variables & obsvariables() const {return obsvars_;}
+  const std::shared_ptr<Distribution> distribution() const { return dist_;}
 
  private:
   void print(std::ostream &) const;
@@ -244,6 +245,8 @@ class ObsData : public oops::ObsSpaceBase {
 
   /*! \brief Sort order for obs grouping */
   std::string obs_sort_order_;
+
+  std::shared_ptr<Distribution> dist_;
 };
 
 /*! \brief Specialized (for DateTime type) helper function for public get_db */
