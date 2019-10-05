@@ -7,9 +7,11 @@
 
 #include "ioda/ObsSpace.h"
 
+#include <algorithm>
 #include <memory>
 #include <numeric>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "eckit/config/Configuration.h"
@@ -44,16 +46,24 @@ ObsSpace::ObsSpace(const eckit::Configuration & config,
   oops::Log::trace() << "ioda::ObsSpace done" << std::endl;
 }
 
+// -----------------------------------------------------------------------------
+/*!
+ * \details Second constructor for an ObsSpace object.
+ *          This constructor will search for observations within a (dist) from a
+ *          specified (Point2).  The number of locations will be limited to (nobs)
+ */
 ObsSpace::ObsSpace(const ObsSpace & os,
                    const eckit::geometry::Point2 & refPoint,
-                   const double & dist,
-                   const int & nobs)
+                   const double & maxDist,
+                   const int & maxNobs)
   : obsspace_(os.obsspace_),
     localobs_(), isLocal_(true)
 {
   oops::Log::trace() << "ioda::ObsSpace for LocalObs starting" << std::endl;
 
   const std::string searchMethod = "brute_force";  //  hard-wired for now!
+
+  std::vector<double> obsdist;
 
   if ( searchMethod == "brute_force" ) {
     oops::Log::trace() << "ioda::ObsSpace searching via brute force" << std::endl;
@@ -70,7 +80,10 @@ ObsSpace::ObsSpace(const ObsSpace & os,
     for (unsigned int jj = 0; jj < nlocs; ++jj) {
       eckit::geometry::Point2 searchPoint(lons[jj], lats[jj]);
       double localDist = eckit::geometry::Sphere::distance(radiusEarth, refPoint, searchPoint);
-      if ( localDist < dist ) localobs_.push_back(jj);
+      if ( localDist < maxDist ) {
+        localobs_.push_back(jj);
+        obsdist.push_back(localDist);
+      }
     }
   } else {
     oops::Log::trace() << "ioda::ObsSpace searching via KDTree" << std::endl;
@@ -79,6 +92,41 @@ ObsSpace::ObsSpace(const ObsSpace & os,
       std::string("ioda::ObsSpace search via KDTree not implemented,") +
       std::string("use 'brute_force' for 'searchMethod:' YAML configuration keyword.");
     ABORT(ErrMsg);
+  }
+
+  if ( (maxNobs > 0) && (localobs_.size() > maxNobs) ) {
+    for (unsigned int jj = 0; jj < localobs_.size(); ++jj) {
+        oops::Log::debug() << "Before sort [i, d]: " << localobs_[jj]
+            << " , " << obsdist[jj] << std::endl;
+    }
+
+    // Construct a temporary paired vector to do the sorting
+    std::vector<std::pair<std::size_t, double>> localObsIndDistPair;
+    for (unsigned int jj = 0; jj < obsdist.size(); ++jj) {
+      localObsIndDistPair.push_back(std::make_pair(localobs_[jj], obsdist[jj]));
+    }
+
+    // Use a lambda function to implement an ascending sort.
+    sort(localObsIndDistPair.begin(), localObsIndDistPair.end(),
+         [](const std::pair<std::size_t, double> & p1,
+            const std::pair<std::size_t, double> & p2){
+              return(p1.second < p2.second);
+            });
+
+    // Unpair the sorted pair vector
+    for (unsigned int jj = 0; jj < obsdist.size(); ++jj) {
+      localobs_[jj] = localObsIndDistPair[jj].first;
+      obsdist[jj] = localObsIndDistPair[jj].second;
+    }
+
+    // Truncate to maxNobs length
+    localobs_.resize(maxNobs);
+    obsdist.resize(maxNobs);
+
+    for (unsigned int jj = 0; jj < localobs_.size(); ++jj) {
+        oops::Log::debug() << " After sort [i, d]: " << localobs_[jj] << " , "
+            << obsdist[jj] << std::endl;
+    }
   }
 
   oops::Log::trace() << "ioda::ObsSpace for LocalObs done" << std::endl;
@@ -96,6 +144,8 @@ ObsSpace::~ObsSpace() {
   oops::Log::trace() << "ioda::~ObsSpace done" << std::endl;
 }
 
+// -----------------------------------------------------------------------------
+
 void ObsSpace::get_db(const std::string & group, const std::string & name,
                       const std::size_t vsize, int vdata[]) const {
   if ( isLocal_ ) {
@@ -108,6 +158,8 @@ void ObsSpace::get_db(const std::string & group, const std::string & name,
     obsspace_->get_db(group, name, vsize, vdata);
   }
 }
+
+// -----------------------------------------------------------------------------
 
 void ObsSpace::get_db(const std::string & group, const std::string & name,
                       const std::size_t vsize, float vdata[]) const {
@@ -122,6 +174,8 @@ void ObsSpace::get_db(const std::string & group, const std::string & name,
   }
 }
 
+// -----------------------------------------------------------------------------
+
 void ObsSpace::get_db(const std::string & group, const std::string & name,
                       const std::size_t vsize, double vdata[]) const {
   if ( isLocal_ ) {
@@ -134,6 +188,8 @@ void ObsSpace::get_db(const std::string & group, const std::string & name,
     obsspace_->get_db(group, name, vsize, vdata);
   }
 }
+
+// -----------------------------------------------------------------------------
 
 void ObsSpace::get_db(const std::string & group, const std::string & name,
                       const std::size_t vsize, util::DateTime vdata[]) const {
@@ -148,20 +204,28 @@ void ObsSpace::get_db(const std::string & group, const std::string & name,
   }
 }
 
+// -----------------------------------------------------------------------------
+
 void ObsSpace::put_db(const std::string & group, const std::string & name,
                       const std::size_t vsize, const int vdata[]) {
   obsspace_->put_db(group, name, vsize, vdata);
 }
+
+// -----------------------------------------------------------------------------
 
 void ObsSpace::put_db(const std::string & group, const std::string & name,
                       const std::size_t vsize, const float vdata[]) {
   obsspace_->put_db(group, name, vsize, vdata);
 }
 
+// -----------------------------------------------------------------------------
+
 void ObsSpace::put_db(const std::string & group, const std::string & name,
                       const std::size_t vsize, const double vdata[]) {
   obsspace_->put_db(group, name, vsize, vdata);
 }
+
+// -----------------------------------------------------------------------------
 
 void ObsSpace::put_db(const std::string & group, const std::string & name,
                       const std::size_t vsize, const util::DateTime vdata[]) {
