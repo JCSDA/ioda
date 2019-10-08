@@ -8,13 +8,12 @@
  * does it submit to any jurisdiction.
  */
 
-#include "ioda/IodaTrait.h"
 #include "oops/runs/Run.h"
-#include "test/interface/ObservationSpace.h"
+#include "../ioda/ObsSpace.h"
 
 int main(int argc,  char ** argv) {
   oops::Run run(argc, argv);
-  test::ObservationSpace<ioda::IodaTrait> tests;
+  ioda::test::ObsSpace tests;
   run.execute(tests);
   return 0;
 };
