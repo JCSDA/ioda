@@ -7,11 +7,11 @@
 
 #include "ioda/IodaTrait.h"
 #include "oops/runs/Run.h"
-#include "test/interface/LocalObservationSpace.h"
+#include "test/interface/LocalObsSpace.h"
 
 int main(int argc,  char ** argv) {
   oops::Run run(argc, argv);
-  test::LocalObservationSpace<ioda::IodaTrait> tests;
+  test::LocalObsSpace<ioda::IodaTrait> tests;
   run.execute(tests);
   return 0;
 }
