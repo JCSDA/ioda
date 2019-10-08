@@ -78,6 +78,7 @@ class ObsSpace : public util::Printable {
   const std::vector<std::size_t> & recidx_vector(const RecIdxIter & Irec) const;
   const std::vector<std::size_t> & recidx_vector(const std::size_t RecNum) const;
   std::vector<std::size_t> recidx_all_recnums() const;
+  const std::vector<std::size_t> & localobs() const { return localobs_; }
 
   /*! \details This method will return the name of the obs type being stored */
   const std::string & obsname() const {return obsspace_->obsname();}
