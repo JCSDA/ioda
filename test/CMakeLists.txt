@@ -91,13 +91,13 @@ endforeach(FILENAME)
 #####################################################################
 # Add executables frequently used in tests
 
-ecbuild_add_executable( TARGET  test_ObservationSpace.x
-                        SOURCES mains/TestObservationSpace.cc
+ecbuild_add_executable( TARGET  test_ObsSpace.x
+                        SOURCES mains/TestObsSpace.cc
                         LIBS    ioda
                        )
 
-ecbuild_add_executable( TARGET  test_ObsSpace.x
-                        SOURCES mains/TestObsSpace.cc
+ecbuild_add_executable( TARGET  test_IodaObsSpace.x
+                        SOURCES mains/TestIodaObsSpace.cc
                         LIBS    ioda
                        )
 
@@ -128,11 +128,6 @@ ecbuild_add_executable( TARGET  test_IodaObsVector.x
 
 #####################################################################
 
-ecbuild_add_test( TARGET  test_ioda_observationspace
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/test_ObservationSpace.x
-                  ARGS    "testinput/iodatest.yml"
-                  DEPENDS test_ObservationSpace.x )
-
 ecbuild_add_test( TARGET  test_ioda_oops_obsvector
                   COMMAND ${CMAKE_BINARY_DIR}/bin/test_ObsVector.x
                   ARGS    "testinput/iodatest_obsvector.yml"
@@ -154,21 +149,26 @@ ecbuild_add_test( TARGET  test_ioda_obsspacecontainer
                   ARGS    "testinput/iodatest_obsspace_container.yml"
                   DEPENDS test_ObsSpaceContainer.x )
 
-ecbuild_add_test( TARGET  test_ioda_obsspace
+ecbuild_add_test( TARGET  test_ioda_oops_obsspace
                   COMMAND ${CMAKE_BINARY_DIR}/bin/test_ObsSpace.x
-                  ARGS    "testinput/iodatest_obsspace.yml"
+                  ARGS    "testinput/iodatest.yml"
                   DEPENDS test_ObsSpace.x )
+
+ecbuild_add_test( TARGET  test_ioda_obsspace
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/test_IodaObsSpace.x
+                  ARGS    "testinput/iodatest_obsspace.yml"
+                  DEPENDS test_IodaObsSpace.x )
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_mpi
                   MPI     2
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/test_ObsSpace.x
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/test_IodaObsSpace.x
                   ARGS    "testinput/iodatest_obsspace.yml"
-                  DEPENDS test_ObsSpace.x )
+                  DEPENDS test_IodaObsSpace.x )
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_marine
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/test_ObsSpace.x
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/test_IodaObsSpace.x
                   ARGS    "testinput/iodatest_obsspace_marine.yml"
-                  DEPENDS test_ObsSpace.x )
+                  DEPENDS test_IodaObsSpace.x )
 
 ecbuild_add_test( TARGET  test_ioda_fileio
                   COMMAND ${CMAKE_BINARY_DIR}/bin/test_IodaIO.x
@@ -177,10 +177,10 @@ ecbuild_add_test( TARGET  test_ioda_fileio
 
 if (HAVE_ODB_API)
 
-ecbuild_add_test( TARGET  test_ioda_observationspace_odb
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/test_ObservationSpace.x
+ecbuild_add_test( TARGET  test_ioda_oops_obsspace_odb
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/test_ObsSpace.x
                   ARGS    "testinput/iodatest_odb.json"
-                  DEPENDS test_ObservationSpace.x )
+                  DEPENDS test_ObsSpace.x )
 
 ecbuild_add_test( TARGET  test_ioda_oops_obsvector_odb
                   COMMAND ${CMAKE_BINARY_DIR}/bin/test_ObsVector.x
@@ -201,10 +201,10 @@ endif (HAVE_ODB_API)
 
 if (HAVE_ODB)
 
-ecbuild_add_test( TARGET  test_ioda_observationspace_odb1
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/test_ObservationSpace.x
+ecbuild_add_test( TARGET  test_ioda_oops_obsspace_odb1
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/test_ObsSpace.x
                   ARGS    "testinput/iodatest_odb1.json"
-                  DEPENDS test_ObservationSpace.x )
+                  DEPENDS test_ObsSpace.x )
 
 ecbuild_add_test( TARGET  test_ioda_oops_obsvector_odb1
                   COMMAND ${CMAKE_BINARY_DIR}/bin/test_ObsVector.x
