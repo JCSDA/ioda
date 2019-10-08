@@ -19,8 +19,8 @@ namespace ioda {
 struct IodaTrait {
   static std::string name() {return "IODA";}
 
-  typedef ioda::ObsSpace           ObsSpace;
-  typedef ioda::ObsVector          ObsVector;
+  typedef ioda::ObsSpace       ObsSpace;
+  typedef ioda::ObsVector      ObsVector;
   template <typename DATATYPE> using ObsDataVector = ioda::ObsDataVector<DATATYPE>;
 };
 

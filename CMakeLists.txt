@@ -85,6 +85,11 @@ if (HAVE_ODB_API)
   set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -DHAVE_ODB_API")
 endif (HAVE_ODB_API)
 
+# enable fctest
+ecbuild_add_option( FEATURE FCTEST  DEFAULT ${ENABLE_TESTS}
+                    DESCRIPTION "Fortran Unit Testing Framework"
+                    REQUIRED_PACKAGES "PROJECT fckit" )
+
 ################################################################################
 # Export package info
 ################################################################################
