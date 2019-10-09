@@ -7,6 +7,7 @@
 
 #include "ioda/obsspace_f.h"
 
+#include <string.h>
 #include <string>
 #include <vector>
 
@@ -29,6 +30,14 @@ const ObsSpace * obsspace_construct_f(const eckit::Configuration * conf,
 void obsspace_destruct_f(ObsSpace * obss) {
   ASSERT(obss != nullptr);
   delete obss;
+}
+
+// -----------------------------------------------------------------------------
+void obsspace_obsname_f(const ObsSpace & obss, const size_t & lcname, char cname[]) {
+  std::string obsname = obss.obsname();
+  ASSERT(obsname.size() < lcname);
+  strncpy(cname, obsname.c_str(), obsname.size());
+  cname[obsname.size()] = '\0';
 }
 
 // -----------------------------------------------------------------------------
