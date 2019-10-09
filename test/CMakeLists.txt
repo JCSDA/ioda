@@ -18,7 +18,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsspace_marine.yml
   testinput/iodatest_fileio_odb_api.yml
   testinput/iodatest_obsspace_fortran.yml
-  testinput/iodatest_localobsspace.yml
+  testinput/iodatest_obsspace_localization.yml
 )
 
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/testinput)
@@ -186,9 +186,9 @@ ecbuild_add_test( TARGET  test_ioda_fileio
                   ARGS    "testinput/iodatest_fileio.yml"
                   DEPENDS test_IodaIO.x )
 
-ecbuild_add_test( TARGET  test_ioda_localobsspace
+ecbuild_add_test( TARGET  test_ioda_obsspace_localization
                   COMMAND ${CMAKE_BINARY_DIR}/bin/test_IodaObsSpace.x
-                  ARGS    "testinput/iodatest_localobsspace.yml"
+                  ARGS    "testinput/iodatest_obsspace_localization.yml"
                   DEPENDS test_IodaObsSpace.x )
 
 if (HAVE_ODB_API)
