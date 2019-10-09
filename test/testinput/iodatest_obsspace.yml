@@ -20,6 +20,8 @@ Observations:
     lonRefPoint: 0.
     latRefPoint: 90.
   ObsTypes:
+
+ 
   - ObsSpace:
       name: "Aod"
       simulate:
@@ -230,3 +232,27 @@ Observations:
           - 1.0e-11
       ObsDataOut:
         obsfile: "testoutput/diagout_with_groups_twfilt.nc4"
+
+  - ObsSpace:
+      name: "AOD"
+      simulate:
+      ObsDataIn:
+        obsfile: "Data/geos_aod_obs_2018041500_m.nc4"
+      Localization: *localization
+      TestData:
+          nlocs: 100
+          nlocs_local: 6
+          nrecs: 100
+          nvars: 1 
+          groups:
+            - "MetaData"
+            - "MetaData"
+          variables:
+            - "latitude"
+            - "longitude"
+          norms:
+            - 567.88380247048008
+            - 1793.5631154126893
+          tolerance:
+            - 1.0e-11
+
