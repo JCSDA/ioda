@@ -18,6 +18,7 @@ implicit none
 private
 public obsspace_construct
 public obsspace_destruct
+public obsspace_obsname
 public obsspace_get_gnlocs
 public obsspace_get_nlocs
 public obsspace_get_nrecs
@@ -73,6 +74,29 @@ subroutine obsspace_destruct(c_obss)
   call c_obsspace_destruct(c_obss)
   c_obss = c_null_ptr
 end subroutine obsspace_destruct
+
+!-------------------------------------------------------------------------------
+
+!> Get obsname from ObsSpace
+
+subroutine obsspace_obsname(obss, obsname)
+  use string_f_c_mod
+  implicit none
+
+  type(c_ptr), value, intent(in) :: obss
+  character(*), intent(out) :: obsname
+
+  integer :: lcname
+  character(kind=c_char,len=1), allocatable :: cname(:)
+
+  lcname = len(obsname)
+  allocate(cname(lcname+1))
+  call c_obsspace_obsname(obss, lcname,  cname)
+  call c_f_string(cname, obsname)
+  deallocate(cname)
+
+end subroutine obsspace_obsname
+
 
 !-------------------------------------------------------------------------------
 !>  Return the number of observational locations in the input obs file

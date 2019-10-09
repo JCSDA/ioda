@@ -51,6 +51,14 @@ integer(kind=c_int) function c_obsspace_get_nvars(obss) bind(C,name='obsspace_ge
   type(c_ptr), value :: obss
 end function c_obsspace_get_nvars
 
+subroutine c_obsspace_obsname(obss, lcname, cname) bind (C,name='obsspace_obsname_f')
+  use, intrinsic :: iso_c_binding, only : c_ptr, c_char, c_size_t
+  implicit none
+  type(c_ptr), value :: obss
+  integer(c_size_t),intent(in) :: lcname
+  character(kind=c_char,len=1), intent(inout) :: cname(*)
+end subroutine c_obsspace_obsname
+
 subroutine c_obsspace_get_recnum(obss, length, recnum) &
               & bind(C,name='obsspace_get_recnum_f')
   use, intrinsic :: iso_c_binding, only : c_ptr, c_size_t
