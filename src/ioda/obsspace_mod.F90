@@ -126,6 +126,7 @@ subroutine obsspace_get_comm(obss, f_comm)
   type(fckit_mpi_comm),intent(out) :: f_comm
 
   integer :: lcname
+  !< If changing the length of name and cname, need to change the ASSERT in obsspace_f.cc also
   character(kind=c_char,len=1) :: cname(101)
   character(len=100) :: name
   character(len=:), allocatable :: name_comm

@@ -51,7 +51,7 @@ int obsspace_get_nvars_f(const ObsSpace & obss) {
 // -----------------------------------------------------------------------------
 void obsspace_get_comm_f(const ObsSpace & obss, int & lcname, char cname[]) {
   lcname = obss.comm().name().size();
-  ASSERT(lcname < 100);
+  ASSERT(lcname < 100);  // to not overflow the associated fortran string
   strncpy(cname, obss.comm().name().c_str(), lcname);
 }
 // -----------------------------------------------------------------------------
