@@ -13,25 +13,22 @@ Locations:
   - 0.0
   - -100.0
 Observations:
-  _: &localization
-    distance: 3.35e6
-    max_nobs: -1
-    searchMethod: "brute_force"
-    lonRefPoint: 0.
-    latRefPoint: 90.
   ObsTypes:
-
- 
   - ObsSpace:
       name: "Aod"
       simulate:
       ObsDataIn:
         obsfile: "Data/aod_obs_2018041500_m.nc4"
-      Localization: *localization
+      Localization:
+        distance: 10.0
+        max_nobs: &max_nobs 1
+        searchMethod: "brute_force"
+        lonRefPoint: 211.7798
+        latRefPoint: 21.21674
       TestData:
         nlocs: 100
         nrecs: 100
-        nlocs_local: 11
+        nlocs_local: *max_nobs
         nvars: 1
         groups:
           - "MetaData"
@@ -50,10 +47,15 @@ Observations:
       simulate:
       ObsDataIn:
         obsfile: "Data/amsua_n19_obs_2018041500_m.nc4"
-      Localization: *localization
+      Localization:
+        distance: 10.0
+        max_nobs: &max_nobs 1
+        searchMethod: "brute_force"
+        lonRefPoint: 9.429600
+        latRefPoint: -77.809998
       TestData:
         nlocs: 100
-        nlocs_local: 10
+        nlocs_local: *max_nobs
         nrecs: 100
         nvars: 15
         groups:
@@ -73,10 +75,15 @@ Observations:
       simulate:
       ObsDataIn:
         obsfile: "Data/smap_obs_2018041500_m.nc4"
-      Localization: *localization
+      Localization:
+        distance: 0.3
+        max_nobs: &max_nobs 1
+        searchMethod: "brute_force"
+        lonRefPoint: 1.58
+        latRefPoint: -81.58
       TestData:
         nlocs: 45
-        nlocs_local: 0
+        nlocs_local: *max_nobs
         nrecs: 45
         nvars: 4
         groups:
@@ -96,10 +103,15 @@ Observations:
       simulate:
       ObsDataIn:
         obsfile: "Data/gmi_gpm_obs_2018041500_m.nc4"
-      Localization: *localization
+      Localization:
+        distance: 0.3
+        max_nobs: &max_nobs 1
+        searchMethod: "brute_force"
+        lonRefPoint: 120.6262
+        latRefPoint: -63.2108
       TestData:
         nlocs: 12
-        nlocs_local: 0
+        nlocs_local: *max_nobs
         nrecs: 12
         nvars: 13
         groups:
@@ -119,10 +131,15 @@ Observations:
       simulate:
       ObsDataIn:
         obsfile: "Data/sondes_obs_2018041500_m.nc4"
-      Localization: *localization
+      Localization:
+        distance: 0.01
+        max_nobs: &max_nobs 1
+        searchMethod: "brute_force"
+        lonRefPoint: 274.070007
+        latRefPoint: 80.000000
       TestData:
         nlocs: 974
-        nlocs_local: 110
+        nlocs_local: *max_nobs
         nrecs: 974
         nvars: 5
         groups:
@@ -140,44 +157,6 @@ Observations:
         obsfile: "testoutput/diagout.nc4"
 
   - ObsSpace:
-      name: "Synthetic"
-      simulate:
-        variables: [air_temperature, eastward_wind]
-      Generate:
-        nobs: 10   # generate 10 obs
-        lat1: 0    # with lat ranging form 0-10.
-        lat2: 10   #
-        lon1: 0    # and lon ranging from 0-10.
-        lon2: 10
-        random_seed: 29837
-        obs_errors: [1.0, 2.0]
-      Localization: *localization
-      TestData:
-        nlocs: 10
-        nlocs_local: 0
-        nrecs: 10
-        nvars: 2
-        groups:
-          - "MetaData"
-          - "MetaData"
-          - "ObsError"
-          - "ObsError"
-        variables:
-          - "latitude"
-          - "longitude"
-          - "air_temperature"
-          - "eastward_wind"
-        norms:
-          - 20.349321770437683
-          - 21.063312039377447
-          - 3.1622776601683795
-          - 6.32455532034
-        tolerance:
-          - 1.0e-11
-      ObsDataOut:
-        obsfile: "testoutput/ospace.generate.nc4"
-
-  - ObsSpace:
       name: "Radiosonde with grouping"
       simulate:
       ObsDataIn:
@@ -186,10 +165,15 @@ Observations:
           group_variable: "station_id"
           sort_variable: "air_pressure"
           sort_order: "descending"
-      Localization: *localization
+      Localization:
+        distance: 0.01
+        max_nobs: &max_nobs 1
+        searchMethod: "brute_force"
+        lonRefPoint: 274.070007
+        latRefPoint: 80.000000
       TestData:
         nlocs: 974
-        nlocs_local: 110
+        nlocs_local: *max_nobs
         nrecs: 36
         nvars: 5
         groups:
@@ -213,10 +197,15 @@ Observations:
         obsfile: "Data/sondes_obs_2018041500_m_twfilt.nc4"
         obsgrouping:
           group_variable: "station_id"
-      Localization: *localization
+      Localization:
+        distance: 0.1
+        max_nobs: &max_nobs 1
+        searchMethod: "brute_force"
+        lonRefPoint: 134.047302
+        latRefPoint: -0.882800
       TestData:
         nlocs: 968
-        nlocs_local: 109
+        nlocs_local: *max_nobs
         nrecs: 31
         nvars: 5
         groups:
@@ -232,27 +221,3 @@ Observations:
           - 1.0e-11
       ObsDataOut:
         obsfile: "testoutput/diagout_with_groups_twfilt.nc4"
-
-  - ObsSpace:
-      name: "AOD"
-      simulate:
-      ObsDataIn:
-        obsfile: "Data/geos_aod_obs_2018041500_m.nc4"
-      Localization: *localization
-      TestData:
-          nlocs: 100
-          nlocs_local: 6
-          nrecs: 100
-          nvars: 1 
-          groups:
-            - "MetaData"
-            - "MetaData"
-          variables:
-            - "latitude"
-            - "longitude"
-          norms:
-            - 567.88380247048008
-            - 1793.5631154126893
-          tolerance:
-            - 1.0e-11
-
