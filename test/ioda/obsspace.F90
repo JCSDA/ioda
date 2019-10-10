@@ -50,6 +50,7 @@ TEST(test_obsspace_construct)
   integer :: nvars, nvars_ref
   integer :: iobstype
   character(len=100) :: obsname
+  character(kind=c_char,len=:), allocatable :: obsname_ref
 
   !> initialize winbgn, winend, get config
   call fckit_resource("--config", "", filename)
@@ -67,7 +68,8 @@ TEST(test_obsspace_construct)
     obsspace(iobstype) = obsspace_construct(obsconfig, winbgn, winend)
     !> print obsspace name
     call obsspace_obsname(obsspace(iobstype), obsname)
-    print *, iobstype, " name: ", obsname
+    call obsconfig%get_or_die("name", obsname_ref)
+    CHECK(trim(obsname) == trim(obsname_ref))
     !> test if nlocs and nvars are the same as reference
     nlocs = obsspace_get_nlocs(obsspace(iobstype))
     nvars = obsspace_get_nvars(obsspace(iobstype))
