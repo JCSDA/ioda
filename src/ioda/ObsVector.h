@@ -37,6 +37,7 @@ class ObsVector : public util::Printable,
   ObsVector(ObsSpace &,
             const std::string & name = "", const bool fail = true);
   ObsVector(const ObsVector &);
+  ObsVector(ObsSpace &, const ObsVector &);
   ~ObsVector();
 
   ObsVector & operator = (const ObsVector &);
