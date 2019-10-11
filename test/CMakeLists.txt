@@ -6,17 +6,13 @@
 # Create Data directory for test input config and symlink all files
 list( APPEND ioda_test_input
   testinput/iodatest.yml
-  testinput/iodatest_odb.json
-  testinput/iodatest_odb1.json
   testinput/iodatest_obsspace.yml
   testinput/iodatest_localobsspace.yml
   testinput/iodatest_obsvector.yml
-  testinput/iodatest_obsvector_odb.yml
   testinput/iodatest_fileio.yml
   testinput/iodatest_distribution.yml
   testinput/iodatest_obsspace_container.yml
   testinput/iodatest_obsspace_marine.yml
-  testinput/iodatest_fileio_odb_api.yml
   testinput/iodatest_obsspace_fortran.yml
   testinput/iodatest_obsspace_localization.yml
 )
@@ -53,7 +49,6 @@ list( APPEND ioda_test_data
   atmosphere/sondes_obs_2018041500_s.nc4
   atmosphere/sondes_obs_2018041500_vs.nc4
   atmosphere/diag_t_obs_01_wprofiles.odb
-  atmosphere/diag_t_obs_01_wprofiles_odb
   atmosphere/smap_obs_2018041500_m.nc4
   atmosphere/gmi_gpm_obs_2018041500_m.nc4
   atmosphere/gnssro_obs_2018041500_m.nc4
