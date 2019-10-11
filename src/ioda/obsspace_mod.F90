@@ -86,7 +86,7 @@ subroutine obsspace_obsname(obss, obsname)
   type(c_ptr), value, intent(in) :: obss
   character(*), intent(out) :: obsname
 
-  integer :: lcname
+  integer(c_size_t) :: lcname
   character(kind=c_char,len=1), allocatable :: cname(:)
 
   lcname = len(obsname)
