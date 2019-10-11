@@ -19,6 +19,7 @@ private
 public obsspace_construct
 public obsspace_destruct
 public obsspace_obsname
+public obsspace_obsvariables
 public obsspace_get_gnlocs
 public obsspace_get_nlocs
 public obsspace_get_nrecs
@@ -97,6 +98,17 @@ subroutine obsspace_obsname(obss, obsname)
 
 end subroutine obsspace_obsname
 
+!-------------------------------------------------------------------------------
+
+!> Get obsvariables from ObsSpace
+
+type(oops_variables) function obsspace_obsvariables(obss)
+  use oops_variables_mod
+  implicit none
+  type(c_ptr), value, intent(in) :: obss
+
+  obsspace_obsvariables = oops_variables(c_obsspace_obsvariables(obss))
+end function obsspace_obsvariables
 
 !-------------------------------------------------------------------------------
 !>  Return the number of observational locations in the input obs file

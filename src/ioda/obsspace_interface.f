@@ -23,6 +23,20 @@ subroutine c_obsspace_destruct(obss) bind(C, name='obsspace_destruct_f')
   type(c_ptr), value :: obss
 end subroutine c_obsspace_destruct
 
+subroutine c_obsspace_obsname(obss, lcname, cname) bind (C,name='obsspace_obsname_f')
+  use, intrinsic :: iso_c_binding, only : c_ptr, c_char, c_size_t
+  implicit none
+  type(c_ptr), value :: obss
+  integer(c_size_t),intent(in) :: lcname
+  character(kind=c_char,len=1), intent(inout) :: cname(*)
+end subroutine c_obsspace_obsname
+
+type(c_ptr) function c_obsspace_obsvariables(obss) bind(C, name='obsspace_obsvariables_f')
+  use, intrinsic :: iso_c_binding, only : c_ptr
+  implicit none
+  type(c_ptr), value :: obss
+end function c_obsspace_obsvariables
+
 integer(kind=c_int) function c_obsspace_get_gnlocs(obss) bind(C,name='obsspace_get_gnlocs_f')
   use, intrinsic :: iso_c_binding
   implicit none
@@ -50,14 +64,6 @@ integer(kind=c_int) function c_obsspace_get_nvars(obss) bind(C,name='obsspace_ge
 
   type(c_ptr), value :: obss
 end function c_obsspace_get_nvars
-
-subroutine c_obsspace_obsname(obss, lcname, cname) bind (C,name='obsspace_obsname_f')
-  use, intrinsic :: iso_c_binding, only : c_ptr, c_char, c_size_t
-  implicit none
-  type(c_ptr), value :: obss
-  integer(c_size_t),intent(in) :: lcname
-  character(kind=c_char,len=1), intent(inout) :: cname(*)
-end subroutine c_obsspace_obsname
 
 subroutine c_obsspace_get_recnum(obss, length, recnum) &
               & bind(C,name='obsspace_get_recnum_f')
