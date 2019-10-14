@@ -26,11 +26,11 @@ extern "C" {
   int obsspace_get_nlocs_f(const ObsSpace &);
   int obsspace_get_nrecs_f(const ObsSpace &);
   int obsspace_get_nvars_f(const ObsSpace &);
-  void obsspace_get_comm_f(const ObsSpace &, int &, char[]);
+  void obsspace_get_comm_f(const ObsSpace &, int &, char *);
   void obsspace_get_recnum_f(const ObsSpace &, const std::size_t &, std::size_t *);
   void obsspace_get_index_f(const ObsSpace &, const std::size_t &, std::size_t *);
 
-  void obsspace_obsname_f(const ObsSpace &, const size_t &, char[]);
+  void obsspace_obsname_f(const ObsSpace &, const size_t &, char *);
 
   bool obsspace_has_f(const ObsSpace &, const char *, const char *);
 
