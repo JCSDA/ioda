@@ -31,6 +31,8 @@ class InefficientDistribution: public Distribution {
      InefficientDistribution(const eckit::mpi::Comm & Comm, const std::size_t Gnlocs);
      ~InefficientDistribution();
      void distribution();
+
+     bool isDistributed() const { return false; }
 };
 
 }  // namespace ioda

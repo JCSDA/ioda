@@ -136,6 +136,7 @@ ecbuild_add_test( TARGET  test_ioda_oops_obsvector
                   DEPENDS test_ObsVector.x )
 
 ecbuild_add_test( TARGET  test_ioda_obsvector
+                  MPI     4
                   COMMAND ${CMAKE_BINARY_DIR}/bin/test_IodaObsVector.x
                   ARGS    "testinput/iodatest_obsvector.yml"
                   DEPENDS test_IodaObsVector.x )
