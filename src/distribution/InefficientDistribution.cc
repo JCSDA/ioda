@@ -48,6 +48,10 @@ void InefficientDistribution::distribution() {
   // and the number of records will equal the number of locations (no grouping)
   nlocs_ = gnlocs_;
   nrecs_ = nlocs_;
+
+  oops::Log::debug() << __func__ << " : " << nlocs_ <<
+      " locations being allocated to processor with inefficient-distribution method : "
+      << comm_.rank()<< std::endl;
 }
 
 // -----------------------------------------------------------------------------
