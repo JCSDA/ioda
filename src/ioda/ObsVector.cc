@@ -1,8 +1,8 @@
 /*
- * (C) Copyright 2017 UCAR
- * 
+ * (C) Copyright 2017-2019 UCAR
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
 #include "ioda/ObsVector.h"
@@ -160,7 +160,9 @@ double ObsVector::dot_product_with(const ObsVector & other) const {
       zz += values_[jj] * other.values_[jj];
     }
   }
-  obsdb_.comm().allReduceInPlace(zz, eckit::mpi::sum());
+  if (obsdb_.isDistributed()) {
+    obsdb_.comm().allReduceInPlace(zz, eckit::mpi::sum());
+  }
   return zz;
 }
 // -----------------------------------------------------------------------------
@@ -173,8 +175,10 @@ double ObsVector::rms() const {
       ++nobs;
     }
   }
-  obsdb_.comm().allReduceInPlace(zrms, eckit::mpi::sum());
-  obsdb_.comm().allReduceInPlace(nobs, eckit::mpi::sum());
+  if (obsdb_.isDistributed()) {
+    obsdb_.comm().allReduceInPlace(zrms, eckit::mpi::sum());
+    obsdb_.comm().allReduceInPlace(nobs, eckit::mpi::sum());
+  }
   if (nobs > 0) zrms = sqrt(zrms / static_cast<double>(nobs));
   return zrms;
 }
@@ -239,7 +243,9 @@ unsigned int ObsVector::nobs() const {
   for (size_t jj = 0; jj < values_.size() ; ++jj) {
     if (values_[jj] != missing_) ++nobs;
   }
-  obsdb_.comm().allReduceInPlace(nobs, eckit::mpi::sum());
+  if (obsdb_.isDistributed()) {
+    obsdb_.comm().allReduceInPlace(nobs, eckit::mpi::sum());
+  }
   return nobs;
 }
 // -----------------------------------------------------------------------------
@@ -274,10 +280,12 @@ void ObsVector::print(std::ostream & os) const {
       ++nobs;
     }
   }
-  obsdb_.comm().allReduceInPlace(zmin, eckit::mpi::min());
-  obsdb_.comm().allReduceInPlace(zmax, eckit::mpi::max());
-  obsdb_.comm().allReduceInPlace(zrms, eckit::mpi::sum());
-  obsdb_.comm().allReduceInPlace(nobs, eckit::mpi::sum());
+  if (obsdb_.isDistributed()) {
+    obsdb_.comm().allReduceInPlace(zmin, eckit::mpi::min());
+    obsdb_.comm().allReduceInPlace(zmax, eckit::mpi::max());
+    obsdb_.comm().allReduceInPlace(zrms, eckit::mpi::sum());
+    obsdb_.comm().allReduceInPlace(nobs, eckit::mpi::sum());
+  }
   if (nobs > 0) zrms = sqrt(zrms / static_cast<double>(nobs));
   os << obsdb_.obsname() << " nobs= " << nobs << " Min="
      << zmin << ", Max=" << zmax << ", RMS=" << zrms << std::endl;

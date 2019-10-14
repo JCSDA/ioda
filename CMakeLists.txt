@@ -62,29 +62,6 @@ ecbuild_use_package( PROJECT oops VERSION 0.2.1 REQUIRED )
 include_directories( ${OOPS_INCLUDE_DIRS} )
 link_directories( ${oops_BASE_DIR}/lib )
 
-#find_package (ODB 1.0.3 COMPONENTS odb odbec odbemos odbifsaux)
-
-#odb
-ecbuild_add_option( FEATURE ODB
-                    DEFAULT OFF
-                    DESCRIPTION "Support for ODB"
-                    REQUIRED_PACKAGES "PROJECT odb  VERSION 1.0.3" )
-
-if (HAVE_ODB)
-  set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -DHAVE_ODB")
-  include_directories( ${ODB_INCLUDE_DIRS} )
-endif (HAVE_ODB)
-
-#odb api
-ecbuild_add_option( FEATURE ODB_API
-                    DEFAULT OFF
-                    DESCRIPTION "Support for ODB API"
-                    REQUIRED_PACKAGES "PROJECT odb_api  VERSION 0.17" )
-
-if (HAVE_ODB_API)
-  set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -DHAVE_ODB_API")
-endif (HAVE_ODB_API)
-
 # enable fctest
 ecbuild_add_option( FEATURE FCTEST  DEFAULT ${ENABLE_TESTS}
                     DESCRIPTION "Fortran Unit Testing Framework"
@@ -108,14 +85,6 @@ foreach( _tpl ${IODA_TPLS} )
   list( APPEND IODA_EXTRA_INCLUDE_DIRS  ${${TPL}_INCLUDE_DIRS} ${${TPL}_TPL_INCLUDE_DIRS} )
   list( APPEND IODA_EXTRA_LIBRARIES     ${${TPL}_LIBRARIES}    ${${TPL}_TPL_LIBRARIES}    )
 endforeach()
-
-if( HAVE_ODB_API )
-  list( APPEND IODA_EXTRA_LIBRARIES     Odb    )
-endif()
-
-if( HAVE_ODB )
-  list( APPEND IODA_EXTRA_LIBRARIES     OOPS  ${ODB_LIBRARY_odb}     )
-endif()
 
 ################################################################################
 # Sources
