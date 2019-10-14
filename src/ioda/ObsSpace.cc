@@ -36,9 +36,9 @@ namespace ioda {
  * \param[in] bgn    DateTime object holding the start of the DA timing window
  * \param[in] end    DateTime object holding the end of the DA timing window
  */
-ObsSpace::ObsSpace(const eckit::Configuration & config,
+ObsSpace::ObsSpace(const eckit::Configuration & config, const eckit::mpi::Comm & comm,
                    const util::DateTime & bgn, const util::DateTime & end)
-  : obsspace_(new ObsData(config, bgn, end)),
+  : obsspace_(new ObsData(config, comm, bgn, end)),
     localobs_(obsspace_->nlocs()), isLocal_(false)
 {
   oops::Log::trace() << "ioda::ObsSpaces starting" << std::endl;
