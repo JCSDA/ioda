@@ -15,13 +15,14 @@
 #include <string>
 #include <vector>
 
-#define ECKIT_TESTING_SELF_REGISTER_CASES 0  
+#define ECKIT_TESTING_SELF_REGISTER_CASES 0
 
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/testing/Test.h"
 #include "ioda/IodaTrait.h"
 #include "ioda/ObsSpace.h"
 #include "ioda/ObsVector.h"
+#include "oops/parallel/mpi/mpi.h"
 #include "oops/runs/Test.h"
 #include "oops/util/dot_product.h"
 #include "test/TestEnvironment.h"
@@ -53,7 +54,7 @@ class ObsVecTestFixture : private boost::noncopyable {
 
     for (std::size_t jj = 0; jj < conf.size(); ++jj) {
       eckit::LocalConfiguration obsconf(conf[jj], "ObsSpace");
-      boost::shared_ptr<ObsSpace_> tmp(new ObsSpace_(obsconf, bgn, end));
+      boost::shared_ptr<ObsSpace_> tmp(new ObsSpace_(obsconf, oops::mpi::comm(), bgn, end));
       ospaces_.push_back(tmp);
       eckit::LocalConfiguration ObsDataInConf;
       obsconf.get("ObsDataIn", ObsDataInConf);
@@ -141,7 +142,7 @@ void testRead() {
     // Read in a vector and check contents with norm function.
     std::unique_ptr<ObsVector_> ov(new ObsVector_(*Odb, "ObsValue"));
     double Rms = ov->rms();
-    
+
     EXPECT(oops::is_close(Rms, ExpectedRms, Tol));
   }
 }
@@ -168,7 +169,7 @@ void testSave() {
 
     std::unique_ptr<ObsVector_> ov_test(new ObsVector_(*Odb, "ObsTest"));
     Rms = ov_test->rms();
-    
+
     EXPECT(oops::is_close(Rms, ExpectedRms, 1.0e-12));
   }
 }
@@ -190,11 +191,11 @@ class ObsVector : public oops::Test {
      ts.emplace_back(CASE("ioda/ObsVector/testCopyConstructor")
       { testCopyConstructor(); });
      ts.emplace_back(CASE("ioda/ObsVector/testNotZero")
-      { testNotZero(); }); 
+      { testNotZero(); });
      ts.emplace_back(CASE("ioda/ObsVector/testRead")
-      { testRead(); });  
+      { testRead(); });
      ts.emplace_back(CASE("ioda/ObsVector/testSave")
-      { testSave(); });  
+      { testSave(); });
   }
 };
 
