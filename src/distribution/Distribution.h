@@ -51,6 +51,8 @@ class Distribution {
      /*! \brief Return number of records in the distribution */
      std::size_t nrecs() const {return nrecs_;}
 
+     virtual bool isDistributed() const = 0;
+
  protected:
      /*! \brief Index of location array being assigned to this processing element */
      std::vector<std::size_t> indx_;
