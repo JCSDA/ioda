@@ -48,11 +48,11 @@ namespace ioda {
  * \param[in] bgn    DateTime object holding the start of the DA timing window
  * \param[in] end    DateTime object holding the end of the DA timing window
  */
-ObsData::ObsData(const eckit::Configuration & config,
+ObsData::ObsData(const eckit::Configuration & config, const eckit::mpi::Comm & comm,
                  const util::DateTime & bgn, const util::DateTime & end)
-  : oops::ObsSpaceBase(config, bgn, end),
+  : oops::ObsSpaceBase(config, comm, bgn, end),
     config_(config),
-    winbgn_(bgn), winend_(end), commMPI_(oops::mpi::comm()),
+    winbgn_(bgn), winend_(end), commMPI_(comm),
     database_(), obsvars_()
 {
   oops::Log::trace() << "ioda::ObsData config  = " << config << std::endl;
@@ -106,7 +106,17 @@ ObsData::ObsData(const eckit::Configuration & config,
 
     // Get the process rank number and format it
     std::ostringstream ss;
-    ss << "_" << std::setw(4) << std::setfill('0') << comm().rank();
+    ss << "_" << std::setw(4) << std::setfill('0') << this->comm().rank();
+
+    // Get the member if in EDA case
+    if (config.has("member")) {
+      const int mymember = config.getInt("member");
+      std::ostringstream mm;
+      mm << "_" << std::setw(3) << std::setfill('0') << mymember;
+      // Construct the output file name
+      fileout_ = filename.insert(found, mm.str());
+      found += 4;
+    }
 
     // Construct the output file name
     fileout_ = filename.insert(found, ss.str());
@@ -569,15 +579,15 @@ void ObsData::generateDistribution(const eckit::Configuration & conf) {
   // would be different in the case where random_seed is not specified.
   std::vector<float> RanVals(gnlocs_, 0.0);
   std::vector<float> RanVals2(gnlocs_, 0.0);
-  if (comm().rank() == 0) {
+  if (this->comm().rank() == 0) {
     util::UniformDistribution<float> RanUD(gnlocs_, 0.0, 1.0, ran_seed);
     util::UniformDistribution<float> RanUD2(gnlocs_, 0.0, 1.0, ran_seed+1);
 
     RanVals = RanUD.data();
     RanVals2 = RanUD2.data();
   }
-  comm().broadcast(RanVals, 0);
-  comm().broadcast(RanVals2, 0);
+  this->comm().broadcast(RanVals, 0);
+  this->comm().broadcast(RanVals2, 0);
 
   // Form the ranges val2-val for lat, lon, time
   float LatRange = lat2 - lat1;
@@ -787,10 +797,10 @@ void ObsData::GenMpiDistribution(const std::unique_ptr<IodaIO> & FileIO) {
     // Grouping based on variable in the input file.
     std::vector<std::size_t> Records(gnlocs_);
     GenRecordNumbers(FileIO, Records);
-    dist.reset(distFactory->createDistribution(comm(), gnlocs_, distname_, Records));
+    dist.reset(distFactory->createDistribution(this->comm(), gnlocs_, distname_, Records));
   } else {
     // Default grouping (every location is a separate record)
-    dist.reset(distFactory->createDistribution(comm(), gnlocs_, distname_));
+    dist.reset(distFactory->createDistribution(this->comm(), gnlocs_, distname_));
   }
   dist->distribution();
 

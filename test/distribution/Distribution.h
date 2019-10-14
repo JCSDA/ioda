@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -100,12 +100,12 @@ void testDistribution() {
     // appended on the end.
     std::string MyRankCfgName = "Specs.rank" + std::to_string(MyRank);
     eckit::LocalConfiguration MyRankConfig = dist_types[i].getSubConfiguration(MyRankCfgName);
-    oops::Log::debug() << "Distribution::DistributionTypes: " 
+    oops::Log::debug() << "Distribution::DistributionTypes: "
                        << MyRankCfgName << ": " << MyRankConfig << std::endl;
 
     std::size_t ExpectedNlocs = MyRankConfig.getUnsigned("nlocs");
     std::size_t ExpectedNrecs = MyRankConfig.getUnsigned("nrecs");
-    std::vector<std::size_t> ExpectedIndex = 
+    std::vector<std::size_t> ExpectedIndex =
                                  MyRankConfig.getUnsignedVector("index");
     std::vector<std::size_t> ExpectedRecnums =
                                  MyRankConfig.getUnsignedVector("recnums");

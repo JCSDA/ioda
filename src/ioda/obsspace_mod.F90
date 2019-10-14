@@ -22,6 +22,7 @@ public obsspace_get_gnlocs
 public obsspace_get_nlocs
 public obsspace_get_nrecs
 public obsspace_get_nvars
+public obsspace_get_comm
 public obsspace_get_recnum
 public obsspace_get_index
 public obsspace_get_db
@@ -39,7 +40,7 @@ interface obsspace_get_db
   module procedure obsspace_get_db_real64
   module procedure obsspace_get_db_datetime
 end interface
-   
+
 interface obsspace_put_db
   module procedure obsspace_put_db_int32
   module procedure obsspace_put_db_int64
@@ -113,6 +114,29 @@ integer function obsspace_get_nvars(c_obss)
 
   obsspace_get_nvars = c_obsspace_get_nvars(c_obss)
 end function obsspace_get_nvars
+
+!-------------------------------------------------------------------------------
+!>  Return the name and name length of obsspace communicator
+subroutine obsspace_get_comm(obss, f_comm)
+  use fckit_mpi_module, only: fckit_mpi_comm
+  use string_f_c_mod
+  implicit none
+
+  type(c_ptr), intent(in)          :: obss
+  type(fckit_mpi_comm),intent(out) :: f_comm
+
+  integer :: lcname
+  !< If changing the length of name and cname, need to change the ASSERT in obsspace_f.cc also
+  character(kind=c_char,len=1) :: cname(101)
+  character(len=100) :: name
+  character(len=:), allocatable :: name_comm
+
+  call c_obsspace_get_comm(obss, lcname, cname)
+  call c_f_string(cname, name)
+
+  name_comm = name(1:lcname)
+  f_comm = fckit_mpi_comm(name_comm)
+end subroutine obsspace_get_comm
 
 !-------------------------------------------------------------------------------
 !>  Get the record number vector
