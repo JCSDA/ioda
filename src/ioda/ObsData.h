@@ -64,7 +64,8 @@ class ObsData : public oops::ObsSpaceBase {
   };
   typedef eckit::KDTreeMemory<TreeTrait> KDTree;
 
-  ObsData(const eckit::Configuration &, const util::DateTime &, const util::DateTime &);
+  ObsData(const eckit::Configuration &, const eckit::mpi::Comm &,
+          const util::DateTime &, const util::DateTime &);
   /*!
    * \details Copy constructor for an ObsData object.
    */
