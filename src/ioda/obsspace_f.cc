@@ -33,6 +33,14 @@ void obsspace_destruct_f(ObsSpace * obss) {
 }
 
 // -----------------------------------------------------------------------------
+void obsspace_obsname_f(const ObsSpace & obss, size_t & lcname, char * cname) {
+  std::string obsname = obss.obsname();
+  lcname = obsname.size();
+  ASSERT(lcname < 100);  // to not overflow the associated fortran string
+  strncpy(cname, obsname.c_str(), lcname);
+}
+
+// -----------------------------------------------------------------------------
 int obsspace_get_gnlocs_f(const ObsSpace & obss) {
   return obss.gnlocs();
 }
@@ -49,7 +57,7 @@ int obsspace_get_nvars_f(const ObsSpace & obss) {
   return obss.nvars();
 }
 // -----------------------------------------------------------------------------
-void obsspace_get_comm_f(const ObsSpace & obss, int & lcname, char cname[]) {
+void obsspace_get_comm_f(const ObsSpace & obss, int & lcname, char * cname) {
   lcname = obss.comm().name().size();
   ASSERT(lcname < 100);  // to not overflow the associated fortran string
   strncpy(cname, obss.comm().name().c_str(), lcname);
