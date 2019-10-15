@@ -45,6 +45,7 @@ class RoundRobin: public Distribution {
                 const std::vector<std::size_t> & Records);
      ~RoundRobin();
      void distribution();
+     bool isDistributed() const { return true; }
 
  private:
      /*! \brief Records numbers which indicate observation location grouping */

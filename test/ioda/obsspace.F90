@@ -1,8 +1,8 @@
 !
 ! (C) Copyright 2019 UCAR
-! 
+!
 ! This software is licensed under the terms of the Apache Licence Version 2.0
-! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
+! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
 !
 !> Test interface for C++ ObsSpace called from Fortran
 
@@ -66,23 +66,23 @@ TEST(test_obsspace_construct)
     call obsconfigs(iobstype)%get_or_die("ObsSpace", obsconfig)
     !> construct obsspace
     obsspace(iobstype) = obsspace_construct(obsconfig, winbgn, winend)
-    !> print obsspace name
     call obsspace_obsname(obsspace(iobstype), obsname)
+    !> test if obsname is the same as reference
     call obsconfig%get_or_die("name", obsname_ref)
-    CHECK(trim(obsname) == trim(obsname_ref))
+    CHECK_EQUAL(obsname, obsname_ref)
     !> test if nlocs and nvars are the same as reference
     nlocs = obsspace_get_nlocs(obsspace(iobstype))
     nvars = obsspace_get_nvars(obsspace(iobstype))
     call obsconfig%get_or_die("TestData.nlocs", nlocs_ref)
     call obsconfig%get_or_die("TestData.nvars", nvars_ref)
-    CHECK(nlocs == nlocs_ref)
-    CHECK(nvars == nvars_ref)
+    CHECK_EQUAL(nlocs, nlocs_ref)
+    CHECK_EQUAL(nvars,  nvars_ref)
   enddo
   !> destruct all obsspaces
   do iobstype = 1, size(obsspace)
     call obsspace_destruct(obsspace(iobstype))
   enddo
-  deallocate(obsspace)
+  deallocate(obsspace, obsname_ref)
 
 END_TEST
 

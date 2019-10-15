@@ -48,3 +48,6 @@ Observations:
         rms_equiv: 71.324181693818431 
         tolerance: 1.0e-14
 
+Distributions:
+  - RoundRobin
+  - InefficientDistribution

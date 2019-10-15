@@ -1,13 +1,13 @@
 /*
  * (C) Copyright 2017-2019 UCAR
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
 #include "ioda/obsspace_f.h"
 
-#include <string.h>
+#include <cstring>
 #include <string>
 #include <vector>
 
@@ -23,7 +23,7 @@ namespace ioda {
 const ObsSpace * obsspace_construct_f(const eckit::Configuration * conf,
                                       const util::DateTime * begin,
                                       const util::DateTime * end) {
-  return new ObsSpace(*conf, *begin, *end);
+  return new ObsSpace(*conf, oops::mpi::comm(), *begin, *end);
 }
 
 // -----------------------------------------------------------------------------
@@ -33,11 +33,11 @@ void obsspace_destruct_f(ObsSpace * obss) {
 }
 
 // -----------------------------------------------------------------------------
-void obsspace_obsname_f(const ObsSpace & obss, const size_t & lcname, char cname[]) {
+void obsspace_obsname_f(const ObsSpace & obss, size_t & lcname, char * cname) {
   std::string obsname = obss.obsname();
-  ASSERT(obsname.size() < lcname);
-  strncpy(cname, obsname.c_str(), obsname.size());
-  cname[obsname.size()] = '\0';
+  lcname = obsname.size();
+  ASSERT(lcname < 100);  // to not overflow the associated fortran string
+  strncpy(cname, obsname.c_str(), lcname);
 }
 
 // -----------------------------------------------------------------------------
@@ -60,6 +60,12 @@ int obsspace_get_nrecs_f(const ObsSpace & obss) {
 // -----------------------------------------------------------------------------
 int obsspace_get_nvars_f(const ObsSpace & obss) {
   return obss.nvars();
+}
+// -----------------------------------------------------------------------------
+void obsspace_get_comm_f(const ObsSpace & obss, int & lcname, char * cname) {
+  lcname = obss.comm().name().size();
+  ASSERT(lcname < 100);  // to not overflow the associated fortran string
+  strncpy(cname, obss.comm().name().c_str(), lcname);
 }
 // -----------------------------------------------------------------------------
 void obsspace_get_recnum_f(const ObsSpace & obss,
