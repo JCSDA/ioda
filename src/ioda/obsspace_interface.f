@@ -55,7 +55,7 @@ subroutine c_obsspace_obsname(obss, lcname, cname) bind (C,name='obsspace_obsnam
   use, intrinsic :: iso_c_binding, only : c_ptr, c_char, c_size_t
   implicit none
   type(c_ptr), value :: obss
-  integer(c_size_t),intent(in) :: lcname
+  integer(c_size_t),intent(inout) :: lcname
   character(kind=c_char,len=1), intent(inout) :: cname(*)
 end subroutine c_obsspace_obsname
 

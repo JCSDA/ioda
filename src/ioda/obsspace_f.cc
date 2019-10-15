@@ -33,11 +33,11 @@ void obsspace_destruct_f(ObsSpace * obss) {
 }
 
 // -----------------------------------------------------------------------------
-void obsspace_obsname_f(const ObsSpace & obss, const size_t & lcname, char * cname) {
+void obsspace_obsname_f(const ObsSpace & obss, size_t & lcname, char * cname) {
   std::string obsname = obss.obsname();
-  ASSERT(obsname.size() < lcname);
-  strncpy(cname, obsname.c_str(), obsname.size());
-  cname[obsname.size()] = '\0';
+  lcname = obsname.size();
+  ASSERT(lcname < 100);  // to not overflow the associated fortran string
+  strncpy(cname, obsname.c_str(), lcname);
 }
 
 // -----------------------------------------------------------------------------
