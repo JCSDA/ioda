@@ -85,16 +85,17 @@ subroutine obsspace_obsname(obss, obsname)
   implicit none
 
   type(c_ptr), value, intent(in) :: obss
-  character(*), intent(out) :: obsname
+  character(*), intent(inout)    :: obsname
 
   integer(c_size_t) :: lcname
-  character(kind=c_char,len=1), allocatable :: cname(:)
 
-  lcname = len(obsname)
-  allocate(cname(lcname+1))
-  call c_obsspace_obsname(obss, lcname,  cname)
+  !< If changing the length of name and cname, need to change the ASSERT in
+  !obsspace_f.cc also
+  character(kind=c_char,len=1) :: cname(101)
+
+  call c_obsspace_obsname(obss, lcname, cname)
   call c_f_string(cname, obsname)
-  deallocate(cname)
+  obsname = obsname(1:lcname)
 
 end subroutine obsspace_obsname
 

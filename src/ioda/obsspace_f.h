@@ -30,7 +30,7 @@ extern "C" {
   void obsspace_get_recnum_f(const ObsSpace &, const std::size_t &, std::size_t *);
   void obsspace_get_index_f(const ObsSpace &, const std::size_t &, std::size_t *);
 
-  void obsspace_obsname_f(const ObsSpace &, const size_t &, char *);
+  void obsspace_obsname_f(const ObsSpace &, size_t &, char *);
 
   bool obsspace_has_f(const ObsSpace &, const char *, const char *);
 
