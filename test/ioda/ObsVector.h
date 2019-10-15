@@ -15,15 +15,17 @@
 #include <string>
 #include <vector>
 
-#define ECKIT_TESTING_SELF_REGISTER_CASES 0  
+#define ECKIT_TESTING_SELF_REGISTER_CASES 0
 
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/testing/Test.h"
 #include "ioda/IodaTrait.h"
 #include "ioda/ObsSpace.h"
 #include "ioda/ObsVector.h"
+#include "oops/parallel/mpi/mpi.h"
 #include "oops/runs/Test.h"
 #include "oops/util/dot_product.h"
+#include "oops/util/Logger.h"
 #include "test/TestEnvironment.h"
 
 namespace ioda {
@@ -53,7 +55,7 @@ class ObsVecTestFixture : private boost::noncopyable {
 
     for (std::size_t jj = 0; jj < conf.size(); ++jj) {
       eckit::LocalConfiguration obsconf(conf[jj], "ObsSpace");
-      boost::shared_ptr<ObsSpace_> tmp(new ObsSpace_(obsconf, bgn, end));
+      boost::shared_ptr<ObsSpace_> tmp(new ObsSpace_(obsconf, oops::mpi::comm(), bgn, end));
       ospaces_.push_back(tmp);
       eckit::LocalConfiguration ObsDataInConf;
       obsconf.get("ObsDataIn", ObsDataInConf);
@@ -141,7 +143,7 @@ void testRead() {
     // Read in a vector and check contents with norm function.
     std::unique_ptr<ObsVector_> ov(new ObsVector_(*Odb, "ObsValue"));
     double Rms = ov->rms();
-    
+
     EXPECT(oops::is_close(Rms, ExpectedRms, Tol));
   }
 }
@@ -168,8 +170,71 @@ void testSave() {
 
     std::unique_ptr<ObsVector_> ov_test(new ObsVector_(*Odb, "ObsTest"));
     Rms = ov_test->rms();
-    
+
     EXPECT(oops::is_close(Rms, ExpectedRms, 1.0e-12));
+  }
+}
+
+// -----------------------------------------------------------------------------
+
+void testDistributedMath() {
+  typedef ObsVecTestFixture Test_;
+  typedef ioda::ObsVector  ObsVector_;
+  typedef ioda::ObsSpace ObsSpace_;
+  typedef std::vector< std::shared_ptr< ObsVector_> > ObsVectors_;
+
+  // Some of the ObsVector math routines require global communications,
+  // and so are performed differently for different distributions. But the
+  // answers should always be the same regardless of distribution.
+
+  // get the list of distributions to test with
+  std::vector<std::string> dist_names = ::test::TestEnvironment::config().getStringVector("Distributions");
+  for (std::size_t ii = 0; ii < dist_names.size(); ++ii) {
+    oops::Log::debug() << "using distribution: " << dist_names[ii] << std::endl;
+  }
+
+  // Get some config information that is the same regardless of distribution
+  util::DateTime bgn((::test::TestEnvironment::config().getString("window_begin")));
+  util::DateTime end((::test::TestEnvironment::config().getString("window_end")));
+  const eckit::LocalConfiguration obsconf(::test::TestEnvironment::config(), "Observations");
+  std::vector<eckit::LocalConfiguration> conf;
+  obsconf.get("ObsTypes", conf);
+
+  // for each distribution, create the set of obs vectors
+  std::vector< ObsVectors_ > dist_obsvecs;
+  std::vector< std::shared_ptr<ObsSpace_> > dist_obsdbs;
+  for (std::size_t dd = 0; dd < dist_names.size(); ++dd) {
+    ObsVectors_ obsvecs;
+    for (std::size_t jj = 0; jj < conf.size(); ++jj) {
+       eckit::LocalConfiguration obsconf(conf[jj], "ObsSpace");
+       obsconf.set("distribution", dist_names[dd]);
+       std::shared_ptr<ObsSpace_> obsdb(new ObsSpace(obsconf, oops::mpi::comm(), bgn, end));
+       std::shared_ptr<ObsVector_> obsvec(new ObsVector_(*obsdb, "ObsValue"));
+       oops::Log::debug() << dist_names[dd] << ": " << *obsvec << std::endl;
+       dist_obsdbs.push_back(obsdb);
+       obsvecs.push_back(obsvec);
+    }
+    dist_obsvecs.push_back(obsvecs);
+  }
+
+  // For each ObsVector make sure the math is the same regardless of distribution.
+  // Test rms(), nobs(), dot_product_with()
+  for ( std::size_t ii = 0; ii < conf.size(); ++ii) {
+    // get the values for the first distribution
+    int nobs = dist_obsvecs[0][ii]->nobs();
+    double rms = dist_obsvecs[0][ii]->rms();
+    double dot = dist_obsvecs[0][ii]->dot_product_with(*dist_obsvecs[0][ii]);
+
+    // make sure the values are the same for all the other distributions
+    for ( std::size_t jj = 1; jj < dist_obsvecs.size(); ++jj) {
+      int nobs2 = dist_obsvecs[jj][ii]->nobs();
+      double rms2 = dist_obsvecs[jj][ii]->rms();
+      double dot2 = dist_obsvecs[jj][ii]->dot_product_with(*dist_obsvecs[jj][ii]);
+
+      EXPECT(nobs == nobs2);
+      EXPECT(oops::is_close(rms, rms2, 1.0e-12));
+      EXPECT(oops::is_close(dot, dot2, 1.0e-12));
+    }
   }
 }
 
@@ -190,11 +255,14 @@ class ObsVector : public oops::Test {
      ts.emplace_back(CASE("ioda/ObsVector/testCopyConstructor")
       { testCopyConstructor(); });
      ts.emplace_back(CASE("ioda/ObsVector/testNotZero")
-      { testNotZero(); }); 
+      { testNotZero(); });
      ts.emplace_back(CASE("ioda/ObsVector/testRead")
-      { testRead(); });  
+      { testRead(); });
      ts.emplace_back(CASE("ioda/ObsVector/testSave")
-      { testSave(); });  
+      { testSave(); });
+     ts.emplace_back(CASE("ioda/ObsVector/testDistributedMath")
+      { testDistributedMath(); });
+
   }
 };
 
