@@ -33,6 +33,7 @@ TEST(test_obsspace_construct)
   use fckit_module
   use datetime_mod
   use obsspace_mod
+  use oops_variables_mod
   use, intrinsic :: iso_c_binding
   implicit none
 
@@ -51,6 +52,7 @@ TEST(test_obsspace_construct)
   integer :: iobstype
   character(len=100) :: obsname
   character(kind=c_char,len=:), allocatable :: obsname_ref
+  type(oops_variables) :: vars
 
   !> initialize winbgn, winend, get config
   call fckit_resource("--config", "", filename)
@@ -77,6 +79,10 @@ TEST(test_obsspace_construct)
     call obsconfig%get_or_die("TestData.nvars", nvars_ref)
     CHECK_EQUAL(nlocs, nlocs_ref)
     CHECK_EQUAL(nvars,  nvars_ref)
+    !> test if obsvariables nvars is the same
+    vars = obsspace_obsvariables(obsspace(iobstype))
+    call obsconfig%get_or_die("TestData.nvars_obsvars", nvars_ref)
+    CHECK_EQUAL(vars.nvars(), nvars_ref)
   enddo
   !> destruct all obsspaces
   do iobstype = 1, size(obsspace)
