@@ -6,41 +6,21 @@ Observations:
   - ObsSpace:
       name: Radiosonde
       simulate:
+        variables: [air_temperature, eastward_wind, northward_wind]
       ObsDataIn:
         obsfile: Data/sondes_obs_2018041500_m.nc4
       TestData:
         nlocs: 974
-        nrecs: 974
         nvars: 5
-        groups:
-          - "MetaData"
-          - "MetaData"
-        variables:
-          - "latitude"
-          - "longitude"
-        norms:
-          - 1254.66336565038
-          - 6076.2659622388919
-        tolerance:
-          - 1.0e-11
+        nvars_obsvars: 3
   - ObsSpace:
       name: "Radiance"
       simulate:
+        variables: [brightness_temperature]
+        channels: 1-10, 15
       ObsDataIn:
         obsfile: "Data/amsua_n19_obs_2018041500_m.nc4"
       TestData:
         nlocs: 100
-        nrecs: 100
         nvars: 15
-        groups:
-          - "MetaData"
-          - "MetaData"
-        variables:
-          - "latitude"
-          - "longitude"
-        norms:
-          - 432.95617402805823
-          - 1661.1529210392009
-        tolerance:
-          - 1.0e-11
-
+        nvars_obsvars: 11
