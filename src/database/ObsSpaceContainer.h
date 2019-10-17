@@ -56,6 +56,7 @@ namespace ioda {
  *
  * \author Xin Zhang (JCSDA)
  */
+template <typename ContType>
 class ObsSpaceContainer: public util::Printable {
  private:
      // --------------------------------------------------------------------------------
@@ -99,23 +100,23 @@ class ObsSpaceContainer: public util::Printable {
              /*!< of these dimension sizes. */
 
          // Data
-         std::unique_ptr<boost::any[]> data;  /*!< Smart pointer to vector */
+         std::vector<ContType> data;  /*!< Smart pointer to vector */
 
          // Constructor with default read & write mode : "rw"
          VarRecord(const std::string & group, const std::string & variable,
                 const std::type_info & type,
                 const std::vector<std::size_t> & shape, const std::size_t & size,
-                std::unique_ptr<boost::any[]> & vect)
+                std::vector<ContType> & vect)
             : group(group), variable(variable), mode("rw"), type(type),
-              size(size), shape(shape), data(std::move(vect)) {}
+              size(size), shape(shape), data(vect) {}
 
          // Constructor with passed read & write mode
          VarRecord(const std::string & group, const std::string & variable,
                    const std::string & mode, const std::type_info & type,
                    const std::vector<std::size_t> & shape,
-                   const std::size_t & size, std::unique_ptr<boost::any[]> & vect)
+                   const std::size_t & size, std::vector<ContType> & vect)
             : group(group), variable(variable), mode(mode), type(type),
-              size(size), shape(shape), data(std::move(vect)) {}
+              size(size), shape(shape), data() {}
      };  // end of VarRecord definition
 
      // Section 3: indexing methods, organization of elements
@@ -165,7 +166,8 @@ class ObsSpaceContainer: public util::Printable {
       * \details This typedef defines the index mechanism that allows access to the
       *          obs container through the secondary indexing by variable.
       */
-     typedef VarRecord_set::index<ObsSpaceContainer::by_variable>::type VarIndex;
+     typedef typename 
+       boost::multi_index::index<VarRecord_set, by_variable>::type VarIndex;
 
      /*!
       * \brief variable iterator
@@ -173,7 +175,7 @@ class ObsSpaceContainer: public util::Printable {
       * \details This typedef defines an iterator that can walk through the obs container
       *          by variable. It utilizes the secondary indexing by variable.
       */
-     typedef VarIndex::iterator VarIter;
+     typedef typename VarIndex::iterator VarIter;
 
      /*!
       * \brief container iterator
@@ -181,7 +183,7 @@ class ObsSpaceContainer: public util::Printable {
       * \details This typedef defines an iterator that can walk through the obs container
       *          using the primary indexing (by group and variable). 
       */
-     typedef VarRecord_set::iterator DbIter;
+     typedef typename VarRecord_set::iterator DbIter;
 
      VarIter var_iter_begin();
      VarIter var_iter_end();
@@ -208,50 +210,13 @@ class ObsSpaceContainer: public util::Printable {
      /*! \brief Return the number of observational variables*/
      std::size_t nvars() const {return nvars_;}
 
-     // -----------------------------------------------------------------------------
-     // LoadFromDb - load data from the obs container into VarData
-     //
-     // The overloaded style of interface is currently being used so that this interface is
-     // consistent with the interfaces of ObsSpace and IodaIO.
-     //
-     // Using the overloaded method style of interface (as opposed to a templated
-     // interface) was done to restrict the allowed data types to only those of
-     // the overloaded interfaces. If a new type is to be added, you have to deliberately
-     // change the interface, update the code in the templated helper, etc. If the interface
-     // itself were templated, then you could just call the interface with your new type
-     // and it may or may not work.
      void LoadFromDb(const std::string & GroupName, const std::string & VarName,
-                  const std::vector<std::size_t> & VarShape, int * VarData) const;
-     void LoadFromDb(const std::string & GroupName, const std::string & VarName,
-                  const std::vector<std::size_t> & VarShape, float * VarData) const;
-     void LoadFromDb(const std::string & GroupName, const std::string & VarName,
-                  const std::vector<std::size_t> & VarShape, std::string * VarData) const;
-     void LoadFromDb(const std::string & GroupName, const std::string & VarName,
-                  const std::vector<std::size_t> & VarShape, util::DateTime * VarData) const;
+                     const std::vector<std::size_t> & VarShape, ContType * VarData) const;
 
-     // -----------------------------------------------------------------------------
-     // StorToDb - store data from VarData into the obs container
-     //
-     // See notes above for LoadToDb regarding why the interfaced consists of overloaded
-     // methods instead of a templated method.
      void StoreToDb(const std::string & GroupName, const std::string & VarName,
-                    const std::vector<std::size_t> & VarShape, const int * VarData);
-     void StoreToDb(const std::string & GroupName, const std::string & VarName,
-                    const std::vector<std::size_t> & VarShape, const float * VarData);
-     void StoreToDb(const std::string & GroupName, const std::string & VarName,
-                    const std::vector<std::size_t> & VarShape, const std::string * VarData);
-     void StoreToDb(const std::string & GroupName, const std::string & VarName,
-                    const std::vector<std::size_t> & VarShape, const util::DateTime * VarData);
+                    const std::vector<std::size_t> & VarShape, const ContType * VarData);
 
  private:
-     template <typename DataType>
-     void LoadFromDb_helper(const std::string & GroupName, const std::string & VarName,
-                      const std::vector<std::size_t> & VarShape, DataType * VarData) const;
-
-     template <typename DataType>
-     void StoreToDb_helper(const std::string & GroupName, const std::string & VarName,
-                      const std::vector<std::size_t> & VarShape, const DataType * VarData);
-
      /*! \brief obs container instance */
      VarRecord_set DataContainer;
 

@@ -229,8 +229,10 @@ class ObsData : public oops::ObsSpaceBase {
   /*! \brief profile ordering */
   RecIdxMap recidx_;
 
-  /*! \brief Multi-index container */
-  ObsSpaceContainer database_;
+  /*! \brief Multi-index containers */
+  ObsSpaceContainer<int> int_database_;
+  ObsSpaceContainer<float> float_database_;
+  ObsSpaceContainer<util::DateTime> datetime_database_;
 
   /*! \brief Observation "variables" to be simulated */
   oops::Variables obsvars_;
