@@ -16,56 +16,26 @@ namespace ioda {
 
 // -----------------------------------------------------------------------------
 
-  ObsSpaceContainer::ObsSpaceContainer() {
-    oops::Log::trace() << "ioda::ObsSpaceContainer Constructor starts " << std::endl;
-  }
+template <typename ContType>
+ObsSpaceContainer<ContType>::ObsSpaceContainer() {
+  oops::Log::trace() << "ioda::ObsSpaceContainer Constructor starts " << std::endl;
+}
 
 // -----------------------------------------------------------------------------
 
-  ObsSpaceContainer::~ObsSpaceContainer() {
-    oops::Log::trace() << "ioda::ObsSpaceContainer deconstructed " << std::endl;
-  }
+template <typename ContType>
+ObsSpaceContainer<ContType>::~ObsSpaceContainer() {
+  oops::Log::trace() << "ioda::ObsSpaceContainer deconstructed " << std::endl;
+}
 
 // -----------------------------------------------------------------------------
 /*!
  * \brief store data into the obs container
  *
- * \details The following four StoreToDb methods are the same except for the data type
- *          of the data that is being stored (integer, float, string, DateTime). The
- *          caller needs to allocate and assign the memory that the VarData parameter
- *          points to.
- *
- * \param[in] GroupName Name of container group (ObsValue, ObsError, MetaData, etc.)
- * \param[in] VarName Name of container variable
- * \param[in] VarShape Dimension sizes of variable
- * \param[in] VarData Pointer to memory that will be stored in the container
- */
-void ObsSpaceContainer::StoreToDb(const std::string & GroupName, const std::string & VarName,
-               const std::vector<std::size_t> & VarShape, const int * VarData) {
-  StoreToDb_helper<int>(GroupName, VarName, VarShape, VarData);
-}
-
-void ObsSpaceContainer::StoreToDb(const std::string & GroupName, const std::string & VarName,
-               const std::vector<std::size_t> & VarShape, const float * VarData) {
-  StoreToDb_helper<float>(GroupName, VarName, VarShape, VarData);
-}
-
-void ObsSpaceContainer::StoreToDb(const std::string & GroupName, const std::string & VarName,
-           const std::vector<std::size_t> & VarShape, const std::string * VarData) {
-  StoreToDb_helper<std::string>(GroupName, VarName, VarShape, VarData);
-}
-
-void ObsSpaceContainer::StoreToDb(const std::string & GroupName, const std::string & VarName,
-           const std::vector<std::size_t> & VarShape, const util::DateTime * VarData) {
-  StoreToDb_helper<util::DateTime>(GroupName, VarName, VarShape, VarData);
-}
-
-/*!
- * \brief Helper method for StoreToDb
- *
- * \details This method fills in the code for the four overloaded StoreToDb methods.
- *          This method handles checking that the varible has write permission if
- *          it exists in the obs container, and inserting the data into the container.
+ * \details This method transfers data from the caller's memory into the obs conatiner.
+ *          The caller needs to allocate and assign the memory that the VarData parameter
+ *          points to. This method also handles checking that the varible has write
+ *          permission if it already exists in the obs container.
  *
  * \param[in] GroupName Name of container group (ObsValue, ObsError, MetaData, etc.)
  * \param[in] VarName Name of container variable
@@ -73,11 +43,11 @@ void ObsSpaceContainer::StoreToDb(const std::string & GroupName, const std::stri
  * \param[in] VarData Pointer to memory that will be stored in the container
  */
 
-template <typename DataType>
-void ObsSpaceContainer::StoreToDb_helper(const std::string & GroupName,
+template <typename ContType>
+void ObsSpaceContainer<ContType>::StoreToDb(const std::string & GroupName,
           const std::string & VarName, const std::vector<std::size_t> & VarShape,
-          const DataType * VarData) {
-  const std::type_info & VarType = typeid(DataType);
+          const ContType * VarData) {
+  const std::type_info & VarType = typeid(ContType);
 
   // Calculate the total number of elements
   std::size_t VarSize = 1;
@@ -86,7 +56,8 @@ void ObsSpaceContainer::StoreToDb_helper(const std::string & GroupName,
   }
 
   // Search for VarRecord with GroupName, VarName combination
-  VarRecord_set::iterator Var = DataContainer.find(boost::make_tuple(GroupName, VarName));
+  typename VarRecord_set::iterator
+        Var = DataContainer.find(boost::make_tuple(GroupName, VarName));
   if (Var != DataContainer.end()) {
     // Found the required record in database
     // Check if attempting to update a read only VarRecord
@@ -117,39 +88,8 @@ void ObsSpaceContainer::StoreToDb_helper(const std::string & GroupName,
 /*!
  * \brief load data from the obs container
  *
- * \details The following four LoadFromDb methods are the same except for the data type
- *          of the data that is being stored (integer, float, string, DateTime). The
- *          caller needs to allocate the memory that the VarData parameter points to.
- *
- * \param[in] GroupName Name of container group (ObsValue, ObsError, MetaData, etc.)
- * \param[in] VarName Name of container variable
- * \param[in] VarShape Dimension sizes of variable
- * \param[in] VarData Pointer to memory that will loaded from the container.
- */
-void ObsSpaceContainer::LoadFromDb(const std::string & GroupName, const std::string & VarName,
-               const std::vector<std::size_t> & VarShape, int * VarData) const {
-  LoadFromDb_helper<int>(GroupName, VarName, VarShape, VarData);
-}
-
-void ObsSpaceContainer::LoadFromDb(const std::string & GroupName, const std::string & VarName,
-               const std::vector<std::size_t> & VarShape, float * VarData) const {
-  LoadFromDb_helper<float>(GroupName, VarName, VarShape, VarData);
-}
-
-void ObsSpaceContainer::LoadFromDb(const std::string & GroupName, const std::string & VarName,
-           const std::vector<std::size_t> & VarShape, std::string * VarData) const {
-  LoadFromDb_helper<std::string>(GroupName, VarName, VarShape, VarData);
-}
-
-void ObsSpaceContainer::LoadFromDb(const std::string & GroupName, const std::string & VarName,
-           const std::vector<std::size_t> & VarShape, util::DateTime * VarData) const {
-  LoadFromDb_helper<util::DateTime>(GroupName, VarName, VarShape, VarData);
-}
-
-/*!
- * \brief Helper method for LoadFromDb
- *
- * \details This method fills in the code for the four overloaded LoadFromDb methods.
+ * \details This method transfers data from the obs container to the caller's memory.
+ *          The caller needs to allocate the memory that the VarData parameter points to.
  *          This method handles the lookup of the container group, variable entry, and
  *          checking that the data type in the container matches that of the VarData
  *          parameter.
@@ -157,15 +97,17 @@ void ObsSpaceContainer::LoadFromDb(const std::string & GroupName, const std::str
  * \param[in] GroupName Name of container group (ObsValue, ObsError, MetaData, etc.)
  * \param[in] VarName Name of container variable
  * \param[in] VarShape Dimension sizes of variable
- * \param[in] VarData Pointer to memory that will be loaded from the container
+ * \param[in] VarData Pointer to memory that will loaded from the container.
  */
-template <typename DataType>
-void ObsSpaceContainer::LoadFromDb_helper(const std::string & GroupName,
+
+template <typename ContType>
+void ObsSpaceContainer<ContType>::LoadFromDb(const std::string & GroupName,
               const std::string & VarName, const std::vector<std::size_t> & VarShape,
-              DataType * VarData) const {
+              ContType * VarData) const {
   if (has(GroupName, VarName)) {
     // Found the required record in the database
-    VarRecord_set::iterator Var = DataContainer.find(boost::make_tuple(GroupName, VarName));
+    typename VarRecord_set::iterator
+      Var = DataContainer.find(boost::make_tuple(GroupName, VarName));
 
     // Calculate the total number of elements
     std::size_t VarSize = 1;
@@ -176,11 +118,11 @@ void ObsSpaceContainer::LoadFromDb_helper(const std::string & GroupName,
     // Copy the elements into the output
     for (std::size_t i = 0; i < VarSize; i++) {
       try {
-        VarData[i] = boost::any_cast<DataType>(Var->data.get()[i]);
+        VarData[i] = boost::any_cast<ContType>(Var->data.get()[i]);
       }
       catch (boost::bad_any_cast &e) {
         std::string DbTypeName = Var->data.get()->type().name();
-        std::string VarTypeName = typeid(DataType).name();
+        std::string VarTypeName = typeid(ContType).name();
 
         oops::Log::error() << "ObsSpaceContainer::LoadFromDb: ERROR: Variable type "
             << "and database entry type do not match." << std::endl
@@ -209,8 +151,9 @@ void ObsSpaceContainer::LoadFromDb_helper(const std::string & GroupName,
  *          obs container.
  *
  */
-ObsSpaceContainer::VarIter ObsSpaceContainer::var_iter_begin() {
-  VarIndex & var_index_ = DataContainer.get<by_variable>();
+template <typename ContType>
+typename ObsSpaceContainer<ContType>::VarIter ObsSpaceContainer<ContType>::var_iter_begin() {
+  VarIndex & var_index_ = DataContainer.template get<by_variable>();
   return var_index_.begin();
 }
 
@@ -221,8 +164,9 @@ ObsSpaceContainer::VarIter ObsSpaceContainer::var_iter_begin() {
  *          obs container.
  *
  */
-ObsSpaceContainer::VarIter ObsSpaceContainer::var_iter_end() {
-  VarIndex & var_index_ = DataContainer.get<by_variable>();
+template <typename ContType>
+typename ObsSpaceContainer<ContType>::VarIter ObsSpaceContainer<ContType>::var_iter_end() {
+  VarIndex & var_index_ = DataContainer.template get<by_variable>();
   return var_index_.end();
 }
 
@@ -239,7 +183,8 @@ ObsSpaceContainer::VarIter ObsSpaceContainer::var_iter_end() {
  * \param[in] variable Name of obs container variable
  *
  */
-ObsSpaceContainer::DbIter ObsSpaceContainer::find(
+template <typename ContType>
+typename ObsSpaceContainer<ContType>::DbIter ObsSpaceContainer<ContType>::find(
                        const std::string & group, const std::string & variable) const {
     DbIter var = DataContainer.find(boost::make_tuple(group, variable));
     return var;
@@ -251,7 +196,8 @@ ObsSpaceContainer::DbIter ObsSpaceContainer::find(
  * \details This method returns the begin iterator for the obs container.
  *
  */
-ObsSpaceContainer::DbIter ObsSpaceContainer::begin() const {
+template <typename ContType>
+typename ObsSpaceContainer<ContType>::DbIter ObsSpaceContainer<ContType>::begin() const {
     return DataContainer.begin();
 }
 
@@ -261,7 +207,8 @@ ObsSpaceContainer::DbIter ObsSpaceContainer::begin() const {
  * \details This method returns the end iterator for the obs container.
  *
  */
-ObsSpaceContainer::DbIter ObsSpaceContainer::end() const {
+template <typename ContType>
+typename ObsSpaceContainer<ContType>::DbIter ObsSpaceContainer<ContType>::end() const {
     return DataContainer.end();
 }
 
@@ -273,7 +220,8 @@ ObsSpaceContainer::DbIter ObsSpaceContainer::end() const {
  *
  * \param[in] Idb Iterator pointing to the current element of the obs container.
  */
-const std::type_info & ObsSpaceContainer::dtype(const DbIter Idb) const {
+template <typename ContType>
+const std::type_info & ObsSpaceContainer<ContType>::dtype(const DbIter Idb) const {
     return Idb->type;
 }
 
@@ -287,7 +235,8 @@ const std::type_info & ObsSpaceContainer::dtype(const DbIter Idb) const {
  * \param[in] group Name of obs container group
  * \param[in] variable Name of obs container variable
  */
-const std::type_info & ObsSpaceContainer::dtype(const std::string & group,
+template <typename ContType>
+const std::type_info & ObsSpaceContainer<ContType>::dtype(const std::string & group,
                                                 const std::string & variable) const {
     DbIter Var = DataContainer.find(boost::make_tuple(group, variable));
     if (Var == DataContainer.end()) {
@@ -305,7 +254,8 @@ const std::type_info & ObsSpaceContainer::dtype(const std::string & group,
  *
  * \param[in] var_iter Iterator of the indexing by variable type.
  */
-std::string ObsSpaceContainer::var_iter_vname(ObsSpaceContainer::VarIter var_iter) {
+template <typename ContType>
+std::string ObsSpaceContainer<ContType>::var_iter_vname(ObsSpaceContainer<ContType>::VarIter var_iter) {
   return var_iter->variable;
 }
 
@@ -317,7 +267,8 @@ std::string ObsSpaceContainer::var_iter_vname(ObsSpaceContainer::VarIter var_ite
  *
  * \param[in] var_iter Iterator of the indexing by variable type.
  */
-std::string ObsSpaceContainer::var_iter_gname(ObsSpaceContainer::VarIter var_iter) {
+template <typename ContType>
+std::string ObsSpaceContainer<ContType>::var_iter_gname(ObsSpaceContainer<ContType>::VarIter var_iter) {
   return var_iter->group;
 }
 
@@ -329,7 +280,8 @@ std::string ObsSpaceContainer::var_iter_gname(ObsSpaceContainer::VarIter var_ite
  *
  * \param[in] var_iter Iterator of the indexing by variable type.
  */
-std::string ObsSpaceContainer::var_iter_mode(ObsSpaceContainer::VarIter var_iter) {
+template <typename ContType>
+std::string ObsSpaceContainer<ContType>::var_iter_mode(ObsSpaceContainer<ContType>::VarIter var_iter) {
   return var_iter->mode;
 }
 
@@ -341,7 +293,8 @@ std::string ObsSpaceContainer::var_iter_mode(ObsSpaceContainer::VarIter var_iter
  *
  * \param[in] var_iter Iterator of the indexing by variable type.
  */
-const std::type_info & ObsSpaceContainer::var_iter_type(ObsSpaceContainer::VarIter var_iter) {
+template <typename ContType>
+const std::type_info & ObsSpaceContainer<ContType>::var_iter_type(ObsSpaceContainer<ContType>::VarIter var_iter) {
   return var_iter->type;
 }
 
@@ -353,7 +306,8 @@ const std::type_info & ObsSpaceContainer::var_iter_type(ObsSpaceContainer::VarIt
  *
  * \param[in] var_iter Iterator of the indexing by variable type.
  */
-std::size_t ObsSpaceContainer::var_iter_size(ObsSpaceContainer::VarIter var_iter) {
+template <typename ContType>
+std::size_t ObsSpaceContainer<ContType>::var_iter_size(ObsSpaceContainer<ContType>::VarIter var_iter) {
   return var_iter->size;
 }
 
@@ -365,7 +319,8 @@ std::size_t ObsSpaceContainer::var_iter_size(ObsSpaceContainer::VarIter var_iter
  *
  * \param[in] var_iter Iterator of the indexing by variable type.
  */
-std::vector<std::size_t> ObsSpaceContainer::var_iter_shape(ObsSpaceContainer::VarIter var_iter) {
+template <typename ContType>
+std::vector<std::size_t> ObsSpaceContainer<ContType>::var_iter_shape(ObsSpaceContainer<ContType>::VarIter var_iter) {
   return var_iter->shape;
 }
 
@@ -380,10 +335,11 @@ std::vector<std::size_t> ObsSpaceContainer::var_iter_shape(ObsSpaceContainer::Va
  * \param[in] variable Name of obs container variable
  *
  */
-  bool ObsSpaceContainer::has(const std::string & group, const std::string & variable) const {
-    DbIter var = find(group, variable);
-    return (var != DataContainer.end());
-  }
+template <typename ContType>
+bool ObsSpaceContainer<ContType>::has(const std::string & group, const std::string & variable) const {
+  DbIter var = find(group, variable);
+  return (var != DataContainer.end());
+}
 
 // -----------------------------------------------------------------------------
 /*!
@@ -393,12 +349,13 @@ std::vector<std::size_t> ObsSpaceContainer::var_iter_shape(ObsSpaceContainer::Va
  *          used in an output stream. A list of all group, variable combinations
  *          present in the obs container is printed out.
  */
-  void ObsSpaceContainer::print(std::ostream & os) const {
-    const VarIndex & var = DataContainer.get<by_variable>();
-    os << "ObsSpace Multi.Index Container for IODA" << "\n";
-    for (VarIter iter = var.begin(); iter != var.end(); ++iter)
-      os << iter->variable << " @ " << iter->group << "\n";
-  }
+template <typename ContType>
+void ObsSpaceContainer<ContType>::print(std::ostream & os) const {
+  const VarIndex & var = DataContainer.template get<by_variable>();
+  os << "ObsSpace Multi.Index Container for IODA" << "\n";
+  for (VarIter iter = var.begin(); iter != var.end(); ++iter)
+    os << iter->variable << " @ " << iter->group << "\n";
+}
 
 // -----------------------------------------------------------------------------
 
