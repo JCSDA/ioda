@@ -82,7 +82,7 @@ TEST(test_obsspace_construct)
     !> test if obsvariables nvars is the same
     vars = obsspace_obsvariables(obsspace(iobstype))
     call obsconfig%get_or_die("TestData.nvars_obsvars", nvars_ref)
-    CHECK_EQUAL(vars.nvars(), nvars_ref)
+    CHECK_EQUAL(vars%nvars(), nvars_ref)
   enddo
   !> destruct all obsspaces
   do iobstype = 1, size(obsspace)
