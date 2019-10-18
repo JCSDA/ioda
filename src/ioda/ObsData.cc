@@ -255,7 +255,7 @@ void ObsData::get_db_helper(const std::string & group, const std::string & name,
                              const std::size_t vsize, DATATYPE vdata[]) const {
 ///   std::string gname = (group.size() <= 0)? "GroupUndefined" : group;
 ///   std::vector<std::size_t> vshape(1, vsize);
-/// 
+///
 ///   // Check to see if the requested variable type matches the type stored in
 ///   // the database. If these are different, issue warnings and do the conversion.
 ///   const std::type_info & VarType = typeid(DATATYPE);
@@ -1018,7 +1018,7 @@ void ObsData::SaveToFile(const std::string & file_name) {
 ///   // Open the file for output
 ///   std::unique_ptr<IodaIO> fileio
 ///     {ioda::IodaIOfactory::Create(file_name, "W", nlocs_, nrecs_, nvars_)};
-/// 
+///
 ///   // List all records and write out the every record
 ///   for (ObsSpaceContainer::VarIter ivar = database_.var_iter_begin();
 ///     ivar != database_.var_iter_end(); ++ivar) {
@@ -1027,7 +1027,7 @@ void ObsData::SaveToFile(const std::string & file_name) {
 ///     const std::type_info & VarType = database_.var_iter_type(ivar);
 ///     std::vector<std::size_t> VarShape = database_.var_iter_shape(ivar);
 ///     std::size_t VarSize = database_.var_iter_size(ivar);
-/// 
+///
 ///     if (VarType == typeid(int)) {
 ///       std::unique_ptr<int[]> VarData(new int[VarSize]);
 ///       database_.LoadFromDb(GroupName, VarName, VarShape, VarData.get());
@@ -1039,7 +1039,7 @@ void ObsData::SaveToFile(const std::string & file_name) {
 ///     } else if (VarType == typeid(std::string)) {
 ///       std::vector<std::string> VarData(VarSize, "");
 ///       database_.LoadFromDb(GroupName, VarName, VarShape, VarData.data());
-/// 
+///
 ///       // Get the shape needed for the character array, which will be a 2D array.
 ///       // The total number of char elelments will be CharShape[0] * CharShape[1].
 ///       std::vector<std::size_t> CharShape = CharShapeFromStringVector(VarData);
@@ -1050,7 +1050,7 @@ void ObsData::SaveToFile(const std::string & file_name) {
 ///       util::DateTime TempDt("0000-01-01T00:00:00Z");
 ///       std::vector<util::DateTime> VarData(VarSize, TempDt);
 ///       database_.LoadFromDb(GroupName, VarName, VarShape, VarData.data());
-/// 
+///
 ///       // Convert the DateTime vector to a string vector, then save into the file.
 ///       std::vector<std::string> StringVector(VarSize, "");
 ///       for (std::size_t i = 0; i < VarSize; i++) {
