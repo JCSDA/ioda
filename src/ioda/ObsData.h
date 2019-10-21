@@ -88,6 +88,8 @@ class ObsData : public oops::ObsSpaceBase {
   void get_db(const std::string & group, const std::string & name,
               const std::size_t vsize, double vdata[]) const;
   void get_db(const std::string & group, const std::string & name,
+              const std::size_t vsize, std::string vdata[]) const;
+  void get_db(const std::string & group, const std::string & name,
               const std::size_t vsize, util::DateTime vdata[]) const;
 
   void put_db(const std::string & group, const std::string & name,
@@ -96,6 +98,8 @@ class ObsData : public oops::ObsSpaceBase {
               const std::size_t vsize, const float vdata[]);
   void put_db(const std::string & group, const std::string & name,
               const std::size_t vsize, const double vdata[]);
+  void put_db(const std::string & group, const std::string & name,
+              const std::size_t vsize, const std::string vdata[]);
   void put_db(const std::string & group, const std::string & name,
               const std::size_t vsize, const util::DateTime vdata[]);
 
@@ -161,21 +165,7 @@ class ObsData : public oops::ObsSpaceBase {
   // Dump the database into the output file
   void SaveToFile(const std::string & file_name);
 
-  // Methods for tranferring data from the database into a variable.
-  template <typename DATATYPE>
-  void get_db_helper(const std::string & group, const std::string & name,
-                     const std::size_t vsize, DATATYPE vdata[]) const;
-
-  template<typename DbType, typename VarType>
-  void LoadFromDbConvert(const std::string & GroupName, const std::string & VarName,
-                    const std::vector<std::size_t> & VarShape, const std::size_t VarSize,
-                    VarType * VarData) const;
-
   // Methods for tranferring data from a variable into the database.
-  template <typename DATATYPE>
-  void put_db_helper(const std::string & group, const std::string & name,
-                     const std::size_t vsize, const DATATYPE vdata[]);
-
   template<typename VarType, typename DbType>
   void ConvertStoreToDb(const std::string & GroupName, const std::string & VarName,
                     const std::vector<std::size_t> & VarShape, const std::size_t VarSize,
@@ -232,6 +222,7 @@ class ObsData : public oops::ObsSpaceBase {
   /*! \brief Multi-index containers */
   ObsSpaceContainer<int> int_database_;
   ObsSpaceContainer<float> float_database_;
+  ObsSpaceContainer<std::string> string_database_;
   ObsSpaceContainer<util::DateTime> datetime_database_;
 
   /*! \brief Observation "variables" to be simulated */
@@ -251,11 +242,6 @@ class ObsData : public oops::ObsSpaceBase {
 
   std::shared_ptr<Distribution> dist_;
 };
-
-/*! \brief Specialized (for DateTime type) helper function for public get_db */
-template <>
-void ObsData::get_db_helper<util::DateTime>(const std::string & group,
-           const std::string & name, const std::size_t vsize, util::DateTime vdata[]) const;
 
 }  // namespace ioda
 
