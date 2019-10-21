@@ -210,99 +210,40 @@ ObsData::~ObsData() {
 
 void ObsData::get_db(const std::string & group, const std::string & name,
                       const std::size_t vsize, int vdata[]) const {
-  get_db_helper<int>(group, name, vsize, vdata);
+  std::string gname = (group.size() <= 0)? "GroupUndefined" : group;
+  std::vector<std::size_t> vshape(1, vsize);
+  int_database_.LoadFromDb(gname, name, vshape, &vdata[0]);
 }
 
 void ObsData::get_db(const std::string & group, const std::string & name,
                       const std::size_t vsize, float vdata[]) const {
-  get_db_helper<float>(group, name, vsize, vdata);
+  std::string gname = (group.size() <= 0)? "GroupUndefined" : group;
+  std::vector<std::size_t> vshape(1, vsize);
+  float_database_.LoadFromDb(gname, name, vshape, &vdata[0]);
 }
 
 void ObsData::get_db(const std::string & group, const std::string & name,
                       const std::size_t vsize, double vdata[]) const {
+  std::string gname = (group.size() <= 0)? "GroupUndefined" : group;
+  std::vector<std::size_t> vshape(1, vsize);
   // load the float values from the database and convert to double
   std::unique_ptr<float[]> FloatData(new float[vsize]);
-  get_db_helper<float>(group, name, vsize, FloatData.get());
+  float_database_.LoadFromDb(gname, name, vshape, FloatData.get());
   ConvertVarType<float, double>(FloatData.get(), &vdata[0], vsize);
 }
 
 void ObsData::get_db(const std::string & group, const std::string & name,
+                      const std::size_t vsize, std::string vdata[]) const {
+  std::string gname = (group.size() <= 0)? "GroupUndefined" : group;
+  std::vector<std::size_t> vshape(1, vsize);
+  string_database_.LoadFromDb(gname, name, vshape, &vdata[0]);
+}
+
+void ObsData::get_db(const std::string & group, const std::string & name,
                       const std::size_t vsize, util::DateTime vdata[]) const {
-  get_db_helper<util::DateTime>(group, name, vsize, vdata);
-}
-
-/*!
- * \brief Helper method for get_db
- *
- * \details This method fills in the code for the four overloaded get_db methods.
- *          This method handles data type conversions, and the transfer of data
- *          from the container to vdata.
- *
- * NOTE: Some data type conversions are to be eventually eliminated, such as
- *       between double and int for QC marks, and warnings are issued when these occur.
- *       Once the need for these type conversions is eliminated across the whole system,
- *       these type mismatches will become errors and the type mismatch will need to be
- *       repaired.
- *
- * \param[in]  group Name of container group (ObsValue, ObsError, MetaData, etc.)
- * \param[in]  name  Name of container variable
- * \param[in]  vsize Total number of elements in variable (i.e., length of vdata)
- * \param[out] vdata Pointer to memory where container data is being transferred to
- */
-
-template <typename DATATYPE>
-void ObsData::get_db_helper(const std::string & group, const std::string & name,
-                             const std::size_t vsize, DATATYPE vdata[]) const {
-///   std::string gname = (group.size() <= 0)? "GroupUndefined" : group;
-///   std::vector<std::size_t> vshape(1, vsize);
-///
-///   // Check to see if the requested variable type matches the type stored in
-///   // the database. If these are different, issue warnings and do the conversion.
-///   const std::type_info & VarType = typeid(DATATYPE);
-///   const std::type_info & DbType = database_.dtype(gname, name);
-///   if (DbType == typeid(void)) {
-///     std::string ErrorMsg = "ObsData::get_db: " + name + " @ " + gname +
-///                            " not found in database.";
-///     ABORT(ErrorMsg);
-///   } else {
-///     // Check for type mis-match between var type and the type of the database
-///     // entry. If a conversion is necessary, do it and issue a warning so this
-///     // situation can be fixed.
-///     if (VarType == DbType) {
-///       database_.LoadFromDb(gname, name, vshape, &vdata[0]);
-///     } else {
-///       if (DbType == typeid(int)) {
-///         // Trying to load int into something else
-///         LoadFromDbConvert<int, DATATYPE>(gname, name, vshape, vsize, &vdata[0]);
-///       } else if (DbType == typeid(float)) {
-///         // Trying to load float into something else
-///         LoadFromDbConvert<float, DATATYPE>(gname, name, vshape, vsize, &vdata[0]);
-///       } else {
-///         // Let the bad cast check catch this one.
-///         database_.LoadFromDb(gname, name, vshape, &vdata[0]);
-///       }
-///     }
-///   }
-}
-
-/*!
- * \brief Helper method for get_db (specialized for DateTime type)
- *
- * \details This method fills in the code for the get_db methods that is transferring
- *          DateTime data. This is here because there isn't a way to convert between
- *          numeric data and DateTime objects.
- *
- * \param[in]  group Name of container group (ObsValue, ObsError, MetaData, etc.)
- * \param[in]  name  Name of container variable
- * \param[in]  vsize Total number of elements in variable (i.e., length of vdata)
- * \param[out] vdata Pointer to memory where container data is being transferred to
- */
-template <>
-void ObsData::get_db_helper<util::DateTime>(const std::string & group,
-         const std::string & name, const std::size_t vsize, util::DateTime vdata[]) const {
-///   std::string gname = (group.size() <= 0)? "GroupUndefined" : group;
-///   std::vector<std::size_t> vshape(1, vsize);
-///   database_.LoadFromDb(gname, name, vshape, &vdata[0]);
+  std::string gname = (group.size() <= 0)? "GroupUndefined" : group;
+  std::vector<std::size_t> vshape(1, vsize);
+  datetime_database_.LoadFromDb(gname, name, vshape, &vdata[0]);
 }
 
 // -----------------------------------------------------------------------------
@@ -322,52 +263,40 @@ void ObsData::get_db_helper<util::DateTime>(const std::string & group,
 
 void ObsData::put_db(const std::string & group, const std::string & name,
                       const std::size_t vsize, const int vdata[]) {
-  put_db_helper<int>(group, name, vsize, vdata);
+  std::string gname = (group.size() <= 0)? "GroupUndefined" : group;
+  std::vector<std::size_t> vshape(1, vsize);
+  int_database_.StoreToDb(gname, name, vshape, &vdata[0]);
 }
 
 void ObsData::put_db(const std::string & group, const std::string & name,
                       const std::size_t vsize, const float vdata[]) {
-  put_db_helper<float>(group, name, vsize, vdata);
+  std::string gname = (group.size() <= 0)? "GroupUndefined" : group;
+  std::vector<std::size_t> vshape(1, vsize);
+  float_database_.StoreToDb(gname, name, vshape, &vdata[0]);
 }
 
 void ObsData::put_db(const std::string & group, const std::string & name,
                       const std::size_t vsize, const double vdata[]) {
+  std::string gname = (group.size() <= 0)? "GroupUndefined" : group;
+  std::vector<std::size_t> vshape(1, vsize);
   // convert to float, then load into the database
   std::unique_ptr<float[]> FloatData(new float[vsize]);
   ConvertVarType<double, float>(&vdata[0], FloatData.get(), vsize);
-  put_db_helper<float>(group, name, vsize, FloatData.get());
+  float_database_.StoreToDb(gname, name, vshape, FloatData.get());
+}
+
+void ObsData::put_db(const std::string & group, const std::string & name,
+                      const std::size_t vsize, const std::string vdata[]) {
+  std::string gname = (group.size() <= 0)? "GroupUndefined" : group;
+  std::vector<std::size_t> vshape(1, vsize);
+  string_database_.StoreToDb(gname, name, vshape, &vdata[0]);
 }
 
 void ObsData::put_db(const std::string & group, const std::string & name,
                       const std::size_t vsize, const util::DateTime vdata[]) {
-  put_db_helper<util::DateTime>(group, name, vsize, vdata);
-}
-
-/*!
- * \brief Helper method for put_db
- *
- * \details This method fills in the code for the four overloaded put_db methods.
- *          This method handles data type conversions, and the transfer of data
- *          from vdata to the container
- *
- * NOTE: Some data type conversions are to be eventually eliminated, such as
- *       between double and int for QC marks, and warnings are issued when these occur.
- *       Once the need for these type conversions is eliminated across the whole system,
- *       these type mismatches will become errors and the type mismatch will need to be
- *       repaired.
- *
- * \param[in]  group Name of container group (ObsValue, ObsError, MetaData, etc.)
- * \param[in]  name  Name of container variable
- * \param[in]  vsize Total number of elements in variable (i.e., length of vdata)
- * \param[out] vdata Pointer to memory where container data is being transferred to
- */
-
-template <typename DATATYPE>
-void ObsData::put_db_helper(const std::string & group, const std::string & name,
-                             const std::size_t vsize, const DATATYPE vdata[]) {
-///   std::string gname = (group.size() <= 0)? "GroupUndefined" : group;
-///   std::vector<std::size_t> vshape(1, vsize);
-///   database_.StoreToDb(gname, name, vshape, &vdata[0]);
+  std::string gname = (group.size() <= 0)? "GroupUndefined" : group;
+  std::vector<std::size_t> vshape(1, vsize);
+  datetime_database_.StoreToDb(gname, name, vshape, &vdata[0]);
 }
 
 // -----------------------------------------------------------------------------
@@ -705,7 +634,7 @@ void ObsData::InitFromFile(const std::string & filename) {
         std::vector<std::size_t> IndexedShape;
         std::size_t IndexedSize;
         ApplyDistIndex<int>(FileData, VarShape, IndexedData, IndexedShape, IndexedSize);
-///        database_.StoreToDb(GroupName, VarName, IndexedShape, IndexedData.get());
+        int_database_.StoreToDb(GroupName, VarName, IndexedShape, IndexedData.get());
       } else if (FileVarType == "float") {
         std::unique_ptr<float[]> FileData(new float[VarSize]);
         fileio->ReadVar(GroupName, VarName, VarShape, FileData.get());
@@ -719,7 +648,7 @@ void ObsData::InitFromFile(const std::string & filename) {
           ConvertStoreToDb<float, int>(GroupName, VarName, IndexedShape,
                                      IndexedSize, IndexedData.get());
         } else {
-///          database_.StoreToDb(GroupName, VarName, IndexedShape, IndexedData.get());
+          float_database_.StoreToDb(GroupName, VarName, IndexedShape, IndexedData.get());
         }
       } else if (FileVarType == "double") {
         // Convert double to float before storing into the database.
@@ -760,9 +689,9 @@ void ObsData::InitFromFile(const std::string & filename) {
             util::DateTime TempDt(StringData[j]);
             DtData[j] = TempDt;
           }
-///          database_.StoreToDb(GroupName, VarName, AdjVarShape, DtData.data());
+          datetime_database_.StoreToDb(GroupName, VarName, AdjVarShape, DtData.data());
         } else {
-///          database_.StoreToDb(GroupName, VarName, AdjVarShape, StringData.data());
+          string_database_.StoreToDb(GroupName, VarName, AdjVarShape, StringData.data());
         }
       } else if (commMPI_.rank() == 0) {
         oops::Log::warning() << "ioda::IodaIO::InitFromFile: Unrecognized file data type: "
@@ -1015,60 +944,73 @@ void ObsData::BuildSortedObsGroups() {
  * \param[in] file_name Path to output obs file.
  */
 void ObsData::SaveToFile(const std::string & file_name) {
-///   // Open the file for output
-///   std::unique_ptr<IodaIO> fileio
-///     {ioda::IodaIOfactory::Create(file_name, "W", nlocs_, nrecs_, nvars_)};
-///
-///   // List all records and write out the every record
-///   for (ObsSpaceContainer::VarIter ivar = database_.var_iter_begin();
-///     ivar != database_.var_iter_end(); ++ivar) {
-///     std::string GroupName = database_.var_iter_gname(ivar);
-///     std::string VarName = database_.var_iter_vname(ivar);
-///     const std::type_info & VarType = database_.var_iter_type(ivar);
-///     std::vector<std::size_t> VarShape = database_.var_iter_shape(ivar);
-///     std::size_t VarSize = database_.var_iter_size(ivar);
-///
-///     if (VarType == typeid(int)) {
-///       std::unique_ptr<int[]> VarData(new int[VarSize]);
-///       database_.LoadFromDb(GroupName, VarName, VarShape, VarData.get());
-///       fileio->WriteVar(GroupName, VarName, VarShape, VarData.get());
-///     } else if (VarType == typeid(float)) {
-///       std::unique_ptr<float[]> VarData(new float[VarSize]);
-///       database_.LoadFromDb(GroupName, VarName, VarShape, VarData.get());
-///       fileio->WriteVar(GroupName, VarName, VarShape, VarData.get());
-///     } else if (VarType == typeid(std::string)) {
-///       std::vector<std::string> VarData(VarSize, "");
-///       database_.LoadFromDb(GroupName, VarName, VarShape, VarData.data());
-///
-///       // Get the shape needed for the character array, which will be a 2D array.
-///       // The total number of char elelments will be CharShape[0] * CharShape[1].
-///       std::vector<std::size_t> CharShape = CharShapeFromStringVector(VarData);
-///       std::unique_ptr<char[]> CharData(new char[CharShape[0] * CharShape[1]]);
-///       StringVectorToCharArray(VarData, CharShape, CharData.get());
-///       fileio->WriteVar(GroupName, VarName, CharShape, CharData.get());
-///     } else if (VarType == typeid(util::DateTime)) {
-///       util::DateTime TempDt("0000-01-01T00:00:00Z");
-///       std::vector<util::DateTime> VarData(VarSize, TempDt);
-///       database_.LoadFromDb(GroupName, VarName, VarShape, VarData.data());
-///
-///       // Convert the DateTime vector to a string vector, then save into the file.
-///       std::vector<std::string> StringVector(VarSize, "");
-///       for (std::size_t i = 0; i < VarSize; i++) {
-///         StringVector[i] = VarData[i].toString();
-///       }
-///       std::vector<std::size_t> CharShape = CharShapeFromStringVector(StringVector);
-///       std::unique_ptr<char[]> CharData(new char[CharShape[0] * CharShape[1]]);
-///       StringVectorToCharArray(StringVector, CharShape, CharData.get());
-///       fileio->WriteVar(GroupName, VarName, CharShape, CharData.get());
-///     } else if (commMPI_.rank() == 0) {
-///       oops::Log::warning() << "ObsData::SaveToFile: Unrecognized data type: "
-///                            << VarType.name() << std::endl;
-///       oops::Log::warning() << "  ObsSpaceContainer currently supports data types "
-///                            << "int, float and char." << std::endl;
-///       oops::Log::warning() << "  Skipping save of " << VarName << " @ " << GroupName
-///                            << " from the input file." << std::endl;
-///     }
-///   }
+  // Open the file for output
+  std::unique_ptr<IodaIO> fileio
+    {ioda::IodaIOfactory::Create(file_name, "W", nlocs_, nrecs_, nvars_)};
+
+  // Write out every record, from every database container.
+  for (ObsSpaceContainer<int>::VarIter ivar = int_database_.var_iter_begin();
+                                       ivar != int_database_.var_iter_end(); ++ivar) {
+    std::string GroupName = int_database_.var_iter_gname(ivar);
+    std::string VarName = int_database_.var_iter_vname(ivar);
+    std::vector<std::size_t> VarShape = int_database_.var_iter_shape(ivar);
+    std::size_t VarSize = int_database_.var_iter_size(ivar);
+
+    std::unique_ptr<int[]> VarData(new int[VarSize]);
+    int_database_.LoadFromDb(GroupName, VarName, VarShape, VarData.get());
+    fileio->WriteVar(GroupName, VarName, VarShape, VarData.get());
+  }
+
+  for (ObsSpaceContainer<float>::VarIter ivar = float_database_.var_iter_begin();
+                                       ivar != float_database_.var_iter_end(); ++ivar) {
+    std::string GroupName = float_database_.var_iter_gname(ivar);
+    std::string VarName = float_database_.var_iter_vname(ivar);
+    std::vector<std::size_t> VarShape = float_database_.var_iter_shape(ivar);
+    std::size_t VarSize = float_database_.var_iter_size(ivar);
+
+    std::unique_ptr<float[]> VarData(new float[VarSize]);
+    float_database_.LoadFromDb(GroupName, VarName, VarShape, VarData.get());
+    fileio->WriteVar(GroupName, VarName, VarShape, VarData.get());
+  }
+
+  for (ObsSpaceContainer<std::string>::VarIter ivar = string_database_.var_iter_begin();
+                                       ivar != string_database_.var_iter_end(); ++ivar) {
+    std::string GroupName = string_database_.var_iter_gname(ivar);
+    std::string VarName = string_database_.var_iter_vname(ivar);
+    std::vector<std::size_t> VarShape = string_database_.var_iter_shape(ivar);
+    std::size_t VarSize = string_database_.var_iter_size(ivar);
+
+    std::vector<std::string> VarData(VarSize, "");
+    string_database_.LoadFromDb(GroupName, VarName, VarShape, VarData.data());
+    // Get the shape needed for the character array, which will be a 2D array.
+    // The total number of char elelments will be CharShape[0] * CharShape[1].
+    std::vector<std::size_t> CharShape = CharShapeFromStringVector(VarData);
+    std::unique_ptr<char[]> CharData(new char[CharShape[0] * CharShape[1]]);
+    StringVectorToCharArray(VarData, CharShape, CharData.get());
+    fileio->WriteVar(GroupName, VarName, CharShape, CharData.get());
+  }
+
+  for (ObsSpaceContainer<util::DateTime>::VarIter ivar = datetime_database_.var_iter_begin();
+                                       ivar != datetime_database_.var_iter_end(); ++ivar) {
+    std::string GroupName = datetime_database_.var_iter_gname(ivar);
+    std::string VarName = datetime_database_.var_iter_vname(ivar);
+    std::vector<std::size_t> VarShape = datetime_database_.var_iter_shape(ivar);
+    std::size_t VarSize = datetime_database_.var_iter_size(ivar);
+
+    util::DateTime TempDt("0000-01-01T00:00:00Z");
+    std::vector<util::DateTime> VarData(VarSize, TempDt);
+    datetime_database_.LoadFromDb(GroupName, VarName, VarShape, VarData.data());
+
+    // Convert the DateTime vector to a string vector, then save into the file.
+    std::vector<std::string> StringVector(VarSize, "");
+    for (std::size_t i = 0; i < VarSize; i++) {
+      StringVector[i] = VarData[i].toString();
+    }
+    std::vector<std::size_t> CharShape = CharShapeFromStringVector(StringVector);
+    std::unique_ptr<char[]> CharData(new char[CharShape[0] * CharShape[1]]);
+    StringVectorToCharArray(StringVector, CharShape, CharData.get());
+    fileio->WriteVar(GroupName, VarName, CharShape, CharData.get());
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -1103,47 +1045,7 @@ void ObsData::ConvertStoreToDb(const std::string & GroupName, const std::string 
 
   std::unique_ptr<DbType[]> DbData(new DbType[VarSize]);
   ConvertVarType<VarType, DbType>(VarData, DbData.get(), VarSize);
-///  database_.StoreToDb(GroupName, VarName, VarShape, DbData.get());
-}
-
-// -----------------------------------------------------------------------------
-/*!
- * \details This method handles the data type conversion when transferring data from
- *          obs container into VarData. This method is called for the cases where
- *          an undesired data type mismatch could occurr during a get_db call. Therefore
- *          this method issues a warning about the conversion. Once the type mismatches
- *          are fixed, this method will be eliminated and the type mismatches that it
- *          is handling will become errors.
- *
- * \param[in] GroupName Name of group in the obs container
- * \param[in] VarName   Name of variable in the obs container
- * \param[in] VarShape  Shape (dimension sizes) of variable
- * \param[in] VarSize   Total number of elements of variable
- * \param[in] VarData   Pointer to memory to be loaded from the obs container
- */
-template<typename DbType, typename VarType>
-void ObsData::LoadFromDbConvert(const std::string & GroupName, const std::string & VarName,
-                   const std::vector<std::size_t> & VarShape, const std::size_t VarSize,
-                   VarType * VarData) const {
-  // Print a warning so we know to fix this situation
-  std::string VarTypeName = TypeIdName(typeid(VarType));
-  std::string DbTypeName = TypeIdName(typeid(DbType));
-  if (commMPI_.rank() == 0) {
-    oops::Log::warning() << "ObsData::LoadFromDbConvert: WARNING: Variable type does not "
-                         << "match that of the database entry." << std::endl
-                         << "  Input file: " << filein_ << std::endl
-                         << "  Variable: " << VarName << " @ " << GroupName << std::endl
-                         << "  Type of variable: " << VarTypeName << std::endl
-                         << "  Type of database entry: " << DbTypeName << std::endl
-                         << "Converting data, including missing marks, from "
-                         << DbTypeName << " to " << VarTypeName << std::endl << std::endl;
-    oops::Log::warning() << "ObsData::LoadFromDbConvert: STACKTRACE:" << std::endl
-                         << boost::stacktrace::stacktrace() << std::endl;
-  }
-
-  std::unique_ptr<DbType[]> DbData(new DbType[VarSize]);
-///  database_.LoadFromDb(GroupName, VarName, VarShape, DbData.get());
-  ConvertVarType<DbType, VarType>(DbData.get(), VarData, VarSize);
+  put_db(GroupName, VarName, VarSize, DbData.get());
 }
 
 // -----------------------------------------------------------------------------
