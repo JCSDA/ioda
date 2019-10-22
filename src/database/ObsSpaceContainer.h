@@ -211,12 +211,18 @@ class ObsSpaceContainer: public util::Printable {
      std::size_t nvars() const {return nvars_;}
 
      void LoadFromDb(const std::string & GroupName, const std::string & VarName,
-                     const std::vector<std::size_t> & VarShape, ContType * VarData) const;
+                     const std::vector<std::size_t> & VarShape, ContType * VarData,
+                     const std::size_t Start = 0, const std::size_t Count = 0) const;
 
      void StoreToDb(const std::string & GroupName, const std::string & VarName,
-                    const std::vector<std::size_t> & VarShape, const ContType * VarData);
+                    const std::vector<std::size_t> & VarShape, const ContType * VarData,
+                    const std::size_t Start = 0, const std::size_t Count = 0);
 
  private:
+     /*! \brief set end of vector segment */
+     static std::size_t SetSegmentEnd(std::size_t Start, std::size_t Count,
+                                      std::size_t VarSize);
+
      /*! \brief obs container instance */
      VarRecord_set DataContainer;
 
@@ -262,10 +268,13 @@ ObsSpaceContainer<ContType>::~ObsSpaceContainer() {
 template <typename ContType>
 void ObsSpaceContainer<ContType>::StoreToDb(const std::string & GroupName,
           const std::string & VarName, const std::vector<std::size_t> & VarShape,
-          const ContType * VarData) {
+          const ContType * VarData, std::size_t Start, std::size_t Count) {
   // Calculate the total number of elements
   std::size_t VarSize =
     std::accumulate(VarShape.begin(), VarShape.end(), 1, std::multiplies<std::size_t>());
+
+  // Set the start and end of the vector segment
+  std::size_t End = SetSegmentEnd(Start, Count, VarSize);
 
   // Search for VarRecord with GroupName, VarName combination
   typename VarRecord_set::iterator Var =
@@ -275,19 +284,19 @@ void ObsSpaceContainer<ContType>::StoreToDb(const std::string & GroupName,
     // Check if attempting to update a read only VarRecord
     if (Var->mode.compare("r") == 0) {
       std::string ErrorMsg =
-                  "ObsSpaceContainer::StoreInDb: trying to overwrite a read-only record : "
+                  "ObsSpaceContainer::StoreToDb: trying to overwrite a read-only record : "
                   + VarName + " : " + GroupName;
       ABORT(ErrorMsg);
     }
 
     // Update the record
-    for (std::size_t ii = 0; ii < VarSize; ++ii) {
+    for (std::size_t ii = Start; ii < End; ++ii) {
       Var->data.get()[ii] = VarData[ii];
     }
   } else {
     // The required record is not in database, update the database
     std::unique_ptr<ContType[]> vect{ new ContType[VarSize] };
-    for (std::size_t ii = 0; ii < VarSize; ++ii) {
+    for (std::size_t ii = Start; ii < End; ++ii) {
       vect.get()[ii] = VarData[ii];
     }
     DataContainer.insert({GroupName, VarName, VarShape, VarSize, vect});
@@ -313,7 +322,7 @@ void ObsSpaceContainer<ContType>::StoreToDb(const std::string & GroupName,
 template <typename ContType>
 void ObsSpaceContainer<ContType>::LoadFromDb(const std::string & GroupName,
               const std::string & VarName, const std::vector<std::size_t> & VarShape,
-              ContType * VarData) const {
+              ContType * VarData, std::size_t Start, std::size_t Count) const {
   if (has(GroupName, VarName)) {
     // Found the required record in the database
     typename VarRecord_set::iterator
@@ -323,8 +332,11 @@ void ObsSpaceContainer<ContType>::LoadFromDb(const std::string & GroupName,
     std::size_t VarSize =
       std::accumulate(VarShape.begin(), VarShape.end(), 1, std::multiplies<std::size_t>());
 
+    // Set the start and end of the vector segment
+    std::size_t End = SetSegmentEnd(Start, Count, VarSize);
+
     // Copy the elements into the output
-    for (std::size_t i = 0; i < VarSize; i++) {
+    for (std::size_t i = Start; i < End; i++) {
       VarData[i] = Var->data.get()[i];
     }
   } else {
@@ -333,6 +345,32 @@ void ObsSpaceContainer<ContType>::LoadFromDb(const std::string & GroupName,
            "ObsSpaceContainer::LoadFromDb: " + VarName + " @ " + GroupName +" is not found";
     ABORT(ErrorMsg);
   }
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ *
+ * \details This method returns the ending index for the vector segment given
+ *          the start and count values.
+ *
+ */
+template <typename ContType>
+std::size_t ObsSpaceContainer<ContType>::SetSegmentEnd(std::size_t Start, std::size_t Count,
+                                                       std::size_t VarSize) {
+  std::size_t End;
+  if (Count > 0) {
+    End = Start + Count;
+    if (End > VarSize) {
+      std::string ErrorMsg =
+                  "ObsSpaceContainer::StoreToDb: Start plus Count goes past end of vector: "
+                  + std::to_string(Start) + " + " + std::to_string(Count) + " > "
+                  + std::to_string(VarSize);
+      ABORT(ErrorMsg);
+    }
+  } else {
+    End = VarSize;
+  }
+  return End;
 }
 
 // -----------------------------------------------------------------------------
