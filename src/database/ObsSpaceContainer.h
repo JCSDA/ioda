@@ -20,13 +20,11 @@
 #include <utility>
 #include <vector>
 
-#include <boost/any.hpp>
 #include <boost/multi_index/composite_key.hpp>
 #include <boost/multi_index/member.hpp>
 #include <boost/multi_index/ordered_index.hpp>
 #include <boost/multi_index_container.hpp>
 #include <boost/range/iterator_range.hpp>
-#include <boost/stacktrace.hpp>
 
 #include "eckit/mpi/Comm.h"
 
