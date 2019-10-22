@@ -19,9 +19,6 @@
 #include <utility>
 #include <vector>
 
-#define BOOST_STACKTRACE_GNU_SOURCE_NOT_REQUIRED
-#include <boost/stacktrace.hpp>
-
 #include "eckit/config/Configuration.h"
 #include "eckit/exception/Exceptions.h"
 
@@ -53,7 +50,7 @@ ObsData::ObsData(const eckit::Configuration & config, const eckit::mpi::Comm & c
   : oops::ObsSpaceBase(config, comm, bgn, end),
     config_(config),
     winbgn_(bgn), winend_(end), commMPI_(comm), int_database_(),
-    float_database_(), datetime_database_(), obsvars_()
+    float_database_(), string_database_(), datetime_database_(), obsvars_()
 {
   oops::Log::trace() << "ioda::ObsData config  = " << config << std::endl;
 
@@ -308,7 +305,7 @@ void ObsData::put_db(const std::string & group, const std::string & name,
 
 bool ObsData::has(const std::string & group, const std::string & name) const {
   return (int_database_.has(group, name) || float_database_.has(group, name) ||
-          datetime_database_.has(group, name));
+          string_database_.has(group, name) || datetime_database_.has(group, name));
 }
 
 // -----------------------------------------------------------------------------
