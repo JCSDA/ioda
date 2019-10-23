@@ -112,6 +112,14 @@ class NetcdfIO : public IodaIO,
   int ncid_;
 
   /*!
+   * \brief count of undefined group names
+   *
+   * \details This data member holds a count of the number of variables in the
+   *          netcdf file that are missing a group name (@GroupName suffix).
+   */
+  std::size_t num_missing_gnames_;
+
+  /*!
    * \brief offset time flag
    *
    * \details This data member is a flag indicating the existence of the
