@@ -41,6 +41,11 @@ void obsspace_obsname_f(const ObsSpace & obss, size_t & lcname, char * cname) {
 }
 
 // -----------------------------------------------------------------------------
+const oops::Variables * obsspace_obsvariables_f(const ObsSpace & obss) {
+  return &obss.obsvariables();
+}
+
+// -----------------------------------------------------------------------------
 int obsspace_get_gnlocs_f(const ObsSpace & obss) {
   return obss.gnlocs();
 }
