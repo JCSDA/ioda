@@ -9,6 +9,7 @@
 #define IODA_OBSSPACE_F_H_
 
 #include "ObsSpace.h"
+#include "oops/base/Variables.h"
 #include "oops/parallel/mpi/mpi.h"
 #include "oops/util/DateTime.h"
 
@@ -22,6 +23,7 @@ extern "C" {
   const ObsSpace * obsspace_construct_f(const eckit::Configuration *, const util::DateTime *,
                                         const util::DateTime *);
   void obsspace_destruct_f(ObsSpace *);
+  const oops::Variables * obsspace_obsvariables_f(const ObsSpace &);
   int obsspace_get_gnlocs_f(const ObsSpace &);
   int obsspace_get_nlocs_f(const ObsSpace &);
   int obsspace_get_nrecs_f(const ObsSpace &);
