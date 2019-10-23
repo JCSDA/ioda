@@ -291,13 +291,13 @@ void ObsSpaceContainer<ContType>::StoreToDb(const std::string & GroupName,
 
     // Update the record
     for (std::size_t ii = Start; ii < End; ++ii) {
-      Var->data.get()[ii] = VarData[ii];
+      Var->data.get()[ii] = VarData[ii-Start];
     }
   } else {
     // The required record is not in database, update the database
     std::unique_ptr<ContType[]> vect{ new ContType[VarSize] };
     for (std::size_t ii = Start; ii < End; ++ii) {
-      vect.get()[ii] = VarData[ii];
+      vect.get()[ii] = VarData[ii-Start];
     }
     DataContainer.insert({GroupName, VarName, VarShape, VarSize, vect});
   }
@@ -337,7 +337,7 @@ void ObsSpaceContainer<ContType>::LoadFromDb(const std::string & GroupName,
 
     // Copy the elements into the output
     for (std::size_t i = Start; i < End; i++) {
-      VarData[i] = Var->data.get()[i];
+      VarData[i-Start] = Var->data.get()[i];
     }
   } else {
     // Required record is not in the database
