@@ -145,7 +145,7 @@ void ObsVector::invert() {
 }
 // -----------------------------------------------------------------------------
 void ObsVector::random() {
-  util::NormalDistribution<double> x(values_.size(), 0.0, 1.0, 1);
+  util::NormalDistribution<double> x(values_.size(), 0.0, 1.0, this->getSeed());
   for (size_t jj = 0; jj < values_.size() ; ++jj) {
     values_[jj] = x[jj];
   }
