@@ -69,7 +69,7 @@ class ObsVector : public util::Printable,
   void mask(const ObsDataVector<int> &);
   bool has(const std::string & var) const {return obsvars_.has(var);}
 
-  const int64_t getSeed() const {return obsdb_.getSeed();}
+  int64_t getSeed() const {return obsdb_.getSeed();}
 
 // I/O
   void save(const std::string &) const;
