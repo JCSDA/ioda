@@ -16,7 +16,6 @@
 #include <typeinfo>
 
 #include <boost/math/special_functions/fpclassify.hpp>
-#include "distribution/DistributionFactory.h"
 #include "oops/parallel/mpi/mpi.h"
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/DateTime.h"

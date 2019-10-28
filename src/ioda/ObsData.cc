@@ -719,23 +719,23 @@ void ObsData::GenMpiDistribution(const std::unique_ptr<IodaIO> & FileIO) {
   // not null), then generate records numbers based on the specified variable
   // in the input file. Otherwise, use default grouping.
   std::unique_ptr<DistributionFactory> distFactory;
-  if (FileIO) {
-    // Grouping based on variable in the input file.
-    std::vector<std::size_t> Records(gnlocs_);
-    GenRecordNumbers(FileIO, Records);
-    dist_.reset(distFactory->createDistribution(this->comm(), gnlocs_, distname_, Records));
-  } else {
-    // Default grouping (every location is a separate record)
-    dist_.reset(distFactory->createDistribution(this->comm(), gnlocs_, distname_));
-  }
-  dist_->distribution();
-
-  // The Distribution::distribution() method calculates data needed for
-  // the nrecs_, nlocs_, indx_ and recnums_ data members.
-  nlocs_ = dist_->nlocs();
-  nrecs_ = dist_->nrecs();
-  indx_ = dist_->index();
-  recnums_ = dist_->recnum();
+///   if (FileIO) {
+///     // Grouping based on variable in the input file.
+///     std::vector<std::size_t> Records(gnlocs_);
+///     GenRecordNumbers(FileIO, Records);
+///     dist_.reset(distFactory->createDistribution(this->comm(), gnlocs_, distname_, Records));
+///   } else {
+///     // Default grouping (every location is a separate record)
+///     dist_.reset(distFactory->createDistribution(this->comm(), gnlocs_, distname_));
+///   }
+///   dist_->distribution();
+/// 
+///   // The Distribution::distribution() method calculates data needed for
+///   // the nrecs_, nlocs_, indx_ and recnums_ data members.
+///   nlocs_ = dist_->nlocs();
+///   nrecs_ = dist_->nrecs();
+///   indx_ = dist_->index();
+///   recnums_ = dist_->recnum();
 }
 
 // -----------------------------------------------------------------------------
