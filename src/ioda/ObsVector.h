@@ -1,8 +1,8 @@
 /*
  * (C) Copyright 2017 UCAR
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
 #ifndef IODA_OBSVECTOR_H_
@@ -68,6 +68,8 @@ class ObsVector : public util::Printable,
   std::size_t nlocs() const {return nlocs_;}
   void mask(const ObsDataVector<int> &);
   bool has(const std::string & var) const {return obsvars_.has(var);}
+
+  int64_t getSeed() const {return obsdb_.getSeed();}
 
 // I/O
   void save(const std::string &) const;
