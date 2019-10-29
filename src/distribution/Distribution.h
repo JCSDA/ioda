@@ -29,7 +29,7 @@ namespace ioda {
  */
 class Distribution {
  public:
-    Distribution(const eckit::mpi::Comm & Comm);
+    explicit Distribution(const eckit::mpi::Comm & Comm);
     virtual ~Distribution() = 0;
 
     virtual bool isMyRecord(std::size_t RecNum) const = 0;

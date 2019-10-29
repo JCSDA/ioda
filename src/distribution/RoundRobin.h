@@ -27,7 +27,7 @@ namespace ioda {
  */
 class RoundRobin: public Distribution {
  public:
-     RoundRobin(const eckit::mpi::Comm & Comm);
+     explicit RoundRobin(const eckit::mpi::Comm & Comm);
      ~RoundRobin();
      bool isMyRecord(std::size_t RecNum) const;
      bool isDistributed() const { return true; }

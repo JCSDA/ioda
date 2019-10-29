@@ -28,7 +28,7 @@ namespace ioda {
  */
 class InefficientDistribution: public Distribution {
  public:
-     InefficientDistribution(const eckit::mpi::Comm & Comm);
+     explicit InefficientDistribution(const eckit::mpi::Comm & Comm);
      ~InefficientDistribution();
 
      bool isMyRecord(std::size_t RecNum) const;
