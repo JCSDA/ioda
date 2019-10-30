@@ -2,6 +2,7 @@
 # Create Data directory for test input data
 list( APPEND test_files
   cpplint.py
+  check_ioda_nc.py
 )
 
 foreach(FILENAME ${test_files})
