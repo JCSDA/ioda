@@ -37,14 +37,12 @@ list( APPEND ioda_test_data
   atmosphere/aircraft_obs_2018041500_m.nc4
   atmosphere/aircraft_obs_2018041500_s.nc4
   atmosphere/amsua_n19_obs_2018041500_m.nc4
-  atmosphere/amsua_n19_obs_2018041500_s.nc4
   atmosphere/ioda_metop_2_amsua.nc4
   atmosphere/mhs_n19_obs_2018041500_m.nc4
   atmosphere/atms_npp_obs_2018041500_m.nc4
   atmosphere/cris-fsr_npp_obs_2018041500_m.nc4
   atmosphere/seviri_m08_obs_2018041500_m.nc4
   atmosphere/airs_aqua_obs_2018041500_m.nc4
-  atmosphere/airs_aqua_obs_2018041500_s.nc4
   atmosphere/sondes_obs_2018041500_m.nc4
   atmosphere/sondes_obs_2018041500_s.nc4
   atmosphere/sondes_obs_2018041500_vs.nc4
