@@ -105,21 +105,30 @@ def CheckNcFile(NcFileName, Verbose):
 
     # Walk through the variables (assume they all live in the root group)
     # and check the data types, etc.
+    MissingGroupMsg = "  Variable: {0:s} " + \
+                      "needs to specify a group name (@<group_name> suffix)"
     DataTypeMsg = "  Variable: {0:s} " + \
                   "has unexpected data type " + \
-                  "({1:s} instead of {2:s})"
+                  "({1} instead of {2})"
     MissingValMsg = "  Variable: {0:s} " + \
                     "needs to use netcdf fill values for missing marks"
     InvalidNumMsg = "  Variable: {0:s} " + \
                     "needs to remove invalid numeric values " + \
                     "(nan, inf, -inf)"
 
+    MissingGroupErrors = 0
     DataTypeErrors = 0
     MissingValErrors = 0
     InvalidNumErrors = 0
     for Vname in NcRootGroup.variables:
         Var = NcRootGroup.variables[Vname]
         (VarName, Dummy, GroupName) = Vname.partition('@')
+
+        # Check that the group name is defined.
+        if (GroupName == ""):
+            if (Verbose):
+                print(MissingGroupMsg.format(Vname))
+            MissingGroupErrors += 1
 
         # Check the variable data type (VarType)
         # Expected var type matches what is in the file, except when
@@ -150,11 +159,12 @@ def CheckNcFile(NcFileName, Verbose):
                 print(InvalidNumMsg.format(Vname))
             InvalidNumErrors += 1
 
-    TotalErrors = DataTypeErrors + MissingValErrors + InvalidNumErrors
-    ErrorReport = "  Data type errors = {0:d}, " + \
-                  "missing value errors = {1:d}, " + \
-                  "invalid numeric values errors = {2:d}"
-    print(ErrorReport.format(DataTypeErrors, MissingValErrors, InvalidNumErrors), end=' ')
+    TotalErrors = MissingGroupErrors + DataTypeErrors + MissingValErrors + InvalidNumErrors
+    ErrorReport = "  Error counts: Missing group: {0:d}, " + \
+                  "data type: {1:d}, " + \
+                  "missing value: {2:d}, " + \
+                  "invalid numeric values: {3:d}"
+    print(ErrorReport.format(MissingGroupErrors, DataTypeErrors, MissingValErrors, InvalidNumErrors), end=' ')
     if (TotalErrors == 0):
         print("--> PASS")
     else:
