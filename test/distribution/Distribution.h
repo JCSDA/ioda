@@ -13,6 +13,9 @@
 
 #include <string>
 #include <cmath>
+#include <numeric>
+#include <set>
+#include <vector>
 
 #define ECKIT_TESTING_SELF_REGISTER_CASES 0
 
@@ -53,12 +56,7 @@ void testConstructor() {
     oops::Log::debug() << "Distribution::DistType: " << TestDistType << std::endl;
 
     DistName = dist_types[i].getString("Specs.dist_name");
-    if (dist_types[i].has("Specs.obs_grouping")) {
-      std::vector<std::size_t> Groups = dist_types[i].getUnsignedVector("Specs.obs_grouping");
-      TestDist.reset(DistFactory->createDistribution(MpiComm, 0, DistName, Groups));
-    } else {
-      TestDist.reset(DistFactory->createDistribution(MpiComm, 0, DistName));
-    }
+    TestDist.reset(DistFactory->createDistribution(MpiComm, DistName));
     EXPECT(TestDist.get());
     }
   }
@@ -86,14 +84,8 @@ void testDistribution() {
     TestDistType = dist_types[i].getString("DistType");
     oops::Log::debug() << "Distribution::DistType: " << TestDistType << std::endl;
 
-    std::size_t Gnlocs = dist_types[i].getInt("Specs.gnlocs");
     DistName = dist_types[i].getString("Specs.dist_name");
-    if (dist_types[i].has("Specs.obs_grouping")) {
-      std::vector<std::size_t> Groups = dist_types[i].getUnsignedVector("Specs.obs_grouping");
-      TestDist.reset(DistFactory->createDistribution(MpiComm, Gnlocs, DistName, Groups));
-    } else {
-      TestDist.reset(DistFactory->createDistribution(MpiComm, Gnlocs, DistName));
-    }
+    TestDist.reset(DistFactory->createDistribution(MpiComm, DistName));
     EXPECT(TestDist.get());
 
     // Expected results are listed in "Specs.index" with the MPI rank number
@@ -110,27 +102,44 @@ void testDistribution() {
     std::vector<std::size_t> ExpectedRecnums =
                                  MyRankConfig.getUnsignedVector("recnums");
 
-    // Form the distribution - this method will set nlocs and nrecs.
-    TestDist->distribution();
+    // If obs_grouping is specified then read the record grouping directly from
+    // the config file. Otherwise, assign 0 to Gnlocs-1 into the record grouping
+    // vector.
+    std::size_t Gnlocs = dist_types[i].getInt("Specs.gnlocs");
+    std::vector<std::size_t> Groups(Gnlocs, 0);
+    if (dist_types[i].has("Specs.obs_grouping")) {
+      Groups = dist_types[i].getUnsignedVector("Specs.obs_grouping");
+    } else {
+      std::iota(Groups.begin(), Groups.end(), 0); 
+    }
+
+    // Loop on gnlocs, and keep the indecies according to the distribution type.
+    std::vector<std::size_t> Index;
+    std::vector<std::size_t> Recnums;
+    std::set<std::size_t> UniqueRecnums;
+    for (std::size_t j = 0; j < Gnlocs; ++j) {
+      std::size_t RecNum = Groups[j];
+      if (TestDist->isMyRecord(RecNum)) {
+        Index.push_back(j);
+        Recnums.push_back(RecNum);
+        UniqueRecnums.insert(RecNum);
+      }
+    }
 
     // Check the location and record counts
-    std::size_t Nlocs = TestDist->nlocs();
-    std::size_t Nrecs = TestDist->nrecs();
+    std::size_t Nlocs = Index.size();
+    std::size_t Nrecs = UniqueRecnums.size();
     EXPECT(Nlocs == ExpectedNlocs);
     EXPECT(Nrecs == ExpectedNrecs);
 
     // Check the resulting index and recnum vectors
-    std::vector<std::size_t> Index(TestDist->nlocs());
-    for (std::size_t i = 0; i < TestDist->nlocs(); i++) {
-      Index[i] = TestDist->index()[i];
+    for (std::size_t j = 0; j < ExpectedIndex.size(); ++j) {
+      EXPECT(Index[j] == ExpectedIndex[j]);
     }
-    EXPECT(Index == ExpectedIndex);
 
-    std::vector<std::size_t> Recnums(TestDist->nlocs());
-    for (std::size_t i = 0; i < TestDist->nlocs(); i++) {
-      Recnums[i] = TestDist->recnum()[i];
+    for (std::size_t j = 0; j < ExpectedRecnums.size(); ++j) {
+      EXPECT(Recnums[j] == ExpectedRecnums[j]);
     }
-    EXPECT(Recnums == ExpectedRecnums);
   }
 }
 
