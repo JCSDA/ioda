@@ -20,21 +20,14 @@ namespace ioda {
  *          multiple process elements.
  *
  * \param[in] Comm Local MPI communicator
- * \param[in] Gnlocs Total number of locations (before distribution)
  * \param[in] Method Name of the method of distribution of obs.
- * \param[in] Records Observation grouping by locations.
  */
 Distribution * DistributionFactory::createDistribution(const eckit::mpi::Comm & Comm,
-                                    const std::size_t Gnlocs, const std::string & Method,
-                                    const std::vector<std::size_t> & Records) {
+                                    const std::string & Method) {
   if (Method == "RoundRobin") {
-    if (Records.size() == 0) {
-      return new RoundRobin(Comm, Gnlocs);
-    } else {
-      return new RoundRobin(Comm, Gnlocs, Records);
-    }
+    return new RoundRobin(Comm);
   } else if (Method == "InefficientDistribution") {
-    return new InefficientDistribution(Comm, Gnlocs);
+    return new InefficientDistribution(Comm);
   } else {
     return NULL;
   }

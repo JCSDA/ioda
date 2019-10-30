@@ -16,62 +16,30 @@
 
 namespace ioda {
 // -----------------------------------------------------------------------------
-
-// Constructor with default obs grouping
-RoundRobin::RoundRobin(const eckit::mpi::Comm & Comm, const std::size_t Gnlocs) :
-      Distribution(Comm, Gnlocs) {
-  // This constructor treats every location as a separate record (ie, no grouping).
-  // To accomplish this, fill the group_number vector with the values 0..(Gnlocs-1).
-  record_numbers_.resize(gnlocs_);
-  std::iota(record_numbers_.begin(), record_numbers_.end(), 0);
-  oops::Log::trace() << "RoundRobin(comm, nlocs) constructed" << std::endl;
-}
-
-// Constructor with specified obs grouping
-RoundRobin::RoundRobin(const eckit::mpi::Comm & Comm, const std::size_t Gnlocs,
-                       const std::vector<std::size_t> & Records) :
-      Distribution(Comm, Gnlocs), record_numbers_(Records) {
-  oops::Log::trace() << "RoundRobin(comm, nlocs, groups) constructed" << std::endl;
+RoundRobin::RoundRobin(const eckit::mpi::Comm & Comm) : Distribution(Comm) {
+  oops::Log::trace() << "RoundRobin constructed" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
-
 RoundRobin::~RoundRobin() {
   oops::Log::trace() << "RoundRobin destructed" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 /*!
- * \brief Round-robin distribution
+ * \brief Round-robin selector
  *
  * \details This method distributes observations according to a round-robin scheme.
  *          The round-robin scheme simply selects all locations where the modulus of
- *          the locations index relative to the number of process elements equals
+ *          the record number relative to the number of process elements equals
  *          the rank of the process element we are running on. This does a good job
  *          of distributing the observations evenly across processors which optimizes
  *          the load balancing.
+ *
+ * \param[in] RecNum Record number, checked if belongs on this process element
  */
-void RoundRobin::distribution() {
-    // Round-Robin distributing the global total locations among comm.
-    std::size_t nproc = comm_.size();
-    std::size_t myproc = comm_.rank();
-    std::set<std::size_t> unique_recnums;
-    for (std::size_t ii = 0; ii < gnlocs_; ++ii) {
-        if (record_numbers_[ii] % nproc == myproc) {
-            indx_.push_back(ii);
-            recnums_.push_back(record_numbers_[ii]);
-            unique_recnums.insert(record_numbers_[ii]);
-        }
-    }
-
-    // The number of locations in this distribution will be equal to the size of
-    // the indx_ vector. nrecs_ is simply the number of unique record numbers selected.
-    nlocs_ = indx_.size();
-    nrecs_ = unique_recnums.size();
-
-    oops::Log::debug() << __func__ << " : " << nlocs_ <<
-        " locations being allocated to processor with round-robin method : "
-        << myproc<< std::endl;
+bool RoundRobin::isMyRecord(std::size_t RecNum) const {
+    return (RecNum % comm_.size() == comm_.rank());
 }
 
 // -----------------------------------------------------------------------------
