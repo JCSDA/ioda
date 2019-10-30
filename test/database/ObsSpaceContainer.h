@@ -35,6 +35,39 @@ namespace test {
 
 // -----------------------------------------------------------------------------
 
+template <typename VarType>
+void StoreVarSegments(const std::string & GroupName, const std::string & VarName,
+                      const std::vector<std::size_t> & VarShape,
+                      const std::vector<VarType> & VarData,
+                      const std::vector<std::size_t> & Starts,
+                      const std::vector<std::size_t> & Counts,
+                      std::unique_ptr<ioda::ObsSpaceContainer<VarType>> & Container) {
+  for (std::size_t i = 0; i < Starts.size(); ++i) {
+    std::vector<VarType> VarSegment(VarData.begin() + Starts[i],
+                                    VarData.begin() + Starts[i] + Counts[i]);
+    Container->StoreToDb(GroupName, VarName, VarShape, VarSegment.data(), Starts[i], Counts[i]);
+  }
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename VarType>
+void LoadVarSegments(const std::string & GroupName, const std::string & VarName,
+                     const std::vector<std::size_t> & VarShape, std::vector<VarType> & VarData,
+                     const std::vector<std::size_t> & Starts,
+                     const std::vector<std::size_t> & Counts,
+                     std::unique_ptr<ioda::ObsSpaceContainer<VarType>> & Container) {
+  for (std::size_t i = 0; i < Starts.size(); ++i) {
+    std::vector<VarType> VarSegment(Counts[i]);
+    Container->LoadFromDb(GroupName, VarName, VarShape, VarSegment.data(), Starts[i], Counts[i]);
+    for (std::size_t j = 0; j < VarSegment.size(); ++j) {
+      VarData[Starts[i]+j] = VarSegment[j];
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+
 void testConstructor() {
   const eckit::LocalConfiguration conf(::test::TestEnvironment::config());
 
@@ -193,8 +226,7 @@ void testStoreLoad() {
     std::string VarTypeName = VarConfig[i].getString("type");
     std::vector<std::size_t> VarShape(1, 0);
 
-    // Read the var values from the config file. The ith variable has its values
-    // in the sub-keyword "var" + i. Eg. when i = 0, then read var0, i = 1 read var1, etc.
+    // Read the var values from the config file.
     if (VarTypeName == "int") {
       std::vector<int> ExpectedIntData = VarConfig[i].getIntVector("values");
       VarShape[0] = ExpectedIntData.size();
@@ -248,6 +280,114 @@ void testStoreLoad() {
   }
 }
 
+void testSegmentedStoreLoad() {
+  const eckit::LocalConfiguration conf(::test::TestEnvironment::config());
+
+  std::unique_ptr<ioda::ObsSpaceContainer<int>> TestIntContainer;
+  std::unique_ptr<ioda::ObsSpaceContainer<float>> TestFloatContainer;
+  std::unique_ptr<ioda::ObsSpaceContainer<std::string>> TestStringContainer;
+  std::unique_ptr<ioda::ObsSpaceContainer<util::DateTime>> TestDateTimeContainer;
+
+  // Instantiate containers
+  TestIntContainer.reset(new ioda::ObsSpaceContainer<int>());
+  TestFloatContainer.reset(new ioda::ObsSpaceContainer<float>());
+  TestStringContainer.reset(new ioda::ObsSpaceContainer<std::string>());
+  TestDateTimeContainer.reset(new ioda::ObsSpaceContainer<util::DateTime>());
+  EXPECT(TestIntContainer.get());
+  EXPECT(TestFloatContainer.get());
+  EXPECT(TestStringContainer.get());
+  EXPECT(TestDateTimeContainer.get());
+
+  // Try storing the variables from the YAML into the container, then load them
+  // from the containter into new variables, and then check that they match.
+  std::vector<eckit::LocalConfiguration> VarConfig =
+                                         conf.getSubConfigurations("TestStoreLoad.variables");
+
+  for(std::size_t i = 0; i < VarConfig.size(); i++) {
+    std::string VarName = VarConfig[i].getString("name");
+    std::string GroupName = VarConfig[i].getString("group");
+    std::string VarTypeName = VarConfig[i].getString("type");
+    std::vector<std::size_t> VarShape(1, 0);
+
+    // Figure out the starting locations for the specified segment sizes.
+    // Store into the containers using the starts and counts given by the
+    // "segments" config, then Load from the containers using the starts
+    // and counts given by the "segments" config in reverse. This uses different
+    // starts and counts for storing and loading which should function properly
+    // and covers testing more potential defects.
+    std::vector<std::size_t> Counts = VarConfig[i].getUnsignedVector("segments");
+    std::vector<std::size_t> RevCounts = Counts;
+    std::reverse(RevCounts.begin(), RevCounts.end());
+
+    std::vector<std::size_t> Starts(Counts.size(), 0);     // first start is always 0
+    std::vector<std::size_t> RevStarts(Counts.size(), 0);
+    for (std::size_t j = 1; j < Counts.size(); j++) {
+      Starts[j] = Starts[j-1] + Counts[j-1];
+      RevStarts[j] = RevStarts[j-1] + RevCounts[j-1];
+    }
+
+    // Read the var values from the config file.
+    if (VarTypeName == "int") {
+      std::vector<int> ExpectedIntData = VarConfig[i].getIntVector("values");
+      VarShape[0] = ExpectedIntData.size();
+      StoreVarSegments<int>(GroupName, VarName, VarShape, ExpectedIntData, Starts,
+                            Counts, TestIntContainer);
+
+      std::vector<int> TestIntData(ExpectedIntData.size(), 0);
+      LoadVarSegments<int>(GroupName, VarName, VarShape, TestIntData, RevStarts,
+                           RevCounts, TestIntContainer);
+      for(std::size_t j = 0; j < TestIntData.size(); j++) {
+        EXPECT(TestIntData[j] == ExpectedIntData[j]);
+      }
+    } else if (VarTypeName == "float") {
+      std::vector<float> ExpectedFloatData = VarConfig[i].getFloatVector("values");
+      VarShape[0] = ExpectedFloatData.size();
+      StoreVarSegments<float>(GroupName, VarName, VarShape, ExpectedFloatData, Starts,
+                              Counts, TestFloatContainer);
+
+      std::vector<float> TestFloatData(ExpectedFloatData.size(), 0.0);
+      LoadVarSegments<float>(GroupName, VarName, VarShape, TestFloatData, RevStarts,
+                             RevCounts, TestFloatContainer);
+      for(std::size_t j = 0; j < TestFloatData.size(); j++) {
+        EXPECT(TestFloatData[j] == ExpectedFloatData[j]);
+      }
+    } else if (VarTypeName == "string") {
+      std::vector<std::string> ExpectedStringData = VarConfig[i].getStringVector("values");
+      VarShape[0] = ExpectedStringData.size();
+      StoreVarSegments<std::string>(GroupName, VarName, VarShape, ExpectedStringData, Starts,
+                                   Counts, TestStringContainer);
+
+      std::vector<std::string> TestStringData(ExpectedStringData.size(), "xx");
+      LoadVarSegments<std::string>(GroupName, VarName, VarShape, TestStringData, RevStarts,
+                                   RevCounts, TestStringContainer);
+      for(std::size_t j = 0; j < TestStringData.size(); j++) {
+        EXPECT(TestStringData[j] == ExpectedStringData[j]);
+      }
+    } else if (VarTypeName == "datetime") {
+      std::vector<std::string> DtStrings = VarConfig[i].getStringVector("values");
+      std::vector<util::DateTime> ExpectedDateTimeData(DtStrings.size());
+      for (std::size_t j = 0; j < DtStrings.size(); j++) {
+        util::DateTime TempDateTime(DtStrings[j]);
+        ExpectedDateTimeData[j] = TempDateTime;
+      }
+      VarShape[0] = ExpectedDateTimeData.size();
+      StoreVarSegments<util::DateTime>(GroupName, VarName, VarShape, ExpectedDateTimeData, Starts,
+                                       Counts, TestDateTimeContainer);
+
+      util::DateTime TempDt("0000-01-01T00:00:00Z");
+      std::vector<util::DateTime> TestDateTimeData(ExpectedDateTimeData.size(), TempDt);
+      LoadVarSegments<util::DateTime>(GroupName, VarName, VarShape, TestDateTimeData, RevStarts,
+                                      RevCounts, TestDateTimeContainer);
+      for(std::size_t j = 0; j < TestDateTimeData.size(); j++) {
+        EXPECT(TestDateTimeData[j] == ExpectedDateTimeData[j]);
+      }
+    } else {
+      oops::Log::debug() << "test::ObsSpaceContainer::testStoreLoad: "
+          << "container only supports data types int, float, string and datetime." << std::endl;
+    }
+  }
+}
+
 // -----------------------------------------------------------------------------
 
 class ObsSpaceContainer : public oops::Test {
@@ -266,6 +406,8 @@ class ObsSpaceContainer : public oops::Test {
       { testGrpVarIter(); });
     ts.emplace_back(CASE("database/ObsSpaceContainer/testStoreLoad")
       { testStoreLoad(); });
+    ts.emplace_back(CASE("database/ObsSpaceContainer/testSegmentedStoreLoad")
+      { testSegmentedStoreLoad(); });
   }
 };
 
