@@ -94,6 +94,7 @@ endforeach()
 
 include( ioda_compiler_flags )
 include_directories( ${IODA_INCLUDE_DIRS} ${IODA_EXTRA_INCLUDE_DIRS} )
+include( ioda_extra_macros )
 add_subdirectory( src )
 add_subdirectory( test )
 add_subdirectory( tools )
