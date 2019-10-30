@@ -31,8 +31,8 @@ class InefficientDistribution: public Distribution {
      explicit InefficientDistribution(const eckit::mpi::Comm & Comm);
      ~InefficientDistribution();
 
-     bool isMyRecord(std::size_t RecNum) const;
-     bool isDistributed() const { return false; }
+     bool isMyRecord(std::size_t RecNum) const override;
+     bool isDistributed() const override { return false; }
 };
 
 }  // namespace ioda
