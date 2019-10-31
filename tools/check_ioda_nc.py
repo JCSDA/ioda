@@ -133,7 +133,7 @@ def CheckNcFile(NcFileName, Verbose):
         # Check the variable data type (VarType)
         # Expected var type matches what is in the file, except when
         # GroupName is PreQC which is int32, and float64 is not allowed.
-        VarType = Var.dtype
+        VarType = Var.dtype.name
         if (GroupName == "PreQC"):
             ExpectedVarType = "int32"
         elif (VarType == "float64"):
