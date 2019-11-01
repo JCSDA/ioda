@@ -10,6 +10,7 @@
 from __future__ import print_function
 import sys
 import os
+import re
 import glob
 import argparse
 import numpy as np
@@ -25,8 +26,9 @@ import netCDF4 as nc
 #    2) existence of invalid numerical values
 #
 def CheckVarValues(Var):
-    BadMissingVals = False;
-    HasInvalidVals = False;
+    BadMissingVals = False
+    HasInvalidVals = False
+    NotFrequency = (re.search("[Ff]requency", Var.name) == None)
 
     # Only do the check for numeric types (skip strings for example)
     if (np.issubdtype(Var.dtype, np.number)):
@@ -48,7 +50,10 @@ def CheckVarValues(Var):
                 # check these locations. Of the other locations, if the
                 # absolute value of the data is > 1e8, then flag this
                 # as an incorrect missing value mark.
-                if ((not VarMask[i]) and (np.fabs(VarData[i]) > 1e8)):
+                #
+                # Channel frequencies can have values > 1e8 so don't include
+                # these variables in the bad missing value check.
+                if ((NotFrequency) and (not VarMask[i]) and (np.fabs(VarData[i]) > 1e8)):
                     BadMissingVals = True
 
     return (BadMissingVals, HasInvalidVals)
