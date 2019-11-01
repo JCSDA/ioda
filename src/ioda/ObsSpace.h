@@ -90,6 +90,8 @@ class ObsSpace : public util::Printable {
   const util::DateTime & windowEnd() const {return obsspace_->windowEnd();}
   /*! \details This method will return the associated MPI communicator */
   const eckit::mpi::Comm & comm() const {return obsspace_->comm();}
+  /*! \details This method will return the associated seed for random distribution */
+  int64_t getSeed() const {return obsspace_->getSeed();}
 
   void generateDistribution(const eckit::Configuration &);
 
