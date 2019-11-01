@@ -16,7 +16,6 @@
 #include <typeinfo>
 
 #include <boost/math/special_functions/fpclassify.hpp>
-#include "distribution/DistributionFactory.h"
 #include "oops/parallel/mpi/mpi.h"
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/DateTime.h"
@@ -62,6 +61,7 @@ NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
   nvars_ = Nvars;
   have_offset_time_ = false;
   have_date_time_ = false;
+  num_missing_gnames_ = 0;
   oops::Log::trace() << __func__ << " fname_: " << fname_ << " fmode_: " << fmode_ << std::endl;
 
   // Open the file. The fmode_ values that are recognized are:
@@ -170,6 +170,8 @@ NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
       if (Spos != VarName.npos) {
         GroupName = VarName.substr(Spos+1);
         VarName = VarName.substr(0, Spos);
+      } else {
+        num_missing_gnames_++;
       }
 
       // If offset time exists, substitute the datetime specs for the offset time specs.
@@ -193,6 +195,11 @@ NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
         grp_var_info_[GroupName][VarName].dtype = NcDtypeName;
         grp_var_info_[GroupName][VarName].shape = NcDimSizes;
       }
+    }
+    if (num_missing_gnames_ > 0) {
+      oops::Log::warning() << "NetcdfIO::NetcdfIO:: WARNING: Input file contains variables "
+            << "that are missing group names (ie, no @GroupName suffix)" << std::endl
+            << "  Input file: " << fname_ << std::endl;
     }
   }
 
@@ -312,7 +319,7 @@ void NetcdfIO::ReadVar_helper(const std::string & GroupName, const std::string &
       }
     }
     if (UsingLargeNumForMissing) {
-      oops::Log::warning() << "ioda::NetcdfIO::ReadVar: WARNING: using large number "
+      oops::Log::warning() << "NetcdfIO::ReadVar: WARNING: using large number "
             << "to represent missing values instead of netcdf fill value " << std::endl
             << "  Input file: " << fname_ << std::endl
             << "  Variable: " << NcVarName << std::endl << std::endl;

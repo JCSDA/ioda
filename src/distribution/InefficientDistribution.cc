@@ -16,14 +16,12 @@
 
 namespace ioda {
 // -----------------------------------------------------------------------------
-InefficientDistribution::InefficientDistribution(const eckit::mpi::Comm & Comm,
-                                                 const std::size_t Gnlocs) :
-      Distribution(Comm, Gnlocs) {
+InefficientDistribution::InefficientDistribution(const eckit::mpi::Comm & Comm) :
+                                             Distribution(Comm) {
   oops::Log::trace() << "InefficientDistribution constructed" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
-
 InefficientDistribution::~InefficientDistribution() {
   oops::Log::trace() << "InefficientDistribution destructed" << std::endl;
 }
@@ -34,24 +32,10 @@ InefficientDistribution::~InefficientDistribution() {
  *
  * \details This method distributes all observations to all processes.
  *
- * \param[in] comm The eckit MPI communicator object for this run
- * \param[in] gnlocs The total number of locations from the input obs file
+ * \param[in] RecNum Record number, checked if belongs on this process element
  */
-void InefficientDistribution::distribution() {
-  indx_.resize(gnlocs_);
-  std::iota(indx_.begin(), indx_.end(), 0);
-
-  recnums_.resize(gnlocs_);
-  std::iota(recnums_.begin(), recnums_.end(), 0);
-
-  // The number of locations will equal the number of global locations,
-  // and the number of records will equal the number of locations (no grouping)
-  nlocs_ = gnlocs_;
-  nrecs_ = nlocs_;
-
-  oops::Log::debug() << __func__ << " : " << nlocs_ <<
-      " locations being allocated to processor with inefficient-distribution method : "
-      << comm_.rank()<< std::endl;
+bool InefficientDistribution::isMyRecord(std::size_t RecNum) const {
+  return true;
 }
 
 // -----------------------------------------------------------------------------
