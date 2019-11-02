@@ -100,7 +100,7 @@ void obsspace_get_int32_f(const ObsSpace & obss, const char * group, const char 
 // -----------------------------------------------------------------------------
 void obsspace_get_int64_f(const ObsSpace & obss, const char * group, const char * vname,
                           const std::size_t & length, int64_t* vec) {
-  if (group == "VarMetaData") ASSERT(length >= obss.nvars());
+  if (std::string(group) == "VarMetaData") ASSERT(length >= obss.nvars());
   else
     ASSERT(length >= obss.nlocs());
 //  obss.get_db(std::string(group), std::string(vname), length, vec);
@@ -108,7 +108,7 @@ void obsspace_get_int64_f(const ObsSpace & obss, const char * group, const char 
 // -----------------------------------------------------------------------------
 void obsspace_get_real32_f(const ObsSpace & obss, const char * group, const char * vname,
                            const std::size_t & length, float* vec) {
-  if (group == "VarMetaData") ASSERT(length >= obss.nvars());
+  if (std::string(group) == "VarMetaData") ASSERT(length >= obss.nvars());
   else
     ASSERT(length >= obss.nlocs());
 //  obss.get_db(std::string(group), std::string(vname), length, vec);
@@ -116,7 +116,7 @@ void obsspace_get_real32_f(const ObsSpace & obss, const char * group, const char
 // -----------------------------------------------------------------------------
 void obsspace_get_real64_f(const ObsSpace & obss, const char * group, const char * vname,
                            const std::size_t & length, double* vec) {
-  if (group == "VarMetaData") ASSERT(length >= obss.nvars());
+  if (std::string(group) == "VarMetaData") ASSERT(length >= obss.nvars());
   else
     ASSERT(length >= obss.nlocs());
   obss.get_db(std::string(group), std::string(vname), length, vec);
@@ -124,7 +124,7 @@ void obsspace_get_real64_f(const ObsSpace & obss, const char * group, const char
 // -----------------------------------------------------------------------------
 void obsspace_get_datetime_f(const ObsSpace & obss, const char * group, const char * vname,
                              const std::size_t & length, int32_t* date, int32_t* time) {
-  if (group == "VarMetaData") ASSERT(length >= obss.nvars());
+  if (std::string(group) == "VarMetaData") ASSERT(length >= obss.nvars());
   else
     ASSERT(length >= obss.nlocs());
 
@@ -151,7 +151,7 @@ void obsspace_get_datetime_f(const ObsSpace & obss, const char * group, const ch
 // -----------------------------------------------------------------------------
 void obsspace_put_int32_f(ObsSpace & obss, const char * group, const char * vname,
                           const std::size_t & length, int32_t* vec) {
-  if (group == "VarMetaData") ASSERT(length >= obss.nvars());
+  if (std::string(group) == "VarMetaData") ASSERT(length >= obss.nvars());
   else
     ASSERT(length >= obss.nlocs());
   obss.put_db(std::string(group), std::string(vname), length, vec);
@@ -159,7 +159,7 @@ void obsspace_put_int32_f(ObsSpace & obss, const char * group, const char * vnam
 // -----------------------------------------------------------------------------
 void obsspace_put_int64_f(ObsSpace & obss, const char * group, const char * vname,
                           const std::size_t & length, int64_t* vec) {
-  if (group == "VarMetaData") ASSERT(length >= obss.nvars());
+  if (std::string(group) == "VarMetaData") ASSERT(length >= obss.nvars());
   else
     ASSERT(length >= obss.nlocs());
 //  obss.put_db(std::string(group), std::string(vname), length, vec);
@@ -167,7 +167,7 @@ void obsspace_put_int64_f(ObsSpace & obss, const char * group, const char * vnam
 // -----------------------------------------------------------------------------
 void obsspace_put_real32_f(ObsSpace & obss, const char * group, const char * vname,
                            const std::size_t & length, float* vec) {
-  if (group == "VarMetaData") ASSERT(length >= obss.nvars());
+  if (std::string(group) == "VarMetaData") ASSERT(length >= obss.nvars());
   else
     ASSERT(length >= obss.nlocs());
 //  obss.put_db(std::string(group), std::string(vname), length, vec);
@@ -175,7 +175,7 @@ void obsspace_put_real32_f(ObsSpace & obss, const char * group, const char * vna
 // -----------------------------------------------------------------------------
 void obsspace_put_real64_f(ObsSpace & obss, const char * group, const char * vname,
                            const std::size_t & length, double* vec) {
-  if (group == "VarMetaData") ASSERT(length >= obss.nvars());
+  if (std::string(group) == "VarMetaData") ASSERT(length >= obss.nvars());
   else
     ASSERT(length >= obss.nlocs());
   obss.put_db(std::string(group), std::string(vname), length, vec);
