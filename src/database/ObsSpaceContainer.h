@@ -295,12 +295,12 @@ void ObsSpaceContainer<ContType>::StoreToDb(const std::string & GroupName,
     DataContainer.replace(Var, DbRec);
   } else {
     // The required record is not in database, update the database
-    std::vector<ContType> vect;
-    vect.reserve(VarSize);
+    std::vector<ContType> vect(VarSize);
     for (std::size_t ii = Start; ii < End; ++ii) {
       vect[ii] = VarData[ii-Start];
     }
-    DataContainer.insert({GroupName, VarName, VarShape, vect});
+    VarRecord DbRec(GroupName, VarName, VarShape, vect);
+    DataContainer.insert(DbRec);
   }
 }
 
@@ -326,8 +326,7 @@ void ObsSpaceContainer<ContType>::LoadFromDb(const std::string & GroupName,
               std::vector<ContType> & VarData, std::size_t Start, std::size_t Count) const {
   if (has(GroupName, VarName)) {
     // Found the required record in the database
-    typename VarRecord_set::iterator
-      Var = DataContainer.find(boost::make_tuple(GroupName, VarName));
+    DbIter Var = DataContainer.find(boost::make_tuple(GroupName, VarName));
 
     // Calculate the total number of elements
     std::size_t VarSize =

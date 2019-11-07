@@ -1094,8 +1094,7 @@ void ObsData::ApplyDistIndex(std::vector<VarType> & FullData,
     for (std::size_t i = 0; i < IndexedShape[0]; i++) {
       for (std::size_t j = 0; j < IndexIncrement; j++) {
         std::size_t isrc = (indx_[i] * IndexIncrement) + j;
-        std::size_t idest = (i * IndexIncrement) + j;
-        IndexedData[idest] = FullData[isrc];
+        IndexedData.push_back(FullData[isrc]);
       }
     }
   } else {
