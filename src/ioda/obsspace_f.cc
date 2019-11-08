@@ -122,7 +122,7 @@ void obsspace_get_real64_f(const ObsSpace & obss, const char * group, const char
   if (std::string(group) == "VarMetaData") ASSERT(length >= obss.nvars());
   else
     ASSERT(length >= obss.nlocs());
-  std::vector<double> vdata;
+  std::vector<double> vdata(length);
   obss.get_db(std::string(group), std::string(vname), length, vdata);
   std::copy(vdata.begin(), vdata.end(), vec);
 }
