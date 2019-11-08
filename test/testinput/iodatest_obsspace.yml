@@ -140,16 +140,17 @@ Observations:
         obsfile: "testoutput/diagout.nc4"
 
   - ObsSpace:
-      name: "Synthetic"
+      name: "Synthetic Random"
       simulate:
         variables: [air_temperature, eastward_wind]
       Generate:
-        nobs: 10   # generate 10 obs
-        lat1: 0    # with lat ranging form 0-10.
-        lat2: 10   #
-        lon1: 0    # and lon ranging from 0-10.
-        lon2: 10
-        random_seed: 29837
+        Random:
+          nobs: 10   # generate 10 obs
+          lat1: 0    # with lat ranging form 0-10.
+          lat2: 10   #
+          lon1: 0    # and lon ranging from 0-10.
+          lon2: 10
+          random_seed: 29837
         obs_errors: [1.0, 2.0]
       Localization: *localization
       TestData:
@@ -175,7 +176,43 @@ Observations:
         tolerance:
           - 1.0e-11
       ObsDataOut:
-        obsfile: "testoutput/ospace.generate.nc4"
+        obsfile: "testoutput/ospace.generate.random.nc4"
+
+  - ObsSpace:
+      name: "Synthetic List"
+      simulate:
+        variables: [air_temperature, eastward_wind]
+      Generate:
+        List:
+          lats: [ 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 ]
+          lons: [ 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 ]
+          datetimes: [ '2010-01-01T00:04:00Z', '2010-01-01T00:04:12Z', '2010-01-01T00:04:24Z', '2010-01-01T00:04:36Z', '2010-01-01T00:04:48Z', '2010-01-01T00:05:00Z', '2010-01-01T00:05:12Z', '2010-01-01T00:05:24Z', '2010-01-01T00:05:36Z', '2010-01-01T00:05:48Z', '2010-01-01T00:06:00Z' ]
+        obs_errors: [1.0, 2.0]
+      Localization: *localization
+      TestData:
+        nlocs: 11
+        nlocs_local: 0
+        nrecs: 11
+        nvars: 2
+        groups:
+          - "MetaData"
+          - "MetaData"
+          - "ObsError"
+          - "ObsError"
+        variables:
+          - "latitude"
+          - "longitude"
+          - "air_temperature"
+          - "eastward_wind"
+        norms:
+          - 16.583123951777001
+          - 16.583123951777001
+          - 3.3166247903553998
+          - 6.6332495807107996
+        tolerance:
+          - 1.0e-11
+      ObsDataOut:
+        obsfile: "testoutput/ospace.generate.list.nc4"
 
   - ObsSpace:
       name: "Radiosonde with grouping"

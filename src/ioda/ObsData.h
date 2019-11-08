@@ -124,8 +124,6 @@ class ObsData : public oops::ObsSpaceBase {
   /*! \details This method will return the associated MPI communicator */
   const eckit::mpi::Comm & comm() const {return commMPI_;}
 
-  void generateDistribution(const eckit::Configuration &);
-
   void printJo(const ObsVector &, const ObsVector &);  // to be removed
 
   const oops::Variables & obsvariables() const {return obsvars_;}
@@ -135,6 +133,13 @@ class ObsData : public oops::ObsSpaceBase {
   void print(std::ostream &) const;
 
   ObsData & operator= (const ObsData &);
+
+  // Initialize the database with auto-generated locations
+  void generateDistribution(const eckit::Configuration &);
+  void genDistRandom(const eckit::Configuration & conf, std::vector<float> & Lats,
+                     std::vector<float> & Lons, std::vector<util::DateTime> & Dtimes);
+  void genDistList(const eckit::Configuration & conf, std::vector<float> & Lats,
+                   std::vector<float> & Lons, std::vector<util::DateTime> & Dtimes);
 
   // Initialize the database from the input file
   void InitFromFile(const std::string & filename);
