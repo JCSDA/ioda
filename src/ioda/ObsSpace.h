@@ -93,8 +93,6 @@ class ObsSpace : public util::Printable {
   /*! \details This method will return the associated seed for random distribution */
   int64_t getSeed() const {return obsspace_->getSeed();}
 
-  void generateDistribution(const eckit::Configuration &);
-
   void printJo(const ObsVector &, const ObsVector &);  // to be removed
 
   const oops::Variables & obsvariables() const {return obsspace_->obsvariables();}
