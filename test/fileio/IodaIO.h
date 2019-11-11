@@ -50,33 +50,6 @@ void ExtractGrpVarName(const std::string & GrpVarName, std::string & GroupName,
 
 // -----------------------------------------------------------------------------
 
-std::vector<std::string> CharArrayToStringVector(const char * VarData,
-                                                 const std::vector<std::size_t> VarShape) {
-  // VarShape[0] is the number of strings
-  // VarShape[1] is the length of each string
-  std::size_t Nstrings = VarShape[0];
-  std::size_t StrLength = VarShape[1];
-
-  std::vector<std::string> StringVector(Nstrings,"");
-  for (std::size_t i = 0; i < Nstrings; i++) {
-    // Copy characters for i-th string into a char vector
-    std::vector<char> CharVector(StrLength, ' ');
-    for (std::size_t j = 0; j < StrLength; j++) {
-      CharVector[j] = VarData[(i*StrLength) + j];
-    }
-
-    // Convert the char vector to a single string. Any trailing white space will be
-    // included in the string, so strip off the trailing white space.
-    std::string String(CharVector.begin(), CharVector.end());
-    String.erase(String.find_last_not_of(" \t\n\r\f\v") + 1);
-    StringVector[i] = String;
-  }
-
-  return StringVector;
-}
-
-// -----------------------------------------------------------------------------
-
 void testConstructor() {
   const eckit::LocalConfiguration conf(::test::TestEnvironment::config());
 
@@ -191,28 +164,33 @@ void testReadVar() {
     // Read and check the variable contents
     std::string ExpectedVarDataName = "TestInput.var" + std::to_string(i);
     float Tolerance = conf.getFloat("TestInput.tolerance");
-    if (VarType.compare("int") == 0) {
+    if (VarType == "int") {
       std::vector<int> TestVarData(VarSize, 0);
-      TestIO->ReadVar(GroupName, VarName, VarShape, TestVarData.data());
+      TestIO->ReadVar(GroupName, VarName, VarShape, TestVarData);
       std::vector<int> ExpectedVarData = conf.getIntVector(ExpectedVarDataName);
       for (std::size_t j = 0; j < TestVarData.size(); j++) {
         EXPECT(TestVarData[j] == ExpectedVarData[j]);
       }
-    } else if ((VarType.compare("float") == 0) or (VarType.compare("double") == 0)) {
+    } else if (VarType == "float") {
       std::vector<float> TestVarData(VarSize, 0.0);
-      TestIO->ReadVar(GroupName, VarName, VarShape, TestVarData.data());
+      TestIO->ReadVar(GroupName, VarName, VarShape, TestVarData);
       std::vector<float> ExpectedVarData = conf.getFloatVector(ExpectedVarDataName);
       for (std::size_t j = 0; j < TestVarData.size(); j++) {
-        EXPECT(oops::is_close(TestVarData[j], ExpectedVarData[j], Tolerance));
+        EXPECT(oops::is_close<float>(TestVarData[j], ExpectedVarData[j], Tolerance));
       }
-    } else if (VarType.compare("char") == 0) {
-      std::unique_ptr<char[]> TestVarData(new char[VarSize]);
-      TestIO->ReadVar(GroupName, VarName, VarShape, TestVarData.get());
-      std::vector<std::string> TestStrings =
-                               CharArrayToStringVector(TestVarData.get(), VarShape);
+    } else if (VarType == "double") {
+      std::vector<double> TestVarData(VarSize, 0.0);
+      TestIO->ReadVar(GroupName, VarName, VarShape, TestVarData);
+      std::vector<double> ExpectedVarData = conf.getDoubleVector(ExpectedVarDataName);
+      for (std::size_t j = 0; j < TestVarData.size(); j++) {
+        EXPECT(oops::is_close<double>(TestVarData[j], ExpectedVarData[j], Tolerance));
+      }
+    } else if (VarType == "string") {
+      std::vector<std::string> TestVarData(VarSize, "");
+      TestIO->ReadVar(GroupName, VarName, VarShape, TestVarData);
       std::vector<std::string> ExpectedVarData = conf.getStringVector(ExpectedVarDataName);
-      for (std::size_t j = 0; j < TestStrings.size(); j++) {
-        EXPECT(TestStrings[j] == ExpectedVarData[j]);
+      for (std::size_t j = 0; j < TestVarData.size(); j++) {
+        EXPECT(TestVarData[j] == ExpectedVarData[j]);
       }
     }
   }
@@ -240,7 +218,7 @@ void testWriteVar() {
   std::vector<std::size_t> FloatVarShape{ ExpectedNlocs };
   std::string FloatGrpName = "MetaData";
   std::string FloatVarName = "test_float";
-  TestIO->WriteVar(FloatGrpName, FloatVarName, FloatVarShape, ExpectedFloatData.data());
+  TestIO->WriteVar(FloatGrpName, FloatVarName, FloatVarShape, ExpectedFloatData);
 
   // Int data
   std::vector<int> ExpectedIntData(ExpectedNvars, 0);
@@ -250,46 +228,31 @@ void testWriteVar() {
   std::vector<std::size_t> IntVarShape{ ExpectedNvars };
   std::string IntGrpName = "VarMetaData";
   std::string IntVarName = "test_int";
-  TestIO->WriteVar(IntGrpName, IntVarName, IntVarShape, ExpectedIntData.data());
+  TestIO->WriteVar(IntGrpName, IntVarName, IntVarShape, ExpectedIntData);
 
   // Char data
-  std::string TempString;
-  std::unique_ptr<char[]> ExpectedCharData(new char[ExpectedNrecs * 5]);
-  TempString = "HelloWorld";
-  for (std::size_t i = 0; i < TempString.size(); i++) {
-    ExpectedCharData.get()[i] = TempString[i];
-  }
-  std::vector<std::size_t> CharVarShape{ ExpectedNrecs, 5 };
-  std::string CharGrpName = "RecMetaData";
-  std::string CharVarName = "test_char";
-  TestIO->WriteVar(CharGrpName, CharVarName, CharVarShape, ExpectedCharData.get());
+  std::vector<std::string> ExpectedStrings{ "Hello", "World" };
+  std::vector<std::size_t> StringVarShape(1, ExpectedNrecs);
+  std::string StringGrpName = "RecMetaData";
+  std::string StringVarName = "test_char";
+  TestIO->WriteVar(StringGrpName, StringVarName, StringVarShape, ExpectedStrings);
 
   // Try char data with same string size
-  std::unique_ptr<char[]> ExpectedChar2Data(new char[ExpectedNvars * 5]);
-  TempString = "12345aaaaa67890bbbbbABCDE";
-  for (std::size_t i = 0; i < TempString.size(); i++) {
-    ExpectedChar2Data.get()[i] = TempString[i];
-  }
-  std::vector<std::size_t> Char2VarShape{ ExpectedNvars, 5 };
-  std::string Char2GrpName = "VarMetaData";
-  std::string Char2VarName = "test_char2";
-  TestIO->WriteVar(Char2GrpName, Char2VarName, Char2VarShape, ExpectedChar2Data.get());
+  std::vector<std::string> ExpectedStrings2{ "12345", "aaa", "67890", "bb", "ABCD" };
+  std::vector<std::size_t> String2VarShape(1, ExpectedNvars);
+  std::string String2GrpName = "VarMetaData";
+  std::string String2VarName = "test_char2";
+  TestIO->WriteVar(String2GrpName, String2VarName, String2VarShape, ExpectedStrings2);
 
   // Try char data with different shape
-  std::unique_ptr<char[]> ExpectedChar3Data(new char[ExpectedNlocs * 20]);
-  std::vector<std::string> Dates = {
+  std::vector<std::string> ExpectedStrings3{
     "2018-04-15T00:00:00Z", "2018-04-15T00:00:30Z", "2018-04-15T00:01:00Z",
     "2018-04-15T00:01:30Z", "2018-04-15T00:02:00Z", "2018-04-15T00:02:30Z",
     "2018-04-15T00:03:00Z", "2018-04-15T00:03:30Z" };
-  TempString = Dates[0] + Dates[1] + Dates[2] + Dates[3] + Dates[4] + Dates[5] +
-               Dates[6] + Dates[7];
-  for (std::size_t i = 0; i < TempString.size(); i++) {
-    ExpectedChar3Data.get()[i] = TempString[i];
-  }
-  std::vector<std::size_t> Char3VarShape{ ExpectedNlocs, 20 };
-  std::string Char3GrpName = "MetaData";
-  std::string Char3VarName = "datetime";
-  TestIO->WriteVar(Char3GrpName, Char3VarName, Char3VarShape, ExpectedChar3Data.get());
+  std::vector<std::size_t> String3VarShape(1, ExpectedNlocs);
+  std::string String3GrpName = "MetaData";
+  std::string String3VarName = "datetime";
+  TestIO->WriteVar(String3GrpName, String3VarName, String3VarShape, ExpectedStrings3);
 
   // open the file we just created and see if it contains what we just wrote into it
   TestIO.reset(ioda::IodaIOfactory::Create(FileName, "r"));
@@ -304,43 +267,31 @@ void testWriteVar() {
 
   float Tolerance = conf.getFloat("TestInput.tolerance");
   std::vector<float> TestFloatData(ExpectedNlocs, 0.0);
-  TestIO->ReadVar(FloatGrpName, FloatVarName, FloatVarShape, TestFloatData.data());
+  TestIO->ReadVar(FloatGrpName, FloatVarName, FloatVarShape, TestFloatData);
   for (std::size_t i = 0; i < ExpectedNlocs; i++) {
     EXPECT(oops::is_close(TestFloatData[i], ExpectedFloatData[i], Tolerance));
   }
 
   std::vector<int> TestIntData(ExpectedNvars, 0);
-  TestIO->ReadVar(IntGrpName, IntVarName, IntVarShape, TestIntData.data());
+  TestIO->ReadVar(IntGrpName, IntVarName, IntVarShape, TestIntData);
   for (std::size_t i = 0; i < TestIntData.size(); i++) {
     EXPECT(TestIntData[i] == ExpectedIntData[i]);
   }
 
-  std::unique_ptr<char[]> TestCharData(new char[ExpectedNrecs * 5]);
-  TestIO->ReadVar(CharGrpName, CharVarName, CharVarShape, TestCharData.get());
-  std::vector<std::string> TestStrings =
-          CharArrayToStringVector(TestCharData.get(), CharVarShape);
-  std::vector<std::string> ExpectedStrings =
-          CharArrayToStringVector(ExpectedCharData.get(), CharVarShape);
+  std::vector<std::string> TestStrings(ExpectedNrecs);
+  TestIO->ReadVar(StringGrpName, StringVarName, StringVarShape, TestStrings);
   for (std::size_t i = 0; i < TestStrings.size(); i++) {
     EXPECT(TestStrings[i] == ExpectedStrings[i]);
   }
 
-  std::unique_ptr<char[]> TestChar2Data(new char[ExpectedNvars * 5]);
-  TestIO->ReadVar(Char2GrpName, Char2VarName, Char2VarShape, TestChar2Data.get());
-  std::vector<std::string> TestStrings2 =
-          CharArrayToStringVector(TestChar2Data.get(), Char2VarShape);
-  std::vector<std::string> ExpectedStrings2 =
-          CharArrayToStringVector(ExpectedChar2Data.get(), Char2VarShape);
+  std::vector<std::string> TestStrings2(ExpectedNvars);
+  TestIO->ReadVar(String2GrpName, String2VarName, String2VarShape, TestStrings2);
   for (std::size_t i = 0; i < TestStrings2.size(); i++) {
     EXPECT(TestStrings2[i] == ExpectedStrings2[i]);
   }
 
-  std::unique_ptr<char[]> TestChar3Data(new char[ExpectedNlocs * 20]);
-  TestIO->ReadVar(Char3GrpName, Char3VarName, Char3VarShape, TestChar3Data.get());
-  std::vector<std::string> TestStrings3 =
-          CharArrayToStringVector(TestChar3Data.get(), Char3VarShape);
-  std::vector<std::string> ExpectedStrings3 =
-          CharArrayToStringVector(ExpectedChar3Data.get(), Char3VarShape);
+  std::vector<std::string> TestStrings3(ExpectedNlocs);
+  TestIO->ReadVar(String3GrpName, String3VarName, String3VarShape, TestStrings3);
   for (std::size_t i = 0; i < TestStrings3.size(); i++) {
     EXPECT(TestStrings3[i] == ExpectedStrings3[i]);
   }
