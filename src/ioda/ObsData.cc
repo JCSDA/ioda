@@ -625,7 +625,7 @@ void ObsData::InitFromFile(const std::string & filename) {
       // Read the variable from the file and transfer it to the database.
       if (FileVarType == "int") {
         std::vector<int> FileData(VarSize);
-        fileio->ReadVar(GroupName, VarName, VarShape, FileData.data());
+        fileio->ReadVar(GroupName, VarName, VarShape, FileData);
 
         std::vector<int> IndexedData;
         std::vector<std::size_t> IndexedShape;
@@ -634,7 +634,7 @@ void ObsData::InitFromFile(const std::string & filename) {
         int_database_.StoreToDb(GroupName, VarName, IndexedShape, IndexedData);
       } else if (FileVarType == "float") {
         std::vector<float> FileData(VarSize);
-        fileio->ReadVar(GroupName, VarName, VarShape, FileData.data());
+        fileio->ReadVar(GroupName, VarName, VarShape, FileData);
 
         std::vector<float> IndexedData;
         std::vector<std::size_t> IndexedShape;
@@ -649,7 +649,7 @@ void ObsData::InitFromFile(const std::string & filename) {
       } else if (FileVarType == "double") {
         // Convert double to float before storing into the database.
         std::vector<double> FileData(VarSize);
-        fileio->ReadVar(GroupName, VarName, VarShape, FileData.data());
+        fileio->ReadVar(GroupName, VarName, VarShape, FileData);
 
         std::vector<double> IndexedData;
         std::vector<std::size_t> IndexedShape;
@@ -657,36 +657,26 @@ void ObsData::InitFromFile(const std::string & filename) {
         ApplyDistIndex<double>(FileData, VarShape, IndexedData, IndexedShape, IndexedSize);
 
         ConvertStoreToDb<double, float>(GroupName, VarName, IndexedShape, IndexedData);
-      } else if (FileVarType == "char") {
-        // Convert the char array to a vector of strings. If we are working
-        // on the variable "datetime", then convert the strings to DateTime
-        // objects.
-        std::vector<char> FileData(VarSize);
-        fileio->ReadVar(GroupName, VarName, VarShape, FileData.data());
+      } else if (FileVarType == "string") {
+        // If we are working on the variable "datetime", convert the strings
+        // to DateTime objects.
+        std::vector<std::string> FileData(VarSize);
+        fileio->ReadVar(GroupName, VarName, VarShape, FileData);
 
-        std::vector<char> IndexedData;
+        std::vector<std::string> IndexedData;
         std::vector<std::size_t> IndexedShape;
         std::size_t IndexedSize;
-        ApplyDistIndex<char>(FileData, VarShape, IndexedData, IndexedShape, IndexedSize);
-
-        std::vector<std::string> StringData =
-               CharArrayToStringVector(IndexedData.data(), IndexedShape);
-        std::vector<std::size_t> AdjVarShape;
-        std::size_t AdjVarSize = 1;
-        for (std::size_t j = 0; j < (IndexedShape.size()-1); j++) {
-          AdjVarShape.push_back(IndexedShape[j]);
-          AdjVarSize *= IndexedShape[j];
-        }
+        ApplyDistIndex<std::string>(FileData, VarShape, IndexedData, IndexedShape, IndexedSize);
 
         if (VarName == "datetime") {
-          std::vector<util::DateTime> DtData(AdjVarSize);
-          for (std::size_t j = 0; j < AdjVarSize; j++) {
-            util::DateTime TempDt(StringData[j]);
+          std::vector<util::DateTime> DtData(IndexedSize);
+          for (std::size_t j = 0; j < IndexedSize; j++) {
+            util::DateTime TempDt(IndexedData[j]);
             DtData[j] = TempDt;
           }
-          datetime_database_.StoreToDb(GroupName, VarName, AdjVarShape, DtData);
+          datetime_database_.StoreToDb(GroupName, VarName, IndexedShape, DtData);
         } else {
-          string_database_.StoreToDb(GroupName, VarName, AdjVarShape, StringData);
+          string_database_.StoreToDb(GroupName, VarName, IndexedShape, IndexedData);
         }
       } else if (commMPI_.rank() == 0) {
         oops::Log::warning() << "ioda::IodaIO::InitFromFile: Unrecognized file data type: "
@@ -781,17 +771,16 @@ void ObsData::GenRecordNumbers(const std::unique_ptr<IodaIO> & FileIO,
 
     if (VarType == "int") {
       std::vector<int> FileData(VarSize);
-      FileIO->ReadVar(GroupName, VarName, VarShape, FileData.data());
+      FileIO->ReadVar(GroupName, VarName, VarShape, FileData);
       GenRnumsFromVar<int>(FileData, Records);
     } else if (VarType == "float") {
       std::vector<float> FileData(VarSize);
-      FileIO->ReadVar(GroupName, VarName, VarShape, FileData.data());
+      FileIO->ReadVar(GroupName, VarName, VarShape, FileData);
       GenRnumsFromVar<float>(FileData, Records);
-    } else if (VarType == "char") {
-      std::vector<char> FileData(VarSize);
-      FileIO->ReadVar(GroupName, VarName, VarShape, FileData.data());
-      std::vector<std::string> StringData = CharArrayToStringVector(FileData.data(), VarShape);
-      GenRnumsFromVar<std::string>(StringData, Records);
+    } else if (VarType == "string") {
+      std::vector<std::string> FileData(VarSize);
+      FileIO->ReadVar(GroupName, VarName, VarShape, FileData);
+      GenRnumsFromVar<std::string>(FileData, Records);
     }
   }
 }
@@ -845,8 +834,8 @@ void ObsData::GenRnumsFromVar(const std::vector<DATATYPE> & VarData,
 void ObsData::ApplyTimingWindow(const std::unique_ptr<IodaIO> & FileIO) {
   // Read in the datetime values and filter out any variables outside the
   // timing window.
-  std::unique_ptr<char[]> DtCharArray(new char[gnlocs_ * 20]);
-  std::vector<std::size_t> DtShape{ gnlocs_, 20 };
+  std::vector<std::string> DtStrings(gnlocs_);
+  std::vector<std::size_t> DtShape(1, gnlocs_);
 
   // Look for datetime@MetaData first, then datetime@GroupUndefined
   std::string DtGroupName = "MetaData";
@@ -858,9 +847,7 @@ void ObsData::ApplyTimingWindow(const std::unique_ptr<IodaIO> & FileIO) {
       ABORT(ErrorMsg);
     }
   }
-  FileIO->ReadVar(DtGroupName, DtVarName, DtShape, DtCharArray.get());
-  std::vector<std::string> DtStrings =
-           CharArrayToStringVector(DtCharArray.get(), DtShape);
+  FileIO->ReadVar(DtGroupName, DtVarName, DtShape, DtStrings);
 
   std::size_t Index;
   std::size_t RecNum;
@@ -961,7 +948,7 @@ void ObsData::SaveToFile(const std::string & file_name) {
 
     std::vector<int> VarData(VarSize);
     int_database_.LoadFromDb(GroupName, VarName, VarShape, VarData);
-    fileio->WriteVar(GroupName, VarName, VarShape, VarData.data());
+    fileio->WriteVar(GroupName, VarName, VarShape, VarData);
   }
 
   for (ObsSpaceContainer<float>::VarIter ivar = float_database_.var_iter_begin();
@@ -973,7 +960,7 @@ void ObsData::SaveToFile(const std::string & file_name) {
 
     std::vector<float> VarData(VarSize);
     float_database_.LoadFromDb(GroupName, VarName, VarShape, VarData);
-    fileio->WriteVar(GroupName, VarName, VarShape, VarData.data());
+    fileio->WriteVar(GroupName, VarName, VarShape, VarData);
   }
 
   for (ObsSpaceContainer<std::string>::VarIter ivar = string_database_.var_iter_begin();
@@ -985,12 +972,7 @@ void ObsData::SaveToFile(const std::string & file_name) {
 
     std::vector<std::string> VarData(VarSize, "");
     string_database_.LoadFromDb(GroupName, VarName, VarShape, VarData);
-    // Get the shape needed for the character array, which will be a 2D array.
-    // The total number of char elelments will be CharShape[0] * CharShape[1].
-    std::vector<std::size_t> CharShape = CharShapeFromStringVector(VarData);
-    std::vector<char> CharData(CharShape[0] * CharShape[1]);
-    StringVectorToCharArray(VarData, CharShape, CharData.data());
-    fileio->WriteVar(GroupName, VarName, CharShape, CharData.data());
+    fileio->WriteVar(GroupName, VarName, VarShape, VarData);
   }
 
   for (ObsSpaceContainer<util::DateTime>::VarIter ivar = datetime_database_.var_iter_begin();
@@ -1009,10 +991,7 @@ void ObsData::SaveToFile(const std::string & file_name) {
     for (std::size_t i = 0; i < VarSize; i++) {
       StringVector[i] = VarData[i].toString();
     }
-    std::vector<std::size_t> CharShape = CharShapeFromStringVector(StringVector);
-    std::vector<char> CharData(CharShape[0] * CharShape[1]);
-    StringVectorToCharArray(StringVector, CharShape, CharData.data());
-    fileio->WriteVar(GroupName, VarName, CharShape, CharData.data());
+    fileio->WriteVar(GroupName, VarName, VarShape, StringVector);
   }
 }
 
