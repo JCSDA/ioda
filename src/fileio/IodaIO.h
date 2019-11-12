@@ -115,6 +115,20 @@ class IodaIO : public util::Printable {
      */
     typedef std::map<std::string, DimInfoRec> DimInfoMap;
 
+    // Container for information about frames.
+    typedef struct {
+      std::size_t start;
+      std::size_t size;
+    } FrameInfoRec;
+
+    /*!
+     * \brief dimension information map
+     *
+     * \details This typedef is dimension information map which containes
+     *          information about the dimensions of the variables.
+     */
+    typedef std::vector<FrameInfoRec> FrameInfo;
+
  public:
     IodaIO(const std::string & FileName, const std::string & FileMode);
 
@@ -205,6 +219,14 @@ class IodaIO : public util::Printable {
     std::size_t dim_name_size(const std::string &);
     int         dim_name_id(const std::string &);
 
+    // Access to data frames
+    typedef FrameInfo::const_iterator FrameIter;
+    virtual FrameIter frame_begin() = 0;
+    virtual FrameIter frame_end() = 0;
+
+    virtual std::size_t frame_start(FrameIter) = 0;
+    virtual std::size_t frame_size(FrameIter) = 0;
+
  protected:
     // Methods provided by subclasses
 
@@ -257,6 +279,11 @@ class IodaIO : public util::Printable {
      * \brief dimension information map
      */
     DimInfoMap dim_info_;
+
+    /*!
+     * \brief frame information vector
+     */
+    FrameInfo frame_info_;
 };
 
 }  // namespace ioda
