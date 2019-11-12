@@ -57,10 +57,8 @@ void testConstructor() {
   std::unique_ptr<ioda::IodaIO> TestIO;
 
   std::size_t Nlocs;
-  std::size_t Nrecs;
   std::size_t Nvars;
   std::size_t ExpectedNlocs;
-  std::size_t ExpectedNrecs;
   std::size_t ExpectedNvars;
 
   // Contructor in read mode
@@ -70,35 +68,22 @@ void testConstructor() {
 
   // Constructor in read mode is also responsible for setting nobs and nlocs
   ExpectedNlocs = conf.getInt("TestInput.nlocs");
-  ExpectedNrecs = conf.getInt("TestInput.nrecs");
   ExpectedNvars = conf.getInt("TestInput.nvars");
 
   Nlocs = TestIO->nlocs();
-  Nrecs = TestIO->nrecs();
   Nvars = TestIO->nvars();
 
   EXPECT(ExpectedNlocs == Nlocs);
-  EXPECT(ExpectedNrecs == Nrecs);
   EXPECT(ExpectedNvars == Nvars);
 
   // Constructor in write mode
   FileName = conf.getString("TestOutput.filename");
 
   ExpectedNlocs = conf.getInt("TestOutput.nlocs");
-  ExpectedNrecs = conf.getInt("TestOutput.nrecs");
   ExpectedNvars = conf.getInt("TestOutput.nvars");
 
-  TestIO.reset(ioda::IodaIOfactory::Create(FileName, "W", ExpectedNlocs,
-                                           ExpectedNrecs, ExpectedNvars));
+  TestIO.reset(ioda::IodaIOfactory::Create(FileName, "W"));
   EXPECT(TestIO.get());
-
-  Nlocs = TestIO->nlocs();
-  Nrecs = TestIO->nrecs();
-  Nvars = TestIO->nvars();
-
-  EXPECT(ExpectedNlocs == Nlocs);
-  EXPECT(ExpectedNrecs == Nrecs);
-  EXPECT(ExpectedNvars == Nvars);
   }
 
 // -----------------------------------------------------------------------------
@@ -205,17 +190,15 @@ void testWriteVar() {
   // Try writing contrived data into the output file. One of each data type, and size.
   std::string FileName = conf.getString("TestOutput.filename");
   std::size_t ExpectedNlocs = conf.getInt("TestOutput.nlocs");
-  std::size_t ExpectedNrecs = conf.getInt("TestOutput.nrecs");
   std::size_t ExpectedNvars = conf.getInt("TestOutput.nvars");
-  TestIO.reset(ioda::IodaIOfactory::Create(FileName, "W", ExpectedNlocs,
-                                           ExpectedNrecs, ExpectedNvars));
+  TestIO.reset(ioda::IodaIOfactory::Create(FileName, "W"));
 
   // Float data
   std::vector<float> ExpectedFloatData(ExpectedNlocs, 0.0);
   for (std::size_t i = 0; i < ExpectedNlocs; ++i) {
     ExpectedFloatData[i] = float(i) + 0.5;
   }
-  std::vector<std::size_t> FloatVarShape{ ExpectedNlocs };
+  std::vector<std::size_t> FloatVarShape(1, ExpectedNlocs);
   std::string FloatGrpName = "MetaData";
   std::string FloatVarName = "test_float";
   TestIO->WriteVar(FloatGrpName, FloatVarName, FloatVarShape, ExpectedFloatData);
@@ -225,30 +208,37 @@ void testWriteVar() {
   for (std::size_t i = 0; i < ExpectedNvars; ++i) {
     ExpectedIntData[i] = i * 2;
   }
-  std::vector<std::size_t> IntVarShape{ ExpectedNvars };
+  std::vector<std::size_t> IntVarShape(1, ExpectedNvars);
   std::string IntGrpName = "VarMetaData";
   std::string IntVarName = "test_int";
   TestIO->WriteVar(IntGrpName, IntVarName, IntVarShape, ExpectedIntData);
 
   // Char data
-  std::vector<std::string> ExpectedStrings{ "Hello", "World" };
-  std::vector<std::size_t> StringVarShape(1, ExpectedNrecs);
-  std::string StringGrpName = "RecMetaData";
+  std::vector<std::string> ExpectedStrings(ExpectedNlocs, "");
+  for (std::size_t i = 0; i < ExpectedNlocs; ++i) {
+    ExpectedStrings[i] = std::string("Hello World: ") + std::to_string(i);
+  }
+  std::vector<std::size_t> StringVarShape(1, ExpectedNlocs);
+  std::string StringGrpName = "MetaData";
   std::string StringVarName = "test_char";
   TestIO->WriteVar(StringGrpName, StringVarName, StringVarShape, ExpectedStrings);
 
   // Try char data with same string size
-  std::vector<std::string> ExpectedStrings2{ "12345", "aaa", "67890", "bb", "ABCD" };
+  std::vector<std::string> ExpectedStrings2(ExpectedNvars, "");
+  for (std::size_t i = 0; i < ExpectedNvars; ++i) {
+    ExpectedStrings2[i] = std::string("ABCD: ") + std::to_string(i);
+  }
   std::vector<std::size_t> String2VarShape(1, ExpectedNvars);
   std::string String2GrpName = "VarMetaData";
   std::string String2VarName = "test_char2";
   TestIO->WriteVar(String2GrpName, String2VarName, String2VarShape, ExpectedStrings2);
 
   // Try char data with different shape
-  std::vector<std::string> ExpectedStrings3{
-    "2018-04-15T00:00:00Z", "2018-04-15T00:00:30Z", "2018-04-15T00:01:00Z",
-    "2018-04-15T00:01:30Z", "2018-04-15T00:02:00Z", "2018-04-15T00:02:30Z",
-    "2018-04-15T00:03:00Z", "2018-04-15T00:03:30Z" };
+  std::vector<std::string> ExpectedStrings3(ExpectedNlocs, "");
+  for (std::size_t i = 0; i < ExpectedNlocs; ++i) {
+    ExpectedStrings3[i] =
+         std::string("2018-04-15T00:00:0") + std::to_string(i) + std::string("Z");
+  }
   std::vector<std::size_t> String3VarShape(1, ExpectedNlocs);
   std::string String3GrpName = "MetaData";
   std::string String3VarName = "datetime";
@@ -258,11 +248,9 @@ void testWriteVar() {
   TestIO.reset(ioda::IodaIOfactory::Create(FileName, "r"));
 
   std::size_t TestNlocs = TestIO->nlocs();
-  std::size_t TestNrecs = TestIO->nrecs();
   std::size_t TestNvars = TestIO->nvars();
 
   EXPECT(TestNlocs == ExpectedNlocs);
-  EXPECT(TestNrecs == ExpectedNrecs);
   EXPECT(TestNvars == ExpectedNvars);
 
   float Tolerance = conf.getFloat("TestInput.tolerance");
@@ -278,7 +266,7 @@ void testWriteVar() {
     EXPECT(TestIntData[i] == ExpectedIntData[i]);
   }
 
-  std::vector<std::string> TestStrings(ExpectedNrecs);
+  std::vector<std::string> TestStrings(ExpectedNlocs);
   TestIO->ReadVar(StringGrpName, StringVarName, StringVarShape, TestStrings);
   for (std::size_t i = 0; i < TestStrings.size(); i++) {
     EXPECT(TestStrings[i] == ExpectedStrings[i]);

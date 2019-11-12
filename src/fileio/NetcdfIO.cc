@@ -35,7 +35,7 @@ namespace ioda {
 // -----------------------------------------------------------------------------
 /*!
  * \details This constructor will open the netcdf file. If opening in read
- *          mode, the parameters nlocs, nrecs and nvars will be set
+ *          mode, the parameters nlocs and nvars will be set
  *          by querying the size of dimensions of the same names in the input
  *          file. If opening in write mode, the parameters will be set from the
  *          same named arguements to this constructor.
@@ -43,25 +43,11 @@ namespace ioda {
  * \param[in]  FileName Path to the netcdf file
  * \param[in]  FileMode "r" for read, "w" for overwrite to an existing file
  *                      and "W" for create and write to a new file.
- * \param[in]  Nlocs Number of unique locations in the obs data.
- * \param[in]  Nrecs Number of unique records in the obs data. Records are
- *                   atomic units that will remain intact when obs are
- *                   distributed across muliple process elements. A single
- *                   radiosonde sounding would be an example.
- * \param[in]  Nvars Number of unique varibles in the obs data.
  */
 
-NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
-                   const std::size_t & Nlocs, const std::size_t & Nrecs,
-                   const std::size_t & Nvars) {
-  fname_ = FileName;
-  fmode_ = FileMode;
-  nlocs_ = Nlocs;
-  nrecs_ = Nrecs;
-  nvars_ = Nvars;
-  have_offset_time_ = false;
-  have_date_time_ = false;
-  num_missing_gnames_ = 0;
+NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode) :
+               IodaIO(FileName, FileMode), have_offset_time_(false),
+               have_date_time_(false) {
   oops::Log::trace() << __func__ << " fname_: " << fname_ << " fmode_: " << fmode_ << std::endl;
 
   // Open the file. The fmode_ values that are recognized are:
@@ -83,9 +69,9 @@ NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
   }
 
   // When in read mode, the constructor is responsible for setting
-  // the data members nlocs_, nrecs_, nvars_ and grp_var_info_.
+  // the data members nlocs_, nvars_ and grp_var_info_.
   //
-  // The files have nlocs, nrecs, nvars.
+  // The files have nlocs, nvars.
   //
   // The way to collect the VALID variable names is controlled by developers.
   //
@@ -99,7 +85,7 @@ NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
     CheckNcCall(nc_inq(ncid_, &NcNdims, &NcNvars, &NcNatts, NULL), ErrorMsg);
 
     // Record the dimension ids and sizes in the dim_info_ container.
-    // Save nlocs, nrecs and nvars in data members.
+    // Save nlocs, nvars in data members.
     for (std::size_t i = 0; i < NcNdims; i++) {
       char NcName[MAX_NC_NAME];
       std::size_t NcSize;
@@ -110,8 +96,6 @@ NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
 
       if (strcmp(NcName, "nlocs") == 0) {
         nlocs_ = NcSize;
-      } else if (strcmp(NcName, "nrecs") == 0) {
-        nrecs_ = NcSize;
       } else if (strcmp(NcName, "nvars") == 0) {
         nvars_ = NcSize;
       }
@@ -176,15 +160,9 @@ NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
 
       // Record the variable info in the grp_var_into_ container.
       int OffsetTimeVarId;
-      std::string VarName{NcVname};
-      std::string GroupName{"GroupUndefined"};
-      std::size_t Spos = VarName.find("@");
-      if (Spos != VarName.npos) {
-        GroupName = VarName.substr(Spos+1);
-        VarName = VarName.substr(0, Spos);
-      } else {
-        num_missing_gnames_++;
-      }
+      std::string VarName;
+      std::string GroupName;
+      ExtractGrpVarName(NcVname, GroupName, VarName);
 
       // If offset time exists, substitute the datetime specs for the offset time specs.
       if (VarName.compare("time") == 0) {
@@ -210,20 +188,6 @@ NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
         grp_var_info_[GroupName][VarName].shape = VarShape;
       }
     }
-    if (num_missing_gnames_ > 0) {
-      oops::Log::warning() << "NetcdfIO::NetcdfIO:: WARNING: Input file contains variables "
-            << "that are missing group names (ie, no @GroupName suffix)" << std::endl
-            << "  Input file: " << fname_ << std::endl;
-    }
-  }
-
-  // When in write mode, create dimensions in the output file based on
-  // nlocs_, nrecs_, nvars_. Record the names and sizes for these
-  // dimensions.
-  if ((fmode_ == "W") || (fmode_ == "w")) {
-    CreateNcDim("nlocs", Nlocs);
-    CreateNcDim("nrecs", Nrecs);
-    CreateNcDim("nvars", Nvars);
   }
 }
 
@@ -378,7 +342,7 @@ void NetcdfIO::WriteVar(const std::string & GroupName, const std::string & VarNa
   std::string ErrorMsg;
   int NcVarId;
   if (nc_inq_varid(ncid_, NcVarName.c_str(), &NcVarId) != NC_NOERR) {
-    std::vector<int> NcDimIds = GetNcDimIds(GroupName);
+    std::vector<int> NcDimIds = GetNcDimIds(GroupName, VarShape);
     ErrorMsg = "NetcdfIO::WriteVar: Unable to create variable dataset: " + NcVarName;
     CheckNcCall(nc_def_var(ncid_, NcVarName.c_str(), NC_INT, NcDimIds.size(),
                            NcDimIds.data(), &NcVarId),
@@ -407,7 +371,7 @@ void NetcdfIO::WriteVar(const std::string & GroupName, const std::string & VarNa
   std::string ErrorMsg;
   int NcVarId;
   if (nc_inq_varid(ncid_, NcVarName.c_str(), &NcVarId) != NC_NOERR) {
-    std::vector<int> NcDimIds = GetNcDimIds(GroupName);
+    std::vector<int> NcDimIds = GetNcDimIds(GroupName, VarShape);
     ErrorMsg = "NetcdfIO::WriteVar: Unable to create variable dataset: " + NcVarName;
     CheckNcCall(nc_def_var(ncid_, NcVarName.c_str(), NC_FLOAT, NcDimIds.size(),
                            NcDimIds.data(), &NcVarId),
@@ -436,7 +400,7 @@ void NetcdfIO::WriteVar(const std::string & GroupName, const std::string & VarNa
   std::string ErrorMsg;
   int NcVarId;
   if (nc_inq_varid(ncid_, NcVarName.c_str(), &NcVarId) != NC_NOERR) {
-    std::vector<int> NcDimIds = GetNcDimIds(GroupName);
+    std::vector<int> NcDimIds = GetNcDimIds(GroupName, VarShape);
     NcDimIds.push_back(GetStringDimBySize(NcVarShape[1]));
     ErrorMsg = "NetcdfIO::WriteVar: Unable to create variable dataset: " + NcVarName;
     CheckNcCall(nc_def_var(ncid_, NcVarName.c_str(), NC_CHAR, NcDimIds.size(),
@@ -473,7 +437,8 @@ std::size_t NetcdfIO::GetMaxStringSize(const std::vector<std::string> & Strings)
  * \details This method will determine the netcdf dimension ids associated with
  *          the current group name.
  */
-std::vector<int> NetcdfIO::GetNcDimIds(const std::string & GroupName) {
+std::vector<int> NetcdfIO::GetNcDimIds(const std::string & GroupName,
+                                       const std::vector<std::size_t> & VarShape) {
   // For now and in order to keep the IodaIO class file type agnostic, infer the
   // dimensions from GroupName and VarShape. This is not a great way to
   // do this, so we may need to remove the IodaIO class and expose the Netcdf
@@ -494,12 +459,24 @@ std::vector<int> NetcdfIO::GetNcDimIds(const std::string & GroupName) {
   // Form the dimension id list.
   std::vector<int> NcDimIds;
   if (GroupName.compare("MetaData") == 0) {
+    if (!dim_exists("nlocs")) {
+      CreateNcDim("nlocs", VarShape[0]);
+    }
     NcDimIds.push_back(dim_name_id("nlocs"));
   } else if (GroupName.compare("VarMetaData") == 0) {
+    if (!dim_exists("nvars")) {
+      CreateNcDim("nvars", VarShape[0]);
+    }
     NcDimIds.push_back(dim_name_id("nvars"));
   } else if (GroupName.compare("RecMetaData") == 0) {
+    if (!dim_exists("nrecs")) {
+      CreateNcDim("nrecs", VarShape[0]);
+    }
     NcDimIds.push_back(dim_name_id("nrecs"));
   } else {
+    if (!dim_exists("nlocs")) {
+      CreateNcDim("nlocs", VarShape[0]);
+    }
     NcDimIds.push_back(dim_name_id("nlocs"));
   }
 

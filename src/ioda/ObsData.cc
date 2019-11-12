@@ -52,7 +52,7 @@ ObsData::ObsData(const eckit::Configuration & config, const eckit::mpi::Comm & c
     winbgn_(bgn), winend_(end), commMPI_(comm), int_database_(),
     float_database_(), string_database_(), datetime_database_(), obsvars_()
 {
-  oops::Log::trace() << "ioda::ObsData config  = " << config << std::endl;
+  oops::Log::trace() << "ObsData::ObsData config  = " << config << std::endl;
 
   obsname_ = config.getString("name");
   nwarns_fdtype_ = 0;
@@ -122,14 +122,14 @@ ObsData::ObsData(const eckit::Configuration & config, const eckit::mpi::Comm & c
     // the overwrite, but issue a warning if we are about to clobber an existing file.
     std::ifstream infile(fileout_);
     if (infile.good() && (commMPI_.rank() == 0)) {
-        oops::Log::warning() << "ioda::ObsData WARNING: Overwriting output file "
+        oops::Log::warning() << "ObsData::ObsData WARNING: Overwriting output file "
                              << fileout_ << std::endl;
       }
   } else {
-    oops::Log::debug() << "ioda::ObsData output file is not required " << std::endl;
+    oops::Log::debug() << "ObsData::ObsData output file is not required " << std::endl;
   }
 
-  oops::Log::trace() << "ioda::ObsData contructed name = " << obsname() << std::endl;
+  oops::Log::trace() << "ObsData::ObsData contructed name = " << obsname() << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -141,14 +141,14 @@ ObsData::ObsData(const eckit::Configuration & config, const eckit::mpi::Comm & c
  *          ObsData object.
  */
 ObsData::~ObsData() {
-  oops::Log::trace() << "ioda::ObsData destructor begin" << std::endl;
+  oops::Log::trace() << "ObsData::ObsData destructor begin" << std::endl;
   if (fileout_.size() != 0) {
     oops::Log::info() << obsname() << ": save database to " << fileout_ << std::endl;
     SaveToFile(fileout_);
   } else {
     oops::Log::info() << obsname() << " :  no output" << std::endl;
   }
-  oops::Log::trace() << "ioda::ObsData destructor end" << std::endl;
+  oops::Log::trace() << "ObsData::ObsData destructor end" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -583,7 +583,7 @@ void ObsData::print(std::ostream & os) const {
  * \param[in] filename Path to input obs file
  */
 void ObsData::InitFromFile(const std::string & filename) {
-  oops::Log::trace() << "ioda::ObsData opening file: " << filename << std::endl;
+  oops::Log::trace() << "ObsData::InitFromFile opening file: " << filename << std::endl;
 
   // Open the file for reading and record nlocs and nvars from the file.
   std::unique_ptr<IodaIO> fileio {ioda::IodaIOfactory::Create(filename, "r")};
@@ -679,7 +679,7 @@ void ObsData::InitFromFile(const std::string & filename) {
           string_database_.StoreToDb(GroupName, VarName, IndexedShape, IndexedData);
         }
       } else if (commMPI_.rank() == 0) {
-        oops::Log::warning() << "ioda::IodaIO::InitFromFile: Unrecognized file data type: "
+        oops::Log::warning() << "ObsData::InitFromFile: Unrecognized file data type: "
                              << FileVarType << std::endl;
         oops::Log::warning() << "  File IO Currently supports data types int, float and char."
                              << std::endl;
@@ -688,7 +688,13 @@ void ObsData::InitFromFile(const std::string & filename) {
       }
     }
   }
-  oops::Log::trace() << "ioda::ObsSpaceContainer opening file ends " << std::endl;
+
+  if (fileio->missing_group_names()) {
+  oops::Log::warning() << "ObsData::InitFromFile:: WARNING: Input file contains variables "
+        << "that are missing group names (ie, no @GroupName suffix)" << std::endl
+        << "  Input file: " << filein_ << std::endl;
+  }
+  oops::Log::trace() << "ObsData::InitFromFile opening file ends " << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -936,7 +942,7 @@ void ObsData::BuildSortedObsGroups() {
 void ObsData::SaveToFile(const std::string & file_name) {
   // Open the file for output
   std::unique_ptr<IodaIO> fileio
-    {ioda::IodaIOfactory::Create(file_name, "W", nlocs_, nrecs_, nvars_)};
+    {ioda::IodaIOfactory::Create(file_name, "W")};
 
   // Write out every record, from every database container.
   for (ObsSpaceContainer<int>::VarIter ivar = int_database_.var_iter_begin();

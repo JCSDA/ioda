@@ -6,7 +6,6 @@ TestInput:
   filename: "Data/fileio.nc4"
   nvars_in_file: 5
   nlocs: 5
-  nrecs: 4
   nvars: 6
   variables:
     - "test_int@IntGroup"
@@ -24,5 +23,4 @@ TestInput:
 TestOutput:
   filename: "testoutput/fileio_out.nc4"
   nlocs: 8
-  nrecs: 2
   nvars: 5

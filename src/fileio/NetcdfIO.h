@@ -47,9 +47,7 @@ class NetcdfIO : public IodaIO,
    */
   static const std::string classname() {return "ioda::NetcdfIO";}
 
-  NetcdfIO(const std::string & FileName, const std::string & FileMode,
-           const std::size_t & Nlocs, const std::size_t & Nrecs,
-           const std::size_t & Nvars);
+  NetcdfIO(const std::string & FileName, const std::string & FileMode);
   ~NetcdfIO();
 
   void ReadVar(const std::string & GroupName, const std::string & VarName,
@@ -96,7 +94,8 @@ class NetcdfIO : public IodaIO,
   void ReplaceFillWithMissing(std::vector<DataType> & VarData, DataType NcFillValue);
 
   std::size_t GetMaxStringSize(const std::vector<std::string> & Strings);
-  std::vector<int> GetNcDimIds(const std::string & GroupName);
+  std::vector<int> GetNcDimIds(const std::string & GroupName,
+                               const std::vector<std::size_t> & VarShape);
 
   // Data members
   /*!
@@ -107,14 +106,6 @@ class NetcdfIO : public IodaIO,
    *          the netcdf file.
    */
   int ncid_;
-
-  /*!
-   * \brief count of undefined group names
-   *
-   * \details This data member holds a count of the number of variables in the
-   *          netcdf file that are missing a group name (@GroupName suffix).
-   */
-  std::size_t num_missing_gnames_;
 
   /*!
    * \brief offset time flag
