@@ -16,7 +16,11 @@
 namespace ioda {
 
 // -----------------------------------------------------------------------------
+IodaIO::IodaIO(const std::string & FileName, const std::string & FileMode) :
+           fname_(FileName), fmode_(FileMode), num_missing_gnames_(0) {
+}
 
+// -----------------------------------------------------------------------------
 IodaIO::~IodaIO() { }
 
 // -----------------------------------------------------------------------------
@@ -48,23 +52,21 @@ std::size_t IodaIO::nlocs() const {
 
 // -----------------------------------------------------------------------------
 /*!
- * \details This method returns the number of unique recoreds in the obs data.
- *          A record is an atomic unit that will remain intact during distribution
- *          across multiple process elements. An example is a single sounding in
- *          radiosonde obs data.
- */
-
-std::size_t IodaIO::nrecs() const {
-  return nrecs_;
-}
-
-// -----------------------------------------------------------------------------
-/*!
  * \details This method returns the number of unique variables in the obs data.
  */
 
 std::size_t IodaIO::nvars() const {
   return nvars_;
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns whether any group names were missing on variables
+ *          from the input file.
+ */
+
+bool IodaIO::missing_group_names() const {
+  return (num_missing_gnames_ > 0);
 }
 
 // -----------------------------------------------------------------------------
@@ -318,6 +320,24 @@ bool IodaIO::dim_exists(const std::string & name) {
 
 // -----------------------------------------------------------------------------
 /*!
+ * \details This method returns the begin iterator for the dimension container
+ */
+
+IodaIO::DimIter IodaIO::dim_begin() {
+  return dim_info_.begin();
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns the end iterator for the dimension container
+ */
+
+IodaIO::DimIter IodaIO::dim_end() {
+  return dim_info_.end();
+}
+
+// -----------------------------------------------------------------------------
+/*!
  * \details This method returns the dimension name given a dimension iterator.
  *
  * \param[in] idim Dimension iterator
@@ -427,6 +447,29 @@ int IodaIO::dim_name_id(const std::string & name) {
   }
 
   return dim_info_.find(name)->second.id;
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method extracts the group and variable names from
+ *          the given compound name.
+ *
+ * \param[in] Name Compound name (eg, Temperature@ObsValue)
+ * \param[out] GroupName Group name (eg, ObsValue)
+ * \param[out] VarName Variable name (eg, Temperature)
+ */
+
+void IodaIO::ExtractGrpVarName(const std::string & Name, std::string & GroupName,
+                               std::string & VarName) {
+  std::size_t Spos = Name.find("@");
+  if (Spos != Name.npos) {
+    GroupName = Name.substr(Spos+1);
+    VarName = Name.substr(0, Spos);
+  } else {
+    GroupName = "GroupUndefined";
+    VarName = Name;
+    num_missing_gnames_++;
+  }
 }
 
 }  // namespace ioda

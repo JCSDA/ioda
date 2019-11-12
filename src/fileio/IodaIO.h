@@ -36,11 +36,10 @@ namespace ioda {
  * number of variables. Each variable is a 1D vector that is nlocs long.
  * Variables can contain missing values.
  *
- * There are three dimensions defined in the file:
+ * There are two dimensions defined in the file:
  *
  *   nlocs: number of locations
  *   nvars: number of variables
- *   nrecs: number of records
  *
  * A record is an atomic unit that is to stay intact when distributing
  * observations across multiple processes.
@@ -51,7 +50,6 @@ namespace ioda {
  *         constructor via a call to the factory method Create in the class IodaIOfactory.
  *    2. The following data members are set according to the file mode
  *         * nlocs_
- *         * nrecs_
  *         * nvars_
  *         * grp_var_info_
  *
@@ -118,6 +116,8 @@ class IodaIO : public util::Printable {
     typedef std::map<std::string, DimInfoRec> DimInfoMap;
 
  public:
+    IodaIO(const std::string & FileName, const std::string & FileMode);
+
     virtual ~IodaIO() = 0;
 
     // Methods provided by subclasses
@@ -144,13 +144,14 @@ class IodaIO : public util::Printable {
                           const std::vector<std::size_t> & VarShape,
                           const std::vector<std::string> & VarData) = 0;
 
-    // Methods inherited from base class
+    // Methods defined in base class
     std::string fname() const;
     std::string fmode() const;
 
     std::size_t nlocs() const;
-    std::size_t nrecs() const;
     std::size_t nvars() const;
+
+    bool missing_group_names() const;
 
     // Group level iterator
     /*!
@@ -189,6 +190,9 @@ class IodaIO : public util::Printable {
 
     // Access to dimension information
     typedef DimInfoMap::const_iterator DimIter;
+    DimIter dim_begin();
+    DimIter dim_end();
+
     bool dim_exists(const std::string &);
 
     std::string dim_name(DimIter);
@@ -205,6 +209,9 @@ class IodaIO : public util::Printable {
     // Methods provided by subclasses
 
     // Methods inherited from base class
+
+    void ExtractGrpVarName(const std::string & Name, std::string & GroupName,
+                           std::string & VarName);
 
     // Data members
 
@@ -227,14 +234,17 @@ class IodaIO : public util::Printable {
     std::size_t nlocs_;
 
     /*!
-     * \brief number of unique records
-     */
-    std::size_t nrecs_;
-
-    /*!
      * \brief number of unique variables
      */
     std::size_t nvars_;
+
+    /*!
+     * \brief count of undefined group names
+     *
+     * \details This data member holds a count of the number of variables in the
+     *          netcdf file that are missing a group name (@GroupName suffix).
+     */
+    std::size_t num_missing_gnames_;
 
     /*!
      * \brief group-variable information map
