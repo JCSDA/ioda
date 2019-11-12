@@ -485,6 +485,42 @@ std::vector<int> NetcdfIO::GetNcDimIds(const std::string & GroupName,
 
 // -----------------------------------------------------------------------------
 /*!
+ * \brief beginning frame iterator
+ */
+
+IodaIO::FrameIter NetcdfIO::frame_begin() {
+  return frame_info_.begin();
+  }
+
+// -----------------------------------------------------------------------------
+/*!
+ * \brief ending frame iterator
+ */
+
+IodaIO::FrameIter NetcdfIO::frame_end() {
+  return frame_info_.end();
+  }
+
+// -----------------------------------------------------------------------------
+/*!
+ * \brief start of current frame
+ */
+
+std::size_t NetcdfIO::frame_start(IodaIO::FrameIter iframe) {
+  return iframe->start;
+  }
+
+// -----------------------------------------------------------------------------
+/*!
+ * \brief size of current frame
+ */
+
+std::size_t NetcdfIO::frame_size(IodaIO::FrameIter iframe) {
+  return iframe->size;
+  }
+
+// -----------------------------------------------------------------------------
+/*!
  * \brief print method for stream output
  *
  * \details This method is supplied for the Printable base class. It defines

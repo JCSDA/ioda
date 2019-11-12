@@ -73,6 +73,12 @@ class NetcdfIO : public IodaIO,
                 const std::vector<std::size_t> & VarShape,
                 const std::vector<std::string> & VarData);
 
+  IodaIO::FrameIter frame_begin();
+  IodaIO::FrameIter frame_end();
+
+  std::size_t frame_start(IodaIO::FrameIter);
+  std::size_t frame_size(IodaIO::FrameIter);
+
  private:
   // For the oops::Printable base class
   void print(std::ostream & os) const;
