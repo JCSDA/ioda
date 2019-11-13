@@ -15,6 +15,9 @@
 
 namespace ioda {
 
+/*! \brief Constant to be used for default maximum frame size */
+const std::size_t IODAIO_DEFAULT_FRAME_SIZE = 10000;
+
 /*!
  * \brief Factory class to instantiate objects of IodaIO subclasses.
  *

@@ -75,7 +75,8 @@ ObsData::ObsData(const eckit::Configuration & config, const eckit::mpi::Comm & c
       ABORT(ErrMsg);
     }
     filein_ = config.getString("ObsDataIn.obsfile");
-    in_max_frame_size_ = config.getUnsigned("ObsDataIn.max_frame_size", 10000);
+    in_max_frame_size_ = config.getUnsigned("ObsDataIn.max_frame_size",
+                                            IODAIO_DEFAULT_FRAME_SIZE);
     oops::Log::trace() << obsname_ << " file in = " << filein_ << std::endl;
     InitFromFile(filein_, in_max_frame_size_);
     if (obs_sort_variable_ != "") {
@@ -95,7 +96,8 @@ ObsData::ObsData(const eckit::Configuration & config, const eckit::mpi::Comm & c
   // Check to see if an output file has been requested.
   if (config.has("ObsDataOut.obsfile")) {
     std::string filename = config.getString("ObsDataOut.obsfile");
-    out_max_frame_size_ = config.getUnsigned("ObsDataOut.max_frame_size", 10000);
+    out_max_frame_size_ = config.getUnsigned("ObsDataOut.max_frame_size",
+                                             IODAIO_DEFAULT_FRAME_SIZE);
 
     // Find the left-most dot in the file name, and use that to pick off the file name
     // and file extension.

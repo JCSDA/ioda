@@ -73,13 +73,13 @@ class IodaIO : public util::Printable {
     // files. In the file, a vector of strings is stored as a character array (2D) whereas
     // internally, a vector of strings is stored in the std::vector<std::string> container
     // which is 1D.
-    typedef struct {
+    struct VarInfoRec {
       std::string dtype;
       std::size_t var_id;
       std::vector<std::size_t> file_shape;
       std::vector<std::size_t> shape;
       std::vector<std::string> dim_names;
-    } VarInfoRec;
+    };
 
     /*!
      * \brief variable information map
@@ -102,10 +102,10 @@ class IodaIO : public util::Printable {
     typedef std::map<std::string, VarInfoMap> GroupVarInfoMap;
 
     // Container for information about a dimension. Holds dimension id and size.
-    typedef struct {
+    struct DimInfoRec {
       std::size_t size;
       int id;
-    } DimInfoRec;
+    };
 
     /*!
      * \brief dimension information map
@@ -116,10 +116,14 @@ class IodaIO : public util::Printable {
     typedef std::map<std::string, DimInfoRec> DimInfoMap;
 
     // Container for information about frames.
-    typedef struct {
+    struct FrameInfoRec {
       std::size_t start;
       std::size_t size;
-    } FrameInfoRec;
+
+      // Constructor
+      FrameInfoRec(const std::size_t Start, const std::size_t Size) :
+          start(Start), size(Size) {}
+    };
 
     /*!
      * \brief dimension information map

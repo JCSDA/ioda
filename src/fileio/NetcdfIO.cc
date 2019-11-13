@@ -88,7 +88,7 @@ NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
     // Record the dimension ids and sizes in the dim_info_ container.
     // Save nlocs, nvars in data members.
     for (std::size_t i = 0; i < NcNdims; i++) {
-      char NcName[MAX_NC_NAME];
+      char NcName[NC_MAX_NAME+1];
       std::size_t NcSize;
       ErrorMsg = "NetcdfIO::NetcdfIO: Unable to read dimension number: " + std::to_string(i);
       CheckNcCall(nc_inq_dim(ncid_, i, NcName, &NcSize), ErrorMsg);
@@ -124,6 +124,7 @@ NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
     have_date_time_ = (nc_inq_varid(ncid_, "datetime@MetaData", &NcVarId) == NC_NOERR);
     have_offset_time_ = (nc_inq_varid(ncid_, "time@MetaData", &NcVarId) == NC_NOERR);
 
+    std::size_t MaxVarSize = 0;
     for (std::size_t ivar=0; ivar < NcNvars; ++ivar) {
       // nc variable dimension and type information
       char NcVname[NC_MAX_NAME+1];
@@ -146,17 +147,22 @@ NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
 
       // Collect the sizes for dimensions from the dim_info_ container.
       std::vector<std::size_t> NcDimSizes;
-      std::vector<std::size_t> VarShape;
       for (std::size_t j = 0; j < NcNdims; j++) {
           NcDimSizes.push_back(dim_id_size(NcDimIds[j]));
       }
       // Copy shape from NcDims to VarShape. If we have a string data type, then
       // copy only the first dimension size to VarShape since the internal variable
       // is a vector of strings, and the file variable is a 2D character array.
+      std::vector<std::size_t> VarShape;
       if (strcmp(NcDtypeName, "string") == 0) {
         VarShape.push_back(NcDimSizes[0]);
       } else {
         VarShape = NcDimSizes;
+      }
+
+      // Record the maximum variable size for the frame construction below.
+      if (VarShape[0] > MaxVarSize) {
+        MaxVarSize = VarShape[0];
       }
 
       // Record the variable info in the grp_var_into_ container.
@@ -188,6 +194,28 @@ NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
         grp_var_info_[GroupName][VarName].file_shape = NcDimSizes;
         grp_var_info_[GroupName][VarName].shape = VarShape;
       }
+    }
+
+    // Set up the frames based on the largest variable size (first dimension of each
+    // variable). The netcdf file doesn't really have frames per se, but we want to
+    // emulate frames to make access to files generic. The idea here is to divide the
+    // variable size up into max_frame_size_ pieces, but make the final frame size so
+    // that the total of all frame sizes equals the largest variable size.
+    std::size_t FrameStart = 0;
+    while (FrameStart < MaxVarSize) {
+      std::size_t FrameSize = max_frame_size_;
+      if ((FrameStart + FrameSize) > MaxVarSize) {
+        FrameSize = MaxVarSize - FrameStart;
+      }
+      IodaIO::FrameInfoRec Finfo(FrameStart, FrameSize);
+      frame_info_.push_back(Finfo);
+
+      FrameStart += max_frame_size_;
+    }
+
+    for (std::size_t i = 0; i < frame_info_.size(); ++i) {
+      std::cout << "DEBUG: frame_info_: " << i << " --> " << frame_info_[i].start << ", "
+                << frame_info_[i].size << std::endl;
     }
   }
 }
