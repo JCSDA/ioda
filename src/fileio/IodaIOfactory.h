@@ -35,7 +35,8 @@ class IodaIOfactory {
   ~IodaIOfactory() { }
 
   // Factory methods
-  static ioda::IodaIO* Create(const std::string & FileName, const std::string & FileMode);
+  static ioda::IodaIO* Create(const std::string & FileName, const std::string & FileMode,
+                              const std::size_t MaxFrameSize);
 };
 
 }  // namespace ioda

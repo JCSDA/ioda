@@ -54,6 +54,7 @@ void testConstructor() {
   const eckit::LocalConfiguration conf(::test::TestEnvironment::config());
 
   std::string FileName;
+  std::size_t MaxFrameSize;
   std::unique_ptr<ioda::IodaIO> TestIO;
 
   std::size_t Nlocs;
@@ -63,7 +64,8 @@ void testConstructor() {
 
   // Contructor in read mode
   FileName = conf.getString("TestInput.filename");
-  TestIO.reset(ioda::IodaIOfactory::Create(FileName, "r"));
+  MaxFrameSize = conf.getUnsigned("TestInput.max_frame_size", 10000);
+  TestIO.reset(ioda::IodaIOfactory::Create(FileName, "r", MaxFrameSize));
   EXPECT(TestIO.get());
 
   // Constructor in read mode is also responsible for setting nobs and nlocs
@@ -78,11 +80,12 @@ void testConstructor() {
 
   // Constructor in write mode
   FileName = conf.getString("TestOutput.filename");
+  MaxFrameSize = conf.getUnsigned("TestOutput.max_frame_size", 10000);
 
   ExpectedNlocs = conf.getInt("TestOutput.nlocs");
   ExpectedNvars = conf.getInt("TestOutput.nvars");
 
-  TestIO.reset(ioda::IodaIOfactory::Create(FileName, "W"));
+  TestIO.reset(ioda::IodaIOfactory::Create(FileName, "W", MaxFrameSize));
   EXPECT(TestIO.get());
   }
 
@@ -93,11 +96,13 @@ void testGrpVarIter() {
   std::vector<eckit::LocalConfiguration> obstypes;
 
   std::string FileName;
+  std::size_t MaxFrameSize;
   std::unique_ptr<ioda::IodaIO> TestIO;
 
   // Constructor in read mode will generate a group variable container.
   FileName = conf.getString("TestInput.filename");
-  TestIO.reset(ioda::IodaIOfactory::Create(FileName, "r"));
+  MaxFrameSize = conf.getUnsigned("TestInput.max_frame_size", 10000);
+  TestIO.reset(ioda::IodaIOfactory::Create(FileName, "r", MaxFrameSize));
   EXPECT(TestIO.get());
 
   // Test the iterators by walking through the entire list of variables
@@ -124,11 +129,13 @@ void testReadVar() {
   std::vector<std::string> GrpVarNames;
 
   std::string FileName;
+  std::size_t MaxFrameSize;
   std::string TestObsType;
   std::unique_ptr<ioda::IodaIO> TestIO;
 
   FileName = conf.getString("TestInput.filename");
-  TestIO.reset(ioda::IodaIOfactory::Create(FileName, "r"));
+  MaxFrameSize = conf.getUnsigned("TestInput.max_frame_size", 10000);
+  TestIO.reset(ioda::IodaIOfactory::Create(FileName, "r", MaxFrameSize));
 
   // Read in data from the file and check values.
   GrpVarNames = conf.getStringVector("TestInput.variables");
@@ -189,9 +196,10 @@ void testWriteVar() {
 
   // Try writing contrived data into the output file. One of each data type, and size.
   std::string FileName = conf.getString("TestOutput.filename");
+  std::size_t MaxFrameSize = conf.getUnsigned("TestOutput.max_frame_size", 10000);
   std::size_t ExpectedNlocs = conf.getInt("TestOutput.nlocs");
   std::size_t ExpectedNvars = conf.getInt("TestOutput.nvars");
-  TestIO.reset(ioda::IodaIOfactory::Create(FileName, "W"));
+  TestIO.reset(ioda::IodaIOfactory::Create(FileName, "W", MaxFrameSize));
 
   // Float data
   std::vector<float> ExpectedFloatData(ExpectedNlocs, 0.0);
@@ -245,7 +253,7 @@ void testWriteVar() {
   TestIO->WriteVar(String3GrpName, String3VarName, String3VarShape, ExpectedStrings3);
 
   // open the file we just created and see if it contains what we just wrote into it
-  TestIO.reset(ioda::IodaIOfactory::Create(FileName, "r"));
+  TestIO.reset(ioda::IodaIOfactory::Create(FileName, "r", MaxFrameSize));
 
   std::size_t TestNlocs = TestIO->nlocs();
   std::size_t TestNvars = TestIO->nvars();

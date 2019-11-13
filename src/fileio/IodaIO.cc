@@ -16,8 +16,10 @@
 namespace ioda {
 
 // -----------------------------------------------------------------------------
-IodaIO::IodaIO(const std::string & FileName, const std::string & FileMode) :
-           fname_(FileName), fmode_(FileMode), num_missing_gnames_(0) {
+IodaIO::IodaIO(const std::string & FileName, const std::string & FileMode,
+               const std::size_t MaxFrameSize) :
+           fname_(FileName), fmode_(FileMode), num_missing_gnames_(0),
+           max_frame_size_(MaxFrameSize) {
 }
 
 // -----------------------------------------------------------------------------

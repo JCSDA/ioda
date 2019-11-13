@@ -130,7 +130,8 @@ class IodaIO : public util::Printable {
     typedef std::vector<FrameInfoRec> FrameInfo;
 
  public:
-    IodaIO(const std::string & FileName, const std::string & FileMode);
+    IodaIO(const std::string & FileName, const std::string & FileMode,
+           const std::size_t MaxFrameSize);
 
     virtual ~IodaIO() = 0;
 
@@ -284,6 +285,11 @@ class IodaIO : public util::Printable {
      * \brief frame information vector
      */
     FrameInfo frame_info_;
+
+    /*!
+     * \brief maximum frame size
+     */
+    std::size_t max_frame_size_;
 };
 
 }  // namespace ioda

@@ -75,8 +75,9 @@ ObsData::ObsData(const eckit::Configuration & config, const eckit::mpi::Comm & c
       ABORT(ErrMsg);
     }
     filein_ = config.getString("ObsDataIn.obsfile");
+    in_max_frame_size_ = config.getUnsigned("ObsDataIn.max_frame_size", 10000);
     oops::Log::trace() << obsname_ << " file in = " << filein_ << std::endl;
-    InitFromFile(filein_);
+    InitFromFile(filein_, in_max_frame_size_);
     if (obs_sort_variable_ != "") {
       BuildSortedObsGroups();
     }
@@ -94,6 +95,7 @@ ObsData::ObsData(const eckit::Configuration & config, const eckit::mpi::Comm & c
   // Check to see if an output file has been requested.
   if (config.has("ObsDataOut.obsfile")) {
     std::string filename = config.getString("ObsDataOut.obsfile");
+    out_max_frame_size_ = config.getUnsigned("ObsDataOut.max_frame_size", 10000);
 
     // Find the left-most dot in the file name, and use that to pick off the file name
     // and file extension.
@@ -144,7 +146,7 @@ ObsData::~ObsData() {
   oops::Log::trace() << "ObsData::ObsData destructor begin" << std::endl;
   if (fileout_.size() != 0) {
     oops::Log::info() << obsname() << ": save database to " << fileout_ << std::endl;
-    SaveToFile(fileout_);
+    SaveToFile(fileout_, out_max_frame_size_);
   } else {
     oops::Log::info() << obsname() << " :  no output" << std::endl;
   }
@@ -582,11 +584,11 @@ void ObsData::print(std::ostream & os) const {
  *
  * \param[in] filename Path to input obs file
  */
-void ObsData::InitFromFile(const std::string & filename) {
+void ObsData::InitFromFile(const std::string & filename, const std::size_t MaxFrameSize) {
   oops::Log::trace() << "ObsData::InitFromFile opening file: " << filename << std::endl;
 
   // Open the file for reading and record nlocs and nvars from the file.
-  std::unique_ptr<IodaIO> fileio {ioda::IodaIOfactory::Create(filename, "r")};
+  std::unique_ptr<IodaIO> fileio {ioda::IodaIOfactory::Create(filename, "r", MaxFrameSize)};
   gnlocs_ = fileio->nlocs();
 
   // Create the MPI distribution
@@ -939,10 +941,10 @@ void ObsData::BuildSortedObsGroups() {
  *
  * \param[in] file_name Path to output obs file.
  */
-void ObsData::SaveToFile(const std::string & file_name) {
+void ObsData::SaveToFile(const std::string & file_name, const std::size_t MaxFrameSize) {
   // Open the file for output
   std::unique_ptr<IodaIO> fileio
-    {ioda::IodaIOfactory::Create(file_name, "W")};
+    {ioda::IodaIOfactory::Create(file_name, "W", MaxFrameSize)};
 
   // Write out every record, from every database container.
   for (ObsSpaceContainer<int>::VarIter ivar = int_database_.var_iter_begin();
