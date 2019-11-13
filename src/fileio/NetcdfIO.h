@@ -47,7 +47,8 @@ class NetcdfIO : public IodaIO,
    */
   static const std::string classname() {return "ioda::NetcdfIO";}
 
-  NetcdfIO(const std::string & FileName, const std::string & FileMode);
+  NetcdfIO(const std::string & FileName, const std::string & FileMode,
+           const std::size_t MaxFrameSize);
   ~NetcdfIO();
 
   void ReadVar(const std::string & GroupName, const std::string & VarName,

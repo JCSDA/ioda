@@ -137,7 +137,7 @@ class ObsData : public oops::ObsSpaceBase {
   ObsData & operator= (const ObsData &);
 
   // Initialize the database from the input file
-  void InitFromFile(const std::string & filename);
+  void InitFromFile(const std::string & filename, const std::size_t MaxFrameSize);
   void GenMpiDistribution(const std::unique_ptr<IodaIO> & FileIO);
   void GenRecordNumbers(const std::unique_ptr<IodaIO> & FileIO,
                         std::vector<std::size_t> & Records) const;
@@ -162,7 +162,7 @@ class ObsData : public oops::ObsSpaceBase {
   static void ConvertVarType(const std::vector<FromType> & FromVar, std::vector<ToType> & ToVar);
 
   // Dump the database into the output file
-  void SaveToFile(const std::string & file_name);
+  void SaveToFile(const std::string & file_name, const std::size_t MaxFrameSize);
 
   // Methods for tranferring data from a variable into the database.
   template<typename VarType, typename DbType>
@@ -208,6 +208,12 @@ class ObsData : public oops::ObsSpaceBase {
 
   /*! \brief path to output file */
   std::string fileout_;
+
+  /*! \brief max frame size for input file */
+  std::size_t in_max_frame_size_;
+
+  /*! \brief max frame size for output file */
+  std::size_t out_max_frame_size_;
 
   /*! \brief indexes of locations to extract from the input obs file */
   std::vector<std::size_t> indx_;

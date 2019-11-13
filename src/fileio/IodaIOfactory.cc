@@ -22,9 +22,11 @@ namespace ioda {
  * \param[in] FileName Path to the obs file
  * \param[in] FileMode Mode in which to open the obs file, "r" for read, "w" for overwrite
  *            and existing file and "W" for create and write to a new file
+ * \param[in] MaxFrameSize  Maximum number of "rows" in a frame
  */
 
-IodaIO* IodaIOfactory::Create(const std::string & FileName, const std::string & FileMode) {
+IodaIO* IodaIOfactory::Create(const std::string & FileName, const std::string & FileMode,
+                              const std::size_t MaxFrameSize) {
   std::size_t Spos;
   std::string FileSuffix;
 
@@ -38,7 +40,7 @@ IodaIO* IodaIOfactory::Create(const std::string & FileName, const std::string & 
 
   // Create the appropriate object depending on the file suffix
   if ((FileSuffix == "nc4") || (FileSuffix == "nc")) {
-    return new ioda::NetcdfIO(FileName, FileMode);
+    return new ioda::NetcdfIO(FileName, FileMode, MaxFrameSize);
   } else {
     oops::Log::error() << "ioda::IodaIO::Create: Unrecognized file suffix: "
                        << FileName << std::endl;

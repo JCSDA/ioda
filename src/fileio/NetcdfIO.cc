@@ -45,8 +45,9 @@ namespace ioda {
  *                      and "W" for create and write to a new file.
  */
 
-NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode) :
-               IodaIO(FileName, FileMode), have_offset_time_(false),
+NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
+                   const std::size_t MaxFrameSize) :
+               IodaIO(FileName, FileMode, MaxFrameSize), have_offset_time_(false),
                have_date_time_(false) {
   oops::Log::trace() << __func__ << " fname_: " << fname_ << " fmode_: " << fmode_ << std::endl;
 
