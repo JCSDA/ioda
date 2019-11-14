@@ -7,6 +7,7 @@
 
 #include "ioda/obsspace_f.h"
 
+#include <algorithm>
 #include <cstring>
 #include <string>
 #include <vector>
@@ -95,7 +96,9 @@ void obsspace_get_int32_f(const ObsSpace & obss, const char * group, const char 
   if (std::string(group) == "VarMetaData") ASSERT(length >= obss.nvars());
   else
     ASSERT(length >= obss.nlocs());
-  obss.get_db(std::string(group), std::string(vname), length, vec);
+  std::vector<int32_t> vdata(length);
+  obss.get_db(std::string(group), std::string(vname), length, vdata);
+  std::copy(vdata.begin(), vdata.end(), vec);
 }
 // -----------------------------------------------------------------------------
 void obsspace_get_int64_f(const ObsSpace & obss, const char * group, const char * vname,
@@ -119,7 +122,9 @@ void obsspace_get_real64_f(const ObsSpace & obss, const char * group, const char
   if (std::string(group) == "VarMetaData") ASSERT(length >= obss.nvars());
   else
     ASSERT(length >= obss.nlocs());
-  obss.get_db(std::string(group), std::string(vname), length, vec);
+  std::vector<double> vdata(length);
+  obss.get_db(std::string(group), std::string(vname), length, vdata);
+  std::copy(vdata.begin(), vdata.end(), vec);
 }
 // -----------------------------------------------------------------------------
 void obsspace_get_datetime_f(const ObsSpace & obss, const char * group, const char * vname,
@@ -132,7 +137,7 @@ void obsspace_get_datetime_f(const ObsSpace & obss, const char * group, const ch
   // vector which are then returned.
   util::DateTime temp_dt("0000-01-01T00:00:00Z");
   std::vector<util::DateTime> dt_vect(length, temp_dt);
-  obss.get_db(std::string(group), std::string(vname), length, dt_vect.data());
+  obss.get_db(std::string(group), std::string(vname), length, dt_vect);
 
   // Convert to date and time values. The DateTime utilities can return year, month,
   // day, hour, minute second.
@@ -154,7 +159,9 @@ void obsspace_put_int32_f(ObsSpace & obss, const char * group, const char * vnam
   if (std::string(group) == "VarMetaData") ASSERT(length >= obss.nvars());
   else
     ASSERT(length >= obss.nlocs());
-  obss.put_db(std::string(group), std::string(vname), length, vec);
+  std::vector<int32_t> vdata;
+  vdata.assign(vec, vec + length);
+  obss.put_db(std::string(group), std::string(vname), length, vdata);
 }
 // -----------------------------------------------------------------------------
 void obsspace_put_int64_f(ObsSpace & obss, const char * group, const char * vname,
@@ -178,7 +185,9 @@ void obsspace_put_real64_f(ObsSpace & obss, const char * group, const char * vna
   if (std::string(group) == "VarMetaData") ASSERT(length >= obss.nvars());
   else
     ASSERT(length >= obss.nlocs());
-  obss.put_db(std::string(group), std::string(vname), length, vec);
+  std::vector<double> vdata;
+  vdata.assign(vec, vec + length);
+  obss.put_db(std::string(group), std::string(vname), length, vdata);
 }
 // -----------------------------------------------------------------------------
 
