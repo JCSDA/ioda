@@ -82,26 +82,26 @@ class ObsData : public oops::ObsSpaceBase {
   bool has(const std::string &, const std::string &) const;
 
   void get_db(const std::string & group, const std::string & name,
-              const std::size_t vsize, int vdata[]) const;
+              const std::size_t vsize, std::vector<int> & vdata) const;
   void get_db(const std::string & group, const std::string & name,
-              const std::size_t vsize, float vdata[]) const;
+              const std::size_t vsize, std::vector<float> & vdata) const;
   void get_db(const std::string & group, const std::string & name,
-              const std::size_t vsize, double vdata[]) const;
+              const std::size_t vsize, std::vector<double> & vdata) const;
   void get_db(const std::string & group, const std::string & name,
-              const std::size_t vsize, std::string vdata[]) const;
+              const std::size_t vsize, std::vector<std::string> & vdata) const;
   void get_db(const std::string & group, const std::string & name,
-              const std::size_t vsize, util::DateTime vdata[]) const;
+              const std::size_t vsize, std::vector<util::DateTime> & vdata) const;
 
   void put_db(const std::string & group, const std::string & name,
-              const std::size_t vsize, const int vdata[]);
+              const std::size_t vsize, const std::vector<int> & vdata);
   void put_db(const std::string & group, const std::string & name,
-              const std::size_t vsize, const float vdata[]);
+              const std::size_t vsize, const std::vector<float> & vdata);
   void put_db(const std::string & group, const std::string & name,
-              const std::size_t vsize, const double vdata[]);
+              const std::size_t vsize, const std::vector<double> & vdata);
   void put_db(const std::string & group, const std::string & name,
-              const std::size_t vsize, const std::string vdata[]);
+              const std::size_t vsize, const std::vector<std::string> & vdata);
   void put_db(const std::string & group, const std::string & name,
-              const std::size_t vsize, const util::DateTime vdata[]);
+              const std::size_t vsize, const std::vector<util::DateTime> & vdata);
 
   const KDTree & getKDTree();
 
@@ -149,9 +149,9 @@ class ObsData : public oops::ObsSpaceBase {
   void createKDTree();
 
   template<typename VarType>
-  void ApplyDistIndex(std::unique_ptr<VarType[]> & FullData,
+  void ApplyDistIndex(std::vector<VarType> & FullData,
                       const std::vector<std::size_t> & FullShape,
-                      std::unique_ptr<VarType[]> & IndexedData,
+                      std::vector<VarType> & IndexedData,
                       std::vector<std::size_t> & IndexedShape,
                       std::size_t & IndexedSize) const;
 
@@ -159,8 +159,7 @@ class ObsData : public oops::ObsSpaceBase {
 
   // Convert variable data types including the missing value marks
   template<typename FromType, typename ToType>
-  static void ConvertVarType(const FromType * FromVar, ToType * ToVar,
-                             const std::size_t VarSize);
+  static void ConvertVarType(const std::vector<FromType> & FromVar, std::vector<ToType> & ToVar);
 
   // Dump the database into the output file
   void SaveToFile(const std::string & file_name);
@@ -168,8 +167,8 @@ class ObsData : public oops::ObsSpaceBase {
   // Methods for tranferring data from a variable into the database.
   template<typename VarType, typename DbType>
   void ConvertStoreToDb(const std::string & GroupName, const std::string & VarName,
-                    const std::vector<std::size_t> & VarShape, const std::size_t VarSize,
-                    const VarType * VarData);
+                        const std::vector<std::size_t> & VarShape,
+                        const std::vector<VarType> & VarData);
 
   /*! \brief name of obs space */
   std::string obsname_;

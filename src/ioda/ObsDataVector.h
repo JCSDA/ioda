@@ -168,7 +168,7 @@ void ObsDataVector<DATATYPE>::read(const std::string & name, const bool fail) {
 
   for (size_t jv = 0; jv < nvars_; ++jv) {
     if (fail || obsdb_.has(name, obsvars_.variables()[jv])) {
-      obsdb_.get_db(name, obsvars_.variables()[jv], nlocs_, tmp.data());
+      obsdb_.get_db(name, obsvars_.variables()[jv], nlocs_, tmp);
       for (size_t jj = 0; jj < nlocs_; ++jj) {
         rows_.at(jv).at(jj) = tmp.at(jj);
       }
@@ -184,7 +184,7 @@ void ObsDataVector<DATATYPE>::save(const std::string & name) const {
     for (size_t jj = 0; jj < nlocs_; ++jj) {
       tmp.at(jj) = rows_.at(jv).at(jj);
     }
-    obsdb_.put_db(name, obsvars_.variables()[jv], nlocs_, tmp.data());
+    obsdb_.put_db(name, obsvars_.variables()[jv], nlocs_, tmp);
   }
 }
 // -----------------------------------------------------------------------------
