@@ -198,7 +198,7 @@ void ObsVector::read(const std::string & name, const bool fail) {
   std::vector<double> tmp(nlocs);
   for (std::size_t jv = 0; jv < nvars_; ++jv) {
     if (fail || obsdb_.has(name, obsvars_.variables()[jv])) {
-      obsdb_.get_db(name, obsvars_.variables()[jv], nlocs, tmp.data());
+      obsdb_.get_db(name, obsvars_.variables()[jv], nlocs, tmp);
 
       for (std::size_t jj = 0; jj < nlocs; ++jj) {
         std::size_t ivec = jv + (jj * nvars_);
@@ -222,7 +222,7 @@ void ObsVector::save(const std::string & name) const {
       tmp[jj] = values_[ivec];
     }
 
-    obsdb_.put_db(name, obsvars_.variables()[jv], nlocs, tmp.data());
+    obsdb_.put_db(name, obsvars_.variables()[jv], nlocs, tmp);
   }
 }
 // -----------------------------------------------------------------------------

@@ -202,45 +202,45 @@ ObsData::~ObsData() {
  * \param[in]  group Name of container group (ObsValue, ObsError, MetaData, etc.)
  * \param[in]  name  Name of container variable
  * \param[in]  vsize Total number of elements in variable (i.e., length of vdata)
- * \param[out] vdata Pointer to memory where container data is being transferred to
+ * \param[out] vdata Vector where container data is being transferred to
  */
 
 void ObsData::get_db(const std::string & group, const std::string & name,
-                      const std::size_t vsize, int vdata[]) const {
+                      const std::size_t vsize, std::vector<int> & vdata) const {
   std::string gname = (group.size() <= 0)? "GroupUndefined" : group;
   std::vector<std::size_t> vshape(1, vsize);
-  int_database_.LoadFromDb(gname, name, vshape, &vdata[0]);
+  int_database_.LoadFromDb(gname, name, vshape, vdata);
 }
 
 void ObsData::get_db(const std::string & group, const std::string & name,
-                      const std::size_t vsize, float vdata[]) const {
+                      const std::size_t vsize, std::vector<float> & vdata) const {
   std::string gname = (group.size() <= 0)? "GroupUndefined" : group;
   std::vector<std::size_t> vshape(1, vsize);
-  float_database_.LoadFromDb(gname, name, vshape, &vdata[0]);
+  float_database_.LoadFromDb(gname, name, vshape, vdata);
 }
 
 void ObsData::get_db(const std::string & group, const std::string & name,
-                      const std::size_t vsize, double vdata[]) const {
+                      const std::size_t vsize, std::vector<double> & vdata) const {
   std::string gname = (group.size() <= 0)? "GroupUndefined" : group;
   std::vector<std::size_t> vshape(1, vsize);
   // load the float values from the database and convert to double
-  std::unique_ptr<float[]> FloatData(new float[vsize]);
-  float_database_.LoadFromDb(gname, name, vshape, FloatData.get());
-  ConvertVarType<float, double>(FloatData.get(), &vdata[0], vsize);
+  std::vector<float> FloatData(vsize, 0.0);
+  float_database_.LoadFromDb(gname, name, vshape, FloatData);
+  ConvertVarType<float, double>(FloatData, vdata);
 }
 
 void ObsData::get_db(const std::string & group, const std::string & name,
-                      const std::size_t vsize, std::string vdata[]) const {
+                      const std::size_t vsize, std::vector<std::string> & vdata) const {
   std::string gname = (group.size() <= 0)? "GroupUndefined" : group;
   std::vector<std::size_t> vshape(1, vsize);
-  string_database_.LoadFromDb(gname, name, vshape, &vdata[0]);
+  string_database_.LoadFromDb(gname, name, vshape, vdata);
 }
 
 void ObsData::get_db(const std::string & group, const std::string & name,
-                      const std::size_t vsize, util::DateTime vdata[]) const {
+                      const std::size_t vsize, std::vector<util::DateTime> & vdata) const {
   std::string gname = (group.size() <= 0)? "GroupUndefined" : group;
   std::vector<std::size_t> vshape(1, vsize);
-  datetime_database_.LoadFromDb(gname, name, vshape, &vdata[0]);
+  datetime_database_.LoadFromDb(gname, name, vshape, vdata);
 }
 
 // -----------------------------------------------------------------------------
@@ -255,45 +255,45 @@ void ObsData::get_db(const std::string & group, const std::string & name,
  * \param[in]  group Name of container group (ObsValue, ObsError, MetaData, etc.)
  * \param[in]  name  Name of container variable
  * \param[in]  vsize Total number of elements in variable (i.e., length of vdata)
- * \param[out] vdata Pointer to memory where container data is being transferred to
+ * \param[out] vdata Vector where container data is being transferred from
  */
 
 void ObsData::put_db(const std::string & group, const std::string & name,
-                      const std::size_t vsize, const int vdata[]) {
+                      const std::size_t vsize, const std::vector<int> & vdata) {
   std::string gname = (group.size() <= 0)? "GroupUndefined" : group;
   std::vector<std::size_t> vshape(1, vsize);
-  int_database_.StoreToDb(gname, name, vshape, &vdata[0]);
+  int_database_.StoreToDb(gname, name, vshape, vdata);
 }
 
 void ObsData::put_db(const std::string & group, const std::string & name,
-                      const std::size_t vsize, const float vdata[]) {
+                      const std::size_t vsize, const std::vector<float> & vdata) {
   std::string gname = (group.size() <= 0)? "GroupUndefined" : group;
   std::vector<std::size_t> vshape(1, vsize);
-  float_database_.StoreToDb(gname, name, vshape, &vdata[0]);
+  float_database_.StoreToDb(gname, name, vshape, vdata);
 }
 
 void ObsData::put_db(const std::string & group, const std::string & name,
-                      const std::size_t vsize, const double vdata[]) {
+                      const std::size_t vsize, const std::vector<double> & vdata) {
   std::string gname = (group.size() <= 0)? "GroupUndefined" : group;
   std::vector<std::size_t> vshape(1, vsize);
   // convert to float, then load into the database
-  std::unique_ptr<float[]> FloatData(new float[vsize]);
-  ConvertVarType<double, float>(&vdata[0], FloatData.get(), vsize);
-  float_database_.StoreToDb(gname, name, vshape, FloatData.get());
+  std::vector<float> FloatData(vsize);
+  ConvertVarType<double, float>(vdata, FloatData);
+  float_database_.StoreToDb(gname, name, vshape, FloatData);
 }
 
 void ObsData::put_db(const std::string & group, const std::string & name,
-                      const std::size_t vsize, const std::string vdata[]) {
+                      const std::size_t vsize, const std::vector<std::string> & vdata) {
   std::string gname = (group.size() <= 0)? "GroupUndefined" : group;
   std::vector<std::size_t> vshape(1, vsize);
-  string_database_.StoreToDb(gname, name, vshape, &vdata[0]);
+  string_database_.StoreToDb(gname, name, vshape, vdata);
 }
 
 void ObsData::put_db(const std::string & group, const std::string & name,
-                      const std::size_t vsize, const util::DateTime vdata[]) {
+                      const std::size_t vsize, const std::vector<util::DateTime> & vdata) {
   std::string gname = (group.size() <= 0)? "GroupUndefined" : group;
   std::vector<std::size_t> vshape(1, vsize);
-  datetime_database_.StoreToDb(gname, name, vshape, &vdata[0]);
+  datetime_database_.StoreToDb(gname, name, vshape, vdata);
 }
 
 // -----------------------------------------------------------------------------
@@ -552,12 +552,12 @@ void ObsData::generateDistribution(const eckit::Configuration & conf) {
     obs_datetimes[ii] = this->windowStart() + OffsetDt;
   }
 
-  put_db("MetaData", "datetime", nlocs_, obs_datetimes.data());
-  put_db("MetaData", "latitude", nlocs_, latitude.data());
-  put_db("MetaData", "longitude", nlocs_, longitude.data());
+  put_db("MetaData", "datetime", nlocs_, obs_datetimes);
+  put_db("MetaData", "latitude", nlocs_, latitude);
+  put_db("MetaData", "longitude", nlocs_, longitude);
   for (std::size_t ivar = 0; ivar < nvars_; ivar++) {
     std::vector<float> obserr(nlocs_, err[ivar]);
-    put_db("ObsError", obsvars_[ivar], nlocs_, obserr.data());
+    put_db("ObsError", obsvars_[ivar], nlocs_, obserr);
   }
 }
 
@@ -624,71 +624,59 @@ void ObsData::InitFromFile(const std::string & filename) {
 
       // Read the variable from the file and transfer it to the database.
       if (FileVarType == "int") {
-        std::unique_ptr<int[]> FileData(new int[VarSize]);
-        fileio->ReadVar(GroupName, VarName, VarShape, FileData.get());
+        std::vector<int> FileData(VarSize);
+        fileio->ReadVar(GroupName, VarName, VarShape, FileData);
 
-        std::unique_ptr<int[]> IndexedData;
+        std::vector<int> IndexedData;
         std::vector<std::size_t> IndexedShape;
         std::size_t IndexedSize;
         ApplyDistIndex<int>(FileData, VarShape, IndexedData, IndexedShape, IndexedSize);
-        int_database_.StoreToDb(GroupName, VarName, IndexedShape, IndexedData.get());
+        int_database_.StoreToDb(GroupName, VarName, IndexedShape, IndexedData);
       } else if (FileVarType == "float") {
-        std::unique_ptr<float[]> FileData(new float[VarSize]);
-        fileio->ReadVar(GroupName, VarName, VarShape, FileData.get());
+        std::vector<float> FileData(VarSize);
+        fileio->ReadVar(GroupName, VarName, VarShape, FileData);
 
-        std::unique_ptr<float[]> IndexedData;
+        std::vector<float> IndexedData;
         std::vector<std::size_t> IndexedShape;
         std::size_t IndexedSize;
         ApplyDistIndex<float>(FileData, VarShape, IndexedData, IndexedShape, IndexedSize);
 
         if (DbVarType == "int") {
-          ConvertStoreToDb<float, int>(GroupName, VarName, IndexedShape,
-                                     IndexedSize, IndexedData.get());
+          ConvertStoreToDb<float, int>(GroupName, VarName, IndexedShape, IndexedData);
         } else {
-          float_database_.StoreToDb(GroupName, VarName, IndexedShape, IndexedData.get());
+          float_database_.StoreToDb(GroupName, VarName, IndexedShape, IndexedData);
         }
       } else if (FileVarType == "double") {
         // Convert double to float before storing into the database.
-        std::unique_ptr<double[]> FileData(new double[VarSize]);
-        fileio->ReadVar(GroupName, VarName, VarShape, FileData.get());
+        std::vector<double> FileData(VarSize);
+        fileio->ReadVar(GroupName, VarName, VarShape, FileData);
 
-        std::unique_ptr<double[]> IndexedData;
+        std::vector<double> IndexedData;
         std::vector<std::size_t> IndexedShape;
         std::size_t IndexedSize;
         ApplyDistIndex<double>(FileData, VarShape, IndexedData, IndexedShape, IndexedSize);
 
-        ConvertStoreToDb<double, float>(GroupName, VarName, IndexedShape,
-                                     IndexedSize, IndexedData.get());
-      } else if (FileVarType == "char") {
-        // Convert the char array to a vector of strings. If we are working
-        // on the variable "datetime", then convert the strings to DateTime
-        // objects.
-        std::unique_ptr<char[]> FileData(new char[VarSize]);
-        fileio->ReadVar(GroupName, VarName, VarShape, FileData.get());
+        ConvertStoreToDb<double, float>(GroupName, VarName, IndexedShape, IndexedData);
+      } else if (FileVarType == "string") {
+        // If we are working on the variable "datetime", convert the strings
+        // to DateTime objects.
+        std::vector<std::string> FileData(VarSize);
+        fileio->ReadVar(GroupName, VarName, VarShape, FileData);
 
-        std::unique_ptr<char[]> IndexedData;
+        std::vector<std::string> IndexedData;
         std::vector<std::size_t> IndexedShape;
         std::size_t IndexedSize;
-        ApplyDistIndex<char>(FileData, VarShape, IndexedData, IndexedShape, IndexedSize);
-
-        std::vector<std::string> StringData =
-               CharArrayToStringVector(IndexedData.get(), IndexedShape);
-        std::vector<std::size_t> AdjVarShape;
-        std::size_t AdjVarSize = 1;
-        for (std::size_t j = 0; j < (IndexedShape.size()-1); j++) {
-          AdjVarShape.push_back(IndexedShape[j]);
-          AdjVarSize *= IndexedShape[j];
-        }
+        ApplyDistIndex<std::string>(FileData, VarShape, IndexedData, IndexedShape, IndexedSize);
 
         if (VarName == "datetime") {
-          std::vector<util::DateTime> DtData(AdjVarSize);
-          for (std::size_t j = 0; j < AdjVarSize; j++) {
-            util::DateTime TempDt(StringData[j]);
+          std::vector<util::DateTime> DtData(IndexedSize);
+          for (std::size_t j = 0; j < IndexedSize; j++) {
+            util::DateTime TempDt(IndexedData[j]);
             DtData[j] = TempDt;
           }
-          datetime_database_.StoreToDb(GroupName, VarName, AdjVarShape, DtData.data());
+          datetime_database_.StoreToDb(GroupName, VarName, IndexedShape, DtData);
         } else {
-          string_database_.StoreToDb(GroupName, VarName, AdjVarShape, StringData.data());
+          string_database_.StoreToDb(GroupName, VarName, IndexedShape, IndexedData);
         }
       } else if (commMPI_.rank() == 0) {
         oops::Log::warning() << "ioda::IodaIO::InitFromFile: Unrecognized file data type: "
@@ -783,17 +771,16 @@ void ObsData::GenRecordNumbers(const std::unique_ptr<IodaIO> & FileIO,
 
     if (VarType == "int") {
       std::vector<int> FileData(VarSize);
-      FileIO->ReadVar(GroupName, VarName, VarShape, FileData.data());
+      FileIO->ReadVar(GroupName, VarName, VarShape, FileData);
       GenRnumsFromVar<int>(FileData, Records);
     } else if (VarType == "float") {
       std::vector<float> FileData(VarSize);
-      FileIO->ReadVar(GroupName, VarName, VarShape, FileData.data());
+      FileIO->ReadVar(GroupName, VarName, VarShape, FileData);
       GenRnumsFromVar<float>(FileData, Records);
-    } else if (VarType == "char") {
-      std::vector<char> FileData(VarSize);
-      FileIO->ReadVar(GroupName, VarName, VarShape, FileData.data());
-      std::vector<std::string> StringData = CharArrayToStringVector(FileData.data(), VarShape);
-      GenRnumsFromVar<std::string>(StringData, Records);
+    } else if (VarType == "string") {
+      std::vector<std::string> FileData(VarSize);
+      FileIO->ReadVar(GroupName, VarName, VarShape, FileData);
+      GenRnumsFromVar<std::string>(FileData, Records);
     }
   }
 }
@@ -847,8 +834,8 @@ void ObsData::GenRnumsFromVar(const std::vector<DATATYPE> & VarData,
 void ObsData::ApplyTimingWindow(const std::unique_ptr<IodaIO> & FileIO) {
   // Read in the datetime values and filter out any variables outside the
   // timing window.
-  std::unique_ptr<char[]> DtCharArray(new char[gnlocs_ * 20]);
-  std::vector<std::size_t> DtShape{ gnlocs_, 20 };
+  std::vector<std::string> DtStrings(gnlocs_);
+  std::vector<std::size_t> DtShape(1, gnlocs_);
 
   // Look for datetime@MetaData first, then datetime@GroupUndefined
   std::string DtGroupName = "MetaData";
@@ -860,9 +847,7 @@ void ObsData::ApplyTimingWindow(const std::unique_ptr<IodaIO> & FileIO) {
       ABORT(ErrorMsg);
     }
   }
-  FileIO->ReadVar(DtGroupName, DtVarName, DtShape, DtCharArray.get());
-  std::vector<std::string> DtStrings =
-           CharArrayToStringVector(DtCharArray.get(), DtShape);
+  FileIO->ReadVar(DtGroupName, DtVarName, DtShape, DtStrings);
 
   std::size_t Index;
   std::size_t RecNum;
@@ -903,12 +888,12 @@ void ObsData::BuildSortedObsGroups() {
   std::vector<float> SortValues(nlocs_);
   if (obs_sort_variable_ == "datetime") {
     std::vector<util::DateTime> Dates(nlocs_);
-    get_db("MetaData", obs_sort_variable_, nlocs_, Dates.data());
+    get_db("MetaData", obs_sort_variable_, nlocs_, Dates);
     for (std::size_t iloc = 0; iloc < nlocs_; iloc++) {
       SortValues[iloc] = (Dates[iloc] - Dates[0]).toSeconds();
     }
   } else {
-    get_db("MetaData", obs_sort_variable_, nlocs_, SortValues.data());
+    get_db("MetaData", obs_sort_variable_, nlocs_, SortValues);
   }
 
   // Construct a temporary structure to do the sorting, then transfer the results
@@ -961,9 +946,9 @@ void ObsData::SaveToFile(const std::string & file_name) {
     std::vector<std::size_t> VarShape = int_database_.var_iter_shape(ivar);
     std::size_t VarSize = int_database_.var_iter_size(ivar);
 
-    std::unique_ptr<int[]> VarData(new int[VarSize]);
-    int_database_.LoadFromDb(GroupName, VarName, VarShape, VarData.get());
-    fileio->WriteVar(GroupName, VarName, VarShape, VarData.get());
+    std::vector<int> VarData(VarSize);
+    int_database_.LoadFromDb(GroupName, VarName, VarShape, VarData);
+    fileio->WriteVar(GroupName, VarName, VarShape, VarData);
   }
 
   for (ObsSpaceContainer<float>::VarIter ivar = float_database_.var_iter_begin();
@@ -973,9 +958,9 @@ void ObsData::SaveToFile(const std::string & file_name) {
     std::vector<std::size_t> VarShape = float_database_.var_iter_shape(ivar);
     std::size_t VarSize = float_database_.var_iter_size(ivar);
 
-    std::unique_ptr<float[]> VarData(new float[VarSize]);
-    float_database_.LoadFromDb(GroupName, VarName, VarShape, VarData.get());
-    fileio->WriteVar(GroupName, VarName, VarShape, VarData.get());
+    std::vector<float> VarData(VarSize);
+    float_database_.LoadFromDb(GroupName, VarName, VarShape, VarData);
+    fileio->WriteVar(GroupName, VarName, VarShape, VarData);
   }
 
   for (ObsSpaceContainer<std::string>::VarIter ivar = string_database_.var_iter_begin();
@@ -986,13 +971,8 @@ void ObsData::SaveToFile(const std::string & file_name) {
     std::size_t VarSize = string_database_.var_iter_size(ivar);
 
     std::vector<std::string> VarData(VarSize, "");
-    string_database_.LoadFromDb(GroupName, VarName, VarShape, VarData.data());
-    // Get the shape needed for the character array, which will be a 2D array.
-    // The total number of char elelments will be CharShape[0] * CharShape[1].
-    std::vector<std::size_t> CharShape = CharShapeFromStringVector(VarData);
-    std::unique_ptr<char[]> CharData(new char[CharShape[0] * CharShape[1]]);
-    StringVectorToCharArray(VarData, CharShape, CharData.get());
-    fileio->WriteVar(GroupName, VarName, CharShape, CharData.get());
+    string_database_.LoadFromDb(GroupName, VarName, VarShape, VarData);
+    fileio->WriteVar(GroupName, VarName, VarShape, VarData);
   }
 
   for (ObsSpaceContainer<util::DateTime>::VarIter ivar = datetime_database_.var_iter_begin();
@@ -1004,17 +984,14 @@ void ObsData::SaveToFile(const std::string & file_name) {
 
     util::DateTime TempDt("0000-01-01T00:00:00Z");
     std::vector<util::DateTime> VarData(VarSize, TempDt);
-    datetime_database_.LoadFromDb(GroupName, VarName, VarShape, VarData.data());
+    datetime_database_.LoadFromDb(GroupName, VarName, VarShape, VarData);
 
     // Convert the DateTime vector to a string vector, then save into the file.
     std::vector<std::string> StringVector(VarSize, "");
     for (std::size_t i = 0; i < VarSize; i++) {
       StringVector[i] = VarData[i].toString();
     }
-    std::vector<std::size_t> CharShape = CharShapeFromStringVector(StringVector);
-    std::unique_ptr<char[]> CharData(new char[CharShape[0] * CharShape[1]]);
-    StringVectorToCharArray(StringVector, CharShape, CharData.get());
-    fileio->WriteVar(GroupName, VarName, CharShape, CharData.get());
+    fileio->WriteVar(GroupName, VarName, VarShape, StringVector);
   }
 }
 
@@ -1035,8 +1012,8 @@ void ObsData::SaveToFile(const std::string & file_name) {
  */
 template<typename VarType, typename DbType>
 void ObsData::ConvertStoreToDb(const std::string & GroupName, const std::string & VarName,
-                   const std::vector<std::size_t> & VarShape, const std::size_t VarSize,
-                   const VarType * VarData) {
+                               const std::vector<std::size_t> & VarShape,
+                               const std::vector<VarType> & VarData) {
   // Print a warning so we know to fix this situation. Limit the warnings to one per
   // ObsData instantiation (roughly one per file).
   std::string VarTypeName = TypeIdName(typeid(VarType));
@@ -1048,9 +1025,9 @@ void ObsData::ConvertStoreToDb(const std::string & GroupName, const std::string 
                          << "  Input file: " << filein_ << std::endl << std::endl;
   }
 
-  std::unique_ptr<DbType[]> DbData(new DbType[VarSize]);
-  ConvertVarType<VarType, DbType>(VarData, DbData.get(), VarSize);
-  put_db(GroupName, VarName, VarSize, DbData.get());
+  std::vector<DbType> DbData(VarData.size());
+  ConvertVarType<VarType, DbType>(VarData, DbData);
+  put_db(GroupName, VarName, VarData.size(), DbData);
 }
 
 // -----------------------------------------------------------------------------
@@ -1068,9 +1045,9 @@ void ObsData::ConvertStoreToDb(const std::string & GroupName, const std::string 
  * \param[out] IndexedSize  Total number of elements in IndexedData
  */
 template<typename VarType>
-void ObsData::ApplyDistIndex(std::unique_ptr<VarType[]> & FullData,
+void ObsData::ApplyDistIndex(std::vector<VarType> & FullData,
                               const std::vector<std::size_t> & FullShape,
-                              std::unique_ptr<VarType[]> & IndexedData,
+                              std::vector<VarType> & IndexedData,
                               std::vector<std::size_t> & IndexedShape,
                               std::size_t & IndexedSize) const {
   IndexedShape = FullShape;
@@ -1092,12 +1069,11 @@ void ObsData::ApplyDistIndex(std::unique_ptr<VarType[]> & FullData,
       }
     }
 
-    IndexedData.reset(new VarType[IndexedSize]);
+    IndexedData.reserve(IndexedSize);
     for (std::size_t i = 0; i < IndexedShape[0]; i++) {
       for (std::size_t j = 0; j < IndexIncrement; j++) {
         std::size_t isrc = (indx_[i] * IndexIncrement) + j;
-        std::size_t idest = (i * IndexIncrement) + j;
-        IndexedData.get()[idest] = FullData.get()[isrc];
+        IndexedData.push_back(FullData[isrc]);
       }
     }
   } else {
@@ -1105,7 +1081,7 @@ void ObsData::ApplyDistIndex(std::unique_ptr<VarType[]> & FullData,
     for (std::size_t i = 0; i < IndexedShape.size(); i++) {
       IndexedSize *= IndexedShape[i];
     }
-    IndexedData.reset(FullData.release());
+    IndexedData = std::move(FullData);
   }
 }
 
@@ -1149,8 +1125,7 @@ std::string ObsData::DesiredVarType(std::string & GroupName, std::string & FileV
  * \param[in]  VarSize Total number of elements in FromVar and ToVar.
  */
 template<typename FromType, typename ToType>
-void ObsData::ConvertVarType(const FromType * FromVar, ToType * ToVar,
-                             const std::size_t VarSize) {
+void ObsData::ConvertVarType(const std::vector<FromType> & FromVar, std::vector<ToType> & ToVar) {
   std::string FromTypeName = TypeIdName(typeid(FromType));
   std::string ToTypeName = TypeIdName(typeid(ToType));
   const FromType FromMiss = util::missingValue(FromMiss);
@@ -1172,7 +1147,7 @@ void ObsData::ConvertVarType(const FromType * FromVar, ToType * ToVar,
                      (typeid(ToType) == typeid(double)));
 
   if (FromTypeOkay && ToTypeOkay) {
-    for (std::size_t i = 0; i < VarSize; i++) {
+    for (std::size_t i = 0; i < FromVar.size(); i++) {
       if (FromVar[i] == FromMiss) {
         ToVar[i] = ToMiss;
       } else {
@@ -1207,8 +1182,8 @@ void ObsData::createKDTree() {
   std::vector<float> lons(nlocs_);
 
   // Get latitudes and longitudes of all observations.
-  this -> get_db("MetaData", "longitude", nlocs_, lons.data());
-  this -> get_db("MetaData", "latitude", nlocs_, lats.data());
+  this -> get_db("MetaData", "longitude", nlocs_, lons);
+  this -> get_db("MetaData", "latitude", nlocs_, lats);
 
   // Define points list from lat/lon values
   typedef KDTree::PointType Point;

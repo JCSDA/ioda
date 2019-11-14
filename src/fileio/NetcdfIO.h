@@ -53,20 +53,27 @@ class NetcdfIO : public IodaIO,
   ~NetcdfIO();
 
   void ReadVar(const std::string & GroupName, const std::string & VarName,
-               const std::vector<std::size_t> & VarShape, int * VarData);
+               const std::vector<std::size_t> & VarShape,
+               std::vector<int> & VarData);
   void ReadVar(const std::string & GroupName, const std::string & VarName,
-               const std::vector<std::size_t> & VarShape, float * VarData);
+               const std::vector<std::size_t> & VarShape,
+               std::vector<float> & VarData);
   void ReadVar(const std::string & GroupName, const std::string & VarName,
-               const std::vector<std::size_t> & VarShape, double * VarData);
+               const std::vector<std::size_t> & VarShape,
+               std::vector<double> & VarData);
   void ReadVar(const std::string & GroupName, const std::string & VarName,
-               const std::vector<std::size_t> & VarShape, char * VarData);
+               const std::vector<std::size_t> & VarShape,
+               std::vector<std::string> & VarData);
 
   void WriteVar(const std::string & GroupName, const std::string & VarName,
-                const std::vector<std::size_t> & VarShape, int * VarData);
+                const std::vector<std::size_t> & VarShape,
+                const std::vector<int> & VarData);
   void WriteVar(const std::string & GroupName, const std::string & VarName,
-                const std::vector<std::size_t> & VarShape, float * VarData);
+                const std::vector<std::size_t> & VarShape,
+                const std::vector<float> & VarData);
   void WriteVar(const std::string & GroupName, const std::string & VarName,
-                const std::vector<std::size_t> & VarShape, char * VarData);
+                const std::vector<std::size_t> & VarShape,
+                const std::vector<std::string> & VarData);
 
  private:
   // For the oops::Printable base class
@@ -82,24 +89,14 @@ class NetcdfIO : public IodaIO,
 
   int GetStringDimBySize(const std::size_t DimSize);
 
-  void ReadConvertDateTime(std::string GroupName, std::string VarName, char * VarData);
+  void ReadConvertDateTime(std::string GroupName, std::string VarName,
+                           std::vector<std::string> & VarData);
 
   template <typename DataType>
-  void ReadVar_helper(const std::string & GroupName, const std::string & VarName,
-                      const std::vector<std::size_t> & VarShape, DataType * VarData);
+  void ReplaceFillWithMissing(std::vector<DataType> & VarData, DataType NcFillValue);
 
-  void ReadNcVarFill(const int & VarId, const std::string & VarName, int * VarData,
-                     int & FillValue);
-  void ReadNcVarFill(const int & VarId, const std::string & VarName, float * VarData,
-                     float & FillValue);
-  void ReadNcVarFill(const int & VarId, const std::string & VarName, double * VarData,
-                     double & FillValue);
-  void ReadNcVarFill(const int & VarId, const std::string & VarName, char * VarData,
-                     char & FillValue);
-
-  template <typename DataType>
-  void WriteVar_helper(const std::string & GroupName, const std::string & VarName,
-                       const std::vector<std::size_t> & VarShape, DataType * VarData);
+  std::size_t GetMaxStringSize(const std::vector<std::string> & Strings);
+  std::vector<int> GetNcDimIds(const std::string & GroupName);
 
   // Data members
   /*!
