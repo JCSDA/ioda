@@ -73,8 +73,8 @@ ObsSpace::ObsSpace(const ObsSpace & os,
     std::vector<float> lons(nlocs);
 
     // Get latitudes and longitudes of all observations.
-    obsspace_ -> get_db("MetaData", "longitude", nlocs, lons.data());
-    obsspace_ -> get_db("MetaData", "latitude",  nlocs, lats.data());
+    obsspace_ -> get_db("MetaData", "longitude", nlocs, lons);
+    obsspace_ -> get_db("MetaData", "latitude",  nlocs, lats);
 
     const double radiusEarth = 6.371e6;
     for (unsigned int jj = 0; jj < nlocs; ++jj) {
@@ -147,10 +147,10 @@ ObsSpace::~ObsSpace() {
 // -----------------------------------------------------------------------------
 
 void ObsSpace::get_db(const std::string & group, const std::string & name,
-                      const std::size_t vsize, int vdata[]) const {
+                      const std::size_t vsize, std::vector<int> & vdata) const {
   if ( isLocal_ ) {
     std::vector<int> vdataTmp(obsspace_ -> nlocs());
-    obsspace_->get_db(group, name, vdataTmp.size(), vdataTmp.data());
+    obsspace_->get_db(group, name, vdataTmp.size(), vdataTmp);
     for (unsigned int ii = 0; ii < localobs_.size(); ++ii) {
       vdata[ii] = vdataTmp[localobs_[ii]];
     }
@@ -162,10 +162,10 @@ void ObsSpace::get_db(const std::string & group, const std::string & name,
 // -----------------------------------------------------------------------------
 
 void ObsSpace::get_db(const std::string & group, const std::string & name,
-                      const std::size_t vsize, float vdata[]) const {
+                      const std::size_t vsize, std::vector<float> & vdata) const {
   if ( isLocal_ ) {
     std::vector<float> vdataTmp(obsspace_->nlocs());
-    obsspace_->get_db(group, name, vdataTmp.size(), vdataTmp.data());
+    obsspace_->get_db(group, name, vdataTmp.size(), vdataTmp);
     for (unsigned int ii = 0; ii < localobs_.size(); ++ii) {
       vdata[ii] = vdataTmp[localobs_[ii]];
     }
@@ -177,10 +177,10 @@ void ObsSpace::get_db(const std::string & group, const std::string & name,
 // -----------------------------------------------------------------------------
 
 void ObsSpace::get_db(const std::string & group, const std::string & name,
-                      const std::size_t vsize, double vdata[]) const {
+                      const std::size_t vsize, std::vector<double> & vdata) const {
   if ( isLocal_ ) {
     std::vector<double> vdataTmp(obsspace_->nlocs());
-    obsspace_->get_db(group, name, vdataTmp.size(), vdataTmp.data());
+    obsspace_->get_db(group, name, vdataTmp.size(), vdataTmp);
     for (unsigned int ii = 0; ii < localobs_.size(); ++ii) {
       vdata[ii] = vdataTmp[localobs_[ii]];
     }
@@ -192,10 +192,10 @@ void ObsSpace::get_db(const std::string & group, const std::string & name,
 // -----------------------------------------------------------------------------
 
 void ObsSpace::get_db(const std::string & group, const std::string & name,
-                      const std::size_t vsize, util::DateTime vdata[]) const {
+                      const std::size_t vsize, std::vector<util::DateTime> & vdata) const {
   if ( isLocal_ ) {
     std::vector<util::DateTime> vdataTmp(obsspace_->nlocs());
-    obsspace_->get_db(group, name, vdataTmp.size(), vdataTmp.data());
+    obsspace_->get_db(group, name, vdataTmp.size(), vdataTmp);
     for (unsigned int ii = 0; ii < localobs_.size(); ++ii) {
       vdata[ii] = vdataTmp[localobs_[ii]];
     }
@@ -207,28 +207,28 @@ void ObsSpace::get_db(const std::string & group, const std::string & name,
 // -----------------------------------------------------------------------------
 
 void ObsSpace::put_db(const std::string & group, const std::string & name,
-                      const std::size_t vsize, const int vdata[]) {
+                      const std::size_t vsize, const std::vector<int> & vdata) {
   obsspace_->put_db(group, name, vsize, vdata);
 }
 
 // -----------------------------------------------------------------------------
 
 void ObsSpace::put_db(const std::string & group, const std::string & name,
-                      const std::size_t vsize, const float vdata[]) {
+                      const std::size_t vsize, const std::vector<float> & vdata) {
   obsspace_->put_db(group, name, vsize, vdata);
 }
 
 // -----------------------------------------------------------------------------
 
 void ObsSpace::put_db(const std::string & group, const std::string & name,
-                      const std::size_t vsize, const double vdata[]) {
+                      const std::size_t vsize, const std::vector<double> & vdata) {
   obsspace_->put_db(group, name, vsize, vdata);
 }
 
 // -----------------------------------------------------------------------------
 
 void ObsSpace::put_db(const std::string & group, const std::string & name,
-                      const std::size_t vsize, const util::DateTime vdata[]) {
+                      const std::size_t vsize, const std::vector<util::DateTime> & vdata) {
   obsspace_->put_db(group, name, vsize, vdata);
 }
 

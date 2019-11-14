@@ -45,7 +45,7 @@ void StoreVarSegments(const std::string & GroupName, const std::string & VarName
   for (std::size_t i = 0; i < Starts.size(); ++i) {
     std::vector<VarType> VarSegment(VarData.begin() + Starts[i],
                                     VarData.begin() + Starts[i] + Counts[i]);
-    Container->StoreToDb(GroupName, VarName, VarShape, VarSegment.data(), Starts[i], Counts[i]);
+    Container->StoreToDb(GroupName, VarName, VarShape, VarSegment, Starts[i], Counts[i]);
   }
 }
 
@@ -59,7 +59,7 @@ void LoadVarSegments(const std::string & GroupName, const std::string & VarName,
                      std::unique_ptr<ioda::ObsSpaceContainer<VarType>> & Container) {
   for (std::size_t i = 0; i < Starts.size(); ++i) {
     std::vector<VarType> VarSegment(Counts[i]);
-    Container->LoadFromDb(GroupName, VarName, VarShape, VarSegment.data(), Starts[i], Counts[i]);
+    Container->LoadFromDb(GroupName, VarName, VarShape, VarSegment, Starts[i], Counts[i]);
     for (std::size_t j = 0; j < VarSegment.size(); ++j) {
       VarData[Starts[i]+j] = VarSegment[j];
     }
@@ -137,15 +137,15 @@ void testGrpVarIter() {
     if (VarTypeName == "int") {
       std::vector<int> StoreData = VarConfig[i].getIntVector("values");
       VarShape[0] = StoreData.size();
-      TestIntContainer->StoreToDb(GroupName, VarName, VarShape, StoreData.data());
+      TestIntContainer->StoreToDb(GroupName, VarName, VarShape, StoreData);
     } else if (VarTypeName == "float") {
       std::vector<float> StoreData = VarConfig[i].getFloatVector("values");
       VarShape[0] = StoreData.size();
-      TestFloatContainer->StoreToDb(GroupName, VarName, VarShape, StoreData.data());
+      TestFloatContainer->StoreToDb(GroupName, VarName, VarShape, StoreData);
     } else if (VarTypeName == "string") {
       std::vector<std::string> StoreData = VarConfig[i].getStringVector("values");
       VarShape[0] = StoreData.size();
-      TestStringContainer->StoreToDb(GroupName, VarName, VarShape, StoreData.data());
+      TestStringContainer->StoreToDb(GroupName, VarName, VarShape, StoreData);
     } else if (VarTypeName == "datetime") {
       std::vector<std::string> TempStoreData = VarConfig[i].getStringVector("values");
       std::vector<util::DateTime> StoreData(TempStoreData.size());
@@ -154,7 +154,7 @@ void testGrpVarIter() {
         StoreData[j] = TempDateTime;
       }
       VarShape[0] = StoreData.size();
-      TestDateTimeContainer->StoreToDb(GroupName, VarName, VarShape, StoreData.data());
+      TestDateTimeContainer->StoreToDb(GroupName, VarName, VarShape, StoreData);
     } else {
       oops::Log::debug() << "test::ObsSpaceContainer::testGrpVarIter: "
           << "container only supports data types int, float, string and datetime." << std::endl;
@@ -230,30 +230,30 @@ void testStoreLoad() {
     if (VarTypeName == "int") {
       std::vector<int> ExpectedIntData = VarConfig[i].getIntVector("values");
       VarShape[0] = ExpectedIntData.size();
-      TestIntContainer->StoreToDb(GroupName, VarName, VarShape, ExpectedIntData.data());
+      TestIntContainer->StoreToDb(GroupName, VarName, VarShape, ExpectedIntData);
 
       std::vector<int> TestIntData(ExpectedIntData.size(), 0);
-      TestIntContainer->LoadFromDb(GroupName, VarName, VarShape, TestIntData.data());
+      TestIntContainer->LoadFromDb(GroupName, VarName, VarShape, TestIntData);
       for(std::size_t j = 0; j < TestIntData.size(); j++) {
         EXPECT(TestIntData[j] == ExpectedIntData[j]);
       }
     } else if (VarTypeName == "float") {
       std::vector<float> ExpectedFloatData = VarConfig[i].getFloatVector("values");
       VarShape[0] = ExpectedFloatData.size();
-      TestFloatContainer->StoreToDb(GroupName, VarName, VarShape, ExpectedFloatData.data());
+      TestFloatContainer->StoreToDb(GroupName, VarName, VarShape, ExpectedFloatData);
 
       std::vector<float> TestFloatData(ExpectedFloatData.size(), 0.0);
-      TestFloatContainer->LoadFromDb(GroupName, VarName, VarShape, TestFloatData.data());
+      TestFloatContainer->LoadFromDb(GroupName, VarName, VarShape, TestFloatData);
       for(std::size_t j = 0; j < TestFloatData.size(); j++) {
         EXPECT(TestFloatData[j] == ExpectedFloatData[j]);
       }
     } else if (VarTypeName == "string") {
       std::vector<std::string> ExpectedStringData = VarConfig[i].getStringVector("values");
       VarShape[0] = ExpectedStringData.size();
-      TestStringContainer->StoreToDb(GroupName, VarName, VarShape, ExpectedStringData.data());
+      TestStringContainer->StoreToDb(GroupName, VarName, VarShape, ExpectedStringData);
 
       std::vector<std::string> TestStringData(ExpectedStringData.size(), "xx");
-      TestStringContainer->LoadFromDb(GroupName, VarName, VarShape, TestStringData.data());
+      TestStringContainer->LoadFromDb(GroupName, VarName, VarShape, TestStringData);
       for(std::size_t j = 0; j < TestStringData.size(); j++) {
         EXPECT(TestStringData[j] == ExpectedStringData[j]);
       }
@@ -265,11 +265,11 @@ void testStoreLoad() {
         ExpectedDateTimeData[j] = TempDateTime;
       }
       VarShape[0] = ExpectedDateTimeData.size();
-      TestDateTimeContainer->StoreToDb(GroupName, VarName, VarShape, ExpectedDateTimeData.data());
+      TestDateTimeContainer->StoreToDb(GroupName, VarName, VarShape, ExpectedDateTimeData);
 
       util::DateTime TempDt("0000-01-01T00:00:00Z");
       std::vector<util::DateTime> TestDateTimeData(ExpectedDateTimeData.size(), TempDt);
-      TestDateTimeContainer->LoadFromDb(GroupName, VarName, VarShape, TestDateTimeData.data());
+      TestDateTimeContainer->LoadFromDb(GroupName, VarName, VarShape, TestDateTimeData);
       for(std::size_t j = 0; j < TestDateTimeData.size(); j++) {
         EXPECT(TestDateTimeData[j] == ExpectedDateTimeData[j]);
       }
