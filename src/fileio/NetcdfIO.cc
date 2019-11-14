@@ -212,11 +212,6 @@ NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
 
       FrameStart += max_frame_size_;
     }
-
-    for (std::size_t i = 0; i < frame_info_.size(); ++i) {
-      std::cout << "DEBUG: frame_info_: " << i << " --> " << frame_info_[i].start << ", "
-                << frame_info_[i].size << std::endl;
-    }
   }
 }
 
@@ -519,6 +514,15 @@ std::vector<int> NetcdfIO::GetNcDimIds(const std::string & GroupName,
 
 IodaIO::FrameIter NetcdfIO::frame_begin() {
   return frame_info_.begin();
+  }
+
+// -----------------------------------------------------------------------------
+/*!
+ * \brief advance frame iterator to next frame
+ */
+
+void NetcdfIO::frame_next(IodaIO::FrameIter & iframe) {
+  std::advance(iframe, 1);
   }
 
 // -----------------------------------------------------------------------------

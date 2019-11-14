@@ -75,6 +75,7 @@ class NetcdfIO : public IodaIO,
                 const std::vector<std::string> & VarData);
 
   IodaIO::FrameIter frame_begin();
+  void frame_next(IodaIO::FrameIter &);
   IodaIO::FrameIter frame_end();
 
   std::size_t frame_start(IodaIO::FrameIter);

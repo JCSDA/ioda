@@ -227,6 +227,7 @@ class IodaIO : public util::Printable {
     // Access to data frames
     typedef FrameInfo::const_iterator FrameIter;
     virtual FrameIter frame_begin() = 0;
+    virtual void frame_next(FrameIter &) = 0;
     virtual FrameIter frame_end() = 0;
 
     virtual std::size_t frame_start(FrameIter) = 0;
