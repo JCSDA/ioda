@@ -374,24 +374,6 @@ std::vector<std::size_t> ObsSpace::recidx_all_recnums() const {
 
 // -----------------------------------------------------------------------------
 /*!
- * \details This method will generate a set of latitudes and longitudes of which
- *          can be used for testing without reading in an obs file. Two latitude
- *          values, two longitude values, the number of locations (nobs keyword)
- *          and an optional random seed are specified in the configuration given
- *          by the conf parameter. Random locations between the two latitudes and
- *          two longitudes are generated and stored in the obs container as meta data.
- *          Random time stamps that fall inside the given timing window (which is
- *          specified in the configuration file) are alos generated and stored
- *          in the obs container as meta data.
- *
- * \param[in] conf ECKIT configuration segment built from an input configuration file.
- */
-void ObsSpace::generateDistribution(const eckit::Configuration & conf) {
-  obsspace_->generateDistribution(conf);
-}
-
-// -----------------------------------------------------------------------------
-/*!
  * \details This method provides a way to print an ObsSpace object in an output
  *          stream. It simply prints a dummy message for now.
  */
