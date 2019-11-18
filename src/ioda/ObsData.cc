@@ -407,6 +407,49 @@ std::vector<std::size_t> ObsData::recidx_all_recnums() const {
 
 // -----------------------------------------------------------------------------
 /*!
+ * \details This method will generate a set of latitudes, longitudes and datetimes
+ *          which can be used for testing without reading in an obs file. Two methods
+ *          are supported, the first generating random values between specified latitudes,
+ *          longitudes and a timing window, and the second copying lists specified by
+ *          the user. This method is triggered using the "Generate" keyword in the
+ *          configuration file and either of the two methods above are specified using
+ *          the sub keywords "Random" or "List".
+ *
+ * \param[in] conf ECKIT configuration segment built from an input configuration file.
+ */
+void ObsData::generateDistribution(const eckit::Configuration & conf) {
+  std::vector<float> latitude;
+  std::vector<float> longitude;
+  std::vector<util::DateTime> obs_datetimes;
+  if (conf.has("Random")) {
+    genDistRandom(conf, latitude, longitude, obs_datetimes);
+  } else if (conf.has("List")) {
+    genDistList(conf, latitude, longitude, obs_datetimes);
+  } else {
+    std::string ErrorMsg =
+      std::string("ObsData::generateDistribution: Must specify either ") +
+      std::string("'Random' or 'List' with 'Generate' configuration keyword");
+    ABORT(ErrorMsg);
+  }
+
+  // number of variables specified in simulate section
+  nvars_ = obsvars_.size();
+
+  // Read obs errors (one for each variable)
+  const std::vector<float> err = conf.getFloatVector("obs_errors");
+  ASSERT(nvars_ == err.size());
+
+  put_db("MetaData", "datetime", obs_datetimes);
+  put_db("MetaData", "latitude", latitude);
+  put_db("MetaData", "longitude", longitude);
+  for (std::size_t ivar = 0; ivar < nvars_; ivar++) {
+    std::vector<float> obserr(nlocs_, err[ivar]);
+    put_db("ObsError", obsvars_[ivar], obserr);
+  }
+}
+
+// -----------------------------------------------------------------------------
+/*!
  * \details This method will generate a set of latitudes and longitudes of which
  *          can be used for testing without reading in an obs file. Two latitude
  *          values, two longitude values, the number of locations (nobs keyword)
@@ -417,27 +460,28 @@ std::vector<std::size_t> ObsData::recidx_all_recnums() const {
  *          specified in the configuration file) are alos generated and stored
  *          in the obs container as meta data.
  *
- * \param[in] conf ECKIT configuration segment built from an input configuration file.
+ * \param[in]  conf  ECKIT configuration segment built from an input configuration file.
+ * \param[out] Lats  Generated latitude values
+ * \param[out] Lons  Generated longitude values
+ * \param[out] Dtims Generated datetime values
  */
-void ObsData::generateDistribution(const eckit::Configuration & conf) {
-  gnlocs_  = conf.getInt("nobs");
-  float lat1 = conf.getFloat("lat1");
-  float lat2 = conf.getFloat("lat2");
-  float lon1 = conf.getFloat("lon1");
-  float lon2 = conf.getFloat("lon2");
+void ObsData::genDistRandom(const eckit::Configuration & conf, std::vector<float> & Lats,
+                            std::vector<float> & Lons, std::vector<util::DateTime> & Dtimes) {
+  gnlocs_  = conf.getInt("Random.nobs");
+  float lat1 = conf.getFloat("Random.lat1");
+  float lat2 = conf.getFloat("Random.lat2");
+  float lon1 = conf.getFloat("Random.lon1");
+  float lon2 = conf.getFloat("Random.lon2");
 
   // Make the random_seed keyword optional. Can spec it for testing to get repeatable
   // values, and the user doesn't have to spec it if they want subsequent runs to
   // use different random sequences.
   unsigned int ran_seed;
-  if (conf.has("random_seed")) {
-    ran_seed = conf.getInt("random_seed");
+  if (conf.has("Random.random_seed")) {
+    ran_seed = conf.getInt("Random.random_seed");
   } else {
     ran_seed = std::time(0);  // based on the current date/time.
   }
-
-  // number of variables specified in simulate section
-  nvars_ = obsvars_.size();
 
   // Create the MPI Distribution
   // The default constructor for std::unique_ptr generates a null ptr which
@@ -480,22 +524,18 @@ void ObsData::generateDistribution(const eckit::Configuration & conf) {
   util::Duration WindowDuration(this->windowEnd() - this->windowStart());
   float TimeRange = static_cast<float>(WindowDuration.toSeconds());
 
-  // Read obs errors (one for each variable)
-  const std::vector<float> err = conf.getFloatVector("obs_errors");
-  ASSERT(nvars_ == err.size());
-
   // Create vectors for lat, lon, time, fill them with random values
   // inside their respective ranges, and put results into the obs container.
-  std::vector<float> latitude(nlocs_);
-  std::vector<float> longitude(nlocs_);
-  std::vector<util::DateTime> obs_datetimes(nlocs_);
+  Lats.assign(nlocs_, 0.0);
+  Lons.assign(nlocs_, 0.0);
+  Dtimes.assign(nlocs_, this->windowStart());
 
   util::Duration DurZero(0);
   util::Duration DurOneSec(1);
   for (std::size_t ii = 0; ii < nlocs_; ii++) {
     std::size_t index = indx_[ii];
-    latitude[ii] = lat1 + (RanVals[index] * LatRange);
-    longitude[ii] = lon1 + (RanVals2[index] * LonRange);
+    Lats[ii] = lat1 + (RanVals[index] * LatRange);
+    Lons[ii] = lon1 + (RanVals2[index] * LonRange);
 
     // Currently the filter for time stamps on obs values is:
     //
@@ -507,15 +547,54 @@ void ObsData::generateDistribution(const eckit::Configuration & conf) {
     if (OffsetDt == DurZero) {
       OffsetDt = DurOneSec;
     }
-    obs_datetimes[ii] = this->windowStart() + OffsetDt;
+    // Dtimes elements were initialized to the window start
+    Dtimes[ii] += OffsetDt;
+  }
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method will generate a set of latitudes and longitudes of which
+ *          can be used for testing without reading in an obs file. The values
+ *          are simply read from lists in the configuration file. The purpose of
+ *          this method is to allow the user to exactly specify obs locations.
+ *
+ * \param[in]  conf  ECKIT configuration segment built from an input configuration file.
+ * \param[out] Lats  Generated latitude values
+ * \param[out] Lons  Generated longitude values
+ * \param[out] Dtims Generated datetime values
+ */
+void ObsData::genDistList(const eckit::Configuration & conf, std::vector<float> & Lats,
+                          std::vector<float> & Lons, std::vector<util::DateTime> & Dtimes) {
+  std::vector<float> latitudes = conf.getFloatVector("List.lats");
+  std::vector<float> longitudes = conf.getFloatVector("List.lons");
+  std::vector<std::string> DtStrings = conf.getStringVector("List.datetimes");
+  std::vector<util::DateTime> datetimes;
+  for (std::size_t i = 0; i < DtStrings.size(); ++i) {
+    util::DateTime TempDt(DtStrings[i]);
+    datetimes.push_back(TempDt);
   }
 
-  put_db("MetaData", "datetime", obs_datetimes);
-  put_db("MetaData", "latitude", latitude);
-  put_db("MetaData", "longitude", longitude);
-  for (std::size_t ivar = 0; ivar < nvars_; ivar++) {
-    std::vector<float> obserr(nlocs_, err[ivar]);
-    put_db("ObsError", obsvars_[ivar], obserr);
+  // Need to set the global number of locations before calling GenMpiDistribution.
+  gnlocs_ = latitudes.size();
+
+  // Create the MPI Distribution
+  // The default constructor for std::unique_ptr generates a null ptr which
+  // can be tested in GenMpiDistribution.
+  std::unique_ptr<IodaIO> NoIO;
+  GenMpiDistribution(NoIO);
+
+  // Create vectors for lat, lon, time, fill them with the values from the
+  // lists in the configuration.
+  Lats.assign(nlocs_, 0.0);
+  Lons.assign(nlocs_, 0.0);
+  Dtimes.assign(nlocs_, this->windowStart());
+
+  for (std::size_t ii = 0; ii < nlocs_; ii++) {
+    std::size_t index = indx_[ii];
+    Lats[ii] = latitudes[index];
+    Lons[ii] = longitudes[index];
+    Dtimes[ii] = datetimes[index];
   }
 }
 
