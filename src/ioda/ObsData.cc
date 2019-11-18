@@ -156,46 +156,6 @@ ObsData::~ObsData() {
 }
 
 // -----------------------------------------------------------------------------
-// NOTES CONCERNING THE get_db methods below.
-//
-// What we want to end up with is deliberate conversion between double outside
-// IODA to float in the ObsSpaceContainer database. This is done to save memory
-// space because it is not necessary to store data with double precision.
-//
-// Given that, we want the structure of the get_db methods below to eventually
-// look like that of the put_db methods. That is the overloaded functions of
-// get_db simply call the templated get_db_helper method, ecexpt a float to double
-// conversion is done in the get_db double case, and the get_db_helper method
-// is a three-liner that just calls database_.LoadFromDb directly.
-//
-// Currently, we have some cases of the wrong data types trying to load from the
-// database, such as trying to put QC marks (integers stored in the database)
-// into a double in an ObsVector. To deal with this we've got checks for the
-// proper data types in the get_db_helper method that will issue warnings if
-// the variable we are trying to load into has a type that does not match the
-// corresponding entry in the database. In these cases, after the warning is
-// issued, a conversion is done including getting the missing value marks
-// converted properly.
-//
-// The idea is to get all of these warnings that come up fixed, and once that
-// is done, we will turn any mismatched types into an error and the program
-// will abort. When we hit this point we should change the code in
-// get_db_helper to:
-//
-//     std::string gname = (group.size() <= 0)? "GroupUndefined" : group;
-//     std::vector<std::size_t> vshape(1, vsize);
-//     database_.LoadFromDb(gname, name, vshape, &vdata[0]);
-//
-// I.e., make get_db_helper analogous to put_db_helper. Then we can get rid
-// of the template specialization for the util::DateTime type. And we can
-// allow the boost::bad_any_cast catch routine in ObsSpaceContainer.cc handle
-// the type check (and abort if the types don't match).
-//
-// Note that when a variable is a double and the database has an int, this
-// code is doing two conversions and is therefore inefficient. This is okay
-// for now because once the variable type not matching the database type
-// issues are fixed we will eliminate one of the conversions.
-// -----------------------------------------------------------------------------
 /*!
  * \brief transfer data from the obs container to vdata
  *
@@ -205,45 +165,44 @@ ObsData::~ObsData() {
  *
  * \param[in]  group Name of container group (ObsValue, ObsError, MetaData, etc.)
  * \param[in]  name  Name of container variable
- * \param[in]  vsize Total number of elements in variable (i.e., length of vdata)
  * \param[out] vdata Vector where container data is being transferred to
  */
 
 void ObsData::get_db(const std::string & group, const std::string & name,
-                      const std::size_t vsize, std::vector<int> & vdata) const {
+                      std::vector<int> & vdata) const {
   std::string gname = (group.size() <= 0)? "GroupUndefined" : group;
-  std::vector<std::size_t> vshape(1, vsize);
+  std::vector<std::size_t> vshape(1, vdata.size());
   int_database_.LoadFromDb(gname, name, vshape, vdata);
 }
 
 void ObsData::get_db(const std::string & group, const std::string & name,
-                      const std::size_t vsize, std::vector<float> & vdata) const {
+                      std::vector<float> & vdata) const {
   std::string gname = (group.size() <= 0)? "GroupUndefined" : group;
-  std::vector<std::size_t> vshape(1, vsize);
+  std::vector<std::size_t> vshape(1, vdata.size());
   float_database_.LoadFromDb(gname, name, vshape, vdata);
 }
 
 void ObsData::get_db(const std::string & group, const std::string & name,
-                      const std::size_t vsize, std::vector<double> & vdata) const {
+                      std::vector<double> & vdata) const {
   std::string gname = (group.size() <= 0)? "GroupUndefined" : group;
-  std::vector<std::size_t> vshape(1, vsize);
+  std::vector<std::size_t> vshape(1, vdata.size());
   // load the float values from the database and convert to double
-  std::vector<float> FloatData(vsize, 0.0);
+  std::vector<float> FloatData(vdata.size(), 0.0);
   float_database_.LoadFromDb(gname, name, vshape, FloatData);
   ConvertVarType<float, double>(FloatData, vdata);
 }
 
 void ObsData::get_db(const std::string & group, const std::string & name,
-                      const std::size_t vsize, std::vector<std::string> & vdata) const {
+                      std::vector<std::string> & vdata) const {
   std::string gname = (group.size() <= 0)? "GroupUndefined" : group;
-  std::vector<std::size_t> vshape(1, vsize);
+  std::vector<std::size_t> vshape(1, vdata.size());
   string_database_.LoadFromDb(gname, name, vshape, vdata);
 }
 
 void ObsData::get_db(const std::string & group, const std::string & name,
-                      const std::size_t vsize, std::vector<util::DateTime> & vdata) const {
+                      std::vector<util::DateTime> & vdata) const {
   std::string gname = (group.size() <= 0)? "GroupUndefined" : group;
-  std::vector<std::size_t> vshape(1, vsize);
+  std::vector<std::size_t> vshape(1, vdata.size());
   datetime_database_.LoadFromDb(gname, name, vshape, vdata);
 }
 
@@ -258,45 +217,44 @@ void ObsData::get_db(const std::string & group, const std::string & name,
  *
  * \param[in]  group Name of container group (ObsValue, ObsError, MetaData, etc.)
  * \param[in]  name  Name of container variable
- * \param[in]  vsize Total number of elements in variable (i.e., length of vdata)
  * \param[out] vdata Vector where container data is being transferred from
  */
 
 void ObsData::put_db(const std::string & group, const std::string & name,
-                      const std::size_t vsize, const std::vector<int> & vdata) {
+                      const std::vector<int> & vdata) {
   std::string gname = (group.size() <= 0)? "GroupUndefined" : group;
-  std::vector<std::size_t> vshape(1, vsize);
+  std::vector<std::size_t> vshape(1, vdata.size());
   int_database_.StoreToDb(gname, name, vshape, vdata);
 }
 
 void ObsData::put_db(const std::string & group, const std::string & name,
-                      const std::size_t vsize, const std::vector<float> & vdata) {
+                      const std::vector<float> & vdata) {
   std::string gname = (group.size() <= 0)? "GroupUndefined" : group;
-  std::vector<std::size_t> vshape(1, vsize);
+  std::vector<std::size_t> vshape(1, vdata.size());
   float_database_.StoreToDb(gname, name, vshape, vdata);
 }
 
 void ObsData::put_db(const std::string & group, const std::string & name,
-                      const std::size_t vsize, const std::vector<double> & vdata) {
+                      const std::vector<double> & vdata) {
   std::string gname = (group.size() <= 0)? "GroupUndefined" : group;
-  std::vector<std::size_t> vshape(1, vsize);
+  std::vector<std::size_t> vshape(1, vdata.size());
   // convert to float, then load into the database
-  std::vector<float> FloatData(vsize);
+  std::vector<float> FloatData(vdata.size());
   ConvertVarType<double, float>(vdata, FloatData);
   float_database_.StoreToDb(gname, name, vshape, FloatData);
 }
 
 void ObsData::put_db(const std::string & group, const std::string & name,
-                      const std::size_t vsize, const std::vector<std::string> & vdata) {
+                      const std::vector<std::string> & vdata) {
   std::string gname = (group.size() <= 0)? "GroupUndefined" : group;
-  std::vector<std::size_t> vshape(1, vsize);
+  std::vector<std::size_t> vshape(1, vdata.size());
   string_database_.StoreToDb(gname, name, vshape, vdata);
 }
 
 void ObsData::put_db(const std::string & group, const std::string & name,
-                      const std::size_t vsize, const std::vector<util::DateTime> & vdata) {
+                      const std::vector<util::DateTime> & vdata) {
   std::string gname = (group.size() <= 0)? "GroupUndefined" : group;
-  std::vector<std::size_t> vshape(1, vsize);
+  std::vector<std::size_t> vshape(1, vdata.size());
   datetime_database_.StoreToDb(gname, name, vshape, vdata);
 }
 
@@ -485,12 +443,12 @@ void ObsData::generateDistribution(const eckit::Configuration & conf) {
   const std::vector<float> err = conf.getFloatVector("obs_errors");
   ASSERT(nvars_ == err.size());
 
-  put_db("MetaData", "datetime", nlocs_, obs_datetimes);
-  put_db("MetaData", "latitude", nlocs_, latitude);
-  put_db("MetaData", "longitude", nlocs_, longitude);
+  put_db("MetaData", "datetime", obs_datetimes);
+  put_db("MetaData", "latitude", latitude);
+  put_db("MetaData", "longitude", longitude);
   for (std::size_t ivar = 0; ivar < nvars_; ivar++) {
     std::vector<float> obserr(nlocs_, err[ivar]);
-    put_db("ObsError", obsvars_[ivar], nlocs_, obserr);
+    put_db("ObsError", obsvars_[ivar], obserr);
   }
 }
 
@@ -977,12 +935,12 @@ void ObsData::BuildSortedObsGroups() {
   std::vector<float> SortValues(nlocs_);
   if (obs_sort_variable_ == "datetime") {
     std::vector<util::DateTime> Dates(nlocs_);
-    get_db("MetaData", obs_sort_variable_, nlocs_, Dates);
+    get_db("MetaData", obs_sort_variable_, Dates);
     for (std::size_t iloc = 0; iloc < nlocs_; iloc++) {
       SortValues[iloc] = (Dates[iloc] - Dates[0]).toSeconds();
     }
   } else {
-    get_db("MetaData", obs_sort_variable_, nlocs_, SortValues);
+    get_db("MetaData", obs_sort_variable_, SortValues);
   }
 
   // Construct a temporary structure to do the sorting, then transfer the results
@@ -1116,7 +1074,7 @@ void ObsData::ConvertStoreToDb(const std::string & GroupName, const std::string 
 
   std::vector<DbType> DbData(VarData.size());
   ConvertVarType<VarType, DbType>(VarData, DbData);
-  put_db(GroupName, VarName, VarData.size(), DbData);
+  put_db(GroupName, VarName, DbData);
 }
 
 // -----------------------------------------------------------------------------
@@ -1271,8 +1229,8 @@ void ObsData::createKDTree() {
   std::vector<float> lons(nlocs_);
 
   // Get latitudes and longitudes of all observations.
-  this -> get_db("MetaData", "longitude", nlocs_, lons);
-  this -> get_db("MetaData", "latitude", nlocs_, lats);
+  this -> get_db("MetaData", "longitude", lons);
+  this -> get_db("MetaData", "latitude", lats);
 
   // Define points list from lat/lon values
   typedef KDTree::PointType Point;
