@@ -56,22 +56,22 @@ class ObsSpace : public util::Printable {
   bool has(const std::string &, const std::string &) const;
 
   void get_db(const std::string & group, const std::string & name,
-              const std::size_t vsize, std::vector<int> & vdata) const;
+              std::vector<int> & vdata) const;
   void get_db(const std::string & group, const std::string & name,
-              const std::size_t vsize, std::vector<float> & vdata) const;
+              std::vector<float> & vdata) const;
   void get_db(const std::string & group, const std::string & name,
-              const std::size_t vsize, std::vector<double> & vdata) const;
+              std::vector<double> & vdata) const;
   void get_db(const std::string & group, const std::string & name,
-              const std::size_t vsize, std::vector<util::DateTime> & vdata) const;
+              std::vector<util::DateTime> & vdata) const;
 
   void put_db(const std::string & group, const std::string & name,
-              const std::size_t vsize, const std::vector<int> & vdata);
+              const std::vector<int> & vdata);
   void put_db(const std::string & group, const std::string & name,
-              const std::size_t vsize, const std::vector<float> & vdata);
+              const std::vector<float> & vdata);
   void put_db(const std::string & group, const std::string & name,
-              const std::size_t vsize, const std::vector<double> & vdata);
+              const std::vector<double> & vdata);
   void put_db(const std::string & group, const std::string & name,
-              const std::size_t vsize, const std::vector<util::DateTime> & vdata);
+              const std::vector<util::DateTime> & vdata);
 
   const RecIdxIter recidx_begin() const;
   const RecIdxIter recidx_end() const;
