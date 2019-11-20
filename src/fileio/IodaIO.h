@@ -140,28 +140,6 @@ class IodaIO : public util::Printable {
     virtual ~IodaIO() = 0;
 
     // Methods provided by subclasses
-    virtual void ReadVar(const std::string & GroupName, const std::string & VarName,
-                         const std::vector<std::size_t> & VarShape,
-                         std::vector<int> & VarData) = 0;
-    virtual void ReadVar(const std::string & GroupName, const std::string & VarName,
-                         const std::vector<std::size_t> & VarShape,
-                         std::vector<float> & VarData) = 0;
-    virtual void ReadVar(const std::string & GroupName, const std::string & VarName,
-                         const std::vector<std::size_t> & VarShape,
-                         std::vector<double> & VarData) = 0;
-    virtual void ReadVar(const std::string & GroupName, const std::string & VarName,
-                         const std::vector<std::size_t> & VarShape,
-                         std::vector<std::string> & VarData) = 0;
-
-    virtual void WriteVar(const std::string & GroupName, const std::string & VarName,
-                          const std::vector<std::size_t> & VarShape,
-                          const std::vector<int> & VarData) = 0;
-    virtual void WriteVar(const std::string & GroupName, const std::string & VarName,
-                          const std::vector<std::size_t> & VarShape,
-                          const std::vector<float> & VarData) = 0;
-    virtual void WriteVar(const std::string & GroupName, const std::string & VarName,
-                          const std::vector<std::size_t> & VarShape,
-                          const std::vector<std::string> & VarData) = 0;
 
     // Methods defined in base class
     std::string fname() const;

@@ -666,7 +666,7 @@ void ObsData::InitFromFile(const std::string & filename, const std::size_t MaxFr
       // Read the variable from the file and transfer it to the database.
       if (FileVarType == "int") {
         std::vector<int> FileData(VarSize);
-        fileio->ReadVar(GroupName, VarName, VarShape, FileData);
+///         fileio->ReadVar(GroupName, VarName, VarShape, FileData);
 
         std::vector<int> IndexedData;
         std::vector<std::size_t> IndexedShape;
@@ -675,7 +675,7 @@ void ObsData::InitFromFile(const std::string & filename, const std::size_t MaxFr
         int_database_.StoreToDb(GroupName, VarName, IndexedShape, IndexedData);
       } else if (FileVarType == "float") {
         std::vector<float> FileData(VarSize);
-        fileio->ReadVar(GroupName, VarName, VarShape, FileData);
+///         fileio->ReadVar(GroupName, VarName, VarShape, FileData);
 
         std::vector<float> IndexedData;
         std::vector<std::size_t> IndexedShape;
@@ -690,7 +690,7 @@ void ObsData::InitFromFile(const std::string & filename, const std::size_t MaxFr
       } else if (FileVarType == "double") {
         // Convert double to float before storing into the database.
         std::vector<double> FileData(VarSize);
-        fileio->ReadVar(GroupName, VarName, VarShape, FileData);
+///         fileio->ReadVar(GroupName, VarName, VarShape, FileData);
 
         std::vector<double> IndexedData;
         std::vector<std::size_t> IndexedShape;
@@ -702,7 +702,7 @@ void ObsData::InitFromFile(const std::string & filename, const std::size_t MaxFr
         // If we are working on the variable "datetime", convert the strings
         // to DateTime objects.
         std::vector<std::string> FileData(VarSize);
-        fileio->ReadVar(GroupName, VarName, VarShape, FileData);
+///         fileio->ReadVar(GroupName, VarName, VarShape, FileData);
 
         std::vector<std::string> IndexedData;
         std::vector<std::size_t> IndexedShape;
@@ -818,15 +818,15 @@ void ObsData::GenRecordNumbers(const std::unique_ptr<IodaIO> & FileIO,
 
     if (VarType == "int") {
       std::vector<int> FileData(VarSize);
-      FileIO->ReadVar(GroupName, VarName, VarShape, FileData);
+///       FileIO->ReadVar(GroupName, VarName, VarShape, FileData);
       GenRnumsFromVar<int>(FileData, Records);
     } else if (VarType == "float") {
       std::vector<float> FileData(VarSize);
-      FileIO->ReadVar(GroupName, VarName, VarShape, FileData);
+///       FileIO->ReadVar(GroupName, VarName, VarShape, FileData);
       GenRnumsFromVar<float>(FileData, Records);
     } else if (VarType == "string") {
       std::vector<std::string> FileData(VarSize);
-      FileIO->ReadVar(GroupName, VarName, VarShape, FileData);
+///       FileIO->ReadVar(GroupName, VarName, VarShape, FileData);
       GenRnumsFromVar<std::string>(FileData, Records);
     }
   }
@@ -894,7 +894,7 @@ void ObsData::ApplyTimingWindow(const std::unique_ptr<IodaIO> & FileIO) {
       ABORT(ErrorMsg);
     }
   }
-  FileIO->ReadVar(DtGroupName, DtVarName, DtShape, DtStrings);
+///   FileIO->ReadVar(DtGroupName, DtVarName, DtShape, DtStrings);
 
   std::size_t Index;
   std::size_t RecNum;
@@ -995,7 +995,7 @@ void ObsData::SaveToFile(const std::string & file_name, const std::size_t MaxFra
 
     std::vector<int> VarData(VarSize);
     int_database_.LoadFromDb(GroupName, VarName, VarShape, VarData);
-    fileio->WriteVar(GroupName, VarName, VarShape, VarData);
+///     fileio->WriteVar(GroupName, VarName, VarShape, VarData);
   }
 
   for (ObsSpaceContainer<float>::VarIter ivar = float_database_.var_iter_begin();
@@ -1007,7 +1007,7 @@ void ObsData::SaveToFile(const std::string & file_name, const std::size_t MaxFra
 
     std::vector<float> VarData(VarSize);
     float_database_.LoadFromDb(GroupName, VarName, VarShape, VarData);
-    fileio->WriteVar(GroupName, VarName, VarShape, VarData);
+///     fileio->WriteVar(GroupName, VarName, VarShape, VarData);
   }
 
   for (ObsSpaceContainer<std::string>::VarIter ivar = string_database_.var_iter_begin();
@@ -1019,7 +1019,7 @@ void ObsData::SaveToFile(const std::string & file_name, const std::size_t MaxFra
 
     std::vector<std::string> VarData(VarSize, "");
     string_database_.LoadFromDb(GroupName, VarName, VarShape, VarData);
-    fileio->WriteVar(GroupName, VarName, VarShape, VarData);
+///     fileio->WriteVar(GroupName, VarName, VarShape, VarData);
   }
 
   for (ObsSpaceContainer<util::DateTime>::VarIter ivar = datetime_database_.var_iter_begin();
@@ -1038,7 +1038,7 @@ void ObsData::SaveToFile(const std::string & file_name, const std::size_t MaxFra
     for (std::size_t i = 0; i < VarSize; i++) {
       StringVector[i] = VarData[i].toString();
     }
-    fileio->WriteVar(GroupName, VarName, VarShape, StringVector);
+///     fileio->WriteVar(GroupName, VarName, VarShape, StringVector);
   }
 }
 
