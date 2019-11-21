@@ -25,6 +25,35 @@ namespace eckit {
 
 namespace ioda {
 
+//---------------------------------------------------------------------------------------
+/*! \brief frame data map
+ *
+ * \details This class contains the current frame data
+ *
+ */
+template<typename FrameType>
+class FrameDataMap {
+  private:
+    typedef std::map<std::string, std::vector<FrameType>> FrameStore;
+
+  public:
+    typedef typename FrameStore::iterator FrameStoreIter;
+    FrameStoreIter begin() { return frame_container_.begin(); }
+    FrameStoreIter end() { return frame_container_.end(); }
+
+    std::string get_name(FrameStoreIter & Iframe) { return Iframe->first; }
+    std::vector<FrameType> get_data(FrameStoreIter & Iframe) { return Iframe->second; }
+
+    void put_data(const std::string & GroupName, const std::string & VarName,
+                  const std::vector<FrameType> & VarData) {
+      std::string VarGrpName = VarName + "@" + GroupName;
+      frame_container_[VarGrpName] = VarData;
+    }
+  private:
+    FrameStore frame_container_;
+};
+
+//---------------------------------------------------------------------------------------
 /*!
  * \brief File access class for IODA
  *
@@ -126,10 +155,9 @@ class IodaIO : public util::Printable {
     };
 
     /*!
-     * \brief dimension information map
+     * \brief frame information map
      *
-     * \details This typedef is dimension information map which containes
-     *          information about the dimensions of the variables.
+     * \details This typedef contains information about the frames in the file
      */
     typedef std::vector<FrameInfoRec> FrameInfo;
 
@@ -204,15 +232,73 @@ class IodaIO : public util::Printable {
 
     // Access to data frames
     typedef FrameInfo::const_iterator FrameIter;
-    virtual FrameIter frame_begin() = 0;
-    virtual void frame_next(FrameIter &) = 0;
-    virtual FrameIter frame_end() = 0;
+    FrameIter frame_begin();
+    void frame_next(FrameIter &);
+    FrameIter frame_end();
 
-    virtual std::size_t frame_start(FrameIter) = 0;
-    virtual std::size_t frame_size(FrameIter) = 0;
+    std::size_t frame_start(FrameIter);
+    std::size_t frame_size(FrameIter);
+
+    typedef FrameDataMap<int>::FrameStoreIter FrameIntIter;
+    FrameIntIter frame_int_begin() { return int_frame_data_->begin(); }
+    FrameIntIter frame_int_end() { return int_frame_data_->end(); }
+    std::vector<int> frame_int_get_data(FrameIntIter & iframe) {
+      return int_frame_data_->get_data(iframe);
+    }
+    std::string frame_int_get_name(FrameIntIter & iframe) {
+      return int_frame_data_->get_name(iframe);
+    }
+    void frame_int_put_data(std::string & GroupName, std::string& VarName,
+                            std::vector<int> & VarData) {
+      int_frame_data_->put_data(GroupName, VarName, VarData);
+    }
+
+    typedef FrameDataMap<float>::FrameStoreIter FrameFloatIter;
+    FrameFloatIter frame_float_begin() { return float_frame_data_->begin(); }
+    FrameFloatIter frame_float_end() { return float_frame_data_->end(); }
+    std::vector<float> frame_float_get_data(FrameFloatIter & iframe) {
+      return float_frame_data_->get_data(iframe);
+    }
+    std::string frame_float_get_name(FrameFloatIter & iframe) {
+      return float_frame_data_->get_name(iframe);
+    }
+    void frame_float_put_data(std::string & GroupName, std::string& VarName,
+                            std::vector<float> & VarData) {
+      float_frame_data_->put_data(GroupName, VarName, VarData);
+    }
+
+    typedef FrameDataMap<double>::FrameStoreIter FrameDoubleIter;
+    FrameDoubleIter frame_double_begin() { return double_frame_data_->begin(); }
+    FrameDoubleIter frame_double_end() { return double_frame_data_->end(); }
+    std::vector<double> frame_double_get_data(FrameDoubleIter & iframe) {
+      return double_frame_data_->get_data(iframe);
+    }
+    std::string frame_double_get_name(FrameDoubleIter & iframe) {
+      return double_frame_data_->get_name(iframe);
+    }
+    void frame_double_put_data(std::string & GroupName, std::string& VarName,
+                            std::vector<double> & VarData) {
+      double_frame_data_->put_data(GroupName, VarName, VarData);
+    }
+
+    typedef FrameDataMap<std::string>::FrameStoreIter FrameStringIter;
+    FrameStringIter frame_string_begin() { return string_frame_data_->begin(); }
+    FrameStringIter frame_string_end() { return string_frame_data_->end(); }
+    std::vector<std::string> frame_string_get_data(FrameStringIter & iframe) {
+      return string_frame_data_->get_data(iframe);
+    }
+    std::string frame_string_get_name(FrameStringIter & iframe) {
+      return string_frame_data_->get_name(iframe);
+    }
+    void frame_string_put_data(std::string & GroupName, std::string& VarName,
+                            std::vector<std::string> & VarData) {
+      string_frame_data_->put_data(GroupName, VarName, VarData);
+    }
+
 
  protected:
     // Methods provided by subclasses
+    virtual void ReadFrame(IodaIO::FrameIter & iframe) = 0;
 
     // Methods inherited from base class
 
@@ -273,6 +359,12 @@ class IodaIO : public util::Printable {
      * \brief maximum frame size
      */
     std::size_t max_frame_size_;
+
+    /*! \brief Containers for file frame */
+    std::unique_ptr<FrameDataMap<int>> int_frame_data_;
+    std::unique_ptr<FrameDataMap<float>> float_frame_data_;
+    std::unique_ptr<FrameDataMap<double>> double_frame_data_;
+    std::unique_ptr<FrameDataMap<std::string>> string_frame_data_;
 };
 
 }  // namespace ioda
