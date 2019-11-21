@@ -147,7 +147,7 @@ void testGetDb() {
       }
 
       double Vnorm = 0.0;
-      Odb->get_db(Gname, VarNames[i], Nlocs, TestVec.data());
+      Odb->get_db(Gname, VarNames[i], TestVec);
 
       // Calculate the norm of the vector
       for (std::size_t j = 0; j < Nlocs; ++j) {
@@ -186,8 +186,8 @@ void testPutDb() {
 
     // Put the vector into the database. Then read the vector back from the database
     // and compare to the original
-    Odb->put_db("MetaData", VarName, Nlocs, ExpectedVec.data());
-    Odb->get_db("MetaData", VarName, Nlocs, TestVec.data());
+    Odb->put_db("MetaData", VarName, ExpectedVec);
+    Odb->get_db("MetaData", VarName, TestVec);
 
     bool VecMatch = true;
     for (std::size_t i = 0; i < Nlocs; ++i) {
@@ -223,8 +223,8 @@ void testWriteableGroup() {
 
     // Put the vector into the database. Then read the vector back from the database
     // and compare to the original
-    Odb->put_db("TestGroup", VarName, Nlocs, ExpectedVec.data());
-    Odb->get_db("TestGroup", VarName, Nlocs, TestVec.data());
+    Odb->put_db("TestGroup", VarName, ExpectedVec);
+    Odb->get_db("TestGroup", VarName, TestVec);
 
     bool VecMatch = true;
     for (std::size_t i = 0; i < Nlocs; ++i) {
@@ -237,8 +237,8 @@ void testWriteableGroup() {
       ExpectedVec[i] = ExpectedVec[i] * 2;
     }
 
-    Odb->put_db("TestGroup", VarName, Nlocs, ExpectedVec.data());
-    Odb->get_db("TestGroup", VarName, Nlocs, TestVec.data());
+    Odb->put_db("TestGroup", VarName, ExpectedVec);
+    Odb->get_db("TestGroup", VarName, TestVec);
 
     VecMatch = true;
     for (std::size_t i = 0; i < Nlocs; ++i) {

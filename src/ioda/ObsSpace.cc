@@ -73,8 +73,8 @@ ObsSpace::ObsSpace(const ObsSpace & os,
     std::vector<float> lons(nlocs);
 
     // Get latitudes and longitudes of all observations.
-    obsspace_ -> get_db("MetaData", "longitude", nlocs, lons.data());
-    obsspace_ -> get_db("MetaData", "latitude",  nlocs, lats.data());
+    obsspace_ -> get_db("MetaData", "longitude", lons);
+    obsspace_ -> get_db("MetaData", "latitude", lats);
 
     const double radiusEarth = 6.371e6;
     for (unsigned int jj = 0; jj < nlocs; ++jj) {
@@ -147,89 +147,89 @@ ObsSpace::~ObsSpace() {
 // -----------------------------------------------------------------------------
 
 void ObsSpace::get_db(const std::string & group, const std::string & name,
-                      const std::size_t vsize, int vdata[]) const {
+                      std::vector<int> & vdata) const {
   if ( isLocal_ ) {
     std::vector<int> vdataTmp(obsspace_ -> nlocs());
-    obsspace_->get_db(group, name, vdataTmp.size(), vdataTmp.data());
+    obsspace_->get_db(group, name, vdataTmp);
     for (unsigned int ii = 0; ii < localobs_.size(); ++ii) {
       vdata[ii] = vdataTmp[localobs_[ii]];
     }
   } else {
-    obsspace_->get_db(group, name, vsize, vdata);
+    obsspace_->get_db(group, name, vdata);
   }
 }
 
 // -----------------------------------------------------------------------------
 
 void ObsSpace::get_db(const std::string & group, const std::string & name,
-                      const std::size_t vsize, float vdata[]) const {
+                      std::vector<float> & vdata) const {
   if ( isLocal_ ) {
     std::vector<float> vdataTmp(obsspace_->nlocs());
-    obsspace_->get_db(group, name, vdataTmp.size(), vdataTmp.data());
+    obsspace_->get_db(group, name, vdataTmp);
     for (unsigned int ii = 0; ii < localobs_.size(); ++ii) {
       vdata[ii] = vdataTmp[localobs_[ii]];
     }
   } else {
-    obsspace_->get_db(group, name, vsize, vdata);
+    obsspace_->get_db(group, name, vdata);
   }
 }
 
 // -----------------------------------------------------------------------------
 
 void ObsSpace::get_db(const std::string & group, const std::string & name,
-                      const std::size_t vsize, double vdata[]) const {
+                      std::vector<double> & vdata) const {
   if ( isLocal_ ) {
     std::vector<double> vdataTmp(obsspace_->nlocs());
-    obsspace_->get_db(group, name, vdataTmp.size(), vdataTmp.data());
+    obsspace_->get_db(group, name, vdataTmp);
     for (unsigned int ii = 0; ii < localobs_.size(); ++ii) {
       vdata[ii] = vdataTmp[localobs_[ii]];
     }
   } else {
-    obsspace_->get_db(group, name, vsize, vdata);
+    obsspace_->get_db(group, name, vdata);
   }
 }
 
 // -----------------------------------------------------------------------------
 
 void ObsSpace::get_db(const std::string & group, const std::string & name,
-                      const std::size_t vsize, util::DateTime vdata[]) const {
+                      std::vector<util::DateTime> & vdata) const {
   if ( isLocal_ ) {
     std::vector<util::DateTime> vdataTmp(obsspace_->nlocs());
-    obsspace_->get_db(group, name, vdataTmp.size(), vdataTmp.data());
+    obsspace_->get_db(group, name, vdataTmp);
     for (unsigned int ii = 0; ii < localobs_.size(); ++ii) {
       vdata[ii] = vdataTmp[localobs_[ii]];
     }
   } else {
-    obsspace_->get_db(group, name, vsize, vdata);
+    obsspace_->get_db(group, name, vdata);
   }
 }
 
 // -----------------------------------------------------------------------------
 
 void ObsSpace::put_db(const std::string & group, const std::string & name,
-                      const std::size_t vsize, const int vdata[]) {
-  obsspace_->put_db(group, name, vsize, vdata);
+                      const std::vector<int> & vdata) {
+  obsspace_->put_db(group, name, vdata);
 }
 
 // -----------------------------------------------------------------------------
 
 void ObsSpace::put_db(const std::string & group, const std::string & name,
-                      const std::size_t vsize, const float vdata[]) {
-  obsspace_->put_db(group, name, vsize, vdata);
+                      const std::vector<float> & vdata) {
+  obsspace_->put_db(group, name, vdata);
 }
 
 // -----------------------------------------------------------------------------
 
 void ObsSpace::put_db(const std::string & group, const std::string & name,
-                      const std::size_t vsize, const double vdata[]) {
-  obsspace_->put_db(group, name, vsize, vdata);
+                      const std::vector<double> & vdata) {
+  obsspace_->put_db(group, name, vdata);
 }
 
 // -----------------------------------------------------------------------------
 
 void ObsSpace::put_db(const std::string & group, const std::string & name,
-                      const std::size_t vsize, const util::DateTime vdata[]) {
-  obsspace_->put_db(group, name, vsize, vdata);
+                      const std::vector<util::DateTime> & vdata) {
+  obsspace_->put_db(group, name, vdata);
 }
 
 // -----------------------------------------------------------------------------
@@ -370,24 +370,6 @@ const std::vector<std::size_t> & ObsSpace::recidx_vector(const std::size_t RecNu
  */
 std::vector<std::size_t> ObsSpace::recidx_all_recnums() const {
   return obsspace_->recidx_all_recnums();
-}
-
-// -----------------------------------------------------------------------------
-/*!
- * \details This method will generate a set of latitudes and longitudes of which
- *          can be used for testing without reading in an obs file. Two latitude
- *          values, two longitude values, the number of locations (nobs keyword)
- *          and an optional random seed are specified in the configuration given
- *          by the conf parameter. Random locations between the two latitudes and
- *          two longitudes are generated and stored in the obs container as meta data.
- *          Random time stamps that fall inside the given timing window (which is
- *          specified in the configuration file) are alos generated and stored
- *          in the obs container as meta data.
- *
- * \param[in] conf ECKIT configuration segment built from an input configuration file.
- */
-void ObsSpace::generateDistribution(const eckit::Configuration & conf) {
-  obsspace_->generateDistribution(conf);
 }
 
 // -----------------------------------------------------------------------------

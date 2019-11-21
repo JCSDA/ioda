@@ -56,22 +56,22 @@ class ObsSpace : public util::Printable {
   bool has(const std::string &, const std::string &) const;
 
   void get_db(const std::string & group, const std::string & name,
-              const std::size_t vsize, int vdata[]) const;
+              std::vector<int> & vdata) const;
   void get_db(const std::string & group, const std::string & name,
-              const std::size_t vsize, float vdata[]) const;
+              std::vector<float> & vdata) const;
   void get_db(const std::string & group, const std::string & name,
-              const std::size_t vsize, double vdata[]) const;
+              std::vector<double> & vdata) const;
   void get_db(const std::string & group, const std::string & name,
-              const std::size_t vsize, util::DateTime vdata[]) const;
+              std::vector<util::DateTime> & vdata) const;
 
   void put_db(const std::string & group, const std::string & name,
-              const std::size_t vsize, const int vdata[]);
+              const std::vector<int> & vdata);
   void put_db(const std::string & group, const std::string & name,
-              const std::size_t vsize, const float vdata[]);
+              const std::vector<float> & vdata);
   void put_db(const std::string & group, const std::string & name,
-              const std::size_t vsize, const double vdata[]);
+              const std::vector<double> & vdata);
   void put_db(const std::string & group, const std::string & name,
-              const std::size_t vsize, const util::DateTime vdata[]);
+              const std::vector<util::DateTime> & vdata);
 
   const RecIdxIter recidx_begin() const;
   const RecIdxIter recidx_end() const;
@@ -92,8 +92,6 @@ class ObsSpace : public util::Printable {
   const eckit::mpi::Comm & comm() const {return obsspace_->comm();}
   /*! \details This method will return the associated seed for random distribution */
   int64_t getSeed() const {return obsspace_->getSeed();}
-
-  void generateDistribution(const eckit::Configuration &);
 
   void printJo(const ObsVector &, const ObsVector &);  // to be removed
 

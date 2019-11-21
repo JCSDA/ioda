@@ -238,6 +238,40 @@ std::vector<std::size_t> IodaIO::var_shape(const std::string & GroupName,
 
 // -----------------------------------------------------------------------------
 /*!
+ * \details This method returns the variable shape in the file for the current iteration
+ *          in the group, variable information map.
+ *
+ * \param[in] ivar Variable iterator for GrpVarInfoMap
+ */
+
+std::vector<std::size_t> IodaIO::file_shape(IodaIO::VarIter ivar) {
+  return ivar->second.file_shape;
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns the variable shape in the file for the group name,
+ *          variable name combination in the group, variable information map.
+ *
+ * \param[in] GroupName Group key for GrpVarInfoMap
+ * \param[in] VarName Variable key for GrpVarInfoMap
+ */
+
+std::vector<std::size_t> IodaIO::file_shape(const std::string & GroupName,
+                                           const std::string & VarName) {
+  if (!grp_var_exists(GroupName, VarName)) {
+    std::string ErrorMsg = "Group name, variable name combination is not available: " +
+                            GroupName + ", " + VarName;
+    ABORT(ErrorMsg);
+  }
+
+  GroupIter igrp = grp_var_info_.find(GroupName);
+  VarIter ivar = igrp->second.find(VarName);
+  return ivar->second.file_shape;
+}
+
+// -----------------------------------------------------------------------------
+/*!
  * \details This method returns the variable id for the current iteration
  *          in the group, variable information map.
  *
