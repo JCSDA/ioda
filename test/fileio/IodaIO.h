@@ -211,45 +211,43 @@ void testReadVar() {
     std::size_t FrameStart = TestIO->frame_start(iframe);
     std::size_t FrameSize = TestIO->frame_size(iframe);
 
-    for (IodaIO::GroupIter igrp = TestIO->group_begin();
-                           igrp != TestIO->group_end(); ++igrp) {
-      std::string GroupName = TestIO->group_name(igrp);
-      for (IodaIO::VarIter ivar = TestIO->var_begin(igrp);
-                           ivar != TestIO->var_end(igrp); ++ivar) {
-        std::string VarName = TestIO->var_name(ivar);
-        std::string VarGrpName = VarName + "@" + GroupName;
-        std::string VarType = TestIO->var_dtype(ivar);
-        std::vector<std::size_t> VarShape = TestIO->var_shape(ivar);
-        std::vector<std::size_t> FrameShape = VarShape;
-        FrameShape[0] = FrameSize;
+    // Integer variables
+    for (IodaIO::FrameIntIter idata = TestIO->frame_int_begin();
+                              idata != TestIO->frame_int_end(); ++idata) {
+      std::string VarGrpName = TestIO->frame_int_get_name(idata);
+      std::vector<int> FrameData = TestIO->frame_int_get_data(idata);
+      for (std::size_t i = 0; i < FrameSize; ++i) {
+        IntVars[VarGrpName][FrameStart + i] = FrameData[i];
+      }
+    }
 
-        std::cout << "DEBUG: testReadVar: " << GroupName << ", "
-                  << VarName << ", " << FrameShape << std::endl;
-        if (VarType == "int") {
-          std::vector<int> FrameData;
-///           TestIO->ReadVar(GroupName, VarName, FrameShape, FrameData);
-///           for (std::size_t i = 0; i < FrameSize; i++) {
-///             IntVars[VarGrpName][FrameStart + i] = FrameData[i];
-///           }
-        } else if (VarType == "float") {
-          std::vector<float> FrameData;
-///           TestIO->ReadVar(GroupName, VarName, FrameShape, FrameData);
-///           for (std::size_t i = 0; i < FrameSize; i++) {
-///             FloatVars[VarGrpName][FrameStart + i] = FrameData[i];
-///           }
-        } else if (VarType == "double") {
-          std::vector<double> FrameData;
-///           TestIO->ReadVar(GroupName, VarName, FrameShape, FrameData);
-///           for (std::size_t i = 0; i < FrameSize; i++) {
-///             DoubleVars[VarGrpName][FrameStart + i] = FrameData[i];
-///           }
-        } else if (VarType == "string") {
-          std::vector<std::string> FrameData;
-///           TestIO->ReadVar(GroupName, VarName, FrameShape, FrameData);
-///           for (std::size_t i = 0; i < FrameSize; i++) {
-///              StringVars[VarGrpName][FrameStart + i] = FrameData[i];
-///           }
-        }
+    // Float variables
+    for (IodaIO::FrameFloatIter idata = TestIO->frame_float_begin();
+                                idata != TestIO->frame_float_end(); ++idata) {
+      std::string VarGrpName = TestIO->frame_float_get_name(idata);
+      std::vector<float> FrameData = TestIO->frame_float_get_data(idata);
+      for (std::size_t i = 0; i < FrameSize; ++i) {
+        FloatVars[VarGrpName][FrameStart + i] = FrameData[i];
+      }
+    }
+
+    // Double variables
+    for (IodaIO::FrameDoubleIter idata = TestIO->frame_double_begin();
+                                 idata != TestIO->frame_double_end(); ++idata) {
+      std::string VarGrpName = TestIO->frame_double_get_name(idata);
+      std::vector<double> FrameData = TestIO->frame_double_get_data(idata);
+      for (std::size_t i = 0; i < FrameSize; ++i) {
+        DoubleVars[VarGrpName][FrameStart + i] = FrameData[i];
+      }
+    }
+
+    // String variables
+    for (IodaIO::FrameStringIter idata = TestIO->frame_string_begin();
+                                 idata != TestIO->frame_string_end(); ++idata) {
+      std::string VarGrpName = TestIO->frame_string_get_name(idata);
+      std::vector<std::string> FrameData = TestIO->frame_string_get_data(idata);
+      for (std::size_t i = 0; i < FrameSize; ++i) {
+        StringVars[VarGrpName][FrameStart + i] = FrameData[i];
       }
     }
   }
@@ -264,9 +262,7 @@ void testReadVar() {
     std::vector<int> IntVect = iint->second;
     std::vector<int> ExpectedIntVect = ExpectedIntVars[iint->first];
     for (std::size_t i = 0; i < IntVect.size(); i++) {
-      std::cout << "DEBUG: Int: " << iint->first << ": " << i << " --> "
-                << IntVect[i] << " (" << ExpectedIntVect[i] << ")" << std::endl;
-//      EXPECT(IntVect[i] == ExpectedIntVect[i]);
+      EXPECT(IntVect[i] == ExpectedIntVect[i]);
     }
   }
 
@@ -275,9 +271,7 @@ void testReadVar() {
     std::vector<float> FloatVect = ifloat->second;
     std::vector<float> ExpectedFloatVect = ExpectedFloatVars[ifloat->first];
     for (std::size_t i = 0; i < FloatVect.size(); i++) {
-      std::cout << "DEBUG: Float: " << ifloat ->first << ": " << i << " --> "
-                << FloatVect[i] << " (" << ExpectedFloatVect[i] << ")" << std::endl;
-//      EXPECT(oops::is_close(FloatVect[i], ExpectedFloatVect[i], FloatTol));
+      EXPECT(oops::is_close(FloatVect[i], ExpectedFloatVect[i], FloatTol));
     }
   }
 
@@ -286,9 +280,7 @@ void testReadVar() {
     std::vector<double> DoubleVect = idouble->second;
     std::vector<double> ExpectedDoubleVect = ExpectedDoubleVars[idouble->first];
     for (std::size_t i = 0; i < DoubleVect.size(); i++) {
-      std::cout << "DEBUG: Double: " << idouble ->first << ": " << i << " --> "
-                << DoubleVect[i] << " (" << ExpectedDoubleVect[i] << ")" << std::endl;
-//      EXPECT(oops::is_close(DoubleVect[i], ExpectedDoubleVect[i], DoubleTol));
+      EXPECT(oops::is_close(DoubleVect[i], ExpectedDoubleVect[i], DoubleTol));
     }
   }
 
@@ -296,9 +288,7 @@ void testReadVar() {
     std::vector<std::string> StringVect = istring->second;
     std::vector<std::string> ExpectedStringVect = ExpectedStringVars[istring->first];
     for (std::size_t i = 0; i < StringVect.size(); i++) {
-      std::cout << "DEBUG: String: " << istring ->first << ": " << i << " --> "
-                << StringVect[i] << " (" << ExpectedStringVect[i] << ")" << std::endl;
-//      EXPECT(StringVect[i] == ExpectedStringVect[i]);
+      EXPECT(StringVect[i] == ExpectedStringVect[i]);
     }
   }
 }

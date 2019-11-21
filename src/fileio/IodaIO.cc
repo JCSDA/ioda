@@ -453,6 +453,58 @@ int IodaIO::dim_name_id(const std::string & name) {
 
 // -----------------------------------------------------------------------------
 /*!
+ * \brief beginning frame iterator
+ */
+
+IodaIO::FrameIter IodaIO::frame_begin() {
+  IodaIO::FrameIter iframe = frame_info_.begin();
+  if (iframe != frame_info_.end()) {
+    ReadFrame(iframe);
+  }
+  return iframe;
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \brief advance frame iterator to next frame
+ */
+
+void IodaIO::frame_next(IodaIO::FrameIter & iframe) {
+  std::advance(iframe, 1);
+  if (iframe != frame_info_.end()) {
+    ReadFrame(iframe);
+  }
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \brief ending frame iterator
+ */
+
+IodaIO::FrameIter IodaIO::frame_end() {
+  return frame_info_.end();
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \brief start of current frame
+ */
+
+std::size_t IodaIO::frame_start(IodaIO::FrameIter iframe) {
+  return iframe->start;
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \brief size of current frame
+ */
+
+std::size_t IodaIO::frame_size(IodaIO::FrameIter iframe) {
+  return iframe->size;
+}
+
+// -----------------------------------------------------------------------------
+/*!
  * \details This method extracts the group and variable names from
  *          the given compound name.
  *

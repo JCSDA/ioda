@@ -16,9 +16,6 @@
 #include "oops/util/DateTime.h"
 #include "oops/util/ObjectCounter.h"
 
-#include "database/ObsSpaceContainer.h"
-
-
 ////////////////////////////////////////////////////////////////////////
 // Implementation of IodaIO for netcdf.
 ////////////////////////////////////////////////////////////////////////
@@ -53,49 +50,42 @@ class NetcdfIO : public IodaIO,
            const std::size_t MaxFrameSize);
   ~NetcdfIO();
 
-  IodaIO::FrameIter frame_begin();
-  void frame_next(IodaIO::FrameIter &);
-  IodaIO::FrameIter frame_end();
-
-  std::size_t frame_start(IodaIO::FrameIter);
-  std::size_t frame_size(IodaIO::FrameIter);
-
  private:
   // For the oops::Printable base class
   void print(std::ostream & os) const;
 
-  void NcReadVar(const int FileId, const int VarId,
+  void NcReadVar(const std::string & GroupName, const std::string & VarName,
                  const std::vector<std::size_t> & Starts,
                  const std::vector<std::size_t> & Counts,
                  const std::vector<std::int64_t> & Strides,
                  int & FillValue, std::vector<int> & VarData);
-  void NcReadVar(const int FileId, const int VarId,
+  void NcReadVar(const std::string & GroupName, const std::string & VarName,
                  const std::vector<std::size_t> & Starts,
                  const std::vector<std::size_t> & Counts,
                  const std::vector<std::int64_t> & Strides,
                  float & FillValue, std::vector<float> & VarData);
-  void NcReadVar(const int FileId, const int VarId,
+  void NcReadVar(const std::string & GroupName, const std::string & VarName,
                  const std::vector<std::size_t> & Starts,
                  const std::vector<std::size_t> & Counts,
                  const std::vector<std::int64_t> & Strides,
                  double & FillValue, std::vector<double> & VarData);
-  void NcReadVar(const int FileId, const int VarId,
+  void NcReadVar(const std::string & GroupName, const std::string & VarName,
                  const std::vector<std::size_t> & Starts,
                  const std::vector<std::size_t> & Counts,
                  const std::vector<std::int64_t> & Strides,
                  char & FillValue, std::vector<std::string> & VarData);
 
-  void NcWriteVar(const int FileId, const int VarId,
+  void NcWriteVar(const std::string & GroupName, const std::string & VarName,
                  const std::vector<std::size_t> & Starts,
                  const std::vector<std::size_t> & Counts,
                  const std::vector<std::int64_t> & Strides,
                  const std::vector<int> & VarData);
-  void NcWriteVar(const int FileId, const int VarId,
+  void NcWriteVar(const std::string & GroupName, const std::string & VarName,
                  const std::vector<std::size_t> & Starts,
                  const std::vector<std::size_t> & Counts,
                  const std::vector<std::int64_t> & Strides,
                  const std::vector<float> & VarData);
-  void NcWriteVar(const int FileId, const int VarId,
+  void NcWriteVar(const std::string & GroupName, const std::string & VarName,
                  const std::vector<std::size_t> & Starts,
                  const std::vector<std::size_t> & Counts,
                  const std::vector<std::int64_t> & Strides,
@@ -111,7 +101,10 @@ class NetcdfIO : public IodaIO,
 
   int GetStringDimBySize(const std::size_t DimSize);
 
-  void ReadConvertDateTime(std::string GroupName, std::string VarName,
+  void ReadConvertDateTime(const std::string & GroupName, const std::string & VarName,
+                           const std::vector<std::size_t> & Starts,
+                           const std::vector<std::size_t> & Counts,
+                           const std::vector<std::int64_t> & Strides,
                            std::vector<std::string> & VarData);
 
   template <typename DataType>
@@ -121,7 +114,7 @@ class NetcdfIO : public IodaIO,
   std::vector<int> GetNcDimIds(const std::string & GroupName,
                                const std::vector<std::size_t> & VarShape);
 
-  void GetFrame(IodaIO::FrameIter & iframe);
+  void ReadFrame(IodaIO::FrameIter & iframe);
 
   // Data members
   /*!
@@ -148,11 +141,6 @@ class NetcdfIO : public IodaIO,
    *          date_time variable in the netcdf file.
    */
   bool have_date_time_;
-
-  /*! \brief Containers for file frame */
-  std::unique_ptr<ioda::ObsSpaceContainer<int>> int_frame_;
-  std::unique_ptr<ioda::ObsSpaceContainer<float>> float_frame_;
-  std::unique_ptr<ioda::ObsSpaceContainer<std::string>> string_frame_;
 };
 
 }  // namespace ioda
