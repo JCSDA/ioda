@@ -457,23 +457,7 @@ int IodaIO::dim_name_id(const std::string & name) {
  */
 
 IodaIO::FrameIter IodaIO::frame_begin() {
-  IodaIO::FrameIter iframe = frame_info_.begin();
-  if (iframe != frame_info_.end()) {
-    ReadFrame(iframe);
-  }
-  return iframe;
-}
-
-// -----------------------------------------------------------------------------
-/*!
- * \brief advance frame iterator to next frame
- */
-
-void IodaIO::frame_next(IodaIO::FrameIter & iframe) {
-  std::advance(iframe, 1);
-  if (iframe != frame_info_.end()) {
-    ReadFrame(iframe);
-  }
+  return frame_info_.begin();
 }
 
 // -----------------------------------------------------------------------------
@@ -487,20 +471,29 @@ IodaIO::FrameIter IodaIO::frame_end() {
 
 // -----------------------------------------------------------------------------
 /*!
- * \brief start of current frame
+ * \brief start value of current frame
  */
 
-std::size_t IodaIO::frame_start(IodaIO::FrameIter iframe) {
+std::size_t IodaIO::frame_start(IodaIO::FrameIter & iframe) {
   return iframe->start;
 }
 
 // -----------------------------------------------------------------------------
 /*!
- * \brief size of current frame
+ * \brief size value of current frame
  */
 
-std::size_t IodaIO::frame_size(IodaIO::FrameIter iframe) {
+std::size_t IodaIO::frame_size(IodaIO::FrameIter & iframe) {
   return iframe->size;
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \brief read from the file into the frame containers
+ */
+
+void IodaIO::frame_read(IodaIO::FrameIter & iframe) {
+  ReadFrame(iframe);
 }
 
 // -----------------------------------------------------------------------------

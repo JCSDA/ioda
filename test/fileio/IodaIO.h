@@ -145,7 +145,7 @@ void testContainers() {
   std::vector<std::size_t> FrameSizes = conf.getUnsignedVector("TestInput.frames.sizes");
   std::size_t i = 0;
   for (IodaIO::FrameIter iframe = TestIO->frame_begin();
-                         iframe != TestIO->frame_end(); TestIO->frame_next(iframe)) {
+                         iframe != TestIO->frame_end(); ++iframe) {
     EXPECT(iframe->start == FrameStarts[i]);
     EXPECT(iframe->size == FrameSizes[i]);
     i++;
@@ -207,9 +207,12 @@ void testReadVar() {
   }
 
   for (IodaIO::FrameIter iframe = TestIO->frame_begin();
-                         iframe != TestIO->frame_end(); TestIO->frame_next(iframe)) {
+                         iframe != TestIO->frame_end(); ++iframe) {
     std::size_t FrameStart = TestIO->frame_start(iframe);
     std::size_t FrameSize = TestIO->frame_size(iframe);
+
+    // Fill in the current frame from the file
+    TestIO->frame_read(iframe);
 
     // Integer variables
     for (IodaIO::FrameIntIter idata = TestIO->frame_int_begin();

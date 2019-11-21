@@ -236,8 +236,10 @@ class IodaIO : public util::Printable {
     void frame_next(FrameIter &);
     FrameIter frame_end();
 
-    std::size_t frame_start(FrameIter);
-    std::size_t frame_size(FrameIter);
+    std::size_t frame_start(FrameIter &);
+    std::size_t frame_size(FrameIter &);
+
+    void frame_read(FrameIter &);
 
     typedef FrameDataMap<int>::FrameStoreIter FrameIntIter;
     FrameIntIter frame_int_begin() { return int_frame_data_->begin(); }
