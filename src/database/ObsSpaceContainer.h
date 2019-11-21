@@ -97,27 +97,25 @@ class ObsSpaceContainer: public util::Printable {
 
          // Attributes
          std::string mode;                /*!< Read & write mode : 'r' or 'rw'*/
-         std::size_t size;                /*!< Total size of data */
          std::vector<std::size_t> shape;  /*!< Shape of data */
              /*!< Note that shape holds the dimension sizes and size is the product */
              /*!< of these dimension sizes. */
 
          // Data
-         std::unique_ptr<ContType[]> data;  /*!< Smart pointer to vector */
+         std::vector<ContType> data;
 
          // Constructor with default read & write mode : "rw"
          VarRecord(const std::string & group, const std::string & variable,
-                const std::vector<std::size_t> & shape, const std::size_t & size,
-                std::unique_ptr<ContType[]> & vect)
+                const std::vector<std::size_t> & shape, std::vector<ContType> & vect)
             : group(group), variable(variable), mode("rw"),
-              size(size), shape(shape), data(std::move(vect)) {}
+              shape(shape), data(std::move(vect)) {}
 
          // Constructor with passed read & write mode
          VarRecord(const std::string & group, const std::string & variable,
                    const std::string & mode, const std::vector<std::size_t> & shape,
-                   const std::size_t & size, std::unique_ptr<ContType[]> & vect)
+                   std::vector<ContType> & vect)
             : group(group), variable(variable), mode(mode),
-              size(size), shape(shape), data(std::move(vect)) {}
+              shape(shape), data(std::move(vect)) {}
      };  // end of VarRecord definition
 
      // Section 3: indexing methods, organization of elements
@@ -211,11 +209,12 @@ class ObsSpaceContainer: public util::Printable {
      std::size_t nvars() const {return nvars_;}
 
      void LoadFromDb(const std::string & GroupName, const std::string & VarName,
-                     const std::vector<std::size_t> & VarShape, ContType * VarData,
+                     const std::vector<std::size_t> & VarShape, std::vector<ContType> & VarData,
                      const std::size_t Start = 0, const std::size_t Count = 0) const;
 
      void StoreToDb(const std::string & GroupName, const std::string & VarName,
-                    const std::vector<std::size_t> & VarShape, const ContType * VarData,
+                    const std::vector<std::size_t> & VarShape,
+                    const std::vector<ContType> & VarData,
                     const std::size_t Start = 0, const std::size_t Count = 0);
 
  private:
@@ -268,7 +267,7 @@ ObsSpaceContainer<ContType>::~ObsSpaceContainer() {
 template <typename ContType>
 void ObsSpaceContainer<ContType>::StoreToDb(const std::string & GroupName,
           const std::string & VarName, const std::vector<std::size_t> & VarShape,
-          const ContType * VarData, std::size_t Start, std::size_t Count) {
+          const std::vector<ContType> & VarData, std::size_t Start, std::size_t Count) {
   // Calculate the total number of elements
   std::size_t VarSize =
     std::accumulate(VarShape.begin(), VarShape.end(), 1, std::multiplies<std::size_t>());
@@ -277,8 +276,7 @@ void ObsSpaceContainer<ContType>::StoreToDb(const std::string & GroupName,
   std::size_t End = SetSegmentEnd(Start, Count, VarSize);
 
   // Search for VarRecord with GroupName, VarName combination
-  typename VarRecord_set::iterator Var =
-                          DataContainer.find(boost::make_tuple(GroupName, VarName));
+  DbIter Var = DataContainer.find(boost::make_tuple(GroupName, VarName));
   if (Var != DataContainer.end()) {
     // Found the required record in database
     // Check if attempting to update a read only VarRecord
@@ -289,17 +287,20 @@ void ObsSpaceContainer<ContType>::StoreToDb(const std::string & GroupName,
       ABORT(ErrorMsg);
     }
 
-    // Update the record
+    // Update the record (boost replace method)
+    VarRecord DbRec = *Var;
     for (std::size_t ii = Start; ii < End; ++ii) {
-      Var->data.get()[ii] = VarData[ii-Start];
+      DbRec.data[ii] = VarData[ii-Start];
     }
+    DataContainer.replace(Var, DbRec);
   } else {
     // The required record is not in database, update the database
-    std::unique_ptr<ContType[]> vect{ new ContType[VarSize] };
+    std::vector<ContType> vect(VarSize);
     for (std::size_t ii = Start; ii < End; ++ii) {
-      vect.get()[ii] = VarData[ii-Start];
+      vect[ii] = VarData[ii-Start];
     }
-    DataContainer.insert({GroupName, VarName, VarShape, VarSize, vect});
+    VarRecord DbRec(GroupName, VarName, VarShape, vect);
+    DataContainer.insert(DbRec);
   }
 }
 
@@ -322,11 +323,10 @@ void ObsSpaceContainer<ContType>::StoreToDb(const std::string & GroupName,
 template <typename ContType>
 void ObsSpaceContainer<ContType>::LoadFromDb(const std::string & GroupName,
               const std::string & VarName, const std::vector<std::size_t> & VarShape,
-              ContType * VarData, std::size_t Start, std::size_t Count) const {
+              std::vector<ContType> & VarData, std::size_t Start, std::size_t Count) const {
   if (has(GroupName, VarName)) {
     // Found the required record in the database
-    typename VarRecord_set::iterator
-      Var = DataContainer.find(boost::make_tuple(GroupName, VarName));
+    DbIter Var = DataContainer.find(boost::make_tuple(GroupName, VarName));
 
     // Calculate the total number of elements
     std::size_t VarSize =
@@ -337,7 +337,7 @@ void ObsSpaceContainer<ContType>::LoadFromDb(const std::string & GroupName,
 
     // Copy the elements into the output
     for (std::size_t i = Start; i < End; i++) {
-      VarData[i-Start] = Var->data.get()[i];
+      VarData[i-Start] = Var->data[i];
     }
   } else {
     // Required record is not in the database
@@ -528,7 +528,7 @@ std::string ObsSpaceContainer<ContType>::var_iter_mode(
 template <typename ContType>
 std::size_t ObsSpaceContainer<ContType>::var_iter_size(
                                          ObsSpaceContainer<ContType>::VarIter var_iter) {
-  return var_iter->size;
+  return var_iter->data.size();
 }
 
 // -----------------------------------------------------------------------------

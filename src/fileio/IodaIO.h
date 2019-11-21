@@ -68,10 +68,17 @@ class IodaIO : public util::Printable {
 
     // Container for information about a variable. Use a nested map structure with the group
     // name for the key in the outer nest, and the variable name for the key in the inner
-    // nest. Information that is recorded is the variable data type and shape.
+    // nest. var_id relates to the variable's id in the file. file_shape relates to the
+    // variable's shape in the file, whereas shape relates to the variable's shape internally.
+    //
+    // The place where file_shape and shape are different, for example, are strings in netcdf
+    // files. In the file, a vector of strings is stored as a character array (2D) whereas
+    // internally, a vector of strings is stored in the std::vector<std::string> container
+    // which is 1D.
     typedef struct {
       std::string dtype;
       std::size_t var_id;
+      std::vector<std::size_t> file_shape;
       std::vector<std::size_t> shape;
       std::vector<std::string> dim_names;
     } VarInfoRec;
@@ -115,20 +122,27 @@ class IodaIO : public util::Printable {
 
     // Methods provided by subclasses
     virtual void ReadVar(const std::string & GroupName, const std::string & VarName,
-                         const std::vector<std::size_t> & VarShape, int * VarData) = 0;
+                         const std::vector<std::size_t> & VarShape,
+                         std::vector<int> & VarData) = 0;
     virtual void ReadVar(const std::string & GroupName, const std::string & VarName,
-                         const std::vector<std::size_t> & VarShape, float * VarData) = 0;
+                         const std::vector<std::size_t> & VarShape,
+                         std::vector<float> & VarData) = 0;
     virtual void ReadVar(const std::string & GroupName, const std::string & VarName,
-                         const std::vector<std::size_t> & VarShape, double * VarData) = 0;
+                         const std::vector<std::size_t> & VarShape,
+                         std::vector<double> & VarData) = 0;
     virtual void ReadVar(const std::string & GroupName, const std::string & VarName,
-                         const std::vector<std::size_t> & VarShape, char * VarData) = 0;
+                         const std::vector<std::size_t> & VarShape,
+                         std::vector<std::string> & VarData) = 0;
 
     virtual void WriteVar(const std::string & GroupName, const std::string & VarName,
-                          const std::vector<std::size_t> & VarShape, int * VarData) = 0;
+                          const std::vector<std::size_t> & VarShape,
+                          const std::vector<int> & VarData) = 0;
     virtual void WriteVar(const std::string & GroupName, const std::string & VarName,
-                          const std::vector<std::size_t> & VarShape, float * VarData) = 0;
+                          const std::vector<std::size_t> & VarShape,
+                          const std::vector<float> & VarData) = 0;
     virtual void WriteVar(const std::string & GroupName, const std::string & VarName,
-                          const std::vector<std::size_t> & VarShape, char * VarData) = 0;
+                          const std::vector<std::size_t> & VarShape,
+                          const std::vector<std::string> & VarData) = 0;
 
     // Methods inherited from base class
     std::string fname() const;
@@ -168,6 +182,8 @@ class IodaIO : public util::Printable {
     std::string var_dtype(const std::string &, const std::string &);
     std::vector<std::size_t> var_shape(VarIter);
     std::vector<std::size_t> var_shape(const std::string &, const std::string &);
+    std::vector<std::size_t> file_shape(VarIter);
+    std::vector<std::size_t> file_shape(const std::string &, const std::string &);
     std::size_t var_id(VarIter);
     std::size_t var_id(const std::string &, const std::string &);
 

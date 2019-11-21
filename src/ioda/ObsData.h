@@ -82,26 +82,26 @@ class ObsData : public oops::ObsSpaceBase {
   bool has(const std::string &, const std::string &) const;
 
   void get_db(const std::string & group, const std::string & name,
-              const std::size_t vsize, int vdata[]) const;
+              std::vector<int> & vdata) const;
   void get_db(const std::string & group, const std::string & name,
-              const std::size_t vsize, float vdata[]) const;
+              std::vector<float> & vdata) const;
   void get_db(const std::string & group, const std::string & name,
-              const std::size_t vsize, double vdata[]) const;
+              std::vector<double> & vdata) const;
   void get_db(const std::string & group, const std::string & name,
-              const std::size_t vsize, std::string vdata[]) const;
+              std::vector<std::string> & vdata) const;
   void get_db(const std::string & group, const std::string & name,
-              const std::size_t vsize, util::DateTime vdata[]) const;
+              std::vector<util::DateTime> & vdata) const;
 
   void put_db(const std::string & group, const std::string & name,
-              const std::size_t vsize, const int vdata[]);
+              const std::vector<int> & vdata);
   void put_db(const std::string & group, const std::string & name,
-              const std::size_t vsize, const float vdata[]);
+              const std::vector<float> & vdata);
   void put_db(const std::string & group, const std::string & name,
-              const std::size_t vsize, const double vdata[]);
+              const std::vector<double> & vdata);
   void put_db(const std::string & group, const std::string & name,
-              const std::size_t vsize, const std::string vdata[]);
+              const std::vector<std::string> & vdata);
   void put_db(const std::string & group, const std::string & name,
-              const std::size_t vsize, const util::DateTime vdata[]);
+              const std::vector<util::DateTime> & vdata);
 
   const KDTree & getKDTree();
 
@@ -124,8 +124,6 @@ class ObsData : public oops::ObsSpaceBase {
   /*! \details This method will return the associated MPI communicator */
   const eckit::mpi::Comm & comm() const {return commMPI_;}
 
-  void generateDistribution(const eckit::Configuration &);
-
   void printJo(const ObsVector &, const ObsVector &);  // to be removed
 
   const oops::Variables & obsvariables() const {return obsvars_;}
@@ -135,6 +133,13 @@ class ObsData : public oops::ObsSpaceBase {
   void print(std::ostream &) const;
 
   ObsData & operator= (const ObsData &);
+
+  // Initialize the database with auto-generated locations
+  void generateDistribution(const eckit::Configuration &);
+  void genDistRandom(const eckit::Configuration & conf, std::vector<float> & Lats,
+                     std::vector<float> & Lons, std::vector<util::DateTime> & Dtimes);
+  void genDistList(const eckit::Configuration & conf, std::vector<float> & Lats,
+                   std::vector<float> & Lons, std::vector<util::DateTime> & Dtimes);
 
   // Initialize the database from the input file
   void InitFromFile(const std::string & filename);
@@ -149,9 +154,9 @@ class ObsData : public oops::ObsSpaceBase {
   void createKDTree();
 
   template<typename VarType>
-  void ApplyDistIndex(std::unique_ptr<VarType[]> & FullData,
+  void ApplyDistIndex(std::vector<VarType> & FullData,
                       const std::vector<std::size_t> & FullShape,
-                      std::unique_ptr<VarType[]> & IndexedData,
+                      std::vector<VarType> & IndexedData,
                       std::vector<std::size_t> & IndexedShape,
                       std::size_t & IndexedSize) const;
 
@@ -159,8 +164,7 @@ class ObsData : public oops::ObsSpaceBase {
 
   // Convert variable data types including the missing value marks
   template<typename FromType, typename ToType>
-  static void ConvertVarType(const FromType * FromVar, ToType * ToVar,
-                             const std::size_t VarSize);
+  static void ConvertVarType(const std::vector<FromType> & FromVar, std::vector<ToType> & ToVar);
 
   // Dump the database into the output file
   void SaveToFile(const std::string & file_name);
@@ -168,8 +172,8 @@ class ObsData : public oops::ObsSpaceBase {
   // Methods for tranferring data from a variable into the database.
   template<typename VarType, typename DbType>
   void ConvertStoreToDb(const std::string & GroupName, const std::string & VarName,
-                    const std::vector<std::size_t> & VarShape, const std::size_t VarSize,
-                    const VarType * VarData);
+                        const std::vector<std::size_t> & VarShape,
+                        const std::vector<VarType> & VarData);
 
   /*! \brief name of obs space */
   std::string obsname_;
