@@ -153,12 +153,7 @@ NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
       // Copy shape from NcDims to VarShape. If we have a string data type, then
       // copy only the first dimension size to VarShape since the internal variable
       // is a vector of strings, and the file variable is a 2D character array.
-      std::vector<std::size_t> VarShape;
-      if (strcmp(NcDtypeName, "string") == 0) {
-        VarShape.push_back(NcDimSizes[0]);
-      } else {
-        VarShape = NcDimSizes;
-      }
+      std::vector<std::size_t> VarShape(1, NcDimSizes[0]);
 
       // Record the maximum variable size for the frame construction below.
       MaxVarSize = std::max(MaxVarSize, VarShape[0]);
@@ -399,8 +394,6 @@ void NetcdfIO::NcWriteVar(const std::string & GroupName, const std::string & Var
                           const std::vector<std::size_t> & Counts,
                           const std::vector<std::int64_t> & Strides,
                           const std::vector<int> & VarData) {
-  std::cout << "DEBUG:   NcWriteVar (Int): " << GroupName << ", " << VarName << ", "
-            << Starts << ", " << Counts << ", " << Strides << ", " << VarData << std::endl;
   int MissVal = util::missingValue(MissVal);
   int NcFillVal = NC_FILL_INT;
 
@@ -424,8 +417,6 @@ void NetcdfIO::NcWriteVar(const std::string & GroupName, const std::string & Var
                           const std::vector<std::size_t> & Counts,
                           const std::vector<std::int64_t> & Strides,
                           const std::vector<float> & VarData) {
-  std::cout << "DEBUG:   NcWriteVar (Float): " << GroupName << ", " << VarName << ", "
-            << Starts << ", " << Counts << ", " << Strides << ", " << VarData << std::endl;
   float MissVal = util::missingValue(MissVal);
   float NcFillVal = NC_FILL_FLOAT;
 
@@ -449,8 +440,6 @@ void NetcdfIO::NcWriteVar(const std::string & GroupName, const std::string & Var
                           const std::vector<std::size_t> & Counts,
                           const std::vector<std::int64_t> & Strides,
                           const std::vector<std::string> & VarData) {
-  std::cout << "DEBUG:   NcWriteVar (String): " << GroupName << ", " << VarName << ", "
-            << Starts << ", " << Counts << ", " << Strides << ", " << VarData << std::endl;
   std::unique_ptr<char[]> CharData(new char[Counts[0] * Counts[1]]);
   StringVectorToCharArray(VarData, Counts, CharData.get());
 
@@ -634,8 +623,6 @@ void NetcdfIO::WriteFrame(IodaIO::FrameIter & iframe) {
   // Grab the specs for the current frame
   std::size_t FrameStart = frame_start(iframe);
   std::size_t FrameSize = frame_size(iframe);
-  std::cout << "DEBUG: FrameInfo: FrameStart, FrameSize: " << FrameStart << ", "
-            << FrameSize << std::endl;
 
   std::vector<std::size_t> Starts(1, FrameStart);
   std::vector<std::size_t> Counts;
@@ -668,9 +655,10 @@ void NetcdfIO::WriteFrame(IodaIO::FrameIter & iframe) {
     ExtractGrpVarName(frame_string_get_name(iframe), GroupName, VarName);
     std::vector<std::string> FrameData = frame_string_get_data(iframe);
     std::vector<std::size_t> FileShape = file_shape(GroupName, VarName);
-    Counts.assign(1, FrameData.size());
-    Counts.push_back(FileShape[1]);
-    NcWriteVar(GroupName, VarName, Starts, Counts, Strides, FrameData);
+    std::vector<std::size_t> CharStarts{ Starts[0], 0 };
+    std::vector<std::size_t> CharCounts{ FrameData.size(), FileShape[1] };
+    std::vector<std::int64_t> CharStrides{ 1, 1 };
+    NcWriteVar(GroupName, VarName, CharStarts, CharCounts, CharStrides, FrameData);
   }
 }
 
@@ -726,6 +714,9 @@ void NetcdfIO::GrpVarInsert(const std::string & GroupName, const std::string & V
     }
 
     std::vector<int> NcDimIds = GetNcDimIds(GroupName, FileShape);
+    if (VarType == "string") {
+      NcDimIds.push_back(GetStringDimBySize(FileShape[1]));
+    }
     ErrorMsg = "NetcdfIO::WriteVar: Unable to create variable dataset: " + NcVarName;
     CheckNcCall(nc_def_var(ncid_, NcVarName.c_str(), NcVarType, NcDimIds.size(),
                            NcDimIds.data(), &NcVarId), ErrorMsg);

@@ -63,7 +63,7 @@ TestOutput:
       type: "int"
       values: [ 0, 2, 4, 6, 8 ]
 
-    - name: "test_char@MetaData"
+    - name: "test_char@VarMetaData"
       type: "string"
       values:
         - "Hello"
@@ -72,7 +72,7 @@ TestOutput:
         - "are"
         - "you"
 
-    - name: "test_char2@VarMetaData"
+    - name: "test_char2@MetaData"
       type: "string"
       values:
         - "ABCD"
