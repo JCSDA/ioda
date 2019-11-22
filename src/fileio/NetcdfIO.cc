@@ -627,7 +627,7 @@ void NetcdfIO::WriteFrame(IodaIO::FrameIter & iframe) {
   std::vector<std::size_t> Starts(1, FrameStart);
   std::vector<std::size_t> Counts;
   std::vector<std::int64_t> Strides(1, 1);
-  
+
   std::string GroupName;
   std::string VarName;
   std::vector<std::size_t> VarShape;
@@ -685,7 +685,7 @@ void NetcdfIO::GrpVarInsert(const std::string & GroupName, const std::string & V
   if (fmode_ == "r") {
     // Read mode, insert data into group, variable info container
     if (VarName == "datetime") {
-      if ((not have_date_time_) and have_offset_time_) {
+      if ((!have_date_time_) && have_offset_time_) {
         NcVarName = "time@" + GroupName;
       }
     }

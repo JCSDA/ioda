@@ -33,10 +33,10 @@ namespace ioda {
  */
 template<typename FrameType>
 class FrameDataMap {
-  private:
+ private:
     typedef std::map<std::string, std::vector<FrameType>> FrameStore;
 
-  public:
+ public:
     typedef typename FrameStore::iterator FrameStoreIter;
     FrameStoreIter begin() { return frame_container_.begin(); }
     FrameStoreIter end() { return frame_container_.end(); }
@@ -49,7 +49,8 @@ class FrameDataMap {
       std::string VarGrpName = VarName + "@" + GroupName;
       frame_container_[VarGrpName] = VarData;
     }
-  private:
+
+ private:
     FrameStore frame_container_;
 };
 
