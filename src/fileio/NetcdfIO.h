@@ -97,8 +97,6 @@ class NetcdfIO : public IodaIO,
 
   std::string FormNcVarName(const std::string & GroupName, const std::string & VarName);
 
-  void CreateNcDim(const std::string DimName, const std::size_t DimSize);
-
   int GetStringDimBySize(const std::size_t DimSize);
 
   void ReadConvertDateTime(const std::string & GroupName, const std::string & VarName,
@@ -114,7 +112,14 @@ class NetcdfIO : public IodaIO,
   std::vector<int> GetNcDimIds(const std::string & GroupName,
                                const std::vector<std::size_t> & VarShape);
 
+  void DimInsert(const std::string & Name, const std::size_t Size);
+
   void ReadFrame(IodaIO::FrameIter & iframe);
+  void WriteFrame(IodaIO::FrameIter & iframe);
+
+  void GrpVarInsert(const std::string & GroupName, const std::string & VarName,
+                    const std::string & VarType, const std::vector<std::size_t> & VarShape,
+                    const std::size_t MaxStringSize);
 
   // Data members
   /*!

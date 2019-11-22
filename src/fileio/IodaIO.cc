@@ -309,6 +309,21 @@ std::size_t IodaIO::var_id(const std::string & GroupName, const std::string & Va
 
 // -----------------------------------------------------------------------------
 /*!
+ * \details This method adds an entry to the group, variable information map.
+ *
+ * \param[in] GroupName Group key for GrpVarInfoMap
+ * \param[in] VarName Variable key for GrpVarInfoMap
+ * \param[in] 
+ */
+
+void IodaIO::grp_var_insert(const std::string & GroupName, const std::string & VarName,
+                 const std::string & VarType, const std::vector<std::size_t> & VarShape,
+                 const std::size_t MaxStringSize) {
+  GrpVarInsert(GroupName, VarName, VarType, VarShape, MaxStringSize);
+}
+
+// -----------------------------------------------------------------------------
+/*!
  * \details This method returns a flag indicating the existence of the given
  *          dimension name. True indicates the dimension exists, false
  *          indicates the dimension does not exist.
@@ -451,6 +466,15 @@ int IodaIO::dim_name_id(const std::string & name) {
   return dim_info_.find(name)->second.id;
 }
 
+/*!
+ * \details This method inserts an entry into the dim info container
+ *
+ * \param[in] name Dimension name
+ */
+
+void IodaIO::dim_insert(const std::string & Name, const std::size_t Size) {
+  DimInsert(Name, Size);
+}
 // -----------------------------------------------------------------------------
 /*!
  * \brief beginning frame iterator
@@ -489,11 +513,53 @@ std::size_t IodaIO::frame_size(IodaIO::FrameIter & iframe) {
 
 // -----------------------------------------------------------------------------
 /*!
+ * \brief initialize the frame info container
+ */
+
+void IodaIO::frame_info_init(std::size_t MaxVarSize) {
+  // Chop the MaxVarSize into max_frame_size_ pieces. Make sure the total
+  // of the sizes of all frames adds up to MaxVarSize.
+  std::size_t FrameStart = 0;
+  while (FrameStart < MaxVarSize) {
+    std::size_t FrameSize = max_frame_size_;
+    if ((FrameStart + FrameSize) > MaxVarSize) {
+      FrameSize = MaxVarSize - FrameStart;
+    }
+    IodaIO::FrameInfoRec Finfo(FrameStart, FrameSize);
+    frame_info_.push_back(Finfo);
+
+    FrameStart += max_frame_size_;
+  }
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \brief initialize the frame data container
+ */
+
+void IodaIO::frame_data_init() {
+  int_frame_data_.reset(new ioda::FrameDataMap<int>);
+  float_frame_data_.reset(new ioda::FrameDataMap<float>);
+  double_frame_data_.reset(new ioda::FrameDataMap<double>);
+  string_frame_data_.reset(new ioda::FrameDataMap<std::string>);
+}
+
+// -----------------------------------------------------------------------------
+/*!
  * \brief read from the file into the frame containers
  */
 
 void IodaIO::frame_read(IodaIO::FrameIter & iframe) {
   ReadFrame(iframe);
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \brief write from the frame containers into the file
+ */
+
+void IodaIO::frame_write(IodaIO::FrameIter & iframe) {
+  WriteFrame(iframe);
 }
 
 // -----------------------------------------------------------------------------

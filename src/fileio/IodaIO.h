@@ -213,6 +213,10 @@ class IodaIO : public util::Printable {
     std::size_t var_id(VarIter);
     std::size_t var_id(const std::string &, const std::string &);
 
+    void grp_var_insert(const std::string & GroupName, const std::string & VarName,
+                        const std::string & VarType, const std::vector<std::size_t> & VarShape,
+                        const std::size_t MaxStringSize = 0);
+
     // Access to dimension information
     typedef DimInfoMap::const_iterator DimIter;
     DimIter dim_begin();
@@ -230,6 +234,8 @@ class IodaIO : public util::Printable {
     std::size_t dim_name_size(const std::string &);
     int         dim_name_id(const std::string &);
 
+    void dim_insert(const std::string &, const std::size_t);
+
     // Access to data frames
     typedef FrameInfo::const_iterator FrameIter;
     FrameIter frame_begin();
@@ -239,7 +245,10 @@ class IodaIO : public util::Printable {
     std::size_t frame_start(FrameIter &);
     std::size_t frame_size(FrameIter &);
 
+    void frame_info_init(std::size_t MaxVarSize);
+    void frame_data_init();
     void frame_read(FrameIter &);
+    void frame_write(FrameIter &);
 
     typedef FrameDataMap<int>::FrameStoreIter FrameIntIter;
     FrameIntIter frame_int_begin() { return int_frame_data_->begin(); }
@@ -300,7 +309,14 @@ class IodaIO : public util::Printable {
 
  protected:
     // Methods provided by subclasses
+    virtual void DimInsert(const std::string & Name, const std::size_t Size) = 0;
+
     virtual void ReadFrame(IodaIO::FrameIter & iframe) = 0;
+    virtual void WriteFrame(IodaIO::FrameIter & iframe) = 0;
+
+    virtual void GrpVarInsert(const std::string & GroupName, const std::string & VarName,
+                       const std::string & VarType, const std::vector<std::size_t> & VarShape,
+                       const std::size_t MaxStringSize) = 0;
 
     // Methods inherited from base class
 
