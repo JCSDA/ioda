@@ -51,6 +51,18 @@ void ExtractGrpVarName(const std::string & GrpVarName, std::string & GroupName,
 
 // -----------------------------------------------------------------------------
 
+std::size_t GetMaxStringSize(const std::vector<std::string> & Strings) {
+  std::size_t MaxSize = 0;
+  for (std::size_t i = 0; i < Strings.size(); ++i) {
+    if (Strings[i].size() > MaxSize) {
+      MaxSize = Strings[i].size();
+    }
+  }
+  return MaxSize;
+}
+
+// -----------------------------------------------------------------------------
+
 void testConstructor() {
   const eckit::LocalConfiguration conf(::test::TestEnvironment::config());
 
@@ -220,7 +232,7 @@ void testReadVar() {
                               idata != TestIO->frame_int_end(); ++idata) {
       std::string VarGrpName = TestIO->frame_int_get_name(idata);
       std::vector<int> FrameData = TestIO->frame_int_get_data(idata);
-      for (std::size_t i = 0; i < FrameSize; ++i) {
+      for (std::size_t i = 0; i < FrameData.size(); ++i) {
         IntVars[VarGrpName][FrameStart + i] = FrameData[i];
       }
     }
@@ -230,7 +242,7 @@ void testReadVar() {
                                 idata != TestIO->frame_float_end(); ++idata) {
       std::string VarGrpName = TestIO->frame_float_get_name(idata);
       std::vector<float> FrameData = TestIO->frame_float_get_data(idata);
-      for (std::size_t i = 0; i < FrameSize; ++i) {
+      for (std::size_t i = 0; i < FrameData.size(); ++i) {
         FloatVars[VarGrpName][FrameStart + i] = FrameData[i];
       }
     }
@@ -240,7 +252,7 @@ void testReadVar() {
                                  idata != TestIO->frame_double_end(); ++idata) {
       std::string VarGrpName = TestIO->frame_double_get_name(idata);
       std::vector<double> FrameData = TestIO->frame_double_get_data(idata);
-      for (std::size_t i = 0; i < FrameSize; ++i) {
+      for (std::size_t i = 0; i < FrameData.size(); ++i) {
         DoubleVars[VarGrpName][FrameStart + i] = FrameData[i];
       }
     }
@@ -250,7 +262,7 @@ void testReadVar() {
                                  idata != TestIO->frame_string_end(); ++idata) {
       std::string VarGrpName = TestIO->frame_string_get_name(idata);
       std::vector<std::string> FrameData = TestIO->frame_string_get_data(idata);
-      for (std::size_t i = 0; i < FrameSize; ++i) {
+      for (std::size_t i = 0; i < FrameData.size(); ++i) {
         StringVars[VarGrpName][FrameStart + i] = FrameData[i];
       }
     }
@@ -370,7 +382,8 @@ void testWriteVar() {
   for (istring = ExpectedStringVars.begin(); istring != ExpectedStringVars.end(); ++istring) {
     ExtractGrpVarName(istring->first, GroupName, VarName);
     std::vector<std::size_t> VarShape(1, (istring->second).size());
-    TestIO->grp_var_insert(GroupName, VarName, "string", VarShape, MaxVarSize);
+    std::size_t MaxStringSize = GetMaxStringSize(istring->second);
+    TestIO->grp_var_insert(GroupName, VarName, "string", VarShape, MaxStringSize);
   }
 
   for (IodaIO::FrameIter iframe = TestIO->frame_begin();
@@ -443,15 +456,52 @@ void testWriteVar() {
   }
 
   // Read the data from the file we just created.
+  TestIO.reset(ioda::IodaIOfactory::Create(FileName, "r", MaxFrameSize));
+  for (IodaIO::FrameIter iframe = TestIO->frame_begin();
+                         iframe != TestIO->frame_end(); ++iframe) {
+    std::size_t FrameStart = TestIO->frame_start(iframe);
+    std::size_t FrameSize = TestIO->frame_size(iframe);
+
+    // Fill in the current frame from the file
+    TestIO->frame_read(iframe);
+
+    // Integer variables
+    for (IodaIO::FrameIntIter idata = TestIO->frame_int_begin();
+                              idata != TestIO->frame_int_end(); ++idata) {
+      std::string VarGrpName = TestIO->frame_int_get_name(idata);
+      std::vector<int> FrameData = TestIO->frame_int_get_data(idata);
+      for (std::size_t i = 0; i < FrameData.size(); ++i) {
+        IntVars[VarGrpName][FrameStart + i] = FrameData[i];
+      }
+    }
+
+    // Float variables
+    for (IodaIO::FrameFloatIter idata = TestIO->frame_float_begin();
+                                idata != TestIO->frame_float_end(); ++idata) {
+      std::string VarGrpName = TestIO->frame_float_get_name(idata);
+      std::vector<float> FrameData = TestIO->frame_float_get_data(idata);
+      for (std::size_t i = 0; i < FrameData.size(); ++i) {
+        FloatVars[VarGrpName][FrameStart + i] = FrameData[i];
+      }
+    }
+
+    // String variables
+    for (IodaIO::FrameStringIter idata = TestIO->frame_string_begin();
+                                 idata != TestIO->frame_string_end(); ++idata) {
+      std::string VarGrpName = TestIO->frame_string_get_name(idata);
+      std::vector<std::string> FrameData = TestIO->frame_string_get_data(idata);
+      for (std::size_t i = 0; i < FrameData.size(); ++i) {
+        StringVars[VarGrpName][FrameStart + i] = FrameData[i];
+      }
+    }
+  }
 
   // Check the variables read from the file against the expected values.
   for (iint = IntVars.begin(); iint != IntVars.end(); ++iint) {
     std::vector<int> IntVect = iint->second;
     std::vector<int> ExpectedIntVect = ExpectedIntVars[iint->first];
     for (std::size_t i = 0; i < IntVect.size(); i++) {
-      std::cout << "DEBUG: i, IntVect, ExpectedIntVect:" << i << " --> "
-                << IntVect[i] << " (" << ExpectedIntVect[i] << ")" << std::endl;
-      // EXPECT(IntVect[i] == ExpectedIntVect[i]);
+      EXPECT(IntVect[i] == ExpectedIntVect[i]);
     }
   }
 
@@ -460,9 +510,7 @@ void testWriteVar() {
     std::vector<float> FloatVect = ifloat->second;
     std::vector<float> ExpectedFloatVect = ExpectedFloatVars[ifloat->first];
     for (std::size_t i = 0; i < FloatVect.size(); i++) {
-      std::cout << "DEBUG: i, FloatVect, ExpectedFloatVect:" << i << " --> "
-                << FloatVect[i] << " (" << ExpectedFloatVect[i] << ")" << std::endl;
-      // EXPECT(oops::is_close(FloatVect[i], ExpectedFloatVect[i], FloatTol));
+      EXPECT(oops::is_close(FloatVect[i], ExpectedFloatVect[i], FloatTol));
     }
   }
 
@@ -470,9 +518,7 @@ void testWriteVar() {
     std::vector<std::string> StringVect = istring->second;
     std::vector<std::string> ExpectedStringVect = ExpectedStringVars[istring->first];
     for (std::size_t i = 0; i < StringVect.size(); i++) {
-      std::cout << "DEBUG: i, StringVect, ExpectedStringVect:" << i << " --> "
-                << StringVect[i] << " (" << ExpectedStringVect[i] << ")" << std::endl;
-      // EXPECT(StringVect[i] == ExpectedStringVect[i]);
+      EXPECT(StringVect[i] == ExpectedStringVect[i]);
     }
   }
 }
