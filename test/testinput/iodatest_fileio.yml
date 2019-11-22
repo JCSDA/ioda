@@ -53,3 +53,47 @@ TestOutput:
   max_frame_size: 3
   nlocs: 8
   nvars: 5
+
+  variables:
+    - name: "test_float@MetaData"
+      type: "float"
+      values: [ 0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5 ]
+
+    - name: "test_int@VarMetaData"
+      type: "int"
+      values: [ 0, 2, 4, 6, 8 ]
+
+    - name: "test_char@MetaData"
+      type: "string"
+      values:
+        - "Hello"
+        - "World"
+        - "How"
+        - "are"
+        - "you"
+
+    - name: "test_char2@VarMetaData"
+      type: "string"
+      values:
+        - "ABCD"
+        - "EFGH"
+        - "01234"
+        - "56789"
+        - "abcdefg"
+        - "hijklmn"
+        - "Yes"
+        - "No"
+
+    - name: "datetime@MetaData"
+      type: "string"
+      values:
+        - "2018-14-15T00:00:00Z"
+        - "2018-14-15T00:00:01Z"
+        - "2018-14-15T00:00:02Z"
+        - "2018-14-15T00:00:03Z"
+        - "2018-14-15T00:00:04Z"
+        - "2018-14-15T00:00:05Z"
+        - "2018-14-15T00:00:06Z"
+        - "2018-14-15T00:00:07Z"
+
+  tolerance: 1.0e-5
