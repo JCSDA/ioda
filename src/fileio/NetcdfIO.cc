@@ -636,7 +636,8 @@ void NetcdfIO::WriteFrame(IodaIO::FrameIter & iframe) {
   // their contents into the output file.
   for (IodaIO::FrameIntIter iframe = frame_int_begin();
                             iframe != frame_int_end(); ++iframe) {
-    ExtractGrpVarName(frame_int_get_name(iframe), GroupName, VarName);
+    GroupName = frame_int_get_gname(iframe);
+    VarName = frame_int_get_vname(iframe);
     std::vector<int> FrameData = frame_int_get_data(iframe);
     Counts.assign(1, FrameData.size());
     NcWriteVar(GroupName, VarName, Starts, Counts, Strides, FrameData);
@@ -644,7 +645,8 @@ void NetcdfIO::WriteFrame(IodaIO::FrameIter & iframe) {
 
   for (IodaIO::FrameFloatIter iframe = frame_float_begin();
                               iframe != frame_float_end(); ++iframe) {
-    ExtractGrpVarName(frame_float_get_name(iframe), GroupName, VarName);
+    GroupName = frame_float_get_gname(iframe);
+    VarName = frame_float_get_vname(iframe);
     std::vector<float> FrameData = frame_float_get_data(iframe);
     Counts.assign(1, FrameData.size());
     NcWriteVar(GroupName, VarName, Starts, Counts, Strides, FrameData);
@@ -652,7 +654,8 @@ void NetcdfIO::WriteFrame(IodaIO::FrameIter & iframe) {
 
   for (IodaIO::FrameStringIter iframe = frame_string_begin();
                                iframe != frame_string_end(); ++iframe) {
-    ExtractGrpVarName(frame_string_get_name(iframe), GroupName, VarName);
+    GroupName = frame_string_get_gname(iframe);
+    VarName = frame_string_get_vname(iframe);
     std::vector<std::string> FrameData = frame_string_get_data(iframe);
     std::vector<std::size_t> FileShape = file_shape(GroupName, VarName);
     std::vector<std::size_t> CharStarts{ Starts[0], 0 };
