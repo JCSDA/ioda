@@ -41,7 +41,16 @@ class FrameDataMap {
     FrameStoreIter begin() { return frame_container_.begin(); }
     FrameStoreIter end() { return frame_container_.end(); }
 
-    std::string get_name(FrameStoreIter & Iframe) { return Iframe->first; }
+    std::string get_gname(FrameStoreIter & Iframe) {
+      std::string GrpVarName = Iframe->first;
+      std::size_t Spos = GrpVarName.find("@");
+      return GrpVarName.substr(Spos+1);
+    }
+    std::string get_vname(FrameStoreIter & Iframe) {
+      std::string GrpVarName = Iframe->first;
+      std::size_t Spos = GrpVarName.find("@");
+      return GrpVarName.substr(0,Spos);
+    }
     std::vector<FrameType> get_data(FrameStoreIter & Iframe) { return Iframe->second; }
 
     void put_data(const std::string & GroupName, const std::string & VarName,
@@ -257,8 +266,11 @@ class IodaIO : public util::Printable {
     std::vector<int> frame_int_get_data(FrameIntIter & iframe) {
       return int_frame_data_->get_data(iframe);
     }
-    std::string frame_int_get_name(FrameIntIter & iframe) {
-      return int_frame_data_->get_name(iframe);
+    std::string frame_int_get_gname(FrameIntIter & iframe) {
+      return int_frame_data_->get_gname(iframe);
+    }
+    std::string frame_int_get_vname(FrameIntIter & iframe) {
+      return int_frame_data_->get_vname(iframe);
     }
     void frame_int_put_data(std::string & GroupName, std::string& VarName,
                             std::vector<int> & VarData) {
@@ -271,8 +283,11 @@ class IodaIO : public util::Printable {
     std::vector<float> frame_float_get_data(FrameFloatIter & iframe) {
       return float_frame_data_->get_data(iframe);
     }
-    std::string frame_float_get_name(FrameFloatIter & iframe) {
-      return float_frame_data_->get_name(iframe);
+    std::string frame_float_get_gname(FrameFloatIter & iframe) {
+      return float_frame_data_->get_gname(iframe);
+    }
+    std::string frame_float_get_vname(FrameFloatIter & iframe) {
+      return float_frame_data_->get_vname(iframe);
     }
     void frame_float_put_data(std::string & GroupName, std::string& VarName,
                             std::vector<float> & VarData) {
@@ -285,8 +300,11 @@ class IodaIO : public util::Printable {
     std::vector<double> frame_double_get_data(FrameDoubleIter & iframe) {
       return double_frame_data_->get_data(iframe);
     }
-    std::string frame_double_get_name(FrameDoubleIter & iframe) {
-      return double_frame_data_->get_name(iframe);
+    std::string frame_double_get_gname(FrameDoubleIter & iframe) {
+      return double_frame_data_->get_gname(iframe);
+    }
+    std::string frame_double_get_vname(FrameDoubleIter & iframe) {
+      return double_frame_data_->get_vname(iframe);
     }
     void frame_double_put_data(std::string & GroupName, std::string& VarName,
                             std::vector<double> & VarData) {
@@ -299,8 +317,11 @@ class IodaIO : public util::Printable {
     std::vector<std::string> frame_string_get_data(FrameStringIter & iframe) {
       return string_frame_data_->get_data(iframe);
     }
-    std::string frame_string_get_name(FrameStringIter & iframe) {
-      return string_frame_data_->get_name(iframe);
+    std::string frame_string_get_gname(FrameStringIter & iframe) {
+      return string_frame_data_->get_gname(iframe);
+    }
+    std::string frame_string_get_vname(FrameStringIter & iframe) {
+      return string_frame_data_->get_vname(iframe);
     }
     void frame_string_put_data(std::string & GroupName, std::string& VarName,
                             std::vector<std::string> & VarData) {

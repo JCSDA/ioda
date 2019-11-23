@@ -230,7 +230,8 @@ void testReadVar() {
     // Integer variables
     for (IodaIO::FrameIntIter idata = TestIO->frame_int_begin();
                               idata != TestIO->frame_int_end(); ++idata) {
-      std::string VarGrpName = TestIO->frame_int_get_name(idata);
+      std::string VarGrpName =
+          TestIO->frame_int_get_vname(idata) + "@" + TestIO->frame_int_get_gname(idata);
       std::vector<int> FrameData = TestIO->frame_int_get_data(idata);
       for (std::size_t i = 0; i < FrameData.size(); ++i) {
         IntVars[VarGrpName][FrameStart + i] = FrameData[i];
@@ -240,7 +241,8 @@ void testReadVar() {
     // Float variables
     for (IodaIO::FrameFloatIter idata = TestIO->frame_float_begin();
                                 idata != TestIO->frame_float_end(); ++idata) {
-      std::string VarGrpName = TestIO->frame_float_get_name(idata);
+      std::string VarGrpName =
+          TestIO->frame_float_get_vname(idata) + "@" + TestIO->frame_float_get_gname(idata);
       std::vector<float> FrameData = TestIO->frame_float_get_data(idata);
       for (std::size_t i = 0; i < FrameData.size(); ++i) {
         FloatVars[VarGrpName][FrameStart + i] = FrameData[i];
@@ -250,7 +252,8 @@ void testReadVar() {
     // Double variables
     for (IodaIO::FrameDoubleIter idata = TestIO->frame_double_begin();
                                  idata != TestIO->frame_double_end(); ++idata) {
-      std::string VarGrpName = TestIO->frame_double_get_name(idata);
+      std::string VarGrpName =
+          TestIO->frame_double_get_vname(idata) + "@" + TestIO->frame_double_get_gname(idata);
       std::vector<double> FrameData = TestIO->frame_double_get_data(idata);
       for (std::size_t i = 0; i < FrameData.size(); ++i) {
         DoubleVars[VarGrpName][FrameStart + i] = FrameData[i];
@@ -260,7 +263,8 @@ void testReadVar() {
     // String variables
     for (IodaIO::FrameStringIter idata = TestIO->frame_string_begin();
                                  idata != TestIO->frame_string_end(); ++idata) {
-      std::string VarGrpName = TestIO->frame_string_get_name(idata);
+      std::string VarGrpName =
+          TestIO->frame_string_get_vname(idata) + "@" + TestIO->frame_string_get_gname(idata);
       std::vector<std::string> FrameData = TestIO->frame_string_get_data(idata);
       for (std::size_t i = 0; i < FrameData.size(); ++i) {
         StringVars[VarGrpName][FrameStart + i] = FrameData[i];
@@ -468,7 +472,8 @@ void testWriteVar() {
     // Integer variables
     for (IodaIO::FrameIntIter idata = TestIO->frame_int_begin();
                               idata != TestIO->frame_int_end(); ++idata) {
-      std::string VarGrpName = TestIO->frame_int_get_name(idata);
+      std::string VarGrpName =
+          TestIO->frame_int_get_vname(idata) + "@" + TestIO->frame_int_get_gname(idata);
       std::vector<int> FrameData = TestIO->frame_int_get_data(idata);
       for (std::size_t i = 0; i < FrameData.size(); ++i) {
         IntVars[VarGrpName][FrameStart + i] = FrameData[i];
@@ -478,7 +483,8 @@ void testWriteVar() {
     // Float variables
     for (IodaIO::FrameFloatIter idata = TestIO->frame_float_begin();
                                 idata != TestIO->frame_float_end(); ++idata) {
-      std::string VarGrpName = TestIO->frame_float_get_name(idata);
+      std::string VarGrpName =
+          TestIO->frame_float_get_vname(idata) + "@" + TestIO->frame_float_get_gname(idata);
       std::vector<float> FrameData = TestIO->frame_float_get_data(idata);
       for (std::size_t i = 0; i < FrameData.size(); ++i) {
         FloatVars[VarGrpName][FrameStart + i] = FrameData[i];
@@ -488,7 +494,8 @@ void testWriteVar() {
     // String variables
     for (IodaIO::FrameStringIter idata = TestIO->frame_string_begin();
                                  idata != TestIO->frame_string_end(); ++idata) {
-      std::string VarGrpName = TestIO->frame_string_get_name(idata);
+      std::string VarGrpName =
+          TestIO->frame_string_get_vname(idata) + "@" + TestIO->frame_string_get_gname(idata);
       std::vector<std::string> FrameData = TestIO->frame_string_get_data(idata);
       for (std::size_t i = 0; i < FrameData.size(); ++i) {
         StringVars[VarGrpName][FrameStart + i] = FrameData[i];
