@@ -654,8 +654,9 @@ void ObsData::InitFromFile(const std::string & filename, const std::size_t MaxFr
     std::vector<int> FrameData;
     fileio->frame_int_get_data(GroupName, VarName, FrameData);
     std::cout << "DEBUG:     Int Vars: " << GroupName << ", " << VarName
-              << " (" << FrameData.size() << ")" << std::endl; 
-    int_database_.StoreToDb(GroupName, VarName, VarShape, FrameData, FrameStart, FrameData.size());
+              << " (" << FrameData.size() << ")" << std::endl;
+    int_database_.StoreToDb(GroupName, VarName, VarShape, FrameData,
+                            FrameStart, FrameData.size());
   }
 
   // Float variables
@@ -667,20 +668,9 @@ void ObsData::InitFromFile(const std::string & filename, const std::size_t MaxFr
     std::vector<float> FrameData;
     fileio->frame_float_get_data(GroupName, VarName, FrameData);
     std::cout << "DEBUG:     Float Vars: " << GroupName << ", " << VarName
-              << " (" << FrameData.size() << ")" << std::endl; 
-    float_database_.StoreToDb(GroupName, VarName, VarShape, FrameData, FrameStart, FrameData.size());
-  }
-
-  // Double variables
-  for (IodaIO::FrameDoubleIter idata = fileio->frame_double_begin();
-                               idata != fileio->frame_double_end(); ++idata) {
-    std::string GroupName = fileio->frame_double_get_gname(idata);
-    std::string VarName = fileio->frame_double_get_vname(idata);
-    std::vector<std::size_t> VarShape = fileio->var_shape(GroupName, VarName);
-    std::vector<double> FrameData;
-    fileio->frame_double_get_data(GroupName, VarName, FrameData);
-    std::cout << "DEBUG:     Double Vars: " << GroupName << ", " << VarName
-              << " (" << FrameData.size() << ")" << std::endl; 
+              << " (" << FrameData.size() << ")" << std::endl;
+    float_database_.StoreToDb(GroupName, VarName, VarShape, FrameData,
+                              FrameStart, FrameData.size());
   }
 
   // String variables
@@ -692,8 +682,9 @@ void ObsData::InitFromFile(const std::string & filename, const std::size_t MaxFr
     std::vector<std::string> FrameData;
     fileio->frame_string_get_data(GroupName, VarName, FrameData);
     std::cout << "DEBUG:     String Vars: " << GroupName << ", " << VarName
-              << " (" << FrameData.size() << ")" << std::endl; 
-    string_database_.StoreToDb(GroupName, VarName, VarShape, FrameData, FrameStart, FrameData.size());
+              << " (" << FrameData.size() << ")" << std::endl;
+    string_database_.StoreToDb(GroupName, VarName, VarShape, FrameData,
+                               FrameStart, FrameData.size());
   }
 }
 
@@ -1232,55 +1223,6 @@ std::string ObsData::DesiredVarType(std::string & GroupName, std::string & FileV
   }
 
   return DbVarType;
-}
-
-// -----------------------------------------------------------------------------
-/*!
- * \details This method will perform numeric data type conversions. The caller needs
- *          to allocate memory for the converted data (ToVar). This method is aware
- *          of the IODA missing values and will convert these appropriately. For
- *          example when converting double to float, all double missing values will
- *          be replaced with float missing values during the conversion.
- *
- * \param[in]  FromVar Pointer to memory of variable we are converting from
- * \param[out] ToVar   Pointer to memory of variable we are converting to
- * \param[in]  VarSize Total number of elements in FromVar and ToVar.
- */
-template<typename FromType, typename ToType>
-void ObsData::ConvertVarType(const std::vector<FromType> & FromVar, std::vector<ToType> & ToVar) {
-  std::string FromTypeName = TypeIdName(typeid(FromType));
-  std::string ToTypeName = TypeIdName(typeid(ToType));
-  const FromType FromMiss = util::missingValue(FromMiss);
-  const ToType ToMiss = util::missingValue(ToMiss);
-
-  // It is assumed that the caller has allocated memory for both input and output
-  // variables.
-  //
-  // In any type change, the missing values need to be switched.
-  //
-  // Allow type changes between numeric types (int, float, double). These can
-  // be handled with the standard conversions.
-  bool FromTypeOkay = ((typeid(FromType) == typeid(int)) ||
-                       (typeid(FromType) == typeid(float)) ||
-                       (typeid(FromType) == typeid(double)));
-
-  bool ToTypeOkay = ((typeid(ToType) == typeid(int)) ||
-                     (typeid(ToType) == typeid(float)) ||
-                     (typeid(ToType) == typeid(double)));
-
-  if (FromTypeOkay && ToTypeOkay) {
-    for (std::size_t i = 0; i < FromVar.size(); i++) {
-      if (FromVar[i] == FromMiss) {
-        ToVar[i] = ToMiss;
-      } else {
-        ToVar[i] = FromVar[i];
-      }
-    }
-  } else {
-    std::string ErrorMsg = "Unsupported variable data type conversion: " +
-       FromTypeName + " to " + ToTypeName;
-    ABORT(ErrorMsg);
-  }
 }
 
 // -----------------------------------------------------------------------------

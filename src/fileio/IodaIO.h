@@ -54,7 +54,7 @@ class FrameDataMap {
     std::string get_vname(FrameStoreIter & Iframe) {
       std::string GrpVarName = Iframe->first;
       std::size_t Spos = GrpVarName.find("@");
-      return GrpVarName.substr(0,Spos);
+      return GrpVarName.substr(0, Spos);
     }
     std::vector<FrameType> get_data(FrameStoreIter & Iframe) { return Iframe->second; }
 
@@ -328,31 +328,6 @@ class IodaIO : public util::Printable {
       float_frame_data_->put_data(GroupName, VarName, VarData);
     }
 
-    // Double frame access
-    typedef FrameDataMap<double>::FrameStoreIter FrameDoubleIter;
-    FrameDoubleIter frame_double_begin() { return double_frame_data_->begin(); }
-    FrameDoubleIter frame_double_end() { return double_frame_data_->end(); }
-    bool frame_double_has(std::string & GroupName, std::string& VarName) {
-      return double_frame_data_->has(GroupName, VarName);
-    }
-    std::vector<double> frame_double_get_data(FrameDoubleIter & iframe) {
-      return double_frame_data_->get_data(iframe);
-    }
-    std::string frame_double_get_gname(FrameDoubleIter & iframe) {
-      return double_frame_data_->get_gname(iframe);
-    }
-    std::string frame_double_get_vname(FrameDoubleIter & iframe) {
-      return double_frame_data_->get_vname(iframe);
-    }
-    void frame_double_get_data(std::string & GroupName, std::string& VarName,
-                            std::vector<double> & VarData) {
-      double_frame_data_->get_data(GroupName, VarName, VarData);
-    }
-    void frame_double_put_data(std::string & GroupName, std::string& VarName,
-                            std::vector<double> & VarData) {
-      double_frame_data_->put_data(GroupName, VarName, VarData);
-    }
-
     // String frame access
     typedef FrameDataMap<std::string>::FrameStoreIter FrameStringIter;
     FrameStringIter frame_string_begin() { return string_frame_data_->begin(); }
@@ -459,7 +434,6 @@ class IodaIO : public util::Printable {
     /*! \brief Containers for file frame */
     std::unique_ptr<FrameDataMap<int>> int_frame_data_;
     std::unique_ptr<FrameDataMap<float>> float_frame_data_;
-    std::unique_ptr<FrameDataMap<double>> double_frame_data_;
     std::unique_ptr<FrameDataMap<std::string>> string_frame_data_;
 };
 
