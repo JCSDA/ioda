@@ -376,18 +376,19 @@ void testWriteVar() {
   for (iint = ExpectedIntVars.begin(); iint != ExpectedIntVars.end(); ++iint) {
     ExtractGrpVarName(iint->first, GroupName, VarName);
     std::vector<std::size_t> VarShape(1, (iint->second).size());
-    TestIO->grp_var_insert(GroupName, VarName, "int", VarShape);
+    TestIO->grp_var_insert(GroupName, VarName, "int", VarShape, iint->first, "int");
   }
   for (ifloat = ExpectedFloatVars.begin(); ifloat != ExpectedFloatVars.end(); ++ifloat) {
     ExtractGrpVarName(ifloat->first, GroupName, VarName);
     std::vector<std::size_t> VarShape(1, (ifloat->second).size());
-    TestIO->grp_var_insert(GroupName, VarName, "float", VarShape);
+    TestIO->grp_var_insert(GroupName, VarName, "float", VarShape, ifloat->first, "float");
   }
   for (istring = ExpectedStringVars.begin(); istring != ExpectedStringVars.end(); ++istring) {
     ExtractGrpVarName(istring->first, GroupName, VarName);
     std::vector<std::size_t> VarShape(1, (istring->second).size());
     std::size_t MaxStringSize = GetMaxStringSize(istring->second);
-    TestIO->grp_var_insert(GroupName, VarName, "string", VarShape, MaxStringSize);
+    TestIO->grp_var_insert(GroupName, VarName, "string", VarShape, istring->first, "string",
+                           MaxStringSize);
   }
 
   for (IodaIO::FrameIter iframe = TestIO->frame_begin();
@@ -472,9 +473,12 @@ void testWriteVar() {
     // Integer variables
     for (IodaIO::FrameIntIter idata = TestIO->frame_int_begin();
                               idata != TestIO->frame_int_end(); ++idata) {
-      std::string VarGrpName =
-          TestIO->frame_int_get_vname(idata) + "@" + TestIO->frame_int_get_gname(idata);
-      std::vector<int> FrameData = TestIO->frame_int_get_data(idata);
+      std::string GroupName = TestIO->frame_int_get_gname(idata);
+      std::string VarName = TestIO->frame_int_get_vname(idata);
+      std::vector<int> FrameData;
+      TestIO->frame_int_get_data(GroupName, VarName, FrameData);
+
+      std::string VarGrpName = VarName + "@" + GroupName;
       for (std::size_t i = 0; i < FrameData.size(); ++i) {
         IntVars[VarGrpName][FrameStart + i] = FrameData[i];
       }
@@ -483,9 +487,12 @@ void testWriteVar() {
     // Float variables
     for (IodaIO::FrameFloatIter idata = TestIO->frame_float_begin();
                                 idata != TestIO->frame_float_end(); ++idata) {
-      std::string VarGrpName =
-          TestIO->frame_float_get_vname(idata) + "@" + TestIO->frame_float_get_gname(idata);
-      std::vector<float> FrameData = TestIO->frame_float_get_data(idata);
+      std::string GroupName = TestIO->frame_float_get_gname(idata);
+      std::string VarName = TestIO->frame_float_get_vname(idata);
+      std::vector<float> FrameData;
+      TestIO->frame_float_get_data(GroupName, VarName, FrameData);
+
+      std::string VarGrpName = VarName + "@" + GroupName;
       for (std::size_t i = 0; i < FrameData.size(); ++i) {
         FloatVars[VarGrpName][FrameStart + i] = FrameData[i];
       }
@@ -494,9 +501,12 @@ void testWriteVar() {
     // String variables
     for (IodaIO::FrameStringIter idata = TestIO->frame_string_begin();
                                  idata != TestIO->frame_string_end(); ++idata) {
-      std::string VarGrpName =
-          TestIO->frame_string_get_vname(idata) + "@" + TestIO->frame_string_get_gname(idata);
-      std::vector<std::string> FrameData = TestIO->frame_string_get_data(idata);
+      std::string GroupName = TestIO->frame_string_get_gname(idata);
+      std::string VarName = TestIO->frame_string_get_vname(idata);
+      std::vector<std::string> FrameData;
+      TestIO->frame_string_get_data(GroupName, VarName, FrameData);
+
+      std::string VarGrpName = VarName + "@" + GroupName;
       for (std::size_t i = 0; i < FrameData.size(); ++i) {
         StringVars[VarGrpName][FrameStart + i] = FrameData[i];
       }

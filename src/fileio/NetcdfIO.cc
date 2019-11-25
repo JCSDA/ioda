@@ -158,7 +158,7 @@ NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
       // Record the maximum variable size for the frame construction below.
       MaxVarSize = std::max(MaxVarSize, VarShape[0]);
 
-      // Record the variable info in the grp_var_into_ container.
+      // Record the variable info in the grp_var_info_ container.
       int OffsetTimeVarId;
       std::string VarName;
       std::string GroupName;
@@ -175,14 +175,15 @@ NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
           // variable id, but with the character array specs for after the
           // conversion.
           // datetime strings are 20 character long
-          grp_var_insert(GroupName, "datetime", "string", VarShape, 20);
+          grp_var_insert(GroupName, "datetime", "string", VarShape, NcVname, NcDtypeName, 20);
         }
       } else {
         // enter var specs into grp_var_info_ map
         if (strcmp(NcDtypeName, "string") == 0) {
-          grp_var_insert(GroupName, VarName, NcDtypeName, VarShape, NcDimSizes[1]);
+          grp_var_insert(GroupName, VarName, NcDtypeName, VarShape, NcVname, NcDtypeName,
+                         NcDimSizes[1]);
         } else {
-          grp_var_insert(GroupName, VarName, NcDtypeName, VarShape);
+          grp_var_insert(GroupName, VarName, NcDtypeName, VarShape, NcVname, NcDtypeName);
         }
       }
     }
@@ -672,9 +673,9 @@ void NetcdfIO::WriteFrame(IodaIO::FrameIter & iframe) {
  */
 
 void NetcdfIO::GrpVarInsert(const std::string & GroupName, const std::string & VarName,
-                     const std::string & VarType, const std::vector<std::size_t> & VarShape,
-                     const std::size_t MaxStringSize) {
-  std::string NcVarName = VarName + "@" + GroupName;
+                 const std::string & VarType, const std::vector<std::size_t> & VarShape,
+                 const std::string & FileVarName, const std::string & FileType,
+                 const std::size_t MaxStringSize) {
   int NcVarId;
   std::string ErrorMsg;
 
@@ -686,19 +687,14 @@ void NetcdfIO::GrpVarInsert(const std::string & GroupName, const std::string & V
   }
 
   if (fmode_ == "r") {
-    // Read mode, insert data into group, variable info container
-    if (VarName == "datetime") {
-      if ((!have_date_time_) && have_offset_time_) {
-        NcVarName = "time@" + GroupName;
-      }
-    }
-
-    ErrorMsg = "NetcdfIO::GrpVarInsert: Unable to get netcdf id for variable: " + NcVarName;
-    CheckNcCall(nc_inq_varid(ncid_, NcVarName.c_str(), &NcVarId), ErrorMsg);
+    ErrorMsg = "NetcdfIO::GrpVarInsert: Unable to get netcdf id for variable: " + FileVarName;
+    CheckNcCall(nc_inq_varid(ncid_, FileVarName.c_str(), &NcVarId), ErrorMsg);
 
     grp_var_info_[GroupName][VarName].var_id = NcVarId;
     grp_var_info_[GroupName][VarName].dtype = VarType;
     grp_var_info_[GroupName][VarName].file_shape = FileShape;
+    grp_var_info_[GroupName][VarName].file_name = FileVarName;
+    grp_var_info_[GroupName][VarName].file_type = FileType;
     grp_var_info_[GroupName][VarName].shape = VarShape;
   } else {
     // Write mode, create the netcdf variable and insert data into
@@ -720,13 +716,15 @@ void NetcdfIO::GrpVarInsert(const std::string & GroupName, const std::string & V
     if (VarType == "string") {
       NcDimIds.push_back(GetStringDimBySize(FileShape[1]));
     }
-    ErrorMsg = "NetcdfIO::WriteVar: Unable to create variable dataset: " + NcVarName;
-    CheckNcCall(nc_def_var(ncid_, NcVarName.c_str(), NcVarType, NcDimIds.size(),
+    ErrorMsg = "NetcdfIO::WriteVar: Unable to create variable dataset: " + FileVarName;
+    CheckNcCall(nc_def_var(ncid_, FileVarName.c_str(), NcVarType, NcDimIds.size(),
                            NcDimIds.data(), &NcVarId), ErrorMsg);
 
     grp_var_info_[GroupName][VarName].var_id = NcVarId;
     grp_var_info_[GroupName][VarName].dtype = VarType;
     grp_var_info_[GroupName][VarName].file_shape = FileShape;
+    grp_var_info_[GroupName][VarName].file_name = FileVarName;
+    grp_var_info_[GroupName][VarName].file_type = FileType;
     grp_var_info_[GroupName][VarName].shape = VarShape;
   }
 }

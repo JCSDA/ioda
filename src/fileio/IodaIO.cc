@@ -19,7 +19,7 @@ namespace ioda {
 IodaIO::IodaIO(const std::string & FileName, const std::string & FileMode,
                const std::size_t MaxFrameSize) :
            fname_(FileName), fmode_(FileMode), num_missing_gnames_(0),
-           max_frame_size_(MaxFrameSize) {
+           num_unexpect_dtypes_(0), max_frame_size_(MaxFrameSize) {
 }
 
 // -----------------------------------------------------------------------------
@@ -69,6 +69,15 @@ std::size_t IodaIO::nvars() const {
 
 bool IodaIO::missing_group_names() const {
   return (num_missing_gnames_ > 0);
+}
+
+/*!
+ * \details This method returns whether any unexpected data types were encountered
+ *          on variables from the input file.
+ */
+
+bool IodaIO::unexpected_data_types() const {
+  return (num_unexpect_dtypes_ > 0);
 }
 
 // -----------------------------------------------------------------------------
@@ -276,6 +285,72 @@ std::vector<std::size_t> IodaIO::file_shape(const std::string & GroupName,
 
 // -----------------------------------------------------------------------------
 /*!
+ * \details This method returns the variable name in the file for the current iteration
+ *          in the group, variable information map.
+ *
+ * \param[in] ivar Variable iterator for GrpVarInfoMap
+ */
+
+std::string IodaIO::file_name(IodaIO::VarIter ivar) {
+  return ivar->second.file_name;
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns the variable name in the file for the group name,
+ *          variable name combination in the group, variable information map.
+ *
+ * \param[in] GroupName Group key for GrpVarInfoMap
+ * \param[in] VarName Variable key for GrpVarInfoMap
+ */
+
+std::string IodaIO::file_name(const std::string & GroupName, const std::string & VarName) {
+  if (!grp_var_exists(GroupName, VarName)) {
+    std::string ErrorMsg = "Group name, variable name combination is not available: " +
+                            GroupName + ", " + VarName;
+    ABORT(ErrorMsg);
+  }
+
+  GroupIter igrp = grp_var_info_.find(GroupName);
+  VarIter ivar = igrp->second.find(VarName);
+  return ivar->second.file_name;
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns the variable type in the file for the current iteration
+ *          in the group, variable information map.
+ *
+ * \param[in] ivar Variable iterator for GrpVarInfoMap
+ */
+
+std::string IodaIO::file_type(IodaIO::VarIter ivar) {
+  return ivar->second.file_type;
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns the variable type in the file for the group name,
+ *          variable name combination in the group, variable information map.
+ *
+ * \param[in] GroupName Group key for GrpVarInfoMap
+ * \param[in] VarName Variable key for GrpVarInfoMap
+ */
+
+std::string IodaIO::file_type(const std::string & GroupName, const std::string & VarName) {
+  if (!grp_var_exists(GroupName, VarName)) {
+    std::string ErrorMsg = "Group name, variable name combination is not available: " +
+                            GroupName + ", " + VarName;
+    ABORT(ErrorMsg);
+  }
+
+  GroupIter igrp = grp_var_info_.find(GroupName);
+  VarIter ivar = igrp->second.find(VarName);
+  return ivar->second.file_type;
+}
+
+// -----------------------------------------------------------------------------
+/*!
  * \details This method returns the variable id for the current iteration
  *          in the group, variable information map.
  *
@@ -318,8 +393,9 @@ std::size_t IodaIO::var_id(const std::string & GroupName, const std::string & Va
 
 void IodaIO::grp_var_insert(const std::string & GroupName, const std::string & VarName,
                  const std::string & VarType, const std::vector<std::size_t> & VarShape,
+                 const std::string & FileVarName, const std::string & FileType,
                  const std::size_t MaxStringSize) {
-  GrpVarInsert(GroupName, VarName, VarType, VarShape, MaxStringSize);
+  GrpVarInsert(GroupName, VarName, VarType, VarShape, FileVarName, FileType, MaxStringSize);
 }
 
 // -----------------------------------------------------------------------------
