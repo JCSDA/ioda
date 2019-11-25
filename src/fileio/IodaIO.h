@@ -41,6 +41,11 @@ class FrameDataMap {
     FrameStoreIter begin() { return frame_container_.begin(); }
     FrameStoreIter end() { return frame_container_.end(); }
 
+    bool has(const std::string & GroupName, const std::string & VarName) {
+      std::string VarGrpName = VarName + "@" + GroupName;
+      return (frame_container_.find(VarGrpName) != frame_container_.end());
+    }
+
     std::string get_gname(FrameStoreIter & Iframe) {
       std::string GrpVarName = Iframe->first;
       std::size_t Spos = GrpVarName.find("@");
@@ -53,6 +58,11 @@ class FrameDataMap {
     }
     std::vector<FrameType> get_data(FrameStoreIter & Iframe) { return Iframe->second; }
 
+    void get_data(const std::string & GroupName, const std::string & VarName,
+                  std::vector<FrameType> & VarData) {
+      std::string VarGrpName = VarName + "@" + GroupName;
+      VarData = frame_container_.at(VarGrpName);
+    }
     void put_data(const std::string & GroupName, const std::string & VarName,
                   const std::vector<FrameType> & VarData) {
       std::string VarGrpName = VarName + "@" + GroupName;
@@ -116,6 +126,8 @@ class IodaIO : public util::Printable {
       std::string dtype;
       std::size_t var_id;
       std::vector<std::size_t> file_shape;
+      std::string file_name;
+      std::string file_type;
       std::vector<std::size_t> shape;
       std::vector<std::string> dim_names;
     };
@@ -187,6 +199,7 @@ class IodaIO : public util::Printable {
     std::size_t nvars() const;
 
     bool missing_group_names() const;
+    bool unexpected_data_types() const;
 
     // Group level iterator
     /*!
@@ -220,11 +233,16 @@ class IodaIO : public util::Printable {
     std::vector<std::size_t> var_shape(const std::string &, const std::string &);
     std::vector<std::size_t> file_shape(VarIter);
     std::vector<std::size_t> file_shape(const std::string &, const std::string &);
+    std::string file_name(VarIter);
+    std::string file_name(const std::string &, const std::string &);
+    std::string file_type(VarIter);
+    std::string file_type(const std::string &, const std::string &);
     std::size_t var_id(VarIter);
     std::size_t var_id(const std::string &, const std::string &);
 
     void grp_var_insert(const std::string & GroupName, const std::string & VarName,
                         const std::string & VarType, const std::vector<std::size_t> & VarShape,
+                        const std::string & FileVarName, const std::string & FileType,
                         const std::size_t MaxStringSize = 0);
 
     // Access to dimension information
@@ -260,9 +278,13 @@ class IodaIO : public util::Printable {
     void frame_read(FrameIter &);
     void frame_write(FrameIter &);
 
+    // Integer frame access
     typedef FrameDataMap<int>::FrameStoreIter FrameIntIter;
     FrameIntIter frame_int_begin() { return int_frame_data_->begin(); }
     FrameIntIter frame_int_end() { return int_frame_data_->end(); }
+    bool frame_int_has(std::string & GroupName, std::string& VarName) {
+      return int_frame_data_->has(GroupName, VarName);
+    }
     std::vector<int> frame_int_get_data(FrameIntIter & iframe) {
       return int_frame_data_->get_data(iframe);
     }
@@ -272,14 +294,22 @@ class IodaIO : public util::Printable {
     std::string frame_int_get_vname(FrameIntIter & iframe) {
       return int_frame_data_->get_vname(iframe);
     }
+    void frame_int_get_data(std::string & GroupName, std::string& VarName,
+                            std::vector<int> & VarData) {
+      int_frame_data_->get_data(GroupName, VarName, VarData);
+    }
     void frame_int_put_data(std::string & GroupName, std::string& VarName,
                             std::vector<int> & VarData) {
       int_frame_data_->put_data(GroupName, VarName, VarData);
     }
 
+    // Float frame access
     typedef FrameDataMap<float>::FrameStoreIter FrameFloatIter;
     FrameFloatIter frame_float_begin() { return float_frame_data_->begin(); }
     FrameFloatIter frame_float_end() { return float_frame_data_->end(); }
+    bool frame_float_has(std::string & GroupName, std::string& VarName) {
+      return float_frame_data_->has(GroupName, VarName);
+    }
     std::vector<float> frame_float_get_data(FrameFloatIter & iframe) {
       return float_frame_data_->get_data(iframe);
     }
@@ -289,14 +319,22 @@ class IodaIO : public util::Printable {
     std::string frame_float_get_vname(FrameFloatIter & iframe) {
       return float_frame_data_->get_vname(iframe);
     }
+    void frame_float_get_data(std::string & GroupName, std::string& VarName,
+                            std::vector<float> & VarData) {
+      float_frame_data_->get_data(GroupName, VarName, VarData);
+    }
     void frame_float_put_data(std::string & GroupName, std::string& VarName,
                             std::vector<float> & VarData) {
       float_frame_data_->put_data(GroupName, VarName, VarData);
     }
 
+    // Double frame access
     typedef FrameDataMap<double>::FrameStoreIter FrameDoubleIter;
     FrameDoubleIter frame_double_begin() { return double_frame_data_->begin(); }
     FrameDoubleIter frame_double_end() { return double_frame_data_->end(); }
+    bool frame_double_has(std::string & GroupName, std::string& VarName) {
+      return double_frame_data_->has(GroupName, VarName);
+    }
     std::vector<double> frame_double_get_data(FrameDoubleIter & iframe) {
       return double_frame_data_->get_data(iframe);
     }
@@ -306,14 +344,22 @@ class IodaIO : public util::Printable {
     std::string frame_double_get_vname(FrameDoubleIter & iframe) {
       return double_frame_data_->get_vname(iframe);
     }
+    void frame_double_get_data(std::string & GroupName, std::string& VarName,
+                            std::vector<double> & VarData) {
+      double_frame_data_->get_data(GroupName, VarName, VarData);
+    }
     void frame_double_put_data(std::string & GroupName, std::string& VarName,
                             std::vector<double> & VarData) {
       double_frame_data_->put_data(GroupName, VarName, VarData);
     }
 
+    // String frame access
     typedef FrameDataMap<std::string>::FrameStoreIter FrameStringIter;
     FrameStringIter frame_string_begin() { return string_frame_data_->begin(); }
     FrameStringIter frame_string_end() { return string_frame_data_->end(); }
+    bool frame_string_has(std::string & GroupName, std::string& VarName) {
+      return string_frame_data_->has(GroupName, VarName);
+    }
     std::vector<std::string> frame_string_get_data(FrameStringIter & iframe) {
       return string_frame_data_->get_data(iframe);
     }
@@ -322,6 +368,10 @@ class IodaIO : public util::Printable {
     }
     std::string frame_string_get_vname(FrameStringIter & iframe) {
       return string_frame_data_->get_vname(iframe);
+    }
+    void frame_string_get_data(std::string & GroupName, std::string& VarName,
+                            std::vector<std::string> & VarData) {
+      string_frame_data_->get_data(GroupName, VarName, VarData);
     }
     void frame_string_put_data(std::string & GroupName, std::string& VarName,
                             std::vector<std::string> & VarData) {
@@ -338,6 +388,7 @@ class IodaIO : public util::Printable {
 
     virtual void GrpVarInsert(const std::string & GroupName, const std::string & VarName,
                        const std::string & VarType, const std::vector<std::size_t> & VarShape,
+                       const std::string & FileVarName, const std::string & FileType,
                        const std::size_t MaxStringSize) = 0;
 
     // Methods inherited from base class
@@ -377,6 +428,11 @@ class IodaIO : public util::Printable {
      *          netcdf file that are missing a group name (@GroupName suffix).
      */
     std::size_t num_missing_gnames_;
+
+    /*!
+     * \brief count of unexpected data types
+     */
+    std::size_t num_unexpect_dtypes_;
 
     /*!
      * \brief group-variable information map

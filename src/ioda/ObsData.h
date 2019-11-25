@@ -150,6 +150,7 @@ class ObsData : public oops::ObsSpaceBase {
   static void GenRnumsFromVar(const std::vector<DATATYPE> & VarData,
                               std::vector<std::size_t> & Records);
   void ApplyTimingWindow(const std::unique_ptr<IodaIO> & FileIO);
+  bool InsideTimingWindow(const util::DateTime & ObsDt);
   void BuildSortedObsGroups();
   void createKDTree();
 

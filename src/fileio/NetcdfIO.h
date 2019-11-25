@@ -119,6 +119,7 @@ class NetcdfIO : public IodaIO,
 
   void GrpVarInsert(const std::string & GroupName, const std::string & VarName,
                     const std::string & VarType, const std::vector<std::size_t> & VarShape,
+                    const std::string & FileVarName, const std::string & FileType,
                     const std::size_t MaxStringSize);
 
   // Data members

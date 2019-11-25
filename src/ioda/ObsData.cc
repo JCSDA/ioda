@@ -629,106 +629,170 @@ void ObsData::InitFromFile(const std::string & filename, const std::size_t MaxFr
   // Open the file for reading and record nlocs and nvars from the file.
   std::unique_ptr<IodaIO> fileio {ioda::IodaIOfactory::Create(filename, "r", MaxFrameSize)};
   gnlocs_ = fileio->nlocs();
+  nvars_ = fileio->nvars();
 
   // Create the MPI distribution
   GenMpiDistribution(fileio);
 
-  // Reject observations that fall outside the DA timing window. Do this by removing
-  // any locations from indx_ and recnums_ that fall outside the window.
-  ApplyTimingWindow(fileio);
+  // Walk through the frames and select the records according to the MPI distribution
+  // and if the records fall inside the DA timing window.
+  for (IodaIO::FrameIter iframe = fileio->frame_begin();
+                       iframe != fileio->frame_end(); ++iframe) {
+  std::size_t FrameStart = fileio->frame_start(iframe);
+  std::size_t FrameSize = fileio->frame_size(iframe);
+  std::cout << "DEBUG: Reading Frame: " << FrameStart << ", " << FrameSize << std::endl;
 
-  // Read in all variables from the file and store them into the database.
-  nvars_ = 0;
-  for (IodaIO::GroupIter igrp = fileio->group_begin();
-                         igrp != fileio->group_end(); ++igrp) {
-    std::string GroupName = fileio->group_name(igrp);
-    for (IodaIO::VarIter ivar = fileio->var_begin(igrp);
-                         ivar != fileio->var_end(igrp); ++ivar) {
-      std::string VarName = fileio->var_name(ivar);
-      std::string FileVarType = fileio->var_dtype(ivar);
+  // Fill in the current frame from the file
+  fileio->frame_read(iframe);
 
-      // nvars_ is equal to the number of variables in the ObsValue group
-      if (GroupName == "ObsValue") {
-        nvars_++;
-      }
-
-      // VarShape, VarSize hold dimension sizes from file.
-      // AdjVarShape, AdjVarSize hold dimension sizes needed when the
-      // fisrt dimension is nlocs in size. Ie, all variables with nlocs
-      // as the first dimension need to be distributed across that dimension.
-      std::vector<std::size_t> VarShape = fileio->var_shape(ivar);
-      std::size_t VarSize =
-        std::accumulate(VarShape.begin(), VarShape.end(), 1, std::multiplies<std::size_t>());
-
-      // Get the desired data type for the database.
-      std::string DbVarType = DesiredVarType(GroupName, FileVarType);
-
-      // Read the variable from the file and transfer it to the database.
-      if (FileVarType == "int") {
-        std::vector<int> FileData(VarSize);
-///         fileio->ReadVar(GroupName, VarName, VarShape, FileData);
-
-        std::vector<int> IndexedData;
-        std::vector<std::size_t> IndexedShape;
-        std::size_t IndexedSize;
-        ApplyDistIndex<int>(FileData, VarShape, IndexedData, IndexedShape, IndexedSize);
-        int_database_.StoreToDb(GroupName, VarName, IndexedShape, IndexedData);
-      } else if (FileVarType == "float") {
-        std::vector<float> FileData(VarSize);
-///         fileio->ReadVar(GroupName, VarName, VarShape, FileData);
-
-        std::vector<float> IndexedData;
-        std::vector<std::size_t> IndexedShape;
-        std::size_t IndexedSize;
-        ApplyDistIndex<float>(FileData, VarShape, IndexedData, IndexedShape, IndexedSize);
-
-        if (DbVarType == "int") {
-          ConvertStoreToDb<float, int>(GroupName, VarName, IndexedShape, IndexedData);
-        } else {
-          float_database_.StoreToDb(GroupName, VarName, IndexedShape, IndexedData);
-        }
-      } else if (FileVarType == "double") {
-        // Convert double to float before storing into the database.
-        std::vector<double> FileData(VarSize);
-///         fileio->ReadVar(GroupName, VarName, VarShape, FileData);
-
-        std::vector<double> IndexedData;
-        std::vector<std::size_t> IndexedShape;
-        std::size_t IndexedSize;
-        ApplyDistIndex<double>(FileData, VarShape, IndexedData, IndexedShape, IndexedSize);
-
-        ConvertStoreToDb<double, float>(GroupName, VarName, IndexedShape, IndexedData);
-      } else if (FileVarType == "string") {
-        // If we are working on the variable "datetime", convert the strings
-        // to DateTime objects.
-        std::vector<std::string> FileData(VarSize);
-///         fileio->ReadVar(GroupName, VarName, VarShape, FileData);
-
-        std::vector<std::string> IndexedData;
-        std::vector<std::size_t> IndexedShape;
-        std::size_t IndexedSize;
-        ApplyDistIndex<std::string>(FileData, VarShape, IndexedData, IndexedShape, IndexedSize);
-
-        if (VarName == "datetime") {
-          std::vector<util::DateTime> DtData(IndexedSize);
-          for (std::size_t j = 0; j < IndexedSize; j++) {
-            util::DateTime TempDt(IndexedData[j]);
-            DtData[j] = TempDt;
-          }
-          datetime_database_.StoreToDb(GroupName, VarName, IndexedShape, DtData);
-        } else {
-          string_database_.StoreToDb(GroupName, VarName, IndexedShape, IndexedData);
-        }
-      } else if (commMPI_.rank() == 0) {
-        oops::Log::warning() << "ObsData::InitFromFile: Unrecognized file data type: "
-                             << FileVarType << std::endl;
-        oops::Log::warning() << "  File IO Currently supports data types int, float and char."
-                             << std::endl;
-        oops::Log::warning() << "  Skipping read of " << VarName << " @ " << GroupName
-                             << " from the input file." << std::endl;
-      }
-    }
+  // Integer variables
+  for (IodaIO::FrameIntIter idata = fileio->frame_int_begin();
+                            idata != fileio->frame_int_end(); ++idata) {
+    std::string GroupName = fileio->frame_int_get_gname(idata);
+    std::string VarName = fileio->frame_int_get_vname(idata);
+    std::vector<std::size_t> VarShape = fileio->var_shape(GroupName, VarName);
+    std::vector<int> FrameData;
+    fileio->frame_int_get_data(GroupName, VarName, FrameData);
+    std::cout << "DEBUG:     Int Vars: " << GroupName << ", " << VarName
+              << " (" << FrameData.size() << ")" << std::endl; 
+    int_database_.StoreToDb(GroupName, VarName, VarShape, FrameData, FrameStart, FrameData.size());
   }
+
+  // Float variables
+  for (IodaIO::FrameFloatIter idata = fileio->frame_float_begin();
+                              idata != fileio->frame_float_end(); ++idata) {
+    std::string GroupName = fileio->frame_float_get_gname(idata);
+    std::string VarName = fileio->frame_float_get_vname(idata);
+    std::vector<std::size_t> VarShape = fileio->var_shape(GroupName, VarName);
+    std::vector<float> FrameData;
+    fileio->frame_float_get_data(GroupName, VarName, FrameData);
+    std::cout << "DEBUG:     Float Vars: " << GroupName << ", " << VarName
+              << " (" << FrameData.size() << ")" << std::endl; 
+    float_database_.StoreToDb(GroupName, VarName, VarShape, FrameData, FrameStart, FrameData.size());
+  }
+
+  // Double variables
+  for (IodaIO::FrameDoubleIter idata = fileio->frame_double_begin();
+                               idata != fileio->frame_double_end(); ++idata) {
+    std::string GroupName = fileio->frame_double_get_gname(idata);
+    std::string VarName = fileio->frame_double_get_vname(idata);
+    std::vector<std::size_t> VarShape = fileio->var_shape(GroupName, VarName);
+    std::vector<double> FrameData;
+    fileio->frame_double_get_data(GroupName, VarName, FrameData);
+    std::cout << "DEBUG:     Double Vars: " << GroupName << ", " << VarName
+              << " (" << FrameData.size() << ")" << std::endl; 
+  }
+
+  // String variables
+  for (IodaIO::FrameStringIter idata = fileio->frame_string_begin();
+                               idata != fileio->frame_string_end(); ++idata) {
+    std::string GroupName = fileio->frame_string_get_gname(idata);
+    std::string VarName = fileio->frame_string_get_vname(idata);
+    std::vector<std::size_t> VarShape = fileio->var_shape(GroupName, VarName);
+    std::vector<std::string> FrameData;
+    fileio->frame_string_get_data(GroupName, VarName, FrameData);
+    std::cout << "DEBUG:     String Vars: " << GroupName << ", " << VarName
+              << " (" << FrameData.size() << ")" << std::endl; 
+    string_database_.StoreToDb(GroupName, VarName, VarShape, FrameData, FrameStart, FrameData.size());
+  }
+}
+
+///   // Reject observations that fall outside the DA timing window. Do this by removing
+///   // any locations from indx_ and recnums_ that fall outside the window.
+///   ApplyTimingWindow(fileio);
+/// 
+///   // Read in all variables from the file and store them into the database.
+///   nvars_ = 0;
+///   for (IodaIO::GroupIter igrp = fileio->group_begin();
+///                          igrp != fileio->group_end(); ++igrp) {
+///     std::string GroupName = fileio->group_name(igrp);
+///     for (IodaIO::VarIter ivar = fileio->var_begin(igrp);
+///                          ivar != fileio->var_end(igrp); ++ivar) {
+///       std::string VarName = fileio->var_name(ivar);
+///       std::string FileVarType = fileio->var_dtype(ivar);
+/// 
+///       // nvars_ is equal to the number of variables in the ObsValue group
+///       if (GroupName == "ObsValue") {
+///         nvars_++;
+///       }
+/// 
+///       // VarShape, VarSize hold dimension sizes from file.
+///       // AdjVarShape, AdjVarSize hold dimension sizes needed when the
+///       // fisrt dimension is nlocs in size. Ie, all variables with nlocs
+///       // as the first dimension need to be distributed across that dimension.
+///       std::vector<std::size_t> VarShape = fileio->var_shape(ivar);
+///       std::size_t VarSize =
+///         std::accumulate(VarShape.begin(), VarShape.end(), 1, std::multiplies<std::size_t>());
+/// 
+///       // Get the desired data type for the database.
+///       std::string DbVarType = DesiredVarType(GroupName, FileVarType);
+/// 
+///       // Read the variable from the file and transfer it to the database.
+///       if (FileVarType == "int") {
+///         std::vector<int> FileData(VarSize);
+///         fileio->ReadVar(GroupName, VarName, VarShape, FileData);
+/// 
+///         std::vector<int> IndexedData;
+///         std::vector<std::size_t> IndexedShape;
+///         std::size_t IndexedSize;
+///         ApplyDistIndex<int>(FileData, VarShape, IndexedData, IndexedShape, IndexedSize);
+///         int_database_.StoreToDb(GroupName, VarName, IndexedShape, IndexedData);
+///       } else if (FileVarType == "float") {
+///         std::vector<float> FileData(VarSize);
+///         fileio->ReadVar(GroupName, VarName, VarShape, FileData);
+/// 
+///         std::vector<float> IndexedData;
+///         std::vector<std::size_t> IndexedShape;
+///         std::size_t IndexedSize;
+///         ApplyDistIndex<float>(FileData, VarShape, IndexedData, IndexedShape, IndexedSize);
+/// 
+///         if (DbVarType == "int") {
+///           ConvertStoreToDb<float, int>(GroupName, VarName, IndexedShape, IndexedData);
+///         } else {
+///           float_database_.StoreToDb(GroupName, VarName, IndexedShape, IndexedData);
+///         }
+///       } else if (FileVarType == "double") {
+///         // Convert double to float before storing into the database.
+///         std::vector<double> FileData(VarSize);
+///         fileio->ReadVar(GroupName, VarName, VarShape, FileData);
+/// 
+///         std::vector<double> IndexedData;
+///         std::vector<std::size_t> IndexedShape;
+///         std::size_t IndexedSize;
+///         ApplyDistIndex<double>(FileData, VarShape, IndexedData, IndexedShape, IndexedSize);
+/// 
+///         ConvertStoreToDb<double, float>(GroupName, VarName, IndexedShape, IndexedData);
+///       } else if (FileVarType == "string") {
+///         // If we are working on the variable "datetime", convert the strings
+///         // to DateTime objects.
+///         std::vector<std::string> FileData(VarSize);
+///         fileio->ReadVar(GroupName, VarName, VarShape, FileData);
+/// 
+///         std::vector<std::string> IndexedData;
+///         std::vector<std::size_t> IndexedShape;
+///         std::size_t IndexedSize;
+///         ApplyDistIndex<std::string>(FileData, VarShape, IndexedData, IndexedShape, IndexedSize);
+/// 
+///         if (VarName == "datetime") {
+///           std::vector<util::DateTime> DtData(IndexedSize);
+///           for (std::size_t j = 0; j < IndexedSize; j++) {
+///             util::DateTime TempDt(IndexedData[j]);
+///             DtData[j] = TempDt;
+///           }
+///           datetime_database_.StoreToDb(GroupName, VarName, IndexedShape, DtData);
+///         } else {
+///           string_database_.StoreToDb(GroupName, VarName, IndexedShape, IndexedData);
+///         }
+///       } else if (commMPI_.rank() == 0) {
+///         oops::Log::warning() << "ObsData::InitFromFile: Unrecognized file data type: "
+///                              << FileVarType << std::endl;
+///         oops::Log::warning() << "  File IO Currently supports data types int, float and char."
+///                              << std::endl;
+///         oops::Log::warning() << "  Skipping read of " << VarName << " @ " << GroupName
+///                              << " from the input file." << std::endl;
+///       }
+///     }
+///   }
 
   if (fileio->missing_group_names()) {
   oops::Log::warning() << "ObsData::InitFromFile:: WARNING: Input file contains variables "
@@ -905,7 +969,7 @@ void ObsData::ApplyTimingWindow(const std::unique_ptr<IodaIO> & FileIO) {
     Index = indx_[ii];
     RecNum = recnums_[ii];
     util::DateTime TestDt(DtStrings[Index]);
-    if ((TestDt > winbgn_) && (TestDt <= winend_)) {
+    if (InsideTimingWindow(TestDt)) {
       // Inside the DA time window, keep this index
       // and associated record number
       NewIndices.push_back(Index);
@@ -919,6 +983,17 @@ void ObsData::ApplyTimingWindow(const std::unique_ptr<IodaIO> & FileIO) {
   nrecs_ = UniqueRecNums.size();
   indx_ = NewIndices;
   recnums_ = NewRecNums;
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method will return true/false according to whether the
+ *          observation datetime (ObsDt) is inside the DA timing window.
+ *
+ * \param[in] ObsDt Observation date time object
+ */
+bool ObsData::InsideTimingWindow(const util::DateTime & ObsDt) {
+  return ((ObsDt > winbgn_) && (ObsDt <= winend_));
 }
 
 // -----------------------------------------------------------------------------
