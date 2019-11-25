@@ -143,12 +143,9 @@ class ObsData : public oops::ObsSpaceBase {
 
   // Initialize the database from the input file
   void InitFromFile(const std::string & filename, const std::size_t MaxFrameSize);
-  void GenMpiDistribution(const std::unique_ptr<IodaIO> & FileIO);
-  void GenRecordNumbers(const std::unique_ptr<IodaIO> & FileIO,
-                        std::vector<std::size_t> & Records) const;
-  template<typename DATATYPE>
-  static void GenRnumsFromVar(const std::vector<DATATYPE> & VarData,
-                              std::vector<std::size_t> & Records);
+  void GenFrameIndexRecNums(const std::unique_ptr<IodaIO> & FileIO,
+               const std::size_t FrameStart, const std::size_t FrameSize,
+               std::vector<std::size_t> & FrameIndex, std::vector<std::size_t> & FrameRecNums);
   void ApplyTimingWindow(const std::unique_ptr<IodaIO> & FileIO);
   bool InsideTimingWindow(const util::DateTime & ObsDt);
   void BuildSortedObsGroups();
@@ -165,12 +162,6 @@ class ObsData : public oops::ObsSpaceBase {
 
   // Dump the database into the output file
   void SaveToFile(const std::string & file_name, const std::size_t MaxFrameSize);
-
-  // Methods for tranferring data from a variable into the database.
-  template<typename VarType, typename DbType>
-  void ConvertStoreToDb(const std::string & GroupName, const std::string & VarName,
-                        const std::vector<std::size_t> & VarShape,
-                        const std::vector<VarType> & VarData);
 
   /*! \brief name of obs space */
   std::string obsname_;
@@ -202,8 +193,11 @@ class ObsData : public oops::ObsSpaceBase {
   /*! \brief number of records */
   std::size_t nrecs_;
 
-  /*! \brief number of file variable data type warnings */
-  std::size_t nwarns_fdtype_;
+  /*! \brief flag, file has variables with missing group names */
+  bool file_missing_gnames_;
+
+  /*! \brief flag, file has variables with unexpected data types */
+  bool file_unexpected_dtypes_;
 
   /*! \brief path to input file */
   std::string filein_;
