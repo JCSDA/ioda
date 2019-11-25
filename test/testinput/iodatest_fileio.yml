@@ -27,8 +27,8 @@ TestInput:
       values: [ 1.5, -3.3688e+38, -3.3688e+38, -3.3688e+38, -3.3688e+38 ]
 
     - name: "test_double@DoubleGroup"
-      type: "double"
-      values: [ 1.5, 2.7, -3.334767e+38, -3.334767e+38, 3.9 ] 
+      type: "float"
+      values: [ 1.5, 2.7, -3.3688e+38, -3.3688e+38, 3.9 ] 
 
     - name: "test_string@CharGroup"
       type: "string"

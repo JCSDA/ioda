@@ -9,7 +9,6 @@
 
 #include <string>
 
-#include "oops/util/abor1_cpp.h"
 #include "oops/util/DateTime.h"
 
 

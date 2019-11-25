@@ -131,6 +131,14 @@ void testContainers() {
 
     for (IodaIO::VarIter ivar = TestIO->var_begin(igrp); ivar != TestIO->var_end(igrp); ++ivar) {
       VarCount++;
+      std::cout << "DEBUG: GrpVarInfo: " << std::endl;
+      std::cout << "DEBUG:   Group: " << GroupName << std::endl;
+      std::cout << "DEBUG:   Var: " << TestIO->var_name(ivar) << std::endl;
+      std::cout << "DEBUG:   Var type: " << TestIO->var_dtype(ivar) << std::endl;
+      std::cout << "DEBUG:   VarShape: " << TestIO->var_shape(ivar) << std::endl;
+      std::cout << "DEBUG:   File name: " << TestIO->file_name(ivar) << std::endl;
+      std::cout << "DEBUG:   File type: " << TestIO->file_type(ivar) << std::endl;
+      std::cout << "DEBUG:   File shape: " << TestIO->file_shape(ivar) << std::endl;
     }
   }
   EXPECT(VarCount == ExpectedVarCount);
@@ -192,12 +200,10 @@ void testReadVar() {
 
   std::map<std::string, std::vector<int>> IntVars;
   std::map<std::string, std::vector<float>> FloatVars;
-  std::map<std::string, std::vector<double>> DoubleVars;
   std::map<std::string, std::vector<std::string>> StringVars;
 
   std::map<std::string, std::vector<int>> ExpectedIntVars;
   std::map<std::string, std::vector<float>> ExpectedFloatVars;
-  std::map<std::string, std::vector<double>> ExpectedDoubleVars;
   std::map<std::string, std::vector<std::string>> ExpectedStringVars;
 
   for (std::size_t i = 0; i < var_config.size(); i++) {
@@ -210,9 +216,6 @@ void testReadVar() {
     } else if (VarType == "float") {
       ExpectedFloatVars[VarGrpName] = var_config[i].getFloatVector("values");
       FloatVars[VarGrpName] = std::vector<float>(ExpectedFloatVars[VarGrpName].size(),0.0);
-    } else if (VarType == "double") {
-      ExpectedDoubleVars[VarGrpName] = var_config[i].getDoubleVector("values");
-      DoubleVars[VarGrpName] = std::vector<double>(ExpectedDoubleVars[VarGrpName].size(),0.0);
     } else if (VarType == "string") {
       ExpectedStringVars[VarGrpName] = var_config[i].getStringVector("values");
       StringVars[VarGrpName] = std::vector<std::string>(ExpectedStringVars[VarGrpName].size(),"");
@@ -249,17 +252,6 @@ void testReadVar() {
       }
     }
 
-    // Double variables
-    for (IodaIO::FrameDoubleIter idata = TestIO->frame_double_begin();
-                                 idata != TestIO->frame_double_end(); ++idata) {
-      std::string VarGrpName =
-          TestIO->frame_double_get_vname(idata) + "@" + TestIO->frame_double_get_gname(idata);
-      std::vector<double> FrameData = TestIO->frame_double_get_data(idata);
-      for (std::size_t i = 0; i < FrameData.size(); ++i) {
-        DoubleVars[VarGrpName][FrameStart + i] = FrameData[i];
-      }
-    }
-
     // String variables
     for (IodaIO::FrameStringIter idata = TestIO->frame_string_begin();
                                  idata != TestIO->frame_string_end(); ++idata) {
@@ -275,7 +267,6 @@ void testReadVar() {
   // Check the variables read from the file against the expected values.
   std::map<std::string, std::vector<int>>::iterator iint;
   std::map<std::string, std::vector<float>>::iterator ifloat;
-  std::map<std::string, std::vector<double>>::iterator idouble;
   std::map<std::string, std::vector<std::string>>::iterator istring;
 
   for (iint = IntVars.begin(); iint != IntVars.end(); ++iint) {
@@ -292,15 +283,6 @@ void testReadVar() {
     std::vector<float> ExpectedFloatVect = ExpectedFloatVars[ifloat->first];
     for (std::size_t i = 0; i < FloatVect.size(); i++) {
       EXPECT(oops::is_close(FloatVect[i], ExpectedFloatVect[i], FloatTol));
-    }
-  }
-
-  double DoubleTol = conf.getDouble("TestInput.tolerance");
-  for (idouble = DoubleVars.begin(); idouble != DoubleVars.end(); ++idouble) {
-    std::vector<double> DoubleVect = idouble->second;
-    std::vector<double> ExpectedDoubleVect = ExpectedDoubleVars[idouble->first];
-    for (std::size_t i = 0; i < DoubleVect.size(); i++) {
-      EXPECT(oops::is_close(DoubleVect[i], ExpectedDoubleVect[i], DoubleTol));
     }
   }
 

@@ -163,10 +163,6 @@ class ObsData : public oops::ObsSpaceBase {
 
   static std::string DesiredVarType(std::string & GroupName, std::string & FileVarType);
 
-  // Convert variable data types including the missing value marks
-  template<typename FromType, typename ToType>
-  static void ConvertVarType(const std::vector<FromType> & FromVar, std::vector<ToType> & ToVar);
-
   // Dump the database into the output file
   void SaveToFile(const std::string & file_name, const std::size_t MaxFrameSize);
 

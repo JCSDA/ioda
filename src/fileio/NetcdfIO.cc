@@ -144,6 +144,7 @@ NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
       if (strcmp(NcDtypeName, "char") == 0) {
         strncpy(NcDtypeName, "string", NC_MAX_NAME);
       }
+      std::string VarType(NcDtypeName);
 
       // Collect the sizes for dimensions from the dim_info_ container.
       std::vector<std::size_t> NcDimSizes;
@@ -164,6 +165,20 @@ NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
       std::string GroupName;
       ExtractGrpVarName(NcVname, GroupName, VarName);
 
+      // If the file type is double, change to float and increment the unexpected
+      // data type counter.
+      if (strcmp(NcDtypeName, "double") == 0) {
+        VarType = "float";
+        num_unexpect_dtypes_++;
+      }
+
+      // If the group name is "PreQC" and the file type is not integer, change to
+      // integer and increment the unexpected data type counter.
+      if ((GroupName == "PreQC") && (strcmp(NcDtypeName, "int") != 0)) {
+        VarType = "int";
+        num_unexpect_dtypes_++;
+      }
+
       // If offset time exists, substitute the datetime specs for the offset time specs.
       if (VarName.compare("time") == 0) {
         // If we have datetime in the file, just let those specs get entered when
@@ -180,10 +195,10 @@ NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
       } else {
         // enter var specs into grp_var_info_ map
         if (strcmp(NcDtypeName, "string") == 0) {
-          grp_var_insert(GroupName, VarName, NcDtypeName, VarShape, NcVname, NcDtypeName,
+          grp_var_insert(GroupName, VarName, VarType, VarShape, NcVname, NcDtypeName,
                          NcDimSizes[1]);
         } else {
-          grp_var_insert(GroupName, VarName, NcDtypeName, VarShape, NcVname, NcDtypeName);
+          grp_var_insert(GroupName, VarName, VarType, VarShape, NcVname, NcDtypeName);
         }
       }
     }
@@ -568,6 +583,7 @@ void NetcdfIO::ReadFrame(IodaIO::FrameIter & iframe) {
         // dimensions, if any are always read in full.
         std::string VarName = var_name(ivar);
         std::string VarType = var_dtype(ivar);
+        std::string FileType = file_type(ivar);
         std::vector<std::size_t> VarStarts(1, FrameStart);
         std::vector<std::int64_t> VarStrides(1, 1);
 
@@ -578,24 +594,70 @@ void NetcdfIO::ReadFrame(IodaIO::FrameIter & iframe) {
           VarCounts.push_back(FrameSize);
         }
 
+        // Compare the variable type for memory (VarType) with the variable type
+        // from the file (FileType). Do conversions for cases that have come up with
+        // various netcdf obs files. The idea is to get all obs files with the expected
+        // data types so that these conversions will be unnecessary. Once we are there
+        // with the files, then make any unexpected data type in the file an error so that
+        // it will get corrected immediately.
         if (VarType == "int") {
-          std::vector<int> FileData;
-          int NcFillValue;
-          NcReadVar(GroupName, VarName, VarStarts, VarCounts, VarStrides, NcFillValue, FileData);
-          ReplaceFillWithMissing<int>(FileData, NcFillValue);
-          int_frame_data_->put_data(GroupName, VarName, FileData);
+          if (FileType == "int") {
+            std::vector<int> FileData;
+            int NcFillValue;
+            NcReadVar(GroupName, VarName, VarStarts, VarCounts, VarStrides,
+                                          NcFillValue, FileData);
+            ReplaceFillWithMissing<int>(FileData, NcFillValue);
+            int_frame_data_->put_data(GroupName, VarName, FileData);
+          } else if (FileType == "float") {
+            std::vector<float> FileData;
+            float NcFillValue;
+            NcReadVar(GroupName, VarName, VarStarts, VarCounts, VarStrides,
+                      NcFillValue, FileData);
+            ReplaceFillWithMissing<float>(FileData, NcFillValue);
+
+            std::vector<int> FrameData(FileData.size(), 0);
+            ConvertVarType<float, int>(FileData, FrameData);
+            int_frame_data_->put_data(GroupName, VarName, FrameData);
+          } else if (FileType == "double") {
+            std::vector<double> FileData;
+            double NcFillValue;
+            NcReadVar(GroupName, VarName, VarStarts, VarCounts, VarStrides,
+                      NcFillValue, FileData);
+            ReplaceFillWithMissing<double>(FileData, NcFillValue);
+
+            std::vector<int> FrameData(FileData.size(), 0);
+            ConvertVarType<double, int>(FileData, FrameData);
+            int_frame_data_->put_data(GroupName, VarName, FrameData);
+          } else {
+            std::string ErrorMsg =
+              "NetcdfIO::ReadFrame: Conflicting data types for conversion to int: ";
+            ErrorMsg += "File variable: " + file_name(ivar) + ", File type: " + FileType;
+            ABORT(ErrorMsg);
+          }
         } else if (VarType == "float") {
-          std::vector<float> FileData;
-          float NcFillValue;
-          NcReadVar(GroupName, VarName, VarStarts, VarCounts, VarStrides, NcFillValue, FileData);
-          ReplaceFillWithMissing<float>(FileData, NcFillValue);
-          float_frame_data_->put_data(GroupName, VarName, FileData);
-        } else if (VarType == "double") {
-          std::vector<double> FileData;
-          double NcFillValue;
-          NcReadVar(GroupName, VarName, VarStarts, VarCounts, VarStrides, NcFillValue, FileData);
-          ReplaceFillWithMissing<double>(FileData, NcFillValue);
-          double_frame_data_->put_data(GroupName, VarName, FileData);
+          if (FileType == "float") {
+            std::vector<float> FileData;
+            float NcFillValue;
+            NcReadVar(GroupName, VarName, VarStarts, VarCounts, VarStrides,
+                      NcFillValue, FileData);
+            ReplaceFillWithMissing<float>(FileData, NcFillValue);
+            float_frame_data_->put_data(GroupName, VarName, FileData);
+          } else if (FileType == "double") {
+            std::vector<double> FileData;
+            double NcFillValue;
+            NcReadVar(GroupName, VarName, VarStarts, VarCounts, VarStrides,
+                      NcFillValue, FileData);
+            ReplaceFillWithMissing<double>(FileData, NcFillValue);
+
+            std::vector<float> FrameData(FileData.size(), 0.0);
+            ConvertVarType<double, float>(FileData, FrameData);
+            float_frame_data_->put_data(GroupName, VarName, FrameData);
+          } else {
+            std::string ErrorMsg =
+              "NetcdfIO::ReadFrame: Conflicting data types for conversion to float: ";
+            ErrorMsg += "File variable: " + file_name(ivar) + ", File type: " + FileType;
+            ABORT(ErrorMsg);
+          }
         } else if (VarType == "string") {
           // Need to expand Starts, Counts, Strides with remaining dimensions.
           std::vector<std::size_t> VarFileShape = file_shape(ivar);

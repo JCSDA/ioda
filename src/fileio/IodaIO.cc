@@ -616,7 +616,6 @@ void IodaIO::frame_info_init(std::size_t MaxVarSize) {
 void IodaIO::frame_data_init() {
   int_frame_data_.reset(new ioda::FrameDataMap<int>);
   float_frame_data_.reset(new ioda::FrameDataMap<float>);
-  double_frame_data_.reset(new ioda::FrameDataMap<double>);
   string_frame_data_.reset(new ioda::FrameDataMap<std::string>);
 }
 
