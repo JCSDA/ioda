@@ -48,19 +48,22 @@ namespace ioda {
 ObsData::ObsData(const eckit::Configuration & config, const eckit::mpi::Comm & comm,
                  const util::DateTime & bgn, const util::DateTime & end)
   : oops::ObsSpaceBase(config, comm, bgn, end),
-    config_(config),
-    winbgn_(bgn), winend_(end), commMPI_(comm), int_database_(),
-    float_database_(), string_database_(), datetime_database_(), obsvars_()
+    config_(config), winbgn_(bgn), winend_(end), commMPI_(comm), int_database_(),
+    float_database_(), string_database_(), datetime_database_(), obsvars_(),
+    gnlocs_(0), nlocs_(0), nvars_(0), nrecs_(0)
 {
   oops::Log::trace() << "ObsData::ObsData config  = " << config << std::endl;
 
   obsname_ = config.getString("name");
-  nwarns_fdtype_ = 0;
   distname_ = config.getString("distribution", "RoundRobin");
 
   eckit::LocalConfiguration varconfig(config, "simulate");
   obsvars_ = oops::Variables(varconfig);
   oops::Log::info() << obsname_ << " vars: " << obsvars_ << std::endl;
+
+  // Create the MPI distribution object
+  std::unique_ptr<DistributionFactory> distFactory;
+  dist_.reset(distFactory->createDistribution(this->comm(), distname_));
 
   // Initialize the obs space container
   if (config.has("ObsDataIn")) {
@@ -79,6 +82,23 @@ ObsData::ObsData(const eckit::Configuration & config, const eckit::mpi::Comm & c
                                             IODAIO_DEFAULT_FRAME_SIZE);
     oops::Log::trace() << obsname_ << " file in = " << filein_ << std::endl;
     InitFromFile(filein_, in_max_frame_size_);
+    if (file_missing_gnames_) {
+      if (commMPI_.rank() == 0) {
+        oops::Log::warning()
+          << "ObsData::ObsData:: WARNING: Input file contains variables "
+          << "that are missing group names (ie, no @GroupName suffix)" << std::endl
+          << "  Input file: " << filein_ << std::endl;
+      }
+    }
+    if (file_unexpected_dtypes_) {
+      if (commMPI_.rank() == 0) {
+        oops::Log::warning()
+          << "ObsData::ObsData:: WARNING: Input file contains variables "
+          << "with unexpected data types" << std::endl
+          << "  Input file: " << filein_ << std::endl;
+      }
+    }
+
     if (obs_sort_variable_ != "") {
       BuildSortedObsGroups();
     }
@@ -422,6 +442,7 @@ std::vector<std::size_t> ObsData::recidx_all_recnums() const {
  * \param[in] conf ECKIT configuration segment built from an input configuration file.
  */
 void ObsData::generateDistribution(const eckit::Configuration & conf) {
+  // Generate lat, lon, time values according to method specified in the config
   std::vector<float> latitude;
   std::vector<float> longitude;
   std::vector<util::DateTime> obs_datetimes;
@@ -487,11 +508,11 @@ void ObsData::genDistRandom(const eckit::Configuration & conf, std::vector<float
     ran_seed = std::time(0);  // based on the current date/time.
   }
 
-  // Create the MPI Distribution
+  // Generate the indexing for MPI distribution
   // The default constructor for std::unique_ptr generates a null ptr which
-  // can be tested in GenMpiDistribution.
+  // can be tested in GenFrameIndexRecNums
   std::unique_ptr<IodaIO> NoIO;
-  GenMpiDistribution(NoIO);
+  GenFrameIndexRecNums(NoIO, 0, gnlocs_, indx_, recnums_);
 
   // Use the following formula to generate random lat, lon and time values.
   //
@@ -579,14 +600,12 @@ void ObsData::genDistList(const eckit::Configuration & conf, std::vector<float> 
     datetimes.push_back(TempDt);
   }
 
-  // Need to set the global number of locations before calling GenMpiDistribution.
-  gnlocs_ = latitudes.size();
-
-  // Create the MPI Distribution
+  // Generate the indexing for MPI distribution
   // The default constructor for std::unique_ptr generates a null ptr which
-  // can be tested in GenMpiDistribution.
+  // can be tested in GenFrameIndexRecNums
+  gnlocs_ = latitudes.size();
   std::unique_ptr<IodaIO> NoIO;
-  GenMpiDistribution(NoIO);
+  GenFrameIndexRecNums(NoIO, 0, gnlocs_, indx_, recnums_);
 
   // Create vectors for lat, lon, time, fill them with the values from the
   // lists in the configuration.
@@ -631,9 +650,6 @@ void ObsData::InitFromFile(const std::string & filename, const std::size_t MaxFr
   gnlocs_ = fileio->nlocs();
   nvars_ = fileio->nvars();
 
-  // Create the MPI distribution
-  GenMpiDistribution(fileio);
-
   // Walk through the frames and select the records according to the MPI distribution
   // and if the records fall inside the DA timing window.
   for (IodaIO::FrameIter iframe = fileio->frame_begin();
@@ -644,6 +660,15 @@ void ObsData::InitFromFile(const std::string & filename, const std::size_t MaxFr
 
   // Fill in the current frame from the file
   fileio->frame_read(iframe);
+
+  // Calculate the corresponding segments of indx_ and recnums_ vectors for this
+  // frame. Use these segments to select the rows from the frame before storing in
+  // the obs space container.
+  std::vector<std::size_t> FrameIndex;
+  std::vector<std::size_t> FrameRecNums;
+  GenFrameIndexRecNums(fileio, FrameStart, FrameSize, FrameIndex, FrameRecNums);
+  std::cout << "DEBUG: FrameIndex: " << FrameIndex << std::endl;
+  std::cout << "DEBUG: FrameRecNums: " << FrameRecNums << std::endl;
 
   // Integer variables
   for (IodaIO::FrameIntIter idata = fileio->frame_int_begin();
@@ -685,8 +710,8 @@ void ObsData::InitFromFile(const std::string & filename, const std::size_t MaxFr
               << " (" << FrameData.size() << ")" << std::endl;
     string_database_.StoreToDb(GroupName, VarName, VarShape, FrameData,
                                FrameStart, FrameData.size());
+    }
   }
-}
 
 ///   // Reject observations that fall outside the DA timing window. Do this by removing
 ///   // any locations from indx_ and recnums_ that fall outside the window.
@@ -785,11 +810,9 @@ void ObsData::InitFromFile(const std::string & filename, const std::size_t MaxFr
 ///     }
 ///   }
 
-  if (fileio->missing_group_names()) {
-  oops::Log::warning() << "ObsData::InitFromFile:: WARNING: Input file contains variables "
-        << "that are missing group names (ie, no @GroupName suffix)" << std::endl
-        << "  Input file: " << filein_ << std::endl;
-  }
+  // Record whether any problems occurred when reading the file.
+  file_missing_gnames_ = fileio->missing_group_names();
+  file_unexpected_dtypes_ = fileio->unexpected_data_types();
   oops::Log::trace() << "ObsData::InitFromFile opening file ends " << std::endl;
 }
 
@@ -799,129 +822,54 @@ void ObsData::InitFromFile(const std::string & filename, const std::size_t MaxFr
  *          record numbers, where the indices denote which locations are to be
  *          read into this process element.
  *
- *          This routine sets up record grouping, and is also responsible for
- *          setting the nrecs_, nlocs_, indx_ and recnums_ data members.
- *
  * \param[in] FileIO File id (pointer to IodaIO object)
+ * \param[in] FrameStart Row number at beginning of frame.
+ * \param[out] FrameIndex Vector of indices indicating rows belonging to this process element
+ * \param[out] FrameRecNums Vector containing record numbers corresponding to FrameIndex
  */
-void ObsData::GenMpiDistribution(const std::unique_ptr<IodaIO> & FileIO) {
-  // Apply the MPI distribution. If we are initializing from a file (FileIO is
-  // not null), then generate records numbers based on the specified variable
-  // in the input file. Otherwise, use default grouping.
-  std::unique_ptr<DistributionFactory> distFactory;
-  dist_.reset(distFactory->createDistribution(this->comm(), distname_));
-  std::vector<std::size_t> Records(gnlocs_);
-
-  if (FileIO) {
-    // Grouping based on variable in the input file.
-    GenRecordNumbers(FileIO, Records);
+void ObsData::GenFrameIndexRecNums(const std::unique_ptr<IodaIO> & FileIO,
+           const std::size_t FrameStart, const std::size_t FrameSize,
+           std::vector<std::size_t> & FrameIndex, std::vector<std::size_t> & FrameRecNums) {
+  std::vector<std::size_t> Index;
+  std::vector<std::size_t> RecNums;
+  if (FileIO == nullptr) {
+    // For the generate style constructors
+    for (std::size_t i = 0; i < FrameSize; ++i) {
+      std::size_t RecNum = FrameStart + i;
+      if (dist_->isMyRecord(RecNum)) {
+        Index.push_back(RecNum);
+        RecNums.push_back(RecNum);
+      }
+    }
   } else {
-    std::iota(Records.begin(), Records.end(), 0);
-  }
+    // For the initialize from file constructor
+    std::string GroupName = "MetaData";
+    std::string VarName = obs_group_variable_;
+    std::cout << "DEBUG: GFIRN: GroupName, VarName: " << GroupName << ", "
+              << VarName << std::endl;
+    std::cout << "DEBUG: GFIRN:   FrameStart, FrameSize: " << FrameStart << ", "
+              << FrameSize << std::endl;
 
-  // Generate indices and record numbers according to the distribution.
-  indx_.clear();
-  recnums_.clear();
-  std::set<std::size_t> UniqueRecnums;
-  for (std::size_t i = 0; i < gnlocs_; ++i) {
-    std::size_t RecNum = Records[i];
-    if (dist_->isMyRecord(RecNum)) {
-      indx_.push_back(i);
-      recnums_.push_back(RecNum);
-      UniqueRecnums.insert(RecNum);
+    std::string DtGroupName = "MetaData";
+    std::string DtVarName = "datetime";
+    std::vector<std::string> DtStrings;
+    FileIO->frame_string_get_data(DtGroupName, DtVarName, DtStrings);
+
+    for (std::size_t i = 0; i < FrameSize; ++i) {
+      std::size_t RowNum = FrameStart + i;
+      std::size_t RecNum = RowNum; // For Now
+      util::DateTime ObsDt(DtStrings[i]);
+      if (dist_->isMyRecord(RecNum) && InsideTimingWindow(ObsDt)) {
+        Index.push_back(RowNum);
+        RecNums.push_back(RecNum);
+      }
     }
   }
 
-  nlocs_ = indx_.size();
-  nrecs_ = UniqueRecnums.size();
-}
-
-// -----------------------------------------------------------------------------
-/*!
- * \details This method calculates the record numbers according to the specs in
- *          the YAML file. If the specification of a variable that denotes the
- *          grouping is present, then that variable is read from the input file
- *          and the records numbers are based on the unique values in that variable.
- *          If the specification is not present, then the record numbers are set
- *          to 0..(nlocs-1) which makes each location a separate record effectively
- *          disabling grouping.
- *
- * \param[in] FileIO File id (pointer to IodaIO object)
- * \param[out] Records Vector of record numbers
- */
-void ObsData::GenRecordNumbers(const std::unique_ptr<IodaIO> & FileIO,
-                                std::vector<std::size_t> & Records) const {
-  // Collect the group and variable names that came from the configuration
-  std::string GroupName = "MetaData";
-  std::string VarName = obs_group_variable_;
-
-  // Construct the group numbers
-  if (VarName.empty()) {
-    // Grouping is not specified, so place 0..(nlocs-1) in the Records vector.
-    // This effectively disables grouping (each location is a separate group).
-    std::iota(Records.begin(), Records.end(), 0);
-  } else {
-    // Grouping is based on GroupName, VarName. Read in the variable and make
-    // two passes through the values. First pass is to determine the unique
-    // values of which group numbers will be assigned 0..(number_of_unique_vals-1).
-    // Second pass is to generate the group numbers in the same order as the
-    // values occur in the variable read in.
-    std::string VarType = FileIO->var_dtype(GroupName, VarName);
-    std::vector<std::size_t> VarShape = FileIO->var_shape(GroupName, VarName);
-    std::size_t VarSize =
-      std::accumulate(VarShape.begin(), VarShape.end(), 1, std::multiplies<std::size_t>());
-
-    if (VarType == "int") {
-      std::vector<int> FileData(VarSize);
-///       FileIO->ReadVar(GroupName, VarName, VarShape, FileData);
-      GenRnumsFromVar<int>(FileData, Records);
-    } else if (VarType == "float") {
-      std::vector<float> FileData(VarSize);
-///       FileIO->ReadVar(GroupName, VarName, VarShape, FileData);
-      GenRnumsFromVar<float>(FileData, Records);
-    } else if (VarType == "string") {
-      std::vector<std::string> FileData(VarSize);
-///       FileIO->ReadVar(GroupName, VarName, VarShape, FileData);
-      GenRnumsFromVar<std::string>(FileData, Records);
-    }
-  }
-}
-
-// -----------------------------------------------------------------------------
-/*!
- * \details This method will generate a set of unique group numbers that go
- *          in sequence from 0 to number_of_unique_values-1. All of the unique
- *          values in VarData are extracted and assigned a unique group number.
- *
- * \param[in] VarData Vector of variable data.
- * \param[out] Records Vector of group numbers.
- */
-template<typename DATATYPE>
-void ObsData::GenRnumsFromVar(const std::vector<DATATYPE> & VarData,
-                               std::vector<std::size_t> & Records) {
-  typedef std::map<DATATYPE, std::size_t> VGMap;
-  typedef typename VGMap::iterator VGMapIter;
-  // Form a map from VarData values to group number.
-  //
-  // First, collect all of the unique key values. Then go back and fill in the
-  // values in the map with numbers going from 0 to number_of_unique_values-1.
-  VGMap ValueToGroupNum;
-  for (std::size_t i = 0; i < VarData.size(); i++) {
-    ValueToGroupNum[VarData[i]] = 0;
-  }
-
-  std::size_t Gnum = 0;
-  for (VGMapIter imap = ValueToGroupNum.begin();
-                 imap != ValueToGroupNum.end(); ++imap) {
-    ValueToGroupNum[imap->first] = Gnum;
-    Gnum++;
-  }
-
-  // Use the map to translate the VarData values into their associated group
-  // numbers
-  for (std::size_t i = 0; i < VarData.size(); i++) {
-    Records[i] = ValueToGroupNum[VarData[i]];
-  }
+  nlocs_ += Index.size();
+  nrecs_ += Index.size(); // For Now
+  FrameIndex = Index;
+  FrameRecNums = RecNums;
 }
 
 // -----------------------------------------------------------------------------
@@ -1106,41 +1054,6 @@ void ObsData::SaveToFile(const std::string & file_name, const std::size_t MaxFra
     }
 ///     fileio->WriteVar(GroupName, VarName, VarShape, StringVector);
   }
-}
-
-// -----------------------------------------------------------------------------
-/*!
- * \details This method handles the data type conversion when transferring data from
- *          VarData into the obs container. This method is called for the cases where
- *          an undesired data type mismatch could occurr during a put_db call. Therefore
- *          this method issues a warning about the conversion. Once the type mismatches
- *          are fixed, this method will be eliminated and the type mismatches that it
- *          is handling will become errors.
- *
- * \param[in] GroupName Name of group in the obs container
- * \param[in] VarName   Name of variable in the obs container
- * \param[in] VarShape  Shape (dimension sizes) of variable
- * \param[in] VarSize   Total number of elements of variable
- * \param[in] VarData   Pointer to memory to be stored in the obs container
- */
-template<typename VarType, typename DbType>
-void ObsData::ConvertStoreToDb(const std::string & GroupName, const std::string & VarName,
-                               const std::vector<std::size_t> & VarShape,
-                               const std::vector<VarType> & VarData) {
-  // Print a warning so we know to fix this situation. Limit the warnings to one per
-  // ObsData instantiation (roughly one per file).
-  std::string VarTypeName = TypeIdName(typeid(VarType));
-  std::string DbTypeName = TypeIdName(typeid(DbType));
-  nwarns_fdtype_++;
-  if ((commMPI_.rank() == 0) && (nwarns_fdtype_ == 1)) {
-    oops::Log::warning() << "ObsData::ConvertStoreToDb: WARNING: input file contains "
-                         << "unexpected data type: " << VarTypeName << std::endl
-                         << "  Input file: " << filein_ << std::endl << std::endl;
-  }
-
-  std::vector<DbType> DbData(VarData.size());
-  ConvertVarType<VarType, DbType>(VarData, DbData);
-  put_db(GroupName, VarName, DbData);
 }
 
 // -----------------------------------------------------------------------------
