@@ -28,6 +28,8 @@ namespace ioda {
   void StringVectorToCharArray(const std::vector<std::string> & StringVector,
                                const std::vector<std::size_t> & CharShape, char * CharData);
 
+  std::size_t FindMaxStringLength(const std::vector<std::string> & StringVector);
+
   std::string TypeIdName(const std::type_info & TypeId);
 
   // -----------------------------------------------------------------------------

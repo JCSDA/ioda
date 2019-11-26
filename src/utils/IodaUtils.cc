@@ -105,4 +105,15 @@ std::string TypeIdName(const std::type_info & TypeId) {
 }
 
 // -----------------------------------------------------------------------------
+std::size_t FindMaxStringLength(const std::vector<std::string> & StringVector) {
+  std::size_t MaxStringLength = 0;
+  for (std::size_t i = 0; i < StringVector.size(); ++i) {
+    if (StringVector[i].size() > MaxStringLength) {
+      MaxStringLength = StringVector[i].size();
+    }
+  }
+  return MaxStringLength;
+}
+
+// -----------------------------------------------------------------------------
 }  // namespace ioda
