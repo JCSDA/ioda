@@ -907,60 +907,132 @@ void ObsData::SaveToFile(const std::string & file_name, const std::size_t MaxFra
   std::unique_ptr<IodaIO> fileio
     {ioda::IodaIOfactory::Create(file_name, "W", MaxFrameSize)};
 
-  // Write out every record, from every database container.
+  // Build the frame info container
+  fileio->frame_info_init(MaxFrameSize);
+
+  // Add dimensions for nlocs and nvars
+  fileio->dim_insert("nlocs", nlocs_);
+  fileio->dim_insert("nvars", nvars_);
+
+  // Build the group, variable info container. This defines the variables 
+  // that will be written into the output file.
   for (ObsSpaceContainer<int>::VarIter ivar = int_database_.var_iter_begin();
                                        ivar != int_database_.var_iter_end(); ++ivar) {
     std::string GroupName = int_database_.var_iter_gname(ivar);
     std::string VarName = int_database_.var_iter_vname(ivar);
+    std::string GrpVarName = VarName + "@" + GroupName;
     std::vector<std::size_t> VarShape = int_database_.var_iter_shape(ivar);
-    std::size_t VarSize = int_database_.var_iter_size(ivar);
-
-    std::vector<int> VarData(VarSize);
-    int_database_.LoadFromDb(GroupName, VarName, VarShape, VarData);
-///     fileio->WriteVar(GroupName, VarName, VarShape, VarData);
+    fileio->grp_var_insert(GroupName, VarName, "int", VarShape, GrpVarName, "int");
   }
-
   for (ObsSpaceContainer<float>::VarIter ivar = float_database_.var_iter_begin();
                                        ivar != float_database_.var_iter_end(); ++ivar) {
     std::string GroupName = float_database_.var_iter_gname(ivar);
     std::string VarName = float_database_.var_iter_vname(ivar);
+    std::string GrpVarName = VarName + "@" + GroupName;
     std::vector<std::size_t> VarShape = float_database_.var_iter_shape(ivar);
-    std::size_t VarSize = float_database_.var_iter_size(ivar);
-
-    std::vector<float> VarData(VarSize);
-    float_database_.LoadFromDb(GroupName, VarName, VarShape, VarData);
-///     fileio->WriteVar(GroupName, VarName, VarShape, VarData);
+    fileio->grp_var_insert(GroupName, VarName, "float", VarShape, GrpVarName, "float");
   }
-
   for (ObsSpaceContainer<std::string>::VarIter ivar = string_database_.var_iter_begin();
                                        ivar != string_database_.var_iter_end(); ++ivar) {
     std::string GroupName = string_database_.var_iter_gname(ivar);
     std::string VarName = string_database_.var_iter_vname(ivar);
+    std::string GrpVarName = VarName + "@" + GroupName;
     std::vector<std::size_t> VarShape = string_database_.var_iter_shape(ivar);
-    std::size_t VarSize = string_database_.var_iter_size(ivar);
-
-    std::vector<std::string> VarData(VarSize, "");
-    string_database_.LoadFromDb(GroupName, VarName, VarShape, VarData);
-///     fileio->WriteVar(GroupName, VarName, VarShape, VarData);
+    std::vector<std::string> DbData(VarShape[0], "");
+    string_database_.LoadFromDb(GroupName, VarName, VarShape, DbData);
+    std::size_t MaxStringSize = FindMaxStringLength(DbData);
+    fileio->grp_var_insert(GroupName, VarName, "string", VarShape, GrpVarName, "string",
+                           MaxStringSize);
   }
-
   for (ObsSpaceContainer<util::DateTime>::VarIter ivar = datetime_database_.var_iter_begin();
                                        ivar != datetime_database_.var_iter_end(); ++ivar) {
     std::string GroupName = datetime_database_.var_iter_gname(ivar);
     std::string VarName = datetime_database_.var_iter_vname(ivar);
+    std::string GrpVarName = VarName + "@" + GroupName;
     std::vector<std::size_t> VarShape = datetime_database_.var_iter_shape(ivar);
-    std::size_t VarSize = datetime_database_.var_iter_size(ivar);
+    fileio->grp_var_insert(GroupName, VarName, "string", VarShape, GrpVarName, "string", 20);
+  }
 
-    util::DateTime TempDt("0000-01-01T00:00:00Z");
-    std::vector<util::DateTime> VarData(VarSize, TempDt);
-    datetime_database_.LoadFromDb(GroupName, VarName, VarShape, VarData);
+  // For every frame, dump out the int, float, string variables.
+  for (IodaIO::FrameIter iframe = fileio->frame_begin();
+                         iframe != fileio->frame_end(); ++iframe) {
+    fileio->frame_data_init();
+    std::size_t FrameStart = fileio->frame_start(iframe);
+    std::size_t FrameSize = fileio->frame_size(iframe);
 
-    // Convert the DateTime vector to a string vector, then save into the file.
-    std::vector<std::string> StringVector(VarSize, "");
-    for (std::size_t i = 0; i < VarSize; i++) {
-      StringVector[i] = VarData[i].toString();
+    // Integer data
+    for (ObsSpaceContainer<int>::VarIter ivar = int_database_.var_iter_begin();
+                                         ivar != int_database_.var_iter_end(); ++ivar) {
+      std::string GroupName = int_database_.var_iter_gname(ivar);
+      std::string VarName = int_database_.var_iter_vname(ivar);
+      std::vector<std::size_t> VarShape = int_database_.var_iter_shape(ivar);
+
+      if (VarShape[0] > FrameStart) {
+        std::size_t Count = FrameSize;
+        if ((FrameStart + FrameSize) > VarShape[0]) { Count = VarShape[0] - FrameStart; }
+        std::vector<int> FrameData(Count, 0);
+        int_database_.LoadFromDb(GroupName, VarName, VarShape, FrameData, FrameStart, Count);
+        fileio->frame_int_put_data(GroupName, VarName, FrameData);
+      }
     }
-///     fileio->WriteVar(GroupName, VarName, VarShape, StringVector);
+
+    // Float data
+    for (ObsSpaceContainer<float>::VarIter ivar = float_database_.var_iter_begin();
+                                         ivar != float_database_.var_iter_end(); ++ivar) {
+      std::string GroupName = float_database_.var_iter_gname(ivar);
+      std::string VarName = float_database_.var_iter_vname(ivar);
+      std::vector<std::size_t> VarShape = float_database_.var_iter_shape(ivar);
+
+      if (VarShape[0] > FrameStart) {
+        std::size_t Count = FrameSize;
+        if ((FrameStart + FrameSize) > VarShape[0]) { Count = VarShape[0] - FrameStart; }
+        std::vector<float> FrameData(Count, 0.0);
+        float_database_.LoadFromDb(GroupName, VarName, VarShape, FrameData, FrameStart, Count);
+        fileio->frame_float_put_data(GroupName, VarName, FrameData);
+      }
+    }
+
+    // String data
+    for (ObsSpaceContainer<std::string>::VarIter ivar = string_database_.var_iter_begin();
+                                         ivar != string_database_.var_iter_end(); ++ivar) {
+      std::string GroupName = string_database_.var_iter_gname(ivar);
+      std::string VarName = string_database_.var_iter_vname(ivar);
+      std::vector<std::size_t> VarShape = string_database_.var_iter_shape(ivar);
+
+      if (VarShape[0] > FrameStart) {
+        std::size_t Count = FrameSize;
+        if ((FrameStart + FrameSize) > VarShape[0]) { Count = VarShape[0] - FrameStart; }
+        std::vector<std::string> FrameData(Count, "");
+        string_database_.LoadFromDb(GroupName, VarName, VarShape, FrameData,
+                                    FrameStart, Count);
+        fileio->frame_string_put_data(GroupName, VarName, FrameData);
+      }
+    }
+
+    for (ObsSpaceContainer<util::DateTime>::VarIter ivar = datetime_database_.var_iter_begin();
+                                       ivar != datetime_database_.var_iter_end(); ++ivar) {
+      std::string GroupName = datetime_database_.var_iter_gname(ivar);
+      std::string VarName = datetime_database_.var_iter_vname(ivar);
+      std::vector<std::size_t> VarShape = datetime_database_.var_iter_shape(ivar);
+
+      if (VarShape[0] > FrameStart) {
+        std::size_t Count = FrameSize;
+        if ((FrameStart + FrameSize) > VarShape[0]) { Count = VarShape[0] - FrameStart; }
+        util::DateTime TempDt("0000-01-01T00:00:00Z");
+        std::vector<util::DateTime> FrameData(Count, TempDt);
+        datetime_database_.LoadFromDb(GroupName, VarName, VarShape, FrameData,
+                                      FrameStart, Count);
+
+        // Convert the DateTime vector to a string vector, then save into the file.
+        std::vector<std::string> StringVector(FrameData.size(), "");
+        for (std::size_t i = 0; i < FrameData.size(); i++) {
+          StringVector[i] = FrameData[i].toString();
+        }
+        fileio->frame_string_put_data(GroupName, VarName, StringVector);
+      }
+    }
+
+    fileio->frame_write(iframe);
   }
 }
 
