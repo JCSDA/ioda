@@ -146,6 +146,7 @@ class ObsData : public oops::ObsSpaceBase {
   std::vector<std::size_t> GenFrameIndexRecNums(const std::unique_ptr<IodaIO> & FileIO,
                                const std::size_t FrameStart, const std::size_t FrameSize);
   bool InsideTimingWindow(const util::DateTime & ObsDt);
+  std::size_t GenRecNum(const std::size_t LocNum);
   void BuildSortedObsGroups();
   void createKDTree();
 
