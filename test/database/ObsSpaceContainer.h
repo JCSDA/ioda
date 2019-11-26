@@ -45,7 +45,8 @@ void StoreVarSegments(const std::string & GroupName, const std::string & VarName
   for (std::size_t i = 0; i < Starts.size(); ++i) {
     std::vector<VarType> VarSegment(VarData.begin() + Starts[i],
                                     VarData.begin() + Starts[i] + Counts[i]);
-    Container->StoreToDb(GroupName, VarName, VarShape, VarSegment, Starts[i], Counts[i]);
+    // last argument == true tells StoreToDb to append
+    Container->StoreToDb(GroupName, VarName, VarShape, VarSegment, true);
   }
 }
 

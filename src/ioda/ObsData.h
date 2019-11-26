@@ -143,20 +143,15 @@ class ObsData : public oops::ObsSpaceBase {
 
   // Initialize the database from the input file
   void InitFromFile(const std::string & filename, const std::size_t MaxFrameSize);
-  void GenFrameIndexRecNums(const std::unique_ptr<IodaIO> & FileIO,
-               const std::size_t FrameStart, const std::size_t FrameSize,
-               std::vector<std::size_t> & FrameIndex, std::vector<std::size_t> & FrameRecNums);
-  void ApplyTimingWindow(const std::unique_ptr<IodaIO> & FileIO);
+  std::vector<std::size_t> GenFrameIndexRecNums(const std::unique_ptr<IodaIO> & FileIO,
+                               const std::size_t FrameStart, const std::size_t FrameSize);
   bool InsideTimingWindow(const util::DateTime & ObsDt);
   void BuildSortedObsGroups();
   void createKDTree();
 
   template<typename VarType>
-  void ApplyDistIndex(std::vector<VarType> & FullData,
-                      const std::vector<std::size_t> & FullShape,
-                      std::vector<VarType> & IndexedData,
-                      std::vector<std::size_t> & IndexedShape,
-                      std::size_t & IndexedSize) const;
+  std::vector<VarType> ApplyIndex(const std::vector<VarType> & FullData,
+                                  const std::vector<std::size_t> & Index) const;
 
   static std::string DesiredVarType(std::string & GroupName, std::string & FileVarType);
 
