@@ -512,7 +512,7 @@ void ObsData::genDistRandom(const eckit::Configuration & conf, std::vector<float
   // The default constructor for std::unique_ptr generates a null ptr which
   // can be tested in GenFrameIndexRecNums
   std::unique_ptr<IodaIO> NoIO;
-  GenFrameIndexRecNums(NoIO, 0, gnlocs_, indx_, recnums_);
+  std::vector<std::size_t> DummyIndex = GenFrameIndexRecNums(NoIO, 0, gnlocs_);
 
   // Use the following formula to generate random lat, lon and time values.
   //
@@ -605,7 +605,7 @@ void ObsData::genDistList(const eckit::Configuration & conf, std::vector<float> 
   // can be tested in GenFrameIndexRecNums
   gnlocs_ = latitudes.size();
   std::unique_ptr<IodaIO> NoIO;
-  GenFrameIndexRecNums(NoIO, 0, gnlocs_, indx_, recnums_);
+  std::vector<std::size_t> DummyIndex = GenFrameIndexRecNums(NoIO, 0, gnlocs_);
 
   // Create vectors for lat, lon, time, fill them with the values from the
   // lists in the configuration.
@@ -654,161 +654,75 @@ void ObsData::InitFromFile(const std::string & filename, const std::size_t MaxFr
   // and if the records fall inside the DA timing window.
   for (IodaIO::FrameIter iframe = fileio->frame_begin();
                        iframe != fileio->frame_end(); ++iframe) {
-  std::size_t FrameStart = fileio->frame_start(iframe);
-  std::size_t FrameSize = fileio->frame_size(iframe);
-  std::cout << "DEBUG: Reading Frame: " << FrameStart << ", " << FrameSize << std::endl;
+    std::size_t FrameStart = fileio->frame_start(iframe);
+    std::size_t FrameSize = fileio->frame_size(iframe);
+    std::cout << "DEBUG: Reading Frame: " << FrameStart << ", " << FrameSize << std::endl;
 
-  // Fill in the current frame from the file
-  fileio->frame_read(iframe);
+    // Fill in the current frame from the file
+    fileio->frame_read(iframe);
 
-  // Calculate the corresponding segments of indx_ and recnums_ vectors for this
-  // frame. Use these segments to select the rows from the frame before storing in
-  // the obs space container.
-  std::vector<std::size_t> FrameIndex;
-  std::vector<std::size_t> FrameRecNums;
-  GenFrameIndexRecNums(fileio, FrameStart, FrameSize, FrameIndex, FrameRecNums);
-  std::cout << "DEBUG: FrameIndex: " << FrameIndex << std::endl;
-  std::cout << "DEBUG: FrameRecNums: " << FrameRecNums << std::endl;
+    // Calculate the corresponding segments of indx_ and recnums_ vectors for this
+    // frame. Use these segments to select the rows from the frame before storing in
+    // the obs space container.
+    std::vector<std::size_t> FrameIndex = GenFrameIndexRecNums(fileio, FrameStart, FrameSize);
+    std::cout << "DEBUG: FrameIndex: " << FrameIndex << std::endl;
+    std::cout << "DEBUG: indx_: " << indx_ << std::endl;
+    std::cout << "DEBUG: recnums_: " << recnums_ << std::endl;
 
-  // Integer variables
-  for (IodaIO::FrameIntIter idata = fileio->frame_int_begin();
-                            idata != fileio->frame_int_end(); ++idata) {
-    std::string GroupName = fileio->frame_int_get_gname(idata);
-    std::string VarName = fileio->frame_int_get_vname(idata);
-    std::vector<std::size_t> VarShape = fileio->var_shape(GroupName, VarName);
-    std::vector<int> FrameData;
-    fileio->frame_int_get_data(GroupName, VarName, FrameData);
-    std::cout << "DEBUG:     Int Vars: " << GroupName << ", " << VarName
+    // Integer variables
+    for (IodaIO::FrameIntIter idata = fileio->frame_int_begin();
+                              idata != fileio->frame_int_end(); ++idata) {
+      std::string GroupName = fileio->frame_int_get_gname(idata);
+      std::string VarName = fileio->frame_int_get_vname(idata);
+      std::vector<std::size_t> VarShape = fileio->var_shape(GroupName, VarName);
+      std::vector<int> FrameData;
+      fileio->frame_int_get_data(GroupName, VarName, FrameData);
+      std::cout << "DEBUG:     Int Vars: " << GroupName << ", " << VarName
               << " (" << FrameData.size() << ")" << std::endl;
-    int_database_.StoreToDb(GroupName, VarName, VarShape, FrameData,
-                            FrameStart, FrameData.size());
-  }
+      if (VarShape[0] == gnlocs_) {
+        std::vector<int> SelectedData = ApplyIndex(FrameData, FrameIndex);
+        int_database_.StoreToDb(GroupName, VarName, VarShape, SelectedData, true);
+      } else {
+        int_database_.StoreToDb(GroupName, VarName, VarShape, FrameData, true);
+      }
+    }
 
-  // Float variables
-  for (IodaIO::FrameFloatIter idata = fileio->frame_float_begin();
-                              idata != fileio->frame_float_end(); ++idata) {
-    std::string GroupName = fileio->frame_float_get_gname(idata);
-    std::string VarName = fileio->frame_float_get_vname(idata);
-    std::vector<std::size_t> VarShape = fileio->var_shape(GroupName, VarName);
-    std::vector<float> FrameData;
-    fileio->frame_float_get_data(GroupName, VarName, FrameData);
-    std::cout << "DEBUG:     Float Vars: " << GroupName << ", " << VarName
-              << " (" << FrameData.size() << ")" << std::endl;
-    float_database_.StoreToDb(GroupName, VarName, VarShape, FrameData,
-                              FrameStart, FrameData.size());
-  }
+    // Float variables
+    for (IodaIO::FrameFloatIter idata = fileio->frame_float_begin();
+                                idata != fileio->frame_float_end(); ++idata) {
+      std::string GroupName = fileio->frame_float_get_gname(idata);
+      std::string VarName = fileio->frame_float_get_vname(idata);
+      std::vector<std::size_t> VarShape = fileio->var_shape(GroupName, VarName);
+      std::vector<float> FrameData;
+      fileio->frame_float_get_data(GroupName, VarName, FrameData);
+      std::cout << "DEBUG:     Float Vars: " << GroupName << ", " << VarName
+                << " (" << FrameData.size() << ")" << std::endl;
+      if (VarShape[0] == gnlocs_) {
+        std::vector<float> SelectedData = ApplyIndex(FrameData, FrameIndex);
+        float_database_.StoreToDb(GroupName, VarName, VarShape, SelectedData, true);
+      } else {
+        float_database_.StoreToDb(GroupName, VarName, VarShape, FrameData, true);
+      }
+    }
 
-  // String variables
-  for (IodaIO::FrameStringIter idata = fileio->frame_string_begin();
-                               idata != fileio->frame_string_end(); ++idata) {
-    std::string GroupName = fileio->frame_string_get_gname(idata);
-    std::string VarName = fileio->frame_string_get_vname(idata);
-    std::vector<std::size_t> VarShape = fileio->var_shape(GroupName, VarName);
-    std::vector<std::string> FrameData;
-    fileio->frame_string_get_data(GroupName, VarName, FrameData);
-    std::cout << "DEBUG:     String Vars: " << GroupName << ", " << VarName
-              << " (" << FrameData.size() << ")" << std::endl;
-    string_database_.StoreToDb(GroupName, VarName, VarShape, FrameData,
-                               FrameStart, FrameData.size());
+    // String variables
+    for (IodaIO::FrameStringIter idata = fileio->frame_string_begin();
+                                 idata != fileio->frame_string_end(); ++idata) {
+      std::string GroupName = fileio->frame_string_get_gname(idata);
+      std::string VarName = fileio->frame_string_get_vname(idata);
+      std::vector<std::size_t> VarShape = fileio->var_shape(GroupName, VarName);
+      std::vector<std::string> FrameData;
+      fileio->frame_string_get_data(GroupName, VarName, FrameData);
+      std::cout << "DEBUG:     String Vars: " << GroupName << ", " << VarName
+                << " (" << FrameData.size() << ")" << std::endl;
+      if (VarShape[0] == gnlocs_) {
+        std::vector<std::string> SelectedData = ApplyIndex(FrameData, FrameIndex);
+        string_database_.StoreToDb(GroupName, VarName, VarShape, SelectedData, true);
+      } else {
+        string_database_.StoreToDb(GroupName, VarName, VarShape, FrameData, true);
+      }
     }
   }
-
-///   // Reject observations that fall outside the DA timing window. Do this by removing
-///   // any locations from indx_ and recnums_ that fall outside the window.
-///   ApplyTimingWindow(fileio);
-/// 
-///   // Read in all variables from the file and store them into the database.
-///   nvars_ = 0;
-///   for (IodaIO::GroupIter igrp = fileio->group_begin();
-///                          igrp != fileio->group_end(); ++igrp) {
-///     std::string GroupName = fileio->group_name(igrp);
-///     for (IodaIO::VarIter ivar = fileio->var_begin(igrp);
-///                          ivar != fileio->var_end(igrp); ++ivar) {
-///       std::string VarName = fileio->var_name(ivar);
-///       std::string FileVarType = fileio->var_dtype(ivar);
-/// 
-///       // nvars_ is equal to the number of variables in the ObsValue group
-///       if (GroupName == "ObsValue") {
-///         nvars_++;
-///       }
-/// 
-///       // VarShape, VarSize hold dimension sizes from file.
-///       // AdjVarShape, AdjVarSize hold dimension sizes needed when the
-///       // fisrt dimension is nlocs in size. Ie, all variables with nlocs
-///       // as the first dimension need to be distributed across that dimension.
-///       std::vector<std::size_t> VarShape = fileio->var_shape(ivar);
-///       std::size_t VarSize =
-///         std::accumulate(VarShape.begin(), VarShape.end(), 1, std::multiplies<std::size_t>());
-/// 
-///       // Get the desired data type for the database.
-///       std::string DbVarType = DesiredVarType(GroupName, FileVarType);
-/// 
-///       // Read the variable from the file and transfer it to the database.
-///       if (FileVarType == "int") {
-///         std::vector<int> FileData(VarSize);
-///         fileio->ReadVar(GroupName, VarName, VarShape, FileData);
-/// 
-///         std::vector<int> IndexedData;
-///         std::vector<std::size_t> IndexedShape;
-///         std::size_t IndexedSize;
-///         ApplyDistIndex<int>(FileData, VarShape, IndexedData, IndexedShape, IndexedSize);
-///         int_database_.StoreToDb(GroupName, VarName, IndexedShape, IndexedData);
-///       } else if (FileVarType == "float") {
-///         std::vector<float> FileData(VarSize);
-///         fileio->ReadVar(GroupName, VarName, VarShape, FileData);
-/// 
-///         std::vector<float> IndexedData;
-///         std::vector<std::size_t> IndexedShape;
-///         std::size_t IndexedSize;
-///         ApplyDistIndex<float>(FileData, VarShape, IndexedData, IndexedShape, IndexedSize);
-/// 
-///         if (DbVarType == "int") {
-///           ConvertStoreToDb<float, int>(GroupName, VarName, IndexedShape, IndexedData);
-///         } else {
-///           float_database_.StoreToDb(GroupName, VarName, IndexedShape, IndexedData);
-///         }
-///       } else if (FileVarType == "double") {
-///         // Convert double to float before storing into the database.
-///         std::vector<double> FileData(VarSize);
-///         fileio->ReadVar(GroupName, VarName, VarShape, FileData);
-/// 
-///         std::vector<double> IndexedData;
-///         std::vector<std::size_t> IndexedShape;
-///         std::size_t IndexedSize;
-///         ApplyDistIndex<double>(FileData, VarShape, IndexedData, IndexedShape, IndexedSize);
-/// 
-///         ConvertStoreToDb<double, float>(GroupName, VarName, IndexedShape, IndexedData);
-///       } else if (FileVarType == "string") {
-///         // If we are working on the variable "datetime", convert the strings
-///         // to DateTime objects.
-///         std::vector<std::string> FileData(VarSize);
-///         fileio->ReadVar(GroupName, VarName, VarShape, FileData);
-/// 
-///         std::vector<std::string> IndexedData;
-///         std::vector<std::size_t> IndexedShape;
-///         std::size_t IndexedSize;
-///         ApplyDistIndex<std::string>(FileData, VarShape, IndexedData, IndexedShape, IndexedSize);
-/// 
-///         if (VarName == "datetime") {
-///           std::vector<util::DateTime> DtData(IndexedSize);
-///           for (std::size_t j = 0; j < IndexedSize; j++) {
-///             util::DateTime TempDt(IndexedData[j]);
-///             DtData[j] = TempDt;
-///           }
-///           datetime_database_.StoreToDb(GroupName, VarName, IndexedShape, DtData);
-///         } else {
-///           string_database_.StoreToDb(GroupName, VarName, IndexedShape, IndexedData);
-///         }
-///       } else if (commMPI_.rank() == 0) {
-///         oops::Log::warning() << "ObsData::InitFromFile: Unrecognized file data type: "
-///                              << FileVarType << std::endl;
-///         oops::Log::warning() << "  File IO Currently supports data types int, float and char."
-///                              << std::endl;
-///         oops::Log::warning() << "  Skipping read of " << VarName << " @ " << GroupName
-///                              << " from the input file." << std::endl;
-///       }
-///     }
-///   }
 
   // Record whether any problems occurred when reading the file.
   file_missing_gnames_ = fileio->missing_group_names();
@@ -827,18 +741,17 @@ void ObsData::InitFromFile(const std::string & filename, const std::size_t MaxFr
  * \param[out] FrameIndex Vector of indices indicating rows belonging to this process element
  * \param[out] FrameRecNums Vector containing record numbers corresponding to FrameIndex
  */
-void ObsData::GenFrameIndexRecNums(const std::unique_ptr<IodaIO> & FileIO,
-           const std::size_t FrameStart, const std::size_t FrameSize,
-           std::vector<std::size_t> & FrameIndex, std::vector<std::size_t> & FrameRecNums) {
+std::vector<std::size_t> ObsData::GenFrameIndexRecNums(const std::unique_ptr<IodaIO> & FileIO,
+                                 const std::size_t FrameStart, const std::size_t FrameSize) {
   std::vector<std::size_t> Index;
-  std::vector<std::size_t> RecNums;
   if (FileIO == nullptr) {
     // For the generate style constructors
     for (std::size_t i = 0; i < FrameSize; ++i) {
       std::size_t RecNum = FrameStart + i;
       if (dist_->isMyRecord(RecNum)) {
-        Index.push_back(RecNum);
-        RecNums.push_back(RecNum);
+        indx_.push_back(RecNum);
+        recnums_.push_back(RecNum);
+        Index.push_back(i);
       }
     }
   } else {
@@ -860,68 +773,16 @@ void ObsData::GenFrameIndexRecNums(const std::unique_ptr<IodaIO> & FileIO,
       std::size_t RecNum = RowNum; // For Now
       util::DateTime ObsDt(DtStrings[i]);
       if (dist_->isMyRecord(RecNum) && InsideTimingWindow(ObsDt)) {
-        Index.push_back(RowNum);
-        RecNums.push_back(RecNum);
+        indx_.push_back(RowNum);
+        recnums_.push_back(RecNum);
+        Index.push_back(i);
       }
     }
   }
 
   nlocs_ += Index.size();
   nrecs_ += Index.size(); // For Now
-  FrameIndex = Index;
-  FrameRecNums = RecNums;
-}
-
-// -----------------------------------------------------------------------------
-/*!
- * \details This method will save the contents of the obs container into the
- *          given file. Currently, all variables in the obs container are written
- *          into the file. This may change in the future where we can select which
- *          variables we want saved.
- *
- * \param[in] file_name Path to output obs file.
- */
-void ObsData::ApplyTimingWindow(const std::unique_ptr<IodaIO> & FileIO) {
-  // Read in the datetime values and filter out any variables outside the
-  // timing window.
-  std::vector<std::string> DtStrings(gnlocs_);
-  std::vector<std::size_t> DtShape(1, gnlocs_);
-
-  // Look for datetime@MetaData first, then datetime@GroupUndefined
-  std::string DtGroupName = "MetaData";
-  std::string DtVarName = "datetime";
-  if (!FileIO->grp_var_exists(DtGroupName, DtVarName)) {
-    DtGroupName = "GroupUndefined";
-    if (!FileIO->grp_var_exists(DtGroupName, DtVarName)) {
-      std::string ErrorMsg = "ObsData::InitFromFile: datetime information is not available";
-      ABORT(ErrorMsg);
-    }
-  }
-///   FileIO->ReadVar(DtGroupName, DtVarName, DtShape, DtStrings);
-
-  std::size_t Index;
-  std::size_t RecNum;
-  std::set<std::size_t> UniqueRecNums;
-  std::vector<std::size_t> NewIndices;
-  std::vector<std::size_t> NewRecNums;
-  for (std::size_t ii = 0; ii < nlocs_; ii++) {
-    Index = indx_[ii];
-    RecNum = recnums_[ii];
-    util::DateTime TestDt(DtStrings[Index]);
-    if (InsideTimingWindow(TestDt)) {
-      // Inside the DA time window, keep this index
-      // and associated record number
-      NewIndices.push_back(Index);
-      NewRecNums.push_back(RecNum);
-      UniqueRecNums.insert(RecNum);
-    }
-  }
-
-  // Save adjusted counts, etc.
-  nlocs_ = NewIndices.size();
-  nrecs_ = UniqueRecNums.size();
-  indx_ = NewIndices;
-  recnums_ = NewRecNums;
+  return Index;
 }
 
 // -----------------------------------------------------------------------------
@@ -1059,56 +920,21 @@ void ObsData::SaveToFile(const std::string & file_name, const std::size_t MaxFra
 // -----------------------------------------------------------------------------
 /*!
  * \details This method applys the distribution index on data read from the input obs file.
- *          This method will allocate the memory for the IndexedData pointer since it
- *          is also calculating the shape and size of the IndexedData memory.
  *          It is expected that when this method is called that the distribution index will
  *          have the process element and DA timing window effects accounted for.
  *
- * \param[in]  FullData     Pointer to the data read in from the input obs file (all locations)
- * \param[in]  FullShape    Shape (dimension sizes) of FullData
- * \param[out] IndexedData  Pointer to memory for the filtered data (selected locations)
- * \param[out] IndexedShape Shape of IndexedData
- * \param[out] IndexedSize  Total number of elements in IndexedData
+ * \param[in]  FullData Vector to the data read in from the input obs file (all locations)
+ * \param[in]  Index    Shape (dimension sizes) of FullData
  */
 template<typename VarType>
-void ObsData::ApplyDistIndex(std::vector<VarType> & FullData,
-                              const std::vector<std::size_t> & FullShape,
-                              std::vector<VarType> & IndexedData,
-                              std::vector<std::size_t> & IndexedShape,
-                              std::size_t & IndexedSize) const {
-  IndexedShape = FullShape;
-  IndexedSize = 1;
-  // Apply the distribution index only when the first dimension size (FullShape[0])
-  // is equal to gnlocs_. Ie, only apply the index to obs data (values, errors
-  // and QC marks) and metadata related to the obs data.
-  if (FullShape[0] == gnlocs_) {
-    // Need to compute the new Shape and size. Keep track of the number of items
-    // between each element of the first dimension (IndexIncrement). IndexIncrement
-    // will define the space between each element of the first dimension, which will
-    // be general no matter how many dimensions in the variable.
-    IndexedShape[0] = nlocs_;
-    std::size_t IndexIncrement = 1;
-    for (std::size_t i = 0; i < IndexedShape.size(); i++) {
-      IndexedSize *= IndexedShape[i];
-      if (i > 0) {
-        IndexIncrement *= IndexedShape[i];
-      }
-    }
-
-    IndexedData.reserve(IndexedSize);
-    for (std::size_t i = 0; i < IndexedShape[0]; i++) {
-      for (std::size_t j = 0; j < IndexIncrement; j++) {
-        std::size_t isrc = (indx_[i] * IndexIncrement) + j;
-        IndexedData.push_back(FullData[isrc]);
-      }
-    }
-  } else {
-    // Transfer the full data pointer to the indexed data pointer
-    for (std::size_t i = 0; i < IndexedShape.size(); i++) {
-      IndexedSize *= IndexedShape[i];
-    }
-    IndexedData = std::move(FullData);
+std::vector<VarType> ObsData::ApplyIndex(const std::vector<VarType> & FullData,
+                              const std::vector<std::size_t> & Index) const {
+  std::vector<VarType> SelectedData;
+  for (std::size_t i = 0; i < Index.size(); ++i) {
+    std::size_t isrc = Index[i];
+    SelectedData.push_back(FullData[isrc]);
   }
+  return SelectedData;
 }
 
 // -----------------------------------------------------------------------------
