@@ -509,9 +509,7 @@ void ObsData::genDistRandom(const eckit::Configuration & conf, std::vector<float
   }
 
   // Generate the indexing for MPI distribution
-  // The default constructor for std::unique_ptr generates a null ptr which
-  // can be tested in GenFrameIndexRecNums
-  std::unique_ptr<IodaIO> NoIO;
+  std::unique_ptr<IodaIO> NoIO(nullptr);
   std::vector<std::size_t> DummyIndex = GenFrameIndexRecNums(NoIO, 0, gnlocs_);
 
   // Use the following formula to generate random lat, lon and time values.
@@ -601,10 +599,8 @@ void ObsData::genDistList(const eckit::Configuration & conf, std::vector<float> 
   }
 
   // Generate the indexing for MPI distribution
-  // The default constructor for std::unique_ptr generates a null ptr which
-  // can be tested in GenFrameIndexRecNums
   gnlocs_ = latitudes.size();
-  std::unique_ptr<IodaIO> NoIO;
+  std::unique_ptr<IodaIO> NoIO(nullptr);
   std::vector<std::size_t> DummyIndex = GenFrameIndexRecNums(NoIO, 0, gnlocs_);
 
   // Create vectors for lat, lon, time, fill them with the values from the
@@ -747,9 +743,10 @@ std::vector<std::size_t> ObsData::GenFrameIndexRecNums(const std::unique_ptr<Iod
   if (FileIO == nullptr) {
     // For the generate style constructors
     for (std::size_t i = 0; i < FrameSize; ++i) {
-      std::size_t RecNum = FrameStart + i;
+      std::size_t RowNum = FrameStart + i;
+      std::size_t RecNum = GenRecNum(RowNum);
       if (dist_->isMyRecord(RecNum)) {
-        indx_.push_back(RecNum);
+        indx_.push_back(RowNum);
         recnums_.push_back(RecNum);
         Index.push_back(i);
       }
@@ -770,7 +767,7 @@ std::vector<std::size_t> ObsData::GenFrameIndexRecNums(const std::unique_ptr<Iod
 
     for (std::size_t i = 0; i < FrameSize; ++i) {
       std::size_t RowNum = FrameStart + i;
-      std::size_t RecNum = RowNum; // For Now
+      std::size_t RecNum = GenRecNum(RowNum);
       util::DateTime ObsDt(DtStrings[i]);
       if (dist_->isMyRecord(RecNum) && InsideTimingWindow(ObsDt)) {
         indx_.push_back(RowNum);
@@ -781,7 +778,6 @@ std::vector<std::size_t> ObsData::GenFrameIndexRecNums(const std::unique_ptr<Iod
   }
 
   nlocs_ += Index.size();
-  nrecs_ += Index.size(); // For Now
   return Index;
 }
 
@@ -794,6 +790,22 @@ std::vector<std::size_t> ObsData::GenFrameIndexRecNums(const std::unique_ptr<Iod
  */
 bool ObsData::InsideTimingWindow(const util::DateTime & ObsDt) {
   return ((ObsDt > winbgn_) && (ObsDt <= winend_));
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method will determine the record number for the current location.
+ *
+ * \param[in] LocNum Current location number
+ */
+std::size_t ObsData::GenRecNum(const std::size_t LocNum) {
+  std::size_t RecNum;
+
+  // No obs grouping specified, each location is a separate record.
+  RecNum = LocNum;
+  nrecs_++;
+
+  return RecNum;
 }
 
 // -----------------------------------------------------------------------------
