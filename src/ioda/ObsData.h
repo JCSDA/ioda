@@ -38,6 +38,26 @@ namespace eckit {
 namespace ioda {
   class ObsVector;
 
+//-------------------------------------------------------------------------------------
+template <typename KeyType>
+class ObsGroupingMap {
+ public:
+   bool has(const KeyType Key) {
+     return (obs_grouping_map_.find(Key) != obs_grouping_map_.end());
+   }
+
+   void insert(const KeyType Key, const std::size_t Val) {
+     obs_grouping_map_.insert(std::pair<KeyType, std::size_t>(Key, Val));
+   }
+
+   std::size_t at(const KeyType Key) {
+     return obs_grouping_map_.at(Key);
+   }
+
+ private:
+   std::map<KeyType, std::size_t> obs_grouping_map_;
+};
+
 /// Observation Data
 /*!
  * \brief Observation data class for IODA
@@ -146,7 +166,6 @@ class ObsData : public oops::ObsSpaceBase {
   std::vector<std::size_t> GenFrameIndexRecNums(const std::unique_ptr<IodaIO> & FileIO,
                                const std::size_t FrameStart, const std::size_t FrameSize);
   bool InsideTimingWindow(const util::DateTime & ObsDt);
-  std::size_t GenRecNum(const std::size_t LocNum);
   void BuildSortedObsGroups();
   void createKDTree();
 
@@ -237,7 +256,16 @@ class ObsData : public oops::ObsSpaceBase {
   /*! \brief Sort order for obs grouping */
   std::string obs_sort_order_;
 
+  /*! \brief MPI distribution object */
   std::shared_ptr<Distribution> dist_;
+
+  /*! \brief maps for obs grouping via integer, float or string values */
+  ObsGroupingMap<int> int_obs_grouping_;
+  ObsGroupingMap<float> float_obs_grouping_;
+  ObsGroupingMap<std::string> string_obs_grouping_;
+
+  /*! \brief next available record number */
+  std::size_t next_rec_num_;
 };
 
 }  // namespace ioda

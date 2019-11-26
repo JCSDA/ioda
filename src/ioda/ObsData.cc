@@ -50,7 +50,7 @@ ObsData::ObsData(const eckit::Configuration & config, const eckit::mpi::Comm & c
   : oops::ObsSpaceBase(config, comm, bgn, end),
     config_(config), winbgn_(bgn), winend_(end), commMPI_(comm), int_database_(),
     float_database_(), string_database_(), datetime_database_(), obsvars_(),
-    gnlocs_(0), nlocs_(0), nvars_(0), nrecs_(0)
+    gnlocs_(0), nlocs_(0), nvars_(0), nrecs_(0), next_rec_num_(0)
 {
   oops::Log::trace() << "ObsData::ObsData config  = " << config << std::endl;
 
@@ -739,41 +739,92 @@ void ObsData::InitFromFile(const std::string & filename, const std::size_t MaxFr
  */
 std::vector<std::size_t> ObsData::GenFrameIndexRecNums(const std::unique_ptr<IodaIO> & FileIO,
                                  const std::size_t FrameStart, const std::size_t FrameSize) {
-  std::vector<std::size_t> Index;
-  if (FileIO == nullptr) {
-    // For the generate style constructors
-    for (std::size_t i = 0; i < FrameSize; ++i) {
-      std::size_t RowNum = FrameStart + i;
-      std::size_t RecNum = GenRecNum(RowNum);
-      if (dist_->isMyRecord(RecNum)) {
-        indx_.push_back(RowNum);
-        recnums_.push_back(RecNum);
-        Index.push_back(i);
-      }
-    }
+  std::cout << "DEBUG: GFIRN:   FrameStart, FrameSize: " << FrameStart << ", "
+            << FrameSize << std::endl;
+
+  // Generate record numbers for this frame
+  std::vector<std::size_t> Records(FrameSize);
+  if ((obs_group_variable_.empty()) || (FileIO == nullptr)) {
+    // Grouping is not specified, so place FrameStart, FrameStart+1, FrameStart+2, ...
+    // in the Records vector. This effectively disables grouping (each location
+    // is a separate group).
+    std::iota(Records.begin(), Records.end(), FrameStart);
+    nrecs_ += FrameSize;
   } else {
-    // For the initialize from file constructor
     std::string GroupName = "MetaData";
     std::string VarName = obs_group_variable_;
-    std::cout << "DEBUG: GFIRN: GroupName, VarName: " << GroupName << ", "
-              << VarName << std::endl;
-    std::cout << "DEBUG: GFIRN:   FrameStart, FrameSize: " << FrameStart << ", "
-              << FrameSize << std::endl;
+    std::cout << "DEBUG: GFIRN: Grouping: GroupName, VarName: " << GroupName << ", "
+            << VarName << std::endl;
+    std::string VarType = FileIO->var_dtype(GroupName, VarName);
+    std::cout << "DEBUG: GFIRN: Grouping: VarType: " << VarType << std::endl;
 
+    if (VarType == "int") {
+      std::vector<int> GroupVar;
+      FileIO->frame_int_get_data(GroupName, VarName, GroupVar);
+      for (std::size_t i = 0; i < GroupVar.size(); ++i) {
+        if (!int_obs_grouping_.has(GroupVar[i])) {
+          int_obs_grouping_.insert(GroupVar[i], next_rec_num_);
+          next_rec_num_++;
+          nrecs_ = next_rec_num_;
+        }
+        Records[i] = int_obs_grouping_.at(GroupVar[i]);
+      }
+    } else if (VarType == "float") {
+      std::vector<float> GroupVar;
+      FileIO->frame_float_get_data(GroupName, VarName, GroupVar);
+      for (std::size_t i = 0; i < GroupVar.size(); ++i) {
+        if (!float_obs_grouping_.has(GroupVar[i])) {
+          float_obs_grouping_.insert(GroupVar[i], next_rec_num_);
+          next_rec_num_++;
+          nrecs_ = next_rec_num_;
+        }
+        Records[i] = float_obs_grouping_.at(GroupVar[i]);
+      }
+    } else if (VarType == "string") {
+      std::vector<std::string> GroupVar;
+      FileIO->frame_string_get_data(GroupName, VarName, GroupVar);
+      for (std::size_t i = 0; i < GroupVar.size(); ++i) {
+        if (!string_obs_grouping_.has(GroupVar[i])) {
+          string_obs_grouping_.insert(GroupVar[i], next_rec_num_);
+          next_rec_num_++;
+          nrecs_ = next_rec_num_;
+        }
+        Records[i] = string_obs_grouping_.at(GroupVar[i]);
+      }
+    }
+  }
+
+  // Build the obs date times for the comparison below.
+  std::vector<util::DateTime> ObsDtimes;
+  if (FileIO != nullptr) {
+    // Grab the datetime strings for checking the timing window
     std::string DtGroupName = "MetaData";
     std::string DtVarName = "datetime";
     std::vector<std::string> DtStrings;
     FileIO->frame_string_get_data(DtGroupName, DtVarName, DtStrings);
-
-    for (std::size_t i = 0; i < FrameSize; ++i) {
-      std::size_t RowNum = FrameStart + i;
-      std::size_t RecNum = GenRecNum(RowNum);
+    for (std::size_t i = 0; i < DtStrings.size(); ++i) {
       util::DateTime ObsDt(DtStrings[i]);
-      if (dist_->isMyRecord(RecNum) && InsideTimingWindow(ObsDt)) {
-        indx_.push_back(RowNum);
-        recnums_.push_back(RecNum);
-        Index.push_back(i);
-      }
+      ObsDtimes.push_back(ObsDt);
+    }
+  } else {
+    // Generating synthetic obs, allow all obs. Note that matching the window
+    // end will count as being inside the timing window.
+    std::string WinEnd = winend_.toString();
+    for (std::size_t i = 0; i < FrameSize; ++i) {
+      util::DateTime ObsDt(WinEnd);
+      ObsDtimes.push_back(ObsDt);
+    }
+  }
+
+  // Generate the index and recnums for this frame
+  std::vector<std::size_t> Index;
+  for (std::size_t i = 0; i < FrameSize; ++i) {
+    std::size_t RowNum = FrameStart + i;
+    std::size_t RecNum = Records[i];
+    if (dist_->isMyRecord(RecNum) && InsideTimingWindow(ObsDtimes[i])) {
+      indx_.push_back(RowNum);
+      recnums_.push_back(RecNum);
+      Index.push_back(i);
     }
   }
 
@@ -790,22 +841,6 @@ std::vector<std::size_t> ObsData::GenFrameIndexRecNums(const std::unique_ptr<Iod
  */
 bool ObsData::InsideTimingWindow(const util::DateTime & ObsDt) {
   return ((ObsDt > winbgn_) && (ObsDt <= winend_));
-}
-
-// -----------------------------------------------------------------------------
-/*!
- * \details This method will determine the record number for the current location.
- *
- * \param[in] LocNum Current location number
- */
-std::size_t ObsData::GenRecNum(const std::size_t LocNum) {
-  std::size_t RecNum;
-
-  // No obs grouping specified, each location is a separate record.
-  RecNum = LocNum;
-  nrecs_++;
-
-  return RecNum;
 }
 
 // -----------------------------------------------------------------------------
