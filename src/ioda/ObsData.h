@@ -12,6 +12,7 @@
 #include <memory>
 #include <ostream>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "eckit/container/KDTree.h"
@@ -42,20 +43,20 @@ namespace ioda {
 template <typename KeyType>
 class ObsGroupingMap {
  public:
-   bool has(const KeyType Key) {
-     return (obs_grouping_map_.find(Key) != obs_grouping_map_.end());
-   }
+  bool has(const KeyType Key) {
+    return (obs_grouping_map_.find(Key) != obs_grouping_map_.end());
+  }
 
-   void insert(const KeyType Key, const std::size_t Val) {
-     obs_grouping_map_.insert(std::pair<KeyType, std::size_t>(Key, Val));
-   }
+  void insert(const KeyType Key, const std::size_t Val) {
+    obs_grouping_map_.insert(std::pair<KeyType, std::size_t>(Key, Val));
+  }
 
-   std::size_t at(const KeyType Key) {
-     return obs_grouping_map_.at(Key);
-   }
+  std::size_t at(const KeyType Key) {
+    return obs_grouping_map_.at(Key);
+  }
 
  private:
-   std::map<KeyType, std::size_t> obs_grouping_map_;
+  std::map<KeyType, std::size_t> obs_grouping_map_;
 };
 
 /// Observation Data
@@ -171,7 +172,9 @@ class ObsData : public oops::ObsSpaceBase {
 
   template<typename VarType>
   std::vector<VarType> ApplyIndex(const std::vector<VarType> & FullData,
-                                  const std::vector<std::size_t> & Index) const;
+                                  const std::vector<std::size_t> & FullShape,
+                                  const std::vector<std::size_t> & Index,
+                                  std::vector<std::size_t> & IndexedShape) const;
 
   static std::string DesiredVarType(std::string & GroupName, std::string & FileVarType);
 

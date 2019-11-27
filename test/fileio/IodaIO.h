@@ -131,14 +131,6 @@ void testContainers() {
 
     for (IodaIO::VarIter ivar = TestIO->var_begin(igrp); ivar != TestIO->var_end(igrp); ++ivar) {
       VarCount++;
-      std::cout << "DEBUG: GrpVarInfo: " << std::endl;
-      std::cout << "DEBUG:   Group: " << GroupName << std::endl;
-      std::cout << "DEBUG:   Var: " << TestIO->var_name(ivar) << std::endl;
-      std::cout << "DEBUG:   Var type: " << TestIO->var_dtype(ivar) << std::endl;
-      std::cout << "DEBUG:   VarShape: " << TestIO->var_shape(ivar) << std::endl;
-      std::cout << "DEBUG:   File name: " << TestIO->file_name(ivar) << std::endl;
-      std::cout << "DEBUG:   File type: " << TestIO->file_type(ivar) << std::endl;
-      std::cout << "DEBUG:   File shape: " << TestIO->file_shape(ivar) << std::endl;
     }
   }
   EXPECT(VarCount == ExpectedVarCount);
