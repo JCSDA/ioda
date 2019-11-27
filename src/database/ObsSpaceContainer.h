@@ -291,6 +291,7 @@ void ObsSpaceContainer<ContType>::StoreToDb(const std::string & GroupName,
     } else {
       DbRec.data = VarData;
     }
+    DbRec.shape[0] = DbRec.data.size();
     DataContainer.replace(Var, DbRec);
   } else {
     // The required record is not in database, update the database
