@@ -11,6 +11,7 @@
 #include <map>
 #include <memory>
 #include <ostream>
+#include <set>
 #include <string>
 #include <utility>
 #include <vector>
@@ -217,6 +218,9 @@ class ObsData : public oops::ObsSpaceBase {
   /*! \brief flag, file has variables with unexpected data types */
   bool file_unexpected_dtypes_;
 
+  /*! \brief flag, file has variables with excess dimensions */
+  bool file_excess_dims_;
+
   /*! \brief path to input file */
   std::string filein_;
 
@@ -269,6 +273,9 @@ class ObsData : public oops::ObsSpaceBase {
 
   /*! \brief next available record number */
   std::size_t next_rec_num_;
+
+  /*! \brief unique record numbers */
+  std::set<std::size_t> unique_rec_nums_;
 };
 
 }  // namespace ioda

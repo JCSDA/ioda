@@ -19,7 +19,7 @@ namespace ioda {
 IodaIO::IodaIO(const std::string & FileName, const std::string & FileMode,
                const std::size_t MaxFrameSize) :
            fname_(FileName), fmode_(FileMode), num_missing_gnames_(0),
-           num_unexpect_dtypes_(0), max_frame_size_(MaxFrameSize) {
+           num_unexpect_dtypes_(0), num_excess_dims_(0), max_frame_size_(MaxFrameSize) {
 }
 
 // -----------------------------------------------------------------------------
@@ -78,6 +78,15 @@ bool IodaIO::missing_group_names() const {
 
 bool IodaIO::unexpected_data_types() const {
   return (num_unexpect_dtypes_ > 0);
+}
+
+/*!
+ * \details This method returns whether any variables with excess dimensions were
+ *          encountered when reading the input file.
+ */
+
+bool IodaIO::excess_dims() const {
+  return (num_excess_dims_ > 0);
 }
 
 // -----------------------------------------------------------------------------
