@@ -146,60 +146,65 @@ NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
       }
       std::string VarType(NcDtypeName);
 
-      // Collect the sizes for dimensions from the dim_info_ container.
-      std::vector<std::size_t> NcDimSizes;
-      for (std::size_t j = 0; j < NcNdims; j++) {
-          NcDimSizes.push_back(dim_id_size(NcDimIds[j]));
-      }
-      // Copy shape from NcDims to VarShape. If we have a string data type, then
-      // copy only the first dimension size to VarShape since the internal variable
-      // is a vector of strings, and the file variable is a 2D character array.
-      std::vector<std::size_t> VarShape(1, NcDimSizes[0]);
+      if (((VarType != "string") && (NcNdims == 1)) ||
+          ((VarType == "string") && (NcNdims == 2))) {
+        // Collect the sizes for dimensions from the dim_info_ container.
+        std::vector<std::size_t> NcDimSizes;
+        for (std::size_t j = 0; j < NcNdims; j++) {
+            NcDimSizes.push_back(dim_id_size(NcDimIds[j]));
+        }
+        // Copy shape from NcDims to VarShape. If we have a string data type, then
+        // copy only the first dimension size to VarShape since the internal variable
+        // is a vector of strings, and the file variable is a 2D character array.
+        std::vector<std::size_t> VarShape(1, NcDimSizes[0]);
 
-      // Record the maximum variable size for the frame construction below.
-      MaxVarSize = std::max(MaxVarSize, VarShape[0]);
+        // Record the maximum variable size for the frame construction below.
+        MaxVarSize = std::max(MaxVarSize, VarShape[0]);
 
-      // Record the variable info in the grp_var_info_ container.
-      int OffsetTimeVarId;
-      std::string VarName;
-      std::string GroupName;
-      ExtractGrpVarName(NcVname, GroupName, VarName);
+        // Record the variable info in the grp_var_info_ container.
+        int OffsetTimeVarId;
+        std::string VarName;
+        std::string GroupName;
+        ExtractGrpVarName(NcVname, GroupName, VarName);
 
-      // If the file type is double, change to float and increment the unexpected
-      // data type counter.
-      if (strcmp(NcDtypeName, "double") == 0) {
-        VarType = "float";
-        num_unexpect_dtypes_++;
-      }
+        // If the file type is double, change to float and increment the unexpected
+        // data type counter.
+        if (strcmp(NcDtypeName, "double") == 0) {
+          VarType = "float";
+          num_unexpect_dtypes_++;
+        }
 
-      // If the group name is "PreQC" and the file type is not integer, change to
-      // integer and increment the unexpected data type counter.
-      if ((GroupName == "PreQC") && (strcmp(NcDtypeName, "int") != 0)) {
-        VarType = "int";
-        num_unexpect_dtypes_++;
-      }
+        // If the group name is "PreQC" and the file type is not integer, change to
+        // integer and increment the unexpected data type counter.
+        if ((GroupName == "PreQC") && (strcmp(NcDtypeName, "int") != 0)) {
+          VarType = "int";
+          num_unexpect_dtypes_++;
+        }
 
-      // If offset time exists, substitute the datetime specs for the offset time specs.
-      if (VarName.compare("time") == 0) {
-        // If we have datetime in the file, just let those specs get entered when
-        // datetime is encountered. Otherwise, replace the offset time specs
-        // with the expected datetime specs. The reader later on will do the
-        // conversion.
-        if (!have_date_time_) {
-          // Replace offset time with datetime specs. We want the offset time
-          // variable id, but with the character array specs for after the
+        // If offset time exists, substitute the datetime specs for the offset time specs.
+        if (VarName.compare("time") == 0) {
+          // If we have datetime in the file, just let those specs get entered when
+          // datetime is encountered. Otherwise, replace the offset time specs
+          // with the expected datetime specs. The reader later on will do the
           // conversion.
-          // datetime strings are 20 character long
-          grp_var_insert(GroupName, "datetime", "string", VarShape, NcVname, NcDtypeName, 20);
+          if (!have_date_time_) {
+            // Replace offset time with datetime specs. We want the offset time
+            // variable id, but with the character array specs for after the
+            // conversion.
+            // datetime strings are 20 character long
+            grp_var_insert(GroupName, "datetime", "string", VarShape, NcVname, NcDtypeName, 20);
+          }
+        } else {
+          // enter var specs into grp_var_info_ map
+          if (strcmp(NcDtypeName, "string") == 0) {
+            grp_var_insert(GroupName, VarName, VarType, VarShape, NcVname, NcDtypeName,
+                           NcDimSizes[1]);
+          } else {
+            grp_var_insert(GroupName, VarName, VarType, VarShape, NcVname, NcDtypeName);
+          }
         }
       } else {
-        // enter var specs into grp_var_info_ map
-        if (strcmp(NcDtypeName, "string") == 0) {
-          grp_var_insert(GroupName, VarName, VarType, VarShape, NcVname, NcDtypeName,
-                         NcDimSizes[1]);
-        } else {
-          grp_var_insert(GroupName, VarName, VarType, VarShape, NcVname, NcDtypeName);
-        }
+        num_excess_dims_++;
       }
     }
 

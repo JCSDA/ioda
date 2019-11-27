@@ -99,6 +99,15 @@ ObsData::ObsData(const eckit::Configuration & config, const eckit::mpi::Comm & c
       }
     }
 
+    if (file_excess_dims_) {
+      if (commMPI_.rank() == 0) {
+        oops::Log::warning()
+          << "ObsData::ObsData:: WARNING: Input file contains variables "
+          << "with excess number of dimensions (these variables were skipped)" << std::endl
+          << "  Input file: " << filein_ << std::endl;
+      }
+    }
+
     if (obs_sort_variable_ != "") {
       BuildSortedObsGroups();
     }
@@ -112,6 +121,7 @@ ObsData::ObsData(const eckit::Configuration & config, const eckit::mpi::Comm & c
       "ObsData::ObsData: Must use one of 'ObsDataIn' or 'Generate' in the YAML configuration.";
     ABORT(ErrorMsg);
   }
+  nrecs_ = unique_rec_nums_.size();
 
   // Check to see if an output file has been requested.
   if (config.has("ObsDataOut.obsfile")) {
@@ -644,10 +654,13 @@ void ObsData::InitFromFile(const std::string & filename, const std::size_t MaxFr
   // Open the file for reading and record nlocs and nvars from the file.
   std::unique_ptr<IodaIO> fileio {ioda::IodaIOfactory::Create(filename, "r", MaxFrameSize)};
   gnlocs_ = fileio->nlocs();
-  nvars_ = fileio->nvars();
 
   // Walk through the frames and select the records according to the MPI distribution
-  // and if the records fall inside the DA timing window.
+  // and if the records fall inside the DA timing window. nvars_ for ObsData is the
+  // number of variables with the GroupName ObsValue. Since we can be reading in
+  // multiple frames, only check for the ObsValue group on the first frame.
+  nvars_ = 0;
+  bool FirstFrame = true;
   for (IodaIO::FrameIter iframe = fileio->frame_begin();
                        iframe != fileio->frame_end(); ++iframe) {
     std::size_t FrameStart = fileio->frame_start(iframe);
@@ -665,6 +678,7 @@ void ObsData::InitFromFile(const std::string & filename, const std::size_t MaxFr
     for (IodaIO::FrameIntIter idata = fileio->frame_int_begin();
                               idata != fileio->frame_int_end(); ++idata) {
       std::string GroupName = fileio->frame_int_get_gname(idata);
+      if (FirstFrame && (GroupName == "ObsValue")) { nvars_++; }
       std::string VarName = fileio->frame_int_get_vname(idata);
       std::vector<std::size_t> VarShape = fileio->var_shape(GroupName, VarName);
       std::vector<int> FrameData;
@@ -685,6 +699,7 @@ void ObsData::InitFromFile(const std::string & filename, const std::size_t MaxFr
     for (IodaIO::FrameFloatIter idata = fileio->frame_float_begin();
                                 idata != fileio->frame_float_end(); ++idata) {
       std::string GroupName = fileio->frame_float_get_gname(idata);
+      if (FirstFrame && (GroupName == "ObsValue")) { nvars_++; }
       std::string VarName = fileio->frame_float_get_vname(idata);
       std::vector<std::size_t> VarShape = fileio->var_shape(GroupName, VarName);
       std::vector<float> FrameData;
@@ -705,6 +720,7 @@ void ObsData::InitFromFile(const std::string & filename, const std::size_t MaxFr
     for (IodaIO::FrameStringIter idata = fileio->frame_string_begin();
                                  idata != fileio->frame_string_end(); ++idata) {
       std::string GroupName = fileio->frame_string_get_gname(idata);
+      if (FirstFrame && (GroupName == "ObsValue")) { nvars_++; }
       std::string VarName = fileio->frame_string_get_vname(idata);
       std::vector<std::size_t> VarShape = fileio->var_shape(GroupName, VarName);
       std::vector<std::string> FrameData;
@@ -715,11 +731,22 @@ void ObsData::InitFromFile(const std::string & filename, const std::size_t MaxFr
         std::vector<std::size_t> IndexedShape;
         std::vector<std::string> SelectedData =
              ApplyIndex(FrameData, VarShape, FrameIndex, FrameShape);
-        string_database_.StoreToDb(GroupName, VarName, FrameShape, SelectedData, true);
+        if (VarName == "datetime") {
+          // Convert to DateTime objects and store in datetime database
+          std::vector<util::DateTime> DtData;
+          for (std::size_t i = 0; i < SelectedData.size(); ++i) {
+            util::DateTime ObsDt(SelectedData[i]);
+            DtData.push_back(ObsDt);
+          }
+          datetime_database_.StoreToDb(GroupName, VarName, FrameShape, DtData, true);
+        } else {
+          string_database_.StoreToDb(GroupName, VarName, FrameShape, SelectedData, true);
+        }
       } else {
         string_database_.StoreToDb(GroupName, VarName, FrameShape, FrameData, true);
       }
     }
+    FirstFrame = false;
   }
 
   // Record whether any problems occurred when reading the file.
@@ -834,7 +861,6 @@ std::vector<std::size_t> ObsData::GenFrameIndexRecNums(const std::unique_ptr<Iod
         if (!float_obs_grouping_.has(RecValue)) {
           float_obs_grouping_.insert(RecValue, next_rec_num_);
           next_rec_num_++;
-          nrecs_ = next_rec_num_;
         }
         Records[i] = float_obs_grouping_.at(RecValue);
       }
@@ -856,12 +882,14 @@ std::vector<std::size_t> ObsData::GenFrameIndexRecNums(const std::unique_ptr<Iod
   // Generate the index and recnums for this frame. We are done with FrameIndex
   // so it can be reused here.
   FrameIndex.clear();
+  std::set<std::size_t> UniqueRecNums;
   for (std::size_t i = 0; i < LocSize; ++i) {
     std::size_t RowNum = LocIndex[i];
     std::size_t RecNum = Records[i];
     if (dist_->isMyRecord(RecNum)) {
       indx_.push_back(RowNum);
       recnums_.push_back(RecNum);
+      unique_rec_nums_.insert(RecNum);
       FrameIndex.push_back(RowNum - FrameStart);
     }
   }

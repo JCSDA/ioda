@@ -200,6 +200,7 @@ class IodaIO : public util::Printable {
 
     bool missing_group_names() const;
     bool unexpected_data_types() const;
+    bool excess_dims() const;
 
     // Group level iterator
     /*!
@@ -373,9 +374,7 @@ class IodaIO : public util::Printable {
 
     // Data members
 
-    /*!
-     * \brief file name
-     */
+    /*! \brief file name */
     std::string fname_;
 
     /*!
@@ -386,49 +385,31 @@ class IodaIO : public util::Printable {
      */
     std::string fmode_;
 
-    /*!
-     * \brief number of unique locations
-     */
+    /*! \brief number of unique locations */
     std::size_t nlocs_;
 
-    /*!
-     * \brief number of unique variables
-     */
+    /*! \brief number of unique variables */
     std::size_t nvars_;
 
-    /*!
-     * \brief count of undefined group names
-     *
-     * \details This data member holds a count of the number of variables in the
-     *          netcdf file that are missing a group name (@GroupName suffix).
-     */
+    /*! \brief count of undefined group names */
     std::size_t num_missing_gnames_;
 
-    /*!
-     * \brief count of unexpected data types
-     */
+    /*! \brief count of unexpected data types */
     std::size_t num_unexpect_dtypes_;
 
-    /*!
-     * \brief group-variable information map
-     *
-     * \details See the GrpVarInfoMap typedef for details.
-     */
+    /*! \brief count of too many dimensions */
+    std::size_t num_excess_dims_;
+
+    /*! \brief group-variable information map */
     GroupVarInfoMap grp_var_info_;
 
-    /*!
-     * \brief dimension information map
-     */
+    /*! \brief dimension information map */
     DimInfoMap dim_info_;
 
-    /*!
-     * \brief frame information vector
-     */
+    /*! \brief frame information vector */
     FrameInfo frame_info_;
 
-    /*!
-     * \brief maximum frame size
-     */
+    /*! \brief maximum frame size */
     std::size_t max_frame_size_;
 
     /*! \brief Containers for file frame */
