@@ -114,160 +114,17 @@ Observations:
 #        tolerance:
 #          - 1.0e-11
 #
-  - ObsSpace:
-      name: "Radiosonde"
-      simulate:
-      ObsDataIn:
-        obsfile: "Data/sondes_obs_2018041500_m.nc4"
-        max_frame_size: 200
-      Localization: *localization
-      TestData:
-        nlocs: 974
-        nlocs_local: 110
-        nrecs: 974
-        nvars: 5
-        groups:
-          - "MetaData"
-          - "MetaData"
-        variables:
-          - "latitude"
-          - "longitude"
-        norms:
-          - 1254.66336565038
-          - 6076.2659622388919
-        tolerance:
-          - 1.0e-11
-      ObsDataOut:
-        obsfile: "testoutput/diagout.nc4"
-        max_frame_size: 300
-
-  - ObsSpace:
-      name: "Synthetic Random"
-      simulate:
-        variables: [air_temperature, eastward_wind]
-      Generate:
-        Random:
-          nobs: 10   # generate 10 obs
-          lat1: 0    # with lat ranging form 0-10.
-          lat2: 10   #
-          lon1: 0    # and lon ranging from 0-10.
-          lon2: 10
-          random_seed: 29837
-        obs_errors: [1.0, 2.0]
-      Localization: *localization
-      TestData:
-        nlocs: 10
-        nlocs_local: 0
-        nrecs: 10
-        nvars: 2
-        groups:
-          - "MetaData"
-          - "MetaData"
-          - "ObsError"
-          - "ObsError"
-        variables:
-          - "latitude"
-          - "longitude"
-          - "air_temperature"
-          - "eastward_wind"
-        norms:
-          - 20.349321770437683
-          - 21.063312039377447
-          - 3.1622776601683795
-          - 6.32455532034
-        tolerance:
-          - 1.0e-11
-      ObsDataOut:
-        obsfile: "testoutput/ospace.generate.random.nc4"
-
-  - ObsSpace:
-      name: "Synthetic List"
-      simulate:
-        variables: [air_temperature, eastward_wind]
-      Generate:
-        List:
-          lats: [ 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 ]
-          lons: [ 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 ]
-          datetimes: 
-          - '2010-01-01T00:04:00Z'
-          - '2010-01-01T00:04:12Z'
-          - '2010-01-01T00:04:24Z'
-          - '2010-01-01T00:04:36Z'
-          - '2010-01-01T00:04:48Z'
-          - '2010-01-01T00:05:00Z'
-          - '2010-01-01T00:05:12Z'
-          - '2010-01-01T00:05:24Z'
-          - '2010-01-01T00:05:36Z'
-          - '2010-01-01T00:05:48Z'
-          - '2010-01-01T00:06:00Z' 
-        obs_errors: [1.0, 2.0]
-      Localization: *localization
-      TestData:
-        nlocs: 11
-        nlocs_local: 0
-        nrecs: 11
-        nvars: 2
-        groups:
-          - "MetaData"
-          - "MetaData"
-          - "ObsError"
-          - "ObsError"
-        variables:
-          - "latitude"
-          - "longitude"
-          - "air_temperature"
-          - "eastward_wind"
-        norms:
-          - 16.583123951777001
-          - 16.583123951777001
-          - 3.3166247903553998
-          - 6.6332495807107996
-        tolerance:
-          - 1.0e-11
-      ObsDataOut:
-        obsfile: "testoutput/ospace.generate.list.nc4"
-
-  - ObsSpace:
-      name: "Radiosonde with grouping"
-      simulate:
-      ObsDataIn:
-        obsfile: "Data/sondes_obs_2018041500_m.nc4"
-        obsgrouping:
-          group_variable: "station_id"
-          sort_variable: "air_pressure"
-          sort_order: "descending"
-      Localization: *localization
-      TestData:
-        nlocs: 974
-        nlocs_local: 110
-        nrecs: 36
-        nvars: 5
-        groups:
-          - "MetaData"
-          - "MetaData"
-        variables:
-          - "latitude"
-          - "longitude"
-        norms:
-          - 1254.66336565038
-          - 6076.2659622388919
-        tolerance:
-          - 1.0e-11
-      ObsDataOut:
-        obsfile: "testoutput/diagout_with_groups.nc4"
-
 #  - ObsSpace:
-#      name: "Radiosonde with grouping and tw filtering"
+#      name: "Radiosonde"
 #      simulate:
 #      ObsDataIn:
-#        obsfile: "Data/sondes_obs_2018041500_m_twfilt.nc4"
-#        obsgrouping:
-#          group_variable: "station_id"
+#        obsfile: "Data/sondes_obs_2018041500_m.nc4"
+#        max_frame_size: 200
 #      Localization: *localization
 #      TestData:
-#        nlocs: 968
-#        nlocs_local: 109
-#        nrecs: 31
+#        nlocs: 974
+#        nlocs_local: 110
+#        nrecs: 974
 #        nvars: 5
 #        groups:
 #          - "MetaData"
@@ -276,13 +133,156 @@ Observations:
 #          - "latitude"
 #          - "longitude"
 #        norms:
-#          - 1252.0139923322768
-#          - 6065.3117664336605
+#          - 1254.66336565038
+#          - 6076.2659622388919
 #        tolerance:
 #          - 1.0e-11
 #      ObsDataOut:
-#        obsfile: "testoutput/diagout_with_groups_twfilt.nc4"
+#        obsfile: "testoutput/diagout.nc4"
+#        max_frame_size: 300
 #
+#  - ObsSpace:
+#      name: "Synthetic Random"
+#      simulate:
+#        variables: [air_temperature, eastward_wind]
+#      Generate:
+#        Random:
+#          nobs: 10   # generate 10 obs
+#          lat1: 0    # with lat ranging form 0-10.
+#          lat2: 10   #
+#          lon1: 0    # and lon ranging from 0-10.
+#          lon2: 10
+#          random_seed: 29837
+#        obs_errors: [1.0, 2.0]
+#      Localization: *localization
+#      TestData:
+#        nlocs: 10
+#        nlocs_local: 0
+#        nrecs: 10
+#        nvars: 2
+#        groups:
+#          - "MetaData"
+#          - "MetaData"
+#          - "ObsError"
+#          - "ObsError"
+#        variables:
+#          - "latitude"
+#          - "longitude"
+#          - "air_temperature"
+#          - "eastward_wind"
+#        norms:
+#          - 20.349321770437683
+#          - 21.063312039377447
+#          - 3.1622776601683795
+#          - 6.32455532034
+#        tolerance:
+#          - 1.0e-11
+#      ObsDataOut:
+#        obsfile: "testoutput/ospace.generate.random.nc4"
+#
+#  - ObsSpace:
+#      name: "Synthetic List"
+#      simulate:
+#        variables: [air_temperature, eastward_wind]
+#      Generate:
+#        List:
+#          lats: [ 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 ]
+#          lons: [ 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 ]
+#          datetimes: 
+#          - '2010-01-01T00:04:00Z'
+#          - '2010-01-01T00:04:12Z'
+#          - '2010-01-01T00:04:24Z'
+#          - '2010-01-01T00:04:36Z'
+#          - '2010-01-01T00:04:48Z'
+#          - '2010-01-01T00:05:00Z'
+#          - '2010-01-01T00:05:12Z'
+#          - '2010-01-01T00:05:24Z'
+#          - '2010-01-01T00:05:36Z'
+#          - '2010-01-01T00:05:48Z'
+#          - '2010-01-01T00:06:00Z' 
+#        obs_errors: [1.0, 2.0]
+#      Localization: *localization
+#      TestData:
+#        nlocs: 11
+#        nlocs_local: 0
+#        nrecs: 11
+#        nvars: 2
+#        groups:
+#          - "MetaData"
+#          - "MetaData"
+#          - "ObsError"
+#          - "ObsError"
+#        variables:
+#          - "latitude"
+#          - "longitude"
+#          - "air_temperature"
+#          - "eastward_wind"
+#        norms:
+#          - 16.583123951777001
+#          - 16.583123951777001
+#          - 3.3166247903553998
+#          - 6.6332495807107996
+#        tolerance:
+#          - 1.0e-11
+#      ObsDataOut:
+#        obsfile: "testoutput/ospace.generate.list.nc4"
+#
+#  - ObsSpace:
+#      name: "Radiosonde with grouping"
+#      simulate:
+#      ObsDataIn:
+#        obsfile: "Data/sondes_obs_2018041500_m.nc4"
+#        obsgrouping:
+#          group_variable: "station_id"
+#          sort_variable: "air_pressure"
+#          sort_order: "descending"
+#      Localization: *localization
+#      TestData:
+#        nlocs: 974
+#        nlocs_local: 110
+#        nrecs: 36
+#        nvars: 5
+#        groups:
+#          - "MetaData"
+#          - "MetaData"
+#        variables:
+#          - "latitude"
+#          - "longitude"
+#        norms:
+#          - 1254.66336565038
+#          - 6076.2659622388919
+#        tolerance:
+#          - 1.0e-11
+#      ObsDataOut:
+#        obsfile: "testoutput/diagout_with_groups.nc4"
+#
+  - ObsSpace:
+      name: "Radiosonde with grouping and tw filtering"
+      simulate:
+      ObsDataIn:
+        obsfile: "Data/sondes_obs_2018041500_m_twfilt.nc4"
+        obsgrouping:
+          group_variable: "station_id"
+      Localization: *localization
+      TestData:
+        nlocs: 968
+        nlocs_local: 109
+        nrecs: 31
+        nvars: 5
+        groups:
+          - "MetaData"
+          - "MetaData"
+        variables:
+          - "latitude"
+          - "longitude"
+        norms:
+          - 1252.0139923322768
+          - 6065.3117664336605
+        tolerance:
+          - 1.0e-11
+      ObsDataOut:
+        obsfile: "testoutput/diagout_with_groups_twfilt.nc4"
+
 #  - ObsSpace:
 #      name: "AOD"
 #      simulate:

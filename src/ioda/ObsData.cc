@@ -741,15 +741,21 @@ std::vector<std::size_t> ObsData::GenFrameIndexRecNums(const std::unique_ptr<Iod
                                  const std::size_t FrameStart, const std::size_t FrameSize) {
   std::cout << "DEBUG: GFIRN:   FrameStart, FrameSize: " << FrameStart << ", "
             << FrameSize << std::endl;
+  // It's possible that the total number of locations (gnlocs_) is smaller than
+  // another dimension (eg, nchans or nvars for a hyperspectral instrument). If that
+  // is the case, we don't want to read past the end of the datetime or obs group
+  // variable which are dimensioned by nlocs.
+  std::size_t RecSize = FrameSize;
+  if ((FrameStart + FrameSize) > gnlocs_) { RecSize = gnlocs_ - FrameStart; }
 
   // Generate record numbers for this frame
-  std::vector<std::size_t> Records(FrameSize);
+  std::vector<std::size_t> Records(RecSize);
   if ((obs_group_variable_.empty()) || (FileIO == nullptr)) {
     // Grouping is not specified, so place FrameStart, FrameStart+1, FrameStart+2, ...
     // in the Records vector. This effectively disables grouping (each location
     // is a separate group).
     std::iota(Records.begin(), Records.end(), FrameStart);
-    nrecs_ += FrameSize;
+    nrecs_ += RecSize;
   } else {
     std::string GroupName = "MetaData";
     std::string VarName = obs_group_variable_;
@@ -810,7 +816,7 @@ std::vector<std::size_t> ObsData::GenFrameIndexRecNums(const std::unique_ptr<Iod
     // Generating synthetic obs, allow all obs. Note that matching the window
     // end will count as being inside the timing window.
     std::string WinEnd = winend_.toString();
-    for (std::size_t i = 0; i < FrameSize; ++i) {
+    for (std::size_t i = 0; i < RecSize; ++i) {
       util::DateTime ObsDt(WinEnd);
       ObsDtimes.push_back(ObsDt);
     }
@@ -818,7 +824,7 @@ std::vector<std::size_t> ObsData::GenFrameIndexRecNums(const std::unique_ptr<Iod
 
   // Generate the index and recnums for this frame
   std::vector<std::size_t> Index;
-  for (std::size_t i = 0; i < FrameSize; ++i) {
+  for (std::size_t i = 0; i < RecSize; ++i) {
     std::size_t RowNum = FrameStart + i;
     std::size_t RecNum = Records[i];
     if (dist_->isMyRecord(RecNum) && InsideTimingWindow(ObsDtimes[i])) {
