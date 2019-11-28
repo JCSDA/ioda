@@ -973,21 +973,20 @@ void ObsData::SaveToFile(const std::string & file_name, const std::size_t MaxFra
   std::unique_ptr<IodaIO> fileio
     {ioda::IodaIOfactory::Create(file_name, "W", MaxFrameSize)};
 
-  // Build the frame info container
-  fileio->frame_info_init(MaxFrameSize);
-
   // Add dimensions for nlocs and nvars
   fileio->dim_insert("nlocs", nlocs_);
   fileio->dim_insert("nvars", nvars_);
 
   // Build the group, variable info container. This defines the variables
   // that will be written into the output file.
+  std::size_t MaxVarSize = 0;
   for (ObsSpaceContainer<int>::VarIter ivar = int_database_.var_iter_begin();
                                        ivar != int_database_.var_iter_end(); ++ivar) {
     std::string GroupName = int_database_.var_iter_gname(ivar);
     std::string VarName = int_database_.var_iter_vname(ivar);
     std::string GrpVarName = VarName + "@" + GroupName;
     std::vector<std::size_t> VarShape = int_database_.var_iter_shape(ivar);
+    if (VarShape[0] > MaxVarSize) { MaxVarSize = VarShape[0]; }
     fileio->grp_var_insert(GroupName, VarName, "int", VarShape, GrpVarName, "int");
   }
   for (ObsSpaceContainer<float>::VarIter ivar = float_database_.var_iter_begin();
@@ -996,6 +995,7 @@ void ObsData::SaveToFile(const std::string & file_name, const std::size_t MaxFra
     std::string VarName = float_database_.var_iter_vname(ivar);
     std::string GrpVarName = VarName + "@" + GroupName;
     std::vector<std::size_t> VarShape = float_database_.var_iter_shape(ivar);
+    if (VarShape[0] > MaxVarSize) { MaxVarSize = VarShape[0]; }
     fileio->grp_var_insert(GroupName, VarName, "float", VarShape, GrpVarName, "float");
   }
   for (ObsSpaceContainer<std::string>::VarIter ivar = string_database_.var_iter_begin();
@@ -1004,6 +1004,7 @@ void ObsData::SaveToFile(const std::string & file_name, const std::size_t MaxFra
     std::string VarName = string_database_.var_iter_vname(ivar);
     std::string GrpVarName = VarName + "@" + GroupName;
     std::vector<std::size_t> VarShape = string_database_.var_iter_shape(ivar);
+    if (VarShape[0] > MaxVarSize) { MaxVarSize = VarShape[0]; }
     std::vector<std::string> DbData(VarShape[0], "");
     string_database_.LoadFromDb(GroupName, VarName, VarShape, DbData);
     std::size_t MaxStringSize = FindMaxStringLength(DbData);
@@ -1016,8 +1017,12 @@ void ObsData::SaveToFile(const std::string & file_name, const std::size_t MaxFra
     std::string VarName = datetime_database_.var_iter_vname(ivar);
     std::string GrpVarName = VarName + "@" + GroupName;
     std::vector<std::size_t> VarShape = datetime_database_.var_iter_shape(ivar);
+    if (VarShape[0] > MaxVarSize) { MaxVarSize = VarShape[0]; }
     fileio->grp_var_insert(GroupName, VarName, "string", VarShape, GrpVarName, "string", 20);
   }
+
+  // Build the frame info container
+  fileio->frame_info_init(MaxVarSize);
 
   // For every frame, dump out the int, float, string variables.
   for (IodaIO::FrameIter iframe = fileio->frame_begin();
