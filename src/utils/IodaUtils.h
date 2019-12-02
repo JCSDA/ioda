@@ -71,7 +71,7 @@ namespace ioda {
         if (FromVar[i] == FromMiss) {
           ToVar[i] = ToMiss;
         } else {
-          ToVar[i] = FromVar[i];
+          ToVar[i] = static_cast<ToType>(FromVar[i]);
         }
       }
     } else {
