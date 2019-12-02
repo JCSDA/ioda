@@ -234,14 +234,12 @@ NetcdfIO::~NetcdfIO() {
  * \param[in]  VarName Name of ObsSpace variable
  * \param[in]  Starts Starting indices in file
  * \param[in]  Counts Size of slices to read from file
- * \param[in]  Strides Stride to read from file
  * \param[out] FillValue Netcdf fill value associated with this variable
  * \param[out] VarData Vector that will receive the file data
  */
 void NetcdfIO::NcReadVar(const std::string & GroupName, const std::string & VarName,
                          const std::vector<std::size_t> & Starts,
                          const std::vector<std::size_t> & Counts,
-                         const std::vector<std::int64_t> & Strides,
                          int & FillValue, std::vector<int> & VarData) {
   // Get the netcdf variable id
   int NcVarId = var_id(GroupName, VarName);
@@ -256,8 +254,8 @@ void NetcdfIO::NcReadVar(const std::string & GroupName, const std::string & VarN
   VarData.assign(Counts[0], 0);  // allocate space for the netcdf read
   ErrorMsg = "NetcdfIO::ReadVar: Unable to read netcdf variable: ";
   ErrorMsg += NcVarName.data();
-  CheckNcCall(nc_get_vars_int(ncid_, NcVarId, Starts.data(), Counts.data(),
-                              (const long *) Strides.data(), VarData.data()), ErrorMsg);
+  CheckNcCall(nc_get_vara_int(ncid_, NcVarId, Starts.data(), Counts.data(),
+                              VarData.data()), ErrorMsg);
 
   if (NcAttrExists(NcVarId, "_FillValue")) {
     ErrorMsg = "NetcdfIO::ReadVar: cannot read _FillValue attribute for variable: ";
@@ -271,7 +269,6 @@ void NetcdfIO::NcReadVar(const std::string & GroupName, const std::string & VarN
 void NetcdfIO::NcReadVar(const std::string & GroupName, const std::string & VarName,
                          const std::vector<std::size_t> & Starts,
                          const std::vector<std::size_t> & Counts,
-                         const std::vector<std::int64_t> & Strides,
                          float & FillValue, std::vector<float> & VarData) {
   // Get the netcdf variable id
   int NcVarId = var_id(GroupName, VarName);
@@ -286,8 +283,8 @@ void NetcdfIO::NcReadVar(const std::string & GroupName, const std::string & VarN
   VarData.assign(Counts[0], 0.0);  // allocate space for the netcdf read
   ErrorMsg = "NetcdfIO::ReadVar: Unable to read netcdf variable: ";
   ErrorMsg += NcVarName.data();
-  CheckNcCall(nc_get_vars_float(ncid_, NcVarId, Starts.data(), Counts.data(),
-                               (const long *) Strides.data(), VarData.data()), ErrorMsg);
+  CheckNcCall(nc_get_vara_float(ncid_, NcVarId, Starts.data(), Counts.data(),
+                               VarData.data()), ErrorMsg);
 
   if (NcAttrExists(NcVarId, "_FillValue")) {
     ErrorMsg = "NetcdfIO::ReadVar: cannot read _FillValue attribute for variable: ";
@@ -301,7 +298,6 @@ void NetcdfIO::NcReadVar(const std::string & GroupName, const std::string & VarN
 void NetcdfIO::NcReadVar(const std::string & GroupName, const std::string & VarName,
                          const std::vector<std::size_t> & Starts,
                          const std::vector<std::size_t> & Counts,
-                         const std::vector<std::int64_t> & Strides,
                          double & FillValue, std::vector<double> & VarData) {
   // Get the netcdf variable id
   int NcVarId = var_id(GroupName, VarName);
@@ -316,8 +312,8 @@ void NetcdfIO::NcReadVar(const std::string & GroupName, const std::string & VarN
   VarData.assign(Counts[0], 0.0);  // allocate space for the netcdf read
   ErrorMsg = "NetcdfIO::ReadVar: Unable to read netcdf variable: ";
   ErrorMsg += NcVarName.data();
-  CheckNcCall(nc_get_vars_double(ncid_, NcVarId, Starts.data(), Counts.data(),
-                                (const long *) Strides.data(), VarData.data()), ErrorMsg);
+  CheckNcCall(nc_get_vara_double(ncid_, NcVarId, Starts.data(), Counts.data(),
+                                VarData.data()), ErrorMsg);
 
   if (NcAttrExists(NcVarId, "_FillValue")) {
     ErrorMsg = "NetcdfIO::ReadVar: cannot read _FillValue attribute for variable: ";
@@ -331,7 +327,6 @@ void NetcdfIO::NcReadVar(const std::string & GroupName, const std::string & VarN
 void NetcdfIO::NcReadVar(const std::string & GroupName, const std::string & VarName,
                          const std::vector<std::size_t> & Starts,
                          const std::vector<std::size_t> & Counts,
-                         const std::vector<std::int64_t> & Strides,
                          char & FillValue, std::vector<std::string> & VarData) {
   // Get the netcdf variable id
   int NcVarId = var_id(GroupName, VarName);
@@ -348,19 +343,19 @@ void NetcdfIO::NcReadVar(const std::string & GroupName, const std::string & VarN
     if (have_date_time_) {
     // datetime exists in the file, simply read it it. Counts holds the shape of the array
     std::unique_ptr<char[]> CharData(new char[Counts[0] * Counts[1]]);
-    CheckNcCall(nc_get_vars_text(ncid_, NcVarId, Starts.data(), Counts.data(),
-                                (const long *) Strides.data(), CharData.get()), ErrorMsg);
+    CheckNcCall(nc_get_vara_text(ncid_, NcVarId, Starts.data(), Counts.data(),
+                                CharData.get()), ErrorMsg);
     VarData = CharArrayToStringVector(CharData.get(), Counts);
     } else {
       // datetime does not exist in the file, read in offset time and convert to
       // datetime strings.
-      ReadConvertDateTime(GroupName, VarName, Starts, Counts, Strides, VarData);
+      ReadConvertDateTime(GroupName, VarName, Starts, Counts, VarData);
     }
   } else {
   // All other variables beside datetime. Counts holds the shape of the array
   std::unique_ptr<char[]> CharData(new char[Counts[0] * Counts[1]]);
-  CheckNcCall(nc_get_vars_text(ncid_, NcVarId, Starts.data(), Counts.data(),
-                              (const long *) Strides.data(), CharData.get()), ErrorMsg);
+  CheckNcCall(nc_get_vara_text(ncid_, NcVarId, Starts.data(), Counts.data(),
+                              CharData.get()), ErrorMsg);
   VarData = CharArrayToStringVector(CharData.get(), Counts);
   }
 
@@ -406,14 +401,12 @@ void NetcdfIO::ReplaceFillWithMissing(std::vector<DataType> & VarData, DataType 
  * \param[in]  VarName Name of ObsSpace variable
  * \param[in]  Starts Starting indices in file
  * \param[in]  Counts Size of slices to read from file
- * \param[in]  Strides Stride to read from file
  * \param[in]  VarData Vector that will be written into the file
  */
 
 void NetcdfIO::NcWriteVar(const std::string & GroupName, const std::string & VarName,
                           const std::vector<std::size_t> & Starts,
                           const std::vector<std::size_t> & Counts,
-                          const std::vector<std::int64_t> & Strides,
                           const std::vector<int> & VarData) {
   int MissVal = util::missingValue(MissVal);
   int NcFillVal = NC_FILL_INT;
@@ -429,14 +422,13 @@ void NetcdfIO::NcWriteVar(const std::string & GroupName, const std::string & Var
   int NcVarId = var_id(GroupName, VarName);
   std::string NcVarName = FormNcVarName(GroupName, VarName);
   std::string ErrorMsg = "NetcdfIO::WriteVar: Unable to write dataset: " + NcVarName;
-  CheckNcCall(nc_put_vars_int(ncid_, NcVarId, Starts.data(), Counts.data(),
-              (const long *) Strides.data(), FileData.data()), ErrorMsg);
+  CheckNcCall(nc_put_vara_int(ncid_, NcVarId, Starts.data(), Counts.data(),
+              FileData.data()), ErrorMsg);
 }
 
 void NetcdfIO::NcWriteVar(const std::string & GroupName, const std::string & VarName,
                           const std::vector<std::size_t> & Starts,
                           const std::vector<std::size_t> & Counts,
-                          const std::vector<std::int64_t> & Strides,
                           const std::vector<float> & VarData) {
   float MissVal = util::missingValue(MissVal);
   float NcFillVal = NC_FILL_FLOAT;
@@ -452,14 +444,13 @@ void NetcdfIO::NcWriteVar(const std::string & GroupName, const std::string & Var
   int NcVarId = var_id(GroupName, VarName);
   std::string NcVarName = FormNcVarName(GroupName, VarName);
   std::string ErrorMsg = "NetcdfIO::WriteVar: Unable to write dataset: " + NcVarName;
-  CheckNcCall(nc_put_vars_float(ncid_, NcVarId, Starts.data(), Counts.data(),
-              (const long *) Strides.data(), FileData.data()), ErrorMsg);
+  CheckNcCall(nc_put_vara_float(ncid_, NcVarId, Starts.data(), Counts.data(),
+              FileData.data()), ErrorMsg);
 }
 
 void NetcdfIO::NcWriteVar(const std::string & GroupName, const std::string & VarName,
                           const std::vector<std::size_t> & Starts,
                           const std::vector<std::size_t> & Counts,
-                          const std::vector<std::int64_t> & Strides,
                           const std::vector<std::string> & VarData) {
   std::unique_ptr<char[]> CharData(new char[Counts[0] * Counts[1]]);
   StringVectorToCharArray(VarData, Counts, CharData.get());
@@ -467,8 +458,8 @@ void NetcdfIO::NcWriteVar(const std::string & GroupName, const std::string & Var
   int NcVarId = var_id(GroupName, VarName);
   std::string NcVarName = FormNcVarName(GroupName, VarName);
   std::string ErrorMsg = "NetcdfIO::WriteVar: Unable to write dataset: " + NcVarName;
-  CheckNcCall(nc_put_vars_text(ncid_, NcVarId, Starts.data(), Counts.data(),
-              (const long *) Strides.data(), CharData.get()), ErrorMsg);
+  CheckNcCall(nc_put_vara_text(ncid_, NcVarId, Starts.data(), Counts.data(),
+              CharData.get()), ErrorMsg);
 }
 
 // -----------------------------------------------------------------------------
@@ -590,7 +581,6 @@ void NetcdfIO::ReadFrame(IodaIO::FrameIter & iframe) {
         std::string VarType = var_dtype(ivar);
         std::string FileType = file_type(ivar);
         std::vector<std::size_t> VarStarts(1, FrameStart);
-        std::vector<std::int64_t> VarStrides(1, 1);
 
         std::vector<std::size_t> VarCounts;
         if (FrameStart + FrameSize > VarShape[0]) {
@@ -609,15 +599,13 @@ void NetcdfIO::ReadFrame(IodaIO::FrameIter & iframe) {
           if (FileType == "int") {
             std::vector<int> FileData;
             int NcFillValue;
-            NcReadVar(GroupName, VarName, VarStarts, VarCounts, VarStrides,
-                                          NcFillValue, FileData);
+            NcReadVar(GroupName, VarName, VarStarts, VarCounts, NcFillValue, FileData);
             ReplaceFillWithMissing<int>(FileData, NcFillValue);
             int_frame_data_->put_data(GroupName, VarName, FileData);
           } else if (FileType == "float") {
             std::vector<float> FileData;
             float NcFillValue;
-            NcReadVar(GroupName, VarName, VarStarts, VarCounts, VarStrides,
-                      NcFillValue, FileData);
+            NcReadVar(GroupName, VarName, VarStarts, VarCounts, NcFillValue, FileData);
             ReplaceFillWithMissing<float>(FileData, NcFillValue);
 
             std::vector<int> FrameData(FileData.size(), 0);
@@ -626,8 +614,7 @@ void NetcdfIO::ReadFrame(IodaIO::FrameIter & iframe) {
           } else if (FileType == "double") {
             std::vector<double> FileData;
             double NcFillValue;
-            NcReadVar(GroupName, VarName, VarStarts, VarCounts, VarStrides,
-                      NcFillValue, FileData);
+            NcReadVar(GroupName, VarName, VarStarts, VarCounts, NcFillValue, FileData);
             ReplaceFillWithMissing<double>(FileData, NcFillValue);
 
             std::vector<int> FrameData(FileData.size(), 0);
@@ -643,15 +630,13 @@ void NetcdfIO::ReadFrame(IodaIO::FrameIter & iframe) {
           if (FileType == "float") {
             std::vector<float> FileData;
             float NcFillValue;
-            NcReadVar(GroupName, VarName, VarStarts, VarCounts, VarStrides,
-                      NcFillValue, FileData);
+            NcReadVar(GroupName, VarName, VarStarts, VarCounts, NcFillValue, FileData);
             ReplaceFillWithMissing<float>(FileData, NcFillValue);
             float_frame_data_->put_data(GroupName, VarName, FileData);
           } else if (FileType == "double") {
             std::vector<double> FileData;
             double NcFillValue;
-            NcReadVar(GroupName, VarName, VarStarts, VarCounts, VarStrides,
-                      NcFillValue, FileData);
+            NcReadVar(GroupName, VarName, VarStarts, VarCounts, NcFillValue, FileData);
             ReplaceFillWithMissing<double>(FileData, NcFillValue);
 
             std::vector<float> FrameData(FileData.size(), 0.0);
@@ -664,16 +649,15 @@ void NetcdfIO::ReadFrame(IodaIO::FrameIter & iframe) {
             ABORT(ErrorMsg);
           }
         } else if (VarType == "string") {
-          // Need to expand Starts, Counts, Strides with remaining dimensions.
+          // Need to expand Starts, Counts with remaining dimensions.
           std::vector<std::size_t> VarFileShape = file_shape(ivar);
           for (std::size_t i = 1; i < VarFileShape.size(); ++i) {
             VarStarts.push_back(0);
             VarCounts.push_back(VarFileShape[i]);
-            VarStrides.push_back(1);
           }
           std::vector<std::string> FileData;
           char NcFillValue;
-          NcReadVar(GroupName, VarName, VarStarts, VarCounts, VarStrides, NcFillValue, FileData);
+          NcReadVar(GroupName, VarName, VarStarts, VarCounts, NcFillValue, FileData);
           string_frame_data_->put_data(GroupName, VarName, FileData);
         }
       }
@@ -694,7 +678,6 @@ void NetcdfIO::WriteFrame(IodaIO::FrameIter & iframe) {
 
   std::vector<std::size_t> Starts(1, FrameStart);
   std::vector<std::size_t> Counts;
-  std::vector<std::int64_t> Strides(1, 1);
 
   std::string GroupName;
   std::string VarName;
@@ -708,7 +691,7 @@ void NetcdfIO::WriteFrame(IodaIO::FrameIter & iframe) {
     VarName = frame_int_get_vname(iframe);
     std::vector<int> FrameData = frame_int_get_data(iframe);
     Counts.assign(1, FrameData.size());
-    NcWriteVar(GroupName, VarName, Starts, Counts, Strides, FrameData);
+    NcWriteVar(GroupName, VarName, Starts, Counts, FrameData);
   }
 
   for (IodaIO::FrameFloatIter iframe = frame_float_begin();
@@ -717,7 +700,7 @@ void NetcdfIO::WriteFrame(IodaIO::FrameIter & iframe) {
     VarName = frame_float_get_vname(iframe);
     std::vector<float> FrameData = frame_float_get_data(iframe);
     Counts.assign(1, FrameData.size());
-    NcWriteVar(GroupName, VarName, Starts, Counts, Strides, FrameData);
+    NcWriteVar(GroupName, VarName, Starts, Counts, FrameData);
   }
 
   for (IodaIO::FrameStringIter iframe = frame_string_begin();
@@ -728,8 +711,7 @@ void NetcdfIO::WriteFrame(IodaIO::FrameIter & iframe) {
     std::vector<std::size_t> FileShape = file_shape(GroupName, VarName);
     std::vector<std::size_t> CharStarts{ Starts[0], 0 };
     std::vector<std::size_t> CharCounts{ FrameData.size(), FileShape[1] };
-    std::vector<std::int64_t> CharStrides{ 1, 1 };
-    NcWriteVar(GroupName, VarName, CharStarts, CharCounts, CharStrides, FrameData);
+    NcWriteVar(GroupName, VarName, CharStarts, CharCounts, FrameData);
   }
 }
 
@@ -942,7 +924,6 @@ int NetcdfIO::GetStringDimBySize(const std::size_t DimSize) {
 void NetcdfIO::ReadConvertDateTime(const std::string & GroupName, const std::string & VarName,
                                    const std::vector<std::size_t> & Starts,
                                    const std::vector<std::size_t> & Counts,
-                                   const std::vector<std::int64_t> & Strides,
                                    std::vector<std::string> & VarData) {
   // Read in the reference date from the date_time attribute and the offset
   // time from the time variable and convert to date_time strings.
@@ -965,8 +946,8 @@ void NetcdfIO::ReadConvertDateTime(const std::string & GroupName, const std::str
   // Read in the time variable.
   std::vector<float> OffsetTime(Counts[0], 0.0);
   ErrorMsg = "NetcdfIO::ReadDateTime: Unable to read variable: time@" + GroupName;
-  CheckNcCall(nc_get_vars_float(ncid_, NcVarId, Starts.data(), Counts.data(),
-                                (const long *) Strides.data(), OffsetTime.data()), ErrorMsg);
+  CheckNcCall(nc_get_vara_float(ncid_, NcVarId, Starts.data(), Counts.data(),
+                                OffsetTime.data()), ErrorMsg);
 
   // Convert offset time to a Duration and add to RefDate. Then use DateTime to
   // output an ISO 8601 datetime string, and place that string into VarData.

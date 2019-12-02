@@ -57,38 +57,31 @@ class NetcdfIO : public IodaIO,
   void NcReadVar(const std::string & GroupName, const std::string & VarName,
                  const std::vector<std::size_t> & Starts,
                  const std::vector<std::size_t> & Counts,
-                 const std::vector<std::int64_t> & Strides,
                  int & FillValue, std::vector<int> & VarData);
   void NcReadVar(const std::string & GroupName, const std::string & VarName,
                  const std::vector<std::size_t> & Starts,
                  const std::vector<std::size_t> & Counts,
-                 const std::vector<std::int64_t> & Strides,
                  float & FillValue, std::vector<float> & VarData);
   void NcReadVar(const std::string & GroupName, const std::string & VarName,
                  const std::vector<std::size_t> & Starts,
                  const std::vector<std::size_t> & Counts,
-                 const std::vector<std::int64_t> & Strides,
                  double & FillValue, std::vector<double> & VarData);
   void NcReadVar(const std::string & GroupName, const std::string & VarName,
                  const std::vector<std::size_t> & Starts,
                  const std::vector<std::size_t> & Counts,
-                 const std::vector<std::int64_t> & Strides,
                  char & FillValue, std::vector<std::string> & VarData);
 
   void NcWriteVar(const std::string & GroupName, const std::string & VarName,
                  const std::vector<std::size_t> & Starts,
                  const std::vector<std::size_t> & Counts,
-                 const std::vector<std::int64_t> & Strides,
                  const std::vector<int> & VarData);
   void NcWriteVar(const std::string & GroupName, const std::string & VarName,
                  const std::vector<std::size_t> & Starts,
                  const std::vector<std::size_t> & Counts,
-                 const std::vector<std::int64_t> & Strides,
                  const std::vector<float> & VarData);
   void NcWriteVar(const std::string & GroupName, const std::string & VarName,
                  const std::vector<std::size_t> & Starts,
                  const std::vector<std::size_t> & Counts,
-                 const std::vector<std::int64_t> & Strides,
                  const std::vector<std::string> & VarData);
 
   void CheckNcCall(int RetCode, std::string & ErrorMsg);
@@ -102,7 +95,6 @@ class NetcdfIO : public IodaIO,
   void ReadConvertDateTime(const std::string & GroupName, const std::string & VarName,
                            const std::vector<std::size_t> & Starts,
                            const std::vector<std::size_t> & Counts,
-                           const std::vector<std::int64_t> & Strides,
                            std::vector<std::string> & VarData);
 
   template <typename DataType>
