@@ -80,31 +80,33 @@ class FrameDataMap {
  * \details The IodaIO class provides the interface for file access. Note that IodaIO is an
  *          abstract base class.
  *
- * Eventually, we want to get to the same file format for every obs type.
- * Currently we are defining this as follows. A file can contain any
- * number of variables. Each variable is a 1D vector that is nlocs long.
- * Variables can contain missing values.
- *
  * There are two dimensions defined in the file:
  *
  *   nlocs: number of locations
  *   nvars: number of variables
+ * 
+ * Files are logically organized as a 2D array (table) where the rows are locations (nlocs)
+ * and the columns are variables (nvars). To avoid reading in the entire file into a table,
+ * and then selecting observations, the selection process is done on the fly. The table in
+ * the file is partitioned into "frames" where a frame is cut along a row. For example, the
+ * first frame consists of the first n rows; the second frame, the next n rows; etc.
  *
- * A record is an atomic unit that is to stay intact when distributing
- * observations across multiple processes.
+ * The frame idea is taken from ODB file organization. It is possible to treat a netcdf
+ * file as consisting of frames using the netcdf hyperslab access scheme. Treating both
+ * ODB and netcdf files as sets of frames allows IodaIO to remain file agnostic, making
+ * it easier to handle both ODB and netcdf files.
  *
- * The constructor that you fill in with a subclass is responsible for:
- *    1. Open the file
- *         The file name and mode (read, write) is passed in to the subclass
- *         constructor via a call to the factory method Create in the class IodaIOfactory.
- *    2. The following data members are set according to the file mode
- *         * nlocs_
- *         * nvars_
- *         * grp_var_info_
+ * Missing values are allowed for variable data. The native scheme for each file type is
+ * recognized and when reading/writing file data, the missing values are converted to the
+ * JEDI in-memory missing values. This again aids in keeping IodaIO file agnostic.
  *
- *       If in read mode, metadata from the input file are used to set the data members
- *       If in write mode, the data members are set from the constructor arguments 
- *       (grp_var_info_ is not used in the write mode case).
+ * IodaIO provides access to files via a frame object. The idea, when reading, is to iterate
+ * over frames where the first action of each iteration is to read the frame from the
+ * file (frame_read method) then walk through the frame to read the individual variable
+ * data values (for that frame). Similarly, when writing, the first action is to fill in
+ * a frame object with the individual variable values (for that frame) and then write
+ * that frame to the file (frame_write method). For details see the code examples in the
+ * test_ioda_fileio test and the ObsData class methods InitFromFile and SaveToFile.
  *
  * \author Stephen Herbener (JCSDA)
  */
