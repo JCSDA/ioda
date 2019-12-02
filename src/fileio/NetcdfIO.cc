@@ -247,21 +247,21 @@ void NetcdfIO::NcReadVar(const std::string & GroupName, const std::string & VarN
   int NcVarId = var_id(GroupName, VarName);
 
   // Get the variable name
-  std::unique_ptr<char[]> NcVarName(new(char[NC_MAX_NAME+1]));
+  std::array<char, NC_MAX_NAME> NcVarName;
   std::string ErrorMsg =
       "NetcdfIO::ReadVar: Unable to get netcdf variable name: " + std::to_string(NcVarId);
-  CheckNcCall(nc_inq_varname(ncid_, NcVarId, NcVarName.get()), ErrorMsg);
+  CheckNcCall(nc_inq_varname(ncid_, NcVarId, NcVarName.data()), ErrorMsg);
 
   // Read variable, and get the fill value.
   VarData.assign(Counts[0], 0);  // allocate space for the netcdf read
   ErrorMsg = "NetcdfIO::ReadVar: Unable to read netcdf variable: ";
-  ErrorMsg += NcVarName.get();
+  ErrorMsg += NcVarName.data();
   CheckNcCall(nc_get_vars_int(ncid_, NcVarId, Starts.data(), Counts.data(),
                               (const long *) Strides.data(), VarData.data()), ErrorMsg);
 
   if (NcAttrExists(NcVarId, "_FillValue")) {
     ErrorMsg = "NetcdfIO::ReadVar: cannot read _FillValue attribute for variable: ";
-    ErrorMsg += NcVarName.get();
+    ErrorMsg += NcVarName.data();
     CheckNcCall(nc_get_att_int(ncid_, NcVarId, "_FillValue", &FillValue), ErrorMsg);
   } else {
     FillValue = NC_FILL_INT;
@@ -277,21 +277,21 @@ void NetcdfIO::NcReadVar(const std::string & GroupName, const std::string & VarN
   int NcVarId = var_id(GroupName, VarName);
 
   // Get the variable name
-  std::unique_ptr<char[]> NcVarName(new(char[NC_MAX_NAME+1]));
+  std::array<char, NC_MAX_NAME> NcVarName;
   std::string ErrorMsg =
       "NetcdfIO::ReadVar: Unable to get netcdf variable name: " + std::to_string(NcVarId);
-  CheckNcCall(nc_inq_varname(ncid_, NcVarId, NcVarName.get()), ErrorMsg);
+  CheckNcCall(nc_inq_varname(ncid_, NcVarId, NcVarName.data()), ErrorMsg);
 
   // Read variable, and get the fill value.
   VarData.assign(Counts[0], 0.0);  // allocate space for the netcdf read
   ErrorMsg = "NetcdfIO::ReadVar: Unable to read netcdf variable: ";
-  ErrorMsg += NcVarName.get();
+  ErrorMsg += NcVarName.data();
   CheckNcCall(nc_get_vars_float(ncid_, NcVarId, Starts.data(), Counts.data(),
                                (const long *) Strides.data(), VarData.data()), ErrorMsg);
 
   if (NcAttrExists(NcVarId, "_FillValue")) {
     ErrorMsg = "NetcdfIO::ReadVar: cannot read _FillValue attribute for variable: ";
-    ErrorMsg += NcVarName.get();
+    ErrorMsg += NcVarName.data();
     CheckNcCall(nc_get_att_float(ncid_, NcVarId, "_FillValue", &FillValue), ErrorMsg);
   } else {
     FillValue = NC_FILL_FLOAT;
@@ -307,21 +307,21 @@ void NetcdfIO::NcReadVar(const std::string & GroupName, const std::string & VarN
   int NcVarId = var_id(GroupName, VarName);
 
   // Get the variable name
-  std::unique_ptr<char[]> NcVarName(new(char[NC_MAX_NAME+1]));
+  std::array<char, NC_MAX_NAME> NcVarName;
   std::string ErrorMsg =
       "NetcdfIO::ReadVar: Unable to get netcdf variable name: " + std::to_string(NcVarId);
-  CheckNcCall(nc_inq_varname(ncid_, NcVarId, NcVarName.get()), ErrorMsg);
+  CheckNcCall(nc_inq_varname(ncid_, NcVarId, NcVarName.data()), ErrorMsg);
 
   // Read variable, and get the fill value.
   VarData.assign(Counts[0], 0.0);  // allocate space for the netcdf read
   ErrorMsg = "NetcdfIO::ReadVar: Unable to read netcdf variable: ";
-  ErrorMsg += NcVarName.get();
+  ErrorMsg += NcVarName.data();
   CheckNcCall(nc_get_vars_double(ncid_, NcVarId, Starts.data(), Counts.data(),
                                 (const long *) Strides.data(), VarData.data()), ErrorMsg);
 
   if (NcAttrExists(NcVarId, "_FillValue")) {
     ErrorMsg = "NetcdfIO::ReadVar: cannot read _FillValue attribute for variable: ";
-    ErrorMsg += NcVarName.get();
+    ErrorMsg += NcVarName.data();
     CheckNcCall(nc_get_att_double(ncid_, NcVarId, "_FillValue", &FillValue), ErrorMsg);
   } else {
     FillValue = NC_FILL_DOUBLE;
@@ -337,13 +337,13 @@ void NetcdfIO::NcReadVar(const std::string & GroupName, const std::string & VarN
   int NcVarId = var_id(GroupName, VarName);
 
   // Get the variable name and second dimension size.
-  std::unique_ptr<char[]> NcVarName(new(char[NC_MAX_NAME+1]));
+  std::array<char, NC_MAX_NAME> NcVarName;
   std::string ErrorMsg =
       "NetcdfIO::ReadVar: Unable to get netcdf variable info: " + std::to_string(NcVarId);
-  CheckNcCall(nc_inq_varname(ncid_, NcVarId, NcVarName.get()), ErrorMsg);
+  CheckNcCall(nc_inq_varname(ncid_, NcVarId, NcVarName.data()), ErrorMsg);
 
   ErrorMsg = "NetcdfIO::ReadVar: Unable to read netcdf variable: ";
-  ErrorMsg += NcVarName.get();
+  ErrorMsg += NcVarName.data();
   if (VarName == "datetime") {
     if (have_date_time_) {
     // datetime exists in the file, simply read it it. Counts holds the shape of the array
@@ -366,7 +366,7 @@ void NetcdfIO::NcReadVar(const std::string & GroupName, const std::string & VarN
 
   if (NcAttrExists(NcVarId, "_FillValue")) {
     ErrorMsg = "NetcdfIO::ReadVar: cannot read _FillValue attribute for variable: ";
-    ErrorMsg += NcVarName.get();
+    ErrorMsg += NcVarName.data();
     CheckNcCall(nc_get_att_text(ncid_, NcVarId, "_FillValue", &FillValue), ErrorMsg);
   } else {
     FillValue = NC_FILL_CHAR;
