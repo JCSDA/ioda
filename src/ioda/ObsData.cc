@@ -28,6 +28,7 @@
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
 #include "oops/util/Random.h"
+#include "oops/util/stringFunctions.h"
 
 #include "distribution/DistributionFactory.h"
 #include "fileio/IodaIOfactory.h"
@@ -129,6 +130,9 @@ ObsData::ObsData(const eckit::Configuration & config, const eckit::mpi::Comm & c
     out_max_frame_size_ = config.getUnsigned("ObsDataOut.max_frame_size",
                                              IODAIO_DEFAULT_FRAME_SIZE);
 
+    // If present, change '%{member}%' to 'mem{i}'
+    util::stringfunctions::swapNameMember(config, filename);
+
     // Find the left-most dot in the file name, and use that to pick off the file name
     // and file extension.
     std::size_t found = filename.find_last_of(".");
@@ -138,16 +142,6 @@ ObsData::ObsData(const eckit::Configuration & config, const eckit::mpi::Comm & c
     // Get the process rank number and format it
     std::ostringstream ss;
     ss << "_" << std::setw(4) << std::setfill('0') << this->comm().rank();
-
-    // Get the member if in EDA case
-    if (config.has("member")) {
-      const int mymember = config.getInt("member");
-      std::ostringstream mm;
-      mm << "_" << std::setw(3) << std::setfill('0') << mymember;
-      // Construct the output file name
-      fileout_ = filename.insert(found, mm.str());
-      found += 4;
-    }
 
     // Construct the output file name
     fileout_ = filename.insert(found, ss.str());
