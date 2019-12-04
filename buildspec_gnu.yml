@@ -63,28 +63,28 @@ phases:
       - cp ~/.gitconfig /home/jcsdauser/
 
       # ioda-bunde 
-      - su - jcsdauser -c "git clone https://$GIT_USER:$GIT_PASS@github.com/jcsda/ioda-bundle ioda-bundle
-        && cd ioda-bundle
-        && git checkout $CODEBUILD_GIT_BRANCH || echo 'No branch named $CODEBUILD_GIT_BRANCH in ioda-bundle repo'
-        && cd $CODEBUILD_SRC_DIR"
+      - git clone https://$GIT_USER:$GIT_PASS@github.com/jcsda/ioda-bundle ioda-bundle
+      - cd ioda-bundle
+      - git checkout $CODEBUILD_GIT_BRANCH || echo "No branch named $CODEBUILD_GIT_BRANCH in ioda-bundle repo"
+      - cd $CODEBUILD_SRC_DIR"
 
       # ioda
-      - su - jcsdauser -c "git clone -b $CODEBUILD_GIT_BRANCH https://$GIT_USER:$GIT_PASS@github.com/jcsda/ioda ioda-bundle/ioda"
+      - git clone -b $CODEBUILD_GIT_BRANCH https://$GIT_USER:$GIT_PASS@github.com/jcsda/ioda ioda-bundle/ioda
       # saber
-      - su -jcsdauser -c "git clone https://$GIT_USER:$GIT_PASS@github.com/jcsda/saber ioda-bundle/saber
-        && cd ioda-bundle/saber
-        && git checkout $CODEBUILD_GIT_BRANCH || echo 'No branch named $CODEBUILD_GIT_BRANCH in saber repo'
-        && cd $CODEBUILD_SRC_DIR"
+      - git clone https://$GIT_USER:$GIT_PASS@github.com/jcsda/saber ioda-bundle/saber
+      - cd ioda-bundle/saber
+      - git checkout $CODEBUILD_GIT_BRANCH || echo "No branch named $CODEBUILD_GIT_BRANCH in saber repo"
+      - cd $CODEBUILD_SRC_DIR"
       # oops
-      - su - jcsdauser -c "git clone https://$GIT_USER:$GIT_PASS@github.com/jcsda/oops ioda-bundle/oops
-        && cd ioda-bundle/oops
-        && git checkout $CODEBUILD_GIT_BRANCH || echo 'No branch named $CODEBUILD_GIT_BRANCH in oops repo'
-        && cd $CODEBUILD_SRC_DIR"
+      - git clone https://$GIT_USER:$GIT_PASS@github.com/jcsda/oops ioda-bundle/oops
+        cd ioda-bundle/oops
+        git checkout $CODEBUILD_GIT_BRANCH || echo "No branch named $CODEBUILD_GIT_BRANCH in oops repo"
+        cd $CODEBUILD_SRC_DIR
       #fckit
-      - su - jcsdauser -c "git clone https://$GIT_USER:$GIT_PASS@github.com/jcsda/fckit ioda-bundle/fckit
-        && cd ioda-bundle/fckit
-        && git checkout $CODEBUILD_GIT_BRANCH || echo 'No branch named $CODEBUILD_GIT_BRANCH in fckit repo'
-        && cd $CODEBUILD_SRC_DIR"
+      - git clone https://$GIT_USER:$GIT_PASS@github.com/jcsda/fckit ioda-bundle/fckit
+        cd ioda-bundle/fckit
+        git checkout $CODEBUILD_GIT_BRANCH || echo "No branch named $CODEBUILD_GIT_BRANCH in fckit repo"
+        cd $CODEBUILD_SRC_DIR"
 
 
       - ls -lt
@@ -97,6 +97,9 @@ phases:
       - ls
       - sed -i 's/BRANCH develop  UPDATE//' CMakeLists.txt
       - sed -i 's/BRANCH develop//' CMakeLists.txt
+      - chown -R jcsdauser:jcsda /jcsda/ioda-bundle/ioda/test_data_download
+      - cd /jcsda/ioda-bundle/ioda
+      - ls -lt
   build:
     commands:
       - echo Executing build phase
