@@ -34,54 +34,25 @@ ecbuild_add_resources( TARGET ioda_test_scripts
 
 # Create Data directory for test data and symlink files
 list( APPEND ioda_test_data
-  atmosphere/aircraft_obs_2018041500_m.nc4
-  atmosphere/aircraft_obs_2018041500_s.nc4
-  atmosphere/amsua_n19_obs_2018041500_m.nc4
-  atmosphere/ioda_metop_2_amsua.nc4
-  atmosphere/mhs_n19_obs_2018041500_m.nc4
-  atmosphere/atms_npp_obs_2018041500_m.nc4
-  atmosphere/cris-fsr_npp_obs_2018041500_m.nc4
-  atmosphere/seviri_m08_obs_2018041500_m.nc4
-  atmosphere/airs_aqua_obs_2018041500_m.nc4
-  atmosphere/sondes_obs_2018041500_m.nc4
-  atmosphere/sondes_obs_2018041500_s.nc4
-  atmosphere/sondes_obs_2018041500_vs.nc4
-  atmosphere/diag_t_obs_01_wprofiles.odb
-  atmosphere/smap_obs_2018041500_m.nc4
-  atmosphere/gmi_gpm_obs_2018041500_m.nc4
-  atmosphere/gnssro_obs_2018041500_m.nc4
-  atmosphere/gnssro_obs_2018041500_l.nc4
+      testinput.tar.gz
+      )
 
-  atmosphere/aod_obs_2018041500_m.nc4
-  atmosphere/hirs4_metop-a_obs_2018041500_m.nc4
-  atmosphere/iasi_metop-a_obs_2018041500_m.nc4
-  atmosphere/sndrd1_g15_obs_2018041500_m.nc4
-  atmosphere/sndrd2_g15_obs_2018041500_m.nc4
-  atmosphere/sndrd3_g15_obs_2018041500_m.nc4
-  atmosphere/sndrd4_g15_obs_2018041500_m.nc4
-  atmosphere/geos_aod_obs_2018041500_m.nc4
+set(ECBUILD_DOWNLOAD_BASE_URL https://jedi-test-files.s3.amazonaws.com)
 
-  atmosphere/ssmis_f18_obs_2018041500_m.nc4
+ecbuild_get_test_multidata ( TARGET get_ioda_test_data
+                             NAMES ${ioda_test_data}
+			     DIRNAME ioda
+			     #DIRSAVE testinput
+			     EXTRACT
+                             )
 
-  atmosphere/sfc_obs_2018041500_m.nc4
-
-  marine/Jason-2-2018-04-15.nc
-  marine/profile_2018-04-15.nc
-  marine/cryosat2-2018-04-15.nc
-  marine/icec-2018-04-15.nc
-  marine/sst_obs-2018-04-15.nc4
-
-  testfiles/fileio.nc4
-  testfiles/sondes_obs_2018041500_m_twfilt.nc4
-)
-
-file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Data)
-foreach(FILENAME ${ioda_test_data})
-    get_filename_component(filename ${FILENAME} NAME )
+#file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Data)
+#foreach(FILENAME ${ioda_test_data})
+	#    get_filename_component(filename ${FILENAME} NAME )
     execute_process( COMMAND ${CMAKE_COMMAND} -E create_symlink
-           ${CMAKE_CURRENT_SOURCE_DIR}/testinput/${FILENAME}
-           ${CMAKE_CURRENT_BINARY_DIR}/Data/${filename} )
-endforeach(FILENAME)
+	   ${PROJECT_SOURCE_DIR}/test_data_download
+           ${CMAKE_CURRENT_BINARY_DIR}/Data )
+#endforeach(FILENAME)
 
 #####################################################################
 # Add executables frequently used in tests

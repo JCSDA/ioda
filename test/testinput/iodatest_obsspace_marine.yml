@@ -24,7 +24,7 @@ Observations:
       name: ADT
       simulate:
       ObsDataIn:
-        obsfile: Data/Jason-2-2018-04-15.nc
+        obsfile: Data/testinput/Jason-2-2018-04-15.nc
       Localization: *localization
       TestData:
         nlocs: 160607
@@ -47,7 +47,7 @@ Observations:
       name: InsituTemperature
       simulate:
       ObsDataIn:
-        obsfile: Data/profile_2018-04-15.nc
+        obsfile: Data/testinput/profile_2018-04-15.nc
       Localization: *localization
       TestData:
         nlocs: 918
@@ -70,7 +70,7 @@ Observations:
       name: SeaSurfaceTemp
       simulate:
       ObsDataIn:
-        obsfile: Data/sst_obs-2018-04-15.nc4
+        obsfile: Data/testinput/sst_obs-2018-04-15.nc4
       Localization: *localization
       TestData:
         nlocs: 200
@@ -93,7 +93,7 @@ Observations:
       name: SeaIceFraction
       simulate:
       ObsDataIn:
-        obsfile: Data/icec-2018-04-15.nc
+        obsfile: Data/testinput/icec-2018-04-15.nc
       Localization: *localization
       TestData:
         nlocs: 71558
@@ -116,7 +116,7 @@ Observations:
       name: SeaIceThickness
       simulate:
       ObsDataIn:
-        obsfile: Data/cryosat2-2018-04-15.nc
+        obsfile: Data/testinput/cryosat2-2018-04-15.nc
       Localization: *localization
       TestData:
         nlocs: 8065
