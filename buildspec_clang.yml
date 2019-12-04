@@ -56,6 +56,8 @@ phases:
 
 
       - mv ioda-bundle /jcsda/
+      - ls 
+      - ls /jcsda
       - cd /jcsda/ioda-bundle
       - sed -i 's/BRANCH develop  UPDATE//' CMakeLists.txt
       - sed -i 's/BRANCH develop//' CMakeLists.txt
