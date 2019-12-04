@@ -46,13 +46,9 @@ ecbuild_get_test_multidata ( TARGET get_ioda_test_data
 			     EXTRACT
                              )
 
-#file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Data)
-#foreach(FILENAME ${ioda_test_data})
-	#    get_filename_component(filename ${FILENAME} NAME )
-    execute_process( COMMAND ${CMAKE_COMMAND} -E create_symlink
+execute_process( COMMAND ${CMAKE_COMMAND} -E create_symlink
 	   ${PROJECT_SOURCE_DIR}/test_data_download
            ${CMAKE_CURRENT_BINARY_DIR}/Data )
-#endforeach(FILENAME)
 
 #####################################################################
 # Add executables frequently used in tests
