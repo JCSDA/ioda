@@ -17,7 +17,7 @@ Observations:
         variables:
           - air_temperature
       ObsDataIn:
-        obsfile: Data/sondes_obs_2018041500_m.nc4
+        obsfile: Data/testinput/sondes_obs_2018041500_m.nc4
 
   - ObsSpace:
       name: Radiosonde_2vars
@@ -26,7 +26,7 @@ Observations:
           - air_temperature
           - specific_humidity
       ObsDataIn:
-        obsfile: Data/sondes_obs_2018041500_m.nc4
+        obsfile: Data/testinput/sondes_obs_2018041500_m.nc4
 
   - ObsSpace:
       name: Radiosonde_4vars
@@ -37,5 +37,5 @@ Observations:
           - eastward_wind
           - northward_wind
       ObsDataIn:
-        obsfile: Data/sondes_obs_2018041500_m.nc4
+        obsfile: Data/testinput/sondes_obs_2018041500_m.nc4
 

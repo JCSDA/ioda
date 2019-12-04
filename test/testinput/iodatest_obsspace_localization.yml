@@ -18,7 +18,7 @@ Observations:
       name: "Aod"
       simulate:
       ObsDataIn:
-        obsfile: "Data/aod_obs_2018041500_m.nc4"
+        obsfile: "Data/testinput/aod_obs_2018041500_m.nc4"
       Localization:
         distance: 10.0
         max_nobs: &max_nobs 1
@@ -46,7 +46,7 @@ Observations:
       name: "Radiance"
       simulate:
       ObsDataIn:
-        obsfile: "Data/amsua_n19_obs_2018041500_m.nc4"
+        obsfile: "Data/testinput/amsua_n19_obs_2018041500_m.nc4"
       Localization:
         distance: 10.0
         max_nobs: &max_nobs 1
@@ -74,7 +74,7 @@ Observations:
       name: "Radiance"
       simulate:
       ObsDataIn:
-        obsfile: "Data/smap_obs_2018041500_m.nc4"
+        obsfile: "Data/testinput/smap_obs_2018041500_m.nc4"
       Localization:
         distance: 0.3
         max_nobs: &max_nobs 1
@@ -102,7 +102,7 @@ Observations:
       name: "Radiance"
       simulate:
       ObsDataIn:
-        obsfile: "Data/gmi_gpm_obs_2018041500_m.nc4"
+        obsfile: "Data/testinput/gmi_gpm_obs_2018041500_m.nc4"
       Localization:
         distance: 0.3
         max_nobs: &max_nobs 1
@@ -130,7 +130,7 @@ Observations:
       name: "Radiosonde"
       simulate:
       ObsDataIn:
-        obsfile: "Data/sondes_obs_2018041500_m.nc4"
+        obsfile: "Data/testinput/sondes_obs_2018041500_m.nc4"
       Localization:
         distance: 0.01
         max_nobs: &max_nobs 1
@@ -160,7 +160,7 @@ Observations:
       name: "Radiosonde with grouping"
       simulate:
       ObsDataIn:
-        obsfile: "Data/sondes_obs_2018041500_m.nc4"
+        obsfile: "Data/testinput/sondes_obs_2018041500_m.nc4"
         obsgrouping:
           group_variable: "station_id"
           sort_variable: "air_pressure"
@@ -194,7 +194,7 @@ Observations:
       name: "Radiosonde with grouping and tw filtering"
       simulate:
       ObsDataIn:
-        obsfile: "Data/sondes_obs_2018041500_m_twfilt.nc4"
+        obsfile: "Data/testinput/sondes_obs_2018041500_m_twfilt.nc4"
         obsgrouping:
           group_variable: "station_id"
       Localization:
