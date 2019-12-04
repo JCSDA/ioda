@@ -65,7 +65,7 @@ phases:
       # ioda-bunde 
       - su -jcsdauser -c "git clone https://$GIT_USER:$GIT_PASS@github.com/jcsda/ioda-bundle ioda-bundle
         && cd ioda-bundle
-        && git checkout $CODEBUILD_GIT_BRANCH || echo "No branch named $CODEBUILD_GIT_BRANCH in ioda-bundle repo"
+        && git checkout $CODEBUILD_GIT_BRANCH || echo 'No branch named $CODEBUILD_GIT_BRANCH in ioda-bundle repo'
         && cd $CODEBUILD_SRC_DIR"
 
       # ioda
@@ -73,17 +73,17 @@ phases:
       # saber
       - su -jcsdauser -c "git clone https://$GIT_USER:$GIT_PASS@github.com/jcsda/saber ioda-bundle/saber
         && cd ioda-bundle/saber
-        && git checkout $CODEBUILD_GIT_BRANCH || echo "No branch named $CODEBUILD_GIT_BRANCH in saber repo"
+        && git checkout $CODEBUILD_GIT_BRANCH || echo 'No branch named $CODEBUILD_GIT_BRANCH in saber repo'
         && cd $CODEBUILD_SRC_DIR"
       # oops
       - su -jcsdauser -c "git clone https://$GIT_USER:$GIT_PASS@github.com/jcsda/oops ioda-bundle/oops
         && cd ioda-bundle/oops
-        && git checkout $CODEBUILD_GIT_BRANCH || echo "No branch named $CODEBUILD_GIT_BRANCH in oops repo"
+        && git checkout $CODEBUILD_GIT_BRANCH || echo 'No branch named $CODEBUILD_GIT_BRANCH in oops repo'
         && cd $CODEBUILD_SRC_DIR"
       #fckit
       - su -jcsdauser -c "git clone https://$GIT_USER:$GIT_PASS@github.com/jcsda/fckit ioda-bundle/fckit
         && cd ioda-bundle/fckit
-        && git checkout $CODEBUILD_GIT_BRANCH || echo "No branch named $CODEBUILD_GIT_BRANCH in fckit repo"
+        && git checkout $CODEBUILD_GIT_BRANCH || echo 'No branch named $CODEBUILD_GIT_BRANCH in fckit repo'
         && cd $CODEBUILD_SRC_DIR"
 
 
