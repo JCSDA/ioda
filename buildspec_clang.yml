@@ -28,6 +28,8 @@ phases:
   pre_build:
     commands:
       - echo Executing pre_build phase
+      - mkdir /build_container
+      - mkdir /jcsda
       - git lfs install # creates .gitconfig
 
       # ioda-bunde 
