@@ -86,11 +86,11 @@ phases:
       - cd $CODEBUILD_SRC_DIR
 
 
-
-
-      - ls
+      - ls -lt
       - pwd
       - mv ioda-bundle /jcsda/
+      - cd /jcsda/ioda-bundle/ioda
+      - ls -lt
       - cd /jcsda/ioda-bundle
       - pwd
       - ls
