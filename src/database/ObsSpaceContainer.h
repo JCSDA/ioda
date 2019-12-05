@@ -215,7 +215,7 @@ class ObsSpaceContainer: public util::Printable {
      void StoreToDb(const std::string & GroupName, const std::string & VarName,
                     const std::vector<std::size_t> & VarShape,
                     const std::vector<ContType> & VarData,
-                    const std::size_t Start = 0, const std::size_t Count = 0);
+                    const bool Append = false);
 
  private:
      /*! \brief set end of vector segment */
@@ -267,13 +267,10 @@ ObsSpaceContainer<ContType>::~ObsSpaceContainer() {
 template <typename ContType>
 void ObsSpaceContainer<ContType>::StoreToDb(const std::string & GroupName,
           const std::string & VarName, const std::vector<std::size_t> & VarShape,
-          const std::vector<ContType> & VarData, std::size_t Start, std::size_t Count) {
+          const std::vector<ContType> & VarData, bool Append) {
   // Calculate the total number of elements
   std::size_t VarSize =
     std::accumulate(VarShape.begin(), VarShape.end(), 1, std::multiplies<std::size_t>());
-
-  // Set the start and end of the vector segment
-  std::size_t End = SetSegmentEnd(Start, Count, VarSize);
 
   // Search for VarRecord with GroupName, VarName combination
   DbIter Var = DataContainer.find(boost::make_tuple(GroupName, VarName));
@@ -289,16 +286,16 @@ void ObsSpaceContainer<ContType>::StoreToDb(const std::string & GroupName,
 
     // Update the record (boost replace method)
     VarRecord DbRec = *Var;
-    for (std::size_t ii = Start; ii < End; ++ii) {
-      DbRec.data[ii] = VarData[ii-Start];
+    if (Append) {
+      DbRec.data.insert(DbRec.data.end(), VarData.begin(), VarData.end());
+    } else {
+      DbRec.data = VarData;
     }
+    DbRec.shape[0] = DbRec.data.size();
     DataContainer.replace(Var, DbRec);
   } else {
     // The required record is not in database, update the database
-    std::vector<ContType> vect(VarSize);
-    for (std::size_t ii = Start; ii < End; ++ii) {
-      vect[ii] = VarData[ii-Start];
-    }
+    std::vector<ContType> vect = VarData;
     VarRecord DbRec(GroupName, VarName, VarShape, vect);
     DataContainer.insert(DbRec);
   }
@@ -362,7 +359,7 @@ std::size_t ObsSpaceContainer<ContType>::SetSegmentEnd(std::size_t Start, std::s
     End = Start + Count;
     if (End > VarSize) {
       std::string ErrorMsg =
-                  "ObsSpaceContainer::StoreToDb: Start plus Count goes past end of vector: "
+                  "ObsSpaceContainer::SetSegmentEnd: Start plus Count goes past end of vector: "
                   + std::to_string(Start) + " + " + std::to_string(Count) + " > "
                   + std::to_string(VarSize);
       ABORT(ErrorMsg);

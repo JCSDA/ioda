@@ -16,7 +16,6 @@
 #include "oops/util/DateTime.h"
 #include "oops/util/ObjectCounter.h"
 
-
 ////////////////////////////////////////////////////////////////////////
 // Implementation of IodaIO for netcdf.
 ////////////////////////////////////////////////////////////////////////
@@ -48,36 +47,42 @@ class NetcdfIO : public IodaIO,
   static const std::string classname() {return "ioda::NetcdfIO";}
 
   NetcdfIO(const std::string & FileName, const std::string & FileMode,
-           const std::size_t & Nlocs, const std::size_t & Nrecs,
-           const std::size_t & Nvars);
+           const std::size_t MaxFrameSize);
   ~NetcdfIO();
-
-  void ReadVar(const std::string & GroupName, const std::string & VarName,
-               const std::vector<std::size_t> & VarShape,
-               std::vector<int> & VarData);
-  void ReadVar(const std::string & GroupName, const std::string & VarName,
-               const std::vector<std::size_t> & VarShape,
-               std::vector<float> & VarData);
-  void ReadVar(const std::string & GroupName, const std::string & VarName,
-               const std::vector<std::size_t> & VarShape,
-               std::vector<double> & VarData);
-  void ReadVar(const std::string & GroupName, const std::string & VarName,
-               const std::vector<std::size_t> & VarShape,
-               std::vector<std::string> & VarData);
-
-  void WriteVar(const std::string & GroupName, const std::string & VarName,
-                const std::vector<std::size_t> & VarShape,
-                const std::vector<int> & VarData);
-  void WriteVar(const std::string & GroupName, const std::string & VarName,
-                const std::vector<std::size_t> & VarShape,
-                const std::vector<float> & VarData);
-  void WriteVar(const std::string & GroupName, const std::string & VarName,
-                const std::vector<std::size_t> & VarShape,
-                const std::vector<std::string> & VarData);
 
  private:
   // For the oops::Printable base class
   void print(std::ostream & os) const;
+
+  void NcReadVar(const std::string & GroupName, const std::string & VarName,
+                 const std::vector<std::size_t> & Starts,
+                 const std::vector<std::size_t> & Counts,
+                 int & FillValue, std::vector<int> & VarData);
+  void NcReadVar(const std::string & GroupName, const std::string & VarName,
+                 const std::vector<std::size_t> & Starts,
+                 const std::vector<std::size_t> & Counts,
+                 float & FillValue, std::vector<float> & VarData);
+  void NcReadVar(const std::string & GroupName, const std::string & VarName,
+                 const std::vector<std::size_t> & Starts,
+                 const std::vector<std::size_t> & Counts,
+                 double & FillValue, std::vector<double> & VarData);
+  void NcReadVar(const std::string & GroupName, const std::string & VarName,
+                 const std::vector<std::size_t> & Starts,
+                 const std::vector<std::size_t> & Counts,
+                 char & FillValue, std::vector<std::string> & VarData);
+
+  void NcWriteVar(const std::string & GroupName, const std::string & VarName,
+                 const std::vector<std::size_t> & Starts,
+                 const std::vector<std::size_t> & Counts,
+                 const std::vector<int> & VarData);
+  void NcWriteVar(const std::string & GroupName, const std::string & VarName,
+                 const std::vector<std::size_t> & Starts,
+                 const std::vector<std::size_t> & Counts,
+                 const std::vector<float> & VarData);
+  void NcWriteVar(const std::string & GroupName, const std::string & VarName,
+                 const std::vector<std::size_t> & Starts,
+                 const std::vector<std::size_t> & Counts,
+                 const std::vector<std::string> & VarData);
 
   void CheckNcCall(int RetCode, std::string & ErrorMsg);
 
@@ -85,18 +90,29 @@ class NetcdfIO : public IodaIO,
 
   std::string FormNcVarName(const std::string & GroupName, const std::string & VarName);
 
-  void CreateNcDim(const std::string DimName, const std::size_t DimSize);
-
   int GetStringDimBySize(const std::size_t DimSize);
 
-  void ReadConvertDateTime(std::string GroupName, std::string VarName,
+  void ReadConvertDateTime(const std::string & GroupName, const std::string & VarName,
+                           const std::vector<std::size_t> & Starts,
+                           const std::vector<std::size_t> & Counts,
                            std::vector<std::string> & VarData);
 
   template <typename DataType>
   void ReplaceFillWithMissing(std::vector<DataType> & VarData, DataType NcFillValue);
 
   std::size_t GetMaxStringSize(const std::vector<std::string> & Strings);
-  std::vector<int> GetNcDimIds(const std::string & GroupName);
+  std::vector<int> GetNcDimIds(const std::string & GroupName,
+                               const std::vector<std::size_t> & VarShape);
+
+  void DimInsert(const std::string & Name, const std::size_t Size);
+
+  void ReadFrame(IodaIO::FrameIter & iframe);
+  void WriteFrame(IodaIO::FrameIter & iframe);
+
+  void GrpVarInsert(const std::string & GroupName, const std::string & VarName,
+                    const std::string & VarType, const std::vector<std::size_t> & VarShape,
+                    const std::string & FileVarName, const std::string & FileType,
+                    const std::size_t MaxStringSize);
 
   // Data members
   /*!
@@ -107,14 +123,6 @@ class NetcdfIO : public IodaIO,
    *          the netcdf file.
    */
   int ncid_;
-
-  /*!
-   * \brief count of undefined group names
-   *
-   * \details This data member holds a count of the number of variables in the
-   *          netcdf file that are missing a group name (@GroupName suffix).
-   */
-  std::size_t num_missing_gnames_;
 
   /*!
    * \brief offset time flag
