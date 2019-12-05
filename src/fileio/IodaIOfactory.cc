@@ -17,42 +17,16 @@ namespace ioda {
 
 //-------------------------------------------------------------------------------------
 /*!
- * \brief Instantiate a IodaIO object in read mode
- *
- * \details This method will instantiate an object of a IodaIO subclass. This method is
- *          intended to be used when opening a file in a read mode. The Nlocs, Nrecs
- *          and Nvars parameters are set to zero which is okay since these will be set
- *          by reading metadata from the input file.
+ * \brief Instantiate a IodaIO object
  *
  * \param[in] FileName Path to the obs file
  * \param[in] FileMode Mode in which to open the obs file, "r" for read, "w" for overwrite
  *            and existing file and "W" for create and write to a new file
- */
-
-IodaIO* IodaIOfactory::Create(const std::string & FileName, const std::string & FileMode) {
-  return Create(FileName, FileMode, 0, 0, 0);
-}
-
-//-------------------------------------------------------------------------------------
-/*!
- * \brief Instantiate a IodaIO object in write mode
- *
- * \details This method will instantiate an object of a IodaIO subclass. This method is
- *          intended to be used when opening a file in a write mode. The Nlocs, Nrecs
- *          and Nvars parameters are set by the caller in this case. These parameters will
- *          subsequently be used to set metadata in the output file.
- *
- * \param[in] Nlocs Number of unique locations
- * \param[in] Nrecs Number of unique records
- * \param[in] Nvars Number of unique observation variables
- * \param[in] FileName Path to the obs file
- * \param[in] FileMode Mode in which to open the obs file, "r" for read, "w" for overwrite
- *            and existing file and "W" for create and write to a new file
+ * \param[in] MaxFrameSize  Maximum number of "rows" in a frame
  */
 
 IodaIO* IodaIOfactory::Create(const std::string & FileName, const std::string & FileMode,
-                              const std::size_t & Nlocs, const std::size_t & Nrecs,
-                              const std::size_t & Nvars) {
+                              const std::size_t MaxFrameSize) {
   std::size_t Spos;
   std::string FileSuffix;
 
@@ -66,7 +40,7 @@ IodaIO* IodaIOfactory::Create(const std::string & FileName, const std::string & 
 
   // Create the appropriate object depending on the file suffix
   if ((FileSuffix == "nc4") || (FileSuffix == "nc")) {
-    return new ioda::NetcdfIO(FileName, FileMode, Nlocs, Nrecs, Nvars);
+    return new ioda::NetcdfIO(FileName, FileMode, MaxFrameSize);
   } else {
     oops::Log::error() << "ioda::IodaIO::Create: Unrecognized file suffix: "
                        << FileName << std::endl;
