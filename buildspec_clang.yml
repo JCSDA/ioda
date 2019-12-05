@@ -91,6 +91,6 @@ phases:
       - echo $CODEBUILD_BUILD_SUCCEEDING
       - if [ "$BUILD_STATUS" = "1"] && ["$CODEBUILD_BUILD_SUCCEEDING" = "0" ];
         then echo "Build passed, rerunning failed tests";
-        cd /build_container/ufo;
+        cd /build_container/ioda;
         ctest -VV --rerun-failed;
         fi
