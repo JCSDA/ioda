@@ -9,7 +9,6 @@
 
 #include <string>
 
-#include "oops/util/abor1_cpp.h"
 #include "oops/util/DateTime.h"
 
 
@@ -103,6 +102,17 @@ std::string TypeIdName(const std::type_info & TypeId) {
   }
 
   return TypeName;
+}
+
+// -----------------------------------------------------------------------------
+std::size_t FindMaxStringLength(const std::vector<std::string> & StringVector) {
+  std::size_t MaxStringLength = 0;
+  for (std::size_t i = 0; i < StringVector.size(); ++i) {
+    if (StringVector[i].size() > MaxStringLength) {
+      MaxStringLength = StringVector[i].size();
+    }
+  }
+  return MaxStringLength;
 }
 
 // -----------------------------------------------------------------------------
