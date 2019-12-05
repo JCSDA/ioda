@@ -118,7 +118,8 @@ Observations:
       name: "Radiosonde"
       simulate:
       ObsDataIn:
-        obsfile: "Data/testinput/sondes_obs_2018041500_m.nc4"
+        obsfile: "Data/sondes_obs_2018041500_m.nc4"
+        max_frame_size: 200
       Localization: *localization
       TestData:
         nlocs: 974
@@ -138,6 +139,7 @@ Observations:
           - 1.0e-11
       ObsDataOut:
         obsfile: "testoutput/diagout.nc4"
+        max_frame_size: 300
 
   - ObsSpace:
       name: "Synthetic Random"

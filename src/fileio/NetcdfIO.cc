@@ -10,6 +10,7 @@
 #include <math.h>
 #include <netcdf.h>
 
+#include <algorithm>
 #include <functional>
 #include <iostream>
 #include <memory>
@@ -35,7 +36,7 @@ namespace ioda {
 // -----------------------------------------------------------------------------
 /*!
  * \details This constructor will open the netcdf file. If opening in read
- *          mode, the parameters nlocs, nrecs and nvars will be set
+ *          mode, the parameters nlocs and nvars will be set
  *          by querying the size of dimensions of the same names in the input
  *          file. If opening in write mode, the parameters will be set from the
  *          same named arguements to this constructor.
@@ -43,25 +44,12 @@ namespace ioda {
  * \param[in]  FileName Path to the netcdf file
  * \param[in]  FileMode "r" for read, "w" for overwrite to an existing file
  *                      and "W" for create and write to a new file.
- * \param[in]  Nlocs Number of unique locations in the obs data.
- * \param[in]  Nrecs Number of unique records in the obs data. Records are
- *                   atomic units that will remain intact when obs are
- *                   distributed across muliple process elements. A single
- *                   radiosonde sounding would be an example.
- * \param[in]  Nvars Number of unique varibles in the obs data.
  */
 
 NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
-                   const std::size_t & Nlocs, const std::size_t & Nrecs,
-                   const std::size_t & Nvars) {
-  fname_ = FileName;
-  fmode_ = FileMode;
-  nlocs_ = Nlocs;
-  nrecs_ = Nrecs;
-  nvars_ = Nvars;
-  have_offset_time_ = false;
-  have_date_time_ = false;
-  num_missing_gnames_ = 0;
+                   const std::size_t MaxFrameSize) :
+               IodaIO(FileName, FileMode, MaxFrameSize), have_offset_time_(false),
+               have_date_time_(false) {
   oops::Log::trace() << __func__ << " fname_: " << fname_ << " fmode_: " << fmode_ << std::endl;
 
   // Open the file. The fmode_ values that are recognized are:
@@ -83,9 +71,9 @@ NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
   }
 
   // When in read mode, the constructor is responsible for setting
-  // the data members nlocs_, nrecs_, nvars_ and grp_var_info_.
+  // the data members nlocs_, nvars_ and grp_var_info_.
   //
-  // The files have nlocs, nrecs, nvars.
+  // The files have nlocs, nvars.
   //
   // The way to collect the VALID variable names is controlled by developers.
   //
@@ -99,9 +87,9 @@ NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
     CheckNcCall(nc_inq(ncid_, &NcNdims, &NcNvars, &NcNatts, NULL), ErrorMsg);
 
     // Record the dimension ids and sizes in the dim_info_ container.
-    // Save nlocs, nrecs and nvars in data members.
+    // Save nlocs, nvars in data members.
     for (std::size_t i = 0; i < NcNdims; i++) {
-      char NcName[MAX_NC_NAME];
+      char NcName[NC_MAX_NAME+1];
       std::size_t NcSize;
       ErrorMsg = "NetcdfIO::NetcdfIO: Unable to read dimension number: " + std::to_string(i);
       CheckNcCall(nc_inq_dim(ncid_, i, NcName, &NcSize), ErrorMsg);
@@ -110,8 +98,6 @@ NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
 
       if (strcmp(NcName, "nlocs") == 0) {
         nlocs_ = NcSize;
-      } else if (strcmp(NcName, "nrecs") == 0) {
-        nrecs_ = NcSize;
       } else if (strcmp(NcName, "nvars") == 0) {
         nvars_ = NcSize;
       }
@@ -139,6 +125,7 @@ NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
     have_date_time_ = (nc_inq_varid(ncid_, "datetime@MetaData", &NcVarId) == NC_NOERR);
     have_offset_time_ = (nc_inq_varid(ncid_, "time@MetaData", &NcVarId) == NC_NOERR);
 
+    std::size_t MaxVarSize = 0;
     for (std::size_t ivar=0; ivar < NcNvars; ++ivar) {
       // nc variable dimension and type information
       char NcVname[NC_MAX_NAME+1];
@@ -148,7 +135,6 @@ NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
       ErrorMsg = "NetcdfIO::NetcdfIO: Unable to read information for variable number: " +
                   std::to_string(ivar);
       CheckNcCall(nc_inq_var(ncid_, ivar, NcVname, &NcDtype, &NcNdims, NcDimIds, 0), ErrorMsg);
-      CheckNcCall(nc_inq_varid(ncid_, NcVname, &NcVarId), ErrorMsg);
 
       // nc type name
       char NcDtypeName[NC_MAX_NAME+1];
@@ -158,72 +144,74 @@ NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
       if (strcmp(NcDtypeName, "char") == 0) {
         strncpy(NcDtypeName, "string", NC_MAX_NAME);
       }
+      std::string VarType(NcDtypeName);
 
-      // Collect the sizes for dimensions from the dim_info_ container.
-      std::vector<std::size_t> NcDimSizes;
-      std::vector<std::size_t> VarShape;
-      for (std::size_t j = 0; j < NcNdims; j++) {
-          NcDimSizes.push_back(dim_id_size(NcDimIds[j]));
-      }
-      // Copy shape from NcDims to VarShape. If we have a string data type, then
-      // copy only the first dimension size to VarShape since the internal variable
-      // is a vector of strings, and the file variable is a 2D character array.
-      if (strcmp(NcDtypeName, "string") == 0) {
-        VarShape.push_back(NcDimSizes[0]);
-      } else {
-        VarShape = NcDimSizes;
-      }
+      if (((VarType != "string") && (NcNdims == 1)) ||
+          ((VarType == "string") && (NcNdims == 2))) {
+        // Collect the sizes for dimensions from the dim_info_ container.
+        std::vector<std::size_t> NcDimSizes;
+        for (std::size_t j = 0; j < NcNdims; j++) {
+            NcDimSizes.push_back(dim_id_size(NcDimIds[j]));
+        }
+        // Copy shape from NcDims to VarShape. If we have a string data type, then
+        // copy only the first dimension size to VarShape since the internal variable
+        // is a vector of strings, and the file variable is a 2D character array.
+        std::vector<std::size_t> VarShape(1, NcDimSizes[0]);
 
-      // Record the variable info in the grp_var_into_ container.
-      int OffsetTimeVarId;
-      std::string VarName{NcVname};
-      std::string GroupName{"GroupUndefined"};
-      std::size_t Spos = VarName.find("@");
-      if (Spos != VarName.npos) {
-        GroupName = VarName.substr(Spos+1);
-        VarName = VarName.substr(0, Spos);
-      } else {
-        num_missing_gnames_++;
-      }
+        // Record the maximum variable size for the frame construction below.
+        MaxVarSize = std::max(MaxVarSize, VarShape[0]);
 
-      // If offset time exists, substitute the datetime specs for the offset time specs.
-      if (VarName.compare("time") == 0) {
-        // If we have datetime in the file, just let those specs get entered when
-        // datetime is encountered. Otherwise, replace the offset time specs
-        // with the expected datetime specs. The reader later on will do the
-        // conversion.
-        if (!have_date_time_) {
-          // Replace offset time with datetime specs. We want the offset time
-          // variable id, but with the character array specs for after the
+        // Record the variable info in the grp_var_info_ container.
+        int OffsetTimeVarId;
+        std::string VarName;
+        std::string GroupName;
+        ExtractGrpVarName(NcVname, GroupName, VarName);
+
+        // If the file type is double, change to float and increment the unexpected
+        // data type counter.
+        if (strcmp(NcDtypeName, "double") == 0) {
+          VarType = "float";
+          num_unexpect_dtypes_++;
+        }
+
+        // If the group name is "PreQC" and the file type is not integer, change to
+        // integer and increment the unexpected data type counter.
+        if ((GroupName == "PreQC") && (strcmp(NcDtypeName, "int") != 0)) {
+          VarType = "int";
+          num_unexpect_dtypes_++;
+        }
+
+        // If offset time exists, substitute the datetime specs for the offset time specs.
+        if (VarName.compare("time") == 0) {
+          // If we have datetime in the file, just let those specs get entered when
+          // datetime is encountered. Otherwise, replace the offset time specs
+          // with the expected datetime specs. The reader later on will do the
           // conversion.
-          NcDimSizes.push_back(20);  // datetime strings are 20 character long
-          grp_var_info_[GroupName]["datetime"].var_id = NcVarId;
-          grp_var_info_[GroupName]["datetime"].dtype = "string";
-          grp_var_info_[GroupName]["datetime"].file_shape = NcDimSizes;
-          grp_var_info_[GroupName]["datetime"].shape = VarShape;
+          if (!have_date_time_) {
+            // Replace offset time with datetime specs. We want the offset time
+            // variable id, but with the character array specs for after the
+            // conversion.
+            // datetime strings are 20 character long
+            grp_var_insert(GroupName, "datetime", "string", VarShape, NcVname, NcDtypeName, 20);
+          }
+        } else {
+          // enter var specs into grp_var_info_ map
+          if (strcmp(NcDtypeName, "string") == 0) {
+            grp_var_insert(GroupName, VarName, VarType, VarShape, NcVname, NcDtypeName,
+                           NcDimSizes[1]);
+          } else {
+            grp_var_insert(GroupName, VarName, VarType, VarShape, NcVname, NcDtypeName);
+          }
         }
       } else {
-        // enter var specs into grp_var_info_ map
-        grp_var_info_[GroupName][VarName].var_id = NcVarId;
-        grp_var_info_[GroupName][VarName].dtype = NcDtypeName;
-        grp_var_info_[GroupName][VarName].file_shape = NcDimSizes;
-        grp_var_info_[GroupName][VarName].shape = VarShape;
+        num_excess_dims_++;
       }
     }
-    if (num_missing_gnames_ > 0) {
-      oops::Log::warning() << "NetcdfIO::NetcdfIO:: WARNING: Input file contains variables "
-            << "that are missing group names (ie, no @GroupName suffix)" << std::endl
-            << "  Input file: " << fname_ << std::endl;
-    }
-  }
 
-  // When in write mode, create dimensions in the output file based on
-  // nlocs_, nrecs_, nvars_. Record the names and sizes for these
-  // dimensions.
-  if ((fmode_ == "W") || (fmode_ == "w")) {
-    CreateNcDim("nlocs", Nlocs);
-    CreateNcDim("nrecs", Nrecs);
-    CreateNcDim("nvars", Nvars);
+    // Set up the frames based on the largest variable size (first dimension of each
+    // variable). The netcdf file doesn't really have frames per se, but we want to
+    // emulate frames to make access to files generic.
+    frame_info_init(MaxVarSize);
   }
 }
 
@@ -239,96 +227,144 @@ NetcdfIO::~NetcdfIO() {
 /*!
  * \brief Read data from netcdf file to memory
  *
- * \details The four ReadVar methods are the same with the exception of the
+ * \details The four NcReadVar methods are the same with the exception of the
  *          datatype that is being read (integer, float, double, string).
  *
  * \param[in]  GroupName Name of ObsSpace group (ObsValue, ObsError, MetaData, etc.)
  * \param[in]  VarName Name of ObsSpace variable
- * \param[in]  VarShape Dimension sizes of variable
+ * \param[in]  Starts Starting indices in file
+ * \param[in]  Counts Size of slices to read from file
+ * \param[out] FillValue Netcdf fill value associated with this variable
  * \param[out] VarData Vector that will receive the file data
  */
-
-void NetcdfIO::ReadVar(const std::string & GroupName, const std::string & VarName,
-                       const std::vector<std::size_t> & VarShape, std::vector<int> & VarData) {
-  std::string NcVarName = FormNcVarName(GroupName, VarName);
+void NetcdfIO::NcReadVar(const std::string & GroupName, const std::string & VarName,
+                         const std::vector<std::size_t> & Starts,
+                         const std::vector<std::size_t> & Counts,
+                         int & FillValue, std::vector<int> & VarData) {
+  // Get the netcdf variable id
   int NcVarId = var_id(GroupName, VarName);
-  int NcFillValue;
 
-  std::string ErrorMsg = "NetcdfIO::ReadVar: Unable to read netcdf variable: " + VarName;
-  CheckNcCall(nc_get_var_int(ncid_, NcVarId, VarData.data()), ErrorMsg);
+  // Get the variable name
+  std::array<char, NC_MAX_NAME> NcVarName;
+  std::string ErrorMsg =
+      "NetcdfIO::ReadVar: Unable to get netcdf variable name: " + std::to_string(NcVarId);
+  CheckNcCall(nc_inq_varname(ncid_, NcVarId, NcVarName.data()), ErrorMsg);
 
   // Read variable, and get the fill value.
+  VarData.assign(Counts[0], 0);  // allocate space for the netcdf read
+  ErrorMsg = "NetcdfIO::ReadVar: Unable to read netcdf variable: ";
+  ErrorMsg += NcVarName.data();
+  CheckNcCall(nc_get_vara_int(ncid_, NcVarId, Starts.data(), Counts.data(),
+                              VarData.data()), ErrorMsg);
+
   if (NcAttrExists(NcVarId, "_FillValue")) {
-    ErrorMsg = "NetcdfIO::ReadVar: cannot read _FillValue attribute for variable: " + VarName;
-    CheckNcCall(nc_get_att_int(ncid_, NcVarId, "_FillValue", &NcFillValue), ErrorMsg);
+    ErrorMsg = "NetcdfIO::ReadVar: cannot read _FillValue attribute for variable: ";
+    ErrorMsg += NcVarName.data();
+    CheckNcCall(nc_get_att_int(ncid_, NcVarId, "_FillValue", &FillValue), ErrorMsg);
   } else {
-    NcFillValue = NC_FILL_INT;
+    FillValue = NC_FILL_INT;
   }
-  ReplaceFillWithMissing<int>(VarData, NcFillValue);
 }
 
-void NetcdfIO::ReadVar(const std::string & GroupName, const std::string & VarName,
-                       const std::vector<std::size_t> & VarShape, std::vector<float> & VarData) {
-  std::string NcVarName = FormNcVarName(GroupName, VarName);
+void NetcdfIO::NcReadVar(const std::string & GroupName, const std::string & VarName,
+                         const std::vector<std::size_t> & Starts,
+                         const std::vector<std::size_t> & Counts,
+                         float & FillValue, std::vector<float> & VarData) {
+  // Get the netcdf variable id
   int NcVarId = var_id(GroupName, VarName);
-  float NcFillValue;
 
-  std::string ErrorMsg = "NetcdfIO::ReadVar: Unable to read netcdf variable: " + VarName;
-  CheckNcCall(nc_get_var_float(ncid_, NcVarId, VarData.data()), ErrorMsg);
+  // Get the variable name
+  std::array<char, NC_MAX_NAME> NcVarName;
+  std::string ErrorMsg =
+      "NetcdfIO::ReadVar: Unable to get netcdf variable name: " + std::to_string(NcVarId);
+  CheckNcCall(nc_inq_varname(ncid_, NcVarId, NcVarName.data()), ErrorMsg);
 
   // Read variable, and get the fill value.
+  VarData.assign(Counts[0], 0.0);  // allocate space for the netcdf read
+  ErrorMsg = "NetcdfIO::ReadVar: Unable to read netcdf variable: ";
+  ErrorMsg += NcVarName.data();
+  CheckNcCall(nc_get_vara_float(ncid_, NcVarId, Starts.data(), Counts.data(),
+                               VarData.data()), ErrorMsg);
+
   if (NcAttrExists(NcVarId, "_FillValue")) {
-    ErrorMsg = "NetcdfIO::ReadVar: cannot read _FillValue attribute for variable: " + VarName;
-    CheckNcCall(nc_get_att_float(ncid_, NcVarId, "_FillValue", &NcFillValue), ErrorMsg);
+    ErrorMsg = "NetcdfIO::ReadVar: cannot read _FillValue attribute for variable: ";
+    ErrorMsg += NcVarName.data();
+    CheckNcCall(nc_get_att_float(ncid_, NcVarId, "_FillValue", &FillValue), ErrorMsg);
   } else {
-    NcFillValue = NC_FILL_FLOAT;
+    FillValue = NC_FILL_FLOAT;
   }
-  ReplaceFillWithMissing<float>(VarData, NcFillValue);
 }
 
-void NetcdfIO::ReadVar(const std::string & GroupName, const std::string & VarName,
-                       const std::vector<std::size_t> & VarShape, std::vector<double> & VarData) {
-  std::string NcVarName = FormNcVarName(GroupName, VarName);
+void NetcdfIO::NcReadVar(const std::string & GroupName, const std::string & VarName,
+                         const std::vector<std::size_t> & Starts,
+                         const std::vector<std::size_t> & Counts,
+                         double & FillValue, std::vector<double> & VarData) {
+  // Get the netcdf variable id
   int NcVarId = var_id(GroupName, VarName);
-  double NcFillValue;
 
-  std::string ErrorMsg = "NetcdfIO::ReadVar: Unable to read netcdf variable: " + VarName;
-  CheckNcCall(nc_get_var_double(ncid_, NcVarId, VarData.data()), ErrorMsg);
+  // Get the variable name
+  std::array<char, NC_MAX_NAME> NcVarName;
+  std::string ErrorMsg =
+      "NetcdfIO::ReadVar: Unable to get netcdf variable name: " + std::to_string(NcVarId);
+  CheckNcCall(nc_inq_varname(ncid_, NcVarId, NcVarName.data()), ErrorMsg);
 
   // Read variable, and get the fill value.
+  VarData.assign(Counts[0], 0.0);  // allocate space for the netcdf read
+  ErrorMsg = "NetcdfIO::ReadVar: Unable to read netcdf variable: ";
+  ErrorMsg += NcVarName.data();
+  CheckNcCall(nc_get_vara_double(ncid_, NcVarId, Starts.data(), Counts.data(),
+                                VarData.data()), ErrorMsg);
+
   if (NcAttrExists(NcVarId, "_FillValue")) {
-    ErrorMsg = "NetcdfIO::ReadVar: cannot read _FillValue attribute for variable: " + VarName;
-    CheckNcCall(nc_get_att_double(ncid_, NcVarId, "_FillValue", &NcFillValue), ErrorMsg);
+    ErrorMsg = "NetcdfIO::ReadVar: cannot read _FillValue attribute for variable: ";
+    ErrorMsg += NcVarName.data();
+    CheckNcCall(nc_get_att_double(ncid_, NcVarId, "_FillValue", &FillValue), ErrorMsg);
   } else {
-    NcFillValue = NC_FILL_FLOAT;
+    FillValue = NC_FILL_DOUBLE;
   }
-  ReplaceFillWithMissing<double>(VarData, NcFillValue);
 }
 
-void NetcdfIO::ReadVar(const std::string & GroupName, const std::string & VarName,
-                       const std::vector<std::size_t> & VarShape,
-                       std::vector<std::string> & VarData) {
-  std::string NcVarName = FormNcVarName(GroupName, VarName);
+void NetcdfIO::NcReadVar(const std::string & GroupName, const std::string & VarName,
+                         const std::vector<std::size_t> & Starts,
+                         const std::vector<std::size_t> & Counts,
+                         char & FillValue, std::vector<std::string> & VarData) {
+  // Get the netcdf variable id
   int NcVarId = var_id(GroupName, VarName);
-  std::vector<std::size_t> NcVarShape = file_shape(GroupName, VarName);
 
-  std::string ErrorMsg = "NetcdfIO::ReadVar: Unable to read netcdf variable: " + VarName;
+  // Get the variable name and second dimension size.
+  std::array<char, NC_MAX_NAME> NcVarName;
+  std::string ErrorMsg =
+      "NetcdfIO::ReadVar: Unable to get netcdf variable info: " + std::to_string(NcVarId);
+  CheckNcCall(nc_inq_varname(ncid_, NcVarId, NcVarName.data()), ErrorMsg);
+
+  ErrorMsg = "NetcdfIO::ReadVar: Unable to read netcdf variable: ";
+  ErrorMsg += NcVarName.data();
   if (VarName == "datetime") {
     if (have_date_time_) {
-    // datetime exists in the file, simply read it it.
-    std::unique_ptr<char[]> CharData(new char[NcVarShape[0] * NcVarShape[1]]);
-    CheckNcCall(nc_get_var_text(ncid_, NcVarId, CharData.get()), ErrorMsg);
-    VarData = CharArrayToStringVector(CharData.get(), NcVarShape);
+    // datetime exists in the file, simply read it it. Counts holds the shape of the array
+    std::unique_ptr<char[]> CharData(new char[Counts[0] * Counts[1]]);
+    CheckNcCall(nc_get_vara_text(ncid_, NcVarId, Starts.data(), Counts.data(),
+                                CharData.get()), ErrorMsg);
+    VarData = CharArrayToStringVector(CharData.get(), Counts);
     } else {
-    // datetime does not exist in the file, read in offset time and convert to
-    // datetime strings.
-      ReadConvertDateTime(GroupName, VarName, VarData);
+      // datetime does not exist in the file, read in offset time and convert to
+      // datetime strings.
+      ReadConvertDateTime(GroupName, VarName, Starts, Counts, VarData);
     }
   } else {
-  // All other variables beside datetime
-  std::unique_ptr<char[]> CharData(new char[NcVarShape[0] * NcVarShape[1]]);
-  CheckNcCall(nc_get_var_text(ncid_, NcVarId, CharData.get()), ErrorMsg);
-  VarData = CharArrayToStringVector(CharData.get(), NcVarShape);
+  // All other variables beside datetime. Counts holds the shape of the array
+  std::unique_ptr<char[]> CharData(new char[Counts[0] * Counts[1]]);
+  CheckNcCall(nc_get_vara_text(ncid_, NcVarId, Starts.data(), Counts.data(),
+                              CharData.get()), ErrorMsg);
+  VarData = CharArrayToStringVector(CharData.get(), Counts);
+  }
+
+  if (NcAttrExists(NcVarId, "_FillValue")) {
+    ErrorMsg = "NetcdfIO::ReadVar: cannot read _FillValue attribute for variable: ";
+    ErrorMsg += NcVarName.data();
+    CheckNcCall(nc_get_att_text(ncid_, NcVarId, "_FillValue", &FillValue), ErrorMsg);
+  } else {
+    FillValue = NC_FILL_CHAR;
   }
 }
 
@@ -358,32 +394,22 @@ void NetcdfIO::ReplaceFillWithMissing(std::vector<DataType> & VarData, DataType 
 /*!
  * \brief Write data from memory to netcdf file
  *
- * \details The three WriteVar methods are the same with the exception of the
+ * \details The three NcWriteVar methods are the same with the exception of the
  *          datatype that is being written (integer, float, char).
  *
  * \param[in]  GroupName Name of ObsSpace group (ObsValue, ObsError, MetaData, etc.)
  * \param[in]  VarName Name of ObsSpace variable
- * \param[in]  VarShape Dimension sizes of variable
+ * \param[in]  Starts Starting indices in file
+ * \param[in]  Counts Size of slices to read from file
  * \param[in]  VarData Vector that will be written into the file
  */
 
-void NetcdfIO::WriteVar(const std::string & GroupName, const std::string & VarName,
-                        const std::vector<std::size_t> & VarShape,
-                        const std::vector<int> & VarData) {
-  std::string NcVarName = FormNcVarName(GroupName, VarName);
+void NetcdfIO::NcWriteVar(const std::string & GroupName, const std::string & VarName,
+                          const std::vector<std::size_t> & Starts,
+                          const std::vector<std::size_t> & Counts,
+                          const std::vector<int> & VarData) {
   int MissVal = util::missingValue(MissVal);
   int NcFillVal = NC_FILL_INT;
-
-  // If var doesn't exist in the file, then create it.
-  std::string ErrorMsg;
-  int NcVarId;
-  if (nc_inq_varid(ncid_, NcVarName.c_str(), &NcVarId) != NC_NOERR) {
-    std::vector<int> NcDimIds = GetNcDimIds(GroupName);
-    ErrorMsg = "NetcdfIO::WriteVar: Unable to create variable dataset: " + NcVarName;
-    CheckNcCall(nc_def_var(ncid_, NcVarName.c_str(), NC_INT, NcDimIds.size(),
-                           NcDimIds.data(), &NcVarId),
-                ErrorMsg);
-  }
 
   // Replace missing values with fill value, then write into the file.
   std::vector<int> FileData = VarData;
@@ -392,27 +418,20 @@ void NetcdfIO::WriteVar(const std::string & GroupName, const std::string & VarNa
       FileData[i] = NcFillVal;
     }
   }
-  ErrorMsg = "NetcdfIO::WriteVar: Unable to write dataset: " + NcVarName;
-  CheckNcCall(nc_put_var_int(ncid_, NcVarId, FileData.data()), ErrorMsg);
+
+  int NcVarId = var_id(GroupName, VarName);
+  std::string NcVarName = FormNcVarName(GroupName, VarName);
+  std::string ErrorMsg = "NetcdfIO::WriteVar: Unable to write dataset: " + NcVarName;
+  CheckNcCall(nc_put_vara_int(ncid_, NcVarId, Starts.data(), Counts.data(),
+              FileData.data()), ErrorMsg);
 }
 
-void NetcdfIO::WriteVar(const std::string & GroupName, const std::string & VarName,
-                        const std::vector<std::size_t> & VarShape,
-                        const std::vector<float> & VarData) {
-  std::string NcVarName = FormNcVarName(GroupName, VarName);
+void NetcdfIO::NcWriteVar(const std::string & GroupName, const std::string & VarName,
+                          const std::vector<std::size_t> & Starts,
+                          const std::vector<std::size_t> & Counts,
+                          const std::vector<float> & VarData) {
   float MissVal = util::missingValue(MissVal);
   float NcFillVal = NC_FILL_FLOAT;
-
-  // If var doesn't exist in the file, then create it.
-  std::string ErrorMsg;
-  int NcVarId;
-  if (nc_inq_varid(ncid_, NcVarName.c_str(), &NcVarId) != NC_NOERR) {
-    std::vector<int> NcDimIds = GetNcDimIds(GroupName);
-    ErrorMsg = "NetcdfIO::WriteVar: Unable to create variable dataset: " + NcVarName;
-    CheckNcCall(nc_def_var(ncid_, NcVarName.c_str(), NC_FLOAT, NcDimIds.size(),
-                           NcDimIds.data(), &NcVarId),
-                ErrorMsg);
-  }
 
   // Replace missing values with fill value, then write into the file.
   std::vector<float> FileData = VarData;
@@ -421,33 +440,26 @@ void NetcdfIO::WriteVar(const std::string & GroupName, const std::string & VarNa
       FileData[i] = NcFillVal;
     }
   }
-  ErrorMsg = "NetcdfIO::WriteVar: Unable to write dataset: " + NcVarName;
-  CheckNcCall(nc_put_var_float(ncid_, NcVarId, FileData.data()), ErrorMsg);
+
+  int NcVarId = var_id(GroupName, VarName);
+  std::string NcVarName = FormNcVarName(GroupName, VarName);
+  std::string ErrorMsg = "NetcdfIO::WriteVar: Unable to write dataset: " + NcVarName;
+  CheckNcCall(nc_put_vara_float(ncid_, NcVarId, Starts.data(), Counts.data(),
+              FileData.data()), ErrorMsg);
 }
 
-void NetcdfIO::WriteVar(const std::string & GroupName, const std::string & VarName,
-                        const std::vector<std::size_t> & VarShape,
-                        const std::vector<std::string> & VarData) {
+void NetcdfIO::NcWriteVar(const std::string & GroupName, const std::string & VarName,
+                          const std::vector<std::size_t> & Starts,
+                          const std::vector<std::size_t> & Counts,
+                          const std::vector<std::string> & VarData) {
+  std::unique_ptr<char[]> CharData(new char[Counts[0] * Counts[1]]);
+  StringVectorToCharArray(VarData, Counts, CharData.get());
+
+  int NcVarId = var_id(GroupName, VarName);
   std::string NcVarName = FormNcVarName(GroupName, VarName);
-  std::vector<std::size_t> NcVarShape = VarShape;
-  NcVarShape.push_back(GetMaxStringSize(VarData));
-
-  // If var doesn't exist in the file, then create it.
-  std::string ErrorMsg;
-  int NcVarId;
-  if (nc_inq_varid(ncid_, NcVarName.c_str(), &NcVarId) != NC_NOERR) {
-    std::vector<int> NcDimIds = GetNcDimIds(GroupName);
-    NcDimIds.push_back(GetStringDimBySize(NcVarShape[1]));
-    ErrorMsg = "NetcdfIO::WriteVar: Unable to create variable dataset: " + NcVarName;
-    CheckNcCall(nc_def_var(ncid_, NcVarName.c_str(), NC_CHAR, NcDimIds.size(),
-                           NcDimIds.data(), &NcVarId),
-                ErrorMsg);
-  }
-
-  std::unique_ptr<char[]> CharData(new char[NcVarShape[0] * NcVarShape[1]]);
-  StringVectorToCharArray(VarData, NcVarShape, CharData.get());
-  ErrorMsg = "NetcdfIO::WriteVar: Unable to write dataset: " + NcVarName;
-  CheckNcCall(nc_put_var_text(ncid_, NcVarId, CharData.get()), ErrorMsg);
+  std::string ErrorMsg = "NetcdfIO::WriteVar: Unable to write dataset: " + NcVarName;
+  CheckNcCall(nc_put_vara_text(ncid_, NcVarId, Starts.data(), Counts.data(),
+              CharData.get()), ErrorMsg);
 }
 
 // -----------------------------------------------------------------------------
@@ -473,7 +485,8 @@ std::size_t NetcdfIO::GetMaxStringSize(const std::vector<std::string> & Strings)
  * \details This method will determine the netcdf dimension ids associated with
  *          the current group name.
  */
-std::vector<int> NetcdfIO::GetNcDimIds(const std::string & GroupName) {
+std::vector<int> NetcdfIO::GetNcDimIds(const std::string & GroupName,
+                                       const std::vector<std::size_t> & VarShape) {
   // For now and in order to keep the IodaIO class file type agnostic, infer the
   // dimensions from GroupName and VarShape. This is not a great way to
   // do this, so we may need to remove the IodaIO class and expose the Netcdf
@@ -494,17 +507,277 @@ std::vector<int> NetcdfIO::GetNcDimIds(const std::string & GroupName) {
   // Form the dimension id list.
   std::vector<int> NcDimIds;
   if (GroupName.compare("MetaData") == 0) {
+    if (!dim_exists("nlocs")) {
+      dim_insert("nlocs", VarShape[0]);
+    }
     NcDimIds.push_back(dim_name_id("nlocs"));
   } else if (GroupName.compare("VarMetaData") == 0) {
+    if (!dim_exists("nvars")) {
+      dim_insert("nvars", VarShape[0]);
+    }
     NcDimIds.push_back(dim_name_id("nvars"));
   } else if (GroupName.compare("RecMetaData") == 0) {
+    if (!dim_exists("nrecs")) {
+      dim_insert("nrecs", VarShape[0]);
+    }
     NcDimIds.push_back(dim_name_id("nrecs"));
   } else {
+    if (!dim_exists("nlocs")) {
+      dim_insert("nlocs", VarShape[0]);
+    }
     NcDimIds.push_back(dim_name_id("nlocs"));
   }
 
   return NcDimIds;
 }
+
+// -----------------------------------------------------------------------------
+/*!
+ * \brief create a dimension in the netcdf file
+ *
+ * \details This method will create a dimension in the output netcdf file using
+ *          the name given by DimName and the size given by DimSize. This method
+ *          also records the dimension name and size for downstream use in the
+ *          WriteVar methods.
+ *
+ * \param[in] Name Name of netcdf dimension
+ * \param[in] Size Size of netcdf dimension
+ */
+
+void NetcdfIO::DimInsert(const std::string & Name, const std::size_t Size) {
+  int NcDimId;
+  std::string ErrorMsg = "NetcdfIO::NetcdfIO: Unable to create dimension: " + Name;
+  CheckNcCall(nc_def_dim(ncid_, Name.c_str(), Size, &NcDimId), ErrorMsg);
+  dim_info_[Name].size = Size;
+  dim_info_[Name].id = NcDimId;
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \brief Read data from the file into the frame containers
+ *
+ */
+void NetcdfIO::ReadFrame(IodaIO::FrameIter & iframe) {
+  // Grab the specs for the current frame
+  std::size_t FrameStart = frame_start(iframe);
+  std::size_t FrameSize = frame_size(iframe);
+
+  // Create new containers and read data from the file into them.
+  frame_data_init();
+
+  for (IodaIO::GroupIter igrp = group_begin(); igrp != group_end(); ++igrp) {
+    std::string GroupName = group_name(igrp);
+    for (IodaIO::VarIter ivar = var_begin(igrp); ivar != var_end(igrp); ++ivar) {
+      // Since there are variables of different lengths in a netcdf file, check to
+      // see if the frame has gone past the end of the variable, and if so skip
+      // that variable.
+      std::vector<std::size_t> VarShape = var_shape(ivar);
+      if (VarShape[0] > FrameStart) {
+        // Grab the var specs, and calculate the start and count in the file.
+        // Make sure the count doesn't go past the end of the variable in the file.
+        // The start and count only apply to the first dimension, the remaining
+        // dimensions, if any are always read in full.
+        std::string VarName = var_name(ivar);
+        std::string VarType = var_dtype(ivar);
+        std::string FileType = file_type(ivar);
+        std::vector<std::size_t> VarStarts(1, FrameStart);
+
+        std::vector<std::size_t> VarCounts;
+        if (FrameStart + FrameSize > VarShape[0]) {
+          VarCounts.push_back(VarShape[0] - FrameStart);
+        } else {
+          VarCounts.push_back(FrameSize);
+        }
+
+        // Compare the variable type for memory (VarType) with the variable type
+        // from the file (FileType). Do conversions for cases that have come up with
+        // various netcdf obs files. The idea is to get all obs files with the expected
+        // data types so that these conversions will be unnecessary. Once we are there
+        // with the files, then make any unexpected data type in the file an error so that
+        // it will get corrected immediately.
+        if (VarType == "int") {
+          if (FileType == "int") {
+            std::vector<int> FileData;
+            int NcFillValue;
+            NcReadVar(GroupName, VarName, VarStarts, VarCounts, NcFillValue, FileData);
+            ReplaceFillWithMissing<int>(FileData, NcFillValue);
+            int_frame_data_->put_data(GroupName, VarName, FileData);
+          } else if (FileType == "float") {
+            std::vector<float> FileData;
+            float NcFillValue;
+            NcReadVar(GroupName, VarName, VarStarts, VarCounts, NcFillValue, FileData);
+            ReplaceFillWithMissing<float>(FileData, NcFillValue);
+
+            std::vector<int> FrameData(FileData.size(), 0);
+            ConvertVarType<float, int>(FileData, FrameData);
+            int_frame_data_->put_data(GroupName, VarName, FrameData);
+          } else if (FileType == "double") {
+            std::vector<double> FileData;
+            double NcFillValue;
+            NcReadVar(GroupName, VarName, VarStarts, VarCounts, NcFillValue, FileData);
+            ReplaceFillWithMissing<double>(FileData, NcFillValue);
+
+            std::vector<int> FrameData(FileData.size(), 0);
+            ConvertVarType<double, int>(FileData, FrameData);
+            int_frame_data_->put_data(GroupName, VarName, FrameData);
+          } else {
+            std::string ErrorMsg =
+              "NetcdfIO::ReadFrame: Conflicting data types for conversion to int: ";
+            ErrorMsg += "File variable: " + file_name(ivar) + ", File type: " + FileType;
+            ABORT(ErrorMsg);
+          }
+        } else if (VarType == "float") {
+          if (FileType == "float") {
+            std::vector<float> FileData;
+            float NcFillValue;
+            NcReadVar(GroupName, VarName, VarStarts, VarCounts, NcFillValue, FileData);
+            ReplaceFillWithMissing<float>(FileData, NcFillValue);
+            float_frame_data_->put_data(GroupName, VarName, FileData);
+          } else if (FileType == "double") {
+            std::vector<double> FileData;
+            double NcFillValue;
+            NcReadVar(GroupName, VarName, VarStarts, VarCounts, NcFillValue, FileData);
+            ReplaceFillWithMissing<double>(FileData, NcFillValue);
+
+            std::vector<float> FrameData(FileData.size(), 0.0);
+            ConvertVarType<double, float>(FileData, FrameData);
+            float_frame_data_->put_data(GroupName, VarName, FrameData);
+          } else {
+            std::string ErrorMsg =
+              "NetcdfIO::ReadFrame: Conflicting data types for conversion to float: ";
+            ErrorMsg += "File variable: " + file_name(ivar) + ", File type: " + FileType;
+            ABORT(ErrorMsg);
+          }
+        } else if (VarType == "string") {
+          // Need to expand Starts, Counts with remaining dimensions.
+          std::vector<std::size_t> VarFileShape = file_shape(ivar);
+          for (std::size_t i = 1; i < VarFileShape.size(); ++i) {
+            VarStarts.push_back(0);
+            VarCounts.push_back(VarFileShape[i]);
+          }
+          std::vector<std::string> FileData;
+          char NcFillValue;
+          NcReadVar(GroupName, VarName, VarStarts, VarCounts, NcFillValue, FileData);
+          string_frame_data_->put_data(GroupName, VarName, FileData);
+        }
+      }
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \brief Write data from the frame containers into the file
+ *
+ */
+
+void NetcdfIO::WriteFrame(IodaIO::FrameIter & iframe) {
+  // Grab the specs for the current frame
+  std::size_t FrameStart = frame_start(iframe);
+  std::size_t FrameSize = frame_size(iframe);
+
+  std::vector<std::size_t> Starts(1, FrameStart);
+  std::vector<std::size_t> Counts;
+
+  std::string GroupName;
+  std::string VarName;
+  std::vector<std::size_t> VarShape;
+
+  // Walk through the int, float, and string frame containers and dump
+  // their contents into the output file.
+  for (IodaIO::FrameIntIter iframe = frame_int_begin();
+                            iframe != frame_int_end(); ++iframe) {
+    GroupName = frame_int_get_gname(iframe);
+    VarName = frame_int_get_vname(iframe);
+    std::vector<int> FrameData = frame_int_get_data(iframe);
+    Counts.assign(1, FrameData.size());
+    NcWriteVar(GroupName, VarName, Starts, Counts, FrameData);
+  }
+
+  for (IodaIO::FrameFloatIter iframe = frame_float_begin();
+                              iframe != frame_float_end(); ++iframe) {
+    GroupName = frame_float_get_gname(iframe);
+    VarName = frame_float_get_vname(iframe);
+    std::vector<float> FrameData = frame_float_get_data(iframe);
+    Counts.assign(1, FrameData.size());
+    NcWriteVar(GroupName, VarName, Starts, Counts, FrameData);
+  }
+
+  for (IodaIO::FrameStringIter iframe = frame_string_begin();
+                               iframe != frame_string_end(); ++iframe) {
+    GroupName = frame_string_get_gname(iframe);
+    VarName = frame_string_get_vname(iframe);
+    std::vector<std::string> FrameData = frame_string_get_data(iframe);
+    std::vector<std::size_t> FileShape = file_shape(GroupName, VarName);
+    std::vector<std::size_t> CharStarts{ Starts[0], 0 };
+    std::vector<std::size_t> CharCounts{ FrameData.size(), FileShape[1] };
+    NcWriteVar(GroupName, VarName, CharStarts, CharCounts, FrameData);
+  }
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \brief Add entry to the group, variable info container
+ *
+ */
+
+void NetcdfIO::GrpVarInsert(const std::string & GroupName, const std::string & VarName,
+                 const std::string & VarType, const std::vector<std::size_t> & VarShape,
+                 const std::string & FileVarName, const std::string & FileType,
+                 const std::size_t MaxStringSize) {
+  int NcVarId;
+  std::string ErrorMsg;
+
+  // If string type, append the MaxStringSize to the FileShape since a vector of strings
+  // is stored as a 2D character array in netcdf.
+  std::vector<std::size_t> FileShape = VarShape;
+  if (VarType == "string") {
+    FileShape.push_back(MaxStringSize);
+  }
+
+  if (fmode_ == "r") {
+    ErrorMsg = "NetcdfIO::GrpVarInsert: Unable to get netcdf id for variable: " + FileVarName;
+    CheckNcCall(nc_inq_varid(ncid_, FileVarName.c_str(), &NcVarId), ErrorMsg);
+
+    grp_var_info_[GroupName][VarName].var_id = NcVarId;
+    grp_var_info_[GroupName][VarName].dtype = VarType;
+    grp_var_info_[GroupName][VarName].file_shape = FileShape;
+    grp_var_info_[GroupName][VarName].file_name = FileVarName;
+    grp_var_info_[GroupName][VarName].file_type = FileType;
+    grp_var_info_[GroupName][VarName].shape = VarShape;
+  } else {
+    // Write mode, create the netcdf variable and insert data into
+    // group, variable info container
+    nc_type NcVarType;
+    if (VarType == "int") {
+      NcVarType = NC_INT;
+    } else if (VarType == "float") {
+      NcVarType = NC_FLOAT;
+    } else if (VarType == "string") {
+      NcVarType = NC_CHAR;
+    } else {
+      ErrorMsg = "NetcdfIO::GrpVarInsert: Unrecognized variable type: " + VarType +
+                 ", must use one of: int, float, string";
+      ABORT(ErrorMsg);
+    }
+
+    std::vector<int> NcDimIds = GetNcDimIds(GroupName, FileShape);
+    if (VarType == "string") {
+      NcDimIds.push_back(GetStringDimBySize(FileShape[1]));
+    }
+    ErrorMsg = "NetcdfIO::WriteVar: Unable to create variable dataset: " + FileVarName;
+    CheckNcCall(nc_def_var(ncid_, FileVarName.c_str(), NcVarType, NcDimIds.size(),
+                           NcDimIds.data(), &NcVarId), ErrorMsg);
+
+    grp_var_info_[GroupName][VarName].var_id = NcVarId;
+    grp_var_info_[GroupName][VarName].dtype = VarType;
+    grp_var_info_[GroupName][VarName].file_shape = FileShape;
+    grp_var_info_[GroupName][VarName].file_name = FileVarName;
+    grp_var_info_[GroupName][VarName].file_type = FileType;
+    grp_var_info_[GroupName][VarName].shape = VarShape;
+  }
+}
+
 
 // -----------------------------------------------------------------------------
 /*!
@@ -589,27 +862,6 @@ std::string NetcdfIO::FormNcVarName(const std::string & GroupName, const std::st
 
 // -----------------------------------------------------------------------------
 /*!
- * \brief create a dimension in the netcdf file
- *
- * \details This method will create a dimension in the output netcdf file using
- *          the name given by DimName and the size given by DimSize. This method
- *          also records the dimension name and size for downstream use in the
- *          WriteVar methods.
- *
- * \param[in] DimName Name of netcdf dimension
- * \param[in] DimSize Size of netcdf dimension
- */
-
-void NetcdfIO::CreateNcDim(const std::string DimName, const std::size_t DimSize) {
-  int NcDimId;
-  std::string ErrorMsg = "NetcdfIO::NetcdfIO: Unable to create dimension: " + DimName;
-  CheckNcCall(nc_def_dim(ncid_, DimName.c_str(), DimSize, &NcDimId), ErrorMsg);
-  dim_info_[DimName].size = DimSize;
-  dim_info_[DimName].id = NcDimId;
-}
-
-// -----------------------------------------------------------------------------
-/*!
  * \brief allocate a dimension for writing a character array
  *
  * \details This method is used for setting up dimensions for a writing a 
@@ -669,14 +921,13 @@ int NetcdfIO::GetStringDimBySize(const std::size_t DimSize) {
  * \param[in] VarName Name of variable in ObsSpace database
  * \param[out] VarData Character array where ISO 8601 date time strings will be placed
  */
-void NetcdfIO::ReadConvertDateTime(std::string GroupName, std::string VarName,
+void NetcdfIO::ReadConvertDateTime(const std::string & GroupName, const std::string & VarName,
+                                   const std::vector<std::size_t> & Starts,
+                                   const std::vector<std::size_t> & Counts,
                                    std::vector<std::string> & VarData) {
   // Read in the reference date from the date_time attribute and the offset
   // time from the time variable and convert to date_time strings.
   int NcVarId = var_id(GroupName, VarName);
-  std::vector<std::size_t> VarShape = var_shape(GroupName, VarName);
-  std::size_t VarSize =
-    std::accumulate(VarShape.begin(), VarShape.end(), 1, std::multiplies<std::size_t>());
 
   // Read in the date_time attribute and convert to a DateTime object.
   int RefDateAttr;
@@ -693,16 +944,16 @@ void NetcdfIO::ReadConvertDateTime(std::string GroupName, std::string VarName,
   util::DateTime RefDate(Year, Month, Day, Hour, 0, 0);
 
   // Read in the time variable.
-  std::vector<float> OffsetTime(VarSize, 0.0);
+  std::vector<float> OffsetTime(Counts[0], 0.0);
   ErrorMsg = "NetcdfIO::ReadDateTime: Unable to read variable: time@" + GroupName;
-  CheckNcCall(nc_get_var_float(ncid_, NcVarId, OffsetTime.data()), ErrorMsg);
+  CheckNcCall(nc_get_vara_float(ncid_, NcVarId, Starts.data(), Counts.data(),
+                                OffsetTime.data()), ErrorMsg);
 
   // Convert offset time to a Duration and add to RefDate. Then use DateTime to
   // output an ISO 8601 datetime string, and place that string into VarData.
   util::DateTime ObsDateTime;
-  std::string ObsDtString;
-  std::size_t ichar = 0;
-  for (std::size_t i = 0; i < VarSize; ++i) {
+  VarData.assign(Counts[0], "");  // allocate space for the conversion
+  for (std::size_t i = 0; i < Counts[0]; ++i) {
     ObsDateTime = RefDate + util::Duration(round(OffsetTime[i] * 3600));
     VarData[i] = ObsDateTime.toString();
   }
