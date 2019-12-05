@@ -3,26 +3,97 @@ window_begin: "2015-08-09T21:00:00Z"
 window_end: "2015-08-10T03:00:00Z"
 
 TestInput:
-  filename: "Data/testinput_tier_1/fileio.nc4"
-  nvars_in_file: 5
+  filename: "Data/fileio.nc4"
   nlocs: 5
-  nrecs: 4
   nvars: 6
+
+  dimensions:
+    names: [ 'maxstrlen', 'nlocs', 'nvars' ]
+    ids: [ 2, 0, 1 ]
+    sizes: [ 8, 5, 6 ]
+
+  frames:
+    max_frame_size: 3
+    starts: [ 0, 3 ]
+    sizes: [ 3, 2 ]
+
   variables:
-    - "test_int@IntGroup"
-    - "test_float@FloatGroup"
-    - "test_double@DoubleGroup"
-    - "test_string@CharGroup"
-    - "datetime@MetaData"
-  var0: [ 2, 4, 6, 8, -2147483643 ]
-  var1: [ 1.5, -3.3688e+38, 3.4, -3.3688e+38, -3.3688e+38, -3.3688e+38 ]
-  var2: [ 1.5, 2.7, -3.33477e+38, -3.33477e+38 ]
-  var3: [ "01234567", "ABCDEFGH", "01234", "Hello", "World" ]
-  var4: [ "2018-04-14T23:41:59Z", "2018-04-14T23:42:07Z", "2018-04-14T23:44:28Z", "2018-04-14T23:46:20Z", "2018-04-14T23:48:15Z" ]
+    - name: "test_int@IntGroup"
+      type: "int"
+      values: [ 2, 4, 6, 8, -2147483643 ]
+
+    - name: "test_float@FloatGroup"
+      type: "float"
+      values: [ 1.5, -3.3688e+38, -3.3688e+38, -3.3688e+38, -3.3688e+38 ]
+
+    - name: "test_double@DoubleGroup"
+      type: "float"
+      values: [ 1.5, 2.7, -3.3688e+38, -3.3688e+38, 3.9 ] 
+
+    - name: "test_string@CharGroup"
+      type: "string"
+      values: [ "01234567", "ABCDEFGH", "01234", "Hello", "World" ]
+
+    - name: "datetime@MetaData"
+      type: "string"
+      values:
+        - "2018-04-14T23:41:59Z"
+        - "2018-04-14T23:42:07Z"
+        - "2018-04-14T23:44:28Z"
+        - "2018-04-14T23:46:20Z"
+        - "2018-04-14T23:48:15Z"
+
+    - name: "varno@VarMetaData"
+      type: "int"
+      values: [ 1, 2, 3, 4, 5 ]
   tolerance: 1.0e-5
 
 TestOutput:
   filename: "testoutput/fileio_out.nc4"
+  max_frame_size: 3
   nlocs: 8
-  nrecs: 2
   nvars: 5
+
+  variables:
+    - name: "test_float@MetaData"
+      type: "float"
+      values: [ 0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5 ]
+
+    - name: "test_int@VarMetaData"
+      type: "int"
+      values: [ 0, 2, 4, 6, 8 ]
+
+    - name: "test_char@VarMetaData"
+      type: "string"
+      values:
+        - "Hello"
+        - "World"
+        - "How"
+        - "are"
+        - "you"
+
+    - name: "test_char2@MetaData"
+      type: "string"
+      values:
+        - "ABCD"
+        - "EFGH"
+        - "01234"
+        - "56789"
+        - "abcdefg"
+        - "hijklmn"
+        - "Yes"
+        - "No"
+
+    - name: "datetime@MetaData"
+      type: "string"
+      values:
+        - "2018-14-15T00:00:00Z"
+        - "2018-14-15T00:00:01Z"
+        - "2018-14-15T00:00:02Z"
+        - "2018-14-15T00:00:03Z"
+        - "2018-14-15T00:00:04Z"
+        - "2018-14-15T00:00:05Z"
+        - "2018-14-15T00:00:06Z"
+        - "2018-14-15T00:00:07Z"
+
+  tolerance: 1.0e-5

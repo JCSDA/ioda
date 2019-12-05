@@ -85,6 +85,13 @@ void testConstructor() {
     std::size_t ExpectedNrecs = conf[jj].getUnsigned("ObsSpace.TestData.nrecs");
     std::size_t ExpectedNvars = conf[jj].getUnsigned("ObsSpace.TestData.nvars");
 
+    oops::Log::debug() << "Nlocs, ExpectedNlocs: " << Nlocs << ", "
+                       << ExpectedNlocs << std::endl;
+    oops::Log::debug() << "Nrecs, ExpectedNrecs: " << Nrecs << ", "
+                       << ExpectedNrecs << std::endl;
+    oops::Log::debug() << "Nvars, ExpectedNvars: " << Nvars << ", "
+                       << ExpectedNvars << std::endl;
+
     EXPECT(Nlocs == ExpectedNlocs);
     EXPECT(Nrecs == ExpectedNrecs);
     EXPECT(Nvars == ExpectedNvars);
