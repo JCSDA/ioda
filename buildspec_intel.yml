@@ -106,6 +106,7 @@ phases:
       - ls
       - sed -i 's/BRANCH develop  UPDATE//' CMakeLists.txt
       - sed -i 's/BRANCH develop//' CMakeLists.txt
+      - chown -R jcsdauser:jcsda /jcsda/ioda-bundle/ioda/test_data_download
 
   build:
     commands:
