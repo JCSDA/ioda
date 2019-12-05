@@ -74,7 +74,7 @@ Observations:
       name: "Radiance"
       simulate:
       ObsDataIn:
-        obsfile: "Data/smap_obs_2018041500_m.nc4"
+        obsfile: "Data/smap_obs_100v1.nc4  #smap_obs_2018041500_m.nc4"
       Localization:
         distance: 0.3
         max_nobs: &max_nobs 1
@@ -82,9 +82,9 @@ Observations:
         lonRefPoint: 1.58
         latRefPoint: -81.58
       TestData:
-        nlocs: 100
+        nlocs: 45
         nlocs_local: *max_nobs
-        nrecs: 100
+        nrecs: 45
         nvars: 4
         groups:
           - "MetaData"
