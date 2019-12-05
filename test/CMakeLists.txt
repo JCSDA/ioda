@@ -34,7 +34,7 @@ ecbuild_add_resources( TARGET ioda_test_scripts
 
 # Create Data directory for test data and symlink files
 list( APPEND ioda_test_data
-      testinput.tar.gz
+      testinput_tier_1.tar.gz
       )
 
 set(ECBUILD_DOWNLOAD_BASE_URL https://jedi-test-files.s3.amazonaws.com)
