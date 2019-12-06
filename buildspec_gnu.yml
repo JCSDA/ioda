@@ -86,17 +86,11 @@ phases:
       - git checkout $CODEBUILD_GIT_BRANCH || echo "No branch named $CODEBUILD_GIT_BRANCH in fckit repo"
       - cd $CODEBUILD_SRC_DIR
 
-
-      - ls -lt
-      - pwd
       - mv ioda-bundle /jcsda/
-      - cd /jcsda/ioda-bundle/ioda
-      - ls -lt
       - cd /jcsda/ioda-bundle
-      - pwd
-      - ls
       - sed -i 's/BRANCH develop  UPDATE//' CMakeLists.txt
       - sed -i 's/BRANCH develop//' CMakeLists.txt
+      - cat CMakeLists.txt
       - chown -R jcsdauser:jcsda /jcsda/ioda-bundle/ioda/test_data_download
       - cd /jcsda/ioda-bundle/ioda
       - ls -lt
@@ -126,7 +120,7 @@ phases:
     commands:
       - echo Executing post_build phase
       - echo $CODEBUILD_BUILD_SUCCEEDING
-      - if [ "$BUILD_STATUS" = "1"] && ["$CODEBUILD_BUILD_SUCCEEDING" = "0" ];
+      - if [ "$BUILD_STATUS" = "1" ] && [ "$CODEBUILD_BUILD_SUCCEEDING" = "0" ];
         then echo "Build passed, rerunning failed tests";
         su - jcsdauser -c "cd /build_container/ioda
         && ctest -VV --rerun-failed"; 
