@@ -98,14 +98,11 @@ phases:
       - git checkout $CODEBUILD_GIT_BRANCH || echo "No branch named $CODEBUILD_GIT_BRANCH in fckit repo"
       - cd $CODEBUILD_SRC_DIR
 
-      - ls
-      - pwd
       - mv ioda-bundle /jcsda/
       - cd /jcsda/ioda-bundle
-      - pwd
-      - ls
       - sed -i 's/BRANCH develop  UPDATE//' CMakeLists.txt
       - sed -i 's/BRANCH develop//' CMakeLists.txt
+      - cat CMakeLists.txt
       - chown -R jcsdauser:jcsda /jcsda/ioda-bundle/ioda/test_data_download
 
   build:

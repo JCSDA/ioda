@@ -42,13 +42,12 @@ set(ECBUILD_DOWNLOAD_BASE_URL https://jedi-test-files.s3.amazonaws.com)
 ecbuild_get_test_multidata ( TARGET get_ioda_test_data
                              NAMES ${ioda_test_data}
 			     DIRNAME ioda
-			     #DIRSAVE testinput
 			     EXTRACT
                              )
 
 execute_process( COMMAND ${CMAKE_COMMAND} -E create_symlink
-	   ${PROJECT_SOURCE_DIR}/test_data_download
-           ${CMAKE_CURRENT_BINARY_DIR}/Data )
+	         ${PROJECT_SOURCE_DIR}/test_data_download
+                 ${CMAKE_CURRENT_BINARY_DIR}/Data )
 
 #####################################################################
 # Add executables frequently used in tests
