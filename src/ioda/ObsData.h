@@ -11,7 +11,9 @@
 #include <map>
 #include <memory>
 #include <ostream>
+#include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "eckit/container/KDTree.h"
@@ -37,6 +39,26 @@ namespace eckit {
 
 namespace ioda {
   class ObsVector;
+
+//-------------------------------------------------------------------------------------
+template <typename KeyType>
+class ObsGroupingMap {
+ public:
+  bool has(const KeyType Key) {
+    return (obs_grouping_map_.find(Key) != obs_grouping_map_.end());
+  }
+
+  void insert(const KeyType Key, const std::size_t Val) {
+    obs_grouping_map_.insert(std::pair<KeyType, std::size_t>(Key, Val));
+  }
+
+  std::size_t at(const KeyType Key) {
+    return obs_grouping_map_.at(Key);
+  }
+
+ private:
+  std::map<KeyType, std::size_t> obs_grouping_map_;
+};
 
 /// Observation Data
 /*!
@@ -142,38 +164,23 @@ class ObsData : public oops::ObsSpaceBase {
                    std::vector<float> & Lons, std::vector<util::DateTime> & Dtimes);
 
   // Initialize the database from the input file
-  void InitFromFile(const std::string & filename);
-  void GenMpiDistribution(const std::unique_ptr<IodaIO> & FileIO);
-  void GenRecordNumbers(const std::unique_ptr<IodaIO> & FileIO,
-                        std::vector<std::size_t> & Records) const;
-  template<typename DATATYPE>
-  static void GenRnumsFromVar(const std::vector<DATATYPE> & VarData,
-                              std::vector<std::size_t> & Records);
-  void ApplyTimingWindow(const std::unique_ptr<IodaIO> & FileIO);
+  void InitFromFile(const std::string & filename, const std::size_t MaxFrameSize);
+  std::vector<std::size_t> GenFrameIndexRecNums(const std::unique_ptr<IodaIO> & FileIO,
+                               const std::size_t FrameStart, const std::size_t FrameSize);
+  bool InsideTimingWindow(const util::DateTime & ObsDt);
   void BuildSortedObsGroups();
   void createKDTree();
 
   template<typename VarType>
-  void ApplyDistIndex(std::vector<VarType> & FullData,
-                      const std::vector<std::size_t> & FullShape,
-                      std::vector<VarType> & IndexedData,
-                      std::vector<std::size_t> & IndexedShape,
-                      std::size_t & IndexedSize) const;
+  std::vector<VarType> ApplyIndex(const std::vector<VarType> & FullData,
+                                  const std::vector<std::size_t> & FullShape,
+                                  const std::vector<std::size_t> & Index,
+                                  std::vector<std::size_t> & IndexedShape) const;
 
   static std::string DesiredVarType(std::string & GroupName, std::string & FileVarType);
 
-  // Convert variable data types including the missing value marks
-  template<typename FromType, typename ToType>
-  static void ConvertVarType(const std::vector<FromType> & FromVar, std::vector<ToType> & ToVar);
-
   // Dump the database into the output file
-  void SaveToFile(const std::string & file_name);
-
-  // Methods for tranferring data from a variable into the database.
-  template<typename VarType, typename DbType>
-  void ConvertStoreToDb(const std::string & GroupName, const std::string & VarName,
-                        const std::vector<std::size_t> & VarShape,
-                        const std::vector<VarType> & VarData);
+  void SaveToFile(const std::string & file_name, const std::size_t MaxFrameSize);
 
   /*! \brief name of obs space */
   std::string obsname_;
@@ -205,14 +212,26 @@ class ObsData : public oops::ObsSpaceBase {
   /*! \brief number of records */
   std::size_t nrecs_;
 
-  /*! \brief number of file variable data type warnings */
-  std::size_t nwarns_fdtype_;
+  /*! \brief flag, file has variables with missing group names */
+  bool file_missing_gnames_;
+
+  /*! \brief flag, file has variables with unexpected data types */
+  bool file_unexpected_dtypes_;
+
+  /*! \brief flag, file has variables with excess dimensions */
+  bool file_excess_dims_;
 
   /*! \brief path to input file */
   std::string filein_;
 
   /*! \brief path to output file */
   std::string fileout_;
+
+  /*! \brief max frame size for input file */
+  std::size_t in_max_frame_size_;
+
+  /*! \brief max frame size for output file */
+  std::size_t out_max_frame_size_;
 
   /*! \brief indexes of locations to extract from the input obs file */
   std::vector<std::size_t> indx_;
@@ -244,7 +263,19 @@ class ObsData : public oops::ObsSpaceBase {
   /*! \brief Sort order for obs grouping */
   std::string obs_sort_order_;
 
+  /*! \brief MPI distribution object */
   std::shared_ptr<Distribution> dist_;
+
+  /*! \brief maps for obs grouping via integer, float or string values */
+  ObsGroupingMap<int> int_obs_grouping_;
+  ObsGroupingMap<float> float_obs_grouping_;
+  ObsGroupingMap<std::string> string_obs_grouping_;
+
+  /*! \brief next available record number */
+  std::size_t next_rec_num_;
+
+  /*! \brief unique record numbers */
+  std::set<std::size_t> unique_rec_nums_;
 };
 
 }  // namespace ioda

@@ -16,7 +16,13 @@
 namespace ioda {
 
 // -----------------------------------------------------------------------------
+IodaIO::IodaIO(const std::string & FileName, const std::string & FileMode,
+               const std::size_t MaxFrameSize) :
+           fname_(FileName), fmode_(FileMode), num_missing_gnames_(0),
+           num_unexpect_dtypes_(0), num_excess_dims_(0), max_frame_size_(MaxFrameSize) {
+}
 
+// -----------------------------------------------------------------------------
 IodaIO::~IodaIO() { }
 
 // -----------------------------------------------------------------------------
@@ -48,23 +54,39 @@ std::size_t IodaIO::nlocs() const {
 
 // -----------------------------------------------------------------------------
 /*!
- * \details This method returns the number of unique recoreds in the obs data.
- *          A record is an atomic unit that will remain intact during distribution
- *          across multiple process elements. An example is a single sounding in
- *          radiosonde obs data.
- */
-
-std::size_t IodaIO::nrecs() const {
-  return nrecs_;
-}
-
-// -----------------------------------------------------------------------------
-/*!
  * \details This method returns the number of unique variables in the obs data.
  */
 
 std::size_t IodaIO::nvars() const {
   return nvars_;
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns whether any group names were missing on variables
+ *          from the input file.
+ */
+
+bool IodaIO::missing_group_names() const {
+  return (num_missing_gnames_ > 0);
+}
+
+/*!
+ * \details This method returns whether any unexpected data types were encountered
+ *          on variables from the input file.
+ */
+
+bool IodaIO::unexpected_data_types() const {
+  return (num_unexpect_dtypes_ > 0);
+}
+
+/*!
+ * \details This method returns whether any variables with excess dimensions were
+ *          encountered when reading the input file.
+ */
+
+bool IodaIO::excess_dims() const {
+  return (num_excess_dims_ > 0);
 }
 
 // -----------------------------------------------------------------------------
@@ -272,6 +294,72 @@ std::vector<std::size_t> IodaIO::file_shape(const std::string & GroupName,
 
 // -----------------------------------------------------------------------------
 /*!
+ * \details This method returns the variable name in the file for the current iteration
+ *          in the group, variable information map.
+ *
+ * \param[in] ivar Variable iterator for GrpVarInfoMap
+ */
+
+std::string IodaIO::file_name(IodaIO::VarIter ivar) {
+  return ivar->second.file_name;
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns the variable name in the file for the group name,
+ *          variable name combination in the group, variable information map.
+ *
+ * \param[in] GroupName Group key for GrpVarInfoMap
+ * \param[in] VarName Variable key for GrpVarInfoMap
+ */
+
+std::string IodaIO::file_name(const std::string & GroupName, const std::string & VarName) {
+  if (!grp_var_exists(GroupName, VarName)) {
+    std::string ErrorMsg = "Group name, variable name combination is not available: " +
+                            GroupName + ", " + VarName;
+    ABORT(ErrorMsg);
+  }
+
+  GroupIter igrp = grp_var_info_.find(GroupName);
+  VarIter ivar = igrp->second.find(VarName);
+  return ivar->second.file_name;
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns the variable type in the file for the current iteration
+ *          in the group, variable information map.
+ *
+ * \param[in] ivar Variable iterator for GrpVarInfoMap
+ */
+
+std::string IodaIO::file_type(IodaIO::VarIter ivar) {
+  return ivar->second.file_type;
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns the variable type in the file for the group name,
+ *          variable name combination in the group, variable information map.
+ *
+ * \param[in] GroupName Group key for GrpVarInfoMap
+ * \param[in] VarName Variable key for GrpVarInfoMap
+ */
+
+std::string IodaIO::file_type(const std::string & GroupName, const std::string & VarName) {
+  if (!grp_var_exists(GroupName, VarName)) {
+    std::string ErrorMsg = "Group name, variable name combination is not available: " +
+                            GroupName + ", " + VarName;
+    ABORT(ErrorMsg);
+  }
+
+  GroupIter igrp = grp_var_info_.find(GroupName);
+  VarIter ivar = igrp->second.find(VarName);
+  return ivar->second.file_type;
+}
+
+// -----------------------------------------------------------------------------
+/*!
  * \details This method returns the variable id for the current iteration
  *          in the group, variable information map.
  *
@@ -305,6 +393,22 @@ std::size_t IodaIO::var_id(const std::string & GroupName, const std::string & Va
 
 // -----------------------------------------------------------------------------
 /*!
+ * \details This method adds an entry to the group, variable information map.
+ *
+ * \param[in] GroupName Group key for GrpVarInfoMap
+ * \param[in] VarName Variable key for GrpVarInfoMap
+ * \param[in] 
+ */
+
+void IodaIO::grp_var_insert(const std::string & GroupName, const std::string & VarName,
+                 const std::string & VarType, const std::vector<std::size_t> & VarShape,
+                 const std::string & FileVarName, const std::string & FileType,
+                 const std::size_t MaxStringSize) {
+  GrpVarInsert(GroupName, VarName, VarType, VarShape, FileVarName, FileType, MaxStringSize);
+}
+
+// -----------------------------------------------------------------------------
+/*!
  * \details This method returns a flag indicating the existence of the given
  *          dimension name. True indicates the dimension exists, false
  *          indicates the dimension does not exist.
@@ -314,6 +418,24 @@ std::size_t IodaIO::var_id(const std::string & GroupName, const std::string & Va
 
 bool IodaIO::dim_exists(const std::string & name) {
   return (dim_info_.find(name) != dim_info_.end());
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns the begin iterator for the dimension container
+ */
+
+IodaIO::DimIter IodaIO::dim_begin() {
+  return dim_info_.begin();
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns the end iterator for the dimension container
+ */
+
+IodaIO::DimIter IodaIO::dim_end() {
+  return dim_info_.end();
 }
 
 // -----------------------------------------------------------------------------
@@ -427,6 +549,124 @@ int IodaIO::dim_name_id(const std::string & name) {
   }
 
   return dim_info_.find(name)->second.id;
+}
+
+/*!
+ * \details This method inserts an entry into the dim info container
+ *
+ * \param[in] name Dimension name
+ */
+
+void IodaIO::dim_insert(const std::string & Name, const std::size_t Size) {
+  DimInsert(Name, Size);
+}
+// -----------------------------------------------------------------------------
+/*!
+ * \brief beginning frame iterator
+ */
+
+IodaIO::FrameIter IodaIO::frame_begin() {
+  return frame_info_.begin();
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \brief ending frame iterator
+ */
+
+IodaIO::FrameIter IodaIO::frame_end() {
+  return frame_info_.end();
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \brief start value of current frame
+ */
+
+std::size_t IodaIO::frame_start(IodaIO::FrameIter & iframe) {
+  return iframe->start;
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \brief size value of current frame
+ */
+
+std::size_t IodaIO::frame_size(IodaIO::FrameIter & iframe) {
+  return iframe->size;
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \brief initialize the frame info container
+ */
+
+void IodaIO::frame_info_init(std::size_t MaxVarSize) {
+  // Chop the MaxVarSize into max_frame_size_ pieces. Make sure the total
+  // of the sizes of all frames adds up to MaxVarSize.
+  std::size_t FrameStart = 0;
+  while (FrameStart < MaxVarSize) {
+    std::size_t FrameSize = max_frame_size_;
+    if ((FrameStart + FrameSize) > MaxVarSize) {
+      FrameSize = MaxVarSize - FrameStart;
+    }
+    IodaIO::FrameInfoRec Finfo(FrameStart, FrameSize);
+    frame_info_.push_back(Finfo);
+
+    FrameStart += max_frame_size_;
+  }
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \brief initialize the frame data container
+ */
+
+void IodaIO::frame_data_init() {
+  int_frame_data_.reset(new ioda::FrameDataMap<int>);
+  float_frame_data_.reset(new ioda::FrameDataMap<float>);
+  string_frame_data_.reset(new ioda::FrameDataMap<std::string>);
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \brief read from the file into the frame containers
+ */
+
+void IodaIO::frame_read(IodaIO::FrameIter & iframe) {
+  ReadFrame(iframe);
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \brief write from the frame containers into the file
+ */
+
+void IodaIO::frame_write(IodaIO::FrameIter & iframe) {
+  WriteFrame(iframe);
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method extracts the group and variable names from
+ *          the given compound name.
+ *
+ * \param[in] Name Compound name (eg, Temperature@ObsValue)
+ * \param[out] GroupName Group name (eg, ObsValue)
+ * \param[out] VarName Variable name (eg, Temperature)
+ */
+
+void IodaIO::ExtractGrpVarName(const std::string & Name, std::string & GroupName,
+                               std::string & VarName) {
+  std::size_t Spos = Name.find("@");
+  if (Spos != Name.npos) {
+    GroupName = Name.substr(Spos+1);
+    VarName = Name.substr(0, Spos);
+  } else {
+    GroupName = "GroupUndefined";
+    VarName = Name;
+    num_missing_gnames_++;
+  }
 }
 
 }  // namespace ioda
