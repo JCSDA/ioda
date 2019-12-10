@@ -51,7 +51,8 @@ ObsData::ObsData(const eckit::Configuration & config, const eckit::mpi::Comm & c
   : oops::ObsSpaceBase(config, comm, bgn, end),
     config_(config), winbgn_(bgn), winend_(end), commMPI_(comm), int_database_(),
     float_database_(), string_database_(), datetime_database_(), obsvars_(),
-    gnlocs_(0), nlocs_(0), nvars_(0), nrecs_(0), next_rec_num_(0)
+    gnlocs_(0), nlocs_(0), nvars_(0), nrecs_(0), next_rec_num_(0),
+    file_missing_gnames_(0), file_unexpected_dtypes_(0), file_excess_dims_(0)
 {
   oops::Log::trace() << "ObsData::ObsData config  = " << config << std::endl;
 
@@ -746,6 +747,7 @@ void ObsData::InitFromFile(const std::string & filename, const std::size_t MaxFr
   // Record whether any problems occurred when reading the file.
   file_missing_gnames_ = fileio->missing_group_names();
   file_unexpected_dtypes_ = fileio->unexpected_data_types();
+  file_excess_dims_ = fileio->excess_dims();
   oops::Log::trace() << "ObsData::InitFromFile opening file ends " << std::endl;
 }
 
