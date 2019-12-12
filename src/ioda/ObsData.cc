@@ -49,9 +49,12 @@ namespace ioda {
 ObsData::ObsData(const eckit::Configuration & config, const eckit::mpi::Comm & comm,
                  const util::DateTime & bgn, const util::DateTime & end)
   : oops::ObsSpaceBase(config, comm, bgn, end),
-    config_(config), winbgn_(bgn), winend_(end), commMPI_(comm), int_database_(),
-    float_database_(), string_database_(), datetime_database_(), obsvars_(),
-    gnlocs_(0), nlocs_(0), nvars_(0), nrecs_(0), next_rec_num_(0)
+    config_(config), winbgn_(bgn), winend_(end), commMPI_(comm),
+    gnlocs_(0), nlocs_(0), nvars_(0), nrecs_(0), file_missing_gnames_(false),
+    file_unexpected_dtypes_(false), file_excess_dims_(false),
+    in_max_frame_size_(0), out_max_frame_size_(0),
+    int_database_(), float_database_(), string_database_(), datetime_database_(),
+    obsvars_(), next_rec_num_(0)
 {
   oops::Log::trace() << "ObsData::ObsData config  = " << config << std::endl;
 
