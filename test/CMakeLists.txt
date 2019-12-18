@@ -39,24 +39,33 @@ list( APPEND ioda_test_data
 
 set(ECBUILD_DOWNLOAD_BASE_URL https://jedi-test-files.s3.amazonaws.com/ioda)
 
-# Get the current working branch
-execute_process(
+if( NOT DEFINED LOCAL_PATH_TESTFILES )
+
+  # Get the current working branch
+  execute_process(
     COMMAND git rev-parse --abbrev-ref HEAD
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     OUTPUT_VARIABLE GIT_BRANCH
     OUTPUT_STRIP_TRAILING_WHITESPACE
-)
+    )
 
-ecbuild_get_test_multidata ( TARGET get_ioda_test_data
+  ecbuild_get_test_multidata ( TARGET get_ioda_test_data
                              NAMES ${ioda_test_data}
 			     DIRNAME ${GIT_BRANCH}
 			     EXTRACT
                              )
 
-execute_process( COMMAND ${CMAKE_COMMAND} -E create_symlink
+  execute_process( COMMAND ${CMAKE_COMMAND} -E create_symlink
 	         ${PROJECT_SOURCE_DIR}/test_data_download
-                 ${CMAKE_CURRENT_BINARY_DIR}/Data )
-
+                 ${CMAKE_CURRENT_BINARY_DIR}/Data 
+		 )
+else()
+   execute_process( COMMAND ${CMAKE_COMMAND} -E create_symlink
+	         ${LOCAL_PATH_TESTFILES}
+                 ${CMAKE_CURRENT_BINARY_DIR}/Data 
+		 )
+ 
+endif()
 #####################################################################
 # Add executables frequently used in tests
 
