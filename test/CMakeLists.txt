@@ -39,6 +39,10 @@ list( APPEND ioda_test_data
 
 set(ECBUILD_DOWNLOAD_BASE_URL https://jedi-test-files.s3.amazonaws.com/ioda)
 
+if (DEFINED ENV{LOCAL_PATH_TESTFILES})
+	set(LOCAL_PATH_TESTFILES "$ENV{LOCAL_PATH_TESTFILES}")
+endif()
+
 if( NOT DEFINED LOCAL_PATH_TESTFILES )
 
   # Get the current working branch
