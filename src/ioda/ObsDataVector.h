@@ -143,7 +143,8 @@ ObsDataVector<DATATYPE> & ObsDataVector<DATATYPE>::operator= (const ObsDataVecto
 }
 // -----------------------------------------------------------------------------
 template <typename DATATYPE>
-ObsDataVector<DATATYPE> & ObsDataVector<DATATYPE>::operator-= (const ObsDataVector<DATATYPE> & rhs) {
+ObsDataVector<DATATYPE> & ObsDataVector<DATATYPE>::operator-=
+                        (const ObsDataVector<DATATYPE> & rhs) {
   oops::Log::trace() << "ObsDataVector::operator-= start" << std::endl;
   ASSERT(&obsdb_ == &rhs.obsdb_);
   ASSERT(obsvars_ == rhs.obsvars_);
@@ -190,7 +191,7 @@ double ObsDataVector<DATATYPE>::rms() const {
       if (rows_.at(jv).at(jj) != missing_) {
         zrms += rows_.at(jv).at(jj) * rows_.at(jv).at(jj);
         ++nobs;
-      };
+      }
     }
   }
   if (obsdb_.isDistributed()) {
