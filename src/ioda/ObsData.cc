@@ -749,6 +749,7 @@ void ObsData::InitFromFile(const std::string & filename, const std::size_t MaxFr
   // Record whether any problems occurred when reading the file.
   file_missing_gnames_ = fileio->missing_group_names();
   file_unexpected_dtypes_ = fileio->unexpected_data_types();
+  file_excess_dims_ = fileio->excess_dims();
   oops::Log::trace() << "ObsData::InitFromFile opening file ends " << std::endl;
 }
 
