@@ -50,11 +50,9 @@ class ObsDataVector: public util::Printable,
   ~ObsDataVector();
 
   ObsDataVector & operator = (const ObsDataVector &);
-  ObsDataVector & operator-= (const ObsDataVector &);
 
   void zero();
   void mask(const ObsDataVector<int> &);
-  double rms() const;
 
   void read(const std::string &, const bool fail = true);  // only used in GNSSRO QC
   void save(const std::string &) const;
@@ -143,26 +141,6 @@ ObsDataVector<DATATYPE> & ObsDataVector<DATATYPE>::operator= (const ObsDataVecto
 }
 // -----------------------------------------------------------------------------
 template <typename DATATYPE>
-ObsDataVector<DATATYPE> & ObsDataVector<DATATYPE>::operator-=
-                        (const ObsDataVector<DATATYPE> & rhs) {
-  oops::Log::trace() << "ObsDataVector::operator-= start" << std::endl;
-  ASSERT(&obsdb_ == &rhs.obsdb_);
-  ASSERT(obsvars_ == rhs.obsvars_);
-  ASSERT(nvars_ == rhs.nvars_);
-  ASSERT(nlocs_ == rhs.nlocs_);
-  for (size_t jv = 0; jv < nvars_; ++jv) {
-    for (size_t jj = 0; jj < nlocs_; ++jj) {
-      if (rows_.at(jv).at(jj) != missing_ && rhs.rows_.at(jv).at(jj) != missing_)
-        rows_.at(jv).at(jj) -= rhs.rows_.at(jv).at(jj);
-      else
-        rows_.at(jv).at(jj) = missing_;
-    }
-  }
-  oops::Log::trace() << "ObsDataVector::operator-= done" << std::endl;
-  return *this;
-}
-// -----------------------------------------------------------------------------
-template <typename DATATYPE>
 void ObsDataVector<DATATYPE>::zero() {
   for (size_t jv = 0; jv < nvars_; ++jv) {
     for (size_t jj = 0; jj < nlocs_; ++jj) {
@@ -180,26 +158,6 @@ void ObsDataVector<DATATYPE>::mask(const ObsDataVector<int> & flags) {
       if (flags[jv][jj] > 0) rows_.at(jv).at(jj) = missing_;
     }
   }
-}
-// -----------------------------------------------------------------------------
-template <typename DATATYPE>
-double ObsDataVector<DATATYPE>::rms() const {
-  double zrms = 0.0;
-  int nobs = 0;
-  for (size_t jv = 0; jv < nvars_; ++jv) {
-    for (size_t jj = 0; jj < nlocs_; ++jj) {
-      if (rows_.at(jv).at(jj) != missing_) {
-        zrms += rows_.at(jv).at(jj) * rows_.at(jv).at(jj);
-        ++nobs;
-      }
-    }
-  }
-  if (obsdb_.isDistributed()) {
-    obsdb_.comm().allReduceInPlace(zrms, eckit::mpi::sum());
-    obsdb_.comm().allReduceInPlace(nobs, eckit::mpi::sum());
-  }
-  if (nobs > 0) zrms = sqrt(zrms / static_cast<double>(nobs));
-  return zrms;
 }
 // -----------------------------------------------------------------------------
 template <typename DATATYPE>
