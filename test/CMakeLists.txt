@@ -43,6 +43,7 @@ if (DEFINED ENV{LOCAL_PATH_TESTFILES})
 	set(LOCAL_PATH_TESTFILES "$ENV{LOCAL_PATH_TESTFILES}")
 endif()
 
+# If local path to testfiles is defined don't download
 if( NOT DEFINED LOCAL_PATH_TESTFILES )
   set(TESTFILE_DIR ${CMAKE_BINARY_DIR}/test_data/ioda CACHE PATH "data dir for test data")
   file(MAKE_DIRECTORY ${TESTFILE_DIR})
@@ -50,7 +51,15 @@ else()
   set(TESTFILE_DIR ${LOCAL_PATH_TESTFILES})
 endif()
 
-#check whether the URL exists or not 
+# Get the current git branch
+execute_process(
+    COMMAND git rev-parse --abbrev-ref HEAD
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    OUTPUT_VARIABLE GIT_BRANCH
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
+# Check whether the URL exists or not 
 ecbuild_check_multiurl(NAMES   ${ioda_test_data}
                        DIRHOST ${GIT_BRANCH}
                        RESULT  SPECIFIC_TEST_FILES)
@@ -64,7 +73,6 @@ else()
     set(DIRHOST "develop")
 endif()
 message(STATUS "Test data downloaded from: " ${ECBUILD_DOWNLOAD_BASE_URL}/${DIRHOST})
-
 
 
 ecbuild_get_test_multidata ( TARGET get_ioda_test_data
