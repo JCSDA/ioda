@@ -44,32 +44,40 @@ if (DEFINED ENV{LOCAL_PATH_TESTFILES})
 endif()
 
 if( NOT DEFINED LOCAL_PATH_TESTFILES )
+  set(TESTFILE_DIR ${CMAKE_BINARY_DIR}/test_data/ioda CACHE PATH "data dir for test data")
+  file(MAKE_DIRECTORY ${TESTFILE_DIR})
+else()
+  set(TESTFILE_DIR ${LOCAL_PATH_TESTFILES})
+endif()
 
-  # Get the current working branch
-  execute_process(
-    COMMAND git rev-parse --abbrev-ref HEAD
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    OUTPUT_VARIABLE GIT_BRANCH
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
+#check whether the URL exists or not 
+ecbuild_check_multiurl(NAMES   ${ioda_test_data}
+                       DIRHOST ${GIT_BRANCH}
+                       RESULT  SPECIFIC_TEST_FILES)
 
-  ecbuild_get_test_multidata ( TARGET get_ioda_test_data
+# Set distant directory
+if(${SPECIFIC_TEST_FILES} MATCHES 0)
+    # Download and extract new test files (distant directory = git branch)
+    set(DIRHOST ${GIT_BRANCH})
+else()
+    # Download and extract develop test files (distant directory = develop)
+    set(DIRHOST "develop")
+endif()
+message(STATUS "Test data downloaded from: " ${ECBUILD_DOWNLOAD_BASE_URL}/${DIRHOST})
+
+
+
+ecbuild_get_test_multidata ( TARGET get_ioda_test_data
                              NAMES ${ioda_test_data}
-			     DIRNAME ${GIT_BRANCH}
+			     DIRHOST ${DIRHOST}
+			     DIRLOCAL ${TESTFILE_DIR}
 			     EXTRACT
                              )
 
-  execute_process( COMMAND ${CMAKE_COMMAND} -E create_symlink
-	         ${PROJECT_SOURCE_DIR}/test_data_download
+execute_process( COMMAND ${CMAKE_COMMAND} -E create_symlink
+                 ${TESTFILE_DIR}
                  ${CMAKE_CURRENT_BINARY_DIR}/Data 
 		 )
-else()
-   execute_process( COMMAND ${CMAKE_COMMAND} -E create_symlink
-	         ${LOCAL_PATH_TESTFILES}
-                 ${CMAKE_CURRENT_BINARY_DIR}/Data 
-		 )
- 
-endif()
 #####################################################################
 # Add executables frequently used in tests
 
