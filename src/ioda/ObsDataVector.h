@@ -49,7 +49,7 @@ class ObsDataVector: public util::Printable,
   ObsDataVector(const ObsDataVector &);
   ~ObsDataVector();
 
-  ObsDataVector & operator = (const ObsDataVector &);
+  ObsDataVector & operator= (const ObsDataVector &);
 
   void zero();
   void mask(const ObsDataVector<int> &);
