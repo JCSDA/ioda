@@ -61,23 +61,23 @@ execute_process(
 
 # Check whether the URL exists or not 
 ecbuild_check_multiurl(NAMES   ${ioda_test_data}
-                       DIRHOST ${GIT_BRANCH}
+                       DIRNAME ${GIT_BRANCH}
                        RESULT  SPECIFIC_TEST_FILES)
 
 # Set distant directory
 if(${SPECIFIC_TEST_FILES} MATCHES 0)
     # Download and extract new test files (distant directory = git branch)
-    set(DIRHOST ${GIT_BRANCH})
+    set(DIRNAME ${GIT_BRANCH})
 else()
     # Download and extract develop test files (distant directory = develop)
-    set(DIRHOST "develop")
+    set(DIRNAME "develop")
 endif()
-message(STATUS "Test data downloaded from: " ${ECBUILD_DOWNLOAD_BASE_URL}/${DIRHOST})
+message(STATUS "Test data downloaded from: " ${ECBUILD_DOWNLOAD_BASE_URL}/${DIRNAME})
 
 
 ecbuild_get_test_multidata ( TARGET get_ioda_test_data
                              NAMES ${ioda_test_data}
-			     DIRHOST ${DIRHOST}
+			     DIRNAME ${DIRNAME}
 			     DIRLOCAL ${TESTFILE_DIR}
 			     EXTRACT
                              )
