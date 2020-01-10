@@ -18,6 +18,7 @@
 #include "eckit/mpi/Comm.h"
 
 #include "ioda/ObsData.h"
+#include "oops/base/ObsSpaceBase.h"
 #include "oops/base/Variables.h"
 #include "oops/util/DateTime.h"
 
@@ -30,7 +31,7 @@ namespace ioda {
   class ObsVector;
 
 /// Observation Space View
-class ObsSpace : public util::Printable {
+class ObsSpace : public oops::ObsSpaceBase {
  public:
   static const std::string classname() {return "ioda::ObsSpace";}
   typedef std::map<std::size_t, std::vector<std::size_t>> RecIdxMap;
@@ -90,8 +91,6 @@ class ObsSpace : public util::Printable {
   const util::DateTime & windowEnd() const {return obsspace_->windowEnd();}
   /*! \details This method will return the associated MPI communicator */
   const eckit::mpi::Comm & comm() const {return obsspace_->comm();}
-  /*! \details This method will return the associated seed for random distribution */
-  int64_t getSeed() const {return obsspace_->getSeed();}
 
   void printJo(const ObsVector &, const ObsVector &);  // to be removed
 
