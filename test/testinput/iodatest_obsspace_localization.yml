@@ -76,15 +76,15 @@ Observations:
       ObsDataIn:
         obsfile: "Data/testinput_tier_1/smap_obs_2018041500_m.nc4"
       Localization:
-        distance: 0.3
+        distance: 10
         max_nobs: &max_nobs 1
         searchMethod: "brute_force"
-        lonRefPoint: 1.58
-        latRefPoint: -81.58
+        lonRefPoint: 279.58 
+        latRefPoint: -71.39
       TestData:
-        nlocs: 45
+        nlocs: 100
         nlocs_local: *max_nobs
-        nrecs: 45
+        nrecs: 100
         nvars: 4
         groups:
           - "MetaData"
@@ -93,8 +93,8 @@ Observations:
           - "latitude"
           - "longitude"
         norms:
-          - 558.238937361
-          - 137.162692422
+          - 694.93010245335154
+          - 2835.0339068827361
         tolerance:
           - 1.0e-11
 

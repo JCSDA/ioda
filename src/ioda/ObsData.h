@@ -21,7 +21,6 @@
 #include "eckit/geometry/Point3.h"
 #include "eckit/geometry/UnitSphere.h"
 #include "eckit/mpi/Comm.h"
-#include "oops/base/ObsSpaceBase.h"
 #include "oops/base/Variables.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
@@ -76,7 +75,7 @@ class ObsGroupingMap {
  *
  * \author Stephen Herbener, Xin Zhang (JCSDA)
  */
-class ObsData : public oops::ObsSpaceBase {
+class ObsData : public util::Printable {
  public:
   typedef std::map<std::size_t, std::vector<std::size_t>> RecIdxMap;
   typedef RecIdxMap::const_iterator RecIdxIter;

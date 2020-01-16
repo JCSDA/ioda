@@ -75,9 +75,9 @@ Observations:
         obsfile: "Data/testinput_tier_1/smap_obs_2018041500_m.nc4"
       Localization: *localization
       TestData:
-        nlocs: 45
+        nlocs: 100
         nlocs_local: 0
-        nrecs: 45
+        nrecs: 100
         nvars: 4
         groups:
           - "MetaData"
@@ -86,8 +86,8 @@ Observations:
           - "latitude"
           - "longitude"
         norms:
-          - 558.238937361
-          - 137.162692422
+          - 694.93010245335154
+          - 2835.0339068827361
         tolerance:
           - 1.0e-11
 
