@@ -250,20 +250,10 @@ unsigned int ObsVector::nobs() const {
 }
 // -----------------------------------------------------------------------------
 const double & ObsVector::toFortran() const {
-  if (values_.empty()) {
-    std::string ErrMsg =
-        "ObsVector::toFortran: Cannot pass empty vector to Fortran routines";
-    ABORT(ErrMsg);
-  }
   return values_[0];
 }
 // -----------------------------------------------------------------------------
 double & ObsVector::toFortran() {
-  if (values_.empty()) {
-    std::string ErrMsg =
-        "ObsVector::toFortran: Cannot pass empty vector to Fortran routines";
-    ABORT(ErrMsg);
-  }
   return values_[0];
 }
 // -----------------------------------------------------------------------------
