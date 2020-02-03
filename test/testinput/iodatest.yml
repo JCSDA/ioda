@@ -64,3 +64,8 @@ Observations:
       simulate:
       ObsDataIn:
         obsfile: Data/cryosat2-2018-04-15.nc
+  - ObsSpace:
+      name: SeaSurfaceSalinity
+      simulate:
+      ObsDataIn:
+        obsfile: Data/sss_obs_20180415_m.nc4
