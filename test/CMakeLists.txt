@@ -70,6 +70,7 @@ list( APPEND ioda_test_data
   marine/cryosat2-2018-04-15.nc
   marine/icec-2018-04-15.nc
   marine/sst_obs-2018-04-15.nc4
+  marine/sss_obs_20180415_m.nc4
 
   testfiles/fileio.nc4
   testfiles/sondes_obs_2018041500_m_twfilt.nc4
