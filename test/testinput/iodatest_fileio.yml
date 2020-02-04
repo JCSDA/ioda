@@ -3,7 +3,7 @@ window_begin: "2015-08-09T21:00:00Z"
 window_end: "2015-08-10T03:00:00Z"
 
 TestInput:
-  filename: "Data/fileio.nc4"
+  filename: "Data/testinput_tier_1/fileio.nc4"
   nlocs: 5
   nvars: 6
 

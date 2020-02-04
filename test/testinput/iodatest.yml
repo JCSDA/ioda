@@ -18,54 +18,54 @@ Observations:
       name: Aod
       simulate:
       ObsDataIn:
-        obsfile: Data/aod_obs_2018041500_m.nc4
+        obsfile: Data/testinput_tier_1/aod_obs_2018041500_m.nc4
 
   - ObsSpace:
       name: Radiance
       simulate:
       ObsDataIn:
-        obsfile: Data/amsua_n19_obs_2018041500_m.nc4
+        obsfile: Data/testinput_tier_1/amsua_n19_obs_2018041500_m.nc4
 
   - ObsSpace:
       name: Radiance
       simulate:
       ObsDataIn:
-        obsfile: Data/gmi_gpm_obs_2018041500_m.nc4
+        obsfile: Data/testinput_tier_1/gmi_gpm_obs_2018041500_m.nc4
 
   - ObsSpace:
       name: Radiosonde
       simulate:
       ObsDataIn:
-        obsfile: Data/sondes_obs_2018041500_m.nc4
+        obsfile: Data/testinput_tier_1/sondes_obs_2018041500_m.nc4
 
   # Marine obs
   - ObsSpace: 
       name: ADT
       simulate:
       ObsDataIn:
-        obsfile: Data/Jason-2-2018-04-15.nc
+        obsfile: Data/testinput_tier_1/Jason-2-2018-04-15.nc
   - ObsSpace:
       name: InsituTemperature
       simulate:
       ObsDataIn:
-        obsfile: Data/profile_2018-04-15.nc
+        obsfile: Data/testinput_tier_1/profile_2018-04-15.nc
   - ObsSpace:
       name: SeaSurfaceTemp
       simulate:
       ObsDataIn:
-        obsfile: Data/sst_obs-2018-04-15.nc4
+        obsfile: Data/testinput_tier_1/sst_obs-2018-04-15.nc4
   - ObsSpace:
       name: SeaIceFraction
       simulate:
       ObsDataIn:
-        obsfile: Data/icec-2018-04-15.nc
+        obsfile: Data/testinput_tier_1/icec-2018-04-15.nc
   - ObsSpace:
       name: SeaIceThickness
       simulate:
       ObsDataIn:
-        obsfile: Data/cryosat2-2018-04-15.nc
+        obsfile: Data/testinput_tier_1/cryosat2-2018-04-15.nc
   - ObsSpace:
       name: SeaSurfaceSalinity
       simulate:
       ObsDataIn:
-        obsfile: Data/sss_obs_20180415_m.nc4
+        obsfile: Data/testinput_tier_1/sss_obs_20180415_m.nc4
