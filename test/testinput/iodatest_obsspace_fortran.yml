@@ -8,7 +8,7 @@ Observations:
       simulate:
         variables: [air_temperature, eastward_wind, northward_wind]
       ObsDataIn:
-        obsfile: Data/sondes_obs_2018041500_m.nc4
+        obsfile: Data/testinput_tier_1/sondes_obs_2018041500_m.nc4
       TestData:
         nlocs: 974
         nvars: 5
@@ -19,7 +19,7 @@ Observations:
         variables: [brightness_temperature]
         channels: 1-10, 15
       ObsDataIn:
-        obsfile: "Data/amsua_n19_obs_2018041500_m.nc4"
+        obsfile: "Data/testinput_tier_1/amsua_n19_obs_2018041500_m.nc4"
       TestData:
         nlocs: 100
         nvars: 15
