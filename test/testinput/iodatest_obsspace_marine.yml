@@ -134,3 +134,26 @@ Observations:
           - 13972.379294774455
         tolerance:
           - 1.0e-14
+
+  - ObsSpace:
+      name: SeaSurfaceSalinity
+      simulate:
+      ObsDataIn:
+        obsfile: Data/testinput_tier_1/sss_obs_20180415_m.nc4
+      Localization: *localization
+      TestData:
+        nlocs: 100
+        nlocs_local: 0
+        nrecs: 100
+        nvars: 1
+        groups:
+          - "MetaData"
+          - "MetaData"
+        variables:
+          - "latitude"
+          - "longitude"
+        norms:
+          - 865.73306254079102
+          - 3328.6794406815029
+        tolerance:
+          - 1.0e-13
