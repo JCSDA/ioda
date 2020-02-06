@@ -59,6 +59,15 @@ class ObsGroupingMap {
   std::map<KeyType, std::size_t> obs_grouping_map_;
 };
 
+// Enum type for obs variable data types
+enum class ObsDtype {
+  None,
+  Float,
+  Integer,
+  String,
+  DateTime
+};
+
 /// Observation Data
 /*!
  * \brief Observation data class for IODA
@@ -101,6 +110,11 @@ class ObsData : public util::Printable {
   const std::vector<std::size_t> & index() const;
 
   bool has(const std::string &, const std::string &) const;
+  ObsDtype dtype(const std::string &, const std::string &) const;
+
+  std::string obs_group_var() const;
+  std::string obs_sort_var() const;
+  std::string obs_sort_order() const;
 
   void get_db(const std::string & group, const std::string & name,
               std::vector<int> & vdata) const;

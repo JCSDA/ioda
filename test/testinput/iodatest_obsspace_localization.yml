@@ -30,15 +30,24 @@ Observations:
         nrecs: 100
         nlocs_local: *max_nobs
         nvars: 1
-        groups:
-          - "MetaData"
-          - "MetaData"
+        obs_group_var: ""
+        obs_sort_var: ""
+        obs_sort_order: "ascending"
         variables:
-          - "latitude"
-          - "longitude"
-        norms:
-          - 353.11505923005967
-          - 1981.4147543887036
+          - name: "latitude"
+            group: "MetaData"
+            type: "float"
+            norm: 353.11505923005967
+
+          - name: "longitude"
+            group: "MetaData"
+            type: "float"
+            norm: 1981.4147543887036
+
+          - name: "surface_type"
+            group: "MetaData"
+            type: "integer"
+            norm: 10.099504938362077
         tolerance:
           - 1.0e-14
 
@@ -58,15 +67,19 @@ Observations:
         nlocs_local: *max_nobs
         nrecs: 100
         nvars: 15
-        groups:
-          - "MetaData"
-          - "MetaData"
+        obs_group_var: ""
+        obs_sort_var: ""
+        obs_sort_order: "ascending"
         variables:
-          - "latitude"
-          - "longitude"
-        norms:
-          - 432.95617402805823
-          - 1661.1529210392009
+          - name: "latitude"
+            group: "MetaData"
+            type: "float"
+            norm: 432.95617402805823
+
+          - name: "longitude"
+            group: "MetaData"
+            type: "float"
+            norm: 1661.1529210392009
         tolerance:
           - 1.0e-11
 
@@ -86,15 +99,19 @@ Observations:
         nlocs_local: *max_nobs
         nrecs: 100
         nvars: 4
-        groups:
-          - "MetaData"
-          - "MetaData"
+        obs_group_var: ""
+        obs_sort_var: ""
+        obs_sort_order: "ascending"
         variables:
-          - "latitude"
-          - "longitude"
-        norms:
-          - 694.93010245335154
-          - 2835.0339068827361
+          - name: "latitude"
+            group: "MetaData"
+            type: "float"
+            norm: 694.93010245335154
+
+          - name: "longitude"
+            group: "MetaData"
+            type: "float"
+            norm: 2835.0339068827361
         tolerance:
           - 1.0e-11
 
@@ -114,15 +131,19 @@ Observations:
         nlocs_local: *max_nobs
         nrecs: 12
         nvars: 13
-        groups:
-          - "MetaData"
-          - "MetaData"
+        obs_group_var: ""
+        obs_sort_var: ""
+        obs_sort_order: "ascending"
         variables:
-          - "latitude"
-          - "longitude"
-        norms:
-          - 211.00380053756118
-          - 172.29837728971688
+          - name: "latitude"
+            group: "MetaData"
+            type: "float"
+            norm: 211.00380053756118
+
+          - name: "longitude"
+            group: "MetaData"
+            type: "float"
+            norm: 172.29837728971688
         tolerance:
           - 1.0e-11
 
@@ -142,15 +163,19 @@ Observations:
         nlocs_local: *max_nobs
         nrecs: 974
         nvars: 5
-        groups:
-          - "MetaData"
-          - "MetaData"
+        obs_group_var: ""
+        obs_sort_var: ""
+        obs_sort_order: "ascending"
         variables:
-          - "latitude"
-          - "longitude"
-        norms:
-          - 1254.66336565038
-          - 6076.2659622388919
+          - name: "latitude"
+            group: "MetaData"
+            type: "float"
+            norm: 1254.66336565038
+
+          - name: "longitude"
+            group: "MetaData"
+            type: "float"
+            norm: 6076.2659622388919
         tolerance:
           - 1.0e-11
       ObsDataOut:
@@ -176,15 +201,19 @@ Observations:
         nlocs_local: *max_nobs
         nrecs: 36
         nvars: 5
-        groups:
-          - "MetaData"
-          - "MetaData"
+        obs_group_var: "station_id"
+        obs_sort_var: "air_pressure"
+        obs_sort_order: "descending"
         variables:
-          - "latitude"
-          - "longitude"
-        norms:
-          - 1254.66336565038
-          - 6076.2659622388919
+          - name: "latitude"
+            group: "MetaData"
+            type: "float"
+            norm: 1254.66336565038
+
+          - name: "longitude"
+            group: "MetaData"
+            type: "float"
+            norm: 6076.2659622388919
         tolerance:
           - 1.0e-11
       ObsDataOut:
@@ -208,15 +237,19 @@ Observations:
         nlocs_local: *max_nobs
         nrecs: 31
         nvars: 5
-        groups:
-          - "MetaData"
-          - "MetaData"
+        obs_group_var: "station_id"
+        obs_sort_var: ""
+        obs_sort_order: "ascending"
         variables:
-          - "latitude"
-          - "longitude"
-        norms:
-          - 1252.0139923322768
-          - 6065.3117664336605
+          - name: "latitude"
+            group: "MetaData"
+            type: "float"
+            norm: 1252.0139923322768
+
+          - name: "longitude"
+            group: "MetaData"
+            type: "float"
+            norm: 6065.3117664336605
         tolerance:
           - 1.0e-11
       ObsDataOut:

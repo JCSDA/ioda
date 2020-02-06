@@ -55,6 +55,11 @@ class ObsSpace : public oops::ObsSpaceBase {
   const std::vector<std::size_t> & index() const;
 
   bool has(const std::string &, const std::string &) const;
+  ObsDtype dtype(const std::string &, const std::string &) const;
+
+  std::string obs_group_var() const;
+  std::string obs_sort_var() const;
+  std::string obs_sort_order() const;
 
   void get_db(const std::string & group, const std::string & name,
               std::vector<int> & vdata) const;
@@ -62,6 +67,8 @@ class ObsSpace : public oops::ObsSpaceBase {
               std::vector<float> & vdata) const;
   void get_db(const std::string & group, const std::string & name,
               std::vector<double> & vdata) const;
+  void get_db(const std::string & group, const std::string & name,
+              std::vector<std::string> & vdata) const;
   void get_db(const std::string & group, const std::string & name,
               std::vector<util::DateTime> & vdata) const;
 
@@ -71,6 +78,8 @@ class ObsSpace : public oops::ObsSpaceBase {
               const std::vector<float> & vdata);
   void put_db(const std::string & group, const std::string & name,
               const std::vector<double> & vdata);
+  void put_db(const std::string & group, const std::string & name,
+              const std::vector<std::string> & vdata);
   void put_db(const std::string & group, const std::string & name,
               const std::vector<util::DateTime> & vdata);
 

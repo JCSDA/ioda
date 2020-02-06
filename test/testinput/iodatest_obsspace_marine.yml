@@ -31,15 +31,19 @@ Observations:
         nlocs_local: 1930
         nrecs: 160607
         nvars: 1
-        groups:
-          - "MetaData"
-          - "MetaData"
+        obs_group_var: ""
+        obs_sort_var: ""
+        obs_sort_order: "ascending"
         variables:
-          - "latitude"
-          - "longitude"
-        norms:
-          - 16692.109207962403
-          - 89252.131593209342
+          - name: "latitude"
+            group: "MetaData"
+            type: "float"
+            norm: 16692.109207962403
+
+          - name: "longitude"
+            group: "MetaData"
+            type: "float"
+            norm: 89252.131593209342
         tolerance:
           - 1.0e-13
 
@@ -54,15 +58,19 @@ Observations:
         nlocs_local: 0
         nrecs: 918
         nvars: 1
-        groups:
-          - "MetaData"
-          - "MetaData"
+        obs_group_var: ""
+        obs_sort_var: ""
+        obs_sort_order: "ascending"
         variables:
-          - "latitude"
-          - "longitude"
-        norms:
-          - 732.46544677303257
-          - 3530.8881463212083
+          - name: "latitude"
+            group: "MetaData"
+            type: "float"
+            norm: 732.46544677303257
+
+          - name: "longitude"
+            group: "MetaData"
+            type: "float"
+            norm: 3530.8881463212083
         tolerance:
           - 1.0e-14
 
@@ -77,15 +85,19 @@ Observations:
         nlocs_local: 0
         nrecs: 200
         nvars: 1
-        groups:
-          - "MetaData"
-          - "MetaData"
+        obs_group_var: ""
+        obs_sort_var: ""
+        obs_sort_order: "ascending"
         variables:
-          - "latitude"
-          - "longitude"
-        norms:
-          - 943.46741129348698
-          - 1206.468598455715
+          - name: "latitude"
+            group: "MetaData"
+            type: "float"
+            norm: 943.46741129348698
+
+          - name: "longitude"
+            group: "MetaData"
+            type: "float"
+            norm: 1206.468598455715
         tolerance:
           - 1.0e-13
 
@@ -100,15 +112,19 @@ Observations:
         nlocs_local: 41757
         nrecs: 71558
         nvars: 1
-        groups:
-          - "MetaData"
-          - "MetaData"
+        obs_group_var: ""
+        obs_sort_var: ""
+        obs_sort_order: "ascending"
         variables:
-          - "latitude"
-          - "longitude"
-        norms:
-          - 19778.589152003486
-          - 57917.351481173151
+          - name: "latitude"
+            group: "MetaData"
+            type: "float"
+            norm: 19778.589152003486
+
+          - name: "longitude"
+            group: "MetaData"
+            type: "float"
+            norm: 57917.351481173151
         tolerance:
           - 1.0e-14
 
@@ -123,15 +139,19 @@ Observations:
         nlocs_local: 8065
         nrecs: 8065
         nvars: 2
-        groups:
-          - "MetaData"
-          - "MetaData"
+        obs_group_var: ""
+        obs_sort_var: ""
+        obs_sort_order: "ascending"
         variables:
-          - "latitude"
-          - "longitude"
-        norms:
-          - 7581.3030036861646
-          - 13972.379294774455
+          - name: "latitude"
+            group: "MetaData"
+            type: "float"
+            norm: 7581.3030036861646
+
+          - name: "longitude"
+            group: "MetaData"
+            type: "float"
+            norm: 13972.379294774455
         tolerance:
           - 1.0e-14
 
@@ -146,14 +166,18 @@ Observations:
         nlocs_local: 0
         nrecs: 100
         nvars: 1
-        groups:
-          - "MetaData"
-          - "MetaData"
+        obs_group_var: ""
+        obs_sort_var: ""
+        obs_sort_order: "ascending"
         variables:
-          - "latitude"
-          - "longitude"
-        norms:
-          - 865.73306254079102
-          - 3328.6794406815029
+          - name: "latitude"
+            group: "MetaData"
+            type: "float"
+            norm: 865.73306254079102
+
+          - name: "longitude"
+            group: "MetaData"
+            type: "float"
+            norm: 3328.6794406815029
         tolerance:
           - 1.0e-13
