@@ -73,7 +73,7 @@ void testConstructor() {
   obsconf.get("ObsTypes", conf);
 
   for (std::size_t jj = 0; jj < Test_::size(); ++jj) {
-    // Get the numbers of locations (nlocs) from the obspace object
+    // Get the numbers of locations (nlocs) from the ObsSpace object
     std::size_t Nlocs = Test_::obspace(jj).nlocs();
     std::size_t Nrecs = Test_::obspace(jj).nrecs();
     std::size_t Nvars = Test_::obspace(jj).nvars();
@@ -85,6 +85,16 @@ void testConstructor() {
     std::size_t ExpectedNrecs = conf[jj].getUnsigned("ObsSpace.TestData.nrecs");
     std::size_t ExpectedNvars = conf[jj].getUnsigned("ObsSpace.TestData.nvars");
 
+    // Get the obs grouping/sorting parameters from the ObsSpace object
+    std::string ObsGroupVar = Test_::obspace(jj).obs_group_var();
+    std::string ObsSortVar = Test_::obspace(jj).obs_sort_var();
+    std::string ObsSortOrder = Test_::obspace(jj).obs_sort_order();
+
+    // Get the expected obs grouping/sorting parameters from the configuration
+    std::string ExpectedObsGroupVar = conf[jj].getString("ObsSpace.TestData.obs_group_var");
+    std::string ExpectedObsSortVar = conf[jj].getString("ObsSpace.TestData.obs_sort_var");
+    std::string ExpectedObsSortOrder = conf[jj].getString("ObsSpace.TestData.obs_sort_order");
+
     oops::Log::debug() << "Nlocs, ExpectedNlocs: " << Nlocs << ", "
                        << ExpectedNlocs << std::endl;
     oops::Log::debug() << "Nrecs, ExpectedNrecs: " << Nrecs << ", "
@@ -92,9 +102,20 @@ void testConstructor() {
     oops::Log::debug() << "Nvars, ExpectedNvars: " << Nvars << ", "
                        << ExpectedNvars << std::endl;
 
+    oops::Log::debug() << "ObsGroupVar, ExpectedObsGroupVar: " << ObsGroupVar << ", "
+                       << ExpectedObsGroupVar << std::endl;
+    oops::Log::debug() << "ObsSortVar, ExpectedObsSortVar: " << ObsSortVar << ", "
+                       << ExpectedObsSortVar << std::endl;
+    oops::Log::debug() << "ObsSortOrder, ExpectedObsSortOrder: " << ObsSortOrder << ", "
+                       << ExpectedObsSortOrder << std::endl;
+
     EXPECT(Nlocs == ExpectedNlocs);
     EXPECT(Nrecs == ExpectedNrecs);
     EXPECT(Nvars == ExpectedNvars);
+
+    EXPECT(ObsGroupVar == ExpectedObsGroupVar);
+    EXPECT(ObsSortVar == ExpectedObsSortVar);
+    EXPECT(ObsSortOrder == ExpectedObsSortOrder);
   }
 }
 
@@ -136,34 +157,72 @@ void testGetDb() {
   for (std::size_t jj = 0; jj < Test_::size(); ++jj) {
     // Set up a pointer to the ObsSpace object for convenience
     ioda::ObsSpace * Odb = &(Test_::obspace(jj));
-    const eckit::LocalConfiguration dataconf(conf[jj], "ObsSpace.TestData");
-
-    // Read in the variable names and expected norm values from the configuration
-    std::vector<std::string> GroupNames = dataconf.getStringVector("groups");
-    std::vector<std::string> VarNames = dataconf.getStringVector("variables");
-    std::vector<double> ExpectedVnorms = dataconf.getDoubleVector("norms");
-    double Tol = dataconf.getDouble("tolerance");
-
     std::size_t Nlocs = Odb->nlocs();
-    std::vector<double> TestVec(Nlocs);
-    for (std::size_t i = 0; i < VarNames.size(); ++i) {
-      // Read in the table, calculate the norm and compare with the expected norm.
-      std::string Gname = GroupNames[i];
-      if (Gname == "NoGroup") {
-        Gname = "";
+
+    // Get the variables section from the test data and perform checks accordingly
+    std::vector<eckit::LocalConfiguration> varconf =
+                            conf[jj].getSubConfigurations("ObsSpace.TestData.variables");
+    double Tol = conf[jj].getDouble("ObsSpace.TestData.tolerance");
+    for (std::size_t i = 0; i < varconf.size(); ++i) {
+      // Read in the variable group, name and expected norm values from the configuration
+      std::string VarName = varconf[i].getString("name");
+      std::string GroupName = varconf[i].getString("group");
+      std::string VarType = varconf[i].getString("type");
+
+      // Do different checks according to type
+      if (VarType == "float") {
+        // Check the type from ObsSpace
+        ObsDtype VarDataType = Odb->dtype(GroupName, VarName);
+        EXPECT(VarDataType == ObsDtype::Float);
+
+        // Check auto-conversion to double from ObsSpace float
+        // Check the norm
+        std::vector<double> TestVec(Nlocs);
+        Odb->get_db(GroupName, VarName, TestVec);
+
+        // Calculate the norm of the vector
+        double ExpectedVnorm = varconf[i].getDouble("norm");
+        double Vnorm = 0.0;
+        for (std::size_t j = 0; j < Nlocs; ++j) {
+          Vnorm += pow(TestVec[j], 2.0);
+        }
+        Test_::obspace(jj).comm().allReduceInPlace(Vnorm, eckit::mpi::sum());
+        Vnorm = sqrt(Vnorm);
+
+        EXPECT(oops::is_close(Vnorm, ExpectedVnorm, Tol));
+      } else if (VarType == "integer") {
+        // Check the type from ObsSpace
+        ObsDtype VarDataType = Odb->dtype(GroupName, VarName);
+        EXPECT(VarDataType == ObsDtype::Integer);
+
+        // Check the norm
+        std::vector<int> TestVec(Nlocs);
+        Odb->get_db(GroupName, VarName, TestVec);
+
+        // Calculate the norm of the vector
+        double ExpectedVnorm = varconf[i].getDouble("norm");
+        double Vnorm = 0.0;
+        for (std::size_t j = 0; j < Nlocs; ++j) {
+          Vnorm += pow(static_cast<double>(TestVec[j]), 2.0);
+        }
+        Test_::obspace(jj).comm().allReduceInPlace(Vnorm, eckit::mpi::sum());
+        Vnorm = sqrt(Vnorm);
+
+        EXPECT(oops::is_close(Vnorm, ExpectedVnorm, Tol));
+      } else if (VarType == "string") {
+        // Check the type from ObsSpace
+        ObsDtype VarDataType = Odb->dtype(GroupName, VarName);
+        EXPECT(VarDataType == ObsDtype::String);
+
+        // Check the first and last values of the vector
+        std::string ExpectedFirstValue = varconf[i].getString("first_value");
+        std::string ExpectedLastValue = varconf[i].getString("last_value");
+        std::vector<std::string> TestVec(Nlocs);
+        Odb->get_db(GroupName, VarName, TestVec);
+
+        EXPECT(TestVec[0] == ExpectedFirstValue);
+        EXPECT(TestVec[Nlocs-1] == ExpectedLastValue);
       }
-
-      double Vnorm = 0.0;
-      Odb->get_db(Gname, VarNames[i], TestVec);
-
-      // Calculate the norm of the vector
-      for (std::size_t j = 0; j < Nlocs; ++j) {
-        Vnorm += pow(TestVec[j], 2.0);
-      }
-      Test_::obspace(jj).comm().allReduceInPlace(Vnorm, eckit::mpi::sum());
-      Vnorm = sqrt(Vnorm);
-
-      EXPECT(oops::is_close(Vnorm, ExpectedVnorms[i], Tol));
     }
   }
 }

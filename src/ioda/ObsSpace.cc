@@ -194,6 +194,21 @@ void ObsSpace::get_db(const std::string & group, const std::string & name,
 // -----------------------------------------------------------------------------
 
 void ObsSpace::get_db(const std::string & group, const std::string & name,
+                      std::vector<std::string> & vdata) const {
+  if ( isLocal_ ) {
+    std::vector<std::string> vdataTmp(obsspace_->nlocs());
+    obsspace_->get_db(group, name, vdataTmp);
+    for (unsigned int ii = 0; ii < localobs_.size(); ++ii) {
+      vdata[ii] = vdataTmp[localobs_[ii]];
+    }
+  } else {
+    obsspace_->get_db(group, name, vdata);
+  }
+}
+
+// -----------------------------------------------------------------------------
+
+void ObsSpace::get_db(const std::string & group, const std::string & name,
                       std::vector<util::DateTime> & vdata) const {
   if ( isLocal_ ) {
     std::vector<util::DateTime> vdataTmp(obsspace_->nlocs());
@@ -230,6 +245,13 @@ void ObsSpace::put_db(const std::string & group, const std::string & name,
 // -----------------------------------------------------------------------------
 
 void ObsSpace::put_db(const std::string & group, const std::string & name,
+                      const std::vector<std::string> & vdata) {
+  obsspace_->put_db(group, name, vdata);
+}
+
+// -----------------------------------------------------------------------------
+
+void ObsSpace::put_db(const std::string & group, const std::string & name,
                       const std::vector<util::DateTime> & vdata) {
   obsspace_->put_db(group, name, vdata);
 }
@@ -244,6 +266,44 @@ void ObsSpace::put_db(const std::string & group, const std::string & name,
 bool ObsSpace::has(const std::string & group, const std::string & name) const {
   return obsspace_->has(group, name);
 }
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns the data type of the variable stored in the obs
+ *          container.
+ */
+
+ObsDtype ObsSpace::dtype(const std::string & group, const std::string & name) const {
+  return obsspace_->dtype(group, name);
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns the setting of the YAML configuration
+ *          parameter: ObsDataIn.obsgrouping.group_variable
+ */
+std::string ObsSpace::obs_group_var() const {
+  return obsspace_->obs_group_var();
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns the setting of the YAML configuration
+ *          parameter: ObsDataIn.obsgrouping.sort_variable
+ */
+std::string ObsSpace::obs_sort_var() const {
+  return obsspace_->obs_sort_var();
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns the setting of the YAML configuration
+ *          parameter: ObsDataIn.obsgrouping.sort_order
+ */
+std::string ObsSpace::obs_sort_order() const {
+  return obsspace_->obs_sort_order();
+}
+
 
 // -----------------------------------------------------------------------------
 /*!

@@ -298,6 +298,54 @@ bool ObsData::has(const std::string & group, const std::string & name) const {
 
 // -----------------------------------------------------------------------------
 /*!
+ * \details This method returns the data type of the variable stored in the obs
+ *          container.
+ */
+
+ObsDtype ObsData::dtype(const std::string & group, const std::string & name) const {
+  ObsDtype VarType = ObsDtype::None;
+  if (int_database_.has(group, name)) {
+    VarType = ObsDtype::Integer;
+  } else if (float_database_.has(group, name)) {
+    VarType = ObsDtype::Float;
+  } else if (string_database_.has(group, name)) {
+    VarType = ObsDtype::String;
+  } else if (datetime_database_.has(group, name)) {
+    VarType = ObsDtype::DateTime;
+  }
+
+  return VarType;
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns the setting of the YAML configuration
+ *          parameter: ObsDataIn.obsgrouping.group_variable
+ */
+std::string ObsData::obs_group_var() const {
+  return obs_group_variable_;
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns the setting of the YAML configuration
+ *          parameter: ObsDataIn.obsgrouping.sort_variable
+ */
+std::string ObsData::obs_sort_var() const {
+  return obs_sort_variable_;
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns the setting of the YAML configuration
+ *          parameter: ObsDataIn.obsgrouping.sort_order
+ */
+std::string ObsData::obs_sort_order() const {
+  return obs_sort_order_;
+}
+
+// -----------------------------------------------------------------------------
+/*!
  * \details This method returns the number of unique locations in the input
  *          obs file. Note that nlocs from the obs container may be smaller
  *          than nlocs from the input obs file due to the removal of obs outside
