@@ -8,6 +8,7 @@
 
 #include <fckit/fctest.h>
 
+!> \cond
 TESTSUITE(obsspace_fortran)
 
 TESTSUITE_INIT
@@ -93,3 +94,4 @@ TEST(test_obsspace_construct)
 END_TEST
 
 END_TESTSUITE
+!> \endcond
