@@ -70,6 +70,11 @@ phases:
 
       # ioda
       - git clone -b $CODEBUILD_GIT_BRANCH https://$GIT_USER:$GIT_PASS@github.com/jcsda/ioda ioda-bundle/ioda
+      # atlas
+      - git clone https://$GIT_USER:$GIT_PASS@github.com/jcsda/atlas ioda-bundle/atlas
+      - cd ioda-bundle/atlas
+      - git checkout $CODEBUILD_GIT_BRANCH || echo "No branch named $CODEBUILD_GIT_BRANCH in atlas repo"
+      - cd $CODEBUILD_SRC_DIR
       # saber
       - git clone https://$GIT_USER:$GIT_PASS@github.com/jcsda/saber ioda-bundle/saber
       - cd ioda-bundle/saber
