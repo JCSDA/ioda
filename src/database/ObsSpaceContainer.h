@@ -268,10 +268,6 @@ template <typename ContType>
 void ObsSpaceContainer<ContType>::StoreToDb(const std::string & GroupName,
           const std::string & VarName, const std::vector<std::size_t> & VarShape,
           const std::vector<ContType> & VarData, bool Append) {
-  // Calculate the total number of elements
-  std::size_t VarSize =
-    std::accumulate(VarShape.begin(), VarShape.end(), 1, std::multiplies<std::size_t>());
-
   // Search for VarRecord with GroupName, VarName combination
   DbIter Var = DataContainer.find(boost::make_tuple(GroupName, VarName));
   if (Var != DataContainer.end()) {

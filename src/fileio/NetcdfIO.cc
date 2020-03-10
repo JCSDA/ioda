@@ -162,7 +162,6 @@ NetcdfIO::NetcdfIO(const std::string & FileName, const std::string & FileMode,
         MaxVarSize = std::max(MaxVarSize, VarShape[0]);
 
         // Record the variable info in the grp_var_info_ container.
-        int OffsetTimeVarId;
         std::string VarName;
         std::string GroupName;
         ExtractGrpVarName(NcVname, GroupName, VarName);
@@ -674,7 +673,6 @@ void NetcdfIO::ReadFrame(IodaIO::FrameIter & iframe) {
 void NetcdfIO::WriteFrame(IodaIO::FrameIter & iframe) {
   // Grab the specs for the current frame
   std::size_t FrameStart = frame_start(iframe);
-  std::size_t FrameSize = frame_size(iframe);
 
   std::vector<std::size_t> Starts(1, FrameStart);
   std::vector<std::size_t> Counts;
@@ -748,7 +746,7 @@ void NetcdfIO::GrpVarInsert(const std::string & GroupName, const std::string & V
   } else {
     // Write mode, create the netcdf variable and insert data into
     // group, variable info container
-    nc_type NcVarType;
+    nc_type NcVarType = NC_NAT;
     if (VarType == "int") {
       NcVarType = NC_INT;
     } else if (VarType == "float") {

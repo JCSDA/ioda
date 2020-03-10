@@ -178,7 +178,6 @@ void testSave() {
 // -----------------------------------------------------------------------------
 
 void testDistributedMath() {
-  typedef ObsVecTestFixture Test_;
   typedef ioda::ObsVector  ObsVector_;
   typedef ioda::ObsSpace ObsSpace_;
   typedef std::vector< std::shared_ptr< ObsVector_> > ObsVectors_;
