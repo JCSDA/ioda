@@ -45,7 +45,7 @@ void testConstructor() {
   std::string TestDistType;
   std::string DistName;
   std::unique_ptr<ioda::Distribution> TestDist;
-  DistributionFactory * DistFactory;
+  DistributionFactory * DistFactory = nullptr;
 
   // Walk through the different distribution types and try constructing.
   conf.get("DistributionTypes", dist_types);
@@ -71,7 +71,7 @@ void testDistribution() {
   std::string TestDistType;
   std::string DistName;
   std::unique_ptr<ioda::Distribution> TestDist;
-  DistributionFactory * DistFactory;
+  DistributionFactory * DistFactory = nullptr;
 
   std::size_t MyRank = MpiComm.rank();
 

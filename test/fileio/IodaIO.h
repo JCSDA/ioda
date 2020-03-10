@@ -181,9 +181,6 @@ void testReadVar() {
                                               IODAIO_DEFAULT_FRAME_SIZE);
   TestIO.reset(ioda::IodaIOfactory::Create(FileName, "r", MaxFrameSize));
 
-  // Get the number of locations
-  std::size_t Nlocs = conf.getUnsigned("TestInput.nlocs");
-
   // Read in the set of test variables from the configuration into a map.
   // Create another map with the same variables to hold the data from the file.
   // Then compare the contents of the maps to complete the test.
@@ -217,7 +214,6 @@ void testReadVar() {
   for (IodaIO::FrameIter iframe = TestIO->frame_begin();
                          iframe != TestIO->frame_end(); ++iframe) {
     std::size_t FrameStart = TestIO->frame_start(iframe);
-    std::size_t FrameSize = TestIO->frame_size(iframe);
 
     // Fill in the current frame from the file
     TestIO->frame_read(iframe);
@@ -439,7 +435,6 @@ void testWriteVar() {
   for (IodaIO::FrameIter iframe = TestIO->frame_begin();
                          iframe != TestIO->frame_end(); ++iframe) {
     std::size_t FrameStart = TestIO->frame_start(iframe);
-    std::size_t FrameSize = TestIO->frame_size(iframe);
 
     // Fill in the current frame from the file
     TestIO->frame_read(iframe);
