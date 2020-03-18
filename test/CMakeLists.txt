@@ -105,114 +105,114 @@ endif()
 execute_process( COMMAND ${CMAKE_COMMAND} -E create_symlink
                  ${TESTFILE_DIR_IODA}
                  ${CMAKE_CURRENT_BINARY_DIR}/Data)
-#####################################################################
-# Add executables frequently used in tests
 
-ecbuild_add_executable( TARGET  test_ObsSpace.x
-                        SOURCES mains/TestObsSpace.cc
-                        LIBS    ioda
-                       )
-
-ecbuild_add_executable( TARGET  test_IodaObsSpace.x
-                        SOURCES mains/TestIodaObsSpace.cc
-                        LIBS    ioda
-                       )
-
-ecbuild_add_executable( TARGET  test_LocalObsSpace.x
-                        SOURCES mains/TestLocalObsSpace.cc
-                        LIBS    ioda
-                       )
-
-ecbuild_add_executable( TARGET  test_IodaIO.x
-                        SOURCES mains/TestIodaIO.cc
-                        LIBS    ioda
-                       )
-
-ecbuild_add_executable( TARGET  test_IodaDistribution.x
-                        SOURCES mains/TestDistribution.cc
-                        LIBS    ioda
-                       )
-
-ecbuild_add_executable( TARGET  test_ObsSpaceContainer.x
-                        SOURCES mains/TestObsSpaceContainer.cc
-                        LIBS    ioda
-                       )
-
-ecbuild_add_executable( TARGET  test_ObsVector.x
-                        SOURCES mains/TestObsVector.cc
-                        LIBS    ioda
-                       )
-
-ecbuild_add_executable( TARGET  test_IodaObsVector.x
-                        SOURCES mains/TestIodaObsVector.cc
-                        LIBS    ioda
-                       )
+# For the following test specifications:
+#   All of the test data is downloaded by the above test "get_ioda_test_data".
+#   Therefore, make "get_ioda_test_data" a dependency (TEST_DEPENDS) for all
+#   of the following tests.
+#
+#   The first test in each group specifies a target to be compiled from source
+#   code. Subsequent tests (in each group) use that compiled target for their tests.
+#   Therefore, the first test in each group uses ecbuild(TARGET SOURCES ...)
+#   specification, and the subsequent tests use ecbuild(TARGET COMMAND ...)"
+#   specification.
 
 #####################################################################
+# IodaIO tests
+#####################################################################
+ecbuild_add_test( TARGET  test_ioda_fileio
+                  SOURCES mains/TestIodaIO.cc
+                  ARGS    "testinput/iodatest_fileio.yml"
+                  LIBS    ioda
+                  TEST_DEPENDS get_ioda_test_data )
 
-ecbuild_add_test( TARGET  test_ioda_oops_obsvector
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/test_ObsVector.x
-                  ARGS    "testinput/iodatest_obsvector.yml"
-                  DEPENDS test_ObsVector.x )
-
-ecbuild_add_test( TARGET  test_ioda_obsvector
-                  MPI     4
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/test_IodaObsVector.x
-                  ARGS    "testinput/iodatest_obsvector.yml"
-                  DEPENDS test_IodaObsVector.x )
-
+#####################################################################
+# Distribution tests
+#####################################################################
 ecbuild_add_test( TARGET  test_ioda_distribution
                   MPI     4
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/test_IodaDistribution.x
+                  SOURCES mains/TestDistribution.cc
                   ARGS    "testinput/iodatest_distribution.yml"
-                  DEPENDS test_IodaDistribution.x )
+                  LIBS    ioda
+                  TEST_DEPENDS get_ioda_test_data )
 
+#####################################################################
+# ObsSpaceContainer tests
+#####################################################################
 ecbuild_add_test( TARGET  test_ioda_obsspacecontainer
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/test_ObsSpaceContainer.x
+                  SOURCES mains/TestObsSpaceContainer.cc
                   ARGS    "testinput/iodatest_obsspace_container.yml"
-                  DEPENDS test_ObsSpaceContainer.x )
+                  LIBS    ioda
+                  TEST_DEPENDS get_ioda_test_data )
 
+#####################################################################
+# ObsSpace tests
+#####################################################################
+
+# OOPS ObsSpace interface
 ecbuild_add_test( TARGET  test_ioda_oops_obsspace
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/test_ObsSpace.x
+                  SOURCES mains/TestObsSpace.cc
                   ARGS    "testinput/iodatest.yml"
-                  DEPENDS test_ObsSpace.x )
+                  LIBS    ioda
+                  TEST_DEPENDS get_ioda_test_data )
 
-ecbuild_add_test( TARGET  test_ioda_localobsspace
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/test_LocalObsSpace.x
-                  ARGS    "testinput/iodatest_localobsspace.yml"
-                  DEPENDS test_LocalObsSpace.x )
-
+# IODA ObsSpace class
 ecbuild_add_test( TARGET  test_ioda_obsspace
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/test_IodaObsSpace.x
+                  SOURCES mains/TestIodaObsSpace.cc
                   ARGS    "testinput/iodatest_obsspace.yml"
-                  DEPENDS test_IodaObsSpace.x )
+                  LIBS    ioda
+                  TEST_DEPENDS get_ioda_test_data )
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_mpi
                   MPI     2
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/test_IodaObsSpace.x
+                  COMMAND test_ioda_obsspace
                   ARGS    "testinput/iodatest_obsspace.yml"
-                  DEPENDS test_IodaObsSpace.x )
+                  TEST_DEPENDS get_ioda_test_data )
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_marine
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/test_IodaObsSpace.x
+                  COMMAND test_ioda_obsspace
                   ARGS    "testinput/iodatest_obsspace_marine.yml"
-                  DEPENDS test_IodaObsSpace.x )
-
-ecbuild_add_test( TARGET  test_ioda_fileio
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/test_IodaIO.x
-                  ARGS    "testinput/iodatest_fileio.yml"
-                  DEPENDS test_IodaIO.x )
+                  TEST_DEPENDS get_ioda_test_data )
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_localization
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/test_IodaObsSpace.x
+                  COMMAND test_ioda_obsspace
                   ARGS    "testinput/iodatest_obsspace_localization.yml"
-                  DEPENDS test_IodaObsSpace.x )
+                  TEST_DEPENDS get_ioda_test_data )
 
+# IODA ObsSpace class - Fortran interface test
 if( HAVE_FCTEST )
 add_fctest( TARGET  test_ioda_obsspace_fortran
             SOURCES ioda/obsspace.F90
             ARGS    --config testinput/iodatest_obsspace_fortran.yml
             CONDITION HAVE_FCTEST
             LINKER_LANGUAGE Fortran
-            LIBS    ioda )
+            LIBS    ioda
+            TEST_DEPENDS get_ioda_test_data )
 endif()
+
+# OOPS LocalObsSpace class
+ecbuild_add_test( TARGET  test_ioda_localobsspace
+                  SOURCES mains/TestLocalObsSpace.cc
+                  ARGS    "testinput/iodatest_localobsspace.yml"
+                  LIBS    ioda
+                  TEST_DEPENDS get_ioda_test_data )
+
+#####################################################################
+# ObsVector tests
+#####################################################################
+
+# OOPS ObsVector interface
+ecbuild_add_test( TARGET  test_ioda_oops_obsvector
+                  SOURCES mains/TestObsVector.cc
+                  ARGS    "testinput/iodatest_obsvector.yml"
+                  LIBS    ioda
+                  TEST_DEPENDS get_ioda_test_data )
+
+# IODA ObsVector class
+ecbuild_add_test( TARGET  test_ioda_obsvector
+                  MPI     4
+                  SOURCES mains/TestIodaObsVector.cc
+                  ARGS    "testinput/iodatest_obsvector.yml"
+                  LIBS    ioda
+                  TEST_DEPENDS get_ioda_test_data )
+
