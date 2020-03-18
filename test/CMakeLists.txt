@@ -56,6 +56,7 @@ if( NOT DEFINED LOCAL_PATH_TESTFILES_IODA )
   )
 
   # Check whether the URL exists or not 
+  set(ECBUILD_DOWNLOAD_BASE_URL ${IODA_DOWNLOAD_BASE_URL}/ioda)
   ecbuild_check_multiurl(NAMES   ${ioda_test_data}
                          DIRHOST ${GIT_BRANCH}
                          RESULT  SPECIFIC_TEST_FILES)
@@ -70,7 +71,7 @@ if( NOT DEFINED LOCAL_PATH_TESTFILES_IODA )
     set(DIRNAME "develop")
     message(STATUS "GIT_BRANCH not found, download develop")
   endif()
-  message(STATUS "Test data downloaded from: " ${IODA_DOWNLOAD_BASE_URL}/${DIRNAME})
+  message(STATUS "Test data downloaded from: ${IODA_DOWNLOAD_BASE_URL}/${DIRNAME}")
 
 
   set(TESTFILE_DIR_IODA ${CMAKE_BINARY_DIR}/test_data/ioda/${DIRNAME} CACHE PATH "data dir for test data")
@@ -99,7 +100,7 @@ if( NOT DEFINED LOCAL_PATH_TESTFILES_IODA )
                   ARGS      testoutput/download_test.log)
 else()
   set(TESTFILE_DIR_IODA ${LOCAL_PATH_TESTFILES_IODA})
-  message(STATUS "use LOCAL_PATH_TESTFILES_IODA : " ${LOCAL_PATH_TESTFILES_IODA})
+  message(STATUS "use LOCAL_PATH_TESTFILES_IODA : ${LOCAL_PATH_TESTFILES_IODA}")
 endif()
 
 execute_process( COMMAND ${CMAKE_COMMAND} -E create_symlink
