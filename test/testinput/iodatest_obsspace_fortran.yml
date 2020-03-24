@@ -10,7 +10,7 @@ Observations:
       ObsDataIn:
         obsfile: Data/testinput_tier_1/sondes_obs_2018041500_m.nc4
       TestData:
-        nlocs: 974
+        nlocs: 1073
         nvars: 5
         nvars_obsvars: 3
   - ObsSpace:
