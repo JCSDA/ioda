@@ -62,7 +62,7 @@ Observations:
       Localization: *localization
       TestData:
         nlocs: 100
-        nlocs_local: 10
+        nlocs_local: 11
         nrecs: 100
         nvars: 15
         obs_group_var: ""
@@ -72,12 +72,12 @@ Observations:
           - name: "latitude"
             group: "MetaData"
             type: "float"
-            norm: 432.95617402805823
+            norm: 428.79235155010923
 
           - name: "longitude"
             group: "MetaData"
             type: "float"
-            norm: 1661.1529210392009
+            norm: 1669.9360030520829
         tolerance:
           - 1.0e-11
 
@@ -143,9 +143,9 @@ Observations:
         max_frame_size: 200
       Localization: *localization
       TestData:
-        nlocs: 974
+        nlocs: 1073
         nlocs_local: 110
-        nrecs: 974
+        nrecs: 1073
         nvars: 5
         obs_group_var: ""
         obs_sort_var: ""
@@ -154,12 +154,12 @@ Observations:
           - name: "latitude"
             group: "MetaData"
             type: "float"
-            norm: 1254.66336565038
+            norm: 1269.1754018979573
 
           - name: "longitude"
             group: "MetaData"
             type: "float"
-            norm: 6076.2659622388919
+            norm: 6356.0173295120949
 
           - name: "station_id"
             group: "MetaData"
@@ -170,7 +170,7 @@ Observations:
           - name: "surface_pressure"
             group: "PreQC"
             type: "integer"
-            norm: 66675822462.585785
+            norm: 70015871163.333832
         tolerance:
           - 1.0e-11
       ObsDataOut:
@@ -290,9 +290,9 @@ Observations:
           sort_order: "descending"
       Localization: *localization
       TestData:
-        nlocs: 974
+        nlocs: 1073
         nlocs_local: 110
-        nrecs: 36
+        nrecs: 37
         nvars: 5
         obs_group_var: "station_id"
         obs_sort_var: "air_pressure"
@@ -301,12 +301,12 @@ Observations:
           - name: "latitude"
             group: "MetaData"
             type: "float"
-            norm: 1254.66336565038
+            norm: 1269.1754018979573
 
           - name: "longitude"
             group: "MetaData"
             type: "float"
-            norm: 6076.2659622388919
+            norm: 6356.0173295120949
         tolerance:
           - 1.0e-11
       ObsDataOut:
