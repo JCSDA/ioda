@@ -84,10 +84,17 @@ if( NOT DEFINED LOCAL_PATH_TESTFILES_IODA )
   set(IODA_BRANCH_NAME ${DIRNAME})
   set(IODA_TESTFILES_PATH ${CMAKE_BINARY_DIR}/test_data/ioda/${DIRNAME})
 
-  CONF_TARGETS_DEPS (ioda_data_downloader.py
-                  ${CMAKE_CURRENT_SOURCE_DIR}
-                  ${CMAKE_BINARY_DIR}/bin
-                  bin_ioda_test_download_scripts_deps )
+  # Create download script for get_ioda_test_data test 
+  set ( FILENAME ioda_data_downloader.py)
+  set ( SOURCE_FILE ${CMAKE_CURRENT_SOURCE_DIR}/${FILENAME} )
+  set ( DEST_FILE ${CMAKE_BINARY_DIR}/bin/${FILENAME} )
+  list( APPEND bin_ioda_test_download_scripts_deps ${DEST_FILE} )
+
+  if( EXISTS "${SOURCE_FILE}.in" )
+    configure_file( ${SOURCE_FILE}.in ${DEST_FILE} @ONLY )
+  else()
+    configure_file( ${SOURCE_FILE}    ${DEST_FILE} @ONLY )
+  endif()
 
   add_custom_target( bin_ioda_test_download_scripts ALL
     COMMAND chmod +x ${bin_ioda_test_download_scripts_deps}
@@ -95,9 +102,9 @@ if( NOT DEFINED LOCAL_PATH_TESTFILES_IODA )
 
 
   ecbuild_add_test( TARGET    get_ioda_test_data
-                  TYPE      SCRIPT
-                  COMMAND    ${CMAKE_BINARY_DIR}/bin/ioda_data_downloader.py
-                  ARGS      testoutput/download_test.log)
+                    TYPE      SCRIPT
+                    COMMAND    ${CMAKE_BINARY_DIR}/bin/ioda_data_downloader.py
+                    ARGS      testoutput/download_test.log)
 else()
   set(TESTFILE_DIR_IODA ${LOCAL_PATH_TESTFILES_IODA})
   message(STATUS "use LOCAL_PATH_TESTFILES_IODA : ${LOCAL_PATH_TESTFILES_IODA}")
