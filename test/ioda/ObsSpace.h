@@ -142,6 +142,16 @@ void testConstructor_local() {
     std::size_t ExpectedNlocs = conf[jj].getUnsigned("ObsSpace.TestData.nlocs_local");
     oops::Log::debug() << "Expected Nlocs_local = " << ExpectedNlocs << std::endl;
     EXPECT(Nlocs == ExpectedNlocs);
+    //test localization distances
+    std::vector<double> obsdist = obsspace_local.obsdist();
+    oops::Log::debug() << "loc_ dist" << distance << std::endl;
+    if (!obsdist.empty()) {
+      oops::Log::debug() << "loc_obs_dist(min,max) = " << 
+                          *std::min_element(obsdist.begin(), obsdist.end()) << " "<<
+                          *std::max_element(obsdist.begin(), obsdist.end()) << std::endl;
+    EXPECT(*std::max_element(obsdist.begin(), obsdist.end()) <= distance); 
+    EXPECT(*std::min_element(obsdist.begin(), obsdist.end()) > 0.0);
+    }
   }
 }
 
