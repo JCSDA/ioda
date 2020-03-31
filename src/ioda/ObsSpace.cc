@@ -40,7 +40,8 @@ ObsSpace::ObsSpace(const eckit::Configuration & config, const eckit::mpi::Comm &
                    const util::DateTime & bgn, const util::DateTime & end)
   : oops::ObsSpaceBase(config, comm, bgn, end),
     obsspace_(new ObsData(config, comm, bgn, end)),
-    localobs_(obsspace_->nlocs()), isLocal_(false)
+    localobs_(obsspace_->nlocs()), isLocal_(false),
+    obsdist_()
 {
   oops::Log::trace() << "ioda::ObsSpaces starting" << std::endl;
   std::iota(localobs_.begin(), localobs_.end(), 0);
@@ -59,13 +60,12 @@ ObsSpace::ObsSpace(const ObsSpace & os,
                    const int & maxNobs)
   : oops::ObsSpaceBase(eckit::LocalConfiguration(), os.comm(), os.windowStart(), os.windowEnd()),
     obsspace_(os.obsspace_),
-    localobs_(), isLocal_(true)
+    localobs_(), isLocal_(true),
+    obsdist_()
 {
   oops::Log::trace() << "ioda::ObsSpace for LocalObs starting" << std::endl;
 
   const std::string searchMethod = "brute_force";  //  hard-wired for now!
-
-  std::vector<double> obsdist;
 
   if ( searchMethod == "brute_force" ) {
     oops::Log::trace() << "ioda::ObsSpace searching via brute force" << std::endl;
@@ -84,7 +84,7 @@ ObsSpace::ObsSpace(const ObsSpace & os,
       double localDist = eckit::geometry::Sphere::distance(radiusEarth, refPoint, searchPoint);
       if ( localDist < maxDist ) {
         localobs_.push_back(jj);
-        obsdist.push_back(localDist);
+        obsdist_.push_back(localDist);
       }
     }
   } else {
@@ -99,13 +99,13 @@ ObsSpace::ObsSpace(const ObsSpace & os,
   if ( (maxNobs > 0) && (localobs_.size() > maxNobs) ) {
     for (unsigned int jj = 0; jj < localobs_.size(); ++jj) {
         oops::Log::debug() << "Before sort [i, d]: " << localobs_[jj]
-            << " , " << obsdist[jj] << std::endl;
+            << " , " << obsdist_[jj] << std::endl;
     }
 
     // Construct a temporary paired vector to do the sorting
     std::vector<std::pair<std::size_t, double>> localObsIndDistPair;
-    for (unsigned int jj = 0; jj < obsdist.size(); ++jj) {
-      localObsIndDistPair.push_back(std::make_pair(localobs_[jj], obsdist[jj]));
+    for (unsigned int jj = 0; jj < obsdist_.size(); ++jj) {
+      localObsIndDistPair.push_back(std::make_pair(localobs_[jj], obsdist_[jj]));
     }
 
     // Use a lambda function to implement an ascending sort.
@@ -116,18 +116,18 @@ ObsSpace::ObsSpace(const ObsSpace & os,
             });
 
     // Unpair the sorted pair vector
-    for (unsigned int jj = 0; jj < obsdist.size(); ++jj) {
+    for (unsigned int jj = 0; jj < obsdist_.size(); ++jj) {
       localobs_[jj] = localObsIndDistPair[jj].first;
-      obsdist[jj] = localObsIndDistPair[jj].second;
+      obsdist_[jj] = localObsIndDistPair[jj].second;
     }
 
     // Truncate to maxNobs length
     localobs_.resize(maxNobs);
-    obsdist.resize(maxNobs);
+    obsdist_.resize(maxNobs);
 
     for (unsigned int jj = 0; jj < localobs_.size(); ++jj) {
         oops::Log::debug() << " After sort [i, d]: " << localobs_[jj] << " , "
-            << obsdist[jj] << std::endl;
+            << obsdist_[jj] << std::endl;
     }
   }
 

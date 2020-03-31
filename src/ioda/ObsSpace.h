@@ -104,6 +104,7 @@ class ObsSpace : public oops::ObsSpaceBase {
   void printJo(const ObsVector &, const ObsVector &);  // to be removed
 
   const oops::Variables & obsvariables() const {return obsspace_->obsvariables();}
+  const std::vector<double> & obsdist() const {return obsdist_;}
   bool isDistributed() const { return obsspace_->distribution()->isDistributed(); }
 
  private:
@@ -112,6 +113,7 @@ class ObsSpace : public oops::ObsSpaceBase {
   std::shared_ptr<ObsData> obsspace_;
   std::vector<std::size_t> localobs_;
   bool isLocal_;
+  std::vector<double> obsdist_;
 };
 
 }  // namespace ioda
