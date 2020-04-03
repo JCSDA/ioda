@@ -58,7 +58,7 @@ Observations:
         obsfile: "Data/testinput_tier_1/amsua_n19_obs_2018041500_m.nc4"
       Localization:
         distance: 10.0
-        max_nobs: &max_nobs 0
+        max_nobs: &max_nobs 1
         searchMethod: "brute_force"
         lonRefPoint: 9.429600
         latRefPoint: -77.809998
@@ -74,12 +74,12 @@ Observations:
           - name: "latitude"
             group: "MetaData"
             type: "float"
-            norm: 428.79235155010923
+            norm: 432.95617402805823
 
           - name: "longitude"
             group: "MetaData"
             type: "float"
-            norm: 1669.9360030520829
+            norm: 1661.1529210392009
         tolerance:
           - 1.0e-11
 
@@ -159,9 +159,9 @@ Observations:
         lonRefPoint: 274.070007
         latRefPoint: 80.000000
       TestData:
-        nlocs: 1073
+        nlocs: 974
         nlocs_local: *max_nobs
-        nrecs: 1073
+        nrecs: 974
         nvars: 5
         obs_group_var: ""
         obs_sort_var: ""
@@ -170,12 +170,12 @@ Observations:
           - name: "latitude"
             group: "MetaData"
             type: "float"
-            norm: 1269.1754018979573
+            norm: 1254.66336565038
 
           - name: "longitude"
             group: "MetaData"
             type: "float"
-            norm: 6356.0173295120949
+            norm: 6076.2659622388919
         tolerance:
           - 1.0e-11
       ObsDataOut:
@@ -197,9 +197,9 @@ Observations:
         lonRefPoint: 274.070007
         latRefPoint: 80.000000
       TestData:
-        nlocs: 1073
+        nlocs: 974
         nlocs_local: *max_nobs
-        nrecs: 37
+        nrecs: 36
         nvars: 5
         obs_group_var: "station_id"
         obs_sort_var: "air_pressure"
@@ -208,12 +208,12 @@ Observations:
           - name: "latitude"
             group: "MetaData"
             type: "float"
-            norm: 1269.1754018979573
+            norm: 1254.66336565038
 
           - name: "longitude"
             group: "MetaData"
             type: "float"
-            norm: 6356.0173295120949
+            norm: 6076.2659622388919
         tolerance:
           - 1.0e-11
       ObsDataOut:
