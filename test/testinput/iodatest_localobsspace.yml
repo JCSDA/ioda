@@ -7,7 +7,7 @@ LocalObsSpace:
     lat: 10
   GeoDistance:
     distance: 6e6
-  reference nobs: 1295
+  reference nobs: 1127
   varname: ObsValue
 Observations:
   ObsTypes:
