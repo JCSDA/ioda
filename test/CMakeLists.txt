@@ -47,32 +47,38 @@ set(IODA_DOWNLOAD_BASE_URL https://jedi-test-files.s3.amazonaws.com)
 # If local path to testfiles is defined don't download
 if( NOT DEFINED LOCAL_PATH_TESTFILES_IODA )
 
-  # Get the current git branch
-  execute_process(
-    COMMAND git rev-parse --abbrev-ref HEAD
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    OUTPUT_VARIABLE GIT_BRANCH
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-  )
+  message(STATUS "LOCAL_PATH_TESTFILES_IODA is not defined, download test files")
+  if ( NOT DEFINED IODA_IODA_TESTFILES_BRANCH)
 
+    # Get the current git branch
+    execute_process(
+      COMMAND git rev-parse --abbrev-ref HEAD
+      WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+      OUTPUT_VARIABLE GIT_BRANCH_IODA
+      OUTPUT_STRIP_TRAILING_WHITESPACE)
+    message(STATUS "IODA is in branch" ${GIT_BRANCH_IODA})
+  else()
+    message(STATUS "Branch name provided by user")
+    set(GIT_BRANCH_IODA ${IODA_IODA_TESTFILES_BRANCH})
+  endif()
+ 
   # Check whether the URL exists or not 
   set(ECBUILD_DOWNLOAD_BASE_URL ${IODA_DOWNLOAD_BASE_URL}/ioda)
   ecbuild_check_multiurl(NAMES   ${ioda_test_data}
-                         DIRHOST ${GIT_BRANCH}
-                         RESULT  SPECIFIC_TEST_FILES)
+                         DIRHOST ${GIT_BRANCH_IODA}
+                         RESULT  IODA_SPECIFIC_TEST_FILES)
 
   # Set distant directory
-  if(${SPECIFIC_TEST_FILES} MATCHES 0)
+  if(${IODA_SPECIFIC_TEST_FILES} MATCHES 0)
     # Download and extract new test files (distant directory = git branch)
-    set(DIRNAME ${GIT_BRANCH})
-    message(STATUS "GIT_BRANCH found, download " ${GIT_BRANCH})
+    set(DIRNAME ${GIT_BRANCH_IODA})
+    message(STATUS "GIT_BRANCH_IODA found, download " ${GIT_BRANCH_IODA})
   else()
     # Download and extract develop test files (distant directory = develop)
     set(DIRNAME "develop")
-    message(STATUS "GIT_BRANCH not found, download develop")
+    message(STATUS "GIT_BRANCH_IODA not found, download develop")
   endif()
-  message(STATUS "Test data downloaded from: ${IODA_DOWNLOAD_BASE_URL}/${DIRNAME}")
-
+  message(STATUS "Test data will be downloaded from: ${IODA_DOWNLOAD_BASE_URL}/${DIRNAME}")
 
   set(TESTFILE_DIR_IODA ${CMAKE_BINARY_DIR}/test_data/ioda/${DIRNAME} CACHE PATH "data dir for test data")
   file(MAKE_DIRECTORY ${TESTFILE_DIR_IODA})
