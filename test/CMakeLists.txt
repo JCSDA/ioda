@@ -8,6 +8,7 @@ list( APPEND ioda_test_input
   testinput/iodatest.yml
   testinput/iodatest_obsspace.yml
   testinput/iodatest_localobsspace.yml
+  testinput/iodatest_obserror.yml
   testinput/iodatest_obsvector.yml
   testinput/iodatest_fileio.yml
   testinput/iodatest_distribution.yml
@@ -227,6 +228,13 @@ ecbuild_add_test( TARGET  test_ioda_obsvector
                   MPI     4
                   SOURCES mains/TestIodaObsVector.cc
                   ARGS    "testinput/iodatest_obsvector.yml"
+                  LIBS    ioda
+                  TEST_DEPENDS get_ioda_test_data )
+
+# OOPS ObsErrorCovariance interface (dependent on ObsVector)
+ecbuild_add_test( TARGET  test_ioda_oops_obserrorcovariance
+                  SOURCES mains/TestObsErrorCovariance.cc
+                  ARGS    "testinput/iodatest_obserror.yml"
                   LIBS    ioda
                   TEST_DEPENDS get_ioda_test_data )
 

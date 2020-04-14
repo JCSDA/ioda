@@ -1,0 +1,23 @@
+---
+window_begin: '2018-04-14T21:00:00Z'
+window_end: '2018-04-15T03:00:00Z'
+Observations:
+  ObsTypes:
+  - ObsSpace:
+      name: Radiance (1 channel)
+      simulate:
+        variables: [brightness_temperature_1]
+      ObsDataIn:
+        obsfile: Data/testinput_tier_1/amsua_n15_obs_2018041500_m.nc4
+    Covariance:
+      covariance: diagonal
+
+  - ObsSpace:
+      name: Radiance
+      simulate:
+        variables: [brightness_temperature]
+        channels: 1-7, 15
+      ObsDataIn:
+        obsfile: Data/testinput_tier_1/amsua_n15_obs_2018041500_m.nc4
+    Covariance:
+      covariance: diagonal
