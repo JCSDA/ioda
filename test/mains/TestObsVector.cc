@@ -15,7 +15,6 @@
 int main(int argc,  char ** argv) {
   oops::Run run(argc, argv);
   test::ObsVector<ioda::IodaTrait> tests;
-  run.execute(tests);
-  return 0;
+  return run.execute(tests);
 };
 

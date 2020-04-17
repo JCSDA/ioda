@@ -14,7 +14,6 @@
 int main(int argc,  char ** argv) {
   oops::Run run(argc, argv);
   ioda::test::IodaIO tests;
-  run.execute(tests);
-  return 0;
+  return run.execute(tests);
 };
 
