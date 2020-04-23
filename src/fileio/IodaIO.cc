@@ -18,8 +18,8 @@ namespace ioda {
 // -----------------------------------------------------------------------------
 IodaIO::IodaIO(const std::string & FileName, const std::string & FileMode,
                const std::size_t MaxFrameSize) :
-           fname_(FileName), fmode_(FileMode), num_missing_gnames_(0),
-           num_unexpect_dtypes_(0), num_excess_dims_(0), max_frame_size_(MaxFrameSize) {
+           fname_(FileName), fmode_(FileMode), num_unexpect_dtypes_(0),
+           num_excess_dims_(0), max_frame_size_(MaxFrameSize) {
 }
 
 // -----------------------------------------------------------------------------
@@ -59,16 +59,6 @@ std::size_t IodaIO::nlocs() const {
 
 std::size_t IodaIO::nvars() const {
   return nvars_;
-}
-
-// -----------------------------------------------------------------------------
-/*!
- * \details This method returns whether any group names were missing on variables
- *          from the input file.
- */
-
-bool IodaIO::missing_group_names() const {
-  return (num_missing_gnames_ > 0);
 }
 
 /*!
@@ -663,9 +653,10 @@ void IodaIO::ExtractGrpVarName(const std::string & Name, std::string & GroupName
     GroupName = Name.substr(Spos+1);
     VarName = Name.substr(0, Spos);
   } else {
-    GroupName = "GroupUndefined";
-    VarName = Name;
-    num_missing_gnames_++;
+    std::string ErrMsg =
+      std::string("IodaIO::ExtractGrpVarName: Input file contains variables ") +
+      std::string("that are missing group names (ie, no @GroupName suffix).");
+    ABORT(ErrMsg);
   }
 }
 
