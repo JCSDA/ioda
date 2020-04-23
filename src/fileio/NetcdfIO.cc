@@ -835,26 +835,14 @@ bool NetcdfIO::NcAttrExists(const int & AttrOwnerId, const std::string & AttrNam
  *
  * \details This method will construct the name of the variable in the netcdf
  *           file from the given GroupName and VarName arguments. The netcdf
- *           variable name is typically "VarName@GroupName". When GroupName
- *           is "GroupUndefined", then the netcdf variable name is simply set
- *           equal to VarName (no @GroupName suffix).
+ *           variable name is "VarName@GroupName".
  *
  * \param[in] GroupName Name of group in ObsSpace database
  * \param[in] VarName Name of variable in ObsSpace database
  */
 
 std::string NetcdfIO::FormNcVarName(const std::string & GroupName, const std::string & VarName) {
-  // Construct the variable name found in the file. If group name is "GroupUndefined",
-  // then the file variable name does not include the "@GroupName" suffix.
-  std::string NcVarName;
-  if (GroupName.compare("GroupUndefined") == 0) {
-    // No suffix in file variable name
-    NcVarName = VarName;
-  } else {
-    // File variable has suffix with group name
-    NcVarName = VarName + "@" + GroupName;
-  }
-
+  std::string NcVarName = VarName + "@" + GroupName;
   return NcVarName;
 }
 

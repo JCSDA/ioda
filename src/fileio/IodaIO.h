@@ -186,6 +186,9 @@ class IodaIO : public util::Printable {
     typedef std::vector<FrameInfoRec> FrameInfo;
 
  public:
+    static void ExtractGrpVarName(const std::string & Name, std::string & GroupName,
+                                  std::string & VarName);
+
     IodaIO(const std::string & FileName, const std::string & FileMode,
            const std::size_t MaxFrameSize);
 
@@ -200,7 +203,6 @@ class IodaIO : public util::Printable {
     std::size_t nlocs() const;
     std::size_t nvars() const;
 
-    bool missing_group_names() const;
     bool unexpected_data_types() const;
     bool excess_dims() const;
 
@@ -369,11 +371,6 @@ class IodaIO : public util::Printable {
                        const std::string & FileVarName, const std::string & FileType,
                        const std::size_t MaxStringSize) = 0;
 
-    // Methods inherited from base class
-
-    void ExtractGrpVarName(const std::string & Name, std::string & GroupName,
-                           std::string & VarName);
-
     // Data members
 
     /*! \brief file name */
@@ -392,9 +389,6 @@ class IodaIO : public util::Printable {
 
     /*! \brief number of unique variables */
     std::size_t nvars_;
-
-    /*! \brief count of undefined group names */
-    std::size_t num_missing_gnames_;
 
     /*! \brief count of unexpected data types */
     std::size_t num_unexpect_dtypes_;

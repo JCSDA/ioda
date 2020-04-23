@@ -37,20 +37,6 @@ namespace test {
 
 // -----------------------------------------------------------------------------
 
-void ExtractGrpVarName(const std::string & GrpVarName, std::string & GroupName,
-                       std::string & VarName) {
-  std::size_t Spos = GrpVarName.find("@");
-  if (Spos != GrpVarName.npos) {
-    GroupName = GrpVarName.substr(Spos+1);
-    VarName = GrpVarName.substr(0, Spos);
-  } else {
-    GroupName = "GroupUndefined";
-    VarName = GrpVarName;
-  }
-}
-
-// -----------------------------------------------------------------------------
-
 std::size_t GetMaxStringSize(const std::vector<std::string> & Strings) {
   std::size_t MaxSize = 0;
   for (std::size_t i = 0; i < Strings.size(); ++i) {
@@ -344,17 +330,17 @@ void testWriteVar() {
   std::string GroupName;
   std::string VarName;
   for (iint = ExpectedIntVars.begin(); iint != ExpectedIntVars.end(); ++iint) {
-    ExtractGrpVarName(iint->first, GroupName, VarName);
+    TestIO->ExtractGrpVarName(iint->first, GroupName, VarName);
     std::vector<std::size_t> VarShape(1, (iint->second).size());
     TestIO->grp_var_insert(GroupName, VarName, "int", VarShape, iint->first, "int");
   }
   for (ifloat = ExpectedFloatVars.begin(); ifloat != ExpectedFloatVars.end(); ++ifloat) {
-    ExtractGrpVarName(ifloat->first, GroupName, VarName);
+    TestIO->ExtractGrpVarName(ifloat->first, GroupName, VarName);
     std::vector<std::size_t> VarShape(1, (ifloat->second).size());
     TestIO->grp_var_insert(GroupName, VarName, "float", VarShape, ifloat->first, "float");
   }
   for (istring = ExpectedStringVars.begin(); istring != ExpectedStringVars.end(); ++istring) {
-    ExtractGrpVarName(istring->first, GroupName, VarName);
+    TestIO->ExtractGrpVarName(istring->first, GroupName, VarName);
     std::vector<std::size_t> VarShape(1, (istring->second).size());
     std::size_t MaxStringSize = GetMaxStringSize(istring->second);
     TestIO->grp_var_insert(GroupName, VarName, "string", VarShape, istring->first, "string",
@@ -368,7 +354,7 @@ void testWriteVar() {
     std::size_t FrameSize = TestIO->frame_size(iframe);
 
     for (iint = ExpectedIntVars.begin(); iint != ExpectedIntVars.end(); ++iint) {
-      ExtractGrpVarName(iint->first, GroupName, VarName);
+      TestIO->ExtractGrpVarName(iint->first, GroupName, VarName);
       std::vector<std::size_t> VarShape = TestIO->var_shape(GroupName, VarName);
 
       if (VarShape[0] > FrameStart) {
@@ -387,7 +373,7 @@ void testWriteVar() {
     }
 
     for (ifloat = ExpectedFloatVars.begin(); ifloat != ExpectedFloatVars.end(); ++ifloat) {
-      ExtractGrpVarName(ifloat->first, GroupName, VarName);
+      TestIO->ExtractGrpVarName(ifloat->first, GroupName, VarName);
       std::vector<std::size_t> VarShape = TestIO->var_shape(GroupName, VarName);
 
       if (VarShape[0] > FrameStart) {
@@ -407,7 +393,7 @@ void testWriteVar() {
     }
 
     for (istring = ExpectedStringVars.begin(); istring != ExpectedStringVars.end(); ++istring) {
-      ExtractGrpVarName(istring->first, GroupName, VarName);
+      TestIO->ExtractGrpVarName(istring->first, GroupName, VarName);
       std::vector<std::size_t> VarShape = TestIO->var_shape(GroupName, VarName);
 
       if (VarShape[0] > FrameStart) {

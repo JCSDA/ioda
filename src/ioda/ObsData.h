@@ -225,9 +225,6 @@ class ObsData : public util::Printable {
   /*! \brief number of records */
   std::size_t nrecs_;
 
-  /*! \brief flag, file has variables with missing group names */
-  bool file_missing_gnames_;
-
   /*! \brief flag, file has variables with unexpected data types */
   bool file_unexpected_dtypes_;
 

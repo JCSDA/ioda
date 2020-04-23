@@ -49,9 +49,8 @@ namespace ioda {
 ObsData::ObsData(const eckit::Configuration & config, const eckit::mpi::Comm & comm,
                  const util::DateTime & bgn, const util::DateTime & end)
   : config_(config), winbgn_(bgn), winend_(end), commMPI_(comm),
-    gnlocs_(0), nlocs_(0), nvars_(0), nrecs_(0), file_missing_gnames_(false),
-    file_unexpected_dtypes_(false), file_excess_dims_(false),
-    in_max_frame_size_(0), out_max_frame_size_(0),
+    gnlocs_(0), nlocs_(0), nvars_(0), nrecs_(0), file_unexpected_dtypes_(false),
+    file_excess_dims_(false), in_max_frame_size_(0), out_max_frame_size_(0),
     int_database_(), float_database_(), string_database_(), datetime_database_(),
     obsvars_(), next_rec_num_(0)
 {
@@ -85,14 +84,6 @@ ObsData::ObsData(const eckit::Configuration & config, const eckit::mpi::Comm & c
                                             IODAIO_DEFAULT_FRAME_SIZE);
     oops::Log::trace() << obsname_ << " file in = " << filein_ << std::endl;
     InitFromFile(filein_, in_max_frame_size_);
-    if (file_missing_gnames_) {
-      if (commMPI_.rank() == 0) {
-        oops::Log::warning()
-          << "ObsData::ObsData:: WARNING: Input file contains variables "
-          << "that are missing group names (ie, no @GroupName suffix)" << std::endl
-          << "  Input file: " << filein_ << std::endl;
-      }
-    }
     if (file_unexpected_dtypes_) {
       if (commMPI_.rank() == 0) {
         oops::Log::warning()
@@ -196,40 +187,35 @@ ObsData::~ObsData() {
 
 void ObsData::get_db(const std::string & group, const std::string & name,
                       std::vector<int> & vdata) const {
-  std::string gname = (group.size() <= 0)? "GroupUndefined" : group;
   std::vector<std::size_t> vshape(1, vdata.size());
-  int_database_.LoadFromDb(gname, name, vshape, vdata);
+  int_database_.LoadFromDb(group, name, vshape, vdata);
 }
 
 void ObsData::get_db(const std::string & group, const std::string & name,
                       std::vector<float> & vdata) const {
-  std::string gname = (group.size() <= 0)? "GroupUndefined" : group;
   std::vector<std::size_t> vshape(1, vdata.size());
-  float_database_.LoadFromDb(gname, name, vshape, vdata);
+  float_database_.LoadFromDb(group, name, vshape, vdata);
 }
 
 void ObsData::get_db(const std::string & group, const std::string & name,
                       std::vector<double> & vdata) const {
-  std::string gname = (group.size() <= 0)? "GroupUndefined" : group;
   std::vector<std::size_t> vshape(1, vdata.size());
   // load the float values from the database and convert to double
   std::vector<float> FloatData(vdata.size(), 0.0);
-  float_database_.LoadFromDb(gname, name, vshape, FloatData);
+  float_database_.LoadFromDb(group, name, vshape, FloatData);
   ConvertVarType<float, double>(FloatData, vdata);
 }
 
 void ObsData::get_db(const std::string & group, const std::string & name,
                       std::vector<std::string> & vdata) const {
-  std::string gname = (group.size() <= 0)? "GroupUndefined" : group;
   std::vector<std::size_t> vshape(1, vdata.size());
-  string_database_.LoadFromDb(gname, name, vshape, vdata);
+  string_database_.LoadFromDb(group, name, vshape, vdata);
 }
 
 void ObsData::get_db(const std::string & group, const std::string & name,
                       std::vector<util::DateTime> & vdata) const {
-  std::string gname = (group.size() <= 0)? "GroupUndefined" : group;
   std::vector<std::size_t> vshape(1, vdata.size());
-  datetime_database_.LoadFromDb(gname, name, vshape, vdata);
+  datetime_database_.LoadFromDb(group, name, vshape, vdata);
 }
 
 // -----------------------------------------------------------------------------
@@ -248,40 +234,35 @@ void ObsData::get_db(const std::string & group, const std::string & name,
 
 void ObsData::put_db(const std::string & group, const std::string & name,
                       const std::vector<int> & vdata) {
-  std::string gname = (group.size() <= 0)? "GroupUndefined" : group;
   std::vector<std::size_t> vshape(1, vdata.size());
-  int_database_.StoreToDb(gname, name, vshape, vdata);
+  int_database_.StoreToDb(group, name, vshape, vdata);
 }
 
 void ObsData::put_db(const std::string & group, const std::string & name,
                       const std::vector<float> & vdata) {
-  std::string gname = (group.size() <= 0)? "GroupUndefined" : group;
   std::vector<std::size_t> vshape(1, vdata.size());
-  float_database_.StoreToDb(gname, name, vshape, vdata);
+  float_database_.StoreToDb(group, name, vshape, vdata);
 }
 
 void ObsData::put_db(const std::string & group, const std::string & name,
                       const std::vector<double> & vdata) {
-  std::string gname = (group.size() <= 0)? "GroupUndefined" : group;
   std::vector<std::size_t> vshape(1, vdata.size());
   // convert to float, then load into the database
   std::vector<float> FloatData(vdata.size());
   ConvertVarType<double, float>(vdata, FloatData);
-  float_database_.StoreToDb(gname, name, vshape, FloatData);
+  float_database_.StoreToDb(group, name, vshape, FloatData);
 }
 
 void ObsData::put_db(const std::string & group, const std::string & name,
                       const std::vector<std::string> & vdata) {
-  std::string gname = (group.size() <= 0)? "GroupUndefined" : group;
   std::vector<std::size_t> vshape(1, vdata.size());
-  string_database_.StoreToDb(gname, name, vshape, vdata);
+  string_database_.StoreToDb(group, name, vshape, vdata);
 }
 
 void ObsData::put_db(const std::string & group, const std::string & name,
                       const std::vector<util::DateTime> & vdata) {
-  std::string gname = (group.size() <= 0)? "GroupUndefined" : group;
   std::vector<std::size_t> vshape(1, vdata.size());
-  datetime_database_.StoreToDb(gname, name, vshape, vdata);
+  datetime_database_.StoreToDb(group, name, vshape, vdata);
 }
 
 // -----------------------------------------------------------------------------
@@ -794,7 +775,6 @@ void ObsData::InitFromFile(const std::string & filename, const std::size_t MaxFr
   }
 
   // Record whether any problems occurred when reading the file.
-  file_missing_gnames_ = fileio->missing_group_names();
   file_unexpected_dtypes_ = fileio->unexpected_data_types();
   file_excess_dims_ = fileio->excess_dims();
   oops::Log::trace() << "ObsData::InitFromFile opening file ends " << std::endl;
