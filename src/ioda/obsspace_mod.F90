@@ -119,6 +119,7 @@ integer function obsspace_get_gnlocs(c_obss)
   implicit none
   type(c_ptr), intent(in) :: c_obss
 
+  ! Implicit conversion from c_size_t to integer which is safe in this case
   obsspace_get_gnlocs = c_obsspace_get_gnlocs(c_obss)
 end function obsspace_get_gnlocs
 
@@ -129,6 +130,7 @@ integer function obsspace_get_nlocs(c_obss)
   implicit none
   type(c_ptr), intent(in) :: c_obss
 
+  ! Implicit conversion from c_size_t to integer which is safe in this case
   obsspace_get_nlocs = c_obsspace_get_nlocs(c_obss)
 end function obsspace_get_nlocs
 
@@ -139,6 +141,7 @@ integer function obsspace_get_nrecs(c_obss)
   implicit none
   type(c_ptr), intent(in) :: c_obss
 
+  ! Implicit conversion from c_size_t to integer which is safe in this case
   obsspace_get_nrecs = c_obsspace_get_nrecs(c_obss)
 end function obsspace_get_nrecs
 
@@ -149,6 +152,7 @@ integer function obsspace_get_nvars(c_obss)
   implicit none
   type(c_ptr), intent(in) :: c_obss
 
+  ! Implicit conversion from c_size_t to integer which is safe in this case
   obsspace_get_nvars = c_obsspace_get_nvars(c_obss)
 end function obsspace_get_nvars
 

@@ -47,19 +47,19 @@ const oops::Variables * obsspace_obsvariables_f(const ObsSpace & obss) {
 }
 
 // -----------------------------------------------------------------------------
-int obsspace_get_gnlocs_f(const ObsSpace & obss) {
+std::size_t obsspace_get_gnlocs_f(const ObsSpace & obss) {
   return obss.gnlocs();
 }
 // -----------------------------------------------------------------------------
-int obsspace_get_nlocs_f(const ObsSpace & obss) {
+std::size_t obsspace_get_nlocs_f(const ObsSpace & obss) {
   return obss.nlocs();
 }
 // -----------------------------------------------------------------------------
-int obsspace_get_nrecs_f(const ObsSpace & obss) {
+std::size_t obsspace_get_nrecs_f(const ObsSpace & obss) {
   return obss.nrecs();
 }
 // -----------------------------------------------------------------------------
-int obsspace_get_nvars_f(const ObsSpace & obss) {
+std::size_t obsspace_get_nvars_f(const ObsSpace & obss) {
   return obss.nvars();
 }
 // -----------------------------------------------------------------------------
