@@ -29,28 +29,28 @@ type(c_ptr) function c_obsspace_obsvariables(obss) bind(C, name='obsspace_obsvar
   type(c_ptr), value :: obss
 end function c_obsspace_obsvariables
 
-integer(kind=c_int) function c_obsspace_get_gnlocs(obss) bind(C,name='obsspace_get_gnlocs_f')
+integer(kind=c_size_t) function c_obsspace_get_gnlocs(obss) bind(C,name='obsspace_get_gnlocs_f')
   use, intrinsic :: iso_c_binding
   implicit none
 
   type(c_ptr), value :: obss
 end function c_obsspace_get_gnlocs
 
-integer(kind=c_int) function c_obsspace_get_nlocs(obss) bind(C,name='obsspace_get_nlocs_f')
+integer(kind=c_size_t) function c_obsspace_get_nlocs(obss) bind(C,name='obsspace_get_nlocs_f')
   use, intrinsic :: iso_c_binding
   implicit none
 
   type(c_ptr), value :: obss
 end function c_obsspace_get_nlocs
 
-integer(kind=c_int) function c_obsspace_get_nrecs(obss) bind(C,name='obsspace_get_nrecs_f')
+integer(kind=c_size_t) function c_obsspace_get_nrecs(obss) bind(C,name='obsspace_get_nrecs_f')
   use, intrinsic :: iso_c_binding
   implicit none
 
   type(c_ptr), value :: obss
 end function c_obsspace_get_nrecs
 
-integer(kind=c_int) function c_obsspace_get_nvars(obss) bind(C,name='obsspace_get_nvars_f')
+integer(kind=c_size_t) function c_obsspace_get_nvars(obss) bind(C,name='obsspace_get_nvars_f')
   use, intrinsic :: iso_c_binding
   implicit none
 

@@ -24,10 +24,10 @@ extern "C" {
                                         const util::DateTime *);
   void obsspace_destruct_f(ObsSpace *);
   const oops::Variables * obsspace_obsvariables_f(const ObsSpace &);
-  int obsspace_get_gnlocs_f(const ObsSpace &);
-  int obsspace_get_nlocs_f(const ObsSpace &);
-  int obsspace_get_nrecs_f(const ObsSpace &);
-  int obsspace_get_nvars_f(const ObsSpace &);
+  std::size_t obsspace_get_gnlocs_f(const ObsSpace &);
+  std::size_t obsspace_get_nlocs_f(const ObsSpace &);
+  std::size_t obsspace_get_nrecs_f(const ObsSpace &);
+  std::size_t obsspace_get_nvars_f(const ObsSpace &);
   void obsspace_get_comm_f(const ObsSpace &, int &, char *);
   void obsspace_get_recnum_f(const ObsSpace &, const std::size_t &, std::size_t *);
   void obsspace_get_index_f(const ObsSpace &, const std::size_t &, std::size_t *);
