@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2017-2019 UCAR
+ * (C) Copyright 2017-2020 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -28,6 +28,7 @@ namespace eckit {
 }
 
 namespace ioda {
+  class LocalObsSpaceParameters;
   class ObsVector;
 
 /// Observation Space View
@@ -40,7 +41,7 @@ class ObsSpace : public oops::ObsSpaceBase {
   ObsSpace(const eckit::Configuration &, const eckit::mpi::Comm &,
            const util::DateTime &, const util::DateTime &);
   ObsSpace(const ObsSpace &, const eckit::geometry::Point2 &,
-           const double &, const int &);
+           const eckit::Configuration &);
   /*!
    * \details Copy constructor for an ObsSpace object.
    */
@@ -111,6 +112,7 @@ class ObsSpace : public oops::ObsSpaceBase {
   void print(std::ostream &) const;
 
   std::shared_ptr<ObsData> obsspace_;
+  std::unique_ptr<LocalObsSpaceParameters> localopts_;
   std::vector<std::size_t> localobs_;
   bool isLocal_;
   std::vector<double> obsdist_;

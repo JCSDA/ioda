@@ -1,37 +1,18 @@
 ---
 window_begin: "2018-04-14T21:00:00Z"
 window_end: "2018-04-15T03:00:00Z"
-Variables:
-   nvars: 1
-   variables:
-   - "testvar"
-Locations:
-  lats:
-  - 45.0
-  - 40.0
-  lons:
-  - 0.0
-  - -100.0
-Observations:
-  _: &localization
-    distance: 3.35e6
-    max_nobs: -1
-    searchMethod: "brute_force"
-    lonRefPoint: 0.
-    latRefPoint: 90.
-  ObsTypes:
 
+Observations:
+  ObsTypes:
  
   - ObsSpace:
       name: "Aod"
       simulate:
       ObsDataIn:
         obsfile: "Data/testinput_tier_1/aod_obs_2018041500_m.nc4"
-      Localization: *localization
       TestData:
         nlocs: 100
         nrecs: 100
-        nlocs_local: 11
         nvars: 1
         obs_group_var: ""
         obs_sort_var: ""
@@ -59,10 +40,8 @@ Observations:
       simulate:
       ObsDataIn:
         obsfile: "Data/testinput_tier_1/amsua_n19_obs_2018041500_m.nc4"
-      Localization: *localization
       TestData:
         nlocs: 100
-        nlocs_local: 10
         nrecs: 100
         nvars: 15
         obs_group_var: ""
@@ -86,10 +65,8 @@ Observations:
       simulate:
       ObsDataIn:
         obsfile: "Data/testinput_tier_1/smap_obs_2018041500_m.nc4"
-      Localization: *localization
       TestData:
         nlocs: 100
-        nlocs_local: 0
         nrecs: 100
         nvars: 4
         obs_group_var: ""
@@ -113,10 +90,8 @@ Observations:
       simulate:
       ObsDataIn:
         obsfile: "Data/testinput_tier_1/gmi_gpm_obs_2018041500_m.nc4"
-      Localization: *localization
       TestData:
         nlocs: 12
-        nlocs_local: 0
         nrecs: 12
         nvars: 13
         obs_group_var: ""
@@ -141,10 +116,8 @@ Observations:
       ObsDataIn:
         obsfile: "Data/testinput_tier_1/sondes_obs_2018041500_m.nc4"
         max_frame_size: 200
-      Localization: *localization
       TestData:
         nlocs: 974
-        nlocs_local: 110
         nrecs: 974
         nvars: 5
         obs_group_var: ""
@@ -190,10 +163,8 @@ Observations:
           lon2: 10
           random_seed: 29837
         obs_errors: [1.0, 2.0]
-      Localization: *localization
       TestData:
         nlocs: 10
-        nlocs_local: 0
         nrecs: 10
         nvars: 2
         obs_group_var: ""
@@ -245,10 +216,8 @@ Observations:
           - '2010-01-01T00:05:48Z'
           - '2010-01-01T00:06:00Z' 
         obs_errors: [1.0, 2.0]
-      Localization: *localization
       TestData:
         nlocs: 11
-        nlocs_local: 0
         nrecs: 11
         nvars: 2
         obs_group_var: ""
@@ -288,10 +257,8 @@ Observations:
           group_variable: "station_id"
           sort_variable: "air_pressure"
           sort_order: "descending"
-      Localization: *localization
       TestData:
         nlocs: 974
-        nlocs_local: 110
         nrecs: 36
         nvars: 5
         obs_group_var: "station_id"
@@ -319,10 +286,8 @@ Observations:
         obsfile: "Data/testinput_tier_1/sondes_obs_2018041500_m_twfilt.nc4"
         obsgrouping:
           group_variable: "station_id"
-      Localization: *localization
       TestData:
         nlocs: 968
-        nlocs_local: 109
         nrecs: 31
         nvars: 5
         obs_group_var: "station_id"
@@ -348,10 +313,8 @@ Observations:
       simulate:
       ObsDataIn:
         obsfile: "Data/testinput_tier_1/geos_aod_obs_2018041500_m.nc4"
-      Localization: *localization
       TestData:
           nlocs: 100
-          nlocs_local: 6
           nrecs: 100
           nvars: 1 
           obs_group_var: ""

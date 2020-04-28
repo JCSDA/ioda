@@ -14,7 +14,7 @@ Locations:
   - -100
 Observations:
   _: &localization
-    distance: 3.35e6
+    lengthscale: 3.35e6
     max_nobs: -1
     searchMethod: "brute_force"
     lonRefPoint: 0.
