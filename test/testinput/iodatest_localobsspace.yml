@@ -5,8 +5,8 @@ LocalObsSpace:
   GeoLocation:
     lon: -10
     lat: 10
-  GeoDistance:
-    distance: 6e6
+  Localization:
+    lengthscale: 6e6
   reference nobs: 1127
   varname: ObsValue
 Observations:

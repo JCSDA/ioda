@@ -1,151 +1,23 @@
 ---
 window_begin: "2018-04-14T21:00:00Z"
 window_end: "2018-04-15T03:00:00Z"
-Variables:
-   nvars: 1
-   variables:
-   - "testvar"
-Locations:
-  lats:
-  - 45.0
-  - 40.0
-  lons:
-  - 0.0
-  - -100.0
+
 Observations:
   ObsTypes:
   - ObsSpace:
-      name: "Aod"
+      name: "Radiosonde"
       simulate:
       ObsDataIn:
-        obsfile: "Data/testinput_tier_1/aod_obs_2018041500_m.nc4"
+        obsfile: "Data/testinput_tier_1/sondes_obs_2018041500_m.nc4"
       Localization:
-        distance: 10.0
-        max_nobs: &max_nobs 1
+        lengthscale: 2000.0
+        max_nobs: 10
         searchMethod: "brute_force"
-        lonRefPoint: 211.7798
-        latRefPoint: 21.21674
+        lonRefPoint: 274.070007
+        latRefPoint: 80.000000
       TestData:
-        nlocs: 100
-        nrecs: 100
-        nlocs_local: *max_nobs
-        nvars: 1
-        obs_group_var: ""
-        obs_sort_var: ""
-        obs_sort_order: "ascending"
-        variables:
-          - name: "latitude"
-            group: "MetaData"
-            type: "float"
-            norm: 353.11505923005967
-
-          - name: "longitude"
-            group: "MetaData"
-            type: "float"
-            norm: 1981.4147543887036
-
-          - name: "surface_type"
-            group: "MetaData"
-            type: "integer"
-            norm: 10.099504938362077
-        tolerance:
-          - 1.0e-14
-
-  - ObsSpace:
-      name: "Radiance"
-      simulate:
-      ObsDataIn:
-        obsfile: "Data/testinput_tier_1/amsua_n19_obs_2018041500_m.nc4"
-      Localization:
-        distance: 10.0
-        max_nobs: &max_nobs 1
-        searchMethod: "brute_force"
-        lonRefPoint: 9.429600
-        latRefPoint: -77.809998
-      TestData:
-        nlocs: 100
-        nlocs_local: *max_nobs
-        nrecs: 100
-        nvars: 15
-        obs_group_var: ""
-        obs_sort_var: ""
-        obs_sort_order: "ascending"
-        variables:
-          - name: "latitude"
-            group: "MetaData"
-            type: "float"
-            norm: 432.95617402805823
-
-          - name: "longitude"
-            group: "MetaData"
-            type: "float"
-            norm: 1661.1529210392009
-        tolerance:
-          - 1.0e-11
-
-  - ObsSpace:
-      name: "Radiance"
-      simulate:
-      ObsDataIn:
-        obsfile: "Data/testinput_tier_1/smap_obs_2018041500_m.nc4"
-      Localization:
-        distance: 10
-        max_nobs: &max_nobs 1
-        searchMethod: "brute_force"
-        lonRefPoint: 279.58 
-        latRefPoint: -71.39
-      TestData:
-        nlocs: 100
-        nlocs_local: *max_nobs
-        nrecs: 100
-        nvars: 4
-        obs_group_var: ""
-        obs_sort_var: ""
-        obs_sort_order: "ascending"
-        variables:
-          - name: "latitude"
-            group: "MetaData"
-            type: "float"
-            norm: 694.93010245335154
-
-          - name: "longitude"
-            group: "MetaData"
-            type: "float"
-            norm: 2835.0339068827361
-        tolerance:
-          - 1.0e-11
-
-  - ObsSpace:
-      name: "Radiance"
-      simulate:
-      ObsDataIn:
-        obsfile: "Data/testinput_tier_1/gmi_gpm_obs_2018041500_m.nc4"
-      Localization:
-        distance: 0.3
-        max_nobs: &max_nobs 1
-        searchMethod: "brute_force"
-        lonRefPoint: 120.6262
-        latRefPoint: -63.2108
-      TestData:
-        nlocs: 12
-        nlocs_local: *max_nobs
-        nrecs: 12
-        nvars: 13
-        obs_group_var: ""
-        obs_sort_var: ""
-        obs_sort_order: "ascending"
-        variables:
-          - name: "latitude"
-            group: "MetaData"
-            type: "float"
-            norm: 211.00380053756118
-
-          - name: "longitude"
-            group: "MetaData"
-            type: "float"
-            norm: 172.29837728971688
-        tolerance:
-          - 1.0e-11
+        nlocs: 974
+        nlocs_local: 6
 
   - ObsSpace:
       name: "Radiosonde"
@@ -153,104 +25,79 @@ Observations:
       ObsDataIn:
         obsfile: "Data/testinput_tier_1/sondes_obs_2018041500_m.nc4"
       Localization:
-        distance: 0.01
-        max_nobs: &max_nobs 1
+        lengthscale: 2000.0
         searchMethod: "brute_force"
         lonRefPoint: 274.070007
         latRefPoint: 80.000000
       TestData:
         nlocs: 974
-        nlocs_local: *max_nobs
-        nrecs: 974
-        nvars: 5
-        obs_group_var: ""
-        obs_sort_var: ""
-        obs_sort_order: "ascending"
-        variables:
-          - name: "latitude"
-            group: "MetaData"
-            type: "float"
-            norm: 1254.66336565038
-
-          - name: "longitude"
-            group: "MetaData"
-            type: "float"
-            norm: 6076.2659622388919
-        tolerance:
-          - 1.0e-11
-      ObsDataOut:
-        obsfile: "testoutput/diagout.nc4"
+        nlocs_local: 6
 
   - ObsSpace:
-      name: "Radiosonde with grouping"
+      name: "Radiosonde"
       simulate:
       ObsDataIn:
         obsfile: "Data/testinput_tier_1/sondes_obs_2018041500_m.nc4"
-        obsgrouping:
-          group_variable: "station_id"
-          sort_variable: "air_pressure"
-          sort_order: "descending"
       Localization:
-        distance: 0.01
-        max_nobs: &max_nobs 1
+        lengthscale: 2000.0
+        max_nobs: 1
+        lonRefPoint: 274.070007
+        latRefPoint: 80.000000
+      TestData:
+        nlocs: 974
+        nlocs_local: 1
+
+  - ObsSpace:
+      name: "Radiosonde"
+      simulate:
+      ObsDataIn:
+        obsfile: "Data/testinput_tier_1/sondes_obs_2018041500_m.nc4"
+      Localization:
+        lengthscale: 100000.0
         searchMethod: "brute_force"
         lonRefPoint: 274.070007
         latRefPoint: 80.000000
       TestData:
         nlocs: 974
-        nlocs_local: *max_nobs
-        nrecs: 36
-        nvars: 5
-        obs_group_var: "station_id"
-        obs_sort_var: "air_pressure"
-        obs_sort_order: "descending"
-        variables:
-          - name: "latitude"
-            group: "MetaData"
-            type: "float"
-            norm: 1254.66336565038
-
-          - name: "longitude"
-            group: "MetaData"
-            type: "float"
-            norm: 6076.2659622388919
-        tolerance:
-          - 1.0e-11
-      ObsDataOut:
-        obsfile: "testoutput/diagout_with_groups.nc4"
+        nlocs_local: 97
 
   - ObsSpace:
-      name: "Radiosonde with grouping and tw filtering"
+      name: "Radiosonde"
       simulate:
       ObsDataIn:
-        obsfile: "Data/testinput_tier_1/sondes_obs_2018041500_m_twfilt.nc4"
-        obsgrouping:
-          group_variable: "station_id"
+        obsfile: "Data/testinput_tier_1/sondes_obs_2018041500_m.nc4"
       Localization:
-        distance: 0.1
-        max_nobs: &max_nobs 1
-        searchMethod: "brute_force"
-        lonRefPoint: 134.047302
-        latRefPoint: -0.882800
+        lengthscale: 10.e6    # rough distance from pole to equator
+        lonRefPoint: 0.
+        latRefPoint: -90.
       TestData:
-        nlocs: 968
-        nlocs_local: *max_nobs
-        nrecs: 31
-        nvars: 5
-        obs_group_var: "station_id"
-        obs_sort_var: ""
-        obs_sort_order: "ascending"
-        variables:
-          - name: "latitude"
-            group: "MetaData"
-            type: "float"
-            norm: 1252.0139923322768
+        nlocs: 974
+        nlocs_local: 353      # all obs in the SH
 
-          - name: "longitude"
-            group: "MetaData"
-            type: "float"
-            norm: 6065.3117664336605
-        tolerance:
-          - 1.0e-11
-      ObsDataOut:
-        obsfile: "testoutput/diagout_with_groups_twfilt.nc4"
+  - ObsSpace:
+      name: "Radiosonde"
+      simulate:
+      ObsDataIn:
+        obsfile: "Data/testinput_tier_1/sondes_obs_2018041500_m.nc4"
+      Localization:
+        lengthscale: 10.e6
+        lonRefPoint: 0.
+        latRefPoint: 90.
+      TestData:
+        nlocs: 974
+        nlocs_local: 621     # 974 - 353 (from test above) -- all obs in the NH
+
+
+  - ObsSpace:
+      name: "Radiosonde"
+      simulate:
+      ObsDataIn:
+        obsfile: "Data/testinput_tier_1/sondes_obs_2018041500_m.nc4"
+      Localization:
+        lengthscale: 20.e6
+        lonRefPoint: 0.
+        latRefPoint: 90.
+      TestData:
+        nlocs: 974
+        nlocs_local: 974    # all obs fall within this distance from the pole
+

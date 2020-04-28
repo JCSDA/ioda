@@ -3,6 +3,7 @@ include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
 list( APPEND ioda_src_files
 ioda/IodaTrait.h
 ioda/instantiateObsLocFactory.h
+ioda/LocalObsSpaceParameters.h
 ioda/ObsLocGC99.cc
 ioda/ObsLocGC99.h
 ioda/ObsData.cc

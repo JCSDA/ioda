@@ -189,11 +189,6 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_marine
                   ARGS    "testinput/iodatest_obsspace_marine.yml"
                   TEST_DEPENDS get_ioda_test_data )
 
-ecbuild_add_test( TARGET  test_ioda_obsspace_localization
-                  COMMAND test_ioda_obsspace
-                  ARGS    "testinput/iodatest_obsspace_localization.yml"
-                  TEST_DEPENDS get_ioda_test_data )
-
 # IODA ObsSpace class - Fortran interface test
 if( HAVE_FCTEST )
 add_fctest( TARGET  test_ioda_obsspace_fortran
@@ -205,12 +200,20 @@ add_fctest( TARGET  test_ioda_obsspace_fortran
             TEST_DEPENDS get_ioda_test_data )
 endif()
 
-# OOPS LocalObsSpace class
+# OOPS LocalObsSpace test
 ecbuild_add_test( TARGET  test_ioda_localobsspace
                   SOURCES mains/TestLocalObsSpace.cc
                   ARGS    "testinput/iodatest_localobsspace.yml"
                   LIBS    ioda
                   TEST_DEPENDS get_ioda_test_data )
+
+# IODA LocalObsSpace test
+ecbuild_add_test( TARGET  test_ioda_obsspace_localization
+                  SOURCES mains/TestIodaLocalObsSpace.cc
+                  ARGS    "testinput/iodatest_obsspace_localization.yml"
+                  LIBS    ioda
+                  TEST_DEPENDS get_ioda_test_data )
+
 
 #####################################################################
 # ObsVector tests

@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2017-2019 UCAR
+ * (C) Copyright 2017-2020 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -15,8 +15,8 @@
 #include <vector>
 
 #include "eckit/config/Configuration.h"
-#include "eckit/geometry/Point3.h"
-#include "eckit/geometry/UnitSphere.h"
+
+#include "ioda/LocalObsSpaceParameters.h"
 
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/DateTime.h"
@@ -39,7 +39,7 @@ namespace ioda {
 ObsSpace::ObsSpace(const eckit::Configuration & config, const eckit::mpi::Comm & comm,
                    const util::DateTime & bgn, const util::DateTime & end)
   : oops::ObsSpaceBase(config, comm, bgn, end),
-    obsspace_(new ObsData(config, comm, bgn, end)),
+    localopts_(), obsspace_(new ObsData(config, comm, bgn, end)),
     localobs_(obsspace_->nlocs()), isLocal_(false),
     obsdist_()
 {
@@ -51,23 +51,21 @@ ObsSpace::ObsSpace(const eckit::Configuration & config, const eckit::mpi::Comm &
 // -----------------------------------------------------------------------------
 /*!
  * \details Second constructor for an ObsSpace object.
- *          This constructor will search for observations within a (dist) from a
- *          specified (Point2).  The number of locations will be limited to (nobs)
+ *          This constructor will search for observations within a distance specified
+ *          in the \p conf from a specified \p refPoint.
  */
 ObsSpace::ObsSpace(const ObsSpace & os,
                    const eckit::geometry::Point2 & refPoint,
-                   const double & maxDist,
-                   const int & maxNobs)
+                   const eckit::Configuration & conf)
   : oops::ObsSpaceBase(eckit::LocalConfiguration(), os.comm(), os.windowStart(), os.windowEnd()),
-    obsspace_(os.obsspace_),
+    localopts_(new LocalObsSpaceParameters()), obsspace_(os.obsspace_),
     localobs_(), isLocal_(true),
     obsdist_()
 {
   oops::Log::trace() << "ioda::ObsSpace for LocalObs starting" << std::endl;
+  localopts_->deserialize(conf);
 
-  const std::string searchMethod = "brute_force";  //  hard-wired for now!
-
-  if ( searchMethod == "brute_force" ) {
+  if ( localopts_->searchMethod == SearchMethod::BRUTEFORCE ) {
     oops::Log::trace() << "ioda::ObsSpace searching via brute force" << std::endl;
 
     std::size_t nlocs = obsspace_->nlocs();
@@ -78,11 +76,10 @@ ObsSpace::ObsSpace(const ObsSpace & os,
     obsspace_ -> get_db("MetaData", "longitude", lons);
     obsspace_ -> get_db("MetaData", "latitude", lats);
 
-    const double radiusEarth = 6.371e6;
     for (unsigned int jj = 0; jj < nlocs; ++jj) {
       eckit::geometry::Point2 searchPoint(lons[jj], lats[jj]);
-      double localDist = eckit::geometry::Sphere::distance(radiusEarth, refPoint, searchPoint);
-      if ( localDist < maxDist ) {
+      double localDist = localopts_->distance(refPoint, searchPoint);
+      if ( localDist < localopts_->lengthscale ) {
         localobs_.push_back(jj);
         obsdist_.push_back(localDist);
       }
@@ -96,7 +93,8 @@ ObsSpace::ObsSpace(const ObsSpace & os,
     ABORT(ErrMsg);
   }
 
-  if ( (maxNobs > 0) && (localobs_.size() > maxNobs) ) {
+  const boost::optional<int> & maxnobs = localopts_->maxnobs;
+  if ( (maxnobs != boost::none) && (localobs_.size() > *maxnobs ) ) {
     for (unsigned int jj = 0; jj < localobs_.size(); ++jj) {
         oops::Log::debug() << "Before sort [i, d]: " << localobs_[jj]
             << " , " << obsdist_[jj] << std::endl;
@@ -122,8 +120,8 @@ ObsSpace::ObsSpace(const ObsSpace & os,
     }
 
     // Truncate to maxNobs length
-    localobs_.resize(maxNobs);
-    obsdist_.resize(maxNobs);
+    localobs_.resize(*maxnobs);
+    obsdist_.resize(*maxnobs);
 
     for (unsigned int jj = 0; jj < localobs_.size(); ++jj) {
         oops::Log::debug() << " After sort [i, d]: " << localobs_[jj] << " , "
