@@ -38,6 +38,7 @@ Observations:
   - ObsSpace:
       name: "Radiance"
       simulate:
+      distribution: "InefficientDistribution"
       ObsDataIn:
         obsfile: "Data/testinput_tier_1/amsua_n19_obs_2018041500_m.nc4"
       TestData:
