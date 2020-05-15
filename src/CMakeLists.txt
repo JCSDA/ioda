@@ -42,7 +42,7 @@ utils/IodaUtils.h
 
 ecbuild_add_library( TARGET   ioda
                      SOURCES  ${ioda_src_files}
-                     LIBS     oops ${IODA_EXTRA_LIBRARIES}
+                     LIBS     oops ioda-engines ${IODA_EXTRA_LIBRARIES}
                      INSTALL_HEADERS LISTED
                      LINKER_LANGUAGE ${IODA_LINKER_LANGUAGE}
                     )

@@ -68,7 +68,7 @@ ecbuild_add_option( FEATURE FCTEST  DEFAULT ${ENABLE_TESTS}
 # Export package info
 ################################################################################
 
-list( APPEND IODA_TPLS NetCDF oops )
+list( APPEND IODA_TPLS NetCDF oops ioda-engines )
 
 set( IODA_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR}/src
                        ${CMAKE_Fortran_MODULE_DIRECTORY} )
