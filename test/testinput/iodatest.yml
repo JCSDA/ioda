@@ -20,6 +20,12 @@ Observations:
       ObsDataIn:
         obsfile: Data/testinput_tier_1/aod_obs_2018041500_m.nc4
 
+  - ObsSpace: 
+      name: Aod
+      simulate:
+      ObsDataIn:
+        obsfile: Data/testinput_tier_1/aod_viirs_obs_2018041500_sf42.nc4
+
   - ObsSpace:
       name: Radiance
       simulate:

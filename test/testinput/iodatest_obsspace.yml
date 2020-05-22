@@ -36,6 +36,37 @@ Observations:
           - 1.0e-14
 
   - ObsSpace:
+      name: "Aod"
+      simulate:
+      ObsDataIn:
+        obsfile: "Data/testinput_tier_1/aod_viirs_obs_2018041500_sf42.nc4"
+      TestData:
+        nlocs: 42
+        nrecs: 42
+        nvars: 1
+        obs_group_var: ""
+        obs_sort_var: ""
+        obs_sort_order: "ascending"
+        variables:
+          - name: "latitude"
+            group: "MetaData"
+            type: "float"
+            norm: 352.09867487082062
+
+          - name: "longitude"
+            group: "MetaData"
+            type: "float"
+            norm: 476.7772684375891
+
+          - name: "surface_type"
+            group: "MetaData"
+            type: "integer"
+            norm: 6.4807406984078604
+        tolerance:
+          - 1.0e-14
+
+
+  - ObsSpace:
       name: "Radiance"
       simulate:
       distribution: "InefficientDistribution"
