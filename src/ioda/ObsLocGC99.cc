@@ -35,10 +35,14 @@ ObsLocGC99::~ObsLocGC99() {}
 
 void ObsLocGC99::multiply(ObsVector & dy) const {
   const std::vector<double> & obsdist = obsdb_.obsdist();
-  double  gc;
-  for (unsigned int ii=0; ii < dy.nobs(); ++ii) {
-    gc = oops::gc99(obsdist[ii]/rscale_);
-    dy[ii] = dy[ii]*gc;
+  const size_t nlocs = dy.nlocs();
+  const size_t nvars = dy.nvars();
+  for (size_t jloc = 0; jloc < nlocs; ++jloc) {
+    double gc = oops::gc99(obsdist[jloc] / rscale_);
+    // obsdist is calculated at each location; need to update R for each variable
+    for (size_t jvar = 0; jvar < nvars; ++jvar) {
+      dy[jvar + jloc * nvars] *= gc;
+    }
   }
 }
 
