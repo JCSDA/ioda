@@ -106,6 +106,8 @@ class NetcdfIO : public IodaIO,
 
   void DimInsert(const std::string & Name, const std::size_t Size);
 
+  void InitializeFrame() {}
+  void FinalizeFrame() {}
   void ReadFrame(IodaIO::FrameIter & iframe);
   void WriteFrame(IodaIO::FrameIter & iframe);
 

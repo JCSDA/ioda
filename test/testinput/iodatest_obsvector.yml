@@ -15,28 +15,28 @@ Locations:
 Observations:
   ObsTypes:
   - ObsSpace:
-      name: Radiosonde_1var
+      name: "Radiosonde_1var"
       simulate:
         variables:
           - air_temperature
       ObsDataIn:
-        obsfile: Data/testinput_tier_1/sondes_obs_2018041500_m.nc4
+        obsfile: Data/testinput_tier_1/sondes_obs_2018041500_m.@OBS_IN_SUFFIX@
         rms_equiv: 216.91619057593934 
         tolerance: 1.0e-14
 
   - ObsSpace:
-      name: Radiosonde_2vars
+      name: "Radiosonde_2vars"
       simulate:
         variables:
           - air_temperature
           - specific_humidity
       ObsDataIn:
-        obsfile: Data/testinput_tier_1/sondes_obs_2018041500_m.nc4
+        obsfile: Data/testinput_tier_1/sondes_obs_2018041500_m.@OBS_IN_SUFFIX@
         rms_equiv: 124.96816071306155 
         tolerance: 1.0e-14
 
   - ObsSpace:
-      name: Radiosonde_4vars
+      name: "Radiosonde_4vars"
       simulate:
         variables:
           - air_temperature
@@ -44,7 +44,7 @@ Observations:
           - eastward_wind
           - northward_wind
       ObsDataIn:
-        obsfile: Data/testinput_tier_1/sondes_obs_2018041500_m.nc4
+        obsfile: Data/testinput_tier_1/sondes_obs_2018041500_m.@OBS_IN_SUFFIX@
         rms_equiv: 71.324181693818431 
         tolerance: 1.0e-14
 

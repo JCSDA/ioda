@@ -79,15 +79,20 @@ void testConstructor() {
   EXPECT(ExpectedNvars == Nvars);
 
   // Constructor in write mode
-  FileName = conf.getString("TestOutput.filename");
-  MaxFrameSize = conf.getUnsigned("TestOutput.max_frame_size", IODAIO_DEFAULT_FRAME_SIZE);
+  if (conf.has("TestOutput")) {
+    FileName = conf.getString("TestOutput.filename");
+    MaxFrameSize = conf.getUnsigned("TestOutput.max_frame_size", IODAIO_DEFAULT_FRAME_SIZE);
 
-  ExpectedNlocs = conf.getInt("TestOutput.nlocs");
-  ExpectedNvars = conf.getInt("TestOutput.nvars");
+    ExpectedNlocs = conf.getInt("TestOutput.nlocs");
+    ExpectedNvars = conf.getInt("TestOutput.nvars");
 
-  TestIO.reset(ioda::IodaIOfactory::Create(FileName, "W", MaxFrameSize));
-  EXPECT(TestIO.get());
+    TestIO.reset(ioda::IodaIOfactory::Create(FileName, "W", MaxFrameSize));
+    EXPECT(TestIO.get());
+  } else {
+    oops::Log::info() << "WARNING: YAML has no 'TestOutput' section, the test of the "
+                      << "constructor in write mode will be skipped." << std::endl;
   }
+}
 
 // -----------------------------------------------------------------------------
 
@@ -197,6 +202,7 @@ void testReadVar() {
     }
   }
 
+  TestIO->frame_initialize();
   for (IodaIO::FrameIter iframe = TestIO->frame_begin();
                          iframe != TestIO->frame_end(); ++iframe) {
     std::size_t FrameStart = TestIO->frame_start(iframe);
@@ -237,6 +243,7 @@ void testReadVar() {
       }
     }
   }
+  TestIO->frame_finalize();
 
   // Check the variables read from the file against the expected values.
   std::map<std::string, std::vector<int>>::iterator iint;
@@ -275,223 +282,235 @@ void testWriteVar() {
   const eckit::LocalConfiguration conf(::test::TestEnvironment::config());
   std::unique_ptr<ioda::IodaIO> TestIO;
 
-  // Try writing variables specified in the config into a file, then read the file
-  // check that you get the same data back.
-  std::string FileName = conf.getString("TestOutput.filename");
-  std::size_t MaxFrameSize = conf.getUnsigned("TestOutput.max_frame_size",
-                                               IODAIO_DEFAULT_FRAME_SIZE);
-  std::size_t ExpectedNlocs = conf.getInt("TestOutput.nlocs");
-  std::size_t ExpectedNvars = conf.getInt("TestOutput.nvars");
+  // Only run the test if the TestOutput section exists. This is a workaround
+  // until the ODC writer is implemented.
+  if (conf.has("TestOutout")) {
+    // Try writing variables specified in the config into a file, then read the file
+    // check that you get the same data back.
+    std::string FileName = conf.getString("TestOutput.filename");
+    std::size_t MaxFrameSize = conf.getUnsigned("TestOutput.max_frame_size",
+                                                 IODAIO_DEFAULT_FRAME_SIZE);
+    std::size_t ExpectedNlocs = conf.getInt("TestOutput.nlocs");
+    std::size_t ExpectedNvars = conf.getInt("TestOutput.nvars");
 
-  std::size_t MaxVarSize = 0;
+    std::size_t MaxVarSize = 0;
 
-  std::map<std::string, std::vector<int>>::iterator iint;
-  std::map<std::string, std::vector<float>>::iterator ifloat;
-  std::map<std::string, std::vector<std::string>>::iterator istring;
+    std::map<std::string, std::vector<int>>::iterator iint;
+    std::map<std::string, std::vector<float>>::iterator ifloat;
+    std::map<std::string, std::vector<std::string>>::iterator istring;
 
-  std::map<std::string, std::vector<int>> IntVars;
-  std::map<std::string, std::vector<float>> FloatVars;
-  std::map<std::string, std::vector<std::string>> StringVars;
+    std::map<std::string, std::vector<int>> IntVars;
+    std::map<std::string, std::vector<float>> FloatVars;
+    std::map<std::string, std::vector<std::string>> StringVars;
 
-  std::map<std::string, std::vector<int>> ExpectedIntVars;
-  std::map<std::string, std::vector<float>> ExpectedFloatVars;
-  std::map<std::string, std::vector<std::string>> ExpectedStringVars;
+    std::map<std::string, std::vector<int>> ExpectedIntVars;
+    std::map<std::string, std::vector<float>> ExpectedFloatVars;
+    std::map<std::string, std::vector<std::string>> ExpectedStringVars;
 
-  // Read in the variable data
-  std::vector<eckit::LocalConfiguration> var_config = 
-                        conf.getSubConfigurations("TestOutput.variables");
+    // Read in the variable data
+    std::vector<eckit::LocalConfiguration> var_config = 
+                          conf.getSubConfigurations("TestOutput.variables");
 
-  for (std::size_t i = 0; i < var_config.size(); i++) {
-    std::string VarGrpName = var_config[i].getString("name");
-    std::string VarType = var_config[i].getString("type");
+    for (std::size_t i = 0; i < var_config.size(); i++) {
+      std::string VarGrpName = var_config[i].getString("name");
+      std::string VarType = var_config[i].getString("type");
 
-    if (VarType == "int") {
-      ExpectedIntVars[VarGrpName] = var_config[i].getIntVector("values");
-      IntVars[VarGrpName] = std::vector<int>(ExpectedIntVars[VarGrpName].size(),0);
-      MaxVarSize = std::max(MaxVarSize, ExpectedIntVars[VarGrpName].size());
-    } else if (VarType == "float") {
-      ExpectedFloatVars[VarGrpName] = var_config[i].getFloatVector("values");
-      FloatVars[VarGrpName] = std::vector<float>(ExpectedFloatVars[VarGrpName].size(),0.0);
-      MaxVarSize = std::max(MaxVarSize, ExpectedFloatVars[VarGrpName].size());
-    } else if (VarType == "string") {
-      ExpectedStringVars[VarGrpName] = var_config[i].getStringVector("values");
-      StringVars[VarGrpName] = std::vector<std::string>(ExpectedStringVars[VarGrpName].size(),"");
-      MaxVarSize = std::max(MaxVarSize, ExpectedStringVars[VarGrpName].size());
+      if (VarType == "int") {
+        ExpectedIntVars[VarGrpName] = var_config[i].getIntVector("values");
+        IntVars[VarGrpName] = std::vector<int>(ExpectedIntVars[VarGrpName].size(),0);
+        MaxVarSize = std::max(MaxVarSize, ExpectedIntVars[VarGrpName].size());
+      } else if (VarType == "float") {
+        ExpectedFloatVars[VarGrpName] = var_config[i].getFloatVector("values");
+        FloatVars[VarGrpName] = std::vector<float>(ExpectedFloatVars[VarGrpName].size(),0.0);
+        MaxVarSize = std::max(MaxVarSize, ExpectedFloatVars[VarGrpName].size());
+      } else if (VarType == "string") {
+        ExpectedStringVars[VarGrpName] = var_config[i].getStringVector("values");
+        StringVars[VarGrpName] = std::vector<std::string>(ExpectedStringVars[VarGrpName].size(),"");
+        MaxVarSize = std::max(MaxVarSize, ExpectedStringVars[VarGrpName].size());
+      }
     }
-  }
 
-  // Write the test data into the file. When writing, need to initialize the frame info
-  // container, the dim info container and the group,variable info container.
-  TestIO.reset(ioda::IodaIOfactory::Create(FileName, "W", MaxFrameSize));
-  TestIO->frame_info_init(MaxVarSize);
-  TestIO->dim_insert("nlocs", ExpectedNlocs); 
-  TestIO->dim_insert("nvars", ExpectedNvars); 
+    // Write the test data into the file. When writing, need to initialize the frame info
+    // container, the dim info container and the group,variable info container.
+    TestIO.reset(ioda::IodaIOfactory::Create(FileName, "W", MaxFrameSize));
+    TestIO->frame_info_init(MaxVarSize);
+    TestIO->dim_insert("nlocs", ExpectedNlocs); 
+    TestIO->dim_insert("nvars", ExpectedNvars); 
 
-  std::string GroupName;
-  std::string VarName;
-  for (iint = ExpectedIntVars.begin(); iint != ExpectedIntVars.end(); ++iint) {
-    TestIO->ExtractGrpVarName(iint->first, GroupName, VarName);
-    std::vector<std::size_t> VarShape(1, (iint->second).size());
-    TestIO->grp_var_insert(GroupName, VarName, "int", VarShape, iint->first, "int");
-  }
-  for (ifloat = ExpectedFloatVars.begin(); ifloat != ExpectedFloatVars.end(); ++ifloat) {
-    TestIO->ExtractGrpVarName(ifloat->first, GroupName, VarName);
-    std::vector<std::size_t> VarShape(1, (ifloat->second).size());
-    TestIO->grp_var_insert(GroupName, VarName, "float", VarShape, ifloat->first, "float");
-  }
-  for (istring = ExpectedStringVars.begin(); istring != ExpectedStringVars.end(); ++istring) {
-    TestIO->ExtractGrpVarName(istring->first, GroupName, VarName);
-    std::vector<std::size_t> VarShape(1, (istring->second).size());
-    std::size_t MaxStringSize = GetMaxStringSize(istring->second);
-    TestIO->grp_var_insert(GroupName, VarName, "string", VarShape, istring->first, "string",
-                           MaxStringSize);
-  }
-
-  for (IodaIO::FrameIter iframe = TestIO->frame_begin();
-                         iframe != TestIO->frame_end(); ++iframe) {
-    TestIO->frame_data_init();
-    std::size_t FrameStart = TestIO->frame_start(iframe);
-    std::size_t FrameSize = TestIO->frame_size(iframe);
-
+    std::string GroupName;
+    std::string VarName;
     for (iint = ExpectedIntVars.begin(); iint != ExpectedIntVars.end(); ++iint) {
       TestIO->ExtractGrpVarName(iint->first, GroupName, VarName);
-      std::vector<std::size_t> VarShape = TestIO->var_shape(GroupName, VarName);
-
-      if (VarShape[0] > FrameStart) {
-        std::size_t VarSize;
-        if (FrameStart + FrameSize > VarShape[0]) {
-          VarSize = VarShape[0] - FrameStart;
-        } else {
-          VarSize = FrameSize;
-        }
-
-        std::vector<int>::iterator Start = ExpectedIntVars[iint->first].begin() + FrameStart;
-        std::vector<int>::iterator End = Start + VarSize;
-        std::vector<int> FrameData(Start, End);
-        TestIO->frame_int_put_data(GroupName, VarName, FrameData);
-      }
+      std::vector<std::size_t> VarShape(1, (iint->second).size());
+      TestIO->grp_var_insert(GroupName, VarName, "int", VarShape, iint->first, "int");
     }
-
     for (ifloat = ExpectedFloatVars.begin(); ifloat != ExpectedFloatVars.end(); ++ifloat) {
       TestIO->ExtractGrpVarName(ifloat->first, GroupName, VarName);
-      std::vector<std::size_t> VarShape = TestIO->var_shape(GroupName, VarName);
-
-      if (VarShape[0] > FrameStart) {
-        std::size_t VarSize;
-        if (FrameStart + FrameSize > VarShape[0]) {
-          VarSize = VarShape[0] - FrameStart;
-        } else {
-          VarSize = FrameSize;
-        }
-
-        std::vector<float>::iterator Start =
-                               ExpectedFloatVars[ifloat->first].begin() + FrameStart;
-        std::vector<float>::iterator End = Start + VarSize;
-        std::vector<float> FrameData(Start, End);
-        TestIO->frame_float_put_data(GroupName, VarName, FrameData);
-      }
+      std::vector<std::size_t> VarShape(1, (ifloat->second).size());
+      TestIO->grp_var_insert(GroupName, VarName, "float", VarShape, ifloat->first, "float");
     }
-
     for (istring = ExpectedStringVars.begin(); istring != ExpectedStringVars.end(); ++istring) {
       TestIO->ExtractGrpVarName(istring->first, GroupName, VarName);
-      std::vector<std::size_t> VarShape = TestIO->var_shape(GroupName, VarName);
+      std::vector<std::size_t> VarShape(1, (istring->second).size());
+      std::size_t MaxStringSize = GetMaxStringSize(istring->second);
+      TestIO->grp_var_insert(GroupName, VarName, "string", VarShape, istring->first, "string",
+                             MaxStringSize);
+    }
 
-      if (VarShape[0] > FrameStart) {
-        std::size_t VarSize;
-        if (FrameStart + FrameSize > VarShape[0]) {
-          VarSize = VarShape[0] - FrameStart;
-        } else {
-          VarSize = FrameSize;
+    TestIO->frame_initialize();
+    for (IodaIO::FrameIter iframe = TestIO->frame_begin();
+                           iframe != TestIO->frame_end(); ++iframe) {
+      TestIO->frame_data_init();
+      std::size_t FrameStart = TestIO->frame_start(iframe);
+      std::size_t FrameSize = TestIO->frame_size(iframe);
+
+      for (iint = ExpectedIntVars.begin(); iint != ExpectedIntVars.end(); ++iint) {
+        TestIO->ExtractGrpVarName(iint->first, GroupName, VarName);
+        std::vector<std::size_t> VarShape = TestIO->var_shape(GroupName, VarName);
+
+        if (VarShape[0] > FrameStart) {
+          std::size_t VarSize;
+          if (FrameStart + FrameSize > VarShape[0]) {
+            VarSize = VarShape[0] - FrameStart;
+          } else {
+            VarSize = FrameSize;
+          }
+
+          std::vector<int>::iterator Start = ExpectedIntVars[iint->first].begin() + FrameStart;
+          std::vector<int>::iterator End = Start + VarSize;
+          std::vector<int> FrameData(Start, End);
+          TestIO->frame_int_put_data(GroupName, VarName, FrameData);
         }
+      }
 
-        std::vector<std::string>::iterator Start =
-                               ExpectedStringVars[istring->first].begin() + FrameStart;
-        std::vector<std::string>::iterator End = Start + VarSize;
-        std::vector<std::string> FrameData(Start, End);
-        TestIO->frame_string_put_data(GroupName, VarName, FrameData);
+      for (ifloat = ExpectedFloatVars.begin(); ifloat != ExpectedFloatVars.end(); ++ifloat) {
+        TestIO->ExtractGrpVarName(ifloat->first, GroupName, VarName);
+        std::vector<std::size_t> VarShape = TestIO->var_shape(GroupName, VarName);
+
+        if (VarShape[0] > FrameStart) {
+          std::size_t VarSize;
+          if (FrameStart + FrameSize > VarShape[0]) {
+            VarSize = VarShape[0] - FrameStart;
+          } else {
+            VarSize = FrameSize;
+          }
+
+          std::vector<float>::iterator Start =
+                                 ExpectedFloatVars[ifloat->first].begin() + FrameStart;
+          std::vector<float>::iterator End = Start + VarSize;
+          std::vector<float> FrameData(Start, End);
+          TestIO->frame_float_put_data(GroupName, VarName, FrameData);
+        }
+      }
+
+      for (istring = ExpectedStringVars.begin(); istring != ExpectedStringVars.end(); ++istring) {
+        TestIO->ExtractGrpVarName(istring->first, GroupName, VarName);
+        std::vector<std::size_t> VarShape = TestIO->var_shape(GroupName, VarName);
+
+        if (VarShape[0] > FrameStart) {
+          std::size_t VarSize;
+          if (FrameStart + FrameSize > VarShape[0]) {
+            VarSize = VarShape[0] - FrameStart;
+          } else {
+            VarSize = FrameSize;
+          }
+
+          std::vector<std::string>::iterator Start =
+                                 ExpectedStringVars[istring->first].begin() + FrameStart;
+          std::vector<std::string>::iterator End = Start + VarSize;
+          std::vector<std::string> FrameData(Start, End);
+          TestIO->frame_string_put_data(GroupName, VarName, FrameData);
+        }
+      }
+
+      // Write the frame into the file
+      TestIO->frame_write(iframe);
+    }
+    TestIO->frame_finalize();
+
+    // Read the data from the file we just created.
+    TestIO.reset(ioda::IodaIOfactory::Create(FileName, "r", MaxFrameSize));
+    TestIO->frame_initialize();
+    for (IodaIO::FrameIter iframe = TestIO->frame_begin();
+                           iframe != TestIO->frame_end(); ++iframe) {
+      std::size_t FrameStart = TestIO->frame_start(iframe);
+      std::size_t FrameSize = TestIO->frame_size(iframe);
+
+      // Fill in the current frame from the file
+      TestIO->frame_read(iframe);
+
+      // Integer variables
+      for (IodaIO::FrameIntIter idata = TestIO->frame_int_begin();
+                                idata != TestIO->frame_int_end(); ++idata) {
+        std::string GroupName = TestIO->frame_int_get_gname(idata);
+        std::string VarName = TestIO->frame_int_get_vname(idata);
+        std::vector<int> FrameData;
+        TestIO->frame_int_get_data(GroupName, VarName, FrameData);
+
+        std::string VarGrpName = VarName + "@" + GroupName;
+        for (std::size_t i = 0; i < FrameData.size(); ++i) {
+          IntVars[VarGrpName][FrameStart + i] = FrameData[i];
+        }
+      }
+
+      // Float variables
+      for (IodaIO::FrameFloatIter idata = TestIO->frame_float_begin();
+                                  idata != TestIO->frame_float_end(); ++idata) {
+        std::string GroupName = TestIO->frame_float_get_gname(idata);
+        std::string VarName = TestIO->frame_float_get_vname(idata);
+        std::vector<float> FrameData;
+        TestIO->frame_float_get_data(GroupName, VarName, FrameData);
+
+        std::string VarGrpName = VarName + "@" + GroupName;
+        for (std::size_t i = 0; i < FrameData.size(); ++i) {
+          FloatVars[VarGrpName][FrameStart + i] = FrameData[i];
+        }
+      }
+
+      // String variables
+      for (IodaIO::FrameStringIter idata = TestIO->frame_string_begin();
+                                   idata != TestIO->frame_string_end(); ++idata) {
+        std::string GroupName = TestIO->frame_string_get_gname(idata);
+        std::string VarName = TestIO->frame_string_get_vname(idata);
+        std::vector<std::string> FrameData;
+        TestIO->frame_string_get_data(GroupName, VarName, FrameData);
+
+        std::string VarGrpName = VarName + "@" + GroupName;
+        for (std::size_t i = 0; i < FrameData.size(); ++i) {
+          StringVars[VarGrpName][FrameStart + i] = FrameData[i];
+        }
+      }
+    }
+    TestIO->frame_finalize();
+
+    // Check the variables read from the file against the expected values.
+    for (iint = IntVars.begin(); iint != IntVars.end(); ++iint) {
+      std::vector<int> IntVect = iint->second;
+      std::vector<int> ExpectedIntVect = ExpectedIntVars[iint->first];
+      for (std::size_t i = 0; i < IntVect.size(); i++) {
+        EXPECT(IntVect[i] == ExpectedIntVect[i]);
       }
     }
 
-    // Write the frame into the file
-    TestIO->frame_write(iframe);
-  }
-
-  // Read the data from the file we just created.
-  TestIO.reset(ioda::IodaIOfactory::Create(FileName, "r", MaxFrameSize));
-  for (IodaIO::FrameIter iframe = TestIO->frame_begin();
-                         iframe != TestIO->frame_end(); ++iframe) {
-    std::size_t FrameStart = TestIO->frame_start(iframe);
-
-    // Fill in the current frame from the file
-    TestIO->frame_read(iframe);
-
-    // Integer variables
-    for (IodaIO::FrameIntIter idata = TestIO->frame_int_begin();
-                              idata != TestIO->frame_int_end(); ++idata) {
-      std::string GroupName = TestIO->frame_int_get_gname(idata);
-      std::string VarName = TestIO->frame_int_get_vname(idata);
-      std::vector<int> FrameData;
-      TestIO->frame_int_get_data(GroupName, VarName, FrameData);
-
-      std::string VarGrpName = VarName + "@" + GroupName;
-      for (std::size_t i = 0; i < FrameData.size(); ++i) {
-        IntVars[VarGrpName][FrameStart + i] = FrameData[i];
+    float FloatTol = conf.getFloat("TestOutput.tolerance");
+    for (ifloat = FloatVars.begin(); ifloat != FloatVars.end(); ++ifloat) {
+      std::vector<float> FloatVect = ifloat->second;
+      std::vector<float> ExpectedFloatVect = ExpectedFloatVars[ifloat->first];
+      for (std::size_t i = 0; i < FloatVect.size(); i++) {
+        EXPECT(oops::is_close(FloatVect[i], ExpectedFloatVect[i], FloatTol));
       }
     }
 
-    // Float variables
-    for (IodaIO::FrameFloatIter idata = TestIO->frame_float_begin();
-                                idata != TestIO->frame_float_end(); ++idata) {
-      std::string GroupName = TestIO->frame_float_get_gname(idata);
-      std::string VarName = TestIO->frame_float_get_vname(idata);
-      std::vector<float> FrameData;
-      TestIO->frame_float_get_data(GroupName, VarName, FrameData);
-
-      std::string VarGrpName = VarName + "@" + GroupName;
-      for (std::size_t i = 0; i < FrameData.size(); ++i) {
-        FloatVars[VarGrpName][FrameStart + i] = FrameData[i];
+    for (istring = StringVars.begin(); istring != StringVars.end(); ++istring) {
+      std::vector<std::string> StringVect = istring->second;
+      std::vector<std::string> ExpectedStringVect = ExpectedStringVars[istring->first];
+      for (std::size_t i = 0; i < StringVect.size(); i++) {
+        EXPECT(StringVect[i] == ExpectedStringVect[i]);
       }
     }
-
-    // String variables
-    for (IodaIO::FrameStringIter idata = TestIO->frame_string_begin();
-                                 idata != TestIO->frame_string_end(); ++idata) {
-      std::string GroupName = TestIO->frame_string_get_gname(idata);
-      std::string VarName = TestIO->frame_string_get_vname(idata);
-      std::vector<std::string> FrameData;
-      TestIO->frame_string_get_data(GroupName, VarName, FrameData);
-
-      std::string VarGrpName = VarName + "@" + GroupName;
-      for (std::size_t i = 0; i < FrameData.size(); ++i) {
-        StringVars[VarGrpName][FrameStart + i] = FrameData[i];
-      }
-    }
-  }
-
-  // Check the variables read from the file against the expected values.
-  for (iint = IntVars.begin(); iint != IntVars.end(); ++iint) {
-    std::vector<int> IntVect = iint->second;
-    std::vector<int> ExpectedIntVect = ExpectedIntVars[iint->first];
-    for (std::size_t i = 0; i < IntVect.size(); i++) {
-      EXPECT(IntVect[i] == ExpectedIntVect[i]);
-    }
-  }
-
-  float FloatTol = conf.getFloat("TestOutput.tolerance");
-  for (ifloat = FloatVars.begin(); ifloat != FloatVars.end(); ++ifloat) {
-    std::vector<float> FloatVect = ifloat->second;
-    std::vector<float> ExpectedFloatVect = ExpectedFloatVars[ifloat->first];
-    for (std::size_t i = 0; i < FloatVect.size(); i++) {
-      EXPECT(oops::is_close(FloatVect[i], ExpectedFloatVect[i], FloatTol));
-    }
-  }
-
-  for (istring = StringVars.begin(); istring != StringVars.end(); ++istring) {
-    std::vector<std::string> StringVect = istring->second;
-    std::vector<std::string> ExpectedStringVect = ExpectedStringVars[istring->first];
-    for (std::size_t i = 0; i < StringVect.size(); i++) {
-      EXPECT(StringVect[i] == ExpectedStringVect[i]);
-    }
+  } else {
+    oops::Log::info() << "WARNING: YAML has no 'TestOutput' section, "
+                      << "testWriteVar test will be skipped." << std::endl;
   }
 }
 
