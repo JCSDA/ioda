@@ -3,14 +3,52 @@
 # This software is licensed under the terms of the Apache Licence Version 2.0
 # which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
 
+# function to remove a symlink if it exists
+function( REMOVE_YAML_SYMLINK link )
+    # if a leftover symlink is sitting around, remove it
+    execute_process( COMMAND find ${link} -type l
+                     OUTPUT_VARIABLE SYMLINK_FILE
+                     OUTPUT_STRIP_TRAILING_WHITESPACE
+                     ERROR_VARIABLE FIND_ERROR )
+    if (SYMLINK_FILE)
+      message( STATUS "Removing obsolete symlink: ${SYMLINK_FILE}" )
+      execute_process( COMMAND rm -f ${SYMLINK_FILE} )
+    endif (SYMLINK_FILE)
+endfunction()
+
+# function to create targets to build test YAML
+function( SET_TARGETS_DEPS_YAML caselist casemode depsvar )
+  foreach(TEST_CASE ${caselist})
+    set( SOURCE_FILE "${CMAKE_CURRENT_SOURCE_DIR}/testinput/iodatest_${TEST_CASE}.yml" )
+    if(${casemode} STREQUAL "ODC")
+      set( DEST_FILE "${CMAKE_CURRENT_BINARY_DIR}/testinput/iodatest_${TEST_CASE}_odc.yml" )
+      set( OBS_IN_SUFFIX "odb" )
+      set( OBS_OUT_SUFFIX "odc.nc4" )
+    else()
+      set( DEST_FILE "${CMAKE_CURRENT_BINARY_DIR}/testinput/iodatest_${TEST_CASE}.yml" )
+      set( OBS_IN_SUFFIX "nc4" )
+      set( OBS_OUT_SUFFIX "nc4" )
+    endif()
+
+    # if a leftover symlink is sitting around, remove it
+    REMOVE_YAML_SYMLINK( ${DEST_FILE} )
+
+    # add a target that runs a sed command to construct the yaml file
+    add_custom_command( OUTPUT ${DEST_FILE}
+      DEPENDS ${SOURCE_FILE}
+      COMMAND sed -e's/@OBS_IN_SUFFIX@/${OBS_IN_SUFFIX}/g' -e's/@OBS_OUT_SUFFIX@/${OBS_OUT_SUFFIX}/g' ${SOURCE_FILE} > ${DEST_FILE} )
+    list( APPEND test_case_deps ${DEST_FILE} )
+  endforeach()
+  set( ${depsvar} ${test_case_deps} PARENT_SCOPE )
+endfunction()
+
 # Create Data directory for test input config and symlink all files
 list( APPEND ioda_test_input
   testinput/iodatest.yml
-  testinput/iodatest_obsspace.yml
   testinput/iodatest_localobsspace.yml
   testinput/iodatest_obserror.yml
-  testinput/iodatest_obsvector.yml
   testinput/iodatest_fileio.yml
+  testinput/iodatest_fileio_odc.yml
   testinput/iodatest_distribution.yml
   testinput/iodatest_obsspace_container.yml
   testinput/iodatest_obsspace_marine.yml
@@ -19,13 +57,32 @@ list( APPEND ioda_test_input
   testinput/iodatest_descendingsort.yml
 )
 
+list( APPEND ioda_repeat_test_cases
+  obsspace
+  obsvector
+)
+
+# Set up test input files (YAML configuration)
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/testinput)
+
 foreach(FILENAME ${ioda_test_input})
     execute_process( COMMAND ${CMAKE_COMMAND} -E create_symlink
            ${CMAKE_CURRENT_SOURCE_DIR}/${FILENAME}
            ${CMAKE_CURRENT_BINARY_DIR}/${FILENAME} )
 endforeach(FILENAME)
 
+# contruct tests in ioda_repeat_test_cases for netcdf obs files
+SET_TARGETS_DEPS_YAML( "${ioda_repeat_test_cases}" NETCDF ioda_test_nc_deps )
+
+if(HAVE_ODC)
+  SET_TARGETS_DEPS_YAML( "${ioda_repeat_test_cases}" ODC ioda_test_odc_deps )
+endif(HAVE_ODC)
+
+list( APPEND ioda_test_cases_deps ${ioda_test_nc_deps} ${ioda_test_odc_deps} )
+add_custom_target( ioda_test_case_yaml ALL DEPENDS ${ioda_test_cases_deps} )
+
+
+# Set up test output directory
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/testoutput)
 
 # Add files to cmake resources
@@ -142,6 +199,13 @@ ecbuild_add_test( TARGET  test_ioda_fileio
                   LIBS    ioda
                   TEST_DEPENDS get_ioda_test_data )
 
+if( HAVE_ODC )
+ecbuild_add_test( TARGET  test_ioda_fileio_odc
+                  COMMAND test_ioda_fileio
+                  ARGS    "testinput/iodatest_fileio_odc.yml"
+                  TEST_DEPENDS get_ioda_test_data )
+endif( HAVE_ODC )
+
 #####################################################################
 # Distribution tests
 #####################################################################
@@ -185,6 +249,21 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_mpi
                   ARGS    "testinput/iodatest_obsspace.yml"
                   TEST_DEPENDS get_ioda_test_data )
 
+if(HAVE_ODC)
+  ecbuild_add_test( TARGET  test_ioda_obsspace_odc
+                    SOURCES mains/TestIodaObsSpace.cc
+                    ARGS    "testinput/iodatest_obsspace_odc.yml"
+                    LIBS    ioda
+                    TEST_DEPENDS get_ioda_test_data )
+
+  ecbuild_add_test( TARGET  test_ioda_obsspace_mpi_odc
+                    MPI     2
+                    COMMAND test_ioda_obsspace
+                    ARGS    "testinput/iodatest_obsspace_odc.yml"
+                    TEST_DEPENDS get_ioda_test_data )
+
+endif(HAVE_ODC)
+
 ecbuild_add_test( TARGET  test_ioda_obsspace_marine
                   COMMAND test_ioda_obsspace
                   ARGS    "testinput/iodatest_obsspace_marine.yml"
@@ -215,6 +294,11 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_localization
                   LIBS    ioda
                   TEST_DEPENDS get_ioda_test_data )
 
+# IODA ObsSpace sorting of obs groups
+ecbuild_add_test( TARGET  test_ioda_descendingsort
+                  SOURCES mains/TestDescendingSort.cc
+                  ARGS    "testinput/iodatest_descendingsort.yml"
+                  LIBS    ioda)
 
 #####################################################################
 # ObsVector tests
@@ -235,6 +319,19 @@ ecbuild_add_test( TARGET  test_ioda_obsvector
                   LIBS    ioda
                   TEST_DEPENDS get_ioda_test_data )
 
+if(HAVE_ODC)
+  ecbuild_add_test( TARGET  test_ioda_obsvector_odc
+                    MPI     4
+                    SOURCES mains/TestIodaObsVector.cc
+                    ARGS    "testinput/iodatest_obsvector_odc.yml"
+                    LIBS    ioda
+                    TEST_DEPENDS get_ioda_test_data )
+endif(HAVE_ODC)
+
+#####################################################################
+# ObsErrorCovariance tests
+#####################################################################
+
 # OOPS ObsErrorCovariance interface (dependent on ObsVector)
 ecbuild_add_test( TARGET  test_ioda_oops_obserrorcovariance
                   SOURCES mains/TestObsErrorCovariance.cc
@@ -242,9 +339,11 @@ ecbuild_add_test( TARGET  test_ioda_oops_obserrorcovariance
                   LIBS    ioda
                   TEST_DEPENDS get_ioda_test_data )
 
+#####################################################################
+# Test the time_IodaIO.x app
+#####################################################################
 
-ecbuild_add_test( TARGET  test_ioda_descendingsort
-                  SOURCES mains/TestDescendingSort.cc
-                  ARGS    "testinput/iodatest_descendingsort.yml"
-                  LIBS    ioda)
-
+ecbuild_add_test( TARGET  test_ioda_time_fileio
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/time_IodaIO.x
+                  ARGS    "testinput/iodatest_obsspace.yml"
+                  TEST_DEPENDS get_ioda_test_data )

@@ -13,6 +13,10 @@
 #include "fileio/IodaIOfactory.h"
 #include "fileio/NetcdfIO.h"
 
+#ifdef HAVE_ODC
+#include "fileio/OdcIO.h"
+#endif
+
 namespace ioda {
 
 //-------------------------------------------------------------------------------------
@@ -39,14 +43,30 @@ IodaIO* IodaIOfactory::Create(const std::string & FileName, const std::string & 
   }
 
   // Create the appropriate object depending on the file suffix
+  std::string FileSuffixList = ".nc4, .nc";
+#ifdef HAVE_ODC
+  FileSuffixList += ", .odb";
+#endif
+
   if ((FileSuffix == "nc4") || (FileSuffix == "nc")) {
     return new ioda::NetcdfIO(FileName, FileMode, MaxFrameSize);
-  } else {
-    oops::Log::error() << "ioda::IodaIO::Create: Unrecognized file suffix: "
+  } else if (FileSuffix == "odb") {
+#ifdef HAVE_ODC
+    return new ioda::OdcIO(FileName, FileMode, MaxFrameSize);
+#else
+    oops::Log::error() << "IodaIO::Create: IODA not compiled with ODC support: "
                        << FileName << std::endl;
-    oops::Log::error() << "ioda::IodaIO::Create:   suffix must be one of: .nc4, .nc"
+    oops::Log::error() << "IodaIO::Create:   Please ensure that the ODC library can "
+                       << "be found and re-run the build process" << std::endl;
+    ABORT("IodaIO::Create: Missing ODC support");
+    return NULL;
+#endif
+  } else {
+    oops::Log::error() << "IodaIO::Create: Unrecognized file suffix: "
+                       << FileName << std::endl;
+    oops::Log::error() << "IodaIO::Create:   suffix must be one of: " << FileSuffixList
                        << std::endl;
-    ABORT("ioda::Ioda::Create: Unrecognized file suffix");
+    ABORT("IodaIO::Create: Unrecognized file suffix");
     return NULL;
   }
 }

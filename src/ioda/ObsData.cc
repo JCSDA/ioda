@@ -686,6 +686,7 @@ void ObsData::InitFromFile(const std::string & filename, const std::size_t MaxFr
   // multiple frames, only check for the ObsValue group on the first frame.
   nvars_ = 0;
   bool FirstFrame = true;
+  fileio->frame_initialize();
   for (IodaIO::FrameIter iframe = fileio->frame_begin();
                        iframe != fileio->frame_end(); ++iframe) {
     std::size_t FrameStart = fileio->frame_start(iframe);
@@ -773,6 +774,7 @@ void ObsData::InitFromFile(const std::string & filename, const std::size_t MaxFr
     }
     FirstFrame = false;
   }
+  fileio->frame_finalize();
 
   // Record whether any problems occurred when reading the file.
   file_unexpected_dtypes_ = fileio->unexpected_data_types();
@@ -1053,6 +1055,7 @@ void ObsData::SaveToFile(const std::string & file_name, const std::size_t MaxFra
   fileio->frame_info_init(MaxVarSize);
 
   // For every frame, dump out the int, float, string variables.
+  fileio->frame_initialize();
   for (IodaIO::FrameIter iframe = fileio->frame_begin();
                          iframe != fileio->frame_end(); ++iframe) {
     fileio->frame_data_init();
@@ -1133,6 +1136,7 @@ void ObsData::SaveToFile(const std::string & file_name, const std::size_t MaxFra
 
     fileio->frame_write(iframe);
   }
+  fileio->frame_finalize();
 }
 
 // -----------------------------------------------------------------------------

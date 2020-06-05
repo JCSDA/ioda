@@ -272,13 +272,15 @@ class IodaIO : public util::Printable {
     // Access to data frames
     typedef FrameInfo::const_iterator FrameIter;
     FrameIter frame_begin();
-    void frame_next(FrameIter &);
     FrameIter frame_end();
+    void frame_initialize();
+    void frame_finalize();
 
     std::size_t frame_start(FrameIter &);
     std::size_t frame_size(FrameIter &);
 
     void frame_info_init(std::size_t MaxVarSize);
+    void frame_info_insert(std::size_t Start, std::size_t Size);
     void frame_data_init();
     void frame_read(FrameIter &);
     void frame_write(FrameIter &);
@@ -363,6 +365,8 @@ class IodaIO : public util::Printable {
     // Methods provided by subclasses
     virtual void DimInsert(const std::string & Name, const std::size_t Size) = 0;
 
+    virtual void InitializeFrame() = 0;
+    virtual void FinalizeFrame() = 0;
     virtual void ReadFrame(IodaIO::FrameIter & iframe) = 0;
     virtual void WriteFrame(IodaIO::FrameIter & iframe) = 0;
 

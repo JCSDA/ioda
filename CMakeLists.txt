@@ -59,6 +59,31 @@ ecbuild_use_package( PROJECT oops VERSION 0.2.1 REQUIRED )
 include_directories( ${OOPS_INCLUDE_DIRS} )
 link_directories( ${oops_BASE_DIR}/lib )
 
+#odc
+# build with odc if the odc library is found
+ecbuild_find_package( NAME odc
+                      VERSION 0.99.0
+                      DESCRIPTION "ODC API Libraries" )
+if (odc_FOUND)
+  set( HAVE_ODC ON CACHE BOOL "ODC API libraries have been found and are being used" )
+
+  include_directories( ${odc_INCLUDE_DIRS} )
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DHAVE_ODC")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DHAVE_ODC")
+  set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -DHAVE_ODC")
+
+  if (odc_VERSION_MAJOR LESS 1)
+    message(STATUS "ODC pre-release version: ${odc_VERSION}")
+  else ()
+    message(STATUS "ODC release version: ${odc_VERSION}")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DODC_RELEASE")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DODC_RELEASE")
+    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -DODC_RELEASE")
+  endif ()
+else (odc_FOUND)
+  set( HAVE_ODC OFF CACHE BOOL "ODC API libraries have been found and are being used" )
+endif (odc_FOUND)
+
 # enable fctest
 ecbuild_add_option( FEATURE FCTEST  DEFAULT ${ENABLE_TESTS}
                     DESCRIPTION "Fortran Unit Testing Framework"
@@ -82,6 +107,10 @@ foreach( _tpl ${IODA_TPLS} )
   list( APPEND IODA_EXTRA_INCLUDE_DIRS  ${${TPL}_INCLUDE_DIRS} ${${TPL}_TPL_INCLUDE_DIRS} )
   list( APPEND IODA_EXTRA_LIBRARIES     ${${TPL}_LIBRARIES}    ${${TPL}_TPL_LIBRARIES}    )
 endforeach()
+
+if (HAVE_ODC)
+  list( APPEND IODA_EXTRA_LIBRARIES ${ODC_LIBRARIES} )
+endif (HAVE_ODC)
 
 ################################################################################
 # Sources

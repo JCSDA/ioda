@@ -6,13 +6,9 @@ CLANG:[![AWS-clang](https://codebuild.us-east-1.amazonaws.com/badges?uuid=eyJlbm
 
 JEDI Interface for Observation Data Access
 
-## ODB support is now available
+## ODC support is now available
 
-ODB is a observation database implementation from ECMWF.
-The IODA implementation using ODB is in a prototype state so the capability, at this time, is limited.
-This is just the beginning and we will be actively developing the ODB interface.
-
-As an example, the radiosonde observation type has can now use netcdf, ODB1 or ODB2 file formats for input observation data.
-
-Instructions for compiling ufo-bundle (which should transfer relatively easily to other bundles) are on the JEDI wiki: 
-* https://wiki.ucar.edu/display/JEDI/Building+ufo-bundle+with+ODB+support
+ODC is an API from ECMWF that gives access to ODB2 (observation data) files.
+The ODC libraries have been installed in the containers, and are available through the jedi-stack build process.
+If the ODC libraries are found in your environment, then the ODC interface will be built into IODA.
+If the ODC libraries are not found, then the ODC interface will be omitted from IODA.

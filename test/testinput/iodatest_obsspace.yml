@@ -6,10 +6,10 @@ Observations:
   ObsTypes:
  
   - ObsSpace:
-      name: "Aod"
+      name: "AOD VIIRS"
       simulate:
       ObsDataIn:
-        obsfile: "Data/testinput_tier_1/aod_obs_2018041500_m.nc4"
+        obsfile: "Data/testinput_tier_1/aod_obs_2018041500_m.@OBS_IN_SUFFIX@"
       TestData:
         nlocs: 100
         nrecs: 100
@@ -36,10 +36,10 @@ Observations:
           - 1.0e-14
 
   - ObsSpace:
-      name: "Aod"
+      name: "AOD VIIRS"
       simulate:
       ObsDataIn:
-        obsfile: "Data/testinput_tier_1/aod_viirs_obs_2018041500_sf42.nc4"
+        obsfile: "Data/testinput_tier_1/aod_viirs_obs_2018041500_sf42.@OBS_IN_SUFFIX@"
       TestData:
         nlocs: 42
         nrecs: 42
@@ -67,11 +67,11 @@ Observations:
 
 
   - ObsSpace:
-      name: "Radiance"
+      name: "AMSUA NOAA19"
       simulate:
       distribution: "InefficientDistribution"
       ObsDataIn:
-        obsfile: "Data/testinput_tier_1/amsua_n19_obs_2018041500_m.nc4"
+        obsfile: "Data/testinput_tier_1/amsua_n19_obs_2018041500_m.@OBS_IN_SUFFIX@"
       TestData:
         nlocs: 100
         nrecs: 100
@@ -93,10 +93,10 @@ Observations:
           - 1.0e-11
 
   - ObsSpace:
-      name: "Radiance"
+      name: "SMAP"
       simulate:
       ObsDataIn:
-        obsfile: "Data/testinput_tier_1/smap_obs_2018041500_m.nc4"
+        obsfile: "Data/testinput_tier_1/smap_obs_2018041500_m.@OBS_IN_SUFFIX@"
       TestData:
         nlocs: 100
         nrecs: 100
@@ -118,10 +118,10 @@ Observations:
           - 1.0e-11
 
   - ObsSpace:
-      name: "Radiance"
+      name: "GMI GPM"
       simulate:
       ObsDataIn:
-        obsfile: "Data/testinput_tier_1/gmi_gpm_obs_2018041500_m.nc4"
+        obsfile: "Data/testinput_tier_1/gmi_gpm_obs_2018041500_m.@OBS_IN_SUFFIX@"
       TestData:
         nlocs: 12
         nrecs: 12
@@ -146,7 +146,7 @@ Observations:
       name: "Radiosonde"
       simulate:
       ObsDataIn:
-        obsfile: "Data/testinput_tier_1/sondes_obs_2018041500_m.nc4"
+        obsfile: "Data/testinput_tier_1/sondes_obs_2018041500_m.@OBS_IN_SUFFIX@"
         max_frame_size: 200
       TestData:
         nlocs: 974
@@ -179,7 +179,7 @@ Observations:
         tolerance:
           - 1.0e-11
       ObsDataOut:
-        obsfile: "testoutput/diagout.nc4"
+        obsfile: "testoutput/diagout.@OBS_OUT_SUFFIX@"
         max_frame_size: 300
 
   - ObsSpace:
@@ -225,7 +225,7 @@ Observations:
         tolerance:
           - 1.0e-11
       ObsDataOut:
-        obsfile: "testoutput/ospace.generate.random.nc4"
+        obsfile: "testoutput/ospace.generate.random.@OBS_OUT_SUFFIX@"
 
   - ObsSpace:
       name: "Synthetic List"
@@ -278,13 +278,13 @@ Observations:
         tolerance:
           - 1.0e-11
       ObsDataOut:
-        obsfile: "testoutput/ospace.generate.list.nc4"
+        obsfile: "testoutput/ospace.generate.list.@OBS_OUT_SUFFIX@"
 
   - ObsSpace:
       name: "Radiosonde with grouping"
       simulate:
       ObsDataIn:
-        obsfile: "Data/testinput_tier_1/sondes_obs_2018041500_m.nc4"
+        obsfile: "Data/testinput_tier_1/sondes_obs_2018041500_m.@OBS_IN_SUFFIX@"
         obsgrouping:
           group_variable: "station_id"
           sort_variable: "air_pressure"
@@ -309,13 +309,13 @@ Observations:
         tolerance:
           - 1.0e-11
       ObsDataOut:
-        obsfile: "testoutput/diagout_with_groups.nc4"
+        obsfile: "testoutput/diagout_with_groups.@OBS_OUT_SUFFIX@"
 
   - ObsSpace:
       name: "Radiosonde with grouping and tw filtering"
       simulate:
       ObsDataIn:
-        obsfile: "Data/testinput_tier_1/sondes_obs_2018041500_m_twfilt.nc4"
+        obsfile: "Data/testinput_tier_1/sondes_obs_2018041500_m_twfilt.@OBS_IN_SUFFIX@"
         obsgrouping:
           group_variable: "station_id"
       TestData:
@@ -338,13 +338,13 @@ Observations:
         tolerance:
           - 1.0e-11
       ObsDataOut:
-        obsfile: "testoutput/diagout_with_groups_twfilt.nc4"
+        obsfile: "testoutput/diagout_with_groups_twfilt.@OBS_OUT_SUFFIX@"
 
   - ObsSpace:
-      name: "AOD"
+      name: "AOD GOES"
       simulate:
       ObsDataIn:
-        obsfile: "Data/testinput_tier_1/geos_aod_obs_2018041500_m.nc4"
+        obsfile: "Data/testinput_tier_1/geos_aod_obs_2018041500_m.@OBS_IN_SUFFIX@"
       TestData:
           nlocs: 100
           nrecs: 100

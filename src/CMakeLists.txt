@@ -40,6 +40,13 @@ utils/IodaUtils.cc
 utils/IodaUtils.h
 )
 
+if (HAVE_ODC)
+  list( APPEND ioda_src_files
+  fileio/OdcIO.cc
+  fileio/OdcIO.h
+  )
+endif (HAVE_ODC)
+
 ecbuild_add_library( TARGET   ioda
                      SOURCES  ${ioda_src_files}
                      LIBS     oops ${IODA_EXTRA_LIBRARIES}
@@ -54,3 +61,5 @@ ecbuild_add_test( TARGET ioda_coding_norms
                   ARGS --quiet --recursive ${CMAKE_CURRENT_SOURCE_DIR}
                   WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/bin )
 
+# add in the mains executables
+add_subdirectory(mains)
