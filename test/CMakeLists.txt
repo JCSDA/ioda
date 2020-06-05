@@ -16,6 +16,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsspace_marine.yml
   testinput/iodatest_obsspace_fortran.yml
   testinput/iodatest_obsspace_localization.yml
+  testinput/iodatest_descendingsort.yml
 )
 
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/testinput)
@@ -240,4 +241,10 @@ ecbuild_add_test( TARGET  test_ioda_oops_obserrorcovariance
                   ARGS    "testinput/iodatest_obserror.yml"
                   LIBS    ioda
                   TEST_DEPENDS get_ioda_test_data )
+
+
+ecbuild_add_test( TARGET  test_ioda_descendingsort
+                  SOURCES mains/TestDescendingSort.cc
+                  ARGS    "testinput/iodatest_descendingsort.yml"
+                  LIBS    ioda)
 

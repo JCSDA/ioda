@@ -1,0 +1,17 @@
+#
+#=== Tests of descending sort with ascending indices ===#
+#
+
+version1:
+  window_begin: 2018-04-14T20:30:00Z
+  window_end: 2018-04-15T03:30:00Z
+  ObsSpace:
+    name: Synthetic
+    ObsDataIn:
+      obsfile: Data/testinput_tier_1/ioda_test_descending_sort.nc4
+      obsgrouping:
+        group_variable: "group"
+        sort_variable: "air_pressure"
+        sort_order: "descending"
+    simulate: 
+      variables: [air_temperature]
