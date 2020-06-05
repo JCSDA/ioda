@@ -968,10 +968,13 @@ void ObsData::BuildSortedObsGroups() {
       sort(irec->second.begin(), irec->second.end());
     } else {
       // Use a lambda function to access the std::pair greater-than operator to
-      // implement a descending order sort.
+      // implement a descending order sort, ensuring the associated indices remain
+      // in ascending order.
       sort(irec->second.begin(), irec->second.end(),
-           [](const std::pair<float, std::size_t> & p1,
-              const std::pair<float, std::size_t> & p2){ return(p1 > p2); } );
+                  [](const std::pair<float, std::size_t> & p1,
+                     const std::pair<float, std::size_t> & p2){
+             return (p2.first < p1.first ||
+                     (!(p1.first < p2.first) && p2.second > p1.second));});
     }
   }
 
