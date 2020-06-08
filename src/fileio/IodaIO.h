@@ -40,6 +40,7 @@ class FrameDataMap {
     typedef typename FrameStore::iterator FrameStoreIter;
     FrameStoreIter begin() { return frame_container_.begin(); }
     FrameStoreIter end() { return frame_container_.end(); }
+    size_t size() { return frame_container_.size(); }
 
     bool has(const std::string & GroupName, const std::string & VarName) {
       std::string VarGrpName = VarName + "@" + GroupName;

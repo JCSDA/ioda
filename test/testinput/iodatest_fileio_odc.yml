@@ -59,3 +59,46 @@ TestInput:
       type: "int"
       values: [ 1, 2, 3, 4, 5, 6, 7, 8, 9 ]
   tolerance: 1.0e-5
+
+TestOutput:
+  filename: "testoutput/fileio_out.odb"
+  max_frame_size: 3
+  nlocs: 8
+  nvars: 5
+
+  variables:
+    - name: "test_float@MetaData"
+      type: "float"
+      values: [ 0.5, 1.5, 2.5, 3.5,  -3.3688e+38 ]
+
+    - name: "test_int@VarMetaData"
+      type: "int"
+      values: [ 0, 2, 4, 6, -2147483643 ]
+
+    - name: "test_char@VarMetaData"
+      type: "string"
+      values:
+        - "Hello"
+        - "World"
+        - "How"
+        - "are"
+        - "you"
+
+    - name: "test_char2@MetaData"
+      type: "string"
+      values:
+        - "ABCD"
+        - "EFGH"
+        - "01234"
+        - "56789"
+        - "abcdefg"
+
+    - name: "datetime@MetaData"
+      type: "string"
+      values:
+        - "2018-04-15T01:57:30Z"
+        - "2018-04-15T01:58:00Z"
+        - "2018-04-15T01:58:30Z"
+        - "2018-04-15T01:59:00Z"
+        - "2018-04-15T01:59:30Z"
+  tolerance: 1.0e-5

@@ -10,6 +10,7 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 
+#include <cstring>
 #include <iomanip>
 #include <sstream>
 
@@ -23,6 +24,8 @@
 ////////////////////////////////////////////////////////////////////////
 
 namespace ioda {
+
+bool OdcIO::odc_initialized_ = false;
 
 // -----------------------------------------------------------------------------
 /*!
@@ -38,26 +41,39 @@ namespace ioda {
 OdcIO::OdcIO(const std::string & FileName, const std::string & FileMode,
              const std::size_t MaxFrameSize) :
           IodaIO(FileName, FileMode, MaxFrameSize), odc_reader_(nullptr), odc_frame_(nullptr),
-                 odc_decoder_(nullptr), next_dim_id_(0) {
+                 odc_decoder_(nullptr), odc_encoder_(nullptr), columnMajorWrite_(false),
+                 next_dim_id_(0), file_descriptor_(-1) {
   oops::Log::trace() << __func__ << " fname_: " << fname_ << " fmode_: " << fmode_ << std::endl;
 
-  // Initialize the API
-  std::string ErrorMsg = "OdcIO::OdcIO: Unable to initialize the ODC API";
-  CheckOdcCall(odc_initialise_api(), ErrorMsg);
+  std::string ErrorMsg;
+
+  // Initialize ODC if it has not yet happened
+  if (!odc_initialized_) {
+    ErrorMsg = "OdcIO::OdcIO: Unable to initialize the ODC API";
+    oops::Log::error() << __func__ << ":INITIALIZING ODC" << std::endl;
+    CheckOdcCall(odc_initialise_api(), ErrorMsg);
+    odc_initialized_ = true;
+  }
 
   // Open the file, recognized modes are:
   //    "r" - read
   //    "w" - write, disallow overwriting an existing file
   //    "W" = write, allow overwriting an existing file
-  std::string OdcWriterWarning = "WARNING: ODC writer is not implemented yet, ";
-  OdcWriterWarning += "output file will not be created.";
   ErrorMsg = "OdcIO::OdcIO: Unable to open file: '"  + fname_ + "' in mode: " + fmode_;
   if (fmode_ == "r") {
     CheckOdcCall(odc_open_path(&odc_reader_, FileName.c_str()), ErrorMsg);
-  } else if (fmode_ == "w") {
-    oops::Log::info() << OdcWriterWarning << std::endl;
-  } else if (fmode_ == "W") {
-    oops::Log::info() << OdcWriterWarning << std::endl;
+  } else if ((fmode_ == "w") || (fmode_ == "W")) {
+    int oflag = O_CREAT | O_WRONLY;
+    if (fmode_ == "w") {
+      oflag = oflag | O_EXCL;  // O_EXCL, when used with O_CREAT, triggers error if file exists
+    }
+    file_descriptor_ = ::open(fname_.c_str(), oflag, 0666);
+    if (file_descriptor_ < 0) {
+      oops::Log::error() << ErrorMsg << std::endl;
+      ABORT(ErrorMsg);
+    }
+    ErrorMsg = "OdcIO::GrpVarInsert: Unable to create new encoder";
+    CheckOdcCall(odc_new_encoder(&odc_encoder_), ErrorMsg);
   } else {
     oops::Log::error() << "OdcIO::OdcIO: Unrecognized FileMode: " << fmode_ << std::endl;
     oops::Log::error() << "OdcIO::OdcIO: Must use one of: 'r', 'w', 'W'" << std::endl;
@@ -172,6 +188,12 @@ OdcIO::~OdcIO() {
   if (fmode_ == "r") {
     CheckOdcCall(odc_close(odc_reader_), ErrorMsg);
   }
+  ErrorMsg =
+    "OdcIO::~OdcIO: Unable to free encoder: '"  + fname_ + "' in mode: " + fmode_;
+  if (fmode_ != "r") {
+    CheckOdcCall(odc_free_encoder(odc_encoder_), ErrorMsg);
+    ::close(file_descriptor_);
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -267,7 +289,7 @@ void OdcIO::DimInsert(const std::string & Name, const std::size_t Size) {
  *
  */
 void OdcIO::InitializeFrame() {
-  std::string ErrorMsg = "OdcIO::BeginFrame: Unable to start a new ODC frame";
+  std::string ErrorMsg = "OdcIO::InitializeFrame: Unable to start a new ODC frame";
   CheckOdcCall(odc_new_frame(&odc_frame_, odc_reader_), ErrorMsg);
 }
 
@@ -277,7 +299,7 @@ void OdcIO::InitializeFrame() {
  *
  */
 void OdcIO::FinalizeFrame() {
-  std::string ErrorMsg = "OdcIO::EndFrame: Unable to free an ODC frame";
+  std::string ErrorMsg = "OdcIO::FinalizeFrame: Unable to free an ODC frame";
   CheckOdcCall(odc_free_frame(odc_frame_), ErrorMsg);
 }
 
@@ -401,6 +423,54 @@ void OdcIO::ReadConvertDateTime(std::vector<std::string> & DtStrings) {
 
 // -----------------------------------------------------------------------------
 /*!
+ * \brief convert ISO8601 date time strings to integer date and time fields
+ *
+ */
+
+void OdcIO::WriteConvertDateTime(std::vector<std::string> & DtStrings,
+                                 std::vector<int>  & intDates, std::vector<int> & intTimes) {
+  std::size_t varSize = DtStrings.size();
+  const size_t yearPosition = 0;
+  const size_t yearLength = 4;
+  const size_t monthPosition = 5;
+  const size_t monthLength = 2;
+  const size_t dayPosition = 8;
+  const size_t dayLength = 2;
+  const size_t hourPosition = 11;
+  const size_t hourLength = 2;
+  const size_t minutePosition = 14;
+  const size_t minuteLength = 2;
+  const size_t secondPosition = 17;
+  const size_t secondLength = 2;
+  int date;
+  int time;
+  std::size_t i;
+
+  try {
+    for (i = 0; i < varSize; ++i) {
+      // date will be integer of form YYYYMMDD
+      date = std::stoi(DtStrings[i].substr(yearPosition, yearLength)) * 10000;
+      date += std::stoi(DtStrings[i].substr(monthPosition, monthLength)) * 100;
+      date += std::stoi(DtStrings[i].substr(dayPosition, dayLength));
+      intDates[i] = date;
+
+      // time will be integer of form HHMMSS
+      time = std::stoi(DtStrings[i].substr(hourPosition, hourLength)) * 10000;
+      time += std::stoi(DtStrings[i].substr(minutePosition, minuteLength)) * 100;
+      time += std::stoi(DtStrings[i].substr(secondPosition, secondLength));
+      intTimes[i] = time;
+    }
+  }
+  catch (...) {
+    std::string errorMsg = "OdcIO::WriteConvertDateTime: Unable to convert '" + DtStrings[i] +
+                           "' to integer date and time fields.";
+    oops::Log::error() << errorMsg << std::endl;
+    ABORT(errorMsg);
+  }
+}
+
+// -----------------------------------------------------------------------------
+/*!
  * \brief Read data from the file into the frame containers
  *
  */
@@ -471,11 +541,153 @@ void OdcIO::ReadFrame(IodaIO::FrameIter & iframe) {
 
 // -----------------------------------------------------------------------------
 /*!
+ * \brief Copy data for a variable to the array that will be used by ODC encoder
+ *
+ * \details The three OdcCopyVar methods are the same with the exception of the
+ *          datatype that is being written (integer, float, char).
+ *
+ * \param[in]  varID column number to put the variable in arrayInOut
+ * \param[in]  frameData Vector of IODA values to be copied to array
+ * \param[in]  ncols Number of columns (variables) in the 2D array arrayInOut 
+ * \param[inout]  arrayInOut Pointer to preallocated 2D array of doubles, frameData.size() by ncols
+ */
+
+void OdcIO::OdcCopyVar(int varID,
+                       std::vector<int> frameData, const int ncols,
+                       double *arrayInOut) {
+  double *valuePtr = nullptr;
+
+  long OdcMissingInteger;
+  std::string errorMsg = "OdcIO::OdcReadVar(int): Unable to obtain ODC missing integer value";
+  CheckOdcCall(odc_missing_integer(&OdcMissingInteger), errorMsg);
+  const int JediMissingInteger = util::missingValue(JediMissingInteger);
+
+  for (int i = 0; i < frameData.size(); ++i) {
+    if (columnMajorWrite_) {  // columns stored seqentially in memory
+      valuePtr = arrayInOut + varID * ncols + i;
+    } else {  // rows stored sequentially in memory
+      valuePtr = arrayInOut + ncols * i + varID;
+    }
+
+    if (frameData[i] != JediMissingInteger) {
+      *valuePtr = frameData[i];
+    } else {
+      *valuePtr = OdcMissingInteger;
+    }
+  }
+}
+
+void OdcIO::OdcCopyVar(int varID,
+                       std::vector<float> frameData, const int ncols,
+                       double *arrayInOut) {
+  double *valuePtr = nullptr;
+
+  double OdcMissingDouble;
+  std::string errorMsg = "OdcIO::OdcReadVar(float): Unable to obtain ODC missing float value";
+  CheckOdcCall(odc_missing_double(&OdcMissingDouble), errorMsg);
+  const float JediMissingFloat = util::missingValue(JediMissingFloat);
+
+  for (int i = 0; i < frameData.size(); ++i) {
+    if (columnMajorWrite_) {  // columns stored seqentially in memory
+      valuePtr = arrayInOut + varID * ncols + i;
+    } else {  // rows stored sequentially in memory
+      valuePtr = arrayInOut + ncols * i + varID;
+    }
+
+    if (frameData[i] != JediMissingFloat) {
+      *valuePtr = frameData[i];
+    } else {
+      *valuePtr = OdcMissingDouble;
+    }
+  }
+}
+
+void OdcIO::OdcCopyVar(int varID,
+                       std::vector<std::string> frameData, const int ncols,
+                       double *arrayInOut) {
+  double *valuePtr = nullptr;
+
+  for (int i = 0; i < frameData.size(); ++i) {
+    if (columnMajorWrite_) {  // columns stored seqentially in memory
+      valuePtr = arrayInOut + varID * ncols + i;
+    } else {  // rows stored sequentially in memory
+      valuePtr = arrayInOut + ncols * i + varID;
+    }
+
+    // TODO(SteveV): Enhance code so that it is equipped for strings longer than sizeof(double)
+    ::strncpy(reinterpret_cast<char*>(valuePtr), frameData[i].c_str(), sizeof(double));
+  }
+}
+
+// -----------------------------------------------------------------------------
+/*!
  * \brief Write data from the frame containers into the file
  *
  */
 
-void OdcIO::WriteFrame(IodaIO::FrameIter & iframe) {
+void OdcIO::WriteFrame(IodaIO::FrameIter & frameInfoIter) {
+  // Grab the specs for the current frame
+  const long nrows = frame_size(frameInfoIter);  // Number of Rows
+  const int ncols = num_odc_cols_;
+  std::string groupName;
+  std::string varName;
+  double * odcFrameData = new double[nrows * ncols];
+
+  // Walk through the int, float, and string frame containers and copy
+  // their contents into the odcFrameData array.
+  // TODO(Steves): Refactor code so that it is guaranteed that the value of the frameInfoIter
+  //       passed in corresponds to the current value of int_frame_data_, float_frame_data_,
+  //       and string_frame_data_.
+  for (IodaIO::FrameIntIter frameStoreIter = frame_int_begin();
+                            frameStoreIter != frame_int_end(); ++frameStoreIter) {
+    groupName = frame_int_get_gname(frameStoreIter);
+    varName = frame_int_get_vname(frameStoreIter);
+    std::vector<int> frameData = frame_int_get_data(frameStoreIter);
+    int varID = var_id(groupName, varName);
+    OdcCopyVar(varID, frameData, ncols, odcFrameData);
+  }
+
+  for (IodaIO::FrameFloatIter frameStoreIter = frame_float_begin();
+                              frameStoreIter != frame_float_end(); ++frameStoreIter) {
+    groupName = frame_float_get_gname(frameStoreIter);
+    varName = frame_float_get_vname(frameStoreIter);
+    std::vector<float> frameData = frame_float_get_data(frameStoreIter);
+    int varID = var_id(groupName, varName);
+    OdcCopyVar(varID, frameData, ncols, odcFrameData);
+  }
+
+  for (IodaIO::FrameStringIter frameStoreIter = frame_string_begin();
+                               frameStoreIter != frame_string_end(); ++frameStoreIter) {
+    groupName = frame_string_get_gname(frameStoreIter);
+    varName = frame_string_get_vname(frameStoreIter);
+    std::vector<std::string> frameData = frame_string_get_data(frameStoreIter);
+    if ((groupName == "MetaData") && (varName == "datetime")) {
+      size_t length = frameData.size();
+      std::vector<int> intDates(length, 0);
+      std::vector<int> intTimes(length, 0);
+      WriteConvertDateTime(frameData, intDates, intTimes);
+      int varID = var_id(groupName, varName);
+      OdcCopyVar(varID, intDates, ncols, odcFrameData);
+      OdcCopyVar(varID + 1, intTimes, ncols, odcFrameData);
+    } else {
+      int varID = var_id(groupName, varName);
+      OdcCopyVar(varID, frameData, ncols, odcFrameData);
+    }
+  }
+
+  // Encode setup
+  std::string errorMsg = "OdcIO::WriteFrame(): Unable to set row count for encoder";
+  CheckOdcCall(odc_encoder_set_row_count(odc_encoder_, nrows), errorMsg);
+  errorMsg = "OdcIO::WriteFrame(): Unable to set data array for encoder";
+  CheckOdcCall(odc_encoder_set_data_array(odc_encoder_, odcFrameData, ncols * sizeof(double),
+    nrows, columnMajorWrite_), errorMsg);
+
+  // Do the encoding
+  long sz;
+  errorMsg = "OdcIO::WriteFrame(): Unable to encode to file descriptor";
+  CheckOdcCall(odc_encode_to_file_descriptor(odc_encoder_, file_descriptor_, &sz), errorMsg);
+
+  delete[] odcFrameData;
 }
 
 // -----------------------------------------------------------------------------
@@ -484,22 +696,62 @@ void OdcIO::WriteFrame(IodaIO::FrameIter & iframe) {
  *
  */
 
-void OdcIO::GrpVarInsert(const std::string & GroupName, const std::string & VarName,
-                 const std::string & VarType, const std::vector<std::size_t> & VarShape,
-                 const std::string & FileVarName, const std::string & FileType,
-                 const std::size_t MaxStringSize) {
-  std::vector<std::size_t> FileShape = VarShape;
-  if (FileType == "string") {
-    FileShape.push_back(MaxStringSize);
+void OdcIO::GrpVarInsert(const std::string & groupName, const std::string & varName,
+                 const std::string & varType, const std::vector<std::size_t> & varShape,
+                 const std::string & fileVarName, const std::string & fileType,
+                 const std::size_t maxStringSize) {
+  std::string errorMsg;
+  std::vector<std::size_t> fileShape = varShape;
+  std::size_t varId;
+  if (fileType == "string") {
+    fileShape.push_back(maxStringSize);
   }
-
-  std::size_t VarId = var_id_get(FileVarName);
-  grp_var_info_[GroupName][VarName].var_id = VarId;
-  grp_var_info_[GroupName][VarName].dtype = VarType;
-  grp_var_info_[GroupName][VarName].file_shape = FileShape;
-  grp_var_info_[GroupName][VarName].file_name = FileVarName;
-  grp_var_info_[GroupName][VarName].file_type = FileType;
-  grp_var_info_[GroupName][VarName].shape = VarShape;
+  if (fmode_ == "r") {
+    varId = var_id_get(fileVarName);
+  } else {
+    // TODO(Steves): create a IODAIO class enum for the implemented varTypes.
+    //       The current code depends upon the caller passing the exact
+    //       correct varType string which cannot be known without searching
+    //       the code.
+    //
+    // Write mode, create the odc column
+    OdcColumnType odcColType;
+    if (varType == "int") {
+      odcColType = ODC_INTEGER;
+    } else if (varType == "float") {
+      odcColType = ODC_REAL;
+    } else if (varType == "string") {
+      odcColType = ODC_STRING;
+    } else {
+      errorMsg = "OdcIO::GrpVarInsert: Unrecognized variable type: " + varType +
+                 ", must use one of: int, float, string";
+      ABORT(errorMsg);
+    }
+    // TODO(Steves): columns will get ordered almost randomly when in write mode.
+    //      Does this matter? Does the odc encoder magically put the constant
+    //      columns on the left when writing the file?
+    varId = num_odc_cols_;
+    // datetime requries special handling since it will come in as a string
+    // but actually be written to the file as two ints
+    if (varName == "datetime") {
+      errorMsg = "OdcIO::GrpVarInsert: Unable to add column: date@MetaData";
+      CheckOdcCall(odc_encoder_add_column(odc_encoder_, "date@MetaData", ODC_INTEGER), errorMsg);
+      num_odc_cols_++;  // Extra increment for the second column
+      errorMsg = "OdcIO::GrpVarInsert: Unable to add column: time@MetaData";
+      CheckOdcCall(odc_encoder_add_column(odc_encoder_, "time@MetaData", ODC_INTEGER), errorMsg);
+    } else {
+      errorMsg = "OdcIO::GrpVarInsert: Unable to add column: " + fileVarName;
+      CheckOdcCall(odc_encoder_add_column(odc_encoder_, fileVarName.c_str(), odcColType),
+                   errorMsg);
+    }
+    num_odc_cols_++;
+  }
+  grp_var_info_[groupName][varName].var_id = varId;
+  grp_var_info_[groupName][varName].dtype = varType;
+  grp_var_info_[groupName][varName].file_shape = fileShape;
+  grp_var_info_[groupName][varName].file_name = fileVarName;
+  grp_var_info_[groupName][varName].file_type = fileType;
+  grp_var_info_[groupName][varName].shape = varShape;
 }
 
 // -----------------------------------------------------------------------------

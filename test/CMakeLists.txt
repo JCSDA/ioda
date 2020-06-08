@@ -22,12 +22,10 @@ function( SET_TARGETS_DEPS_YAML caselist casemode depsvar )
     set( SOURCE_FILE "${CMAKE_CURRENT_SOURCE_DIR}/testinput/iodatest_${TEST_CASE}.yml" )
     if(${casemode} STREQUAL "ODC")
       set( DEST_FILE "${CMAKE_CURRENT_BINARY_DIR}/testinput/iodatest_${TEST_CASE}_odc.yml" )
-      set( OBS_IN_SUFFIX "odb" )
-      set( OBS_OUT_SUFFIX "odc.nc4" )
+      set( OBS_FILE_SUFFIX "odb" )
     else()
       set( DEST_FILE "${CMAKE_CURRENT_BINARY_DIR}/testinput/iodatest_${TEST_CASE}.yml" )
-      set( OBS_IN_SUFFIX "nc4" )
-      set( OBS_OUT_SUFFIX "nc4" )
+      set( OBS_FILE_SUFFIX "nc4" )
     endif()
 
     # if a leftover symlink is sitting around, remove it
@@ -36,7 +34,7 @@ function( SET_TARGETS_DEPS_YAML caselist casemode depsvar )
     # add a target that runs a sed command to construct the yaml file
     add_custom_command( OUTPUT ${DEST_FILE}
       DEPENDS ${SOURCE_FILE}
-      COMMAND sed -e's/@OBS_IN_SUFFIX@/${OBS_IN_SUFFIX}/g' -e's/@OBS_OUT_SUFFIX@/${OBS_OUT_SUFFIX}/g' ${SOURCE_FILE} > ${DEST_FILE} )
+      COMMAND sed -e's/@OBS_FILE_SUFFIX@/${OBS_FILE_SUFFIX}/g' ${SOURCE_FILE} > ${DEST_FILE} )
     list( APPEND test_case_deps ${DEST_FILE} )
   endforeach()
   set( ${depsvar} ${test_case_deps} PARENT_SCOPE )
