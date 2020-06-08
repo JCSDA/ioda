@@ -1055,7 +1055,6 @@ void ObsData::SaveToFile(const std::string & file_name, const std::size_t MaxFra
   fileio->frame_info_init(MaxVarSize);
 
   // For every frame, dump out the int, float, string variables.
-  fileio->frame_initialize();
   for (IodaIO::FrameIter iframe = fileio->frame_begin();
                          iframe != fileio->frame_end(); ++iframe) {
     fileio->frame_data_init();
@@ -1136,7 +1135,6 @@ void ObsData::SaveToFile(const std::string & file_name, const std::size_t MaxFra
 
     fileio->frame_write(iframe);
   }
-  fileio->frame_finalize();
 }
 
 // -----------------------------------------------------------------------------

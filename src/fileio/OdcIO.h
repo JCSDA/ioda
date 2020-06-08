@@ -72,15 +72,25 @@ class OdcIO : public IodaIO, private util::ObjectCounter<OdcIO> {
   void OdcReadVar(const std::size_t VarId, std::vector<float> & VarData);
   void OdcReadVar(const std::size_t VarId, std::vector<std::string> & VarData, bool IsDateTime);
 
+  void OdcCopyVar(int varID, std::vector<int> frameData, const int ncols,
+                  double *arrayInOut);
+  void OdcCopyVar(int varID, std::vector<float> frameData, const int ncols,
+                  double *arrayInOut);
+  void OdcCopyVar(int varID, std::vector<std::string> frameData, const int ncols,
+                  double *arrayInOut);
+
   void ReadConvertDateTime(std::vector<std::string> & DtStrings);
+
+  void WriteConvertDateTime(std::vector<std::string> & DtStrings,
+                            std::vector<int>  & intDates, std::vector<int> & intTimes);
 
   void ReadFrame(IodaIO::FrameIter & iframe);
   void WriteFrame(IodaIO::FrameIter & iframe);
 
-  void GrpVarInsert(const std::string & GroupName, const std::string & VarName,
-                    const std::string & VarType, const std::vector<std::size_t> & VarShape,
-                    const std::string & FileVarName, const std::string & FileType,
-                    const std::size_t MaxStringSize);
+  void GrpVarInsert(const std::string & groupName, const std::string & varName,
+                    const std::string & varType, const std::vector<std::size_t> & varShape,
+                    const std::string & fileVarName, const std::string & fileType,
+                    const std::size_t maxStringSize);
 
   std::size_t var_id_get(const std::string & GrpVarName);
 
@@ -95,7 +105,10 @@ class OdcIO : public IodaIO, private util::ObjectCounter<OdcIO> {
   /*! \brief ODC decoder */
   odc_decoder_t* odc_decoder_;
 
-  /*! \brief ODC decoder */
+  /*! \brief ODC encoder */
+  odc_encoder_t* odc_encoder_;
+
+  /*! \brief ODC frame data */
   double* odc_frame_data_;
 
   /*! \brief output file descriptor */
@@ -105,10 +118,19 @@ class OdcIO : public IodaIO, private util::ObjectCounter<OdcIO> {
   std::size_t next_dim_id_;
 
   /*! \brief number of columns in first frame */
-  int num_odc_cols_;
+  int num_odc_cols_ = 0;
 
   /*! \brief variable ids (column number from file) */
   VarIdMap var_ids_;
+
+  /*! \brief ODC columnMajor value for writing */
+  bool columnMajorWrite_;
+
+  /*! \brief file descriptor for file being written */
+  int file_descriptor_;
+
+  /*! \brief Indicator whether ODC has been initialized */
+  static bool odc_initialized_;
 };
 
 }  // namespace ioda
