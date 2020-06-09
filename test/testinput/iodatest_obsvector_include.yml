@@ -1,0 +1,10 @@
+TestReferences:
+  - &Sonde1varRms 216.91619057593934 
+  - &Sonde1varTol 1.0e-14
+
+  - &Sonde2varRms 124.96816071306155 
+  - &Sonde2varTol 1.0e-14
+
+  - &Sonde4varRms 71.324181693818431 
+  - &Sonde4varTol 1.0e-14
+

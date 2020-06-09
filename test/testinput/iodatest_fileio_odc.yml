@@ -1,0 +1,104 @@
+---
+window_begin: "2015-08-09T21:00:00Z"
+window_end: "2015-08-10T03:00:00Z"
+
+TestInput:
+  filename: "Data/testinput_tier_1/fileio.odb"
+  nlocs: 9
+  nvars: 6
+
+  dimensions:
+    names: [ 'nlocs' ]
+    ids: [ 0 ]
+    sizes: [ 9 ]
+
+  frames:
+    starts: [ 0, 2, 5 ]
+    sizes: [ 2, 3, 4 ]
+
+  variables:
+    - name: "test_int@PreQC"
+      type: "int"
+      values: [ 2, 4, 6, 8, 10, 12, 14, -2147483643, 18 ]
+
+    - name: "test_float@ObsValue"
+      type: "float"
+      values: [ 1.5, 3.5, 5.5, 7.5, 9.5, 11.5, 13.5, 15.5, 17.5 ]
+
+    - name: "test_double@MetaData"
+      type: "float"
+      values: [ 1.25, 2.25, -3.3688e+38, 4.25, 5.25, 6.25, 7.25, 8.25, 9.25 ]
+
+    - name: "test_string@MetaData"
+      type: "string"
+      values:
+        - "12345678"
+        - "012345"
+        - "abcdef"
+        - "ABCDEFGH"
+        - "1234"
+        - "XYZ"
+        - "test"
+        - "1234"
+        - "XYZ"
+
+    - name: "datetime@MetaData"
+      type: "string"
+      values:
+        - "2018-04-15T01:57:30Z"
+        - "2018-04-15T01:58:00Z"
+        - "2018-04-15T01:58:30Z"
+        - "2018-04-15T01:59:00Z"
+        - "2018-04-15T01:59:30Z"
+        - "2018-04-15T02:00:00Z"
+        - "2018-04-15T02:00:30Z"
+        - "2018-04-15T02:01:00Z"
+        - "2018-04-15T02:01:30Z"
+
+    - name: "seqno@MetaData"
+      type: "int"
+      values: [ 1, 2, 3, 4, 5, 6, 7, 8, 9 ]
+  tolerance: 1.0e-5
+
+TestOutput:
+  filename: "testoutput/fileio_out.odb"
+  max_frame_size: 3
+  nlocs: 8
+  nvars: 5
+
+  variables:
+    - name: "test_float@MetaData"
+      type: "float"
+      values: [ 0.5, 1.5, 2.5, 3.5,  -3.3688e+38 ]
+
+    - name: "test_int@VarMetaData"
+      type: "int"
+      values: [ 0, 2, 4, 6, -2147483643 ]
+
+    - name: "test_char@VarMetaData"
+      type: "string"
+      values:
+        - "Hello"
+        - "World"
+        - "How"
+        - "are"
+        - "you"
+
+    - name: "test_char2@MetaData"
+      type: "string"
+      values:
+        - "ABCD"
+        - "EFGH"
+        - "01234"
+        - "56789"
+        - "abcdefg"
+
+    - name: "datetime@MetaData"
+      type: "string"
+      values:
+        - "2018-04-15T01:57:30Z"
+        - "2018-04-15T01:58:00Z"
+        - "2018-04-15T01:58:30Z"
+        - "2018-04-15T01:59:00Z"
+        - "2018-04-15T01:59:30Z"
+  tolerance: 1.0e-5

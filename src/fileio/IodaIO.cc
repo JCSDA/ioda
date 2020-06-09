@@ -570,6 +570,24 @@ IodaIO::FrameIter IodaIO::frame_end() {
 
 // -----------------------------------------------------------------------------
 /*!
+ * \brief initialize frame access
+ */
+
+void IodaIO::frame_initialize() {
+  InitializeFrame();
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \brief finalize frame access
+ */
+
+void IodaIO::frame_finalize() {
+  FinalizeFrame();
+}
+
+// -----------------------------------------------------------------------------
+/*!
  * \brief start value of current frame
  */
 
@@ -605,6 +623,16 @@ void IodaIO::frame_info_init(std::size_t MaxVarSize) {
 
     FrameStart += max_frame_size_;
   }
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \brief insert item into the frame info container
+ */
+
+void IodaIO::frame_info_insert(std::size_t Start, std::size_t Size) {
+  IodaIO::FrameInfoRec Finfo(Start, Size);
+  frame_info_.push_back(Finfo);
 }
 
 // -----------------------------------------------------------------------------

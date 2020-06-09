@@ -87,7 +87,7 @@ void testConstructor() {
 
   TestIO.reset(ioda::IodaIOfactory::Create(FileName, "W", MaxFrameSize));
   EXPECT(TestIO.get());
-  }
+}
 
 // -----------------------------------------------------------------------------
 
@@ -197,6 +197,7 @@ void testReadVar() {
     }
   }
 
+  TestIO->frame_initialize();
   for (IodaIO::FrameIter iframe = TestIO->frame_begin();
                          iframe != TestIO->frame_end(); ++iframe) {
     std::size_t FrameStart = TestIO->frame_start(iframe);
@@ -237,6 +238,7 @@ void testReadVar() {
       }
     }
   }
+  TestIO->frame_finalize();
 
   // Check the variables read from the file against the expected values.
   std::map<std::string, std::vector<int>>::iterator iint;
@@ -279,7 +281,7 @@ void testWriteVar() {
   // check that you get the same data back.
   std::string FileName = conf.getString("TestOutput.filename");
   std::size_t MaxFrameSize = conf.getUnsigned("TestOutput.max_frame_size",
-                                               IODAIO_DEFAULT_FRAME_SIZE);
+                                                IODAIO_DEFAULT_FRAME_SIZE);
   std::size_t ExpectedNlocs = conf.getInt("TestOutput.nlocs");
   std::size_t ExpectedNvars = conf.getInt("TestOutput.nvars");
 
@@ -298,7 +300,7 @@ void testWriteVar() {
   std::map<std::string, std::vector<std::string>> ExpectedStringVars;
 
   // Read in the variable data
-  std::vector<eckit::LocalConfiguration> var_config = 
+  std::vector<eckit::LocalConfiguration> var_config =
                         conf.getSubConfigurations("TestOutput.variables");
 
   for (std::size_t i = 0; i < var_config.size(); i++) {
@@ -324,8 +326,8 @@ void testWriteVar() {
   // container, the dim info container and the group,variable info container.
   TestIO.reset(ioda::IodaIOfactory::Create(FileName, "W", MaxFrameSize));
   TestIO->frame_info_init(MaxVarSize);
-  TestIO->dim_insert("nlocs", ExpectedNlocs); 
-  TestIO->dim_insert("nvars", ExpectedNvars); 
+  TestIO->dim_insert("nlocs", ExpectedNlocs);
+  TestIO->dim_insert("nvars", ExpectedNvars);
 
   std::string GroupName;
   std::string VarName;
@@ -344,11 +346,11 @@ void testWriteVar() {
     std::vector<std::size_t> VarShape(1, (istring->second).size());
     std::size_t MaxStringSize = GetMaxStringSize(istring->second);
     TestIO->grp_var_insert(GroupName, VarName, "string", VarShape, istring->first, "string",
-                           MaxStringSize);
+                            MaxStringSize);
   }
 
   for (IodaIO::FrameIter iframe = TestIO->frame_begin();
-                         iframe != TestIO->frame_end(); ++iframe) {
+                          iframe != TestIO->frame_end(); ++iframe) {
     TestIO->frame_data_init();
     std::size_t FrameStart = TestIO->frame_start(iframe);
     std::size_t FrameSize = TestIO->frame_size(iframe);
@@ -385,7 +387,7 @@ void testWriteVar() {
         }
 
         std::vector<float>::iterator Start =
-                               ExpectedFloatVars[ifloat->first].begin() + FrameStart;
+                                ExpectedFloatVars[ifloat->first].begin() + FrameStart;
         std::vector<float>::iterator End = Start + VarSize;
         std::vector<float> FrameData(Start, End);
         TestIO->frame_float_put_data(GroupName, VarName, FrameData);
@@ -405,7 +407,7 @@ void testWriteVar() {
         }
 
         std::vector<std::string>::iterator Start =
-                               ExpectedStringVars[istring->first].begin() + FrameStart;
+                                ExpectedStringVars[istring->first].begin() + FrameStart;
         std::vector<std::string>::iterator End = Start + VarSize;
         std::vector<std::string> FrameData(Start, End);
         TestIO->frame_string_put_data(GroupName, VarName, FrameData);
@@ -418,9 +420,11 @@ void testWriteVar() {
 
   // Read the data from the file we just created.
   TestIO.reset(ioda::IodaIOfactory::Create(FileName, "r", MaxFrameSize));
+  TestIO->frame_initialize();
   for (IodaIO::FrameIter iframe = TestIO->frame_begin();
-                         iframe != TestIO->frame_end(); ++iframe) {
+                          iframe != TestIO->frame_end(); ++iframe) {
     std::size_t FrameStart = TestIO->frame_start(iframe);
+    std::size_t FrameSize = TestIO->frame_size(iframe);
 
     // Fill in the current frame from the file
     TestIO->frame_read(iframe);
@@ -455,7 +459,7 @@ void testWriteVar() {
 
     // String variables
     for (IodaIO::FrameStringIter idata = TestIO->frame_string_begin();
-                                 idata != TestIO->frame_string_end(); ++idata) {
+                                  idata != TestIO->frame_string_end(); ++idata) {
       std::string GroupName = TestIO->frame_string_get_gname(idata);
       std::string VarName = TestIO->frame_string_get_vname(idata);
       std::vector<std::string> FrameData;
@@ -467,6 +471,7 @@ void testWriteVar() {
       }
     }
   }
+  TestIO->frame_finalize();
 
   // Check the variables read from the file against the expected values.
   for (iint = IntVars.begin(); iint != IntVars.end(); ++iint) {
