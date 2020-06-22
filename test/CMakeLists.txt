@@ -121,9 +121,9 @@ if( NOT DEFINED LOCAL_PATH_TESTFILES_IODA )
  
   # Check whether the URL exists or not 
   set(ECBUILD_DOWNLOAD_BASE_URL ${IODA_DOWNLOAD_BASE_URL}/ioda)
-  ecbuild_check_multiurl(NAMES   ${ioda_test_data}
-                         DIRHOST ${GIT_BRANCH_IODA}
-                         RESULT  IODA_SPECIFIC_TEST_FILES)
+
+  ecbuild_check_urls(NAMES ${GIT_BRANCH_IODA}/${ioda_test_data}
+                     RESULT IODA_SPECIFIC_TEST_FILES)
 
   # Set distant directory
   if(${IODA_SPECIFIC_TEST_FILES} MATCHES 0)
