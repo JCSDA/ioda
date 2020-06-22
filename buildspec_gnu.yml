@@ -64,23 +64,28 @@ phases:
 
       - cd CI
 
+      - if [ "$CODEBUILD_GIT_BRANCH" = "develop"];
+        then export CODEBUILD_GIT_BRANCH_FORK="release-stable";
+        else export CODEBUILD_GIT_BRANCH_FORK=$CODEBUILD_GIT_BRANCH;
+        fi
+
       # ioda-bunde 
       - ./clone.sh $GIT_USER $GIT_PASS ioda-bundle $CODEBUILD_GIT_BRANCH ioda-bundle /jcsda develop
 
       # ioda
       - ./clone.sh $GIT_USER $GIT_PASS ioda $CODEBUILD_GIT_BRANCH ioda /jcsda/ioda-bundle develop
 
-      # atlas
-      - ./clone.sh $GIT_USER $GIT_PASS atlas $CODEBUILD_GIT_BRANCH atlas /jcsda/ioda-bundle release-stable
-
       # saber
       - ./clone.sh $GIT_USER $GIT_PASS saber $CODEBUILD_GIT_BRANCH saber /jcsda/ioda-bundle develop
 
       # oops
       - ./clone.sh $GIT_USER $GIT_PASS oops $CODEBUILD_GIT_BRANCH oops /jcsda/ioda-bundle develop
-
+ 
       #fckit
-      - ./clone.sh $GIT_USER $GIT_PASS fckit $CODEBUILD_GIT_BRANCH fckit /jcsda/ioda-bundle release-stable
+      - ./clone.sh $GIT_USER $GIT_PASS fckit $CODEBUILD_GIT_BRANCH_FORK fckit /jcsda/ioda-bundle release-stable
+
+      # atlas
+      - ./clone.sh $GIT_USER $GIT_PASS atlas $CODEBUILD_GIT_BRANCH_FORK atlas /jcsda/ioda-bundle release-stable
 
       - cd /jcsda/ioda-bundle
       - sed -i 's/BRANCH develop  UPDATE//' CMakeLists.txt
