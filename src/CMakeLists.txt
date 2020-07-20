@@ -49,10 +49,14 @@ endif (HAVE_ODC)
 
 ecbuild_add_library( TARGET   ioda
                      SOURCES  ${ioda_src_files}
-                     LIBS     oops ioda-engines ${IODA_EXTRA_LIBRARIES}
+                     LIBS     oops NetCDF::NetCDF_C ioda-engines
                      INSTALL_HEADERS LISTED
                      LINKER_LANGUAGE ${IODA_LINKER_LANGUAGE}
                     )
+
+if(HAVE_ODC)
+    target_link_libraries(${PROJECT_NAME} PUBLIC ${ODC_LIBRARIES})
+endif()
 
 # coding norms check
 ecbuild_add_test( TARGET ioda_coding_norms
