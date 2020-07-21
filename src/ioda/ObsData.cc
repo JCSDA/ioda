@@ -32,6 +32,7 @@
 
 #include "distribution/DistributionFactory.h"
 #include "fileio/IodaIOfactory.h"
+#include "ioda/Variables/Variable.h"
 
 namespace ioda {
 
@@ -51,8 +52,7 @@ ObsData::ObsData(const eckit::Configuration & config, const eckit::mpi::Comm & c
   : config_(config), winbgn_(bgn), winend_(end), commMPI_(comm),
     gnlocs_(0), nlocs_(0), nvars_(0), nrecs_(0), file_unexpected_dtypes_(false),
     file_excess_dims_(false), in_max_frame_size_(0), out_max_frame_size_(0),
-    int_database_(), float_database_(), string_database_(), datetime_database_(),
-    obsvars_(), next_rec_num_(0)
+    obsvars_(), next_rec_num_(0), obs_group_(ObsGroup::createObsGroupMem())
 {
   oops::Log::trace() << "ObsData::ObsData config  = " << config << std::endl;
 
@@ -188,13 +188,13 @@ ObsData::~ObsData() {
 void ObsData::get_db(const std::string & group, const std::string & name,
                       std::vector<int> & vdata) const {
   std::vector<std::size_t> vshape(1, vdata.size());
-  int_database_.LoadFromDb(group, name, vshape, vdata);
+  LoadFromDb<int>(group, name, vshape, vdata);
 }
 
 void ObsData::get_db(const std::string & group, const std::string & name,
                       std::vector<float> & vdata) const {
   std::vector<std::size_t> vshape(1, vdata.size());
-  float_database_.LoadFromDb(group, name, vshape, vdata);
+  LoadFromDb<float>(group, name, vshape, vdata);
 }
 
 void ObsData::get_db(const std::string & group, const std::string & name,
@@ -202,20 +202,20 @@ void ObsData::get_db(const std::string & group, const std::string & name,
   std::vector<std::size_t> vshape(1, vdata.size());
   // load the float values from the database and convert to double
   std::vector<float> FloatData(vdata.size(), 0.0);
-  float_database_.LoadFromDb(group, name, vshape, FloatData);
+  LoadFromDb<float>(group, name, vshape, FloatData);
   ConvertVarType<float, double>(FloatData, vdata);
 }
 
 void ObsData::get_db(const std::string & group, const std::string & name,
                       std::vector<std::string> & vdata) const {
   std::vector<std::size_t> vshape(1, vdata.size());
-  string_database_.LoadFromDb(group, name, vshape, vdata);
+  LoadFromDb<std::string>(group, name, vshape, vdata);
 }
 
 void ObsData::get_db(const std::string & group, const std::string & name,
                       std::vector<util::DateTime> & vdata) const {
   std::vector<std::size_t> vshape(1, vdata.size());
-  datetime_database_.LoadFromDb(group, name, vshape, vdata);
+  // datetime_database_.LoadFromDb(group, name, vshape, vdata);
 }
 
 // -----------------------------------------------------------------------------
@@ -235,13 +235,13 @@ void ObsData::get_db(const std::string & group, const std::string & name,
 void ObsData::put_db(const std::string & group, const std::string & name,
                       const std::vector<int> & vdata) {
   std::vector<std::size_t> vshape(1, vdata.size());
-  int_database_.StoreToDb(group, name, vshape, vdata);
+  StoreToDb<int>(group, name, vshape, vdata);
 }
 
 void ObsData::put_db(const std::string & group, const std::string & name,
                       const std::vector<float> & vdata) {
   std::vector<std::size_t> vshape(1, vdata.size());
-  float_database_.StoreToDb(group, name, vshape, vdata);
+  StoreToDb<float>(group, name, vshape, vdata);
 }
 
 void ObsData::put_db(const std::string & group, const std::string & name,
@@ -250,19 +250,19 @@ void ObsData::put_db(const std::string & group, const std::string & name,
   // convert to float, then load into the database
   std::vector<float> FloatData(vdata.size());
   ConvertVarType<double, float>(vdata, FloatData);
-  float_database_.StoreToDb(group, name, vshape, FloatData);
+  StoreToDb<float>(group, name, vshape, FloatData);
 }
 
 void ObsData::put_db(const std::string & group, const std::string & name,
                       const std::vector<std::string> & vdata) {
   std::vector<std::size_t> vshape(1, vdata.size());
-  string_database_.StoreToDb(group, name, vshape, vdata);
+  StoreToDb<std::string>(group, name, vshape, vdata);
 }
 
 void ObsData::put_db(const std::string & group, const std::string & name,
                       const std::vector<util::DateTime> & vdata) {
   std::vector<std::size_t> vshape(1, vdata.size());
-  datetime_database_.StoreToDb(group, name, vshape, vdata);
+  // StoreToDb<util::DateTime>(group, name, vshape, vdata);
 }
 
 // -----------------------------------------------------------------------------
@@ -273,8 +273,7 @@ void ObsData::put_db(const std::string & group, const std::string & name,
  */
 
 bool ObsData::has(const std::string & group, const std::string & name) const {
-  return (int_database_.has(group, name) || float_database_.has(group, name) ||
-          string_database_.has(group, name) || datetime_database_.has(group, name));
+  return obs_group_.existsDbVar(group, name);
 }
 
 // -----------------------------------------------------------------------------
@@ -284,17 +283,18 @@ bool ObsData::has(const std::string & group, const std::string & name) const {
  */
 
 ObsDtype ObsData::dtype(const std::string & group, const std::string & name) const {
+  // Set the type to None if there is no type from the backend
   ObsDtype VarType = ObsDtype::None;
-  if (int_database_.has(group, name)) {
-    VarType = ObsDtype::Integer;
-  } else if (float_database_.has(group, name)) {
-    VarType = ObsDtype::Float;
-  } else if (string_database_.has(group, name)) {
-    VarType = ObsDtype::String;
-  } else if (datetime_database_.has(group, name)) {
-    VarType = ObsDtype::DateTime;
+  if (has(group, name)) {
+    Variable var = obs_group_.openDbVar(group, name);
+    if (var.isA<int>()) {
+      VarType = ObsDtype::Integer;
+    } else if (var.isA<float>()) {
+      VarType = ObsDtype::Float;
+    } else if (var.isA<std::string>()) {
+      VarType = ObsDtype::String;
+    }
   }
-
   return VarType;
 }
 
@@ -715,9 +715,9 @@ void ObsData::InitFromFile(const std::string & filename, const std::size_t MaxFr
         std::vector<std::size_t> IndexedShape;
         std::vector<int> SelectedData =
              ApplyIndex(FrameData, VarShape, FrameIndex, FrameShape);
-        int_database_.StoreToDb(GroupName, VarName, FrameShape, SelectedData, true);
+        StoreToDb<int>(GroupName, VarName, FrameShape, SelectedData, true);
       } else {
-        int_database_.StoreToDb(GroupName, VarName, FrameShape, FrameData, true);
+        StoreToDb<int>(GroupName, VarName, FrameShape, FrameData, true);
       }
     }
 
@@ -736,9 +736,9 @@ void ObsData::InitFromFile(const std::string & filename, const std::size_t MaxFr
         std::vector<std::size_t> IndexedShape;
         std::vector<float> SelectedData =
              ApplyIndex(FrameData, VarShape, FrameIndex, FrameShape);
-        float_database_.StoreToDb(GroupName, VarName, FrameShape, SelectedData, true);
+        StoreToDb<float>(GroupName, VarName, FrameShape, SelectedData, true);
       } else {
-        float_database_.StoreToDb(GroupName, VarName, FrameShape, FrameData, true);
+        StoreToDb<float>(GroupName, VarName, FrameShape, FrameData, true);
       }
     }
 
@@ -757,19 +757,9 @@ void ObsData::InitFromFile(const std::string & filename, const std::size_t MaxFr
         std::vector<std::size_t> IndexedShape;
         std::vector<std::string> SelectedData =
              ApplyIndex(FrameData, VarShape, FrameIndex, FrameShape);
-        if (VarName == "datetime") {
-          // Convert to DateTime objects and store in datetime database
-          std::vector<util::DateTime> DtData;
-          for (std::size_t i = 0; i < SelectedData.size(); ++i) {
-            util::DateTime ObsDt(SelectedData[i]);
-            DtData.push_back(ObsDt);
-          }
-          datetime_database_.StoreToDb(GroupName, VarName, FrameShape, DtData, true);
-        } else {
-          string_database_.StoreToDb(GroupName, VarName, FrameShape, SelectedData, true);
-        }
+        StoreToDb<std::string>(GroupName, VarName, FrameShape, SelectedData, true);
       } else {
-        string_database_.StoreToDb(GroupName, VarName, FrameShape, FrameData, true);
+        StoreToDb<std::string>(GroupName, VarName, FrameShape, FrameData, true);
       }
     }
     FirstFrame = false;
@@ -780,6 +770,111 @@ void ObsData::InitFromFile(const std::string & filename, const std::size_t MaxFr
   file_unexpected_dtypes_ = fileio->unexpected_data_types();
   file_excess_dims_ = fileio->excess_dims();
   oops::Log::trace() << "ObsData::InitFromFile opening file ends " << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method will transfer data into the in-memory storage.
+ *
+ * \param[in] GroupName Name of group from top level (ObsValue, ObsError, etc)
+ * \param[in] VarName Name of variable that goes under the group
+ * \param[in] VarShape Sizes of variable dimensions
+ * \param[in] VarData Variable data values
+ * \param[in] Append If true then append the variable to the existing variable
+ */
+template<typename VarType>
+void ObsData::StoreToDb(const std::string & GroupName, const std::string & VarName,
+                        const std::vector<std::size_t> & VarShape,
+                        const std::vector<VarType> & VarData, bool Append) {
+  // Need to copy VarShape into a dimension spec
+  std::vector<Dimensions_t> VarDims(VarShape.size());
+  for (std::size_t i = 0; i < VarShape.size(); ++i) {
+    VarDims[i] = VarShape[i];
+  }
+
+  // Create the group if it doesn't exist
+  Group grp;
+  if (!obs_group_.exists(GroupName)) {
+    grp = obs_group_.create(GroupName);
+  } else {
+    grp = obs_group_.open(GroupName);
+  }
+
+  // Create the variable if it doesn't exist
+  Variable var;
+  if (!grp.vars.exists(VarName)) {
+    // Need to set fill value to the appropriate missing value
+    VarType FillValue;
+    GetFillValue<VarType>(FillValue);
+    VariableCreationParameters VarParams;
+    VarParams.setFillValue<VarType>(FillValue);
+
+    // Create and write the variable. Since it is new, the Append control
+    // doesn't matter. Regardless of its setting, you want to simply write
+    // the variable into the space that was just created.
+    VarParams.finalize();
+    var = grp.vars.create<VarType>(VarName, VarDims, VarDims, VarParams);
+    var.write(VarData);
+  } else {
+    var = grp.vars.open(VarName);
+    if (Append) {
+      // Need to add the existing old and new dimensions to get the
+      // dimensions for resizing. Then write the new data into the new
+      // space that was opened up.
+      std::vector<Dimensions_t> CurDims = var.getDimensions().dimsCur;
+      std::vector<Dimensions_t> NewDims = CurDims;
+      std::vector<Dimensions_t> Counts(CurDims.size());
+      for (std::size_t i = 0; i < NewDims.size(); ++i) {
+        NewDims[i] += VarDims[i];
+        Counts[i] = VarDims[i];
+      }
+      var.resize(NewDims);
+
+      // Create a selection object for the ObsStore ("file") side. Use
+      // the default ALL for the memory side.
+      var.write(VarData, Selection::all,
+                Selection().select({ SelectionOperator::SET, CurDims, Counts }));
+
+    } else {
+      var.write(VarData);
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method will transfer data from the in-memory storage.
+ *
+ * \param[in]  GroupName Name of group from top level (ObsValue, ObsError, etc)
+ * \param[in]  VarName Name of variable that goes under the group
+ * \param[in]  VarShape Sizes of variable dimensions
+ * \param[out] VarData Variable data values
+ */
+template<typename VarType>
+void ObsData::LoadFromDb(const std::string & GroupName, const std::string & VarName,
+                  const std::vector<std::size_t> & VarShape, std::vector<VarType> & VarData,
+                  const std::size_t Start, const std::size_t Count) const {
+  // Need to copy VarShape into a dimension spec
+  std::vector<Dimensions_t> VarDims(VarShape.size());
+  for (std::size_t i = 0; i < VarShape.size(); ++i) {
+    VarDims[i] = VarShape[i];
+  }
+
+  // Open the group and variable
+  Group grp = obs_group_.open(GroupName);
+  Variable var = grp.vars.open(VarName);
+
+  // Read the variable
+  Selection MemSelect = Selection::all;
+  Selection FileSelect;
+  if (Count > 0) {
+    std::vector<Dimensions_t> Starts(1, Start);
+    std::vector<Dimensions_t> Counts(1, Count);
+    FileSelect.select({ SelectionOperator::SET, Starts, Counts });
+  } else {
+    FileSelect = Selection::all;
+  }
+  var.read(VarData, MemSelect, FileSelect);
 }
 
 // -----------------------------------------------------------------------------
@@ -1007,134 +1102,152 @@ void ObsData::SaveToFile(const std::string & file_name, const std::size_t MaxFra
   fileio->dim_insert("nlocs", nlocs_);
   fileio->dim_insert("nvars", nvars_);
 
-  // Build the group, variable info container. This defines the variables
-  // that will be written into the output file.
-  std::size_t MaxVarSize = 0;
-  for (ObsSpaceContainer<int>::VarIter ivar = int_database_.var_iter_begin();
-                                       ivar != int_database_.var_iter_end(); ++ivar) {
-    std::string GroupName = int_database_.var_iter_gname(ivar);
-    std::string VarName = int_database_.var_iter_vname(ivar);
-    std::string GrpVarName = VarName + "@" + GroupName;
-    std::vector<std::size_t> VarShape = int_database_.var_iter_shape(ivar);
-    if (VarShape[0] > MaxVarSize) { MaxVarSize = VarShape[0]; }
-    fileio->grp_var_insert(GroupName, VarName, "int", VarShape, GrpVarName, "int");
-  }
-  for (ObsSpaceContainer<float>::VarIter ivar = float_database_.var_iter_begin();
-                                       ivar != float_database_.var_iter_end(); ++ivar) {
-    std::string GroupName = float_database_.var_iter_gname(ivar);
-    std::string VarName = float_database_.var_iter_vname(ivar);
-    std::string GrpVarName = VarName + "@" + GroupName;
-    std::vector<std::size_t> VarShape = float_database_.var_iter_shape(ivar);
-    if (VarShape[0] > MaxVarSize) { MaxVarSize = VarShape[0]; }
-    fileio->grp_var_insert(GroupName, VarName, "float", VarShape, GrpVarName, "float");
-  }
-  for (ObsSpaceContainer<std::string>::VarIter ivar = string_database_.var_iter_begin();
-                                       ivar != string_database_.var_iter_end(); ++ivar) {
-    std::string GroupName = string_database_.var_iter_gname(ivar);
-    std::string VarName = string_database_.var_iter_vname(ivar);
-    std::string GrpVarName = VarName + "@" + GroupName;
-    std::vector<std::size_t> VarShape = string_database_.var_iter_shape(ivar);
-    if (VarShape[0] > MaxVarSize) { MaxVarSize = VarShape[0]; }
-    std::vector<std::string> DbData(VarShape[0], "");
-    string_database_.LoadFromDb(GroupName, VarName, VarShape, DbData);
-    std::size_t MaxStringSize = FindMaxStringLength(DbData);
-    fileio->grp_var_insert(GroupName, VarName, "string", VarShape, GrpVarName, "string",
-                           MaxStringSize);
-  }
-  for (ObsSpaceContainer<util::DateTime>::VarIter ivar = datetime_database_.var_iter_begin();
-                                       ivar != datetime_database_.var_iter_end(); ++ivar) {
-    std::string GroupName = datetime_database_.var_iter_gname(ivar);
-    std::string VarName = datetime_database_.var_iter_vname(ivar);
-    std::string GrpVarName = VarName + "@" + GroupName;
-    std::vector<std::size_t> VarShape = datetime_database_.var_iter_shape(ivar);
-    if (VarShape[0] > MaxVarSize) { MaxVarSize = VarShape[0]; }
-    fileio->grp_var_insert(GroupName, VarName, "string", VarShape, GrpVarName, "string", 20);
-  }
+///   // Build the group, variable info container. This defines the variables
+///   // that will be written into the output file.
+///   std::size_t MaxVarSize = 0;
+///   for (ObsSpaceContainer<int>::VarIter ivar = int_database_.var_iter_begin();
+///                                        ivar != int_database_.var_iter_end(); ++ivar) {
+///     std::string GroupName = int_database_.var_iter_gname(ivar);
+///     std::string VarName = int_database_.var_iter_vname(ivar);
+///     std::string GrpVarName = VarName + "@" + GroupName;
+///     std::vector<std::size_t> VarShape = int_database_.var_iter_shape(ivar);
+///     if (VarShape[0] > MaxVarSize) { MaxVarSize = VarShape[0]; }
+///     fileio->grp_var_insert(GroupName, VarName, "int", VarShape, GrpVarName, "int");
+///   }
+///   for (ObsSpaceContainer<float>::VarIter ivar = float_database_.var_iter_begin();
+///                                        ivar != float_database_.var_iter_end(); ++ivar) {
+///     std::string GroupName = float_database_.var_iter_gname(ivar);
+///     std::string VarName = float_database_.var_iter_vname(ivar);
+///     std::string GrpVarName = VarName + "@" + GroupName;
+///     std::vector<std::size_t> VarShape = float_database_.var_iter_shape(ivar);
+///     if (VarShape[0] > MaxVarSize) { MaxVarSize = VarShape[0]; }
+///     fileio->grp_var_insert(GroupName, VarName, "float", VarShape, GrpVarName, "float");
+///   }
+///   for (ObsSpaceContainer<std::string>::VarIter ivar = string_database_.var_iter_begin();
+///                                        ivar != string_database_.var_iter_end(); ++ivar) {
+///     std::string GroupName = string_database_.var_iter_gname(ivar);
+///     std::string VarName = string_database_.var_iter_vname(ivar);
+///     std::string GrpVarName = VarName + "@" + GroupName;
+///     std::vector<std::size_t> VarShape = string_database_.var_iter_shape(ivar);
+///     if (VarShape[0] > MaxVarSize) { MaxVarSize = VarShape[0]; }
+///     std::vector<std::string> DbData(VarShape[0], "");
+///     string_database_.LoadFromDb(GroupName, VarName, VarShape, DbData);
+///     std::size_t MaxStringSize = FindMaxStringLength(DbData);
+///     fileio->grp_var_insert(GroupName, VarName, "string", VarShape, GrpVarName, "string",
+///                            MaxStringSize);
+///   }
+///   for (ObsSpaceContainer<util::DateTime>::VarIter ivar = datetime_database_.var_iter_begin();
+///                                        ivar != datetime_database_.var_iter_end(); ++ivar) {
+///     std::string GroupName = datetime_database_.var_iter_gname(ivar);
+///     std::string VarName = datetime_database_.var_iter_vname(ivar);
+///     std::string GrpVarName = VarName + "@" + GroupName;
+///     std::vector<std::size_t> VarShape = datetime_database_.var_iter_shape(ivar);
+///     if (VarShape[0] > MaxVarSize) { MaxVarSize = VarShape[0]; }
+///     fileio->grp_var_insert(GroupName, VarName, "string", VarShape, GrpVarName, "string", 20);
+///   }
+///
+///   // Build the frame info container
+///   fileio->frame_info_init(MaxVarSize);
+///
+///   // For every frame, dump out the int, float, string variables.
+///   for (IodaIO::FrameIter iframe = fileio->frame_begin();
+///                          iframe != fileio->frame_end(); ++iframe) {
+///     fileio->frame_data_init();
+///     std::size_t FrameStart = fileio->frame_start(iframe);
+///     std::size_t FrameSize = fileio->frame_size(iframe);
+///
+///     // Integer data
+///     for (ObsSpaceContainer<int>::VarIter ivar = int_database_.var_iter_begin();
+///                                          ivar != int_database_.var_iter_end(); ++ivar) {
+///       std::string GroupName = int_database_.var_iter_gname(ivar);
+///       std::string VarName = int_database_.var_iter_vname(ivar);
+///       std::vector<std::size_t> VarShape = int_database_.var_iter_shape(ivar);
+///
+///       if (VarShape[0] > FrameStart) {
+///         std::size_t Count = FrameSize;
+///         if ((FrameStart + FrameSize) > VarShape[0]) { Count = VarShape[0] - FrameStart; }
+///         std::vector<int> FrameData(Count, 0);
+///         int_database_.LoadFromDb(GroupName, VarName, VarShape, FrameData, FrameStart, Count);
+///         fileio->frame_int_put_data(GroupName, VarName, FrameData);
+///       }
+///     }
+///
+///     // Float data
+///     for (ObsSpaceContainer<float>::VarIter ivar = float_database_.var_iter_begin();
+///                                          ivar != float_database_.var_iter_end(); ++ivar) {
+///       std::string GroupName = float_database_.var_iter_gname(ivar);
+///       std::string VarName = float_database_.var_iter_vname(ivar);
+///       std::vector<std::size_t> VarShape = float_database_.var_iter_shape(ivar);
+///
+///       if (VarShape[0] > FrameStart) {
+///         std::size_t Count = FrameSize;
+///         if ((FrameStart + FrameSize) > VarShape[0]) { Count = VarShape[0] - FrameStart; }
+///         std::vector<float> FrameData(Count, 0.0);
+///         float_database_.LoadFromDb(GroupName, VarName, VarShape, FrameData, FrameStart, Count);
+///         fileio->frame_float_put_data(GroupName, VarName, FrameData);
+///       }
+///     }
+///
+///     // String data
+///     for (ObsSpaceContainer<std::string>::VarIter ivar = string_database_.var_iter_begin();
+///                                          ivar != string_database_.var_iter_end(); ++ivar) {
+///       std::string GroupName = string_database_.var_iter_gname(ivar);
+///       std::string VarName = string_database_.var_iter_vname(ivar);
+///       std::vector<std::size_t> VarShape = string_database_.var_iter_shape(ivar);
+///
+///       if (VarShape[0] > FrameStart) {
+///         std::size_t Count = FrameSize;
+///         if ((FrameStart + FrameSize) > VarShape[0]) { Count = VarShape[0] - FrameStart; }
+///         std::vector<std::string> FrameData(Count, "");
+///         string_database_.LoadFromDb(GroupName, VarName, VarShape, FrameData,
+///                                     FrameStart, Count);
+///         fileio->frame_string_put_data(GroupName, VarName, FrameData);
+///       }
+///     }
+///
+///     for (ObsSpaceContainer<util::DateTime>::VarIter ivar = datetime_database_.var_iter_begin();
+///                                        ivar != datetime_database_.var_iter_end(); ++ivar) {
+///       std::string GroupName = datetime_database_.var_iter_gname(ivar);
+///       std::string VarName = datetime_database_.var_iter_vname(ivar);
+///       std::vector<std::size_t> VarShape = datetime_database_.var_iter_shape(ivar);
+///
+///       if (VarShape[0] > FrameStart) {
+///         std::size_t Count = FrameSize;
+///         if ((FrameStart + FrameSize) > VarShape[0]) { Count = VarShape[0] - FrameStart; }
+///         util::DateTime TempDt("0000-01-01T00:00:00Z");
+///         std::vector<util::DateTime> FrameData(Count, TempDt);
+///         datetime_database_.LoadFromDb(GroupName, VarName, VarShape, FrameData,
+///                                       FrameStart, Count);
+///
+///         // Convert the DateTime vector to a string vector, then save into the file.
+///         std::vector<std::string> StringVector(FrameData.size(), "");
+///         for (std::size_t i = 0; i < FrameData.size(); i++) {
+///           StringVector[i] = FrameData[i].toString();
+///         }
+///         fileio->frame_string_put_data(GroupName, VarName, StringVector);
+///       }
+///     }
+///
+///     fileio->frame_write(iframe);
+///   }
+}
 
-  // Build the frame info container
-  fileio->frame_info_init(MaxVarSize);
+// -----------------------------------------------------------------------------
+/*!
+ * \details This sets a variable fill value. By default it uses the oops missing values
+ *          according to type. For strings, there is a template specialization which
+ *          uses a blank string.
+ *
+ * \param[out] FillValue Value (according to type) to use for a variable's fill value
+ */
+template<typename DataType>
+void ObsData::GetFillValue(DataType & FillValue) const {
+  FillValue = util::missingValue(FillValue);
+}
 
-  // For every frame, dump out the int, float, string variables.
-  for (IodaIO::FrameIter iframe = fileio->frame_begin();
-                         iframe != fileio->frame_end(); ++iframe) {
-    fileio->frame_data_init();
-    std::size_t FrameStart = fileio->frame_start(iframe);
-    std::size_t FrameSize = fileio->frame_size(iframe);
-
-    // Integer data
-    for (ObsSpaceContainer<int>::VarIter ivar = int_database_.var_iter_begin();
-                                         ivar != int_database_.var_iter_end(); ++ivar) {
-      std::string GroupName = int_database_.var_iter_gname(ivar);
-      std::string VarName = int_database_.var_iter_vname(ivar);
-      std::vector<std::size_t> VarShape = int_database_.var_iter_shape(ivar);
-
-      if (VarShape[0] > FrameStart) {
-        std::size_t Count = FrameSize;
-        if ((FrameStart + FrameSize) > VarShape[0]) { Count = VarShape[0] - FrameStart; }
-        std::vector<int> FrameData(Count, 0);
-        int_database_.LoadFromDb(GroupName, VarName, VarShape, FrameData, FrameStart, Count);
-        fileio->frame_int_put_data(GroupName, VarName, FrameData);
-      }
-    }
-
-    // Float data
-    for (ObsSpaceContainer<float>::VarIter ivar = float_database_.var_iter_begin();
-                                         ivar != float_database_.var_iter_end(); ++ivar) {
-      std::string GroupName = float_database_.var_iter_gname(ivar);
-      std::string VarName = float_database_.var_iter_vname(ivar);
-      std::vector<std::size_t> VarShape = float_database_.var_iter_shape(ivar);
-
-      if (VarShape[0] > FrameStart) {
-        std::size_t Count = FrameSize;
-        if ((FrameStart + FrameSize) > VarShape[0]) { Count = VarShape[0] - FrameStart; }
-        std::vector<float> FrameData(Count, 0.0);
-        float_database_.LoadFromDb(GroupName, VarName, VarShape, FrameData, FrameStart, Count);
-        fileio->frame_float_put_data(GroupName, VarName, FrameData);
-      }
-    }
-
-    // String data
-    for (ObsSpaceContainer<std::string>::VarIter ivar = string_database_.var_iter_begin();
-                                         ivar != string_database_.var_iter_end(); ++ivar) {
-      std::string GroupName = string_database_.var_iter_gname(ivar);
-      std::string VarName = string_database_.var_iter_vname(ivar);
-      std::vector<std::size_t> VarShape = string_database_.var_iter_shape(ivar);
-
-      if (VarShape[0] > FrameStart) {
-        std::size_t Count = FrameSize;
-        if ((FrameStart + FrameSize) > VarShape[0]) { Count = VarShape[0] - FrameStart; }
-        std::vector<std::string> FrameData(Count, "");
-        string_database_.LoadFromDb(GroupName, VarName, VarShape, FrameData,
-                                    FrameStart, Count);
-        fileio->frame_string_put_data(GroupName, VarName, FrameData);
-      }
-    }
-
-    for (ObsSpaceContainer<util::DateTime>::VarIter ivar = datetime_database_.var_iter_begin();
-                                       ivar != datetime_database_.var_iter_end(); ++ivar) {
-      std::string GroupName = datetime_database_.var_iter_gname(ivar);
-      std::string VarName = datetime_database_.var_iter_vname(ivar);
-      std::vector<std::size_t> VarShape = datetime_database_.var_iter_shape(ivar);
-
-      if (VarShape[0] > FrameStart) {
-        std::size_t Count = FrameSize;
-        if ((FrameStart + FrameSize) > VarShape[0]) { Count = VarShape[0] - FrameStart; }
-        util::DateTime TempDt("0000-01-01T00:00:00Z");
-        std::vector<util::DateTime> FrameData(Count, TempDt);
-        datetime_database_.LoadFromDb(GroupName, VarName, VarShape, FrameData,
-                                      FrameStart, Count);
-
-        // Convert the DateTime vector to a string vector, then save into the file.
-        std::vector<std::string> StringVector(FrameData.size(), "");
-        for (std::size_t i = 0; i < FrameData.size(); i++) {
-          StringVector[i] = FrameData[i].toString();
-        }
-        fileio->frame_string_put_data(GroupName, VarName, StringVector);
-      }
-    }
-
-    fileio->frame_write(iframe);
-  }
+template<>
+void ObsData::GetFillValue<std::string>(std::string & FillValue) const {
+  FillValue = std::string("");
 }
 
 // -----------------------------------------------------------------------------

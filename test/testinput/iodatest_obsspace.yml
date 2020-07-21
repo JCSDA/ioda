@@ -35,333 +35,333 @@ Observations:
         tolerance:
           - 1.0e-14
 
-  - ObsSpace:
-      name: "AOD VIIRS"
-      simulate:
-      ObsDataIn:
-        obsfile: "Data/testinput_tier_1/aod_viirs_obs_2018041500_sf42.@OBS_FILE_SUFFIX@"
-      TestData:
-        nlocs: 42
-        nrecs: 42
-        nvars: 1
-        obs_group_var: ""
-        obs_sort_var: ""
-        obs_sort_order: "ascending"
-        variables:
-          - name: "latitude"
-            group: "MetaData"
-            type: "float"
-            norm: 352.09867487082062
-
-          - name: "longitude"
-            group: "MetaData"
-            type: "float"
-            norm: 476.7772684375891
-
-          - name: "surface_type"
-            group: "MetaData"
-            type: "integer"
-            norm: 6.4807406984078604
-        tolerance:
-          - 1.0e-14
-
-
-  - ObsSpace:
-      name: "AMSUA NOAA19"
-      simulate:
-      distribution: "InefficientDistribution"
-      ObsDataIn:
-        obsfile: "Data/testinput_tier_1/amsua_n19_obs_2018041500_m.@OBS_FILE_SUFFIX@"
-      TestData:
-        nlocs: 100
-        nrecs: 100
-        nvars: 15
-        obs_group_var: ""
-        obs_sort_var: ""
-        obs_sort_order: "ascending"
-        variables:
-          - name: "latitude"
-            group: "MetaData"
-            type: "float"
-            norm: 432.95617402805823
-
-          - name: "longitude"
-            group: "MetaData"
-            type: "float"
-            norm: 1661.1529210392009
-        tolerance:
-          - 1.0e-11
-
-  - ObsSpace:
-      name: "SMAP"
-      simulate:
-      ObsDataIn:
-        obsfile: "Data/testinput_tier_1/smap_obs_2018041500_m.@OBS_FILE_SUFFIX@"
-      TestData:
-        nlocs: 100
-        nrecs: 100
-        nvars: 4
-        obs_group_var: ""
-        obs_sort_var: ""
-        obs_sort_order: "ascending"
-        variables:
-          - name: "latitude"
-            group: "MetaData"
-            type: "float"
-            norm: 694.93010245335154
-
-          - name: "longitude"
-            group: "MetaData"
-            type: "float"
-            norm: 2835.0339068827361
-        tolerance:
-          - 1.0e-11
-
-  - ObsSpace:
-      name: "GMI GPM"
-      simulate:
-      ObsDataIn:
-        obsfile: "Data/testinput_tier_1/gmi_gpm_obs_2018041500_m.@OBS_FILE_SUFFIX@"
-      TestData:
-        nlocs: 12
-        nrecs: 12
-        nvars: 13
-        obs_group_var: ""
-        obs_sort_var: ""
-        obs_sort_order: "ascending"
-        variables:
-          - name: "latitude"
-            group: "MetaData"
-            type: "float"
-            norm: 211.00380053756118
-
-          - name: "longitude"
-            group: "MetaData"
-            type: "float"
-            norm: 172.29837728971688
-        tolerance:
-          - 1.0e-11
-
-  - ObsSpace:
-      name: "Radiosonde"
-      simulate:
-      ObsDataIn:
-        obsfile: "Data/testinput_tier_1/sondes_obs_2018041500_m.@OBS_FILE_SUFFIX@"
-        max_frame_size: 200
-      TestData:
-        nlocs: 974
-        nrecs: 974
-        nvars: 5
-        obs_group_var: ""
-        obs_sort_var: ""
-        obs_sort_order: "ascending"
-        variables:
-          - name: "latitude"
-            group: "MetaData"
-            type: "float"
-            norm: 1254.66336565038
-
-          - name: "longitude"
-            group: "MetaData"
-            type: "float"
-            norm: 6076.2659622388919
-
-          - name: "station_id"
-            group: "MetaData"
-            type: "string"
-            first_value: "07510"
-            last_value: "97530"
-
-          - name: "surface_pressure"
-            group: "PreQC"
-            type: "integer"
-            norm: 66675822462.585785
-        tolerance:
-          - 1.0e-11
-      ObsDataOut:
-        obsfile: "testoutput/diagout.@OBS_FILE_SUFFIX@"
-        max_frame_size: 300
-
-  - ObsSpace:
-      name: "Synthetic Random"
-      simulate:
-        variables: [air_temperature, eastward_wind]
-      Generate:
-        Random:
-          nobs: 10   # generate 10 obs
-          lat1: 0    # with lat ranging form 0-10.
-          lat2: 10   #
-          lon1: 0    # and lon ranging from 0-10.
-          lon2: 10
-          random_seed: 29837
-        obs_errors: [1.0, 2.0]
-      TestData:
-        nlocs: 10
-        nrecs: 10
-        nvars: 2
-        obs_group_var: ""
-        obs_sort_var: ""
-        obs_sort_order: ""
-        variables:
-          - name: "latitude"
-            group: "MetaData"
-            type: "float"
-            norm: 20.349321770437683
-
-          - name: "longitude"
-            group: "MetaData"
-            type: "float"
-            norm: 21.063312039377447
-
-          - name: "air_temperature"
-            group: "ObsError"
-            type: "float"
-            norm: 3.1622776601683795
-
-          - name: "eastward_wind"
-            group: "ObsError"
-            type: "float"
-            norm: 6.32455532034
-        tolerance:
-          - 1.0e-11
-      ObsDataOut:
-        obsfile: "testoutput/ospace.generate.random.@OBS_FILE_SUFFIX@"
-
-  - ObsSpace:
-      name: "Synthetic List"
-      simulate:
-        variables: [air_temperature, eastward_wind]
-      Generate:
-        List:
-          lats: [ 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 ]
-          lons: [ 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 ]
-          datetimes: 
-          - '2010-01-01T00:04:00Z'
-          - '2010-01-01T00:04:12Z'
-          - '2010-01-01T00:04:24Z'
-          - '2010-01-01T00:04:36Z'
-          - '2010-01-01T00:04:48Z'
-          - '2010-01-01T00:05:00Z'
-          - '2010-01-01T00:05:12Z'
-          - '2010-01-01T00:05:24Z'
-          - '2010-01-01T00:05:36Z'
-          - '2010-01-01T00:05:48Z'
-          - '2010-01-01T00:06:00Z' 
-        obs_errors: [1.0, 2.0]
-      TestData:
-        nlocs: 11
-        nrecs: 11
-        nvars: 2
-        obs_group_var: ""
-        obs_sort_var: ""
-        obs_sort_order: ""
-        variables:
-          - name: "latitude"
-            group: "MetaData"
-            type: "float"
-            norm: 16.583123951777001
-
-          - name: "longitude"
-            group: "MetaData"
-            type: "float"
-            norm: 16.583123951777001
-
-          - name: "air_temperature"
-            group: "ObsError"
-            type: "float"
-            norm: 3.3166247903553998
-
-          - name: "eastward_wind"
-            group: "ObsError"
-            type: "float"
-            norm: 6.6332495807107996
-        tolerance:
-          - 1.0e-11
-      ObsDataOut:
-        obsfile: "testoutput/ospace.generate.list.@OBS_FILE_SUFFIX@"
-
-  - ObsSpace:
-      name: "Radiosonde with grouping"
-      simulate:
-      ObsDataIn:
-        obsfile: "Data/testinput_tier_1/sondes_obs_2018041500_m.@OBS_FILE_SUFFIX@"
-        obsgrouping:
-          group_variable: "station_id"
-          sort_variable: "air_pressure"
-          sort_order: "descending"
-      TestData:
-        nlocs: 974
-        nrecs: 36
-        nvars: 5
-        obs_group_var: "station_id"
-        obs_sort_var: "air_pressure"
-        obs_sort_order: "descending"
-        variables:
-          - name: "latitude"
-            group: "MetaData"
-            type: "float"
-            norm: 1254.66336565038
-
-          - name: "longitude"
-            group: "MetaData"
-            type: "float"
-            norm: 6076.2659622388919
-        tolerance:
-          - 1.0e-11
-      ObsDataOut:
-        obsfile: "testoutput/diagout_with_groups.@OBS_FILE_SUFFIX@"
-
-  - ObsSpace:
-      name: "Radiosonde with grouping and tw filtering"
-      simulate:
-      ObsDataIn:
-        obsfile: "Data/testinput_tier_1/sondes_obs_2018041500_m_twfilt.@OBS_FILE_SUFFIX@"
-        obsgrouping:
-          group_variable: "station_id"
-      TestData:
-        nlocs: 968
-        nrecs: 31
-        nvars: 5
-        obs_group_var: "station_id"
-        obs_sort_var: ""
-        obs_sort_order: "ascending"
-        variables:
-          - name: "latitude"
-            group: "MetaData"
-            type: "float"
-            norm: 1252.0139923322768
-
-          - name: "longitude"
-            group: "MetaData"
-            type: "float"
-            norm: 6065.3117664336605
-        tolerance:
-          - 1.0e-11
-      ObsDataOut:
-        obsfile: "testoutput/diagout_with_groups_twfilt.@OBS_FILE_SUFFIX@"
-
-  - ObsSpace:
-      name: "AOD GOES"
-      simulate:
-      ObsDataIn:
-        obsfile: "Data/testinput_tier_1/geos_aod_obs_2018041500_m.@OBS_FILE_SUFFIX@"
-      TestData:
-          nlocs: 100
-          nrecs: 100
-          nvars: 1 
-          obs_group_var: ""
-          obs_sort_var: ""
-          obs_sort_order: "ascending"
-          variables:
-            - name: "latitude"
-              group: "MetaData"
-              type: "float"
-              norm: 567.88380247048008
-
-            - name: "longitude"
-              group: "MetaData"
-              type: "float"
-              norm: 1793.5631154126893
-          tolerance:
-            - 1.0e-11
-
+###   - ObsSpace:
+###       name: "AOD VIIRS"
+###       simulate:
+###       ObsDataIn:
+###         obsfile: "Data/testinput_tier_1/aod_viirs_obs_2018041500_sf42.@OBS_FILE_SUFFIX@"
+###       TestData:
+###         nlocs: 42
+###         nrecs: 42
+###         nvars: 1
+###         obs_group_var: ""
+###         obs_sort_var: ""
+###         obs_sort_order: "ascending"
+###         variables:
+###           - name: "latitude"
+###             group: "MetaData"
+###             type: "float"
+###             norm: 352.09867487082062
+### 
+###           - name: "longitude"
+###             group: "MetaData"
+###             type: "float"
+###             norm: 476.7772684375891
+### 
+###           - name: "surface_type"
+###             group: "MetaData"
+###             type: "integer"
+###             norm: 6.4807406984078604
+###         tolerance:
+###           - 1.0e-14
+### 
+### 
+###   - ObsSpace:
+###       name: "AMSUA NOAA19"
+###       simulate:
+###       distribution: "InefficientDistribution"
+###       ObsDataIn:
+###         obsfile: "Data/testinput_tier_1/amsua_n19_obs_2018041500_m.@OBS_FILE_SUFFIX@"
+###       TestData:
+###         nlocs: 100
+###         nrecs: 100
+###         nvars: 15
+###         obs_group_var: ""
+###         obs_sort_var: ""
+###         obs_sort_order: "ascending"
+###         variables:
+###           - name: "latitude"
+###             group: "MetaData"
+###             type: "float"
+###             norm: 432.95617402805823
+### 
+###           - name: "longitude"
+###             group: "MetaData"
+###             type: "float"
+###             norm: 1661.1529210392009
+###         tolerance:
+###           - 1.0e-11
+### 
+###   - ObsSpace:
+###       name: "SMAP"
+###       simulate:
+###       ObsDataIn:
+###         obsfile: "Data/testinput_tier_1/smap_obs_2018041500_m.@OBS_FILE_SUFFIX@"
+###       TestData:
+###         nlocs: 100
+###         nrecs: 100
+###         nvars: 4
+###         obs_group_var: ""
+###         obs_sort_var: ""
+###         obs_sort_order: "ascending"
+###         variables:
+###           - name: "latitude"
+###             group: "MetaData"
+###             type: "float"
+###             norm: 694.93010245335154
+### 
+###           - name: "longitude"
+###             group: "MetaData"
+###             type: "float"
+###             norm: 2835.0339068827361
+###         tolerance:
+###           - 1.0e-11
+### 
+###   - ObsSpace:
+###       name: "GMI GPM"
+###       simulate:
+###       ObsDataIn:
+###         obsfile: "Data/testinput_tier_1/gmi_gpm_obs_2018041500_m.@OBS_FILE_SUFFIX@"
+###       TestData:
+###         nlocs: 12
+###         nrecs: 12
+###         nvars: 13
+###         obs_group_var: ""
+###         obs_sort_var: ""
+###         obs_sort_order: "ascending"
+###         variables:
+###           - name: "latitude"
+###             group: "MetaData"
+###             type: "float"
+###             norm: 211.00380053756118
+### 
+###           - name: "longitude"
+###             group: "MetaData"
+###             type: "float"
+###             norm: 172.29837728971688
+###         tolerance:
+###           - 1.0e-11
+### 
+###   - ObsSpace:
+###       name: "Radiosonde"
+###       simulate:
+###       ObsDataIn:
+###         obsfile: "Data/testinput_tier_1/sondes_obs_2018041500_m.@OBS_FILE_SUFFIX@"
+###         max_frame_size: 200
+###       TestData:
+###         nlocs: 974
+###         nrecs: 974
+###         nvars: 5
+###         obs_group_var: ""
+###         obs_sort_var: ""
+###         obs_sort_order: "ascending"
+###         variables:
+###           - name: "latitude"
+###             group: "MetaData"
+###             type: "float"
+###             norm: 1254.66336565038
+### 
+###           - name: "longitude"
+###             group: "MetaData"
+###             type: "float"
+###             norm: 6076.2659622388919
+### 
+###           - name: "station_id"
+###             group: "MetaData"
+###             type: "string"
+###             first_value: "07510"
+###             last_value: "97530"
+### 
+###           - name: "surface_pressure"
+###             group: "PreQC"
+###             type: "integer"
+###             norm: 66675822462.585785
+###         tolerance:
+###           - 1.0e-11
+###       ObsDataOut:
+###         obsfile: "testoutput/diagout.@OBS_FILE_SUFFIX@"
+###         max_frame_size: 300
+### 
+###   - ObsSpace:
+###       name: "Synthetic Random"
+###       simulate:
+###         variables: [air_temperature, eastward_wind]
+###       Generate:
+###         Random:
+###           nobs: 10   # generate 10 obs
+###           lat1: 0    # with lat ranging form 0-10.
+###           lat2: 10   #
+###           lon1: 0    # and lon ranging from 0-10.
+###           lon2: 10
+###           random_seed: 29837
+###         obs_errors: [1.0, 2.0]
+###       TestData:
+###         nlocs: 10
+###         nrecs: 10
+###         nvars: 2
+###         obs_group_var: ""
+###         obs_sort_var: ""
+###         obs_sort_order: ""
+###         variables:
+###           - name: "latitude"
+###             group: "MetaData"
+###             type: "float"
+###             norm: 20.349321770437683
+### 
+###           - name: "longitude"
+###             group: "MetaData"
+###             type: "float"
+###             norm: 21.063312039377447
+### 
+###           - name: "air_temperature"
+###             group: "ObsError"
+###             type: "float"
+###             norm: 3.1622776601683795
+### 
+###           - name: "eastward_wind"
+###             group: "ObsError"
+###             type: "float"
+###             norm: 6.32455532034
+###         tolerance:
+###           - 1.0e-11
+###       ObsDataOut:
+###         obsfile: "testoutput/ospace.generate.random.@OBS_FILE_SUFFIX@"
+### 
+###   - ObsSpace:
+###       name: "Synthetic List"
+###       simulate:
+###         variables: [air_temperature, eastward_wind]
+###       Generate:
+###         List:
+###           lats: [ 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 ]
+###           lons: [ 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 ]
+###           datetimes: 
+###           - '2010-01-01T00:04:00Z'
+###           - '2010-01-01T00:04:12Z'
+###           - '2010-01-01T00:04:24Z'
+###           - '2010-01-01T00:04:36Z'
+###           - '2010-01-01T00:04:48Z'
+###           - '2010-01-01T00:05:00Z'
+###           - '2010-01-01T00:05:12Z'
+###           - '2010-01-01T00:05:24Z'
+###           - '2010-01-01T00:05:36Z'
+###           - '2010-01-01T00:05:48Z'
+###           - '2010-01-01T00:06:00Z' 
+###         obs_errors: [1.0, 2.0]
+###       TestData:
+###         nlocs: 11
+###         nrecs: 11
+###         nvars: 2
+###         obs_group_var: ""
+###         obs_sort_var: ""
+###         obs_sort_order: ""
+###         variables:
+###           - name: "latitude"
+###             group: "MetaData"
+###             type: "float"
+###             norm: 16.583123951777001
+### 
+###           - name: "longitude"
+###             group: "MetaData"
+###             type: "float"
+###             norm: 16.583123951777001
+### 
+###           - name: "air_temperature"
+###             group: "ObsError"
+###             type: "float"
+###             norm: 3.3166247903553998
+### 
+###           - name: "eastward_wind"
+###             group: "ObsError"
+###             type: "float"
+###             norm: 6.6332495807107996
+###         tolerance:
+###           - 1.0e-11
+###       ObsDataOut:
+###         obsfile: "testoutput/ospace.generate.list.@OBS_FILE_SUFFIX@"
+### 
+###   - ObsSpace:
+###       name: "Radiosonde with grouping"
+###       simulate:
+###       ObsDataIn:
+###         obsfile: "Data/testinput_tier_1/sondes_obs_2018041500_m.@OBS_FILE_SUFFIX@"
+###         obsgrouping:
+###           group_variable: "station_id"
+###           sort_variable: "air_pressure"
+###           sort_order: "descending"
+###       TestData:
+###         nlocs: 974
+###         nrecs: 36
+###         nvars: 5
+###         obs_group_var: "station_id"
+###         obs_sort_var: "air_pressure"
+###         obs_sort_order: "descending"
+###         variables:
+###           - name: "latitude"
+###             group: "MetaData"
+###             type: "float"
+###             norm: 1254.66336565038
+### 
+###           - name: "longitude"
+###             group: "MetaData"
+###             type: "float"
+###             norm: 6076.2659622388919
+###         tolerance:
+###           - 1.0e-11
+###       ObsDataOut:
+###         obsfile: "testoutput/diagout_with_groups.@OBS_FILE_SUFFIX@"
+### 
+###   - ObsSpace:
+###       name: "Radiosonde with grouping and tw filtering"
+###       simulate:
+###       ObsDataIn:
+###         obsfile: "Data/testinput_tier_1/sondes_obs_2018041500_m_twfilt.@OBS_FILE_SUFFIX@"
+###         obsgrouping:
+###           group_variable: "station_id"
+###       TestData:
+###         nlocs: 968
+###         nrecs: 31
+###         nvars: 5
+###         obs_group_var: "station_id"
+###         obs_sort_var: ""
+###         obs_sort_order: "ascending"
+###         variables:
+###           - name: "latitude"
+###             group: "MetaData"
+###             type: "float"
+###             norm: 1252.0139923322768
+### 
+###           - name: "longitude"
+###             group: "MetaData"
+###             type: "float"
+###             norm: 6065.3117664336605
+###         tolerance:
+###           - 1.0e-11
+###       ObsDataOut:
+###         obsfile: "testoutput/diagout_with_groups_twfilt.@OBS_FILE_SUFFIX@"
+### 
+###   - ObsSpace:
+###       name: "AOD GOES"
+###       simulate:
+###       ObsDataIn:
+###         obsfile: "Data/testinput_tier_1/geos_aod_obs_2018041500_m.@OBS_FILE_SUFFIX@"
+###       TestData:
+###           nlocs: 100
+###           nrecs: 100
+###           nvars: 1 
+###           obs_group_var: ""
+###           obs_sort_var: ""
+###           obs_sort_order: "ascending"
+###           variables:
+###             - name: "latitude"
+###               group: "MetaData"
+###               type: "float"
+###               norm: 567.88380247048008
+### 
+###             - name: "longitude"
+###               group: "MetaData"
+###               type: "float"
+###               norm: 1793.5631154126893
+###           tolerance:
+###             - 1.0e-11
+### 

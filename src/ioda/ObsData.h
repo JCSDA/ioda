@@ -27,9 +27,11 @@
 #include "oops/util/Printable.h"
 #include "utils/IodaUtils.h"
 
-#include "database/ObsSpaceContainer.h"
 #include "distribution/Distribution.h"
 #include "fileio/IodaIO.h"
+#include "ioda/defs.h"
+#include "ioda/Engines/Factory.h"
+#include "ioda/ObsGroup.h"
 
 // Forward declarations
 namespace eckit {
@@ -178,6 +180,10 @@ class ObsData : public util::Printable {
 
   // Initialize the database from the input file
   void InitFromFile(const std::string & filename, const std::size_t MaxFrameSize);
+  template<typename VarType>
+  void StoreToDb(const std::string & GroupName, const std::string & VarName,
+                 const std::vector<std::size_t> & VarShape,
+                 const std::vector<VarType> & VarData, bool Append = false);
   std::vector<std::size_t> GenFrameIndexRecNums(const std::unique_ptr<IodaIO> & FileIO,
                                const std::size_t FrameStart, const std::size_t FrameSize);
   bool InsideTimingWindow(const util::DateTime & ObsDt);
@@ -194,6 +200,14 @@ class ObsData : public util::Printable {
 
   // Dump the database into the output file
   void SaveToFile(const std::string & file_name, const std::size_t MaxFrameSize);
+  template<typename VarType>
+  void LoadFromDb(const std::string & GroupName, const std::string & VarName,
+                  const std::vector<std::size_t> & VarShape, std::vector<VarType> & VarData,
+                  const std::size_t Start = 0, const std::size_t Count = 0) const;
+
+  // Return a fill value
+  template<typename DataType>
+  void GetFillValue(DataType & FillValue) const;
 
   /*! \brief name of obs space */
   std::string obsname_;
@@ -252,12 +266,6 @@ class ObsData : public util::Printable {
   /*! \brief profile ordering */
   RecIdxMap recidx_;
 
-  /*! \brief Multi-index containers */
-  ObsSpaceContainer<int> int_database_;
-  ObsSpaceContainer<float> float_database_;
-  ObsSpaceContainer<std::string> string_database_;
-  ObsSpaceContainer<util::DateTime> datetime_database_;
-
   /*! \brief Observation "variables" to be simulated */
   oops::Variables obsvars_;
 
@@ -275,6 +283,9 @@ class ObsData : public util::Printable {
 
   /*! \brief MPI distribution object */
   std::shared_ptr<Distribution> dist_;
+
+  /*! \brief observation data store */
+  ObsGroup obs_group_;
 
   /*! \brief maps for obs grouping via integer, float or string values */
   ObsGroupingMap<int> int_obs_grouping_;
