@@ -55,8 +55,8 @@ character(len=max_string)  :: fin
 character(len=max_string)  :: MyObsType
 character(len=255) :: record
 
-if (config_element_exists(c_conf,"ObsData.ObsDataIn")) then
-  fin  = config_get_string(c_conf,max_string,"ObsData.ObsDataIn.obsfile")
+if (config_element_exists(c_conf,"obs space.obsdatain")) then
+  fin  = config_get_string(c_conf,max_string,"obs space.obsdatain.obsfile")
 else
   fin  = ""
 endif

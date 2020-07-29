@@ -59,8 +59,7 @@ ObsData::ObsData(const eckit::Configuration & config, const eckit::mpi::Comm & c
   obsname_ = config.getString("name");
   distname_ = config.getString("distribution", "RoundRobin");
 
-  eckit::LocalConfiguration varconfig(config, "simulate");
-  obsvars_ = oops::Variables(varconfig);
+  obsvars_ = oops::Variables(config, "simulated variables");
   oops::Log::info() << obsname_ << " vars: " << obsvars_ << std::endl;
 
   // Create the MPI distribution object
@@ -68,19 +67,19 @@ ObsData::ObsData(const eckit::Configuration & config, const eckit::mpi::Comm & c
   dist_.reset(distFactory->createDistribution(this->comm(), distname_));
 
   // Initialize the obs space container
-  if (config.has("ObsDataIn")) {
+  if (config.has("obsdatain")) {
     // Initialize the container from an input obs file
-    obs_group_variable_ = config.getString("ObsDataIn.obsgrouping.group_variable", "");
-    obs_sort_variable_ = config.getString("ObsDataIn.obsgrouping.sort_variable", "");
-    obs_sort_order_ = config.getString("ObsDataIn.obsgrouping.sort_order", "ascending");
+    obs_group_variable_ = config.getString("obsdatain.obsgrouping.group variable", "");
+    obs_sort_variable_ = config.getString("obsdatain.obsgrouping.sort variable", "");
+    obs_sort_order_ = config.getString("obsdatain.obsgrouping.sort order", "ascending");
     if ((obs_sort_order_ != "ascending") && (obs_sort_order_ != "descending")) {
       std::string ErrMsg =
         std::string("ObsData::ObsData: Must use one of 'ascending' or 'descending' ") +
-        std::string("for the 'sort_order:' YAML configuration keyword.");
+        std::string("for the 'sort order:' YAML configuration keyword.");
       ABORT(ErrMsg);
     }
-    filein_ = config.getString("ObsDataIn.obsfile");
-    in_max_frame_size_ = config.getUnsigned("ObsDataIn.max_frame_size",
+    filein_ = config.getString("obsdatain.obsfile");
+    in_max_frame_size_ = config.getUnsigned("obsdatain.max frame size",
                                             IODAIO_DEFAULT_FRAME_SIZE);
     oops::Log::trace() << obsname_ << " file in = " << filein_ << std::endl;
     InitFromFile(filein_, in_max_frame_size_);
@@ -105,22 +104,22 @@ ObsData::ObsData(const eckit::Configuration & config, const eckit::mpi::Comm & c
     if (obs_sort_variable_ != "") {
       BuildSortedObsGroups();
     }
-  } else if (config.has("Generate")) {
+  } else if (config.has("generate")) {
     // Initialize the container from the generateDistribution method
-    eckit::LocalConfiguration genconfig(config, "Generate");
+    eckit::LocalConfiguration genconfig(config, "generate");
     generateDistribution(genconfig);
   } else {
-    // Error - must have one of ObsDataIn or Generate
+    // Error - must have one of obsdatain or Generate
     std::string ErrorMsg =
-      "ObsData::ObsData: Must use one of 'ObsDataIn' or 'Generate' in the YAML configuration.";
+      "ObsData::ObsData: Must use one of 'obsdatain' or 'generate' in the YAML configuration.";
     ABORT(ErrorMsg);
   }
   nrecs_ = unique_rec_nums_.size();
 
   // Check to see if an output file has been requested.
-  if (config.has("ObsDataOut.obsfile")) {
-    std::string filename = config.getString("ObsDataOut.obsfile");
-    out_max_frame_size_ = config.getUnsigned("ObsDataOut.max_frame_size",
+  if (config.has("obsdataout.obsfile")) {
+    std::string filename = config.getString("obsdataout.obsfile");
+    out_max_frame_size_ = config.getUnsigned("obsdataout.max frame size",
                                              IODAIO_DEFAULT_FRAME_SIZE);
 
     // If present, change '%{member}%' to 'mem{i}'
@@ -301,7 +300,7 @@ ObsDtype ObsData::dtype(const std::string & group, const std::string & name) con
 // -----------------------------------------------------------------------------
 /*!
  * \details This method returns the setting of the YAML configuration
- *          parameter: ObsDataIn.obsgrouping.group_variable
+ *          parameter: obsdatain.obsgrouping.group variable
  */
 std::string ObsData::obs_group_var() const {
   return obs_group_variable_;
@@ -310,7 +309,7 @@ std::string ObsData::obs_group_var() const {
 // -----------------------------------------------------------------------------
 /*!
  * \details This method returns the setting of the YAML configuration
- *          parameter: ObsDataIn.obsgrouping.sort_variable
+ *          parameter: obsdatain.obsgrouping.sort variable
  */
 std::string ObsData::obs_sort_var() const {
   return obs_sort_variable_;
@@ -319,7 +318,7 @@ std::string ObsData::obs_sort_var() const {
 // -----------------------------------------------------------------------------
 /*!
  * \details This method returns the setting of the YAML configuration
- *          parameter: ObsDataIn.obsgrouping.sort_order
+ *          parameter: obsdatain.obsgrouping.sort order
  */
 std::string ObsData::obs_sort_order() const {
   return obs_sort_order_;
@@ -481,14 +480,14 @@ void ObsData::generateDistribution(const eckit::Configuration & conf) {
   std::vector<float> latitude;
   std::vector<float> longitude;
   std::vector<util::DateTime> obs_datetimes;
-  if (conf.has("Random")) {
+  if (conf.has("random")) {
     genDistRandom(conf, latitude, longitude, obs_datetimes);
-  } else if (conf.has("List")) {
+  } else if (conf.has("list")) {
     genDistList(conf, latitude, longitude, obs_datetimes);
   } else {
     std::string ErrorMsg =
       std::string("ObsData::generateDistribution: Must specify either ") +
-      std::string("'Random' or 'List' with 'Generate' configuration keyword");
+      std::string("'random' or 'list' with 'generate' configuration keyword");
     ABORT(ErrorMsg);
   }
 
@@ -496,7 +495,7 @@ void ObsData::generateDistribution(const eckit::Configuration & conf) {
   nvars_ = obsvars_.size();
 
   // Read obs errors (one for each variable)
-  const std::vector<float> err = conf.getFloatVector("obs_errors");
+  const std::vector<float> err = conf.getFloatVector("obs errors");
   ASSERT(nvars_ == err.size());
 
   put_db("MetaData", "datetime", obs_datetimes);
@@ -527,18 +526,18 @@ void ObsData::generateDistribution(const eckit::Configuration & conf) {
  */
 void ObsData::genDistRandom(const eckit::Configuration & conf, std::vector<float> & Lats,
                             std::vector<float> & Lons, std::vector<util::DateTime> & Dtimes) {
-  gnlocs_  = conf.getInt("Random.nobs");
-  float lat1 = conf.getFloat("Random.lat1");
-  float lat2 = conf.getFloat("Random.lat2");
-  float lon1 = conf.getFloat("Random.lon1");
-  float lon2 = conf.getFloat("Random.lon2");
+  gnlocs_  = conf.getInt("random.nobs");
+  float lat1 = conf.getFloat("random.lat1");
+  float lat2 = conf.getFloat("random.lat2");
+  float lon1 = conf.getFloat("random.lon1");
+  float lon2 = conf.getFloat("random.lon2");
 
   // Make the random_seed keyword optional. Can spec it for testing to get repeatable
   // values, and the user doesn't have to spec it if they want subsequent runs to
   // use different random sequences.
   unsigned int ran_seed;
-  if (conf.has("Random.random_seed")) {
-    ran_seed = conf.getInt("Random.random_seed");
+  if (conf.has("random.random seed")) {
+    ran_seed = conf.getInt("random.random seed");
   } else {
     ran_seed = std::time(0);  // based on the current date/time.
   }
@@ -624,9 +623,9 @@ void ObsData::genDistRandom(const eckit::Configuration & conf, std::vector<float
  */
 void ObsData::genDistList(const eckit::Configuration & conf, std::vector<float> & Lats,
                           std::vector<float> & Lons, std::vector<util::DateTime> & Dtimes) {
-  std::vector<float> latitudes = conf.getFloatVector("List.lats");
-  std::vector<float> longitudes = conf.getFloatVector("List.lons");
-  std::vector<std::string> DtStrings = conf.getStringVector("List.datetimes");
+  std::vector<float> latitudes = conf.getFloatVector("list.lats");
+  std::vector<float> longitudes = conf.getFloatVector("list.lons");
+  std::vector<std::string> DtStrings = conf.getStringVector("list.datetimes");
   std::vector<util::DateTime> datetimes;
   for (std::size_t i = 0; i < DtStrings.size(); ++i) {
     util::DateTime TempDt(DtStrings[i]);

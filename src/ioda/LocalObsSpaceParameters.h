@@ -87,14 +87,14 @@ class LocalObsSpaceParameters : public oops::Parameters {
 
   /// Method for searching for nearest points: brute force or KD-tree
   /// Default: brute force (the only one implemented now)
-  oops::Parameter<SearchMethod> searchMethod{"search_method", SearchMethod::BRUTEFORCE, this};
+  oops::Parameter<SearchMethod> searchMethod{"search method", SearchMethod::BRUTEFORCE, this};
 
   /// Maximum number of obs
-  oops::OptionalParameter<int> maxnobs{"max_nobs", this};
+  oops::OptionalParameter<int> maxnobs{"max nobs", this};
 
   /// Distance calculation type: geodesic (on sphere) or cartesian (euclidian)
   /// Default: geodesic
-  oops::Parameter<DistanceType> distanceType{"distance_type", DistanceType::GEODESIC, this};
+  oops::Parameter<DistanceType> distanceType{"distance type", DistanceType::GEODESIC, this};
 
   /// returns distance between points \p p1 and \p p2, depending on the
   /// distance calculation type distanceType

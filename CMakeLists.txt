@@ -42,9 +42,8 @@ set( IODA_LINKER_LANGUAGE CXX )
 include_directories( ${Boost_INCLUDE_DIR} )
 
 # NetCDF
-set( NETCDF_F90 ON CACHE BOOL "Compile with Fortran NetCDF" )
-find_package( NetCDF REQUIRED )
-include_directories( ${NETCDF_INCLUDE_DIR} )
+find_package( NetCDF REQUIRED COMPONENTS Fortran )
+include_directories( ${NETCDF_INCLUDE_DIRS} )
 
 # eckit
 ecbuild_use_package( PROJECT eckit VERSION 0.18.0 REQUIRED )
