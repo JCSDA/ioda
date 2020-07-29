@@ -29,9 +29,9 @@ namespace test {
 void testDescendingSort(const eckit::LocalConfiguration &conf) {
 
   // Produce and configure ObsData object
-  util::DateTime bgn(conf.getString("window_begin"));
-  util::DateTime end(conf.getString("window_end"));
-  const eckit::LocalConfiguration obsSpaceConf(conf, "ObsSpace");
+  util::DateTime bgn(conf.getString("window begin"));
+  util::DateTime end(conf.getString("window end"));
+  const eckit::LocalConfiguration obsSpaceConf(conf, "obs space");
   ioda::ObsData obsdata(obsSpaceConf, oops::mpi::comm(), bgn, end);
 
   // This test only works for grouped data with descending sort order

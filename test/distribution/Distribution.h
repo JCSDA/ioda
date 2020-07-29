@@ -48,14 +48,14 @@ void testConstructor() {
   DistributionFactory * DistFactory = nullptr;
 
   // Walk through the different distribution types and try constructing.
-  conf.get("DistributionTypes", dist_types);
+  conf.get("distribution types", dist_types);
   for (std::size_t i = 0; i < dist_types.size(); ++i) {
     oops::Log::debug() << "Distribution::DistributionTypes: conf: " << dist_types[i] << std::endl;
 
-    TestDistType = dist_types[i].getString("DistType");
+    TestDistType = dist_types[i].getString("distribution");
     oops::Log::debug() << "Distribution::DistType: " << TestDistType << std::endl;
 
-    DistName = dist_types[i].getString("Specs.dist_name");
+    DistName = dist_types[i].getString("specs.name");
     TestDist.reset(DistFactory->createDistribution(MpiComm, DistName));
     EXPECT(TestDist.get());
     }
@@ -76,21 +76,21 @@ void testDistribution() {
   std::size_t MyRank = MpiComm.rank();
 
   // Walk through the different distribution types and try constructing.
-  conf.get("DistributionTypes", dist_types);
+  conf.get("distribution types", dist_types);
   for (std::size_t i = 0; i < dist_types.size(); ++i) {
     oops::Log::debug() << "Distribution::DistributionTypes: conf: "
                        << dist_types[i] << std::endl;
 
-    TestDistType = dist_types[i].getString("DistType");
+    TestDistType = dist_types[i].getString("distribution");
     oops::Log::debug() << "Distribution::DistType: " << TestDistType << std::endl;
 
-    DistName = dist_types[i].getString("Specs.dist_name");
+    DistName = dist_types[i].getString("specs.name");
     TestDist.reset(DistFactory->createDistribution(MpiComm, DistName));
     EXPECT(TestDist.get());
 
-    // Expected results are listed in "Specs.index" with the MPI rank number
+    // Expected results are listed in "specs.index" with the MPI rank number
     // appended on the end.
-    std::string MyRankCfgName = "Specs.rank" + std::to_string(MyRank);
+    std::string MyRankCfgName = "specs.rank" + std::to_string(MyRank);
     eckit::LocalConfiguration MyRankConfig = dist_types[i].getSubConfiguration(MyRankCfgName);
     oops::Log::debug() << "Distribution::DistributionTypes: "
                        << MyRankCfgName << ": " << MyRankConfig << std::endl;
@@ -102,15 +102,15 @@ void testDistribution() {
     std::vector<std::size_t> ExpectedRecnums =
                                  MyRankConfig.getUnsignedVector("recnums");
 
-    // If obs_grouping is specified then read the record grouping directly from
+    // If obsgrouping is specified then read the record grouping directly from
     // the config file. Otherwise, assign 0 to Gnlocs-1 into the record grouping
     // vector.
-    std::size_t Gnlocs = dist_types[i].getInt("Specs.gnlocs");
+    std::size_t Gnlocs = dist_types[i].getInt("specs.gnlocs");
     std::vector<std::size_t> Groups(Gnlocs, 0);
-    if (dist_types[i].has("Specs.obs_grouping")) {
-      Groups = dist_types[i].getUnsignedVector("Specs.obs_grouping");
+    if (dist_types[i].has("specs.obsgrouping")) {
+      Groups = dist_types[i].getUnsignedVector("specs.obsgrouping");
     } else {
-      std::iota(Groups.begin(), Groups.end(), 0); 
+      std::iota(Groups.begin(), Groups.end(), 0);
     }
 
     // Loop on gnlocs, and keep the indecies according to the distribution type.

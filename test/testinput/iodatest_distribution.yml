@@ -1,6 +1,6 @@
 ---
-window_begin: "2015-08-09T21:00:00Z"
-window_end: "2015-08-10T03:00:00Z"
+window begin: "2015-08-09T21:00:00Z"
+window end: "2015-08-10T03:00:00Z"
 
 # Expected indices are based on 4 PE's during an MPI run. If you change
 # the number of PE in the ecbuild_add_test in the ../CMakeLists.txt file,
@@ -9,10 +9,10 @@ window_end: "2015-08-10T03:00:00Z"
 # The test is coded so that the keyword "rank" + (MPI Rank Number) is used from this
 # file to get the expected result. If you are MPI rank 0, then you read the keywords
 # under "rank0:" from this file; MPI rank 1, keywords from "rank1:"; etc.
-DistributionTypes: 
-  - DistType: "Round Robin 8"
-    Specs:
-      dist_name: "RoundRobin"
+distribution types:
+  - distribution: "Round Robin 8"
+    specs:
+      name: "RoundRobin"
       gnlocs: 8
       rank0:
         nlocs: 2
@@ -35,9 +35,9 @@ DistributionTypes:
         index: [ 3, 7 ]
         recnums: [ 3, 7 ]
 
-  - DistType: "Round Robin 10"
-    Specs:
-      dist_name: "RoundRobin"
+  - distribution: "Round Robin 10"
+    specs:
+      name: "RoundRobin"
       gnlocs: 10
       rank0:
         nlocs: 3
@@ -60,9 +60,9 @@ DistributionTypes:
         index: [ 3, 7 ]
         recnums: [ 3, 7 ]
 
-  - DistType: "Inefficient 4"
-    Specs:
-      dist_name: "InefficientDistribution"
+  - distribution: "Inefficient 4"
+    specs:
+      name: "InefficientDistribution"
       gnlocs: 4
       rank0:
         nlocs: 4
@@ -85,11 +85,11 @@ DistributionTypes:
         index: [ 0, 1, 2, 3 ]
         recnums: [ 0, 1, 2, 3 ]
 
-  - DistType: "Round Robin Grouping 20"
-    Specs:
-      dist_name: "RoundRobin"
+  - distribution: "Round Robin Grouping 20"
+    specs:
+      name: "RoundRobin"
       gnlocs: 20
-      obs_grouping: [ 0, 0, 1, 1, 1, 2, 3, 3, 3, 3, 4, 5, 6, 7, 8, 8, 8, 9, 9, 10 ]
+      obsgrouping: [ 0, 0, 1, 1, 1, 2, 3, 3, 3, 3, 4, 5, 6, 7, 8, 8, 8, 9, 9, 10 ]
       rank0:
         nlocs: 6
         nrecs: 3
@@ -111,11 +111,11 @@ DistributionTypes:
         index: [ 6, 7, 8, 9, 13 ]
         recnums: [ 3, 3, 3, 3, 7 ]
 
-  - DistType: "Round Robin Grouping Repeat 20"
-    Specs:
-      dist_name: "RoundRobin"
+  - distribution: "Round Robin Grouping Repeat 20"
+    specs:
+      name: "RoundRobin"
       gnlocs: 18
-      obs_grouping: [ 0, 0, 1, 1, 1, 0, 2, 3, 3, 3, 3, 4, 5, 6, 7, 8, 1, 2 ]
+      obsgrouping: [ 0, 0, 1, 1, 1, 0, 2, 3, 3, 3, 3, 4, 5, 6, 7, 8, 1, 2 ]
       rank0:
         nlocs: 5
         nrecs: 3
@@ -136,4 +136,3 @@ DistributionTypes:
         nrecs: 2
         index: [ 7, 8, 9, 10, 14 ]
         recnums: [ 3, 3, 3, 3, 7 ]
-

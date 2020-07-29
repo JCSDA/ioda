@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -62,15 +62,15 @@ void testConstructor() {
   std::size_t ExpectedNvars;
 
   // Contructor in read mode
-  FileName = conf.getString("TestInput.filename");
-  MaxFrameSize = conf.getUnsigned("TestInput.frames.max_frame_size",
+  FileName = conf.getString("test input.filename");
+  MaxFrameSize = conf.getUnsigned("test input.frames.max frame size",
                                   IODAIO_DEFAULT_FRAME_SIZE);
   TestIO.reset(ioda::IodaIOfactory::Create(FileName, "r", MaxFrameSize));
   EXPECT(TestIO.get());
 
   // Constructor in read mode is also responsible for setting nobs and nlocs
-  ExpectedNlocs = conf.getInt("TestInput.nlocs");
-  ExpectedNvars = conf.getInt("TestInput.nvars");
+  ExpectedNlocs = conf.getInt("test input.nlocs");
+  ExpectedNvars = conf.getInt("test input.nvars");
 
   Nlocs = TestIO->nlocs();
   Nvars = TestIO->nvars();
@@ -79,11 +79,11 @@ void testConstructor() {
   EXPECT(ExpectedNvars == Nvars);
 
   // Constructor in write mode
-  FileName = conf.getString("TestOutput.filename");
-  MaxFrameSize = conf.getUnsigned("TestOutput.max_frame_size", IODAIO_DEFAULT_FRAME_SIZE);
+  FileName = conf.getString("test output.filename");
+  MaxFrameSize = conf.getUnsigned("test output.max frame size", IODAIO_DEFAULT_FRAME_SIZE);
 
-  ExpectedNlocs = conf.getInt("TestOutput.nlocs");
-  ExpectedNvars = conf.getInt("TestOutput.nvars");
+  ExpectedNlocs = conf.getInt("test output.nlocs");
+  ExpectedNvars = conf.getInt("test output.nvars");
 
   TestIO.reset(ioda::IodaIOfactory::Create(FileName, "W", MaxFrameSize));
   EXPECT(TestIO.get());
@@ -99,10 +99,10 @@ void testContainers() {
   std::size_t MaxFrameSize;
   std::unique_ptr<ioda::IodaIO> TestIO;
 
-  // Constructor in read mode will generate a group variable container, 
+  // Constructor in read mode will generate a group variable container,
   // a dimension container and a frame container.
-  FileName = conf.getString("TestInput.filename");
-  MaxFrameSize = conf.getUnsigned("TestInput.frames.max_frame_size",
+  FileName = conf.getString("test input.filename");
+  MaxFrameSize = conf.getUnsigned("test input.frames.max frame size",
                                   IODAIO_DEFAULT_FRAME_SIZE);
   TestIO.reset(ioda::IodaIOfactory::Create(FileName, "r", MaxFrameSize));
   EXPECT(TestIO.get());
@@ -111,7 +111,7 @@ void testContainers() {
   // and check the count of variables (total number in the file) with the
   // expected count.
   std::size_t VarCount = 0;
-  std::size_t ExpectedVarCount = conf.getInt("TestInput.nvars");
+  std::size_t ExpectedVarCount = conf.getInt("test input.nvars");
   for (IodaIO::GroupIter igrp = TestIO->group_begin(); igrp != TestIO->group_end(); ++igrp) {
     std::string GroupName = TestIO->group_name(igrp);
 
@@ -125,9 +125,9 @@ void testContainers() {
   std::vector<std::string> DimNames;
   std::vector<std::size_t> DimIds;
   std::vector<std::size_t> DimSizes;
-  std::vector<std::string> ExpectedDimNames = conf.getStringVector("TestInput.dimensions.names");
-  std::vector<std::size_t> ExpectedDimIds = conf.getUnsignedVector("TestInput.dimensions.ids");
-  std::vector<std::size_t> ExpectedDimSizes = conf.getUnsignedVector("TestInput.dimensions.sizes");
+  std::vector<std::string> ExpectedDimNames = conf.getStringVector("test input.dimensions.names");
+  std::vector<std::size_t> ExpectedDimIds = conf.getUnsignedVector("test input.dimensions.ids");
+  std::vector<std::size_t> ExpectedDimSizes = conf.getUnsignedVector("test input.dimensions.sizes");
   for (IodaIO::DimIter idim = TestIO->dim_begin(); idim != TestIO->dim_end(); ++idim) {
     DimNames.push_back(TestIO->dim_name(idim));
     DimIds.push_back(TestIO->dim_id(idim));
@@ -140,15 +140,15 @@ void testContainers() {
   }
 
   // Test the frame info container.
-  std::vector<std::size_t> FrameStarts = conf.getUnsignedVector("TestInput.frames.starts");
-  std::vector<std::size_t> FrameSizes = conf.getUnsignedVector("TestInput.frames.sizes");
+  std::vector<std::size_t> FrameStarts = conf.getUnsignedVector("test input.frames.starts");
+  std::vector<std::size_t> FrameSizes = conf.getUnsignedVector("test input.frames.sizes");
   std::size_t i = 0;
   for (IodaIO::FrameIter iframe = TestIO->frame_begin();
                          iframe != TestIO->frame_end(); ++iframe) {
     EXPECT(TestIO->frame_start(iframe) == FrameStarts[i]);
     EXPECT(TestIO->frame_size(iframe) == FrameSizes[i]);
     i++;
-  } 
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -162,16 +162,16 @@ void testReadVar() {
   std::unique_ptr<ioda::IodaIO> TestIO;
 
   // Get the input file name and the frame size.
-  std::string FileName = conf.getString("TestInput.filename");
-  std::size_t MaxFrameSize = conf.getUnsigned("TestInput.frames.max_frame_size",
+  std::string FileName = conf.getString("test input.filename");
+  std::size_t MaxFrameSize = conf.getUnsigned("test input.frames.max frame size",
                                               IODAIO_DEFAULT_FRAME_SIZE);
   TestIO.reset(ioda::IodaIOfactory::Create(FileName, "r", MaxFrameSize));
 
   // Read in the set of test variables from the configuration into a map.
   // Create another map with the same variables to hold the data from the file.
   // Then compare the contents of the maps to complete the test.
-  std::vector<eckit::LocalConfiguration> var_config = 
-                        conf.getSubConfigurations("TestInput.variables");
+  std::vector<eckit::LocalConfiguration> var_config =
+                        conf.getSubConfigurations("test input.variables");
 
   std::map<std::string, std::vector<int>> IntVars;
   std::map<std::string, std::vector<float>> FloatVars;
@@ -253,7 +253,7 @@ void testReadVar() {
     }
   }
 
-  float FloatTol = conf.getFloat("TestInput.tolerance");
+  float FloatTol = conf.getFloat("test input.tolerance");
   for (ifloat = FloatVars.begin(); ifloat != FloatVars.end(); ++ifloat) {
     std::vector<float> FloatVect = ifloat->second;
     std::vector<float> ExpectedFloatVect = ExpectedFloatVars[ifloat->first];
@@ -279,11 +279,11 @@ void testWriteVar() {
 
   // Try writing variables specified in the config into a file, then read the file
   // check that you get the same data back.
-  std::string FileName = conf.getString("TestOutput.filename");
-  std::size_t MaxFrameSize = conf.getUnsigned("TestOutput.max_frame_size",
+  std::string FileName = conf.getString("test output.filename");
+  std::size_t MaxFrameSize = conf.getUnsigned("test output.max frame size",
                                                 IODAIO_DEFAULT_FRAME_SIZE);
-  std::size_t ExpectedNlocs = conf.getInt("TestOutput.nlocs");
-  std::size_t ExpectedNvars = conf.getInt("TestOutput.nvars");
+  std::size_t ExpectedNlocs = conf.getInt("test output.nlocs");
+  std::size_t ExpectedNvars = conf.getInt("test output.nvars");
 
   std::size_t MaxVarSize = 0;
 
@@ -301,7 +301,7 @@ void testWriteVar() {
 
   // Read in the variable data
   std::vector<eckit::LocalConfiguration> var_config =
-                        conf.getSubConfigurations("TestOutput.variables");
+                        conf.getSubConfigurations("test output.variables");
 
   for (std::size_t i = 0; i < var_config.size(); i++) {
     std::string VarGrpName = var_config[i].getString("name");
@@ -482,7 +482,7 @@ void testWriteVar() {
     }
   }
 
-  float FloatTol = conf.getFloat("TestOutput.tolerance");
+  float FloatTol = conf.getFloat("test output.tolerance");
   for (ifloat = FloatVars.begin(); ifloat != FloatVars.end(); ++ifloat) {
     std::vector<float> FloatVect = ifloat->second;
     std::vector<float> ExpectedFloatVect = ExpectedFloatVars[ifloat->first];

@@ -278,7 +278,7 @@ ObsDtype ObsSpace::dtype(const std::string & group, const std::string & name) co
 // -----------------------------------------------------------------------------
 /*!
  * \details This method returns the setting of the YAML configuration
- *          parameter: ObsDataIn.obsgrouping.group_variable
+ *          parameter: obsdatain.obsgrouping.group variable
  */
 std::string ObsSpace::obs_group_var() const {
   return obsspace_->obs_group_var();
@@ -287,7 +287,7 @@ std::string ObsSpace::obs_group_var() const {
 // -----------------------------------------------------------------------------
 /*!
  * \details This method returns the setting of the YAML configuration
- *          parameter: ObsDataIn.obsgrouping.sort_variable
+ *          parameter: obsdatain.obsgrouping.sort variable
  */
 std::string ObsSpace::obs_sort_var() const {
   return obsspace_->obs_sort_var();
@@ -296,7 +296,7 @@ std::string ObsSpace::obs_sort_var() const {
 // -----------------------------------------------------------------------------
 /*!
  * \details This method returns the setting of the YAML configuration
- *          parameter: ObsDataIn.obsgrouping.sort_order
+ *          parameter: obsdatain.obsgrouping.sort order
  */
 std::string ObsSpace::obs_sort_order() const {
   return obsspace_->obs_sort_order();

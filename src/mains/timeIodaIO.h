@@ -38,18 +38,18 @@ template <typename MODEL> class TimeIodaIO : public oops::Application {
 // -----------------------------------------------------------------------------
   int execute(const eckit::Configuration & fullConfig) const {
 //  Setup observation window
-    const util::DateTime winbgn(fullConfig.getString("window_begin"));
-    const util::DateTime winend(fullConfig.getString("window_end"));
+    const util::DateTime winbgn(fullConfig.getString("window begin"));
+    const util::DateTime winend(fullConfig.getString("window end"));
     oops::Log::info() << "Observation window begin:" << winbgn << std::endl;
     oops::Log::info() << "Observation window end:" << winend << std::endl;
 
 //  Setup observations
-    eckit::LocalConfiguration obsconf(fullConfig, "Observations");
+    eckit::LocalConfiguration obsconf(fullConfig, "observations");
     oops::Log::debug() << "Observations configuration is:" << obsconf << std::endl;
     ObsSpaces_ obsdb(obsconf, this->getComm(), winbgn, winend);
 
     std::vector<eckit::LocalConfiguration> conf;
-    obsconf.get("ObsTypes", conf);
+    fullConfig.get("observations", conf);
 
     for (std::size_t jj = 0; jj < obsdb.size(); ++jj) {
       oops::Log::info() << "ObsSpace: " << obsdb[jj].obsname() << std::endl;

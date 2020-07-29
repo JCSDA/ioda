@@ -1,26 +1,23 @@
 ---
-window_begin: 2018-04-14T21:00:00Z
-window_end: 2018-04-15T03:00:00Z
-Observations:
-  ObsTypes:
-  - ObsSpace:
-      name: Radiosonde
-      simulate:
-        variables: [air_temperature, eastward_wind, northward_wind]
-      ObsDataIn:
-        obsfile: Data/testinput_tier_1/sondes_obs_2018041500_m.nc4
-      TestData:
-        nlocs: 974
-        nvars: 5
-        nvars_obsvars: 3
-  - ObsSpace:
-      name: "Radiance"
-      simulate:
-        variables: [brightness_temperature]
-        channels: 1-10, 15
-      ObsDataIn:
-        obsfile: "Data/testinput_tier_1/amsua_n19_obs_2018041500_m.nc4"
-      TestData:
-        nlocs: 100
-        nvars: 15
-        nvars_obsvars: 11
+window begin: 2018-04-14T21:00:00Z
+window end: 2018-04-15T03:00:00Z
+observations:
+- obs space:
+    name: Radiosonde
+    simulated variables: [air_temperature, eastward_wind, northward_wind]
+    obsdatain:
+      obsfile: Data/testinput_tier_1/sondes_obs_2018041500_m.nc4
+    test data:
+      nlocs: 974
+      nvars: 5
+      nvars obsvars: 3
+- obs space:
+    name: Radiance
+    simulated variables: [brightness_temperature]
+    channels: 1-10, 15
+    obsdatain:
+      obsfile: Data/testinput_tier_1/amsua_n19_obs_2018041500_m.nc4
+    test data:
+      nlocs: 100
+      nvars: 15
+      nvars obsvars: 11

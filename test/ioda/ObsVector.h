@@ -48,19 +48,18 @@ class ObsVecTestFixture : private boost::noncopyable {
   }
 
   ObsVecTestFixture(): ospaces_() {
-    util::DateTime bgn((::test::TestEnvironment::config().getString("window_begin")));
-    util::DateTime end((::test::TestEnvironment::config().getString("window_end")));
+    util::DateTime bgn((::test::TestEnvironment::config().getString("window begin")));
+    util::DateTime end((::test::TestEnvironment::config().getString("window end")));
 
-    const eckit::LocalConfiguration obsconf(::test::TestEnvironment::config(), "Observations");
     std::vector<eckit::LocalConfiguration> conf;
-    obsconf.get("ObsTypes", conf);
+    ::test::TestEnvironment::config().get("observations", conf);
 
     for (std::size_t jj = 0; jj < conf.size(); ++jj) {
-      eckit::LocalConfiguration obsconf(conf[jj], "ObsSpace");
+      eckit::LocalConfiguration obsconf(conf[jj], "obs space");
       boost::shared_ptr<ObsSpace_> tmp(new ObsSpace_(obsconf, oops::mpi::comm(), bgn, end));
       ospaces_.push_back(tmp);
       eckit::LocalConfiguration ObsDataInConf;
-      obsconf.get("ObsDataIn", ObsDataInConf);
+      obsconf.get("obsdatain", ObsDataInConf);
     }
   }
 
@@ -131,16 +130,15 @@ void testRead() {
   typedef ObsVecTestFixture Test_;
   typedef ioda::ObsVector  ObsVector_;
 
-  const eckit::LocalConfiguration obsconf(::test::TestEnvironment::config(), "Observations");
   std::vector<eckit::LocalConfiguration> conf;
-  obsconf.get("ObsTypes", conf);
+  ::test::TestEnvironment::config().get("observations", conf);
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     ioda::ObsSpace * Odb = Test_::obspace()[jj].get();
 
     // Grab the expected RMS value and tolerance from the obsdb_ configuration.
-    double ExpectedRms = conf[jj].getDouble("ObsSpace.ObsDataIn.rms_equiv");
-    double Tol = conf[jj].getDouble("ObsSpace.ObsDataIn.tolerance");
+    double ExpectedRms = conf[jj].getDouble("obs space.obsdatain.rms ref");
+    double Tol = conf[jj].getDouble("obs space.obsdatain.tolerance");
 
     // Read in a vector and check contents with norm function.
     std::unique_ptr<ObsVector_> ov(new ObsVector_(*Odb, "ObsValue"));
@@ -189,17 +187,16 @@ void testDistributedMath() {
   // answers should always be the same regardless of distribution.
 
   // get the list of distributions to test with
-  std::vector<std::string> dist_names = ::test::TestEnvironment::config().getStringVector("Distributions");
+  std::vector<std::string> dist_names = ::test::TestEnvironment::config().getStringVector("distributions");
   for (std::size_t ii = 0; ii < dist_names.size(); ++ii) {
     oops::Log::debug() << "using distribution: " << dist_names[ii] << std::endl;
   }
 
   // Get some config information that is the same regardless of distribution
-  util::DateTime bgn((::test::TestEnvironment::config().getString("window_begin")));
-  util::DateTime end((::test::TestEnvironment::config().getString("window_end")));
-  const eckit::LocalConfiguration obsconf(::test::TestEnvironment::config(), "Observations");
+  util::DateTime bgn((::test::TestEnvironment::config().getString("window begin")));
+  util::DateTime end((::test::TestEnvironment::config().getString("window end")));
   std::vector<eckit::LocalConfiguration> conf;
-  obsconf.get("ObsTypes", conf);
+  ::test::TestEnvironment::config().get("observations", conf);
 
   // for each distribution, create the set of obs vectors
   std::vector< ObsVectors_ > dist_obsvecs;
@@ -207,7 +204,7 @@ void testDistributedMath() {
   for (std::size_t dd = 0; dd < dist_names.size(); ++dd) {
     ObsVectors_ obsvecs;
     for (std::size_t jj = 0; jj < conf.size(); ++jj) {
-       eckit::LocalConfiguration obsconf(conf[jj], "ObsSpace");
+       eckit::LocalConfiguration obsconf(conf[jj], "obs space");
        obsconf.set("distribution", dist_names[dd]);
        std::shared_ptr<ObsSpace_> obsdb(new ObsSpace(obsconf, oops::mpi::comm(), bgn, end));
        std::shared_ptr<ObsVector_> obsvec(new ObsVector_(*obsdb, "ObsValue"));

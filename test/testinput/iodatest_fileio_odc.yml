@@ -1,8 +1,8 @@
 ---
-window_begin: "2015-08-09T21:00:00Z"
-window_end: "2015-08-10T03:00:00Z"
+window begin: "2015-08-09T21:00:00Z"
+window end: "2015-08-10T03:00:00Z"
 
-TestInput:
+test input:
   filename: "Data/testinput_tier_1/fileio.odb"
   nlocs: 9
   nvars: 6
@@ -60,9 +60,9 @@ TestInput:
       values: [ 1, 2, 3, 4, 5, 6, 7, 8, 9 ]
   tolerance: 1.0e-5
 
-TestOutput:
+test output:
   filename: "testoutput/fileio_out.odb"
-  max_frame_size: 3
+  max frame size: 3
   nlocs: 8
   nvars: 5
 
