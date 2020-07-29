@@ -5,9 +5,9 @@ ObsTestData:
     nrecs: 100
     nlocs_local: 11
     nvars: 1
-    obs_group_var: ""
-    obs_sort_var: ""
-    obs_sort_order: "ascending"
+    expected group variable: ""
+    expected sort variable: ""
+    expected sort order: "ascending"
     variables:
       - name: "latitude"
         group: "MetaData"
@@ -31,9 +31,9 @@ ObsTestData:
       nlocs_local: 6
       nrecs: 100
       nvars: 1
-      obs_group_var: ""
-      obs_sort_var: ""
-      obs_sort_order: "ascending"
+      expected group variable: ""
+      expected sort variable: ""
+      expected sort order: "ascending"
       variables:
         - name: "latitude"
           group: "MetaData"
@@ -52,9 +52,9 @@ ObsTestData:
     nlocs_local: 10
     nrecs: 100
     nvars: 15
-    obs_group_var: ""
-    obs_sort_var: ""
-    obs_sort_order: "ascending"
+    expected group variable: ""
+    expected sort variable: ""
+    expected sort order: "ascending"
     variables:
       - name: "latitude"
         group: "MetaData"
@@ -73,9 +73,9 @@ ObsTestData:
     nlocs_local: 0
     nrecs: 100
     nvars: 4
-    obs_group_var: ""
-    obs_sort_var: ""
-    obs_sort_order: "ascending"
+    expected group variable: ""
+    expected sort variable: ""
+    expected sort order: "ascending"
     variables:
       - name: "latitude"
         group: "MetaData"
@@ -94,9 +94,9 @@ ObsTestData:
     nlocs_local: 0
     nrecs: 12
     nvars: 13
-    obs_group_var: ""
-    obs_sort_var: ""
-    obs_sort_order: "ascending"
+    expected group variable: ""
+    expected sort variable: ""
+    expected sort order: "ascending"
     variables:
       - name: "latitude"
         group: "MetaData"
@@ -115,9 +115,9 @@ ObsTestData:
     nlocs_local: 110
     nrecs: 974
     nvars: 5
-    obs_group_var: ""
-    obs_sort_var: ""
-    obs_sort_order: "ascending"
+    expected group variable: ""
+    expected sort variable: ""
+    expected sort order: "ascending"
     variables:
       - name: "latitude"
         group: "MetaData"
@@ -132,8 +132,8 @@ ObsTestData:
       - name: "station_id"
         group: "MetaData"
         type: "string"
-        first_value: "07510"
-        last_value: "97530"
+        first value: "07510"
+        last value: "97530"
 
       - name: "surface_pressure"
         group: "PreQC"
@@ -147,9 +147,9 @@ ObsTestData:
     nlocs_local: 110
     nrecs: 36
     nvars: 5
-    obs_group_var: "station_id"
-    obs_sort_var: "air_pressure"
-    obs_sort_order: "descending"
+    expected group variable: "station_id"
+    expected sort variable: "air_pressure"
+    expected sort order: "descending"
     variables:
       - name: "latitude"
         group: "MetaData"
@@ -168,9 +168,9 @@ ObsTestData:
     nlocs_local: 109
     nrecs: 31
     nvars: 5
-    obs_group_var: "station_id"
-    obs_sort_var: ""
-    obs_sort_order: "ascending"
+    expected group variable: "station_id"
+    expected sort variable: ""
+    expected sort order: "ascending"
     variables:
       - name: "latitude"
         group: "MetaData"
@@ -206,9 +206,9 @@ SyntheticObsSpecs:
         nlocs_local: 0
         nrecs: 10
         nvars: 2
-        obs_group_var: ""
-        obs_sort_var: ""
-        obs_sort_order: ""
+        expected group variable: ""
+        expected sort variable: ""
+        expected sort order: ""
         variables:
           - name: "latitude"
             group: "MetaData"
@@ -261,9 +261,9 @@ SyntheticObsSpecs:
         nlocs_local: 0
         nrecs: 11
         nvars: 2
-        obs_group_var: ""
-        obs_sort_var: ""
-        obs_sort_order: ""
+        expected group variable: ""
+        expected sort variable: ""
+        expected sort order: ""
         variables:
           - name: "latitude"
             group: "MetaData"

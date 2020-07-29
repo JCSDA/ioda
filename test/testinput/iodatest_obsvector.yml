@@ -1,53 +1,38 @@
 ---
-window_begin: '2018-04-14T21:00:00Z'
-window_end: '2018-04-15T03:00:00Z'
-Variables:
-  nvars: '1'
-  variables:
-  - testvar
-Locations:
-  lats:
-  - 45
-  - 40
-  lons:
-  - 0
-  - -100
-Observations:
-  ObsTypes:
-  - ObsSpace:
-      name: "Radiosonde_1var"
-      simulate:
-        variables:
-          - air_temperature
-      ObsDataIn:
-        obsfile: Data/testinput_tier_1/sondes_obs_2018041500_m.@OBS_FILE_SUFFIX@
-        rms_equiv: 216.91619057593934 
-        tolerance: 1.0e-14
+window begin: '2018-04-14T21:00:00Z'
+window end: '2018-04-15T03:00:00Z'
+observations:
+- obs space:
+    name: "Radiosonde_1var"
+    simulated variables:
+    - air_temperature
+    obsdatain:
+      obsfile: Data/testinput_tier_1/sondes_obs_2018041500_m.@OBS_FILE_SUFFIX@
+      rms ref: 216.91619057593934
+      tolerance: 1.0e-14
 
-  - ObsSpace:
-      name: "Radiosonde_2vars"
-      simulate:
-        variables:
-          - air_temperature
-          - specific_humidity
-      ObsDataIn:
-        obsfile: Data/testinput_tier_1/sondes_obs_2018041500_m.@OBS_FILE_SUFFIX@
-        rms_equiv: 124.96816071306155 
-        tolerance: 1.0e-14
+- obs space:
+    name: "Radiosonde_2vars"
+    simulated variables:
+    - air_temperature
+    - specific_humidity
+    obsdatain:
+      obsfile: Data/testinput_tier_1/sondes_obs_2018041500_m.@OBS_FILE_SUFFIX@
+      rms ref: 124.96816071306155
+      tolerance: 1.0e-14
 
-  - ObsSpace:
-      name: "Radiosonde_4vars"
-      simulate:
-        variables:
-          - air_temperature
-          - specific_humidity
-          - eastward_wind
-          - northward_wind
-      ObsDataIn:
-        obsfile: Data/testinput_tier_1/sondes_obs_2018041500_m.@OBS_FILE_SUFFIX@
-        rms_equiv: 71.324181693818431 
-        tolerance: 1.0e-14
+- obs space:
+    name: "Radiosonde_4vars"
+    simulated variables:
+    - air_temperature
+    - specific_humidity
+    - eastward_wind
+    - northward_wind
+    obsdatain:
+      obsfile: Data/testinput_tier_1/sondes_obs_2018041500_m.@OBS_FILE_SUFFIX@
+      rms ref: 71.324181693818431
+      tolerance: 1.0e-14
 
-Distributions:
+distributions:
   - RoundRobin
   - InefficientDistribution

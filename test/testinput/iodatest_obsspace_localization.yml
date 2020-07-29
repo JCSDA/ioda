@@ -1,103 +1,101 @@
 ---
-window_begin: "2018-04-14T21:00:00Z"
-window_end: "2018-04-15T03:00:00Z"
+window begin: 2018-04-14T21:00:00Z
+window end: 2018-04-15T03:00:00Z
 
-Observations:
-  ObsTypes:
-  - ObsSpace:
-      name: "Radiosonde"
-      simulate:
-      ObsDataIn:
-        obsfile: "Data/testinput_tier_1/sondes_obs_2018041500_m.nc4"
-      Localization:
-        lengthscale: 2000.0
-        max_nobs: 10
-        searchMethod: "brute_force"
-        lonRefPoint: 274.070007
-        latRefPoint: 80.000000
-      TestData:
-        nlocs: 974
-        nlocs_local: 6
+observations:
+- obs space:
+    name: Radiosonde
+    simulated variables: [air_temperature]
+    obsdatain:
+      obsfile: Data/testinput_tier_1/sondes_obs_2018041500_m.nc4
+    localization:
+      lengthscale: 2000.0
+      max nobs: 10
+      search method: brute_force
+      lon ref point: 274.070007
+      lat ref point: 80.000000
+    test data:
+      nlocs: 974
+      expected local nlocs: 6
 
-  - ObsSpace:
-      name: "Radiosonde"
-      simulate:
-      ObsDataIn:
-        obsfile: "Data/testinput_tier_1/sondes_obs_2018041500_m.nc4"
-      Localization:
-        lengthscale: 2000.0
-        searchMethod: "brute_force"
-        lonRefPoint: 274.070007
-        latRefPoint: 80.000000
-      TestData:
-        nlocs: 974
-        nlocs_local: 6
+- obs space:
+    name: Radiosonde
+    simulated variables: [air_temperature]
+    obsdatain:
+      obsfile: Data/testinput_tier_1/sondes_obs_2018041500_m.nc4
+    localization:
+      lengthscale: 2000.0
+      search method: brute_force
+      lon ref point: 274.070007
+      lat ref point: 80.000000
+    test data:
+      nlocs: 974
+      expected local nlocs: 6
 
-  - ObsSpace:
-      name: "Radiosonde"
-      simulate:
-      ObsDataIn:
-        obsfile: "Data/testinput_tier_1/sondes_obs_2018041500_m.nc4"
-      Localization:
-        lengthscale: 2000.0
-        max_nobs: 1
-        lonRefPoint: 274.070007
-        latRefPoint: 80.000000
-      TestData:
-        nlocs: 974
-        nlocs_local: 1
+- obs space:
+    name: Radiosonde
+    simulated variables: [air_temperature]
+    obsdatain:
+      obsfile: Data/testinput_tier_1/sondes_obs_2018041500_m.nc4
+    localization:
+      lengthscale: 2000.0
+      max nobs: 1
+      lon ref point: 274.070007
+      lat ref point: 80.000000
+    test data:
+      nlocs: 974
+      expected local nlocs: 1
 
-  - ObsSpace:
-      name: "Radiosonde"
-      simulate:
-      ObsDataIn:
-        obsfile: "Data/testinput_tier_1/sondes_obs_2018041500_m.nc4"
-      Localization:
-        lengthscale: 100000.0
-        searchMethod: "brute_force"
-        lonRefPoint: 274.070007
-        latRefPoint: 80.000000
-      TestData:
-        nlocs: 974
-        nlocs_local: 97
+- obs space:
+    name: Radiosonde
+    simulated variables: [air_temperature]
+    obsdatain:
+      obsfile: Data/testinput_tier_1/sondes_obs_2018041500_m.nc4
+    localization:
+      lengthscale: 100000.0
+      search method: brute_force
+      lon ref point: 274.070007
+      lat ref point: 80.000000
+    test data:
+      nlocs: 974
+      expected local nlocs: 97
 
-  - ObsSpace:
-      name: "Radiosonde"
-      simulate:
-      ObsDataIn:
-        obsfile: "Data/testinput_tier_1/sondes_obs_2018041500_m.nc4"
-      Localization:
-        lengthscale: 10.e6    # rough distance from pole to equator
-        lonRefPoint: 0.
-        latRefPoint: -90.
-      TestData:
-        nlocs: 974
-        nlocs_local: 353      # all obs in the SH
+- obs space:
+    name: Radiosonde
+    simulated variables: [air_temperature]
+    obsdatain:
+      obsfile: Data/testinput_tier_1/sondes_obs_2018041500_m.nc4
+    localization:
+      lengthscale: 10.e6    # rough distance from pole to equator
+      lon ref point: 0.
+      lat ref point: -90.
+    test data:
+      nlocs: 974
+      expected local nlocs: 353      # all obs in the SH
 
-  - ObsSpace:
-      name: "Radiosonde"
-      simulate:
-      ObsDataIn:
-        obsfile: "Data/testinput_tier_1/sondes_obs_2018041500_m.nc4"
-      Localization:
-        lengthscale: 10.e6
-        lonRefPoint: 0.
-        latRefPoint: 90.
-      TestData:
-        nlocs: 974
-        nlocs_local: 621     # 974 - 353 (from test above) -- all obs in the NH
+- obs space:
+    name: Radiosonde
+    simulated variables: [air_temperature]
+    obsdatain:
+      obsfile: Data/testinput_tier_1/sondes_obs_2018041500_m.nc4
+    localization:
+      lengthscale: 10.e6
+      lon ref point: 0.
+      lat ref point: 90.
+    test data:
+      nlocs: 974
+      expected local nlocs: 621     # 974 - 353 (from test above) -- all obs in the NH
 
 
-  - ObsSpace:
-      name: "Radiosonde"
-      simulate:
-      ObsDataIn:
-        obsfile: "Data/testinput_tier_1/sondes_obs_2018041500_m.nc4"
-      Localization:
-        lengthscale: 20.e6
-        lonRefPoint: 0.
-        latRefPoint: 90.
-      TestData:
-        nlocs: 974
-        nlocs_local: 974    # all obs fall within this distance from the pole
-
+- obs space:
+    name: Radiosonde
+    simulated variables: [air_temperature]
+    obsdatain:
+      obsfile: Data/testinput_tier_1/sondes_obs_2018041500_m.nc4
+    localization:
+      lengthscale: 20.e6
+      lon ref point: 0.
+      lat ref point: 90.
+    test data:
+      nlocs: 974
+      expected local nlocs: 974    # all obs fall within this distance from the pole

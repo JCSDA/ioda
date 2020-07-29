@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -122,7 +122,7 @@ void testGrpVarIter() {
   // Try storing the variables from the YAML into the container, then load them
   // from the containter into new variables, and then check that they match.
   std::vector<eckit::LocalConfiguration> VarConfig =
-                                         conf.getSubConfigurations("TestStoreLoad.variables");
+                                         conf.getSubConfigurations("test store load.variables");
 
   typedef std::tuple<std::string, std::string, std::vector<std::size_t>> VarDescrip;
   std::set<VarDescrip> VarInfo;
@@ -219,7 +219,7 @@ void testStoreLoad() {
   // Try storing the variables from the YAML into the container, then load them
   // from the containter into new variables, and then check that they match.
   std::vector<eckit::LocalConfiguration> VarConfig =
-                                         conf.getSubConfigurations("TestStoreLoad.variables");
+                                         conf.getSubConfigurations("test store load.variables");
 
   for(std::size_t i = 0; i < VarConfig.size(); i++) {
     std::string VarName = VarConfig[i].getString("name");
@@ -302,7 +302,7 @@ void testSegmentedStoreLoad() {
   // Try storing the variables from the YAML into the container, then load them
   // from the containter into new variables, and then check that they match.
   std::vector<eckit::LocalConfiguration> VarConfig =
-                                         conf.getSubConfigurations("TestStoreLoad.variables");
+                                         conf.getSubConfigurations("test store load.variables");
 
   for(std::size_t i = 0; i < VarConfig.size(); i++) {
     std::string VarName = VarConfig[i].getString("name");

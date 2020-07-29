@@ -1,8 +1,8 @@
 ---
-window_begin: "2018-04-14T21:00:00Z"
-window_end: "2018-04-15T03:00:00Z"
+window begin: "2018-04-14T21:00:00Z"
+window end: "2018-04-15T03:00:00Z"
 
-TestStoreLoad:
+test store load:
   variables:
     - name: "test_int"
       group: "IntGroup"
@@ -24,4 +24,3 @@ TestStoreLoad:
       type: "datetime"
       values: [ "2018-04-14T23:41:59Z", "2018-04-14T23:42:07Z", "2018-04-14T23:44:28Z", "2018-04-14T23:46:20Z", "2018-04-14T23:48:15Z" ]
       segments: [ 2, 2, 1 ]
-

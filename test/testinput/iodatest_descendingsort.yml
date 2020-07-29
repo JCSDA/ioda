@@ -3,15 +3,14 @@
 #
 
 version1:
-  window_begin: 2018-04-14T20:30:00Z
-  window_end: 2018-04-15T03:30:00Z
-  ObsSpace:
+  window begin: 2018-04-14T20:30:00Z
+  window end: 2018-04-15T03:30:00Z
+  obs space:
     name: Synthetic
-    ObsDataIn:
+    obsdatain:
       obsfile: Data/testinput_tier_1/ioda_test_descending_sort.nc4
       obsgrouping:
-        group_variable: "group"
-        sort_variable: "air_pressure"
-        sort_order: "descending"
-    simulate: 
-      variables: [air_temperature]
+        group variable: "group"
+        sort variable: "air_pressure"
+        sort order: "descending"
+    simulated variables: [air_temperature]

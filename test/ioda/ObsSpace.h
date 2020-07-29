@@ -43,15 +43,14 @@ class ObsSpaceTestFixture : private boost::noncopyable {
   }
 
   ObsSpaceTestFixture(): ospaces_() {
-    util::DateTime bgn(::test::TestEnvironment::config().getString("window_begin"));
-    util::DateTime end(::test::TestEnvironment::config().getString("window_end"));
+    util::DateTime bgn(::test::TestEnvironment::config().getString("window begin"));
+    util::DateTime end(::test::TestEnvironment::config().getString("window end"));
 
-    const eckit::LocalConfiguration obsconf(::test::TestEnvironment::config(), "Observations");
     std::vector<eckit::LocalConfiguration> conf;
-    obsconf.get("ObsTypes", conf);
+    ::test::TestEnvironment::config().get("observations", conf);
 
     for (std::size_t jj = 0; jj < conf.size(); ++jj) {
-      eckit::LocalConfiguration obsconf(conf[jj], "ObsSpace");
+      eckit::LocalConfiguration obsconf(conf[jj], "obs space");
       boost::shared_ptr<ioda::ObsSpace> tmp(new ioda::ObsSpace(obsconf, oops::mpi::comm(),
                                                                bgn, end));
       ospaces_.push_back(tmp);
@@ -68,9 +67,8 @@ class ObsSpaceTestFixture : private boost::noncopyable {
 void testConstructor() {
   typedef ObsSpaceTestFixture Test_;
 
-  const eckit::LocalConfiguration obsconf(::test::TestEnvironment::config(), "Observations");
   std::vector<eckit::LocalConfiguration> conf;
-  obsconf.get("ObsTypes", conf);
+  ::test::TestEnvironment::config().get("observations", conf);
 
   for (std::size_t jj = 0; jj < Test_::size(); ++jj) {
     // Get the distribution method. If the method is "InefficientDistribution", then
@@ -78,7 +76,7 @@ void testConstructor() {
     // is distributing all observations to all mpi tasks, so if you do the allreduce
     // calls you will overcount the sums (double count when 2 mpi tasks, triple count
     // with 3 mpi tasks, etc.)
-    std::string DistMethod = conf[jj].getString("ObsSpace.distribution", "RoundRobin");
+    std::string DistMethod = conf[jj].getString("obs space.distribution", "RoundRobin");
 
     // Get the numbers of locations (nlocs) from the ObsSpace object
     std::size_t Nlocs = Test_::obspace(jj).nlocs();
@@ -90,9 +88,9 @@ void testConstructor() {
     }
 
     // Get the expected nlocs from the obspace object's configuration
-    std::size_t ExpectedNlocs = conf[jj].getUnsigned("ObsSpace.TestData.nlocs");
-    std::size_t ExpectedNrecs = conf[jj].getUnsigned("ObsSpace.TestData.nrecs");
-    std::size_t ExpectedNvars = conf[jj].getUnsigned("ObsSpace.TestData.nvars");
+    std::size_t ExpectedNlocs = conf[jj].getUnsigned("obs space.test data.nlocs");
+    std::size_t ExpectedNrecs = conf[jj].getUnsigned("obs space.test data.nrecs");
+    std::size_t ExpectedNvars = conf[jj].getUnsigned("obs space.test data.nvars");
 
     // Get the obs grouping/sorting parameters from the ObsSpace object
     std::string ObsGroupVar = Test_::obspace(jj).obs_group_var();
@@ -100,9 +98,9 @@ void testConstructor() {
     std::string ObsSortOrder = Test_::obspace(jj).obs_sort_order();
 
     // Get the expected obs grouping/sorting parameters from the configuration
-    std::string ExpectedObsGroupVar = conf[jj].getString("ObsSpace.TestData.obs_group_var");
-    std::string ExpectedObsSortVar = conf[jj].getString("ObsSpace.TestData.obs_sort_var");
-    std::string ExpectedObsSortOrder = conf[jj].getString("ObsSpace.TestData.obs_sort_order");
+    std::string ExpectedObsGroupVar = conf[jj].getString("obs space.test data.expected group variable");
+    std::string ExpectedObsSortVar = conf[jj].getString("obs space.test data.expected sort variable");
+    std::string ExpectedObsSortOrder = conf[jj].getString("obs space.test data.expected sort order");
 
     oops::Log::debug() << "Nlocs, ExpectedNlocs: " << Nlocs << ", "
                        << ExpectedNlocs << std::endl;
@@ -133,12 +131,11 @@ void testConstructor() {
 void testGetDb() {
   typedef ObsSpaceTestFixture Test_;
 
-  const eckit::LocalConfiguration obsconf(::test::TestEnvironment::config(), "Observations");
   std::vector<eckit::LocalConfiguration> conf;
-  obsconf.get("ObsTypes", conf);
+  ::test::TestEnvironment::config().get("observations", conf);
 
   for (std::size_t jj = 0; jj < Test_::size(); ++jj) {
-    std::string DistMethod = conf[jj].getString("ObsSpace.distribution", "RoundRobin");
+    std::string DistMethod = conf[jj].getString("obs space.distribution", "RoundRobin");
 
     // Set up a pointer to the ObsSpace object for convenience
     ioda::ObsSpace * Odb = &(Test_::obspace(jj));
@@ -146,8 +143,8 @@ void testGetDb() {
 
     // Get the variables section from the test data and perform checks accordingly
     std::vector<eckit::LocalConfiguration> varconf =
-                            conf[jj].getSubConfigurations("ObsSpace.TestData.variables");
-    double Tol = conf[jj].getDouble("ObsSpace.TestData.tolerance");
+                            conf[jj].getSubConfigurations("obs space.test data.variables");
+    double Tol = conf[jj].getDouble("obs space.test data.tolerance");
     for (std::size_t i = 0; i < varconf.size(); ++i) {
       // Read in the variable group, name and expected norm values from the configuration
       std::string VarName = varconf[i].getString("name");
@@ -204,8 +201,8 @@ void testGetDb() {
         EXPECT(VarDataType == ObsDtype::String);
 
         // Check the first and last values of the vector
-        std::string ExpectedFirstValue = varconf[i].getString("first_value");
-        std::string ExpectedLastValue = varconf[i].getString("last_value");
+        std::string ExpectedFirstValue = varconf[i].getString("first value");
+        std::string ExpectedLastValue = varconf[i].getString("last value");
         std::vector<std::string> TestVec(Nlocs);
         Odb->get_db(GroupName, VarName, TestVec);
 
