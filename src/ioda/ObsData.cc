@@ -273,7 +273,8 @@ void ObsData::put_db(const std::string & group, const std::string & name,
  */
 
 bool ObsData::has(const std::string & group, const std::string & name) const {
-  return obs_group_.existsDbVar(group, name);
+  std::string groupVar = group + "/" + name;
+  return obs_group_.vars.exists(groupVar);
 }
 
 // -----------------------------------------------------------------------------
@@ -284,9 +285,10 @@ bool ObsData::has(const std::string & group, const std::string & name) const {
 
 ObsDtype ObsData::dtype(const std::string & group, const std::string & name) const {
   // Set the type to None if there is no type from the backend
+  std::string groupVar = group + "/" + name;
   ObsDtype VarType = ObsDtype::None;
   if (has(group, name)) {
-    Variable var = obs_group_.openDbVar(group, name);
+    Variable var = obs_group_.vars.open(groupVar);
     if (var.isA<int>()) {
       VarType = ObsDtype::Integer;
     } else if (var.isA<float>()) {
