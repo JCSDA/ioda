@@ -42,7 +42,7 @@ set( IODA_LINKER_LANGUAGE CXX )
 include_directories( ${Boost_INCLUDE_DIR} )
 
 # NetCDF
-find_package( NetCDF REQUIRED COMPONENTS Fortran )
+find_package( NetCDF REQUIRED COMPONENTS Fortran C )
 include_directories( ${NETCDF_INCLUDE_DIRS} )
 
 # eckit
