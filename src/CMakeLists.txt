@@ -9,7 +9,6 @@ ioda/ObsLocGC99.h
 ioda/ObsData.cc
 ioda/ObsData.h
 ioda/ObsDataVector.h
-ioda/ObsDataVector.cc
 ioda/ObsSpace.cc
 ioda/ObsSpace.h
 ioda/ObsVector.cc
