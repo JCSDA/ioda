@@ -52,7 +52,7 @@ ObsData::ObsData(const eckit::Configuration & config, const eckit::mpi::Comm & c
   : config_(config), winbgn_(bgn), winend_(end), commMPI_(comm),
     gnlocs_(0), nlocs_(0), nvars_(0), nrecs_(0), file_unexpected_dtypes_(false),
     file_excess_dims_(false), in_max_frame_size_(0), out_max_frame_size_(0),
-    obsvars_(), next_rec_num_(0), obs_group_(ObsGroup::createObsGroupMem())
+    obsvars_(), next_rec_num_(0), obs_group_()
 {
   oops::Log::trace() << "ObsData::ObsData config  = " << config << std::endl;
 
@@ -65,6 +65,14 @@ ObsData::ObsData(const eckit::Configuration & config, const eckit::mpi::Comm & c
   // Create the MPI distribution object
   std::unique_ptr<DistributionFactory> distFactory;
   dist_.reset(distFactory->createDistribution(this->comm(), distname_));
+
+  // Create the backend
+  Engines::BackendNames backendName = Engines::BackendNames::ObsStore;
+  Engines::BackendCreationParameters backendParams;
+  Group backend = constructBackend(backendName, backendParams);
+
+  // Create the ObsGroup and attach the backend.
+  obs_group_ = ObsGroup::generate(backend, { });
 
   // Initialize the obs space container
   if (config.has("obsdatain")) {
