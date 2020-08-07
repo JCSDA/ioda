@@ -5,9 +5,7 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#include "utils/IodaUtils.h"
-
-#include <string>
+#include "ioda/core/IodaUtils.h"
 
 #include "oops/util/DateTime.h"
 

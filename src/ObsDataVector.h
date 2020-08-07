@@ -5,8 +5,8 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#ifndef IODA_OBSDATAVECTOR_H_
-#define IODA_OBSDATAVECTOR_H_
+#ifndef OBSDATAVECTOR_H_
+#define OBSDATAVECTOR_H_
 
 #include <cmath>
 #include <limits>
@@ -209,4 +209,4 @@ void ObsDataVector<DATATYPE>::print(std::ostream & os) const {
 // -----------------------------------------------------------------------------
 }  // namespace ioda
 
-#endif  // IODA_OBSDATAVECTOR_H_
+#endif  // OBSDATAVECTOR_H_

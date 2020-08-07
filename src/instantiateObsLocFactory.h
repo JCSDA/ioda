@@ -5,10 +5,10 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#ifndef IODA_INSTANTIATEOBSLOCFACTORY_H_
-#define IODA_INSTANTIATEOBSLOCFACTORY_H_
+#ifndef CORE_INSTANTIATEOBSLOCFACTORY_H_
+#define CORE_INSTANTIATEOBSLOCFACTORY_H_
 
-#include "ioda/ObsLocGC99.h"
+#include "ioda/core/ObsLocGC99.h"
 #include "oops/interface/ObsLocalization.h"
 
 namespace ioda {
@@ -19,4 +19,4 @@ template<typename MODEL> void instantiateObsLocFactory() {
 
 }  // namespace ioda
 
-#endif  // IODA_INSTANTIATEOBSLOCFACTORY_H_
+#endif  // CORE_INSTANTIATEOBSLOCFACTORY_H_

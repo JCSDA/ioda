@@ -1,23 +1,24 @@
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
 
 list( APPEND ioda_src_files
-ioda/IodaTrait.h
-ioda/instantiateObsLocFactory.h
-ioda/LocalObsSpaceParameters.h
-ioda/ObsLocGC99.cc
-ioda/ObsLocGC99.h
-ioda/ObsData.cc
-ioda/ObsData.h
-ioda/ObsDataVector.h
-ioda/ObsSpace.cc
-ioda/ObsSpace.h
-ioda/ObsVector.cc
-ioda/ObsVector.h
-ioda/obsspace_f.cc
-ioda/obsspace_f.h
-ioda/obsspace_mod.F90
+IodaTrait.h
+ObsDataVector.h
+ObsSpace.cc
+ObsSpace.h
+ObsVector.cc
+ObsVector.h
+obsspace_mod.F90
+instantiateObsLocFactory.h
 
-database/ObsSpaceContainer.h
+core/IodaUtils.cc
+core/IodaUtils.h
+core/LocalObsSpaceParameters.h
+core/ObsLocGC99.cc
+core/ObsLocGC99.h
+core/ObsData.cc
+core/ObsData.h
+core/ObsSpaceContainer.h
+core/obsspace_f.cc
+core/obsspace_f.h
 
 distribution/Distribution.cc
 distribution/Distribution.h
@@ -34,35 +35,59 @@ fileio/IodaIOfactory.cc
 fileio/IodaIOfactory.h
 fileio/NetcdfIO.cc
 fileio/NetcdfIO.h
-
-utils/IodaUtils.cc
-utils/IodaUtils.h
 )
 
-if (HAVE_ODC)
+list( APPEND ioda_fortran_interface_includes
+obsspace_interface.f
+)
+
+if(odc_FOUND)
   list( APPEND ioda_src_files
   fileio/OdcIO.cc
   fileio/OdcIO.h
   )
-endif (HAVE_ODC)
-
-ecbuild_add_library( TARGET   ioda
-                     SOURCES  ${ioda_src_files}
-                     LIBS     oops NetCDF::NetCDF_C
-                     INSTALL_HEADERS LISTED
-                     LINKER_LANGUAGE ${IODA_LINKER_LANGUAGE}
-                    )
-
-if(HAVE_ODC)
-    target_link_libraries(${PROJECT_NAME} PUBLIC ${ODC_LIBRARIES})
 endif()
 
-# coding norms check
-ecbuild_add_test( TARGET ioda_coding_norms
-                  TYPE SCRIPT
-                  COMMAND cpplint.py
-                  ARGS --quiet --recursive ${CMAKE_CURRENT_SOURCE_DIR}
-                  WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/bin )
+include(GNUInstallDirs)
+ecbuild_add_library( TARGET ${PROJECT_NAME}
+                     SOURCES ${${PROJECT_NAME}_src_files}
+                     INSTALL_HEADERS LISTED
+                     HEADER_DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}
+                     LINKER_LANGUAGE CXX )
+
+target_link_libraries( ${PROJECT_NAME} PUBLIC NetCDF::NetCDF_C )
+target_link_libraries( ${PROJECT_NAME} PUBLIC fckit )
+target_link_libraries( ${PROJECT_NAME} PUBLIC ${oops_LIBRARIES} ) #TODO: Change to "oops::oops" once oops adds namespace support
+if(odc_FOUND)
+    target_link_libraries(${PROJECT_NAME} PUBLIC ${ODC_LIBRARIES})
+    target_compile_definitions(${PROJECT_NAME} PUBLIC HAVE_ODC=1)
+    if (odc_VERSION_MAJOR VERSION_LESS 1)
+        message(STATUS "ODC pre-release version: ${odc_VERSION}")
+    else()
+        message(STATUS "ODC release version: ${odc_VERSION}")
+        target_compile_definitions(${PROJECT_NAME} PUBLIC ODC_RELEASE=1)
+    endif()
+endif()
+
+#Configure include directory layout for build-tree to match install-tree
+set(BUILD_DIR_INCLUDE_PATH ${CMAKE_BINARY_DIR}/${PROJECT_NAME}/include)
+add_custom_target(${PROJECT_NAME}_headers ALL
+                    COMMAND ${CMAKE_COMMAND} -E make_directory ${BUILD_DIR_INCLUDE_PATH}
+                    COMMAND ${CMAKE_COMMAND} -E create_symlink ${CMAKE_CURRENT_SOURCE_DIR} ${BUILD_DIR_INCLUDE_PATH}/${PROJECT_NAME})
+add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_headers)
+target_include_directories(${PROJECT_NAME} PUBLIC $<BUILD_INTERFACE:${BUILD_DIR_INCLUDE_PATH}>)
+
+#Fortran file interfaces templates
+install(FILES ${ioda_fortran_interface_includes} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/ioda)
+
+#Fortran module output directory for build and install interfaces
+set(MODULE_DIR module/${PROJECT_NAME}/${CMAKE_Fortran_COMPILER_ID}/${CMAKE_Fortran_COMPILER_VERSION})
+set_target_properties(${PROJECT_NAME} PROPERTIES Fortran_MODULE_DIRECTORY ${CMAKE_BINARY_DIR}/${MODULE_DIR})
+install(DIRECTORY ${CMAKE_BINARY_DIR}/${MODULE_DIR}/ DESTINATION ${MODULE_DIR})
+target_include_directories(${PROJECT_NAME} INTERFACE
+                                $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/${MODULE_DIR}>
+                                $<INSTALL_INTERFACE:${MODULE_DIR}>)
+
 
 # add in the mains executables
 add_subdirectory(mains)

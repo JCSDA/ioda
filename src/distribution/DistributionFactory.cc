@@ -5,9 +5,10 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#include "distribution/DistributionFactory.h"
-#include "distribution/InefficientDistribution.h"
-#include "distribution/RoundRobin.h"
+#include "ioda/distribution/DistributionFactory.h"
+
+#include "ioda/distribution/InefficientDistribution.h"
+#include "ioda/distribution/RoundRobin.h"
 
 namespace ioda {
 // -----------------------------------------------------------------------------

@@ -10,12 +10,6 @@
 # FLAGS COMMON TO ALL BUILD TYPES
 ####################################################################
 
-if( HAVE_OMP )
-  set( CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fopenmp")
-else( )
-  set( CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fno-openmp")
-endif( )
-
 set( CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -D_REAL8_ -ffree-line-length-none")
 
 ####################################################################

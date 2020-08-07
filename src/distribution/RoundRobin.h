@@ -10,9 +10,10 @@
 
 #include <vector>
 
-#include "distribution/Distribution.h"
 #include "eckit/mpi/Comm.h"
 #include "oops/util/Logger.h"
+
+#include "ioda/distribution/Distribution.h"
 
 namespace ioda {
 

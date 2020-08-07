@@ -13,9 +13,10 @@
 #include <vector>
 
 #include "odc/api/odc.h"
+
 #include "oops/util/ObjectCounter.h"
 
-#include "fileio/IodaIO.h"
+#include "ioda/fileio/IodaIO.h"
 
 ////////////////////////////////////////////////////////////////////////
 // Implementation of IodaIO for ODB.

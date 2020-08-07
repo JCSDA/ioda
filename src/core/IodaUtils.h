@@ -5,8 +5,8 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#ifndef UTILS_IODAUTILS_H_
-#define UTILS_IODAUTILS_H_
+#ifndef CORE_IODAUTILS_H_
+#define CORE_IODAUTILS_H_
 
 #include <string>
 #include <typeinfo>
@@ -82,4 +82,4 @@ namespace ioda {
   }
 }  // namespace ioda
 
-#endif  // UTILS_IODAUTILS_H_
+#endif  // CORE_IODAUTILS_H_

@@ -5,8 +5,9 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#include "../ioda/DescendingSort.h"
 #include "oops/runs/Run.h"
+
+#include "ioda/test/ioda/DescendingSort.h"
 
 int main(int argc,  char ** argv) {
   oops::Run run(argc, argv);

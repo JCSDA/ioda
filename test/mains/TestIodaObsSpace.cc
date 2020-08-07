@@ -9,11 +9,11 @@
  */
 
 #include "oops/runs/Run.h"
-#include "../ioda/ObsSpace.h"
+
+#include "ioda/test/ioda/ObsSpace.h"
 
 int main(int argc,  char ** argv) {
   oops::Run run(argc, argv);
   ioda::test::ObsSpace tests;
   return run.execute(tests);
-};
-
+}

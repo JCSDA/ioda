@@ -8,13 +8,13 @@
  * does it submit to any jurisdiction.
  */
 
-#include "ioda/IodaTrait.h"
 #include "oops/runs/Run.h"
-#include "test/interface/ObsVector.h"
+#include "oops/test/interface/ObsVector.h"
+
+#include "ioda/IodaTrait.h"
 
 int main(int argc,  char ** argv) {
   oops::Run run(argc, argv);
   test::ObsVector<ioda::IodaTrait> tests;
   return run.execute(tests);
-};
-
+}
