@@ -14,7 +14,7 @@
 
 #include "oops/util/Logger.h"
 
-#include "distribution/Distribution.h"
+#include "ioda/distribution/Distribution.h"
 
 namespace ioda {
 

@@ -9,11 +9,11 @@
  */
 
 #include "oops/runs/Run.h"
-#include "../fileio/IodaIO.h"
+
+#include "ioda/test/fileio/IodaIO.h"
 
 int main(int argc,  char ** argv) {
   oops::Run run(argc, argv);
   ioda::test::IodaIO tests;
   return run.execute(tests);
-};
-
+}

@@ -8,8 +8,8 @@
 #ifndef MAINS_TIMEIODAIO_H_
 #define MAINS_TIMEIODAIO_H_
 
-#include<string>
-#include<vector>
+#include <string>
+#include <vector>
 
 #include "eckit/config/LocalConfiguration.h"
 
@@ -21,9 +21,9 @@
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
 
-#include "fileio/IodaIO.h"
-#include "fileio/IodaIOfactory.h"
-#include "utils/IodaUtils.h"
+#include "ioda/fileio/IodaIO.h"
+#include "ioda/fileio/IodaIOfactory.h"
+#include "ioda/core/IodaUtils.h"
 
 namespace ioda {
 

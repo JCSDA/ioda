@@ -9,11 +9,11 @@
  */
 
 #include "oops/runs/Run.h"
-#include "../ioda/ObsVector.h"
+
+#include "ioda/test/ioda/ObsVector.h"
 
 int main(int argc,  char ** argv) {
   oops::Run run(argc, argv);
   ioda::test::ObsVector tests;
   return run.execute(tests);
-};
-
+}

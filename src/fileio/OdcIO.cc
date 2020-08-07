@@ -5,7 +5,7 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
  */
 
-#include "fileio/OdcIO.h"
+#include "ioda/fileio/OdcIO.h"
 
 #include <fcntl.h>
 #include <sys/stat.h>
@@ -15,6 +15,7 @@
 #include <sstream>
 
 #include "eckit/exception/Exceptions.h"
+
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/Logger.h"
 #include "oops/util/missingValues.h"

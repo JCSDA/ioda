@@ -31,7 +31,7 @@ public obsspace_get_db
 public obsspace_put_db
 public obsspace_has
 
-#include "obsspace_interface.f"
+#include "ioda/obsspace_interface.f"
 
 !-------------------------------------------------------------------------------
 

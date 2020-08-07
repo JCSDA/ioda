@@ -5,12 +5,12 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
+#include "ioda/distribution/RoundRobin.h"
+
 #include <algorithm>
 #include <iostream>
 #include <numeric>
 #include <set>
-
-#include "distribution/RoundRobin.h"
 
 #include "oops/util/Logger.h"
 

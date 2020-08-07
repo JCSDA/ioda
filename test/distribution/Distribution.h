@@ -8,13 +8,14 @@
  * does it submit to any jurisdiction.
  */
 
-#ifndef TEST_INTERFACE_OBSSPACE_H_
-#define TEST_INTERFACE_OBSSPACE_H_
+#ifndef TEST_DISTRIBUTION_DISTRIBUTION_H_
+#define TEST_DISTRIBUTION_DISTRIBUTION_H_
 
-#include <string>
 #include <cmath>
+#include <memory>
 #include <numeric>
 #include <set>
+#include <string>
 #include <vector>
 
 #define ECKIT_TESTING_SELF_REGISTER_CASES 0
@@ -24,13 +25,14 @@
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/mpi/Comm.h"
 #include "eckit/testing/Test.h"
+
 #include "oops/parallel/mpi/mpi.h"
 #include "oops/runs/Test.h"
+#include "oops/test/TestEnvironment.h"
 #include "oops/util/Logger.h"
-#include "test/TestEnvironment.h"
 
-#include "distribution/Distribution.h"
-#include "distribution/DistributionFactory.h"
+#include "ioda/distribution/Distribution.h"
+#include "ioda/distribution/DistributionFactory.h"
 
 namespace ioda {
 namespace test {
@@ -167,4 +169,4 @@ class Distribution : public oops::Test {
 }  // namespace test
 }  // namespace ioda
 
-#endif  // TEST_INTERFACE_OBSSPACE_H_
+#endif  // TEST_DISTRIBUTION_DISTRIBUTION_H_

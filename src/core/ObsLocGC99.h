@@ -5,8 +5,8 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#ifndef IODA_OBSLOCGC99_H_
-#define IODA_OBSLOCGC99_H_
+#ifndef CORE_OBSLOCGC99_H_
+#define CORE_OBSLOCGC99_H_
 
 #include <ostream>
 #include <string>
@@ -42,4 +42,4 @@ class ObsLocGC99: public util::Printable {
 // -----------------------------------------------------------------------------
 }  // namespace ioda
 
-#endif  // IODA_OBSLOCGC99_H_
+#endif  // CORE_OBSLOCGC99_H_

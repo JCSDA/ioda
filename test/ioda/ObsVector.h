@@ -8,8 +8,8 @@
  * does it submit to any jurisdiction.
  */
 
-#ifndef TEST_INTERFACE_OBSVECTOR_H_
-#define TEST_INTERFACE_OBSVECTOR_H_
+#ifndef TEST_IODA_OBSVECTOR_H_
+#define TEST_IODA_OBSVECTOR_H_
 
 #include <memory>
 #include <string>
@@ -21,14 +21,16 @@
 
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/testing/Test.h"
+
+#include "oops/parallel/mpi/mpi.h"
+#include "oops/runs/Test.h"
+#include "oops/test/TestEnvironment.h"
+#include "oops/util/dot_product.h"
+#include "oops/util/Logger.h"
+
 #include "ioda/IodaTrait.h"
 #include "ioda/ObsSpace.h"
 #include "ioda/ObsVector.h"
-#include "oops/parallel/mpi/mpi.h"
-#include "oops/runs/Test.h"
-#include "oops/util/dot_product.h"
-#include "oops/util/Logger.h"
-#include "test/TestEnvironment.h"
 
 namespace ioda {
 namespace test {
@@ -187,7 +189,8 @@ void testDistributedMath() {
   // answers should always be the same regardless of distribution.
 
   // get the list of distributions to test with
-  std::vector<std::string> dist_names = ::test::TestEnvironment::config().getStringVector("distributions");
+  std::vector<std::string> dist_names =
+    ::test::TestEnvironment::config().getStringVector("distributions");
   for (std::size_t ii = 0; ii < dist_names.size(); ++ii) {
     oops::Log::debug() << "using distribution: " << dist_names[ii] << std::endl;
   }
@@ -217,14 +220,14 @@ void testDistributedMath() {
 
   // For each ObsVector make sure the math is the same regardless of distribution.
   // Test rms(), nobs(), dot_product_with()
-  for ( std::size_t ii = 0; ii < conf.size(); ++ii) {
+  for (std::size_t ii = 0; ii < conf.size(); ++ii) {
     // get the values for the first distribution
     int nobs = dist_obsvecs[0][ii]->nobs();
     double rms = dist_obsvecs[0][ii]->rms();
     double dot = dist_obsvecs[0][ii]->dot_product_with(*dist_obsvecs[0][ii]);
 
     // make sure the values are the same for all the other distributions
-    for ( std::size_t jj = 1; jj < dist_obsvecs.size(); ++jj) {
+    for (std::size_t jj = 1; jj < dist_obsvecs.size(); ++jj) {
       int nobs2 = dist_obsvecs[jj][ii]->nobs();
       double rms2 = dist_obsvecs[jj][ii]->rms();
       double dot2 = dist_obsvecs[jj][ii]->dot_product_with(*dist_obsvecs[jj][ii]);
@@ -260,7 +263,6 @@ class ObsVector : public oops::Test {
       { testSave(); });
      ts.emplace_back(CASE("ioda/ObsVector/testDistributedMath")
       { testDistributedMath(); });
-
   }
 };
 
@@ -269,4 +271,4 @@ class ObsVector : public oops::Test {
 }  // namespace test
 }  // namespace ioda
 
-#endif  // TEST_INTERFACE_OBSVECTOR_H_
+#endif  // TEST_IODA_OBSVECTOR_H_

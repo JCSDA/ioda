@@ -5,7 +5,7 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#include "ioda/ObsData.h"
+#include "ioda/core/ObsData.h"
 
 #include <algorithm>
 #include <fstream>
@@ -30,8 +30,8 @@
 #include "oops/util/Random.h"
 #include "oops/util/stringFunctions.h"
 
-#include "distribution/DistributionFactory.h"
-#include "fileio/IodaIOfactory.h"
+#include "ioda/distribution/DistributionFactory.h"
+#include "ioda/fileio/IodaIOfactory.h"
 
 namespace ioda {
 

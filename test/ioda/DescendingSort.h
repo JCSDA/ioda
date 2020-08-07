@@ -15,19 +15,20 @@
 
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/testing/Test.h"
-#include "ioda/IodaTrait.h"
-#include "ioda/ObsSpace.h"
+
 #include "oops/parallel/mpi/mpi.h"
 #include "oops/runs/Test.h"
+#include "oops/test/TestEnvironment.h"
 #include "oops/util/Expect.h"
-#include "test/TestEnvironment.h"
+
+#include "ioda/IodaTrait.h"
+#include "ioda/ObsSpace.h"
 
 namespace ioda {
 
 namespace test {
 
 void testDescendingSort(const eckit::LocalConfiguration &conf) {
-
   // Produce and configure ObsData object
   util::DateTime bgn(conf.getString("window begin"));
   util::DateTime end(conf.getString("window end"));
@@ -45,7 +46,7 @@ void testDescendingSort(const eckit::LocalConfiguration &conf) {
   // Number of locations
   const size_t nlocs = obsdata.nlocs();
 
-  // All expected sort indices, obtained from input file  
+  // All expected sort indices, obtained from input file
   std::vector <int> expectedIndicesAll;
   expectedIndicesAll.assign(nlocs, 0);
   obsdata.get_db("MetaData", "expected_indices", expectedIndicesAll);

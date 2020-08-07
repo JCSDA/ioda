@@ -8,29 +8,32 @@
  * does it submit to any jurisdiction.
  */
 
-#ifndef TEST_INTERFACE_OBSSPACE_H_
-#define TEST_INTERFACE_OBSSPACE_H_
+#ifndef TEST_FILEIO_IODAIO_H_
+#define TEST_FILEIO_IODAIO_H_
 
 #include <algorithm>
-#include <string>
 #include <cmath>
+#include <map>
+#include <memory>
+#include <string>
 #include <typeinfo>
+#include <vector>
 
 #define ECKIT_TESTING_SELF_REGISTER_CASES 0
 
-#include <boost/noncopyable.hpp>
-
 #include <boost/any.hpp>
+#include <boost/noncopyable.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/testing/Test.h"
+
 #include "oops/parallel/mpi/mpi.h"
 #include "oops/runs/Test.h"
+#include "oops/test/TestEnvironment.h"
 #include "oops/util/Logger.h"
-#include "test/TestEnvironment.h"
 
-#include "fileio/IodaIO.h"
-#include "fileio/IodaIOfactory.h"
+#include "ioda/fileio/IodaIO.h"
+#include "ioda/fileio/IodaIOfactory.h"
 
 namespace ioda {
 namespace test {
@@ -187,13 +190,13 @@ void testReadVar() {
 
     if (VarType == "int") {
       ExpectedIntVars[VarGrpName] = var_config[i].getIntVector("values");
-      IntVars[VarGrpName] = std::vector<int>(ExpectedIntVars[VarGrpName].size(),0);
+      IntVars[VarGrpName] = std::vector<int>(ExpectedIntVars[VarGrpName].size(), 0);
     } else if (VarType == "float") {
       ExpectedFloatVars[VarGrpName] = var_config[i].getFloatVector("values");
-      FloatVars[VarGrpName] = std::vector<float>(ExpectedFloatVars[VarGrpName].size(),0.0);
+      FloatVars[VarGrpName] = std::vector<float>(ExpectedFloatVars[VarGrpName].size(), 0.0);
     } else if (VarType == "string") {
       ExpectedStringVars[VarGrpName] = var_config[i].getStringVector("values");
-      StringVars[VarGrpName] = std::vector<std::string>(ExpectedStringVars[VarGrpName].size(),"");
+      StringVars[VarGrpName] = std::vector<std::string>(ExpectedStringVars[VarGrpName].size(), "");
     }
   }
 
@@ -309,15 +312,15 @@ void testWriteVar() {
 
     if (VarType == "int") {
       ExpectedIntVars[VarGrpName] = var_config[i].getIntVector("values");
-      IntVars[VarGrpName] = std::vector<int>(ExpectedIntVars[VarGrpName].size(),0);
+      IntVars[VarGrpName] = std::vector<int>(ExpectedIntVars[VarGrpName].size(), 0);
       MaxVarSize = std::max(MaxVarSize, ExpectedIntVars[VarGrpName].size());
     } else if (VarType == "float") {
       ExpectedFloatVars[VarGrpName] = var_config[i].getFloatVector("values");
-      FloatVars[VarGrpName] = std::vector<float>(ExpectedFloatVars[VarGrpName].size(),0.0);
+      FloatVars[VarGrpName] = std::vector<float>(ExpectedFloatVars[VarGrpName].size(), 0.0);
       MaxVarSize = std::max(MaxVarSize, ExpectedFloatVars[VarGrpName].size());
     } else if (VarType == "string") {
       ExpectedStringVars[VarGrpName] = var_config[i].getStringVector("values");
-      StringVars[VarGrpName] = std::vector<std::string>(ExpectedStringVars[VarGrpName].size(),"");
+      StringVars[VarGrpName] = std::vector<std::string>(ExpectedStringVars[VarGrpName].size(), "");
       MaxVarSize = std::max(MaxVarSize, ExpectedStringVars[VarGrpName].size());
     }
   }
@@ -528,4 +531,4 @@ class IodaIO : public oops::Test {
 }  // namespace test
 }  // namespace ioda
 
-#endif  // TEST_INTERFACE_OBSSPACE_H_
+#endif  // TEST_FILEIO_IODAIO_H_

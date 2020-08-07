@@ -5,8 +5,8 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#ifndef IODA_OBSSPACE_H_
-#define IODA_OBSSPACE_H_
+#ifndef OBSSPACE_H_
+#define OBSSPACE_H_
 
 #include <map>
 #include <memory>
@@ -17,7 +17,7 @@
 #include "eckit/geometry/Point2.h"
 #include "eckit/mpi/Comm.h"
 
-#include "ioda/ObsData.h"
+#include "ioda/core/ObsData.h"
 #include "oops/base/ObsSpaceBase.h"
 #include "oops/base/Variables.h"
 #include "oops/util/DateTime.h"
@@ -120,4 +120,4 @@ class ObsSpace : public oops::ObsSpaceBase {
 
 }  // namespace ioda
 
-#endif  // IODA_OBSSPACE_H_
+#endif  // OBSSPACE_H_

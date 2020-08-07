@@ -9,11 +9,11 @@
  */
 
 #include "oops/runs/Run.h"
-#include "../distribution/Distribution.h"
+
+#include "ioda/test/distribution/Distribution.h"
 
 int main(int argc,  char ** argv) {
   oops::Run run(argc, argv);
   ioda::test::Distribution tests;
   return run.execute(tests);
-};
-
+}

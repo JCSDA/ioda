@@ -5,10 +5,10 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#ifndef IODA_OBSSPACE_F_H_
-#define IODA_OBSSPACE_F_H_
+#ifndef CORE_OBSSPACE_F_H_
+#define CORE_OBSSPACE_F_H_
 
-#include "ObsSpace.h"
+#include "ioda/ObsSpace.h"
 #include "oops/base/Variables.h"
 #include "oops/parallel/mpi/mpi.h"
 #include "oops/util/DateTime.h"
@@ -59,4 +59,4 @@ extern "C" {
 
 }  // namespace ioda
 
-#endif  // IODA_OBSSPACE_F_H_
+#endif  // CORE_OBSSPACE_F_H_

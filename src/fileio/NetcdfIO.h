@@ -12,9 +12,10 @@
 #include <string>
 #include <vector>
 
-#include "fileio/IodaIO.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/ObjectCounter.h"
+
+#include "ioda/fileio/IodaIO.h"
 
 ////////////////////////////////////////////////////////////////////////
 // Implementation of IodaIO for netcdf.

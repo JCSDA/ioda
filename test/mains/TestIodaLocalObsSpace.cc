@@ -6,11 +6,11 @@
  */
 
 #include "oops/runs/Run.h"
-#include "../ioda/LocalObsSpace.h"
+
+#include "ioda/test/ioda/LocalObsSpace.h"
 
 int main(int argc,  char ** argv) {
   oops::Run run(argc, argv);
   ioda::test::LocalObsSpace tests;
   return run.execute(tests);
-};
-
+}

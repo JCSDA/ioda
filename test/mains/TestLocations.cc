@@ -5,13 +5,13 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
  */
 
-#include "ioda/IodaTrait.h"
 #include "oops/runs/Run.h"
-#include "test/interface/Locations.h"
+#include "oops/test/interface/Locations.h"
+
+#include "ioda/IodaTrait.h"
 
 int main(int argc,  char ** argv) {
   oops::Run run(argc, argv);
   test::Locations<ioda::IodaTrait> tests;
   return run.execute(tests);
-};
-
+}

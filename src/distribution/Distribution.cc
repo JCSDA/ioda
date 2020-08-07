@@ -7,7 +7,7 @@
 
 #include <algorithm>
 
-#include "distribution/Distribution.h"
+#include "ioda/distribution/Distribution.h"
 
 #include "oops/util/Logger.h"
 

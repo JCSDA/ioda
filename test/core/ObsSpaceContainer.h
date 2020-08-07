@@ -8,13 +8,16 @@
  * does it submit to any jurisdiction.
  */
 
-#ifndef TEST_INTERFACE_OBSSPACE_H_
-#define TEST_INTERFACE_OBSSPACE_H_
+#ifndef TEST_CORE_OBSSPACECONTAINER_H_
+#define TEST_CORE_OBSSPACECONTAINER_H_
 
 #include <cmath>
+#include <memory>
+#include <set>
 #include <string>
 #include <tuple>
 #include <typeinfo>
+#include <vector>
 
 #define ECKIT_TESTING_SELF_REGISTER_CASES 0
 
@@ -23,12 +26,13 @@
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/mpi/Comm.h"
 #include "eckit/testing/Test.h"
+
 #include "oops/parallel/mpi/mpi.h"
 #include "oops/runs/Test.h"
+#include "oops/test/TestEnvironment.h"
 #include "oops/util/Logger.h"
-#include "test/TestEnvironment.h"
 
-#include "database/ObsSpaceContainer.h"
+#include "ioda/core/ObsSpaceContainer.h"
 
 namespace ioda {
 namespace test {
@@ -127,7 +131,7 @@ void testGrpVarIter() {
   typedef std::tuple<std::string, std::string, std::vector<std::size_t>> VarDescrip;
   std::set<VarDescrip> VarInfo;
 
-  for(std::size_t i = 0; i < VarConfig.size(); i++) {
+  for (std::size_t i = 0; i < VarConfig.size(); i++) {
     std::string VarName = VarConfig[i].getString("name");
     std::string GroupName = VarConfig[i].getString("group");
     std::string VarTypeName = VarConfig[i].getString("type");
@@ -221,7 +225,7 @@ void testStoreLoad() {
   std::vector<eckit::LocalConfiguration> VarConfig =
                                          conf.getSubConfigurations("test store load.variables");
 
-  for(std::size_t i = 0; i < VarConfig.size(); i++) {
+  for (std::size_t i = 0; i < VarConfig.size(); i++) {
     std::string VarName = VarConfig[i].getString("name");
     std::string GroupName = VarConfig[i].getString("group");
     std::string VarTypeName = VarConfig[i].getString("type");
@@ -235,7 +239,7 @@ void testStoreLoad() {
 
       std::vector<int> TestIntData(ExpectedIntData.size(), 0);
       TestIntContainer->LoadFromDb(GroupName, VarName, VarShape, TestIntData);
-      for(std::size_t j = 0; j < TestIntData.size(); j++) {
+      for (std::size_t j = 0; j < TestIntData.size(); j++) {
         EXPECT(TestIntData[j] == ExpectedIntData[j]);
       }
     } else if (VarTypeName == "float") {
@@ -245,7 +249,7 @@ void testStoreLoad() {
 
       std::vector<float> TestFloatData(ExpectedFloatData.size(), 0.0);
       TestFloatContainer->LoadFromDb(GroupName, VarName, VarShape, TestFloatData);
-      for(std::size_t j = 0; j < TestFloatData.size(); j++) {
+      for (std::size_t j = 0; j < TestFloatData.size(); j++) {
         EXPECT(TestFloatData[j] == ExpectedFloatData[j]);
       }
     } else if (VarTypeName == "string") {
@@ -255,7 +259,7 @@ void testStoreLoad() {
 
       std::vector<std::string> TestStringData(ExpectedStringData.size(), "xx");
       TestStringContainer->LoadFromDb(GroupName, VarName, VarShape, TestStringData);
-      for(std::size_t j = 0; j < TestStringData.size(); j++) {
+      for (std::size_t j = 0; j < TestStringData.size(); j++) {
         EXPECT(TestStringData[j] == ExpectedStringData[j]);
       }
     } else if (VarTypeName == "datetime") {
@@ -271,7 +275,7 @@ void testStoreLoad() {
       util::DateTime TempDt("0000-01-01T00:00:00Z");
       std::vector<util::DateTime> TestDateTimeData(ExpectedDateTimeData.size(), TempDt);
       TestDateTimeContainer->LoadFromDb(GroupName, VarName, VarShape, TestDateTimeData);
-      for(std::size_t j = 0; j < TestDateTimeData.size(); j++) {
+      for (std::size_t j = 0; j < TestDateTimeData.size(); j++) {
         EXPECT(TestDateTimeData[j] == ExpectedDateTimeData[j]);
       }
     } else {
@@ -304,7 +308,7 @@ void testSegmentedStoreLoad() {
   std::vector<eckit::LocalConfiguration> VarConfig =
                                          conf.getSubConfigurations("test store load.variables");
 
-  for(std::size_t i = 0; i < VarConfig.size(); i++) {
+  for (std::size_t i = 0; i < VarConfig.size(); i++) {
     std::string VarName = VarConfig[i].getString("name");
     std::string GroupName = VarConfig[i].getString("group");
     std::string VarTypeName = VarConfig[i].getString("type");
@@ -337,7 +341,7 @@ void testSegmentedStoreLoad() {
       std::vector<int> TestIntData(ExpectedIntData.size(), 0);
       LoadVarSegments<int>(GroupName, VarName, VarShape, TestIntData, RevStarts,
                            RevCounts, TestIntContainer);
-      for(std::size_t j = 0; j < TestIntData.size(); j++) {
+      for (std::size_t j = 0; j < TestIntData.size(); j++) {
         EXPECT(TestIntData[j] == ExpectedIntData[j]);
       }
     } else if (VarTypeName == "float") {
@@ -349,7 +353,7 @@ void testSegmentedStoreLoad() {
       std::vector<float> TestFloatData(ExpectedFloatData.size(), 0.0);
       LoadVarSegments<float>(GroupName, VarName, VarShape, TestFloatData, RevStarts,
                              RevCounts, TestFloatContainer);
-      for(std::size_t j = 0; j < TestFloatData.size(); j++) {
+      for (std::size_t j = 0; j < TestFloatData.size(); j++) {
         EXPECT(TestFloatData[j] == ExpectedFloatData[j]);
       }
     } else if (VarTypeName == "string") {
@@ -361,7 +365,7 @@ void testSegmentedStoreLoad() {
       std::vector<std::string> TestStringData(ExpectedStringData.size(), "xx");
       LoadVarSegments<std::string>(GroupName, VarName, VarShape, TestStringData, RevStarts,
                                    RevCounts, TestStringContainer);
-      for(std::size_t j = 0; j < TestStringData.size(); j++) {
+      for (std::size_t j = 0; j < TestStringData.size(); j++) {
         EXPECT(TestStringData[j] == ExpectedStringData[j]);
       }
     } else if (VarTypeName == "datetime") {
@@ -379,7 +383,7 @@ void testSegmentedStoreLoad() {
       std::vector<util::DateTime> TestDateTimeData(ExpectedDateTimeData.size(), TempDt);
       LoadVarSegments<util::DateTime>(GroupName, VarName, VarShape, TestDateTimeData, RevStarts,
                                       RevCounts, TestDateTimeContainer);
-      for(std::size_t j = 0; j < TestDateTimeData.size(); j++) {
+      for (std::size_t j = 0; j < TestDateTimeData.size(); j++) {
         EXPECT(TestDateTimeData[j] == ExpectedDateTimeData[j]);
       }
     } else {
@@ -417,4 +421,4 @@ class ObsSpaceContainer : public oops::Test {
 }  // namespace test
 }  // namespace ioda
 
-#endif  // TEST_INTERFACE_OBSSPACE_H_
+#endif  // TEST_CORE_OBSSPACECONTAINER_H_

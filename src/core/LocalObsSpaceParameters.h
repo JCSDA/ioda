@@ -5,8 +5,8 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#ifndef IODA_LOCALOBSSPACEPARAMETERS_H_
-#define IODA_LOCALOBSSPACEPARAMETERS_H_
+#ifndef CORE_LOCALOBSSPACEPARAMETERS_H_
+#define CORE_LOCALOBSSPACEPARAMETERS_H_
 
 #include <string>
 
@@ -113,4 +113,4 @@ class LocalObsSpaceParameters : public oops::Parameters {
 
 }  // namespace ioda
 
-#endif  // IODA_LOCALOBSSPACEPARAMETERS_H_
+#endif  // CORE_LOCALOBSSPACEPARAMETERS_H_

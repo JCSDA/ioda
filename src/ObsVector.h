@@ -5,8 +5,8 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#ifndef IODA_OBSVECTOR_H_
-#define IODA_OBSVECTOR_H_
+#ifndef OBSVECTOR_H_
+#define OBSVECTOR_H_
 
 #include <ostream>
 #include <string>
@@ -98,4 +98,4 @@ class ObsVector : public util::Printable,
 
 }  // namespace ioda
 
-#endif  // IODA_OBSVECTOR_H_
+#endif  // OBSVECTOR_H_
