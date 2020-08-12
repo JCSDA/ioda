@@ -10,8 +10,9 @@
 
 #include <string>
 
-#include "fileio/IodaIO.h"
 #include "oops/util/DateTime.h"
+
+#include "ioda/fileio/IodaIO.h"
 
 namespace ioda {
 

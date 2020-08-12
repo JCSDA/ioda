@@ -5,11 +5,12 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#ifndef TEST_INTERFACE_OBSSPACE_H_
-#define TEST_INTERFACE_OBSSPACE_H_
+#ifndef TEST_IODA_OBSSPACE_H_
+#define TEST_IODA_OBSSPACE_H_
 
-#include <string>
 #include <cmath>
+#include <string>
+#include <vector>
 
 #define ECKIT_TESTING_SELF_REGISTER_CASES 0
 
@@ -18,11 +19,13 @@
 
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/testing/Test.h"
-#include "ioda/IodaTrait.h"
-#include "ioda/ObsSpace.h"
+
 #include "oops/parallel/mpi/mpi.h"
 #include "oops/runs/Test.h"
-#include "test/TestEnvironment.h"
+#include "oops/test/TestEnvironment.h"
+
+#include "ioda/IodaTrait.h"
+#include "ioda/ObsSpace.h"
 
 namespace ioda {
 namespace test {
@@ -98,9 +101,12 @@ void testConstructor() {
     std::string ObsSortOrder = Test_::obspace(jj).obs_sort_order();
 
     // Get the expected obs grouping/sorting parameters from the configuration
-    std::string ExpectedObsGroupVar = conf[jj].getString("obs space.test data.expected group variable");
-    std::string ExpectedObsSortVar = conf[jj].getString("obs space.test data.expected sort variable");
-    std::string ExpectedObsSortOrder = conf[jj].getString("obs space.test data.expected sort order");
+    std::string ExpectedObsGroupVar =
+      conf[jj].getString("obs space.test data.expected group variable");
+    std::string ExpectedObsSortVar =
+      conf[jj].getString("obs space.test data.expected sort variable");
+    std::string ExpectedObsSortOrder =
+      conf[jj].getString("obs space.test data.expected sort order");
 
     oops::Log::debug() << "Nlocs, ExpectedNlocs: " << Nlocs << ", "
                        << ExpectedNlocs << std::endl;
@@ -221,7 +227,6 @@ void testPutDb() {
   std::string VarName("DummyVar");
 
   for (std::size_t jj = 0; jj < Test_::size(); ++jj) {
-
     // Set up a pointer to the ObsSpace object for convenience
     ioda::ObsSpace * Odb = &(Test_::obspace(jj));
 
@@ -233,7 +238,7 @@ void testPutDb() {
     std::vector<double> ExpectedVec(Nlocs);
 
     for (std::size_t i = 0; i < Nlocs; ++i) {
-      ExpectedVec[i] = double(i);
+      ExpectedVec[i] = static_cast<double>(i);
     }
 
     // Put the vector into the database. Then read the vector back from the database
@@ -243,7 +248,7 @@ void testPutDb() {
 
     bool VecMatch = true;
     for (std::size_t i = 0; i < Nlocs; ++i) {
-      VecMatch = VecMatch && (int(ExpectedVec[i]) == int(TestVec[i]));
+      VecMatch = VecMatch && (static_cast<int>(ExpectedVec[i]) == static_cast<int>(TestVec[i]));
     }
 
     EXPECT(VecMatch);
@@ -258,7 +263,6 @@ void testWriteableGroup() {
   std::string VarName("DummyVar");
 
   for (std::size_t jj = 0; jj < Test_::size(); ++jj) {
-
     // Set up a pointer to the ObsSpace object for convenience
     ioda::ObsSpace * Odb = &(Test_::obspace(jj));
 
@@ -270,7 +274,7 @@ void testWriteableGroup() {
     std::vector<double> ExpectedVec(Nlocs);
 
     for (std::size_t i = 0; i < Nlocs; ++i) {
-      ExpectedVec[i] = double(i);
+      ExpectedVec[i] = static_cast<double>(i);
     }
 
     // Put the vector into the database. Then read the vector back from the database
@@ -280,7 +284,7 @@ void testWriteableGroup() {
 
     bool VecMatch = true;
     for (std::size_t i = 0; i < Nlocs; ++i) {
-      VecMatch = VecMatch && (int(ExpectedVec[i]) == int(TestVec[i]));
+      VecMatch = VecMatch && (static_cast<int>(ExpectedVec[i]) == static_cast<int>(TestVec[i]));
     }
     EXPECT(VecMatch);
 
@@ -294,7 +298,7 @@ void testWriteableGroup() {
 
     VecMatch = true;
     for (std::size_t i = 0; i < Nlocs; ++i) {
-      VecMatch = VecMatch && (int(ExpectedVec[i]) == int(TestVec[i]));
+      VecMatch = VecMatch && (static_cast<int>(ExpectedVec[i]) == static_cast<int>(TestVec[i]));
     }
     EXPECT(VecMatch);
   }
@@ -328,4 +332,4 @@ class ObsSpace : public oops::Test {
 }  // namespace test
 }  // namespace ioda
 
-#endif  // TEST_INTERFACE_OBSSPACE_H_
+#endif  // TEST_IODA_OBSSPACE_H_

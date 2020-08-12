@@ -5,8 +5,8 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#ifndef IODA_OBSDATA_H_
-#define IODA_OBSDATA_H_
+#ifndef CORE_OBSDATA_H_
+#define CORE_OBSDATA_H_
 
 #include <map>
 #include <memory>
@@ -25,12 +25,12 @@
 #include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
 #include "oops/util/Printable.h"
-#include "utils/IodaUtils.h"
+#include "ioda/core/IodaUtils.h"
 
-#include "distribution/Distribution.h"
-#include "fileio/IodaIO.h"
-#include "ioda/defs.h"
+#include "ioda/core/ObsSpaceContainer.h"
+#include "ioda/distribution/Distribution.h"
 #include "ioda/Engines/Factory.h"
+#include "ioda/fileio/IodaIO.h"
 #include "ioda/ObsGroup.h"
 
 // Forward declarations
@@ -301,4 +301,4 @@ class ObsData : public util::Printable {
 
 }  // namespace ioda
 
-#endif  // IODA_OBSDATA_H_
+#endif  // CORE_OBSDATA_H_

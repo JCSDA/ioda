@@ -8,9 +8,11 @@
  * does it submit to any jurisdiction.
  */
 
-#include "mains/timeIodaIO.h"
-#include "ioda/IodaTrait.h"
+#include "ioda/mains/timeIodaIO.h"
+
 #include "oops/runs/Run.h"
+
+#include "ioda/IodaTrait.h"
 
 int main(int argc, char ** argv) {
   oops::Run run(argc, argv);

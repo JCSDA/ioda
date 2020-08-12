@@ -5,27 +5,27 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
  */
 
-#include "fileio/NetcdfIO.h"
-
-#include <math.h>
-#include <netcdf.h>
+#include "ioda/fileio/NetcdfIO.h"
 
 #include <algorithm>
+#include <cmath>
 #include <functional>
 #include <iostream>
 #include <memory>
 #include <numeric>
-#include <string>
 #include <typeinfo>
 
 #include <boost/math/special_functions/fpclassify.hpp>
+
+#include "netcdf.h"
+
 #include "oops/parallel/mpi/mpi.h"
 #include "oops/util/abor1_cpp.h"
-#include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
 #include "oops/util/missingValues.h"
-#include "utils/IodaUtils.h"
+
+#include "ioda/core/IodaUtils.h"
 
 ////////////////////////////////////////////////////////////////////////
 // Implementation of IodaIO for netcdf.

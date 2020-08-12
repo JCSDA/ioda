@@ -15,8 +15,9 @@
 
 #include "eckit/mpi/Comm.h"
 
-#include "distribution/Distribution.h"
 #include "oops/util/Printable.h"
+
+#include "ioda/distribution/Distribution.h"
 
 // Forward declarations
 namespace eckit {

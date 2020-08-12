@@ -5,16 +5,17 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
  */
 
+#include "ioda/fileio/IodaIOfactory.h"
+
 #include <string>
 
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/Logger.h"
 
-#include "fileio/IodaIOfactory.h"
-#include "fileio/NetcdfIO.h"
+#include "ioda/fileio/NetcdfIO.h"
 
 #ifdef HAVE_ODC
-#include "fileio/OdcIO.h"
+#include "ioda/fileio/OdcIO.h"
 #endif
 
 namespace ioda {

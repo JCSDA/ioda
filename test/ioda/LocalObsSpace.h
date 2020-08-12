@@ -5,23 +5,27 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#ifndef TEST_INTERFACE_LOCALOBSSPACE_H_
-#define TEST_INTERFACE_LOCALOBSSPACE_H_
+#ifndef TEST_IODA_LOCALOBSSPACE_H_
+#define TEST_IODA_LOCALOBSSPACE_H_
 
+#include <algorithm>
 #include <string>
+#include <vector>
 
 #define ECKIT_TESTING_SELF_REGISTER_CASES 0
 
 #include <boost/shared_ptr.hpp>
 
-#include "../test/ioda/ObsSpace.h"
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/testing/Test.h"
-#include "ioda/IodaTrait.h"
-#include "ioda/ObsSpace.h"
+
 #include "oops/parallel/mpi/mpi.h"
 #include "oops/runs/Test.h"
-#include "test/TestEnvironment.h"
+#include "oops/test/TestEnvironment.h"
+
+#include "ioda/IodaTrait.h"
+#include "ioda/ObsSpace.h"
+#include "ioda/test/ioda/ObsSpace.h"
 
 namespace ioda {
 namespace test {
@@ -49,7 +53,7 @@ void testConstructor_local() {
     std::size_t ExpectedNlocs = conf[jj].getUnsigned("obs space.test data.expected local nlocs");
     oops::Log::debug() << "Expected Nlocs_local = " << ExpectedNlocs << std::endl;
     EXPECT(Nlocs == ExpectedNlocs);
-    //test localization distances
+    // test localization distances
     std::vector<double> obsdist = obsspace_local.obsdist();
     double distance = conf[jj].getDouble("obs space.localization.lengthscale");
     oops::Log::debug() << "loc_ dist" << distance << std::endl;
@@ -85,4 +89,4 @@ class LocalObsSpace : public oops::Test {
 }  // namespace test
 }  // namespace ioda
 
-#endif  // TEST_INTERFACE_LOCALOBSSPACE_H_
+#endif  // TEST_IODA_LOCALOBSSPACE_H_

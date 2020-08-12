@@ -5,6 +5,4 @@
 
 ecbuild_add_executable( TARGET  time_IodaIO.x
                         SOURCES timeIodaIO.cc
-                        LIBS    ioda
-                       )
-
+                        LIBS    ioda )

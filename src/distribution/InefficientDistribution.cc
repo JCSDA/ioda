@@ -5,7 +5,7 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#include "distribution/InefficientDistribution.h"
+#include "ioda/distribution/InefficientDistribution.h"
 
 #include <algorithm>
 #include <iostream>

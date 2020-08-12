@@ -16,7 +16,7 @@
 
 #include "eckit/config/Configuration.h"
 
-#include "ioda/LocalObsSpaceParameters.h"
+#include "ioda/core/LocalObsSpaceParameters.h"
 
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/DateTime.h"

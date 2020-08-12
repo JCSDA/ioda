@@ -11,7 +11,7 @@
 #include <string>
 #include <vector>
 
-#include "distribution/Distribution.h"
+#include "ioda/distribution/Distribution.h"
 
 namespace ioda {
 

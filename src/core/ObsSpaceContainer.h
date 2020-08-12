@@ -5,8 +5,8 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#ifndef DATABASE_OBSSPACECONTAINER_H_
-#define DATABASE_OBSSPACECONTAINER_H_
+#ifndef CORE_OBSSPACECONTAINER_H_
+#define CORE_OBSSPACECONTAINER_H_
 
 #define BOOST_STACKTRACE_GNU_SOURCE_NOT_REQUIRED
 
@@ -34,7 +34,7 @@
 #include "oops/util/missingValues.h"
 #include "oops/util/Printable.h"
 
-#include "utils/IodaUtils.h"
+#include "ioda/core/IodaUtils.h"
 
 using boost::multi_index::composite_key;
 using boost::multi_index::indexed_by;
@@ -576,4 +576,4 @@ void ObsSpaceContainer<ContType>::print(std::ostream & os) const {
 
 }  // namespace ioda
 
-#endif  // DATABASE_OBSSPACECONTAINER_H_
+#endif  // CORE_OBSSPACECONTAINER_H_

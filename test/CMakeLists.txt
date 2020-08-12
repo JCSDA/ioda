@@ -10,10 +10,10 @@ function( REMOVE_YAML_SYMLINK link )
                      OUTPUT_VARIABLE SYMLINK_FILE
                      OUTPUT_STRIP_TRAILING_WHITESPACE
                      ERROR_VARIABLE FIND_ERROR )
-    if (SYMLINK_FILE)
+    if(SYMLINK_FILE)
       message( STATUS "Removing obsolete symlink: ${SYMLINK_FILE}" )
       execute_process( COMMAND rm -f ${SYMLINK_FILE} )
-    endif (SYMLINK_FILE)
+    endif()
 endfunction()
 
 # function to create targets to build test YAML
@@ -67,14 +67,14 @@ foreach(FILENAME ${ioda_test_input})
     execute_process( COMMAND ${CMAKE_COMMAND} -E create_symlink
            ${CMAKE_CURRENT_SOURCE_DIR}/${FILENAME}
            ${CMAKE_CURRENT_BINARY_DIR}/${FILENAME} )
-endforeach(FILENAME)
+endforeach()
 
 # contruct tests in ioda_repeat_test_cases for netcdf obs files
 SET_TARGETS_DEPS_YAML( "${ioda_repeat_test_cases}" NETCDF ioda_test_nc_deps )
 
-if(HAVE_ODC)
+if(odc_FOUND)
   SET_TARGETS_DEPS_YAML( "${ioda_repeat_test_cases}" ODC ioda_test_odc_deps )
-endif(HAVE_ODC)
+endif()
 
 list( APPEND ioda_test_cases_deps ${ioda_test_nc_deps} ${ioda_test_odc_deps} )
 add_custom_target( ioda_test_case_yaml ALL DEPENDS ${ioda_test_cases_deps} )
@@ -85,17 +85,13 @@ file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/testoutput)
 
 # Add files to cmake resources
 ecbuild_add_resources( TARGET ioda_test_scripts
-                       SOURCES_PACK
-                       ${ioda_test_input}
-                     )
+                       SOURCES_PACK ${ioda_test_input} )
 
 # Create Data directory for test data and symlink files
-list( APPEND ioda_test_data
-      testinput_tier_1.tar.gz
-      )
+list( APPEND ioda_test_data testinput_tier_1.tar.gz )
 
-if (DEFINED ENV{LOCAL_PATH_TESTFILES_IODA})
-	set(LOCAL_PATH_TESTFILES_IODA "$ENV{LOCAL_PATH_TESTFILES_IODA}")
+if( DEFINED ENV{LOCAL_PATH_TESTFILES_IODA})
+    set(LOCAL_PATH_TESTFILES_IODA "$ENV{LOCAL_PATH_TESTFILES_IODA}")
 endif()
 
 # Set URL for IODA test files
@@ -105,7 +101,7 @@ set(IODA_DOWNLOAD_BASE_URL https://jedi-test-files.s3.amazonaws.com)
 if( NOT DEFINED LOCAL_PATH_TESTFILES_IODA )
 
   message(STATUS "LOCAL_PATH_TESTFILES_IODA is not defined, download test files")
-  if ( NOT DEFINED IODA_IODA_TESTFILES_BRANCH)
+  if( NOT DEFINED IODA_IODA_TESTFILES_BRANCH)
 
     # Get the current git branch
     execute_process(
@@ -113,9 +109,9 @@ if( NOT DEFINED LOCAL_PATH_TESTFILES_IODA )
       WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
       OUTPUT_VARIABLE GIT_BRANCH_IODA
       OUTPUT_STRIP_TRAILING_WHITESPACE)
-    message(STATUS "IODA is in branch" ${GIT_BRANCH_IODA})
+    message(STATUS "IODA branch [parsed]: ${GIT_BRANCH_IODA}")
   else()
-    message(STATUS "Branch name provided by user")
+    message(STATUS "IODA branch [user-set]: ${IODA_IODA_TESTFILES_BRANCH}")
     set(GIT_BRANCH_IODA ${IODA_IODA_TESTFILES_BRANCH})
   endif()
  
@@ -126,14 +122,14 @@ if( NOT DEFINED LOCAL_PATH_TESTFILES_IODA )
                      RESULT IODA_SPECIFIC_TEST_FILES)
 
   # Set distant directory
-  if(${IODA_SPECIFIC_TEST_FILES} MATCHES 0)
+  if( IODA_SPECIFIC_TEST_FILES MATCHES 0 )
     # Download and extract new test files (distant directory = git branch)
     set(DIRNAME ${GIT_BRANCH_IODA})
-    message(STATUS "GIT_BRANCH_IODA found, download " ${GIT_BRANCH_IODA})
+    message(STATUS "GIT_BRANCH_IODA is set. [download: ${DIRNAME}]")
   else()
     # Download and extract develop test files (distant directory = develop)
     set(DIRNAME "develop")
-    message(STATUS "GIT_BRANCH_IODA not found, download develop")
+    message(STATUS "GIT_BRANCH_IODA not set. [download: ${DIRNAME}]")
   endif()
   message(STATUS "Test data will be downloaded from: ${IODA_DOWNLOAD_BASE_URL}/${DIRNAME}")
 
@@ -170,12 +166,20 @@ if( NOT DEFINED LOCAL_PATH_TESTFILES_IODA )
                     ARGS      testoutput/download_test.log)
 else()
   set(TESTFILE_DIR_IODA ${LOCAL_PATH_TESTFILES_IODA})
-  message(STATUS "use LOCAL_PATH_TESTFILES_IODA : ${LOCAL_PATH_TESTFILES_IODA}")
+  message(STATUS "use LOCAL_PATH_TESTFILES_IODA: ${LOCAL_PATH_TESTFILES_IODA}")
 endif()
 
 execute_process( COMMAND ${CMAKE_COMMAND} -E create_symlink
                  ${TESTFILE_DIR_IODA}
                  ${CMAKE_CURRENT_BINARY_DIR}/Data)
+
+add_library(ioda_test INTERFACE)
+set(BUILD_DIR_TEST_INCLUDE_PATH ${CMAKE_BINARY_DIR}/${PROJECT_NAME}/test/include)
+add_custom_target(ioda_test_headers ALL COMMAND ${CMAKE_COMMAND} -E make_directory "${BUILD_DIR_TEST_INCLUDE_PATH}/${PROJECT_NAME}"
+                                    COMMAND ${CMAKE_COMMAND} -E create_symlink ${CMAKE_CURRENT_SOURCE_DIR} ${BUILD_DIR_TEST_INCLUDE_PATH}/${PROJECT_NAME}/test)
+add_dependencies(ioda_test ioda_test_headers)
+target_include_directories(ioda_test INTERFACE $<BUILD_INTERFACE:${BUILD_DIR_TEST_INCLUDE_PATH}>)
+target_link_libraries(ioda_test INTERFACE ioda)
 
 # For the following test specifications:
 #   All of the test data is downloaded by the above test "get_ioda_test_data".
@@ -194,15 +198,15 @@ execute_process( COMMAND ${CMAKE_COMMAND} -E create_symlink
 ecbuild_add_test( TARGET  test_ioda_fileio
                   SOURCES mains/TestIodaIO.cc
                   ARGS    "testinput/iodatest_fileio.yml"
-                  LIBS    ioda
+                  LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
-if( HAVE_ODC )
+if( odc_FOUND )
 ecbuild_add_test( TARGET  test_ioda_fileio_odc
                   COMMAND test_ioda_fileio
                   ARGS    "testinput/iodatest_fileio_odc.yml"
                   TEST_DEPENDS get_ioda_test_data )
-endif( HAVE_ODC )
+endif()
 
 #####################################################################
 # Distribution tests
@@ -211,7 +215,7 @@ ecbuild_add_test( TARGET  test_ioda_distribution
                   MPI     4
                   SOURCES mains/TestDistribution.cc
                   ARGS    "testinput/iodatest_distribution.yml"
-                  LIBS    ioda
+                  LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
 #####################################################################
@@ -220,7 +224,7 @@ ecbuild_add_test( TARGET  test_ioda_distribution
 ecbuild_add_test( TARGET  test_ioda_obsspacecontainer
                   SOURCES mains/TestObsSpaceContainer.cc
                   ARGS    "testinput/iodatest_obsspace_container.yml"
-                  LIBS    ioda
+                  LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
 #####################################################################
@@ -231,14 +235,14 @@ ecbuild_add_test( TARGET  test_ioda_obsspacecontainer
 ecbuild_add_test( TARGET  test_ioda_oops_obsspace
                   SOURCES mains/TestObsSpace.cc
                   ARGS    "testinput/iodatest.yml"
-                  LIBS    ioda
+                  LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
 # IODA ObsSpace class
 ecbuild_add_test( TARGET  test_ioda_obsspace
                   SOURCES mains/TestIodaObsSpace.cc
                   ARGS    "testinput/iodatest_obsspace.yml"
-                  LIBS    ioda
+                  LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_mpi
@@ -247,11 +251,11 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_mpi
                   ARGS    "testinput/iodatest_obsspace.yml"
                   TEST_DEPENDS get_ioda_test_data )
 
-if(HAVE_ODC)
+if(odc_FOUND)
   ecbuild_add_test( TARGET  test_ioda_obsspace_odc
                     SOURCES mains/TestIodaObsSpace.cc
                     ARGS    "testinput/iodatest_obsspace_odc.yml"
-                    LIBS    ioda
+                    LIBS  ioda_test
                     TEST_DEPENDS get_ioda_test_data )
 
   ecbuild_add_test( TARGET  test_ioda_obsspace_mpi_odc
@@ -260,7 +264,7 @@ if(HAVE_ODC)
                     ARGS    "testinput/iodatest_obsspace_odc.yml"
                     TEST_DEPENDS get_ioda_test_data )
 
-endif(HAVE_ODC)
+endif()
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_marine
                   COMMAND test_ioda_obsspace
@@ -274,7 +278,7 @@ add_fctest( TARGET  test_ioda_obsspace_fortran
             ARGS    --config testinput/iodatest_obsspace_fortran.yml
             CONDITION HAVE_FCTEST
             LINKER_LANGUAGE Fortran
-            LIBS    ioda
+            LIBS  ioda_test
             TEST_DEPENDS get_ioda_test_data )
 endif()
 
@@ -282,21 +286,22 @@ endif()
 ecbuild_add_test( TARGET  test_ioda_localobsspace
                   SOURCES mains/TestLocalObsSpace.cc
                   ARGS    "testinput/iodatest_localobsspace.yml"
-                  LIBS    ioda
+                  LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
 # IODA LocalObsSpace test
 ecbuild_add_test( TARGET  test_ioda_obsspace_localization
                   SOURCES mains/TestIodaLocalObsSpace.cc
                   ARGS    "testinput/iodatest_obsspace_localization.yml"
-                  LIBS    ioda
+                  LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
 # IODA ObsSpace sorting of obs groups
 ecbuild_add_test( TARGET  test_ioda_descendingsort
                   SOURCES mains/TestDescendingSort.cc
                   ARGS    "testinput/iodatest_descendingsort.yml"
-                  LIBS    ioda)
+                  LIBS  ioda_test
+                  TEST_DEPENDS get_ioda_test_data )
 
 #####################################################################
 # ObsVector tests
@@ -306,7 +311,7 @@ ecbuild_add_test( TARGET  test_ioda_descendingsort
 ecbuild_add_test( TARGET  test_ioda_oops_obsvector
                   SOURCES mains/TestObsVector.cc
                   ARGS    "testinput/iodatest_obsvector.yml"
-                  LIBS    ioda
+                  LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
 # IODA ObsVector class
@@ -314,17 +319,17 @@ ecbuild_add_test( TARGET  test_ioda_obsvector
                   MPI     4
                   SOURCES mains/TestIodaObsVector.cc
                   ARGS    "testinput/iodatest_obsvector.yml"
-                  LIBS    ioda
+                  LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
-if(HAVE_ODC)
+if(odc_FOUND)
   ecbuild_add_test( TARGET  test_ioda_obsvector_odc
                     MPI     4
                     SOURCES mains/TestIodaObsVector.cc
                     ARGS    "testinput/iodatest_obsvector_odc.yml"
-                    LIBS    ioda
+                    LIBS  ioda_test
                     TEST_DEPENDS get_ioda_test_data )
-endif(HAVE_ODC)
+endif()
 
 #####################################################################
 # ObsErrorCovariance tests
@@ -334,7 +339,7 @@ endif(HAVE_ODC)
 ecbuild_add_test( TARGET  test_ioda_oops_obserrorcovariance
                   SOURCES mains/TestObsErrorCovariance.cc
                   ARGS    "testinput/iodatest_obserror.yml"
-                  LIBS    ioda
+                  LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
 #####################################################################

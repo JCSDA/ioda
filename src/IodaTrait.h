@@ -5,8 +5,8 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
  */
 
-#ifndef IODA_IODATRAIT_H_
-#define IODA_IODATRAIT_H_
+#ifndef IODATRAIT_H_
+#define IODATRAIT_H_
 
 #include <string>
 
@@ -26,4 +26,4 @@ struct IodaTrait {
 
 }  // namespace ioda
 
-#endif  // IODA_IODATRAIT_H_
+#endif  // IODATRAIT_H_

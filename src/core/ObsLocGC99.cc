@@ -5,7 +5,7 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#include "ioda/ObsLocGC99.h"
+#include "ioda/core/ObsLocGC99.h"
 
 #include "eckit/config/Configuration.h"
 #include "eckit/exception/Exceptions.h"
