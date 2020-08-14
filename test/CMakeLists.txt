@@ -72,13 +72,8 @@ endforeach()
 # contruct tests in ioda_repeat_test_cases for netcdf obs files
 SET_TARGETS_DEPS_YAML( "${ioda_repeat_test_cases}" NETCDF ioda_test_nc_deps )
 
-if(odc_FOUND)
-  SET_TARGETS_DEPS_YAML( "${ioda_repeat_test_cases}" ODC ioda_test_odc_deps )
-endif()
-
 list( APPEND ioda_test_cases_deps ${ioda_test_nc_deps} ${ioda_test_odc_deps} )
 add_custom_target( ioda_test_case_yaml ALL DEPENDS ${ioda_test_cases_deps} )
-
 
 # Set up test output directory
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/testoutput)
@@ -251,21 +246,6 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_mpi
                   ARGS    "testinput/iodatest_obsspace.yml"
                   TEST_DEPENDS get_ioda_test_data )
 
-if(odc_FOUND)
-  ecbuild_add_test( TARGET  test_ioda_obsspace_odc
-                    SOURCES mains/TestIodaObsSpace.cc
-                    ARGS    "testinput/iodatest_obsspace_odc.yml"
-                    LIBS  ioda_test
-                    TEST_DEPENDS get_ioda_test_data )
-
-  ecbuild_add_test( TARGET  test_ioda_obsspace_mpi_odc
-                    MPI     2
-                    COMMAND test_ioda_obsspace
-                    ARGS    "testinput/iodatest_obsspace_odc.yml"
-                    TEST_DEPENDS get_ioda_test_data )
-
-endif()
-
 ecbuild_add_test( TARGET  test_ioda_obsspace_marine
                   COMMAND test_ioda_obsspace
                   ARGS    "testinput/iodatest_obsspace_marine.yml"
@@ -321,15 +301,6 @@ ecbuild_add_test( TARGET  test_ioda_obsvector
                   ARGS    "testinput/iodatest_obsvector.yml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
-
-if(odc_FOUND)
-  ecbuild_add_test( TARGET  test_ioda_obsvector_odc
-                    MPI     4
-                    SOURCES mains/TestIodaObsVector.cc
-                    ARGS    "testinput/iodatest_obsvector_odc.yml"
-                    LIBS  ioda_test
-                    TEST_DEPENDS get_ioda_test_data )
-endif()
 
 #####################################################################
 # ObsErrorCovariance tests
