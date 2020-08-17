@@ -45,8 +45,8 @@ list( APPEND ioda_test_input
   testinput/iodatest.yml
   testinput/iodatest_localobsspace.yml
   testinput/iodatest_obserror.yml
-  testinput/iodatest_fileio.yml
-  testinput/iodatest_fileio_odc.yml
+  testinput/iodatest_io.yml
+  testinput/iodatest_io_odc.yml
   testinput/iodatest_distribution.yml
   testinput/iodatest_obsspace_container.yml
   testinput/iodatest_obsspace_marine.yml
@@ -195,16 +195,16 @@ target_link_libraries(ioda_test INTERFACE ioda)
 #####################################################################
 # IodaIO tests
 #####################################################################
-ecbuild_add_test( TARGET  test_ioda_fileio
+ecbuild_add_test( TARGET  test_ioda_io
                   SOURCES mains/TestIodaIO.cc
-                  ARGS    "testinput/iodatest_fileio.yml"
+                  ARGS    "testinput/iodatest_io.yml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
 if( odc_FOUND )
-ecbuild_add_test( TARGET  test_ioda_fileio_odc
-                  COMMAND test_ioda_fileio
-                  ARGS    "testinput/iodatest_fileio_odc.yml"
+ecbuild_add_test( TARGET  test_ioda_io_odc
+                  COMMAND test_ioda_io
+                  ARGS    "testinput/iodatest_io_odc.yml"
                   TEST_DEPENDS get_ioda_test_data )
 endif()
 
@@ -346,7 +346,7 @@ ecbuild_add_test( TARGET  test_ioda_oops_obserrorcovariance
 # Test the time_IodaIO.x app
 #####################################################################
 
-ecbuild_add_test( TARGET  test_ioda_time_fileio
+ecbuild_add_test( TARGET  test_ioda_time_io
                   COMMAND ${CMAKE_BINARY_DIR}/bin/time_IodaIO.x
                   ARGS    "testinput/iodatest_obsspace.yml"
                   TEST_DEPENDS get_ioda_test_data )

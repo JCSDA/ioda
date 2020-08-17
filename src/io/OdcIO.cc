@@ -5,7 +5,7 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
  */
 
-#include "ioda/fileio/OdcIO.h"
+#include "ioda/io/OdcIO.h"
 
 #include <fcntl.h>
 #include <sys/stat.h>

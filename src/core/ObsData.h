@@ -30,7 +30,7 @@
 #include "ioda/core/ObsSpaceContainer.h"
 #include "ioda/distribution/Distribution.h"
 #include "ioda/Engines/Factory.h"
-#include "ioda/fileio/IodaIO.h"
+#include "ioda/io/IodaIO.h"
 #include "ioda/ObsGroup.h"
 
 // Forward declarations

@@ -5,8 +5,8 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#ifndef FILEIO_IODAIO_H_
-#define FILEIO_IODAIO_H_
+#ifndef IO_IODAIO_H_
+#define IO_IODAIO_H_
 
 #include <map>
 #include <memory>
@@ -422,4 +422,4 @@ class IodaIO : public util::Printable {
 
 }  // namespace ioda
 
-#endif  // FILEIO_IODAIO_H_
+#endif  // IO_IODAIO_H_

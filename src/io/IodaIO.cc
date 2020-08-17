@@ -5,7 +5,7 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
  */
 
-#include "ioda/fileio/IodaIO.h"
+#include "ioda/io/IodaIO.h"
 
 #include <string>
 

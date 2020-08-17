@@ -5,8 +5,8 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#ifndef FILEIO_ODCIO_H_
-#define FILEIO_ODCIO_H_
+#ifndef IO_ODCIO_H_
+#define IO_ODCIO_H_
 
 #include <map>
 #include <string>
@@ -16,7 +16,7 @@
 
 #include "oops/util/ObjectCounter.h"
 
-#include "ioda/fileio/IodaIO.h"
+#include "ioda/io/IodaIO.h"
 
 ////////////////////////////////////////////////////////////////////////
 // Implementation of IodaIO for ODB.
@@ -136,4 +136,4 @@ class OdcIO : public IodaIO, private util::ObjectCounter<OdcIO> {
 
 }  // namespace ioda
 
-#endif  // FILEIO_ODCIO_H_
+#endif  // IO_ODCIO_H_

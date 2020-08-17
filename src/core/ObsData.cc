@@ -31,7 +31,7 @@
 #include "oops/util/stringFunctions.h"
 
 #include "ioda/distribution/DistributionFactory.h"
-#include "ioda/fileio/IodaIOfactory.h"
+#include "ioda/io/IodaIOfactory.h"
 #include "ioda/Variables/Variable.h"
 
 namespace ioda {
@@ -194,35 +194,30 @@ ObsData::~ObsData() {
 
 void ObsData::get_db(const std::string & group, const std::string & name,
                       std::vector<int> & vdata) const {
-  std::vector<std::size_t> vshape(1, vdata.size());
-  LoadFromDb<int>(group, name, vshape, vdata);
+  LoadFromDb<int>(group, name, { vdata.size() }, vdata);
 }
 
 void ObsData::get_db(const std::string & group, const std::string & name,
                       std::vector<float> & vdata) const {
-  std::vector<std::size_t> vshape(1, vdata.size());
-  LoadFromDb<float>(group, name, vshape, vdata);
+  LoadFromDb<float>(group, name, { vdata.size() }, vdata);
 }
 
 void ObsData::get_db(const std::string & group, const std::string & name,
                       std::vector<double> & vdata) const {
-  std::vector<std::size_t> vshape(1, vdata.size());
   // load the float values from the database and convert to double
   std::vector<float> FloatData(vdata.size(), 0.0);
-  LoadFromDb<float>(group, name, vshape, FloatData);
+  LoadFromDb<float>(group, name, { vdata.size() }, FloatData);
   ConvertVarType<float, double>(FloatData, vdata);
 }
 
 void ObsData::get_db(const std::string & group, const std::string & name,
                       std::vector<std::string> & vdata) const {
-  std::vector<std::size_t> vshape(1, vdata.size());
-  LoadFromDb<std::string>(group, name, vshape, vdata);
+  LoadFromDb<std::string>(group, name, { vdata.size() }, vdata);
 }
 
 void ObsData::get_db(const std::string & group, const std::string & name,
                       std::vector<util::DateTime> & vdata) const {
-  std::vector<std::size_t> vshape(1, vdata.size());
-  // datetime_database_.LoadFromDb(group, name, vshape, vdata);
+  // datetime_database_.LoadFromDb(group, name, { vdata.size() }, vdata);
 }
 
 // -----------------------------------------------------------------------------
@@ -241,35 +236,30 @@ void ObsData::get_db(const std::string & group, const std::string & name,
 
 void ObsData::put_db(const std::string & group, const std::string & name,
                       const std::vector<int> & vdata) {
-  std::vector<std::size_t> vshape(1, vdata.size());
-  StoreToDb<int>(group, name, vshape, vdata);
+  StoreToDb<int>(group, name, { vdata.size() }, vdata);
 }
 
 void ObsData::put_db(const std::string & group, const std::string & name,
                       const std::vector<float> & vdata) {
-  std::vector<std::size_t> vshape(1, vdata.size());
-  StoreToDb<float>(group, name, vshape, vdata);
+  StoreToDb<float>(group, name, { vdata.size() }, vdata);
 }
 
 void ObsData::put_db(const std::string & group, const std::string & name,
                       const std::vector<double> & vdata) {
-  std::vector<std::size_t> vshape(1, vdata.size());
   // convert to float, then load into the database
   std::vector<float> FloatData(vdata.size());
   ConvertVarType<double, float>(vdata, FloatData);
-  StoreToDb<float>(group, name, vshape, FloatData);
+  StoreToDb<float>(group, name, { vdata.size() }, FloatData);
 }
 
 void ObsData::put_db(const std::string & group, const std::string & name,
                       const std::vector<std::string> & vdata) {
-  std::vector<std::size_t> vshape(1, vdata.size());
-  StoreToDb<std::string>(group, name, vshape, vdata);
+  StoreToDb<std::string>(group, name, { vdata.size() }, vdata);
 }
 
 void ObsData::put_db(const std::string & group, const std::string & name,
                       const std::vector<util::DateTime> & vdata) {
-  std::vector<std::size_t> vshape(1, vdata.size());
-  // StoreToDb<util::DateTime>(group, name, vshape, vdata);
+  // StoreToDb<util::DateTime>(group, name, { vdata.size() }, vdata);
 }
 
 // -----------------------------------------------------------------------------
@@ -796,10 +786,7 @@ void ObsData::StoreToDb(const std::string & GroupName, const std::string & VarNa
                         const std::vector<std::size_t> & VarShape,
                         const std::vector<VarType> & VarData, bool Append) {
   // Need to copy VarShape into a dimension spec
-  std::vector<Dimensions_t> VarDims(VarShape.size());
-  for (std::size_t i = 0; i < VarShape.size(); ++i) {
-    VarDims[i] = VarShape[i];
-  }
+  std::vector<Dimensions_t> VarDims(VarShape.begin(), VarShape.end());
 
   // Create the group if it doesn't exist
   Group grp;
@@ -821,7 +808,6 @@ void ObsData::StoreToDb(const std::string & GroupName, const std::string & VarNa
     // Create and write the variable. Since it is new, the Append control
     // doesn't matter. Regardless of its setting, you want to simply write
     // the variable into the space that was just created.
-    VarParams.finalize();
     var = grp.vars.create<VarType>(VarName, VarDims, VarDims, VarParams);
     var.write(VarData);
   } else {
@@ -1256,7 +1242,7 @@ void ObsData::GetFillValue(DataType & FillValue) const {
 
 template<>
 void ObsData::GetFillValue<std::string>(std::string & FillValue) const {
-  FillValue = std::string("");
+  FillValue = std::string("_fill_");
 }
 
 // -----------------------------------------------------------------------------

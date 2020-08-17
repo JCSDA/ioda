@@ -29,12 +29,12 @@ distribution/InefficientDistribution.h
 distribution/RoundRobin.cc
 distribution/RoundRobin.h
 
-fileio/IodaIO.cc
-fileio/IodaIO.h
-fileio/IodaIOfactory.cc
-fileio/IodaIOfactory.h
-fileio/NetcdfIO.cc
-fileio/NetcdfIO.h
+io/IodaIO.cc
+io/IodaIO.h
+io/IodaIOfactory.cc
+io/IodaIOfactory.h
+io/NetcdfIO.cc
+io/NetcdfIO.h
 )
 
 list( APPEND ioda_fortran_interface_includes
@@ -43,8 +43,8 @@ obsspace_interface.f
 
 if(odc_FOUND)
   list( APPEND ioda_src_files
-  fileio/OdcIO.cc
-  fileio/OdcIO.h
+  io/OdcIO.cc
+  io/OdcIO.h
   )
 endif()
 
