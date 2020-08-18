@@ -6,9 +6,3 @@ CLANG:[![AWS-clang](https://codebuild.us-east-1.amazonaws.com/badges?uuid=eyJlbm
 
 JEDI Interface for Observation Data Access
 
-## ODC support is now available
-
-ODC is an API from ECMWF that gives access to ODB2 (observation data) files.
-The ODC libraries have been installed in the containers, and are available through the jedi-stack build process.
-If the ODC libraries are found in your environment, then the ODC interface will be built into IODA.
-If the ODC libraries are not found, then the ODC interface will be omitted from IODA.

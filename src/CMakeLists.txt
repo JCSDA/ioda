@@ -41,13 +41,6 @@ list( APPEND ioda_fortran_interface_includes
 obsspace_interface.f
 )
 
-if(odc_FOUND)
-  list( APPEND ioda_src_files
-  io/OdcIO.cc
-  io/OdcIO.h
-  )
-endif()
-
 include(GNUInstallDirs)
 ecbuild_add_library( TARGET ${PROJECT_NAME}
                      SOURCES ${${PROJECT_NAME}_src_files}
@@ -59,16 +52,6 @@ target_link_libraries( ${PROJECT_NAME} PUBLIC NetCDF::NetCDF_C )
 target_link_libraries( ${PROJECT_NAME} PUBLIC fckit )
 target_link_libraries( ${PROJECT_NAME} PUBLIC ioda-engines )
 target_link_libraries( ${PROJECT_NAME} PUBLIC ${oops_LIBRARIES} ) #TODO: Change to "oops::oops" once oops adds namespace support
-if(odc_FOUND)
-    target_link_libraries(${PROJECT_NAME} PUBLIC ${ODC_LIBRARIES})
-    target_compile_definitions(${PROJECT_NAME} PUBLIC HAVE_ODC=1)
-    if (odc_VERSION_MAJOR VERSION_LESS 1)
-        message(STATUS "ODC pre-release version: ${odc_VERSION}")
-    else()
-        message(STATUS "ODC release version: ${odc_VERSION}")
-        target_compile_definitions(${PROJECT_NAME} PUBLIC ODC_RELEASE=1)
-    endif()
-endif()
 
 #Configure include directory layout for build-tree to match install-tree
 set(BUILD_DIR_INCLUDE_PATH ${CMAKE_BINARY_DIR}/${PROJECT_NAME}/include)

@@ -6,9 +6,6 @@ include(CMakeFindDependencyMacro)
 find_package( NetCDF REQUIRED COMPONENTS C )
 find_dependency( fckit REQUIRED )
 find_dependency( oops REQUIRED )
-if(@odc_FOUND@) # odc_FOUND
-    find_dependency( odc REQUIRED )
-endif()
 
 #Export Fortran compiler version for checking module compatibility
 set(@PROJECT_NAME@_MODULES_Fortran_COMPILER_ID @CMAKE_Fortran_COMPILER_ID@)
