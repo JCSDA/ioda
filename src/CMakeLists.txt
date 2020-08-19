@@ -41,6 +41,7 @@ io/ObsGenerate.cc
 io/ObsGenerate.h
 io/ObsIo.cc
 io/ObsIo.h
+io/ObsIoParameters.h
 io/ObsIoFactory.cc
 io/ObsIoFactory.h
 )

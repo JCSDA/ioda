@@ -23,6 +23,7 @@
 
 #include "ioda/io/ObsIo.h"
 #include "ioda/io/ObsIoFactory.h"
+#include "ioda/io/ObsIoParameters.h"
 
 namespace ioda {
 namespace test {
@@ -33,8 +34,16 @@ void testConstructor() {
     const eckit::LocalConfiguration conf(::test::TestEnvironment::config());
     std::vector<eckit::LocalConfiguration> confOspaces = conf.getSubConfigurations("observations");
 
+    std::unique_ptr<ioda::ObsIoParameters> obsParams;
     for (std::size_t i = 0; i < confOspaces.size(); ++i) {
-        std::cout << "ObsIo test config: " << i << ": " << confOspaces[i] << std::endl;
+        eckit::LocalConfiguration obsConfig;
+        confOspaces[i].get("obs space", obsConfig);
+        oops::Log::trace() << "ObsIo test config: " << i << ": " << obsConfig << std::endl;
+
+        obsParams.reset(new ioda::ObsIoParameters());   
+        obsParams->deserialize(obsConfig);
+
+        int dummy = 1; /// delete this
     }
 }
 
