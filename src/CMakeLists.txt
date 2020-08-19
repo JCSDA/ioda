@@ -35,6 +35,14 @@ io/IodaIOfactory.cc
 io/IodaIOfactory.h
 io/NetcdfIO.cc
 io/NetcdfIO.h
+io/ObsFile.cc
+io/ObsFile.h
+io/ObsGenerate.cc
+io/ObsGenerate.h
+io/ObsIo.cc
+io/ObsIo.h
+io/ObsIoFactory.cc
+io/ObsIoFactory.h
 )
 
 list( APPEND ioda_fortran_interface_includes

@@ -9,6 +9,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_localobsspace.yml
   testinput/iodatest_obserror.yml
   testinput/iodatest_io.yml
+  testinput/iodatest_obsio.yml
   testinput/iodatest_distribution.yml
   testinput/iodatest_obsspace_container.yml
   testinput/iodatest_obsspace.yml
@@ -146,6 +147,12 @@ target_link_libraries(ioda_test INTERFACE ioda)
 ecbuild_add_test( TARGET  test_ioda_io
                   SOURCES mains/TestIodaIO.cc
                   ARGS    "testinput/iodatest_io.yml"
+                  LIBS  ioda_test
+                  TEST_DEPENDS get_ioda_test_data )
+
+ecbuild_add_test( TARGET  test_ioda_obsio
+                  SOURCES mains/TestObsIo.cc
+                  ARGS    "testinput/iodatest_obsio.yml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
