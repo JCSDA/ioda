@@ -8,11 +8,15 @@
 #ifndef IO_OBSIO_H_
 #define IO_OBSIO_H_
 
+#include <iostream>
+
+#include "ioda/io/ObsIoParameters.h"
 #include "eckit/config/LocalConfiguration.h"
+#include "oops/util/Logger.h"
 #include "oops/util/Printable.h"
 
 ////////////////////////////////////////////////////////////////////////
-// Implementation of IodaIO for netcdf.
+// Base class for observation data IO
 ////////////////////////////////////////////////////////////////////////
 
 namespace ioda {
@@ -23,15 +27,21 @@ namespace ioda {
  */
 class ObsIo : public util::Printable {
     public:
-        ObsIo(const eckit::LocalConfiguration & config) : config_(config) {}
-        ~ObsIo();
+        ObsIo(const ObsIoActions action, const ObsIoModes mode, const ObsIoParameters & params);
+	virtual ~ObsIo() = 0;
 
-        /// \brief returns YAML configuration
-        eckit::LocalConfiguration config() { return config_; }
+    protected:
+        /// \brief print() for oops::Printable base class
+        virtual void print(std::ostream & os) const = 0;
 
-    private:
-        /// \brief YAML configuration
-        const eckit::LocalConfiguration & config_;
+        /// \brief ObsIo action
+        ObsIoActions action_;
+
+        /// \brief ObsIo mode
+        ObsIoModes mode_;
+
+        /// \brief ObsIo parameter specs
+        ObsIoParameters params_;
 };
 
 }  // namespace ioda

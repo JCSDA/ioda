@@ -8,12 +8,16 @@
 #ifndef IO_OBSGENERATE_H_
 #define IO_OBSGENERATE_H_
 
-#include "oops/util/ObjectCounter.h"
+#include <iostream>
 
 #include "ioda/io/ObsIo.h"
+#include "ioda/io/ObsIoParameters.h"
+
+#include "oops/util/Logger.h"
+#include "oops/util/ObjectCounter.h"
 
 ////////////////////////////////////////////////////////////////////////
-// Implementation of IodaIO for netcdf.
+// ObsIo subclass for a YAML generator
 ////////////////////////////////////////////////////////////////////////
 
 namespace ioda {
@@ -31,11 +35,12 @@ class ObsGenerate : public ObsIo, private util::ObjectCounter<ObsGenerate> {
         ///          for reporting by OOPS.
         static const std::string classname() {return "ioda::ObsFile";}
 
-        ObsGenerate(const eckit::LocalConfiguration & config);
+        ObsGenerate(const ObsIoActions action, const ObsIoModes mode, const ObsIoParameters & params);
         ~ObsGenerate();
 
     private:
-
+        /// \brief print routine for oops::Printable base class
+        void print(std::ostream & os) const override;
 };
 
 }  // namespace ioda

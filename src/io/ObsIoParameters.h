@@ -13,6 +13,7 @@
 
 #include "eckit/exception/Exceptions.h"
 
+#include "oops/util/Logger.h"
 #include "oops/util/parameters/OptionalParameter.h"
 #include "oops/util/parameters/Parameter.h"
 #include "oops/util/parameters/Parameters.h"
@@ -23,6 +24,26 @@ namespace eckit {
 }
 
 namespace ioda {
+
+enum class ObsIoActions {
+    OPEN_FILE,
+    CREATE_FILE,
+    CREATE_GENERATOR
+};
+
+enum class ObsIoModes {
+    READ_ONLY,
+    READ_WRITE,
+    CLOBBER,
+    NO_CLOBBER
+};
+
+enum class ObsIoTypes {
+    NONE,
+    OBS_FILE,
+    GENERATOR_RANDOM,
+    GENERATOR_LIST
+};
 
 class ObsFileInParameters : public oops::Parameters {
     public:
@@ -82,24 +103,29 @@ class ObsFileOutParameters : public oops::Parameters {
 };
 
 class ObsIoParameters : public oops::Parameters {
+    private:
+        ObsIoTypes params_in_type_;
+        ObsIoTypes params_out_type_;
+
     public:
         /// sub groups of parameters
-        std::unique_ptr<ObsFileInParameters> params_in_file_;
-        std::unique_ptr<ObsGenerateRandomParameters> params_in_gen_rand_;
-        std::unique_ptr<ObsGenerateListParameters> params_in_gen_list_;
-        std::unique_ptr<ObsFileOutParameters> params_out_file_;
+        ObsFileInParameters params_in_file_;
+        ObsGenerateRandomParameters params_in_gen_rand_;
+        ObsGenerateListParameters params_in_gen_list_;
+        ObsFileOutParameters params_out_file_;
 
         /// \brief deserialize the parameter sub groups
         /// \param config "obs space" level configuration
         void deserialize(const eckit::LocalConfiguration & config) {
             /// Must have one of the input parameter sub groups
             oops::Log::trace() << "ObsIoParameters config: " << config << std::endl;
+
             eckit::LocalConfiguration subConfig;
             if (config.get("obsdatain", subConfig)) {
                 oops::Log::trace() << "ObsParameters sub config: FileIn: "
                                    << subConfig << std::endl;
-                params_in_file_.reset(new ObsFileInParameters());
-                params_in_file_->deserialize(subConfig);
+                params_in_file_.deserialize(subConfig);
+                params_in_type_ = ObsIoTypes::OBS_FILE;
             } else if (config.get("generate", subConfig)) {
                 // Need to pass in sub configuration at the generate level, but
                 // check to make sure that one of the sub keywords "random" or
@@ -107,13 +133,13 @@ class ObsIoParameters : public oops::Parameters {
                 if (subConfig.has("random")) {
                     oops::Log::trace() << "ObsIoParameters sub config: GenerateRandom: "
                                        << subConfig << std::endl;
-                    params_in_gen_rand_.reset(new ObsGenerateRandomParameters());
-                    params_in_gen_rand_->deserialize(subConfig);
+                    params_in_gen_rand_.deserialize(subConfig);
+                    params_in_type_ = ObsIoTypes::GENERATOR_RANDOM;
                 } else if (subConfig.has("list")) {
                     oops::Log::trace() << "ObsIoParameters sub config: GenerateList: "
                                        << subConfig << std::endl;
-                    params_in_gen_list_.reset(new ObsGenerateListParameters());
-                    params_in_gen_list_->deserialize(subConfig);
+                    params_in_gen_list_.deserialize(subConfig);
+                    params_in_type_ = ObsIoTypes::GENERATOR_LIST;
                 } else {
                     throw eckit::BadParameter(
                         "Must specify one of random or list under generate keyword", Here());
@@ -126,10 +152,18 @@ class ObsIoParameters : public oops::Parameters {
             if (config.get("obsdataout", subConfig)) {
                 oops::Log::trace() << "ObsIoParameters sub config: FileOut: "
                                    << subConfig << std::endl;
-                params_out_file_.reset(new ObsFileOutParameters());
-                params_out_file_->deserialize(subConfig);
+                params_out_file_.deserialize(subConfig);
+                params_out_type_ = ObsIoTypes::OBS_FILE;
+            } else {
+                params_out_type_ = ObsIoTypes::NONE;
             }
         }
+
+        /// \brief return input io type
+        ObsIoTypes in_type() { return params_in_type_; }
+
+        /// \brief return output io type
+        ObsIoTypes out_type() { return params_out_type_; }
 };
 
 }  // namespace ioda

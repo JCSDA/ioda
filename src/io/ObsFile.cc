@@ -13,5 +13,17 @@
 
 namespace ioda {
 
+//--------------------------------------------------------------------------------
+ObsFile::ObsFile(const ObsIoActions action, const ObsIoModes mode,
+                 const ObsIoParameters & params) : ObsIo(action, mode, params) {
+    oops::Log::trace() << "Constructing ObsFile" << std::endl;
+}
+
+ObsFile::~ObsFile() {}
+
+//-----------------------------------------------------------------------------------
+void ObsFile::print(std::ostream & os) const {
+    os << "ObsFile: " << std::endl;
+}
 
 }  // namespace ioda

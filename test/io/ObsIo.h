@@ -34,16 +34,27 @@ void testConstructor() {
     const eckit::LocalConfiguration conf(::test::TestEnvironment::config());
     std::vector<eckit::LocalConfiguration> confOspaces = conf.getSubConfigurations("observations");
 
-    std::unique_ptr<ioda::ObsIoParameters> obsParams;
     for (std::size_t i = 0; i < confOspaces.size(); ++i) {
         eckit::LocalConfiguration obsConfig;
         confOspaces[i].get("obs space", obsConfig);
         oops::Log::trace() << "ObsIo test config: " << i << ": " << obsConfig << std::endl;
 
-        obsParams.reset(new ioda::ObsIoParameters());   
-        obsParams->deserialize(obsConfig);
+        ioda::ObsIoParameters obsParams;
+        obsParams.deserialize(obsConfig);
 
-        int dummy = 1; /// delete this
+        // Try the input constructor first - should have one to try if we got here
+        std::shared_ptr<ObsIo> obsIo;
+        if (obsParams.in_type() == ObsIoTypes::OBS_FILE) {
+            obsIo = ObsIoFactory::create(ObsIoActions::OPEN_FILE, ObsIoModes::READ_ONLY, obsParams);
+        } else if ((obsParams.in_type() == ObsIoTypes::GENERATOR_RANDOM) ||
+                   (obsParams.in_type() == ObsIoTypes::GENERATOR_LIST)) {
+            obsIo = ObsIoFactory::create(ObsIoActions::CREATE_GENERATOR, ObsIoModes::READ_ONLY, obsParams);
+        }
+
+        // Try the output constructor, if one was specified
+        if (obsParams.out_type() == ObsIoTypes::OBS_FILE) {
+            obsIo = ObsIoFactory::create(ObsIoActions::CREATE_FILE, ObsIoModes::CLOBBER, obsParams);
+        }
     }
 }
 

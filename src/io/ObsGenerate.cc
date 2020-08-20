@@ -13,5 +13,17 @@
 
 namespace ioda {
 
+//-----------------------------------------------------------------------------------
+ObsGenerate::ObsGenerate(const ObsIoActions action, const ObsIoModes mode,
+                         const ObsIoParameters & params) : ObsIo(action, mode, params) {
+    oops::Log::trace() << "Constructing ObsGenerate" << std::endl;
+}
+
+ObsGenerate::~ObsGenerate() {}
+
+//-----------------------------------------------------------------------------------
+void ObsGenerate::print(std::ostream & os) const {
+    os << "ObsGenerate: " << std::endl;
+}
 
 }  // namespace ioda

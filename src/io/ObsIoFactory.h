@@ -9,6 +9,7 @@
 #define IO_OBSIOFACTORY_H_
 
 #include "ioda/io/ObsIo.h"
+#include "ioda/io/ObsIoParameters.h"
 
 namespace ioda {
 
@@ -25,7 +26,8 @@ class ObsIoFactory {
 
         /// \brief factory function to create an object of an ObsIo subclass
         /// \param config Eckit local configuration ojbect containing specs for construction
-        static std::shared_ptr<ioda::ObsIo> create(const eckit::LocalConfiguration & config);
+        static std::shared_ptr<ObsIo> create(const ObsIoActions action, const ObsIoModes mode,
+                                             const ObsIoParameters & params);
 };
 
 }  // namespace ioda

@@ -8,12 +8,16 @@
 #ifndef IO_OBSFILE_H_
 #define IO_OBSFILE_H_
 
-#include "oops/util/ObjectCounter.h"
+#include <iostream>
 
 #include "ioda/io/ObsIo.h"
+#include "ioda/io/ObsIoParameters.h"
+
+#include "oops/util/Logger.h"
+#include "oops/util/ObjectCounter.h"
 
 ////////////////////////////////////////////////////////////////////////
-// Implementation of IodaIO for netcdf.
+// ObsIo subclass for a file
 ////////////////////////////////////////////////////////////////////////
 
 namespace ioda {
@@ -31,11 +35,12 @@ class ObsFile : public ObsIo, private util::ObjectCounter<ObsFile> {
         ///          for reporting by OOPS.
         static const std::string classname() {return "ioda::ObsFile";}
 
-        ObsFile(const eckit::LocalConfiguration & config);
+        ObsFile(const ObsIoActions action, const ObsIoModes mode, const ObsIoParameters & params);
         ~ObsFile();
 
     private:
-
+        /// \brief print routine for oops::Printable base class
+        void print(std::ostream & os) const override;
 };
 
 }  // namespace ioda

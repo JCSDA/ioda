@@ -18,18 +18,19 @@
 namespace ioda {
 
 //-------------------------------------------------------------------------------------
-std::shared_ptr<ioda::ObsIo> ObsIoFactory::create(const eckit::LocalConfiguration & config) { 
-    if (config.has("obsdatain")) {
-        // Open a backend file for reading
-        oops::Log::info() << "ObsIoFactory::Create: file" << std::endl;
-    } else if (config.has("generate")) {
-        // Open an in-memory backend
-        oops::Log::info() << "ObsIoFactory::Create: in-memory" << std::endl;
+std::shared_ptr<ObsIo> ObsIoFactory::create(const ObsIoActions action, const ObsIoModes mode,
+                                            const ObsIoParameters & params) { 
+    std::shared_ptr<ObsIo> obsIo;
+    if ((action == ObsIoActions::CREATE_FILE) || (action == ObsIoActions::OPEN_FILE)) {
+        // Instantiate an ObsFile object
+        obsIo = std::make_shared<ObsFile>(action, mode, params);
+    } else if (action == ObsIoActions::CREATE_GENERATOR) {
+        // Instantiate an ObsGenerate object
+        obsIo = std::make_shared<ObsGenerate>(action, mode, params);
     } else {
-        oops::Log::error() << "ObsIoFactory::Create: Unrecognized configuration action: "
-                           << config << std::endl;
-        ABORT("IodaIO::Create: Unrecognized configuration");
+        ABORT("ObsIoFactory::create: Unrecognized action");
     }
+    return obsIo;
 }
 
 }  // namespace ioda
