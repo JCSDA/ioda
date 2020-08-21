@@ -76,9 +76,6 @@ phases:
       # ioda
       - ./clone.sh $GIT_USER $GIT_PASS ioda $CODEBUILD_GIT_BRANCH ioda /jcsda/ioda-bundle develop
 
-      # saber
-      - ./clone.sh $GIT_USER $GIT_PASS saber $CODEBUILD_GIT_BRANCH saber /jcsda/ioda-bundle develop
-
       # oops
       - ./clone.sh $GIT_USER $GIT_PASS oops $CODEBUILD_GIT_BRANCH oops /jcsda/ioda-bundle develop
  
@@ -99,7 +96,7 @@ phases:
         && echo $CC
         && echo $CXX
         && echo $FC
-        && CC=mpicc CXX=mpicxx FC=mpifort ecbuild /jcsda/ioda-bundle/
+        && CC=mpicc CXX=mpicxx FC=mpifort cmake -DCMAKE_MODULE_PATH=/usr/local/share/ecbuild/cmake/ -DCMAKE_BUILD_TYPE=RelWithDebInfo -DENABLE_GPROF=ON /jcsda/ioda-bundle/
         && cd /build_container/ioda
         && make -j4"
 
@@ -122,3 +119,5 @@ phases:
         su - jcsdauser -c "cd /build_container/ioda
         && ctest -VV --rerun-failed"; 
         fi
+      - cd /build_container/ioda
+      - bash /jcsda/ioda-bundle/ioda/CI/codecov_script.sh
