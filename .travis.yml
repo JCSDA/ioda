@@ -78,7 +78,7 @@ before_install:
   - sed -i 's/BRANCH develop UPDATE//' CMakeLists.txt
   - sed -i 's/BRANCH release-stable  UPDATE//' CMakeLists.txt
   - sed -i 's/BRANCH release-stable UPDATE//' CMakeLists.txt
-  - sed -i 's/BRANCH feature/bufr-converter UPDATE//' CMakeLists.txt
+  - sed -i 's/BRANCH feature\/bufr-converter UPDATE//' CMakeLists.txt
 
   - cat CMakeLists.txt
   - cd ${REPO_SOURCE_DIR}
