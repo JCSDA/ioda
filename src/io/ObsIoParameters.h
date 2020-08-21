@@ -11,6 +11,10 @@
 #include <string>
 #include <vector>
 
+#include "ioda/Group.h"
+#include "ioda/Engines/Factory.h"
+#include "ioda/ObsGroup.h"
+
 #include "eckit/exception/Exceptions.h"
 
 #include "oops/util/Logger.h"

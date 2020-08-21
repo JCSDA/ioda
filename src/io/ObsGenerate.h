@@ -41,6 +41,8 @@ class ObsGenerate : public ObsIo, private util::ObjectCounter<ObsGenerate> {
     private:
         /// \brief print routine for oops::Printable base class
         void print(std::ostream & os) const override;
+
+        ObsGroup obs_group_;
 };
 
 }  // namespace ioda
