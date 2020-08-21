@@ -91,9 +91,6 @@ phases:
       # ioda
       - ./clone.sh $GIT_USER $GIT_PASS ioda $CODEBUILD_GIT_BRANCH ioda /jcsda/ioda-bundle develop
 
-      # saber
-      - ./clone.sh $GIT_USER $GIT_PASS saber $CODEBUILD_GIT_BRANCH saber /jcsda/ioda-bundle develop
-
       # oops
       - ./clone.sh $GIT_USER $GIT_PASS oops $CODEBUILD_GIT_BRANCH oops /jcsda/ioda-bundle develop
 
