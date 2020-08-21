@@ -160,10 +160,10 @@ class ObsIoParameters : public oops::Parameters {
         }
 
         /// \brief return input io type
-        ObsIoTypes in_type() { return params_in_type_; }
+        ObsIoTypes in_type() const { return params_in_type_; }
 
         /// \brief return output io type
-        ObsIoTypes out_type() { return params_out_type_; }
+        ObsIoTypes out_type() const { return params_out_type_; }
 };
 
 }  // namespace ioda
