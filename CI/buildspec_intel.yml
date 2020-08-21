@@ -94,6 +94,12 @@ phases:
       # oops
       - ./clone.sh $GIT_USER $GIT_PASS oops $CODEBUILD_GIT_BRANCH oops /jcsda/ioda-bundle develop
 
+      # ioda-engines
+      - ./clone.sh $GIT_USER $GIT_PASS ioda-engines $CODEBUILD_GIT_BRANCH ioda-engines /jcsda/ioda-bundle develop
+
+      # ioda-converters
+      - ./clone.sh $GIT_USER $GIT_PASS ioda-converters $CODEBUILD_GIT_BRANCH ioda-converters /jcsda/ioda-bundle feature/bufr-converter
+
       #fckit
       - ./clone.sh $GIT_USER $GIT_PASS fckit $CODEBUILD_GIT_BRANCH_FORK fckit /jcsda/ioda-bundle release-stable
 
