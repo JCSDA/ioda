@@ -116,8 +116,3 @@ script:
   - docker exec jcsda_container bash -c 'cd /build_container/ioda && make -j4'
   - date
   - docker exec jcsda_container bash -c 'cd /build_container/ioda && ctest --output-on-failure'
-  - date
-#upload to codecov
-  - docker exec jcsda_container bash -c 'cd /build_container/ioda && ls'
-  - docker exec jcsda_container bash -c 'cd /build_container/ioda && bash <(curl -s https://codecov.io/bash) -t 3b511d7d-c15d-4ee5-8a1e-29c6d97d2032 -R /jcsda/src_repo/ioda/'
-
