@@ -38,6 +38,18 @@ before_install:
   - git checkout $BRANCH || echo "No branch named $BRANCH in oops repo"
   - cd $REPO_SOURCE_DIR
 
+#  checkout for the same branch name in ioda-engines
+  - git clone https://github.com/jcsda/ioda-engines.git ${REPO_SOURCE_DIR}/ioda-bundle/ioda-engines
+  - cd ${REPO_SOURCE_DIR}/ioda-bundle/ioda-engines
+  - git checkout $BRANCH || echo "No branch named $BRANCH in ioda-engines repo"
+  - cd $REPO_SOURCE_DIR
+
+#  checkout for the same branch name in ioda-converters
+  - git clone https://github.com/jcsda/ioda-converters.git ${REPO_SOURCE_DIR}/ioda-bundle/ioda-converters
+  - cd ${REPO_SOURCE_DIR}/ioda-bundle/ioda-converters
+  - git checkout $BRANCH || echo "No branch named $BRANCH in ioda-converters repo"; git checkout feature/bufr-converter
+  - cd $REPO_SOURCE_DIR
+
 #  clone the testing branch of ioda
   - git clone -b $BRANCH https://github.com/jcsda/ioda.git ${REPO_SOURCE_DIR}/ioda-bundle/ioda 
 
@@ -63,7 +75,10 @@ before_install:
 
   - cd ${REPO_SOURCE_DIR}/ioda-bundle
   - sed -i 's/BRANCH develop  UPDATE//' CMakeLists.txt
+  - sed -i 's/BRANCH develop UPDATE//' CMakeLists.txt
   - sed -i 's/BRANCH release-stable  UPDATE//' CMakeLists.txt
+  - sed -i 's/BRANCH release-stable UPDATE//' CMakeLists.txt
+  - sed -i 's/BRANCH feature\/bufr-converter UPDATE//' CMakeLists.txt
 
   - cat CMakeLists.txt
   - cd ${REPO_SOURCE_DIR}
