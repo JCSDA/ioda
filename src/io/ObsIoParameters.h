@@ -16,7 +16,9 @@
 #include "ioda/ObsGroup.h"
 
 #include "eckit/exception/Exceptions.h"
+#include "eckit/mpi/Comm.h"
 
+#include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
 #include "oops/util/parameters/OptionalParameter.h"
 #include "oops/util/parameters/Parameter.h"
@@ -81,6 +83,9 @@ class ObsGenerateRandomParameters : public oops::Parameters {
         /// longitude range end
         oops::RequiredParameter<float> lonEnd{"random.lon2", this};
 
+        /// random seed
+        oops::OptionalParameter<int> ranSeed{"random.random seed", this};
+
         /// obs error estimates
         oops::OptionalParameter<std::vector<float>> obsErrors{"obs errors", this};
 };
@@ -107,16 +112,17 @@ class ObsFileOutParameters : public oops::Parameters {
 };
 
 class ObsIoParameters : public oops::Parameters {
-    private:
-        ObsIoTypes params_in_type_;
-        ObsIoTypes params_out_type_;
-
     public:
         /// sub groups of parameters
         ObsFileInParameters params_in_file_;
         ObsGenerateRandomParameters params_in_gen_rand_;
         ObsGenerateListParameters params_in_gen_list_;
         ObsFileOutParameters params_out_file_;
+
+        /// Constructor
+        ObsIoParameters(const util::DateTime & winbgn, const util::DateTime & winend,
+                        const eckit::mpi::Comm & comm) :
+                            winbgn_(winbgn), winend_(winend), comm_(comm) {}
 
         /// \brief deserialize the parameter sub groups
         /// \param config "obs space" level configuration
@@ -129,7 +135,7 @@ class ObsIoParameters : public oops::Parameters {
                 oops::Log::trace() << "ObsParameters sub config: FileIn: "
                                    << subConfig << std::endl;
                 params_in_file_.deserialize(subConfig);
-                params_in_type_ = ObsIoTypes::OBS_FILE;
+                in_type_ = ObsIoTypes::OBS_FILE;
             } else if (config.get("generate", subConfig)) {
                 // Need to pass in sub configuration at the generate level, but
                 // check to make sure that one of the sub keywords "random" or
@@ -138,12 +144,12 @@ class ObsIoParameters : public oops::Parameters {
                     oops::Log::trace() << "ObsIoParameters sub config: GenerateRandom: "
                                        << subConfig << std::endl;
                     params_in_gen_rand_.deserialize(subConfig);
-                    params_in_type_ = ObsIoTypes::GENERATOR_RANDOM;
+                    in_type_ = ObsIoTypes::GENERATOR_RANDOM;
                 } else if (subConfig.has("list")) {
                     oops::Log::trace() << "ObsIoParameters sub config: GenerateList: "
                                        << subConfig << std::endl;
                     params_in_gen_list_.deserialize(subConfig);
-                    params_in_type_ = ObsIoTypes::GENERATOR_LIST;
+                    in_type_ = ObsIoTypes::GENERATOR_LIST;
                 } else {
                     throw eckit::BadParameter(
                         "Must specify one of random or list under generate keyword", Here());
@@ -157,17 +163,42 @@ class ObsIoParameters : public oops::Parameters {
                 oops::Log::trace() << "ObsIoParameters sub config: FileOut: "
                                    << subConfig << std::endl;
                 params_out_file_.deserialize(subConfig);
-                params_out_type_ = ObsIoTypes::OBS_FILE;
+                out_type_ = ObsIoTypes::OBS_FILE;
             } else {
-                params_out_type_ = ObsIoTypes::NONE;
+                out_type_ = ObsIoTypes::NONE;
             }
         }
 
         /// \brief return input io type
-        ObsIoTypes in_type() const { return params_in_type_; }
+        ObsIoTypes in_type() const { return in_type_; }
 
         /// \brief return output io type
-        ObsIoTypes out_type() const { return params_out_type_; }
+        ObsIoTypes out_type() const { return out_type_; }
+
+        /// \details return the start of the DA timing window
+        const util::DateTime & windowStart() const {return winbgn_;}
+
+        /// \details return the end of the DA timing window
+        const util::DateTime & windowEnd() const {return winend_;}
+
+        /// \details return the associated MPI communicator
+        const eckit::mpi::Comm & comm() const {return comm_;}
+
+    private:
+        /// \brief ObsIo input type
+        ObsIoTypes in_type_;
+
+        /// \brief ObsIo output type
+        ObsIoTypes out_type_;
+
+        /// \brief Beginning of DA timing window
+        const util::DateTime winbgn_;
+
+        /// \brief End of DA timing window
+        const util::DateTime winend_;
+
+        /// \brief MPI communicator
+        const eckit::mpi::Comm & comm_;
 };
 
 }  // namespace ioda

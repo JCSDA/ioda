@@ -8,6 +8,8 @@
 #ifndef IO_OBSIOFACTORY_H_
 #define IO_OBSIOFACTORY_H_
 
+#include "eckit/mpi/Comm.h"
+
 #include "ioda/io/ObsIo.h"
 #include "ioda/io/ObsIoParameters.h"
 

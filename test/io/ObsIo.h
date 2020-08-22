@@ -19,6 +19,7 @@
 #include "oops/parallel/mpi/mpi.h"
 #include "oops/runs/Test.h"
 #include "oops/test/TestEnvironment.h"
+#include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
 
 #include "ioda/io/ObsIo.h"
@@ -39,7 +40,10 @@ void testConstructor() {
         confOspaces[i].get("obs space", obsConfig);
         oops::Log::trace() << "ObsIo test config: " << i << ": " << obsConfig << std::endl;
 
-        ioda::ObsIoParameters obsParams;
+        util::DateTime bgn(::test::TestEnvironment::config().getString("window begin"));
+        util::DateTime end(::test::TestEnvironment::config().getString("window end"));
+
+        ioda::ObsIoParameters obsParams(bgn, end, oops::mpi::comm());
         obsParams.deserialize(obsConfig);
 
         // Try the input constructor first - should have one to try if we got here

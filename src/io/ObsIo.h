@@ -10,8 +10,10 @@
 
 #include <iostream>
 
-#include "ioda/io/ObsIoParameters.h"
 #include "eckit/config/LocalConfiguration.h"
+
+#include "ioda/io/ObsIoParameters.h"
+
 #include "oops/util/Logger.h"
 #include "oops/util/Printable.h"
 
@@ -32,6 +34,7 @@ class ObsIo : public util::Printable {
 
     protected:
         /// \brief print() for oops::Printable base class
+        /// \param ostream output stream
         virtual void print(std::ostream & os) const = 0;
 
         /// \brief ObsIo action

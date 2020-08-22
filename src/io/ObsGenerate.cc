@@ -10,6 +10,8 @@
 #include "ioda/Layout.h"
 
 #include "oops/util/abor1_cpp.h"
+#include "oops/util/Duration.h"
+#include "oops/util/Random.h"
 
 ////////////////////////////////////////////////////////////////////////
 // Implementation of ObsIo for a YAML generator
@@ -32,40 +34,26 @@ ObsGenerate::ObsGenerate(const ObsIoActions action, const ObsIoModes mode,
         if (params.in_type() == ObsIoTypes::GENERATOR_RANDOM) {
             oops::Log::trace() << "Constructing ObsGenerate: Random method" << std::endl;
 
-            // Grab the parameters
-            int numLocs = params.params_in_gen_rand_.numObs;
-            float latStart = params.params_in_gen_rand_.latStart;
-            float latEnd = params.params_in_gen_rand_.latEnd;
-            float lonStart = params.params_in_gen_rand_.lonStart;
-            float lonEnd = params.params_in_gen_rand_.lonEnd;
-            std::vector<float> obsErrors;
-            if (params.params_in_gen_rand_.obsErrors.value() != boost::none) {
-                obsErrors = params.params_in_gen_rand_.obsErrors.value().get();
-            }
-
             // Create the in-memory ObsGroup
+            int numLocs = params.params_in_gen_rand_.numObs; // number of locations to generate
             newDims.push_back(
                 std::make_shared<ioda::NewDimensionScale<int>>("nlocs", numLocs, numLocs, numLocs));
             obs_group_ = ObsGroup::generate(backend, newDims);
 
+            // Fill in the ObsGroup with the generated data
+            genDistRandom(params.params_in_gen_rand_, params.windowStart(),
+                          params.windowEnd(), params.comm());
         } else if (params.in_type() == ObsIoTypes::GENERATOR_LIST) {
             oops::Log::trace() << "Constructing ObsGenerate: List method" << std::endl;
 
-            // Grab the parameters
-            std::vector<float> latVals = params.params_in_gen_list_.lats;
-            std::vector<float> lonVals = params.params_in_gen_list_.lons;
-            std::vector<std::string> dtVals = params.params_in_gen_list_.datetimes;
-            std::vector<float> obsErrors;
-            if (params.params_in_gen_rand_.obsErrors.value() != boost::none) {
-                obsErrors = params.params_in_gen_rand_.obsErrors.value().get();
-            }
-
             // Create the in-memory ObsGroup
-            int numLocs = latVals.size();
+            int numLocs = params.params_in_gen_list_.lats.value().size();
             newDims.push_back(
                 std::make_shared<ioda::NewDimensionScale<int>>("nlocs", numLocs, numLocs, numLocs));
             obs_group_ = ObsGroup::generate(backend, newDims);
 
+            // Fill in the ObsGroup with the generated data
+            genDistList(params.params_in_gen_list_);
         } else {
             ABORT("ObsGenerate: Unrecongnized ObsIoTypes value");
         }
@@ -75,6 +63,108 @@ ObsGenerate::ObsGenerate(const ObsIoActions action, const ObsIoModes mode,
 }
 
 ObsGenerate::~ObsGenerate() {}
+
+//-----------------------------------------------------------------------------------
+void ObsGenerate::genDistRandom(const ObsGenerateRandomParameters & params,
+                                const util::DateTime & winbgn, const util::DateTime & winend,
+                                const eckit::mpi::Comm & comm) {
+    /// Grab the parameter values
+    int numLocs = params.numObs;
+    float latStart = params.latStart;
+    float latEnd = params.latEnd;
+    float lonStart = params.lonStart;
+    float lonEnd = params.lonEnd;
+    int ranSeed;
+    if (params.ranSeed.value() != boost::none) {
+        ranSeed = params.ranSeed.value().get();
+    } else {
+        ranSeed = std::time(0);  // based on the current date/time.
+    }
+    std::vector<float> obsErrors;
+    if (params.obsErrors.value() != boost::none) {
+        obsErrors = params.obsErrors.value().get();
+    }
+
+    // Use the following formula to generate random lat, lon and time values.
+    //
+    //   val = val1 + (random_number_between_0_and_1 * (val2-val1))
+    //
+    // where val2 > val1.
+    //
+    // Create a list of random values between 0 and 1 to be used for generating
+    // random lat, lon and time vaules.
+    //
+    // Use different seeds for lat and lon so that in the case where lat and lon ranges
+    // are the same, you get a different sequences for lat compared to lon.
+    //
+    // Have rank 0 generate the full length random sequences, and then
+    // broadcast these to the other ranks. This ensures that every rank
+    // contains the same random sequences. If all ranks generated their
+    // own sequences, which they could do, the sequences between ranks
+    // would be different in the case where random_seed is not specified.
+    std::vector<float> ranVals(numLocs, 0.0);
+    std::vector<float> ranVals2(numLocs, 0.0);
+    if (comm.rank() == 0) {
+        util::UniformDistribution<float> ranUD(numLocs, 0.0, 1.0, ranSeed);
+        util::UniformDistribution<float> ranUD2(numLocs, 0.0, 1.0, ranSeed+1);
+
+        ranVals = ranUD.data();
+        ranVals2 = ranUD2.data();
+    }
+    comm.broadcast(ranVals, 0);
+    comm.broadcast(ranVals2, 0);
+
+    // Form the ranges val2-val for lat, lon, time
+    float latRange = latEnd - latStart;
+    float lonRange = lonEnd - lonStart;
+    util::Duration windowDuration(winend - winbgn);
+    float timeRange = static_cast<float>(windowDuration.toSeconds());
+
+    // Create vectors for lat, lon, time, fill them with random values
+    // inside their respective ranges, and put results into the obs container.
+    std::vector<float> latVals(numLocs, 0.0);
+    std::vector<float> lonVals(numLocs, 0.0);
+    std::vector<std::string> dtStrings(numLocs, "");
+
+    util::Duration durZero(0);
+    util::Duration durOneSec(1);
+    for (std::size_t ii = 0; ii < numLocs; ii++) {
+        latVals[ii] = latStart + (ranVals[ii] * latRange);
+        lonVals[ii] = lonStart + (ranVals2[ii] * lonRange);
+
+        // Currently the filter for time stamps on obs values is:
+        //
+        //     windowStart < ObsTime <= windowEnd
+        //
+        // If we get a zero offsetDt, then change it to 1 second so that the observation
+        // will remain inside the timing window.
+        util::Duration offsetDt(static_cast<int64_t>(ranVals[ii] * timeRange));
+        if (offsetDt == durZero) {
+            offsetDt = durOneSec;
+        }
+        // convert result to ISO 8601 string
+        util::DateTime dtVal = winbgn + offsetDt;
+        dtStrings[ii] = dtVal.toString();
+    }
+
+    // Transfer the generated values to the ObsGroup
+    int Dummy = 0;
+}
+
+//-----------------------------------------------------------------------------------
+void ObsGenerate::genDistList(const ObsGenerateListParameters & params) {
+    // Grab the parameters
+    std::vector<float> latVals = params.lats;
+    std::vector<float> lonVals = params.lons;
+    std::vector<std::string> dtStrings = params.datetimes;
+    std::vector<float> obsErrors;
+    if (params.obsErrors.value() != boost::none) {
+        obsErrors = params.obsErrors.value().get();
+    }
+
+    // Transfer the specified values to the ObsGroup
+    int Dummy = 0;
+}
 
 //-----------------------------------------------------------------------------------
 void ObsGenerate::print(std::ostream & os) const {
