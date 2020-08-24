@@ -108,7 +108,7 @@ class FrameDataMap {
  * data values (for that frame). Similarly, when writing, the first action is to fill in
  * a frame object with the individual variable values (for that frame) and then write
  * that frame to the file (frame_write method). For details see the code examples in the
- * test_ioda_fileio test and the ObsData class methods InitFromFile and SaveToFile.
+ * test_ioda_io test and the ObsData class methods InitFromFile and SaveToFile.
  *
  * \author Stephen Herbener (JCSDA)
  */
