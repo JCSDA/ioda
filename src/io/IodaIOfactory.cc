@@ -5,18 +5,14 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
  */
 
-#include "ioda/fileio/IodaIOfactory.h"
+#include "ioda/io/IodaIOfactory.h"
 
 #include <string>
 
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/Logger.h"
 
-#include "ioda/fileio/NetcdfIO.h"
-
-#ifdef HAVE_ODC
-#include "ioda/fileio/OdcIO.h"
-#endif
+#include "ioda/io/NetcdfIO.h"
 
 namespace ioda {
 
@@ -45,23 +41,9 @@ IodaIO* IodaIOfactory::Create(const std::string & FileName, const std::string & 
 
   // Create the appropriate object depending on the file suffix
   std::string FileSuffixList = ".nc4, .nc";
-#ifdef HAVE_ODC
-  FileSuffixList += ", .odb";
-#endif
 
   if ((FileSuffix == "nc4") || (FileSuffix == "nc")) {
     return new ioda::NetcdfIO(FileName, FileMode, MaxFrameSize);
-  } else if (FileSuffix == "odb") {
-#ifdef HAVE_ODC
-    return new ioda::OdcIO(FileName, FileMode, MaxFrameSize);
-#else
-    oops::Log::error() << "IodaIO::Create: IODA not compiled with ODC support: "
-                       << FileName << std::endl;
-    oops::Log::error() << "IodaIO::Create:   Please ensure that the ODC library can "
-                       << "be found and re-run the build process" << std::endl;
-    ABORT("IodaIO::Create: Missing ODC support");
-    return NULL;
-#endif
   } else {
     oops::Log::error() << "IodaIO::Create: Unrecognized file suffix: "
                        << FileName << std::endl;

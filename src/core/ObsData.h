@@ -29,7 +29,7 @@
 
 #include "ioda/core/ObsSpaceContainer.h"
 #include "ioda/distribution/Distribution.h"
-#include "ioda/fileio/IodaIO.h"
+#include "ioda/io/IodaIO.h"
 
 // Forward declarations
 namespace eckit {
