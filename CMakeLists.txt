@@ -22,9 +22,6 @@ find_package( NetCDF REQUIRED COMPONENTS C )
 find_package( fckit REQUIRED )
 find_package( oops REQUIRED )
 
-# Optional
-find_package( odc QUIET )
-
 ## Sources
 add_subdirectory( src )
 add_subdirectory( test )

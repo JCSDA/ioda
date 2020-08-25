@@ -7,7 +7,7 @@ observations:
     simulated variables:
     - air_temperature
     obsdatain:
-      obsfile: Data/testinput_tier_1/sondes_obs_2018041500_m.@OBS_FILE_SUFFIX@
+      obsfile: Data/testinput_tier_1/sondes_obs_2018041500_m.nc4
       rms ref: 216.91619057593934
       tolerance: 1.0e-14
 
@@ -17,7 +17,7 @@ observations:
     - air_temperature
     - specific_humidity
     obsdatain:
-      obsfile: Data/testinput_tier_1/sondes_obs_2018041500_m.@OBS_FILE_SUFFIX@
+      obsfile: Data/testinput_tier_1/sondes_obs_2018041500_m.nc4
       rms ref: 124.96816071306155
       tolerance: 1.0e-14
 
@@ -29,7 +29,7 @@ observations:
     - eastward_wind
     - northward_wind
     obsdatain:
-      obsfile: Data/testinput_tier_1/sondes_obs_2018041500_m.@OBS_FILE_SUFFIX@
+      obsfile: Data/testinput_tier_1/sondes_obs_2018041500_m.nc4
       rms ref: 71.324181693818431
       tolerance: 1.0e-14
 

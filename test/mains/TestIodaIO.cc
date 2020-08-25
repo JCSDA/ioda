@@ -10,7 +10,7 @@
 
 #include "oops/runs/Run.h"
 
-#include "ioda/test/fileio/IodaIO.h"
+#include "ioda/test/io/IodaIO.h"
 
 int main(int argc,  char ** argv) {
   oops::Run run(argc, argv);
