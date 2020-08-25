@@ -7,7 +7,7 @@ observations:
     name: "AOD VIIRS"
     simulated variables: ['temperature']
     obsdatain:
-      obsfile: "Data/testinput_tier_1/aod_obs_2018041500_m.@OBS_FILE_SUFFIX@"
+      obsfile: "Data/testinput_tier_1/aod_obs_2018041500_m.nc4"
     test data:
       nlocs: 100
       nrecs: 100
@@ -37,7 +37,7 @@ observations:
     name: "AOD VIIRS"
     simulated variables: ['temperature']
     obsdatain:
-      obsfile: "Data/testinput_tier_1/aod_viirs_obs_2018041500_sf42.@OBS_FILE_SUFFIX@"
+      obsfile: "Data/testinput_tier_1/aod_viirs_obs_2018041500_sf42.nc4"
     test data:
       nlocs: 42
       nrecs: 42
@@ -69,7 +69,7 @@ observations:
     simulated variables: ['brightness_temperature']
     distribution: "InefficientDistribution"
     obsdatain:
-      obsfile: "Data/testinput_tier_1/amsua_n19_obs_2018041500_m.@OBS_FILE_SUFFIX@"
+      obsfile: "Data/testinput_tier_1/amsua_n19_obs_2018041500_m.nc4"
     test data:
       nlocs: 100
       nrecs: 100
@@ -94,7 +94,7 @@ observations:
     name: "SMAP"
     simulated variables: ['brightness_temperature']
     obsdatain:
-      obsfile: "Data/testinput_tier_1/smap_obs_2018041500_m.@OBS_FILE_SUFFIX@"
+      obsfile: "Data/testinput_tier_1/smap_obs_2018041500_m.nc4"
     test data:
       nlocs: 100
       nrecs: 100
@@ -119,7 +119,7 @@ observations:
     name: "GMI GPM"
     simulated variables: ['temperature']
     obsdatain:
-      obsfile: "Data/testinput_tier_1/gmi_gpm_obs_2018041500_m.@OBS_FILE_SUFFIX@"
+      obsfile: "Data/testinput_tier_1/gmi_gpm_obs_2018041500_m.nc4"
     test data:
       nlocs: 12
       nrecs: 12
@@ -144,7 +144,7 @@ observations:
     name: "Radiosonde"
     simulated variables: ['temperature']
     obsdatain:
-      obsfile: "Data/testinput_tier_1/sondes_obs_2018041500_m.@OBS_FILE_SUFFIX@"
+      obsfile: "Data/testinput_tier_1/sondes_obs_2018041500_m.nc4"
       max frame size: 200
     test data:
       nlocs: 974
@@ -177,7 +177,7 @@ observations:
       tolerance:
         - 1.0e-11
     obsdataout:
-      obsfile: "testoutput/diagout.@OBS_FILE_SUFFIX@"
+      obsfile: "testoutput/diagout.nc4"
       max frame size: 300
 
 - obs space:
@@ -222,7 +222,7 @@ observations:
       tolerance:
         - 1.0e-11
     obsdataout:
-      obsfile: "testoutput/ospace.generate.random.@OBS_FILE_SUFFIX@"
+      obsfile: "testoutput/ospace.generate.random.nc4"
 
 - obs space:
     name: "Synthetic List"
@@ -274,13 +274,13 @@ observations:
       tolerance:
         - 1.0e-11
     obsdataout:
-      obsfile: "testoutput/ospace.generate.list.@OBS_FILE_SUFFIX@"
+      obsfile: "testoutput/ospace.generate.list.nc4"
 
 - obs space:
     name: "Radiosonde with grouping"
     simulated variables: ['temperature']
     obsdatain:
-      obsfile: "Data/testinput_tier_1/sondes_obs_2018041500_m.@OBS_FILE_SUFFIX@"
+      obsfile: "Data/testinput_tier_1/sondes_obs_2018041500_m.nc4"
       obsgrouping:
         group variable: "station_id"
         sort variable: "air_pressure"
@@ -305,13 +305,13 @@ observations:
       tolerance:
         - 1.0e-11
     obsdataout:
-      obsfile: "testoutput/diagout_with_groups.@OBS_FILE_SUFFIX@"
+      obsfile: "testoutput/diagout_with_groups.nc4"
 
 - obs space:
     name: "Radiosonde with grouping and tw filtering"
     simulated variables: ['temperature']
     obsdatain:
-      obsfile: "Data/testinput_tier_1/sondes_obs_2018041500_m_twfilt.@OBS_FILE_SUFFIX@"
+      obsfile: "Data/testinput_tier_1/sondes_obs_2018041500_m_twfilt.nc4"
       obsgrouping:
         group variable: "station_id"
     test data:
@@ -334,13 +334,13 @@ observations:
       tolerance:
         - 1.0e-11
     obsdataout:
-      obsfile: "testoutput/diagout_with_groups_twfilt.@OBS_FILE_SUFFIX@"
+      obsfile: "testoutput/diagout_with_groups_twfilt.nc4"
 
 - obs space:
     name: "AOD GOES"
     simulated variables: ['temperature']
     obsdatain:
-      obsfile: "Data/testinput_tier_1/geos_aod_obs_2018041500_m.@OBS_FILE_SUFFIX@"
+      obsfile: "Data/testinput_tier_1/geos_aod_obs_2018041500_m.nc4"
     test data:
       nlocs: 100
       nrecs: 100

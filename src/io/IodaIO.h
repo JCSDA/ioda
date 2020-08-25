@@ -5,8 +5,8 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#ifndef FILEIO_IODAIO_H_
-#define FILEIO_IODAIO_H_
+#ifndef IO_IODAIO_H_
+#define IO_IODAIO_H_
 
 #include <map>
 #include <memory>
@@ -108,7 +108,7 @@ class FrameDataMap {
  * data values (for that frame). Similarly, when writing, the first action is to fill in
  * a frame object with the individual variable values (for that frame) and then write
  * that frame to the file (frame_write method). For details see the code examples in the
- * test_ioda_fileio test and the ObsData class methods InitFromFile and SaveToFile.
+ * test_ioda_io test and the ObsData class methods InitFromFile and SaveToFile.
  *
  * \author Stephen Herbener (JCSDA)
  */
@@ -422,4 +422,4 @@ class IodaIO : public util::Printable {
 
 }  // namespace ioda
 
-#endif  // FILEIO_IODAIO_H_
+#endif  // IO_IODAIO_H_

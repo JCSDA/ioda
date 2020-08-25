@@ -31,7 +31,7 @@
 #include "oops/util/stringFunctions.h"
 
 #include "ioda/distribution/DistributionFactory.h"
-#include "ioda/fileio/IodaIOfactory.h"
+#include "ioda/io/IodaIOfactory.h"
 
 namespace ioda {
 

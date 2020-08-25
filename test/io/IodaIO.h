@@ -8,8 +8,8 @@
  * does it submit to any jurisdiction.
  */
 
-#ifndef TEST_FILEIO_IODAIO_H_
-#define TEST_FILEIO_IODAIO_H_
+#ifndef TEST_IO_IODAIO_H_
+#define TEST_IO_IODAIO_H_
 
 #include <algorithm>
 #include <cmath>
@@ -32,8 +32,8 @@
 #include "oops/test/TestEnvironment.h"
 #include "oops/util/Logger.h"
 
-#include "ioda/fileio/IodaIO.h"
-#include "ioda/fileio/IodaIOfactory.h"
+#include "ioda/io/IodaIO.h"
+#include "ioda/io/IodaIOfactory.h"
 
 namespace ioda {
 namespace test {
@@ -515,13 +515,13 @@ class IodaIO : public oops::Test {
   void register_tests() const {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
-    ts.emplace_back(CASE("fileio/IodaIO/testConstructor")
+    ts.emplace_back(CASE("io/IodaIO/testConstructor")
       { testConstructor(); });
-    ts.emplace_back(CASE("fileio/IodaIO/testContainers")
+    ts.emplace_back(CASE("io/IodaIO/testContainers")
       { testContainers(); });
-    ts.emplace_back(CASE("fileio/IodaIO/testReadVar")
+    ts.emplace_back(CASE("io/IodaIO/testReadVar")
       { testReadVar(); });
-    ts.emplace_back(CASE("fileio/IodaIO/testWriteVar")
+    ts.emplace_back(CASE("io/IodaIO/testWriteVar")
       { testWriteVar(); });
   }
 };
@@ -531,4 +531,4 @@ class IodaIO : public oops::Test {
 }  // namespace test
 }  // namespace ioda
 
-#endif  // TEST_FILEIO_IODAIO_H_
+#endif  // TEST_IO_IODAIO_H_

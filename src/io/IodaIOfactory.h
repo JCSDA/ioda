@@ -5,14 +5,14 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#ifndef FILEIO_IODAIOFACTORY_H_
-#define FILEIO_IODAIOFACTORY_H_
+#ifndef IO_IODAIOFACTORY_H_
+#define IO_IODAIOFACTORY_H_
 
 #include <string>
 
 #include "oops/util/DateTime.h"
 
-#include "ioda/fileio/IodaIO.h"
+#include "ioda/io/IodaIO.h"
 
 namespace ioda {
 
@@ -45,4 +45,4 @@ class IodaIOfactory {
 
 }  // namespace ioda
 
-#endif  // FILEIO_IODAIOFACTORY_H_
+#endif  // IO_IODAIOFACTORY_H_

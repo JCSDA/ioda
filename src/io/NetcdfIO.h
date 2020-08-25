@@ -5,8 +5,8 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#ifndef FILEIO_NETCDFIO_H_
-#define FILEIO_NETCDFIO_H_
+#ifndef IO_NETCDFIO_H_
+#define IO_NETCDFIO_H_
 
 #include <map>
 #include <string>
@@ -15,7 +15,7 @@
 #include "oops/util/DateTime.h"
 #include "oops/util/ObjectCounter.h"
 
-#include "ioda/fileio/IodaIO.h"
+#include "ioda/io/IodaIO.h"
 
 ////////////////////////////////////////////////////////////////////////
 // Implementation of IodaIO for netcdf.
@@ -146,4 +146,4 @@ class NetcdfIO : public IodaIO,
 
 }  // namespace ioda
 
-#endif  // FILEIO_NETCDFIO_H_
+#endif  // IO_NETCDFIO_H_
