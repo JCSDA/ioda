@@ -130,7 +130,7 @@ ObsData::ObsData(const eckit::Configuration & config, const eckit::mpi::Comm & c
     out_max_frame_size_ = config.getUnsigned("obsdataout.max frame size",
                                              IODAIO_DEFAULT_FRAME_SIZE);
 
-    // If present, change '%{member}%' to 'mem{i}'
+    // If present, change '%{member}%' to 'iii'
     util::stringfunctions::swapNameMember(config, filename);
 
     // Find the left-most dot in the file name, and use that to pick off the file name
