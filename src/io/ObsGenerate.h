@@ -56,8 +56,9 @@ class ObsGenerate : public ObsIo, private util::ObjectCounter<ObsGenerate> {
         ///          with the MakeObs functionality.
         /// \param params Parameters structure specific to the generate random method
         void genDistRandom(const ObsGenerateRandomParameters & params,
-                           const util::DateTime & winbgn, const util::DateTime & winend,
-                           const eckit::mpi::Comm & comm);
+                           const util::DateTime & winStart, const util::DateTime & winEnd,
+                           const eckit::mpi::Comm & comm,
+                           const std::vector<std::string> & simVarNames);
 
         /// \brief generate observation locations using the list method
         /// \details This method will generate a set of latitudes and longitudes of which
@@ -66,7 +67,8 @@ class ObsGenerate : public ObsIo, private util::ObjectCounter<ObsGenerate> {
         ///          this method is to allow the user to exactly specify obs locations.
         ///          these data are intended for use with the MakeObs functionality.
         /// \param params Parameters structure specific to the generate list method
-        void genDistList(const ObsGenerateListParameters & params);
+        void genDistList(const ObsGenerateListParameters & params,
+                         const std::vector<std::string> & simVarNames);
 
         /// \brief print routine for oops::Printable base class
         /// \param ostream output stream

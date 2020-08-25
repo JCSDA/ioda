@@ -87,7 +87,7 @@ class ObsGenerateRandomParameters : public oops::Parameters {
         oops::OptionalParameter<int> ranSeed{"random.random seed", this};
 
         /// obs error estimates
-        oops::OptionalParameter<std::vector<float>> obsErrors{"obs errors", this};
+        oops::Parameter<std::vector<float>> obsErrors{"obs errors", { }, this};
 };
 
 class ObsGenerateListParameters : public oops::Parameters {
@@ -102,7 +102,7 @@ class ObsGenerateListParameters : public oops::Parameters {
         oops::RequiredParameter<std::vector<std::string>> datetimes{"list.datetimes", this};
 
         /// obs error estimates
-        oops::OptionalParameter<std::vector<float>> obsErrors{"obs errors", this};
+        oops::Parameter<std::vector<float>> obsErrors{"obs errors", { }, this};
 };
 
 class ObsFileOutParameters : public oops::Parameters {
@@ -120,9 +120,11 @@ class ObsIoParameters : public oops::Parameters {
         ObsFileOutParameters params_out_file_;
 
         /// Constructor
-        ObsIoParameters(const util::DateTime & winbgn, const util::DateTime & winend,
-                        const eckit::mpi::Comm & comm) :
-                            winbgn_(winbgn), winend_(winend), comm_(comm) {}
+        ObsIoParameters(const util::DateTime & winStart, const util::DateTime & winEnd,
+                        const eckit::mpi::Comm & comm,
+                        const std::vector<std::string> & simVarNames) :
+                            win_start_(winStart), win_end_(winEnd), comm_(comm),
+                            sim_var_names_(simVarNames) {}
 
         /// \brief deserialize the parameter sub groups
         /// \param config "obs space" level configuration
@@ -176,13 +178,16 @@ class ObsIoParameters : public oops::Parameters {
         ObsIoTypes out_type() const { return out_type_; }
 
         /// \details return the start of the DA timing window
-        const util::DateTime & windowStart() const {return winbgn_;}
+        const util::DateTime & windowStart() const {return win_start_;}
 
         /// \details return the end of the DA timing window
-        const util::DateTime & windowEnd() const {return winend_;}
+        const util::DateTime & windowEnd() const {return win_end_;}
 
         /// \details return the associated MPI communicator
         const eckit::mpi::Comm & comm() const {return comm_;}
+
+        /// \details return the list of simulated variable names
+        const std::vector<std::string> & simVarNames() const {return sim_var_names_;}
 
     private:
         /// \brief ObsIo input type
@@ -192,13 +197,16 @@ class ObsIoParameters : public oops::Parameters {
         ObsIoTypes out_type_;
 
         /// \brief Beginning of DA timing window
-        const util::DateTime winbgn_;
+        const util::DateTime win_start_;
 
         /// \brief End of DA timing window
-        const util::DateTime winend_;
+        const util::DateTime win_end_;
 
         /// \brief MPI communicator
         const eckit::mpi::Comm & comm_;
+
+        /// \brief simulated variable names
+        const std::vector<std::string> sim_var_names_;
 };
 
 }  // namespace ioda

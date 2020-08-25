@@ -43,7 +43,10 @@ void testConstructor() {
         util::DateTime bgn(::test::TestEnvironment::config().getString("window begin"));
         util::DateTime end(::test::TestEnvironment::config().getString("window end"));
 
-        ioda::ObsIoParameters obsParams(bgn, end, oops::mpi::comm());
+        std::vector<std::string> obsVarNames =
+            obsConfig.getStringVector("simulated variables", { });
+
+        ioda::ObsIoParameters obsParams(bgn, end, oops::mpi::comm(), obsVarNames);
         obsParams.deserialize(obsConfig);
 
         // Try the input constructor first - should have one to try if we got here

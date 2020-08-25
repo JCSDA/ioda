@@ -42,7 +42,7 @@ ObsGenerate::ObsGenerate(const ObsIoActions action, const ObsIoModes mode,
 
             // Fill in the ObsGroup with the generated data
             genDistRandom(params.params_in_gen_rand_, params.windowStart(),
-                          params.windowEnd(), params.comm());
+                          params.windowEnd(), params.comm(), params.simVarNames());
         } else if (params.in_type() == ObsIoTypes::GENERATOR_LIST) {
             oops::Log::trace() << "Constructing ObsGenerate: List method" << std::endl;
 
@@ -53,7 +53,7 @@ ObsGenerate::ObsGenerate(const ObsIoActions action, const ObsIoModes mode,
             obs_group_ = ObsGroup::generate(backend, newDims);
 
             // Fill in the ObsGroup with the generated data
-            genDistList(params.params_in_gen_list_);
+            genDistList(params.params_in_gen_list_, params.simVarNames());
         } else {
             ABORT("ObsGenerate: Unrecongnized ObsIoTypes value");
         }
@@ -66,8 +66,9 @@ ObsGenerate::~ObsGenerate() {}
 
 //-----------------------------------------------------------------------------------
 void ObsGenerate::genDistRandom(const ObsGenerateRandomParameters & params,
-                                const util::DateTime & winbgn, const util::DateTime & winend,
-                                const eckit::mpi::Comm & comm) {
+                                const util::DateTime & winStart, const util::DateTime & winEnd,
+                                const eckit::mpi::Comm & comm,
+                                const std::vector<std::string> & simVarNames) {
     /// Grab the parameter values
     int numLocs = params.numObs;
     float latStart = params.latStart;
@@ -80,10 +81,7 @@ void ObsGenerate::genDistRandom(const ObsGenerateRandomParameters & params,
     } else {
         ranSeed = std::time(0);  // based on the current date/time.
     }
-    std::vector<float> obsErrors;
-    if (params.obsErrors.value() != boost::none) {
-        obsErrors = params.obsErrors.value().get();
-    }
+    std::vector<float> obsErrors = params.obsErrors;
 
     // Use the following formula to generate random lat, lon and time values.
     //
@@ -117,7 +115,7 @@ void ObsGenerate::genDistRandom(const ObsGenerateRandomParameters & params,
     // Form the ranges val2-val for lat, lon, time
     float latRange = latEnd - latStart;
     float lonRange = lonEnd - lonStart;
-    util::Duration windowDuration(winend - winbgn);
+    util::Duration windowDuration(winEnd - winStart);
     float timeRange = static_cast<float>(windowDuration.toSeconds());
 
     // Create vectors for lat, lon, time, fill them with random values
@@ -143,7 +141,7 @@ void ObsGenerate::genDistRandom(const ObsGenerateRandomParameters & params,
             offsetDt = durOneSec;
         }
         // convert result to ISO 8601 string
-        util::DateTime dtVal = winbgn + offsetDt;
+        util::DateTime dtVal = winStart + offsetDt;
         dtStrings[ii] = dtVal.toString();
     }
 
@@ -152,15 +150,13 @@ void ObsGenerate::genDistRandom(const ObsGenerateRandomParameters & params,
 }
 
 //-----------------------------------------------------------------------------------
-void ObsGenerate::genDistList(const ObsGenerateListParameters & params) {
+void ObsGenerate::genDistList(const ObsGenerateListParameters & params,
+                              const std::vector<std::string> & simVarNames) {
     // Grab the parameters
     std::vector<float> latVals = params.lats;
     std::vector<float> lonVals = params.lons;
     std::vector<std::string> dtStrings = params.datetimes;
-    std::vector<float> obsErrors;
-    if (params.obsErrors.value() != boost::none) {
-        obsErrors = params.obsErrors.value().get();
-    }
+    std::vector<float> obsErrors = params.obsErrors;
 
     // Transfer the specified values to the ObsGroup
     int Dummy = 0;
