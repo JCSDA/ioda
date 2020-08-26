@@ -114,4 +114,26 @@ std::size_t FindMaxStringLength(const std::vector<std::string> & StringVector) {
 }
 
 // -----------------------------------------------------------------------------
+std::vector<std::string> listAllVars(const Group & group, std::string varPath) {
+    std::vector<std::string> varList;
+
+    // Add in variables at this level
+    std::vector<std::string> myVars;
+    for (auto & varName : group.vars.list()) {
+        myVars.push_back(varPath + varName);
+    }
+    varList.insert(varList.end(), myVars.begin(), myVars.end());
+
+    // Traverse to child groups and append their var lists
+    for (auto & childGroup : group.list()) {
+        std::string childVarPath = varPath + childGroup + std::string("/");
+        std::vector<std::string> childVarList =
+            listAllVars(group.open(childGroup), childVarPath);
+        varList.insert(varList.end(), childVarList.begin(), childVarList.end());
+    }
+
+    return varList;
+}
+
+// -----------------------------------------------------------------------------
 }  // namespace ioda

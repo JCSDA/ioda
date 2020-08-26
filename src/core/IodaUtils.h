@@ -12,8 +12,11 @@
 #include <typeinfo>
 #include <vector>
 
+#include "ioda/ObsGroup.h"
+
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/missingValues.h"
+
 
 namespace ioda {
 
@@ -31,6 +34,11 @@ namespace ioda {
   std::size_t FindMaxStringLength(const std::vector<std::string> & StringVector);
 
   std::string TypeIdName(const std::type_info & TypeId);
+
+  /// \brief find all variables in a Group and list their hierarchical names
+  /// \param group Group for which all variables underneath this group will be listed
+  /// \param varPath Hierarchical path to group (use "" for top level)
+  std::vector<std::string> listAllVars(const Group & group, std::string varPath);
 
   // -----------------------------------------------------------------------------
   /*!
