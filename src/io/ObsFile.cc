@@ -42,7 +42,7 @@ ObsFile::ObsFile(const ObsIoActions action, const ObsIoModes mode,
         backend = constructBackend(backendName, backendParams);
         ObsGroup og(backend,
             detail::DataLayoutPolicy::generate(detail::DataLayoutPolicy::Policies::None));
-        file_ = og;
+        obs_group_ = og;
 
     } else if (action == ObsIoActions::CREATE_FILE) {
         fileName = params.params_out_file_.fileName;
@@ -59,7 +59,7 @@ ObsFile::ObsFile(const ObsIoActions action, const ObsIoModes mode,
         // Use the None DataLyoutPolicy for now to accommodate the current file format
         backend = constructBackend(backendName, backendParams);
         NewDimensionScales_t newDims;
-        file_ = ObsGroup::generate(backend, newDims,
+        obs_group_ = ObsGroup::generate(backend, newDims,
             detail::DataLayoutPolicy::generate(detail::DataLayoutPolicy::Policies::None));
 
     } else {

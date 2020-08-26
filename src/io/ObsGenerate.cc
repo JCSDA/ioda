@@ -10,6 +10,7 @@
 #include "ioda/Layout.h"
 
 #include "oops/util/abor1_cpp.h"
+#include "oops/util/missingValues.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Random.h"
 
@@ -82,6 +83,7 @@ void ObsGenerate::genDistRandom(const ObsGenerateRandomParameters & params,
         ranSeed = std::time(0);  // based on the current date/time.
     }
     std::vector<float> obsErrors = params.obsErrors;
+    ASSERT(obsErrors.size() == simVarNames.size());
 
     // Use the following formula to generate random lat, lon and time values.
     //
@@ -146,7 +148,7 @@ void ObsGenerate::genDistRandom(const ObsGenerateRandomParameters & params,
     }
 
     // Transfer the generated values to the ObsGroup
-    int Dummy = 0;
+    storeGenData(latVals, lonVals, dtStrings, simVarNames, obsErrors);
 }
 
 //-----------------------------------------------------------------------------------
@@ -157,9 +159,64 @@ void ObsGenerate::genDistList(const ObsGenerateListParameters & params,
     std::vector<float> lonVals = params.lons;
     std::vector<std::string> dtStrings = params.datetimes;
     std::vector<float> obsErrors = params.obsErrors;
+    ASSERT(obsErrors.size() == simVarNames.size());
 
     // Transfer the specified values to the ObsGroup
-    int Dummy = 0;
+    storeGenData(latVals, lonVals, dtStrings, simVarNames, obsErrors);
+}
+
+//-----------------------------------------------------------------------------------
+void ObsGenerate::storeGenData(const std::vector<float> & latVals,
+                               const std::vector<float> & lonVals,
+                               const std::vector<std::string> & dtStrings,
+                               const std::vector<std::string> & obsVarNames,
+                               const std::vector<float> & obsErrors) {
+    // Generated data is a set of vectors for now.
+    //     MetaData group
+    //        latitude
+    //        longitude
+    //        datetime
+    //
+    //     ObsError group
+    //        list of simulated variables in obsVarNames
+
+    Variable nlocsVar = obs_group_.vars["nlocs"];
+
+    float missingFloat = util::missingValue(missingFloat); // JEDI missing value mark
+    std::string missingString("missing");
+
+    ioda::VariableCreationParameters float_params;
+    float_params.chunk = true;
+    float_params.compressWithGZIP();
+    float_params.setFillValue<float>(missingFloat);
+
+    ioda::VariableCreationParameters string_params;
+    float_params.chunk = true;
+    float_params.compressWithGZIP();
+    float_params.setFillValue<std::string>(missingString);
+
+    std::string latName("latitude@MetaData");
+    std::string lonName("longitude@MetaData");
+    std::string dtName("datetime@MetaData");
+
+    // Create, write and attach units attributes to the variables
+    obs_group_.vars.createWithScales<float>(latName, { nlocsVar }, float_params)
+        .write<float>(latVals)
+        .atts.add<std::string>("units", std::string("degrees_east"));
+    obs_group_.vars.createWithScales<float>(lonName, { nlocsVar }, float_params)
+        .write<float>(lonVals)
+        .atts.add<std::string>("units", std::string("degrees_north"));
+    obs_group_.vars.createWithScales<std::string>(dtName, { nlocsVar }, string_params)
+        .write<std::string>(dtStrings)
+        .atts.add<std::string>("units", std::string("ISO 8601 format"));
+
+    for (std::size_t i = 0; i < obsVarNames.size(); ++i) {
+        std::string varName = obsVarNames[i] + std::string("@ObsError");
+        std::vector<float> obsErrVals(latVals.size(), obsErrors[i]);
+        obs_group_.vars.createWithScales<float>(varName, { nlocsVar }, float_params)
+            .write<float>(obsErrVals)
+            .atts.add<std::string>("units", std::string("estimated standard deviation"));
+    }
 }
 
 //-----------------------------------------------------------------------------------

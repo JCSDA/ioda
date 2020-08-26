@@ -70,11 +70,21 @@ class ObsGenerate : public ObsIo, private util::ObjectCounter<ObsGenerate> {
         void genDistList(const ObsGenerateListParameters & params,
                          const std::vector<std::string> & simVarNames);
 
+        /// \brief load generated data into an ObsGroup
+        /// \param latVals vector of latitude values
+        /// \param lonVals vector of longitude values
+        /// \param dtStrings vector of datetime (ISO 8601 string) values
+        /// \param obsVarNames vector (string) of simulated variable names
+        /// \param obsErrors vector of obs error estimates
+        void storeGenData(const std::vector<float> & latVals,
+                          const std::vector<float> & lonVals,
+                          const std::vector<std::string> & dtStrings,
+                          const std::vector<std::string> & obsVarNames,
+                          const std::vector<float> & obsErrors);
+
         /// \brief print routine for oops::Printable base class
         /// \param ostream output stream
         void print(std::ostream & os) const override;
-
-        ObsGroup obs_group_;
 };
 
 }  // namespace ioda

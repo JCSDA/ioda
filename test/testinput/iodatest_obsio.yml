@@ -13,6 +13,8 @@ observations:
     obsdataout:
       obsfile: "testoutput/diagout.nc4"
       max frame size: 300
+    test data:
+      nlocs: 974
 
 - obs space:
     name: "Synthetic Random"
@@ -28,6 +30,8 @@ observations:
       obs errors: [1.0, 2.0]
     obsdataout:
       obsfile: "testoutput/ospace.generate.random.nc4"
+    test data:
+      nlocs: 10
 
 - obs space:
     name: "Synthetic List"
@@ -51,4 +55,6 @@ observations:
       obs errors: [1.0, 2.0]
     obsdataout:
       obsfile: "testoutput/ospace.generate.list.nc4"
+    test data:
+      nlocs: 11
 

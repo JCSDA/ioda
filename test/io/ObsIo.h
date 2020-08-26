@@ -43,10 +43,10 @@ void testConstructor() {
         util::DateTime bgn(::test::TestEnvironment::config().getString("window begin"));
         util::DateTime end(::test::TestEnvironment::config().getString("window end"));
 
-        std::vector<std::string> obsVarNames =
+        std::vector<std::string> simVarNames =
             obsConfig.getStringVector("simulated variables", { });
 
-        ioda::ObsIoParameters obsParams(bgn, end, oops::mpi::comm(), obsVarNames);
+        ioda::ObsIoParameters obsParams(bgn, end, oops::mpi::comm(), simVarNames);
         obsParams.deserialize(obsConfig);
 
         // Try the input constructor first - should have one to try if we got here
@@ -58,9 +58,19 @@ void testConstructor() {
             obsIo = ObsIoFactory::create(ObsIoActions::CREATE_GENERATOR, ObsIoModes::READ_ONLY, obsParams);
         }
 
+        // See if we get expected number of locations
+        ioda::Dimensions_t expectedNumLocs = obsConfig.getInt("test data.nlocs", 0);
+        ioda::Dimensions nlocsDims = obsIo->obs_group_.vars.open("nlocs").getDimensions();
+        ioda::Dimensions_t numLocs = nlocsDims.dimsCur[0];
+        EXPECT(numLocs == expectedNumLocs);
+
         // Try the output constructor, if one was specified
         if (obsParams.out_type() == ObsIoTypes::OBS_FILE) {
             obsIo = ObsIoFactory::create(ObsIoActions::CREATE_FILE, ObsIoModes::CLOBBER, obsParams);
+
+            // Should have an empty top level group at this point
+            std::vector<std::string> childGroups = obsIo->obs_group_.list();
+            EXPECT(childGroups.size() == 0);
         }
     }
 }

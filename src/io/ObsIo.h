@@ -29,6 +29,9 @@ namespace ioda {
  */
 class ObsIo : public util::Printable {
     public:
+        /// \brief ObsGroup object representing io source/destination
+        ObsGroup obs_group_;
+
         ObsIo(const ObsIoActions action, const ObsIoModes mode, const ObsIoParameters & params);
 	virtual ~ObsIo() = 0;
 

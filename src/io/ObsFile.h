@@ -42,9 +42,6 @@ class ObsFile : public ObsIo, private util::ObjectCounter<ObsFile> {
         /// \brief print routine for oops::Printable base class
         /// \param ostream output stream
         void print(std::ostream & os) const override;
-
-        /// \brief ObsGroup object for file io
-        ObsGroup file_;
 };
 
 }  // namespace ioda
