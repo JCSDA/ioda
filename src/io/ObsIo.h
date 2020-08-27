@@ -28,12 +28,32 @@ namespace ioda {
  * \author Stephen Herbener (JCSDA)
  */
 class ObsIo : public util::Printable {
+    private:
+        // Container for information about frames.
+        struct FrameInfoRec {
+          std::size_t start;
+          std::size_t size;
+
+          // Constructor
+          FrameInfoRec(const std::size_t Start, const std::size_t Size) :
+              start(Start), size(Size) {}
+        };
+
+        /// \brief frame information map
+        /// \details This typedef contains information about the frames in the file
+        typedef std::vector<FrameInfoRec> FrameInfo;
+
+        /// \brief frame information vector
+        FrameInfo frame_info_;
+
     public:
         /// \brief ObsGroup object representing io source/destination
         ObsGroup obs_group_;
 
         ObsIo(const ObsIoActions action, const ObsIoModes mode, const ObsIoParameters & params);
 	virtual ~ObsIo() = 0;
+
+        void frame_info_init(std::size_t maxVarSize);
 
     protected:
         /// \brief print() for oops::Printable base class
@@ -48,6 +68,9 @@ class ObsIo : public util::Printable {
 
         /// \brief ObsIo parameter specs
         ObsIoParameters params_;
+
+        /// \brief maximum frame size
+        int max_frame_size_;
 };
 
 }  // namespace ioda

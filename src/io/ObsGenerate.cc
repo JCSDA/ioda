@@ -36,25 +36,31 @@ ObsGenerate::ObsGenerate(const ObsIoActions action, const ObsIoModes mode,
             oops::Log::trace() << "Constructing ObsGenerate: Random method" << std::endl;
 
             // Create the in-memory ObsGroup
-            int numLocs = params.params_in_gen_rand_.numObs; // number of locations to generate
+            int numLocs = params.in_gen_rand_.numObs; // number of locations to generate
             newDims.push_back(
                 std::make_shared<ioda::NewDimensionScale<int>>("nlocs", numLocs, numLocs, numLocs));
             obs_group_ = ObsGroup::generate(backend, newDims);
 
             // Fill in the ObsGroup with the generated data
-            genDistRandom(params.params_in_gen_rand_, params.windowStart(),
-                          params.windowEnd(), params.comm(), params.simVarNames());
+            genDistRandom(params.in_gen_rand_, params.windowStart(),
+                          params.windowEnd(), params.comm(), params.top_level_.simVars);
+
+            // fill in the frame_info_ vector
+            max_frame_size_ = params.in_gen_rand_.maxFrameSize;
         } else if (params.in_type() == ObsIoTypes::GENERATOR_LIST) {
             oops::Log::trace() << "Constructing ObsGenerate: List method" << std::endl;
 
             // Create the in-memory ObsGroup
-            int numLocs = params.params_in_gen_list_.lats.value().size();
+            int numLocs = params.in_gen_list_.lats.value().size();
             newDims.push_back(
                 std::make_shared<ioda::NewDimensionScale<int>>("nlocs", numLocs, numLocs, numLocs));
             obs_group_ = ObsGroup::generate(backend, newDims);
 
             // Fill in the ObsGroup with the generated data
-            genDistList(params.params_in_gen_list_, params.simVarNames());
+            genDistList(params.in_gen_list_, params.top_level_.simVars);
+
+            // fill in the frame_info_ vector
+            max_frame_size_ = params.in_gen_list_.maxFrameSize;
         } else {
             ABORT("ObsGenerate: Unrecongnized ObsIoTypes value");
         }

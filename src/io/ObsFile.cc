@@ -27,7 +27,7 @@ ObsFile::ObsFile(const ObsIoActions action, const ObsIoModes mode,
     Group backend;
 
     if (action == ObsIoActions::OPEN_FILE) {
-        fileName = params.params_in_file_.fileName;
+        fileName = params.in_file_.fileName;
         oops::Log::trace() << "Constructing ObsFile: Opening file for read: "
                            << fileName << std::endl;
 
@@ -44,8 +44,10 @@ ObsFile::ObsFile(const ObsIoActions action, const ObsIoModes mode,
             detail::DataLayoutPolicy::generate(detail::DataLayoutPolicy::Policies::None));
         obs_group_ = og;
 
+        // fill in the frame_info_ vector
+        max_frame_size_ = params.in_file_.maxFrameSize;
     } else if (action == ObsIoActions::CREATE_FILE) {
-        fileName = params.params_out_file_.fileName;
+        fileName = params.out_file_.fileName;
         oops::Log::trace() << "Constructing ObsFile: Creating file for write: "
                            << fileName << std::endl;
         backendName = Engines::BackendNames::Hdf5File;
@@ -62,6 +64,8 @@ ObsFile::ObsFile(const ObsIoActions action, const ObsIoModes mode,
         obs_group_ = ObsGroup::generate(backend, newDims,
             detail::DataLayoutPolicy::generate(detail::DataLayoutPolicy::Policies::None));
 
+        // fill in the frame_info_ vector
+        max_frame_size_ = params.out_file_.maxFrameSize;
     } else {
         ABORT("ObsFile: Unrecongnized ObsIoActions value");
     }
