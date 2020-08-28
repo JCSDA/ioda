@@ -7,6 +7,7 @@
 
 #include "ioda/io/ObsGenerate.h"
 
+#include "ioda/core/IodaUtils.h"
 #include "ioda/Layout.h"
 
 #include "oops/util/abor1_cpp.h"
@@ -45,7 +46,7 @@ ObsGenerate::ObsGenerate(const ObsIoActions action, const ObsIoModes mode,
             genDistRandom(params.in_gen_rand_, params.windowStart(),
                           params.windowEnd(), params.comm(), params.top_level_.simVars);
 
-            // fill in the frame_info_ vector
+            // record maximum frame size
             max_frame_size_ = params.in_gen_rand_.maxFrameSize;
         } else if (params.in_type() == ObsIoTypes::GENERATOR_LIST) {
             oops::Log::trace() << "Constructing ObsGenerate: List method" << std::endl;
@@ -59,7 +60,7 @@ ObsGenerate::ObsGenerate(const ObsIoActions action, const ObsIoModes mode,
             // Fill in the ObsGroup with the generated data
             genDistList(params.in_gen_list_, params.top_level_.simVars);
 
-            // fill in the frame_info_ vector
+            // record maximum frame size
             max_frame_size_ = params.in_gen_list_.maxFrameSize;
         } else {
             ABORT("ObsGenerate: Unrecongnized ObsIoTypes value");
@@ -67,6 +68,9 @@ ObsGenerate::ObsGenerate(const ObsIoActions action, const ObsIoModes mode,
     } else {
         ABORT("ObsGenerate: Unrecongnized ObsIoActions value");
     }
+
+    // fill in the variable list
+    var_list_ = listAllVars(obs_group_, "");
 }
 
 ObsGenerate::~ObsGenerate() {}

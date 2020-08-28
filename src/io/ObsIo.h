@@ -55,6 +55,8 @@ class ObsIo : public util::Printable {
 
         void frame_info_init(std::size_t maxVarSize);
 
+        std::vector<std::string> var_list();
+
     protected:
         /// \brief print() for oops::Printable base class
         /// \param ostream output stream
@@ -71,6 +73,9 @@ class ObsIo : public util::Printable {
 
         /// \brief maximum frame size
         int max_frame_size_;
+
+        /// \brief list of all variables in the ObsGroup
+        std::vector<std::string> var_list_;
 };
 
 }  // namespace ioda

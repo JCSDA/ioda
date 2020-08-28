@@ -39,6 +39,11 @@ void ObsIo::frame_info_init(std::size_t maxVarSize) {
 }
 
 //------------------------------------------------------------------------------------
+std::vector<std::string> ObsIo::var_list() {
+    return var_list_;
+}
+
+//------------------------------------------------------------------------------------
 void ObsIo::print(std::ostream & os) const {}
 
 }  // namespace ioda

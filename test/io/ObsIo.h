@@ -111,7 +111,7 @@ void testRead() {
         EXPECT_EQUAL(numLocs, expectedNumLocs);
 
         int expectedNumVars = obsConfig.getInt("test data.nvars", 0);
-        std::vector<std::string> varNames = listAllVars(obsIo->obs_group_, "");
+        std::vector<std::string> varNames = obsIo->var_list();
         int numVars = varNames.size();
         EXPECT_EQUAL(numVars, expectedNumVars);
 

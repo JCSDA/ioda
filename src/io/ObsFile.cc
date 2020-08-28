@@ -7,6 +7,7 @@
 
 #include "ioda/io/ObsFile.h"
 
+#include "ioda/core/IodaUtils.h"
 #include "ioda/Layout.h"
 
 #include "oops/util/abor1_cpp.h"
@@ -44,8 +45,11 @@ ObsFile::ObsFile(const ObsIoActions action, const ObsIoModes mode,
             detail::DataLayoutPolicy::generate(detail::DataLayoutPolicy::Policies::None));
         obs_group_ = og;
 
-        // fill in the frame_info_ vector
+        // record maximum frame size
         max_frame_size_ = params.in_file_.maxFrameSize;
+
+        // fill in the variable list
+        var_list_ = listAllVars(obs_group_, "");
     } else if (action == ObsIoActions::CREATE_FILE) {
         fileName = params.out_file_.fileName;
         oops::Log::trace() << "Constructing ObsFile: Creating file for write: "
@@ -64,7 +68,7 @@ ObsFile::ObsFile(const ObsIoActions action, const ObsIoModes mode,
         obs_group_ = ObsGroup::generate(backend, newDims,
             detail::DataLayoutPolicy::generate(detail::DataLayoutPolicy::Policies::None));
 
-        // fill in the frame_info_ vector
+        // record maximum frame size
         max_frame_size_ = params.out_file_.maxFrameSize;
     } else {
         ABORT("ObsFile: Unrecongnized ObsIoActions value");
