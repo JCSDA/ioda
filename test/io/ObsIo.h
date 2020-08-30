@@ -8,8 +8,9 @@
 #ifndef TEST_IO_OBSIO_H_
 #define TEST_IO_OBSIO_H_
 
+#include <functional>
+#include <numeric>
 #include <string>
-#include <valarray>
 #include <vector>
 
 #define ECKIT_TESTING_SELF_REGISTER_CASES 0
@@ -29,6 +30,7 @@
 #include "ioda/io/ObsIoFactory.h"
 #include "ioda/io/ObsIoParameters.h"
 #include "ioda/ObsGroup.h"
+#include "ioda/Variables/Variable.h"
 
 namespace ioda {
 namespace test {
@@ -111,45 +113,85 @@ void testRead() {
         EXPECT_EQUAL(numLocs, expectedNumLocs);
 
         int expectedNumVars = obsConfig.getInt("test data.nvars", 0);
-        std::vector<std::string> varNames = obsIo->var_list();
-        int numVars = varNames.size();
+        std::size_t numVars = obsIo->numVars();
         EXPECT_EQUAL(numVars, expectedNumVars);
 
-        // Try reading a couple variables
+        // Get the expected data for variables
         float floatTol = obsConfig.getFloat("test data.tolerance", 1.0e-5);
         std::vector<eckit::LocalConfiguration> readVarConfigs =
             obsConfig.getSubConfigurations("test data.read variables");
-        for (std::size_t j = 0; j < readVarConfigs.size(); ++j) {
-           std::string varName = readVarConfigs[j].getString("name");
-           std::string varType = readVarConfigs[j].getString("type");
-           if (varType == "int") {
-               int expectedVarValue0 = readVarConfigs[j].getInt("value0");
-               std::vector<int> varValues;
-               obsIo->obs_group_.vars.open(varName).read<int>(varValues);
-               EXPECT_EQUAL(varValues[0], expectedVarValue0);
-           } else if (varType == "float") {
-               float expectedVarValue0 = readVarConfigs[j].getFloat("value0");
-               std::vector<float> varValues;
-               obsIo->obs_group_.vars.open(varName).read<float>(varValues);
-               EXPECT(oops::is_close_relative(varValues[0], expectedVarValue0, floatTol));
-           } else if (varType == "string") {
-               std::string expectedVarValue0 = readVarConfigs[j].getString("value0");
-               ioda::Variable var = obsIo->obs_group_.vars.open(varName);
-               std::vector<std::string> varValues;
-               if (var.isA<std::string>()) {
-                   var.read<std::string>(varValues);
-               } else {
-                   ioda::Dimensions varDims = var.getDimensions();
-                   std::vector<std::size_t> varShape;
-                   varShape.assign(varDims.dimsCur.begin(), varDims.dimsCur.end());
 
-                   std::vector<char> charData;
-                   var.read<char>(charData);
-                   varValues = CharArrayToStringVector(charData.data(), varShape);
+        // Try the frame iterator
+        int iframe = 0;
+        for (obsIo->frameInit(); obsIo->frameAvailable(); obsIo->frameNext()) {
+            oops::Log::debug() << "testRead: Frame number: " << iframe << std::endl
+                               << "    frameStart: " << obsIo->frameStart() << std::endl;
+            // Try reading a couple variables
+            for (std::size_t j = 0; j < readVarConfigs.size(); ++j) {
+               std::string varName = readVarConfigs[j].getString("name");
+               std::string expectedVarType = readVarConfigs[j].getString("type");
+
+               // Get the frame start, and the count associated with this variable
+               int frameStart = obsIo->frameStart();
+               int frameCount = obsIo->frameCount(varName);
+
+               if (frameCount > 0) {
+                   oops::Log::debug() << "    Variable: " << varName
+                                      << ", frameCount: " << frameCount << std::endl;
+                   ioda::Variable var = obsIo->obs_group_.vars.open(varName);
+
+                   // Form the hyperslab selection for this frame
+                   std::vector<ioda::Dimensions_t> f_counts = var.getDimensions().dimsCur;
+                   std::vector<ioda::Dimensions_t> f_starts(f_counts.size(), 0);
+                   f_starts[0] = frameStart;
+                   f_counts[0] = frameCount;
+
+                   ioda::Dimensions_t numElements = std::accumulate(
+                       f_counts.begin(), f_counts.end(), 1, std::multiplies<ioda::Dimensions_t>());
+                   std::vector<ioda::Dimensions_t> m_counts(1, numElements);
+                   std::vector<ioda::Dimensions_t> m_starts(1, 0);
+
+                   ioda::Selection m_select;
+                   m_select.extent(m_counts)
+                       .select({ ioda::SelectionOperator::SET, m_starts, m_counts });
+                   ioda::Selection f_select;
+                   f_select.select({ ioda::SelectionOperator::SET, f_starts, f_counts });
+
+                   if (expectedVarType == "int") {
+                       EXPECT(var.isA<int>());
+                       std::vector<int> expectedVarValue0 =
+                           readVarConfigs[j].getIntVector("value0");
+                       std::vector<int> varValues(frameCount, 0);
+                       var.read<int>(varValues, m_select, f_select);
+                       EXPECT_EQUAL(varValues[0], expectedVarValue0[iframe]);
+                   } else if (expectedVarType == "float") {
+                       EXPECT(var.isA<float>());
+                       std::vector<float> expectedVarValue0 =
+                           readVarConfigs[j].getFloatVector("value0");
+                       std::vector<float> varValues(frameCount, 0.0);
+                       var.read<float>(varValues, m_select, f_select);
+                       EXPECT(oops::is_close_relative(varValues[0],
+                                                      expectedVarValue0[iframe], floatTol));
+                   } else if (expectedVarType == "string") {
+                       std::vector<std::string> expectedVarValue0 =
+                           readVarConfigs[j].getStringVector("value0");
+                       std::vector<std::string> varValues(frameCount, "");
+                       if (var.isA<std::string>()) {
+                           var.read<std::string>(varValues, m_select, f_select);
+                       } else {
+                           ioda::Dimensions varDims = var.getDimensions();
+                           std::vector<std::size_t> varShape;
+                           varShape.assign(varDims.dimsCur.begin(), varDims.dimsCur.end());
+
+                           std::vector<char> charData;
+                           var.read<char>(charData);
+                           varValues = CharArrayToStringVector(charData.data(), varShape);
+                       }
+                       EXPECT_EQUAL(varValues[0], expectedVarValue0[iframe]);
+                   }
                }
-               int dummy = 0;
-               EXPECT_EQUAL(varValues[0], expectedVarValue0);
-           }
+            }
+            iframe++;
         }
     }
 }

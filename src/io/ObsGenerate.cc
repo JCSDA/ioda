@@ -7,8 +7,12 @@
 
 #include "ioda/io/ObsGenerate.h"
 
+#include <typeindex>
+#include <typeinfo>
+
 #include "ioda/core/IodaUtils.h"
 #include "ioda/Layout.h"
+#include "ioda/Misc/Dimensions.h"
 
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/missingValues.h"
@@ -69,8 +73,19 @@ ObsGenerate::ObsGenerate(const ObsIoActions action, const ObsIoModes mode,
         ABORT("ObsGenerate: Unrecongnized ObsIoActions value");
     }
 
-    // fill in the variable list
-    var_list_ = listAllVars(obs_group_, "");
+    // fill in the variable information
+    for (auto & varName : listAllVars(obs_group_, std::string(""))) {
+        std::pair<std::string, VarInfoRec> element = std::make_pair(varName,
+            VarInfoRec(getVarSize0(varName), getVarDtype(varName), getVarIsDist(varName)));
+        if (getVarIsDimScale(varName)) {
+            dim_var_info_.insert(element);
+        } else {
+            var_info_.insert(element);
+        }
+    }
+
+    // record the maximum variable size
+    max_var_size_ = getVarSizeMax();
 }
 
 ObsGenerate::~ObsGenerate() {}

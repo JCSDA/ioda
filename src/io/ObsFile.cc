@@ -7,6 +7,9 @@
 
 #include "ioda/io/ObsFile.h"
 
+#include <typeindex>
+#include <typeinfo>
+
 #include "ioda/core/IodaUtils.h"
 #include "ioda/Layout.h"
 
@@ -48,8 +51,19 @@ ObsFile::ObsFile(const ObsIoActions action, const ObsIoModes mode,
         // record maximum frame size
         max_frame_size_ = params.in_file_.maxFrameSize;
 
-        // fill in the variable list
-        var_list_ = listAllVars(obs_group_, "");
+        // fill in the variable information data structures
+        for (auto & varName : listAllVars(obs_group_, std::string(""))) {
+            std::pair<std::string, VarInfoRec> element = std::make_pair(varName,
+                VarInfoRec(getVarSize0(varName), getVarDtype(varName), getVarIsDist(varName)));
+            if (getVarIsDimScale(varName)) {
+                dim_var_info_.insert(element);
+            } else {
+                var_info_.insert(element);
+            }
+        }
+
+        // record the maximum variable size
+        max_var_size_ = getVarSizeMax();
     } else if (action == ObsIoActions::CREATE_FILE) {
         fileName = params.out_file_.fileName;
         oops::Log::trace() << "Constructing ObsFile: Creating file for write: "

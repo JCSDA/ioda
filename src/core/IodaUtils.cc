@@ -7,6 +7,8 @@
 
 #include "ioda/core/IodaUtils.h"
 
+#include "ioda/Variables/Variable.h"
+
 #include "oops/util/DateTime.h"
 
 

@@ -15,17 +15,17 @@ observations:
       max frame size: 300
     test data:
       nlocs: 974
-      nvars: 70
+      nvars: 65
       read variables:
         - name: "air_pressure@MetaData"
           type: "float"
-          value0: 12900.0
+          value0: [ 12900.0, 39400.0, 45800.0, 59830.0, 13800.0 ]
 #        - name: "datetime@MetaData"
 #          type: "string"
-#          value0: "2018-04-15T00:07:54Z"
+#          value0: [ "2018-04-15T00:07:54Z", "2018-04-15T00:07:54Z", "2018-04-15T00:07:54Z", "2018-04-15T00:07:54Z", "2018-04-15T00:07:54Z" ]
         - name: "northward_wind@PreQC"
           type: "int"
-          value0: 2
+          value0: [ 2, 2, -2147483647, 2, 2 ]
       tolerance: 1.0e-6
 
 - obs space:
@@ -44,17 +44,17 @@ observations:
       obsfile: "testoutput/ospace.generate.random.nc4"
     test data:
       nlocs: 10
-      nvars: 6
+      nvars: 5
       read variables:
         - name: "MetaData/latitude"
           type: "float"
-          value0: 9.35412
+          value0: [ 9.35412 ]
         - name: "MetaData/datetime"
           type: "string"
-          value0: "2018-04-15T02:36:44Z"
+          value0: [ "2018-04-15T02:36:44Z" ]
         - name: "ObsError/air_temperature"
           type: "float"
-          value0: 1.0
+          value0: [ 1.0 ]
       tolerance: 1.0e-6
 
 - obs space:
@@ -81,16 +81,16 @@ observations:
       obsfile: "testoutput/ospace.generate.list.nc4"
     test data:
       nlocs: 11
-      nvars: 6
+      nvars: 5
       read variables:
         - name: "MetaData/latitude"
           type: "float"
-          value0: 5.0
+          value0: [ 5.0 ]
         - name: "MetaData/datetime"
           type: "string"
-          value0: "2010-01-01T00:04:00Z"
+          value0: [ "2010-01-01T00:04:00Z" ]
         - name: "ObsError/eastward_wind"
           type: "float"
-          value0: 2.0
+          value0: [ 2.0 ]
       tolerance: 1.0e-6
 
