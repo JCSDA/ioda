@@ -23,6 +23,9 @@
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
 
+#include "atlas/util/Earth.h"
+
+
 namespace ioda {
 
 // -----------------------------------------------------------------------------
@@ -84,51 +87,65 @@ ObsSpace::ObsSpace(const ObsSpace & os,
         obsdist_.push_back(localDist);
       }
     }
+    const boost::optional<int> & maxnobs = localopts_->maxnobs;
+    if ( (maxnobs != boost::none) && (localobs_.size() > *maxnobs ) ) {
+      for (unsigned int jj = 0; jj < localobs_.size(); ++jj) {
+          oops::Log::debug() << "Before sort [i, d]: " << localobs_[jj]
+              << " , " << obsdist_[jj] << std::endl;
+      }
+      // Construct a temporary paired vector to do the sorting
+      std::vector<std::pair<std::size_t, double>> localObsIndDistPair;
+      for (unsigned int jj = 0; jj < obsdist_.size(); ++jj) {
+        localObsIndDistPair.push_back(std::make_pair(localobs_[jj], obsdist_[jj]));
+      }
+
+      // Use a lambda function to implement an ascending sort.
+      sort(localObsIndDistPair.begin(), localObsIndDistPair.end(),
+           [](const std::pair<std::size_t, double> & p1,
+              const std::pair<std::size_t, double> & p2){
+                return(p1.second < p2.second);
+              });
+
+      // Unpair the sorted pair vector
+      for (unsigned int jj = 0; jj < obsdist_.size(); ++jj) {
+        localobs_[jj] = localObsIndDistPair[jj].first;
+        obsdist_[jj] = localObsIndDistPair[jj].second;
+      }
+
+      // Truncate to maxNobs length
+      localobs_.resize(*maxnobs);
+      obsdist_.resize(*maxnobs);
+    }
   } else {
     oops::Log::trace() << "ioda::ObsSpace searching via KDTree" << std::endl;
 
-    std::string ErrMsg =
-      std::string("ioda::ObsSpace search via KDTree not implemented,") +
-      std::string("use 'brute_force' for 'searchMethod:' YAML configuration keyword.");
-    ABORT(ErrMsg);
-  }
+    if ( localopts_->distanceType == DistanceType::CARTESIAN)
+      ABORT("ObsSpace:: search method must be 'brute_force' when using 'cartesian' distance");
 
-  const boost::optional<int> & maxnobs = localopts_->maxnobs;
-  if ( (maxnobs != boost::none) && (localobs_.size() > *maxnobs ) ) {
-    for (unsigned int jj = 0; jj < localobs_.size(); ++jj) {
-        oops::Log::debug() << "Before sort [i, d]: " << localobs_[jj]
-            << " , " << obsdist_[jj] << std::endl;
-    }
+    ObsData::KDTree & kdtree = obsspace_->getKDTree();
 
-    // Construct a temporary paired vector to do the sorting
-    std::vector<std::pair<std::size_t, double>> localObsIndDistPair;
-    for (unsigned int jj = 0; jj < obsdist_.size(); ++jj) {
-      localObsIndDistPair.push_back(std::make_pair(localobs_[jj], obsdist_[jj]));
-    }
+    // Using the radius of the earth
+    eckit::geometry::Point3 refPoint3D;
+    atlas::util::Earth::convertSphericalToCartesian(refPoint, refPoint3D);
+    double alpha =  (localopts_->lengthscale / localopts_->radiusEarth)/ 2.0;  // angle in radians
+    double chordLength = 2.0*localopts_->radiusEarth * sin(alpha);  // search radius in 3D space
 
-    // Use a lambda function to implement an ascending sort.
-    sort(localObsIndDistPair.begin(), localObsIndDistPair.end(),
-         [](const std::pair<std::size_t, double> & p1,
-            const std::pair<std::size_t, double> & p2){
-              return(p1.second < p2.second);
-            });
+    auto closePoints = kdtree.findInSphere(refPoint3D, chordLength);
 
-    // Unpair the sorted pair vector
-    for (unsigned int jj = 0; jj < obsdist_.size(); ++jj) {
-      localobs_[jj] = localObsIndDistPair[jj].first;
-      obsdist_[jj] = localObsIndDistPair[jj].second;
-    }
+    // put closePoints back into localobs_ and obsdist_
+    for (unsigned int jj = 0; jj < closePoints.size(); ++jj) {
+       localobs_.push_back(closePoints[jj].payload());  // observation
+       obsdist_.push_back(closePoints[jj].distance());  // distance
+     }
 
-    // Truncate to maxNobs length
-    localobs_.resize(*maxnobs);
-    obsdist_.resize(*maxnobs);
-
-    for (unsigned int jj = 0; jj < localobs_.size(); ++jj) {
-        oops::Log::debug() << " After sort [i, d]: " << localobs_[jj] << " , "
-            << obsdist_[jj] << std::endl;
+    // The obs are sorted in the kdtree call
+    const boost::optional<int> & maxnobs = localopts_->maxnobs;
+    if ( (maxnobs != boost::none) && (localobs_.size() > *maxnobs ) ) {
+      // Truncate to maxNobs length
+      localobs_.resize(*maxnobs);
+      obsdist_.resize(*maxnobs);
     }
   }
-
   oops::Log::trace() << "ioda::ObsSpace for LocalObs done" << std::endl;
 }
 
