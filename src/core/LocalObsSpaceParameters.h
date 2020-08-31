@@ -86,7 +86,6 @@ class LocalObsSpaceParameters : public oops::Parameters {
   oops::RequiredParameter<double> lengthscale{"lengthscale", this};
 
   /// Method for searching for nearest points: brute force or KD-tree
-  /// Default: brute force (the only one implemented now)
   oops::Parameter<SearchMethod> searchMethod{"search method", SearchMethod::BRUTEFORCE, this};
 
   /// Maximum number of obs
@@ -100,15 +99,14 @@ class LocalObsSpaceParameters : public oops::Parameters {
   /// distance calculation type distanceType
   double distance(const eckit::geometry::Point2 & p1, const eckit::geometry::Point2 & p2) {
     if (distanceType == DistanceType::GEODESIC) {
-      return eckit::geometry::Sphere::distance(radiusEarth_, p1, p2);
+      return eckit::geometry::Sphere::distance(radiusEarth, p1, p2);
     } else {
       ASSERT(distanceType == DistanceType::CARTESIAN);
       return p1.distance(p2);
     }
   }
 
- private:
-  const double radiusEarth_ = 6.371e6;  // Earth radius in km
+  const double radiusEarth = 6.371e6;  // Earth radius in km
 };
 
 }  // namespace ioda

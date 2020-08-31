@@ -33,6 +33,8 @@
 #include "ioda/distribution/DistributionFactory.h"
 #include "ioda/io/IodaIOfactory.h"
 
+#include "atlas/util/Earth.h"
+
 namespace ioda {
 
 // -----------------------------------------------------------------------------
@@ -1219,8 +1221,8 @@ void ObsData::createKDTree() {
   for (unsigned int i = 0; i < nlocs_; i++) {
     eckit::geometry::Point2 lonlat(lons[i], lats[i]);
     Point xyz = Point();
-    // FIXME: get geometry from yaml, for now assume spherical.
-    eckit::geometry::UnitSphere::convertSphericalToCartesian(lonlat, xyz);
+    // FIXME: get geometry from yaml, for now assume spherical Earth radius.
+    atlas::util::Earth::convertSphericalToCartesian(lonlat, xyz);
     double index = static_cast<double>(i);
     KDTree::Value v(xyz, index);
     points.push_back(v);
@@ -1234,7 +1236,7 @@ void ObsData::createKDTree() {
  * \details This method returns the KDTree class member that can be used
  *          for searching for local obs when creating an ObsSpace.
  */
-const ObsData::KDTree & ObsData::getKDTree() {
+ObsData::KDTree & ObsData::getKDTree() {
   // Create the KDTree if it doesn't yet exist
   if (kd_ == NULL)
     createKDTree();
