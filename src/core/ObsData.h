@@ -140,7 +140,7 @@ class ObsData : public util::Printable {
   void put_db(const std::string & group, const std::string & name,
               const std::vector<util::DateTime> & vdata);
 
-  const KDTree & getKDTree();
+  KDTree & getKDTree();
 
   const RecIdxIter recidx_begin() const;
   const RecIdxIter recidx_end() const;

@@ -11,7 +11,6 @@ observations:
     localization:
       lengthscale: 2000.0
       max nobs: 10
-      search method: brute_force
       lon ref point: 274.070007
       lat ref point: 80.000000
     test data:
@@ -25,7 +24,6 @@ observations:
       obsfile: Data/testinput_tier_1/sondes_obs_2018041500_m.nc4
     localization:
       lengthscale: 2000.0
-      search method: brute_force
       lon ref point: 274.070007
       lat ref point: 80.000000
     test data:
@@ -53,7 +51,6 @@ observations:
       obsfile: Data/testinput_tier_1/sondes_obs_2018041500_m.nc4
     localization:
       lengthscale: 100000.0
-      search method: brute_force
       lon ref point: 274.070007
       lat ref point: 80.000000
     test data:
