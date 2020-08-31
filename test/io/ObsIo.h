@@ -141,35 +141,23 @@ void testRead() {
                    ioda::Variable var = obsIo->obs_group_.vars.open(varName);
 
                    // Form the hyperslab selection for this frame
-                   std::vector<ioda::Dimensions_t> f_counts = var.getDimensions().dimsCur;
-                   std::vector<ioda::Dimensions_t> f_starts(f_counts.size(), 0);
-                   f_starts[0] = frameStart;
-                   f_counts[0] = frameCount;
-
-                   ioda::Dimensions_t numElements = std::accumulate(
-                       f_counts.begin(), f_counts.end(), 1, std::multiplies<ioda::Dimensions_t>());
-                   std::vector<ioda::Dimensions_t> m_counts(1, numElements);
-                   std::vector<ioda::Dimensions_t> m_starts(1, 0);
-
-                   ioda::Selection m_select;
-                   m_select.extent(m_counts)
-                       .select({ ioda::SelectionOperator::SET, m_starts, m_counts });
-                   ioda::Selection f_select;
-                   f_select.select({ ioda::SelectionOperator::SET, f_starts, f_counts });
+                   ioda::Selection frontendSelect;
+                   ioda::Selection backendSelect;
+                   obsIo->createFrameSelection(varName, frontendSelect, backendSelect);
 
                    if (expectedVarType == "int") {
                        EXPECT(var.isA<int>());
                        std::vector<int> expectedVarValue0 =
                            readVarConfigs[j].getIntVector("value0");
                        std::vector<int> varValues(frameCount, 0);
-                       var.read<int>(varValues, m_select, f_select);
+                       var.read<int>(varValues, frontendSelect, backendSelect);
                        EXPECT_EQUAL(varValues[0], expectedVarValue0[iframe]);
                    } else if (expectedVarType == "float") {
                        EXPECT(var.isA<float>());
                        std::vector<float> expectedVarValue0 =
                            readVarConfigs[j].getFloatVector("value0");
                        std::vector<float> varValues(frameCount, 0.0);
-                       var.read<float>(varValues, m_select, f_select);
+                       var.read<float>(varValues, frontendSelect, backendSelect);
                        EXPECT(oops::is_close_relative(varValues[0],
                                                       expectedVarValue0[iframe], floatTol));
                    } else if (expectedVarType == "string") {
@@ -177,7 +165,7 @@ void testRead() {
                            readVarConfigs[j].getStringVector("value0");
                        std::vector<std::string> varValues(frameCount, "");
                        if (var.isA<std::string>()) {
-                           var.read<std::string>(varValues, m_select, f_select);
+                           var.read<std::string>(varValues, frontendSelect, backendSelect);
                        } else {
                            ioda::Dimensions varDims = var.getDimensions();
                            std::vector<std::size_t> varShape;

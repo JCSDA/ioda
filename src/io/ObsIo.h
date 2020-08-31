@@ -16,6 +16,7 @@
 
 #include "ioda/io/ObsIoParameters.h"
 #include "ioda/Misc/Dimensions.h"
+#include "ioda/Variables/Variable.h"
 
 #include "oops/util/Logger.h"
 #include "oops/util/Printable.h"
@@ -81,6 +82,13 @@ class ObsIo : public util::Printable {
         /// routine returns a zero to indicate that we're done with this variable.
         /// \param varName name of variable
         int frameCount(const std::string & varName);
+
+        /// \brief set up frontend and backend selection objects for the given variable
+        /// \param varName Name of variable associated with the selection objects
+        /// \param feSelect Front end selection object
+        /// \param beSelect Back end selection object
+        void createFrameSelection(const std::string & varName, Selection & feSelect,
+                                  Selection & beSelect);
 
     protected:
         //------------------ typedefs ----------------------------------
