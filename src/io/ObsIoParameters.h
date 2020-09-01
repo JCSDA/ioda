@@ -13,6 +13,8 @@
 
 #include "ioda/Group.h"
 #include "ioda/Engines/Factory.h"
+#include "ioda/Misc/DimensionScales.h"
+#include "ioda/Misc/Dimensions.h"
 #include "ioda/ObsGroup.h"
 
 #include "eckit/exception/Exceptions.h"
@@ -151,8 +153,7 @@ class ObsIoParameters : public oops::Parameters {
 
         /// Constructor
         ObsIoParameters(const util::DateTime & winStart, const util::DateTime & winEnd,
-                        const eckit::mpi::Comm & comm,
-                        const std::vector<std::string> & simVarNames) :
+                        const eckit::mpi::Comm & comm) :
                             win_start_(winStart), win_end_(winEnd), comm_(comm) {}
 
         /// \brief deserialize the parameter sub groups
@@ -200,14 +201,24 @@ class ObsIoParameters : public oops::Parameters {
         /// \brief return output io type
         ObsIoTypes out_type() const { return out_type_; }
 
-        /// \details return the start of the DA timing window
+        /// \brief return the start of the DA timing window
         const util::DateTime & windowStart() const {return win_start_;}
 
-        /// \details return the end of the DA timing window
+        /// \brief return the end of the DA timing window
         const util::DateTime & windowEnd() const {return win_end_;}
 
-        /// \details return the associated MPI communicator
+        /// \brief return the associated MPI communicator
         const eckit::mpi::Comm & comm() const {return comm_;}
+
+        /// \brief set a new dimension scale
+        void setDimScale(const std::string & dimName, const Dimensions_t curSize,
+                         const Dimensions_t maxSize, const Dimensions_t chunkSize) {
+            new_dims_.push_back(
+                std::make_shared<NewDimensionScale<int>>(dimName, curSize, maxSize, chunkSize));
+            }
+
+        /// \brief set a new dimension scale
+        NewDimensionScales_t getDimScales() const { return new_dims_; };
 
     private:
         /// \brief ObsIo input type
@@ -224,6 +235,9 @@ class ObsIoParameters : public oops::Parameters {
 
         /// \brief MPI communicator
         const eckit::mpi::Comm & comm_;
+
+        /// \brief new dimension scales for an output file construction
+        NewDimensionScales_t new_dims_;
 };
 
 }  // namespace ioda

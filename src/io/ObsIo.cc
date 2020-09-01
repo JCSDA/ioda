@@ -126,22 +126,22 @@ void ObsIo::createFrameSelection(const std::string & varName, Selection & feSele
     Variable var = obs_group_.vars.open(varName);
     std::vector<Dimensions_t> varShape = var.getDimensions().dimsCur;
 
-    std::vector<ioda::Dimensions_t> beStarts(varShape.size(), 0);
+    std::vector<Dimensions_t> beStarts(varShape.size(), 0);
     beStarts[0] = frameStart();
     std::vector<Dimensions_t> beCounts = varShape;
     beCounts[0] = frameCount(varName);
 
     // Get the number of elements for the frontend selection after the counts for the backend
     // selection have been adjusted for the frame size.
-    ioda::Dimensions_t numElements = std::accumulate(
-        beCounts.begin(), beCounts.end(), 1, std::multiplies<ioda::Dimensions_t>());
+    Dimensions_t numElements = std::accumulate(
+        beCounts.begin(), beCounts.end(), 1, std::multiplies<Dimensions_t>());
     std::vector<Dimensions_t> feStarts(1, 0);
     std::vector<Dimensions_t> feCounts(1, numElements);
 
     // Create the selection objects
     feSelect.extent(feCounts)
-        .select({ ioda::SelectionOperator::SET, feStarts, feCounts });
-    beSelect.select({ ioda::SelectionOperator::SET, beStarts, beCounts });
+        .select({ SelectionOperator::SET, feStarts, feCounts });
+    beSelect.select({ SelectionOperator::SET, beStarts, beCounts });
 }
 
 //------------------------ protected functions ---------------------------------------

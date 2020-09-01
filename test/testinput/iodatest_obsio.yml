@@ -11,8 +11,8 @@ observations:
       obsfile: "Data/testinput_tier_1/sondes_obs_2018041500_m.nc4"
       max frame size: 200
     obsdataout:
-      obsfile: "testoutput/diagout.nc4"
-      max frame size: 300
+      obsfile: "testoutput/sonde_write_test.nc4"
+      max frame size: 5
     test data:
       nlocs: 974
       nvars: 65
@@ -26,6 +26,41 @@ observations:
         - name: "northward_wind@PreQC"
           type: "int"
           value0: [ 2, 2, -2147483647, 2, 2 ]
+      write dimensions:
+        - name: "nlocs"
+          size: 8
+          unlimited: true
+        - name: "nvars"
+          size: 4
+      write variables:
+        - name: "air_temperature@ObsValue"
+          type: "float"
+          dim: "nlocs"
+          values: [ 275.0 , 291.7, 286.9, 278.7, 302.1, 305.8, 298.3, 278.6 ]
+        - name: "latitude@MetaData"
+          type: "float"
+          dim: "nlocs"
+          values: [ -21.0, -14.0 , -7.0, 0.0, 7.0, 14.0, 21.0, 28.0 ]
+        - name: "longitude@MetaData"
+          type: "float"
+          dim: "nlocs"
+          values: [ -4.0, -3.0 , -2.0, -1.0, 0.0, 1.0, 2.0, 3.0 ]
+        - name: "datetime@MetaData"
+          type: "string"
+          dim: "nlocs"
+          values: 
+            - "2018-04-15T00:01:00Z"
+            - "2018-04-15T00:01:20Z"
+            - "2018-04-15T00:01:40Z"
+            - "2018-04-15T00:02:00Z"
+            - "2018-04-15T00:02:20Z"
+            - "2018-04-15T00:02:40Z"
+            - "2018-04-15T00:03:00Z"
+            - "2018-04-15T00:03:20Z"
+        - name: "varid@MetaData"
+          type: "int"
+          dim: "nvars"
+          values:  [ 1, 2, 3, 4 ]
       tolerance: 1.0e-6
 
 - obs space:
@@ -40,8 +75,6 @@ observations:
         lon2: 10
         random seed: 29837
       obs errors: [1.0, 2.0]
-    obsdataout:
-      obsfile: "testoutput/ospace.generate.random.nc4"
     test data:
       nlocs: 10
       nvars: 5
@@ -77,8 +110,6 @@ observations:
         - "2010-01-01T00:05:48Z"
         - "2010-01-01T00:06:00Z"
       obs errors: [1.0, 2.0]
-    obsdataout:
-      obsfile: "testoutput/ospace.generate.list.nc4"
     test data:
       nlocs: 11
       nvars: 5

@@ -78,8 +78,7 @@ ObsFile::ObsFile(const ObsIoActions action, const ObsIoModes mode,
         // Create the backend and attach it to an ObsGroup
         // Use the None DataLyoutPolicy for now to accommodate the current file format
         backend = constructBackend(backendName, backendParams);
-        NewDimensionScales_t newDims;
-        obs_group_ = ObsGroup::generate(backend, newDims,
+        obs_group_ = ObsGroup::generate(backend, params.getDimScales(),
             detail::DataLayoutPolicy::generate(detail::DataLayoutPolicy::Policies::None));
 
         // record maximum frame size
