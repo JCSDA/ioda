@@ -53,17 +53,17 @@ ObsFile::ObsFile(const ObsIoActions action, const ObsIoModes mode,
 
         // fill in the variable information data structures
         for (auto & varName : listAllVars(obs_group_, std::string(""))) {
-            std::pair<std::string, VarInfoRec> element = std::make_pair(varName,
-                VarInfoRec(getVarSize0(varName), getVarDtype(varName), getVarIsDist(varName)));
-            if (getVarIsDimScale(varName)) {
-                dim_var_info_.insert(element);
+            if (varIsDimScale(obs_group_, varName)) {
+                insertDimVarInfo(varName, varSize0(obs_group_, varName),
+                    varDtype(obs_group_, varName), varIsDist(obs_group_, varName));
             } else {
-                var_info_.insert(element);
+                insertVarInfo(varName, varSize0(obs_group_, varName),
+                    varDtype(obs_group_, varName), varIsDist(obs_group_, varName));
             }
         }
 
         // record the maximum variable size
-        max_var_size_ = getVarSizeMax();
+        max_var_size_ = varSize0Max();
     } else if (action == ObsIoActions::CREATE_FILE) {
         fileName = params.out_file_.fileName;
         oops::Log::trace() << "Constructing ObsFile: Creating file for write: "

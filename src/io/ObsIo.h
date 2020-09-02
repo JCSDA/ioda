@@ -40,26 +40,25 @@ class ObsIo : public util::Printable {
 	virtual ~ObsIo() = 0;
 
         //--------- Access to variable info data structure -------------
-        /// \brief return number of variables from and ObsIo source
+        /// \brief return number of variables from an ObsIo source
         std::size_t numVars();
 
-        /// \brief return size of variable's first dimension (dimension number 0)
+        /// \brief insert a record into the variable info data structure
         /// \param varName name of variable
-        Dimensions_t varSize0(const std::string & varName);
+        /// \param varSize0 size of first dimension of variable
+        /// \param varDtype data type of variable
+        /// \param varIsDist true if this variable distributable across MPI tasks
+        void insertVarInfo(const std::string & varName, const Dimensions_t varSize0,
+                           const std::type_index & varDtype, const bool varIsDist); 
 
-        /// \brief return data type of variable
+        /// \brief insert a record into the dimension variable info data structure
         /// \param varName name of variable
-        std::type_index varDtype(const std::string & varName);
+        /// \param varSize0 size of first dimension of variable
+        /// \param varDtype data type of variable
+        /// \param varIsDist true if this variable distributable across MPI tasks
+        void insertDimVarInfo(const std::string & varName, const Dimensions_t varSize0,
+                              const std::type_index & varDtype, const bool varIsDist); 
 
-        /// \brief return true if variable is to be MPI distributed
-        /// \param varName name of variable
-        bool varIsDist(const std::string & varName);
-
-        /// \brief return a list of all the dimension scale variables
-        std::vector<std::string> listDimVars();
-
-        /// \brief return a list of all the regular variables
-        std::vector<std::string> listVars();
 
         //----------------- Access to frame selection -------------------
         /// \brief initialize for walking through the frames
@@ -135,19 +134,7 @@ class ObsIo : public util::Printable {
 
         //------------------ functions ----------------------------------
         /// \brief get variable size along the first dimension
-        Dimensions_t getVarSize0(const std::string & varName);
-
-        /// \brief get variable data type along the first dimension
-        std::type_index getVarDtype(const std::string & varName);
-
-        /// \brief true if first dimension is nlocs dimension
-        bool getVarIsDist(const std::string & varName);
-
-        /// \brief true if variable is a dimension scale
-        bool getVarIsDimScale(const std::string & varName);
-
-        /// \brief get variable size along the first dimension
-        Dimensions_t getVarSizeMax();
+        Dimensions_t varSize0Max();
 
         /// \brief print() for oops::Printable base class
         /// \param ostream output stream

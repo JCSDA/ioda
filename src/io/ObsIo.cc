@@ -7,6 +7,7 @@
 
 #include "oops/util/abor1_cpp.h"
 
+#include "ioda/core/IodaUtils.h"
 #include "ioda/io/ObsIo.h"
 #include "ioda/Variables/Variable.h"
 
@@ -31,51 +32,15 @@ std::size_t ObsIo::numVars() {
 }
 
 //------------------------------------------------------------------------------------
-Dimensions_t ObsIo::varSize0(const std::string & varName) {
-    auto ivar = var_info_.find(varName);
-    if (ivar == var_info_.end()) {
-        std::string ErrMsg = "ObsIo::varSize: Variable does not exist: " + varName;
-        ABORT(ErrMsg);
-    }
-    return ivar->second.size0_;
+void ObsIo::insertVarInfo(const std::string & varName, const Dimensions_t varSize0,
+                          const std::type_index & varDtype, const bool varIsDist) { 
+    var_info_.insert(std::make_pair(varName, VarInfoRec(varSize0, varDtype, varIsDist)));
 }
 
 //------------------------------------------------------------------------------------
-std::type_index ObsIo::varDtype(const std::string & varName) {
-    auto ivar = var_info_.find(varName);
-    if (ivar == var_info_.end()) {
-        std::string ErrMsg = "ObsIo::varDtype: Variable does not exist: " + varName;
-        ABORT(ErrMsg);
-    }
-    return ivar->second.dtype_;
-}
-
-//------------------------------------------------------------------------------------
-bool ObsIo::varIsDist(const std::string & varName) {
-    auto ivar = var_info_.find(varName);
-    if (ivar == var_info_.end()) {
-        std::string ErrMsg = "ObsIo::varIsDist: Variable does not exist: " + varName;
-        ABORT(ErrMsg);
-    }
-    return ivar->second.is_dist_;
-}
-
-//------------------------------------------------------------------------------------
-std::vector<std::string> ObsIo::listDimVars() {
-    std::vector<std::string> varList;
-    for (auto ivar = dim_var_info_.begin(); ivar != dim_var_info_.end(); ++ivar) {
-        varList.push_back(ivar->first);
-    }
-    return varList;
-}
-
-//------------------------------------------------------------------------------------
-std::vector<std::string> ObsIo::listVars() {
-    std::vector<std::string> varList;
-    for (auto ivar = var_info_.begin(); ivar != var_info_.end(); ++ivar) {
-        varList.push_back(ivar->first);
-    }
-    return varList;
+void ObsIo::insertDimVarInfo(const std::string & varName, const Dimensions_t varSize0,
+                             const std::type_index & varDtype, const bool varIsDist) { 
+    dim_var_info_.insert(std::make_pair(varName, VarInfoRec(varSize0, varDtype, varIsDist)));
 }
 
 //------------------------------------------------------------------------------------
@@ -101,7 +66,7 @@ int ObsIo::frameStart() {
 //------------------------------------------------------------------------------------
 int ObsIo::frameCount(const std::string & varName) {
     int count;
-    Dimensions_t vsize = varSize0(varName);
+    Dimensions_t vsize = varSize0(obs_group_, varName);
     if ((frame_start_ + max_frame_size_) > vsize) {
         count = vsize - frame_start_;
         if (count < 0) { count = 0; }
@@ -146,44 +111,7 @@ void ObsIo::createFrameSelection(const std::string & varName, Selection & feSele
 
 //------------------------ protected functions ---------------------------------------
 //------------------------------------------------------------------------------------
-Dimensions_t ObsIo::getVarSize0(const std::string & varName) {
-    Dimensions varDims = obs_group_.vars.open(varName).getDimensions();
-    return varDims.dimsCur[0];
-}
-
-//------------------------------------------------------------------------------------
-std::type_index ObsIo::getVarDtype(const std::string & varName) {
-    Variable var = obs_group_.vars.open(varName);
-    std::type_index varType(typeid(std::string));
-    if (var.isA<int>()) {
-        varType = typeid(int);
-    } else if (var.isA<float>()) {
-        varType = typeid(float);
-    }
-    return varType;
-}
-
-//------------------------------------------------------------------------------------
-bool ObsIo::getVarIsDist(const std::string & varName) {
-    bool isDist;
-    Variable var = obs_group_.vars.open(varName);
-    Variable nlocsVar = obs_group_.vars.open("nlocs");
-    if (var.isDimensionScale()) {
-        isDist = false;
-    } else {
-        isDist = var.isDimensionScaleAttached(0, nlocsVar);
-    }
-    return isDist;
-}
-
-//------------------------------------------------------------------------------------
-bool ObsIo::getVarIsDimScale(const std::string & varName) {
-    Variable var = obs_group_.vars.open(varName);
-    return var.isDimensionScale();
-}
-
-//------------------------------------------------------------------------------------
-Dimensions_t ObsIo::getVarSizeMax() {
+Dimensions_t ObsIo::varSize0Max() {
     Dimensions_t varSizeMax = 0;
     for (auto ivar = var_info_.begin(); ivar != var_info_.end(); ++ivar) {
         if (varSizeMax < ivar->second.size0_) {

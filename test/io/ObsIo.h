@@ -190,7 +190,6 @@ void testWrite() {
         ioda::ObsIoParameters obsParams(bgn, end, oops::mpi::comm());
         obsParams.deserialize(obsConfig);
 
-        // Output constructor
         if (obsParams.out_type() == ObsIoTypes::OBS_FILE) {
             // Get dimensions and variables sub configurations
             std::vector<eckit::LocalConfiguration> writeDimConfigs =
@@ -211,8 +210,17 @@ void testWrite() {
                 }
             }
 
+            // Add the maximum variable size to the ObsIo parmeters
+            int maxVarSize = 0;
+            for (std::size_t i = 0; i < writeVarConfigs.size(); ++i) {
+            }
+            obsParams.setMaxVarSize(maxVarSize);
+
+            // Output constructor
             std::shared_ptr<ObsIo> obsIo =
                 ObsIoFactory::create(ObsIoActions::CREATE_FILE, ObsIoModes::CLOBBER, obsParams);
+
+            // Test the frame iteration
         }
     }
 }

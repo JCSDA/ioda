@@ -12,6 +12,7 @@
 #include <typeinfo>
 #include <vector>
 
+#include "ioda/Misc/Dimensions.h"
 #include "ioda/ObsGroup.h"
 
 #include "oops/util/abor1_cpp.h"
@@ -39,6 +40,26 @@ namespace ioda {
   /// \param group Group for which all variables underneath this group will be listed
   /// \param varPath Hierarchical path to group (use "" for top level)
   std::vector<std::string> listAllVars(const Group & group, std::string varPath);
+
+  /// \brief find the dimension scale variables in a Group and list their hierarchical names
+  /// \param group Group for which variables underneath this group will be listed
+  std::vector<std::string> listDimVars(const Group & group);
+
+  /// \brief find the regular variables in a Group and list their hierarchical names
+  /// \param group Group for which variables underneath this group will be listed
+  std::vector<std::string> listVars(const Group & group);
+
+  /// \brief get variable size along the first dimension
+  Dimensions_t varSize0(const Group & group, const std::string & varName);
+
+  /// \brief get variable data type along the first dimension
+  std::type_index varDtype(const Group & group, const std::string & varName);
+
+  /// \brief true if first dimension is nlocs dimension
+  bool varIsDist(const Group & group, const std::string & varName);
+
+  /// \brief true if variable is a dimension scale
+  bool varIsDimScale(const Group & group, const std::string & varName);
 
   // -----------------------------------------------------------------------------
   /*!

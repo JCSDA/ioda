@@ -138,4 +138,67 @@ std::vector<std::string> listAllVars(const Group & group, std::string varPath) {
 }
 
 // -----------------------------------------------------------------------------
+std::vector<std::string> listDimVars(const Group & group) {
+    std::vector<std::string> varList;
+    std::vector<std::string> allVars = listAllVars(group, std::string(""));
+
+    for (auto & varName : allVars) {
+        if (varIsDimScale(group, varName)) {
+            varList.push_back(varName);
+        }
+    }
+    return varList;
+}
+
+// -----------------------------------------------------------------------------
+std::vector<std::string> listVars(const Group & group) {
+    std::vector<std::string> varList;
+    std::vector<std::string> allVars = listAllVars(group, std::string(""));
+
+    for (auto & varName : allVars) {
+        if (!varIsDimScale(group, varName)) {
+            varList.push_back(varName);
+        }
+    }
+    return varList;
+}
+
+//------------------------------------------------------------------------------------
+Dimensions_t varSize0(const Group & group, const std::string & varName) {
+    Dimensions varDims = group.vars.open(varName).getDimensions();
+    return varDims.dimsCur[0];
+}
+
+//------------------------------------------------------------------------------------
+std::type_index varDtype(const Group & group, const std::string & varName) {
+    Variable var = group.vars.open(varName);
+    std::type_index varType(typeid(std::string));
+    if (var.isA<int>()) {
+        varType = typeid(int);
+    } else if (var.isA<float>()) {
+        varType = typeid(float);
+    }
+    return varType;
+}
+
+//------------------------------------------------------------------------------------
+bool varIsDist(const Group & group, const std::string & varName) {
+    bool isDist;
+    Variable var = group.vars.open(varName);
+    Variable nlocsVar = group.vars.open("nlocs");
+    if (var.isDimensionScale()) {
+        isDist = false;
+    } else {
+        isDist = var.isDimensionScaleAttached(0, nlocsVar);
+    }
+    return isDist;
+}
+
+//------------------------------------------------------------------------------------
+bool varIsDimScale(const Group & group, const std::string & varName) {
+    Variable var = group.vars.open(varName);
+    return var.isDimensionScale();
+}
+
+// -----------------------------------------------------------------------------
 }  // namespace ioda

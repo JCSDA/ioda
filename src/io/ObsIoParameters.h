@@ -217,8 +217,14 @@ class ObsIoParameters : public oops::Parameters {
                 std::make_shared<NewDimensionScale<int>>(dimName, curSize, maxSize, chunkSize));
             }
 
-        /// \brief set a new dimension scale
+        /// \brief get a new dimension scale
         NewDimensionScales_t getDimScales() const { return new_dims_; };
+
+        /// \brief set the maximum variable size
+        void setMaxVarSize(const int maxVarSize) { max_var_size_ = maxVarSize; };
+
+        /// \brief get the maximum variable size
+        int getMaxVarSize() const { return max_var_size_; };
 
     private:
         /// \brief ObsIo input type
@@ -236,8 +242,11 @@ class ObsIoParameters : public oops::Parameters {
         /// \brief MPI communicator
         const eckit::mpi::Comm & comm_;
 
-        /// \brief new dimension scales for an output file construction
+        /// \brief new dimension scales for output file construction
         NewDimensionScales_t new_dims_;
+
+        /// \brief maximum variable size for output file contruction
+        int max_var_size_;
 };
 
 }  // namespace ioda
