@@ -10,8 +10,11 @@
 
 #include <algorithm>
 #include <functional>
+#include <map>
+#include <memory>
 #include <numeric>
 #include <string>
+#include <utility>
 #include <vector>
 
 #define ECKIT_TESTING_SELF_REGISTER_CASES 0
@@ -211,7 +214,8 @@ void testConstructor() {
             obsIo = ObsIoFactory::create(ObsIoActions::OPEN_FILE, ObsIoModes::READ_ONLY, obsParams);
         } else if ((obsParams.in_type() == ObsIoTypes::GENERATOR_RANDOM) ||
                    (obsParams.in_type() == ObsIoTypes::GENERATOR_LIST)) {
-            obsIo = ObsIoFactory::create(ObsIoActions::CREATE_GENERATOR, ObsIoModes::READ_ONLY, obsParams);
+            obsIo = ObsIoFactory::create(ObsIoActions::CREATE_GENERATOR,
+                                         ObsIoModes::READ_ONLY, obsParams);
         }
 
         // See if we get expected number of locations
@@ -252,7 +256,8 @@ void testRead() {
             obsIo = ObsIoFactory::create(ObsIoActions::OPEN_FILE, ObsIoModes::READ_ONLY, obsParams);
         } else if ((obsParams.in_type() == ObsIoTypes::GENERATOR_RANDOM) ||
                    (obsParams.in_type() == ObsIoTypes::GENERATOR_LIST)) {
-            obsIo = ObsIoFactory::create(ObsIoActions::CREATE_GENERATOR, ObsIoModes::READ_ONLY, obsParams);
+            obsIo = ObsIoFactory::create(ObsIoActions::CREATE_GENERATOR,
+                                         ObsIoModes::READ_ONLY, obsParams);
         }
 
         // See if we get expected number of locations and variables
@@ -355,21 +360,21 @@ void testWrite() {
 // -----------------------------------------------------------------------------
 
 class ObsIo : public oops::Test {
-    public:
-        ObsIo() {}
-        virtual ~ObsIo() {}
-    private:
-        std::string testid() const {return "test::ObsIo";}
+ public:
+    ObsIo() {}
+    virtual ~ObsIo() {}
+ private:
+    std::string testid() const {return "test::ObsIo";}
 
-        void register_tests() const {
-            std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
+    void register_tests() const {
+        std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
-            ts.emplace_back(CASE("ioda/ObsIo/testConstructor")
-                { testConstructor(); });
-            ts.emplace_back(CASE("ioda/ObsIo/testRead")
-                { testRead(); });
-            ts.emplace_back(CASE("ioda/ObsIo/testWrite")
-                { testWrite(); });
+        ts.emplace_back(CASE("ioda/ObsIo/testConstructor")
+            { testConstructor(); });
+        ts.emplace_back(CASE("ioda/ObsIo/testRead")
+            { testRead(); });
+        ts.emplace_back(CASE("ioda/ObsIo/testWrite")
+            { testWrite(); });
     }
 };
 

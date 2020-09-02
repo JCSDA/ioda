@@ -33,108 +33,107 @@ namespace ioda {
  */
 
 class ObsFrame {
-    public:
-        /// \brief initialize for walking through the frames
-        void frameInit(const Dimensions_t maxVarSize, const Dimensions_t maxFrameSize);
+ public:
+    /// \brief initialize for walking through the frames
+    void frameInit(const Dimensions_t maxVarSize, const Dimensions_t maxFrameSize);
 
-        /// \brief move to the next frame
-        void frameNext();
+    /// \brief move to the next frame
+    void frameNext();
 
-        /// \brief true if a frame is available (not past end of frames)
-        bool frameAvailable();
+    /// \brief true if a frame is available (not past end of frames)
+    bool frameAvailable();
 
-        /// \brief return current frame starting index
-        /// \param varName name of variable
-        Dimensions_t frameStart();
+    /// \brief return current frame starting index
+    /// \param varName name of variable
+    Dimensions_t frameStart();
 
-        /// \brief return current frame count for variable
-        /// \details Variables can be of different sizes so it's possible that the
-        /// frame has moved past the end of some variables but not so for other
-        /// variables. When the frame is past the end of the given variable, this
-        /// routine returns a zero to indicate that we're done with this variable.
-        /// \param var variable
-        Dimensions_t frameCount(const Variable & var);
+    /// \brief return current frame count for variable
+    /// \details Variables can be of different sizes so it's possible that the
+    /// frame has moved past the end of some variables but not so for other
+    /// variables. When the frame is past the end of the given variable, this
+    /// routine returns a zero to indicate that we're done with this variable.
+    /// \param var variable
+    Dimensions_t frameCount(const Variable & var);
 
-        /// \brief set up frontend and backend selection objects for the given variable
-        /// \param var Variable associated with the selection objects
-        /// \param feSelect Front end selection object
-        /// \param beSelect Back end selection object
-        void createFrameSelection(const Variable & var, Selection & feSelect,
-                                  Selection & beSelect);
+    /// \brief set up frontend and backend selection objects for the given variable
+    /// \param var Variable associated with the selection objects
+    /// \param feSelect Front end selection object
+    /// \param beSelect Back end selection object
+    void createFrameSelection(const Variable & var, Selection & feSelect,
+                              Selection & beSelect);
 
-    private:
-        /// \brief maximum frame size
-        Dimensions_t max_size_;
+ private:
+    /// \brief maximum frame size
+    Dimensions_t max_size_;
 
-        /// \brief maximum variable size
-        Dimensions_t max_var_size_;
+    /// \brief maximum variable size
+    Dimensions_t max_var_size_;
 
-        /// \brief current frame starting index
-        Dimensions_t start_;
+    /// \brief current frame starting index
+    Dimensions_t start_;
 };
 
 class ObsIo : public util::Printable {
-    public:
-        /// \brief ObsGroup object representing io source/destination
-        ObsGroup obs_group_;
+ public:
+    /// \brief ObsGroup object representing io source/destination
+    ObsGroup obs_group_;
 
-        ObsIo(const ObsIoActions action, const ObsIoModes mode, const ObsIoParameters & params);
-	virtual ~ObsIo() = 0;
+    ObsIo(const ObsIoActions action, const ObsIoModes mode, const ObsIoParameters & params);
+    virtual ~ObsIo() = 0;
 
-        //----------------- Access to frame selection -------------------
-        /// \brief initialize for walking through the frames
-        void frameInit();
+    //----------------- Access to frame selection -------------------
+    /// \brief initialize for walking through the frames
+    void frameInit();
 
-        /// \brief move to the next frame
-        void frameNext();
+    /// \brief move to the next frame
+    void frameNext();
 
-        /// \brief true if a frame is available (not past end of frames)
-        bool frameAvailable();
+    /// \brief true if a frame is available (not past end of frames)
+    bool frameAvailable();
 
-        /// \brief return current frame starting index
-        /// \param varName name of variable
-        Dimensions_t frameStart();
+    /// \brief return current frame starting index
+    /// \param varName name of variable
+    Dimensions_t frameStart();
 
-        /// \brief return current frame count for variable
-        /// \details Variables can be of different sizes so it's possible that the
-        /// frame has moved past the end of some variables but not so for other
-        /// variables. When the frame is past the end of the given variable, this
-        /// routine returns a zero to indicate that we're done with this variable.
-        /// \param var ObsGroup variable
-        Dimensions_t frameCount(const Variable & var);
+    /// \brief return current frame count for variable
+    /// \details Variables can be of different sizes so it's possible that the
+    /// frame has moved past the end of some variables but not so for other
+    /// variables. When the frame is past the end of the given variable, this
+    /// routine returns a zero to indicate that we're done with this variable.
+    /// \param var ObsGroup variable
+    Dimensions_t frameCount(const Variable & var);
 
-        /// \brief set up frontend and backend selection objects for the given variable
-        /// \param var ObsGroup variable
-        /// \param feSelect Front end selection object
-        /// \param beSelect Back end selection object
-        void createFrameSelection(const Variable & var, Selection & feSelect,
-                                  Selection & beSelect);
+    /// \brief set up frontend and backend selection objects for the given variable
+    /// \param var ObsGroup variable
+    /// \param feSelect Front end selection object
+    /// \param beSelect Back end selection object
+    void createFrameSelection(const Variable & var, Selection & feSelect, Selection & beSelect);
 
-    protected:
-        //------------------ data members ----------------------------------
-        /// \brief ObsIo action
-        ObsIoActions action_;
+ protected:
+    //------------------ data members ----------------------------------
+    /// \brief ObsIo action
+    ObsIoActions action_;
 
-        /// \brief ObsIo mode
-        ObsIoModes mode_;
+    /// \brief ObsIo mode
+    ObsIoModes mode_;
 
-        /// \brief ObsIo parameter specs
-        ObsIoParameters params_;
+    /// \brief ObsIo parameter specs
+    ObsIoParameters params_;
 
-        /// \brief maximum variable size (ie, first dimension size)
-        Dimensions_t max_var_size_;
+    /// \brief maximum variable size (ie, first dimension size)
+    Dimensions_t max_var_size_;
 
-        /// \brief maximum frame size
-        Dimensions_t max_frame_size_;
+    /// \brief maximum frame size
+    Dimensions_t max_frame_size_;
 
-        //------------------ functions ----------------------------------
-        /// \brief print() for oops::Printable base class
-        /// \param ostream output stream
-        virtual void print(std::ostream & os) const = 0;
+    //------------------ functions ----------------------------------
+    /// \brief print() for oops::Printable base class
+    /// \param ostream output stream
+    virtual void print(std::ostream & os) const = 0;
 
-    private:
-        /// \brief ObsFrame object for generating variable selection objects
-        ObsFrame obs_frame_;
+ private:
+    /// \brief ObsFrame object for generating variable selection objects
+    ObsFrame obs_frame_;
 };
 
 }  // namespace ioda

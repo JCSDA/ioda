@@ -19,7 +19,7 @@ namespace ioda {
 
 //-------------------------------------------------------------------------------------
 std::shared_ptr<ObsIo> ObsIoFactory::create(const ObsIoActions action, const ObsIoModes mode,
-                                            const ObsIoParameters & params) { 
+                                            const ObsIoParameters & params) {
     std::shared_ptr<ObsIo> obsIo;
     if ((action == ObsIoActions::CREATE_FILE) || (action == ObsIoActions::OPEN_FILE)) {
         // Instantiate an ObsFile object

@@ -41,7 +41,7 @@ ObsGenerate::ObsGenerate(const ObsIoActions action, const ObsIoModes mode,
             oops::Log::trace() << "Constructing ObsGenerate: Random method" << std::endl;
 
             // Create the in-memory ObsGroup
-            Dimensions_t numLocs = params.in_gen_rand_.numObs; // number of locations to generate
+            Dimensions_t numLocs = params.in_gen_rand_.numObs;
             newDims.push_back(
                 std::make_shared<ioda::NewDimensionScale<int>>("nlocs", numLocs, numLocs, numLocs));
             obs_group_ = ObsGroup::generate(backend, newDims);
@@ -195,7 +195,7 @@ void ObsGenerate::storeGenData(const std::vector<float> & latVals,
 
     Variable nlocsVar = obs_group_.vars["nlocs"];
 
-    float missingFloat = util::missingValue(missingFloat); // JEDI missing value mark
+    float missingFloat = util::missingValue(missingFloat);
     std::string missingString("missing");
 
     ioda::VariableCreationParameters float_params;

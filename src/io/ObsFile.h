@@ -27,21 +27,21 @@ namespace ioda {
  * \author Stephen Herbener (JCSDA)
  */
 class ObsFile : public ObsIo, private util::ObjectCounter<ObsFile> {
-    public:
-        /// \brief classname method for object counter
-        ///
-        /// \details This method is supplied for the ObjectCounter base class.
-        ///          It defines a name to identify an object of this class
-        ///          for reporting by OOPS.
-        static const std::string classname() {return "ioda::ObsFile";}
+ public:
+    /// \brief classname method for object counter
+    ///
+    /// \details This method is supplied for the ObjectCounter base class.
+    ///          It defines a name to identify an object of this class
+    ///          for reporting by OOPS.
+    static const std::string classname() {return "ioda::ObsFile";}
 
-        ObsFile(const ObsIoActions action, const ObsIoModes mode, const ObsIoParameters & params);
-        ~ObsFile();
+    ObsFile(const ObsIoActions action, const ObsIoModes mode, const ObsIoParameters & params);
+    ~ObsFile();
 
-    private:
-        /// \brief print routine for oops::Printable base class
-        /// \param ostream output stream
-        void print(std::ostream & os) const override;
+ private:
+    /// \brief print routine for oops::Printable base class
+    /// \param ostream output stream
+    void print(std::ostream & os) const override;
 };
 
 }  // namespace ioda

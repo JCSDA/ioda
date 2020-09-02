@@ -22,14 +22,14 @@ namespace ioda {
  */
 
 class ObsIoFactory {
-    public:
-        ObsIoFactory() { }
-        ~ObsIoFactory() { }
+ public:
+    ObsIoFactory() { }
+    ~ObsIoFactory() { }
 
-        /// \brief factory function to create an object of an ObsIo subclass
-        /// \param config Eckit local configuration ojbect containing specs for construction
-        static std::shared_ptr<ObsIo> create(const ObsIoActions action, const ObsIoModes mode,
-                                             const ObsIoParameters & params);
+    /// \brief factory function to create an object of an ObsIo subclass
+    /// \param config Eckit local configuration ojbect containing specs for construction
+    static std::shared_ptr<ObsIo> create(const ObsIoActions action, const ObsIoModes mode,
+                                         const ObsIoParameters & params);
 };
 
 }  // namespace ioda
