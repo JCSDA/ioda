@@ -21,8 +21,6 @@
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
 
-#include "ioda/io/IodaIO.h"
-#include "ioda/io/IodaIOfactory.h"
 #include "ioda/core/IodaUtils.h"
 
 namespace ioda {

@@ -30,7 +30,6 @@
 #include "ioda/core/ObsSpaceContainer.h"
 #include "ioda/distribution/Distribution.h"
 #include "ioda/Engines/Factory.h"
-#include "ioda/io/IodaIO.h"
 #include "ioda/ObsGroup.h"
 
 // Forward declarations
@@ -184,8 +183,8 @@ class ObsData : public util::Printable {
   void StoreToDb(const std::string & GroupName, const std::string & VarName,
                  const std::vector<std::size_t> & VarShape,
                  const std::vector<VarType> & VarData, bool Append = false);
-  std::vector<std::size_t> GenFrameIndexRecNums(const std::unique_ptr<IodaIO> & FileIO,
-                               const std::size_t FrameStart, const std::size_t FrameSize);
+//  std::vector<std::size_t> GenFrameIndexRecNums(const std::unique_ptr<IodaIO> & FileIO,
+//                               const std::size_t FrameStart, const std::size_t FrameSize);
   bool InsideTimingWindow(const util::DateTime & ObsDt);
   void BuildSortedObsGroups();
   void createKDTree();

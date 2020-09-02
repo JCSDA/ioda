@@ -29,12 +29,6 @@ distribution/InefficientDistribution.h
 distribution/RoundRobin.cc
 distribution/RoundRobin.h
 
-io/IodaIO.cc
-io/IodaIO.h
-io/IodaIOfactory.cc
-io/IodaIOfactory.h
-io/NetcdfIO.cc
-io/NetcdfIO.h
 io/ObsFile.cc
 io/ObsFile.h
 io/ObsGenerate.cc
