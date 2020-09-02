@@ -52,6 +52,9 @@ namespace ioda {
   /// \brief get variable size along the first dimension
   Dimensions_t varSize0(const Group & group, const std::string & varName);
 
+  /// \brief get maximum variable size along the first dimension
+  Dimensions_t maxVarSize0(const Group & group);
+
   /// \brief get variable data type along the first dimension
   std::type_index varDtype(const Group & group, const std::string & varName);
 

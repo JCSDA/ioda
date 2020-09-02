@@ -17,68 +17,49 @@
 
 namespace ioda {
 
+//------------------------------------------------------------------------------------
+// ObsFrame functions
+//------------------------------------------------------------------------------------
+
 //--------------------------- public functions ---------------------------------------
 //------------------------------------------------------------------------------------
-ObsIo::ObsIo(const ObsIoActions action, const ObsIoModes mode, const ObsIoParameters & params) :
-                 action_(action), mode_(mode), params_(params) {
-    oops::Log::trace() << "Constructing ObsIo" << std::endl;
-}
-
-ObsIo::~ObsIo() {}
-
-//------------------------------------------------------------------------------------
-std::size_t ObsIo::numVars() {
-    return var_info_.size();
+void ObsFrame::frameInit(const Dimensions_t maxVarSize, const Dimensions_t maxFrameSize) {
+    start_ = 0;
+    max_var_size_ = maxVarSize;
+    max_size_ = maxFrameSize;
 }
 
 //------------------------------------------------------------------------------------
-void ObsIo::insertVarInfo(const std::string & varName, const Dimensions_t varSize0,
-                          const std::type_index & varDtype, const bool varIsDist) { 
-    var_info_.insert(std::make_pair(varName, VarInfoRec(varSize0, varDtype, varIsDist)));
+void ObsFrame::frameNext() {
+    start_ += max_size_;
 }
 
 //------------------------------------------------------------------------------------
-void ObsIo::insertDimVarInfo(const std::string & varName, const Dimensions_t varSize0,
-                             const std::type_index & varDtype, const bool varIsDist) { 
-    dim_var_info_.insert(std::make_pair(varName, VarInfoRec(varSize0, varDtype, varIsDist)));
+bool ObsFrame::frameAvailable() {
+    return (start_ < max_var_size_);
 }
 
 //------------------------------------------------------------------------------------
-void ObsIo::frameInit() {
-    frame_start_ = 0;
+Dimensions_t ObsFrame::frameStart() {
+    return start_;
 }
 
 //------------------------------------------------------------------------------------
-void ObsIo::frameNext() {
-    frame_start_ += max_frame_size_;
-}
-
-//------------------------------------------------------------------------------------
-bool ObsIo::frameAvailable() {
-    return (frame_start_ < max_var_size_);
-}
-
-//------------------------------------------------------------------------------------
-int ObsIo::frameStart() {
-    return frame_start_;
-}
-
-//------------------------------------------------------------------------------------
-int ObsIo::frameCount(const std::string & varName) {
-    int count;
-    Dimensions_t vsize = varSize0(obs_group_, varName);
-    if ((frame_start_ + max_frame_size_) > vsize) {
-        count = vsize - frame_start_;
+Dimensions_t ObsFrame::frameCount(const Variable & var) {
+    Dimensions_t count;
+    Dimensions_t varSize0 = var.getDimensions().dimsCur[0];
+    if ((start_ + max_size_) > varSize0) {
+        count = varSize0 - start_;
         if (count < 0) { count = 0; }
     } else {
-        count = max_frame_size_;
+        count = max_size_;
     }
     return count;
 }
 
 //------------------------------------------------------------------------------------
-void ObsIo::createFrameSelection(const std::string & varName, Selection & feSelect,
-                                 Selection & beSelect) {
+void ObsFrame::createFrameSelection(const Variable & var, Selection & feSelect,
+                                    Selection & beSelect) {
     // Form the hyperslab style selection for this frame. The frontend selection will
     // simply be the current size (according to the variable) of the frame going from
     // 0 to size-1. The backend selection will be the same except starting at the frame
@@ -88,13 +69,12 @@ void ObsIo::createFrameSelection(const std::string & varName, Selection & feSele
     // (vector of dimension sizes). Make the backend starts and counts for the
     // selection objects match the number of dimensions of the variable, but limit the
     // count for the first dimension to the associate frame count for the variable.
-    Variable var = obs_group_.vars.open(varName);
     std::vector<Dimensions_t> varShape = var.getDimensions().dimsCur;
 
     std::vector<Dimensions_t> beStarts(varShape.size(), 0);
     beStarts[0] = frameStart();
     std::vector<Dimensions_t> beCounts = varShape;
-    beCounts[0] = frameCount(varName);
+    beCounts[0] = frameCount(var);
 
     // Get the number of elements for the frontend selection after the counts for the backend
     // selection have been adjusted for the frame size.
@@ -109,18 +89,53 @@ void ObsIo::createFrameSelection(const std::string & varName, Selection & feSele
     beSelect.select({ SelectionOperator::SET, beStarts, beCounts });
 }
 
-//------------------------ protected functions ---------------------------------------
 //------------------------------------------------------------------------------------
-Dimensions_t ObsIo::varSize0Max() {
-    Dimensions_t varSizeMax = 0;
-    for (auto ivar = var_info_.begin(); ivar != var_info_.end(); ++ivar) {
-        if (varSizeMax < ivar->second.size0_) {
-            varSizeMax = ivar->second.size0_;
-        }
-    }
-    return varSizeMax;
+// ObsIo functions
+//------------------------------------------------------------------------------------
+
+//--------------------------- public functions ---------------------------------------
+//------------------------------------------------------------------------------------
+ObsIo::ObsIo(const ObsIoActions action, const ObsIoModes mode, const ObsIoParameters & params) :
+                 action_(action), mode_(mode), params_(params), obs_frame_() {
+    oops::Log::trace() << "Constructing ObsIo" << std::endl;
 }
 
+ObsIo::~ObsIo() {}
+
+//------------------------------------------------------------------------------------
+void ObsIo::frameInit() {
+    Dimensions_t maxVarSize = maxVarSize0(obs_group_);
+    obs_frame_.frameInit(maxVarSize, max_frame_size_);
+}
+
+//------------------------------------------------------------------------------------
+void ObsIo::frameNext() {
+    obs_frame_.frameNext();
+}
+
+//------------------------------------------------------------------------------------
+bool ObsIo::frameAvailable() {
+    return obs_frame_.frameAvailable();
+}
+
+//------------------------------------------------------------------------------------
+Dimensions_t ObsIo::frameStart() {
+    return obs_frame_.frameStart();
+}
+
+//------------------------------------------------------------------------------------
+Dimensions_t ObsIo::frameCount(const std::string & varName) {
+    return obs_frame_.frameCount(obs_group_.vars.open(varName));
+}
+
+//------------------------------------------------------------------------------------
+void ObsIo::createFrameSelection(const std::string & varName, Selection & feSelect,
+                                 Selection & beSelect) {
+    Variable var = obs_group_.vars.open(varName);
+    obs_frame_.createFrameSelection(var, feSelect, beSelect);
+}
+
+//------------------------ protected functions ---------------------------------------
 //------------------------------------------------------------------------------------
 void ObsIo::print(std::ostream & os) const {}
 

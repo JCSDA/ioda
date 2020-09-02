@@ -50,20 +50,6 @@ ObsFile::ObsFile(const ObsIoActions action, const ObsIoModes mode,
 
         // record maximum frame size
         max_frame_size_ = params.in_file_.maxFrameSize;
-
-        // fill in the variable information data structures
-        for (auto & varName : listAllVars(obs_group_, std::string(""))) {
-            if (varIsDimScale(obs_group_, varName)) {
-                insertDimVarInfo(varName, varSize0(obs_group_, varName),
-                    varDtype(obs_group_, varName), varIsDist(obs_group_, varName));
-            } else {
-                insertVarInfo(varName, varSize0(obs_group_, varName),
-                    varDtype(obs_group_, varName), varIsDist(obs_group_, varName));
-            }
-        }
-
-        // record the maximum variable size
-        max_var_size_ = varSize0Max();
     } else if (action == ObsIoActions::CREATE_FILE) {
         fileName = params.out_file_.fileName;
         oops::Log::trace() << "Constructing ObsFile: Creating file for write: "

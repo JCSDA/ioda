@@ -41,7 +41,7 @@ ObsGenerate::ObsGenerate(const ObsIoActions action, const ObsIoModes mode,
             oops::Log::trace() << "Constructing ObsGenerate: Random method" << std::endl;
 
             // Create the in-memory ObsGroup
-            int numLocs = params.in_gen_rand_.numObs; // number of locations to generate
+            Dimensions_t numLocs = params.in_gen_rand_.numObs; // number of locations to generate
             newDims.push_back(
                 std::make_shared<ioda::NewDimensionScale<int>>("nlocs", numLocs, numLocs, numLocs));
             obs_group_ = ObsGroup::generate(backend, newDims);
@@ -56,7 +56,7 @@ ObsGenerate::ObsGenerate(const ObsIoActions action, const ObsIoModes mode,
             oops::Log::trace() << "Constructing ObsGenerate: List method" << std::endl;
 
             // Create the in-memory ObsGroup
-            int numLocs = params.in_gen_list_.lats.value().size();
+            Dimensions_t numLocs = params.in_gen_list_.lats.value().size();
             newDims.push_back(
                 std::make_shared<ioda::NewDimensionScale<int>>("nlocs", numLocs, numLocs, numLocs));
             obs_group_ = ObsGroup::generate(backend, newDims);
@@ -72,20 +72,6 @@ ObsGenerate::ObsGenerate(const ObsIoActions action, const ObsIoModes mode,
     } else {
         ABORT("ObsGenerate: Unrecongnized ObsIoActions value");
     }
-
-    // fill in the variable information
-    for (auto & varName : listAllVars(obs_group_, std::string(""))) {
-        if (varIsDimScale(obs_group_, varName)) {
-            insertDimVarInfo(varName, varSize0(obs_group_, varName),
-                varDtype(obs_group_, varName), varIsDist(obs_group_, varName));
-        } else {
-            insertVarInfo(varName, varSize0(obs_group_, varName),
-                varDtype(obs_group_, varName), varIsDist(obs_group_, varName));
-        }
-    }
-
-    // record the maximum variable size
-    max_var_size_ = varSize0Max();
 }
 
 ObsGenerate::~ObsGenerate() {}

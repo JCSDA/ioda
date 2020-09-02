@@ -170,6 +170,18 @@ Dimensions_t varSize0(const Group & group, const std::string & varName) {
 }
 
 //------------------------------------------------------------------------------------
+Dimensions_t maxVarSize0(const Group & group) {
+    Dimensions_t size0Max = 0;
+    for (auto & varName : listVars(group)) {
+        Dimensions_t size0 = varSize0(group, varName);
+        if (size0 > size0Max) {
+            size0Max = size0;
+        }
+    }
+    return size0Max;
+}
+
+//------------------------------------------------------------------------------------
 std::type_index varDtype(const Group & group, const std::string & varName) {
     Variable var = group.vars.open(varName);
     std::type_index varType(typeid(std::string));

@@ -5,8 +5,8 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#ifndef CORE_OBSIOPARAMETERS_H_
-#define CORE_OBSIOPARAMETERS_H_
+#ifndef IO_OBSIOPARAMETERS_H_
+#define IO_OBSIOPARAMETERS_H_
 
 #include <string>
 #include <vector>
@@ -251,4 +251,4 @@ class ObsIoParameters : public oops::Parameters {
 
 }  // namespace ioda
 
-#endif  // CORE_OBSIOPARAMETERS_H_
+#endif  // IO_OBSIOPARAMETERS_H_
