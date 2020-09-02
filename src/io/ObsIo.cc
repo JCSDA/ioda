@@ -104,8 +104,7 @@ ObsIo::~ObsIo() {}
 
 //------------------------------------------------------------------------------------
 void ObsIo::frameInit() {
-    Dimensions_t maxVarSize = maxVarSize0(obs_group_);
-    obs_frame_.frameInit(maxVarSize, max_frame_size_);
+    obs_frame_.frameInit(max_var_size_, max_frame_size_);
 }
 
 //------------------------------------------------------------------------------------
@@ -124,14 +123,13 @@ Dimensions_t ObsIo::frameStart() {
 }
 
 //------------------------------------------------------------------------------------
-Dimensions_t ObsIo::frameCount(const std::string & varName) {
-    return obs_frame_.frameCount(obs_group_.vars.open(varName));
+Dimensions_t ObsIo::frameCount(const Variable & var) {
+    return obs_frame_.frameCount(var);
 }
 
 //------------------------------------------------------------------------------------
-void ObsIo::createFrameSelection(const std::string & varName, Selection & feSelect,
+void ObsIo::createFrameSelection(const Variable & var, Selection & feSelect,
                                  Selection & beSelect) {
-    Variable var = obs_group_.vars.open(varName);
     obs_frame_.createFrameSelection(var, feSelect, beSelect);
 }
 

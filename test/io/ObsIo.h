@@ -125,17 +125,17 @@ void testRead() {
             for (std::size_t j = 0; j < readVarConfigs.size(); ++j) {
                std::string varName = readVarConfigs[j].getString("name");
                std::string expectedVarType = readVarConfigs[j].getString("type");
+               ioda::Variable var = obsIo->obs_group_.vars.open(varName);
 
-               int frameCount = obsIo->frameCount(varName);
+               Dimensions_t frameCount = obsIo->frameCount(var);
                if (frameCount > 0) {
                    oops::Log::debug() << "    Variable: " << varName
                        << ", frameCount: " << frameCount << std::endl;
-                   ioda::Variable var = obsIo->obs_group_.vars.open(varName);
 
                    // Form the hyperslab selection for this frame
                    ioda::Selection frontendSelect;
                    ioda::Selection backendSelect;
-                   obsIo->createFrameSelection(varName, frontendSelect, backendSelect);
+                   obsIo->createFrameSelection(var, frontendSelect, backendSelect);
 
                    if (expectedVarType == "int") {
                        EXPECT(var.isA<int>());
@@ -199,6 +199,7 @@ void testWrite() {
                 obsConfig.getSubConfigurations("test data.write variables");
 
             // Add the dimensions scales to the ObsIo parameters
+            std::map<std::string, Dimensions_t> dimSizes;
             for (std::size_t i = 0; i < writeDimConfigs.size(); ++i) {
                 std::string dimName = writeDimConfigs[i].getString("name");
                 Dimensions_t dimSize = writeDimConfigs[i].getInt("size");
@@ -209,11 +210,17 @@ void testWrite() {
                 } else {
                     obsParams.setDimScale(dimName, dimSize, dimSize, dimSize);
                 }
+                dimSizes.insert(std::pair<std::string, Dimensions_t>(dimName, dimSize));
             }
 
             // Add the maximum variable size to the ObsIo parmeters
-            int maxVarSize = 0;
+            Dimensions_t maxVarSize = 0;
             for (std::size_t i = 0; i < writeVarConfigs.size(); ++i) {
+                std::vector<std::string> dimNames = writeVarConfigs[i].getStringVector("dims");
+                Dimensions_t varSize0 = dimSizes.at(dimNames[0]);
+                if (varSize0 > maxVarSize) {
+                    maxVarSize = varSize0;
+                }
             }
             obsParams.setMaxVarSize(maxVarSize);
 
@@ -222,6 +229,80 @@ void testWrite() {
                 ObsIoFactory::create(ObsIoActions::CREATE_FILE, ObsIoModes::CLOBBER, obsParams);
 
             // Test the frame iteration
+            int iframe = 0;
+            for (obsIo->frameInit(); obsIo->frameAvailable(); obsIo->frameNext()) {
+                Dimensions_t frameStart = obsIo->frameStart();
+                oops::Log::debug() << "testWrite: Frame number: " << iframe << std::endl
+                    << "    frameStart: " << frameStart << std::endl;
+
+                // Write the test variables
+                for (std::size_t j = 0; j < writeVarConfigs.size(); ++j) {
+                    std::string varName = writeVarConfigs[j].getString("name");
+                    std::string varType = writeVarConfigs[j].getString("type");
+                    std::vector<std::string> varDimNames =
+                        writeVarConfigs[j].getStringVector("dims");
+
+                    ioda::Variable var;
+                    // if on the first frame, create the variable
+                    if (iframe == 0) {
+                        std::vector<ioda::Variable> varDims;
+                        for (std::size_t idim = 0; idim < varDimNames.size(); ++idim) {
+                            varDims.push_back(obsIo->obs_group_.vars.open(varDimNames[idim]));
+                        }
+
+                        ioda::VariableCreationParameters params;
+                        params.chunk = true;
+                        params.compressWithGZIP();
+                        if (varType == "int") {
+                            params.setFillValue<int>(-999);
+                            var = obsIo->obs_group_.vars
+                                .createWithScales<int>(varName, varDims, params);
+                        } else if (varType == "float") {
+                            params.setFillValue<float>(-999);
+                            var = obsIo->obs_group_.vars
+                                .createWithScales<float>(varName, varDims, params);
+                        } else if (varType == "string") {
+                            params.setFillValue<std::string>("fill");
+                            var = obsIo->obs_group_.vars
+                                .createWithScales<std::string>(varName, varDims, params);
+                        }
+                    } else {
+                        var = obsIo->obs_group_.vars.open(varName);
+                    }
+
+                    Dimensions_t frameCount = obsIo->frameCount(var);
+                    if (frameCount > 0) {
+                        oops::Log::debug() << "    Variable: " << varName
+                            << ", frameCount: " << frameCount << std::endl;
+                        // Form the hyperslab selection for this frame
+                        ioda::Selection frontendSelect;
+                        ioda::Selection backendSelect;
+                        obsIo->createFrameSelection(var, frontendSelect, backendSelect);
+
+                        if (varType == "int") {
+                            std::vector<int> values =
+                                writeVarConfigs[j].getIntVector("values");
+                            std::vector<int> varValues(values.begin() + frameStart,
+                                values.begin() + frameStart + frameCount);
+                            var.write<int>(varValues, frontendSelect, backendSelect);
+                        } else if (varType == "float") {
+                            std::vector<float> values =
+                                writeVarConfigs[j].getFloatVector("values");
+                            std::vector<float> varValues(values.begin() + frameStart,
+                                values.begin() + frameStart + frameCount);
+                            var.write<float>(varValues, frontendSelect, backendSelect);
+                        } else if (varType == "string") {
+                            std::vector<std::string> values =
+                                writeVarConfigs[j].getStringVector("values");
+                            std::vector<std::string> varValues(values.begin() + frameStart,
+                                values.begin() + frameStart + frameCount);
+                            var.write<std::string>(varValues, frontendSelect, backendSelect);
+                        }
+                    }
+                }
+
+                iframe++;
+            }
         }
     }
 }

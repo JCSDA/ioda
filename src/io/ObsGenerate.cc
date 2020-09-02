@@ -50,7 +50,8 @@ ObsGenerate::ObsGenerate(const ObsIoActions action, const ObsIoModes mode,
             genDistRandom(params.in_gen_rand_, params.windowStart(),
                           params.windowEnd(), params.comm(), params.top_level_.simVars);
 
-            // record maximum frame size
+            // record maximum variable and frame size
+            max_var_size_ = maxVarSize0(obs_group_);
             max_frame_size_ = params.in_gen_rand_.maxFrameSize;
         } else if (params.in_type() == ObsIoTypes::GENERATOR_LIST) {
             oops::Log::trace() << "Constructing ObsGenerate: List method" << std::endl;
@@ -64,7 +65,8 @@ ObsGenerate::ObsGenerate(const ObsIoActions action, const ObsIoModes mode,
             // Fill in the ObsGroup with the generated data
             genDistList(params.in_gen_list_, params.top_level_.simVars);
 
-            // record maximum frame size
+            // record maximum variable and frame size
+            max_var_size_ = maxVarSize0(obs_group_);
             max_frame_size_ = params.in_gen_list_.maxFrameSize;
         } else {
             ABORT("ObsGenerate: Unrecongnized ObsIoTypes value");

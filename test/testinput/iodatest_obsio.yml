@@ -35,19 +35,19 @@ observations:
       write variables:
         - name: "air_temperature@ObsValue"
           type: "float"
-          dim: "nlocs"
+          dims: [ "nlocs" ]
           values: [ 275.0 , 291.7, 286.9, 278.7, 302.1, 305.8, 298.3, 278.6 ]
         - name: "latitude@MetaData"
           type: "float"
-          dim: "nlocs"
+          dims: [ "nlocs" ]
           values: [ -21.0, -14.0 , -7.0, 0.0, 7.0, 14.0, 21.0, 28.0 ]
         - name: "longitude@MetaData"
           type: "float"
-          dim: "nlocs"
+          dims: [ "nlocs" ]
           values: [ -4.0, -3.0 , -2.0, -1.0, 0.0, 1.0, 2.0, 3.0 ]
         - name: "datetime@MetaData"
           type: "string"
-          dim: "nlocs"
+          dims: [ "nlocs" ]
           values: 
             - "2018-04-15T00:01:00Z"
             - "2018-04-15T00:01:20Z"
@@ -59,7 +59,7 @@ observations:
             - "2018-04-15T00:03:20Z"
         - name: "varid@MetaData"
           type: "int"
-          dim: "nvars"
+          dims: [ "nvars" ]
           values:  [ 1, 2, 3, 4 ]
       tolerance: 1.0e-6
 

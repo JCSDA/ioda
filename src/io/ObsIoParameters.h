@@ -85,7 +85,7 @@ class ObsFileInParameters : public oops::Parameters {
         oops::Parameter<std::string> obsSortOrder{"sort order", "", this};
 
         /// maximum frame size
-        oops::Parameter<int> maxFrameSize{"max frame size", DEFAULT_FRAME_SIZE, this};
+        oops::Parameter<Dimensions_t> maxFrameSize{"max frame size", DEFAULT_FRAME_SIZE, this};
 };
 
 class ObsGenerateRandomParameters : public oops::Parameters {
@@ -139,7 +139,7 @@ class ObsFileOutParameters : public oops::Parameters {
         oops::RequiredParameter<std::string> fileName{"obsfile", this};
 
         /// maximum frame size
-        oops::Parameter<int> maxFrameSize{"max frame size", DEFAULT_FRAME_SIZE, this};
+        oops::Parameter<Dimensions_t> maxFrameSize{"max frame size", DEFAULT_FRAME_SIZE, this};
 };
 
 class ObsIoParameters : public oops::Parameters {
@@ -221,10 +221,10 @@ class ObsIoParameters : public oops::Parameters {
         NewDimensionScales_t getDimScales() const { return new_dims_; };
 
         /// \brief set the maximum variable size
-        void setMaxVarSize(const int maxVarSize) { max_var_size_ = maxVarSize; };
+        void setMaxVarSize(const Dimensions_t maxVarSize) { max_var_size_ = maxVarSize; };
 
         /// \brief get the maximum variable size
-        int getMaxVarSize() const { return max_var_size_; };
+        Dimensions_t getMaxVarSize() const { return max_var_size_; };
 
     private:
         /// \brief ObsIo input type
@@ -246,7 +246,7 @@ class ObsIoParameters : public oops::Parameters {
         NewDimensionScales_t new_dims_;
 
         /// \brief maximum variable size for output file contruction
-        int max_var_size_;
+        Dimensions_t max_var_size_;
 };
 
 }  // namespace ioda

@@ -100,14 +100,14 @@ class ObsIo : public util::Printable {
         /// frame has moved past the end of some variables but not so for other
         /// variables. When the frame is past the end of the given variable, this
         /// routine returns a zero to indicate that we're done with this variable.
-        /// \param varName name of variable
-        Dimensions_t frameCount(const std::string & varName);
+        /// \param var ObsGroup variable
+        Dimensions_t frameCount(const Variable & var);
 
         /// \brief set up frontend and backend selection objects for the given variable
-        /// \param varName Name of variable associated with the selection objects
+        /// \param var ObsGroup variable
         /// \param feSelect Front end selection object
         /// \param beSelect Back end selection object
-        void createFrameSelection(const std::string & varName, Selection & feSelect,
+        void createFrameSelection(const Variable & var, Selection & feSelect,
                                   Selection & beSelect);
 
     protected:
@@ -120,6 +120,9 @@ class ObsIo : public util::Printable {
 
         /// \brief ObsIo parameter specs
         ObsIoParameters params_;
+
+        /// \brief maximum variable size (ie, first dimension size)
+        Dimensions_t max_var_size_;
 
         /// \brief maximum frame size
         Dimensions_t max_frame_size_;

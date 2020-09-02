@@ -48,7 +48,8 @@ ObsFile::ObsFile(const ObsIoActions action, const ObsIoModes mode,
             detail::DataLayoutPolicy::generate(detail::DataLayoutPolicy::Policies::None));
         obs_group_ = og;
 
-        // record maximum frame size
+        // record maximum variable and frame size
+        max_var_size_ = maxVarSize0(obs_group_);
         max_frame_size_ = params.in_file_.maxFrameSize;
     } else if (action == ObsIoActions::CREATE_FILE) {
         fileName = params.out_file_.fileName;
@@ -67,7 +68,8 @@ ObsFile::ObsFile(const ObsIoActions action, const ObsIoModes mode,
         obs_group_ = ObsGroup::generate(backend, params.getDimScales(),
             detail::DataLayoutPolicy::generate(detail::DataLayoutPolicy::Policies::None));
 
-        // record maximum frame size
+        // record maximum variable and frame size
+        max_var_size_ = params.getMaxVarSize();
         max_frame_size_ = params.out_file_.maxFrameSize;
     } else {
         ABORT("ObsFile: Unrecongnized ObsIoActions value");
