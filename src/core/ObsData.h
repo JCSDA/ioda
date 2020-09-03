@@ -21,15 +21,18 @@
 #include "eckit/geometry/Point3.h"
 #include "eckit/geometry/UnitSphere.h"
 #include "eckit/mpi/Comm.h"
+
 #include "oops/base/Variables.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
 #include "oops/util/Printable.h"
-#include "ioda/core/IodaUtils.h"
 
+#include "ioda/core/IodaUtils.h"
 #include "ioda/core/ObsSpaceContainer.h"
 #include "ioda/distribution/Distribution.h"
 #include "ioda/Engines/Factory.h"
+#include "ioda/io/ObsIo.h"
+#include "ioda/io/ObsIoParameters.h"
 #include "ioda/ObsGroup.h"
 
 // Forward declarations
@@ -170,15 +173,8 @@ class ObsData : public util::Printable {
 
   ObsData & operator= (const ObsData &);
 
-  // Initialize the database with auto-generated locations
-  void generateDistribution(const eckit::Configuration &);
-  void genDistRandom(const eckit::Configuration & conf, std::vector<float> & Lats,
-                     std::vector<float> & Lons, std::vector<util::DateTime> & Dtimes);
-  void genDistList(const eckit::Configuration & conf, std::vector<float> & Lats,
-                   std::vector<float> & Lons, std::vector<util::DateTime> & Dtimes);
-
   // Initialize the database from the input file
-  void InitFromFile(const std::string & filename, const std::size_t MaxFrameSize);
+  void initFromObsIo(const std::shared_ptr<ObsIo> & obsIo);
   template<typename VarType>
   void StoreToDb(const std::string & GroupName, const std::string & VarName,
                  const std::vector<std::size_t> & VarShape,
@@ -223,6 +219,9 @@ class ObsData : public util::Printable {
   /*! \brief MPI communicator */
   const eckit::mpi::Comm & commMPI_;
 
+  /*! \brief obs io parameters */
+  ObsIoParameters obs_params_;
+
   /*! \brief KD Tree */
   std::shared_ptr<KDTree> kd_;
 
@@ -238,23 +237,11 @@ class ObsData : public util::Printable {
   /*! \brief number of records */
   std::size_t nrecs_;
 
-  /*! \brief flag, file has variables with unexpected data types */
-  bool file_unexpected_dtypes_;
-
-  /*! \brief flag, file has variables with excess dimensions */
-  bool file_excess_dims_;
-
   /*! \brief path to input file */
   std::string filein_;
 
   /*! \brief path to output file */
   std::string fileout_;
-
-  /*! \brief max frame size for input file */
-  std::size_t in_max_frame_size_;
-
-  /*! \brief max frame size for output file */
-  std::size_t out_max_frame_size_;
 
   /*! \brief indexes of locations to extract from the input obs file */
   std::vector<std::size_t> indx_;

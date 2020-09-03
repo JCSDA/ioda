@@ -31,9 +31,8 @@
 #include "oops/util/stringFunctions.h"
 
 #include "ioda/distribution/DistributionFactory.h"
-#include "ioda/io/ObsIo.h"
 #include "ioda/io/ObsIoFactory.h"
-#include "ioda/io/ObsIoParameters.h"
+#include "ioda/Misc/Dimensions.h"
 #include "ioda/Variables/Variable.h"
 
 #include "atlas/util/Earth.h"
@@ -54,14 +53,14 @@ namespace ioda {
 ObsData::ObsData(const eckit::Configuration & config, const eckit::mpi::Comm & comm,
                  const util::DateTime & bgn, const util::DateTime & end)
   : config_(config), winbgn_(bgn), winend_(end), commMPI_(comm),
-    gnlocs_(0), nlocs_(0), nvars_(0), nrecs_(0), file_unexpected_dtypes_(false),
-    file_excess_dims_(false), in_max_frame_size_(0), out_max_frame_size_(0),
-    obsvars_(), next_rec_num_(0), obs_group_()
+    gnlocs_(0), nlocs_(0), nvars_(0), nrecs_(0), obsvars_(),
+    next_rec_num_(0), obs_group_(), obs_params_(bgn, end, comm)
 {
   oops::Log::trace() << "ObsData::ObsData config  = " << config << std::endl;
+  obs_params_.deserialize(config);
 
-  obsname_ = config.getString("name");
-  distname_ = config.getString("distribution", "RoundRobin");
+  obsname_ = obs_params_.top_level_.obsSpaceName;
+  distname_ = obs_params_.top_level_.distributionType;
 
   obsvars_ = oops::Variables(config, "simulated variables");
   oops::Log::info() << obsname_ << " vars: " << obsvars_ << std::endl;
@@ -79,58 +78,44 @@ ObsData::ObsData(const eckit::Configuration & config, const eckit::mpi::Comm & c
   obs_group_ = ObsGroup::generate(backend, { });
 
   // Initialize the obs space container
-  if (config.has("obsdatain")) {
+  std::shared_ptr<ObsIo> obsIo;
+  if (obs_params_.in_type() == ObsIoTypes::OBS_FILE) {
     // Initialize the container from an input obs file
-    obs_group_variable_ = config.getString("obsdatain.obsgrouping.group variable", "");
-    obs_sort_variable_ = config.getString("obsdatain.obsgrouping.sort variable", "");
-    obs_sort_order_ = config.getString("obsdatain.obsgrouping.sort order", "ascending");
+    obs_group_variable_ = obs_params_.in_file_.obsGroupVar;
+    obs_sort_variable_ = obs_params_.in_file_.obsSortVar;
+    obs_sort_order_ = obs_params_.in_file_.obsSortOrder;
     if ((obs_sort_order_ != "ascending") && (obs_sort_order_ != "descending")) {
       std::string ErrMsg =
         std::string("ObsData::ObsData: Must use one of 'ascending' or 'descending' ") +
         std::string("for the 'sort order:' YAML configuration keyword.");
       ABORT(ErrMsg);
     }
-    filein_ = config.getString("obsdatain.obsfile");
-    in_max_frame_size_ = config.getUnsigned("obsdatain.max frame size", DEFAULT_FRAME_SIZE);
-    oops::Log::trace() << obsname_ << " file in = " << filein_ << std::endl;
-    InitFromFile(filein_, in_max_frame_size_);
-    if (file_unexpected_dtypes_) {
-      if (commMPI_.rank() == 0) {
-        oops::Log::warning()
-          << "ObsData::ObsData:: WARNING: Input file contains variables "
-          << "with unexpected data types" << std::endl
-          << "  Input file: " << filein_ << std::endl;
-      }
-    }
 
-    if (file_excess_dims_) {
-      if (commMPI_.rank() == 0) {
-        oops::Log::warning()
-          << "ObsData::ObsData:: WARNING: Input file contains variables "
-          << "with excess number of dimensions (these variables were skipped)" << std::endl
-          << "  Input file: " << filein_ << std::endl;
-      }
-    }
+    obsIo = ObsIoFactory::create(ObsIoActions::OPEN_FILE, ObsIoModes::READ_ONLY, obs_params_);
 
-    if (obs_sort_variable_ != "") {
-      BuildSortedObsGroups();
-    }
-  } else if (config.has("generate")) {
-    // Initialize the container from the generateDistribution method
-    eckit::LocalConfiguration genconfig(config, "generate");
-    generateDistribution(genconfig);
+  } else if ((obs_params_.in_type() == ObsIoTypes::GENERATOR_RANDOM) ||
+             (obs_params_.in_type() == ObsIoTypes::GENERATOR_LIST)) {
+    // Initialize the container from the generate method
+    obsIo = ObsIoFactory::create(ObsIoActions::CREATE_GENERATOR, ObsIoModes::READ_ONLY,
+                                 obs_params_);
   } else {
-    // Error - must have one of obsdatain or Generate
+    // Error - must have one of obsdatain or generate
     std::string ErrorMsg =
       "ObsData::ObsData: Must use one of 'obsdatain' or 'generate' in the YAML configuration.";
     ABORT(ErrorMsg);
   }
+
+  initFromObsIo(obsIo);
+
+  if (obs_sort_variable_ != "") {
+    BuildSortedObsGroups();
+  }
+
   nrecs_ = unique_rec_nums_.size();
 
   // Check to see if an output file has been requested.
   if (config.has("obsdataout.obsfile")) {
     std::string filename = config.getString("obsdataout.obsfile");
-    out_max_frame_size_ = config.getUnsigned("obsdataout.max frame size", DEFAULT_FRAME_SIZE);
 
     // If present, change '%{member}%' to 'iii'
     util::stringfunctions::swapNameMember(config, filename);
@@ -174,7 +159,7 @@ ObsData::~ObsData() {
   oops::Log::trace() << "ObsData::ObsData destructor begin" << std::endl;
   if (fileout_.size() != 0) {
     oops::Log::info() << obsname() << ": save database to " << fileout_ << std::endl;
-    SaveToFile(fileout_, out_max_frame_size_);
+    // SaveToFile(fileout_, out_max_frame_size_);
   } else {
     oops::Log::info() << obsname() << " :  no output" << std::endl;
   }
@@ -467,199 +452,34 @@ std::vector<std::size_t> ObsData::recidx_all_recnums() const {
 
 // -----------------------------------------------------------------------------
 /*!
- * \details This method will generate a set of latitudes, longitudes and datetimes
- *          which can be used for testing without reading in an obs file. Two methods
- *          are supported, the first generating random values between specified latitudes,
- *          longitudes and a timing window, and the second copying lists specified by
- *          the user. This method is triggered using the "Generate" keyword in the
- *          configuration file and either of the two methods above are specified using
- *          the sub keywords "Random" or "List".
- *
- * \param[in] conf ECKIT configuration segment built from an input configuration file.
- */
-void ObsData::generateDistribution(const eckit::Configuration & conf) {
-  // Generate lat, lon, time values according to method specified in the config
-  std::vector<float> latitude;
-  std::vector<float> longitude;
-  std::vector<util::DateTime> obs_datetimes;
-  if (conf.has("random")) {
-    genDistRandom(conf, latitude, longitude, obs_datetimes);
-  } else if (conf.has("list")) {
-    genDistList(conf, latitude, longitude, obs_datetimes);
-  } else {
-    std::string ErrorMsg =
-      std::string("ObsData::generateDistribution: Must specify either ") +
-      std::string("'random' or 'list' with 'generate' configuration keyword");
-    ABORT(ErrorMsg);
-  }
-
-  // number of variables specified in simulate section
-  nvars_ = obsvars_.size();
-
-  // Read obs errors (one for each variable)
-  const std::vector<float> err = conf.getFloatVector("obs errors");
-  ASSERT(nvars_ == err.size());
-
-  put_db("MetaData", "datetime", obs_datetimes);
-  put_db("MetaData", "latitude", latitude);
-  put_db("MetaData", "longitude", longitude);
-  for (std::size_t ivar = 0; ivar < nvars_; ivar++) {
-    std::vector<float> obserr(nlocs_, err[ivar]);
-    put_db("ObsError", obsvars_[ivar], obserr);
-  }
-}
-
-// -----------------------------------------------------------------------------
-/*!
- * \details This method will generate a set of latitudes and longitudes of which
- *          can be used for testing without reading in an obs file. Two latitude
- *          values, two longitude values, the number of locations (nobs keyword)
- *          and an optional random seed are specified in the configuration given
- *          by the conf parameter. Random locations between the two latitudes and
- *          two longitudes are generated and stored in the obs container as meta data.
- *          Random time stamps that fall inside the given timing window (which is
- *          specified in the configuration file) are alos generated and stored
- *          in the obs container as meta data.
- *
- * \param[in]  conf  ECKIT configuration segment built from an input configuration file.
- * \param[out] Lats  Generated latitude values
- * \param[out] Lons  Generated longitude values
- * \param[out] Dtims Generated datetime values
- */
-void ObsData::genDistRandom(const eckit::Configuration & conf, std::vector<float> & Lats,
-                            std::vector<float> & Lons, std::vector<util::DateTime> & Dtimes) {
-  gnlocs_  = conf.getInt("random.nobs");
-  float lat1 = conf.getFloat("random.lat1");
-  float lat2 = conf.getFloat("random.lat2");
-  float lon1 = conf.getFloat("random.lon1");
-  float lon2 = conf.getFloat("random.lon2");
-
-  // Make the random_seed keyword optional. Can spec it for testing to get repeatable
-  // values, and the user doesn't have to spec it if they want subsequent runs to
-  // use different random sequences.
-  unsigned int ran_seed;
-  if (conf.has("random.random seed")) {
-    ran_seed = conf.getInt("random.random seed");
-  } else {
-    ran_seed = std::time(0);  // based on the current date/time.
-  }
-
-  // Generate the indexing for MPI distribution
-//  std::unique_ptr<IodaIO> NoIO(nullptr);
-//  std::vector<std::size_t> DummyIndex = GenFrameIndexRecNums(NoIO, 0, gnlocs_);
-
-  // Use the following formula to generate random lat, lon and time values.
-  //
-  //   val = val1 + (random_number_between_0_and_1 * (val2-val1))
-  //
-  // where val2 > val1.
-  //
-  // Create a list of random values between 0 and 1 to be used for genearting
-  // random lat, lon and time vaules.
-  //
-  // Use different seeds for lat and lon so that in the case where lat and lon ranges
-  // are the same, you get a different sequences for lat compared to lon.
-  //
-  // Have rank 0 generate the full length random sequences, and then
-  // broadcast these to the other ranks. This ensures that every rank
-  // contains the same random sequences. If all ranks generated their
-  // own sequences, which they could do, the sequences between ranks
-  // would be different in the case where random_seed is not specified.
-  std::vector<float> RanVals(gnlocs_, 0.0);
-  std::vector<float> RanVals2(gnlocs_, 0.0);
-  if (this->comm().rank() == 0) {
-    util::UniformDistribution<float> RanUD(gnlocs_, 0.0, 1.0, ran_seed);
-    util::UniformDistribution<float> RanUD2(gnlocs_, 0.0, 1.0, ran_seed+1);
-
-    RanVals = RanUD.data();
-    RanVals2 = RanUD2.data();
-  }
-  this->comm().broadcast(RanVals, 0);
-  this->comm().broadcast(RanVals2, 0);
-
-  // Form the ranges val2-val for lat, lon, time
-  float LatRange = lat2 - lat1;
-  float LonRange = lon2 - lon1;
-  util::Duration WindowDuration(this->windowEnd() - this->windowStart());
-  float TimeRange = static_cast<float>(WindowDuration.toSeconds());
-
-  // Create vectors for lat, lon, time, fill them with random values
-  // inside their respective ranges, and put results into the obs container.
-  Lats.assign(nlocs_, 0.0);
-  Lons.assign(nlocs_, 0.0);
-  Dtimes.assign(nlocs_, this->windowStart());
-
-  util::Duration DurZero(0);
-  util::Duration DurOneSec(1);
-  for (std::size_t ii = 0; ii < nlocs_; ii++) {
-    std::size_t index = indx_[ii];
-    Lats[ii] = lat1 + (RanVals[index] * LatRange);
-    Lons[ii] = lon1 + (RanVals2[index] * LonRange);
-
-    // Currently the filter for time stamps on obs values is:
-    //
-    //     windowStart < ObsTime <= windowEnd
-    //
-    // If we get a zero OffsetDt, then change it to 1 second so that the observation
-    // will remain inside the timing window.
-    util::Duration OffsetDt(static_cast<int64_t>(RanVals[index] * TimeRange));
-    if (OffsetDt == DurZero) {
-      OffsetDt = DurOneSec;
-    }
-    // Dtimes elements were initialized to the window start
-    Dtimes[ii] += OffsetDt;
-  }
-}
-
-// -----------------------------------------------------------------------------
-/*!
- * \details This method will generate a set of latitudes and longitudes of which
- *          can be used for testing without reading in an obs file. The values
- *          are simply read from lists in the configuration file. The purpose of
- *          this method is to allow the user to exactly specify obs locations.
- *
- * \param[in]  conf  ECKIT configuration segment built from an input configuration file.
- * \param[out] Lats  Generated latitude values
- * \param[out] Lons  Generated longitude values
- * \param[out] Dtims Generated datetime values
- */
-void ObsData::genDistList(const eckit::Configuration & conf, std::vector<float> & Lats,
-                          std::vector<float> & Lons, std::vector<util::DateTime> & Dtimes) {
-  std::vector<float> latitudes = conf.getFloatVector("list.lats");
-  std::vector<float> longitudes = conf.getFloatVector("list.lons");
-  std::vector<std::string> DtStrings = conf.getStringVector("list.datetimes");
-  std::vector<util::DateTime> datetimes;
-  for (std::size_t i = 0; i < DtStrings.size(); ++i) {
-    util::DateTime TempDt(DtStrings[i]);
-    datetimes.push_back(TempDt);
-  }
-
-  // Generate the indexing for MPI distribution
-  gnlocs_ = latitudes.size();
-//  std::unique_ptr<IodaIO> NoIO(nullptr);
-//  std::vector<std::size_t> DummyIndex = GenFrameIndexRecNums(NoIO, 0, gnlocs_);
-
-  // Create vectors for lat, lon, time, fill them with the values from the
-  // lists in the configuration.
-  Lats.assign(nlocs_, 0.0);
-  Lons.assign(nlocs_, 0.0);
-  Dtimes.assign(nlocs_, this->windowStart());
-
-  for (std::size_t ii = 0; ii < nlocs_; ii++) {
-    std::size_t index = indx_[ii];
-    Lats[ii] = latitudes[index];
-    Lons[ii] = longitudes[index];
-    Dtimes[ii] = datetimes[index];
-  }
-}
-
-// -----------------------------------------------------------------------------
-/*!
  * \details This method provides a way to print an ObsData object in an output
  *          stream. It simply prints a dummy message for now.
  */
 void ObsData::print(std::ostream & os) const {
   os << "ObsData::print not implemented";
+}
+
+// -----------------------------------------------------------------------------
+void ObsData::initFromObsIo(const std::shared_ptr<ObsIo> & obsIo) {
+    // Walk through the frames and copy the data to the obs_group_ storage
+    std::vector<std::string> varList = listVars(obsIo->obs_group_);
+    int iframe = 0;
+    for (obsIo->frameInit(); obsIo->frameAvailable(); obsIo->frameNext()) {
+        Dimensions_t frameStart = obsIo->frameStart();
+        oops::Log::debug() << "ObsData::initFromObsIo: Frame number: " << iframe << std::endl
+            << "    frameStart: " << frameStart << std::endl;
+
+        for (auto & varName : varList) {
+            Variable var = obsIo->obs_group_.vars.open(varName);
+            Dimensions_t frameCount = obsIo->frameCount(var);
+            if (frameCount > 0) {
+                oops::Log::debug() << "ObsData::initFromObsIo: Variable: " << varName
+                    << ", frameCount: " << frameCount << std::endl;
+            }
+        }
+
+        iframe++;
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -674,8 +494,8 @@ void ObsData::print(std::ostream & os) const {
  *
  * \param[in] filename Path to input obs file
  */
-void ObsData::InitFromFile(const std::string & filename, const std::size_t MaxFrameSize) {
-  oops::Log::trace() << "ObsData::InitFromFile opening file: " << filename << std::endl;
+/// void ObsData::InitFromFile(const std::string & filename, const std::size_t MaxFrameSize) {
+///   oops::Log::trace() << "ObsData::InitFromFile opening file: " << filename << std::endl;
 
 ///   // Open the file for reading and record nlocs and nvars from the file.
 ///   std::unique_ptr<IodaIO> fileio {ioda::IodaIOfactory::Create(filename, "r", MaxFrameSize)};
@@ -771,7 +591,7 @@ void ObsData::InitFromFile(const std::string & filename, const std::size_t MaxFr
 ///   file_unexpected_dtypes_ = fileio->unexpected_data_types();
 ///   file_excess_dims_ = fileio->excess_dims();
 ///   oops::Log::trace() << "ObsData::InitFromFile opening file ends " << std::endl;
-}
+/// }
 
 // -----------------------------------------------------------------------------
 /*!

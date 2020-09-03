@@ -57,6 +57,12 @@ GENERATOR_LIST
 
 class ObsTopLevelParameters : public oops::Parameters {
  public:
+    /// name of obs space
+    oops::RequiredParameter<std::string> obsSpaceName{"name", this};
+
+    /// name of obs space
+    oops::Parameter<std::string> distributionType{"distribution", "RoundRobin", this};
+
     /// simulated variables
     oops::RequiredParameter<std::vector<std::string>> simVars{"simulated variables", this};
 
@@ -82,7 +88,7 @@ class ObsFileInParameters : public oops::Parameters {
     oops::Parameter<std::string> obsSortVar{"sort variable", "", this};
 
     /// direction for sort
-    oops::Parameter<std::string> obsSortOrder{"sort order", "", this};
+    oops::Parameter<std::string> obsSortOrder{"sort order", "ascending", this};
 
     /// maximum frame size
     oops::Parameter<Dimensions_t> maxFrameSize{"max frame size", DEFAULT_FRAME_SIZE, this};
@@ -158,7 +164,7 @@ class ObsIoParameters : public oops::Parameters {
 
     /// \brief deserialize the parameter sub groups
     /// \param config "obs space" level configuration
-    void deserialize(const eckit::LocalConfiguration & config) {
+    void deserialize(const eckit::Configuration & config) {
         /// Must have one of the input parameter sub groups
         oops::Log::trace() << "ObsIoParameters config: " << config << std::endl;
 
