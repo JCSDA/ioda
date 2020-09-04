@@ -39,6 +39,7 @@
 
 namespace ioda {
 
+// ----------------------------- public functions ------------------------------
 // -----------------------------------------------------------------------------
 /*!
  * \details Config based constructor for an ObsData object. This constructor will read
@@ -52,100 +53,66 @@ namespace ioda {
  */
 ObsData::ObsData(const eckit::Configuration & config, const eckit::mpi::Comm & comm,
                  const util::DateTime & bgn, const util::DateTime & end)
-  : config_(config), winbgn_(bgn), winend_(end), commMPI_(comm),
-    gnlocs_(0), nlocs_(0), nvars_(0), nrecs_(0), obsvars_(),
-    next_rec_num_(0), obs_group_(), obs_params_(bgn, end, comm)
+    : config_(config), winbgn_(bgn), winend_(end), commMPI_(comm),
+      gnlocs_(0), nlocs_(0), nvars_(0), nrecs_(0), obsvars_(),
+      next_rec_num_(0), obs_group_(), obs_params_(bgn, end, comm)
 {
-  oops::Log::trace() << "ObsData::ObsData config  = " << config << std::endl;
-  obs_params_.deserialize(config);
+    oops::Log::trace() << "ObsData::ObsData config  = " << config << std::endl;
+    obs_params_.deserialize(config);
 
-  obsname_ = obs_params_.top_level_.obsSpaceName;
-  distname_ = obs_params_.top_level_.distributionType;
+    obsname_ = obs_params_.top_level_.obsSpaceName;
+    obsvars_ = oops::Variables(config, "simulated variables");
+    oops::Log::info() << this->obsname() << " vars: " << obsvars_ << std::endl;
 
-  obsvars_ = oops::Variables(config, "simulated variables");
-  oops::Log::info() << obsname_ << " vars: " << obsvars_ << std::endl;
+    // Create the MPI distribution object
+    std::unique_ptr<DistributionFactory> distFactory;
+    dist_.reset(distFactory->createDistribution(this->comm(), this->distname()));
 
-  // Create the MPI distribution object
-  std::unique_ptr<DistributionFactory> distFactory;
-  dist_.reset(distFactory->createDistribution(this->comm(), distname_));
-
-  // Create the backend
-  Engines::BackendNames backendName = Engines::BackendNames::ObsStore;
-  Engines::BackendCreationParameters backendParams;
-  Group backend = constructBackend(backendName, backendParams);
-
-  // Create the ObsGroup and attach the backend.
-  obs_group_ = ObsGroup::generate(backend, { });
-
-  // Initialize the obs space container
-  std::shared_ptr<ObsIo> obsIo;
-  if (obs_params_.in_type() == ObsIoTypes::OBS_FILE) {
-    // Initialize the container from an input obs file
-    obs_group_variable_ = obs_params_.in_file_.obsGroupVar;
-    obs_sort_variable_ = obs_params_.in_file_.obsSortVar;
-    obs_sort_order_ = obs_params_.in_file_.obsSortOrder;
-    if ((obs_sort_order_ != "ascending") && (obs_sort_order_ != "descending")) {
-      std::string ErrMsg =
-        std::string("ObsData::ObsData: Must use one of 'ascending' or 'descending' ") +
-        std::string("for the 'sort order:' YAML configuration keyword.");
-      ABORT(ErrMsg);
+    // Open the source (ObsIo) of the data for initializing the obs_group_ (ObsGroup)
+    std::shared_ptr<ObsIo> obsIo;
+    if (obs_params_.in_type() == ObsIoTypes::OBS_FILE) {
+      obsIo = ObsIoFactory::create(ObsIoActions::OPEN_FILE, ObsIoModes::READ_ONLY, obs_params_);
+    } else if ((obs_params_.in_type() == ObsIoTypes::GENERATOR_RANDOM) ||
+               (obs_params_.in_type() == ObsIoTypes::GENERATOR_LIST)) {
+      obsIo = ObsIoFactory::create(ObsIoActions::CREATE_GENERATOR, ObsIoModes::READ_ONLY,
+          obs_params_);
+    } else {
+      // Error - must have one of obsdatain or generate
+      std::string ErrorMsg =
+        "ObsData::ObsData: Must use one of 'obsdatain' or 'generate' in the YAML configuration.";
+      ABORT(ErrorMsg);
     }
 
-    obsIo = ObsIoFactory::create(ObsIoActions::OPEN_FILE, ObsIoModes::READ_ONLY, obs_params_);
+    createObsGroup(obsIo);
+    initFromObsSource(obsIo);
 
-  } else if ((obs_params_.in_type() == ObsIoTypes::GENERATOR_RANDOM) ||
-             (obs_params_.in_type() == ObsIoTypes::GENERATOR_LIST)) {
-    // Initialize the container from the generate method
-    obsIo = ObsIoFactory::create(ObsIoActions::CREATE_GENERATOR, ObsIoModes::READ_ONLY,
-                                 obs_params_);
-  } else {
-    // Error - must have one of obsdatain or generate
-    std::string ErrorMsg =
-      "ObsData::ObsData: Must use one of 'obsdatain' or 'generate' in the YAML configuration.";
-    ABORT(ErrorMsg);
-  }
+    gnlocs_ = obsIo->nlocs();
 
-  initFromObsIo(obsIo);
+    if (this->obs_sort_var() != "") {
+      BuildSortedObsGroups();
+    }
 
-  if (obs_sort_variable_ != "") {
-    BuildSortedObsGroups();
-  }
-
-  nrecs_ = unique_rec_nums_.size();
-
-  // Check to see if an output file has been requested.
-  if (config.has("obsdataout.obsfile")) {
-    std::string filename = config.getString("obsdataout.obsfile");
-
-    // If present, change '%{member}%' to 'iii'
-    util::stringfunctions::swapNameMember(config, filename);
-
-    // Find the left-most dot in the file name, and use that to pick off the file name
-    // and file extension.
-    std::size_t found = filename.find_last_of(".");
-    if (found == std::string::npos)
-      found = filename.length();
-
-    // Get the process rank number and format it
-    std::ostringstream ss;
-    ss << "_" << std::setw(4) << std::setfill('0') << this->comm().rank();
-
-    // Construct the output file name
-    fileout_ = filename.insert(found, ss.str());
-
-    // Check to see if user is trying to overwrite an existing file. For now always allow
-    // the overwrite, but issue a warning if we are about to clobber an existing file.
-    std::ifstream infile(fileout_);
-    if (infile.good() && (commMPI_.rank() == 0)) {
-        oops::Log::warning() << "ObsData::ObsData WARNING: Overwriting output file "
-                             << fileout_ << std::endl;
-      }
-  } else {
-    oops::Log::debug() << "ObsData::ObsData output file is not required " << std::endl;
-  }
-
-  oops::Log::trace() << "ObsData::ObsData contructed name = " << obsname() << std::endl;
+    oops::Log::trace() << "ObsData::ObsData contructed name = " << obsname() << std::endl;
 }
+
+// -----------------------------------------------------------------------------
+std::size_t ObsData::nlocs() const {
+    return obs_group_.vars.open("nlocs").getDimensions().dimsCur[0];
+}
+
+// -----------------------------------------------------------------------------
+std::size_t ObsData::nrecs() const {
+    // TODO(srh) placeholder until distribution is working
+    return obs_group_.vars.open("nlocs").getDimensions().dimsCur[0];
+}
+
+// -----------------------------------------------------------------------------
+std::size_t ObsData::nvars() const {
+    Group g = obs_group_.open("ObsValue");
+    return g.vars.list().size();
+}
+
+
 
 // -----------------------------------------------------------------------------
 /*!
@@ -286,77 +253,6 @@ ObsDtype ObsData::dtype(const std::string & group, const std::string & name) con
 
 // -----------------------------------------------------------------------------
 /*!
- * \details This method returns the setting of the YAML configuration
- *          parameter: obsdatain.obsgrouping.group variable
- */
-std::string ObsData::obs_group_var() const {
-  return obs_group_variable_;
-}
-
-// -----------------------------------------------------------------------------
-/*!
- * \details This method returns the setting of the YAML configuration
- *          parameter: obsdatain.obsgrouping.sort variable
- */
-std::string ObsData::obs_sort_var() const {
-  return obs_sort_variable_;
-}
-
-// -----------------------------------------------------------------------------
-/*!
- * \details This method returns the setting of the YAML configuration
- *          parameter: obsdatain.obsgrouping.sort order
- */
-std::string ObsData::obs_sort_order() const {
-  return obs_sort_order_;
-}
-
-// -----------------------------------------------------------------------------
-/*!
- * \details This method returns the number of unique locations in the input
- *          obs file. Note that nlocs from the obs container may be smaller
- *          than nlocs from the input obs file due to the removal of obs outside
- *          the DA timing window and/or due to distribution of obs across
- *          multiple process elements.
- */
-std::size_t ObsData::gnlocs() const {
-  return gnlocs_;
-}
-
-// -----------------------------------------------------------------------------
-/*!
- * \details This method returns the number of unique locations in the obs
- *          container. Note that nlocs from the obs container may be smaller
- *          than nlocs from the input obs file due to the removal of obs outside
- *          the DA timing window and/or due to distribution of obs across
- *          multiple process elements.
- */
-std::size_t ObsData::nlocs() const {
-  return nlocs_;
-}
-
-// -----------------------------------------------------------------------------
-/*!
- * \details This method returns the number of unique records in the obs
- *          container. A record is an atomic unit of locations that belong
- *          together such as a single radiosonde sounding.
- */
-std::size_t ObsData::nrecs() const {
-  return nrecs_;
-}
-
-// -----------------------------------------------------------------------------
-/*!
- * \details This method returns the number of unique variables in the obs
- *          container. "Variables" refers to the quantities that can be
- *          assimilated as opposed to meta data.
- */
-std::size_t ObsData::nvars() const {
-  return nvars_;
-}
-
-// -----------------------------------------------------------------------------
-/*!
  * \details This method returns a reference to the record number vector
  *          data member. This is for read only access.
  */
@@ -450,37 +346,117 @@ std::vector<std::size_t> ObsData::recidx_all_recnums() const {
   return RecNums;
 }
 
+// ----------------------------- private functions -----------------------------
 // -----------------------------------------------------------------------------
-/*!
- * \details This method provides a way to print an ObsData object in an output
- *          stream. It simply prints a dummy message for now.
- */
 void ObsData::print(std::ostream & os) const {
-  os << "ObsData::print not implemented";
+    os << "ObsData::print not implemented";
 }
 
 // -----------------------------------------------------------------------------
-void ObsData::initFromObsIo(const std::shared_ptr<ObsIo> & obsIo) {
+void ObsData::createObsGroup(const std::shared_ptr<ObsIo> & obsIo) {
+    // Create the dimension specs for obs_group_
+    NewDimensionScales_t newDims;
+    for (auto & dimName : listDimVars(obsIo->obs_group_)) {
+        Variable var = obsIo->obs_group_.vars.open(dimName);
+        Dimensions_t dimSize = var.getDimensions().dimsCur[0];
+        Dimensions_t maxDimSize = dimSize;
+        if (dimName == "nlocs") {
+            maxDimSize = Unlimited;
+        }
+        newDims.push_back(std::make_shared<ioda::NewDimensionScale<int>>(
+            dimName, dimSize, maxDimSize, dimSize));
+    }
+
+    // Create the backend for obs_group_
+//  Engines::BackendNames backendName = Engines::BackendNames::ObsStore;
+//  Engines::BackendCreationParameters backendParams;
+//  Group backend = constructBackend(backendName, backendParams);
+    Engines::BackendNames backendName = Engines::BackendNames::Hdf5File;
+    Engines::BackendCreationParameters backendParams;
+    backendParams.fileName = "test_obsspace.hdf5";
+    backendParams.action = Engines::BackendFileActions::Create;
+    backendParams.createMode = Engines::BackendCreateModes::Truncate_If_Exists;
+    Group backend = constructBackend(backendName, backendParams);
+
+    // Create the ObsGroup and attach the backend.
+    obs_group_ = ObsGroup::generate(backend, newDims);
+}
+
+// -----------------------------------------------------------------------------
+void ObsData::initFromObsSource(const std::shared_ptr<ObsIo> & obsIo) {
     // Walk through the frames and copy the data to the obs_group_ storage
     std::vector<std::string> varList = listVars(obsIo->obs_group_);
-    int iframe = 0;
+    int iframe = 1;
     for (obsIo->frameInit(); obsIo->frameAvailable(); obsIo->frameNext()) {
         Dimensions_t frameStart = obsIo->frameStart();
-        oops::Log::debug() << "ObsData::initFromObsIo: Frame number: " << iframe << std::endl
+        oops::Log::debug() << "ObsData::initFromObsSource: Frame number: " << iframe << std::endl
             << "    frameStart: " << frameStart << std::endl;
 
         for (auto & varName : varList) {
             Variable var = obsIo->obs_group_.vars.open(varName);
             Dimensions_t frameCount = obsIo->frameCount(var);
             if (frameCount > 0) {
-                oops::Log::debug() << "ObsData::initFromObsIo: Variable: " << varName
+                oops::Log::debug() << "ObsData::initFromObsSource: Variable: " << varName
                     << ", frameCount: " << frameCount << std::endl;
+                // Transfer the variable to the in-memory storage
+                if (var.isA<int>()) {
+                    std::vector<int> varValues;
+                    readObsSource<int>(obsIo, varName, varValues);
+                    if (iframe == 1) { createVarFromObsSource<int>(obsIo, varName); }
+                    storeVar<int>(varName, varValues, frameStart, frameCount);
+                } else if (var.isA<float>()) {
+                    std::vector<float> varValues;
+                    readObsSource<float>(obsIo, varName, varValues);
+                    if (iframe == 1) { createVarFromObsSource<float>(obsIo, varName); }
+                    storeVar<float>(varName, varValues, frameStart, frameCount);
+                } else if (var.isA<std::string>()) {
+                    std::vector<std::string> varValues;
+                    readObsSource<std::string>(obsIo, varName, varValues);
+                    if (iframe == 1) { createVarFromObsSource<std::string>(obsIo, varName); }
+                    storeVar<std::string>(varName, varValues, frameStart, frameCount);
+                } else {
+                    oops::Log::warning() << "ObsData::initFromObsSource: Skipping read due to "
+                        << "an unexpected data type for variable: " << varName << std::endl;
+                }
             }
         }
 
         iframe++;
     }
 }
+
+// -----------------------------------------------------------------------------
+std::vector<Variable> ObsData::setVarDimsFromObsSource(const std::shared_ptr<ObsIo> & obsIo,
+                                                       const std::string & varName) {
+    // Get a list of dimension variables from the source (obsIo)
+    std::map<std::string, Variable> srcDimVars;
+    for (auto & dimVarName : listDimVars(obsIo->obs_group_)) {
+        Variable dimVar = obsIo->obs_group_.vars.open(dimVarName);
+        srcDimVars.insert(std::pair<std::string, Variable>(dimVarName, dimVar));
+    }
+
+    // find which dimensions are attached to the source variable
+    Variable sourceVar = obsIo->obs_group_.vars.open(varName);
+    Dimensions sourceDims = sourceVar.getDimensions();
+    std::vector<std::string> dimNames;
+    for (std::size_t i = 0; i < sourceDims.dimensionality; ++i) {
+        for (auto & dimVar : srcDimVars) {
+            if (sourceVar.isDimensionScaleAttached(i, dimVar.second)) {
+                dimNames.push_back(dimVar.first);
+            }
+        }
+    }
+
+    // convert the list of names to a list of variables
+    std::vector<Variable> destDimVars;
+    for (auto & dimName : dimNames) {
+        destDimVars.push_back(obs_group_.vars.open(dimName));
+    }
+
+    return destDimVars;
+}
+
+
 
 // -----------------------------------------------------------------------------
 /*!
@@ -860,14 +836,14 @@ void ObsData::BuildSortedObsGroups() {
 
   // Get the sort variable from the data store, and convert to a vector of floats.
   std::vector<float> SortValues(nlocs_);
-  if (obs_sort_variable_ == "datetime") {
+  if (this->obs_sort_var() == "datetime") {
     std::vector<util::DateTime> Dates(nlocs_);
-    get_db("MetaData", obs_sort_variable_, Dates);
+    get_db("MetaData", this->obs_sort_var(), Dates);
     for (std::size_t iloc = 0; iloc < nlocs_; iloc++) {
       SortValues[iloc] = (Dates[iloc] - Dates[0]).toSeconds();
     }
   } else {
-    get_db("MetaData", obs_sort_variable_, SortValues);
+    get_db("MetaData", this->obs_sort_var(), SortValues);
   }
 
   // Construct a temporary structure to do the sorting, then transfer the results
@@ -878,7 +854,7 @@ void ObsData::BuildSortedObsGroups() {
   }
 
   for (TmpRecIdxIter irec = TmpRecIdx.begin(); irec != TmpRecIdx.end(); ++irec) {
-    if (obs_sort_order_ == "ascending") {
+    if (this->obs_sort_order() == "ascending") {
       sort(irec->second.begin(), irec->second.end());
     } else {
       // Use a lambda function to access the std::pair greater-than operator to

@@ -81,6 +81,9 @@ class ObsIo : public util::Printable {
     ObsIo(const ObsIoActions action, const ObsIoModes mode, const ObsIoParameters & params);
     virtual ~ObsIo() = 0;
 
+    /// \brief return number of locations from the source
+    std::size_t nlocs() const {return nlocs_;}
+
     //----------------- Access to frame selection -------------------
     /// \brief initialize for walking through the frames
     void frameInit();
@@ -125,6 +128,9 @@ class ObsIo : public util::Printable {
 
     /// \brief maximum frame size
     Dimensions_t max_frame_size_;
+
+    /// \brief number of locations from source (file or generator)
+    std::size_t nlocs_;
 
     //------------------ functions ----------------------------------
     /// \brief print() for oops::Printable base class

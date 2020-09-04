@@ -105,11 +105,13 @@ ObsIo::~ObsIo() {}
 //------------------------------------------------------------------------------------
 void ObsIo::frameInit() {
     obs_frame_.frameInit(max_var_size_, max_frame_size_);
+    nlocs_ = obs_frame_.frameCount(obs_group_.vars.open("nlocs"));
 }
 
 //------------------------------------------------------------------------------------
 void ObsIo::frameNext() {
     obs_frame_.frameNext();
+    nlocs_ += obs_frame_.frameCount(obs_group_.vars.open("nlocs"));
 }
 
 //------------------------------------------------------------------------------------

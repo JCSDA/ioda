@@ -34,6 +34,7 @@
 #include "ioda/io/ObsIo.h"
 #include "ioda/io/ObsIoParameters.h"
 #include "ioda/ObsGroup.h"
+#include "ioda/Variables/Fill.h"
 
 // Forward declarations
 namespace eckit {
@@ -90,35 +91,72 @@ enum class ObsDtype {
  */
 class ObsData : public util::Printable {
  public:
-  typedef std::map<std::size_t, std::vector<std::size_t>> RecIdxMap;
-  typedef RecIdxMap::const_iterator RecIdxIter;
-  struct TreeTrait {
-      typedef eckit::geometry::Point3 Point;
-      typedef double                  Payload;
-  };
-  typedef eckit::KDTreeMemory<TreeTrait> KDTree;
+    //---------------------------- typedefs -------------------------------
+    typedef std::map<std::size_t, std::vector<std::size_t>> RecIdxMap;
+    typedef RecIdxMap::const_iterator RecIdxIter;
+    struct TreeTrait {
+        typedef eckit::geometry::Point3 Point;
+        typedef double                  Payload;
+    };
+    typedef eckit::KDTreeMemory<TreeTrait> KDTree;
 
-  ObsData(const eckit::Configuration &, const eckit::mpi::Comm &,
-          const util::DateTime &, const util::DateTime &);
-  /*!
-   * \details Copy constructor for an ObsData object.
-   */
-  ObsData(const ObsData &);
-  ~ObsData();
+    //---------------------------- functions ------------------------------
+    ObsData(const eckit::Configuration &, const eckit::mpi::Comm &,
+            const util::DateTime &, const util::DateTime &);
+    ObsData(const ObsData &);
+    ~ObsData();
 
-  std::size_t gnlocs() const;
-  std::size_t nlocs() const;
-  std::size_t nrecs() const;
-  std::size_t nvars() const;
+    /// \details This method will return the handle to the configuration
+    const eckit::Configuration & getConfig() const {return config_;}
+
+    /// \details This method will return the start of the DA timing window
+    const util::DateTime & windowStart() const {return winbgn_;}
+
+    /// \details This method will return the end of the DA timing window
+    const util::DateTime & windowEnd() const {return winend_;}
+
+    /// \details This method will return the associated MPI communicator
+    const eckit::mpi::Comm & comm() const {return commMPI_;}
+
+    /// \brief return the number of locations in the obs source (ObsIo)
+    /// \details This is the number of loctions from the input file or input
+    /// obs generator.
+    std::size_t gnlocs() const {return gnlocs_;}
+
+    /// \brief return the number of locations in the obs space
+    /// \details This is the number of loctions in the resulting obs space container
+    /// after removing obs outside the timing window and applying MPI distribution.
+    std::size_t nlocs() const;
+
+    /// \brief return the number of records in the obs space container
+    /// \details This is the number of sets of locations after applying the
+    /// optional grouping.
+    std::size_t nrecs() const;
+
+    /// \brief return the number of variables in the obs space container
+    std::size_t nvars() const;
+
+    /// \brief return YAML configuration parameter: obsdatain.obsgrouping.group variable
+    std::string obs_group_var() const {return obs_params_.in_file_.obsGroupVar;}
+
+    /// \brief return YAML configuration parameter: obsdatain.obsgrouping.sort variable
+    std::string obs_sort_var() const {return obs_params_.in_file_.obsSortVar;}
+
+    /// \brief return YAML configuration parameter: obsdatain.obsgrouping.sort order
+    std::string obs_sort_order() const {return obs_params_.in_file_.obsSortOrder;}
+
+    /// \brief return the name of the obs type being stored
+    const std::string & obsname() const {return obsname_;}
+
+    /// \brief return the name of the MPI distribution
+    std::string distname() const {return obs_params_.top_level_.distributionType;}
+
+
   const std::vector<std::size_t> & recnum() const;
   const std::vector<std::size_t> & index() const;
 
   bool has(const std::string &, const std::string &) const;
   ObsDtype dtype(const std::string &, const std::string &) const;
-
-  std::string obs_group_var() const;
-  std::string obs_sort_var() const;
-  std::string obs_sort_order() const;
 
   void get_db(const std::string & group, const std::string & name,
               std::vector<int> & vdata) const;
@@ -152,29 +190,160 @@ class ObsData : public util::Printable {
   const std::vector<std::size_t> & recidx_vector(const std::size_t RecNum) const;
   std::vector<std::size_t> recidx_all_recnums() const;
 
-  /*! \details This method will return the name of the obs type being stored */
-  const std::string & obsname() const {return obsname_;}
-  /*! \details This method will return the handle to the configuration */
-  const eckit::Configuration & getConfig() const {return config_;}
-  /*! \details This method will return the start of the DA timing window */
-  const util::DateTime & windowStart() const {return winbgn_;}
-  /*! \details This method will return the end of the DA timing window */
-  const util::DateTime & windowEnd() const {return winend_;}
-  /*! \details This method will return the associated MPI communicator */
-  const eckit::mpi::Comm & comm() const {return commMPI_;}
-
   void printJo(const ObsVector &, const ObsVector &);  // to be removed
 
   const oops::Variables & obsvariables() const {return obsvars_;}
   const std::shared_ptr<Distribution> distribution() const { return dist_;}
 
  private:
-  void print(std::ostream &) const;
+    // ----------------------------- private data members ---------------------------
+    /// \brief Configuration file
+    const eckit::LocalConfiguration config_;
 
-  ObsData & operator= (const ObsData &);
+    /// \brief Beginning of DA timing window
+    const util::DateTime winbgn_;
 
-  // Initialize the database from the input file
-  void initFromObsIo(const std::shared_ptr<ObsIo> & obsIo);
+    /// \brief End of DA timing window
+    const util::DateTime winend_;
+
+    /// \brief MPI communicator
+    const eckit::mpi::Comm & commMPI_;
+
+    /// \brief total number of locations
+    std::size_t gnlocs_;
+
+    /// \brief number of locations on this domain
+    std::size_t nlocs_;
+
+    /// \brief number of variables
+    std::size_t nvars_;
+
+    /// \brief number of records
+    std::size_t nrecs_;
+
+    /// \brief observation data store
+    ObsGroup obs_group_;
+
+    /// \brief obs io parameters
+    ObsIoParameters obs_params_;
+
+    /// \brief name of obs space
+    std::string obsname_;
+
+    /// \brief Observation "variables" to be simulated
+    oops::Variables obsvars_;
+
+    /*! \brief MPI distribution object */
+    std::shared_ptr<Distribution> dist_;
+
+
+
+
+    // ----------------------------- private functions ------------------------------
+    ObsData & operator= (const ObsData &);
+
+    /// \brief print function for oops::Printable class
+    /// \param os output stream
+    void print(std::ostream & os) const;
+
+    // Initialize the database from a source (ObsIo ojbect)
+    /// \brief create the in-memory obs_group_ (ObsGroup) object
+    /// \param obsIo ObsIo object holding source data
+    void createObsGroup(const std::shared_ptr<ObsIo> & obsIo);
+
+    /// \brief initialize the in-memory obs_group_ (ObsGroup) object from the ObsIo source
+    /// \param obsIo ObsIo object holding source data
+    void initFromObsSource(const std::shared_ptr<ObsIo> & obsIo);
+
+    template<typename VarType>
+    void readObsSource(const std::shared_ptr<ObsIo> & obsIo, const std::string & varName,
+                       std::vector<VarType> & varValues) {
+        Variable var = obsIo->obs_group_.vars.open(varName);
+
+        // Form the selection objects for this variable
+        Selection frontendSelection;
+        Selection backendSelection;
+        obsIo->createFrameSelection(var, frontendSelection, backendSelection);
+
+        // Read the variable
+        var.read<VarType>(varValues, frontendSelection, backendSelection);
+
+        // Replace source fill values with corresponding missing marks
+        Variable sourceVar = obsIo->obs_group_.vars.open(varName);
+        if (sourceVar.hasFillValue()) {
+            detail::FillValueData_t sourceFvData = sourceVar.getFillValue();
+            VarType sourceFillValue = detail::getFillValue<VarType>(sourceFvData);
+            VarType varFillValue = this->getFillValue<VarType>();
+            for (auto i = varValues.begin(); i != varValues.end(); ++i) {
+                if (*i == sourceFillValue) { *i = varFillValue; }
+            }
+        }
+    }
+
+    /// \brief create a variable in the obs_group_ object based on the obs source
+    /// \param obsIo ObsIo object
+    /// \param varName Name of obs_group_ variable for obs_group_ object
+    template<typename VarType>
+    Variable createVarFromObsSource(const std::shared_ptr<ObsIo> & obsIo,
+                                    const std::string & varName) {
+        // Creation parameters. Enable chunking, compression, and set a fill
+        // value based on the built in missing values marks.
+        VariableCreationParameters params;
+        params.chunk = true;
+        params.compressWithGZIP();
+        params.setFillValue<VarType>(this->getFillValue<VarType>());
+
+        std::vector<Variable> varDims = this->setVarDimsFromObsSource(obsIo, varName);
+        return obs_group_.vars.createWithScales<VarType>(varName, varDims, params);
+    }
+
+    /// \brief store a variable in the obs_group_ object
+    /// \param obsIo ObsIo object
+    /// \param varName Name of obs_group_ variable for obs_group_ object
+    /// \param varValues Values for obs_group_ variable
+    template<typename VarType>
+    void storeVar(const std::string & varName, std::vector<VarType> & varValues,
+                  const Dimensions_t frameStart, const Dimensions_t frameCount) {
+        // get the dimensions of the variable
+        Variable var = obs_group_.vars.open(varName);
+        Dimensions varDims = var.getDimensions();
+
+        // front end always starts at zero, and the count for the first dimension
+        // is the frame count
+        std::vector<Dimensions_t> feCounts = varDims.dimsCur;
+        feCounts[0] = frameCount;
+        std::vector<Dimensions_t> feStarts(feCounts.size(), 0);
+
+        // backend end starts at frameStart, and the count is the same as the
+        // frontend counts (with the first dimension adjusted)
+        std::vector<Dimensions_t> beCounts = feCounts;
+        std::vector<Dimensions_t> beStarts(beCounts.size(), 0);
+        beStarts[0] = frameStart;
+
+        var.write<VarType>(varValues,
+            Selection().extent(feCounts).select({ SelectionOperator::SET, feStarts, feCounts }),
+            Selection().select({ SelectionOperator::SET, beStarts, beCounts }));
+    }
+
+    /// \brief get fill value for use in the obs_group_ object
+    template<typename DataType>
+    DataType getFillValue() {
+        DataType fillVal = util::missingValue(fillVal);
+        return fillVal;
+    }
+
+    /// \brief template specialization for string types
+    template<>
+    std::string getFillValue<std::string>() {
+        return std::string("_fill_");
+    }
+
+    /// \brief set the vector of dimension variables for the obs_group_ variable creation
+    /// \param obsIo ObsIo object
+    /// \param varName Name of obs_group_ variable for obs_group_ object
+    std::vector<Variable> setVarDimsFromObsSource(const std::shared_ptr<ObsIo> & obsIo,
+                                                  const std::string & varName);
+
   template<typename VarType>
   void StoreToDb(const std::string & GroupName, const std::string & VarName,
                  const std::vector<std::size_t> & VarShape,
@@ -204,38 +373,9 @@ class ObsData : public util::Printable {
   template<typename DataType>
   void GetFillValue(DataType & FillValue) const;
 
-  /*! \brief name of obs space */
-  std::string obsname_;
-
-  /*! \brief Configuration file */
-  const eckit::LocalConfiguration config_;
-
-  /*! \brief Beginning of DA timing window */
-  const util::DateTime winbgn_;
-
-  /*! \brief End of DA timing window */
-  const util::DateTime winend_;
-
-  /*! \brief MPI communicator */
-  const eckit::mpi::Comm & commMPI_;
-
-  /*! \brief obs io parameters */
-  ObsIoParameters obs_params_;
 
   /*! \brief KD Tree */
   std::shared_ptr<KDTree> kd_;
-
-  /*! \brief total number of locations */
-  std::size_t gnlocs_;
-
-  /*! \brief number of locations on this domain */
-  std::size_t nlocs_;
-
-  /*! \brief number of variables */
-  std::size_t nvars_;
-
-  /*! \brief number of records */
-  std::size_t nrecs_;
 
   /*! \brief path to input file */
   std::string filein_;
@@ -251,27 +391,6 @@ class ObsData : public util::Printable {
 
   /*! \brief profile ordering */
   RecIdxMap recidx_;
-
-  /*! \brief Observation "variables" to be simulated */
-  oops::Variables obsvars_;
-
-  /*! \brief Distribution type */
-  std::string distname_;
-
-  /*! \brief Variable that location grouping is based upon */
-  std::string obs_group_variable_;
-
-  /*! \brief Variable that location group sorting is based upon */
-  std::string obs_sort_variable_;
-
-  /*! \brief Sort order for obs grouping */
-  std::string obs_sort_order_;
-
-  /*! \brief MPI distribution object */
-  std::shared_ptr<Distribution> dist_;
-
-  /*! \brief observation data store */
-  ObsGroup obs_group_;
 
   /*! \brief maps for obs grouping via integer, float or string values */
   ObsGroupingMap<int> int_obs_grouping_;
