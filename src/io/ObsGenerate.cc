@@ -27,7 +27,7 @@ namespace ioda {
 
 //-----------------------------------------------------------------------------------
 ObsGenerate::ObsGenerate(const ObsIoActions action, const ObsIoModes mode,
-                         const ObsIoParameters & params) : ObsIo(action, mode, params) {
+                         const ObsSpaceParameters & params) : ObsIo(action, mode, params) {
     // Create an in-memory backend and attach it to an in-memory ObsGroup
     Engines::BackendNames backendName;
     Engines::BackendCreationParameters backendParams;

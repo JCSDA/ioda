@@ -5,8 +5,8 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#ifndef IO_OBSIOPARAMETERS_H_
-#define IO_OBSIOPARAMETERS_H_
+#ifndef OBSSPACEPARAMETERS_H_
+#define OBSSPACEPARAMETERS_H_
 
 #include <string>
 #include <vector>
@@ -148,7 +148,7 @@ class ObsFileOutParameters : public oops::Parameters {
     oops::Parameter<Dimensions_t> maxFrameSize{"max frame size", DEFAULT_FRAME_SIZE, this};
 };
 
-class ObsIoParameters : public oops::Parameters {
+class ObsSpaceParameters : public oops::Parameters {
  public:
     /// sub groups of parameters
     ObsTopLevelParameters top_level_;
@@ -158,15 +158,15 @@ class ObsIoParameters : public oops::Parameters {
     ObsFileOutParameters out_file_;
 
     /// Constructor
-    ObsIoParameters(const util::DateTime & winStart, const util::DateTime & winEnd,
-                    const eckit::mpi::Comm & comm) :
-                        win_start_(winStart), win_end_(winEnd), comm_(comm) {}
+    ObsSpaceParameters(const util::DateTime & winStart, const util::DateTime & winEnd,
+                       const eckit::mpi::Comm & comm) :
+                           win_start_(winStart), win_end_(winEnd), comm_(comm) {}
 
     /// \brief deserialize the parameter sub groups
     /// \param config "obs space" level configuration
     void deserialize(const eckit::Configuration & config) {
         /// Must have one of the input parameter sub groups
-        oops::Log::trace() << "ObsIoParameters config: " << config << std::endl;
+        oops::Log::trace() << "ObsSpaceParameters config: " << config << std::endl;
 
         /// First deserialize the top level parameters, then deserialize the
         /// appropriate sub configurations
@@ -257,4 +257,4 @@ class ObsIoParameters : public oops::Parameters {
 
 }  // namespace ioda
 
-#endif  // IO_OBSIOPARAMETERS_H_
+#endif  // OBSSPACEPARAMETERS_H_

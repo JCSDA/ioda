@@ -95,7 +95,8 @@ void ObsFrame::createFrameSelection(const Variable & var, Selection & feSelect,
 
 //--------------------------- public functions ---------------------------------------
 //------------------------------------------------------------------------------------
-ObsIo::ObsIo(const ObsIoActions action, const ObsIoModes mode, const ObsIoParameters & params) :
+ObsIo::ObsIo(const ObsIoActions action, const ObsIoModes mode,
+             const ObsSpaceParameters & params) :
                  action_(action), mode_(mode), params_(params), obs_frame_() {
     oops::Log::trace() << "Constructing ObsIo" << std::endl;
 }

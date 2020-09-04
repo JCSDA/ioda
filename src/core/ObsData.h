@@ -32,8 +32,8 @@
 #include "ioda/distribution/Distribution.h"
 #include "ioda/Engines/Factory.h"
 #include "ioda/io/ObsIo.h"
-#include "ioda/io/ObsIoParameters.h"
 #include "ioda/ObsGroup.h"
+#include "ioda/ObsSpaceParameters.h"
 #include "ioda/Variables/Fill.h"
 
 // Forward declarations
@@ -225,7 +225,7 @@ class ObsData : public util::Printable {
     ObsGroup obs_group_;
 
     /// \brief obs io parameters
-    ObsIoParameters obs_params_;
+    ObsSpaceParameters obs_params_;
 
     /// \brief name of obs space
     std::string obsname_;

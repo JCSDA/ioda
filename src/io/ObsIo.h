@@ -14,8 +14,8 @@
 
 #include "eckit/config/LocalConfiguration.h"
 
-#include "ioda/io/ObsIoParameters.h"
 #include "ioda/Misc/Dimensions.h"
+#include "ioda/ObsSpaceParameters.h"
 #include "ioda/Variables/Variable.h"
 
 #include "oops/util/Logger.h"
@@ -78,7 +78,7 @@ class ObsIo : public util::Printable {
     /// \brief ObsGroup object representing io source/destination
     ObsGroup obs_group_;
 
-    ObsIo(const ObsIoActions action, const ObsIoModes mode, const ObsIoParameters & params);
+    ObsIo(const ObsIoActions action, const ObsIoModes mode, const ObsSpaceParameters & params);
     virtual ~ObsIo() = 0;
 
     /// \brief return number of locations from the source
@@ -121,7 +121,7 @@ class ObsIo : public util::Printable {
     ObsIoModes mode_;
 
     /// \brief ObsIo parameter specs
-    ObsIoParameters params_;
+    ObsSpaceParameters params_;
 
     /// \brief maximum variable size (ie, first dimension size)
     Dimensions_t max_var_size_;

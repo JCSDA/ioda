@@ -11,7 +11,7 @@
 #include <iostream>
 
 #include "ioda/io/ObsIo.h"
-#include "ioda/io/ObsIoParameters.h"
+#include "ioda/ObsSpaceParameters.h"
 
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"
@@ -35,7 +35,8 @@ class ObsFile : public ObsIo, private util::ObjectCounter<ObsFile> {
     ///          for reporting by OOPS.
     static const std::string classname() {return "ioda::ObsFile";}
 
-    ObsFile(const ObsIoActions action, const ObsIoModes mode, const ObsIoParameters & params);
+    ObsFile(const ObsIoActions action, const ObsIoModes mode,
+            const ObsSpaceParameters & params);
     ~ObsFile();
 
  private:

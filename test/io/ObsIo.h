@@ -32,8 +32,8 @@
 #include "ioda/core/IodaUtils.h"
 #include "ioda/io/ObsIo.h"
 #include "ioda/io/ObsIoFactory.h"
-#include "ioda/io/ObsIoParameters.h"
 #include "ioda/ObsGroup.h"
+#include "ioda/ObsSpaceParameters.h"
 #include "ioda/Variables/Variable.h"
 
 namespace ioda {
@@ -205,7 +205,7 @@ void testConstructor() {
         confOspaces[i].get("obs space", obsConfig);
         oops::Log::trace() << "ObsIo test config: " << i << ": " << obsConfig << std::endl;
 
-        ioda::ObsIoParameters obsParams(bgn, end, oops::mpi::comm());
+        ioda::ObsSpaceParameters obsParams(bgn, end, oops::mpi::comm());
         obsParams.deserialize(obsConfig);
 
         // Try the input constructor first - should have one to try if we got here
@@ -247,7 +247,7 @@ void testRead() {
         confOspaces[i].get("obs space", obsConfig);
         oops::Log::trace() << "ObsIo testRead config: " << i << ": " << obsConfig << std::endl;
 
-        ioda::ObsIoParameters obsParams(bgn, end, oops::mpi::comm());
+        ioda::ObsSpaceParameters obsParams(bgn, end, oops::mpi::comm());
         obsParams.deserialize(obsConfig);
 
         // Input constructor
@@ -288,7 +288,7 @@ void testWrite() {
         confOspaces[i].get("obs space", obsConfig);
         oops::Log::trace() << "ObsIo testWrite config: " << i << ": " << obsConfig << std::endl;
 
-        ioda::ObsIoParameters obsParams(bgn, end, oops::mpi::comm());
+        ioda::ObsSpaceParameters obsParams(bgn, end, oops::mpi::comm());
         obsParams.deserialize(obsConfig);
 
         if (obsParams.out_type() == ObsIoTypes::OBS_FILE) {

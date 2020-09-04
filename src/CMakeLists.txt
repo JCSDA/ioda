@@ -4,6 +4,7 @@ IodaTrait.h
 ObsDataVector.h
 ObsSpace.cc
 ObsSpace.h
+ObsSpaceParameters.h
 ObsVector.cc
 ObsVector.h
 obsspace_mod.F90
@@ -35,7 +36,6 @@ io/ObsGenerate.cc
 io/ObsGenerate.h
 io/ObsIo.cc
 io/ObsIo.h
-io/ObsIoParameters.h
 io/ObsIoFactory.cc
 io/ObsIoFactory.h
 )

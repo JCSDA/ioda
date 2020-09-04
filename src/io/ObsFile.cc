@@ -23,7 +23,7 @@ namespace ioda {
 
 //--------------------------------------------------------------------------------
 ObsFile::ObsFile(const ObsIoActions action, const ObsIoModes mode,
-                 const ObsIoParameters & params) : ObsIo(action, mode, params) {
+                 const ObsSpaceParameters & params) : ObsIo(action, mode, params) {
     std::string fileName;
 
     Engines::BackendNames backendName;

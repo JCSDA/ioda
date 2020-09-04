@@ -11,7 +11,7 @@
 #include <iostream>
 
 #include "ioda/io/ObsIo.h"
-#include "ioda/io/ObsIoParameters.h"
+#include "ioda/ObsSpaceParameters.h"
 
 #include "eckit/mpi/Comm.h"
 
@@ -39,7 +39,7 @@ class ObsGenerate : public ObsIo, private util::ObjectCounter<ObsGenerate> {
     static const std::string classname() {return "ioda::ObsFile";}
 
     ObsGenerate(const ObsIoActions action, const ObsIoModes mode,
-                const ObsIoParameters & params);
+                const ObsSpaceParameters & params);
     ~ObsGenerate();
 
  private:
