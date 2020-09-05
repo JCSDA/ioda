@@ -17,7 +17,6 @@ core/ObsLocGC99.cc
 core/ObsLocGC99.h
 core/ObsData.cc
 core/ObsData.h
-core/ObsSpaceContainer.h
 core/obsspace_f.cc
 core/obsspace_f.h
 

@@ -28,7 +28,6 @@
 #include "oops/util/Printable.h"
 
 #include "ioda/core/IodaUtils.h"
-#include "ioda/core/ObsSpaceContainer.h"
 #include "ioda/distribution/Distribution.h"
 #include "ioda/Engines/Factory.h"
 #include "ioda/io/ObsIo.h"

@@ -10,7 +10,6 @@ list( APPEND ioda_test_input
   testinput/iodatest_obserror.yml
   testinput/iodatest_obsio.yml
   testinput/iodatest_distribution.yml
-  testinput/iodatest_obsspace_container.yml
   testinput/iodatest_obsspace.yml
   testinput/iodatest_obsspace_marine.yml
   testinput/iodatest_obsspace_fortran.yml
@@ -156,15 +155,6 @@ ecbuild_add_test( TARGET  test_ioda_distribution
                   MPI     4
                   SOURCES mains/TestDistribution.cc
                   ARGS    "testinput/iodatest_distribution.yml"
-                  LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data )
-
-#####################################################################
-# ObsSpaceContainer tests
-#####################################################################
-ecbuild_add_test( TARGET  test_ioda_obsspacecontainer
-                  SOURCES mains/TestObsSpaceContainer.cc
-                  ARGS    "testinput/iodatest_obsspace_container.yml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
