@@ -248,12 +248,23 @@ class ObsData : public util::Printable {
     // Initialize the database from a source (ObsIo ojbect)
     /// \brief create the in-memory obs_group_ (ObsGroup) object
     /// \param obsIo ObsIo object holding source data
-    void createObsGroup(const std::shared_ptr<ObsIo> & obsIo);
+    void createObsGroupFromObsIo(const std::shared_ptr<ObsIo> & obsIo);
 
     /// \brief initialize the in-memory obs_group_ (ObsGroup) object from the ObsIo source
     /// \param obsIo ObsIo object holding source data
     void initFromObsSource(const std::shared_ptr<ObsIo> & obsIo);
 
+    /// \brief resize along nlocs dimension
+    /// \param obsIo ObsIo object
+    /// \param nlocsSize new size to either append or reset
+    /// \param append when true append nlocsSize to current size, otherwise reset to nlocsSize
+    bool resizeNlocs(const std::shared_ptr<ObsIo> & obsIo, const std::string & varName,
+                     const Dimensions_t nlocsSize, const bool append);
+
+    /// \brief read in values for variable from obs source
+    /// \param obsIo ObsIo object
+    /// \param varName Name of variable in obs source object
+    /// \param varValues values for variable
     template<typename VarType>
     void readObsSource(const std::shared_ptr<ObsIo> & obsIo, const std::string & varName,
                        std::vector<VarType> & varValues) {
