@@ -16,6 +16,8 @@
 #include "ioda/ObsGroup.h"
 
 #include "oops/util/abor1_cpp.h"
+#include "oops/util/DateTime.h"
+#include "oops/util/Duration.h"
 #include "oops/util/missingValues.h"
 
 
@@ -63,6 +65,12 @@ namespace ioda {
 
   /// \brief true if variable is a dimension scale
   bool varIsDimScale(const Group & group, const std::string & varName);
+
+  /// \brief convert reference, time to DateTime object
+  /// \param refDtime reference date time
+  /// \param timeOffets offset time values (in hours)
+  std::vector<util::DateTime> convertRefOffsetToDtime(const int refIntDtime,
+                                                      const std::vector<float> & timeOffsets);
 
   // -----------------------------------------------------------------------------
   /*!

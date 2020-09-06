@@ -32,7 +32,6 @@
 
 #include "ioda/distribution/DistributionFactory.h"
 #include "ioda/io/ObsIoFactory.h"
-#include "ioda/Misc/Dimensions.h"
 #include "ioda/Variables/Variable.h"
 
 #include "atlas/util/Earth.h"
@@ -403,20 +402,29 @@ void ObsData::initFromObsSource(const std::shared_ptr<ObsIo> & obsIo) {
             << iframe << std::endl
             << "    frameStart: " << frameStart << std::endl;
 
-        bool resizedNlocs = false;
+        bool firstVarAlongNlocs = true;
         for (auto & varName : varList) {
             Variable var = obsIo->obs_group_.vars.open(varName);
             Dimensions_t frameCount = obsIo->frameCount(var);
             if (frameCount > 0) {
+                // Adjust the frame count for variables dimensioned along nlocs according
+                // to MPI distribution and timing window selection. Take this information
+                // into account when resizing variable and forming selection objects.
+                //
+                // At this point need to check the variable in the obs source since we
+                // may not have created the variable in the obs_group_ yet.
+                if (isObsSourceVarDimByNlocs(obsIo, varName)) {
+                    if (firstVarAlongNlocs) {
+                        genFrameIndexRecNums(obsIo, frameStart, frameCount);
+                        resizeNlocs(adjusted_frame_count_, (iframe > 1));
+                        firstVarAlongNlocs = false;
+                    }
+                    // put in new frame count here
+                    frameCount = adjusted_frame_count_;
+                }
+
                 oops::Log::debug() << "ObsData::initFromObsSource: Variable: " << varName
                     << ", frameCount: " << frameCount << std::endl;
-
-                // resize nlocs in anticipation of storing variables along nlocs
-                // TODO(srh) need to do distribution, timing window filtering before
-                // this and get an adjusted frame count for use downstream.
-                if (!resizedNlocs) {
-                    resizedNlocs = resizeNlocs(obsIo, varName, frameCount, (iframe > 1));
-                }
 
                 // Transfer the variable to the in-memory storage
                 if (var.isA<int>()) {
@@ -436,7 +444,7 @@ void ObsData::initFromObsSource(const std::shared_ptr<ObsIo> & obsIo) {
                     storeVar<std::string>(varName, varValues, frameStart, frameCount);
                 } else {
                     if ((iframe == 1) && (this->comm().rank() == 0)) {
-                        oops::Log::warning() << "ObsData::initFromObsSource: "
+                        oops::Log::warning() << "WARNING: ObsData::initFromObsSource: "
                             << "Skipping read due to an unexpected data type for variable: "
                             << varName << std::endl;
                     }
@@ -449,26 +457,24 @@ void ObsData::initFromObsSource(const std::shared_ptr<ObsIo> & obsIo) {
 }
 
 // -----------------------------------------------------------------------------
-bool ObsData::resizeNlocs(const std::shared_ptr<ObsIo> & obsIo, const std::string & varName,
-                          const Dimensions_t nlocsSize, const bool append) {
-    bool resized;
-    Variable sourceVar = obsIo->obs_group_.vars.open(varName);
-    Variable sourceNlocsVar = obsIo->obs_group_.vars.open("nlocs");
-    if (sourceVar.isDimensionScaleAttached(0, sourceNlocsVar)) { 
-        Variable nlocsVar = obs_group_.vars.open("nlocs");
-        Dimensions_t nlocsResize;
-        if (append) {
-            nlocsResize = nlocsVar.getDimensions().dimsCur[0] + nlocsSize;
-        } else {
-            nlocsResize = nlocsSize;
-        }
-        obs_group_.resize(
-            { std::pair<Variable, Dimensions_t>(nlocsVar, nlocsResize) });
-        resized= true;
+void ObsData::resizeNlocs(const Dimensions_t nlocsSize, const bool append) {
+    Variable nlocsVar = obs_group_.vars.open("nlocs");
+    Dimensions_t nlocsResize;
+    if (append) {
+        nlocsResize = nlocsVar.getDimensions().dimsCur[0] + nlocsSize;
     } else {
-        resized= false;
+        nlocsResize = nlocsSize;
     }
-    return resized;
+    obs_group_.resize(
+        { std::pair<Variable, Dimensions_t>(nlocsVar, nlocsResize) });
+}
+
+// -----------------------------------------------------------------------------
+bool ObsData::isObsSourceVarDimByNlocs(const std::shared_ptr<ObsIo> & obsIo,
+                                       const std::string & varName) {
+    Variable var = obsIo->obs_group_.vars.open(varName);
+    Variable nlocsVar = obsIo->obs_group_.vars.open("nlocs");
+    return var.isDimensionScaleAttached(0, nlocsVar);
 }
 
 // -----------------------------------------------------------------------------
@@ -501,6 +507,151 @@ std::vector<Variable> ObsData::setVarDimsFromObsSource(const std::shared_ptr<Obs
 
     return destDimVars;
 }
+
+// -----------------------------------------------------------------------------
+void ObsData::genFrameIndexRecNums(const std::shared_ptr<ObsIo> & obsIo,
+                                   const Dimensions_t frameStart,
+                                   const Dimensions_t frameCount) {
+    // Apply the timing window if we are reading from a file. Need to filter out locations
+    // that are outside the timing window before generating record numbers. This is because
+    // we are generating record numbers on the fly since we want to get to the point where
+    // we can do the MPI distribution without knowing how many obs (and records) we are going
+    // to encounter.
+    //
+    // Create two vectors as the timing windows are checked, one for location indices the
+    // other for frame indices. Location indices are relative to FrameStart, and frame
+    // indices are relative to this frame (start at zero).
+    //
+    // If we are not reading from a file, then load up the locations and frame indices
+    // with all locations in the frame.
+    Dimensions_t locSize = frameCount;
+    std::vector<std::size_t> locIndex;
+    std::vector<std::size_t> frameIndex;
+    // TODO(srh) prefer datetime@Metadata once fixed length strings are available
+    std::string dtVarName = std::string("time@MetaData");
+    if ((obs_params_.in_type() == ObsIoTypes::OBS_FILE) &&
+        (obsIo->obs_group_.vars.exists(dtVarName))) {
+        Variable dtVar = obsIo->obs_group_.vars.open(dtVarName);
+        std::vector<Dimensions_t> counts(1, locSize);
+        std::vector<Dimensions_t> feStarts(1, 0);
+        std::vector<Dimensions_t> beStarts(1, frameStart);
+        std::vector<float> dtValues;
+        dtVar.read(dtValues,
+            Selection().extent(counts)
+                .select({ SelectionOperator::SET, feStarts, counts }),
+            Selection()
+                .select({ SelectionOperator::SET, beStarts, counts }));
+        dtValues.resize(frameCount);
+
+        // convert ref, offset time to datetime objects
+        int refDtime;
+        obsIo->obs_group_.atts.open("date_time").read<int>(refDtime);
+        std::vector<util::DateTime> dtimeVals = convertRefOffsetToDtime(refDtime, dtValues);
+
+        // Keep all locations that fall inside the timing window
+        for (std::size_t i = 0; i < locSize; ++i) {
+          if (insideTimingWindow(dtimeVals[i])) {
+            locIndex.push_back(frameStart + i);
+            frameIndex.push_back(i);
+          }
+        }
+        locSize = locIndex.size();  // in case any locations were rejected
+    } else {
+        // Not reading from file, keep all locations.
+        locIndex.assign(locSize, 0);
+        std::iota(locIndex.begin(), locIndex.end(), frameStart);
+
+        frameIndex.assign(locSize, 0);
+        std::iota(frameIndex.begin(), frameIndex.end(), 0);
+    }
+      
+
+///   // Generate record numbers for this frame
+///   std::vector<std::size_t> Records(locSize);
+///   if ((obs_group_variable_.empty()) || (FileIO == nullptr)) {
+///     // Grouping is not specified, so use the location indices as the record indicators.
+///     // Using the obs grouping object will make the record numbering go sequentially
+///     // from 0 to nrecs_ - 1.
+///     for (std::size_t i = 0; i < locSize; ++i) {
+///       int RecValue = locIndex[i];
+///       if (!int_obs_grouping_.has(RecValue)) {
+///         int_obs_grouping_.insert(RecValue, next_rec_num_);
+///         next_rec_num_++;
+///         nrecs_ = next_rec_num_;
+///       }
+///       Records[i] = int_obs_grouping_.at(RecValue);
+///     }
+///   } else {
+///     // Group according to the data in obs_group_variable_
+///     std::string GroupName = "MetaData";
+///     std::string VarName = obs_group_variable_;
+///     std::string VarType = FileIO->var_dtype(GroupName, VarName);
+
+///     if (VarType == "int") {
+///       std::vector<int> GroupVar;
+///       FileIO->frame_int_get_data(GroupName, VarName, GroupVar);
+///       for (std::size_t i = 0; i < locSize; ++i) {
+///         int RecValue = GroupVar[frameIndex[i]];
+///         if (!int_obs_grouping_.has(RecValue)) {
+///           int_obs_grouping_.insert(RecValue, next_rec_num_);
+///           next_rec_num_++;
+///           nrecs_ = next_rec_num_;
+///         }
+///         Records[i] = int_obs_grouping_.at(RecValue);
+///       }
+///     } else if (VarType == "float") {
+///       std::vector<float> GroupVar;
+///       FileIO->frame_float_get_data(GroupName, VarName, GroupVar);
+///       for (std::size_t i = 0; i < locSize; ++i) {
+///         float RecValue = GroupVar[frameIndex[i]];
+///         if (!float_obs_grouping_.has(RecValue)) {
+///           float_obs_grouping_.insert(RecValue, next_rec_num_);
+///           next_rec_num_++;
+///         }
+///         Records[i] = float_obs_grouping_.at(RecValue);
+///       }
+///     } else if (VarType == "string") {
+///       std::vector<std::string> GroupVar;
+///       FileIO->frame_string_get_data(GroupName, VarName, GroupVar);
+///       for (std::size_t i = 0; i < locSize; ++i) {
+///         std::string RecValue = GroupVar[frameIndex[i]];
+///         if (!string_obs_grouping_.has(RecValue)) {
+///           string_obs_grouping_.insert(RecValue, next_rec_num_);
+///           next_rec_num_++;
+///           nrecs_ = next_rec_num_;
+///         }
+///         Records[i] = string_obs_grouping_.at(RecValue);
+///       }
+///     }
+///   }
+
+///   // Generate the index and recnums for this frame. We are done with frameIndex
+///   // so it can be reused here.
+///   frameIndex.clear();
+///   std::set<std::size_t> UniqueRecNums;
+///   for (std::size_t i = 0; i < locSize; ++i) {
+///     std::size_t RowNum = locIndex[i];
+///     std::size_t RecNum = Records[i];
+///     if (dist_->isMyRecord(RecNum)) {
+///       indx_.push_back(RowNum);
+///       recnums_.push_back(RecNum);
+///       unique_rec_nums_.insert(RecNum);
+///       frameIndex.push_back(RowNum - FrameStart);
+///     }
+///   }
+
+///   nlocs_ += frameIndex.size();
+///   return frameIndex;
+
+    adjusted_frame_count_ = frameCount;
+}
+
+// -----------------------------------------------------------------------------
+bool ObsData::insideTimingWindow(const util::DateTime & obsDt) {
+    return ((obsDt > winbgn_) && (obsDt <= winend_));
+}
+
+
 
 
 
@@ -714,160 +865,6 @@ void ObsData::LoadFromDb(const std::string & GroupName, const std::string & VarN
     FileSelect = Selection::all;
   }
   var.read(VarData, MemSelect, FileSelect);
-}
-
-/// // -----------------------------------------------------------------------------
-/// /*!
-///  * \details This method generates an list of indices with their corresponding
-///  *          record numbers, where the indices denote which locations are to be
-///  *          read into this process element.
-///  *
-///  * \param[in] FileIO File id (pointer to IodaIO object)
-///  * \param[in] FrameStart Row number at beginning of frame.
-///  * \param[out] FrameIndex Vector of indices indicating rows belonging to this process element
-///  * \param[out] FrameRecNums Vector containing record numbers corresponding to FrameIndex
-///  */
-/// std::vector<std::size_t> ObsData::GenFrameIndexRecNums(const std::unique_ptr<IodaIO> & FileIO,
-///                                  const std::size_t FrameStart, const std::size_t FrameSize) {
-///   // It's possible that the total number of locations (gnlocs_) is smaller than
-///   // another dimension (eg, nchans or nvars for a hyperspectral instrument). If that
-///   // is the case, we don't want to read past the end of the datetime or obs group
-///   // variable which are dimensioned by nlocs.
-///   std::size_t LocSize = FrameSize;
-///   if ((FrameStart + FrameSize) > gnlocs_) { LocSize = gnlocs_ - FrameStart; }
-
-///   // Apply the timing window if we are reading from a file. Need to filter out locations
-///   // that are outside the timing window before generating record numbers. This is because
-///   // we are generating record numbers on the fly since we want to get to the point where
-///   // we can do the MPI distribution without knowing how many obs (and records) we are going
-///   // to encounter.
-///   //
-///   // Create two vectors as the timing windows are checked, one for location indices the
-///   // other for frame indices. Location indices are relative to FrameStart, and frame
-///   // indices are relative to this frame (start at zero).
-///   //
-///   // If we are not reading from a file, then load up the locations and frame indices
-///   // with all locations in the frame.
-///   std::vector<std::size_t> LocIndex;
-///   std::vector<std::size_t> FrameIndex;
-///   if (FileIO != nullptr) {
-///     // Grab the datetime strings for checking the timing window
-///     std::string DtGroupName = "MetaData";
-///     std::string DtVarName = "datetime";
-///     std::vector<std::string> DtStrings;
-///     FileIO->frame_string_get_data(DtGroupName, DtVarName, DtStrings);
-
-///     // Convert the datetime strings to DateTime objects
-///     std::vector<util::DateTime> ObsDtimes;
-///     for (std::size_t i = 0; i < DtStrings.size(); ++i) {
-///       util::DateTime ObsDt(DtStrings[i]);
-///       ObsDtimes.push_back(ObsDt);
-///     }
-
-///     // Keep all locations that fall inside the timing window
-///     for (std::size_t i = 0; i < LocSize; ++i) {
-///       if (InsideTimingWindow(ObsDtimes[i])) {
-///         LocIndex.push_back(FrameStart + i);
-///         FrameIndex.push_back(i);
-///       }
-///     }
-///     LocSize = LocIndex.size();  // in case any locations were rejected
-///   } else {
-///     // Not reading from file, keep all locations.
-///     LocIndex.assign(LocSize, 0);
-///     std::iota(LocIndex.begin(), LocIndex.end(), FrameStart);
-
-///     FrameIndex.assign(LocSize, 0);
-///     std::iota(FrameIndex.begin(), FrameIndex.end(), 0);
-///   }
-
-///   // Generate record numbers for this frame
-///   std::vector<std::size_t> Records(LocSize);
-///   if ((obs_group_variable_.empty()) || (FileIO == nullptr)) {
-///     // Grouping is not specified, so use the location indices as the record indicators.
-///     // Using the obs grouping object will make the record numbering go sequentially
-///     // from 0 to nrecs_ - 1.
-///     for (std::size_t i = 0; i < LocSize; ++i) {
-///       int RecValue = LocIndex[i];
-///       if (!int_obs_grouping_.has(RecValue)) {
-///         int_obs_grouping_.insert(RecValue, next_rec_num_);
-///         next_rec_num_++;
-///         nrecs_ = next_rec_num_;
-///       }
-///       Records[i] = int_obs_grouping_.at(RecValue);
-///     }
-///   } else {
-///     // Group according to the data in obs_group_variable_
-///     std::string GroupName = "MetaData";
-///     std::string VarName = obs_group_variable_;
-///     std::string VarType = FileIO->var_dtype(GroupName, VarName);
-
-///     if (VarType == "int") {
-///       std::vector<int> GroupVar;
-///       FileIO->frame_int_get_data(GroupName, VarName, GroupVar);
-///       for (std::size_t i = 0; i < LocSize; ++i) {
-///         int RecValue = GroupVar[FrameIndex[i]];
-///         if (!int_obs_grouping_.has(RecValue)) {
-///           int_obs_grouping_.insert(RecValue, next_rec_num_);
-///           next_rec_num_++;
-///           nrecs_ = next_rec_num_;
-///         }
-///         Records[i] = int_obs_grouping_.at(RecValue);
-///       }
-///     } else if (VarType == "float") {
-///       std::vector<float> GroupVar;
-///       FileIO->frame_float_get_data(GroupName, VarName, GroupVar);
-///       for (std::size_t i = 0; i < LocSize; ++i) {
-///         float RecValue = GroupVar[FrameIndex[i]];
-///         if (!float_obs_grouping_.has(RecValue)) {
-///           float_obs_grouping_.insert(RecValue, next_rec_num_);
-///           next_rec_num_++;
-///         }
-///         Records[i] = float_obs_grouping_.at(RecValue);
-///       }
-///     } else if (VarType == "string") {
-///       std::vector<std::string> GroupVar;
-///       FileIO->frame_string_get_data(GroupName, VarName, GroupVar);
-///       for (std::size_t i = 0; i < LocSize; ++i) {
-///         std::string RecValue = GroupVar[FrameIndex[i]];
-///         if (!string_obs_grouping_.has(RecValue)) {
-///           string_obs_grouping_.insert(RecValue, next_rec_num_);
-///           next_rec_num_++;
-///           nrecs_ = next_rec_num_;
-///         }
-///         Records[i] = string_obs_grouping_.at(RecValue);
-///       }
-///     }
-///   }
-
-///   // Generate the index and recnums for this frame. We are done with FrameIndex
-///   // so it can be reused here.
-///   FrameIndex.clear();
-///   std::set<std::size_t> UniqueRecNums;
-///   for (std::size_t i = 0; i < LocSize; ++i) {
-///     std::size_t RowNum = LocIndex[i];
-///     std::size_t RecNum = Records[i];
-///     if (dist_->isMyRecord(RecNum)) {
-///       indx_.push_back(RowNum);
-///       recnums_.push_back(RecNum);
-///       unique_rec_nums_.insert(RecNum);
-///       FrameIndex.push_back(RowNum - FrameStart);
-///     }
-///   }
-
-///   nlocs_ += FrameIndex.size();
-///   return FrameIndex;
-/// }
-
-// -----------------------------------------------------------------------------
-/*!
- * \details This method will return true/false according to whether the
- *          observation datetime (ObsDt) is inside the DA timing window.
- *
- * \param[in] ObsDt Observation date time object
- */
-bool ObsData::InsideTimingWindow(const util::DateTime & ObsDt) {
-  return ((ObsDt > winbgn_) && (ObsDt <= winend_));
 }
 
 // -----------------------------------------------------------------------------

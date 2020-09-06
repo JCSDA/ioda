@@ -212,5 +212,28 @@ bool varIsDimScale(const Group & group, const std::string & varName) {
     return var.isDimensionScale();
 }
 
+//------------------------------------------------------------------------------------
+std::vector<util::DateTime> convertRefOffsetToDtime(const int refIntDtime,
+                                                    const std::vector<float> & timeOffsets) {
+    // convert refDtime to a DateTime object
+    int Year = refIntDtime / 1000000;
+    int TempInt = refIntDtime % 1000000;
+    int Month = TempInt / 10000;
+    TempInt = TempInt % 10000;
+    int Day = TempInt / 100;
+    int Hour = TempInt % 100;
+    util::DateTime refDtime(Year, Month, Day, Hour, 0, 0);
+
+    // Convert offset time to a Duration and add to RefDate.
+    std::size_t dtimeSize = timeOffsets.size();
+    std::vector<util::DateTime> dateTimeValues(dtimeSize);
+    for (std::size_t i = 0; i < dtimeSize; ++i) {
+        util::DateTime dateTime =
+            refDtime + util::Duration(round(timeOffsets[i] * 3600));
+        dateTimeValues[i] = dateTime;
+    }
+    return dateTimeValues;
+}
+
 // -----------------------------------------------------------------------------
 }  // namespace ioda

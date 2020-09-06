@@ -31,6 +31,7 @@
 #include "ioda/distribution/Distribution.h"
 #include "ioda/Engines/Factory.h"
 #include "ioda/io/ObsIo.h"
+#include "ioda/Misc/Dimensions.h"
 #include "ioda/ObsGroup.h"
 #include "ioda/ObsSpaceParameters.h"
 #include "ioda/Variables/Fill.h"
@@ -44,25 +45,6 @@ namespace ioda {
   class ObsVector;
 
 //-------------------------------------------------------------------------------------
-template <typename KeyType>
-class ObsGroupingMap {
- public:
-  bool has(const KeyType Key) {
-    return (obs_grouping_map_.find(Key) != obs_grouping_map_.end());
-  }
-
-  void insert(const KeyType Key, const std::size_t Val) {
-    obs_grouping_map_.insert(std::pair<KeyType, std::size_t>(Key, Val));
-  }
-
-  std::size_t at(const KeyType Key) {
-    return obs_grouping_map_.at(Key);
-  }
-
- private:
-  std::map<KeyType, std::size_t> obs_grouping_map_;
-};
-
 // Enum type for obs variable data types
 enum class ObsDtype {
   None,
@@ -232,9 +214,11 @@ class ObsData : public util::Printable {
     /// \brief Observation "variables" to be simulated
     oops::Variables obsvars_;
 
-    /*! \brief MPI distribution object */
+    /// \brief MPI distribution object
     std::shared_ptr<Distribution> dist_;
 
+    /// \brief current frame count for variable dimensioned along nlocs
+    Dimensions_t adjusted_frame_count_;
 
 
 
@@ -247,22 +231,26 @@ class ObsData : public util::Printable {
 
     // Initialize the database from a source (ObsIo ojbect)
     /// \brief create the in-memory obs_group_ (ObsGroup) object
-    /// \param obsIo ObsIo object holding source data
+    /// \param obsIo obs source object
     void createObsGroupFromObsIo(const std::shared_ptr<ObsIo> & obsIo);
 
     /// \brief initialize the in-memory obs_group_ (ObsGroup) object from the ObsIo source
-    /// \param obsIo ObsIo object holding source data
+    /// \param obsIo obs source object
     void initFromObsSource(const std::shared_ptr<ObsIo> & obsIo);
 
     /// \brief resize along nlocs dimension
-    /// \param obsIo ObsIo object
     /// \param nlocsSize new size to either append or reset
     /// \param append when true append nlocsSize to current size, otherwise reset to nlocsSize
-    bool resizeNlocs(const std::shared_ptr<ObsIo> & obsIo, const std::string & varName,
-                     const Dimensions_t nlocsSize, const bool append);
+    void resizeNlocs(const Dimensions_t nlocsSize, const bool append);
+
+    /// \brief true if obs source variable is dimensioned along nlocs
+    /// \param obsIo obs source object
+    /// \param varName obs source variable name
+    bool isObsSourceVarDimByNlocs(const std::shared_ptr<ObsIo> & obsIo,
+                                  const std::string & varName);
 
     /// \brief read in values for variable from obs source
-    /// \param obsIo ObsIo object
+    /// \param obsIo obs source object
     /// \param varName Name of variable in obs source object
     /// \param varValues values for variable
     template<typename VarType>
@@ -291,7 +279,7 @@ class ObsData : public util::Printable {
     }
 
     /// \brief create a variable in the obs_group_ object based on the obs source
-    /// \param obsIo ObsIo object
+    /// \param obsIo obs source object
     /// \param varName Name of obs_group_ variable for obs_group_ object
     template<typename VarType>
     Variable createVarFromObsSource(const std::shared_ptr<ObsIo> & obsIo,
@@ -308,7 +296,7 @@ class ObsData : public util::Printable {
     }
 
     /// \brief store a variable in the obs_group_ object
-    /// \param obsIo ObsIo object
+    /// \param obsIo obs source object
     /// \param varName Name of obs_group_ variable for obs_group_ object
     /// \param varValues Values for obs_group_ variable
     template<typename VarType>
@@ -349,18 +337,29 @@ class ObsData : public util::Printable {
     }
 
     /// \brief set the vector of dimension variables for the obs_group_ variable creation
-    /// \param obsIo ObsIo object
+    /// \param obsIo obs source object
     /// \param varName Name of obs_group_ variable for obs_group_ object
     std::vector<Variable> setVarDimsFromObsSource(const std::shared_ptr<ObsIo> & obsIo,
                                                   const std::string & varName);
+
+    /// \brief generate frame indices and corresponding record numbers
+    /// \details This method generates a list of indices with their corresponding
+    ///  record numbers, where the indices denote which locations are to be
+    ///  read into this process element.
+    /// \param obsIo obs source object
+    /// \param frameStart start of current of frame
+    /// \param frameCount size of current frame
+    void genFrameIndexRecNums(const std::shared_ptr<ObsIo> & obsIo,
+                              const Dimensions_t frameStart, const Dimensions_t frameCount);
+   
+    /// \details return true if observation is inside the DA timing window.
+    /// \param obsDt Observation date time object
+    bool insideTimingWindow(const util::DateTime & ObsDt);
 
   template<typename VarType>
   void StoreToDb(const std::string & GroupName, const std::string & VarName,
                  const std::vector<std::size_t> & VarShape,
                  const std::vector<VarType> & VarData, bool Append = false);
-//  std::vector<std::size_t> GenFrameIndexRecNums(const std::unique_ptr<IodaIO> & FileIO,
-//                               const std::size_t FrameStart, const std::size_t FrameSize);
-  bool InsideTimingWindow(const util::DateTime & ObsDt);
   void BuildSortedObsGroups();
   void createKDTree();
 
@@ -403,9 +402,9 @@ class ObsData : public util::Printable {
   RecIdxMap recidx_;
 
   /*! \brief maps for obs grouping via integer, float or string values */
-  ObsGroupingMap<int> int_obs_grouping_;
-  ObsGroupingMap<float> float_obs_grouping_;
-  ObsGroupingMap<std::string> string_obs_grouping_;
+  std::map<int, std::size_t> int_obs_grouping_;
+  std::map<float, std::size_t> float_obs_grouping_;
+  std::map<std::string, std::size_t> string_obs_grouping_;
 
   /*! \brief next available record number */
   std::size_t next_rec_num_;
