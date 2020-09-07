@@ -31,6 +31,8 @@ distribution/RoundRobin.h
 
 io/ObsFile.cc
 io/ObsFile.h
+io/ObsFrame.cc
+io/ObsFrame.h
 io/ObsGenerate.cc
 io/ObsGenerate.h
 io/ObsIo.cc

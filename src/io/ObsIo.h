@@ -14,6 +14,7 @@
 
 #include "eckit/config/LocalConfiguration.h"
 
+#include "ioda/io/ObsFrame.h"
 #include "ioda/Misc/Dimensions.h"
 #include "ioda/ObsSpaceParameters.h"
 #include "ioda/Variables/Variable.h"
@@ -27,51 +28,8 @@
 
 namespace ioda {
 
-/*! \brief Implementation of ObsIo base class
- *
- * \author Stephen Herbener (JCSDA)
- */
-
-class ObsFrame {
- public:
-    /// \brief initialize for walking through the frames
-    void frameInit(const Dimensions_t maxVarSize, const Dimensions_t maxFrameSize);
-
-    /// \brief move to the next frame
-    void frameNext();
-
-    /// \brief true if a frame is available (not past end of frames)
-    bool frameAvailable();
-
-    /// \brief return current frame starting index
-    /// \param varName name of variable
-    Dimensions_t frameStart();
-
-    /// \brief return current frame count for variable
-    /// \details Variables can be of different sizes so it's possible that the
-    /// frame has moved past the end of some variables but not so for other
-    /// variables. When the frame is past the end of the given variable, this
-    /// routine returns a zero to indicate that we're done with this variable.
-    /// \param var variable
-    Dimensions_t frameCount(const Variable & var);
-
-    /// \brief set up frontend and backend selection objects for the given variable
-    /// \param var Variable associated with the selection objects
-    /// \param feSelect Front end selection object
-    /// \param beSelect Back end selection object
-    void createFrameSelection(const Variable & var, Selection & feSelect,
-                              Selection & beSelect);
-
- private:
-    /// \brief maximum frame size
-    Dimensions_t max_size_;
-
-    /// \brief maximum variable size
-    Dimensions_t max_var_size_;
-
-    /// \brief current frame starting index
-    Dimensions_t start_;
-};
+/// \brief Implementation of ObsIo base class
+/// \author Stephen Herbener (JCSDA)
 
 class ObsIo : public util::Printable {
  public:
