@@ -532,11 +532,11 @@ void ObsData::genFrameIndexRecNums(const std::shared_ptr<ObsIo> & obsIo,
     if ((obs_params_.in_type() == ObsIoTypes::OBS_FILE) &&
         (obsIo->obs_group_.vars.exists(dtVarName))) {
         Variable dtVar = obsIo->obs_group_.vars.open(dtVarName);
-        std::vector<Dimensions_t> counts(1, locSize);
+        std::vector<Dimensions_t> counts(1, frameCount);
         std::vector<Dimensions_t> feStarts(1, 0);
         std::vector<Dimensions_t> beStarts(1, frameStart);
         std::vector<float> dtValues;
-        dtVar.read(dtValues,
+        dtVar.read<float>(dtValues,
             Selection().extent(counts)
                 .select({ SelectionOperator::SET, feStarts, counts }),
             Selection()
@@ -564,85 +564,107 @@ void ObsData::genFrameIndexRecNums(const std::shared_ptr<ObsIo> & obsIo,
         frameIndex.assign(locSize, 0);
         std::iota(frameIndex.begin(), frameIndex.end(), 0);
     }
-      
 
-///   // Generate record numbers for this frame
-///   std::vector<std::size_t> Records(locSize);
-///   if ((obs_group_variable_.empty()) || (FileIO == nullptr)) {
-///     // Grouping is not specified, so use the location indices as the record indicators.
-///     // Using the obs grouping object will make the record numbering go sequentially
-///     // from 0 to nrecs_ - 1.
-///     for (std::size_t i = 0; i < locSize; ++i) {
-///       int RecValue = locIndex[i];
-///       if (!int_obs_grouping_.has(RecValue)) {
-///         int_obs_grouping_.insert(RecValue, next_rec_num_);
-///         next_rec_num_++;
-///         nrecs_ = next_rec_num_;
-///       }
-///       Records[i] = int_obs_grouping_.at(RecValue);
-///     }
-///   } else {
-///     // Group according to the data in obs_group_variable_
-///     std::string GroupName = "MetaData";
-///     std::string VarName = obs_group_variable_;
-///     std::string VarType = FileIO->var_dtype(GroupName, VarName);
+    // Generate record numbers for this frame
+    std::string obsGroupVarName;
+    if (obs_params_.in_type() == ObsIoTypes::OBS_FILE) {
+        obsGroupVarName = obs_params_.in_file_.obsGroupVar;
+    }
+    std::vector<std::size_t> records(locSize);
+    if ((obsGroupVarName.empty()) ||
+        (obs_params_.in_type() == ObsIoTypes::GENERATOR_RANDOM) ||
+        (obs_params_.in_type() == ObsIoTypes::GENERATOR_LIST)) {
+        // Grouping is not specified, so use the location indices as the record indicators.
+        // Using the obs grouping object will make the record numbering go sequentially
+        // from 0 to nrecs_ - 1.
+        for (std::size_t i = 0; i < locSize; ++i) {
+            int recValue = locIndex[i];
+            if (int_obs_grouping_.find(recValue) == int_obs_grouping_.end()) {
+                int_obs_grouping_.insert(
+                    std::pair<int, std::size_t>(recValue, next_rec_num_));
+                next_rec_num_++;
+                nrecs_ = next_rec_num_;
+            }
+            records[i] = int_obs_grouping_.at(recValue);
+        }
+    } else {
+        // Group according to the data in obs_group_variable_
+        std::string varName = obsGroupVarName + std::string("@MetaData");
+        Variable groupVar = obsIo->obs_group_.vars.open(varName);
+        std::vector<Dimensions_t> counts(1, frameCount);
+        std::vector<Dimensions_t> feStarts(1, 0);
+        std::vector<Dimensions_t> beStarts(1, frameStart);
 
-///     if (VarType == "int") {
-///       std::vector<int> GroupVar;
-///       FileIO->frame_int_get_data(GroupName, VarName, GroupVar);
-///       for (std::size_t i = 0; i < locSize; ++i) {
-///         int RecValue = GroupVar[frameIndex[i]];
-///         if (!int_obs_grouping_.has(RecValue)) {
-///           int_obs_grouping_.insert(RecValue, next_rec_num_);
-///           next_rec_num_++;
-///           nrecs_ = next_rec_num_;
-///         }
-///         Records[i] = int_obs_grouping_.at(RecValue);
-///       }
-///     } else if (VarType == "float") {
-///       std::vector<float> GroupVar;
-///       FileIO->frame_float_get_data(GroupName, VarName, GroupVar);
-///       for (std::size_t i = 0; i < locSize; ++i) {
-///         float RecValue = GroupVar[frameIndex[i]];
-///         if (!float_obs_grouping_.has(RecValue)) {
-///           float_obs_grouping_.insert(RecValue, next_rec_num_);
-///           next_rec_num_++;
-///         }
-///         Records[i] = float_obs_grouping_.at(RecValue);
-///       }
-///     } else if (VarType == "string") {
-///       std::vector<std::string> GroupVar;
-///       FileIO->frame_string_get_data(GroupName, VarName, GroupVar);
-///       for (std::size_t i = 0; i < locSize; ++i) {
-///         std::string RecValue = GroupVar[frameIndex[i]];
-///         if (!string_obs_grouping_.has(RecValue)) {
-///           string_obs_grouping_.insert(RecValue, next_rec_num_);
-///           next_rec_num_++;
-///           nrecs_ = next_rec_num_;
-///         }
-///         Records[i] = string_obs_grouping_.at(RecValue);
-///       }
-///     }
-///   }
+      if (groupVar.isA<int>()) {
+        std::vector<int> groupVarVals;
+        groupVar.read<int>(groupVarVals,
+            Selection().extent(counts)
+                .select({ SelectionOperator::SET, feStarts, counts }),
+            Selection()
+                .select({ SelectionOperator::SET, beStarts, counts }));
+        groupVarVals.resize(frameCount);
+        for (std::size_t i = 0; i < locSize; ++i) {
+          int recValue = groupVarVals[frameIndex[i]];
+          if (int_obs_grouping_.find(recValue) == int_obs_grouping_.end()) {
+            int_obs_grouping_.insert(
+                std::pair<int, std::size_t>(recValue, next_rec_num_));
+            next_rec_num_++;
+            nrecs_ = next_rec_num_;
+          }
+          records[i] = int_obs_grouping_.at(recValue);
+        }
+      } else if (groupVar.isA<float>()) {
+        std::vector<float> groupVarVals;
+        groupVar.read<float>(groupVarVals,
+            Selection().extent(counts)
+                .select({ SelectionOperator::SET, feStarts, counts }),
+            Selection()
+                .select({ SelectionOperator::SET, beStarts, counts }));
+        groupVarVals.resize(frameCount);
+        for (std::size_t i = 0; i < locSize; ++i) {
+          float recValue = groupVarVals[frameIndex[i]];
+          if (float_obs_grouping_.find(recValue) == float_obs_grouping_.end()) {
+            float_obs_grouping_.insert(
+                std::pair<float, std::size_t>(recValue, next_rec_num_));
+            next_rec_num_++;
+          }
+          records[i] = float_obs_grouping_.at(recValue);
+        }
+      } else if (groupVar.isA<std::string>()) {
+        std::vector<std::string> groupVarVals;
+        groupVar.read<std::string>(groupVarVals,
+            Selection().extent(counts)
+                .select({ SelectionOperator::SET, feStarts, counts }),
+            Selection()
+                .select({ SelectionOperator::SET, beStarts, counts }));
+        groupVarVals.resize(frameCount);
+        for (std::size_t i = 0; i < locSize; ++i) {
+          std::string recValue = groupVarVals[frameIndex[i]];
+          if (string_obs_grouping_.find(recValue) == string_obs_grouping_.end()) {
+            string_obs_grouping_.insert(
+                std::pair<std::string, std::size_t>(recValue, next_rec_num_));
+            next_rec_num_++;
+            nrecs_ = next_rec_num_;
+          }
+          records[i] = string_obs_grouping_.at(recValue);
+        }
+      }
+    }
 
-///   // Generate the index and recnums for this frame. We are done with frameIndex
-///   // so it can be reused here.
-///   frameIndex.clear();
-///   std::set<std::size_t> UniqueRecNums;
-///   for (std::size_t i = 0; i < locSize; ++i) {
-///     std::size_t RowNum = locIndex[i];
-///     std::size_t RecNum = Records[i];
-///     if (dist_->isMyRecord(RecNum)) {
-///       indx_.push_back(RowNum);
-///       recnums_.push_back(RecNum);
-///       unique_rec_nums_.insert(RecNum);
-///       frameIndex.push_back(RowNum - FrameStart);
-///     }
-///   }
+    // Generate the index and recnums for this frame.
+    frame_loc_index_.clear();
+    for (std::size_t i = 0; i < locSize; ++i) {
+        std::size_t rowNum = locIndex[i];
+        std::size_t recNum = records[i];
+        if (dist_->isMyRecord(recNum)) {
+            indx_.push_back(rowNum);
+            recnums_.push_back(recNum);
+            unique_rec_nums_.insert(recNum);
+            frame_loc_index_.push_back(rowNum);
+        }
+    }
 
-///   nlocs_ += frameIndex.size();
-///   return frameIndex;
-
+    // New frame count is the number of entries in the frame_index_ vector
     adjusted_frame_count_ = frameCount;
 }
 

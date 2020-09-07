@@ -147,6 +147,8 @@ observations:
     obsdatain:
       obsfile: "Data/testinput_tier_1/sondes_obs_2018041500_m.nc4"
       max frame size: 200
+      obsgrouping:
+        group variable: "record_number"
     test data:
       nlocs: 974
       nrecs: 974

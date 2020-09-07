@@ -220,7 +220,28 @@ class ObsData : public util::Printable {
     /// \brief current frame count for variable dimensioned along nlocs
     Dimensions_t adjusted_frame_count_;
 
+    /// \brief indexes of locations to extract from the input obs file
+    std::vector<std::size_t> indx_;
 
+    /// \brief record numbers associated with the location indexes
+    std::vector<std::size_t> recnums_;
+
+    /// \brief profile ordering
+    RecIdxMap recidx_;
+
+    /// \brief maps for obs grouping via integer, float or string values
+    std::map<int, std::size_t> int_obs_grouping_;
+    std::map<float, std::size_t> float_obs_grouping_;
+    std::map<std::string, std::size_t> string_obs_grouping_;
+
+    /// \brief next available record number
+    std::size_t next_rec_num_;
+
+    /// \brief unique record numbers
+    std::set<std::size_t> unique_rec_nums_;
+
+    /// \brief location indices for current frame
+    std::vector<std::size_t> frame_loc_index_;
 
     // ----------------------------- private functions ------------------------------
     ObsData & operator= (const ObsData &);
@@ -391,26 +412,6 @@ class ObsData : public util::Printable {
 
   /*! \brief path to output file */
   std::string fileout_;
-
-  /*! \brief indexes of locations to extract from the input obs file */
-  std::vector<std::size_t> indx_;
-
-  /*! \brief record numbers associated with the location indexes */
-  std::vector<std::size_t> recnums_;
-
-  /*! \brief profile ordering */
-  RecIdxMap recidx_;
-
-  /*! \brief maps for obs grouping via integer, float or string values */
-  std::map<int, std::size_t> int_obs_grouping_;
-  std::map<float, std::size_t> float_obs_grouping_;
-  std::map<std::string, std::size_t> string_obs_grouping_;
-
-  /*! \brief next available record number */
-  std::size_t next_rec_num_;
-
-  /*! \brief unique record numbers */
-  std::set<std::size_t> unique_rec_nums_;
 };
 
 }  // namespace ioda

@@ -82,13 +82,13 @@ class ObsFileInParameters : public oops::Parameters {
     oops::RequiredParameter<std::string> fileName{"obsfile", this};
 
     /// variable of which to base obs record grouping
-    oops::Parameter<std::string> obsGroupVar{"group variable", "", this};
+    oops::Parameter<std::string> obsGroupVar{"obsgrouping.group variable", "", this};
 
     /// variable of which to base obs record sorting
-    oops::Parameter<std::string> obsSortVar{"sort variable", "", this};
+    oops::Parameter<std::string> obsSortVar{"obsgrouping.sort variable", "", this};
 
     /// direction for sort
-    oops::Parameter<std::string> obsSortOrder{"sort order", "ascending", this};
+    oops::Parameter<std::string> obsSortOrder{"obsgrouping.sort order", "ascending", this};
 
     /// maximum frame size
     oops::Parameter<Dimensions_t> maxFrameSize{"max frame size", DEFAULT_FRAME_SIZE, this};
