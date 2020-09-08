@@ -10,6 +10,7 @@
 
 #include <iostream>
 
+#include "ioda/distribution/Distribution.h"
 #include "ioda/io/ObsIo.h"
 #include "ioda/ObsSpaceParameters.h"
 
@@ -39,7 +40,16 @@ class ObsFile : public ObsIo, private util::ObjectCounter<ObsFile> {
             const ObsSpaceParameters & params);
     ~ObsFile();
 
+    /// \brief generate frame indices and corresponding record numbers
+    /// \details This method generates a list of indices with their corresponding
+    ///  record numbers, where the indices denote which locations are to be
+    ///  read into this process element.
+    void genFrameIndexRecNums(std::shared_ptr<Distribution> & dist) override;
+
  private:
+    //-------------------------- private data members -------------------------------
+
+    //-------------------------- private functions ----------------------------------
     /// \brief print routine for oops::Printable base class
     /// \param ostream output stream
     void print(std::ostream & os) const override;

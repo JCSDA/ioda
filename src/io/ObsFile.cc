@@ -21,6 +21,7 @@
 
 namespace ioda {
 
+//------------------------------ public functions --------------------------------
 //--------------------------------------------------------------------------------
 ObsFile::ObsFile(const ObsIoActions action, const ObsIoModes mode,
                  const ObsSpaceParameters & params) : ObsIo(action, mode, params) {
@@ -78,6 +79,38 @@ ObsFile::ObsFile(const ObsIoActions action, const ObsIoModes mode,
 
 ObsFile::~ObsFile() {}
 
+// -----------------------------------------------------------------------------
+void ObsFile::genFrameIndexRecNums(std::shared_ptr<Distribution> & dist) {
+    // Generate location indices relative to the obs source (locIndex) and relative
+    // to the current frame (frameIndex).
+    //
+    // Apply the timing window. Need to filter out locations that are outside the
+    // timing window before generating record numbers. This is because
+    // we are generating record numbers on the fly since we want to get to the point where
+    // we can do the MPI distribution without knowing how many obs (and records) we are going
+    // to encounter.
+    std::vector<Dimensions_t> locIndex;
+    std::vector<Dimensions_t> frameIndex;
+    genFrameLocationsTimeWindow(locIndex, frameIndex);
+
+    // Generate record numbers for this frame. Consider obs grouping.
+    std::vector<Dimensions_t> records;
+    std::string obsGroupVarName = params_.in_file_.obsGroupVar;
+    if (obsGroupVarName.empty()) {
+         genRecordNumbersAll(locIndex, records);
+    } else {
+        genRecordNumbersGrouping(obsGroupVarName, frameIndex, records);
+    }
+
+    // Apply the MPI distribution to the records
+    applyMpiDistribution(dist, locIndex, records);
+
+    // New frame count is the number of entries in the frame_loc_index_ vector
+    Variable nlocsVar = obs_group_.vars.open("nlocs");
+    adjusted_nlocs_frame_count_ = obs_frame_.frameCount(nlocsVar);
+}
+
+//------------------------------ private functions ----------------------------------
 //-----------------------------------------------------------------------------------
 void ObsFile::print(std::ostream & os) const {
     os << "ObsFile: " << std::endl;

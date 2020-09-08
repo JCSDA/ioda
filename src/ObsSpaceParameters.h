@@ -61,7 +61,7 @@ class ObsTopLevelParameters : public oops::Parameters {
     oops::RequiredParameter<std::string> obsSpaceName{"name", this};
 
     /// name of obs space
-    oops::Parameter<std::string> distributionType{"distribution", "RoundRobin", this};
+    oops::Parameter<std::string> distName{"distribution", "RoundRobin", this};
 
     /// simulated variables
     oops::RequiredParameter<std::vector<std::string>> simVars{"simulated variables", this};

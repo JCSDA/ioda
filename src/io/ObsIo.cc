@@ -21,7 +21,8 @@ namespace ioda {
 //------------------------------------------------------------------------------------
 ObsIo::ObsIo(const ObsIoActions action, const ObsIoModes mode,
              const ObsSpaceParameters & params) :
-                 action_(action), mode_(mode), params_(params), obs_frame_() {
+                 action_(action), mode_(mode), params_(params), obs_frame_(),
+                 next_rec_num_(0) {
     oops::Log::trace() << "Constructing ObsIo" << std::endl;
 }
 
@@ -51,7 +52,13 @@ Dimensions_t ObsIo::frameStart() {
 
 //------------------------------------------------------------------------------------
 Dimensions_t ObsIo::frameCount(const Variable & var) {
-    return obs_frame_.frameCount(var);
+    Dimensions_t  fCount;
+    if (var.isDimensionScaleAttached(0, obs_group_.vars.open("nlocs"))) {
+        fCount = adjusted_nlocs_frame_count_;
+    } else {
+        fCount = obs_frame_.frameCount(var);
+    }
+    return fCount;
 }
 
 //------------------------------------------------------------------------------------
@@ -60,8 +67,180 @@ void ObsIo::createFrameSelection(const Variable & var, Selection & feSelect,
     obs_frame_.createFrameSelection(var, feSelect, beSelect);
 }
 
+// -----------------------------------------------------------------------------
+bool ObsIo::insideTimingWindow(const util::DateTime & obsDt) {
+    return ((obsDt > params_.windowStart()) && (obsDt <= params_.windowEnd()));
+}
+
 //------------------------ protected functions ---------------------------------------
 //------------------------------------------------------------------------------------
 void ObsIo::print(std::ostream & os) const {}
+
+//------------------------------------------------------------------------------------
+void ObsIo::genFrameLocationsAll(std::vector<Dimensions_t> & locIndex,
+                                 std::vector<Dimensions_t> & frameIndex) {
+    Variable nlocsVar = obs_group_.vars.open("nlocs");
+    Dimensions_t locSize = obs_frame_.frameCount(nlocsVar);
+
+    locIndex.assign(locSize, 0);
+    std::iota(locIndex.begin(), locIndex.end(), this->frameStart());
+
+    frameIndex.assign(locSize, 0);
+    std::iota(frameIndex.begin(), frameIndex.end(), 0);
+}
+
+//------------------------------------------------------------------------------------
+void ObsIo::genFrameLocationsTimeWindow(std::vector<Dimensions_t> & locIndex,
+                                        std::vector<Dimensions_t> & frameIndex) {
+
+    Variable nlocsVar = obs_group_.vars.open("nlocs");
+    Dimensions_t locSize = obs_frame_.frameCount(nlocsVar);
+
+    // TODO(srh) prefer datetime@Metadata once fixed length strings are available
+    std::string dtVarName = std::string("time@MetaData");
+    if (!this->obs_group_.vars.exists(dtVarName)) {
+        std::string ErrMsg =
+            std::string("ERROR: ObsIo::genFrameLocationsTimeWindow:: date time information ") +
+            std::string("does not exist, cannot perform time window filtering");
+        ABORT(ErrMsg);
+    }
+
+    Variable dtVar = this->obs_group_.vars.open(dtVarName);
+    std::vector<Dimensions_t> counts(1, locSize);
+    std::vector<Dimensions_t> feStarts(1, 0);
+    std::vector<Dimensions_t> beStarts(1, this->frameStart());
+    std::vector<float> dtValues;
+    dtVar.read<float>(dtValues,
+        Selection().extent(counts)
+            .select({ SelectionOperator::SET, feStarts, counts }),
+        Selection()
+            .select({ SelectionOperator::SET, beStarts, counts }));
+    dtValues.resize(locSize);
+
+    // convert ref, offset time to datetime objects
+    int refDtime;
+    this->obs_group_.atts.open("date_time").read<int>(refDtime);
+    std::vector<util::DateTime> dtimeVals = convertRefOffsetToDtime(refDtime, dtValues);
+
+    // Keep all locations that fall inside the timing window
+    for (std::size_t i = 0; i < locSize; ++i) {
+      if (this->insideTimingWindow(dtimeVals[i])) {
+        locIndex.push_back(this->frameStart() + i);
+        frameIndex.push_back(i);
+      }
+    }
+}
+
+//------------------------------------------------------------------------------------
+void ObsIo::genRecordNumbersAll(const std::vector<Dimensions_t> & locIndex,
+                                std::vector<Dimensions_t> & records) {
+    Dimensions_t locSize = locIndex.size();
+    records.assign(locSize, 0);
+    for (std::size_t i = 0; i < locSize; ++i) {
+        int recValue = locIndex[i];
+        if (int_obs_grouping_.find(recValue) == int_obs_grouping_.end()) {
+            int_obs_grouping_.insert(
+                std::pair<int, std::size_t>(recValue, next_rec_num_));
+            next_rec_num_++;
+        }
+        records[i] = int_obs_grouping_.at(recValue);
+    }
+}
+
+//------------------------------------------------------------------------------------
+void ObsIo::genRecordNumbersGrouping(const std::string & obsGroupVarName,
+                                     const std::vector<Dimensions_t> & frameIndex,
+                                     std::vector<Dimensions_t> & records) {
+    // Group according to the data in obs_group_variable_
+    std::string varName = obsGroupVarName + std::string("@MetaData");
+    Variable groupVar = this->obs_group_.vars.open(varName);
+    Variable nlocsVar = this->obs_group_.vars.open("nlocs");
+    if (!groupVar.isDimensionScaleAttached(0, nlocsVar)) {
+        std::string ErrMsg =
+            std::string("ERROR: ObsIo::genRecordNumbersGrouping: obs grouping variable (") +
+            obsGroupVarName + std::string(") must have 'nlocs' as first dimension");
+    }
+
+    Dimensions_t frameStart = this->frameStart();
+    Dimensions_t frameCount = obs_frame_.frameCount(nlocsVar);
+
+    std::vector<Dimensions_t> counts(1, frameCount);
+    std::vector<Dimensions_t> feStarts(1, 0);
+    std::vector<Dimensions_t> beStarts(1, frameStart);
+
+    Dimensions_t locSize = frameIndex.size();
+    records.assign(locSize, 0);
+    if (groupVar.isA<int>()) {
+        std::vector<int> groupVarVals;
+        groupVar.read<int>(groupVarVals,
+            Selection().extent(counts)
+                .select({ SelectionOperator::SET, feStarts, counts }),
+            Selection()
+                .select({ SelectionOperator::SET, beStarts, counts }));
+        groupVarVals.resize(frameCount);
+        for (std::size_t i = 0; i < locSize; ++i) {
+            int recValue = groupVarVals[frameIndex[i]];
+            if (int_obs_grouping_.find(recValue) == int_obs_grouping_.end()) {
+                int_obs_grouping_.insert(
+                    std::pair<int, std::size_t>(recValue, next_rec_num_));
+                next_rec_num_++;
+            }
+            records[i] = int_obs_grouping_.at(recValue);
+        }
+    } else if (groupVar.isA<float>()) {
+        std::vector<float> groupVarVals;
+        groupVar.read<float>(groupVarVals,
+            Selection().extent(counts)
+                .select({ SelectionOperator::SET, feStarts, counts }),
+            Selection()
+                .select({ SelectionOperator::SET, beStarts, counts }));
+        groupVarVals.resize(frameCount);
+        for (std::size_t i = 0; i < locSize; ++i) {
+            float recValue = groupVarVals[frameIndex[i]];
+            if (float_obs_grouping_.find(recValue) == float_obs_grouping_.end()) {
+                float_obs_grouping_.insert(
+                    std::pair<float, std::size_t>(recValue, next_rec_num_));
+                next_rec_num_++;
+            }
+            records[i] = float_obs_grouping_.at(recValue);
+        }
+    } else if (groupVar.isA<std::string>()) {
+        std::vector<std::string> groupVarVals;
+        groupVar.read<std::string>(groupVarVals,
+            Selection().extent(counts)
+                .select({ SelectionOperator::SET, feStarts, counts }),
+            Selection()
+                .select({ SelectionOperator::SET, beStarts, counts }));
+        groupVarVals.resize(frameCount);
+        for (std::size_t i = 0; i < locSize; ++i) {
+            std::string recValue = groupVarVals[frameIndex[i]];
+            if (string_obs_grouping_.find(recValue) == string_obs_grouping_.end()) {
+                string_obs_grouping_.insert(
+                    std::pair<std::string, std::size_t>(recValue, next_rec_num_));
+                next_rec_num_++;
+            }
+            records[i] = string_obs_grouping_.at(recValue);
+        }
+    }
+}
+
+//------------------------------------------------------------------------------------
+void ObsIo::applyMpiDistribution(const std::shared_ptr<Distribution> & dist,
+                                 const std::vector<Dimensions_t> & locIndex,
+                                 const std::vector<Dimensions_t> & records) {
+    // Generate the index and recnums for this frame.
+    Dimensions_t locSize = locIndex.size();
+    frame_loc_index_.clear();
+    for (std::size_t i = 0; i < locSize; ++i) {
+        std::size_t rowNum = locIndex[i];
+        std::size_t recNum = records[i];
+        if (dist->isMyRecord(recNum)) {
+            indx_.push_back(rowNum);
+            recnums_.push_back(recNum);
+            unique_rec_nums_.insert(recNum);
+            frame_loc_index_.push_back(rowNum);
+        }
+    }
+}
 
 }  // namespace ioda

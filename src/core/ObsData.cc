@@ -54,7 +54,7 @@ ObsData::ObsData(const eckit::Configuration & config, const eckit::mpi::Comm & c
                  const util::DateTime & bgn, const util::DateTime & end)
     : config_(config), winbgn_(bgn), winend_(end), commMPI_(comm),
       gnlocs_(0), nlocs_(0), nvars_(0), nrecs_(0), obsvars_(),
-      next_rec_num_(0), obs_group_(), obs_params_(bgn, end, comm)
+      obs_group_(), obs_params_(bgn, end, comm)
 {
     oops::Log::trace() << "ObsData::ObsData config  = " << config << std::endl;
     obs_params_.deserialize(config);
@@ -70,15 +70,17 @@ ObsData::ObsData(const eckit::Configuration & config, const eckit::mpi::Comm & c
     // Open the source (ObsIo) of the data for initializing the obs_group_ (ObsGroup)
     std::shared_ptr<ObsIo> obsIo;
     if (obs_params_.in_type() == ObsIoTypes::OBS_FILE) {
-      obsIo = ObsIoFactory::create(ObsIoActions::OPEN_FILE, ObsIoModes::READ_ONLY, obs_params_);
+        obsIo = ObsIoFactory::create(ObsIoActions::OPEN_FILE, ObsIoModes::READ_ONLY,
+                                     obs_params_);
     } else if ((obs_params_.in_type() == ObsIoTypes::GENERATOR_RANDOM) ||
                (obs_params_.in_type() == ObsIoTypes::GENERATOR_LIST)) {
-      obsIo = ObsIoFactory::create(ObsIoActions::CREATE_GENERATOR, ObsIoModes::READ_ONLY,
-          obs_params_);
+        obsIo = ObsIoFactory::create(ObsIoActions::CREATE_GENERATOR, ObsIoModes::READ_ONLY,
+                                     obs_params_);
     } else {
       // Error - must have one of obsdatain or generate
       std::string ErrorMsg =
-        "ObsData::ObsData: Must use one of 'obsdatain' or 'generate' in the YAML configuration.";
+          std::string("ObsData::ObsData: Must use one of 'obsdatain' or 'generate' ");
+          std::string(" in the YAML configuration.");
       ABORT(ErrorMsg);
     }
 
@@ -101,8 +103,7 @@ std::size_t ObsData::nlocs() const {
 
 // -----------------------------------------------------------------------------
 std::size_t ObsData::nrecs() const {
-    // TODO(srh) placeholder until distribution is working
-    return obs_group_.vars.open("nlocs").getDimensions().dimsCur[0];
+    return nrecs_;
 }
 
 // -----------------------------------------------------------------------------
@@ -395,6 +396,10 @@ void ObsData::createObsGroupFromObsIo(const std::shared_ptr<ObsIo> & obsIo) {
 void ObsData::initFromObsSource(const std::shared_ptr<ObsIo> & obsIo) {
     // Walk through the frames and copy the data to the obs_group_ storage
     std::vector<std::string> varList = listVars(obsIo->obs_group_);
+
+    // Create variables in obs_group_ based on those in the obs source
+    createVariablesFromObsSource(obsIo, varList);
+
     int iframe = 1;
     for (obsIo->frameInit(); obsIo->frameAvailable(); obsIo->frameNext()) {
         Dimensions_t frameStart = obsIo->frameStart();
@@ -402,27 +407,18 @@ void ObsData::initFromObsSource(const std::shared_ptr<ObsIo> & obsIo) {
             << iframe << std::endl
             << "    frameStart: " << frameStart << std::endl;
 
-        bool firstVarAlongNlocs = true;
+        // Generate the indices (for selection) for variables dimensioned by nlocs
+        obsIo->genFrameIndexRecNums(dist_);
+
+        // Resize the nlocs dimesion according to the adjusted frame size produced
+        // genFrameIndexRecNums. The second argument is to tell resizeNlocs whether
+        // to append or reset to the size given by the first arguemnt.
+        resizeNlocs(obsIo->adjNlocsFrameSize(), (iframe > 1));
+
         for (auto & varName : varList) {
             Variable var = obsIo->obs_group_.vars.open(varName);
             Dimensions_t frameCount = obsIo->frameCount(var);
             if (frameCount > 0) {
-                // Adjust the frame count for variables dimensioned along nlocs according
-                // to MPI distribution and timing window selection. Take this information
-                // into account when resizing variable and forming selection objects.
-                //
-                // At this point need to check the variable in the obs source since we
-                // may not have created the variable in the obs_group_ yet.
-                if (isObsSourceVarDimByNlocs(obsIo, varName)) {
-                    if (firstVarAlongNlocs) {
-                        genFrameIndexRecNums(obsIo, frameStart, frameCount);
-                        resizeNlocs(adjusted_frame_count_, (iframe > 1));
-                        firstVarAlongNlocs = false;
-                    }
-                    // put in new frame count here
-                    frameCount = adjusted_frame_count_;
-                }
-
                 oops::Log::debug() << "ObsData::initFromObsSource: Variable: " << varName
                     << ", frameCount: " << frameCount << std::endl;
 
@@ -430,30 +426,23 @@ void ObsData::initFromObsSource(const std::shared_ptr<ObsIo> & obsIo) {
                 if (var.isA<int>()) {
                     std::vector<int> varValues;
                     readObsSource<int>(obsIo, varName, varValues);
-                    if (iframe == 1) { createVarFromObsSource<int>(obsIo, varName); }
                     storeVar<int>(varName, varValues, frameStart, frameCount);
                 } else if (var.isA<float>()) {
                     std::vector<float> varValues;
                     readObsSource<float>(obsIo, varName, varValues);
-                    if (iframe == 1) { createVarFromObsSource<float>(obsIo, varName); }
                     storeVar<float>(varName, varValues, frameStart, frameCount);
                 } else if (var.isA<std::string>()) {
                     std::vector<std::string> varValues;
                     readObsSource<std::string>(obsIo, varName, varValues);
-                    if (iframe == 1) { createVarFromObsSource<std::string>(obsIo, varName); }
                     storeVar<std::string>(varName, varValues, frameStart, frameCount);
-                } else {
-                    if ((iframe == 1) && (this->comm().rank() == 0)) {
-                        oops::Log::warning() << "WARNING: ObsData::initFromObsSource: "
-                            << "Skipping read due to an unexpected data type for variable: "
-                            << varName << std::endl;
-                    }
                 }
             }
         }
 
         iframe++;
     }
+
+    nrecs_ = obsIo->nrecs();
 }
 
 // -----------------------------------------------------------------------------
@@ -509,170 +498,26 @@ std::vector<Variable> ObsData::setVarDimsFromObsSource(const std::shared_ptr<Obs
 }
 
 // -----------------------------------------------------------------------------
-void ObsData::genFrameIndexRecNums(const std::shared_ptr<ObsIo> & obsIo,
-                                   const Dimensions_t frameStart,
-                                   const Dimensions_t frameCount) {
-    // Apply the timing window if we are reading from a file. Need to filter out locations
-    // that are outside the timing window before generating record numbers. This is because
-    // we are generating record numbers on the fly since we want to get to the point where
-    // we can do the MPI distribution without knowing how many obs (and records) we are going
-    // to encounter.
-    //
-    // Create two vectors as the timing windows are checked, one for location indices the
-    // other for frame indices. Location indices are relative to FrameStart, and frame
-    // indices are relative to this frame (start at zero).
-    //
-    // If we are not reading from a file, then load up the locations and frame indices
-    // with all locations in the frame.
-    Dimensions_t locSize = frameCount;
-    std::vector<std::size_t> locIndex;
-    std::vector<std::size_t> frameIndex;
-    // TODO(srh) prefer datetime@Metadata once fixed length strings are available
-    std::string dtVarName = std::string("time@MetaData");
-    if ((obs_params_.in_type() == ObsIoTypes::OBS_FILE) &&
-        (obsIo->obs_group_.vars.exists(dtVarName))) {
-        Variable dtVar = obsIo->obs_group_.vars.open(dtVarName);
-        std::vector<Dimensions_t> counts(1, frameCount);
-        std::vector<Dimensions_t> feStarts(1, 0);
-        std::vector<Dimensions_t> beStarts(1, frameStart);
-        std::vector<float> dtValues;
-        dtVar.read<float>(dtValues,
-            Selection().extent(counts)
-                .select({ SelectionOperator::SET, feStarts, counts }),
-            Selection()
-                .select({ SelectionOperator::SET, beStarts, counts }));
-        dtValues.resize(frameCount);
-
-        // convert ref, offset time to datetime objects
-        int refDtime;
-        obsIo->obs_group_.atts.open("date_time").read<int>(refDtime);
-        std::vector<util::DateTime> dtimeVals = convertRefOffsetToDtime(refDtime, dtValues);
-
-        // Keep all locations that fall inside the timing window
-        for (std::size_t i = 0; i < locSize; ++i) {
-          if (insideTimingWindow(dtimeVals[i])) {
-            locIndex.push_back(frameStart + i);
-            frameIndex.push_back(i);
-          }
-        }
-        locSize = locIndex.size();  // in case any locations were rejected
-    } else {
-        // Not reading from file, keep all locations.
-        locIndex.assign(locSize, 0);
-        std::iota(locIndex.begin(), locIndex.end(), frameStart);
-
-        frameIndex.assign(locSize, 0);
-        std::iota(frameIndex.begin(), frameIndex.end(), 0);
-    }
-
-    // Generate record numbers for this frame
-    std::string obsGroupVarName;
-    if (obs_params_.in_type() == ObsIoTypes::OBS_FILE) {
-        obsGroupVarName = obs_params_.in_file_.obsGroupVar;
-    }
-    std::vector<std::size_t> records(locSize);
-    if ((obsGroupVarName.empty()) ||
-        (obs_params_.in_type() == ObsIoTypes::GENERATOR_RANDOM) ||
-        (obs_params_.in_type() == ObsIoTypes::GENERATOR_LIST)) {
-        // Grouping is not specified, so use the location indices as the record indicators.
-        // Using the obs grouping object will make the record numbering go sequentially
-        // from 0 to nrecs_ - 1.
-        for (std::size_t i = 0; i < locSize; ++i) {
-            int recValue = locIndex[i];
-            if (int_obs_grouping_.find(recValue) == int_obs_grouping_.end()) {
-                int_obs_grouping_.insert(
-                    std::pair<int, std::size_t>(recValue, next_rec_num_));
-                next_rec_num_++;
-                nrecs_ = next_rec_num_;
+void ObsData::createVariablesFromObsSource(const std::shared_ptr<ObsIo> & obsIo,
+                                           const std::vector<std::string> & varList) {
+    for (std::size_t i = 0; i < varList.size(); ++i) {
+        std::string varName = varList[i];
+        Variable var = obsIo->obs_group_.vars.open(varName);
+        if (var.isA<int>()) {
+            createVarFromObsSource<int>(obsIo, varName);
+        } else if (var.isA<float>()) {
+            createVarFromObsSource<float>(obsIo, varName);
+        } else if (var.isA<std::string>()) {
+            createVarFromObsSource<std::string>(obsIo, varName);
+        } else {
+            if (this->comm().rank() == 0) {
+                oops::Log::warning() << "WARNING: ObsData::createVariablesFromObsSpace: "
+                    << "Skipping variable due to an unexpected data type for variable: "
+                    << varName << std::endl;
             }
-            records[i] = int_obs_grouping_.at(recValue);
-        }
-    } else {
-        // Group according to the data in obs_group_variable_
-        std::string varName = obsGroupVarName + std::string("@MetaData");
-        Variable groupVar = obsIo->obs_group_.vars.open(varName);
-        std::vector<Dimensions_t> counts(1, frameCount);
-        std::vector<Dimensions_t> feStarts(1, 0);
-        std::vector<Dimensions_t> beStarts(1, frameStart);
-
-      if (groupVar.isA<int>()) {
-        std::vector<int> groupVarVals;
-        groupVar.read<int>(groupVarVals,
-            Selection().extent(counts)
-                .select({ SelectionOperator::SET, feStarts, counts }),
-            Selection()
-                .select({ SelectionOperator::SET, beStarts, counts }));
-        groupVarVals.resize(frameCount);
-        for (std::size_t i = 0; i < locSize; ++i) {
-          int recValue = groupVarVals[frameIndex[i]];
-          if (int_obs_grouping_.find(recValue) == int_obs_grouping_.end()) {
-            int_obs_grouping_.insert(
-                std::pair<int, std::size_t>(recValue, next_rec_num_));
-            next_rec_num_++;
-            nrecs_ = next_rec_num_;
-          }
-          records[i] = int_obs_grouping_.at(recValue);
-        }
-      } else if (groupVar.isA<float>()) {
-        std::vector<float> groupVarVals;
-        groupVar.read<float>(groupVarVals,
-            Selection().extent(counts)
-                .select({ SelectionOperator::SET, feStarts, counts }),
-            Selection()
-                .select({ SelectionOperator::SET, beStarts, counts }));
-        groupVarVals.resize(frameCount);
-        for (std::size_t i = 0; i < locSize; ++i) {
-          float recValue = groupVarVals[frameIndex[i]];
-          if (float_obs_grouping_.find(recValue) == float_obs_grouping_.end()) {
-            float_obs_grouping_.insert(
-                std::pair<float, std::size_t>(recValue, next_rec_num_));
-            next_rec_num_++;
-          }
-          records[i] = float_obs_grouping_.at(recValue);
-        }
-      } else if (groupVar.isA<std::string>()) {
-        std::vector<std::string> groupVarVals;
-        groupVar.read<std::string>(groupVarVals,
-            Selection().extent(counts)
-                .select({ SelectionOperator::SET, feStarts, counts }),
-            Selection()
-                .select({ SelectionOperator::SET, beStarts, counts }));
-        groupVarVals.resize(frameCount);
-        for (std::size_t i = 0; i < locSize; ++i) {
-          std::string recValue = groupVarVals[frameIndex[i]];
-          if (string_obs_grouping_.find(recValue) == string_obs_grouping_.end()) {
-            string_obs_grouping_.insert(
-                std::pair<std::string, std::size_t>(recValue, next_rec_num_));
-            next_rec_num_++;
-            nrecs_ = next_rec_num_;
-          }
-          records[i] = string_obs_grouping_.at(recValue);
-        }
-      }
-    }
-
-    // Generate the index and recnums for this frame.
-    frame_loc_index_.clear();
-    for (std::size_t i = 0; i < locSize; ++i) {
-        std::size_t rowNum = locIndex[i];
-        std::size_t recNum = records[i];
-        if (dist_->isMyRecord(recNum)) {
-            indx_.push_back(rowNum);
-            recnums_.push_back(recNum);
-            unique_rec_nums_.insert(recNum);
-            frame_loc_index_.push_back(rowNum);
         }
     }
-
-    // New frame count is the number of entries in the frame_index_ vector
-    adjusted_frame_count_ = frameCount;
 }
-
-// -----------------------------------------------------------------------------
-bool ObsData::insideTimingWindow(const util::DateTime & obsDt) {
-    return ((obsDt > winbgn_) && (obsDt <= winend_));
-}
-
 
 
 

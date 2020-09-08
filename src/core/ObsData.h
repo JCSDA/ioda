@@ -130,7 +130,7 @@ class ObsData : public util::Printable {
     const std::string & obsname() const {return obsname_;}
 
     /// \brief return the name of the MPI distribution
-    std::string distname() const {return obs_params_.top_level_.distributionType;}
+    std::string distname() const {return obs_params_.top_level_.distName;}
 
 
   const std::vector<std::size_t> & recnum() const;
@@ -217,9 +217,6 @@ class ObsData : public util::Printable {
     /// \brief MPI distribution object
     std::shared_ptr<Distribution> dist_;
 
-    /// \brief current frame count for variable dimensioned along nlocs
-    Dimensions_t adjusted_frame_count_;
-
     /// \brief indexes of locations to extract from the input obs file
     std::vector<std::size_t> indx_;
 
@@ -228,20 +225,6 @@ class ObsData : public util::Printable {
 
     /// \brief profile ordering
     RecIdxMap recidx_;
-
-    /// \brief maps for obs grouping via integer, float or string values
-    std::map<int, std::size_t> int_obs_grouping_;
-    std::map<float, std::size_t> float_obs_grouping_;
-    std::map<std::string, std::size_t> string_obs_grouping_;
-
-    /// \brief next available record number
-    std::size_t next_rec_num_;
-
-    /// \brief unique record numbers
-    std::set<std::size_t> unique_rec_nums_;
-
-    /// \brief location indices for current frame
-    std::vector<std::size_t> frame_loc_index_;
 
     // ----------------------------- private functions ------------------------------
     ObsData & operator= (const ObsData &);
@@ -362,20 +345,12 @@ class ObsData : public util::Printable {
     /// \param varName Name of obs_group_ variable for obs_group_ object
     std::vector<Variable> setVarDimsFromObsSource(const std::shared_ptr<ObsIo> & obsIo,
                                                   const std::string & varName);
-
-    /// \brief generate frame indices and corresponding record numbers
-    /// \details This method generates a list of indices with their corresponding
-    ///  record numbers, where the indices denote which locations are to be
-    ///  read into this process element.
-    /// \param obsIo obs source object
-    /// \param frameStart start of current of frame
-    /// \param frameCount size of current frame
-    void genFrameIndexRecNums(const std::shared_ptr<ObsIo> & obsIo,
-                              const Dimensions_t frameStart, const Dimensions_t frameCount);
    
-    /// \details return true if observation is inside the DA timing window.
-    /// \param obsDt Observation date time object
-    bool insideTimingWindow(const util::DateTime & ObsDt);
+    /// \brief create set of variables in the obs_group_ object based on the obs source
+    /// \param obsIo obs source object
+    /// \param varList List of obs_group_ variable names for obs_group_ object
+    void createVariablesFromObsSource(const std::shared_ptr<ObsIo> & obsIo,
+                                      const std::vector<std::string> & varList);
 
   template<typename VarType>
   void StoreToDb(const std::string & GroupName, const std::string & VarName,

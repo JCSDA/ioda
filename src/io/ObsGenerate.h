@@ -10,6 +10,7 @@
 
 #include <iostream>
 
+#include "ioda/distribution/Distribution.h"
 #include "ioda/io/ObsIo.h"
 #include "ioda/ObsSpaceParameters.h"
 
@@ -42,7 +43,16 @@ class ObsGenerate : public ObsIo, private util::ObjectCounter<ObsGenerate> {
                 const ObsSpaceParameters & params);
     ~ObsGenerate();
 
+    /// \brief generate frame indices and corresponding record numbers
+    /// \details This method generates a list of indices with their corresponding
+    ///  record numbers, where the indices denote which locations are to be
+    ///  read into this process element.
+    void genFrameIndexRecNums(std::shared_ptr<Distribution> & dist) override;
+
  private:
+    //-------------------------- private data members -------------------------------
+
+    //-------------------------- private functions ----------------------------------
     /// \brief generate observation locations using the random method
     /// \details This method will generate a set of latitudes and longitudes of which
     ///          can be used for testing without reading in an obs file. Two latitude
