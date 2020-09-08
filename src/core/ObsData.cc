@@ -400,6 +400,7 @@ void ObsData::initFromObsSource(const std::shared_ptr<ObsIo> & obsIo) {
     // Create variables in obs_group_ based on those in the obs source
     createVariablesFromObsSource(obsIo, varList);
 
+    Variable nlocsVar = obsIo->obs_group_.vars.open("nlocs");
     int iframe = 1;
     for (obsIo->frameInit(); obsIo->frameAvailable(); obsIo->frameNext()) {
         Dimensions_t frameStart = obsIo->frameStart();
@@ -413,10 +414,16 @@ void ObsData::initFromObsSource(const std::shared_ptr<ObsIo> & obsIo) {
         // Resize the nlocs dimesion according to the adjusted frame size produced
         // genFrameIndexRecNums. The second argument is to tell resizeNlocs whether
         // to append or reset to the size given by the first arguemnt.
-        resizeNlocs(obsIo->adjNlocsFrameSize(), (iframe > 1));
+        resizeNlocs(obsIo->adjNlocsFrameCount(), (iframe > 1));
 
         for (auto & varName : varList) {
             Variable var = obsIo->obs_group_.vars.open(varName);
+            Dimensions_t beFrameStart;
+            if (var.isDimensionScaleAttached(0, nlocsVar)) {
+                beFrameStart = obsIo->adjNlocsFrameStart();
+            } else {
+                beFrameStart = frameStart;
+            }
             Dimensions_t frameCount = obsIo->frameCount(var);
             if (frameCount > 0) {
                 oops::Log::debug() << "ObsData::initFromObsSource: Variable: " << varName
@@ -426,15 +433,15 @@ void ObsData::initFromObsSource(const std::shared_ptr<ObsIo> & obsIo) {
                 if (var.isA<int>()) {
                     std::vector<int> varValues;
                     readObsSource<int>(obsIo, varName, varValues);
-                    storeVar<int>(varName, varValues, frameStart, frameCount);
+                    storeVar<int>(varName, varValues, beFrameStart, frameCount);
                 } else if (var.isA<float>()) {
                     std::vector<float> varValues;
                     readObsSource<float>(obsIo, varName, varValues);
-                    storeVar<float>(varName, varValues, frameStart, frameCount);
+                    storeVar<float>(varName, varValues, beFrameStart, frameCount);
                 } else if (var.isA<std::string>()) {
                     std::vector<std::string> varValues;
                     readObsSource<std::string>(obsIo, varName, varValues);
-                    storeVar<std::string>(varName, varValues, frameStart, frameCount);
+                    storeVar<std::string>(varName, varValues, beFrameStart, frameCount);
                 }
             }
         }
@@ -443,6 +450,8 @@ void ObsData::initFromObsSource(const std::shared_ptr<ObsIo> & obsIo) {
     }
 
     nrecs_ = obsIo->nrecs();
+    indx_ = obsIo->index();
+    recnums_ = obsIo->recnums();
 }
 
 // -----------------------------------------------------------------------------

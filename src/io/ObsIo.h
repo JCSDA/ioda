@@ -46,8 +46,17 @@ class ObsIo : public util::Printable {
     /// \brief return number of locations from the source
     std::size_t nrecs() const {return unique_rec_nums_.size();}
 
+    /// \brief return adjusted nlocs frame start
+    std::size_t adjNlocsFrameStart() const {return adjusted_nlocs_frame_start_;}
+
     /// \brief return adjusted nlocs frame count
-    std::size_t adjNlocsFrameSize() const {return adjusted_nlocs_frame_count_;}
+    std::size_t adjNlocsFrameCount() const {return adjusted_nlocs_frame_count_;}
+
+    /// \brief return vector with results of timing window filtering and MPI distribution
+    std::vector<std::size_t> index() const {return indx_;}
+
+    /// \brief return vector with record numbering
+    std::vector<std::size_t> recnums() const {return recnums_;}
 
     //----------------- Access to frame selection -------------------
     /// \brief initialize for walking through the frames
@@ -113,6 +122,13 @@ class ObsIo : public util::Printable {
     /// \brief ObsFrame object for generating variable selection objects
     ObsFrame obs_frame_;
 
+    /// \brief current frame start for variable dimensioned along nlocs
+    /// \details This data member is keeping track of the frame start for
+    /// the contiguous storage where the obs source data will be moved to.
+    /// Note that the start_ data member is keeping track of the frame start
+    /// for the obs source itself.
+    Dimensions_t adjusted_nlocs_frame_start_;
+
     /// \brief current frame count for variable dimensioned along nlocs
     Dimensions_t adjusted_nlocs_frame_count_;
 
@@ -134,7 +150,7 @@ class ObsIo : public util::Printable {
     std::set<std::size_t> unique_rec_nums_;
 
     /// \brief location indices for current frame
-    std::vector<std::size_t> frame_loc_index_;
+    std::vector<Dimensions_t> frame_loc_index_;
 
     //------------------ protected functions ----------------------------------
     /// \brief print() for oops::Printable base class
@@ -147,7 +163,7 @@ class ObsIo : public util::Printable {
     void genFrameLocationsAll(std::vector<Dimensions_t> & locIndex,
                               std::vector<Dimensions_t> & frameIndex);
 
-    /// \brief generate indices for locations in current frame after filtering out 
+    /// \brief generate indices for locations in current frame after filtering out
     ///  obs outside DA timing window
     /// \param locIndex vector of location indices relative to entire obs source
     /// \param frameIndex vector of location indices relative to current frame

@@ -32,12 +32,14 @@ ObsIo::~ObsIo() {}
 void ObsIo::frameInit() {
     obs_frame_.frameInit(max_var_size_, max_frame_size_);
     nlocs_ = obs_frame_.frameCount(obs_group_.vars.open("nlocs"));
+    adjusted_nlocs_frame_start_ = 0;
 }
 
 //------------------------------------------------------------------------------------
 void ObsIo::frameNext() {
     obs_frame_.frameNext();
     nlocs_ += obs_frame_.frameCount(obs_group_.vars.open("nlocs"));
+    adjusted_nlocs_frame_start_ += adjusted_nlocs_frame_count_;
 }
 
 //------------------------------------------------------------------------------------
@@ -64,7 +66,52 @@ Dimensions_t ObsIo::frameCount(const Variable & var) {
 //------------------------------------------------------------------------------------
 void ObsIo::createFrameSelection(const Variable & var, Selection & feSelect,
                                  Selection & beSelect) {
-    obs_frame_.createFrameSelection(var, feSelect, beSelect);
+    // Form the selection objects for this frame. The frontend selection will
+    // simply be the current size (according to the variable) of the frame going from
+    // 0 to size-1.
+    //
+    // The backend selection will start at the frame start value (instead of zero) and
+    // be determined by the size of the frame for the given variable and whether
+    // that variable is dimensioned by nlocs.
+
+    // Grab the variable dimensions and use this as a template for the selection operators.
+    std::vector<Dimensions_t> varDims = var.getDimensions().dimsCur;
+    Dimensions_t frameStart = this->frameStart();
+    Dimensions_t frameCount = this->frameCount(var);
+
+    // Substitute the frameCount for the first dimension size of the variable since it's
+    // possible that this size got reduced by MPI distribution and timing window filtering.
+    varDims[0] = frameCount;
+
+    // For the frontend, treat the data as a vector with a total size given by the product
+    // of the dimension sizes considering the possible adjustment of the fisrt
+    // dimension (varDims). Use hyperslab style selection since we will be consolidating
+    // the selected locations into a contiguous series.
+    Dimensions_t numElements = std::accumulate(
+        varDims.begin(), varDims.end(), 1, std::multiplies<Dimensions_t>());
+    std::vector<Dimensions_t> feStarts(1, 0);
+    std::vector<Dimensions_t> feCounts(1, numElements);
+    feSelect.extent(feCounts).select({ SelectionOperator::SET, feStarts, feCounts });
+
+    // For the backend, if the variable is dimensioned by nlocs, then use the dimension
+    // style selectors. Otherwise, use a hyperslab style.
+    //
+    // For the dimensioned-by-nlocs case, frame_loc_index_ contains the indices for
+    // the first dimension. Subsequent dimensions, we want to select all indices.
+    Variable nlocsVar = obs_group_.vars.open("nlocs");
+    if (var.isDimensionScaleAttached(0, nlocsVar)) {
+        beSelect.select({ SelectionOperator::SET, 0, frame_loc_index_ });
+        for (std::size_t i = 1; i < varDims.size(); ++i) {
+            std::vector<Dimensions_t> dimIndex(varDims[i]);
+            std::iota(dimIndex.begin(), dimIndex.end(), 0);
+            beSelect.select({ SelectionOperator::AND, i, dimIndex });
+        }
+    } else {
+        std::vector<Dimensions_t> beStarts(varDims.size(), 0);
+        beStarts[0] = frameStart;
+        std::vector<Dimensions_t> beCounts = varDims;
+        beSelect.select({ SelectionOperator::SET, beStarts, beCounts });
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -92,7 +139,6 @@ void ObsIo::genFrameLocationsAll(std::vector<Dimensions_t> & locIndex,
 //------------------------------------------------------------------------------------
 void ObsIo::genFrameLocationsTimeWindow(std::vector<Dimensions_t> & locIndex,
                                         std::vector<Dimensions_t> & frameIndex) {
-
     Variable nlocsVar = obs_group_.vars.open("nlocs");
     Dimensions_t locSize = obs_frame_.frameCount(nlocsVar);
 

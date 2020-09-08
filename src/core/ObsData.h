@@ -345,7 +345,7 @@ class ObsData : public util::Printable {
     /// \param varName Name of obs_group_ variable for obs_group_ object
     std::vector<Variable> setVarDimsFromObsSource(const std::shared_ptr<ObsIo> & obsIo,
                                                   const std::string & varName);
-   
+
     /// \brief create set of variables in the obs_group_ object based on the obs source
     /// \param obsIo obs source object
     /// \param varList List of obs_group_ variable names for obs_group_ object

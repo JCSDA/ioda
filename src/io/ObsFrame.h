@@ -49,13 +49,6 @@ class ObsFrame {
     /// \param var variable
     Dimensions_t frameCount(const Variable & var);
 
-    /// \brief set up frontend and backend selection objects for the given variable
-    /// \param var Variable associated with the selection objects
-    /// \param feSelect Front end selection object
-    /// \param beSelect Back end selection object
-    void createFrameSelection(const Variable & var, Selection & feSelect,
-                              Selection & beSelect);
-
  private:
     /// \brief maximum frame size
     Dimensions_t max_size_;

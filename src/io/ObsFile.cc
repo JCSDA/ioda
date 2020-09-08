@@ -106,8 +106,9 @@ void ObsFile::genFrameIndexRecNums(std::shared_ptr<Distribution> & dist) {
     applyMpiDistribution(dist, locIndex, records);
 
     // New frame count is the number of entries in the frame_loc_index_ vector
-    Variable nlocsVar = obs_group_.vars.open("nlocs");
-    adjusted_nlocs_frame_count_ = obs_frame_.frameCount(nlocsVar);
+    // This will be handed to callers through the frameCount function for all
+    // variables with nlocs as their first dimension.
+    adjusted_nlocs_frame_count_ = frame_loc_index_.size();
 }
 
 //------------------------------ private functions ----------------------------------
