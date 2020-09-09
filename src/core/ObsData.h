@@ -352,6 +352,10 @@ class ObsData : public util::Printable {
     void createVariablesFromObsSource(const std::shared_ptr<ObsIo> & obsIo,
                                       const std::vector<std::string> & varList);
 
+
+
+
+
   template<typename VarType>
   void StoreToDb(const std::string & GroupName, const std::string & VarName,
                  const std::vector<std::size_t> & VarShape,
@@ -369,10 +373,6 @@ class ObsData : public util::Printable {
 
   // Dump the database into the output file
   void SaveToFile(const std::string & file_name, const std::size_t MaxFrameSize);
-  template<typename VarType>
-  void LoadFromDb(const std::string & GroupName, const std::string & VarName,
-                  const std::vector<std::size_t> & VarShape, std::vector<VarType> & VarData,
-                  const std::size_t Start = 0, const std::size_t Count = 0) const;
 
   // Return a fill value
   template<typename DataType>

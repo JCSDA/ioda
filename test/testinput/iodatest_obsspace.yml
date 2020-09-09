@@ -164,11 +164,11 @@ observations:
           type: "float"
           norm: 6076.2659622388919
 
-        - name: "station_id"
-          group: "MetaData"
-          type: "string"
-          first value: "07510"
-          last value: "97530"
+#        - name: "station_id"
+#          group: "MetaData"
+#          type: "string"
+#          first value: "07510"
+#          last value: "97530"
 
         - name: "surface_pressure"
           group: "PreQC"

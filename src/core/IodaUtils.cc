@@ -116,6 +116,11 @@ std::size_t FindMaxStringLength(const std::vector<std::string> & StringVector) {
 }
 
 // -----------------------------------------------------------------------------
+std::string fullVarName(const std::string & groupName, const std::string & varName) {
+    return groupName + std::string("/") + varName;
+}
+
+// -----------------------------------------------------------------------------
 std::vector<std::string> listAllVars(const Group & group, std::string varPath) {
     std::vector<std::string> varList;
 

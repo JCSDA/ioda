@@ -38,6 +38,13 @@ namespace ioda {
 
   std::string TypeIdName(const std::type_info & TypeId);
 
+  /// \brief form full variable name given individual group and variable names
+  /// \details This routine will form the consistent frontend variable name according
+  //  to the layout policy. This is defined as "groupName/varName".
+  /// \params groupName name of group
+  /// \params varName name of variable
+  std::string fullVarName(const std::string & groupName, const std::string & varName);
+
   /// \brief find all variables in a Group and list their hierarchical names
   /// \param group Group for which all variables underneath this group will be listed
   /// \param varPath Hierarchical path to group (use "" for top level)

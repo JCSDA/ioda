@@ -148,30 +148,33 @@ ObsData::~ObsData() {
 
 void ObsData::get_db(const std::string & group, const std::string & name,
                       std::vector<int> & vdata) const {
-  LoadFromDb<int>(group, name, { vdata.size() }, vdata);
+  Variable var = obs_group_.vars.open(fullVarName(group, name));
+  var.read<int>(vdata);
 }
 
 void ObsData::get_db(const std::string & group, const std::string & name,
                       std::vector<float> & vdata) const {
-  LoadFromDb<float>(group, name, { vdata.size() }, vdata);
+  Variable var = obs_group_.vars.open(fullVarName(group, name));
+  var.read<float>(vdata);
 }
 
 void ObsData::get_db(const std::string & group, const std::string & name,
                       std::vector<double> & vdata) const {
   // load the float values from the database and convert to double
-  std::vector<float> FloatData(vdata.size(), 0.0);
-  LoadFromDb<float>(group, name, { vdata.size() }, FloatData);
-  ConvertVarType<float, double>(FloatData, vdata);
+  std::vector<float> floatData(vdata.size(), 0.0);
+  Variable var = obs_group_.vars.open(fullVarName(group, name));
+  var.read<float>(floatData);
+  ConvertVarType<float, double>(floatData, vdata);
 }
 
 void ObsData::get_db(const std::string & group, const std::string & name,
                       std::vector<std::string> & vdata) const {
-  LoadFromDb<std::string>(group, name, { vdata.size() }, vdata);
+  Variable var = obs_group_.vars.open(fullVarName(group, name));
+  var.read<std::string>(vdata);
 }
 
 void ObsData::get_db(const std::string & group, const std::string & name,
                       std::vector<util::DateTime> & vdata) const {
-  // datetime_database_.LoadFromDb(group, name, { vdata.size() }, vdata);
 }
 
 // -----------------------------------------------------------------------------
@@ -705,42 +708,6 @@ void ObsData::StoreToDb(const std::string & GroupName, const std::string & VarNa
       var.write(VarData);
     }
   }
-}
-
-// -----------------------------------------------------------------------------
-/*!
- * \details This method will transfer data from the in-memory storage.
- *
- * \param[in]  GroupName Name of group from top level (ObsValue, ObsError, etc)
- * \param[in]  VarName Name of variable that goes under the group
- * \param[in]  VarShape Sizes of variable dimensions
- * \param[out] VarData Variable data values
- */
-template<typename VarType>
-void ObsData::LoadFromDb(const std::string & GroupName, const std::string & VarName,
-                  const std::vector<std::size_t> & VarShape, std::vector<VarType> & VarData,
-                  const std::size_t Start, const std::size_t Count) const {
-  // Need to copy VarShape into a dimension spec
-  std::vector<Dimensions_t> VarDims(VarShape.size());
-  for (std::size_t i = 0; i < VarShape.size(); ++i) {
-    VarDims[i] = VarShape[i];
-  }
-
-  // Open the group and variable
-  Group grp = obs_group_.open(GroupName);
-  Variable var = grp.vars.open(VarName);
-
-  // Read the variable
-  Selection MemSelect = Selection::all;
-  Selection FileSelect;
-  if (Count > 0) {
-    std::vector<Dimensions_t> Starts(1, Start);
-    std::vector<Dimensions_t> Counts(1, Count);
-    FileSelect.select({ SelectionOperator::SET, Starts, Counts });
-  } else {
-    FileSelect = Selection::all;
-  }
-  var.read(VarData, MemSelect, FileSelect);
 }
 
 // -----------------------------------------------------------------------------
