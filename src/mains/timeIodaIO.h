@@ -15,7 +15,7 @@
 
 #include "oops/base/Observations.h"
 #include "oops/base/ObsSpaces.h"
-#include "oops/parallel/mpi/mpi.h"
+#include "oops/mpi/mpi.h"
 #include "oops/runs/Application.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
@@ -32,7 +32,7 @@ template <typename MODEL> class TimeIodaIO : public oops::Application {
 
  public:
 // -----------------------------------------------------------------------------
-  explicit TimeIodaIO(const eckit::mpi::Comm & comm = oops::mpi::comm()) : Application(comm) {}
+  explicit TimeIodaIO(const eckit::mpi::Comm & comm = oops::mpi::world()) : Application(comm) {}
 // -----------------------------------------------------------------------------
   virtual ~TimeIodaIO() {}
 // -----------------------------------------------------------------------------

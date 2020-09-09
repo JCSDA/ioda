@@ -1,15 +1,15 @@
 /*
  * (C) Copyright 2017-2019 UCAR
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
 #include "ioda/io/IodaIO.h"
 
 #include <string>
 
-#include "oops/parallel/mpi/mpi.h"
+#include "oops/mpi/mpi.h"
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/Logger.h"
 
@@ -388,7 +388,7 @@ std::size_t IodaIO::var_id(const std::string & GroupName, const std::string & Va
  *
  * \param[in] GroupName Group key for GrpVarInfoMap
  * \param[in] VarName Variable key for GrpVarInfoMap
- * \param[in] 
+ * \param[in]
  */
 
 void IodaIO::grp_var_insert(const std::string & GroupName, const std::string & VarName,
