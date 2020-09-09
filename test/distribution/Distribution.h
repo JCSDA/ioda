@@ -26,7 +26,7 @@
 #include "eckit/mpi/Comm.h"
 #include "eckit/testing/Test.h"
 
-#include "oops/parallel/mpi/mpi.h"
+#include "oops/mpi/mpi.h"
 #include "oops/runs/Test.h"
 #include "oops/test/TestEnvironment.h"
 #include "oops/util/Logger.h"
@@ -42,7 +42,7 @@ namespace test {
 void testConstructor() {
   const eckit::LocalConfiguration conf(::test::TestEnvironment::config());
   std::vector<eckit::LocalConfiguration> dist_types;
-  eckit::mpi::Comm & MpiComm = eckit::mpi::comm();
+  const eckit::mpi::Comm & MpiComm = oops::mpi::world();
 
   std::string TestDistType;
   std::string DistName;
@@ -68,7 +68,7 @@ void testConstructor() {
 void testDistribution() {
   const eckit::LocalConfiguration conf(::test::TestEnvironment::config());
   std::vector<eckit::LocalConfiguration> dist_types;
-  eckit::mpi::Comm & MpiComm = eckit::mpi::comm();
+  const eckit::mpi::Comm & MpiComm = oops::mpi::world();
 
   std::string TestDistType;
   std::string DistName;

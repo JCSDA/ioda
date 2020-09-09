@@ -10,7 +10,7 @@
 
 #include "ioda/ObsSpace.h"
 #include "oops/base/Variables.h"
-#include "oops/parallel/mpi/mpi.h"
+#include "oops/mpi/mpi.h"
 #include "oops/util/DateTime.h"
 
 // -----------------------------------------------------------------------------

@@ -1,8 +1,8 @@
 /*
  * (C) Copyright 2017-2019 UCAR
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
 #include "ioda/io/NetcdfIO.h"
@@ -19,7 +19,7 @@
 
 #include "netcdf.h"
 
-#include "oops/parallel/mpi/mpi.h"
+#include "oops/mpi/mpi.h"
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
@@ -793,7 +793,7 @@ void NetcdfIO::print(std::ostream & os) const {
 /*!
  * \brief check results of netcdf call
  *
- * \details This method will check the return code from a netcdf API call. 
+ * \details This method will check the return code from a netcdf API call.
  *          Successful completion of the call is indicated by the return
  *          code being equal to NC_NOERR. If the call was not successful,
  *          then the error message is written to the OOPS log, and is also
@@ -850,7 +850,7 @@ std::string NetcdfIO::FormNcVarName(const std::string & GroupName, const std::st
 /*!
  * \brief allocate a dimension for writing a character array
  *
- * \details This method is used for setting up dimensions for a writing a 
+ * \details This method is used for setting up dimensions for a writing a
  *          character array in the output netcdf file. A character array is
  *          how a vector of strings is represented in netcdf. In order to
  *          minimize storage, this method is part of a scheme to always create
