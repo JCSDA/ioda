@@ -40,21 +40,11 @@ namespace ioda {
 
 // ----------------------------- public functions ------------------------------
 // -----------------------------------------------------------------------------
-/*!
- * \details Config based constructor for an ObsData object. This constructor will read
- *          in from the obs file and transfer the variables into the obs container. Obs
- *          falling outside the DA timing window, specified by bgn and end, will be
- *          discarded before storing them in the obs container.
- *
- * \param[in] config ECKIT configuration segment holding obs types specs
- * \param[in] bgn    DateTime object holding the start of the DA timing window
- * \param[in] end    DateTime object holding the end of the DA timing window
- */
 ObsData::ObsData(const eckit::Configuration & config, const eckit::mpi::Comm & comm,
                  const util::DateTime & bgn, const util::DateTime & end)
-    : config_(config), winbgn_(bgn), winend_(end), commMPI_(comm),
-      gnlocs_(0), nlocs_(0), nvars_(0), nrecs_(0), obsvars_(),
-      obs_group_(), obs_params_(bgn, end, comm)
+                     : config_(config), winbgn_(bgn), winend_(end), commMPI_(comm),
+                       gnlocs_(0), nlocs_(0), nvars_(0), nrecs_(0), obsvars_(),
+                       obs_group_(), obs_params_(bgn, end, comm)
 {
     oops::Log::trace() << "ObsData::ObsData config  = " << config << std::endl;
     obs_params_.deserialize(config);
@@ -95,6 +85,22 @@ ObsData::ObsData(const eckit::Configuration & config, const eckit::mpi::Comm & c
 
     oops::Log::trace() << "ObsData::ObsData contructed name = " << obsname() << std::endl;
 }
+// -----------------------------------------------------------------------------
+/// \details Destructor for an ObsData object. This destructor will clean up the ObsData
+///          object and optionally write out the contents of the obs container into
+///          the output file. The save-to-file operation is invoked when an output obs
+///          file is specified in the ECKIT configuration segment associated with the
+///          ObsData object.
+ObsData::~ObsData() {
+    if (obs_params_.out_type() == ObsIoTypes::OBS_FILE) {
+        std::string fileName = obs_params_.out_file_.fileName;
+        oops::Log::info() << obsname() << ": save database to " << fileName << std::endl;
+        // SaveToFile(fileName, obs_params_.out_file.maxFrameSize);
+    } else {
+        oops::Log::info() << obsname() << " :  no output" << std::endl;
+    }
+    oops::Log::trace() << "ObsData::ObsData destructor" << std::endl;
+}
 
 // -----------------------------------------------------------------------------
 std::size_t ObsData::nlocs() const {
@@ -112,165 +118,99 @@ std::size_t ObsData::nvars() const {
     return g.vars.list().size();
 }
 
-
-
 // -----------------------------------------------------------------------------
-/*!
- * \details Destructor for an ObsData object. This destructor will clean up the ObsData
- *          object and optionally write out the contents of the obs container into
- *          the output file. The save-to-file operation is invoked when an output obs
- *          file is specified in the ECKIT configuration segment associated with the
- *          ObsData object.
- */
-ObsData::~ObsData() {
-  oops::Log::trace() << "ObsData::ObsData destructor begin" << std::endl;
-  if (fileout_.size() != 0) {
-    oops::Log::info() << obsname() << ": save database to " << fileout_ << std::endl;
-    // SaveToFile(fileout_, out_max_frame_size_);
-  } else {
-    oops::Log::info() << obsname() << " :  no output" << std::endl;
-  }
-  oops::Log::trace() << "ObsData::ObsData destructor end" << std::endl;
+bool ObsData::has(const std::string & group, const std::string & name) const {
+    return obs_group_.vars.exists(fullVarName(group, name));
 }
 
 // -----------------------------------------------------------------------------
-/*!
- * \brief transfer data from the obs container to vdata
- *
- * \details The following four get_db methods are the same except for the data type
- *          of the data being transferred (integer, float, double, DateTime). The
- *          caller needs to allocate the memory that the vdata parameter points to.
- *
- * \param[in]  group Name of container group (ObsValue, ObsError, MetaData, etc.)
- * \param[in]  name  Name of container variable
- * \param[out] vdata Vector where container data is being transferred to
- */
+ObsDtype ObsData::dtype(const std::string & group, const std::string & name) const {
+    // Set the type to None if there is no type from the backend
+    ObsDtype VarType = ObsDtype::None;
+    if (has(group, name)) {
+        Variable var = obs_group_.vars.open(fullVarName(group, name));
+        if (var.isA<int>()) {
+            VarType = ObsDtype::Integer;
+        } else if (var.isA<float>()) {
+            VarType = ObsDtype::Float;
+        } else if (var.isA<std::string>()) {
+            VarType = ObsDtype::String;
+        }
+    }
+    return VarType;
+}
 
+// -----------------------------------------------------------------------------
 void ObsData::get_db(const std::string & group, const std::string & name,
-                      std::vector<int> & vdata) const {
-  Variable var = obs_group_.vars.open(fullVarName(group, name));
-  var.read<int>(vdata);
+                     std::vector<int> & vdata) const {
+    Variable var = obs_group_.vars.open(fullVarName(group, name));
+    var.read<int>(vdata);
 }
 
 void ObsData::get_db(const std::string & group, const std::string & name,
-                      std::vector<float> & vdata) const {
-  Variable var = obs_group_.vars.open(fullVarName(group, name));
-  var.read<float>(vdata);
+                     std::vector<float> & vdata) const {
+    Variable var = obs_group_.vars.open(fullVarName(group, name));
+    var.read<float>(vdata);
 }
 
 void ObsData::get_db(const std::string & group, const std::string & name,
-                      std::vector<double> & vdata) const {
-  // load the float values from the database and convert to double
-  std::vector<float> floatData(vdata.size(), 0.0);
-  Variable var = obs_group_.vars.open(fullVarName(group, name));
-  var.read<float>(floatData);
-  ConvertVarType<float, double>(floatData, vdata);
+                     std::vector<double> & vdata) const {
+    // load the float values from the database and convert to double
+    std::vector<float> floatData(vdata.size(), 0.0);
+    Variable var = obs_group_.vars.open(fullVarName(group, name));
+    var.read<float>(floatData);
+    ConvertVarType<float, double>(floatData, vdata);
 }
 
 void ObsData::get_db(const std::string & group, const std::string & name,
-                      std::vector<std::string> & vdata) const {
-  Variable var = obs_group_.vars.open(fullVarName(group, name));
-  var.read<std::string>(vdata);
+                     std::vector<std::string> & vdata) const {
+    Variable var = obs_group_.vars.open(fullVarName(group, name));
+    var.read<std::string>(vdata);
 }
 
 void ObsData::get_db(const std::string & group, const std::string & name,
                       std::vector<util::DateTime> & vdata) const {
+    // TODO(srh) fill in read strings, convert to DateTime objects
 }
 
 // -----------------------------------------------------------------------------
-/*!
- * \brief transfer data from vdata to the obs container
- *
- * \details The following four put_db methods are the same except for the data type
- *          of the data being transferred (integer, float, double, DateTime). The
- *          caller needs to allocate and assign the memory that the vdata parameter
- *          points to.
- *
- * \param[in]  group Name of container group (ObsValue, ObsError, MetaData, etc.)
- * \param[in]  name  Name of container variable
- * \param[out] vdata Vector where container data is being transferred from
- */
-
 void ObsData::put_db(const std::string & group, const std::string & name,
                       const std::vector<int> & vdata) {
-  StoreToDb<int>(group, name, { vdata.size() }, vdata);
+  Variable var = openCreateVar<int>(fullVarName(group, name));
+  var.write<int>(vdata);
 }
 
 void ObsData::put_db(const std::string & group, const std::string & name,
                       const std::vector<float> & vdata) {
-  StoreToDb<float>(group, name, { vdata.size() }, vdata);
+  Variable var = openCreateVar<float>(fullVarName(group, name));
+  var.write<float>(vdata);
 }
 
 void ObsData::put_db(const std::string & group, const std::string & name,
                       const std::vector<double> & vdata) {
   // convert to float, then load into the database
-  std::vector<float> FloatData(vdata.size());
-  ConvertVarType<double, float>(vdata, FloatData);
-  StoreToDb<float>(group, name, { vdata.size() }, FloatData);
+  std::vector<float> floatData(vdata.size());
+  ConvertVarType<double, float>(vdata, floatData);
+  Variable var = openCreateVar<float>(fullVarName(group, name));
+  var.write<float>(floatData);
 }
 
 void ObsData::put_db(const std::string & group, const std::string & name,
                       const std::vector<std::string> & vdata) {
-  StoreToDb<std::string>(group, name, { vdata.size() }, vdata);
+  Variable var = openCreateVar<std::string>(fullVarName(group, name));
+  var.write<std::string>(vdata);
 }
 
 void ObsData::put_db(const std::string & group, const std::string & name,
                       const std::vector<util::DateTime> & vdata) {
-  // StoreToDb<util::DateTime>(group, name, { vdata.size() }, vdata);
+  // TODO(srh) convert DateTime objects to strings and write
 }
 
-// -----------------------------------------------------------------------------
-/*!
- * \details This method checks for the existence of the group, name combination
- *          in the obs container. If the combination exists, "true" is returned,
- *          otherwise "false" is returned.
- */
 
-bool ObsData::has(const std::string & group, const std::string & name) const {
-  std::string groupVar = group + "/" + name;
-  return obs_group_.vars.exists(groupVar);
-}
 
-// -----------------------------------------------------------------------------
-/*!
- * \details This method returns the data type of the variable stored in the obs
- *          container.
- */
 
-ObsDtype ObsData::dtype(const std::string & group, const std::string & name) const {
-  // Set the type to None if there is no type from the backend
-  std::string groupVar = group + "/" + name;
-  ObsDtype VarType = ObsDtype::None;
-  if (has(group, name)) {
-    Variable var = obs_group_.vars.open(groupVar);
-    if (var.isA<int>()) {
-      VarType = ObsDtype::Integer;
-    } else if (var.isA<float>()) {
-      VarType = ObsDtype::Float;
-    } else if (var.isA<std::string>()) {
-      VarType = ObsDtype::String;
-    }
-  }
-  return VarType;
-}
 
-// -----------------------------------------------------------------------------
-/*!
- * \details This method returns a reference to the record number vector
- *          data member. This is for read only access.
- */
-const std::vector<std::size_t> & ObsData::recnum() const {
-  return recnums_;
-}
 
-// -----------------------------------------------------------------------------
-/*!
- * \details This method returns a reference to the index vector
- *          data member. This is for read only access.
- */
-const std::vector<std::size_t> & ObsData::index() const {
-  return indx_;
-}
 
 // -----------------------------------------------------------------------------
 /*!
@@ -381,14 +321,8 @@ void ObsData::createObsGroupFromObsIo(const std::shared_ptr<ObsIo> & obsIo) {
     }
 
     // Create the backend for obs_group_
-//  Engines::BackendNames backendName = Engines::BackendNames::ObsStore;
-//  Engines::BackendCreationParameters backendParams;
-//  Group backend = constructBackend(backendName, backendParams);
-    Engines::BackendNames backendName = Engines::BackendNames::Hdf5File;
+    Engines::BackendNames backendName = Engines::BackendNames::ObsStore;
     Engines::BackendCreationParameters backendParams;
-    backendParams.fileName = "test_obsspace.hdf5";
-    backendParams.action = Engines::BackendFileActions::Create;
-    backendParams.createMode = Engines::BackendCreateModes::Truncate_If_Exists;
     Group backend = constructBackend(backendName, backendParams);
 
     // Create the ObsGroup and attach the backend.
@@ -407,9 +341,6 @@ void ObsData::initFromObsSource(const std::shared_ptr<ObsIo> & obsIo) {
     int iframe = 1;
     for (obsIo->frameInit(); obsIo->frameAvailable(); obsIo->frameNext()) {
         Dimensions_t frameStart = obsIo->frameStart();
-        oops::Log::debug() << "ObsData::initFromObsSource: Frame number: "
-            << iframe << std::endl
-            << "    frameStart: " << frameStart << std::endl;
 
         // Generate the indices (for selection) for variables dimensioned by nlocs
         obsIo->genFrameIndexRecNums(dist_);
@@ -429,9 +360,6 @@ void ObsData::initFromObsSource(const std::shared_ptr<ObsIo> & obsIo) {
             }
             Dimensions_t frameCount = obsIo->frameCount(var);
             if (frameCount > 0) {
-                oops::Log::debug() << "ObsData::initFromObsSource: Variable: " << varName
-                    << ", frameCount: " << frameCount << std::endl;
-
                 // Transfer the variable to the in-memory storage
                 if (var.isA<int>()) {
                     std::vector<int> varValues;
@@ -534,181 +462,8 @@ void ObsData::createVariablesFromObsSource(const std::shared_ptr<ObsIo> & obsIo,
 
 
 
-// -----------------------------------------------------------------------------
-/*!
- * \details This method will initialize the obs container from the input obs file.
- *          All the variables from the input file will be read in and loaded into
- *          the obs container. Obs that fall outside the DA timing window will be
- *          filtered out before loading into the container. This method will also
- *          apply obs distribution across multiple process elements. For these reasons,
- *          the number of locations in the obs container may be smaller than the
- *          number of locations in the input obs file.
- *
- * \param[in] filename Path to input obs file
- */
-/// void ObsData::InitFromFile(const std::string & filename, const std::size_t MaxFrameSize) {
-///   oops::Log::trace() << "ObsData::InitFromFile opening file: " << filename << std::endl;
 
-///   // Open the file for reading and record nlocs and nvars from the file.
-///   std::unique_ptr<IodaIO> fileio {ioda::IodaIOfactory::Create(filename, "r", MaxFrameSize)};
-///   gnlocs_ = fileio->nlocs();
 
-///   // Walk through the frames and select the records according to the MPI distribution
-///   // and if the records fall inside the DA timing window. nvars_ for ObsData is the
-///   // number of variables with the GroupName ObsValue. Since we can be reading in
-///   // multiple frames, only check for the ObsValue group on the first frame.
-///   nvars_ = 0;
-///   bool FirstFrame = true;
-///   fileio->frame_initialize();
-///   for (IodaIO::FrameIter iframe = fileio->frame_begin();
-///                        iframe != fileio->frame_end(); ++iframe) {
-///     std::size_t FrameStart = fileio->frame_start(iframe);
-///     std::size_t FrameSize = fileio->frame_size(iframe);
-
-///     // Fill in the current frame from the file
-///     fileio->frame_read(iframe);
-
-///     // Calculate the corresponding segments of indx_ and recnums_ vectors for this
-///     // frame. Use these segments to select the rows from the frame before storing in
-///     // the obs space container.
-/// //    std::vector<std::size_t> FrameIndex = GenFrameIndexRecNums(fileio, FrameStart, FrameSize);
-
-///     // Integer variables
-///     for (IodaIO::FrameIntIter idata = fileio->frame_int_begin();
-///                               idata != fileio->frame_int_end(); ++idata) {
-///       std::string GroupName = fileio->frame_int_get_gname(idata);
-///       if (FirstFrame && (GroupName == "ObsValue")) { nvars_++; }
-///       std::string VarName = fileio->frame_int_get_vname(idata);
-///       std::vector<std::size_t> VarShape = fileio->var_shape(GroupName, VarName);
-///       std::vector<int> FrameData;
-///       fileio->frame_int_get_data(GroupName, VarName, FrameData);
-///       std::vector<std::size_t> FrameShape = VarShape;
-///       FrameShape[0] = FrameData.size();
-///       if (VarShape[0] == gnlocs_) {
-///         std::vector<std::size_t> IndexedShape;
-///         std::vector<int> SelectedData =
-///              ApplyIndex(FrameData, VarShape, FrameIndex, FrameShape);
-///         StoreToDb<int>(GroupName, VarName, FrameShape, SelectedData, true);
-///       } else {
-///         StoreToDb<int>(GroupName, VarName, FrameShape, FrameData, true);
-///       }
-///     }
-
-///     // Float variables
-///     for (IodaIO::FrameFloatIter idata = fileio->frame_float_begin();
-///                                 idata != fileio->frame_float_end(); ++idata) {
-///       std::string GroupName = fileio->frame_float_get_gname(idata);
-///       if (FirstFrame && (GroupName == "ObsValue")) { nvars_++; }
-///       std::string VarName = fileio->frame_float_get_vname(idata);
-///       std::vector<std::size_t> VarShape = fileio->var_shape(GroupName, VarName);
-///       std::vector<float> FrameData;
-///       fileio->frame_float_get_data(GroupName, VarName, FrameData);
-///       std::vector<std::size_t> FrameShape = VarShape;
-///       FrameShape[0] = FrameData.size();
-///       if (VarShape[0] == gnlocs_) {
-///         std::vector<std::size_t> IndexedShape;
-///         std::vector<float> SelectedData =
-///              ApplyIndex(FrameData, VarShape, FrameIndex, FrameShape);
-///         StoreToDb<float>(GroupName, VarName, FrameShape, SelectedData, true);
-///       } else {
-///         StoreToDb<float>(GroupName, VarName, FrameShape, FrameData, true);
-///       }
-///     }
-
-///     // String variables
-///     for (IodaIO::FrameStringIter idata = fileio->frame_string_begin();
-///                                  idata != fileio->frame_string_end(); ++idata) {
-///       std::string GroupName = fileio->frame_string_get_gname(idata);
-///       if (FirstFrame && (GroupName == "ObsValue")) { nvars_++; }
-///       std::string VarName = fileio->frame_string_get_vname(idata);
-///       std::vector<std::size_t> VarShape = fileio->var_shape(GroupName, VarName);
-///       std::vector<std::string> FrameData;
-///       fileio->frame_string_get_data(GroupName, VarName, FrameData);
-///       std::vector<std::size_t> FrameShape = VarShape;
-///       FrameShape[0] = FrameData.size();
-///       if (VarShape[0] == gnlocs_) {
-///         std::vector<std::size_t> IndexedShape;
-///         std::vector<std::string> SelectedData =
-///              ApplyIndex(FrameData, VarShape, FrameIndex, FrameShape);
-///         StoreToDb<std::string>(GroupName, VarName, FrameShape, SelectedData, true);
-///       } else {
-///         StoreToDb<std::string>(GroupName, VarName, FrameShape, FrameData, true);
-///       }
-///     }
-///     FirstFrame = false;
-///   }
-///   fileio->frame_finalize();
-
-///   // Record whether any problems occurred when reading the file.
-///   file_unexpected_dtypes_ = fileio->unexpected_data_types();
-///   file_excess_dims_ = fileio->excess_dims();
-///   oops::Log::trace() << "ObsData::InitFromFile opening file ends " << std::endl;
-/// }
-
-// -----------------------------------------------------------------------------
-/*!
- * \details This method will transfer data into the in-memory storage.
- *
- * \param[in] GroupName Name of group from top level (ObsValue, ObsError, etc)
- * \param[in] VarName Name of variable that goes under the group
- * \param[in] VarShape Sizes of variable dimensions
- * \param[in] VarData Variable data values
- * \param[in] Append If true then append the variable to the existing variable
- */
-template<typename VarType>
-void ObsData::StoreToDb(const std::string & GroupName, const std::string & VarName,
-                        const std::vector<std::size_t> & VarShape,
-                        const std::vector<VarType> & VarData, bool Append) {
-  // Need to copy VarShape into a dimension spec
-  std::vector<Dimensions_t> VarDims(VarShape.begin(), VarShape.end());
-
-  // Create the group if it doesn't exist
-  Group grp;
-  if (!obs_group_.exists(GroupName)) {
-    grp = obs_group_.create(GroupName);
-  } else {
-    grp = obs_group_.open(GroupName);
-  }
-
-  // Create the variable if it doesn't exist
-  Variable var;
-  if (!grp.vars.exists(VarName)) {
-    // Need to set fill value to the appropriate missing value
-    VarType FillValue;
-    GetFillValue<VarType>(FillValue);
-    VariableCreationParameters VarParams;
-    VarParams.setFillValue<VarType>(FillValue);
-
-    // Create and write the variable. Since it is new, the Append control
-    // doesn't matter. Regardless of its setting, you want to simply write
-    // the variable into the space that was just created.
-    var = grp.vars.create<VarType>(VarName, VarDims, VarDims, VarParams);
-    var.write(VarData);
-  } else {
-    var = grp.vars.open(VarName);
-    if (Append) {
-      // Need to add the existing old and new dimensions to get the
-      // dimensions for resizing. Then write the new data into the new
-      // space that was opened up.
-      std::vector<Dimensions_t> CurDims = var.getDimensions().dimsCur;
-      std::vector<Dimensions_t> NewDims = CurDims;
-      std::vector<Dimensions_t> Counts(CurDims.size());
-      for (std::size_t i = 0; i < NewDims.size(); ++i) {
-        NewDims[i] += VarDims[i];
-        Counts[i] = VarDims[i];
-      }
-      var.resize(NewDims);
-
-      // Create a selection object for the ObsStore ("file") side. Use
-      // the default ALL for the memory side.
-      var.write(VarData, Selection::all,
-                Selection().select({ SelectionOperator::SET, CurDims, Counts }));
-
-    } else {
-      var.write(VarData);
-    }
-  }
-}
 
 // -----------------------------------------------------------------------------
 /*!

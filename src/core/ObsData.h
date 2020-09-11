@@ -38,128 +38,164 @@
 
 // Forward declarations
 namespace eckit {
-  class Configuration;
+    class Configuration;
 }
 
 namespace ioda {
-  class ObsVector;
+    class ObsVector;
 
-//-------------------------------------------------------------------------------------
-// Enum type for obs variable data types
-enum class ObsDtype {
-  None,
-  Float,
-  Integer,
-  String,
-  DateTime
-};
-
-/// Observation Data
-/*!
- * \brief Observation data class for IODA
- *
- * \details This class handles the memory store of observation data. It handles the transfer
- *          of data between memory and files, the distribution of obs data across multiple
- *          process elements, the filtering out of obs data that is outside the DA timing
- *          window, the transfer of data between UFO, OOPS and IODA, and data type
- *          conversion that is "missing value aware".
- *
- * During the DA run, all data transfers are done in memory. The only time file I/O is
- * invoked is during the constructor (read from the file into the obs container) and
- * optionally during the the destructor (write from obs container into the file).
- *
- * \author Stephen Herbener, Xin Zhang (JCSDA)
- */
-class ObsData : public util::Printable {
- public:
-    //---------------------------- typedefs -------------------------------
-    typedef std::map<std::size_t, std::vector<std::size_t>> RecIdxMap;
-    typedef RecIdxMap::const_iterator RecIdxIter;
-    struct TreeTrait {
-        typedef eckit::geometry::Point3 Point;
-        typedef double                  Payload;
+    //-------------------------------------------------------------------------------------
+    // Enum type for obs variable data types
+    enum class ObsDtype {
+        None,
+        Float,
+        Integer,
+        String,
+        DateTime
     };
-    typedef eckit::KDTreeMemory<TreeTrait> KDTree;
 
-    //---------------------------- functions ------------------------------
-    ObsData(const eckit::Configuration &, const eckit::mpi::Comm &,
-            const util::DateTime &, const util::DateTime &);
-    ObsData(const ObsData &);
-    ~ObsData();
+    /// \brief Observation data class for IODA
+    ///
+    /// \details This class handles the memory store of observation data. It handles
+    /// the transfer of data between memory and files, the distribution of obs data
+    /// across multiple process elements, the filtering out of obs data that is outside
+    /// the DA timing window, the transfer of data between UFO, OOPS and IODA, and data type
+    /// conversion that is "missing value aware".
+    ///
+    /// During the DA run, all data transfers are done in memory. The only time file I/O is
+    /// invoked is during the constructor (read from the file into the obs container) and
+    /// optionally during the the destructor (write from obs container into the file).
+    class ObsData : public util::Printable {
+     public:
+        //---------------------------- typedefs -------------------------------
+        typedef std::map<std::size_t, std::vector<std::size_t>> RecIdxMap;
+        typedef RecIdxMap::const_iterator RecIdxIter;
+        struct TreeTrait {
+            typedef eckit::geometry::Point3 Point;
+            typedef double                  Payload;
+        };
+        typedef eckit::KDTreeMemory<TreeTrait> KDTree;
 
-    /// \details This method will return the handle to the configuration
-    const eckit::Configuration & getConfig() const {return config_;}
+        //---------------------------- functions ------------------------------
+        /// \brief Config based constructor for an ObsData object.
+        ///
+        /// \details This constructor will read in from the obs file and transfer the
+        /// variables into the obs container. Obs falling outside the DA timing window,
+        /// specified by bgn and end, will be discarded before storing them in the
+        /// obs container.
+        ///
+        /// \param config eckit configuration segment holding obs types specs
+        /// \param bgn    DateTime object holding the start of the DA timing window
+        /// \param end    DateTime object holding the end of the DA timing window
+        ObsData(const eckit::Configuration &, const eckit::mpi::Comm &,
+                const util::DateTime &, const util::DateTime &);
+        ObsData(const ObsData &);
+        ~ObsData();
 
-    /// \details This method will return the start of the DA timing window
-    const util::DateTime & windowStart() const {return winbgn_;}
+        /// \details This method will return the handle to the configuration
+        const eckit::Configuration & getConfig() const {return config_;}
 
-    /// \details This method will return the end of the DA timing window
-    const util::DateTime & windowEnd() const {return winend_;}
+        /// \details This method will return the start of the DA timing window
+        const util::DateTime & windowStart() const {return winbgn_;}
 
-    /// \details This method will return the associated MPI communicator
-    const eckit::mpi::Comm & comm() const {return commMPI_;}
+        /// \details This method will return the end of the DA timing window
+        const util::DateTime & windowEnd() const {return winend_;}
 
-    /// \brief return the number of locations in the obs source (ObsIo)
-    /// \details This is the number of loctions from the input file or input
-    /// obs generator.
-    std::size_t gnlocs() const {return gnlocs_;}
+        /// \details This method will return the associated MPI communicator
+        const eckit::mpi::Comm & comm() const {return commMPI_;}
 
-    /// \brief return the number of locations in the obs space
-    /// \details This is the number of loctions in the resulting obs space container
-    /// after removing obs outside the timing window and applying MPI distribution.
-    std::size_t nlocs() const;
+        /// \brief return the number of locations in the obs source (ObsIo)
+        /// \details This is the number of loctions from the input file or input
+        /// obs generator.
+        std::size_t gnlocs() const {return gnlocs_;}
 
-    /// \brief return the number of records in the obs space container
-    /// \details This is the number of sets of locations after applying the
-    /// optional grouping.
-    std::size_t nrecs() const;
+        /// \brief return the number of locations in the obs space
+        /// \details This is the number of loctions in the resulting obs space container
+        /// after removing obs outside the timing window and applying MPI distribution.
+        std::size_t nlocs() const;
 
-    /// \brief return the number of variables in the obs space container
-    std::size_t nvars() const;
+        /// \brief return the number of records in the obs space container
+        /// \details This is the number of sets of locations after applying the
+        /// optional grouping.
+        std::size_t nrecs() const;
 
-    /// \brief return YAML configuration parameter: obsdatain.obsgrouping.group variable
-    std::string obs_group_var() const {return obs_params_.in_file_.obsGroupVar;}
+        /// \brief return the number of variables in the obs space container
+        std::size_t nvars() const;
 
-    /// \brief return YAML configuration parameter: obsdatain.obsgrouping.sort variable
-    std::string obs_sort_var() const {return obs_params_.in_file_.obsSortVar;}
+        /// \brief return YAML configuration parameter: obsdatain.obsgrouping.group variable
+        std::string obs_group_var() const {return obs_params_.in_file_.obsGroupVar;}
 
-    /// \brief return YAML configuration parameter: obsdatain.obsgrouping.sort order
-    std::string obs_sort_order() const {return obs_params_.in_file_.obsSortOrder;}
+        /// \brief return YAML configuration parameter: obsdatain.obsgrouping.sort variable
+        std::string obs_sort_var() const {return obs_params_.in_file_.obsSortVar;}
 
-    /// \brief return the name of the obs type being stored
-    const std::string & obsname() const {return obsname_;}
+        /// \brief return YAML configuration parameter: obsdatain.obsgrouping.sort order
+        std::string obs_sort_order() const {return obs_params_.in_file_.obsSortOrder;}
 
-    /// \brief return the name of the MPI distribution
-    std::string distname() const {return obs_params_.top_level_.distName;}
+        /// \brief return the name of the obs type being stored
+        const std::string & obsname() const {return obsname_;}
+
+        /// \brief return the name of the MPI distribution
+        std::string distname() const {return obs_params_.top_level_.distName;}
+
+        /// \brief return reference to the record number vector
+        const std::vector<std::size_t> & recnum() const {return recnums_;}
+
+        /// \brief return reference to the index vector
+        const std::vector<std::size_t> & index() const {return indx_;}
+
+        /// \brief return true if group/variable exists
+        bool has(const std::string &, const std::string &) const;
+
+        /// \brief return data type for group/variable
+        ObsDtype dtype(const std::string &, const std::string &) const;
+
+        /// \brief transfer data from the obs container to vdata
+        ///
+        /// \details The following get_db methods are the same except for the data type
+        /// of the data being transferred (integer, float, double, string, DateTime). The
+        /// caller needs to allocate the memory that the vdata parameter points to
+        /// 
+        /// \param group Name of container group (ObsValue, ObsError, MetaData, etc.)
+        /// \param name  Name of container variable
+        /// \param vdata Vector where container data is being transferred to
+        void get_db(const std::string & group, const std::string & name,
+                    std::vector<int> & vdata) const;
+        void get_db(const std::string & group, const std::string & name,
+                    std::vector<float> & vdata) const;
+        void get_db(const std::string & group, const std::string & name,
+                    std::vector<double> & vdata) const;
+        void get_db(const std::string & group, const std::string & name,
+                    std::vector<std::string> & vdata) const;
+        void get_db(const std::string & group, const std::string & name,
+                    std::vector<util::DateTime> & vdata) const;
+
+        /// \brief transfer data from vdata to the obs container
+        ///
+        /// \details The following put_db methods are the same except for the data type
+        /// of the data being transferred (integer, float, double, string, DateTime). The
+        /// caller needs to allocate and assign the memory that the vdata parameter points to.
+        ///
+        /// \param group Name of container group (ObsValue, ObsError, MetaData, etc.)
+        /// \param name  Name of container variable
+        /// \param vdata Vector where container data is being transferred from
+
+        void put_db(const std::string & group, const std::string & name,
+                    const std::vector<int> & vdata);
+        void put_db(const std::string & group, const std::string & name,
+                    const std::vector<float> & vdata);
+        void put_db(const std::string & group, const std::string & name,
+                    const std::vector<double> & vdata);
+        void put_db(const std::string & group, const std::string & name,
+                    const std::vector<std::string> & vdata);
+        void put_db(const std::string & group, const std::string & name,
+                    const std::vector<util::DateTime> & vdata);
 
 
-  const std::vector<std::size_t> & recnum() const;
-  const std::vector<std::size_t> & index() const;
 
-  bool has(const std::string &, const std::string &) const;
-  ObsDtype dtype(const std::string &, const std::string &) const;
 
-  void get_db(const std::string & group, const std::string & name,
-              std::vector<int> & vdata) const;
-  void get_db(const std::string & group, const std::string & name,
-              std::vector<float> & vdata) const;
-  void get_db(const std::string & group, const std::string & name,
-              std::vector<double> & vdata) const;
-  void get_db(const std::string & group, const std::string & name,
-              std::vector<std::string> & vdata) const;
-  void get_db(const std::string & group, const std::string & name,
-              std::vector<util::DateTime> & vdata) const;
 
-  void put_db(const std::string & group, const std::string & name,
-              const std::vector<int> & vdata);
-  void put_db(const std::string & group, const std::string & name,
-              const std::vector<float> & vdata);
-  void put_db(const std::string & group, const std::string & name,
-              const std::vector<double> & vdata);
-  void put_db(const std::string & group, const std::string & name,
-              const std::vector<std::string> & vdata);
-  void put_db(const std::string & group, const std::string & name,
-              const std::vector<util::DateTime> & vdata);
+
+
 
   KDTree & getKDTree();
 
@@ -352,14 +388,34 @@ class ObsData : public util::Printable {
     void createVariablesFromObsSource(const std::shared_ptr<ObsIo> & obsIo,
                                       const std::vector<std::string> & varList);
 
+    /// \brief open an obs_group_ variable, create the varialbe if necessary
+    template<typename VarType>
+    Variable openCreateVar(const std::string & varName) {
+        Variable var;
+        if (obs_group_.vars.exists(varName)) {
+            var = obs_group_.vars.open(varName);
+        } else {
+            // Create the variable. Use the JEDI internal missing value marks for
+            // fill values.
+            // TODO(srh) Current put_db interface has no means for passing in which
+            // TODO(srh) dimension the variable is associated with. For now assume
+            // TODO(srh) all variables are 1D dimensioned by nlocs.
+            VarType fillVal = this->getFillValue<VarType>();
+            Variable nlocsVar = obs_group_.vars.open("nlocs");
+
+            VariableCreationParameters params;
+            params.chunk = true;
+            params.compressWithGZIP();
+            params.setFillValue<VarType>(fillVal);
+
+            var = obs_group_.vars.createWithScales<VarType>(varName, { nlocsVar }, params);
+        }
+        return var;
+    }
 
 
 
 
-  template<typename VarType>
-  void StoreToDb(const std::string & GroupName, const std::string & VarName,
-                 const std::vector<std::size_t> & VarShape,
-                 const std::vector<VarType> & VarData, bool Append = false);
   void BuildSortedObsGroups();
   void createKDTree();
 

@@ -320,10 +320,10 @@ class ObsSpace : public oops::Test {
       { testConstructor(); });
     ts.emplace_back(CASE("ioda/ObsSpace/testGetDb")
       { testGetDb(); });
-//    ts.emplace_back(CASE("ioda/ObsSpace/testPutDb")
-//      { testPutDb(); });
-//    ts.emplace_back(CASE("ioda/ObsSpace/testWriteableGroup")
-//      { testWriteableGroup(); });
+    ts.emplace_back(CASE("ioda/ObsSpace/testPutDb")
+      { testPutDb(); });
+    ts.emplace_back(CASE("ioda/ObsSpace/testWriteableGroup")
+      { testWriteableGroup(); });
   }
 };
 
