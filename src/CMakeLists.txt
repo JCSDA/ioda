@@ -11,6 +11,7 @@ instantiateObsLocFactory.h
 
 core/IodaUtils.cc
 core/IodaUtils.h
+core/LocalObsSpaceParameters.cc
 core/LocalObsSpaceParameters.h
 core/ObsLocGC99.cc
 core/ObsLocGC99.h

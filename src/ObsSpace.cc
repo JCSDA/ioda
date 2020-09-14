@@ -127,8 +127,8 @@ ObsSpace::ObsSpace(const ObsSpace & os,
     // Using the radius of the earth
     eckit::geometry::Point3 refPoint3D;
     atlas::util::Earth::convertSphericalToCartesian(refPoint, refPoint3D);
-    double alpha =  (localopts_->lengthscale / localopts_->radiusEarth)/ 2.0;  // angle in radians
-    double chordLength = 2.0*localopts_->radiusEarth * sin(alpha);  // search radius in 3D space
+    double alpha =  (localopts_->lengthscale / localopts_->radius_earth)/ 2.0;  // angle in radians
+    double chordLength = 2.0*localopts_->radius_earth * sin(alpha);  // search radius in 3D space
 
     auto closePoints = kdtree.findInSphere(refPoint3D, chordLength);
 
