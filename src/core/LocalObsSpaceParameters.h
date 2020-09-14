@@ -9,9 +9,11 @@
 #define CORE_LOCALOBSSPACEPARAMETERS_H_
 
 #include <string>
+#include <utility>
 
 #include "eckit/exception/Exceptions.h"
 #include "eckit/geometry/KPoint.h"
+#include "eckit/geometry/Point2.h"
 #include "eckit/geometry/UnitSphere.h"
 
 #include "oops/util/parameters/OptionalParameter.h"
@@ -33,47 +35,40 @@ enum class SearchMethod {
   BRUTEFORCE, KDTREE
 };
 
+struct DistanceTypeParameterTraitsHelper {
+  typedef DistanceType EnumType;
+  static constexpr char enumTypeName[] = "DistanceType";
+  static constexpr util::NamedEnumerator<DistanceType> namedValues[] = {
+    { DistanceType::GEODESIC, "geodesic" },
+    { DistanceType::CARTESIAN, "cartesian" }
+  };
+};
+
+struct SearchMethodParameterTraitsHelper {
+  typedef SearchMethod EnumType;
+  static constexpr char enumTypeName[] = "SearchMethod";
+  static constexpr util::NamedEnumerator<SearchMethod> namedValues[] = {
+    { SearchMethod::BRUTEFORCE, "brute_force" },
+    { SearchMethod::KDTREE, "kd_tree" }
+  };
+};
+
 }  // namespace ioda
 
 namespace oops {
 
-/// Extraction of DistanceType parameter from config
+/// Extraction of DistanceType parameters from config
 template <>
-struct ParameterTraits<ioda::DistanceType> {
-  static boost::optional<ioda::DistanceType> get(const eckit::Configuration &config,
-                                                const std::string& name) {
-    std::string value;
-    if (config.get(name, value)) {
-      if (value == "geodesic")
-        return ioda::DistanceType::GEODESIC;
-      if (value == "cartesian")
-        return ioda::DistanceType::CARTESIAN;
-      throw eckit::BadParameter("Bad conversion from std::string '" + value + "' to DistanceType",
-                                Here());
-    } else {
-      return boost::none;
-    }
-  }
-};
+struct ParameterTraits<ioda::DistanceType> :
+    public EnumParameterTraits<ioda::DistanceTypeParameterTraitsHelper>
+{};
 
-/// Extraction of SearchMethod parameter from config
+
+/// Extraction of SearchMethod parameters from config
 template <>
-struct ParameterTraits<ioda::SearchMethod> {
-  static boost::optional<ioda::SearchMethod> get(const eckit::Configuration &config,
-                                                 const std::string& name) {
-    std::string value;
-    if (config.get(name, value)) {
-      if (value == "brute_force")
-        return ioda::SearchMethod::BRUTEFORCE;
-      if (value == "kd_tree")
-        return ioda::SearchMethod::KDTREE;
-      throw eckit::BadParameter("Bad conversion from std::string '" + value + "' to SearchMethod",
-                                Here());
-    } else {
-      return boost::none;
-    }
-  }
-};
+struct ParameterTraits<ioda::SearchMethod> :
+    public EnumParameterTraits<ioda::SearchMethodParameterTraitsHelper>
+{};
 
 }  // namespace oops
 
@@ -81,6 +76,8 @@ namespace ioda {
 
 /// \brief Options controlling local observations subsetting
 class LocalObsSpaceParameters : public oops::Parameters {
+  OOPS_CONCRETE_PARAMETERS(LocalObsSpaceParameters, Parameters)
+
  public:
   /// Localization lengthscale (find all obs within the distance from reference point)
   oops::RequiredParameter<double> lengthscale{"lengthscale", this};
@@ -99,14 +96,15 @@ class LocalObsSpaceParameters : public oops::Parameters {
   /// distance calculation type distanceType
   double distance(const eckit::geometry::Point2 & p1, const eckit::geometry::Point2 & p2) {
     if (distanceType == DistanceType::GEODESIC) {
-      return eckit::geometry::Sphere::distance(radiusEarth, p1, p2);
+      return eckit::geometry::Sphere::distance(radius_earth, p1, p2);
     } else {
       ASSERT(distanceType == DistanceType::CARTESIAN);
       return p1.distance(p2);
     }
   }
 
-  const double radiusEarth = 6.371e6;  // Earth radius in km
+  // Earth radius in m
+  static constexpr double radius_earth = 6.371e6;
 };
 
 }  // namespace ioda
