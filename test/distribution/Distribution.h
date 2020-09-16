@@ -152,9 +152,9 @@ class Distribution : public oops::Test {
   Distribution() {}
   virtual ~Distribution() {}
  private:
-  std::string testid() const {return "test::Distribution";}
+  std::string testid() const override {return "test::Distribution";}
 
-  void register_tests() const {
+  void register_tests() const override {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
     ts.emplace_back(CASE("distribution/Distribution/testConstructor")
@@ -162,6 +162,8 @@ class Distribution : public oops::Test {
     ts.emplace_back(CASE("distribution/Distribution/testDistribution")
       { testDistribution(); });
   }
+
+  void clear() const override {}
 };
 
 // -----------------------------------------------------------------------------

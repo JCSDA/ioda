@@ -83,14 +83,16 @@ class LocalObsSpace : public oops::Test {
   LocalObsSpace() {}
   virtual ~LocalObsSpace() {}
  private:
-  std::string testid() const {return "test::LocalObsSpace<ioda::IodaTrait>";}
+  std::string testid() const override {return "test::LocalObsSpace<ioda::IodaTrait>";}
 
-  void register_tests() const {
+  void register_tests() const override {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
     ts.emplace_back(CASE("ioda/LocalObsSpace/testConstructor_local")
       { testConstructor_local(); });
   }
+
+  void clear() const override {}
 };
 
 // -----------------------------------------------------------------------------

@@ -400,9 +400,9 @@ class ObsSpaceContainer : public oops::Test {
   ObsSpaceContainer() {}
   virtual ~ObsSpaceContainer() {}
  private:
-  std::string testid() const {return "test::ObsSpaceContainer";}
+  std::string testid() const override {return "test::ObsSpaceContainer";}
 
-  void register_tests() const {
+  void register_tests() const override {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
     ts.emplace_back(CASE("database/ObsSpaceContainer/testConstructor")
@@ -414,6 +414,8 @@ class ObsSpaceContainer : public oops::Test {
     ts.emplace_back(CASE("database/ObsSpaceContainer/testSegmentedStoreLoad")
       { testSegmentedStoreLoad(); });
   }
+
+  void clear() const override {}
 };
 
 // -----------------------------------------------------------------------------
