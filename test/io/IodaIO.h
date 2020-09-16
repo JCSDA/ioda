@@ -510,9 +510,9 @@ class IodaIO : public oops::Test {
   IodaIO() {}
   virtual ~IodaIO() {}
  private:
-  std::string testid() const {return "test::IodaIO";}
+  std::string testid() const override {return "test::IodaIO";}
 
-  void register_tests() const {
+  void register_tests() const override {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
     ts.emplace_back(CASE("io/IodaIO/testConstructor")
@@ -524,6 +524,8 @@ class IodaIO : public oops::Test {
     ts.emplace_back(CASE("io/IodaIO/testWriteVar")
       { testWriteVar(); });
   }
+
+  void clear() const override {}
 };
 
 // -----------------------------------------------------------------------------

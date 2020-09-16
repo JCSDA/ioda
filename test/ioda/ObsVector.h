@@ -245,10 +245,11 @@ class ObsVector : public oops::Test {
  public:
   ObsVector() {}
   virtual ~ObsVector() {}
- private:
-  std::string testid() const {return "test::ObsVector<ioda::IodaTrait>";}
 
-  void register_tests() const {
+ private:
+  std::string testid() const override {return "test::ObsVector<ioda::IodaTrait>";}
+
+  void register_tests() const override {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
      ts.emplace_back(CASE("ioda/ObsVector/testConstructor")
@@ -264,6 +265,8 @@ class ObsVector : public oops::Test {
      ts.emplace_back(CASE("ioda/ObsVector/testDistributedMath")
       { testDistributedMath(); });
   }
+
+  void clear() const override {}
 };
 
 // =============================================================================

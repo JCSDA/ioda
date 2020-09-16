@@ -311,9 +311,9 @@ class ObsSpace : public oops::Test {
   ObsSpace() {}
   virtual ~ObsSpace() {}
  private:
-  std::string testid() const {return "test::ObsSpace<ioda::IodaTrait>";}
+  std::string testid() const override {return "test::ObsSpace<ioda::IodaTrait>";}
 
-  void register_tests() const {
+  void register_tests() const override {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
     ts.emplace_back(CASE("ioda/ObsSpace/testConstructor")
@@ -325,6 +325,8 @@ class ObsSpace : public oops::Test {
     ts.emplace_back(CASE("ioda/ObsSpace/testWriteableGroup")
       { testWriteableGroup(); });
   }
+
+  void clear() const override {}
 };
 
 // -----------------------------------------------------------------------------
