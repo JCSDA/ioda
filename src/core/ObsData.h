@@ -123,13 +123,13 @@ namespace ioda {
         std::size_t nvars() const;
 
         /// \brief return YAML configuration parameter: obsdatain.obsgrouping.group variable
-        std::string obs_group_var() const {return obs_params_.in_file_.obsGroupVar;}
+        std::string obs_group_var() const;
 
         /// \brief return YAML configuration parameter: obsdatain.obsgrouping.sort variable
-        std::string obs_sort_var() const {return obs_params_.in_file_.obsSortVar;}
+        std::string obs_sort_var() const;
 
         /// \brief return YAML configuration parameter: obsdatain.obsgrouping.sort order
-        std::string obs_sort_order() const {return obs_params_.in_file_.obsSortOrder;}
+        std::string obs_sort_order() const;
 
         /// \brief return the name of the obs type being stored
         const std::string & obsname() const {return obsname_;}

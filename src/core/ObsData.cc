@@ -93,7 +93,7 @@ ObsData::ObsData(const eckit::Configuration & config, const eckit::mpi::Comm & c
 ///          ObsData object.
 ObsData::~ObsData() {
     if (obs_params_.out_type() == ObsIoTypes::OBS_FILE) {
-        std::string fileName = obs_params_.out_file_.fileName;
+        std::string fileName = obs_params_.top_level_.obsOutFile.value()->fileName;
         oops::Log::info() << obsname() << ": save database to " << fileName << std::endl;
         // SaveToFile(fileName, obs_params_.out_file.maxFrameSize);
     } else {
@@ -116,6 +116,36 @@ std::size_t ObsData::nrecs() const {
 std::size_t ObsData::nvars() const {
     Group g = obs_group_.open("ObsValue");
     return g.vars.list().size();
+}
+
+// -----------------------------------------------------------------------------
+std::string ObsData::obs_group_var() const {
+    std::string obsGroupVar = "";
+    if (obs_params_.top_level_.obsInFile.value() != boost::none) {
+        obsGroupVar =
+            obs_params_.top_level_.obsInFile.value()->obsGrouping.value().obsGroupVar;
+    }
+    return obsGroupVar;
+}
+
+// -----------------------------------------------------------------------------
+std::string ObsData::obs_sort_var() const {
+    std::string obsSortVar = "";
+    if (obs_params_.top_level_.obsInFile.value() != boost::none) {
+        obsSortVar =
+            obs_params_.top_level_.obsInFile.value()->obsGrouping.value().obsSortVar;
+    }
+    return obsSortVar;
+}
+
+// -----------------------------------------------------------------------------
+std::string ObsData::obs_sort_order() const {
+    std::string obsSortOrder = "";
+    if (obs_params_.top_level_.obsInFile.value() != boost::none) {
+        obsSortOrder =
+            obs_params_.top_level_.obsInFile.value()->obsGrouping.value().obsSortOrder;
+    }
+    return obsSortOrder;
 }
 
 // -----------------------------------------------------------------------------

@@ -55,7 +55,7 @@ ecbuild_add_library( TARGET ${PROJECT_NAME}
 
 target_link_libraries( ${PROJECT_NAME} PUBLIC NetCDF::NetCDF_C )
 target_link_libraries( ${PROJECT_NAME} PUBLIC fckit )
-target_link_libraries( ${PROJECT_NAME} PUBLIC ioda-engines )
+target_link_libraries( ${PROJECT_NAME} PUBLIC ioda_engines )
 target_link_libraries( ${PROJECT_NAME} PUBLIC ${oops_LIBRARIES} ) #TODO: Change to "oops::oops" once oops adds namespace support
 
 #Configure include directory layout for build-tree to match install-tree
