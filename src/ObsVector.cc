@@ -160,9 +160,9 @@ double ObsVector::dot_product_with(const ObsVector & other) const {
       zz += values_[jj] * other.values_[jj];
     }
   }
-  if (obsdb_.isDistributed()) {
-    obsdb_.comm().allReduceInPlace(zz, eckit::mpi::sum());
-  }
+
+  obsdb_.sum(zz);
+
   return zz;
 }
 // -----------------------------------------------------------------------------
