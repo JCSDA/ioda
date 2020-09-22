@@ -198,6 +198,9 @@ void ObsDataVector<DATATYPE>::print(std::ostream & os) const {
         ++nobs;
       }
     }
+    // collect zmin, zmax, nobs, nloc on all processors
+    // HK 1. why is this an all reduce for a print?
+    //    2. does this need to be four all reduces?
     if (obsdb_.isDistributed()) {
       obsdb_.comm().allReduceInPlace(zmin, eckit::mpi::min());
       obsdb_.comm().allReduceInPlace(zmax, eckit::mpi::max());
