@@ -42,33 +42,39 @@ ObsGenerate::ObsGenerate(const ObsIoActions action, const ObsIoModes mode,
             oops::Log::trace() << "Constructing ObsGenerate: Random method" << std::endl;
 
             // Create the in-memory ObsGroup
-            Dimensions_t numLocs = params.in_gen_rand_.numObs;
+            Dimensions_t numLocs =
+                params.top_level_.obsGenerate.value()->random.value()->numObs;
             newDims.push_back(
                 std::make_shared<ioda::NewDimensionScale<int>>("nlocs", numLocs, numLocs, numLocs));
             obs_group_ = ObsGroup::generate(backend, newDims);
 
             // Fill in the ObsGroup with the generated data
-            genDistRandom(params.in_gen_rand_, params.windowStart(),
-                          params.windowEnd(), params.comm(), params.top_level_.simVars);
+            genDistRandom(*(params.top_level_.obsGenerate.value()->random.value()),
+                          params.windowStart(), params.windowEnd(), params.comm(),
+                          params.top_level_.obsGenerate.value()->obsErrors,
+                          params.top_level_.simVars);
 
             // record maximum variable and frame size
             max_var_size_ = maxVarSize0(obs_group_);
-            max_frame_size_ = params.in_gen_rand_.maxFrameSize;
+            max_frame_size_ = params.top_level_.obsGenerate.value()->maxFrameSize;
         } else if (params.in_type() == ObsIoTypes::GENERATOR_LIST) {
             oops::Log::trace() << "Constructing ObsGenerate: List method" << std::endl;
 
             // Create the in-memory ObsGroup
-            Dimensions_t numLocs = params.in_gen_list_.lats.value().size();
+            Dimensions_t numLocs =
+                params.top_level_.obsGenerate.value()->list.value()->lats.value().size();
             newDims.push_back(
                 std::make_shared<ioda::NewDimensionScale<int>>("nlocs", numLocs, numLocs, numLocs));
             obs_group_ = ObsGroup::generate(backend, newDims);
 
             // Fill in the ObsGroup with the generated data
-            genDistList(params.in_gen_list_, params.top_level_.simVars);
+            genDistList(*(params.top_level_.obsGenerate.value()->list.value()),
+                        params.top_level_.obsGenerate.value()->obsErrors,
+                        params.top_level_.simVars);
 
             // record maximum variable and frame size
             max_var_size_ = maxVarSize0(obs_group_);
-            max_frame_size_ = params.in_gen_list_.maxFrameSize;
+            max_frame_size_ = params.top_level_.obsGenerate.value()->maxFrameSize;
         } else {
             ABORT("ObsGenerate: Unrecongnized ObsIoTypes value");
         }
@@ -108,7 +114,10 @@ void ObsGenerate::genFrameIndexRecNums(std::shared_ptr<Distribution> & dist) {
 void ObsGenerate::genDistRandom(const ObsGenerateRandomParameters & params,
                                 const util::DateTime & winStart, const util::DateTime & winEnd,
                                 const eckit::mpi::Comm & comm,
+                                const std::vector<float> & obsErrors,
                                 const std::vector<std::string> & simVarNames) {
+    ASSERT(obsErrors.size() == simVarNames.size());
+
     /// Grab the parameter values
     int numLocs = params.numObs;
     float latStart = params.latStart;
@@ -121,8 +130,6 @@ void ObsGenerate::genDistRandom(const ObsGenerateRandomParameters & params,
     } else {
         ranSeed = std::time(0);  // based on the current date/time.
     }
-    std::vector<float> obsErrors = params.obsErrors;
-    ASSERT(obsErrors.size() == simVarNames.size());
 
     // Use the following formula to generate random lat, lon and time values.
     //
@@ -192,13 +199,14 @@ void ObsGenerate::genDistRandom(const ObsGenerateRandomParameters & params,
 
 //-----------------------------------------------------------------------------------
 void ObsGenerate::genDistList(const ObsGenerateListParameters & params,
+                              const std::vector<float> & obsErrors,
                               const std::vector<std::string> & simVarNames) {
+    ASSERT(obsErrors.size() == simVarNames.size());
+
     // Grab the parameters
     std::vector<float> latVals = params.lats;
     std::vector<float> lonVals = params.lons;
     std::vector<std::string> dtStrings = params.datetimes;
-    std::vector<float> obsErrors = params.obsErrors;
-    ASSERT(obsErrors.size() == simVarNames.size());
 
     // Transfer the specified values to the ObsGroup
     storeGenData(latVals, lonVals, dtStrings, simVarNames, obsErrors);

@@ -65,9 +65,15 @@ class ObsGenerate : public ObsIo, private util::ObjectCounter<ObsGenerate> {
     ///          in the obs container as meta data. These data are intended for use
     ///          with the MakeObs functionality.
     /// \param params Parameters structure specific to the generate random method
+    /// \param winStart DateTime object marking DA window start
+    /// \param winEnd DateTime object marking DA window end
+    /// \param comm MPI communicator group
+    /// \param obsErrors list of error estimates for each assimilated variable
+    /// \param simVarNames list of names of variables to be assimilated
     void genDistRandom(const ObsGenerateRandomParameters & params,
                        const util::DateTime & winStart, const util::DateTime & winEnd,
                        const eckit::mpi::Comm & comm,
+                       const std::vector<float> & obsErrors,
                        const std::vector<std::string> & simVarNames);
 
     /// \brief generate observation locations using the list method
@@ -77,10 +83,13 @@ class ObsGenerate : public ObsIo, private util::ObjectCounter<ObsGenerate> {
     ///          this method is to allow the user to exactly specify obs locations.
     ///          these data are intended for use with the MakeObs functionality.
     /// \param params Parameters structure specific to the generate list method
+    /// \param obsErrors list of error estimates for each assimilated variable
+    /// \param simVarNames list of names of variables to be assimilated
     void genDistList(const ObsGenerateListParameters & params,
+                     const std::vector<float> & obsErrors,
                      const std::vector<std::string> & simVarNames);
 
-    /// \brief load generated data into an ObsGroup
+    /// \brief store generated data into an ObsGroup
     /// \param latVals vector of latitude values
     /// \param lonVals vector of longitude values
     /// \param dtStrings vector of datetime (ISO 8601 string) values

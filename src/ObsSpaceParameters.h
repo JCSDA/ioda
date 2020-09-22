@@ -78,7 +78,7 @@ class ObsFileInParameters : public oops::Parameters {
     oops::Parameter<ObsGroupingParameters> obsGrouping{"obsgrouping", {}, this};
 
     /// maximum frame size
-    oops::Parameter<Dimensions_t> maxFrameSize{"max frame size", DEFAULT_FRAME_SIZE, this};
+    oops::Parameter<int> maxFrameSize{"max frame size", DEFAULT_FRAME_SIZE, this};
 };
 
 class ObsGenerateRandomParameters : public oops::Parameters {
@@ -121,10 +121,10 @@ class ObsGenerateParameters : public oops::Parameters {
  public:
     /// specification for generating using the random method
     oops::OptionalParameter<ObsGenerateRandomParameters> random{"random", this};
- 
+
     /// specification for generating using the list method
     oops::OptionalParameter<ObsGenerateListParameters> list{"list", this};
- 
+
     /// obs error estimates
     oops::Parameter<std::vector<float>> obsErrors{"obs errors", { }, this};
 
@@ -139,7 +139,7 @@ class ObsFileOutParameters : public oops::Parameters {
     oops::RequiredParameter<std::string> fileName{"obsfile", this};
 
     /// maximum frame size
-    oops::Parameter<Dimensions_t> maxFrameSize{"max frame size", DEFAULT_FRAME_SIZE, this};
+    oops::Parameter<int> maxFrameSize{"max frame size", DEFAULT_FRAME_SIZE, this};
 };
 
 class ObsTopLevelParameters : public oops::Parameters {

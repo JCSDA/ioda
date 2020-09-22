@@ -32,7 +32,7 @@ ObsFile::ObsFile(const ObsIoActions action, const ObsIoModes mode,
     Group backend;
 
     if (action == ObsIoActions::OPEN_FILE) {
-        fileName = params.in_file_.fileName;
+        fileName = params.top_level_.obsInFile.value()->fileName;
         oops::Log::trace() << "Constructing ObsFile: Opening file for read: "
                            << fileName << std::endl;
 
@@ -51,9 +51,9 @@ ObsFile::ObsFile(const ObsIoActions action, const ObsIoModes mode,
 
         // record maximum variable and frame size
         max_var_size_ = maxVarSize0(obs_group_);
-        max_frame_size_ = params.in_file_.maxFrameSize;
+        max_frame_size_ = params.top_level_.obsInFile.value()->maxFrameSize;
     } else if (action == ObsIoActions::CREATE_FILE) {
-        fileName = params.out_file_.fileName;
+        fileName = params.top_level_.obsOutFile.value()->fileName;
         oops::Log::trace() << "Constructing ObsFile: Creating file for write: "
                            << fileName << std::endl;
         backendName = Engines::BackendNames::Hdf5File;
@@ -71,7 +71,7 @@ ObsFile::ObsFile(const ObsIoActions action, const ObsIoModes mode,
 
         // record maximum variable and frame size
         max_var_size_ = params.getMaxVarSize();
-        max_frame_size_ = params.out_file_.maxFrameSize;
+        max_frame_size_ = params.top_level_.obsOutFile.value()->maxFrameSize;
     } else {
         ABORT("ObsFile: Unrecongnized ObsIoActions value");
     }
@@ -95,7 +95,8 @@ void ObsFile::genFrameIndexRecNums(std::shared_ptr<Distribution> & dist) {
 
     // Generate record numbers for this frame. Consider obs grouping.
     std::vector<Dimensions_t> records;
-    std::string obsGroupVarName = params_.in_file_.obsGroupVar;
+    std::string obsGroupVarName =
+        params_.top_level_.obsInFile.value()->obsGrouping.value().obsGroupVar;
     if (obsGroupVarName.empty()) {
          genRecordNumbersAll(locIndex, records);
     } else {

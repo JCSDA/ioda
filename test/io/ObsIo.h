@@ -30,6 +30,7 @@
 #include "oops/util/Logger.h"
 
 #include "ioda/core/IodaUtils.h"
+#include "ioda/distribution/DistributionFactory.h"
 #include "ioda/io/ObsIo.h"
 #include "ioda/io/ObsIoFactory.h"
 #include "ioda/ObsGroup.h"
@@ -44,16 +45,24 @@ namespace test {
 // -----------------------------------------------------------------------------
 
 // -----------------------------------------------------------------------------
-void testFrameRead(std::shared_ptr<ObsIo> & obsIo, eckit::LocalConfiguration & obsConfig) {
+void testFrameRead(std::shared_ptr<ObsIo> & obsIo, eckit::LocalConfiguration & obsConfig,
+                   ioda::ObsSpaceParameters & obsParams) {
     float floatTol = obsConfig.getFloat("test data.tolerance", 1.0e-5);
     std::vector<eckit::LocalConfiguration> readVarConfigs =
         obsConfig.getSubConfigurations("test data.read variables");
 
     // Test reading from frames
+    std::unique_ptr<DistributionFactory> distFactory;
+    std::shared_ptr<Distribution> dist;
+    dist.reset(distFactory->createDistribution(obsParams.comm(), "RoundRobin"));
     int iframe = 0;
     for (obsIo->frameInit(); obsIo->frameAvailable(); obsIo->frameNext()) {
         oops::Log::debug() << "testRead: Frame number: " << iframe << std::endl
             << "    frameStart: " << obsIo->frameStart() << std::endl;
+
+        // generate the selection indices for variabels dimensioned by nlocs
+        obsIo->genFrameIndexRecNums(dist);
+        
         // Try reading a couple variables
         for (std::size_t j = 0; j < readVarConfigs.size(); ++j) {
            std::string varName = readVarConfigs[j].getString("name");
@@ -272,7 +281,7 @@ void testRead() {
         EXPECT_EQUAL(numVars, expectedNumVars);
 
         // Test reading frames
-        testFrameRead(obsIo, obsConfig);
+        testFrameRead(obsIo, obsConfig, obsParams);
     }
 }
 
@@ -364,9 +373,9 @@ class ObsIo : public oops::Test {
     ObsIo() {}
     virtual ~ObsIo() {}
  private:
-    std::string testid() const {return "test::ObsIo";}
+    std::string testid() const override {return "test::ObsIo";}
 
-    void register_tests() const {
+    void register_tests() const override {
         std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
         ts.emplace_back(CASE("ioda/ObsIo/testConstructor")
@@ -376,6 +385,8 @@ class ObsIo : public oops::Test {
         ts.emplace_back(CASE("ioda/ObsIo/testWrite")
             { testWrite(); });
     }
+
+    void clear() const override {}
 };
 
 // -----------------------------------------------------------------------------

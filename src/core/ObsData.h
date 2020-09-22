@@ -154,7 +154,7 @@ namespace ioda {
         /// \details The following get_db methods are the same except for the data type
         /// of the data being transferred (integer, float, double, string, DateTime). The
         /// caller needs to allocate the memory that the vdata parameter points to
-        /// 
+        ///
         /// \param group Name of container group (ObsValue, ObsError, MetaData, etc.)
         /// \param name  Name of container variable
         /// \param vdata Vector where container data is being transferred to
@@ -212,206 +212,206 @@ namespace ioda {
   const oops::Variables & obsvariables() const {return obsvars_;}
   const std::shared_ptr<Distribution> distribution() const { return dist_;}
 
- private:
-    // ----------------------------- private data members ---------------------------
-    /// \brief Configuration file
-    const eckit::LocalConfiguration config_;
+     private:
+        // ----------------------------- private data members ---------------------------
+        /// \brief Configuration file
+        const eckit::LocalConfiguration config_;
 
-    /// \brief Beginning of DA timing window
-    const util::DateTime winbgn_;
+        /// \brief Beginning of DA timing window
+        const util::DateTime winbgn_;
 
-    /// \brief End of DA timing window
-    const util::DateTime winend_;
+        /// \brief End of DA timing window
+        const util::DateTime winend_;
 
-    /// \brief MPI communicator
-    const eckit::mpi::Comm & commMPI_;
+        /// \brief MPI communicator
+        const eckit::mpi::Comm & commMPI_;
 
-    /// \brief total number of locations
-    std::size_t gnlocs_;
+        /// \brief total number of locations
+        std::size_t gnlocs_;
 
-    /// \brief number of locations on this domain
-    std::size_t nlocs_;
+        /// \brief number of locations on this domain
+        std::size_t nlocs_;
 
-    /// \brief number of variables
-    std::size_t nvars_;
+        /// \brief number of variables
+        std::size_t nvars_;
 
-    /// \brief number of records
-    std::size_t nrecs_;
+        /// \brief number of records
+        std::size_t nrecs_;
 
-    /// \brief observation data store
-    ObsGroup obs_group_;
+        /// \brief observation data store
+        ObsGroup obs_group_;
 
-    /// \brief obs io parameters
-    ObsSpaceParameters obs_params_;
+        /// \brief obs io parameters
+        ObsSpaceParameters obs_params_;
 
-    /// \brief name of obs space
-    std::string obsname_;
+        /// \brief name of obs space
+        std::string obsname_;
 
-    /// \brief Observation "variables" to be simulated
-    oops::Variables obsvars_;
+        /// \brief Observation "variables" to be simulated
+        oops::Variables obsvars_;
 
-    /// \brief MPI distribution object
-    std::shared_ptr<Distribution> dist_;
+        /// \brief MPI distribution object
+        std::shared_ptr<Distribution> dist_;
 
-    /// \brief indexes of locations to extract from the input obs file
-    std::vector<std::size_t> indx_;
+        /// \brief indexes of locations to extract from the input obs file
+        std::vector<std::size_t> indx_;
 
-    /// \brief record numbers associated with the location indexes
-    std::vector<std::size_t> recnums_;
+        /// \brief record numbers associated with the location indexes
+        std::vector<std::size_t> recnums_;
 
-    /// \brief profile ordering
-    RecIdxMap recidx_;
+        /// \brief profile ordering
+        RecIdxMap recidx_;
 
-    // ----------------------------- private functions ------------------------------
-    ObsData & operator= (const ObsData &);
+        // ----------------------------- private functions ------------------------------
+        ObsData & operator= (const ObsData &);
 
-    /// \brief print function for oops::Printable class
-    /// \param os output stream
-    void print(std::ostream & os) const;
+        /// \brief print function for oops::Printable class
+        /// \param os output stream
+        void print(std::ostream & os) const;
 
-    // Initialize the database from a source (ObsIo ojbect)
-    /// \brief create the in-memory obs_group_ (ObsGroup) object
-    /// \param obsIo obs source object
-    void createObsGroupFromObsIo(const std::shared_ptr<ObsIo> & obsIo);
+        // Initialize the database from a source (ObsIo ojbect)
+        /// \brief create the in-memory obs_group_ (ObsGroup) object
+        /// \param obsIo obs source object
+        void createObsGroupFromObsIo(const std::shared_ptr<ObsIo> & obsIo);
 
-    /// \brief initialize the in-memory obs_group_ (ObsGroup) object from the ObsIo source
-    /// \param obsIo obs source object
-    void initFromObsSource(const std::shared_ptr<ObsIo> & obsIo);
+        /// \brief initialize the in-memory obs_group_ (ObsGroup) object from the ObsIo source
+        /// \param obsIo obs source object
+        void initFromObsSource(const std::shared_ptr<ObsIo> & obsIo);
 
-    /// \brief resize along nlocs dimension
-    /// \param nlocsSize new size to either append or reset
-    /// \param append when true append nlocsSize to current size, otherwise reset to nlocsSize
-    void resizeNlocs(const Dimensions_t nlocsSize, const bool append);
+        /// \brief resize along nlocs dimension
+        /// \param nlocsSize new size to either append or reset
+        /// \param append when true append nlocsSize to current size, otherwise reset to nlocsSize
+        void resizeNlocs(const Dimensions_t nlocsSize, const bool append);
 
-    /// \brief true if obs source variable is dimensioned along nlocs
-    /// \param obsIo obs source object
-    /// \param varName obs source variable name
-    bool isObsSourceVarDimByNlocs(const std::shared_ptr<ObsIo> & obsIo,
-                                  const std::string & varName);
+        /// \brief true if obs source variable is dimensioned along nlocs
+        /// \param obsIo obs source object
+        /// \param varName obs source variable name
+        bool isObsSourceVarDimByNlocs(const std::shared_ptr<ObsIo> & obsIo,
+                                      const std::string & varName);
 
-    /// \brief read in values for variable from obs source
-    /// \param obsIo obs source object
-    /// \param varName Name of variable in obs source object
-    /// \param varValues values for variable
-    template<typename VarType>
-    void readObsSource(const std::shared_ptr<ObsIo> & obsIo, const std::string & varName,
-                       std::vector<VarType> & varValues) {
-        Variable var = obsIo->obs_group_.vars.open(varName);
+        /// \brief read in values for variable from obs source
+        /// \param obsIo obs source object
+        /// \param varName Name of variable in obs source object
+        /// \param varValues values for variable
+        template<typename VarType>
+        void readObsSource(const std::shared_ptr<ObsIo> & obsIo, const std::string & varName,
+                           std::vector<VarType> & varValues) {
+            Variable var = obsIo->obs_group_.vars.open(varName);
 
-        // Form the selection objects for this variable
-        Selection frontendSelection;
-        Selection backendSelection;
-        obsIo->createFrameSelection(var, frontendSelection, backendSelection);
+            // Form the selection objects for this variable
+            Selection frontendSelection;
+            Selection backendSelection;
+            obsIo->createFrameSelection(var, frontendSelection, backendSelection);
 
-        // Read the variable
-        var.read<VarType>(varValues, frontendSelection, backendSelection);
+            // Read the variable
+            var.read<VarType>(varValues, frontendSelection, backendSelection);
 
-        // Replace source fill values with corresponding missing marks
-        Variable sourceVar = obsIo->obs_group_.vars.open(varName);
-        if (sourceVar.hasFillValue()) {
-            detail::FillValueData_t sourceFvData = sourceVar.getFillValue();
-            VarType sourceFillValue = detail::getFillValue<VarType>(sourceFvData);
-            VarType varFillValue = this->getFillValue<VarType>();
-            for (auto i = varValues.begin(); i != varValues.end(); ++i) {
-                if (*i == sourceFillValue) { *i = varFillValue; }
+            // Replace source fill values with corresponding missing marks
+            Variable sourceVar = obsIo->obs_group_.vars.open(varName);
+            if (sourceVar.hasFillValue()) {
+                detail::FillValueData_t sourceFvData = sourceVar.getFillValue();
+                VarType sourceFillValue = detail::getFillValue<VarType>(sourceFvData);
+                VarType varFillValue = this->getFillValue<VarType>();
+                for (auto i = varValues.begin(); i != varValues.end(); ++i) {
+                    if (*i == sourceFillValue) { *i = varFillValue; }
+                }
             }
         }
-    }
 
-    /// \brief create a variable in the obs_group_ object based on the obs source
-    /// \param obsIo obs source object
-    /// \param varName Name of obs_group_ variable for obs_group_ object
-    template<typename VarType>
-    Variable createVarFromObsSource(const std::shared_ptr<ObsIo> & obsIo,
-                                    const std::string & varName) {
-        // Creation parameters. Enable chunking, compression, and set a fill
-        // value based on the built in missing values marks.
-        VariableCreationParameters params;
-        params.chunk = true;
-        params.compressWithGZIP();
-        params.setFillValue<VarType>(this->getFillValue<VarType>());
-
-        std::vector<Variable> varDims = this->setVarDimsFromObsSource(obsIo, varName);
-        return obs_group_.vars.createWithScales<VarType>(varName, varDims, params);
-    }
-
-    /// \brief store a variable in the obs_group_ object
-    /// \param obsIo obs source object
-    /// \param varName Name of obs_group_ variable for obs_group_ object
-    /// \param varValues Values for obs_group_ variable
-    template<typename VarType>
-    void storeVar(const std::string & varName, std::vector<VarType> & varValues,
-                  const Dimensions_t frameStart, const Dimensions_t frameCount) {
-        // get the dimensions of the variable
-        Variable var = obs_group_.vars.open(varName);
-        Dimensions varDims = var.getDimensions();
-
-        // front end always starts at zero, and the count for the first dimension
-        // is the frame count
-        std::vector<Dimensions_t> feCounts = varDims.dimsCur;
-        feCounts[0] = frameCount;
-        std::vector<Dimensions_t> feStarts(feCounts.size(), 0);
-
-        // backend end starts at frameStart, and the count is the same as the
-        // frontend counts (with the first dimension adjusted)
-        std::vector<Dimensions_t> beCounts = feCounts;
-        std::vector<Dimensions_t> beStarts(beCounts.size(), 0);
-        beStarts[0] = frameStart;
-
-        var.write<VarType>(varValues,
-            Selection().extent(feCounts).select({ SelectionOperator::SET, feStarts, feCounts }),
-            Selection().select({ SelectionOperator::SET, beStarts, beCounts }));
-    }
-
-    /// \brief get fill value for use in the obs_group_ object
-    template<typename DataType>
-    DataType getFillValue() {
-        DataType fillVal = util::missingValue(fillVal);
-        return fillVal;
-    }
-
-    /// \brief template specialization for string types
-    template<>
-    std::string getFillValue<std::string>() {
-        return std::string("_fill_");
-    }
-
-    /// \brief set the vector of dimension variables for the obs_group_ variable creation
-    /// \param obsIo obs source object
-    /// \param varName Name of obs_group_ variable for obs_group_ object
-    std::vector<Variable> setVarDimsFromObsSource(const std::shared_ptr<ObsIo> & obsIo,
-                                                  const std::string & varName);
-
-    /// \brief create set of variables in the obs_group_ object based on the obs source
-    /// \param obsIo obs source object
-    /// \param varList List of obs_group_ variable names for obs_group_ object
-    void createVariablesFromObsSource(const std::shared_ptr<ObsIo> & obsIo,
-                                      const std::vector<std::string> & varList);
-
-    /// \brief open an obs_group_ variable, create the varialbe if necessary
-    template<typename VarType>
-    Variable openCreateVar(const std::string & varName) {
-        Variable var;
-        if (obs_group_.vars.exists(varName)) {
-            var = obs_group_.vars.open(varName);
-        } else {
-            // Create the variable. Use the JEDI internal missing value marks for
-            // fill values.
-            // TODO(srh) Current put_db interface has no means for passing in which
-            // TODO(srh) dimension the variable is associated with. For now assume
-            // TODO(srh) all variables are 1D dimensioned by nlocs.
-            VarType fillVal = this->getFillValue<VarType>();
-            Variable nlocsVar = obs_group_.vars.open("nlocs");
-
+        /// \brief create a variable in the obs_group_ object based on the obs source
+        /// \param obsIo obs source object
+        /// \param varName Name of obs_group_ variable for obs_group_ object
+        template<typename VarType>
+        Variable createVarFromObsSource(const std::shared_ptr<ObsIo> & obsIo,
+                                        const std::string & varName) {
+            // Creation parameters. Enable chunking, compression, and set a fill
+            // value based on the built in missing values marks.
             VariableCreationParameters params;
             params.chunk = true;
             params.compressWithGZIP();
-            params.setFillValue<VarType>(fillVal);
+            params.setFillValue<VarType>(this->getFillValue<VarType>());
 
-            var = obs_group_.vars.createWithScales<VarType>(varName, { nlocsVar }, params);
+            std::vector<Variable> varDims = this->setVarDimsFromObsSource(obsIo, varName);
+            return obs_group_.vars.createWithScales<VarType>(varName, varDims, params);
         }
-        return var;
-    }
+
+        /// \brief store a variable in the obs_group_ object
+        /// \param obsIo obs source object
+        /// \param varName Name of obs_group_ variable for obs_group_ object
+        /// \param varValues Values for obs_group_ variable
+        template<typename VarType>
+        void storeVar(const std::string & varName, std::vector<VarType> & varValues,
+                      const Dimensions_t frameStart, const Dimensions_t frameCount) {
+            // get the dimensions of the variable
+            Variable var = obs_group_.vars.open(varName);
+            Dimensions varDims = var.getDimensions();
+
+            // front end always starts at zero, and the count for the first dimension
+            // is the frame count
+            std::vector<Dimensions_t> feCounts = varDims.dimsCur;
+            feCounts[0] = frameCount;
+            std::vector<Dimensions_t> feStarts(feCounts.size(), 0);
+
+            // backend end starts at frameStart, and the count is the same as the
+            // frontend counts (with the first dimension adjusted)
+            std::vector<Dimensions_t> beCounts = feCounts;
+            std::vector<Dimensions_t> beStarts(beCounts.size(), 0);
+            beStarts[0] = frameStart;
+
+            var.write<VarType>(varValues,
+                Selection().extent(feCounts).select({ SelectionOperator::SET, feStarts, feCounts }),
+                Selection().select({ SelectionOperator::SET, beStarts, beCounts }));
+        }
+
+        /// \brief get fill value for use in the obs_group_ object
+        template<typename DataType>
+        DataType getFillValue() {
+            DataType fillVal = util::missingValue(fillVal);
+            return fillVal;
+        }
+
+        /// \brief template specialization for string types
+        template<>
+        std::string getFillValue<std::string>() {
+            return std::string("_fill_");
+        }
+
+        /// \brief set the vector of dimension variables for the obs_group_ variable creation
+        /// \param obsIo obs source object
+        /// \param varName Name of obs_group_ variable for obs_group_ object
+        std::vector<Variable> setVarDimsFromObsSource(const std::shared_ptr<ObsIo> & obsIo,
+                                                      const std::string & varName);
+
+        /// \brief create set of variables in the obs_group_ object based on the obs source
+        /// \param obsIo obs source object
+        /// \param varList List of obs_group_ variable names for obs_group_ object
+        void createVariablesFromObsSource(const std::shared_ptr<ObsIo> & obsIo,
+                                          const std::vector<std::string> & varList);
+
+        /// \brief open an obs_group_ variable, create the varialbe if necessary
+        template<typename VarType>
+        Variable openCreateVar(const std::string & varName) {
+            Variable var;
+            if (obs_group_.vars.exists(varName)) {
+                var = obs_group_.vars.open(varName);
+            } else {
+                // Create the variable. Use the JEDI internal missing value marks for
+                // fill values.
+                // TODO(srh) Current put_db interface has no means for passing in which
+                // TODO(srh) dimension the variable is associated with. For now assume
+                // TODO(srh) all variables are 1D dimensioned by nlocs.
+                VarType fillVal = this->getFillValue<VarType>();
+                Variable nlocsVar = obs_group_.vars.open("nlocs");
+
+                VariableCreationParameters params;
+                params.chunk = true;
+                params.compressWithGZIP();
+                params.setFillValue<VarType>(fillVal);
+
+                var = obs_group_.vars.createWithScales<VarType>(varName, { nlocsVar }, params);
+            }
+            return var;
+        }
 
 
 
@@ -443,7 +443,7 @@ namespace ioda {
 
   /*! \brief path to output file */
   std::string fileout_;
-};
+    };
 
 }  // namespace ioda
 
