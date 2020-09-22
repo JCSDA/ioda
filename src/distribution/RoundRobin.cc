@@ -42,6 +42,10 @@ bool RoundRobin::isMyRecord(std::size_t RecNum) const {
     return (RecNum % comm_.size() == comm_.rank());
 }
 
+std::size_t RoundRobin::sum(std::size_t x) {
+    return x; // HK incorrect result
+}
+
 // -----------------------------------------------------------------------------
 
 }  // namespace ioda

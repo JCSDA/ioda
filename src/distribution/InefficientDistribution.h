@@ -33,6 +33,7 @@ class InefficientDistribution: public Distribution {
 
      bool isMyRecord(std::size_t RecNum) const override;
      bool isDistributed() const override { return false; }
+     std::size_t sum(std::size_t x) override {return x; }
 };
 
 }  // namespace ioda

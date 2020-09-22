@@ -32,6 +32,9 @@ class RoundRobin: public Distribution {
      ~RoundRobin();
      bool isMyRecord(std::size_t RecNum) const override;
      bool isDistributed() const override { return true; }
+
+     std::size_t sum(std::size_t x) override; 
+
 };
 
 }  // namespace ioda
