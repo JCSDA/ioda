@@ -40,12 +40,6 @@ class ObsFile : public ObsIo, private util::ObjectCounter<ObsFile> {
             const ObsSpaceParameters & params);
     ~ObsFile();
 
-    /// \brief generate frame indices and corresponding record numbers
-    /// \details This method generates a list of indices with their corresponding
-    ///  record numbers, where the indices denote which locations are to be
-    ///  read into this process element.
-    void genFrameIndexRecNums(std::shared_ptr<Distribution> & dist) override;
-
  private:
     //-------------------------- private data members -------------------------------
 

@@ -21,18 +21,13 @@ observations:
       read variables:
         - name: "air_pressure@MetaData"
           type: "float"
-          values: [ 12900.0, 15000.0, 15000.0, 15300.0, 10900.0 ]
+          value0: [ 12900.0, 39400.0, 45800.0, 59830.0, 13800.0 ]
         - name: "datetime@MetaData"
           type: "string"
-          values:
-            - "2018-04-15T00:07:54Z"
-            - "2018-04-15T00:04:42Z"
-            - "2018-04-15T00:04:42Z"
-            - "2018-04-15T00:04:16Z"
-            - "2018-04-15T00:11:29Z"
+          value0: [ "2018-04-15T00:07:54Z", "2018-04-15T00:07:54Z", "2018-04-15T00:07:54Z", "2018-04-15T00:07:54Z", "2018-04-15T00:07:54Z" ]
         - name: "northward_wind@PreQC"
           type: "int"
-          values: [ 2, 2, -2147483647, 2, 2 ]
+          value0: [ 2, 2, -2147483647, 2, 2 ]
       write dimensions:
         - name: "nlocs"
           size: 8
@@ -90,18 +85,13 @@ observations:
       read variables:
         - name: "MetaData/latitude"
           type: "float"
-          values: [ 9.35411644, 1.61539197, 6.21208954, 7.34661484, 5.87295628 ]
+          value0: [ 9.35412 ]
         - name: "MetaData/datetime"
           type: "string"
-          values:
-            - "2018-04-15T02:36:44Z"
-            - "2018-04-14T21:58:09Z"
-            - "2018-04-15T00:43:38Z"
-            - "2018-04-15T01:24:28Z"
-            - "2018-04-15T00:31:25Z"
+          value0: [ "2018-04-15T02:36:44Z" ]
         - name: "ObsError/air_temperature"
           type: "float"
-          values: [ 1.0, 1.0, 1.0, 1.0, 1.0 ]
+          value0: [ 1.0 ]
       tolerance: 1.0e-6
 
 - obs space:
@@ -132,17 +122,12 @@ observations:
       read variables:
         - name: "MetaData/latitude"
           type: "float"
-          values: [ 5.0, 5.0, 5.0, 5.0, 5.0 ]
+          value0: [ 5.0 ]
         - name: "MetaData/datetime"
           type: "string"
-          values:
-            - "2010-01-01T00:04:00Z"
-            - "2010-01-01T00:04:12Z"
-            - "2010-01-01T00:04:24Z"
-            - "2010-01-01T00:04:36Z"
-            - "2010-01-01T00:04:48Z"
+          value0: [ "2010-01-01T00:04:00Z" ]
         - name: "ObsError/eastward_wind"
           type: "float"
-          values: [ 2.0, 2.0, 2.0, 2.0, 2.0 ]
+          value0: [ 2.0 ]
       tolerance: 1.0e-6
 

@@ -79,6 +79,15 @@ namespace ioda {
   std::vector<util::DateTime> convertRefOffsetToDtime(const int refIntDtime,
                                                       const std::vector<float> & timeOffsets);
 
+  /// \brief convert 2D string array to a vector of strings
+  /// \details The incoming 2D strings array is passed in through the arrayData argument
+  /// as a flattened vector. The arrayShape arugument shows how to un-flatten the arrayData.
+  /// \param arrayData Flattened data for input 2D string array
+  /// \param arrayShape Shape of input arrayData
+  std::vector<std::string> StringArrayToStringVector(
+                              const std::vector<std::string> & arrayData,
+                              const std::vector<Dimensions_t> & arrayShape);
+
   // -----------------------------------------------------------------------------
   /*!
    * \details This method will perform numeric data type conversions. The caller needs

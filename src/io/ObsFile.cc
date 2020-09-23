@@ -49,9 +49,12 @@ ObsFile::ObsFile(const ObsIoActions action, const ObsIoModes mode,
             detail::DataLayoutPolicy::generate(detail::DataLayoutPolicy::Policies::None));
         obs_group_ = og;
 
-        // record maximum variable and frame size
+        // record maximum variable size
         max_var_size_ = maxVarSize0(obs_group_);
-        max_frame_size_ = params.top_level_.obsInFile.value()->maxFrameSize;
+
+        // record lists of regular variables and dimension scale variables
+        this->resetVarList();
+        this->resetDimVarList();
     } else if (action == ObsIoActions::CREATE_FILE) {
         fileName = params.top_level_.obsOutFile.value()->fileName;
         oops::Log::trace() << "Constructing ObsFile: Creating file for write: "
@@ -69,48 +72,17 @@ ObsFile::ObsFile(const ObsIoActions action, const ObsIoModes mode,
         obs_group_ = ObsGroup::generate(backend, params.getDimScales(),
             detail::DataLayoutPolicy::generate(detail::DataLayoutPolicy::Policies::None));
 
-        // record maximum variable and frame size
+        // record maximum variable size
         max_var_size_ = params.getMaxVarSize();
-        max_frame_size_ = params.top_level_.obsOutFile.value()->maxFrameSize;
     } else {
         ABORT("ObsFile: Unrecongnized ObsIoActions value");
     }
+
+    // record number of locations
+    nlocs_ = obs_group_.vars.open("nlocs").getDimensions().dimsCur[0];
 }
 
 ObsFile::~ObsFile() {}
-
-// -----------------------------------------------------------------------------
-void ObsFile::genFrameIndexRecNums(std::shared_ptr<Distribution> & dist) {
-    // Generate location indices relative to the obs source (locIndex) and relative
-    // to the current frame (frameIndex).
-    //
-    // Apply the timing window. Need to filter out locations that are outside the
-    // timing window before generating record numbers. This is because
-    // we are generating record numbers on the fly since we want to get to the point where
-    // we can do the MPI distribution without knowing how many obs (and records) we are going
-    // to encounter.
-    std::vector<Dimensions_t> locIndex;
-    std::vector<Dimensions_t> frameIndex;
-    genFrameLocationsTimeWindow(locIndex, frameIndex);
-
-    // Generate record numbers for this frame. Consider obs grouping.
-    std::vector<Dimensions_t> records;
-    std::string obsGroupVarName =
-        params_.top_level_.obsInFile.value()->obsGrouping.value().obsGroupVar;
-    if (obsGroupVarName.empty()) {
-         genRecordNumbersAll(locIndex, records);
-    } else {
-        genRecordNumbersGrouping(obsGroupVarName, frameIndex, records);
-    }
-
-    // Apply the MPI distribution to the records
-    applyMpiDistribution(dist, locIndex, records);
-
-    // New frame count is the number of entries in the frame_loc_index_ vector
-    // This will be handed to callers through the frameCount function for all
-    // variables with nlocs as their first dimension.
-    adjusted_nlocs_frame_count_ = frame_loc_index_.size();
-}
 
 //------------------------------ private functions ----------------------------------
 //-----------------------------------------------------------------------------------

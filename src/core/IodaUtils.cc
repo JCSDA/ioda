@@ -240,5 +240,37 @@ std::vector<util::DateTime> convertRefOffsetToDtime(const int refIntDtime,
     return dateTimeValues;
 }
 
+//------------------------------------------------------------------------------------
+std::vector<std::string> StringArrayToStringVector(
+                                               const std::vector<std::string> & arrayData,
+                                               const std::vector<Dimensions_t> & arrayShape) {
+    // arrayShape[0] is the number of strings
+    // arrayShape[1] is the length of each string
+    std::size_t nstrings = arrayShape[0];
+    std::size_t strLength = arrayShape[1];
+
+    //
+    std::vector<std::string> stringVector(nstrings, "");
+    for (std::size_t i = 0; i < nstrings; i++) {
+        std::string oneString = "";
+        for (std::size_t j = 0; j < strLength; j++) {
+            oneString += arrayData[(i*strLength) + j];
+        }
+
+        // Strip off trainling whitespace.
+        //
+        // In order to include null characters in the white space list, the (char *, size_t)
+        // form of the string constructor needs to be used. The size_t (2nd) argument says
+        // how many characters to use from the "buffer" (1st argument). If the (char *) form
+        // of the string constructor is use, the null character terminates the string and only
+        // those characters leading up to the null are used.
+        std::string WhiteSpace(" \t\n\r\f\v\0", 7);
+        oneString.erase(oneString.find_last_not_of(WhiteSpace) + 1, std::string::npos);
+        stringVector[i] = oneString;
+    }
+
+  return stringVector;
+}
+
 // -----------------------------------------------------------------------------
 }  // namespace ioda
