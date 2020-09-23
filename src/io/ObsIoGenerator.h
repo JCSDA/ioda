@@ -5,8 +5,8 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#ifndef IO_OBSGENERATE_H_
-#define IO_OBSGENERATE_H_
+#ifndef IO_OBSIOGENERATOR_H_
+#define IO_OBSIOGENERATOR_H_
 
 #include <iostream>
 
@@ -30,18 +30,18 @@ namespace ioda {
  *
  * \author Stephen Herbener (JCSDA)
  */
-class ObsGenerate : public ObsIo, private util::ObjectCounter<ObsGenerate> {
+class ObsIoGenerator : public ObsIo, private util::ObjectCounter<ObsIoGenerator> {
  public:
     /// \brief classname method for object counter
     ///
     /// \details This method is supplied for the ObjectCounter base class.
     ///          It defines a name to identify an object of this class
     ///          for reporting by OOPS.
-    static const std::string classname() {return "ioda::ObsFile";}
+    static const std::string classname() {return "ioda::ObsGenerator";}
 
-    ObsGenerate(const ObsIoActions action, const ObsIoModes mode,
+    ObsIoGenerator(const ObsIoActions action, const ObsIoModes mode,
                 const ObsSpaceParameters & params);
-    ~ObsGenerate();
+    ~ObsIoGenerator();
 
  private:
     //-------------------------- private data members -------------------------------
@@ -102,4 +102,4 @@ class ObsGenerate : public ObsIo, private util::ObjectCounter<ObsGenerate> {
 
 }  // namespace ioda
 
-#endif  // IO_OBSGENERATE_H_
+#endif  // IO_OBSIOGENERATOR_H_

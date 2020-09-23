@@ -12,8 +12,8 @@
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/Logger.h"
 
-#include "ioda/io/ObsFile.h"
-#include "ioda/io/ObsGenerate.h"
+#include "ioda/io/ObsIoFile.h"
+#include "ioda/io/ObsIoGenerator.h"
 
 namespace ioda {
 
@@ -22,11 +22,11 @@ std::shared_ptr<ObsIo> ObsIoFactory::create(const ObsIoActions action, const Obs
                                             const ObsSpaceParameters & params) {
     std::shared_ptr<ObsIo> obsIo;
     if ((action == ObsIoActions::CREATE_FILE) || (action == ObsIoActions::OPEN_FILE)) {
-        // Instantiate an ObsFile object
-        obsIo = std::make_shared<ObsFile>(action, mode, params);
+        // Instantiate an ObsIoFile object
+        obsIo = std::make_shared<ObsIoFile>(action, mode, params);
     } else if (action == ObsIoActions::CREATE_GENERATOR) {
-        // Instantiate an ObsGenerate object
-        obsIo = std::make_shared<ObsGenerate>(action, mode, params);
+        // Instantiate an ObsIoGenerator object
+        obsIo = std::make_shared<ObsIoGenerator>(action, mode, params);
     } else {
         ABORT("ObsIoFactory::create: Unrecognized action");
     }

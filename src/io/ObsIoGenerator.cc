@@ -5,7 +5,7 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
  */
 
-#include "ioda/io/ObsGenerate.h"
+#include "ioda/io/ObsIoGenerator.h"
 
 #include <typeindex>
 #include <typeinfo>
@@ -27,8 +27,9 @@ namespace ioda {
 
 //----------------------------- public functions ------------------------------------
 //-----------------------------------------------------------------------------------
-ObsGenerate::ObsGenerate(const ObsIoActions action, const ObsIoModes mode,
-                         const ObsSpaceParameters & params) : ObsIo(action, mode, params) {
+ObsIoGenerator::ObsIoGenerator(const ObsIoActions action, const ObsIoModes mode,
+                               const ObsSpaceParameters & params) :
+                                   ObsIo(action, mode, params) {
     // Create an in-memory backend and attach it to an in-memory ObsGroup
     Engines::BackendNames backendName;
     Engines::BackendCreationParameters backendParams;
@@ -39,7 +40,7 @@ ObsGenerate::ObsGenerate(const ObsIoActions action, const ObsIoModes mode,
     NewDimensionScales_t newDims;
     if (action == ObsIoActions::CREATE_GENERATOR) {
         if (params.in_type() == ObsIoTypes::GENERATOR_RANDOM) {
-            oops::Log::trace() << "Constructing ObsGenerate: Random method" << std::endl;
+            oops::Log::trace() << "Constructing ObsIoGenerator: Random method" << std::endl;
 
             // Create the in-memory ObsGroup
             Dimensions_t numLocs =
@@ -54,7 +55,7 @@ ObsGenerate::ObsGenerate(const ObsIoActions action, const ObsIoModes mode,
                           params.top_level_.obsGenerate.value()->obsErrors,
                           params.top_level_.simVars);
         } else if (params.in_type() == ObsIoTypes::GENERATOR_LIST) {
-            oops::Log::trace() << "Constructing ObsGenerate: List method" << std::endl;
+            oops::Log::trace() << "Constructing ObsIoGenerator: List method" << std::endl;
 
             // Create the in-memory ObsGroup
             Dimensions_t numLocs =
@@ -68,10 +69,10 @@ ObsGenerate::ObsGenerate(const ObsIoActions action, const ObsIoModes mode,
                         params.top_level_.obsGenerate.value()->obsErrors,
                         params.top_level_.simVars);
         } else {
-            ABORT("ObsGenerate: Unrecongnized ObsIoTypes value");
+            ABORT("ObsIoGenerator: Unrecongnized ObsIoTypes value");
         }
     } else {
-        ABORT("ObsGenerate: Unrecongnized ObsIoActions value");
+        ABORT("ObsIoGenerator: Unrecongnized ObsIoActions value");
     }
 
     // record counts useful for an obs source
@@ -81,17 +82,18 @@ ObsGenerate::ObsGenerate(const ObsIoActions action, const ObsIoModes mode,
     this->resetDimVarList();
 }
 
-ObsGenerate::~ObsGenerate() {}
+ObsIoGenerator::~ObsIoGenerator() {}
 
 //----------------------------- public functions -------------------------------
 
 //----------------------------- private functions -----------------------------------
 //-----------------------------------------------------------------------------------
-void ObsGenerate::genDistRandom(const ObsGenerateRandomParameters & params,
-                                const util::DateTime & winStart, const util::DateTime & winEnd,
-                                const eckit::mpi::Comm & comm,
-                                const std::vector<float> & obsErrors,
-                                const std::vector<std::string> & simVarNames) {
+void ObsIoGenerator::genDistRandom(const ObsGenerateRandomParameters & params,
+                                   const util::DateTime & winStart,
+                                   const util::DateTime & winEnd,
+                                   const eckit::mpi::Comm & comm,
+                                   const std::vector<float> & obsErrors,
+                                   const std::vector<std::string> & simVarNames) {
     ASSERT(obsErrors.size() == simVarNames.size());
 
     /// Grab the parameter values
@@ -174,9 +176,9 @@ void ObsGenerate::genDistRandom(const ObsGenerateRandomParameters & params,
 }
 
 //-----------------------------------------------------------------------------------
-void ObsGenerate::genDistList(const ObsGenerateListParameters & params,
-                              const std::vector<float> & obsErrors,
-                              const std::vector<std::string> & simVarNames) {
+void ObsIoGenerator::genDistList(const ObsGenerateListParameters & params,
+                                 const std::vector<float> & obsErrors,
+                                 const std::vector<std::string> & simVarNames) {
     ASSERT(obsErrors.size() == simVarNames.size());
 
     // Grab the parameters
@@ -189,11 +191,11 @@ void ObsGenerate::genDistList(const ObsGenerateListParameters & params,
 }
 
 //-----------------------------------------------------------------------------------
-void ObsGenerate::storeGenData(const std::vector<float> & latVals,
-                               const std::vector<float> & lonVals,
-                               const std::vector<std::string> & dtStrings,
-                               const std::vector<std::string> & obsVarNames,
-                               const std::vector<float> & obsErrors) {
+void ObsIoGenerator::storeGenData(const std::vector<float> & latVals,
+                                  const std::vector<float> & lonVals,
+                                  const std::vector<std::string> & dtStrings,
+                                  const std::vector<std::string> & obsVarNames,
+                                  const std::vector<float> & obsErrors) {
     // Generated data is a set of vectors for now.
     //     MetaData group
     //        latitude
@@ -243,8 +245,8 @@ void ObsGenerate::storeGenData(const std::vector<float> & latVals,
 }
 
 //-----------------------------------------------------------------------------------
-void ObsGenerate::print(std::ostream & os) const {
-    os << "ObsGenerate: " << std::endl;
+void ObsIoGenerator::print(std::ostream & os) const {
+    os << "ObsIoGenerator: " << std::endl;
 }
 
 }  // namespace ioda

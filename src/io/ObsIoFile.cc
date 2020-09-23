@@ -5,7 +5,7 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
  */
 
-#include "ioda/io/ObsFile.h"
+#include "ioda/io/ObsIoFile.h"
 
 #include <typeindex>
 #include <typeinfo>
@@ -23,8 +23,8 @@ namespace ioda {
 
 //------------------------------ public functions --------------------------------
 //--------------------------------------------------------------------------------
-ObsFile::ObsFile(const ObsIoActions action, const ObsIoModes mode,
-                 const ObsSpaceParameters & params) : ObsIo(action, mode, params) {
+ObsIoFile::ObsIoFile(const ObsIoActions action, const ObsIoModes mode,
+                     const ObsSpaceParameters & params) : ObsIo(action, mode, params) {
     std::string fileName;
 
     Engines::BackendNames backendName;
@@ -33,7 +33,7 @@ ObsFile::ObsFile(const ObsIoActions action, const ObsIoModes mode,
 
     if (action == ObsIoActions::OPEN_FILE) {
         fileName = params.top_level_.obsInFile.value()->fileName;
-        oops::Log::trace() << "Constructing ObsFile: Opening file for read: "
+        oops::Log::trace() << "Constructing ObsIoFile: Opening file for read: "
                            << fileName << std::endl;
 
         // Open an hdf5 file, read only
@@ -57,7 +57,7 @@ ObsFile::ObsFile(const ObsIoActions action, const ObsIoModes mode,
         this->resetDimVarList();
     } else if (action == ObsIoActions::CREATE_FILE) {
         fileName = params.top_level_.obsOutFile.value()->fileName;
-        oops::Log::trace() << "Constructing ObsFile: Creating file for write: "
+        oops::Log::trace() << "Constructing ObsIoFile: Creating file for write: "
                            << fileName << std::endl;
         backendName = Engines::BackendNames::Hdf5File;
 
@@ -75,19 +75,19 @@ ObsFile::ObsFile(const ObsIoActions action, const ObsIoModes mode,
         // record maximum variable size
         max_var_size_ = params.getMaxVarSize();
     } else {
-        ABORT("ObsFile: Unrecongnized ObsIoActions value");
+        ABORT("ObsIoFile: Unrecongnized ObsIoActions value");
     }
 
     // record number of locations
     nlocs_ = obs_group_.vars.open("nlocs").getDimensions().dimsCur[0];
 }
 
-ObsFile::~ObsFile() {}
+ObsIoFile::~ObsIoFile() {}
 
 //------------------------------ private functions ----------------------------------
 //-----------------------------------------------------------------------------------
-void ObsFile::print(std::ostream & os) const {
-    os << "ObsFile: " << std::endl;
+void ObsIoFile::print(std::ostream & os) const {
+    os << "ObsIoFile: " << std::endl;
 }
 
 }  // namespace ioda

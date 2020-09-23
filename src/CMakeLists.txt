@@ -30,8 +30,6 @@ distribution/InefficientDistribution.h
 distribution/RoundRobin.cc
 distribution/RoundRobin.h
 
-io/ObsFile.cc
-io/ObsFile.h
 io/ObsFrame.cc
 io/ObsFrame.h
 io/ObsFrameFactory.cc
@@ -40,12 +38,14 @@ io/ObsFrameRead.cc
 io/ObsFrameRead.h
 io/ObsFrameWrite.cc
 io/ObsFrameWrite.h
-io/ObsGenerate.cc
-io/ObsGenerate.h
 io/ObsIo.cc
 io/ObsIo.h
 io/ObsIoFactory.cc
 io/ObsIoFactory.h
+io/ObsIoFile.cc
+io/ObsIoFile.h
+io/ObsIoGenerator.cc
+io/ObsIoGenerator.h
 )
 
 list( APPEND ioda_fortran_interface_includes

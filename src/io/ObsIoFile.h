@@ -5,8 +5,8 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#ifndef IO_OBSFILE_H_
-#define IO_OBSFILE_H_
+#ifndef IO_OBSIOFILE_H_
+#define IO_OBSIOFILE_H_
 
 #include <iostream>
 
@@ -27,18 +27,18 @@ namespace ioda {
  *
  * \author Stephen Herbener (JCSDA)
  */
-class ObsFile : public ObsIo, private util::ObjectCounter<ObsFile> {
+class ObsIoFile : public ObsIo, private util::ObjectCounter<ObsIoFile> {
  public:
     /// \brief classname method for object counter
     ///
     /// \details This method is supplied for the ObjectCounter base class.
     ///          It defines a name to identify an object of this class
     ///          for reporting by OOPS.
-    static const std::string classname() {return "ioda::ObsFile";}
+    static const std::string classname() {return "ioda::ObsIoFile";}
 
-    ObsFile(const ObsIoActions action, const ObsIoModes mode,
+    ObsIoFile(const ObsIoActions action, const ObsIoModes mode,
             const ObsSpaceParameters & params);
-    ~ObsFile();
+    ~ObsIoFile();
 
  private:
     //-------------------------- private data members -------------------------------
@@ -51,4 +51,4 @@ class ObsFile : public ObsIo, private util::ObjectCounter<ObsFile> {
 
 }  // namespace ioda
 
-#endif  // IO_OBSFILE_H_
+#endif  // IO_OBSIOFILE_H_
