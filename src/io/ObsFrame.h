@@ -28,6 +28,10 @@ namespace ioda {
 
 class ObsFrame {
  public:
+    ObsFrame(const ObsIoActions action, const ObsIoModes mode,
+             const ObsSpaceParameters & params);
+    virtual ~ObsFrame() = 0;
+
     /// \brief initialize for walking through the frames
     void frameInit(const Dimensions_t maxVarSize, const Dimensions_t maxFrameSize);
 
@@ -49,7 +53,16 @@ class ObsFrame {
     /// \param var variable
     Dimensions_t frameCount(const Variable & var);
 
- private:
+ protected:
+    /// \brief ObsIo action
+    ObsIoActions action_;
+
+    /// \brief ObsIo mode
+    ObsIoModes mode_;
+
+    /// \brief ObsIo parameter specs
+    ObsSpaceParameters params_;
+
     /// \brief maximum frame size
     Dimensions_t max_size_;
 

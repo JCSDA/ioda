@@ -15,6 +15,15 @@ namespace ioda {
 
 //--------------------------- public functions ---------------------------------------
 //------------------------------------------------------------------------------------
+ObsFrame::ObsFrame(const ObsIoActions action, const ObsIoModes mode,
+                   const ObsSpaceParameters & params) :
+                       action_(action), mode_(mode), params_(params) {
+    oops::Log::trace() << "Constructing ObsFrame" << std::endl;
+}
+
+ObsFrame::~ObsFrame() {}
+
+//------------------------------------------------------------------------------------
 void ObsFrame::frameInit(const Dimensions_t maxVarSize, const Dimensions_t maxFrameSize) {
     start_ = 0;
     max_var_size_ = maxVarSize;

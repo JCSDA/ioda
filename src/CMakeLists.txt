@@ -34,6 +34,12 @@ io/ObsFile.cc
 io/ObsFile.h
 io/ObsFrame.cc
 io/ObsFrame.h
+io/ObsFrameFactory.cc
+io/ObsFrameFactory.h
+io/ObsFrameRead.cc
+io/ObsFrameRead.h
+io/ObsFrameWrite.cc
+io/ObsFrameWrite.h
 io/ObsGenerate.cc
 io/ObsGenerate.h
 io/ObsIo.cc
