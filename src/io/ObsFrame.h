@@ -27,36 +27,36 @@ namespace ioda {
 /// \brief Implementation of ObsFrame class
 /// \author Stephen Herbener (JCSDA)
 
-class ObsFrame {
+class ObsFrame : public util::Printable {
  public:
     ObsFrame(const ObsIoActions action, const ObsIoModes mode,
              const ObsSpaceParameters & params);
     virtual ~ObsFrame() = 0;
 
-    /// \brief return number of maximum variable size (along first dimension)
-    Dimensions_t maxVarSize() const {return obs_io_->maxVarSize();}
+    /// \brief return number of maximum variable size (along first dimension) from the source
+    Dimensions_t maxSrcVarSize() const {return obs_io_->maxVarSize();}
 
     /// \brief return number of locations from the source
-    Dimensions_t numLocs() const {return obs_io_->numLocs();}
+    Dimensions_t numSrcLocs() const {return obs_io_->numLocs();}
 
     /// \brief return number of regular variables from the source
-    Dimensions_t numVars() const {return obs_io_->numVars();}
+    Dimensions_t numSrcVars() const {return obs_io_->numVars();}
 
     /// \brief return number of dimension scale variables from the source
-    Dimensions_t numDimVars() const {return obs_io_->numDimVars();}
+    Dimensions_t numSrcDimVars() const {return obs_io_->numDimVars();}
 
     /// \brief initialize for walking through the frames
-    void frameInit(const Dimensions_t maxVarSize, const Dimensions_t maxFrameSize);
+    virtual void frameInit() = 0;
 
     /// \brief move to the next frame
-    void frameNext();
+    virtual void frameNext() = 0;
 
     /// \brief true if a frame is available (not past end of frames)
-    bool frameAvailable();
+    virtual bool frameAvailable() = 0;
 
     /// \brief return current frame starting index
     /// \param varName name of variable
-    Dimensions_t frameStart();
+    virtual Dimensions_t frameStart() = 0;
 
     /// \brief return current frame count for variable
     /// \details Variables can be of different sizes so it's possible that the
@@ -64,9 +64,10 @@ class ObsFrame {
     /// variables. When the frame is past the end of the given variable, this
     /// routine returns a zero to indicate that we're done with this variable.
     /// \param var variable
-    Dimensions_t frameCount(const Variable & var);
+    virtual Dimensions_t frameCount(const Variable & var) = 0;
 
  protected:
+    //------------------ protected data members ------------------------------
     /// \brief ObsIo object
     std::shared_ptr<ObsIo> obs_io_;
 
@@ -76,17 +77,28 @@ class ObsFrame {
     /// \brief ObsIo mode
     ObsIoModes mode_;
 
+    /// \brief number of records from source (file or generator)
+    Dimensions_t nrecs_;
+
+    /// \brief number of locations from source (file or generator)
+    Dimensions_t nlocs_;
+
     /// \brief ObsIo parameter specs
     ObsSpaceParameters params_;
 
     /// \brief maximum frame size
-    Dimensions_t max_size_;
+    Dimensions_t max_frame_size_;
 
     /// \brief maximum variable size
     Dimensions_t max_var_size_;
 
     /// \brief current frame starting index
-    Dimensions_t start_;
+    Dimensions_t frame_start_;
+
+    //------------------ protected functions ----------------------------------
+    /// \brief print() for oops::Printable base class
+    /// \param ostream output stream
+    virtual void print(std::ostream & os) const = 0;
 };
 
 }  // namespace ioda

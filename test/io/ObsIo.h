@@ -146,7 +146,7 @@ void testRead() {
         for (std::size_t ivar = 0; ivar < readVarConfigs.size(); ++ivar) {
             std::string varName = readVarConfigs[ivar].getString("name");
             std::string expectedVarType = readVarConfigs[ivar].getString("type");
-            ioda::Variable var = obsIo->openVar(varName);
+            ioda::Variable var = obsIo->vars().open(varName);
 
             if (expectedVarType == "int") {
                 EXPECT(var.isA<int>());
@@ -225,7 +225,7 @@ void testWrite() {
                 ioda::Variable var;
                 std::vector<ioda::Variable> varDims;
                 for (std::size_t idim = 0; idim < varDimNames.size(); ++idim) {
-                    varDims.push_back(obsIo->openVar(varDimNames[idim]));
+                    varDims.push_back(obsIo->vars().open(varDimNames[idim]));
                 }
 
                 ioda::VariableCreationParameters params;

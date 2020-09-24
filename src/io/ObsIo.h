@@ -54,11 +54,11 @@ class ObsIo : public util::Printable {
     /// \brief return list of dimension scale variable names
     std::vector<std::string> dimVarList() const {return dim_var_list_;}
 
-    /// \brief open a variable
-    Variable openVar(const std::string & varName) const;
-
-    /// \brief access to the vars container in the associated ObsGroup
+    /// \brief access to the variables container in the associated ObsGroup
     Has_Variables & vars() {return obs_group_.vars;}
+
+    /// \brief access to the attributes container in the associated ObsGroup
+    Has_Attributes & atts() {return obs_group_.atts;}
 
     /// \brief reset the regular variable list
     void resetVarList();

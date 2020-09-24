@@ -230,19 +230,19 @@ void testConstructor() {
 
         // Test the counts that should be set on construction
         ioda::Dimensions_t expectedMaxVarSize = obsConfig.getInt("test data.max var size", 0);
-        ioda::Dimensions_t maxVarSize = obsFrame->maxVarSize();
+        ioda::Dimensions_t maxVarSize = obsFrame->maxSrcVarSize();
         EXPECT_EQUAL(maxVarSize, expectedMaxVarSize);
 
         ioda::Dimensions_t expectedNumLocs = obsConfig.getInt("test data.nlocs", 0);
-        ioda::Dimensions_t numLocs = obsFrame->numLocs();
+        ioda::Dimensions_t numLocs = obsFrame->numSrcLocs();
         EXPECT_EQUAL(numLocs, expectedNumLocs);
 
         ioda::Dimensions_t expectedNumVars = obsConfig.getInt("test data.nvars", 0);
-        ioda::Dimensions_t numVars = obsFrame->numVars();
+        ioda::Dimensions_t numVars = obsFrame->numSrcVars();
         EXPECT_EQUAL(numVars, expectedNumVars);
 
         ioda::Dimensions_t expectedNumDimVars = obsConfig.getInt("test data.ndvars", 0);
-        ioda::Dimensions_t numDimVars = obsFrame->numDimVars();
+        ioda::Dimensions_t numDimVars = obsFrame->numSrcDimVars();
         EXPECT_EQUAL(numDimVars, expectedNumDimVars);
 
         // Try the output constructor, if one was specified
@@ -263,53 +263,61 @@ void testConstructor() {
                 }
             }
 
-            ioda::Dimensions_t numLocs = obsFrame->numLocs();
+            ioda::Dimensions_t numLocs = obsFrame->numSrcLocs();
             EXPECT_EQUAL(numLocs, expectedNumLocs);
         }
     }
 }
 
-/// // -----------------------------------------------------------------------------
-/// void testRead() {
-///     const eckit::LocalConfiguration conf(::test::TestEnvironment::config());
-///     std::vector<eckit::LocalConfiguration> confOspaces = conf.getSubConfigurations("observations");
-///     util::DateTime bgn(::test::TestEnvironment::config().getString("window begin"));
-///     util::DateTime end(::test::TestEnvironment::config().getString("window end"));
-/// 
-///     for (std::size_t i = 0; i < confOspaces.size(); ++i) {
-///         eckit::LocalConfiguration obsConfig;
-///         confOspaces[i].get("obs space", obsConfig);
-///         oops::Log::trace() << "ObsIo testRead config: " << i << ": " << obsConfig << std::endl;
-/// 
-///         ioda::ObsSpaceParameters obsParams(bgn, end, oops::mpi::world());
-///         obsParams.deserialize(obsConfig);
-/// 
-///         // Input constructor
-///         std::shared_ptr<ObsIo> obsIo;
-///         if (obsParams.in_type() == ObsIoTypes::OBS_FILE) {
-///             obsIo = ObsIoFactory::create(ObsIoActions::OPEN_FILE, ObsIoModes::READ_ONLY, obsParams);
-///         } else if ((obsParams.in_type() == ObsIoTypes::GENERATOR_RANDOM) ||
-///                    (obsParams.in_type() == ObsIoTypes::GENERATOR_LIST)) {
-///             obsIo = ObsIoFactory::create(ObsIoActions::CREATE_GENERATOR,
-///                                          ObsIoModes::READ_ONLY, obsParams);
-///         }
-/// 
-///         // See if we get expected number of locations and variables
-///         ioda::Dimensions_t expectedNumLocs = obsConfig.getInt("test data.nlocs", 0);
-///         ioda::Dimensions nlocsDims = obsIo->obs_group_.vars.open("nlocs").getDimensions();
-///         ioda::Dimensions_t numLocs = nlocsDims.dimsCur[0];
-///         EXPECT_EQUAL(numLocs, expectedNumLocs);
-/// 
-///         int expectedNumVars = obsConfig.getInt("test data.nvars", 0);
-///         std::vector<std::string> varList = listVars(obsIo->obs_group_);
-///         int numVars = varList.size();
-///         EXPECT_EQUAL(numVars, expectedNumVars);
-/// 
+// -----------------------------------------------------------------------------
+void testRead() {
+    const eckit::LocalConfiguration conf(::test::TestEnvironment::config());
+    std::vector<eckit::LocalConfiguration> confOspaces = conf.getSubConfigurations("observations");
+    util::DateTime bgn(::test::TestEnvironment::config().getString("window begin"));
+    util::DateTime end(::test::TestEnvironment::config().getString("window end"));
+
+    for (std::size_t i = 0; i < confOspaces.size(); ++i) {
+        eckit::LocalConfiguration obsConfig;
+        confOspaces[i].get("obs space", obsConfig);
+        oops::Log::trace() << "ObsIo testRead config: " << i << ": " << obsConfig << std::endl;
+
+        ioda::ObsSpaceParameters obsParams(bgn, end, oops::mpi::world());
+        obsParams.deserialize(obsConfig);
+
+        // Input constructor
+        std::shared_ptr<ObsFrame> obsFrame;
+        if (obsParams.in_type() == ObsIoTypes::OBS_FILE) {
+            obsFrame =
+                ObsFrameFactory::create(ObsIoActions::OPEN_FILE,
+                                        ObsIoModes::READ_ONLY, obsParams);
+        } else if ((obsParams.in_type() == ObsIoTypes::GENERATOR_RANDOM) ||
+                   (obsParams.in_type() == ObsIoTypes::GENERATOR_LIST)) {
+            obsFrame = ObsFrameFactory::create(ObsIoActions::CREATE_GENERATOR,
+                                               ObsIoModes::READ_ONLY, obsParams);
+        }
+
+        // Check the counts
+        ioda::Dimensions_t expectedNumLocs = obsConfig.getInt("test data.nlocs", 0);
+        ioda::Dimensions_t numLocs = obsFrame->numSrcLocs();
+        EXPECT_EQUAL(numLocs, expectedNumLocs);
+
+        ioda::Dimensions_t expectedNumVars = obsConfig.getInt("test data.nvars", 0);
+        ioda::Dimensions_t numVars = obsFrame->numSrcVars();
+        EXPECT_EQUAL(numVars, expectedNumVars);
+
+        ioda::Dimensions_t expectedNumDimVars = obsConfig.getInt("test data.ndvars", 0);
+        ioda::Dimensions_t numDimVars = obsFrame->numSrcDimVars();
+        EXPECT_EQUAL(numDimVars, expectedNumDimVars);
+
+        ioda::Dimensions_t expectedMaxVarSize = obsConfig.getInt("test data.max var size", 0);
+        ioda::Dimensions_t maxVarSize = obsFrame->maxSrcVarSize();
+        EXPECT_EQUAL(maxVarSize, expectedMaxVarSize);
+
 ///         // Test reading frames
 ///         testFrameRead(obsIo, obsConfig, obsParams);
-///     }
-/// }
-/// 
+    }
+}
+
 /// // -----------------------------------------------------------------------------
 /// void testWrite() {
 ///     const eckit::LocalConfiguration conf(::test::TestEnvironment::config());
@@ -405,8 +413,8 @@ class ObsFrame : public oops::Test {
 
         ts.emplace_back(CASE("ioda/ObsIo/testConstructor")
             { testConstructor(); });
-//        ts.emplace_back(CASE("ioda/ObsIo/testRead")
-//            { testRead(); });
+        ts.emplace_back(CASE("ioda/ObsIo/testRead")
+            { testRead(); });
 //        ts.emplace_back(CASE("ioda/ObsIo/testWrite")
 //            { testWrite(); });
     }

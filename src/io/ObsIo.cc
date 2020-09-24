@@ -29,11 +29,6 @@ ObsIo::ObsIo(const ObsIoActions action, const ObsIoModes mode,
 ObsIo::~ObsIo() {}
 
 //------------------------------------------------------------------------------------
-Variable ObsIo::openVar(const std::string & varName) const {
-    return obs_group_.vars.open(varName);
-}
-
-//------------------------------------------------------------------------------------
 void ObsIo::resetVarList() {
     var_list_ = listVars(obs_group_);
 }

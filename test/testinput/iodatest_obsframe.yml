@@ -11,7 +11,7 @@ observations:
       obsfile: "Data/testinput_tier_1/sondes_obs_2018041500_m.nc4"
       max frame size: 200
     obsdataout:
-      obsfile: "testoutput/sonde_write_test.nc4"
+      obsfile: "testoutput/sonde_write_frame_test.nc4"
       max frame size: 5
     test data:
       nlocs: 974

@@ -37,7 +37,7 @@ class ObsIoGenerator : public ObsIo, private util::ObjectCounter<ObsIoGenerator>
     /// \details This method is supplied for the ObjectCounter base class.
     ///          It defines a name to identify an object of this class
     ///          for reporting by OOPS.
-    static const std::string classname() {return "ioda::ObsGenerator";}
+    static const std::string classname() {return "ioda::ObsIoGenerator";}
 
     ObsIoGenerator(const ObsIoActions action, const ObsIoModes mode,
                 const ObsSpaceParameters & params);
