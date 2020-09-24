@@ -15,6 +15,7 @@
 #include "eckit/config/LocalConfiguration.h"
 
 #include "ioda/Misc/Dimensions.h"
+#include "ioda/io/ObsIo.h"
 #include "ioda/ObsSpaceParameters.h"
 #include "ioda/Variables/Variable.h"
 
@@ -31,6 +32,18 @@ class ObsFrame {
     ObsFrame(const ObsIoActions action, const ObsIoModes mode,
              const ObsSpaceParameters & params);
     virtual ~ObsFrame() = 0;
+
+    /// \brief return number of maximum variable size (along first dimension)
+    Dimensions_t maxVarSize() const {return obs_io_->maxVarSize();}
+
+    /// \brief return number of locations from the source
+    Dimensions_t numLocs() const {return obs_io_->numLocs();}
+
+    /// \brief return number of regular variables from the source
+    Dimensions_t numVars() const {return obs_io_->numVars();}
+
+    /// \brief return number of dimension scale variables from the source
+    Dimensions_t numDimVars() const {return obs_io_->numDimVars();}
 
     /// \brief initialize for walking through the frames
     void frameInit(const Dimensions_t maxVarSize, const Dimensions_t maxFrameSize);
@@ -54,6 +67,9 @@ class ObsFrame {
     Dimensions_t frameCount(const Variable & var);
 
  protected:
+    /// \brief ObsIo object
+    std::shared_ptr<ObsIo> obs_io_;
+
     /// \brief ObsIo action
     ObsIoActions action_;
 

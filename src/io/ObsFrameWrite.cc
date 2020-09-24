@@ -8,6 +8,7 @@
 #include "oops/util/abor1_cpp.h"
 
 #include "ioda/io/ObsFrameWrite.h"
+#include "ioda/io/ObsIoFactory.h"
 
 namespace ioda {
 
@@ -16,6 +17,8 @@ namespace ioda {
 ObsFrameWrite::ObsFrameWrite(const ObsIoActions action, const ObsIoModes mode,
                              const ObsSpaceParameters & params) :
                                  ObsFrame(action, mode, params) {
+    // Create the ObsIo object
+    obs_io_ = ObsIoFactory::create(ObsIoActions::CREATE_FILE, ObsIoModes::CLOBBER, params);
 }
 
 ObsFrameWrite::~ObsFrameWrite() {}

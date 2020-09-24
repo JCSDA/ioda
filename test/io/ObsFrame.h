@@ -31,8 +31,8 @@
 
 #include "ioda/core/IodaUtils.h"
 #include "ioda/distribution/DistributionFactory.h"
-#include "ioda/io/ObsIo.h"
-#include "ioda/io/ObsIoFactory.h"
+#include "ioda/io/ObsFrame.h"
+#include "ioda/io/ObsFrameFactory.h"
 #include "ioda/ObsGroup.h"
 #include "ioda/ObsSpaceParameters.h"
 #include "ioda/Variables/Variable.h"
@@ -214,33 +214,58 @@ void testConstructor() {
         confOspaces[i].get("obs space", obsConfig);
         oops::Log::trace() << "ObsIo test config: " << i << ": " << obsConfig << std::endl;
 
-///         ioda::ObsSpaceParameters obsParams(bgn, end, oops::mpi::world());
-///         obsParams.deserialize(obsConfig);
-/// 
-///         // Try the input constructor first - should have one to try if we got here
-///         std::shared_ptr<ObsIo> obsIo;
-///         if (obsParams.in_type() == ObsIoTypes::OBS_FILE) {
-///             obsIo = ObsIoFactory::create(ObsIoActions::OPEN_FILE, ObsIoModes::READ_ONLY, obsParams);
-///         } else if ((obsParams.in_type() == ObsIoTypes::GENERATOR_RANDOM) ||
-///                    (obsParams.in_type() == ObsIoTypes::GENERATOR_LIST)) {
-///             obsIo = ObsIoFactory::create(ObsIoActions::CREATE_GENERATOR,
-///                                          ObsIoModes::READ_ONLY, obsParams);
-///         }
-/// 
-///         // See if we get expected number of locations
-///         ioda::Dimensions_t expectedNumLocs = obsConfig.getInt("test data.nlocs", 0);
-///         ioda::Dimensions nlocsDims = obsIo->obs_group_.vars.open("nlocs").getDimensions();
-///         ioda::Dimensions_t numLocs = nlocsDims.dimsCur[0];
-///         EXPECT_EQUAL(numLocs, expectedNumLocs);
-/// 
-///         // Try the output constructor, if one was specified
-///         if (obsParams.out_type() == ObsIoTypes::OBS_FILE) {
-///             obsIo = ObsIoFactory::create(ObsIoActions::CREATE_FILE, ObsIoModes::CLOBBER, obsParams);
-/// 
-///             // Should have an empty top level group at this point
-///             std::vector<std::string> childGroups = obsIo->obs_group_.list();
-///             EXPECT_EQUAL(childGroups.size(), 0);
-///         }
+        ioda::ObsSpaceParameters obsParams(bgn, end, oops::mpi::world());
+        obsParams.deserialize(obsConfig);
+
+        // Try the input constructor first - should have one to try if we got here
+        std::shared_ptr<ObsFrame> obsFrame;
+        if (obsParams.in_type() == ObsIoTypes::OBS_FILE) {
+            obsFrame = ObsFrameFactory::create(ObsIoActions::OPEN_FILE,
+                                               ObsIoModes::READ_ONLY, obsParams);
+        } else if ((obsParams.in_type() == ObsIoTypes::GENERATOR_RANDOM) ||
+                   (obsParams.in_type() == ObsIoTypes::GENERATOR_LIST)) {
+            obsFrame = ObsFrameFactory::create(ObsIoActions::CREATE_GENERATOR,
+                                               ObsIoModes::READ_ONLY, obsParams);
+        }
+
+        // Test the counts that should be set on construction
+        ioda::Dimensions_t expectedMaxVarSize = obsConfig.getInt("test data.max var size", 0);
+        ioda::Dimensions_t maxVarSize = obsFrame->maxVarSize();
+        EXPECT_EQUAL(maxVarSize, expectedMaxVarSize);
+
+        ioda::Dimensions_t expectedNumLocs = obsConfig.getInt("test data.nlocs", 0);
+        ioda::Dimensions_t numLocs = obsFrame->numLocs();
+        EXPECT_EQUAL(numLocs, expectedNumLocs);
+
+        ioda::Dimensions_t expectedNumVars = obsConfig.getInt("test data.nvars", 0);
+        ioda::Dimensions_t numVars = obsFrame->numVars();
+        EXPECT_EQUAL(numVars, expectedNumVars);
+
+        ioda::Dimensions_t expectedNumDimVars = obsConfig.getInt("test data.ndvars", 0);
+        ioda::Dimensions_t numDimVars = obsFrame->numDimVars();
+        EXPECT_EQUAL(numDimVars, expectedNumDimVars);
+
+        // Try the output constructor, if one was specified
+        if (obsParams.out_type() == ObsIoTypes::OBS_FILE) {
+            setOfileParamsFromTestConfig(obsConfig, obsParams);
+            obsFrame = ObsFrameFactory::create(ObsIoActions::CREATE_FILE,
+                                               ObsIoModes::CLOBBER, obsParams);
+
+            // See if we get expected number of locations
+            std::vector<eckit::LocalConfiguration> writeDimConfigs =
+                obsConfig.getSubConfigurations("test data.write dimensions");
+            ioda::Dimensions_t expectedNumLocs = 0;
+            for (std::size_t j = 0; j < writeDimConfigs.size(); ++j) {
+                std::string dimName = writeDimConfigs[i].getString("name");
+                Dimensions_t dimSize = writeDimConfigs[i].getInt("size");
+                if (dimName == "nlocs") {
+                    expectedNumLocs = dimSize;
+                }
+            }
+
+            ioda::Dimensions_t numLocs = obsFrame->numLocs();
+            EXPECT_EQUAL(numLocs, expectedNumLocs);
+        }
     }
 }
 

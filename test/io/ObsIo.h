@@ -44,41 +44,6 @@ namespace test {
 // Helper Functions
 // -----------------------------------------------------------------------------
 
-void setOutFileParams(const eckit::LocalConfiguration & obsConfig,
-                      ioda::ObsSpaceParameters & obsParams) {
-    // Get dimensions and variables sub configurations
-    std::vector<eckit::LocalConfiguration> writeDimConfigs =
-        obsConfig.getSubConfigurations("test data.write dimensions");
-    std::vector<eckit::LocalConfiguration> writeVarConfigs =
-        obsConfig.getSubConfigurations("test data.write variables");
-
-    // Add the dimensions scales to the ObsIo parameters
-    std::map<std::string, Dimensions_t> dimSizes;
-    for (std::size_t i = 0; i < writeDimConfigs.size(); ++i) {
-        std::string dimName = writeDimConfigs[i].getString("name");
-        Dimensions_t dimSize = writeDimConfigs[i].getInt("size");
-        bool isUnlimited = writeDimConfigs[i].getBool("unlimited", false);
-
-        if (isUnlimited) {
-            obsParams.setDimScale(dimName, dimSize, Unlimited, dimSize);
-        } else {
-            obsParams.setDimScale(dimName, dimSize, dimSize, dimSize);
-        }
-        dimSizes.insert(std::pair<std::string, Dimensions_t>(dimName, dimSize));
-    }
-
-    // Add the maximum variable size to the ObsIo parmeters
-    Dimensions_t maxVarSize = 0;
-    for (std::size_t i = 0; i < writeVarConfigs.size(); ++i) {
-        std::vector<std::string> dimNames = writeVarConfigs[i].getStringVector("dims");
-        Dimensions_t varSize0 = dimSizes.at(dimNames[0]);
-        if (varSize0 > maxVarSize) {
-            maxVarSize = varSize0;
-        }
-    }
-    obsParams.setMaxVarSize(maxVarSize);
-}
-
 // -----------------------------------------------------------------------------
 // Test Functions
 // -----------------------------------------------------------------------------
@@ -127,7 +92,7 @@ void testConstructor() {
 
         // Try the output constructor, if one was specified
         if (obsParams.out_type() == ObsIoTypes::OBS_FILE) {
-            setOutFileParams(obsConfig, obsParams);
+            setOfileParamsFromTestConfig(obsConfig, obsParams);
             obsIo = ObsIoFactory::create(ObsIoActions::CREATE_FILE, ObsIoModes::CLOBBER, obsParams);
 
             // See if we get expected number of locations
@@ -245,7 +210,7 @@ void testWrite() {
                 obsConfig.getSubConfigurations("test data.write dimensions");
 
             // Output constructor
-            setOutFileParams(obsConfig, obsParams);
+            setOfileParamsFromTestConfig(obsConfig, obsParams);
             std::shared_ptr<ObsIo> obsIo =
                 ObsIoFactory::create(ObsIoActions::CREATE_FILE, ObsIoModes::CLOBBER, obsParams);
 

@@ -15,7 +15,6 @@
 #include "eckit/config/LocalConfiguration.h"
 
 #include "ioda/distribution/Distribution.h"
-#include "ioda/io/ObsFrame.h"
 #include "ioda/Misc/Dimensions.h"
 #include "ioda/ObsSpaceParameters.h"
 #include "ioda/Variables/Variable.h"

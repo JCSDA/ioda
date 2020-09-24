@@ -12,8 +12,11 @@
 #include <typeinfo>
 #include <vector>
 
+#include "eckit/config/LocalConfiguration.h"
+
 #include "ioda/Misc/Dimensions.h"
 #include "ioda/ObsGroup.h"
+#include "ioda/ObsSpaceParameters.h"
 
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/DateTime.h"
@@ -87,6 +90,17 @@ namespace ioda {
   std::vector<std::string> StringArrayToStringVector(
                               const std::vector<std::string> & arrayData,
                               const std::vector<Dimensions_t> & arrayShape);
+
+  /// \brief set params for output file construction from test YAML configuration
+  /// \details This routine is intended for use by the ObsIo and ObsFrame tests. It
+  /// relies on test confiruation "test data.write dimensions" and 
+  /// "test data.write variables" accompanying an "obsdataout.obsfile" spec in the
+  /// YAML configuration.
+  /// \param obsConfig test YAML configuration for and ObsSpace
+  /// \param obsParams output params
+  void setOfileParamsFromTestConfig(const eckit::LocalConfiguration & obsConfig,
+                                    ioda::ObsSpaceParameters & obsParams);
+
 
   // -----------------------------------------------------------------------------
   /*!
