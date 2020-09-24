@@ -35,7 +35,7 @@ class Distribution {
     virtual bool isMyRecord(std::size_t RecNum) const = 0;
     virtual bool isDistributed() const = 0;
 
-    virtual std::size_t sum(std::size_t x) = 0;
+    virtual void sum(double &x) = 0;
 
  protected:
      /*! \brief Local MPI communicator */

@@ -42,11 +42,8 @@ bool RoundRobin::isMyRecord(std::size_t RecNum) const {
     return (RecNum % comm_.size() == comm_.rank());
 }
 
-std::size_t RoundRobin::sum(std::size_t x) {
-  //if (obsdb_.isDistributed()) {
-  //  obsdb_.comm().allReduceInPlace(zz, eckit::mpi::sum());
-  //}
-    return x; // HK incorrect result
+void RoundRobin::sum(double &x) {
+    comm_.allReduceInPlace(x, eckit::mpi::sum());
 }
 
 // -----------------------------------------------------------------------------
