@@ -58,6 +58,19 @@ class ObsFrameRead : public ObsFrame, private util::ObjectCounter<ObsFrameRead> 
     /// \param var variable
     Dimensions_t frameCount(const Variable & var) override;
 
+    /// \brief generate frame indices and corresponding record numbers
+    /// \details This method generates a list of indices with their corresponding
+    ///  record numbers, where the indices denote which locations are to be
+    ///  read into this process element.
+    void genFrameIndexRecNums(std::shared_ptr<Distribution> & dist) override;
+
+    /// \brief set up frontend and backend selection objects for the given variable
+    /// \param var ObsGroup variable
+    /// \param feSelect Front end selection object
+    /// \param beSelect Back end selection object
+    void createFrameSelection(const Variable & var, Selection & feSelect,
+                              Selection & beSelect) override;
+
  private:
     //------------------ private data members ------------------------------
     /// \brief current frame start for variable dimensioned along nlocs
@@ -95,11 +108,13 @@ class ObsFrameRead : public ObsFrame, private util::ObjectCounter<ObsFrameRead> 
     /// \param ostream output stream
     void print(std::ostream & os) const override;
 
-    /// \brief generate frame indices and corresponding record numbers
-    /// \details This method generates a list of indices with their corresponding
-    ///  record numbers, where the indices denote which locations are to be
-    ///  read into this process element.
-    void genFrameIndexRecNums(std::shared_ptr<Distribution> & dist);
+    /// \brief return current frame count for variable
+    /// \details Variables can be of different sizes so it's possible that the
+    /// frame has moved past the end of some variables but not so for other
+    /// variables. When the frame is past the end of the given variable, this
+    /// routine returns a zero to indicate that we're done with this variable.
+    /// \param var variable
+    Dimensions_t basicFrameCount(const Variable & var);
 
     /// \brief generate indices for all locations in current frame
     /// \param locIndex vector of location indices relative to entire obs source

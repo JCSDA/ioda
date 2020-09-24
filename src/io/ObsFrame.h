@@ -45,6 +45,9 @@ class ObsFrame : public util::Printable {
     /// \brief return number of dimension scale variables from the source
     Dimensions_t numSrcDimVars() const {return obs_io_->numDimVars();}
 
+    /// \brief return number of dimension scale variables from the source
+    Has_Variables & srcVars() const {return obs_io_->vars();}
+
     /// \brief initialize for walking through the frames
     virtual void frameInit() = 0;
 
@@ -65,6 +68,19 @@ class ObsFrame : public util::Printable {
     /// routine returns a zero to indicate that we're done with this variable.
     /// \param var variable
     virtual Dimensions_t frameCount(const Variable & var) = 0;
+
+    /// \brief generate frame indices and corresponding record numbers
+    /// \details This method generates a list of indices with their corresponding
+    ///  record numbers, where the indices denote which locations are to be
+    ///  read into this process element.
+    virtual void genFrameIndexRecNums(std::shared_ptr<Distribution> & dist) {}
+
+    /// \brief set up frontend and backend selection objects for the given variable
+    /// \param var ObsGroup variable
+    /// \param feSelect Front end selection object
+    /// \param beSelect Back end selection object
+    virtual void createFrameSelection(const Variable & var, Selection & feSelect,
+                                      Selection & beSelect) {}
 
  protected:
     //------------------ protected data members ------------------------------

@@ -60,18 +60,16 @@ Dimensions_t ObsFrameRead::frameStart() {
 //------------------------------------------------------------------------------------
 Dimensions_t ObsFrameRead::frameCount(const Variable & var) {
     Dimensions_t  fCount;
-    if (var.isDimensionScaleAttached(0, obs_io_->vars().open("nlocs"))) {
-        fCount = adjusted_nlocs_frame_count_;
+    if (var.isDimensionScale()) {
+        fCount = basicFrameCount(var);
     } else {
-        fCount = frameCount(var);
+        if (var.isDimensionScaleAttached(0, obs_io_->vars().open("nlocs"))) {
+            fCount = adjusted_nlocs_frame_count_;
+        } else {
+            fCount = basicFrameCount(var);
+        }
     }
     return fCount;
-}
-
-//--------------------------- private functions --------------------------------------
-//-----------------------------------------------------------------------------------
-void ObsFrameRead::print(std::ostream & os) const {
-    os << "ObsFrameRead: " << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -94,12 +92,16 @@ void ObsFrameRead::genFrameIndexRecNums(std::shared_ptr<Distribution> & dist) {
 
     // Generate record numbers for this frame. Consider obs grouping.
     std::vector<Dimensions_t> records;
-    std::string obsGroupVarName =
-        params_.top_level_.obsInFile.value()->obsGrouping.value().obsGroupVar;
-    if ((params_.in_type() != ObsIoTypes::OBS_FILE) || (obsGroupVarName.empty())) {
-         genRecordNumbersAll(locIndex, records);
+    if (params_.in_type() == ObsIoTypes::OBS_FILE) {
+        std::string obsGroupVarName =
+            params_.top_level_.obsInFile.value()->obsGrouping.value().obsGroupVar;
+        if (obsGroupVarName.empty()) {
+            genRecordNumbersAll(locIndex, records);
+        } else {
+            genRecordNumbersGrouping(obsGroupVarName, frameIndex, records);
+        }
     } else {
-        genRecordNumbersGrouping(obsGroupVarName, frameIndex, records);
+        genRecordNumbersAll(locIndex, records);
     }
 
     // Apply the MPI distribution to the records
@@ -109,6 +111,76 @@ void ObsFrameRead::genFrameIndexRecNums(std::shared_ptr<Distribution> & dist) {
     // This will be handed to callers through the frameCount function for all
     // variables with nlocs as their first dimension.
     adjusted_nlocs_frame_count_ = frame_loc_index_.size();
+}
+
+//------------------------------------------------------------------------------------
+void ObsFrameRead::createFrameSelection(const Variable & var, Selection & feSelect,
+                                        Selection & beSelect) {
+    // Form the selection objects for this frame. The frontend selection will
+    // simply be the current size (according to the variable) of the frame going from
+    // 0 to size-1.
+    //
+    // The backend selection will start at the frame start value (instead of zero) and
+    // be determined by the size of the frame for the given variable and whether
+    // that variable is dimensioned by nlocs.
+
+    // Grab the variable dimensions and use this as a template for the selection operators.
+    std::vector<Dimensions_t> varDims = var.getDimensions().dimsCur;
+    Dimensions_t frameStart = this->frameStart();
+    Dimensions_t frameCount = this->frameCount(var);
+
+    // Substitute the frameCount for the first dimension size of the variable since it's
+    // possible that this size got reduced by MPI distribution and timing window filtering.
+    varDims[0] = frameCount;
+
+    // For the frontend, treat the data as a vector with a total size given by the product
+    // of the dimension sizes considering the possible adjustment of the fisrt
+    // dimension (varDims). Use hyperslab style selection since we will be consolidating
+    // the selected locations into a contiguous series.
+    Dimensions_t numElements = std::accumulate(
+        varDims.begin(), varDims.end(), 1, std::multiplies<Dimensions_t>());
+    std::vector<Dimensions_t> feStarts(1, 0);
+    std::vector<Dimensions_t> feCounts(1, numElements);
+    feSelect.extent(feCounts).select({ SelectionOperator::SET, feStarts, feCounts });
+
+    // For the backend, if the variable is dimensioned by nlocs, then use the dimension
+    // style selectors. Otherwise, use a hyperslab style.
+    //
+    // For the dimensioned-by-nlocs case, frame_loc_index_ contains the indices for
+    // the first dimension. Subsequent dimensions, we want to select all indices.
+    Variable nlocsVar = obs_io_->vars().open("nlocs");
+    if (var.isDimensionScaleAttached(0, nlocsVar)) {
+        beSelect.select({ SelectionOperator::SET, 0, frame_loc_index_ });
+        for (std::size_t i = 1; i < varDims.size(); ++i) {
+            std::vector<Dimensions_t> dimIndex(varDims[i]);
+            std::iota(dimIndex.begin(), dimIndex.end(), 0);
+            beSelect.select({ SelectionOperator::AND, i, dimIndex });
+        }
+    } else {
+        std::vector<Dimensions_t> beStarts(varDims.size(), 0);
+        beStarts[0] = frameStart;
+        std::vector<Dimensions_t> beCounts = varDims;
+        beSelect.select({ SelectionOperator::SET, beStarts, beCounts });
+    }
+}
+
+//--------------------------- private functions --------------------------------------
+//-----------------------------------------------------------------------------------
+void ObsFrameRead::print(std::ostream & os) const {
+    os << "ObsFrameRead: " << std::endl;
+}
+
+//------------------------------------------------------------------------------------
+Dimensions_t ObsFrameRead::basicFrameCount(const Variable & var) {
+    Dimensions_t count;
+    Dimensions_t varSize0 = var.getDimensions().dimsCur[0];
+    if ((frame_start_ + max_frame_size_) > varSize0) {
+        count = varSize0 - frame_start_;
+        if (count < 0) { count = 0; }
+    } else {
+        count = max_frame_size_;
+    }
+    return count;
 }
 
 //------------------------------------------------------------------------------------

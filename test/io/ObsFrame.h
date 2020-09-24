@@ -44,79 +44,80 @@ namespace test {
 // Helper Functions
 // -----------------------------------------------------------------------------
 
-/// // -----------------------------------------------------------------------------
-/// void testFrameRead(std::shared_ptr<ObsIo> & obsIo, eckit::LocalConfiguration & obsConfig,
-///                    ioda::ObsSpaceParameters & obsParams) {
-///     float floatTol = obsConfig.getFloat("test data.tolerance", 1.0e-5);
-///     std::vector<eckit::LocalConfiguration> readVarConfigs =
-///         obsConfig.getSubConfigurations("test data.read variables");
-/// 
-///     // Test reading from frames
-///     std::unique_ptr<DistributionFactory> distFactory;
-///     std::shared_ptr<Distribution> dist;
-///     dist.reset(distFactory->createDistribution(obsParams.comm(), "RoundRobin"));
-///     int iframe = 0;
-///     for (obsIo->frameInit(); obsIo->frameAvailable(); obsIo->frameNext()) {
-///         oops::Log::debug() << "testRead: Frame number: " << iframe << std::endl
-///             << "    frameStart: " << obsIo->frameStart() << std::endl;
-/// 
-///         // generate the selection indices for variabels dimensioned by nlocs
-///         obsIo->genFrameIndexRecNums(dist);
-///         
-///         // Try reading a couple variables
-///         for (std::size_t j = 0; j < readVarConfigs.size(); ++j) {
-///            std::string varName = readVarConfigs[j].getString("name");
-///            std::string expectedVarType = readVarConfigs[j].getString("type");
-///            ioda::Variable var = obsIo->obs_group_.vars.open(varName);
-/// 
-///            Dimensions_t frameCount = obsIo->frameCount(var);
-///            if (frameCount > 0) {
-///                oops::Log::debug() << "    Variable: " << varName
-///                    << ", frameCount: " << frameCount << std::endl;
-/// 
-///                // Form the hyperslab selection for this frame
-///                ioda::Selection frontendSelect;
-///                ioda::Selection backendSelect;
-///                obsIo->createFrameSelection(var, frontendSelect, backendSelect);
-/// 
-///                if (expectedVarType == "int") {
-///                    EXPECT(var.isA<int>());
-///                    std::vector<int> expectedVarValue0 =
-///                        readVarConfigs[j].getIntVector("value0");
-///                    std::vector<int> varValues(frameCount, 0);
-///                    var.read<int>(varValues, frontendSelect, backendSelect);
-///                    EXPECT_EQUAL(varValues[0], expectedVarValue0[iframe]);
-///                } else if (expectedVarType == "float") {
-///                    EXPECT(var.isA<float>());
-///                    std::vector<float> expectedVarValue0 =
-///                        readVarConfigs[j].getFloatVector("value0");
-///                    std::vector<float> varValues(frameCount, 0.0);
-///                    var.read<float>(varValues, frontendSelect, backendSelect);
-///                    EXPECT(oops::is_close_relative(varValues[0],
-///                                                   expectedVarValue0[iframe], floatTol));
-///                } else if (expectedVarType == "string") {
-///                    std::vector<std::string> expectedVarValue0 =
-///                        readVarConfigs[j].getStringVector("value0");
-///                    std::vector<std::string> varValues(frameCount, "");
-///                    if (var.isA<std::string>()) {
-///                        var.read<std::string>(varValues, frontendSelect, backendSelect);
-///                    } else {
-///                        ioda::Dimensions varDims = var.getDimensions();
-///                        std::vector<std::size_t> varShape;
-///                        varShape.assign(varDims.dimsCur.begin(), varDims.dimsCur.end());
-/// 
-///                        std::vector<char> charData;
-///                        var.read<char>(charData);
-///                        varValues = CharArrayToStringVector(charData.data(), varShape);
-///                    }
-///                    EXPECT_EQUAL(varValues[0], expectedVarValue0[iframe]);
-///                }
-///            }
-///         }
-///         iframe++;
-///     }
-/// }
-/// 
+// -----------------------------------------------------------------------------
+void testFrameRead(std::shared_ptr<ObsFrame> & obsFrame, eckit::LocalConfiguration & obsConfig,
+                   ioda::ObsSpaceParameters & obsParams) {
+    float floatTol = obsConfig.getFloat("test data.tolerance", 1.0e-5);
+    std::vector<eckit::LocalConfiguration> readVarConfigs =
+        obsConfig.getSubConfigurations("test data.read variables");
+
+    // Test reading from frames
+    std::unique_ptr<DistributionFactory> distFactory;
+    std::shared_ptr<Distribution> dist;
+    dist.reset(distFactory->createDistribution(obsParams.comm(), "RoundRobin"));
+    int iframe = 0;
+    for (obsFrame->frameInit(); obsFrame->frameAvailable(); obsFrame->frameNext()) {
+        oops::Log::debug() << "testRead: Frame number: " << iframe << std::endl
+            << "    frameStart: " << obsFrame->frameStart() << std::endl;
+
+        // generate the selection indices for variabels dimensioned by nlocs
+        obsFrame->genFrameIndexRecNums(dist);
+
+        // Try reading a couple variables
+        for (std::size_t j = 0; j < readVarConfigs.size(); ++j) {
+           std::string varName = readVarConfigs[j].getString("name");
+           std::string expectedVarType = readVarConfigs[j].getString("type");
+           ioda::Variable var = obsFrame->srcVars().open(varName);
+
+           Dimensions_t frameCount = obsFrame->frameCount(var);
+           if (frameCount > 0) {
+               oops::Log::debug() << "    Variable: " << varName
+                   << ", frameCount: " << frameCount << std::endl;
+
+               // Form the hyperslab selection for this frame
+               ioda::Selection frontendSelect;
+               ioda::Selection backendSelect;
+               obsFrame->createFrameSelection(var, frontendSelect, backendSelect);
+
+               if (expectedVarType == "int") {
+                   EXPECT(var.isA<int>());
+                   std::vector<int> expectedVarValue0 =
+                       readVarConfigs[j].getIntVector("value0");
+                   std::vector<int> varValues(frameCount, 0);
+                   var.read<int>(varValues, frontendSelect, backendSelect);
+                   EXPECT_EQUAL(varValues[0], expectedVarValue0[iframe]);
+               } else if (expectedVarType == "float") {
+                   EXPECT(var.isA<float>());
+                   std::vector<float> expectedVarValue0 =
+                       readVarConfigs[j].getFloatVector("value0");
+                   std::vector<float> varValues(frameCount, 0.0);
+                   var.read<float>(varValues, frontendSelect, backendSelect);
+                   EXPECT(oops::is_close_relative(varValues[0],
+                                                  expectedVarValue0[iframe], floatTol));
+               } else if (expectedVarType == "string") {
+                   EXPECT(var.isA<std::string>());
+                   std::vector<std::string> expectedVarValue0 =
+                       readVarConfigs[j].getStringVector("value0");
+                   std::vector<std::string> varValues(frameCount, "");
+
+                   Dimensions varDims = var.getDimensions();
+                   if (varDims.dimensionality > 1) {
+                       std::vector<Dimensions_t> varShape = varDims.dimsCur;
+                       varShape[0] = frameCount;
+                       std::vector<std::string> stringArray =
+                           var.readAsVector<std::string>(frontendSelect, backendSelect);
+                       varValues = StringArrayToStringVector(stringArray, varShape);
+                   } else {
+                       var.read<std::string>(varValues, frontendSelect, backendSelect);
+                   }
+                   EXPECT_EQUAL(varValues[0], expectedVarValue0[iframe]);
+               }
+           }
+        }
+        iframe++;
+    }
+}
+
 /// // -----------------------------------------------------------------------------
 /// void frameWrite(std::shared_ptr<ObsIo> & obsIo, eckit::LocalConfiguration & obsConfig) {
 ///     std::vector<eckit::LocalConfiguration> writeVarConfigs =
@@ -313,8 +314,8 @@ void testRead() {
         ioda::Dimensions_t maxVarSize = obsFrame->maxSrcVarSize();
         EXPECT_EQUAL(maxVarSize, expectedMaxVarSize);
 
-///         // Test reading frames
-///         testFrameRead(obsIo, obsConfig, obsParams);
+        // Test reading frames
+        testFrameRead(obsFrame, obsConfig, obsParams);
     }
 }
 

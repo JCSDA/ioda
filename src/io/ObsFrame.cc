@@ -23,17 +23,4 @@ ObsFrame::ObsFrame(const ObsIoActions action, const ObsIoModes mode,
 
 ObsFrame::~ObsFrame() {}
 
-//------------------------------------------------------------------------------------
-Dimensions_t ObsFrame::frameCount(const Variable & var) {
-    Dimensions_t count;
-    Dimensions_t varSize0 = var.getDimensions().dimsCur[0];
-    if ((frame_start_ + max_frame_size_) > varSize0) {
-        count = varSize0 - frame_start_;
-        if (count < 0) { count = 0; }
-    } else {
-        count = max_frame_size_;
-    }
-    return count;
-}
-
 }  // namespace ioda
