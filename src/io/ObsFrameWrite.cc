@@ -58,6 +58,41 @@ Dimensions_t ObsFrameWrite::frameCount(const Variable & var) {
     return count;
 }
 
+//------------------------------------------------------------------------------------
+void ObsFrameWrite::createFrameSelection(const Variable & var, Selection & feSelect,
+                                         Selection & beSelect) {
+    // Form the selection objects for this frame. The frontend selection will
+    // simply be the current size (according to the variable) of the frame going from
+    // 0 to size-1.
+    //
+    // The backend selection will start at the frame start value (instead of zero) and
+    // be determined by the size of the frame for the given variable.
+
+    // Grab the variable dimensions and use this as a template for the selection operators.
+    std::vector<Dimensions_t> varDims = var.getDimensions().dimsCur;
+    Dimensions_t frameStart = this->frameStart();
+    Dimensions_t frameCount = this->frameCount(var);
+
+    // Substitute the frameCount for the first dimension size of the variable.
+    varDims[0] = frameCount;
+
+    // For the frontend, treat the data as a vector with a total size given by the product
+    // of the dimension sizes considering the possible adjustment of the fisrt
+    // dimension (varDims). Use hyperslab style selection since we will be consolidating
+    // the selected locations into a contiguous series.
+    Dimensions_t numElements = std::accumulate(
+        varDims.begin(), varDims.end(), 1, std::multiplies<Dimensions_t>());
+    std::vector<Dimensions_t> feStarts(1, 0);
+    std::vector<Dimensions_t> feCounts(1, numElements);
+    feSelect.extent(feCounts).select({ SelectionOperator::SET, feStarts, feCounts });
+
+    // For the backend, use a hyperslab style.
+    std::vector<Dimensions_t> beStarts(varDims.size(), 0);
+    beStarts[0] = frameStart;
+    std::vector<Dimensions_t> beCounts = varDims;
+    beSelect.select({ SelectionOperator::SET, beStarts, beCounts });
+}
+
 //--------------------------- private functions --------------------------------------
 //-----------------------------------------------------------------------------------
 void ObsFrameWrite::print(std::ostream & os) const {

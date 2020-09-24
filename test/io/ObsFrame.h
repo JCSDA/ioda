@@ -5,8 +5,8 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#ifndef TEST_IO_OBSIO_H_
-#define TEST_IO_OBSIO_H_
+#ifndef TEST_IO_OBSFRAME_H_
+#define TEST_IO_OBSFRAME_H_
 
 #include <algorithm>
 #include <functional>
@@ -67,7 +67,7 @@ void testFrameRead(std::shared_ptr<ObsFrame> & obsFrame, eckit::LocalConfigurati
         for (std::size_t j = 0; j < readVarConfigs.size(); ++j) {
            std::string varName = readVarConfigs[j].getString("name");
            std::string expectedVarType = readVarConfigs[j].getString("type");
-           ioda::Variable var = obsFrame->srcVars().open(varName);
+           ioda::Variable var = obsFrame->vars().open(varName);
 
            Dimensions_t frameCount = obsFrame->frameCount(var);
            if (frameCount > 0) {
@@ -118,86 +118,86 @@ void testFrameRead(std::shared_ptr<ObsFrame> & obsFrame, eckit::LocalConfigurati
     }
 }
 
-/// // -----------------------------------------------------------------------------
-/// void frameWrite(std::shared_ptr<ObsIo> & obsIo, eckit::LocalConfiguration & obsConfig) {
-///     std::vector<eckit::LocalConfiguration> writeVarConfigs =
-///         obsConfig.getSubConfigurations("test data.write variables");
-/// 
-///     int iframe = 0;
-///     for (obsIo->frameInit(); obsIo->frameAvailable(); obsIo->frameNext()) {
-///         Dimensions_t frameStart = obsIo->frameStart();
-///         oops::Log::debug() << "testWrite: Frame number: " << iframe << std::endl
-///             << "    frameStart: " << frameStart << std::endl;
-/// 
-///         // Write the test variables
-///         for (std::size_t j = 0; j < writeVarConfigs.size(); ++j) {
-///             std::string varName = writeVarConfigs[j].getString("name");
-///             std::string varType = writeVarConfigs[j].getString("type");
-///             std::vector<std::string> varDimNames =
-///                 writeVarConfigs[j].getStringVector("dims");
-/// 
-///             ioda::Variable var;
-///             // if on the first frame, create the variable
-///             if (iframe == 0) {
-///                 std::vector<ioda::Variable> varDims;
-///                 for (std::size_t idim = 0; idim < varDimNames.size(); ++idim) {
-///                     varDims.push_back(obsIo->obs_group_.vars.open(varDimNames[idim]));
-///                 }
-/// 
-///                 ioda::VariableCreationParameters params;
-///                 params.chunk = true;
-///                 params.compressWithGZIP();
-///                 if (varType == "int") {
-///                     params.setFillValue<int>(-999);
-///                     var = obsIo->obs_group_.vars
-///                         .createWithScales<int>(varName, varDims, params);
-///                 } else if (varType == "float") {
-///                     params.setFillValue<float>(-999);
-///                     var = obsIo->obs_group_.vars
-///                         .createWithScales<float>(varName, varDims, params);
-///                 } else if (varType == "string") {
-///                     params.setFillValue<std::string>("fill");
-///                     var = obsIo->obs_group_.vars
-///                         .createWithScales<std::string>(varName, varDims, params);
-///                 }
-///             } else {
-///                 var = obsIo->obs_group_.vars.open(varName);
-///             }
-/// 
-///             Dimensions_t frameCount = obsIo->frameCount(var);
-///             if (frameCount > 0) {
-///                 oops::Log::debug() << "    Variable: " << varName
-///                     << ", frameCount: " << frameCount << std::endl;
-///                 // Form the hyperslab selection for this frame
-///                 ioda::Selection frontendSelect;
-///                 ioda::Selection backendSelect;
-///                 obsIo->createFrameSelection(var, frontendSelect, backendSelect);
-/// 
-///                 if (varType == "int") {
-///                     std::vector<int> values =
-///                         writeVarConfigs[j].getIntVector("values");
-///                     std::vector<int> varValues(values.begin() + frameStart,
-///                         values.begin() + frameStart + frameCount);
-///                     var.write<int>(varValues, frontendSelect, backendSelect);
-///                 } else if (varType == "float") {
-///                     std::vector<float> values =
-///                         writeVarConfigs[j].getFloatVector("values");
-///                     std::vector<float> varValues(values.begin() + frameStart,
-///                         values.begin() + frameStart + frameCount);
-///                     var.write<float>(varValues, frontendSelect, backendSelect);
-///                 } else if (varType == "string") {
-///                     std::vector<std::string> values =
-///                         writeVarConfigs[j].getStringVector("values");
-///                     std::vector<std::string> varValues(values.begin() + frameStart,
-///                         values.begin() + frameStart + frameCount);
-///                     var.write<std::string>(varValues, frontendSelect, backendSelect);
-///                 }
-///             }
-///         }
-/// 
-///         iframe++;
-///     }
-/// }
+// -----------------------------------------------------------------------------
+void frameWrite(std::shared_ptr<ObsFrame> & obsFrame, eckit::LocalConfiguration & obsConfig) {
+    std::vector<eckit::LocalConfiguration> writeVarConfigs =
+        obsConfig.getSubConfigurations("test data.write variables");
+
+    int iframe = 0;
+    for (obsFrame->frameInit(); obsFrame->frameAvailable(); obsFrame->frameNext()) {
+        Dimensions_t frameStart = obsFrame->frameStart();
+        oops::Log::debug() << "testWrite: Frame number: " << iframe << std::endl
+            << "    frameStart: " << frameStart << std::endl;
+
+        // Write the test variables
+        for (std::size_t j = 0; j < writeVarConfigs.size(); ++j) {
+            std::string varName = writeVarConfigs[j].getString("name");
+            std::string varType = writeVarConfigs[j].getString("type");
+            std::vector<std::string> varDimNames =
+                writeVarConfigs[j].getStringVector("dims");
+
+            ioda::Variable var;
+            // if on the first frame, create the variable
+            if (iframe == 0) {
+                std::vector<ioda::Variable> varDims;
+                for (std::size_t idim = 0; idim < varDimNames.size(); ++idim) {
+                    varDims.push_back(obsFrame->vars().open(varDimNames[idim]));
+                }
+
+                ioda::VariableCreationParameters params;
+                params.chunk = true;
+                params.compressWithGZIP();
+                if (varType == "int") {
+                    params.setFillValue<int>(-999);
+                    var = obsFrame->vars()
+                        .createWithScales<int>(varName, varDims, params);
+                } else if (varType == "float") {
+                    params.setFillValue<float>(-999);
+                    var = obsFrame->vars()
+                        .createWithScales<float>(varName, varDims, params);
+                } else if (varType == "string") {
+                    params.setFillValue<std::string>("fill");
+                    var = obsFrame->vars()
+                        .createWithScales<std::string>(varName, varDims, params);
+                }
+            } else {
+                var = obsFrame->vars().open(varName);
+            }
+
+            Dimensions_t frameCount = obsFrame->frameCount(var);
+            if (frameCount > 0) {
+                oops::Log::debug() << "    Variable: " << varName
+                    << ", frameCount: " << frameCount << std::endl;
+                // Form the hyperslab selection for this frame
+                ioda::Selection frontendSelect;
+                ioda::Selection backendSelect;
+                obsFrame->createFrameSelection(var, frontendSelect, backendSelect);
+
+                if (varType == "int") {
+                    std::vector<int> values =
+                        writeVarConfigs[j].getIntVector("values");
+                    std::vector<int> varValues(values.begin() + frameStart,
+                        values.begin() + frameStart + frameCount);
+                    var.write<int>(varValues, frontendSelect, backendSelect);
+                } else if (varType == "float") {
+                    std::vector<float> values =
+                        writeVarConfigs[j].getFloatVector("values");
+                    std::vector<float> varValues(values.begin() + frameStart,
+                        values.begin() + frameStart + frameCount);
+                    var.write<float>(varValues, frontendSelect, backendSelect);
+                } else if (varType == "string") {
+                    std::vector<std::string> values =
+                        writeVarConfigs[j].getStringVector("values");
+                    std::vector<std::string> varValues(values.begin() + frameStart,
+                        values.begin() + frameStart + frameCount);
+                    var.write<std::string>(varValues, frontendSelect, backendSelect);
+                }
+            }
+        }
+
+        iframe++;
+    }
+}
 
 // -----------------------------------------------------------------------------
 // Test Functions
@@ -231,19 +231,19 @@ void testConstructor() {
 
         // Test the counts that should be set on construction
         ioda::Dimensions_t expectedMaxVarSize = obsConfig.getInt("test data.max var size", 0);
-        ioda::Dimensions_t maxVarSize = obsFrame->maxSrcVarSize();
+        ioda::Dimensions_t maxVarSize = obsFrame->maxVarSize();
         EXPECT_EQUAL(maxVarSize, expectedMaxVarSize);
 
         ioda::Dimensions_t expectedNumLocs = obsConfig.getInt("test data.nlocs", 0);
-        ioda::Dimensions_t numLocs = obsFrame->numSrcLocs();
+        ioda::Dimensions_t numLocs = obsFrame->numLocs();
         EXPECT_EQUAL(numLocs, expectedNumLocs);
 
         ioda::Dimensions_t expectedNumVars = obsConfig.getInt("test data.nvars", 0);
-        ioda::Dimensions_t numVars = obsFrame->numSrcVars();
+        ioda::Dimensions_t numVars = obsFrame->numVars();
         EXPECT_EQUAL(numVars, expectedNumVars);
 
         ioda::Dimensions_t expectedNumDimVars = obsConfig.getInt("test data.ndvars", 0);
-        ioda::Dimensions_t numDimVars = obsFrame->numSrcDimVars();
+        ioda::Dimensions_t numDimVars = obsFrame->numDimVars();
         EXPECT_EQUAL(numDimVars, expectedNumDimVars);
 
         // Try the output constructor, if one was specified
@@ -264,7 +264,7 @@ void testConstructor() {
                 }
             }
 
-            ioda::Dimensions_t numLocs = obsFrame->numSrcLocs();
+            ioda::Dimensions_t numLocs = obsFrame->numLocs();
             EXPECT_EQUAL(numLocs, expectedNumLocs);
         }
     }
@@ -299,19 +299,19 @@ void testRead() {
 
         // Check the counts
         ioda::Dimensions_t expectedNumLocs = obsConfig.getInt("test data.nlocs", 0);
-        ioda::Dimensions_t numLocs = obsFrame->numSrcLocs();
+        ioda::Dimensions_t numLocs = obsFrame->numLocs();
         EXPECT_EQUAL(numLocs, expectedNumLocs);
 
         ioda::Dimensions_t expectedNumVars = obsConfig.getInt("test data.nvars", 0);
-        ioda::Dimensions_t numVars = obsFrame->numSrcVars();
+        ioda::Dimensions_t numVars = obsFrame->numVars();
         EXPECT_EQUAL(numVars, expectedNumVars);
 
         ioda::Dimensions_t expectedNumDimVars = obsConfig.getInt("test data.ndvars", 0);
-        ioda::Dimensions_t numDimVars = obsFrame->numSrcDimVars();
+        ioda::Dimensions_t numDimVars = obsFrame->numDimVars();
         EXPECT_EQUAL(numDimVars, expectedNumDimVars);
 
         ioda::Dimensions_t expectedMaxVarSize = obsConfig.getInt("test data.max var size", 0);
-        ioda::Dimensions_t maxVarSize = obsFrame->maxSrcVarSize();
+        ioda::Dimensions_t maxVarSize = obsFrame->maxVarSize();
         EXPECT_EQUAL(maxVarSize, expectedMaxVarSize);
 
         // Test reading frames
@@ -319,86 +319,89 @@ void testRead() {
     }
 }
 
-/// // -----------------------------------------------------------------------------
-/// void testWrite() {
-///     const eckit::LocalConfiguration conf(::test::TestEnvironment::config());
-///     std::vector<eckit::LocalConfiguration> confOspaces = conf.getSubConfigurations("observations");
-///     util::DateTime bgn(::test::TestEnvironment::config().getString("window begin"));
-///     util::DateTime end(::test::TestEnvironment::config().getString("window end"));
-/// 
-///     for (std::size_t i = 0; i < confOspaces.size(); ++i) {
-///         eckit::LocalConfiguration obsConfig;
-///         confOspaces[i].get("obs space", obsConfig);
-///         oops::Log::trace() << "ObsIo testWrite config: " << i << ": " << obsConfig << std::endl;
-/// 
-///         ioda::ObsSpaceParameters obsParams(bgn, end, oops::mpi::world());
-///         obsParams.deserialize(obsConfig);
-/// 
-///         if (obsParams.out_type() == ObsIoTypes::OBS_FILE) {
-///             // Get dimensions and variables sub configurations
-///             std::vector<eckit::LocalConfiguration> writeDimConfigs =
-///                 obsConfig.getSubConfigurations("test data.write dimensions");
-///             std::vector<eckit::LocalConfiguration> writeVarConfigs =
-///                 obsConfig.getSubConfigurations("test data.write variables");
-/// 
-///             // Add the dimensions scales to the ObsIo parameters
-///             std::map<std::string, Dimensions_t> dimSizes;
-///             for (std::size_t i = 0; i < writeDimConfigs.size(); ++i) {
-///                 std::string dimName = writeDimConfigs[i].getString("name");
-///                 Dimensions_t dimSize = writeDimConfigs[i].getInt("size");
-///                 bool isUnlimited = writeDimConfigs[i].getBool("unlimited", false);
-/// 
-///                 if (isUnlimited) {
-///                     obsParams.setDimScale(dimName, dimSize, Unlimited, dimSize);
-///                 } else {
-///                     obsParams.setDimScale(dimName, dimSize, dimSize, dimSize);
-///                 }
-///                 dimSizes.insert(std::pair<std::string, Dimensions_t>(dimName, dimSize));
-///             }
-/// 
-///             // Add the maximum variable size to the ObsIo parmeters
-///             Dimensions_t maxVarSize = 0;
-///             for (std::size_t i = 0; i < writeVarConfigs.size(); ++i) {
-///                 std::vector<std::string> dimNames = writeVarConfigs[i].getStringVector("dims");
-///                 Dimensions_t varSize0 = dimSizes.at(dimNames[0]);
-///                 if (varSize0 > maxVarSize) {
-///                     maxVarSize = varSize0;
-///                 }
-///             }
-///             obsParams.setMaxVarSize(maxVarSize);
-/// 
-///             // Output constructor
-///             std::shared_ptr<ObsIo> obsIo =
-///                 ObsIoFactory::create(ObsIoActions::CREATE_FILE, ObsIoModes::CLOBBER, obsParams);
-/// 
-///             // Write contents of file
-///             frameWrite(obsIo, obsConfig);
-/// 
-///             // Check if all the variables got written into the file
-///             // Dimension scale variables
-///             std::vector<std::string> expectedDimList;
-///             for (size_t i = 0; i < writeDimConfigs.size(); ++i) {
-///                 expectedDimList.push_back(writeDimConfigs[i].getString("name"));
-///             }
-///             std::sort(expectedDimList.begin(), expectedDimList.end());
-///             std::vector<std::string> dimList = listDimVars(obsIo->obs_group_);
-///             for (size_t i = 0; i < dimList.size(); ++i) {
-///                 EXPECT_EQUAL(dimList[i], expectedDimList[i]);
-///             }
-/// 
-///             // Regular variables
-///             std::vector<std::string> expectedVarList;
-///             for (size_t i = 0; i < writeVarConfigs.size(); ++i) {
-///                 expectedVarList.push_back(writeVarConfigs[i].getString("name"));
-///             }
-///             std::sort(expectedVarList.begin(), expectedVarList.end());
-///             std::vector<std::string> varList = listVars(obsIo->obs_group_);
-///             for (size_t i = 0; i < varList.size(); ++i) {
-///                 EXPECT_EQUAL(varList[i], expectedVarList[i]);
-///             }
-///         }
-///     }
-/// }
+// -----------------------------------------------------------------------------
+void testWrite() {
+    const eckit::LocalConfiguration conf(::test::TestEnvironment::config());
+    std::vector<eckit::LocalConfiguration> confOspaces = conf.getSubConfigurations("observations");
+    util::DateTime bgn(::test::TestEnvironment::config().getString("window begin"));
+    util::DateTime end(::test::TestEnvironment::config().getString("window end"));
+
+    for (std::size_t i = 0; i < confOspaces.size(); ++i) {
+        eckit::LocalConfiguration obsConfig;
+        confOspaces[i].get("obs space", obsConfig);
+        oops::Log::trace() << "ObsIo testWrite config: " << i << ": " << obsConfig << std::endl;
+
+        ioda::ObsSpaceParameters obsParams(bgn, end, oops::mpi::world());
+        obsParams.deserialize(obsConfig);
+
+        if (obsParams.out_type() == ObsIoTypes::OBS_FILE) {
+            // Get dimensions and variables sub configurations
+            std::vector<eckit::LocalConfiguration> writeDimConfigs =
+                obsConfig.getSubConfigurations("test data.write dimensions");
+            std::vector<eckit::LocalConfiguration> writeVarConfigs =
+                obsConfig.getSubConfigurations("test data.write variables");
+
+            // Add the dimensions scales to the ObsIo parameters
+            std::map<std::string, Dimensions_t> dimSizes;
+            for (std::size_t i = 0; i < writeDimConfigs.size(); ++i) {
+                std::string dimName = writeDimConfigs[i].getString("name");
+                Dimensions_t dimSize = writeDimConfigs[i].getInt("size");
+                bool isUnlimited = writeDimConfigs[i].getBool("unlimited", false);
+
+                if (isUnlimited) {
+                    obsParams.setDimScale(dimName, dimSize, Unlimited, dimSize);
+                } else {
+                    obsParams.setDimScale(dimName, dimSize, dimSize, dimSize);
+                }
+                dimSizes.insert(std::pair<std::string, Dimensions_t>(dimName, dimSize));
+            }
+
+            // Add the maximum variable size to the ObsIo parmeters
+            Dimensions_t maxVarSize = 0;
+            for (std::size_t i = 0; i < writeVarConfigs.size(); ++i) {
+                std::vector<std::string> dimNames = writeVarConfigs[i].getStringVector("dims");
+                Dimensions_t varSize0 = dimSizes.at(dimNames[0]);
+                if (varSize0 > maxVarSize) {
+                    maxVarSize = varSize0;
+                }
+            }
+            obsParams.setMaxVarSize(maxVarSize);
+
+            // Output constructor
+            std::shared_ptr<ObsFrame> obsFrame =
+                ObsFrameFactory::create(ObsIoActions::CREATE_FILE,
+                                        ObsIoModes::CLOBBER, obsParams);
+
+            // Write contents of file
+            frameWrite(obsFrame, obsConfig);
+            obsFrame->resetVarList();
+            obsFrame->resetDimVarList();
+
+            // Check if all the variables got written into the file
+            // Dimension scale variables
+            std::vector<std::string> expectedDimList;
+            for (size_t i = 0; i < writeDimConfigs.size(); ++i) {
+                expectedDimList.push_back(writeDimConfigs[i].getString("name"));
+            }
+            std::sort(expectedDimList.begin(), expectedDimList.end());
+            std::vector<std::string> dimList = obsFrame->dimVarList();
+            for (size_t i = 0; i < expectedDimList.size(); ++i) {
+                EXPECT_EQUAL(dimList[i], expectedDimList[i]);
+            }
+
+            // Regular variables
+            std::vector<std::string> expectedVarList;
+            for (size_t i = 0; i < writeVarConfigs.size(); ++i) {
+                expectedVarList.push_back(writeVarConfigs[i].getString("name"));
+            }
+            std::sort(expectedVarList.begin(), expectedVarList.end());
+            std::vector<std::string> varList = obsFrame->varList();
+            for (size_t i = 0; i < expectedVarList.size(); ++i) {
+                EXPECT_EQUAL(varList[i], expectedVarList[i]);
+            }
+        }
+    }
+}
 
 // -----------------------------------------------------------------------------
 
@@ -416,8 +419,8 @@ class ObsFrame : public oops::Test {
             { testConstructor(); });
         ts.emplace_back(CASE("ioda/ObsIo/testRead")
             { testRead(); });
-//        ts.emplace_back(CASE("ioda/ObsIo/testWrite")
-//            { testWrite(); });
+        ts.emplace_back(CASE("ioda/ObsIo/testWrite")
+            { testWrite(); });
     }
 
     void clear() const override {}
@@ -428,4 +431,4 @@ class ObsFrame : public oops::Test {
 }  // namespace test
 }  // namespace ioda
 
-#endif  // TEST_IO_OBSIO_H_
+#endif  // TEST_IO_OBSFRAME_H_

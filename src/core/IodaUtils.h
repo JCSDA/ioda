@@ -93,7 +93,7 @@ namespace ioda {
 
   /// \brief set params for output file construction from test YAML configuration
   /// \details This routine is intended for use by the ObsIo and ObsFrame tests. It
-  /// relies on test confiruation "test data.write dimensions" and 
+  /// relies on test confiruation "test data.write dimensions" and
   /// "test data.write variables" accompanying an "obsdataout.obsfile" spec in the
   /// YAML configuration.
   /// \param obsConfig test YAML configuration for and ObsSpace

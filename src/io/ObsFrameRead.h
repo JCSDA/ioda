@@ -37,6 +37,12 @@ class ObsFrameRead : public ObsFrame, private util::ObjectCounter<ObsFrameRead> 
 
     ~ObsFrameRead();
 
+    /// \brief return list of indices indicating which locations were selected from ObsIo
+    std::vector<std::size_t> index() const override {return indx_;}
+
+    /// \brief return list of record numbers from ObsIo
+    std::vector<std::size_t> recnums() const override {return recnums_;}
+
     /// \brief initialize for walking through the frames
     void frameInit() override;
 

@@ -57,6 +57,13 @@ class ObsFrameWrite : public ObsFrame, private util::ObjectCounter<ObsFrameWrite
     /// \param var variable
     Dimensions_t frameCount(const Variable & var) override;
 
+    /// \brief set up frontend and backend selection objects for the given variable
+    /// \param var ObsGroup variable
+    /// \param feSelect Front end selection object
+    /// \param beSelect Back end selection object
+    void createFrameSelection(const Variable & var, Selection & feSelect,
+                              Selection & beSelect) override;
+
  private:
     //------------------ private data members ------------------------------
 
@@ -64,7 +71,6 @@ class ObsFrameWrite : public ObsFrame, private util::ObjectCounter<ObsFrameWrite
     /// \brief print routine for oops::Printable base class
     /// \param ostream output stream
     void print(std::ostream & os) const override;
-
 };
 
 }  // namespace ioda

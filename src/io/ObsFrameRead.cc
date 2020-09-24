@@ -35,6 +35,7 @@ ObsFrameRead::~ObsFrameRead() {}
 //------------------------------------------------------------------------------------
 void ObsFrameRead::frameInit() {
     frame_start_ = 0;
+    next_rec_num_ = 0;
     max_var_size_ = obs_io_->maxVarSize();
     nlocs_ = frameCount(obs_io_->vars().open("nlocs"));
     adjusted_nlocs_frame_start_ = 0;
@@ -206,8 +207,9 @@ void ObsFrameRead::genFrameLocationsTimeWindow(std::vector<Dimensions_t> & locIn
     std::string dtVarName = std::string("time@MetaData");
     if (!this->obs_io_->vars().exists(dtVarName)) {
         std::string ErrMsg =
-            std::string("ERROR: ObsFrameRead::genFrameLocationsTimeWindow:: date time information ") +
-            std::string("does not exist, cannot perform time window filtering");
+            std::string("ERROR: ObsFrameRead::genFrameLocationsTimeWindow: ") +
+            std::string("date time information does not exist, ") +
+            std::string("cannot perform time window filtering");
         ABORT(ErrMsg);
     }
 

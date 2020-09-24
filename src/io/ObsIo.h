@@ -96,7 +96,6 @@ class ObsIo : public util::Printable {
     /// \brief print() for oops::Printable base class
     /// \param ostream output stream
     virtual void print(std::ostream & os) const = 0;
-
 };
 
 }  // namespace ioda
