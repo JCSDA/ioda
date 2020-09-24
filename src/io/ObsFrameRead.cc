@@ -201,11 +201,16 @@ void ObsFrameRead::genFrameLocationsAll(std::vector<Dimensions_t> & locIndex,
 void ObsFrameRead::genFrameLocationsTimeWindow(std::vector<Dimensions_t> & locIndex,
                                                std::vector<Dimensions_t> & frameIndex) {
     Variable nlocsVar = obs_io_->vars().open("nlocs");
-    Dimensions_t locSize = this->frameCount(nlocsVar);
+    Dimensions_t locCount = this->frameCount(nlocsVar);
+    Dimensions_t locStart = this->frameStart();
 
-    // TODO(srh) prefer datetime@Metadata once fixed length strings are available
-    std::string dtVarName = std::string("time@MetaData");
-    if (!this->obs_io_->vars().exists(dtVarName)) {
+    // Prefer datetime@Metadata. Eventually "time@MetaData" will be obsoleted.
+    std::string dtVarName;
+    if (this->obs_io_->vars().exists("datetime@MetaData")) {
+        dtVarName = std::string("datetime@MetaData");
+    } else if (this->obs_io_->vars().exists("time@MetaData")) {
+        dtVarName = std::string("time@MetaData");
+    } else {
         std::string ErrMsg =
             std::string("ERROR: ObsFrameRead::genFrameLocationsTimeWindow: ") +
             std::string("date time information does not exist, ") +
@@ -213,27 +218,35 @@ void ObsFrameRead::genFrameLocationsTimeWindow(std::vector<Dimensions_t> & locIn
         ABORT(ErrMsg);
     }
 
-    Variable dtVar = this->obs_io_->vars().open(dtVarName);
-    std::vector<Dimensions_t> counts(1, locSize);
-    std::vector<Dimensions_t> feStarts(1, 0);
-    std::vector<Dimensions_t> beStarts(1, this->frameStart());
-    std::vector<float> dtValues;
-    dtVar.read<float>(dtValues,
-        Selection().extent(counts)
-            .select({ SelectionOperator::SET, feStarts, counts }),
-        Selection()
-            .select({ SelectionOperator::SET, beStarts, counts }));
-    dtValues.resize(locSize);
-
     // convert ref, offset time to datetime objects
-    int refDtime;
-    this->obs_io_->atts().open("date_time").read<int>(refDtime);
-    std::vector<util::DateTime> dtimeVals = convertRefOffsetToDtime(refDtime, dtValues);
+    Variable dtVar = this->obs_io_->vars().open(dtVarName);
+    std::vector<util::DateTime> dtimeVals;
+    if (dtVarName == "datetime@MetaData") {
+        std::vector<std::string> dtValues;
+        getReadFrameStringVar(dtVar, locStart, locCount, dtValues);
+        dtValues.resize(locCount);
+
+        dtimeVals = convertDtStringsToDtime(dtValues);
+    } else {
+        std::vector<Dimensions_t> counts(1, locCount);
+        std::vector<Dimensions_t> feStarts(1, 0);
+        std::vector<Dimensions_t> beStarts(1, locStart);
+
+        std::vector<float> dtValues;
+        dtVar.read<float>(dtValues,
+            Selection().extent(counts).select({ SelectionOperator::SET, feStarts, counts }),
+            Selection().select({ SelectionOperator::SET, beStarts, counts }));
+        dtValues.resize(locCount);
+
+        int refDtime;
+        this->obs_io_->atts().open("date_time").read<int>(refDtime);
+        dtimeVals = convertRefOffsetToDtime(refDtime, dtValues);
+    }
 
     // Keep all locations that fall inside the timing window
-    for (std::size_t i = 0; i < locSize; ++i) {
+    for (std::size_t i = 0; i < locCount; ++i) {
       if (this->insideTimingWindow(dtimeVals[i])) {
-        locIndex.push_back(this->frameStart() + i);
+        locIndex.push_back(locStart + i);
         frameIndex.push_back(i);
       }
     }

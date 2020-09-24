@@ -82,6 +82,23 @@ namespace ioda {
   std::vector<util::DateTime> convertRefOffsetToDtime(const int refIntDtime,
                                                       const std::vector<float> & timeOffsets);
 
+  /// \brief convert datetime strings to DateTime object
+  /// \param dtStrings datetime strings
+  std::vector<util::DateTime> convertDtStringsToDtime(const std::vector<std::string> & dtStrings);
+
+  /// \brief read string variable from an ObsReadFrame into a vector of strings
+  /// \details The incoming variable could be a vector of strings, or a 2D array of
+  /// string elements (strings of length 1). This routine will figure out which it is,
+  /// read in the variable and if needed, convert to a vector of strings
+  /// \param stringVar variable to be read
+  /// \param frameCount size of section to read
+  /// \param frontendSelect selection object for stringVector
+  /// \param backendSelect selection object for ObsIo variable
+  /// \param stringVector output string Vector
+  void getReadFrameStringVar(const Variable & stringVar, const Dimensions_t frameStart,
+                             const Dimensions_t frameCount,
+                             std::vector<std::string> & stringVector);
+
   /// \brief convert 2D string array to a vector of strings
   /// \details The incoming 2D strings array is passed in through the arrayData argument
   /// as a flattened vector. The arrayShape arugument shows how to un-flatten the arrayData.

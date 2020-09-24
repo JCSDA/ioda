@@ -57,8 +57,9 @@ void testFrameRead(std::shared_ptr<ObsFrame> & obsFrame, eckit::LocalConfigurati
     dist.reset(distFactory->createDistribution(obsParams.comm(), "RoundRobin"));
     int iframe = 0;
     for (obsFrame->frameInit(); obsFrame->frameAvailable(); obsFrame->frameNext()) {
+        Dimensions_t frameStart = obsFrame->frameStart();
         oops::Log::debug() << "testRead: Frame number: " << iframe << std::endl
-            << "    frameStart: " << obsFrame->frameStart() << std::endl;
+            << "    frameStart: " << frameStart << std::endl;
 
         // generate the selection indices for variabels dimensioned by nlocs
         obsFrame->genFrameIndexRecNums(dist);
@@ -99,17 +100,7 @@ void testFrameRead(std::shared_ptr<ObsFrame> & obsFrame, eckit::LocalConfigurati
                    std::vector<std::string> expectedVarValue0 =
                        readVarConfigs[j].getStringVector("value0");
                    std::vector<std::string> varValues(frameCount, "");
-
-                   Dimensions varDims = var.getDimensions();
-                   if (varDims.dimensionality > 1) {
-                       std::vector<Dimensions_t> varShape = varDims.dimsCur;
-                       varShape[0] = frameCount;
-                       std::vector<std::string> stringArray =
-                           var.readAsVector<std::string>(frontendSelect, backendSelect);
-                       varValues = StringArrayToStringVector(stringArray, varShape);
-                   } else {
-                       var.read<std::string>(varValues, frontendSelect, backendSelect);
-                   }
+                   getReadFrameStringVar(var, frameStart, frameCount, varValues);
                    EXPECT_EQUAL(varValues[0], expectedVarValue0[iframe]);
                }
            }

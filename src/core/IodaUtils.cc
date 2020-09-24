@@ -218,6 +218,18 @@ bool varIsDimScale(const Group & group, const std::string & varName) {
 }
 
 //------------------------------------------------------------------------------------
+std::vector<util::DateTime> convertDtStringsToDtime(const std::vector<std::string> & dtStrings) {
+    // Convert ISO 8601 strings directly to DateTime objects
+    std::size_t dtimeSize = dtStrings.size();
+    std::vector<util::DateTime> dateTimeValues(dtimeSize);
+    for (std::size_t i = 0; i < dtimeSize; ++i) {
+        util::DateTime dateTime(dtStrings[i]);
+        dateTimeValues[i] = dateTime;
+    }
+    return dateTimeValues;
+}
+
+//------------------------------------------------------------------------------------
 std::vector<util::DateTime> convertRefOffsetToDtime(const int refIntDtime,
                                                     const std::vector<float> & timeOffsets) {
     // convert refDtime to a DateTime object
@@ -238,6 +250,34 @@ std::vector<util::DateTime> convertRefOffsetToDtime(const int refIntDtime,
         dateTimeValues[i] = dateTime;
     }
     return dateTimeValues;
+}
+
+//------------------------------------------------------------------------------------
+void getReadFrameStringVar(const Variable & stringVar, const Dimensions_t frameStart,
+                           const Dimensions_t frameCount,
+                           std::vector<std::string> & stringVector) {
+   // Generate the selection objects
+   Dimensions varDims = stringVar.getDimensions();
+   std::vector<Dimensions_t> counts = varDims.dimsCur;
+   counts[0] = frameCount;
+   std::vector<Dimensions_t> feStarts(counts.size(), 0);
+   std::vector<Dimensions_t> beStarts(counts.size(), 0);
+   beStarts[0] = frameStart;
+
+   Selection feSelect;
+   feSelect.extent(counts).select({ SelectionOperator::SET, feStarts, counts });
+   Selection beSelect;
+   beSelect.select({ SelectionOperator::SET, beStarts, counts });
+
+   if (varDims.dimensionality > 1) {
+       std::vector<Dimensions_t> varShape = varDims.dimsCur;
+       varShape[0] = frameCount;
+       std::vector<std::string> stringArray =
+           stringVar.readAsVector<std::string>(feSelect, beSelect);
+       stringVector = StringArrayToStringVector(stringArray, varShape);
+   } else {
+       stringVar.read<std::string>(stringVector, feSelect, beSelect);
+   }
 }
 
 //------------------------------------------------------------------------------------
