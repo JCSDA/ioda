@@ -64,6 +64,12 @@ class ObsFrameRead : public ObsFrame, private util::ObjectCounter<ObsFrameRead> 
     /// \param var variable
     Dimensions_t frameCount(const Variable & var) override;
 
+    /// \brief return adjusted nlocs frame start
+    Dimensions_t adjNlocsFrameStart() const override {return adjusted_nlocs_frame_start_;}
+
+    /// \brief return adjusted nlocs frame count
+    Dimensions_t adjNlocsFrameCount() const override {return adjusted_nlocs_frame_count_;}
+
     /// \brief generate frame indices and corresponding record numbers
     /// \details This method generates a list of indices with their corresponding
     ///  record numbers, where the indices denote which locations are to be

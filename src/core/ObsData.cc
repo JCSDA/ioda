@@ -31,7 +31,7 @@
 #include "oops/util/stringFunctions.h"
 
 #include "ioda/distribution/DistributionFactory.h"
-//#include "ioda/io/ObsIoFactory.h"
+#include "ioda/io/ObsFrameFactory.h"
 #include "ioda/Variables/Variable.h"
 
 #include "atlas/util/Earth.h"
@@ -57,34 +57,35 @@ ObsData::ObsData(const eckit::Configuration & config, const eckit::mpi::Comm & c
     std::unique_ptr<DistributionFactory> distFactory;
     dist_.reset(distFactory->createDistribution(this->comm(), this->distname()));
 
-///     // Open the source (ObsIo) of the data for initializing the obs_group_ (ObsGroup)
-///     std::shared_ptr<ObsIo> obsIo;
-///     if (obs_params_.in_type() == ObsIoTypes::OBS_FILE) {
-///         obsIo = ObsIoFactory::create(ObsIoActions::OPEN_FILE, ObsIoModes::READ_ONLY,
-///                                      obs_params_);
-///     } else if ((obs_params_.in_type() == ObsIoTypes::GENERATOR_RANDOM) ||
-///                (obs_params_.in_type() == ObsIoTypes::GENERATOR_LIST)) {
-///         obsIo = ObsIoFactory::create(ObsIoActions::CREATE_GENERATOR, ObsIoModes::READ_ONLY,
-///                                      obs_params_);
-///     } else {
-///       // Error - must have one of obsdatain or generate
-///       std::string ErrorMsg =
-///           std::string("ObsData::ObsData: Must use one of 'obsdatain' or 'generate' ");
-///           std::string(" in the YAML configuration.");
-///       ABORT(ErrorMsg);
-///     }
-/// 
-///     createObsGroupFromObsIo(obsIo);
-///     initFromObsSource(obsIo);
-/// 
-///     gnlocs_ = obsIo->nlocs();
-/// 
-///     if (this->obs_sort_var() != "") {
-///       BuildSortedObsGroups();
-///     }
+    // Open the source (ObsFrame) of the data for initializing the obs_group_ (ObsGroup)
+    std::shared_ptr<ObsFrame> obsFrame;
+    if (obs_params_.in_type() == ObsIoTypes::OBS_FILE) {
+        obsFrame = ObsFrameFactory::create(ObsIoActions::OPEN_FILE,
+                                           ObsIoModes::READ_ONLY, obs_params_);
+    } else if ((obs_params_.in_type() == ObsIoTypes::GENERATOR_RANDOM) ||
+               (obs_params_.in_type() == ObsIoTypes::GENERATOR_LIST)) {
+        obsFrame = ObsFrameFactory::create(ObsIoActions::CREATE_GENERATOR,
+                                           ObsIoModes::READ_ONLY, obs_params_);
+    } else {
+      // Error - must have one of obsdatain or generate
+      std::string ErrorMsg =
+          std::string("ObsData::ObsData: Must use one of 'obsdatain' or 'generate' ");
+          std::string(" in the YAML configuration.");
+      ABORT(ErrorMsg);
+    }
+
+    createObsGroupFromObsFrame(obsFrame);
+    initFromObsSource(obsFrame);
+
+    gnlocs_ = obsFrame->ioNumLocs();
+
+    if (this->obs_sort_var() != "") {
+      BuildSortedObsGroups();
+    }
 
     oops::Log::trace() << "ObsData::ObsData contructed name = " << obsname() << std::endl;
 }
+
 // -----------------------------------------------------------------------------
 /// \details Destructor for an ObsData object. This destructor will clean up the ObsData
 ///          object and optionally write out the contents of the obs container into
@@ -325,95 +326,95 @@ void ObsData::print(std::ostream & os) const {
     os << "ObsData::print not implemented";
 }
 
-/// // -----------------------------------------------------------------------------
-/// void ObsData::createObsGroupFromObsIo(const std::shared_ptr<ObsIo> & obsIo) {
-///     // Create the dimension specs for obs_group_
-///     NewDimensionScales_t newDims;
-///     for (auto & dimName : listDimVars(obsIo->obs_group_)) {
-///         Variable var = obsIo->obs_group_.vars.open(dimName);
-///         Dimensions_t dimSize = var.getDimensions().dimsCur[0];
-///         Dimensions_t maxDimSize = dimSize;
-///         Dimensions_t chunkSize = dimSize;
-/// 
-///         // If the dimension is nlocs, we want to avoid allocating the file's entire
-///         // size because we could be taking a subset of the locations (MPI distribution,
-///         // removal of obs outside the DA window).
-///         //
-///         // Make nlocs unlimited size, and start with a small size. Then when writing into
-///         // the ObsGroup backend, resize along nlocs and put in the new data.
-///         if (dimName == "nlocs") {
-///             dimSize = 10;
-///             maxDimSize = Unlimited;
-///             chunkSize = 10;
-///         }
-///         newDims.push_back(std::make_shared<ioda::NewDimensionScale<int>>(
-///             dimName, dimSize, maxDimSize, chunkSize));
-///     }
-/// 
-///     // Create the backend for obs_group_
-///     Engines::BackendNames backendName = Engines::BackendNames::ObsStore;
-///     Engines::BackendCreationParameters backendParams;
-///     Group backend = constructBackend(backendName, backendParams);
-/// 
-///     // Create the ObsGroup and attach the backend.
-///     obs_group_ = ObsGroup::generate(backend, newDims);
-/// }
-/// 
-/// // -----------------------------------------------------------------------------
-/// void ObsData::initFromObsSource(const std::shared_ptr<ObsIo> & obsIo) {
-///     // Walk through the frames and copy the data to the obs_group_ storage
-///     std::vector<std::string> varList = listVars(obsIo->obs_group_);
-/// 
-///     // Create variables in obs_group_ based on those in the obs source
-///     createVariablesFromObsSource(obsIo, varList);
-/// 
-///     Variable nlocsVar = obsIo->obs_group_.vars.open("nlocs");
-///     int iframe = 1;
-///     for (obsIo->frameInit(); obsIo->frameAvailable(); obsIo->frameNext()) {
-///         Dimensions_t frameStart = obsIo->frameStart();
-/// 
-///         // Generate the indices (for selection) for variables dimensioned by nlocs
-///         obsIo->genFrameIndexRecNums(dist_);
-/// 
-///         // Resize the nlocs dimesion according to the adjusted frame size produced
-///         // genFrameIndexRecNums. The second argument is to tell resizeNlocs whether
-///         // to append or reset to the size given by the first arguemnt.
-///         resizeNlocs(obsIo->adjNlocsFrameCount(), (iframe > 1));
-/// 
-///         for (auto & varName : varList) {
-///             Variable var = obsIo->obs_group_.vars.open(varName);
-///             Dimensions_t beFrameStart;
-///             if (var.isDimensionScaleAttached(0, nlocsVar)) {
-///                 beFrameStart = obsIo->adjNlocsFrameStart();
-///             } else {
-///                 beFrameStart = frameStart;
-///             }
-///             Dimensions_t frameCount = obsIo->frameCount(var);
-///             if (frameCount > 0) {
-///                 // Transfer the variable to the in-memory storage
-///                 if (var.isA<int>()) {
-///                     std::vector<int> varValues;
-///                     readObsSource<int>(obsIo, varName, varValues);
-///                     storeVar<int>(varName, varValues, beFrameStart, frameCount);
-///                 } else if (var.isA<float>()) {
-///                     std::vector<float> varValues;
-///                     readObsSource<float>(obsIo, varName, varValues);
-///                     storeVar<float>(varName, varValues, beFrameStart, frameCount);
-///                 } else if (var.isA<std::string>()) {
-///                     std::vector<std::string> varValues;
-///                     readObsSource<std::string>(obsIo, varName, varValues);
-///                     storeVar<std::string>(varName, varValues, beFrameStart, frameCount);
-///                 }
-///             }
-///         }
-/// 
-///         iframe++;
-///     }
-/// 
-///     nrecs_ = obsIo->nrecs();
-///     indx_ = obsIo->index();
-///     recnums_ = obsIo->recnums();
-/// }
+// -----------------------------------------------------------------------------
+void ObsData::createObsGroupFromObsFrame(const std::shared_ptr<ObsFrame> & obsFrame) {
+    // Create the dimension specs for obs_group_
+    NewDimensionScales_t newDims;
+    for (auto & dimName : obsFrame->ioDimVarList()) {
+        Variable var = obsFrame->vars().open(dimName);
+        Dimensions_t dimSize = var.getDimensions().dimsCur[0];
+        Dimensions_t maxDimSize = dimSize;
+        Dimensions_t chunkSize = dimSize;
+
+        // If the dimension is nlocs, we want to avoid allocating the file's entire
+        // size because we could be taking a subset of the locations (MPI distribution,
+        // removal of obs outside the DA window).
+        //
+        // Make nlocs unlimited size, and start with a small size. Then when writing into
+        // the ObsGroup backend, resize along nlocs and put in the new data.
+        if (dimName == "nlocs") {
+            dimSize = 10;
+            maxDimSize = Unlimited;
+            chunkSize = 10;
+        }
+        newDims.push_back(std::make_shared<ioda::NewDimensionScale<int>>(
+            dimName, dimSize, maxDimSize, chunkSize));
+    }
+
+    // Create the backend for obs_group_
+    Engines::BackendNames backendName = Engines::BackendNames::ObsStore;
+    Engines::BackendCreationParameters backendParams;
+    Group backend = constructBackend(backendName, backendParams);
+
+    // Create the ObsGroup and attach the backend.
+    obs_group_ = ObsGroup::generate(backend, newDims);
+}
+
+// -----------------------------------------------------------------------------
+void ObsData::initFromObsSource(const std::shared_ptr<ObsFrame> & obsFrame) {
+    // Walk through the frames and copy the data to the obs_group_ storage
+    std::vector<std::string> varList = obsFrame->ioVarList();
+
+    // Create variables in obs_group_ based on those in the obs source
+    createVariablesFromObsSource(obsFrame, varList);
+
+    Variable nlocsVar = obsFrame->vars().open("nlocs");
+    int iframe = 1;
+    for (obsFrame->frameInit(); obsFrame->frameAvailable(); obsFrame->frameNext()) {
+        Dimensions_t frameStart = obsFrame->frameStart();
+
+        // Generate the indices (for selection) for variables dimensioned by nlocs
+        obsFrame->genFrameIndexRecNums(dist_);
+
+        // Resize the nlocs dimesion according to the adjusted frame size produced
+        // genFrameIndexRecNums. The second argument is to tell resizeNlocs whether
+        // to append or reset to the size given by the first arguemnt.
+        resizeNlocs(obsFrame->adjNlocsFrameCount(), (iframe > 1));
+
+        for (auto & varName : varList) {
+            Variable var = obsFrame->vars().open(varName);
+            Dimensions_t beFrameStart;
+            if (var.isDimensionScaleAttached(0, nlocsVar)) {
+                beFrameStart = obsFrame->adjNlocsFrameStart();
+            } else {
+                beFrameStart = frameStart;
+            }
+            Dimensions_t frameCount = obsFrame->frameCount(var);
+            if (frameCount > 0) {
+                // Transfer the variable to the in-memory storage
+                if (var.isA<int>()) {
+                    std::vector<int> varValues;
+                    readObsSource<int>(obsFrame, varName, varValues);
+                    storeVar<int>(varName, varValues, beFrameStart, frameCount);
+                } else if (var.isA<float>()) {
+                    std::vector<float> varValues;
+                    readObsSource<float>(obsFrame, varName, varValues);
+                    storeVar<float>(varName, varValues, beFrameStart, frameCount);
+                } else if (var.isA<std::string>()) {
+                    std::vector<std::string> varValues;
+                    readObsSource<std::string>(obsFrame, varName, varValues);
+                    storeVar<std::string>(varName, varValues, beFrameStart, frameCount);
+                }
+            }
+        }
+
+        iframe++;
+    }
+
+    nrecs_ = obsFrame->frameNumLocs();
+    indx_ = obsFrame->index();
+    recnums_ = obsFrame->recnums();
+}
 
 // -----------------------------------------------------------------------------
 void ObsData::resizeNlocs(const Dimensions_t nlocsSize, const bool append) {
@@ -428,66 +429,58 @@ void ObsData::resizeNlocs(const Dimensions_t nlocsSize, const bool append) {
         { std::pair<Variable, Dimensions_t>(nlocsVar, nlocsResize) });
 }
 
-/// // -----------------------------------------------------------------------------
-/// bool ObsData::isObsSourceVarDimByNlocs(const std::shared_ptr<ObsIo> & obsIo,
-///                                        const std::string & varName) {
-///     Variable var = obsIo->obs_group_.vars.open(varName);
-///     Variable nlocsVar = obsIo->obs_group_.vars.open("nlocs");
-///     return var.isDimensionScaleAttached(0, nlocsVar);
-/// }
-/// 
-/// // -----------------------------------------------------------------------------
-/// std::vector<Variable> ObsData::setVarDimsFromObsSource(const std::shared_ptr<ObsIo> & obsIo,
-///                                                        const std::string & varName) {
-///     // Get a list of dimension variables from the source (obsIo)
-///     std::map<std::string, Variable> srcDimVars;
-///     for (auto & dimVarName : listDimVars(obsIo->obs_group_)) {
-///         Variable dimVar = obsIo->obs_group_.vars.open(dimVarName);
-///         srcDimVars.insert(std::pair<std::string, Variable>(dimVarName, dimVar));
-///     }
-/// 
-///     // find which dimensions are attached to the source variable
-///     Variable sourceVar = obsIo->obs_group_.vars.open(varName);
-///     Dimensions sourceDims = sourceVar.getDimensions();
-///     std::vector<std::string> dimNames;
-///     for (std::size_t i = 0; i < sourceDims.dimensionality; ++i) {
-///         for (auto & dimVar : srcDimVars) {
-///             if (sourceVar.isDimensionScaleAttached(i, dimVar.second)) {
-///                 dimNames.push_back(dimVar.first);
-///             }
-///         }
-///     }
-/// 
-///     // convert the list of names to a list of variables
-///     std::vector<Variable> destDimVars;
-///     for (auto & dimName : dimNames) {
-///         destDimVars.push_back(obs_group_.vars.open(dimName));
-///     }
-/// 
-///     return destDimVars;
-/// }
-/// 
-/// // -----------------------------------------------------------------------------
-/// void ObsData::createVariablesFromObsSource(const std::shared_ptr<ObsIo> & obsIo,
-///                                            const std::vector<std::string> & varList) {
-///     for (std::size_t i = 0; i < varList.size(); ++i) {
-///         std::string varName = varList[i];
-///         Variable var = obsIo->obs_group_.vars.open(varName);
-///         if (var.isA<int>()) {
-///             createVarFromObsSource<int>(obsIo, varName);
-///         } else if (var.isA<float>()) {
-///             createVarFromObsSource<float>(obsIo, varName);
-///         } else if (var.isA<std::string>()) {
-///             createVarFromObsSource<std::string>(obsIo, varName);
-///         } else {
-///             if (this->comm().rank() == 0) {
-///                 oops::Log::warning() << "WARNING: ObsData::createVariablesFromObsSpace: "
-///                     << "Skipping variable due to an unexpected data type for variable: "
-///                     << varName << std::endl;
-///             }
-///         }
-///     }
-/// }
+// -----------------------------------------------------------------------------
+std::vector<Variable> ObsData::setVarDimsFromObsSource(
+    const std::shared_ptr<ObsFrame> & obsFrame, const std::string & varName) {
+    // Get a list of dimension variables from the source (obsIo)
+    std::map<std::string, Variable> srcDimVars;
+    for (auto & dimVarName : obsFrame->ioDimVarList()) {
+        Variable dimVar = obsFrame->vars().open(dimVarName);
+        srcDimVars.insert(std::pair<std::string, Variable>(dimVarName, dimVar));
+    }
+
+    // find which dimensions are attached to the source variable
+    Variable sourceVar = obsFrame->vars().open(varName);
+    Dimensions sourceDims = sourceVar.getDimensions();
+    std::vector<std::string> dimNames;
+    for (std::size_t i = 0; i < sourceDims.dimensionality; ++i) {
+        for (auto & dimVar : srcDimVars) {
+            if (sourceVar.isDimensionScaleAttached(i, dimVar.second)) {
+                dimNames.push_back(dimVar.first);
+            }
+        }
+    }
+
+    // convert the list of names to a list of variables
+    std::vector<Variable> destDimVars;
+    for (auto & dimName : dimNames) {
+        destDimVars.push_back(obs_group_.vars.open(dimName));
+    }
+
+    return destDimVars;
+}
+
+// -----------------------------------------------------------------------------
+void ObsData::createVariablesFromObsSource(const std::shared_ptr<ObsFrame> & obsFrame,
+                                           const std::vector<std::string> & varList) {
+    for (std::size_t i = 0; i < varList.size(); ++i) {
+        std::string varName = varList[i];
+        Variable var = obsFrame->vars().open(varName);
+        if (var.isA<int>()) {
+            createVarFromObsSource<int>(obsFrame, varName);
+        } else if (var.isA<float>()) {
+            createVarFromObsSource<float>(obsFrame, varName);
+        } else if (var.isA<std::string>()) {
+            createVarFromObsSource<std::string>(obsFrame, varName);
+        } else {
+            if (this->comm().rank() == 0) {
+                oops::Log::warning() << "WARNING: ObsData::createVariablesFromObsSpace: "
+                    << "Skipping variable due to an unexpected data type for variable: "
+                    << varName << std::endl;
+            }
+        }
+    }
+}
 
 
 

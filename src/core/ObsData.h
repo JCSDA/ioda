@@ -30,7 +30,7 @@
 #include "ioda/core/IodaUtils.h"
 #include "ioda/distribution/Distribution.h"
 #include "ioda/Engines/Factory.h"
-//#include "ioda/io/ObsIo.h"
+#include "ioda/io/ObsFrame.h"
 #include "ioda/Misc/Dimensions.h"
 #include "ioda/ObsGroup.h"
 #include "ioda/ObsSpaceParameters.h"
@@ -269,71 +269,65 @@ namespace ioda {
         /// \param os output stream
         void print(std::ostream & os) const;
 
-///         // Initialize the database from a source (ObsIo ojbect)
-///         /// \brief create the in-memory obs_group_ (ObsGroup) object
-///         /// \param obsIo obs source object
-///         void createObsGroupFromObsIo(const std::shared_ptr<ObsIo> & obsIo);
-/// 
-///         /// \brief initialize the in-memory obs_group_ (ObsGroup) object from the ObsIo source
-///         /// \param obsIo obs source object
-///         void initFromObsSource(const std::shared_ptr<ObsIo> & obsIo);
+        // Initialize the database from a source (ObsFrame ojbect)
+        /// \brief create the in-memory obs_group_ (ObsGroup) object
+        /// \param obsFrame obs source object
+        void createObsGroupFromObsFrame(const std::shared_ptr<ObsFrame> & obsFrame);
+
+        /// \brief initialize the in-memory obs_group_ (ObsGroup) object from the ObsIo source
+        /// \param obsIo obs source object
+        void initFromObsSource(const std::shared_ptr<ObsFrame> & obsFrame);
 
         /// \brief resize along nlocs dimension
         /// \param nlocsSize new size to either append or reset
         /// \param append when true append nlocsSize to current size, otherwise reset to nlocsSize
         void resizeNlocs(const Dimensions_t nlocsSize, const bool append);
 
-///         /// \brief true if obs source variable is dimensioned along nlocs
-///         /// \param obsIo obs source object
-///         /// \param varName obs source variable name
-///         bool isObsSourceVarDimByNlocs(const std::shared_ptr<ObsIo> & obsIo,
-///                                       const std::string & varName);
-/// 
-///         /// \brief read in values for variable from obs source
-///         /// \param obsIo obs source object
-///         /// \param varName Name of variable in obs source object
-///         /// \param varValues values for variable
-///         template<typename VarType>
-///         void readObsSource(const std::shared_ptr<ObsIo> & obsIo, const std::string & varName,
-///                            std::vector<VarType> & varValues) {
-///             Variable var = obsIo->obs_group_.vars.open(varName);
-/// 
-///             // Form the selection objects for this variable
-///             Selection frontendSelection;
-///             Selection backendSelection;
-///             obsIo->createFrameSelection(var, frontendSelection, backendSelection);
-/// 
-///             // Read the variable
-///             var.read<VarType>(varValues, frontendSelection, backendSelection);
-/// 
-///             // Replace source fill values with corresponding missing marks
-///             Variable sourceVar = obsIo->obs_group_.vars.open(varName);
-///             if (sourceVar.hasFillValue()) {
-///                 detail::FillValueData_t sourceFvData = sourceVar.getFillValue();
-///                 VarType sourceFillValue = detail::getFillValue<VarType>(sourceFvData);
-///                 VarType varFillValue = this->getFillValue<VarType>();
-///                 for (auto i = varValues.begin(); i != varValues.end(); ++i) {
-///                     if (*i == sourceFillValue) { *i = varFillValue; }
-///                 }
-///             }
-///         }
-/// 
-///         /// \brief create a variable in the obs_group_ object based on the obs source
-///         /// \param obsIo obs source object
-///         /// \param varName Name of obs_group_ variable for obs_group_ object
-///         template<typename VarType>
-///         Variable createVarFromObsSource(const std::shared_ptr<ObsIo> & obsIo,
-///                                         const std::string & varName) {
-///             // Creation parameters. Enable chunking, compression, and set a fill
-///             // value based on the built in missing values marks.
-///             VariableCreationParameters params;
-///             params.chunk = true;
-///             params.compressWithGZIP();
-///             params.setFillValue<VarType>(this->getFillValue<VarType>());
-/// 
-///             std::vector<Variable> varDims = this->setVarDimsFromObsSource(obsIo, varName);
-///             return obs_group_.vars.createWithScales<VarType>(varName, varDims, params);
-///         }
+        /// \brief read in values for variable from obs source
+        /// \param obsIo obs source object
+        /// \param varName Name of variable in obs source object
+        /// \param varValues values for variable
+        template<typename VarType>
+        void readObsSource(const std::shared_ptr<ObsFrame> & obsFrame,
+            const std::string & varName, std::vector<VarType> & varValues) {
+            Variable var = obsFrame->vars().open(varName);
+
+            // Form the selection objects for this variable
+            Selection frontendSelection;
+            Selection backendSelection;
+            obsFrame->createFrameSelection(var, frontendSelection, backendSelection);
+
+            // Read the variable
+            var.read<VarType>(varValues, frontendSelection, backendSelection);
+
+            // Replace source fill values with corresponding missing marks
+            Variable sourceVar = obsFrame->vars().open(varName);
+            if (sourceVar.hasFillValue()) {
+                detail::FillValueData_t sourceFvData = sourceVar.getFillValue();
+                VarType sourceFillValue = detail::getFillValue<VarType>(sourceFvData);
+                VarType varFillValue = this->getFillValue<VarType>();
+                for (auto i = varValues.begin(); i != varValues.end(); ++i) {
+                    if (*i == sourceFillValue) { *i = varFillValue; }
+                }
+            }
+        }
+
+        /// \brief create a variable in the obs_group_ object based on the obs source
+        /// \param obsIo obs source object
+        /// \param varName Name of obs_group_ variable for obs_group_ object
+        template<typename VarType>
+        Variable createVarFromObsSource(const std::shared_ptr<ObsFrame> & obsFrame,
+                                        const std::string & varName) {
+            // Creation parameters. Enable chunking, compression, and set a fill
+            // value based on the built in missing values marks.
+            VariableCreationParameters params;
+            params.chunk = true;
+            params.compressWithGZIP();
+            params.setFillValue<VarType>(this->getFillValue<VarType>());
+
+            std::vector<Variable> varDims = this->setVarDimsFromObsSource(obsFrame, varName);
+            return obs_group_.vars.createWithScales<VarType>(varName, varDims, params);
+        }
 
         /// \brief store a variable in the obs_group_ object
         /// \param obsIo obs source object
@@ -376,17 +370,17 @@ namespace ioda {
             return std::string("_fill_");
         }
 
-///         /// \brief set the vector of dimension variables for the obs_group_ variable creation
-///         /// \param obsIo obs source object
-///         /// \param varName Name of obs_group_ variable for obs_group_ object
-///         std::vector<Variable> setVarDimsFromObsSource(const std::shared_ptr<ObsIo> & obsIo,
-///                                                       const std::string & varName);
-/// 
-///         /// \brief create set of variables in the obs_group_ object based on the obs source
-///         /// \param obsIo obs source object
-///         /// \param varList List of obs_group_ variable names for obs_group_ object
-///         void createVariablesFromObsSource(const std::shared_ptr<ObsIo> & obsIo,
-///                                           const std::vector<std::string> & varList);
+        /// \brief set the vector of dimension variables for the obs_group_ variable creation
+        /// \param obsIo obs source object
+        /// \param varName Name of obs_group_ variable for obs_group_ object
+        std::vector<Variable> setVarDimsFromObsSource(
+            const std::shared_ptr<ObsFrame> & obsFrame, const std::string & varName);
+
+        /// \brief create set of variables in the obs_group_ object based on the obs source
+        /// \param obsIo obs source object
+        /// \param varList List of obs_group_ variable names for obs_group_ object
+        void createVariablesFromObsSource(const std::shared_ptr<ObsFrame> & obsFrame,
+                                          const std::vector<std::string> & varList);
 
         /// \brief open an obs_group_ variable, create the varialbe if necessary
         template<typename VarType>

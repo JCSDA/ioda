@@ -34,31 +34,37 @@ class ObsFrame : public util::Printable {
     virtual ~ObsFrame() = 0;
 
     /// \brief return number of maximum variable size (along first dimension) from ObsIo
-    Dimensions_t maxVarSize() const {return obs_io_->maxVarSize();}
+    Dimensions_t ioMaxVarSize() const {return obs_io_->maxVarSize();}
 
     /// \brief return number of locations from ObsIo
-    Dimensions_t numLocs() const {return obs_io_->numLocs();}
+    Dimensions_t ioNumLocs() const {return obs_io_->numLocs();}
 
     /// \brief return number of regular variables from ObsIo
-    Dimensions_t numVars() const {return obs_io_->numVars();}
+    Dimensions_t ioNumVars() const {return obs_io_->numVars();}
 
     /// \brief return number of dimension scale variables from ObsIo
-    Dimensions_t numDimVars() const {return obs_io_->numDimVars();}
+    Dimensions_t ioNumDimVars() const {return obs_io_->numDimVars();}
 
     /// \brief return number of dimension scale variables from ObsIo
     Has_Variables & vars() const {return obs_io_->vars();}
 
     /// \brief return list of regular variables from ObsIo
-    std::vector<std::string> varList() const {return obs_io_->varList();}
+    std::vector<std::string> ioVarList() const {return obs_io_->varList();}
 
     /// \brief return list of dimension scale variables from ObsIo
-    std::vector<std::string> dimVarList() const {return obs_io_->dimVarList();}
+    std::vector<std::string> ioDimVarList() const {return obs_io_->dimVarList();}
 
     /// \brief return list of regular variables from ObsIo
-    void resetVarList() const {return obs_io_->resetVarList();}
+    void ioResetVarList() const {return obs_io_->resetVarList();}
 
     /// \brief return list of dimension scale variables from ObsIo
-    void resetDimVarList() const {return obs_io_->resetDimVarList();}
+    void ioResetDimVarList() const {return obs_io_->resetDimVarList();}
+
+    /// \brief return number of locations
+    virtual std::size_t frameNumLocs() const {return nlocs_;}
+
+    /// \brief return number of records
+    virtual std::size_t frameNumRecs() const {return nrecs_;}
 
     /// \brief return list of indices indicating which locations were selected from ObsIo
     virtual std::vector<std::size_t> index() const {return std::vector<std::size_t>{};}
@@ -86,6 +92,12 @@ class ObsFrame : public util::Printable {
     /// routine returns a zero to indicate that we're done with this variable.
     /// \param var variable
     virtual Dimensions_t frameCount(const Variable & var) = 0;
+
+    /// \brief return adjusted nlocs frame start
+    virtual Dimensions_t adjNlocsFrameStart() const {return 0;}
+
+    /// \brief return adjusted nlocs frame count
+    virtual Dimensions_t adjNlocsFrameCount() const {return 0;}
 
     /// \brief generate frame indices and corresponding record numbers
     /// \details This method generates a list of indices with their corresponding

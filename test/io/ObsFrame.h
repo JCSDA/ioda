@@ -222,19 +222,19 @@ void testConstructor() {
 
         // Test the counts that should be set on construction
         ioda::Dimensions_t expectedMaxVarSize = obsConfig.getInt("test data.max var size", 0);
-        ioda::Dimensions_t maxVarSize = obsFrame->maxVarSize();
+        ioda::Dimensions_t maxVarSize = obsFrame->ioMaxVarSize();
         EXPECT_EQUAL(maxVarSize, expectedMaxVarSize);
 
         ioda::Dimensions_t expectedNumLocs = obsConfig.getInt("test data.nlocs", 0);
-        ioda::Dimensions_t numLocs = obsFrame->numLocs();
+        ioda::Dimensions_t numLocs = obsFrame->ioNumLocs();
         EXPECT_EQUAL(numLocs, expectedNumLocs);
 
         ioda::Dimensions_t expectedNumVars = obsConfig.getInt("test data.nvars", 0);
-        ioda::Dimensions_t numVars = obsFrame->numVars();
+        ioda::Dimensions_t numVars = obsFrame->ioNumVars();
         EXPECT_EQUAL(numVars, expectedNumVars);
 
         ioda::Dimensions_t expectedNumDimVars = obsConfig.getInt("test data.ndvars", 0);
-        ioda::Dimensions_t numDimVars = obsFrame->numDimVars();
+        ioda::Dimensions_t numDimVars = obsFrame->ioNumDimVars();
         EXPECT_EQUAL(numDimVars, expectedNumDimVars);
 
         // Try the output constructor, if one was specified
@@ -255,7 +255,7 @@ void testConstructor() {
                 }
             }
 
-            ioda::Dimensions_t numLocs = obsFrame->numLocs();
+            ioda::Dimensions_t numLocs = obsFrame->ioNumLocs();
             EXPECT_EQUAL(numLocs, expectedNumLocs);
         }
     }
@@ -290,19 +290,19 @@ void testRead() {
 
         // Check the counts
         ioda::Dimensions_t expectedNumLocs = obsConfig.getInt("test data.nlocs", 0);
-        ioda::Dimensions_t numLocs = obsFrame->numLocs();
+        ioda::Dimensions_t numLocs = obsFrame->ioNumLocs();
         EXPECT_EQUAL(numLocs, expectedNumLocs);
 
         ioda::Dimensions_t expectedNumVars = obsConfig.getInt("test data.nvars", 0);
-        ioda::Dimensions_t numVars = obsFrame->numVars();
+        ioda::Dimensions_t numVars = obsFrame->ioNumVars();
         EXPECT_EQUAL(numVars, expectedNumVars);
 
         ioda::Dimensions_t expectedNumDimVars = obsConfig.getInt("test data.ndvars", 0);
-        ioda::Dimensions_t numDimVars = obsFrame->numDimVars();
+        ioda::Dimensions_t numDimVars = obsFrame->ioNumDimVars();
         EXPECT_EQUAL(numDimVars, expectedNumDimVars);
 
         ioda::Dimensions_t expectedMaxVarSize = obsConfig.getInt("test data.max var size", 0);
-        ioda::Dimensions_t maxVarSize = obsFrame->maxVarSize();
+        ioda::Dimensions_t maxVarSize = obsFrame->ioMaxVarSize();
         EXPECT_EQUAL(maxVarSize, expectedMaxVarSize);
 
         // Test reading frames
@@ -365,8 +365,8 @@ void testWrite() {
 
             // Write contents of file
             frameWrite(obsFrame, obsConfig);
-            obsFrame->resetVarList();
-            obsFrame->resetDimVarList();
+            obsFrame->ioResetVarList();
+            obsFrame->ioResetDimVarList();
 
             // Check if all the variables got written into the file
             // Dimension scale variables
@@ -375,7 +375,7 @@ void testWrite() {
                 expectedDimList.push_back(writeDimConfigs[i].getString("name"));
             }
             std::sort(expectedDimList.begin(), expectedDimList.end());
-            std::vector<std::string> dimList = obsFrame->dimVarList();
+            std::vector<std::string> dimList = obsFrame->ioDimVarList();
             for (size_t i = 0; i < expectedDimList.size(); ++i) {
                 EXPECT_EQUAL(dimList[i], expectedDimList[i]);
             }
@@ -386,7 +386,7 @@ void testWrite() {
                 expectedVarList.push_back(writeVarConfigs[i].getString("name"));
             }
             std::sort(expectedVarList.begin(), expectedVarList.end());
-            std::vector<std::string> varList = obsFrame->varList();
+            std::vector<std::string> varList = obsFrame->ioVarList();
             for (size_t i = 0; i < expectedVarList.size(); ++i) {
                 EXPECT_EQUAL(varList[i], expectedVarList[i]);
             }

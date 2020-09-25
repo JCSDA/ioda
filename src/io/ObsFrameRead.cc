@@ -362,6 +362,7 @@ void ObsFrameRead::applyMpiDistribution(const std::shared_ptr<Distribution> & di
             frame_loc_index_.push_back(rowNum);
         }
     }
+    nrecs_ = unique_rec_nums_.size();
 }
 
 // -----------------------------------------------------------------------------
