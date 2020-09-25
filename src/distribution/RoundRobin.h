@@ -34,6 +34,7 @@ class RoundRobin: public Distribution {
      bool isDistributed() const override { return true; }
 
      void sum(double &x) override;
+     void sum(int &x) override;
 };
 
 }  // namespace ioda

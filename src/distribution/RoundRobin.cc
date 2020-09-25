@@ -46,6 +46,10 @@ void RoundRobin::sum(double &x) {
     comm_.allReduceInPlace(x, eckit::mpi::sum());
 }
 
+void RoundRobin::sum(int &x) {
+    comm_.allReduceInPlace(x, eckit::mpi::sum());
+}
+
 // -----------------------------------------------------------------------------
 
 }  // namespace ioda

@@ -11,7 +11,6 @@
 #include <limits>
 
 #include "eckit/config/LocalConfiguration.h"
-#include "eckit/mpi/Comm.h"
 #include "ioda/ObsSpace.h"
 #include "oops/base/Variables.h"
 #include "oops/util/abor1_cpp.h"
@@ -175,10 +174,10 @@ double ObsVector::rms() const {
       ++nobs;
     }
   }
-  if (obsdb_.isDistributed()) {
-    obsdb_.comm().allReduceInPlace(zrms, eckit::mpi::sum());
-    obsdb_.comm().allReduceInPlace(nobs, eckit::mpi::sum());
-  }
+
+  obsdb_.sum(zrms);
+  obsdb_.sum(nobs);
+
   if (nobs > 0) zrms = sqrt(zrms / static_cast<double>(nobs));
   return zrms;
 }
@@ -243,9 +242,7 @@ unsigned int ObsVector::nobs() const {
   for (size_t jj = 0; jj < values_.size() ; ++jj) {
     if (values_[jj] != missing_) ++nobs;
   }
-  if (obsdb_.isDistributed()) {
-    obsdb_.comm().allReduceInPlace(nobs, eckit::mpi::sum());
-  }
+  obsdb_.sum(nobs);
   return nobs;
 }
 // -----------------------------------------------------------------------------
@@ -270,12 +267,12 @@ void ObsVector::print(std::ostream & os) const {
       ++nobs;
     }
   }
-  if (obsdb_.isDistributed()) {
-    obsdb_.comm().allReduceInPlace(zmin, eckit::mpi::min());
-    obsdb_.comm().allReduceInPlace(zmax, eckit::mpi::max());
-    obsdb_.comm().allReduceInPlace(zrms, eckit::mpi::sum());
-    obsdb_.comm().allReduceInPlace(nobs, eckit::mpi::sum());
-  }
+
+  obsdb_.sum(zmin);
+  obsdb_.sum(zmax);
+  obsdb_.sum(zrms);
+  obsdb_.sum(nobs);
+
   if (nobs > 0) zrms = sqrt(zrms / static_cast<double>(nobs));
   os << obsdb_.obsname() << " nobs= " << nobs << " Min="
      << zmin << ", Max=" << zmax << ", RMS=" << zrms << std::endl;

@@ -36,6 +36,7 @@ class Distribution {
     virtual bool isDistributed() const = 0;
 
     virtual void sum(double &x) = 0;
+    virtual void sum(int &x) = 0;
 
  protected:
      /*! \brief Local MPI communicator */

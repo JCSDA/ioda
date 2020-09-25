@@ -108,6 +108,7 @@ class ObsSpace : public oops::ObsSpaceBase {
   const std::vector<double> & obsdist() const {return obsdist_;}
   bool isDistributed() const { return obsspace_->distribution()->isDistributed(); }
   void sum(double &x) { return obsspace_->distribution()->sum(x); }
+  void sum(int &x) { return obsspace_->distribution()->sum(x); }
 
  private:
   void print(std::ostream &) const;
