@@ -218,24 +218,30 @@ void ObsFrameRead::genFrameLocationsTimeWindow(std::vector<Dimensions_t> & locIn
         ABORT(ErrMsg);
     }
 
-    // convert ref, offset time to datetime objects
+    // Build the selection objects
     Variable dtVar = this->obs_io_->vars().open(dtVarName);
+    std::vector<Dimensions_t> counts = dtVar.getDimensions().dimsCur;
+    counts[0] = locCount;
+    std::vector<Dimensions_t> feStarts(counts.size(), 0);
+    std::vector<Dimensions_t> beStarts = feStarts;
+    beStarts[0] = locStart;
+
+    Selection feSelect;
+        feSelect.extent(counts).select({ SelectionOperator::SET, feStarts, counts });
+    Selection beSelect;
+        beSelect.select({ SelectionOperator::SET, beStarts, counts });
+
+    // convert ref, offset time to datetime objects
     std::vector<util::DateTime> dtimeVals;
     if (dtVarName == "datetime@MetaData") {
         std::vector<std::string> dtValues;
-        getReadFrameStringVar(dtVar, locStart, locCount, dtValues);
+        getFrameStringVar(dtVar, feSelect, beSelect, locCount, dtValues);
         dtValues.resize(locCount);
 
         dtimeVals = convertDtStringsToDtime(dtValues);
     } else {
-        std::vector<Dimensions_t> counts(1, locCount);
-        std::vector<Dimensions_t> feStarts(1, 0);
-        std::vector<Dimensions_t> beStarts(1, locStart);
-
         std::vector<float> dtValues;
-        dtVar.read<float>(dtValues,
-            Selection().extent(counts).select({ SelectionOperator::SET, feStarts, counts }),
-            Selection().select({ SelectionOperator::SET, beStarts, counts }));
+        dtVar.read<float>(dtValues, feSelect, beSelect);
         dtValues.resize(locCount);
 
         int refDtime;

@@ -13,6 +13,7 @@
 #include <ostream>
 #include <set>
 #include <string>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -312,6 +313,39 @@ namespace ioda {
             }
         }
 
+        /// \brief read in values for variable from obs source
+        /// \details This function is a template specialization for a string variable. It
+        /// is temporary in that it is here to handle the old ioda file format where
+        /// a string vector is stored as a string array in the file.
+        /// \param obsIo obs source object
+        /// \param varName Name of variable in obs source object
+        /// \param varValues values for variable
+        template<>
+        void readObsSource(const std::shared_ptr<ObsFrame> & obsFrame,
+            const std::string & varName, std::vector<std::string> & varValues) {
+            Variable var = obsFrame->vars().open(varName);
+
+            // Form the selection objects for this variable
+            Selection frontendSelection;
+            Selection backendSelection;
+            obsFrame->createFrameSelection(var, frontendSelection, backendSelection);
+
+            // Read the variable
+            Dimensions_t frameCount = obsFrame->frameCount(var);
+            getFrameStringVar(var, frontendSelection, backendSelection, frameCount, varValues);
+
+            // Replace source fill values with corresponding missing marks
+            Variable sourceVar = obsFrame->vars().open(varName);
+            if (sourceVar.hasFillValue()) {
+                detail::FillValueData_t sourceFvData = sourceVar.getFillValue();
+                std::string sourceFillValue = detail::getFillValue<std::string>(sourceFvData);
+                std::string varFillValue = this->getFillValue<std::string>();
+                for (auto i = varValues.begin(); i != varValues.end(); ++i) {
+                    if (*i == sourceFillValue) { *i = varFillValue; }
+                }
+            }
+        }
+
         /// \brief create a variable in the obs_group_ object based on the obs source
         /// \param obsIo obs source object
         /// \param varName Name of obs_group_ variable for obs_group_ object
@@ -327,6 +361,33 @@ namespace ioda {
 
             std::vector<Variable> varDims = this->setVarDimsFromObsSource(obsFrame, varName);
             return obs_group_.vars.createWithScales<VarType>(varName, varDims, params);
+        }
+
+        /// \brief create a variable in the obs_group_ object based on the obs source
+        /// \details This function is a template specialization for a string variable. It
+        /// is temporary in that it is here to handle the old ioda file format where
+        /// a string vector is stored as a string array in the file.
+        /// \param obsIo obs source object
+        /// \param varName Name of obs_group_ variable for obs_group_ object
+        template<>
+        Variable createVarFromObsSource<std::string>(
+                                            const std::shared_ptr<ObsFrame> & obsFrame,
+                                            const std::string & varName) {
+            // Creation parameters. Enable chunking, compression, and set a fill
+            // value based on the built in missing values marks.
+            VariableCreationParameters params;
+            params.chunk = true;
+            params.compressWithGZIP();
+            params.setFillValue<std::string>(this->getFillValue<std::string>());
+
+            // If we have a new style string variable (stored in file as vector of strings),
+            // then use varDims as is. If we have an old style string variable (stored in
+            // file as a 2D string array), the target variable in obs_group_ will be a 1D
+            // vector of strings, so strip of the extra dimension. In either case, varDims
+            // should contain just one element.
+            std::vector<Variable> varDims = this->setVarDimsFromObsSource(obsFrame, varName);
+            varDims.resize(1);
+            return obs_group_.vars.createWithScales<std::string>(varName, varDims, params);
         }
 
         /// \brief store a variable in the obs_group_ object

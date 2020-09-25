@@ -253,31 +253,23 @@ std::vector<util::DateTime> convertRefOffsetToDtime(const int refIntDtime,
 }
 
 //------------------------------------------------------------------------------------
-void getReadFrameStringVar(const Variable & stringVar, const Dimensions_t frameStart,
-                           const Dimensions_t frameCount,
-                           std::vector<std::string> & stringVector) {
-   // Generate the selection objects
-   Dimensions varDims = stringVar.getDimensions();
-   std::vector<Dimensions_t> counts = varDims.dimsCur;
-   counts[0] = frameCount;
-   std::vector<Dimensions_t> feStarts(counts.size(), 0);
-   std::vector<Dimensions_t> beStarts(counts.size(), 0);
-   beStarts[0] = frameStart;
-
-   Selection feSelect;
-   feSelect.extent(counts).select({ SelectionOperator::SET, feStarts, counts });
-   Selection beSelect;
-   beSelect.select({ SelectionOperator::SET, beStarts, counts });
-
-   if (varDims.dimensionality > 1) {
-       std::vector<Dimensions_t> varShape = varDims.dimsCur;
-       varShape[0] = frameCount;
-       std::vector<std::string> stringArray =
-           stringVar.readAsVector<std::string>(feSelect, beSelect);
-       stringVector = StringArrayToStringVector(stringArray, varShape);
-   } else {
-       stringVar.read<std::string>(stringVector, feSelect, beSelect);
-   }
+void getFrameStringVar(const Variable & stringVar, const Selection feSelect,
+                       const Selection beSelect, const Dimensions_t frameCount,
+                       std::vector<std::string> & stringVector) {
+    Dimensions varDims = stringVar.getDimensions();
+    if (varDims.dimensionality > 1) {
+        // The shape of the data in the stringArray vector will be the same
+        // as the shape of the frame variable (dimsCur), but with the first
+        // dimension size adjusted to the size of the selection in the backend for
+        // the first dimension.
+        std::vector<Dimensions_t> varShape = varDims.dimsCur;
+        varShape[0] = frameCount;
+        std::vector<std::string> stringArray =
+            stringVar.readAsVector<std::string>(feSelect, beSelect);
+        stringVector = StringArrayToStringVector(stringArray, varShape);
+    } else {
+        stringVar.read<std::string>(stringVector, feSelect, beSelect);
+    }
 }
 
 //------------------------------------------------------------------------------------

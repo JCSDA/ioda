@@ -86,18 +86,18 @@ namespace ioda {
   /// \param dtStrings datetime strings
   std::vector<util::DateTime> convertDtStringsToDtime(const std::vector<std::string> & dtStrings);
 
-  /// \brief read string variable from an ObsReadFrame into a vector of strings
+  /// \brief read string variable from an ObsFrameRead into a vector of strings
   /// \details The incoming variable could be a vector of strings, or a 2D array of
   /// string elements (strings of length 1). This routine will figure out which it is,
   /// read in the variable and if needed, convert to a vector of strings
   /// \param stringVar variable to be read
-  /// \param frameCount size of section to read
-  /// \param frontendSelect selection object for stringVector
-  /// \param backendSelect selection object for ObsIo variable
+  /// \param feSelect selection object for stringVector (frontend)
+  /// \param beSelect selection object for ObsFrame variable (backend)
+  /// \param frameCount size (along first dimension) of section to read
   /// \param stringVector output string Vector
-  void getReadFrameStringVar(const Variable & stringVar, const Dimensions_t frameStart,
-                             const Dimensions_t frameCount,
-                             std::vector<std::string> & stringVector);
+  void getFrameStringVar(const Variable & stringVar, const Selection feSelect,
+                         const Selection beSelect, const Dimensions_t frameCount,
+                         std::vector<std::string> & stringVector);
 
   /// \brief convert 2D string array to a vector of strings
   /// \details The incoming 2D strings array is passed in through the arrayData argument

@@ -100,7 +100,7 @@ void testFrameRead(std::shared_ptr<ObsFrame> & obsFrame, eckit::LocalConfigurati
                    std::vector<std::string> expectedVarValue0 =
                        readVarConfigs[j].getStringVector("value0");
                    std::vector<std::string> varValues(frameCount, "");
-                   getReadFrameStringVar(var, frameStart, frameCount, varValues);
+                   getFrameStringVar(var, frontendSelect, backendSelect, frameCount, varValues);
                    EXPECT_EQUAL(varValues[0], expectedVarValue0[iframe]);
                }
            }
