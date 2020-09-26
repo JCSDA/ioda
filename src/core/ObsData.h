@@ -113,12 +113,12 @@ namespace ioda {
         /// \brief return the number of locations in the obs space
         /// \details This is the number of loctions in the resulting obs space container
         /// after removing obs outside the timing window and applying MPI distribution.
-        std::size_t nlocs() const;
+        std::size_t nlocs() const {return nlocs_;}
 
         /// \brief return the number of records in the obs space container
         /// \details This is the number of sets of locations after applying the
         /// optional grouping.
-        std::size_t nrecs() const;
+        std::size_t nrecs() const {return nrecs_;}
 
         /// \brief return the number of variables in the obs space container
         std::size_t nvars() const;
@@ -232,9 +232,6 @@ namespace ioda {
 
         /// \brief number of locations on this domain
         std::size_t nlocs_;
-
-        /// \brief number of variables
-        std::size_t nvars_;
 
         /// \brief number of records
         std::size_t nrecs_;

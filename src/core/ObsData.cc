@@ -42,7 +42,7 @@ namespace ioda {
 ObsData::ObsData(const eckit::Configuration & config, const eckit::mpi::Comm & comm,
                  const util::DateTime & bgn, const util::DateTime & end)
                      : config_(config), winbgn_(bgn), winend_(end), commMPI_(comm),
-                       gnlocs_(0), nlocs_(0), nvars_(0), nrecs_(0), obsvars_(),
+                       gnlocs_(0), nlocs_(0), nrecs_(0), obsvars_(),
                        obs_group_(), obs_params_(bgn, end, comm)
 {
     oops::Log::trace() << "ObsData::ObsData config  = " << config << std::endl;
@@ -95,7 +95,7 @@ ObsData::~ObsData() {
     if (obs_params_.out_type() == ObsIoTypes::OBS_FILE) {
         std::string fileName = obs_params_.top_level_.obsOutFile.value()->fileName;
         oops::Log::info() << obsname() << ": save database to " << fileName << std::endl;
-        saveToFile(true); // argument set to true will write in old format
+        saveToFile(true);  // argument set to true will write in old format
     } else {
         oops::Log::info() << obsname() << " :  no output" << std::endl;
     }
@@ -103,19 +103,24 @@ ObsData::~ObsData() {
 }
 
 // -----------------------------------------------------------------------------
-std::size_t ObsData::nlocs() const {
-    return obs_group_.vars.open("nlocs").getDimensions().dimsCur[0];
-}
-
-// -----------------------------------------------------------------------------
-std::size_t ObsData::nrecs() const {
-    return nrecs_;
-}
-
-// -----------------------------------------------------------------------------
 std::size_t ObsData::nvars() const {
-    Group g = obs_group_.open("ObsValue");
-    return g.vars.list().size();
+    // Nvars is the number of variables in the ObsValue group. By querying
+    // the ObsValue group, nvars will keep track of new variables that are added
+    // during a run.
+    // Some of the generators, upon construction, do not create variables in ObsValue
+    // since the MakeObs function will do that. In this case, they instead create
+    // error estimates in ObsError with the expectation that ObsValue will be filled
+    // in later. So upon construction, nvars will be the number of variables in ObsError
+    // instead of ObsValue.
+    // Because of the generator case above, query ObsValue first and if ObsValue doesn't
+    // exist query ObsError.
+    std::size_t numVars = 0;
+    if (obs_group_.exists("ObsValue")) {
+         numVars = obs_group_.open("ObsValue").vars.list().size();
+    } else if (obs_group_.exists("ObsError")) {
+         numVars = obs_group_.open("ObsError").vars.list().size();
+    }
+    return numVars;
 }
 
 // -----------------------------------------------------------------------------
@@ -367,7 +372,7 @@ void ObsData::initFromObsSource(const std::shared_ptr<ObsFrame> & obsFrame) {
 
     // Form a map containing a list of attached dims for each variable
     VarDimMap dimsAttachedToVars = genDimsAttachedToVars(obsFrame->vars(), varList, dimVarList);
-    
+
     // Create variables in obs_group_ based on those in the obs source
     createVariables(obsFrame->vars(), obs_group_.vars, dimsAttachedToVars);
 
@@ -410,11 +415,11 @@ void ObsData::initFromObsSource(const std::shared_ptr<ObsFrame> & obsFrame) {
                 }
             }
         }
-
         iframe++;
     }
 
-    nrecs_ = obsFrame->frameNumLocs();
+    nlocs_ = obs_group_.vars.open("nlocs").getDimensions().dimsCur[0];
+    nrecs_ = obsFrame->frameNumRecs();
     indx_ = obsFrame->index();
     recnums_ = obsFrame->recnums();
 }
@@ -561,14 +566,14 @@ void ObsData::saveToFile(const bool useOldFormat) {
     obs_params_.setMaxVarSize(maxVarSize);
 
     // Open the file for output
-    std::shared_ptr<ObsFrame> obsFrame = 
+    std::shared_ptr<ObsFrame> obsFrame =
         ObsFrameFactory::create(ObsIoActions::CREATE_FILE, ObsIoModes::CLOBBER, obs_params_);
 
     // Create a map showing list of dimension scale variables attached to each variable
     // in the obs_group_. Then create the variables.
     VarDimMap dimsAttachedToVars = genDimsAttachedToVars(obs_group_.vars, varList, dimVarList);
     createVariables(obs_group_.vars, obsFrame->vars(), dimsAttachedToVars, useOldFormat);
-    
+
     // Iterate through the frames and variables moving data from the database into
     // the file.
     int iframe = 0;

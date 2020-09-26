@@ -291,19 +291,22 @@ void ObsFrameRead::genRecordNumbersGrouping(const std::string & obsGroupVarName,
     Dimensions_t frameStart = this->frameStart();
     Dimensions_t frameCount = this->frameCount(nlocsVar);
 
-    std::vector<Dimensions_t> counts(1, frameCount);
-    std::vector<Dimensions_t> feStarts(1, 0);
-    std::vector<Dimensions_t> beStarts(1, frameStart);
+    std::vector<Dimensions_t> counts = groupVar.getDimensions().dimsCur;
+    counts[0] = frameCount;
+    std::vector<Dimensions_t> feStarts(counts.size(), 0);
+    std::vector<Dimensions_t> beStarts = feStarts;
+    beStarts[0] = frameStart;
+
+    Selection feSelect;
+        feSelect.extent(counts).select({ SelectionOperator::SET, feStarts, counts });
+    Selection beSelect;
+        beSelect.select({ SelectionOperator::SET, beStarts, counts });
 
     Dimensions_t locSize = frameIndex.size();
     records.assign(locSize, 0);
     if (groupVar.isA<int>()) {
         std::vector<int> groupVarVals;
-        groupVar.read<int>(groupVarVals,
-            Selection().extent(counts)
-                .select({ SelectionOperator::SET, feStarts, counts }),
-            Selection()
-                .select({ SelectionOperator::SET, beStarts, counts }));
+        groupVar.read<int>(groupVarVals, feSelect, beSelect);
         groupVarVals.resize(frameCount);
         for (std::size_t i = 0; i < locSize; ++i) {
             int recValue = groupVarVals[frameIndex[i]];
@@ -316,11 +319,7 @@ void ObsFrameRead::genRecordNumbersGrouping(const std::string & obsGroupVarName,
         }
     } else if (groupVar.isA<float>()) {
         std::vector<float> groupVarVals;
-        groupVar.read<float>(groupVarVals,
-            Selection().extent(counts)
-                .select({ SelectionOperator::SET, feStarts, counts }),
-            Selection()
-                .select({ SelectionOperator::SET, beStarts, counts }));
+        groupVar.read<float>(groupVarVals, feSelect, beSelect);
         groupVarVals.resize(frameCount);
         for (std::size_t i = 0; i < locSize; ++i) {
             float recValue = groupVarVals[frameIndex[i]];
@@ -333,11 +332,7 @@ void ObsFrameRead::genRecordNumbersGrouping(const std::string & obsGroupVarName,
         }
     } else if (groupVar.isA<std::string>()) {
         std::vector<std::string> groupVarVals;
-        groupVar.read<std::string>(groupVarVals,
-            Selection().extent(counts)
-                .select({ SelectionOperator::SET, feStarts, counts }),
-            Selection()
-                .select({ SelectionOperator::SET, beStarts, counts }));
+        getFrameStringVar(groupVar, feSelect, beSelect, frameCount, groupVarVals);
         groupVarVals.resize(frameCount);
         for (std::size_t i = 0; i < locSize; ++i) {
             std::string recValue = groupVarVals[frameIndex[i]];
