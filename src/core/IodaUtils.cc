@@ -5,6 +5,8 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
+#include <fstream>
+
 #include "ioda/core/IodaUtils.h"
 
 #include "ioda/Variables/Variable.h"
@@ -340,6 +342,65 @@ void setOfileParamsFromTestConfig(const eckit::LocalConfiguration & obsConfig,
     obsParams.setMaxVarSize(maxVarSize);
 }
 
+
+// -----------------------------------------------------------------------------
+std::string uniquifyFileName(const std::string & fileName, const std::size_t rankNum) {
+    // Attach the rank number to the output file name to avoid collisions when running
+    // with multiple MPI tasks.
+    std::string uniqueFileName = fileName;
+
+    // Find the left-most dot in the file name, and use that to pick off the file name
+    // and file extension.
+    std::size_t found = uniqueFileName.find_last_of(".");
+    if (found == std::string::npos)
+      found = uniqueFileName.length();
+
+    // Get the process rank number and format it
+    std::ostringstream ss;
+    ss << "_" << std::setw(4) << std::setfill('0') << rankNum;
+
+    // Construct the output file name
+    return uniqueFileName.insert(found, ss.str());
+}
+
+// -----------------------------------------------------------------------------
+VarDimMap genDimsAttachedToVars(const Has_Variables & varContainer,
+                                const std::vector<std::string> & varList,
+                                const std::vector<std::string> & dimVarList) {
+    VarDimMap dimsAttachedToVars;
+    for (auto & varName : varList) {
+        Variable var = varContainer.open(varName);
+        std::vector<std::string> dimVarNames;
+        for (std::size_t i = 0; i < var.getDimensions().dimensionality; ++i) {
+            for (auto & dimVarName : dimVarList) {
+                Variable dimVar = varContainer.open(dimVarName);
+                if (var.isDimensionScaleAttached(i, dimVar)) {
+                    dimVarNames.push_back(dimVarName);
+                    break;
+                }
+            }
+        }
+        dimsAttachedToVars.insert(
+            std::pair<std::string, std::vector<std::string>>(varName, dimVarNames));
+    }
+    return dimsAttachedToVars;
+}
+
+// -----------------------------------------------------------------------------
+std::string convertNewVnameToOldVname(const std::string & varName) {
+    // New format is "Group/Variable", old format is "Variable@Group"
+    std::string oldFormat;
+    std::size_t pos = varName.find("/");
+    if (pos == std::string::npos) {
+        // no slash, just return the input string as is
+        oldFormat = varName;
+    } else {
+        std::string gname = varName.substr(0, pos);
+        std::string vname = varName.substr(pos);
+        oldFormat = vname + std::string("@") + gname;
+    }
+    return oldFormat;
+}
 
 // -----------------------------------------------------------------------------
 }  // namespace ioda

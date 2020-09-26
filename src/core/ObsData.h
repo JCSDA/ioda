@@ -263,6 +263,9 @@ namespace ioda {
         /// \brief profile ordering
         RecIdxMap recidx_;
 
+        /// \brief KD Tree
+        std::shared_ptr<KDTree> kd_;
+
         // ----------------------------- private functions ------------------------------
         ObsData & operator= (const ObsData &);
 
@@ -270,10 +273,23 @@ namespace ioda {
         /// \param os output stream
         void print(std::ostream & os) const;
 
-        // Initialize the database from a source (ObsFrame ojbect)
-        /// \brief create the in-memory obs_group_ (ObsGroup) object
+        /// \brief Initialize the database from a source (ObsFrame ojbect)
         /// \param obsFrame obs source object
         void createObsGroupFromObsFrame(const std::shared_ptr<ObsFrame> & obsFrame);
+
+        /// \brief Dump the database into the output file
+        void saveToFile(const bool useOldFormat = false);
+
+        /// \brief Create a data structure holding sorted records
+        /// \details This method will construct a data structure that holds the
+        /// location order within each group sorted by the values of the specified
+        /// sort variable.
+        void BuildSortedObsGroups();
+
+        /// \brief Create a data structure holding a KD-tree based on locations
+        /// \details This method creates a private KDTree class member that can be used
+        /// for searching for local obs to create an ObsSpace.
+        void createKDTree();
 
         /// \brief initialize the in-memory obs_group_ (ObsGroup) object from the ObsIo source
         /// \param obsIo obs source object
@@ -281,7 +297,7 @@ namespace ioda {
 
         /// \brief resize along nlocs dimension
         /// \param nlocsSize new size to either append or reset
-        /// \param append when true append nlocsSize to current size, otherwise reset to nlocsSize
+        /// \param append when true append nlocsSize to current size, otherwise reset size
         void resizeNlocs(const Dimensions_t nlocsSize, const bool append);
 
         /// \brief read in values for variable from obs source
@@ -346,50 +362,6 @@ namespace ioda {
             }
         }
 
-        /// \brief create a variable in the obs_group_ object based on the obs source
-        /// \param obsIo obs source object
-        /// \param varName Name of obs_group_ variable for obs_group_ object
-        template<typename VarType>
-        Variable createVarFromObsSource(const std::shared_ptr<ObsFrame> & obsFrame,
-                                        const std::string & varName) {
-            // Creation parameters. Enable chunking, compression, and set a fill
-            // value based on the built in missing values marks.
-            VariableCreationParameters params;
-            params.chunk = true;
-            params.compressWithGZIP();
-            params.setFillValue<VarType>(this->getFillValue<VarType>());
-
-            std::vector<Variable> varDims = this->setVarDimsFromObsSource(obsFrame, varName);
-            return obs_group_.vars.createWithScales<VarType>(varName, varDims, params);
-        }
-
-        /// \brief create a variable in the obs_group_ object based on the obs source
-        /// \details This function is a template specialization for a string variable. It
-        /// is temporary in that it is here to handle the old ioda file format where
-        /// a string vector is stored as a string array in the file.
-        /// \param obsIo obs source object
-        /// \param varName Name of obs_group_ variable for obs_group_ object
-        template<>
-        Variable createVarFromObsSource<std::string>(
-                                            const std::shared_ptr<ObsFrame> & obsFrame,
-                                            const std::string & varName) {
-            // Creation parameters. Enable chunking, compression, and set a fill
-            // value based on the built in missing values marks.
-            VariableCreationParameters params;
-            params.chunk = true;
-            params.compressWithGZIP();
-            params.setFillValue<std::string>(this->getFillValue<std::string>());
-
-            // If we have a new style string variable (stored in file as vector of strings),
-            // then use varDims as is. If we have an old style string variable (stored in
-            // file as a 2D string array), the target variable in obs_group_ will be a 1D
-            // vector of strings, so strip of the extra dimension. In either case, varDims
-            // should contain just one element.
-            std::vector<Variable> varDims = this->setVarDimsFromObsSource(obsFrame, varName);
-            varDims.resize(1);
-            return obs_group_.vars.createWithScales<std::string>(varName, varDims, params);
-        }
-
         /// \brief store a variable in the obs_group_ object
         /// \param obsIo obs source object
         /// \param varName Name of obs_group_ variable for obs_group_ object
@@ -431,17 +403,15 @@ namespace ioda {
             return std::string("_fill_");
         }
 
-        /// \brief set the vector of dimension variables for the obs_group_ variable creation
-        /// \param obsIo obs source object
-        /// \param varName Name of obs_group_ variable for obs_group_ object
-        std::vector<Variable> setVarDimsFromObsSource(
-            const std::shared_ptr<ObsFrame> & obsFrame, const std::string & varName);
-
-        /// \brief create set of variables in the obs_group_ object based on the obs source
-        /// \param obsIo obs source object
-        /// \param varList List of obs_group_ variable names for obs_group_ object
-        void createVariablesFromObsSource(const std::shared_ptr<ObsFrame> & obsFrame,
-                                          const std::vector<std::string> & varList);
+        /// \brief create set of variables from source variables and lists
+        /// \param srcVarContainer Has_Variables object from source
+        /// \param destVarContainer Has_Variables object from destination
+        /// \param dimsAttachedToVars Map containing list of attached dims for each variable
+        /// \param useOldFormat If true, use old format with @ symbol for the new var names
+        void createVariables(const Has_Variables & srcVarContainer,
+                             Has_Variables & destVarContainer,
+                             const VarDimMap & dimsAttachedToVars,
+                             const bool useOldFormat = false);
 
         /// \brief open an obs_group_ variable, create the varialbe if necessary
         template<typename VarType>
@@ -467,37 +437,6 @@ namespace ioda {
             }
             return var;
         }
-
-
-
-
-  void BuildSortedObsGroups();
-  void createKDTree();
-
-  template<typename VarType>
-  std::vector<VarType> ApplyIndex(const std::vector<VarType> & FullData,
-                                  const std::vector<std::size_t> & FullShape,
-                                  const std::vector<std::size_t> & Index,
-                                  std::vector<std::size_t> & IndexedShape) const;
-
-  static std::string DesiredVarType(std::string & GroupName, std::string & FileVarType);
-
-  // Dump the database into the output file
-  void SaveToFile(const std::string & file_name, const std::size_t MaxFrameSize);
-
-  // Return a fill value
-  template<typename DataType>
-  void GetFillValue(DataType & FillValue) const;
-
-
-  /*! \brief KD Tree */
-  std::shared_ptr<KDTree> kd_;
-
-  /*! \brief path to input file */
-  std::string filein_;
-
-  /*! \brief path to output file */
-  std::string fileout_;
     };
 
 }  // namespace ioda

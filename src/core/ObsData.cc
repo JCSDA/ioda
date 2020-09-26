@@ -8,7 +8,6 @@
 #include "ioda/core/ObsData.h"
 
 #include <algorithm>
-#include <fstream>
 #include <functional>
 #include <iomanip>
 #include <map>
@@ -93,13 +92,13 @@ ObsData::ObsData(const eckit::Configuration & config, const eckit::mpi::Comm & c
 ///          file is specified in the ECKIT configuration segment associated with the
 ///          ObsData object.
 ObsData::~ObsData() {
-///     if (obs_params_.out_type() == ObsIoTypes::OBS_FILE) {
-///         std::string fileName = obs_params_.top_level_.obsOutFile.value()->fileName;
-///         oops::Log::info() << obsname() << ": save database to " << fileName << std::endl;
-///         // SaveToFile(fileName, obs_params_.out_file.maxFrameSize);
-///     } else {
-///         oops::Log::info() << obsname() << " :  no output" << std::endl;
-///     }
+    if (obs_params_.out_type() == ObsIoTypes::OBS_FILE) {
+        std::string fileName = obs_params_.top_level_.obsOutFile.value()->fileName;
+        oops::Log::info() << obsname() << ": save database to " << fileName << std::endl;
+        saveToFile(true); // argument set to true will write in old format
+    } else {
+        oops::Log::info() << obsname() << " :  no output" << std::endl;
+    }
     oops::Log::trace() << "ObsData::ObsData destructor" << std::endl;
 }
 
@@ -364,9 +363,13 @@ void ObsData::createObsGroupFromObsFrame(const std::shared_ptr<ObsFrame> & obsFr
 void ObsData::initFromObsSource(const std::shared_ptr<ObsFrame> & obsFrame) {
     // Walk through the frames and copy the data to the obs_group_ storage
     std::vector<std::string> varList = obsFrame->ioVarList();
+    std::vector<std::string> dimVarList = obsFrame->ioDimVarList();
 
+    // Form a map containing a list of attached dims for each variable
+    VarDimMap dimsAttachedToVars = genDimsAttachedToVars(obsFrame->vars(), varList, dimVarList);
+    
     // Create variables in obs_group_ based on those in the obs source
-    createVariablesFromObsSource(obsFrame, varList);
+    createVariables(obsFrame->vars(), obs_group_.vars, dimsAttachedToVars);
 
     Variable nlocsVar = obsFrame->vars().open("nlocs");
     int iframe = 1;
@@ -430,51 +433,51 @@ void ObsData::resizeNlocs(const Dimensions_t nlocsSize, const bool append) {
 }
 
 // -----------------------------------------------------------------------------
-std::vector<Variable> ObsData::setVarDimsFromObsSource(
-    const std::shared_ptr<ObsFrame> & obsFrame, const std::string & varName) {
-    // Get a list of dimension variables from the source (obsIo)
-    std::map<std::string, Variable> srcDimVars;
-    for (auto & dimVarName : obsFrame->ioDimVarList()) {
-        Variable dimVar = obsFrame->vars().open(dimVarName);
-        srcDimVars.insert(std::pair<std::string, Variable>(dimVarName, dimVar));
-    }
+void ObsData::createVariables(const Has_Variables & srcVarContainer,
+                              Has_Variables & destVarContainer,
+                              const VarDimMap & dimsAttachedToVars,
+                              const bool useOldFormat) {
+    // Walk through map to get list of variables to create along with
+    // their dimensions. Use the srcVarContainer to get the var data type.
+    for (auto & ivar : dimsAttachedToVars) {
+        std::string varName = ivar.first;
+        std::vector<std::string> varDimNames = ivar.second;
 
-    // find which dimensions are attached to the source variable
-    Variable sourceVar = obsFrame->vars().open(varName);
-    Dimensions sourceDims = sourceVar.getDimensions();
-    std::vector<std::string> dimNames;
-    for (std::size_t i = 0; i < sourceDims.dimensionality; ++i) {
-        for (auto & dimVar : srcDimVars) {
-            if (sourceVar.isDimensionScaleAttached(i, dimVar.second)) {
-                dimNames.push_back(dimVar.first);
-            }
+        VariableCreationParameters params;
+        params.chunk = true;
+        params.compressWithGZIP();
+
+        // Create a vector with dimension scale vector from destination container
+        std::vector<Variable> varDims;
+        for (auto & dimVarName : varDimNames) {
+            varDims.push_back(destVarContainer.open(dimVarName));
         }
-    }
 
-    // convert the list of names to a list of variables
-    std::vector<Variable> destDimVars;
-    for (auto & dimName : dimNames) {
-        destDimVars.push_back(obs_group_.vars.open(dimName));
-    }
-
-    return destDimVars;
-}
-
-// -----------------------------------------------------------------------------
-void ObsData::createVariablesFromObsSource(const std::shared_ptr<ObsFrame> & obsFrame,
-                                           const std::vector<std::string> & varList) {
-    for (std::size_t i = 0; i < varList.size(); ++i) {
-        std::string varName = varList[i];
-        Variable var = obsFrame->vars().open(varName);
-        if (var.isA<int>()) {
-            createVarFromObsSource<int>(obsFrame, varName);
-        } else if (var.isA<float>()) {
-            createVarFromObsSource<float>(obsFrame, varName);
-        } else if (var.isA<std::string>()) {
-            createVarFromObsSource<std::string>(obsFrame, varName);
+        Variable srcVar = srcVarContainer.open(varName);
+        std::string destVarName;
+        if (useOldFormat) {
+            destVarName = convertNewVnameToOldVname(varName);
+        } else {
+            destVarName = varName;
+        }
+        if (srcVar.isA<int>()) {
+            params.setFillValue<int>(this->getFillValue<float>());
+            destVarContainer.createWithScales<int>(destVarName, varDims, params);
+        } else if (srcVar.isA<float>()) {
+            params.setFillValue<float>(this->getFillValue<float>());
+            destVarContainer.createWithScales<float>(destVarName, varDims, params);
+        } else if (srcVar.isA<std::string>()) {
+            params.setFillValue<std::string>(this->getFillValue<std::string>());
+            // If we have a new style string variable (stored in file as vector of strings),
+            // then use varDims as is. If we have an old style string variable (stored in
+            // file as a 2D string array), the target variable will be a 1D vector of
+            // strings, so strip of the extra dimension. In either case, varDims
+            // should contain just one element.
+            varDims.resize(1);
+            destVarContainer.createWithScales<std::string>(destVarName, varDims, params);
         } else {
             if (this->comm().rank() == 0) {
-                oops::Log::warning() << "WARNING: ObsData::createVariablesFromObsSpace: "
+                oops::Log::warning() << "WARNING: ObsData::createVariables: "
                     << "Skipping variable due to an unexpected data type for variable: "
                     << varName << std::endl;
             }
@@ -482,18 +485,7 @@ void ObsData::createVariablesFromObsSource(const std::shared_ptr<ObsFrame> & obs
     }
 }
 
-
-
-
-
-
-
 // -----------------------------------------------------------------------------
-/*!
- * \details This method will construct a data structure that holds the
- *          location order within each group sorted by the values of
- *          the specified sort variable.
- */
 void ObsData::BuildSortedObsGroups() {
   typedef std::map<std::size_t, std::vector<std::pair<float, std::size_t>>> TmpRecIdxMap;
   typedef TmpRecIdxMap::iterator TmpRecIdxIter;
@@ -542,222 +534,84 @@ void ObsData::BuildSortedObsGroups() {
 }
 
 // -----------------------------------------------------------------------------
-/*!
- * \details This method will save the contents of the obs container into the
- *          given file. Currently, all variables in the obs container are written
- *          into the file. This may change in the future where we can select which
- *          variables we want saved.
- *
- * \param[in] file_name Path to output obs file.
- */
-void ObsData::SaveToFile(const std::string & file_name, const std::size_t MaxFrameSize) {
-///   // Open the file for output
-///   std::unique_ptr<IodaIO> fileio
-///     {ioda::IodaIOfactory::Create(file_name, "W", MaxFrameSize)};
+void ObsData::saveToFile(const bool useOldFormat) {
+    // Form lists of regular and dimension scale variables
+    std::vector<std::string> varList = listVars(obs_group_);
+    std::vector<std::string> dimVarList = listDimVars(obs_group_);
 
-///   // Add dimensions for nlocs and nvars
-///   fileio->dim_insert("nlocs", nlocs_);
-///   fileio->dim_insert("nvars", nvars_);
+    // Record dimension scale variables for the output file creation.
+    for (auto & dimName : dimVarList) {
+        Dimensions_t dimSize = obs_group_.vars.open(dimName).getDimensions().dimsCur[0];
+        Dimensions_t dimMaxSize = dimSize;
+        if (dimName == "nlocs") {
+            dimMaxSize = Unlimited;
+        }
+        obs_params_.setDimScale(dimName, dimSize, dimMaxSize, dimSize);
+    }
 
-///   // Build the group, variable info container. This defines the variables
-///   // that will be written into the output file.
-///   std::size_t MaxVarSize = 0;
-///   for (ObsSpaceContainer<int>::VarIter ivar = int_database_.var_iter_begin();
-///                                        ivar != int_database_.var_iter_end(); ++ivar) {
-///     std::string GroupName = int_database_.var_iter_gname(ivar);
-///     std::string VarName = int_database_.var_iter_vname(ivar);
-///     std::string GrpVarName = VarName + "@" + GroupName;
-///     std::vector<std::size_t> VarShape = int_database_.var_iter_shape(ivar);
-///     if (VarShape[0] > MaxVarSize) { MaxVarSize = VarShape[0]; }
-///     fileio->grp_var_insert(GroupName, VarName, "int", VarShape, GrpVarName, "int");
-///   }
-///   for (ObsSpaceContainer<float>::VarIter ivar = float_database_.var_iter_begin();
-///                                        ivar != float_database_.var_iter_end(); ++ivar) {
-///     std::string GroupName = float_database_.var_iter_gname(ivar);
-///     std::string VarName = float_database_.var_iter_vname(ivar);
-///     std::string GrpVarName = VarName + "@" + GroupName;
-///     std::vector<std::size_t> VarShape = float_database_.var_iter_shape(ivar);
-///     if (VarShape[0] > MaxVarSize) { MaxVarSize = VarShape[0]; }
-///     fileio->grp_var_insert(GroupName, VarName, "float", VarShape, GrpVarName, "float");
-///   }
-///   for (ObsSpaceContainer<std::string>::VarIter ivar = string_database_.var_iter_begin();
-///                                        ivar != string_database_.var_iter_end(); ++ivar) {
-///     std::string GroupName = string_database_.var_iter_gname(ivar);
-///     std::string VarName = string_database_.var_iter_vname(ivar);
-///     std::string GrpVarName = VarName + "@" + GroupName;
-///     std::vector<std::size_t> VarShape = string_database_.var_iter_shape(ivar);
-///     if (VarShape[0] > MaxVarSize) { MaxVarSize = VarShape[0]; }
-///     std::vector<std::string> DbData(VarShape[0], "");
-///     string_database_.LoadFromDb(GroupName, VarName, VarShape, DbData);
-///     std::size_t MaxStringSize = FindMaxStringLength(DbData);
-///     fileio->grp_var_insert(GroupName, VarName, "string", VarShape, GrpVarName, "string",
-///                            MaxStringSize);
-///   }
-///   for (ObsSpaceContainer<util::DateTime>::VarIter ivar = datetime_database_.var_iter_begin();
-///                                        ivar != datetime_database_.var_iter_end(); ++ivar) {
-///     std::string GroupName = datetime_database_.var_iter_gname(ivar);
-///     std::string VarName = datetime_database_.var_iter_vname(ivar);
-///     std::string GrpVarName = VarName + "@" + GroupName;
-///     std::vector<std::size_t> VarShape = datetime_database_.var_iter_shape(ivar);
-///     if (VarShape[0] > MaxVarSize) { MaxVarSize = VarShape[0]; }
-///     fileio->grp_var_insert(GroupName, VarName, "string", VarShape, GrpVarName, "string", 20);
-///   }
-///
-///   // Build the frame info container
-///   fileio->frame_info_init(MaxVarSize);
-///
-///   // For every frame, dump out the int, float, string variables.
-///   for (IodaIO::FrameIter iframe = fileio->frame_begin();
-///                          iframe != fileio->frame_end(); ++iframe) {
-///     fileio->frame_data_init();
-///     std::size_t FrameStart = fileio->frame_start(iframe);
-///     std::size_t FrameSize = fileio->frame_size(iframe);
-///
-///     // Integer data
-///     for (ObsSpaceContainer<int>::VarIter ivar = int_database_.var_iter_begin();
-///                                          ivar != int_database_.var_iter_end(); ++ivar) {
-///       std::string GroupName = int_database_.var_iter_gname(ivar);
-///       std::string VarName = int_database_.var_iter_vname(ivar);
-///       std::vector<std::size_t> VarShape = int_database_.var_iter_shape(ivar);
-///
-///       if (VarShape[0] > FrameStart) {
-///         std::size_t Count = FrameSize;
-///         if ((FrameStart + FrameSize) > VarShape[0]) { Count = VarShape[0] - FrameStart; }
-///         std::vector<int> FrameData(Count, 0);
-///         int_database_.LoadFromDb(GroupName, VarName, VarShape, FrameData, FrameStart, Count);
-///         fileio->frame_int_put_data(GroupName, VarName, FrameData);
-///       }
-///     }
-///
-///     // Float data
-///     for (ObsSpaceContainer<float>::VarIter ivar = float_database_.var_iter_begin();
-///                                          ivar != float_database_.var_iter_end(); ++ivar) {
-///       std::string GroupName = float_database_.var_iter_gname(ivar);
-///       std::string VarName = float_database_.var_iter_vname(ivar);
-///       std::vector<std::size_t> VarShape = float_database_.var_iter_shape(ivar);
-///
-///       if (VarShape[0] > FrameStart) {
-///         std::size_t Count = FrameSize;
-///         if ((FrameStart + FrameSize) > VarShape[0]) { Count = VarShape[0] - FrameStart; }
-///         std::vector<float> FrameData(Count, 0.0);
-///         float_database_.LoadFromDb(GroupName, VarName, VarShape, FrameData, FrameStart, Count);
-///         fileio->frame_float_put_data(GroupName, VarName, FrameData);
-///       }
-///     }
-///
-///     // String data
-///     for (ObsSpaceContainer<std::string>::VarIter ivar = string_database_.var_iter_begin();
-///                                          ivar != string_database_.var_iter_end(); ++ivar) {
-///       std::string GroupName = string_database_.var_iter_gname(ivar);
-///       std::string VarName = string_database_.var_iter_vname(ivar);
-///       std::vector<std::size_t> VarShape = string_database_.var_iter_shape(ivar);
-///
-///       if (VarShape[0] > FrameStart) {
-///         std::size_t Count = FrameSize;
-///         if ((FrameStart + FrameSize) > VarShape[0]) { Count = VarShape[0] - FrameStart; }
-///         std::vector<std::string> FrameData(Count, "");
-///         string_database_.LoadFromDb(GroupName, VarName, VarShape, FrameData,
-///                                     FrameStart, Count);
-///         fileio->frame_string_put_data(GroupName, VarName, FrameData);
-///       }
-///     }
-///
-///     for (ObsSpaceContainer<util::DateTime>::VarIter ivar = datetime_database_.var_iter_begin();
-///                                        ivar != datetime_database_.var_iter_end(); ++ivar) {
-///       std::string GroupName = datetime_database_.var_iter_gname(ivar);
-///       std::string VarName = datetime_database_.var_iter_vname(ivar);
-///       std::vector<std::size_t> VarShape = datetime_database_.var_iter_shape(ivar);
-///
-///       if (VarShape[0] > FrameStart) {
-///         std::size_t Count = FrameSize;
-///         if ((FrameStart + FrameSize) > VarShape[0]) { Count = VarShape[0] - FrameStart; }
-///         util::DateTime TempDt("0000-01-01T00:00:00Z");
-///         std::vector<util::DateTime> FrameData(Count, TempDt);
-///         datetime_database_.LoadFromDb(GroupName, VarName, VarShape, FrameData,
-///                                       FrameStart, Count);
-///
-///         // Convert the DateTime vector to a string vector, then save into the file.
-///         std::vector<std::string> StringVector(FrameData.size(), "");
-///         for (std::size_t i = 0; i < FrameData.size(); i++) {
-///           StringVector[i] = FrameData[i].toString();
-///         }
-///         fileio->frame_string_put_data(GroupName, VarName, StringVector);
-///       }
-///     }
-///
-///     fileio->frame_write(iframe);
-///   }
-}
+    // Record the maximum variable size
+    Dimensions_t maxVarSize = 0;
+    for (auto & varName : varList) {
+        Variable var = obs_group_.vars.open(varName);
+        Dimensions_t varSize0 = var.getDimensions().dimsCur[0];
+        if (varSize0 > maxVarSize) {
+            maxVarSize = varSize0;
+        }
+    }
+    obs_params_.setMaxVarSize(maxVarSize);
 
-// -----------------------------------------------------------------------------
-/*!
- * \details This sets a variable fill value. By default it uses the oops missing values
- *          according to type. For strings, there is a template specialization which
- *          uses a blank string.
- *
- * \param[out] FillValue Value (according to type) to use for a variable's fill value
- */
-template<typename DataType>
-void ObsData::GetFillValue(DataType & FillValue) const {
-  FillValue = util::missingValue(FillValue);
-}
+    // Open the file for output
+    std::shared_ptr<ObsFrame> obsFrame = 
+        ObsFrameFactory::create(ObsIoActions::CREATE_FILE, ObsIoModes::CLOBBER, obs_params_);
 
-template<>
-void ObsData::GetFillValue<std::string>(std::string & FillValue) const {
-  FillValue = std::string("_fill_");
-}
+    // Create a map showing list of dimension scale variables attached to each variable
+    // in the obs_group_. Then create the variables.
+    VarDimMap dimsAttachedToVars = genDimsAttachedToVars(obs_group_.vars, varList, dimVarList);
+    createVariables(obs_group_.vars, obsFrame->vars(), dimsAttachedToVars, useOldFormat);
+    
+    // Iterate through the frames and variables moving data from the database into
+    // the file.
+    int iframe = 0;
+    for (obsFrame->frameInit(); obsFrame->frameAvailable(); obsFrame->frameNext()) {
+        Dimensions_t frameStart = obsFrame->frameStart();
+        for (auto & varName : varList) {
+            // form the destination (ObsFrame) variable name
+            std::string destVarName;
+            if (useOldFormat) {
+                destVarName = convertNewVnameToOldVname(varName);
+            } else {
+                destVarName = varName;
+            }
 
-// -----------------------------------------------------------------------------
-/*!
- * \details This method applys the distribution index on data read from the input obs file.
- *          It is expected that when this method is called that the distribution index will
- *          have the process element and DA timing window effects accounted for.
- *
- * \param[in]  FullData     Vector holding data to be indexed
- * \param[in]  FullShape    Shape (dimension sizes) of FullData
- * \param[in]  Index        Index to be applied to FullData
- * \param[out] IndexedShape Shape (dimension sizes) of data after indexing
- */
-template<typename VarType>
-std::vector<VarType> ObsData::ApplyIndex(const std::vector<VarType> & FullData,
-                              const std::vector<std::size_t> & FullShape,
-                              const std::vector<std::size_t> & Index,
-                              std::vector<std::size_t> & IndexedShape) const {
-  std::vector<VarType> SelectedData;
-  for (std::size_t i = 0; i < Index.size(); ++i) {
-    std::size_t isrc = Index[i];
-    SelectedData.push_back(FullData[isrc]);
-  }
-  IndexedShape = FullShape;
-  IndexedShape[0] = SelectedData.size();
-  return SelectedData;
-}
+            // open the destination variable and get the associate count
+            Variable destVar = obsFrame->vars().open(destVarName);
+            Dimensions_t frameCount = obsFrame->frameCount(destVar);
 
-// -----------------------------------------------------------------------------
-/*!
- * \details This method will return the desired numeric data type for variables
- *          read from the input obs file. The rule for now is any variable
- *          in the group "PreQC" is to be an integer, and any variable that is
- *          a double is to be a float (single precision). For cases outside of this
- *          rule, the data type from the file is used.
- *
- * \param[in] GroupName   Name of obs container group
- * \param[in] FileVarType Name of the data type of the variable from the input obs file
- */
-std::string ObsData::DesiredVarType(std::string & GroupName, std::string & FileVarType) {
-  // By default, make the DbVarType equal to the FileVarType
-  // Exceptions are:
-  //   Force the group "PreQC" to an integer type.
-  //   Force double to float.
-  std::string DbVarType = FileVarType;
+            // transfer data if we haven't gone past the end of the variable yet
+            if (frameCount > 0) {
+                // Form the hyperslab selection for this frame
+                ioda::Selection frontendSelect;
+                ioda::Selection backendSelect;
+                obsFrame->createFrameSelection(destVar, frontendSelect, backendSelect);
 
-  if (GroupName == "PreQC") {
-    DbVarType = "int";
-  } else if (FileVarType == "double") {
-    DbVarType = "float";
-  }
-
-  return DbVarType;
+                // transfer the data
+                Variable srcVar = obs_group_.vars.open(varName);
+                if (srcVar.isA<int>()) {
+                    std::vector<int> varValues;
+                    srcVar.read<int>(varValues, frontendSelect, backendSelect);
+                    destVar.write<int>(varValues, frontendSelect, backendSelect);
+                } else if (srcVar.isA<float>()) {
+                    std::vector<float> varValues;
+                    srcVar.read<float>(varValues, frontendSelect, backendSelect);
+                    destVar.write<float>(varValues, frontendSelect, backendSelect);
+                } else if (srcVar.isA<std::string>()) {
+                    std::vector<std::string> varValues;
+                    srcVar.read<std::string>(varValues, frontendSelect, backendSelect);
+                    destVar.write<std::string>(varValues, frontendSelect, backendSelect);
+                }
+            }
+        }
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -768,11 +622,8 @@ std::string ObsData::DesiredVarType(std::string & GroupName, std::string & FileV
 void ObsData::printJo(const ObsVector & dy, const ObsVector & grad) {
   oops::Log::info() << "ObsData::printJo not implemented" << std::endl;
 }
+
 // -----------------------------------------------------------------------------
-/*!
- * \details This method creates a private KDTree class member that can be used
- *          for searching for local obs to create an ObsSpace.
- */
 void ObsData::createKDTree() {
   // Initialize KDTree class member
   kd_ = std::shared_ptr<ObsData::KDTree> ( new KDTree() );
@@ -800,6 +651,7 @@ void ObsData::createKDTree() {
   // Create KDTree class member from points list.
   kd_->build(points.begin(), points.end());
 }
+
 // -----------------------------------------------------------------------------
 /*!
  * \details This method returns the KDTree class member that can be used
@@ -812,6 +664,7 @@ ObsData::KDTree & ObsData::getKDTree() {
 
   return * kd_;
 }
+
 // -----------------------------------------------------------------------------
 
 }  // namespace ioda

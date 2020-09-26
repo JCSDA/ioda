@@ -62,7 +62,9 @@ ObsIoFile::ObsIoFile(const ObsIoActions action, const ObsIoModes mode,
         backendName = Engines::BackendNames::Hdf5File;
 
         // Create an hdf5 file, and allow overwriting an existing file (for now)
-        backendParams.fileName = fileName;
+        // Tag on the rank number to the output file name to avoid collisions if running
+        // with multiple MPI tasks.
+        backendParams.fileName = uniquifyFileName(fileName, params.comm().rank());
         backendParams.action = Engines::BackendFileActions::Create;
         backendParams.createMode = Engines::BackendCreateModes::Truncate_If_Exists;
 

@@ -8,6 +8,7 @@
 #ifndef CORE_IODAUTILS_H_
 #define CORE_IODAUTILS_H_
 
+#include <map>
 #include <string>
 #include <typeinfo>
 #include <vector>
@@ -25,6 +26,8 @@
 
 
 namespace ioda {
+  /// \brief typedef for holding dim names attached to variables
+  typedef std::map<std::string, std::vector<std::string>> VarDimMap;
 
   // Utilities for converting back and forth between vector of strings and
   // a 2D character array.
@@ -118,6 +121,25 @@ namespace ioda {
   void setOfileParamsFromTestConfig(const eckit::LocalConfiguration & obsConfig,
                                     ioda::ObsSpaceParameters & obsParams);
 
+  /// \brief uniquify the output file name
+  /// \details This function will tag on the MPI task number to the end of the file name
+  /// to avoid collisions when running with multiple MPI tasks.
+  /// \param fileName raw output file name
+  /// \param rankNum MPI rank number
+  std::string uniquifyFileName(const std::string & fileName, const std::size_t rankNum);
+
+  /// \brief form a map containing lists of dimension variables that are attached to each
+  /// variable
+  /// \param varContainer Has_Variables object with variables to check
+  /// \param varList list of regular variables
+  /// \param dimVarList list of dimension scale variables
+  VarDimMap genDimsAttachedToVars(const Has_Variables & varContainer,
+                                  const std::vector<std::string> & varList,
+                                  const std::vector<std::string> & dimVarList);
+
+  /// \brief convert the new format varible name to the old format
+  /// \param varName new format variable name
+  std::string convertNewVnameToOldVname(const std::string & varName);
 
   // -----------------------------------------------------------------------------
   /*!
