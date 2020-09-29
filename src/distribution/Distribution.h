@@ -38,6 +38,13 @@ class Distribution {
     virtual void sum(double &x) = 0;
     virtual void sum(int &x) = 0;
 
+    virtual void min(double &x) = 0;
+    virtual void min(float &x) = 0;
+    virtual void min(int &x) = 0;
+
+    virtual void max(double &x) = 0;
+    virtual void max(float &x) = 0;
+    virtual void max(int &x) = 0;
  protected:
      /*! \brief Local MPI communicator */
      const eckit::mpi::Comm & comm_;

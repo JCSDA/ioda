@@ -50,6 +50,30 @@ void RoundRobin::sum(int &x) {
     comm_.allReduceInPlace(x, eckit::mpi::sum());
 }
 
+void RoundRobin::min(double &x) {
+    comm_.allReduceInPlace(x, eckit::mpi::min());
+}
+
+void RoundRobin::min(float &x) {
+    comm_.allReduceInPlace(x, eckit::mpi::min());
+}
+
+void RoundRobin::min(int &x) {
+    comm_.allReduceInPlace(x, eckit::mpi::min());
+}
+
+void RoundRobin::max(double &x) {
+    comm_.allReduceInPlace(x, eckit::mpi::max());
+}
+
+void RoundRobin::max(float &x) {
+    comm_.allReduceInPlace(x, eckit::mpi::max());
+}
+
+void RoundRobin::max(int &x) {
+    comm_.allReduceInPlace(x, eckit::mpi::max());
+}
+
 // -----------------------------------------------------------------------------
 
 }  // namespace ioda
