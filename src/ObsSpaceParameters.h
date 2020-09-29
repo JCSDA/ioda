@@ -172,7 +172,19 @@ class ObsSpaceParameters {
     /// Constructor
     ObsSpaceParameters(const util::DateTime & winStart, const util::DateTime & winEnd,
                        const eckit::mpi::Comm & comm) :
-                           win_start_(winStart), win_end_(winEnd), comm_(comm) {}
+                           win_start_(winStart), win_end_(winEnd), comm_(comm) {
+        // Record the MPI rank number. The rank number is being saved during the
+        // construction of the Parameters for the ObsSpace saveToFile routine.
+        // (saveToFile will uniquify the output file name by tagging on the MPI rank
+        // number) For some reason, querying the saved MPI communicator (comm_) during
+        // the deconstruction process (when saveToFile is being run) will not reliably
+        // return the correct rank number. It was attempted to put in an MPI barrier call
+        // in case the issue was one rank finishing up before the other got to the query, but
+        // the barrier command itself caused a crash. It appears that the saved MPI
+        // communicator is getting corrupted during the deconstruction, but this has not
+        // been fully debugged, and should therefore be looked at later.
+        mpi_rank_ = comm.rank();
+    }
 
     /// \brief deserialize the parameter sub groups
     /// \param config "obs space" level configuration
@@ -239,6 +251,9 @@ class ObsSpaceParameters {
     /// \brief get the maximum variable size
     Dimensions_t getMaxVarSize() const { return max_var_size_; }
 
+    /// \brief get the MPI rank number
+    Dimensions_t getMpiRank() const { return mpi_rank_; }
+
  private:
     /// \brief ObsIo input type
     ObsIoTypes in_type_;
@@ -260,6 +275,9 @@ class ObsSpaceParameters {
 
     /// \brief maximum variable size for output file contruction
     Dimensions_t max_var_size_;
+
+    /// \brief MPI rank number of output file construction
+    std::size_t mpi_rank_;
 };
 
 }  // namespace ioda
