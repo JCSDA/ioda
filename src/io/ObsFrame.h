@@ -54,11 +54,22 @@ class ObsFrame : public util::Printable {
     /// \brief return list of dimension scale variables from ObsIo
     std::vector<std::string> ioDimVarList() const {return obs_io_->dimVarList();}
 
-    /// \brief return list of regular variables from ObsIo
+    /// \brief return map from variables to their attached dimension scales
+    VarDimMap ioVarDimMap() const {return obs_io_->varDimMap();}
+
+    /// \brief return true if variable is dimensioned by nlocs
+    bool ioIsVarDimByNlocs(const std::string & varName) const {
+        return obs_io_->isVarDimByNlocs(varName);
+    }
+
+    /// \brief reset list of regular variables from ObsIo
     void ioResetVarList() const {return obs_io_->resetVarList();}
 
-    /// \brief return list of dimension scale variables from ObsIo
+    /// \brief reset list of dimension scale variables from ObsIo
     void ioResetDimVarList() const {return obs_io_->resetDimVarList();}
+
+    /// \brief reset map from variables to their attached dimension scales
+    void ioResetVarDimMap() const {return obs_io_->resetVarDimMap();}
 
     /// \brief return number of locations
     virtual std::size_t frameNumLocs() const {return nlocs_;}
@@ -90,8 +101,8 @@ class ObsFrame : public util::Printable {
     /// frame has moved past the end of some variables but not so for other
     /// variables. When the frame is past the end of the given variable, this
     /// routine returns a zero to indicate that we're done with this variable.
-    /// \param var variable
-    virtual Dimensions_t frameCount(const Variable & var) = 0;
+    /// \param varName variable name
+    virtual Dimensions_t frameCount(const std::string & varName) = 0;
 
     /// \brief return adjusted nlocs frame start
     virtual Dimensions_t adjNlocsFrameStart() const {return 0;}
@@ -106,10 +117,10 @@ class ObsFrame : public util::Printable {
     virtual void genFrameIndexRecNums(std::shared_ptr<Distribution> & dist) {}
 
     /// \brief set up frontend and backend selection objects for the given variable
-    /// \param var ObsGroup variable
+    /// \param varName ObsGroup variable name
     /// \param feSelect Front end selection object
     /// \param beSelect Back end selection object
-    virtual void createFrameSelection(const Variable & var, Selection & feSelect,
+    virtual void createFrameSelection(const std::string & varName, Selection & feSelect,
                                       Selection & beSelect) {}
 
  protected:

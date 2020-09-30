@@ -392,12 +392,12 @@ void ObsData::initFromObsSource(const std::shared_ptr<ObsFrame> & obsFrame) {
         for (auto & varName : varList) {
             Variable var = obsFrame->vars().open(varName);
             Dimensions_t beFrameStart;
-            if (var.isDimensionScaleAttached(0, nlocsVar)) {
+            if (obsFrame->ioIsVarDimByNlocs(varName)) {
                 beFrameStart = obsFrame->adjNlocsFrameStart();
             } else {
                 beFrameStart = frameStart;
             }
-            Dimensions_t frameCount = obsFrame->frameCount(var);
+            Dimensions_t frameCount = obsFrame->frameCount(varName);
             if (frameCount > 0) {
                 // Transfer the variable to the in-memory storage
                 if (var.isA<int>()) {
@@ -590,14 +590,14 @@ void ObsData::saveToFile(const bool useOldFormat) {
 
             // open the destination variable and get the associate count
             Variable destVar = obsFrame->vars().open(destVarName);
-            Dimensions_t frameCount = obsFrame->frameCount(destVar);
+            Dimensions_t frameCount = obsFrame->frameCount(destVarName);
 
             // transfer data if we haven't gone past the end of the variable yet
             if (frameCount > 0) {
                 // Form the hyperslab selection for this frame
                 ioda::Selection frontendSelect;
                 ioda::Selection backendSelect;
-                obsFrame->createFrameSelection(destVar, frontendSelect, backendSelect);
+                obsFrame->createFrameSelection(destVarName, frontendSelect, backendSelect);
 
                 // transfer the data
                 Variable srcVar = obs_group_.vars.open(varName);

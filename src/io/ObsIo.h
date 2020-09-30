@@ -14,6 +14,7 @@
 
 #include "eckit/config/LocalConfiguration.h"
 
+#include "ioda/core/IodaUtils.h"
 #include "ioda/distribution/Distribution.h"
 #include "ioda/Misc/Dimensions.h"
 #include "ioda/ObsSpaceParameters.h"
@@ -54,6 +55,12 @@ class ObsIo : public util::Printable {
     /// \brief return list of dimension scale variable names
     std::vector<std::string> dimVarList() const {return dim_var_list_;}
 
+    /// \brief return map of variables to attached dimension scales
+    VarDimMap varDimMap() const {return dims_attached_to_vars_;}
+
+    /// \brief return true if variable's first dimension is nlocs
+    bool isVarDimByNlocs(const std::string varName);
+
     /// \brief access to the variables container in the associated ObsGroup
     Has_Variables & vars() {return obs_group_.vars;}
 
@@ -65,6 +72,9 @@ class ObsIo : public util::Printable {
 
     /// \brief reset the dimension scale variable list
     void resetDimVarList();
+
+    /// \brief reset the variable to dimension scales map
+    void resetVarDimMap();
 
  protected:
     //------------------ protected data members ------------------------------
@@ -91,6 +101,9 @@ class ObsIo : public util::Printable {
 
     /// \brief list of dimension scale variables from source (file or generator)
     std::vector<std::string> dim_var_list_;
+
+    /// \brief map containing variables with their attached dimension scales
+    VarDimMap dims_attached_to_vars_;
 
     //------------------ protected functions ----------------------------------
     /// \brief print() for oops::Printable base class

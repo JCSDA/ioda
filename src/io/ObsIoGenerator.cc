@@ -80,6 +80,7 @@ ObsIoGenerator::ObsIoGenerator(const ObsIoActions action, const ObsIoModes mode,
     nlocs_ = obs_group_.vars.open("nlocs").getDimensions().dimsCur[0];
     this->resetVarList();
     this->resetDimVarList();
+    this->resetVarDimMap();
 }
 
 ObsIoGenerator::~ObsIoGenerator() {}

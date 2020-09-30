@@ -73,9 +73,6 @@ namespace ioda {
   /// \brief get variable data type along the first dimension
   std::type_index varDtype(const Group & group, const std::string & varName);
 
-  /// \brief true if first dimension is nlocs dimension
-  bool varIsDist(const Group & group, const std::string & varName);
-
   /// \brief true if variable is a dimension scale
   bool varIsDimScale(const Group & group, const std::string & varName);
 

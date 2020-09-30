@@ -10,6 +10,7 @@
 
 #include "eckit/config/LocalConfiguration.h"
 
+#include "ioda/core/IodaUtils.h"
 #include "ioda/distribution/Distribution.h"
 #include "ioda/io/ObsFrame.h"
 #include "ioda/ObsSpaceParameters.h"
@@ -61,8 +62,8 @@ class ObsFrameRead : public ObsFrame, private util::ObjectCounter<ObsFrameRead> 
     /// frame has moved past the end of some variables but not so for other
     /// variables. When the frame is past the end of the given variable, this
     /// routine returns a zero to indicate that we're done with this variable.
-    /// \param var variable
-    Dimensions_t frameCount(const Variable & var) override;
+    /// \param varName variable name
+    Dimensions_t frameCount(const std::string & varName) override;
 
     /// \brief return adjusted nlocs frame start
     Dimensions_t adjNlocsFrameStart() const override {return adjusted_nlocs_frame_start_;}
@@ -77,10 +78,10 @@ class ObsFrameRead : public ObsFrame, private util::ObjectCounter<ObsFrameRead> 
     void genFrameIndexRecNums(std::shared_ptr<Distribution> & dist) override;
 
     /// \brief set up frontend and backend selection objects for the given variable
-    /// \param var ObsGroup variable
+    /// \param varName ObsGroup variable name
     /// \param feSelect Front end selection object
     /// \param beSelect Back end selection object
-    void createFrameSelection(const Variable & var, Selection & feSelect,
+    void createFrameSelection(const std::string & varName, Selection & feSelect,
                               Selection & beSelect) override;
 
  private:

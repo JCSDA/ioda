@@ -55,6 +55,7 @@ ObsIoFile::ObsIoFile(const ObsIoActions action, const ObsIoModes mode,
         // record lists of regular variables and dimension scale variables
         this->resetVarList();
         this->resetDimVarList();
+        this->resetVarDimMap();
     } else if (action == ObsIoActions::CREATE_FILE) {
         fileName = params.top_level_.obsOutFile.value()->fileName;
         oops::Log::trace() << "Constructing ObsIoFile: Creating file for write: "

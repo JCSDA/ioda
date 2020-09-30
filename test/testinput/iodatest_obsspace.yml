@@ -90,57 +90,55 @@ observations:
       tolerance:
         - 1.0e-11
 
-# NETCDF3
-#- obs space:
-#    name: "SMAP"
-#    simulated variables: ['brightness_temperature']
-#    obsdatain:
-#      obsfile: "Data/testinput_tier_1/smap_obs_2018041500_m.nc4"
-#    test data:
-#      nlocs: 100
-#      nrecs: 100
-#      nvars: 4
-#      expected group variable: ""
-#      expected sort variable: ""
-#      expected sort order: "ascending"
-#      variables:
-#        - name: "latitude"
-#          group: "MetaData"
-#          type: "float"
-#          norm: 694.93010245335154
-#
-#        - name: "longitude"
-#          group: "MetaData"
-#          type: "float"
-#          norm: 2835.0339068827361
-#      tolerance:
-#        - 1.0e-11
+- obs space:
+    name: "SMAP"
+    simulated variables: ['brightness_temperature']
+    obsdatain:
+      obsfile: "Data/testinput_tier_1/smap_obs_2018041500_m.nc4"
+    test data:
+      nlocs: 100
+      nrecs: 100
+      nvars: 4
+      expected group variable: ""
+      expected sort variable: ""
+      expected sort order: "ascending"
+      variables:
+        - name: "latitude"
+          group: "MetaData"
+          type: "float"
+          norm: 694.93010245335154
 
-# NETCDF3
-#- obs space:
-#    name: "GMI GPM"
-#    simulated variables: ['temperature']
-#    obsdatain:
-#      obsfile: "Data/testinput_tier_1/gmi_gpm_obs_2018041500_m.nc4"
-#    test data:
-#      nlocs: 12
-#      nrecs: 12
-#      nvars: 13
-#      expected group variable: ""
-#      expected sort variable: ""
-#      expected sort order: "ascending"
-#      variables:
-#        - name: "latitude"
-#          group: "MetaData"
-#          type: "float"
-#          norm: 211.00380053756118
-#
-#        - name: "longitude"
-#          group: "MetaData"
-#          type: "float"
-#          norm: 172.29837728971688
-#      tolerance:
-#        - 1.0e-11
+        - name: "longitude"
+          group: "MetaData"
+          type: "float"
+          norm: 2835.0339068827361
+      tolerance:
+        - 1.0e-11
+
+- obs space:
+    name: "GMI GPM"
+    simulated variables: ['temperature']
+    obsdatain:
+      obsfile: "Data/testinput_tier_1/gmi_gpm_obs_2018041500_m.nc4"
+    test data:
+      nlocs: 12
+      nrecs: 12
+      nvars: 13
+      expected group variable: ""
+      expected sort variable: ""
+      expected sort order: "ascending"
+      variables:
+        - name: "latitude"
+          group: "MetaData"
+          type: "float"
+          norm: 211.00380053756118
+
+        - name: "longitude"
+          group: "MetaData"
+          type: "float"
+          norm: 172.29837728971688
+      tolerance:
+        - 1.0e-11
 
 - obs space:
     name: "Radiosonde"

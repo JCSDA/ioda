@@ -70,7 +70,7 @@ void testFrameRead(std::shared_ptr<ObsFrame> & obsFrame, eckit::LocalConfigurati
            std::string expectedVarType = readVarConfigs[j].getString("type");
            ioda::Variable var = obsFrame->vars().open(varName);
 
-           Dimensions_t frameCount = obsFrame->frameCount(var);
+           Dimensions_t frameCount = obsFrame->frameCount(varName);
            if (frameCount > 0) {
                oops::Log::debug() << "    Variable: " << varName
                    << ", frameCount: " << frameCount << std::endl;
@@ -78,7 +78,7 @@ void testFrameRead(std::shared_ptr<ObsFrame> & obsFrame, eckit::LocalConfigurati
                // Form the hyperslab selection for this frame
                ioda::Selection frontendSelect;
                ioda::Selection backendSelect;
-               obsFrame->createFrameSelection(var, frontendSelect, backendSelect);
+               obsFrame->createFrameSelection(varName, frontendSelect, backendSelect);
 
                if (expectedVarType == "int") {
                    EXPECT(var.isA<int>());
@@ -155,14 +155,14 @@ void frameWrite(std::shared_ptr<ObsFrame> & obsFrame, eckit::LocalConfiguration 
                 var = obsFrame->vars().open(varName);
             }
 
-            Dimensions_t frameCount = obsFrame->frameCount(var);
+            Dimensions_t frameCount = obsFrame->frameCount(varName);
             if (frameCount > 0) {
                 oops::Log::debug() << "    Variable: " << varName
                     << ", frameCount: " << frameCount << std::endl;
                 // Form the hyperslab selection for this frame
                 ioda::Selection frontendSelect;
                 ioda::Selection backendSelect;
-                obsFrame->createFrameSelection(var, frontendSelect, backendSelect);
+                obsFrame->createFrameSelection(varName, frontendSelect, backendSelect);
 
                 if (varType == "int") {
                     std::vector<int> values =

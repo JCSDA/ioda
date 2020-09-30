@@ -54,14 +54,14 @@ class ObsFrameWrite : public ObsFrame, private util::ObjectCounter<ObsFrameWrite
     /// frame has moved past the end of some variables but not so for other
     /// variables. When the frame is past the end of the given variable, this
     /// routine returns a zero to indicate that we're done with this variable.
-    /// \param var variable
-    Dimensions_t frameCount(const Variable & var) override;
+    /// \param varName variable name
+    Dimensions_t frameCount(const std::string & varName) override;
 
     /// \brief set up frontend and backend selection objects for the given variable
-    /// \param var ObsGroup variable
+    /// \param varName ObsGroup variable name
     /// \param feSelect Front end selection object
     /// \param beSelect Back end selection object
-    void createFrameSelection(const Variable & var, Selection & feSelect,
+    void createFrameSelection(const std::string & varName, Selection & feSelect,
                               Selection & beSelect) override;
 
  private:

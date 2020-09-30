@@ -46,8 +46,9 @@ Dimensions_t ObsFrameWrite::frameStart() {
 }
 
 //------------------------------------------------------------------------------------
-Dimensions_t ObsFrameWrite::frameCount(const Variable & var) {
+Dimensions_t ObsFrameWrite::frameCount(const std::string & varName) {
     Dimensions_t count;
+    Variable var = obs_io_->vars().open(varName);
     Dimensions_t varSize0 = var.getDimensions().dimsCur[0];
     if ((frame_start_ + max_frame_size_) > varSize0) {
         count = varSize0 - frame_start_;
@@ -59,7 +60,7 @@ Dimensions_t ObsFrameWrite::frameCount(const Variable & var) {
 }
 
 //------------------------------------------------------------------------------------
-void ObsFrameWrite::createFrameSelection(const Variable & var, Selection & feSelect,
+void ObsFrameWrite::createFrameSelection(const std::string & varName, Selection & feSelect,
                                          Selection & beSelect) {
     // Form the selection objects for this frame. The frontend selection will
     // simply be the current size (according to the variable) of the frame going from
@@ -69,9 +70,9 @@ void ObsFrameWrite::createFrameSelection(const Variable & var, Selection & feSel
     // be determined by the size of the frame for the given variable.
 
     // Grab the variable dimensions and use this as a template for the selection operators.
-    std::vector<Dimensions_t> varDims = var.getDimensions().dimsCur;
+    std::vector<Dimensions_t> varDims = obs_io_->vars().open(varName).getDimensions().dimsCur;
     Dimensions_t frameStart = this->frameStart();
-    Dimensions_t frameCount = this->frameCount(var);
+    Dimensions_t frameCount = this->frameCount(varName);
 
     // Substitute the frameCount for the first dimension size of the variable.
     varDims[0] = frameCount;

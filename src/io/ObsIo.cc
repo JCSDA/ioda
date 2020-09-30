@@ -7,7 +7,6 @@
 
 #include "oops/util/abor1_cpp.h"
 
-#include "ioda/core/IodaUtils.h"
 #include "ioda/io/ObsIo.h"
 #include "ioda/Variables/Variable.h"
 
@@ -29,6 +28,18 @@ ObsIo::ObsIo(const ObsIoActions action, const ObsIoModes mode,
 ObsIo::~ObsIo() {}
 
 //------------------------------------------------------------------------------------
+bool ObsIo::isVarDimByNlocs(const std::string varName) {
+    bool isDimByNlocs = false;
+    auto ivar = dims_attached_to_vars_.find(varName);
+    if (ivar != dims_attached_to_vars_.end()) {
+        if (ivar->second[0] == "nlocs") {
+            isDimByNlocs = true;
+        }
+    }
+    return isDimByNlocs;
+}
+
+//------------------------------------------------------------------------------------
 void ObsIo::resetVarList() {
     var_list_ = listVars(obs_group_);
 }
@@ -36,6 +47,11 @@ void ObsIo::resetVarList() {
 //------------------------------------------------------------------------------------
 void ObsIo::resetDimVarList() {
     dim_var_list_ = listDimVars(obs_group_);
+}
+
+//------------------------------------------------------------------------------------
+void ObsIo::resetVarDimMap() {
+    dims_attached_to_vars_ = genDimsAttachedToVars(obs_group_.vars, var_list_, dim_var_list_);
 }
 
 //------------------------ protected functions ---------------------------------------

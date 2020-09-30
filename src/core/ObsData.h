@@ -304,18 +304,17 @@ namespace ioda {
         template<typename VarType>
         void readObsSource(const std::shared_ptr<ObsFrame> & obsFrame,
             const std::string & varName, std::vector<VarType> & varValues) {
-            Variable var = obsFrame->vars().open(varName);
+            Variable sourceVar = obsFrame->vars().open(varName);
 
             // Form the selection objects for this variable
             Selection frontendSelection;
             Selection backendSelection;
-            obsFrame->createFrameSelection(var, frontendSelection, backendSelection);
+            obsFrame->createFrameSelection(varName, frontendSelection, backendSelection);
 
             // Read the variable
-            var.read<VarType>(varValues, frontendSelection, backendSelection);
+            sourceVar.read<VarType>(varValues, frontendSelection, backendSelection);
 
             // Replace source fill values with corresponding missing marks
-            Variable sourceVar = obsFrame->vars().open(varName);
             if (sourceVar.hasFillValue()) {
                 detail::FillValueData_t sourceFvData = sourceVar.getFillValue();
                 VarType sourceFillValue = detail::getFillValue<VarType>(sourceFvData);
@@ -336,19 +335,19 @@ namespace ioda {
         template<>
         void readObsSource(const std::shared_ptr<ObsFrame> & obsFrame,
             const std::string & varName, std::vector<std::string> & varValues) {
-            Variable var = obsFrame->vars().open(varName);
+            Variable sourceVar = obsFrame->vars().open(varName);
 
             // Form the selection objects for this variable
             Selection frontendSelection;
             Selection backendSelection;
-            obsFrame->createFrameSelection(var, frontendSelection, backendSelection);
+            obsFrame->createFrameSelection(varName, frontendSelection, backendSelection);
 
             // Read the variable
-            Dimensions_t frameCount = obsFrame->frameCount(var);
-            getFrameStringVar(var, frontendSelection, backendSelection, frameCount, varValues);
+            Dimensions_t frameCount = obsFrame->frameCount(varName);
+            getFrameStringVar(sourceVar, frontendSelection, backendSelection,
+                              frameCount, varValues);
 
             // Replace source fill values with corresponding missing marks
-            Variable sourceVar = obsFrame->vars().open(varName);
             if (sourceVar.hasFillValue()) {
                 detail::FillValueData_t sourceFvData = sourceVar.getFillValue();
                 std::string sourceFillValue = detail::getFillValue<std::string>(sourceFvData);

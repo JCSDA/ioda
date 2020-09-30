@@ -201,19 +201,6 @@ std::type_index varDtype(const Group & group, const std::string & varName) {
 }
 
 //------------------------------------------------------------------------------------
-bool varIsDist(const Group & group, const std::string & varName) {
-    bool isDist;
-    Variable var = group.vars.open(varName);
-    Variable nlocsVar = group.vars.open("nlocs");
-    if (var.isDimensionScale()) {
-        isDist = false;
-    } else {
-        isDist = var.isDimensionScaleAttached(0, nlocsVar);
-    }
-    return isDist;
-}
-
-//------------------------------------------------------------------------------------
 bool varIsDimScale(const Group & group, const std::string & varName) {
     Variable var = group.vars.open(varName);
     return var.isDimensionScale();

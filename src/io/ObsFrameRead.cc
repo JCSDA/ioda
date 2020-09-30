@@ -7,7 +7,6 @@
 
 #include "oops/util/abor1_cpp.h"
 
-#include "ioda/core/IodaUtils.h"
 #include "ioda/io/ObsFrameRead.h"
 #include "ioda/io/ObsIoFactory.h"
 
@@ -37,14 +36,14 @@ void ObsFrameRead::frameInit() {
     frame_start_ = 0;
     next_rec_num_ = 0;
     max_var_size_ = obs_io_->maxVarSize();
-    nlocs_ = frameCount(obs_io_->vars().open("nlocs"));
+    nlocs_ = frameCount("nlocs");
     adjusted_nlocs_frame_start_ = 0;
 }
 
 //------------------------------------------------------------------------------------
 void ObsFrameRead::frameNext() {
     frame_start_ += max_frame_size_;
-    nlocs_ += frameCount(obs_io_->vars().open("nlocs"));
+    nlocs_ += frameCount("nlocs");
     adjusted_nlocs_frame_start_ += adjusted_nlocs_frame_count_;
 }
 
@@ -59,12 +58,13 @@ Dimensions_t ObsFrameRead::frameStart() {
 }
 
 //------------------------------------------------------------------------------------
-Dimensions_t ObsFrameRead::frameCount(const Variable & var) {
+Dimensions_t ObsFrameRead::frameCount(const std::string & varName) {
+    Variable var = obs_io_->vars().open(varName);
     Dimensions_t  fCount;
     if (var.isDimensionScale()) {
         fCount = basicFrameCount(var);
     } else {
-        if (var.isDimensionScaleAttached(0, obs_io_->vars().open("nlocs"))) {
+        if (obs_io_->isVarDimByNlocs(varName)) {
             fCount = adjusted_nlocs_frame_count_;
         } else {
             fCount = basicFrameCount(var);
@@ -115,7 +115,7 @@ void ObsFrameRead::genFrameIndexRecNums(std::shared_ptr<Distribution> & dist) {
 }
 
 //------------------------------------------------------------------------------------
-void ObsFrameRead::createFrameSelection(const Variable & var, Selection & feSelect,
+void ObsFrameRead::createFrameSelection(const std::string & varName, Selection & feSelect,
                                         Selection & beSelect) {
     // Form the selection objects for this frame. The frontend selection will
     // simply be the current size (according to the variable) of the frame going from
@@ -126,9 +126,9 @@ void ObsFrameRead::createFrameSelection(const Variable & var, Selection & feSele
     // that variable is dimensioned by nlocs.
 
     // Grab the variable dimensions and use this as a template for the selection operators.
-    std::vector<Dimensions_t> varDims = var.getDimensions().dimsCur;
+    std::vector<Dimensions_t> varDims = obs_io_->vars().open(varName).getDimensions().dimsCur;
     Dimensions_t frameStart = this->frameStart();
-    Dimensions_t frameCount = this->frameCount(var);
+    Dimensions_t frameCount = this->frameCount(varName);
 
     // Substitute the frameCount for the first dimension size of the variable since it's
     // possible that this size got reduced by MPI distribution and timing window filtering.
@@ -149,8 +149,7 @@ void ObsFrameRead::createFrameSelection(const Variable & var, Selection & feSele
     //
     // For the dimensioned-by-nlocs case, frame_loc_index_ contains the indices for
     // the first dimension. Subsequent dimensions, we want to select all indices.
-    Variable nlocsVar = obs_io_->vars().open("nlocs");
-    if (var.isDimensionScaleAttached(0, nlocsVar)) {
+    if (obs_io_->isVarDimByNlocs(varName)) {
         beSelect.select({ SelectionOperator::SET, 0, frame_loc_index_ });
         for (std::size_t i = 1; i < varDims.size(); ++i) {
             std::vector<Dimensions_t> dimIndex(varDims[i]);
@@ -187,8 +186,7 @@ Dimensions_t ObsFrameRead::basicFrameCount(const Variable & var) {
 //------------------------------------------------------------------------------------
 void ObsFrameRead::genFrameLocationsAll(std::vector<Dimensions_t> & locIndex,
                                         std::vector<Dimensions_t> & frameIndex) {
-    Variable nlocsVar = obs_io_->vars().open("nlocs");
-    Dimensions_t locSize = this->frameCount(nlocsVar);
+    Dimensions_t locSize = this->frameCount("nlocs");
 
     locIndex.assign(locSize, 0);
     std::iota(locIndex.begin(), locIndex.end(), this->frameStart());
@@ -200,8 +198,7 @@ void ObsFrameRead::genFrameLocationsAll(std::vector<Dimensions_t> & locIndex,
 //------------------------------------------------------------------------------------
 void ObsFrameRead::genFrameLocationsTimeWindow(std::vector<Dimensions_t> & locIndex,
                                                std::vector<Dimensions_t> & frameIndex) {
-    Variable nlocsVar = obs_io_->vars().open("nlocs");
-    Dimensions_t locCount = this->frameCount(nlocsVar);
+    Dimensions_t locCount = this->frameCount("nlocs");
     Dimensions_t locStart = this->frameStart();
 
     // Prefer datetime@Metadata. Eventually "time@MetaData" will be obsoleted.
@@ -281,15 +278,14 @@ void ObsFrameRead::genRecordNumbersGrouping(const std::string & obsGroupVarName,
     // Group according to the data in obs_group_variable_
     std::string varName = obsGroupVarName + std::string("@MetaData");
     Variable groupVar = this->obs_io_->vars().open(varName);
-    Variable nlocsVar = this->obs_io_->vars().open("nlocs");
-    if (!groupVar.isDimensionScaleAttached(0, nlocsVar)) {
+    if (!obs_io_->isVarDimByNlocs(varName)) {
         std::string ErrMsg =
             std::string("ERROR: ObsFrameRead::genRecordNumbersGrouping: obs grouping variable (") +
             obsGroupVarName + std::string(") must have 'nlocs' as first dimension");
     }
 
     Dimensions_t frameStart = this->frameStart();
-    Dimensions_t frameCount = this->frameCount(nlocsVar);
+    Dimensions_t frameCount = this->frameCount("nlocs");
 
     std::vector<Dimensions_t> counts = groupVar.getDimensions().dimsCur;
     counts[0] = frameCount;

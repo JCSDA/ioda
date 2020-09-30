@@ -264,6 +264,7 @@ void testWrite() {
             // reset the variable lists in the ObsIo object
             obsIo->resetVarList();
             obsIo->resetDimVarList();
+            obsIo->resetVarDimMap();
 
             // Check if all the variables got written into the file
             // Dimension scale variables
