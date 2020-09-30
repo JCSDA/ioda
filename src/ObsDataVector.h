@@ -199,8 +199,7 @@ void ObsDataVector<DATATYPE>::print(std::ostream & os) const {
       }
     }
     // collect zmin, zmax, nobs, nloc on all processors
-    // HK 1. why is this an all reduce for a print?
-    //    2. does this need to be four all reduces?
+    // TODO combine into one reduce
     obsdb_.min(zmin);
     obsdb_.max(zmax);
     obsdb_.sum(nobs);
