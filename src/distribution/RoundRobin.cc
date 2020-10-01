@@ -50,6 +50,10 @@ void RoundRobin::sum(int &x) {
     comm_.allReduceInPlace(x, eckit::mpi::sum());
 }
 
+void RoundRobin::sum(size_t &x) {
+    comm_.allReduceInPlace(x, eckit::mpi::sum());
+}
+
 void RoundRobin::min(double &x) {
     comm_.allReduceInPlace(x, eckit::mpi::min());
 }

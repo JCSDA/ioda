@@ -35,6 +35,7 @@ class RoundRobin: public Distribution {
 
      void sum(double &x) override;
      void sum(int &x) override;
+     void sum(size_t &x) override;
 
      void min(double &x) override;
      void min(float &x) override;
@@ -43,7 +44,6 @@ class RoundRobin: public Distribution {
      void max(double &x) override;
      void max(float &x) override;
      void max(int &x) override;
-
 };
 
 }  // namespace ioda

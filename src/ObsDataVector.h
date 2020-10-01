@@ -199,7 +199,7 @@ void ObsDataVector<DATATYPE>::print(std::ostream & os) const {
       }
     }
     // collect zmin, zmax, nobs, nloc on all processors
-    // TODO combine into one reduce
+    // TODO(hkershaw-brown) combine into one reduce
     obsdb_.min(zmin);
     obsdb_.max(zmax);
     obsdb_.sum(nobs);

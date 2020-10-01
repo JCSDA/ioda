@@ -74,21 +74,17 @@ void testConstructor() {
   ::test::TestEnvironment::config().get("observations", conf);
 
   for (std::size_t jj = 0; jj < Test_::size(); ++jj) {
-    // Get the distribution method. If the method is "InefficientDistribution", then
-    // don't do the mpi allreduce calls. What is going on is that InefficientDistribution
-    // is distributing all observations to all mpi tasks, so if you do the allreduce
-    // calls you will overcount the sums (double count when 2 mpi tasks, triple count
-    // with 3 mpi tasks, etc.)
+    // The observations are distributed across processors, so Nlocs is local to a
+    // processor. To get the total number of observations, use ObsSpace.sum(Nlocs)
+    // to sum accoss all processors.
     std::string DistMethod = conf[jj].getString("obs space.distribution", "RoundRobin");
 
     // Get the numbers of locations (nlocs) from the ObsSpace object
     std::size_t Nlocs = Test_::obspace(jj).nlocs();
     std::size_t Nrecs = Test_::obspace(jj).nrecs();
     std::size_t Nvars = Test_::obspace(jj).nvars();
-    if (DistMethod != "InefficientDistribution") {
-      Test_::obspace(jj).comm().allReduceInPlace(Nlocs, eckit::mpi::sum());
-      Test_::obspace(jj).comm().allReduceInPlace(Nrecs, eckit::mpi::sum());
-    }
+    Test_::obspace(jj).sum(Nlocs);
+    Test_::obspace(jj).sum(Nrecs);
 
     // Get the expected nlocs from the obspace object's configuration
     std::size_t ExpectedNlocs = conf[jj].getUnsigned("obs space.test data.nlocs");
@@ -174,9 +170,7 @@ void testGetDb() {
         for (std::size_t j = 0; j < Nlocs; ++j) {
           Vnorm += pow(TestVec[j], 2.0);
         }
-        if (DistMethod != "InefficientDistribution") {
-          Test_::obspace(jj).comm().allReduceInPlace(Vnorm, eckit::mpi::sum());
-        }
+        Test_::obspace(jj).sum(Vnorm);
         Vnorm = sqrt(Vnorm);
 
         EXPECT(oops::is_close(Vnorm, ExpectedVnorm, Tol));
@@ -195,9 +189,7 @@ void testGetDb() {
         for (std::size_t j = 0; j < Nlocs; ++j) {
           Vnorm += pow(static_cast<double>(TestVec[j]), 2.0);
         }
-        if (DistMethod != "InefficientDistribution") {
-          Test_::obspace(jj).comm().allReduceInPlace(Vnorm, eckit::mpi::sum());
-        }
+        Test_::obspace(jj).sum(Vnorm);
         Vnorm = sqrt(Vnorm);
 
         EXPECT(oops::is_close(Vnorm, ExpectedVnorm, Tol));

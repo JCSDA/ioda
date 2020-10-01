@@ -109,9 +109,12 @@ class ObsSpace : public oops::ObsSpaceBase {
   bool isDistributed() const { return obsspace_->distribution()->isDistributed(); }
   void sum(double &x) { return obsspace_->distribution()->sum(x); }
   void sum(int &x) { return obsspace_->distribution()->sum(x); }
+  void sum(size_t &x) { return obsspace_->distribution()->sum(x); }
+
   void min(double &x) { return obsspace_->distribution()->min(x); }
   void min(float &x) { return obsspace_->distribution()->min(x); }
   void min(int &x) { return obsspace_->distribution()->min(x); }
+
   void max(double &x) { return obsspace_->distribution()->max(x); }
   void max(float &x) { return obsspace_->distribution()->max(x); }
   void max(int &x) { return obsspace_->distribution()->max(x); }
