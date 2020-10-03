@@ -40,9 +40,10 @@ namespace ioda {
  * \param[in] end    DateTime object holding the end of the DA timing window
  */
 ObsSpace::ObsSpace(const eckit::Configuration & config, const eckit::mpi::Comm & comm,
-                   const util::DateTime & bgn, const util::DateTime & end)
+                   const util::DateTime & bgn, const util::DateTime & end,
+                   const eckit::mpi::Comm & time)
   : oops::ObsSpaceBase(config, comm, bgn, end),
-    localopts_(), obsspace_(new ObsData(config, comm, bgn, end)),
+    localopts_(), obsspace_(new ObsData(config, comm, bgn, end, time)),
     localobs_(obsspace_->nlocs()), isLocal_(false),
     obsdist_()
 {

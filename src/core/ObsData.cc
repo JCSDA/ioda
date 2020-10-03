@@ -49,7 +49,8 @@ namespace ioda {
  * \param[in] end    DateTime object holding the end of the DA timing window
  */
 ObsData::ObsData(const eckit::Configuration & config, const eckit::mpi::Comm & comm,
-                 const util::DateTime & bgn, const util::DateTime & end)
+                 const util::DateTime & bgn, const util::DateTime & end,
+                 const eckit::mpi::Comm & timeComm)
   : config_(config), winbgn_(bgn), winend_(end), commMPI_(comm),
     gnlocs_(0), nlocs_(0), nvars_(0), nrecs_(0), file_unexpected_dtypes_(false),
     file_excess_dims_(false), in_max_frame_size_(0), out_max_frame_size_(0),
@@ -136,6 +137,7 @@ ObsData::ObsData(const eckit::Configuration & config, const eckit::mpi::Comm & c
     // Get the process rank number and format it
     std::ostringstream ss;
     ss << "_" << std::setw(4) << std::setfill('0') << this->comm().rank();
+    if (timeComm.size() > 1) ss << "_" << timeComm.rank();
 
     // Construct the output file name
     fileout_ = filename.insert(found, ss.str());
