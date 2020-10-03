@@ -58,7 +58,8 @@ class ObsVecTestFixture : private boost::noncopyable {
 
     for (std::size_t jj = 0; jj < conf.size(); ++jj) {
       eckit::LocalConfiguration obsconf(conf[jj], "obs space");
-      boost::shared_ptr<ObsSpace_> tmp(new ObsSpace_(obsconf, oops::mpi::world(), bgn, end));
+      boost::shared_ptr<ObsSpace_> tmp(new ObsSpace_(obsconf, oops::mpi::world(),
+                                                     bgn, end, oops::mpi::myself()));
       ospaces_.push_back(tmp);
       eckit::LocalConfiguration ObsDataInConf;
       obsconf.get("obsdatain", ObsDataInConf);
@@ -209,7 +210,8 @@ void testDistributedMath() {
     for (std::size_t jj = 0; jj < conf.size(); ++jj) {
        eckit::LocalConfiguration obsconf(conf[jj], "obs space");
        obsconf.set("distribution", dist_names[dd]);
-       std::shared_ptr<ObsSpace_> obsdb(new ObsSpace(obsconf, oops::mpi::world(), bgn, end));
+       std::shared_ptr<ObsSpace_> obsdb(new ObsSpace(obsconf, oops::mpi::world(),
+                                                     bgn, end, oops::mpi::myself()));
        std::shared_ptr<ObsVector_> obsvec(new ObsVector_(*obsdb, "ObsValue"));
        oops::Log::debug() << dist_names[dd] << ": " << *obsvec << std::endl;
        dist_obsdbs.push_back(obsdb);

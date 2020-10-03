@@ -95,7 +95,7 @@ class ObsData : public util::Printable {
   typedef eckit::KDTreeMemory<TreeTrait> KDTree;
 
   ObsData(const eckit::Configuration &, const eckit::mpi::Comm &,
-          const util::DateTime &, const util::DateTime &);
+          const util::DateTime &, const util::DateTime &, const eckit::mpi::Comm &);
   /*!
    * \details Copy constructor for an ObsData object.
    */
