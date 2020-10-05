@@ -40,10 +40,11 @@ namespace ioda {
 // ----------------------------- public functions ------------------------------
 // -----------------------------------------------------------------------------
 ObsData::ObsData(const eckit::Configuration & config, const eckit::mpi::Comm & comm,
-                 const util::DateTime & bgn, const util::DateTime & end)
+                 const util::DateTime & bgn, const util::DateTime & end,
+                 const eckit::mpi::Comm & timeComm)
                      : config_(config), winbgn_(bgn), winend_(end), commMPI_(comm),
                        gnlocs_(0), nlocs_(0), nrecs_(0), obsvars_(),
-                       obs_group_(), obs_params_(bgn, end, comm)
+                       obs_group_(), obs_params_(bgn, end, comm, timeComm)
 {
     oops::Log::trace() << "ObsData::ObsData config  = " << config << std::endl;
     obs_params_.deserialize(config);
@@ -205,7 +206,10 @@ void ObsData::get_db(const std::string & group, const std::string & name,
 
 void ObsData::get_db(const std::string & group, const std::string & name,
                       std::vector<util::DateTime> & vdata) const {
-    // TODO(srh) fill in read strings, convert to DateTime objects
+    std::vector<std::string> dtStrings;
+    Variable var = obs_group_.vars.open(fullVarName(group, name));
+    var.read<std::string>(dtStrings);
+    vdata = convertDtStringsToDtime(dtStrings);
 }
 
 // -----------------------------------------------------------------------------
@@ -238,7 +242,12 @@ void ObsData::put_db(const std::string & group, const std::string & name,
 
 void ObsData::put_db(const std::string & group, const std::string & name,
                       const std::vector<util::DateTime> & vdata) {
-  // TODO(srh) convert DateTime objects to strings and write
+  std::vector<std::string> dtStrings(vdata.size(), "");
+  for (std::size_t i = 0; i < vdata.size(); ++i) {
+    dtStrings[i] = vdata[i].toString();
+  }
+  Variable var = openCreateVar<std::string>(fullVarName(group, name));
+  var.write<std::string>(dtStrings);
 }
 
 

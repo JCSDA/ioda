@@ -331,7 +331,8 @@ void setOfileParamsFromTestConfig(const eckit::LocalConfiguration & obsConfig,
 
 
 // -----------------------------------------------------------------------------
-std::string uniquifyFileName(const std::string & fileName, const std::size_t rankNum) {
+std::string uniquifyFileName(const std::string & fileName, const std::size_t rankNum,
+                             const std::size_t timeRankNum) {
     // Attach the rank number to the output file name to avoid collisions when running
     // with multiple MPI tasks.
     std::string uniqueFileName = fileName;
@@ -345,6 +346,7 @@ std::string uniquifyFileName(const std::string & fileName, const std::size_t ran
     // Get the process rank number and format it
     std::ostringstream ss;
     ss << "_" << std::setw(4) << std::setfill('0') << rankNum;
+    if (timeRankNum >= 0) ss << "_" << timeRankNum;
 
     // Construct the output file name
     return uniqueFileName.insert(found, ss.str());

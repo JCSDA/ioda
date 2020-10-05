@@ -171,8 +171,9 @@ class ObsSpaceParameters {
 
     /// Constructor
     ObsSpaceParameters(const util::DateTime & winStart, const util::DateTime & winEnd,
-                       const eckit::mpi::Comm & comm) :
-                           win_start_(winStart), win_end_(winEnd), comm_(comm) {
+                       const eckit::mpi::Comm & comm, const eckit::mpi::Comm & timeComm) :
+                           win_start_(winStart), win_end_(winEnd), comm_(comm),
+                           time_comm_(timeComm) {
         // Record the MPI rank number. The rank number is being saved during the
         // construction of the Parameters for the ObsSpace saveToFile routine.
         // (saveToFile will uniquify the output file name by tagging on the MPI rank
@@ -184,6 +185,11 @@ class ObsSpaceParameters {
         // communicator is getting corrupted during the deconstruction, but this has not
         // been fully debugged, and should therefore be looked at later.
         mpi_rank_ = comm.rank();
+        if (timeComm.size() > 1) {
+            mpi_time_rank_ = timeComm.rank();
+        } else {
+            mpi_time_rank_ = -1;
+        }
     }
 
     /// \brief deserialize the parameter sub groups
@@ -232,8 +238,11 @@ class ObsSpaceParameters {
     /// \brief return the end of the DA timing window
     const util::DateTime & windowEnd() const {return win_end_;}
 
-    /// \brief return the associated MPI communicator
+    /// \brief return the associated MPI group communicator
     const eckit::mpi::Comm & comm() const {return comm_;}
+
+    /// \brief return the associated MPI time communicator
+    const eckit::mpi::Comm & timeComm() const {return time_comm_;}
 
     /// \brief set a new dimension scale
     void setDimScale(const std::string & dimName, const Dimensions_t curSize,
@@ -252,7 +261,10 @@ class ObsSpaceParameters {
     Dimensions_t getMaxVarSize() const { return max_var_size_; }
 
     /// \brief get the MPI rank number
-    Dimensions_t getMpiRank() const { return mpi_rank_; }
+    std::size_t getMpiRank() const { return mpi_rank_; }
+
+    /// \brief get the MPI rank number
+    int getMpiTimeRank() const { return mpi_time_rank_; }
 
  private:
     /// \brief ObsIo input type
@@ -267,8 +279,11 @@ class ObsSpaceParameters {
     /// \brief End of DA timing window
     const util::DateTime win_end_;
 
-    /// \brief MPI communicator
+    /// \brief MPI group communicator
     const eckit::mpi::Comm & comm_;
+
+    /// \brief MPI time communicator
+    const eckit::mpi::Comm & time_comm_;
 
     /// \brief new dimension scales for output file construction
     NewDimensionScales_t new_dims_;
@@ -276,8 +291,11 @@ class ObsSpaceParameters {
     /// \brief maximum variable size for output file contruction
     Dimensions_t max_var_size_;
 
-    /// \brief MPI rank number of output file construction
+    /// \brief group MPI rank number for output file construction
     std::size_t mpi_rank_;
+
+    /// \brief time MPI rank number of output file construction
+    int mpi_time_rank_;
 };
 
 }  // namespace ioda

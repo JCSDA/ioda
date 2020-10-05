@@ -85,11 +85,13 @@ namespace ioda {
         /// specified by bgn and end, will be discarded before storing them in the
         /// obs container.
         ///
-        /// \param config eckit configuration segment holding obs types specs
-        /// \param bgn    DateTime object holding the start of the DA timing window
-        /// \param end    DateTime object holding the end of the DA timing window
+        /// \param eckit configuration segment holding obs types specs
+        /// \param MPI communicator for model grouping
+        /// \param DateTime object holding the start of the DA timing window
+        /// \param DateTime object holding the end of the DA timing window
+        /// \param MPI communicator for ensemble
         ObsData(const eckit::Configuration &, const eckit::mpi::Comm &,
-                const util::DateTime &, const util::DateTime &);
+                const util::DateTime &, const util::DateTime &, const eckit::mpi::Comm &);
         ObsData(const ObsData &);
         ~ObsData();
 
@@ -190,7 +192,6 @@ namespace ioda {
                     const std::vector<std::string> & vdata);
         void put_db(const std::string & group, const std::string & name,
                     const std::vector<util::DateTime> & vdata);
-
 
 
 

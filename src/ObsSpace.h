@@ -39,7 +39,7 @@ class ObsSpace : public oops::ObsSpaceBase {
   typedef RecIdxMap::const_iterator RecIdxIter;
 
   ObsSpace(const eckit::Configuration &, const eckit::mpi::Comm &,
-           const util::DateTime &, const util::DateTime &);
+           const util::DateTime &, const util::DateTime &, const eckit::mpi::Comm &);
   ObsSpace(const ObsSpace &, const eckit::geometry::Point2 &,
            const eckit::Configuration &);
   /*!
