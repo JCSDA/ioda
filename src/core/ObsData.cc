@@ -466,7 +466,7 @@ void ObsData::createVariables(const Has_Variables & srcVarContainer,
             destVarName = varName;
         }
         if (srcVar.isA<int>()) {
-            params.setFillValue<int>(this->getFillValue<float>());
+            params.setFillValue<int>(this->getFillValue<int>());
             destVarContainer.createWithScales<int>(destVarName, varDims, params);
         } else if (srcVar.isA<float>()) {
             params.setFillValue<float>(this->getFillValue<float>());
