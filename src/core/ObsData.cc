@@ -431,6 +431,36 @@ void ObsData::initFromObsSource(const std::shared_ptr<ObsFrame> & obsFrame) {
     nrecs_ = obsFrame->frameNumRecs();
     indx_ = obsFrame->index();
     recnums_ = obsFrame->recnums();
+
+    // TODO(SRH) Eliminate this temporary fix. Some files do not have ISO 8601 date time
+    // strings. Instead they have a reference date time and time offset. If there is no
+    // datetime variable in the obs_group_ after reading in the file, then create one
+    // from the reference/offset time values.
+    std::string dtVarName = fullVarName("MetaData", "datetime");
+    if (!obs_group_.vars.exists(dtVarName)) {
+        int refDtime;
+        obsFrame->atts().open("date_time").read<int>(refDtime);
+
+        std::vector<float> timeOffset;
+        Variable timeVar = obs_group_.vars.open(fullVarName("MetaData", "time"));
+        timeVar.read<float>(timeOffset);
+
+        std::vector<util::DateTime> dtVals = convertRefOffsetToDtime(refDtime, timeOffset);
+        std::vector<std::string> dtStrings(dtVals.size(), "");
+        for (std::size_t i = 0; i < dtVals.size(); ++i) {
+            dtStrings[i] = dtVals[i].toString();
+        }
+
+        VariableCreationParameters params;
+        params.chunk = true;
+        params.compressWithGZIP();
+        params.setFillValue<std::string>(this->getFillValue<std::string>());
+        std::vector<Variable> dimVars(1, obs_group_.vars.open("nlocs"));
+        obs_group_.vars
+            .createWithScales<std::string>(dtVarName, dimVars, params)
+            .write<std::string>(dtStrings);
+    }
+
 }
 
 // -----------------------------------------------------------------------------

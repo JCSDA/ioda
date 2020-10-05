@@ -45,8 +45,11 @@ class ObsFrame : public util::Printable {
     /// \brief return number of dimension scale variables from ObsIo
     Dimensions_t ioNumDimVars() const {return obs_io_->numDimVars();}
 
-    /// \brief return number of dimension scale variables from ObsIo
+    /// \brief return variables container from ObsIo
     Has_Variables & vars() const {return obs_io_->vars();}
+
+    /// \brief return attributes container from ObsIo
+    Has_Attributes & atts() const {return obs_io_->atts();}
 
     /// \brief return list of regular variables from ObsIo
     std::vector<std::string> ioVarList() const {return obs_io_->varList();}
