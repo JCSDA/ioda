@@ -40,13 +40,8 @@ bool ObsIo::isVarDimByNlocs(const std::string varName) {
 }
 
 //------------------------------------------------------------------------------------
-void ObsIo::resetVarList() {
-    var_list_ = listVars(obs_group_);
-}
-
-//------------------------------------------------------------------------------------
-void ObsIo::resetDimVarList() {
-    dim_var_list_ = listDimVars(obs_group_);
+void ObsIo::resetVarLists() {
+    getVarLists(obs_group_, var_list_, dim_var_list_);
 }
 
 //------------------------------------------------------------------------------------

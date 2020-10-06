@@ -49,13 +49,12 @@ ObsIoFile::ObsIoFile(const ObsIoActions action, const ObsIoModes mode,
             detail::DataLayoutPolicy::generate(detail::DataLayoutPolicy::Policies::None));
         obs_group_ = og;
 
-        // record maximum variable size
-        max_var_size_ = maxVarSize0(obs_group_);
-
         // record lists of regular variables and dimension scale variables
-        this->resetVarList();
-        this->resetDimVarList();
+        this->resetVarLists();
         this->resetVarDimMap();
+
+        // record maximum variable size
+        max_var_size_ = maxVarSize0(obs_group_, this->varList());
     } else if (action == ObsIoActions::CREATE_FILE) {
         fileName = params.top_level_.obsOutFile.value()->fileName;
         oops::Log::trace() << "Constructing ObsIoFile: Creating file for write: "

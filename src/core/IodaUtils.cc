@@ -145,29 +145,28 @@ std::vector<std::string> listAllVars(const Group & group, std::string varPath) {
 }
 
 // -----------------------------------------------------------------------------
-std::vector<std::string> listDimVars(const Group & group) {
-    std::vector<std::string> varList;
+void getVarLists(const Group & group, std::vector<std::string> & varList,
+                 std::vector<std::string> & dimVarList) {
+    // Get a list of all variables
     std::vector<std::string> allVars = listAllVars(group, std::string(""));
 
+    varList.clear();
+    dimVarList.clear();
     for (auto & varName : allVars) {
         if (varIsDimScale(group, varName)) {
+            // To help speed up the genDimAttachedToVars routine, it is advantageous
+            // to make nlocs be the first in the list. There are typically a vary small
+            // number of dimension variables, so it doesn't hurt to use insert to put
+            // nlocs at the front.
+            if (varName == "nlocs") {
+                dimVarList.insert(dimVarList.begin(), varName);
+            } else {
+                dimVarList.push_back(varName);
+            }
+        } else {
             varList.push_back(varName);
         }
     }
-    return varList;
-}
-
-// -----------------------------------------------------------------------------
-std::vector<std::string> listVars(const Group & group) {
-    std::vector<std::string> varList;
-    std::vector<std::string> allVars = listAllVars(group, std::string(""));
-
-    for (auto & varName : allVars) {
-        if (!varIsDimScale(group, varName)) {
-            varList.push_back(varName);
-        }
-    }
-    return varList;
 }
 
 //------------------------------------------------------------------------------------
@@ -177,9 +176,9 @@ Dimensions_t varSize0(const Group & group, const std::string & varName) {
 }
 
 //------------------------------------------------------------------------------------
-Dimensions_t maxVarSize0(const Group & group) {
+Dimensions_t maxVarSize0(const Group & group, const std::vector<std::string> & varList) {
     Dimensions_t size0Max = 0;
-    for (auto & varName : listVars(group)) {
+    for (auto & varName : varList) {
         Dimensions_t size0 = varSize0(group, varName);
         if (size0 > size0Max) {
             size0Max = size0;

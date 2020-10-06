@@ -67,11 +67,8 @@ class ObsIo : public util::Printable {
     /// \brief access to the attributes container in the associated ObsGroup
     Has_Attributes & atts() {return obs_group_.atts;}
 
-    /// \brief reset the regular variable list
-    void resetVarList();
-
-    /// \brief reset the dimension scale variable list
-    void resetDimVarList();
+    /// \brief reset the regular and dimension scale variable lists
+    void resetVarLists();
 
     /// \brief reset the variable to dimension scales map
     void resetVarDimMap();

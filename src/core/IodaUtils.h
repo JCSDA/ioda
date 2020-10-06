@@ -56,19 +56,18 @@ namespace ioda {
   /// \param varPath Hierarchical path to group (use "" for top level)
   std::vector<std::string> listAllVars(const Group & group, std::string varPath);
 
-  /// \brief find the dimension scale variables in a Group and list their hierarchical names
-  /// \param group Group for which variables underneath this group will be listed
-  std::vector<std::string> listDimVars(const Group & group);
-
   /// \brief find the regular variables in a Group and list their hierarchical names
   /// \param group Group for which variables underneath this group will be listed
-  std::vector<std::string> listVars(const Group & group);
+  /// \param varList List of regular variable names
+  /// \param dimVarList List of dimension variable names
+  void getVarLists(const Group & group, std::vector<std::string> & varList,
+                   std::vector<std::string> & dimVarList);
 
   /// \brief get variable size along the first dimension
   Dimensions_t varSize0(const Group & group, const std::string & varName);
 
   /// \brief get maximum variable size along the first dimension
-  Dimensions_t maxVarSize0(const Group & group);
+  Dimensions_t maxVarSize0(const Group & group, const std::vector<std::string> & varList);
 
   /// \brief get variable data type along the first dimension
   std::type_index varDtype(const Group & group, const std::string & varName);

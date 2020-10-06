@@ -365,8 +365,7 @@ void testWrite() {
 
             // Write contents of file
             frameWrite(obsFrame, obsConfig);
-            obsFrame->ioResetVarList();
-            obsFrame->ioResetDimVarList();
+            obsFrame->ioResetVarLists();
 
             // Check if all the variables got written into the file
             // Dimension scale variables

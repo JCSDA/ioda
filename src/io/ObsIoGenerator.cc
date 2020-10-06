@@ -76,11 +76,10 @@ ObsIoGenerator::ObsIoGenerator(const ObsIoActions action, const ObsIoModes mode,
     }
 
     // record counts useful for an obs source
-    max_var_size_ = maxVarSize0(obs_group_);
     nlocs_ = obs_group_.vars.open("nlocs").getDimensions().dimsCur[0];
-    this->resetVarList();
-    this->resetDimVarList();
+    this->resetVarLists();
     this->resetVarDimMap();
+    max_var_size_ = maxVarSize0(obs_group_, this->varList());
 }
 
 ObsIoGenerator::~ObsIoGenerator() {}

@@ -65,11 +65,8 @@ class ObsFrame : public util::Printable {
         return obs_io_->isVarDimByNlocs(varName);
     }
 
-    /// \brief reset list of regular variables from ObsIo
-    void ioResetVarList() const {return obs_io_->resetVarList();}
-
-    /// \brief reset list of dimension scale variables from ObsIo
-    void ioResetDimVarList() const {return obs_io_->resetDimVarList();}
+    /// \brief reset lists of regular and dimension scale variables from ObsIo
+    void ioResetVarLists() const {return obs_io_->resetVarLists();}
 
     /// \brief reset map from variables to their attached dimension scales
     void ioResetVarDimMap() const {return obs_io_->resetVarDimMap();}

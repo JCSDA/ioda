@@ -262,8 +262,7 @@ void testWrite() {
             }
 
             // reset the variable lists in the ObsIo object
-            obsIo->resetVarList();
-            obsIo->resetDimVarList();
+            obsIo->resetVarLists();
             obsIo->resetVarDimMap();
 
             // Check if all the variables got written into the file

@@ -378,9 +378,7 @@ void ObsData::initFromObsSource(const std::shared_ptr<ObsFrame> & obsFrame) {
     // Walk through the frames and copy the data to the obs_group_ storage
     std::vector<std::string> varList = obsFrame->ioVarList();
     std::vector<std::string> dimVarList = obsFrame->ioDimVarList();
-
-    // Form a map containing a list of attached dims for each variable
-    VarDimMap dimsAttachedToVars = genDimsAttachedToVars(obsFrame->vars(), varList, dimVarList);
+    VarDimMap dimsAttachedToVars = obsFrame->ioVarDimMap();
 
     // Create variables in obs_group_ based on those in the obs source
     createVariables(obsFrame->vars(), obs_group_.vars, dimsAttachedToVars);
@@ -460,7 +458,6 @@ void ObsData::initFromObsSource(const std::shared_ptr<ObsFrame> & obsFrame) {
             .createWithScales<std::string>(dtVarName, dimVars, params)
             .write<std::string>(dtStrings);
     }
-
 }
 
 // -----------------------------------------------------------------------------
@@ -580,8 +577,9 @@ void ObsData::BuildSortedObsGroups() {
 // -----------------------------------------------------------------------------
 void ObsData::saveToFile(const bool useOldFormat) {
     // Form lists of regular and dimension scale variables
-    std::vector<std::string> varList = listVars(obs_group_);
-    std::vector<std::string> dimVarList = listDimVars(obs_group_);
+    std::vector<std::string> varList;
+    std::vector<std::string> dimVarList;
+    getVarLists(obs_group_, varList, dimVarList);
 
     // Record dimension scale variables for the output file creation.
     for (auto & dimName : dimVarList) {
