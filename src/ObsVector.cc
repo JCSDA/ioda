@@ -268,8 +268,8 @@ void ObsVector::print(std::ostream & os) const {
     }
   }
 
-  obsdb_.sum(zmin);
-  obsdb_.sum(zmax);
+  obsdb_.min(zmin);
+  obsdb_.max(zmax);
   obsdb_.sum(zrms);
   obsdb_.sum(nobs);
 
