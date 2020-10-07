@@ -170,7 +170,14 @@ ObsDtype ObsData::dtype(const std::string & group, const std::string & name) con
         } else if (var.isA<float>()) {
             VarType = ObsDtype::Float;
         } else if (var.isA<std::string>()) {
-            VarType = ObsDtype::String;
+            if ((group == "MetaData") && (name == "datetime")) {
+                // TODO(srh) Workaround to cover when datetime was stored
+                // as a util::DateTime object. The ufo processWhere function needs
+                // this, but should be eventually be updated to use the datetime strings.
+                VarType = ObsDtype::DateTime;
+            } else {
+                VarType = ObsDtype::String;
+            }
         }
     }
     return VarType;
