@@ -273,9 +273,13 @@ void ObsVector::print(std::ostream & os) const {
   obsdb_.sum(zrms);
   obsdb_.sum(nobs);
 
-  if (nobs > 0) zrms = sqrt(zrms / static_cast<double>(nobs));
-  os << obsdb_.obsname() << " nobs= " << nobs << " Min="
-     << zmin << ", Max=" << zmax << ", RMS=" << zrms << std::endl;
+  if (nobs > 0) {
+    zrms = sqrt(zrms / static_cast<double>(nobs));
+    os << obsdb_.obsname() << " nobs= " << nobs << " Min="
+       << zmin << ", Max=" << zmax << ", RMS=" << zrms << std::endl;
+  } else {
+    os << obsdb_.obsname() << ": No observations." << std::endl;
+  }
 }
 // -----------------------------------------------------------------------------
 }  // namespace ioda
