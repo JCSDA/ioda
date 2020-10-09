@@ -31,7 +31,6 @@ class RoundRobin: public Distribution {
      explicit RoundRobin(const eckit::mpi::Comm & Comm);
      ~RoundRobin();
      bool isMyRecord(std::size_t RecNum) const override;
-     bool isDistributed() const override { return true; }
 
      void sum(double &x) override;
      void sum(int &x) override;

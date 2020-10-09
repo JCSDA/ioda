@@ -33,7 +33,6 @@ class Distribution {
     virtual ~Distribution() = 0;
 
     virtual bool isMyRecord(std::size_t RecNum) const = 0;
-    virtual bool isDistributed() const = 0;
 
     virtual void sum(double &x) = 0;
     virtual void sum(int &x) = 0;

@@ -32,7 +32,6 @@ class InefficientDistribution: public Distribution {
      ~InefficientDistribution();
 
      bool isMyRecord(std::size_t RecNum) const override;
-     bool isDistributed() const override { return false; }
 
      void sum(double &x) override {};
      void sum(int &x) override {};
