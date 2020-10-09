@@ -73,10 +73,10 @@ class ObsVector : public util::Printable,
 
 // I/O
   void save(const std::string &) const;
+  void read(const std::string &, const bool fail = true);
 
  private:
   void print(std::ostream &) const;
-  void read(const std::string &, const bool fail = true);
 
   /*! \brief Associate ObsSpace object */
   ObsSpace & obsdb_;
