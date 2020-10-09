@@ -6,6 +6,7 @@
  */
 
 #include <fstream>
+#include <iomanip>
 
 #include "ioda/core/IodaUtils.h"
 

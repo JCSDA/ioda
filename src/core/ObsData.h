@@ -13,6 +13,7 @@
 #include <ostream>
 #include <set>
 #include <string>
+#include <type_traits>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -54,6 +55,17 @@ namespace ioda {
         String,
         DateTime
     };
+
+    /// Convenience template for checking whether we are specializaing on a string.
+    /// We need to use SFINAE to handle C++14's limits on specializing templates
+    /// inside of classes.
+    template<typename T>
+    struct is_std_string : std::false_type {};
+    template<> struct is_std_string<std::string> : std::true_type {};
+
+    template<typename T>
+    struct is_not_std_string : std::true_type {};
+    template<> struct is_not_std_string<std::string> : std::false_type {};
 
     /// \brief Observation data class for IODA
     ///
@@ -302,7 +314,9 @@ namespace ioda {
         /// \param obsIo obs source object
         /// \param varName Name of variable in obs source object
         /// \param varValues values for variable
-        template<typename VarType>
+        template<typename VarType,
+            typename std::enable_if<is_not_std_string<VarType>::value, int>::type = 0
+        >
         void readObsSource(const std::shared_ptr<ObsFrame> & obsFrame,
             const std::string & varName, std::vector<VarType> & varValues) {
             Variable sourceVar = obsFrame->vars().open(varName);
@@ -333,9 +347,11 @@ namespace ioda {
         /// \param obsIo obs source object
         /// \param varName Name of variable in obs source object
         /// \param varValues values for variable
-        template<>
+        template<typename VarType,
+            typename std::enable_if<is_std_string<VarType>::value, int>::type = 0
+        >
         void readObsSource(const std::shared_ptr<ObsFrame> & obsFrame,
-            const std::string & varName, std::vector<std::string> & varValues) {
+            const std::string & varName, std::vector<VarType> & varValues) {
             Variable sourceVar = obsFrame->vars().open(varName);
 
             // Form the selection objects for this variable
@@ -392,12 +408,6 @@ namespace ioda {
         DataType getFillValue() {
             DataType fillVal = util::missingValue(fillVal);
             return fillVal;
-        }
-
-        /// \brief template specialization for string types
-        template<>
-        std::string getFillValue<std::string>() {
-            return std::string("_fill_");
         }
 
         /// \brief create set of variables from source variables and lists
