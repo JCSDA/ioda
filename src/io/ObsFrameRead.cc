@@ -233,10 +233,14 @@ void ObsFrameRead::genFrameLocationsTimeWindow(std::vector<Dimensions_t> & locIn
     if (dtVarName == "datetime@MetaData") {
         std::vector<std::string> dtValues;
         getFrameStringVar(dtVar, feSelect, beSelect, locCount, dtValues);
+        dtValues.resize(locCount);
+
         dtimeVals = convertDtStringsToDtime(dtValues);
     } else {
         std::vector<float> dtValues;
         dtVar.read<float>(dtValues, feSelect, beSelect);
+        dtValues.resize(locCount);
+
         int refDtime;
         this->obs_io_->atts().open("date_time").read<int>(refDtime);
         dtimeVals = convertRefOffsetToDtime(refDtime, dtValues);
@@ -299,6 +303,7 @@ void ObsFrameRead::genRecordNumbersGrouping(const std::string & obsGroupVarName,
     if (groupVar.isA<int>()) {
         std::vector<int> groupVarVals;
         groupVar.read<int>(groupVarVals, feSelect, beSelect);
+        groupVarVals.resize(frameCount);
         for (std::size_t i = 0; i < locSize; ++i) {
             int recValue = groupVarVals[frameIndex[i]];
             if (int_obs_grouping_.find(recValue) == int_obs_grouping_.end()) {
@@ -311,6 +316,7 @@ void ObsFrameRead::genRecordNumbersGrouping(const std::string & obsGroupVarName,
     } else if (groupVar.isA<float>()) {
         std::vector<float> groupVarVals;
         groupVar.read<float>(groupVarVals, feSelect, beSelect);
+        groupVarVals.resize(frameCount);
         for (std::size_t i = 0; i < locSize; ++i) {
             float recValue = groupVarVals[frameIndex[i]];
             if (float_obs_grouping_.find(recValue) == float_obs_grouping_.end()) {
@@ -323,6 +329,7 @@ void ObsFrameRead::genRecordNumbersGrouping(const std::string & obsGroupVarName,
     } else if (groupVar.isA<std::string>()) {
         std::vector<std::string> groupVarVals;
         getFrameStringVar(groupVar, feSelect, beSelect, frameCount, groupVarVals);
+        groupVarVals.resize(frameCount);
         for (std::size_t i = 0; i < locSize; ++i) {
             std::string recValue = groupVarVals[frameIndex[i]];
             if (string_obs_grouping_.find(recValue) == string_obs_grouping_.end()) {
