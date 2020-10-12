@@ -25,9 +25,6 @@ ObsIo::ObsIo(const ObsIoActions action, const ObsIoModes mode,
 }
 
 //------------------------------------------------------------------------------------
-ObsIo::~ObsIo() {}
-
-//------------------------------------------------------------------------------------
 bool ObsIo::isVarDimByNlocs(const std::string varName) {
     bool isDimByNlocs = false;
     auto ivar = dims_attached_to_vars_.find(varName);

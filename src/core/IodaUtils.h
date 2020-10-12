@@ -56,7 +56,7 @@ namespace ioda {
   /// \param varPath Hierarchical path to group (use "" for top level)
   std::vector<std::string> listAllVars(const Group & group, std::string varPath);
 
-  /// \brief find the regular variables in a Group and list their hierarchical names
+  /// \brief find the regular and dimension variables in a Group and list their hierarchical names
   /// \param group Group for which variables underneath this group will be listed
   /// \param varList List of regular variable names
   /// \param dimVarList List of dimension variable names

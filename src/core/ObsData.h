@@ -97,13 +97,14 @@ namespace ioda {
         /// specified by bgn and end, will be discarded before storing them in the
         /// obs container.
         ///
-        /// \param eckit configuration segment holding obs types specs
-        /// \param MPI communicator for model grouping
-        /// \param DateTime object holding the start of the DA timing window
-        /// \param DateTime object holding the end of the DA timing window
-        /// \param MPI communicator for ensemble
-        ObsData(const eckit::Configuration &, const eckit::mpi::Comm &,
-                const util::DateTime &, const util::DateTime &, const eckit::mpi::Comm &);
+        /// \param config eckit configuration segment holding obs types specs
+        /// \param comm MPI communicator for model grouping
+        /// \param bgn DateTime object holding the start of the DA timing window
+        /// \param end DateTime object holding the end of the DA timing window
+        /// \param timeComm MPI communicator for ensemble
+        ObsData(const eckit::Configuration & config, const eckit::mpi::Comm & comm,
+                const util::DateTime & bgn, const util::DateTime & end,
+                const eckit::mpi::Comm & timeComm);
         ObsData(const ObsData &);
         ~ObsData();
 
@@ -162,7 +163,9 @@ namespace ioda {
         bool has(const std::string &, const std::string &) const;
 
         /// \brief return data type for group/variable
-        ObsDtype dtype(const std::string &, const std::string &) const;
+        /// \param group Group name containting the variable
+        /// \param name Variable name
+        ObsDtype dtype(const std::string & group, const std::string & name) const;
 
         /// \brief transfer data from the obs container to vdata
         ///
@@ -193,7 +196,6 @@ namespace ioda {
         /// \param group Name of container group (ObsValue, ObsError, MetaData, etc.)
         /// \param name  Name of container variable
         /// \param vdata Vector where container data is being transferred from
-
         void put_db(const std::string & group, const std::string & name,
                     const std::vector<int> & vdata);
         void put_db(const std::string & group, const std::string & name,
@@ -205,26 +207,46 @@ namespace ioda {
         void put_db(const std::string & group, const std::string & name,
                     const std::vector<util::DateTime> & vdata);
 
+        /// \brief return KDTree class member
+        /// \details This function provides a KDTree which can be used to search for local
+        /// observations when creating an ObsSpace
+        KDTree & getKDTree();
 
+        /// \brief Return the begin iterator associated with the recidx_ data member
+        const RecIdxIter recidx_begin() const;
 
+        /// \brief Return the end iterator associated with the recidx_ data member
+        const RecIdxIter recidx_end() const;
 
+        /// \brief true if given record number exists in the recidx_ data member
+        /// \param recNum Record number being searched for
+        bool recidx_has(const std::size_t recNum) const;
 
+        /// \brief return record number pointed to by the given iterator
+        /// \param irec Iterator into the recidx_ data member
+        std::size_t recidx_recnum(const RecIdxIter & irec) const;
 
+        /// \brief return record number vector pointed to by the given iterator
+        /// \param irec Iterator into the recidx_ data member
+        const std::vector<std::size_t> & recidx_vector(const RecIdxIter & irec) const;
 
-  KDTree & getKDTree();
+        /// \brief return record number vector selected by the given record number
+        /// \param recNum Record number being searched for
+        const std::vector<std::size_t> & recidx_vector(const std::size_t recNum) const;
 
-  const RecIdxIter recidx_begin() const;
-  const RecIdxIter recidx_end() const;
-  bool recidx_has(const std::size_t RecNum) const;
-  std::size_t recidx_recnum(const RecIdxIter & Irec) const;
-  const std::vector<std::size_t> & recidx_vector(const RecIdxIter & Irec) const;
-  const std::vector<std::size_t> & recidx_vector(const std::size_t RecNum) const;
-  std::vector<std::size_t> recidx_all_recnums() const;
+        /// \brief return all record numbers from the recidx_ data member
+        std::vector<std::size_t> recidx_all_recnums() const;
 
-  void printJo(const ObsVector &, const ObsVector &);  // to be removed
+        /// \brief print the current value of the observation side of the cost function
+        /// \param dy departure value
+        /// \param gradient value
+        void printJo(const ObsVector & dy, const ObsVector & grad);  // to be removed
 
-  const oops::Variables & obsvariables() const {return obsvars_;}
-  const std::shared_ptr<Distribution> distribution() const { return dist_;}
+        /// \brief return oops variables object (simulated variables)
+       const oops::Variables & obsvariables() const {return obsvars_;}
+
+       /// \brief return MPI distribution object
+       const std::shared_ptr<Distribution> distribution() const { return dist_;}
 
      private:
         // ----------------------------- private data members ---------------------------
@@ -276,9 +298,10 @@ namespace ioda {
         /// \brief KD Tree
         std::shared_ptr<KDTree> kd_;
 
-        // ----------------------------- private functions ------------------------------
-        ObsData & operator= (const ObsData &);
+        /// \brief disable the "=" operator
+        ObsData & operator= (const ObsData &) = delete;
 
+        // ----------------------------- private functions ------------------------------
         /// \brief print function for oops::Printable class
         /// \param os output stream
         void print(std::ostream & os) const;

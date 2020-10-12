@@ -173,7 +173,8 @@ class ObsSpaceParameters {
     ObsSpaceParameters(const util::DateTime & winStart, const util::DateTime & winEnd,
                        const eckit::mpi::Comm & comm, const eckit::mpi::Comm & timeComm) :
                            win_start_(winStart), win_end_(winEnd), comm_(comm),
-                           time_comm_(timeComm) {
+                           time_comm_(timeComm), in_type_(ObsIoTypes::NONE),
+                           out_type_(ObsIoTypes::NONE), new_dims_(), max_var_size_(0) {
         // Record the MPI rank number. The rank number is being saved during the
         // construction of the Parameters for the ObsSpace saveToFile routine.
         // (saveToFile will uniquify the output file name by tagging on the MPI rank

@@ -24,14 +24,22 @@
 
 namespace ioda {
 
-/// \brief Implementation of ObsFrame class
+/// \details The ObsFrame class along with its subclasses are responsible for appying
+/// the timing window filtering, record number assignment (according to the obsgrouping
+/// specification) and the application of MPI distribution when transferring data from a
+/// source (file or generator) into memory. For data transfer in both directions (source to
+/// memory, and memory to destination), this class also provides a means for transferring
+/// data in chunks (first n locations, followed by second n locations, etc.) which for
+/// a transfer from a file to memory can be utilized to avoid reading in the whole file
+/// into memory before applying the filtering and distribution.
+///
 /// \author Stephen Herbener (JCSDA)
 
 class ObsFrame : public util::Printable {
  public:
     ObsFrame(const ObsIoActions action, const ObsIoModes mode,
              const ObsSpaceParameters & params);
-    virtual ~ObsFrame() = 0;
+    ~ObsFrame() {}
 
     /// \brief return number of maximum variable size (along first dimension) from ObsIo
     Dimensions_t ioMaxVarSize() const {return obs_io_->maxVarSize();}

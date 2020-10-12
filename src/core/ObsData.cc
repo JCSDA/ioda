@@ -267,68 +267,38 @@ void ObsData::put_db(const std::string & group, const std::string & name,
   var.write<std::string>(dtStrings);
 }
 
-
-
-
-
-
-
 // -----------------------------------------------------------------------------
-/*!
- * \details This method returns the begin iterator associated with the
- *          recidx_ data member.
- */
 const ObsData::RecIdxIter ObsData::recidx_begin() const {
   return recidx_.begin();
 }
 
 // -----------------------------------------------------------------------------
-/*!
- * \details This method returns the end iterator associated with the
- *          recidx_ data member.
- */
 const ObsData::RecIdxIter ObsData::recidx_end() const {
   return recidx_.end();
 }
 
 // -----------------------------------------------------------------------------
-/*!
- * \details This method returns a boolean value indicating whether the
- *          given record number exists in the recidx_ data member.
- */
-bool ObsData::recidx_has(const std::size_t RecNum) const {
-  RecIdxIter irec = recidx_.find(RecNum);
+bool ObsData::recidx_has(const std::size_t recNum) const {
+  RecIdxIter irec = recidx_.find(recNum);
   return (irec != recidx_.end());
 }
 
 // -----------------------------------------------------------------------------
-/*!
- * \details This method returns the current record number, pointed to by the
- *          given iterator, from the recidx_ data member.
- */
-std::size_t ObsData::recidx_recnum(const RecIdxIter & Irec) const {
-  return Irec->first;
+std::size_t ObsData::recidx_recnum(const RecIdxIter & irec) const {
+  return irec->first;
 }
 
 // -----------------------------------------------------------------------------
-/*!
- * \details This method returns the current vector, pointed to by the
- *          given iterator, from the recidx_ data member.
- */
-const std::vector<std::size_t> & ObsData::recidx_vector(const RecIdxIter & Irec) const {
-  return Irec->second;
+const std::vector<std::size_t> & ObsData::recidx_vector(const RecIdxIter & irec) const {
+  return irec->second;
 }
 
 // -----------------------------------------------------------------------------
-/*!
- * \details This method returns the current vector, pointed to by the
- *          given iterator, from the recidx_ data member.
- */
-const std::vector<std::size_t> & ObsData::recidx_vector(const std::size_t RecNum) const {
-  RecIdxIter Irec = recidx_.find(RecNum);
+const std::vector<std::size_t> & ObsData::recidx_vector(const std::size_t recNum) const {
+  RecIdxIter Irec = recidx_.find(recNum);
   if (Irec == recidx_.end()) {
     std::string ErrMsg =
-      "ObsData::recidx_vector: Record number, " + std::to_string(RecNum) +
+      "ObsData::recidx_vector: Record number, " + std::to_string(recNum) +
       ", does not exist in record index map.";
     ABORT(ErrMsg);
   }
@@ -336,10 +306,6 @@ const std::vector<std::size_t> & ObsData::recidx_vector(const std::size_t RecNum
 }
 
 // -----------------------------------------------------------------------------
-/*!
- * \details This method returns the all of the record numbers from the
- *          recidx_ data member (ie, all the key values) in a vector.
- */
 std::vector<std::size_t> ObsData::recidx_all_recnums() const {
   std::vector<std::size_t> RecNums(nrecs_);
   std::size_t recnum = 0;
@@ -674,10 +640,6 @@ void ObsData::saveToFile(const bool useOldFormat) {
 }
 
 // -----------------------------------------------------------------------------
-/*!
- * \details This method provides a means for printing Jo in
- *          an output stream. For now a dummy message is printed.
- */
 void ObsData::printJo(const ObsVector & dy, const ObsVector & grad) {
   oops::Log::info() << "ObsData::printJo not implemented" << std::endl;
 }
@@ -712,10 +674,6 @@ void ObsData::createKDTree() {
 }
 
 // -----------------------------------------------------------------------------
-/*!
- * \details This method returns the KDTree class member that can be used
- *          for searching for local obs when creating an ObsSpace.
- */
 ObsData::KDTree & ObsData::getKDTree() {
   // Create the KDTree if it doesn't yet exist
   if (kd_ == NULL)

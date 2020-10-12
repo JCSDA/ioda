@@ -188,10 +188,10 @@ void ObsFrameRead::genFrameLocationsAll(std::vector<Dimensions_t> & locIndex,
                                         std::vector<Dimensions_t> & frameIndex) {
     Dimensions_t locSize = this->frameCount("nlocs");
 
-    locIndex.assign(locSize, 0);
+    locIndex.resize(locSize);
     std::iota(locIndex.begin(), locIndex.end(), this->frameStart());
 
-    frameIndex.assign(locSize, 0);
+    frameIndex.resize(locSize);
     std::iota(frameIndex.begin(), frameIndex.end(), 0);
 }
 

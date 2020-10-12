@@ -21,6 +21,4 @@ ObsFrame::ObsFrame(const ObsIoActions action, const ObsIoModes mode,
     oops::Log::trace() << "Constructing ObsFrame" << std::endl;
 }
 
-ObsFrame::~ObsFrame() {}
-
 }  // namespace ioda

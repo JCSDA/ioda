@@ -239,8 +239,7 @@ void ObsIoGenerator::storeGenData(const std::vector<float> & latVals,
         std::string varName = obsVarNames[i] + std::string("@ObsError");
         std::vector<float> obsErrVals(latVals.size(), obsErrors[i]);
         obs_group_.vars.createWithScales<float>(varName, { nlocsVar }, float_params)
-            .write<float>(obsErrVals)
-            .atts.add<std::string>("units", std::string("estimated standard deviation"));
+            .write<float>(obsErrVals);
     }
 }
 

@@ -23,19 +23,21 @@
 #include "oops/util/Logger.h"
 #include "oops/util/Printable.h"
 
-////////////////////////////////////////////////////////////////////////
-// Base class for observation data IO
-////////////////////////////////////////////////////////////////////////
-
 namespace ioda {
 
-/// \brief Implementation of ObsIo base class
+/// \details The ObsIo class along with its subclasses are responsible for providing an obs
+/// data source (for the ObsSpace constructor) and an obs data destination (for the
+/// ObsSpace destructor). An obs data source can either be a file (obsdatain.obsfile YAML
+/// specification) or a "generator" (obsdatain.generate YAML specification). The generator
+/// provides a means for creating obs data through YAML specification, which is useful for
+/// testing purposes, thus bypassing the need for a file.
+///
 /// \author Stephen Herbener (JCSDA)
 
 class ObsIo : public util::Printable {
  public:
     ObsIo(const ObsIoActions action, const ObsIoModes mode, const ObsSpaceParameters & params);
-    virtual ~ObsIo() = 0;
+    ~ObsIo() {}
 
     /// \brief return number of maximum variable size (along first dimension)
     Dimensions_t maxVarSize() const {return max_var_size_;}

@@ -16,7 +16,7 @@
 namespace ioda {
 
 /*!
- * \brief Factory class to instantiate objects of ObsIo subclasses.
+ * \brief Factory class to instantiate objects of ObsFrame subclasses.
  *
  * \author Stephen Herbener (JCSDA)
  */
