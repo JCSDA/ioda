@@ -186,36 +186,46 @@ ObsDtype ObsData::dtype(const std::string & group, const std::string & name) con
 // -----------------------------------------------------------------------------
 void ObsData::get_db(const std::string & group, const std::string & name,
                      std::vector<int> & vdata) const {
+    std::size_t vsize = vdata.size();
     Variable var = obs_group_.vars.open(fullVarName(group, name));
     var.read<int>(vdata);
+    vdata.resize(vsize);
 }
 
 void ObsData::get_db(const std::string & group, const std::string & name,
                      std::vector<float> & vdata) const {
+    std::size_t vsize = vdata.size();
     Variable var = obs_group_.vars.open(fullVarName(group, name));
     var.read<float>(vdata);
+    vdata.resize(vsize);
 }
 
 void ObsData::get_db(const std::string & group, const std::string & name,
                      std::vector<double> & vdata) const {
     // load the float values from the database and convert to double
-    std::vector<float> floatData(vdata.size(), 0.0);
+    std::size_t vsize = vdata.size();
+    std::vector<float> floatData;
     Variable var = obs_group_.vars.open(fullVarName(group, name));
     var.read<float>(floatData);
+    floatData.resize(vsize);
     ConvertVarType<float, double>(floatData, vdata);
 }
 
 void ObsData::get_db(const std::string & group, const std::string & name,
                      std::vector<std::string> & vdata) const {
+    std::size_t vsize = vdata.size();
     Variable var = obs_group_.vars.open(fullVarName(group, name));
     var.read<std::string>(vdata);
+    vdata.resize(vsize);
 }
 
 void ObsData::get_db(const std::string & group, const std::string & name,
                       std::vector<util::DateTime> & vdata) const {
+    std::size_t vsize = vdata.size();
     std::vector<std::string> dtStrings;
     Variable var = obs_group_.vars.open(fullVarName(group, name));
     var.read<std::string>(dtStrings);
+    dtStrings.resize(vsize);
     vdata = convertDtStringsToDtime(dtStrings);
 }
 
