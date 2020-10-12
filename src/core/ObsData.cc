@@ -186,75 +186,105 @@ ObsDtype ObsData::dtype(const std::string & group, const std::string & name) con
 // -----------------------------------------------------------------------------
 void ObsData::get_db(const std::string & group, const std::string & name,
                      std::vector<int> & vdata) const {
+    Selection feSelect;
+    Selection beSelect;
+    genVectorSelectionObjects(vdata.size(), feSelect, beSelect);
     Variable var = obs_group_.vars.open(fullVarName(group, name));
-    var.read<int>(vdata);
+    var.read<int>(vdata, feSelect, beSelect);
 }
 
 void ObsData::get_db(const std::string & group, const std::string & name,
                      std::vector<float> & vdata) const {
+    Selection feSelect;
+    Selection beSelect;
+    genVectorSelectionObjects(vdata.size(), feSelect, beSelect);
     Variable var = obs_group_.vars.open(fullVarName(group, name));
-    var.read<float>(vdata);
+    var.read<float>(vdata, feSelect, beSelect);
 }
 
 void ObsData::get_db(const std::string & group, const std::string & name,
                      std::vector<double> & vdata) const {
     // load the float values from the database and convert to double
-    std::vector<float> floatData(vdata.size(), 0.0);
+    std::vector<float> floatData;
+    Selection feSelect;
+    Selection beSelect;
+    genVectorSelectionObjects(vdata.size(), feSelect, beSelect);
     Variable var = obs_group_.vars.open(fullVarName(group, name));
-    var.read<float>(floatData);
+    var.read<float>(floatData, feSelect, beSelect);
     ConvertVarType<float, double>(floatData, vdata);
 }
 
 void ObsData::get_db(const std::string & group, const std::string & name,
                      std::vector<std::string> & vdata) const {
+    Selection feSelect;
+    Selection beSelect;
+    genVectorSelectionObjects(vdata.size(), feSelect, beSelect);
     Variable var = obs_group_.vars.open(fullVarName(group, name));
-    var.read<std::string>(vdata);
+    var.read<std::string>(vdata, feSelect, beSelect);
 }
 
 void ObsData::get_db(const std::string & group, const std::string & name,
                       std::vector<util::DateTime> & vdata) const {
     std::vector<std::string> dtStrings;
+    Selection feSelect;
+    Selection beSelect;
+    genVectorSelectionObjects(vdata.size(), feSelect, beSelect);
     Variable var = obs_group_.vars.open(fullVarName(group, name));
-    var.read<std::string>(dtStrings);
+    var.read<std::string>(dtStrings, feSelect, beSelect);
     vdata = convertDtStringsToDtime(dtStrings);
 }
 
 // -----------------------------------------------------------------------------
 void ObsData::put_db(const std::string & group, const std::string & name,
                       const std::vector<int> & vdata) {
-  Variable var = openCreateVar<int>(fullVarName(group, name));
-  var.write<int>(vdata);
+    Selection feSelect;
+    Selection beSelect;
+    genVectorSelectionObjects(vdata.size(), feSelect, beSelect);
+    Variable var = openCreateVar<int>(fullVarName(group, name));
+    var.write<int>(vdata, feSelect, beSelect);
 }
 
 void ObsData::put_db(const std::string & group, const std::string & name,
                       const std::vector<float> & vdata) {
-  Variable var = openCreateVar<float>(fullVarName(group, name));
-  var.write<float>(vdata);
+    Selection feSelect;
+    Selection beSelect;
+    genVectorSelectionObjects(vdata.size(), feSelect, beSelect);
+    Variable var = openCreateVar<float>(fullVarName(group, name));
+    var.write<float>(vdata, feSelect, beSelect);
 }
 
 void ObsData::put_db(const std::string & group, const std::string & name,
                       const std::vector<double> & vdata) {
   // convert to float, then load into the database
-  std::vector<float> floatData(vdata.size());
-  ConvertVarType<double, float>(vdata, floatData);
-  Variable var = openCreateVar<float>(fullVarName(group, name));
-  var.write<float>(floatData);
+    std::vector<float> floatData(vdata.size());
+    ConvertVarType<double, float>(vdata, floatData);
+    Selection feSelect;
+    Selection beSelect;
+    genVectorSelectionObjects(vdata.size(), feSelect, beSelect);
+    Variable var = openCreateVar<float>(fullVarName(group, name));
+    var.write<float>(floatData, feSelect, beSelect);
 }
 
 void ObsData::put_db(const std::string & group, const std::string & name,
                       const std::vector<std::string> & vdata) {
-  Variable var = openCreateVar<std::string>(fullVarName(group, name));
-  var.write<std::string>(vdata);
+    Selection feSelect;
+    Selection beSelect;
+    genVectorSelectionObjects(vdata.size(), feSelect, beSelect);
+    Variable var = openCreateVar<std::string>(fullVarName(group, name));
+    var.write<std::string>(vdata, feSelect, beSelect);
 }
 
 void ObsData::put_db(const std::string & group, const std::string & name,
                       const std::vector<util::DateTime> & vdata) {
-  std::vector<std::string> dtStrings(vdata.size(), "");
-  for (std::size_t i = 0; i < vdata.size(); ++i) {
-    dtStrings[i] = vdata[i].toString();
-  }
-  Variable var = openCreateVar<std::string>(fullVarName(group, name));
-  var.write<std::string>(dtStrings);
+    std::vector<std::string> dtStrings(vdata.size(), "");
+    for (std::size_t i = 0; i < vdata.size(); ++i) {
+      dtStrings[i] = vdata[i].toString();
+    }
+    Selection feSelect;
+    Selection beSelect;
+    genVectorSelectionObjects(vdata.size(), feSelect, beSelect);
+    Variable var = openCreateVar<std::string>(fullVarName(group, name));
+    var.write<std::string>(dtStrings, feSelect, beSelect);
 }
 
 
@@ -478,6 +508,16 @@ void ObsData::resizeNlocs(const Dimensions_t nlocsSize, const bool append) {
     }
     obs_group_.resize(
         { std::pair<Variable, Dimensions_t>(nlocsVar, nlocsResize) });
+}
+
+// -----------------------------------------------------------------------------
+void ObsData::genVectorSelectionObjects(const Dimensions_t vsize, Selection & feSelect,
+                                        Selection & beSelect) {
+    std::vector<Dimensions_t> starts(1, 0);
+    std::vector<Dimensions_t> counts(1, vsize);
+    feSelect = Selection()
+        .extent({ counts }).select({ SelectionOperator::SET, starts, counts }),
+    beSelect = Selection().select({ SelectionOperator::SET, starts, counts });
 }
 
 // -----------------------------------------------------------------------------

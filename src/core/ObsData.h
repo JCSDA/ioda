@@ -310,6 +310,13 @@ namespace ioda {
         /// \param append when true append nlocsSize to current size, otherwise reset size
         void resizeNlocs(const Dimensions_t nlocsSize, const bool append);
 
+        /// \brief create selection objects for vector (1D) read/writes
+        /// \param vsize size of vector
+        /// \param feSelect front end selection object
+        /// \param beSelect back end selection object
+        static void genVectorSelectionObjects(const Dimensions_t vsize, Selection & feSelect,
+                                              Selection & beSelect);
+
         /// \brief read in values for variable from obs source
         /// \param obsIo obs source object
         /// \param varName Name of variable in obs source object
