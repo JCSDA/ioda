@@ -46,7 +46,7 @@ before_install:
 
 #  checkout for the same branch name in ioda-engines
   - git clone https://github.com/jcsda/ioda-engines.git ${REPO_SOURCE_DIR}/ioda-bundle/ioda_engines
-  - cd ${REPO_SOURCE_DIR}/ioda-bundle/ioda-engines
+  - cd ${REPO_SOURCE_DIR}/ioda-bundle/ioda_engines
   - git checkout $BRANCH || echo "No branch named $BRANCH in ioda-engines repo"
   - cd $REPO_SOURCE_DIR
 
