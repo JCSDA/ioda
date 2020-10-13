@@ -12,6 +12,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsframe.yml
   testinput/iodatest_distribution.yml
   testinput/iodatest_obsspace.yml
+  testinput/iodatest_obsspace_mpi.yml
   testinput/iodatest_obsspace_marine.yml
   testinput/iodatest_obsspace_fortran.yml
   testinput/iodatest_obsspace_localization.yml
@@ -186,7 +187,7 @@ ecbuild_add_test( TARGET  test_ioda_obsspace
 ecbuild_add_test( TARGET  test_ioda_obsspace_mpi
                   MPI     2
                   COMMAND test_ioda_obsspace
-                  ARGS    "testinput/iodatest_obsspace.yml"
+                  ARGS    "testinput/iodatest_obsspace_mpi.yml"
                   TEST_DEPENDS get_ioda_test_data )
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_marine

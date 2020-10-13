@@ -124,7 +124,7 @@ namespace ioda {
   /// \param rankNum MPI group communicator rank number
   /// \param timeRankNum MPI time communicator rank number
   std::string uniquifyFileName(const std::string & fileName, const std::size_t rankNum,
-                               const std::size_t timeRankNum);
+                               const int timeRankNum);
 
   /// \brief form a map containing lists of dimension variables that are attached to each
   /// variable
