@@ -157,7 +157,7 @@ namespace ioda {
         const std::vector<std::size_t> & index() const {return indx_;}
 
         /// \brief return true if group/variable exists
-        bool has(const std::string &, const std::string &) const;
+        bool has(const std::string & group, const std::string & name) const;
 
         /// \brief return data type for group/variable
         /// \param group Group name containting the variable
