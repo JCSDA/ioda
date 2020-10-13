@@ -386,9 +386,7 @@ void testWrite() {
             }
             std::sort(expectedVarList.begin(), expectedVarList.end());
             std::vector<std::string> varList = obsFrame->ioVarList();
-            for (size_t i = 0; i < expectedVarList.size(); ++i) {
-                EXPECT_EQUAL(varList[i], expectedVarList[i]);
-            }
+            EXPECT_EQUAL(varList, expectedVarList);
         }
     }
 }

@@ -109,8 +109,8 @@ observations:
     simulated variables: [air_temperature, eastward_wind]
     generate:
       list:
-        lats: [ 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 ]
-        lons: [ 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 ]
+        lats: [ 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14 ]
+        lons: [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 ]
         datetimes:
         - "2010-01-01T00:04:00Z"
         - "2010-01-01T00:04:12Z"
@@ -132,7 +132,7 @@ observations:
       read variables:
         - name: "MetaData/latitude"
           type: "float"
-          values: [ 5.0, 5.0, 5.0, 5.0, 5.0 ]
+          values: [ 4.0, 5.0, 6.0, 7.0, 8.0 ]
         - name: "MetaData/datetime"
           type: "string"
           values:

@@ -50,7 +50,7 @@ ObsData::ObsData(const eckit::Configuration & config, const eckit::mpi::Comm & c
     obs_params_.deserialize(config);
 
     obsname_ = obs_params_.top_level_.obsSpaceName;
-    obsvars_ = oops::Variables(config, "simulated variables");
+    obsvars_ = obs_params_.top_level_.simVars;
     oops::Log::info() << this->obsname() << " vars: " << obsvars_ << std::endl;
 
     // Create the MPI distribution object
@@ -184,6 +184,16 @@ ObsDtype ObsData::dtype(const std::string & group, const std::string & name) con
 }
 
 // -----------------------------------------------------------------------------
+// In the following get_db methods, there exists code to resize vdata to the
+// size that was allocated for vdata upon entry. In the old implementation, the
+// data from the in-memory store would get copied, starting at index 0, for just that
+// size regardless of the size of the data in the in-memory store. The resize here is
+// added for compatibility with the old implementation. (With the new ioda-engines
+// interface, vdata gets resized to the size in the memory store during the read function.)
+//
+// The ufo test test_ufo_profileconsistencychecks_wrongOPScomparison relies on the old
+// behavior where it allocates vdata to a subset of the total size and relies on vdata
+// being returned with that pre-allocated size intact.
 void ObsData::get_db(const std::string & group, const std::string & name,
                      std::vector<int> & vdata) const {
     std::size_t vsize = vdata.size();

@@ -108,9 +108,6 @@ namespace ioda {
         ObsData(const ObsData &);
         ~ObsData();
 
-        /// \details This method will return the handle to the configuration
-        const eckit::Configuration & getConfig() const {return config_;}
-
         /// \details This method will return the start of the DA timing window
         const util::DateTime & windowStart() const {return winbgn_;}
 

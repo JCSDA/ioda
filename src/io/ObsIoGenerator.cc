@@ -53,7 +53,7 @@ ObsIoGenerator::ObsIoGenerator(const ObsIoActions action, const ObsIoModes mode,
             genDistRandom(*(params.top_level_.obsGenerate.value()->random.value()),
                           params.windowStart(), params.windowEnd(), params.comm(),
                           params.top_level_.obsGenerate.value()->obsErrors,
-                          params.top_level_.simVars);
+                          params.top_level_.simVars.value().variables());
         } else if (params.in_type() == ObsIoTypes::GENERATOR_LIST) {
             oops::Log::trace() << "Constructing ObsIoGenerator: List method" << std::endl;
 
@@ -67,7 +67,7 @@ ObsIoGenerator::ObsIoGenerator(const ObsIoActions action, const ObsIoModes mode,
             // Fill in the ObsGroup with the generated data
             genDistList(*(params.top_level_.obsGenerate.value()->list.value()),
                         params.top_level_.obsGenerate.value()->obsErrors,
-                        params.top_level_.simVars);
+                        params.top_level_.simVars.value().variables());
         } else {
             ABORT("ObsIoGenerator: Unrecongnized ObsIoTypes value");
         }

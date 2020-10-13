@@ -284,8 +284,35 @@ void testWrite() {
             }
             std::sort(expectedVarList.begin(), expectedVarList.end());
             std::vector<std::string> varList = obsIo->varList();
-            for (size_t i = 0; i < varList.size(); ++i) {
-                EXPECT_EQUAL(varList[i], expectedVarList[i]);
+            EXPECT_EQUAL(varList, expectedVarList);
+
+            // Check if the values of the variables got written correctly
+            for (std::size_t j = 0; j < writeVarConfigs.size(); ++j) {
+                std::string varName = writeVarConfigs[j].getString("name");
+                std::string varType = writeVarConfigs[j].getString("type");
+
+                // Read the variable data from the file and compare with
+                // the values from the YAML configuration
+                Variable var = obsIo->vars().open(varName);
+                if (varType == "int") {
+                    std::vector<int> expectedVarValues =
+                        writeVarConfigs[j].getIntVector("values");
+                    std::vector<int> varValues;
+                    var.read<int>(varValues);
+                    EXPECT_EQUAL(varValues, expectedVarValues);
+                } else if (varType == "float") {
+                    std::vector<float> expectedVarValues =
+                        writeVarConfigs[j].getFloatVector("values");
+                    std::vector<float> varValues;
+                    var.read<float>(varValues);
+                    EXPECT_EQUAL(varValues, expectedVarValues);
+                } else if (varType == "string") {
+                    std::vector<std::string> expectedVarValues =
+                        writeVarConfigs[j].getStringVector("values");
+                    std::vector<std::string> varValues;
+                    var.read<std::string>(varValues);
+                    EXPECT_EQUAL(varValues, expectedVarValues);
+                }
             }
         }
     }

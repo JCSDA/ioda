@@ -20,6 +20,7 @@
 #include "eckit/exception/Exceptions.h"
 #include "eckit/mpi/Comm.h"
 
+#include "oops/base/ParameterTraitsVariables.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
 #include "oops/util/parameters/OptionalParameter.h"
@@ -152,7 +153,7 @@ class ObsTopLevelParameters : public oops::Parameters {
     oops::Parameter<std::string> distName{"distribution", "RoundRobin", this};
 
     /// simulated variables
-    oops::RequiredParameter<std::vector<std::string>> simVars{"simulated variables", this};
+    oops::RequiredParameter<oops::Variables> simVars{"simulated variables", this};
 
     /// input specification by reading from a file
     oops::OptionalParameter<ObsFileInParameters> obsInFile{"obsdatain", this};
