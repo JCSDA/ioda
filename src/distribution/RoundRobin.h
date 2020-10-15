@@ -35,6 +35,8 @@ class RoundRobin: public Distribution {
      void sum(double &x) override;
      void sum(int &x) override;
      void sum(size_t &x) override;
+     void sum(std::vector<double> &x) override;
+     void sum(std::vector<size_t> &x) override;
 
      void min(double &x) override;
      void min(float &x) override;

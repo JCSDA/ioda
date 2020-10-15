@@ -37,6 +37,8 @@ class Distribution {
     virtual void sum(double &x) = 0;
     virtual void sum(int &x) = 0;
     virtual void sum(size_t &x) = 0;
+    virtual void sum(std::vector<double> &x) = 0;
+    virtual void sum(std::vector<size_t> &x) = 0;
 
     virtual void min(double &x) = 0;
     virtual void min(float &x) = 0;
