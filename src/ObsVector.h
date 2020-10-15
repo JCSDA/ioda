@@ -8,6 +8,7 @@
 #ifndef OBSVECTOR_H_
 #define OBSVECTOR_H_
 
+#include <Eigen/Dense>
 #include <ostream>
 #include <string>
 #include <vector>
@@ -58,6 +59,7 @@ class ObsVector : public util::Printable,
   const double & operator[](const std::size_t ii) const {return values_.at(ii);}
   double & operator[](const std::size_t ii) {return values_.at(ii);}
   unsigned int nobs() const;  // Number of active observations (missing values not included)
+  Eigen::VectorXd  packEigen() const;
 
   const double & toFortran() const;
   double & toFortran();
