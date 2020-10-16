@@ -225,6 +225,17 @@ void ObsVector::save(const std::string & name) const {
   }
 }
 // -----------------------------------------------------------------------------
+Eigen::VectorXd ObsVector::packEigen() const {
+  Eigen::VectorXd vec(nobs());
+  size_t ii = 0;
+  for (const double & val : values_) {
+    if (val != missing_) {
+      vec(ii++) = val;
+    }
+  }
+  return vec;
+}
+// -----------------------------------------------------------------------------
 void ObsVector::mask(const ObsDataVector<int> & flags) {
   oops::Log::trace() << "ObsVector::mask" << std::endl;
   ASSERT(values_.size() == flags.nvars() * flags.nlocs());
