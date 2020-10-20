@@ -37,13 +37,20 @@ void ObsLocGC99::multiply(ObsVector & dy) const {
   const std::vector<double> & obsdist = obsdb_.obsdist();
   const size_t nlocs = dy.nlocs();
   const size_t nvars = dy.nvars();
+
+  // create a temporary vector with localization values
+  // (by putting in an ObsVector, multiplication respects the missing values)
+  ObsVector gcVec(dy);
+  gcVec.zero();
   for (size_t jloc = 0; jloc < nlocs; ++jloc) {
     double gc = oops::gc99(obsdist[jloc] / rscale_);
     // obsdist is calculated at each location; need to update R for each variable
     for (size_t jvar = 0; jvar < nvars; ++jvar) {
-      dy[jvar + jloc * nvars] *= gc;
+      gcVec[jvar + jloc * nvars] = gc;
     }
   }
+
+  dy *= gcVec;
 }
 
 // -----------------------------------------------------------------------------

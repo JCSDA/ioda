@@ -8,6 +8,7 @@
 #include "ioda/core/ObsData.h"
 
 #include <algorithm>
+#include <fstream>
 #include <functional>
 #include <iomanip>
 #include <map>
