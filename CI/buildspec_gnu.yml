@@ -82,8 +82,8 @@ phases:
       - ./clone.sh $GIT_USER $GIT_PASS atlas $CODEBUILD_GIT_BRANCH_FORK atlas /jcsda/ioda-bundle release-stable
  
       # move CMakeLists.txt
-      - cp CI/CMakeLists.txt /jcsda/ioda-bundle
-      - cp -r CI/cmake /jcsda/ioda-bundle/
+      - cp CMakeLists.txt /jcsda/ioda-bundle
+      - cp -r cmake /jcsda/ioda-bundle/
 
       - cd /jcsda/ioda-bundle
       - sed -i 's/BRANCH develop  UPDATE//' CMakeLists.txt
