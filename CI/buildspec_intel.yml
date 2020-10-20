@@ -97,6 +97,8 @@ phases:
 
       # move CMakeLists.txt
       - cp CI/CMakeLists.txt /jcsda/ioda-bundle
+      - cp -r CI/cmake /jcsda/ioda-bundle/
+      - ls /jcsda/ioda-bundle
 
       - cd /jcsda/ioda-bundle
       - sed -i 's/BRANCH develop  UPDATE//' CMakeLists.txt

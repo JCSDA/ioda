@@ -53,8 +53,8 @@ before_install:
   - cd $REPO_SOURCE_DIR
 
 #  move CMakeLists.txt
-  - mv ${TRAVIS_BUILD_DIR}/CI/CMakeLists.txt ${REPO_SOURCE_DIR}/ioda-bundle
-
+  - cp ${TRAVIS_BUILD_DIR}/CI/CMakeLists.txt ${REPO_SOURCE_DIR}/ioda-bundle
+  - cp -r ${TRAVIS_BUILD_DIR}/CI/cmake ${REPO_SOURCE_DIR}/ioda-bundle/
 #======================================================================
 # Pull docker image
 #======================================================================
