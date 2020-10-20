@@ -68,6 +68,7 @@ phases:
         echo "CODEBUILD_GIT_BRANCH_FORK=${CODEBUILD_GIT_BRANCH_FORK}";
         fi
 
+      - cd CI
       # ioda
       - ./clone.sh $GIT_USER $GIT_PASS ioda $CODEBUILD_GIT_BRANCH ioda /jcsda/ioda-bundle develop
 

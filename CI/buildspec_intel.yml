@@ -81,8 +81,9 @@ phases:
         then export CODEBUILD_GIT_BRANCH_FORK="release-stable";
         else export CODEBUILD_GIT_BRANCH_FORK=${CODEBUILD_GIT_BRANCH};
         echo "CODEBUILD_GIT_BRANCH_FORK=${CODEBUILD_GIT_BRANCH_FORK}";
-        fi      
-
+        fi
+   
+      - cd CI
       # ioda
       - ./clone.sh $GIT_USER $GIT_PASS ioda $CODEBUILD_GIT_BRANCH ioda /jcsda/ioda-bundle develop
 
