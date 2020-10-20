@@ -77,16 +77,11 @@ phases:
       - echo "CODEBUILD_GIT_BRANCH=${CODEBUILD_GIT_BRANCH}"
       - echo "CODEBUILD_SOURCE_VERSION=${CODEBUILD_SOURCE_VERSION}"
 
-      - cd CI
-
       - if [ "$CODEBUILD_GIT_BRANCH" = "develop" ];
         then export CODEBUILD_GIT_BRANCH_FORK="release-stable";
         else export CODEBUILD_GIT_BRANCH_FORK=${CODEBUILD_GIT_BRANCH};
         echo "CODEBUILD_GIT_BRANCH_FORK=${CODEBUILD_GIT_BRANCH_FORK}";
         fi      
-
-      # ioda-bunde 
-      - ./clone.sh $GIT_USER $GIT_PASS ioda-bundle $CODEBUILD_GIT_BRANCH ioda-bundle /jcsda develop
 
       # ioda
       - ./clone.sh $GIT_USER $GIT_PASS ioda $CODEBUILD_GIT_BRANCH ioda /jcsda/ioda-bundle develop
@@ -99,6 +94,9 @@ phases:
 
       # atlas
       - ./clone.sh $GIT_USER $GIT_PASS atlas $CODEBUILD_GIT_BRANCH_FORK atlas /jcsda/ioda-bundle release-stable
+
+      # move CMakeLists.txt
+      - cp CI/CMakeLists.txt /jcsda/ioda-bundle
 
       - cd /jcsda/ioda-bundle
       - sed -i 's/BRANCH develop  UPDATE//' CMakeLists.txt
