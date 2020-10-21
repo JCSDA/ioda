@@ -18,11 +18,11 @@ include( ecbuild_bundle )
 set( ENABLE_MPI ON CACHE BOOL "Compile with MPI" )
 
 ecbuild_bundle_initialize()
-ecbuild_bundle( PROJECT jedicmake GIT "https://github.com/JCSDA/jedi-cmake.git" BRANCH develop UPDATE )
+ecbuild_bundle( PROJECT jedicmake GIT "https://github.com/JCSDA-internal/jedi-cmake.git" )
 
 option("BUNDLE_SKIP_ECKIT" "Don't build eckit" "ON") #Skip eckit build unless user passes -DBUNDLE_SKIP_ECKIT=OFF
-ecbuild_bundle( PROJECT fckit GIT "https://github.com/JCSDA/fckit.git" )
-ecbuild_bundle( PROJECT atlas GIT "https://github.com/JCSDA/atlas.git" )
+ecbuild_bundle( PROJECT fckit GIT "https://github.com/JCSDA-internal/fckit.git" )
+ecbuild_bundle( PROJECT atlas GIT "https://github.com/JCSDA-internal/atlas.git" )
 
 ecbuild_bundle( PROJECT oops         GIT "https://github.com/JCSDA/oops.git" )
 ecbuild_bundle( PROJECT ioda         GIT "https://github.com/JCSDA/ioda.git" )

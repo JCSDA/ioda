@@ -35,19 +35,25 @@ before_install:
   - git checkout $BRANCH || echo "No branch named $BRANCH in oops repo"
   - cd $REPO_SOURCE_DIR
 
+#  checkout for the same branch name in jedi-cmake
+  - git clone https://github.com/jcsda-internal/jedi-cmake.git ${REPO_SOURCE_DIR}/ioda-bundle/jedicmake
+  - cd ${REPO_SOURCE_DIR}/ioda-bundle/jedicmake
+  - git checkout $BRANCH || echo "No branch named $BRANCH in jedi-cmake repo"
+  - cd $REPO_SOURCE_DIR
+
   - if [ "$BRANCH" = "develop" ];
     then export BRANCH_FORK="release-stable";
     else export BRANCH_FORK=$BRANCH;
     fi
 
 #  checkout for the same branch name in fckit
-  - git clone https://github.com/jcsda/fckit.git ${REPO_SOURCE_DIR}/ioda-bundle/fckit
+  - git clone https://github.com/jcsda-internal/fckit.git ${REPO_SOURCE_DIR}/ioda-bundle/fckit
   - cd ${REPO_SOURCE_DIR}/ioda-bundle/fckit
   - git checkout $BRANCH_FORK || echo "No branch named $BRANCH in atlas repo"; git checkout release-stable
   - cd $REPO_SOURCE_DIR
 
 #  checkout for the same branch name in atlas
-  - git clone https://github.com/jcsda/atlas.git ${REPO_SOURCE_DIR}/ioda-bundle/atlas
+  - git clone https://github.com/jcsda-internal/atlas.git ${REPO_SOURCE_DIR}/ioda-bundle/atlas
   - cd ${REPO_SOURCE_DIR}/ioda-bundle/atlas
   - git checkout $BRANCH_FORK || echo "No branch named $BRANCH in atlas repo"; git checkout release-stable
   - cd $REPO_SOURCE_DIR
