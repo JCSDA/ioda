@@ -84,20 +84,23 @@ phases:
         fi
    
       - cd CI
-      # ioda
-      - ./clone.sh $GIT_USER $GIT_PASS ioda $CODEBUILD_GIT_BRANCH ioda /jcsda/ioda-bundle develop
 
-      # jedi-cmake
-      - ./clone.sh $GIT_USER $GIT_PASS jedi-cmake $CODEBUILD_GIT_BRANCH jedicmake /jcsda/ioda-bundle develop
+      # ioda
+      - ./clone.sh $GIT_USER $GIT_PASS jcsda/ioda $CODEBUILD_GIT_BRANCH ioda /jcsda/ioda-bundle develop
 
       # oops
-      - ./clone.sh $GIT_USER $GIT_PASS oops $CODEBUILD_GIT_BRANCH oops /jcsda/ioda-bundle develop
+      - ./clone.sh $GIT_USER $GIT_PASS jcsda/oops $CODEBUILD_GIT_BRANCH oops /jcsda/ioda-bundle develop
+
+
+      # internal repos
+      # jedi-cmake
+      - ./clone.sh $GIT_USER $GIT_PASS jcsda-internal/jedi-cmake $CODEBUILD_GIT_BRANCH jedicmake /jcsda/ioda-bundle develop
 
       #fckit
-      - ./clone.sh $GIT_USER $GIT_PASS fckit $CODEBUILD_GIT_BRANCH_FORK fckit /jcsda/ioda-bundle release-stable
+      - ./clone.sh $GIT_USER $GIT_PASS jcsda-internal/fckit $CODEBUILD_GIT_BRANCH_FORK fckit /jcsda/ioda-bundle release-stable
 
       # atlas
-      - ./clone.sh $GIT_USER $GIT_PASS atlas $CODEBUILD_GIT_BRANCH_FORK atlas /jcsda/ioda-bundle release-stable
+      - ./clone.sh $GIT_USER $GIT_PASS jcsda-internal/atlas $CODEBUILD_GIT_BRANCH_FORK atlas /jcsda/ioda-bundle release-stable
 
       # move CMakeLists.txt
       - cp CMakeLists.txt /jcsda/ioda-bundle
