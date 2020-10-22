@@ -35,7 +35,6 @@ before_install:
   - git checkout $BRANCH || echo "No branch named $BRANCH in oops repo"
   - cd $REPO_SOURCE_DIR
 
-
   - if [ "$BRANCH" = "develop" ];
     then export BRANCH_FORK="release-stable";
     else export BRANCH_FORK=$BRANCH;
