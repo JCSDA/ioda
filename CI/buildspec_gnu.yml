@@ -25,7 +25,7 @@ phases:
       - if [ "$CODEBUILD_WEBHOOK_EVENT" = "PULL_REQUEST_MERGED" ];
         then export CODEBUILD_GIT_BRANCH="develop";
         echo "Merging to develop";
-        else export CODEBUILD_GIT_BRANCH=${CODEBUILD_WEBHOOK_HEAD_REF#refs/head/};
+        else export CODEBUILD_GIT_BRANCH=${CODEBUILD_WEBHOOK_HEAD_REF#refs/heads/};
         fi
 
       - echo "CODEBUILD_GIT_BRANCH=${CODEBUILD_GIT_BRANCH}"
