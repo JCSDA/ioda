@@ -38,30 +38,31 @@ ecbuild_add_resources( TARGET ioda_test_scripts
 # Create Data directory for test data and symlink files
 list( APPEND ioda_test_data testinput_tier_1.tar.gz )
 
-if( DEFINED ENV{LOCAL_PATH_TESTFILES_IODA})
-    set(LOCAL_PATH_TESTFILES_IODA "$ENV{LOCAL_PATH_TESTFILES_IODA}")
+if( DEFINED ENV{LOCAL_PATH_JEDI_TESTFILES})
+    set(LOCAL_PATH_JEDI_TESTFILES "$ENV{LOCAL_PATH_JEDI_TESTFILES}")
 endif()
 
 # Set URL for IODA test files
 set(IODA_DOWNLOAD_BASE_URL https://jedi-test-files.s3.amazonaws.com)
 
+# Determine the branch name
+set( IODA_TESTFILES_BRANCH "$ENV{IODA_TESTFILES_BRANCH}")
+if ( IODA_TESTFILES_BRANCH STREQUAL "" )
+  # Get the current git branch
+  execute_process(
+    COMMAND bash "-c" "git symbolic-ref -q --short HEAD || git describe --tags --exact-match"
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    OUTPUT_VARIABLE GIT_BRANCH_IODA
+    OUTPUT_STRIP_TRAILING_WHITESPACE)
+  message(STATUS "IODA branch [parsed]: ${GIT_BRANCH_IODA}")
+else()
+  message(STATUS "IODA branch [user-set]: ${IODA_TESTFILES_BRANCH}")
+  set(GIT_BRANCH_IODA ${IODA_TESTFILES_BRANCH})
+endif()
+
 # If local path to testfiles is defined don't download
-if( NOT DEFINED LOCAL_PATH_TESTFILES_IODA )
-
-  message(STATUS "LOCAL_PATH_TESTFILES_IODA is not defined, download test files")
-  if( NOT DEFINED IODA_IODA_TESTFILES_BRANCH)
-
-    # Get the current git branch
-    execute_process(
-      COMMAND git rev-parse --abbrev-ref HEAD
-      WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-      OUTPUT_VARIABLE GIT_BRANCH_IODA
-      OUTPUT_STRIP_TRAILING_WHITESPACE)
-    message(STATUS "IODA branch [parsed]: ${GIT_BRANCH_IODA}")
-  else()
-    message(STATUS "IODA branch [user-set]: ${IODA_IODA_TESTFILES_BRANCH}")
-    set(GIT_BRANCH_IODA ${IODA_IODA_TESTFILES_BRANCH})
-  endif()
+if( NOT DEFINED LOCAL_PATH_JEDI_TESTFILES )
+  message(STATUS "LOCAL_PATH_JEDI_TESTFILES is not defined, download test files")
  
   # Check whether the URL exists or not 
   set(ECBUILD_DOWNLOAD_BASE_URL ${IODA_DOWNLOAD_BASE_URL}/ioda)
@@ -83,7 +84,6 @@ if( NOT DEFINED LOCAL_PATH_TESTFILES_IODA )
 
   set(TESTFILE_DIR_IODA ${CMAKE_BINARY_DIR}/test_data/ioda/${DIRNAME} CACHE PATH "data dir for test data")
   file(MAKE_DIRECTORY ${TESTFILE_DIR_IODA})
-  message(STATUS "LOCAL_PATH_TESTFILES_IODA is not defined, download test files")
 
   # Run test to download data
   set(IODA_REP_NAME ioda)
@@ -113,8 +113,8 @@ if( NOT DEFINED LOCAL_PATH_TESTFILES_IODA )
                     COMMAND    ${CMAKE_BINARY_DIR}/bin/ioda_data_downloader.py
                     ARGS      testoutput/download_test.log)
 else()
-  set(TESTFILE_DIR_IODA ${LOCAL_PATH_TESTFILES_IODA})
-  message(STATUS "use LOCAL_PATH_TESTFILES_IODA: ${LOCAL_PATH_TESTFILES_IODA}")
+  set(TESTFILE_DIR_IODA "${LOCAL_PATH_JEDI_TESTFILES}/ioda/${GIT_BRANCH_IODA}")
+  message(STATUS "use LOCAL_PATH_JEDI_TESTFILES: ${LOCAL_PATH_JEDI_TESTFILES}")
 endif()
 
 execute_process( COMMAND ${CMAKE_COMMAND} -E create_symlink
