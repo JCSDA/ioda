@@ -80,9 +80,9 @@ if( NOT DEFINED LOCAL_PATH_JEDI_TESTFILES )
     set(DIRNAME "develop")
     message(STATUS "GIT_BRANCH_IODA not set. [download: ${DIRNAME}]")
   endif()
-  message(STATUS "Test data will be downloaded from: ${IODA_DOWNLOAD_BASE_URL}/${DIRNAME}")
+  message(STATUS "Test data will be downloaded from: ${ECBUILD_DOWNLOAD_BASE_URL}/${DIRNAME}")
 
-  set(TESTFILE_DIR_IODA ${CMAKE_BINARY_DIR}/test_data/ioda/${DIRNAME} CACHE PATH "data dir for test data")
+  set(TESTFILE_DIR_IODA ${CMAKE_BINARY_DIR}/test_data/ioda/${DIRNAME})
   file(MAKE_DIRECTORY ${TESTFILE_DIR_IODA})
 
   # Run test to download data
