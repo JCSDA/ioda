@@ -28,7 +28,7 @@ add_subdirectory( src )
 add_subdirectory( test )
 add_subdirectory( tools )
 
-if( ENABLE_OOPS_DOC )
+if( ENABLE_IODA_DOC )
     add_subdirectory( Documents )
 endif()
 
