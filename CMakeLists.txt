@@ -29,7 +29,7 @@ add_subdirectory( test )
 add_subdirectory( tools )
 
 if( ENABLE_IODA_DOC )
-    add_subdirectory( Documents )
+    add_subdirectory( docs )
 endif()
 
 ## Tests
