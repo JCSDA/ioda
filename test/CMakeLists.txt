@@ -66,6 +66,9 @@ if( NOT DEFINED LOCAL_PATH_JEDI_TESTFILES )
   message(STATUS "LOCAL_PATH_JEDI_TESTFILES is not defined, download test files")
  
   # Set URL for the source of the IODA test files
+  # After this if-then-else structure:
+  #    IODA_DOWNLOAD_BASE_URL needs to be set to the full URL path to the download files.
+  #    DIRNAME needs to be set to the branch/tag value corresponding to the version checked out
   if (${GIT_BRANCH_IODA} STREQUAL "1.0.0")
     # Release 1.0.0 data comes from UCAR hosting
     # UCAR hosting is logically in a flat directory structure so the different repo
@@ -97,10 +100,10 @@ if( NOT DEFINED LOCAL_PATH_JEDI_TESTFILES )
       message(STATUS "GIT_BRANCH_IODA not set. [download: ${DIRNAME}]")
     endif()
 
-    # Set another variable with the full path to the download files that were found.
+    # Set variable with the full path to the download files that were found.
     set(IODA_DOWNLOAD_BASE_URL "${ECBUILD_DOWNLOAD_BASE_URL}/${DIRNAME}")
-    message(STATUS "Test data will be downloaded from: ${IODA_DOWNLOAD_BASE_URL}")
   endif()
+  message(STATUS "Test data will be downloaded from: ${IODA_DOWNLOAD_BASE_URL}")
 
   # Create the local directory to receive the test data download
   set(TESTFILE_DIR_IODA "${CMAKE_BINARY_DIR}/test_data/ioda/${DIRNAME}")
