@@ -65,18 +65,20 @@ endif()
 if( NOT DEFINED LOCAL_PATH_JEDI_TESTFILES )
   message(STATUS "LOCAL_PATH_JEDI_TESTFILES is not defined, download test files")
  
-  # Set URL for IODA test files
+  # Set URL for the source of the IODA test files
   if (${GIT_BRANCH_IODA} STREQUAL "1.0.0")
     # Release 1.0.0 data comes from UCAR hosting
-    set(ECBUILD_DOWNLOAD_BASE_URL https://dashrepo.ucar.edu/dataset/147_miesch/file/ioda)
+    # UCAR hosting is logically in a flat directory structure so the different repo
+    # names are tagged onto the front of the file names.
+    set(IODA_DOWNLOAD_BASE_URL https://dashrepo.ucar.edu/dataset/147_miesch/file)
     set(DIRNAME ${GIT_BRANCH_IODA})
   else ()
     # All other data comes from AWS hosting
     # Using the ecbuild_check_urls to see if the data is on AWS in a bucket
     # corresponding to the checked out branch. The ecbuild_check_urls uses the variable
-    # ECBUILD_DOWNLOAD_BASE_URL which must be set to a path that is to be checked for
-    # the existence of files. The NAMES argument to ecbuild_check_urls specifies paths
-    # to files underneath ECBUILD_DOWNLOAD_BASE_URL that are to be checked for existence.
+    # ECBUILD_DOWNLOAD_BASE_URL which must be set to a path that contains the test data
+    # files. The NAMES argument to ecbuild_check_urls specifies paths to files
+    # underneath ECBUILD_DOWNLOAD_BASE_URL that are to be checked for existence.
     # The number of files NOT found is returned in the variable specified by RESULT.
     set(ECBUILD_DOWNLOAD_BASE_URL https://jedi-test-files.s3.amazonaws.com/ioda)
     ecbuild_check_urls(NAMES ${GIT_BRANCH_IODA}/${ioda_test_data}
@@ -94,11 +96,13 @@ if( NOT DEFINED LOCAL_PATH_JEDI_TESTFILES )
       set(DIRNAME "develop")
       message(STATUS "GIT_BRANCH_IODA not set. [download: ${DIRNAME}]")
     endif()
-  # Set another variable with the full path to the download files that were found.
-  set(IODA_DOWNLOAD_BASE_URL "${ECBUILD_DOWNLOAD_BASE_URL}/${DIRNAME}")
-  message(STATUS "Test data will be downloaded from: ${IODA_DOWNLOAD_BASE_URL}")
+
+    # Set another variable with the full path to the download files that were found.
+    set(IODA_DOWNLOAD_BASE_URL "${ECBUILD_DOWNLOAD_BASE_URL}/${DIRNAME}")
+    message(STATUS "Test data will be downloaded from: ${IODA_DOWNLOAD_BASE_URL}")
   endif()
 
+  # Create the local directory to receive the test data download
   set(TESTFILE_DIR_IODA "${CMAKE_BINARY_DIR}/test_data/ioda/${DIRNAME}")
   file(MAKE_DIRECTORY ${TESTFILE_DIR_IODA})
 
