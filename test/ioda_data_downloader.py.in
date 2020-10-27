@@ -51,5 +51,5 @@ else:
   if os.path.isfile(testfiles_path+"/"+testfiles_name):
     print("local RELEASE file found")
   else:
-    print ("downloading RELEASE data from "+download_base_url+"/"+download_file_name)
+    print ("downloading RELEASE data from "+download_base_url+"/"+testfiles_name)
     DownloadUntar(download_base_url, testfiles_path, testfiles_name, md5check)
