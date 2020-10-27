@@ -27,6 +27,6 @@ else
   echo "clone " ${branch_name_clone}
 fi
 
-git clone -b $branch_name_clone https://$git_user:$git_token@github.com/$repo_name $save_dir/$save_name
+git clone --depth 1 -b $branch_name_clone https://$git_user:$git_token@github.com/$repo_name $save_dir/$save_name
 
 
