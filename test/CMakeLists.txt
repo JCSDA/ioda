@@ -75,6 +75,7 @@ if( NOT DEFINED LOCAL_PATH_JEDI_TESTFILES )
     # names are tagged onto the front of the file names.
     set(IODA_DOWNLOAD_BASE_URL https://dashrepo.ucar.edu/dataset/147_miesch/file)
     set(DIRNAME ${GIT_BRANCH_IODA})
+    set(checksum "0")
   else ()
     # All other data comes from AWS hosting
     # Using the ecbuild_check_urls to see if the data is on AWS in a bucket
@@ -99,6 +100,8 @@ if( NOT DEFINED LOCAL_PATH_JEDI_TESTFILES )
       set(DIRNAME "develop")
       message(STATUS "GIT_BRANCH_IODA not set. [download: ${DIRNAME}]")
     endif()
+
+    set(checksum "1")
 
     # Set variable with the full path to the download files that were found.
     set(IODA_DOWNLOAD_BASE_URL "${ECBUILD_DOWNLOAD_BASE_URL}/${DIRNAME}")
@@ -129,7 +132,7 @@ if( NOT DEFINED LOCAL_PATH_JEDI_TESTFILES )
   ecbuild_add_test( TARGET    get_ioda_test_data
                     TYPE      SCRIPT
                     COMMAND   ${CMAKE_BINARY_DIR}/bin/ioda_data_downloader.py
-                    ARGS      ${IODA_DOWNLOAD_BASE_URL} ${TESTFILE_DIR_IODA} ${ioda_test_data})
+                    ARGS      ${IODA_DOWNLOAD_BASE_URL} ${TESTFILE_DIR_IODA} ${ioda_test_data} ${checksum})
 else()
   # use local test files
   set(TESTFILE_DIR_IODA "${LOCAL_PATH_JEDI_TESTFILES}/ioda/${GIT_BRANCH_IODA}")
