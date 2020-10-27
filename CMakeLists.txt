@@ -14,6 +14,7 @@ set( CMAKE_DIRECTORY_LABELS ${PROJECT_NAME} )
 
 ## Configuration options
 include( ${PROJECT_NAME}_compiler_flags )
+option( ENABLE_IODA_DOC "Build IODA documentation" OFF )
 
 ## Dependencies
 
@@ -26,6 +27,10 @@ find_package( oops REQUIRED )
 add_subdirectory( src )
 add_subdirectory( test )
 add_subdirectory( tools )
+
+if( ENABLE_IODA_DOC )
+    add_subdirectory( docs )
+endif()
 
 ## Tests
 ecbuild_add_test( TARGET ${PROJECT_NAME}_coding_norms
