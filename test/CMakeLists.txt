@@ -36,16 +36,17 @@ ecbuild_add_resources( TARGET ioda_test_scripts
                        SOURCES_PACK ${ioda_test_input} )
 
 # Create Data directory for test data and symlink files
-list( APPEND ioda_test_data testinput_tier_1.tar.gz )
+# Set list of test file tar balls
+list( APPEND ioda_test_data ioda_testinput_tier_1.tar.gz )
 
+# Check if user wants to use locally downloaded test data
 if( DEFINED ENV{LOCAL_PATH_JEDI_TESTFILES})
     set(LOCAL_PATH_JEDI_TESTFILES "$ENV{LOCAL_PATH_JEDI_TESTFILES}")
 endif()
 
-# Set URL for IODA test files
-set(IODA_DOWNLOAD_BASE_URL https://jedi-test-files.s3.amazonaws.com)
-
 # Determine the branch name
+# Deafult is to use the name corresponding to the currently checked out branch or tag
+# User can override through the IODA_TESTFILES_BRANCH environment variable
 set( IODA_TESTFILES_BRANCH "$ENV{IODA_TESTFILES_BRANCH}")
 if ( IODA_TESTFILES_BRANCH STREQUAL "" )
   # Get the current git branch
@@ -60,36 +61,56 @@ else()
   set(GIT_BRANCH_IODA ${IODA_TESTFILES_BRANCH})
 endif()
 
-# If local path to testfiles is defined don't download
+# Set up the download mechanism if local test files are not being used
 if( NOT DEFINED LOCAL_PATH_JEDI_TESTFILES )
   message(STATUS "LOCAL_PATH_JEDI_TESTFILES is not defined, download test files")
  
-  # Check whether the URL exists or not 
-  set(ECBUILD_DOWNLOAD_BASE_URL ${IODA_DOWNLOAD_BASE_URL}/ioda)
-
-  ecbuild_check_urls(NAMES ${GIT_BRANCH_IODA}/${ioda_test_data}
-                     RESULT IODA_SPECIFIC_TEST_FILES)
-
-  # Set distant directory
-  if( IODA_SPECIFIC_TEST_FILES MATCHES 0 )
-    # Download and extract new test files (distant directory = git branch)
+  # Set URL for the source of the IODA test files
+  # After this if-then-else structure:
+  #    IODA_DOWNLOAD_BASE_URL needs to be set to the full URL path to the download files.
+  #    DIRNAME needs to be set to the branch/tag value corresponding to the version checked out
+  if (${GIT_BRANCH_IODA} STREQUAL "1.0.0")
+    # Release 1.0.0 data comes from UCAR hosting
+    # UCAR hosting is logically in a flat directory structure so the different repo
+    # names are tagged onto the front of the file names.
+    set(IODA_DOWNLOAD_BASE_URL https://dashrepo.ucar.edu/dataset/147_miesch/file)
     set(DIRNAME ${GIT_BRANCH_IODA})
-    message(STATUS "GIT_BRANCH_IODA is set. [download: ${DIRNAME}]")
-  else()
-    # Download and extract develop test files (distant directory = develop)
-    set(DIRNAME "develop")
-    message(STATUS "GIT_BRANCH_IODA not set. [download: ${DIRNAME}]")
+    set(checksum "0")
+  else ()
+    # All other data comes from AWS hosting
+    # Using the ecbuild_check_urls to see if the data is on AWS in a bucket
+    # corresponding to the checked out branch. The ecbuild_check_urls uses the variable
+    # ECBUILD_DOWNLOAD_BASE_URL which must be set to a path that contains the test data
+    # files. The NAMES argument to ecbuild_check_urls specifies paths to files
+    # underneath ECBUILD_DOWNLOAD_BASE_URL that are to be checked for existence.
+    # The number of files NOT found is returned in the variable specified by RESULT.
+    set(ECBUILD_DOWNLOAD_BASE_URL https://jedi-test-files.s3.amazonaws.com/ioda)
+    ecbuild_check_urls(NAMES ${GIT_BRANCH_IODA}/${ioda_test_data}
+                       RESULT IODA_SPECIFIC_TEST_FILES)
+
+    # Set distant directory
+    if( IODA_SPECIFIC_TEST_FILES MATCHES 0 )
+      # The files in GIT_BRANCH_IODA do indeed exist, so use them
+      # Download and extract new test files (distant directory = git branch)
+      set(DIRNAME ${GIT_BRANCH_IODA})
+      message(STATUS "GIT_BRANCH_IODA is set. [download: ${DIRNAME}]")
+    else()
+      # The files in GIT_BRANCH_IODA do not exist, fall back on develop
+      # Download and extract develop test files (distant directory = develop)
+      set(DIRNAME "develop")
+      message(STATUS "GIT_BRANCH_IODA not set. [download: ${DIRNAME}]")
+    endif()
+
+    set(checksum "1")
+
+    # Set variable with the full path to the download files that were found.
+    set(IODA_DOWNLOAD_BASE_URL "${ECBUILD_DOWNLOAD_BASE_URL}/${DIRNAME}")
   endif()
-  message(STATUS "Test data will be downloaded from: ${ECBUILD_DOWNLOAD_BASE_URL}/${DIRNAME}")
+  message(STATUS "Test data will be downloaded from: ${IODA_DOWNLOAD_BASE_URL}")
 
-  set(TESTFILE_DIR_IODA ${CMAKE_BINARY_DIR}/test_data/ioda/${DIRNAME})
+  # Create the local directory to receive the test data download
+  set(TESTFILE_DIR_IODA "${CMAKE_BINARY_DIR}/test_data/ioda/${DIRNAME}")
   file(MAKE_DIRECTORY ${TESTFILE_DIR_IODA})
-
-  # Run test to download data
-  set(IODA_REP_NAME ioda)
-  set(IODA_TESTFILES_NAME ${ioda_test_data})
-  set(IODA_BRANCH_NAME ${DIRNAME})
-  set(IODA_TESTFILES_PATH ${CMAKE_BINARY_DIR}/test_data/ioda/${DIRNAME})
 
   # Create download script for get_ioda_test_data test 
   set ( FILENAME ioda_data_downloader.py)
@@ -110,9 +131,10 @@ if( NOT DEFINED LOCAL_PATH_JEDI_TESTFILES )
 
   ecbuild_add_test( TARGET    get_ioda_test_data
                     TYPE      SCRIPT
-                    COMMAND    ${CMAKE_BINARY_DIR}/bin/ioda_data_downloader.py
-                    ARGS      testoutput/download_test.log)
+                    COMMAND   ${CMAKE_BINARY_DIR}/bin/ioda_data_downloader.py
+                    ARGS      ${IODA_DOWNLOAD_BASE_URL} ${TESTFILE_DIR_IODA} ${ioda_test_data} ${checksum})
 else()
+  # use local test files
   set(TESTFILE_DIR_IODA "${LOCAL_PATH_JEDI_TESTFILES}/ioda/${GIT_BRANCH_IODA}")
   message(STATUS "use LOCAL_PATH_JEDI_TESTFILES: ${LOCAL_PATH_JEDI_TESTFILES}")
 endif()
