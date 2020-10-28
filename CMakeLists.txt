@@ -1,4 +1,5 @@
-# (C) Copyright 2017 UCAR.
+#
+# (C) Copyright 2017-2020 UCAR.
 #
 # This software is licensed under the terms of the Apache Licence Version 2.0
 # which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -7,75 +8,44 @@
 # IODA
 ################################################################################
 
-cmake_minimum_required( VERSION 3.3.2 FATAL_ERROR )
+cmake_minimum_required( VERSION 3.12 )
+project( ioda VERSION 1.0.0 LANGUAGES CXX Fortran )
 
-project( ioda C CXX Fortran )
-
-set( CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake;${CMAKE_MODULE_PATH} )
-
-set( ECBUILD_DEFAULT_BUILD_TYPE Release )
-set( ENABLE_OS_TESTS           OFF CACHE BOOL "Disable OS tests" FORCE )
-set( ENABLE_LARGE_FILE_SUPPORT OFF CACHE BOOL "Disable testing of large file support" FORCE )
-set( ENABLE_MPI ON CACHE BOOL "Compile with MPI" )
-
+## Ecbuild integration
+find_package( ecbuild QUIET )
 include( ecbuild_system NO_POLICY_SCOPE )
-
-ecbuild_requires_macro_version( 2.5 )
-
-################################################################################
-# Project
-################################################################################
-
 ecbuild_declare_project()
+list( APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake )
+set( CMAKE_DIRECTORY_LABELS ${PROJECT_NAME} )
 
-ecbuild_enable_fortran( REQUIRED )
-ecbuild_add_cxx11_flags()
+## Configuration options
+include( ${PROJECT_NAME}_compiler_flags )
+option( ENABLE_IODA_DOC "Build IODA documentation" OFF )
 
-set( UFO_LINKER_LANGUAGE Fortran )
+## Dependencies
 
-################################################################################
-# Dependencies
-################################################################################
+# Required
+find_package( NetCDF REQUIRED COMPONENTS C )
+find_package( fckit 0.7.0 REQUIRED )
+find_package( oops 1.0.0 REQUIRED )
 
-# NetCDF
-set( NETCDF_F90 ON CACHE BOOL "Compile with Fortran NetCDF" )
-find_package( NetCDF REQUIRED )
-include_directories( ${NETCDF_INCLUDE_DIR} )
-
-################################################################################
-# Export package info
-################################################################################
-
-list( APPEND IODA_TPLS NetCDF )
-
-set( IODA_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR}/src
-                       ${CMAKE_Fortran_MODULE_DIRECTORY} )
-set( IODA_LIBRARIES ioda )
-
-get_directory_property( IODA_DEFINITIONS COMPILE_DEFINITIONS )
-
-foreach( _tpl ${IODA_TPLS} )
-  string( TOUPPER ${_tpl} TPL )
-  list( APPEND IODA_EXTRA_DEFINITIONS   ${${TPL}_DEFINITIONS}  ${${TPL}_TPL_DEFINITIONS}  )
-  list( APPEND IODA_EXTRA_INCLUDE_DIRS  ${${TPL}_INCLUDE_DIRS} ${${TPL}_TPL_INCLUDE_DIRS} )
-  list( APPEND IODA_EXTRA_LIBRARIES     ${${TPL}_LIBRARIES}    ${${TPL}_TPL_LIBRARIES}    )
-endforeach()
-
-################################################################################
-# Sources
-################################################################################
-
-include( ioda_compiler_flags )
-include_directories( ${IODA_INCLUDE_DIRS} ${IODA_EXTRA_INCLUDE_DIRS} )
+## Sources
 add_subdirectory( src )
+add_subdirectory( test )
+add_subdirectory( tools )
 
-################################################################################
-# Finalise configuration
-################################################################################
+if( ENABLE_IODA_DOC )
+    add_subdirectory( docs )
+endif()
 
-# prepares a tar.gz of the sources and/or binaries
-ecbuild_install_project( NAME ioda )
+## Tests
+ecbuild_add_test( TARGET ${PROJECT_NAME}_coding_norms
+                  TYPE SCRIPT
+                  COMMAND ${PROJECT_NAME}_cpplint.py
+                  ARGS --quiet --recursive ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_SOURCE_DIR}/test
+                  WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/bin )
 
-# print the summary of the configuration
+## Package Config
+ecbuild_install_project( NAME ${PROJECT_NAME} )
+
 ecbuild_print_summary()
-
