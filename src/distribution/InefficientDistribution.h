@@ -34,8 +34,8 @@ class InefficientDistribution: public Distribution {
      bool isMyRecord(std::size_t RecNum) const override;
 
      // The sum/min/max functions do nothing for the inefficient
-     // distribution. Each processor has each observation so the local 
-     // sum/min/max is equal to the global sum/min/max 
+     // distribution. Each processor has each observation so the local
+     // sum/min/max is equal to the global sum/min/max
      void sum(double &x) override {};
      void sum(int &x) override {};
      void sum(size_t &x) override {};

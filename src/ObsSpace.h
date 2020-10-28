@@ -106,19 +106,19 @@ class ObsSpace : public oops::ObsSpaceBase {
 
   const oops::Variables & obsvariables() const {return obsspace_->obsvariables();}
   const std::vector<double> & obsdist() const {return obsdist_;}
-  void sum(double &x) { return obsspace_->distribution()->sum(x); }
-  void sum(int &x) { return obsspace_->distribution()->sum(x); }
-  void sum(size_t &x) { return obsspace_->distribution()->sum(x); }
-  void sum(std::vector<size_t> &x) { return obsspace_->distribution()->sum(x); }
+  void sum(double &x) const { return obsspace_->distribution()->sum(x); }
+  void sum(int &x) const { return obsspace_->distribution()->sum(x); }
+  void sum(size_t &x) const { return obsspace_->distribution()->sum(x); }
+  void sum(std::vector<size_t> &x) const { return obsspace_->distribution()->sum(x); }
   void sum(std::vector<double> &x) { return obsspace_->distribution()->sum(x); }
 
-  void min(double &x) { return obsspace_->distribution()->min(x); }
-  void min(float &x) { return obsspace_->distribution()->min(x); }
-  void min(int &x) { return obsspace_->distribution()->min(x); }
+  void min(double &x) const { return obsspace_->distribution()->min(x); }
+  void min(float &x) const { return obsspace_->distribution()->min(x); }
+  void min(int &x) const { return obsspace_->distribution()->min(x); }
 
-  void max(double &x) { return obsspace_->distribution()->max(x); }
-  void max(float &x) { return obsspace_->distribution()->max(x); }
-  void max(int &x) { return obsspace_->distribution()->max(x); }
+  void max(double &x) const { return obsspace_->distribution()->max(x); }
+  void max(float &x) const { return obsspace_->distribution()->max(x); }
+  void max(int &x) const { return obsspace_->distribution()->max(x); }
 
  private:
   void print(std::ostream &) const;
