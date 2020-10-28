@@ -1,9 +1,15 @@
 #
+# (C) Copyright 2017-2020 UCAR.
+#
+# This software is licensed under the terms of the Apache Licence Version 2.0
+# which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+
+################################################################################
 # IODA
-# Copyright and License: see LICENSE
+################################################################################
 
 cmake_minimum_required( VERSION 3.12 )
-project( ioda LANGUAGES CXX Fortran )
+project( ioda VERSION 1.0.0 LANGUAGES CXX Fortran )
 
 ## Ecbuild integration
 find_package( ecbuild QUIET )
@@ -20,8 +26,8 @@ option( ENABLE_IODA_DOC "Build IODA documentation" OFF )
 
 # Required
 find_package( NetCDF REQUIRED COMPONENTS C )
-find_package( fckit REQUIRED )
-find_package( oops REQUIRED )
+find_package( fckit 0.7.0 REQUIRED )
+find_package( oops 1.0.0 REQUIRED )
 
 ## Sources
 add_subdirectory( src )
