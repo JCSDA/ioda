@@ -110,7 +110,7 @@ class ObsSpace : public oops::ObsSpaceBase {
   void sum(int &x) const { return obsspace_->distribution()->sum(x); }
   void sum(size_t &x) const { return obsspace_->distribution()->sum(x); }
   void sum(std::vector<size_t> &x) const { return obsspace_->distribution()->sum(x); }
-  void sum(std::vector<double> &x) { return obsspace_->distribution()->sum(x); }
+  void sum(std::vector<double> &x) const { return obsspace_->distribution()->sum(x); }
 
   void min(double &x) const { return obsspace_->distribution()->min(x); }
   void min(float &x) const { return obsspace_->distribution()->min(x); }
