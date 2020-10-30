@@ -44,7 +44,6 @@ void testDistributionMethods() {
   std::vector<eckit::LocalConfiguration> dist_types;
   const eckit::mpi::Comm & MpiComm = oops::mpi::world();
 
-  std::string TestDistType;
   std::string DistName;
   std::unique_ptr<ioda::Distribution> TestDist;
   DistributionFactory * DistFactory = nullptr;
@@ -59,7 +58,6 @@ void testDistributionMethods() {
     DistName = dist_types[i].getString("name");
     complete = dist_types[i].getBool("complete");
     TestDist.reset(DistFactory->createDistribution(MpiComm, DistName));
-    oops::Log::debug() << "Distribution::DistType: " << TestDistType << std::endl;
 
     // set up a,b,c on each processor (assuming 4 processors)
     double a = MyRank;
