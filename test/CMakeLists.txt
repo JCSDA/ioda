@@ -10,6 +10,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_obserror.yml
   testinput/iodatest_io.yml
   testinput/iodatest_distribution.yml
+  testinput/iodatest_distribution_methods.yml
   testinput/iodatest_obsspace_container.yml
   testinput/iodatest_obsspace.yml
   testinput/iodatest_obsspace_marine.yml
@@ -178,6 +179,14 @@ ecbuild_add_test( TARGET  test_ioda_distribution
                   MPI     4
                   SOURCES mains/TestDistribution.cc
                   ARGS    "testinput/iodatest_distribution.yml"
+                  LIBS  ioda_test
+                  TEST_DEPENDS get_ioda_test_data )
+
+# Disrtibution method tests
+ecbuild_add_test( TARGET  test_ioda_distribution_methods
+                  MPI     4
+                  SOURCES mains/TestDistributionMethods.cc
+                  ARGS    "testinput/iodatest_distribution_methods.yml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
