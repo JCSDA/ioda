@@ -49,15 +49,12 @@ void testDistributionMethods() {
   DistributionFactory * DistFactory = nullptr;
   std::size_t MyRank = MpiComm.rank();
   std::size_t nprocs = MpiComm.size();
-  bool complete;  // true means distribution does not need to comunicate
-                  // (each processors has every observation)
   conf.get("distribution types", dist_types);
   for (std::size_t i = 0; i < dist_types.size(); ++i) {
     conf.get("distribution", dist_types);
     oops::Log::debug() << "Distribution::DistributionTypes: conf: "
                        << dist_types[i] << std::endl;
     DistName = dist_types[i].getString("name");
-    complete = dist_types[i].getBool("complete");
     TestDist.reset(DistFactory->createDistribution(MpiComm, DistName));
 
     // Inputs for the tests: double, float, int, vector double, vector size_t
@@ -76,21 +73,21 @@ void testDistributionMethods() {
     }
 
     // vector solutions for sum
-    std::vector<double> vaRefComplete(5, MyRank);
-    std::vector<size_t> vbRefComplete(5, MyRank);
+    std::vector<double> vaRefInefficient(5, MyRank);
+    std::vector<size_t> vbRefInefficient(5, MyRank);
     std::vector<double> vaRef(5, result);
     std::vector<size_t> vbRef(5, result);
 
-    if (complete) {
+    if (DistName == "InefficientDistribution") {
         // sum
         TestDist->sum(a);
         EXPECT(a == MyRank);  // MyRank (sum should do nothing for Inefficient)
         TestDist->sum(c);
         EXPECT(c == MyRank);
         TestDist->sum(va);
-        EXPECT(va == vaRefComplete);
+        EXPECT(va == vaRefInefficient);
         TestDist->sum(vb);
-        EXPECT(vb == vbRefComplete);
+        EXPECT(vb == vbRefInefficient);
 
 
         // min

@@ -6,7 +6,5 @@ window end: "2015-08-10T03:00:00Z"
 distribution types:
   - distribution: "Round Robin"
     name: "RoundRobin"
-    complete: "false"    
   - distribution: "Inefficient"
     name: "InefficientDistribution"
-    complete: "true"    
