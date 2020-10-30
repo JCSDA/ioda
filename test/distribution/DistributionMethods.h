@@ -48,6 +48,7 @@ void testDistributionMethods() {
   std::unique_ptr<ioda::Distribution> TestDist;
   DistributionFactory * DistFactory = nullptr;
   std::size_t MyRank = MpiComm.rank();
+  std::size_t nprocs = MpiComm.size();
   bool complete;  // true means distribution does not need to comunicate
                   // (each processors has every observation)
   conf.get("distribution types", dist_types);
@@ -59,23 +60,31 @@ void testDistributionMethods() {
     complete = dist_types[i].getBool("complete");
     TestDist.reset(DistFactory->createDistribution(MpiComm, DistName));
 
-    // set up a,b,c on each processor (assuming 4 processors)
+    // Inputs for the tests: double, float, int, vector double, vector size_t
+    // set up a,b,c,va,vb on each processor
     double a = MyRank;
     float b = MyRank;
     int c = MyRank;
     std::vector<double> va(5, MyRank);
     std::vector<size_t> vb(5, MyRank);
 
+
+    // Test result: sum (0 + 1 + ..  nprocs -1)
+    double result = 0;
+    for (std::size_t i = 0; i < nprocs; i++) {
+       result = result + i;
+    }
+
     // vector solutions for sum
     std::vector<double> vaRefComplete(5, MyRank);
     std::vector<size_t> vbRefComplete(5, MyRank);
-    std::vector<double> vaRef(5, 6);
-    std::vector<size_t> vbRef(5, 6);
+    std::vector<double> vaRef(5, result);
+    std::vector<size_t> vbRef(5, result);
 
     if (complete) {
         // sum
         TestDist->sum(a);
-        EXPECT(a == MyRank);  // 0 + 1 + 2 + 3
+        EXPECT(a == MyRank);  // MyRank (sum should do nothing for Inefficient)
         TestDist->sum(c);
         EXPECT(c == MyRank);
         TestDist->sum(va);
@@ -109,9 +118,9 @@ void testDistributionMethods() {
         } else {
         // sum
         TestDist->sum(a);
-        EXPECT(a == 6);  // 0 + 1 + 2 + 3
+        EXPECT(a == result);  // 0 + 1 + .. nprocs-1 (sum across tasks)
         TestDist->sum(c);
-        EXPECT(c == 6);
+        EXPECT(c == result);
         TestDist->sum(va);
         EXPECT(va == vaRef);
         TestDist->sum(vb);
@@ -133,11 +142,11 @@ void testDistributionMethods() {
         b = MyRank;
         c = MyRank;
         TestDist->max(a);
-        EXPECT(a == 3);
+        EXPECT(a == nprocs -1);
         TestDist->max(b);
-        EXPECT(b == 3);
+        EXPECT(b == nprocs -1);
         TestDist->max(c);
-        EXPECT(c == 3);
+        EXPECT(c == nprocs -1);
       }
   }
 }

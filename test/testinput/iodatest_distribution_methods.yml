@@ -2,13 +2,7 @@
 window begin: "2015-08-09T21:00:00Z"
 window end: "2015-08-10T03:00:00Z"
 
-# Expected indices are based on 4 PE's during an MPI run. If you change
-# the number of PE in the ecbuild_add_test in the ../CMakeLists.txt file,
-# then the expected indices below need to change accordingly.
-#
-# The test is coded so that the keyword "rank" + (MPI Rank Number) is used from this
-# file to get the expected result. If you are MPI rank 0, then you read the keywords
-# under "rank0:" from this file; MPI rank 1, keywords from "rank1:"; etc.
+# 
 distribution types:
   - distribution: "Round Robin"
     name: "RoundRobin"
