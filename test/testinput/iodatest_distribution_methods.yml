@@ -1,0 +1,10 @@
+---
+window begin: "2015-08-09T21:00:00Z"
+window end: "2015-08-10T03:00:00Z"
+
+# 
+distribution types:
+  - distribution: "Round Robin"
+    name: "RoundRobin"
+  - distribution: "Inefficient"
+    name: "InefficientDistribution"
