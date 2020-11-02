@@ -162,7 +162,7 @@ class ObsData : public util::Printable {
   void printJo(const ObsVector &, const ObsVector &);  // to be removed
 
   const oops::Variables & obsvariables() const {return obsvars_;}
-  const std::shared_ptr<Distribution> distribution() const { return dist_;}
+  const std::shared_ptr<const Distribution> distribution() const { return dist_;}
 
  private:
   void print(std::ostream &) const;
@@ -274,7 +274,7 @@ class ObsData : public util::Printable {
   std::string obs_sort_order_;
 
   /*! \brief MPI distribution object */
-  std::shared_ptr<Distribution> dist_;
+  std::shared_ptr<const Distribution> dist_;
 
   /*! \brief maps for obs grouping via integer, float or string values */
   ObsGroupingMap<int> int_obs_grouping_;

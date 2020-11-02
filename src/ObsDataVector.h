@@ -199,10 +199,10 @@ void ObsDataVector<DATATYPE>::print(std::ostream & os) const {
       }
     }
     // collect zmin, zmax, nobs, nloc on all processors
-    obsdb_.min(zmin);
-    obsdb_.max(zmax);
-    obsdb_.sum(nobs);
-    obsdb_.sum(nloc);
+    obsdb_.distribution().min(zmin);
+    obsdb_.distribution().max(zmax);
+    obsdb_.distribution().sum(nobs);
+    obsdb_.distribution().sum(nloc);
 
     os << obsdb_.obsname() << " " << obsvars_[jv] << " nlocs = " << nloc
        << ", nobs= " << nobs << " Min=" << zmin << ", Max=" << zmax << std::endl;

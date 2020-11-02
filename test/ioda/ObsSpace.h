@@ -83,8 +83,8 @@ void testConstructor() {
     std::size_t Nlocs = Test_::obspace(jj).nlocs();
     std::size_t Nrecs = Test_::obspace(jj).nrecs();
     std::size_t Nvars = Test_::obspace(jj).nvars();
-    Test_::obspace(jj).sum(Nlocs);
-    Test_::obspace(jj).sum(Nrecs);
+    Test_::obspace(jj).distribution().sum(Nlocs);
+    Test_::obspace(jj).distribution().sum(Nrecs);
 
     // Get the expected nlocs from the obspace object's configuration
     std::size_t ExpectedNlocs = conf[jj].getUnsigned("obs space.test data.nlocs");
@@ -170,7 +170,7 @@ void testGetDb() {
         for (std::size_t j = 0; j < Nlocs; ++j) {
           Vnorm += pow(TestVec[j], 2.0);
         }
-        Test_::obspace(jj).sum(Vnorm);
+        Test_::obspace(jj).distribution().sum(Vnorm);
         Vnorm = sqrt(Vnorm);
 
         EXPECT(oops::is_close(Vnorm, ExpectedVnorm, Tol));
@@ -189,7 +189,7 @@ void testGetDb() {
         for (std::size_t j = 0; j < Nlocs; ++j) {
           Vnorm += pow(static_cast<double>(TestVec[j]), 2.0);
         }
-        Test_::obspace(jj).sum(Vnorm);
+        Test_::obspace(jj).distribution().sum(Vnorm);
         Vnorm = sqrt(Vnorm);
 
         EXPECT(oops::is_close(Vnorm, ExpectedVnorm, Tol));

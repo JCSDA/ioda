@@ -53,23 +53,23 @@ namespace ioda {
 class Distribution {
  public:
     explicit Distribution(const eckit::mpi::Comm & Comm);
-    virtual ~Distribution() = 0;
+    virtual ~Distribution();
 
     virtual bool isMyRecord(std::size_t RecNum) const = 0;
 
-    virtual void sum(double &x) = 0;
-    virtual void sum(int &x) = 0;
-    virtual void sum(size_t &x) = 0;
-    virtual void sum(std::vector<double> &x) = 0;
-    virtual void sum(std::vector<size_t> &x) = 0;
+    virtual void sum(double &x) const = 0;
+    virtual void sum(int &x) const = 0;
+    virtual void sum(size_t &x) const = 0;
+    virtual void sum(std::vector<double> &x) const = 0;
+    virtual void sum(std::vector<size_t> &x) const = 0;
 
-    virtual void min(double &x) = 0;
-    virtual void min(float &x) = 0;
-    virtual void min(int &x) = 0;
+    virtual void min(double &x) const = 0;
+    virtual void min(float &x) const = 0;
+    virtual void min(int &x) const = 0;
 
-    virtual void max(double &x) = 0;
-    virtual void max(float &x) = 0;
-    virtual void max(int &x) = 0;
+    virtual void max(double &x) const = 0;
+    virtual void max(float &x) const = 0;
+    virtual void max(int &x) const = 0;
  protected:
      /*! \brief Local MPI communicator */
      const eckit::mpi::Comm & comm_;
