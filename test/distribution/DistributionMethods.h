@@ -8,16 +8,11 @@
 #ifndef TEST_DISTRIBUTION_DISTRIBUTIONMETHODS_H_
 #define TEST_DISTRIBUTION_DISTRIBUTIONMETHODS_H_
 
-#include <cmath>
 #include <memory>
-#include <numeric>
-#include <set>
 #include <string>
 #include <vector>
 
 #define ECKIT_TESTING_SELF_REGISTER_CASES 0
-
-#include <boost/noncopyable.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/mpi/Comm.h"

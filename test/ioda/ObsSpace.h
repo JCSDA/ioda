@@ -75,7 +75,7 @@ void testConstructor() {
 
   for (std::size_t jj = 0; jj < Test_::size(); ++jj) {
     // The observations are distributed across processors, so Nlocs is local to a
-    // processor. To get the total number of observations, use ObsSpace.sum(Nlocs)
+    // processor. To get the total number of observations, use ObsSpace.distribution().sum(Nlocs)
     // to sum accoss all processors.
     std::string DistMethod = conf[jj].getString("obs space.distribution", "RoundRobin");
 

@@ -107,7 +107,7 @@ class ObsSpace : public oops::ObsSpaceBase {
   const oops::Variables & obsvariables() const {return obsspace_->obsvariables();}
   const std::vector<double> & obsdist() const {return obsdist_;}
 
-  const Distribution & distribution() {return *obsspace_->distribution();}
+  const Distribution & distribution() const {return *obsspace_->distribution();}
 
  private:
   void print(std::ostream &) const;
