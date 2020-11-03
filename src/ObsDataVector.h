@@ -198,12 +198,12 @@ void ObsDataVector<DATATYPE>::print(std::ostream & os) const {
         ++nobs;
       }
     }
-    if (obsdb_.isDistributed()) {
-      obsdb_.comm().allReduceInPlace(zmin, eckit::mpi::min());
-      obsdb_.comm().allReduceInPlace(zmax, eckit::mpi::max());
-      obsdb_.comm().allReduceInPlace(nobs, eckit::mpi::sum());
-      obsdb_.comm().allReduceInPlace(nloc, eckit::mpi::sum());
-    }
+    // collect zmin, zmax, nobs, nloc on all processors
+    obsdb_.distribution().min(zmin);
+    obsdb_.distribution().max(zmax);
+    obsdb_.distribution().sum(nobs);
+    obsdb_.distribution().sum(nloc);
+
     os << obsdb_.obsname() << " " << obsvars_[jv] << " nlocs = " << nloc
        << ", nobs= " << nobs << " Min=" << zmin << ", Max=" << zmax << std::endl;
   }

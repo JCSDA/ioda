@@ -42,6 +42,50 @@ bool RoundRobin::isMyRecord(std::size_t RecNum) const {
     return (RecNum % comm_.size() == comm_.rank());
 }
 
+void RoundRobin::sum(double &x) const {
+    comm_.allReduceInPlace(x, eckit::mpi::sum());
+}
+
+void RoundRobin::sum(int &x) const {
+    comm_.allReduceInPlace(x, eckit::mpi::sum());
+}
+
+void RoundRobin::sum(size_t &x) const {
+    comm_.allReduceInPlace(x, eckit::mpi::sum());
+}
+
+void RoundRobin::sum(std::vector<double> &x) const {
+    comm_.allReduceInPlace(x.begin(), x.end(), eckit::mpi::sum());
+}
+
+void RoundRobin::sum(std::vector<size_t> &x) const {
+    comm_.allReduceInPlace(x.begin(), x.end(), eckit::mpi::sum());
+}
+
+void RoundRobin::min(double &x) const {
+    comm_.allReduceInPlace(x, eckit::mpi::min());
+}
+
+void RoundRobin::min(float &x) const {
+    comm_.allReduceInPlace(x, eckit::mpi::min());
+}
+
+void RoundRobin::min(int &x) const {
+    comm_.allReduceInPlace(x, eckit::mpi::min());
+}
+
+void RoundRobin::max(double &x) const {
+    comm_.allReduceInPlace(x, eckit::mpi::max());
+}
+
+void RoundRobin::max(float &x) const {
+    comm_.allReduceInPlace(x, eckit::mpi::max());
+}
+
+void RoundRobin::max(int &x) const {
+    comm_.allReduceInPlace(x, eckit::mpi::max());
+}
+
 // -----------------------------------------------------------------------------
 
 }  // namespace ioda

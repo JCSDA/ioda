@@ -31,7 +31,20 @@ class RoundRobin: public Distribution {
      explicit RoundRobin(const eckit::mpi::Comm & Comm);
      ~RoundRobin();
      bool isMyRecord(std::size_t RecNum) const override;
-     bool isDistributed() const override { return true; }
+
+     void sum(double &x) const override;
+     void sum(int &x) const override;
+     void sum(size_t &x) const override;
+     void sum(std::vector<double> &x) const override;
+     void sum(std::vector<size_t> &x) const override;
+
+     void min(double &x) const override;
+     void min(float &x) const override;
+     void min(int &x) const override;
+
+     void max(double &x) const override;
+     void max(float &x) const override;
+     void max(int &x) const override;
 };
 
 }  // namespace ioda

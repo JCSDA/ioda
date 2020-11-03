@@ -32,7 +32,23 @@ class InefficientDistribution: public Distribution {
      ~InefficientDistribution();
 
      bool isMyRecord(std::size_t RecNum) const override;
-     bool isDistributed() const override { return false; }
+
+     // The sum/min/max functions do nothing for the inefficient
+     // distribution. Each processor has each observation so the local
+     // sum/min/max is equal to the global sum/min/max
+     void sum(double &x) const override {};
+     void sum(int &x) const override {};
+     void sum(size_t &x) const override {};
+     void sum(std::vector<double> &x) const override {};
+     void sum(std::vector<size_t> &x) const override {};
+
+     void min(double &x) const override {};
+     void min(float &x) const override {};
+     void min(int &x) const override {};
+
+     void max(double &x) const override {};
+     void max(float &x) const override {};
+     void max(int &x) const override {};
 };
 
 }  // namespace ioda
