@@ -76,10 +76,10 @@ phases:
 
       - cd CI
       # ioda
-      - ./clone.sh $GIT_USER $GIT_PASS jcsda/ioda $CODEBUILD_GIT_BRANCH ioda /jcsda/ioda-bundle develop
+      - ./clone.sh $GIT_USER $GIT_PASS jcsda-internal/ioda $CODEBUILD_GIT_BRANCH ioda /jcsda/ioda-bundle develop
 
       # oops
-      - ./clone.sh $GIT_USER $GIT_PASS jcsda/oops $CODEBUILD_GIT_BRANCH oops /jcsda/ioda-bundle develop
+      - ./clone.sh $GIT_USER $GIT_PASS jcsda-internal/oops $CODEBUILD_GIT_BRANCH oops /jcsda/ioda-bundle develop
 
 
       # internal repos

@@ -23,8 +23,8 @@ option("BUNDLE_SKIP_ECKIT" "Don't build eckit" "ON") #Skip eckit build unless us
 ecbuild_bundle( PROJECT fckit GIT "https://github.com/JCSDA-internal/fckit.git" )
 ecbuild_bundle( PROJECT atlas GIT "https://github.com/JCSDA-internal/atlas.git" )
 
-ecbuild_bundle( PROJECT oops         GIT "https://github.com/JCSDA/oops.git" )
-ecbuild_bundle( PROJECT ioda         GIT "https://github.com/JCSDA/ioda.git" )
+ecbuild_bundle( PROJECT oops         GIT "https://github.com/JCSDA-internal/oops.git" )
+ecbuild_bundle( PROJECT ioda         GIT "https://github.com/JCSDA-internal/ioda.git" )
 
 # Build Doxygen documentation
 option(BUILD_IODA_BUNDLE_DOC "Build documentation" OFF)
