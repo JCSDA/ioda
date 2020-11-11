@@ -382,6 +382,19 @@ const std::vector<std::size_t> & ObsSpace::recnum() const {
 /*!
  * \details This method returns a reference to the index vector
  *          data member. This is for read only access.
+ *
+ * The returned vector has length nlocs() and contains the original indices of locations from the
+ * input ioda file corresponding to locations stored in this ObsSpace object -- i.e. those that
+ * were selected by the timing window filter and the MPI distribution.
+ *
+ * Example 1: Suppose the RoundRobin distribution is used and and there are two MPI tasks (ranks 0
+ * and 1). The even-numbered locations from the file will go to rank 0, and the odd-numbered
+ * locations will go to rank 1. This means that `ObsSpace::index()` will return the vector `0, 2,
+ * 4, 6, ...` on rank 0 and `1, 3, 5, 7, ...` on rank 1.
+ *
+ * Example 2: Suppose MPI is not used and the file contains 10 locations in total, but locations 2,
+ * 3 and 7 are outside the DA timing window. In this case, `ObsSpace::index()` will return `0, 1,
+ * 4, 5, 6, 8, 9`.
  */
 const std::vector<std::size_t> & ObsSpace::index() const {
   return obsspace_->index();
