@@ -40,4 +40,9 @@ bool InefficientDistribution::isMyRecord(std::size_t RecNum) const {
 
 // -----------------------------------------------------------------------------
 
+void InefficientDistribution::exclusiveScan(size_t &x) const {
+  x = 0;
+}
+
+// -----------------------------------------------------------------------------
 }  // namespace ioda

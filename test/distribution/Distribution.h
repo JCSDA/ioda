@@ -11,6 +11,7 @@
 #ifndef TEST_DISTRIBUTION_DISTRIBUTION_H_
 #define TEST_DISTRIBUTION_DISTRIBUTION_H_
 
+#include <algorithm>
 #include <cmath>
 #include <memory>
 #include <numeric>
@@ -29,10 +30,21 @@
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Test.h"
 #include "oops/test/TestEnvironment.h"
+#include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
 
 #include "ioda/distribution/Distribution.h"
 #include "ioda/distribution/DistributionFactory.h"
+
+namespace eckit
+{
+  // Don't use the contracted output for these types: the current implementation works only
+  // with integer types.
+  // TODO(wsmigaj) Report this (especially for floats) as a bug in eckit?
+  template <> struct VectorPrintSelector<float> { typedef VectorPrintSimple selector; };
+  template <> struct VectorPrintSelector<util::DateTime> { typedef VectorPrintSimple selector; };
+  template <> struct VectorPrintSelector<util::Duration> { typedef VectorPrintSimple selector; };
+}  // namespace eckit
 
 namespace ioda {
 namespace test {
@@ -103,6 +115,9 @@ void testDistribution() {
                                  MyRankConfig.getUnsignedVector("index");
     std::vector<std::size_t> ExpectedRecnums =
                                  MyRankConfig.getUnsignedVector("recnums");
+    const std::vector<std::size_t> ExpectedAllGatherv =
+        dist_types[i].getUnsignedVector("specs.allgatherv");
+    const std::size_t ExpectedExclusiveScan = MyRankConfig.getUnsigned("exclusivescan");
 
     // If obsgrouping is specified then read the record grouping directly from
     // the config file. Otherwise, assign 0 to Gnlocs-1 into the record grouping
@@ -141,6 +156,76 @@ void testDistribution() {
 
     for (std::size_t j = 0; j < ExpectedRecnums.size(); ++j) {
       EXPECT(Recnums[j] == ExpectedRecnums[j]);
+    }
+
+    // Test overloads of the allGatherv() method. We will pass to it vectors derived from the Index
+    // vector and compare the results against vectors derived from ExpectedAllGatherv.
+
+    // Overload taking an std::vector<size_t>
+    {
+      const std::vector<std::size_t> ExpectedAllGathervSizeT = ExpectedAllGatherv;
+      std::vector<size_t> AllGathervSizeT = Index;
+      TestDist->allGatherv(AllGathervSizeT);
+      EXPECT_EQUAL(AllGathervSizeT, ExpectedAllGathervSizeT);
+    }
+
+    // Overload taking an std::vector<int>
+    {
+      std::vector<int> ExpectedAllGathervInt(ExpectedAllGatherv.begin(), ExpectedAllGatherv.end());
+      std::vector<int> AllGathervInt(Index.begin(), Index.end());
+      TestDist->allGatherv(AllGathervInt);
+      EXPECT_EQUAL(AllGathervInt, ExpectedAllGathervInt);
+    }
+
+    // Overload taking an std::vector<float>
+    {
+      std::vector<float> ExpectedAllGathervFloat(ExpectedAllGatherv.begin(),
+                                                 ExpectedAllGatherv.end());
+      std::vector<float> AllGathervFloat(Index.begin(), Index.end());
+      TestDist->allGatherv(AllGathervFloat);
+      EXPECT_EQUAL(AllGathervFloat, ExpectedAllGathervFloat);
+    }
+
+    // Overload taking an std::vector<double>
+    {
+      std::vector<double> ExpectedAllGathervDouble(ExpectedAllGatherv.begin(),
+                                                   ExpectedAllGatherv.end());
+      std::vector<double> AllGathervDouble(Index.begin(), Index.end());
+      TestDist->allGatherv(AllGathervDouble);
+      EXPECT_EQUAL(AllGathervDouble, ExpectedAllGathervDouble);
+    }
+
+    // Overload taking an std::vector<std::string>
+    {
+      auto numberToString = [](std::size_t x) { return std::to_string(x); };
+      std::vector<std::string> ExpectedAllGathervString;
+      std::transform(ExpectedAllGatherv.begin(), ExpectedAllGatherv.end(),
+                     std::back_inserter(ExpectedAllGathervString), numberToString);
+      std::vector<std::string> AllGathervString;
+      std::transform(Index.begin(), Index.end(),
+                     std::back_inserter(AllGathervString), numberToString);
+      TestDist->allGatherv(AllGathervString);
+      EXPECT_EQUAL(AllGathervString, ExpectedAllGathervString);
+    }
+
+    // Overload taking an std::vector<util::DateTime>
+    {
+      auto numberToDateTime = [](std::size_t x) { return util::DateTime(2000, 1, 1, 0, 0, x); };
+      std::vector<util::DateTime> ExpectedAllGathervDateTime;
+      std::transform(ExpectedAllGatherv.begin(), ExpectedAllGatherv.end(),
+                     std::back_inserter(ExpectedAllGathervDateTime), numberToDateTime);
+      std::vector<util::DateTime> AllGathervDateTime;
+      std::transform(Index.begin(), Index.end(),
+                     std::back_inserter(AllGathervDateTime), numberToDateTime);
+      TestDist->allGatherv(AllGathervDateTime);
+      EXPECT_EQUAL(AllGathervDateTime, ExpectedAllGathervDateTime);
+    }
+
+    // Test the exclusiveScan() method
+    {
+      std::size_t ExclusiveScan = Nlocs;
+      TestDist->exclusiveScan(ExclusiveScan);
+      EXPECT_EQUAL(ExclusiveScan, ExpectedExclusiveScan);
     }
   }
 }

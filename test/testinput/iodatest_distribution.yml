@@ -14,125 +14,150 @@ distribution types:
     specs:
       name: "RoundRobin"
       gnlocs: 8
+      allgatherv: [ 0, 4, 1, 5, 2, 6, 3, 7 ]
       rank0:
         nlocs: 2
         nrecs: 2
         index: [ 0, 4 ]
         recnums: [ 0, 4 ]
+        exclusivescan: 0
       rank1:
         nlocs: 2
         nrecs: 2
         index: [ 1, 5 ]
         recnums: [ 1, 5 ]
+        exclusivescan: 2
       rank2:
         nlocs: 2
         nrecs: 2
         index: [ 2, 6 ]
         recnums: [ 2, 6 ]
+        exclusivescan: 4
       rank3:
         nlocs: 2
         nrecs: 2
         index: [ 3, 7 ]
         recnums: [ 3, 7 ]
+        exclusivescan: 6
 
   - distribution: "Round Robin 10"
     specs:
       name: "RoundRobin"
       gnlocs: 10
+      allgatherv: [ 0, 4, 8, 1, 5, 9, 2, 6, 3, 7 ]
       rank0:
         nlocs: 3
         nrecs: 3
         index: [ 0, 4, 8 ]
         recnums: [ 0, 4, 8 ]
+        exclusivescan: 0
       rank1:
         nlocs: 3
         nrecs: 3
         index: [ 1, 5, 9 ]
         recnums: [ 1, 5, 9 ]
+        exclusivescan: 3
       rank2:
         nlocs: 2
         nrecs: 2
         index: [ 2, 6 ]
         recnums: [ 2, 6 ]
+        exclusivescan: 6
       rank3:
         nlocs: 2
         nrecs: 2
         index: [ 3, 7 ]
         recnums: [ 3, 7 ]
+        exclusivescan: 8
 
   - distribution: "Inefficient 4"
     specs:
       name: "InefficientDistribution"
       gnlocs: 4
+      allgatherv: [ 0, 1, 2, 3 ]
       rank0:
         nlocs: 4
         nrecs: 4
         index: [ 0, 1, 2, 3 ]
         recnums: [ 0, 1, 2, 3 ]
+        exclusivescan: 0
       rank1:
         nlocs: 4
         nrecs: 4
         index: [ 0, 1, 2, 3 ]
         recnums: [ 0, 1, 2, 3 ]
+        exclusivescan: 0
       rank2:
         nlocs: 4
         nrecs: 4
         index: [ 0, 1, 2, 3 ]
         recnums: [ 0, 1, 2, 3 ]
+        exclusivescan: 0
       rank3:
         nlocs: 4
         nrecs: 4
         index: [ 0, 1, 2, 3 ]
         recnums: [ 0, 1, 2, 3 ]
+        exclusivescan: 0
 
   - distribution: "Round Robin Grouping 20"
     specs:
       name: "RoundRobin"
       gnlocs: 20
       obsgrouping: [ 0, 0, 1, 1, 1, 2, 3, 3, 3, 3, 4, 5, 6, 7, 8, 8, 8, 9, 9, 10 ]
+      allgatherv: [ 0, 1, 10, 14, 15, 16, 2, 3, 4, 11, 17, 18, 5, 12, 19, 6, 7, 8, 9, 13 ]
       rank0:
         nlocs: 6
         nrecs: 3
         index: [ 0, 1, 10, 14, 15, 16 ]
         recnums: [ 0, 0, 4, 8, 8, 8 ]
+        exclusivescan: 0
       rank1:
         nlocs: 6
         nrecs: 3
         index: [ 2, 3, 4, 11, 17, 18 ]
         recnums: [ 1, 1, 1, 5, 9, 9 ]
+        exclusivescan: 6
       rank2:
         nlocs: 3
         nrecs: 3
         index: [ 5, 12, 19 ]
         recnums: [ 2, 6, 10 ]
+        exclusivescan: 12
       rank3:
         nlocs: 5
         nrecs: 2
         index: [ 6, 7, 8, 9, 13 ]
         recnums: [ 3, 3, 3, 3, 7 ]
+        exclusivescan: 15
 
   - distribution: "Round Robin Grouping Repeat 20"
     specs:
       name: "RoundRobin"
       gnlocs: 18
       obsgrouping: [ 0, 0, 1, 1, 1, 0, 2, 3, 3, 3, 3, 4, 5, 6, 7, 8, 1, 2 ]
+      allgatherv: [ 0, 1, 5, 11, 15, 2, 3, 4, 12, 16, 6, 13, 17, 7, 8, 9, 10, 14 ]
       rank0:
         nlocs: 5
         nrecs: 3
         index: [ 0, 1, 5, 11, 15 ]
         recnums: [ 0, 0, 0, 4, 8 ]
+        exclusivescan: 0
       rank1:
         nlocs: 5
         nrecs: 2
         index: [ 2, 3, 4, 12, 16 ]
         recnums: [ 1, 1, 1, 5, 1 ]
+        exclusivescan: 5
       rank2:
         nlocs: 3
         nrecs: 2
         index: [ 6, 13, 17 ]
         recnums: [ 2, 6, 2 ]
+        exclusivescan: 10
       rank3:
         nlocs: 5
         nrecs: 2
         index: [ 7, 8, 9, 10, 14 ]
         recnums: [ 3, 3, 3, 3, 7 ]
+        exclusivescan: 13
