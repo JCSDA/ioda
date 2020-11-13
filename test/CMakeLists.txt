@@ -70,7 +70,7 @@ if( NOT DEFINED LOCAL_PATH_JEDI_TESTFILES )
   # After this if-then-else structure:
   #    IODA_DOWNLOAD_BASE_URL needs to be set to the full URL path to the download files.
   #    DIRNAME needs to be set to the branch/tag value corresponding to the version checked out
-  if (${GIT_BRANCH_IODA} STREQUAL "1.0.0")
+  if (GIT_BRANCH_IODA STREQUAL "1.0.0")
     # Release 1.0.0 data comes from UCAR hosting
     # UCAR hosting is logically in a flat directory structure so the different repo
     # names are tagged onto the front of the file names.
