@@ -12,6 +12,8 @@ phases:
         
       - echo $CODEBUILD_RESOLVED_SOURCE_VERSION
       - echo $CODEBUILD_SOURCE_REPO_URL
+      - org_name=$(echo $CODEBUILD_SOURCE_REPO_URL | awk '{split($0,org,"/"); print org[4]}')
+      - echo $org_name
       - echo $CODEBUILD_SOURCE_VERSION
 
       - echo $CODEBUILD_WEBHOOK_MERGE_COMMIT
@@ -128,4 +130,5 @@ phases:
         && ctest -VV --rerun-failed"; 
         fi
       - cd /build_container/ioda
-      - bash /jcsda/ioda-bundle/ioda/CI/codecov_script.sh
+      - bash /jcsda/ioda-bundle/ioda/CI/codecov_script_$org_name.sh
+
