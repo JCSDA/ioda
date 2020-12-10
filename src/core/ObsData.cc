@@ -63,7 +63,7 @@ ObsData::ObsData(const eckit::Configuration & config, const eckit::mpi::Comm & c
   distname_ = config.getString("distribution", "RoundRobin");
 
   obsvars_ = oops::Variables(config, "simulated variables");
-  oops::Log::info() << obsname_ << " vars: " << obsvars_ << std::endl;
+  oops::Log::debug() << obsname_ << " vars: " << obsvars_ << std::endl;
 
   // Create the MPI distribution object
   std::unique_ptr<DistributionFactory> distFactory;
