@@ -45,7 +45,8 @@ class ObsSpace : public oops::ObsSpaceBase {
   /*!
    * \details Copy constructor for an ObsSpace object.
    */
-  ObsSpace(const ObsSpace &);
+  ObsSpace(const ObsSpace &) = delete;
+  ObsSpace& operator=(const ObsSpace &) = delete;
   ~ObsSpace();
 
   std::size_t gnlocs() const;
