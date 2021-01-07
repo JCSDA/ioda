@@ -6,7 +6,6 @@ ObsSpace.cc
 ObsSpace.h
 ObsVector.cc
 ObsVector.h
-obsspace_mod.F90
 instantiateObsLocFactory.h
 
 core/IodaUtils.cc
@@ -38,6 +37,10 @@ io/NetcdfIO.cc
 io/NetcdfIO.h
 )
 
+if (IODA_BUILD_LANGUAGE_FORTRAN)
+  list( APPEND ioda_src_files obsspace_mod.F90)
+endif()
+
 list( APPEND ioda_fortran_interface_includes
 obsspace_interface.f
 )
@@ -65,13 +68,17 @@ target_include_directories(${PROJECT_NAME} PUBLIC $<BUILD_INTERFACE:${BUILD_DIR_
 install(FILES ${ioda_fortran_interface_includes} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/ioda)
 
 #Fortran module output directory for build and install interfaces
-set(MODULE_DIR module/${PROJECT_NAME}/${CMAKE_Fortran_COMPILER_ID}/${CMAKE_Fortran_COMPILER_VERSION})
-set_target_properties(${PROJECT_NAME} PROPERTIES Fortran_MODULE_DIRECTORY ${CMAKE_BINARY_DIR}/${MODULE_DIR})
-install(DIRECTORY ${CMAKE_BINARY_DIR}/${MODULE_DIR}/ DESTINATION ${MODULE_DIR})
-target_include_directories(${PROJECT_NAME} INTERFACE
+if (IODA_BUILD_LANGUAGE_FORTRAN)
+  set(MODULE_DIR module/${PROJECT_NAME}/${CMAKE_Fortran_COMPILER_ID}/${CMAKE_Fortran_COMPILER_VERSION})
+  set_target_properties(${PROJECT_NAME} PROPERTIES Fortran_MODULE_DIRECTORY ${CMAKE_BINARY_DIR}/${MODULE_DIR})
+  install(DIRECTORY ${CMAKE_BINARY_DIR}/${MODULE_DIR}/ DESTINATION ${MODULE_DIR})
+  target_include_directories(${PROJECT_NAME} INTERFACE
                                 $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/${MODULE_DIR}>
                                 $<INSTALL_INTERFACE:${MODULE_DIR}>)
+endif()
 
+# add in the engines library
+add_subdirectory(engines)
 
 # add in the mains executables
 add_subdirectory(mains)

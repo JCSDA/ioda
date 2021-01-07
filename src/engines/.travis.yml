@@ -1,0 +1,72 @@
+# NOTE: This is a temporary Travis CI config that does not build ioda-engines in any bundle.
+# Eventually, this will be ported to use the ioda-bundle.
+
+#======================================================================
+# Project settings
+#======================================================================
+branches:
+  only:
+    - develop
+
+language: cpp
+
+services:
+  - docker
+
+before_install:
+  - date
+  - REPO_SOURCE_DIR=${TRAVIS_BUILD_DIR}/jcsda/src_repo
+
+#  create the same file structure on Travis VM and Docker container
+  - mkdir -p ${TRAVIS_BUILD_DIR}/jcsda/src_repo
+# echo branch info
+  - echo $TRAVIS_PULL_REQUEST
+  - echo $TRAVIS_PULL_REQUEST_BRANCH
+  - echo $TRAVIS_BRANCH
+  - export BRANCH=$(if [ "$TRAVIS_PULL_REQUEST" == "false" ]; then echo $TRAVIS_BRANCH; else echo $TRAVIS_PULL_REQUEST_BRANCH; fi)
+  - export DASHBOARD=$(if [ "$TRAVIS_EVENT_TYPE" == "cron" ]; then echo Nightly; else echo Continuous; fi)
+  - echo "TRAVIS_BRANCH=$TRAVIS_BRANCH, PR=$PR, BRANCH=$BRANCH"
+#======================================================================
+# Clone all repos
+#======================================================================
+  - git clone -b $BRANCH https://github.com/jcsda/ioda-engines.git ${REPO_SOURCE_DIR}/ioda-engines
+
+#======================================================================
+# get docker image
+# FROM  jcsda/docker:latest
+#======================================================================
+  - cd ${REPO_SOURCE_DIR}/ioda-engines
+  - date
+  - docker build -t jcsda/dockerl2 --build-arg=Dockerfile .  #Dockerfile handles ssh for mpi
+  - date
+  - docker images
+# request codecov to detect CI environment to pass through to docker
+  - ci_env=`bash <(curl -s https://codecov.io/env)`
+  - docker run -d -t $ci_env --name jcsda_container -v ${REPO_SOURCE_DIR}/ioda-engines:/jcsda/src_repo jcsda/dockerl2
+  - docker ps -a
+  - date
+
+#======================================================================
+# Here are the run steps
+#======================================================================
+script:
+  - docker exec jcsda_container ls
+  - docker exec jcsda_container bash -c 'cp -r /jcsda/.openmpi/ ~/' 
+##  use cmake with flags to generate test coverage reports
+  - date
+  - docker exec jcsda_container bash -c 'cd /build_container && cmake -DCMAKE_MODULE_PATH=/usr/local/share/ecbuild/cmake/ -DCMAKE_BUILD_TYPE=Debug -DCDASH_OVERRIDE_SITE=TravisCI -DCMAKE_CXX_FLAGS="-Wall -Wextra" -DCMAKE_C_FLAGS="-Wall -Wextra" -DENABLE_GPROF=ON -DCTEST_UPDATE_VERSION_ONLY=TRUE  /jcsda/src_repo'
+  - date
+  - docker exec jcsda_container bash -c 'cd /build_container && ctest -D ExperimentalStart -- --group $DASHBOARD'
+  - docker exec jcsda_container bash -c 'cd /build_container && ctest -D ExperimentalUpdate'
+  - docker exec jcsda_container bash -c 'cd /build_container && ctest -D ExperimentalConfigure'
+  - docker exec jcsda_container bash -c 'cd /build_container && ctest -D ExperimentalBuild -j4'
+  - docker exec jcsda_container bash -c 'cd /build_container && ctest -D ExperimentalTest'
+  - if [ "$TRAVIS_EVENT_TYPE" == "cron" ]; then echo docker exec jcsda_container bash -c 'cd /build_container && ctest -D ExperimentalMemCheck'; fi
+  - docker exec jcsda_container bash -c 'cd /build_container && ctest -D ExperimentalCoverage'
+  - docker exec jcsda_container bash -c 'cd /build_container && ctest -D ExperimentalSubmit -- --group Continuous'
+  - date
+##  run lcov inside container ## Disabled
+#  - docker exec jcsda_container bash -c 'cd /build_container && lcov --capture --directory . --output-file coverage.info'
+#  - docker exec jcsda_container bash -c 'cd /build_container && lcov --remove coverage.info "/usr/*" --output-file coverage.info'  #  filter system-files 
+#  - docker exec jcsda_container bash -c 'cd /build_container && lcov --list coverage.info'  #  debug info
+#  - docker exec jcsda_container bash -c 'cd /build_container && bash <(curl -s https://codecov.io/bash) -t ff803288-0fc9-4582-aa7b-9245b3b9f761  -X gcov -f coverage.info -R /jcsda/src_repo/'

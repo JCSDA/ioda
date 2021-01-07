@@ -1,0 +1,20 @@
+---
+Language: Cpp
+BasedOnStyle: Google
+AccessModifierOffset: -2
+AlignAfterOpenBracket: Align
+AlignConsecutiveAssignments: true
+AlignEscapedNewlines: Right
+AlignOperands: true
+BreakBeforeBinaryOperators: true
+ColumnLimit: 110
+ConstructorInitializerIndentWidth: 4
+ContinuationIndentWidth: 2
+FixNamespaceComments: true
+IndentPPDirectives: AfterHash
+IndentWidth: 2
+NamespaceIndentation: All
+PointerAlignment: Right
+ReflowComments: true
+SortIncludes: true
+SortUsingDeclarations: true

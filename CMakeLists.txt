@@ -9,7 +9,13 @@
 ################################################################################
 
 cmake_minimum_required( VERSION 3.12 )
-project( ioda VERSION 1.0.0 LANGUAGES CXX Fortran )
+option(IODA_BUILD_LANGUAGE_FORTRAN "Build Fortran bindings." ON)
+list( APPEND IODA_LANGUAGES CXX)
+if (IODA_BUILD_LANGUAGE_FORTRAN)
+	list( APPEND IODA_LANGUAGES Fortran)
+endif()
+
+project( ioda VERSION 1.0.0 LANGUAGES ${IODA_LANGUAGES} )
 
 ## Ecbuild integration
 find_package( ecbuild QUIET )

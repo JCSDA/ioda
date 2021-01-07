@@ -1,0 +1,574 @@
+#pragma once
+/*
+ * (C) Copyright 2020 UCAR
+ *
+ * This software is licensed under the terms of the Apache Licence Version 2.0
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ */
+/// \file Variable.h
+/// \brief Interfaces of ioda::Variable and related classes.
+#include <cstring>
+#include <gsl/gsl-lite.hpp>
+#include <list>
+#include <map>
+#include <memory>
+#include <string>
+#include <tuple>
+#include <utility>
+#include <vector>
+
+#include "ioda/Attributes/Has_Attributes.h"
+#include "ioda/Misc/Eigen_Compat.h"
+#include "ioda/Python/Var_ext.h"
+#include "ioda/Types/Marshalling.h"
+#include "ioda/Types/Type.h"
+#include "ioda/Types/Type_Provider.h"
+#include "ioda/Variables/Fill.h"
+#include "ioda/Variables/Selection.h"
+#include "ioda/defs.h"
+
+namespace ioda {
+class Variable;
+
+namespace detail {
+class Variable_Backend;
+
+/// \brief Exists to prevent constructor conflicts when passing a backend into
+/// a frontend object.
+/// \bug Need to add a virtual resize function.
+template <class Variable_Implementation = Variable>
+class Variable_Base {
+protected:
+  /// Using an opaque object to implement the backend.
+  std::shared_ptr<Variable_Backend> backend_;
+
+  /// @name General Functions
+  /// @{
+
+  Variable_Base(std::shared_ptr<Variable_Backend>);
+
+public:
+  virtual ~Variable_Base();
+
+  /// @}
+  /// @name Metadata manipulation
+  /// @{
+
+  /// Attributes
+  Has_Attributes atts;
+
+  /// @}
+
+  /// @name General Functions
+  /// @{
+
+  /// Gets a handle to the underlying object that implements the backend functionality.
+  std::shared_ptr<Variable_Backend> get() const;
+
+  /// @}
+  /// @name Type-querying Functions
+  /// @{
+
+  /// Get type
+  // virtual Type getType() const;
+  /// Get type
+  // inline Type type() const { return getType(); }
+
+  /// Query the backend and get the type provider.
+  virtual detail::Type_Provider* getTypeProvider() const;
+
+  /// \brief Convenience function to check a Variable's storage type.
+  /// \param DataType is the type of the data. I.e. float, int, int32_t, uint16_t, std::string, etc.
+  /// \returns True if the type matches
+  /// \returns False (0) if the type does not match
+  /// \throws jedi::xError if an error occurred.
+  template <class DataType>
+  bool isA() const {
+    Type templateType = Types::GetType_Wrapper<DataType>::GetType(getTypeProvider());
+
+    return isA(templateType);
+  }
+  /// Hand-off to the backend to check equivalence
+  virtual bool isA(Type lhs) const;
+
+  /// Python compatability function
+  inline bool isA(BasicTypes dataType) const { return isA(Type(dataType, getTypeProvider())); }
+  /// \internal pybind11
+  inline bool _py_isA2(BasicTypes dataType) { return isA(dataType); }
+  /// Convenience function to query type
+  BasicTypes getBasicType() const;
+
+  /// @}
+  /// @name Querying Functions for Fill Values, Chunking and Compression
+  /// @{
+
+  /// \brief Check if a variable has a fill value set
+  /// \returns true if a fill value is set, false otherwise.
+  virtual bool hasFillValue() const;
+
+  /// Remap fill value storage type into this class.
+  typedef detail::FillValueData_t FillValueData_t;
+
+  /// \brief Retrieve the fill value
+  /// \returns an object of type FillValueData_t that stores
+  ///   the fill value. If there is no fill value, then
+  ///   FillValueData_t::set_ will equal false. The fill
+  ///   value data will be stored in
+  ///   FillValueData_t::fillValue_ (for simple types), or in
+  ///   FillValueData_t::stringFillValue_ (for strings only).
+  /// \note Recommend querying isA to make sure that you
+  ///   are reading the fill value as the correct type.
+  virtual FillValueData_t getFillValue() const;
+
+  /// \brief Retrieve the chunking options for the Variable.
+  /// \note Not all backends support chunking, but they should
+  ///   all store the desired chunk size information in case the
+  ///   Variable is copied to a new backend.
+  /// \returns a vector containing the chunk sizes.
+  /// \returns an empty vector if chunking is not used.
+  virtual std::vector<Dimensions_t> getChunkSizes() const;
+
+  /// \brief Retrieve the GZIP compression options for the Variable.
+  /// \note Not all backends support compression (and those that
+  ///   do also require chunking support). They should store this
+  ///   information anyways, in case the Variable is copied to
+  ///   a new backend.
+  /// \returns a pair indicating 1) whether GZIP is requested and
+  ///   2) the compression level that is desired.
+  virtual std::pair<bool, int> getGZIPCompression() const;
+
+  /// \brief Retrieve the SZIP compression options for the Variable.
+  /// \note Not all backends support compression (and those that
+  ///   do also require chunking support). They should store this
+  ///   information anyways, in case the Variable is copied to
+  ///   a new backend.
+  /// \returns a tuple indicating 1) whether SZIP is requested,
+  ///   2) PixelsPerBlock, and 3) general SZIP filter option flags.
+  virtual std::tuple<bool, unsigned, unsigned> getSZIPCompression() const;
+
+  /// @}
+  /// @name Data Space-Querying Functions
+  /// @{
+
+  // Get dataspace
+  // JEDI_NODISCARD DataSpace getSpace() const;
+
+  /// Get current and maximum dimensions, and number of total points.
+  /// \note In Python, see the dims property.
+  virtual Dimensions getDimensions() const;
+
+  /// \brief Resize the variable.
+  /// \note Not all variables are resizable. This depends
+  ///   on backend support. For HDF5, the variable must be chunked
+  ///   and must not exceed max_dims.
+  /// \note Bad things may happen if a variable's dimension scales
+  ///   have different lengths than its dimensions. Resize them
+  ///   together, preferably using the ObsSpace resize function.
+  /// \see ObsSpace::resize
+  /// \param newDims are the new dimensions.
+  virtual Variable resize(const std::vector<Dimensions_t>& newDims);
+
+  /// Attach a dimension scale to this Variable.
+  virtual Variable attachDimensionScale(unsigned int DimensionNumber, const Variable& scale);
+  /// Detach a dimension scale
+  virtual Variable detachDimensionScale(unsigned int DimensionNumber, const Variable& scale);
+  /// Set dimensions (convenience function to several invocations of attachDimensionScale).
+  Variable setDimScale(const std::vector<Variable>& dims);
+  /// Set dimensions (convenience function to several invocations of attachDimensionScale).
+  Variable setDimScale(const Variable& dims);
+  /// Set dimensions (convenience function to several invocations of attachDimensionScale).
+  Variable setDimScale(const Variable& dim1, const Variable& dim2);
+  /// Set dimensions (convenience function to several invocations of attachDimensionScale).
+  Variable setDimScale(const Variable& dim1, const Variable& dim2, const Variable& dim3);
+
+  /// Is this Variable used as a dimension scale?
+  virtual bool isDimensionScale() const;
+
+  /// Designate this table as a dimension scale
+  virtual Variable setIsDimensionScale(const std::string& dimensionScaleName);
+  /// Get the name of this Variable's defined dimension scale
+  inline std::string getDimensionScaleName() const {
+    std::string r;
+    getDimensionScaleName(r);
+    return r;
+  }
+  virtual Variable getDimensionScaleName(std::string& res) const;
+
+  /// Is a dimension scale attached to this Variable in a certain position?
+  virtual bool isDimensionScaleAttached(unsigned int DimensionNumber, const Variable& scale) const;
+
+  /// \brief Which dimensions are attached at which positions? This function may offer improved
+  /// performance on some backends compared to serial isDimensionScaleAttached calls.
+  /// \param scalesToQueryAgainst is a vector containing the scales. You can pass in
+  ///   "tagged" strings that map the Variable to a name.
+  ///   If you do not pass in a scale to check against, then this scale will not be checked and
+  ///   will not be present in the function output.
+  /// \param firstOnly is specified when only one dimension can be attached to each axis (the default).
+  /// \returns a vector with the same length as the variable's dimensionality.
+  ///   Each variable dimension in the vector can have one or more attached scales. These scales are
+  ///   returned as their own, inner, vector of pair<string, Variable>.
+  virtual std::vector<std::vector<std::pair<std::string, Variable>>> getDimensionScaleMappings(
+    const std::list<std::pair<std::string, Variable>>& scalesToQueryAgainst, bool firstOnly = true) const;
+
+  /// @}
+  /// @name Writing Data
+  /// @{
+
+  /// \brief The fundamental write function. Backends overload this function to implement all write
+  /// operations.
+  ///
+  /// \details This function writes a span of bytes (characters) to the backend attribute storage.
+  /// No type conversions take place here (see the templated conversion function, below).
+  ///
+  /// \param data is a span of data.
+  /// \param in_memory_datatype is an opaque (backend-level) object that describes the placement of
+  ///   the data in memory. Usually ignorable - needed for complex data structures.
+  ///   \param mem_selection_id is the user's memory layout representing the location where the data is read
+  ///   from. \param file_selection_id is the backend's memory layout representing the location where the data
+  ///   are written to.
+  /// \throws jedi::xError if data has the wrong size.
+  /// \returns The variable (for chaining).
+  virtual Variable write(gsl::span<char> data, const Type& in_memory_dataType,
+                         const Selection& mem_selection = Selection::all,
+                         const Selection& file_selection = Selection::all);
+
+  /// \brief Write the Variable
+  /// \note Ensure that the correct dimension ordering is preserved.
+  /// \note With default parameters, the entire Variable is written.
+  /// \param DataType is the type of the data to be written.
+  /// \param Marshaller is a class that serializes / deserializes data.
+  /// \param data is a span of data.
+  /// \param in_memory_datatype is an opaque (backend-level) object that describes the placement of
+  ///   the data in memory. Usually ignorable - needed for complex data structures.
+  /// \throws jedi::xError if data has the wrong size.
+  /// \returns The variable (for chaining).
+  template <class DataType, class Marshaller = Object_Accessor<DataType>,
+            class TypeWrapper = Types::GetType_Wrapper<DataType>>
+  Variable_Implementation write(const gsl::span<DataType> data,
+                                const Selection& mem_selection = Selection::all,
+                                const Selection& file_selection = Selection::all) {
+    Marshaller m;
+    auto d = m.serialize(data);
+    return write(
+      gsl::make_span<char>(const_cast<char*>(reinterpret_cast<const char*>(d->DataPointers.data())),
+                           d->DataPointers.size() * sizeof(typename Marshaller::mutable_value_type)),
+      TypeWrapper::GetType(getTypeProvider()), mem_selection, file_selection);
+  }
+
+  /// \brief Write the Variable
+  /// \note Ensure that the correct dimension ordering is preserved.
+  /// \note With default parameters, the entire Variable is written.
+  /// \param DataType is the type of the data to be written.
+  /// \param Marshaller is a class that serializes / deserializes data.
+  /// \param data is a span of data.
+  /// \param in_memory_datatype is an opaque (backend-level) object that describes the placement of
+  ///   the data in memory. Usually ignorable - needed for complex data structures.
+  /// \throws jedi::xError if data has the wrong size.
+  /// \returns The variable (for chaining).
+  template <class DataType, class Marshaller = Object_Accessor<DataType>,
+            class TypeWrapper = Types::GetType_Wrapper<DataType>>
+  Variable_Implementation write(const gsl::span<const DataType> data,
+                                const Selection& mem_selection = Selection::all,
+                                const Selection& file_selection = Selection::all) {
+    Marshaller m;
+    auto d = m.serialize(data);
+    return write(
+      gsl::make_span<char>(const_cast<char*>(reinterpret_cast<const char*>(d->DataPointers.data())),
+                           d->DataPointers.size() * sizeof(typename Marshaller::mutable_value_type)),
+      TypeWrapper::GetType(getTypeProvider()), mem_selection, file_selection);
+  }
+
+  /// Write the variable
+  template <class DataType, class Marshaller = Object_Accessor<DataType>,
+            class TypeWrapper = Types::GetType_Wrapper<DataType>>
+  Variable_Implementation write(const std::vector<DataType>& data,
+                                const Selection& mem_selection = Selection::all,
+                                const Selection& file_selection = Selection::all) {
+    Expects(backend_ != nullptr);
+    return this->write<DataType, Marshaller, TypeWrapper>(gsl::make_span(data), mem_selection,
+                                                          file_selection);
+  }
+
+  /// \brief Write an Eigen object (a Matrix, an Array, a Block, a Map).
+  /// \param d is the data to be written.
+  /// \throws jedi::xError on a dimension mismatch.
+  /// \returns the variable
+  template <class EigenClass>
+  Variable_Implementation writeWithEigenRegular(const EigenClass& d,
+                                                const Selection& mem_selection = Selection::all,
+                                                const Selection& file_selection = Selection::all) {
+#if 1  //__has_include("Eigen/Dense")
+    typedef typename EigenClass::Scalar ScalarType;
+    // If d is already in Row Major form, then this is optimized out.
+    Eigen::Array<ScalarType, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> dout;
+    dout.resize(d.rows(), d.cols());
+    dout = d;
+    const auto& dconst = dout;  // To make some compilers happy.
+    auto sp = gsl::make_span(dconst.data(), static_cast<int>(d.rows() * d.cols()));
+
+    return write<ScalarType>(sp, mem_selection, file_selection);
+#else
+    static_assert(false, "The Eigen headers cannot be found, so this function cannot be used.");
+#endif
+  }
+
+  /// \brief Write an Eigen Tensor-like object
+  /// \param d is the data to be written.
+  /// \throws jedi::xError on a dimension mismatch.
+  /// \returns the variable
+  template <class EigenClass>
+  Variable_Implementation writeWithEigenTensor(const EigenClass& d,
+                                               const Selection& mem_selection = Selection::all,
+                                               const Selection& file_selection = Selection::all) {
+#if 1  //__has_include("unsupported/Eigen/CXX11/Tensor")
+    ioda::Dimensions dims = detail::EigenCompat::getTensorDimensions(d);
+
+    auto sp = (gsl::make_span(d.data(), dims.numElements));
+    auto res = write(sp, mem_selection, file_selection);
+    return res;
+#else
+    static_assert(false, "The Eigen unsupported/ headers cannot be found, so this function cannot be used.");
+#endif
+  }
+
+  /// @}
+  /// @name Reading Data
+  /// @{
+
+  /// \brief Read the Variable - as char array. Ordering is row-major.
+  /// \details This is the fundamental read function that has to be implemented.
+  /// \note Ensure that the correct dimension ordering is preserved
+  /// \note With default parameters, the entire Variable is read
+  virtual Variable read(gsl::span<char> data, const Type& in_memory_dataType,
+                        const Selection& mem_selection = Selection::all,
+                        const Selection& file_selection = Selection::all) const;
+
+  /// \brief Read the variable into a span (range) or memory. Ordering is row-major.
+  /// \todo Add in the dataspaces!
+  template <class DataType, class Marshaller = ioda::Object_Accessor<DataType>,
+            class TypeWrapper = Types::GetType_Wrapper<DataType>>
+  Variable_Implementation read(gsl::span<DataType> data, const Selection& mem_selection = Selection::all,
+                               const Selection& file_selection = Selection::all) const {
+    Expects(backend_ != nullptr);
+    const size_t numObjects = data.size();
+    Expects(getDimensions().numElements == gsl::narrow<ioda::Dimensions_t>(numObjects));
+
+    detail::PointerOwner pointerOwner = getTypeProvider()->getReturnedPointerOwner();
+    Marshaller m(pointerOwner);
+    auto p = m.prep_deserialize(numObjects);
+    read(gsl::make_span<char>(reinterpret_cast<char*>(p->DataPointers.data()),
+                              // Logic note: sizeof mutable data type. If we are
+                              // reading in a string, then mutable data type is char*,
+                              // which works because address pointers have the same size.
+                              p->DataPointers.size() * sizeof(typename Marshaller::mutable_value_type)),
+         TypeWrapper::GetType(getTypeProvider()), mem_selection, file_selection);
+    m.deserialize(p, data);
+
+    return Variable_Implementation{backend_};
+  }
+
+  /// \brief Read the variable into a vector. Resize if needed. For a non-resizing version, use a gsl::span.
+  /// \details Ordering is row-major.
+  template <class DataType, class Marshaller = ioda::Object_Accessor<DataType>,
+            class TypeWrapper = Types::GetType_Wrapper<DataType>>
+  Variable_Implementation read(std::vector<DataType>& data, const Selection& mem_selection = Selection::all,
+                               const Selection& file_selection = Selection::all) const {
+    /// \bug Resize only if needed, and resize to the proper extent depending on
+    /// mem_selection and file_selection.
+    data.resize(getDimensions().numElements);
+    return read<DataType, Marshaller, TypeWrapper>(gsl::make_span(data.data(), data.size()), mem_selection,
+                                                   file_selection);
+  }
+
+  /// \brief Read the variable into a new vector. Python convenience function.
+  /// \bug Get correct size.
+  template <class DataType, class Marshaller = ioda::Object_Accessor<DataType>,
+            class TypeWrapper = Types::GetType_Wrapper<DataType>>
+  std::vector<DataType> readAsVector(const Selection& mem_selection = Selection::all,
+                                     const Selection& file_selection = Selection::all) const {
+    std::vector<DataType> data(getDimensions().numElements);
+    read<DataType, Marshaller, TypeWrapper>(gsl::make_span(data.data(), data.size()), mem_selection,
+                                            file_selection);
+    return data;
+  }
+
+  /// \brief Valarray read convenience function. Resize if needed. For a non-resizing version, use a
+  /// gsl::span. \param DataType is the type of the data. I.e. float, int, int32_t, uint16_t, std::string,
+  /// etc. \param data is a valarray acting as a data buffer that is filled with the metadata's contents. It
+  /// gets resized as needed. \returns Another instance of this Attribute. Used for operation chaining. \note
+  /// data will be stored in row-major order.
+  template <class DataType, class Marshaller = ioda::Object_Accessor<DataType>,
+            class TypeWrapper = Types::GetType_Wrapper<DataType>>
+  Variable_Implementation read(std::valarray<DataType>& data, const Selection& mem_selection = Selection::all,
+                               const Selection& file_selection = Selection::all) const {
+    /// \bug Resize only if needed, and resize to the proper extent depending on
+    /// mem_selection and file_selection.
+    data.resize(getDimensions().numElements);
+    return read<DataType, Marshaller, TypeWrapper>(gsl::make_span(std::begin(data), std::end(data)),
+                                                   mem_selection, file_selection);
+  }
+
+  /// \brief Read data into an Eigen::Array, Eigen::Matrix, Eigen::Map, etc.
+  /// \param EigenClass is a template pointing to the Eigen object.
+  ///   This template must provide the EigenClass::Scalar typedef.
+  /// \param res is the Eigen object.
+  /// \param Resize indicates whether the Eigen object should be resized
+  ///   if there is a dimension mismatch. Not all Eigen objects can be resized.
+  /// \returns Another instance of this Variable. Used for operation chaining.
+  /// \throws jedi::xError if the variable's dimensionality is
+  ///   too high.
+  /// \throws jedi::xError if resize = false and there is a dimension mismatch.
+  /// \note When reading in a 1-D object, the data are read as a column vector.
+  template <class EigenClass, bool Resize = detail::EigenCompat::CanResize<EigenClass>::value>
+  Variable_Implementation readWithEigenRegular(EigenClass& res,
+                                               const Selection& mem_selection = Selection::all,
+                                               const Selection& file_selection = Selection::all) const {
+    /// \bug Resize only if needed, and resize to the proper extent depending on
+    /// mem_selection and file_selection.
+#if 1  //__has_include("Eigen/Dense")
+    typedef typename EigenClass::Scalar ScalarType;
+
+    static_assert(!(Resize && !detail::EigenCompat::CanResize<EigenClass>::value),
+                  "This object cannot be resized, but you have specified that a resize is required.");
+
+    // Check that the dimensionality is 1 or 2.
+    const auto dims = getDimensions();
+    if (dims.dimensionality > 2)
+      throw;  // jedi_throw.add("Reason", "Dimensionality too high for a regular Eigen read. Use Eigen::Tensor
+              // reads instead.");
+
+    int nDims[2] = {1, 1};
+    if (dims.dimsCur.size() >= 1) nDims[0] = gsl::narrow<int>(dims.dimsCur[0]);
+    if (dims.dimsCur.size() >= 2) nDims[1] = gsl::narrow<int>(dims.dimsCur[1]);
+
+    // Resize if needed.
+    if (Resize)
+      detail::EigenCompat::DoEigenResize(res, nDims[0], nDims[1]);  // nullop if the size is already correct.
+    else if (dims.numElements != (size_t)(res.rows() * res.cols()))
+      throw;  // jedi_throw.add("Reason", "Size mismatch");
+
+    // Array copy to preserve row vs column major format.
+    // Should be optimized away by the compiler if unneeded.
+    // Note to the reader: We are reading in the data to a temporary object.
+    // We can size _this_ temporary object however we want.
+    // The temporary is used to swap row / column indices if needed.
+    // It should be optimized away if not needed... making sure this happens is a todo.
+    Eigen::Array<ScalarType, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> data_in(res.rows(), res.cols());
+
+    auto ret = read<ScalarType>(gsl::span<ScalarType>(data_in.data(), dims.numElements), mem_selection,
+                                file_selection);
+    res = data_in;
+    return ret;
+#else
+    static_assert(false, "The Eigen headers cannot be found, so this function cannot be used.");
+#endif
+  }
+
+  /// \brief Read data into an Eigen::Array, Eigen::Matrix, Eigen::Map, etc.
+  /// \param EigenClass is a template pointing to the Eigen object.
+  ///   This template must provide the EigenClass::Scalar typedef.
+  /// \param res is the Eigen object.
+  /// \returns Another instance of this Variable. Used for operation chaining.
+  /// \throws jedi::xError if there is a size mismatch.
+  /// \note When reading in a 1-D object, the data are read as a column vector.
+  template <class EigenClass>
+  Variable_Implementation readWithEigenTensor(EigenClass& res,
+                                              const Selection& mem_selection = Selection::all,
+                                              const Selection& file_selection = Selection::all) const {
+#if 1  //__has_include("unsupported/Eigen/CXX11/Tensor")
+       // Check dimensionality of source and destination
+    const auto ioda_dims = getDimensions();
+    const auto eigen_dims = ioda::detail::EigenCompat::getTensorDimensions(res);
+    if (ioda_dims.numElements != eigen_dims.numElements)
+      throw;  // jedi_throw.add("Reason", "Size mismatch for Eigen Tensor-like read.");
+
+    auto sp = (gsl::make_span(res.data(), eigen_dims.numElements));
+    return read(sp, mem_selection, file_selection);
+#else
+    static_assert(false, "The Eigen unsupported/ headers cannot be found, so this function cannot be used.");
+#endif
+  }
+
+  /// \internal Python binding function
+  template <class EigenClass>
+  EigenClass _readWithEigenRegular_python(const Selection& mem_selection = Selection::all,
+                                          const Selection& file_selection = Selection::all) const {
+    EigenClass data;
+    readWithEigenRegular(data, mem_selection, file_selection);
+    return data;
+  }
+
+  /// @}
+};
+// extern template class Variable_Base<Variable>;
+}  // namespace detail
+
+/** \brief Variables store data!
+ *
+ * A variable represents a single field of data. It can be multi-dimensional and
+ * usually has one or more attached **dimension scales**.
+ *
+ * Variables have Metadata, which describe the variable (i.e. valid_range, long_name, units).
+ *
+ * Variables can have different data types (i.e. int16_t, float, double, string, datetime).
+ *
+ * Variables can be resized. Depending on the backend, the data in a variable can be stored using
+ * chunks, and may also be compressed.
+ *
+ * The backend manages how variables are stored in memory or on disk. The functions in the Variable
+ * class provide methods to query and set data. The goal is to have data transfers involve as
+ * few copies as possible.
+ *
+ * Variable objects themselves are lightweight handles that may be easily passed across different
+ * parts of a program. Variables are always stored somewhere in a Group (or ObsSpace), so you
+ * can always re-open a handle.
+ *
+ * \note Thread and MPI safety depend on the specific backends used to implement a variable.
+ * \note A variable may be linked to multiple groups and listed under multiple names, so long as
+ * the storage backends are all the same.
+ * \todo Add resize function.
+ **/
+class IODA_DL Variable : public detail::Variable_Base<Variable> {
+public:
+  /// @name General Functions
+  /// @{
+
+  Variable();
+  Variable(std::shared_ptr<detail::Variable_Backend> b);
+  Variable(const Variable&);
+  Variable& operator=(const Variable&);
+  virtual ~Variable();
+
+  /// @}
+  /// @name Python compatability objects
+  /// @{
+
+  detail::python_bindings::VariableIsA<Variable> _py_isA;
+
+  detail::python_bindings::VariableReadVector<Variable> _py_readVector;
+  detail::python_bindings::VariableReadNPArray<Variable> _py_readNPArray;
+
+  detail::python_bindings::VariableWriteVector<Variable> _py_writeVector;
+  detail::python_bindings::VariableWriteNPArray<Variable> _py_writeNPArray;
+
+  detail::python_bindings::VariableScales<Variable> _py_scales;
+
+  /// @}
+};
+
+namespace detail {
+/// \brief Variable backends inherit from this.
+class IODA_DL Variable_Backend : public Variable_Base<Variable> {
+public:
+  virtual ~Variable_Backend();
+
+  /// Default, trivial implementation. Customizable by backends for performance.
+  std::vector<std::vector<std::pair<std::string, Variable>>> getDimensionScaleMappings(
+    const std::list<std::pair<std::string, Variable>>& scalesToQueryAgainst,
+    bool firstOnly = true) const override;
+
+protected:
+  Variable_Backend();
+};
+}  // namespace detail
+}  // namespace ioda
