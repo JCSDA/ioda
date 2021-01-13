@@ -55,7 +55,6 @@ void testConstructor_local() {
         // Get the numbers of locations (nlocs) from the local obspace object
         std::size_t Nlocs = obsspace_local.nlocs();
         oops::Log::debug() << "Nlocs_local = " << Nlocs << std::endl;
-        obsspace_local.comm().allReduceInPlace(Nlocs, eckit::mpi::sum());
         // Get the expected nlocs from the obspace object's configuration
         std::size_t ExpectedNlocs =
           conf[jj].getUnsigned("obs space.test data.expected local nlocs");

@@ -58,6 +58,7 @@ class ObsDataVector: public util::Printable,
   void save(const std::string &) const;
 
 // Methods below are used by UFO but not by OOPS
+  void rmse_with(const ioda::ObsDataVector<float> & ref, std::vector<float> & rms_out) const;
   size_t nvars() const {return nvars_;}  // Size in (local) memory
   size_t nlocs() const {return nlocs_;}  // Size in (local) memory
   bool has(const std::string & vargrp) const {return obsvars_.has(vargrp);}
@@ -133,6 +134,27 @@ ObsDataVector<DATATYPE> & ObsDataVector<DATATYPE>::operator= (const ObsDataVecto
   oops::Log::trace() << "ObsDataVector::operator= done" << std::endl;
   return *this;
 }
+
+// -----------------------------------------------------------------------------
+template <typename DATATYPE>
+void ObsDataVector<DATATYPE>::rmse_with(const ioda::ObsDataVector<float> & ref,
+            std::vector<float> & rms_out) const {
+  rms_out.resize(nvars_);
+
+  /// Loop through variables and calculate rms for each variable
+  for (size_t ivar = 0; ivar < nvars_; ++ivar) {
+    int nloc = obsdb_.nlocspatch();
+    // need to cast ObsDataRow to vector<double> to use in nobs() later
+    std::vector<double> tmpvec(nloc);
+    for (size_t jj = 0; jj < nloc; ++jj) {
+      tmpvec[jj] = rows_[ivar][jj] - ref[ivar][jj];
+    }
+    int nobs = obsdb_.distribution().nobs(tmpvec);
+    double rms = obsdb_.distribution().dot_product(tmpvec, tmpvec);
+    if (nobs > 0) rms = sqrt(rms / static_cast<double>(nobs));
+    rms_out[ivar] = static_cast<float>(rms);
+  }
+}
 // -----------------------------------------------------------------------------
 template <typename DATATYPE>
 void ObsDataVector<DATATYPE>::zero() {
@@ -188,21 +210,23 @@ void ObsDataVector<DATATYPE>::print(std::ostream & os) const {
   for (size_t jv = 0; jv < nvars_; ++jv) {
     DATATYPE zmin = std::numeric_limits<DATATYPE>::max();
     DATATYPE zmax = std::numeric_limits<DATATYPE>::lowest();
-    int nobs = 0;
-    int nloc = nlocs_;
+    int nloc = obsdb_.nlocspatch();
+    // need to cast ObsDataRow to vector<double> to use in nobs() later
+    std::vector<double> tmpvec(nlocs_);
+
     for (size_t jj = 0; jj < nlocs_; ++jj) {
       DATATYPE zz = rows_.at(jv).at(jj);
+      tmpvec[jj] = zz;
       if (zz != missing) {
         if (zz < zmin) zmin = zz;
         if (zz > zmax) zmax = zz;
-        ++nobs;
       }
     }
     // collect zmin, zmax, nobs, nloc on all processors
     obsdb_.distribution().min(zmin);
     obsdb_.distribution().max(zmax);
-    obsdb_.distribution().sum(nobs);
     obsdb_.distribution().sum(nloc);
+    int nobs = obsdb_.distribution().nobs(tmpvec);
 
     os << obsdb_.obsname() << " " << obsvars_[jv] << " nlocs = " << nloc
        << ", nobs= " << nobs << " Min=" << zmin << ", Max=" << zmax << std::endl;

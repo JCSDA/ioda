@@ -10,6 +10,54 @@ window end: "2015-08-10T03:00:00Z"
 # file to get the expected result. If you are MPI rank 0, then you read the keywords
 # under "rank0:" from this file; MPI rank 1, keywords from "rank1:"; etc.
 distribution types:
+  - distribution: "Halo 4"
+    specs:
+      name: "Halo"
+      gnlocs: 4
+      latitude: [40., 10., -10., -40.]
+      longitude: [0.0, 0.0, 0.0, 0.0]
+      allgatherv: []
+      rank0:
+        nlocs: 3
+        nrecs: 3
+        nPatchLocs: 1
+        center: [0.0, 45.0]
+        radius: 7000000.0
+        index: [ 0, 1, 2 ]
+        recnums: [ 0, 1, 2 ]
+        patchIndex: [0]
+        exclusivescan: 0
+      rank1:
+        nlocs: 3
+        nrecs: 3
+        nPatchLocs: 1
+        center: [0.0, -45.0]
+        radius: 7000000.0
+        index: [ 1, 2, 3 ]
+        recnums: [ 1, 2, 3 ]
+        patchIndex: [3]
+        exclusivescan: 0
+      rank2:
+        nlocs: 2
+        nrecs: 2
+        nPatchLocs: 2
+        center: [0.0, 0.0]
+        radius: 2000000.0
+        index: [ 1, 2 ]
+        recnums: [ 1, 2 ]
+        patchIndex: [1, 2]
+        exclusivescan: 0
+      rank3:
+        nlocs: 0
+        nrecs: 0
+        nPatchLocs: 0
+        center: [180.0, 0.0]
+        radius: 100.0
+        index: [  ]
+        recnums: [  ]
+        patchIndex: [ ]
+        exclusivescan: 0
+
   - distribution: "Round Robin 8"
     specs:
       name: "RoundRobin"
@@ -18,26 +66,34 @@ distribution types:
       rank0:
         nlocs: 2
         nrecs: 2
+        nPatchLocs: 2
         index: [ 0, 4 ]
         recnums: [ 0, 4 ]
+        patchIndex: [ 0, 4 ]
         exclusivescan: 0
       rank1:
         nlocs: 2
         nrecs: 2
+        nPatchLocs: 2
         index: [ 1, 5 ]
         recnums: [ 1, 5 ]
+        patchIndex: [ 1, 5 ]
         exclusivescan: 2
       rank2:
         nlocs: 2
         nrecs: 2
+        nPatchLocs: 2
         index: [ 2, 6 ]
         recnums: [ 2, 6 ]
+        patchIndex: [ 2, 6 ]
         exclusivescan: 4
       rank3:
         nlocs: 2
         nrecs: 2
+        nPatchLocs: 2
         index: [ 3, 7 ]
         recnums: [ 3, 7 ]
+        patchIndex: [ 3, 7 ]
         exclusivescan: 6
 
   - distribution: "Round Robin 10"
@@ -48,26 +104,34 @@ distribution types:
       rank0:
         nlocs: 3
         nrecs: 3
+        nPatchLocs: 3
         index: [ 0, 4, 8 ]
         recnums: [ 0, 4, 8 ]
+        patchIndex: [ 0, 4, 8 ]
         exclusivescan: 0
       rank1:
         nlocs: 3
         nrecs: 3
+        nPatchLocs: 3
         index: [ 1, 5, 9 ]
         recnums: [ 1, 5, 9 ]
+        patchIndex: [ 1, 5, 9 ]
         exclusivescan: 3
       rank2:
         nlocs: 2
         nrecs: 2
+        nPatchLocs: 2
         index: [ 2, 6 ]
         recnums: [ 2, 6 ]
+        patchIndex: [ 2, 6 ]
         exclusivescan: 6
       rank3:
         nlocs: 2
         nrecs: 2
+        nPatchLocs: 2
         index: [ 3, 7 ]
         recnums: [ 3, 7 ]
+        patchIndex: [ 3, 7 ]
         exclusivescan: 8
 
   - distribution: "Inefficient 4"
@@ -78,26 +142,34 @@ distribution types:
       rank0:
         nlocs: 4
         nrecs: 4
+        nPatchLocs: 4
         index: [ 0, 1, 2, 3 ]
         recnums: [ 0, 1, 2, 3 ]
+        patchIndex: [ 0, 1, 2, 3 ]
         exclusivescan: 0
       rank1:
         nlocs: 4
         nrecs: 4
+        nPatchLocs: 0
         index: [ 0, 1, 2, 3 ]
         recnums: [ 0, 1, 2, 3 ]
+        patchIndex: [ ]
         exclusivescan: 0
       rank2:
         nlocs: 4
         nrecs: 4
+        nPatchLocs: 0
         index: [ 0, 1, 2, 3 ]
         recnums: [ 0, 1, 2, 3 ]
+        patchIndex: [ ]
         exclusivescan: 0
       rank3:
         nlocs: 4
         nrecs: 4
+        nPatchLocs: 0
         index: [ 0, 1, 2, 3 ]
         recnums: [ 0, 1, 2, 3 ]
+        patchIndex: [  ]
         exclusivescan: 0
 
   - distribution: "Round Robin Grouping 20"
@@ -109,26 +181,34 @@ distribution types:
       rank0:
         nlocs: 6
         nrecs: 3
+        nPatchLocs: 6
         index: [ 0, 1, 10, 14, 15, 16 ]
         recnums: [ 0, 0, 4, 8, 8, 8 ]
+        patchIndex: [ 0, 1, 10, 14, 15, 16 ]
         exclusivescan: 0
       rank1:
         nlocs: 6
         nrecs: 3
+        nPatchLocs: 6
         index: [ 2, 3, 4, 11, 17, 18 ]
         recnums: [ 1, 1, 1, 5, 9, 9 ]
+        patchIndex: [ 2, 3, 4, 11, 17, 18 ]
         exclusivescan: 6
       rank2:
         nlocs: 3
         nrecs: 3
+        nPatchLocs: 3
         index: [ 5, 12, 19 ]
         recnums: [ 2, 6, 10 ]
+        patchIndex: [ 5, 12, 19 ]
         exclusivescan: 12
       rank3:
         nlocs: 5
         nrecs: 2
+        nPatchLocs: 5
         index: [ 6, 7, 8, 9, 13 ]
         recnums: [ 3, 3, 3, 3, 7 ]
+        patchIndex: [ 6, 7, 8, 9, 13 ]
         exclusivescan: 15
 
   - distribution: "Round Robin Grouping Repeat 20"
@@ -140,24 +220,32 @@ distribution types:
       rank0:
         nlocs: 5
         nrecs: 3
+        nPatchLocs: 5
         index: [ 0, 1, 5, 11, 15 ]
         recnums: [ 0, 0, 0, 4, 8 ]
+        patchIndex: [ 0, 1, 5, 11, 15 ]
         exclusivescan: 0
       rank1:
         nlocs: 5
         nrecs: 2
+        nPatchLocs: 5
         index: [ 2, 3, 4, 12, 16 ]
         recnums: [ 1, 1, 1, 5, 1 ]
+        patchIndex: [ 2, 3, 4, 12, 16 ]
         exclusivescan: 5
       rank2:
         nlocs: 3
         nrecs: 2
+        nPatchLocs: 3
         index: [ 6, 13, 17 ]
         recnums: [ 2, 6, 2 ]
+        patchIndex: [ 6, 13, 17 ]
         exclusivescan: 10
       rank3:
         nlocs: 5
         nrecs: 2
+        nPatchLocs: 5
         index: [ 7, 8, 9, 10, 14 ]
         recnums: [ 3, 3, 3, 3, 7 ]
+        patchIndex: [ 7, 8, 9, 10, 14 ]
         exclusivescan: 13

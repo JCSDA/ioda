@@ -26,6 +26,8 @@ distribution/DistributionFactory.cc
 distribution/DistributionFactory.h
 distribution/InefficientDistribution.cc
 distribution/InefficientDistribution.h
+distribution/Halo.cc
+distribution/Halo.h
 distribution/RoundRobin.cc
 distribution/RoundRobin.h
 

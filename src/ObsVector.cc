@@ -151,34 +151,15 @@ void ObsVector::random() {
 }
 // -----------------------------------------------------------------------------
 double ObsVector::dot_product_with(const ObsVector & other) const {
-  const size_t nn = values_.size();
-  ASSERT(other.values_.size() == nn);
-  double zz = 0.0;
-  for (size_t jj = 0; jj < nn ; ++jj) {
-    if (values_[jj] != missing_ && other.values_[jj] != missing_) {
-      zz += values_[jj] * other.values_[jj];
-    }
-  }
-
-  obsdb_.distribution().sum(zz);
-
+  double zz =  obsdb_.distribution().dot_product(values_, other.values_);
   return zz;
 }
 // -----------------------------------------------------------------------------
 double ObsVector::rms() const {
-  double zrms = 0.0;
-  int nobs = 0;
-  for (size_t jj = 0; jj < values_.size() ; ++jj) {
-    if (values_[jj] != missing_) {
-      zrms += values_[jj] * values_[jj];
-      ++nobs;
-    }
-  }
-
-  obsdb_.distribution().sum(zrms);
-  obsdb_.distribution().sum(nobs);
-
+  double zrms = dot_product_with(*this);
+  int nobs = this->nobs();
   if (nobs > 0) zrms = sqrt(zrms / static_cast<double>(nobs));
+
   return zrms;
 }
 // -----------------------------------------------------------------------------
@@ -249,11 +230,8 @@ void ObsVector::mask(const ObsDataVector<int> & flags) {
 }
 // -----------------------------------------------------------------------------
 unsigned int ObsVector::nobs() const {
-  int nobs = 0;
-  for (size_t jj = 0; jj < values_.size() ; ++jj) {
-    if (values_[jj] != missing_) ++nobs;
-  }
-  obsdb_.distribution().sum(nobs);
+  int nobs = obsdb_.distribution().nobs(values_);
+
   return nobs;
 }
 // -----------------------------------------------------------------------------
@@ -268,24 +246,19 @@ double & ObsVector::toFortran() {
 void ObsVector::print(std::ostream & os) const {
   double zmin = std::numeric_limits<double>::max();
   double zmax = std::numeric_limits<double>::lowest();
-  double zrms = 0.0;
-  int nobs = 0;
+  double zrms = rms();
+  int nobs = this->nobs();
   for (size_t jj = 0; jj < values_.size() ; ++jj) {
     if (values_[jj] != missing_) {
       if (values_[jj] < zmin) zmin = values_[jj];
       if (values_[jj] > zmax) zmax = values_[jj];
-      zrms += values_[jj] * values_[jj];
-      ++nobs;
     }
   }
 
   obsdb_.distribution().min(zmin);
   obsdb_.distribution().max(zmax);
-  obsdb_.distribution().sum(zrms);
-  obsdb_.distribution().sum(nobs);
 
   if (nobs > 0) {
-    zrms = sqrt(zrms / static_cast<double>(nobs));
     os << obsdb_.obsname() << " nobs= " << nobs << " Min="
        << zmin << ", Max=" << zmax << ", RMS=" << zrms << std::endl;
   } else {

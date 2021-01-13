@@ -116,7 +116,9 @@ void allGathervImpl(const eckit::mpi::Comm & comm, std::vector<std::string> &x) 
 }  // namespace
 
 // -----------------------------------------------------------------------------
-RoundRobin::RoundRobin(const eckit::mpi::Comm & Comm) : Distribution(Comm) {
+RoundRobin::RoundRobin(const eckit::mpi::Comm & Comm,
+                       const eckit::Configuration & config)
+                       : Distribution(Comm, config) {
   oops::Log::trace() << "RoundRobin constructed" << std::endl;
 }
 
@@ -140,6 +142,50 @@ RoundRobin::~RoundRobin() {
  */
 bool RoundRobin::isMyRecord(std::size_t RecNum) const {
     return (RecNum % comm_.size() == comm_.rank());
+}
+
+// -----------------------------------------------------------------------------
+void RoundRobin::patchObs(std::vector<bool> & patchObsVec) const {
+  std::fill(patchObsVec.begin(), patchObsVec.end(), true);
+}
+
+// -----------------------------------------------------------------------------
+double RoundRobin::dot_product(
+                const std::vector<double> &v1, const std::vector<double> &v2) const {
+  ASSERT(v1.size() == v2.size());
+  double missingValue = util::missingValue(missingValue);
+
+  double zz = 0.0;
+  for (size_t jj = 0; jj < v1.size() ; ++jj) {
+    if (v1[jj] != missingValue && v2[jj] != missingValue) {
+      zz += v1[jj] * v2[jj];
+    }
+  }
+
+  this->sum(zz);
+  return zz;
+}
+
+// -----------------------------------------------------------------------------
+double RoundRobin::dot_product(
+                const std::vector<int> &v1, const std::vector<int> &v2) const {
+  std::vector<double> v1d(v1.begin(), v1.end());
+  std::vector<double> v2d(v2.begin(), v2.end());
+  double rv = this->dot_product(v1d, v2d);
+  return rv;
+}
+
+// -----------------------------------------------------------------------------
+size_t RoundRobin::nobs(const std::vector<double> &v1) const {
+  double missingValue = util::missingValue(missingValue);
+
+  size_t nobs = 0;
+  for (size_t jj = 0; jj < v1.size() ; ++jj) {
+    if (v1[jj] != missingValue) ++nobs;
+  }
+
+  this->sum(nobs);
+  return nobs;
 }
 
 void RoundRobin::sum(double &x) const {

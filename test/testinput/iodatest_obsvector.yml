@@ -36,3 +36,4 @@ observations:
 distributions:
   - RoundRobin
   - InefficientDistribution
+  - Halo

@@ -5,11 +5,14 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#ifndef DISTRIBUTION_ROUNDROBIN_H_
-#define DISTRIBUTION_ROUNDROBIN_H_
+#ifndef DISTRIBUTION_HALO_H_
+#define DISTRIBUTION_HALO_H_
 
+#include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
+#include "eckit/geometry/Sphere.h"
 #include "eckit/mpi/Comm.h"
 #include "oops/util/Logger.h"
 
@@ -19,20 +22,21 @@ namespace ioda {
 
 // ---------------------------------------------------------------------
 /*!
- * \brief Round robin distribution
+ * \brief Halo distribution
  *
- * \details This class implements a round-robin style of distribution which
- *          optimzes load balancing.
+ * \details All obs. are divided into compact overlaping sets assigned to each PE 
  *
- * \author Xin Zhang (JCSDA)
+ * \author Sergey Frolov (CIRES)
  */
-class RoundRobin: public Distribution {
+class Halo: public Distribution {
  public:
-     explicit RoundRobin(const eckit::mpi::Comm & Comm,
-                         const eckit::Configuration & config);
-     ~RoundRobin();
+     explicit Halo(const eckit::mpi::Comm & Comm,
+                   const eckit::Configuration & config);
+     ~Halo();
+     void assignRecord(const std::size_t RecNum, const std::size_t LocNum,
+                      const eckit::geometry::Point2 & point) override;
      bool isMyRecord(std::size_t RecNum) const override;
-
+     std::size_t computePatchLocs(const std::size_t nglocs) override;
      void patchObs(std::vector<bool> &) const override;
 
      double dot_product(const std::vector<double> &v1, const std::vector<double> &v2)
@@ -63,8 +67,21 @@ class RoundRobin: public Distribution {
      void allGatherv(std::vector<std::string> &x) const override;
 
      void exclusiveScan(size_t &x) const override;
+
+ private:
+     double radius_;
+     eckit::geometry::Point2 center_;
+     // storage container for halo ids
+     std::unordered_set<std::size_t> haloObsRecord_;
+     std::unordered_map<std::size_t, double> haloObsLoc_;
+     std::vector<size_t> haloLocVector_;
+     // storage container for patch ids
+     std::unordered_set<std::size_t> patchObsLoc_;
+     std::vector<bool> patchObsBool_;
+     // Earth radius in m
+     const double radius_earth_ = 6.371e6;
 };
 
 }  // namespace ioda
 
-#endif  // DISTRIBUTION_ROUNDROBIN_H_
+#endif  // DISTRIBUTION_HALO_H_

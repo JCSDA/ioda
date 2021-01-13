@@ -54,6 +54,19 @@ class ObsSpaceTestFixture : private boost::noncopyable {
 
     for (std::size_t jj = 0; jj < conf.size(); ++jj) {
       eckit::LocalConfiguration obsconf(conf[jj], "obs space");
+      std::string distname = obsconf.getString("distribution", "RoundRobin");
+      // if Halo distribution, need to prescribe center and radius for each patch
+      if (distname == "Halo") {
+        const eckit::mpi::Comm & MpiComm = oops::mpi::world();
+        std::size_t MyRank = MpiComm.rank();
+        std::size_t nprocs = MpiComm.size();
+        double centerLongitude = static_cast<double>(MyRank)*
+                                 (360.0/static_cast<double>(nprocs));
+        double radius = 50000000.0;  // this is big enough to hold all points on each PE
+        std::vector<double> centerd{centerLongitude, 0.0};
+        obsconf.set("center", centerd);
+        obsconf.set("radius", radius);
+      }
       boost::shared_ptr<ioda::ObsSpace> tmp(new ioda::ObsSpace(obsconf, oops::mpi::world(),
                                                                bgn, end, oops::mpi::myself()));
       ospaces_.push_back(tmp);
@@ -80,7 +93,7 @@ void testConstructor() {
     std::string DistMethod = conf[jj].getString("obs space.distribution", "RoundRobin");
 
     // Get the numbers of locations (nlocs) from the ObsSpace object
-    std::size_t Nlocs = Test_::obspace(jj).nlocs();
+    std::size_t Nlocs = Test_::obspace(jj).nlocspatch();
     std::size_t Nrecs = Test_::obspace(jj).nrecs();
     std::size_t Nvars = Test_::obspace(jj).nvars();
     Test_::obspace(jj).distribution().sum(Nlocs);
@@ -106,10 +119,16 @@ void testConstructor() {
 
     oops::Log::debug() << "Nlocs, ExpectedNlocs: " << Nlocs << ", "
                        << ExpectedNlocs << std::endl;
-    oops::Log::debug() << "Nrecs, ExpectedNrecs: " << Nrecs << ", "
-                       << ExpectedNrecs << std::endl;
     oops::Log::debug() << "Nvars, ExpectedNvars: " << Nvars << ", "
                        << ExpectedNvars << std::endl;
+    // records are ambigious for halo distribution
+    // e.g. consider airplane (a single record in round robin) flying accros the globe
+    // for Halo distr this record will be considered unique on each PE
+    if (DistMethod != "Halo") {
+      oops::Log::debug() << "Nrecs, ExpectedNrecs: " << Nrecs << ", "
+                       << ExpectedNrecs << std::endl;
+      EXPECT(Nrecs == ExpectedNrecs);
+    }
 
     oops::Log::debug() << "ObsGroupVar, ExpectedObsGroupVar: " << ObsGroupVar << ", "
                        << ExpectedObsGroupVar << std::endl;
@@ -119,7 +138,6 @@ void testConstructor() {
                        << ExpectedObsSortOrder << std::endl;
 
     EXPECT(Nlocs == ExpectedNlocs);
-    EXPECT(Nrecs == ExpectedNrecs);
     EXPECT(Nvars == ExpectedNvars);
 
     EXPECT(ObsGroupVar == ExpectedObsGroupVar);
@@ -166,11 +184,7 @@ void testGetDb() {
 
         // Calculate the norm of the vector
         double ExpectedVnorm = varconf[i].getDouble("norm");
-        double Vnorm = 0.0;
-        for (std::size_t j = 0; j < Nlocs; ++j) {
-          Vnorm += pow(TestVec[j], 2.0);
-        }
-        Test_::obspace(jj).distribution().sum(Vnorm);
+        double Vnorm = Odb->distribution().dot_product(TestVec, TestVec);
         Vnorm = sqrt(Vnorm);
 
         EXPECT(oops::is_close(Vnorm, ExpectedVnorm, Tol));
@@ -185,11 +199,7 @@ void testGetDb() {
 
         // Calculate the norm of the vector
         double ExpectedVnorm = varconf[i].getDouble("norm");
-        double Vnorm = 0.0;
-        for (std::size_t j = 0; j < Nlocs; ++j) {
-          Vnorm += pow(static_cast<double>(TestVec[j]), 2.0);
-        }
-        Test_::obspace(jj).distribution().sum(Vnorm);
+        double Vnorm = Odb->distribution().dot_product(TestVec, TestVec);
         Vnorm = sqrt(Vnorm);
 
         EXPECT(oops::is_close(Vnorm, ExpectedVnorm, Tol));

@@ -335,8 +335,10 @@ std::size_t ObsSpace::gnlocs() const {
 
 // -----------------------------------------------------------------------------
 /*!
- * \details This method returns the number of unique locations in the obs
- *          container. Note that nlocs from the obs container may be smaller
+ * \details This method returns the number of locations in the obs
+ *          container. This method is used to reserve enough memory to store 
+ *          the obs local to this PE. 
+ *          Note that nlocs from the obs container may be smaller
  *          than nlocs from the input obs file due to the removal of obs outside
  *          the DA timing window and/or due to distribution of obs across
  *          multiple process elements.
@@ -347,6 +349,15 @@ std::size_t ObsSpace::nlocs() const {
   } else {
     return obsspace_->nlocs();
   }
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns the number of patch obs. on this PE.
+ * the following equality holds ObsSpace::gnlocs() == distribution().sum(nlocspatch())
+ */
+std::size_t ObsSpace::nlocspatch() const {
+  return obsspace_->nlocspatch();
 }
 
 // -----------------------------------------------------------------------------

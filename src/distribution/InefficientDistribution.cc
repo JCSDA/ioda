@@ -13,11 +13,20 @@
 
 #include "oops/util/Logger.h"
 
+// -----------------------------------------------------------------------------
+/*!
+ * \brief Inefficient distribution
+ *
+ * \details This method distributes all observations to all processes.
+ */
+
+// -----------------------------------------------------------------------------
 
 namespace ioda {
 // -----------------------------------------------------------------------------
-InefficientDistribution::InefficientDistribution(const eckit::mpi::Comm & Comm) :
-                                             Distribution(Comm) {
+InefficientDistribution::InefficientDistribution(const eckit::mpi::Comm & Comm,
+                           const eckit::Configuration & config) :
+                                             Distribution(Comm, config) {
   oops::Log::trace() << "InefficientDistribution constructed" << std::endl;
 }
 
@@ -27,18 +36,51 @@ InefficientDistribution::~InefficientDistribution() {
 }
 
 // -----------------------------------------------------------------------------
-/*!
- * \brief Inefficient distribution
- *
- * \details This method distributes all observations to all processes.
- *
- * \param[in] RecNum Record number, checked if belongs on this process element
- */
-bool InefficientDistribution::isMyRecord(std::size_t RecNum) const {
-  return true;
+void InefficientDistribution::patchObs(std::vector<bool> & patchObsVec) const {
+  // a copy of obs is present on all PEs but only rank=0 "owns" this obs. as patch
+  size_t MyRank = comm_.rank();
+  if (MyRank == 0) {
+    std::fill(patchObsVec.begin(), patchObsVec.end(), true);
+  } else {
+    std::fill(patchObsVec.begin(), patchObsVec.end(), false);
+  }
 }
 
 // -----------------------------------------------------------------------------
+double InefficientDistribution::dot_product(
+                const std::vector<double> &v1, const std::vector<double> &v2) const {
+  ASSERT(v1.size() == v2.size());
+  double missingValue = util::missingValue(missingValue);
+
+  double zz = 0.0;
+  for (size_t jj = 0; jj < v1.size() ; ++jj) {
+    if (v1[jj] != missingValue && v2[jj] != missingValue) {
+      zz += v1[jj] * v2[jj];
+    }
+  }
+
+  return zz;
+}
+
+// -----------------------------------------------------------------------------
+double InefficientDistribution::dot_product(
+                const std::vector<int> &v1, const std::vector<int> &v2) const {
+  std::vector<double> v1d(v1.begin(), v1.end());
+  std::vector<double> v2d(v2.begin(), v2.end());
+  double rv = this->dot_product(v1d, v2d);
+  return rv;
+}
+
+// -----------------------------------------------------------------------------
+size_t InefficientDistribution::nobs(const std::vector<double> &v1) const {
+  double missingValue = util::missingValue(missingValue);
+  size_t nobs = 0;
+  for (size_t jj = 0; jj < v1.size() ; ++jj) {
+    if (v1[jj] != missingValue) ++nobs;
+  }
+
+  return nobs;
+}
 
 void InefficientDistribution::exclusiveScan(size_t &x) const {
   x = 0;

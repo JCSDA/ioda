@@ -11,6 +11,8 @@
 #include <string>
 #include <vector>
 
+#include "eckit/config/Configuration.h"
+#include "eckit/geometry/Point2.h"
 #include "ioda/distribution/Distribution.h"
 
 namespace ioda {
@@ -28,6 +30,7 @@ namespace ioda {
 class DistributionFactory {
  public:
     Distribution * createDistribution(const eckit::mpi::Comm & Comm,
+                                      const eckit::Configuration & config,
                                       const std::string & Method);
 };
 

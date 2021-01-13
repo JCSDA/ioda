@@ -67,7 +67,7 @@ ObsData::ObsData(const eckit::Configuration & config, const eckit::mpi::Comm & c
 
   // Create the MPI distribution object
   std::unique_ptr<DistributionFactory> distFactory;
-  dist_.reset(distFactory->createDistribution(this->comm(), distname_));
+  dist_.reset(distFactory->createDistribution(this->comm(), config, distname_));
 
   // Initialize the obs space container
   if (config.has("obsdatain")) {
@@ -102,6 +102,12 @@ ObsData::ObsData(const eckit::Configuration & config, const eckit::mpi::Comm & c
           << "with excess number of dimensions (these variables were skipped)" << std::endl
           << "  Input file: " << filein_ << std::endl;
       }
+    }
+
+    // assign a record to a unique PE
+    nlocspatch_ = dist_->computePatchLocs(gnlocs_);
+    if (distname_ != "Halo") {
+      nlocspatch_ = nlocs_;
     }
 
     if (obs_sort_variable_ != "") {
@@ -350,6 +356,15 @@ std::size_t ObsData::gnlocs() const {
  */
 std::size_t ObsData::nlocs() const {
   return nlocs_;
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns the number of patch locations on this PE.
+ * the following equality holds ObsData::gnlocs() == distribution().sum(nlocspatch())
+ */
+std::size_t ObsData::nlocspatch() const {
+  return nlocspatch_;
 }
 
 // -----------------------------------------------------------------------------
@@ -922,13 +937,26 @@ std::vector<std::size_t> ObsData::GenFrameIndexRecNums(const std::unique_ptr<Iod
     }
   }
 
+  // Read lat/lon for this frame
+  std::vector<float> lats(LocSize, 0);
+  std::vector<float> lons(LocSize, 0);
+  if (FileIO != nullptr) {
+    std::string GroupName = "MetaData";
+    std::string GroupVar = "longitude";
+    FileIO->frame_float_get_data(GroupName, GroupVar, lons);
+    GroupVar = "latitude";
+    FileIO->frame_float_get_data(GroupName, GroupVar, lats);
+  }
+
   // Generate the index and recnums for this frame. We are done with FrameIndex
   // so it can be reused here.
   FrameIndex.clear();
-  std::set<std::size_t> UniqueRecNums;
+  std::set<std::size_t> PatchRecNums;
   for (std::size_t i = 0; i < LocSize; ++i) {
     std::size_t RowNum = LocIndex[i];
     std::size_t RecNum = Records[i];
+    eckit::geometry::Point2 point(lons[i], lats[i]);
+    dist_->assignRecord(RecNum, RowNum, point);
     if (dist_->isMyRecord(RecNum)) {
       indx_.push_back(RowNum);
       recnums_.push_back(RecNum);

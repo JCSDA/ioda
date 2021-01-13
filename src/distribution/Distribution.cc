@@ -7,6 +7,8 @@
 
 #include <algorithm>
 
+#include "eckit/config/Configuration.h"
+
 #include "ioda/distribution/Distribution.h"
 
 #include "oops/util/Logger.h"
@@ -14,7 +16,8 @@
 namespace ioda {
 // -----------------------------------------------------------------------------
 
-Distribution::Distribution(const eckit::mpi::Comm & Comm) : comm_(Comm) {
+Distribution::Distribution(const eckit::mpi::Comm & Comm,
+                           const eckit::Configuration & config) : comm_(Comm) {
   oops::Log::trace() << "Distribution constructed" << std::endl;
 }
 

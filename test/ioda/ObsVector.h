@@ -58,6 +58,19 @@ class ObsVecTestFixture : private boost::noncopyable {
 
     for (std::size_t jj = 0; jj < conf.size(); ++jj) {
       eckit::LocalConfiguration obsconf(conf[jj], "obs space");
+      std::string distname = obsconf.getString("distribution", "RoundRobin");
+      // if Halo distribution, need to prescribe center and radius for each patch
+      if (distname == "Halo") {
+        const eckit::mpi::Comm & MpiComm = oops::mpi::world();
+        std::size_t MyRank = MpiComm.rank();
+        std::size_t nprocs = MpiComm.size();
+        double centerLongitude = static_cast<double>(MyRank)*
+                                 (360.0/static_cast<double>(nprocs));
+        double radius = 50000000.0;  // this is big enough to hold all points on each PE
+        std::vector<double> centerd{centerLongitude, 0.0};
+        obsconf.set("center", centerd);
+        obsconf.set("radius", radius);
+      }
       boost::shared_ptr<ObsSpace_> tmp(new ObsSpace_(obsconf, oops::mpi::world(),
                                                      bgn, end, oops::mpi::myself()));
       ospaces_.push_back(tmp);
@@ -210,6 +223,18 @@ void testDistributedMath() {
     for (std::size_t jj = 0; jj < conf.size(); ++jj) {
        eckit::LocalConfiguration obsconf(conf[jj], "obs space");
        obsconf.set("distribution", dist_names[dd]);
+       // if Halo distribution, need to prescribe center and radius for each patch
+       if (dist_names[dd] == "Halo") {
+         const eckit::mpi::Comm & MpiComm = oops::mpi::world();
+         std::size_t MyRank = MpiComm.rank();
+         std::size_t nprocs = MpiComm.size();
+         double centerLongitude = static_cast<double>(MyRank)*
+                                 (360.0/static_cast<double>(nprocs));
+         double radius = 50000000.0;  // this is big enough to hold all points on each PE
+         std::vector<double> centerd{centerLongitude, 0.0};
+         obsconf.set("center", centerd);
+         obsconf.set("radius", radius);
+       }
        std::shared_ptr<ObsSpace_> obsdb(new ObsSpace(obsconf, oops::mpi::world(),
                                                      bgn, end, oops::mpi::myself()));
        std::shared_ptr<ObsVector_> obsvec(new ObsVector_(*obsdb, "ObsValue"));

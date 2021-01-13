@@ -28,14 +28,24 @@ namespace ioda {
  */
 class InefficientDistribution: public Distribution {
  public:
-     explicit InefficientDistribution(const eckit::mpi::Comm & Comm);
+     explicit InefficientDistribution(const eckit::mpi::Comm & Comm,
+                           const eckit::Configuration & config);
      ~InefficientDistribution();
 
-     bool isMyRecord(std::size_t RecNum) const override;
+     bool isMyRecord(std::size_t RecNum) const override {return true;};
+
+     void patchObs(std::vector<bool> &) const override;
 
      // The sum/min/max functions do nothing for the inefficient
      // distribution. Each processor has each observation so the local
      // sum/min/max is equal to the global sum/min/max
+
+     double dot_product(const std::vector<double> &v1, const std::vector<double> &v2)
+                      const override;
+     double dot_product(const std::vector<int> &v1, const std::vector<int> &v2)
+                      const override;
+     size_t nobs(const std::vector<double> &v1) const override;
+
      void sum(double &x) const override {};
      void sum(int &x) const override {};
      void sum(size_t &x) const override {};

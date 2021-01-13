@@ -32,7 +32,7 @@ namespace test {
 // -----------------------------------------------------------------------------
 
 void testDistributionMethods() {
-  const eckit::LocalConfiguration conf(::test::TestEnvironment::config());
+  eckit::LocalConfiguration conf(::test::TestEnvironment::config());
   std::vector<eckit::LocalConfiguration> dist_types;
   const eckit::mpi::Comm & MpiComm = oops::mpi::world();
 
@@ -47,16 +47,35 @@ void testDistributionMethods() {
     oops::Log::debug() << "Distribution::DistributionTypes: conf: "
                        << dist_types[i] << std::endl;
     DistName = dist_types[i].getString("name");
-    TestDist.reset(DistFactory->createDistribution(MpiComm, DistName));
+
+    // prescribe pars for Halo distribution
+    double centerLongitude = static_cast<double>(MyRank)*
+                             (360.0/static_cast<double>(nprocs));
+    double radius = 50000000.0;  // this is big enough to hold all points on each PE
+    std::vector<double> centerd{centerLongitude, 0.0};
+    conf.set("center", centerd);
+    conf.set("radius", radius);
+
+    TestDist.reset(DistFactory->createDistribution(MpiComm, conf, DistName));
+
+    // initialize distributions
+    size_t Gnlocs = nprocs;
+    std::vector<double> glats(Gnlocs, 0.0);
+    std::vector<double> glons(Gnlocs, 0.0);
+    for (std::size_t j = 0; j < Gnlocs; ++j) {
+      glons[j] = j*360.0/Gnlocs;
+      eckit::geometry::Point2 point(glons[j], glats[j]);
+      TestDist->assignRecord(j, j, point);
+    }
+    TestDist->computePatchLocs(Gnlocs);
 
     // Inputs for the tests: double, float, int, vector double, vector size_t
-    // set up a,b,c,va,vb on each processor
+    // set up a,b,c on each processor
     double a = MyRank;
     float b = MyRank;
     int c = MyRank;
-    std::vector<double> va(5, MyRank);
-    std::vector<size_t> vb(5, MyRank);
-
+    std::vector<double> va(Gnlocs, MyRank);
+    std::vector<size_t> vb(Gnlocs, MyRank);
 
     // Test result: sum (0 + 1 + ..  nprocs -1)
     double result = 0;
@@ -65,10 +84,16 @@ void testDistributionMethods() {
     }
 
     // vector solutions for sum
-    std::vector<double> vaRefInefficient(5, MyRank);
-    std::vector<size_t> vbRefInefficient(5, MyRank);
-    std::vector<double> vaRef(5, result);
-    std::vector<size_t> vbRef(5, result);
+    std::vector<double> vaRefHalo(Gnlocs);
+    std::vector<size_t> vbRefHalo(Gnlocs);
+    for (size_t i = 0; i < vbRefHalo.size(); ++i) {
+      vaRefHalo[i] = i;
+      vbRefHalo[i] = i;
+    }
+    std::vector<double> vaRefInefficient(Gnlocs, MyRank);
+    std::vector<size_t> vbRefInefficient(Gnlocs, MyRank);
+    std::vector<double> vaRef(Gnlocs, result);
+    std::vector<size_t> vbRef(Gnlocs, result);
 
     if (DistName == "InefficientDistribution") {
         // sum
@@ -80,7 +105,6 @@ void testDistributionMethods() {
         EXPECT(va == vaRefInefficient);
         TestDist->sum(vb);
         EXPECT(vb == vbRefInefficient);
-
 
         // min
         a = MyRank;
@@ -104,16 +128,23 @@ void testDistributionMethods() {
         TestDist->max(c);
         EXPECT(c == MyRank);
 
-        } else {
+    } else {
         // sum
         TestDist->sum(a);
         EXPECT(a == result);  // 0 + 1 + .. nprocs-1 (sum across tasks)
         TestDist->sum(c);
         EXPECT(c == result);
         TestDist->sum(va);
-        EXPECT(va == vaRef);
         TestDist->sum(vb);
-        EXPECT(vb == vbRef);
+
+        oops::Log::debug() << "va=" << va << " vaRef=" << vaRef << std::endl;
+        if (DistName == "Halo") {
+          EXPECT(va == vaRefHalo);
+          EXPECT(vb == vbRefHalo);
+        } else {
+          EXPECT(va == vaRef);
+          EXPECT(vb == vbRef);
+        }
 
         // min
         a = MyRank;
@@ -136,7 +167,7 @@ void testDistributionMethods() {
         EXPECT(b == nprocs -1);
         TestDist->max(c);
         EXPECT(c == nprocs -1);
-      }
+    }
   }
 }
 

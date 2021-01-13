@@ -10,7 +10,11 @@
 
 #include <vector>
 
+#include "eckit/config/Configuration.h"
+#include "eckit/exception/Exceptions.h"
+#include "eckit/geometry/Point2.h"
 #include "eckit/mpi/Comm.h"
+#include "oops/util/missingValues.h"
 
 namespace util {
 class DateTime;
@@ -29,6 +33,18 @@ namespace ioda {
  *           The client will use the isMyRecord method to determine what records to keep
  *           when reading in observations.
  *
+ *           for distributions sensitive to lat/lon locations of the ob.
+ *           assignRecord() must be called before isMyRecord or isMyPatchRecord 
+ *           can be called 
+ *
+ *           for distributions with observations duplicated on multiple PEs 
+ *           (currently Inefficient and Halo) the following terminology/logic is used:
+ *           the set of obs on each PE is called halo obs. (as in within a halo of some location)
+ *           obs in the halo set can be duplicated across multiple PEs
+ *           the subset of halo obs. (patch obs.) "belong" only to this PE and are used to 
+ *           compute reduce operations without duplication. 
+ *           patch obs form complete, non-overlapping partition of the global set of obs. 
+ *
  * \author Xin Zhang (JCSDA)
  */
 
@@ -36,6 +52,30 @@ namespace ioda {
  *  \brief The client will use the isMyRecord method to determine what records to 
  *         keep when reading in observations.
  *  \param RecNum Record Number       
+ */
+
+/*! \fn std::size_t computePatchLocs(const std::size_t nglocs)
+ *  \brief computes internal index (if needed) of patch locations for this PE
+ *         assumed that this function is called before dot_product, nobs
+ *  \param nglocs total number of global locations
+*/
+
+/*! \fn void assignRecord(const std::size_t RecNum, const std::size_t LocNum,
+                          const eckit::geometry::Point2 & point)
+ *  \brief for Halo distribution, computes if this recNumber locNumber belong to this PE
+ *         empty function for other distributions
+ *  \param point Point2 object describing location of this LocNum/RecNum
+ */
+
+/*! \fn void patchObs(std::vector<bool> & vecIn) 
+ *  \brief returns vector<bool> that is true for patch obs on this PE and false otherwise
+ *         currently only used in tests 
+ *  \param  vecIn(nobs) preallocated vector of length == to number of obs on this PE
+ */
+
+/*! \fn double dot_product(const std::vector<double> &v1, const std::vector<double> &v2)
+ *  \brief computes dot product between two vectors of obs distributed accross PEs
+ *         assumes that data vectors have the following layout values[iloc*nvars + ivar] 
  */
 
 /*! \fn void sum(x)
@@ -55,14 +95,30 @@ namespace ioda {
 
 class Distribution {
  public:
-    explicit Distribution(const eckit::mpi::Comm & Comm);
+    explicit Distribution(const eckit::mpi::Comm & Comm,
+                          const eckit::Configuration & config);
     virtual ~Distribution();
 
     virtual bool isMyRecord(std::size_t RecNum) const = 0;
+    virtual std::size_t computePatchLocs(const std::size_t nglocs) {return 0;}
+    virtual void assignRecord(const std::size_t RecNum, const std::size_t LocNum,
+              const eckit::geometry::Point2 & point) {}
+    virtual void patchObs(std::vector<bool> &) const = 0;
 
+
+    // operations for computing RMSE and nobs in presence of overlaping obs.
+    virtual double dot_product(const std::vector<double> &v1, const std::vector<double> &v2)
+                      const = 0;
+    virtual double dot_product(const std::vector<int> &v1, const std::vector<int> &v2)
+                      const = 0;
+    virtual size_t nobs(const std::vector<double> &v1) const = 0;
+
+    // scalar sum_reduce operatios (not safe for overlaping obs.)
     virtual void sum(double &x) const = 0;
     virtual void sum(int &x) const = 0;
     virtual void sum(size_t &x) const = 0;
+
+    // reduce operatios (safe for overlaping obs.)
     virtual void sum(std::vector<double> &x) const = 0;
     virtual void sum(std::vector<size_t> &x) const = 0;
 

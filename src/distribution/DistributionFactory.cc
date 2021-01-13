@@ -5,8 +5,11 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
+#include "eckit/config/Configuration.h"
+
 #include "ioda/distribution/DistributionFactory.h"
 
+#include "ioda/distribution/Halo.h"
 #include "ioda/distribution/InefficientDistribution.h"
 #include "ioda/distribution/RoundRobin.h"
 
@@ -24,11 +27,14 @@ namespace ioda {
  * \param[in] Method Name of the method of distribution of obs.
  */
 Distribution * DistributionFactory::createDistribution(const eckit::mpi::Comm & Comm,
+                                    const eckit::Configuration & config,
                                     const std::string & Method) {
   if (Method == "RoundRobin") {
-    return new RoundRobin(Comm);
+    return new RoundRobin(Comm, config);
   } else if (Method == "InefficientDistribution") {
-    return new InefficientDistribution(Comm);
+    return new InefficientDistribution(Comm, config);
+  } else if (Method == "Halo") {
+    return new Halo(Comm, config);
   } else {
     return NULL;
   }

@@ -104,6 +104,7 @@ class ObsData : public util::Printable {
 
   std::size_t gnlocs() const;
   std::size_t nlocs() const;
+  std::size_t nlocspatch() const;
   std::size_t nrecs() const;
   std::size_t nvars() const;
   const std::vector<std::size_t> & recnum() const;
@@ -219,6 +220,9 @@ class ObsData : public util::Printable {
   /*! \brief number of locations on this domain */
   std::size_t nlocs_;
 
+  /*! \brief number of patch locations for this domain */
+  std::size_t nlocspatch_;
+
   /*! \brief number of variables */
   std::size_t nvars_;
 
@@ -274,7 +278,7 @@ class ObsData : public util::Printable {
   std::string obs_sort_order_;
 
   /*! \brief MPI distribution object */
-  std::shared_ptr<const Distribution> dist_;
+  std::shared_ptr<Distribution> dist_;
 
   /*! \brief maps for obs grouping via integer, float or string values */
   ObsGroupingMap<int> int_obs_grouping_;

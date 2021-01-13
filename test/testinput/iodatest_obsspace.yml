@@ -91,6 +91,32 @@ observations:
         - 1.0e-11
 
 - obs space:
+    name: "AMSUA NOAA19"
+    simulated variables: ['brightness_temperature']
+    distribution: "Halo"
+    obsdatain:
+      obsfile: "Data/testinput_tier_1/amsua_n19_obs_2018041500_m.nc4"
+    test data:
+      nlocs: 100
+      nrecs: 100
+      nvars: 15
+      expected group variable: ""
+      expected sort variable: ""
+      expected sort order: "ascending"
+      variables:
+        - name: "latitude"
+          group: "MetaData"
+          type: "float"
+          norm: 432.95617402805823
+
+        - name: "longitude"
+          group: "MetaData"
+          type: "float"
+          norm: 1661.1529210392009
+      tolerance:
+        - 1.0e-11
+
+- obs space:
     name: "SMAP"
     simulated variables: ['brightness_temperature']
     obsdatain:
@@ -179,102 +205,6 @@ observations:
     obsdataout:
       obsfile: "testoutput/diagout.nc4"
       max frame size: 300
-
-- obs space:
-    name: "Synthetic Random"
-    simulated variables: [air_temperature, eastward_wind]
-    generate:
-      random:
-        nobs: 10   # generate 10 obs
-        lat1: 0    # with lat ranging form 0-10.
-        lat2: 10   #
-        lon1: 0    # and lon ranging from 0-10.
-        lon2: 10
-        random seed: 29837
-      obs errors: [1.0, 2.0]
-    test data:
-      nlocs: 10
-      nrecs: 10
-      nvars: 2
-      expected group variable: ""
-      expected sort variable: ""
-      expected sort order: ""
-      variables:
-        - name: "latitude"
-          group: "MetaData"
-          type: "float"
-          norm: 20.349321770437683
-
-        - name: "longitude"
-          group: "MetaData"
-          type: "float"
-          norm: 21.063312039377447
-
-        - name: "air_temperature"
-          group: "ObsError"
-          type: "float"
-          norm: 3.1622776601683795
-
-        - name: "eastward_wind"
-          group: "ObsError"
-          type: "float"
-          norm: 6.32455532034
-      tolerance:
-        - 1.0e-11
-    obsdataout:
-      obsfile: "testoutput/ospace.generate.random.nc4"
-
-- obs space:
-    name: "Synthetic List"
-    simulated variables: [air_temperature, eastward_wind]
-    generate:
-      list:
-        lats: [ 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 ]
-        lons: [ 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 ]
-        datetimes:
-        - '2010-01-01T00:04:00Z'
-        - '2010-01-01T00:04:12Z'
-        - '2010-01-01T00:04:24Z'
-        - '2010-01-01T00:04:36Z'
-        - '2010-01-01T00:04:48Z'
-        - '2010-01-01T00:05:00Z'
-        - '2010-01-01T00:05:12Z'
-        - '2010-01-01T00:05:24Z'
-        - '2010-01-01T00:05:36Z'
-        - '2010-01-01T00:05:48Z'
-        - '2010-01-01T00:06:00Z'
-      obs errors: [1.0, 2.0]
-    test data:
-      nlocs: 11
-      nrecs: 11
-      nvars: 2
-      expected group variable: ""
-      expected sort variable: ""
-      expected sort order: ""
-      variables:
-        - name: "latitude"
-          group: "MetaData"
-          type: "float"
-          norm: 16.583123951777001
-
-        - name: "longitude"
-          group: "MetaData"
-          type: "float"
-          norm: 16.583123951777001
-
-        - name: "air_temperature"
-          group: "ObsError"
-          type: "float"
-          norm: 3.3166247903553998
-
-        - name: "eastward_wind"
-          group: "ObsError"
-          type: "float"
-          norm: 6.6332495807107996
-      tolerance:
-        - 1.0e-11
-    obsdataout:
-      obsfile: "testoutput/ospace.generate.list.nc4"
 
 - obs space:
     name: "Radiosonde with grouping"
