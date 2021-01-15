@@ -25,6 +25,7 @@
 #include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
 #include "oops/util/Printable.h"
+#include "oops/util/parameters/ParameterTraits.h"
 #include "ioda/core/IodaUtils.h"
 
 #include "ioda/core/ObsSpaceContainer.h"
@@ -59,7 +60,7 @@ class ObsGroupingMap {
   std::map<KeyType, std::size_t> obs_grouping_map_;
 };
 
-// Enum type for obs variable data types
+/// Enum type for obs variable data types
 enum class ObsDtype {
   None,
   Float,
@@ -67,6 +68,32 @@ enum class ObsDtype {
   String,
   DateTime
 };
+
+/// Helps with the conversion of ObsDtype values to/from strings.
+struct ObsDtypeParameterTraitsHelper {
+  typedef ObsDtype EnumType;
+  static constexpr char enumTypeName[] = "ObsDtype";
+  static constexpr util::NamedEnumerator<EnumType> namedValues[] = {
+    { EnumType::Float, "float" },
+    { EnumType::Integer, "int" },
+    { EnumType::String, "string" },
+    { EnumType::DateTime, "datetime" }
+  };
+};
+
+}  // namespace ioda
+
+namespace oops {
+
+/// Specialization of ParameterTraits for ObsDtype.
+template <>
+struct ParameterTraits<ioda::ObsDtype> :
+    public EnumParameterTraits<ioda::ObsDtypeParameterTraitsHelper>
+{};
+
+}  // namespace oops
+
+namespace ioda {
 
 /// Observation Data
 /*!

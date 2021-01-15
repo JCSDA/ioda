@@ -37,6 +37,9 @@
 
 namespace ioda {
 
+constexpr char ObsDtypeParameterTraitsHelper::enumTypeName[];
+constexpr util::NamedEnumerator<ObsDtype> ObsDtypeParameterTraitsHelper::namedValues[];
+
 // -----------------------------------------------------------------------------
 /*!
  * \details Config based constructor for an ObsData object. This constructor will read
