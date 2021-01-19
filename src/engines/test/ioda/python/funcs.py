@@ -9,12 +9,6 @@ if os.environ.get('LIBDIR') is not None:
 else:
     print("\tLIBDIR unset. No change to sys path.")
 
-print("\tLoading jedi_base library...")
-
-import jedi_base
-
-print("\tjedi_base library is at " + jedi_base.OS.getLibPath())
-
 print("\tLoading ioda library...")
 
 import ioda
