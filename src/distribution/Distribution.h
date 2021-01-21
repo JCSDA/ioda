@@ -78,6 +78,20 @@ namespace ioda {
  *         assumes that data vectors have the following layout values[iloc*nvars + ivar] 
  */
 
+/*! \fn size_t nobs(const std::vector<double> &v) const
+ *  \brief Counts unique non-missing observations in \p v.
+ *
+ *  \param v
+ *    A vector assumed to contain observations of a single variable or interleaved observations of
+ *    multiple variables (so that the observations of variable `ivar` at location `iloc` in the
+ *    halo of this PE is stored at `v[iloc * nvars + ivar]`, where `nvars` is the number of
+ *    variables stored in `v`).
+ *
+ *  \return The number of unique observations on all PEs set to something else than the missing
+ *  value indicator. "Unique" means that observations taken at locations belonging to the halos of
+ *  multiple PEs are counted only once.
+ */
+
 /*! \fn void sum(x)
  *  \brief sum x across processors and overwrite x with the result. The
  *  subclass will take care of not counting duplicate records across processors
@@ -106,12 +120,17 @@ class Distribution {
     virtual void patchObs(std::vector<bool> &) const = 0;
 
 
-    // operations for computing RMSE and nobs in presence of overlaping obs.
+    // operations for computing RMSE and nobs in presence of overlapping obs.
     virtual double dot_product(const std::vector<double> &v1, const std::vector<double> &v2)
                       const = 0;
     virtual double dot_product(const std::vector<int> &v1, const std::vector<int> &v2)
                       const = 0;
-    virtual size_t nobs(const std::vector<double> &v1) const = 0;
+
+    virtual size_t nobs(const std::vector<double> &v) const = 0;
+    virtual size_t nobs(const std::vector<float> &v) const = 0;
+    virtual size_t nobs(const std::vector<int> &v) const = 0;
+    virtual size_t nobs(const std::vector<std::string> &v) const = 0;
+    virtual size_t nobs(const std::vector<util::DateTime> &v) const = 0;
 
     // scalar sum_reduce operatios (not safe for overlaping obs.)
     virtual void sum(double &x) const = 0;

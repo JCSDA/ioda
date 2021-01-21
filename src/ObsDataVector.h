@@ -183,33 +183,84 @@ void ObsDataVector<DATATYPE>::save(const std::string & name) const {
   }
 }
 // -----------------------------------------------------------------------------
+/// Print statistics describing a vector \p obsdatavector of observations taken from \p obsdb
+/// to the stream \p os.
+///
+/// This is an implementation suitable for non-numeric data. Users shouldn't need to call it
+/// directly; they should call ObsDataVector::print() instead.
+///
+/// \see printNumericObsDataVectorStats.
 template <typename DATATYPE>
-void ObsDataVector<DATATYPE>::print(std::ostream & os) const {
+void printNonnumericObsDataVectorStats(const ObsDataVector<DATATYPE> &obsdatavector,
+                                       const ObsSpace &obsdb,
+                                       std::ostream & os) {
+  for (size_t jv = 0; jv < obsdatavector.nvars(); ++jv) {
+    int nloc = obsdb.nlocspatch();
+    // collect nloc and nobs on all processors
+    obsdb.distribution().sum(nloc);
+    int nobs = obsdb.distribution().nobs(obsdatavector[jv]);
+
+    os << obsdb.obsname() << " " << obsdatavector.varnames()[jv] << " nlocs = " << nloc
+       << ", nobs = " << nobs << std::endl;
+  }
+}
+// -----------------------------------------------------------------------------
+/// Print statistics describing a vector \p obsdatavector of observations taken from \p obsdb
+/// to the stream \p os.
+///
+/// This is an implementation suitable for numeric data. Users shouldn't need to call it
+/// directly; they should call ObsDataVector::print() instead.
+///
+/// \see printNonnumericObsDataVectorStats.
+template <typename DATATYPE>
+void printNumericObsDataVectorStats(const ObsDataVector<DATATYPE> &obsdatavector,
+                                    const ObsSpace &obsdb,
+                                    std::ostream & os) {
   const DATATYPE missing = util::missingValue(missing);
-  for (size_t jv = 0; jv < nvars_; ++jv) {
+  for (size_t jv = 0; jv < obsdatavector.nvars(); ++jv) {
     DATATYPE zmin = std::numeric_limits<DATATYPE>::max();
     DATATYPE zmax = std::numeric_limits<DATATYPE>::lowest();
-    int nloc = obsdb_.nlocspatch();
-    // need to cast ObsDataRow to vector<double> to use in nobs() later
-    std::vector<double> tmpvec(nlocs_);
+    int nloc = obsdb.nlocspatch();
 
-    for (size_t jj = 0; jj < nlocs_; ++jj) {
-      DATATYPE zz = rows_.at(jv).at(jj);
-      tmpvec[jj] = zz;
+    const std::vector<DATATYPE> &vector = obsdatavector[jv];
+    for (size_t jj = 0; jj < obsdatavector.nlocs(); ++jj) {
+      DATATYPE zz = vector.at(jj);
       if (zz != missing) {
         if (zz < zmin) zmin = zz;
         if (zz > zmax) zmax = zz;
       }
     }
     // collect zmin, zmax, nobs, nloc on all processors
-    obsdb_.distribution().min(zmin);
-    obsdb_.distribution().max(zmax);
-    obsdb_.distribution().sum(nloc);
-    int nobs = obsdb_.distribution().nobs(tmpvec);
+    obsdb.distribution().min(zmin);
+    obsdb.distribution().max(zmax);
+    obsdb.distribution().sum(nloc);
+    int nobs = obsdb.distribution().nobs(vector);
 
-    os << obsdb_.obsname() << " " << obsvars_[jv] << " nlocs = " << nloc
-       << ", nobs= " << nobs << " Min=" << zmin << ", Max=" << zmax << std::endl;
+    os << obsdb.obsname() << " " << obsdatavector.varnames()[jv] << " nlocs = " << nloc
+       << ", nobs = " << nobs << ", min = " << zmin << ", max = " << zmax << std::endl;
   }
+}
+// -----------------------------------------------------------------------------
+// Default implementation...
+template <typename DATATYPE>
+void ObsDataVector<DATATYPE>::print(std::ostream & os) const {
+  printNonnumericObsDataVectorStats(*this, obsdb_, os);
+}
+// -----------------------------------------------------------------------------
+// and specializations for numeric types that can be held in ioda::ObsSpace variables.
+template <>
+inline void ObsDataVector<double>::print(std::ostream & os) const {
+  printNumericObsDataVectorStats(*this, obsdb_, os);
+}
+// -----------------------------------------------------------------------------
+template <>
+inline void ObsDataVector<float>::print(std::ostream & os) const {
+  printNumericObsDataVectorStats(*this, obsdb_, os);
+}
+// -----------------------------------------------------------------------------
+template <>
+inline void ObsDataVector<int>::print(std::ostream & os) const {
+  printNumericObsDataVectorStats(*this, obsdb_, os);
 }
 // -----------------------------------------------------------------------------
 }  // namespace ioda

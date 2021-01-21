@@ -43,7 +43,12 @@ class Halo: public Distribution {
                       const override;
      double dot_product(const std::vector<int> &v1, const std::vector<int> &v2)
                       const override;
-     size_t nobs(const std::vector<double> &v1) const override;
+
+     size_t nobs(const std::vector<double> &v) const override;
+     size_t nobs(const std::vector<float> &v) const override;
+     size_t nobs(const std::vector<int> &v) const override;
+     size_t nobs(const std::vector<std::string> &v) const override;
+     size_t nobs(const std::vector<util::DateTime> &v) const override;
 
      void sum(double &x) const override;
      void sum(int &x) const override;
@@ -69,6 +74,9 @@ class Halo: public Distribution {
      void exclusiveScan(size_t &x) const override;
 
  private:
+     template <typename T>
+     size_t nobsImpl(const std::vector<T> &v) const;
+
      double radius_;
      eckit::geometry::Point2 center_;
      // storage container for halo ids

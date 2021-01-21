@@ -176,18 +176,40 @@ double RoundRobin::dot_product(
 }
 
 // -----------------------------------------------------------------------------
-size_t RoundRobin::nobs(const std::vector<double> &v1) const {
-  double missingValue = util::missingValue(missingValue);
+size_t RoundRobin::nobs(const std::vector<double> &v) const {
+  return nobsImpl(v);
+}
+
+size_t RoundRobin::nobs(const std::vector<float> &v) const {
+  return nobsImpl(v);
+}
+
+size_t RoundRobin::nobs(const std::vector<int> &v) const {
+  return nobsImpl(v);
+}
+
+size_t RoundRobin::nobs(const std::vector<std::string> &v) const {
+  return nobsImpl(v);
+}
+
+size_t RoundRobin::nobs(const std::vector<util::DateTime> &v) const {
+  return nobsImpl(v);
+}
+
+template <typename T>
+size_t RoundRobin::nobsImpl(const std::vector<T> &v) const {
+  T missingValue = util::missingValue(missingValue);
 
   size_t nobs = 0;
-  for (size_t jj = 0; jj < v1.size() ; ++jj) {
-    if (v1[jj] != missingValue) ++nobs;
+  for (size_t jj = 0; jj < v.size() ; ++jj) {
+    if (v[jj] != missingValue) ++nobs;
   }
 
   this->sum(nobs);
   return nobs;
 }
 
+// -----------------------------------------------------------------------------
 void RoundRobin::sum(double &x) const {
     comm_.allReduceInPlace(x, eckit::mpi::sum());
 }

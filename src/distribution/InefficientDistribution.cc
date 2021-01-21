@@ -11,6 +11,7 @@
 #include <iostream>
 #include <numeric>
 
+#include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
 
 // -----------------------------------------------------------------------------
@@ -72,16 +73,37 @@ double InefficientDistribution::dot_product(
 }
 
 // -----------------------------------------------------------------------------
-size_t InefficientDistribution::nobs(const std::vector<double> &v1) const {
-  double missingValue = util::missingValue(missingValue);
-  size_t nobs = 0;
-  for (size_t jj = 0; jj < v1.size() ; ++jj) {
-    if (v1[jj] != missingValue) ++nobs;
-  }
+size_t InefficientDistribution::nobs(const std::vector<double> &v) const {
+  return nobsImpl(v);
+}
 
+size_t InefficientDistribution::nobs(const std::vector<float> &v) const {
+  return nobsImpl(v);
+}
+
+size_t InefficientDistribution::nobs(const std::vector<int> &v) const {
+  return nobsImpl(v);
+}
+
+size_t InefficientDistribution::nobs(const std::vector<std::string> &v) const {
+  return nobsImpl(v);
+}
+
+size_t InefficientDistribution::nobs(const std::vector<util::DateTime> &v) const {
+  return nobsImpl(v);
+}
+
+template <typename T>
+size_t InefficientDistribution::nobsImpl(const std::vector<T> &v) const {
+  T missingValue = util::missingValue(missingValue);
+  size_t nobs = 0;
+  for (size_t jj = 0; jj < v.size(); ++jj) {
+    if (v[jj] != missingValue) ++nobs;
+  }
   return nobs;
 }
 
+// -----------------------------------------------------------------------------
 void InefficientDistribution::exclusiveScan(size_t &x) const {
   x = 0;
 }

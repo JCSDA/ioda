@@ -11,6 +11,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_io.yml
   testinput/iodatest_distribution.yml
   testinput/iodatest_distribution_methods.yml
+  testinput/iodatest_obsdatavector.yml
   testinput/iodatest_obsspace_container.yml
   testinput/iodatest_obsspace.yml
   testinput/iodatest_obsspace_marine.yml
@@ -276,6 +277,18 @@ ecbuild_add_test( TARGET  test_ioda_obsvector
                   MPI     4
                   SOURCES mains/TestIodaObsVector.cc
                   ARGS    "testinput/iodatest_obsvector.yml"
+                  LIBS  ioda_test
+                  TEST_DEPENDS get_ioda_test_data )
+
+#####################################################################
+# ObsDataVector tests
+#####################################################################
+
+# IODA ObsDataVector class
+ecbuild_add_test( TARGET  test_ioda_obsdatavector
+                  MPI     2
+                  SOURCES mains/TestIodaObsDataVector.cc
+                  ARGS    "testinput/iodatest_obsdatavector.yml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 

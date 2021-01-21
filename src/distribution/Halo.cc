@@ -13,6 +13,7 @@
 #include <set>
 #include <vector>
 
+#include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
 
 #include "eckit/config/LocalConfiguration.h"
@@ -157,14 +158,35 @@ double Halo::dot_product(const std::vector<int> &v1, const std::vector<int> &v2)
 }
 
 // -----------------------------------------------------------------------------
-size_t Halo::nobs(const std::vector<double> &v1) const {
-  double missingValue = util::missingValue(missingValue);
-  size_t nvars = v1.size()/patchObsBool_.size();
+size_t Halo::nobs(const std::vector<double> &v) const {
+  return nobsImpl(v);
+}
+
+size_t Halo::nobs(const std::vector<float> &v) const {
+  return nobsImpl(v);
+}
+
+size_t Halo::nobs(const std::vector<int> &v) const {
+  return nobsImpl(v);
+}
+
+size_t Halo::nobs(const std::vector<std::string> &v) const {
+  return nobsImpl(v);
+}
+
+size_t Halo::nobs(const std::vector<util::DateTime> &v) const {
+  return nobsImpl(v);
+}
+
+template <typename T>
+size_t Halo::nobsImpl(const std::vector<T> &v) const {
+  T missingValue = util::missingValue(missingValue);
+  size_t nvars = v.size()/patchObsBool_.size();
 
   size_t nobs = 0;
-  for (size_t jj = 0; jj < v1.size() ; ++jj) {
+  for (size_t jj = 0; jj < v.size(); ++jj) {
     size_t iLoc = jj % nvars;
-    if (v1[jj] != missingValue && patchObsBool_[iLoc]) ++nobs;
+    if (v[jj] != missingValue && patchObsBool_[iLoc]) ++nobs;
   }
 
   this->sum(nobs);

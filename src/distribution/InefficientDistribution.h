@@ -36,15 +36,20 @@ class InefficientDistribution: public Distribution {
 
      void patchObs(std::vector<bool> &) const override;
 
-     // The sum/min/max functions do nothing for the inefficient
-     // distribution. Each processor has each observation so the local
-     // sum/min/max is equal to the global sum/min/max
-
      double dot_product(const std::vector<double> &v1, const std::vector<double> &v2)
                       const override;
      double dot_product(const std::vector<int> &v1, const std::vector<int> &v2)
                       const override;
-     size_t nobs(const std::vector<double> &v1) const override;
+
+     size_t nobs(const std::vector<double> &v) const override;
+     size_t nobs(const std::vector<float> &v) const override;
+     size_t nobs(const std::vector<int> &v) const override;
+     size_t nobs(const std::vector<std::string> &v) const override;
+     size_t nobs(const std::vector<util::DateTime> &v) const override;
+
+     // The sum/min/max functions do nothing for the inefficient
+     // distribution. Each processor has each observation so the local
+     // sum/min/max is equal to the global sum/min/max
 
      void sum(double &x) const override {};
      void sum(int &x) const override {};
@@ -69,6 +74,10 @@ class InefficientDistribution: public Distribution {
      void allGatherv(std::vector<std::string> &x) const override {}
 
      void exclusiveScan(size_t &x) const override;
+
+ private:
+     template <typename T>
+     size_t nobsImpl(const std::vector<T> &v) const;
 };
 
 }  // namespace ioda
