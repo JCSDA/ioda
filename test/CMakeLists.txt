@@ -12,8 +12,11 @@ list( APPEND ioda_test_input
   testinput/iodatest_distribution.yml
   testinput/iodatest_distribution_methods.yml
   testinput/iodatest_obsdatavector.yml
+  testinput/iodatest_obsdtype.yml
   testinput/iodatest_obsspace_container.yml
   testinput/iodatest_obsspace.yml
+  testinput/iodatest_obsspace_grouping.yml
+  testinput/iodatest_obsspace_index_recnum.yml
   testinput/iodatest_obsspace_marine.yml
   testinput/iodatest_obsspace_fortran.yml
   testinput/iodatest_obsspace_localization.yml
@@ -218,6 +221,32 @@ ecbuild_add_test( TARGET  test_ioda_obsspace
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
+ecbuild_add_test( TARGET  test_ioda_obsspace_grouping
+                  SOURCES mains/TestIodaObsSpace.cc
+                  ARGS    "testinput/iodatest_obsspace_grouping.yml"
+                  LIBS  ioda_test
+                  TEST_DEPENDS get_ioda_test_data )
+
+ecbuild_add_test( TARGET  test_ioda_obsspace_index_recnum
+                  SOURCES mains/TestIodaObsSpaceIndexRecnum.cc
+                  ARGS    "testinput/iodatest_obsspace_index_recnum.yml"
+                  LIBS  ioda_test
+                  TEST_DEPENDS get_ioda_test_data )
+
+ecbuild_add_test( TARGET  test_ioda_obsspace_index_recnum_mpi_2
+                  MPI 2
+                  COMMAND test_ioda_obsspace_index_recnum
+                  ARGS    "testinput/iodatest_obsspace_index_recnum.yml"
+                  LIBS  ioda_test
+                  TEST_DEPENDS get_ioda_test_data )
+
+ecbuild_add_test( TARGET  test_ioda_obsspace_index_recnum_mpi_4
+                  MPI 4
+                  COMMAND test_ioda_obsspace_index_recnum
+                  ARGS    "testinput/iodatest_obsspace_index_recnum.yml"
+                  LIBS  ioda_test
+                  TEST_DEPENDS get_ioda_test_data )
+
 ecbuild_add_test( TARGET  test_ioda_obsspace_mpi
                   MPI     2
                   COMMAND test_ioda_obsspace
@@ -311,3 +340,13 @@ ecbuild_add_test( TARGET  test_ioda_time_io
                   COMMAND ${CMAKE_BINARY_DIR}/bin/time_IodaIO.x
                   ARGS    "testinput/iodatest_obsspace.yml"
                   TEST_DEPENDS get_ioda_test_data )
+
+
+#####################################################################
+# ObsDtype tests
+#####################################################################
+
+ecbuild_add_test( TARGET  test_ioda_obsdtype
+                  SOURCES mains/TestIodaObsDtype.cc
+                  ARGS    "testinput/iodatest_obsdtype.yml"
+                  LIBS    ioda_test )

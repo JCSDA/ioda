@@ -296,10 +296,10 @@ ObsDtype ObsSpace::dtype(const std::string & group, const std::string & name) co
 // -----------------------------------------------------------------------------
 /*!
  * \details This method returns the setting of the YAML configuration
- *          parameter: obsdatain.obsgrouping.group variable
+ *          parameter: obsdatain.obsgrouping.group variables
  */
-std::string ObsSpace::obs_group_var() const {
-  return obsspace_->obs_group_var();
+const std::vector<std::string> & ObsSpace::obs_group_vars() const {
+  return obsspace_->obs_group_vars();
 }
 
 // -----------------------------------------------------------------------------

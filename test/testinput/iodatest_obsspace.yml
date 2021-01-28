@@ -12,7 +12,7 @@ observations:
       nlocs: 100
       nrecs: 100
       nvars: 1
-      expected group variable: ""
+      expected group variables: []
       expected sort variable: ""
       expected sort order: "ascending"
       variables:
@@ -42,7 +42,7 @@ observations:
       nlocs: 42
       nrecs: 42
       nvars: 1
-      expected group variable: ""
+      expected group variables: []
       expected sort variable: ""
       expected sort order: "ascending"
       variables:
@@ -74,7 +74,7 @@ observations:
       nlocs: 100
       nrecs: 100
       nvars: 15
-      expected group variable: ""
+      expected group variables: []
       expected sort variable: ""
       expected sort order: "ascending"
       variables:
@@ -100,7 +100,7 @@ observations:
       nlocs: 100
       nrecs: 100
       nvars: 15
-      expected group variable: ""
+      expected group variables: []
       expected sort variable: ""
       expected sort order: "ascending"
       variables:
@@ -125,7 +125,7 @@ observations:
       nlocs: 100
       nrecs: 100
       nvars: 4
-      expected group variable: ""
+      expected group variables: []
       expected sort variable: ""
       expected sort order: "ascending"
       variables:
@@ -150,7 +150,7 @@ observations:
       nlocs: 12
       nrecs: 12
       nvars: 13
-      expected group variable: ""
+      expected group variables: []
       expected sort variable: ""
       expected sort order: "ascending"
       variables:
@@ -176,7 +176,7 @@ observations:
       nlocs: 974
       nrecs: 974
       nvars: 5
-      expected group variable: ""
+      expected group variables: []
       expected sort variable: ""
       expected sort order: "ascending"
       variables:
@@ -212,14 +212,14 @@ observations:
     obsdatain:
       obsfile: "Data/testinput_tier_1/sondes_obs_2018041500_m.nc4"
       obsgrouping:
-        group variable: "station_id"
+        group variables: [ "station_id" ]
         sort variable: "air_pressure"
         sort order: "descending"
     test data:
       nlocs: 974
       nrecs: 36
       nvars: 5
-      expected group variable: "station_id"
+      expected group variables: [ "station_id" ]
       expected sort variable: "air_pressure"
       expected sort order: "descending"
       variables:
@@ -243,12 +243,12 @@ observations:
     obsdatain:
       obsfile: "Data/testinput_tier_1/sondes_obs_2018041500_m_twfilt.nc4"
       obsgrouping:
-        group variable: "station_id"
+        group variables: [ "station_id" ]
     test data:
       nlocs: 968
       nrecs: 31
       nvars: 5
-      expected group variable: "station_id"
+      expected group variables: [ "station_id" ]
       expected sort variable: ""
       expected sort order: "ascending"
       variables:
@@ -275,7 +275,7 @@ observations:
       nlocs: 100
       nrecs: 100
       nvars: 1
-      expected group variable: ""
+      expected group variables: []
       expected sort variable: ""
       expected sort order: "ascending"
       variables:

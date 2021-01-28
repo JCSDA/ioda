@@ -12,7 +12,7 @@ observations:
       nlocs_local: 1930
       nrecs: 160607
       nvars: 1
-      expected group variable: ""
+      expected group variables: []
       expected sort variable: ""
       expected sort order: "ascending"
       variables:
@@ -38,7 +38,7 @@ observations:
       nlocs_local: 0
       nrecs: 918
       nvars: 1
-      expected group variable: ""
+      expected group variables: []
       expected sort variable: ""
       expected sort order: "ascending"
       variables:
@@ -64,7 +64,7 @@ observations:
       nlocs_local: 0
       nrecs: 200
       nvars: 1
-      expected group variable: ""
+      expected group variables: []
       expected sort variable: ""
       expected sort order: "ascending"
       variables:
@@ -90,7 +90,7 @@ observations:
       nlocs_local: 41757
       nrecs: 71558
       nvars: 1
-      expected group variable: ""
+      expected group variables: []
       expected sort variable: ""
       expected sort order: "ascending"
       variables:
@@ -116,7 +116,7 @@ observations:
       nlocs_local: 8065
       nrecs: 8065
       nvars: 2
-      expected group variable: ""
+      expected group variables: []
       expected sort variable: ""
       expected sort order: "ascending"
       variables:
@@ -142,7 +142,7 @@ observations:
       nlocs_local: 0
       nrecs: 100
       nvars: 1
-      expected group variable: ""
+      expected group variables: []
       expected sort variable: ""
       expected sort order: "ascending"
       variables:

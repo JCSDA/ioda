@@ -1,0 +1,11 @@
+---
+int:
+  dtype: int
+float:
+  dtype: float
+string:
+  dtype: string
+datetime:
+  dtype: datetime
+invalid:
+  dtype: invalid

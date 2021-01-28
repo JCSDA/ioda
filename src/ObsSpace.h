@@ -60,7 +60,7 @@ class ObsSpace : public oops::ObsSpaceBase {
   bool has(const std::string &, const std::string &) const;
   ObsDtype dtype(const std::string &, const std::string &) const;
 
-  std::string obs_group_var() const;
+  const std::vector<std::string> & obs_group_vars() const;
   std::string obs_sort_var() const;
   std::string obs_sort_order() const;
 

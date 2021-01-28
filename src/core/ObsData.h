@@ -25,7 +25,6 @@
 #include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
 #include "oops/util/Printable.h"
-#include "oops/util/parameters/ParameterTraits.h"
 #include "ioda/core/IodaUtils.h"
 
 #include "ioda/core/ObsSpaceContainer.h"
@@ -41,24 +40,6 @@ namespace ioda {
   class ObsVector;
 
 //-------------------------------------------------------------------------------------
-template <typename KeyType>
-class ObsGroupingMap {
- public:
-  bool has(const KeyType Key) {
-    return (obs_grouping_map_.find(Key) != obs_grouping_map_.end());
-  }
-
-  void insert(const KeyType Key, const std::size_t Val) {
-    obs_grouping_map_.insert(std::pair<KeyType, std::size_t>(Key, Val));
-  }
-
-  std::size_t at(const KeyType Key) {
-    return obs_grouping_map_.at(Key);
-  }
-
- private:
-  std::map<KeyType, std::size_t> obs_grouping_map_;
-};
 
 /// Enum type for obs variable data types
 enum class ObsDtype {
@@ -69,29 +50,7 @@ enum class ObsDtype {
   DateTime
 };
 
-/// Helps with the conversion of ObsDtype values to/from strings.
-struct ObsDtypeParameterTraitsHelper {
-  typedef ObsDtype EnumType;
-  static constexpr char enumTypeName[] = "ObsDtype";
-  static constexpr util::NamedEnumerator<EnumType> namedValues[] = {
-    { EnumType::Float, "float" },
-    { EnumType::Integer, "int" },
-    { EnumType::String, "string" },
-    { EnumType::DateTime, "datetime" }
-  };
-};
-
 }  // namespace ioda
-
-namespace oops {
-
-/// Specialization of ParameterTraits for ObsDtype.
-template <>
-struct ParameterTraits<ioda::ObsDtype> :
-    public EnumParameterTraits<ioda::ObsDtypeParameterTraitsHelper>
-{};
-
-}  // namespace oops
 
 namespace ioda {
 
@@ -140,7 +99,7 @@ class ObsData : public util::Printable {
   bool has(const std::string &, const std::string &) const;
   ObsDtype dtype(const std::string &, const std::string &) const;
 
-  std::string obs_group_var() const;
+  const std::vector<std::string> & obs_group_vars() const;
   std::string obs_sort_var() const;
   std::string obs_sort_order() const;
 
@@ -207,8 +166,12 @@ class ObsData : public util::Printable {
   // Initialize the database from the input file
   void InitFromFile(const std::string & filename, const std::size_t MaxFrameSize);
   std::vector<std::size_t> GenFrameIndexRecNums(const std::unique_ptr<IodaIO> & FileIO,
-                               const std::size_t FrameStart, const std::size_t FrameSize);
+                               const std::size_t FrameStart, const std::size_t FrameSize,
+                               std::map<std::string, std::size_t> & ObsGroupingMap);
   bool InsideTimingWindow(const util::DateTime & ObsDt);
+  void BuildObsGroupingKeys(const std::unique_ptr<IodaIO> & FileIO,
+                            const std::vector<std::size_t> & FrameIndex,
+                            std::vector<std::string> & GroupingKeys);
   void BuildSortedObsGroups();
   void createKDTree();
 
@@ -296,7 +259,7 @@ class ObsData : public util::Printable {
   std::string distname_;
 
   /*! \brief Variable that location grouping is based upon */
-  std::string obs_group_variable_;
+  std::vector<std::string> obs_group_variables_;
 
   /*! \brief Variable that location group sorting is based upon */
   std::string obs_sort_variable_;
@@ -306,11 +269,6 @@ class ObsData : public util::Printable {
 
   /*! \brief MPI distribution object */
   std::shared_ptr<Distribution> dist_;
-
-  /*! \brief maps for obs grouping via integer, float or string values */
-  ObsGroupingMap<int> int_obs_grouping_;
-  ObsGroupingMap<float> float_obs_grouping_;
-  ObsGroupingMap<std::string> string_obs_grouping_;
 
   /*! \brief next available record number */
   std::size_t next_rec_num_;

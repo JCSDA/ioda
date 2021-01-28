@@ -1,0 +1,229 @@
+---
+window begin: "2021-01-15T12:00:00Z"
+window end: "2021-01-15T18:00:00Z"
+
+observations:
+- obs space:
+    name: "No Grouping Vars"
+    simulated variables: ['temperature']
+    obsdatain:
+      obsfile: "Data/testinput_tier_1/obsspace_grouping.nc4"
+      obsgrouping:
+        group variables: []
+    test data:
+      nlocs: 10
+      nrecs: 10
+      nvars: 1
+      expected group variables: []
+      expected sort variable: ""
+      expected sort order: "ascending"
+      variables:
+        - name: "latitude"
+          group: "MetaData"
+          type: "float"
+          norm: 19.621416870348583
+
+        - name: "longitude"
+          group: "MetaData"
+          type: "float"
+          norm: 19.621416870348583
+
+      tolerance:
+        - 1.0e-14
+
+- obs space:
+    name: "One Grouping Var (string)"
+    simulated variables: ['temperature']
+    obsdatain:
+      obsfile: "Data/testinput_tier_1/obsspace_grouping.nc4"
+      obsgrouping:
+        group variables: [ "group_by_string" ]
+    test data:
+      nlocs: 10
+      nrecs: 2
+      nvars: 1
+      expected group variables: [ "group_by_string" ]
+      expected sort variable: ""
+      expected sort order: "ascending"
+      variables:
+        - name: "latitude"
+          group: "MetaData"
+          type: "float"
+          norm: 19.621416870348583
+
+        - name: "longitude"
+          group: "MetaData"
+          type: "float"
+          norm: 19.621416870348583
+
+      tolerance:
+        - 1.0e-14
+
+- obs space:
+    name: "One Grouping Var (int)"
+    simulated variables: ['temperature']
+    obsdatain:
+      obsfile: "Data/testinput_tier_1/obsspace_grouping.nc4"
+      obsgrouping:
+        group variables: [ "group_by_int" ]
+    test data:
+      nlocs: 10
+      nrecs: 3
+      nvars: 1
+      expected group variables: [ "group_by_int" ]
+      expected sort variable: ""
+      expected sort order: "ascending"
+      variables:
+        - name: "latitude"
+          group: "MetaData"
+          type: "float"
+          norm: 19.621416870348583
+
+        - name: "longitude"
+          group: "MetaData"
+          type: "float"
+          norm: 19.621416870348583
+
+      tolerance:
+        - 1.0e-14
+
+- obs space:
+    name: "One Grouping Var (float)"
+    simulated variables: ['temperature']
+    obsdatain:
+      obsfile: "Data/testinput_tier_1/obsspace_grouping.nc4"
+      obsgrouping:
+        group variables: [ "group_by_float" ]
+    test data:
+      nlocs: 10
+      nrecs: 4
+      nvars: 1
+      expected group variables: [ "group_by_float" ]
+      expected sort variable: ""
+      expected sort order: "ascending"
+      variables:
+        - name: "latitude"
+          group: "MetaData"
+          type: "float"
+          norm: 19.621416870348583
+
+        - name: "longitude"
+          group: "MetaData"
+          type: "float"
+          norm: 19.621416870348583
+
+      tolerance:
+        - 1.0e-14
+
+- obs space:
+    name: "Two Grouping Vars (string, int)"
+    simulated variables: ['temperature']
+    obsdatain:
+      obsfile: "Data/testinput_tier_1/obsspace_grouping.nc4"
+      obsgrouping:
+        group variables: [ "group_by_string", "group_by_int" ]
+    test data:
+      nlocs: 10
+      nrecs: 4
+      nvars: 1
+      expected group variables: [ "group_by_string", "group_by_int" ]
+      expected sort variable: ""
+      expected sort order: "ascending"
+      variables:
+        - name: "latitude"
+          group: "MetaData"
+          type: "float"
+          norm: 19.621416870348583
+
+        - name: "longitude"
+          group: "MetaData"
+          type: "float"
+          norm: 19.621416870348583
+
+      tolerance:
+        - 1.0e-14
+
+- obs space:
+    name: "Two Grouping Vars (string, float)"
+    simulated variables: ['temperature']
+    obsdatain:
+      obsfile: "Data/testinput_tier_1/obsspace_grouping.nc4"
+      obsgrouping:
+        group variables: [ "group_by_string", "group_by_float" ]
+    test data:
+      nlocs: 10
+      nrecs: 7
+      nvars: 1
+      expected group variables: [ "group_by_string", "group_by_float" ]
+      expected sort variable: ""
+      expected sort order: "ascending"
+      variables:
+        - name: "latitude"
+          group: "MetaData"
+          type: "float"
+          norm: 19.621416870348583
+
+        - name: "longitude"
+          group: "MetaData"
+          type: "float"
+          norm: 19.621416870348583
+
+      tolerance:
+        - 1.0e-14
+
+- obs space:
+    name: "Two Grouping Vars (float, int)"
+    simulated variables: ['temperature']
+    obsdatain:
+      obsfile: "Data/testinput_tier_1/obsspace_grouping.nc4"
+      obsgrouping:
+        group variables: [ "group_by_float", "group_by_int" ]
+    test data:
+      nlocs: 10
+      nrecs: 5
+      nvars: 1
+      expected group variables: [ "group_by_float", "group_by_int" ]
+      expected sort variable: ""
+      expected sort order: "ascending"
+      variables:
+        - name: "latitude"
+          group: "MetaData"
+          type: "float"
+          norm: 19.621416870348583
+
+        - name: "longitude"
+          group: "MetaData"
+          type: "float"
+          norm: 19.621416870348583
+
+      tolerance:
+        - 1.0e-14
+
+- obs space:
+    name: "Three Grouping Vars (string, float, int)"
+    simulated variables: ['temperature']
+    obsdatain:
+      obsfile: "Data/testinput_tier_1/obsspace_grouping.nc4"
+      obsgrouping:
+        group variables: [ "group_by_string", "group_by_float", "group_by_int" ]
+    test data:
+      nlocs: 10
+      nrecs: 7
+      nvars: 1
+      expected group variables: [ "group_by_string", "group_by_float", "group_by_int" ]
+      expected sort variable: ""
+      expected sort order: "ascending"
+      variables:
+        - name: "latitude"
+          group: "MetaData"
+          type: "float"
+          norm: 19.621416870348583
+
+        - name: "longitude"
+          group: "MetaData"
+          type: "float"
+          norm: 19.621416870348583
+
+      tolerance:
+        - 1.0e-14
+

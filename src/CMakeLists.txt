@@ -19,6 +19,8 @@ core/ObsData.h
 core/ObsSpaceContainer.h
 core/obsspace_f.cc
 core/obsspace_f.h
+core/ParameterTraitsObsDtype.cc
+core/ParameterTraitsObsDtype.h
 
 distribution/Distribution.cc
 distribution/Distribution.h

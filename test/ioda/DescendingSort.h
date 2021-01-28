@@ -39,7 +39,7 @@ void testDescendingSort(const eckit::LocalConfiguration &conf) {
   if (obsdata.obs_sort_order() != "descending") {
     throw eckit::BadValue("Must set sort_order to descending", Here());
   }
-  if (obsdata.obs_group_var().empty()) {
+  if (obsdata.obs_group_vars().empty()) {
     throw eckit::BadValue("Must set group_variable", Here());
   }
 

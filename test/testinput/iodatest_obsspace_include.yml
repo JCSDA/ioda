@@ -5,7 +5,7 @@ ObsTestData:
     nrecs: 100
     nlocs_local: 11
     nvars: 1
-    expected group variable: ""
+    expected group variables: []
     expected sort variable: ""
     expected sort order: "ascending"
     variables:
@@ -31,7 +31,7 @@ ObsTestData:
       nlocs_local: 6
       nrecs: 100
       nvars: 1
-      expected group variable: ""
+      expected group variables: []
       expected sort variable: ""
       expected sort order: "ascending"
       variables:
@@ -52,7 +52,7 @@ ObsTestData:
     nlocs_local: 10
     nrecs: 100
     nvars: 15
-    expected group variable: ""
+    expected group variables: []
     expected sort variable: ""
     expected sort order: "ascending"
     variables:
@@ -73,7 +73,7 @@ ObsTestData:
     nlocs_local: 0
     nrecs: 100
     nvars: 4
-    expected group variable: ""
+    expected group variables: []
     expected sort variable: ""
     expected sort order: "ascending"
     variables:
@@ -94,7 +94,7 @@ ObsTestData:
     nlocs_local: 0
     nrecs: 12
     nvars: 13
-    expected group variable: ""
+    expected group variables: []
     expected sort variable: ""
     expected sort order: "ascending"
     variables:
@@ -115,7 +115,7 @@ ObsTestData:
     nlocs_local: 110
     nrecs: 974
     nvars: 5
-    expected group variable: ""
+    expected group variables: []
     expected sort variable: ""
     expected sort order: "ascending"
     variables:
@@ -147,7 +147,7 @@ ObsTestData:
     nlocs_local: 110
     nrecs: 36
     nvars: 5
-    expected group variable: "station_id"
+    expected group variables: [ "station_id" ]
     expected sort variable: "air_pressure"
     expected sort order: "descending"
     variables:
@@ -168,7 +168,7 @@ ObsTestData:
     nlocs_local: 109
     nrecs: 31
     nvars: 5
-    expected group variable: "station_id"
+    expected group variables: [ "station_id" ]
     expected sort variable: ""
     expected sort order: "ascending"
     variables:
@@ -206,7 +206,7 @@ SyntheticObsSpecs:
         nlocs_local: 0
         nrecs: 10
         nvars: 2
-        expected group variable: ""
+        expected group variables: []
         expected sort variable: ""
         expected sort order: ""
         variables:
@@ -261,7 +261,7 @@ SyntheticObsSpecs:
         nlocs_local: 0
         nrecs: 11
         nvars: 2
-        expected group variable: ""
+        expected group variables: []
         expected sort variable: ""
         expected sort order: ""
         variables:

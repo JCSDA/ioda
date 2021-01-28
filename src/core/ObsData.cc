@@ -37,9 +37,6 @@
 
 namespace ioda {
 
-constexpr char ObsDtypeParameterTraitsHelper::enumTypeName[];
-constexpr util::NamedEnumerator<ObsDtype> ObsDtypeParameterTraitsHelper::namedValues[];
-
 // -----------------------------------------------------------------------------
 /*!
  * \details Config based constructor for an ObsData object. This constructor will read
@@ -75,7 +72,11 @@ ObsData::ObsData(const eckit::Configuration & config, const eckit::mpi::Comm & c
   // Initialize the obs space container
   if (config.has("obsdatain")) {
     // Initialize the container from an input obs file
-    obs_group_variable_ = config.getString("obsdatain.obsgrouping.group variable", "");
+    if (config.has("obsdatain.obsgrouping.group variables")) {
+      obs_group_variables_ = config.getStringVector("obsdatain.obsgrouping.group variables");
+    } else {
+      obs_group_variables_.clear();
+    }
     obs_sort_variable_ = config.getString("obsdatain.obsgrouping.sort variable", "");
     obs_sort_order_ = config.getString("obsdatain.obsgrouping.sort order", "ascending");
     if ((obs_sort_order_ != "ascending") && (obs_sort_order_ != "descending")) {
@@ -313,10 +314,10 @@ ObsDtype ObsData::dtype(const std::string & group, const std::string & name) con
 // -----------------------------------------------------------------------------
 /*!
  * \details This method returns the setting of the YAML configuration
- *          parameter: obsdatain.obsgrouping.group variable
+ *          parameter: obsdatain.obsgrouping.group variables
  */
-std::string ObsData::obs_group_var() const {
-  return obs_group_variable_;
+const std::vector<std::string> & ObsData::obs_group_vars() const {
+  return obs_group_variables_;
 }
 
 // -----------------------------------------------------------------------------
@@ -579,7 +580,8 @@ void ObsData::genDistRandom(const eckit::Configuration & conf, std::vector<float
 
   // Generate the indexing for MPI distribution
   std::unique_ptr<IodaIO> NoIO(nullptr);
-  std::vector<std::size_t> DummyIndex = GenFrameIndexRecNums(NoIO, 0, gnlocs_);
+  std::map<std::string, std::size_t> ObsGroupingMap;
+  std::vector<std::size_t> DummyIndex = GenFrameIndexRecNums(NoIO, 0, gnlocs_, ObsGroupingMap);
 
   // Use the following formula to generate random lat, lon and time values.
   //
@@ -670,7 +672,8 @@ void ObsData::genDistList(const eckit::Configuration & conf, std::vector<float> 
   // Generate the indexing for MPI distribution
   gnlocs_ = latitudes.size();
   std::unique_ptr<IodaIO> NoIO(nullptr);
-  std::vector<std::size_t> DummyIndex = GenFrameIndexRecNums(NoIO, 0, gnlocs_);
+  std::map<std::string, std::size_t> ObsGroupingMap;
+  std::vector<std::size_t> DummyIndex = GenFrameIndexRecNums(NoIO, 0, gnlocs_, ObsGroupingMap);
 
   // Create vectors for lat, lon, time, fill them with the values from the
   // lists in the configuration.
@@ -721,6 +724,9 @@ void ObsData::InitFromFile(const std::string & filename, const std::size_t MaxFr
   nvars_ = 0;
   bool FirstFrame = true;
   fileio->frame_initialize();
+  // container used by GenFrameIndexRecNums for holding grouping key to record number mapping
+  // during the following loop through the frames
+  std::map<std::string, std::size_t> ObsGroupingMap;
   for (IodaIO::FrameIter iframe = fileio->frame_begin();
                        iframe != fileio->frame_end(); ++iframe) {
     std::size_t FrameStart = fileio->frame_start(iframe);
@@ -732,7 +738,8 @@ void ObsData::InitFromFile(const std::string & filename, const std::size_t MaxFr
     // Calculate the corresponding segments of indx_ and recnums_ vectors for this
     // frame. Use these segments to select the rows from the frame before storing in
     // the obs space container.
-    std::vector<std::size_t> FrameIndex = GenFrameIndexRecNums(fileio, FrameStart, FrameSize);
+    std::vector<std::size_t> FrameIndex =
+       GenFrameIndexRecNums(fileio, FrameStart, FrameSize, ObsGroupingMap);
 
     // Integer variables
     for (IodaIO::FrameIntIter idata = fileio->frame_int_begin();
@@ -828,7 +835,8 @@ void ObsData::InitFromFile(const std::string & filename, const std::size_t MaxFr
  * \param[out] FrameRecNums Vector containing record numbers corresponding to FrameIndex
  */
 std::vector<std::size_t> ObsData::GenFrameIndexRecNums(const std::unique_ptr<IodaIO> & FileIO,
-                                 const std::size_t FrameStart, const std::size_t FrameSize) {
+                                 const std::size_t FrameStart, const std::size_t FrameSize,
+                                 std::map<std::string, std::size_t> & ObsGroupingMap) {
   // It's possible that the total number of locations (gnlocs_) is smaller than
   // another dimension (eg, nchans or nvars for a hyperspectral instrument). If that
   // is the case, we don't want to read past the end of the datetime or obs group
@@ -883,60 +891,33 @@ std::vector<std::size_t> ObsData::GenFrameIndexRecNums(const std::unique_ptr<Iod
 
   // Generate record numbers for this frame
   std::vector<std::size_t> Records(LocSize);
-  if ((obs_group_variable_.empty()) || (FileIO == nullptr)) {
-    // Grouping is not specified, so use the location indices as the record indicators.
-    // Using the obs grouping object will make the record numbering go sequentially
-    // from 0 to nrecs_ - 1.
+  if (obs_group_variables_.empty() || (FileIO == nullptr)) {
+    // No obs grouping. Assign sequential numbers (via next_rec_num_) from 0 to
+    // (nlocs - 1). The LocIndex vector might have missing locations due to those locations
+    // outside the DA timing window, so increment next_rec_num_ through the number
+    // of locations in LocIndex (LocSize) to make sure record numbers are sequential.
     for (std::size_t i = 0; i < LocSize; ++i) {
-      int RecValue = LocIndex[i];
-      if (!int_obs_grouping_.has(RecValue)) {
-        int_obs_grouping_.insert(RecValue, next_rec_num_);
+      Records[i] = next_rec_num_;
+      next_rec_num_++;
+      nrecs_ = next_rec_num_;
+    }
+  } else {
+    // Applying obs grouping. First convert all of the group variable data values for this
+    // frame into string key values. This is done in one call to minimize accessing the
+    // frame data for the grouping variables.
+    std::vector<std::string> ObsGroupingKeys(FrameIndex.size());
+    BuildObsGroupingKeys(FileIO, FrameIndex, ObsGroupingKeys);
+
+    for (std::size_t i = 0; i < LocSize; ++i) {
+      if (ObsGroupingMap.find(ObsGroupingKeys[i]) == ObsGroupingMap.end()) {
+        // key is not present in the map
+        // assign current record number to the current key, and move to the next record number
+        ObsGroupingMap.insert(
+            std::pair<std::string, std::size_t>(ObsGroupingKeys[i], next_rec_num_));
         next_rec_num_++;
         nrecs_ = next_rec_num_;
       }
-      Records[i] = int_obs_grouping_.at(RecValue);
-    }
-  } else {
-    // Group according to the data in obs_group_variable_
-    std::string GroupName = "MetaData";
-    std::string VarName = obs_group_variable_;
-    std::string VarType = FileIO->var_dtype(GroupName, VarName);
-
-    if (VarType == "int") {
-      std::vector<int> GroupVar;
-      FileIO->frame_int_get_data(GroupName, VarName, GroupVar);
-      for (std::size_t i = 0; i < LocSize; ++i) {
-        int RecValue = GroupVar[FrameIndex[i]];
-        if (!int_obs_grouping_.has(RecValue)) {
-          int_obs_grouping_.insert(RecValue, next_rec_num_);
-          next_rec_num_++;
-          nrecs_ = next_rec_num_;
-        }
-        Records[i] = int_obs_grouping_.at(RecValue);
-      }
-    } else if (VarType == "float") {
-      std::vector<float> GroupVar;
-      FileIO->frame_float_get_data(GroupName, VarName, GroupVar);
-      for (std::size_t i = 0; i < LocSize; ++i) {
-        float RecValue = GroupVar[FrameIndex[i]];
-        if (!float_obs_grouping_.has(RecValue)) {
-          float_obs_grouping_.insert(RecValue, next_rec_num_);
-          next_rec_num_++;
-        }
-        Records[i] = float_obs_grouping_.at(RecValue);
-      }
-    } else if (VarType == "string") {
-      std::vector<std::string> GroupVar;
-      FileIO->frame_string_get_data(GroupName, VarName, GroupVar);
-      for (std::size_t i = 0; i < LocSize; ++i) {
-        std::string RecValue = GroupVar[FrameIndex[i]];
-        if (!string_obs_grouping_.has(RecValue)) {
-          string_obs_grouping_.insert(RecValue, next_rec_num_);
-          next_rec_num_++;
-          nrecs_ = next_rec_num_;
-        }
-        Records[i] = string_obs_grouping_.at(RecValue);
-      }
+      Records[i] = ObsGroupingMap.at(ObsGroupingKeys[i]);
     }
   }
 
@@ -981,6 +962,66 @@ std::vector<std::size_t> ObsData::GenFrameIndexRecNums(const std::unique_ptr<Iod
  */
 bool ObsData::InsideTimingWindow(const util::DateTime & ObsDt) {
   return ((ObsDt > winbgn_) && (ObsDt <= winend_));
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method will read in the values of the obs grouping variables,
+ *          convert those values to strings and store them in the VarStrings
+ *          data structure.
+ *
+ * \param[in] FileIO Pointer to the opened observation data file
+ * \param[in] FrameIndex Vector of frame indices
+ * \param[out] VarStinrs Vector of strings vectors holding variable string values
+ */
+void ObsData::BuildObsGroupingKeys(const std::unique_ptr<IodaIO> & FileIO,
+                                   const std::vector<std::size_t> & FrameIndex,
+                                   std::vector<std::string> & GroupingKeys) {
+  // Walk though each variable and construct the segments of the key values (strings)
+  // Append the segments as each variable is encountered.
+  std::string GroupName = "MetaData";
+  for (std::size_t i = 0; i < obs_group_variables_.size(); ++i) {
+    std::string VarName = obs_group_variables_[i];
+    std::string VarType = FileIO->var_dtype(GroupName, VarName);
+    std::string KeySegment;
+    if (VarType == "int") {
+      std::vector<int> GroupVar;
+      FileIO->frame_int_get_data(GroupName, VarName, GroupVar);
+      for (std::size_t j = 0; j < FrameIndex.size(); ++j) {
+        KeySegment = std::to_string(GroupVar[FrameIndex[j]]);
+        if (i == 0) {
+          GroupingKeys[j] = KeySegment;
+        } else {
+          GroupingKeys[j] += ":";
+          GroupingKeys[j] += KeySegment;
+        }
+      }
+    } else if (VarType == "float") {
+      std::vector<float> GroupVar;
+      FileIO->frame_float_get_data(GroupName, VarName, GroupVar);
+      for (std::size_t j = 0; j < FrameIndex.size(); ++j) {
+        KeySegment = std::to_string(GroupVar[FrameIndex[j]]);
+        if (i == 0) {
+          GroupingKeys[j] = KeySegment;
+        } else {
+          GroupingKeys[j] += ":";
+          GroupingKeys[j] += KeySegment;
+        }
+      }
+    } else if (VarType == "string") {
+      std::vector<std::string> GroupVar;
+      FileIO->frame_string_get_data(GroupName, VarName, GroupVar);
+      for (std::size_t j = 0; j < FrameIndex.size(); ++j) {
+        KeySegment = GroupVar[FrameIndex[j]];
+        if (i == 0) {
+          GroupingKeys[j] = KeySegment;
+        } else {
+          GroupingKeys[j] += ":";
+          GroupingKeys[j] += KeySegment;
+        }
+      }
+    }
+  }
 }
 
 // -----------------------------------------------------------------------------

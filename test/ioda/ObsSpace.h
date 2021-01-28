@@ -105,13 +105,13 @@ void testConstructor() {
     std::size_t ExpectedNvars = conf[jj].getUnsigned("obs space.test data.nvars");
 
     // Get the obs grouping/sorting parameters from the ObsSpace object
-    std::string ObsGroupVar = Test_::obspace(jj).obs_group_var();
+    std::vector<std::string> ObsGroupVars = Test_::obspace(jj).obs_group_vars();
     std::string ObsSortVar = Test_::obspace(jj).obs_sort_var();
     std::string ObsSortOrder = Test_::obspace(jj).obs_sort_order();
 
     // Get the expected obs grouping/sorting parameters from the configuration
-    std::string ExpectedObsGroupVar =
-      conf[jj].getString("obs space.test data.expected group variable");
+    std::vector<std::string> ExpectedObsGroupVars =
+      conf[jj].getStringVector("obs space.test data.expected group variables");
     std::string ExpectedObsSortVar =
       conf[jj].getString("obs space.test data.expected sort variable");
     std::string ExpectedObsSortOrder =
@@ -130,8 +130,8 @@ void testConstructor() {
       EXPECT(Nrecs == ExpectedNrecs);
     }
 
-    oops::Log::debug() << "ObsGroupVar, ExpectedObsGroupVar: " << ObsGroupVar << ", "
-                       << ExpectedObsGroupVar << std::endl;
+    oops::Log::debug() << "ObsGroupVars, ExpectedObsGroupVars: " << ObsGroupVars << ", "
+                       << ExpectedObsGroupVars << std::endl;
     oops::Log::debug() << "ObsSortVar, ExpectedObsSortVar: " << ObsSortVar << ", "
                        << ExpectedObsSortVar << std::endl;
     oops::Log::debug() << "ObsSortOrder, ExpectedObsSortOrder: " << ObsSortOrder << ", "
@@ -140,7 +140,7 @@ void testConstructor() {
     EXPECT(Nlocs == ExpectedNlocs);
     EXPECT(Nvars == ExpectedNvars);
 
-    EXPECT(ObsGroupVar == ExpectedObsGroupVar);
+    EXPECT(ObsGroupVars == ExpectedObsGroupVars);
     EXPECT(ObsSortVar == ExpectedObsSortVar);
     EXPECT(ObsSortOrder == ExpectedObsSortOrder);
   }
