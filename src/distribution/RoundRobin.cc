@@ -176,28 +176,28 @@ double RoundRobin::dot_product(
 }
 
 // -----------------------------------------------------------------------------
-size_t RoundRobin::nobs(const std::vector<double> &v) const {
-  return nobsImpl(v);
+size_t RoundRobin::globalNumNonMissingObs(const std::vector<double> &v) const {
+  return globalNumNonMissingObsImpl(v);
 }
 
-size_t RoundRobin::nobs(const std::vector<float> &v) const {
-  return nobsImpl(v);
+size_t RoundRobin::globalNumNonMissingObs(const std::vector<float> &v) const {
+  return globalNumNonMissingObsImpl(v);
 }
 
-size_t RoundRobin::nobs(const std::vector<int> &v) const {
-  return nobsImpl(v);
+size_t RoundRobin::globalNumNonMissingObs(const std::vector<int> &v) const {
+  return globalNumNonMissingObsImpl(v);
 }
 
-size_t RoundRobin::nobs(const std::vector<std::string> &v) const {
-  return nobsImpl(v);
+size_t RoundRobin::globalNumNonMissingObs(const std::vector<std::string> &v) const {
+  return globalNumNonMissingObsImpl(v);
 }
 
-size_t RoundRobin::nobs(const std::vector<util::DateTime> &v) const {
-  return nobsImpl(v);
+size_t RoundRobin::globalNumNonMissingObs(const std::vector<util::DateTime> &v) const {
+  return globalNumNonMissingObsImpl(v);
 }
 
 template <typename T>
-size_t RoundRobin::nobsImpl(const std::vector<T> &v) const {
+size_t RoundRobin::globalNumNonMissingObsImpl(const std::vector<T> &v) const {
   T missingValue = util::missingValue(missingValue);
 
   size_t nobs = 0;

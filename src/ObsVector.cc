@@ -230,7 +230,7 @@ void ObsVector::mask(const ObsDataVector<int> & flags) {
 }
 // -----------------------------------------------------------------------------
 unsigned int ObsVector::nobs() const {
-  int nobs = obsdb_.distribution().nobs(values_);
+  int nobs = obsdb_.distribution().globalNumNonMissingObs(values_);
 
   return nobs;
 }

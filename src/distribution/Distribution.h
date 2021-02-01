@@ -56,7 +56,7 @@ namespace ioda {
 
 /*! \fn std::size_t computePatchLocs(const std::size_t nglocs)
  *  \brief computes internal index (if needed) of patch locations for this PE
- *         assumed that this function is called before dot_product, nobs
+ *         assumed that this function is called before dot_product, globalNumNonMissingObs
  *  \param nglocs total number of global locations
 */
 
@@ -78,7 +78,7 @@ namespace ioda {
  *         assumes that data vectors have the following layout values[iloc*nvars + ivar] 
  */
 
-/*! \fn size_t nobs(const std::vector<double> &v) const
+/*! \fn size_t globalNumNonMissingObs(const std::vector<double> &v) const
  *  \brief Counts unique non-missing observations in \p v.
  *
  *  \param v
@@ -120,17 +120,17 @@ class Distribution {
     virtual void patchObs(std::vector<bool> &) const = 0;
 
 
-    // operations for computing RMSE and nobs in presence of overlapping obs.
+    // operations for computing RMSE and globalNumNonMissingObs in presence of overlapping obs.
     virtual double dot_product(const std::vector<double> &v1, const std::vector<double> &v2)
                       const = 0;
     virtual double dot_product(const std::vector<int> &v1, const std::vector<int> &v2)
                       const = 0;
 
-    virtual size_t nobs(const std::vector<double> &v) const = 0;
-    virtual size_t nobs(const std::vector<float> &v) const = 0;
-    virtual size_t nobs(const std::vector<int> &v) const = 0;
-    virtual size_t nobs(const std::vector<std::string> &v) const = 0;
-    virtual size_t nobs(const std::vector<util::DateTime> &v) const = 0;
+    virtual size_t globalNumNonMissingObs(const std::vector<double> &v) const = 0;
+    virtual size_t globalNumNonMissingObs(const std::vector<float> &v) const = 0;
+    virtual size_t globalNumNonMissingObs(const std::vector<int> &v) const = 0;
+    virtual size_t globalNumNonMissingObs(const std::vector<std::string> &v) const = 0;
+    virtual size_t globalNumNonMissingObs(const std::vector<util::DateTime> &v) const = 0;
 
     // scalar sum_reduce operatios (not safe for overlaping obs.)
     virtual void sum(double &x) const = 0;

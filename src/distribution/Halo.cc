@@ -158,28 +158,28 @@ double Halo::dot_product(const std::vector<int> &v1, const std::vector<int> &v2)
 }
 
 // -----------------------------------------------------------------------------
-size_t Halo::nobs(const std::vector<double> &v) const {
-  return nobsImpl(v);
+size_t Halo::globalNumNonMissingObs(const std::vector<double> &v) const {
+  return globalNumNonMissingObsImpl(v);
 }
 
-size_t Halo::nobs(const std::vector<float> &v) const {
-  return nobsImpl(v);
+size_t Halo::globalNumNonMissingObs(const std::vector<float> &v) const {
+  return globalNumNonMissingObsImpl(v);
 }
 
-size_t Halo::nobs(const std::vector<int> &v) const {
-  return nobsImpl(v);
+size_t Halo::globalNumNonMissingObs(const std::vector<int> &v) const {
+  return globalNumNonMissingObsImpl(v);
 }
 
-size_t Halo::nobs(const std::vector<std::string> &v) const {
-  return nobsImpl(v);
+size_t Halo::globalNumNonMissingObs(const std::vector<std::string> &v) const {
+  return globalNumNonMissingObsImpl(v);
 }
 
-size_t Halo::nobs(const std::vector<util::DateTime> &v) const {
-  return nobsImpl(v);
+size_t Halo::globalNumNonMissingObs(const std::vector<util::DateTime> &v) const {
+  return globalNumNonMissingObsImpl(v);
 }
 
 template <typename T>
-size_t Halo::nobsImpl(const std::vector<T> &v) const {
+size_t Halo::globalNumNonMissingObsImpl(const std::vector<T> &v) const {
   T missingValue = util::missingValue(missingValue);
   size_t nvars = v.size()/patchObsBool_.size();
 

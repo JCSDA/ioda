@@ -41,11 +41,11 @@ class InefficientDistribution: public Distribution {
      double dot_product(const std::vector<int> &v1, const std::vector<int> &v2)
                       const override;
 
-     size_t nobs(const std::vector<double> &v) const override;
-     size_t nobs(const std::vector<float> &v) const override;
-     size_t nobs(const std::vector<int> &v) const override;
-     size_t nobs(const std::vector<std::string> &v) const override;
-     size_t nobs(const std::vector<util::DateTime> &v) const override;
+     size_t globalNumNonMissingObs(const std::vector<double> &v) const override;
+     size_t globalNumNonMissingObs(const std::vector<float> &v) const override;
+     size_t globalNumNonMissingObs(const std::vector<int> &v) const override;
+     size_t globalNumNonMissingObs(const std::vector<std::string> &v) const override;
+     size_t globalNumNonMissingObs(const std::vector<util::DateTime> &v) const override;
 
      // The sum/min/max functions do nothing for the inefficient
      // distribution. Each processor has each observation so the local
@@ -77,7 +77,7 @@ class InefficientDistribution: public Distribution {
 
  private:
      template <typename T>
-     size_t nobsImpl(const std::vector<T> &v) const;
+     size_t globalNumNonMissingObsImpl(const std::vector<T> &v) const;
 };
 
 }  // namespace ioda
