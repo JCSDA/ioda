@@ -21,13 +21,13 @@
 namespace ioda {
 // -----------------------------------------------------------------------------
 ObsVector::ObsVector(ObsSpace & obsdb,
-                     const std::string & name, const bool fail)
+                     const std::string & name)
   : obsdb_(obsdb), obsvars_(obsdb.obsvariables()),
     nvars_(obsvars_.variables().size()), nlocs_(obsdb_.nlocs()),
     values_(nlocs_ * nvars_),
     missing_(util::missingValue(missing_)) {
   oops::Log::trace() << "ObsVector::ObsVector " << name << std::endl;
-  if (!name.empty()) this->read(name, fail);
+  if (!name.empty()) this->read(name);
 }
 // -----------------------------------------------------------------------------
 ObsVector::ObsVector(const ObsVector & other)
@@ -163,7 +163,7 @@ double ObsVector::rms() const {
   return zrms;
 }
 // -----------------------------------------------------------------------------
-void ObsVector::read(const std::string & name, const bool fail) {
+void ObsVector::read(const std::string & name) {
   oops::Log::trace() << "ObsVector::read, name = " << name << std::endl;
 
   // Read in the variables stored in obsvars_ from the group given by "name".
@@ -177,13 +177,11 @@ void ObsVector::read(const std::string & name, const bool fail) {
   std::size_t nlocs = obsdb_.nlocs();
   std::vector<double> tmp(nlocs);
   for (std::size_t jv = 0; jv < nvars_; ++jv) {
-    if (fail || obsdb_.has(name, obsvars_.variables()[jv])) {
-      obsdb_.get_db(name, obsvars_.variables()[jv], tmp);
+    obsdb_.get_db(name, obsvars_.variables()[jv], tmp);
 
-      for (std::size_t jj = 0; jj < nlocs; ++jj) {
-        std::size_t ivec = jv + (jj * nvars_);
-        values_[ivec] = tmp[jj];
-      }
+    for (std::size_t jj = 0; jj < nlocs; ++jj) {
+      std::size_t ivec = jv + (jj * nvars_);
+      values_[ivec] = tmp[jj];
     }
   }
 }

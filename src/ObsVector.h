@@ -36,7 +36,7 @@ class ObsVector : public util::Printable,
   static const std::string classname() {return "ioda::ObsVector";}
 
   ObsVector(ObsSpace &,
-            const std::string & name = "", const bool fail = true);
+            const std::string & name = "");
   ObsVector(const ObsVector &);
   ObsVector(ObsSpace &, const ObsVector &);
   ~ObsVector();
@@ -75,7 +75,7 @@ class ObsVector : public util::Printable,
 
 // I/O
   void save(const std::string &) const;
-  void read(const std::string &, const bool fail = true);
+  void read(const std::string &);
 
  private:
   void print(std::ostream &) const;
