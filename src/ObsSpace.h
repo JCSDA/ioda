@@ -86,6 +86,7 @@ class ObsSpace : public oops::ObsSpaceBase {
   void put_db(const std::string & group, const std::string & name,
               const std::vector<util::DateTime> & vdata);
 
+  const bool obsAreSorted() const { return obsspace_->obsAreSorted(); }
   const RecIdxIter recidx_begin() const;
   const RecIdxIter recidx_end() const;
   bool recidx_has(const std::size_t RecNum) const;

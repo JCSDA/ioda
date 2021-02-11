@@ -130,6 +130,7 @@ class ObsData : public util::Printable {
   const RecIdxIter recidx_begin() const;
   const RecIdxIter recidx_end() const;
   bool recidx_has(const std::size_t RecNum) const;
+  bool obsAreSorted() const { return recidx_is_sorted_; }
   std::size_t recidx_recnum(const RecIdxIter & Irec) const;
   const std::vector<std::size_t> & recidx_vector(const RecIdxIter & Irec) const;
   const std::vector<std::size_t> & recidx_vector(const std::size_t RecNum) const;
@@ -173,6 +174,7 @@ class ObsData : public util::Printable {
                             const std::vector<std::size_t> & FrameIndex,
                             std::vector<std::string> & GroupingKeys);
   void BuildSortedObsGroups();
+  void BuildRecIdxUnsorted();
   void createKDTree();
 
   template<typename VarType>
@@ -245,6 +247,9 @@ class ObsData : public util::Printable {
 
   /*! \brief profile ordering */
   RecIdxMap recidx_;
+
+  /*! \brief indicator whether the data in recidx_ is sorted */
+  bool recidx_is_sorted_;
 
   /*! \brief Multi-index containers */
   ObsSpaceContainer<int> int_database_;

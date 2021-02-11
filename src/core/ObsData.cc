@@ -115,7 +115,16 @@ ObsData::ObsData(const eckit::Configuration & config, const eckit::mpi::Comm & c
     }
 
     if (obs_sort_variable_ != "") {
+      // Fill the recidx_ map with indices representing sorted groups
       BuildSortedObsGroups();
+      recidx_is_sorted_ = true;
+    } else {
+      // Fill the recidx_ map with indices that represent each group, but are not
+      // sorted. This is done so the recidx_ structure can be used to walk
+      // through the individual groups. For example, this can be used to calculate
+      // RMS values for each group.
+      BuildRecIdxUnsorted();
+      recidx_is_sorted_ = false;
     }
   } else if (config.has("generate")) {
     // Initialize the container from the generateDistribution method
@@ -1074,6 +1083,19 @@ void ObsData::BuildSortedObsGroups() {
     for (std::size_t iloc = 0; iloc < irec->second.size(); iloc++) {
       recidx_[irec->first][iloc] = irec->second[iloc].second;
     }
+  }
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method will construct a data structure that holds the
+ *          location indices for all locations within each group. The
+ *          indices will not be sorted. The purpose of this is so the
+ *          client can see the structure of the records.
+ */
+void ObsData::BuildRecIdxUnsorted() {
+  for (size_t iloc = 0; iloc < nlocs_; iloc++) {
+    recidx_[recnums_[iloc]].push_back(iloc);
   }
 }
 
