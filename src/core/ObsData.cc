@@ -872,6 +872,10 @@ std::vector<std::size_t> ObsData::GenFrameIndexRecNums(const std::unique_ptr<Iod
     std::string DtGroupName = "MetaData";
     std::string DtVarName = "datetime";
     std::vector<std::string> DtStrings;
+    if (!FileIO->frame_string_has(DtGroupName, DtVarName)) {
+      throw eckit::UserError(DtVarName + "@" + DtGroupName + " not found in observations file",
+                             Here());
+    }
     FileIO->frame_string_get_data(DtGroupName, DtVarName, DtStrings);
 
     // Convert the datetime strings to DateTime objects
@@ -936,8 +940,16 @@ std::vector<std::size_t> ObsData::GenFrameIndexRecNums(const std::unique_ptr<Iod
   if (FileIO != nullptr) {
     std::string GroupName = "MetaData";
     std::string GroupVar = "longitude";
+    if (!FileIO->frame_float_has(GroupName, GroupVar)) {
+      throw eckit::UserError(GroupVar + "@" + GroupName + " not found in observations file",
+                             Here());
+    }
     FileIO->frame_float_get_data(GroupName, GroupVar, lons);
     GroupVar = "latitude";
+    if (!FileIO->frame_float_has(GroupName, GroupVar)) {
+      throw eckit::UserError(GroupVar + "@" + GroupName + " not found in observations file",
+                             Here());
+    }
     FileIO->frame_float_get_data(GroupName, GroupVar, lats);
   }
 
