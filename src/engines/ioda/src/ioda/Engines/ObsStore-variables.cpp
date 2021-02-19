@@ -12,7 +12,7 @@ namespace ObsStore {
 //*************************************************************************
 // ObsStore_Variable_Backend functions
 //*************************************************************************
-ObsStore_Variable_Backend::ObsStore_Variable_Backend() = default;
+ObsStore_Variable_Backend::ObsStore_Variable_Backend()  = default;
 ObsStore_Variable_Backend::~ObsStore_Variable_Backend() = default;
 ObsStore_Variable_Backend::ObsStore_Variable_Backend(std::shared_ptr<ioda::ObsStore::Variable> b)
     : backend_(b) {
@@ -28,7 +28,7 @@ detail::Type_Provider* ObsStore_Variable_Backend::getTypeProvider() const {
 }
 
 bool ObsStore_Variable_Backend::isA(Type lhs) const {
-  auto typeBackend = std::dynamic_pointer_cast<ObsStore_Type>(lhs.getBackend());
+  auto typeBackend               = std::dynamic_pointer_cast<ObsStore_Type>(lhs.getBackend());
   ioda::ObsStore::ObsTypes dtype = typeBackend->dtype();
   return backend_->isOfType(dtype);
 }
@@ -72,15 +72,15 @@ std::tuple<bool, unsigned, unsigned> ObsStore_Variable_Backend::getSZIPCompressi
 Dimensions ObsStore_Variable_Backend::getDimensions() const {
   // Convert to Dimensions types
   std::vector<Dimensions_t> iodaDims = backend_->get_dimensions();
-  std::size_t numElems = 1;
+  std::size_t numElems               = 1;
   for (std::size_t i = 0; i < iodaDims.size(); ++i) {
     numElems *= iodaDims[i];
   }
 
   // Create and return a Dimensions object
   std::vector<Dimensions_t> iodaMaxDims = backend_->get_max_dimensions();
-  auto iodaRank = gsl::narrow<Dimensions_t>(iodaDims.size());
-  auto iodaNumElems = gsl::narrow<Dimensions_t>(numElems);
+  auto iodaRank                         = gsl::narrow<Dimensions_t>(iodaDims.size());
+  auto iodaNumElems                     = gsl::narrow<Dimensions_t>(numElems);
   Dimensions dims(iodaDims, iodaMaxDims, iodaRank, iodaNumElems);
   return dims;
 }
@@ -92,7 +92,7 @@ Variable ObsStore_Variable_Backend::resize(const std::vector<Dimensions_t>& newD
 
 Variable ObsStore_Variable_Backend::attachDimensionScale(unsigned int DimensionNumber,
                                                          const Variable& scale) {
-  auto scaleBackendBase = scale.get();
+  auto scaleBackendBase    = scale.get();
   auto scaleBackendDerived = std::dynamic_pointer_cast<ObsStore_Variable_Backend>(scaleBackendBase);
   backend_->attachDimensionScale(DimensionNumber, scaleBackendDerived->backend_);
 
@@ -101,7 +101,7 @@ Variable ObsStore_Variable_Backend::attachDimensionScale(unsigned int DimensionN
 
 Variable ObsStore_Variable_Backend::detachDimensionScale(unsigned int DimensionNumber,
                                                          const Variable& scale) {
-  auto scaleBackendBase = scale.get();
+  auto scaleBackendBase    = scale.get();
   auto scaleBackendDerived = std::dynamic_pointer_cast<ObsStore_Variable_Backend>(scaleBackendBase);
   backend_->detachDimensionScale(DimensionNumber, scaleBackendDerived->backend_);
 
@@ -123,17 +123,18 @@ Variable ObsStore_Variable_Backend::getDimensionScaleName(std::string& res) cons
 /// Is a dimension scale attached to this Variable in a certain position?
 bool ObsStore_Variable_Backend::isDimensionScaleAttached(unsigned int DimensionNumber,
                                                          const Variable& scale) const {
-  auto scaleBackendBase = scale.get();
+  auto scaleBackendBase    = scale.get();
   auto scaleBackendDerived = std::dynamic_pointer_cast<ObsStore_Variable_Backend>(scaleBackendBase);
   return backend_->isDimensionScaleAttached(DimensionNumber, scaleBackendDerived->backend_);
 }
 
 Variable ObsStore_Variable_Backend::write(gsl::span<char> data, const Type& in_memory_dataType,
-                                          const Selection& mem_selection, const Selection& file_selection) {
+                                          const Selection& mem_selection,
+                                          const Selection& file_selection) {
   // Convert to an obs store data type
   auto typeBackend = std::dynamic_pointer_cast<ObsStore_Type>(in_memory_dataType.getBackend());
   ioda::ObsStore::ObsTypes dtype = typeBackend->dtype();
-  std::size_t dtype_size = typeBackend->dtype_size();
+  std::size_t dtype_size         = typeBackend->dtype_size();
 
   // Convert to obs store selection
   //
@@ -158,7 +159,8 @@ Variable ObsStore_Variable_Backend::write(gsl::span<char> data, const Type& in_m
   }
 
   ioda::ObsStore::Selection m_select = createObsStoreSelection(mem_selection, dim_sizes);
-  ioda::ObsStore::Selection f_select = createObsStoreSelection(file_selection, backend_->get_dimensions());
+  ioda::ObsStore::Selection f_select
+    = createObsStoreSelection(file_selection, backend_->get_dimensions());
 
   // Check the number of points in the selections. Data transfer is going
   // from memory to file so make sure the memory npoints is not greater
@@ -166,8 +168,8 @@ Variable ObsStore_Variable_Backend::write(gsl::span<char> data, const Type& in_m
   std::size_t m_npts = m_select.npoints();
   std::size_t f_npts = f_select.npoints();
   if (m_npts > f_npts) {
-    std::string ErrMsg = std::string("ioda::Engines::ObsStore::ObsStore_Variable_Backend::write: ") +
-                         std::string("Number of points from memory is greater than that of file");
+    std::string ErrMsg = std::string("ioda::Engines::ObsStore::ObsStore_Variable_Backend::write: ")
+                         + std::string("Number of points from memory is greater than that of file");
     throw; /* jedi_throw
 .add("Reason", ErrMsg)
 .add("  Memory select npoints: ", m_npts)
@@ -184,7 +186,7 @@ Variable ObsStore_Variable_Backend::read(gsl::span<char> data, const Type& in_me
   // Convert to an obs store data type
   auto typeBackend = std::dynamic_pointer_cast<ObsStore_Type>(in_memory_dataType.getBackend());
   ioda::ObsStore::ObsTypes dtype = typeBackend->dtype();
-  std::size_t dtype_size = typeBackend->dtype_size();
+  std::size_t dtype_size         = typeBackend->dtype_size();
 
   // Convert to obs store selection
   //
@@ -209,7 +211,8 @@ Variable ObsStore_Variable_Backend::read(gsl::span<char> data, const Type& in_me
   }
 
   ioda::ObsStore::Selection m_select = createObsStoreSelection(mem_selection, dim_sizes);
-  ioda::ObsStore::Selection f_select = createObsStoreSelection(file_selection, backend_->get_dimensions());
+  ioda::ObsStore::Selection f_select
+    = createObsStoreSelection(file_selection, backend_->get_dimensions());
 
   // Check the number of points in the selections. Data transfer is going
   // from file to memory so make sure the file npoints is not greater
@@ -217,8 +220,8 @@ Variable ObsStore_Variable_Backend::read(gsl::span<char> data, const Type& in_me
   std::size_t m_npts = m_select.npoints();
   std::size_t f_npts = f_select.npoints();
   if (m_npts > f_npts) {
-    std::string ErrMsg = std::string("ioda::Engines::ObsStore::ObsStore_Variable_Backend::read: ") +
-                         std::string("Number of points from file is greater than that of memory");
+    std::string ErrMsg = std::string("ioda::Engines::ObsStore::ObsStore_Variable_Backend::read: ")
+                         + std::string("Number of points from file is greater than that of memory");
     throw; /* jedi_throw
 .add("Reason", ErrMsg)
 .add("  Memory select npoints: ", m_npts)
@@ -235,7 +238,8 @@ Variable ObsStore_Variable_Backend::read(gsl::span<char> data, const Type& in_me
 // ObsStore_HasVariables_Backend functions
 //*************************************************************************
 ObsStore_HasVariables_Backend::ObsStore_HasVariables_Backend() : backend_(nullptr) {}
-ObsStore_HasVariables_Backend::ObsStore_HasVariables_Backend(std::shared_ptr<ioda::ObsStore::Has_Variables> b)
+ObsStore_HasVariables_Backend::ObsStore_HasVariables_Backend(
+  std::shared_ptr<ioda::ObsStore::Has_Variables> b)
     : backend_(b) {}
 ObsStore_HasVariables_Backend::~ObsStore_HasVariables_Backend() = default;
 
@@ -243,20 +247,23 @@ detail::Type_Provider* ObsStore_HasVariables_Backend::getTypeProvider() const {
   return ObsStore_Type_Provider::instance();
 }
 
-bool ObsStore_HasVariables_Backend::exists(const std::string& name) const { return backend_->exists(name); }
+bool ObsStore_HasVariables_Backend::exists(const std::string& name) const {
+  return backend_->exists(name);
+}
 
 void ObsStore_HasVariables_Backend::remove(const std::string& name) { backend_->remove(name); }
 
 Variable ObsStore_HasVariables_Backend::open(const std::string& name) const {
   auto res = backend_->open(name);
-  auto b = std::make_shared<ObsStore_Variable_Backend>(res);
+  auto b   = std::make_shared<ObsStore_Variable_Backend>(res);
   Variable var{b};
   return var;
 }
 
 std::vector<std::string> ObsStore_HasVariables_Backend::list() const { return backend_->list(); }
 
-Variable ObsStore_HasVariables_Backend::create(const std::string& name, const Type& in_memory_dataType,
+Variable ObsStore_HasVariables_Backend::create(const std::string& name,
+                                               const Type& in_memory_dataType,
                                                const std::vector<Dimensions_t>& dimensions,
                                                const std::vector<Dimensions_t>& max_dimensions,
                                                const VariableCreationParameters& params) {
@@ -276,20 +283,22 @@ Variable ObsStore_HasVariables_Backend::create(const std::string& name, const Ty
   ioda::ObsStore::VarCreateParams os_params;
   os_params.dtype_size = typeBackend->dtype_size();
 
-  os_params.fvdata = params.fillValue_;
+  os_params.fvdata        = params.fillValue_;
   const auto fvdata_final = params.finalize();  // Using in a span. Keep in scope.
   if (os_params.fvdata.set_) {
-    os_params.fill_value = gsl::make_span<char>((char*)&(fvdata_final), sizeof(fvdata_final));  // NOLINT
+    os_params.fill_value
+      = gsl::make_span<char>((char*)&(fvdata_final), sizeof(fvdata_final));  // NOLINT
   }
 
   // Call backend create
   auto res = backend_->create(name, dtype, dimensions, max_dims, os_params);
-  auto b = std::make_shared<ObsStore_Variable_Backend>(res);
+  auto b   = std::make_shared<ObsStore_Variable_Backend>(res);
 
   // Also set the chunking and compression parameters
   if (params.chunk) b->impl_atts_.add<Dimensions_t>("_chunks", params.getChunks(dimensions));
   if (params.gzip_) b->impl_atts_.add<int>("_gzip", params.gzip_level_);
-  if (params.szip_) b->impl_atts_.add<unsigned>("_szip", {params.szip_options_, params.szip_PixelsPerBlock_});
+  if (params.szip_)
+    b->impl_atts_.add<unsigned>("_szip", {params.szip_options_, params.szip_PixelsPerBlock_});
 
   Variable var{b};
 

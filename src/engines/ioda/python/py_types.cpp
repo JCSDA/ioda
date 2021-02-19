@@ -25,9 +25,11 @@ void setupTypeSystem(pybind11::module& m) {
   // eTypes.doc() = "Basic types available in the C++/Python interface";
   eTypes
     .value("float", BasicTypes::float_,
-           "Platform-defined single precision float: typically sign bit, 8 bits exponent, 23 bits mantissa")
+           "Platform-defined single precision float: typically sign bit, 8 bits exponent, 23 bits "
+           "mantissa")
     .value("double", BasicTypes::double_,
-           "Platform-defined double precision float: typically sign bit, 11 bits exponent, 52 bits mantissa")
+           "Platform-defined double precision float: typically sign bit, 11 bits exponent, 52 bits "
+           "mantissa")
     .value("ldouble", BasicTypes::ldouble_, "Platform-defined extended-precision float")
     .value("char", BasicTypes::char_, "C character type")
     .value("short", BasicTypes::short_, "C short integer type (platform-defined)")

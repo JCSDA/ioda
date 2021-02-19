@@ -41,7 +41,8 @@ struct c_ioda_engines_ObsStore {
   struct ioda_group* (*createRootGroup)();
 };
 struct c_ioda_engines_HH {
-  struct ioda_group* (*createMemoryFile)(const char*, bool, long);  // NOLINT: cppcheck complains about long
+  struct ioda_group* (*createMemoryFile)(const char*, bool,
+                                         long);  // NOLINT: cppcheck complains about long
   struct ioda_group* (*openFile)(const char*, enum ioda_Engines_BackendOpenModes);
   struct ioda_group* (*createFile)(const char*, enum ioda_Engines_BackendCreateModes);
 };

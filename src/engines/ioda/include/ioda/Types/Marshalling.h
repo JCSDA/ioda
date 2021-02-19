@@ -69,7 +69,7 @@ public:
   /// \brief Converts an object into a void* byte stream.
   /// \note The shared_ptr takes care of "deallocation" when we no longer need the "buffer".
   const_serialized_type serialize(::gsl::span<const DataType> d) {
-    auto res = std::make_shared<Marshalled_Data<DataType, mutable_DataType>>();
+    auto res          = std::make_shared<Marshalled_Data<DataType, mutable_DataType>>();
     res->DataPointers = std::vector<mutable_DataType>(d.size());
     // Forcible memset of the data to zero. Needed for long double type, which is typically 80
     // bits but takes up 96 or 128 bits of storage space. This triggers a Valgrind warning for
@@ -85,7 +85,7 @@ public:
   /// and deallocate any temporary buffer.
   /// \note For trivial (POD) objects, there is no need to do anything.
   serialized_type prep_deserialize(size_t numObjects) {
-    auto res = std::make_shared<typename serialized_type::element_type>(pointerOwner_);
+    auto res          = std::make_shared<typename serialized_type::element_type>(pointerOwner_);
     res->DataPointers = std::vector<mutable_DataType>(numObjects);
     return res;
   }
@@ -113,7 +113,7 @@ public:
   /// \brief Converts an object into a void* byte stream.
   /// \note The shared_ptr takes care of "deallocation" when we no longer need the "buffer".
   const_serialized_type serialize(::gsl::span<const DataType> d) {
-    auto res = std::make_shared<Marshalled_Data<DataType, mutable_DataType>>();
+    auto res          = std::make_shared<Marshalled_Data<DataType, mutable_DataType>>();
     res->DataPointers = std::vector<mutable_DataType>(d.size());
     std::copy_n(reinterpret_cast<char*>(d.data()), d.size_bytes(),
                 reinterpret_cast<char*>(res->DataPointers.data()));
@@ -130,7 +130,7 @@ public:
   /// and deallocate any temporary buffer.
   /// \note For trivial (POD) objects, there is no need to do anything.
   serialized_type prep_deserialize(size_t numObjects) {
-    auto res = std::make_shared<typename serialized_type::element_type>(pointerOwner_);
+    auto res          = std::make_shared<typename serialized_type::element_type>(pointerOwner_);
     res->DataPointers = std::vector<mutable_DataType>(numObjects);
     return res;
   }
@@ -150,13 +150,14 @@ template <class DataType, class value_type = DataType*>
 struct Object_Accessor_Variable_Array_With_Data_Method {
   typedef typename std::remove_const<DataType>::type mutable_DataType;
   typedef typename std::remove_const<value_type>::type mutable_value_type;
-  typedef std::shared_ptr<const Marshalled_Data<DataType, mutable_value_type, false>> const_serialized_type;
+  typedef std::shared_ptr<const Marshalled_Data<DataType, mutable_value_type, false>>
+    const_serialized_type;
   typedef std::shared_ptr<Marshalled_Data<DataType, mutable_value_type, true>> serialized_type;
   detail::PointerOwner pointerOwner_;
 
 public:
-  Object_Accessor_Variable_Array_With_Data_Method(
-    detail::PointerOwner pointerOwner = detail::PointerOwner::Caller)
+  Object_Accessor_Variable_Array_With_Data_Method(detail::PointerOwner pointerOwner
+                                                  = detail::PointerOwner::Caller)
       : pointerOwner_(pointerOwner) {}
   const_serialized_type serialize(::gsl::span<const DataType> d) {
     auto res = std::make_shared<Marshalled_Data<DataType, mutable_value_type, false>>();
@@ -166,7 +167,7 @@ public:
     return res;
   }
   serialized_type prep_deserialize(size_t numObjects) {
-    auto res = std::make_shared<typename serialized_type::element_type>(pointerOwner_);
+    auto res          = std::make_shared<typename serialized_type::element_type>(pointerOwner_);
     res->DataPointers = std::vector<mutable_value_type>(numObjects);
     return res;
   }
@@ -184,12 +185,14 @@ template <class DataType, class value_type = DataType*>
 struct Object_Accessor_Variable_Raw_Array {
   typedef typename std::remove_const<DataType>::type mutable_DataType;
   typedef typename std::remove_const<value_type>::type mutable_value_type;
-  typedef std::shared_ptr<const Marshalled_Data<DataType, mutable_value_type, false>> const_serialized_type;
+  typedef std::shared_ptr<const Marshalled_Data<DataType, mutable_value_type, false>>
+    const_serialized_type;
   typedef std::shared_ptr<Marshalled_Data<DataType, mutable_value_type, true>> serialized_type;
   detail::PointerOwner pointerOwner_;
 
 public:
-  Object_Accessor_Variable_Raw_Array(detail::PointerOwner pointerOwner = detail::PointerOwner::Caller)
+  Object_Accessor_Variable_Raw_Array(detail::PointerOwner pointerOwner
+                                     = detail::PointerOwner::Caller)
       : pointerOwner_(pointerOwner) {}
   const_serialized_type serialize(::gsl::span<const DataType> d) {
     auto res = std::make_shared<Marshalled_Data<DataType, mutable_value_type, false>>();
@@ -199,7 +202,7 @@ public:
     return res;
   }
   serialized_type prep_deserialize(size_t numObjects) {
-    auto res = std::make_shared<typename serialized_type::element_type>(pointerOwner_);
+    auto res          = std::make_shared<typename serialized_type::element_type>(pointerOwner_);
     res->DataPointers = std::vector<mutable_value_type>(numObjects);
     return res;
   }

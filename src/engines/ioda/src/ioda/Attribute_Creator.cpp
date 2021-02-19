@@ -14,7 +14,7 @@ Attribute_Creator_Base::Attribute_Creator_Base(const std::string& name) : name_(
 
 }  // namespace detail
 
-Attribute_Creator_Store::Attribute_Creator_Store() = default;
+Attribute_Creator_Store::Attribute_Creator_Store()  = default;
 Attribute_Creator_Store::~Attribute_Creator_Store() = default;
 
 void Attribute_Creator_Store::apply(Has_Attributes& obj) const {

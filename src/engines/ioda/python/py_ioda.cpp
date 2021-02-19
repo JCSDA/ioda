@@ -51,7 +51,8 @@ std::shared_ptr<const ioda::detail::DataLayoutPolicy> setupDLP(pybind11::module&
 
 void setupNewDimensionScales(pybind11::module& m);
 
-void setupObsGroup(pybind11::module& m, std::shared_ptr<const ioda::detail::DataLayoutPolicy> default_dlp);
+void setupObsGroup(pybind11::module& m,
+                   std::shared_ptr<const ioda::detail::DataLayoutPolicy> default_dlp);
 
 using namespace ioda;
 PYBIND11_MODULE(_ioda_python, m) {
@@ -59,13 +60,13 @@ PYBIND11_MODULE(_ioda_python, m) {
 
   m.doc() = "Python bindings for ioda";
 
-  auto mDetail = m.def_submodule("detail");
+  auto mDetail  = m.def_submodule("detail");
   mDetail.doc() = "Implementation details";
 
-  auto mDLP = m.def_submodule("DLP");
+  auto mDLP  = m.def_submodule("DLP");
   mDLP.doc() = "Data layout policies";
 
-  auto mPy = mDetail.def_submodule("python_bindings");
+  auto mPy  = mDetail.def_submodule("python_bindings");
   mPy.doc() = "Python binding helper classes";
 
   setupTypeSystem(m);

@@ -27,7 +27,7 @@ std::shared_ptr<const DataLayoutPolicy> DataLayoutPolicy::generate(Policies pol)
 }
 
 DataLayoutPolicy::~DataLayoutPolicy() = default;
-DataLayoutPolicy::DataLayoutPolicy() = default;
+DataLayoutPolicy::DataLayoutPolicy()  = default;
 void DataLayoutPolicy::initializeStructure(Group_Base &) const {
   // Do nothing in the default policy.
 }

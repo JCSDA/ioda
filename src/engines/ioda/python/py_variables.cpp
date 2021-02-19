@@ -28,7 +28,7 @@ using namespace ioda;
 void setupVariables(pybind11::module& m, pybind11::module& mDetail, pybind11::module& mPy) {
   using namespace ioda::detail;
 
-  auto mVar = mPy.def_submodule("Variables");
+  auto mVar  = mPy.def_submodule("Variables");
   mVar.doc() = "Variable binding helper classes";
 
   py::class_<python_bindings::VariableIsA<Variable>> is(mVar, "isA");
@@ -63,7 +63,8 @@ void setupVariables(pybind11::module& m, pybind11::module& mDetail, pybind11::mo
          "Attach a dimension scale to a variable", py::arg("DimensionNumber"), py::arg("scale"))
     .def("detach", &python_bindings::VariableScales<Variable>::detach, "Detach a dimension scale",
          py::arg("DimensionNumber"), py::arg("scale"))
-    .def("set", &python_bindings::VariableScales<Variable>::set, "Set dimension scales", py::arg("scales"))
+    .def("set", &python_bindings::VariableScales<Variable>::set, "Set dimension scales",
+         py::arg("scales"))
     .def("isScale", &python_bindings::VariableScales<Variable>::isScale,
          "Is this variable a dimension scale?")
     .def("setIsScale", &python_bindings::VariableScales<Variable>::setIsScale,
@@ -76,7 +77,8 @@ void setupVariables(pybind11::module& m, pybind11::module& mDetail, pybind11::mo
 
   py::class_<Variable>(m, "Variable")
     .def_readwrite("atts", &Variable::atts)
-    .def_property_readonly("dims", &Variable::getDimensions, "The current dimensions of the variable")
+    .def_property_readonly("dims", &Variable::getDimensions,
+                           "The current dimensions of the variable")
     .def_readwrite("isA", &Variable::_py_isA, "Query the data type")
     .def("isA2", &Variable::_py_isA2, "Query the data type", py::arg("dtype"))
     .def_readwrite("scales", &Variable::_py_scales, "Manipulate this variable's dimension scales")

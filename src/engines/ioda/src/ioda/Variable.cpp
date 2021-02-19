@@ -93,13 +93,15 @@ Variable Variable_Base<>::resize(const std::vector<Dimensions_t>& newDims) {
 }
 
 template <>
-Variable Variable_Base<>::attachDimensionScale(unsigned int DimensionNumber, const Variable& scale) {
+Variable Variable_Base<>::attachDimensionScale(unsigned int DimensionNumber,
+                                               const Variable& scale) {
   Expects(backend_ != nullptr);
   return backend_->attachDimensionScale(DimensionNumber, scale);
 }
 
 template <>
-Variable Variable_Base<>::detachDimensionScale(unsigned int DimensionNumber, const Variable& scale) {
+Variable Variable_Base<>::detachDimensionScale(unsigned int DimensionNumber,
+                                               const Variable& scale) {
   Expects(backend_ != nullptr);
   return backend_->detachDimensionScale(DimensionNumber, scale);
 }
@@ -117,7 +119,8 @@ Variable Variable_Base<>::setDimScale(const Variable& dim1, const Variable& dim2
   return setDimScale(std::vector<Variable>{dim1, dim2});
 }
 template <>
-Variable Variable_Base<>::setDimScale(const Variable& dim1, const Variable& dim2, const Variable& dim3) {
+Variable Variable_Base<>::setDimScale(const Variable& dim1, const Variable& dim2,
+                                      const Variable& dim3) {
   return setDimScale(std::vector<Variable>{dim1, dim2, dim3});
 }
 
@@ -138,13 +141,15 @@ Variable Variable_Base<>::getDimensionScaleName(std::string& res) const {
   return backend_->getDimensionScaleName(res);
 }
 template <>
-bool Variable_Base<>::isDimensionScaleAttached(unsigned int DimensionNumber, const Variable& scale) const {
+bool Variable_Base<>::isDimensionScaleAttached(unsigned int DimensionNumber,
+                                               const Variable& scale) const {
   Expects(backend_ != nullptr);
   return backend_->isDimensionScaleAttached(DimensionNumber, scale);
 }
 
 template <>
-std::vector<std::vector<std::pair<std::string, Variable>>> Variable_Base<>::getDimensionScaleMappings(
+std::vector<std::vector<std::pair<std::string, Variable>>>
+Variable_Base<>::getDimensionScaleMappings(
   const std::list<std::pair<std::string, Variable>>& scalesToQueryAgainst, bool firstOnly) const {
   Expects(backend_ != nullptr);
   return backend_->getDimensionScaleMappings(scalesToQueryAgainst, firstOnly);
@@ -159,7 +164,8 @@ Variable Variable_Base<>::write(gsl::span<char> data, const Type& in_memory_data
 
 template <>
 Variable Variable_Base<>::read(gsl::span<char> data, const Type& in_memory_dataType,
-                               const Selection& mem_selection, const Selection& file_selection) const {
+                               const Selection& mem_selection,
+                               const Selection& file_selection) const {
   Expects(backend_ != nullptr);
   return backend_->read(data, in_memory_dataType, mem_selection, file_selection);
 }
@@ -169,10 +175,12 @@ template class Variable_Base<Variable>;  // NOLINT: Bad check result
 Variable_Backend::~Variable_Backend() = default;
 Variable_Backend::Variable_Backend() : Variable_Base(nullptr) {}
 
-std::vector<std::vector<std::pair<std::string, Variable>>> Variable_Backend::getDimensionScaleMappings(
+std::vector<std::vector<std::pair<std::string, Variable>>>
+Variable_Backend::getDimensionScaleMappings(
   const std::list<std::pair<std::string, Variable>>& scalesToQueryAgainst, bool firstOnly) const {
   auto dims = this->getDimensions();
-  std::vector<std::vector<std::pair<std::string, Variable>>> res(gsl::narrow<size_t>(dims.dimensionality));
+  std::vector<std::vector<std::pair<std::string, Variable>>> res(
+    gsl::narrow<size_t>(dims.dimensionality));
   for (unsigned i = 0; i < gsl::narrow<unsigned>(dims.dimensionality); ++i) {
     for (const auto& s : scalesToQueryAgainst) {
       if (this->isDimensionScaleAttached(i, s.second)) {
@@ -217,15 +225,15 @@ Variable::Variable(const Variable& r)
 
 Variable& Variable::operator=(const Variable& r) {
   if (this == &r) return *this;
-  backend_ = r.backend_;
-  atts = r.atts;
+  backend_   = r.backend_;
+  atts       = r.atts;
   _py_scales = detail::python_bindings::VariableScales<Variable>{this};
-  _py_isA = detail::python_bindings::VariableIsA<Variable>{this};
+  _py_isA    = detail::python_bindings::VariableIsA<Variable>{this};
 
-  _py_readVector = detail::python_bindings::VariableReadVector<Variable>{this};
+  _py_readVector  = detail::python_bindings::VariableReadVector<Variable>{this};
   _py_readNPArray = detail::python_bindings::VariableReadNPArray<Variable>{this};
 
-  _py_writeVector = detail::python_bindings::VariableWriteVector<Variable>{this};
+  _py_writeVector  = detail::python_bindings::VariableWriteVector<Variable>{this};
   _py_writeNPArray = detail::python_bindings::VariableWriteNPArray<Variable>{this};
   return *this;
 }

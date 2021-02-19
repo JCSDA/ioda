@@ -74,31 +74,32 @@ Type_Backend::~Type_Backend() = default;
 }  // namespace detail
 
 Type::Type() : Type_Base(nullptr), as_type_index_(typeid(void)) {}
-Type::Type(std::shared_ptr<detail::Type_Backend> b, std::type_index t) : Type_Base(b), as_type_index_(t) {}
+Type::Type(std::shared_ptr<detail::Type_Backend> b, std::type_index t)
+    : Type_Base(b), as_type_index_(t) {}
 
 Type::Type(BasicTypes typ, gsl::not_null<const ::ioda::detail::Type_Provider*> t)
     : Type_Base(nullptr), as_type_index_(typeid(void)) {
-  static const std::map<BasicTypes, std::type_index> workable_types = {
-    {BasicTypes::float_, typeid(float)},    // NOLINT: cpplint doesn't understand this!
-    {BasicTypes::double_, typeid(double)},  // NOLINT
-    {BasicTypes::ldouble_, typeid(long double)},
-    {BasicTypes::char_, typeid(char)},  // NOLINT
-    {BasicTypes::short_, typeid(short)},
-    {BasicTypes::ushort_, typeid(unsigned short)},
-    {BasicTypes::int_, typeid(int)},  // NOLINT
-    {BasicTypes::uint_, typeid(unsigned)},
-    {BasicTypes::lint_, typeid(long)},
-    {BasicTypes::ulint_, typeid(unsigned long)},
-    {BasicTypes::llint_, typeid(long long)},
-    {BasicTypes::ullint_, typeid(unsigned long long)},
-    {BasicTypes::int32_, typeid(int32_t)},
-    {BasicTypes::uint32_, typeid(uint32_t)},
-    {BasicTypes::int16_, typeid(int16_t)},
-    {BasicTypes::uint16_, typeid(uint16_t)},
-    {BasicTypes::int64_, typeid(int64_t)},
-    {BasicTypes::uint64_, typeid(uint64_t)},
-    {BasicTypes::bool_, typeid(bool)},  // NOLINT
-    {BasicTypes::str_, typeid(std::string)}};
+  static const std::map<BasicTypes, std::type_index> workable_types
+    = {{BasicTypes::float_, typeid(float)},    // NOLINT: cpplint doesn't understand this!
+       {BasicTypes::double_, typeid(double)},  // NOLINT
+       {BasicTypes::ldouble_, typeid(long double)},
+       {BasicTypes::char_, typeid(char)},  // NOLINT
+       {BasicTypes::short_, typeid(short)},
+       {BasicTypes::ushort_, typeid(unsigned short)},
+       {BasicTypes::int_, typeid(int)},  // NOLINT
+       {BasicTypes::uint_, typeid(unsigned)},
+       {BasicTypes::lint_, typeid(long)},
+       {BasicTypes::ulint_, typeid(unsigned long)},
+       {BasicTypes::llint_, typeid(long long)},
+       {BasicTypes::ullint_, typeid(unsigned long long)},
+       {BasicTypes::int32_, typeid(int32_t)},
+       {BasicTypes::uint32_, typeid(uint32_t)},
+       {BasicTypes::int16_, typeid(int16_t)},
+       {BasicTypes::uint16_, typeid(uint16_t)},
+       {BasicTypes::int64_, typeid(int64_t)},
+       {BasicTypes::uint64_, typeid(uint64_t)},
+       {BasicTypes::bool_, typeid(bool)},  // NOLINT
+       {BasicTypes::str_, typeid(std::string)}};
   as_type_index_ = workable_types.at(typ);
 
   if (typ == BasicTypes::undefined_) throw;  // jedi_throw.add("Reason", "Bad input");

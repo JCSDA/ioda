@@ -31,10 +31,11 @@ template <class T> ObjectSelection add(
 }
 */
 /*
-ObjectSelection ObjectSelection::operator+(const ObjectSelection& obj) const { return add(*this, obj); }
-ObjectSelection ObjectSelection::operator+(const Variable& obj) const { return add(*this, obj); }
-ObjectSelection ObjectSelection::operator+(const std::vector<Variable>& obj) const { return add(*this, obj); }
-ObjectSelection ObjectSelection::operator+(const Has_Variables& obj) const { return add(*this, obj); }
+ObjectSelection ObjectSelection::operator+(const ObjectSelection& obj) const { return add(*this,
+obj); } ObjectSelection ObjectSelection::operator+(const Variable& obj) const { return add(*this,
+obj); } ObjectSelection ObjectSelection::operator+(const std::vector<Variable>& obj) const { return
+add(*this, obj); } ObjectSelection ObjectSelection::operator+(const Has_Variables& obj) const {
+return add(*this, obj); }
 */
 
 /*
@@ -50,10 +51,11 @@ template<> ObjectSelection& emplace<ObjectSelection>(ObjectSelection& src, const
         src.insert(obj);
         return src;
 }
-ObjectSelection& ObjectSelection::operator+=(const ObjectSelection& obj) { return emplace(*this, obj); }
-ObjectSelection& ObjectSelection::operator+=(const Variable& obj) { return emplace(*this, obj); }
-ObjectSelection& ObjectSelection::operator+=(const std::vector<Variable>& obj) { return emplace(*this, obj); }
-ObjectSelection& ObjectSelection::operator+=(const Has_Variables& obj) { return emplace(*this, obj); }
+ObjectSelection& ObjectSelection::operator+=(const ObjectSelection& obj) { return emplace(*this,
+obj); } ObjectSelection& ObjectSelection::operator+=(const Variable& obj) { return emplace(*this,
+obj); } ObjectSelection& ObjectSelection::operator+=(const std::vector<Variable>& obj) { return
+emplace(*this, obj); } ObjectSelection& ObjectSelection::operator+=(const Has_Variables& obj) {
+return emplace(*this, obj); }
 */
 
 ScaleMapping::~ScaleMapping() {}
@@ -70,7 +72,8 @@ void copy(const ObjectSelection& from, ObjectSelection& to, const ScaleMapping&)
 
   // Convenience lambda to hint if a variable is a scale.
   auto isPossiblyScale = [](const std::string& name) -> bool {
-    return (std::string::npos == name.find('@')) && (std::string::npos == name.find('/')) ? true : false;
+    return (std::string::npos == name.find('@')) && (std::string::npos == name.find('/')) ? true
+                                                                                          : false;
   };
 
   // We start with the names of all of the variables.
@@ -114,11 +117,11 @@ void copy(const ObjectSelection& from, ObjectSelection& to, const ScaleMapping&)
   auto group = from.g_;
 
   for (const auto& vname : sortedAllVars) {
-    Variable v = group.vars.open(vname);
+    Variable v      = group.vars.open(vname);
     const auto dims = v.getDimensions();
     if (dims.dimensionality >= 1) {
 #ifdef max
-#undef max
+#  undef max
 #endif
       max_var_size_ = std::max(max_var_size_, (size_t)dims.dimsCur[0]);
     }
@@ -142,7 +145,8 @@ void copy(const ObjectSelection& from, ObjectSelection& to, const ScaleMapping&)
     dimVarNames.reserve(dims.dimensionality);
     for (const auto& dim_scales_along_axis : attached_dimensions) {
       if (dim_scales_along_axis.empty())
-        throw jedi_throw.add("Reason", "Bad dimension mapping. Not all dimension scales are known.");
+        throw jedi_throw.add("Reason",
+                             "Bad dimension mapping. Not all dimension scales are known.");
       dimVarNames.push_back(dim_scales_along_axis[0].first);
     }
     dims_attached_to_vars_.emplace(vname, dimVarNames);
@@ -158,11 +162,9 @@ void copy(const ObjectSelection& from, ObjectSelection& to, const ScaleMapping&)
   {
           map<string, Variable> res;
           auto basevars = baseGrp.vars.list();
-          //std::cerr << "Finding dim scales. There are " << basevars.size() << " candidates." << std::endl;
-          for (const auto& name : basevars) {
-                  auto v = baseGrp.vars.open(name);
-                  if (v.isDimensionScale()) {
-                          string id = name;
+          //std::cerr << "Finding dim scales. There are " << basevars.size() << " candidates." <<
+  std::endl; for (const auto& name : basevars) { auto v = baseGrp.vars.open(name); if
+  (v.isDimensionScale()) { string id = name;
                           //string id_scale = v.getDimensionScaleName();
                           //if (id_scale.size()) id = id_scale;
                           res[id] = v;
@@ -192,8 +194,8 @@ void copy(const ObjectSelection& from, ObjectSelection& to, const ScaleMapping&)
                           throw jedi_throw.add("Reason", "Unrecognized basic type");
                   const auto dims = src.second.getDimensions();
 
-                  auto newscale = destGrp.vars._create_py(src.first, typ, dims.dimsCur, dims.dimsMax, {},
-  params); res[src.first] = newscale;
+                  auto newscale = destGrp.vars._create_py(src.first, typ, dims.dimsCur,
+  dims.dimsMax, {}, params); res[src.first] = newscale;
           }
           return res;
   }(to.g_, scale_id_var_from);
@@ -208,8 +210,8 @@ void copy(const ObjectSelection& from, ObjectSelection& to, const ScaleMapping&)
                   for (size_t i = 0; i < (size_t)v.getDimensions().dimensionality; ++i) {
                           for (const auto& scales_from : scale_id_var_from) {
                                   if (v.isDimensionScaleAttached((unsigned)i, scales_from.second)) {
-                                          //std::cerr << "\t\t" << i << "\t" << scales_from.first << "\n"; //
-  std::endl;
+                                          //std::cerr << "\t\t" << i << "\t" << scales_from.first <<
+  "\n"; // std::endl;
                                   }
                           }
 

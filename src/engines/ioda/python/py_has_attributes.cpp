@@ -26,12 +26,13 @@ void setupHasAttributes(pybind11::module& m) {
     .def("exists", &Has_Attributes::exists, "Does an attribute exist with the specified name?",
          py::arg("name"))
     .def("remove", &Has_Attributes::remove, "Remove an attribute", py::arg("name"))
-    .def("rename", &Has_Attributes::rename, "Rename an attribute", py::arg("oldname"), py::arg("newname"))
+    .def("rename", &Has_Attributes::rename, "Rename an attribute", py::arg("oldname"),
+         py::arg("newname"))
     .def("open", &Has_Attributes::open, "Open an attribute", py::arg("name"))
-    .def("create", &Has_Attributes::_create_py, "Create an attribute", py::arg("name"), py::arg("dtype"),
-         py::arg("dims") = std::vector<Dimensions_t>{1})
-    // CLASS_TEMPLATE_FUNCTION_PATTERN(create, create, Has_Attributes, CREATE_CLASS_TEMPLATE_FUNCTION_T)
-    // Convenience functions, add and read
+    .def("create", &Has_Attributes::_create_py, "Create an attribute", py::arg("name"),
+         py::arg("dtype"), py::arg("dims") = std::vector<Dimensions_t>{1})
+    // CLASS_TEMPLATE_FUNCTION_PATTERN(create, create, Has_Attributes,
+    // CREATE_CLASS_TEMPLATE_FUNCTION_T) Convenience functions, add and read
     //.def("read", &Has_Attributes::read)
     .def("__repr__",
          [](const Has_Attributes& ha) {

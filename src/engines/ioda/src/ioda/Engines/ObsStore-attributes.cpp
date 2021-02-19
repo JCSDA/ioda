@@ -32,7 +32,8 @@ Attribute ObsStore_Attribute_Backend::write(gsl::span<char> data, const Type& in
   return Attribute{shared_from_this()};
 }
 
-Attribute ObsStore_Attribute_Backend::read(gsl::span<char> data, const Type& in_memory_dataType) const {
+Attribute ObsStore_Attribute_Backend::read(gsl::span<char> data,
+                                           const Type& in_memory_dataType) const {
   // Convert to an obs store data type
   auto typeBackend = std::dynamic_pointer_cast<ObsStore_Type>(in_memory_dataType.getBackend());
   ioda::ObsStore::ObsTypes dtype = typeBackend->dtype();
@@ -44,7 +45,7 @@ Attribute ObsStore_Attribute_Backend::read(gsl::span<char> data, const Type& in_
 }
 
 bool ObsStore_Attribute_Backend::isA(Type lhs) const {
-  auto typeBackend = std::dynamic_pointer_cast<ObsStore_Type>(lhs.getBackend());
+  auto typeBackend               = std::dynamic_pointer_cast<ObsStore_Type>(lhs.getBackend());
   ioda::ObsStore::ObsTypes dtype = typeBackend->dtype();
   return backend_->isOfType(dtype);
 }
@@ -60,7 +61,7 @@ Dimensions ObsStore_Attribute_Backend::getDimensions() const {
   }
 
   // Create and return a Dimensions object
-  auto iodaRank = gsl::narrow<Dimensions_t>(iodaDims.size());
+  auto iodaRank     = gsl::narrow<Dimensions_t>(iodaDims.size());
   auto iodaNumElems = gsl::narrow<Dimensions_t>(numElems);
   Dimensions dims(iodaDims, iodaDims, iodaRank, iodaNumElems);
   return dims;
@@ -85,16 +86,19 @@ bool ObsStore_HasAttributes_Backend::exists(const std::string& attname) const {
   return backend_->exists(attname);
 }
 
-void ObsStore_HasAttributes_Backend::remove(const std::string& attname) { return backend_->remove(attname); }
+void ObsStore_HasAttributes_Backend::remove(const std::string& attname) {
+  return backend_->remove(attname);
+}
 
 Attribute ObsStore_HasAttributes_Backend::open(const std::string& attrname) const {
   auto res = backend_->open(attrname);
-  auto b = std::make_shared<ObsStore_Attribute_Backend>(res);
+  auto b   = std::make_shared<ObsStore_Attribute_Backend>(res);
   Attribute att{b};
   return att;
 }
 
-Attribute ObsStore_HasAttributes_Backend::create(const std::string& attrname, const Type& in_memory_dataType,
+Attribute ObsStore_HasAttributes_Backend::create(const std::string& attrname,
+                                                 const Type& in_memory_dataType,
                                                  const std::vector<Dimensions_t>& dimensions) {
   /// Convert to an obs store data type
   auto typeBackend = std::dynamic_pointer_cast<ObsStore_Type>(in_memory_dataType.getBackend());
@@ -107,12 +111,13 @@ Attribute ObsStore_HasAttributes_Backend::create(const std::string& attrname, co
   }
 
   auto res = backend_->create(attrname, dtype, dims);
-  auto b = std::make_shared<ObsStore_Attribute_Backend>(res);
+  auto b   = std::make_shared<ObsStore_Attribute_Backend>(res);
   Attribute att{b};
   return att;
 }
 
-void ObsStore_HasAttributes_Backend::rename(const std::string& oldName, const std::string& newName) {
+void ObsStore_HasAttributes_Backend::rename(const std::string& oldName,
+                                            const std::string& newName) {
   backend_->rename(oldName, newName);
 }
 }  // namespace ObsStore

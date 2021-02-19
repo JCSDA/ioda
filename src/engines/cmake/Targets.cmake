@@ -12,18 +12,19 @@ target_compile_definitions(${tgt} PUBLIC
 		_CRT_SECURE_NO_WARNINGS
         # remove deprecation warnings about std::uncaught_exception() (from catch)
         _SILENCE_CXX17_UNCAUGHT_EXCEPTION_DEPRECATION_WARNING
-	# Report the correct C++ version
-	/Zc:__cplusplus
-	# Multiprocessor compilation
-	#/MP
 	>
 	)
 
-	# GCC-specific options
 	target_compile_options(${tgt} PUBLIC
 		$<$<CXX_COMPILER_ID:GNU>:
 		# Turn off GCC 4.4 ABI warning involving unions of long double.
 		-Wno-psabi
+		>
+		$<$<CXX_COMPILER_ID:MSVC>:
+		# Report the correct C++ version
+		/Zc:__cplusplus
+		# Multiprocessor compilation
+		#/MP
 		>
 		)
 

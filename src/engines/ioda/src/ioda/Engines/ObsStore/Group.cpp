@@ -13,7 +13,8 @@
 
 namespace ioda {
 namespace ObsStore {
-Group::Group() : atts(std::make_shared<Has_Attributes>()), vars(std::make_shared<Has_Variables>()) {}
+Group::Group()
+    : atts(std::make_shared<Has_Attributes>()), vars(std::make_shared<Has_Variables>()) {}
 Group::~Group() = default;
 
 std::list<std::string> Group::list() const {
@@ -24,12 +25,13 @@ std::list<std::string> Group::list() const {
   return childList;
 }
 
-void Group::listObjects(ObjectType filter, bool recurse, std::map<ObjectType, std::list<std::string>>& res,
+void Group::listObjects(ObjectType filter, bool recurse,
+                        std::map<ObjectType, std::list<std::string>>& res,
                         const std::string& prefix) const {
   // If we either want to list groups or do any type of recursion, then we need
   // to get the one-level child groups.
   bool needGroups = filter == ObjectType::Ignored || filter == ObjectType::Group || recurse;
-  bool needVars = filter == ObjectType::Ignored || filter == ObjectType::Variable;
+  bool needVars   = filter == ObjectType::Ignored || filter == ObjectType::Variable;
 
   if (needVars) {
     // Prepare empty list if it does not already exist
@@ -75,7 +77,8 @@ std::shared_ptr<Group> Group::create(const std::string& name) {
   } else {
     childGroup = std::make_shared<Group>();
     childGroup->vars->setParentGroup(childGroup);
-    child_groups_.insert(std::pair<std::string, std::shared_ptr<Group>>(pathSections[0], childGroup));
+    child_groups_.insert(
+      std::pair<std::string, std::shared_ptr<Group>>(pathSections[0], childGroup));
   }
 
   // Recurse if there are more levels in the input name

@@ -35,8 +35,8 @@ public:
   // Leave makeArrayType undeclared for now. Add in later if needed.
   // Let makeArrayType method in ioda::TypeProvider handle this case
   // which will issue an error.
-  // virtual Type makeArrayType(std::initializer_list<Dimensions_t> dimensions, std::type_index typeOuter,
-  // std::type_index typeInner) const override final;
+  // virtual Type makeArrayType(std::initializer_list<Dimensions_t> dimensions, std::type_index
+  // typeOuter, std::type_index typeInner) const override final;
 
   /// \brief create mapping between ioda string type and ObsStore string type
   /// \param string_length length, in characters, of string

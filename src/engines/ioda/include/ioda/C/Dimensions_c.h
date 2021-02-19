@@ -11,9 +11,9 @@
 #include "./c_binding_macros.h"
 
 #ifdef __cplusplus
-#include <cstddef>
+#  include <cstddef>
 #else
-#include <stddef.h>
+#  include <stddef.h>
 #endif
 
 #ifdef __cplusplus

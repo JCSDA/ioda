@@ -28,6 +28,7 @@ class Attribute;
 
 namespace detail {
 class Attribute_Backend;
+class Variable_Backend;
 
 /// \brief Base class for Attributes
 ///
@@ -42,6 +43,9 @@ class Attribute_Base {
 protected:
   /// Using an opaque object to implement the backend.
   std::shared_ptr<Attribute_Backend> backend_;
+
+  // Variable_Backend's derived classes do occasionally need access to the Attribute_Backend object.
+  friend class Variable_Backend;
 
   /// @name General Functions
   /// @{
@@ -77,17 +81,18 @@ public:
   /// \param data is a gsl::span (a pointer-length pair) that contains the data to be written.
   /// \param in_memory_dataType is the memory layout needed to parse data's type.
   /// \param DataType is the type of the data. I.e. float, int, int32_t, uint16_t, std::string, etc.
-  /// \param Marshaller is the class that serializes the data type into something that the backend library can
-  /// use. \returns Another instance of this Attribute. Used for operation chaining. \throws jedi::xError if
-  /// data.size() does not match getDimensions().numElements. \see gsl::span for details of how to make a
-  /// span. \see gsl::make_span
+  /// \param Marshaller is the class that serializes the data type into something that the backend
+  /// library can use. \returns Another instance of this Attribute. Used for operation chaining.
+  /// \throws jedi::xError if data.size() does not match getDimensions().numElements. \see gsl::span
+  /// for details of how to make a span. \see gsl::make_span
   template <class DataType, class Marshaller = ioda::Object_Accessor<DataType>,
             class TypeWrapper = Types::GetType_Wrapper<DataType>>
   Attribute_Implementation write(gsl::span<const DataType> data) {
     Marshaller m;
     auto d = m.serialize(data);
-    write(gsl::make_span<char>(const_cast<char*>(reinterpret_cast<const char*>(d->DataPointers.data())),
-                               d->DataPointers.size() * sizeof(typename Marshaller::mutable_value_type)),
+    write(gsl::make_span<char>(
+            const_cast<char*>(reinterpret_cast<const char*>(d->DataPointers.data())),
+            d->DataPointers.size() * sizeof(typename Marshaller::mutable_value_type)),
           TypeWrapper::GetType(getTypeProvider()));
     return Attribute_Implementation{backend_};
   }
@@ -97,10 +102,10 @@ public:
   /// \param data is a std::vector that contains the data to be written.
   /// \param in_memory_dataType is the memory layout needed to parse data's type.
   /// \param DataType is the type of the data. I.e. float, int, int32_t, uint16_t, std::string, etc.
-  /// \param Marshaller is the class that serializes the data type into something that the backend library can
-  /// use. \returns Another instance of this Attribute. Used for operation chaining. \throws jedi::xError if
-  /// data.size() does not match getDimensions().numElements. \see gsl::span for details of how to make a
-  /// span. \see gsl::make_span
+  /// \param Marshaller is the class that serializes the data type into something that the backend
+  /// library can use. \returns Another instance of this Attribute. Used for operation chaining.
+  /// \throws jedi::xError if data.size() does not match getDimensions().numElements. \see gsl::span
+  /// for details of how to make a span. \see gsl::make_span
   template <class DataType, class Marshaller = ioda::Object_Accessor<DataType>,
             class TypeWrapper = Types::GetType_Wrapper<DataType>>
   Attribute_Implementation write(const std::vector<DataType>& data) {
@@ -113,10 +118,10 @@ public:
   /// \param data is an initializer list that contains the data to be written.
   /// \param in_memory_dataType is the memory layout needed to parse data's type.
   /// \param DataType is the type of the data. I.e. float, int, int32_t, uint16_t, std::string, etc.
-  /// \param Marshaller is the class that serializes the data type into something that the backend library can
-  /// use. \returns Another instance of this Attribute. Used for operation chaining. \throws jedi::xError if
-  /// data.size() does not match getDimensions().numElements. \see gsl::span for details of how to make a
-  /// span. \see gsl::make_span
+  /// \param Marshaller is the class that serializes the data type into something that the backend
+  /// library can use. \returns Another instance of this Attribute. Used for operation chaining.
+  /// \throws jedi::xError if data.size() does not match getDimensions().numElements. \see gsl::span
+  /// for details of how to make a span. \see gsl::make_span
   template <class DataType>
   Attribute_Implementation write(std::initializer_list<DataType> data) {
     Expects(backend_ != nullptr);
@@ -154,9 +159,9 @@ public:
     // If d is already in Row Major form, then this is optimized out.
     Eigen::Array<ScalarType, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> dout;
     dout.resize(d.rows(), d.cols());
-    dout = d;
+    dout               = d;
     const auto& dconst = dout;  // To make some compilers happy.
-    auto sp = gsl::make_span(dconst.data(), static_cast<int>(d.rows() * d.cols()));
+    auto sp            = gsl::make_span(dconst.data(), static_cast<int>(d.rows() * d.cols()));
 
     return write<ScalarType>(sp);
 #else
@@ -173,11 +178,12 @@ public:
 #if 1  //__has_include("unsupported/Eigen/CXX11/Tensor")
     ioda::Dimensions dims = detail::EigenCompat::getTensorDimensions(d);
 
-    auto sp = (gsl::make_span(d.data(), dims.numElements));
+    auto sp  = (gsl::make_span(d.data(), dims.numElements));
     auto res = write(sp);
     return res;
 #else
-    static_assert(false, "The Eigen unsupported/ headers cannot be found, so this function cannot be used.");
+    static_assert(
+      false, "The Eigen unsupported/ headers cannot be found, so this function cannot be used.");
 #endif
   }
 
@@ -186,7 +192,8 @@ public:
   /// @{
   ///
 
-  /// \brief The fundamental read function. Backends overload this function to implement all read operations.
+  /// \brief The fundamental read function. Backends overload this function to implement all read
+  /// operations.
   ///
   /// \details This function reads in a span of characters from the backend attribute storage.
   /// No type conversions take place here (see the templated conversion function, below).
@@ -200,17 +207,18 @@ public:
 
   /// \brief Read data.
   ///
-  /// \details This is a fundamental function that reads a span of characters from backend storage, and then
-  /// performs the appropriate type conversion / deserialization into objects in data.
+  /// \details This is a fundamental function that reads a span of characters from backend storage,
+  /// and then performs the appropriate type conversion / deserialization into objects in data.
   ///
-  /// \param DataType is the type if the data to be read. I.e. float, int, int32_t, uint16_t, std::string,
-  /// etc. \param Marshaller is the class that performs the deserialization operation. \param data is a
-  /// pointer-size pair to the data buffer that is filled with the metadata's contents. It should be
-  ///   pre-sized to accomodate all of the matadata. See getDimensions().numElements. data will be filled in
-  ///   row-major order.
+  /// \param DataType is the type if the data to be read. I.e. float, int, int32_t, uint16_t,
+  /// std::string, etc. \param Marshaller is the class that performs the deserialization operation.
+  /// \param data is a pointer-size pair to the data buffer that is filled with the metadata's
+  /// contents. It should be
+  ///   pre-sized to accomodate all of the matadata. See getDimensions().numElements. data will be
+  ///   filled in row-major order.
   /// \param in_memory_datatype is an opaque (backend-level) object that describes the placement of
-  ///   the data in memory. Usually this does not need to be set to anything other than its default value.
-  ///   Kept as a parameter for debugging purposes.
+  ///   the data in memory. Usually this does not need to be set to anything other than its default
+  ///   value. Kept as a parameter for debugging purposes.
   /// \returns Another instance of this Attribute. Used for operation chaining.
   /// \throws jedi::xError if data.size() != getDimensions().numElements.
   /// \see getDimensions for buffer size information.
@@ -224,8 +232,9 @@ public:
     detail::PointerOwner pointerOwner = getTypeProvider()->getReturnedPointerOwner();
     Marshaller m(pointerOwner);
     auto p = m.prep_deserialize(numObjects);
-    read(gsl::make_span<char>(reinterpret_cast<char*>(p->DataPointers.data()),
-                              p->DataPointers.size() * sizeof(typename Marshaller::mutable_value_type)),
+    read(gsl::make_span<char>(
+           reinterpret_cast<char*>(p->DataPointers.data()),
+           p->DataPointers.size() * sizeof(typename Marshaller::mutable_value_type)),
          TypeWrapper::GetType(getTypeProvider()));
     m.deserialize(p, data);
 
@@ -234,9 +243,9 @@ public:
 
   /// \brief Vector read convenience function.
   /// \param DataType is the type of the data. I.e. float, int, int32_t, uint16_t, std::string, etc.
-  /// \param data is a vector acting as a data buffer that is filled with the metadata's contents. It gets
-  /// resized as needed. \returns Another instance of this Attribute. Used for operation chaining. \note data
-  /// will be stored in row-major order.
+  /// \param data is a vector acting as a data buffer that is filled with the metadata's contents.
+  /// It gets resized as needed. \returns Another instance of this Attribute. Used for operation
+  /// chaining. \note data will be stored in row-major order.
   template <class DataType>
   Attribute_Implementation read(std::vector<DataType>& data) const {
     data.resize(getDimensions().numElements);
@@ -245,9 +254,9 @@ public:
 
   /// \brief Valarray read convenience function.
   /// \param DataType is the type of the data. I.e. float, int, int32_t, uint16_t, std::string, etc.
-  /// \param data is a valarray acting as a data buffer that is filled with the metadata's contents. It gets
-  /// resized as needed. \returns Another instance of this Attribute. Used for operation chaining. \note data
-  /// will be stored in row-major order.
+  /// \param data is a valarray acting as a data buffer that is filled with the metadata's contents.
+  /// It gets resized as needed. \returns Another instance of this Attribute. Used for operation
+  /// chaining. \note data will be stored in row-major order.
   template <class DataType>
   Attribute_Implementation read(std::valarray<DataType>& data) const {
     data.resize(getDimensions().numElements);
@@ -302,14 +311,15 @@ public:
 #if 1  //__has_include("Eigen/Dense")
     typedef typename EigenClass::Scalar ScalarType;
 
-    static_assert(!(Resize && !detail::EigenCompat::CanResize<EigenClass>::value),
-                  "This object cannot be resized, but you have specified that a resize is required.");
+    static_assert(
+      !(Resize && !detail::EigenCompat::CanResize<EigenClass>::value),
+      "This object cannot be resized, but you have specified that a resize is required.");
 
     // Check that the dimensionality is 1 or 2.
     const auto dims = getDimensions();
     if (dims.dimensionality > 2)
-      throw;  // jedi_throw.add("Reason", "Dimensionality too high for a regular Eigen read. Use Eigen::Tensor
-              // reads instead.");
+      throw;  // jedi_throw.add("Reason", "Dimensionality too high for a regular Eigen read. Use
+              // Eigen::Tensor reads instead.");
 
     int nDims[2] = {1, 1};
     if (dims.dimsCur.size() >= 1) nDims[0] = gsl::narrow<int>(dims.dimsCur[0]);
@@ -317,7 +327,8 @@ public:
 
     // Resize if needed.
     if (Resize)
-      detail::EigenCompat::DoEigenResize(res, nDims[0], nDims[1]);  // nullop if the size is already correct.
+      detail::EigenCompat::DoEigenResize(res, nDims[0],
+                                         nDims[1]);  // nullop if the size is already correct.
     else if (dims.numElements != (size_t)(res.rows() * res.cols()))
       throw;  // jedi_throw.add("Reason", "Size mismatch");
 
@@ -327,10 +338,11 @@ public:
     // We can size _this_ temporary object however we want.
     // The temporary is used to swap row / column indices if needed.
     // It should be optimized away if not needed... making sure this happens is a todo.
-    Eigen::Array<ScalarType, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> data_in(res.rows(), res.cols());
+    Eigen::Array<ScalarType, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> data_in(res.rows(),
+                                                                                      res.cols());
 
     auto ret = read<ScalarType>(gsl::span<ScalarType>(data_in.data(), dims.numElements));
-    res = data_in;
+    res      = data_in;
     return ret;
 #else
     static_assert(false, "The Eigen headers cannot be found, so this function cannot be used.");
@@ -348,7 +360,7 @@ public:
   Attribute_Implementation readWithEigenTensor(EigenClass& res) const {
 #if 1  //__has_include("unsupported/Eigen/CXX11/Tensor")
        // Check dimensionality of source and destination
-    const auto ioda_dims = getDimensions();
+    const auto ioda_dims  = getDimensions();
     const auto eigen_dims = ioda::detail::EigenCompat::getTensorDimensions(res);
     if (ioda_dims.numElements != eigen_dims.numElements)
       throw;  // jedi_throw.add("Reason", "Size mismatch for Eigen Tensor-like read.");
@@ -356,7 +368,8 @@ public:
     auto sp = (gsl::make_span(res.data(), eigen_dims.numElements));
     return read(sp);
 #else
-    static_assert(false, "The Eigen unsupported/ headers cannot be found, so this function cannot be used.");
+    static_assert(
+      false, "The Eigen unsupported/ headers cannot be found, so this function cannot be used.");
 #endif
   }
 

@@ -48,7 +48,8 @@ public:
   /// \param res are the search results.
   /// \param prefix is used with recursion. Start with "".
   ///   Each new element gets a new "group/" prefix added.
-  void listObjects(ObjectType filter, bool recurse, std::map<ObjectType, std::list<std::string>>& res,
+  void listObjects(ObjectType filter, bool recurse,
+                   std::map<ObjectType, std::list<std::string>>& res,
                    const std::string& prefix = "") const;
 
   /// \brief returns true if child group exists

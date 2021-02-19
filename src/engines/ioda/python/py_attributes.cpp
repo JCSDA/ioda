@@ -23,7 +23,7 @@ using namespace ioda;
 void setupAttributes(pybind11::module& m, pybind11::module& mDetail, pybind11::module& mPy) {
   using namespace ioda::detail;
 
-  auto mAtt = mPy.def_submodule("Attributes");
+  auto mAtt  = mPy.def_submodule("Attributes");
   mAtt.doc() = "Attribute binding helper classes";
 
   py::class_<python_bindings::AttributeIsA<Attribute>> is(mAtt, "isA");
@@ -58,8 +58,8 @@ void setupAttributes(pybind11::module& m, pybind11::module& mDetail, pybind11::m
 
   py::class_<python_bindings::AttributeWriteNPArray<Attribute>> wNPA(mAtt, "writeNPArray");
   wNPA.doc() = "Write data as a numpy array";
-  wNPA CLASS_TEMPLATE_FUNCTION_PATTERN_NOSTR(write, python_bindings::AttributeWriteNPArray<Attribute>,
-                                             WRITE_ATT_CLASS_TEMPLATE_FUNCTION_T);
+  wNPA CLASS_TEMPLATE_FUNCTION_PATTERN_NOSTR(
+    write, python_bindings::AttributeWriteNPArray<Attribute>, WRITE_ATT_CLASS_TEMPLATE_FUNCTION_T);
 
   py::class_<Attribute> att(m, "Attribute");
   att.doc() = "A small tag on a variable or group that describes how to interpret data.";

@@ -9,24 +9,25 @@
 /// \brief Common preprocessor definitions used throughout IODA.
 
 #ifdef __cplusplus
-#include <cstddef>
+#  include <cstddef>
 #else
-#include <stddef.h>
+#  include <stddef.h>
 #endif
 
 // Compiler interface warning suppression
 #ifdef _MSC_FULL_VER
 //# include <CppCoreCheck/Warnings.h>
 //# pragma warning(disable: CPPCORECHECK_DECLARATION_WARNINGS)
-#pragma warning(push)
-#pragma warning(disable : 4003)  // Bug in boost with VS2016.3
-#pragma warning(disable : 4251)  // DLL interface
-#pragma warning(disable : 4275)  // DLL interface
-// Avoid unnamed objects. Buggy in VS / does not respect attributes telling the compiler to ignore the check.
-#pragma warning(disable : 26444)
-#pragma warning(disable : 4661)  // Template definition
-#pragma warning(disable : 4554)  // Eigen Tensor warning
-#pragma warning(disable : 4996)  // Old versions of Eigen may use C++17-deprecated functions.
+#  pragma warning(push)
+#  pragma warning(disable : 4003)  // Bug in boost with VS2016.3
+#  pragma warning(disable : 4251)  // DLL interface
+#  pragma warning(disable : 4275)  // DLL interface
+// Avoid unnamed objects. Buggy in VS / does not respect attributes telling the compiler to ignore
+// the check.
+#  pragma warning(disable : 26444)
+#  pragma warning(disable : 4661)  // Template definition
+#  pragma warning(disable : 4554)  // Eigen Tensor warning
+#  pragma warning(disable : 4996)  // Old versions of Eigen may use C++17-deprecated functions.
 #endif
 
 /* Symbol export / import macros */
@@ -42,11 +43,11 @@
  */
 
 #if defined(_MSC_FULL_VER)
-#define IODA_COMPILER_EXPORTS_VERSION 1
+#  define IODA_COMPILER_EXPORTS_VERSION 1
 #elif defined(__INTEL_COMPILER) || defined(__GNUC__) || defined(__MINGW32__) || defined(__clang__)
-#define IODA_COMPILER_EXPORTS_VERSION 2
+#  define IODA_COMPILER_EXPORTS_VERSION 2
 #else
-#define IODA_COMPILER_EXPORTS_VERSION 0
+#  define IODA_COMPILER_EXPORTS_VERSION 0
 #endif
 
 // Defaults for static libraries
@@ -68,22 +69,22 @@
  **/
 
 #if IODA_COMPILER_EXPORTS_VERSION == 1
-#define IODA_SHARED_EXPORT __declspec(dllexport)
-#define IODA_SHARED_IMPORT __declspec(dllimport)
-#define IODA_HIDDEN
-#define IODA_PRIVATE
+#  define IODA_SHARED_EXPORT __declspec(dllexport)
+#  define IODA_SHARED_IMPORT __declspec(dllimport)
+#  define IODA_HIDDEN
+#  define IODA_PRIVATE
 #elif IODA_COMPILER_EXPORTS_VERSION == 2
-#define IODA_SHARED_EXPORT __attribute__((visibility("default")))
-#define IODA_SHARED_IMPORT __attribute__((visibility("default")))
-#define IODA_HIDDEN __attribute__((visibility("hidden")))
-#define IODA_PRIVATE __attribute__((visibility("internal")))
+#  define IODA_SHARED_EXPORT __attribute__((visibility("default")))
+#  define IODA_SHARED_IMPORT __attribute__((visibility("default")))
+#  define IODA_HIDDEN __attribute__((visibility("hidden")))
+#  define IODA_PRIVATE __attribute__((visibility("internal")))
 #else
-#pragma message( \
-  "ioda - defs.h warning: compiler is unrecognized. Shared libraries may not export their symbols properly.")
-#define IODA_SHARED_EXPORT
-#define IODA_SHARED_IMPORT
-#define IODA_HIDDEN
-#define IODA_PRIVATE
+#  pragma message(                                                                                 \
+    "ioda - defs.h warning: compiler is unrecognized. Shared libraries may not export their symbols properly.")
+#  define IODA_SHARED_EXPORT
+#  define IODA_SHARED_IMPORT
+#  define IODA_HIDDEN
+#  define IODA_PRIVATE
 #endif
 
 /**
@@ -97,13 +98,13 @@
  **/
 
 #if ioda_SHARED
-#ifdef ioda_EXPORTING
-#define IODA_DL IODA_SHARED_EXPORT
+#  ifdef ioda_EXPORTING
+#    define IODA_DL IODA_SHARED_EXPORT
+#  else
+#    define IODA_DL IODA_SHARED_IMPORT
+#  endif
 #else
-#define IODA_DL IODA_SHARED_IMPORT
-#endif
-#else
-#define IODA_DL
+#  define IODA_DL
 #endif
 
 #ifdef __cplusplus

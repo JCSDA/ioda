@@ -46,9 +46,9 @@ Group constructFromCmdLine(int argc, char** argv, const std::string& defaultFile
   auto it = std::find(opts.cbegin(), opts.cend(), "--ioda-engine-options");
   if (it == opts.cend()) {
     // No options --> create a file using the defaultFileName
-    backendName = BackendNames::Hdf5File;
-    params.fileName = defaultFilename;
-    params.action = BackendFileActions::Create;
+    backendName       = BackendNames::Hdf5File;
+    params.fileName   = defaultFilename;
+    params.action     = BackendFileActions::Create;
     params.createMode = BackendCreateModes::Truncate_If_Exists;
   } else {
     ++it;
@@ -74,21 +74,22 @@ Group constructFromCmdLine(int argc, char** argv, const std::string& defaultFile
     string sEngine = *it;
     if (sEngine == "HDF5-file") {
       auto engineOpts = readOpts(3);
-      backendName = BackendNames::Hdf5File;
+      backendName     = BackendNames::Hdf5File;
       params.fileName = engineOpts[0];
 
       enum class open_or_create {
         open,
         create
-      } action = (engineOpts[1] == "create") ? open_or_create::create : open_or_create::open;
+      } action
+        = (engineOpts[1] == "create") ? open_or_create::create : open_or_create::open;
       if (action == open_or_create::open) {
         // open action
-        params.action = BackendFileActions::Open;
-        params.openMode =
-          (engineOpts[2] == "read_write") ? BackendOpenModes::Read_Write : BackendOpenModes::Read_Only;
+        params.action   = BackendFileActions::Open;
+        params.openMode = (engineOpts[2] == "read_write") ? BackendOpenModes::Read_Write
+                                                          : BackendOpenModes::Read_Only;
       } else {
         // create action
-        params.action = BackendFileActions::Create;
+        params.action     = BackendFileActions::Create;
         params.createMode = (engineOpts[2] == "truncate") ? BackendCreateModes::Truncate_If_Exists
                                                           : BackendCreateModes::Fail_If_Exists;
       }
@@ -99,16 +100,16 @@ Group constructFromCmdLine(int argc, char** argv, const std::string& defaultFile
       //	= (engineOpts[1] == "create") ? open_or_create::create :
       //	open_or_create::open;
 
-      backendName = BackendNames::Hdf5Mem;
-      params.fileName = engineOpts[0];
-      params.action = BackendFileActions::Create;
+      backendName       = BackendNames::Hdf5Mem;
+      params.fileName   = engineOpts[0];
+      params.action     = BackendFileActions::Create;
       params.createMode = BackendCreateModes::Truncate_If_Exists;
 
       string sAllocLen_MB = engineOpts[1];
-      string sFlush = engineOpts[2];
+      string sFlush       = engineOpts[2];
 
       params.allocBytes = gsl::narrow<size_t>(((size_t)std::stoul(sAllocLen_MB)) * 1024 * 1024);
-      params.flush = (sFlush == "true");
+      params.flush      = (sFlush == "true");
     } else if (sEngine == "obs-store") {
       backendName = BackendNames::ObsStore;
     } else {
@@ -123,7 +124,8 @@ Group constructFromCmdLine(int argc, char** argv, const std::string& defaultFile
 Group constructBackend(BackendNames name, BackendCreationParameters& params) {
   Group backend;
   if (name == BackendNames::Hdf5File) {
-    if (params.action == BackendFileActions::Open) return HH::openFile(params.fileName, params.openMode);
+    if (params.action == BackendFileActions::Open)
+      return HH::openFile(params.fileName, params.openMode);
     if (params.action == BackendFileActions::Create)
       return HH::createFile(params.fileName, params.createMode);
     throw;  // jedi_throw.add("Reason", "Unknown BackendFileActions value");
@@ -132,7 +134,8 @@ Group constructBackend(BackendNames name, BackendCreationParameters& params) {
     if (params.action == BackendFileActions::Open)
       return HH::openMemoryFile(params.fileName, params.openMode, params.flush, params.allocBytes);
     if (params.action == BackendFileActions::Create)
-      return HH::createMemoryFile(params.fileName, params.createMode, params.flush, params.allocBytes);
+      return HH::createMemoryFile(params.fileName, params.createMode, params.flush,
+                                  params.allocBytes);
     throw;  // jedi_throw.add("Reason", "Unknown BackendFileActions value");
   }
   if (name == BackendNames::ObsStore) return ObsStore::createRootGroup();

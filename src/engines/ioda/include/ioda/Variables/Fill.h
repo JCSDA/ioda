@@ -45,7 +45,7 @@ struct IODA_DL FillValueData_t {
     unsigned char uc;
   } fillValue_ = {0};
   std::string stringFillValue_;
-  bool set_ = false;
+  bool set_      = false;
   bool isString_ = false;
   FillValueUnion_t finalize() const;
 
@@ -75,14 +75,14 @@ void assignFillValue(FillValueData_t& data, T val) {
   else
     memcpy(&(data.fillValue_.ui64), &val, sizeof(val));
   data.stringFillValue_ = "";
-  data.set_ = true;
-  data.isString_ = false;
+  data.set_             = true;
+  data.isString_        = false;
 }
 template <>
 inline void assignFillValue<std::string>(FillValueData_t& data, std::string val) {
   data.stringFillValue_ = val;
-  data.set_ = true;
-  data.isString_ = true;
+  data.set_             = true;
+  data.isString_        = true;
 }
 }  // namespace detail
 }  // namespace ioda

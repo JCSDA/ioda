@@ -25,12 +25,14 @@ class Has_Attributes;
 namespace detail {
 class Has_Attributes_Backend;
 class Has_Attributes_Base;
+class Variable_Backend;
+class Group_Backend;
 
 /// \brief Describes the functions that can add attributes
 /// \details Using the (Curiously Recurring Template
-/// Pattern)[https://en.wikipedia.org/wiki/Curiously_recurring_template_pattern] to implement this since we
-/// want to use the same functions for placeholder attribute construction. \see Has_Attributes \see
-/// Attribute_Creator
+/// Pattern)[https://en.wikipedia.org/wiki/Curiously_recurring_template_pattern] to implement this
+/// since we want to use the same functions for placeholder attribute construction. \see
+/// Has_Attributes \see Attribute_Creator
 template <class DerivedHasAtts>
 class CanAddAttributes {
 public:
@@ -41,16 +43,16 @@ public:
   /// \param DataType is the type of the data. I.e. float, int, int32_t, uint16_t, std::string, etc.
   /// \param attrname is the name of the Attribute to be created.
   /// \param data is a gsl::span (a pointer-length pair) that contains the data to be written.
-  /// \param dimensions is an initializer list representing the size of the metadata. Each element is a
-  /// dimension with a certain size. \param in_memory_dataType is the memory layout needed to parse data's
-  /// type. \returns Another instance of this Has_Attribute. Used for operation chaining. \throws jedi::xError
-  /// if data.size() does not match the number of total elements described by dimensions. \see gsl::span for
-  /// details of how to make a span. \see gsl::make_span
+  /// \param dimensions is an initializer list representing the size of the metadata. Each element
+  /// is a dimension with a certain size. \param in_memory_dataType is the memory layout needed to
+  /// parse data's type. \returns Another instance of this Has_Attribute. Used for operation
+  /// chaining. \throws jedi::xError if data.size() does not match the number of total elements
+  /// described by dimensions. \see gsl::span for details of how to make a span. \see gsl::make_span
   template <class DataType>
   DerivedHasAtts add(const std::string& attrname, ::gsl::span<const DataType> data,
                      const ::std::vector<Dimensions_t>& dimensions) {
     auto derivedThis = static_cast<DerivedHasAtts*>(this);
-    auto att = derivedThis->template create<DataType>(attrname, dimensions);
+    auto att         = derivedThis->template create<DataType>(attrname, dimensions);
     att.template write<DataType>(data);
     return *derivedThis;
   }
@@ -59,15 +61,15 @@ public:
   /// \param DataType is the type of the data. I.e. float, int, int32_t, uint16_t, std::string, etc.
   /// \param attrname is the name of the Attribute to be created.
   /// \param data is an initializer list that contains the data to be written.
-  /// \param dimensions is an initializer list representing the size of the metadata. Each element is a
-  /// dimension with a certain size. \returns Another instance of this Has_Attribute. Used for operation
-  /// chaining. \throws jedi::xError if data.size() does not match the number of total elements described by
-  /// dimensions.
+  /// \param dimensions is an initializer list representing the size of the metadata. Each element
+  /// is a dimension with a certain size. \returns Another instance of this Has_Attribute. Used for
+  /// operation chaining. \throws jedi::xError if data.size() does not match the number of total
+  /// elements described by dimensions.
   template <class DataType>
   DerivedHasAtts add(const std::string& attrname, ::std::initializer_list<DataType> data,
                      const ::std::vector<Dimensions_t>& dimensions) {
     auto derivedThis = static_cast<DerivedHasAtts*>(this);
-    auto att = derivedThis->template create<DataType>(attrname, dimensions);
+    auto att         = derivedThis->template create<DataType>(attrname, dimensions);
     att.template write<DataType>(data);
     return *derivedThis;
   }
@@ -99,25 +101,26 @@ public:
   /// \brief Create and write a single datum of an Attribute.
   /// \param DataType is the type of the data. I.e. float, int, int32_t, uint16_t, std::string, etc.
   /// \param attrname is the name of the Attribute to be created.
-  /// \param data is the data to be written. The new Attribute will be zero-dimensional and will contain only
-  /// this datum. \note Even 0-dimensional data have a type, which may be a compound array (i.e. a single
-  /// string of variable length). \returns Another instance of this Has_Attribute. Used for operation
-  /// chaining.
+  /// \param data is the data to be written. The new Attribute will be zero-dimensional and will
+  /// contain only this datum. \note Even 0-dimensional data have a type, which may be a compound
+  /// array (i.e. a single string of variable length). \returns Another instance of this
+  /// Has_Attribute. Used for operation chaining.
   template <class DataType>
   DerivedHasAtts add(const std::string& attrname, const DataType& data) {
     return add(attrname, gsl::make_span(&data, 1), {1});
   }
 
   template <class EigenClass>
-  DerivedHasAtts addWithEigenRegular(const std::string& attrname, const EigenClass& data, bool is2D = true) {
+  DerivedHasAtts addWithEigenRegular(const std::string& attrname, const EigenClass& data,
+                                     bool is2D = true) {
 #if 1  //__has_include("Eigen/Dense")
     typedef typename EigenClass::Scalar ScalarType;
     // If d is already in Row Major form, then this is optimized out.
     Eigen::Array<ScalarType, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> dout;
     dout.resize(data.rows(), data.cols());
-    dout = data;
+    dout               = data;
     const auto& dconst = dout;  // To make some compilers happy.
-    auto sp = gsl::make_span(dconst.data(), static_cast<int>(data.rows() * data.cols()));
+    auto sp            = gsl::make_span(dconst.data(), static_cast<int>(data.rows() * data.cols()));
 
     if (is2D)
       return add(attrname, sp,
@@ -136,12 +139,13 @@ public:
     ioda::Dimensions dims = detail::EigenCompat::getTensorDimensions(data);
 
     auto derived_this = static_cast<DerivedHasAtts*>(this);
-    Attribute att = derived_this->template create<ScalarType>(attrname, dims.dimsCur);
+    Attribute att     = derived_this->template create<ScalarType>(attrname, dims.dimsCur);
 
     att.writeWithEigenTensor(data);
     return *derived_this;
 #else
-    static_assert(false, "The Eigen unsupported/ headers cannot be found, so this function cannot be used.");
+    static_assert(
+      false, "The Eigen unsupported/ headers cannot be found, so this function cannot be used.");
 #endif
   }
 
@@ -150,8 +154,9 @@ public:
 
 /// \brief Describes the functions that can read attributes
 /// \details Using the (Curiously Recurring Template
-/// Pattern)[https://en.wikipedia.org/wiki/Curiously_recurring_template_pattern] to implement this since we
-/// want to use the same functions for placeholder attribute construction. \see Has_Attributes
+/// Pattern)[https://en.wikipedia.org/wiki/Curiously_recurring_template_pattern] to implement this
+/// since we want to use the same functions for placeholder attribute construction. \see
+/// Has_Attributes
 template <class DerivedHasAtts>
 class CanReadAttributes {
 protected:
@@ -166,10 +171,10 @@ public:
   /// \brief Open and read an Attribute, for expected dimensions.
   /// \param DataType is the type of the data. I.e. float, int, int32_t, uint16_t, std::string, etc.
   /// \param attrname is the name of the Attribute to be read.
-  /// \param data is a pointer-size pair to the data buffer that is filled with the metadata's contents. It
-  /// should be
-  ///   pre-sized to accomodate all of the matadata. See getDimensions().numElements. Data will be filled
-  ///   in row-major order.
+  /// \param data is a pointer-size pair to the data buffer that is filled with the metadata's
+  /// contents. It should be
+  ///   pre-sized to accomodate all of the matadata. See getDimensions().numElements. Data will be
+  ///   filled in row-major order.
   /// \throws jedi::xError on a size mismatch between Attribute dimensions and data.size().
   template <class DataType>
   const DerivedHasAtts read(const std::string& attrname, gsl::span<DataType> data) const {
@@ -182,8 +187,8 @@ public:
   /// \brief Open and read an Attribute, with unknown dimensions.
   /// \param DataType is the type of the data. I.e. float, int, int32_t, uint16_t, std::string, etc.
   /// \param attrname is the name of the Attribute to be read.
-  /// \param data is a vector acting as a data buffer that is filled with the metadata's contents. It gets
-  /// resized as needed.
+  /// \param data is a vector acting as a data buffer that is filled with the metadata's contents.
+  /// It gets resized as needed.
   ///   data will be filled in row-major order.
   template <class DataType>
   const DerivedHasAtts read(const std::string& attrname, std::vector<DataType>& data) const {
@@ -195,8 +200,8 @@ public:
   /// \brief Open and read an Attribute, with unknown dimensions.
   /// \param DataType is the type of the data. I.e. float, int, int32_t, uint16_t, std::string, etc.
   /// \param attrname is the name of the Attribute to be read.
-  /// \param data is a valarray acting as a data buffer that is filled with the metadata's contents. It gets
-  /// resized as needed.
+  /// \param data is a valarray acting as a data buffer that is filled with the metadata's contents.
+  /// It gets resized as needed.
   ///   data will be filled in row-major order.
   template <class DataType>
   const DerivedHasAtts read(const std::string& attrname, std::valarray<DataType>& data) const {
@@ -246,7 +251,8 @@ public:
     att.readWithEigenTensor<EigenClass>(data);
     return *(static_cast<const DerivedHasAtts*>(this));
 #else
-    static_assert(false, "The Eigen unsupported/ headers cannot be found, so this function cannot be used.");
+    static_assert(
+      false, "The Eigen unsupported/ headers cannot be found, so this function cannot be used.");
 #endif
   }
 
@@ -257,6 +263,10 @@ class IODA_DL Has_Attributes_Base {
 private:
   /// Using an opaque object to implement the backend.
   std::shared_ptr<Has_Attributes_Backend> backend_;
+
+  // Backend classes do occasionally need access to the Attribute_Backend object.
+  friend class Group_Backend;
+  friend class Variable_Backend;
 
 protected:
   Has_Attributes_Base(std::shared_ptr<Has_Attributes_Backend>);
@@ -298,9 +308,10 @@ public:
 
   /// \brief Create an Attribute without setting its data.
   /// \param attrname is the name of the Attribute.
-  /// \param dimensions is a vector representing the size of the metadata. Each element of the vector is a
-  /// dimension with a certain size. \param in_memory_datatype is the runtime description of the Attribute's
-  /// data type. \returns An instance of Attribute that can be written to.
+  /// \param dimensions is a vector representing the size of the metadata. Each element of the
+  /// vector is a dimension with a certain size. \param in_memory_datatype is the runtime
+  /// description of the Attribute's data type. \returns An instance of Attribute that can be
+  /// written to.
   virtual Attribute create(const std::string& attrname, const Type& in_memory_dataType,
                            const std::vector<Dimensions_t>& dimensions = {1});
 
@@ -313,12 +324,13 @@ public:
   /// \brief Create an Attribute without setting its data.
   /// \param DataType is the type of the data. I.e. float, int, int32_t, uint16_t, std::string, etc.
   /// \param attrname is the name of the Attribute.
-  /// \param dimensions is a vector representing the size of the metadata. Each element of the vector is a
-  /// dimension with a certain size. \returns An instance of Attribute that can be written to.
+  /// \param dimensions is a vector representing the size of the metadata. Each element of the
+  /// vector is a dimension with a certain size. \returns An instance of Attribute that can be
+  /// written to.
   template <class DataType, class TypeWrapper = Types::GetType_Wrapper<DataType>>
   Attribute create(const std::string& attrname, const std::vector<Dimensions_t>& dimensions = {1}) {
     Type in_memory_dataType = TypeWrapper::GetType(getTypeProvider());
-    auto att = create(attrname, in_memory_dataType, dimensions);
+    auto att                = create(attrname, in_memory_dataType, dimensions);
     return att;
   }
 

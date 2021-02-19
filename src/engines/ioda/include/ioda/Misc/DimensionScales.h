@@ -63,9 +63,14 @@ struct IODA_DL NewDimensionScale_Base : std::enable_shared_from_this<NewDimensio
 
   /// \note This should not be used directly. Keeping it public because of cross-language bindings.
   /// \see NewDimensionScale
-  NewDimensionScale_Base(const std::string& name, const std::type_index& dataType, Dimensions_t size = 0,
-                         Dimensions_t maxSize = Unlimited, Dimensions_t chunkingSize = Unspecified)
-      : name_(name), dataType_(dataType), size_(size), maxSize_(maxSize), chunkingSize_(chunkingSize) {}
+  NewDimensionScale_Base(const std::string& name, const std::type_index& dataType,
+                         Dimensions_t size = 0, Dimensions_t maxSize = Unlimited,
+                         Dimensions_t chunkingSize = Unspecified)
+      : name_(name),
+        dataType_(dataType),
+        size_(size),
+        maxSize_(maxSize),
+        chunkingSize_(chunkingSize) {}
 };
 typedef std::vector<std::shared_ptr<NewDimensionScale_Base>> NewDimensionScales_t;
 
@@ -77,8 +82,8 @@ struct NewDimensionScale : public NewDimensionScale_Base {
 
   std::vector<DataType> initdata_;
 
-  NewDimensionScale(const std::string& name, Dimensions_t size = 0, Dimensions_t maxSize = Unlimited,
-                    Dimensions_t chunkingSize = Unspecified)
+  NewDimensionScale(const std::string& name, Dimensions_t size = 0,
+                    Dimensions_t maxSize = Unlimited, Dimensions_t chunkingSize = Unspecified)
       : NewDimensionScale_Base(name, typeid(DataType), size, maxSize, chunkingSize),
         initdata_(gsl::narrow<size_t>(size)) {
     for (size_t i = 0; i < initdata_.size(); ++i) initdata_[i] = gsl::narrow<DataType>(i + 1);

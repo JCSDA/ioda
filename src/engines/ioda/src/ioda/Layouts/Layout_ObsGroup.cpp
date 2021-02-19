@@ -16,8 +16,8 @@
 namespace ioda {
 namespace detail {
 int32_t DataLayoutPolicy_ObsGroup::ObsGroup_Layout_Version = 0;
-DataLayoutPolicy_ObsGroup::~DataLayoutPolicy_ObsGroup() = default;
-DataLayoutPolicy_ObsGroup::DataLayoutPolicy_ObsGroup() = default;
+DataLayoutPolicy_ObsGroup::~DataLayoutPolicy_ObsGroup()    = default;
+DataLayoutPolicy_ObsGroup::DataLayoutPolicy_ObsGroup()     = default;
 void DataLayoutPolicy_ObsGroup::initializeStructure(Group_Base &g) const {
   // First, set an attribute to indicate that the data are managed
   // by this data policy.

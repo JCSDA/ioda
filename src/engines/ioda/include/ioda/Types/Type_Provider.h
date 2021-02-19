@@ -33,8 +33,8 @@ public:
   /// Make a basic object type, like a double, a float, or a char.
   virtual Type makeFundamentalType(std::type_index type) const;
   /// Make an array type, like a double[2].
-  virtual Type makeArrayType(std::initializer_list<Dimensions_t> dimensions, std::type_index typeOuter,
-                             std::type_index typeInner) const;
+  virtual Type makeArrayType(std::initializer_list<Dimensions_t> dimensions,
+                             std::type_index typeOuter, std::type_index typeInner) const;
   /// Make a variable-length string type.
   virtual Type makeStringType(size_t string_length, std::type_index typeOuter) const;
 

@@ -22,8 +22,8 @@ namespace ObsStore {
 // Spurious warning on Intel compilers:
 // https://stackoverflow.com/questions/2571850/why-does-enable-shared-from-this-have-a-non-virtual-destructor
 #if defined(__INTEL_COMPILER)
-#pragma warning(push)
-#pragma warning(disable : 444)
+#  pragma warning(push)
+#  pragma warning(disable : 444)
 #endif
 class Attribute : public std::enable_shared_from_this<Attribute> {
 private:
@@ -93,7 +93,7 @@ public:
   std::vector<std::string> list() const;
 };
 #if defined(__INTEL_COMPILER)
-#pragma warning(pop)
+#  pragma warning(pop)
 #endif
 }  // namespace ObsStore
 }  // namespace ioda

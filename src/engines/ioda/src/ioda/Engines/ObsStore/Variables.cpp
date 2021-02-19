@@ -70,8 +70,8 @@ void Variable::resize(const std::vector<Dimensions_t>& new_dim_sizes) {
   // Allow for the total number of elements to change. If there are
   // addtional elements (total size is growing), then fill those elements
   // with the variable's fill value (if exists).
-  std::size_t numElements =
-    std::accumulate(new_dim_sizes.begin(), new_dim_sizes.end(), (size_t)1, std::multiplies<std::size_t>());
+  std::size_t numElements = std::accumulate(new_dim_sizes.begin(), new_dim_sizes.end(), (size_t)1,
+                                            std::multiplies<std::size_t>());
 
   if (impl_atts->exists("_fillValue")) {
     std::vector<char> fvalue(dtype_size_);
@@ -89,16 +89,18 @@ bool Variable::hasFillValue() const { return fvdata_.set_; }
 
 detail::FillValueData_t Variable::getFillValue() const { return fvdata_; }
 
-void Variable::attachDimensionScale(const std::size_t dim_number, const std::shared_ptr<Variable> scale) {
+void Variable::attachDimensionScale(const std::size_t dim_number,
+                                    const std::shared_ptr<Variable> scale) {
   dim_scales_[dim_number] = scale;
 }
 
-void Variable::detachDimensionScale(const std::size_t dim_number, const std::shared_ptr<Variable> scale) {
+void Variable::detachDimensionScale(const std::size_t dim_number,
+                                    const std::shared_ptr<Variable> scale) {
   if (dim_scales_[dim_number] == scale) {
     dim_scales_[dim_number] = nullptr;
   } else {
-    std::string ErrMsg = std::string("ioda::ObsStore::Variable::detachDimensionScale: ") +
-                         std::string("specified scale is not found");
+    std::string ErrMsg = std::string("ioda::ObsStore::Variable::detachDimensionScale: ")
+                         + std::string("specified scale is not found");
     throw;  // jedi_throw.add("Reason", ErrMsg);
   }
 }
@@ -106,7 +108,7 @@ void Variable::detachDimensionScale(const std::size_t dim_number, const std::sha
 bool Variable::isDimensionScale() const { return is_scale_; }
 
 void Variable::setIsDimensionScale(const std::string& name) {
-  is_scale_ = true;
+  is_scale_   = true;
   scale_name_ = name;
 }
 
@@ -120,8 +122,8 @@ bool Variable::isDimensionScaleAttached(const std::size_t dim_number,
 std::shared_ptr<Variable> Variable::write(gsl::span<char> data, ObsTypes dtype, Selection& m_select,
                                           Selection& f_select) {
   if (dtype != dtype_) {
-    std::string ErrMsg = std::string("ioda::ObsStore::Variable::write: ") +
-                         std::string("Requested data type not equal to storage datatype");
+    std::string ErrMsg = std::string("ioda::ObsStore::Variable::write: ")
+                         + std::string("Requested data type not equal to storage datatype");
     throw std::logic_error(
       "Requested data type not equal to storage datatype");  // jedi_throw.add("Reason", ErrMsg);
   }
@@ -133,8 +135,8 @@ std::shared_ptr<Variable> Variable::write(gsl::span<char> data, ObsTypes dtype, 
 std::shared_ptr<Variable> Variable::read(gsl::span<char> data, ObsTypes dtype, Selection& m_select,
                                          Selection& f_select) {
   if (dtype != dtype_) {
-    std::string ErrMsg = std::string("ioda::ObsStore::Variable::read: ") +
-                         std::string("Requested data type not equal to storage datatype");
+    std::string ErrMsg = std::string("ioda::ObsStore::Variable::read: ")
+                         + std::string("Requested data type not equal to storage datatype");
     throw std::logic_error(ErrMsg);  // jedi_throw.add("Reason", ErrMsg);
   }
 
@@ -159,7 +161,7 @@ std::shared_ptr<Variable> Has_Variables::create(const std::string& name,
   if (splitPaths.size() > 1) {
     // Have intermediate groups, create variable in "bottom" group
     std::shared_ptr<Group> parentGroup = parent_group_.lock();
-    std::shared_ptr<Group> group = parentGroup->create(splitPaths[0]);
+    std::shared_ptr<Group> group       = parentGroup->create(splitPaths[0]);
     var = group->vars->create(splitPaths[1], dtype, dims, max_dims, params);
   } else {
     // No intermediate groups, create variable here
@@ -174,13 +176,13 @@ std::shared_ptr<Variable> Has_Variables::open(const std::string& name) const {
   std::vector<std::string> splitPaths = splitGroupVar(name);
   if (splitPaths.size() > 1) {
     std::shared_ptr<Group> parentGroup = parent_group_.lock();
-    std::shared_ptr<Group> group = parentGroup->open(splitPaths[0]);
-    var = group->vars->open(splitPaths[1]);
+    std::shared_ptr<Group> group       = parentGroup->open(splitPaths[0]);
+    var                                = group->vars->open(splitPaths[1]);
   } else {
     auto ivar = variables_.find(name);
     if (ivar == variables_.end()) {
-      std::string ErrMsg =
-        std::string("ioda::ObsStore::Has_Variables::open: ") + std::string("Variable not found: ") + name;
+      std::string ErrMsg = std::string("ioda::ObsStore::Has_Variables::open: ")
+                           + std::string("Variable not found: ") + name;
       throw std::logic_error(ErrMsg);  // jedi_throw.add("Reason", ErrMsg);
     }
     var = ivar->second;
@@ -189,13 +191,13 @@ std::shared_ptr<Variable> Has_Variables::open(const std::string& name) const {
 }
 
 bool Has_Variables::exists(const std::string& name) const {
-  bool varExists = false;
+  bool varExists                      = false;
   std::vector<std::string> splitPaths = splitGroupVar(name);
   if (splitPaths.size() > 1) {
     std::shared_ptr<Group> parentGroup = parent_group_.lock();
     if (parentGroup->exists(splitPaths[0])) {
       std::shared_ptr<Group> group = parentGroup->open(splitPaths[0]);
-      varExists = group->vars->exists(splitPaths[1]);
+      varExists                    = group->vars->exists(splitPaths[1]);
     }
   } else {
     varExists = (variables_.find(name) != variables_.end());
@@ -207,7 +209,7 @@ void Has_Variables::remove(const std::string& name) {
   std::vector<std::string> splitPaths = splitGroupVar(name);
   if (splitPaths.size() > 1) {
     std::shared_ptr<Group> parentGroup = parent_group_.lock();
-    std::shared_ptr<Group> group = parentGroup->open(splitPaths[0]);
+    std::shared_ptr<Group> group       = parentGroup->open(splitPaths[0]);
     group->vars->remove(splitPaths[1]);
   } else {
     variables_.erase(name);
@@ -218,7 +220,7 @@ void Has_Variables::rename(const std::string& oldName, const std::string& newNam
   std::vector<std::string> splitPaths = splitGroupVar(oldName);
   if (splitPaths.size() > 1) {
     std::shared_ptr<Group> parentGroup = parent_group_.lock();
-    std::shared_ptr<Group> group = parentGroup->open(splitPaths[0]);
+    std::shared_ptr<Group> group       = parentGroup->open(splitPaths[0]);
     group->vars->rename(splitPaths[1], newName);
   } else {
     std::shared_ptr<Variable> var = open(oldName);
@@ -235,7 +237,9 @@ std::vector<std::string> Has_Variables::list() const {
   return varList;
 }
 
-void Has_Variables::setParentGroup(const std::shared_ptr<Group>& parentGroup) { parent_group_ = parentGroup; }
+void Has_Variables::setParentGroup(const std::shared_ptr<Group>& parentGroup) {
+  parent_group_ = parentGroup;
+}
 
 // private methods
 std::vector<std::string> Has_Variables::splitGroupVar(const std::string& path) {

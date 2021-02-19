@@ -39,8 +39,8 @@ IODA_DL struct ioda_string_ret_t* ioda_group_list(const struct ioda_group*);
 IODA_DL int ioda_group_exists(const struct ioda_group* base, const char* child);
 /// \brief Create a group.
 /// \see ioda::Group::create.
-/// \returns A handle to the new group on success. The handle should be freed after use by ioda_group_destruct
-/// (c_ioda.Groups.destruct). \returns NULL on failure.
+/// \returns A handle to the new group on success. The handle should be freed after use by
+/// ioda_group_destruct (c_ioda.Groups.destruct). \returns NULL on failure.
 IODA_DL struct ioda_group* ioda_group_create(struct ioda_group*, const char*);
 /// \brief Open a group.
 /// \see ioda::Group::open.

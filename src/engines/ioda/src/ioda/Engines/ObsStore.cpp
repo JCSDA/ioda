@@ -24,10 +24,10 @@ Capabilities getCapabilities() {
   static Capabilities caps;
   static bool inited = false;
   if (!inited) {
-    caps.canChunk = Capability_Mask::Ignored;
+    caps.canChunk            = Capability_Mask::Ignored;
     caps.canCompressWithGZIP = Capability_Mask::Ignored;
     caps.canCompressWithSZIP = Capability_Mask::Ignored;
-    caps.MPIaware = Capability_Mask::Unsupported;
+    caps.MPIaware            = Capability_Mask::Unsupported;
   }
 
   return caps;

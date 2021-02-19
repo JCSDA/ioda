@@ -20,7 +20,8 @@ ObsGroup::ObsGroup(Group g, std::shared_ptr<const detail::DataLayoutPolicy> layo
   if (layout)
     this->setLayout(layout);
   else
-    this->setLayout(detail::DataLayoutPolicy::generate(detail::DataLayoutPolicy::Policies::ObsGroup));
+    this->setLayout(
+      detail::DataLayoutPolicy::generate(detail::DataLayoutPolicy::Policies::ObsGroup));
 }
 
 void ObsGroup::setLayout(std::shared_ptr<const detail::DataLayoutPolicy> policy) {
@@ -36,13 +37,13 @@ void ObsGroup::setup(const NewDimensionScales_t& fundamentalDims,
     ioda::VariableCreationParameters p;
     p.setIsDimensionScale(f->name_);
     p.chunk = true;
-    p.fChunkingStrategy = [&f](const ioda::Selection::VecDimensions_t&,
-                               ioda::Selection::VecDimensions_t& out) {
-      out = {f->chunkingSize_};
-      return true;
-    };
+    p.fChunkingStrategy
+      = [&f](const ioda::Selection::VecDimensions_t&, ioda::Selection::VecDimensions_t& out) {
+          out = {f->chunkingSize_};
+          return true;
+        };
     p.atts.add("suggested_chunk_dim", f->chunkingSize_);
-    Type t = vars.getTypeProvider()->makeFundamentalType(f->dataType_);
+    Type t      = vars.getTypeProvider()->makeFundamentalType(f->dataType_);
     auto newvar = vars.create(f->name_, t, {f->size_}, {f->maxSize_}, p);
 
     f->writeInitialData(newvar);
@@ -68,7 +69,8 @@ void ObsGroup::resize(const std::vector<std::pair<Variable, ioda::Dimensions_t>>
   resizeVars(*this, newDims);
 }
 
-void ObsGroup::resizeVars(Group& g, const std::vector<std::pair<Variable, ioda::Dimensions_t>>& newDims) {
+void ObsGroup::resizeVars(Group& g,
+                          const std::vector<std::pair<Variable, ioda::Dimensions_t>>& newDims) {
   // Visit the variables in this group, and resize according to
   // what's in the newDims vector.
   auto groupVars = g.listObjects(ObjectType::Variable, true)[ObjectType::Variable];

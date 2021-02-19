@@ -30,15 +30,16 @@ namespace ObsStore {
 // Spurious warning on Intel compilers:
 // https://stackoverflow.com/questions/2571850/why-does-enable-shared-from-this-have-a-non-virtual-destructor
 #if defined(__INTEL_COMPILER)
-#pragma warning(push)
-#pragma warning(disable : 444)
+#  pragma warning(push)
+#  pragma warning(disable : 444)
 #endif
 
 class ObsStore_HasVariables_Backend;
 
 /// \brief This is the implementation of Variable in ioda::ObsStore
-class ObsStore_Variable_Backend : public ioda::detail::Variable_Backend,
-                                  public std::enable_shared_from_this<ObsStore::ObsStore_Variable_Backend> {
+class ObsStore_Variable_Backend
+    : public ioda::detail::Variable_Backend,
+      public std::enable_shared_from_this<ObsStore::ObsStore_Variable_Backend> {
 private:
   friend class ObsStore_HasVariables_Backend;
 
@@ -112,20 +113,21 @@ public:
   /// \param in_memory_dataType frontend type marker
   /// \param mem_selection ioda::Selection for incoming data
   /// \param file_selection ioda::Selection for target Variable data
-  Variable write(gsl::span<char> data, const Type& in_memory_dataType, const Selection& mem_selection,
-                 const Selection& file_selection) final;
+  Variable write(gsl::span<char> data, const Type& in_memory_dataType,
+                 const Selection& mem_selection, const Selection& file_selection) final;
   /// \brief transfer data from the ObsStore Variable
   /// \param data contiguous block of data to transfer
   /// \param in_memory_dataType frontend type marker
   /// \param mem_selection ioda::Selection for target data
   /// \param file_selection ioda::Selection for incoming Variable data
-  Variable read(gsl::span<char> data, const Type& in_memory_dataType, const Selection& mem_selection,
-                const Selection& file_selection) const final;
+  Variable read(gsl::span<char> data, const Type& in_memory_dataType,
+                const Selection& mem_selection, const Selection& file_selection) const final;
 };
 
 /// \brief This is the implementation of Has_Variables in ioda::ObsStore
-class ObsStore_HasVariables_Backend : public ioda::detail::Has_Variables_Backend,
-                                      public std::enable_shared_from_this<ObsStore_HasVariables_Backend> {
+class ObsStore_HasVariables_Backend
+    : public ioda::detail::Has_Variables_Backend,
+      public std::enable_shared_from_this<ObsStore_HasVariables_Backend> {
 private:
   /// \brief ObsStore Has_Variables
   std::shared_ptr<ioda::ObsStore::Has_Variables> backend_;
@@ -160,12 +162,12 @@ public:
   /// \param max_dimensions maximum_dimensions of variable (for resizing)
   /// \param params creation specs (chunking, fill value, compression, etc.)
   Variable create(const std::string& name, const Type& in_memory_dataType,
-                  const std::vector<Dimensions_t>& dimensions = {1},
+                  const std::vector<Dimensions_t>& dimensions     = {1},
                   const std::vector<Dimensions_t>& max_dimensions = {},
                   const VariableCreationParameters& params = VariableCreationParameters()) final;
 };
 #if defined(__INTEL_COMPILER)
-#pragma warning(pop)
+#  pragma warning(pop)
 #endif
 }  // namespace ObsStore
 }  // namespace Engines

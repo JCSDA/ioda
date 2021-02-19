@@ -144,7 +144,7 @@ int main(int argc, char** argv) {
     // for detailed explanations.
     // To tell ioda that you want to chunk a variable:
     params.chunk = true;        // Turn chunking on
-    params.chunks = {100, 10};  // Each chunk is a 100 x 10 block of data.
+    params.chunks = {100};  // Each chunk is a size 100 block of data.
 
     // Compression
     // If you are using chunked storage, you can tell ioda that you want to compress

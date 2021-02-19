@@ -11,11 +11,11 @@ Potential future engines:
 - AWS S3 ([based on HDF5 1.12](https://portal.hdfgroup.org/display/HDF5/New+Features+in+HDF5+Release+1.12#NewFeaturesinHDF5Release1.12-vol))
 
 A backend engine needs to provide support for:
-- Groups (ioda::Group)
-- Attributes (ioda::Attribute) and ioda::Has_Attributes
-- The type system (ioda::Type and ioda::detail::Type_Provider)
-- Variables (ioda::Variable and ioda::Has_Variables)
-- Data selectors (how Variables interact with ioda::Selection)
+- Groups (```ioda::Group```)
+- Attributes (```ioda::Attribute```) and ```ioda::Has_Attributes```
+- The type system (```ioda::Type``` and ```ioda::detail::Type_Provider```)
+- Variables (```ioda::Variable``` and ```ioda::Has_Variables```)
+- Data selectors (how Variables interact with ```ioda::Selection```)
 We recommend that you try to implement these features in the above order, and should aim to pass the various unit tests before progressing to the next feature.
 
 ## The general class structure
@@ -35,7 +35,7 @@ We have this odd split between frontend and backend because we want to separate 
 
 The base class will have more functions than the backend needs to provide. You only have to override the functions marked ```virtual``` within the base class.
 
-Consider ioda::detail::Attribute_Base. This class has *a lot* of functions. However, a backend really only has to provide four functions:
+Consider ```ioda::detail::Attribute_Base```. This class has *a lot* of functions. However, a backend really only has to provide four functions:
 ```
     virtual Attribute write(gsl::span<char> data, const Type& in_memory_dataType) override final;
     virtual Attribute read(gsl::span<char> data, const Type& in_memory_dataType) const override final;
@@ -68,8 +68,8 @@ See [include/ioda/Engines/ObsStore.h](@ref include/ioda/Engines/ObsStore.h) for 
 
 In the front end:
 
-These are set in ioda::detail::Group_Base::Group_Base. Basically, a Group is constructed from a provided
-backend object. ioda::detail::Group_Base::atts and ioda::detail::Group_Base::vars are set to match the objects that the backend
+These are set in ```ioda::detail::Group_Base::Group_Base```. Basically, a Group is constructed from a provided
+backend object. ```ioda::detail::Group_Base::atts``` and ```ioda::detail::Group_Base::vars``` are set to match the objects that the backend
 has provided. See [ioda/src/ioda/Group.cpp](@ref ioda/src/ioda/Group.cpp) for details.
 
 At the back end:

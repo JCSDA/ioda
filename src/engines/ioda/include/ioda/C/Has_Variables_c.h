@@ -35,11 +35,11 @@ IODA_DL struct ioda_variable* ioda_has_variables_open(const struct ioda_has_vari
 
 // ioda_has_attributes_create_* functions
 
-#define IODA_HAS_VARIABLES_CREATE_TEMPLATE(funcnamestr, junk)                               \
-  IODA_DL struct ioda_variable* funcnamestr(                                                \
-    struct ioda_has_variables* has_vars, const char* name, size_t n_dims, const long* dims, \
-    const long* max_dims,                                                                   \
-    const struct ioda_variable_creation_parameters* params);  // NOLINT: cppcheck complains about long
+#define IODA_HAS_VARIABLES_CREATE_TEMPLATE(funcnamestr, junk)                                      \
+  IODA_DL struct ioda_variable* funcnamestr(struct ioda_has_variables* has_vars, const char* name, \
+                                            size_t n_dims, const long* dims, const long* max_dims, \
+                                            const struct ioda_variable_creation_parameters*        \
+                                              params);  // NOLINT: cppcheck complains about long
 
 C_TEMPLATE_FUNCTION_DECLARATION(ioda_has_variables_create, IODA_HAS_VARIABLES_CREATE_TEMPLATE);
 
@@ -50,9 +50,9 @@ struct c_has_variables {
   bool (*remove)(struct ioda_has_variables*, const char*);
   struct ioda_variable* (*open)(const struct ioda_has_variables*, const char*);
 
-#define IODA_HAS_VARIABLES_CREATE_FUNC_TEMPLATE(shortnamestr, basenamestr)     \
-  struct ioda_variable* (*shortnamestr)(                                       \
-    struct ioda_has_variables*, const char*, size_t, const long*, const long*, \
+#define IODA_HAS_VARIABLES_CREATE_FUNC_TEMPLATE(shortnamestr, basenamestr)                         \
+  struct ioda_variable* (*shortnamestr)(                                                           \
+    struct ioda_has_variables*, const char*, size_t, const long*, const long*,                     \
     const struct ioda_variable_creation_parameters*);  // NOLINT: cppcheck complains about long
   C_TEMPLATE_FUNCTION_DECLARATION_3(create, ioda_has_variables_create,
                                     IODA_HAS_VARIABLES_CREATE_FUNC_TEMPLATE);

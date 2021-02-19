@@ -39,7 +39,8 @@ void setupGroups(pybind11::module& m) {
          [](const Group& g) {
            std::ostringstream out;
            auto names = g.list();
-           out << "<ioda.Group at " << &g << ". Use list(), atts.list() and vars.list() to see contents.>";
+           out << "<ioda.Group at " << &g
+               << ". Use list(), atts.list() and vars.list() to see contents.>";
 
            return out.str();
          })

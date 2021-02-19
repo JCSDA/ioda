@@ -179,8 +179,8 @@ int main(int argc, char** argv) {
   p1 = ioda.VariableCreationParams.create();
   if (!p1) doErr;
   ioda.VariableCreationParams.setFillValue_float(p1, -999);
-  const ptrdiff_t p1_chunks[] = {100, 10};
-  ioda.VariableCreationParams.chunking(p1, true, 2, p1_chunks);
+  const ptrdiff_t p1_chunks[] = {100};
+  ioda.VariableCreationParams.chunking(p1, true, 1, p1_chunks);
   ioda.VariableCreationParams.compressWithGZIP(p1, 6);
   const struct ioda_variable* sza_dimscale[] = {dim_location};
   ioda.VariableCreationParams.setDimScale(p1, 1, sza_dimscale);

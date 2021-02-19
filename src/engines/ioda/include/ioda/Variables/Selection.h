@@ -56,8 +56,9 @@ public:
     size_t dimension_;
     VecDimensions_t dimension_indices_starts_, dimension_indices_counts_;
     // Constructors
-    SingleSelection(SelectionOperator op, const VecDimensions_t& start, const VecDimensions_t& count,
-                    const VecDimensions_t& stride = {}, const VecDimensions_t& block = {})
+    SingleSelection(SelectionOperator op, const VecDimensions_t& start,
+                    const VecDimensions_t& count, const VecDimensions_t& stride = {},
+                    const VecDimensions_t& block = {})
         : op_(op), start_(start), count_(count), stride_(stride), block_(block), dimension_(0) {}
     SingleSelection(SelectionOperator op, const std::vector<VecDimensions_t>& points)
         : op_(op), points_(points), dimension_(0) {}

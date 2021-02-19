@@ -23,7 +23,8 @@ ioda::ObsStore::Selection createObsStoreSelection(const ioda::Selection& selecti
 
 /// \brief generate the dimension selection structure from hyperslab specs
 void genDimSelects(const Selection::VecDimensions_t& start, const Selection::VecDimensions_t& count,
-                   const Selection::VecDimensions_t& stride, const Selection::VecDimensions_t& block,
+                   const Selection::VecDimensions_t& stride,
+                   const Selection::VecDimensions_t& block,
                    std::vector<ioda::ObsStore::SelectSpecs>& selects);
 
 /// \brief generate the dimension selection structure from point specs

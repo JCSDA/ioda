@@ -68,7 +68,8 @@ private:
   /// to newDims.
   /// \param group Current group in traversal
   /// \param newDims Vector of pairs of Dimension and new size
-  static void resizeVars(Group& g, const std::vector<std::pair<Variable, ioda::Dimensions_t>>& newDims);
+  static void resizeVars(Group& g,
+                         const std::vector<std::pair<Variable, ioda::Dimensions_t>>& newDims);
 
   /// Create ObsGroup objects
   void setup(const NewDimensionScales_t& fundamentalDims,

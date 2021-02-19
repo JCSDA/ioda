@@ -25,7 +25,8 @@
 namespace py = pybind11;
 using namespace ioda;
 
-void setupObsGroup(pybind11::module& m, std::shared_ptr<const ioda::detail::DataLayoutPolicy> default_dlp) {
+void setupObsGroup(pybind11::module& m,
+                   std::shared_ptr<const ioda::detail::DataLayoutPolicy> default_dlp) {
   py::class_<ObsGroup, Group, std::shared_ptr<ObsGroup>> obs(m, "ObsGroup");
 
   obs.doc() = "The main class for manipulating data";

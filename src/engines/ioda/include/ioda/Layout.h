@@ -45,7 +45,9 @@ public:
     return generate(polid);
   }
   /// \internal pybind11 overload casts do not work on some compilers.
-  static inline std::shared_ptr<const DataLayoutPolicy> _py_generate2(Policies pol) { return generate(pol); }
+  static inline std::shared_ptr<const DataLayoutPolicy> _py_generate2(Policies pol) {
+    return generate(pol);
+  }
 
   /// Create default groups and write default attributes upon object
   /// creation / initialization.

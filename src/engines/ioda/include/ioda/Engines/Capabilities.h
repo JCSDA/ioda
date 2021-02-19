@@ -38,10 +38,10 @@ enum class Capability_Mask {
 ///   if SZIP is not available, then the HDF5 backend cannot
 ///   use SZIP compression.
 struct Capabilities {
-  Capability_Mask canChunk = Capability_Mask::Ignored;
+  Capability_Mask canChunk            = Capability_Mask::Ignored;
   Capability_Mask canCompressWithGZIP = Capability_Mask::Ignored;
   Capability_Mask canCompressWithSZIP = Capability_Mask::Ignored;
-  Capability_Mask MPIaware = Capability_Mask::Unsupported;
+  Capability_Mask MPIaware            = Capability_Mask::Unsupported;
 
   // Other candidate capabilities:
   // canResizeAnyDimension

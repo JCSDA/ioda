@@ -13,11 +13,13 @@ namespace detail {
 template <>
 Attribute_Base<>::~Attribute_Base() = default;
 template <>
-Attribute_Base<>::Attribute_Base(std::shared_ptr<Attribute_Backend> hnd_attr) : backend_(hnd_attr) {}
+Attribute_Base<>::Attribute_Base(std::shared_ptr<Attribute_Backend> hnd_attr)
+    : backend_(hnd_attr) {}
 
-// Attribute Attribute::writeFixedLengthString(const std::string& data) { Expects(backend_ != nullptr &&
-// "Unimplemented function for backend");  return backend_->writeFixedLengthString(data); } template<> Type
-// Attribute_Base<>::getType() const { Expects(backend_ != nullptr); return backend_->getType(); }
+// Attribute Attribute::writeFixedLengthString(const std::string& data) { Expects(backend_ !=
+// nullptr && "Unimplemented function for backend");  return backend_->writeFixedLengthString(data);
+// } template<> Type Attribute_Base<>::getType() const { Expects(backend_ != nullptr); return
+// backend_->getType(); }
 
 template <>
 Dimensions Attribute_Base<>::getDimensions() const {
@@ -86,14 +88,14 @@ Attribute::Attribute(const Attribute& r)
       _py_writeNPArray{this} {}
 Attribute& Attribute::operator=(const Attribute& r) {
   if (this == &r) return *this;
-  backend_ = r.backend_;
-  _py_isA = detail::python_bindings::AttributeIsA<Attribute>{this};
-  _py_readSingle = detail::python_bindings::AttributeReadSingle<Attribute>{this};
-  _py_readVector = detail::python_bindings::AttributeReadVector<Attribute>{this};
+  backend_        = r.backend_;
+  _py_isA         = detail::python_bindings::AttributeIsA<Attribute>{this};
+  _py_readSingle  = detail::python_bindings::AttributeReadSingle<Attribute>{this};
+  _py_readVector  = detail::python_bindings::AttributeReadVector<Attribute>{this};
   _py_readNPArray = detail::python_bindings::AttributeReadNPArray<Attribute>{this};
 
-  _py_writeSingle = detail::python_bindings::AttributeWriteSingle<Attribute>{this};
-  _py_writeVector = detail::python_bindings::AttributeWriteVector<Attribute>{this};
+  _py_writeSingle  = detail::python_bindings::AttributeWriteSingle<Attribute>{this};
+  _py_writeVector  = detail::python_bindings::AttributeWriteVector<Attribute>{this};
   _py_writeNPArray = detail::python_bindings::AttributeWriteNPArray<Attribute>{this};
   return *this;
 }

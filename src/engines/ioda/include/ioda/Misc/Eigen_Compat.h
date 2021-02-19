@@ -14,15 +14,15 @@
 
 // Eigen causes static analysis tools to emit lots of warnings.
 #ifdef _MSC_FULL_VER
-#pragma warning(push)
-#pragma warning(disable : 26450)
-#pragma warning(disable : 26495)
-#pragma warning(disable : 26812)
+#  pragma warning(push)
+#  pragma warning(disable : 26450)
+#  pragma warning(disable : 26495)
+#  pragma warning(disable : 26812)
 #endif
 #include "Eigen/Dense"
 #include "unsupported/Eigen/CXX11/Tensor"
 #ifdef _MSC_FULL_VER
-#pragma warning(pop)
+#  pragma warning(pop)
 #endif
 #include "ioda/Misc/Dimensions.h"
 
@@ -58,7 +58,8 @@ typename ::std::enable_if<CanResize<EigenClass>::value>::type DoEigenResize(Eige
 
 /// \todo Make a static_assert!
 template <class EigenClass>
-typename ::std::enable_if<!CanResize<EigenClass>::value>::type DoEigenResize(EigenClass&, ::Eigen::Index,
+typename ::std::enable_if<!CanResize<EigenClass>::value>::type DoEigenResize(EigenClass&,
+                                                                             ::Eigen::Index,
                                                                              ::Eigen::Index) {
   throw;
 }
@@ -66,7 +67,7 @@ typename ::std::enable_if<!CanResize<EigenClass>::value>::type DoEigenResize(Eig
 template <class EigenClass>
 Dimensions getTensorDimensions(EigenClass& e) {
   const int numDims = e.NumDimensions;
-  const auto& dims = e.dimensions();
+  const auto& dims  = e.dimensions();
 
   Dimensions res;
   std::vector<Dimensions_t> hdims;
@@ -76,9 +77,9 @@ Dimensions getTensorDimensions(EigenClass& e) {
     hdims.push_back(val);
     sz *= val;
   }
-  res.dimsCur = hdims;
-  res.dimsMax = hdims;
-  res.numElements = sz;
+  res.dimsCur        = hdims;
+  res.dimsMax        = hdims;
+  res.numElements    = sz;
   res.dimensionality = gsl::narrow<Dimensions_t>(numDims);
   return res;
 }

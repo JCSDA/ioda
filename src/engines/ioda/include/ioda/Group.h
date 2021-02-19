@@ -42,7 +42,7 @@ public:
   virtual ~Group_Base();
 
   /// Get capabilities of the Engine backing this Group
-  virtual Engines::Capabilities getCapabilities() const;
+  virtual ::ioda::Engines::Capabilities getCapabilities() const;
 
   /// \brief Get the fill value policy used for Variables within this Group
   /// \details The backend has to be consulted for this operation. Storage of this policy is
@@ -80,7 +80,8 @@ public:
   ///   listLinks function.
   /// \todo Once links are implemented, add an option to auto-resolve
   ///   soft and external links.
-  virtual std::map<ObjectType, std::vector<std::string>> listObjects(ObjectType filter = ObjectType::Ignored,
+  virtual std::map<ObjectType, std::vector<std::string>> listObjects(ObjectType filter
+                                                                     = ObjectType::Ignored,
                                                                      bool recurse = false) const;
 
   template <ObjectType objectClass>

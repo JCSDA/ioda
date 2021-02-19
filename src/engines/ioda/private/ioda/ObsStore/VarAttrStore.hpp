@@ -76,8 +76,8 @@ public:
     m_select.init_lin_indx();
     f_select.init_lin_indx();
     while (!m_select.end_lin_indx()) {
-      std::size_t m_indx = m_select.next_lin_indx();
-      std::size_t f_indx = f_select.next_lin_indx();
+      std::size_t m_indx     = m_select.next_lin_indx();
+      std::size_t f_indx     = f_select.next_lin_indx();
       var_attr_data_[f_indx] = d_span[m_indx];
     }
   }
@@ -89,8 +89,8 @@ public:
   void read(gsl::span<char> data, Selection &m_select, Selection &f_select) const override {
     std::size_t datumLen = sizeof(DataType);
     std::size_t numChars = var_attr_data_.size() * datumLen;
-    gsl::span<char> c_span(const_cast<char *>(reinterpret_cast<const char *>(var_attr_data_.data())),
-                           numChars);
+    gsl::span<char> c_span(
+      const_cast<char *>(reinterpret_cast<const char *>(var_attr_data_.data())), numChars);
     // assumes m_select and f_select have same number of points
     m_select.init_lin_indx();
     f_select.init_lin_indx();
@@ -147,8 +147,8 @@ public:
     m_select.init_lin_indx();
     f_select.init_lin_indx();
     while (!m_select.end_lin_indx()) {
-      std::size_t m_indx = m_select.next_lin_indx();
-      std::size_t f_indx = f_select.next_lin_indx();
+      std::size_t m_indx     = m_select.next_lin_indx();
+      std::size_t f_indx     = f_select.next_lin_indx();
       var_attr_data_[f_indx] = inStrings[m_indx];
     }
   }
@@ -224,8 +224,8 @@ inline VarAttrStore_Base *createVarAttrStore(ObsTypes dtype) {
   } else if (dtype == ObsTypes::STRING) {
     newStore = new VarAttrStore<std::string>;
   } else {
-    std::string ErrMsg = std::string("ioda::ObsStore::Attribute: Unrecognized data type ") +
-                         std::string("encountered during Attribute object construnction");
+    std::string ErrMsg = std::string("ioda::ObsStore::Attribute: Unrecognized data type ")
+                         + std::string("encountered during Attribute object construnction");
     throw;  // jedi_throw.add("Reason", ErrMsg);
   }
 

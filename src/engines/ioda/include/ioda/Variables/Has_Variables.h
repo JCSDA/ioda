@@ -76,8 +76,8 @@ public:
   /// Manually specify the chunks. Never read. Use getChunks(...) instead.
   std::vector<Dimensions_t> chunks;
   /// Set variable chunking strategy. Used only if chunk == true and chunks.size() == 0.
-  std::function<bool(const std::vector<Dimensions_t>&, std::vector<Dimensions_t>&)> fChunkingStrategy =
-    chunking::Chunking_Max;
+  std::function<bool(const std::vector<Dimensions_t>&, std::vector<Dimensions_t>&)>
+    fChunkingStrategy = chunking::Chunking_Max;
   /// Figure out the chunking size
   /// \param cur_dims are the current dimensions
   std::vector<Dimensions_t> getChunks(const std::vector<Dimensions_t>& cur_dims) const {
@@ -87,11 +87,11 @@ public:
     throw;  // jedi_throw.add("Reason", "Cannot figure out an appropriate chunking size.");
   }
 
-  bool gzip_ = false;
-  bool szip_ = false;
-  int gzip_level_ = 6;  // 1 (fastest) - 9 (most compression)
+  bool gzip_                        = false;
+  bool szip_                        = false;
+  int gzip_level_                   = 6;  // 1 (fastest) - 9 (most compression)
   unsigned int szip_PixelsPerBlock_ = 16;
-  unsigned int szip_options_ = 4;  // Defined as H5_SZIP_EC_OPTION_MASK in hdf5.h;
+  unsigned int szip_options_        = 4;  // Defined as H5_SZIP_EC_OPTION_MASK in hdf5.h;
 
   void noCompress();
   void compressWithGZIP(int level = 6);
@@ -103,7 +103,8 @@ public:
 
   bool hasSetDimScales() const;
   /// Attach a dimension scale to any new Variable.
-  VariableCreationParameters& attachDimensionScale(unsigned int DimensionNumber, const Variable& scale);
+  VariableCreationParameters& attachDimensionScale(unsigned int DimensionNumber,
+                                                   const Variable& scale);
   VariableCreationParameters& setDimScale(const std::vector<Variable>& dims);
   VariableCreationParameters& setDimScale(const Variable& dim1) {
     return setDimScale(std::vector<Variable>{dim1});
@@ -111,7 +112,8 @@ public:
   VariableCreationParameters& setDimScale(const Variable& dim1, const Variable& dim2) {
     return setDimScale(std::vector<Variable>{dim1, dim2});
   }
-  VariableCreationParameters& setDimScale(const Variable& dim1, const Variable& dim2, const Variable& dim3) {
+  VariableCreationParameters& setDimScale(const Variable& dim1, const Variable& dim2,
+                                          const Variable& dim3) {
     return setDimScale(std::vector<Variable>{dim1, dim2, dim3});
   }
   VariableCreationParameters& setIsDimensionScale(const std::string& scaleName);
@@ -153,7 +155,8 @@ private:
   std::shared_ptr<const detail::DataLayoutPolicy> layout_;
   /// \brief FillValuePolicy helper
   /// \details Hides the template function calls, so that the headers are smaller.
-  static void _py_fvp_helper(BasicTypes dataType, FillValuePolicy& fvp, VariableCreationParameters& params);
+  static void _py_fvp_helper(BasicTypes dataType, FillValuePolicy& fvp,
+                             VariableCreationParameters& params);
 
 protected:
   Has_Variables_Base(std::shared_ptr<Has_Variables_Backend>,
@@ -207,11 +210,11 @@ public:
 
   /// \brief Create a Variable without setting its data.
   /// \param attrname is the name of the Variable.
-  /// \param dimensions is a vector representing the size of the metadata. Each element of the vector is a
-  /// dimension with a certain size. \param in_memory_datatype is the runtime description of the Attribute's
-  /// data type. \returns A Variable that can be written to.
+  /// \param dimensions is a vector representing the size of the metadata. Each element of the
+  /// vector is a dimension with a certain size. \param in_memory_datatype is the runtime
+  /// description of the Attribute's data type. \returns A Variable that can be written to.
   virtual Variable create(const std::string& name, const Type& in_memory_dataType,
-                          const std::vector<Dimensions_t>& dimensions = {1},
+                          const std::vector<Dimensions_t>& dimensions     = {1},
                           const std::vector<Dimensions_t>& max_dimensions = {},
                           const VariableCreationParameters& params = VariableCreationParameters());
 
@@ -221,15 +224,16 @@ public:
   inline Variable _create_py(const std::string& name, BasicTypes dataType,
                              const std::vector<Dimensions_t>& cur_dimensions = {1},
                              const std::vector<Dimensions_t>& max_dimensions = {},
-                             const std::vector<Variable>& dimension_scales = {},
-                             const VariableCreationParameters& params = VariableCreationParameters()) {
+                             const std::vector<Variable>& dimension_scales   = {},
+                             const VariableCreationParameters& params
+                             = VariableCreationParameters()) {
     Type typ = Type(dataType, getTypeProvider());
     if (dimension_scales.size()) {
       std::vector<Dimensions_t> c_d, m_d, chunking_hints;
 
       for (size_t i = 0; i < dimension_scales.size(); ++i) {
         const auto& varDims = dimension_scales[i];
-        const auto& d = varDims.getDimensions();
+        const auto& d       = varDims.getDimensions();
         if (varDims.isDimensionScale() == false)
           throw;  // jedi_throw.add("Reason", "Input variable is not a dimension scale.");
         if (d.dimensionality != 1)
@@ -243,7 +247,7 @@ public:
       }
 
       VariableCreationParameters params2 = params;
-      params2.chunk = true;
+      params2.chunk                      = true;
       if (!params2.chunks.size()) params2.chunks = chunking_hints;
       auto fvp = getFillValuePolicy();
       _py_fvp_helper(dataType, fvp, params2);
@@ -268,16 +272,16 @@ public:
   /// \brief Create a Variable without setting its data.
   /// \param DataType is the type of the data. I.e. float, int, int32_t, uint16_t, std::string, etc.
   /// \param name is the name of the Variable.
-  /// \param dimensions is a vector representing the size of the metadata. Each element of the vector is a
-  /// dimension with a certain size. \returns A Variable that can be written to.
+  /// \param dimensions is a vector representing the size of the metadata. Each element of the
+  /// vector is a dimension with a certain size. \returns A Variable that can be written to.
   template <class DataType>
   Variable create(const std::string& name, const std::vector<Dimensions_t>& dimensions = {1},
                   const std::vector<Dimensions_t>& max_dimensions = {},
-                  const VariableCreationParameters& params = VariableCreationParameters()) {
+                  const VariableCreationParameters& params        = VariableCreationParameters()) {
     VariableCreationParameters params2 = params;
     FillValuePolicies::applyFillValuePolicy<DataType>(getFillValuePolicy(), params2.fillValue_);
     Type in_memory_dataType = Types::GetType<DataType>(getTypeProvider());
-    auto var = create(name, in_memory_dataType, dimensions, max_dimensions, params2);
+    auto var                = create(name, in_memory_dataType, dimensions, max_dimensions, params2);
     return var;
   }
 
@@ -292,16 +296,17 @@ public:
   /// \brief Convenience function to create a Variable from certain dimension scales.
   /// \param DataType is the type of the data. I.e. float, int, int32_t, uint16_t, std::string, etc.
   /// \param name is the name of the Variable.
-  /// \param dimensions is a vector representing the size of the metadata. Each element of the vector is a
-  /// dimension with a certain size. \returns A Variable that can be written to.
+  /// \param dimensions is a vector representing the size of the metadata. Each element of the
+  /// vector is a dimension with a certain size. \returns A Variable that can be written to.
   template <class DataType>
   Variable createWithScales(const std::string& name, const std::vector<Variable>& dimension_scales,
-                            const VariableCreationParameters& params = VariableCreationParameters()) {
+                            const VariableCreationParameters& params
+                            = VariableCreationParameters()) {
     Type in_memory_dataType = Types::GetType<DataType>(getTypeProvider());
     std::vector<Dimensions_t> dimensions, max_dimensions, chunking_hints;
     for (size_t i = 0; i < dimension_scales.size(); ++i) {
       const auto& varDims = dimension_scales[i];
-      const auto& d = varDims.getDimensions();
+      const auto& d       = varDims.getDimensions();
       if (varDims.isDimensionScale() == false)
         throw;  // jedi_throw.add("Reason", "Input variable is not a dimension scale.");
       if (d.dimensionality != 1)
@@ -346,7 +351,8 @@ public:
 };
 }  // namespace detail
 
-/// \brief This class exists inside of ioda::Group and provides the interface to manipulating Variables.
+/// \brief This class exists inside of ioda::Group and provides the interface to manipulating
+/// Variables.
 ///
 /// \note It should only be constructed inside of a Group. It has no meaning elsewhere.
 /// \see ioda::Variable for the class that represents individual variables.

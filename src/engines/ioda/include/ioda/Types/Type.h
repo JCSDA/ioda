@@ -118,13 +118,12 @@ namespace Types {
 // using namespace ioda::Handles;
 
 /// \brief Convenience struct to determine if a type can represent a string.
-/// \todo extend to UTF-8 strings, as HDF5 supports these. No support for UTF-16, but conversion functions may
-/// be applied. \todo Fix for "const std::string".
+/// \todo extend to UTF-8 strings, as HDF5 supports these. No support for UTF-16, but conversion
+/// functions may be applied. \todo Fix for "const std::string".
 template <typename T>
-struct is_string
-    : public std::integral_constant<bool, std::is_same<char*, typename std::decay<T>::type>::value ||
-                                            std::is_same<const char*, typename std::decay<T>::type>::value> {
-};
+struct is_string : public std::integral_constant<
+                     bool, std::is_same<char*, typename std::decay<T>::type>::value
+                             || std::is_same<const char*, typename std::decay<T>::type>::value> {};
 /// \brief Convenience struct to determine if a type can represent a string.
 template <>
 struct is_string<std::string> : std::true_type {};
@@ -139,7 +138,7 @@ constexpr size_t _Variable_Length = 0;
 /// For fundamental, non-string types.
 template <class DataType, int Array_Type_Dimensionality = 0>
 Type GetType(gsl::not_null<const ::ioda::detail::Type_Provider*> t,
-             std::initializer_list<Dimensions_t> Adims = {},
+             std::initializer_list<Dimensions_t> Adims                   = {},
              typename std::enable_if<!is_string<DataType>::value>::type* = 0) {
   if (Array_Type_Dimensionality <= 0)
     throw std::logic_error(
@@ -147,10 +146,11 @@ Type GetType(gsl::not_null<const ::ioda::detail::Type_Provider*> t,
   else
     return t->makeArrayType(Adims, typeid(DataType[]), typeid(DataType));
 }
-/// For fundamental string types. These are either constant or variable length arrays. Separate handling
-/// elsewhere.
+/// For fundamental string types. These are either constant or variable length arrays. Separate
+/// handling elsewhere.
 template <class DataType, int String_Type_Length = constants::_Variable_Length>
-Type GetType(gsl::not_null<const ::ioda::detail::Type_Provider*> t, std::initializer_list<Dimensions_t> = {},
+Type GetType(gsl::not_null<const ::ioda::detail::Type_Provider*> t,
+             std::initializer_list<Dimensions_t>                        = {},
              typename std::enable_if<is_string<DataType>::value>::type* = 0) {
   return t->makeStringType(String_Type_Length, typeid(DataType));
 }
@@ -168,11 +168,11 @@ Type GetType(gsl::not_null<const ::ioda::detail::Type_Provider*> t, std::initial
 ///   wchar_t, char16_t, char32_t,
 ///   float, double, long double.
 /// \since C++20: we also add char8_t.
-#define IODA_ADD_FUNDAMENTAL_TYPE(x)                                               \
-  template <>                                                                      \
-  inline Type GetType<x, 0>(gsl::not_null<const ::ioda::detail::Type_Provider*> t, \
-                            std::initializer_list<Dimensions_t>, void*) {          \
-    return t->makeFundamentalType(typeid(x));                                      \
+#define IODA_ADD_FUNDAMENTAL_TYPE(x)                                                               \
+  template <>                                                                                      \
+  inline Type GetType<x, 0>(gsl::not_null<const ::ioda::detail::Type_Provider*> t,                 \
+                            std::initializer_list<Dimensions_t>, void*) {                          \
+    return t->makeFundamentalType(typeid(x));                                                      \
   }
 
 IODA_ADD_FUNDAMENTAL_TYPE(bool);
@@ -221,14 +221,16 @@ Type GetType(
 
 /// \brief Wrapper struct to call GetType. Needed because of C++ template rules.
 /// \see ioda::Attribute, ioda::Has_Attributes, ioda::Variable, ioda::Has_Variables
-template <class DataType, int Length = 0>  //, typename = std::enable_if_t<!is_string<DataType>::value>>
+template <class DataType,
+          int Length = 0>  //, typename = std::enable_if_t<!is_string<DataType>::value>>
 struct GetType_Wrapper {
   static Type GetType(gsl::not_null<const ::ioda::detail::Type_Provider*> t) {
     /// \note Currently breaks array types, but these are not yet used.
     return ::ioda::Types::GetType<DataType, Length>(t, {Length});
   }
 };
-typedef std::function<Type(gsl::not_null<const ::ioda::detail::Type_Provider*>)> TypeWrapper_function;
+typedef std::function<Type(gsl::not_null<const ::ioda::detail::Type_Provider*>)>
+  TypeWrapper_function;
 /*
 template <class DataType, int Length = 0, typename = std::enable_if_t<is_string<DataType>::value>>
 struct GetType_Wrapper {

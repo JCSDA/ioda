@@ -20,8 +20,8 @@ Attribute::Attribute(const std::vector<std::size_t>& dimensions, const ObsTypes&
   attr_data_.reset(createVarAttrStore(dtype_));
 
   // Set the size of the attribute value
-  std::size_t numElements =
-    std::accumulate(dimensions_.begin(), dimensions_.end(), (size_t)1, std::multiplies<std::size_t>());
+  std::size_t numElements = std::accumulate(dimensions_.begin(), dimensions_.end(), (size_t)1,
+                                            std::multiplies<std::size_t>());
   attr_data_->resize(numElements);
 }
 
@@ -31,14 +31,14 @@ bool Attribute::isOfType(ObsTypes dtype) const { return (dtype == dtype_); }
 
 std::shared_ptr<Attribute> Attribute::write(gsl::span<char> data, ObsTypes dtype) {
   if (dtype != dtype_) {
-    std::string ErrMsg = std::string("ioda::ObsStore::Attribute::write: ") +
-                         std::string("Requested data type not equal to storage datatype");
+    std::string ErrMsg = std::string("ioda::ObsStore::Attribute::write: ")
+                         + std::string("Requested data type not equal to storage datatype");
     throw;  // jedi_throw.add("Reason", ErrMsg);
   }
   // Create select objects for all elements. Ie, attributes don't use
   // selection, but the VarAttrStore object is also used by variables which
   // do use selection.
-  std::size_t start = 0;
+  std::size_t start   = 0;
   std::size_t npoints = 1;
   for (std::size_t idim = 0; idim < dimensions_.size(); ++idim) {
     npoints *= dimensions_[idim];
@@ -51,14 +51,14 @@ std::shared_ptr<Attribute> Attribute::write(gsl::span<char> data, ObsTypes dtype
 
 std::shared_ptr<Attribute> Attribute::read(gsl::span<char> data, ObsTypes dtype) {
   if (dtype != dtype_) {
-    std::string ErrMsg = std::string("ioda::ObsStore::Attribute::read: ") +
-                         std::string("Requested data type not equal to storage datatype");
+    std::string ErrMsg = std::string("ioda::ObsStore::Attribute::read: ")
+                         + std::string("Requested data type not equal to storage datatype");
     throw;  // jedi_throw.add("Reason", ErrMsg);
   }
   // Create select objects for all elements. Ie, attributes don't use
   // selection, but the VarAttrStore object is also used by variables which
   // do use selection.
-  std::size_t start = 0;
+  std::size_t start   = 0;
   std::size_t npoints = 1;
   for (std::size_t idim = 0; idim < dimensions_.size(); ++idim) {
     npoints *= dimensions_[idim];
@@ -83,8 +83,8 @@ std::shared_ptr<Attribute> Has_Attributes::create(const std::string& name,
 std::shared_ptr<Attribute> Has_Attributes::open(const std::string& name) const {
   auto iattr = attributes_.find(name);
   if (iattr == attributes_.end()) {
-    std::string ErrMsg =
-      std::string("ioda::ObsStore::Has_Attributes::open: ") + std::string("Attribute not found: ") + name;
+    std::string ErrMsg = std::string("ioda::ObsStore::Has_Attributes::open: ")
+                         + std::string("Attribute not found: ") + name;
     throw;  // jedi_throw.add("Reason", ErrMsg);
   }
   return iattr->second;

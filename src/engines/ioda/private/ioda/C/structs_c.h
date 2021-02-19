@@ -52,7 +52,7 @@ inline ioda_string_ret_t* create_str_vector_c(const std::vector<std::string>& vd
   memset(res->strings, 0, sizeof(char*) * res->n);
 
   for (size_t i = 0; i < res->n; ++i) {
-    size_t slen = vdata[i].length();  // length of string without the ending null byte
+    size_t slen     = vdata[i].length();  // length of string without the ending null byte
     res->strings[i] = new char[slen + 1];
     if (!res->strings[i]) goto hadError_InnerStrings;
 

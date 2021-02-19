@@ -7,6 +7,7 @@
  */
 /// \file Copying.h
 /// \brief Generic copying facility
+/// \note Feature is under development. This is a placeholder header file.
 
 #include <algorithm>
 #include <gsl/gsl-lite.hpp>
@@ -50,7 +51,8 @@ public:
   ObjectSelection(const Variable& v) : ObjectSelection() { insert(v); }
   ObjectSelection(const std::vector<Variable>& v) : ObjectSelection() { insert(v); }
   ObjectSelection(const Has_Variables& v) : ObjectSelection() { insert(v); }
-  ObjectSelection(const Group& g, const std::vector<std::string>& v) : ObjectSelection() { insert(g,v); }
+  ObjectSelection(const Group& g, const std::vector<std::string>& v) : ObjectSelection() {
+  insert(g,v); }
 
   void insert(const ObjectSelection&);
   void insert(const Variable&);

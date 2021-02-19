@@ -28,9 +28,11 @@
 #include "ioda/defs.h"
 
 namespace ioda {
+class Attribute;
 class Variable;
 
 namespace detail {
+class Attribute_Backend;
 class Variable_Backend;
 
 /// \brief Exists to prevent constructor conflicts when passing a backend into
@@ -203,12 +205,13 @@ public:
   ///   "tagged" strings that map the Variable to a name.
   ///   If you do not pass in a scale to check against, then this scale will not be checked and
   ///   will not be present in the function output.
-  /// \param firstOnly is specified when only one dimension can be attached to each axis (the default).
-  /// \returns a vector with the same length as the variable's dimensionality.
+  /// \param firstOnly is specified when only one dimension can be attached to each axis (the
+  /// default). \returns a vector with the same length as the variable's dimensionality.
   ///   Each variable dimension in the vector can have one or more attached scales. These scales are
   ///   returned as their own, inner, vector of pair<string, Variable>.
   virtual std::vector<std::vector<std::pair<std::string, Variable>>> getDimensionScaleMappings(
-    const std::list<std::pair<std::string, Variable>>& scalesToQueryAgainst, bool firstOnly = true) const;
+    const std::list<std::pair<std::string, Variable>>& scalesToQueryAgainst,
+    bool firstOnly = true) const;
 
   /// @}
   /// @name Writing Data
@@ -223,13 +226,13 @@ public:
   /// \param data is a span of data.
   /// \param in_memory_datatype is an opaque (backend-level) object that describes the placement of
   ///   the data in memory. Usually ignorable - needed for complex data structures.
-  ///   \param mem_selection_id is the user's memory layout representing the location where the data is read
-  ///   from. \param file_selection_id is the backend's memory layout representing the location where the data
-  ///   are written to.
+  ///   \param mem_selection_id is the user's memory layout representing the location where the data
+  ///   is read from. \param file_selection_id is the backend's memory layout representing the
+  ///   location where the data are written to.
   /// \throws jedi::xError if data has the wrong size.
   /// \returns The variable (for chaining).
   virtual Variable write(gsl::span<char> data, const Type& in_memory_dataType,
-                         const Selection& mem_selection = Selection::all,
+                         const Selection& mem_selection  = Selection::all,
                          const Selection& file_selection = Selection::all);
 
   /// \brief Write the Variable
@@ -245,14 +248,14 @@ public:
   template <class DataType, class Marshaller = Object_Accessor<DataType>,
             class TypeWrapper = Types::GetType_Wrapper<DataType>>
   Variable_Implementation write(const gsl::span<DataType> data,
-                                const Selection& mem_selection = Selection::all,
+                                const Selection& mem_selection  = Selection::all,
                                 const Selection& file_selection = Selection::all) {
     Marshaller m;
     auto d = m.serialize(data);
-    return write(
-      gsl::make_span<char>(const_cast<char*>(reinterpret_cast<const char*>(d->DataPointers.data())),
-                           d->DataPointers.size() * sizeof(typename Marshaller::mutable_value_type)),
-      TypeWrapper::GetType(getTypeProvider()), mem_selection, file_selection);
+    return write(gsl::make_span<char>(
+                   const_cast<char*>(reinterpret_cast<const char*>(d->DataPointers.data())),
+                   d->DataPointers.size() * sizeof(typename Marshaller::mutable_value_type)),
+                 TypeWrapper::GetType(getTypeProvider()), mem_selection, file_selection);
   }
 
   /// \brief Write the Variable
@@ -268,21 +271,21 @@ public:
   template <class DataType, class Marshaller = Object_Accessor<DataType>,
             class TypeWrapper = Types::GetType_Wrapper<DataType>>
   Variable_Implementation write(const gsl::span<const DataType> data,
-                                const Selection& mem_selection = Selection::all,
+                                const Selection& mem_selection  = Selection::all,
                                 const Selection& file_selection = Selection::all) {
     Marshaller m;
     auto d = m.serialize(data);
-    return write(
-      gsl::make_span<char>(const_cast<char*>(reinterpret_cast<const char*>(d->DataPointers.data())),
-                           d->DataPointers.size() * sizeof(typename Marshaller::mutable_value_type)),
-      TypeWrapper::GetType(getTypeProvider()), mem_selection, file_selection);
+    return write(gsl::make_span<char>(
+                   const_cast<char*>(reinterpret_cast<const char*>(d->DataPointers.data())),
+                   d->DataPointers.size() * sizeof(typename Marshaller::mutable_value_type)),
+                 TypeWrapper::GetType(getTypeProvider()), mem_selection, file_selection);
   }
 
   /// Write the variable
   template <class DataType, class Marshaller = Object_Accessor<DataType>,
             class TypeWrapper = Types::GetType_Wrapper<DataType>>
   Variable_Implementation write(const std::vector<DataType>& data,
-                                const Selection& mem_selection = Selection::all,
+                                const Selection& mem_selection  = Selection::all,
                                 const Selection& file_selection = Selection::all) {
     Expects(backend_ != nullptr);
     return this->write<DataType, Marshaller, TypeWrapper>(gsl::make_span(data), mem_selection,
@@ -295,16 +298,16 @@ public:
   /// \returns the variable
   template <class EigenClass>
   Variable_Implementation writeWithEigenRegular(const EigenClass& d,
-                                                const Selection& mem_selection = Selection::all,
+                                                const Selection& mem_selection  = Selection::all,
                                                 const Selection& file_selection = Selection::all) {
 #if 1  //__has_include("Eigen/Dense")
     typedef typename EigenClass::Scalar ScalarType;
     // If d is already in Row Major form, then this is optimized out.
     Eigen::Array<ScalarType, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> dout;
     dout.resize(d.rows(), d.cols());
-    dout = d;
+    dout               = d;
     const auto& dconst = dout;  // To make some compilers happy.
-    auto sp = gsl::make_span(dconst.data(), static_cast<int>(d.rows() * d.cols()));
+    auto sp            = gsl::make_span(dconst.data(), static_cast<int>(d.rows() * d.cols()));
 
     return write<ScalarType>(sp, mem_selection, file_selection);
 #else
@@ -318,16 +321,17 @@ public:
   /// \returns the variable
   template <class EigenClass>
   Variable_Implementation writeWithEigenTensor(const EigenClass& d,
-                                               const Selection& mem_selection = Selection::all,
+                                               const Selection& mem_selection  = Selection::all,
                                                const Selection& file_selection = Selection::all) {
 #if 1  //__has_include("unsupported/Eigen/CXX11/Tensor")
     ioda::Dimensions dims = detail::EigenCompat::getTensorDimensions(d);
 
-    auto sp = (gsl::make_span(d.data(), dims.numElements));
+    auto sp  = (gsl::make_span(d.data(), dims.numElements));
     auto res = write(sp, mem_selection, file_selection);
     return res;
 #else
-    static_assert(false, "The Eigen unsupported/ headers cannot be found, so this function cannot be used.");
+    static_assert(
+      false, "The Eigen unsupported/ headers cannot be found, so this function cannot be used.");
 #endif
   }
 
@@ -340,14 +344,15 @@ public:
   /// \note Ensure that the correct dimension ordering is preserved
   /// \note With default parameters, the entire Variable is read
   virtual Variable read(gsl::span<char> data, const Type& in_memory_dataType,
-                        const Selection& mem_selection = Selection::all,
+                        const Selection& mem_selection  = Selection::all,
                         const Selection& file_selection = Selection::all) const;
 
   /// \brief Read the variable into a span (range) or memory. Ordering is row-major.
   /// \todo Add in the dataspaces!
   template <class DataType, class Marshaller = ioda::Object_Accessor<DataType>,
             class TypeWrapper = Types::GetType_Wrapper<DataType>>
-  Variable_Implementation read(gsl::span<DataType> data, const Selection& mem_selection = Selection::all,
+  Variable_Implementation read(gsl::span<DataType> data,
+                               const Selection& mem_selection  = Selection::all,
                                const Selection& file_selection = Selection::all) const {
     Expects(backend_ != nullptr);
     const size_t numObjects = data.size();
@@ -356,35 +361,37 @@ public:
     detail::PointerOwner pointerOwner = getTypeProvider()->getReturnedPointerOwner();
     Marshaller m(pointerOwner);
     auto p = m.prep_deserialize(numObjects);
-    read(gsl::make_span<char>(reinterpret_cast<char*>(p->DataPointers.data()),
-                              // Logic note: sizeof mutable data type. If we are
-                              // reading in a string, then mutable data type is char*,
-                              // which works because address pointers have the same size.
-                              p->DataPointers.size() * sizeof(typename Marshaller::mutable_value_type)),
+    read(gsl::make_span<char>(
+           reinterpret_cast<char*>(p->DataPointers.data()),
+           // Logic note: sizeof mutable data type. If we are
+           // reading in a string, then mutable data type is char*,
+           // which works because address pointers have the same size.
+           p->DataPointers.size() * sizeof(typename Marshaller::mutable_value_type)),
          TypeWrapper::GetType(getTypeProvider()), mem_selection, file_selection);
     m.deserialize(p, data);
 
     return Variable_Implementation{backend_};
   }
 
-  /// \brief Read the variable into a vector. Resize if needed. For a non-resizing version, use a gsl::span.
-  /// \details Ordering is row-major.
+  /// \brief Read the variable into a vector. Resize if needed. For a non-resizing version, use a
+  /// gsl::span. \details Ordering is row-major.
   template <class DataType, class Marshaller = ioda::Object_Accessor<DataType>,
             class TypeWrapper = Types::GetType_Wrapper<DataType>>
-  Variable_Implementation read(std::vector<DataType>& data, const Selection& mem_selection = Selection::all,
+  Variable_Implementation read(std::vector<DataType>& data,
+                               const Selection& mem_selection  = Selection::all,
                                const Selection& file_selection = Selection::all) const {
     /// \bug Resize only if needed, and resize to the proper extent depending on
     /// mem_selection and file_selection.
     data.resize(getDimensions().numElements);
-    return read<DataType, Marshaller, TypeWrapper>(gsl::make_span(data.data(), data.size()), mem_selection,
-                                                   file_selection);
+    return read<DataType, Marshaller, TypeWrapper>(gsl::make_span(data.data(), data.size()),
+                                                   mem_selection, file_selection);
   }
 
   /// \brief Read the variable into a new vector. Python convenience function.
   /// \bug Get correct size.
   template <class DataType, class Marshaller = ioda::Object_Accessor<DataType>,
             class TypeWrapper = Types::GetType_Wrapper<DataType>>
-  std::vector<DataType> readAsVector(const Selection& mem_selection = Selection::all,
+  std::vector<DataType> readAsVector(const Selection& mem_selection  = Selection::all,
                                      const Selection& file_selection = Selection::all) const {
     std::vector<DataType> data(getDimensions().numElements);
     read<DataType, Marshaller, TypeWrapper>(gsl::make_span(data.data(), data.size()), mem_selection,
@@ -393,13 +400,14 @@ public:
   }
 
   /// \brief Valarray read convenience function. Resize if needed. For a non-resizing version, use a
-  /// gsl::span. \param DataType is the type of the data. I.e. float, int, int32_t, uint16_t, std::string,
-  /// etc. \param data is a valarray acting as a data buffer that is filled with the metadata's contents. It
-  /// gets resized as needed. \returns Another instance of this Attribute. Used for operation chaining. \note
-  /// data will be stored in row-major order.
+  /// gsl::span. \param DataType is the type of the data. I.e. float, int, int32_t, uint16_t,
+  /// std::string, etc. \param data is a valarray acting as a data buffer that is filled with the
+  /// metadata's contents. It gets resized as needed. \returns Another instance of this Attribute.
+  /// Used for operation chaining. \note data will be stored in row-major order.
   template <class DataType, class Marshaller = ioda::Object_Accessor<DataType>,
             class TypeWrapper = Types::GetType_Wrapper<DataType>>
-  Variable_Implementation read(std::valarray<DataType>& data, const Selection& mem_selection = Selection::all,
+  Variable_Implementation read(std::valarray<DataType>& data,
+                               const Selection& mem_selection  = Selection::all,
                                const Selection& file_selection = Selection::all) const {
     /// \bug Resize only if needed, and resize to the proper extent depending on
     /// mem_selection and file_selection.
@@ -422,20 +430,22 @@ public:
   template <class EigenClass, bool Resize = detail::EigenCompat::CanResize<EigenClass>::value>
   Variable_Implementation readWithEigenRegular(EigenClass& res,
                                                const Selection& mem_selection = Selection::all,
-                                               const Selection& file_selection = Selection::all) const {
+                                               const Selection& file_selection
+                                               = Selection::all) const {
     /// \bug Resize only if needed, and resize to the proper extent depending on
     /// mem_selection and file_selection.
 #if 1  //__has_include("Eigen/Dense")
     typedef typename EigenClass::Scalar ScalarType;
 
-    static_assert(!(Resize && !detail::EigenCompat::CanResize<EigenClass>::value),
-                  "This object cannot be resized, but you have specified that a resize is required.");
+    static_assert(
+      !(Resize && !detail::EigenCompat::CanResize<EigenClass>::value),
+      "This object cannot be resized, but you have specified that a resize is required.");
 
     // Check that the dimensionality is 1 or 2.
     const auto dims = getDimensions();
     if (dims.dimensionality > 2)
-      throw;  // jedi_throw.add("Reason", "Dimensionality too high for a regular Eigen read. Use Eigen::Tensor
-              // reads instead.");
+      throw;  // jedi_throw.add("Reason", "Dimensionality too high for a regular Eigen read. Use
+              // Eigen::Tensor reads instead.");
 
     int nDims[2] = {1, 1};
     if (dims.dimsCur.size() >= 1) nDims[0] = gsl::narrow<int>(dims.dimsCur[0]);
@@ -443,7 +453,8 @@ public:
 
     // Resize if needed.
     if (Resize)
-      detail::EigenCompat::DoEigenResize(res, nDims[0], nDims[1]);  // nullop if the size is already correct.
+      detail::EigenCompat::DoEigenResize(res, nDims[0],
+                                         nDims[1]);  // nullop if the size is already correct.
     else if (dims.numElements != (size_t)(res.rows() * res.cols()))
       throw;  // jedi_throw.add("Reason", "Size mismatch");
 
@@ -453,11 +464,12 @@ public:
     // We can size _this_ temporary object however we want.
     // The temporary is used to swap row / column indices if needed.
     // It should be optimized away if not needed... making sure this happens is a todo.
-    Eigen::Array<ScalarType, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> data_in(res.rows(), res.cols());
+    Eigen::Array<ScalarType, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> data_in(res.rows(),
+                                                                                      res.cols());
 
-    auto ret = read<ScalarType>(gsl::span<ScalarType>(data_in.data(), dims.numElements), mem_selection,
-                                file_selection);
-    res = data_in;
+    auto ret = read<ScalarType>(gsl::span<ScalarType>(data_in.data(), dims.numElements),
+                                mem_selection, file_selection);
+    res      = data_in;
     return ret;
 #else
     static_assert(false, "The Eigen headers cannot be found, so this function cannot be used.");
@@ -474,10 +486,11 @@ public:
   template <class EigenClass>
   Variable_Implementation readWithEigenTensor(EigenClass& res,
                                               const Selection& mem_selection = Selection::all,
-                                              const Selection& file_selection = Selection::all) const {
+                                              const Selection& file_selection
+                                              = Selection::all) const {
 #if 1  //__has_include("unsupported/Eigen/CXX11/Tensor")
        // Check dimensionality of source and destination
-    const auto ioda_dims = getDimensions();
+    const auto ioda_dims  = getDimensions();
     const auto eigen_dims = ioda::detail::EigenCompat::getTensorDimensions(res);
     if (ioda_dims.numElements != eigen_dims.numElements)
       throw;  // jedi_throw.add("Reason", "Size mismatch for Eigen Tensor-like read.");
@@ -485,13 +498,14 @@ public:
     auto sp = (gsl::make_span(res.data(), eigen_dims.numElements));
     return read(sp, mem_selection, file_selection);
 #else
-    static_assert(false, "The Eigen unsupported/ headers cannot be found, so this function cannot be used.");
+    static_assert(
+      false, "The Eigen unsupported/ headers cannot be found, so this function cannot be used.");
 #endif
   }
 
   /// \internal Python binding function
   template <class EigenClass>
-  EigenClass _readWithEigenRegular_python(const Selection& mem_selection = Selection::all,
+  EigenClass _readWithEigenRegular_python(const Selection& mem_selection  = Selection::all,
                                           const Selection& file_selection = Selection::all) const {
     EigenClass data;
     readWithEigenRegular(data, mem_selection, file_selection);
@@ -569,6 +583,30 @@ public:
 
 protected:
   Variable_Backend();
+
+  /// @brief This function de-encapsulates an Attribute's backend storage object. This function is
+  /// used by
+  ///   Variable_Backend's derivatives when accessing a Variable's Attributes. IODA-internal use
+  ///   only.
+  /// @tparam Attribute_Implementation is a dummy parameter used by Attributes.
+  /// @param base is the Attribute whose backend you want.
+  /// @return The encapsulated backend object.
+  template <class Attribute_Implementation = Attribute>
+  static std::shared_ptr<Attribute_Backend> _getAttributeBackend(
+    const Attribute_Implementation& att) {
+    return att.backend_;
+  }
+
+  /// @brief This function de-encapsulates a Has_Attributes backend storage object.
+  ///   IODA-internal use only.
+  /// @tparam Has_Attributes_Implementation is a dummy parameter for template resolution.
+  /// @param hatts is the Has_Attributes whose backend you want.
+  /// @return The encapsulated backend object.
+  template <class Has_Attributes_Implementation = Has_Attributes>
+  static std::shared_ptr<Has_Attributes_Backend> _getHasAttributesBackend(
+    const Has_Attributes_Implementation& hatts) {
+    return hatts.backend_;
+  }
 };
 }  // namespace detail
 }  // namespace ioda

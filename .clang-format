@@ -7,13 +7,13 @@ AlignConsecutiveAssignments: true
 AlignEscapedNewlines: Right
 AlignOperands: true
 BreakBeforeBinaryOperators: true
-ColumnLimit: 110
+ColumnLimit: 100
 ConstructorInitializerIndentWidth: 4
 ContinuationIndentWidth: 2
 FixNamespaceComments: true
 IndentPPDirectives: AfterHash
 IndentWidth: 2
-NamespaceIndentation: All
+NamespaceIndentation: None
 PointerAlignment: Right
 ReflowComments: true
 SortIncludes: true

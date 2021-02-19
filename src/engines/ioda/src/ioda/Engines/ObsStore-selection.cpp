@@ -18,7 +18,7 @@ ioda::ObsStore::Selection createObsStoreSelection(const ioda::Selection& selecti
                                                   const std::vector<Dimensions_t>& dim_sizes) {
   ioda::ObsStore::SelectionModes mode = ioda::ObsStore::SelectionModes::ALL;
   std::vector<ioda::ObsStore::SelectSpecs> dim_selects;
-  std::size_t start = 0;
+  std::size_t start   = 0;
   std::size_t npoints = 0;
 
   // If incoming mode is set to select all, then pass that information
@@ -30,7 +30,7 @@ ioda::ObsStore::Selection createObsStoreSelection(const ioda::Selection& selecti
   //    2. No offset specs
   if ((selection.default_ == SelectionState::ALL) && (selection.actions_.empty())) {
     // Select all points
-    mode = ioda::ObsStore::SelectionModes::ALL;
+    mode  = ioda::ObsStore::SelectionModes::ALL;
     start = 0;
 
     // Count up the number of points
@@ -43,8 +43,8 @@ ioda::ObsStore::Selection createObsStoreSelection(const ioda::Selection& selecti
     if (!first_action->start_.empty()) {
       // Selection is specified as hyperslab
       mode = ioda::ObsStore::SelectionModes::INTERSECT;
-      genDimSelects(first_action->start_, first_action->count_, first_action->stride_, first_action->block_,
-                    dim_selects);
+      genDimSelects(first_action->start_, first_action->count_, first_action->stride_,
+                    first_action->block_, dim_selects);
     } else if (!first_action->points_.empty()) {
       // Selection is specified as list of points
       mode = ioda::ObsStore::SelectionModes::POINT;
@@ -63,7 +63,8 @@ ioda::ObsStore::Selection createObsStoreSelection(const ioda::Selection& selecti
 }
 
 void genDimSelects(const Selection::VecDimensions_t& start, const Selection::VecDimensions_t& count,
-                   const Selection::VecDimensions_t& stride, const Selection::VecDimensions_t& block,
+                   const Selection::VecDimensions_t& stride,
+                   const Selection::VecDimensions_t& block,
                    std::vector<ioda::ObsStore::SelectSpecs>& selects) {
   // Walk through the start, count, stride, block specs and generate
   // the indices for each dimension.
@@ -71,8 +72,8 @@ void genDimSelects(const Selection::VecDimensions_t& start, const Selection::Vec
   selects.resize(numDims);
   for (std::size_t idim = 0; idim < numDims; ++idim) {
     // Get the start, count, stride, and block parameters for this dimension
-    std::size_t dim_start = start[idim];
-    std::size_t dim_count = count[idim];
+    std::size_t dim_start  = start[idim];
+    std::size_t dim_count  = count[idim];
     std::size_t dim_stride = 1;
     if (!stride.empty()) {
       dim_stride = stride[idim];
@@ -98,7 +99,7 @@ void genDimSelects(const std::vector<Selection::VecDimensions_t>& points,
   // points[1] holds indices of second point, etc.
   // Copy indexes in points directly to select object
   std::size_t numPoints = points.size();
-  std::size_t numDims = points[0].size();
+  std::size_t numDims   = points[0].size();
   selects.resize(numDims);
   for (std::size_t idim = 0; idim < numDims; ++idim) {
     selects[idim].resize(numPoints);

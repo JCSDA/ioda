@@ -29,14 +29,17 @@ void setupHasVariables(pybind11::module& m) {
   py::class_<Has_Variables> hvar(m, "Has_Variables");
   hvar.doc() = "Container for this group's variables";
   hvar
-    .def("exists", &Has_Variables::exists, "Does a variable exist with the specified name?", py::arg("name"))
+    .def("exists", &Has_Variables::exists, "Does a variable exist with the specified name?",
+         py::arg("name"))
     .def("remove", &Has_Variables::remove, "Remove a variable", py::arg("name"))
     .def("open", &Has_Variables::open, "Open a variable", py::arg("name"))
     .def("list", &Has_Variables::list, "The names of all variables")
 
-    .def("create", &Has_Variables::_create_py, "Create a variable", py::arg("name"), py::arg("dtype"),
-         py::arg("dimsCur") = std::vector<Dimensions_t>{1}, py::arg("dimsMax") = std::vector<Dimensions_t>{},
-         py::arg("scales") = std::vector<Variable>{}, py::arg("params") = VariableCreationParameters())
+    .def("create", &Has_Variables::_create_py, "Create a variable", py::arg("name"),
+         py::arg("dtype"), py::arg("dimsCur") = std::vector<Dimensions_t>{1},
+         py::arg("dimsMax") = std::vector<Dimensions_t>{},
+         py::arg("scales")  = std::vector<Variable>{},
+         py::arg("params")  = VariableCreationParameters())
     .def("__repr__",
          [](const Has_Variables& g) {
            std::ostringstream out;

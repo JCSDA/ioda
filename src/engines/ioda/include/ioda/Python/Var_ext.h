@@ -40,7 +40,7 @@ class VariableReadVector {
 public:
   VariableReadVector(C* p) : parent_{p} {}
   template <class T>
-  std::vector<T> read(const Selection& mem_selection = Selection::all,
+  std::vector<T> read(const Selection& mem_selection  = Selection::all,
                       const Selection& file_selection = Selection::all) const {
     std::vector<T> vals;
     parent_->template read<T>(vals, mem_selection, file_selection);
@@ -56,7 +56,8 @@ public:
   VariableReadNPArray(C* p) : parent_{p} {}
   template <class T>
   Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> read(
-    const Selection& mem_selection = Selection::all, const Selection& file_selection = Selection::all) const {
+    const Selection& mem_selection  = Selection::all,
+    const Selection& file_selection = Selection::all) const {
     Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> vals;
 #ifdef _MSC_FULL_VER
     parent_->readWithEigenRegular(vals, mem_selection, file_selection);
@@ -88,7 +89,7 @@ public:
   VariableWriteNPArray(C* p) : parent_{p} {}
   template <class T>
   void write(const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& vals,
-             const Selection& mem_selection = Selection::all,
+             const Selection& mem_selection  = Selection::all,
              const Selection& file_selection = Selection::all) const {
 #ifdef _MSC_FULL_VER
     parent_->writeWithEigenRegular(vals, mem_selection, file_selection);

@@ -43,7 +43,8 @@ public:
   virtual ~ObsStore_Group_Backend() {}
 
   /// \brief returns list of child groups and variables
-  std::map<ObjectType, std::vector<std::string>> listObjects(ObjectType filter, bool recurse) const final {
+  std::map<ObjectType, std::vector<std::string>> listObjects(ObjectType filter,
+                                                             bool recurse) const final {
     std::map<ObjectType, std::list<std::string>> data;
     backend_->listObjects(filter, recurse, data);
 

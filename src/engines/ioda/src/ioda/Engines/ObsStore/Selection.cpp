@@ -17,9 +17,9 @@ namespace ObsStore {
 SelectCounter::SelectCounter() : icount_(0), ndigits_(0) {}
 
 void SelectCounter::reset(const SelectionModes mode, const std::vector<std::size_t>& digit_sizes) {
-  mode_ = mode;
+  mode_        = mode;
   digit_sizes_ = digit_sizes;
-  ndigits_ = digit_sizes.size();
+  ndigits_     = digit_sizes.size();
   digits_.assign(digit_sizes.size(), 0);
   counter_end_ = false;
 }
@@ -65,7 +65,10 @@ const std::vector<std::size_t>& SelectCounter::count() const { return digits_; }
 //           Selection functions
 //*************************************************************************
 Selection::Selection(const std::size_t start, const std::size_t npoints)
-    : mode_(SelectionModes::ALL), end_(gsl::narrow<int>(start + npoints - 1)), index_(0), npoints_(npoints) {
+    : mode_(SelectionModes::ALL),
+      end_(gsl::narrow<int>(start + npoints - 1)),
+      index_(0),
+      npoints_(npoints) {
   max_index_ = end_;
 }
 
@@ -124,7 +127,7 @@ std::size_t Selection::next_lin_indx() {
   } else {
     // Calculate linear index from current count
     const std::vector<std::size_t>& curCount = counter_->count();
-    lin_index = dim_selects_[0][curCount[0]];
+    lin_index                                = dim_selects_[0][curCount[0]];
     for (std::size_t i = 1; i < dim_selects_.size(); ++i) {
       lin_index *= dim_sizes_[i];
       lin_index += dim_selects_[i][curCount[i]];
@@ -136,8 +139,8 @@ std::size_t Selection::next_lin_indx() {
 
   // Make sure lin_index_ is in bounds.
   if (lin_index > max_index_) {
-    std::string ErrMsg = std::string("ioda::ObsStore::Selection::next_lin_indx: ") +
-                         std::string("Next linear index is out of bounds");
+    std::string ErrMsg = std::string("ioda::ObsStore::Selection::next_lin_indx: ")
+                         + std::string("Next linear index is out of bounds");
     throw; /* jedi_throw
 .add("Reason", ErrMsg)
 .add("  Next linear index: ", lin_index)

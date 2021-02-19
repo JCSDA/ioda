@@ -1,21 +1,10 @@
-# (C) Copyright 2020 UCAR.
+# (C) Copyright 2020-2021 UCAR.
 #
 # This software is licensed under the terms of the Apache Licence Version 2.0
 # which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
 
 include(GNUInstallDirs)
 include(Targets)
-
-set(IODA_ENGINES_MAJOR 0)
-set(IODA_ENGINES_MINOR 7)
-set(IODA_ENGINES_REVISION 0)
-set(IODA_ENGINES_VERSION ${IODA_ENGINES_MAJOR}.${IODA_ENGINES_MINOR}.${IODA_ENGINES_REVISION})
-
-set(IODA_ENGINES_MAJOR ${IODA_ENGINES_MAJOR} PARENT_SCOPE)
-set(IODA_ENGINES_MINOR ${IODA_ENGINES_MINOR} PARENT_SCOPE)
-set(IODA_ENGINES_REVISION ${IODA_ENGINES_REVISION} PARENT_SCOPE)
-set(IODA_ENGINES_VERSION ${IODA_ENGINES_VERSION} PARENT_SCOPE)
-
 
 list(APPEND SRCS_IODA
 	include/ioda/defs.h
@@ -26,6 +15,7 @@ list(APPEND SRCS_IODA
 	#include/ioda/Copying.h
 	include/ioda/Misc/Dimensions.h
 	include/ioda/Misc/Eigen_Compat.h
+	include/ioda/Misc/SFuncs.h
 	include/ioda/Variables/Fill.h
 	src/ioda/Fill.cpp
 	include/ioda/Variables/FillPolicy.h
@@ -49,6 +39,7 @@ list(APPEND SRCS_IODA
 	src/ioda/Group.cpp
 	src/ioda/ObsGroup.cpp
 	src/ioda/Selection.cpp
+	src/ioda/SFuncs.cpp
 	src/ioda/Type.cpp
 	src/ioda/Type_Provider.cpp
 	src/ioda/Variable.cpp
@@ -63,17 +54,32 @@ source_group("Custom Types" FILES ${SRCS_IODA_TYPES})
 list(APPEND SRCS_ENGINES_TOP
 	include/ioda/Engines/Factory.h
 	src/ioda/Engines/Factory.cpp)
+
 list(APPEND SRCS_ENGINES_HH 
-	src/ioda/Engines/HH-attributes.cpp
-	src/ioda/Engines/HH-variables.cpp
 	include/ioda/Engines/HH.h
-	src/ioda/Engines/HH.cpp
-	private/ioda/Engines/HH/HH-attributes.h
-	src/ioda/Engines/HH-groups.cpp
-	private/ioda/Engines/HH/HH-groups.h
-	private/ioda/Engines/HH/HH-types.h
-	private/ioda/Engines/HH/HH-variables.h
-	src/ioda/Engines/HH-types.cpp)
+	src/ioda/Engines/HH/HH.cpp
+
+	src/ioda/Engines/HH/HH/Handles.h
+	src/ioda/Engines/HH/Handles.cpp
+
+	src/ioda/Engines/HH/HH-attributes.cpp
+	src/ioda/Engines/HH/HH/HH-attributes.h
+	src/ioda/Engines/HH/HH-Filters.cpp
+	src/ioda/Engines/HH/HH/HH-Filters.h
+	src/ioda/Engines/HH/HH-groups.cpp
+	src/ioda/Engines/HH/HH/HH-groups.h
+	src/ioda/Engines/HH/HH-hasattributes.cpp
+	src/ioda/Engines/HH/HH/HH-hasattributes.h
+	src/ioda/Engines/HH/HH-hasvariables.cpp
+	src/ioda/Engines/HH/HH/HH-hasvariables.h
+	src/ioda/Engines/HH/HH-types.cpp
+	src/ioda/Engines/HH/HH/HH-types.h
+	src/ioda/Engines/HH/HH-variablecreation.cpp
+	src/ioda/Engines/HH/HH/HH-variablecreation.h
+	src/ioda/Engines/HH/HH-variables.cpp
+	src/ioda/Engines/HH/HH/HH-variables.h
+	)
+
 list(APPEND SRCS_ENGINES_OBS_STORE 
 	include/ioda/Engines/ObsStore.h
 	src/ioda/Engines/ObsStore.cpp
@@ -85,18 +91,19 @@ list(APPEND SRCS_ENGINES_OBS_STORE
 	private/ioda/ObsStore/VarAttrStore.hpp
 	private/ioda/ObsStore/Group.hpp
 	private/ioda/ObsStore/Selection.hpp
-        private/ioda/ObsStore/Types.hpp
+    private/ioda/ObsStore/Types.hpp
 	private/ioda/ObsStore/Variables.hpp
 	private/ioda/Engines/ObsStore/ObsStore-attributes.h
 	private/ioda/Engines/ObsStore/ObsStore-groups.h
 	private/ioda/Engines/ObsStore/ObsStore-selection.h
 	private/ioda/Engines/ObsStore/ObsStore-types.h
 	private/ioda/Engines/ObsStore/ObsStore-variables.h
-        src/ioda/Engines/ObsStore/Attributes.cpp
-        src/ioda/Engines/ObsStore/Group.cpp
-        src/ioda/Engines/ObsStore/Selection.cpp
-        src/ioda/Engines/ObsStore/Variables.cpp
-        )
+    src/ioda/Engines/ObsStore/Attributes.cpp
+    src/ioda/Engines/ObsStore/Group.cpp
+    src/ioda/Engines/ObsStore/Selection.cpp
+    src/ioda/Engines/ObsStore/Variables.cpp
+    )
+
 list(APPEND SRCS_C_BINDINGS
 	include/ioda/C/Attribute_c.h
 	include/ioda/C/c_binding_macros.h
@@ -121,22 +128,35 @@ list(APPEND SRCS_C_BINDINGS
 	src/ioda/C/Has_Variables_c.cpp
 	src/ioda/C/Variable_c.cpp
 	)
+
 source_group("C Bindings" FILES ${SRCS_C_BINDINGS})
 source_group("Engines" FILES ${SRCS_ENGINES_TOP})
 source_group("Engines\\HH" FILES ${SRCS_ENGINES_HH})
 source_group("Engines\\ObsStore" FILES ${SRCS_ENGINES_OBS_STORE})
 add_library(ioda_engines SHARED ${SRCS_IODA} ${SRCS_C_BINDINGS} ${SRCS_ENGINES_HH} ${SRCS_ENGINES_TOP} ${SRCS_IODA_TYPES} ${SRCS_ENGINES_OBS_STORE})
 
-target_link_libraries(ioda_engines PUBLIC gsl::gsl-lite)
-target_link_libraries(ioda_engines PUBLIC HH)
-target_link_libraries(ioda_engines PUBLIC Eigen3::Eigen)
+if(DEFINED HDF5_C_DEFINITIONS)
+	target_compile_options(ioda_engines PRIVATE "${HDF5_C_DEFINITIONS}")
+endif()
+if(DEFINED HDF5_C_INCLUDE_DIRS)
+	target_include_directories(ioda_engines SYSTEM PUBLIC ${HDF5_C_INCLUDE_DIRS})
+endif()
+if(DEFINED HDF5_C_LIBRARIES)
+	target_link_libraries(ioda_engines PUBLIC ${HDF5_C_LIBRARIES})
+endif()
+if(DEFINED HDF5_HL_LIBRARIES)
+	target_link_libraries(ioda_engines PUBLIC ${HDF5_HL_LIBRARIES})
+endif()
 if(HDF5_IS_PARALLEL)
 	target_link_libraries(ioda_engines PUBLIC MPI::MPI_C MPI::MPI_CXX)
 endif()
 
+target_link_libraries(ioda_engines PUBLIC gsl::gsl-lite)
+target_link_libraries(ioda_engines PUBLIC Eigen3::Eigen)
+
 addlib(ioda_engines SHARED ioda ioda_engines-targets)
 set_property(TARGET ioda_engines PROPERTY VERSION ${IODA_ENGINES_VERSION})
-set_property(TARGET ioda_engines PROPERTY SOVERSION 0)
+set_property(TARGET ioda_engines PROPERTY SOVERSION ${IODA_ENGINES_TWEAK})
 set_property(TARGET ioda_engines PROPERTY
 	INTERFACE_ioda_engines_MAJOR_VERSION ${IODA_ENGINES_MAJOR})
 set_property(TARGET ioda_engines APPEND PROPERTY
@@ -201,7 +221,6 @@ else()
 	# the ioda packaging.
 	list(APPEND IodaEnginesTargets
 		ioda_engines
-		HH
 		)
 
 	install(TARGETS ${IodaEnginesTargets}

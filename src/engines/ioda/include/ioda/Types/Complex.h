@@ -27,7 +27,7 @@ public:
   /// \brief Converts an object into a void* byte stream.
   /// \note The shared_ptr takes care of "deallocation" when we no longer need the "buffer".
   const_serialized_type serialize(::gsl::span<const DataType> d) {
-    auto res = std::make_shared<Marshalled_Data<DataType, mutable_DataType>>();
+    auto res          = std::make_shared<Marshalled_Data<DataType, mutable_DataType>>();
     res->DataPointers = std::vector<mutable_DataType>(d.size());
     for (size_t i = 0; i < (size_t)d.size(); ++i) res->DataPointers[i] = d[i];
     // res->DataPointers = std::vector<mutable_value_type>(d.begin(), d.end()); //return (const
@@ -38,7 +38,7 @@ public:
   /// and deallocate any temporary buffer.
   /// \note For trivial (POD) objects, there is no need to do anything.
   serialized_type prep_deserialize(size_t numObjects) {
-    auto res = std::make_shared<Marshalled_Data<DataType, mutable_DataType>>();
+    auto res          = std::make_shared<Marshalled_Data<DataType, mutable_DataType>>();
     res->DataPointers = std::vector<mutable_DataType>(numObjects);
     return res;
   }

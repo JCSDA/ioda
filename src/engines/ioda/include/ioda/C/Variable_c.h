@@ -37,7 +37,8 @@ IODA_DL bool ioda_variable_detachDimensionScale(struct ioda_variable*, unsigned 
 IODA_DL bool ioda_variable_setDimScale(struct ioda_variable*, size_t n_dims,
                                        const struct ioda_variable* const* dims);
 IODA_DL int ioda_variable_isDimensionScale(const struct ioda_variable*);
-IODA_DL bool ioda_variable_setIsDimensionScale(struct ioda_variable*, const char* dimensionScaleName);
+IODA_DL bool ioda_variable_setIsDimensionScale(struct ioda_variable*,
+                                               const char* dimensionScaleName);
 
 /** \brief Get the name of the dimension scale.
  * \param var is the dimension scale.
@@ -67,18 +68,19 @@ IODA_DL int ioda_variable_isDimensionScaleAttached(const struct ioda_variable* v
                                                    const struct ioda_variable* scale);
 
 // isA - int ioda_attribute_isa_char(const ioda_attribute*);
-#define IODA_VARIABLE_ISA_TEMPLATE(funcnamestr, junk) \
+#define IODA_VARIABLE_ISA_TEMPLATE(funcnamestr, junk)                                              \
   IODA_DL int funcnamestr(const struct ioda_variable* att);
 C_TEMPLATE_FUNCTION_DECLARATION(ioda_variable_isa, IODA_VARIABLE_ISA_TEMPLATE);
 
 // write - bool ioda_variable_write_full_char(ioda_variable*, size_t, const char*);
-#define IODA_VARIABLE_WRITE_FULL_TEMPLATE(funcnamestr, Type) \
+#define IODA_VARIABLE_WRITE_FULL_TEMPLATE(funcnamestr, Type)                                       \
   IODA_DL bool funcnamestr(struct ioda_variable* var, size_t sz, const Type* vals);
 C_TEMPLATE_FUNCTION_DEFINITION_NOSTR(ioda_variable_write_full, IODA_VARIABLE_WRITE_FULL_TEMPLATE);
-IODA_DL bool ioda_variable_write_full_str(struct ioda_variable* var, size_t sz, const char* const* vals);
+IODA_DL bool ioda_variable_write_full_str(struct ioda_variable* var, size_t sz,
+                                          const char* const* vals);
 
 // read - void ioda_variable_read_full_char(const ioda_variable*, size_t, char*);
-#define IODA_VARIABLE_READ_FULL_TEMPLATE(funcnamestr, Type) \
+#define IODA_VARIABLE_READ_FULL_TEMPLATE(funcnamestr, Type)                                        \
   IODA_DL bool funcnamestr(const struct ioda_variable* att, size_t sz, Type* vals);
 C_TEMPLATE_FUNCTION_DEFINITION_NOSTR(ioda_variable_read_full, IODA_VARIABLE_READ_FULL_TEMPLATE);
 IODA_DL struct ioda_string_ret_t* ioda_variable_read_full_str(const struct ioda_variable* var);
@@ -94,22 +96,23 @@ struct c_variable {
   int (*isDimensionScale)(const struct ioda_variable*);
   bool (*setIsDimensionScale)(struct ioda_variable*, const char*);
   size_t (*getDimensionScaleName)(const struct ioda_variable*, size_t, char*);
-  int (*isDimensionScaleAttached)(const struct ioda_variable*, unsigned int, const struct ioda_variable*);
+  int (*isDimensionScaleAttached)(const struct ioda_variable*, unsigned int,
+                                  const struct ioda_variable*);
 
   // bool isA_char(const ioda_attribute*);
-#define IODA_VARIABLE_ISA_FUNC_TEMPLATE(shortnamestr, basenamestr) \
+#define IODA_VARIABLE_ISA_FUNC_TEMPLATE(shortnamestr, basenamestr)                                 \
   int (*shortnamestr)(const struct ioda_variable*);
   C_TEMPLATE_FUNCTION_DECLARATION_3(isA, ioda_variable_isa, IODA_VARIABLE_ISA_FUNC_TEMPLATE);
 
   // void write_full_char(ioda_variable*, size_t, const Type*);
-#define IODA_VARIABLE_WRITE_FULL_FUNC_TEMPLATE(shortnamestr, basenamestr, Type) \
+#define IODA_VARIABLE_WRITE_FULL_FUNC_TEMPLATE(shortnamestr, basenamestr, Type)                    \
   bool (*shortnamestr)(struct ioda_variable*, size_t, const Type*);
   C_TEMPLATE_FUNCTION_DECLARATION_4_NOSTR(write_full, ioda_variable_write_full,
                                           IODA_VARIABLE_WRITE_FULL_FUNC_TEMPLATE);
   bool (*write_full_str)(struct ioda_variable*, size_t, const char* const*);
 
   // void read_full_char(const ioda_variable*, size_t, char*);
-#define IODA_VARIABLE_READ_FULL_FUNC_TEMPLATE(shortnamestr, basenamestr, Type) \
+#define IODA_VARIABLE_READ_FULL_FUNC_TEMPLATE(shortnamestr, basenamestr, Type)                     \
   bool (*shortnamestr)(const struct ioda_variable*, size_t, Type*);
   C_TEMPLATE_FUNCTION_DECLARATION_4_NOSTR(read_full, ioda_variable_read_full,
                                           IODA_VARIABLE_READ_FULL_FUNC_TEMPLATE);

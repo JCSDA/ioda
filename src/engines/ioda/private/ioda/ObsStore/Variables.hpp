@@ -25,8 +25,8 @@ namespace ObsStore {
 // Spurious warning on Intel compilers:
 // https://stackoverflow.com/questions/2571850/why-does-enable-shared-from-this-have-a-non-virtual-destructor
 #if defined(__INTEL_COMPILER)
-#pragma warning(push)
-#pragma warning(disable : 444)
+#  pragma warning(push)
+#  pragma warning(disable : 444)
 #endif
 /// \brief parameters for creating a new variable
 struct VarCreateParams {
@@ -67,8 +67,9 @@ private:
 
 public:
   Variable() : atts(std::make_shared<Has_Attributes>()) {}
-  Variable(const std::vector<Dimensions_t>& dimensions, const std::vector<Dimensions_t>& max_dimensions,
-           const ObsTypes& dtype, const VarCreateParams& params);
+  Variable(const std::vector<Dimensions_t>& dimensions,
+           const std::vector<Dimensions_t>& max_dimensions, const ObsTypes& dtype,
+           const VarCreateParams& params);
   ~Variable() {}
 
   /// \brief container for variable attributes
@@ -118,7 +119,8 @@ public:
 
   /// \brief return true if the scale is attached to this variable
   /// \param name name for this dimension scale
-  bool isDimensionScaleAttached(const std::size_t dim_number, const std::shared_ptr<Variable> scale) const;
+  bool isDimensionScaleAttached(const std::size_t dim_number,
+                                const std::shared_ptr<Variable> scale) const;
 
   /// \brief transfer data to variable storage
   /// \param data contiguous block of data to transfer
@@ -159,7 +161,8 @@ public:
   /// \param params parameters for creating new variable
   std::shared_ptr<Variable> create(const std::string& name, const ioda::ObsStore::ObsTypes& dtype,
                                    const std::vector<Dimensions_t>& dims,
-                                   const std::vector<Dimensions_t>& max_dims, const VarCreateParams& params);
+                                   const std::vector<Dimensions_t>& max_dims,
+                                   const VarCreateParams& params);
 
   /// \brief open an existing variable (throws exception if not found)
   std::shared_ptr<Variable> open(const std::string& name) const;
@@ -185,7 +188,7 @@ public:
   void setParentGroup(const std::shared_ptr<Group>& parentGroup);
 };
 #if defined(__INTEL_COMPILER)
-#pragma warning(pop)
+#  pragma warning(pop)
 #endif
 }  // namespace ObsStore
 }  // namespace ioda

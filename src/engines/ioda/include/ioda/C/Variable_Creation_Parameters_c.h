@@ -23,7 +23,8 @@ struct ioda_has_variables;
 struct ioda_variable;
 struct ioda_variable_creation_parameters;
 
-IODA_DL void ioda_variable_creation_parameters_destruct(struct ioda_variable_creation_parameters* params);
+IODA_DL void ioda_variable_creation_parameters_destruct(
+  struct ioda_variable_creation_parameters* params);
 
 IODA_DL struct ioda_variable_creation_parameters* ioda_variable_creation_parameters_create();
 IODA_DL struct ioda_variable_creation_parameters* ioda_variable_creation_parameters_clone(
@@ -31,10 +32,12 @@ IODA_DL struct ioda_variable_creation_parameters* ioda_variable_creation_paramet
 
 // Set fill value
 // setFillValue - void
-// ioda_variable_creation_parameters_setFillValue_double(ioda_variable_creation_parameters*, double);
-#define IODA_VCP_FILL_TEMPLATE(funcnamestr, typ) \
+// ioda_variable_creation_parameters_setFillValue_double(ioda_variable_creation_parameters*,
+// double);
+#define IODA_VCP_FILL_TEMPLATE(funcnamestr, typ)                                                   \
   IODA_DL void funcnamestr(struct ioda_variable_creation_parameters*, typ);
-C_TEMPLATE_FUNCTION_DEFINITION_NOSTR(ioda_variable_creation_parameters_setFillValue, IODA_VCP_FILL_TEMPLATE);
+C_TEMPLATE_FUNCTION_DEFINITION_NOSTR(ioda_variable_creation_parameters_setFillValue,
+                                     IODA_VCP_FILL_TEMPLATE);
 
 // Set chunking
 IODA_DL void ioda_variable_creation_parameters_chunking(struct ioda_variable_creation_parameters*,
@@ -42,24 +45,25 @@ IODA_DL void ioda_variable_creation_parameters_chunking(struct ioda_variable_cre
                                                         const ptrdiff_t* chunks);
 
 // Compression
-IODA_DL void ioda_variable_creation_parameters_noCompress(struct ioda_variable_creation_parameters*);
-IODA_DL void ioda_variable_creation_parameters_compressWithGZIP(struct ioda_variable_creation_parameters*,
-                                                                int level);
-IODA_DL void ioda_variable_creation_parameters_compressWithSZIP(struct ioda_variable_creation_parameters*,
-                                                                unsigned PixelsPerBlock, unsigned options);
+IODA_DL void ioda_variable_creation_parameters_noCompress(
+  struct ioda_variable_creation_parameters*);
+IODA_DL void ioda_variable_creation_parameters_compressWithGZIP(
+  struct ioda_variable_creation_parameters*, int level);
+IODA_DL void ioda_variable_creation_parameters_compressWithSZIP(
+  struct ioda_variable_creation_parameters*, unsigned PixelsPerBlock, unsigned options);
 
 // Dimension scales
 IODA_DL bool ioda_variable_creation_parameters_hasSetDimScales(
   const struct ioda_variable_creation_parameters*);
-IODA_DL bool ioda_variable_creation_parameters_attachDimensionScale(struct ioda_variable_creation_parameters*,
-                                                                    unsigned int DimensionNumber,
-                                                                    const struct ioda_variable* scale);
-IODA_DL bool ioda_variable_creation_parameters_setDimScale(struct ioda_variable_creation_parameters*,
-                                                           size_t n_dims, const struct ioda_variable** dims);
+IODA_DL bool ioda_variable_creation_parameters_attachDimensionScale(
+  struct ioda_variable_creation_parameters*, unsigned int DimensionNumber,
+  const struct ioda_variable* scale);
+IODA_DL bool ioda_variable_creation_parameters_setDimScale(
+  struct ioda_variable_creation_parameters*, size_t n_dims, const struct ioda_variable** dims);
 IODA_DL int ioda_variable_creation_parameters_isDimensionScale(
   const struct ioda_variable_creation_parameters*);
-IODA_DL bool ioda_variable_creation_parameters_setIsDimensionScale(struct ioda_variable_creation_parameters*,
-                                                                   const char* dimensionScaleName);
+IODA_DL bool ioda_variable_creation_parameters_setIsDimensionScale(
+  struct ioda_variable_creation_parameters*, const char* dimensionScaleName);
 IODA_DL size_t ioda_variable_creation_parameters_getDimensionScaleName(
   const struct ioda_variable_creation_parameters* var, size_t len_out, char* out);
 
@@ -70,10 +74,11 @@ IODA_DL size_t ioda_variable_creation_parameters_getDimensionScaleName(
 struct c_variable_creation_parameters {
   void (*destruct)(struct ioda_variable_creation_parameters*);
   struct ioda_variable_creation_parameters* (*create)();
-  struct ioda_variable_creation_parameters* (*clone)(const struct ioda_variable_creation_parameters*);
+  struct ioda_variable_creation_parameters* (*clone)(
+    const struct ioda_variable_creation_parameters*);
 
   // Fill values
-#define IODA_VCP_FILL_TEMPLATE2(funcnamestr, typ) \
+#define IODA_VCP_FILL_TEMPLATE2(funcnamestr, typ)                                                  \
   void (*funcnamestr)(struct ioda_variable_creation_parameters*, typ);
   C_TEMPLATE_FUNCTION_DEFINITION_NOSTR(setFillValue, IODA_VCP_FILL_TEMPLATE2);
 
@@ -84,7 +89,8 @@ struct c_variable_creation_parameters {
   bool (*hasSetDimScales)(const struct ioda_variable_creation_parameters*);
   bool (*attachDimensionScale)(struct ioda_variable_creation_parameters*, unsigned int,
                                const struct ioda_variable*);
-  bool (*setDimScale)(struct ioda_variable_creation_parameters*, size_t, const struct ioda_variable**);
+  bool (*setDimScale)(struct ioda_variable_creation_parameters*, size_t,
+                      const struct ioda_variable**);
   int (*isDimensionScale)(const struct ioda_variable_creation_parameters*);
   bool (*setIsDimensionScale)(struct ioda_variable_creation_parameters*, const char*);
   size_t (*getDimensionScaleName)(const struct ioda_variable_creation_parameters*, size_t, char*);

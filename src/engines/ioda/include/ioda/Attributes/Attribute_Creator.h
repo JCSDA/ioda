@@ -85,7 +85,8 @@ public:
   }
 
   template <class DataType>
-  Attribute_Creator_Store& create(const std::string& attrname, ::std::initializer_list<DataType> data,
+  Attribute_Creator_Store& create(const std::string& attrname,
+                                  ::std::initializer_list<DataType> data,
                                   ::std::initializer_list<Dimensions_t> dimensions) {
     atts_.push_back(std::make_shared<Attribute_Creator<DataType>>(attrname, data, dimensions));
     return *this;

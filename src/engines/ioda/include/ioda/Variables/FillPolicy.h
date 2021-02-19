@@ -17,15 +17,16 @@
 
 namespace ioda {
 
-/// \brief This option describes the default fill values that will be used if the user does not manually
-/// specify a fill value.
+/// \brief This option describes the default fill values that will be used if the user does not
+/// manually specify a fill value.
 enum class FillValuePolicy {
   HDF5,    ///< Set all fill values to zero or null strings.
   NETCDF4  ///< Use NetCDF4 default fill values. This is the default option for ioda files.
 };
 
-/// \brief Holds the different default fill values used in ioda files produced by different backends.
-/// \details This matters for netCDF4 vs HDF5-produced files. They have different default fill values.
+/// \brief Holds the different default fill values used in ioda files produced by different
+/// backends. \details This matters for netCDF4 vs HDF5-produced files. They have different default
+/// fill values.
 namespace FillValuePolicies {
 template <class T>
 T HDF5_default() {
@@ -91,8 +92,8 @@ inline uint64_t netCDF4_default<uint64_t>() {
   return 18446744073709551614ULL;
 }
 
-/// \brief Applies the fill value policy. This sets default fill values when fill values are not already
-/// provided.
+/// \brief Applies the fill value policy. This sets default fill values when fill values are not
+/// already provided.
 template <class T>
 void applyFillValuePolicy(FillValuePolicy pol, detail::FillValueData_t& fvd) {
   if (fvd.set_) return;  // If already set, then do nothing.

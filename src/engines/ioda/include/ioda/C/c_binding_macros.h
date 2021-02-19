@@ -9,12 +9,12 @@
 /// \brief C wrapper macros
 
 #ifndef __cplusplus
-#include <stdint.h>
+#  include <stdint.h>
 #else
-#include <cstdint>
-#include <iostream>
-#include <stdexcept>
-#include <string>
+#  include <cstdint>
+#  include <iostream>
+#  include <stdexcept>
+#  include <string>
 
 /**
  * \def C_TRY
@@ -41,39 +41,39 @@
  *   to avoid memory leaks.
  **/
 
-#define C_TRY try {
-#define C_CATCH_AND_TERMINATE           \
-  }                                     \
-  catch (std::exception & e) {          \
-    std::cerr << e.what() << std::endl; \
-    std::terminate();                   \
-  }                                     \
-  catch (...) {                         \
-    std::terminate();                   \
-  }
+#  define C_TRY try {
+#  define C_CATCH_AND_TERMINATE                                                                    \
+    }                                                                                              \
+    catch (std::exception & e) {                                                                   \
+      std::cerr << e.what() << std::endl;                                                          \
+      std::terminate();                                                                            \
+    }                                                                                              \
+    catch (...) {                                                                                  \
+      std::terminate();                                                                            \
+    }
 
-#define C_CATCH_AND_RETURN(retval_on_success, retval_on_error) \
-  return (retval_on_success);                                  \
-  }                                                            \
-  catch (std::exception & e) {                                 \
-    std::cerr << e.what() << std::endl;                        \
-    return retval_on_error;                                    \
-  }                                                            \
-  catch (...) {                                                \
-    std::terminate();                                          \
-  }
+#  define C_CATCH_AND_RETURN(retval_on_success, retval_on_error)                                   \
+    return (retval_on_success);                                                                    \
+    }                                                                                              \
+    catch (std::exception & e) {                                                                   \
+      std::cerr << e.what() << std::endl;                                                          \
+      return retval_on_error;                                                                      \
+    }                                                                                              \
+    catch (...) {                                                                                  \
+      std::terminate();                                                                            \
+    }
 
-#define C_CATCH_RETURN_FREE(retval_on_success, retval_on_error, freeable) \
-  return (retval_on_success);                                             \
-  }                                                                       \
-  catch (std::exception & e) {                                            \
-    std::cerr << e.what() << std::endl;                                   \
-    delete freeable;                                                      \
-    return retval_on_error;                                               \
-  }                                                                       \
-  catch (...) {                                                           \
-    std::terminate();                                                     \
-  }
+#  define C_CATCH_RETURN_FREE(retval_on_success, retval_on_error, freeable)                        \
+    return (retval_on_success);                                                                    \
+    }                                                                                              \
+    catch (std::exception & e) {                                                                   \
+      std::cerr << e.what() << std::endl;                                                          \
+      delete freeable;                                                                             \
+      return retval_on_error;                                                                      \
+    }                                                                                              \
+    catch (...) {                                                                                  \
+      std::terminate();                                                                            \
+    }
 
 /**
  * \def C_TEMPLATE_FUNCTION_DEFINITION
@@ -89,85 +89,85 @@
 
 #endif  // ifndef __CPLUSPLUS
 
-#define C_TEMPLATE_FUNCTION_DEFINITION_NOSTR(funcname, PATTERN) \
-  PATTERN(funcname##_float, float)                              \
-  PATTERN(funcname##_double, double)                            \
-  PATTERN(funcname##_ldouble, long double)                      \
-  PATTERN(funcname##_char, char)                                \
-  PATTERN(funcname##_short, short int)                          \
-  PATTERN(funcname##_ushort, unsigned short int)                \
-  PATTERN(funcname##_int, int)                                  \
-  PATTERN(funcname##_uint, unsigned int)                        \
-  PATTERN(funcname##_lint, long int)                            \
-  PATTERN(funcname##_ulint, unsigned long int)                  \
-  PATTERN(funcname##_llint, long long int)                      \
-  PATTERN(funcname##_ullint, unsigned long long int)            \
-  PATTERN(funcname##_int32, int32_t)                            \
-  PATTERN(funcname##_uint32, uint32_t)                          \
-  PATTERN(funcname##_int16, int16_t)                            \
-  PATTERN(funcname##_uint16, uint16_t)                          \
-  PATTERN(funcname##_int64, int64_t)                            \
+#define C_TEMPLATE_FUNCTION_DEFINITION_NOSTR(funcname, PATTERN)                                    \
+  PATTERN(funcname##_float, float)                                                                 \
+  PATTERN(funcname##_double, double)                                                               \
+  PATTERN(funcname##_ldouble, long double)                                                         \
+  PATTERN(funcname##_char, char)                                                                   \
+  PATTERN(funcname##_short, short int)                                                             \
+  PATTERN(funcname##_ushort, unsigned short int)                                                   \
+  PATTERN(funcname##_int, int)                                                                     \
+  PATTERN(funcname##_uint, unsigned int)                                                           \
+  PATTERN(funcname##_lint, long int)                                                               \
+  PATTERN(funcname##_ulint, unsigned long int)                                                     \
+  PATTERN(funcname##_llint, long long int)                                                         \
+  PATTERN(funcname##_ullint, unsigned long long int)                                               \
+  PATTERN(funcname##_int32, int32_t)                                                               \
+  PATTERN(funcname##_uint32, uint32_t)                                                             \
+  PATTERN(funcname##_int16, int16_t)                                                               \
+  PATTERN(funcname##_uint16, uint16_t)                                                             \
+  PATTERN(funcname##_int64, int64_t)                                                               \
   PATTERN(funcname##_uint64, uint64_t)
 /*
 Problems:
 PATTERN(funcname ## _bool, bool)   \
 */
 
-#define C_TEMPLATE_FUNCTION_DECLARATION_4_NOSTR(shortname, basename, PATTERN) \
-  PATTERN(shortname##_float, basename##_float, float);                        \
-  PATTERN(shortname##_double, basename##_double, double);                     \
-  PATTERN(shortname##_ldouble, basename##_ldouble, long double);              \
-  PATTERN(shortname##_char, basename##_char, char);                           \
-  PATTERN(shortname##_short, basename##_short, short);                        \
-  PATTERN(shortname##_ushort, basename##_ushort, unsigned short);             \
-  PATTERN(shortname##_int, basename##_int, int);                              \
-  PATTERN(shortname##_uint, basename##_uint, unsigned);                       \
-  PATTERN(shortname##_lint, basename##_lint, long);                           \
-  PATTERN(shortname##_ulint, basename##_ulint, unsigned long);                \
-  PATTERN(shortname##_llint, basename##_llint, long long);                    \
-  PATTERN(shortname##_ullint, basename##_ullint, unsigned long long);         \
-  PATTERN(shortname##_int32, basename##_int32, int32_t);                      \
-  PATTERN(shortname##_uint32, basename##_uint32, uint32_t);                   \
-  PATTERN(shortname##_int16, basename##_int16, int16_t);                      \
-  PATTERN(shortname##_uint16, basename##_uint16, uint16_t);                   \
-  PATTERN(shortname##_int64, basename##_int64, int64_t);                      \
+#define C_TEMPLATE_FUNCTION_DECLARATION_4_NOSTR(shortname, basename, PATTERN)                      \
+  PATTERN(shortname##_float, basename##_float, float);                                             \
+  PATTERN(shortname##_double, basename##_double, double);                                          \
+  PATTERN(shortname##_ldouble, basename##_ldouble, long double);                                   \
+  PATTERN(shortname##_char, basename##_char, char);                                                \
+  PATTERN(shortname##_short, basename##_short, short);                                             \
+  PATTERN(shortname##_ushort, basename##_ushort, unsigned short);                                  \
+  PATTERN(shortname##_int, basename##_int, int);                                                   \
+  PATTERN(shortname##_uint, basename##_uint, unsigned);                                            \
+  PATTERN(shortname##_lint, basename##_lint, long);                                                \
+  PATTERN(shortname##_ulint, basename##_ulint, unsigned long);                                     \
+  PATTERN(shortname##_llint, basename##_llint, long long);                                         \
+  PATTERN(shortname##_ullint, basename##_ullint, unsigned long long);                              \
+  PATTERN(shortname##_int32, basename##_int32, int32_t);                                           \
+  PATTERN(shortname##_uint32, basename##_uint32, uint32_t);                                        \
+  PATTERN(shortname##_int16, basename##_int16, int16_t);                                           \
+  PATTERN(shortname##_uint16, basename##_uint16, uint16_t);                                        \
+  PATTERN(shortname##_int64, basename##_int64, int64_t);                                           \
   PATTERN(shortname##_uint64, basename##_uint64, uint64_t);
 
-#define C_TEMPLATE_FUNCTION_DECLARATION_3_NOSTR(shortname, basename, PATTERN) \
-  PATTERN(shortname##_float, basename##_float);                               \
-  PATTERN(shortname##_double, basename##_double);                             \
-  PATTERN(shortname##_ldouble, basename##_ldouble);                           \
-  PATTERN(shortname##_char, basename##_char);                                 \
-  PATTERN(shortname##_short, basename##_short);                               \
-  PATTERN(shortname##_ushort, basename##_ushort);                             \
-  PATTERN(shortname##_int, basename##_int);                                   \
-  PATTERN(shortname##_uint, basename##_uint);                                 \
-  PATTERN(shortname##_lint, basename##_lint);                                 \
-  PATTERN(shortname##_ulint, basename##_ulint);                               \
-  PATTERN(shortname##_llint, basename##_llint);                               \
-  PATTERN(shortname##_ullint, basename##_ullint);                             \
-  PATTERN(shortname##_int32, basename##_int32);                               \
-  PATTERN(shortname##_uint32, basename##_uint32);                             \
-  PATTERN(shortname##_int16, basename##_int16);                               \
-  PATTERN(shortname##_uint16, basename##_uint16);                             \
-  PATTERN(shortname##_int64, basename##_int64);                               \
+#define C_TEMPLATE_FUNCTION_DECLARATION_3_NOSTR(shortname, basename, PATTERN)                      \
+  PATTERN(shortname##_float, basename##_float);                                                    \
+  PATTERN(shortname##_double, basename##_double);                                                  \
+  PATTERN(shortname##_ldouble, basename##_ldouble);                                                \
+  PATTERN(shortname##_char, basename##_char);                                                      \
+  PATTERN(shortname##_short, basename##_short);                                                    \
+  PATTERN(shortname##_ushort, basename##_ushort);                                                  \
+  PATTERN(shortname##_int, basename##_int);                                                        \
+  PATTERN(shortname##_uint, basename##_uint);                                                      \
+  PATTERN(shortname##_lint, basename##_lint);                                                      \
+  PATTERN(shortname##_ulint, basename##_ulint);                                                    \
+  PATTERN(shortname##_llint, basename##_llint);                                                    \
+  PATTERN(shortname##_ullint, basename##_ullint);                                                  \
+  PATTERN(shortname##_int32, basename##_int32);                                                    \
+  PATTERN(shortname##_uint32, basename##_uint32);                                                  \
+  PATTERN(shortname##_int16, basename##_int16);                                                    \
+  PATTERN(shortname##_uint16, basename##_uint16);                                                  \
+  PATTERN(shortname##_int64, basename##_int64);                                                    \
   PATTERN(shortname##_uint64, basename##_uint64);
 
-#define C_TEMPLATE_FUNCTION_DECLARATION_3(shortname, basename, PATTERN) \
-  C_TEMPLATE_FUNCTION_DECLARATION_3_NOSTR(shortname, basename, PATTERN) \
+#define C_TEMPLATE_FUNCTION_DECLARATION_3(shortname, basename, PATTERN)                            \
+  C_TEMPLATE_FUNCTION_DECLARATION_3_NOSTR(shortname, basename, PATTERN)                            \
   PATTERN(shortname##_str, basename##_str);
 
-#define C_TEMPLATE_FUNCTION_DECLARATION_NOSTR(funcname, PATTERN) \
+#define C_TEMPLATE_FUNCTION_DECLARATION_NOSTR(funcname, PATTERN)                                   \
   C_TEMPLATE_FUNCTION_DECLARATION_3_NOSTR(funcname, funcname, PATTERN)
 
-#define C_TEMPLATE_FUNCTION_DECLARATION(funcname, PATTERN)             \
-  C_TEMPLATE_FUNCTION_DECLARATION_3_NOSTR(funcname, funcname, PATTERN) \
+#define C_TEMPLATE_FUNCTION_DECLARATION(funcname, PATTERN)                                         \
+  C_TEMPLATE_FUNCTION_DECLARATION_3_NOSTR(funcname, funcname, PATTERN)                             \
   PATTERN(funcname##_str, funcname##_str)
 
 #ifdef __cplusplus
 
-#define C_TEMPLATE_FUNCTION_DEFINITION(funcname, PATTERN) \
-  C_TEMPLATE_FUNCTION_DEFINITION_NOSTR(funcname, PATTERN) \
-  PATTERN(funcname##_str, std::string)
+#  define C_TEMPLATE_FUNCTION_DEFINITION(funcname, PATTERN)                                        \
+    C_TEMPLATE_FUNCTION_DEFINITION_NOSTR(funcname, PATTERN)                                        \
+    PATTERN(funcname##_str, std::string)
 
 #endif
