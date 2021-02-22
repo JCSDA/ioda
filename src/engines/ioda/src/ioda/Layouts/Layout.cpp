@@ -9,25 +9,43 @@
 
 #include "ioda/Layout.h"
 
+#include <exception>
 #include <vector>
 
+#include "eckit/config/Configuration.h"
+
 #include "ioda/Layouts/Layout_ObsGroup.h"
+#include "ioda/Layouts/Layout_ObsGroup_ODB.h"
 #include "ioda/defs.h"
 
 namespace ioda {
 namespace detail {
 std::shared_ptr<const DataLayoutPolicy> DataLayoutPolicy::generate(const std::string &polid) {
-  if (polid == "ObsGroup") return std::make_shared<DataLayoutPolicy_ObsGroup>();
+  if (polid == "ObsGroup" || polid == "ObsGroupODB") return std::make_shared<DataLayoutPolicy_ObsGroup>();
   return std::make_shared<DataLayoutPolicy>();
+}
+
+std::shared_ptr<const DataLayoutPolicy> DataLayoutPolicy::generate(
+    const std::string &polid, const std::string &mapPath) {
+  if (polid != "ObsGroupODB")
+    throw std::invalid_argument("A mapping file is only relevant for the ODB Data Layout.");
+  return std::make_shared<DataLayoutPolicy_ObsGroup_ODB>(mapPath);
 }
 
 std::shared_ptr<const DataLayoutPolicy> DataLayoutPolicy::generate(Policies pol) {
-  if (pol == Policies::ObsGroup) return std::make_shared<DataLayoutPolicy_ObsGroup>();
+  if (pol == Policies::ObsGroup || pol == Policies::ObsGroupODB) return std::make_shared<DataLayoutPolicy_ObsGroup>();
   return std::make_shared<DataLayoutPolicy>();
 }
 
-DataLayoutPolicy::~DataLayoutPolicy() = default;
-DataLayoutPolicy::DataLayoutPolicy()  = default;
+std::shared_ptr<const DataLayoutPolicy> DataLayoutPolicy::generate(
+    Policies pol, const std::string &mapPath) {
+  if (pol != Policies::ObsGroupODB)
+    throw std::invalid_argument("A mapping file is only relevant for the ODB Data Layout.");
+  return std::make_shared<DataLayoutPolicy_ObsGroup_ODB>(mapPath);
+}
+
+DataLayoutPolicy::~DataLayoutPolicy(){}
+DataLayoutPolicy::DataLayoutPolicy(){}
 void DataLayoutPolicy::initializeStructure(Group_Base &) const {
   // Do nothing in the default policy.
 }

@@ -34,12 +34,26 @@ public:
     None,
     /// Transform "Variable@Group" into "Group/Variable". Ensure that
     /// group names match a few predefined keys.
-    ObsGroup
+    ObsGroup,
+    /// Uses an auxiliary YAML dictionary to convert ODB variable/group naming conventions to IODA
+    /// equivalents. Transform "Variable@Group" into "Group/Variable". Ensure that the new group
+    /// names match a few predefined keys.
+    ObsGroupODB
   };
   /// Factory generator.
   static std::shared_ptr<const DataLayoutPolicy> generate(const std::string &polid = "");
+  /// Factory generator (ODB-specific)
+  /// \p mapPath path to a yaml file that defines how input file variables should be renamed
+  /// upon import to ioda.
+  static std::shared_ptr<const DataLayoutPolicy> generate(const std::string &polid,
+                                                          const std::string &mapPath);
   /// Factory generator.
   static std::shared_ptr<const DataLayoutPolicy> generate(Policies pol = Policies::None);
+  /// Factory generator (ODB-specific)
+  /// \p mapPath path to a yaml file that defines how input file variables should be renamed
+  /// upon import to ioda.
+  static std::shared_ptr<const DataLayoutPolicy> generate(Policies pol,
+                                                          const std::string &mapPath);
   /// \internal pybind11 overload casts do not work on some compilers.
   static inline std::shared_ptr<const DataLayoutPolicy> _py_generate1(const std::string &polid) {
     return generate(polid);

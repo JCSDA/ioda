@@ -31,6 +31,8 @@ list(APPEND SRCS_IODA
 	include/ioda/Variables/Variable.h
 	include/ioda/Python/Var_ext.h
 	private/ioda/Layouts/Layout_ObsGroup.h
+  private/ioda/Layouts/Layout_ObsGroup_ODB.h
+  private/ioda/Layouts/Layout_Utils.h
 	src/ioda/Attribute.cpp
 	src/ioda/Attribute_Creator.cpp
 	#src/ioda/Copying.cpp
@@ -45,7 +47,9 @@ list(APPEND SRCS_IODA
 	src/ioda/Variable.cpp
 	src/ioda/Layouts/Layout.cpp
 	src/ioda/Layouts/Layout_ObsGroup.cpp
-	)
+  src/ioda/Layouts/Layout_ObsGroup_ODB.cpp
+  src/ioda/Layouts/Layout_Utils.cpp
+  )
 list(APPEND SRCS_IODA_TYPES
 	include/ioda/Types/Complex.h
 	include/ioda/Types/Sample.h
@@ -151,6 +155,7 @@ if(HDF5_IS_PARALLEL)
 	target_link_libraries(ioda_engines PUBLIC MPI::MPI_C MPI::MPI_CXX)
 endif()
 
+target_link_libraries(ioda_engines PUBLIC eckit)
 target_link_libraries(ioda_engines PUBLIC gsl::gsl-lite)
 target_link_libraries(ioda_engines PUBLIC Eigen3::Eigen)
 

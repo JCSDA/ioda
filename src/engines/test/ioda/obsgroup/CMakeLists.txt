@@ -13,6 +13,11 @@ add_executable(ioda-engines_obsgroup_append test_append.cpp)
 addapp(ioda-engines_obsgroup_append)
 target_link_libraries(ioda-engines_obsgroup_append PUBLIC ioda_engines)
 
+# Link for the mapping yaml file
+execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink
+                    ${CMAKE_CURRENT_SOURCE_DIR}/odb_default_name_map.yaml
+                    ${CMAKE_CURRENT_BINARY_DIR}/odb_default_name_map.yaml)
+
 if(BUILD_TESTING)
     add_test(NAME test_ioda-engines_obsgroup-default COMMAND ioda-engines_obsgroup)
     add_test(NAME test_ioda-engines_obsgroup-h5file COMMAND ioda-engines_obsgroup --ioda-engine-options HDF5-file "ioda-engines_obsgroup-file.hdf5" create truncate)
@@ -20,5 +25,6 @@ if(BUILD_TESTING)
     add_test(NAME test_ioda-engines_obsgroup-ObsStore COMMAND ioda-engines_obsgroup --ioda-engine-options obs-store)
 
     add_test(NAME test_ioda-engines_obsgroup_append-h5file COMMAND ioda-engines_obsgroup_append "file")
+    add_test(NAME test_ioda-engines_obsgroup_append-remappedfile COMMAND ioda-engines_obsgroup_append "fileRemapped")
     add_test(NAME test_ioda-engines_obsgroup_append-mem COMMAND ioda-engines_obsgroup_append "memory")
 endif()

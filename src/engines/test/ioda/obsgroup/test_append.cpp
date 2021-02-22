@@ -1,4 +1,4 @@
-/*
+﻿/*
  * (C) Copyright 2020 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
@@ -14,10 +14,13 @@
 #include <typeinfo>
 
 #include "Eigen/Dense"
+#include "eckit/filesystem/LocalPathName.h"
 #include "ioda/Engines/Factory.h"
+#include "ioda/Layout.h"
 #include "ioda/ObsGroup.h"
 
-void test_obsgroup_helper_funcs(std::string backendType, std::string fileName) {
+void test_obsgroup_helper_funcs(std::string backendType, std::string fileName,
+                                const std::string mappingFile = "") {
   using namespace ioda;
 
   // Create test data
@@ -68,7 +71,7 @@ void test_obsgroup_helper_funcs(std::string backendType, std::string fileName) {
   // Create a backend
   Engines::BackendNames backendName;
   Engines::BackendCreationParameters backendParams;
-  if (backendType == "file") {
+  if (backendType == "file" || backendType == "fileRemapped") {
     backendName = Engines::BackendNames::Hdf5File;
 
     backendParams.fileName = fileName;
@@ -84,12 +87,30 @@ void test_obsgroup_helper_funcs(std::string backendType, std::string fileName) {
   Group backend = constructBackend(backendName, backendParams);
 
   // Create an ObsGroup object and attach the backend
-  ObsGroup og = ObsGroup::generate(
-    backend, {
-               std::make_shared<NewDimensionScale<int>>("nlocs", locations, ioda::Unlimited, locations),
-               std::make_shared<NewDimensionScale<int>>("nchans", channels, channels, channels),
-             });
-
+  ObsGroup og;
+  if (backendType != "fileRemapped") {
+    og = ObsGroup::generate(
+          backend, {
+            std::make_shared<NewDimensionScale<int>>("nlocs", locations, ioda::Unlimited, locations),
+            std::make_shared<NewDimensionScale<int>>("nchans", channels, channels, channels),
+          });
+  } else if (mappingFile == "") {
+    og = ObsGroup::generate(
+          backend, {
+            std::make_shared<NewDimensionScale<int>>("nlocs", locations, ioda::Unlimited, locations),
+            std::make_shared<NewDimensionScale<int>>("nchans", channels, channels, channels),
+          });
+  } else {
+    og = ObsGroup::generate(
+          backend,
+          {
+            std::make_shared<NewDimensionScale<int>>(
+            "nlocs", locations, ioda::Unlimited, locations),
+            std::make_shared<NewDimensionScale<int>>(
+            "nchans", channels, channels, channels), },
+          detail::DataLayoutPolicy::generate(detail::DataLayoutPolicy::Policies::ObsGroupODB,
+                                             mappingFile));
+  }
   Variable nlocs_var = og.vars.open("nlocs");
   nlocs_var.write(nLocs1);
 
@@ -209,6 +230,12 @@ int main(int argc, char** argv) {
     } else if (backendType == "memory") {
       std::cout << "Testing memory backend" << std::endl;
       test_obsgroup_helper_funcs(backendType, {""});
+    } else if (backendType == "fileRemapped") {
+      test_obsgroup_helper_funcs(backendType, {"ioda-engines_obsgroup_append-file.hdf5"});
+      // Layout_ObsGroup_ODB runs identically to Layout_ObsGroup if a yaml file is not provided
+      std::cout << "Testing ODB Data Layout Policy with explicit mapping file" << std::endl;
+      std::string mappingFile(eckit::LocalPathName::cwd() + "/odb_default_name_map.yaml");
+      test_obsgroup_helper_funcs(backendType, {"append-remapped.hdf5"}, mappingFile);
     } else {
       throw; /* jedi_throw
               .add("Reason", "Unrecognized backend type:")

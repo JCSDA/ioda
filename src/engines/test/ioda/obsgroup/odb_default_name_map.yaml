@@ -1,0 +1,8 @@
+ioda:
+  variables:
+    - name: "/MetaData/latitude"
+      source: "/MetaData_renamed/latitude_renamed"
+    - name: "/MetaData/longitude"
+      source: "/MetaData_renamed/longitude_renamed"
+    - name: "/ObsValue/myObs"
+      source: "/ObsValue_renamed/myObs_renamed"
