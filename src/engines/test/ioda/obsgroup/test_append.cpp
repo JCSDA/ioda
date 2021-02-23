@@ -231,7 +231,7 @@ int main(int argc, char** argv) {
       std::cout << "Testing memory backend" << std::endl;
       test_obsgroup_helper_funcs(backendType, {""});
     } else if (backendType == "fileRemapped") {
-      test_obsgroup_helper_funcs(backendType, {"ioda-engines_obsgroup_append-file.hdf5"});
+      test_obsgroup_helper_funcs(backendType, {"ioda-engines_obsgroup_append-remapped-file.hdf5"});
       // Layout_ObsGroup_ODB runs identically to Layout_ObsGroup if a yaml file is not provided
       std::cout << "Testing ODB Data Layout Policy with explicit mapping file" << std::endl;
       std::string mappingFile(eckit::LocalPathName::cwd() + "/odb_default_name_map.yaml");
