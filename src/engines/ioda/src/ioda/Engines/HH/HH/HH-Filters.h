@@ -6,6 +6,12 @@
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
+/*! \addtogroup ioda_internals_engines_hh
+ *
+ * @{
+ * \file HH-Filters.h
+ * \brief HDF5 filters
+ */
 
 #include <list>
 #include <memory>
@@ -22,11 +28,13 @@ namespace detail {
 namespace Engines {
 namespace HH {
 /// @brief Check that the given filter is available for encoding/decoding in the HDF5 pipeline.
+/// @ingroup ioda_internals_engines_hh
 /// @param filt is the filter in question. Commonly H5Z_FILTER_SZIP.
 /// @return A pair of (canEncode, canDecode).
 IODA_HIDDEN std::pair<bool, bool> isFilteravailable(H5Z_filter_t filt);
 
 /// @brief Can SZIP encoding be used for a datatype?
+/// @ingroup ioda_internals_engines_hh
 /// @detail This depends on the data type and the HDF5 build options.
 ///   SZIP cannot be applied to compound, array, variable-length,
 ///   enumerative or user-defined datatypes.
@@ -35,6 +43,8 @@ IODA_HIDDEN std::pair<bool, bool> isFilteravailable(H5Z_filter_t filt);
 IODA_HIDDEN bool CanUseSZIP(HH_hid_t dtype);
 
 /** \brief Order-obeying filter insertions and replacements
+\ingroup ioda_internals_engines_hh
+\details
 Filters will be repeatedly removed and reinserted to get the desired filter order.
 The desired filter order is:
 - Shuffling
@@ -80,3 +90,5 @@ public:
 }  // namespace Engines
 }  // namespace detail
 }  // namespace ioda
+
+/// @}

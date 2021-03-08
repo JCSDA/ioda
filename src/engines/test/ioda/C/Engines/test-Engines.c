@@ -23,9 +23,9 @@ int main() {
 
   g1 = ioda_Engines_ObsStore_createRootGroup();
   if (!g1) goto hadError;
-  g2 = ioda_Engines_HH_createMemoryFile("1", false, 100000);
+  g2 = ioda_Engines_HH_createMemoryFile(1, "1", false, 100000);
   if (!g2) goto hadError;
-  g3 = ioda_Engines_HH_createFile("test-engines-3.hdf5", ioda_Engines_BackendCreateModes_Truncate_If_Exists);
+  g3 = ioda_Engines_HH_createFile(19, "test-engines-3.hdf5", ioda_Engines_BackendCreateModes_Truncate_If_Exists);
   if (!g3) goto hadError;
 
   goto cleanup;

@@ -1,12 +1,18 @@
 #pragma once
 /*
- * (C) Copyright 2020 UCAR
+ * (C) Copyright 2020-2021 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
-/// \file Attribute.h
-/// \brief Interfaces of ioda::Attribute and related classes.
+/*! \defgroup ioda_cxx_attribute Attributes and Has_Attributes
+ * \brief Ancillary data attached to variables and groups.
+ * \ingroup ioda_cxx_api
+ *
+ * @{
+ * \file Attribute.h
+ * \brief @link ioda_cxx_attribute Interfaces @endlink for ioda::Attribute and related classes.
+ */
 #include <functional>
 #include <gsl/gsl-lite.hpp>
 #include <iostream>
@@ -31,6 +37,7 @@ class Attribute_Backend;
 class Variable_Backend;
 
 /// \brief Base class for Attributes
+/// \ingroup ioda_cxx_attribute
 ///
 /// \details You might wonder why we have this class
 /// as a template. This is because we are using
@@ -78,13 +85,16 @@ public:
   virtual Attribute_Implementation write(gsl::span<char> data, const Type& type);
 
   /// \brief Write data.
+  /// \tparam DataType is the type of the data. I.e. float, int, int32_t, uint16_t, std::string, etc.
+  /// \tparam Marshaller is the class that serializes the data type into something that the backend
+  /// library can use.
+  /// \tparam TypeWrapper is a helper class that creates Type objects for the backend.
   /// \param data is a gsl::span (a pointer-length pair) that contains the data to be written.
   /// \param in_memory_dataType is the memory layout needed to parse data's type.
-  /// \param DataType is the type of the data. I.e. float, int, int32_t, uint16_t, std::string, etc.
-  /// \param Marshaller is the class that serializes the data type into something that the backend
-  /// library can use. \returns Another instance of this Attribute. Used for operation chaining.
-  /// \throws jedi::xError if data.size() does not match getDimensions().numElements. \see gsl::span
-  /// for details of how to make a span. \see gsl::make_span
+  /// \returns Another instance of this Attribute. Used for operation chaining.
+  /// \throws jedi::xError if data.size() does not match getDimensions().numElements.
+  /// \see gsl::span for details of how to make a span.
+  /// \see gsl::make_span
   template <class DataType, class Marshaller = ioda::Object_Accessor<DataType>,
             class TypeWrapper = Types::GetType_Wrapper<DataType>>
   Attribute_Implementation write(gsl::span<const DataType> data) {
@@ -99,13 +109,16 @@ public:
 
   /// \brief Write data
   /// \note Normally the gsl::span write is fine. This one exists for easy Python binding.
+  /// \tparam DataType is the type of the data. I.e. float, int, int32_t, uint16_t, std::string, etc.
+  /// \tparam Marshaller is the class that serializes the data type into something that the backend
+  /// library can use.
+  /// \tparam TypeWrapper is a helper class that creates Type objects for the backend.
   /// \param data is a std::vector that contains the data to be written.
   /// \param in_memory_dataType is the memory layout needed to parse data's type.
-  /// \param DataType is the type of the data. I.e. float, int, int32_t, uint16_t, std::string, etc.
-  /// \param Marshaller is the class that serializes the data type into something that the backend
-  /// library can use. \returns Another instance of this Attribute. Used for operation chaining.
-  /// \throws jedi::xError if data.size() does not match getDimensions().numElements. \see gsl::span
-  /// for details of how to make a span. \see gsl::make_span
+  /// \returns Another instance of this Attribute. Used for operation chaining.
+  /// \throws jedi::xError if data.size() does not match getDimensions().numElements.
+  /// \see gsl::span for details of how to make a span.
+  /// \see gsl::make_span for details on how to make a span.
   template <class DataType, class Marshaller = ioda::Object_Accessor<DataType>,
             class TypeWrapper = Types::GetType_Wrapper<DataType>>
   Attribute_Implementation write(const std::vector<DataType>& data) {
@@ -115,13 +128,12 @@ public:
   }
 
   /// \brief Write data.
+  /// \tparam DataType is the type of the data. I.e. float, int, int32_t, uint16_t, std::string, etc.
   /// \param data is an initializer list that contains the data to be written.
   /// \param in_memory_dataType is the memory layout needed to parse data's type.
-  /// \param DataType is the type of the data. I.e. float, int, int32_t, uint16_t, std::string, etc.
-  /// \param Marshaller is the class that serializes the data type into something that the backend
-  /// library can use. \returns Another instance of this Attribute. Used for operation chaining.
-  /// \throws jedi::xError if data.size() does not match getDimensions().numElements. \see gsl::span
-  /// for details of how to make a span. \see gsl::make_span
+  /// \returns Another instance of this Attribute. Used for operation chaining.
+  /// \throws jedi::xError if data.size() does not match getDimensions().numElements.
+  /// \see gsl::span for details of how to make a span.
   template <class DataType>
   Attribute_Implementation write(std::initializer_list<DataType> data) {
     Expects(backend_ != nullptr);
@@ -130,7 +142,7 @@ public:
   }
 
   /// \brief Write a datum.
-  /// \param DataType is the type of the data. I.e. float, int, int32_t, uint16_t, std::string, etc.
+  /// \tparam DataType is the type of the data. I.e. float, int, int32_t, uint16_t, std::string, etc.
   /// \param data is the data to be written.
   /// \returns Another instance of this Attribute. Used for operation chaining.
   /// \throws jedi::xError if the Attribute dimensions are larger than a single point.
@@ -140,15 +152,8 @@ public:
     return write<DataType>(gsl::make_span<DataType>(&data, 1));
   }
 
-  /*
-  // \brief Special function to write a fixed-length string (needed for some backends).
-  // \param data is the string to be written.
-  // \returns Another instance of this Attribute. Used for operation chaining.
-  // \throws if data.size() is too large for the backend object.
-  //virtual Attribute writeFixedLengthString(const std::string& data);
-  */
-
   /// \brief Write an Eigen object (a Matrix, an Array, a Block, a Map).
+  /// \tparam EigenClass is the Eigen object to write.
   /// \param d is the data to be written.
   /// \throws jedi::xError on a dimension mismatch.
   /// \returns the attribute
@@ -170,6 +175,7 @@ public:
   }
 
   /// \brief Write an Eigen Tensor-like object
+  /// \tparam EigenClass is the Eigen tensor to write.
   /// \param d is the data to be written.
   /// \throws jedi::xError on a dimension mismatch.
   /// \returns the attribute
@@ -210,8 +216,10 @@ public:
   /// \details This is a fundamental function that reads a span of characters from backend storage,
   /// and then performs the appropriate type conversion / deserialization into objects in data.
   ///
-  /// \param DataType is the type if the data to be read. I.e. float, int, int32_t, uint16_t,
-  /// std::string, etc. \param Marshaller is the class that performs the deserialization operation.
+  /// \tparam DataType is the type if the data to be read. I.e. float, int, int32_t, uint16_t,
+  /// std::string, etc.
+  /// \tparam Marshaller is the class that performs the deserialization operation.
+  /// \tparam TypeWrapper is a helper class that passes Type information to the backend.
   /// \param data is a pointer-size pair to the data buffer that is filled with the metadata's
   /// contents. It should be
   ///   pre-sized to accomodate all of the matadata. See getDimensions().numElements. data will be
@@ -242,10 +250,11 @@ public:
   }
 
   /// \brief Vector read convenience function.
-  /// \param DataType is the type of the data. I.e. float, int, int32_t, uint16_t, std::string, etc.
+  /// \tparam DataType is the type of the data. I.e. float, int, int32_t, uint16_t, std::string, etc.
   /// \param data is a vector acting as a data buffer that is filled with the metadata's contents.
-  /// It gets resized as needed. \returns Another instance of this Attribute. Used for operation
-  /// chaining. \note data will be stored in row-major order.
+  ///   It gets resized as needed.
+  /// \returns Another instance of this Attribute. Used for operation chaining.
+  /// \note data will be stored in row-major order.
   template <class DataType>
   Attribute_Implementation read(std::vector<DataType>& data) const {
     data.resize(getDimensions().numElements);
@@ -253,10 +262,11 @@ public:
   }
 
   /// \brief Valarray read convenience function.
-  /// \param DataType is the type of the data. I.e. float, int, int32_t, uint16_t, std::string, etc.
+  /// \tparam DataType is the type of the data. I.e. float, int, int32_t, uint16_t, std::string, etc.
   /// \param data is a valarray acting as a data buffer that is filled with the metadata's contents.
-  /// It gets resized as needed. \returns Another instance of this Attribute. Used for operation
-  /// chaining. \note data will be stored in row-major order.
+  ///   It gets resized as needed.
+  /// \returns Another instance of this Attribute. Used for operation chaining.
+  /// \note data will be stored in row-major order.
   template <class DataType>
   Attribute_Implementation read(std::valarray<DataType>& data) const {
     data.resize(getDimensions().numElements);
@@ -264,7 +274,7 @@ public:
   }
 
   /// \brief Read into a single value (convenience function).
-  /// \param DataType is the type of the data. I.e. float, int, int32_t, uint16_t, std::string, etc.
+  /// \tparam DataType is the type of the data. I.e. float, int, int32_t, uint16_t, std::string, etc.
   /// \param data is where the datum is read to.
   /// \returns Another instance of this Attribute. Used for operation chaining.
   /// \throws jedi::xError if the underlying data have multiple elements.
@@ -275,9 +285,9 @@ public:
   }
 
   /// \brief Read a single value (convenience function).
-  /// \param DataType is the type of the data. I.e. float, int, int32_t, uint16_t, std::string, etc.
+  /// \tparam DataType is the type of the data. I.e. float, int, int32_t, uint16_t, std::string, etc.
   /// \returns A datum of type DataType.
-  /// \throws jedi::xError if the underlying data have size > 1.
+  /// \throws jedi::xError if the underlying data have size greater than 1.
   /// \note The Python function is read_datum_*
   template <class DataType>
   DataType read() const {
@@ -287,6 +297,7 @@ public:
   }
 
   /// \brief Read into a new vector. Python convenience function.
+  /// \tparam DataType is the type of the data.
   /// \note The Python function is read_list_*
   template <class DataType>
   std::vector<DataType> readAsVector() const {
@@ -296,11 +307,11 @@ public:
   }
 
   /// \brief Read data into an Eigen::Array, Eigen::Matrix, Eigen::Map, etc.
-  /// \param EigenClass is a template pointing to the Eigen object.
+  /// \tparam EigenClass is a template pointing to the Eigen object.
   ///   This template must provide the EigenClass::Scalar typedef.
-  /// \param res is the Eigen object.
-  /// \param Resize indicates whether the Eigen object should be resized
+  /// \tparam Resize indicates whether the Eigen object should be resized
   ///   if there is a dimension mismatch. Not all Eigen objects can be resized.
+  /// \param res is the Eigen object.
   /// \returns Another instance of this Attribute. Used for operation chaining.
   /// \throws jedi::xError if the attribute's dimensionality is
   ///   too high.
@@ -350,7 +361,7 @@ public:
   }
 
   /// \brief Read data into an Eigen::Array, Eigen::Matrix, Eigen::Map, etc.
-  /// \param EigenClass is a template pointing to the Eigen object.
+  /// \tparam EigenClass is a template pointing to the Eigen object.
   ///   This template must provide the EigenClass::Scalar typedef.
   /// \param res is the Eigen object.
   /// \returns Another instance of this Attribute. Used for operation chaining.
@@ -394,7 +405,7 @@ public:
   virtual detail::Type_Provider* getTypeProvider() const;
 
   /// \brief Convenience function to check an Attribute's storage type.
-  /// \param DataType is the type of the data. I.e. float, int, int32_t, uint16_t, std::string, etc.
+  /// \tparam DataType is the type of the data. I.e. float, int, int32_t, uint16_t, std::string, etc.
   /// \returns True if the type matches
   /// \returns False (0) if the type does not match
   /// \throws jedi::xError if an error occurred.
@@ -429,6 +440,7 @@ public:
 }  // namespace detail
 
 /** \brief This class represents attributes, which may be attached to both Variables and Groups.
+ *  \ingroup ioda_cxx_attribute
  *
  * Attributes are used to store small objects that get tagged to a Variable or a
  * Group to provide context to users and other programs. Attributes include
@@ -479,3 +491,5 @@ protected:
 };
 }  // namespace detail
 }  // namespace ioda
+
+/// @} // End Doxygen block

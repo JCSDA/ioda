@@ -1,13 +1,24 @@
 /*
- * (C) Copyright 2020 UCAR
+ * (C) Copyright 2020-2021 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
-/** \dir Basic
- * \brief Basic ioda-engines usage tutorials
- **/
-/** \file 01-GroupsAndObsSpaces.cpp
+/*! \defgroup ioda_cxx_ex Examples
+ * \brief C++ Usage Examples
+ * \ingroup ioda_cxx
+ *
+ * @{
+ * \dir Basic
+ * \brief Basic C++ ioda-engines usage tutorials
+ *
+ * \defgroup ioda_cxx_ex_1 Ex 1: Groups and ObsSpaces
+ * \brief Group manipulation using the C++ interface
+ * \see 01-GroupsAndObsSpaces.cpp for the example.
+ *
+ * @{
+ *
+ * \file 01-GroupsAndObsSpaces.cpp
  * \brief First example showing how to make a group (or an ObsSpace).
  *
  * IODA is the Interface for Observation Data Access.
@@ -166,3 +177,6 @@ int main(int argc, char** argv) {
   }
   return 0;
 }
+
+/// @}
+/// @}

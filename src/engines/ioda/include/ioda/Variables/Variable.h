@@ -1,12 +1,18 @@
 #pragma once
 /*
- * (C) Copyright 2020 UCAR
+ * (C) Copyright 2020-2021 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
-/// \file Variable.h
-/// \brief Interfaces of ioda::Variable and related classes.
+/*! \defgroup ioda_cxx_variable Variables, Data Access, and Selections
+ * \brief The main data storage methods and objects in IODA.
+ * \ingroup ioda_cxx_api
+ *
+ * @{
+ * \file Variable.h
+ * \brief @link ioda_cxx_variable Interfaces @endlink for ioda::Variable and related classes.
+ */
 #include <cstring>
 #include <gsl/gsl-lite.hpp>
 #include <list>
@@ -36,7 +42,8 @@ class Attribute_Backend;
 class Variable_Backend;
 
 /// \brief Exists to prevent constructor conflicts when passing a backend into
-/// a frontend object.
+///   a frontend object.
+/// \ingroup ioda_cxx_variable
 /// \bug Need to add a virtual resize function.
 template <class Variable_Implementation = Variable>
 class Variable_Base {
@@ -217,19 +224,21 @@ public:
   /// @name Writing Data
   /// @{
 
-  /// \brief The fundamental write function. Backends overload this function to implement all write
-  /// operations.
+  /// \brief The fundamental write function. Backends overload this function to implement
+  ///   all write operations.
   ///
-  /// \details This function writes a span of bytes (characters) to the backend attribute storage.
-  /// No type conversions take place here (see the templated conversion function, below).
+  /// \details This function writes a span of bytes (characters) to the backend attribute
+  ///   storage. No type conversions take place here (see the templated conversion function,
+  ///   below).
   ///
   /// \param data is a span of data.
-  /// \param in_memory_datatype is an opaque (backend-level) object that describes the placement of
-  ///   the data in memory. Usually ignorable - needed for complex data structures.
-  ///   \param mem_selection_id is the user's memory layout representing the location where the data
-  ///   is read from. \param file_selection_id is the backend's memory layout representing the
+  /// \param in_memory_datatype is an opaque (backend-level) object that describes the
+  ///   placement of the data in memory. Usually ignorable - needed for complex data structures.
+  /// \param mem_selection is the user's memory layout representing the location where
+  ///   the data is read from.
+  /// \param file_selection is the backend's memory layout representing the
   ///   location where the data are written to.
-  /// \throws jedi::xError if data has the wrong size.
+  /// \throws ioda::xError if data has the wrong size.
   /// \returns The variable (for chaining).
   virtual Variable write(gsl::span<char> data, const Type& in_memory_dataType,
                          const Selection& mem_selection  = Selection::all,
@@ -238,12 +247,15 @@ public:
   /// \brief Write the Variable
   /// \note Ensure that the correct dimension ordering is preserved.
   /// \note With default parameters, the entire Variable is written.
-  /// \param DataType is the type of the data to be written.
-  /// \param Marshaller is a class that serializes / deserializes data.
+  /// \tparam DataType is the type of the data to be written.
+  /// \tparam Marshaller is a class that serializes / deserializes data.
+  /// \tparam TypeWrapper translates DataType into a form that the backend understands.
   /// \param data is a span of data.
-  /// \param in_memory_datatype is an opaque (backend-level) object that describes the placement of
-  ///   the data in memory. Usually ignorable - needed for complex data structures.
-  /// \throws jedi::xError if data has the wrong size.
+  /// \param mem_selection is the user's memory layout representing the location where
+  ///   the data is read from.
+  /// \param file_selection is the backend's memory layout representing the
+  ///   location where the data are written to.
+  /// \throws ioda::xError if data has the wrong size.
   /// \returns The variable (for chaining).
   template <class DataType, class Marshaller = Object_Accessor<DataType>,
             class TypeWrapper = Types::GetType_Wrapper<DataType>>
@@ -261,12 +273,15 @@ public:
   /// \brief Write the Variable
   /// \note Ensure that the correct dimension ordering is preserved.
   /// \note With default parameters, the entire Variable is written.
-  /// \param DataType is the type of the data to be written.
-  /// \param Marshaller is a class that serializes / deserializes data.
+  /// \tparam DataType is the type of the data to be written.
+  /// \tparam Marshaller is a class that serializes / deserializes data.
+  /// \tparam TypeWrapper translates DataType into a form that the backend understands.
   /// \param data is a span of data.
-  /// \param in_memory_datatype is an opaque (backend-level) object that describes the placement of
-  ///   the data in memory. Usually ignorable - needed for complex data structures.
-  /// \throws jedi::xError if data has the wrong size.
+  /// \param mem_selection is the user's memory layout representing the location where
+  ///   the data is read from.
+  /// \param file_selection is the backend's memory layout representing the
+  ///   location where the data are written to.
+  /// \throws ioda::xError if data has the wrong size.
   /// \returns The variable (for chaining).
   template <class DataType, class Marshaller = Object_Accessor<DataType>,
             class TypeWrapper = Types::GetType_Wrapper<DataType>>
@@ -281,7 +296,18 @@ public:
                  TypeWrapper::GetType(getTypeProvider()), mem_selection, file_selection);
   }
 
-  /// Write the variable
+  /// \brief Write the variable
+  /// \tparam DataType is the type of the data to be written.
+  /// \tparam Marshaller is a class that serializes / deserializes data.
+  /// \tparam TypeWrapper translates DataType into a form that the backend understands.
+  /// \param data is a span of data.
+  /// \param mem_selection is the user's memory layout representing the location where
+  ///   the data is read from.
+  /// \param file_selection is the backend's memory layout representing the
+  ///   location where the data are written to.
+  /// \throws ioda::xError if data has the wrong size.
+  /// \returns The variable (for chaining).
+
   template <class DataType, class Marshaller = Object_Accessor<DataType>,
             class TypeWrapper = Types::GetType_Wrapper<DataType>>
   Variable_Implementation write(const std::vector<DataType>& data,
@@ -293,8 +319,13 @@ public:
   }
 
   /// \brief Write an Eigen object (a Matrix, an Array, a Block, a Map).
+  /// \tparam EigenClass is the type of the Eigen object being written.
   /// \param d is the data to be written.
-  /// \throws jedi::xError on a dimension mismatch.
+  /// \param mem_selection is the user's memory layout representing the location where
+  ///   the data is read from.
+  /// \param file_selection is the backend's memory layout representing the
+  ///   location where the data are written to.
+  /// \throws ioda::xError on a dimension mismatch.
   /// \returns the variable
   template <class EigenClass>
   Variable_Implementation writeWithEigenRegular(const EigenClass& d,
@@ -316,8 +347,13 @@ public:
   }
 
   /// \brief Write an Eigen Tensor-like object
+  /// \tparam EigenClass is the type of the Eigen object being written.
   /// \param d is the data to be written.
-  /// \throws jedi::xError on a dimension mismatch.
+  /// \param mem_selection is the user's memory layout representing the location where
+  ///   the data is read from.
+  /// \param file_selection is the backend's memory layout representing the
+  ///   location where the data are written to.
+  /// \throws ioda::xError on a dimension mismatch.
   /// \returns the variable
   template <class EigenClass>
   Variable_Implementation writeWithEigenTensor(const EigenClass& d,
@@ -341,6 +377,13 @@ public:
 
   /// \brief Read the Variable - as char array. Ordering is row-major.
   /// \details This is the fundamental read function that has to be implemented.
+  /// \param data is a byte-array that will hold the read data.
+  /// \param in_memory_dataType describes how ioda should arrange the read data in memory.
+  ///   As floats? As doubles? Strings?
+  /// \param mem_selection is the user's memory layout representing the location where
+  ///   the data is read from.
+  /// \param file_selection is the backend's memory layout representing the
+  ///   location where the data are written to.
   /// \note Ensure that the correct dimension ordering is preserved
   /// \note With default parameters, the entire Variable is read
   virtual Variable read(gsl::span<char> data, const Type& in_memory_dataType,
@@ -348,6 +391,14 @@ public:
                         const Selection& file_selection = Selection::all) const;
 
   /// \brief Read the variable into a span (range) or memory. Ordering is row-major.
+  /// \tparam DataType is the type of the data to be written.
+  /// \tparam Marshaller is a class that serializes / deserializes data.
+  /// \tparam TypeWrapper translates DataType into a form that the backend understands.
+  /// \param data is a byte-array that will hold the read data.
+  /// \param mem_selection is the user's memory layout representing the location where
+  ///   the data is read from.
+  /// \param file_selection is the backend's memory layout representing the
+  ///   location where the data are written to.
   /// \todo Add in the dataspaces!
   template <class DataType, class Marshaller = ioda::Object_Accessor<DataType>,
             class TypeWrapper = Types::GetType_Wrapper<DataType>>
@@ -373,22 +424,38 @@ public:
     return Variable_Implementation{backend_};
   }
 
-  /// \brief Read the variable into a vector. Resize if needed. For a non-resizing version, use a
-  /// gsl::span. \details Ordering is row-major.
+  /// \brief Read the variable into a vector. Resize if needed. For a non-resizing
+  ///   version, use a gsl::span.
+  /// \details Ordering is row-major.
+  /// \tparam DataType is the type of the data to be written.
+  /// \tparam Marshaller is a class that serializes / deserializes data.
+  /// \tparam TypeWrapper translates DataType into a form that the backend understands.
+  /// \param data is a byte-array that will hold the read data.
+  /// \param mem_selection is the user's memory layout representing the location where
+  ///   the data is read from.
+  /// \param file_selection is the backend's memory layout representing the
+  ///   location where the data are written to.
+  /// \bug Resize only if needed, and resize to the proper extent depending on
+  ///   mem_selection and file_selection.
   template <class DataType, class Marshaller = ioda::Object_Accessor<DataType>,
             class TypeWrapper = Types::GetType_Wrapper<DataType>>
   Variable_Implementation read(std::vector<DataType>& data,
                                const Selection& mem_selection  = Selection::all,
                                const Selection& file_selection = Selection::all) const {
-    /// \bug Resize only if needed, and resize to the proper extent depending on
-    /// mem_selection and file_selection.
     data.resize(getDimensions().numElements);
     return read<DataType, Marshaller, TypeWrapper>(gsl::make_span(data.data(), data.size()),
                                                    mem_selection, file_selection);
   }
 
   /// \brief Read the variable into a new vector. Python convenience function.
-  /// \bug Get correct size.
+  /// \bug Get correct size based on selection operands.
+  /// \tparam DataType is the type of the data to be written.
+  /// \tparam Marshaller is a class that serializes / deserializes data.
+  /// \tparam TypeWrapper translates DataType into a form that the backend understands.
+  /// \param mem_selection is the user's memory layout representing the location where
+  ///   the data is read from.
+  /// \param file_selection is the backend's memory layout representing the
+  ///   location where the data are written to.
   template <class DataType, class Marshaller = ioda::Object_Accessor<DataType>,
             class TypeWrapper = Types::GetType_Wrapper<DataType>>
   std::vector<DataType> readAsVector(const Selection& mem_selection  = Selection::all,
@@ -399,11 +466,19 @@ public:
     return data;
   }
 
-  /// \brief Valarray read convenience function. Resize if needed. For a non-resizing version, use a
-  /// gsl::span. \param DataType is the type of the data. I.e. float, int, int32_t, uint16_t,
-  /// std::string, etc. \param data is a valarray acting as a data buffer that is filled with the
-  /// metadata's contents. It gets resized as needed. \returns Another instance of this Attribute.
-  /// Used for operation chaining. \note data will be stored in row-major order.
+  /// \brief Valarray read convenience function. Resize if needed.
+  ///   For a non-resizing version, use a gsl::span.
+  /// \tparam DataType is the type of the data to be written.
+  /// \tparam Marshaller is a class that serializes / deserializes data.
+  /// \tparam TypeWrapper translates DataType into a form that the backend understands.
+  /// \param data is a valarray acting as a data buffer that is filled with the
+  ///   metadata's contents. It gets resized as needed.
+  /// \param mem_selection is the user's memory layout representing the location where
+  ///   the data is read from.
+  /// \param file_selection is the backend's memory layout representing the
+  ///   location where the data are written to.
+  /// \returns Another instance of this Attribute. Used for operation chaining.
+  /// \note data will be stored in row-major order.
   template <class DataType, class Marshaller = ioda::Object_Accessor<DataType>,
             class TypeWrapper = Types::GetType_Wrapper<DataType>>
   Variable_Implementation read(std::valarray<DataType>& data,
@@ -417,15 +492,19 @@ public:
   }
 
   /// \brief Read data into an Eigen::Array, Eigen::Matrix, Eigen::Map, etc.
-  /// \param EigenClass is a template pointing to the Eigen object.
+  /// \tparam EigenClass is a template pointing to the Eigen object.
   ///   This template must provide the EigenClass::Scalar typedef.
-  /// \param res is the Eigen object.
-  /// \param Resize indicates whether the Eigen object should be resized
+  /// \tparam Resize indicates whether the Eigen object should be resized
   ///   if there is a dimension mismatch. Not all Eigen objects can be resized.
+  /// \param res is the Eigen object.
+  /// \param mem_selection is the user's memory layout representing the location where
+  ///   the data is read from.
+  /// \param file_selection is the backend's memory layout representing the
+  ///   location where the data are written to.
   /// \returns Another instance of this Variable. Used for operation chaining.
-  /// \throws jedi::xError if the variable's dimensionality is
+  /// \throws ioda::xError if the variable's dimensionality is
   ///   too high.
-  /// \throws jedi::xError if resize = false and there is a dimension mismatch.
+  /// \throws ioda::xError if resize = false and there is a dimension mismatch.
   /// \note When reading in a 1-D object, the data are read as a column vector.
   template <class EigenClass, bool Resize = detail::EigenCompat::CanResize<EigenClass>::value>
   Variable_Implementation readWithEigenRegular(EigenClass& res,
@@ -477,9 +556,13 @@ public:
   }
 
   /// \brief Read data into an Eigen::Array, Eigen::Matrix, Eigen::Map, etc.
-  /// \param EigenClass is a template pointing to the Eigen object.
+  /// \tparam EigenClass is a template pointing to the Eigen object.
   ///   This template must provide the EigenClass::Scalar typedef.
   /// \param res is the Eigen object.
+  /// \param mem_selection is the user's memory layout representing the location where
+  ///   the data is read from.
+  /// \param file_selection is the backend's memory layout representing the
+  ///   location where the data are written to.
   /// \returns Another instance of this Variable. Used for operation chaining.
   /// \throws jedi::xError if there is a size mismatch.
   /// \note When reading in a 1-D object, the data are read as a column vector.
@@ -518,29 +601,27 @@ public:
 }  // namespace detail
 
 /** \brief Variables store data!
+ * \ingroup ioda_cxx_variable
  *
  * A variable represents a single field of data. It can be multi-dimensional and
  * usually has one or more attached **dimension scales**.
  *
  * Variables have Metadata, which describe the variable (i.e. valid_range, long_name, units).
- *
  * Variables can have different data types (i.e. int16_t, float, double, string, datetime).
+ * Variables can be resized. Depending on the backend, the data in a variable can be stored
+ * using chunks, and may also be compressed.
  *
- * Variables can be resized. Depending on the backend, the data in a variable can be stored using
- * chunks, and may also be compressed.
+ * The backend manages how variables are stored in memory or on disk. The functions in the
+ * Variable class provide methods to query and set data. The goal is to have data transfers
+ * involve as few copies as possible.
  *
- * The backend manages how variables are stored in memory or on disk. The functions in the Variable
- * class provide methods to query and set data. The goal is to have data transfers involve as
- * few copies as possible.
- *
- * Variable objects themselves are lightweight handles that may be easily passed across different
+ * Variable objects themselves are lightweight handles that may be passed across different
  * parts of a program. Variables are always stored somewhere in a Group (or ObsSpace), so you
  * can always re-open a handle.
  *
  * \note Thread and MPI safety depend on the specific backends used to implement a variable.
  * \note A variable may be linked to multiple groups and listed under multiple names, so long as
  * the storage backends are all the same.
- * \todo Add resize function.
  **/
 class IODA_DL Variable : public detail::Variable_Base<Variable> {
 public:
@@ -584,10 +665,9 @@ public:
 protected:
   Variable_Backend();
 
-  /// @brief This function de-encapsulates an Attribute's backend storage object. This function is
-  /// used by
-  ///   Variable_Backend's derivatives when accessing a Variable's Attributes. IODA-internal use
-  ///   only.
+  /// @brief This function de-encapsulates an Attribute's backend storage object.
+  ///   This function is used by Variable_Backend's derivatives when accessing a
+  ///   Variable's Attributes. IODA-internal use only.
   /// @tparam Attribute_Implementation is a dummy parameter used by Attributes.
   /// @param base is the Attribute whose backend you want.
   /// @return The encapsulated backend object.
@@ -610,3 +690,5 @@ protected:
 };
 }  // namespace detail
 }  // namespace ioda
+
+/// @}

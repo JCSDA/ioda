@@ -1,10 +1,21 @@
 /*
- * (C) Copyright 2020 UCAR
+ * (C) Copyright 2020-2021 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
-/** \file 02-Attributes.cpp
+/*! \addtogroup ioda_cxx_ex
+ *
+ * @{
+ *
+ * \defgroup ioda_cxx_ex_2 Ex 2: Attribute manipulation
+ * \brief Shows how to manipulate Attributes and an introduction to
+ * the type system.
+ * \see 02-Attributes.cpp for comments and the walkthrough.
+ *
+ * @{
+ *
+ * \file 02-Attributes.cpp
  * \brief Shows how to manipulate Attributes and an introduction to
  * the type system.
  *
@@ -130,8 +141,8 @@ int main(int argc, char** argv) {
     std::array<int, 6> a_data_6{1, 2, 3, 4, 5, 6};         // A fixed-length array of data.
     std::valarray<int> va_data_7{1, 2, 3, 4};              // A basic math-supporting vector.
     const size_t sz_ca_data_8 = 7;
-    const int ca_data_8[sz_ca_data_8] = {1, 2, 3, 4,
-                                         5, 6, 7};  // NOLINT: (Humans should ignore this comment.)
+    const int ca_data_8[sz_ca_data_8]
+      = {1, 2, 3, 4, 5, 6, 7};  // NOLINT: (Humans should ignore this comment.)
 
     g.atts.add<int>("int-att-5", gsl::make_span(v_data_5));
     g.atts.add<int>("int-att-6", gsl::make_span(a_data_6));
@@ -246,3 +257,6 @@ int main(int argc, char** argv) {
   }
   return 0;
 }
+
+/// @}
+/// @}

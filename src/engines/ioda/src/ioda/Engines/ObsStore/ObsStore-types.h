@@ -1,15 +1,19 @@
 /*
- * (C) Copyright 2020 UCAR
+ * (C) Copyright 2020-2021 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
-/// \file ObsStore-types.h
-/// \brief Functions for translating ioda::Types to ObsStore Types
+/*! \addtogroup ioda_internals_engines_obsstore
+ *
+ * @{
+ * \file ObsStore-types.h
+ * \brief Functions for translating ioda::Types to ObsStore Types
+ */
 #pragma once
 #include <utility>
 
-#include "ioda/ObsStore/Types.hpp"
+#include "./Types.hpp"
 #include "ioda/Types/Type.h"
 #include "ioda/Types/Type_Provider.h"
 #include "ioda/defs.h"
@@ -20,6 +24,7 @@ namespace ObsStore {
 typedef std::pair<ioda::ObsStore::ObsTypes, std::size_t> ObsTypeInfo;
 
 /// \brief set of functions to return ObsStore Types
+/// \ingroup ioda_internals_engines_obsstore
 class IODA_DL ObsStore_Type_Provider : public detail::Type_Provider {
 public:
   virtual ~ObsStore_Type_Provider();
@@ -50,6 +55,7 @@ public:
   static ObsStore_Type_Provider* instance();
 };
 
+/// \ingroup ioda_internals_engines_obsstore
 class IODA_DL ObsStore_Type : public detail::Type_Backend {
 private:
   /// \brief holds ObsStore type for mapping with corresponding ioda::Type
@@ -71,3 +77,5 @@ public:
 }  // namespace ObsStore
 }  // namespace Engines
 }  // namespace ioda
+
+/// @}

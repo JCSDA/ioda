@@ -1,10 +1,16 @@
 /*
- * (C) Copyright 2020 UCAR
+ * (C) Copyright 2020-2021 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
-#include "ioda/ObsStore/Attributes.hpp"
+/*! \addtogroup ioda_internals_engines_obsstore
+ *
+ * @{
+ * \file Attributes.cpp
+ * \brief Functions for ObsStore Attribute and Has_Attributes
+ */
+#include "./Attributes.hpp"
 
 #include <functional>
 #include <numeric>
@@ -111,3 +117,5 @@ std::vector<std::string> Has_Attributes::list() const {
 }
 }  // namespace ObsStore
 }  // namespace ioda
+
+/// @}

@@ -1,12 +1,16 @@
 #pragma once
 /*
- * (C) Copyright 2020 UCAR
+ * (C) Copyright 2020-2021 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
-/// \file FillPolicy.h
-/// \brief Default fill values for ioda files.
+/*! \addtogroup ioda_cxx_variable
+ *
+ * @{
+ * \file FillPolicy.h
+ * \brief Default fill values for ioda files.
+ */
 
 #include <gsl/gsl-lite.hpp>
 #include <memory>
@@ -19,14 +23,17 @@ namespace ioda {
 
 /// \brief This option describes the default fill values that will be used if the user does not
 /// manually specify a fill value.
+/// \ingroup ioda_cxx_variable
 enum class FillValuePolicy {
   HDF5,    ///< Set all fill values to zero or null strings.
   NETCDF4  ///< Use NetCDF4 default fill values. This is the default option for ioda files.
 };
 
 /// \brief Holds the different default fill values used in ioda files produced by different
-/// backends. \details This matters for netCDF4 vs HDF5-produced files. They have different default
-/// fill values.
+///   backends.
+/// \ingroup ioda_cxx_variable
+/// \details This matters for netCDF4 vs HDF5-produced files. They have different default
+///   fill values.
 namespace FillValuePolicies {
 template <class T>
 T HDF5_default() {
@@ -37,8 +44,9 @@ inline std::string HDF5_default<std::string>() {
   return std::string();
 }
 
+/// \ingroup ioda_cxx_variable
 /// \see netcdf.h, starting around line 62, for these values
-/// netcdf uses "ints" and "shorts", but these are all defined as fixed-width types.
+///   netcdf uses "ints" and "shorts", but these are all defined as fixed-width types.
 template <class T>
 T netCDF4_default() {
   return 0;
@@ -93,7 +101,8 @@ inline uint64_t netCDF4_default<uint64_t>() {
 }
 
 /// \brief Applies the fill value policy. This sets default fill values when fill values are not
-/// already provided.
+///   already provided.
+/// \ingroup ioda_cxx_variable
 template <class T>
 void applyFillValuePolicy(FillValuePolicy pol, detail::FillValueData_t& fvd) {
   if (fvd.set_) return;  // If already set, then do nothing.
@@ -106,3 +115,6 @@ void applyFillValuePolicy(FillValuePolicy pol, detail::FillValueData_t& fvd) {
 }
 }  // namespace FillValuePolicies
 }  // namespace ioda
+
+/// @}
+

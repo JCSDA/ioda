@@ -1,19 +1,30 @@
 /*
- * (C) Copyright 2020 UCAR
+ * (C) Copyright 2020-2021 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
-/** \dir C
+
+/*! \defgroup ioda_c_ex Examples
+ * \brief C Usage Examples
+ * \ingroup ioda_c
+ *
+ * @{
+ * \dir C
  * \brief C ioda-engines usage examples
- **/
-/** \file 01-GroupsAndObsSpaces.c
+ */
+
+/*!
+ * \defgroup ioda_c_ex_1 Ex 1: Groups and ObsSpaces
  * \brief Group manipulation using the C interface
+ * \details This example parallels the C++ examples.
+ * \see 01-GroupsAndObsSpaces.c for the example.
+ * \see 01-GroupsAndObsSpaces.cpp for parallel C++ comments and the walkthrough.
  *
- * This example parallels the C++ examples.
- * \see 01-GroupsAndObsSpaces.cpp for comments and the walkthrough.
+ * @{
  *
- * \author Ryan Honeyager (honeyage@ucar.edu)
+ * \file 01-GroupsAndObsSpaces.c
+ * \brief @link ioda_c_ex_1 Example 1 @endlink for ioda's C API.
  **/
 
 #include <stdio.h>
@@ -26,15 +37,15 @@
 
 #define sslin(x) #x
 #define slin(x) sslin(x)
-#define doErr                                                       \
-  {                                                                 \
-    errlin = "Error in " __FILE__ " at line " slin(__LINE__) ".\n"; \
-    goto hadError;                                                  \
+#define doErr                                                                                      \
+  {                                                                                                \
+    errlin = "Error in " __FILE__ " at line " slin(__LINE__) ".\n";                                \
+    goto hadError;                                                                                 \
   }
 
 int main(int argc, char** argv) {
-  int errval = 0;
-  const char* errlin = NULL;
+  int errval                     = 0;
+  const char* errlin             = NULL;
   struct ioda_group *grpFromFile = NULL, *g1 = NULL, *g2 = NULL, *g3 = NULL, *g4 = NULL, *g5 = NULL,
                     *g6 = NULL, *opened_g3 = NULL, *opened_g6 = NULL;
   struct ioda_string_ret_t *g3_list = NULL, *g4_list = NULL;
@@ -42,22 +53,22 @@ int main(int argc, char** argv) {
   grpFromFile = ioda_Engines_constructFromCmdLine(argc, argv, "Example-01a-C.hdf5");
   if (!grpFromFile) doErr;
 
-  g1 = ioda_group_create(grpFromFile, "g1");
+  g1 = ioda_group_create(grpFromFile, 2, "g1");
   if (!g1) doErr;
-  g2 = ioda_group_create(grpFromFile, "g2");
+  g2 = ioda_group_create(grpFromFile, 2, "g2");
   if (!g2) doErr;
-  g3 = ioda_group_create(g1, "g3");
+  g3 = ioda_group_create(g1, 2, "g3");
   if (!g3) doErr;
-  g4 = ioda_group_create(g3, "g4");
+  g4 = ioda_group_create(g3, 2, "g4");
   if (!g4) doErr;
-  g5 = ioda_group_create(g4, "g5");
+  g5 = ioda_group_create(g4, 2, "g5");
   if (!g5) doErr;
-  g6 = ioda_group_create(g4, "g6");
+  g6 = ioda_group_create(g4, 2, "g6");
   if (!g6) doErr;
 
-  if (ioda_group_exists(g1, "g3") <= 0) doErr;
+  if (ioda_group_exists(g1, 2, "g3") <= 0) doErr;
 
-  if (ioda_group_exists(g1, "g3/g4") <= 0) doErr;
+  if (ioda_group_exists(g1, 5, "g3/g4") <= 0) doErr;
 
   g3_list = ioda_group_list(g3);
   if (!g3_list) doErr;
@@ -66,9 +77,9 @@ int main(int argc, char** argv) {
   if (!g4_list) doErr;
   if (g4_list->n != 2) doErr;
 
-  opened_g3 = ioda_group_open(g1, "g3");
+  opened_g3 = ioda_group_open(g1, 2, "g3");
   if (!opened_g3) doErr;
-  opened_g6 = ioda_group_open(g3, "g4/g6");
+  opened_g6 = ioda_group_open(g3, 5, "g4/g6");
   if (!opened_g6) doErr;
 
   ioda_group_destruct(opened_g3);

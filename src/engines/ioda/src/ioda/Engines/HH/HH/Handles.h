@@ -6,6 +6,12 @@
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
+/*! \addtogroup ioda_internals_engines_hh
+ *
+ * @{
+ * \file Handles.h
+ * \brief HDF5 resource handles in C++.
+ */
 #include <hdf5.h>
 
 #include <functional>
@@ -20,6 +26,7 @@ namespace Handles {
 
 /// @brief Describes what a handle points to.
 /// @deprecated To be removed.
+/// @ingroup ioda_internals_engines_hh
 enum class Handle_Types {
   ATTRIBUTE,
   DATASET,
@@ -34,6 +41,7 @@ enum class Handle_Types {
 };
 
 /// @brief A class to wrap HDF5's hid_t resource handles.
+/// @ingroup ioda_internals_engines_hh
 ///
 /// This class adds RAII resource management to keep track of the various
 /// hid_t handles that HDF5 returns to ioda. A handle, in this context, is
@@ -41,7 +49,7 @@ enum class Handle_Types {
 /// tracks what is accessing a particular resource like a file, a group, an
 /// attribute, and so on. Whenever you open or create a resource, you get back
 /// a handle that you reference when calling other functions on that resource.
-/// 
+///
 /// The problem with hid_t is that HDF5's C interface is a C interface, and there
 /// are three key points that HH_hid_t aims to address.
 ///
@@ -50,9 +58,9 @@ enum class Handle_Types {
 ///   HDF5 provides at least ten release functions.
 /// - HDF5 has some reserved values, like H5P_DEFAULT, that are not strictly handles
 ///   but are passed to the same function calls. These values can never be released.
-/// 
+///
 /// Usage:
-/// 
+///
 /// Wrapping an HDF5 return call into a managed handle:
 /// ```
 /// hid_t raw_handle = H5Fopen(.....);
@@ -60,24 +68,24 @@ enum class Handle_Types {
 /// ...
 /// ```
 /// The functions in Handles::Closers let you specify which function releases a handle.
-/// 
+///
 /// Using a wrapped handle:
 /// ```
 /// auto res = H5Gopen(managed_handle(), ...);
 /// // You could also explicitly type managed_handle.get().
 /// ```
-/// 
+///
 /// Cloning a handle:
 /// ```
 /// HH_hid_t hnd2 = hnd1;
 /// ```
-/// 
+///
 /// Checking if a handle is "valid" - i.e. that an error did not occur:
 /// ```
 /// HH_hid_t managed_handle(H5Fopen(.....), Handles::Closers::CloseHDF5File::CloseP);
 /// if (!managed_handle.isValid()) throw;
 /// ```
-/// 
+///
 /// @todo Autodetect hid_t handle "type" if possible and auto-assign the closer function.
 ///   Will not work in all cases, particularly property lists, as HDF5 does not have a
 ///   good detection function for these.
@@ -103,12 +111,14 @@ public:
   bool isValid() const;
 };
 
-/// Encapsulate a static hid object in a shared pointer.
+/// @brief Encapsulate a static hid object in a shared pointer.
+/// @ingroup ioda_internals_engines_hh
 inline std::shared_ptr<hid_t> createStatic(hid_t newh) {
   return std::shared_ptr<hid_t>(new hid_t(newh));
 }
 
-/// Detect invalid HDF5 ids
+/// @brief Detect invalid HDF5 ids
+/// @ingroup ioda_internals_engines_hh
 struct InvalidHDF5Handle {
   static inline bool isValid(hid_t h) {
     htri_t res = H5Iis_valid(h);
@@ -120,7 +130,8 @@ struct InvalidHDF5Handle {
   static inline bool isInvalid(hid_t h) { return !isValid(h); }
 };
 
-/// Structs in this namespace implement close operations on HDF5 handles.
+/// \brief Structs in this namespace implement close operations on HDF5 handles.
+/// \ingroup ioda_internals_engines_hh
 namespace Closers {
 struct CloseHDF5Attribute {
   static inline void Close(hid_t h) { herr_t err = H5Aclose(h); }
@@ -182,3 +193,5 @@ using Handles::HH_hid_t;
 }  // namespace Engines
 }  // namespace detail
 }  // namespace ioda
+
+/// @}

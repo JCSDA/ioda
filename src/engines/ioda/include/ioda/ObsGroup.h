@@ -1,12 +1,16 @@
 #pragma once
 /*
- * (C) Copyright 2020 UCAR
+ * (C) Copyright 2020-2021 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
-/// \file ObsGroup.h
-/// \brief Interfaces for ioda::ObsGroup and related classes.
+/*! \addtogroup ioda_cxx_layout
+ *
+ * @{
+ * \file ObsGroup.h
+ * \brief Interfaces for ioda::ObsGroup and related classes.
+ */
 
 #include <memory>
 #include <utility>
@@ -23,7 +27,8 @@ class DataLayoutPolicy;
 }  // namespace detail
 
 /// \brief An ObsGroup is a specialization of a ioda::Group. It provides convenience functions
-/// and guarantees that the ioda data are well-formed.
+///   and guarantees that the ioda data are well-formed.
+/// \ingroup ioda_cxx_layout
 class IODA_DL ObsGroup : public Group {
   /// Identifies the current version of the ObsGroup schema.
   static const int current_schema_version_;
@@ -77,3 +82,5 @@ private:
 };
 
 }  // namespace ioda
+
+/// @}

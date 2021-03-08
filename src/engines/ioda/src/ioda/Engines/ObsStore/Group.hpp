@@ -1,11 +1,17 @@
 /*
- * (C) Copyright 2020 UCAR
+ * (C) Copyright 2020-2021 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
-/// \file Group.hpp
-/// \brief Functions for ObsStore Group and Has_Groups
+/*! \defgroup ioda_internals_engines_obsstore ObsStore Engine
+ * \brief Implementation of the in-memory ObsStore backend.
+ * \ingroup ioda_internals_engines
+ *
+ * @{
+ * \file Group.hpp
+ * \brief Functions for ObsStore Group and Has_Groups
+ */
 #pragma once
 
 #include <exception>
@@ -15,11 +21,12 @@
 #include <string>
 #include <vector>
 
-#include "ioda/ObsStore/Attributes.hpp"
+#include "./Attributes.hpp"
 
 namespace ioda {
 namespace ObsStore {
 class Has_Variables;
+/// \ingroup ioda_internals_engines_obsstore
 class Group {
 private:
   /// \brief container for child groups
@@ -69,3 +76,5 @@ public:
 };
 }  // namespace ObsStore
 }  // namespace ioda
+
+/// @}

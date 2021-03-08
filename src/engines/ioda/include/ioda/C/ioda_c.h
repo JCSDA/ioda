@@ -1,12 +1,19 @@
 #pragma once
 /*
- * (C) Copyright 2020 UCAR
+ * (C) Copyright 2020-2021 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
-/// \file ioda_c.h
-/// \brief C bindings for ioda-engines. Provides a class-like structure.
+
+/*! \defgroup ioda_c_api API
+ * \brief C API
+ * \ingroup ioda_c
+ *
+ * @{
+ * \file ioda_c.h
+ * \brief C bindings for ioda-engines. Provides a class-like structure.
+ */
 
 #include <stdbool.h>
 
@@ -41,3 +48,5 @@ IODA_DL struct c_ioda use_c_ioda();
 #ifdef __cplusplus
 }
 #endif
+
+/// @} // Close Doxygen block

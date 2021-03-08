@@ -1,19 +1,20 @@
 /*
- * (C) Copyright 2020 UCAR
+ * (C) Copyright 2020-2021 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
-/** \dir C
- * \brief C ioda-engines usage examples
- **/
-/** \file 01-GroupsAndObsSpaces.c
+/*! \addtogroup ioda_c_ex
+ *
+ * @{
+ *
+ * \defgroup ioda_c_ex_1b Ex 1b: Groups and ObsSpaces
  * \brief Group manipulation using the C interface
+ * \details This example parallels the C++ examples.
  *
- * This example parallels the C++ examples.
- * \see 01-GroupsAndObsSpaces.cpp for comments and the walkthrough.
+ * @{
  *
- * \author Ryan Honeyager (honeyage@ucar.edu)
+ * \file 01b-GroupsAndObsSpaces.c More group examples
  **/
 
 #include <stdio.h>
@@ -24,16 +25,16 @@
 
 #define sslin(x) #x
 #define slin(x) sslin(x)
-#define doErr                                                       \
-  {                                                                 \
-    errlin = "Error in " __FILE__ " at line " slin(__LINE__) ".\n"; \
-    goto hadError;                                                  \
+#define doErr                                                                                      \
+  {                                                                                                \
+    errlin = "Error in " __FILE__ " at line " slin(__LINE__) ".\n";                                \
+    goto hadError;                                                                                 \
   }
 
 int main(int argc, char** argv) {
-  int errval = 0;
-  const char* errlin = NULL;
-  struct c_ioda ioda = use_c_ioda();
+  int errval                     = 0;
+  const char* errlin             = NULL;
+  struct c_ioda ioda             = use_c_ioda();
   struct ioda_group *grpFromFile = NULL, *g1 = NULL, *g2 = NULL, *g3 = NULL, *g4 = NULL, *g5 = NULL,
                     *g6 = NULL, *opened_g3 = NULL, *opened_g6 = NULL;
   struct ioda_string_ret_t *g3_list = NULL, *g4_list = NULL;
@@ -41,22 +42,22 @@ int main(int argc, char** argv) {
   grpFromFile = ioda.Engines.constructFromCmdLine(argc, argv, "Example-01b-C.hdf5");
   if (!grpFromFile) goto hadError;
 
-  g1 = ioda.Group.create(grpFromFile, "g1");
+  g1 = ioda.Group.create(grpFromFile, 2, "g1");
   if (!g1) doErr;
-  g2 = ioda.Group.create(grpFromFile, "g2");
+  g2 = ioda.Group.create(grpFromFile, 2, "g2");
   if (!g2) doErr;
-  g3 = ioda.Group.create(g1, "g3");
+  g3 = ioda.Group.create(g1, 2, "g3");
   if (!g3) doErr;
-  g4 = ioda.Group.create(g3, "g4");
+  g4 = ioda.Group.create(g3, 2, "g4");
   if (!g4) doErr;
-  g5 = ioda.Group.create(g4, "g5");
+  g5 = ioda.Group.create(g4, 2, "g5");
   if (!g5) doErr;
-  g6 = ioda.Group.create(g4, "g6");
+  g6 = ioda.Group.create(g4, 2, "g6");
   if (!g6) doErr;
 
-  if (ioda.Group.exists(g1, "g3") <= 0) doErr;
+  if (ioda.Group.exists(g1, 2, "g3") <= 0) doErr;
 
-  if (ioda.Group.exists(g1, "g3/g4") <= 0) doErr;
+  if (ioda.Group.exists(g1, 5, "g3/g4") <= 0) doErr;
 
   g3_list = ioda.Group.list(g3);
   if (!g3_list) doErr;
@@ -65,9 +66,9 @@ int main(int argc, char** argv) {
   if (!g4_list) doErr;
   if (g4_list->n != 2) doErr;
 
-  opened_g3 = ioda.Group.open(g1, "g3");
+  opened_g3 = ioda.Group.open(g1, 2, "g3");
   if (!opened_g3) doErr;
-  opened_g6 = ioda.Group.open(g3, "g4/g6");
+  opened_g6 = ioda.Group.open(g3, 5, "g4/g6");
   if (!opened_g6) doErr;
 
   ioda_group_destruct(opened_g3);

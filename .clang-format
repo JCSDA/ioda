@@ -15,6 +15,6 @@ IndentPPDirectives: AfterHash
 IndentWidth: 2
 NamespaceIndentation: None
 PointerAlignment: Right
-ReflowComments: true
+ReflowComments: false
 SortIncludes: true
 SortUsingDeclarations: true

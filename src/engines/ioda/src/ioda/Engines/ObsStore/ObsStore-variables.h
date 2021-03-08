@@ -1,11 +1,15 @@
 /*
- * (C) Copyright 2020 UCAR
+ * (C) Copyright 2020-2021 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
-/// \file ObsStore-variables.h
-/// \brief Functions for ioda::Variable and ioda::Has_Variables backed by ObsStore
+/*! \addtogroup ioda_internals_engines_obsstore
+ *
+ * @{
+ * \file ObsStore-variables.h
+ * \brief Functions for ioda::Variable and ioda::Has_Variables backed by ObsStore
+ */
 #pragma once
 
 #include <memory>
@@ -14,14 +18,14 @@
 #include <utility>
 #include <vector>
 
-#include "ioda/Engines/ObsStore/ObsStore-attributes.h"
-#include "ioda/Engines/ObsStore/ObsStore-selection.h"
-#include "ioda/Engines/ObsStore/ObsStore-types.h"
+#include "./ObsStore-attributes.h"
+#include "./ObsStore-selection.h"
+#include "./ObsStore-types.h"
+#include "./Selection.hpp"
+#include "./Types.hpp"
+#include "./Variables.hpp"
 #include "ioda/Group.h"
 #include "ioda/Misc/Dimensions.h"
-#include "ioda/ObsStore/Selection.hpp"
-#include "ioda/ObsStore/Types.hpp"
-#include "ioda/ObsStore/Variables.hpp"
 #include "ioda/defs.h"
 
 namespace ioda {
@@ -37,6 +41,7 @@ namespace ObsStore {
 class ObsStore_HasVariables_Backend;
 
 /// \brief This is the implementation of Variable in ioda::ObsStore
+/// \ingroup ioda_internals_engines_obsstore
 class ObsStore_Variable_Backend
     : public ioda::detail::Variable_Backend,
       public std::enable_shared_from_this<ObsStore::ObsStore_Variable_Backend> {
@@ -125,6 +130,7 @@ public:
 };
 
 /// \brief This is the implementation of Has_Variables in ioda::ObsStore
+/// \ingroup ioda_internals_engines_obsstore
 class ObsStore_HasVariables_Backend
     : public ioda::detail::Has_Variables_Backend,
       public std::enable_shared_from_this<ObsStore_HasVariables_Backend> {
@@ -172,3 +178,5 @@ public:
 }  // namespace ObsStore
 }  // namespace Engines
 }  // namespace ioda
+
+/// @}

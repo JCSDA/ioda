@@ -1,10 +1,16 @@
 #pragma once
 /*
  * (C) Copyright 2017-2020 Ryan Honeyager (ryan@honeyager.info)
- * (C) Copyright 2020 UCAR
+ * (C) Copyright 2020-2021 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ */
+/*! \addtogroup ioda_internals_engines_hh
+ *
+ * @{
+ * \file HH-types.h
+ * \brief HDF5 engine implementation of ioda::detail::Type_Provider.
  */
 #include "./Handles.h"
 #include "ioda/Types/Type.h"
@@ -17,6 +23,7 @@ namespace Engines {
 namespace HH {
 
 /// \brief This is the implementation of Type_Provider using HDF5. Do not use outside of IODA.
+/// \ingroup ioda_internals_engines_hh
 class IODA_DL HH_Type_Provider : public detail::Type_Provider {
 public:
   virtual ~HH_Type_Provider();
@@ -29,6 +36,7 @@ public:
 };
 
 /// \brief This is the implementation of ioda::Type using HDF5. Do not use outside of IODA.
+/// \ingroup ioda_internals_engines_hh
 class IODA_DL HH_Type : public detail::Type_Backend {
 public:
   virtual ~HH_Type();
@@ -39,3 +47,5 @@ public:
 }  // namespace Engines
 }  // namespace detail
 }  // namespace ioda
+
+/// @}

@@ -17,7 +17,7 @@ else()
 endif()
 
 set(IODA_ENGINES_MAJOR 0 CACHE INTERNAL "ioda engines major version" FORCE)
-set(IODA_ENGINES_MINOR 8 CACHE INTERNAL "ioda engines minor version" FORCE)
+set(IODA_ENGINES_MINOR 9 CACHE INTERNAL "ioda engines minor version" FORCE)
 set(IODA_ENGINES_REVISION 0 CACHE INTERNAL "ioda engines revision version" FORCE)
 set(IODA_ENGINES_TWEAK 0 CACHE INTERNAL "ioda engines tweak version" FORCE)
 set(IODA_ENGINES_VERSION ${IODA_ENGINES_MAJOR}.${IODA_ENGINES_MINOR}.${IODA_ENGINES_REVISION}.${IODA_ENGINES_TWEAK}

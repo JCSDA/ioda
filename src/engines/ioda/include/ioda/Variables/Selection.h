@@ -1,12 +1,16 @@
 #pragma once
 /*
- * (C) Copyright 2020 UCAR
+ * (C) Copyright 2020-2021 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
-/// \file Selection.h
-/// \brief Dataspace selections for reading and writing ioda::Variable data.
+/*! \addtogroup ioda_cxx_variable
+ *
+ * @{
+ * \file Selection.h
+ * \brief Dataspace selections for reading and writing ioda::Variable data.
+ */
 #include <utility>
 #include <vector>
 
@@ -14,12 +18,15 @@
 
 namespace ioda {
 /// \brief Selection enum
+/// \ingroup ioda_cxx_variable
 enum class SelectionOperator { SET, OR, AND, XOR, NOT_B, NOT_A, APPEND, PREPEND };
 /// \brief The "default" for the selection.
+/// \ingroup ioda_cxx_variable
 enum class SelectionState { ALL, NONE };
 
 /// \brief A Selection represents the bounds of the data, in ioda or in userspace, that
 ///        you are reading or writing.
+/// \ingroup ioda_cxx_variable
 ///
 /// It is made of a series of SingleSelection objects.
 /// Each of these objects represents a selection operation that filters the range that

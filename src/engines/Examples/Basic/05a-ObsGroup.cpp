@@ -1,10 +1,20 @@
 /*
- * (C) Copyright 2020 UCAR
+ * (C) Copyright 2020-2021 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
-/** \file 05a-ObsGroup.cpp
+/*! \addtogroup ioda_cxx_ex
+ *
+ * @{
+ *
+ * \defgroup ioda_cxx_ex_5a Ex 5a: ObsGroups
+ * \brief Constructing ObsGroups
+ * \see 05a-ObsGroup.cpp for comments and the walkthrough.
+ *
+ * @{
+ *
+ * \file 05a-ObsGroup.cpp
  * \brief ObsGroup
  *
  * The ObsGroup class is derived from the Group class and provides some help in
@@ -151,7 +161,7 @@ int main(int argc, char** argv) {
     // Create an ObsGroup object using the ObsGroup::generate function. This function
     // takes a Group argument (the backend we just created above) and a vector of dimension
     // creation specs.
-    const int numLocs = 40;
+    const int numLocs  = 40;
     const int numChans = 30;
 
     // The NewDimensionsScales_t is a vector, that holds specs for one dimension scale
@@ -165,8 +175,10 @@ int main(int argc, char** argv) {
     //              unlimited size
     //       4th - suggested chunk size for dimension (and associated variables)
     ioda::NewDimensionScales_t newDims;
-    newDims.push_back(std::make_shared<ioda::NewDimensionScale<int>>("nlocs", numLocs, Unlimited, numLocs));
-    newDims.push_back(std::make_shared<ioda::NewDimensionScale<int>>("nchans", numChans, numChans, numChans));
+    newDims.push_back(
+      std::make_shared<ioda::NewDimensionScale<int>>("nlocs", numLocs, Unlimited, numLocs));
+    newDims.push_back(
+      std::make_shared<ioda::NewDimensionScale<int>>("nchans", numChans, numChans, numChans));
 
     // Construct an ObsGroup object, with 2 dimensions nlocs, nchans, and attach
     // the backend we constructed above. Under the hood, the ObsGroup::generate function
@@ -177,13 +189,13 @@ int main(int argc, char** argv) {
     // We now have the top-level group containing the two dimension scales. We need
     // Variable objects for these dimension scales later on for creating variables so
     // build those now.
-    ioda::Variable nlocsVar = og.vars["nlocs"];
+    ioda::Variable nlocsVar  = og.vars["nlocs"];
     ioda::Variable nchansVar = og.vars["nchans"];
 
     // Next let's create the variables. The variable names should be specified using the
     // hierarchy as described above. For example, the variable brightness_temperature
     // in the group ObsValue is specified in a string as "ObsValue/brightness_temperature".
-    string tbName = "ObsValue/brightness_temperature";
+    string tbName  = "ObsValue/brightness_temperature";
     string latName = "MetaData/latitude";
     string lonName = "MetaData/longitude";
 
@@ -196,7 +208,7 @@ int main(int argc, char** argv) {
 
     // Create the variables. Note the use of the createWithScales function. This should
     // always be used when working with an ObsGroup object.
-    Variable tbVar = og.vars.createWithScales<float>(tbName, {nlocsVar, nchansVar}, float_params);
+    Variable tbVar  = og.vars.createWithScales<float>(tbName, {nlocsVar, nchansVar}, float_params);
     Variable latVar = og.vars.createWithScales<float>(latName, {nlocsVar}, float_params);
     Variable lonVar = og.vars.createWithScales<float>(lonName, {nlocsVar}, float_params);
 
@@ -222,7 +234,7 @@ int main(int argc, char** argv) {
     Eigen::ArrayXXf tbData(numLocs, numChans);
     std::vector<float> lonData(numLocs);
     std::vector<float> latData(numLocs);
-    float midLoc = static_cast<float>(numLocs) / 2.0f;
+    float midLoc  = static_cast<float>(numLocs) / 2.0f;
     float midChan = static_cast<float>(numChans) / 2.0f;
     for (std::size_t i = 0; i < numLocs; ++i) {
       lonData[i] = static_cast<float>(i % 8) * 3.0f;
@@ -232,8 +244,8 @@ int main(int argc, char** argv) {
       // no actual bug, we indicate this with NOLINT.
       latData[i] = static_cast<float>(i / 8) * 3.0f;  // NOLINT(bugprone-integer-division)
       for (std::size_t j = 0; j < numChans; ++j) {
-        float del_i = static_cast<float>(i) - midLoc;
-        float del_j = static_cast<float>(j) - midChan;
+        float del_i  = static_cast<float>(i) - midLoc;
+        float del_j  = static_cast<float>(j) - midChan;
         tbData(i, j) = 250.0f + sqrt(del_i * del_i + del_j * del_j);
       }
     }
@@ -250,3 +262,6 @@ int main(int argc, char** argv) {
   }
   return 0;
 }
+
+/// @}
+/// @}

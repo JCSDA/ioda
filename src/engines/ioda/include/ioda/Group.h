@@ -1,12 +1,18 @@
 #pragma once
 /*
- * (C) Copyright 2020 UCAR
+ * (C) Copyright 2020-2021 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
-/// \file Group.h
-/// \brief Interfaces for ioda::Group and related classes.
+/*! \defgroup ioda_cxx_layout Groups and Data Layout
+ * \brief Public API for ioda::Group, ioda::ObsGroup, and data layout policies.
+ * \ingroup ioda_cxx_api
+ *
+ * @{
+ * \file Group.h
+ * \brief Interfaces for ioda::Group and related classes.
+ */
 
 #include <gsl/gsl-lite.hpp>
 #include <map>
@@ -30,7 +36,8 @@ namespace detail {
 class Group_Base;
 class Group_Backend;
 
-/// Hidden base class to prevent constructor confusion.
+/// \brief Hidden base class to prevent constructor confusion.
+/// \ingroup ioda_cxx_layout
 /// \note enable_shared_from_this is a hint to pybind11.
 class IODA_DL Group_Base {
   std::shared_ptr<Group_Backend> backend_;
@@ -46,7 +53,7 @@ public:
 
   /// \brief Get the fill value policy used for Variables within this Group
   /// \details The backend has to be consulted for this operation. Storage of this policy is
-  /// backend-dependent.
+  ///   backend-dependent.
   virtual FillValuePolicy getFillValuePolicy() const;
 
   /// \brief List all one-level child groups in this group
@@ -131,6 +138,7 @@ protected:
 }  // namespace detail
 
 /** \brief Groups are a new implementation of ObsSpaces.
+ * \ingroup ioda_cxx_layout
  *
  * \see \ref Groups for a examples.
  *
@@ -156,3 +164,5 @@ public:
 };
 
 }  // namespace ioda
+
+/// @}

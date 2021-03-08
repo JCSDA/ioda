@@ -1,22 +1,27 @@
 /*
- * (C) Copyright 2020 UCAR
+ * (C) Copyright 2020-2021 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
-/// \file VarAttrStore.hpp
-/// \brief Functions for ObsStore variable and attribute data storage
+/*! \addtogroup ioda_internals_engines_obsstore
+ *
+ * @{
+ * \file VarAttrStore.hpp
+ * \brief Functions for ObsStore variable and attribute data storage
+ */
 #pragma once
 
 #include <gsl/gsl-lite.hpp>
 #include <string>
 #include <vector>
 
-#include "ioda/ObsStore/Selection.hpp"
-#include "ioda/ObsStore/Types.hpp"
+#include "./Selection.hpp"
+#include "./Types.hpp"
 
 namespace ioda {
 namespace ObsStore {
+/// \ingroup ioda_internals_engines_obsstore
 class VarAttrStore_Base {
 private:
 public:
@@ -43,6 +48,7 @@ public:
 };
 
 // Templated versions for each data type
+/// \ingroup ioda_internals_engines_obsstore
 template <typename DataType>
 class VarAttrStore : public VarAttrStore_Base {
 private:
@@ -105,6 +111,7 @@ public:
 };
 
 // Specialization for std::string data type
+/// \ingroup ioda_internals_engines_obsstore
 template <>
 class VarAttrStore<std::string> : public VarAttrStore_Base {
 private:
@@ -182,6 +189,7 @@ public:
 };
 
 /// \brief factory style function to create a new templated object
+/// \ingroup ioda_internals_engines_obsstore
 inline VarAttrStore_Base *createVarAttrStore(ObsTypes dtype) {
   VarAttrStore_Base *newStore = nullptr;
 
@@ -234,3 +242,5 @@ inline VarAttrStore_Base *createVarAttrStore(ObsTypes dtype) {
 
 }  // namespace ObsStore
 }  // namespace ioda
+
+/// @}

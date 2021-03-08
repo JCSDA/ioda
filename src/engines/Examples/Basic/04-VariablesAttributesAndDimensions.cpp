@@ -1,10 +1,20 @@
 /*
- * (C) Copyright 2020 UCAR
+ * (C) Copyright 2020-2021 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
-/** \file 04-VariablesAttributesAndDimensions.cpp
+/*! \addtogroup ioda_cxx_ex
+ *
+ * @{
+ *
+ * \defgroup ioda_cxx_ex_4 Ex 4: Variables, Attributes, and Dimension Scales
+ * \brief Variables, Attributes, and Dimension Scales
+ * \see 04-VariablesAttributesAndDimensions.cpp for comments and the walkthrough.
+ *
+ * @{
+ *
+ * \file 04-VariablesAttributesAndDimensions.cpp
  * \brief Variables, Attributes, and Dimension Scales
  *
  * Variables store data, but how should this data be interpreted? This is the
@@ -67,15 +77,16 @@ int main(int argc, char** argv) {
 
     // Create two dimensions, "Location", and "ATMS Channel". Set distinct values within
     // these dimensions.
-    const int num_locs = 3000;
+    const int num_locs     = 3000;
     const int num_channels = 23;
-    ioda::Variable dim_location = g.vars.create<int>("Location", {num_locs})
-                                    .writeWithEigenRegular(Eigen::ArrayXi(num_locs).setLinSpaced(1, num_locs))
-                                    .setIsDimensionScale("Location");
-    ioda::Variable dim_channel =
-      g.vars.create<int>("ATMS Channel", {num_channels})
-        .writeWithEigenRegular(Eigen::ArrayXi(num_channels).setLinSpaced(1, num_channels))
-        .setIsDimensionScale("ATMS Channel Number");
+    ioda::Variable dim_location
+      = g.vars.create<int>("Location", {num_locs})
+          .writeWithEigenRegular(Eigen::ArrayXi(num_locs).setLinSpaced(1, num_locs))
+          .setIsDimensionScale("Location");
+    ioda::Variable dim_channel
+      = g.vars.create<int>("ATMS Channel", {num_channels})
+          .writeWithEigenRegular(Eigen::ArrayXi(num_channels).setLinSpaced(1, num_channels))
+          .setIsDimensionScale("ATMS Channel Number");
 
     // Now that we have created dimensions, we can create new variables and attach the
     // dimensions to our data.
@@ -114,10 +125,12 @@ int main(int argc, char** argv) {
       .add<std::string>("long_name", std::string("Latitude"));
 
     // The ATMS Brightness Temperature depends on both location and instrument channel number.
-    ioda::Variable tb = g.vars.createWithScales<float>("Brightness Temperature", {dim_location, dim_channel});
+    ioda::Variable tb
+      = g.vars.createWithScales<float>("Brightness Temperature", {dim_location, dim_channel});
     tb.atts.add<float>("valid_range", {100, 500})
       .add<std::string>("units", std::string("K"))
-      .add<std::string>("long_name", std::string("ATMS Observed (Uncorrected) Brightness Temperature"));
+      .add<std::string>("long_name",
+                        std::string("ATMS Observed (Uncorrected) Brightness Temperature"));
 
     // Advanced topic:
 
@@ -143,7 +156,7 @@ int main(int argc, char** argv) {
     // https://www.unidata.ucar.edu/blogs/developer/en/entry/chunking_data_why_it_matters
     // for detailed explanations.
     // To tell ioda that you want to chunk a variable:
-    params.chunk = true;        // Turn chunking on
+    params.chunk  = true;   // Turn chunking on
     params.chunks = {100};  // Each chunk is a size 100 block of data.
 
     // Compression
@@ -167,3 +180,6 @@ int main(int argc, char** argv) {
   }
   return 0;
 }
+
+/// @}
+/// @}

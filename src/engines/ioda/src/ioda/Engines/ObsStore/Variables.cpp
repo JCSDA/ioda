@@ -1,17 +1,23 @@
 /*
- * (C) Copyright 2020 UCAR
+ * (C) Copyright 2020-2021 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
+/*! \addtogroup ioda_internals_engines_obsstore
+ *
+ * @{
+ * \file Variables.cpp
+ * \brief Functions for ObsStore Variable and Has_Variables
+ */
 
-#include "ioda/ObsStore/Variables.hpp"
+#include "./Variables.hpp"
 
 #include <exception>
 #include <functional>
 #include <numeric>
 
-#include "ioda/ObsStore/Group.hpp"
+#include "./Group.hpp"
 
 namespace ioda {
 namespace ObsStore {
@@ -253,3 +259,5 @@ std::vector<std::string> Has_Variables::splitGroupVar(const std::string& path) {
 }
 }  // namespace ObsStore
 }  // namespace ioda
+
+/// @}

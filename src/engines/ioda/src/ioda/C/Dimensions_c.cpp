@@ -1,16 +1,19 @@
 /*
- * (C) Copyright 2020 UCAR
+ * (C) Copyright 2020-2021 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
-/// \file Dimensions_c.cpp
-/// \brief C bindings for ioda::Dimensions
+/*! \addtogroup ioda_dimensions
+ * @{
+ * \file Dimensions_c.cpp
+ * \brief @link ioda_dimensions C bindings @endlink for ioda::Dimensions
+ */
 #include "ioda/C/Dimensions_c.h"
 
 #include <numeric>
 
-#include "ioda/C/structs_c.h"
+#include "./structs_c.h"
 
 extern "C" {
 
@@ -35,8 +38,9 @@ bool ioda_dimensions_set_dimensionality(ioda_dimensions* d, size_t N) {
   d->d.dimensionality = gsl::narrow<ioda::Dimensions_t>(N);
   d->d.dimsCur.resize(N, 0);
   d->d.dimsMax.resize(N, 0);
-  d->d.numElements = gsl::narrow<size_t>(std::accumulate(
-    d->d.dimsCur.begin(), d->d.dimsCur.end(), (ioda::Dimensions_t)1, std::multiplies<ioda::Dimensions_t>()));
+  d->d.numElements = gsl::narrow<size_t>(std::accumulate(d->d.dimsCur.begin(), d->d.dimsCur.end(),
+                                                         (ioda::Dimensions_t)1,
+                                                         std::multiplies<ioda::Dimensions_t>()));
   C_CATCH_AND_RETURN(true, false);
 }
 
@@ -82,3 +86,5 @@ bool ioda_dimensions_set_dim_max(ioda_dimensions* d, size_t n, ptrdiff_t sz) {
   C_CATCH_AND_RETURN(true, false);
 }
 }
+
+/// @}

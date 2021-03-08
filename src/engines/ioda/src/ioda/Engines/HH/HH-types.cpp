@@ -1,8 +1,14 @@
 /*
- * (C) Copyright 2020 UCAR
+ * (C) Copyright 2020-2021 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ */
+/*! \addtogroup ioda_internals_engines_hh
+ *
+ * @{
+ * \file HH-types.cpp
+ * \brief HDF5 engine implementation of Type.
  */
 #include "./HH/HH-types.h"
 
@@ -85,3 +91,5 @@ Type HH_Type_Provider::makeStringType(size_t string_length, std::type_index type
 }  // namespace Engines
 }  // namespace detail
 }  // namespace ioda
+
+/// @}

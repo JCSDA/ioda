@@ -1,10 +1,18 @@
 #pragma once
 /*
  * (C) Copyright 2017-2020 Ryan Honeyager (ryan@honeyager.info)
- * (C) Copyright 2020 UCAR
+ * (C) Copyright 2020-2021 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ */
+/*! \defgroup ioda_internals_engines_hh HDF5 / HH Engine
+ * \brief Implementation of the HDF5 backend.
+ * \ingroup ioda_internals_engines
+ *
+ * @{
+ * \file HH-groups.h
+ * \brief HDF5 group interface
  */
 
 #include <map>
@@ -26,7 +34,7 @@ namespace detail {
 namespace Engines {
 namespace HH {
 /// \brief This is the implementation of Groups using HDF5. Do not use outside of IODA.
-/// \todo This header should really be stored in a private location.
+/// \ingroup ioda_internals_engines_hh
 class IODA_HIDDEN HH_Group : public ioda::detail::Group_Backend {
   HH_hid_t backend_;
   HH_hid_t fileroot_;
@@ -65,3 +73,5 @@ public:
 }  // namespace Engines
 }  // namespace detail
 }  // namespace ioda
+
+/// @}

@@ -1,11 +1,15 @@
 /*
- * (C) Copyright 2020 UCAR
+ * (C) Copyright 2020-2021 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
-/// \file Selection.hpp
-/// \brief Functions for ObsStore Selection
+/*! \addtogroup ioda_internals_engines_obsstore
+ *
+ * @{
+ * \file Selection.hpp
+ * \brief Functions for ObsStore Selection
+ */
 #pragma once
 #include <cstring>
 #include <gsl/gsl-lite.hpp>
@@ -20,9 +24,11 @@
 namespace ioda {
 namespace ObsStore {
 /// \brief container of selection indices
+/// \ingroup ioda_internals_engines_obsstore
 typedef std::vector<std::size_t> SelectSpecs;
 
 /// \brief ObsStore selection modes
+/// \ingroup ioda_internals_engines_obsstore
 /// \details Selection mode meanings
 ///     ALL - select all points
 ///     INTERSECT - select points in intersection of dim indices
@@ -49,6 +55,7 @@ typedef std::vector<std::size_t> SelectSpecs;
 ///                     (8,10)
 enum class SelectionModes { ALL, INTERSECT, POINT };
 
+/// \ingroup ioda_internals_engines_obsstore
 class SelectCounter {
 private:
   /// \brief mode of selection
@@ -81,6 +88,7 @@ public:
   const std::vector<std::size_t>& count() const;
 };
 
+/// \ingroup ioda_internals_engines_obsstore
 class Selection {
 private:
   /// \brief mode of selection (which impacts how linear memory is accessed)
@@ -127,3 +135,5 @@ public:
 };
 }  // namespace ObsStore
 }  // namespace ioda
+
+/// @}

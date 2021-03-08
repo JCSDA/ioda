@@ -1,12 +1,16 @@
 #pragma once
 /*
- * (C) Copyright 2020 UCAR
+ * (C) Copyright 2020-2021 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
-/// \file Eigen_Compat.h
-/// \brief Convenience functions to work with Eigen objects.
+/*! \addtogroup ioda_cxx_api
+ *
+ * @{
+ * \file Eigen_Compat.h
+ * \brief Convenience functions to work with Eigen objects.
+ */
 #include <type_traits>
 #include <vector>
 
@@ -86,3 +90,5 @@ Dimensions getTensorDimensions(EigenClass& e) {
 }  // namespace EigenCompat
 }  // namespace detail
 }  // namespace ioda
+
+/// @}

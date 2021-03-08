@@ -1,12 +1,16 @@
 #pragma once
 /*
- * (C) Copyright 2020 UCAR
+ * (C) Copyright 2020-2021 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
-/// \file Fill.h
-/// \brief Fill value getters and setters
+/*! \addtogroup ioda_cxx_variable
+ *
+ * @{
+ * \file Fill.h
+ * \brief Fill value getters and setters
+ */
 
 #include <cstdint>  // uint64_t
 #include <memory>   // weak_ptr
@@ -18,7 +22,9 @@ namespace ioda {
 namespace detail {
 class Group_Base;
 
-/** \brief Container used to store and manipulate fill values.
+/**
+ * \brief Container used to store and manipulate fill values.
+ * \ingroup ioda_cxx_variable
  *
  * When reading a fill value, first always check that the fill value is set (set_ == true).
  * Then, check the type of fill value (string, or a fundamental data type),
@@ -52,6 +58,7 @@ struct IODA_DL FillValueData_t {
   // Type fillValue_type; // Possible TODO - store this and make sure it matches?
 };
 
+/// \ingroup ioda_cxx_variable
 template <class T>
 T getFillValue(FillValueData_t& data) {
   if (sizeof(T) > sizeof(uint64_t)) {
@@ -63,11 +70,13 @@ T getFillValue(FillValueData_t& data) {
   }
 }
 
+/// \ingroup ioda_cxx_variable
 template <>
 inline std::string getFillValue(FillValueData_t& data) {
   return data.stringFillValue_;
 }
 
+/// \ingroup ioda_cxx_variable
 template <class T>
 void assignFillValue(FillValueData_t& data, T val) {
   if (sizeof(T) > sizeof(uint64_t))
@@ -78,6 +87,7 @@ void assignFillValue(FillValueData_t& data, T val) {
   data.set_             = true;
   data.isString_        = false;
 }
+/// \ingroup ioda_cxx_variable
 template <>
 inline void assignFillValue<std::string>(FillValueData_t& data, std::string val) {
   data.stringFillValue_ = val;
@@ -86,3 +96,5 @@ inline void assignFillValue<std::string>(FillValueData_t& data, std::string val)
 }
 }  // namespace detail
 }  // namespace ioda
+
+/// @}

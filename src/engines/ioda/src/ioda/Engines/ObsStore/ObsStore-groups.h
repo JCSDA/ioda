@@ -1,11 +1,15 @@
 /*
- * (C) Copyright 2020 UCAR
+ * (C) Copyright 2020-2021 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
-/// \file ObsStore-groups.h
-/// \brief Functions for ioda::Group backed by ObsStore
+/*! \addtogroup ioda_internals_engines_obsstore
+ *
+ * @{
+ * \file ObsStore-groups.h
+ * \brief Functions for ioda::Group backed by ObsStore
+ */
 #pragma once
 
 #include <list>
@@ -14,18 +18,19 @@
 #include <string>
 #include <vector>
 
+#include "./Attributes.hpp"
+#include "./Group.hpp"
 #include "./ObsStore-attributes.h"
 #include "./ObsStore-variables.h"
 #include "ioda/Engines/ObsStore.h"
 #include "ioda/Group.h"
-#include "ioda/ObsStore/Attributes.hpp"
-#include "ioda/ObsStore/Group.hpp"
 #include "ioda/defs.h"
 
 namespace ioda {
 namespace Engines {
 namespace ObsStore {
 /// \brief This is the implementation of Groups using ObsStore.
+/// \ingroup ioda_internals_engines_obsstore
 class IODA_HIDDEN ObsStore_Group_Backend : public ioda::detail::Group_Backend {
 private:
   /// \brief ObsStore Group
@@ -84,3 +89,5 @@ public:
 }  // namespace ObsStore
 }  // namespace Engines
 }  // namespace ioda
+
+/// @}

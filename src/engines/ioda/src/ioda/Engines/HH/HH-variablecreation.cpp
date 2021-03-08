@@ -5,8 +5,12 @@
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
-/// \file HH-variablecreation.cpp
-/// \brief HDF5 engine Variable creation and property lists.
+/*! \addtogroup ioda_internals_engines_hh
+ *
+ * @{
+ * \file HH-variablecreation.cpp
+ * \brief HDF5 engine Variable creation and property lists.
+ */
 
 #include "./HH/HH-variablecreation.h"
 
@@ -112,3 +116,5 @@ HH_hid_t VariableCreation::linkCreationPlist() {
 }  // namespace Engines
 }  // namespace detail
 }  // namespace ioda
+
+/// @}

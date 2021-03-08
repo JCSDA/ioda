@@ -1,14 +1,20 @@
 /*
- * (C) Copyright 2020 UCAR
+ * (C) Copyright 2020-2021 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
+/*! \addtogroup ioda_cxx_engines_pub_ObsStore
+ *
+ * @{
+ * \file ObsStore.cpp
+ * \brief ObsStore engine bindings
+ */
 #include "ioda/Engines/ObsStore.h"
 
-#include "ioda/Engines/ObsStore/ObsStore-groups.h"
+#include "./Group.hpp"
+#include "./ObsStore-groups.h"
 #include "ioda/Group.h"
-#include "ioda/ObsStore/Group.hpp"
 
 namespace ioda {
 namespace Engines {

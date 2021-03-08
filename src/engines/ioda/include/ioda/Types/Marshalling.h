@@ -1,14 +1,17 @@
 #pragma once
 /*
- * (C) Copyright 2020 UCAR
+ * (C) Copyright 2020-2021 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
-/// \file Marshalling.h
-/// \brief Classes and functions that implement the type system and allow
-///        for frontend/backend communication.
-
+/*! \addtogroup ioda_cxx_types
+ *
+ * @{
+ * \file Marshalling.h
+ * \brief Classes and functions that implement the type system and allow
+ *   for frontend/backend communication.
+ */
 #include <complex>
 #include <cstring>
 #include <memory>
@@ -21,6 +24,7 @@
 
 namespace ioda {
 
+/// \ingroup ioda_internals_engines_types
 template <class DataType, bool FreeOnClose>
 void FreeType(DataType, typename std::enable_if<!std::is_pointer<DataType>::value>::type* = 0) {}
 template <class DataType, bool FreeOnClose>
@@ -33,6 +37,7 @@ void FreeType(DataType d, typename std::enable_if<std::is_pointer<DataType>::val
 }
 
 /// \brief Structure used to pass data between the frontend and the backend engine.
+/// \ingroup ioda_internals_engines_types
 template <class T, class value_type = T, bool FreeOnClose = false>
 struct Marshalled_Data {
   std::vector<value_type> DataPointers;
@@ -53,6 +58,7 @@ namespace detail {
 /// \note By default, we are using the POD accessor. Valid for simple data types,
 /// where multiple objects are in the same dataspace, and each object is a
 /// singular instance of the base data type.
+/// \ingroup ioda_internals_engines_types
 template <class DataType, class value_type = DataType>
 struct Object_Accessor_Regular {
   typedef typename std::remove_const<DataType>::type mutable_DataType;
@@ -99,6 +105,7 @@ public:
   }
 };
 
+/// \ingroup ioda_internals_engines_types
 template <class DataType, class value_type = std::remove_pointer<std::decay<DataType>>>
 struct Object_Accessor_Fixed_Array {
   typedef typename std::remove_const<DataType>::type mutable_DataType;
@@ -146,6 +153,7 @@ public:
   }
 };
 
+/// \ingroup ioda_internals_engines_types
 template <class DataType, class value_type = DataType*>
 struct Object_Accessor_Variable_Array_With_Data_Method {
   typedef typename std::remove_const<DataType>::type mutable_DataType;
@@ -181,6 +189,7 @@ public:
   }
 };
 
+/// \ingroup ioda_internals_engines_types
 template <class DataType, class value_type = DataType*>
 struct Object_Accessor_Variable_Raw_Array {
   typedef typename std::remove_const<DataType>::type mutable_DataType;
@@ -215,10 +224,12 @@ public:
   }
 };
 
+/// \ingroup ioda_cxx_types
 template <typename T>
 struct Object_AccessorTypedef {
   typedef Object_Accessor_Regular<T> type;
 };
+/// \ingroup ioda_cxx_types
 template <>
 struct Object_AccessorTypedef<std::string> {
   typedef Object_Accessor_Variable_Array_With_Data_Method<std::string, char*> type;
@@ -238,7 +249,11 @@ struct Object_AccessorTypedef<std::array<int, 2>> {
   typedef Object_Accessor_Fixed_Array<std::array<int, 2>, int> type;
 };
 }  // namespace detail
+
+/// \ingroup ioda_cxx_types
 template <typename DataType>
 using Object_Accessor = typename detail::Object_AccessorTypedef<DataType>::type;
 
 }  // namespace ioda
+
+/// @}

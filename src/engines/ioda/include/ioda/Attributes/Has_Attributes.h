@@ -1,12 +1,16 @@
 #pragma once
 /*
- * (C) Copyright 2020 UCAR
+ * (C) Copyright 2020-2021 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
-/// \file Has_Attributes.h
-/// \brief Interfaces for ioda::Has_Attributes and related classes.
+/*! \addtogroup ioda_cxx_attribute
+ *
+ * @{
+ * \file Has_Attributes.h
+ * \brief Interfaces for ioda::Has_Attributes and related classes.
+ */
 
 #include <gsl/gsl-lite.hpp>
 #include <iostream>
@@ -29,10 +33,12 @@ class Variable_Backend;
 class Group_Backend;
 
 /// \brief Describes the functions that can add attributes
+/// \ingroup ioda_cxx_attribute
 /// \details Using the (Curiously Recurring Template
 /// Pattern)[https://en.wikipedia.org/wiki/Curiously_recurring_template_pattern] to implement this
-/// since we want to use the same functions for placeholder attribute construction. \see
-/// Has_Attributes \see Attribute_Creator
+/// since we want to use the same functions for placeholder attribute construction.
+/// \see Has_Attributes
+/// \see Attribute_Creator
 template <class DerivedHasAtts>
 class CanAddAttributes {
 public:
@@ -40,14 +46,15 @@ public:
   /// @{
 
   /// \brief Create and write an Attribute, for arbitrary dimensions.
-  /// \param DataType is the type of the data. I.e. float, int, int32_t, uint16_t, std::string, etc.
+  /// \tparam DataType is the type of the data. I.e. float, int, int32_t, uint16_t, std::string, etc.
   /// \param attrname is the name of the Attribute to be created.
   /// \param data is a gsl::span (a pointer-length pair) that contains the data to be written.
   /// \param dimensions is an initializer list representing the size of the metadata. Each element
-  /// is a dimension with a certain size. \param in_memory_dataType is the memory layout needed to
-  /// parse data's type. \returns Another instance of this Has_Attribute. Used for operation
-  /// chaining. \throws jedi::xError if data.size() does not match the number of total elements
-  /// described by dimensions. \see gsl::span for details of how to make a span. \see gsl::make_span
+  /// is a dimension with a certain size.
+  /// \returns Another instance of this Has_Attribute. Used for operation chaining.
+  /// \throws jedi::xError if data.size() does not match the number of total elements
+  ///   described by dimensions.
+  /// \see gsl::span for details of how to make a span.
   template <class DataType>
   DerivedHasAtts add(const std::string& attrname, ::gsl::span<const DataType> data,
                      const ::std::vector<Dimensions_t>& dimensions) {
@@ -58,13 +65,14 @@ public:
   }
 
   /// \brief Create and write an Attribute, for arbitrary dimensions.
-  /// \param DataType is the type of the data. I.e. float, int, int32_t, uint16_t, std::string, etc.
+  /// \tparam DataType is the type of the data. I.e. float, int, int32_t, uint16_t, std::string, etc.
   /// \param attrname is the name of the Attribute to be created.
   /// \param data is an initializer list that contains the data to be written.
-  /// \param dimensions is an initializer list representing the size of the metadata. Each element
-  /// is a dimension with a certain size. \returns Another instance of this Has_Attribute. Used for
-  /// operation chaining. \throws jedi::xError if data.size() does not match the number of total
-  /// elements described by dimensions.
+  /// \param dimensions is an initializer list representing the size of the metadata. Each
+  ///   element is a dimension with a certain size.
+  /// \returns Another instance of this Has_Attribute. Used for operation chaining.
+  /// \throws jedi::xError if data.size() does not match the number of total
+  ///   elements described by dimensions.
   template <class DataType>
   DerivedHasAtts add(const std::string& attrname, ::std::initializer_list<DataType> data,
                      const ::std::vector<Dimensions_t>& dimensions) {
@@ -75,7 +83,7 @@ public:
   }
 
   /// \brief Create and write an Attribute, for a single-dimensional span of 1-D data.
-  /// \param DataType is the type of the data. I.e. float, int, int32_t, uint16_t, std::string, etc.
+  /// \tparam DataType is the type of the data. I.e. float, int, int32_t, uint16_t, std::string, etc.
   /// \param attrname is the name of the Attribute to be created.
   /// \param data is a gsl::span (a pointer-length pair) that contains the data to be written.
   ///   The new Attribute will be one-dimensional and the length of the overall span.
@@ -88,7 +96,7 @@ public:
   }
 
   /// \brief Create and write an Attribute, for a 1-D initializer list.
-  /// \param DataType is the type of the data. I.e. float, int, int32_t, uint16_t, std::string, etc.
+  /// \tparam DataType is the type of the data. I.e. float, int, int32_t, uint16_t, std::string, etc.
   /// \param attrname is the name of the Attribute to be created.
   /// \param data is an initializer list that contains the data to be written.
   ///   The new Attribute will be one-dimensional and the length of the overall span.
@@ -99,12 +107,13 @@ public:
   }
 
   /// \brief Create and write a single datum of an Attribute.
-  /// \param DataType is the type of the data. I.e. float, int, int32_t, uint16_t, std::string, etc.
+  /// \tparam DataType is the type of the data. I.e. float, int, int32_t, uint16_t, std::string, etc.
   /// \param attrname is the name of the Attribute to be created.
   /// \param data is the data to be written. The new Attribute will be zero-dimensional and will
-  /// contain only this datum. \note Even 0-dimensional data have a type, which may be a compound
-  /// array (i.e. a single string of variable length). \returns Another instance of this
-  /// Has_Attribute. Used for operation chaining.
+  /// contain only this datum.
+  /// \note Even 0-dimensional data have a type, which may be a compound
+  /// array (i.e. a single string of variable length).
+  /// \returns Another instance of this Has_Attribute. Used for operation chaining.
   template <class DataType>
   DerivedHasAtts add(const std::string& attrname, const DataType& data) {
     return add(attrname, gsl::make_span(&data, 1), {1});
@@ -153,10 +162,10 @@ public:
 };
 
 /// \brief Describes the functions that can read attributes
-/// \details Using the (Curiously Recurring Template
-/// Pattern)[https://en.wikipedia.org/wiki/Curiously_recurring_template_pattern] to implement this
-/// since we want to use the same functions for placeholder attribute construction. \see
-/// Has_Attributes
+/// \ingroup ioda_cxx_attribute
+/// \details Uses the (CRTP)[https://en.wikipedia.org/wiki/Curiously_recurring_template_pattern]
+///   to implement this as we use the same functions for placeholder attribute construction.
+/// \see Has_Attributes
 template <class DerivedHasAtts>
 class CanReadAttributes {
 protected:
@@ -169,12 +178,11 @@ public:
   /// @{
 
   /// \brief Open and read an Attribute, for expected dimensions.
-  /// \param DataType is the type of the data. I.e. float, int, int32_t, uint16_t, std::string, etc.
+  /// \tparam DataType is the type of the data. I.e. float, int, int32_t, uint16_t, std::string, etc.
   /// \param attrname is the name of the Attribute to be read.
   /// \param data is a pointer-size pair to the data buffer that is filled with the metadata's
-  /// contents. It should be
-  ///   pre-sized to accomodate all of the matadata. See getDimensions().numElements. Data will be
-  ///   filled in row-major order.
+  ///   contents. It should be pre-sized to accomodate all of the matadata. See
+  ///   getDimensions().numElements. Data will be filled in row-major order.
   /// \throws jedi::xError on a size mismatch between Attribute dimensions and data.size().
   template <class DataType>
   const DerivedHasAtts read(const std::string& attrname, gsl::span<DataType> data) const {
@@ -185,11 +193,10 @@ public:
   }
 
   /// \brief Open and read an Attribute, with unknown dimensions.
-  /// \param DataType is the type of the data. I.e. float, int, int32_t, uint16_t, std::string, etc.
+  /// \tparam DataType is the type of the data. I.e. float, int, int32_t, uint16_t, std::string, etc.
   /// \param attrname is the name of the Attribute to be read.
-  /// \param data is a vector acting as a data buffer that is filled with the metadata's contents.
-  /// It gets resized as needed.
-  ///   data will be filled in row-major order.
+  /// \param data is a vector acting as a data buffer that is filled with the metadata's
+  ///   contents. It gets resized as needed. data will be filled in row-major order.
   template <class DataType>
   const DerivedHasAtts read(const std::string& attrname, std::vector<DataType>& data) const {
     Attribute att = static_cast<const DerivedHasAtts*>(this)->open(attrname);
@@ -198,11 +205,10 @@ public:
   }
 
   /// \brief Open and read an Attribute, with unknown dimensions.
-  /// \param DataType is the type of the data. I.e. float, int, int32_t, uint16_t, std::string, etc.
+  /// \tparam DataType is the type of the data. I.e. float, int, int32_t, uint16_t, std::string, etc.
   /// \param attrname is the name of the Attribute to be read.
-  /// \param data is a valarray acting as a data buffer that is filled with the metadata's contents.
-  /// It gets resized as needed.
-  ///   data will be filled in row-major order.
+  /// \param data is a valarray acting as a data buffer that is filled with the metadata's
+  ///   contents. It gets resized as needed. data will be filled in row-major order.
   template <class DataType>
   const DerivedHasAtts read(const std::string& attrname, std::valarray<DataType>& data) const {
     Attribute att = static_cast<const DerivedHasAtts*>(this)->open(attrname);
@@ -211,7 +217,7 @@ public:
   }
 
   /// \brief Read a datum of an Attribute.
-  /// \param DataType is the type of the data. I.e. float, int, int32_t, uint16_t, std::string, etc.
+  /// \tparam DataType is the type of the data. I.e. float, int, int32_t, uint16_t, std::string, etc.
   /// \param attrname is the name of the Attribute to be read.
   /// \param data is a datum of type DataType.
   /// \throws jedi::xError if the underlying data have size > 1.
@@ -223,7 +229,7 @@ public:
   }
 
   /// \brief Read a datum of an Attribute.
-  /// \param DataType is the type of the data. I.e. float, int, int32_t, uint16_t, std::string, etc.
+  /// \tparam DataType is the type of the data. I.e. float, int, int32_t, uint16_t, std::string, etc.
   /// \param attrname is the name of the Attribute to be read.
   /// \returns A datum of type DataType.
   /// \throws jedi::xError if the underlying data have size > 1.
@@ -259,6 +265,7 @@ public:
   /// @}
 };
 
+/// \ingroup ioda_cxx_attribute
 class IODA_DL Has_Attributes_Base {
 private:
   /// Using an opaque object to implement the backend.
@@ -308,10 +315,10 @@ public:
 
   /// \brief Create an Attribute without setting its data.
   /// \param attrname is the name of the Attribute.
-  /// \param dimensions is a vector representing the size of the metadata. Each element of the
-  /// vector is a dimension with a certain size. \param in_memory_datatype is the runtime
-  /// description of the Attribute's data type. \returns An instance of Attribute that can be
-  /// written to.
+  /// \param dimensions is a vector representing the size of the metadata.
+  ///   Each element of the vector is a dimension with a certain size.
+  /// \param in_memory_datatype is the runtime description of the Attribute's data type.
+  /// \returns An instance of Attribute that can be written to.
   virtual Attribute create(const std::string& attrname, const Type& in_memory_dataType,
                            const std::vector<Dimensions_t>& dimensions = {1});
 
@@ -322,11 +329,11 @@ public:
   }
 
   /// \brief Create an Attribute without setting its data.
-  /// \param DataType is the type of the data. I.e. float, int, int32_t, uint16_t, std::string, etc.
+  /// \tparam DataType is the type of the data. I.e. float, int, uint16_t, std::string, etc.
   /// \param attrname is the name of the Attribute.
   /// \param dimensions is a vector representing the size of the metadata. Each element of the
-  /// vector is a dimension with a certain size. \returns An instance of Attribute that can be
-  /// written to.
+  ///   vector is a dimension with a certain size.
+  /// \returns An instance of Attribute that can be written to.
   template <class DataType, class TypeWrapper = Types::GetType_Wrapper<DataType>>
   Attribute create(const std::string& attrname, const std::vector<Dimensions_t>& dimensions = {1}) {
     Type in_memory_dataType = TypeWrapper::GetType(getTypeProvider());
@@ -353,10 +360,12 @@ public:
 };
 }  // namespace detail
 
-/** \brief This class exists inside of ioda::Group or ioda::Variable and provides the interface to
- *manipulating Attributes.
+/** \brief This class exists inside of ioda::Group or ioda::Variable and provides
+ *         the interface to manipulating Attributes.
+ * \ingroup ioda_cxx_attribute
  *
- * \note It should only be constructed inside of a Group or Variable. It has no meaning elsewhere.
+ * \note It should only be constructed inside of a Group or Variable.
+ *       It has no meaning elsewhere.
  * \see Attribute for the class that represents individual attributes.
  * \throws jedi::xError on all exceptions.
  **/
@@ -370,3 +379,5 @@ public:
 };
 
 }  // namespace ioda
+
+/// @} // End Doxygen block

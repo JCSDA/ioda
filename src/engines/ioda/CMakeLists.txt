@@ -86,27 +86,27 @@ list(APPEND SRCS_ENGINES_HH
 
 list(APPEND SRCS_ENGINES_OBS_STORE 
 	include/ioda/Engines/ObsStore.h
-	src/ioda/Engines/ObsStore.cpp
-	src/ioda/Engines/ObsStore-attributes.cpp
-	src/ioda/Engines/ObsStore-selection.cpp
-	src/ioda/Engines/ObsStore-types.cpp
-	src/ioda/Engines/ObsStore-variables.cpp
-	private/ioda/ObsStore/Attributes.hpp
-	private/ioda/ObsStore/VarAttrStore.hpp
-	private/ioda/ObsStore/Group.hpp
-	private/ioda/ObsStore/Selection.hpp
-    private/ioda/ObsStore/Types.hpp
-	private/ioda/ObsStore/Variables.hpp
-	private/ioda/Engines/ObsStore/ObsStore-attributes.h
-	private/ioda/Engines/ObsStore/ObsStore-groups.h
-	private/ioda/Engines/ObsStore/ObsStore-selection.h
-	private/ioda/Engines/ObsStore/ObsStore-types.h
-	private/ioda/Engines/ObsStore/ObsStore-variables.h
-    src/ioda/Engines/ObsStore/Attributes.cpp
-    src/ioda/Engines/ObsStore/Group.cpp
-    src/ioda/Engines/ObsStore/Selection.cpp
-    src/ioda/Engines/ObsStore/Variables.cpp
-    )
+	src/ioda/Engines/ObsStore/ObsStore.cpp
+	src/ioda/Engines/ObsStore/ObsStore-attributes.cpp
+	src/ioda/Engines/ObsStore/ObsStore-selection.cpp
+	src/ioda/Engines/ObsStore/ObsStore-types.cpp
+	src/ioda/Engines/ObsStore/ObsStore-variables.cpp
+	src/ioda/Engines/ObsStore/Attributes.hpp
+	src/ioda/Engines/ObsStore/VarAttrStore.hpp
+	src/ioda/Engines/ObsStore/Group.hpp
+	src/ioda/Engines/ObsStore/Selection.hpp
+	src/ioda/Engines/ObsStore/Types.hpp
+	src/ioda/Engines/ObsStore/Variables.hpp
+	src/ioda/Engines/ObsStore/ObsStore-attributes.h
+	src/ioda/Engines/ObsStore/ObsStore-groups.h
+	src/ioda/Engines/ObsStore/ObsStore-selection.h
+	src/ioda/Engines/ObsStore/ObsStore-types.h
+	src/ioda/Engines/ObsStore/ObsStore-variables.h
+	src/ioda/Engines/ObsStore/Attributes.cpp
+	src/ioda/Engines/ObsStore/Group.cpp
+	src/ioda/Engines/ObsStore/Selection.cpp
+	src/ioda/Engines/ObsStore/Variables.cpp
+	)
 
 list(APPEND SRCS_C_BINDINGS
 	include/ioda/C/Attribute_c.h
@@ -120,7 +120,7 @@ list(APPEND SRCS_C_BINDINGS
 	include/ioda/C/String_c.h
 	include/ioda/C/Variable_c.h
 	include/ioda/C/Variable_Creation_Parameters_c.h
-	private/ioda/C/structs_c.h
+	src/ioda/C/structs_c.h
 	src/ioda/C/Attribute_c.cpp
 	src/ioda/C/Dimensions_c.cpp
 	src/ioda/C/Engines_c.cpp

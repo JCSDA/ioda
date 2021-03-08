@@ -1,15 +1,20 @@
 /*
- * (C) Copyright 2020 UCAR
+ * (C) Copyright 2020-2021 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
-/// \file Variable_Creation_Parameters_c.cpp
-/// \brief C bindings for ioda::VariableCreationParameters
+/*! \addtogroup ioda_variable_creation_parameters
+ *
+ * @{
+ * \file Variable_Creation_Parameters_c.cpp
+ * \brief @link ioda_variable_creation_parameters C bindings @endlink for
+ * ioda::VariableCreationParameters, used in ioda::Has_Variables::create.
+ */
 
+#include "./structs_c.h"
 #include "ioda/C/Group_c.h"
 #include "ioda/C/c_binding_macros.h"
-#include "ioda/C/structs_c.h"
 #include "ioda/Group.h"
 
 extern "C" {
@@ -38,15 +43,17 @@ ioda_variable_creation_parameters* ioda_variable_creation_parameters_clone(
   C_CATCH_AND_RETURN(res, NULL);
 }
 
-void ioda_variable_creation_parameters_chunking(struct ioda_variable_creation_parameters* p, bool doChunking,
-                                                size_t Ndims, const ptrdiff_t* chunks) {
+void ioda_variable_creation_parameters_chunking(struct ioda_variable_creation_parameters* p,
+                                                bool doChunking, size_t Ndims,
+                                                const ptrdiff_t* chunks) {
   C_TRY;
   Expects(p != nullptr);
-  Expects(chunks != nullptr);
   p->params.chunk = doChunking;
   if (doChunking) {
+    Expects(chunks != nullptr);
     p->params.chunks.resize(Ndims);
-    for (size_t i = 0; i < Ndims; ++i) p->params.chunks[i] = gsl::narrow<ioda::Dimensions_t>(chunks[i]);
+    for (size_t i = 0; i < Ndims; ++i)
+      p->params.chunks[i] = gsl::narrow<ioda::Dimensions_t>(chunks[i]);
   }
   C_CATCH_AND_TERMINATE;
 }
@@ -74,15 +81,16 @@ void ioda_variable_creation_parameters_compressWithSZIP(struct ioda_variable_cre
   C_CATCH_AND_TERMINATE;
 }
 
-bool ioda_variable_creation_parameters_hasSetDimScales(const struct ioda_variable_creation_parameters* p) {
+bool ioda_variable_creation_parameters_hasSetDimScales(
+  const struct ioda_variable_creation_parameters* p) {
   C_TRY;
   Expects(p != nullptr);
   C_CATCH_AND_RETURN(p->params.hasSetDimScales(), false);
 }
 
-bool ioda_variable_creation_parameters_attachDimensionScale(struct ioda_variable_creation_parameters* p,
-                                                            unsigned int DimensionNumber,
-                                                            const struct ioda_variable* scale) {
+bool ioda_variable_creation_parameters_attachDimensionScale(
+  struct ioda_variable_creation_parameters* p, unsigned int DimensionNumber,
+  const struct ioda_variable* scale) {
   C_TRY;
   Expects(p != nullptr);
   Expects(scale != nullptr);
@@ -90,7 +98,8 @@ bool ioda_variable_creation_parameters_attachDimensionScale(struct ioda_variable
   C_CATCH_AND_RETURN(true, false);
 }
 
-bool ioda_variable_creation_parameters_setDimScale(struct ioda_variable_creation_parameters* p, size_t n_dims,
+bool ioda_variable_creation_parameters_setDimScale(struct ioda_variable_creation_parameters* p,
+                                                   size_t n_dims,
                                                    const struct ioda_variable** dims) {
   C_TRY;
   Expects(p != nullptr);
@@ -102,7 +111,8 @@ bool ioda_variable_creation_parameters_setDimScale(struct ioda_variable_creation
   C_CATCH_AND_RETURN(true, false);
 }
 
-int ioda_variable_creation_parameters_isDimensionScale(const struct ioda_variable_creation_parameters* p) {
+int ioda_variable_creation_parameters_isDimensionScale(
+  const struct ioda_variable_creation_parameters* p) {
   bool res = false;
   C_TRY;
   Expects(p != nullptr);
@@ -110,12 +120,12 @@ int ioda_variable_creation_parameters_isDimensionScale(const struct ioda_variabl
   C_CATCH_AND_RETURN((res) ? 1 : 0, -1);
 }
 
-bool ioda_variable_creation_parameters_setIsDimensionScale(struct ioda_variable_creation_parameters* p,
-                                                           const char* dimensionScaleName) {
+bool ioda_variable_creation_parameters_setIsDimensionScale(
+  struct ioda_variable_creation_parameters* p, size_t sz, const char* dimensionScaleName) {
   C_TRY;
   Expects(p != nullptr);
   Expects(dimensionScaleName != nullptr);
-  p->params.setIsDimensionScale(dimensionScaleName);
+  p->params.setIsDimensionScale(std::string(dimensionScaleName, sz));
   C_CATCH_AND_RETURN(true, false);
 }
 
@@ -132,13 +142,16 @@ size_t ioda_variable_creation_parameters_getDimensionScaleName(
 }
 
 // Fill value
-#define IODA_VCP_FILL_IMPL(funcnamestr, Type)                                         \
-  IODA_DL void funcnamestr(struct ioda_variable_creation_parameters* p, Type value) { \
-    C_TRY;                                                                            \
-    Expects(p != nullptr);                                                            \
-    p->params.setFillValue<Type>(value);                                              \
-    C_CATCH_AND_TERMINATE;                                                            \
+#define IODA_VCP_FILL_IMPL(funcnamestr, Type)                                                      \
+  IODA_DL void funcnamestr(struct ioda_variable_creation_parameters* p, Type value) {              \
+    C_TRY;                                                                                         \
+    Expects(p != nullptr);                                                                         \
+    p->params.setFillValue<Type>(value);                                                           \
+    C_CATCH_AND_TERMINATE;                                                                         \
   }
 
-C_TEMPLATE_FUNCTION_DEFINITION_NOSTR(ioda_variable_creation_parameters_setFillValue, IODA_VCP_FILL_IMPL);
+C_TEMPLATE_FUNCTION_DEFINITION_NOSTR(ioda_variable_creation_parameters_setFillValue,
+                                     IODA_VCP_FILL_IMPL);
 }
+
+/// @}

@@ -1,12 +1,16 @@
 #pragma once
 /*
- * (C) Copyright 2020 UCAR
+ * (C) Copyright 2020-2021 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
-/// \file Layout.h
-/// \brief Contains definitions for how data are arranged in ioda internally.
+/*! \addtogroup ioda_cxx_layout
+ *
+ * @{
+ * \file Layout.h
+ * \brief Contains definitions for how data are arranged in ioda internally.
+ */
 
 #include <gsl/gsl-lite.hpp>
 #include <memory>
@@ -23,6 +27,7 @@ class Group_Backend;
 class DataLayoutPolicy;
 
 /// \brief Policy used for setting locations for Variable access
+/// \ingroup ioda_cxx_layout
 /// \note Using std::enable_shared_from_this as part of the pybind11 interface.
 ///   We pass this to ObsGroup as a shared_ptr.
 ///   See https://pybind11.readthedocs.io/en/stable/advanced/smart_ptrs.html#std-shared-ptr
@@ -33,25 +38,25 @@ public:
     /// Do no manipulation of the Group / Variable layout.
     None,
     /// Transform "Variable@Group" into "Group/Variable". Ensure that
-    /// group names match a few predefined keys.
+    ///   group names match a few predefined keys.
     ObsGroup,
-    /// Uses an auxiliary YAML dictionary to convert ODB variable/group naming conventions to IODA
-    /// equivalents. Transform "Variable@Group" into "Group/Variable". Ensure that the new group
-    /// names match a few predefined keys.
+    /// Uses an auxiliary YAML dictionary to convert ODB variable/group naming conventions to
+    ///  IODA equivalents. Transform "Variable@Group" into "Group/Variable". Ensure that
+    ///  the new group names match a few predefined keys.
     ObsGroupODB
   };
   /// Factory generator.
   static std::shared_ptr<const DataLayoutPolicy> generate(const std::string &polid = "");
   /// Factory generator (ODB-specific)
   /// \p mapPath path to a yaml file that defines how input file variables should be renamed
-  /// upon import to ioda.
+  ///   upon import to ioda.
   static std::shared_ptr<const DataLayoutPolicy> generate(const std::string &polid,
                                                           const std::string &mapPath);
   /// Factory generator.
   static std::shared_ptr<const DataLayoutPolicy> generate(Policies pol = Policies::None);
   /// Factory generator (ODB-specific)
   /// \p mapPath path to a yaml file that defines how input file variables should be renamed
-  /// upon import to ioda.
+  ///   upon import to ioda.
   static std::shared_ptr<const DataLayoutPolicy> generate(Policies pol,
                                                           const std::string &mapPath);
   /// \internal pybind11 overload casts do not work on some compilers.
@@ -88,3 +93,5 @@ public:
 };
 }  // namespace detail
 }  // namespace ioda
+
+/// @}

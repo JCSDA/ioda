@@ -21,7 +21,7 @@ int main() {
   int errval = 0;
   struct ioda_group* g4 = NULL;
 
-  g4 = ioda_Engines_HH_openFile("test-engines-3.hdf5", ioda_Engines_BackendOpenModes_Read_Only);
+  g4 = ioda_Engines_HH_openFile(19, "test-engines-3.hdf5", ioda_Engines_BackendOpenModes_Read_Only);
   if (!g4) goto hadError;
 
   goto cleanup;

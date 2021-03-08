@@ -1,10 +1,20 @@
 /*
- * (C) Copyright 2020 UCAR
+ * (C) Copyright 2020-2021 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
-/** \file 03-VariablesIntro.cpp
+/*! \addtogroup ioda_cxx_ex
+ *
+ * @{
+ *
+ * \defgroup ioda_cxx_ex_3 Ex 3: Introduction to Variables
+ * \brief Basic usage of Variables
+ * \see 03-VariablesIntro.cpp for comments and the walkthrough.
+ *
+ * @{
+ *
+ * \file 03-VariablesIntro.cpp
  * \brief Basic usage of Variables
  *
  * Variables store data. They are generally treated as an extension of
@@ -57,12 +67,12 @@ int main(int argc, char** argv) {
 
     // Let's make some Variables.
 
-    // The most basic creation function is .create<Type>(name, {dimensions}). Same as with creating an
-    // attribute.
+    // The most basic creation function is .create<Type>(name, {dimensions}). Same as with creating
+    // an attribute.
     ioda::Variable intvar1 = g.vars.create<int>("var-1", {2, 3});
     // The above creates a 2x3 variable that contains integers.
-    // * First difference from attributes: multidimensional data is fully supported. You can create points,
-    // 1-D, 2-D, 3-D, ..., n-dimensional data.
+    // * First difference from attributes: multidimensional data is fully supported. You can create
+    // points, 1-D, 2-D, 3-D, ..., n-dimensional data.
 
     // Writing a small amount of data is also easy.
     intvar1.write<int>({1, 2, 3, 4, 5, 6});
@@ -72,9 +82,10 @@ int main(int argc, char** argv) {
     // more complicated than attribute creation.
 
     // However, you can still chain operations:
-    g.vars.create<float>("var-2", {2, 3, 4}).write<float>({1.1f, 2.2f, 3.14159f, 4,     5,  6,  7,  8,
-                                                           9,    10,   11.5f,    12.6f, 13, 14, 15, 16,
-                                                           17,   18,   19,       20,    21, 22, 23, 24});
+    g.vars.create<float>("var-2", {2, 3, 4}).write<float>({1.1f, 2.2f, 3.14159f, 4,  5,     6,
+                                                           7,    8,    9,        10, 11.5f, 12.6f,
+                                                           13,   14,   15,       16, 17,    18,
+                                                           19,   20,   21,       22, 23,    24});
 
     // * The second difference: variables can be resized.
     // The create function also can take a few other parameters, such as maximum dimensions,
@@ -84,7 +95,7 @@ int main(int argc, char** argv) {
     // In that tutorial, you'll learn to create variables using expressions like these:
     {
       ioda::VariableCreationParameters p1;
-      p1.chunk = true;
+      p1.chunk  = true;
       p1.chunks = {200, 3};  // "Chunk" every 600 elements together.
       p1.setFillValue<int>(-999);
       p1.compressWithGZIP();
@@ -103,7 +114,8 @@ int main(int argc, char** argv) {
     std::array<int, 6> a_data_5{1, 2, 3, 4, 5, 6};         // A fixed-length array of data.
     std::valarray<int> va_data_6{1, 2, 3, 4};              // A basic math-supporting vector.
     const size_t sz_ca_data_7 = 7;
-    const int ca_data_7[sz_ca_data_7] = {1, 2, 3, 4, 5, 6, 7};  // NOLINT: (Humans should ignore this comment)
+    const int ca_data_7[sz_ca_data_7]
+      = {1, 2, 3, 4, 5, 6, 7};  // NOLINT: (Humans should ignore this comment)
 
     g.vars.create<int>("var-4", {gsl::narrow<ioda::Dimensions_t>(v_data_4.size())})
       .write<int>(gsl::make_span(v_data_4));
@@ -112,7 +124,8 @@ int main(int argc, char** argv) {
     g.vars.create<int>("var-6", {gsl::narrow<ioda::Dimensions_t>(va_data_6.size())})
       .write<int>(gsl::make_span(std::begin(va_data_6), std::end(va_data_6)));
     // A variable in a Group.
-    g.vars.create<int>("exgroup/var-7", {sz_ca_data_7}).write<int>(gsl::make_span(ca_data_7, sz_ca_data_7));
+    g.vars.create<int>("exgroup/var-7", {sz_ca_data_7})
+      .write<int>(gsl::make_span(ca_data_7, sz_ca_data_7));
     // You should notice that the creation and writing are a bit "inelegant" in that we seem to
     // specify the size twice, when creating and when writing the data. There are two
     // reasons for this:
@@ -144,10 +157,9 @@ int main(int argc, char** argv) {
     // Eigen (http://eigen.tuxfamily.org/) is a is a high-level C++ library of template headers
     // for linear algebra, matrix and vector operations, geometrical transformations, numerical
     // solvers and related algorithms.
-    // You can use it to read data from / write data into ioda while preserving the data's dimensions.
-    // You can use Eigen's containers to **do math** in a natural manner, without constantly iterating
-    // over array indices.
-    // We support i/o with all Eigen objects.
+    // You can use it to read data from / write data into ioda while preserving the data's
+    // dimensions. You can use Eigen's containers to **do math** in a natural manner, without
+    // constantly iterating over array indices. We support i/o with all Eigen objects.
 
     // Here is a 30x30 block of integers.
     const int num_i = 30, num_j = 30;
@@ -197,7 +209,8 @@ int main(int argc, char** argv) {
 .add("Actual", varList.size()); */
 
     // Checking variable existence and removing.
-    if (!g.vars.exists("var-2")) throw;  // jedi_throw.add("Reason", "Variable var-2 does not exist.");
+    if (!g.vars.exists("var-2"))
+      throw;  // jedi_throw.add("Reason", "Variable var-2 does not exist.");
     g.vars.create<int>("removable-int-1", {1});
     g.vars.remove("removable-int-1");
 
@@ -283,3 +296,6 @@ int main(int argc, char** argv) {
   }
   return 0;
 }
+
+/// @}
+/// @}

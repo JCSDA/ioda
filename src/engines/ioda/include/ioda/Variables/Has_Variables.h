@@ -1,12 +1,16 @@
 #pragma once
 /*
- * (C) Copyright 2020 UCAR
+ * (C) Copyright 2020-2021 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
-/// \file Has_Variables.h
-/// \brief Interfaces for ioda::Has_Variables and related classes.
+/*! \addtogroup ioda_cxx_variable
+ *
+ * @{
+ * \file Has_Variables.h
+ * \brief Interfaces for ioda::Has_Variables and related classes.
+ */
 
 #include <cstring>
 #include <gsl/gsl-lite.hpp>
@@ -44,6 +48,7 @@ inline bool Chunking_Max(const std::vector<Dimensions_t>& in, std::vector<Dimens
 }  // namespace chunking
 
 /// \brief Used to specify Variable creation-time properties.
+/// \ingroup ioda_cxx_variable
 struct IODA_DL VariableCreationParameters {
 private:
   std::vector<std::pair<unsigned int, Variable> > dimsToAttach_;
@@ -69,11 +74,11 @@ public:
   /// @name Chunking and compression
   /// @{
 
-  /// \brief Do we want to chunk this variable? Required for extendible and compressible Variables.
+  /// \brief Do we chunk this variable? Required for extendible / compressible Variables.
   /// \details Requires a chunking strategy.
   bool chunk = false;
 
-  /// Manually specify the chunks. Never read. Use getChunks(...) instead.
+  /// \brief Manually specify the chunks. Never directly use. Use getChunks(...) instead.
   std::vector<Dimensions_t> chunks;
   /// Set variable chunking strategy. Used only if chunk == true and chunks.size() == 0.
   std::function<bool(const std::vector<Dimensions_t>&, std::vector<Dimensions_t>&)>
@@ -146,6 +151,7 @@ private:
 
 namespace detail {
 
+/// \ingroup ioda_cxx_variable
 class IODA_DL Has_Variables_Base {
   // friend class Group_Base;
 private:
@@ -210,9 +216,10 @@ public:
 
   /// \brief Create a Variable without setting its data.
   /// \param attrname is the name of the Variable.
-  /// \param dimensions is a vector representing the size of the metadata. Each element of the
-  /// vector is a dimension with a certain size. \param in_memory_datatype is the runtime
-  /// description of the Attribute's data type. \returns A Variable that can be written to.
+  /// \param dimensions is a vector representing the size of the metadata.
+  ///   Each element of the vector is a dimension with a certain size.
+  /// \param in_memory_datatype is the runtime description of the Attribute's data type.
+  /// \returns A Variable that can be written to.
   virtual Variable create(const std::string& name, const Type& in_memory_dataType,
                           const std::vector<Dimensions_t>& dimensions     = {1},
                           const std::vector<Dimensions_t>& max_dimensions = {},
@@ -270,10 +277,11 @@ public:
   }
 
   /// \brief Create a Variable without setting its data.
-  /// \param DataType is the type of the data. I.e. float, int, int32_t, uint16_t, std::string, etc.
+  /// \tparam DataType is the type of the data. I.e. float, int32_t, uint16_t, std::string, etc.
   /// \param name is the name of the Variable.
   /// \param dimensions is a vector representing the size of the metadata. Each element of the
-  /// vector is a dimension with a certain size. \returns A Variable that can be written to.
+  ///   vector is a dimension with a certain size.
+  /// \returns A Variable that can be written to.
   template <class DataType>
   Variable create(const std::string& name, const std::vector<Dimensions_t>& dimensions = {1},
                   const std::vector<Dimensions_t>& max_dimensions = {},
@@ -294,10 +302,11 @@ public:
   }
 
   /// \brief Convenience function to create a Variable from certain dimension scales.
-  /// \param DataType is the type of the data. I.e. float, int, int32_t, uint16_t, std::string, etc.
+  /// \tparam DataType is the type of the data. I.e. int, int32_t, uint16_t, std::string, etc.
   /// \param name is the name of the Variable.
   /// \param dimensions is a vector representing the size of the metadata. Each element of the
-  /// vector is a dimension with a certain size. \returns A Variable that can be written to.
+  ///   vector is a dimension with a certain size.
+  /// \returns A Variable that can be written to.
   template <class DataType>
   Variable createWithScales(const std::string& name, const std::vector<Variable>& dimension_scales,
                             const VariableCreationParameters& params
@@ -352,7 +361,8 @@ public:
 }  // namespace detail
 
 /// \brief This class exists inside of ioda::Group and provides the interface to manipulating
-/// Variables.
+///   Variables.
+/// \ingroup ioda_cxx_variable
 ///
 /// \note It should only be constructed inside of a Group. It has no meaning elsewhere.
 /// \see ioda::Variable for the class that represents individual variables.
@@ -365,3 +375,5 @@ public:
                 std::shared_ptr<const detail::DataLayoutPolicy> = nullptr);
 };
 }  // namespace ioda
+
+/// @}

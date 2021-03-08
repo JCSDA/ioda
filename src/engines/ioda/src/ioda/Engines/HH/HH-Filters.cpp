@@ -5,6 +5,12 @@
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
+/*! \addtogroup ioda_internals_engines_hh
+ *
+ * @{
+ * \file HH-Filters.cpp
+ * \brief HDF5 filters
+ */
 
 #include "./HH/HH-Filters.h"
 
@@ -181,3 +187,5 @@ void Filters::setScaleOffset(H5Z_SO_scale_type_t scale_type, int scale_factor) {
 }  // namespace Engines
 }  // namespace detail
 }  // namespace ioda
+
+/// @}

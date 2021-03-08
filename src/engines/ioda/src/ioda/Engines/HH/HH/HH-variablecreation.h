@@ -6,8 +6,12 @@
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
-/// \file HH-variablecreation.h
-/// \brief HDF5 engine variable creation parameters.
+/*! \addtogroup ioda_internals_engines_hh
+ *
+ * @{
+ * \file HH-variablecreation.h
+ * \brief HDF5 engine variable creation parameters.
+ */
 
 #include <list>
 #include <memory>
@@ -28,6 +32,7 @@ class HH_Type;
 
 /// \brief This encapsulates dataset creation parameters. Used for generating HDF5 property lists
 ///   for variable creation.
+/// \ingroup ioda_internals_engines_hh
 class IODA_HIDDEN VariableCreation {
   friend class HH_HasVariables;
 
@@ -65,3 +70,5 @@ class IODA_HIDDEN VariableCreation {
 }  // namespace Engines
 }  // namespace detail
 }  // namespace ioda
+
+/// @}

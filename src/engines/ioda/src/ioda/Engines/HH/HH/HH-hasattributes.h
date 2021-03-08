@@ -6,8 +6,12 @@
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
-/// \file HH-hasattributes.h
-/// \brief HDF5 engine implementation of HasAttributes.
+/*! \addtogroup ioda_internals_engines_hh
+ *
+ * @{
+ * \file HH-hasattributes.h
+ * \brief HDF5 engine implementation of Has_Attributes.
+ */
 
 #include <string>
 #include <vector>
@@ -21,6 +25,7 @@ namespace detail {
 namespace Engines {
 namespace HH {
 /// \brief This is the implementation of Has_Attributes using HDF5.
+/// \ingroup ioda_internals_engines_hh
 class IODA_HIDDEN HH_HasAttributes : public ioda::detail::Has_Attributes_Backend,
                                      public std::enable_shared_from_this<HH_HasAttributes> {
 private:
@@ -43,3 +48,5 @@ public:
 }  // namespace Engines
 }  // namespace detail
 }  // namespace ioda
+
+/// @}

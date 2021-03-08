@@ -1,12 +1,16 @@
 #pragma once
 /*
- * (C) Copyright 2020 UCAR
+ * (C) Copyright 2020-2021 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
-/// \file Type_Provider.h
-/// \brief Frontend/backend bindings for the type system.
+/*! \addtogroup ioda_internals_engines_types
+ *
+ * @{
+ * \file Type_Provider.h
+ * \brief Frontend/backend bindings for the type system.
+ */
 #include <initializer_list>
 #include <typeindex>
 #include <typeinfo>
@@ -17,16 +21,18 @@ namespace ioda {
 class Type;  // This file is included by Type.h.
 
 namespace detail {
-/// Who owns (and should free) pointers passed across the
-/// frontend / backend interface?
+/// \brief Who owns (and should free) pointers passed across the
+///   frontend / backend interface?
+/// \ingroup ioda_internals_engines_types
 enum class PointerOwner {
   Engine,  ///< The backend engine frees pointers that it provides.
   Caller   ///< The user has to free pointers.
 };
 
-/// Backends implement type providers in conjunction with
-/// Attributes, Has_Attributes, Variables and Has_Variables.
-/// The backend objects pass through their underlying logic to represent types.
+/// \brief Backends implement type providers in conjunction with
+///   Attributes, Has_Attributes, Variables and Has_Variables.
+///   The backend objects pass through their underlying logic to represent types.
+/// \ingroup ioda_internals_engines_types
 class IODA_DL Type_Provider {
 public:
   virtual ~Type_Provider();
@@ -43,3 +49,5 @@ public:
 };
 }  // namespace detail
 }  // namespace ioda
+
+/// @}

@@ -1,12 +1,18 @@
 #pragma once
-/**
- * \copyright 2020 UCAR \n
- * 		This software is licensed under the terms of the Apache Licence Version 2.0
- * 		which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+/*
+ * (C) Copyright 2020-2021 UCAR
  *
+ * This software is licensed under the terms of the Apache Licence Version 2.0
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ */
+/*! \defgroup ioda_cxx_types Type System
+ * \brief The data type system
+ * \ingroup ioda_cxx_api
+ *
+ * @{
  * \file Type.h
  * \brief Interfaces for ioda::Type and related classes. Implements the type system.
- **/
+ */
 #include <array>
 #include <cstring>
 #include <functional>
@@ -28,6 +34,7 @@ IODA_DL size_t COMPAT_strncpy_s(char* dest, size_t destSz, const char* src, size
 
 class Type_Backend;
 
+/// \ingroup ioda_cxx_types
 template <class Type_Implementation = Type>
 class Type_Base {
   std::shared_ptr<Type_Backend> backend_;
@@ -74,6 +81,7 @@ enum class BasicTypes {
 };
 
 /// \brief Represents the "type" (i.e. integer, string, float) of a piece of data.
+/// \ingroup ioda_cxx_types
 ///
 /// Generally, you do not have to use this class directly. Attributes and Variables have
 /// templated functions that convert your type into the type used internally by ioda.
@@ -118,13 +126,16 @@ namespace Types {
 // using namespace ioda::Handles;
 
 /// \brief Convenience struct to determine if a type can represent a string.
+/// \ingroup ioda_cxx_types
 /// \todo extend to UTF-8 strings, as HDF5 supports these. No support for UTF-16, but conversion
-/// functions may be applied. \todo Fix for "const std::string".
+/// functions may be applied.
+/// \todo Fix for "const std::string".
 template <typename T>
 struct is_string : public std::integral_constant<
                      bool, std::is_same<char*, typename std::decay<T>::type>::value
                              || std::is_same<const char*, typename std::decay<T>::type>::value> {};
 /// \brief Convenience struct to determine if a type can represent a string.
+/// \ingroup ioda_cxx_types
 template <>
 struct is_string<std::string> : std::true_type {};
 
@@ -135,7 +146,8 @@ constexpr size_t _Variable_Length = 0;
 // constexpr int _Not_An_Array_type = -3;
 }  // namespace constants
 
-/// For fundamental, non-string types.
+/// \brief For fundamental, non-string types.
+/// \ingroup ioda_cxx_types
 template <class DataType, int Array_Type_Dimensionality = 0>
 Type GetType(gsl::not_null<const ::ioda::detail::Type_Provider*> t,
              std::initializer_list<Dimensions_t> Adims                   = {},
@@ -146,8 +158,9 @@ Type GetType(gsl::not_null<const ::ioda::detail::Type_Provider*> t,
   else
     return t->makeArrayType(Adims, typeid(DataType[]), typeid(DataType));
 }
-/// For fundamental string types. These are either constant or variable length arrays. Separate
-/// handling elsewhere.
+/// \brief For fundamental string types. These are either constant or variable length arrays.
+/// Separate handling elsewhere.
+/// \ingroup ioda_cxx_types
 template <class DataType, int String_Type_Length = constants::_Variable_Length>
 Type GetType(gsl::not_null<const ::ioda::detail::Type_Provider*> t,
              std::initializer_list<Dimensions_t>                        = {},
@@ -160,6 +173,7 @@ Type GetType(gsl::not_null<const ::ioda::detail::Type_Provider*> t,
 /// @def IODA_ADD_FUNDAMENTAL_TYPE
 /// Macro that defines a "fundamental type" that needs to be supported
 /// by the backend. These match C++11.
+/// \ingroup ioda_cxx_types
 /// \see https://en.cppreference.com/w/cpp/language/types
 /// \since C++11: we use bool, short int, unsigned short int,
 ///   int, unsigned int, long int, unsigned long int,
@@ -220,6 +234,7 @@ Type GetType(
         */
 
 /// \brief Wrapper struct to call GetType. Needed because of C++ template rules.
+/// \ingroup ioda_cxx_types
 /// \see ioda::Attribute, ioda::Has_Attributes, ioda::Variable, ioda::Has_Variables
 template <class DataType,
           int Length = 0>  //, typename = std::enable_if_t<!is_string<DataType>::value>>
@@ -229,6 +244,7 @@ struct GetType_Wrapper {
     return ::ioda::Types::GetType<DataType, Length>(t, {Length});
   }
 };
+/// \ingroup ioda_cxx_types
 typedef std::function<Type(gsl::not_null<const ::ioda::detail::Type_Provider*>)>
   TypeWrapper_function;
 /*
@@ -244,3 +260,5 @@ struct GetType_Wrapper {
 // inline Encapsulated_Handle GetTypeFixedString(Dimensions_t sz);
 }  // namespace Types
 }  // namespace ioda
+
+/// @}

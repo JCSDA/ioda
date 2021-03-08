@@ -1,12 +1,18 @@
 #pragma once
 /*
- * (C) Copyright 2020 UCAR
+ * (C) Copyright 2020-2021 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
-/// \file Att_ext.h
-/// \brief Python extensions to ioda::Attribute.
+/*! \defgroup ioda_cxx_py C++ / Python Bindings
+ * \brief Python binding helper classes, functions, and templates.
+ * \ingroup ioda_internals
+ *
+ * @{
+ * \file Att_ext.h
+ * \brief Python extensions to ioda::Attribute.
+ */
 
 #include <vector>
 
@@ -19,6 +25,7 @@ namespace detail {
  **/
 namespace python_bindings {
 
+/// \ingroup ioda_cxx_attribute_py
 template <class C = Attribute>
 class AttributeIsA {
   C* parent_;
@@ -31,6 +38,7 @@ public:
   }
 };
 
+/// \ingroup ioda_cxx_attribute_py
 template <class C = Attribute>
 class AttributeReadSingle {
   C* parent_;
@@ -43,6 +51,7 @@ public:
   }
 };
 
+/// \ingroup ioda_cxx_attribute_py
 template <class C = Attribute>
 class AttributeReadVector {
   C* parent_;
@@ -57,6 +66,7 @@ public:
   }
 };
 
+/// \ingroup ioda_cxx_attribute_py
 template <class C = Attribute>
 class AttributeReadNPArray {
   C* parent_;
@@ -75,6 +85,7 @@ public:
   }
 };
 
+/// \ingroup ioda_cxx_attribute_py
 template <class C = Attribute>
 class AttributeWriteSingle {
   C* parent_;
@@ -87,6 +98,7 @@ public:
   }
 };
 
+/// \ingroup ioda_cxx_attribute_py
 template <class C = Attribute>
 class AttributeWriteVector {
   C* parent_;
@@ -99,6 +111,7 @@ public:
   }
 };
 
+/// \ingroup ioda_cxx_attribute_py
 template <class C = Attribute>
 class AttributeWriteNPArray {
   C* parent_;
@@ -118,3 +131,5 @@ public:
 }  // namespace python_bindings
 }  // namespace detail
 }  // namespace ioda
+
+/// @}

@@ -1,13 +1,17 @@
 #pragma once
 /*
- * (C) Copyright 2020 UCAR
+ * (C) Copyright 2020-2021 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
-/// \file Attribute_Creator.h
-/// \brief Flywheel creation of ioda::Attribute. Used by ioda::Has_Attributes
-///        and ioda::VariableCreationParameters.
+/*! \addtogroup ioda_cxx_attribute
+ *
+ * @{
+ * \file Attribute_Creator.h
+ * \brief Flywheel creation of ioda::Attribute. Used by ioda::Has_Attributes and
+ * ioda::VariableCreationParameters.
+ */
 
 #include <gsl/gsl-lite.hpp>
 #include <iostream>
@@ -24,6 +28,7 @@
 namespace ioda {
 namespace detail {
 /// \brief Flywheel creation of ioda::Attribute.
+/// \ingroup ioda_cxx_attribute
 class IODA_DL Attribute_Creator_Base {
 protected:
   std::string name_;
@@ -36,6 +41,7 @@ public:
 }  // namespace detail
 
 /// \brief Flywheel creation of ioda::Attribute.
+/// \ingroup ioda_cxx_attribute
 template <class DataType>
 class Attribute_Creator : public detail::Attribute_Creator_Base {
 private:
@@ -62,6 +68,7 @@ public:
 };
 
 /// \brief Flywheel creation of ioda::Attribute objects.
+/// \ingroup ioda_cxx_attribute
 /// This is needed because you might want to make the same Attribute in multiple places.
 class IODA_DL Attribute_Creator_Store : public detail::CanAddAttributes<Attribute_Creator_Store> {
   std::vector<std::shared_ptr<detail::Attribute_Creator_Base>> atts_;
@@ -113,3 +120,5 @@ public:
 };
 
 }  // namespace ioda
+
+/// @} // End Doxygen block

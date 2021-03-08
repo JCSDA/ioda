@@ -1,11 +1,15 @@
 /*
- * (C) Copyright 2020 UCAR
+ * (C) Copyright 2020-2021 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
-/// \file Types.hpp
-/// \brief Functions for ObsStore type markers
+/*! \addtogroup ioda_internals_engines_obsstore
+ *
+ * @{
+ * \file Types.hpp
+ * \brief Functions for ObsStore type markers
+ */
 #pragma once
 #include <cstring>
 #include <gsl/gsl-lite.hpp>
@@ -18,6 +22,7 @@
 namespace ioda {
 namespace ObsStore {
 /// \brief ObsStore data type markers
+/// \ingroup ioda_internals_engines_obsstore
 /// \details ObsStore data type markers are one-for-one with C++ POD types.
 ///          These are needed for translating the frontend structure that holds
 ///          POD types to an equivalent in ObsStore. These are primarily used
@@ -52,3 +57,5 @@ enum class ObsTypes {
 };
 }  // namespace ObsStore
 }  // namespace ioda
+
+/// @}

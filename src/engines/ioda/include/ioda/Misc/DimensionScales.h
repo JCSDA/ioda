@@ -49,9 +49,8 @@ struct IODA_DL NewDimensionScale_Base : std::enable_shared_from_this<NewDimensio
   /// Maximum size of the new dimension. Unlimited (< 0) by default.
   Dimensions_t maxSize_;
   /// \brief Chunking size of the new dimension. May be used as a
-  /// hint when creating new Variables based on this dimension.
-  /// \details Matches size by default,
-  /// but will throw an error if the size is zero.
+  ///   hint when creating new Variables based on this dimension.
+  /// \details Matches size by default, but will throw an error if the size is zero.
   Dimensions_t chunkingSize_;
 
   /// \note Not pure virtual to avoid pybind11 headaches with adding a trampoline class.

@@ -7,6 +7,7 @@
  */
 /// \file structs_c.h
 /// \brief C wrappers for ioda classes and structures. Private header. Can have C++!
+/// \ingroup ioda_c_api
 
 #include <string>
 #include <vector>

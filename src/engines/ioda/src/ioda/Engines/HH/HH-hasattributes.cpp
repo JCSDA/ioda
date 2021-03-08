@@ -5,8 +5,12 @@
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
-/// \file HH-hasattributes.cpp
-/// \brief HDF5 engine implementation of HasAttributes.
+/*! \addtogroup ioda_internals_engines_hh
+ *
+ * @{
+ * \file HH-hasattributes.cpp
+ * \brief HDF5 engine implementation of Has_Attributes.
+ */
 
 #include "./HH/HH-hasattributes.h"
 
@@ -98,3 +102,5 @@ void HH_HasAttributes::rename(const std::string& oldName, const std::string& new
 }  // namespace Engines
 }  // namespace detail
 }  // namespace ioda
+
+/// @}

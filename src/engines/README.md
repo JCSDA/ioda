@@ -56,24 +56,11 @@ To test, run ```ctest``` or ```make test```.
 ## Directory layout
 
 - cmake - CMake-specific macros
-- deps
-  - deps/gsl-single - The C++ Core Guidelines Support Library
-  - deps/HH - HDFforHumans
 - docs - Ancillary markdown files, Doxyfile.in
 - Examples - User guides and tutorials.
-- jedi - Top-level library that should either be added into the bundles or merged into oops.
 - ioda - The main library. Split into include and source files.
 - share - Example data files.
 - test - Unit testing applications.
-
-## Porting instructions
-
-The current idea is that this repository will be added into the regular bundles. A few things should
-be done to make it link up properly.
-
-1. The CMake instructions should be replaced with ecbuild instructions.
-2. Folders should be renamed. ioda -> ioda-engines?
-3. More tests need to be produced.
 
 ## Contact info
 
@@ -81,7 +68,7 @@ The majority of ioda-engines is authored by Ryan Honeyager (honeyage@ucar.edu; r
 
 ## License
 
-(C) Copyright 2020 UCAR
+(C) Copyright 2020-2021 UCAR
 
 This software is licensed under the terms of the Apache Licence Version 2.0
 which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.

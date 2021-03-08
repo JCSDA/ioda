@@ -1,12 +1,19 @@
 #pragma once
 /*
- * (C) Copyright 2020 UCAR
+ * (C) Copyright 2020-2021 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
-/// \file c_binding_macros.h
-/// \brief C wrapper macros
+/*! \defgroup ioda_c_binding_macros C++/C binding macros
+ * \brief Provides the C-style bindings for ioda's templated C++ classes and functions.
+ * \ingroup ioda_c_api
+ *
+ * @{
+ * \file c_binding_macros.h
+ * \brief @link ioda_c_binding_macros C bindings interface @endlink to templated C++ ioda classes
+ * and functions.
+ */
 
 #ifndef __cplusplus
 #  include <stdint.h>
@@ -15,14 +22,14 @@
 #  include <iostream>
 #  include <stdexcept>
 #  include <string>
+#endif  // ifndef __CPLUSPLUS
 
-/**
- * \def C_TRY
- * \brief Goes with C_CATCH_AND_TERMINATE.
- *
- * \def C_CATCH_AND_TERMINATE
+/*! \def C_TRY
+ *  \brief Goes with C_CATCH_AND_TERMINATE.
+ */
+#define C_TRY try {
+/*! \def C_CATCH_AND_TERMINATE
  * \brief Catch C++ exceptions before they go across code boundaries.
- *
  * \details
  * This is needed because exceptions are not supposed to propagate across language
  * boundaries. Undefined behavior, and at best the program would terminate cleanly.
@@ -30,50 +37,47 @@
  * prints an error indicating where this occurs.
  *
  * \see C_TRY for the other end of the block.
- *
- *
- * \def C_CATCH_AND_RETURN
- * \brief This macro catches C++ exceptions. If they are recoverable, then return the
+ */
+#define C_CATCH_AND_TERMINATE                                                                      \
+  }                                                                                                \
+  catch (std::exception & e) {                                                                     \
+    std::cerr << e.what() << std::endl;                                                            \
+    std::terminate();                                                                              \
+  }                                                                                                \
+  catch (...) {                                                                                    \
+    std::terminate();                                                                              \
+  }
+
+/*! \def C_CATCH_AND_RETURN
+ *  \brief This macro catches C++ exceptions. If they are recoverable, then return the
  *   error value. If nonrecoverable, behave as C_CATCH_AND_TERMINATE.
- *
- * \def C_CATCH_RETURN_FREE
- * \brief Like C_CATCH_AND_RETURN, but free any in-function allocated C resource before returning
+ */
+#define C_CATCH_AND_RETURN(retval_on_success, retval_on_error)                                     \
+  return (retval_on_success);                                                                      \
+  }                                                                                                \
+  catch (std::exception & e) {                                                                     \
+    std::cerr << e.what() << std::endl;                                                            \
+    return retval_on_error;                                                                        \
+  }                                                                                                \
+  catch (...) {                                                                                    \
+    std::terminate();                                                                              \
+  }
+
+/*! \def C_CATCH_RETURN_FREE
+ *  \brief Like C_CATCH_AND_RETURN, but free any in-function allocated C resource before returning
  *   to avoid memory leaks.
- **/
-
-#  define C_TRY try {
-#  define C_CATCH_AND_TERMINATE                                                                    \
-    }                                                                                              \
-    catch (std::exception & e) {                                                                   \
-      std::cerr << e.what() << std::endl;                                                          \
-      std::terminate();                                                                            \
-    }                                                                                              \
-    catch (...) {                                                                                  \
-      std::terminate();                                                                            \
-    }
-
-#  define C_CATCH_AND_RETURN(retval_on_success, retval_on_error)                                   \
-    return (retval_on_success);                                                                    \
-    }                                                                                              \
-    catch (std::exception & e) {                                                                   \
-      std::cerr << e.what() << std::endl;                                                          \
-      return retval_on_error;                                                                      \
-    }                                                                                              \
-    catch (...) {                                                                                  \
-      std::terminate();                                                                            \
-    }
-
-#  define C_CATCH_RETURN_FREE(retval_on_success, retval_on_error, freeable)                        \
-    return (retval_on_success);                                                                    \
-    }                                                                                              \
-    catch (std::exception & e) {                                                                   \
-      std::cerr << e.what() << std::endl;                                                          \
-      delete freeable;                                                                             \
-      return retval_on_error;                                                                      \
-    }                                                                                              \
-    catch (...) {                                                                                  \
-      std::terminate();                                                                            \
-    }
+ */
+#define C_CATCH_RETURN_FREE(retval_on_success, retval_on_error, freeable)                          \
+  return (retval_on_success);                                                                      \
+  }                                                                                                \
+  catch (std::exception & e) {                                                                     \
+    std::cerr << e.what() << std::endl;                                                            \
+    delete freeable;                                                                               \
+    return retval_on_error;                                                                        \
+  }                                                                                                \
+  catch (...) {                                                                                    \
+    std::terminate();                                                                              \
+  }
 
 /**
  * \def C_TEMPLATE_FUNCTION_DEFINITION
@@ -86,8 +90,6 @@
  *   template-deprived languages (C, Fortran).
  * \note There is a similar macro in the ioda python interface.
  **/
-
-#endif  // ifndef __CPLUSPLUS
 
 #define C_TEMPLATE_FUNCTION_DEFINITION_NOSTR(funcname, PATTERN)                                    \
   PATTERN(funcname##_float, float)                                                                 \
@@ -164,10 +166,8 @@ PATTERN(funcname ## _bool, bool)   \
   C_TEMPLATE_FUNCTION_DECLARATION_3_NOSTR(funcname, funcname, PATTERN)                             \
   PATTERN(funcname##_str, funcname##_str)
 
-#ifdef __cplusplus
+#define C_TEMPLATE_FUNCTION_DEFINITION(funcname, PATTERN)                                          \
+  C_TEMPLATE_FUNCTION_DEFINITION_NOSTR(funcname, PATTERN)                                          \
+  PATTERN(funcname##_str, std::string)
 
-#  define C_TEMPLATE_FUNCTION_DEFINITION(funcname, PATTERN)                                        \
-    C_TEMPLATE_FUNCTION_DEFINITION_NOSTR(funcname, PATTERN)                                        \
-    PATTERN(funcname##_str, std::string)
-
-#endif
+/// @} // End Doxygen block

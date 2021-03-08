@@ -6,8 +6,12 @@
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
-/// \file HH-variables.h
-/// \brief HDF5 engine implementation of Variable.
+/*! \addtogroup ioda_internals_engines_hh
+ *
+ * @{
+ * \file HH-variables.h
+ * \brief HDF5 engine implementation of Variable.
+ */
 
 #include <list>
 #include <memory>
@@ -29,6 +33,7 @@ namespace HH {
 class HH_HasVariables;
 
 /// \brief This is the implementation of Variables using HDF5.
+/// \ingroup ioda_internals_engines_hh
 class IODA_HIDDEN HH_Variable : public ioda::detail::Variable_Backend,
                                 public std::enable_shared_from_this<HH_Variable> {
   HH_hid_t var_;
@@ -101,9 +106,9 @@ public:
   /// \param scalesToQueryAgainst is the list of scales that are being queried against.
   /// \param firstOnly reports only the first match along each axis
   /// \param dimensionNumbers is the list of dimensions to scan. An empty value means scan
-  /// everything. \returns a vector of size dimensionNumbers if dimensionNumbers is specified. If
-  /// not, then
-  ///   returns a vector with length equaling the dimensionality of the variable.
+  ///   everything.
+  /// \returns a vector of size dimensionNumbers if dimensionNumbers is specified. If
+  ///   not, then returns a vector with length equaling the dimensionality of the variable.
   std::vector<std::vector<std::pair<std::string, Variable>>> getDimensionScaleMappings(
     const std::vector<std::pair<std::string, Variable>>& scalesToQueryAgainst, bool firstOnly,
     const std::vector<unsigned>& dimensionNumbers) const;
@@ -125,3 +130,5 @@ public:
 }  // namespace Engines
 }  // namespace detail
 }  // namespace ioda
+
+/// @}

@@ -1,20 +1,24 @@
 /*
- * (C) Copyright 2020 UCAR
+ * (C) Copyright 2020-2021 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
-/// \file ObsStore-attributes.h
-/// \brief Functions for ioda::Attribute and ioda::Has_Attribute backed by ObsStore
+/*! \addtogroup ioda_internals_engines_obsstore
+ *
+ * @{
+ * \file ObsStore-attributes.h
+ * \brief Functions for ObsStore Attribute and Has_Attributes
+ */
 #pragma once
 
 #include <memory>
 #include <string>
 #include <vector>
 
+#include "./Attributes.hpp"
+#include "./Types.hpp"
 #include "ioda/Group.h"
-#include "ioda/ObsStore/Attributes.hpp"
-#include "ioda/ObsStore/Types.hpp"
 #include "ioda/defs.h"
 
 namespace ioda {
@@ -28,6 +32,7 @@ namespace ObsStore {
 #endif
 
 /// \brief This is the implementation of Attributes in ioda::ObsStore
+/// \ingroup ioda_internals_engines_obsstore
 class ObsStore_Attribute_Backend : public ioda::detail::Attribute_Backend,
                                    public std::enable_shared_from_this<ObsStore_Attribute_Backend> {
 private:
@@ -60,6 +65,7 @@ public:
 };
 
 /// \brief This is the implementation of Has_Attributes in ioda::ObsStore.
+/// \ingroup ioda_internals_engines_obsstore
 class ObsStore_HasAttributes_Backend : public ioda::detail::Has_Attributes_Backend {
 private:
   /// \brief ObsStore Has_Attribute
@@ -106,3 +112,5 @@ public:
 }  // namespace ObsStore
 }  // namespace Engines
 }  // namespace ioda
+
+/// @}

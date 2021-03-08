@@ -1,6 +1,6 @@
 # The HDF5 / HH Backend
 
-\brief This page describes implementation details of the HH backend.
+\addtogroup ioda_engines_grp_HH
 
 ## Ancient history
 

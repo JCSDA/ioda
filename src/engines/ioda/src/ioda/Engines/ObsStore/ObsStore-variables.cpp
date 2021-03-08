@@ -1,10 +1,16 @@
 /*
- * (C) Copyright 2020 UCAR
+ * (C) Copyright 2020-2021 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
-#include "ioda/Engines/ObsStore/ObsStore-variables.h"
+/*! \addtogroup ioda_internals_engines_obsstore
+ *
+ * @{
+ * \file ObsStore-variables.cpp
+ * \brief Functions for ioda::Variable and ioda::Has_Variables backed by ObsStore
+ */
+#include "./ObsStore-variables.h"
 
 namespace ioda {
 namespace Engines {
@@ -307,3 +313,5 @@ Variable ObsStore_HasVariables_Backend::create(const std::string& name,
 }  // namespace ObsStore
 }  // namespace Engines
 }  // namespace ioda
+
+/// @}

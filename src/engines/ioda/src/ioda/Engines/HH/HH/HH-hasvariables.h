@@ -6,8 +6,12 @@
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
-/// \file HH-hasvariables.h
-/// \brief HDF5 engine implementation of Has_Variables.
+/*! \addtogroup ioda_internals_engines_hh
+ *
+ * @{
+ * \file HH-hasvariables.h
+ * \brief HDF5 engine implementation of Has_Variables.
+ */
 
 #include <list>
 #include <memory>
@@ -25,6 +29,7 @@ namespace detail {
 namespace Engines {
 namespace HH {
 /// \brief This encapsulates dataset creation parameters
+/// \ingroup ioda_internals_engines_hh
 class IODA_HIDDEN DatasetParameterPack {
   friend class HH_HasVariables;
 
@@ -65,3 +70,5 @@ public:
 }  // namespace Engines
 }  // namespace detail
 }  // namespace ioda
+
+/// @}

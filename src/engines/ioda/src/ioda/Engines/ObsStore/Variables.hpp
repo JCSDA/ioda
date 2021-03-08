@@ -1,11 +1,15 @@
 /*
- * (C) Copyright 2020 UCAR
+ * (C) Copyright 2020-2021 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
-/// \file Variables.hpp
-/// \brief Functions for ObsStore Variable and Has_Variables
+/*! \addtogroup ioda_internals_engines_obsstore
+ *
+ * @{
+ * \file Variables.hpp
+ * \brief Functions for ObsStore Variable and Has_Variables
+ */
 #pragma once
 
 #include <map>
@@ -13,10 +17,10 @@
 #include <string>
 #include <vector>
 
-#include "ioda/ObsStore/Attributes.hpp"
-#include "ioda/ObsStore/Selection.hpp"
-#include "ioda/ObsStore/Types.hpp"
-#include "ioda/ObsStore/VarAttrStore.hpp"
+#include "./Attributes.hpp"
+#include "./Selection.hpp"
+#include "./Types.hpp"
+#include "./VarAttrStore.hpp"
 #include "ioda/Variables/Fill.h"
 #include "ioda/defs.h"
 
@@ -29,6 +33,7 @@ namespace ObsStore {
 #  pragma warning(disable : 444)
 #endif
 /// \brief parameters for creating a new variable
+/// \ingroup ioda_internals_engines_obsstore
 struct VarCreateParams {
 public:
   // Data type element size
@@ -39,6 +44,7 @@ public:
   gsl::span<char> fill_value;
 };
 
+/// \ingroup ioda_internals_engines_obsstore
 class Variable : public std::enable_shared_from_this<Variable> {
 private:
   /// \brief dimension sizes (length is rank of dimensions)
@@ -137,6 +143,7 @@ public:
 };
 
 class Group;
+/// \ingroup ioda_internals_engines_obsstore
 class Has_Variables {
 private:
   /// \brief container of variables
@@ -192,3 +199,5 @@ public:
 #endif
 }  // namespace ObsStore
 }  // namespace ioda
+
+/// @}

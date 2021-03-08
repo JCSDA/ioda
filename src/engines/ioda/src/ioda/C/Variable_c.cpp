@@ -1,16 +1,20 @@
 /*
- * (C) Copyright 2020 UCAR
+ * (C) Copyright 2020-2021 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
-/// \file Variable_c.c
-/// \brief C bindings for ioda::Variable
+/*! \addtogroup ioda_variable
+ *
+ * @{
+ * \file Variable_c.cpp
+ * \brief @link ioda_variable C bindings @endlink for ioda::Variable
+ */
 
 #include "ioda/C/Variable_c.h"
 
+#include "./structs_c.h"
 #include "ioda/C/c_binding_macros.h"
-#include "ioda/C/structs_c.h"
 #include "ioda/Types/Type.h"
 #include "ioda/Variables/Variable.h"
 
@@ -27,7 +31,7 @@ ioda_has_attributes* ioda_variable_atts(const ioda_variable* var) {
   ioda_has_attributes* res = nullptr;
   C_TRY;
   Expects(var != nullptr);
-  res = new ioda_has_attributes;
+  res       = new ioda_has_attributes;
   res->atts = var->var.atts;
   C_CATCH_RETURN_FREE(res, NULL, res);
 }
@@ -70,7 +74,8 @@ bool ioda_variable_detachDimensionScale(struct ioda_variable* var, unsigned int 
   C_CATCH_AND_RETURN(true, false);
 }
 
-bool ioda_variable_setDimScale(struct ioda_variable* var, size_t N, const struct ioda_variable* const* dims) {
+bool ioda_variable_setDimScale(struct ioda_variable* var, size_t N,
+                               const struct ioda_variable* const* dims) {
   C_TRY;
   Expects(var != nullptr);
   Expects(dims != nullptr);
@@ -91,27 +96,30 @@ int ioda_variable_isDimensionScale(const struct ioda_variable* var) {
   C_CATCH_AND_RETURN((res) ? 1 : 0, -1);
 }
 
-bool ioda_variable_setIsDimensionScale(struct ioda_variable* var, const char* dimensionScaleName) {
+bool ioda_variable_setIsDimensionScale(struct ioda_variable* var, size_t sz,
+                                       const char* dimensionScaleName) {
   C_TRY;
   Expects(var != nullptr);
   Expects(dimensionScaleName != nullptr);
-  var->var.setIsDimensionScale(dimensionScaleName);
+  var->var.setIsDimensionScale(std::string(dimensionScaleName, sz));
   C_CATCH_AND_RETURN(true, false);
 }
 
 size_t ioda_variable_getDimensionScaleName(const struct ioda_variable* var, size_t N, char* out) {
   C_TRY;
   Expects(var != nullptr);
-  Expects(out != nullptr);
   std::string name;
   var->var.getDimensionScaleName(name);
   if (name.size() == SIZE_MAX) throw std::logic_error("Dimension scale name is too large.");
+  if (!out) return name.size() + 1;
+  Expects(out != nullptr);
   ioda::detail::COMPAT_strncpy_s(out, N, name.data(), name.size() + 1);
 
   C_CATCH_AND_RETURN(name.size() + 1, 0);
 }
 
-int ioda_variable_isDimensionScaleAttached(const struct ioda_variable* var, unsigned int DimensionNumber,
+int ioda_variable_isDimensionScaleAttached(const struct ioda_variable* var,
+                                           unsigned int DimensionNumber,
                                            const struct ioda_variable* scale) {
   C_TRY;
   Expects(var != nullptr);
@@ -121,25 +129,25 @@ int ioda_variable_isDimensionScaleAttached(const struct ioda_variable* var, unsi
 }
 
 // isA
-#define IODA_VARIABLE_ISA_IMPL(funcnamestr, Type)     \
-  IODA_DL int funcnamestr(const ioda_variable* var) { \
-    C_TRY;                                            \
-    Expects(var != nullptr);                          \
-    bool ret = var->var.isA<Type>();                  \
-    C_CATCH_AND_RETURN((ret) ? 1 : 0, -1);            \
+#define IODA_VARIABLE_ISA_IMPL(funcnamestr, Type)                                                  \
+  IODA_DL int funcnamestr(const ioda_variable* var) {                                              \
+    C_TRY;                                                                                         \
+    Expects(var != nullptr);                                                                       \
+    bool ret = var->var.isA<Type>();                                                               \
+    C_CATCH_AND_RETURN((ret) ? 1 : 0, -1);                                                         \
   }
 
 C_TEMPLATE_FUNCTION_DEFINITION(ioda_variable_isa, IODA_VARIABLE_ISA_IMPL);
 
 // write
 
-#define IODA_VARIABLE_WRITE_FULL(funcnamestr, Type)                           \
-  IODA_DL bool funcnamestr(ioda_variable* var, size_t sz, const Type* vals) { \
-    C_TRY;                                                                    \
-    Expects(var != nullptr);                                                  \
-    Expects(vals != nullptr);                                                 \
-    var->var.write<Type>(gsl::span<const Type>(vals, sz));                    \
-    C_CATCH_AND_RETURN(true, false);                                          \
+#define IODA_VARIABLE_WRITE_FULL(funcnamestr, Type)                                                \
+  IODA_DL bool funcnamestr(ioda_variable* var, size_t sz, const Type* vals) {                      \
+    C_TRY;                                                                                         \
+    Expects(var != nullptr);                                                                       \
+    Expects(vals != nullptr);                                                                      \
+    var->var.write<Type>(gsl::span<const Type>(vals, sz));                                         \
+    C_CATCH_AND_RETURN(true, false);                                                               \
   }
 
 C_TEMPLATE_FUNCTION_DEFINITION_NOSTR(ioda_variable_write_full, IODA_VARIABLE_WRITE_FULL);
@@ -156,13 +164,13 @@ IODA_DL bool ioda_variable_write_full_str(ioda_variable* var, size_t sz, const c
 
 // read
 
-#define IODA_VARIABLE_READ_FULL(funcnamestr, Type)                            \
-  IODA_DL bool funcnamestr(const ioda_variable* var, size_t sz, Type* vals) { \
-    C_TRY;                                                                    \
-    Expects(var != nullptr);                                                  \
-    Expects(vals != nullptr);                                                 \
-    var->var.read<Type>(gsl::span<Type>(vals, sz));                           \
-    C_CATCH_AND_RETURN(true, false);                                          \
+#define IODA_VARIABLE_READ_FULL(funcnamestr, Type)                                                 \
+  IODA_DL bool funcnamestr(const ioda_variable* var, size_t sz, Type* vals) {                      \
+    C_TRY;                                                                                         \
+    Expects(var != nullptr);                                                                       \
+    Expects(vals != nullptr);                                                                      \
+    var->var.read<Type>(gsl::span<Type>(vals, sz));                                                \
+    C_CATCH_AND_RETURN(true, false);                                                               \
   }
 
 C_TEMPLATE_FUNCTION_DEFINITION_NOSTR(ioda_variable_read_full, IODA_VARIABLE_READ_FULL);
@@ -176,3 +184,5 @@ IODA_DL ioda_string_ret_t* ioda_variable_read_full_str(const ioda_variable* var)
   C_CATCH_AND_RETURN(create_str_vector_c(vdata), nullptr);
 }
 }
+
+/// @}

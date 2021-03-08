@@ -1,12 +1,16 @@
 #pragma once
 /*
- * (C) Copyright 2020 UCAR
+ * (C) Copyright 2021 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
-/// \file Var_ext.h
-/// \brief Python extensions to ioda::Variable.
+/*! \addtogroup ioda_cxx_py
+ *
+ * @{
+ * \file Var_ext.h
+ * \brief Python extensions to ioda::Variable.
+ */
 
 #include <string>
 #include <vector>
@@ -21,6 +25,7 @@ namespace detail {
  **/
 namespace python_bindings {
 
+/// \ingroup ioda_cxx_variable_py
 template <class C = Variable>
 class VariableIsA {
   C* parent_;
@@ -33,6 +38,7 @@ public:
   }
 };
 
+/// \ingroup ioda_cxx_variable_py
 template <class C = Variable>
 class VariableReadVector {
   C* parent_;
@@ -48,6 +54,7 @@ public:
   }
 };
 
+/// \ingroup ioda_cxx_variable_py
 template <class C = Variable>
 class VariableReadNPArray {
   C* parent_;
@@ -68,6 +75,7 @@ public:
   }
 };
 
+/// \ingroup ioda_cxx_variable_py
 template <class C = Variable>
 class VariableWriteVector {
   C* parent_;
@@ -81,6 +89,7 @@ public:
   }
 };
 
+/// \ingroup ioda_cxx_variable_py
 template <class C = Variable>
 class VariableWriteNPArray {
   C* parent_;
@@ -99,6 +108,7 @@ public:
   }
 };
 
+/// \ingroup ioda_cxx_variable_py
 template <class C = Variable>
 class VariableScales {
   C* parent_;
@@ -123,6 +133,7 @@ public:
   }
 };
 
+/// \ingroup ioda_cxx_variable_py
 template <class C = Variable>
 class VariableCreationFillValues {
   C* parent_;
@@ -137,3 +148,5 @@ public:
 }  // namespace python_bindings
 }  // namespace detail
 }  // namespace ioda
+
+/// @}
