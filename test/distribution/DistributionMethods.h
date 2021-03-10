@@ -48,14 +48,6 @@ void testDistributionMethods() {
                        << dist_types[i] << std::endl;
     DistName = dist_types[i].getString("name");
 
-    // prescribe pars for Halo distribution
-    double centerLongitude = static_cast<double>(MyRank)*
-                             (360.0/static_cast<double>(nprocs));
-    double radius = 50000000.0;  // this is big enough to hold all points on each PE
-    std::vector<double> centerd{centerLongitude, 0.0};
-    conf.set("center", centerd);
-    conf.set("radius", radius);
-
     TestDist.reset(DistFactory->createDistribution(MpiComm, conf, DistName));
 
     // initialize distributions
@@ -137,11 +129,12 @@ void testDistributionMethods() {
         TestDist->sum(va);
         TestDist->sum(vb);
 
-        oops::Log::debug() << "va=" << va << " vaRef=" << vaRef << std::endl;
         if (DistName == "Halo") {
+          oops::Log::debug() << "va=" << va << " vaRefHalo=" << vaRef << std::endl;
           EXPECT(va == vaRefHalo);
           EXPECT(vb == vbRefHalo);
         } else {
+          oops::Log::debug() << "va=" << va << " vaRef=" << vaRef << std::endl;
           EXPECT(va == vaRef);
           EXPECT(vb == vbRef);
         }
