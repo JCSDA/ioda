@@ -74,10 +74,14 @@ class InefficientDistribution: public Distribution {
      void allGatherv(std::vector<std::string> &x) const override {}
 
      void exclusiveScan(size_t &x) const override;
+     std::string name() const {return distName_;}
 
  private:
      template <typename T>
      size_t globalNumNonMissingObsImpl(const std::vector<T> &v) const;
+
+     // dist name
+     const std::string distName_ = "InefficientDistribution";
 };
 
 }  // namespace ioda

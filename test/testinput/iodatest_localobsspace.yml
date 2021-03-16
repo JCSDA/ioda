@@ -12,6 +12,7 @@ local obs space:
 observations:
 - obs space:
     name: Radiosonde_1var
+    distribution: InefficientDistribution
     simulated variables:
     - air_temperature
     obsdatain:
@@ -19,6 +20,7 @@ observations:
 
 - obs space:
     name: Radiosonde_2vars
+    distribution: Halo
     simulated variables:
     - air_temperature
     - specific_humidity
@@ -27,6 +29,7 @@ observations:
 
 - obs space:
     name: Radiosonde_4vars
+    distribution: Halo
     simulated variables:
     - air_temperature
     - specific_humidity

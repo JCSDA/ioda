@@ -15,6 +15,8 @@
 #include <vector>
 
 #include "eckit/config/Configuration.h"
+#include "eckit/exception/Exceptions.h"
+#include "eckit/config/LocalConfiguration.h"
 
 #include "ioda/core/LocalObsSpaceParameters.h"
 
@@ -49,6 +51,10 @@ ObsSpace::ObsSpace(const eckit::Configuration & config, const eckit::mpi::Comm &
 {
   oops::Log::trace() << "ioda::ObsSpaces starting" << std::endl;
   std::iota(localobs_.begin(), localobs_.end(), 0);
+  // make a dummy localDistribution_
+  DistributionFactory distFactory;
+  localDistribution_.reset(distFactory.createDistribution(
+      comm, eckit::LocalConfiguration(), "InefficientDistribution"));
   oops::Log::trace() << "ioda::ObsSpace done" << std::endl;
 }
 
@@ -67,7 +73,21 @@ ObsSpace::ObsSpace(const ObsSpace & os,
     obsdist_()
 {
   oops::Log::trace() << "ioda::ObsSpace for LocalObs starting" << std::endl;
+
+  // check that this distribution supports local obs space
+  std::string distName = obsspace_->distribution()->name();
+  if ( distName != "Halo" && distName != "InefficientDistribution" ) {
+    std::string message = "Can not use local ObsSpace with distribution=" + distName;
+    throw eckit::BadParameter(message);
+  }
+
   localopts_->deserialize(conf);
+
+  // for local ObsSpace, all local obs reside on this PE
+  // so we will make an Ineffecient distribution that reflects this
+  DistributionFactory distFactory;
+  localDistribution_.reset(distFactory.createDistribution(
+      os.comm(), eckit::LocalConfiguration(), "InefficientDistribution"));
 
   if ( localopts_->searchMethod == SearchMethod::BRUTEFORCE ) {
     oops::Log::trace() << "ioda::ObsSpace searching via brute force" << std::endl;
@@ -494,5 +514,14 @@ void ObsSpace::printJo(const ObsVector & dy, const ObsVector & grad) {
 }
 
 // -----------------------------------------------------------------------------
-
+const Distribution & ObsSpace::distribution() const {
+  if (isLocal_) {
+    // return a dummy ineffecient distribution
+    return *localDistribution_;
+  } else {
+    // return ObsData distribution
+    return *obsspace_->distribution();
+  }
+}
+// -----------------------------------------------------------------------------
 }  // namespace ioda

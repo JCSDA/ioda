@@ -18,9 +18,12 @@
 #include "eckit/mpi/Comm.h"
 
 #include "ioda/core/ObsData.h"
+#include "ioda/distribution/Distribution.h"
+#include "ioda/distribution/DistributionFactory.h"
 #include "oops/base/ObsSpaceBase.h"
 #include "oops/base/Variables.h"
 #include "oops/util/DateTime.h"
+
 
 // Forward declarations
 namespace eckit {
@@ -110,7 +113,7 @@ class ObsSpace : public oops::ObsSpaceBase {
   const oops::Variables & obsvariables() const {return obsspace_->obsvariables();}
   const std::vector<double> & obsdist() const {return obsdist_;}
 
-  const Distribution & distribution() const {return *obsspace_->distribution();}
+  const Distribution & distribution() const;
 
  private:
   void print(std::ostream &) const;
@@ -120,6 +123,9 @@ class ObsSpace : public oops::ObsSpaceBase {
   std::vector<std::size_t> localobs_;
   bool isLocal_;
   std::vector<double> obsdist_;
+  // for local ObsSpace, all local obs reside on this PE
+  // so we will make an Ineffecient distribution that reflects this
+  std::shared_ptr<Distribution> localDistribution_;
 };
 
 }  // namespace ioda

@@ -73,6 +73,8 @@ class Halo: public Distribution {
 
      void exclusiveScan(size_t &x) const override;
 
+     std::string name() const {return distName_;}
+
  private:
      template <typename T>
      size_t globalNumNonMissingObsImpl(const std::vector<T> &v) const;
@@ -88,6 +90,8 @@ class Halo: public Distribution {
      std::vector<bool> patchObsBool_;
      // Earth radius in m
      const double radius_earth_ = 6.371e6;
+     // dist name
+     const std::string distName_ = "Halo";
 };
 
 }  // namespace ioda

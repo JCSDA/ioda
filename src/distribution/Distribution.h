@@ -177,6 +177,9 @@ class Distribution {
      */
     virtual void exclusiveScan(size_t &x) const = 0;
 
+    // return the name of the distribution
+    virtual std::string name() const = 0;
+
  protected:
      /*! \brief Local MPI communicator */
      const eckit::mpi::Comm & comm_;

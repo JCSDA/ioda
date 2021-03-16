@@ -141,14 +141,16 @@ double Halo::dot_product(const std::vector<double> &v1, const std::vector<double
                 const {
   ASSERT(v1.size() == v2.size());
   double missingValue = util::missingValue(missingValue);
-  size_t nvars = v1.size()/patchObsBool_.size();
-
   double zz = 0.0;
-  for (size_t jj = 0; jj < v1.size() ; ++jj) {
-    size_t iLoc = jj % nvars;
-    if (v1[jj] != missingValue && v2[jj] != missingValue &&
-        patchObsBool_[iLoc]) {
-      zz += v1[jj] * v2[jj];
+
+  if (patchObsBool_.size() > 0) {
+    size_t nvars = v1.size()/patchObsBool_.size();
+    for (size_t jj = 0; jj < v1.size() ; ++jj) {
+      size_t iLoc = jj / nvars;
+      if (v1[jj] != missingValue && v2[jj] != missingValue &&
+          patchObsBool_[iLoc]) {
+        zz += v1[jj] * v2[jj];
+      }
     }
   }
 
@@ -188,12 +190,14 @@ size_t Halo::globalNumNonMissingObs(const std::vector<util::DateTime> &v) const 
 template <typename T>
 size_t Halo::globalNumNonMissingObsImpl(const std::vector<T> &v) const {
   T missingValue = util::missingValue(missingValue);
-  size_t nvars = v.size()/patchObsBool_.size();
 
   size_t nobs = 0;
-  for (size_t jj = 0; jj < v.size(); ++jj) {
-    size_t iLoc = jj % nvars;
-    if (v[jj] != missingValue && patchObsBool_[iLoc]) ++nobs;
+  if (patchObsBool_.size() > 0) {
+    size_t nvars = v.size()/patchObsBool_.size();
+    for (size_t jj = 0; jj < v.size(); ++jj) {
+      size_t iLoc = jj / nvars;
+      if (v[jj] != missingValue && patchObsBool_[iLoc]) ++nobs;
+    }
   }
 
   this->sum(nobs);
