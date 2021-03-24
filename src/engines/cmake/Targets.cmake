@@ -16,7 +16,7 @@ target_compile_definitions(${tgt} PUBLIC
 	)
 
 	target_compile_options(${tgt} PUBLIC
-		$<$<CXX_COMPILER_ID:GNU>:
+		$<$<AND:$<CXX_COMPILER_ID:GNU>,$<COMPILE_LANGUAGE:CXX>>:
 		# Turn off GCC 4.4 ABI warning involving unions of long double.
 		-Wno-psabi
 		>
