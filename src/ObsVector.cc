@@ -123,6 +123,10 @@ void ObsVector::zero() {
   }
 }
 // -----------------------------------------------------------------------------
+void ObsVector::ones() {
+  std::fill(values_.begin(), values_.end(), 1.0);
+}
+// -----------------------------------------------------------------------------
 void ObsVector::axpy(const double & zz, const ObsVector & rhs) {
   const size_t nn = values_.size();
   ASSERT(rhs.values_.size() == nn);

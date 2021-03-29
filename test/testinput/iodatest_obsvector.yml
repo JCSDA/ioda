@@ -10,6 +10,9 @@ observations:
       obsfile: Data/testinput_tier_1/sondes_obs_2018041500_m.nc4
       rms ref: 216.91619057593934
       tolerance: 1.0e-14
+  reference nobs: 974
+  mask variable: GsiUseFlag
+  reference masked nobs: 819
 
 - obs space:
     name: "Radiosonde_2vars"
@@ -20,6 +23,9 @@ observations:
       obsfile: Data/testinput_tier_1/sondes_obs_2018041500_m.nc4
       rms ref: 124.96816071306155
       tolerance: 1.0e-14
+  reference nobs: 1948
+  mask variable: GsiUseFlag
+  reference masked nobs: 1633
 
 - obs space:
     name: "Radiosonde_4vars"
@@ -32,6 +38,9 @@ observations:
       obsfile: Data/testinput_tier_1/sondes_obs_2018041500_m.nc4
       rms ref: 71.324181693818431
       tolerance: 1.0e-14
+  reference nobs: 3896
+  mask variable: GsiUseFlag
+  reference masked nobs: 2587
 
 distributions:
   - RoundRobin

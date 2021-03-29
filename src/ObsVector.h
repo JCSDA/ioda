@@ -49,6 +49,8 @@ class ObsVector : public util::Printable,
   ObsVector & operator/= (const ObsVector &);
 
   void zero();
+  /// set all elements to one (used in tests)
+  void ones();
   void axpy(const double &, const ObsVector &);
   void invert();
   void random();

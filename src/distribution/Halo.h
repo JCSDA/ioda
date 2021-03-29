@@ -73,7 +73,7 @@ class Halo: public Distribution {
 
      void exclusiveScan(size_t &x) const override;
 
-     std::string name() const {return distName_;}
+     std::string name() const override {return distName_;}
 
  private:
      template <typename T>
