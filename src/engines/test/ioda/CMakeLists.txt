@@ -10,9 +10,11 @@ add_subdirectory(engine-hdf5)
 add_subdirectory(fillvalues)
 # Needs development: add_subdirectory(generic_copy)
 add_subdirectory(iodaio-templated-tests)
+add_subdirectory(layouts)
 add_subdirectory(obsgroup)
 add_subdirectory(misc)
 add_subdirectory(persist)
+add_subdirectory(variables)
 # Needs a test file
 #add_subdirectory(upgrade_format)
 

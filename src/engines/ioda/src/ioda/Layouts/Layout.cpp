@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "eckit/config/Configuration.h"
+#include "eckit/exception/Exceptions.h"
 
 #include "ioda/Layouts/Layout_ObsGroup.h"
 #include "ioda/Layouts/Layout_ObsGroup_ODB.h"
@@ -53,5 +54,28 @@ void DataLayoutPolicy::initializeStructure(Group_Base &) const {
 std::string DataLayoutPolicy::name() const { return std::string{"None / no policy"}; }
 
 std::string DataLayoutPolicy::doMap(const std::string &str) const { return str; }
+
+bool DataLayoutPolicy::isComplementary(const std::string &str) const { return false; }
+
+size_t DataLayoutPolicy::getComplementaryPosition(const std::string &str) const {
+  throw eckit::UserError("Illogical operation for non-ODB data layout policies.");
+}
+
+std::string DataLayoutPolicy::getOutputNameFromComponent(const std::string &str) const {
+  throw eckit::UserError("Illogical operation for non-ODB data layout policies.");
+}
+
+std::type_index DataLayoutPolicy::getOutputVariableDataType(const std::string &str) const {
+  throw eckit::UserError("Illogical operation for non-ODB data layout policies.");
+}
+
+DataLayoutPolicy::MergeMethod DataLayoutPolicy::getMergeMethod(const std::string &str) const {
+  throw eckit::UserError("Illogical operation for non-ODB data layout policies.");
+}
+
+size_t DataLayoutPolicy::getInputsNeeded(const std::string &str) const {
+  throw eckit::UserError("Illogical operation for non-ODB data layout policies.");
+}
+
 }  // namespace detail
 }  // namespace ioda

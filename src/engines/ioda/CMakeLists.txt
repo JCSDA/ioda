@@ -15,6 +15,7 @@ list(APPEND SRCS_IODA
 	#include/ioda/Copying.h
 	include/ioda/Misc/Dimensions.h
 	include/ioda/Misc/Eigen_Compat.h
+	include/ioda/Misc/MergeMethods.h
 	include/ioda/Misc/SFuncs.h
 	include/ioda/Variables/Fill.h
 	src/ioda/Fill.cpp
@@ -31,8 +32,8 @@ list(APPEND SRCS_IODA
 	include/ioda/Variables/Variable.h
 	include/ioda/Python/Var_ext.h
 	private/ioda/Layouts/Layout_ObsGroup.h
-  private/ioda/Layouts/Layout_ObsGroup_ODB.h
-  private/ioda/Layouts/Layout_Utils.h
+	private/ioda/Layouts/Layout_ObsGroup_ODB.h
+	private/ioda/Layouts/Layout_Utils.h
 	src/ioda/Attribute.cpp
 	src/ioda/Attribute_Creator.cpp
 	#src/ioda/Copying.cpp
@@ -47,8 +48,8 @@ list(APPEND SRCS_IODA
 	src/ioda/Variable.cpp
 	src/ioda/Layouts/Layout.cpp
 	src/ioda/Layouts/Layout_ObsGroup.cpp
-  src/ioda/Layouts/Layout_ObsGroup_ODB.cpp
-  src/ioda/Layouts/Layout_Utils.cpp
+	src/ioda/Layouts/Layout_ObsGroup_ODB.cpp
+	src/ioda/Layouts/Layout_Utils.cpp
   )
 list(APPEND SRCS_IODA_TYPES
 	include/ioda/Types/Complex.h

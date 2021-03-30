@@ -33,6 +33,13 @@ IODA_DL std::vector<std::string> splitPaths(const std::string& p);
 /// @return The resulting string.
 IODA_DL std::string condensePaths(const std::vector<std::string>& p, size_t start = 0,
                                   size_t end = std::string::npos);
+
+/// @brief Concatenate equal-length vectors of strings element-by-element. Removes trailing spaces.
+/// @param stringVectors represents the vectors of strings all stored together in one vector.
+/// @return The resulting vector of strings.
+IODA_DL std::vector<std::string> concatenateStringVectors(
+    const std::vector<std::vector<std::string>>& stringVectors);
+
 }  // namespace ioda
 
 /// @}

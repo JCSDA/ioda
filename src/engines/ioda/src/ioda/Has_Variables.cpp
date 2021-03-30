@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2020 UCAR
+ * (C) Copyright 2021 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -7,6 +7,8 @@
 #include "ioda/Variables/Has_Variables.h"
 
 #include "ioda/Layout.h"
+#include "ioda/Misc/MergeMethods.h"
+#include "ioda/Misc/SFuncs.h"
 
 namespace ioda {
 namespace detail {
@@ -46,8 +48,97 @@ void Has_Variables_Base::remove(const std::string& name) {
 Variable Has_Variables_Base::open(const std::string& name) const {
   Expects(backend_ != nullptr);
   Expects(layout_ != nullptr);
-  return backend_->open(layout_->doMap(name));
+  Variable openedVariable = backend_->open(layout_->doMap(name));
+  return openedVariable;
 }
+
+void Has_Variables_Base::stitchComplementaryVariables(bool removeOriginals) {
+  if (layout_->name() != std::string("ObsGroup ODB v1"))
+    return;
+  std::vector<std::string> variableList = list();
+  for (auto const& name : variableList) {
+    const std::string destinationName = layout_->doMap(name);
+    if (layout_->isComplementary(destinationName)) {
+      size_t position = layout_->getComplementaryPosition(destinationName);
+      std::string outputName = layout_->getOutputNameFromComponent(destinationName);
+      bool oneVariableStitch = false;
+      if (layout_->getInputsNeeded(destinationName) == 1)
+        oneVariableStitch = true;
+
+      bool outputVariableMetadataPreviouslyGenerated = true;
+      // point to the derived variable parameter group if it has already been created (if
+      // another component variable has already been accessed)
+      auto const it =
+          std::find_if(complementaryVariables_.begin(), complementaryVariables_.end(),
+                       [&outputName](ComplementaryVariableCreationParameters compParam) {
+          return compParam.outputName == outputName; });
+      if (it == complementaryVariables_.end()) {
+        outputVariableMetadataPreviouslyGenerated = false;
+        ComplementaryVariableCreationParameters derivedVariable =
+            createDerivedVariableParameters(name, outputName, position);
+        complementaryVariables_.push_back(derivedVariable);
+      }
+
+      if (outputVariableMetadataPreviouslyGenerated || oneVariableStitch) {
+        ComplementaryVariableCreationParameters* derivedVariableParams;
+        if (oneVariableStitch) {
+          derivedVariableParams = &complementaryVariables_.back();
+        } else {
+          derivedVariableParams = &(*it);
+          derivedVariableParams->inputVariableNames.at(position) = name;
+          derivedVariableParams->inputVarsEnteredCount++;
+          if (derivedVariableParams->inputVarsEnteredCount !=
+              derivedVariableParams->inputVarsNeededCount) {
+            continue;
+          }
+        }
+        std::vector<std::vector<std::string> > mergeMethodInput =
+            loadComponentVariableData(*derivedVariableParams);
+        Variable derivedVariable;
+        if (derivedVariableParams->mergeMethod == ioda::detail::DataLayoutPolicy::MergeMethod::Concat) {
+          std::vector<std::string> derivedVector = concatenateStringVectors(mergeMethodInput);
+          derivedVariable = this->create<std::string>(
+                derivedVariableParams->outputName,
+                {gsl::narrow<ioda::Dimensions_t>(derivedVector.size())});
+          derivedVariable.write(derivedVector);
+        }
+        if (removeOriginals) {
+          for (auto const& inputVar : derivedVariableParams->inputVariableNames) {
+            this->remove(layout_->doMap(inputVar));
+          }
+        }
+      }
+    }
+  }
+}
+
+ComplementaryVariableCreationParameters Has_Variables_Base::createDerivedVariableParameters(
+    const std::string &inputName, const std::string &outputName, size_t position) {
+  ComplementaryVariableCreationParameters newDerivedVariable(outputName);
+  const std::string destName = layout_->doMap(inputName);
+  newDerivedVariable.mergeMethod = layout_->getMergeMethod(destName);
+  newDerivedVariable.inputVarsNeededCount = layout_->getInputsNeeded(destName);
+  // Populates a vector with 1 empty entry for every vector that must be entered
+  std::vector<std::string> vec(newDerivedVariable.inputVarsNeededCount, "");
+  newDerivedVariable.inputVariableNames = std::move(vec);
+  newDerivedVariable.inputVariableNames.at(position) = inputName;
+  newDerivedVariable.inputVarsEnteredCount = 1;
+  return newDerivedVariable;
+}
+
+std::vector<std::vector<std::string> > Has_Variables_Base::loadComponentVariableData(
+    const ComplementaryVariableCreationParameters &derivedVariableParams)
+{
+    std::vector<std::vector<std::string>> mergeMethodInput;
+    for (size_t inputVariableIdx = 0; inputVariableIdx !=
+         derivedVariableParams.inputVarsEnteredCount; inputVariableIdx++) {
+      Variable inputVariable = this->open(
+            derivedVariableParams.inputVariableNames[inputVariableIdx]);
+      mergeMethodInput.push_back(inputVariable.readAsVector<std::string>());
+    }
+    return mergeMethodInput;
+}
+
 // This is a one-level search. For searching contents of an ObsGroup, you need to
 // list the Variables in each child group.
 std::vector<std::string> Has_Variables_Base::list() const {
@@ -90,8 +181,9 @@ Variable Has_Variables_Base::create(const std::string& name, const Type& in_memo
                                     const VariableCreationParameters& params) {
   Expects(backend_ != nullptr);
   Expects(layout_ != nullptr);
-  auto newVar = backend_->create(layout_->doMap(name), in_memory_dataType, dimensions,
-                                 max_dimensions, params);
+  auto newVar =
+    backend_->create(layout_->doMap(name), in_memory_dataType, dimensions,
+                     max_dimensions, params);
   params.applyImmediatelyAfterVariableCreation(newVar);
   return newVar;
 }

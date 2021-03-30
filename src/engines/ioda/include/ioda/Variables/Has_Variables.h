@@ -21,7 +21,9 @@
 #include <vector>
 
 #include "ioda/Attributes/Attribute_Creator.h"
+#include "ioda/Layout.h"
 #include "ioda/Misc/Eigen_Compat.h"
+#include "ioda/Misc/MergeMethods.h"
 #include "ioda/Types/Type.h"
 #include "ioda/Variables/FillPolicy.h"
 #include "ioda/Variables/Variable.h"
@@ -159,10 +161,16 @@ private:
   std::shared_ptr<Has_Variables_Backend> backend_;
   /// Set by ObsGroup.
   std::shared_ptr<const detail::DataLayoutPolicy> layout_;
+  std::vector<ComplementaryVariableCreationParameters> complementaryVariables_;
   /// \brief FillValuePolicy helper
   /// \details Hides the template function calls, so that the headers are smaller.
   static void _py_fvp_helper(BasicTypes dataType, FillValuePolicy& fvp,
                              VariableCreationParameters& params);
+
+  ComplementaryVariableCreationParameters createDerivedVariableParameters(
+      const std::string &inputName, const std::string &outputName, size_t position);
+  std::vector<std::vector<std::string>> loadComponentVariableData(
+      const ComplementaryVariableCreationParameters& derivedVariableParams);
 
 protected:
   Has_Variables_Base(std::shared_ptr<Has_Variables_Backend>,
@@ -213,6 +221,14 @@ public:
   /// \see Group_Base::listObjects if you need to enumerate both Groups and Variables, or
   ///   if you need recursion.
   inline std::vector<std::string> operator()() const { return list(); }
+
+  /// \brief Combines all complementary variables as specified in the mapping file, opens them,
+  /// and optionally removes the originals from the ObsGroup.
+  ///
+  /// \p removeOriginals determines if the original complementary variables should be removed from
+  /// the ObsGroup. Later functionality will ensure that the original complementary variables can
+  /// be recreated on writing back to the original file.
+  void stitchComplementaryVariables(bool removeOriginals = true);
 
   /// \brief Create a Variable without setting its data.
   /// \param attrname is the name of the Variable.

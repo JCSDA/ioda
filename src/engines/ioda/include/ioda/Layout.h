@@ -15,6 +15,7 @@
 #include <gsl/gsl-lite.hpp>
 #include <memory>
 #include <string>
+#include <typeindex>
 
 #include "ioda/defs.h"
 
@@ -45,6 +46,11 @@ public:
     ///  the new group names match a few predefined keys.
     ObsGroupODB
   };
+  enum class MergeMethod {
+    /// Concatenate complementary variables entry-by-entry
+    Concat
+  };
+
   /// Factory generator.
   static std::shared_ptr<const DataLayoutPolicy> generate(const std::string &polid = "");
   /// Factory generator (ODB-specific)
@@ -85,6 +91,29 @@ public:
   /// \returns A canonical path, always of the form "Group/Variable". In case of a dimension
   ///   scale, then there is no group name, but for every other Variable, there is a Group name.
   virtual std::string doMap(const std::string &) const;
+
+  /// Check if the named variable will be a part of a derived variable
+  virtual bool isComplementary(const std::string &) const;
+
+  /// Returns the position of the input variable in the derived variable.
+  /// \throws If the input is not part of a derived variable.
+  virtual size_t getComplementaryPosition(const std::string &) const;
+
+  /// Returns the derived variable name to be used in ioda.
+  /// \throws If the input is not part of a derived variable.
+  virtual std::string getOutputNameFromComponent(const std::string &) const;
+
+  /// Returns the data type of the derived variable.
+  /// \throws If the input is not part of a derived variable.
+  virtual std::type_index getOutputVariableDataType(const std::string &) const;
+
+  /// Returns the merge method for derived variables.
+  /// \throws If the input is not part of a derived variable.
+  virtual MergeMethod getMergeMethod(const std::string &) const;
+
+  /// Returns the count of input variables needed.
+  /// \throws If the input is not part of a derived variable.
+  virtual size_t getInputsNeeded(const std::string &) const;
 
   /// A descriptive name for the policy.
   virtual std::string name() const;

@@ -16,6 +16,9 @@ else()
 	set(IODA_ENGINES_IS_PROJECT False)
 endif()
 
+# save path of private directory for use by unit tests
+set(IODA_ENGINES_PRIVATE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ioda/private)
+
 set(IODA_ENGINES_MAJOR 0 CACHE INTERNAL "ioda engines major version" FORCE)
 set(IODA_ENGINES_MINOR 9 CACHE INTERNAL "ioda engines minor version" FORCE)
 set(IODA_ENGINES_REVISION 0 CACHE INTERNAL "ioda engines revision version" FORCE)
