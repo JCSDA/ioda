@@ -152,8 +152,27 @@ void RoundRobin::patchObs(std::vector<bool> & patchObsVec) const {
 // -----------------------------------------------------------------------------
 double RoundRobin::dot_product(
                 const std::vector<double> &v1, const std::vector<double> &v2) const {
+  return dot_productImpl(v1, v2);
+}
+
+// -----------------------------------------------------------------------------
+double RoundRobin::dot_product(
+                const std::vector<float> &v1, const std::vector<float> &v2) const {
+  return dot_productImpl(v1, v2);
+}
+
+// -----------------------------------------------------------------------------
+double RoundRobin::dot_product(
+                const std::vector<int> &v1, const std::vector<int> &v2) const {
+  return dot_productImpl(v1, v2);
+}
+
+// -----------------------------------------------------------------------------
+template <typename T>
+double RoundRobin::dot_productImpl(
+                   const std::vector<T> &v1, const std::vector<T> &v2) const {
   ASSERT(v1.size() == v2.size());
-  double missingValue = util::missingValue(missingValue);
+  T missingValue = util::missingValue(missingValue);
 
   double zz = 0.0;
   for (size_t jj = 0; jj < v1.size() ; ++jj) {
@@ -164,15 +183,6 @@ double RoundRobin::dot_product(
 
   this->sum(zz);
   return zz;
-}
-
-// -----------------------------------------------------------------------------
-double RoundRobin::dot_product(
-                const std::vector<int> &v1, const std::vector<int> &v2) const {
-  std::vector<double> v1d(v1.begin(), v1.end());
-  std::vector<double> v2d(v2.begin(), v2.end());
-  double rv = this->dot_product(v1d, v2d);
-  return rv;
 }
 
 // -----------------------------------------------------------------------------

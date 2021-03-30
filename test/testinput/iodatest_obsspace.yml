@@ -199,7 +199,7 @@ observations:
         - name: "surface_pressure"
           group: "PreQC"
           type: "integer"
-          norm: 66675822462.585785
+          norm: 6.32455532034
       tolerance:
         - 1.0e-11
     obsdataout:

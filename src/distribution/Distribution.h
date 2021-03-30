@@ -123,6 +123,8 @@ class Distribution {
     // operations for computing RMSE and globalNumNonMissingObs in presence of overlapping obs.
     virtual double dot_product(const std::vector<double> &v1, const std::vector<double> &v2)
                       const = 0;
+    virtual double dot_product(const std::vector<float> &v1, const std::vector<float> &v2)
+                      const = 0;
     virtual double dot_product(const std::vector<int> &v1, const std::vector<int> &v2)
                       const = 0;
 

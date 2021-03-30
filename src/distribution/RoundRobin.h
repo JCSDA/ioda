@@ -37,6 +37,8 @@ class RoundRobin: public Distribution {
 
      double dot_product(const std::vector<double> &v1, const std::vector<double> &v2)
                       const override;
+     double dot_product(const std::vector<float> &v1, const std::vector<float> &v2)
+                      const override;
      double dot_product(const std::vector<int> &v1, const std::vector<int> &v2)
                       const override;
 
@@ -73,6 +75,9 @@ class RoundRobin: public Distribution {
  private:
     template <typename T>
     size_t globalNumNonMissingObsImpl(const std::vector<T> &v) const;
+    template <typename T>
+    double dot_productImpl(const std::vector<T> &v1, const std::vector<T> &v2) const;
+
     const std::string distName_ = "RoundRobin";
 };
 
