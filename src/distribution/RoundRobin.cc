@@ -224,6 +224,10 @@ void RoundRobin::sum(double &x) const {
     comm_.allReduceInPlace(x, eckit::mpi::sum());
 }
 
+void RoundRobin::sum(float &x) const {
+    comm_.allReduceInPlace(x, eckit::mpi::sum());
+}
+
 void RoundRobin::sum(int &x) const {
     comm_.allReduceInPlace(x, eckit::mpi::sum());
 }

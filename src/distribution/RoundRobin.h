@@ -49,6 +49,7 @@ class RoundRobin: public Distribution {
      size_t globalNumNonMissingObs(const std::vector<util::DateTime> &v) const override;
 
      void sum(double &x) const override;
+     void sum(float &x) const override;
      void sum(int &x) const override;
      void sum(size_t &x) const override;
      void sum(std::vector<double> &x) const override;

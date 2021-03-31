@@ -26,6 +26,7 @@
 #include "oops/util/Printable.h"
 
 #include "ioda/ObsSpace.h"
+#include "ioda/ObsVector.h"
 
 namespace ioda {
 
@@ -46,6 +47,7 @@ class ObsDataVector: public util::Printable,
                 const std::string & grp = "", const bool fail = true);
   ObsDataVector(ObsSpace &, const std::string &,
                 const std::string & grp = "", const bool fail = true);
+  explicit ObsDataVector(ObsVector &);
   ObsDataVector(const ObsDataVector &);
   ~ObsDataVector();
 
@@ -58,6 +60,7 @@ class ObsDataVector: public util::Printable,
   void save(const std::string &) const;
 
 // Methods below are used by UFO but not by OOPS
+  const ObsSpace & space() const {return obsdb_;}
   size_t nvars() const {return nvars_;}  // Size in (local) memory
   size_t nlocs() const {return nlocs_;}  // Size in (local) memory
   bool has(const std::string & vargrp) const {return obsvars_.has(vargrp);}
@@ -113,6 +116,30 @@ ObsDataVector<DATATYPE>::ObsDataVector(ObsSpace & obsdb, const std::string & var
 }
 // -----------------------------------------------------------------------------
 template <typename DATATYPE>
+ObsDataVector<DATATYPE>::ObsDataVector(ObsVector & vect)
+  : obsdb_(vect.space()), obsvars_(vect.varnames()), nvars_(vect.nvars()), nlocs_(vect.nlocs()),
+    rows_(nvars_), missing_(util::missingValue(missing_))
+{
+  oops::Log::trace() << "ObsDataVector::ObsDataVector ObsVector start" << std::endl;
+  const double dmiss = util::missingValue(dmiss);
+  for (size_t jv = 0; jv < nvars_; ++jv) {
+    rows_[jv].resize(nlocs_);
+  }
+  size_t ii = 0;
+  for (size_t jl = 0; jl < nlocs_; ++jl) {
+    for (size_t jv = 0; jv < nvars_; ++jv) {
+       if (vect[ii] == dmiss) {
+         rows_[jv][jl] = missing_;
+       } else {
+         rows_[jv][jl] = static_cast<DATATYPE>(vect[ii]);
+       }
+       ++ii;
+    }
+  }
+  oops::Log::trace() << "ObsDataVector::ObsDataVector ObsVector done" << std::endl;
+}
+// -----------------------------------------------------------------------------
+template <typename DATATYPE>
 ObsDataVector<DATATYPE>::ObsDataVector(const ObsDataVector & other)
   : obsdb_(other.obsdb_), obsvars_(other.obsvars_), nvars_(other.nvars_),
     nlocs_(other.nlocs_), rows_(other.rows_), missing_(util::missingValue(missing_)) {
@@ -133,7 +160,6 @@ ObsDataVector<DATATYPE> & ObsDataVector<DATATYPE>::operator= (const ObsDataVecto
   oops::Log::trace() << "ObsDataVector::operator= done" << std::endl;
   return *this;
 }
-
 // -----------------------------------------------------------------------------
 template <typename DATATYPE>
 void ObsDataVector<DATATYPE>::zero() {
@@ -220,6 +246,7 @@ void printNumericObsDataVectorStats(const ObsDataVector<DATATYPE> &obsdatavector
   for (size_t jv = 0; jv < obsdatavector.nvars(); ++jv) {
     DATATYPE zmin = std::numeric_limits<DATATYPE>::max();
     DATATYPE zmax = std::numeric_limits<DATATYPE>::lowest();
+    DATATYPE zavg = 0;
     int nloc = obsdb.nlocspatch();
 
     const std::vector<DATATYPE> &vector = obsdatavector[jv];
@@ -228,16 +255,23 @@ void printNumericObsDataVectorStats(const ObsDataVector<DATATYPE> &obsdatavector
       if (zz != missing) {
         if (zz < zmin) zmin = zz;
         if (zz > zmax) zmax = zz;
+        zavg += zz;
       }
     }
     // collect zmin, zmax, globalNumNonMissingObs, nloc on all processors
     obsdb.distribution().min(zmin);
     obsdb.distribution().max(zmax);
+    obsdb.distribution().sum(zavg);
     obsdb.distribution().sum(nloc);
     int nobs = obsdb.distribution().globalNumNonMissingObs(vector);
 
-    os << obsdb.obsname() << " " << obsdatavector.varnames()[jv] << " nlocs = " << nloc
-       << ", nobs = " << nobs << ", min = " << zmin << ", max = " << zmax << std::endl;
+    os << std::endl << obsdb.obsname() << " " << obsdatavector.varnames()[jv]
+       << " nlocs = " << nloc << ", nobs = " << nobs;
+    if (nobs > 0) {
+      os << ", min = " << zmin << ", max = " << zmax << ", avg = " << zavg/nobs;
+    } else {
+      os << " : No observations.";
+    }
   }
 }
 // -----------------------------------------------------------------------------

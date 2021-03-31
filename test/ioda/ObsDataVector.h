@@ -52,6 +52,14 @@ class ObsDataVecTestFixture : private boost::noncopyable {
   std::unique_ptr<ObsSpace_> obspace_;
 };
 
+std::string trim(const std::string & str) {
+  const auto strBegin = str.find_first_not_of("\n");
+  if (strBegin == std::string::npos) return "";
+  const auto strEnd = str.find_last_not_of("\n");
+  const auto strRange = strEnd - strBegin + 1;
+  return str.substr(strBegin, strRange);
+}
+
 
 template <typename T>
 void testPrint(const std::string &datatype) {
@@ -65,8 +73,8 @@ void testPrint(const std::string &datatype) {
 
   std::stringstream stream;
   stream << vector;
-  std::string output = stream.str();
-  std::string expectedOutput = conf.getString("expected output");
+  std::string output = trim(stream.str());
+  std::string expectedOutput = trim(conf.getString("expected output"));
   EXPECT_EQUAL(output, expectedOutput);
 }
 

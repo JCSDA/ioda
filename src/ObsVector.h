@@ -13,13 +13,13 @@
 #include <string>
 #include <vector>
 
-#include "ioda/ObsDataVector.h"
 #include "ioda/ObsSpace.h"
 #include "oops/base/Variables.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
 
 namespace ioda {
+  template <typename DATATYPE> class ObsDataVector;
 
 //-----------------------------------------------------------------------------
 /*! \brief ObsVector class to handle vectors in observation space for IODA
@@ -35,8 +35,7 @@ class ObsVector : public util::Printable,
  public:
   static const std::string classname() {return "ioda::ObsVector";}
 
-  ObsVector(ObsSpace &,
-            const std::string & name = "");
+  explicit ObsVector(ObsSpace &, const std::string & name = "");
   ObsVector(const ObsVector &);
   ObsVector(ObsSpace &, const ObsVector &);
   ~ObsVector();
@@ -47,6 +46,8 @@ class ObsVector : public util::Printable,
   ObsVector & operator-= (const ObsVector &);
   ObsVector & operator*= (const ObsVector &);
   ObsVector & operator/= (const ObsVector &);
+
+  ObsVector & operator = (const ObsDataVector<float> &);
 
   void zero();
   /// set all elements to one (used in tests)
@@ -66,6 +67,8 @@ class ObsVector : public util::Printable,
   const double & toFortran() const;
   double & toFortran();
 
+  ObsSpace & space() {return obsdb_;}
+  const ObsSpace & space() const {return obsdb_;}
   const std::string & obstype() const {return obsdb_.obsname();}
   const oops::Variables & varnames() const {return obsvars_;}
   std::size_t nvars() const {return nvars_;}

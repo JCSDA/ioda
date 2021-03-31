@@ -54,6 +54,7 @@ class InefficientDistribution: public Distribution {
      // sum/min/max is equal to the global sum/min/max
 
      void sum(double &x) const override {};
+     void sum(float &x) const override {};
      void sum(int &x) const override {};
      void sum(size_t &x) const override {};
      void sum(std::vector<double> &x) const override {};

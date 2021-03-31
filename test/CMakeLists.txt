@@ -301,6 +301,12 @@ ecbuild_add_test( TARGET  test_ioda_oops_obsvector
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
+ecbuild_add_test( TARGET  test_ioda_oops_obsdatavector
+                  SOURCES mains/TestObsDataVector.cc
+                  ARGS    "testinput/iodatest_obsvector.yml"
+                  LIBS  ioda_test
+                  TEST_DEPENDS get_ioda_test_data )
+
 # IODA ObsVector class
 ecbuild_add_test( TARGET  test_ioda_obsvector
                   MPI     4

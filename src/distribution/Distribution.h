@@ -136,6 +136,7 @@ class Distribution {
 
     // scalar sum_reduce operatios (not safe for overlaping obs.)
     virtual void sum(double &x) const = 0;
+    virtual void sum(float &x) const = 0;
     virtual void sum(int &x) const = 0;
     virtual void sum(size_t &x) const = 0;
 

@@ -217,6 +217,10 @@ void Halo::sum(double &x) const {
     comm_.allReduceInPlace(x, eckit::mpi::sum());
 }
 
+void Halo::sum(float &x) const {
+    comm_.allReduceInPlace(x, eckit::mpi::sum());
+}
+
 void Halo::sum(int &x) const {
     comm_.allReduceInPlace(x, eckit::mpi::sum());
 }

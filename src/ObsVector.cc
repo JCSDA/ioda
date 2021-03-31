@@ -11,6 +11,7 @@
 #include <limits>
 
 #include "eckit/config/LocalConfiguration.h"
+#include "ioda/ObsDataVector.h"
 #include "ioda/ObsSpace.h"
 #include "oops/base/Variables.h"
 #include "oops/util/abor1_cpp.h"
@@ -219,12 +220,35 @@ Eigen::VectorXd ObsVector::packEigen() const {
   return vec;
 }
 // -----------------------------------------------------------------------------
+ObsVector & ObsVector::operator=(const ObsDataVector<float> & rhs) {
+  oops::Log::trace() << "ObsVector::operator= start" << std::endl;
+  ASSERT(&rhs.space() == &obsdb_);
+  ASSERT(rhs.nvars() == nvars_);
+  ASSERT(rhs.nlocs() == nlocs_);
+  const float  fmiss = util::missingValue(fmiss);
+  const double dmiss = util::missingValue(dmiss);
+  size_t ii = 0;
+  for (size_t jl = 0; jl < nlocs_; ++jl) {
+    for (size_t jv = 0; jv < nvars_; ++jv) {
+       if (rhs[jv][jl] == fmiss) {
+         values_[ii] = dmiss;
+       } else {
+         values_[ii] = static_cast<double>(rhs[jv][jl]);
+       }
+       ++ii;
+    }
+  }
+  oops::Log::trace() << "ObsVector::operator= done" << std::endl;
+
+  return *this;
+}
+// -----------------------------------------------------------------------------
 void ObsVector::mask(const ObsDataVector<int> & flags) {
   oops::Log::trace() << "ObsVector::mask" << std::endl;
   ASSERT(values_.size() == flags.nvars() * flags.nlocs());
   size_t ii = 0;
-  for (size_t jv = 0; jv < flags.nvars(); ++jv) {
-    for (size_t jj = 0; jj < flags.nlocs(); ++jj) {
+  for (size_t jj = 0; jj < flags.nlocs(); ++jj) {
+    for (size_t jv = 0; jv < flags.nvars(); ++jv) {
       if (flags[jv][jj] > 0) values_[ii] = missing_;
       ++ii;
     }
