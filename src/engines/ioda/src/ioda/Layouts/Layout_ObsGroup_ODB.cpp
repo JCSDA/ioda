@@ -9,18 +9,21 @@
 
 #include "ioda/Layouts/Layout_ObsGroup_ODB.h"
 
+#include "ioda/Layouts/Layout_ObsGroup_ODB_Params.h"
 #include "ioda/Layouts/Layout_Utils.h"
 
 #include "ioda/Group.h"
 #include "ioda/Layout.h"
 #include "ioda/defs.h"
 
+#include "boost/none_t.hpp"
 #include "eckit/config/Configuration.h"
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/config/YAMLConfiguration.h"
 #include "eckit/exception/Exceptions.h"
 #include "eckit/filesystem/LocalPathName.h"
 #include "eckit/filesystem/PathName.h"
+#include "oops/util/parameters/Parameters.h"
 
 #include <exception>
 #include <string>
@@ -31,7 +34,10 @@ namespace ioda {
 namespace detail {
 DataLayoutPolicy_ObsGroup_ODB::~DataLayoutPolicy_ObsGroup_ODB(){}
 
-DataLayoutPolicy_ObsGroup_ODB::DataLayoutPolicy_ObsGroup_ODB(const std::string &fileMappingName) {
+DataLayoutPolicy_ObsGroup_ODB::DataLayoutPolicy_ObsGroup_ODB(const std::string &fileMappingName)
+  : mappingParams_(new ODBLayoutParameters())
+{
+
   parseMappingFile(fileMappingName);
 }
 
@@ -47,44 +53,32 @@ void DataLayoutPolicy_ObsGroup_ODB::parseMappingFile(const std::string &nameMapF
   eckit::PathName yamlPath = nameMapFile;
   eckit::YAMLConfiguration conf(yamlPath);
   eckit::LocalConfiguration ioda(conf, "ioda");
-  parseNameChanges(ioda);
-  parseComponentVariables(ioda);
+  mappingParams_->validateAndDeserialize(ioda);
+  if (mappingParams_->variables.value() != boost::none)
+    parseNameChanges();
+  if (mappingParams_->complementaryVariables.value() != boost::none)
+    parseComponentVariables();
 }
 
-void DataLayoutPolicy_ObsGroup_ODB::parseNameChanges(const eckit::LocalConfiguration &conf)
+void DataLayoutPolicy_ObsGroup_ODB::parseNameChanges()
 {
-  std::vector<eckit::LocalConfiguration> listVariables;
-  conf.get("variables", listVariables);
-  for (auto const& variable : listVariables) {
-    std::string name; // The naming scheme to be used in the ioda file
-    std::string source; // The naming scheme in the source file
-    variable.get("name", name);
-    variable.get("source", source);
-    Mapping[source] = name;
+  for (VariableParameters const& variable : *(mappingParams_->variables.value())) {
+    Mapping[variable.source] = variable.name;
   }
 }
 
-void DataLayoutPolicy_ObsGroup_ODB::parseComponentVariables(const eckit::LocalConfiguration &conf)
+void DataLayoutPolicy_ObsGroup_ODB::parseComponentVariables()
 {
-  std::vector<eckit::LocalConfiguration> listVariables;
-  conf.get("complementary variables", listVariables);
-  for (auto const& variable : listVariables) {
-    std::string outputVariableDataType;
-    variable.get("output variable data type", outputVariableDataType);
-    if (outputVariableDataType != std::string("string")) {
-      throw eckit::MethodNotYetImplemented(std::string("YAML mapping file: the output variable") +
-                                           std::string("data type for a derived variable is not") +
-                                           std::string(" a 'string'"));
+  for (ComplementaryVariablesParameters const& variable :
+       *(mappingParams_->complementaryVariables.value())) {
+    if (variable.outputVariableDataType.value() != "string") {
+      throw eckit::MethodNotYetImplemented("YAML mapping file: the output variable "
+                                           "data type for a derived variable is not "
+                                           "'string'");
     }
-    std::string mergeMethodString;
-    variable.get("merge method", mergeMethodString);
-    MergeMethod mergeMethod = parseMergeMethod(mergeMethodString);
-    std::string outputName;
-    variable.get("output name", outputName);
-    std::vector<std::string> inputVariableNames;
-    variable.get("input names", inputVariableNames);
-    if (std::find(inputVariableNames.begin(), inputVariableNames.end(), outputName) !=
-        inputVariableNames.end()) {
+    MergeMethod mergeMethod = parseMergeMethod(variable.mergeMethod);
+    if (std::find(variable.inputNames.value().begin(), variable.inputNames.value().end(),
+                  variable.outputName.value()) != variable.inputNames.value().end()) {
       throw eckit::ReadError(std::string("YAML mapping file has a complementary variable name") +
                              std::string("matching a derived variable name."));
     }
@@ -93,9 +87,10 @@ void DataLayoutPolicy_ObsGroup_ODB::parseComponentVariables(const eckit::LocalCo
     //merge methods are available
 
     std::shared_ptr<ComplementaryVariableOutputMetadata> sharedOutputMetaData(
-          new ComplementaryVariableOutputMetadata{outputName, outputTypeIndex, mergeMethod, 0});
+          new ComplementaryVariableOutputMetadata{
+            variable.outputName, outputTypeIndex, mergeMethod, 0});
     size_t inputIndex = 0;
-    for (const std::string &input : inputVariableNames) {
+    for (const std::string &input : variable.inputNames.value()) {
       complementaryVariableDataMap[input] = std::make_pair(inputIndex, sharedOutputMetaData);
       inputIndex++;
     }

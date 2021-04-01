@@ -21,12 +21,16 @@ class LocalConfiguration;
 
 namespace ioda {
 namespace detail {
+
+class ODBLayoutParameters;
+
 /// Layout for ObsGroup-like data.
 class IODA_DL DataLayoutPolicy_ObsGroup_ODB : public DataLayoutPolicy {
   /// \brief Record versioning information for this layout in the ioda object. Provides forward compatability.
   const int32_t ObsGroup_ODB_Layout_Version = 0;
   /// \brief Mapping with ODB equivalents as keys and IODA namings as values
   std::unordered_map<std::string, std::string> Mapping;
+  std::shared_ptr<ODBLayoutParameters> mappingParams_;
   /// \brief Metadata for generating a variable in IODA from multiple component variables (same across components).
   struct ComplementaryVariableOutputMetadata {
     std::string outputName;
@@ -39,7 +43,7 @@ class IODA_DL DataLayoutPolicy_ObsGroup_ODB : public DataLayoutPolicy {
   //The component strings mapped to the common-across-components information for creating a derived variable
   std::unordered_map<std::string, complementaryVariableMetaData> complementaryVariableDataMap;
 
-public:
+ public:
   virtual ~DataLayoutPolicy_ObsGroup_ODB();
   void initializeStructure(Group_Base &) const override;
   std::string doMap(const std::string &) const override;
@@ -52,10 +56,10 @@ public:
   DataLayoutPolicy_ObsGroup_ODB(const std::string &);
   /// A descriptive name for the policy.
   std::string name() const override;
-private:
+ private:
   void parseMappingFile(const std::string &);
-  void parseNameChanges(const eckit::LocalConfiguration &);
-  void parseComponentVariables(const eckit::LocalConfiguration &);
+  void parseNameChanges();
+  void parseComponentVariables();
   DataLayoutPolicy::MergeMethod parseMergeMethod(const std::string &);
 };
 

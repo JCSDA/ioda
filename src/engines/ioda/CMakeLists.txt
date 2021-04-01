@@ -33,6 +33,7 @@ list(APPEND SRCS_IODA
 	include/ioda/Python/Var_ext.h
 	private/ioda/Layouts/Layout_ObsGroup.h
 	private/ioda/Layouts/Layout_ObsGroup_ODB.h
+	private/ioda/Layouts/Layout_ObsGroup_ODB_Params.h
 	private/ioda/Layouts/Layout_Utils.h
 	src/ioda/Attribute.cpp
 	src/ioda/Attribute_Creator.cpp
@@ -157,6 +158,7 @@ if(HDF5_IS_PARALLEL)
 endif()
 
 target_link_libraries(ioda_engines PUBLIC eckit)
+target_link_libraries(ioda_engines PUBLIC oops)
 target_link_libraries(ioda_engines PUBLIC gsl::gsl-lite)
 target_link_libraries(ioda_engines PUBLIC Eigen3::Eigen)
 
