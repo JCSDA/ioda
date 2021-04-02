@@ -12,8 +12,9 @@
 #include "oops/interface/ObsLocalization.h"
 
 namespace ioda {
-template<typename MODEL> void instantiateObsLocFactory() {
-  static oops::ObsLocalizationMaker<MODEL, oops::ObsLocalization<MODEL, ioda::ObsLocGC99> >
+template<typename MODEL, typename OBS> void instantiateObsLocFactory() {
+  static oops::ObsLocalizationMaker<MODEL, OBS,
+                                    oops::ObsLocalization<MODEL, OBS, ioda::ObsLocGC99<MODEL>> >
            maker_("Gaspari-Cohn");
 }
 
