@@ -52,7 +52,7 @@ class ObsSpace : public oops::ObsSpaceBase {
   ObsSpace& operator=(const ObsSpace &) = delete;
   ~ObsSpace();
 
-  std::size_t gnlocs() const;
+  std::size_t globalNumLocs() const;
   std::size_t nlocs() const;
   std::size_t nlocspatch() const;
   std::size_t nrecs() const;

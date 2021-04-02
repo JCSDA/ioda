@@ -88,7 +88,7 @@ class ObsData : public util::Printable {
   ObsData(const ObsData &);
   ~ObsData();
 
-  std::size_t gnlocs() const;
+  std::size_t globalNumLocs() const;
   std::size_t nlocs() const;
   std::size_t nlocspatch() const;
   std::size_t nrecs() const;
@@ -205,6 +205,9 @@ class ObsData : public util::Printable {
 
   /*! \brief KD Tree */
   std::shared_ptr<KDTree> kd_;
+
+  /*! \brief total number of locations filtered because they were outside of the time window */
+  std::size_t gnlocs_outside_timewindow_;
 
   /*! \brief total number of locations */
   std::size_t gnlocs_;

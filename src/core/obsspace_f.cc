@@ -48,7 +48,7 @@ const oops::Variables * obsspace_obsvariables_f(const ObsSpace & obss) {
 
 // -----------------------------------------------------------------------------
 std::size_t obsspace_get_gnlocs_f(const ObsSpace & obss) {
-  return obss.gnlocs();
+  return obss.globalNumLocs();
 }
 // -----------------------------------------------------------------------------
 std::size_t obsspace_get_nlocs_f(const ObsSpace & obss) {

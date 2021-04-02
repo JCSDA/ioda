@@ -340,17 +340,15 @@ std::string ObsSpace::obs_sort_order() const {
   return obsspace_->obs_sort_order();
 }
 
-
 // -----------------------------------------------------------------------------
 /*!
- * \details This method returns the number of unique locations in the input
- *          obs file. Note that nlocs from the obs container may be smaller
- *          than nlocs from the input obs file due to the removal of obs outside
- *          the DA timing window and/or due to distribution of obs across
+ * \details This method returns the number of global unique locations.
+ *          Note that nlocs from the obs container may be smaller than
+ *          number of global unique locations due to distribution of obs across
  *          multiple process elements.
  */
-std::size_t ObsSpace::gnlocs() const {
-  return obsspace_->gnlocs();
+std::size_t ObsSpace::globalNumLocs() const {
+  return obsspace_->globalNumLocs();
 }
 
 // -----------------------------------------------------------------------------
@@ -359,8 +357,7 @@ std::size_t ObsSpace::gnlocs() const {
  *          container. This method is used to reserve enough memory to store 
  *          the obs local to this PE. 
  *          Note that nlocs from the obs container may be smaller
- *          than nlocs from the input obs file due to the removal of obs outside
- *          the DA timing window and/or due to distribution of obs across
+ *          than global unique nlocs due to distribution of obs across
  *          multiple process elements.
  */
 std::size_t ObsSpace::nlocs() const {

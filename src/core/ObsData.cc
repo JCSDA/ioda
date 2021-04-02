@@ -52,7 +52,8 @@ ObsData::ObsData(const eckit::Configuration & config, const eckit::mpi::Comm & c
                  const util::DateTime & bgn, const util::DateTime & end,
                  const eckit::mpi::Comm & timeComm)
   : config_(config), winbgn_(bgn), winend_(end), commMPI_(comm),
-    gnlocs_(0), nlocs_(0), nvars_(0), nrecs_(0), file_unexpected_dtypes_(false),
+    gnlocs_outside_timewindow_(0), gnlocs_(0), nlocs_(0), nvars_(0), nrecs_(0),
+    file_unexpected_dtypes_(false),
     file_excess_dims_(false), in_max_frame_size_(0), out_max_frame_size_(0),
     int_database_(), float_database_(), string_database_(), datetime_database_(),
     obsvars_(), next_rec_num_(0)
@@ -349,13 +350,12 @@ std::string ObsData::obs_sort_order() const {
 
 // -----------------------------------------------------------------------------
 /*!
- * \details This method returns the number of unique locations in the input
- *          obs file. Note that nlocs from the obs container may be smaller
- *          than nlocs from the input obs file due to the removal of obs outside
- *          the DA timing window and/or due to distribution of obs across
+ * \details This method returns the number of global unique locations.
+ *          Note that nlocs from the obs container may be smaller than number
+ *          of global unique locations due to distribution of obs across
  *          multiple process elements.
  */
-std::size_t ObsData::gnlocs() const {
+std::size_t ObsData::globalNumLocs() const {
   return gnlocs_;
 }
 
@@ -363,8 +363,7 @@ std::size_t ObsData::gnlocs() const {
 /*!
  * \details This method returns the number of unique locations in the obs
  *          container. Note that nlocs from the obs container may be smaller
- *          than nlocs from the input obs file due to the removal of obs outside
- *          the DA timing window and/or due to distribution of obs across
+ *          than global nlocs due to distribution of obs across
  *          multiple process elements.
  */
 std::size_t ObsData::nlocs() const {
@@ -826,6 +825,13 @@ void ObsData::InitFromFile(const std::string & filename, const std::size_t MaxFr
   }
   fileio->frame_finalize();
 
+  // update gnlocs_: subtract number of locations outside of time window
+  if (gnlocs_outside_timewindow_ > 0) {
+    oops::Log::debug() << obsname() << ": " << gnlocs_outside_timewindow_ <<
+                          " observations are outside of time window. " << std::endl;
+    gnlocs_ -= gnlocs_outside_timewindow_;
+  }
+
   // Record whether any problems occurred when reading the file.
   file_unexpected_dtypes_ = fileio->unexpected_data_types();
   file_excess_dims_ = fileio->excess_dims();
@@ -892,7 +898,9 @@ std::vector<std::size_t> ObsData::GenFrameIndexRecNums(const std::unique_ptr<Iod
         FrameIndex.push_back(i);
       }
     }
-    LocSize = LocIndex.size();  // in case any locations were rejected
+    // in case any locations were rejected
+    gnlocs_outside_timewindow_ += (LocSize - LocIndex.size());
+    LocSize = LocIndex.size();
   } else {
     // Not reading from file, keep all locations.
     LocIndex.assign(LocSize, 0);

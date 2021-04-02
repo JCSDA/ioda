@@ -86,6 +86,7 @@ void testConstructor() {
     std::size_t Nvars = Test_::obspace(jj).nvars();
     Test_::obspace(jj).distribution().sum(Nlocs);
     Test_::obspace(jj).distribution().sum(Nrecs);
+    std::size_t gNlocs = Test_::obspace(jj).globalNumLocs();
 
     // Get the expected nlocs from the obspace object's configuration
     std::size_t ExpectedNlocs = conf[jj].getUnsigned("obs space.test data.nlocs");
@@ -105,8 +106,8 @@ void testConstructor() {
     std::string ExpectedObsSortOrder =
       conf[jj].getString("obs space.test data.expected sort order");
 
-    oops::Log::debug() << "Nlocs, ExpectedNlocs: " << Nlocs << ", "
-                       << ExpectedNlocs << std::endl;
+    oops::Log::debug() << "Nlocs, gNlocs, ExpectedNlocs: " << Nlocs << ", "
+                       << gNlocs << ", " << ExpectedNlocs << std::endl;
     oops::Log::debug() << "Nvars, ExpectedNvars: " << Nvars << ", "
                        << ExpectedNvars << std::endl;
     // records are ambigious for halo distribution
@@ -126,6 +127,7 @@ void testConstructor() {
                        << ExpectedObsSortOrder << std::endl;
 
     EXPECT(Nlocs == ExpectedNlocs);
+    EXPECT(Nlocs == gNlocs);
     EXPECT(Nvars == ExpectedNvars);
 
     EXPECT(ObsGroupVars == ExpectedObsGroupVars);
