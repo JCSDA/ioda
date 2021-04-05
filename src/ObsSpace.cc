@@ -89,10 +89,11 @@ ObsSpace::ObsSpace(const ObsSpace & os,
   localDistribution_.reset(distFactory.createDistribution(
       os.comm(), eckit::LocalConfiguration(), "InefficientDistribution"));
 
+  std::size_t nlocs = obsspace_->nlocs();
+
   if ( localopts_->searchMethod == SearchMethod::BRUTEFORCE ) {
     oops::Log::trace() << "ioda::ObsSpace searching via brute force" << std::endl;
 
-    std::size_t nlocs = obsspace_->nlocs();
     std::vector<float> lats(nlocs);
     std::vector<float> lons(nlocs);
 
@@ -137,7 +138,10 @@ ObsSpace::ObsSpace(const ObsSpace & os,
       localobs_.resize(*maxnobs);
       obsdist_.resize(*maxnobs);
     }
-  } else {
+  } else if (nlocs > 0) {
+    // Check (nlocs > 0) is needed,
+    // otherwise, it will cause ASERT check fail in kdtree.findInSphere, and hang.
+
     oops::Log::trace() << "ioda::ObsSpace searching via KDTree" << std::endl;
 
     if ( localopts_->distanceType == DistanceType::CARTESIAN)
@@ -157,7 +161,7 @@ ObsSpace::ObsSpace(const ObsSpace & os,
     for (unsigned int jj = 0; jj < closePoints.size(); ++jj) {
        localobs_.push_back(closePoints[jj].payload());  // observation
        obsdist_.push_back(closePoints[jj].distance());  // distance
-     }
+    }
 
     // The obs are sorted in the kdtree call
     const boost::optional<int> & maxnobs = localopts_->maxnobs;
