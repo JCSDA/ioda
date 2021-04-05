@@ -170,7 +170,7 @@ double Halo::dot_productImpl(const std::vector<T> &v1, const std::vector<T> &v2)
     }
   }
 
-  this->sum(zz);
+  comm_.allReduceInPlace(zz, eckit::mpi::sum());
   return zz;
 }
 
@@ -208,29 +208,30 @@ size_t Halo::globalNumNonMissingObsImpl(const std::vector<T> &v) const {
     }
   }
 
-  this->sum(nobs);
+  comm_.allReduceInPlace(nobs, eckit::mpi::sum());
   return nobs;
 }
 
 // -----------------------------------------------------------------------------
 void Halo::sum(double &x) const {
-    comm_.allReduceInPlace(x, eckit::mpi::sum());
+  throw eckit::NotImplemented("Reduce (sum) is not defined for Halo distribution", Here());
 }
 
 void Halo::sum(float &x) const {
-    comm_.allReduceInPlace(x, eckit::mpi::sum());
+  throw eckit::NotImplemented("Reduce (sum) is not defined for Halo distribution", Here());
 }
 
 void Halo::sum(int &x) const {
-    comm_.allReduceInPlace(x, eckit::mpi::sum());
+  throw eckit::NotImplemented("Reduce (sum) is not defined for Halo distribution", Here());
 }
 
 void Halo::sum(size_t &x) const {
-    comm_.allReduceInPlace(x, eckit::mpi::sum());
+  throw eckit::NotImplemented("Reduce (sum) is not defined for Halo distribution", Here());
 }
 
 void Halo::sum(std::vector<double> &x) const {
   // replace items not owned by this PE by 0 before reduce to prevent double counting
+  ASSERT(x.size() == patchObsBool_.size());
   oops::Log::debug() << "size(x)=" << x.size() << " size(patchObsBool_)=" <<
                         patchObsBool_.size() << std::endl;
 
@@ -239,6 +240,7 @@ void Halo::sum(std::vector<double> &x) const {
 }
 
 void Halo::sum(std::vector<size_t> &x) const {
+  ASSERT(x.size() == patchObsBool_.size());
   for (size_t i = 0; i < x.size(); ++i) { if (patchObsBool_[i] == false) {x[i] = 0;} }
     comm_.allReduceInPlace(x.begin(), x.end(), eckit::mpi::sum());
 }

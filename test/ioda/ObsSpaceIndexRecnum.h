@@ -75,21 +75,13 @@ void testConstructor() {
   ::test::TestEnvironment::config().get("observations", conf);
 
   for (std::size_t jj = 0; jj < Test_::size(); ++jj) {
-    // The observations are distributed across processors, so Nlocs is local to a
-    // processor. To get the total number of observations,
-    // use ObsSpace.distribution().sum(Nlocs) to sum accoss all processors.
-
     // Get the numbers of locations (nlocs) from the ObsSpace object
-    std::size_t Nlocs = Test_::obspace(jj).nlocspatch();
-    std::size_t Nrecs = Test_::obspace(jj).nrecs();
+    std::size_t Nlocs = Test_::obspace(jj).globalNumLocs();
     std::size_t Nvars = Test_::obspace(jj).nvars();
-    Test_::obspace(jj).distribution().sum(Nlocs);
-    Test_::obspace(jj).distribution().sum(Nrecs);
     bool ObsAreSorted = Test_::obspace(jj).obsAreSorted();
 
     // Get the expected nlocs from the obspace object's configuration
     std::size_t ExpectedNlocs = conf[jj].getUnsigned("obs space.test data.nlocs");
-    std::size_t ExpectedNrecs = conf[jj].getUnsigned("obs space.test data.nrecs");
     std::size_t ExpectedNvars = conf[jj].getUnsigned("obs space.test data.nvars");
     bool ExpectedObsAreSorted = conf[jj].getBool("obs space.test data.obs are sorted");
 
@@ -97,15 +89,22 @@ void testConstructor() {
                        << ExpectedNlocs << std::endl;
     oops::Log::debug() << "Nvars, ExpectedNvars: " << Nvars << ", "
                        << ExpectedNvars << std::endl;
-    oops::Log::debug() << "Nrecs, ExpectedNrecs: " << Nrecs << ", "
-                       << ExpectedNrecs << std::endl;
     oops::Log::debug() << "ObsAreSorted, ExpectedObsAreSorted: " << ObsAreSorted << ", "
                        << ExpectedObsAreSorted << std::endl;
 
     EXPECT(Nlocs == ExpectedNlocs);
-    EXPECT(Nrecs == ExpectedNrecs);
     EXPECT(Nvars == ExpectedNvars);
     EXPECT(ObsAreSorted == ExpectedObsAreSorted);
+
+    // records are ambigious and not implemented for halo distribution
+    if (Test_::obspace(jj).distribution().name() != "Halo") {
+      std::size_t Nrecs = Test_::obspace(jj).nrecs();
+      Test_::obspace(jj).distribution().sum(Nrecs);
+      std::size_t ExpectedNrecs = conf[jj].getUnsigned("obs space.test data.nrecs");
+      oops::Log::debug() << "Nrecs, ExpectedNrecs: " << Nrecs << ", "
+                       << ExpectedNrecs << std::endl;
+      EXPECT(Nrecs == ExpectedNrecs);
+    }
   }
 }
 

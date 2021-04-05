@@ -221,9 +221,8 @@ void printNonnumericObsDataVectorStats(const ObsDataVector<DATATYPE> &obsdatavec
                                        const ObsSpace &obsdb,
                                        std::ostream & os) {
   for (size_t jv = 0; jv < obsdatavector.nvars(); ++jv) {
-    int nloc = obsdb.nlocspatch();
-    // collect nloc and nobs on all processors
-    obsdb.distribution().sum(nloc);
+    int nloc = obsdb.globalNumLocs();
+    // collect nobs on all processors
     int nobs = obsdb.distribution().globalNumNonMissingObs(obsdatavector[jv]);
 
     os << obsdb.obsname() << " " << obsdatavector.varnames()[jv] << " nlocs = " << nloc
@@ -247,7 +246,7 @@ void printNumericObsDataVectorStats(const ObsDataVector<DATATYPE> &obsdatavector
     DATATYPE zmin = std::numeric_limits<DATATYPE>::max();
     DATATYPE zmax = std::numeric_limits<DATATYPE>::lowest();
     DATATYPE zavg = 0;
-    int nloc = obsdb.nlocspatch();
+    int nloc = obsdb.globalNumLocs();
 
     const std::vector<DATATYPE> &vector = obsdatavector[jv];
     for (size_t jj = 0; jj < obsdatavector.nlocs(); ++jj) {
@@ -258,11 +257,10 @@ void printNumericObsDataVectorStats(const ObsDataVector<DATATYPE> &obsdatavector
         zavg += zz;
       }
     }
-    // collect zmin, zmax, globalNumNonMissingObs, nloc on all processors
+    // collect zmin, zmax, zavg, globalNumNonMissingObs on all processors
     obsdb.distribution().min(zmin);
     obsdb.distribution().max(zmax);
     obsdb.distribution().sum(zavg);
-    obsdb.distribution().sum(nloc);
     int nobs = obsdb.distribution().globalNumNonMissingObs(vector);
 
     os << std::endl << obsdb.obsname() << " " << obsdatavector.varnames()[jv]

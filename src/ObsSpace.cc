@@ -374,15 +374,6 @@ std::size_t ObsSpace::nlocs() const {
 
 // -----------------------------------------------------------------------------
 /*!
- * \details This method returns the number of patch obs. on this PE.
- * the following equality holds ObsSpace::gnlocs() == distribution().sum(nlocspatch())
- */
-std::size_t ObsSpace::nlocspatch() const {
-  return obsspace_->nlocspatch();
-}
-
-// -----------------------------------------------------------------------------
-/*!
  * \details This method returns the number of unique records in the obs
  *          container. A record is an atomic unit of locations that belong
  *          together such as a single radiosonde sounding.

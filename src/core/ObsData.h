@@ -90,7 +90,6 @@ class ObsData : public util::Printable {
 
   std::size_t globalNumLocs() const;
   std::size_t nlocs() const;
-  std::size_t nlocspatch() const;
   std::size_t nrecs() const;
   std::size_t nvars() const;
   const std::vector<std::size_t> & recnum() const;
@@ -214,9 +213,6 @@ class ObsData : public util::Printable {
 
   /*! \brief number of locations on this domain */
   std::size_t nlocs_;
-
-  /*! \brief number of patch locations for this domain */
-  std::size_t nlocspatch_;
 
   /*! \brief number of variables */
   std::size_t nvars_;

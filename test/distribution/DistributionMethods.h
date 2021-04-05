@@ -76,12 +76,6 @@ void testDistributionMethods() {
     }
 
     // vector solutions for sum
-    std::vector<double> vaRefHalo(Gnlocs);
-    std::vector<size_t> vbRefHalo(Gnlocs);
-    for (size_t i = 0; i < vbRefHalo.size(); ++i) {
-      vaRefHalo[i] = i;
-      vbRefHalo[i] = i;
-    }
     std::vector<double> vaRefInefficient(Gnlocs, MyRank);
     std::vector<size_t> vbRefInefficient(Gnlocs, MyRank);
     std::vector<double> vaRef(Gnlocs, result);
@@ -122,18 +116,13 @@ void testDistributionMethods() {
 
     } else {
         // sum
-        TestDist->sum(a);
-        EXPECT(a == result);  // 0 + 1 + .. nprocs-1 (sum across tasks)
-        TestDist->sum(c);
-        EXPECT(c == result);
-        TestDist->sum(va);
-        TestDist->sum(vb);
-
-        if (DistName == "Halo") {
-          oops::Log::debug() << "va=" << va << " vaRefHalo=" << vaRef << std::endl;
-          EXPECT(va == vaRefHalo);
-          EXPECT(vb == vbRefHalo);
-        } else {
+        if (DistName != "Halo") {
+          TestDist->sum(a);
+          EXPECT(a == result);  // 0 + 1 + .. nprocs-1 (sum across tasks)
+          TestDist->sum(c);
+          EXPECT(c == result);
+          TestDist->sum(va);
+          TestDist->sum(vb);
           oops::Log::debug() << "va=" << va << " vaRef=" << vaRef << std::endl;
           EXPECT(va == vaRef);
           EXPECT(vb == vbRef);

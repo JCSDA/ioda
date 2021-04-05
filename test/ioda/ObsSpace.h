@@ -75,22 +75,13 @@ void testConstructor() {
   ::test::TestEnvironment::config().get("observations", conf);
 
   for (std::size_t jj = 0; jj < Test_::size(); ++jj) {
-    // The observations are distributed across processors, so Nlocs is local to a
-    // processor. To get the total number of observations, use ObsSpace.distribution().sum(Nlocs)
-    // to sum accoss all processors.
     std::string DistMethod = conf[jj].getString("obs space.distribution", "RoundRobin");
 
-    // Get the numbers of locations (nlocs) from the ObsSpace object
-    std::size_t Nlocs = Test_::obspace(jj).nlocspatch();
-    std::size_t Nrecs = Test_::obspace(jj).nrecs();
     std::size_t Nvars = Test_::obspace(jj).nvars();
-    Test_::obspace(jj).distribution().sum(Nlocs);
-    Test_::obspace(jj).distribution().sum(Nrecs);
-    std::size_t gNlocs = Test_::obspace(jj).globalNumLocs();
+    std::size_t Nlocs = Test_::obspace(jj).globalNumLocs();
 
     // Get the expected nlocs from the obspace object's configuration
     std::size_t ExpectedNlocs = conf[jj].getUnsigned("obs space.test data.nlocs");
-    std::size_t ExpectedNrecs = conf[jj].getUnsigned("obs space.test data.nrecs");
     std::size_t ExpectedNvars = conf[jj].getUnsigned("obs space.test data.nvars");
 
     // Get the obs grouping/sorting parameters from the ObsSpace object
@@ -106,14 +97,17 @@ void testConstructor() {
     std::string ExpectedObsSortOrder =
       conf[jj].getString("obs space.test data.expected sort order");
 
-    oops::Log::debug() << "Nlocs, gNlocs, ExpectedNlocs: " << Nlocs << ", "
-                       << gNlocs << ", " << ExpectedNlocs << std::endl;
+    oops::Log::debug() << "Nlocs, ExpectedNlocs: " << Nlocs << ", "
+                       << ExpectedNlocs << std::endl;
     oops::Log::debug() << "Nvars, ExpectedNvars: " << Nvars << ", "
                        << ExpectedNvars << std::endl;
     // records are ambigious for halo distribution
     // e.g. consider airplane (a single record in round robin) flying accros the globe
     // for Halo distr this record will be considered unique on each PE
     if (DistMethod != "Halo") {
+      std::size_t Nrecs = Test_::obspace(jj).nrecs();
+      Test_::obspace(jj).distribution().sum(Nrecs);
+      std::size_t ExpectedNrecs = conf[jj].getUnsigned("obs space.test data.nrecs");
       oops::Log::debug() << "Nrecs, ExpectedNrecs: " << Nrecs << ", "
                        << ExpectedNrecs << std::endl;
       EXPECT(Nrecs == ExpectedNrecs);
@@ -127,7 +121,6 @@ void testConstructor() {
                        << ExpectedObsSortOrder << std::endl;
 
     EXPECT(Nlocs == ExpectedNlocs);
-    EXPECT(Nlocs == gNlocs);
     EXPECT(Nvars == ExpectedNvars);
 
     EXPECT(ObsGroupVars == ExpectedObsGroupVars);

@@ -110,10 +110,7 @@ ObsData::ObsData(const eckit::Configuration & config, const eckit::mpi::Comm & c
     }
 
     // assign a record to a unique PE
-    nlocspatch_ = dist_->computePatchLocs(gnlocs_);
-    if (distname_ != "Halo") {
-      nlocspatch_ = nlocs_;
-    }
+    size_t nlocspatch = dist_->computePatchLocs(gnlocs_);
 
     if (obs_sort_variable_ != "") {
       // Fill the recidx_ map with indices representing sorted groups
@@ -368,15 +365,6 @@ std::size_t ObsData::globalNumLocs() const {
  */
 std::size_t ObsData::nlocs() const {
   return nlocs_;
-}
-
-// -----------------------------------------------------------------------------
-/*!
- * \details This method returns the number of patch locations on this PE.
- * the following equality holds ObsData::gnlocs() == distribution().sum(nlocspatch())
- */
-std::size_t ObsData::nlocspatch() const {
-  return nlocspatch_;
 }
 
 // -----------------------------------------------------------------------------
