@@ -1,5 +1,4 @@
-#ifndef ENGINES_IODA_INCLUDE_IODA_MISC_MERGEMETHODS_H_
-#define ENGINES_IODA_INCLUDE_IODA_MISC_MERGEMETHODS_H_
+#pragma once
 /*
  * (C) Crown copyright 2021, Met Office
  *
@@ -32,4 +31,3 @@ struct IODA_DL ComplementaryVariableCreationParameters {
 };
 
 } // namespace ioda
-#endif // ENGINES_IODA_INCLUDE_IODA_MISC_MERGEMETHODS_H_
