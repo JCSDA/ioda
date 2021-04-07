@@ -951,23 +951,23 @@ std::vector<std::size_t> ObsData::GenFrameIndexRecNums(const std::unique_ptr<Iod
 
   // Generate the index and recnums for this frame. We are done with FrameIndex
   // so it can be reused here.
-  FrameIndex.clear();
+  std::vector<std::size_t> FinalFrameIndex;
   std::set<std::size_t> PatchRecNums;
   for (std::size_t i = 0; i < LocSize; ++i) {
     std::size_t RowNum = LocIndex[i];
     std::size_t RecNum = Records[i];
-    eckit::geometry::Point2 point(lons[i], lats[i]);
+    eckit::geometry::Point2 point(lons[FrameIndex[i]], lats[FrameIndex[i]]);
     dist_->assignRecord(RecNum, RowNum, point);
     if (dist_->isMyRecord(RecNum)) {
       indx_.push_back(RowNum);
       recnums_.push_back(RecNum);
       unique_rec_nums_.insert(RecNum);
-      FrameIndex.push_back(RowNum - FrameStart);
+      FinalFrameIndex.push_back(RowNum - FrameStart);
     }
   }
 
-  nlocs_ += FrameIndex.size();
-  return FrameIndex;
+  nlocs_ += FinalFrameIndex.size();
+  return FinalFrameIndex;
 }
 
 // -----------------------------------------------------------------------------

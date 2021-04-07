@@ -17,6 +17,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsspace.yml
   testinput/iodatest_obsspace_grouping.yml
   testinput/iodatest_obsspace_index_recnum.yml
+  testinput/iodatest_obsspace_index_recnum_twfilt.yml
   testinput/iodatest_obsspace_marine.yml
   testinput/iodatest_obsspace_fortran.yml
   testinput/iodatest_obsspace_localization.yml
@@ -244,6 +245,26 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_index_recnum_mpi_4
                   MPI 4
                   COMMAND test_ioda_obsspace_index_recnum
                   ARGS    "testinput/iodatest_obsspace_index_recnum.yml"
+                  LIBS  ioda_test
+                  TEST_DEPENDS get_ioda_test_data )
+
+ecbuild_add_test( TARGET  test_ioda_obsspace_index_recnum_twfilt
+                  COMMAND test_ioda_obsspace_index_recnum
+                  ARGS    "testinput/iodatest_obsspace_index_recnum_twfilt.yml"
+                  LIBS  ioda_test
+                  TEST_DEPENDS get_ioda_test_data )
+
+ecbuild_add_test( TARGET  test_ioda_obsspace_index_recnum_twfilt_mpi_2
+                  MPI 2
+                  COMMAND test_ioda_obsspace_index_recnum
+                  ARGS    "testinput/iodatest_obsspace_index_recnum_twfilt.yml"
+                  LIBS  ioda_test
+                  TEST_DEPENDS get_ioda_test_data )
+
+ecbuild_add_test( TARGET  test_ioda_obsspace_index_recnum_twfilt_mpi_4
+                  MPI 4
+                  COMMAND test_ioda_obsspace_index_recnum
+                  ARGS    "testinput/iodatest_obsspace_index_recnum_twfilt.yml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
