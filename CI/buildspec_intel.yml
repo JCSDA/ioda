@@ -75,8 +75,9 @@ phases:
         && export CXX=mpiicpc
         && export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
         && export PATH=/usr/local/lib:$PATH
+        && export PYTHONPATH=/usr/local/lib:/usr/local/lib/python3.8/site-packages:$PYTHONPATH
         && cd /home/jedi
-        && ecbuild /jcsda/ioda-bundle/
+        && ecbuild -DBUILD_PYTHON_BINDINGS=ON /jcsda/ioda-bundle/
         && cd /home/jedi/ioda
         && make -j4"
 
@@ -93,7 +94,7 @@ phases:
       - su - jedi -c "export CC=mpiicc
         && export FC=mpiifort
         && export CXX=mpiicpc
-        && export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
+        && export LD_LIBRARY_PATH=/usr/local/lib:/home/jedi/lib:$LD_LIBRARY_PATH
         && export PATH=/usr/local/lib:$PATH
         && cd /home/jedi/ioda
         && ctest"
@@ -108,7 +109,7 @@ phases:
         su - jedi -c "export CC=mpiicc
         && export FC=mpiifort
         && export CXX=mpiicpc
-        && export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
+        && export LD_LIBRARY_PATH=/usr/local/lib:/home/jedi/lib:$LD_LIBRARY_PATH
         && export PATH=/usr/local/lib:$PATH
         && cd /home/jedi/ioda
         && ctest -VV --rerun-failed";

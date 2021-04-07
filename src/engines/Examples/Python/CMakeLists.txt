@@ -10,7 +10,7 @@ macro(AddPyExample_base name testname)
 		COMMAND #${Python3_EXECUTABLE}
         python3 ${CMAKE_CURRENT_SOURCE_DIR}/${name}.py )
 	set_tests_properties(${testname} PROPERTIES
-		ENVIRONMENT LIBDIR=$<TARGET_FILE_DIR:_ioda_python>/../
+		ENVIRONMENT "LIBDIR=$<TARGET_FILE_DIR:_ioda_python>/../;LD_LIBRARY_PATH=${CMAKE_BINARY_DIR}/lib:$ENV{LD_LIBRARY_PATH}"
 		WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
 		)
 endmacro()

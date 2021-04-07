@@ -121,7 +121,7 @@ p1 = ioda.VariableCreationParameters()
 #  for detailed explanations.
 #  To tell ioda that you want to chunk a variable:
 p1.chunk = True
-p1.chunks = [100, 10]
+p1.chunks = [100]
 
 #  Fill values:
 #  The "fill value" for a dataset is the specification of the default value assigned
