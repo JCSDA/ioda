@@ -52,9 +52,9 @@ ObsSpace::ObsSpace(const eckit::Configuration & config, const eckit::mpi::Comm &
   oops::Log::trace() << "ioda::ObsSpaces starting" << std::endl;
   std::iota(localobs_.begin(), localobs_.end(), 0);
   // make a dummy localDistribution_
-  DistributionFactory distFactory;
-  localDistribution_.reset(distFactory.createDistribution(
-      comm, eckit::LocalConfiguration(), "InefficientDistribution"));
+  eckit::LocalConfiguration localConfig;
+  localConfig.set("distribution", "InefficientDistribution");
+  localDistribution_ = DistributionFactory::create(comm, localConfig);
   oops::Log::trace() << "ioda::ObsSpace done" << std::endl;
 }
 
@@ -84,10 +84,10 @@ ObsSpace::ObsSpace(const ObsSpace & os,
   localopts_->deserialize(conf);
 
   // for local ObsSpace, all local obs reside on this PE
-  // so we will make an Ineffecient distribution that reflects this
-  DistributionFactory distFactory;
-  localDistribution_.reset(distFactory.createDistribution(
-      os.comm(), eckit::LocalConfiguration(), "InefficientDistribution"));
+  // so we will make an Inefficient distribution that reflects this
+  eckit::LocalConfiguration localConfig;
+  localConfig.set("distribution", "InefficientDistribution");
+  localDistribution_ = DistributionFactory::create(os.comm(), localConfig);
 
   std::size_t nlocs = obsspace_->nlocs();
 

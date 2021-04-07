@@ -259,9 +259,6 @@ class ObsData : public util::Printable {
   /*! \brief Observation "variables" to be simulated */
   oops::Variables obsvars_;
 
-  /*! \brief Distribution type */
-  std::string distname_;
-
   /*! \brief Variable that location grouping is based upon */
   std::vector<std::string> obs_group_variables_;
 

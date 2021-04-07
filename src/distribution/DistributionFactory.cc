@@ -6,38 +6,31 @@
  */
 
 #include "eckit/config/Configuration.h"
-
 #include "ioda/distribution/DistributionFactory.h"
-
-#include "ioda/distribution/Halo.h"
-#include "ioda/distribution/InefficientDistribution.h"
-#include "ioda/distribution/RoundRobin.h"
+#include "oops/util/Logger.h"
 
 namespace ioda {
+
 // -----------------------------------------------------------------------------
-/*!
- * \brief create a Distribution object
- *
- * \details This method creates a Distribution object from a specified subclass
- *          of the Distribution base class. The purpose of instantiating a subclass
- *          is to get access to a particular method of distributing obs across
- *          multiple process elements.
- *
- * \param[in] Comm Local MPI communicator
- * \param[in] Method Name of the method of distribution of obs.
- */
-Distribution * DistributionFactory::createDistribution(const eckit::mpi::Comm & Comm,
-                                    const eckit::Configuration & config,
-                                    const std::string & Method) {
-  if (Method == "RoundRobin") {
-    return new RoundRobin(Comm, config);
-  } else if (Method == "InefficientDistribution") {
-    return new InefficientDistribution(Comm, config);
-  } else if (Method == "Halo") {
-    return new Halo(Comm, config);
-  } else {
-    return NULL;
-  }
+
+DistributionFactory::DistributionFactory(const std::string & name) {
+  if (getMakers().find(name) != getMakers().end())
+    throw std::runtime_error(name + " already registered in the distribution factory");
+  getMakers()[name] = this;
+}
+
+// -----------------------------------------------------------------------------
+
+std::unique_ptr<Distribution> DistributionFactory::create(const eckit::mpi::Comm & comm,
+                                                          const eckit::Configuration & config) {
+  oops::Log::trace() << "Distribution::create starting" << std::endl;
+  const std::string id = config.getString("distribution", "RoundRobin");
+  typename std::map<std::string, DistributionFactory*>::iterator it = getMakers().find(id);
+  if (it == getMakers().end())
+    throw std::runtime_error(id + " does not exist in the distribution factory");
+  std::unique_ptr<Distribution> distribution = it->second->make(comm, config);
+  oops::Log::trace() << "Distribution::create done" << std::endl;
+  return distribution;
 }
 
 // -----------------------------------------------------------------------------

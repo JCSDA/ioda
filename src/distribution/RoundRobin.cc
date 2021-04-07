@@ -12,6 +12,7 @@
 #include <numeric>
 #include <set>
 
+#include "ioda/distribution/DistributionFactory.h"
 #include "oops/mpi/mpi.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
@@ -114,6 +115,9 @@ void allGathervImpl(const eckit::mpi::Comm & comm, std::vector<std::string> &x) 
 }
 
 }  // namespace
+
+// -----------------------------------------------------------------------------
+static DistributionMaker<RoundRobin> maker("RoundRobin");
 
 // -----------------------------------------------------------------------------
 RoundRobin::RoundRobin(const eckit::mpi::Comm & Comm,

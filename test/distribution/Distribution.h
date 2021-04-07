@@ -71,7 +71,9 @@ void testConstructor() {
     oops::Log::debug() << "Distribution::DistType: " << TestDistType << std::endl;
 
     DistName = dist_types[i].getString("specs.name");
-    TestDist.reset(DistFactory->createDistribution(MpiComm, conf, DistName));
+    eckit::LocalConfiguration DistConfig;
+    DistConfig.set("distribution", DistName);
+    TestDist = DistributionFactory::create(MpiComm, DistConfig);
     EXPECT(TestDist.get());
     }
   }
@@ -116,7 +118,8 @@ void testDistribution() {
       glats = dist_types[i].getDoubleVector("specs.latitude");
       glons = dist_types[i].getDoubleVector("specs.longitude");
     }
-    TestDist.reset(DistFactory->createDistribution(MpiComm, MyRankConfig, DistName));
+    MyRankConfig.set("distribution", DistName);
+    TestDist = DistributionFactory::create(MpiComm, MyRankConfig);
     EXPECT(TestDist.get());
 
     // expected answers

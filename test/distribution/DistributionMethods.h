@@ -38,7 +38,6 @@ void testDistributionMethods() {
 
   std::string DistName;
   std::unique_ptr<ioda::Distribution> TestDist;
-  DistributionFactory * DistFactory = nullptr;
   std::size_t MyRank = MpiComm.rank();
   std::size_t nprocs = MpiComm.size();
   conf.get("distribution types", dist_types);
@@ -48,7 +47,10 @@ void testDistributionMethods() {
                        << dist_types[i] << std::endl;
     DistName = dist_types[i].getString("name");
 
-    TestDist.reset(DistFactory->createDistribution(MpiComm, conf, DistName));
+    eckit::LocalConfiguration DistConfig;
+    DistConfig.set("distribution", DistName);
+
+    TestDist = DistributionFactory::create(MpiComm, DistConfig);
 
     // initialize distributions
     size_t Gnlocs = nprocs;

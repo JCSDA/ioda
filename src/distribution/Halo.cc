@@ -16,10 +16,15 @@
 #include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
 
+#include "ioda/distribution/DistributionFactory.h"
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/exception/Exceptions.h"
 
 namespace ioda {
+
+// -----------------------------------------------------------------------------
+static DistributionMaker<Halo> maker("Halo");
+
 // -----------------------------------------------------------------------------
 /*!
  * \brief Halo selector

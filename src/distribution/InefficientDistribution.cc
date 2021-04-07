@@ -11,6 +11,7 @@
 #include <iostream>
 #include <numeric>
 
+#include "ioda/distribution/DistributionFactory.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
 
@@ -24,6 +25,10 @@
 // -----------------------------------------------------------------------------
 
 namespace ioda {
+
+// -----------------------------------------------------------------------------
+static DistributionMaker<InefficientDistribution> maker("InefficientDistribution");
+
 // -----------------------------------------------------------------------------
 InefficientDistribution::InefficientDistribution(const eckit::mpi::Comm & Comm,
                            const eckit::Configuration & config) :

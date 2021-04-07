@@ -61,14 +61,12 @@ ObsData::ObsData(const eckit::Configuration & config, const eckit::mpi::Comm & c
   oops::Log::trace() << "ObsData::ObsData config  = " << config << std::endl;
 
   obsname_ = config.getString("name");
-  distname_ = config.getString("distribution", "RoundRobin");
 
   obsvars_ = oops::Variables(config, "simulated variables");
   oops::Log::debug() << obsname_ << " vars: " << obsvars_ << std::endl;
 
   // Create the MPI distribution object
-  std::unique_ptr<DistributionFactory> distFactory;
-  dist_.reset(distFactory->createDistribution(this->comm(), config, distname_));
+  dist_ = DistributionFactory::create(this->comm(), config);
 
   // Initialize the obs space container
   if (config.has("obsdatain")) {
