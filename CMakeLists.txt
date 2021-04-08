@@ -31,6 +31,7 @@ option( ENABLE_IODA_DOC "Build IODA documentation" OFF )
 ## Dependencies
 
 # Required
+find_package( jedicmake QUIET )  # Prefer find modules from jedi-cmake
 find_package( OpenMP COMPONENTS C CXX Fortran )
 find_package( NetCDF REQUIRED COMPONENTS C )
 find_package( eckit 1.11.6 REQUIRED )
