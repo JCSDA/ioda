@@ -218,89 +218,92 @@ size_t Halo::globalNumNonMissingObsImpl(const std::vector<T> &v) const {
 }
 
 // -----------------------------------------------------------------------------
-void Halo::sum(double &x) const {
-  throw eckit::NotImplemented("Reduce (sum) is not defined for Halo distribution", Here());
+void Halo::allReduceInPlace(double &x, eckit::mpi::Operation::Code op) const {
+  allReduceInPlaceImpl(x, op);
 }
 
-void Halo::sum(float &x) const {
-  throw eckit::NotImplemented("Reduce (sum) is not defined for Halo distribution", Here());
+void Halo::allReduceInPlace(float &x, eckit::mpi::Operation::Code op) const {
+  allReduceInPlaceImpl(x, op);
 }
 
-void Halo::sum(int &x) const {
-  throw eckit::NotImplemented("Reduce (sum) is not defined for Halo distribution", Here());
+void Halo::allReduceInPlace(int &x, eckit::mpi::Operation::Code op) const {
+  allReduceInPlaceImpl(x, op);
 }
 
-void Halo::sum(size_t &x) const {
-  throw eckit::NotImplemented("Reduce (sum) is not defined for Halo distribution", Here());
+void Halo::allReduceInPlace(size_t &x, eckit::mpi::Operation::Code op) const {
+  allReduceInPlaceImpl(x, op);
 }
 
-void Halo::sum(std::vector<double> &x) const {
-  // replace items not owned by this PE by 0 before reduce to prevent double counting
-  ASSERT(x.size() == patchObsBool_.size());
-  oops::Log::debug() << "size(x)=" << x.size() << " size(patchObsBool_)=" <<
-                        patchObsBool_.size() << std::endl;
-
-  for (size_t i = 0; i < x.size(); ++i) { if (patchObsBool_[i] == false) {x[i] = 0.0;} }
-  comm_.allReduceInPlace(x.begin(), x.end(), eckit::mpi::sum());
+void Halo::allReduceInPlace(std::vector<double> &x, eckit::mpi::Operation::Code op) const {
+  allReduceInPlaceImpl(x, op);
 }
 
-void Halo::sum(std::vector<size_t> &x) const {
-  ASSERT(x.size() == patchObsBool_.size());
-  for (size_t i = 0; i < x.size(); ++i) { if (patchObsBool_[i] == false) {x[i] = 0;} }
-    comm_.allReduceInPlace(x.begin(), x.end(), eckit::mpi::sum());
+
+void Halo::allReduceInPlace(std::vector<float> &x, eckit::mpi::Operation::Code op) const {
+  allReduceInPlaceImpl(x, op);
 }
 
-void Halo::min(double &x) const {
-    comm_.allReduceInPlace(x, eckit::mpi::min());
+void Halo::allReduceInPlace(std::vector<size_t> &x, eckit::mpi::Operation::Code op) const {
+  allReduceInPlaceImpl(x, op);
 }
 
-void Halo::min(float &x) const {
-    comm_.allReduceInPlace(x, eckit::mpi::min());
+template<typename T>
+void Halo::allReduceInPlaceImpl(T &x, eckit::mpi::Operation::Code op) const {
+  // reduce is well defined only for min & max for Halo distribution
+  if ((op == eckit::mpi::min()) || (op == eckit::mpi::max())) {
+    comm_.allReduceInPlace(x, op);
+  } else {
+    throw eckit::NotImplemented("Reduce operation is not defined for Halo distribution", Here());
+  }
 }
 
-void Halo::min(int &x) const {
-    comm_.allReduceInPlace(x, eckit::mpi::min());
+template<typename T>
+void Halo::allReduceInPlaceImpl(std::vector<T> &x, eckit::mpi::Operation::Code op) const {
+  if ((op == eckit::mpi::min()) || (op == eckit::mpi::max())) {
+    comm_.allReduceInPlace(x.begin(), x.end(), op);
+  } else if (op == eckit::mpi::sum()) {
+    // reduce for vector is well defined only when values passed in \p x are corresponding
+    // to global locations. the below check for sizes is not safe if size(\p x) is only
+    // coincidentally same as size(patchObsBool_)
+    ASSERT(x.size() == patchObsBool_.size());
+    for (size_t i = 0; i < x.size(); ++i) {
+      if (!patchObsBool_[i])    x[i] = 0.0;
+    }
+    comm_.allReduceInPlace(x.begin(), x.end(), op);
+  } else {
+    throw eckit::NotImplemented(std::to_string(op) + " reduce operation is not defined " +
+                                "for Halo distribution", Here());
+  }
 }
 
-void Halo::max(double &x) const {
-    comm_.allReduceInPlace(x, eckit::mpi::max());
-}
-
-void Halo::max(float &x) const {
-    comm_.allReduceInPlace(x, eckit::mpi::max());
-}
-
-void Halo::max(int &x) const {
-    comm_.allReduceInPlace(x, eckit::mpi::max());
-}
-
+// -----------------------------------------------------------------------------
 // TODO(issue #45) implement methods below
 void Halo::allGatherv(std::vector<size_t> &x) const {
-  throw std::runtime_error("allGatherv not implemented for Halo distribution");
+  throw eckit::NotImplemented("allGatherv not implemented for Halo distribution", Here());
 }
 
 void Halo::allGatherv(std::vector<int> &x) const {
-  throw std::runtime_error("allGatherv not implemented for Halo distribution");
+  throw eckit::NotImplemented("allGatherv not implemented for Halo distribution", Here());
 }
 
 void Halo::allGatherv(std::vector<float> &x) const {
-  throw std::runtime_error("allGatherv not implemented for Halo distribution");
+  throw eckit::NotImplemented("allGatherv not implemented for Halo distribution", Here());
 }
 
 void Halo::allGatherv(std::vector<double> &x) const {
-  throw std::runtime_error("allGatherv not implemented for Halo distribution");
+  throw eckit::NotImplemented("allGatherv not implemented for Halo distribution", Here());
 }
 
 void Halo::allGatherv(std::vector<util::DateTime> &x) const {
-  throw std::runtime_error("allGatherv not implemented for Halo distribution");
+  throw eckit::NotImplemented("allGatherv not implemented for Halo distribution", Here());
 }
 
 void Halo::allGatherv(std::vector<std::string> &x) const {
-  throw std::runtime_error("allGatherv not implemented for Halo distribution");
+  throw eckit::NotImplemented("allGatherv not implemented for Halo distribution", Here());
 }
 
 void Halo::exclusiveScan(size_t &x) const {
-  throw std::runtime_error("exclusiveScan not implemented for Halo distribution");
+  throw eckit::NotImplemented("exclusiveScan not implemented for Halo distribution", Here());
 }
 
 // -----------------------------------------------------------------------------

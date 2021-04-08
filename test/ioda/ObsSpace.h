@@ -106,7 +106,7 @@ void testConstructor() {
     // for Halo distr this record will be considered unique on each PE
     if (DistMethod != "Halo") {
       std::size_t Nrecs = Test_::obspace(jj).nrecs();
-      Test_::obspace(jj).distribution().sum(Nrecs);
+      Test_::obspace(jj).distribution().allReduceInPlace(Nrecs, eckit::mpi::sum());
       std::size_t ExpectedNrecs = conf[jj].getUnsigned("obs space.test data.nrecs");
       oops::Log::debug() << "Nrecs, ExpectedNrecs: " << Nrecs << ", "
                        << ExpectedNrecs << std::endl;

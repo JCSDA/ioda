@@ -92,21 +92,6 @@ namespace ioda {
  *  multiple PEs are counted only once.
  */
 
-/*! \fn void sum(x)
- *  \brief sum x across processors and overwrite x with the result. The
- *  subclass will take care of not counting duplicate records across processors
- *  \param x the value to be summed across processes. 
- */
-
-/*! \fn void min(x)
- *  \brief overwrites x with the minimum value of x across all processors
- */
-
-/*! \fn void max(x)
- *  \brief overwrites x with the maximum value of x across all processors
- */
-
-
 class Distribution {
  public:
     explicit Distribution(const eckit::mpi::Comm & Comm,
@@ -134,23 +119,32 @@ class Distribution {
     virtual size_t globalNumNonMissingObs(const std::vector<std::string> &v) const = 0;
     virtual size_t globalNumNonMissingObs(const std::vector<util::DateTime> &v) const = 0;
 
-    // scalar sum_reduce operatios (not safe for overlaping obs.)
-    virtual void sum(double &x) const = 0;
-    virtual void sum(float &x) const = 0;
-    virtual void sum(int &x) const = 0;
-    virtual void sum(size_t &x) const = 0;
+    /*!
+     * \brief All reduce operation on a scalar
+     *
+     * \param[inout] x
+     *   On input: a scalar associated with observations held by the calling process.
+     *   On output: a result of reduction operation on \p x passed by all calling processes.
+     * \param[in] op
+     *   Reduction operation (e.g. eckit::mpi::sum(), eckit::mpi::min(), eckit::mpi::max()
+     */
+    virtual void allReduceInPlace(double &x, eckit::mpi::Operation::Code op) const = 0;
+    virtual void allReduceInPlace(float &x, eckit::mpi::Operation::Code op) const = 0;
+    virtual void allReduceInPlace(int &x, eckit::mpi::Operation::Code op) const = 0;
+    virtual void allReduceInPlace(size_t &x, eckit::mpi::Operation::Code op) const = 0;
 
-    // reduce operatios (safe for overlaping obs.)
-    virtual void sum(std::vector<double> &x) const = 0;
-    virtual void sum(std::vector<size_t> &x) const = 0;
-
-    virtual void min(double &x) const = 0;
-    virtual void min(float &x) const = 0;
-    virtual void min(int &x) const = 0;
-
-    virtual void max(double &x) const = 0;
-    virtual void max(float &x) const = 0;
-    virtual void max(int &x) const = 0;
+    /*!
+     * \brief All reduce operation on a vector
+     *
+     * \param[inout] x
+     *   On input: a standard vector associated with observations held by the calling process.
+     *   On output: a result of reduction operation on \p x passed by all calling processes.
+     * \param[in] op
+     *   Reduction operation (e.g. eckit::mpi::sum(), eckit::mpi::min(), eckit::mpi::max()
+     */
+    virtual void allReduceInPlace(std::vector<double> &x, eckit::mpi::Operation::Code op) const = 0;
+    virtual void allReduceInPlace(std::vector<float> &x, eckit::mpi::Operation::Code op) const = 0;
+    virtual void allReduceInPlace(std::vector<size_t> &x, eckit::mpi::Operation::Code op) const = 0;
 
     /*!
      * \brief Gather observation data from all processes and deliver the combined data to

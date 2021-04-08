@@ -49,24 +49,15 @@ class InefficientDistribution: public Distribution {
      size_t globalNumNonMissingObs(const std::vector<std::string> &v) const override;
      size_t globalNumNonMissingObs(const std::vector<util::DateTime> &v) const override;
 
-     // The sum/min/max functions do nothing for the inefficient
-     // distribution. Each processor has each observation so the local
-     // sum/min/max is equal to the global sum/min/max
-
-     void sum(double &x) const override {};
-     void sum(float &x) const override {};
-     void sum(int &x) const override {};
-     void sum(size_t &x) const override {};
-     void sum(std::vector<double> &x) const override {};
-     void sum(std::vector<size_t> &x) const override {};
-
-     void min(double &x) const override {};
-     void min(float &x) const override {};
-     void min(int &x) const override {};
-
-     void max(double &x) const override {};
-     void max(float &x) const override {};
-     void max(int &x) const override {};
+     // allReduce do nothing for the inefficient distribution. Each processor has each
+     // observation so the local reduce is equal to the global reduce
+     void allReduceInPlace(double &x, eckit::mpi::Operation::Code op) const override {}
+     void allReduceInPlace(float &x, eckit::mpi::Operation::Code op) const override {}
+     void allReduceInPlace(int &x, eckit::mpi::Operation::Code op) const override {}
+     void allReduceInPlace(size_t &x, eckit::mpi::Operation::Code op) const override {}
+     void allReduceInPlace(std::vector<double> &x, eckit::mpi::Operation::Code op) const override {}
+     void allReduceInPlace(std::vector<float> &x, eckit::mpi::Operation::Code op) const override {}
+     void allReduceInPlace(std::vector<size_t> &x, eckit::mpi::Operation::Code op) const override {}
 
      // Similarly, allGatherv does nothing, since each processor has all observations.
      void allGatherv(std::vector<size_t> &x) const override {}

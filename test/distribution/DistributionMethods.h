@@ -85,46 +85,46 @@ void testDistributionMethods() {
 
     if (DistName == "InefficientDistribution") {
         // sum
-        TestDist->sum(a);
+        TestDist->allReduceInPlace(a, eckit::mpi::sum());
         EXPECT(a == MyRank);  // MyRank (sum should do nothing for Inefficient)
-        TestDist->sum(c);
+        TestDist->allReduceInPlace(c, eckit::mpi::sum());
         EXPECT(c == MyRank);
-        TestDist->sum(va);
+        TestDist->allReduceInPlace(va, eckit::mpi::sum());
         EXPECT(va == vaRefInefficient);
-        TestDist->sum(vb);
+        TestDist->allReduceInPlace(vb, eckit::mpi::sum());
         EXPECT(vb == vbRefInefficient);
 
         // min
         a = MyRank;
         b = MyRank;
         c = MyRank;
-        TestDist->min(a);
+        TestDist->allReduceInPlace(a, eckit::mpi::min());
         EXPECT(a == MyRank);
-        TestDist->min(b);
+        TestDist->allReduceInPlace(b, eckit::mpi::min());
         EXPECT(b == MyRank);
-        TestDist->min(c);
+        TestDist->allReduceInPlace(c, eckit::mpi::min());
         EXPECT(c == MyRank);
 
         // max
         a = MyRank;
         b = MyRank;
         c = MyRank;
-        TestDist->max(a);
+        TestDist->allReduceInPlace(a, eckit::mpi::max());
         EXPECT(a == MyRank);
-        TestDist->max(b);
+        TestDist->allReduceInPlace(b, eckit::mpi::max());
         EXPECT(b == MyRank);
-        TestDist->max(c);
+        TestDist->allReduceInPlace(c, eckit::mpi::max());
         EXPECT(c == MyRank);
 
     } else {
-        // sum
         if (DistName != "Halo") {
-          TestDist->sum(a);
+          // sum
+          TestDist->allReduceInPlace(a, eckit::mpi::sum());
           EXPECT(a == result);  // 0 + 1 + .. nprocs-1 (sum across tasks)
-          TestDist->sum(c);
+          TestDist->allReduceInPlace(c, eckit::mpi::sum());
           EXPECT(c == result);
-          TestDist->sum(va);
-          TestDist->sum(vb);
+          TestDist->allReduceInPlace(va, eckit::mpi::sum());
+          TestDist->allReduceInPlace(vb, eckit::mpi::sum());
           oops::Log::debug() << "va=" << va << " vaRef=" << vaRef << std::endl;
           EXPECT(va == vaRef);
           EXPECT(vb == vbRef);
@@ -134,22 +134,22 @@ void testDistributionMethods() {
         a = MyRank;
         b = MyRank;
         c = MyRank;
-        TestDist->min(a);
+        TestDist->allReduceInPlace(a, eckit::mpi::min());
         EXPECT(a == 0);
-        TestDist->min(b);
+        TestDist->allReduceInPlace(b, eckit::mpi::min());
         EXPECT(b == 0);
-        TestDist->min(c);
+        TestDist->allReduceInPlace(c, eckit::mpi::min());
         EXPECT(c == 0);
 
         // max
         a = MyRank;
         b = MyRank;
         c = MyRank;
-        TestDist->max(a);
+        TestDist->allReduceInPlace(a, eckit::mpi::max());
         EXPECT(a == nprocs -1);
-        TestDist->max(b);
+        TestDist->allReduceInPlace(b, eckit::mpi::max());
         EXPECT(b == nprocs -1);
-        TestDist->max(c);
+        TestDist->allReduceInPlace(c, eckit::mpi::max());
         EXPECT(c == nprocs -1);
     }
   }

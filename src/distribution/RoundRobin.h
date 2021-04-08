@@ -48,20 +48,13 @@ class RoundRobin: public Distribution {
      size_t globalNumNonMissingObs(const std::vector<std::string> &v) const override;
      size_t globalNumNonMissingObs(const std::vector<util::DateTime> &v) const override;
 
-     void sum(double &x) const override;
-     void sum(float &x) const override;
-     void sum(int &x) const override;
-     void sum(size_t &x) const override;
-     void sum(std::vector<double> &x) const override;
-     void sum(std::vector<size_t> &x) const override;
-
-     void min(double &x) const override;
-     void min(float &x) const override;
-     void min(int &x) const override;
-
-     void max(double &x) const override;
-     void max(float &x) const override;
-     void max(int &x) const override;
+     void allReduceInPlace(double &x, eckit::mpi::Operation::Code op) const override;
+     void allReduceInPlace(float &x, eckit::mpi::Operation::Code op) const override;
+     void allReduceInPlace(int &x, eckit::mpi::Operation::Code op) const override;
+     void allReduceInPlace(size_t &x, eckit::mpi::Operation::Code op) const override;
+     void allReduceInPlace(std::vector<double> &x, eckit::mpi::Operation::Code op) const override;
+     void allReduceInPlace(std::vector<float> &x, eckit::mpi::Operation::Code op) const override;
+     void allReduceInPlace(std::vector<size_t> &x, eckit::mpi::Operation::Code op) const override;
 
      void allGatherv(std::vector<size_t> &x) const override;
      void allGatherv(std::vector<int> &x) const override;

@@ -281,8 +281,8 @@ void ObsVector::print(std::ostream & os) const {
     }
   }
 
-  obsdb_.distribution().min(zmin);
-  obsdb_.distribution().max(zmax);
+  obsdb_.distribution().allReduceInPlace(zmin, eckit::mpi::min());
+  obsdb_.distribution().allReduceInPlace(zmax, eckit::mpi::max());
 
   if (nobs > 0) {
     os << obsdb_.obsname() << " nobs= " << nobs << " Min="

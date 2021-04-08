@@ -185,7 +185,7 @@ double RoundRobin::dot_productImpl(
     }
   }
 
-  this->sum(zz);
+  comm_.allReduceInPlace(zz, eckit::mpi::sum());
   return zz;
 }
 
@@ -219,59 +219,40 @@ size_t RoundRobin::globalNumNonMissingObsImpl(const std::vector<T> &v) const {
     if (v[jj] != missingValue) ++nobs;
   }
 
-  this->sum(nobs);
+  comm_.allReduceInPlace(nobs, eckit::mpi::sum());
   return nobs;
 }
 
 // -----------------------------------------------------------------------------
-void RoundRobin::sum(double &x) const {
-    comm_.allReduceInPlace(x, eckit::mpi::sum());
+void RoundRobin::allReduceInPlace(double &x, eckit::mpi::Operation::Code op) const {
+  comm_.allReduceInPlace(x, op);
 }
 
-void RoundRobin::sum(float &x) const {
-    comm_.allReduceInPlace(x, eckit::mpi::sum());
+void RoundRobin::allReduceInPlace(float &x, eckit::mpi::Operation::Code op) const {
+  comm_.allReduceInPlace(x, op);
 }
 
-void RoundRobin::sum(int &x) const {
-    comm_.allReduceInPlace(x, eckit::mpi::sum());
+void RoundRobin::allReduceInPlace(int &x, eckit::mpi::Operation::Code op) const {
+  comm_.allReduceInPlace(x, op);
 }
 
-void RoundRobin::sum(size_t &x) const {
-    comm_.allReduceInPlace(x, eckit::mpi::sum());
+void RoundRobin::allReduceInPlace(size_t &x, eckit::mpi::Operation::Code op) const {
+  comm_.allReduceInPlace(x, op);
 }
 
-void RoundRobin::sum(std::vector<double> &x) const {
-    comm_.allReduceInPlace(x.begin(), x.end(), eckit::mpi::sum());
+void RoundRobin::allReduceInPlace(std::vector<double> &x, eckit::mpi::Operation::Code op) const {
+  comm_.allReduceInPlace(x.begin(), x.end(), op);
 }
 
-void RoundRobin::sum(std::vector<size_t> &x) const {
-    comm_.allReduceInPlace(x.begin(), x.end(), eckit::mpi::sum());
+void RoundRobin::allReduceInPlace(std::vector<float> &x, eckit::mpi::Operation::Code op) const {
+  comm_.allReduceInPlace(x.begin(), x.end(), op);
 }
 
-void RoundRobin::min(double &x) const {
-    comm_.allReduceInPlace(x, eckit::mpi::min());
+void RoundRobin::allReduceInPlace(std::vector<size_t> &x, eckit::mpi::Operation::Code op) const {
+  comm_.allReduceInPlace(x.begin(), x.end(), op);
 }
 
-void RoundRobin::min(float &x) const {
-    comm_.allReduceInPlace(x, eckit::mpi::min());
-}
-
-void RoundRobin::min(int &x) const {
-    comm_.allReduceInPlace(x, eckit::mpi::min());
-}
-
-void RoundRobin::max(double &x) const {
-    comm_.allReduceInPlace(x, eckit::mpi::max());
-}
-
-void RoundRobin::max(float &x) const {
-    comm_.allReduceInPlace(x, eckit::mpi::max());
-}
-
-void RoundRobin::max(int &x) const {
-    comm_.allReduceInPlace(x, eckit::mpi::max());
-}
-
+// -----------------------------------------------------------------------------
 void RoundRobin::allGatherv(std::vector<size_t> &x) const {
     allGathervImpl(comm_, x);
 }

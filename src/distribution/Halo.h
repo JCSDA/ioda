@@ -52,20 +52,13 @@ class Halo: public Distribution {
      size_t globalNumNonMissingObs(const std::vector<std::string> &v) const override;
      size_t globalNumNonMissingObs(const std::vector<util::DateTime> &v) const override;
 
-     void sum(double &x) const override;
-     void sum(float &x) const override;
-     void sum(int &x) const override;
-     void sum(size_t &x) const override;
-     void sum(std::vector<double> &x) const override;
-     void sum(std::vector<size_t> &x) const override;
-
-     void min(double &x) const override;
-     void min(float &x) const override;
-     void min(int &x) const override;
-
-     void max(double &x) const override;
-     void max(float &x) const override;
-     void max(int &x) const override;
+     void allReduceInPlace(double &x, eckit::mpi::Operation::Code op) const override;
+     void allReduceInPlace(float &x, eckit::mpi::Operation::Code op) const override;
+     void allReduceInPlace(int &x, eckit::mpi::Operation::Code op) const override;
+     void allReduceInPlace(size_t &x, eckit::mpi::Operation::Code op) const override;
+     void allReduceInPlace(std::vector<double> &x, eckit::mpi::Operation::Code op) const override;
+     void allReduceInPlace(std::vector<float> &x, eckit::mpi::Operation::Code op) const override;
+     void allReduceInPlace(std::vector<size_t> &x, eckit::mpi::Operation::Code op) const override;
 
      void allGatherv(std::vector<size_t> &x) const override;
      void allGatherv(std::vector<int> &x) const override;
@@ -83,6 +76,10 @@ class Halo: public Distribution {
      double dot_productImpl(const std::vector<T> &v1, const std::vector<T> &v2) const;
      template <typename T>
      size_t globalNumNonMissingObsImpl(const std::vector<T> &v) const;
+     template <typename T>
+     void allReduceInPlaceImpl(T &x, eckit::mpi::Operation::Code op) const;
+     template <typename T>
+     void allReduceInPlaceImpl(std::vector<T> &x, eckit::mpi::Operation::Code op) const;
 
      double radius_;
      eckit::geometry::Point2 center_;
