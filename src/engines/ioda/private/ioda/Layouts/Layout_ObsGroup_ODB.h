@@ -24,12 +24,17 @@ namespace detail {
 
 class ODBLayoutParameters;
 
+struct variableStorageInformation {
+  std::string iodaName;
+  boost::optional<std::string> inputUnit;
+};
+
 /// Layout for ObsGroup-like data.
 class IODA_DL DataLayoutPolicy_ObsGroup_ODB : public DataLayoutPolicy {
   /// \brief Record versioning information for this layout in the ioda object. Provides forward compatability.
   const int32_t ObsGroup_ODB_Layout_Version = 0;
-  /// \brief Mapping with ODB equivalents as keys and IODA namings as values
-  std::unordered_map<std::string, std::string> Mapping;
+  /// \brief Mapping with ODB equivalents as keys and IODA naming/unit pairs as values
+  std::unordered_map<std::string, variableStorageInformation> Mapping;
   std::shared_ptr<ODBLayoutParameters> mappingParams_;
   /// \brief Metadata for generating a variable in IODA from multiple component variables (same across components).
   struct ComplementaryVariableOutputMetadata {
@@ -48,9 +53,11 @@ class IODA_DL DataLayoutPolicy_ObsGroup_ODB : public DataLayoutPolicy {
   void initializeStructure(Group_Base &) const override;
   std::string doMap(const std::string &) const override;
   bool isComplementary(const std::string &) const override;
+  bool isMapped(const std::string &) const override;
   size_t getComplementaryPosition(const std::string &) const override;
   size_t getInputsNeeded(const std::string &) const override;
   DataLayoutPolicy::MergeMethod getMergeMethod(const std::string &) const override;
+  boost::optional<std::string> getUnit(const std::string &) const override;
   std::string getOutputNameFromComponent(const std::string &) const override;
   std::type_index getOutputVariableDataType(const std::string &) const override;
   DataLayoutPolicy_ObsGroup_ODB(const std::string &);

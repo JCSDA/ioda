@@ -12,6 +12,8 @@
 #include <exception>
 #include <vector>
 
+#include "boost/optional.hpp"
+
 #include "eckit/config/Configuration.h"
 #include "eckit/exception/Exceptions.h"
 
@@ -57,6 +59,8 @@ std::string DataLayoutPolicy::doMap(const std::string &str) const { return str; 
 
 bool DataLayoutPolicy::isComplementary(const std::string &str) const { return false; }
 
+bool DataLayoutPolicy::isMapped(const std::string &) const { return false; }
+
 size_t DataLayoutPolicy::getComplementaryPosition(const std::string &str) const {
   throw eckit::UserError("Illogical operation for non-ODB data layout policies.");
 }
@@ -74,6 +78,10 @@ DataLayoutPolicy::MergeMethod DataLayoutPolicy::getMergeMethod(const std::string
 }
 
 size_t DataLayoutPolicy::getInputsNeeded(const std::string &str) const {
+  throw eckit::UserError("Illogical operation for non-ODB data layout policies.");
+}
+
+boost::optional<std::string> DataLayoutPolicy::getUnit(const std::string &) const {
   throw eckit::UserError("Illogical operation for non-ODB data layout policies.");
 }
 

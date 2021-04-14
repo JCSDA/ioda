@@ -7,7 +7,7 @@
  */
 /// \file MergeMethods.h
 /// \brief Utility functions and structs for combining multiple variables into one
-/// \todo The method for merging vertical coordinates will be added to this header.
+/// \todo The method for merging identical columns will be added to this header.
 
 #include <string>
 #include <vector>

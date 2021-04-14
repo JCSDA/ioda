@@ -12,6 +12,7 @@
  * \brief Contains definitions for how data are arranged in ioda internally.
  */
 
+#include <boost/optional.hpp>
 #include <gsl/gsl-lite.hpp>
 #include <memory>
 #include <string>
@@ -95,6 +96,9 @@ public:
   /// Check if the named variable will be a part of a derived variable
   virtual bool isComplementary(const std::string &) const;
 
+  /// Check if the named variable is in the Variables section of the ODB mapping file.
+  virtual bool isMapped(const std::string &) const;
+
   /// Returns the position of the input variable in the derived variable.
   /// \throws If the input is not part of a derived variable.
   virtual size_t getComplementaryPosition(const std::string &) const;
@@ -114,6 +118,10 @@ public:
   /// Returns the count of input variables needed.
   /// \throws If the input is not part of a derived variable.
   virtual size_t getInputsNeeded(const std::string &) const;
+
+  /// Returns the variable's unit if it has been specified.
+  /// \throws If the input is not listed in Variables section of mapping file.
+  virtual boost::optional<std::string> getUnit(const std::string &) const;
 
   /// A descriptive name for the policy.
   virtual std::string name() const;

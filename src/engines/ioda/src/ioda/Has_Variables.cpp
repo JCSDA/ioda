@@ -9,6 +9,12 @@
 #include "ioda/Layout.h"
 #include "ioda/Misc/MergeMethods.h"
 #include "ioda/Misc/SFuncs.h"
+#include "ioda/Misc/UnitConversions.h"
+
+#include "oops/util/Logger.h"
+
+#include <boost/optional.hpp>
+#include <stdexcept>
 
 namespace ioda {
 namespace detail {
@@ -107,6 +113,32 @@ void Has_Variables_Base::stitchComplementaryVariables(bool removeOriginals) {
             this->remove(layout_->doMap(inputVar));
           }
         }
+      }
+    }
+  }
+}
+
+void Has_Variables_Base::convertVariableUnits() {
+  if (layout_->name() != std::string("ObsGroup ODB v1"))
+    return;
+  std::vector<std::string> variableList = list();
+  for (auto const& name : variableList) {
+    const std::string destinationName = layout_->doMap(name);
+    if (!layout_->isMapped(destinationName))
+      continue;
+    if (boost::optional<std::string> unit = layout_->getUnit(destinationName)) {
+      Variable variableToConvert = this->open(destinationName);
+      try {
+        std::vector<double> outputData = variableToConvert.readAsVector<double>();
+        convertColumn(*unit, outputData);
+        variableToConvert.write(outputData);
+        variableToConvert.atts.add<std::string>("units", getSIUnit(*unit));
+      } catch (std::invalid_argument) {
+        oops::Log::warning() << "The unit specified in ODB mapping file '" << *unit <<
+                                "' does not have a unit conversion defined in" <<
+                                " UnitConversions.h, and the variable will be stored in" <<
+                                " its original form.\n";
+        variableToConvert.atts.add<std::string>("units", *unit);
       }
     }
   }

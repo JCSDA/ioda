@@ -77,7 +77,6 @@ CASE("Stitch variables, remove originals defaulted as true") {
   EXPECT(og.vars.exists(str("incompleteCombinationPart1")));
   EXPECT(og.vars.exists(str("incompleteCombinationPart2")));
 
-  //fails on this line
   EXPECT_NOT(og.vars.exists(str("oneVariableCombination")));
   EXPECT(og.vars.exists("oneVariableDerivedVariable"));
   std::vector<str> singleVarCombPostStitch;

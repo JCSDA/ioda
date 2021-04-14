@@ -230,6 +230,13 @@ public:
   /// be recreated on writing back to the original file.
   void stitchComplementaryVariables(bool removeOriginals = true);
 
+  /// \brief Converts unit to SI for all eligible variables. If conversion function not defined,
+  /// stores unit as attribute.
+  ///
+  /// Makes the conversion if the variable's unit is defined in the mapping file and the unit conversion
+  /// is defined in UnitConversions.h.
+  void convertVariableUnits();
+
   /// \brief Create a Variable without setting its data.
   /// \param attrname is the name of the Variable.
   /// \param dimensions is a vector representing the size of the metadata.

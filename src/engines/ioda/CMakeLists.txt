@@ -17,6 +17,7 @@ list(APPEND SRCS_IODA
 	include/ioda/Misc/Eigen_Compat.h
 	include/ioda/Misc/MergeMethods.h
 	include/ioda/Misc/SFuncs.h
+	include/ioda/Misc/UnitConversions.h
 	include/ioda/Variables/Fill.h
 	src/ioda/Fill.cpp
 	include/ioda/Variables/FillPolicy.h
@@ -46,6 +47,7 @@ list(APPEND SRCS_IODA
 	src/ioda/SFuncs.cpp
 	src/ioda/Type.cpp
 	src/ioda/Type_Provider.cpp
+	src/ioda/UnitConversions.cpp
 	src/ioda/Variable.cpp
 	src/ioda/Layouts/Layout.cpp
 	src/ioda/Layouts/Layout_ObsGroup.cpp

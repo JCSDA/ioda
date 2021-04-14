@@ -22,17 +22,29 @@ namespace detail {
 class VariableParameters : public oops::Parameters {
 OOPS_CONCRETE_PARAMETERS(VariableParameters, Parameters)
  public:
+  /// \p name is what the variable should be referred to as in ioda, including the full group
+  /// hierarchy.
   oops::RequiredParameter<std::string> name {"name", this};
+  /// \p source is the variable's name in the input file
   oops::RequiredParameter<std::string> source {"source", this};
+  /// \p unit is the variable's unit type, for conversion to SI units. The data values will be
+  /// changed according to the arithmetic conversion function if function is available.
+  oops::OptionalParameter<std::string> unit {"unit", this};
 };
 
 class ComplementaryVariablesParameters : public oops::Parameters {
 OOPS_CONCRETE_PARAMETERS(ComplementaryVariablesParameters, Parameters)
  public:
+  /// \p outputName is the variable's name as it should be found in IODA. The full group
+  /// hierarchy should be included.
   oops::RequiredParameter<std::string> outputName {"output name", this};
+  /// \p outputVariableDataType is the output variable's data type. Strings are currently
+  /// the only supported type.
   oops::Parameter<std::string> outputVariableDataType {
     "output variable data type", "string", this};
+  /// \p inputNames are the variable names as they should be found prior to the merge.
   oops::RequiredParameter<std::vector<std::string>> inputNames {"input names", this};
+  /// \p mergeMethod is the method which should be used to combine the input variables.
   oops::Parameter<std::string> mergeMethod {"merge method", "concat", this};
 };
 

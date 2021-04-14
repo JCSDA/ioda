@@ -6,8 +6,15 @@
 include(Targets)
 
 ecbuild_add_test ( TARGET     test_ioda-engines_hasvariables_stitchcomplementaryvars
-                   SOURCES    test.cpp
+                   SOURCES    test_stitchcomplementaryvariables.cpp
                    LIBS       ioda_engines )
 
+ecbuild_add_test ( TARGET     test_ioda-engines_hasvariables_convertvariableunits
+                   SOURCES    test_convertvariableunits.cpp
+                   LIBS       ioda_engines)
+
 target_compile_definitions(test_ioda-engines_hasvariables_stitchcomplementaryvars PRIVATE
+  TEST_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
+
+target_compile_definitions(test_ioda-engines_hasvariables_convertvariableunits PRIVATE
   TEST_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")

@@ -17,6 +17,7 @@
 #include "ioda/defs.h"
 
 #include "boost/none_t.hpp"
+#include "boost/optional.hpp"
 #include "eckit/config/Configuration.h"
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/config/YAMLConfiguration.h"
@@ -63,7 +64,7 @@ void DataLayoutPolicy_ObsGroup_ODB::parseMappingFile(const std::string &nameMapF
 void DataLayoutPolicy_ObsGroup_ODB::parseNameChanges()
 {
   for (VariableParameters const& variable : *(mappingParams_->variables.value())) {
-    Mapping[variable.source] = variable.name;
+    Mapping[variable.source] = {variable.name, variable.unit};
   }
 }
 
@@ -122,7 +123,7 @@ std::string DataLayoutPolicy_ObsGroup_ODB::doMap(const std::string &str) const {
   std::string mappedStr;
   auto it = Mapping.find(str);
   if (it != Mapping.end()) {
-    mappedStr = it->second;
+    mappedStr = (it->second).iodaName;
   } else {
     mappedStr = str;
   }
@@ -137,6 +138,10 @@ bool DataLayoutPolicy_ObsGroup_ODB::isComplementary(const std::string &inputVari
     return true;
   else
     return false;
+}
+
+bool DataLayoutPolicy_ObsGroup_ODB::isMapped(const std::string &input) const {
+  return (Mapping.find(input) != Mapping.end());
 }
 
 size_t DataLayoutPolicy_ObsGroup_ODB::getComplementaryPosition(const std::string &input) const
@@ -175,6 +180,14 @@ DataLayoutPolicy::MergeMethod DataLayoutPolicy_ObsGroup_ODB::getMergeMethod(
   if (!isComplementary(input))
     throw eckit::ReadError(input + " was not found to be a complementary variable.");
   return complementaryVariableDataMap.at(input).second->mergeMethod;
+}
+
+boost::optional<std::string> DataLayoutPolicy_ObsGroup_ODB::getUnit(
+    const std::string & input) const {
+  if (Mapping.find(input) == Mapping.end()) {
+    throw eckit::ReadError(input + " was not found to to be an ODB source variable.");
+  }
+  return (Mapping.at(input)).inputUnit;
 }
 
 std::string DataLayoutPolicy_ObsGroup_ODB::name() const { return std::string{"ObsGroup ODB v1"}; }

@@ -20,7 +20,7 @@ using namespace eckit::testing;
 namespace ioda {
 namespace test {
 
-CASE("Concatenation mapping file") {
+CASE("Concatenation mapping file; error checks of unit conversion methods") {
   std::string yamlMappingFile = std::string(TEST_SOURCE_DIR) + "/odb_concat_name_map.yaml";
   ioda::detail::DataLayoutPolicy_ObsGroup_ODB dataLayoutPolicy(yamlMappingFile);
   //existent variable in mapping file
@@ -57,6 +57,9 @@ CASE("Concatenation mapping file") {
   EXPECT_THROWS(dataLayoutPolicy.getMergeMethod("notInMapping"));
   EXPECT_THROWS(dataLayoutPolicy.getOutputNameFromComponent("notInMapping"));
   EXPECT_THROWS(dataLayoutPolicy.getOutputVariableDataType("notInMapping"));
+  // unit conversion methods
+  EXPECT_NOT(dataLayoutPolicy.isMapped("notInMapping"));
+  EXPECT_THROWS(dataLayoutPolicy.getUnit("notInMapping"));
 }
 CASE("Input data name matches the export data name") {
   std::string yamlMappingFile = std::string(TEST_SOURCE_DIR) + "/odb_matchinginputoutput_name_map.yaml";
