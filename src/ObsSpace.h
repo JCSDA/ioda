@@ -32,7 +32,6 @@ namespace eckit {
 
 namespace ioda {
   class LocalObsSpaceParameters;
-  class ObsVector;
 
 /// Observation Space View
 class ObsSpace : public oops::ObsSpaceBase {
@@ -106,8 +105,6 @@ class ObsSpace : public oops::ObsSpaceBase {
   const util::DateTime & windowEnd() const {return obsspace_->windowEnd();}
   /*! \details This method will return the associated MPI communicator */
   const eckit::mpi::Comm & comm() const {return obsspace_->comm();}
-
-  void printJo(const ObsVector &, const ObsVector &);  // to be removed
 
   const oops::Variables & obsvariables() const {return obsspace_->obsvariables();}
   const std::vector<double> & obsdist() const {return obsdist_;}

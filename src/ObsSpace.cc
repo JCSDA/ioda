@@ -495,16 +495,6 @@ void ObsSpace::print(std::ostream & os) const {
   os << *obsspace_;
 }
 
-
-// -----------------------------------------------------------------------------
-/*!
- * \details This method provides a means for printing Jo in
- *          an output stream. For now a dummy message is printed.
- */
-void ObsSpace::printJo(const ObsVector & dy, const ObsVector & grad) {
-  obsspace_->printJo(dy, grad);
-}
-
 // -----------------------------------------------------------------------------
 const Distribution & ObsSpace::distribution() const {
   if (isLocal_) {

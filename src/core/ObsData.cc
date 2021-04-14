@@ -1308,14 +1308,6 @@ std::string ObsData::DesiredVarType(std::string & GroupName, std::string & FileV
 
 // -----------------------------------------------------------------------------
 /*!
- * \details This method provides a means for printing Jo in
- *          an output stream. For now a dummy message is printed.
- */
-void ObsData::printJo(const ObsVector & dy, const ObsVector & grad) {
-  oops::Log::info() << "ObsData::printJo not implemented" << std::endl;
-}
-// -----------------------------------------------------------------------------
-/*!
  * \details This method creates a private KDTree class member that can be used
  *          for searching for local obs to create an ObsSpace.
  */

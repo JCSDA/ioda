@@ -37,7 +37,6 @@ namespace eckit {
 }
 
 namespace ioda {
-  class ObsVector;
 
 //-------------------------------------------------------------------------------------
 
@@ -145,8 +144,6 @@ class ObsData : public util::Printable {
   const util::DateTime & windowEnd() const {return winend_;}
   /*! \details This method will return the associated MPI communicator */
   const eckit::mpi::Comm & comm() const {return commMPI_;}
-
-  void printJo(const ObsVector &, const ObsVector &);  // to be removed
 
   const oops::Variables & obsvariables() const {return obsvars_;}
   const std::shared_ptr<const Distribution> distribution() const { return dist_;}
