@@ -210,7 +210,7 @@ void ObsVector::save(const std::string & name) const {
 }
 // -----------------------------------------------------------------------------
 Eigen::VectorXd ObsVector::packEigen() const {
-  Eigen::VectorXd vec(nobs());
+  Eigen::VectorXd vec(packEigenSize());
   size_t ii = 0;
   for (const double & val : values_) {
     if (val != missing_) {
@@ -218,6 +218,16 @@ Eigen::VectorXd ObsVector::packEigen() const {
     }
   }
   return vec;
+}
+// -----------------------------------------------------------------------------
+size_t ObsVector::packEigenSize() const {
+  size_t len = 0;
+  for (const double & val : values_) {
+    if (val != missing_) {
+      len++;
+    }
+  }
+  return len;
 }
 // -----------------------------------------------------------------------------
 ObsVector & ObsVector::operator=(const ObsDataVector<float> & rhs) {

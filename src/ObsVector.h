@@ -61,8 +61,16 @@ class ObsVector : public util::Printable,
   std::size_t size() const {return values_.size();}  // Size of vector in local memory
   const double & operator[](const std::size_t ii) const {return values_.at(ii);}
   double & operator[](const std::size_t ii) {return values_.at(ii);}
-  unsigned int nobs() const;  // Number of active observations (missing values not included)
+
+  /// Number of active observations (missing values not included) across all MPI tasks
+  unsigned int nobs() const;
+
+  /// Pack observations local to this MPI task into an Eigen vector
+  /// (excluding vector elements that are masked out)
   Eigen::VectorXd  packEigen() const;
+  /// Number of non-masked out observations local to this MPI task
+  /// (size of an Eigen vector returned by `packEigen`
+  size_t packEigenSize() const;
 
   const double & toFortran() const;
   double & toFortran();
