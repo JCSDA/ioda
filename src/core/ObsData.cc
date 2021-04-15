@@ -1307,49 +1307,5 @@ std::string ObsData::DesiredVarType(std::string & GroupName, std::string & FileV
 }
 
 // -----------------------------------------------------------------------------
-/*!
- * \details This method creates a private KDTree class member that can be used
- *          for searching for local obs to create an ObsSpace.
- */
-void ObsData::createKDTree() {
-  // Initialize KDTree class member
-  kd_ = std::shared_ptr<ObsData::KDTree> ( new KDTree() );
-  // Define lats,lons
-  std::vector<float> lats(nlocs_);
-  std::vector<float> lons(nlocs_);
-
-  // Get latitudes and longitudes of all observations.
-  this -> get_db("MetaData", "longitude", lons);
-  this -> get_db("MetaData", "latitude", lats);
-
-  // Define points list from lat/lon values
-  typedef KDTree::PointType Point;
-  std::vector<KDTree::Value> points;
-  for (unsigned int i = 0; i < nlocs_; i++) {
-    eckit::geometry::Point2 lonlat(lons[i], lats[i]);
-    Point xyz = Point();
-    // FIXME: get geometry from yaml, for now assume spherical Earth radius.
-    atlas::util::Earth::convertSphericalToCartesian(lonlat, xyz);
-    double index = static_cast<double>(i);
-    KDTree::Value v(xyz, index);
-    points.push_back(v);
-  }
-
-  // Create KDTree class member from points list.
-  kd_->build(points.begin(), points.end());
-}
-// -----------------------------------------------------------------------------
-/*!
- * \details This method returns the KDTree class member that can be used
- *          for searching for local obs when creating an ObsSpace.
- */
-ObsData::KDTree & ObsData::getKDTree() {
-  // Create the KDTree if it doesn't yet exist
-  if (kd_ == NULL)
-    createKDTree();
-
-  return * kd_;
-}
-// -----------------------------------------------------------------------------
 
 }  // namespace ioda

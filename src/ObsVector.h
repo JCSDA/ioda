@@ -37,7 +37,6 @@ class ObsVector : public util::Printable,
 
   explicit ObsVector(ObsSpace &, const std::string & name = "");
   ObsVector(const ObsVector &);
-  ObsVector(ObsSpace &, const ObsVector &);
   ~ObsVector();
 
   ObsVector & operator = (const ObsVector &);
@@ -67,10 +66,10 @@ class ObsVector : public util::Printable,
 
   /// Pack observations local to this MPI task into an Eigen vector
   /// (excluding vector elements that are masked out)
-  Eigen::VectorXd  packEigen() const;
+  Eigen::VectorXd  packEigen(const ObsDataVector<int> &) const;
   /// Number of non-masked out observations local to this MPI task
   /// (size of an Eigen vector returned by `packEigen`
-  size_t packEigenSize() const;
+  size_t packEigenSize(const ObsDataVector<int> &) const;
 
   const double & toFortran() const;
   double & toFortran();

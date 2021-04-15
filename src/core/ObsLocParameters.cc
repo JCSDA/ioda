@@ -7,7 +7,7 @@
 
 #include <utility>
 
-#include "ioda/core/LocalObsSpaceParameters.h"
+#include "ioda/core/ObsLocParameters.h"
 
 namespace ioda {
 
@@ -17,6 +17,6 @@ constexpr util::NamedEnumerator<DistanceType> DistanceTypeParameterTraitsHelper:
 constexpr char SearchMethodParameterTraitsHelper::enumTypeName[];
 constexpr util::NamedEnumerator<SearchMethod> SearchMethodParameterTraitsHelper::namedValues[];
 
-constexpr double LocalObsSpaceParameters::radius_earth;
+constexpr double ObsLocParameters::radius_earth;
 
 }  // namespace ioda

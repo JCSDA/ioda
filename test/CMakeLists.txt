@@ -6,7 +6,6 @@
 # Create Data directory for test input config and symlink all files
 list( APPEND ioda_test_input
   testinput/iodatest.yml
-  testinput/iodatest_localobsspace.yml
   testinput/iodatest_obserror.yml
   testinput/iodatest_io.yml
   testinput/iodatest_distribution.yml
@@ -20,7 +19,6 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsspace_index_recnum_twfilt.yml
   testinput/iodatest_obsspace_marine.yml
   testinput/iodatest_obsspace_fortran.yml
-  testinput/iodatest_obsspace_localization.yml
   testinput/iodatest_obsvector.yml
   testinput/iodatest_descendingsort.yml
 )
@@ -289,20 +287,6 @@ add_fctest( TARGET  test_ioda_obsspace_fortran
             LIBS  ioda_test
             TEST_DEPENDS get_ioda_test_data )
 endif()
-
-# OOPS LocalObsSpace test
-ecbuild_add_test( TARGET  test_ioda_localobsspace
-                  SOURCES mains/TestLocalObsSpace.cc
-                  ARGS    "testinput/iodatest_localobsspace.yml"
-                  LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data )
-
-# IODA LocalObsSpace test
-ecbuild_add_test( TARGET  test_ioda_obsspace_localization
-                  SOURCES mains/TestIodaLocalObsSpace.cc
-                  ARGS    "testinput/iodatest_obsspace_localization.yml"
-                  LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data )
 
 # IODA ObsSpace sorting of obs groups
 ecbuild_add_test( TARGET  test_ioda_descendingsort

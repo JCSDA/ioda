@@ -29,11 +29,11 @@ namespace ioda {
 namespace test {
 
 void testDescendingSort(const eckit::LocalConfiguration &conf) {
-  // Produce and configure ObsData object
+  // Produce and configure ObsSpace object
   util::DateTime bgn(conf.getString("window begin"));
   util::DateTime end(conf.getString("window end"));
   const eckit::LocalConfiguration obsSpaceConf(conf, "obs space");
-  ioda::ObsData obsdata(obsSpaceConf, oops::mpi::world(), bgn, end, oops::mpi::myself());
+  ioda::ObsSpace obsdata(obsSpaceConf, oops::mpi::world(), bgn, end, oops::mpi::myself());
 
   // This test only works for grouped data with descending sort order
   if (obsdata.obs_sort_order() != "descending") {

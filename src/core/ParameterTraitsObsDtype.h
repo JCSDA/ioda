@@ -12,7 +12,7 @@
 #include <utility>
 #include <vector>
 
-#include "ioda/core/ObsData.h"
+#include "ioda/ObsSpace.h"
 
 #include "oops/util/parameters/ParameterTraits.h"
 

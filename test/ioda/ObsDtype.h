@@ -23,8 +23,8 @@
 #include "oops/util/parameters/Parameters.h"
 #include "oops/util/parameters/RequiredParameter.h"
 
-#include "ioda/core/ObsData.h"
 #include "ioda/core/ParameterTraitsObsDtype.h"
+#include "ioda/ObsSpace.h"
 
 namespace ioda {
 namespace test {

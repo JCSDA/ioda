@@ -5,8 +5,8 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#ifndef CORE_LOCALOBSSPACEPARAMETERS_H_
-#define CORE_LOCALOBSSPACEPARAMETERS_H_
+#ifndef CORE_OBSLOCPARAMETERS_H_
+#define CORE_OBSLOCPARAMETERS_H_
 
 #include <string>
 #include <utility>
@@ -75,8 +75,8 @@ struct ParameterTraits<ioda::SearchMethod> :
 namespace ioda {
 
 /// \brief Options controlling local observations subsetting
-class LocalObsSpaceParameters : public oops::Parameters {
-  OOPS_CONCRETE_PARAMETERS(LocalObsSpaceParameters, Parameters)
+class ObsLocParameters : public oops::Parameters {
+  OOPS_CONCRETE_PARAMETERS(ObsLocParameters, Parameters)
 
  public:
   /// Localization lengthscale (find all obs within the distance from reference point)
@@ -94,7 +94,7 @@ class LocalObsSpaceParameters : public oops::Parameters {
 
   /// returns distance between points \p p1 and \p p2, depending on the
   /// distance calculation type distanceType
-  double distance(const eckit::geometry::Point2 & p1, const eckit::geometry::Point2 & p2) {
+  double distance(const eckit::geometry::Point2 & p1, const eckit::geometry::Point2 & p2) const {
     if (distanceType == DistanceType::GEODESIC) {
       return eckit::geometry::Sphere::distance(radius_earth, p1, p2);
     } else {
@@ -109,4 +109,4 @@ class LocalObsSpaceParameters : public oops::Parameters {
 
 }  // namespace ioda
 
-#endif  // CORE_LOCALOBSSPACEPARAMETERS_H_
+#endif  // CORE_OBSLOCPARAMETERS_H_

@@ -7,9 +7,7 @@
 
 #include "ioda/ObsSpace.h"
 
-#include <algorithm>
 #include <memory>
-#include <numeric>
 #include <string>
 #include <utility>
 #include <vector>
@@ -18,14 +16,10 @@
 #include "eckit/exception/Exceptions.h"
 #include "eckit/config/LocalConfiguration.h"
 
-#include "ioda/core/LocalObsSpaceParameters.h"
-
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
-
-#include "atlas/util/Earth.h"
 
 
 namespace ioda {
@@ -45,133 +39,9 @@ ObsSpace::ObsSpace(const eckit::Configuration & config, const eckit::mpi::Comm &
                    const util::DateTime & bgn, const util::DateTime & end,
                    const eckit::mpi::Comm & time)
   : oops::ObsSpaceBase(config, comm, bgn, end),
-    localopts_(), obsspace_(new ObsData(config, comm, bgn, end, time)),
-    localobs_(obsspace_->nlocs()), isLocal_(false),
-    obsdist_()
+    obsspace_(new ObsData(config, comm, bgn, end, time))
 {
-  oops::Log::trace() << "ioda::ObsSpaces starting" << std::endl;
-  std::iota(localobs_.begin(), localobs_.end(), 0);
-  // make a dummy localDistribution_
-  eckit::LocalConfiguration localConfig;
-  localConfig.set("distribution", "InefficientDistribution");
-  localDistribution_ = DistributionFactory::create(comm, localConfig);
   oops::Log::trace() << "ioda::ObsSpace done" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-/*!
- * \details Second constructor for an ObsSpace object.
- *          This constructor will search for observations within a distance specified
- *          in the \p conf from a specified \p refPoint.
- */
-ObsSpace::ObsSpace(const ObsSpace & os,
-                   const eckit::geometry::Point2 & refPoint,
-                   const eckit::Configuration & conf)
-  : oops::ObsSpaceBase(eckit::LocalConfiguration(), os.comm(), os.windowStart(), os.windowEnd()),
-    localopts_(new LocalObsSpaceParameters()), obsspace_(os.obsspace_),
-    localobs_(), isLocal_(true),
-    obsdist_()
-{
-  oops::Log::trace() << "ioda::ObsSpace for LocalObs starting" << std::endl;
-
-  // check that this distribution supports local obs space
-  std::string distName = obsspace_->distribution()->name();
-  if ( distName != "Halo" && distName != "InefficientDistribution" ) {
-    std::string message = "Can not use local ObsSpace with distribution=" + distName;
-    throw eckit::BadParameter(message);
-  }
-
-  localopts_->deserialize(conf);
-
-  // for local ObsSpace, all local obs reside on this PE
-  // so we will make an Inefficient distribution that reflects this
-  eckit::LocalConfiguration localConfig;
-  localConfig.set("distribution", "InefficientDistribution");
-  localDistribution_ = DistributionFactory::create(os.comm(), localConfig);
-
-  std::size_t nlocs = obsspace_->nlocs();
-
-  if ( localopts_->searchMethod == SearchMethod::BRUTEFORCE ) {
-    oops::Log::trace() << "ioda::ObsSpace searching via brute force" << std::endl;
-
-    std::vector<float> lats(nlocs);
-    std::vector<float> lons(nlocs);
-
-    // Get latitudes and longitudes of all observations.
-    obsspace_ -> get_db("MetaData", "longitude", lons);
-    obsspace_ -> get_db("MetaData", "latitude", lats);
-
-    for (unsigned int jj = 0; jj < nlocs; ++jj) {
-      eckit::geometry::Point2 searchPoint(lons[jj], lats[jj]);
-      double localDist = localopts_->distance(refPoint, searchPoint);
-      if ( localDist < localopts_->lengthscale ) {
-        localobs_.push_back(jj);
-        obsdist_.push_back(localDist);
-      }
-    }
-    const boost::optional<int> & maxnobs = localopts_->maxnobs;
-    if ( (maxnobs != boost::none) && (localobs_.size() > *maxnobs ) ) {
-      for (unsigned int jj = 0; jj < localobs_.size(); ++jj) {
-          oops::Log::debug() << "Before sort [i, d]: " << localobs_[jj]
-              << " , " << obsdist_[jj] << std::endl;
-      }
-      // Construct a temporary paired vector to do the sorting
-      std::vector<std::pair<std::size_t, double>> localObsIndDistPair;
-      for (unsigned int jj = 0; jj < obsdist_.size(); ++jj) {
-        localObsIndDistPair.push_back(std::make_pair(localobs_[jj], obsdist_[jj]));
-      }
-
-      // Use a lambda function to implement an ascending sort.
-      sort(localObsIndDistPair.begin(), localObsIndDistPair.end(),
-           [](const std::pair<std::size_t, double> & p1,
-              const std::pair<std::size_t, double> & p2){
-                return(p1.second < p2.second);
-              });
-
-      // Unpair the sorted pair vector
-      for (unsigned int jj = 0; jj < obsdist_.size(); ++jj) {
-        localobs_[jj] = localObsIndDistPair[jj].first;
-        obsdist_[jj] = localObsIndDistPair[jj].second;
-      }
-
-      // Truncate to maxNobs length
-      localobs_.resize(*maxnobs);
-      obsdist_.resize(*maxnobs);
-    }
-  } else if (nlocs > 0) {
-    // Check (nlocs > 0) is needed,
-    // otherwise, it will cause ASERT check fail in kdtree.findInSphere, and hang.
-
-    oops::Log::trace() << "ioda::ObsSpace searching via KDTree" << std::endl;
-
-    if ( localopts_->distanceType == DistanceType::CARTESIAN)
-      ABORT("ObsSpace:: search method must be 'brute_force' when using 'cartesian' distance");
-
-    ObsData::KDTree & kdtree = obsspace_->getKDTree();
-
-    // Using the radius of the earth
-    eckit::geometry::Point3 refPoint3D;
-    atlas::util::Earth::convertSphericalToCartesian(refPoint, refPoint3D);
-    double alpha =  (localopts_->lengthscale / localopts_->radius_earth)/ 2.0;  // angle in radians
-    double chordLength = 2.0*localopts_->radius_earth * sin(alpha);  // search radius in 3D space
-
-    auto closePoints = kdtree.findInSphere(refPoint3D, chordLength);
-
-    // put closePoints back into localobs_ and obsdist_
-    for (unsigned int jj = 0; jj < closePoints.size(); ++jj) {
-       localobs_.push_back(closePoints[jj].payload());  // observation
-       obsdist_.push_back(closePoints[jj].distance());  // distance
-    }
-
-    // The obs are sorted in the kdtree call
-    const boost::optional<int> & maxnobs = localopts_->maxnobs;
-    if ( (maxnobs != boost::none) && (localobs_.size() > *maxnobs ) ) {
-      // Truncate to maxNobs length
-      localobs_.resize(*maxnobs);
-      obsdist_.resize(*maxnobs);
-    }
-  }
-  oops::Log::trace() << "ioda::ObsSpace for LocalObs done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -190,75 +60,35 @@ ObsSpace::~ObsSpace() {
 
 void ObsSpace::get_db(const std::string & group, const std::string & name,
                       std::vector<int> & vdata) const {
-  if ( isLocal_ ) {
-    std::vector<int> vdataTmp(obsspace_ -> nlocs());
-    obsspace_->get_db(group, name, vdataTmp);
-    for (unsigned int ii = 0; ii < localobs_.size(); ++ii) {
-      vdata[ii] = vdataTmp[localobs_[ii]];
-    }
-  } else {
-    obsspace_->get_db(group, name, vdata);
-  }
+  obsspace_->get_db(group, name, vdata);
 }
 
 // -----------------------------------------------------------------------------
 
 void ObsSpace::get_db(const std::string & group, const std::string & name,
                       std::vector<float> & vdata) const {
-  if ( isLocal_ ) {
-    std::vector<float> vdataTmp(obsspace_->nlocs());
-    obsspace_->get_db(group, name, vdataTmp);
-    for (unsigned int ii = 0; ii < localobs_.size(); ++ii) {
-      vdata[ii] = vdataTmp[localobs_[ii]];
-    }
-  } else {
-    obsspace_->get_db(group, name, vdata);
-  }
+  obsspace_->get_db(group, name, vdata);
 }
 
 // -----------------------------------------------------------------------------
 
 void ObsSpace::get_db(const std::string & group, const std::string & name,
                       std::vector<double> & vdata) const {
-  if ( isLocal_ ) {
-    std::vector<double> vdataTmp(obsspace_->nlocs());
-    obsspace_->get_db(group, name, vdataTmp);
-    for (unsigned int ii = 0; ii < localobs_.size(); ++ii) {
-      vdata[ii] = vdataTmp[localobs_[ii]];
-    }
-  } else {
-    obsspace_->get_db(group, name, vdata);
-  }
+  obsspace_->get_db(group, name, vdata);
 }
 
 // -----------------------------------------------------------------------------
 
 void ObsSpace::get_db(const std::string & group, const std::string & name,
                       std::vector<std::string> & vdata) const {
-  if ( isLocal_ ) {
-    std::vector<std::string> vdataTmp(obsspace_->nlocs());
-    obsspace_->get_db(group, name, vdataTmp);
-    for (unsigned int ii = 0; ii < localobs_.size(); ++ii) {
-      vdata[ii] = vdataTmp[localobs_[ii]];
-    }
-  } else {
-    obsspace_->get_db(group, name, vdata);
-  }
+  obsspace_->get_db(group, name, vdata);
 }
 
 // -----------------------------------------------------------------------------
 
 void ObsSpace::get_db(const std::string & group, const std::string & name,
                       std::vector<util::DateTime> & vdata) const {
-  if ( isLocal_ ) {
-    std::vector<util::DateTime> vdataTmp(obsspace_->nlocs());
-    obsspace_->get_db(group, name, vdataTmp);
-    for (unsigned int ii = 0; ii < localobs_.size(); ++ii) {
-      vdata[ii] = vdataTmp[localobs_[ii]];
-    }
-  } else {
-    obsspace_->get_db(group, name, vdata);
-  }
+  obsspace_->get_db(group, name, vdata);
 }
 
 // -----------------------------------------------------------------------------
@@ -365,11 +195,7 @@ std::size_t ObsSpace::globalNumLocs() const {
  *          multiple process elements.
  */
 std::size_t ObsSpace::nlocs() const {
-  if ( isLocal_ ) {
-    return localobs_.size();
-  } else {
-    return obsspace_->nlocs();
-  }
+  return obsspace_->nlocs();
 }
 
 // -----------------------------------------------------------------------------
@@ -495,15 +321,5 @@ void ObsSpace::print(std::ostream & os) const {
   os << *obsspace_;
 }
 
-// -----------------------------------------------------------------------------
-const Distribution & ObsSpace::distribution() const {
-  if (isLocal_) {
-    // return a dummy ineffecient distribution
-    return *localDistribution_;
-  } else {
-    // return ObsData distribution
-    return *obsspace_->distribution();
-  }
-}
 // -----------------------------------------------------------------------------
 }  // namespace ioda

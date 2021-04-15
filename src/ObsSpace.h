@@ -14,12 +14,10 @@
 #include <string>
 #include <vector>
 
-#include "eckit/geometry/Point2.h"
 #include "eckit/mpi/Comm.h"
 
 #include "ioda/core/ObsData.h"
 #include "ioda/distribution/Distribution.h"
-#include "ioda/distribution/DistributionFactory.h"
 #include "oops/base/ObsSpaceBase.h"
 #include "oops/base/Variables.h"
 #include "oops/util/DateTime.h"
@@ -42,8 +40,6 @@ class ObsSpace : public oops::ObsSpaceBase {
 
   ObsSpace(const eckit::Configuration &, const eckit::mpi::Comm &,
            const util::DateTime &, const util::DateTime &, const eckit::mpi::Comm &);
-  ObsSpace(const ObsSpace &, const eckit::geometry::Point2 &,
-           const eckit::Configuration &);
   /*!
    * \details Copy constructor for an ObsSpace object.
    */
@@ -95,7 +91,6 @@ class ObsSpace : public oops::ObsSpaceBase {
   const std::vector<std::size_t> & recidx_vector(const RecIdxIter & Irec) const;
   const std::vector<std::size_t> & recidx_vector(const std::size_t RecNum) const;
   std::vector<std::size_t> recidx_all_recnums() const;
-  const std::vector<std::size_t> & localobs() const { return localobs_; }
 
   /*! \details This method will return the name of the obs type being stored */
   const std::string & obsname() const {return obsspace_->obsname();}
@@ -107,21 +102,13 @@ class ObsSpace : public oops::ObsSpaceBase {
   const eckit::mpi::Comm & comm() const {return obsspace_->comm();}
 
   const oops::Variables & obsvariables() const {return obsspace_->obsvariables();}
-  const std::vector<double> & obsdist() const {return obsdist_;}
 
-  const Distribution & distribution() const;
+  const Distribution & distribution() const {return obsspace_->distribution();}
 
  private:
   void print(std::ostream &) const;
 
   std::shared_ptr<ObsData> obsspace_;
-  std::unique_ptr<LocalObsSpaceParameters> localopts_;
-  std::vector<std::size_t> localobs_;
-  bool isLocal_;
-  std::vector<double> obsdist_;
-  // for local ObsSpace, all local obs reside on this PE
-  // so we will make an Ineffecient distribution that reflects this
-  std::shared_ptr<Distribution> localDistribution_;
 };
 
 }  // namespace ioda

@@ -38,17 +38,6 @@ ObsVector::ObsVector(const ObsVector & other)
   oops::Log::trace() << "ObsVector copied " << std::endl;
 }
 // -----------------------------------------------------------------------------
-ObsVector::ObsVector(ObsSpace & obsdb, const ObsVector & other)
-  : obsdb_(obsdb), obsvars_(other.obsvars_), nvars_(other.nvars_),
-    nlocs_(obsdb.localobs().size()), values_(nlocs_ * nvars_), missing_(other.missing_) {
-  for (size_t ii = 0; ii < nlocs_; ++ii) {
-    for (size_t vv = 0; vv < nvars_; ++vv) {
-      values_[ii*nvars_ + vv] = other.values_[obsdb.localobs()[ii]*nvars_ + vv];
-    }
-  }
-  oops::Log::trace() << "Local ObsVector copied " << std::endl;
-}
-// -----------------------------------------------------------------------------
 ObsVector::~ObsVector() {
 }
 // -----------------------------------------------------------------------------
@@ -209,25 +198,31 @@ void ObsVector::save(const std::string & name) const {
   }
 }
 // -----------------------------------------------------------------------------
-Eigen::VectorXd ObsVector::packEigen() const {
-  Eigen::VectorXd vec(packEigenSize());
+size_t ObsVector::packEigenSize(const ObsDataVector<int> & mask) const {
+  size_t nlocs = 0;
   size_t ii = 0;
-  for (const double & val : values_) {
-    if (val != missing_) {
-      vec(ii++) = val;
+  for (size_t jloc = 0; jloc < mask.nlocs(); ++jloc) {
+    for (size_t jvar = 0; jvar < mask.nvars(); ++jvar) {
+      if ((mask[jvar][jloc] == 0) && (values_[ii] != missing_)) nlocs++;
+      ++ii;
+    }
+  }
+  return nlocs;
+}
+// -----------------------------------------------------------------------------
+Eigen::VectorXd ObsVector::packEigen(const ObsDataVector<int> & mask) const {
+  Eigen::VectorXd vec(packEigenSize(mask));
+  size_t ii = 0;
+  size_t vecindex = 0;
+  for (size_t jloc = 0; jloc < mask.nlocs(); ++jloc) {
+    for (size_t jvar = 0; jvar < mask.nvars(); ++jvar) {
+      if ((mask[jvar][jloc] == 0) && (values_[ii] != missing_)) {
+        vec(vecindex++) = values_[ii];
+      }
+      ++ii;
     }
   }
   return vec;
-}
-// -----------------------------------------------------------------------------
-size_t ObsVector::packEigenSize() const {
-  size_t len = 0;
-  for (const double & val : values_) {
-    if (val != missing_) {
-      len++;
-    }
-  }
-  return len;
 }
 // -----------------------------------------------------------------------------
 ObsVector & ObsVector::operator=(const ObsDataVector<float> & rhs) {

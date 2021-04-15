@@ -16,10 +16,6 @@
 #include <utility>
 #include <vector>
 
-#include "eckit/container/KDTree.h"
-#include "eckit/geometry/Point2.h"
-#include "eckit/geometry/Point3.h"
-#include "eckit/geometry/UnitSphere.h"
 #include "eckit/mpi/Comm.h"
 #include "oops/base/Variables.h"
 #include "oops/util/DateTime.h"
@@ -73,11 +69,6 @@ class ObsData : public util::Printable {
  public:
   typedef std::map<std::size_t, std::vector<std::size_t>> RecIdxMap;
   typedef RecIdxMap::const_iterator RecIdxIter;
-  struct TreeTrait {
-      typedef eckit::geometry::Point3 Point;
-      typedef double                  Payload;
-  };
-  typedef eckit::KDTreeMemory<TreeTrait> KDTree;
 
   ObsData(const eckit::Configuration &, const eckit::mpi::Comm &,
           const util::DateTime &, const util::DateTime &, const eckit::mpi::Comm &);
@@ -123,8 +114,6 @@ class ObsData : public util::Printable {
   void put_db(const std::string & group, const std::string & name,
               const std::vector<util::DateTime> & vdata);
 
-  KDTree & getKDTree();
-
   const RecIdxIter recidx_begin() const;
   const RecIdxIter recidx_end() const;
   bool recidx_has(const std::size_t RecNum) const;
@@ -146,7 +135,7 @@ class ObsData : public util::Printable {
   const eckit::mpi::Comm & comm() const {return commMPI_;}
 
   const oops::Variables & obsvariables() const {return obsvars_;}
-  const std::shared_ptr<const Distribution> distribution() const { return dist_;}
+  const Distribution & distribution() const { return *dist_;}
 
  private:
   void print(std::ostream &) const;
@@ -171,7 +160,6 @@ class ObsData : public util::Printable {
                             std::vector<std::string> & GroupingKeys);
   void BuildSortedObsGroups();
   void BuildRecIdxUnsorted();
-  void createKDTree();
 
   template<typename VarType>
   std::vector<VarType> ApplyIndex(const std::vector<VarType> & FullData,
@@ -198,9 +186,6 @@ class ObsData : public util::Printable {
 
   /*! \brief MPI communicator */
   const eckit::mpi::Comm & commMPI_;
-
-  /*! \brief KD Tree */
-  std::shared_ptr<KDTree> kd_;
 
   /*! \brief total number of locations filtered because they were outside of the time window */
   std::size_t gnlocs_outside_timewindow_;
