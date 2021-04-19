@@ -180,6 +180,52 @@ void testSave() {
 }
 
 // -----------------------------------------------------------------------------
+/// \brief tests ObsVector::axpy methods
+/// \details Tests the following for a random vector vec1:
+/// 1. Calling ObsVector::axpy with a single number (2.0) returns the same result
+///    as calling it with a vector of 2.0
+/// 2. Calling ObsVector::axpy with vectors of coefficients that differ across
+///    variables gives reasonable result. axpy is called twice, the coefficients
+///    between the two different calls add to 2.0.
+void testAxpy() {
+  typedef ObsVecTestFixture Test_;
+  typedef ioda::ObsVector  ObsVector_;
+
+  for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
+    ioda::ObsSpace & obspace = *Test_::obspace()[jj];
+    ObsVector_ vec1(obspace);
+    vec1.random();
+
+    // call axpy with coefficient 2.0 two different ways
+    ObsVector_ vec2(vec1);
+    vec2.axpy(2.0, vec1);
+    ObsVector_ vec3(vec1);
+    std::vector<double> beta(obspace.obsvariables().size(), 2.0);
+    vec3.axpy(beta, vec1);
+    oops::Log::test() << "Testing ObsVector::axpy" << std::endl;
+    oops::Log::test() << "x = " << vec1 << std::endl;
+    oops::Log::test() << "x.axpy(2, x) = " << vec2 << std::endl;
+    oops::Log::test() << "x.axpy(vector of 2, x) = " << vec3 << std::endl;
+    EXPECT(oops::is_close(vec2.rms(), vec3.rms(), 1.0e-8));
+
+    // call axpy with vector of different values
+    std::vector<double> beta1(obspace.obsvariables().size());
+    std::vector<double> beta2(obspace.obsvariables().size());
+    for (size_t jj = 0; jj < beta1.size(); ++jj) {
+      beta1[jj] = static_cast<double>(jj)/beta1.size();
+      beta2[jj] = 2.0 - beta1[jj];
+    }
+    oops::Log::test() << "beta1 = " << beta1 << ", beta2 = " << beta2 << std::endl;
+    ObsVector_ vec4(vec1);
+    vec4.axpy(beta1, vec1);
+    oops::Log::test() << "x.axpy(beta1, x) = " << vec4 << std::endl;
+    vec4.axpy(beta2, vec1);
+    oops::Log::test() << "x.axpy(beta2, x) = " << vec4 << std::endl;
+    EXPECT(oops::is_close(vec4.rms(), vec3.rms(), 1.0e-8));
+  }
+}
+
+// -----------------------------------------------------------------------------
 
 void testDistributedMath() {
   typedef ioda::ObsVector  ObsVector_;
@@ -265,6 +311,8 @@ class ObsVector : public oops::Test {
       { testRead(); });
      ts.emplace_back(CASE("ioda/ObsVector/testSave")
       { testSave(); });
+     ts.emplace_back(CASE("ioda/ObsVector/testAxpy")
+      { testAxpy(); });
      ts.emplace_back(CASE("ioda/ObsVector/testDistributedMath")
       { testDistributedMath(); });
   }

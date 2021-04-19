@@ -129,6 +129,22 @@ void ObsVector::axpy(const double & zz, const ObsVector & rhs) {
   }
 }
 // -----------------------------------------------------------------------------
+void ObsVector::axpy(const std::vector<double> & beta, const ObsVector & y) {
+  ASSERT(y.values_.size() == values_.size());
+  ASSERT(beta.size() == nvars_);
+
+  size_t ivec = 0;
+  for (size_t jloc = 0; jloc < nlocs_; ++jloc) {
+    for (size_t jvar = 0; jvar < nvars_; ++jvar, ++ivec) {
+      if (values_[ivec] == missing_ || y.values_[ivec] == missing_) {
+        values_[ivec] = missing_;
+      } else {
+        values_[ivec] += beta[jvar] * y.values_[ivec];
+      }
+    }
+  }
+}
+// -----------------------------------------------------------------------------
 void ObsVector::invert() {
   for (size_t jj = 0; jj < values_.size() ; ++jj) {
     if (values_[jj] != missing_) {

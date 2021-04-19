@@ -51,7 +51,12 @@ class ObsVector : public util::Printable,
   void zero();
   /// set all elements to one (used in tests)
   void ones();
-  void axpy(const double &, const ObsVector &);
+  /// adds \p beta * \p y to the current vector
+  void axpy(const double & beta, const ObsVector & y);
+  /// adds \p beta[ivar] * \p y[ivar] for each variable in the current
+  /// vector. \p beta has to be size of variables
+  void axpy(const std::vector<double> & beta, const ObsVector & y);
+
   void invert();
   void random();
   double dot_product_with(const ObsVector &) const;
