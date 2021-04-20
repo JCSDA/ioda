@@ -59,6 +59,9 @@ class ObsLocGC99: public util::Printable {
 
   std::vector<float> lats_;
   std::vector<float> lons_;
+
+  /// TODO(travis) distribution name is needed for temporary fix, should be removed eventually
+  std::string distName_;
 };
 
 // -----------------------------------------------------------------------------
@@ -73,11 +76,8 @@ ObsLocGC99<MODEL>::ObsLocGC99(const eckit::Configuration & config, const ObsSpac
   options_.deserialize(config);
 
   // check that this distribution supports local obs space
-  std::string distName = obsspace.distribution().name();
-  if ( distName != "Halo" && distName != "InefficientDistribution" ) {
-    std::string message = "Can not use local ObsSpace with distribution=" + distName;
-    throw eckit::BadParameter(message);
-  }
+  // TODO(travis) this has been moved to computeLocalization as a quick fix for a bug.
+  distName_ = obsspace.distribution().name();
 
   const size_t nlocs = obsspace.nlocs();
   // Get latitudes and longitudes of all observations.
@@ -110,6 +110,14 @@ void ObsLocGC99<MODEL>::computeLocalization(const GeometryIterator_ & i,
                                             ObsDataVector<int> & outside,
                                             ObsVector & locvector) const {
   oops::Log::trace() << "ioda::ObsSpace for LocalObs starting" << std::endl;
+
+  // check that this distribution supports local obs space
+  // TODO(travis) this should be in the constructor, but currently
+  //  breaks LETKF when using a split observer/solver
+  if ( distName_ != "Halo" && distName_ != "InefficientDistribution" ) {
+    std::string message = "Can not use local ObsSpace with distribution=" + distName_;
+    throw eckit::BadParameter(message);
+  }
 
   eckit::geometry::Point2 refPoint = *i;
   std::vector<int> localobs;
