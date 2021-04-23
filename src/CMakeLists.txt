@@ -6,15 +6,11 @@ ObsSpace.cc
 ObsSpace.h
 ObsVector.cc
 ObsVector.h
-instantiateObsLocFactory.h
 
 core/IodaUtils.cc
 core/IodaUtils.h
 core/ObsData.cc
 core/ObsData.h
-core/ObsLocGC99.h
-core/ObsLocParameters.cc
-core/ObsLocParameters.h
 core/ObsSpaceContainer.h
 core/obsspace_f.cc
 core/obsspace_f.h

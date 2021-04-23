@@ -33,8 +33,6 @@
 #include "ioda/distribution/DistributionFactory.h"
 #include "ioda/io/IodaIOfactory.h"
 
-#include "atlas/util/Earth.h"
-
 namespace ioda {
 
 // -----------------------------------------------------------------------------
