@@ -59,7 +59,13 @@ class ObsVector : public util::Printable,
 
   void invert();
   void random();
-  double dot_product_with(const ObsVector &) const;
+
+  /// global (across all MPI tasks) dot product of this with \p other
+  double dot_product_with(const ObsVector & other) const;
+  /// global (across all MPI tasks) dot product of this with \p other,
+  /// variable by variable. Returns vectors size of nvars_
+  std::vector<double> multivar_dot_product_with(const ObsVector & other) const;
+
   double rms() const;
 
   std::size_t size() const {return values_.size();}  // Size of vector in local memory

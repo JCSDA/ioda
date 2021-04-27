@@ -165,6 +165,23 @@ double ObsVector::dot_product_with(const ObsVector & other) const {
   return zz;
 }
 // -----------------------------------------------------------------------------
+std::vector<double> ObsVector::multivar_dot_product_with(const ObsVector & other) const {
+  std::vector<double> result(nvars_, 0);
+  for (size_t jvar = 0; jvar < nvars_; ++jvar) {
+    // fill vectors for current variable (note: if elements in values_
+    // were distributed as all locs for var1; all locs for var2; etc, we
+    // wouldn't need copies here).
+    std::vector<double> x1(nlocs_);
+    std::vector<double> x2(nlocs_);
+    for (size_t jloc = 0; jloc < nlocs_; ++jloc) {
+      x1[jloc] = values_[jvar + (jloc * nvars_)];
+      x2[jloc] = other.values_[jvar + (jloc*nvars_)];
+    }
+    result[jvar] = obsdb_.distribution().dot_product(x1, x2);
+  }
+  return result;
+}
+// -----------------------------------------------------------------------------
 double ObsVector::rms() const {
   double zrms = dot_product_with(*this);
   int nobs = this->nobs();

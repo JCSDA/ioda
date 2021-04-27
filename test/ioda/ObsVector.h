@@ -225,6 +225,37 @@ void testAxpy() {
   }
 }
 
+/// \brief tests ObsVector::dot_product methods
+/// \details Tests the following for a random vector vec1:
+/// 1. Calling ObsVector::dot_product and calling ObsVector::multivar_dot_product
+///    are consistent.
+void testDotProduct() {
+  typedef ObsVecTestFixture Test_;
+  typedef ioda::ObsVector  ObsVector_;
+
+  for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
+    ioda::ObsSpace & obspace = *Test_::obspace()[jj];
+    ObsVector_ vec1(obspace);
+    vec1.random();
+    ObsVector_ vec2(obspace);
+    vec2.random();
+
+    double dp1 = vec1.dot_product_with(vec2);
+    std::vector<double> dp2 = vec1.multivar_dot_product_with(vec2);
+    oops::Log::test() << "Testing ObsVector::dot_product" << std::endl;
+    oops::Log::test() << "x1 = " << vec1 << std::endl;
+    oops::Log::test() << "x2 = " << vec2 << std::endl;
+    oops::Log::test() << "x1.dot_product_with(x2) = " << dp1 << std::endl;
+    oops::Log::test() << "x1.multivar_dot_product_with(x2) = " << dp2 << std::endl;
+
+    // test that size of vector returned by multivar dot product is correct
+    EXPECT_EQUAL(dp2.size(), vec1.nvars());
+    // test that dot products are consistent (sum of all elements in multivar one
+    // is the same as the scalar one)
+    EXPECT(oops::is_close(dp1, std::accumulate(dp2.begin(), dp2.end(), 0.0), 1.0e-12));
+  }
+}
+
 // -----------------------------------------------------------------------------
 
 void testDistributedMath() {
@@ -313,6 +344,8 @@ class ObsVector : public oops::Test {
       { testSave(); });
      ts.emplace_back(CASE("ioda/ObsVector/testAxpy")
       { testAxpy(); });
+     ts.emplace_back(CASE("ioda/ObsVector/testDotProduct")
+      { testDotProduct(); });
      ts.emplace_back(CASE("ioda/ObsVector/testDistributedMath")
       { testDistributedMath(); });
   }
