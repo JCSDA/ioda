@@ -59,6 +59,8 @@ ObsData::ObsData(const eckit::Configuration & config, const eckit::mpi::Comm & c
   oops::Log::trace() << "ObsData::ObsData config  = " << config << std::endl;
 
   obsname_ = config.getString("name");
+  std::string distname = config.getString("distribution", "RoundRobin");
+  bool read_obs_from_separate_file = config.getBool("read obs from separate file", false);
 
   obsvars_ = oops::Variables(config, "simulated variables");
   oops::Log::debug() << obsname_ << " vars: " << obsvars_ << std::endl;
@@ -82,7 +84,26 @@ ObsData::ObsData(const eckit::Configuration & config, const eckit::mpi::Comm & c
         std::string("for the 'sort order:' YAML configuration keyword.");
       ABORT(ErrMsg);
     }
-    filein_ = config.getString("obsdatain.obsfile");
+
+    if (("Halo" == distname) && read_obs_from_separate_file) {
+      std::string filename = config.getString("obsdatain.obsfile");
+      // Find the left-most dot in the file name, and use that to pick off the file name
+      // and file extension.
+      std::size_t found = filename.find_last_of(".");
+      if (found == std::string::npos)
+        found = filename.length();
+
+      // Get the process rank number and format it
+      std::ostringstream ss;
+      ss << "_" << std::setw(4) << std::setfill('0') << commMPI_.rank();
+      if (timeComm.size() > 1) ss << "_" << timeComm.rank();
+
+      // Construct the input file name
+      filein_ = filename.insert(found, ss.str());
+    } else {
+      filein_ = config.getString("obsdatain.obsfile");
+    }
+
     in_max_frame_size_ = config.getUnsigned("obsdatain.max frame size",
                                             IODAIO_DEFAULT_FRAME_SIZE);
     oops::Log::trace() << obsname_ << " file in = " << filein_ << std::endl;
@@ -203,35 +224,45 @@ ObsData::~ObsData() {
 
 void ObsData::get_db(const std::string & group, const std::string & name,
                       std::vector<int> & vdata) const {
-  std::vector<std::size_t> vshape(1, vdata.size());
-  int_database_.LoadFromDb(group, name, vshape, vdata);
+  if (vdata.size() > 0) {
+    std::vector<std::size_t> vshape(1, vdata.size());
+    int_database_.LoadFromDb(group, name, vshape, vdata);
+  }
 }
 
 void ObsData::get_db(const std::string & group, const std::string & name,
                       std::vector<float> & vdata) const {
-  std::vector<std::size_t> vshape(1, vdata.size());
-  float_database_.LoadFromDb(group, name, vshape, vdata);
+  if (vdata.size() > 0) {
+    std::vector<std::size_t> vshape(1, vdata.size());
+    float_database_.LoadFromDb(group, name, vshape, vdata);
+  }
 }
 
 void ObsData::get_db(const std::string & group, const std::string & name,
                       std::vector<double> & vdata) const {
-  std::vector<std::size_t> vshape(1, vdata.size());
-  // load the float values from the database and convert to double
-  std::vector<float> FloatData(vdata.size(), 0.0);
-  float_database_.LoadFromDb(group, name, vshape, FloatData);
-  ConvertVarType<float, double>(FloatData, vdata);
+  if (vdata.size() > 0) {
+    std::vector<std::size_t> vshape(1, vdata.size());
+    // load the float values from the database and convert to double
+    std::vector<float> FloatData(vdata.size(), 0.0);
+    float_database_.LoadFromDb(group, name, vshape, FloatData);
+    ConvertVarType<float, double>(FloatData, vdata);
+  }
 }
 
 void ObsData::get_db(const std::string & group, const std::string & name,
                       std::vector<std::string> & vdata) const {
-  std::vector<std::size_t> vshape(1, vdata.size());
-  string_database_.LoadFromDb(group, name, vshape, vdata);
+  if (vdata.size() > 0) {
+    std::vector<std::size_t> vshape(1, vdata.size());
+    string_database_.LoadFromDb(group, name, vshape, vdata);
+  }
 }
 
 void ObsData::get_db(const std::string & group, const std::string & name,
                       std::vector<util::DateTime> & vdata) const {
-  std::vector<std::size_t> vshape(1, vdata.size());
-  datetime_database_.LoadFromDb(group, name, vshape, vdata);
+  if (vdata.size() > 0) {
+    std::vector<std::size_t> vshape(1, vdata.size());
+    datetime_database_.LoadFromDb(group, name, vshape, vdata);
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -857,112 +888,115 @@ std::vector<std::size_t> ObsData::GenFrameIndexRecNums(const std::unique_ptr<Iod
   // with all locations in the frame.
   std::vector<std::size_t> LocIndex;
   std::vector<std::size_t> FrameIndex;
-  if (FileIO != nullptr) {
-    // Grab the datetime strings for checking the timing window
-    std::string DtGroupName = "MetaData";
-    std::string DtVarName = "datetime";
-    std::vector<std::string> DtStrings;
-    if (!FileIO->frame_string_has(DtGroupName, DtVarName)) {
-      throw eckit::UserError(DtVarName + "@" + DtGroupName + " not found in observations file",
-                             Here());
-    }
-    FileIO->frame_string_get_data(DtGroupName, DtVarName, DtStrings);
+  std::vector<std::size_t> FinalFrameIndex;
 
-    // Convert the datetime strings to DateTime objects
-    std::vector<util::DateTime> ObsDtimes;
-    for (std::size_t i = 0; i < DtStrings.size(); ++i) {
-      util::DateTime ObsDt(DtStrings[i]);
-      ObsDtimes.push_back(ObsDt);
-    }
-
-    // Keep all locations that fall inside the timing window
-    for (std::size_t i = 0; i < LocSize; ++i) {
-      if (InsideTimingWindow(ObsDtimes[i])) {
-        LocIndex.push_back(FrameStart + i);
-        FrameIndex.push_back(i);
+  if (LocSize > 0) {
+    if (FileIO != nullptr) {
+      // Grab the datetime strings for checking the timing window
+      std::string DtGroupName = "MetaData";
+      std::string DtVarName = "datetime";
+      std::vector<std::string> DtStrings;
+      if (!FileIO->frame_string_has(DtGroupName, DtVarName)) {
+        throw eckit::UserError(DtVarName + "@" + DtGroupName + " not found in observations file",
+                               Here());
       }
+      FileIO->frame_string_get_data(DtGroupName, DtVarName, DtStrings);
+
+      // Convert the datetime strings to DateTime objects
+      std::vector<util::DateTime> ObsDtimes;
+      for (std::size_t i = 0; i < DtStrings.size(); ++i) {
+        util::DateTime ObsDt(DtStrings[i]);
+        ObsDtimes.push_back(ObsDt);
+      }
+
+      // Keep all locations that fall inside the timing window
+      for (std::size_t i = 0; i < LocSize; ++i) {
+        if (InsideTimingWindow(ObsDtimes[i])) {
+          LocIndex.push_back(FrameStart + i);
+          FrameIndex.push_back(i);
+        }
+      }
+      // in case any locations were rejected
+      gnlocs_outside_timewindow_ += (LocSize - LocIndex.size());
+      LocSize = LocIndex.size();
+    } else {
+      // Not reading from file, keep all locations.
+      LocIndex.assign(LocSize, 0);
+      std::iota(LocIndex.begin(), LocIndex.end(), FrameStart);
+
+      FrameIndex.assign(LocSize, 0);
+      std::iota(FrameIndex.begin(), FrameIndex.end(), 0);
     }
-    // in case any locations were rejected
-    gnlocs_outside_timewindow_ += (LocSize - LocIndex.size());
-    LocSize = LocIndex.size();
-  } else {
-    // Not reading from file, keep all locations.
-    LocIndex.assign(LocSize, 0);
-    std::iota(LocIndex.begin(), LocIndex.end(), FrameStart);
 
-    FrameIndex.assign(LocSize, 0);
-    std::iota(FrameIndex.begin(), FrameIndex.end(), 0);
-  }
-
-  // Generate record numbers for this frame
-  std::vector<std::size_t> Records(LocSize);
-  if (obs_group_variables_.empty() || (FileIO == nullptr)) {
-    // No obs grouping. Assign sequential numbers (via next_rec_num_) from 0 to
-    // (nlocs - 1). The LocIndex vector might have missing locations due to those locations
-    // outside the DA timing window, so increment next_rec_num_ through the number
-    // of locations in LocIndex (LocSize) to make sure record numbers are sequential.
-    for (std::size_t i = 0; i < LocSize; ++i) {
-      Records[i] = next_rec_num_;
-      next_rec_num_++;
-      nrecs_ = next_rec_num_;
-    }
-  } else {
-    // Applying obs grouping. First convert all of the group variable data values for this
-    // frame into string key values. This is done in one call to minimize accessing the
-    // frame data for the grouping variables.
-    std::vector<std::string> ObsGroupingKeys(FrameIndex.size());
-    BuildObsGroupingKeys(FileIO, FrameIndex, ObsGroupingKeys);
-
-    for (std::size_t i = 0; i < LocSize; ++i) {
-      if (ObsGroupingMap.find(ObsGroupingKeys[i]) == ObsGroupingMap.end()) {
-        // key is not present in the map
-        // assign current record number to the current key, and move to the next record number
-        ObsGroupingMap.insert(
-            std::pair<std::string, std::size_t>(ObsGroupingKeys[i], next_rec_num_));
+    // Generate record numbers for this frame
+    std::vector<std::size_t> Records(LocSize);
+    if (obs_group_variables_.empty() || (FileIO == nullptr)) {
+      // No obs grouping. Assign sequential numbers (via next_rec_num_) from 0 to
+      // (nlocs - 1). The LocIndex vector might have missing locations due to those locations
+      // outside the DA timing window, so increment next_rec_num_ through the number
+      // of locations in LocIndex (LocSize) to make sure record numbers are sequential.
+      for (std::size_t i = 0; i < LocSize; ++i) {
+        Records[i] = next_rec_num_;
         next_rec_num_++;
         nrecs_ = next_rec_num_;
       }
-      Records[i] = ObsGroupingMap.at(ObsGroupingKeys[i]);
-    }
-  }
+    } else {
+      // Applying obs grouping. First convert all of the group variable data values for this
+      // frame into string key values. This is done in one call to minimize accessing the
+      // frame data for the grouping variables.
+      std::vector<std::string> ObsGroupingKeys(FrameIndex.size());
+      BuildObsGroupingKeys(FileIO, FrameIndex, ObsGroupingKeys);
 
-  // Read lat/lon for this frame
-  std::vector<float> lats(LocSize, 0);
-  std::vector<float> lons(LocSize, 0);
-  if (FileIO != nullptr) {
-    std::string GroupName = "MetaData";
-    std::string GroupVar = "longitude";
-    if (!FileIO->frame_float_has(GroupName, GroupVar)) {
-      throw eckit::UserError(GroupVar + "@" + GroupName + " not found in observations file",
-                             Here());
+      for (std::size_t i = 0; i < LocSize; ++i) {
+        if (ObsGroupingMap.find(ObsGroupingKeys[i]) == ObsGroupingMap.end()) {
+          // key is not present in the map
+          // assign current record number to the current key, and move to the next record number
+          ObsGroupingMap.insert(
+              std::pair<std::string, std::size_t>(ObsGroupingKeys[i], next_rec_num_));
+          next_rec_num_++;
+          nrecs_ = next_rec_num_;
+        }
+        Records[i] = ObsGroupingMap.at(ObsGroupingKeys[i]);
+      }
     }
-    FileIO->frame_float_get_data(GroupName, GroupVar, lons);
-    GroupVar = "latitude";
-    if (!FileIO->frame_float_has(GroupName, GroupVar)) {
-      throw eckit::UserError(GroupVar + "@" + GroupName + " not found in observations file",
-                             Here());
-    }
-    FileIO->frame_float_get_data(GroupName, GroupVar, lats);
-  }
 
-  // Generate the index and recnums for this frame. We are done with FrameIndex
-  // so it can be reused here.
-  std::vector<std::size_t> FinalFrameIndex;
-  std::set<std::size_t> PatchRecNums;
-  for (std::size_t i = 0; i < LocSize; ++i) {
-    std::size_t RowNum = LocIndex[i];
-    std::size_t RecNum = Records[i];
-    eckit::geometry::Point2 point(lons[FrameIndex[i]], lats[FrameIndex[i]]);
-    dist_->assignRecord(RecNum, RowNum, point);
-    if (dist_->isMyRecord(RecNum)) {
-      indx_.push_back(RowNum);
-      recnums_.push_back(RecNum);
-      unique_rec_nums_.insert(RecNum);
-      FinalFrameIndex.push_back(RowNum - FrameStart);
+    // Read lat/lon for this frame
+    std::vector<float> lats(LocSize, 0);
+    std::vector<float> lons(LocSize, 0);
+    if (FileIO != nullptr) {
+      std::string GroupName = "MetaData";
+      std::string GroupVar = "longitude";
+      if (!FileIO->frame_float_has(GroupName, GroupVar)) {
+        throw eckit::UserError(GroupVar + "@" + GroupName + " not found in observations file",
+                               Here());
+      }
+      FileIO->frame_float_get_data(GroupName, GroupVar, lons);
+      GroupVar = "latitude";
+      if (!FileIO->frame_float_has(GroupName, GroupVar)) {
+        throw eckit::UserError(GroupVar + "@" + GroupName + " not found in observations file",
+                               Here());
+      }
+      FileIO->frame_float_get_data(GroupName, GroupVar, lats);
     }
-  }
 
-  nlocs_ += FinalFrameIndex.size();
+    // Generate the index and recnums for this frame. We are done with FrameIndex
+    // so it can be reused here.
+    std::set<std::size_t> PatchRecNums;
+    for (std::size_t i = 0; i < LocSize; ++i) {
+      std::size_t RowNum = LocIndex[i];
+      std::size_t RecNum = Records[i];
+      eckit::geometry::Point2 point(lons[FrameIndex[i]], lats[FrameIndex[i]]);
+      dist_->assignRecord(RecNum, RowNum, point);
+      if (dist_->isMyRecord(RecNum)) {
+        indx_.push_back(RowNum);
+        recnums_.push_back(RecNum);
+        unique_rec_nums_.insert(RecNum);
+        FinalFrameIndex.push_back(RowNum - FrameStart);
+      }
+    }
+
+    nlocs_ += FinalFrameIndex.size();
+  }
   return FinalFrameIndex;
 }
 

@@ -10,6 +10,8 @@ observations:
       obsfile: Data/testinput_tier_1/sondes_obs_2018041500_m.nc4
       rms ref: 216.91619057593934
       tolerance: 1.0e-14
+    obsdataout: 
+      obsfile: Data/sondes_obs_2018041500_m.nc4
   reference nobs: 974
   mask variable: GsiUseFlag
   reference masked nobs: 819

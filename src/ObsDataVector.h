@@ -185,13 +185,18 @@ template <typename DATATYPE>
 void ObsDataVector<DATATYPE>::read(const std::string & name, const bool fail) {
   oops::Log::trace() << "ObsDataVector::read, name = " << name << std::endl;
   const DATATYPE missing = util::missingValue(missing);
-  std::vector<DATATYPE> tmp(nlocs_);
 
-  for (size_t jv = 0; jv < nvars_; ++jv) {
-    if (fail || obsdb_.has(name, obsvars_.variables()[jv])) {
-      obsdb_.get_db(name, obsvars_.variables()[jv], tmp);
-      for (size_t jj = 0; jj < nlocs_; ++jj) {
-        rows_.at(jv).at(jj) = tmp.at(jj);
+  // Only need to read data when nlocs_ is greater than 0.
+  // e.g. if there is no obs. on current MPI task, no read needed.
+  if ( nlocs_ > 0 ) {
+    std::vector<DATATYPE> tmp(nlocs_);
+
+    for (size_t jv = 0; jv < nvars_; ++jv) {
+      if (fail || obsdb_.has(name, obsvars_.variables()[jv])) {
+        obsdb_.get_db(name, obsvars_.variables()[jv], tmp);
+        for (size_t jj = 0; jj < nlocs_; ++jj) {
+          rows_.at(jv).at(jj) = tmp.at(jj);
+        }
       }
     }
   }

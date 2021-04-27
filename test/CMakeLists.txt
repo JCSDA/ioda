@@ -20,6 +20,8 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsspace_marine.yml
   testinput/iodatest_obsspace_fortran.yml
   testinput/iodatest_obsvector.yml
+  testinput/iodatest_obsvector_pio_observer.yml
+  testinput/iodatest_obsvector_pio_read_distributed_files.yml
   testinput/iodatest_descendingsort.yml
 )
 
@@ -319,6 +321,22 @@ ecbuild_add_test( TARGET  test_ioda_obsvector
                   ARGS    "testinput/iodatest_obsvector.yml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
+
+# IODA ObsVector class (Halo) parallel IO Observer
+ecbuild_add_test( TARGET  test_ioda_obsvector_pio_observer
+                  MPI     4
+                  SOURCES mains/TestIodaObsVector.cc
+                  ARGS    "testinput/iodatest_obsvector_pio_observer.yml"
+                  LIBS  ioda_test
+                  TEST_DEPENDS get_ioda_test_data )
+
+# IODA ObsVector class (Halo) parallel IO read from distributed files.
+ecbuild_add_test( TARGET  test_ioda_obsvector_pio_read_distributed_files
+                  MPI     4
+                  SOURCES mains/TestIodaObsVector.cc
+                  ARGS    "testinput/iodatest_obsvector_pio_read_distributed_files.yml"
+                  LIBS  ioda_test
+                  TEST_DEPENDS test_ioda_obsvector_pio_observer )
 
 #####################################################################
 # ObsDataVector tests
