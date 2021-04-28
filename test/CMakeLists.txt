@@ -23,6 +23,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsvector_pio_observer.yml
   testinput/iodatest_obsvector_pio_read_distributed_files.yml
   testinput/iodatest_descendingsort.yml
+  testinput/iodatest_extendedobsspace.yml
 )
 
 # Set up test input files (YAML configuration)
@@ -296,6 +297,28 @@ ecbuild_add_test( TARGET  test_ioda_descendingsort
                   ARGS    "testinput/iodatest_descendingsort.yml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
+
+# IODA extended ObsSpace
+ecbuild_add_test( TARGET  test_ioda_extendedobsspace
+                  SOURCES mains/TestExtendedObsSpace.cc
+                  ARGS    "testinput/iodatest_extendedobsspace.yml"
+                  LIBS  ioda_test
+                  TEST_DEPENDS get_ioda_test_data )
+
+ecbuild_add_test( TARGET  test_ioda_extendedobsspace_MPI_2
+                  MPI     2
+                  SOURCES mains/TestExtendedObsSpace.cc
+                  ARGS    "testinput/iodatest_extendedobsspace.yml"
+                  LIBS  ioda_test
+                  TEST_DEPENDS get_ioda_test_data )
+
+ecbuild_add_test( TARGET  test_ioda_extendedobsspace_MPI_3
+                  MPI     3
+                  SOURCES mains/TestExtendedObsSpace.cc
+                  ARGS    "testinput/iodatest_extendedobsspace.yml"
+                  LIBS  ioda_test
+                  TEST_DEPENDS get_ioda_test_data )
+
 
 #####################################################################
 # ObsVector tests

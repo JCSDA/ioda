@@ -169,6 +169,12 @@ class ObsData : public util::Printable {
 
   static std::string DesiredVarType(std::string & GroupName, std::string & FileVarType);
 
+  void extendObsSpace(const eckit::Configuration & config);
+
+  /*! \brief Extend all vectors in a database with missing values. */
+  template <typename T>
+    void extendVectorsInDatabase(const ObsSpaceContainer<T> &Db, const size_t nlocsext);
+
   // Dump the database into the output file
   void SaveToFile(const std::string & file_name, const std::size_t MaxFrameSize);
 

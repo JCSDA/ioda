@@ -27,6 +27,7 @@
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
+#include "oops/util/missingValues.h"
 #include "oops/util/Random.h"
 #include "oops/util/stringFunctions.h"
 
@@ -152,6 +153,9 @@ ObsData::ObsData(const eckit::Configuration & config, const eckit::mpi::Comm & c
     ABORT(ErrorMsg);
   }
   nrecs_ = unique_rec_nums_.size();
+
+  // Extend the ObsSpace if requested to do so.
+  if (config.has("extension")) extendObsSpace(config);
 
   // Check to see if an output file has been requested.
   if (config.has("obsdataout.obsfile")) {
@@ -1338,6 +1342,80 @@ std::string ObsData::DesiredVarType(std::string & GroupName, std::string & FileV
   return DbVarType;
 }
 
+template <typename T>
+void ObsData::extendVectorsInDatabase(const ObsSpaceContainer<T> &Db, const size_t nlocsext)
+{
+  const T missing = util::missingValue(missing);
+  std::vector<T> vecin(nlocs_);  // Input vector
+  std::vector<T> vecout(nlocsext, missing);  // Output vector
+  for (auto Var = Db.begin(); Var != Db.end(); ++Var) {
+    const std::string &varname = Var->variable;
+    const std::string &groupname = Var->group;
+    const std::vector<std::size_t> &shape = Var->shape;
+    // Only extend variables that have (at least) one dimension of length nlocs_.
+    if (std::find(shape.begin(), shape.end(), nlocs_) == shape.end()) continue;
+    // Retrieve input vector.
+    get_db(groupname, varname, vecin);
+    // Fill output vector with input vector.
+    std::copy(vecin.begin(), vecin.end(), vecout.begin());
+    // Save output vector.
+    put_db(groupname, varname, vecout);
+  }
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method extends the ObsSpace according to the method requested
+ *          in the configuration file.
+ */
+void ObsData::extendObsSpace(const eckit::Configuration & config) {
+  const int nlevs = config.getInt("extension.average profiles onto model levels", 0);
+  if (nlevs > 0 &&
+      nlocs_ > 0 &&
+      !obs_group_variables_.empty()) {
+    // Number of extended locations on this processor.
+    const std::size_t nlocsext = nlocs_ + nrecs_ * nlevs;
+    // Find starting index (in the extended section) across all processors.
+    size_t indxstart = indx_.back() + 1;
+    dist_->allReduceInPlace(indxstart, eckit::mpi::max());
+    // Maximum unique record ID across all processors.
+    std::size_t maxOriginalRecordId = *unique_rec_nums_.rbegin();
+    dist_->allReduceInPlace(maxOriginalRecordId, eckit::mpi::max());
+    // Produce the indices and record numbers in the extended ObsSpace for this processor.
+    // Place each extended record on the same processor as the equivalent original one.
+    const std::vector <std::size_t> vec_unique_rec_nums(unique_rec_nums_.begin(),
+                                                        unique_rec_nums_.end());
+    for (std::size_t irec : vec_unique_rec_nums) {
+      const size_t irec_ext = irec + maxOriginalRecordId + 1;
+      unique_rec_nums_.insert(irec_ext);
+      nrecs_++;
+      for (size_t ilev = 0; ilev < nlevs; ++ilev) {
+        recnums_.push_back(irec_ext);
+        indx_.push_back(indxstart + irec * nlevs + ilev);
+      }
+    }
+    // Extend recidx_, which maps indices to records on the local processor.
+    for (size_t iloc = nlocs_; iloc < nlocsext; ++iloc)
+      recidx_[recnums_[iloc]].push_back(iloc);
+    // Extend all existing vectors with missing values.
+    // Only vectors with (at least) one dimension equal to nlocs_ are modified.
+    extendVectorsInDatabase(int_database_, nlocsext);
+    extendVectorsInDatabase(float_database_, nlocsext);
+    extendVectorsInDatabase(string_database_, nlocsext);
+    extendVectorsInDatabase(datetime_database_, nlocsext);
+    // Fill extended_obs_space with 0, which indicates the standard section of the ObsSpace,
+    // and 1, which indicates the extended section.
+    std::vector <int> extended_obs_space(nlocsext, 0);
+    std::fill(extended_obs_space.begin() + nlocs_, extended_obs_space.begin() + nlocsext, 1);
+    // Save extended_obs_space for use in filters.
+    put_db("MetaData", "extended_obs_space", extended_obs_space);
+    // Extend nlocs_ on this processor.
+    nlocs_ = nlocsext;
+    // Extend gnlocs_ by summing nlocs_ across all processors.
+    gnlocs_ = nlocs_;
+    dist_->allReduceInPlace(gnlocs_, eckit::mpi::sum());
+  }
+}
 // -----------------------------------------------------------------------------
 
 }  // namespace ioda

@@ -1,0 +1,141 @@
+#
+#=== Tests of extended ObsSpace ===#
+#
+# Please note that the expected values listed below are only valid when
+# the test is run on one, two or three PEs and the data are taken from sondes_obs_2018041500_{m,s}.nc4.
+# If the number of PEs or the input data sets change then the expected numbers should be modified accordingly.
+
+extend obs space, RoundRobin, 71 entries per averaged profile:
+  window begin: 2018-04-14T20:30:00Z
+  window end: 2018-04-15T03:30:00Z
+  obs space:
+    name: Sondes
+    obsdatain:
+      obsfile: Data/testinput_tier_1/sondes_obs_2018041500_m.nc4
+      obsgrouping:
+        group variables: [ "station_id" ]
+        sort variable: "air_pressure"
+        sort order: "descending"
+    simulated variables: [air_temperature]
+    distribution: "RoundRobin"
+    extension:
+      average profiles onto model levels: 71
+  expected nlocs (1 PE, rank 0): 3530
+  expected gnlocs (1 PE, rank 0): 3530
+  expected nrecs (1 PE, rank 0): 72
+  expected nlocs (2 PE, rank 0): 1808
+  expected gnlocs (2 PE, rank 0): 3530
+  expected nrecs (2 PE, rank 0): 36
+  expected nlocs (2 PE, rank 1): 1722
+  expected gnlocs (2 PE, rank 1): 3530
+  expected nrecs (2 PE, rank 1): 36
+  expected nlocs (3 PE, rank 0): 1320
+  expected gnlocs (3 PE, rank 0): 3530
+  expected nrecs (3 PE, rank 0): 24
+  expected nlocs (3 PE, rank 1): 1074
+  expected gnlocs (3 PE, rank 1): 3530
+  expected nrecs (3 PE, rank 1): 24
+  expected nlocs (3 PE, rank 2): 1136
+  expected gnlocs (3 PE, rank 2): 3530
+  expected nrecs (3 PE, rank 2): 24
+
+extend obs space, InefficientDistribution, 71 entries per averaged profile:
+  window begin: 2018-04-14T20:30:00Z
+  window end: 2018-04-15T03:30:00Z
+  obs space:
+    name: Sondes
+    obsdatain:
+      obsfile: Data/testinput_tier_1/sondes_obs_2018041500_m.nc4
+      obsgrouping:
+        group variables: [ "station_id" ]
+        sort variable: "air_pressure"
+        sort order: "descending"
+    simulated variables: [air_temperature]
+    distribution: "InefficientDistribution"
+    extension:
+      average profiles onto model levels: 71
+  expected nlocs (1 PE, rank 0): 3530
+  expected gnlocs (1 PE, rank 0): 3530
+  expected nrecs (1 PE, rank 0): 72
+  expected nlocs (2 PE, rank 0): 3530
+  expected gnlocs (2 PE, rank 0): 3530
+  expected nrecs (2 PE, rank 0): 72
+  expected nlocs (2 PE, rank 1): 3530
+  expected gnlocs (2 PE, rank 1): 3530
+  expected nrecs (2 PE, rank 1): 72
+  expected nlocs (3 PE, rank 0): 3530
+  expected gnlocs (3 PE, rank 0): 3530
+  expected nrecs (3 PE, rank 0): 72
+  expected nlocs (3 PE, rank 1): 3530
+  expected gnlocs (3 PE, rank 1): 3530
+  expected nrecs (3 PE, rank 1): 72
+  expected nlocs (3 PE, rank 2): 3530
+  expected gnlocs (3 PE, rank 2): 3530
+  expected nrecs (3 PE, rank 2): 72
+
+extend obs space, Halo, 71 entries per averaged profile:
+  window begin: 2018-04-14T20:30:00Z
+  window end: 2018-04-15T03:30:00Z
+  obs space:
+    name: Sondes
+    obsdatain:
+      obsfile: Data/testinput_tier_1/sondes_obs_2018041500_m.nc4
+      obsgrouping:
+        group variables: [ "station_id" ]
+        sort variable: "air_pressure"
+        sort order: "descending"
+    simulated variables: [air_temperature]
+    distribution: "Halo"
+    extension:
+      average profiles onto model levels: 71
+  expectThrows: true
+
+extend obs space, 0 entries per averaged profile:
+  window begin: 2018-04-14T20:30:00Z
+  window end: 2018-04-15T03:30:00Z
+  obs space:
+    name: Sondes
+    obsdatain:
+      obsfile: Data/testinput_tier_1/sondes_obs_2018041500_m.nc4
+      obsgrouping:
+        group variables: [ "station_id" ]
+        sort variable: "air_pressure"
+        sort order: "descending"
+    simulated variables: [air_temperature]
+    extension:
+      average profiles onto model levels: 0
+  # the test exits if nlevs <= 0, so there are no expected values
+
+extend obs space, RoundRobin, 71 entries per averaged profile, alternative data set:
+  window begin: 2018-04-14T20:30:00Z
+  window end: 2018-04-15T03:30:00Z
+  obs space:
+    name: Sondes
+    obsdatain:
+      obsfile: Data/testinput_tier_1/sondes_obs_2018041500_s.nc4
+      obsgrouping:
+        group variables: [ "station_id" ]
+        sort variable: "air_pressure"
+        sort order: "descending"
+    simulated variables: [air_temperature]
+    distribution: "RoundRobin"
+    extension:
+      average profiles onto model levels: 71
+  expected nlocs (1 PE, rank 0): 375
+  expected gnlocs (1 PE, rank 0): 375
+  expected nrecs (1 PE, rank 0): 8
+  expected nlocs (2 PE, rank 0): 222
+  expected gnlocs (2 PE, rank 0): 375
+  expected nrecs (2 PE, rank 0): 4
+  expected nlocs (2 PE, rank 1): 153
+  expected gnlocs (2 PE, rank 1): 375
+  expected nrecs (2 PE, rank 1): 4
+  expected nlocs (3 PE, rank 0): 157
+  expected gnlocs (3 PE, rank 0): 375
+  expected nrecs (3 PE, rank 0): 4
+  expected nlocs (3 PE, rank 1): 81
+  expected gnlocs (3 PE, rank 1): 375
+  expected nrecs (3 PE, rank 1): 2
+  expected nlocs (3 PE, rank 2): 137
+  expected gnlocs (3 PE, rank 2): 375
+  expected nrecs (3 PE, rank 2): 2
