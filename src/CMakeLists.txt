@@ -25,6 +25,8 @@ distribution/InefficientDistribution.cc
 distribution/InefficientDistribution.h
 distribution/Halo.cc
 distribution/Halo.h
+distribution/NonoverlappingDistribution.cc
+distribution/NonoverlappingDistribution.h
 distribution/RoundRobin.cc
 distribution/RoundRobin.h
 
