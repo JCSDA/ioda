@@ -173,7 +173,7 @@ int main(int argc, char** argv) {
     g.atts.add<std::string>("str-1", std::string("This is a test."));
     // You need the std::string() wrapper because otherwise the C++
     // compiler may assume that you want to do this:
-    g.atts.add<char>("char-1", {"This is a test"}, {15});
+    // g.atts.add<char>("char-1", {"This is a test"}, {15});
     // This is a fixed-length set of characters, which is _completely_ different.
 
     // Notes on the type system:
@@ -197,10 +197,10 @@ int main(int argc, char** argv) {
     // This is easy. We return a vector instead of a set because one day we might care
     // about ordering.
     std::vector<std::string> attList = g.atts.list();
-    if (attList.size() != 12)
+    if (attList.size() != 11)
       throw; /* jedi_throw
 .add("Reason", "Unexpected attribute count.")
-.add("Expected", 12)
+.add("Expected", 11)
 .add("Actual", attList.size()); */
 
     // Opening
