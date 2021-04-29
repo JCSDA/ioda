@@ -12,10 +12,13 @@ list(APPEND SRCS_IODA
 	include/ioda/Attributes/Attribute_Creator.h
 	include/ioda/Python/Att_ext.h
 	include/ioda/Engines/Capabilities.h
+	include/ioda/Exception.h
 	#include/ioda/Copying.h
+	include/ioda/Misc/compat/std/source_location_compat.h
 	include/ioda/Misc/Dimensions.h
 	include/ioda/Misc/Eigen_Compat.h
 	include/ioda/Misc/MergeMethods.h
+	include/ioda/Misc/Options.h
 	include/ioda/Misc/SFuncs.h
 	include/ioda/Misc/UnitConversions.h
 	include/ioda/Variables/Fill.h
@@ -39,6 +42,7 @@ list(APPEND SRCS_IODA
 	src/ioda/Attribute.cpp
 	src/ioda/Attribute_Creator.cpp
 	#src/ioda/Copying.cpp
+	src/ioda/Exception.cpp
 	src/ioda/Has_Attributes.cpp
 	src/ioda/Has_Variables.cpp
 	src/ioda/Group.cpp

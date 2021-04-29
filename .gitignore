@@ -2,10 +2,4 @@
 ._*
 *.swp
 build
-/.vs/VSWorkspaceState.json
-/.vs/slnx.sqlite
-/.vs/ProjectSettings.json
-/.vs/ioda2/v16/Browse.VC.db
-/.vs/ioda2/v16/.suo
-/.vs/ioda2/v16
-/.vs/CMake Overview
+.vs
