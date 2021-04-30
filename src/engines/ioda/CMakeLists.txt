@@ -38,7 +38,6 @@ list(APPEND SRCS_IODA
 	private/ioda/Layouts/Layout_ObsGroup.h
 	private/ioda/Layouts/Layout_ObsGroup_ODB.h
 	private/ioda/Layouts/Layout_ObsGroup_ODB_Params.h
-	private/ioda/Layouts/Layout_Utils.h
 	src/ioda/Attribute.cpp
 	src/ioda/Attribute_Creator.cpp
 	#src/ioda/Copying.cpp
@@ -56,7 +55,6 @@ list(APPEND SRCS_IODA
 	src/ioda/Layouts/Layout.cpp
 	src/ioda/Layouts/Layout_ObsGroup.cpp
 	src/ioda/Layouts/Layout_ObsGroup_ODB.cpp
-	src/ioda/Layouts/Layout_Utils.cpp
   )
 list(APPEND SRCS_IODA_TYPES
 	include/ioda/Types/Complex.h

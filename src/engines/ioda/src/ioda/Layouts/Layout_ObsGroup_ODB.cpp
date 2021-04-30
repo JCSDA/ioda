@@ -10,10 +10,10 @@
 #include "ioda/Layouts/Layout_ObsGroup_ODB.h"
 
 #include "ioda/Layouts/Layout_ObsGroup_ODB_Params.h"
-#include "ioda/Layouts/Layout_Utils.h"
 
 #include "ioda/Group.h"
 #include "ioda/Layout.h"
+#include "ioda/Misc/SFuncs.h"
 #include "ioda/defs.h"
 
 #include "boost/none_t.hpp"
@@ -128,7 +128,7 @@ std::string DataLayoutPolicy_ObsGroup_ODB::doMap(const std::string &str) const {
     mappedStr = str;
   }
 
-  mappedStr = reverseStringSwapDelimiter(mappedStr);
+  mappedStr = convertV1PathToV2Path(mappedStr);
   return mappedStr;
 }
 

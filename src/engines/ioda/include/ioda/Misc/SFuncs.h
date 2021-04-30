@@ -40,6 +40,15 @@ IODA_DL std::string condensePaths(const std::vector<std::string>& p, size_t star
 IODA_DL std::vector<std::string> concatenateStringVectors(
     const std::vector<std::vector<std::string>>& stringVectors);
 
+/// @brief Split `path` into substrings separated by `@` characters, then concatenate them in
+/// reverse order, replacing the `@`s with `/`s.
+///
+/// For example, longitude@MetaData becomes MetaData/longitude.
+///
+/// @param path is the path to convert
+/// @return The converted path.
+IODA_DL std::string convertV1PathToV2Path(const std::string & path);
+
 }  // namespace ioda
 
 /// @}

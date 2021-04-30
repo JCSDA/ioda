@@ -9,10 +9,9 @@
 
 #include "ioda/Layouts/Layout_ObsGroup.h"
 
-#include "ioda/Layouts/Layout_Utils.h"
-
 #include "ioda/Group.h"
 #include "ioda/Layout.h"
+#include "ioda/Misc/SFuncs.h"
 #include "ioda/defs.h"
 
 namespace ioda {
@@ -40,7 +39,7 @@ std::string DataLayoutPolicy_ObsGroup::doMap(const std::string &str) const {
   // If the string contains '@', then it needs to be broken into
   // components and reversed. All other strings are passed through untouched.
 
-  std::string out = reverseStringSwapDelimiter(str);
+  std::string out = convertV1PathToV2Path(str);
   return out;
 }
 

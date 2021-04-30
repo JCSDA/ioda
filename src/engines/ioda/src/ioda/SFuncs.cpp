@@ -66,4 +66,25 @@ std::vector<std::string> concatenateStringVectors(const std::vector<std::vector<
   return derivedVector;
 }
 
+std::string convertV1PathToV2Path(const std::string & path) {
+  const char delim = '@';
+  std::vector<std::string> tokens;
+  size_t prev = 0, pos = 0;
+  do {
+    pos = path.find(delim, prev);
+    if (pos == std::string::npos) pos = path.length();
+    std::string token = path.substr(prev, pos - prev);
+    if (!token.empty()) tokens.push_back(std::move(token));
+    prev = pos + 1;
+  } while (pos < path.length() && prev < path.length());
+
+  // Reverse the tokens to get the output path
+  std::string out;
+  for (auto it = tokens.crbegin(); it != tokens.crend(); ++it) {
+    if (it != tokens.crbegin()) out += "/";
+    out += *it;
+  }
+  return out;
+}
+
 }  // namespace ioda
