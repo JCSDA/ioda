@@ -847,7 +847,7 @@ void ObsData::InitFromFile(const std::string & filename, const std::size_t MaxFr
   // update gnlocs_: subtract number of locations outside of time window
   if (gnlocs_outside_timewindow_ > 0) {
     oops::Log::debug() << obsname() << ": " << gnlocs_outside_timewindow_ <<
-                          " observations are outside of time window. " << std::endl;
+            " observations are outside of time window out of " << gnlocs_ << std::endl;
     gnlocs_ -= gnlocs_outside_timewindow_;
   }
 
