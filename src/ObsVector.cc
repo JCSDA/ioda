@@ -236,7 +236,7 @@ size_t ObsVector::packEigenSize(const ObsDataVector<int> & mask) const {
   size_t ii = 0;
   for (size_t jloc = 0; jloc < mask.nlocs(); ++jloc) {
     for (size_t jvar = 0; jvar < mask.nvars(); ++jvar) {
-      if ((mask[jvar][jloc] == 0) && (values_[ii] != missing_)) nlocs++;
+      if ((mask[jvar][jloc] <= 0) && (values_[ii] != missing_)) nlocs++;
       ++ii;
     }
   }
@@ -249,7 +249,7 @@ Eigen::VectorXd ObsVector::packEigen(const ObsDataVector<int> & mask) const {
   size_t vecindex = 0;
   for (size_t jloc = 0; jloc < mask.nlocs(); ++jloc) {
     for (size_t jvar = 0; jvar < mask.nvars(); ++jvar) {
-      if ((mask[jvar][jloc] == 0) && (values_[ii] != missing_)) {
+      if ((mask[jvar][jloc] <= 0) && (values_[ii] != missing_)) {
         vec(vecindex++) = values_[ii];
       }
       ++ii;

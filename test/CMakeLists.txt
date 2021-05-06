@@ -326,6 +326,7 @@ ecbuild_add_test( TARGET  test_ioda_extendedobsspace_MPI_3
 
 # OOPS ObsVector interface
 ecbuild_add_test( TARGET  test_ioda_oops_obsvector
+                  MPI     2
                   SOURCES mains/TestObsVector.cc
                   ARGS    "testinput/iodatest_obsvector.yml"
                   LIBS  ioda_test
