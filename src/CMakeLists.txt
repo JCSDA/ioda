@@ -53,9 +53,10 @@ ecbuild_add_library( TARGET ${PROJECT_NAME}
                      HEADER_DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}
                      LINKER_LANGUAGE CXX )
 
+target_link_libraries( ${PROJECT_NAME} PUBLIC ioda_engines )
 target_link_libraries( ${PROJECT_NAME} PUBLIC NetCDF::NetCDF_C )
 target_link_libraries( ${PROJECT_NAME} PUBLIC fckit )
-target_link_libraries( ${PROJECT_NAME} PUBLIC ${oops_LIBRARIES} ) #TODO: Change to "oops::oops" once oops adds namespace support
+target_link_libraries( ${PROJECT_NAME} PUBLIC ${oops_LIBRARIES} )
 
 #Configure include directory layout for build-tree to match install-tree
 set(BUILD_DIR_INCLUDE_PATH ${CMAKE_BINARY_DIR}/${PROJECT_NAME}/include)
@@ -78,8 +79,3 @@ if (IODA_BUILD_LANGUAGE_FORTRAN)
                                 $<INSTALL_INTERFACE:${MODULE_DIR}>)
 endif()
 
-# add in the engines library
-add_subdirectory(engines)
-
-# add in the mains executables
-add_subdirectory(mains)

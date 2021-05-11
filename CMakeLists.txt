@@ -39,9 +39,11 @@ find_package( fckit 0.7.0 REQUIRED )
 find_package( oops 1.0.0 REQUIRED )
 
 ## Sources
-add_subdirectory( src )
-add_subdirectory( test )
-add_subdirectory( tools )
+add_subdirectory( src/engines ) # `ioda_engines` target
+add_subdirectory( src )         # `ioda` target
+add_subdirectory( src/mains )    # ioda executable targets
+add_subdirectory( test )        # ioda ctests
+add_subdirectory( tools )       # misc tools
 
 if( ENABLE_IODA_DOC )
     add_subdirectory( docs )
