@@ -139,3 +139,73 @@ extend obs space, RoundRobin, 71 entries per averaged profile, alternative data 
   expected nlocs (3 PE, rank 2): 137
   expected gnlocs (3 PE, rank 2): 375
   expected nrecs (3 PE, rank 2): 2
+
+extend obs space, RoundRobin, 71 entries per averaged profile, only pressure filled with non-missing values:
+  window begin: 2018-04-14T20:30:00Z
+  window end: 2018-04-15T03:30:00Z
+  obs space:
+    name: Sondes
+    obsdatain:
+      obsfile: Data/testinput_tier_1/sondes_obs_2018041500_m.nc4
+      obsgrouping:
+        group variables: [ "station_id" ]
+        sort variable: "air_pressure"
+        sort order: "descending"
+    simulated variables: [air_temperature]
+    distribution: "RoundRobin"
+    extension:
+      average profiles onto model levels: 71
+      variables filled with non-missing values: [air_pressure]
+  expected nlocs (1 PE, rank 0): 3530
+  expected gnlocs (1 PE, rank 0): 3530
+  expected nrecs (1 PE, rank 0): 72
+  expected nlocs (2 PE, rank 0): 1808
+  expected gnlocs (2 PE, rank 0): 3530
+  expected nrecs (2 PE, rank 0): 36
+  expected nlocs (2 PE, rank 1): 1722
+  expected gnlocs (2 PE, rank 1): 3530
+  expected nrecs (2 PE, rank 1): 36
+  expected nlocs (3 PE, rank 0): 1320
+  expected gnlocs (3 PE, rank 0): 3530
+  expected nrecs (3 PE, rank 0): 24
+  expected nlocs (3 PE, rank 1): 1074
+  expected gnlocs (3 PE, rank 1): 3530
+  expected nrecs (3 PE, rank 1): 24
+  expected nlocs (3 PE, rank 2): 1136
+  expected gnlocs (3 PE, rank 2): 3530
+  expected nrecs (3 PE, rank 2): 24
+
+extend obs space, RoundRobin, 71 entries per averaged profile, no variables filled with non-missing values:
+  window begin: 2018-04-14T20:30:00Z
+  window end: 2018-04-15T03:30:00Z
+  obs space:
+    name: Sondes
+    obsdatain:
+      obsfile: Data/testinput_tier_1/sondes_obs_2018041500_m.nc4
+      obsgrouping:
+        group variables: [ "station_id" ]
+        sort variable: "air_pressure"
+        sort order: "descending"
+    simulated variables: [air_temperature]
+    distribution: "RoundRobin"
+    extension:
+      average profiles onto model levels: 71
+      variables filled with non-missing values: []
+  expected nlocs (1 PE, rank 0): 3530
+  expected gnlocs (1 PE, rank 0): 3530
+  expected nrecs (1 PE, rank 0): 72
+  expected nlocs (2 PE, rank 0): 1808
+  expected gnlocs (2 PE, rank 0): 3530
+  expected nrecs (2 PE, rank 0): 36
+  expected nlocs (2 PE, rank 1): 1722
+  expected gnlocs (2 PE, rank 1): 3530
+  expected nrecs (2 PE, rank 1): 36
+  expected nlocs (3 PE, rank 0): 1320
+  expected gnlocs (3 PE, rank 0): 3530
+  expected nrecs (3 PE, rank 0): 24
+  expected nlocs (3 PE, rank 1): 1074
+  expected gnlocs (3 PE, rank 1): 3530
+  expected nrecs (3 PE, rank 1): 24
+  expected nlocs (3 PE, rank 2): 1136
+  expected gnlocs (3 PE, rank 2): 3530
+  expected nrecs (3 PE, rank 2): 24

@@ -1343,11 +1343,12 @@ std::string ObsData::DesiredVarType(std::string & GroupName, std::string & FileV
 }
 
 template <typename T>
-void ObsData::extendVectorsInDatabase(const ObsSpaceContainer<T> &Db, const size_t nlocsext)
+void ObsData::extendVectorsInDatabase(const ObsSpaceContainer<T> &Db,
+                                      const std::vector <std::string> &nonMissingExtendedVars,
+                                      const size_t nlocsext)
 {
   const T missing = util::missingValue(missing);
   std::vector<T> vecin(nlocs_);  // Input vector
-  std::vector<T> vecout(nlocsext, missing);  // Output vector
   for (auto Var = Db.begin(); Var != Db.end(); ++Var) {
     const std::string &varname = Var->variable;
     const std::string &groupname = Var->group;
@@ -1356,8 +1357,21 @@ void ObsData::extendVectorsInDatabase(const ObsSpaceContainer<T> &Db, const size
     if (std::find(shape.begin(), shape.end(), nlocs_) == shape.end()) continue;
     // Retrieve input vector.
     get_db(groupname, varname, vecin);
-    // Fill output vector with input vector.
+    // Initialise the output vector with missing values.
+    std::vector<T> vecout(nlocsext, missing);
+    // Fill the original section of the output vector with the contents of the input vector.
     std::copy(vecin.begin(), vecin.end(), vecout.begin());
+    // For certain variables, fill the extended section of the output vector with
+    // the first non-missing value in the input vector.
+    if (groupname == "MetaData" &&
+        std::find(nonMissingExtendedVars.begin(), nonMissingExtendedVars.end(), varname) !=
+        nonMissingExtendedVars.end()) {
+      // Iterator pointing to the first non-missing value in the input vector.
+      auto it_nonmissing = std::find_if(vecin.begin(), vecin.end(),
+                                        [&missing](T x){return x != missing;});
+      if (it_nonmissing != vecin.end())
+        std::fill(vecout.begin() + nlocs_, vecout.end(), *it_nonmissing);
+    }
     // Save output vector.
     put_db(groupname, varname, vecout);
   }
@@ -1397,12 +1411,18 @@ void ObsData::extendObsSpace(const eckit::Configuration & config) {
     // Extend recidx_, which maps indices to records on the local processor.
     for (size_t iloc = nlocs_; iloc < nlocsext; ++iloc)
       recidx_[recnums_[iloc]].push_back(iloc);
-    // Extend all existing vectors with missing values.
+    // Extend all existing vectors with missing values, excepting those
+    // that have been selected to be filled with non-missing values.
+    // By default, some spatial and temporal coordinates are filled in this way.
+    const std::vector <std::string> &nonMissingExtendedVars =
+      config.getStringVector("extension.variables filled with non-missing values",
+                             {"latitude", "longitude", "datetime",
+                                 "air_pressure", "air_pressure_levels"});
     // Only vectors with (at least) one dimension equal to nlocs_ are modified.
-    extendVectorsInDatabase(int_database_, nlocsext);
-    extendVectorsInDatabase(float_database_, nlocsext);
-    extendVectorsInDatabase(string_database_, nlocsext);
-    extendVectorsInDatabase(datetime_database_, nlocsext);
+    extendVectorsInDatabase(int_database_, nonMissingExtendedVars, nlocsext);
+    extendVectorsInDatabase(float_database_, nonMissingExtendedVars, nlocsext);
+    extendVectorsInDatabase(string_database_, nonMissingExtendedVars, nlocsext);
+    extendVectorsInDatabase(datetime_database_, nonMissingExtendedVars, nlocsext);
     // Fill extended_obs_space with 0, which indicates the standard section of the ObsSpace,
     // and 1, which indicates the extended section.
     std::vector <int> extended_obs_space(nlocsext, 0);

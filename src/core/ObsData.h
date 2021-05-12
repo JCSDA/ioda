@@ -173,7 +173,9 @@ class ObsData : public util::Printable {
 
   /*! \brief Extend all vectors in a database with missing values. */
   template <typename T>
-    void extendVectorsInDatabase(const ObsSpaceContainer<T> &Db, const size_t nlocsext);
+    void extendVectorsInDatabase(const ObsSpaceContainer<T> &Db,
+                                 const std::vector <std::string> &nonMissingExtendedVars,
+                                 const size_t nlocsext);
 
   // Dump the database into the output file
   void SaveToFile(const std::string & file_name, const std::size_t MaxFrameSize);

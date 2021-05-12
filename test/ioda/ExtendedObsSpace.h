@@ -123,6 +123,34 @@ void testExtendedObsSpace(const eckit::LocalConfiguration &conf) {
       EXPECT(statid[iloc] == missingValueString);
   }
 
+  // Check the values of any variables that have been filled with non-missing
+  // values in the extended section.
+  // List of variables to check.
+  const std::vector <std::string> extendedVarsToCheck =
+    {"latitude", "longitude", "air_pressure"};
+  // List of variables that should be filled with non-missing values.
+  const std::vector <std::string> &nonMissingExtendedVars =
+    obsSpaceConf.getStringVector("extension.variables filled with non-missing values",
+                                 {"latitude", "longitude", "datetime",
+                                     "air_pressure", "air_pressure_levels"});
+  std::vector <float> val_extended(nlocs);
+  for (auto &varname : extendedVarsToCheck) {
+    // Only variables that are present in the ObsSpace are checked.
+    if (obsdata.has("MetaData", varname)) {
+      const bool filledWithNonMissing =
+        std::find(nonMissingExtendedVars.begin(), nonMissingExtendedVars.end(), varname) !=
+        nonMissingExtendedVars.end();
+      obsdata.get_db("MetaData", varname, val_extended);
+      if (filledWithNonMissing) {
+        for (int iloc = extendedObsSpaceStart; iloc < nlocs; ++iloc)
+          EXPECT(val_extended[iloc] != missingValueFloat);
+      } else {
+        for (int iloc = extendedObsSpaceStart; iloc < nlocs; ++iloc)
+          EXPECT(val_extended[iloc] == missingValueFloat);
+      }
+    }
+  }
+
   // Compare record numbers on this processor.
   const std::vector<std::size_t> recidx_all_recnums = obsdata.recidx_all_recnums();
   // Determine the original record numbers by dividing the global number of records by two.
