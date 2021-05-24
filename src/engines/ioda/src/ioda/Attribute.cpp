@@ -5,6 +5,7 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 #include "ioda/Attributes/Attribute.h"
+#include "ioda/Exception.h"
 
 namespace ioda {
 
@@ -18,38 +19,66 @@ Attribute_Base<>::Attribute_Base(std::shared_ptr<Attribute_Backend> hnd_attr)
 
 // Attribute Attribute::writeFixedLengthString(const std::string& data) { Expects(backend_ !=
 // nullptr && "Unimplemented function for backend");  return backend_->writeFixedLengthString(data);
-// } template<> Type Attribute_Base<>::getType() const { Expects(backend_ != nullptr); return
-// backend_->getType(); }
+// }
+
+template <>
+Type Attribute_Base<>::getType() const {
+  try {
+    if (backend_ == nullptr) throw Exception("Missing backend.", ioda_Here());
+    return backend_->getType();
+  } catch (...) {
+    std::throw_with_nested(Exception("An exception occurred inside ioda.", ioda_Here()));
+  }
+}
 
 template <>
 Dimensions Attribute_Base<>::getDimensions() const {
-  Expects(backend_ != nullptr);
-  return backend_->getDimensions();
+  try {
+    if (backend_ == nullptr) throw Exception("Missing backend.", ioda_Here());
+    return backend_->getDimensions();
+  } catch (...) {
+    std::throw_with_nested(Exception("An exception occurred inside ioda.", ioda_Here()));
+  }
 }
 
 template <>
 bool Attribute_Base<>::isA(Type lhs) const {
-  Expects(backend_ != nullptr);
-  return backend_->isA(lhs);
+  try {
+    if (backend_ == nullptr) throw Exception("Missing backend.", ioda_Here());
+    return backend_->isA(lhs);
+  } catch (...) {
+    std::throw_with_nested(Exception("An exception occurred inside ioda.", ioda_Here()));
+  }
 }
 
 template <>
 detail::Type_Provider* Attribute_Base<>::getTypeProvider() const {
-  Expects(backend_ != nullptr);
-  return backend_->getTypeProvider();
+  try {
+    if (backend_ == nullptr) throw Exception("Missing backend.", ioda_Here());
+    return backend_->getTypeProvider();
+  } catch (...) {
+    std::throw_with_nested(Exception("An exception occurred inside ioda.", ioda_Here()));
+  }
 }
 
 template <>
 Attribute Attribute_Base<>::write(gsl::span<char> data, const Type& in_memory_dataType) {
-  Expects(backend_ != nullptr);
-  return backend_->write(data, in_memory_dataType);
+  try {
+    if (backend_ == nullptr) throw Exception("Missing backend.", ioda_Here());
+    return backend_->write(data, in_memory_dataType);
+  } catch (...) {
+    std::throw_with_nested(Exception("An exception occurred inside ioda.", ioda_Here()));
+  }
 }
 
 template <>
 Attribute Attribute_Base<>::read(gsl::span<char> data, const Type& in_memory_dataType) const {
-  Expects(backend_ != nullptr);
-  // Expects(data.size_bytes() >= getStorageSize()); // Not always applicable for strings.
-  return backend_->read(data, in_memory_dataType);
+  try {
+    if (backend_ == nullptr) throw Exception("Missing backend.", ioda_Here());
+    return backend_->read(data, in_memory_dataType);
+  } catch (...) {
+    std::throw_with_nested(Exception("An exception occurred inside ioda.", ioda_Here()));
+  }
 }
 
 template class Attribute_Base<Attribute>;  // NOLINT: Bad check result

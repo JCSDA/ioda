@@ -47,6 +47,7 @@
 #include <vector>    // We want vectors
 
 #include "ioda/Engines/Factory.h"  // Used to kickstart the Group engine.
+#include "ioda/Exception.h"        // Exceptions and debugging
 #include "ioda/Group.h"            // Groups have attributes.
 
 int main(int argc, char** argv) {
@@ -198,10 +199,9 @@ int main(int argc, char** argv) {
     // about ordering.
     std::vector<std::string> attList = g.atts.list();
     if (attList.size() != 11)
-      throw; /* jedi_throw
-.add("Reason", "Unexpected attribute count.")
-.add("Expected", 11)
-.add("Actual", attList.size()); */
+      throw ioda::Exception("Unexpected attribute count.")
+      .add("Expected", 11)
+      .add("Actual", attList.size());
 
     // Opening
     // Also easy. We can use the .open() function, or use square brackets.
@@ -252,7 +252,7 @@ int main(int argc, char** argv) {
     g.atts.read<double>("double-1", check_double_1_valarray);
 
   } catch (const std::exception& e) {
-    cerr << "An error occurred.\n\n" << e.what() << endl;
+    ioda::unwind_exception_stack(e);
     return 1;
   }
   return 0;

@@ -8,12 +8,11 @@
 #include "ioda/core/ObsData.h"
 
 #include <algorithm>
+#include <cmath>
 #include <fstream>
-#include <functional>
 #include <iomanip>
 #include <map>
 #include <memory>
-#include <numeric>
 #include <set>
 #include <string>
 #include <utility>
@@ -32,479 +31,332 @@
 #include "oops/util/stringFunctions.h"
 
 #include "ioda/distribution/DistributionFactory.h"
-#include "ioda/io/IodaIOfactory.h"
+#include "ioda/Engines/HH.h"
+#include "ioda/io/ObsFrameFactory.h"
+#include "ioda/Variables/Variable.h"
 
 namespace ioda {
 
+namespace {
+
+// If the variable name \p name ends with an underscore followed by a number (potentially a channel
+// number), split it at that underscore, store the two parts in \p nameWithoutChannelSuffix and
+// \p channel, and return true. Otherwise return false.
+bool extractChannelSuffixIfPresent(const std::string &name,
+                                   std::string &nameWithoutChannelSuffix, int &channel) {
+    const std::string::size_type lastUnderscore = name.find_last_of('_');
+    if (lastUnderscore != std::string::npos &&
+        name.find_first_not_of("0123456789", lastUnderscore + 1) == std::string::npos) {
+        // The variable name has a numeric suffix.
+        channel = std::stoi(name.substr(lastUnderscore + 1));
+        nameWithoutChannelSuffix = name.substr(0, lastUnderscore);
+        return true;
+    }
+    return false;
+}
+
+}  // namespace
+
+// ----------------------------- public functions ------------------------------
 // -----------------------------------------------------------------------------
-/*!
- * \details Config based constructor for an ObsData object. This constructor will read
- *          in from the obs file and transfer the variables into the obs container. Obs
- *          falling outside the DA timing window, specified by bgn and end, will be
- *          discarded before storing them in the obs container.
- *
- * \param[in] config ECKIT configuration segment holding obs types specs
- * \param[in] bgn    DateTime object holding the start of the DA timing window
- * \param[in] end    DateTime object holding the end of the DA timing window
- */
+ObsDimInfo::ObsDimInfo() {
+    // The following code needs to stay in sync with the ObsDimensionId enum object.
+    // The entries are the standard dimension names according to the unified naming convention.
+    std::string dimName = "nlocs";
+    dim_id_name_[ObsDimensionId::Nlocs] = dimName;
+    dim_id_size_[ObsDimensionId::Nlocs] = 0;
+    dim_name_id_[dimName] = ObsDimensionId::Nlocs;
+
+    dimName = "nchans";
+    dim_id_name_[ObsDimensionId::Nchans] = dimName;
+    dim_id_size_[ObsDimensionId::Nchans] = 0;
+    dim_name_id_[dimName] = ObsDimensionId::Nchans;
+}
+
+ObsDimensionId ObsDimInfo::get_dim_id(const std::string & dimName) const {
+    return dim_name_id_.at(dimName);
+}
+
+std::string ObsDimInfo::get_dim_name(const ObsDimensionId dimId) const {
+    return dim_id_name_.at(dimId);
+}
+
+std::size_t ObsDimInfo::get_dim_size(const ObsDimensionId dimId) const {
+    return dim_id_size_.at(dimId);
+}
+
+void ObsDimInfo::set_dim_size(const ObsDimensionId dimId, std::size_t dimSize) {
+    dim_id_size_.at(dimId) = dimSize;
+}
+
+// -----------------------------------------------------------------------------
 ObsData::ObsData(const eckit::Configuration & config, const eckit::mpi::Comm & comm,
                  const util::DateTime & bgn, const util::DateTime & end,
                  const eckit::mpi::Comm & timeComm)
-  : config_(config), winbgn_(bgn), winend_(end), commMPI_(comm),
-    gnlocs_outside_timewindow_(0), gnlocs_(0), nlocs_(0), nvars_(0), nrecs_(0),
-    file_unexpected_dtypes_(false),
-    file_excess_dims_(false), in_max_frame_size_(0), out_max_frame_size_(0),
-    int_database_(), float_database_(), string_database_(), datetime_database_(),
-    obsvars_(), next_rec_num_(0)
+                     : config_(config), winbgn_(bgn), winend_(end), commMPI_(comm),
+                       gnlocs_(0), nrecs_(0), obsvars_(),
+                       obs_group_(), obs_params_(bgn, end, comm, timeComm)
 {
-  oops::Log::trace() << "ObsData::ObsData config  = " << config << std::endl;
+    oops::Log::trace() << "ObsData::ObsData config  = " << config << std::endl;
 
-  obsname_ = config.getString("name");
-  std::string distname = config.getString("distribution", "RoundRobin");
-  bool read_obs_from_separate_file = config.getBool("read obs from separate file", false);
+    // transfer the input config to the ObsSpaceParameters object data member
+    obs_params_.deserialize(config);
 
-  obsvars_ = oops::Variables(config, "simulated variables");
-  oops::Log::debug() << obsname_ << " vars: " << obsvars_ << std::endl;
+    obsname_ = obs_params_.top_level_.obsSpaceName;
+    obsvars_ = obs_params_.top_level_.simVars;
+    oops::Log::info() << this->obsname() << " vars: " << obsvars_ << std::endl;
 
-  // Create the MPI distribution object
-  dist_ = DistributionFactory::create(this->comm(), config);
+    // Create the MPI distribution object
+    dist_ = DistributionFactory::create(this->comm(), config);
 
-  // Initialize the obs space container
-  if (config.has("obsdatain")) {
-    // Initialize the container from an input obs file
-    if (config.has("obsdatain.obsgrouping.group variables")) {
-      obs_group_variables_ = config.getStringVector("obsdatain.obsgrouping.group variables");
-    } else {
-      obs_group_variables_.clear();
-    }
-    obs_sort_variable_ = config.getString("obsdatain.obsgrouping.sort variable", "");
-    obs_sort_order_ = config.getString("obsdatain.obsgrouping.sort order", "ascending");
-    if ((obs_sort_order_ != "ascending") && (obs_sort_order_ != "descending")) {
-      std::string ErrMsg =
-        std::string("ObsData::ObsData: Must use one of 'ascending' or 'descending' ") +
-        std::string("for the 'sort order:' YAML configuration keyword.");
-      ABORT(ErrMsg);
-    }
+    // Open the source (ObsFrame) of the data for initializing the obs_group_ (ObsGroup)
+    std::shared_ptr<ObsFrame> obsFrame;
+    obsFrame = ObsFrameFactory::create(ObsIoModes::READ, obs_params_, dist_);
 
-    if (("Halo" == distname) && read_obs_from_separate_file) {
-      std::string filename = config.getString("obsdatain.obsfile");
-      // Find the left-most dot in the file name, and use that to pick off the file name
-      // and file extension.
-      std::size_t found = filename.find_last_of(".");
-      if (found == std::string::npos)
-        found = filename.length();
+    createObsGroupFromObsFrame(obsFrame);
+    initFromObsSource(obsFrame);
 
-      // Get the process rank number and format it
-      std::ostringstream ss;
-      ss << "_" << std::setw(4) << std::setfill('0') << commMPI_.rank();
-      if (timeComm.size() > 1) ss << "_" << timeComm.rank();
-
-      // Construct the input file name
-      filein_ = filename.insert(found, ss.str());
-    } else {
-      filein_ = config.getString("obsdatain.obsfile");
-    }
-
-    in_max_frame_size_ = config.getUnsigned("obsdatain.max frame size",
-                                            IODAIO_DEFAULT_FRAME_SIZE);
-    oops::Log::trace() << obsname_ << " file in = " << filein_ << std::endl;
-    InitFromFile(filein_, in_max_frame_size_);
-    if (file_unexpected_dtypes_) {
-      if (commMPI_.rank() == 0) {
-        oops::Log::warning()
-          << "ObsData::ObsData:: WARNING: Input file contains variables "
-          << "with unexpected data types" << std::endl
-          << "  Input file: " << filein_ << std::endl;
-      }
-    }
-
-    if (file_excess_dims_) {
-      if (commMPI_.rank() == 0) {
-        oops::Log::warning()
-          << "ObsData::ObsData:: WARNING: Input file contains variables "
-          << "with excess number of dimensions (these variables were skipped)" << std::endl
-          << "  Input file: " << filein_ << std::endl;
-      }
-    }
+    // After walking through all the frames, gnlocs_ and gnlocs_outside_timewindow_
+    // are set representing the entire file. This is because they are calculated
+    // before doing the MPI distribution.
+    gnlocs_ = obsFrame->globalNumLocs();
+    gnlocs_outside_timewindow_ = obsFrame->globalNumLocsOutsideTimeWindow();
 
     // assign a record to a unique PE
     size_t nlocspatch = dist_->computePatchLocs(gnlocs_);
 
-    if (obs_sort_variable_ != "") {
-      // Fill the recidx_ map with indices representing sorted groups
-      BuildSortedObsGroups();
+    if (this->obs_sort_var() != "") {
+      buildSortedObsGroups();
       recidx_is_sorted_ = true;
     } else {
       // Fill the recidx_ map with indices that represent each group, but are not
       // sorted. This is done so the recidx_ structure can be used to walk
       // through the individual groups. For example, this can be used to calculate
       // RMS values for each group.
-      BuildRecIdxUnsorted();
+      buildRecIdxUnsorted();
       recidx_is_sorted_ = false;
     }
-  } else if (config.has("generate")) {
-    // Initialize the container from the generateDistribution method
-    eckit::LocalConfiguration genconfig(config, "generate");
-    generateDistribution(genconfig);
-  } else {
-    // Error - must have one of obsdatain or Generate
-    std::string ErrorMsg =
-      "ObsData::ObsData: Must use one of 'obsdatain' or 'generate' in the YAML configuration.";
-    ABORT(ErrorMsg);
-  }
-  nrecs_ = unique_rec_nums_.size();
 
-  // Extend the ObsSpace if requested to do so.
-  if (config.has("extension")) extendObsSpace(config);
+    fillChanNumToIndexMap();
 
-  // Check to see if an output file has been requested.
-  if (config.has("obsdataout.obsfile")) {
-    std::string filename = config.getString("obsdataout.obsfile");
-    out_max_frame_size_ = config.getUnsigned("obsdataout.max frame size",
-                                             IODAIO_DEFAULT_FRAME_SIZE);
+    if (obs_params_.top_level_.obsExtend.value() != boost::none) {
+        extendObsSpace(*(obs_params_.top_level_.obsExtend.value()));
+    }
 
-    // If present, change '%{member}%' to 'iii'
-    util::stringfunctions::swapNameMember(config, filename);
-
-    // Find the left-most dot in the file name, and use that to pick off the file name
-    // and file extension.
-    std::size_t found = filename.find_last_of(".");
-    if (found == std::string::npos)
-      found = filename.length();
-
-    // Get the process rank number and format it
-    std::ostringstream ss;
-    ss << "_" << std::setw(4) << std::setfill('0') << this->comm().rank();
-    if (timeComm.size() > 1) ss << "_" << timeComm.rank();
-
-    // Construct the output file name
-    fileout_ = filename.insert(found, ss.str());
-
-    // Check to see if user is trying to overwrite an existing file. For now always allow
-    // the overwrite, but issue a warning if we are about to clobber an existing file.
-    std::ifstream infile(fileout_);
-    if (infile.good() && (commMPI_.rank() == 0)) {
-        oops::Log::warning() << "ObsData::ObsData WARNING: Overwriting output file "
-                             << fileout_ << std::endl;
-      }
-  } else {
-    oops::Log::debug() << "ObsData::ObsData output file is not required " << std::endl;
-  }
-
-  oops::Log::trace() << "ObsData::ObsData contructed name = " << obsname() << std::endl;
+    oops::Log::trace() << "ObsData::ObsData constructed name = " << obsname() << std::endl;
 }
 
 // -----------------------------------------------------------------------------
-/*!
- * \details Destructor for an ObsData object. This destructor will clean up the ObsData
- *          object and optionally write out the contents of the obs container into
- *          the output file. The save-to-file operation is invoked when an output obs
- *          file is specified in the ECKIT configuration segment associated with the
- *          ObsData object.
- */
+/// \details Destructor for an ObsData object. This destructor will clean up the ObsData
+///          object and optionally write out the contents of the obs container into
+///          the output file. The save-to-file operation is invoked when an output obs
+///          file is specified in the ECKIT configuration segment associated with the
+///          ObsData object.
 ObsData::~ObsData() {
-  oops::Log::trace() << "ObsData::ObsData destructor begin" << std::endl;
-  if (fileout_.size() != 0) {
-    oops::Log::info() << obsname() << ": save database to " << fileout_ << std::endl;
-    SaveToFile(fileout_, out_max_frame_size_);
-  } else {
-    oops::Log::info() << obsname() << " :  no output" << std::endl;
-  }
-  oops::Log::trace() << "ObsData::ObsData destructor end" << std::endl;
+    // Destructors are not supposed to throw exceptions so use a try..catch structure
+    // to prevent this destructor from thowing and exception.
+    try {
+        if (obs_params_.top_level_.obsOutFile.value() != boost::none) {
+            std::string fileName = obs_params_.top_level_.obsOutFile.value()->fileName;
+            oops::Log::info() << obsname() << ": save database to " << fileName << std::endl;
+            saveToFile();
+        } else {
+            oops::Log::info() << obsname() << " :  no output" << std::endl;
+        }
+        oops::Log::trace() << "ObsData::ObsData destructor" << std::endl;
+    }
+    catch (std::exception& e) {
+        oops::Log::info()
+            << "ObsData::ObsData destructor has caught exception:" << e.what() << std::endl;
+    }
+    catch(...) {
+        oops::Log::info()
+            << "ObsData::ObsData destructor has caught an unknown exception" << std::endl;
+    }
 }
 
 // -----------------------------------------------------------------------------
-/*!
- * \brief transfer data from the obs container to vdata
- *
- * \details The following four get_db methods are the same except for the data type
- *          of the data being transferred (integer, float, double, DateTime). The
- *          caller needs to allocate the memory that the vdata parameter points to.
- *
- * \param[in]  group Name of container group (ObsValue, ObsError, MetaData, etc.)
- * \param[in]  name  Name of container variable
- * \param[out] vdata Vector where container data is being transferred to
- */
-
-void ObsData::get_db(const std::string & group, const std::string & name,
-                      std::vector<int> & vdata) const {
-  if (vdata.size() > 0) {
-    std::vector<std::size_t> vshape(1, vdata.size());
-    int_database_.LoadFromDb(group, name, vshape, vdata);
-  }
-}
-
-void ObsData::get_db(const std::string & group, const std::string & name,
-                      std::vector<float> & vdata) const {
-  if (vdata.size() > 0) {
-    std::vector<std::size_t> vshape(1, vdata.size());
-    float_database_.LoadFromDb(group, name, vshape, vdata);
-  }
-}
-
-void ObsData::get_db(const std::string & group, const std::string & name,
-                      std::vector<double> & vdata) const {
-  if (vdata.size() > 0) {
-    std::vector<std::size_t> vshape(1, vdata.size());
-    // load the float values from the database and convert to double
-    std::vector<float> FloatData(vdata.size(), 0.0);
-    float_database_.LoadFromDb(group, name, vshape, FloatData);
-    ConvertVarType<float, double>(FloatData, vdata);
-  }
-}
-
-void ObsData::get_db(const std::string & group, const std::string & name,
-                      std::vector<std::string> & vdata) const {
-  if (vdata.size() > 0) {
-    std::vector<std::size_t> vshape(1, vdata.size());
-    string_database_.LoadFromDb(group, name, vshape, vdata);
-  }
-}
-
-void ObsData::get_db(const std::string & group, const std::string & name,
-                      std::vector<util::DateTime> & vdata) const {
-  if (vdata.size() > 0) {
-    std::vector<std::size_t> vshape(1, vdata.size());
-    datetime_database_.LoadFromDb(group, name, vshape, vdata);
-  }
-}
-
-// -----------------------------------------------------------------------------
-/*!
- * \brief transfer data from vdata to the obs container
- *
- * \details The following four put_db methods are the same except for the data type
- *          of the data being transferred (integer, float, double, DateTime). The
- *          caller needs to allocate and assign the memory that the vdata parameter
- *          points to.
- *
- * \param[in]  group Name of container group (ObsValue, ObsError, MetaData, etc.)
- * \param[in]  name  Name of container variable
- * \param[out] vdata Vector where container data is being transferred from
- */
-
-void ObsData::put_db(const std::string & group, const std::string & name,
-                      const std::vector<int> & vdata) {
-  std::vector<std::size_t> vshape(1, vdata.size());
-  int_database_.StoreToDb(group, name, vshape, vdata);
-}
-
-void ObsData::put_db(const std::string & group, const std::string & name,
-                      const std::vector<float> & vdata) {
-  std::vector<std::size_t> vshape(1, vdata.size());
-  float_database_.StoreToDb(group, name, vshape, vdata);
-}
-
-void ObsData::put_db(const std::string & group, const std::string & name,
-                      const std::vector<double> & vdata) {
-  std::vector<std::size_t> vshape(1, vdata.size());
-  // convert to float, then load into the database
-  std::vector<float> FloatData(vdata.size());
-  ConvertVarType<double, float>(vdata, FloatData);
-  float_database_.StoreToDb(group, name, vshape, FloatData);
-}
-
-void ObsData::put_db(const std::string & group, const std::string & name,
-                      const std::vector<std::string> & vdata) {
-  std::vector<std::size_t> vshape(1, vdata.size());
-  string_database_.StoreToDb(group, name, vshape, vdata);
-}
-
-void ObsData::put_db(const std::string & group, const std::string & name,
-                      const std::vector<util::DateTime> & vdata) {
-  std::vector<std::size_t> vshape(1, vdata.size());
-  datetime_database_.StoreToDb(group, name, vshape, vdata);
-}
-
-// -----------------------------------------------------------------------------
-/*!
- * \details This method checks for the existence of the group, name combination
- *          in the obs container. If the combination exists, "true" is returned,
- *          otherwise "false" is returned.
- */
-
-bool ObsData::has(const std::string & group, const std::string & name) const {
-  return (int_database_.has(group, name) || float_database_.has(group, name) ||
-          string_database_.has(group, name) || datetime_database_.has(group, name));
-}
-
-// -----------------------------------------------------------------------------
-/*!
- * \details This method returns the data type of the variable stored in the obs
- *          container.
- */
-
-ObsDtype ObsData::dtype(const std::string & group, const std::string & name) const {
-  ObsDtype VarType = ObsDtype::None;
-  if (int_database_.has(group, name)) {
-    VarType = ObsDtype::Integer;
-  } else if (float_database_.has(group, name)) {
-    VarType = ObsDtype::Float;
-  } else if (string_database_.has(group, name)) {
-    VarType = ObsDtype::String;
-  } else if (datetime_database_.has(group, name)) {
-    VarType = ObsDtype::DateTime;
-  }
-
-  return VarType;
-}
-
-// -----------------------------------------------------------------------------
-/*!
- * \details This method returns the setting of the YAML configuration
- *          parameter: obsdatain.obsgrouping.group variables
- */
-const std::vector<std::string> & ObsData::obs_group_vars() const {
-  return obs_group_variables_;
-}
-
-// -----------------------------------------------------------------------------
-/*!
- * \details This method returns the setting of the YAML configuration
- *          parameter: obsdatain.obsgrouping.sort variable
- */
-std::string ObsData::obs_sort_var() const {
-  return obs_sort_variable_;
-}
-
-// -----------------------------------------------------------------------------
-/*!
- * \details This method returns the setting of the YAML configuration
- *          parameter: obsdatain.obsgrouping.sort order
- */
-std::string ObsData::obs_sort_order() const {
-  return obs_sort_order_;
-}
-
-// -----------------------------------------------------------------------------
-/*!
- * \details This method returns the number of global unique locations.
- *          Note that nlocs from the obs container may be smaller than number
- *          of global unique locations due to distribution of obs across
- *          multiple process elements.
- */
-std::size_t ObsData::globalNumLocs() const {
-  return gnlocs_;
-}
-
-// -----------------------------------------------------------------------------
-/*!
- * \details This method returns the number of unique locations in the obs
- *          container. Note that nlocs from the obs container may be smaller
- *          than global nlocs due to distribution of obs across
- *          multiple process elements.
- */
-std::size_t ObsData::nlocs() const {
-  return nlocs_;
-}
-
-// -----------------------------------------------------------------------------
-/*!
- * \details This method returns the number of unique records in the obs
- *          container. A record is an atomic unit of locations that belong
- *          together such as a single radiosonde sounding.
- */
-std::size_t ObsData::nrecs() const {
-  return nrecs_;
-}
-
-// -----------------------------------------------------------------------------
-/*!
- * \details This method returns the number of unique variables in the obs
- *          container. "Variables" refers to the quantities that can be
- *          assimilated as opposed to meta data.
- */
 std::size_t ObsData::nvars() const {
-  return nvars_;
+    // Nvars is the number of variables in the ObsValue group. By querying
+    // the ObsValue group, nvars will keep track of new variables that are added
+    // during a run.
+    // Some of the generators, upon construction, do not create variables in ObsValue
+    // since the MakeObs function will do that. In this case, they instead create
+    // error estimates in ObsError with the expectation that ObsValue will be filled
+    // in later. So upon construction, nvars will be the number of variables in ObsError
+    // instead of ObsValue.
+    // Because of the generator case above, query ObsValue first and if ObsValue doesn't
+    // exist query ObsError.
+    std::size_t numVars = 0;
+    if (obs_group_.exists("ObsValue")) {
+         numVars = obs_group_.open("ObsValue").vars.list().size();
+    } else if (obs_group_.exists("ObsError")) {
+         numVars = obs_group_.open("ObsError").vars.list().size();
+    }
+    return numVars;
 }
 
 // -----------------------------------------------------------------------------
-/*!
- * \details This method returns a reference to the record number vector
- *          data member. This is for read only access.
- */
-const std::vector<std::size_t> & ObsData::recnum() const {
-  return recnums_;
+const std::vector<std::string> & ObsData::obs_group_vars() const {
+    return obs_params_.top_level_.obsIoInParameters().obsGrouping.value().obsGroupVars;
 }
 
 // -----------------------------------------------------------------------------
-/*!
- * \details This method returns a reference to the index vector
- *          data member. This is for read only access.
- *
- * The returned vector has length nlocs() and contains the original indices of locations from the
- * input ioda file corresponding to locations stored in this ObsData object -- i.e. those that were
- * selected by the timing window filter and the MPI distribution.
- *
- * Example 1: Suppose the RoundRobin distribution is used and and there are two MPI tasks (ranks 0
- * and 1). The even-numbered locations from the file will go to rank 0, and the odd-numbered
- * locations will go to rank 1. This means that `ObsData::index()` will return the vector `0, 2,
- * 4, 6, ...` on rank 0 and `1, 3, 5, 7, ...` on rank 1.
- *
- * Example 2: Suppose MPI is not used and the file contains 10 locations in total, but locations 2,
- * 3 and 7 are outside the DA timing window. In this case, `ObsData::index()` will return `0, 1, 4,
- * 5, 6, 8, 9`.
- */
-const std::vector<std::size_t> & ObsData::index() const {
-  return indx_;
+std::string ObsData::obs_sort_var() const {
+    return obs_params_.top_level_.obsIoInParameters().obsGrouping.value().obsSortVar;
 }
 
 // -----------------------------------------------------------------------------
-/*!
- * \details This method returns the begin iterator associated with the
- *          recidx_ data member.
- */
+std::string ObsData::obs_sort_order() const {
+    return obs_params_.top_level_.obsIoInParameters().obsGrouping.value().obsSortOrder;
+}
+
+// -----------------------------------------------------------------------------
+bool ObsData::has(const std::string & group, const std::string & name) const {
+    // For backward compatibility, recognize and handle appropriately variable names with
+    // channel suffixes.
+    std::string nameToUse;
+    std::vector<int> chanSelectToUse;
+    splitChanSuffix(group, name, { }, nameToUse, chanSelectToUse);
+    return obs_group_.vars.exists(fullVarName(group, nameToUse));
+}
+
+// -----------------------------------------------------------------------------
+ObsDtype ObsData::dtype(const std::string & group, const std::string & name) const {
+    // For backward compatibility, recognize and handle appropriately variable names with
+    // channel suffixes.
+    std::string nameToUse;
+    std::vector<int> chanSelectToUse;
+    splitChanSuffix(group, name, { }, nameToUse, chanSelectToUse);
+
+    // Set the type to None if there is no type from the backend
+    ObsDtype VarType = ObsDtype::None;
+    if (has(group, nameToUse)) {
+        Variable var = obs_group_.vars.open(fullVarName(group, nameToUse));
+        if (var.isA<int>()) {
+            VarType = ObsDtype::Integer;
+        } else if (var.isA<float>()) {
+            VarType = ObsDtype::Float;
+        } else if (var.isA<std::string>()) {
+            if ((group == "MetaData") && (nameToUse == "datetime")) {
+                // TODO(srh) Workaround to cover when datetime was stored
+                // as a util::DateTime object. For now, ioda will store datetimes
+                // as strings and convert to DateTime objects for client access.
+                VarType = ObsDtype::DateTime;
+            } else {
+                VarType = ObsDtype::String;
+            }
+        }
+    }
+    return VarType;
+}
+
+// -----------------------------------------------------------------------------
+void ObsData::get_db(const std::string & group, const std::string & name,
+                     std::vector<int> & vdata,
+                     const std::vector<int> & chanSelect) const {
+    loadVar<int>(group, name, chanSelect, vdata);
+}
+
+void ObsData::get_db(const std::string & group, const std::string & name,
+                     std::vector<float> & vdata,
+                     const std::vector<int> & chanSelect) const {
+    loadVar<float>(group, name, chanSelect, vdata);
+}
+
+void ObsData::get_db(const std::string & group, const std::string & name,
+                     std::vector<double> & vdata,
+                     const std::vector<int> & chanSelect) const {
+    // load the float values from the database and convert to double
+    std::vector<float> floatData;
+    loadVar<float>(group, name, chanSelect, floatData);
+    ConvertVarType<float, double>(floatData, vdata);
+}
+
+void ObsData::get_db(const std::string & group, const std::string & name,
+                     std::vector<std::string> & vdata,
+                     const std::vector<int> & chanSelect) const {
+    loadVar<std::string>(group, name, chanSelect, vdata);
+}
+
+void ObsData::get_db(const std::string & group, const std::string & name,
+                     std::vector<util::DateTime> & vdata,
+                     const std::vector<int> & chanSelect) const {
+    std::vector<std::string> dtStrings;
+    loadVar<std::string>(group, name, chanSelect, dtStrings);
+    vdata = convertDtStringsToDtime(dtStrings);
+}
+
+// -----------------------------------------------------------------------------
+void ObsData::put_db(const std::string & group, const std::string & name,
+                     const std::vector<int> & vdata,
+                     const std::vector<std::string> & dimList) {
+    saveVar(group, name, vdata, dimList);
+}
+
+void ObsData::put_db(const std::string & group, const std::string & name,
+                     const std::vector<float> & vdata,
+                     const std::vector<std::string> & dimList) {
+    saveVar(group, name, vdata, dimList);
+}
+
+void ObsData::put_db(const std::string & group, const std::string & name,
+                     const std::vector<double> & vdata,
+                     const std::vector<std::string> & dimList) {
+    // convert to float, then save to the database
+    std::vector<float> floatData;
+    ConvertVarType<double, float>(vdata, floatData);
+    saveVar(group, name, floatData, dimList);
+}
+
+void ObsData::put_db(const std::string & group, const std::string & name,
+                     const std::vector<std::string> & vdata,
+                     const std::vector<std::string> & dimList) {
+    saveVar(group, name, vdata, dimList);
+}
+
+void ObsData::put_db(const std::string & group, const std::string & name,
+                     const std::vector<util::DateTime> & vdata,
+                     const std::vector<std::string> & dimList) {
+    std::vector<std::string> dtStrings(vdata.size(), "");
+    for (std::size_t i = 0; i < vdata.size(); ++i) {
+      dtStrings[i] = vdata[i].toString();
+    }
+    saveVar(group, name, dtStrings, dimList);
+}
+
+// -----------------------------------------------------------------------------
 const ObsData::RecIdxIter ObsData::recidx_begin() const {
   return recidx_.begin();
 }
 
 // -----------------------------------------------------------------------------
-/*!
- * \details This method returns the end iterator associated with the
- *          recidx_ data member.
- */
 const ObsData::RecIdxIter ObsData::recidx_end() const {
   return recidx_.end();
 }
 
 // -----------------------------------------------------------------------------
-/*!
- * \details This method returns a boolean value indicating whether the
- *          given record number exists in the recidx_ data member.
- */
-bool ObsData::recidx_has(const std::size_t RecNum) const {
-  RecIdxIter irec = recidx_.find(RecNum);
+bool ObsData::recidx_has(const std::size_t recNum) const {
+  RecIdxIter irec = recidx_.find(recNum);
   return (irec != recidx_.end());
 }
 
 // -----------------------------------------------------------------------------
-/*!
- * \details This method returns the current record number, pointed to by the
- *          given iterator, from the recidx_ data member.
- */
-std::size_t ObsData::recidx_recnum(const RecIdxIter & Irec) const {
-  return Irec->first;
+std::size_t ObsData::recidx_recnum(const RecIdxIter & irec) const {
+  return irec->first;
 }
 
 // -----------------------------------------------------------------------------
-/*!
- * \details This method returns the current vector, pointed to by the
- *          given iterator, from the recidx_ data member.
- */
-const std::vector<std::size_t> & ObsData::recidx_vector(const RecIdxIter & Irec) const {
-  return Irec->second;
+const std::vector<std::size_t> & ObsData::recidx_vector(const RecIdxIter & irec) const {
+  return irec->second;
 }
 
 // -----------------------------------------------------------------------------
-/*!
- * \details This method returns the current vector, pointed to by the
- *          given iterator, from the recidx_ data member.
- */
-const std::vector<std::size_t> & ObsData::recidx_vector(const std::size_t RecNum) const {
-  RecIdxIter Irec = recidx_.find(RecNum);
+const std::vector<std::size_t> & ObsData::recidx_vector(const std::size_t recNum) const {
+  RecIdxIter Irec = recidx_.find(recNum);
   if (Irec == recidx_.end()) {
     std::string ErrMsg =
-      "ObsData::recidx_vector: Record number, " + std::to_string(RecNum) +
+      "ObsData::recidx_vector: Record number, " + std::to_string(recNum) +
       ", does not exist in record index map.";
     ABORT(ErrMsg);
   }
@@ -512,10 +364,6 @@ const std::vector<std::size_t> & ObsData::recidx_vector(const std::size_t RecNum
 }
 
 // -----------------------------------------------------------------------------
-/*!
- * \details This method returns the all of the record numbers from the
- *          recidx_ data member (ie, all the key values) in a vector.
- */
 std::vector<std::size_t> ObsData::recidx_all_recnums() const {
   std::vector<std::size_t> RecNums(nrecs_);
   std::size_t recnum = 0;
@@ -526,882 +374,718 @@ std::vector<std::size_t> ObsData::recidx_all_recnums() const {
   return RecNums;
 }
 
+// ----------------------------- private functions -----------------------------
 // -----------------------------------------------------------------------------
-/*!
- * \details This method will generate a set of latitudes, longitudes and datetimes
- *          which can be used for testing without reading in an obs file. Two methods
- *          are supported, the first generating random values between specified latitudes,
- *          longitudes and a timing window, and the second copying lists specified by
- *          the user. This method is triggered using the "Generate" keyword in the
- *          configuration file and either of the two methods above are specified using
- *          the sub keywords "Random" or "List".
- *
- * \param[in] conf ECKIT configuration segment built from an input configuration file.
- */
-void ObsData::generateDistribution(const eckit::Configuration & conf) {
-  // Generate lat, lon, time values according to method specified in the config
-  std::vector<float> latitude;
-  std::vector<float> longitude;
-  std::vector<util::DateTime> obs_datetimes;
-  if (conf.has("random")) {
-    genDistRandom(conf, latitude, longitude, obs_datetimes);
-  } else if (conf.has("list")) {
-    genDistList(conf, latitude, longitude, obs_datetimes);
-  } else {
-    std::string ErrorMsg =
-      std::string("ObsData::generateDistribution: Must specify either ") +
-      std::string("'random' or 'list' with 'generate' configuration keyword");
-    ABORT(ErrorMsg);
-  }
-
-  // number of variables specified in simulate section
-  nvars_ = obsvars_.size();
-
-  // Read obs errors (one for each variable)
-  const std::vector<float> err = conf.getFloatVector("obs errors");
-  ASSERT(nvars_ == err.size());
-
-  put_db("MetaData", "datetime", obs_datetimes);
-  put_db("MetaData", "latitude", latitude);
-  put_db("MetaData", "longitude", longitude);
-  for (std::size_t ivar = 0; ivar < nvars_; ivar++) {
-    std::vector<float> obserr(nlocs_, err[ivar]);
-    put_db("ObsError", obsvars_[ivar], obserr);
-  }
-}
-
-// -----------------------------------------------------------------------------
-/*!
- * \details This method will generate a set of latitudes and longitudes of which
- *          can be used for testing without reading in an obs file. Two latitude
- *          values, two longitude values, the number of locations (nobs keyword)
- *          and an optional random seed are specified in the configuration given
- *          by the conf parameter. Random locations between the two latitudes and
- *          two longitudes are generated and stored in the obs container as meta data.
- *          Random time stamps that fall inside the given timing window (which is
- *          specified in the configuration file) are alos generated and stored
- *          in the obs container as meta data.
- *
- * \param[in]  conf  ECKIT configuration segment built from an input configuration file.
- * \param[out] Lats  Generated latitude values
- * \param[out] Lons  Generated longitude values
- * \param[out] Dtims Generated datetime values
- */
-void ObsData::genDistRandom(const eckit::Configuration & conf, std::vector<float> & Lats,
-                            std::vector<float> & Lons, std::vector<util::DateTime> & Dtimes) {
-  gnlocs_  = conf.getInt("random.nobs");
-  float lat1 = conf.getFloat("random.lat1");
-  float lat2 = conf.getFloat("random.lat2");
-  float lon1 = conf.getFloat("random.lon1");
-  float lon2 = conf.getFloat("random.lon2");
-
-  // Make the random_seed keyword optional. Can spec it for testing to get repeatable
-  // values, and the user doesn't have to spec it if they want subsequent runs to
-  // use different random sequences.
-  unsigned int ran_seed;
-  if (conf.has("random.random seed")) {
-    ran_seed = conf.getInt("random.random seed");
-  } else {
-    ran_seed = std::time(0);  // based on the current date/time.
-  }
-
-  // Generate the indexing for MPI distribution
-  std::unique_ptr<IodaIO> NoIO(nullptr);
-  std::map<std::string, std::size_t> ObsGroupingMap;
-  std::vector<std::size_t> DummyIndex = GenFrameIndexRecNums(NoIO, 0, gnlocs_, ObsGroupingMap);
-
-  // Use the following formula to generate random lat, lon and time values.
-  //
-  //   val = val1 + (random_number_between_0_and_1 * (val2-val1))
-  //
-  // where val2 > val1.
-  //
-  // Create a list of random values between 0 and 1 to be used for genearting
-  // random lat, lon and time vaules.
-  //
-  // Use different seeds for lat and lon so that in the case where lat and lon ranges
-  // are the same, you get a different sequences for lat compared to lon.
-  //
-  // Have rank 0 generate the full length random sequences, and then
-  // broadcast these to the other ranks. This ensures that every rank
-  // contains the same random sequences. If all ranks generated their
-  // own sequences, which they could do, the sequences between ranks
-  // would be different in the case where random_seed is not specified.
-  std::vector<float> RanVals(gnlocs_, 0.0);
-  std::vector<float> RanVals2(gnlocs_, 0.0);
-  if (this->comm().rank() == 0) {
-    util::UniformDistribution<float> RanUD(gnlocs_, 0.0, 1.0, ran_seed);
-    util::UniformDistribution<float> RanUD2(gnlocs_, 0.0, 1.0, ran_seed+1);
-
-    RanVals = RanUD.data();
-    RanVals2 = RanUD2.data();
-  }
-  this->comm().broadcast(RanVals, 0);
-  this->comm().broadcast(RanVals2, 0);
-
-  // Form the ranges val2-val for lat, lon, time
-  float LatRange = lat2 - lat1;
-  float LonRange = lon2 - lon1;
-  util::Duration WindowDuration(this->windowEnd() - this->windowStart());
-  float TimeRange = static_cast<float>(WindowDuration.toSeconds());
-
-  // Create vectors for lat, lon, time, fill them with random values
-  // inside their respective ranges, and put results into the obs container.
-  Lats.assign(nlocs_, 0.0);
-  Lons.assign(nlocs_, 0.0);
-  Dtimes.assign(nlocs_, this->windowStart());
-
-  util::Duration DurZero(0);
-  util::Duration DurOneSec(1);
-  for (std::size_t ii = 0; ii < nlocs_; ii++) {
-    std::size_t index = indx_[ii];
-    Lats[ii] = lat1 + (RanVals[index] * LatRange);
-    Lons[ii] = lon1 + (RanVals2[index] * LonRange);
-
-    // Currently the filter for time stamps on obs values is:
-    //
-    //     windowStart < ObsTime <= windowEnd
-    //
-    // If we get a zero OffsetDt, then change it to 1 second so that the observation
-    // will remain inside the timing window.
-    util::Duration OffsetDt(static_cast<int64_t>(RanVals[index] * TimeRange));
-    if (OffsetDt == DurZero) {
-      OffsetDt = DurOneSec;
-    }
-    // Dtimes elements were initialized to the window start
-    Dtimes[ii] += OffsetDt;
-  }
-}
-
-// -----------------------------------------------------------------------------
-/*!
- * \details This method will generate a set of latitudes and longitudes of which
- *          can be used for testing without reading in an obs file. The values
- *          are simply read from lists in the configuration file. The purpose of
- *          this method is to allow the user to exactly specify obs locations.
- *
- * \param[in]  conf  ECKIT configuration segment built from an input configuration file.
- * \param[out] Lats  Generated latitude values
- * \param[out] Lons  Generated longitude values
- * \param[out] Dtims Generated datetime values
- */
-void ObsData::genDistList(const eckit::Configuration & conf, std::vector<float> & Lats,
-                          std::vector<float> & Lons, std::vector<util::DateTime> & Dtimes) {
-  std::vector<float> latitudes = conf.getFloatVector("list.lats");
-  std::vector<float> longitudes = conf.getFloatVector("list.lons");
-  std::vector<std::string> DtStrings = conf.getStringVector("list.datetimes");
-  std::vector<util::DateTime> datetimes;
-  for (std::size_t i = 0; i < DtStrings.size(); ++i) {
-    util::DateTime TempDt(DtStrings[i]);
-    datetimes.push_back(TempDt);
-  }
-
-  // Generate the indexing for MPI distribution
-  gnlocs_ = latitudes.size();
-  std::unique_ptr<IodaIO> NoIO(nullptr);
-  std::map<std::string, std::size_t> ObsGroupingMap;
-  std::vector<std::size_t> DummyIndex = GenFrameIndexRecNums(NoIO, 0, gnlocs_, ObsGroupingMap);
-
-  // Create vectors for lat, lon, time, fill them with the values from the
-  // lists in the configuration.
-  Lats.assign(nlocs_, 0.0);
-  Lons.assign(nlocs_, 0.0);
-  Dtimes.assign(nlocs_, this->windowStart());
-
-  for (std::size_t ii = 0; ii < nlocs_; ii++) {
-    std::size_t index = indx_[ii];
-    Lats[ii] = latitudes[index];
-    Lons[ii] = longitudes[index];
-    Dtimes[ii] = datetimes[index];
-  }
-}
-
-// -----------------------------------------------------------------------------
-/*!
- * \details This method provides a way to print an ObsData object in an output
- *          stream. It simply prints a dummy message for now.
- */
 void ObsData::print(std::ostream & os) const {
-  os << "ObsData::print not implemented";
+    os << "ObsData::print not implemented";
 }
 
 // -----------------------------------------------------------------------------
-/*!
- * \details This method will initialize the obs container from the input obs file.
- *          All the variables from the input file will be read in and loaded into
- *          the obs container. Obs that fall outside the DA timing window will be
- *          filtered out before loading into the container. This method will also
- *          apply obs distribution across multiple process elements. For these reasons,
- *          the number of locations in the obs container may be smaller than the
- *          number of locations in the input obs file.
- *
- * \param[in] filename Path to input obs file
- */
-void ObsData::InitFromFile(const std::string & filename, const std::size_t MaxFrameSize) {
-  oops::Log::trace() << "ObsData::InitFromFile opening file: " << filename << std::endl;
+void ObsData::createObsGroupFromObsFrame(const std::shared_ptr<ObsFrame> & obsFrame) {
+    // Determine the maximum frame size
+    Dimensions_t maxFrameSize = obs_params_.top_level_.obsIoInParameters().maxFrameSize;
 
-  // Open the file for reading and record nlocs and nvars from the file.
-  std::unique_ptr<IodaIO> fileio {ioda::IodaIOfactory::Create(filename, "r", MaxFrameSize)};
-  gnlocs_ = fileio->nlocs();
+    // Create the dimension specs for obs_group_
+    NewDimensionScales_t newDims;
+    for (auto & dimNameObject : obsFrame->ioDimVarList()) {
+        std::string dimName = dimNameObject.first;
+        Variable srcDimVar = dimNameObject.second;
+        Dimensions_t dimSize = srcDimVar.getDimensions().dimsCur[0];
+        Dimensions_t maxDimSize = dimSize;
+        Dimensions_t chunkSize = dimSize;
 
-  // Walk through the frames and select the records according to the MPI distribution
-  // and if the records fall inside the DA timing window. nvars_ for ObsData is the
-  // number of variables with the GroupName ObsValue. Since we can be reading in
-  // multiple frames, only check for the ObsValue group on the first frame.
-  nvars_ = 0;
-  bool FirstFrame = true;
-  fileio->frame_initialize();
-  // container used by GenFrameIndexRecNums for holding grouping key to record number mapping
-  // during the following loop through the frames
-  std::map<std::string, std::size_t> ObsGroupingMap;
-  for (IodaIO::FrameIter iframe = fileio->frame_begin();
-                       iframe != fileio->frame_end(); ++iframe) {
-    std::size_t FrameStart = fileio->frame_start(iframe);
-    std::size_t FrameSize = fileio->frame_size(iframe);
-
-    // Fill in the current frame from the file
-    fileio->frame_read(iframe);
-
-    // Calculate the corresponding segments of indx_ and recnums_ vectors for this
-    // frame. Use these segments to select the rows from the frame before storing in
-    // the obs space container.
-    std::vector<std::size_t> FrameIndex =
-       GenFrameIndexRecNums(fileio, FrameStart, FrameSize, ObsGroupingMap);
-
-    // Integer variables
-    for (IodaIO::FrameIntIter idata = fileio->frame_int_begin();
-                              idata != fileio->frame_int_end(); ++idata) {
-      std::string GroupName = fileio->frame_int_get_gname(idata);
-      if (FirstFrame && (GroupName == "ObsValue")) { nvars_++; }
-      std::string VarName = fileio->frame_int_get_vname(idata);
-      std::vector<std::size_t> VarShape = fileio->var_shape(GroupName, VarName);
-      std::vector<int> FrameData;
-      fileio->frame_int_get_data(GroupName, VarName, FrameData);
-      std::vector<std::size_t> FrameShape = VarShape;
-      FrameShape[0] = FrameData.size();
-      if (VarShape[0] == gnlocs_) {
-        std::vector<std::size_t> IndexedShape;
-        std::vector<int> SelectedData =
-             ApplyIndex(FrameData, VarShape, FrameIndex, FrameShape);
-        int_database_.StoreToDb(GroupName, VarName, FrameShape, SelectedData, true);
-      } else {
-        int_database_.StoreToDb(GroupName, VarName, FrameShape, FrameData, true);
-      }
-    }
-
-    // Float variables
-    for (IodaIO::FrameFloatIter idata = fileio->frame_float_begin();
-                                idata != fileio->frame_float_end(); ++idata) {
-      std::string GroupName = fileio->frame_float_get_gname(idata);
-      if (FirstFrame && (GroupName == "ObsValue")) { nvars_++; }
-      std::string VarName = fileio->frame_float_get_vname(idata);
-      std::vector<std::size_t> VarShape = fileio->var_shape(GroupName, VarName);
-      std::vector<float> FrameData;
-      fileio->frame_float_get_data(GroupName, VarName, FrameData);
-      std::vector<std::size_t> FrameShape = VarShape;
-      FrameShape[0] = FrameData.size();
-      if (VarShape[0] == gnlocs_) {
-        std::vector<std::size_t> IndexedShape;
-        std::vector<float> SelectedData =
-             ApplyIndex(FrameData, VarShape, FrameIndex, FrameShape);
-        float_database_.StoreToDb(GroupName, VarName, FrameShape, SelectedData, true);
-      } else {
-        float_database_.StoreToDb(GroupName, VarName, FrameShape, FrameData, true);
-      }
-    }
-
-    // String variables
-    for (IodaIO::FrameStringIter idata = fileio->frame_string_begin();
-                                 idata != fileio->frame_string_end(); ++idata) {
-      std::string GroupName = fileio->frame_string_get_gname(idata);
-      if (FirstFrame && (GroupName == "ObsValue")) { nvars_++; }
-      std::string VarName = fileio->frame_string_get_vname(idata);
-      std::vector<std::size_t> VarShape = fileio->var_shape(GroupName, VarName);
-      std::vector<std::string> FrameData;
-      fileio->frame_string_get_data(GroupName, VarName, FrameData);
-      std::vector<std::size_t> FrameShape = VarShape;
-      FrameShape[0] = FrameData.size();
-      if (VarShape[0] == gnlocs_) {
-        std::vector<std::size_t> IndexedShape;
-        std::vector<std::string> SelectedData =
-             ApplyIndex(FrameData, VarShape, FrameIndex, FrameShape);
-        if (VarName == "datetime") {
-          // Convert to DateTime objects and store in datetime database
-          std::vector<util::DateTime> DtData;
-          for (std::size_t i = 0; i < SelectedData.size(); ++i) {
-            util::DateTime ObsDt(SelectedData[i]);
-            DtData.push_back(ObsDt);
-          }
-          datetime_database_.StoreToDb(GroupName, VarName, FrameShape, DtData, true);
-        } else {
-          string_database_.StoreToDb(GroupName, VarName, FrameShape, SelectedData, true);
+        // If the dimension is nlocs, we want to avoid allocating the file's entire
+        // size because we could be taking a subset of the locations (MPI distribution,
+        // removal of obs outside the DA window).
+        //
+        // Make nlocs unlimited size, and start with its size limited by the
+        // max_frame_size parameter.
+        if (dimName == dim_info_.get_dim_name(ObsDimensionId::Nlocs)) {
+            if (dimSize > maxFrameSize) {
+                dimSize = maxFrameSize;
+            }
+            maxDimSize = Unlimited;
+            chunkSize = dimSize;
         }
-      } else {
-        string_database_.StoreToDb(GroupName, VarName, FrameShape, FrameData, true);
-      }
+
+        if (srcDimVar.isA<int>()) {
+            newDims.push_back(ioda::NewDimensionScale<int>(
+                dimName, dimSize, maxDimSize, chunkSize));
+        } else if (srcDimVar.isA<float>()) {
+            newDims.push_back(ioda::NewDimensionScale<float>(
+                dimName, dimSize, maxDimSize, chunkSize));
+        }
     }
-    FirstFrame = false;
-  }
-  fileio->frame_finalize();
 
-  // update gnlocs_: subtract number of locations outside of time window
-  if (gnlocs_outside_timewindow_ > 0) {
-    oops::Log::debug() << obsname() << ": " << gnlocs_outside_timewindow_ <<
-            " observations are outside of time window out of " << gnlocs_ << std::endl;
-    gnlocs_ -= gnlocs_outside_timewindow_;
-  }
+    // Create the backend for obs_group_
+    Engines::BackendNames backendName = Engines::BackendNames::ObsStore;  // Hdf5Mem; ObsStore;
+    Engines::BackendCreationParameters backendParams;
+    // These parameters only matter if Hdf5Mem is the engine selected. ObsStore ignores.
+    backendParams.action = Engines::BackendFileActions::Create;
+    backendParams.createMode = Engines::BackendCreateModes::Truncate_If_Exists;
+    backendParams.fileName = ioda::Engines::HH::genUniqueName();
+    backendParams.allocBytes = 1024*1024*50;
+    backendParams.flush = false;
+    Group backend = constructBackend(backendName, backendParams);
 
-  // Record whether any problems occurred when reading the file.
-  file_unexpected_dtypes_ = fileio->unexpected_data_types();
-  file_excess_dims_ = fileio->excess_dims();
-  oops::Log::trace() << "ObsData::InitFromFile opening file ends " << std::endl;
+    // Create the ObsGroup and attach the backend.
+    obs_group_ = ObsGroup::generate(backend, newDims);
+
+    // fill in dimension coordinate values
+    for (auto & dimNameObject : obsFrame->ioDimVarList()) {
+        std::string dimName = dimNameObject.first;
+        Variable srcDimVar = dimNameObject.second;
+        Variable destDimVar = obs_group_.vars.open(dimName);
+
+        // Set up the dimension selection objects. The prior loop declared the
+        // sizes of all the dimensions in the frame so use that as a guide, and
+        // transfer the first frame's worth of coordinate values accordingly.
+        std::vector<Dimensions_t> srcDimShape = srcDimVar.getDimensions().dimsCur;
+        std::vector<Dimensions_t> destDimShape = destDimVar.getDimensions().dimsCur;
+
+        std::vector<Dimensions_t> counts = destDimShape;
+        std::vector<Dimensions_t> starts(counts.size(), 0);
+
+        Selection srcSelect;
+        srcSelect.extent(srcDimShape).select({SelectionOperator::SET, starts, counts });
+        Selection memSelect;
+        memSelect.extent(destDimShape).select({SelectionOperator::SET, starts, counts });
+        Selection destSelect;
+        destSelect.extent(destDimShape).select({SelectionOperator::SET, starts, counts });
+
+        if (srcDimVar.isA<int>()) {
+            std::vector<int> dimCoords;
+            srcDimVar.read<int>(dimCoords, memSelect, srcSelect);
+            destDimVar.write<int>(dimCoords, memSelect, destSelect);
+        } else if (srcDimVar.isA<float>()) {
+            std::vector<float> dimCoords;
+            srcDimVar.read<float>(dimCoords, memSelect, srcSelect);
+            destDimVar.write<float>(dimCoords, memSelect, destSelect);
+        }
+    }
 }
 
 // -----------------------------------------------------------------------------
-/*!
- * \details This method generates an list of indices with their corresponding
- *          record numbers, where the indices denote which locations are to be
- *          read into this process element.
- *
- * \param[in] FileIO File id (pointer to IodaIO object)
- * \param[in] FrameStart Row number at beginning of frame.
- * \param[out] FrameIndex Vector of indices indicating rows belonging to this process element
- * \param[out] FrameRecNums Vector containing record numbers corresponding to FrameIndex
- */
-std::vector<std::size_t> ObsData::GenFrameIndexRecNums(const std::unique_ptr<IodaIO> & FileIO,
-                                 const std::size_t FrameStart, const std::size_t FrameSize,
-                                 std::map<std::string, std::size_t> & ObsGroupingMap) {
-  // It's possible that the total number of locations (gnlocs_) is smaller than
-  // another dimension (eg, nchans or nvars for a hyperspectral instrument). If that
-  // is the case, we don't want to read past the end of the datetime or obs group
-  // variable which are dimensioned by nlocs.
-  std::size_t LocSize = FrameSize;
-  if ((FrameStart + FrameSize) > gnlocs_) { LocSize = gnlocs_ - FrameStart; }
+template<typename VarType>
+bool ObsData::readObsSource(const std::shared_ptr<ObsFrame> & obsFrame,
+                            const std::string & varName, std::vector<VarType> & varValues) {
+    Variable sourceVar = obsFrame->vars().open(varName);
 
-  // Apply the timing window if we are reading from a file. Need to filter out locations
-  // that are outside the timing window before generating record numbers. This is because
-  // we are generating record numbers on the fly since we want to get to the point where
-  // we can do the MPI distribution without knowing how many obs (and records) we are going
-  // to encounter.
-  //
-  // Create two vectors as the timing windows are checked, one for location indices the
-  // other for frame indices. Location indices are relative to FrameStart, and frame
-  // indices are relative to this frame (start at zero).
-  //
-  // If we are not reading from a file, then load up the locations and frame indices
-  // with all locations in the frame.
-  std::vector<std::size_t> LocIndex;
-  std::vector<std::size_t> FrameIndex;
-  std::vector<std::size_t> FinalFrameIndex;
+    // Read the variable
+    bool gotVarData = obsFrame->readFrameVar(varName, varValues);
 
-  if (LocSize > 0) {
-    if (FileIO != nullptr) {
-      // Grab the datetime strings for checking the timing window
-      std::string DtGroupName = "MetaData";
-      std::string DtVarName = "datetime";
-      std::vector<std::string> DtStrings;
-      if (!FileIO->frame_string_has(DtGroupName, DtVarName)) {
-        throw eckit::UserError(DtVarName + "@" + DtGroupName + " not found in observations file",
-                               Here());
-      }
-      FileIO->frame_string_get_data(DtGroupName, DtVarName, DtStrings);
-
-      // Convert the datetime strings to DateTime objects
-      std::vector<util::DateTime> ObsDtimes;
-      for (std::size_t i = 0; i < DtStrings.size(); ++i) {
-        util::DateTime ObsDt(DtStrings[i]);
-        ObsDtimes.push_back(ObsDt);
-      }
-
-      // Keep all locations that fall inside the timing window
-      for (std::size_t i = 0; i < LocSize; ++i) {
-        if (InsideTimingWindow(ObsDtimes[i])) {
-          LocIndex.push_back(FrameStart + i);
-          FrameIndex.push_back(i);
+    // Replace source fill values with corresponding missing marks
+    if ((gotVarData) && (sourceVar.hasFillValue())) {
+        VarType sourceFillValue;
+        detail::FillValueData_t sourceFvData = sourceVar.getFillValue();
+        sourceFillValue = detail::getFillValue<VarType>(sourceFvData);
+        VarType varFillValue = this->getFillValue<VarType>();
+        for (std::size_t i = 0; i < varValues.size(); ++i) {
+            if ((varValues[i] == sourceFillValue) || std::isinf(varValues[i])
+                                                  || std::isnan(varValues[i])) {
+                varValues[i] = varFillValue;
+            }
         }
-      }
-      // in case any locations were rejected
-      gnlocs_outside_timewindow_ += (LocSize - LocIndex.size());
-      LocSize = LocIndex.size();
+    }
+    return gotVarData;
+}
+
+template<>
+bool ObsData::readObsSource(const std::shared_ptr<ObsFrame> & obsFrame,
+                            const std::string & varName, std::vector<std::string> & varValues) {
+    Variable sourceVar = obsFrame->vars().open(varName);
+
+    // Read the variable
+    bool gotVarData = obsFrame->readFrameVar(varName, varValues);
+
+    // Replace source fill values with corresponding missing marks
+    if ((gotVarData) && (sourceVar.hasFillValue())) {
+        std::string sourceFillValue;
+        detail::FillValueData_t sourceFvData = sourceVar.getFillValue();
+        sourceFillValue = detail::getFillValue<std::string>(sourceFvData);
+        std::string varFillValue = this->getFillValue<std::string>();
+        for (std::size_t i = 0; i < varValues.size(); ++i) {
+            if (varValues[i] == sourceFillValue) {
+                varValues[i] = varFillValue;
+            }
+        }
+    }
+    return gotVarData;
+}
+
+// -----------------------------------------------------------------------------
+void ObsData::initFromObsSource(const std::shared_ptr<ObsFrame> & obsFrame) {
+    // Walk through the frames and copy the data to the obs_group_ storage
+    dims_attached_to_vars_ = obsFrame->ioVarDimMap();
+
+    // Create variables in obs_group_ based on those in the obs source
+    createVariables(obsFrame->vars(), obs_group_.vars, dims_attached_to_vars_);
+
+    Variable nlocsVar = obsFrame->vars().open(dim_info_.get_dim_name(ObsDimensionId::Nlocs));
+    int iframe = 1;
+    for (obsFrame->frameInit(); obsFrame->frameAvailable(); obsFrame->frameNext()) {
+        Dimensions_t frameStart = obsFrame->frameStart();
+
+        // Resize the nlocs dimesion according to the adjusted frame size produced
+        // genFrameIndexRecNums. The second argument is to tell resizeNlocs whether
+        // to append or reset to the size given by the first arguemnt.
+        resizeNlocs(obsFrame->adjNlocsFrameCount(), (iframe > 1));
+
+        // Clear out the selection caches
+        known_fe_selections_.clear();
+        known_be_selections_.clear();
+
+        for (auto & varNameObject : obsFrame->ioVarList()) {
+            std::string varName = varNameObject.first;
+            Variable var = varNameObject.second;
+            Dimensions_t beFrameStart;
+            if (obsFrame->ioIsVarDimByNlocs(varName)) {
+                beFrameStart = obsFrame->adjNlocsFrameStart();
+            } else {
+                beFrameStart = frameStart;
+            }
+            Dimensions_t frameCount = obsFrame->frameCount(varName);
+
+            // Transfer the variable to the in-memory storage
+            if (var.isA<int>()) {
+                std::vector<int> varValues;
+                if (readObsSource<int>(obsFrame, varName, varValues)) {
+                    storeVar<int>(varName, varValues, beFrameStart, frameCount);
+                }
+            } else if (var.isA<float>()) {
+                std::vector<float> varValues;
+                if (readObsSource<float>(obsFrame, varName, varValues)) {
+                    storeVar<float>(varName, varValues, beFrameStart, frameCount);
+                }
+            } else if (var.isA<std::string>()) {
+                std::vector<std::string> varValues;
+                if (readObsSource<std::string>(obsFrame, varName, varValues)) {
+                    storeVar<std::string>(varName, varValues, beFrameStart, frameCount);
+                }
+            }
+        }
+        iframe++;
+    }
+
+    // Record locations and channels dimension sizes
+    std::string nlocsName = dim_info_.get_dim_name(ObsDimensionId::Nlocs);
+    std::size_t nLocs = obs_group_.vars.open(nlocsName).getDimensions().dimsCur[0];
+    dim_info_.set_dim_size(ObsDimensionId::Nlocs, nLocs);
+
+    std::string nchansName = dim_info_.get_dim_name(ObsDimensionId::Nchans);
+    if (obs_group_.vars.exists(nchansName)) {
+        std::size_t nChans = obs_group_.vars.open(nchansName).getDimensions().dimsCur[0];
+        dim_info_.set_dim_size(ObsDimensionId::Nchans, nChans);
+    }
+
+    // Record record information
+    nrecs_ = obsFrame->frameNumRecs();
+    indx_ = obsFrame->index();
+    recnums_ = obsFrame->recnums();
+
+    // TODO(SRH) Eliminate this temporary fix. Some files do not have ISO 8601 date time
+    // strings. Instead they have a reference date time and time offset. If there is no
+    // datetime variable in the obs_group_ after reading in the file, then create one
+    // from the reference/offset time values.
+    std::string dtVarName = fullVarName("MetaData", "datetime");
+    if (!obs_group_.vars.exists(dtVarName)) {
+        int refDtime;
+        obsFrame->atts().open("date_time").read<int>(refDtime);
+
+        std::vector<float> timeOffset;
+        Variable timeVar = obs_group_.vars.open(fullVarName("MetaData", "time"));
+        timeVar.read<float>(timeOffset);
+
+        std::vector<util::DateTime> dtVals = convertRefOffsetToDtime(refDtime, timeOffset);
+        std::vector<std::string> dtStrings(dtVals.size(), "");
+        for (std::size_t i = 0; i < dtVals.size(); ++i) {
+            dtStrings[i] = dtVals[i].toString();
+        }
+
+        VariableCreationParameters params;
+        params.chunk = true;
+        params.compressWithGZIP();
+        params.setFillValue<std::string>(this->getFillValue<std::string>());
+        std::vector<Variable>
+            dimVars(1, obs_group_.vars.open(dim_info_.get_dim_name(ObsDimensionId::Nlocs)));
+        obs_group_.vars
+            .createWithScales<std::string>(dtVarName, dimVars, params)
+            .write<std::string>(dtStrings);
+    }
+}
+
+// -----------------------------------------------------------------------------
+void ObsData::resizeNlocs(const Dimensions_t nlocsSize, const bool append) {
+    Variable nlocsVar = obs_group_.vars.open(dim_info_.get_dim_name(ObsDimensionId::Nlocs));
+    Dimensions_t nlocsResize;
+    if (append) {
+        nlocsResize = nlocsVar.getDimensions().dimsCur[0] + nlocsSize;
     } else {
-      // Not reading from file, keep all locations.
-      LocIndex.assign(LocSize, 0);
-      std::iota(LocIndex.begin(), LocIndex.end(), FrameStart);
-
-      FrameIndex.assign(LocSize, 0);
-      std::iota(FrameIndex.begin(), FrameIndex.end(), 0);
+        nlocsResize = nlocsSize;
     }
+    obs_group_.resize(
+        { std::pair<Variable, Dimensions_t>(nlocsVar, nlocsResize) });
+}
 
-    // Generate record numbers for this frame
-    std::vector<std::size_t> Records(LocSize);
-    if (obs_group_variables_.empty() || (FileIO == nullptr)) {
-      // No obs grouping. Assign sequential numbers (via next_rec_num_) from 0 to
-      // (nlocs - 1). The LocIndex vector might have missing locations due to those locations
-      // outside the DA timing window, so increment next_rec_num_ through the number
-      // of locations in LocIndex (LocSize) to make sure record numbers are sequential.
-      for (std::size_t i = 0; i < LocSize; ++i) {
-        Records[i] = next_rec_num_;
-        next_rec_num_++;
-        nrecs_ = next_rec_num_;
-      }
+// -----------------------------------------------------------------------------
+
+template<typename VarType>
+void ObsData::loadVar(const std::string & group, const std::string & name,
+                      const std::vector<int> & chanSelect,
+                      std::vector<VarType> & varValues) const {
+    // For backward compatibility, recognize and handle appropriately variable names with
+    // channel suffixes.
+    std::string nameToUse;
+    std::vector<int> chanSelectToUse;
+    splitChanSuffix(group, name, chanSelect, nameToUse, chanSelectToUse);
+
+    Variable var = obs_group_.vars.open(fullVarName(group, nameToUse));
+    std::string nchansVarName = this->get_dim_name(ObsDimensionId::Nchans);
+
+    // In the following code, assume that if a variable has channels, the
+    // nchans dimension will be the second dimension.
+    if (obs_group_.vars.exists(nchansVarName)) {
+        Variable nchansVar = obs_group_.vars.open(nchansVarName);
+        if (var.getDimensions().dimensionality > 1) {
+            if (var.isDimensionScaleAttached(1, nchansVar) && (chanSelectToUse.size() > 0)) {
+                // This variable has nchans as the second dimension, and channel
+                // selection has been specified. Build selection objects based on the
+                // channel numbers. For now, select all locations (first dimension).
+                const std::size_t nchansDimIndex = 1;
+                Selection memSelect;
+                Selection obsGroupSelect;
+                const std::size_t numElements = createChannelSelections(
+                      var, nchansDimIndex, chanSelectToUse, memSelect, obsGroupSelect);
+
+                var.read<VarType>(varValues, memSelect, obsGroupSelect);
+                varValues.resize(numElements);
+            } else {
+              // Not a radiance variable, just read in the whole variable
+              var.read<VarType>(varValues);
+            }
+        } else {
+            // Not a radiance variable, just read in the whole variable
+            var.read<VarType>(varValues);
+        }
     } else {
-      // Applying obs grouping. First convert all of the group variable data values for this
-      // frame into string key values. This is done in one call to minimize accessing the
-      // frame data for the grouping variables.
-      std::vector<std::string> ObsGroupingKeys(FrameIndex.size());
-      BuildObsGroupingKeys(FileIO, FrameIndex, ObsGroupingKeys);
-
-      for (std::size_t i = 0; i < LocSize; ++i) {
-        if (ObsGroupingMap.find(ObsGroupingKeys[i]) == ObsGroupingMap.end()) {
-          // key is not present in the map
-          // assign current record number to the current key, and move to the next record number
-          ObsGroupingMap.insert(
-              std::pair<std::string, std::size_t>(ObsGroupingKeys[i], next_rec_num_));
-          next_rec_num_++;
-          nrecs_ = next_rec_num_;
-        }
-        Records[i] = ObsGroupingMap.at(ObsGroupingKeys[i]);
-      }
+        // Not a radiance variable, just read in the whole variable
+        var.read<VarType>(varValues);
     }
-
-    // Read lat/lon for this frame
-    std::vector<float> lats(LocSize, 0);
-    std::vector<float> lons(LocSize, 0);
-    if (FileIO != nullptr) {
-      std::string GroupName = "MetaData";
-      std::string GroupVar = "longitude";
-      if (!FileIO->frame_float_has(GroupName, GroupVar)) {
-        throw eckit::UserError(GroupVar + "@" + GroupName + " not found in observations file",
-                               Here());
-      }
-      FileIO->frame_float_get_data(GroupName, GroupVar, lons);
-      GroupVar = "latitude";
-      if (!FileIO->frame_float_has(GroupName, GroupVar)) {
-        throw eckit::UserError(GroupVar + "@" + GroupName + " not found in observations file",
-                               Here());
-      }
-      FileIO->frame_float_get_data(GroupName, GroupVar, lats);
-    }
-
-    // Generate the index and recnums for this frame. We are done with FrameIndex
-    // so it can be reused here.
-    std::set<std::size_t> PatchRecNums;
-    for (std::size_t i = 0; i < LocSize; ++i) {
-      std::size_t RowNum = LocIndex[i];
-      std::size_t RecNum = Records[i];
-      eckit::geometry::Point2 point(lons[FrameIndex[i]], lats[FrameIndex[i]]);
-      dist_->assignRecord(RecNum, RowNum, point);
-      if (dist_->isMyRecord(RecNum)) {
-        indx_.push_back(RowNum);
-        recnums_.push_back(RecNum);
-        unique_rec_nums_.insert(RecNum);
-        FinalFrameIndex.push_back(RowNum - FrameStart);
-      }
-    }
-
-    nlocs_ += FinalFrameIndex.size();
-  }
-  return FinalFrameIndex;
 }
 
 // -----------------------------------------------------------------------------
-/*!
- * \details This method will return true/false according to whether the
- *          observation datetime (ObsDt) is inside the DA timing window.
- *
- * \param[in] ObsDt Observation date time object
- */
-bool ObsData::InsideTimingWindow(const util::DateTime & ObsDt) {
-  return ((ObsDt > winbgn_) && (ObsDt <= winend_));
-}
 
-// -----------------------------------------------------------------------------
-/*!
- * \details This method will read in the values of the obs grouping variables,
- *          convert those values to strings and store them in the VarStrings
- *          data structure.
- *
- * \param[in] FileIO Pointer to the opened observation data file
- * \param[in] FrameIndex Vector of frame indices
- * \param[out] VarStinrs Vector of strings vectors holding variable string values
- */
-void ObsData::BuildObsGroupingKeys(const std::unique_ptr<IodaIO> & FileIO,
-                                   const std::vector<std::size_t> & FrameIndex,
-                                   std::vector<std::string> & GroupingKeys) {
-  // Walk though each variable and construct the segments of the key values (strings)
-  // Append the segments as each variable is encountered.
-  std::string GroupName = "MetaData";
-  for (std::size_t i = 0; i < obs_group_variables_.size(); ++i) {
-    std::string VarName = obs_group_variables_[i];
-    std::string VarType = FileIO->var_dtype(GroupName, VarName);
-    std::string KeySegment;
-    if (VarType == "int") {
-      std::vector<int> GroupVar;
-      FileIO->frame_int_get_data(GroupName, VarName, GroupVar);
-      for (std::size_t j = 0; j < FrameIndex.size(); ++j) {
-        KeySegment = std::to_string(GroupVar[FrameIndex[j]]);
-        if (i == 0) {
-          GroupingKeys[j] = KeySegment;
-        } else {
-          GroupingKeys[j] += ":";
-          GroupingKeys[j] += KeySegment;
-        }
-      }
-    } else if (VarType == "float") {
-      std::vector<float> GroupVar;
-      FileIO->frame_float_get_data(GroupName, VarName, GroupVar);
-      for (std::size_t j = 0; j < FrameIndex.size(); ++j) {
-        KeySegment = std::to_string(GroupVar[FrameIndex[j]]);
-        if (i == 0) {
-          GroupingKeys[j] = KeySegment;
-        } else {
-          GroupingKeys[j] += ":";
-          GroupingKeys[j] += KeySegment;
-        }
-      }
-    } else if (VarType == "string") {
-      std::vector<std::string> GroupVar;
-      FileIO->frame_string_get_data(GroupName, VarName, GroupVar);
-      for (std::size_t j = 0; j < FrameIndex.size(); ++j) {
-        KeySegment = GroupVar[FrameIndex[j]];
-        if (i == 0) {
-          GroupingKeys[j] = KeySegment;
-        } else {
-          GroupingKeys[j] += ":";
-          GroupingKeys[j] += KeySegment;
-        }
-      }
+template<typename VarType>
+void ObsData::saveVar(const std::string & group, std::string name,
+                      const std::vector<VarType> & varValues,
+                      const std::vector<std::string> & dimList) {
+    // For backward compatibility, recognize and handle appropriately variable names with
+    // channel suffixes.
+
+    std::vector<int> channels;
+
+    const std::string nchansVarName = this->get_dim_name(ObsDimensionId::Nchans);
+    if (group != "MetaData" && obs_group_.vars.exists(nchansVarName)) {
+        // If the variable does not already exist and its name ends with an underscore followed by
+        // a number, interpret the latter as a channel number selecting a slice of the "nchans"
+        // dimension.
+        std::string nameToUse;
+        splitChanSuffix(group, name, {}, nameToUse, channels);
+        name = std::move(nameToUse);
     }
-  }
-}
 
-// -----------------------------------------------------------------------------
-/*!
- * \details This method will construct a data structure that holds the
- *          location order within each group sorted by the values of
- *          the specified sort variable.
- */
-void ObsData::BuildSortedObsGroups() {
-  typedef std::map<std::size_t, std::vector<std::pair<float, std::size_t>>> TmpRecIdxMap;
-  typedef TmpRecIdxMap::iterator TmpRecIdxIter;
+    const std::string fullName = fullVarName(group, name);
 
-  // Get the sort variable from the data store, and convert to a vector of floats.
-  std::vector<float> SortValues(nlocs_);
-  if (obs_sort_variable_ == "datetime") {
-    std::vector<util::DateTime> Dates(nlocs_);
-    get_db("MetaData", obs_sort_variable_, Dates);
-    for (std::size_t iloc = 0; iloc < nlocs_; iloc++) {
-      SortValues[iloc] = (Dates[iloc] - Dates[0]).toSeconds();
+    std::vector<std::string> dimListToUse = dimList;
+    if (!obs_group_.vars.exists(fullName) && !channels.empty()) {
+        // Append "channels" to the dimensions list if not already present.
+        const size_t nchansDimIndex =
+            std::find(dimListToUse.begin(), dimListToUse.end(), nchansVarName) -
+            dimListToUse.begin();
+        if (nchansDimIndex == dimListToUse.size())
+            dimListToUse.push_back(nchansVarName);
     }
-  } else {
-    get_db("MetaData", obs_sort_variable_, SortValues);
-  }
+    Variable var = openCreateVar<VarType>(fullName, dimListToUse);
 
-  // Construct a temporary structure to do the sorting, then transfer the results
-  // to the data member recidx_.
-  TmpRecIdxMap TmpRecIdx;
-  for (size_t iloc = 0; iloc < nlocs_; iloc++) {
-    TmpRecIdx[recnums_[iloc]].push_back(std::make_pair(SortValues[iloc], iloc));
-  }
-
-  for (TmpRecIdxIter irec = TmpRecIdx.begin(); irec != TmpRecIdx.end(); ++irec) {
-    if (obs_sort_order_ == "ascending") {
-      sort(irec->second.begin(), irec->second.end());
+    if (channels.empty()) {
+        var.write<VarType>(varValues);
     } else {
-      // Use a lambda function to access the std::pair greater-than operator to
-      // implement a descending order sort, ensuring the associated indices remain
-      // in ascending order.
-      sort(irec->second.begin(), irec->second.end(),
-                  [](const std::pair<float, std::size_t> & p1,
-                     const std::pair<float, std::size_t> & p2){
-             return (p2.first < p1.first ||
-                     (!(p1.first < p2.first) && p2.second > p1.second));});
-    }
-  }
+        // Find the index of the nchans dimension
+        Variable nchansVar = obs_group_.vars.open(nchansVarName);
+        std::vector<std::vector<Named_Variable>> dimScales =
+            var.getDimensionScaleMappings({Named_Variable(nchansVarName, nchansVar)});
+        size_t nchansDimIndex = std::find_if(dimScales.begin(), dimScales.end(),
+                                             [](const std::vector<Named_Variable> &x)
+                                             { return !x.empty(); }) - dimScales.begin();
+        if (nchansDimIndex == dimScales.size())
+            throw eckit::UserError("Variable " + fullName +
+                                   " is not indexed by channel numbers", Here());
 
-  // Copy indexing to the recidx_ data member.
-  for (TmpRecIdxIter irec = TmpRecIdx.begin(); irec != TmpRecIdx.end(); ++irec) {
-    recidx_[irec->first].resize(irec->second.size());
-    for (std::size_t iloc = 0; iloc < irec->second.size(); iloc++) {
-      recidx_[irec->first][iloc] = irec->second[iloc].second;
+        Selection memSelect;
+        Selection obsGroupSelect;
+        createChannelSelections(var, nchansDimIndex, channels,
+                                memSelect, obsGroupSelect);
+        var.write<VarType>(varValues, memSelect, obsGroupSelect);
     }
-  }
 }
 
 // -----------------------------------------------------------------------------
-/*!
- * \details This method will construct a data structure that holds the
- *          location indices for all locations within each group. The
- *          indices will not be sorted. The purpose of this is so the
- *          client can see the structure of the records.
- */
-void ObsData::BuildRecIdxUnsorted() {
-  for (size_t iloc = 0; iloc < nlocs_; iloc++) {
+
+std::size_t ObsData::createChannelSelections(const Variable & variable,
+                                             std::size_t nchansDimIndex,
+                                             const std::vector<int> & channels,
+                                             Selection & memSelect,
+                                             Selection & obsGroupSelect) const {
+    // Create a vector with the channel indices corresponding to
+    // the channel numbers that have been requested.
+    std::vector<Dimensions_t> chanIndices;
+    chanIndices.reserve(channels.size());
+    for (std::size_t i = 0; i < channels.size(); ++i) {
+        auto ichan = chan_num_to_index_.find(channels[i]);
+        if (ichan != chan_num_to_index_.end()) {
+            chanIndices.push_back(ichan->second);
+        } else {
+            throw eckit::BadParameter("Selected channel number " +
+                std::to_string(channels[i]) + " does not exist.", Here());
+        }
+    }
+
+    // Form index style selection for selecting channels
+    std::vector<Dimensions_t> varDims = variable.getDimensions().dimsCur;
+    std::vector<std::vector<Dimensions_t>> dimSelects(varDims.size());
+    Dimensions_t numElements = 1;
+    for (std::size_t i = 0; i < varDims.size(); ++i) {
+        if (i == nchansDimIndex) {
+            // channels are the second dimension
+            numElements *= chanIndices.size();
+            dimSelects[i] = chanIndices;
+        } else {
+            numElements *= varDims[i];
+            std::vector<Dimensions_t> allIndices(varDims[i]);
+            std::iota(allIndices.begin(), allIndices.end(), 0);
+            dimSelects[i] = allIndices;
+        }
+    }
+
+    std::vector<Dimensions_t> memStarts(1, 0);
+    std::vector<Dimensions_t> memCounts(1, numElements);
+    memSelect.extent(memCounts)
+             .select({SelectionOperator::SET, memStarts, memCounts});
+
+    obsGroupSelect.extent(varDims)
+                  .select({SelectionOperator::SET, 0, dimSelects[0]});
+    for (std::size_t i = 1; i < dimSelects.size(); ++i) {
+        obsGroupSelect.select({SelectionOperator::AND, i, dimSelects[i]});
+    }
+
+    return numElements;
+}
+
+// -----------------------------------------------------------------------------
+// This function is for transferring data from a memory buffer into the ObsSpace
+// container. At this point, the time window filtering, obs grouping and MPI
+// distribution has been applied to the input memory buffer (varValues). Also,
+// the variable has been resized according to appending a new frame's worth of
+// data to the existing variable in the ObsSpace container.
+//
+// What this means is that you can always transfer the data as a single contiguous
+// block which can be accomplished with a single hyperslab selection. There should
+// be no need to cache these selections because of this.
+template<typename VarType>
+void ObsData::storeVar(const std::string & varName, std::vector<VarType> & varValues,
+                       const Dimensions_t frameStart, const Dimensions_t frameCount) {
+    // get the dimensions of the variable
+    Variable var = obs_group_.vars.open(varName);
+    std::vector<Dimensions_t> varDims = var.getDimensions().dimsCur;
+
+    // check the caches for the selectors
+    std::vector<std::string> &dims = dims_attached_to_vars_.at(varName);
+    if (!known_fe_selections_.count(dims)) {
+        // backend starts at frameStart, and the count for the first dimension
+        // is the frame count
+        std::vector<Dimensions_t> beCounts = varDims;
+        beCounts[0] = frameCount;
+        std::vector<Dimensions_t> beStarts(beCounts.size(), 0);
+        beStarts[0] = frameStart;
+
+        // front end always starts at zero, and the number of elements is equal to the
+        // product of the var dimensions (with the first dimension adjusted by
+        // the frame count)
+        std::vector<Dimensions_t> feCounts(1, std::accumulate(
+            beCounts.begin(), beCounts.end(), static_cast<Dimensions_t>(1),
+            std::multiplies<Dimensions_t>()));
+        std::vector<Dimensions_t> feStarts(1, 0);
+
+        known_fe_selections_[dims] = Selection()
+            .extent(feCounts).select({ SelectionOperator::SET, feStarts, feCounts });
+        known_be_selections_[dims] = Selection()
+            .extent(varDims).select({ SelectionOperator::SET, beStarts, beCounts });
+    }
+    Selection & feSelect = known_fe_selections_[dims];
+    Selection & beSelect = known_be_selections_[dims];
+
+    var.write<VarType>(varValues, feSelect, beSelect);
+}
+
+// -----------------------------------------------------------------------------
+// NOTE(RH): Variable creation params rewritten so they are constructed once for each type.
+//           There is no need to keep re-creating the same objects over and over again.
+// TODO(?): Rewrite slightly so that the scales are opened all at once and are kept
+//          open until the end of the function.
+// TODO(?): Batch variable creation so that the collective function is used.
+void ObsData::createVariables(const Has_Variables & srcVarContainer,
+                              Has_Variables & destVarContainer,
+                              const VarDimMap & dimsAttachedToVars) {
+    // Set up reusable creation parameters for the loop below. Use the JEDI missing
+    // values for the fill values.
+    VariableCreationParameters paramsInt = VariableCreationParameters::defaults<int>();
+    VariableCreationParameters paramsFloat = VariableCreationParameters::defaults<float>();
+    VariableCreationParameters paramsStr = VariableCreationParameters::defaults<std::string>();
+
+    paramsInt.setFillValue<int>(this->getFillValue<int>());
+    paramsFloat.setFillValue<float>(this->getFillValue<float>());
+    paramsStr.setFillValue<std::string>(this->getFillValue<std::string>());
+
+    // Walk through map to get list of variables to create along with
+    // their dimensions. Use the srcVarContainer to get the var data type.
+    for (auto & ivar : dimsAttachedToVars) {
+        std::string varName = ivar.first;
+        std::vector<std::string> varDimNames = ivar.second;
+
+        // Create a vector with dimension scale vector from destination container
+        std::vector<Variable> varDims;
+        for (auto & dimVarName : varDimNames) {
+            varDims.push_back(destVarContainer.open(dimVarName));
+        }
+
+        Variable srcVar = srcVarContainer.open(varName);
+        if (srcVar.isA<int>()) {
+            destVarContainer.createWithScales<int>(varName, varDims, paramsInt);
+        } else if (srcVar.isA<float>()) {
+            destVarContainer.createWithScales<float>(varName, varDims, paramsFloat);
+        } else if (srcVar.isA<std::string>()) {
+            destVarContainer.createWithScales<std::string>(varName, varDims, paramsStr);
+        } else {
+            if (this->comm().rank() == 0) {
+                oops::Log::warning() << "WARNING: ObsData::createVariables: "
+                    << "Skipping variable due to an unexpected data type for variable: "
+                    << varName << std::endl;
+            }
+        }
+    }
+}
+
+// -----------------------------------------------------------------------------
+void ObsData::fillChanNumToIndexMap() {
+    // If there is a channels dimension, load up the channel number to index map
+    // for channel selection feature.
+    std::string nchansVarName = this->get_dim_name(ObsDimensionId::Nchans);
+    if (obs_group_.vars.exists(nchansVarName)) {
+        // Get the vector of channel numbers
+        Variable nchansVar = obs_group_.vars.open(nchansVarName);
+        std::vector<int> chanNumbers;
+        if (nchansVar.isA<int>()) {
+            nchansVar.read<int>(chanNumbers);
+        } else if (nchansVar.isA<float>()) {
+            std::vector<float> floatChanNumbers;
+            nchansVar.read<float>(floatChanNumbers);
+            ConvertVarType<float, int>(floatChanNumbers, chanNumbers);
+        }
+
+        // Walk through the vector and place the number to index mapping into
+        // the map structure.
+        for (int i = 0; i < chanNumbers.size(); ++i) {
+            chan_num_to_index_[chanNumbers[i]] = i;
+        }
+    }
+}
+
+// -----------------------------------------------------------------------------
+void ObsData::splitChanSuffix(const std::string & group, const std::string & name,
+                              const std::vector<int> & chanSelect, std::string & nameToUse,
+                              std::vector<int> & chanSelectToUse) const {
+    nameToUse = name;
+    chanSelectToUse = chanSelect;
+    // For backward compatibility, recognize and handle appropriately variable names with
+    // channel suffixes.
+    if (chanSelect.empty() && !obs_group_.vars.exists(fullVarName(group, name))) {
+        int channelNumber;
+        if (extractChannelSuffixIfPresent(name, nameToUse, channelNumber))
+            chanSelectToUse = {channelNumber};
+    }
+}
+
+// -----------------------------------------------------------------------------
+void ObsData::buildSortedObsGroups() {
+    typedef std::map<std::size_t, std::vector<std::pair<float, std::size_t>>> TmpRecIdxMap;
+    typedef TmpRecIdxMap::iterator TmpRecIdxIter;
+
+    // Get the sort variable from the data store, and convert to a vector of floats.
+    std::size_t nLocs = this->nlocs();
+    std::vector<float> SortValues(nLocs);
+    if (this->obs_sort_var() == "datetime") {
+        std::vector<util::DateTime> Dates(nLocs);
+        get_db("MetaData", this->obs_sort_var(), Dates);
+        for (std::size_t iloc = 0; iloc < nLocs; iloc++) {
+            SortValues[iloc] = (Dates[iloc] - Dates[0]).toSeconds();
+        }
+    } else {
+        get_db("MetaData", this->obs_sort_var(), SortValues);
+    }
+
+    // Construct a temporary structure to do the sorting, then transfer the results
+    // to the data member recidx_.
+    TmpRecIdxMap TmpRecIdx;
+    for (size_t iloc = 0; iloc < nLocs; iloc++) {
+        TmpRecIdx[recnums_[iloc]].push_back(std::make_pair(SortValues[iloc], iloc));
+    }
+
+    for (TmpRecIdxIter irec = TmpRecIdx.begin(); irec != TmpRecIdx.end(); ++irec) {
+        if (this->obs_sort_order() == "ascending") {
+            sort(irec->second.begin(), irec->second.end());
+        } else {
+            // Use a lambda function to access the std::pair greater-than operator to
+            // implement a descending order sort, ensuring the associated indices remain
+            // in ascending order.
+            sort(irec->second.begin(), irec->second.end(),
+                        [](const std::pair<float, std::size_t> & p1,
+                           const std::pair<float, std::size_t> & p2){
+                   return (p2.first < p1.first ||
+                           (!(p1.first < p2.first) && p2.second > p1.second));});
+        }
+    }
+
+    // Copy indexing to the recidx_ data member.
+    for (TmpRecIdxIter irec = TmpRecIdx.begin(); irec != TmpRecIdx.end(); ++irec) {
+        recidx_[irec->first].resize(irec->second.size());
+        for (std::size_t iloc = 0; iloc < irec->second.size(); iloc++) {
+            recidx_[irec->first][iloc] = irec->second[iloc].second;
+        }
+    }
+}
+
+// -----------------------------------------------------------------------------
+void ObsData::buildRecIdxUnsorted() {
+  std::size_t nLocs = this->nlocs();
+  for (size_t iloc = 0; iloc < nLocs; iloc++) {
     recidx_[recnums_[iloc]].push_back(iloc);
   }
 }
 
 // -----------------------------------------------------------------------------
-/*!
- * \details This method will save the contents of the obs container into the
- *          given file. Currently, all variables in the obs container are written
- *          into the file. This may change in the future where we can select which
- *          variables we want saved.
- *
- * \param[in] file_name Path to output obs file.
- */
-void ObsData::SaveToFile(const std::string & file_name, const std::size_t MaxFrameSize) {
-  // Open the file for output
-  std::unique_ptr<IodaIO> fileio
-    {ioda::IodaIOfactory::Create(file_name, "W", MaxFrameSize)};
+void ObsData::saveToFile() {
+    // Form lists of regular and dimension scale variables
+    VarNameObjectList varList;
+    VarNameObjectList dimVarList;
+    VarDimMap dimsAttachedToVars;
+    Dimensions_t maxVarSize;
+    collectVarDimInfo(obs_group_, varList, dimVarList, dimsAttachedToVars, maxVarSize);
 
-  // Add dimensions for nlocs and nvars
-  fileio->dim_insert("nlocs", nlocs_);
-  fileio->dim_insert("nvars", nvars_);
-
-  // Build the group, variable info container. This defines the variables
-  // that will be written into the output file.
-  std::size_t MaxVarSize = 0;
-  for (ObsSpaceContainer<int>::VarIter ivar = int_database_.var_iter_begin();
-                                       ivar != int_database_.var_iter_end(); ++ivar) {
-    std::string GroupName = int_database_.var_iter_gname(ivar);
-    std::string VarName = int_database_.var_iter_vname(ivar);
-    std::string GrpVarName = VarName + "@" + GroupName;
-    std::vector<std::size_t> VarShape = int_database_.var_iter_shape(ivar);
-    if (VarShape[0] > MaxVarSize) { MaxVarSize = VarShape[0]; }
-    fileio->grp_var_insert(GroupName, VarName, "int", VarShape, GrpVarName, "int");
-  }
-  for (ObsSpaceContainer<float>::VarIter ivar = float_database_.var_iter_begin();
-                                       ivar != float_database_.var_iter_end(); ++ivar) {
-    std::string GroupName = float_database_.var_iter_gname(ivar);
-    std::string VarName = float_database_.var_iter_vname(ivar);
-    std::string GrpVarName = VarName + "@" + GroupName;
-    std::vector<std::size_t> VarShape = float_database_.var_iter_shape(ivar);
-    if (VarShape[0] > MaxVarSize) { MaxVarSize = VarShape[0]; }
-    fileio->grp_var_insert(GroupName, VarName, "float", VarShape, GrpVarName, "float");
-  }
-  for (ObsSpaceContainer<std::string>::VarIter ivar = string_database_.var_iter_begin();
-                                       ivar != string_database_.var_iter_end(); ++ivar) {
-    std::string GroupName = string_database_.var_iter_gname(ivar);
-    std::string VarName = string_database_.var_iter_vname(ivar);
-    std::string GrpVarName = VarName + "@" + GroupName;
-    std::vector<std::size_t> VarShape = string_database_.var_iter_shape(ivar);
-    if (VarShape[0] > MaxVarSize) { MaxVarSize = VarShape[0]; }
-    std::vector<std::string> DbData(VarShape[0], "");
-    string_database_.LoadFromDb(GroupName, VarName, VarShape, DbData);
-    std::size_t MaxStringSize = FindMaxStringLength(DbData);
-    fileio->grp_var_insert(GroupName, VarName, "string", VarShape, GrpVarName, "string",
-                           MaxStringSize);
-  }
-  for (ObsSpaceContainer<util::DateTime>::VarIter ivar = datetime_database_.var_iter_begin();
-                                       ivar != datetime_database_.var_iter_end(); ++ivar) {
-    std::string GroupName = datetime_database_.var_iter_gname(ivar);
-    std::string VarName = datetime_database_.var_iter_vname(ivar);
-    std::string GrpVarName = VarName + "@" + GroupName;
-    std::vector<std::size_t> VarShape = datetime_database_.var_iter_shape(ivar);
-    if (VarShape[0] > MaxVarSize) { MaxVarSize = VarShape[0]; }
-    fileio->grp_var_insert(GroupName, VarName, "string", VarShape, GrpVarName, "string", 20);
-  }
-
-  // Build the frame info container
-  fileio->frame_info_init(MaxVarSize);
-
-  // For every frame, dump out the int, float, string variables.
-  for (IodaIO::FrameIter iframe = fileio->frame_begin();
-                         iframe != fileio->frame_end(); ++iframe) {
-    fileio->frame_data_init();
-    std::size_t FrameStart = fileio->frame_start(iframe);
-    std::size_t FrameSize = fileio->frame_size(iframe);
-
-    // Integer data
-    for (ObsSpaceContainer<int>::VarIter ivar = int_database_.var_iter_begin();
-                                         ivar != int_database_.var_iter_end(); ++ivar) {
-      std::string GroupName = int_database_.var_iter_gname(ivar);
-      std::string VarName = int_database_.var_iter_vname(ivar);
-      std::vector<std::size_t> VarShape = int_database_.var_iter_shape(ivar);
-
-      if (VarShape[0] > FrameStart) {
-        std::size_t Count = FrameSize;
-        if ((FrameStart + FrameSize) > VarShape[0]) { Count = VarShape[0] - FrameStart; }
-        std::vector<int> FrameData(Count, 0);
-        int_database_.LoadFromDb(GroupName, VarName, VarShape, FrameData, FrameStart, Count);
-        fileio->frame_int_put_data(GroupName, VarName, FrameData);
-      }
-    }
-
-    // Float data
-    for (ObsSpaceContainer<float>::VarIter ivar = float_database_.var_iter_begin();
-                                         ivar != float_database_.var_iter_end(); ++ivar) {
-      std::string GroupName = float_database_.var_iter_gname(ivar);
-      std::string VarName = float_database_.var_iter_vname(ivar);
-      std::vector<std::size_t> VarShape = float_database_.var_iter_shape(ivar);
-
-      if (VarShape[0] > FrameStart) {
-        std::size_t Count = FrameSize;
-        if ((FrameStart + FrameSize) > VarShape[0]) { Count = VarShape[0] - FrameStart; }
-        std::vector<float> FrameData(Count, 0.0);
-        float_database_.LoadFromDb(GroupName, VarName, VarShape, FrameData, FrameStart, Count);
-        fileio->frame_float_put_data(GroupName, VarName, FrameData);
-      }
-    }
-
-    // String data
-    for (ObsSpaceContainer<std::string>::VarIter ivar = string_database_.var_iter_begin();
-                                         ivar != string_database_.var_iter_end(); ++ivar) {
-      std::string GroupName = string_database_.var_iter_gname(ivar);
-      std::string VarName = string_database_.var_iter_vname(ivar);
-      std::vector<std::size_t> VarShape = string_database_.var_iter_shape(ivar);
-
-      if (VarShape[0] > FrameStart) {
-        std::size_t Count = FrameSize;
-        if ((FrameStart + FrameSize) > VarShape[0]) { Count = VarShape[0] - FrameStart; }
-        std::vector<std::string> FrameData(Count, "");
-        string_database_.LoadFromDb(GroupName, VarName, VarShape, FrameData,
-                                    FrameStart, Count);
-        fileio->frame_string_put_data(GroupName, VarName, FrameData);
-      }
-    }
-
-    for (ObsSpaceContainer<util::DateTime>::VarIter ivar = datetime_database_.var_iter_begin();
-                                       ivar != datetime_database_.var_iter_end(); ++ivar) {
-      std::string GroupName = datetime_database_.var_iter_gname(ivar);
-      std::string VarName = datetime_database_.var_iter_vname(ivar);
-      std::vector<std::size_t> VarShape = datetime_database_.var_iter_shape(ivar);
-
-      if (VarShape[0] > FrameStart) {
-        std::size_t Count = FrameSize;
-        if ((FrameStart + FrameSize) > VarShape[0]) { Count = VarShape[0] - FrameStart; }
-        util::DateTime TempDt("0000-01-01T00:00:00Z");
-        std::vector<util::DateTime> FrameData(Count, TempDt);
-        datetime_database_.LoadFromDb(GroupName, VarName, VarShape, FrameData,
-                                      FrameStart, Count);
-
-        // Convert the DateTime vector to a string vector, then save into the file.
-        std::vector<std::string> StringVector(FrameData.size(), "");
-        for (std::size_t i = 0; i < FrameData.size(); i++) {
-          StringVector[i] = FrameData[i].toString();
+    // Record dimension scale variables for the output file creation.
+    for (auto & dimNameObject : dimVarList) {
+        std::string dimName = dimNameObject.first;
+        Dimensions_t dimSize = dimNameObject.second.getDimensions().dimsCur[0];
+        Dimensions_t dimMaxSize = dimSize;
+        if (dimName == dim_info_.get_dim_name(ObsDimensionId::Nlocs)) {
+            dimMaxSize = Unlimited;
         }
-        fileio->frame_string_put_data(GroupName, VarName, StringVector);
-      }
+        obs_params_.setDimScale(dimName, dimSize, dimMaxSize, dimSize);
     }
 
-    fileio->frame_write(iframe);
-  }
-}
+    // Record the maximum variable size
+    obs_params_.setMaxVarSize(maxVarSize);
 
-// -----------------------------------------------------------------------------
-/*!
- * \details This method applys the distribution index on data read from the input obs file.
- *          It is expected that when this method is called that the distribution index will
- *          have the process element and DA timing window effects accounted for.
- *
- * \param[in]  FullData     Vector holding data to be indexed
- * \param[in]  FullShape    Shape (dimension sizes) of FullData
- * \param[in]  Index        Index to be applied to FullData
- * \param[out] IndexedShape Shape (dimension sizes) of data after indexing
- */
-template<typename VarType>
-std::vector<VarType> ObsData::ApplyIndex(const std::vector<VarType> & FullData,
-                              const std::vector<std::size_t> & FullShape,
-                              const std::vector<std::size_t> & Index,
-                              std::vector<std::size_t> & IndexedShape) const {
-  std::vector<VarType> SelectedData;
-  for (std::size_t i = 0; i < Index.size(); ++i) {
-    std::size_t isrc = Index[i];
-    SelectedData.push_back(FullData[isrc]);
-  }
-  IndexedShape = FullShape;
-  IndexedShape[0] = SelectedData.size();
-  return SelectedData;
-}
+    // Open the file for output
+    std::shared_ptr<ObsFrame> obsFrame = ObsFrameFactory::create(ObsIoModes::WRITE,
+                                                                 obs_params_, dist_);
 
-// -----------------------------------------------------------------------------
-/*!
- * \details This method will return the desired numeric data type for variables
- *          read from the input obs file. The rule for now is any variable
- *          in the group "PreQC" is to be an integer, and any variable that is
- *          a double is to be a float (single precision). For cases outside of this
- *          rule, the data type from the file is used.
- *
- * \param[in] GroupName   Name of obs container group
- * \param[in] FileVarType Name of the data type of the variable from the input obs file
- */
-std::string ObsData::DesiredVarType(std::string & GroupName, std::string & FileVarType) {
-  // By default, make the DbVarType equal to the FileVarType
-  // Exceptions are:
-  //   Force the group "PreQC" to an integer type.
-  //   Force double to float.
-  std::string DbVarType = FileVarType;
+    // Iterate through the frames and variables moving data from the database into
+    // the file.
+    int iframe = 0;
+    for (obsFrame->frameInit(varList, dimVarList, dimsAttachedToVars, maxVarSize);
+         obsFrame->frameAvailable(); obsFrame->frameNext(varList)) {
+        Dimensions_t frameStart = obsFrame->frameStart();
+        for (auto & varNameObject : varList) {
+            // form the destination (ObsFrame) variable name
+            std::string destVarName = varNameObject.first;
 
-  if (GroupName == "PreQC") {
-    DbVarType = "int";
-  } else if (FileVarType == "double") {
-    DbVarType = "float";
-  }
+            // open the destination variable and get the associate count
+            Variable destVar = obsFrame->vars().open(destVarName);
+            Dimensions_t frameCount = obsFrame->frameCount(destVarName);
 
-  return DbVarType;
-}
+            // transfer data if we haven't gone past the end of the variable yet
+            if (frameCount > 0) {
+                // Form the hyperslab selection for this frame
+                Variable srcVar = varNameObject.second;
+                std::vector<Dimensions_t> varShape = srcVar.getDimensions().dimsCur;
+                ioda::Selection memSelect = obsFrame->createMemSelection(varShape, frameCount);
+                ioda::Selection varSelect =
+                    obsFrame->createVarSelection(varShape, frameStart, frameCount);
 
-template <typename T>
-void ObsData::extendVectorsInDatabase(const ObsSpaceContainer<T> &Db,
-                                      const std::vector <std::string> &nonMissingExtendedVars,
-                                      const size_t nlocsext)
-{
-  const T missing = util::missingValue(missing);
-  std::vector<T> vecin(nlocs_);  // Input vector
-  for (auto Var = Db.begin(); Var != Db.end(); ++Var) {
-    const std::string &varname = Var->variable;
-    const std::string &groupname = Var->group;
-    const std::vector<std::size_t> &shape = Var->shape;
-    // Only extend variables that have (at least) one dimension of length nlocs_.
-    if (std::find(shape.begin(), shape.end(), nlocs_) == shape.end()) continue;
-    // Retrieve input vector.
-    get_db(groupname, varname, vecin);
-    // Initialise the output vector with missing values.
-    std::vector<T> vecout(nlocsext, missing);
-    // Fill the original section of the output vector with the contents of the input vector.
-    std::copy(vecin.begin(), vecin.end(), vecout.begin());
-    // For certain variables, fill the extended section of the output vector with
-    // the first non-missing value in the input vector.
-    if (groupname == "MetaData" &&
-        std::find(nonMissingExtendedVars.begin(), nonMissingExtendedVars.end(), varname) !=
-        nonMissingExtendedVars.end()) {
-      // Iterator pointing to the first non-missing value in the input vector.
-      auto it_nonmissing = std::find_if(vecin.begin(), vecin.end(),
-                                        [&missing](T x){return x != missing;});
-      if (it_nonmissing != vecin.end())
-        std::fill(vecout.begin() + nlocs_, vecout.end(), *it_nonmissing);
+                // transfer the data
+                if (srcVar.isA<int>()) {
+                    std::vector<int> varValues;
+                    srcVar.read<int>(varValues, memSelect, varSelect);
+                    obsFrame->writeFrameVar(destVarName, varValues);
+                } else if (srcVar.isA<float>()) {
+                    std::vector<float> varValues;
+                    srcVar.read<float>(varValues, memSelect, varSelect);
+                    obsFrame->writeFrameVar(destVarName, varValues);
+                } else if (srcVar.isA<std::string>()) {
+                    std::vector<std::string> varValues;
+                    srcVar.read<std::string>(varValues, memSelect, varSelect);
+                    obsFrame->writeFrameVar(destVarName, varValues);
+                }
+            }
+        }
     }
-    // Save output vector.
-    put_db(groupname, varname, vecout);
-  }
 }
 
 // -----------------------------------------------------------------------------
-/*!
- * \details This method extends the ObsSpace according to the method requested
- *          in the configuration file.
- */
-void ObsData::extendObsSpace(const eckit::Configuration & config) {
-  const int nlevs = config.getInt("extension.average profiles onto model levels", 0);
+template <typename DataType>
+void ObsData::extendVariable(Variable & extendVar, const size_t startFill) {
+    const DataType missing = util::missingValue(missing);
+
+    // Read in variable data values. At this point the values will contain
+    // the extended region filled with missing values. The read call will size
+    // the varVals vector accordingly.
+    std::vector<DataType> varVals;
+    extendVar.read<DataType>(varVals);
+
+    // Iterator pointing to the first non-missing value in the input vector.
+    auto it_nonmissing = std::find_if(varVals.begin(), varVals.end(),
+                                      [&missing](DataType x){return x != missing;});
+    if (it_nonmissing != varVals.end()) {
+        std::fill(varVals.begin() + startFill, varVals.end(), *it_nonmissing);
+        extendVar.write<DataType>(varVals);
+    }
+}
+
+// -----------------------------------------------------------------------------
+void ObsData::extendObsSpace(const ObsExtendParameters & params) {
+  const int nlevs = params.numModelLevels;
+  const std::vector <std::string> &nonMissingExtendedVars = params.nonMissingExtendedVars;
+
+  const std::size_t nlocs = this->nlocs();
+  const std::vector<std::string> obsGroupVars = this->obs_group_vars();
   if (nlevs > 0 &&
-      nlocs_ > 0 &&
-      !obs_group_variables_.empty()) {
+      nlocs > 0 &&
+      !obsGroupVars.empty()) {
     // Number of extended locations on this processor.
-    const std::size_t nlocsext = nlocs_ + nrecs_ * nlevs;
+    const std::size_t nlocsext = nlocs + nrecs_ * nlevs;
     // Find starting index (in the extended section) across all processors.
     size_t indxstart = indx_.back() + 1;
     dist_->allReduceInPlace(indxstart, eckit::mpi::max());
     // Maximum unique record ID across all processors.
-    std::size_t maxOriginalRecordId = *unique_rec_nums_.rbegin();
+    std::set<std::size_t> uniqueRecNums(recnums_.begin(), recnums_.end());
+    std::size_t maxOriginalRecordId = *uniqueRecNums.rbegin();
     dist_->allReduceInPlace(maxOriginalRecordId, eckit::mpi::max());
     // Produce the indices and record numbers in the extended ObsSpace for this processor.
     // Place each extended record on the same processor as the equivalent original one.
-    const std::vector <std::size_t> vec_unique_rec_nums(unique_rec_nums_.begin(),
-                                                        unique_rec_nums_.end());
+    const std::vector <std::size_t> vec_unique_rec_nums(uniqueRecNums.begin(),
+                                                        uniqueRecNums.end());
     for (std::size_t irec : vec_unique_rec_nums) {
       const size_t irec_ext = irec + maxOriginalRecordId + 1;
-      unique_rec_nums_.insert(irec_ext);
       nrecs_++;
       for (size_t ilev = 0; ilev < nlevs; ++ilev) {
         recnums_.push_back(irec_ext);
@@ -1409,30 +1093,52 @@ void ObsData::extendObsSpace(const eckit::Configuration & config) {
       }
     }
     // Extend recidx_, which maps indices to records on the local processor.
-    for (size_t iloc = nlocs_; iloc < nlocsext; ++iloc)
+    for (size_t iloc = nlocs; iloc < nlocsext; ++iloc)
       recidx_[recnums_[iloc]].push_back(iloc);
+    // Extend all existing vectors with missing values.
+    // Only vectors with (at least) one dimension equal to nlocs are modified.
+    // Second argument (bool) to resizeNlocs tells function:
+    //       true -> append the amount in first argument to the existing size
+    //      false -> reset the existing size to the amount in the first argument
+    this->resizeNlocs(nlocsext, false);
+
     // Extend all existing vectors with missing values, excepting those
     // that have been selected to be filled with non-missing values.
     // By default, some spatial and temporal coordinates are filled in this way.
-    const std::vector <std::string> &nonMissingExtendedVars =
-      config.getStringVector("extension.variables filled with non-missing values",
-                             {"latitude", "longitude", "datetime",
-                                 "air_pressure", "air_pressure_levels"});
-    // Only vectors with (at least) one dimension equal to nlocs_ are modified.
-    extendVectorsInDatabase(int_database_, nonMissingExtendedVars, nlocsext);
-    extendVectorsInDatabase(float_database_, nonMissingExtendedVars, nlocsext);
-    extendVectorsInDatabase(string_database_, nonMissingExtendedVars, nlocsext);
-    extendVectorsInDatabase(datetime_database_, nonMissingExtendedVars, nlocsext);
+    //
+    // The resizeNlocs() call above has extended all variables with nlocs as a first
+    // dimension to the new nlocsext size, and filled all the extended parts with
+    // missing values. Go through the list of variables that are to be filled with
+    // non-missing values, check if they exist and if so fill in the extended section
+    // with non-missing values.
+    for (auto & varName : nonMissingExtendedVars) {
+        // It is implied that these variables are in the MetaData group
+        std::string groupName = "MetaData";
+        std::string fullVname = fullVarName(groupName, varName);
+        if (obs_group_.vars.exists(fullVname)) {
+            // Note nlocs at this point holds the original size before extending.
+            // Pass nlocs into extendVariable to indicate where to start filling.
+            Variable extendVar = obs_group_.vars.open(fullVname);
+            if (extendVar.isA<int>()) {
+                extendVariable<int>(extendVar, nlocs);
+            } else if (extendVar.isA<float>()) {
+                extendVariable<float>(extendVar, nlocs);
+            } else if (extendVar.isA<std::string>()) {
+                extendVariable<std::string>(extendVar, nlocs);
+            }
+        }
+    }
+
     // Fill extended_obs_space with 0, which indicates the standard section of the ObsSpace,
     // and 1, which indicates the extended section.
     std::vector <int> extended_obs_space(nlocsext, 0);
-    std::fill(extended_obs_space.begin() + nlocs_, extended_obs_space.begin() + nlocsext, 1);
+    std::fill(extended_obs_space.begin() + nlocs, extended_obs_space.begin() + nlocsext, 1);
     // Save extended_obs_space for use in filters.
     put_db("MetaData", "extended_obs_space", extended_obs_space);
-    // Extend nlocs_ on this processor.
-    nlocs_ = nlocsext;
+    // Extend nlocs on this processor.
+    dim_info_.set_dim_size(ObsDimensionId::Nlocs, nlocsext);
     // Extend gnlocs_ by summing nlocs_ across all processors.
-    gnlocs_ = nlocs_;
+    gnlocs_ = nlocsext;
     dist_->allReduceInPlace(gnlocs_, eckit::mpi::sum());
   }
 }

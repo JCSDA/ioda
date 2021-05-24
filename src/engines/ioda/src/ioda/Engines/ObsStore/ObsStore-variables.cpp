@@ -11,6 +11,7 @@
  * \brief Functions for ioda::Variable and ioda::Has_Variables backed by ObsStore
  */
 #include "./ObsStore-variables.h"
+#include "ioda/Exception.h"
 
 namespace ioda {
 namespace Engines {
@@ -33,6 +34,12 @@ detail::Type_Provider* ObsStore_Variable_Backend::getTypeProvider() const {
   return ObsStore_Type_Provider::instance();
 }
 
+Type ObsStore_Variable_Backend::getType() const {
+  auto backend_type = backend_->dtype();
+  ObsTypeInfo typ{backend_type.first, backend_type.second};
+  return Type{std::make_shared<ObsStore_Type>(typ), typeid(ObsStore_Type)};
+}
+
 bool ObsStore_Variable_Backend::isA(Type lhs) const {
   auto typeBackend               = std::dynamic_pointer_cast<ObsStore_Type>(lhs.getBackend());
   ioda::ObsStore::ObsTypes dtype = typeBackend->dtype();
@@ -42,16 +49,16 @@ bool ObsStore_Variable_Backend::isA(Type lhs) const {
 bool ObsStore_Variable_Backend::hasFillValue() const {
   try {
     return backend_->hasFillValue();
-  } catch (std::bad_cast&) {
-    throw;
+  } catch (std::bad_cast) {
+    std::throw_with_nested(Exception("Bad cast.", ioda_Here()));
   }
 }
 
 ObsStore_Variable_Backend::FillValueData_t ObsStore_Variable_Backend::getFillValue() const {
   try {
     return backend_->getFillValue();
-  } catch (std::bad_cast&) {
-    throw;
+  } catch (std::bad_cast) {
+    std::throw_with_nested(Exception("Bad cast.", ioda_Here()));
   }
 }
 
@@ -154,13 +161,13 @@ Variable ObsStore_Variable_Backend::write(gsl::span<char> data, const Type& in_m
   // sizes from this variable.
 
   // Copy the selection extent (dim sizes)
-  std::size_t extSize = mem_selection.extent_.size();
+  std::size_t extSize = mem_selection.extent().size();
   std::vector<Dimensions_t> dim_sizes(extSize);
   if (extSize == 0) {
     dim_sizes.push_back(data.size() / dtype_size);
   } else {
     for (std::size_t i = 0; i < extSize; ++i) {
-      dim_sizes[i] = mem_selection.extent_[i];
+      dim_sizes[i] = mem_selection.extent()[i];
     }
   }
 
@@ -173,14 +180,10 @@ Variable ObsStore_Variable_Backend::write(gsl::span<char> data, const Type& in_m
   // than the file npoints.
   std::size_t m_npts = m_select.npoints();
   std::size_t f_npts = f_select.npoints();
-  if (m_npts > f_npts) {
-    std::string ErrMsg = std::string("ioda::Engines::ObsStore::ObsStore_Variable_Backend::write: ")
-                         + std::string("Number of points from memory is greater than that of file");
-    throw; /* jedi_throw
-.add("Reason", ErrMsg)
-.add("  Memory select npoints: ", m_npts)
-.add("  File select npoints: ", f_npts);*/
-  }
+  if (m_npts > f_npts)
+    throw Exception("Number of points from memory is greater than that of file", ioda_Here())
+      .add("m_select.npoints()", m_npts)
+      .add("f_select.npoints()", f_npts);
 
   backend_->write(data, dtype, m_select, f_select);
   return Variable{shared_from_this()};
@@ -206,13 +209,13 @@ Variable ObsStore_Variable_Backend::read(gsl::span<char> data, const Type& in_me
   // sizes from this variable.
 
   // Copy the selection extent (dim sizes)
-  std::size_t extSize = mem_selection.extent_.size();
+  std::size_t extSize = mem_selection.extent().size();
   std::vector<Dimensions_t> dim_sizes(extSize);
   if (extSize == 0) {
     dim_sizes.push_back(data.size() / dtype_size);
   } else {
     for (std::size_t i = 0; i < extSize; ++i) {
-      dim_sizes[i] = mem_selection.extent_[i];
+      dim_sizes[i] = mem_selection.extent()[i];
     }
   }
 
@@ -225,14 +228,10 @@ Variable ObsStore_Variable_Backend::read(gsl::span<char> data, const Type& in_me
   // than the memory npoints.
   std::size_t m_npts = m_select.npoints();
   std::size_t f_npts = f_select.npoints();
-  if (m_npts > f_npts) {
-    std::string ErrMsg = std::string("ioda::Engines::ObsStore::ObsStore_Variable_Backend::read: ")
-                         + std::string("Number of points from file is greater than that of memory");
-    throw; /* jedi_throw
-.add("Reason", ErrMsg)
-.add("  Memory select npoints: ", m_npts)
-.add("  File select npoints: ", f_npts);*/
-  }
+  if (m_npts > f_npts)
+    throw Exception("Number of points from file is greater than that of memory", ioda_Here())
+      .add("m_select.npoints()", m_npts)
+      .add("f_select.npoints()", f_npts);
 
   backend_->read(data, dtype, m_select, f_select);
   // Need to construct a shared_ptr to "this", instead of using

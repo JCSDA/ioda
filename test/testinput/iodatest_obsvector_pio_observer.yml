@@ -4,9 +4,7 @@ window end: '2018-04-15T03:00:00Z'
 observations:
 - obs space:
     name: "Radiosonde_4vars"
-    distribution:
-    - Halo
-    read obs from separate file: false
+    distribution: "Halo"
     simulated variables:
     - air_temperature
     - specific_humidity
@@ -14,10 +12,12 @@ observations:
     - northward_wind
     obsdatain:
       obsfile: Data/testinput_tier_1/sondes_obs_2018041500_m.nc4
-      rms ref: 71.324181693818431
-      tolerance: 1.0e-14
+      read obs from separate file: false
     obsdataout:
       obsfile: testoutput/obsvector_pio_observer.nc4
+  test data:
+    rms ref: 71.324181693818431
+    tolerance: 1.0e-14
   reference nobs: 3896
   mask variable: GsiUseFlag
   reference masked nobs: 2587

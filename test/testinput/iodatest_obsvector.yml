@@ -8,10 +8,12 @@ observations:
     - air_temperature
     obsdatain:
       obsfile: Data/testinput_tier_1/sondes_obs_2018041500_m.nc4
-      rms ref: 216.91619057593934
-      tolerance: 1.0e-14
     obsdataout: 
-      obsfile: Data/sondes_obs_2018041500_m.nc4
+      obsfile: testoutput/sondes_obs_2018041500_m.nc4
+  test data:
+    rms ref: 216.91619057593934
+    tolerance: 1.0e-14
+  reference nobs: 974
   reference global nobs: 974
   mask variable: GsiUseFlag
   reference global masked nobs: 819
@@ -24,8 +26,10 @@ observations:
     - specific_humidity
     obsdatain:
       obsfile: Data/testinput_tier_1/sondes_obs_2018041500_m.nc4
-      rms ref: 124.96816071306155
-      tolerance: 1.0e-14
+  test data:
+    rms ref: 124.96816071306155
+    tolerance: 1.0e-14
+  reference nobs: 1948
   reference global nobs: 1948
   mask variable: GsiUseFlag
   reference global masked nobs: 1633
@@ -40,8 +44,10 @@ observations:
     - northward_wind
     obsdatain:
       obsfile: Data/testinput_tier_1/sondes_obs_2018041500_m.nc4
-      rms ref: 71.324181693818431
-      tolerance: 1.0e-14
+  test data:
+    rms ref: 71.324181693818431
+    tolerance: 1.0e-14
+  reference nobs: 3896
   reference global nobs: 3896
   mask variable: GsiUseFlag
   reference global masked nobs: 2587

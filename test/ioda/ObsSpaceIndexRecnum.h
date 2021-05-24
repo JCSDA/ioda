@@ -75,15 +75,24 @@ void testConstructor() {
   ::test::TestEnvironment::config().get("observations", conf);
 
   for (std::size_t jj = 0; jj < Test_::size(); ++jj) {
+    // Grab the test configuration which holds the expected data.
+    eckit::LocalConfiguration testConfig;
+    conf[jj].get("test data", testConfig);
+    oops::Log::debug() << "Test data configuration: " << testConfig << std::endl;
+
+    // The observations are distributed across processors, so Nlocs is local to a
+    // processor. To get the total number of observations,
+    // use ObsSpace.distribution().sum(Nlocs) to sum accoss all processors.
+
     // Get the numbers of locations (nlocs) from the ObsSpace object
     std::size_t Nlocs = Test_::obspace(jj).globalNumLocs();
     std::size_t Nvars = Test_::obspace(jj).nvars();
     bool ObsAreSorted = Test_::obspace(jj).obsAreSorted();
 
     // Get the expected nlocs from the obspace object's configuration
-    std::size_t ExpectedNlocs = conf[jj].getUnsigned("obs space.test data.nlocs");
-    std::size_t ExpectedNvars = conf[jj].getUnsigned("obs space.test data.nvars");
-    bool ExpectedObsAreSorted = conf[jj].getBool("obs space.test data.obs are sorted");
+    std::size_t ExpectedNlocs = testConfig.getUnsigned("nlocs");
+    std::size_t ExpectedNvars = testConfig.getUnsigned("nvars");
+    bool ExpectedObsAreSorted = testConfig.getBool("obs are sorted");
 
     oops::Log::debug() << "Nlocs, ExpectedNlocs: " << Nlocs << ", "
                        << ExpectedNlocs << std::endl;
@@ -100,7 +109,7 @@ void testConstructor() {
     if (Test_::obspace(jj).distribution().name() != "Halo") {
       std::size_t Nrecs = Test_::obspace(jj).nrecs();
       Test_::obspace(jj).distribution().allReduceInPlace(Nrecs, eckit::mpi::sum());
-      std::size_t ExpectedNrecs = conf[jj].getUnsigned("obs space.test data.nrecs");
+      std::size_t ExpectedNrecs = testConfig.getUnsigned("nrecs");
       oops::Log::debug() << "Nrecs, ExpectedNrecs: " << Nrecs << ", "
                        << ExpectedNrecs << std::endl;
       EXPECT(Nrecs == ExpectedNrecs);
@@ -119,7 +128,7 @@ void testIndexRecnum() {
   for (std::size_t jj = 0; jj < Test_::size(); ++jj) {
     // Grab the test configuration which holds the expected data.
     eckit::LocalConfiguration testConfig;
-    conf[jj].get("obs space.test data", testConfig);
+    conf[jj].get("test data", testConfig);
     oops::Log::debug() << "Test data configuration: " << testConfig << std::endl;
 
     // Get the index and recnum vectors from the obs space

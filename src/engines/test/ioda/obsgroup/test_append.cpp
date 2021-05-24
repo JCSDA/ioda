@@ -14,10 +14,12 @@
 #include <typeinfo>
 
 #include "Eigen/Dense"
-#include "eckit/filesystem/LocalPathName.h"
 #include "ioda/Engines/Factory.h"
+#include "ioda/Exception.h"
 #include "ioda/Layout.h"
 #include "ioda/ObsGroup.h"
+
+#include "ioda/testconfig.h"
 
 void test_obsgroup_helper_funcs(std::string backendType, std::string fileName,
                                 const std::string mappingFile = "") {
@@ -80,9 +82,8 @@ void test_obsgroup_helper_funcs(std::string backendType, std::string fileName,
   } else if (backendType == "memory") {
     backendName = Engines::BackendNames::ObsStore;
   } else {
-    throw; /* jedi_throw
-            .add("Reason", "Unrecognized backend type")
-            .add("backendType", backendType); */
+    throw Exception("Unrecognized backend type", ioda_Here())
+            .add("backendType", backendType);
   }
   Group backend = constructBackend(backendName, backendParams);
 
@@ -91,23 +92,23 @@ void test_obsgroup_helper_funcs(std::string backendType, std::string fileName,
   if (backendType != "fileRemapped") {
     og = ObsGroup::generate(
           backend, {
-            std::make_shared<NewDimensionScale<int>>("nlocs", locations, ioda::Unlimited, locations),
-            std::make_shared<NewDimensionScale<int>>("nchans", channels, channels, channels),
+            NewDimensionScale<int>("nlocs", locations, ioda::Unlimited, locations),
+            NewDimensionScale<int>("nchans", channels, channels, channels)
           });
   } else if (mappingFile == "") {
     og = ObsGroup::generate(
           backend, {
-            std::make_shared<NewDimensionScale<int>>("nlocs", locations, ioda::Unlimited, locations),
-            std::make_shared<NewDimensionScale<int>>("nchans", channels, channels, channels),
+            NewDimensionScale<int>("nlocs", locations, ioda::Unlimited, locations),
+            NewDimensionScale<int>("nchans", channels, channels, channels)
           });
   } else {
     og = ObsGroup::generate(
           backend,
           {
-            std::make_shared<NewDimensionScale<int>>(
+            NewDimensionScale<int>(
             "nlocs", locations, ioda::Unlimited, locations),
-            std::make_shared<NewDimensionScale<int>>(
-            "nchans", channels, channels, channels), },
+            NewDimensionScale<int>(
+            "nchans", channels, channels, channels) },
           detail::DataLayoutPolicy::generate(detail::DataLayoutPolicy::Policies::ObsGroupODB,
                                              mappingFile));
   }
@@ -184,7 +185,7 @@ void test_obsgroup_helper_funcs(std::string backendType, std::string fileName,
   Eigen::ArrayXXf myData(locationsX2, channels);
   obs_var.readWithEigenRegular(myData);
   if (!myData.isApprox(myDataExpected)) {
-    throw;  // jedi_throw.add("Reason", "Test obs data mismatch");
+    throw Exception("Test obs data mismatch", ioda_Here());
   }
 
   std::vector<float> myLats(locationsX2, 0.0);
@@ -192,11 +193,10 @@ void test_obsgroup_helper_funcs(std::string backendType, std::string fileName,
   for (std::size_t i = 0; i < locationsX2; ++i) {
     double check = fabs((myLats[i] / myLatExpected[i]) - 1.0);
     if (check > 1.0e-3) {
-      throw; /* jedi_throw
-              .add("Reason", "Test lats mismatch outside tolerence (1e-3)")
+      throw Exception("Test lats mismatch outside tolerence (1e-3)", ioda_Here())
               .add("  i", i)
               .add("  myLatExpected[i]", myLatExpected[i])
-              .add("  myLats[i]", myLats[i]); */
+              .add("  myLats[i]", myLats[i]);
     }
   }
 
@@ -205,11 +205,10 @@ void test_obsgroup_helper_funcs(std::string backendType, std::string fileName,
   for (std::size_t i = 0; i < locationsX2; ++i) {
     double check = fabs((myLons[i] / myLonExpected[i]) - 1.0);
     if (check > 1.0e-3) {
-      throw; /* jedi_throw
-              .add("Reason", "Test lons mismatch outside tolerence (1e-3)")
+      throw Exception("Test lons mismatch outside tolerence (1e-3)", ioda_Here())
               .add("  i", i)
               .add("  myLonExpected[i]", myLonExpected[i])
-              .add("  myLons[i]", myLons[i]); */
+              .add("  myLons[i]", myLons[i]);
     }
   }
 
@@ -234,15 +233,15 @@ int main(int argc, char** argv) {
       test_obsgroup_helper_funcs(backendType, {"ioda-engines_obsgroup_append-remapped-file.hdf5"});
       // Layout_ObsGroup_ODB runs identically to Layout_ObsGroup if a yaml file is not provided
       std::cout << "Testing ODB Data Layout Policy with explicit mapping file" << std::endl;
-      std::string mappingFile(eckit::LocalPathName::cwd() + "/odb_default_name_map.yaml");
+      std::string mappingFile = std::string(IODA_ENGINES_TEST_SOURCE_DIR)
+        + "/obsgroup/odb_default_name_map.yaml";
       test_obsgroup_helper_funcs(backendType, {"append-remapped.hdf5"}, mappingFile);
     } else {
-      throw; /* jedi_throw
-              .add("Reason", "Unrecognized backend type:")
-              .add("Backend type", backendType); */
+      throw ioda::Exception("Unrecognized backend type:", ioda_Here())
+              .add("Backend type", backendType);
     }
   } catch (const std::exception& e) {
-    std::cerr << e.what() << std::endl;
+    ioda::unwind_exception_stack(e);
     return 1;
   }
   return 0;

@@ -18,6 +18,7 @@
 #include <numeric>
 
 #include "./Group.hpp"
+#include "ioda/Exception.h"
 
 namespace ioda {
 namespace ObsStore {
@@ -65,7 +66,10 @@ void Variable::resize(const std::vector<Dimensions_t>& new_dim_sizes) {
   for (std::size_t i = 0; i < max_dimensions_.size(); ++i) {
     if (max_dimensions_[i] >= 0) {
       if (new_dim_sizes[i] > max_dimensions_[i]) {
-        throw;  // jedi_throw.add("Reason", "new_dim_sizes exceeds max_dimensions_");
+        throw Exception("new_dim_sizes exceeds max_dimensions_", ioda_Here())
+          .add("dimension index", i)
+          .add("max_dims[i]", max_dimensions_[i])
+          .add("new_dim_sizes[i]", new_dim_sizes[i]);
       }
     }
   }
@@ -104,11 +108,8 @@ void Variable::detachDimensionScale(const std::size_t dim_number,
                                     const std::shared_ptr<Variable> scale) {
   if (dim_scales_[dim_number] == scale) {
     dim_scales_[dim_number] = nullptr;
-  } else {
-    std::string ErrMsg = std::string("ioda::ObsStore::Variable::detachDimensionScale: ")
-                         + std::string("specified scale is not found");
-    throw;  // jedi_throw.add("Reason", ErrMsg);
-  }
+  } else
+    throw Exception("specified scale is not found", ioda_Here()).add("dim_number", dim_number);
 }
 
 bool Variable::isDimensionScale() const { return is_scale_; }
@@ -127,12 +128,8 @@ bool Variable::isDimensionScaleAttached(const std::size_t dim_number,
 
 std::shared_ptr<Variable> Variable::write(gsl::span<char> data, ObsTypes dtype, Selection& m_select,
                                           Selection& f_select) {
-  if (dtype != dtype_) {
-    std::string ErrMsg = std::string("ioda::ObsStore::Variable::write: ")
-                         + std::string("Requested data type not equal to storage datatype");
-    throw std::logic_error(
-      "Requested data type not equal to storage datatype");  // jedi_throw.add("Reason", ErrMsg);
-  }
+  if (dtype != dtype_)
+    throw Exception("Requested data type not equal to storage datatype", ioda_Here());
 
   var_data_->write(data, m_select, f_select);
   return shared_from_this();
@@ -140,11 +137,8 @@ std::shared_ptr<Variable> Variable::write(gsl::span<char> data, ObsTypes dtype, 
 
 std::shared_ptr<Variable> Variable::read(gsl::span<char> data, ObsTypes dtype, Selection& m_select,
                                          Selection& f_select) {
-  if (dtype != dtype_) {
-    std::string ErrMsg = std::string("ioda::ObsStore::Variable::read: ")
-                         + std::string("Requested data type not equal to storage datatype");
-    throw std::logic_error(ErrMsg);  // jedi_throw.add("Reason", ErrMsg);
-  }
+  if (dtype != dtype_)
+    throw Exception("Requested data type not equal to storage datatype.", ioda_Here());
 
   var_data_->read(data, m_select, f_select);
   return shared_from_this();
@@ -186,11 +180,8 @@ std::shared_ptr<Variable> Has_Variables::open(const std::string& name) const {
     var                                = group->vars->open(splitPaths[1]);
   } else {
     auto ivar = variables_.find(name);
-    if (ivar == variables_.end()) {
-      std::string ErrMsg = std::string("ioda::ObsStore::Has_Variables::open: ")
-                           + std::string("Variable not found: ") + name;
-      throw std::logic_error(ErrMsg);  // jedi_throw.add("Reason", ErrMsg);
-    }
+    if (ivar == variables_.end())
+      throw Exception("Variable not found.", ioda_Here()).add("name", name);
     var = ivar->second;
   }
   return var;

@@ -83,23 +83,17 @@ int main(int argc, char** argv) {
 
   params_dimchannel = ioda.VariableCreationParams.create();
   if (!params_dimchannel) doErr;
-  if (!ioda.VariableCreationParams.setIsDimensionScale(params_dimchannel, 19, "ATMS Channel Number"))
-    doErr;
-  if (ioda.VariableCreationParams.isDimensionScale(params_dimchannel) <= 0) doErr;
 
   dim_channel = ioda.Has_Variables.create_int(gvars, 12, "ATMS Channel", 1, &num_channels,
                                               &num_channels, params_dimchannel);
   if (!dim_channel) doErr;
+  if (!ioda.Variable.setIsDimensionScale(dim_channel, 19, "ATMS Channel Number")) doErr;
   if (ioda.Variable.isDimensionScale(dim_channel) <= 0) doErr;
 
   const char* check_str_dimscale_name = "ATMS Channel Number";
   const int buf_sz                    = 60;
   char buf[60]                        = {"\n"};
   size_t sz = ioda.Variable.getDimensionScaleName(dim_channel, buf_sz, buf);
-  if (sz != 20) doErr;
-  if (0 != strncmp(buf, check_str_dimscale_name, buf_sz)) doErr;
-
-  sz = ioda.VariableCreationParams.getDimensionScaleName(params_dimchannel, buf_sz, buf);
   if (sz != 20) doErr;
   if (0 != strncmp(buf, check_str_dimscale_name, buf_sz)) doErr;
 
@@ -198,13 +192,12 @@ int main(int argc, char** argv) {
   ioda.VariableCreationParams.chunking(p1, true, 1, p1_chunks);
   ioda.VariableCreationParams.compressWithGZIP(p1, 6);
   const struct ioda_variable* sza_dimscale[] = {dim_location};
-  ioda.VariableCreationParams.setDimScale(p1, 1, sza_dimscale);
-  if (!ioda.VariableCreationParams.hasSetDimScales(p1)) doErr;
 
   // C++ line 166
   var_sza
     = ioda.Has_Variables.create_float(gvars, 18, "Solar Zenith Angle", 1, &num_locs, &num_locs, p1);
   if (!var_sza) doErr;
+  if (!ioda.Variable.setDimScale(var_sza, 1, sza_dimscale)) doErr;
   if (ioda.Variable.isDimensionScaleAttached(var_sza, 0, dim_location) <= 0) doErr;
   if (!ioda.Variable.detachDimensionScale(var_sza, 0, dim_location))
     doErr;  // Just trying to check...
@@ -226,8 +219,6 @@ int main(int argc, char** argv) {
   if (!v_sza_units) doErr;
   if (!ioda.Attribute.write_str(v_sza_units, 1, &sza_units)) doErr;
 
-  // This is effectively a no-op, but we want to test that the code executes.
-  if (!ioda.VariableCreationParams.attachDimensionScale(p1, 1, dim_channel)) doErr;
 
   goto cleanup;
 

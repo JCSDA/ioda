@@ -1,0 +1,22 @@
+---
+window begin: "2018-04-14T21:00:00Z"
+window end: "2018-04-15T03:00:00Z"
+
+observations:
+
+- obs space:
+    name: "AMSUA NOAA19"
+    simulated variables: ['brightness_temperature']
+    channels: 1,2,4,5
+    obsdatain:
+      obsfile: "Data/testinput_tier_1/amsua_n19_obs_2018041500_m.nc4"
+    obsdataout:
+      obsfile: "testoutput/amsua_n19_obs_2018041500_m_put_db.nc4"
+
+- obs space:
+    name: "Radiosonde"
+    simulated variables: ['temperature']
+    obsdatain:
+      obsfile: "Data/testinput_tier_1/sondes_obs_2018041500_m.nc4"
+    obsdataout:
+      obsfile: "testoutput/sondes_obs_2018041500_m_put_db.nc4"

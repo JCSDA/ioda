@@ -8,8 +8,10 @@
 /*! @file Options.h
 * @brief Quick and easy key-value container that stringifies all values.
 */
+#include <exception>
 #include <map>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 
 #include "../defs.h"
@@ -69,7 +71,7 @@ public:
   /// Adds an option. Throws if the same name already exists.
   template <class T>
   Options& add(const std::string& key, const T& value) {
-    if (has(key)) throw;
+    if (has(key)) throw std::logic_error("Key already exists.");
     return this->set<T>(key, value);
   }
 };

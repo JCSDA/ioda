@@ -16,9 +16,11 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "ioda/Attributes/Attribute.h"
+#include "ioda/Exception.h"
 #include "ioda/Misc/Dimensions.h"
 #include "ioda/Misc/Eigen_Compat.h"
 #include "ioda/Types/Type.h"
@@ -313,6 +315,11 @@ public:
   /// \returns An instance of Attribute that can be queried (with getDimensions()) and read.
   inline Attribute operator[](const std::string& name) const { return open(name); }
 
+  /// \brief Open all attributes in an object.
+  /// \details This is a collective call, optimized for performance.
+  /// \return A sequence of (name, Attribute) pairs.
+  virtual std::vector<std::pair<std::string, Attribute>> openAll() const;
+
   /// \brief Create an Attribute without setting its data.
   /// \param attrname is the name of the Attribute.
   /// \param dimensions is a vector representing the size of the metadata.
@@ -325,7 +332,7 @@ public:
   /// Python compatability function
   inline Attribute _create_py(const std::string& attrname, BasicTypes dataType,
                               const std::vector<Dimensions_t>& dimensions = {1}) {
-    return create(attrname, Type(dataType, getTypeProvider()), dimensions);
+    return create(attrname, ::ioda::Type(dataType, getTypeProvider()), dimensions);
   }
 
   /// \brief Create an Attribute without setting its data.
@@ -335,10 +342,15 @@ public:
   ///   vector is a dimension with a certain size.
   /// \returns An instance of Attribute that can be written to.
   template <class DataType, class TypeWrapper = Types::GetType_Wrapper<DataType>>
-  Attribute create(const std::string& attrname, const std::vector<Dimensions_t>& dimensions = {1}) {
-    Type in_memory_dataType = TypeWrapper::GetType(getTypeProvider());
-    auto att                = create(attrname, in_memory_dataType, dimensions);
-    return att;
+  Attribute create(const std::string& attrname,
+                   const std::vector<Dimensions_t>& dimensions = {1}) {
+    try {
+      Type in_memory_dataType = TypeWrapper::GetType(getTypeProvider());
+      auto att                = create(attrname, in_memory_dataType, dimensions);
+      return att;
+    } catch (...) {
+      std::throw_with_nested(Exception(ioda_Here()));
+    }
   }
 
   /// \brief Rename an Attribute
@@ -357,6 +369,10 @@ protected:
 
 public:
   virtual ~Has_Attributes_Backend();
+
+  /// \brief Default implementation of Has_Attributes_Base::openAll.
+  /// \see Has_Attributes_Base::openAll.
+  std::vector<std::pair<std::string, Attribute>> openAll() const override;
 };
 }  // namespace detail
 

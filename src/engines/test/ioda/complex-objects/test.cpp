@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "ioda/Engines/Factory.h"
+#include "ioda/Exception.h"
 #include "ioda/Group.h"
 
 // These tests really need a better check system.
@@ -129,7 +130,7 @@ int main(int argc, char** argv) {
       check_equal("Str_w_fill", v_data, {"I_am_fill", "I_am_fill", "I_am_fill", "I_am_fill"});
     }
   } catch (const std::exception& e) {
-    cerr << e.what() << endl;
+    ioda::unwind_exception_stack(e);
     return 1;
   }
   return 0;

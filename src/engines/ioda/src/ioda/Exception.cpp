@@ -11,9 +11,12 @@
 
 namespace ioda {
 
-Exception::Exception(const ::ioda::source_location& loc) { add_source_location(loc); }
+Exception::Exception(const ::ioda::source_location& loc, const Options& opts) : opts_{opts} {
+  add_source_location(loc);
+}
 
-Exception::Exception(const char* msg, const ::ioda::source_location& loc) {
+Exception::Exception(const char* msg, const ::ioda::source_location& loc, const Options& opts)
+    : opts_{opts} {
   add("Reason", std::string(msg));
   add_source_location(loc);
 }

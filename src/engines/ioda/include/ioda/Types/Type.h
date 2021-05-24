@@ -24,33 +24,11 @@
 #include <vector>
 
 #include "ioda/Types/Type_Provider.h"
+#include "ioda/Exception.h"
 #include "ioda/defs.h"
 
 namespace ioda {
 class Type;
-
-namespace detail {
-IODA_DL size_t COMPAT_strncpy_s(char* dest, size_t destSz, const char* src, size_t srcSz);
-
-class Type_Backend;
-
-/// \ingroup ioda_cxx_types
-template <class Type_Implementation = Type>
-class Type_Base {
-  std::shared_ptr<Type_Backend> backend_;
-
-protected:
-  /// @name General Functions
-  /// @{
-
-  Type_Base(std::shared_ptr<Type_Backend> b) : backend_(b) {}
-
-public:
-  virtual ~Type_Base() {}
-  std::shared_ptr<Type_Backend> getBackend() const { return backend_; }
-  /// @}
-};
-}  // namespace detail
 
 /// Basic pre-defined types (Python convenience wrappers)
 /// \see py_ioda.cpp
@@ -80,6 +58,62 @@ enum class BasicTypes {
   str_
 };
 
+namespace detail {
+IODA_DL size_t COMPAT_strncpy_s(char* dest, size_t destSz, const char* src, size_t srcSz);
+
+class Type_Backend;
+
+template <class Type_Implementation = Type>
+class Type_Base {
+  friend class ::ioda::Type;
+  std::shared_ptr<Type_Backend> backend_;
+
+protected:
+  ::ioda::detail::Type_Provider* provider_;
+
+  /// @name General Functions
+  /// @{
+
+  Type_Base(std::shared_ptr<Type_Backend> b, ::ioda::detail::Type_Provider* p)
+      : backend_(b), provider_(p) {}
+
+  /// Get the type provider.
+  inline detail::Type_Provider* getTypeProvider() const { return provider_; }
+
+  /*
+  /// \brief Convenience function to check a type.
+  /// \param DataType is the type of the data. I.e. float, int, int32_t, uint16_t, std::string, etc.
+  /// \returns True if the type matches
+  /// \returns False (0) if the type does not match
+  /// \throws if an error occurred.
+  template <class DataType>
+  bool isA() const {
+    Type templateType = Types::GetType_Wrapper<DataType>::GetType(getTypeProvider());
+
+    return isA(templateType);
+  }
+  /// Hand-off to the backend to check equivalence
+  virtual bool isA(Type lhs) const;
+
+  /// Python compatability function
+  inline bool isA(BasicTypes dataType) const { return isA(Type(dataType, getTypeProvider())); }
+  */
+public:
+  virtual ~Type_Base() {}
+  std::shared_ptr<Type_Backend> getBackend() const { return backend_; }
+  bool isValid() const { return (backend_.use_count() > 0); }
+
+  /// \brief Get the size of a single element of a type, in bytes.
+  /// \details This function is paired with the read and write functions to allow you to
+  /// read and write data in a type-agnostic manner.
+  /// This size report is a bit complicated when variable-length strings are encountered.
+  /// In these cases, the size of the string pointer is returned.
+  virtual size_t getSize() const;
+
+  /// @}
+};
+}  // namespace detail
+
 /// \brief Represents the "type" (i.e. integer, string, float) of a piece of data.
 /// \ingroup ioda_cxx_types
 ///
@@ -90,13 +124,15 @@ class IODA_DL Type : public detail::Type_Base<> {
 public:
   Type();
   Type(std::shared_ptr<detail::Type_Backend> b, std::type_index t);
-  Type(BasicTypes, gsl::not_null<const ::ioda::detail::Type_Provider*> t);
+  Type(BasicTypes, gsl::not_null<::ioda::detail::Type_Provider*> t);
 
   virtual ~Type();
 
   /// @name Type-querying functions
   /// @{
 
+  /// @deprecated This function is problematic since we cannot query a type properly
+  /// when loading from a file.
   std::type_index getType() const { return as_type_index_; }
   inline std::type_index operator()() const { return getType(); }
   inline std::type_index get() const { return getType(); }
@@ -113,6 +149,7 @@ namespace detail {
 class IODA_DL Type_Backend : public Type_Base<> {
 public:
   virtual ~Type_Backend();
+  size_t getSize() const override;
 
 protected:
   Type_Backend();
@@ -153,8 +190,9 @@ Type GetType(gsl::not_null<const ::ioda::detail::Type_Provider*> t,
              std::initializer_list<Dimensions_t> Adims                   = {},
              typename std::enable_if<!is_string<DataType>::value>::type* = 0) {
   if (Array_Type_Dimensionality <= 0)
-    throw std::logic_error(
-      "Bad assertion / unsupported fundamental type at the frontend side of the ioda type system.");
+    throw Exception(
+      "Bad assertion / unsupported fundamental type at the frontend side "
+      "of the ioda type system.", ioda_Here());
   else
     return t->makeArrayType(Adims, typeid(DataType[]), typeid(DataType));
 }

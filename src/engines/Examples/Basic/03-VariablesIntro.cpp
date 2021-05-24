@@ -42,6 +42,7 @@
 
 #include "Eigen/Dense"                     // Eigen Arrays and Matrices
 #include "ioda/Engines/Factory.h"          // Used to kickstart the Group engine.
+#include "ioda/Exception.h"                // Exceptions and debugging
 #include "ioda/Group.h"                    // Groups have attributes.
 #include "unsupported/Eigen/CXX11/Tensor"  // Eigen Tensors
 
@@ -149,7 +150,7 @@ int main(int argc, char** argv) {
     try {
       auto bad_1 = g.vars.create<int>("bad-int-1", {1});
       bad_1.write<float>(std::vector<float>{2.2f});
-    } catch (const std::exception&) {
+    } catch (std::exception) {
     }
 
     // Writing Eigen objects
@@ -203,14 +204,13 @@ int main(int argc, char** argv) {
     // about ordering.
     std::vector<std::string> varList = g.vars.list();
     if (varList.size() != 11)
-      throw; /* jedi_throw
-.add("Reason", "Unexpected variable count.")
-.add("Expected", 11)
-.add("Actual", varList.size()); */
+      throw ioda::Exception("Unexpected variable count.", ioda_Here())
+        .add("Expected", 11)
+        .add("Actual", varList.size());
 
     // Checking variable existence and removing.
     if (!g.vars.exists("var-2"))
-      throw;  // jedi_throw.add("Reason", "Variable var-2 does not exist.");
+      throw ioda::Exception("Variable var-2 does not exist.", ioda_Here());
     g.vars.create<int>("removable-int-1", {1});
     g.vars.remove("removable-int-1");
 
@@ -226,7 +226,7 @@ int main(int argc, char** argv) {
       H5Eset_auto(H5E_DEFAULT, NULL, NULL);  // Turn off HDF5 automatic error handling.
       ioda::Variable z2;
       z2 = g.vars.open("var-z-2");
-    } catch (const std::exception&) {  // This is expected.
+    } catch (std::exception) {  // This is expected.
     }
 
     // Get dimensions
@@ -286,12 +286,13 @@ int main(int argc, char** argv) {
     // If you read data into an object that has the wrong storage type, ioda-engines complains.
     try {
       std::vector<double> y1_check_bad;
-      y1.read<double>(y1_check_bad);
-    } catch (const std::exception&) {
+      y1.read<double>(y1_check_bad); // This will fail
+    } catch (...) {
+      // Silently catch in this example
     }
 
   } catch (const std::exception& e) {
-    cerr << "An error occurred.\n\n" << e.what() << endl;
+    ioda::unwind_exception_stack(e);
     return 1;
   }
   return 0;

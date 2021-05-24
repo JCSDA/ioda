@@ -50,19 +50,6 @@ void setupVCPs(pybind11::module& m, pybind11::module& mDetail, pybind11::module&
     .def("compressWithSZIP", &VariableCreationParameters::compressWithSZIP,
          "Use SZIP compression (see H5_SZIP_EC_OPTION_MASK in hdf5.h)",
          py::arg("PixelsPerBlock") = 16, py::arg("options") = 4)
-    .def("attachDimensionScale", &VariableCreationParameters::attachDimensionScale,
-         "Attach a dimension scale to a variable", py::arg("DimensionNumber"), py::arg("scale"))
-    .def("setIsDimensionScale", &VariableCreationParameters::setIsDimensionScale,
-         "Make this variable a dimension scale", py::arg("name"))
-    .def("isDimensionScale", &VariableCreationParameters::isDimensionScale,
-         "Is this variable a dimension scale?")
-    .def("getDimensionScaleName", &VariableCreationParameters::getDimensionScaleName,
-         "Get the name of this dimension scale")
-    .def(
-      "setDimScale",
-      (VariableCreationParameters & (VariableCreationParameters::*)(const std::vector<Variable>&))
-        & VariableCreationParameters::setDimScale,
-      "Set dimensions")
     .def_readwrite("setFillValue", &VariableCreationParameters::_py_setFillValue, "Set fill value")
     .def_readwrite("atts", &VariableCreationParameters::atts, "Attributes");
 }

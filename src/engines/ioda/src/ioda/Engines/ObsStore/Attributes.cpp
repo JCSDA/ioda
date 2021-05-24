@@ -10,10 +10,12 @@
  * \file Attributes.cpp
  * \brief Functions for ObsStore Attribute and Has_Attributes
  */
-#include "./Attributes.hpp"
-
 #include <functional>
 #include <numeric>
+
+#include "./Attributes.hpp"
+#include "ioda/Exception.h"
+
 
 namespace ioda {
 namespace ObsStore {
@@ -36,11 +38,9 @@ std::vector<std::size_t> Attribute::get_dimensions() const { return dimensions_;
 bool Attribute::isOfType(ObsTypes dtype) const { return (dtype == dtype_); }
 
 std::shared_ptr<Attribute> Attribute::write(gsl::span<char> data, ObsTypes dtype) {
-  if (dtype != dtype_) {
-    std::string ErrMsg = std::string("ioda::ObsStore::Attribute::write: ")
-                         + std::string("Requested data type not equal to storage datatype");
-    throw;  // jedi_throw.add("Reason", ErrMsg);
-  }
+  if (dtype != dtype_)
+    throw Exception("Requested data type not equal to storage datatype.", ioda_Here());
+  
   // Create select objects for all elements. Ie, attributes don't use
   // selection, but the VarAttrStore object is also used by variables which
   // do use selection.
@@ -56,11 +56,9 @@ std::shared_ptr<Attribute> Attribute::write(gsl::span<char> data, ObsTypes dtype
 }
 
 std::shared_ptr<Attribute> Attribute::read(gsl::span<char> data, ObsTypes dtype) {
-  if (dtype != dtype_) {
-    std::string ErrMsg = std::string("ioda::ObsStore::Attribute::read: ")
-                         + std::string("Requested data type not equal to storage datatype");
-    throw;  // jedi_throw.add("Reason", ErrMsg);
-  }
+  if (dtype != dtype_) 
+    throw Exception("Requested data type not equal to storage datatype", ioda_Here());
+  
   // Create select objects for all elements. Ie, attributes don't use
   // selection, but the VarAttrStore object is also used by variables which
   // do use selection.
@@ -88,11 +86,9 @@ std::shared_ptr<Attribute> Has_Attributes::create(const std::string& name,
 
 std::shared_ptr<Attribute> Has_Attributes::open(const std::string& name) const {
   auto iattr = attributes_.find(name);
-  if (iattr == attributes_.end()) {
-    std::string ErrMsg = std::string("ioda::ObsStore::Has_Attributes::open: ")
-                         + std::string("Attribute not found: ") + name;
-    throw;  // jedi_throw.add("Reason", ErrMsg);
-  }
+  if (iattr == attributes_.end())
+    throw Exception("Attribute not found.", ioda_Here()).add("name", name);
+
   return iattr->second;
 }
 

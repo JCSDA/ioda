@@ -17,6 +17,7 @@
 #include <hdf5_hl.h>
 
 #include <algorithm>
+#include <exception>
 #include <numeric>
 #include <set>
 
@@ -25,15 +26,19 @@
 #include "./HH/HH-hasattributes.h"
 #include "./HH/HH-hasvariables.h"
 #include "./HH/HH-types.h"
+#include "./HH/HH-util.h"
 #include "./HH/Handles.h"
+#include "ioda/Exception.h"
 #include "ioda/Misc/DimensionScales.h"
 #include "ioda/Misc/Dimensions.h"
-#include "ioda/Misc/SFuncs.h"
+#include "ioda/Misc/StringFuncs.h"
 
 namespace ioda {
 namespace detail {
 namespace Engines {
 namespace HH {
+
+
 template <class T>
 std::vector<T> convertToH5Length(const std::vector<Dimensions_t>& in) {
   std::vector<T> res(in.size());
@@ -56,14 +61,18 @@ HH_hid_t HH_Variable::get() const { return var_; }
 
 bool HH_Variable::isVariable() const {
   H5I_type_t typ = H5Iget_type(var_());
-  if (typ == H5I_BADID) throw;  // HH_throw;
+  if (typ == H5I_BADID) throw Exception("Cannot determine object type", ioda_Here());
   return (typ == H5I_DATASET);
 }
 
 detail::Type_Provider* HH_Variable::getTypeProvider() const { return HH_Type_Provider::instance(); }
 
-HH_hid_t HH_Variable::type() const {
+HH_hid_t HH_Variable::internalType() const {
   return HH_hid_t(H5Dget_type(var_()), Handles::Closers::CloseHDF5Datatype::CloseP);
+}
+
+Type HH_Variable::getType() const {
+  return Type{std::make_shared<HH_Type>(internalType()), typeid(HH_Type)};
 }
 
 HH_hid_t HH_Variable::space() const {
@@ -72,15 +81,27 @@ HH_hid_t HH_Variable::space() const {
 
 Dimensions HH_Variable::getDimensions() const {
   Dimensions ret;
+  Options errOpts; // Used for tracking parameters that can show up in the error message.
+  errOpts.add("variable", getNameFromIdentifier(var_()));
 
   std::vector<hsize_t> dims, dimsmax;
-  if (H5Sis_simple(space()()) < 0) throw;
+  htri_t isSimple = H5Sis_simple(space()());
+  if (isSimple < 0) throw Exception("Dimension space parameter is invalid.", ioda_Here(), errOpts);
+  if (isSimple == 0) throw Exception("Dataspace is not simple. Unsupported case in code. "
+    "Complex dataspace support was not available in HDF5 when this function was written.",
+      ioda_Here(), errOpts);
   hssize_t numPoints = H5Sget_simple_extent_npoints(space()());
+  errOpts.add("numPoints", numPoints);
+  if (numPoints < 0)
+    throw Exception("H5Sget_simple_extent_npoints error.", ioda_Here(), errOpts);
   int dimensionality = H5Sget_simple_extent_ndims(space()());
-  if (dimensionality < 0) throw;
+  errOpts.add("dimensionality", dimensionality);
+  if (dimensionality < 0)
+    throw Exception("H5Sget_simple_extent_ndims error.", ioda_Here(), errOpts);
   dims.resize(dimensionality);
   dimsmax.resize(dimensionality);
-  if (H5Sget_simple_extent_dims(space()(), dims.data(), dimsmax.data()) < 0) throw;
+  if (H5Sget_simple_extent_dims(space()(), dims.data(), dimsmax.data()) < 0)
+    throw Exception("H5Sget_simple_extent_dims error.", ioda_Here(), errOpts);
 
   ret.numElements    = gsl::narrow<decltype(Dimensions::numElements)>(numPoints);
   ret.dimensionality = gsl::narrow<decltype(Dimensions::dimensionality)>(dimensionality);
@@ -95,25 +116,18 @@ Variable HH_Variable::resize(const std::vector<Dimensions_t>& newDims) {
   std::vector<hsize_t> hdims = convertToH5Length<hsize_t>(newDims);
 
   if (H5Dset_extent(var_(), hdims.data()) < 0)
-    throw;  // jedi_throw.add("Reason", "Failure to resize a Variable with the HDF5 backend.");
+    throw Exception("Failure to resize a Variable with the HDF5 backend.", ioda_Here())
+    .add("variable", getNameFromIdentifier(var_()))
+    .add("dimensionality", hdims.size());
 
   return Variable{shared_from_this()};
 }
 
 Variable HH_Variable::attachDimensionScale(unsigned int DimensionNumber, const Variable& scale) {
-  // We are extracting the backend object.
-  auto scaleBackendBase = scale.get();
-  // If the backend object is an HH object, then we can attach this scale.
-  // Otherwise, throw an error because you can't mix Variables from different
-  // backends.
-  auto scaleBackendDerived = std::dynamic_pointer_cast<HH_Variable>(scaleBackendBase);
+  Options errOpts;
+  errOpts.add("variable", getNameFromIdentifier(var_()));
+  errOpts.add("DimensionNumber", DimensionNumber);
 
-  const herr_t res = H5DSattach_scale(var_(), scaleBackendDerived->var_(), DimensionNumber);
-  if (res != 0) throw;  // HH_throw;
-
-  return Variable{shared_from_this()};
-}
-Variable HH_Variable::detachDimensionScale(unsigned int DimensionNumber, const Variable& scale) {
   try {
     // We are extracting the backend object.
     auto scaleBackendBase = scale.get();
@@ -121,36 +135,95 @@ Variable HH_Variable::detachDimensionScale(unsigned int DimensionNumber, const V
     // Otherwise, throw an error because you can't mix Variables from different
     // backends.
     auto scaleBackendDerived = std::dynamic_pointer_cast<HH_Variable>(scaleBackendBase);
+    errOpts.add("scale", getNameFromIdentifier(scaleBackendDerived->var_()));
 
-    const herr_t res = H5DSdetach_scale(var_(), scaleBackendDerived->var_(), DimensionNumber);
-    if (res != 0) throw;  // HH_throw;
+    const herr_t res = H5DSattach_scale(var_(), scaleBackendDerived->var_(), DimensionNumber);
+    if (res != 0) throw Exception("Dimension scale attachment failed.", ioda_Here(), errOpts);
 
     return Variable{shared_from_this()};
-  } catch (const std::bad_cast&) {
-    throw;  // For now, rethrow.
+  } catch (std::bad_cast) {
+    throw Exception("Cannot attach dimension scales across incompatible backends.",
+      ioda_Here(), errOpts);
   }
 }
+
+Variable HH_Variable::detachDimensionScale(unsigned int DimensionNumber, const Variable& scale) {
+  Options errOpts;
+  errOpts.add("variable", getNameFromIdentifier(var_()));
+  errOpts.add("DimensionNumber", DimensionNumber);
+
+  try {
+    // We are extracting the backend object.
+    auto scaleBackendBase = scale.get();
+    // If the backend object is an HH object, then we can attach this scale.
+    // Otherwise, throw an error because you can't mix Variables from different
+    // backends.
+    auto scaleBackendDerived = std::dynamic_pointer_cast<HH_Variable>(scaleBackendBase);
+    errOpts.add("scale", getNameFromIdentifier(scaleBackendDerived->var_()));
+
+    const herr_t res = H5DSdetach_scale(var_(), scaleBackendDerived->var_(), DimensionNumber);
+    if (res != 0) throw Exception("Dimension scale detachment failed", ioda_Here(), errOpts);
+
+    return Variable{shared_from_this()};
+  } catch (std::bad_cast) {
+    throw Exception("Cannot detach dimension scales across incompatible backends.",
+      ioda_Here(), errOpts);
+  }
+}
+
 bool HH_Variable::isDimensionScale() const {
   const htri_t res = H5DSis_scale(var_());
-  if (res < 0) throw;  // HH_throw;
+  if (res < 0) {
+    Options errOpts;
+    try {
+      errOpts.add("variable", getNameFromIdentifier(var_()));
+    } catch (...) {
+      errOpts.add("variable", "unknown / bad id");
+    }
+    
+    throw Exception("Error returned from H5DSis_scale.", ioda_Here(), errOpts);
+  }
   return (res > 0);
 }
+
 Variable HH_Variable::setIsDimensionScale(const std::string& dimensionScaleName) {
   const htri_t res = H5DSset_scale(var_(), dimensionScaleName.c_str());
-  if (res != 0) throw;  // HH_throw;
+  if (res != 0) {
+    Options errOpts;
+    errOpts.add("dimensionScaleName", dimensionScaleName);
+    try {
+      errOpts.add("variable", getNameFromIdentifier(var_()));
+    } catch (...) {
+      errOpts.add("variable", "unknown / bad id");
+    }
+
+    throw Exception(
+      "Error returned from H5DSset_scale.", ioda_Here(), errOpts);
+  }
   return Variable{shared_from_this()};
 }
+
 Variable HH_Variable::getDimensionScaleName(std::string& res) const {
   constexpr size_t max_label_size = 1000;
   std::array<char, max_label_size> label{};  // Value-initialized to nulls.
   const ssize_t sz = H5DSget_scale_name(var_(), label.data(), max_label_size);
-  if (sz < 0) throw;  // HH_throw;
+  if (sz < 0) {
+    Options errOpts;
+    try {
+      errOpts.add("variable", getNameFromIdentifier(var_()));
+    } catch (...) {
+      errOpts.add("variable", "unknown / bad id");
+    }
+
+    throw Exception("Error returned from H5DSget_scale_name.", ioda_Here(), errOpts);
+  }
   // sz is the size of the label. The HDF5 documentation does not include whether the label is
   // null-terminated, so I am terminating it manually.
   label[max_label_size - 1] = '\0';
   res                       = std::string(label.data());
   return Variable{std::make_shared<HH_Variable>(*this)};
 }
+
 
 /** \details This function is byzantine, it is performance-critical, and it cannot be split apart.
  *
@@ -169,8 +242,8 @@ Variable HH_Variable::getDimensionScaleName(std::string& res) const {
  * Also note: different HDF5 versions use slightly different structs and function calls,
  * hence the #ifdefs.
  **/
-std::vector<std::vector<std::pair<std::string, Variable>>> HH_Variable::getDimensionScaleMappings(
-  const std::vector<std::pair<std::string, Variable>>& scalesToQueryAgainst, bool firstOnly,
+std::vector<std::vector<Named_Variable>> HH_Variable::getDimensionScaleMappings(
+  const std::vector<Named_Variable>& scalesToQueryAgainst, bool firstOnly,
   const std::vector<unsigned>& dimensionNumbers_) const {
   try {
     // Extract all of the scalesToQueryAgainst and convert them into the appropriate backend
@@ -178,10 +251,10 @@ std::vector<std::vector<std::pair<std::string, Variable>>> HH_Variable::getDimen
     // Variables and scales across different backends).
     std::vector<std::pair<std::string, std::shared_ptr<HH_Variable>>> scales;
     for (const auto& scale : scalesToQueryAgainst) {
-      auto scaleBackendBase    = scale.second.get();
+      auto scaleBackendBase    = scale.var.get();
       auto scaleBackendDerived = std::dynamic_pointer_cast<HH_Variable>(scaleBackendBase);
       scales.push_back(
-        {scale.first, scaleBackendDerived});  // NOLINT: macos oddly is missing emplace_back here.
+        {scale.name, scaleBackendDerived});  // NOLINT: macos oddly is missing emplace_back here.
     }
 
     // The logic here roughly follows H5DSis_attached, but with extra optimizations and added
@@ -193,50 +266,64 @@ std::vector<std::vector<std::pair<std::string, Variable>>> HH_Variable::getDimen
     std::vector<unsigned> dimensionNumbers = dimensionNumbers_;
     if (!dimensionNumbers.empty()) {
       auto max_elem_it = std::max_element(dimensionNumbers.cbegin(), dimensionNumbers.cend());
-      if (max_elem_it == dimensionNumbers.cend()) throw;   // jedi_throw;
-      if (datadims.dimensionality <= *max_elem_it) throw;  // jedi_throw;
+      if (max_elem_it == dimensionNumbers.cend()) throw Exception(ioda_Here());
+      if (datadims.dimensionality <= *max_elem_it) throw Exception(ioda_Here());
     } else {
       dimensionNumbers.resize(datadims.dimensionality);
       std::iota(dimensionNumbers.begin(), dimensionNumbers.end(), 0);
     }
 
     // The return value. Give it the correct size (the dimensionality of the variable).
-    std::vector<std::vector<std::pair<std::string, Variable>>> ret(
+    std::vector<std::vector<Named_Variable>> ret(
       gsl::narrow<size_t>(datadims.dimensionality));
 
+    // Iterate over all attributes to get the DIMENSION_LIST attribute. Then,
+    // attempt to read the reference list inside the DIMENSION_LIST attribute and link
+    // dimension references to dimension scales.
+
+    // NOTE: This code does not use the regular atts.open("DIMENSION_LIST") call
+    // for performance reasons on large IASI-like files where we have to repeat this
+    // call for tens of thousands of variables. We instead do a creation-order-preferred
+    // search.
+
+    // Get search order
+    H5_index_t iteration_type = getAttrCreationOrder(get()(), H5O_TYPE_DATASET);
+    // H5Aiterate2 exists in v1.8 and up.
+    hsize_t pos           = 0;
+    Iterator_find_attr_data_t search_data_opts;
+    search_data_opts.search_for = "DIMENSION_LIST";
+    herr_t att_search_ret
+      = H5Aiterate2(get()(),                  // Search on this dataset
+                    iteration_type,           // Iterate by name or creation order
+                    H5_ITER_NATIVE,           // Fastest ordering possible
+                    &pos,                     // Initial (and current) index
+                    iterate_find_attr,        // C-style search function
+      reinterpret_cast<void*>(&search_data_opts)  // Data passed to/from the C-style search function
+      );
+    if (att_search_ret < 0) throw Exception(ioda_Here());
+
+    if (!search_data_opts.success) return ret; // Fallthrough returning a vector of empty vectors.
+
+    hid_t found_att = H5Aopen_by_idx(get()(), ".", iteration_type, H5_ITER_NATIVE,
+                                     search_data_opts.idx, H5P_DEFAULT, H5P_DEFAULT);
+    HH_Attribute aDims_HH(
+      HH_hid_t(std::move(found_att), Handles::Closers::CloseHDF5Attribute::CloseP));
+
     // Attempt to read the reference list for our variable's
-    // DIMENSION_LIST attribute at index DimensionNumber.
-    if (!atts.exists("DIMENSION_LIST"))
-      return ret;  // Fallthrough returning a vector of empty vectors.
-    Attribute aDims    = atts.open("DIMENSION_LIST");
-    auto aDims_backend = _getAttributeBackend<ioda::detail::Attribute_Base<Attribute>>(aDims);
-    auto aDims_HH      = std::dynamic_pointer_cast<HH_Attribute>(aDims_backend);
+    // DIMENSION_LIST attribute.
+    //if (!atts.exists("DIMENSION_LIST"))
+    //  return ret;  // Fallthrough returning a vector of empty vectors.
+    //Attribute aDims    = atts.open("DIMENSION_LIST");
+    //auto aDims_backend = _getAttributeBackend<ioda::detail::Attribute_Base<Attribute>>(aDims);
+    //auto aDims_HH      = std::dynamic_pointer_cast<HH_Attribute>(aDims_backend);
 
-    auto vltyp  = aDims_HH->type();
-    auto vldims = aDims.getDimensions();
+    auto vltyp  = aDims_HH.internalType();
+    auto vldims = aDims_HH.getDimensions();
 
-    // Internal structure to encapsulate resources and prevent leaks.
-    // This is because H5Aread is returning a variable-length array
-    // data structure that must be reclaimed. This is also why we don't
-    // just use a std::vector.
-    struct Vlen_data {
-      std::unique_ptr<hvl_t[]> buf;  // NOLINT: C array and visibility warnings.
-      HH_hid_t typ, space;           // NOLINT: C visibility warnings.
-      Vlen_data(size_t sz, HH_hid_t typ, HH_hid_t space)
-          : buf(new hvl_t[sz]), typ{typ}, space{space} {}
-      ~Vlen_data() {
-        if (buf)
-          H5Dvlen_reclaim(typ.get(), space.get(), H5P_DEFAULT, reinterpret_cast<void*>(buf.get()));
-      }
-      Vlen_data(const Vlen_data&) = delete;
-      Vlen_data(Vlen_data&&)      = delete;
-      Vlen_data operator=(const Vlen_data&) = delete;
-      Vlen_data operator=(Vlen_data&&) = delete;
-    };
-    Vlen_data buf((size_t)datadims.dimensionality, vltyp, aDims_HH->space());
+    Vlen_data buf((size_t)datadims.dimensionality, vltyp, aDims_HH.space());
 
-    if (H5Aread(aDims_HH->get()(), vltyp.get(), reinterpret_cast<void*>(buf.buf.get())) < 0)
-      throw;  // jedi_throw;
+    if (H5Aread(aDims_HH.get()(), vltyp.get(), reinterpret_cast<void*>(buf.buf.get())) < 0)
+      throw Exception("Attribute read failure", ioda_Here());
 
       // We now have the list of object references.
       // We need to query the scale information.
@@ -252,10 +339,10 @@ std::vector<std::vector<std::pair<std::string, Variable>>> HH_Variable::getDimen
     for (size_t i = 0; i < scales.size(); ++i) {
 #if H5_VERSION_GE(1, 10, 3)
       if (H5Oget_info2(scales[i].second->get()(), &scale_infos[i], H5O_INFO_BASIC) < 0)
-        throw;  // jedi_throw.add("Reason", "Bad HDF5 call");
+        throw Exception("H5Oget_info2 failure", ioda_Here());
 #else
       if (H5Oget_info(scales[i].second->get()(), &scale_infos[i], H5O_INFO_BASIC) < 0)
-        throw;  // jedi_throw.add("Reason", "Bad HDF5 call");
+        throw Exception("H5Oget_info failure", ioda_Here());
 #endif
     }
 
@@ -282,10 +369,10 @@ std::vector<std::vector<std::pair<std::string, Variable>>> HH_Variable::getDimen
         // Get deref_scale's info and compare to scale_info.
 #if H5_VERSION_GE(1, 10, 3)
         if (H5Oget_info2(deref_scale.get()(), &check_info, H5O_INFO_BASIC) < 0)
-          throw;  // jedi_throw.add("Reason", "Bad HDF5 call");
+          throw Exception("H5Oget_info2 failure", ioda_Here());
 #else
         if (H5Oget_info(deref_scale.get()(), &check_info, H5O_INFO_BASIC) < 0)
-          throw;  // jedi_throw.add("Reason", "Bad HDF5 call");
+          throw Exception("H5Oget_info failure", ioda_Here());
 #endif
 
         // Iterate over each scalesToQueryAgainst
@@ -308,43 +395,78 @@ std::vector<std::vector<std::pair<std::string, Variable>>> HH_Variable::getDimen
     }
 
     return ret;
-  } catch (const std::bad_cast&) {
-    throw;  // For now, rethrow.
+  } catch (...) {
+    Options errOpts;
+    try {
+      errOpts.add("variable", getNameFromIdentifier(var_()));
+    } catch (...) {
+      errOpts.add("variable", "unknown / bad id");
+    }
+
+    std::throw_with_nested(Exception("Caught an exception.", ioda_Here(), errOpts));
   }
 }
 
 bool HH_Variable::isDimensionScaleAttached(unsigned int DimensionNumber,
                                            const Variable& scale) const {
-  const std::vector<std::pair<std::string, Variable>> scalesToQueryAgainst{{"unused_param", scale}};
-  auto res = getDimensionScaleMappings(scalesToQueryAgainst, true, {DimensionNumber});
-  return !res[DimensionNumber].empty();
+  try {
+    const std::vector<Named_Variable> scalesToQueryAgainst{{"unused_param", scale}};
+    auto res = getDimensionScaleMappings(scalesToQueryAgainst, true, {DimensionNumber});
+    return !res[DimensionNumber].empty();
+  } catch (...) {
+    Options errOpts;
+    try {
+      errOpts.add("variable", getNameFromIdentifier(var_()));
+    } catch (...) {
+      errOpts.add("variable", "unknown / bad id");
+    }
+
+    std::throw_with_nested(Exception("Caught an exception.", ioda_Here(), errOpts));
+  }
 }
 
-std::vector<std::vector<std::pair<std::string, Variable>>> HH_Variable::getDimensionScaleMappings(
-  const std::list<std::pair<std::string, Variable>>& scalesToQueryAgainst, bool firstOnly) const {
+std::vector<std::vector<Named_Variable>> HH_Variable::getDimensionScaleMappings(
+  const std::list<Named_Variable>& scalesToQueryAgainst, bool firstOnly) const {
   return getDimensionScaleMappings({scalesToQueryAgainst.begin(), scalesToQueryAgainst.end()},
                                    firstOnly, {});
 }
 
+Selections::SelectionBackend_t HH_Variable::instantiateSelection(const Selection& sel) const {
+  auto res = std::make_shared<HH_Selection>();
+  res->sel = getSpaceWithSelection(sel);
+  return res;
+}
+
 HH_hid_t HH_Variable::getSpaceWithSelection(const Selection& sel) const {
-  if (sel.default_ == SelectionState::ALL)
-    if (sel.actions_.empty()) return HH_hid_t(H5S_ALL);
-
+  if (sel.isConcretized()) {
+    auto concretized = sel.concretize();
+    try {
+      // Only return the concretized selection if this is the correct backend.
+      auto csel = std::dynamic_pointer_cast<HH_Selection>(concretized);
+      return csel->sel;
+    } catch (std::bad_cast) {
+      sel.invalidate();
+    }
+  }
+  
+  if (sel.getDefault() == SelectionState::ALL)
+    if (sel.getActions().empty()) return HH_hid_t(H5S_ALL);
+  
   HH_hid_t spc(H5Scopy(space()()), Handles::Closers::CloseHDF5Dataspace::CloseP);
-  if (spc() < 0) throw;  // HH_throw.add("Reason", "Cannot copy dataspace.");
+  if (spc() < 0) throw Exception("Cannot copy dataspace.", ioda_Here());
 
-  if (!sel.extent_.empty()) {
-    if (H5Sset_extent_simple(spc(), gsl::narrow<int>(sel.extent_.size()),
-                             convertToH5Length<hsize_t>(sel.extent_).data(),
-                             convertToH5Length<hsize_t>(sel.extent_).data())
+  if (!sel.extent().empty()) {
+    if (H5Sset_extent_simple(spc(), gsl::narrow<int>(sel.extent().size()),
+                             convertToH5Length<hsize_t>(sel.extent()).data(),
+                             convertToH5Length<hsize_t>(sel.extent()).data())
         < 0)
-      throw;  // HH_throw.add("Reason", "Caanot set dataspace extent.");
+      throw Exception("Cannot set dataspace extent.", ioda_Here());
   }
 
-  if (sel.default_ == SelectionState::ALL) {
-    if (H5Sselect_all(spc()) < 0) throw;  // HH_throw.add("Reason", "Dataspace selection failed.");
-  } else if (sel.default_ == SelectionState::NONE) {
-    if (H5Sselect_none(spc()) < 0) throw;  // HH_throw.add("Reason", "Dataspace selection failed.");
+  if (sel.getDefault() == SelectionState::ALL) {
+    if (H5Sselect_all(spc()) < 0) throw Exception("Dataspace selection failed.", ioda_Here());
+  } else if (sel.getDefault() == SelectionState::NONE) {
+    if (H5Sselect_none(spc()) < 0) throw Exception("Dataspace selection failed.", ioda_Here());
   }
 
   static const std::map<SelectionOperator, H5S_seloper_t> op_map
@@ -357,8 +479,8 @@ HH_hid_t HH_Variable::getSpaceWithSelection(const Selection& sel) const {
        {SelectionOperator::APPEND, H5S_SELECT_APPEND},
        {SelectionOperator::PREPEND, H5S_SELECT_PREPEND}};
   bool first_action = true;
-  for (const auto& s : sel.actions_) {
-    if (!op_map.count(s.op_)) throw std::logic_error("Unimplemented map value.");
+  for (const auto& s : sel.getActions()) {
+    if (!op_map.count(s.op_)) throw Exception("Unimplemented map value.", ioda_Here());
     herr_t chk = 0;
     // Is this a hyperslab or a single point selection?
     if (!s.points_.empty()) {  // Single point selection
@@ -371,7 +493,10 @@ HH_hid_t HH_Variable::getSpaceWithSelection(const Selection& sel) const {
       for (size_t i = 0; i < s.points_.size(); ++i)  // const auto& p : s.points_)
       {
         if (s.points_[i].size() != dimensionality)
-          throw std::logic_error("Points have inconsistent dimensionalities.");
+          throw Exception("Points have inconsistent dimensionalities.", ioda_Here())
+          .add("dimensionality", dimensionality)
+          .add("s.points_[i].size()", s.points_[i].size())
+          .add("i", i);
         for (size_t j = 0; j < dimensionality; ++j)
           elems[j + (dimensionality * i)] = s.points_[i][j];
         // std::copy_n(p.data(), dimensionality, elems.data() + (i * dimensionality));
@@ -388,7 +513,7 @@ HH_hid_t HH_Variable::getSpaceWithSelection(const Selection& sel) const {
       //  Then, apply this bulk selection to the actual space.
 #if H5_VERSION_GE(1, 12, 0)
       HH_hid_t cloned_space(H5Scopy(spc()), Handles::Closers::CloseHDF5Dataspace::CloseP);
-      Expects(H5Sselect_none(cloned_space()) >= 0);
+      if(H5Sselect_none(cloned_space()) < 0) throw Exception("Cannot copy space", ioda_Here());
 
       ioda::Dimensions dims = getDimensions();
       Expects(s.dimension_ < (size_t)dims.dimensionality);
@@ -396,19 +521,19 @@ HH_hid_t HH_Variable::getSpaceWithSelection(const Selection& sel) const {
       for (size_t i = 0; i < numSlabs; ++i) {
         // Fill with zeros, and set the right starting dimension
         std::vector<hsize_t> hstart;
-        if (sel.extent_.empty()) {
+        if (sel.extent().empty()) {
           hstart.resize((size_t)dims.dimensionality, 0);
         } else {
-          hstart.resize((size_t)sel.extent_.size(), 0);
+          hstart.resize((size_t)sel.extent().size(), 0);
         }
         hstart[s.dimension_] = s.dimension_indices_starts_[i];
 
         // Fill with the total size, and then set the right extent
         std::vector<hsize_t> hcount;
-        if (sel.extent_.empty()) {
+        if (sel.extent().empty()) {
           hcount = convertToH5Length<hsize_t>(dims.dimsCur);
         } else {
-          hcount = convertToH5Length<hsize_t>(sel.extent_);
+          hcount = convertToH5Length<hsize_t>(sel.extent());
         }
         hcount[s.dimension_]
           = (i < s.dimension_indices_counts_.size()) ? s.dimension_indices_counts_[i] : 1;
@@ -416,7 +541,7 @@ HH_hid_t HH_Variable::getSpaceWithSelection(const Selection& sel) const {
         if (H5Sselect_hyperslab(cloned_space(), op_map.at(SelectionOperator::OR), hstart.data(),
                                 NULL, hcount.data(), NULL)
             < 0)
-          throw;  // HH_throw.add("Reason", "Sub-space selection failed.");
+          throw Exception("Sub-space selection failed.", ioda_Here());
       }
 
       // Once we have looped through then we apply the actual selection operator to our
@@ -426,16 +551,16 @@ HH_hid_t HH_Variable::getSpaceWithSelection(const Selection& sel) const {
       // instead of a select modify.
       if (first_action) {
         if (H5Sselect_copy(spc(), cloned_space()) < 0)
-          throw;  // HH_throw.add("Reason", "Space copy selection failed");
+          throw Exception("Space copy selection failed", ioda_Here());
       } else {
         if (H5Smodify_select(spc(), op_map.at(s.op_), cloned_space()) < 0)
-          throw;  // HH_throw.add("Reason", "Space modify selection failed");
+          throw Exception("Space modify selection failed", ioda_Here());
       }
 #else
-      throw;      // jedi_throw.add("Reason",
-                  //"The HDF5 engine needs to be backed by at least "
-                  //"HDF5 1.12.0 to do the requested selection properly. Older HDF5 versions "
-                  //"do not have the H5Smodify_select function.");
+      throw Exception(
+                  "The HDF5 engine needs to be backed by at least "
+                  "HDF5 1.12.0 to do the requested selection properly. Older HDF5 versions "
+                  "do not have the H5Smodify_select function.", ioda_Here());
 #endif
     } else {  // Hyperslab selection
 
@@ -448,16 +573,19 @@ HH_hid_t HH_Variable::getSpaceWithSelection(const Selection& sel) const {
                                 (s.stride_.size()) ? hstride.data() : NULL, hcount.data(),
                                 (s.block_.size()) ? hblock.data() : NULL);
     }
-    if (chk < 0) throw;    // HH_throw.add("Reason", "Space selection failed.");
+    if (chk < 0) throw Exception("Space selection failed.", ioda_Here());
     first_action = false;  // NOLINT: Compilers inconsistently complain about use/unuse of
                            // first_action. Not our bug.
   }
 
-  if (!sel.offset_.empty()) {
-    if (H5Soffset_simple(spc(), convertToH5Length<hssize_t>(sel.offset_).data()) < 0)
-      throw;  // HH_throw.add("Reason", "Problem applying offset to space.");
+  if (!sel.getOffset().empty()) {
+    if (H5Soffset_simple(spc(), convertToH5Length<hssize_t>(sel.getOffset()).data()) < 0)
+      throw Exception("Problem applying offset to space.", ioda_Here());
   }
 
+  auto res = std::make_shared<HH_Selection>();
+  res->sel = spc;
+  sel.concretize(res);
   return spc;
 }
 
@@ -473,7 +601,7 @@ Variable HH_Variable::write(gsl::span<char> data, const Type& in_memory_dataType
                       H5P_DEFAULT,            // xfer_plist_id
                       data.data()             // data
   );
-  if (ret < 0) throw;  // HH_throw;
+  if (ret < 0) throw Exception(ioda_Here());
   return Variable{shared_from_this()};
 }
 
@@ -489,7 +617,7 @@ Variable HH_Variable::read(gsl::span<char> data, const Type& in_memory_dataType,
   // Apologies for the complexity of what would otherwise be a straightforward function.
 
   // Is this a string of any type?
-  H5T_class_t cls_my = H5Tget_class(type().get());
+  H5T_class_t cls_my = H5Tget_class(internalType().get());
   if (cls_my == H5T_STRING) {
     // The type *is* a string type.
 
@@ -497,7 +625,7 @@ Variable HH_Variable::read(gsl::span<char> data, const Type& in_memory_dataType,
     // type. This way, we ignore character set flags
     // and other string properties that do not matter
     // in ioda.
-    auto file_type = type();
+    auto file_type = internalType();
 
     // However, fixed and variable-length strings need
     // slightly different read calls.
@@ -514,7 +642,7 @@ Variable HH_Variable::read(gsl::span<char> data, const Type& in_memory_dataType,
                          H5P_DEFAULT,  // xfer_plist_id
                          data.data()   // data
       );
-      if (ret < 0) throw;  // HH_throw;
+      if (ret < 0) throw Exception("Failure in H5Dread", ioda_Here());
 
     } else {
       // Fixed-length string
@@ -530,7 +658,7 @@ Variable HH_Variable::read(gsl::span<char> data, const Type& in_memory_dataType,
                           H5S_sel_type st = H5Sget_select_type(memSpace.get());
                           return (st == H5S_SEL_NONE) ? 0 : H5Sget_select_npoints(memSpace.get());
                         }();
-      if (sz < 0) throw;  // H5Sget_select_npoints could return an error. Catch here.
+      if (sz < 0) throw Exception(ioda_Here());
 
       // This is all of the strings concatenated.
       std::vector<char> tmp_buf(gsl::narrow<size_t>(sz));
@@ -541,7 +669,7 @@ Variable HH_Variable::read(gsl::span<char> data, const Type& in_memory_dataType,
                          H5P_DEFAULT,    // xfer_plist_id
                          tmp_buf.data()  // data
       );
-      if (ret < 0) throw;
+      if (ret < 0) throw Exception(ioda_Here());
 
       // From here, we must "fake" the structure that we fill so that
       // it looks like a variable-length string. Basically, we want to present a
@@ -576,7 +704,7 @@ Variable HH_Variable::read(gsl::span<char> data, const Type& in_memory_dataType,
                        H5P_DEFAULT,            // xfer_plist_id
                        data.data()             // data
     );
-    if (ret < 0) throw;  // HH_throw;
+    if (ret < 0) throw Exception(ioda_Here());
   }
 
   return Variable{std::make_shared<HH_Variable>(*this)};
@@ -595,7 +723,7 @@ bool HH_Variable::isA(Type lhs) const {
   // Is the object a string of any type?
   // If both are true, then we just return true.
   H5T_class_t cls_lhs = H5Tget_class(typeBackend->handle.get());
-  H5T_class_t cls_my  = H5Tget_class(type()());
+  H5T_class_t cls_my  = H5Tget_class(internalType()());
   if (cls_lhs == H5T_STRING && cls_my == H5T_STRING) return true;
 
   // Another issue: are the types equivalent but not
@@ -604,11 +732,11 @@ bool HH_Variable::isA(Type lhs) const {
   if (cls_lhs != cls_my) return false;
   // Now the data are either both integers or floats.
   // For both, are the size (in bytes) the same?
-  if (H5Tget_size(typeBackend->handle.get()) != H5Tget_size(type()())) return false;
+  if (H5Tget_size(typeBackend->handle.get()) != H5Tget_size(internalType()())) return false;
 
   // For integers, are they both signed or unsigned?
   if (cls_lhs == H5T_INTEGER)
-    if (H5Tget_sign(typeBackend->handle.get()) != H5Tget_sign(type()())) return false;
+    if (H5Tget_sign(typeBackend->handle.get()) != H5Tget_sign(internalType()())) return false;
 
   // Ignored:
   // Are the precisions the same?
@@ -621,29 +749,31 @@ bool HH_Variable::isA(Type lhs) const {
 }
 
 bool HH_Variable::isExactlyA(HH_hid_t ttype) const {
-  HH_hid_t otype = type();
+  HH_hid_t otype = internalType();
   auto ret       = H5Tequal(ttype(), otype());
-  if (ret < 0) throw;  // HH_throw;
+  if (ret < 0) throw Exception(ioda_Here());
   return (ret > 0) ? true : false;
+}
+
+bool HH_Variable::hasFillValue(HH_hid_t create_plist) {
+  H5D_fill_value_t fvstatus;                                            // NOLINT: HDF5 C interface
+  if (H5Pfill_value_defined(create_plist.get(), &fvstatus) < 0) throw Exception(ioda_Here());
+  // if H5D_FILL_VALUE_UNDEFINED, return false. In all other cases, return true.
+  return (fvstatus != H5D_FILL_VALUE_UNDEFINED);
 }
 
 bool HH_Variable::hasFillValue() const {
   HH_hid_t create_plist(H5Dget_create_plist(var_()),
                         Handles::Closers::CloseHDF5PropertyList::CloseP);
-  H5D_fill_value_t fvstatus;                                            // NOLINT: HDF5 C interface
-  if (H5Pfill_value_defined(create_plist.get(), &fvstatus) < 0) throw;  // HH_throw;
-  // if H5D_FILL_VALUE_UNDEFINED, return false. In all other cases, return true.
-  return (fvstatus != H5D_FILL_VALUE_UNDEFINED);
+  return hasFillValue(create_plist);
 }
 
-HH_Variable::FillValueData_t HH_Variable::getFillValue() const {
+HH_Variable::FillValueData_t HH_Variable::getFillValue(HH_hid_t create_plist) const {
   try {
     HH_Variable::FillValueData_t res;
 
-    HH_hid_t create_plist(H5Dget_create_plist(var_()),
-                          Handles::Closers::CloseHDF5PropertyList::CloseP);
     H5D_fill_value_t fvstatus;  // NOLINT: HDF5 C interface
-    if (H5Pfill_value_defined(create_plist.get(), &fvstatus) < 0) throw;  // HH_throw;
+    if (H5Pfill_value_defined(create_plist.get(), &fvstatus) < 0) throw Exception(ioda_Here());
 
     // if H5D_FILL_VALUE_UNDEFINED, false. In all other cases, true.
     res.set_ = (fvstatus != H5D_FILL_VALUE_UNDEFINED);
@@ -691,8 +821,8 @@ HH_Variable::FillValueData_t HH_Variable::getFillValue() const {
     } else {
       // H5D_FILL_VALUE_DEFAULT with HDF5 fill value policy
       // H5D_FILL_VALUE_USER_DEFINED regardless of fill value policy
-      auto hType = type();          // Get type as
-      if (!hType.isValid()) throw;  // HH_throw;
+      auto hType = internalType();  // Get type as
+      if (!hType.isValid()) throw Exception(ioda_Here());
 
       H5T_class_t cls = H5Tget_class(hType());  // NOLINT: HDF5 C interface
       // Check types for support in this function
@@ -700,18 +830,20 @@ HH_Variable::FillValueData_t HH_Variable::getFillValue() const {
       // Unsupported for now: H5T_BITFIELD, H5T_OPAQUE, H5T_COMPOUND,
       // H5T_REFERENCE, H5T_ENUM, H5T_VLEN, H5T_ARRAY.
       if (!supported.count(cls))
-        throw; /* jedi_throw
-.add("Reason", "HH's getFillValue function only supports "
-"basic numeric and string data types. Any other types "
-"will require enhancement to FillValueData_t::FillValueUnion_t.");*/
+        throw Exception(
+          "HH's getFillValue function only supports "
+          "basic numeric and string data types. Any other types "
+          "will require enhancement to FillValueData_t::FillValueUnion_t.",
+          ioda_Here());
 
       size_t szType_inBytes = H5Tget_size(hType());
 
       // Basic types and string pointers fit in the union. Fixed-length string
       // types do not, which is why we create a special buffer to accommodate.
       std::vector<char> fvbuf(szType_inBytes, 0);
-      if (H5Pget_fill_value(create_plist.get(), hType(), reinterpret_cast<void*>(fvbuf.data())) < 0)
-        throw;  // HH_throw;
+      if (H5Pget_fill_value(create_plist.get(), hType(),
+        reinterpret_cast<void*>(fvbuf.data())) < 0)
+        throw Exception(ioda_Here());
 
       // When recovering the fill value, we need to distinguish between
       // strings and the other types.
@@ -721,49 +853,55 @@ HH_Variable::FillValueData_t HH_Variable::getFillValue() const {
       if (cls == H5T_STRING) {
         // Need to distinguish between variable-length and fixed-width data types.
         htri_t str_type = H5Tis_variable_str(hType());
-        if (str_type < 0) throw;  // HH_throw;
+        if (str_type < 0) throw Exception(ioda_Here());
         if (str_type > 0) {
           // Variable-length string
           const char** ccp = (const char**)fvbuf.data();  // NOLINT: Casting with HDF5
           // A fill value for a string should always be at the zero element.
           // It makes no sense to have a multidimensional fill.
-          res.stringFillValue_ = std::string(ccp[0]);
-          // Do proper deallocation of the HDF5-returned string array.
-          if (H5free_memory(const_cast<void*>(reinterpret_cast<const void*>(ccp[0]))) < 0)
-            throw;  // HH_throw;
+          if (ccp[0]) {
+            res.stringFillValue_ = std::string(ccp[0]);
+            // Do proper deallocation of the HDF5-returned string array.
+            if (H5free_memory(const_cast<void*>(reinterpret_cast<const void*>(ccp[0]))) < 0)
+              throw Exception(ioda_Here());
+          }
         } else {
           // Fixed-length string
           res.stringFillValue_ = std::string(fvbuf.data(), fvbuf.size());
         }
       } else {
         if (szType_inBytes > sizeof(res.fillValue_))
-          throw; /* jedi_throw
-.add("Reason", "The fill value in HDF5 is too large for the "
-"fillValue_ union. ioda-engines currently only supports fill "
-"values on fundamental types and strings.")
-.add("szType_inBytes", szType_inBytes)
-.add("sizeof(res.fillValue_)", sizeof(res.fillValue_)); */
+          throw Exception(
+            "The fill value in HDF5 is too large for the "
+            "fillValue_ union. ioda-engines currently only supports fill "
+            "values on fundamental types and strings.",
+            ioda_Here())
+            .add("szType_inBytes", szType_inBytes)
+            .add("sizeof(res.fillValue_)", sizeof(res.fillValue_));
         // Copy the buffer to the fvdata object
-        // TODO(ryan): Use memcpy_s when available.
         memcpy(&(res.fillValue_.ui64), fvbuf.data(),
                fvbuf.size());  // NOLINT: Accessing this union member deliberately.
       }
     }
     return res;
-  } catch (std::bad_cast&) {
-    throw;
+  } catch (...) {
+    std::throw_with_nested(Exception("Caught an exception.", ioda_Here()));
   }
 }
 
-std::vector<Dimensions_t> HH_Variable::getChunkSizes() const {
+HH_Variable::FillValueData_t HH_Variable::getFillValue() const {
   HH_hid_t create_plist(H5Dget_create_plist(var_()),
                         Handles::Closers::CloseHDF5PropertyList::CloseP);
+  return getFillValue(create_plist);
+}
 
+std::vector<Dimensions_t> HH_Variable::getChunkSizes(HH_hid_t create_plist, const Dimensions &dims) {
   H5D_layout_t layout = H5Pget_layout(create_plist.get());
   if (layout == H5D_CHUNKED) {
-    int max_ndims = gsl::narrow<int>(getDimensions().dimensionality);
+    int max_ndims = gsl::narrow<int>(dims.dimensionality);
     std::vector<hsize_t> chunks(max_ndims);
-    if (H5Pget_chunk(create_plist.get(), max_ndims, chunks.data()) < 0) throw;  // HH_throw;
+    if (H5Pget_chunk(create_plist.get(), max_ndims, chunks.data()) < 0)
+      throw Exception(ioda_Here());
     std::vector<Dimensions_t> res;
     res.reserve(chunks.size());
     for (const auto& i : chunks)
@@ -774,12 +912,15 @@ std::vector<Dimensions_t> HH_Variable::getChunkSizes() const {
   return {};
 }
 
-std::pair<bool, int> HH_Variable::getGZIPCompression() const {
+std::vector<Dimensions_t> HH_Variable::getChunkSizes() const {
   HH_hid_t create_plist(H5Dget_create_plist(var_()),
                         Handles::Closers::CloseHDF5PropertyList::CloseP);
+  return getChunkSizes(create_plist, getDimensions());
+}
 
+std::pair<bool, int> HH_Variable::getGZIPCompression(HH_hid_t create_plist) {
   int nfilters = H5Pget_nfilters(create_plist.get());
-  if (nfilters < 0) throw;  // HH_throw;
+  if (nfilters < 0) throw Exception(ioda_Here());
 
   for (unsigned i = 0; i < (unsigned)nfilters; ++i) {
     // See https://support.hdfgroup.org/HDF5/doc/RM/RM_H5P.html#Property-GetFilter2 for the function
@@ -798,7 +939,7 @@ std::pair<bool, int> HH_Variable::getGZIPCompression() const {
                                        namelen, name.data(), &filter_config);
     if (filt != H5Z_FILTER_DEFLATE) continue;
 
-    if (!cd_nelems) throw;  // HH_throw.add("Reason", "Bad deflate filter return options.");
+    if (!cd_nelems) throw Exception(ioda_Here());
 
     return std::pair<bool, int>(true, gsl::narrow<int>(cd_values[0]));
   }
@@ -807,12 +948,15 @@ std::pair<bool, int> HH_Variable::getGZIPCompression() const {
   return std::pair<bool, int>(false, 0);
 }
 
-std::tuple<bool, unsigned, unsigned> HH_Variable::getSZIPCompression() const {
+std::pair<bool, int> HH_Variable::getGZIPCompression() const {
   HH_hid_t create_plist(H5Dget_create_plist(var_()),
                         Handles::Closers::CloseHDF5PropertyList::CloseP);
+  return getGZIPCompression(create_plist);
+}
 
+std::tuple<bool, unsigned, unsigned> HH_Variable::getSZIPCompression(HH_hid_t create_plist) {
   int nfilters = H5Pget_nfilters(create_plist.get());
-  if (nfilters < 0) throw;  // HH_throw;
+  if (nfilters < 0) throw Exception(ioda_Here());
 
   for (unsigned i = 0; i < (unsigned)nfilters; ++i) {
     // See https://support.hdfgroup.org/HDF5/doc/RM/RM_H5P.html#Property-GetFilter2 for the function
@@ -831,15 +975,53 @@ std::tuple<bool, unsigned, unsigned> HH_Variable::getSZIPCompression() const {
                                        namelen, name.data(), &filter_config);
     if (filt != H5Z_FILTER_SZIP) continue;
 
-    if (cd_nelems < 2) throw;  // HH_throw.add("Reason", "Bad szip filter return options.");
+    if (cd_nelems < 2) throw Exception(ioda_Here());
 
-    // TODO(ryan): cd_nelems is actually 4, but the options do not match the H5Pset_szip flags!
+    // cd_nelems is actually 4, but the options do not match the H5Pset_szip flags!
     return std::tuple<bool, unsigned, unsigned>(true, cd_values[0], cd_values[1]);
   }
 
   // Fallthrough. No SZIP compression was specified.
   return std::tuple<bool, unsigned, unsigned>(false, 0, 0);
 }
+
+std::tuple<bool, unsigned, unsigned> HH_Variable::getSZIPCompression() const {
+  HH_hid_t create_plist(H5Dget_create_plist(var_()),
+                        Handles::Closers::CloseHDF5PropertyList::CloseP);
+  return getSZIPCompression(create_plist);
+}
+
+VariableCreationParameters HH_Variable::getCreationParameters(bool doAtts, bool doDims) const {
+  HH_hid_t create_plist(H5Dget_create_plist(var_()),
+                        Handles::Closers::CloseHDF5PropertyList::CloseP);
+  VariableCreationParameters res;
+
+  // Get chunking
+  auto chunkinfo = getChunkSizes(create_plist, getDimensions());
+  if (chunkinfo.size()) {
+    res.chunk  = true;
+    res.chunks = chunkinfo;
+  }
+  // Get compression
+  auto gz = getGZIPCompression(create_plist);
+  if (gz.first) res.compressWithGZIP(gz.second);
+  auto sz = getSZIPCompression(create_plist);
+  if (std::get<0>(sz)) res.compressWithSZIP(std::get<1>(sz), std::get<2>(sz));
+  // Get fill value
+  res.fillValue_ = getFillValue(create_plist);
+  // Attributes (optional)
+  if (doAtts) {
+    throw Exception("Unimplemented doAtts", ioda_Here());
+  }
+  // Dimensions (optional)
+  if (doDims) {
+    throw Exception("Unimplemented doDims", ioda_Here());
+  }
+
+  return res;
+}
+
+HH_Selection::~HH_Selection() = default;
 
 }  // namespace HH
 }  // namespace Engines

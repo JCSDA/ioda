@@ -65,6 +65,22 @@ public:
                   const std::vector<Dimensions_t>& dimensions     = {1},
                   const std::vector<Dimensions_t>& max_dimensions = {},
                   const VariableCreationParameters& params = VariableCreationParameters()) final;
+
+  /*! HDF5-optimized collective variable version of attachDimensionScales.
+* 
+* This function exists to improve performance. When attaching many
+* variables to the same dimension scale, HDF5's HL library performs
+* suboptimally. Each time a new variable is attached to a scale, that
+* scale's REFERENCE_LIST attribute must be resized and recreated. This collective
+* function call avoids this issue by rewriting H5DSattach_scale to attach multiple
+* variables to a scale at the same time.
+* 
+* @see https://github.com/HDFGroup/hdf5/blob/develop/hl/src/H5DS.c#L107 for the HDF5 function.
+* @param mapping is a sequence of variables along with their dimension scales.
+*/
+  void attachDimensionScales(
+    const std::vector<std::pair<Variable, std::vector<Variable>>>& mapping)
+    final;
 };
 }  // namespace HH
 }  // namespace Engines

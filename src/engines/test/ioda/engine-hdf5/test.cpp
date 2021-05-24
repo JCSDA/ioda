@@ -7,6 +7,7 @@
 #include <iostream>
 
 #include "ioda/Engines/HH.h"
+#include "ioda/Exception.h"
 #include "ioda/Group.h"
 #include "ioda/defs.h"
 
@@ -17,7 +18,7 @@ int main(int, char**) {
     auto f =
       Engines::HH::createMemoryFile(name, Engines::BackendCreateModes::Truncate_If_Exists, false, 10000);
   } catch (const std::exception& e) {
-    std::cerr << e.what() << std::endl;
+    ioda::unwind_exception_stack(e);
     return 1;
   }
   return 0;

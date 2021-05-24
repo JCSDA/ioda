@@ -14,11 +14,14 @@
  */
 #include <complex>
 #include <cstring>
+#include <exception>
 #include <memory>
+#include <stdexcept>
 #include <string>
 #include <type_traits>
 #include <vector>
 
+#include "ioda/Exception.h"
 #include "ioda/Types/Type_Provider.h"
 #include "ioda/defs.h"
 
@@ -98,7 +101,7 @@ public:
   /// Unpack the data. For POD, nothing special here.
   void deserialize(serialized_type p, gsl::span<DataType> data) {
     const size_t ds = data.size(), dp = p->DataPointers.size();
-    Expects(ds == dp);
+    if (ds != dp) throw Exception("ds != dp", ioda_Here());
     for (size_t i = 0; i < (size_t)data.size(); ++i) {
       data[i] = p->DataPointers[i];
     }
@@ -144,7 +147,7 @@ public:
   /// Unpack the data. For POD, nothing special here.
   void deserialize(serialized_type p, gsl::span<DataType> data) {
     const size_t ds = data.size(), dp = p->DataPointers.size();
-    Expects(ds == dp);
+    if (ds != dp) throw Exception("ds != dp", ioda_Here());
     std::copy_n(reinterpret_cast<char*>(p->DataPointers.data()), data.size_bytes(),
                 reinterpret_cast<char*>(data.data()));
 
@@ -181,7 +184,7 @@ public:
   }
   void deserialize(serialized_type p, gsl::span<DataType> data) {
     const size_t ds = data.size(), dp = p->DataPointers.size();
-    Expects(ds == dp);
+    if (ds != dp) throw Exception("ds != dp", ioda_Here());
     for (size_t i = 0; i < ds; ++i) {
       if (p->DataPointers[i])  // Odd Valgrind detection. Maybe a false positive.
         data[i] = p->DataPointers[i];
@@ -217,7 +220,7 @@ public:
   }
   void deserialize(serialized_type p, gsl::span<DataType> data) {
     const size_t ds = data.size(), dp = p->DataPointers.size();
-    Expects(ds == dp);
+    if (ds != dp) throw Exception("ds != dp", ioda_Here());
     for (size_t i = 0; i < (size_t)data.size(); ++i) {
       data[i] = p->DataPointers[i];
     }

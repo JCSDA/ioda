@@ -8,8 +8,10 @@
 #include "ioda/Variables/Has_Variables.h"
 
 #include "ioda/Engines/Factory.h"
+#include "ioda/Exception.h"
 #include "ioda/Layout.h"
 #include "ioda/ObsGroup.h"
+#include "ioda/testconfig.h"
 
 #include "eckit/testing/Test.h"
 
@@ -25,7 +27,8 @@ const int locations = 40;
 const int channels = 30;
 CASE("Convert variables") {
   typedef std::string str;
-  str mappingFile = str(TEST_SOURCE_DIR) + "/hasvariables_unitconversion_map.yaml";
+  str mappingFile = str(IODA_ENGINES_TEST_SOURCE_DIR)
+    + "/variables/hasvariables_unitconversion_map.yaml";
   Engines::BackendNames backendName = Engines::BackendNames::Hdf5File;
   Engines::BackendCreationParameters backendParams;
   backendParams.fileName = "ioda-engines_hasvariables_unitconv-file.hdf5";
@@ -51,10 +54,8 @@ CASE("Convert variables") {
   ObsGroup og = ObsGroup::generate(
           backend,
           {
-            std::make_shared<NewDimensionScale<int>>(
-            "nlocs", locations, ioda::Unlimited, locations),
-            std::make_shared<NewDimensionScale<int>>(
-            "nchans", channels, channels, channels), },
+            NewDimensionScale<int>("nlocs", locations, ioda::Unlimited, locations),
+            NewDimensionScale<int>("nchans", channels, channels, channels) },
           detail::DataLayoutPolicy::generate(detail::DataLayoutPolicy::Policies::ObsGroupODB,
                                              mappingFile));
 

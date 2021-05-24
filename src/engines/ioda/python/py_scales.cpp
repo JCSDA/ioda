@@ -54,15 +54,15 @@ void setupNewDimensionScales(pybind11::module& m) {
 
 #define InstTmpl(typen, an, cn, typ)                                                               \
   {                                                                                                \
-    py::class_<NewDimensionScale<typ>, NewDimensionScale_Base,                                     \
-               std::shared_ptr<NewDimensionScale<typ>>>                                            \
+    py::class_<NewDimensionScale_Object<typ>, NewDimensionScale_Base,                                     \
+               std::shared_ptr<NewDimensionScale_Object<typ>>>                                            \
       newnds(mNDS, typen);                                                                         \
     newnds.doc() = "New dimension scale of type " typen;                                           \
     newnds                                                                                         \
       .def(py::init<const std::string, Dimensions_t, Dimensions_t, Dimensions_t>(),                \
-           py::arg("name"), py::arg("size"), py::arg("maxSize"), py::arg("chunkingSize"))          \
-      .def("getShared", &NewDimensionScale<typ>::getShared)                                        \
-      .def_readwrite("initdata", &NewDimensionScale<typ>::initdata_);                              \
+           py::arg("name"), py::arg("size"), py::arg("maxSize") = ioda::Unspecified, py::arg("chunkingSize") = ioda::Unspecified)          \
+      .def("getShared", &NewDimensionScale_Object<typ>::getShared)                                        \
+      .def_readwrite("initdata", &NewDimensionScale_Object<typ>::initdata_);                              \
   }
 
   CLASS_TEMPLATE_FUNCTION_PATTERN_NOALIASES(NDS, NDS, InstTmpl);

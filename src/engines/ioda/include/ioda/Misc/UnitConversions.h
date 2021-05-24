@@ -18,30 +18,31 @@
 namespace ioda {
 namespace detail {
 
-IODA_DL inline double celsiusToKelvin(double temp) {
+inline double celsiusToKelvin(double temp) {
   return temp + 273.15;
 }
 
-IODA_DL inline double knotsToMetersPerSecond(double knots) {
+inline double knotsToMetersPerSecond(double knots) {
   return knots * 0.514444;
 }
 
-IODA_DL inline double percentageToFraction(double percentage) {
+inline double percentageToFraction(double percentage) {
   return percentage * 0.01;
 }
 
-IODA_DL inline double hectopascalToPascal(double hPa) {
+inline double hectopascalToPascal(double hPa) {
   return hPa * 100;
 }
 
-IODA_DL inline double degreesToRadians(double deg) {
+inline double degreesToRadians(double deg) {
   return deg * .0174533;
 }
 
-IODA_DL inline double oktaToFraction(double okta) {
+inline double oktaToFraction(double okta) {
   return okta * .125;
 }
 
+/// @todo Move to source file.
 const std::unordered_map<std::string, std::function<double(double)>> unitConversionEquations {
   {"celsius", celsiusToKelvin},
   {"knot", knotsToMetersPerSecond},
@@ -51,6 +52,7 @@ const std::unordered_map<std::string, std::function<double(double)>> unitConvers
   {"okta", oktaToFraction}
 };
 
+/// @todo Move to source file.
 const std::unordered_map<std::string, std::string> equivalentSIUnit {
   {"celsius", "kelvin"},
   {"knot", "meters per second"},

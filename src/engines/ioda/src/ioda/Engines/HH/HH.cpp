@@ -20,6 +20,7 @@
 #include "./HH/HH-attributes.h"
 #include "./HH/HH-groups.h"
 #include "./HH/Handles.h"
+#include "ioda/Exception.h"
 #include "ioda/Group.h"
 #include "ioda/defs.h"
 
@@ -95,13 +96,14 @@ Group createMemoryFile(const std::string& filename, BackendCreateModes mode, boo
   HH_hid_t pl(plid, Handles::Closers::CloseHDF5PropertyList::CloseP);
 
   if (0 > H5Pset_fapl_core(pl.get(), increment_len, flush_on_close))
-    throw;  // jedi_throw.add("Reason", "H5Pset_fapl_core failed");
+    throw Exception("H5Pset_fapl_core failed", ioda_Here());
   // H5F_LIBVER_V18, H5F_LIBVER_V110, H5F_LIBVER_V112, H5F_LIBVER_LATEST.
   // Note: this propagates to any files flushed to disk.
   if (0 > H5Pset_libver_bounds(pl.get(), map_h5ver.at(compat.first), map_h5ver.at(compat.second)))
-    throw;  // jedi_throw.add("Reason", "H5Pset_libver_bounds failed");
+    throw Exception("H5Pset_libver_bounds failed", ioda_Here());
 
   HH_hid_t f = H5Fcreate(filename.c_str(), m.at(mode), H5P_DEFAULT, pl.get());
+  if (f() < 0) throw Exception("H5Fcreate failed", ioda_Here());
 
   auto backend
     = std::make_shared<detail::Engines::HH::HH_Group>(f, getCapabilitiesInMemoryEngine(), f);
@@ -116,14 +118,15 @@ Group createFile(const std::string& filename, BackendCreateModes mode, HDF5_Vers
     {BackendCreateModes::Fail_If_Exists, H5F_ACC_CREAT}};
 
   hid_t plid = H5Pcreate(H5P_FILE_ACCESS);
-  Expects(plid >= 0);
+  if (plid < 0) throw Exception("H5Pcreate failed", ioda_Here());
   HH_hid_t pl(plid, Handles::Closers::CloseHDF5PropertyList::CloseP);
   // H5F_LIBVER_V18, H5F_LIBVER_V110, H5F_LIBVER_V112, H5F_LIBVER_LATEST.
   // Note: this propagates to any files flushed to disk.
   if (0 > H5Pset_libver_bounds(pl.get(), map_h5ver.at(compat.first), map_h5ver.at(compat.second)))
-    throw;  // jedi_throw.add("Reason", "H5Pset_libver_bounds failed");
+    throw Exception("H5Pset_libver_bounds failed", ioda_Here());
 
   HH_hid_t f = H5Fcreate(filename.c_str(), m.at(mode), H5P_DEFAULT, pl.get());
+  if (f() < 0) throw Exception("H5Fcreate failed", ioda_Here());
 
   auto backend = std::make_shared<detail::Engines::HH::HH_Group>(f, getCapabilitiesFileEngine(), f);
   return ::ioda::Group{backend};
@@ -135,12 +138,13 @@ Group openFile(const std::string& filename, BackendOpenModes mode, HDF5_Version_
     {BackendOpenModes::Read_Only, H5F_ACC_RDONLY}, {BackendOpenModes::Read_Write, H5F_ACC_RDWR}};
 
   hid_t plid = H5Pcreate(H5P_FILE_ACCESS);
-  Expects(plid >= 0);
+  if (plid < 0) throw Exception("H5Pcreate failed", ioda_Here());
   HH_hid_t pl(plid, Handles::Closers::CloseHDF5PropertyList::CloseP);
   if (0 > H5Pset_libver_bounds(pl.get(), map_h5ver.at(compat.first), map_h5ver.at(compat.second)))
-    throw;  // jedi_throw.add("Reason", "H5Pset_libver_bounds failed");
+    throw Exception("H5Pset_libver_bounds failed", ioda_Here());
 
   HH_hid_t f = H5Fopen(filename.c_str(), m.at(mode), pl.get());
+  if (f() < 0) throw Exception("H5Fopen failed", ioda_Here());
 
   auto backend = std::make_shared<detail::Engines::HH::HH_Group>(f, getCapabilitiesFileEngine(), f);
 
@@ -158,11 +162,12 @@ Group openMemoryFile(const std::string& filename, BackendOpenModes mode, bool fl
   HH_hid_t pl(plid, Handles::Closers::CloseHDF5PropertyList::CloseP);
 
   const auto h5Result = H5Pset_fapl_core(pl.get(), increment_len, flush_on_close);
-  if (h5Result < 0) throw;  // jedi_throw.add("Reason", "H5Pset_fapl_core failed");
+  if (h5Result < 0) throw Exception("H5Pset_fapl_core failed", ioda_Here());
   if (0 > H5Pset_libver_bounds(pl.get(), map_h5ver.at(compat.first), map_h5ver.at(compat.second)))
-    throw;  // jedi_throw.add("Reason", "H5Pset_libver_bounds failed");
+    throw Exception("H5Pset_libver_bounds failed", ioda_Here());
 
   HH_hid_t f = H5Fopen(filename.c_str(), m.at(mode), pl.get());
+  if (f() < 0) throw Exception("H5Fopen failed", ioda_Here());
 
   auto backend
     = std::make_shared<detail::Engines::HH::HH_Group>(f, getCapabilitiesInMemoryEngine(), f);

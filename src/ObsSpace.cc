@@ -42,6 +42,13 @@ ObsSpace::ObsSpace(const eckit::Configuration & config, const eckit::mpi::Comm &
     obsspace_(new ObsData(config, comm, bgn, end, time))
 {
   oops::Log::trace() << "ioda::ObsSpace done" << std::endl;
+
+  oops::Log::debug() << obsname() << ": " << obsspace_->globalNumLocsOutsideTimeWindow()
+      << " observations are outside of time window out of "
+      << (obsspace_->globalNumLocsOutsideTimeWindow() + obsspace_->globalNumLocs())
+      << std::endl;
+
+  oops::Log::info() << "ioda::ObsSpace constructed: " << *this << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -59,71 +66,81 @@ ObsSpace::~ObsSpace() {
 // -----------------------------------------------------------------------------
 
 void ObsSpace::get_db(const std::string & group, const std::string & name,
-                      std::vector<int> & vdata) const {
-  obsspace_->get_db(group, name, vdata);
+                      std::vector<int> & vdata,
+                      const std::vector<int> & chanSelect) const {
+  obsspace_->get_db(group, name, vdata, chanSelect);
 }
 
 // -----------------------------------------------------------------------------
 
 void ObsSpace::get_db(const std::string & group, const std::string & name,
-                      std::vector<float> & vdata) const {
-  obsspace_->get_db(group, name, vdata);
+                      std::vector<float> & vdata,
+                      const std::vector<int> & chanSelect) const {
+  obsspace_->get_db(group, name, vdata, chanSelect);
 }
 
 // -----------------------------------------------------------------------------
 
 void ObsSpace::get_db(const std::string & group, const std::string & name,
-                      std::vector<double> & vdata) const {
-  obsspace_->get_db(group, name, vdata);
+                      std::vector<double> & vdata,
+                      const std::vector<int> & chanSelect) const {
+  obsspace_->get_db(group, name, vdata, chanSelect);
 }
 
 // -----------------------------------------------------------------------------
 
 void ObsSpace::get_db(const std::string & group, const std::string & name,
-                      std::vector<std::string> & vdata) const {
-  obsspace_->get_db(group, name, vdata);
+                      std::vector<std::string> & vdata,
+                      const std::vector<int> & chanSelect) const {
+  obsspace_->get_db(group, name, vdata, chanSelect);
 }
 
 // -----------------------------------------------------------------------------
 
 void ObsSpace::get_db(const std::string & group, const std::string & name,
-                      std::vector<util::DateTime> & vdata) const {
-  obsspace_->get_db(group, name, vdata);
+                      std::vector<util::DateTime> & vdata,
+                      const std::vector<int> & chanSelect) const {
+  obsspace_->get_db(group, name, vdata, chanSelect);
 }
 
 // -----------------------------------------------------------------------------
 
 void ObsSpace::put_db(const std::string & group, const std::string & name,
-                      const std::vector<int> & vdata) {
-  obsspace_->put_db(group, name, vdata);
+                      const std::vector<int> & vdata,
+                      const std::vector<std::string> & dimList) {
+  obsspace_->put_db(group, name, vdata, dimList);
 }
 
 // -----------------------------------------------------------------------------
 
 void ObsSpace::put_db(const std::string & group, const std::string & name,
-                      const std::vector<float> & vdata) {
-  obsspace_->put_db(group, name, vdata);
+                      const std::vector<float> & vdata,
+                      const std::vector<std::string> & dimList) {
+  obsspace_->put_db(group, name, vdata, dimList);
 }
 
 // -----------------------------------------------------------------------------
 
 void ObsSpace::put_db(const std::string & group, const std::string & name,
-                      const std::vector<double> & vdata) {
-  obsspace_->put_db(group, name, vdata);
+                      const std::vector<double> & vdata,
+                      const std::vector<std::string> & dimList) {
+  obsspace_->put_db(group, name, vdata, dimList);
 }
 
 // -----------------------------------------------------------------------------
 
 void ObsSpace::put_db(const std::string & group, const std::string & name,
-                      const std::vector<std::string> & vdata) {
-  obsspace_->put_db(group, name, vdata);
+                      const std::vector<std::string> & vdata,
+                      const std::vector<std::string> & dimList) {
+  obsspace_->put_db(group, name, vdata, dimList);
 }
 
 // -----------------------------------------------------------------------------
 
 void ObsSpace::put_db(const std::string & group, const std::string & name,
-                      const std::vector<util::DateTime> & vdata) {
-  obsspace_->put_db(group, name, vdata);
+                      const std::vector<util::DateTime> & vdata,
+                      const std::vector<std::string> & dimList) {
+  obsspace_->put_db(group, name, vdata, dimList);
 }
 
 // -----------------------------------------------------------------------------
@@ -216,6 +233,39 @@ std::size_t ObsSpace::nrecs() const {
  */
 std::size_t ObsSpace::nvars() const {
   return obsspace_->nvars();
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns the number of channels in the container. If this
+ *          is not a radiance obs type, then this will return zero.
+ */
+std::size_t ObsSpace::nchans() const {
+  return obsspace_->nchans();
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns the standard name for the given dimension id
+ */
+std::string ObsSpace::get_dim_name(const ObsDimensionId dimId) const {
+  return obsspace_->get_dim_name(dimId);
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns the size for the given dimension id
+ */
+std::size_t ObsSpace::get_dim_size(const ObsDimensionId dimId) const {
+  return obsspace_->get_dim_size(dimId);
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method returns the id value for the given dimension name
+ */
+ObsDimensionId ObsSpace::get_dim_id(const std::string & dimName) const {
+  return obsspace_->get_dim_id(dimName);
 }
 
 // -----------------------------------------------------------------------------
@@ -315,10 +365,15 @@ std::vector<std::size_t> ObsSpace::recidx_all_recnums() const {
 // -----------------------------------------------------------------------------
 /*!
  * \details This method provides a way to print an ObsSpace object in an output
- *          stream. It simply prints a dummy message for now.
+ *          stream.
  */
 void ObsSpace::print(std::ostream & os) const {
-  os << *obsspace_;
+  std::size_t totalNlocs = this->globalNumLocs();
+  std::size_t nvars = this->obsvariables().size();
+  std::size_t nobs = totalNlocs * nvars;
+
+  os << obsspace_->obsname() << ": nlocs: " << totalNlocs
+     << ", nvars: " << nvars << ", nobs: " << nobs;
 }
 
 // -----------------------------------------------------------------------------

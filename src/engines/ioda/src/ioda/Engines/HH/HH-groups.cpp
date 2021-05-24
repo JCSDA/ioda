@@ -22,8 +22,9 @@
 #include "./HH/HH-hasattributes.h"
 #include "./HH/HH-hasvariables.h"
 #include "./HH/Handles.h"
+#include "ioda/Exception.h"
 #include "ioda/Misc/Dimensions.h"
-#include "ioda/Misc/SFuncs.h"
+#include "ioda/Misc/StringFuncs.h"
 
 namespace ioda {
 namespace detail {
@@ -39,16 +40,17 @@ Group HH_Group::create(const std::string& name) {
   // Group creation property list
   HH_hid_t groupCreationProps(H5Pcreate(H5P_GROUP_CREATE),
                               Handles::Closers::CloseHDF5PropertyList::CloseP);
-  if (!groupCreationProps.isValid()) throw;
+  if (!groupCreationProps.isValid()) throw Exception("H5Pcreate failed.", ioda_Here());
   if (0 > H5Pset_link_creation_order(groupCreationProps(),
                                      H5P_CRT_ORDER_TRACKED | H5P_CRT_ORDER_INDEXED))
-    throw;
+    throw Exception("H5Pset_link_creation_order failed.", ioda_Here());
 
   // Link creation property list
   HH_hid_t linkCreationProps(H5Pcreate(H5P_LINK_CREATE),
                              Handles::Closers::CloseHDF5PropertyList::CloseP);
-  if (!linkCreationProps.isValid()) throw;
-  if (0 > H5Pset_create_intermediate_group(linkCreationProps(), 1)) throw;
+  if (!linkCreationProps.isValid()) throw Exception("H5Pcreate failed.", ioda_Here());
+  if (0 > H5Pset_create_intermediate_group(linkCreationProps(), 1))
+    throw Exception("H5Pset_create_intermediate_group failed.", ioda_Here());
 
   // Finally, create the group
   hid_t res = H5Gcreate(backend_(),    // hid
@@ -56,7 +58,7 @@ Group HH_Group::create(const std::string& name) {
                         linkCreationProps(), groupCreationProps(),
                         H5P_DEFAULT  // Group access property list
   );
-  if (res < 0) throw;
+  if (res < 0) throw Exception("H5Gcreate failed.", ioda_Here());
   HH_hid_t hnd(res, Handles::Closers::CloseHDF5Group::CloseP);
 
   auto backend = std::make_shared<HH_Group>(hnd, caps_, fileroot_);
@@ -65,7 +67,7 @@ Group HH_Group::create(const std::string& name) {
 
 Group HH_Group::open(const std::string& name) const {
   hid_t g = H5Gopen(backend_(), name.c_str(), H5P_DEFAULT);
-  if (g < 0) throw;
+  if (g < 0) throw Exception("H5Gopen failed.", ioda_Here());
   HH_hid_t grp_handle(g, Handles::Closers::CloseHDF5Group::CloseP);
 
   auto res = std::make_shared<HH_Group>(grp_handle, caps_, fileroot_);
@@ -77,7 +79,7 @@ bool HH_Group::exists(const std::string& name) const {
   for (size_t i = 0; i < paths.size(); ++i) {
     auto p            = condensePaths(paths, 0, i + 1);
     htri_t linkExists = H5Lexists(backend_(), p.c_str(), H5P_DEFAULT);
-    if (linkExists < 0) throw;
+    if (linkExists < 0) throw Exception("H5Lexists failed.", ioda_Here());
     if (linkExists == 0) return false;
   }
 
@@ -89,7 +91,7 @@ bool HH_Group::exists(const std::string& name) const {
   H5O_info_t obj_info;
   herr_t err = H5Oget_info_by_name(backend_(), name.c_str(), &obj_info, H5P_DEFAULT);
 #endif
-  if (err < 0) throw;
+  if (err < 0) throw Exception("H5Oget_info_by_name failed.", ioda_Here());
   return (obj_info.type == H5O_TYPE_GROUP);
 }
 
@@ -157,8 +159,9 @@ std::map<ObjectType, std::vector<std::string>> HH_Group::listObjects(ObjectType 
   if (H5I_GROUP == H5Iget_type(backend_())) {
     HH_hid_t createpl(H5Gget_create_plist(backend_()),
                       Handles::Closers::CloseHDF5PropertyList::CloseP);
-    if (createpl() < 0) throw;
-    if (0 > H5Pget_link_creation_order(createpl(), &crt_order_flags)) throw;
+    if (createpl() < 0) throw Exception("H5Gget_create_plist failed.", ioda_Here());
+    if (0 > H5Pget_link_creation_order(createpl(), &crt_order_flags))
+      throw Exception("H5Pget_link_creation_order failed.", ioda_Here());
   }
   // We only care if this property is tracked. Indexing is performed on the fly
   // if it is not available (and incurs a read penalty).
@@ -176,7 +179,8 @@ std::map<ObjectType, std::vector<std::string>> HH_Group::listObjects(ObjectType 
         : H5Literate(backend_(), idxclass, H5_ITER_NATIVE, 0, iterate_find_by_link,
                      reinterpret_cast<void*>(&iter_data));  // NOLINT: 0 is not a nullptr here.
 
-  if (search_res < 0) throw;
+  if (search_res < 0) throw Exception("H5Lvisit / H5Literate failed.", ioda_Here())
+    .add("recurse", recurse);
 
   for (auto& cls : iter_data.lists) {
     if (filter == ObjectType::Ignored || filter == cls.first)

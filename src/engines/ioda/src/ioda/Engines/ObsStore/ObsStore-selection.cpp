@@ -16,6 +16,7 @@
 #include <set>
 
 #include "ioda/defs.h"
+#include "ioda/Exception.h"
 
 namespace ioda {
 namespace Engines {
@@ -34,7 +35,7 @@ ioda::ObsStore::Selection createObsStoreSelection(const ioda::Selection& selecti
   // Assumptions:
   //    1. Only one action is specified
   //    2. No offset specs
-  if ((selection.default_ == SelectionState::ALL) && (selection.actions_.empty())) {
+  if ((selection.getDefault() == SelectionState::ALL) && (selection.getActions().empty())) {
     // Select all points
     mode  = ioda::ObsStore::SelectionModes::ALL;
     start = 0;
@@ -45,7 +46,7 @@ ioda::ObsStore::Selection createObsStoreSelection(const ioda::Selection& selecti
       npoints *= dim_sizes[idim];
     }
   } else {
-    auto first_action = selection.actions_.begin();
+    auto first_action = selection.getActions().begin();
     if (!first_action->start_.empty()) {
       // Selection is specified as hyperslab
       mode = ioda::ObsStore::SelectionModes::INTERSECT;
@@ -58,9 +59,9 @@ ioda::ObsStore::Selection createObsStoreSelection(const ioda::Selection& selecti
     } else if (!first_action->dimension_indices_starts_.empty()) {
       // Selection is specified as dimension indices
       mode = ioda::ObsStore::SelectionModes::INTERSECT;
-      genDimSelects(selection.actions_, dim_sizes, dim_selects);
+      genDimSelects(selection.getActions(), dim_sizes, dim_selects);
     } else {
-      throw;  // jedi_throw.add("Reason", "Unrecongnized selection mode");
+      throw Exception("Unrecongnized selection mode", ioda_Here());
     }
   }
 

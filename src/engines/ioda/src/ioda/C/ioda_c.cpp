@@ -110,16 +110,6 @@ extern "C" c_ioda use_c_ioda() {
       = &ioda_variable_creation_parameters_compressWithGZIP;
     res.VariableCreationParams.compressWithSZIP
       = &ioda_variable_creation_parameters_compressWithSZIP;
-    res.VariableCreationParams.hasSetDimScales = &ioda_variable_creation_parameters_hasSetDimScales;
-    res.VariableCreationParams.attachDimensionScale
-      = &ioda_variable_creation_parameters_attachDimensionScale;
-    res.VariableCreationParams.setDimScale = &ioda_variable_creation_parameters_setDimScale;
-    res.VariableCreationParams.isDimensionScale
-      = &ioda_variable_creation_parameters_isDimensionScale;
-    res.VariableCreationParams.setIsDimensionScale
-      = &ioda_variable_creation_parameters_setIsDimensionScale;
-    res.VariableCreationParams.getDimensionScaleName
-      = &ioda_variable_creation_parameters_getDimensionScaleName;
   }
 
   // Variables

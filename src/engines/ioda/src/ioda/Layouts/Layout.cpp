@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2020 UCAR
+ * (C) Copyright 2020-2021 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -12,27 +12,23 @@
 #include <exception>
 #include <vector>
 
-#include "boost/optional.hpp"
-
-#include "eckit/config/Configuration.h"
-#include "eckit/exception/Exceptions.h"
-
-#include "ioda/Layouts/Layout_ObsGroup.h"
-#include "ioda/Layouts/Layout_ObsGroup_ODB.h"
 #include "ioda/defs.h"
+#include "ioda/Exception.h"
+#include "ioda/Layouts/Layout_ObsGroup.h"
+
+#include "ioda/config.h"
+
+#if (eckit_FOUND && oops_FOUND)
+#  define ENABLE_ODB_LAYOUT
+#  include "ioda/Layouts/Layout_ObsGroup_ODB.h"
+#endif
 
 namespace ioda {
 namespace detail {
 std::shared_ptr<const DataLayoutPolicy> DataLayoutPolicy::generate(const std::string &polid) {
-  if (polid == "ObsGroup" || polid == "ObsGroupODB") return std::make_shared<DataLayoutPolicy_ObsGroup>();
+  if (polid == "ObsGroup" || polid == "ObsGroupODB")
+    return std::make_shared<DataLayoutPolicy_ObsGroup>();
   return std::make_shared<DataLayoutPolicy>();
-}
-
-std::shared_ptr<const DataLayoutPolicy> DataLayoutPolicy::generate(
-    const std::string &polid, const std::string &mapPath) {
-  if (polid != "ObsGroupODB")
-    throw std::invalid_argument("A mapping file is only relevant for the ODB Data Layout.");
-  return std::make_shared<DataLayoutPolicy_ObsGroup_ODB>(mapPath);
 }
 
 std::shared_ptr<const DataLayoutPolicy> DataLayoutPolicy::generate(Policies pol) {
@@ -40,11 +36,27 @@ std::shared_ptr<const DataLayoutPolicy> DataLayoutPolicy::generate(Policies pol)
   return std::make_shared<DataLayoutPolicy>();
 }
 
-std::shared_ptr<const DataLayoutPolicy> DataLayoutPolicy::generate(
-    Policies pol, const std::string &mapPath) {
-  if (pol != Policies::ObsGroupODB)
-    throw std::invalid_argument("A mapping file is only relevant for the ODB Data Layout.");
+std::shared_ptr<const DataLayoutPolicy> DataLayoutPolicy::generate(const std::string &polid, const std::string &mapPath) {
+  if (polid != "ObsGroupODB")
+    throw Exception("A mapping file is only relevant for the ODB Data Layout.", ioda_Here());
+#ifdef ENABLE_ODB_LAYOUT
   return std::make_shared<DataLayoutPolicy_ObsGroup_ODB>(mapPath);
+#else
+  throw Exception("Cannot generate this policy, as either eckit or oops are disabled.",
+                  ioda_Here());
+#endif
+}
+
+std::shared_ptr<const DataLayoutPolicy> DataLayoutPolicy::generate(Policies pol,
+                                                                   const std::string &mapPath) {
+  if (pol != Policies::ObsGroupODB)
+    throw Exception("A mapping file is only relevant for the ODB Data Layout.", ioda_Here());
+#ifdef ENABLE_ODB_LAYOUT
+  return std::make_shared<DataLayoutPolicy_ObsGroup_ODB>(mapPath);
+#else
+  throw Exception("Cannot generate this policy, as either eckit or oops are disabled.",
+                  ioda_Here());
+#endif
 }
 
 DataLayoutPolicy::~DataLayoutPolicy(){}
@@ -62,27 +74,27 @@ bool DataLayoutPolicy::isComplementary(const std::string &str) const { return fa
 bool DataLayoutPolicy::isMapped(const std::string &) const { return false; }
 
 size_t DataLayoutPolicy::getComplementaryPosition(const std::string &str) const {
-  throw eckit::UserError("Illogical operation for non-ODB data layout policies.");
+  throw Exception("Illogical operation for non-ODB data layout policies.", ioda_Here());
 }
 
 std::string DataLayoutPolicy::getOutputNameFromComponent(const std::string &str) const {
-  throw eckit::UserError("Illogical operation for non-ODB data layout policies.");
+  throw Exception("Illogical operation for non-ODB data layout policies.", ioda_Here());
 }
 
 std::type_index DataLayoutPolicy::getOutputVariableDataType(const std::string &str) const {
-  throw eckit::UserError("Illogical operation for non-ODB data layout policies.");
+  throw Exception("Illogical operation for non-ODB data layout policies.", ioda_Here());
 }
 
 DataLayoutPolicy::MergeMethod DataLayoutPolicy::getMergeMethod(const std::string &str) const {
-  throw eckit::UserError("Illogical operation for non-ODB data layout policies.");
+  throw Exception("Illogical operation for non-ODB data layout policies.", ioda_Here());
 }
 
 size_t DataLayoutPolicy::getInputsNeeded(const std::string &str) const {
-  throw eckit::UserError("Illogical operation for non-ODB data layout policies.");
+  throw Exception("Illogical operation for non-ODB data layout policies.", ioda_Here());
 }
 
-boost::optional<std::string> DataLayoutPolicy::getUnit(const std::string &) const {
-  throw eckit::UserError("Illogical operation for non-ODB data layout policies.");
+std::pair<bool, std::string> DataLayoutPolicy::getUnit(const std::string &) const {
+  throw Exception("Illogical operation for non-ODB data layout policies.", ioda_Here());
 }
 
 }  // namespace detail

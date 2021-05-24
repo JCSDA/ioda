@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2020 UCAR
+ * (C) Copyright 2020-2021 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -9,27 +9,21 @@
 #include <map>
 
 #include "ioda/defs.h"
+#include "ioda/Exception.h"
 
 namespace ioda {
 namespace detail {
 /** \brief Safe char array copy.
-        \returns the number of characters actually written.
-        \param dest is the pointer to the destination. Always null terminated.
-        \param destSz is the size of the destination buller, including the trailing null character.
-        \param src is the pointer to the source. Characters from src are copied either until the
-        first null character or until srcSz. Note that null termination comes later.
-        \param srcSz is the max size of the source buffer.
-        **/
-size_t COMPAT_strncpy_s(char* dest, size_t destSz, const char* src, size_t srcSz) {
-  /** \brief Safe char array copy. Uses strncpy_s if available.
   \returns the number of characters actually written.
   \param dest is the pointer to the destination. Always null terminated.
   \param destSz is the size of the destination buller, including the trailing null character.
   \param src is the pointer to the source. Characters from src are copied either until the
   first null character or until srcSz. Note that null termination comes later.
   \param srcSz is the max size of the source buffer.
+  \deprecated This function is old and should not be used!
   **/
-  if (!dest || !src) throw;  // jedi_throw.add("Reason", "Null pointer passed to function.");
+size_t COMPAT_strncpy_s(char* dest, size_t destSz, const char* src, size_t srcSz) {
+  if (!dest || !src) throw Exception("Null pointer passed to function.", ioda_Here());
 #ifdef JEDI_USING_SECURE_STRINGS
   strncpy_s(dest, destSz, src, srcSz);
   return strnlen_s(dest, destSz);
@@ -40,7 +34,7 @@ size_t COMPAT_strncpy_s(char* dest, size_t destSz, const char* src, size_t srcSz
   // manner. This is why we want to use the secure string functions if at all possible.
   if (srcSz <= destSz) {
     strncpy(dest, src, srcSz);
-    if (dest[srcSz - 1] != '\0') throw;  // jedi_throw.add("Reason", "Non-terminated null copy.");
+    if (dest[srcSz - 1] != '\0') throw Exception("Non-terminated null copy.", ioda_Here());
   } else {
     strncpy(dest, src, destSz);
     // Additionally, throw on null-string truncation.
@@ -50,9 +44,9 @@ size_t COMPAT_strncpy_s(char* dest, size_t destSz, const char* src, size_t srcSz
       if (i < srcSz) {
         if (dest[i] == '\0' && src[i] == '\0') break;  // First null hit. Success.
         if (dest[i] == '\0' && src[i] != '\0')
-          throw;  // jedi_throw.add("Reason", "Truncated array copy error.");
+          throw Exception("Truncated array copy error.", ioda_Here());
       } else
-        throw;  // jedi_throw.add("Reason", "Null not reached by end of source!");
+        throw Exception("Null not reached by end of source!", ioda_Here());
     }
   }
 
@@ -60,7 +54,7 @@ size_t COMPAT_strncpy_s(char* dest, size_t destSz, const char* src, size_t srcSz
   for (size_t i = 0; i < destSz; ++i) {
     if (dest[i] == '\0') return i;
   }
-  throw;  // jedi_throw.add("Reason", "Truncated array copy error.");
+  throw Exception("Truncated array copy error.", ioda_Here());
 #endif
 }
 
@@ -68,17 +62,34 @@ size_t COMPAT_strncpy_s(char* dest, size_t destSz, const char* src, size_t srcSz
 // template<> Type_Base<>::Type_Base(std::shared_ptr<Type_Backend> b) : backend_(b) {}
 // template<> std::shared_ptr<Type_Backend> Type_Base<>::getBackend() const { return backend_; }
 
-Type_Backend::Type_Backend() : Type_Base{nullptr} {}
+
+template <>
+size_t Type_Base<>::getSize() const {
+  try {
+    if (backend_ == nullptr)
+      throw Exception("Missing backend or unimplemented backend function.", ioda_Here());
+    return backend_->getSize();
+  } catch (...) {
+    std::throw_with_nested(Exception(
+      "An exception occurred inside ioda while getting the size of a data type.", ioda_Here()));
+  }
+}
+
+Type_Backend::Type_Backend() : Type_Base{nullptr, nullptr} {}
 Type_Backend::~Type_Backend() = default;
+
+size_t Type_Backend::getSize() const {
+  throw Exception("This function must be implemented in the backend engine.", ioda_Here());
+}
 
 }  // namespace detail
 
-Type::Type() : Type_Base(nullptr), as_type_index_(typeid(void)) {}
+Type::Type() : Type_Base(nullptr, nullptr), as_type_index_(typeid(void)) {}
 Type::Type(std::shared_ptr<detail::Type_Backend> b, std::type_index t)
-    : Type_Base(b), as_type_index_(t) {}
+    : Type_Base(b, b->provider_), as_type_index_(t) {}
 
-Type::Type(BasicTypes typ, gsl::not_null<const ::ioda::detail::Type_Provider*> t)
-    : Type_Base(nullptr), as_type_index_(typeid(void)) {
+Type::Type(BasicTypes typ, gsl::not_null<::ioda::detail::Type_Provider*> t)
+    : Type_Base(nullptr, t.get()), as_type_index_(typeid(void)) {
   static const std::map<BasicTypes, std::type_index> workable_types
     = {{BasicTypes::float_, typeid(float)},    // NOLINT: cpplint doesn't understand this!
        {BasicTypes::double_, typeid(double)},  // NOLINT
@@ -102,7 +113,7 @@ Type::Type(BasicTypes typ, gsl::not_null<const ::ioda::detail::Type_Provider*> t
        {BasicTypes::str_, typeid(std::string)}};
   as_type_index_ = workable_types.at(typ);
 
-  if (typ == BasicTypes::undefined_) throw;  // jedi_throw.add("Reason", "Bad input");
+  if (typ == BasicTypes::undefined_) throw Exception("Bad input", ioda_Here());
   if (typ == BasicTypes::str_)
     *this = t->makeStringType(Types::constants::_Variable_Length, typeid(std::string));
   else
@@ -110,5 +121,6 @@ Type::Type(BasicTypes typ, gsl::not_null<const ::ioda::detail::Type_Provider*> t
 }
 
 Type::~Type() = default;
+
 
 }  // namespace ioda

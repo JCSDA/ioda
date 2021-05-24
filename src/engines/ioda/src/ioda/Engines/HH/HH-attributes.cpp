@@ -15,6 +15,7 @@
 #include "./HH/HH-attributes.h"
 
 #include "./HH/HH-types.h"
+#include "ioda/Exception.h"
 #include "ioda/Misc/Dimensions.h"
 
 namespace ioda {
@@ -33,23 +34,23 @@ HH_hid_t HH_Attribute::get() const { return attr_; }
 
 bool HH_Attribute::isAttribute() const {
   H5I_type_t typ = H5Iget_type(attr_());
-  if (typ == H5I_BADID) throw;  // HH_throw;
+  if (typ == H5I_BADID) throw Exception("H5Iget_type failed.", ioda_Here());
   return (typ == H5I_ATTR);
 }
 
 std::string HH_Attribute::getName() const {
   ssize_t sz = H5Aget_name(attr_(), 0, nullptr);
-  if (sz < 0) throw;
+  if (sz < 0) throw Exception("H5Aget_name failed.", ioda_Here());
   auto s = gsl::narrow<size_t>(sz);
   std::vector<char> v(s + 1, '\0');
   sz = H5Aget_name(attr_(), v.size(), v.data());
-  if (sz < 0) throw;
+  if (sz < 0) throw Exception("H5Aget_name failed.", ioda_Here());
   return std::string(v.data());
 }
 
 void HH_Attribute::write(gsl::span<const char> data, HH_hid_t in_memory_dataType) {
   if (H5Awrite(attr_(), in_memory_dataType(), data.data()) < 0)
-    throw;  // HH_throw.add("Reason", "H5Awrite failed.");
+    throw Exception("H5Awrite failed.", ioda_Here());
 }
 
 Attribute HH_Attribute::write(gsl::span<char> data, const Type& in_memory_dataType) {
@@ -60,7 +61,7 @@ Attribute HH_Attribute::write(gsl::span<char> data, const Type& in_memory_dataTy
 
 void HH_Attribute::read(gsl::span<char> data, HH_hid_t in_memory_dataType) const {
   herr_t ret = H5Aread(attr_(), in_memory_dataType(), static_cast<void*>(data.data()));
-  if (ret < 0) throw;  // HH_throw.add("Reason", "H5Aread failed.");
+  if (ret < 0) throw Exception("H5Aread failed.", ioda_Here());
 }
 
 Attribute HH_Attribute::read(gsl::span<char> data, const Type& in_memory_dataType) const {
@@ -72,33 +73,41 @@ Attribute HH_Attribute::read(gsl::span<char> data, const Type& in_memory_dataTyp
 }
 
 bool HH_Attribute::isA(HH_hid_t ttype) const {
-  HH_hid_t otype = type();
+  HH_hid_t otype = internalType();
   auto ret       = H5Tequal(ttype(), otype());
-  if (ret < 0) throw;
+  if (ret < 0) throw Exception("H5Tequal failed.", ioda_Here());
   return (ret > 0) ? true : false;
 }
 
 bool HH_Attribute::isA(Type lhs) const {
-  auto typeBackend = std::dynamic_pointer_cast<HH_Type>(lhs.getBackend());
+  try {
+    auto typeBackend = std::dynamic_pointer_cast<HH_Type>(lhs.getBackend());
 
-  // Override for old-format ioda files:
-  // Unfortunately, v0 ioda files have an odd mixture
-  // of ascii vs unicode strings, as well as
-  // fixed and variable-length strings.
-  // We try and fix a few of these issues here.
+    // Override for old-format ioda files:
+    // Unfortunately, v0 ioda files have an odd mixture
+    // of ascii vs unicode strings, as well as
+    // fixed and variable-length strings.
+    // We try and fix a few of these issues here.
 
-  // Do we expect a string of any type?
-  // Is the object a string of any type?
-  // If both are true, then we just return true.
-  H5T_class_t cls_lhs = H5Tget_class(typeBackend->handle.get());
-  H5T_class_t cls_my  = H5Tget_class(type()());
-  if (cls_lhs == H5T_STRING && cls_my == H5T_STRING) return true;
+    // Do we expect a string of any type?
+    // Is the object a string of any type?
+    // If both are true, then we just return true.
+    H5T_class_t cls_lhs = H5Tget_class(typeBackend->handle.get());
+    H5T_class_t cls_my  = H5Tget_class(internalType()());
+    if (cls_lhs == H5T_STRING && cls_my == H5T_STRING) return true;
 
-  return isA(typeBackend->handle);
+    return isA(typeBackend->handle);
+  } catch (std::bad_cast) {
+    std::throw_with_nested(Exception("lhs is not an HH_Type.", ioda_Here()));
+  }
 }
 
-HH_hid_t HH_Attribute::type() const {
+HH_hid_t HH_Attribute::internalType() const {
   return HH_hid_t(H5Aget_type(attr_()), Handles::Closers::CloseHDF5Datatype::CloseP);
+}
+
+Type HH_Attribute::getType() const {
+  return Type{std::make_shared<HH_Type>(internalType()), typeid(HH_Type)};
 }
 
 HH_hid_t HH_Attribute::space() const {
@@ -109,12 +118,13 @@ Dimensions HH_Attribute::getDimensions() const {
   Dimensions ret;
 
   std::vector<hsize_t> dims;
-  if (H5Sis_simple(space()()) < 0) throw;
+  if (H5Sis_simple(space()()) < 0) throw Exception("H5Sis_simple failed.", ioda_Here());
   hssize_t numPoints = H5Sget_simple_extent_npoints(space()());
   int dimensionality = H5Sget_simple_extent_ndims(space()());
-  if (dimensionality < 0) throw;
+  if (dimensionality < 0) throw Exception("H5Sget_simple_extent_ndims failed.", ioda_Here());
   dims.resize(dimensionality);
-  if (H5Sget_simple_extent_dims(space()(), dims.data(), nullptr) < 0) throw;
+  if (H5Sget_simple_extent_dims(space()(), dims.data(), nullptr) < 0)
+    throw Exception("H5Sget_simple_extent_dims failed.", ioda_Here());
 
   ret.numElements    = gsl::narrow<decltype(Dimensions::numElements)>(numPoints);
   ret.dimensionality = gsl::narrow<decltype(Dimensions::dimensionality)>(dimensionality);

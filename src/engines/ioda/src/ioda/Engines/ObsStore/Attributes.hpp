@@ -15,6 +15,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "./Selection.hpp"
@@ -36,6 +37,9 @@ private:
   std::vector<std::size_t> dimensions_;
   /// \brief holds ObsStore data type
   ObsTypes dtype_ = ObsTypes::NOTYPE;
+  /// \brief ObsStore data type
+  /// \note Unused for now.
+  std::size_t dtype_size_ = 0;
 
   /// \brief container for attribute data values
   std::unique_ptr<VarAttrStore_Base> attr_data_;
@@ -50,6 +54,8 @@ public:
   /// \brief returns true if requested type matches stored type
   /// \param dtype ObsStore Type being checked
   bool isOfType(ObsTypes dtype) const;
+  /// \brief returns the data type.
+  inline std::pair<ObsTypes, size_t> dtype() const { return std::make_pair(dtype_, dtype_size_); }
 
   /// \brief transfer data into attribute
   /// \param data contiguous block of data to transfer

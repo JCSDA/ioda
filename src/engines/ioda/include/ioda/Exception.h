@@ -58,9 +58,11 @@ class IODA_DL Exception : virtual public std::exception {
   void add_source_location(const ::ioda::source_location& loc);
 
 public:
-  Exception(const ::ioda::source_location& loc = source_location::current());
+  Exception(const ::ioda::source_location& loc = source_location::current(),
+            const Options& opts                = Options{});
   explicit Exception(const char* msg,
-                     const ::ioda::source_location& loc = source_location::current());
+                     const ::ioda::source_location& loc = source_location::current(),
+                     const Options& opts                = Options{});
   virtual ~Exception() noexcept;
   /// \brief Print the error message.
   /// \todo Make this truly noexcept. Should never throw unless a

@@ -8,265 +8,533 @@
 #ifndef CORE_OBSDATA_H_
 #define CORE_OBSDATA_H_
 
+#include <functional>
 #include <map>
 #include <memory>
+#include <numeric>
 #include <ostream>
 #include <set>
 #include <string>
+#include <type_traits>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
+#include "eckit/exception/Exceptions.h"
 #include "eckit/mpi/Comm.h"
+
 #include "oops/base/Variables.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
 #include "oops/util/Printable.h"
 #include "ioda/core/IodaUtils.h"
-
-#include "ioda/core/ObsSpaceContainer.h"
 #include "ioda/distribution/Distribution.h"
-#include "ioda/io/IodaIO.h"
+#include "ioda/Engines/Factory.h"
+#include "ioda/io/ObsFrame.h"
+#include "ioda/Misc/Dimensions.h"
+#include "ioda/ObsGroup.h"
+#include "ioda/ObsSpaceParameters.h"
+#include "ioda/Variables/Fill.h"
 
 // Forward declarations
 namespace eckit {
-  class Configuration;
+    class Configuration;
 }
 
 namespace ioda {
+    class ObsVector;
 
-//-------------------------------------------------------------------------------------
+    //-------------------------------------------------------------------------------------
+    // Enum type for obs variable data types
+    enum class ObsDtype {
+        None,
+        Float,
+        Integer,
+        String,
+        DateTime
+    };
 
-/// Enum type for obs variable data types
-enum class ObsDtype {
-  None,
-  Float,
-  Integer,
-  String,
-  DateTime
-};
+    // Enum type for obs dimension ids
+    // The first two dimension names for now are nlocs and nchans. This will likely expand
+    // in the future, so make sure that this enum class and the following initializer
+    // function stay in sync.
+    enum class ObsDimensionId {
+        Nlocs,
+        Nchans
+    };
 
-}  // namespace ioda
+    class ObsDimInfo {
+     public:
+        ObsDimInfo();
 
-namespace ioda {
+        /// \brief return the standard id value for the given dimension name
+        ObsDimensionId get_dim_id(const std::string & dimName) const;
 
-/// Observation Data
-/*!
- * \brief Observation data class for IODA
- *
- * \details This class handles the memory store of observation data. It handles the transfer
- *          of data between memory and files, the distribution of obs data across multiple
- *          process elements, the filtering out of obs data that is outside the DA timing
- *          window, the transfer of data between UFO, OOPS and IODA, and data type
- *          conversion that is "missing value aware".
- *
- * During the DA run, all data transfers are done in memory. The only time file I/O is
- * invoked is during the constructor (read from the file into the obs container) and
- * optionally during the the destructor (write from obs container into the file).
- *
- * \author Stephen Herbener, Xin Zhang (JCSDA)
- */
-class ObsData : public util::Printable {
- public:
-  typedef std::map<std::size_t, std::vector<std::size_t>> RecIdxMap;
-  typedef RecIdxMap::const_iterator RecIdxIter;
+        /// \brief return the dimension name for the given dimension id
+        std::string get_dim_name(const ObsDimensionId dimId) const;
 
-  ObsData(const eckit::Configuration &, const eckit::mpi::Comm &,
-          const util::DateTime &, const util::DateTime &, const eckit::mpi::Comm &);
-  /*!
-   * \details Copy constructor for an ObsData object.
-   */
-  ObsData(const ObsData &);
-  ~ObsData();
+        /// \brief return the dimension size for the given dimension id
+        std::size_t get_dim_size(const ObsDimensionId dimId) const;
 
-  std::size_t globalNumLocs() const;
-  std::size_t nlocs() const;
-  std::size_t nrecs() const;
-  std::size_t nvars() const;
-  const std::vector<std::size_t> & recnum() const;
-  const std::vector<std::size_t> & index() const;
+        /// \brief set the dimension size for the given dimension id
+        void set_dim_size(const ObsDimensionId dimId, std::size_t dimSize);
 
-  bool has(const std::string &, const std::string &) const;
-  ObsDtype dtype(const std::string &, const std::string &) const;
+     private:
+        /// \brief map going from dim id to dim name
+        std::map<ObsDimensionId, std::string> dim_id_name_;
 
-  const std::vector<std::string> & obs_group_vars() const;
-  std::string obs_sort_var() const;
-  std::string obs_sort_order() const;
+        /// \brief map going from dim id to dim size
+        std::map<ObsDimensionId, std::size_t> dim_id_size_;
 
-  void get_db(const std::string & group, const std::string & name,
-              std::vector<int> & vdata) const;
-  void get_db(const std::string & group, const std::string & name,
-              std::vector<float> & vdata) const;
-  void get_db(const std::string & group, const std::string & name,
-              std::vector<double> & vdata) const;
-  void get_db(const std::string & group, const std::string & name,
-              std::vector<std::string> & vdata) const;
-  void get_db(const std::string & group, const std::string & name,
-              std::vector<util::DateTime> & vdata) const;
+        /// \brief map going from dim name to id
+        std::map<std::string, ObsDimensionId> dim_name_id_;
+    };
 
-  void put_db(const std::string & group, const std::string & name,
-              const std::vector<int> & vdata);
-  void put_db(const std::string & group, const std::string & name,
-              const std::vector<float> & vdata);
-  void put_db(const std::string & group, const std::string & name,
-              const std::vector<double> & vdata);
-  void put_db(const std::string & group, const std::string & name,
-              const std::vector<std::string> & vdata);
-  void put_db(const std::string & group, const std::string & name,
-              const std::vector<util::DateTime> & vdata);
+    /// @brief Template handlers for implicit variable conversion.
+    /// @tparam Type is the source type of the data.
+    template <class Type>
+    struct ConvertType {
+      /// @brief The type that data should be converted to upon write.
+      typedef Type to_type;
+    };
+    template<>
+    struct ConvertType<double> {
+      typedef float to_type;
+    };
 
-  const RecIdxIter recidx_begin() const;
-  const RecIdxIter recidx_end() const;
-  bool recidx_has(const std::size_t RecNum) const;
-  bool obsAreSorted() const { return recidx_is_sorted_; }
-  std::size_t recidx_recnum(const RecIdxIter & Irec) const;
-  const std::vector<std::size_t> & recidx_vector(const RecIdxIter & Irec) const;
-  const std::vector<std::size_t> & recidx_vector(const std::size_t RecNum) const;
-  std::vector<std::size_t> recidx_all_recnums() const;
+    /// \brief Observation data class for IODA
+    ///
+    /// \details This class handles the memory store of observation data. It handles
+    /// the transfer of data between memory and files, the distribution of obs data
+    /// across multiple process elements, the filtering out of obs data that is outside
+    /// the DA timing window, the transfer of data between UFO, OOPS and IODA, and data type
+    /// conversion that is "missing value aware".
+    ///
+    /// During the DA run, all data transfers are done in memory. The only time file I/O is
+    /// invoked is during the constructor (read from the file into the obs container) and
+    /// optionally during the the destructor (write from obs container into the file).
+    class ObsData : public util::Printable {
+     public:
+        //---------------------------- typedefs -------------------------------
+        typedef std::map<std::size_t, std::vector<std::size_t>> RecIdxMap;
+        typedef RecIdxMap::const_iterator RecIdxIter;
 
-  /*! \details This method will return the name of the obs type being stored */
-  const std::string & obsname() const {return obsname_;}
-  /*! \details This method will return the handle to the configuration */
-  const eckit::Configuration & getConfig() const {return config_;}
-  /*! \details This method will return the start of the DA timing window */
-  const util::DateTime & windowStart() const {return winbgn_;}
-  /*! \details This method will return the end of the DA timing window */
-  const util::DateTime & windowEnd() const {return winend_;}
-  /*! \details This method will return the associated MPI communicator */
-  const eckit::mpi::Comm & comm() const {return commMPI_;}
+        //---------------------------- functions ------------------------------
+        /// \brief Config based constructor for an ObsData object.
+        ///
+        /// \details This constructor will read in from the obs file and transfer the
+        /// variables into the obs container. Obs falling outside the DA timing window,
+        /// specified by bgn and end, will be discarded before storing them in the
+        /// obs container.
+        ///
+        /// \param config eckit configuration segment holding obs types specs
+        /// \param comm MPI communicator for model grouping
+        /// \param bgn DateTime object holding the start of the DA timing window
+        /// \param end DateTime object holding the end of the DA timing window
+        /// \param timeComm MPI communicator for ensemble
+        ObsData(const eckit::Configuration & config, const eckit::mpi::Comm & comm,
+                const util::DateTime & bgn, const util::DateTime & end,
+                const eckit::mpi::Comm & timeComm);
+        ObsData(const ObsData &);
+        ~ObsData();
 
-  const oops::Variables & obsvariables() const {return obsvars_;}
-  const Distribution & distribution() const { return *dist_;}
+        /// \details This method will return the start of the DA timing window
+        const util::DateTime & windowStart() const {return winbgn_;}
 
- private:
-  void print(std::ostream &) const;
+        /// \details This method will return the end of the DA timing window
+        const util::DateTime & windowEnd() const {return winend_;}
 
-  ObsData & operator= (const ObsData &);
+        /// \details This method will return the associated MPI communicator
+        const eckit::mpi::Comm & comm() const {return commMPI_;}
 
-  // Initialize the database with auto-generated locations
-  void generateDistribution(const eckit::Configuration &);
-  void genDistRandom(const eckit::Configuration & conf, std::vector<float> & Lats,
-                     std::vector<float> & Lons, std::vector<util::DateTime> & Dtimes);
-  void genDistList(const eckit::Configuration & conf, std::vector<float> & Lats,
-                   std::vector<float> & Lons, std::vector<util::DateTime> & Dtimes);
+        /// \details This method will return the associated parameters
+        const ObsSpaceParameters & params() const {return obs_params_;}
 
-  // Initialize the database from the input file
-  void InitFromFile(const std::string & filename, const std::size_t MaxFrameSize);
-  std::vector<std::size_t> GenFrameIndexRecNums(const std::unique_ptr<IodaIO> & FileIO,
-                               const std::size_t FrameStart, const std::size_t FrameSize,
-                               std::map<std::string, std::size_t> & ObsGroupingMap);
-  bool InsideTimingWindow(const util::DateTime & ObsDt);
-  void BuildObsGroupingKeys(const std::unique_ptr<IodaIO> & FileIO,
-                            const std::vector<std::size_t> & FrameIndex,
-                            std::vector<std::string> & GroupingKeys);
-  void BuildSortedObsGroups();
-  void BuildRecIdxUnsorted();
+        /// \brief return the total number of locations in the corresponding obs spaces
+        ///        across all MPI tasks
+        std::size_t globalNumLocs() const {return gnlocs_;}
 
-  template<typename VarType>
-  std::vector<VarType> ApplyIndex(const std::vector<VarType> & FullData,
-                                  const std::vector<std::size_t> & FullShape,
-                                  const std::vector<std::size_t> & Index,
-                                  std::vector<std::size_t> & IndexedShape) const;
+        /// \brief return number of locations from obs source that were outside the time window
+        std::size_t globalNumLocsOutsideTimeWindow() const {return gnlocs_outside_timewindow_;}
 
-  static std::string DesiredVarType(std::string & GroupName, std::string & FileVarType);
+        /// \brief return the number of locations in the obs space
+        inline size_t nlocs() { return get_dim_size(ObsDimensionId::Nlocs); }
 
-  void extendObsSpace(const eckit::Configuration & config);
+        /// \brief return the number of locations in the obs space
+        inline size_t nchans() { return get_dim_size(ObsDimensionId::Nchans); }
 
-  /*! \brief Extend all vectors in a database with missing values. */
-  template <typename T>
-    void extendVectorsInDatabase(const ObsSpaceContainer<T> &Db,
-                                 const std::vector <std::string> &nonMissingExtendedVars,
-                                 const size_t nlocsext);
+        /// \brief return the number of records in the obs space container
+        /// \details This is the number of sets of locations after applying the
+        /// optional grouping.
+        std::size_t nrecs() const {return nrecs_;}
 
-  // Dump the database into the output file
-  void SaveToFile(const std::string & file_name, const std::size_t MaxFrameSize);
+        /// \brief return the number of variables in the obs space container
+        std::size_t nvars() const;
 
-  /*! \brief name of obs space */
-  std::string obsname_;
+        /// \brief return the standard dimension name for the given dimension id
+        std::string get_dim_name(const ObsDimensionId dimId) const {
+            return dim_info_.get_dim_name(dimId);
+        }
 
-  /*! \brief Configuration file */
-  const eckit::LocalConfiguration config_;
+        /// \brief return the standard dimension size for the given dimension id
+        std::size_t get_dim_size(const ObsDimensionId dimId) const {
+            return dim_info_.get_dim_size(dimId);
+        }
 
-  /*! \brief Beginning of DA timing window */
-  const util::DateTime winbgn_;
+        /// \brief return the standard dimension id for the given dimension name
+        ObsDimensionId get_dim_id(const std::string & dimName) const {
+            return dim_info_.get_dim_id(dimName);
+        }
 
-  /*! \brief End of DA timing window */
-  const util::DateTime winend_;
+        /// \brief return YAML configuration parameter: obsdatain.obsgrouping.group variables
+        const std::vector<std::string> & obs_group_vars() const;
 
-  /*! \brief MPI communicator */
-  const eckit::mpi::Comm & commMPI_;
+        /// \brief return YAML configuration parameter: obsdatain.obsgrouping.sort variable
+        std::string obs_sort_var() const;
 
-  /*! \brief total number of locations filtered because they were outside of the time window */
-  std::size_t gnlocs_outside_timewindow_;
+        /// \brief return YAML configuration parameter: obsdatain.obsgrouping.sort order
+        std::string obs_sort_order() const;
 
-  /*! \brief total number of locations */
-  std::size_t gnlocs_;
+        /// \brief return the name of the obs type being stored
+        const std::string & obsname() const {return obsname_;}
 
-  /*! \brief number of locations on this domain */
-  std::size_t nlocs_;
+        /// \brief return the name of the MPI distribution
+        std::string distname() const {return obs_params_.top_level_.distName;}
 
-  /*! \brief number of variables */
-  std::size_t nvars_;
+        /// \brief return reference to the record number vector
+        const std::vector<std::size_t> & recnum() const {return recnums_;}
 
-  /*! \brief number of records */
-  std::size_t nrecs_;
+        /// \brief return reference to the index vector
+        const std::vector<std::size_t> & index() const {return indx_;}
 
-  /*! \brief flag, file has variables with unexpected data types */
-  bool file_unexpected_dtypes_;
+        /// \brief return true if group/variable exists
+        bool has(const std::string & group, const std::string & name) const;
 
-  /*! \brief flag, file has variables with excess dimensions */
-  bool file_excess_dims_;
+        /// \brief return data type for group/variable
+        /// \param group Group name containting the variable
+        /// \param name Variable name
+        ObsDtype dtype(const std::string & group, const std::string & name) const;
 
-  /*! \brief path to input file */
-  std::string filein_;
+        /// \brief transfer data from the obs container to vdata
+        ///
+        /// \details The following get_db methods are the same except for the data type
+        /// of the data being transferred (integer, float, double, string, DateTime). The
+        /// caller needs to allocate the memory that the vdata parameter points to
+        ///
+        /// \param group Name of container group (ObsValue, ObsError, MetaData, etc.)
+        /// \param name  Name of container variable
+        /// \param vdata Vector where container data is being transferred to
+        /// \param chanSelect Channel selection (list of channel numbers)
+        void get_db(const std::string & group, const std::string & name,
+                    std::vector<int> & vdata,
+                    const std::vector<int> & chanSelect = { }) const;
+        void get_db(const std::string & group, const std::string & name,
+                    std::vector<float> & vdata,
+                    const std::vector<int> & chanSelect = { }) const;
+        void get_db(const std::string & group, const std::string & name,
+                    std::vector<double> & vdata,
+                    const std::vector<int> & chanSelect = { }) const;
+        void get_db(const std::string & group, const std::string & name,
+                    std::vector<std::string> & vdata,
+                    const std::vector<int> & chanSelect = { }) const;
+        void get_db(const std::string & group, const std::string & name,
+                    std::vector<util::DateTime> & vdata,
+                    const std::vector<int> & chanSelect = { }) const;
 
-  /*! \brief path to output file */
-  std::string fileout_;
+        /// \brief transfer data from vdata to the obs container
+        ///
+        /// \details The following put_db methods are the same except for the data type
+        /// of the data being transferred (integer, float, double, string, DateTime). The
+        /// caller needs to allocate and assign the memory that the vdata parameter points to.
+        ///
+        /// \param group Name of container group (ObsValue, ObsError, MetaData, etc.)
+        /// \param name  Name of container variable
+        /// \param vdata Vector where container data is being transferred from
+        /// \param dimList Vector of dimension names (for creating variable if needed)
+        void put_db(const std::string & group, const std::string & name,
+                    const std::vector<int> & vdata,
+                    const std::vector<std::string> & dimList = { "nlocs" });
+        void put_db(const std::string & group, const std::string & name,
+                    const std::vector<float> & vdata,
+                    const std::vector<std::string> & dimList = { "nlocs" });
+        void put_db(const std::string & group, const std::string & name,
+                    const std::vector<double> & vdata,
+                    const std::vector<std::string> & dimList = { "nlocs" });
+        void put_db(const std::string & group, const std::string & name,
+                    const std::vector<std::string> & vdata,
+                    const std::vector<std::string> & dimList = { "nlocs" });
+        void put_db(const std::string & group, const std::string & name,
+                    const std::vector<util::DateTime> & vdata,
+                    const std::vector<std::string> & dimList = { "nlocs" });
 
-  /*! \brief max frame size for input file */
-  std::size_t in_max_frame_size_;
+        /// \brief Return the begin iterator associated with the recidx_ data member
+        const RecIdxIter recidx_begin() const;
 
-  /*! \brief max frame size for output file */
-  std::size_t out_max_frame_size_;
+        /// \brief Return the end iterator associated with the recidx_ data member
+        const RecIdxIter recidx_end() const;
 
-  /*! \brief indexes of locations to extract from the input obs file */
-  std::vector<std::size_t> indx_;
+        /// \brief true if given record number exists in the recidx_ data member
+        /// \param recNum Record number being searched for
+        bool recidx_has(const std::size_t recNum) const;
 
-  /*! \brief record numbers associated with the location indexes */
-  std::vector<std::size_t> recnums_;
+        /// \brief true if the groups in the recidx data member are sorted
+        bool obsAreSorted() const { return recidx_is_sorted_; }
 
-  /*! \brief profile ordering */
-  RecIdxMap recidx_;
+        /// \brief return record number pointed to by the given iterator
+        /// \param irec Iterator into the recidx_ data member
+        std::size_t recidx_recnum(const RecIdxIter & irec) const;
 
-  /*! \brief indicator whether the data in recidx_ is sorted */
-  bool recidx_is_sorted_;
+        /// \brief return record number vector pointed to by the given iterator
+        /// \param irec Iterator into the recidx_ data member
+        const std::vector<std::size_t> & recidx_vector(const RecIdxIter & irec) const;
 
-  /*! \brief Multi-index containers */
-  ObsSpaceContainer<int> int_database_;
-  ObsSpaceContainer<float> float_database_;
-  ObsSpaceContainer<std::string> string_database_;
-  ObsSpaceContainer<util::DateTime> datetime_database_;
+        /// \brief return record number vector selected by the given record number
+        /// \param recNum Record number being searched for
+        const std::vector<std::size_t> & recidx_vector(const std::size_t recNum) const;
 
-  /*! \brief Observation "variables" to be simulated */
-  oops::Variables obsvars_;
+        /// \brief return all record numbers from the recidx_ data member
+        std::vector<std::size_t> recidx_all_recnums() const;
 
-  /*! \brief Variable that location grouping is based upon */
-  std::vector<std::string> obs_group_variables_;
+        /// \brief return oops variables object (simulated variables)
+       const oops::Variables & obsvariables() const {return obsvars_;}
 
-  /*! \brief Variable that location group sorting is based upon */
-  std::string obs_sort_variable_;
+       /// \brief return MPI distribution object
+       const Distribution & distribution() const { return *dist_;}
 
-  /*! \brief Sort order for obs grouping */
-  std::string obs_sort_order_;
+     private:
+        // ----------------------------- private data members ---------------------------
+        /// \brief Configuration file
+        const eckit::LocalConfiguration config_;
 
-  /*! \brief MPI distribution object */
-  std::shared_ptr<Distribution> dist_;
+        /// \brief Beginning of DA timing window
+        const util::DateTime winbgn_;
 
-  /*! \brief next available record number */
-  std::size_t next_rec_num_;
+        /// \brief End of DA timing window
+        const util::DateTime winend_;
 
-  /*! \brief unique record numbers */
-  std::set<std::size_t> unique_rec_nums_;
-};
+        /// \brief MPI communicator
+        const eckit::mpi::Comm & commMPI_;
+
+        /// \brief total number of locations
+        std::size_t gnlocs_;
+
+        /// \brief number of nlocs from the obs source that are outside the time window
+        std::size_t gnlocs_outside_timewindow_;
+
+        /// \brief number of records
+        std::size_t nrecs_;
+
+        /// \brief dimension information for variables in this obs space
+        ObsDimInfo dim_info_;
+
+        /// \brief map to go from channel number (not necessarily consecutive)
+        ///        to channel index (consecutive, starting from zero).
+        std::map<int, int> chan_num_to_index_;
+
+        /// \brief observation data store
+        ObsGroup obs_group_;
+
+        /// \brief obs io parameters
+        ObsSpaceParameters obs_params_;
+
+        /// \brief name of obs space
+        std::string obsname_;
+
+        /// \brief Observation "variables" to be simulated
+        oops::Variables obsvars_;
+
+        /// \brief MPI distribution object
+        std::shared_ptr<Distribution> dist_;
+
+        /// \brief indexes of locations to extract from the input obs file
+        std::vector<std::size_t> indx_;
+
+        /// \brief record numbers associated with the location indexes
+        std::vector<std::size_t> recnums_;
+
+        /// \brief profile ordering
+        RecIdxMap recidx_;
+
+        /// \brief indicator whether the data in recidx_ is sorted
+        bool recidx_is_sorted_;
+
+        /// \brief map showing association of dim names with each variable name
+        VarDimMap dims_attached_to_vars_;
+
+        /// \brief cache for frontend selection
+        std::map<std::vector<std::string>, Selection> known_fe_selections_;
+
+        /// \brief cache for backend selection
+        std::map<std::vector<std::string>, Selection> known_be_selections_;
+
+        /// \brief disable the "=" operator
+        ObsData & operator= (const ObsData &) = delete;
+
+        // ----------------------------- private functions ------------------------------
+        /// \brief print function for oops::Printable class
+        /// \param os output stream
+        void print(std::ostream & os) const;
+
+        /// \brief Initialize the database from a source (ObsFrame ojbect)
+        /// \param obsFrame obs source object
+        void createObsGroupFromObsFrame(const std::shared_ptr<ObsFrame> & obsFrame);
+
+        /// \brief Extend the ObsSpace according to the method requested in
+        ///  the configuration file.
+        /// \param params object containing specs for extending the ObsSpace
+        void extendObsSpace(const ObsExtendParameters & params);
+
+        /// \brief Dump the database into the output file
+        void saveToFile();
+
+        /// \brief Create the recidx data structure holding sorted record groups
+        /// \details This method will construct a data structure that holds the
+        /// location order within each group sorted by the values of the specified
+        /// sort variable.
+        void buildSortedObsGroups();
+
+        /// \brief Create the recidx data structure with unsorted record groups
+        /// \details This method will initialize the recidx structure without
+        /// any particular ordering of the record groups.
+        void buildRecIdxUnsorted();
+
+        /// \brief initialize the in-memory obs_group_ (ObsGroup) object from the ObsIo source
+        /// \param obsIo obs source object
+        void initFromObsSource(const std::shared_ptr<ObsFrame> & obsFrame);
+
+        /// \brief resize along nlocs dimension
+        /// \param nlocsSize new size to either append or reset
+        /// \param append when true append nlocsSize to current size, otherwise reset size
+        void resizeNlocs(const Dimensions_t nlocsSize, const bool append);
+
+        /// \brief read in values for variable from obs source
+        /// \param obsFrame obs frame object
+        /// \param varName Name of variable in obs source object
+        /// \param varValues values for variable
+        template<typename VarType>
+        bool readObsSource(const std::shared_ptr<ObsFrame> & obsFrame,
+                           const std::string & varName, std::vector<VarType> & varValues);
+
+        /// \brief store a variable in the obs_group_ object
+        /// \param obsIo obs source object
+        /// \param varName Name of obs_group_ variable for obs_group_ object
+        /// \param varValues Values for obs_group_ variable
+        /// \param frameStart is the start of the ObsFrame
+        /// \param frameCount is the size of the ObsFrame
+        template<typename VarType>
+        void storeVar(const std::string & varName, std::vector<VarType> & varValues,
+                      const Dimensions_t frameStart, const Dimensions_t frameCount);
+
+        /// \brief get fill value for use in the obs_group_ object
+        template<typename DataType>
+        DataType getFillValue() {
+            DataType fillVal = util::missingValue(fillVal);
+            return fillVal;
+        }
+
+        /// \brief load a variable from the obs_group_ object
+        /// \details This function will load data from the obs_group_ object into
+        ///          the memory buffer (vector) varValues. The chanSelect parameter
+        ///          is only used when the variable is 2D radiance data (nlocs X nchans),
+        ///          and contains a list of channel numbers to be selected from the
+        ///          obs_group_ variable.
+        /// \param group Name of Group in obs_group_
+        /// \param name Name of Variable in group
+        /// \param selectChan Vector of channel numbers for selection
+        /// \param varValues memory to load from obs_group_ variable
+        template<typename VarType>
+        void loadVar(const std::string & group, const std::string & name,
+                     const std::vector<int> & chanSelect,
+                     std::vector<VarType> & varValues) const;
+
+        /// \brief save a variable to the obs_group_ object
+        /// \param group Name of Group in obs_group_
+        /// \param name Name of Variable in group.
+        /// \param varValues values to be saved
+        /// \param dimList Vector of dimension names (for creating variable if needed)
+        ///
+        /// If the group `group` does not contain a variable with the specified name, but this name
+        /// has the form <string>_<integer> and `obs_group_` contains an `nchans` dimension, this
+        /// function will save `varValues` in the slice of variable <string> corresponding to
+        /// channel <integer>. If channel <integer> does not exist or the variable <string> already
+        /// exists but is not associated with the `nchans` dimension, an exception will be thrown.
+        template<typename VarType>
+        void saveVar(const std::string & group, std::string name,
+                     const std::vector<VarType> & varValues,
+                     const std::vector<std::string> & dimList);
+
+        /// \brief Create selections of slices of the variable \p variable along dimension
+        /// \p nchansDimIndex corresponding to channels \p channels.
+        ///
+        /// \returns The number of elements in each selection.
+        std::size_t createChannelSelections(const Variable & variable,
+                                            std::size_t nchansDimIndex,
+                                            const std::vector<int> & channels,
+                                            Selection & memSelect,
+                                            Selection & obsGroupSelect) const;
+
+        /// \brief create set of variables from source variables and lists
+        /// \param srcVarContainer Has_Variables object from source
+        /// \param destVarContainer Has_Variables object from destination
+        /// \param dimsAttachedToVars Map containing list of attached dims for each variable
+        void createVariables(const Has_Variables & srcVarContainer,
+                             Has_Variables & destVarContainer,
+                             const VarDimMap & dimsAttachedToVars);
+
+        /// \brief open an obs_group_ variable, create the varialbe if necessary
+        template<typename VarType>
+        Variable openCreateVar(const std::string & varName,
+                               const std::vector<std::string> & varDimList) {
+            Variable var;
+            if (obs_group_.vars.exists(varName)) {
+                var = obs_group_.vars.open(varName);
+            } else {
+                // Create a vector of the dimension variables
+                std::vector<Variable> varDims;
+                for (auto & dimName : varDimList) {
+                    varDims.push_back(obs_group_.vars.open(dimName));
+                }
+
+                // Create the variable. Use the JEDI internal missing value marks for
+                // fill values.
+                VarType fillVal = this->getFillValue<VarType>();
+                VariableCreationParameters params;
+                params.chunk = true;
+                params.compressWithGZIP();
+                params.setFillValue<VarType>(fillVal);
+
+                var = obs_group_.vars.createWithScales<VarType>(varName, varDims, params);
+            }
+            return var;
+        }
+
+        /// \brief fill in the channel number to channel index map
+        void fillChanNumToIndexMap();
+
+        /// \brief split off the channel number suffix from a given variable name
+        /// \details If the given variable name does not exist, the channelSelect vector
+        ///          is empty, and the given variable name has a suffix matching
+        ///          "_[0-9][0-9]*" (ie, a numeric suffix), then this routine will strip
+        ///          off the channel number from the name and place that channel number
+        ///          into the ouput canSelectToUse vector. The new name will be returned
+        ///          in the nameToUse string.
+        ///          This is being done for backward compatibility until the ufo Variables
+        ///          class and its clients are modified to handle a single variable name
+        ///          and a vector of channel numbers.
+        /// \param group Name of Group in obs_group_
+        /// \param name Name of Variable in group
+        /// \param selectChan Vector of channel numbers for selection
+        /// \param varName Name of Variable after splitting off the channel number
+        void splitChanSuffix(const std::string & group, const std::string & name,
+                     const std::vector<int> & chanSelect, std::string & nameToUse,
+                     std::vector<int> & chanSelectToUse) const;
+
+        /// \brief Extend the given variable
+        /// \param extendVar database variable to be extended
+        /// \param startFill nlocs index indicating the start of the extended region
+        template <typename DataType>
+        void extendVariable(Variable & extendVar, const size_t startFill);
+    };
 
 }  // namespace ioda
 

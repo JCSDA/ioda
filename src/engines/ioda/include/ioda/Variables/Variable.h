@@ -24,6 +24,7 @@
 #include <vector>
 
 #include "ioda/Attributes/Has_Attributes.h"
+#include "ioda/Exception.h"
 #include "ioda/Misc/Eigen_Compat.h"
 #include "ioda/Python/Var_ext.h"
 #include "ioda/Types/Marshalling.h"
@@ -36,6 +37,9 @@
 namespace ioda {
 class Attribute;
 class Variable;
+struct VariableCreationParameters;
+
+struct Named_Variable;
 
 namespace detail {
 class Attribute_Backend;
@@ -79,9 +83,9 @@ public:
   /// @{
 
   /// Get type
-  // virtual Type getType() const;
+  virtual Type getType() const;
   /// Get type
-  // inline Type type() const { return getType(); }
+  inline Type type() const { return getType(); }
 
   /// Query the backend and get the type provider.
   virtual detail::Type_Provider* getTypeProvider() const;
@@ -110,6 +114,18 @@ public:
   /// @}
   /// @name Querying Functions for Fill Values, Chunking and Compression
   /// @{
+
+  /// @brief Convenience function to get fill value, attributes,
+  ///   chunk sizes, and compression in a collective call.
+  /// @details This function has better performance on some engines
+  ///   for bulk operations than calling separately.
+  /// @param doAtts includes attributes in the creation parameters.
+  /// @param doDims includes dimension scales in the creation parameters.
+  /// Although dimensions are attributes on some backends, we treat them
+  /// separately in this function.
+  /// @returns the filled-in VariableCreationParameters object
+  virtual VariableCreationParameters getCreationParameters(bool doAtts = true,
+                                                           bool doDims = true) const;
 
   /// \brief Check if a variable has a fill value set
   /// \returns true if a fill value is set, false otherwise.
@@ -184,6 +200,8 @@ public:
   /// Set dimensions (convenience function to several invocations of attachDimensionScale).
   Variable setDimScale(const std::vector<Variable>& dims);
   /// Set dimensions (convenience function to several invocations of attachDimensionScale).
+  Variable setDimScale(const std::vector<Named_Variable>& dims);
+  /// Set dimensions (convenience function to several invocations of attachDimensionScale).
   Variable setDimScale(const Variable& dims);
   /// Set dimensions (convenience function to several invocations of attachDimensionScale).
   Variable setDimScale(const Variable& dim1, const Variable& dim2);
@@ -213,11 +231,12 @@ public:
   ///   If you do not pass in a scale to check against, then this scale will not be checked and
   ///   will not be present in the function output.
   /// \param firstOnly is specified when only one dimension can be attached to each axis (the
-  /// default). \returns a vector with the same length as the variable's dimensionality.
+  /// default).
+  /// \returns a vector with the same length as the variable's dimensionality.
   ///   Each variable dimension in the vector can have one or more attached scales. These scales are
   ///   returned as their own, inner, vector of pair<string, Variable>.
-  virtual std::vector<std::vector<std::pair<std::string, Variable>>> getDimensionScaleMappings(
-    const std::list<std::pair<std::string, Variable>>& scalesToQueryAgainst,
+  virtual std::vector<std::vector<Named_Variable>> getDimensionScaleMappings(
+    const std::list<Named_Variable>& scalesToQueryAgainst,
     bool firstOnly = true) const;
 
   /// @}
@@ -262,12 +281,16 @@ public:
   Variable_Implementation write(const gsl::span<DataType> data,
                                 const Selection& mem_selection  = Selection::all,
                                 const Selection& file_selection = Selection::all) {
-    Marshaller m;
-    auto d = m.serialize(data);
-    return write(gsl::make_span<char>(
-                   const_cast<char*>(reinterpret_cast<const char*>(d->DataPointers.data())),
-                   d->DataPointers.size() * sizeof(typename Marshaller::mutable_value_type)),
-                 TypeWrapper::GetType(getTypeProvider()), mem_selection, file_selection);
+    try {
+      Marshaller m;
+      auto d = m.serialize(data);
+      return write(gsl::make_span<char>(
+                     const_cast<char*>(reinterpret_cast<const char*>(d->DataPointers.data())),
+                     d->DataPointers.size() * sizeof(typename Marshaller::mutable_value_type)),
+                   TypeWrapper::GetType(getTypeProvider()), mem_selection, file_selection);
+    } catch (...) {
+      std::throw_with_nested(Exception(ioda_Here()));
+    }
   }
 
   /// \brief Write the Variable
@@ -288,12 +311,16 @@ public:
   Variable_Implementation write(const gsl::span<const DataType> data,
                                 const Selection& mem_selection  = Selection::all,
                                 const Selection& file_selection = Selection::all) {
-    Marshaller m;
-    auto d = m.serialize(data);
-    return write(gsl::make_span<char>(
-                   const_cast<char*>(reinterpret_cast<const char*>(d->DataPointers.data())),
-                   d->DataPointers.size() * sizeof(typename Marshaller::mutable_value_type)),
-                 TypeWrapper::GetType(getTypeProvider()), mem_selection, file_selection);
+    try {
+      Marshaller m;
+      auto d = m.serialize(data);
+      return write(gsl::make_span<char>(
+                     const_cast<char*>(reinterpret_cast<const char*>(d->DataPointers.data())),
+                     d->DataPointers.size() * sizeof(typename Marshaller::mutable_value_type)),
+                   TypeWrapper::GetType(getTypeProvider()), mem_selection, file_selection);
+    } catch (...) {
+      std::throw_with_nested(Exception(ioda_Here()));
+    }
   }
 
   /// \brief Write the variable
@@ -313,9 +340,12 @@ public:
   Variable_Implementation write(const std::vector<DataType>& data,
                                 const Selection& mem_selection  = Selection::all,
                                 const Selection& file_selection = Selection::all) {
-    Expects(backend_ != nullptr);
-    return this->write<DataType, Marshaller, TypeWrapper>(gsl::make_span(data), mem_selection,
-                                                          file_selection);
+    try {
+      return this->write<DataType, Marshaller, TypeWrapper>(gsl::make_span(data), mem_selection,
+                                                            file_selection);
+    } catch (...) {
+      std::throw_with_nested(Exception(ioda_Here()));
+    }
   }
 
   /// \brief Write an Eigen object (a Matrix, an Array, a Block, a Map).
@@ -332,15 +362,19 @@ public:
                                                 const Selection& mem_selection  = Selection::all,
                                                 const Selection& file_selection = Selection::all) {
 #if 1  //__has_include("Eigen/Dense")
-    typedef typename EigenClass::Scalar ScalarType;
-    // If d is already in Row Major form, then this is optimized out.
-    Eigen::Array<ScalarType, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> dout;
-    dout.resize(d.rows(), d.cols());
-    dout               = d;
-    const auto& dconst = dout;  // To make some compilers happy.
-    auto sp            = gsl::make_span(dconst.data(), static_cast<int>(d.rows() * d.cols()));
+    try {
+      typedef typename EigenClass::Scalar ScalarType;
+      // If d is already in Row Major form, then this is optimized out.
+      Eigen::Array<ScalarType, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> dout;
+      dout.resize(d.rows(), d.cols());
+      dout               = d;
+      const auto& dconst = dout;  // To make some compilers happy.
+      auto sp            = gsl::make_span(dconst.data(), static_cast<int>(d.rows() * d.cols()));
 
-    return write<ScalarType>(sp, mem_selection, file_selection);
+      return write<ScalarType>(sp, mem_selection, file_selection);
+    } catch (...) {
+      std::throw_with_nested(Exception(ioda_Here()));
+    }
 #else
     static_assert(false, "The Eigen headers cannot be found, so this function cannot be used.");
 #endif
@@ -360,11 +394,15 @@ public:
                                                const Selection& mem_selection  = Selection::all,
                                                const Selection& file_selection = Selection::all) {
 #if 1  //__has_include("unsupported/Eigen/CXX11/Tensor")
-    ioda::Dimensions dims = detail::EigenCompat::getTensorDimensions(d);
+    try {
+      ioda::Dimensions dims = detail::EigenCompat::getTensorDimensions(d);
 
-    auto sp  = (gsl::make_span(d.data(), dims.numElements));
-    auto res = write(sp, mem_selection, file_selection);
-    return res;
+      auto sp  = (gsl::make_span(d.data(), dims.numElements));
+      auto res = write(sp, mem_selection, file_selection);
+      return res;
+    } catch (...) {
+      std::throw_with_nested(Exception(ioda_Here()));
+    }
 #else
     static_assert(
       false, "The Eigen unsupported/ headers cannot be found, so this function cannot be used.");
@@ -405,23 +443,26 @@ public:
   Variable_Implementation read(gsl::span<DataType> data,
                                const Selection& mem_selection  = Selection::all,
                                const Selection& file_selection = Selection::all) const {
-    Expects(backend_ != nullptr);
-    const size_t numObjects = data.size();
-    Expects(getDimensions().numElements == gsl::narrow<ioda::Dimensions_t>(numObjects));
+    try {
+      const size_t numObjects = data.size();
+      Dimensions_t ne         = getDimensions().numElements;
 
-    detail::PointerOwner pointerOwner = getTypeProvider()->getReturnedPointerOwner();
-    Marshaller m(pointerOwner);
-    auto p = m.prep_deserialize(numObjects);
-    read(gsl::make_span<char>(
-           reinterpret_cast<char*>(p->DataPointers.data()),
-           // Logic note: sizeof mutable data type. If we are
-           // reading in a string, then mutable data type is char*,
-           // which works because address pointers have the same size.
-           p->DataPointers.size() * sizeof(typename Marshaller::mutable_value_type)),
-         TypeWrapper::GetType(getTypeProvider()), mem_selection, file_selection);
-    m.deserialize(p, data);
+      detail::PointerOwner pointerOwner = getTypeProvider()->getReturnedPointerOwner();
+      Marshaller m(pointerOwner);
+      auto p = m.prep_deserialize(numObjects);
+      read(gsl::make_span<char>(
+             reinterpret_cast<char*>(p->DataPointers.data()),
+             // Logic note: sizeof mutable data type. If we are
+             // reading in a string, then mutable data type is char*,
+             // which works because address pointers have the same size.
+             p->DataPointers.size() * sizeof(typename Marshaller::mutable_value_type)),
+           TypeWrapper::GetType(getTypeProvider()), mem_selection, file_selection);
+      m.deserialize(p, data);
 
-    return Variable_Implementation{backend_};
+      return Variable_Implementation{backend_};
+    } catch (...) {
+      std::throw_with_nested(Exception(ioda_Here()));
+    }
   }
 
   /// \brief Read the variable into a vector. Resize if needed. For a non-resizing
@@ -442,7 +483,7 @@ public:
   Variable_Implementation read(std::vector<DataType>& data,
                                const Selection& mem_selection  = Selection::all,
                                const Selection& file_selection = Selection::all) const {
-    data.resize(getDimensions().numElements);
+    data.resize(getDimensions().numElements); // TODO(Ryan): remove
     return read<DataType, Marshaller, TypeWrapper>(gsl::make_span(data.data(), data.size()),
                                                    mem_selection, file_selection);
   }
@@ -486,7 +527,7 @@ public:
                                const Selection& file_selection = Selection::all) const {
     /// \bug Resize only if needed, and resize to the proper extent depending on
     /// mem_selection and file_selection.
-    data.resize(getDimensions().numElements);
+    data.resize(getDimensions().numElements); // TODO(Ryan): remove
     return read<DataType, Marshaller, TypeWrapper>(gsl::make_span(std::begin(data), std::end(data)),
                                                    mem_selection, file_selection);
   }
@@ -514,42 +555,46 @@ public:
     /// \bug Resize only if needed, and resize to the proper extent depending on
     /// mem_selection and file_selection.
 #if 1  //__has_include("Eigen/Dense")
-    typedef typename EigenClass::Scalar ScalarType;
+    try {
+      typedef typename EigenClass::Scalar ScalarType;
 
-    static_assert(
-      !(Resize && !detail::EigenCompat::CanResize<EigenClass>::value),
-      "This object cannot be resized, but you have specified that a resize is required.");
+      static_assert(
+        !(Resize && !detail::EigenCompat::CanResize<EigenClass>::value),
+        "This object cannot be resized, but you have specified that a resize is required.");
 
-    // Check that the dimensionality is 1 or 2.
-    const auto dims = getDimensions();
-    if (dims.dimensionality > 2)
-      throw;  // jedi_throw.add("Reason", "Dimensionality too high for a regular Eigen read. Use
-              // Eigen::Tensor reads instead.");
+      // Check that the dimensionality is 1 or 2.
+      const auto dims = getDimensions();
+      if (dims.dimensionality > 2)
+        throw Exception("Dimensionality too high for a regular Eigen read. Use "
+          "Eigen::Tensor reads instead.", ioda_Here());
 
-    int nDims[2] = {1, 1};
-    if (dims.dimsCur.size() >= 1) nDims[0] = gsl::narrow<int>(dims.dimsCur[0]);
-    if (dims.dimsCur.size() >= 2) nDims[1] = gsl::narrow<int>(dims.dimsCur[1]);
+      int nDims[2] = {1, 1};
+      if (dims.dimsCur.size() >= 1) nDims[0] = gsl::narrow<int>(dims.dimsCur[0]);
+      if (dims.dimsCur.size() >= 2) nDims[1] = gsl::narrow<int>(dims.dimsCur[1]);
 
-    // Resize if needed.
-    if (Resize)
-      detail::EigenCompat::DoEigenResize(res, nDims[0],
-                                         nDims[1]);  // nullop if the size is already correct.
-    else if (dims.numElements != (size_t)(res.rows() * res.cols()))
-      throw;  // jedi_throw.add("Reason", "Size mismatch");
+      // Resize if needed.
+      if (Resize)
+        detail::EigenCompat::DoEigenResize(res, nDims[0],
+                                           nDims[1]);  // nullop if the size is already correct.
+      else if (dims.numElements != (size_t)(res.rows() * res.cols()))
+        throw Exception("Size mismatch", ioda_Here());
 
-    // Array copy to preserve row vs column major format.
-    // Should be optimized away by the compiler if unneeded.
-    // Note to the reader: We are reading in the data to a temporary object.
-    // We can size _this_ temporary object however we want.
-    // The temporary is used to swap row / column indices if needed.
-    // It should be optimized away if not needed... making sure this happens is a todo.
-    Eigen::Array<ScalarType, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> data_in(res.rows(),
-                                                                                      res.cols());
+      // Array copy to preserve row vs column major format.
+      // Should be optimized away by the compiler if unneeded.
+      // Note to the reader: We are reading in the data to a temporary object.
+      // We can size _this_ temporary object however we want.
+      // The temporary is used to swap row / column indices if needed.
+      // It should be optimized away if not needed... making sure this happens is a todo.
+      Eigen::Array<ScalarType, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> data_in(res.rows(),
+                                                                                        res.cols());
 
-    auto ret = read<ScalarType>(gsl::span<ScalarType>(data_in.data(), dims.numElements),
-                                mem_selection, file_selection);
-    res      = data_in;
-    return ret;
+      auto ret = read<ScalarType>(gsl::span<ScalarType>(data_in.data(), dims.numElements),
+                                  mem_selection, file_selection);
+      res      = data_in;
+      return ret;
+    } catch (...) {
+      std::throw_with_nested(Exception(ioda_Here()));
+    }
 #else
     static_assert(false, "The Eigen headers cannot be found, so this function cannot be used.");
 #endif
@@ -572,14 +617,18 @@ public:
                                               const Selection& file_selection
                                               = Selection::all) const {
 #if 1  //__has_include("unsupported/Eigen/CXX11/Tensor")
-       // Check dimensionality of source and destination
-    const auto ioda_dims  = getDimensions();
-    const auto eigen_dims = ioda::detail::EigenCompat::getTensorDimensions(res);
-    if (ioda_dims.numElements != eigen_dims.numElements)
-      throw;  // jedi_throw.add("Reason", "Size mismatch for Eigen Tensor-like read.");
+    try {
+      // Check dimensionality of source and destination
+      const auto ioda_dims  = getDimensions();
+      const auto eigen_dims = ioda::detail::EigenCompat::getTensorDimensions(res);
+      if (ioda_dims.numElements != eigen_dims.numElements)
+        throw Exception("Size mismatch for Eigen Tensor-like read.", ioda_Here());
 
-    auto sp = (gsl::make_span(res.data(), eigen_dims.numElements));
-    return read(sp, mem_selection, file_selection);
+      auto sp = (gsl::make_span(res.data(), eigen_dims.numElements));
+      return read(sp, mem_selection, file_selection);
+    } catch (...) {
+      std::throw_with_nested(Exception(ioda_Here()));
+    }
 #else
     static_assert(
       false, "The Eigen unsupported/ headers cannot be found, so this function cannot be used.");
@@ -594,6 +643,11 @@ public:
     readWithEigenRegular(data, mem_selection, file_selection);
     return data;
   }
+
+  /// @brief Convert a selection into its backend representation
+  /// @param sel is the frontend selection.
+  /// @return The cached backend selection.
+  virtual Selections::SelectionBackend_t instantiateSelection(const Selection& sel) const;
 
   /// @}
 };
@@ -658,9 +712,13 @@ public:
   virtual ~Variable_Backend();
 
   /// Default, trivial implementation. Customizable by backends for performance.
-  std::vector<std::vector<std::pair<std::string, Variable>>> getDimensionScaleMappings(
-    const std::list<std::pair<std::string, Variable>>& scalesToQueryAgainst,
+  std::vector<std::vector<Named_Variable>> getDimensionScaleMappings(
+    const std::list<Named_Variable>& scalesToQueryAgainst,
     bool firstOnly = true) const override;
+
+  /// Default implementation. Customizable by backends for performance.
+  VariableCreationParameters getCreationParameters(bool doAtts = true,
+                                                   bool doDims = true) const override;
 
 protected:
   Variable_Backend();
@@ -689,6 +747,17 @@ protected:
   }
 };
 }  // namespace detail
+
+/// @brief A named pair of (variable_name, ioda::Variable).
+struct Named_Variable {
+  std::string name;
+  ioda::Variable var;
+  bool operator<(const Named_Variable& rhs) const { return name < rhs.name; }
+
+  Named_Variable() = default;
+  Named_Variable(const std::string& name, const ioda::Variable& var) : name(name), var(var) {}
+};
+
 }  // namespace ioda
 
 /// @}

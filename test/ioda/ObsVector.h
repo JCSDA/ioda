@@ -43,6 +43,13 @@ class ObsVecTestFixture : private boost::noncopyable {
  public:
   static std::vector<boost::shared_ptr<ObsSpace_> > & obspace() {return getInstance().ospaces_;}
 
+  static void cleanup() {
+    auto &spaces = getInstance().ospaces_;
+    for (auto &space : spaces) {
+      space.reset();
+    }
+  }
+
  private:
   static ObsVecTestFixture& getInstance() {
     static ObsVecTestFixture theObsVecTestFixture;
@@ -141,8 +148,11 @@ void testRead() {
     ioda::ObsSpace * Odb = Test_::obspace()[jj].get();
 
     // Grab the expected RMS value and tolerance from the obsdb_ configuration.
-    double ExpectedRms = conf[jj].getDouble("obs space.obsdatain.rms ref");
-    double Tol = conf[jj].getDouble("obs space.obsdatain.tolerance");
+    // Grab the obs space and test data configurations
+    eckit::LocalConfiguration testConfig;
+    conf[jj].get("test data", testConfig);
+    double ExpectedRms = testConfig.getDouble("rms ref");
+    double Tol = testConfig.getDouble("tolerance");
 
     // Read in a vector and check contents with norm function.
     std::unique_ptr<ObsVector_> ov(new ObsVector_(*Odb, "ObsValue"));
@@ -293,8 +303,41 @@ void testDistributedMath() {
   for (std::size_t dd = 0; dd < dist_names.size(); ++dd) {
     ObsVectors_ obsvecs;
     for (std::size_t jj = 0; jj < conf.size(); ++jj) {
+       // We want to cycle through the set of distributions that are specified
+       // in the list with the keyword "distributions" in the YAML. The test fixture
+       // has already constructed all of the obs spaces listed in the YAML, and we
+       // are repeating that action inside this loop. In other words, we are doubling
+       // up the obs space objects that a specified in the YAML.
+       //
+       // This is okay unless the YAML has specified an output file anywhere. The issue
+       // is that the output file is written during the destructor and the HDF library
+       // (unfortunately) tends to keep file descriptors open until the process terminates.
+       // Therefore it is possible for the file writes to collide, causing the test to
+       // crash, if the obs space created here is writing to the same file as the
+       // corresponding obs space in the test fixture.
+       //
+       // The fix is to tag on the name of the distribution on the output file name here
+       // to prevent the collision. The collision avoidance is absolutely guaranteed, but
+       // we can do it in a way that is unlikely to collide with any other output file
+       // names in the YAML. Note that this also prevents clobbering any output files
+       // specfied in the YAML.
        eckit::LocalConfiguration obsconf(conf[jj], "obs space");
        obsconf.set("distribution", dist_names[dd]);
+       if (obsconf.has("obsdataout.obsfile")) {
+           std::string fileName = obsconf.getString("obsdataout.obsfile");
+           std::string fileTag = std::string("_Dist_") + dist_names[dd];
+           std::size_t pos = fileName.find_last_of(".");
+           if (pos != std::string::npos) {
+               // have a suffix on the file name, insert tag before the suffix
+               fileName.insert(pos, fileTag);
+           } else {
+               // do not have a suffix on the file name, append tag to end of file name
+               fileName += fileTag;
+           }
+           obsconf.set("obsdataout.obsfile", fileName);
+       }
+
+       // Instantiate the obs space with the distribution we are testing
        std::shared_ptr<ObsSpace_> obsdb(new ObsSpace(obsconf, oops::mpi::world(),
                                                      bgn, end, oops::mpi::myself()));
        std::shared_ptr<ObsVector_> obsvec(new ObsVector_(*obsdb, "ObsValue"));
@@ -328,6 +371,18 @@ void testDistributedMath() {
 
 // -----------------------------------------------------------------------------
 
+void testCleanup() {
+  // This test removes the obsspaces from the test fixture and ensures that they evict
+  // their contents to disk successfully. The saveToFile logic runs in a destructor,
+  // so this test ensures that we are not executing features that we want to test after
+  // the eckit testing environment reports success.
+  typedef ObsVecTestFixture Test_;
+
+  Test_::cleanup();
+}
+
+// -----------------------------------------------------------------------------
+
 class ObsVector : public oops::Test {
  public:
   ObsVector() {}
@@ -355,6 +410,8 @@ class ObsVector : public oops::Test {
       { testDotProduct(); });
      ts.emplace_back(CASE("ioda/ObsVector/testDistributedMath")
       { testDistributedMath(); });
+     ts.emplace_back(CASE("ioda/ObsVector/testCleanup")
+      { testCleanup(); });
   }
 
   void clear() const override {}

@@ -10,13 +10,14 @@
  * \file ObsStore-types.cpp
  * \brief Functions for translating ioda::Types to ObsStore Types
  */
-#include "./ObsStore-types.h"
 
 #include <map>
 
+#include "./ObsStore-types.h"
 #include "./Types.hpp"
-#include "ioda/Types/Type.h"
 #include "ioda/defs.h"
+#include "ioda/Exception.h"
+#include "ioda/Types/Type.h"
 
 namespace ioda {
 namespace Engines {
@@ -30,6 +31,7 @@ ObsStore_Type::~ObsStore_Type() = default;
 ioda::ObsStore::ObsTypes ObsStore_Type::dtype() const { return dtype_; }
 
 std::size_t ObsStore_Type::dtype_size() const { return dtype_size_; }
+std::size_t ObsStore_Type::getSize() const { return dtype_size(); }
 
 //*********************************************************************
 // ObsStore_Type_Provider functions
@@ -67,7 +69,7 @@ ObsTypeInfo ObsStore_Type_Provider::getFundamentalObsStoreType(std::type_index t
        {typeid(char32_t), {ioda::ObsStore::ObsTypes::CHAR32, sizeof(char32_t)}}};
 
   if (!fundamental_types.count(type)) {
-    throw;  // jedi_throw.add("Reason", "ObsStore does not recognize this type.");
+    throw Exception("ObsStore does not recognize this type.", ioda_Here());
   }
   return fundamental_types.at(type);
 }

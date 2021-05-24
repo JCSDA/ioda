@@ -13,7 +13,7 @@
 
 #include "ioda/Group.h"
 #include "ioda/Layout.h"
-#include "ioda/Misc/SFuncs.h"
+#include "ioda/Misc/StringFuncs.h"
 #include "ioda/defs.h"
 
 #include "boost/none_t.hpp"
@@ -64,7 +64,11 @@ void DataLayoutPolicy_ObsGroup_ODB::parseMappingFile(const std::string &nameMapF
 void DataLayoutPolicy_ObsGroup_ODB::parseNameChanges()
 {
   for (VariableParameters const& variable : *(mappingParams_->variables.value())) {
-    Mapping[variable.source] = {variable.name, variable.unit};
+    if (variable.unit.value())
+      Mapping[variable.source] = {variable.name, {true, *(variable.unit.value())}};
+    else
+      Mapping[variable.source] = {variable.name, {false, ""}};
+    //Mapping[variable.source] = {variable.name, variable.unit};
   }
 }
 
@@ -182,7 +186,7 @@ DataLayoutPolicy::MergeMethod DataLayoutPolicy_ObsGroup_ODB::getMergeMethod(
   return complementaryVariableDataMap.at(input).second->mergeMethod;
 }
 
-boost::optional<std::string> DataLayoutPolicy_ObsGroup_ODB::getUnit(
+std::pair<bool, std::string> DataLayoutPolicy_ObsGroup_ODB::getUnit(
     const std::string & input) const {
   if (Mapping.find(input) == Mapping.end()) {
     throw eckit::ReadError(input + " was not found to to be an ODB source variable.");

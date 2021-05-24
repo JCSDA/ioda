@@ -1,0 +1,30 @@
+#pragma once
+/*
+ * (C) Copyright 2020-2021 UCAR
+ *
+ * This software is licensed under the terms of the Apache Licence Version 2.0
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ */
+
+/// \file ioda_config.h
+/// \brief Build-time configuration settings for IODA.
+
+// ioda-engines version
+#define IODA_ENGINES_MAJOR @IODA_ENGINES_MAJOR@
+#define IODA_ENGINES_MINOR @IODA_ENGINES_MINOR@
+#define IODA_ENGINES_REVISION @IODA_ENGINES_REVISION@
+#define IODA_ENGINES_TWEAK @IODA_ENGINES_TWEAK@
+#define IODA_ENGINES_VERSION "@IODA_ENGINES_VERSION@"
+
+
+// Package build options
+// Used to enable-disable code in factory methods.
+
+#cmakedefine01 Boost_FOUND
+#cmakedefine01 eckit_FOUND
+#cmakedefine01 Eigen3_FOUND
+#cmakedefine01 HDF5_FOUND
+#cmakedefine01 odc_FOUND
+#cmakedefine01 oops_FOUND
+#cmakedefine01 Python3_FOUND
+#cmakedefine01 pybind11_FOUND

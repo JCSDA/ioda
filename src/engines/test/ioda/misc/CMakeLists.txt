@@ -5,20 +5,15 @@
 
 include(Targets)
 
-ecbuild_add_test ( TARGET     test_ioda-engines_sfuncs_concatstringvectors
-                   SOURCES    test-concatstringvecs.cpp
-                   LIBS       ioda_engines )
+if(ecbuild_FOUND AND eckit_FOUND)
 
-ecbuild_add_test ( TARGET     test_ioda-engines_sfuncs_convertv1pathtov2path
-                   SOURCES    test-convertv1pathtov2path.cpp
-                   LIBS       ioda_engines )
+    ecbuild_add_test ( TARGET     test_ioda-engines_sfuncs_concatstringvectors
+                       SOURCES    test-concatstringvecs.cpp
+                       LIBS       ioda_engines )
 
-# Buggy. Disabled.
-#add_executable(ioda-test-types ioda-test-types.cpp)
-#addapp(ioda-test-types)
-#target_link_libraries(ioda-test-types PUBLIC ioda_engines)
+    ecbuild_add_test ( TARGET     test_ioda-engines_sfuncs_convertv1pathtov2path
+                       SOURCES    test-convertv1pathtov2path.cpp
+                       LIBS       ioda_engines )
 
-#if(BUILD_TESTING)
-#    add_test(NAME ioda-test-types COMMAND ioda-test-types)
-#endif()
 
+endif()

@@ -1,0 +1,185 @@
+---
+window begin: "2018-04-14T21:00:00Z"
+window end: "2018-04-15T03:00:00Z"
+
+observations:
+
+- obs space:
+    name: "Radiosonde"
+    simulated variables: ['temperature']
+    obsdatain:
+      obsfile: "Data/testinput_tier_1/sondes_obs_2018041500_m.nc4"
+      max frame size: 200
+  test data:
+    nlocs: 974
+    nvars: 65
+    ndvars: 5
+    max var size: 974
+    read variables:
+      - name: "air_pressure@MetaData"
+        type: "float"
+        values: [ 12900.0, 15000.0, 15000.0, 15300.0, 10900.0 ]
+      - name: "datetime@MetaData"
+        type: "string"
+        values:
+          - "2018-04-15T00:07:54Z"
+          - "2018-04-15T00:04:42Z"
+          - "2018-04-15T00:04:42Z"
+          - "2018-04-15T00:04:16Z"
+          - "2018-04-15T00:11:29Z"
+      - name: "northward_wind@PreQC"
+        type: "int"
+        values: [ 2, 2, -2147483647, 2, 2 ]
+    tolerance: 1.0e-6
+
+- obs space:
+    name: "Synthetic Random"
+    simulated variables: [air_temperature, eastward_wind]
+    generate:
+      random:
+        nobs: 10   # generate 10 obs
+        lat1: 0    # with lat ranging form 0-10.
+        lat2: 10   #
+        lon1: 0    # and lon ranging from 0-10.
+        lon2: 10
+        random seed: 29837
+      obs errors: [1.0, 2.0]
+  test data:
+    nlocs: 10
+    nvars: 5
+    ndvars: 1
+    max var size: 10
+    read variables:
+      - name: "MetaData/latitude"
+        type: "float"
+        values: [ 8.80016517, 6.47274542, 8.11081027, 7.75301551, 5.23049402 ]
+      - name: "MetaData/datetime"
+        type: "string"
+        values:
+          - "2018-04-15T02:16:48Z"
+          - "2018-04-15T00:53:01Z"
+          - "2018-04-15T01:51:59Z"
+          - "2018-04-15T01:39:06Z"
+          - "2018-04-15T00:08:17Z"
+      - name: "ObsError/air_temperature"
+        type: "float"
+        values: [ 1.0, 1.0, 1.0, 1.0, 1.0 ]
+    tolerance: 1.0e-6
+
+- obs space:
+    name: "Synthetic List"
+    simulated variables: [air_temperature, eastward_wind]
+    generate:
+      list:
+        lats: [ 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14 ]
+        lons: [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 ]
+        datetimes:
+        - "2010-01-01T00:04:00Z"
+        - "2010-01-01T00:04:12Z"
+        - "2010-01-01T00:04:24Z"
+        - "2010-01-01T00:04:36Z"
+        - "2010-01-01T00:04:48Z"
+        - "2010-01-01T00:05:00Z"
+        - "2010-01-01T00:05:12Z"
+        - "2010-01-01T00:05:24Z"
+        - "2010-01-01T00:05:36Z"
+        - "2010-01-01T00:05:48Z"
+        - "2010-01-01T00:06:00Z"
+      obs errors: [1.0, 2.0]
+  test data:
+    nlocs: 11
+    nvars: 5
+    ndvars: 1
+    max var size: 11
+    read variables:
+      - name: "MetaData/latitude"
+        type: "float"
+        values: [ 4.0, 5.0, 6.0, 7.0, 8.0 ]
+      - name: "MetaData/datetime"
+        type: "string"
+        values:
+          - "2010-01-01T00:04:00Z"
+          - "2010-01-01T00:04:12Z"
+          - "2010-01-01T00:04:24Z"
+          - "2010-01-01T00:04:36Z"
+          - "2010-01-01T00:04:48Z"
+      - name: "ObsError/eastward_wind"
+        type: "float"
+        values: [ 2.0, 2.0, 2.0, 2.0, 2.0 ]
+    tolerance: 1.0e-6
+
+# Now the same obs spaces as above, but set up using the 'source' YAML section instead of
+# 'obsdatain' or 'generate'. (We skip the Synthetic Random obs space because there's no way to
+# force the same seed to be used.)
+
+- obs space:
+    name: "Radiosonde"
+    simulated variables: ['temperature']
+    source:
+      type: FileRead
+      obsfile: "Data/testinput_tier_1/sondes_obs_2018041500_m.nc4"
+      max frame size: 200
+  test data:
+    nlocs: 974
+    nvars: 65
+    ndvars: 5
+    max var size: 974
+    read variables:
+      - name: "air_pressure@MetaData"
+        type: "float"
+        values: [ 12900.0, 15000.0, 15000.0, 15300.0, 10900.0 ]
+      - name: "datetime@MetaData"
+        type: "string"
+        values:
+          - "2018-04-15T00:07:54Z"
+          - "2018-04-15T00:04:42Z"
+          - "2018-04-15T00:04:42Z"
+          - "2018-04-15T00:04:16Z"
+          - "2018-04-15T00:11:29Z"
+      - name: "northward_wind@PreQC"
+        type: "int"
+        values: [ 2, 2, -2147483647, 2, 2 ]
+    tolerance: 1.0e-6
+
+- obs space:
+    name: "Synthetic List"
+    simulated variables: [air_temperature, eastward_wind]
+    source:
+      type: GenerateList
+      lats: [ 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14 ]
+      lons: [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 ]
+      datetimes:
+      - "2010-01-01T00:04:00Z"
+      - "2010-01-01T00:04:12Z"
+      - "2010-01-01T00:04:24Z"
+      - "2010-01-01T00:04:36Z"
+      - "2010-01-01T00:04:48Z"
+      - "2010-01-01T00:05:00Z"
+      - "2010-01-01T00:05:12Z"
+      - "2010-01-01T00:05:24Z"
+      - "2010-01-01T00:05:36Z"
+      - "2010-01-01T00:05:48Z"
+      - "2010-01-01T00:06:00Z"
+      obs errors: [1.0, 2.0]
+  test data:
+    nlocs: 11
+    nvars: 5
+    ndvars: 1
+    max var size: 11
+    read variables:
+      - name: "MetaData/latitude"
+        type: "float"
+        values: [ 4.0, 5.0, 6.0, 7.0, 8.0 ]
+      - name: "MetaData/datetime"
+        type: "string"
+        values:
+          - "2010-01-01T00:04:00Z"
+          - "2010-01-01T00:04:12Z"
+          - "2010-01-01T00:04:24Z"
+          - "2010-01-01T00:04:36Z"
+          - "2010-01-01T00:04:48Z"
+      - name: "ObsError/eastward_wind"
+        type: "float"
+        values: [ 2.0, 2.0, 2.0, 2.0, 2.0 ]
+    tolerance: 1.0e-6
+

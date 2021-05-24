@@ -5,19 +5,25 @@
 
 include(Targets)
 
-ecbuild_add_test ( TARGET     test_ioda-engines_layouts_layoutobsgroupodb
-                   SOURCES    test-layoutodb.cpp
-                   LIBS       ioda_engines )
+# Although these tests are for features used by the odb interface, they do not use
+# odb / odc itself.
+if(eckit_FOUND AND oops_FOUND)
 
-ecbuild_add_test ( TARGET     test_ioda-engines_layouts_layoutobsgroup
-                   SOURCES    test-layoutobsgroup.cpp
-                   LIBS       ioda_engines )
+	add_executable(test_ioda-engines_layouts_layoutobsgroupodb test-layoutodb.cpp)
+	addapp(test_ioda-engines_layouts_layoutobsgroupodb)
+	target_link_libraries(test_ioda-engines_layouts_layoutobsgroupodb PUBLIC ioda_engines)
+	add_test(NAME test_ioda-engines_layouts_layoutobsgroupodb COMMAND test_ioda-engines_layouts_layoutobsgroupodb)
 
-target_compile_definitions(test_ioda-engines_layouts_layoutobsgroupodb PRIVATE
-  TEST_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
+	add_executable(test_ioda-engines_layouts_layoutobsgroup test-layoutobsgroup.cpp)
+	addapp(test_ioda-engines_layouts_layoutobsgroup)
+	target_link_libraries(test_ioda-engines_layouts_layoutobsgroup PUBLIC ioda_engines)
+	add_test(NAME test_ioda-engines_layouts_layoutobsgroup COMMAND test_ioda-engines_layouts_layoutobsgroup)
 
-target_include_directories(test_ioda-engines_layouts_layoutobsgroupodb PUBLIC
-  $<BUILD_INTERFACE:${IODA_ENGINES_PRIVATE_DIR}>)
 
-target_include_directories(test_ioda-engines_layouts_layoutobsgroup PUBLIC
-  $<BUILD_INTERFACE:${IODA_ENGINES_PRIVATE_DIR}>)
+	# Include ioda-internal headers for these tests.
+	target_include_directories(test_ioda-engines_layouts_layoutobsgroupodb PUBLIC
+	  $<BUILD_INTERFACE:${IODA_ENGINES_PRIVATE_DIR}>)
+
+	target_include_directories(test_ioda-engines_layouts_layoutobsgroup PUBLIC
+	  $<BUILD_INTERFACE:${IODA_ENGINES_PRIVATE_DIR}>)
+endif()

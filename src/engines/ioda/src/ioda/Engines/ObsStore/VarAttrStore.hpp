@@ -12,12 +12,14 @@
  */
 #pragma once
 
-#include <gsl/gsl-lite.hpp>
 #include <string>
 #include <vector>
 
+#include "gsl/gsl-lite.hpp"
+
 #include "./Selection.hpp"
 #include "./Types.hpp"
+#include "ioda/Exception.h"
 
 namespace ioda {
 namespace ObsStore {
@@ -231,11 +233,9 @@ inline VarAttrStore_Base *createVarAttrStore(ObsTypes dtype) {
     newStore = new VarAttrStore<char32_t>;
   } else if (dtype == ObsTypes::STRING) {
     newStore = new VarAttrStore<std::string>;
-  } else {
-    std::string ErrMsg = std::string("ioda::ObsStore::Attribute: Unrecognized data type ")
-                         + std::string("encountered during Attribute object construnction");
-    throw;  // jedi_throw.add("Reason", ErrMsg);
-  }
+  } else
+    throw Exception("Unrecognized data type encountered during "
+      "Attribute object construnction", ioda_Here());
 
   return newStore;
 }

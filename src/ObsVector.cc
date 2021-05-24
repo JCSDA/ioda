@@ -220,13 +220,13 @@ void ObsVector::save(const std::string & name) const {
   // then all variables at the next location, etc.
   std::size_t nlocs = obsdb_.nlocs();
   std::size_t ivec;
+
   for (std::size_t jv = 0; jv < nvars_; ++jv) {
     std::vector<double> tmp(nlocs);
     for (std::size_t jj = 0; jj < tmp.size(); ++jj) {
       ivec = jv + (jj * nvars_);
       tmp[jj] = values_[ivec];
     }
-
     obsdb_.put_db(name, obsvars_.variables()[jv], tmp);
   }
 }

@@ -10,6 +10,7 @@
 
 #include "Eigen/Dense"
 #include "ioda/Engines/Factory.h"
+#include "ioda/Exception.h"
 #include "ioda/ObsGroup.h"
 #include "ioda/defs.h"
 #include "unsupported/Eigen/CXX11/Tensor"
@@ -38,11 +39,11 @@ int main(int argc, char** argv) {
     // a "hint" for setting chunking properties of derived variables.
 
     auto og = ObsGroup::generate(
-      f, {std::make_shared<NewDimensionScale<int>>("ScanPosition", atms_scanpos, atms_scanpos, atms_scanpos),
-          std::make_shared<NewDimensionScale<int>>("ScanLine", atms_initlines, -1, 11),
-          std::make_shared<NewDimensionScale<int>>("Level", crtm_numlevels, crtm_numlevels, crtm_numlevels),
-          std::make_shared<NewDimensionScale<int>>("Layer", crtm_numlayers, crtm_numlayers, crtm_numlayers),
-          std::make_shared<NewDimensionScale<int>>("Channel", atms_numchannels, atms_numchannels,
+      f, {NewDimensionScale<int>("ScanPosition", atms_scanpos, atms_scanpos, atms_scanpos),
+          NewDimensionScale<int>("ScanLine", atms_initlines, -1, 11),
+          NewDimensionScale<int>("Level", crtm_numlevels, crtm_numlevels, crtm_numlevels),
+          NewDimensionScale<int>("Layer", crtm_numlayers, crtm_numlayers, crtm_numlayers),
+          NewDimensionScale<int>("Channel", atms_numchannels, atms_numchannels,
                                                    atms_numchannels)});
 
     // We want to use variable chunking and turn on GZIP compression.
@@ -150,7 +151,7 @@ int main(int argc, char** argv) {
     Expects(og.vars["ObsValue/Inst_Brightness_Temperature_Uncorrected"].isDimensionScaleAttached(
       0, og.vars["ScanLine"]));
   } catch (const std::exception& e) {
-    std::cerr << e.what() << std::endl;
+    ioda::unwind_exception_stack(e);
     return 1;
   }
   return 0;

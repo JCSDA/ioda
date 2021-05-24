@@ -17,6 +17,7 @@
 #include <string>
 
 #include "ioda/Variables/Fill.h"
+#include "ioda/Exception.h"
 #include "ioda/defs.h"
 
 namespace ioda {
@@ -111,8 +112,11 @@ void applyFillValuePolicy(FillValuePolicy pol, detail::FillValueData_t& fvd) {
   else if (pol == FillValuePolicy::NETCDF4)
     detail::assignFillValue(fvd, netCDF4_default<T>());
   else
-    throw;  // jedi_throw.add("Reason", "Unsupported fill value policy.");
+    throw Exception("Unsupported fill value policy.", ioda_Here());
 }
+
+
+
 }  // namespace FillValuePolicies
 }  // namespace ioda
 

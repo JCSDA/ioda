@@ -10,9 +10,11 @@
  * \file Selection.cpp
  * \brief Functions for ObsStore Selection
  */
-#include "./Selection.hpp"
 
-#include <gsl/gsl-lite.hpp>
+#include "gsl/gsl-lite.hpp"
+
+#include "./Selection.hpp"
+#include "ioda/Exception.h"
 
 namespace ioda {
 namespace ObsStore {
@@ -72,9 +74,8 @@ const std::vector<std::size_t>& SelectCounter::count() const { return digits_; }
 //*************************************************************************
 Selection::Selection(const std::size_t start, const std::size_t npoints)
     : mode_(SelectionModes::ALL),
-      end_(gsl::narrow<int>(start + npoints - 1)),
-      index_(0),
-      npoints_(npoints) {
+      end_(gsl::narrow<int>(start + npoints) - 1),
+      index_(0), npoints_(npoints) {
   max_index_ = end_;
 }
 
@@ -144,14 +145,10 @@ std::size_t Selection::next_lin_indx() {
   }
 
   // Make sure lin_index_ is in bounds.
-  if (lin_index > max_index_) {
-    std::string ErrMsg = std::string("ioda::ObsStore::Selection::next_lin_indx: ")
-                         + std::string("Next linear index is out of bounds");
-    throw; /* jedi_throw
-.add("Reason", ErrMsg)
-.add("  Next linear index: ", lin_index)
-.add("  Maximum allowed index: ", max_index_); */
-  }
+  if (lin_index > max_index_)
+    throw Exception("Next linear index is out of bounds.", ioda_Here())
+      .add("  Next linear index: ", lin_index)
+      .add("  Maximum allowed index: ", max_index_);
 
   return lin_index;
 }

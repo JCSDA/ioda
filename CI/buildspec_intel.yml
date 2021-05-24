@@ -71,6 +71,9 @@ phases:
       # atlas
       - ./clone.sh $GIT_USER $GIT_PASS jcsda-internal/atlas $CODEBUILD_GIT_BRANCH_FORK atlas /jcsda/ioda-bundle release-stable
 
+      # ioda-test
+      - ./clone.sh $GIT_USER $GIT_PASS jcsda-internal/ioda-data $CODEBUILD_GIT_BRANCH ioda-data /jcsda/ioda-bundle develop
+
       - cp CMakeLists.txt /jcsda/ioda-bundle
       - cp -r cmake /jcsda/ioda-bundle/
       # cdash upload setup

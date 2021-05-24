@@ -115,97 +115,6 @@ IODA_DL void ioda_variable_creation_parameters_compressWithSZIP(
   struct ioda_variable_creation_parameters* params, unsigned PixelsPerBlock, unsigned options);
 
 /// @}
-/// @name Dimension scales
-/// @{
-
-/// \brief Have dimension scales been specified?
-/// \param[in] params is the parameters object.
-/// \returns true if yes, false if no or on error (invalid params).
-/// \pre params must be valid.
-IODA_DL bool ioda_variable_creation_parameters_hasSetDimScales(
-  const struct ioda_variable_creation_parameters* params);
-
-/// \brief Attach a dimension scale to a variable.
-/// \param[in] params is the parameters object.
-/// \param DimensionNumber denotes the dimension which you are adding a scale to.
-///   Counts start at zero.
-/// \param[in] scale is the dimension scale that will be attached.
-/// \returns true on success.
-///   Success implies that the parameters have added the scale to the internal list. It does not
-///   imply that scale attachment will be successful when a variable is created using these
-///   parameters.
-/// \returns false on failure.
-/// \pre params and scale must both be valid.
-/// \pre DimensionNumber must be within the variable's intended dimensionality.
-/// \pre scale must not already be attached at the same dimension number.
-/// \pre scale must share the same backend instance with any new variable created
-///   with these params.
-IODA_DL bool ioda_variable_creation_parameters_attachDimensionScale(
-  struct ioda_variable_creation_parameters* params, unsigned int DimensionNumber,
-  const struct ioda_variable* scale);
-
-/// \brief Convenience function to set a sequence of scales on a variable.
-/// \param[in] params is the parameters object.
-/// \param n_dims is the size of the dims array.
-/// \param[in] dims is a sequence of dimension scales that will be attached to var.
-///   dims[0] will be attached to var along dimension 0,
-///   dims[1] will be attached to var along dimension 1, and so on.
-/// \returns true on success. Success implies that the parameters have added the scale to the
-///   internal list. It does not imply that scale attachment will be successful when a
-///   variable is created using these parameters.
-/// \returns false on failure.
-/// \pre params must be valid.
-/// \pre dims must be non-null, and each scale in dims must be valid and share the same backend
-///   instance as every variable created using these parameters.
-/// \pre The scales in dims should not already be attached to var at their expected places.
-/// \pre n_dims must be less than or equal to the dimensionality of any new variable created
-///   using these parameters.
-IODA_DL bool ioda_variable_creation_parameters_setDimScale(
-  struct ioda_variable_creation_parameters*, size_t n_dims, const struct ioda_variable** dims);
-
-/// \brief Check if variables created using these creation params will act as dimension scales.
-/// \param[in] params is the parameters object.
-/// \returns 1 if yes.
-/// \returns 0 if no.
-/// \returns -1 on error.
-/// \pre params must be valid.
-IODA_DL int ioda_variable_creation_parameters_isDimensionScale(
-  const struct ioda_variable_creation_parameters* params);
-
-/// \brief Specify that variables created using these creation params will be dimension scales.
-/// \param[in] params is the parameters object.
-/// \param sz_name is strlen(dimensionScaleName). Fortran compatability.
-/// \param[in] dimensionScaleName is the "name" of the dimension scale. This name does not
-///   need to correspond to the variable's name, and acts as a convenience label when
-///   reading data.
-/// \returns true on success, which does not imply that the scale operation will be valid when
-///   actually creating a variable using these pcreation parameters.
-/// \returns false on failure.
-/// \pre params must be valid.
-/// \pre dimensionScaleName must be valid. If unused, it should be set to an empty string
-///   and not NULL.
-IODA_DL bool ioda_variable_creation_parameters_setIsDimensionScale(
-  struct ioda_variable_creation_parameters*, size_t sz_name, const char* dimensionScaleName);
-
-/**
- * \brief Get the intended name of the dimension scale.
- * \param[in] params is the parameters object.
- * \param[out] out is the output buffer that will hold the name of the dimension scale.
- *   This will always be a null-terminated string. If len_out is smaller than the length
- *   of the dimension scale's name, then out will be truncated to fit.
- * \param len_out is the length (size) of the output buffer, in bytes.
- * \returns The minimum size of an output buffer needed to fully read the scale name.
- *   Callers should check that the return value is less than len_out. If it is not, then
- *   the output buffer is too small and should be expanded. The output buffer is
- *   always at least one byte in size (the null byte).
- * \returns 0 if an error has occurred.
- * \pre params must be valid.
- * \pre out must be valid (not null!)
- **/
-IODA_DL size_t ioda_variable_creation_parameters_getDimensionScaleName(
-  const struct ioda_variable_creation_parameters* params, size_t len_out, char* out);
-
-/// @}
 /// @name Attributes
 /// @todo Implement these!
 /// @todo Attribute_Creator_Store should derive from Has_Attributes.
@@ -231,15 +140,6 @@ struct c_variable_creation_parameters {
   void (*noCompress)(struct ioda_variable_creation_parameters*);
   void (*compressWithGZIP)(struct ioda_variable_creation_parameters*, int);
   void (*compressWithSZIP)(struct ioda_variable_creation_parameters*, unsigned, unsigned);
-  bool (*hasSetDimScales)(const struct ioda_variable_creation_parameters*);
-  bool (*attachDimensionScale)(struct ioda_variable_creation_parameters*, unsigned int,
-                               const struct ioda_variable*);
-  bool (*setDimScale)(struct ioda_variable_creation_parameters*, size_t,
-                      const struct ioda_variable**);
-  int (*isDimensionScale)(const struct ioda_variable_creation_parameters*);
-  bool (*setIsDimensionScale)(struct ioda_variable_creation_parameters*, size_t, const char*);
-  size_t (*getDimensionScaleName)(const struct ioda_variable_creation_parameters*, size_t, char*);
-
   // Attributes TODO
 };
 

@@ -8,7 +8,11 @@
 
 #include <string>
 #include <typeindex>
+#include "ioda/Exception.h"
+#include "ioda/testconfig.h"
 
+// This header is internal to ioda. It is not callable by end-users outside of the
+// testing environment.
 #include "ioda/Layouts/Layout_ObsGroup.h"
 
 #include "eckit/testing/Test.h"

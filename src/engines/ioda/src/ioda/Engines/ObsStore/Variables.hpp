@@ -15,6 +15,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "./Attributes.hpp"
@@ -94,6 +95,8 @@ public:
   void resize(const std::vector<Dimensions_t>& new_dim_sizes);
   /// \brief returns true if requested type matches stored type
   bool isOfType(ObsTypes dtype) const;
+  /// \brief returns the data type.
+  inline std::pair<ObsTypes, size_t> dtype() const { return std::make_pair(dtype_, dtype_size_); }
 
   /// \brief Is there an associated fill value?
   /// \returns true if yes, false if no.

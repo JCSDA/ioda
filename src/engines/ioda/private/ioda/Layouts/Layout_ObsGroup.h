@@ -24,8 +24,9 @@ namespace ioda {
 namespace detail {
 /// Layout for ObsGroup-like data.
 class IODA_DL DataLayoutPolicy_ObsGroup : public DataLayoutPolicy {
-  /// \brief Record versioning information for this layout in the ioda object. Provides forward compatability.
-  const int32_t ObsGroup_Layout_Version = 0;
+  /// \brief Record versioning information for this layout in the ioda object. Provides forward
+  /// compatability.
+  static const int32_t ObsGroup_Layout_Version;
 
 public:
   virtual ~DataLayoutPolicy_ObsGroup();

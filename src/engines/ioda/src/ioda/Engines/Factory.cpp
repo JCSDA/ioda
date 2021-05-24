@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2020 UCAR
+ * (C) Copyright 2020-2021 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -11,6 +11,7 @@
 
 #include "ioda/Engines/HH.h"
 #include "ioda/Engines/ObsStore.h"
+#include "ioda/Exception.h"
 #include "ioda/Group.h"
 #include "ioda/defs.h"
 
@@ -53,8 +54,8 @@ Group constructFromCmdLine(int argc, char** argv, const std::string& defaultFile
   } else {
     ++it;
     if (it == opts.cend()) {
-      // Got the --ioda-engine-options token but nothing else
-      throw;  // jedi_throw.add("Reason", "Bad option --ioda-engine-options.");
+      throw Exception("Bad option --ioda-engine-options. Got the "
+        "--ioda-engine-options token but nothing else.", ioda_Here());
     }
 
     // convert array of c-string options into vector of strings
@@ -63,9 +64,8 @@ Group constructFromCmdLine(int argc, char** argv, const std::string& defaultFile
       for (size_t i = 0; i < n; ++i) {
         ++it;
         if (it == opts.cend())
-          throw; /* jedi_throw
-                  .add("Reason", "Bad option --ioda-engine-options. Wrong number of elements.")
-          .add("Expected", n); */
+          throw Exception("Bad option --ioda-engine-options. "
+            "Wrong number of elements.", ioda_Here()).add("Expected", n);
         res[i] = std::string(*it);
       }
       return res;
@@ -113,9 +113,8 @@ Group constructFromCmdLine(int argc, char** argv, const std::string& defaultFile
     } else if (sEngine == "obs-store") {
       backendName = BackendNames::ObsStore;
     } else {
-      throw; /* jedi_throw.add("Reason", "Bad option --ioda-engine-options. "
-              "Unknown engine.")
-              .add("Engine", sEngine); */
+      throw Exception("Bad option --ioda-engine-options. "
+              "Unknown engine.", ioda_Here()).add("Engine", sEngine);
     }
   }
   return constructBackend(backendName, params);
@@ -127,8 +126,8 @@ Group constructBackend(BackendNames name, BackendCreationParameters& params) {
     if (params.action == BackendFileActions::Open)
       return HH::openFile(params.fileName, params.openMode);
     if (params.action == BackendFileActions::Create)
-      return HH::createFile(params.fileName, params.createMode);
-    throw;  // jedi_throw.add("Reason", "Unknown BackendFileActions value");
+      return HH::createFile(params.fileName, params.createMode, HH::HDF5_Version_Range(HH::HDF5_Version::V18, HH::HDF5_Version::V110));
+    throw Exception("Unknown BackendFileActions value", ioda_Here());
   }
   if (name == BackendNames::Hdf5Mem) {
     if (params.action == BackendFileActions::Open)
@@ -136,13 +135,13 @@ Group constructBackend(BackendNames name, BackendCreationParameters& params) {
     if (params.action == BackendFileActions::Create)
       return HH::createMemoryFile(params.fileName, params.createMode, params.flush,
                                   params.allocBytes);
-    throw;  // jedi_throw.add("Reason", "Unknown BackendFileActions value");
+    throw Exception("Unknown BackendFileActions value", ioda_Here());
   }
   if (name == BackendNames::ObsStore) return ObsStore::createRootGroup();
 
   // If we get to here, then we have a backend name that is
   // not implemented yet.
-  throw;  // jedi_throw.add("Reason", "Backend not implemented yet");
+  throw Exception("Backend not implemented yet", ioda_Here());
 }
 }  // namespace Engines
 }  // namespace ioda

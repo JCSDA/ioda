@@ -16,6 +16,7 @@
 
 #include "./HH/Handles.h"
 #include "ioda/Types/Type.h"
+#include "ioda/Exception.h"
 #include "ioda/defs.h"
 
 namespace ioda {
@@ -24,6 +25,13 @@ namespace Engines {
 namespace HH {
 HH_Type::~HH_Type() = default;
 HH_Type::HH_Type(HH_hid_t h) : handle(h) {}
+
+size_t HH_Type::getSize() const {
+  size_t res = H5Tget_size(handle.get());
+  if (res == 0) throw Exception("H5Tget_size failed.", ioda_Here());
+  return res;
+}
+
 HH_Type_Provider::~HH_Type_Provider() = default;
 HH_Type_Provider* HH_Type_Provider::instance() {
   static HH_Type_Provider provider;
@@ -52,7 +60,7 @@ HH_hid_t HH_Type_Provider::getFundamentalHHType(std::type_index type) {
        {typeid(double), {H5T_NATIVE_DOUBLE}},
        {typeid(long double), {H5T_NATIVE_LDOUBLE}}};
 
-  if (!fundamental_types.count(type)) throw std::logic_error("HDF5 does not implement this type.");
+  if (!fundamental_types.count(type)) throw Exception("HDF5 does not implement this type as a fundamental type.", ioda_Here());
   return fundamental_types.at(type);
 }
 
@@ -71,7 +79,7 @@ Type HH_Type_Provider::makeArrayType(std::initializer_list<Dimensions_t> dimensi
   for (const auto& d : dimensions) hdims.push_back(gsl::narrow<hsize_t>(d));
   hid_t t = H5Tarray_create2(fundamental_type(), gsl::narrow<unsigned int>(dimensions.size()),
                              hdims.data());
-  if (t < 0) throw;
+  if (t < 0) throw Exception("Failed call to H5Tarray_create2.", ioda_Here());
   auto hnd = HH_hid_t(t, Handles::Closers::CloseHDF5Datatype::CloseP);
 
   return Type{std::make_shared<HH_Type>(hnd), typeOuter};
@@ -80,8 +88,9 @@ Type HH_Type_Provider::makeArrayType(std::initializer_list<Dimensions_t> dimensi
 Type HH_Type_Provider::makeStringType(size_t string_length, std::type_index typeOuter) const {
   if (string_length == Types::constants::_Variable_Length) string_length = H5T_VARIABLE;
   hid_t t = H5Tcreate(H5T_STRING, string_length);
-  if (t < 0) throw;
-  if (H5Tset_cset(t, H5T_CSET_UTF8) < 0) throw;
+  if (t < 0) throw Exception("Failed call to H5Tcreate.", ioda_Here());
+  if (H5Tset_cset(t, H5T_CSET_UTF8) < 0)
+    throw Exception("Failed call to H5Tset_cset.", ioda_Here());
   auto hnd = HH_hid_t(t, Handles::Closers::CloseHDF5Datatype::CloseP);
 
   return Type{std::make_shared<HH_Type>(hnd), typeOuter};

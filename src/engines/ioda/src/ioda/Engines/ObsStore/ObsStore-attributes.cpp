@@ -50,6 +50,12 @@ Attribute ObsStore_Attribute_Backend::read(gsl::span<char> data,
   return Attribute{std::make_shared<ObsStore_Attribute_Backend>(*this)};
 }
 
+Type ObsStore_Attribute_Backend::getType() const {
+  auto backend_type = backend_->dtype();
+  ObsTypeInfo typ{backend_type.first, backend_type.second};
+  return Type{std::make_shared<ObsStore_Type>(typ), typeid(ObsStore_Type)};
+}
+
 bool ObsStore_Attribute_Backend::isA(Type lhs) const {
   auto typeBackend               = std::dynamic_pointer_cast<ObsStore_Type>(lhs.getBackend());
   ioda::ObsStore::ObsTypes dtype = typeBackend->dtype();

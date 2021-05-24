@@ -19,4 +19,7 @@ FillValueData_t::FillValueUnion_t FillValueData_t::finalize() const {
   return ret;
 }
 }  // namespace detail
+namespace FillValuePolicies {
+
+}  // namespace FillValuePolicies
 }  // namespace ioda

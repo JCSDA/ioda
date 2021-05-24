@@ -6,114 +6,17 @@
 include(GNUInstallDirs)
 include(Targets)
 
-list(APPEND SRCS_IODA
-	include/ioda/defs.h
+## File definitions
+
+list(APPEND SRCS_ATTRIBUTES
 	include/ioda/Attributes/Attribute.h
 	include/ioda/Attributes/Attribute_Creator.h
-	include/ioda/Python/Att_ext.h
-	include/ioda/Engines/Capabilities.h
-	include/ioda/Exception.h
-	#include/ioda/Copying.h
-	include/ioda/Misc/compat/std/source_location_compat.h
-	include/ioda/Misc/Dimensions.h
-	include/ioda/Misc/Eigen_Compat.h
-	include/ioda/Misc/MergeMethods.h
-	include/ioda/Misc/Options.h
-	include/ioda/Misc/SFuncs.h
-	include/ioda/Misc/UnitConversions.h
-	include/ioda/Variables/Fill.h
-	src/ioda/Fill.cpp
-	include/ioda/Variables/FillPolicy.h
-	include/ioda/Group.h
-	include/ioda/Layout.h
 	include/ioda/Attributes/Has_Attributes.h
-	include/ioda/Variables/Has_Variables.h
-	include/ioda/Types/Marshalling.h
-	include/ioda/ObsGroup.h
-	include/ioda/Variables/Selection.h
-	include/ioda/Types/Type.h
-	include/ioda/Types/Type_Provider.h
-	include/ioda/Variables/Variable.h
-	include/ioda/Python/Var_ext.h
-	private/ioda/Layouts/Layout_ObsGroup.h
-	private/ioda/Layouts/Layout_ObsGroup_ODB.h
-	private/ioda/Layouts/Layout_ObsGroup_ODB_Params.h
+	include/ioda/Python/Att_ext.h
 	src/ioda/Attribute.cpp
 	src/ioda/Attribute_Creator.cpp
-	#src/ioda/Copying.cpp
-	src/ioda/Exception.cpp
 	src/ioda/Has_Attributes.cpp
-	src/ioda/Has_Variables.cpp
-	src/ioda/Group.cpp
-	src/ioda/ObsGroup.cpp
-	src/ioda/Selection.cpp
-	src/ioda/SFuncs.cpp
-	src/ioda/Type.cpp
-	src/ioda/Type_Provider.cpp
-	src/ioda/UnitConversions.cpp
-	src/ioda/Variable.cpp
-	src/ioda/Layouts/Layout.cpp
-	src/ioda/Layouts/Layout_ObsGroup.cpp
-	src/ioda/Layouts/Layout_ObsGroup_ODB.cpp
-  )
-list(APPEND SRCS_IODA_TYPES
-	include/ioda/Types/Complex.h
-	include/ioda/Types/Sample.h
 	)
-source_group("Custom Types" FILES ${SRCS_IODA_TYPES})
-list(APPEND SRCS_ENGINES_TOP
-	include/ioda/Engines/Factory.h
-	src/ioda/Engines/Factory.cpp)
-
-list(APPEND SRCS_ENGINES_HH 
-	include/ioda/Engines/HH.h
-	src/ioda/Engines/HH/HH.cpp
-
-	src/ioda/Engines/HH/HH/Handles.h
-	src/ioda/Engines/HH/Handles.cpp
-
-	src/ioda/Engines/HH/HH-attributes.cpp
-	src/ioda/Engines/HH/HH/HH-attributes.h
-	src/ioda/Engines/HH/HH-Filters.cpp
-	src/ioda/Engines/HH/HH/HH-Filters.h
-	src/ioda/Engines/HH/HH-groups.cpp
-	src/ioda/Engines/HH/HH/HH-groups.h
-	src/ioda/Engines/HH/HH-hasattributes.cpp
-	src/ioda/Engines/HH/HH/HH-hasattributes.h
-	src/ioda/Engines/HH/HH-hasvariables.cpp
-	src/ioda/Engines/HH/HH/HH-hasvariables.h
-	src/ioda/Engines/HH/HH-types.cpp
-	src/ioda/Engines/HH/HH/HH-types.h
-	src/ioda/Engines/HH/HH-variablecreation.cpp
-	src/ioda/Engines/HH/HH/HH-variablecreation.h
-	src/ioda/Engines/HH/HH-variables.cpp
-	src/ioda/Engines/HH/HH/HH-variables.h
-	)
-
-list(APPEND SRCS_ENGINES_OBS_STORE 
-	include/ioda/Engines/ObsStore.h
-	src/ioda/Engines/ObsStore/ObsStore.cpp
-	src/ioda/Engines/ObsStore/ObsStore-attributes.cpp
-	src/ioda/Engines/ObsStore/ObsStore-selection.cpp
-	src/ioda/Engines/ObsStore/ObsStore-types.cpp
-	src/ioda/Engines/ObsStore/ObsStore-variables.cpp
-	src/ioda/Engines/ObsStore/Attributes.hpp
-	src/ioda/Engines/ObsStore/VarAttrStore.hpp
-	src/ioda/Engines/ObsStore/Group.hpp
-	src/ioda/Engines/ObsStore/Selection.hpp
-	src/ioda/Engines/ObsStore/Types.hpp
-	src/ioda/Engines/ObsStore/Variables.hpp
-	src/ioda/Engines/ObsStore/ObsStore-attributes.h
-	src/ioda/Engines/ObsStore/ObsStore-groups.h
-	src/ioda/Engines/ObsStore/ObsStore-selection.h
-	src/ioda/Engines/ObsStore/ObsStore-types.h
-	src/ioda/Engines/ObsStore/ObsStore-variables.h
-	src/ioda/Engines/ObsStore/Attributes.cpp
-	src/ioda/Engines/ObsStore/Group.cpp
-	src/ioda/Engines/ObsStore/Selection.cpp
-	src/ioda/Engines/ObsStore/Variables.cpp
-	)
-
 list(APPEND SRCS_C_BINDINGS
 	include/ioda/C/Attribute_c.h
 	include/ioda/C/c_binding_macros.h
@@ -138,13 +41,177 @@ list(APPEND SRCS_C_BINDINGS
 	src/ioda/C/Has_Variables_c.cpp
 	src/ioda/C/Variable_c.cpp
 	)
+list(APPEND SRCS_GROUPS
+	include/ioda/Group.h
+	include/ioda/ObsGroup.h
+	src/ioda/Group.cpp
+	src/ioda/ObsGroup.cpp
+	)
+list(APPEND SRCS_LAYOUTS
+	include/ioda/Layout.h
+	private/ioda/Layouts/Layout_ObsGroup.h
+	src/ioda/Layouts/Layout.cpp
+	src/ioda/Layouts/Layout_ObsGroup.cpp
+	)
+list(APPEND SRCS_LAYOUTS_ODB
+	private/ioda/Layouts/Layout_ObsGroup_ODB.h
+	private/ioda/Layouts/Layout_ObsGroup_ODB_Params.h
+	src/ioda/Layouts/Layout_ObsGroup_ODB.cpp
+	)
+list(APPEND SRCS_MISC
+	include/ioda/defs.h
+	include/ioda/Exception.h
+	include/ioda/iodaNamespaceDoc.h
+	include/ioda/Misc/compat/std/source_location_compat.h
+	include/ioda/Misc/Dimensions.h
+	include/ioda/Misc/DimensionScales.h
+	include/ioda/Misc/Eigen_Compat.h
+	include/ioda/Misc/MergeMethods.h
+	include/ioda/Misc/Options.h
+	include/ioda/Misc/StringFuncs.h
+	include/ioda/Misc/UnitConversions.h
+	src/ioda/DimensionScales.cpp
+	src/ioda/Exception.cpp
+	src/ioda/StringFuncs.cpp
+	src/ioda/UnitConversions.cpp
+	)
+list(APPEND SRCS_TYPES
+	include/ioda/Misc/Eigen_Compat.h
+	include/ioda/Types/Complex.h
+	include/ioda/Types/Marshalling.h
+	include/ioda/Types/Sample.h
+	include/ioda/Types/Type.h
+	include/ioda/Types/Type_Provider.h
+	src/ioda/Type.cpp
+	src/ioda/Type_Provider.cpp
+	)
+list(APPEND SRCS_VARIABLES
+	include/ioda/Python/Var_ext.h
+	include/ioda/Variables/Fill.h
+	include/ioda/Variables/FillPolicy.h
+	include/ioda/Variables/Has_Variables.h
+	include/ioda/Variables/Selection.h
+	include/ioda/Variables/Variable.h
+	src/ioda/Fill.cpp
+	src/ioda/Has_Variables.cpp
+	src/ioda/Selection.cpp
+	src/ioda/Variable.cpp
+	)
 
+list(APPEND SRCS_ENGINES_TOP
+	include/ioda/Engines/Capabilities.h
+	include/ioda/Engines/Factory.h
+	src/ioda/Engines/Factory.cpp)
+list(APPEND SRCS_ENGINES_HH 
+	include/ioda/Engines/HH.h
+	src/ioda/Engines/HH/HH.cpp
+
+	src/ioda/Engines/HH/HH/Handles.h
+	src/ioda/Engines/HH/Handles.cpp
+
+	src/ioda/Engines/HH/HH-attributes.cpp
+	src/ioda/Engines/HH/HH/HH-attributes.h
+	src/ioda/Engines/HH/HH-Filters.cpp
+	src/ioda/Engines/HH/HH/HH-Filters.h
+	src/ioda/Engines/HH/HH-groups.cpp
+	src/ioda/Engines/HH/HH/HH-groups.h
+	src/ioda/Engines/HH/HH-hasattributes.cpp
+	src/ioda/Engines/HH/HH/HH-hasattributes.h
+	src/ioda/Engines/HH/HH-hasvariables.cpp
+	src/ioda/Engines/HH/HH/HH-hasvariables.h
+	src/ioda/Engines/HH/HH-types.cpp
+	src/ioda/Engines/HH/HH/HH-types.h
+	src/ioda/Engines/HH/HH-util.cpp
+	src/ioda/Engines/HH/HH/HH-util.h
+	src/ioda/Engines/HH/HH-variablecreation.cpp
+	src/ioda/Engines/HH/HH/HH-variablecreation.h
+	src/ioda/Engines/HH/HH-variables.cpp
+	src/ioda/Engines/HH/HH/HH-variables.h
+	)
+list(APPEND SRCS_ENGINES_OBS_STORE 
+	include/ioda/Engines/ObsStore.h
+	src/ioda/Engines/ObsStore/ObsStore.cpp
+	src/ioda/Engines/ObsStore/ObsStore-attributes.cpp
+	src/ioda/Engines/ObsStore/ObsStore-selection.cpp
+	src/ioda/Engines/ObsStore/ObsStore-types.cpp
+	src/ioda/Engines/ObsStore/ObsStore-variables.cpp
+	src/ioda/Engines/ObsStore/Attributes.hpp
+	src/ioda/Engines/ObsStore/VarAttrStore.hpp
+	src/ioda/Engines/ObsStore/Group.hpp
+	src/ioda/Engines/ObsStore/Selection.hpp
+	src/ioda/Engines/ObsStore/Types.hpp
+	src/ioda/Engines/ObsStore/Variables.hpp
+	src/ioda/Engines/ObsStore/ObsStore-attributes.h
+	src/ioda/Engines/ObsStore/ObsStore-groups.h
+	src/ioda/Engines/ObsStore/ObsStore-selection.h
+	src/ioda/Engines/ObsStore/ObsStore-types.h
+	src/ioda/Engines/ObsStore/ObsStore-variables.h
+	src/ioda/Engines/ObsStore/Attributes.cpp
+	src/ioda/Engines/ObsStore/Group.cpp
+	src/ioda/Engines/ObsStore/Selection.cpp
+	src/ioda/Engines/ObsStore/Variables.cpp
+	)
+
+source_group("Attributes" FILES ${SRCS_ATTRIBUTES})
 source_group("C Bindings" FILES ${SRCS_C_BINDINGS})
+source_group("Groups" FILES ${SRCS_GROUPS})
+source_group("Layouts" FILES ${SRCS_LAYOUTS} ${SRCS_LAYOUTS_ODB})
+source_group("Misc" FILES ${SRCS_MISC})
+source_group("Type System" FILES ${SRCS_TYPES})
+source_group("Variables" FILES ${SRCS_VARIABLES})
 source_group("Engines" FILES ${SRCS_ENGINES_TOP})
 source_group("Engines\\HH" FILES ${SRCS_ENGINES_HH})
 source_group("Engines\\ObsStore" FILES ${SRCS_ENGINES_OBS_STORE})
-add_library(ioda_engines SHARED ${SRCS_IODA} ${SRCS_C_BINDINGS} ${SRCS_ENGINES_HH} ${SRCS_ENGINES_TOP} ${SRCS_IODA_TYPES} ${SRCS_ENGINES_OBS_STORE})
 
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/ioda/config.h.in
+	${CMAKE_CURRENT_BINARY_DIR}/config/ioda/config.h)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/ioda/testconfig.h.in
+	${CMAKE_CURRENT_BINARY_DIR}/config/ioda/testconfig.h)
+
+## Define which source files are compiled.
+
+list(APPEND SRCS_IODA_ENGINES
+	${SRCS_ATTRIBUTES} ${SRCS_C_BINDINGS} ${SRCS_GROUPS}
+	${SRCS_LAYOUTS} ${SRCS_MISC} ${SRCS_TYPES} ${SRCS_VARIABLES}
+	${SRCS_ENGINES_TOP} ${SRCS_ENGINES_OBS_STORE}
+	${CMAKE_CURRENT_BINARY_DIR}/config/ioda/config.h
+	${CMAKE_CURRENT_BINARY_DIR}/config/ioda/testconfig.h
+	)
+if (eckit_FOUND AND oops_FOUND)
+	list(APPEND SRCS_IODA_ENGINES ${SRCS_LAYOUTS_ODB})
+endif()
+if (HDF5_FOUND)
+	list(APPEND SRCS_IODA_ENGINES ${SRCS_ENGINES_HH})
+endif()
+
+## Create options files that specify compilation options, available libraries,
+## and test file paths.
+
+
+## Create the library
+
+add_library(ioda_engines SHARED ${SRCS_IODA_ENGINES})
+# Macro to set libary paths (since we are not using ecbuild)
+addlib(ioda_engines SHARED ioda ioda_engines-targets)
+# Set lib versioning information
+set_property(TARGET ioda_engines PROPERTY VERSION ${IODA_ENGINES_VERSION})
+set_property(TARGET ioda_engines PROPERTY SOVERSION ${IODA_ENGINES_TWEAK})
+set_property(TARGET ioda_engines PROPERTY
+	INTERFACE_ioda_engines_MAJOR_VERSION ${IODA_ENGINES_MAJOR})
+set_property(TARGET ioda_engines APPEND PROPERTY
+	COMPATIBLE_INTERFACE_STRING ioda_engines_MAJOR_VERSION
+	)
+
+
+## Linking options
+
+target_link_libraries(ioda_engines PUBLIC gsl::gsl-lite)
+target_link_libraries(ioda_engines PUBLIC Eigen3::Eigen)
+
+if (eckit_FOUND)
+	target_link_libraries(ioda_engines PUBLIC eckit)
+endif()
+### find_package(HDF5) may set only a subset of these. Options depend on how HDF5 was built.
 if(DEFINED HDF5_C_DEFINITIONS)
 	target_compile_options(ioda_engines PRIVATE "${HDF5_C_DEFINITIONS}")
 endif()
@@ -161,37 +228,48 @@ if(HDF5_IS_PARALLEL)
 	target_link_libraries(ioda_engines PUBLIC MPI::MPI_C MPI::MPI_CXX)
 endif()
 
-target_link_libraries(ioda_engines PUBLIC eckit)
-target_link_libraries(ioda_engines PUBLIC oops)
-target_link_libraries(ioda_engines PUBLIC gsl::gsl-lite)
-target_link_libraries(ioda_engines PUBLIC Eigen3::Eigen)
+if (odc_FOUND)
+	target_link_libraries(ioda_engines PUBLIC odccore)
+endif()
+if (oops_FOUND)
+	target_link_libraries(ioda_engines PUBLIC oops)
+endif()
 
-addlib(ioda_engines SHARED ioda ioda_engines-targets)
-set_property(TARGET ioda_engines PROPERTY VERSION ${IODA_ENGINES_VERSION})
-set_property(TARGET ioda_engines PROPERTY SOVERSION ${IODA_ENGINES_TWEAK})
-set_property(TARGET ioda_engines PROPERTY
-	INTERFACE_ioda_engines_MAJOR_VERSION ${IODA_ENGINES_MAJOR})
-set_property(TARGET ioda_engines APPEND PROPERTY
-	COMPATIBLE_INTERFACE_STRING ioda_engines_MAJOR_VERSION
-	)
 
+## Include directories
 
 target_include_directories(ioda_engines PRIVATE
 	$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/private>
 	)
+# ioda/config.h and ioda/testconfig.h
+# ioda/config.h gets installed. ioda/testconfig.h does not.
+target_include_directories(ioda_engines PUBLIC
+	$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/config>
+	)
 
 target_include_directories(ioda_engines PUBLIC
 	$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-	$<INSTALL_INTERFACE:$<INSTALL_PREFIX>/${CMAKE_INSTALL_INCLUDEDIR}>	
+	$<INSTALL_INTERFACE:$<INSTALL_PREFIX>/${CMAKE_INSTALL_INCLUDEDIR}>
 	)
 
 INSTALL(DIRECTORY include/ioda
 	DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 	COMPONENT Headers)
 
+INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/config/ioda/config.h
+	DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/ioda
+	COMPONENT Headers)
+
+
+## Python library is built separately.
+
 if (BUILD_PYTHON_BINDINGS)
 	add_subdirectory(python)
 endif()
+
+
+## Installation and cpack options
+
 
 if (IODA_ENGINES_IS_PROJECT)
 	include(CMakePackageConfigHelpers)
@@ -242,3 +320,4 @@ else()
 		ARCHIVE DESTINATION ${INSTALL_LIB_DIR} )
 endif()
 
+add_subdirectory(src/mains)

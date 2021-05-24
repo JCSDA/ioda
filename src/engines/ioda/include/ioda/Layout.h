@@ -12,11 +12,10 @@
  * \brief Contains definitions for how data are arranged in ioda internally.
  */
 
-#include <boost/optional.hpp>
-#include <gsl/gsl-lite.hpp>
 #include <memory>
 #include <string>
 #include <typeindex>
+#include <utility>
 
 #include "ioda/defs.h"
 
@@ -120,8 +119,9 @@ public:
   virtual size_t getInputsNeeded(const std::string &) const;
 
   /// Returns the variable's unit if it has been specified.
+  /// \returns A pair of (found, unit) indicating if a unit was found and what it is.
   /// \throws If the input is not listed in Variables section of mapping file.
-  virtual boost::optional<std::string> getUnit(const std::string &) const;
+  virtual std::pair<bool, std::string> getUnit(const std::string &) const;
 
   /// A descriptive name for the policy.
   virtual std::string name() const;

@@ -81,66 +81,6 @@ void ioda_variable_creation_parameters_compressWithSZIP(struct ioda_variable_cre
   C_CATCH_AND_TERMINATE;
 }
 
-bool ioda_variable_creation_parameters_hasSetDimScales(
-  const struct ioda_variable_creation_parameters* p) {
-  C_TRY;
-  Expects(p != nullptr);
-  C_CATCH_AND_RETURN(p->params.hasSetDimScales(), false);
-}
-
-bool ioda_variable_creation_parameters_attachDimensionScale(
-  struct ioda_variable_creation_parameters* p, unsigned int DimensionNumber,
-  const struct ioda_variable* scale) {
-  C_TRY;
-  Expects(p != nullptr);
-  Expects(scale != nullptr);
-  p->params.attachDimensionScale(DimensionNumber, scale->var);
-  C_CATCH_AND_RETURN(true, false);
-}
-
-bool ioda_variable_creation_parameters_setDimScale(struct ioda_variable_creation_parameters* p,
-                                                   size_t n_dims,
-                                                   const struct ioda_variable** dims) {
-  C_TRY;
-  Expects(p != nullptr);
-  Expects(dims != nullptr);
-  for (size_t i = 0; i < n_dims; ++i) Expects(dims[i] != nullptr);
-
-  for (size_t i = 0; i < n_dims; ++i)
-    p->params.attachDimensionScale(gsl::narrow<unsigned int>(i), dims[i]->var);
-  C_CATCH_AND_RETURN(true, false);
-}
-
-int ioda_variable_creation_parameters_isDimensionScale(
-  const struct ioda_variable_creation_parameters* p) {
-  bool res = false;
-  C_TRY;
-  Expects(p != nullptr);
-  res = p->params.isDimensionScale();
-  C_CATCH_AND_RETURN((res) ? 1 : 0, -1);
-}
-
-bool ioda_variable_creation_parameters_setIsDimensionScale(
-  struct ioda_variable_creation_parameters* p, size_t sz, const char* dimensionScaleName) {
-  C_TRY;
-  Expects(p != nullptr);
-  Expects(dimensionScaleName != nullptr);
-  p->params.setIsDimensionScale(std::string(dimensionScaleName, sz));
-  C_CATCH_AND_RETURN(true, false);
-}
-
-size_t ioda_variable_creation_parameters_getDimensionScaleName(
-  const struct ioda_variable_creation_parameters* p, size_t len_out, char* out) {
-  C_TRY;
-  Expects(p != nullptr);
-  Expects(out != nullptr);
-  std::string name = p->params.getDimensionScaleName();
-  if (name.size() == SIZE_MAX) throw std::logic_error("Dimension scale name is too large.");
-  ioda::detail::COMPAT_strncpy_s(out, len_out, name.data(), name.size() + 1);
-
-  C_CATCH_AND_RETURN(name.size() + 1, 0);
-}
-
 // Fill value
 #define IODA_VCP_FILL_IMPL(funcnamestr, Type)                                                      \
   IODA_DL void funcnamestr(struct ioda_variable_creation_parameters* p, Type value) {              \

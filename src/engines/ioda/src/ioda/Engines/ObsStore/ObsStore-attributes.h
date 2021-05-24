@@ -56,6 +56,10 @@ public:
   /// \param in_memory_dataType frontend type marker
   Attribute read(gsl::span<char> data, const Type& in_memory_dataType) const final;
 
+  /// \brief Encapsulate the internal ObsStore_Type object as a Type.
+  /// \returns the wrapped type.
+  Type getType() const final;
+
   /// \brief check if requested type matches stored type
   /// \param lhs frontend type marker
   bool isA(Type lhs) const final;

@@ -21,6 +21,7 @@
 #include "oops/base/ObsSpaceBase.h"
 #include "oops/base/Variables.h"
 #include "oops/util/DateTime.h"
+#include "ioda/ObsSpaceParameters.h"
 
 
 // Forward declarations
@@ -48,9 +49,14 @@ class ObsSpace : public oops::ObsSpaceBase {
   ~ObsSpace();
 
   std::size_t globalNumLocs() const;
-  std::size_t nlocs() const;
   std::size_t nrecs() const;
   std::size_t nvars() const;
+  std::size_t nlocs() const;
+  std::size_t nchans() const;
+  std::string get_dim_name(const ObsDimensionId) const;
+  std::size_t get_dim_size(const ObsDimensionId) const;
+  ObsDimensionId get_dim_id(const std::string &) const;
+
   const std::vector<std::size_t> & recnum() const;
   const std::vector<std::size_t> & index() const;
 
@@ -62,26 +68,36 @@ class ObsSpace : public oops::ObsSpaceBase {
   std::string obs_sort_order() const;
 
   void get_db(const std::string & group, const std::string & name,
-              std::vector<int> & vdata) const;
+              std::vector<int> & vdata,
+              const std::vector<int> & chanSelect = { }) const;
   void get_db(const std::string & group, const std::string & name,
-              std::vector<float> & vdata) const;
+              std::vector<float> & vdata,
+              const std::vector<int> & chanSelect = { }) const;
   void get_db(const std::string & group, const std::string & name,
-              std::vector<double> & vdata) const;
+              std::vector<double> & vdata,
+              const std::vector<int> & chanSelect = { }) const;
   void get_db(const std::string & group, const std::string & name,
-              std::vector<std::string> & vdata) const;
+              std::vector<std::string> & vdata,
+              const std::vector<int> & chanSelect = { }) const;
   void get_db(const std::string & group, const std::string & name,
-              std::vector<util::DateTime> & vdata) const;
+              std::vector<util::DateTime> & vdata,
+              const std::vector<int> & chanSelect = { }) const;
 
   void put_db(const std::string & group, const std::string & name,
-              const std::vector<int> & vdata);
+              const std::vector<int> & vdata,
+              const std::vector<std::string> & dimList = { "nlocs" });
   void put_db(const std::string & group, const std::string & name,
-              const std::vector<float> & vdata);
+              const std::vector<float> & vdata,
+              const std::vector<std::string> & dimList = { "nlocs" });
   void put_db(const std::string & group, const std::string & name,
-              const std::vector<double> & vdata);
+              const std::vector<double> & vdata,
+              const std::vector<std::string> & dimList = { "nlocs" });
   void put_db(const std::string & group, const std::string & name,
-              const std::vector<std::string> & vdata);
+              const std::vector<std::string> & vdata,
+              const std::vector<std::string> & dimList = { "nlocs" });
   void put_db(const std::string & group, const std::string & name,
-              const std::vector<util::DateTime> & vdata);
+              const std::vector<util::DateTime> & vdata,
+              const std::vector<std::string> & dimList = { "nlocs" });
 
   bool obsAreSorted() const { return obsspace_->obsAreSorted(); }
   const RecIdxIter recidx_begin() const;
@@ -100,6 +116,8 @@ class ObsSpace : public oops::ObsSpaceBase {
   const util::DateTime & windowEnd() const {return obsspace_->windowEnd();}
   /*! \details This method will return the associated MPI communicator */
   const eckit::mpi::Comm & comm() const {return obsspace_->comm();}
+
+  const ObsSpaceParameters & params() const {return obsspace_->params();}
 
   const oops::Variables & obsvariables() const {return obsspace_->obsvariables();}
 

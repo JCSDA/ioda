@@ -19,6 +19,7 @@
 #include "ioda/C/c_binding_macros.h"  // C_TRY and C_CATCH_AND_TERMINATE
 #include "ioda/Engines/HH.h"
 #include "ioda/Engines/ObsStore.h"
+#include "ioda/Exception.h"
 
 extern "C" {
 
@@ -52,7 +53,7 @@ IODA_DL ioda_group* ioda_Engines_HH_openFile(size_t sz_filename, const char* fil
   const std::map<ioda_Engines_BackendOpenModes, ioda::Engines::BackendOpenModes> m{
     {ioda_Engines_BackendOpenModes_Read_Only, ioda::Engines::BackendOpenModes::Read_Only},
     {ioda_Engines_BackendOpenModes_Read_Write, ioda::Engines::BackendOpenModes::Read_Write}};
-  if (!m.count(mode)) throw;  // jedi_Unimplemented;
+  if (!m.count(mode)) throw ioda::Exception("Unimplemented Backend Open Mode", ioda_Here());
 
   res->g = ioda::Engines::HH::openFile(std::string(filename, sz_filename), m.at(mode));
   C_CATCH_RETURN_FREE(res, NULL, res);
@@ -69,7 +70,7 @@ IODA_DL ioda_group* ioda_Engines_HH_createFile(size_t sz_filename, const char* f
      ioda::Engines::BackendCreateModes::Truncate_If_Exists},
     {ioda_Engines_BackendCreateModes_Fail_If_Exists,
      ioda::Engines::BackendCreateModes::Fail_If_Exists}};
-  if (!m.count(mode)) throw;  // jedi_Unimplemented;
+  if (!m.count(mode)) throw ioda::Exception("Unimplemented Backend Creation Mode", ioda_Here());
 
   res->g = ioda::Engines::HH::createFile(std::string(filename, sz_filename), m.at(mode));
   C_CATCH_RETURN_FREE(res, NULL, res);

@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "ioda/Engines/HH.h"
+#include "ioda/Exception.h"
 #include "ioda/Group.h"
 #include "ioda/ObsGroup.h"
 #include "ioda/defs.h"
@@ -24,7 +25,7 @@ int main(int, char**) {
     Variable datetime = f.vars["datetime@MetaData"];
     Variable variable_names = f.vars["variable_names@VarMetaData"];
 
-    if (!datetime.isA<string>()) throw jedi_throw.add("Reason", "Unexpected type.");
+    if (!datetime.isA<string>()) throw ioda::Exception("Unexpected type.", ioda_Here());
 
     // vector<char> vd = datetime.readAsVector<char>();
 
@@ -39,7 +40,7 @@ int main(int, char**) {
 
     return 0;
   } catch (const std::exception& e) {
-    std::cerr << e.what() << std::endl;
+    ioda::unwind_exception_stack(e);
     return 1;
   } catch (...) {
     std::cerr << "Unknown exception." << std::endl;

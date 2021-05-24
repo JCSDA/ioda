@@ -30,7 +30,6 @@ class IODA_HIDDEN HH_Attribute : public ioda::detail::Attribute_Backend,
                                  public std::enable_shared_from_this<HH_Attribute> {
 private:
   HH_hid_t attr_;
-  detail::Type_Provider* getTypeProvider() const final;
 
 public:
   HH_Attribute();
@@ -48,7 +47,16 @@ public:
   void read(gsl::span<char> data, HH_hid_t in_memory_dataType) const;
   Attribute read(gsl::span<char> data, const Type& in_memory_dataType) const final;
 
-  HH_hid_t type() const;
+  /// @brief Get HDF5-internal type.
+  /// @return Handle to HDF5-internal type.
+  HH_hid_t internalType() const;
+  detail::Type_Provider* getTypeProvider() const final;
+
+  /// @brief Get HDF5-internal type, wrapped as a ioda::Type object.
+  /// @details This is used to pass information from
+  /// @return The wrapped type.
+  Type getType() const final;
+
   bool isA(HH_hid_t ttype) const;
   bool isA(Type lhs) const final;
   HH_hid_t space() const;

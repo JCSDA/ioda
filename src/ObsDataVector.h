@@ -207,7 +207,7 @@ void ObsDataVector<DATATYPE>::save(const std::string & name) const {
   oops::Log::trace() << "ObsDataVector::save, name = " << name << std::endl;
   std::vector<DATATYPE> tmp(nlocs_);
   for (size_t jv = 0; jv < nvars_; ++jv) {
-    for (size_t jj = 0; jj < nlocs_; ++jj) {
+    for (std::size_t jj = 0; jj < tmp.size(); ++jj) {
       tmp.at(jj) = rows_.at(jv).at(jj);
     }
     obsdb_.put_db(name, obsvars_.variables()[jv], tmp);

@@ -8,8 +8,10 @@
 #include "ioda/Variables/Has_Variables.h"
 
 #include "ioda/Engines/Factory.h"
+#include "ioda/Exception.h"
 #include "ioda/Layout.h"
 #include "ioda/ObsGroup.h"
+#include "ioda/testconfig.h"
 
 #include "eckit/testing/Test.h"
 
@@ -23,7 +25,8 @@ const int locations = 40;
 const int channels = 30;
 CASE("Stitch variables, remove originals defaulted as true") {
   typedef std::string str;
-  str mappingFile = str(TEST_SOURCE_DIR) + "/hasvariables_stitching_map.yaml";
+  str mappingFile = str(IODA_ENGINES_TEST_SOURCE_DIR)
+    + "/variables/hasvariables_stitching_map.yaml";
   Engines::BackendNames backendName = Engines::BackendNames::Hdf5File;
   Engines::BackendCreationParameters backendParams;
   backendParams.fileName = "ioda-engines_hasvariables_stitch-file.hdf5";
@@ -44,13 +47,11 @@ CASE("Stitch variables, remove originals defaulted as true") {
   ioda::Variable oneVar = backend.vars.create<str>("oneVariableCombination", {5});
   oneVar.write<str>({str("foo"), str("bar"), str("baz"), str("lorem"), str("ipsum")});
 
+  NewDimensionScales_t newDims;
+  newDims.push_back(NewDimensionScale<int>("nlocs", locations, ioda::Unlimited, locations));
+  newDims.push_back(NewDimensionScale<int>("nchans", channels, channels, channels));
   ObsGroup og = ObsGroup::generate(
-          backend,
-          {
-            std::make_shared<NewDimensionScale<int>>(
-            "nlocs", locations, ioda::Unlimited, locations),
-            std::make_shared<NewDimensionScale<int>>(
-            "nchans", channels, channels, channels), },
+          backend, newDims,
           detail::DataLayoutPolicy::generate(detail::DataLayoutPolicy::Policies::ObsGroupODB,
                                              mappingFile));
 
@@ -86,7 +87,8 @@ CASE("Stitch variables, remove originals defaulted as true") {
 
 CASE("Stitch variables, remove originals set to false") {
   typedef std::string str;
-  str mappingFile = str(TEST_SOURCE_DIR) + "/hasvariables_stitching_map.yaml";
+  str mappingFile = str(IODA_ENGINES_TEST_SOURCE_DIR)
+    + "/variables/hasvariables_stitching_map.yaml";
   Engines::BackendNames backendName = Engines::BackendNames::Hdf5File;
   Engines::BackendCreationParameters backendParams;
   backendParams.fileName = "ioda-engines_hasvariables_stitch-file-originals-kept.hdf5";
@@ -107,13 +109,11 @@ CASE("Stitch variables, remove originals set to false") {
   ioda::Variable oneVar = backend.vars.create<str>("oneVariableCombination", {5});
   oneVar.write<str>({str("foo"), str("bar"), str("baz"), str("lorem"), str("ipsum")});
 
+  NewDimensionScales_t newDims;
+  newDims.push_back(NewDimensionScale<int>("nlocs", locations, ioda::Unlimited, locations));
+  newDims.push_back(NewDimensionScale<int>("nchans", channels, channels, channels));
   ObsGroup og = ObsGroup::generate(
-          backend,
-          {
-            std::make_shared<NewDimensionScale<int>>(
-            "nlocs", locations, ioda::Unlimited, locations),
-            std::make_shared<NewDimensionScale<int>>(
-            "nchans", channels, channels, channels), },
+          backend, newDims,
           detail::DataLayoutPolicy::generate(detail::DataLayoutPolicy::Policies::ObsGroupODB,
                                              mappingFile));
   EXPECT(og.vars.exists(str("completeCombinationPart1")));

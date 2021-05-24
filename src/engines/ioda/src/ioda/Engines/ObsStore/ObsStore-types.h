@@ -73,6 +73,7 @@ public:
 
   /// \brief return size (in bytes) of given type
   std::size_t dtype_size() const;
+  size_t getSize() const final;
 };
 }  // namespace ObsStore
 }  // namespace Engines

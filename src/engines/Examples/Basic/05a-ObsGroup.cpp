@@ -78,6 +78,7 @@
 
 #include "Eigen/Dense"             // Eigen Arrays and Matrices
 #include "ioda/Engines/Factory.h"  // Used to kickstart the Group engine.
+#include "ioda/Exception.h"        // Exceptions and debugging
 #include "ioda/Group.h"            // Groups have attributes.
 #include "ioda/ObsGroup.h"
 #include "unsupported/Eigen/CXX11/Tensor"  // Eigen Tensors
@@ -168,17 +169,19 @@ int main(int argc, char** argv) {
     // per element. An individual dimension scale spec is held in a NewDimensionsScale
     // object, whose constructor arguments are:
     //       1st - dimension scale name
-    //       2nd - size of dimension
+    //       2nd - size of dimension. May be zero.
     //       3rd - maximum size of dimension
     //              resizeable dimensions are said to have "unlimited" size, so there
     //              is a built-in variable ("Unlimited") that can be used to denote
-    //              unlimited size
-    //       4th - suggested chunk size for dimension (and associated variables)
+    //              unlimited size. If Unspecified (the default), we assume that the
+    //              maximum size is the same as the initial size (the previous parameter).
+    //       4th - suggested chunk size for dimension (and associated variables).
+    //              This defaults to the initial size. This parameter must be nonzero. If
+    //              the initial size is zero, it must be explicitly specified.
+    //
     ioda::NewDimensionScales_t newDims;
-    newDims.push_back(
-      std::make_shared<ioda::NewDimensionScale<int>>("nlocs", numLocs, Unlimited, numLocs));
-    newDims.push_back(
-      std::make_shared<ioda::NewDimensionScale<int>>("nchans", numChans, numChans, numChans));
+    newDims.push_back(NewDimensionScale<int>("nlocs", numLocs, Unlimited, numLocs));
+    newDims.push_back(NewDimensionScale<int>("nchans", numChans, numChans, numChans));
 
     // Construct an ObsGroup object, with 2 dimensions nlocs, nchans, and attach
     // the backend we constructed above. Under the hood, the ObsGroup::generate function
@@ -257,7 +260,7 @@ int main(int argc, char** argv) {
 
     // Done!
   } catch (const std::exception& e) {
-    cerr << "An error occurred.\n\n" << e.what() << endl;
+    ioda::unwind_exception_stack(e);
     return 1;
   }
   return 0;

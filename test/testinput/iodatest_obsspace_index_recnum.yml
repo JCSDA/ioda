@@ -9,89 +9,89 @@ observations:
     distribution: "RoundRobin"
     obsdatain:
       obsfile: "Data/testinput_tier_1/obsspace_index_recnum.nc4"
-    test data:
-      nlocs: 16
-      nrecs: 16
-      nvars: 1
-      obs are sorted: false
-      mpi size1:
-        rank0:
-          index: [ 0, 1, 3, 4, 5, 6, 8, 9, 10, 11, 14, 15, 16, 17, 18, 19 ]
-          recnum: [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 ]
-          recidx:
-            rec0: [ 0 ]
-            rec1: [ 1 ]
-            rec2: [ 2 ]
-            rec3: [ 3 ]
-            rec4: [ 4 ]
-            rec5: [ 5 ]
-            rec6: [ 6 ]
-            rec7: [ 7 ]
-            rec8: [ 8 ]
-            rec9: [ 9 ]
-            rec10: [ 10 ]
-            rec11: [ 11 ]
-            rec12: [ 12 ]
-            rec13: [ 13 ]
-            rec14: [ 14 ]
-            rec15: [ 15 ]
+  test data:
+    nlocs: 16
+    nrecs: 16
+    nvars: 1
+    obs are sorted: false
+    mpi size1:
+      rank0:
+        index: [ 0, 1, 3, 4, 5, 6, 8, 9, 10, 11, 14, 15, 16, 17, 18, 19 ]
+        recnum: [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 ]
+        recidx:
+          rec0: [ 0 ]
+          rec1: [ 1 ]
+          rec2: [ 2 ]
+          rec3: [ 3 ]
+          rec4: [ 4 ]
+          rec5: [ 5 ]
+          rec6: [ 6 ]
+          rec7: [ 7 ]
+          rec8: [ 8 ]
+          rec9: [ 9 ]
+          rec10: [ 10 ]
+          rec11: [ 11 ]
+          rec12: [ 12 ]
+          rec13: [ 13 ]
+          rec14: [ 14 ]
+          rec15: [ 15 ]
 
-      mpi size2:
-        rank0:
-          index: [ 0, 3, 5, 8, 10, 14, 16, 18 ]
-          recnum: [ 0, 2, 4, 6, 8, 10, 12, 14 ]
-          recidx:
-            rec0: [ 0 ]
-            rec2: [ 1 ]
-            rec4: [ 2 ]
-            rec6: [ 3 ]
-            rec8: [ 4 ]
-            rec10: [ 5 ]
-            rec12: [ 6 ]
-            rec14: [ 7 ]
-        rank1:
-          index: [ 1, 4, 6, 9, 11, 15, 17, 19 ]
-          recnum: [ 1, 3, 5, 7, 9, 11, 13, 15 ]
-          recidx:
-            rec1: [ 0 ]
-            rec3: [ 1 ]
-            rec5: [ 2 ]
-            rec7: [ 3 ]
-            rec9: [ 4 ]
-            rec11: [ 5 ]
-            rec13: [ 6 ]
-            rec15: [ 7 ]
-      mpi size4:
-        rank0:
-          index: [ 0, 5, 10, 16 ]
-          recnum: [ 0, 4, 8, 12 ]
-          recidx:
-            rec0: [ 0 ]
-            rec4: [ 1 ]
-            rec8: [ 2 ]
-            rec12: [ 3 ]
-        rank1:
-          index: [ 1, 6, 11, 17 ]
-          recnum: [ 1, 5, 9,  13 ]
-          recidx:
-            rec1: [ 0 ]
-            rec5: [ 1 ]
-            rec9: [ 2 ]
-            rec13: [ 3 ]
-        rank2:
-          index: [ 3, 8, 14, 18 ]
-          recnum: [ 2, 6, 10, 14 ]
-          recidx:
-            rec2: [ 0 ]
-            rec6: [ 1 ]
-            rec10: [ 2 ]
-            rec14: [ 3 ]
-        rank3:
-          index: [ 4, 9, 15, 19 ]
-          recnum: [ 3, 7, 11, 15 ]
-          recidx:
-            rec3: [ 0 ]
-            rec7: [ 1 ]
-            rec11: [ 2 ]
-            rec15: [ 3 ]
+    mpi size2:
+      rank0:
+        index: [ 0, 3, 5, 8, 10, 14, 16, 18 ]
+        recnum: [ 0, 2, 4, 6, 8, 10, 12, 14 ]
+        recidx:
+          rec0: [ 0 ]
+          rec2: [ 1 ]
+          rec4: [ 2 ]
+          rec6: [ 3 ]
+          rec8: [ 4 ]
+          rec10: [ 5 ]
+          rec12: [ 6 ]
+          rec14: [ 7 ]
+      rank1:
+        index: [ 1, 4, 6, 9, 11, 15, 17, 19 ]
+        recnum: [ 1, 3, 5, 7, 9, 11, 13, 15 ]
+        recidx:
+          rec1: [ 0 ]
+          rec3: [ 1 ]
+          rec5: [ 2 ]
+          rec7: [ 3 ]
+          rec9: [ 4 ]
+          rec11: [ 5 ]
+          rec13: [ 6 ]
+          rec15: [ 7 ]
+    mpi size4:
+      rank0:
+        index: [ 0, 5, 10, 16 ]
+        recnum: [ 0, 4, 8, 12 ]
+        recidx:
+          rec0: [ 0 ]
+          rec4: [ 1 ]
+          rec8: [ 2 ]
+          rec12: [ 3 ]
+      rank1:
+        index: [ 1, 6, 11, 17 ]
+        recnum: [ 1, 5, 9,  13 ]
+        recidx:
+          rec1: [ 0 ]
+          rec5: [ 1 ]
+          rec9: [ 2 ]
+          rec13: [ 3 ]
+      rank2:
+        index: [ 3, 8, 14, 18 ]
+        recnum: [ 2, 6, 10, 14 ]
+        recidx:
+          rec2: [ 0 ]
+          rec6: [ 1 ]
+          rec10: [ 2 ]
+          rec14: [ 3 ]
+      rank3:
+        index: [ 4, 9, 15, 19 ]
+        recnum: [ 3, 7, 11, 15 ]
+        recidx:
+          rec3: [ 0 ]
+          rec7: [ 1 ]
+          rec11: [ 2 ]
+          rec15: [ 3 ]
 

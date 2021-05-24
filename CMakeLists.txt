@@ -33,7 +33,11 @@ option( ENABLE_IODA_DOC "Build IODA documentation" OFF )
 # Required
 find_package( jedicmake QUIET )  # Prefer find modules from jedi-cmake
 find_package( OpenMP COMPONENTS C CXX Fortran )
+set(HDF5_PREFER_PARALLEL true) # CMake sometimes mistakenly finds a serial system-provided HDF5.
+find_package( HDF5 REQUIRED COMPONENTS C HL )
+find_package( MPI REQUIRED )
 find_package( NetCDF REQUIRED COMPONENTS C )
+find_package( jedicmake REQUIRED )
 find_package( eckit 1.11.6 REQUIRED )
 find_package( fckit 0.7.0 REQUIRED )
 find_package( oops 1.0.0 REQUIRED )
@@ -60,3 +64,4 @@ ecbuild_add_test( TARGET ${PROJECT_NAME}_coding_norms
 ecbuild_install_project( NAME ${PROJECT_NAME} )
 
 ecbuild_print_summary()
+

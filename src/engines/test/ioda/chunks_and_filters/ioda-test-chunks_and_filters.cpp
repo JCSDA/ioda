@@ -9,6 +9,7 @@
 
 #include "ioda/Engines/Capabilities.h"
 #include "ioda/Engines/Factory.h"
+#include "ioda/Exception.h"
 #include "ioda/Group.h"
 
 template <class T>
@@ -119,7 +120,7 @@ int main(int argc, char **argv) {
     std::cout << "\n\nSuccesses: " << good << "\nFailures: " << bad << std::endl;
     return (bad) ? 1 : 0;
   } catch (const std::exception &e) {
-    cerr << e.what() << endl;
+    ioda::unwind_exception_stack(e);
     return 1;
   }
 }

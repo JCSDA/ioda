@@ -42,6 +42,7 @@ public:
   virtual ~HH_Type();
   HH_hid_t handle;
   HH_Type(HH_hid_t h);
+  size_t getSize() const final;
 };
 }  // namespace HH
 }  // namespace Engines

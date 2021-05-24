@@ -23,15 +23,15 @@ def DownloadUntar(download_base_url, testfiles_path, testfiles_name, md5check):
   tar_file.close()
 
 if (md5check == "1") :
-  #  if .tar.gz and .tar.gz.md5 exist 
+  #  if .tar.gz and .tar.gz.md5 exist
   #  then download s3 md5
   #  and compare with local md5
   if os.path.isfile(testfiles_path+"/"+testfiles_name) and os.path.isfile(testfiles_path+"/"+testfiles_name+".md5") :
     print("local files found")
-  
+
     #  dl md5 save it as *.md5.dl
     urllib.request.urlretrieve( download_base_url+"/"+testfiles_name+".md5", testfiles_path+"/"+testfiles_name+".md5.dl")
-  
+
     #  compare *md5.dl with md5 local
     with open(testfiles_path+"/"+testfiles_name+".md5", 'r') as f:
       md5_local = f.read()

@@ -22,6 +22,7 @@
 #  include <iostream>
 #  include <stdexcept>
 #  include <string>
+#  include "ioda/Exception.h"
 #endif  // ifndef __CPLUSPLUS
 
 /*! \def C_TRY
@@ -41,7 +42,7 @@
 #define C_CATCH_AND_TERMINATE                                                                      \
   }                                                                                                \
   catch (std::exception & e) {                                                                     \
-    std::cerr << e.what() << std::endl;                                                            \
+    ioda::unwind_exception_stack(e);                                     \
     std::terminate();                                                                              \
   }                                                                                                \
   catch (...) {                                                                                    \
@@ -56,7 +57,7 @@
   return (retval_on_success);                                                                      \
   }                                                                                                \
   catch (std::exception & e) {                                                                     \
-    std::cerr << e.what() << std::endl;                                                            \
+    ioda::unwind_exception_stack(e);                                     \
     return retval_on_error;                                                                        \
   }                                                                                                \
   catch (...) {                                                                                    \
@@ -71,7 +72,7 @@
   return (retval_on_success);                                                                      \
   }                                                                                                \
   catch (std::exception & e) {                                                                     \
-    std::cerr << e.what() << std::endl;                                                            \
+    ioda::unwind_exception_stack(e);                                     \
     delete freeable;                                                                               \
     return retval_on_error;                                                                        \
   }                                                                                                \

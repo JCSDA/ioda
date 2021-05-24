@@ -5,16 +5,16 @@
 
 include(Targets)
 
-ecbuild_add_test ( TARGET     test_ioda-engines_hasvariables_stitchcomplementaryvars
-                   SOURCES    test_stitchcomplementaryvariables.cpp
-                   LIBS       ioda_engines )
+if (eckit_FOUND AND oops_FOUND)
 
-ecbuild_add_test ( TARGET     test_ioda-engines_hasvariables_convertvariableunits
-                   SOURCES    test_convertvariableunits.cpp
-                   LIBS       ioda_engines)
+	add_executable(test_ioda-engines_hasvariables_stitchcomplementaryvars test_stitchcomplementaryvariables.cpp)
+	addapp(test_ioda-engines_hasvariables_stitchcomplementaryvars)
+	target_link_libraries(test_ioda-engines_hasvariables_stitchcomplementaryvars PUBLIC ioda_engines)
+	add_test(NAME test_ioda-engines_hasvariables_stitchcomplementaryvars COMMAND test_ioda-engines_hasvariables_stitchcomplementaryvars)
 
-target_compile_definitions(test_ioda-engines_hasvariables_stitchcomplementaryvars PRIVATE
-  TEST_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
-
-target_compile_definitions(test_ioda-engines_hasvariables_convertvariableunits PRIVATE
-  TEST_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
+	add_executable(test_ioda-engines_hasvariables_convertvariableunits test_convertvariableunits.cpp)
+	addapp(test_ioda-engines_hasvariables_convertvariableunits)
+	target_link_libraries(test_ioda-engines_hasvariables_convertvariableunits PUBLIC ioda_engines)
+	add_test(NAME test_ioda-engines_hasvariables_convertvariableunits COMMAND test_ioda-engines_sfuncs_concatstringvectors)
+	
+endif()

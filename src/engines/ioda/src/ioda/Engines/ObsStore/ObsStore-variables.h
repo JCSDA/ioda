@@ -62,6 +62,10 @@ public:
   /// \brief return an ObsStore type marker
   detail::Type_Provider* getTypeProvider() const final;
 
+  /// \brief Encapsulate the internal ObsStore_Type object as a Type. 
+  /// \returns the wrapped type.
+  Type getType() const final;
+
   /// \brief return true if requested type matches stored type
   /// \param lhs type being requested
   bool isA(Type lhs) const final;

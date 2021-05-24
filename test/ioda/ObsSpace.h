@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2018 UCAR
+ * (C) Copyright 2018-2021 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -38,6 +38,12 @@ class ObsSpaceTestFixture : private boost::noncopyable {
     return *getInstance().ospaces_.at(ii);
   }
   static std::size_t size() {return getInstance().ospaces_.size();}
+  static void cleanup() {
+    auto &spaces = getInstance().ospaces_;
+    for (auto &space : spaces) {
+      space.reset();
+    }
+  }
 
  private:
   static ObsSpaceTestFixture & getInstance() {
@@ -75,27 +81,40 @@ void testConstructor() {
   ::test::TestEnvironment::config().get("observations", conf);
 
   for (std::size_t jj = 0; jj < Test_::size(); ++jj) {
-    std::string DistMethod = conf[jj].getString("obs space.distribution", "RoundRobin");
+    // Grab the obs space and test data configurations
+    eckit::LocalConfiguration obsConfig;
+    eckit::LocalConfiguration testConfig;
+    conf[jj].get("obs space", obsConfig);
+    conf[jj].get("test data", testConfig);
 
-    std::size_t Nvars = Test_::obspace(jj).nvars();
-    std::size_t Nlocs = Test_::obspace(jj).globalNumLocs();
+    std::string DistMethod = obsConfig.getString("distribution", "RoundRobin");
+
+    const ObsSpace &odb = Test_::obspace(jj);
+
+    // Get the numbers of locations (nlocs) from the ObsSpace object
+    std::size_t Nlocs = odb.globalNumLocs();
+    std::size_t Nvars = odb.nvars();
+
+    // Get the purturbation seed from the ObsSpace object
+    int obsPertSeed = odb.params().obsPertSeed();
 
     // Get the expected nlocs from the obspace object's configuration
-    std::size_t ExpectedNlocs = conf[jj].getUnsigned("obs space.test data.nlocs");
-    std::size_t ExpectedNvars = conf[jj].getUnsigned("obs space.test data.nvars");
+    std::size_t ExpectedNlocs = testConfig.getUnsigned("nlocs");
+    std::size_t ExpectedNvars = testConfig.getUnsigned("nvars");
+
+    // Get the expected purturbation seed from the config object
+    int ExpectedObsPertSeed = testConfig.getUnsigned("obs perturbations seed");
 
     // Get the obs grouping/sorting parameters from the ObsSpace object
-    std::vector<std::string> ObsGroupVars = Test_::obspace(jj).obs_group_vars();
-    std::string ObsSortVar = Test_::obspace(jj).obs_sort_var();
-    std::string ObsSortOrder = Test_::obspace(jj).obs_sort_order();
+    std::vector<std::string> ObsGroupVars = odb.obs_group_vars();
+    std::string ObsSortVar = odb.obs_sort_var();
+    std::string ObsSortOrder = odb.obs_sort_order();
 
     // Get the expected obs grouping/sorting parameters from the configuration
     std::vector<std::string> ExpectedObsGroupVars =
-      conf[jj].getStringVector("obs space.test data.expected group variables");
-    std::string ExpectedObsSortVar =
-      conf[jj].getString("obs space.test data.expected sort variable");
-    std::string ExpectedObsSortOrder =
-      conf[jj].getString("obs space.test data.expected sort order");
+      testConfig.getStringVector("expected group variables");
+    std::string ExpectedObsSortVar = testConfig.getString("expected sort variable");
+    std::string ExpectedObsSortOrder = testConfig.getString("expected sort order");
 
     oops::Log::debug() << "Nlocs, ExpectedNlocs: " << Nlocs << ", "
                        << ExpectedNlocs << std::endl;
@@ -105,9 +124,9 @@ void testConstructor() {
     // e.g. consider airplane (a single record in round robin) flying accros the globe
     // for Halo distr this record will be considered unique on each PE
     if (DistMethod != "Halo") {
-      std::size_t Nrecs = Test_::obspace(jj).nrecs();
-      Test_::obspace(jj).distribution().allReduceInPlace(Nrecs, eckit::mpi::sum());
-      std::size_t ExpectedNrecs = conf[jj].getUnsigned("obs space.test data.nrecs");
+      std::size_t Nrecs = odb.nrecs();
+      odb.distribution().allReduceInPlace(Nrecs, eckit::mpi::sum());
+      std::size_t ExpectedNrecs = testConfig.getUnsigned("nrecs");
       oops::Log::debug() << "Nrecs, ExpectedNrecs: " << Nrecs << ", "
                        << ExpectedNrecs << std::endl;
       EXPECT(Nrecs == ExpectedNrecs);
@@ -120,12 +139,24 @@ void testConstructor() {
     oops::Log::debug() << "ObsSortOrder, ExpectedObsSortOrder: " << ObsSortOrder << ", "
                        << ExpectedObsSortOrder << std::endl;
 
+    // get the standard nlocs and nchans dimension names and compare with expected values
+    std::string nlocsName = odb.get_dim_name(ioda::ObsDimensionId::Nlocs);
+    std::string nchansName = odb.get_dim_name(ioda::ObsDimensionId::Nchans);
+
     EXPECT(Nlocs == ExpectedNlocs);
     EXPECT(Nvars == ExpectedNvars);
+
+    EXPECT(obsPertSeed == ExpectedObsPertSeed);
 
     EXPECT(ObsGroupVars == ExpectedObsGroupVars);
     EXPECT(ObsSortVar == ExpectedObsSortVar);
     EXPECT(ObsSortOrder == ExpectedObsSortOrder);
+
+    EXPECT(nlocsName == "nlocs");
+    EXPECT(nchansName == "nchans");
+
+    EXPECT(odb.get_dim_id("nlocs") == ioda::ObsDimensionId::Nlocs);
+    EXPECT(odb.get_dim_id("nchans") == ioda::ObsDimensionId::Nchans);
   }
 }
 
@@ -138,7 +169,13 @@ void testGetDb() {
   ::test::TestEnvironment::config().get("observations", conf);
 
   for (std::size_t jj = 0; jj < Test_::size(); ++jj) {
-    std::string DistMethod = conf[jj].getString("obs space.distribution", "RoundRobin");
+    // Grab the obs space and test data configurations
+    eckit::LocalConfiguration obsConfig;
+    eckit::LocalConfiguration testConfig;
+    conf[jj].get("obs space", obsConfig);
+    conf[jj].get("test data", testConfig);
+
+    std::string DistMethod = obsConfig.getString("distribution", "RoundRobin");
 
     // Set up a pointer to the ObsSpace object for convenience
     ioda::ObsSpace * Odb = &(Test_::obspace(jj));
@@ -146,8 +183,8 @@ void testGetDb() {
 
     // Get the variables section from the test data and perform checks accordingly
     std::vector<eckit::LocalConfiguration> varconf =
-                            conf[jj].getSubConfigurations("obs space.test data.variables");
-    double Tol = conf[jj].getDouble("obs space.test data.tolerance");
+                            testConfig.getSubConfigurations("variables");
+    double Tol = testConfig.getDouble("tolerance");
     for (std::size_t i = 0; i < varconf.size(); ++i) {
       // Read in the variable group, name and expected norm values from the configuration
       std::string VarName = varconf[i].getString("name");
@@ -196,7 +233,6 @@ void testGetDb() {
         std::string ExpectedLastValue = varconf[i].getString("last value");
         std::vector<std::string> TestVec(Nlocs);
         Odb->get_db(GroupName, VarName, TestVec);
-
         EXPECT(TestVec[0] == ExpectedFirstValue);
         EXPECT(TestVec[Nlocs-1] == ExpectedLastValue);
       }
@@ -291,10 +327,110 @@ void testWriteableGroup() {
 
 // -----------------------------------------------------------------------------
 
+void testMultiDimTransfer() {
+  typedef ObsSpaceTestFixture Test_;
+
+  for (std::size_t jj = 0; jj < Test_::size(); ++jj) {
+    // Set up a pointer to the ObsSpace object for convenience
+    ioda::ObsSpace * Odb = &(Test_::obspace(jj));
+
+    // Create a dummy array to put into the database
+    // Load up the array with contrived data, put the array then
+    // get the array and see if the contrived data made it through.
+    // If Nchans comes back equal to zero, it means that this obs space does not
+    // have an nchans dimension. In this case, this test is reduced to testing
+    // a 1D vector.
+    std::size_t Nlocs = Odb->nlocs();
+    std::size_t Nchans = Odb->nchans();
+
+    std::vector<int> TestValues;
+    std::vector<int> ExpectedValues;
+    std::vector<std::string> dimList;
+
+    int numElements = Nlocs;
+    dimList.push_back(Odb->get_dim_name(ObsDimensionId::Nlocs));
+    if (Nchans > 0) {
+        numElements *= Nchans;
+        dimList.push_back(Odb->get_dim_name(ObsDimensionId::Nchans));
+    }
+
+    // Load up the expected values with numbers 0..n-1.
+    TestValues.resize(numElements);
+    ExpectedValues.resize(numElements);
+    int testValue = 0;
+    for (std::size_t i = 0; i < numElements; ++i) {
+      ExpectedValues[i] = testValue;
+      testValue++;
+    }
+
+    // Put the data into the ObsSpace, then get the data back from the ObsSpace and
+    // compare to the original.
+    Odb->put_db("MultiDimData", "DummyVar", ExpectedValues, dimList);
+    Odb->get_db("MultiDimData", "DummyVar", TestValues, {} /*select all channels*/);
+    EXPECT(TestValues == ExpectedValues);
+
+    const int numOddChannels = Nchans/2;
+    if (numOddChannels > 0) {
+      // Test retrieval of only the odd channels.
+
+      const std::vector<int>& channels = Odb->obsvariables().channels();
+      ASSERT(channels.size() == Nchans);
+
+      std::vector<int> chanSelect;
+      for (int i = 0; i < numOddChannels; ++i) {
+        const std::size_t channelIndex = 1 + 2 * i;
+        chanSelect.push_back(channels[channelIndex]);
+      }
+
+      ExpectedValues.clear();
+      for (std::size_t loc = 0; loc < Nlocs; ++loc) {
+        for (int i = 0; i < numOddChannels; ++i) {
+          const std::size_t channelIndex = 1 + 2 * i;
+          ExpectedValues.push_back(loc * Nchans + channelIndex);
+        }
+      }
+
+      Odb->get_db("MultiDimData", "DummyVar", TestValues, chanSelect);
+      EXPECT_EQUAL(TestValues, ExpectedValues);
+    }
+
+    if (numOddChannels > 0) {
+      // Test retrieval of a single channel using the old syntax
+      // (variable name with a channel suffix)
+
+      const std::vector<int>& channels = Odb->obsvariables().channels();
+      const int channelIndex = 1;
+      const int channelNumber = channels[channelIndex];
+
+      ExpectedValues.clear();
+      for (std::size_t loc = 0; loc < Nlocs; ++loc)
+        ExpectedValues.push_back(loc * Nchans + channelIndex);
+
+      Odb->get_db("MultiDimData", "DummyVar_" + std::to_string(channelNumber), TestValues);
+      EXPECT_EQUAL(TestValues, ExpectedValues);
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+
+void testCleanup() {
+  // This test removes the obsspaces and ensures that they evict their contents
+  // to disk successfully. The saveToFile logic runs in a destructor, so this
+  // test ensures that we are not executing features that we want to test after
+  // the eckit testing environment reports success.
+  typedef ObsSpaceTestFixture Test_;
+
+  Test_::cleanup();
+}
+
+// -----------------------------------------------------------------------------
+
 class ObsSpace : public oops::Test {
  public:
   ObsSpace() {}
   virtual ~ObsSpace() {}
+
  private:
   std::string testid() const override {return "test::ObsSpace<ioda::IodaTrait>";}
 
@@ -309,6 +445,10 @@ class ObsSpace : public oops::Test {
       { testPutDb(); });
     ts.emplace_back(CASE("ioda/ObsSpace/testWriteableGroup")
       { testWriteableGroup(); });
+    ts.emplace_back(CASE("ioda/ObsSpace/testMultiDimTransfer")
+      { testMultiDimTransfer(); });
+    ts.emplace_back(CASE("ioda/ObsSpace/testCleanup")
+      { testCleanup(); });
   }
 
   void clear() const override {}

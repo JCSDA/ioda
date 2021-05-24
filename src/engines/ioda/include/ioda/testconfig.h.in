@@ -1,0 +1,26 @@
+#pragma once
+/*
+ * (C) Copyright 2020-2021 UCAR
+ *
+ * This software is licensed under the terms of the Apache Licence Version 2.0
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ */
+
+/// \file ioda_testconfig.h
+/// \brief Test-time configuration settings for IODA.
+
+// Test data directory
+// Used to find files without symlinks or CWD manipulation.
+#define IODA_ENGINES_TEST_SOURCE_DIR "@IODA_ENGINES_TEST_SOURCE_DIR@"
+
+// Private header location
+// Used temporarily by unit tests
+#define IODA_ENGINES_PRIVATE_DIR "@IODA_ENGINES_PRIVATE_DIR@"
+
+// TODO(Ryan): When ioda-data is used in develop, ioda should
+//   call find_package(ioda-data) to get the location of the ioda data files.
+//   The path to the data files should be passed here, and the test applications
+//   should look in this path to find their test files.
+//   This will remove the need for symlinks between the source and build trees.
+//   Note: the CMake logic should also respect ENV{LOCAL_PATH_JEDI_TESTFILES}.
+//#define IODA_TEST_DATA_DIR "TODO"

@@ -21,6 +21,7 @@
 #include <valarray>
 #include <vector>
 
+#include "ioda/Exception.h"
 #include "ioda/Misc/Dimensions.h"
 #include "ioda/Misc/Eigen_Compat.h"
 #include "ioda/Python/Att_ext.h"
@@ -98,13 +99,17 @@ public:
   template <class DataType, class Marshaller = ioda::Object_Accessor<DataType>,
             class TypeWrapper = Types::GetType_Wrapper<DataType>>
   Attribute_Implementation write(gsl::span<const DataType> data) {
-    Marshaller m;
-    auto d = m.serialize(data);
-    write(gsl::make_span<char>(
-            const_cast<char*>(reinterpret_cast<const char*>(d->DataPointers.data())),
-            d->DataPointers.size() * sizeof(typename Marshaller::mutable_value_type)),
-          TypeWrapper::GetType(getTypeProvider()));
-    return Attribute_Implementation{backend_};
+    try {
+      Marshaller m;
+      auto d = m.serialize(data);
+      write(gsl::make_span<char>(
+              const_cast<char*>(reinterpret_cast<const char*>(d->DataPointers.data())),
+              d->DataPointers.size() * sizeof(typename Marshaller::mutable_value_type)),
+            TypeWrapper::GetType(getTypeProvider()));
+      return Attribute_Implementation{backend_};
+    } catch (...) {
+      std::throw_with_nested(Exception(ioda_Here()));
+    }
   }
 
   /// \brief Write data
@@ -122,7 +127,6 @@ public:
   template <class DataType, class Marshaller = ioda::Object_Accessor<DataType>,
             class TypeWrapper = Types::GetType_Wrapper<DataType>>
   Attribute_Implementation write(const std::vector<DataType>& data) {
-    Expects(backend_ != nullptr);
     std::vector<DataType> vd = data;
     return this->write<DataType>(gsl::make_span(vd));
   }
@@ -136,7 +140,6 @@ public:
   /// \see gsl::span for details of how to make a span.
   template <class DataType>
   Attribute_Implementation write(std::initializer_list<DataType> data) {
-    Expects(backend_ != nullptr);
     std::vector<DataType> v(data);
     return this->write<DataType>(gsl::make_span(v));
   }
@@ -148,8 +151,13 @@ public:
   /// \throws jedi::xError if the Attribute dimensions are larger than a single point.
   template <class DataType>  //, class Marshaller = HH::Types::Object_Accessor<DataType> >
   Attribute_Implementation write(DataType data) {
-    Expects(getDimensions().numElements == 1);
-    return write<DataType>(gsl::make_span<DataType>(&data, 1));
+    try {
+      if (getDimensions().numElements != 1)
+        throw Exception("Wrong number of elements. Use a different write() method.", ioda_Here());
+      return write<DataType>(gsl::make_span<DataType>(&data, 1));
+    } catch (...) {
+      std::throw_with_nested(Exception(ioda_Here()));
+    }
   }
 
   /// \brief Write an Eigen object (a Matrix, an Array, a Block, a Map).
@@ -160,15 +168,19 @@ public:
   template <class EigenClass>
   Attribute_Implementation writeWithEigenRegular(const EigenClass& d) {
 #if 1  //__has_include("Eigen/Dense")
-    typedef typename EigenClass::Scalar ScalarType;
-    // If d is already in Row Major form, then this is optimized out.
-    Eigen::Array<ScalarType, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> dout;
-    dout.resize(d.rows(), d.cols());
-    dout               = d;
-    const auto& dconst = dout;  // To make some compilers happy.
-    auto sp            = gsl::make_span(dconst.data(), static_cast<int>(d.rows() * d.cols()));
+    try {
+      typedef typename EigenClass::Scalar ScalarType;
+      // If d is already in Row Major form, then this is optimized out.
+      Eigen::Array<ScalarType, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> dout;
+      dout.resize(d.rows(), d.cols());
+      dout               = d;
+      const auto& dconst = dout;  // To make some compilers happy.
+      auto sp            = gsl::make_span(dconst.data(), static_cast<int>(d.rows() * d.cols()));
 
-    return write<ScalarType>(sp);
+      return write<ScalarType>(sp);
+    } catch (...) {
+      std::throw_with_nested(Exception(ioda_Here()));
+    }
 #else
     static_assert(false, "The Eigen headers cannot be found, so this function cannot be used.");
 #endif
@@ -182,11 +194,15 @@ public:
   template <class EigenClass>
   Attribute_Implementation writeWithEigenTensor(const EigenClass& d) {
 #if 1  //__has_include("unsupported/Eigen/CXX11/Tensor")
-    ioda::Dimensions dims = detail::EigenCompat::getTensorDimensions(d);
+    try {
+      ioda::Dimensions dims = detail::EigenCompat::getTensorDimensions(d);
 
-    auto sp  = (gsl::make_span(d.data(), dims.numElements));
-    auto res = write(sp);
-    return res;
+      auto sp  = (gsl::make_span(d.data(), dims.numElements));
+      auto res = write(sp);
+      return res;
+    } catch (...) {
+      std::throw_with_nested(Exception(ioda_Here()));
+    }
 #else
     static_assert(
       false, "The Eigen unsupported/ headers cannot be found, so this function cannot be used.");
@@ -233,20 +249,25 @@ public:
   template <class DataType, class Marshaller = ioda::Object_Accessor<DataType>,
             class TypeWrapper = Types::GetType_Wrapper<DataType>>
   Attribute_Implementation read(gsl::span<DataType> data) const {
-    Expects(backend_ != nullptr);
-    const size_t numObjects = data.size();
-    Expects(getDimensions().numElements == gsl::narrow<ioda::Dimensions_t>(numObjects));
+    try {
+      const size_t numObjects = data.size();
+      if (getDimensions().numElements != gsl::narrow<ioda::Dimensions_t>(numObjects))
+        throw Exception("Size mismatch between underlying object and user-provided data range.",
+          ioda_Here());
 
-    detail::PointerOwner pointerOwner = getTypeProvider()->getReturnedPointerOwner();
-    Marshaller m(pointerOwner);
-    auto p = m.prep_deserialize(numObjects);
-    read(gsl::make_span<char>(
-           reinterpret_cast<char*>(p->DataPointers.data()),
-           p->DataPointers.size() * sizeof(typename Marshaller::mutable_value_type)),
-         TypeWrapper::GetType(getTypeProvider()));
-    m.deserialize(p, data);
+      detail::PointerOwner pointerOwner = getTypeProvider()->getReturnedPointerOwner();
+      Marshaller m(pointerOwner);
+      auto p = m.prep_deserialize(numObjects);
+      read(gsl::make_span<char>(
+             reinterpret_cast<char*>(p->DataPointers.data()),
+             p->DataPointers.size() * sizeof(typename Marshaller::mutable_value_type)),
+           TypeWrapper::GetType(getTypeProvider()));
+      m.deserialize(p, data);
 
-    return Attribute_Implementation{backend_};
+      return Attribute_Implementation{backend_};
+    } catch (...) {
+      std::throw_with_nested(Exception(ioda_Here()));
+    }
   }
 
   /// \brief Vector read convenience function.
@@ -280,8 +301,13 @@ public:
   /// \throws jedi::xError if the underlying data have multiple elements.
   template <class DataType>
   Attribute_Implementation read(DataType& data) const {
-    Expects(getDimensions().numElements == 1);
-    return read<DataType>(gsl::make_span<DataType>(&data, 1));
+    try {
+      if (getDimensions().numElements != 1)
+        throw Exception("Wrong number of elements. Use a different read() method.", ioda_Here());
+      return read<DataType>(gsl::make_span<DataType>(&data, 1));
+    } catch (...) {
+      std::throw_with_nested(Exception(ioda_Here()));
+    }
   }
 
   /// \brief Read a single value (convenience function).
@@ -320,41 +346,45 @@ public:
   template <class EigenClass, bool Resize = detail::EigenCompat::CanResize<EigenClass>::value>
   Attribute_Implementation readWithEigenRegular(EigenClass& res) const {
 #if 1  //__has_include("Eigen/Dense")
-    typedef typename EigenClass::Scalar ScalarType;
+    try {
+      typedef typename EigenClass::Scalar ScalarType;
 
-    static_assert(
-      !(Resize && !detail::EigenCompat::CanResize<EigenClass>::value),
-      "This object cannot be resized, but you have specified that a resize is required.");
+      static_assert(
+        !(Resize && !detail::EigenCompat::CanResize<EigenClass>::value),
+        "This object cannot be resized, but you have specified that a resize is required.");
 
-    // Check that the dimensionality is 1 or 2.
-    const auto dims = getDimensions();
-    if (dims.dimensionality > 2)
-      throw;  // jedi_throw.add("Reason", "Dimensionality too high for a regular Eigen read. Use
-              // Eigen::Tensor reads instead.");
+      // Check that the dimensionality is 1 or 2.
+      const auto dims = getDimensions();
+      if (dims.dimensionality > 2)
+        throw Exception("Dimensionality too high for a regular Eigen read. Use "
+          "Eigen::Tensor reads instead.", ioda_Here());
 
-    int nDims[2] = {1, 1};
-    if (dims.dimsCur.size() >= 1) nDims[0] = gsl::narrow<int>(dims.dimsCur[0]);
-    if (dims.dimsCur.size() >= 2) nDims[1] = gsl::narrow<int>(dims.dimsCur[1]);
+      int nDims[2] = {1, 1};
+      if (dims.dimsCur.size() >= 1) nDims[0] = gsl::narrow<int>(dims.dimsCur[0]);
+      if (dims.dimsCur.size() >= 2) nDims[1] = gsl::narrow<int>(dims.dimsCur[1]);
 
-    // Resize if needed.
-    if (Resize)
-      detail::EigenCompat::DoEigenResize(res, nDims[0],
-                                         nDims[1]);  // nullop if the size is already correct.
-    else if (dims.numElements != (size_t)(res.rows() * res.cols()))
-      throw;  // jedi_throw.add("Reason", "Size mismatch");
+      // Resize if needed.
+      if (Resize)
+        detail::EigenCompat::DoEigenResize(res, nDims[0],
+                                           nDims[1]);  // nullop if the size is already correct.
+      else if (dims.numElements != (size_t)(res.rows() * res.cols()))
+        throw Exception("Size mismatch", ioda_Here());
 
-    // Array copy to preserve row vs column major format.
-    // Should be optimized away by the compiler if unneeded.
-    // Note to the reader: We are reading in the data to a temporary object.
-    // We can size _this_ temporary object however we want.
-    // The temporary is used to swap row / column indices if needed.
-    // It should be optimized away if not needed... making sure this happens is a todo.
-    Eigen::Array<ScalarType, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> data_in(res.rows(),
-                                                                                      res.cols());
+      // Array copy to preserve row vs column major format.
+      // Should be optimized away by the compiler if unneeded.
+      // Note to the reader: We are reading in the data to a temporary object.
+      // We can size _this_ temporary object however we want.
+      // The temporary is used to swap row / column indices if needed.
+      // It should be optimized away if not needed... making sure this happens is a todo.
+      Eigen::Array<ScalarType, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> data_in(res.rows(),
+                                                                                        res.cols());
 
-    auto ret = read<ScalarType>(gsl::span<ScalarType>(data_in.data(), dims.numElements));
-    res      = data_in;
-    return ret;
+      auto ret = read<ScalarType>(gsl::span<ScalarType>(data_in.data(), dims.numElements));
+      res      = data_in;
+      return ret;
+    } catch (...) {
+      std::throw_with_nested(Exception(ioda_Here()));
+    }
 #else
     static_assert(false, "The Eigen headers cannot be found, so this function cannot be used.");
 #endif
@@ -370,14 +400,18 @@ public:
   template <class EigenClass>
   Attribute_Implementation readWithEigenTensor(EigenClass& res) const {
 #if 1  //__has_include("unsupported/Eigen/CXX11/Tensor")
-       // Check dimensionality of source and destination
-    const auto ioda_dims  = getDimensions();
-    const auto eigen_dims = ioda::detail::EigenCompat::getTensorDimensions(res);
-    if (ioda_dims.numElements != eigen_dims.numElements)
-      throw;  // jedi_throw.add("Reason", "Size mismatch for Eigen Tensor-like read.");
+    try {
+      // Check dimensionality of source and destination
+      const auto ioda_dims  = getDimensions();
+      const auto eigen_dims = ioda::detail::EigenCompat::getTensorDimensions(res);
+      if (ioda_dims.numElements != eigen_dims.numElements)
+        throw Exception("Size mismatch for Eigen Tensor-like read.", ioda_Here());
 
-    auto sp = (gsl::make_span(res.data(), eigen_dims.numElements));
-    return read(sp);
+      auto sp = (gsl::make_span(res.data(), eigen_dims.numElements));
+      return read(sp);
+    } catch (...) {
+      std::throw_with_nested(Exception(ioda_Here()));
+    }
 #else
     static_assert(
       false, "The Eigen unsupported/ headers cannot be found, so this function cannot be used.");
@@ -397,9 +431,9 @@ public:
   /// @{
 
   /// \brief Get Attribute type.
-  /// \see Types.h for the functions to compare the returned type id number with a system type.
-  // virtual Type getType() const;
-  // inline Type type() const { return getType(); }
+  virtual Type getType() const;
+  /// \brief Get Attribute type.
+  inline Type type() const { return getType(); }
 
   /// Query the backend and get the type provider.
   virtual detail::Type_Provider* getTypeProvider() const;

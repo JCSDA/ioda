@@ -21,9 +21,8 @@
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
 
-#include "ioda/io/IodaIO.h"
-#include "ioda/io/IodaIOfactory.h"
 #include "ioda/core/IodaUtils.h"
+#include "ioda/ObsSpace.h"
 
 namespace ioda {
 
@@ -47,9 +46,6 @@ template <typename MODEL> class TimeIodaIO : public oops::Application {
     eckit::LocalConfiguration obsconf(fullConfig, "observations");
     oops::Log::debug() << "Observations configuration is:" << obsconf << std::endl;
     ObsSpaces_ obsdb(obsconf, this->getComm(), winbgn, winend);
-
-    std::vector<eckit::LocalConfiguration> conf;
-    fullConfig.get("observations", conf);
 
     for (std::size_t jj = 0; jj < obsdb.size(); ++jj) {
       oops::Log::info() << "ObsSpace: " << obsdb[jj].obsname() << std::endl;

@@ -41,8 +41,15 @@ VariableCreation::VariableCreation(const VariableCreationParameters& p, const Ve
   // Convert dims and max_dims to HDF5 equivalents
   // Data dimensions and max dimensions
   for (const auto& d : dims) dims_.push_back(gsl::narrow<hsize_t>(d));
-  for (const auto& d : max_dims) {
-    max_dims_.push_back((d != ioda::Unlimited) ? gsl::narrow<hsize_t>(d) : H5S_UNLIMITED);
+  // Deliberately not an equality comparison. max_dims may be unspecified.
+  if (dims.size() < max_dims.size()) throw;  // TODO(ryan): Separate PR for ioda Exceptions class.
+  for (size_t i = 0; i < max_dims.size(); ++i) {
+    if (max_dims[i] == ioda::Unlimited)
+      max_dims_.push_back(H5S_UNLIMITED);
+    else if (max_dims[i] == ioda::Unspecified)
+      max_dims_.push_back(gsl::narrow<hsize_t>(dims[i]));
+    else
+      max_dims_.push_back(gsl::narrow<hsize_t>(max_dims[i]));
   }
 
   // Chunking
@@ -63,7 +70,11 @@ VariableCreation::VariableCreation(const VariableCreationParameters& p, const Ve
       hcs[i] = gsl::narrow<hsize_t>(  // Always narrow to hsize_t.
         (chunksizes[i] > 0) ? chunksizes[i] : dims_[i]);
       if (hcs[i] == 0) throw;  // We need a hint at this point.
+      if (max_dims_[i] >= 0) {
+        if (hcs[i] > max_dims_[i]) hcs[i] = max_dims_[i];
+      }
     }
+    final_chunks_ = hcs;
 
     if (H5Pset_chunk(dcp_(), static_cast<int>(hcs.size()), hcs.data()) < 0) throw;
   }
@@ -94,10 +105,12 @@ VariableCreation::VariableCreation(const VariableCreationParameters& p, const Ve
 HH_hid_t VariableCreation::datasetCreationPlist() const { return dcp_; }
 
 HH_hid_t VariableCreation::dataspace() const {
-  auto space_id = H5Screate_simple(gsl::narrow<int>(dims_.size()), dims_.data(), max_dims_.data());
-  if (space_id < 0) throw;
+  hid_t space = (dims_.empty()) ? H5Screate(H5S_SCALAR)
+                                : H5Screate_simple(gsl::narrow<int>(dims_.size()), dims_.data(),
+                                                   max_dims_.data());
+  if (space < 0) throw;
 
-  HH_hid_t res(space_id, Handles::Closers::CloseHDF5Dataspace::CloseP);
+  HH_hid_t res(space, Handles::Closers::CloseHDF5Dataspace::CloseP);
   return res;
 }
 

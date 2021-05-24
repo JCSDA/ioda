@@ -38,7 +38,7 @@ class IODA_HIDDEN VariableCreation {
 
   typedef std::vector<hsize_t> VecHS_t;
   typedef std::vector<ioda::Dimensions_t> Vec_t;
-  VecHS_t dims_, max_dims_;
+  VecHS_t dims_, max_dims_, final_chunks_;
   HH_hid_t dcp_;
 
   /// @brief Manages property lists for HDF5 variable creation.

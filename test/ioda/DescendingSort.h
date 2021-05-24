@@ -49,7 +49,7 @@ void testDescendingSort(const eckit::LocalConfiguration &conf) {
   // All expected sort indices, obtained from input file
   std::vector <int> expectedIndicesAll;
   expectedIndicesAll.assign(nlocs, 0);
-  obsdata.get_db("MetaData", "expected_indices", expectedIndicesAll);
+  obsdata.get_db("MetaData", "expected_indices", expectedIndicesAll, { });
 
   // Record index for each location
   const std::vector <size_t> recnums = obsdata.recnum();

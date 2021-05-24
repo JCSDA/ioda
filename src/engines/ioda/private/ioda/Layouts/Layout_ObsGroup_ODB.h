@@ -8,9 +8,10 @@
 /// \file Layout_ObsGroup_ODB.h
 /// \brief Contains definitions for how ODB data are arranged in ioda internally.
 
-#include <unordered_map>
 #include <memory>
 #include <string>
+#include <unordered_map>
+#include <utility>
 
 #include "ioda/Layout.h"
 #include "ioda/defs.h"
@@ -26,7 +27,7 @@ class ODBLayoutParameters;
 
 struct variableStorageInformation {
   std::string iodaName;
-  boost::optional<std::string> inputUnit;
+  std::pair<bool,std::string> inputUnit;
 };
 
 /// Layout for ObsGroup-like data.
@@ -57,7 +58,7 @@ class IODA_DL DataLayoutPolicy_ObsGroup_ODB : public DataLayoutPolicy {
   size_t getComplementaryPosition(const std::string &) const override;
   size_t getInputsNeeded(const std::string &) const override;
   DataLayoutPolicy::MergeMethod getMergeMethod(const std::string &) const override;
-  boost::optional<std::string> getUnit(const std::string &) const override;
+  std::pair<bool,std::string> getUnit(const std::string &) const override;
   std::string getOutputNameFromComponent(const std::string &) const override;
   std::type_index getOutputVariableDataType(const std::string &) const override;
   DataLayoutPolicy_ObsGroup_ODB(const std::string &);

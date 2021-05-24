@@ -16,6 +16,7 @@
 #include "ioda/Copying.h"
 #include "ioda/Engines/HH.h"
 #include "ioda/Engines/ObsStore.h"
+#include "ioda/Exception.h"
 #include "ioda/Group.h"
 
 int main(int argc, char** argv) {
@@ -64,7 +65,7 @@ int main(int argc, char** argv) {
 
     return 0;
   } catch (const std::exception& e) {
-    std::cerr << e.what() << std::endl;
+    ioda::unwind_exception_stack(e, cout);
     return 1;
   } catch (...) {
     std::cerr << "Unhandled exception\n";

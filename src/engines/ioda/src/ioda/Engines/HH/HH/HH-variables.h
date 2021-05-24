@@ -22,7 +22,9 @@
 
 #include "./HH-attributes.h"
 #include "./Handles.h"
+#include "ioda/Exception.h"
 #include "ioda/Group.h"
+#include "ioda/Variables/Selection.h"
 #include "ioda/Types/Type.h"
 #include "ioda/defs.h"
 
@@ -47,8 +49,15 @@ public:
   HH_hid_t get() const;
   bool isVariable() const;
 
-  HH_hid_t type() const;
+  /// @brief Get HDF5-internal type.
+  /// @return Handle to HDF5-internal type.
+  HH_hid_t internalType() const;
   detail::Type_Provider* getTypeProvider() const final;
+
+  /// @brief Get HDF5-internal type, wrapped as a ioda::Type object.
+  /// @details This is used to pass information from 
+  /// @return The wrapped type.
+  Type getType() const final;
 
   /// General function to check type matching. Approximate match in the HDF5 context
   /// to account for different floating point and string types across systems.
@@ -78,19 +87,24 @@ public:
   template <class DataType>
   bool isExactlyA() const {
     auto ttype     = Types::GetType<DataType>(getTypeProvider());
-    HH_hid_t otype = type();
+    HH_hid_t otype = internalType();
     auto ret       = H5Tequal(ttype(), otype());
-    if (ret < 0) throw;  // HH_throw;
+    if (ret < 0) throw Exception("Cannot check type equality. General failure.", ioda_Here());
     return (ret > 0) ? true : false;
   }
 
   HH_hid_t space() const;
   Dimensions getDimensions() const final;
 
+  static bool hasFillValue(HH_hid_t create_plist);
   bool hasFillValue() const final;
+  FillValueData_t getFillValue(HH_hid_t create_plist) const;
   FillValueData_t getFillValue() const final;
+  static std::vector<Dimensions_t> getChunkSizes(HH_hid_t create_plist, const Dimensions& dims);
   std::vector<Dimensions_t> getChunkSizes() const final;
+  static std::pair<bool, int> getGZIPCompression(HH_hid_t create_plist);
   std::pair<bool, int> getGZIPCompression() const final;
+  static std::tuple<bool, unsigned, unsigned> getSZIPCompression(HH_hid_t create_plist);
   std::tuple<bool, unsigned, unsigned> getSZIPCompression() const final;
 
   Variable resize(const std::vector<Dimensions_t>& newDims) final;
@@ -109,14 +123,14 @@ public:
   ///   everything.
   /// \returns a vector of size dimensionNumbers if dimensionNumbers is specified. If
   ///   not, then returns a vector with length equaling the dimensionality of the variable.
-  std::vector<std::vector<std::pair<std::string, Variable>>> getDimensionScaleMappings(
-    const std::vector<std::pair<std::string, Variable>>& scalesToQueryAgainst, bool firstOnly,
+  std::vector<std::vector<Named_Variable>> getDimensionScaleMappings(
+    const std::vector<Named_Variable>& scalesToQueryAgainst, bool firstOnly,
     const std::vector<unsigned>& dimensionNumbers) const;
   /// HDF5-specific, performance-focused implementation.
   bool isDimensionScaleAttached(unsigned int DimensionNumber, const Variable& scale) const final;
   /// HDF5-specific, performance-focused implementation.
-  std::vector<std::vector<std::pair<std::string, Variable>>> getDimensionScaleMappings(
-    const std::list<std::pair<std::string, Variable>>& scalesToQueryAgainst,
+  std::vector<std::vector<Named_Variable>> getDimensionScaleMappings(
+    const std::list<Named_Variable>& scalesToQueryAgainst,
     bool firstOnly = true) const final;
 
   Variable write(gsl::span<char> data, const Type& in_memory_dataType,
@@ -125,7 +139,19 @@ public:
                 const Selection& mem_selection, const Selection& file_selection) const final;
 
   HH_hid_t getSpaceWithSelection(const Selection& sel) const;
+
+  Selections::SelectionBackend_t instantiateSelection(const Selection& sel) const final;
+
+  /// HDF5-specific, performance-focused implementation.
+  VariableCreationParameters getCreationParameters(bool doAtts = true,
+                                                   bool doDims = true) const final;
 };
+
+struct HH_Selection : public Selections::InstantiatedSelection {
+  HH_hid_t sel;
+  virtual ~HH_Selection();
+};
+
 }  // namespace HH
 }  // namespace Engines
 }  // namespace detail

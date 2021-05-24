@@ -16,6 +16,7 @@
 
 #include "./Variables.hpp"
 #include "ioda/defs.h"
+#include "ioda/Exception.h"
 
 namespace ioda {
 namespace ObsStore {
@@ -115,7 +116,7 @@ std::shared_ptr<Group> Group::open(const std::string& name, const bool throwIfNo
   }
 
   if (throwIfNotFound && (childGroup == nullptr)) {
-    throw;  // jedi_throw.add("Reason", "Child group not found");
+    throw Exception("Child group not found", ioda_Here());
   }
 
   return childGroup;

@@ -2,6 +2,7 @@
 set(_programs
     ioda_cpplint.py
     check_ioda_nc.py
+    ioda_compare.sh
 )
 
 foreach(_f IN LISTS _programs)

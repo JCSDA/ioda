@@ -15,6 +15,7 @@
 
 #include "./structs_c.h"
 #include "ioda/C/c_binding_macros.h"
+#include "ioda/Exception.h"
 #include "ioda/Types/Type.h"
 #include "ioda/Variables/Variable.h"
 
@@ -110,7 +111,8 @@ size_t ioda_variable_getDimensionScaleName(const struct ioda_variable* var, size
   Expects(var != nullptr);
   std::string name;
   var->var.getDimensionScaleName(name);
-  if (name.size() == SIZE_MAX) throw std::logic_error("Dimension scale name is too large.");
+  if (name.size() == SIZE_MAX) throw ioda::Exception(
+    "Dimension scale name is too large.", ioda_Here());
   if (!out) return name.size() + 1;
   Expects(out != nullptr);
   ioda::detail::COMPAT_strncpy_s(out, N, name.data(), name.size() + 1);

@@ -5,6 +5,12 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
+#include "ioda/testconfig.h"
+
+#include "ioda/Exception.h"
+
+// This header is internal to ioda. It is not callable by end-users outside of the
+// testing environment.
 #include "ioda/Layouts/Layout_ObsGroup_ODB.h"
 
 #include <string>
@@ -12,16 +18,14 @@
 
 #include "eckit/testing/Test.h"
 
-/// @def TEST_SOURCE_DIR Convenience definition set in build system
-/// to find the source directory's test file.
-
 using namespace eckit::testing;
 
 namespace ioda {
 namespace test {
 
 CASE("Concatenation mapping file; error checks of unit conversion methods") {
-  std::string yamlMappingFile = std::string(TEST_SOURCE_DIR) + "/odb_concat_name_map.yaml";
+  std::string yamlMappingFile
+    = std::string(IODA_ENGINES_TEST_SOURCE_DIR) + "/layouts/odb_concat_name_map.yaml";
   ioda::detail::DataLayoutPolicy_ObsGroup_ODB dataLayoutPolicy(yamlMappingFile);
   //existent variable in mapping file
   EXPECT(dataLayoutPolicy.isComplementary("firstPart"));
@@ -62,12 +66,14 @@ CASE("Concatenation mapping file; error checks of unit conversion methods") {
   EXPECT_THROWS(dataLayoutPolicy.getUnit("notInMapping"));
 }
 CASE("Input data name matches the export data name") {
-  std::string yamlMappingFile = std::string(TEST_SOURCE_DIR) + "/odb_matchinginputoutput_name_map.yaml";
+  std::string yamlMappingFile = std::string(IODA_ENGINES_TEST_SOURCE_DIR)
+    + "/layouts/odb_matchinginputoutput_name_map.yaml";
   EXPECT_THROWS(ioda::detail::DataLayoutPolicy_ObsGroup_ODB policy(yamlMappingFile));
 }
 //The vertical coordinate merge method is currently unsupported
 CASE("Vertical coordinate mapping file") {
-  std::string yamlMappingFile = std::string(TEST_SOURCE_DIR) + "/odb_verticalreference_name_map.yaml";
+  std::string yamlMappingFile = std::string(IODA_ENGINES_TEST_SOURCE_DIR)
+    + "/layouts/odb_verticalreference_name_map.yaml";
   EXPECT_THROWS(ioda::detail::DataLayoutPolicy_ObsGroup_ODB dataLayoutPolicy(yamlMappingFile));
 }
 

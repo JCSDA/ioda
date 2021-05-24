@@ -1,5 +1,10 @@
 *DS_Store*
 ._*
 *.swp
+/.vs
+/out/build
 build
+/ioda-data
+/jedicmake
+/CMakeSettings.json
 .vs

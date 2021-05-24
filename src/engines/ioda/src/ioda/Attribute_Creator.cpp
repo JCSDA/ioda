@@ -5,6 +5,7 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 #include "ioda/Attributes/Attribute_Creator.h"
+#include "ioda/Exception.h"
 
 namespace ioda {
 namespace detail {
@@ -18,7 +19,11 @@ Attribute_Creator_Store::Attribute_Creator_Store()  = default;
 Attribute_Creator_Store::~Attribute_Creator_Store() = default;
 
 void Attribute_Creator_Store::apply(Has_Attributes& obj) const {
-  for (const auto& a : atts_) a->apply(obj);
+  try {
+    for (const auto& a : atts_) a->apply(obj);
+  } catch (...) {
+    std::throw_with_nested(Exception(ioda_Here()));
+  }
 }
 
 }  // namespace ioda

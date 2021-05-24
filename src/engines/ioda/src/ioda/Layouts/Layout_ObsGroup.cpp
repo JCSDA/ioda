@@ -11,13 +11,14 @@
 
 #include "ioda/Group.h"
 #include "ioda/Layout.h"
-#include "ioda/Misc/SFuncs.h"
+#include "ioda/Misc/StringFuncs.h"
 #include "ioda/defs.h"
 
 namespace ioda {
 namespace detail {
-DataLayoutPolicy_ObsGroup::~DataLayoutPolicy_ObsGroup() = default;
-DataLayoutPolicy_ObsGroup::DataLayoutPolicy_ObsGroup() = default;
+const int32_t DataLayoutPolicy_ObsGroup::ObsGroup_Layout_Version = 0;
+DataLayoutPolicy_ObsGroup::~DataLayoutPolicy_ObsGroup()    = default;
+DataLayoutPolicy_ObsGroup::DataLayoutPolicy_ObsGroup()     = default;
 void DataLayoutPolicy_ObsGroup::initializeStructure(Group_Base &g) const {
   // First, set an attribute to indicate that the data are managed
   // by this data policy.

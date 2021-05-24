@@ -4,6 +4,8 @@ IodaTrait.h
 ObsDataVector.h
 ObsSpace.cc
 ObsSpace.h
+ObsSpaceParameters.cc
+ObsSpaceParameters.h
 ObsVector.cc
 ObsVector.h
 
@@ -11,7 +13,6 @@ core/IodaUtils.cc
 core/IodaUtils.h
 core/ObsData.cc
 core/ObsData.h
-core/ObsSpaceContainer.h
 core/obsspace_f.cc
 core/obsspace_f.h
 core/ParameterTraitsObsDtype.cc
@@ -30,12 +31,29 @@ distribution/NonoverlappingDistribution.h
 distribution/RoundRobin.cc
 distribution/RoundRobin.h
 
-io/IodaIO.cc
-io/IodaIO.h
-io/IodaIOfactory.cc
-io/IodaIOfactory.h
-io/NetcdfIO.cc
-io/NetcdfIO.h
+io/ObsFrame.cc
+io/ObsFrame.h
+io/ObsFrameFactory.cc
+io/ObsFrameFactory.h
+io/ObsFrameRead.cc
+io/ObsFrameRead.h
+io/ObsFrameWrite.cc
+io/ObsFrameWrite.h
+io/ObsIo.cc
+io/ObsIo.h
+io/ObsIoFactory.cc
+io/ObsIoFactory.h
+io/ObsIoFileCreate.cc
+io/ObsIoFileCreate.h
+io/ObsIoFileRead.cc
+io/ObsIoFileRead.h
+io/ObsIoParametersBase.h
+io/ObsIoGenerateList.cc
+io/ObsIoGenerateList.h
+io/ObsIoGenerateRandom.cc
+io/ObsIoGenerateRandom.h
+io/ObsIoGenerateUtils.cc
+io/ObsIoGenerateUtils.h
 )
 
 if (IODA_BUILD_LANGUAGE_FORTRAN)

@@ -56,6 +56,7 @@ phases:
       - echo ${CODEBUILD_RESOLVED_SOURCE_VERSION} > /jcsda/artifacts/commit_sha.txt
 
       - cd CI
+
       # jedi-cmake
       - ./clone.sh $GIT_USER $GIT_PASS jcsda-internal/jedi-cmake $CODEBUILD_GIT_BRANCH jedicmake /jcsda/ioda-bundle develop
 
@@ -71,6 +72,9 @@ phases:
 
       # atlas
       - ./clone.sh $GIT_USER $GIT_PASS jcsda-internal/atlas $CODEBUILD_GIT_BRANCH_FORK atlas /jcsda/ioda-bundle release-stable
+
+      # ioda-test
+      - ./clone.sh $GIT_USER $GIT_PASS jcsda-internal/ioda-data $CODEBUILD_GIT_BRANCH ioda-data /jcsda/ioda-bundle develop
 
       # move CMakeLists.txt
       - cp CMakeLists.txt /jcsda/ioda-bundle

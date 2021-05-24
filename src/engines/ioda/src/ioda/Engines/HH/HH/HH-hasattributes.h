@@ -30,6 +30,7 @@ class IODA_HIDDEN HH_HasAttributes : public ioda::detail::Has_Attributes_Backend
                                      public std::enable_shared_from_this<HH_HasAttributes> {
 private:
   HH_hid_t base_;
+  static const hsize_t thresholdLinear = 10;
 
 public:
   HH_HasAttributes();
@@ -37,8 +38,18 @@ public:
   virtual ~HH_HasAttributes();
   detail::Type_Provider* getTypeProvider() const final;
   std::vector<std::string> list() const final;
+  /// @brief Check if an attribute exists.
+  /// @param attname is the name of the attribute.
+  /// @return true if exists, false otherwise.
+  /// @details This uses an optimized search.
+  /// @see open for search details.
   bool exists(const std::string& attname) const final;
   void remove(const std::string& attname) final;
+  /// @brief Open an attribute
+  /// @param name is the name of the attribute
+  /// @return The opened attribute
+  /// @details This uses an optimized search. If the number of attributes in the container is
+  ///   less than ten, performs a linear search. Otherwise, it uses the usual H5Aopen call.
   Attribute open(const std::string& name) const final;
   Attribute create(const std::string& attrname, const Type& in_memory_dataType,
                    const std::vector<Dimensions_t>& dimensions = {1}) final;

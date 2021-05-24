@@ -42,13 +42,14 @@ TEST(test_obsspace_construct)
   type(fckit_configuration) :: config
   type(fckit_configuration), allocatable :: obsconfigs(:)
   type(fckit_configuration) :: obsconfig
+  type(fckit_configuration) :: testconfig
 
   character(kind=c_char,len=:), allocatable :: winbgnstr
   character(kind=c_char,len=:), allocatable :: winendstr
   type(datetime) :: winbgn, winend
 
   type(c_ptr), allocatable, dimension(:) :: obsspace
-  integer :: nlocs, nlocs_ref
+  integer :: nlocs, nlocs_ref, nlocs_id
   integer :: nvars, nvars_ref
   integer :: iobstype
   character(len=100) :: obsname
@@ -58,33 +59,44 @@ TEST(test_obsspace_construct)
   !> initialize winbgn, winend, get config
   call fckit_resource("--config", "", filename)
   config = fckit_YAMLConfiguration(fckit_pathname(filename))
+
   call config%get_or_die("window begin", winbgnstr)
   call config%get_or_die("window end", winendstr)
+
   call datetime_create(winbgnstr, winbgn)
   call datetime_create(winendstr, winend)
+
   !> allocate all ObsSpaces
   call config%get_or_die("observations", obsconfigs)
   allocate(obsspace(size(obsconfigs)))
   do iobstype = 1, size(obsconfigs)
+    !> get the obs space and test data config pair for this ObsSpace
     call obsconfigs(iobstype)%get_or_die("obs space", obsconfig)
+    call obsconfigs(iobstype)%get_or_die("test data", testconfig)
+
     !> construct obsspace
     obsspace(iobstype) = obsspace_construct(obsconfig, winbgn, winend)
     call obsspace_obsname(obsspace(iobstype), obsname)
+
     !> test if obsname is the same as reference
     call obsconfig%get_or_die("name", obsname_ref)
     CHECK_EQUAL(obsname, obsname_ref)
+
     !> test if nlocs and nvars are the same as reference
-    nlocs = obsspace_get_nlocs(obsspace(iobstype))
+    nlocs_id = obsspace_get_dim_id(obsspace(iobstype), "nlocs")
+    nlocs = obsspace_get_dim_size(obsspace(iobstype), nlocs_id)
     nvars = obsspace_get_nvars(obsspace(iobstype))
-    call obsconfig%get_or_die("test data.nlocs", nlocs_ref)
-    call obsconfig%get_or_die("test data.nvars", nvars_ref)
+    call testconfig%get_or_die("nlocs", nlocs_ref)
+    call testconfig%get_or_die("nvars", nvars_ref)
     CHECK_EQUAL(nlocs, nlocs_ref)
     CHECK_EQUAL(nvars,  nvars_ref)
+
     !> test if obsvariables nvars is the same
     vars = obsspace_obsvariables(obsspace(iobstype))
-    call obsconfig%get_or_die("test data.nvars obsvars", nvars_ref)
+    call testconfig%get_or_die("nvars obsvars", nvars_ref)
     CHECK_EQUAL(vars%nvars(), nvars_ref)
   enddo
+
   !> destruct all obsspaces
   do iobstype = 1, size(obsspace)
     call obsspace_destruct(obsspace(iobstype))
