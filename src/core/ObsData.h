@@ -30,7 +30,6 @@
 #include "ioda/core/IodaUtils.h"
 #include "ioda/distribution/Distribution.h"
 #include "ioda/Engines/Factory.h"
-#include "ioda/io/ObsFrame.h"
 #include "ioda/Misc/Dimensions.h"
 #include "ioda/ObsGroup.h"
 #include "ioda/ObsSpaceParameters.h"
@@ -42,6 +41,7 @@ namespace eckit {
 }
 
 namespace ioda {
+    class ObsFrameRead;
     class ObsVector;
 
     //-------------------------------------------------------------------------------------
@@ -344,7 +344,7 @@ namespace ioda {
         oops::Variables obsvars_;
 
         /// \brief MPI distribution object
-        std::shared_ptr<Distribution> dist_;
+        std::shared_ptr<const Distribution> dist_;
 
         /// \brief indexes of locations to extract from the input obs file
         std::vector<std::size_t> indx_;
@@ -377,7 +377,7 @@ namespace ioda {
 
         /// \brief Initialize the database from a source (ObsFrame ojbect)
         /// \param obsFrame obs source object
-        void createObsGroupFromObsFrame(const std::shared_ptr<ObsFrame> & obsFrame);
+        void createObsGroupFromObsFrame(ObsFrameRead & obsFrame);
 
         /// \brief Extend the ObsSpace according to the method requested in
         ///  the configuration file.
@@ -400,7 +400,7 @@ namespace ioda {
 
         /// \brief initialize the in-memory obs_group_ (ObsGroup) object from the ObsIo source
         /// \param obsIo obs source object
-        void initFromObsSource(const std::shared_ptr<ObsFrame> & obsFrame);
+        void initFromObsSource(ObsFrameRead & obsFrame);
 
         /// \brief resize along nlocs dimension
         /// \param nlocsSize new size to either append or reset
@@ -412,7 +412,7 @@ namespace ioda {
         /// \param varName Name of variable in obs source object
         /// \param varValues values for variable
         template<typename VarType>
-        bool readObsSource(const std::shared_ptr<ObsFrame> & obsFrame,
+        bool readObsSource(ObsFrameRead & obsFrame,
                            const std::string & varName, std::vector<VarType> & varValues);
 
         /// \brief store a variable in the obs_group_ object

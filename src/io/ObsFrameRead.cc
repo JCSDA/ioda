@@ -9,6 +9,7 @@
 
 #include "oops/util/Logger.h"
 
+#include "ioda/distribution/DistributionFactory.h"
 #include "ioda/io/ObsFrameRead.h"
 #include "ioda/io/ObsIoFactory.h"
 
@@ -16,11 +17,23 @@ namespace ioda {
 
 //--------------------------- public functions ---------------------------------------
 //------------------------------------------------------------------------------------
-ObsFrameRead::ObsFrameRead(const ObsSpaceParameters & params,
-                           const std::shared_ptr<Distribution> & dist) :
-    ObsFrame(params, dist) {
+ObsFrameRead::ObsFrameRead(const ObsSpaceParameters & params) :
+    ObsFrame(params) {
     // Create the ObsIo object
     obs_io_ = ObsIoFactory::create(ObsIoModes::READ, params);
+
+    // Create an MPI distribution
+    each_process_reads_separate_obs_ = obs_io_->eachProcessGeneratesSeparateObs();
+    if (each_process_reads_separate_obs_) {
+      // On each process the obs_io_ object will produce a separate series of observations, so
+      // we need to use a non-overlapping distribution. The RoundRobin will do.
+      eckit::LocalConfiguration distConf;
+      distConf.set("distribution", "RoundRobin");
+      dist_ = DistributionFactory::create(params.comm(), distConf);
+    } else {
+      dist_ = DistributionFactory::create(params.comm(), params.top_level_.toConfiguration());
+    }
+
     max_frame_size_ = params.top_level_.obsIoInParameters().maxFrameSize;
     oops::Log::debug() << "ObsFrameRead: maximum frame size: " << max_frame_size_ << std::endl;
 }
@@ -31,7 +44,14 @@ ObsFrameRead::~ObsFrameRead() {}
 void ObsFrameRead::frameInit() {
     // reset counters, etc.
     frame_start_ = 0;
-    next_rec_num_ = 0;
+    if (each_process_reads_separate_obs_) {
+      // Ensure record numbers assigned on different processes don't overlap
+      next_rec_num_ = params_.comm().rank();
+      rec_num_increment_ = params_.comm().size();
+    } else {
+      next_rec_num_ = 0;
+      rec_num_increment_ = 1;
+    }
     unique_rec_nums_.clear();
     max_var_size_ = obs_io_->maxVarSize();
     nlocs_ = frameCount("nlocs");
@@ -102,6 +122,14 @@ bool ObsFrameRead::frameAvailable() {
         // clear the selection caches
         known_frame_selections_.clear();
         known_mem_selections_.clear();
+    } else {
+      if (obs_io_->eachProcessGeneratesSeparateObs()) {
+        // sum up global location counts on all PEs
+        params_.comm().allReduceInPlace(gnlocs_, eckit::mpi::sum());
+        params_.comm().allReduceInPlace(gnlocs_outside_timewindow_, eckit::mpi::sum());
+      }
+      // assign each record to the patch of a unique PE
+      dist_->computePatchLocs(gnlocs_);
     }
     return (haveAnotherFrame);
 }
@@ -137,23 +165,6 @@ bool ObsFrameRead::readFrameVar(const std::string & varName, std::vector<float> 
 bool ObsFrameRead::readFrameVar(const std::string & varName,
                                 std::vector<std::string> & varData) {
     return readFrameVarHelper<std::string>(varName, varData);
-}
-
-//-----------------------------------------------------------------------------------
-void ObsFrameRead::writeFrameVar(const std::string & varName,
-                                 const std::vector<int> & varData) {
-    oops::Log::error()
-        << "ObsFrameRead: Frame integer write function is not implemented" << std::endl;
-}
-void ObsFrameRead::writeFrameVar(const std::string & varName,
-                                 const std::vector<float> & varData) {
-    oops::Log::error()
-        << "ObsFrameRead: Frame float write function is not implemented" << std::endl;
-}
-void ObsFrameRead::writeFrameVar(const std::string & varName,
-                                 const std::vector<std::string> & varData) {
-    oops::Log::error()
-        << "ObsFrameRead: Frame string write function is not implemented" << std::endl;
 }
 
 //--------------------------- private functions --------------------------------------
@@ -306,15 +317,12 @@ void ObsFrameRead::genFrameLocationsTimeWindow(std::vector<Dimensions_t> & locIn
 //------------------------------------------------------------------------------------
 void ObsFrameRead::genRecordNumbersAll(const std::vector<Dimensions_t> & locIndex,
                                        std::vector<Dimensions_t> & records) {
-    // No obs grouping. Assign sequential numbers (via next_rec_num_) from 0 to
-    // (nlocs - 1). The LocIndex vector might have missing locations due to those locations
-    // outside the DA timing window, so increment next_rec_num_ through the number
-    // of locations in LocIndex (LocSize) to make sure record numbers are sequential.
+    // No obs grouping. Assign each location to a separate record.
     Dimensions_t locSize = locIndex.size();
     records.assign(locSize, 0);
     for (std::size_t i = 0; i < locSize; ++i) {
         records[i] = next_rec_num_;
-        next_rec_num_++;
+        next_rec_num_ += rec_num_increment_;
     }
 }
 
@@ -338,7 +346,7 @@ void ObsFrameRead::genRecordNumbersGrouping(const std::vector<std::string> & obs
         // assign current record number to the current key, and move to the next record number
         obs_grouping_.insert(
             std::pair<std::string, std::size_t>(obsGroupingKeys[i], next_rec_num_));
-        next_rec_num_++;
+        next_rec_num_ += rec_num_increment_;
       }
       records[i] = obs_grouping_.at(obsGroupingKeys[i]);
     }
@@ -449,6 +457,8 @@ void ObsFrameRead::applyMpiDistribution(const std::shared_ptr<Distribution> & di
     lats.resize(frameCount);
 
     // Generate the index and recnums for this frame.
+    const std::size_t commSize = params_.comm().size();
+    const std::size_t commRank = params_.comm().rank();
     frame_loc_index_.clear();
     for (std::size_t i = 0; i < locSize; ++i) {
         std::size_t rowNum = locIndex[i];
@@ -457,9 +467,17 @@ void ObsFrameRead::applyMpiDistribution(const std::shared_ptr<Distribution> & di
         // needs to be the offset from the ObsIo frame start.
         std::size_t frameIndex = rowNum - frameStart;
         eckit::geometry::Point2 point(lons[frameIndex], lats[frameIndex]);
-        dist->assignRecord(recNum, rowNum, point);
+
+        std::size_t globalLocIndex = rowNum;
+        if (each_process_reads_separate_obs_) {
+          // Each process reads a different set of observations. Make sure all of them are assigned
+          // different global location indices
+          globalLocIndex = rowNum * commSize + commRank;
+        }
+        dist_->assignRecord(recNum, globalLocIndex, point);
+
         if (dist->isMyRecord(recNum)) {
-            indx_.push_back(rowNum);
+            indx_.push_back(globalLocIndex);
             recnums_.push_back(recNum);
             unique_rec_nums_.insert(recNum);
             frame_loc_index_.push_back(frameIndex);

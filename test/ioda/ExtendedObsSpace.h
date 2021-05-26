@@ -152,29 +152,24 @@ void testExtendedObsSpace(const eckit::LocalConfiguration &conf) {
   }
 
   // Compare record numbers on this processor.
+  // There should be an even number of records; the second half should have indices shifted
+  // by a constant offset with respect to the first half. This offset should be equal to the
+  // original number of records.
   const std::vector<std::size_t> recidx_all_recnums = obsdata.recidx_all_recnums();
   // Determine the original record numbers by dividing the global number of records by two.
-  std::size_t gnrecs_original = nrecs / 2;
-  obsdata.distribution()->allReduceInPlace(gnrecs_original, eckit::mpi::sum());
-  // Expected record numbers on this processor.
-  std::vector<std::size_t> recidx_all_recnums_expected;
-  for (size_t irec = 0; irec < gnrecs_original; ++irec) {
-    if (obsdata.distribution()->isMyRecord(irec)) {
-      recidx_all_recnums_expected.push_back(irec);
-    }
-  }
-  // Determine the offset for the extended records using the same method as in the
-  // ObsSpace extension code.
-  std::size_t maxOriginalRecordId = *recidx_all_recnums_expected.rbegin();
-  obsdata.distribution()->allReduceInPlace(maxOriginalRecordId, eckit::mpi::max());
-  // Determine the extended record numbers.
-  for (size_t irec = 0; irec < gnrecs_original; ++irec) {
-    if (obsdata.distribution()->isMyRecord(irec)) {
-      recidx_all_recnums_expected.push_back(irec + maxOriginalRecordId + 1);
-    }
-  }
-  // Compare actual and expected record numbers.
-  EXPECT_EQUAL(recidx_all_recnums, recidx_all_recnums_expected);
+  EXPECT_EQUAL(nrecs % 2, 0);
+  std::size_t nrecs_original = nrecs / 2;
+  const std::vector<std::size_t> original_recnums(recidx_all_recnums.begin(),
+                                                  recidx_all_recnums.begin() + nrecs / 2);
+  const std::vector<std::size_t> extended_recnums(recidx_all_recnums.begin() + nrecs / 2,
+                                                  recidx_all_recnums.end());
+  std::size_t gnrecs_original = original_recnums.empty() ? 0 : (original_recnums.back() + 1);
+  obsdata.distribution()->allReduceInPlace(gnrecs_original, eckit::mpi::max());
+
+  std::vector<std::size_t> extended_recnums_expected;
+  for (std::size_t i : original_recnums)
+    extended_recnums_expected.push_back(i + gnrecs_original);
+  EXPECT_EQUAL(extended_recnums, extended_recnums_expected);
 
   // Compare indices across all processors.
   // Gather all indices, sort them, and produce a vector of unique indices.

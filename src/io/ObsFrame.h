@@ -16,7 +16,6 @@
 
 #include "ioda/Misc/Dimensions.h"
 #include "ioda/core/IodaUtils.h"
-#include "ioda/distribution/Distribution.h"
 #include "ioda/io/ObsIo.h"
 #include "ioda/ObsGroup.h"
 #include "ioda/ObsSpaceParameters.h"
@@ -40,7 +39,7 @@ namespace ioda {
 
 class ObsFrame : public util::Printable {
  public:
-    ObsFrame(const ObsSpaceParameters & params, const std::shared_ptr<Distribution> & dist);
+    explicit ObsFrame(const ObsSpaceParameters & params);
     ~ObsFrame() {}
 
     /// \brief return number of maximum variable size (along first dimension) from ObsIo
@@ -156,34 +155,6 @@ class ObsFrame : public util::Printable {
                                  const Dimensions_t frameStart,
                                  const Dimensions_t frameCount);
 
-    /// \brief read a frame variable
-    /// \details It's possible for some variables to not be included in the
-    ///          read because the frame has gone past their ending index.
-    ///          Therefore, this function will return true when there exists
-    ///          more data available for the variable in the frame.
-    ///          This function will allocate the proper amount of memory for the
-    ///          output vector varData.
-    ///          The following signatures are for different variable data types.
-    /// \param varName variable name
-    /// \param varData varible data
-    virtual bool readFrameVar(const std::string & varName, std::vector<int> & varData) = 0;
-    virtual bool readFrameVar(const std::string & varName, std::vector<float> & varData) = 0;
-    virtual bool readFrameVar(const std::string & varName,
-                              std::vector<std::string> & varData) = 0;
-
-    /// \brief write a frame variable
-    /// \details This function reuquires the caller to allocate the proper amount of
-    ///          memory for the intput vector varData.
-    ///          The following signatures are for different variable data types.
-    /// \param varName variable name
-    /// \param varData varible data
-    virtual void writeFrameVar(const std::string & varName,
-                               const std::vector<int> & varData) = 0;
-    virtual void writeFrameVar(const std::string & varName,
-                               const std::vector<float> & varData) = 0;
-    virtual void writeFrameVar(const std::string & varName,
-                               const std::vector<std::string> & varData) = 0;
-
  protected:
     //------------------ protected data members ------------------------------
     /// \brief ObsIo object
@@ -191,9 +162,6 @@ class ObsFrame : public util::Printable {
 
     /// \brief ObsGroup object (temporary storage for a single frame)
     ObsGroup obs_frame_;
-
-    /// \brief MPI distribution object
-    std::shared_ptr<Distribution> dist_;
 
     /// \brief number of records from source (file or generator)
     Dimensions_t nrecs_;

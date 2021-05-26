@@ -36,8 +36,7 @@ class ObsFrameWrite : public ObsFrame, private util::ObjectCounter<ObsFrameWrite
     ///          for reporting by OOPS.
     static const std::string classname() {return "ioda::ObsFrameWrite";}
 
-    ObsFrameWrite(const ObsSpaceParameters & params,
-                  const std::shared_ptr<Distribution> & dist);
+    explicit ObsFrameWrite(const ObsSpaceParameters & params);
 
     ~ObsFrameWrite();
 
@@ -68,28 +67,18 @@ class ObsFrameWrite : public ObsFrame, private util::ObjectCounter<ObsFrameWrite
     /// \param varName variable name
     Dimensions_t frameCount(const std::string & varName) override;
 
-    /// \brief read a frame variable
-    /// \details These are here for completeness. There is no reading of the frame
-    ///          for the ObsFrameWrite subclass, but it works a little better to
-    ///          have these here so the subclass can be identified in an error message.
-    /// \param varName variable name
-    /// \param varData varible data
-    bool readFrameVar(const std::string & varName, std::vector<int> & varData) override;
-    bool readFrameVar(const std::string & varName, std::vector<float> & varData) override;
-    bool readFrameVar(const std::string & varName, std::vector<std::string> & varData) override;
-
     /// \brief write a frame variable
-    /// \details This function reuquires the caller to allocate the proper amount of
+    /// \details This function requires the caller to allocate the proper amount of
     ///          memory for the intput vector varData.
     ///          The following signatures are for different variable data types.
     /// \param varName variable name
     /// \param varData varible data
     void writeFrameVar(const std::string & varName,
-                       const std::vector<int> & varData) override;
+                       const std::vector<int> & varData);
     void writeFrameVar(const std::string & varName,
-                       const std::vector<float> & varData) override;
+                       const std::vector<float> & varData);
     void writeFrameVar(const std::string & varName,
-                       const std::vector<std::string> & varData) override;
+                       const std::vector<std::string> & varData);
 
  private:
     //------------------ private data members ------------------------------

@@ -37,8 +37,7 @@ class ObsFrameRead : public ObsFrame, private util::ObjectCounter<ObsFrameRead> 
     ///          for reporting by OOPS.
     static const std::string classname() {return "ioda::ObsFrameRead";}
 
-    ObsFrameRead(const ObsSpaceParameters & params,
-                 const std::shared_ptr<Distribution> & dist);
+    explicit ObsFrameRead(const ObsSpaceParameters & params);
 
     ~ObsFrameRead();
 
@@ -87,26 +86,23 @@ class ObsFrameRead : public ObsFrame, private util::ObjectCounter<ObsFrameRead> 
     /// \param varData varible data
     /// \param varDataSelect selection information for the selection in memory
     /// \param frameSelect selection information for the selection in frame
-    bool readFrameVar(const std::string & varName, std::vector<int> & varData) override;
-    bool readFrameVar(const std::string & varName, std::vector<float> & varData) override;
-    bool readFrameVar(const std::string & varName, std::vector<std::string> & varData) override;
+    bool readFrameVar(const std::string & varName, std::vector<int> & varData);
+    bool readFrameVar(const std::string & varName, std::vector<float> & varData);
+    bool readFrameVar(const std::string & varName, std::vector<std::string> & varData);
 
-    /// \brief write a frame variable
-    /// \details These are here for completeness. There is no writing of the frame for
-    ///          the ObsFrameRead subclass, bit it works a little better to have these
-    ///          here so the subclass can be indentifed in an error message.
-    ///          The following signatures are for different variable data types.
-    /// \param varName variable name
-    /// \param varData varible data
-    void writeFrameVar(const std::string & varName,
-                       const std::vector<int> & varData) override;
-    void writeFrameVar(const std::string & varName,
-                       const std::vector<float> & varData) override;
-    void writeFrameVar(const std::string & varName,
-                       const std::vector<std::string> & varData) override;
+    /// \brief return the MPI distribution
+    std::shared_ptr<const Distribution> distribution() {return dist_;}
 
  private:
     //------------------ private data members ------------------------------
+
+    /// \brief MPI distribution object
+    std::shared_ptr<Distribution> dist_;
+
+    /// \brief true if obs_io_ produces a different series of observations on each process,
+    /// false if they are all the same
+    bool each_process_reads_separate_obs_;
+
     /// \brief current frame start for variable dimensioned along nlocs
     /// \details This data member is keeping track of the frame start for
     /// the contiguous storage where the obs source data will be moved to.
@@ -128,6 +124,13 @@ class ObsFrameRead : public ObsFrame, private util::ObjectCounter<ObsFrameRead> 
 
     /// \brief next available record number
     std::size_t next_rec_num_;
+
+    /// \brief spacing between record numbers assigned on this process.
+    ///
+    /// Normally 1, but if each process reads observations from a different file, then set to
+    /// the size of the MPI communicator to ensure record numbers assigned by different processes
+    /// are distinct.
+    std::size_t rec_num_increment_;
 
     /// \brief unique record numbers
     std::set<std::size_t> unique_rec_nums_;

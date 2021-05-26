@@ -84,6 +84,10 @@ class ObsIo : public util::Printable {
     /// false otherwise.
     virtual bool applyTimingWindow() const { return true; }
 
+    /// \brief return true if each process generates a separate series of observations
+    /// (e.g. read from different files).
+    virtual bool eachProcessGeneratesSeparateObs() const { return false; }
+
  protected:
     //------------------ protected data members ------------------------------
     /// \brief ObsGroup object representing io source/destination

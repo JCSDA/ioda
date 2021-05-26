@@ -94,8 +94,6 @@ class Halo: public Distribution {
      const double radius_earth_ = 6.371e6;
      // dist name
      const std::string distName_ = "Halo";
-     // When read obs from separate file
-     bool read_obs_from_separate_file_ = false;
 };
 
 }  // namespace ioda

@@ -63,8 +63,6 @@ Halo::Halo(const eckit::mpi::Comm & Comm,
 
   radius_ = radius;
 
-  read_obs_from_separate_file_ = config.getBool("read obs from separate file", false);
-
   oops::Log::debug() << "Halo constructed: center: " << center_ << " radius: "
                      << radius_ << std::endl;
 }
@@ -101,51 +99,45 @@ std::size_t Halo::computePatchLocs(const std::size_t nglocs) {
   size_t myRank = comm_.rank();
 
   if ( nglocs > 0 ) {
-    if (read_obs_from_separate_file_) {
-      for (size_t jj = 0; jj < nglocs; ++jj) {
-        patchObsBool_.push_back(true);
-      }
-    } else {
-      // make structures holding pairs of {distance,rank} for reduce operation later
-      // initialize the local array to dist == inf
-      std::vector<std::pair<double, int>> dist_and_lidx_loc(nglocs);
-      std::vector<std::pair<double, int>> dist_and_lidx_glb(nglocs);
-      for ( size_t jj = 0; jj < nglocs; ++jj ) {
-        dist_and_lidx_loc[jj] = std::make_pair(inf, myRank);
-      }
-
-      // populate local obs (stored in haloObsLoc_) with actual distances
-      for (auto i : haloObsLoc_) {
-        dist_and_lidx_loc[i.first] = std::make_pair(i.second, myRank);
-      }
-
-      // use reduce operation to find PE rank with minimal distance
-      comm_.allReduce(dist_and_lidx_loc, dist_and_lidx_glb, eckit::mpi::minloc());
-
-      // if this PE has the minimum distance then this PE owns this ob. as patch
-      for (auto i : haloObsLoc_) {
-        if ( dist_and_lidx_glb[i.first].second == myRank ) {
-          patchObsLoc_.insert(i.first);
-        }
-      }
-
-      // convert storage from unodered sets to a bool vector
-      for (size_t jj = 0; jj < haloLocVector_.size(); ++jj) {
-        if ( patchObsLoc_.count(haloLocVector_[jj]) ) {
-          patchObsBool_.push_back(true);
-        } else {
-          patchObsBool_.push_back(false);
-        }
-      }
-
-      // Number of Obs within/on Patch.
-      nPatchObsLoc = patchObsLoc_.size();
-
-      // now that we have patchObsBool_ computed we can free memory for temp objects
-      haloObsLoc_.clear();
-      haloLocVector_.clear();
-      patchObsLoc_.clear();
+    // make structures holding pairs of {distance,rank} for reduce operation later
+    // initialize the local array to dist == inf
+    std::vector<std::pair<double, int>> dist_and_lidx_loc(nglocs);
+    std::vector<std::pair<double, int>> dist_and_lidx_glb(nglocs);
+    for ( size_t jj = 0; jj < nglocs; ++jj ) {
+      dist_and_lidx_loc[jj] = std::make_pair(inf, myRank);
     }
+
+    // populate local obs (stored in haloObsLoc_) with actual distances
+    for (auto i : haloObsLoc_) {
+      dist_and_lidx_loc[i.first] = std::make_pair(i.second, myRank);
+    }
+
+    // use reduce operation to find PE rank with minimal distance
+    comm_.allReduce(dist_and_lidx_loc, dist_and_lidx_glb, eckit::mpi::minloc());
+
+    // if this PE has the minimum distance then this PE owns this ob. as patch
+    for (auto i : haloObsLoc_) {
+      if ( dist_and_lidx_glb[i.first].second == myRank ) {
+        patchObsLoc_.insert(i.first);
+      }
+    }
+
+    // convert storage from unodered sets to a bool vector
+    for (size_t jj = 0; jj < haloLocVector_.size(); ++jj) {
+      if ( patchObsLoc_.count(haloLocVector_[jj]) ) {
+        patchObsBool_.push_back(true);
+      } else {
+        patchObsBool_.push_back(false);
+      }
+    }
+
+    // Number of Obs within/on Patch.
+    nPatchObsLoc = patchObsLoc_.size();
+
+    // now that we have patchObsBool_ computed we can free memory for temp objects
+    haloObsLoc_.clear();
+    haloLocVector_.clear();
+    patchObsLoc_.clear();
   }
 
   return nPatchObsLoc;

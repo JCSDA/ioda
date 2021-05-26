@@ -16,9 +16,8 @@ namespace ioda {
 //--------------------------- public functions ---------------------------------------
 //------------------------------------------------------------------------------------
 
-  ObsFrameWrite::ObsFrameWrite(const ObsSpaceParameters & params,
-                               const std::shared_ptr<Distribution> & dist) :
-    ObsFrame(params, dist) {
+  ObsFrameWrite::ObsFrameWrite(const ObsSpaceParameters & params) :
+    ObsFrame(params) {
     // Create the ObsIo object
     obs_io_ = ObsIoFactory::create(ObsIoModes::WRITE, params);
     max_frame_size_ = params.top_level_.obsOutFile.value()->maxFrameSize;
@@ -104,24 +103,6 @@ Dimensions_t ObsFrameWrite::frameCount(const std::string & varName) {
         count = max_frame_size_;
     }
     return count;
-}
-
-//-----------------------------------------------------------------------------------
-bool ObsFrameWrite::readFrameVar(const std::string & varName, std::vector<int> & varData) {
-    oops::Log::error()
-        << "ObsFrameWrite: Frame integer read function is not implemented" << std::endl;
-    return false;
-}
-bool ObsFrameWrite::readFrameVar(const std::string & varName, std::vector<float> & varData) {
-    oops::Log::error()
-        << "ObsFrameWrite: Frame float read function is not implemented" << std::endl;
-    return false;
-}
-bool ObsFrameWrite::readFrameVar(const std::string & varName,
-                                 std::vector<std::string> & varData) {
-    oops::Log::error()
-        << "ObsFrameWrite: Frame string read function is not implemented" << std::endl;
-    return false;
 }
 
 //-----------------------------------------------------------------------------------

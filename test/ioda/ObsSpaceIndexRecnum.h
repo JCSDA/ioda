@@ -80,10 +80,6 @@ void testConstructor() {
     conf[jj].get("test data", testConfig);
     oops::Log::debug() << "Test data configuration: " << testConfig << std::endl;
 
-    // The observations are distributed across processors, so Nlocs is local to a
-    // processor. To get the total number of observations,
-    // use ObsSpace.distribution().sum(Nlocs) to sum accoss all processors.
-
     // Get the numbers of locations (nlocs) from the ObsSpace object
     std::size_t Nlocs = Test_::obspace(jj).globalNumLocs();
     std::size_t Nvars = Test_::obspace(jj).nvars();
@@ -102,7 +98,8 @@ void testConstructor() {
                        << ExpectedObsAreSorted << std::endl;
 
     EXPECT(Nlocs == ExpectedNlocs);
-    EXPECT(Nvars == ExpectedNvars);
+    if (Nlocs > 0)
+      EXPECT(Nvars == ExpectedNvars);
     EXPECT(ObsAreSorted == ExpectedObsAreSorted);
 
     // records are ambigious and not implemented for halo distribution
@@ -136,45 +133,16 @@ void testIndexRecnum() {
     std::vector<std::size_t> Recnum = Test_::obspace(jj).recnum();
 
     // Get the expected index and recnum vectors from the obspace object's configuration
-    // Allow number of MPI tasks to be 1, 2 or 4. Look for corresponding YAML configuration.
-    eckit::LocalConfiguration recidxTestConfig;
-    std::vector<std::size_t> ExpectedIndex;
-    std::vector<std::size_t> ExpectedRecnum;
+
     int MyMpiSize = Test_::obspace(jj).comm().size();
     int MyMpiRank = Test_::obspace(jj).comm().rank();
-    if (MyMpiSize == 1) {
-      ExpectedIndex = testConfig.getUnsignedVector("mpi size1.rank0.index");
-      ExpectedRecnum = testConfig.getUnsignedVector("mpi size1.rank0.recnum");
-      testConfig.get("mpi size1.rank0.recidx", recidxTestConfig);
-    } else if (MyMpiSize == 2) {
-      if (MyMpiRank == 0) {
-        ExpectedIndex = testConfig.getUnsignedVector("mpi size2.rank0.index");
-        ExpectedRecnum = testConfig.getUnsignedVector("mpi size2.rank0.recnum");
-        testConfig.get("mpi size2.rank0.recidx", recidxTestConfig);
-      } else {
-        ExpectedIndex = testConfig.getUnsignedVector("mpi size2.rank1.index");
-        ExpectedRecnum = testConfig.getUnsignedVector("mpi size2.rank1.recnum");
-        testConfig.get("mpi size2.rank1.recidx", recidxTestConfig);
-      }
-    } else if (MyMpiSize == 4) {
-      if (MyMpiRank == 0) {
-        ExpectedIndex = testConfig.getUnsignedVector("mpi size4.rank0.index");
-        ExpectedRecnum = testConfig.getUnsignedVector("mpi size4.rank0.recnum");
-        testConfig.get("mpi size4.rank0.recidx", recidxTestConfig);
-      } else if (MyMpiRank == 1) {
-        ExpectedIndex = testConfig.getUnsignedVector("mpi size4.rank1.index");
-        ExpectedRecnum = testConfig.getUnsignedVector("mpi size4.rank1.recnum");
-        testConfig.get("mpi size4.rank1.recidx", recidxTestConfig);
-      } else if (MyMpiRank == 2) {
-        ExpectedIndex = testConfig.getUnsignedVector("mpi size4.rank2.index");
-        ExpectedRecnum = testConfig.getUnsignedVector("mpi size4.rank2.recnum");
-        testConfig.get("mpi size4.rank2.recidx", recidxTestConfig);
-      } else {
-        ExpectedIndex = testConfig.getUnsignedVector("mpi size4.rank3.index");
-        ExpectedRecnum = testConfig.getUnsignedVector("mpi size4.rank3.recnum");
-        testConfig.get("mpi size4.rank3.recidx", recidxTestConfig);
-      }
-    }
+
+    std::string MyPath = "mpi size" + std::to_string(MyMpiSize) +
+                               ".rank" + std::to_string(MyMpiRank);
+    std::vector<std::size_t> ExpectedIndex = testConfig.getUnsignedVector(MyPath + ".index");
+    std::vector<std::size_t> ExpectedRecnum = testConfig.getUnsignedVector(MyPath + ".recnum");
+    eckit::LocalConfiguration recidxTestConfig;
+    testConfig.get(MyPath + ".recidx", recidxTestConfig);
 
     oops::Log::debug() << "Index, ExpectedIndex: " << Index << ", "
                        << ExpectedIndex << std::endl;

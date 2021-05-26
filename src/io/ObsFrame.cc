@@ -17,9 +17,8 @@ namespace ioda {
 
 //--------------------------- public functions ---------------------------------------
 //------------------------------------------------------------------------------------
-  ObsFrame::ObsFrame(const ObsSpaceParameters & params,
-                     const std::shared_ptr<Distribution> & dist) :
-      params_(params), dist_(dist), gnlocs_(0), gnlocs_outside_timewindow_(0) {
+  ObsFrame::ObsFrame(const ObsSpaceParameters & params) :
+      params_(params), gnlocs_(0), gnlocs_outside_timewindow_(0) {
     oops::Log::trace() << "Constructing ObsFrame" << std::endl;
 }
 

@@ -31,8 +31,7 @@
 
 #include "ioda/core/IodaUtils.h"
 #include "ioda/distribution/DistributionFactory.h"
-#include "ioda/io/ObsFrame.h"
-#include "ioda/io/ObsFrameFactory.h"
+#include "ioda/io/ObsFrameRead.h"
 #include "ioda/ObsGroup.h"
 #include "ioda/ObsSpaceParameters.h"
 #include "ioda/Variables/Variable.h"
@@ -45,7 +44,7 @@ namespace test {
 // -----------------------------------------------------------------------------
 
 // -----------------------------------------------------------------------------
-void testFrameRead(std::shared_ptr<ObsFrame> & obsFrame, eckit::LocalConfiguration & obsConfig,
+void testFrameRead(ObsFrameRead & obsFrame, eckit::LocalConfiguration & obsConfig,
                    ioda::ObsSpaceParameters & obsParams) {
     float floatTol = obsConfig.getFloat("tolerance", 1.0e-5);
     std::vector<eckit::LocalConfiguration> readVarConfigs =
@@ -53,8 +52,8 @@ void testFrameRead(std::shared_ptr<ObsFrame> & obsFrame, eckit::LocalConfigurati
 
     // Test reading from frames
     int iframe = 0;
-    for (obsFrame->frameInit(); obsFrame->frameAvailable(); obsFrame->frameNext()) {
-        Dimensions_t frameStart = obsFrame->frameStart();
+    for (obsFrame.frameInit(); obsFrame.frameAvailable(); obsFrame.frameNext()) {
+        Dimensions_t frameStart = obsFrame.frameStart();
         oops::Log::debug() << "testRead: Frame number: " << iframe << std::endl
             << "    frameStart: " << frameStart << std::endl;
 
@@ -62,17 +61,17 @@ void testFrameRead(std::shared_ptr<ObsFrame> & obsFrame, eckit::LocalConfigurati
         for (std::size_t j = 0; j < readVarConfigs.size(); ++j) {
             std::string varName = readVarConfigs[j].getString("name");
             std::string expectedVarType = readVarConfigs[j].getString("type");
-            ioda::Variable var = obsFrame->vars().open(varName);
+            ioda::Variable var = obsFrame.vars().open(varName);
 
             oops::Log::debug() << "    Variable: " << varName
-                << ", frameCount: " << obsFrame->frameCount(varName) << std::endl;
+                << ", frameCount: " << obsFrame.frameCount(varName) << std::endl;
 
             if (expectedVarType == "int") {
                 EXPECT(var.isA<int>());
                 std::vector<int> expectedVarValue0 =
                     readVarConfigs[j].getIntVector("value0");
                 std::vector<int> varValues;
-                if (obsFrame->readFrameVar(varName, varValues)) {
+                if (obsFrame.readFrameVar(varName, varValues)) {
                     EXPECT_EQUAL(varValues[0], expectedVarValue0[iframe]);
                 }
             } else if (expectedVarType == "float") {
@@ -80,7 +79,7 @@ void testFrameRead(std::shared_ptr<ObsFrame> & obsFrame, eckit::LocalConfigurati
                 std::vector<float> expectedVarValue0 =
                     readVarConfigs[j].getFloatVector("value0");
                 std::vector<float> varValues;
-                if (obsFrame->readFrameVar(varName, varValues)) {
+                if (obsFrame.readFrameVar(varName, varValues)) {
                     EXPECT(oops::is_close_relative(varValues[0],
                            expectedVarValue0[iframe], floatTol));
                 }
@@ -89,7 +88,7 @@ void testFrameRead(std::shared_ptr<ObsFrame> & obsFrame, eckit::LocalConfigurati
                 std::vector<std::string> expectedVarValue0 =
                     readVarConfigs[j].getStringVector("value0");
                 std::vector<std::string> varValues;
-                if (obsFrame->readFrameVar(varName, varValues)) {
+                if (obsFrame.readFrameVar(varName, varValues)) {
                     EXPECT_EQUAL(varValues[0], expectedVarValue0[iframe]);
                 }
             }
@@ -122,29 +121,24 @@ void testRead() {
         ioda::ObsSpaceParameters obsParams(bgn, end, oops::mpi::world(), oops::mpi::myself());
         obsParams.deserialize(obsConfig);
 
-        // Create the MPI distribution object
-        std::shared_ptr<Distribution> dist =
-            DistributionFactory::create(obsParams.comm(), obsConfig);
-
         // Input constructor
-        std::shared_ptr<ObsFrame> obsFrame;
-        obsFrame = ObsFrameFactory::create(ObsIoModes::READ, obsParams, dist);
+        ObsFrameRead obsFrame(obsParams);
 
         // Check the counts
         ioda::Dimensions_t expectedNumLocs = testConfig.getInt("nlocs", 0);
-        ioda::Dimensions_t numLocs = obsFrame->ioNumLocs();
+        ioda::Dimensions_t numLocs = obsFrame.ioNumLocs();
         EXPECT_EQUAL(numLocs, expectedNumLocs);
 
         ioda::Dimensions_t expectedNumVars = testConfig.getInt("nvars", 0);
-        ioda::Dimensions_t numVars = obsFrame->ioNumVars();
+        ioda::Dimensions_t numVars = obsFrame.ioNumVars();
         EXPECT_EQUAL(numVars, expectedNumVars);
 
         ioda::Dimensions_t expectedNumDimVars = testConfig.getInt("ndvars", 0);
-        ioda::Dimensions_t numDimVars = obsFrame->ioNumDimVars();
+        ioda::Dimensions_t numDimVars = obsFrame.ioNumDimVars();
         EXPECT_EQUAL(numDimVars, expectedNumDimVars);
 
         ioda::Dimensions_t expectedMaxVarSize = testConfig.getInt("max var size", 0);
-        ioda::Dimensions_t maxVarSize = obsFrame->ioMaxVarSize();
+        ioda::Dimensions_t maxVarSize = obsFrame.ioMaxVarSize();
         EXPECT_EQUAL(maxVarSize, expectedMaxVarSize);
 
         // Test reading frames

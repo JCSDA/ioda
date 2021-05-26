@@ -30,10 +30,8 @@
 #include "oops/util/Logger.h"
 
 #include "ioda/core/IodaUtils.h"
-#include "ioda/distribution/DistributionFactory.h"
 #include "ioda/Engines/HH.h"
-#include "ioda/io/ObsFrame.h"
-#include "ioda/io/ObsFrameFactory.h"
+#include "ioda/io/ObsFrameWrite.h"
 #include "ioda/Layout.h"
 #include "ioda/ObsGroup.h"
 #include "ioda/ObsSpaceParameters.h"
@@ -113,7 +111,7 @@ ObsGroup buildTestObsGroup(const std::vector<eckit::LocalConfiguration> & dimCon
 }
 
 // -----------------------------------------------------------------------------
-void frameWrite(std::shared_ptr<ObsFrame> & obsFrame, eckit::LocalConfiguration & testConfig,
+void frameWrite(ObsFrameWrite & obsFrame, eckit::LocalConfiguration & testConfig,
                 const Has_Variables & sourceVars, const VarNameObjectList & varList,
                 const VarNameObjectList & dimVarList,
                 const VarDimMap & varDimMap, const Dimensions_t maxVarSize) {
@@ -121,9 +119,9 @@ void frameWrite(std::shared_ptr<ObsFrame> & obsFrame, eckit::LocalConfiguration 
         testConfig.getSubConfigurations("write variables");
 
     int iframe = 0;
-    for (obsFrame->frameInit(varList, dimVarList, varDimMap, maxVarSize);
-         obsFrame->frameAvailable(); obsFrame->frameNext(varList)) {
-        Dimensions_t frameStart = obsFrame->frameStart();
+    for (obsFrame.frameInit(varList, dimVarList, varDimMap, maxVarSize);
+         obsFrame.frameAvailable(); obsFrame.frameNext(varList)) {
+        Dimensions_t frameStart = obsFrame.frameStart();
         oops::Log::debug() << "testWrite: Frame number: " << iframe << std::endl
             << "    frameStart: " << frameStart << std::endl;
 
@@ -134,9 +132,9 @@ void frameWrite(std::shared_ptr<ObsFrame> & obsFrame, eckit::LocalConfiguration 
             std::vector<std::string> varDimNames =
                 writeVarConfigs[j].getStringVector("dims");
 
-            ioda::Variable var = obsFrame->vars().open(varName);
+            ioda::Variable var = obsFrame.vars().open(varName);
 
-            Dimensions_t frameCount = obsFrame->frameCount(varName);
+            Dimensions_t frameCount = obsFrame.frameCount(varName);
             if (frameCount > 0) {
                 oops::Log::debug() << "    Variable: " << varName
                     << ", frameCount: " << frameCount << std::endl;
@@ -146,19 +144,19 @@ void frameWrite(std::shared_ptr<ObsFrame> & obsFrame, eckit::LocalConfiguration 
                         writeVarConfigs[j].getIntVector("values");
                     std::vector<int> varValues(values.begin() + frameStart,
                         values.begin() + frameStart + frameCount);
-                    obsFrame->writeFrameVar(varName, varValues);
+                    obsFrame.writeFrameVar(varName, varValues);
                 } else if (varType == "float") {
                     std::vector<float> values =
                         writeVarConfigs[j].getFloatVector("values");
                     std::vector<float> varValues(values.begin() + frameStart,
                         values.begin() + frameStart + frameCount);
-                    obsFrame->writeFrameVar(varName, varValues);
+                    obsFrame.writeFrameVar(varName, varValues);
                 } else if (varType == "string") {
                     std::vector<std::string> values =
                         writeVarConfigs[j].getStringVector("values");
                     std::vector<std::string> varValues(values.begin() + frameStart,
                         values.begin() + frameStart + frameCount);
-                    obsFrame->writeFrameVar(varName, varValues);
+                    obsFrame.writeFrameVar(varName, varValues);
                 }
             }
         }
@@ -189,10 +187,6 @@ void testWrite() {
 
         ioda::ObsSpaceParameters obsParams(bgn, end, oops::mpi::world(), oops::mpi::myself());
         obsParams.deserialize(obsConfig);
-
-        // Create the MPI distribution object
-        std::shared_ptr<Distribution> dist =
-            DistributionFactory::create(obsParams.comm(), obsConfig);
 
         if (obsParams.top_level_.obsOutFile.value() != boost::none) {
             // Get dimensions and variables sub configurations
@@ -227,13 +221,12 @@ void testWrite() {
             obsParams.setMaxVarSize(maxVarSize);
 
             // Output constructor
-            std::shared_ptr<ObsFrame> obsFrame =
-              ObsFrameFactory::create(ObsIoModes::WRITE, obsParams, dist);
+            ObsFrameWrite obsFrame(obsParams);
 
             // Write contents of file
             frameWrite(obsFrame, testConfig, testObsGroup.vars, varList, dimVarList,
                        dimsAttachedToVars, maxVarSize);
-            obsFrame->ioUpdateVarDimInfo();
+            obsFrame.ioUpdateVarDimInfo();
 
             // Check if all the variables got written into the file
             // Dimension scale variables
@@ -243,7 +236,7 @@ void testWrite() {
             }
             std::sort(expectedDimList.begin(), expectedDimList.end());
             std::vector<std::string> dimList;
-            for (auto & dimVarNameObject : obsFrame->ioDimVarList()) {
+            for (auto & dimVarNameObject : obsFrame.ioDimVarList()) {
                 dimList.push_back(dimVarNameObject.first);
             }
             std::sort(dimList.begin(), dimList.end());
@@ -258,7 +251,7 @@ void testWrite() {
             }
             std::sort(expectedVariableList.begin(), expectedVariableList.end());
             std::vector<std::string> variableList;
-            for (auto & varNameObject : obsFrame->ioVarList()) {
+            for (auto & varNameObject : obsFrame.ioVarList()) {
                 variableList.push_back(varNameObject.first);
             }
             std::sort(variableList.begin(), variableList.end());

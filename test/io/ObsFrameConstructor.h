@@ -31,8 +31,8 @@
 
 #include "ioda/core/IodaUtils.h"
 #include "ioda/distribution/DistributionFactory.h"
-#include "ioda/io/ObsFrame.h"
-#include "ioda/io/ObsFrameFactory.h"
+#include "ioda/io/ObsFrameRead.h"
+#include "ioda/io/ObsFrameWrite.h"
 #include "ioda/ObsGroup.h"
 #include "ioda/ObsSpaceParameters.h"
 #include "ioda/Variables/Variable.h"
@@ -66,13 +66,8 @@ void testConstructor() {
         ioda::ObsSpaceParameters obsParams(bgn, end, oops::mpi::world(), oops::mpi::myself());
         obsParams.deserialize(obsConfig);
 
-        // Create the MPI distribution object
-        std::shared_ptr<Distribution> dist =
-            DistributionFactory::create(obsParams.comm(), obsConfig);
-
         // Try the input constructor first - should have one to try if we got here
-        std::shared_ptr<ObsFrame> obsFrame;
-        obsFrame = ObsFrameFactory::create(ObsIoModes::READ, obsParams, dist);
+        std::shared_ptr<ObsFrame> obsFrame = std::make_shared<ObsFrameRead>(obsParams);
 
         // Test the counts that should be set on construction
         ioda::Dimensions_t expectedMaxVarSize = testConfig.getInt("max var size", 0);
@@ -94,7 +89,7 @@ void testConstructor() {
         // Try the output constructor, if one was specified
         if (obsParams.top_level_.obsOutFile.value() != boost::none) {
             setOfileParamsFromTestConfig(testConfig, obsParams);
-            obsFrame = ObsFrameFactory::create(ObsIoModes::WRITE, obsParams, dist);
+            obsFrame = std::make_shared<ObsFrameWrite>(obsParams);
 
             // See if we get expected number of locations
             std::vector<eckit::LocalConfiguration> writeDimConfigs =

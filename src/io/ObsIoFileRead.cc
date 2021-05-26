@@ -32,6 +32,7 @@ ObsIoFileRead::ObsIoFileRead(const Parameters_ & ioParams,
         // separate ioda files produced from that prior run.
         backendParams.fileName = uniquifyFileName(fileName, obsSpaceParams.getMpiRank(),
                                                   obsSpaceParams.getMpiTimeRank());
+        read_separate_files_ = true;
     } else {
         backendParams.fileName = fileName;
     }
@@ -55,6 +56,10 @@ ObsIoFileRead::ObsIoFileRead(const Parameters_ & ioParams,
 }
 
 ObsIoFileRead::~ObsIoFileRead() {}
+
+bool ObsIoFileRead::eachProcessGeneratesSeparateObs() const {
+  return read_separate_files_;
+}
 
 //------------------------------ private functions ----------------------------------
 //-----------------------------------------------------------------------------------

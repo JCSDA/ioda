@@ -32,7 +32,8 @@
 
 #include "ioda/distribution/DistributionFactory.h"
 #include "ioda/Engines/HH.h"
-#include "ioda/io/ObsFrameFactory.h"
+#include "ioda/io/ObsFrameRead.h"
+#include "ioda/io/ObsFrameWrite.h"
 #include "ioda/Variables/Variable.h"
 
 namespace ioda {
@@ -106,12 +107,11 @@ ObsData::ObsData(const eckit::Configuration & config, const eckit::mpi::Comm & c
     obsvars_ = obs_params_.top_level_.simVars;
     oops::Log::info() << this->obsname() << " vars: " << obsvars_ << std::endl;
 
-    // Create the MPI distribution object
-    dist_ = DistributionFactory::create(this->comm(), config);
-
     // Open the source (ObsFrame) of the data for initializing the obs_group_ (ObsGroup)
-    std::shared_ptr<ObsFrame> obsFrame;
-    obsFrame = ObsFrameFactory::create(ObsIoModes::READ, obs_params_, dist_);
+    ObsFrameRead obsFrame(obs_params_);
+
+    // Retrieve the MPI distribution object
+    dist_ = obsFrame.distribution();
 
     createObsGroupFromObsFrame(obsFrame);
     initFromObsSource(obsFrame);
@@ -119,11 +119,8 @@ ObsData::ObsData(const eckit::Configuration & config, const eckit::mpi::Comm & c
     // After walking through all the frames, gnlocs_ and gnlocs_outside_timewindow_
     // are set representing the entire file. This is because they are calculated
     // before doing the MPI distribution.
-    gnlocs_ = obsFrame->globalNumLocs();
-    gnlocs_outside_timewindow_ = obsFrame->globalNumLocsOutsideTimeWindow();
-
-    // assign a record to a unique PE
-    size_t nlocspatch = dist_->computePatchLocs(gnlocs_);
+    gnlocs_ = obsFrame.globalNumLocs();
+    gnlocs_outside_timewindow_ = obsFrame.globalNumLocsOutsideTimeWindow();
 
     if (this->obs_sort_var() != "") {
       buildSortedObsGroups();
@@ -381,13 +378,13 @@ void ObsData::print(std::ostream & os) const {
 }
 
 // -----------------------------------------------------------------------------
-void ObsData::createObsGroupFromObsFrame(const std::shared_ptr<ObsFrame> & obsFrame) {
+void ObsData::createObsGroupFromObsFrame(ObsFrameRead & obsFrame) {
     // Determine the maximum frame size
     Dimensions_t maxFrameSize = obs_params_.top_level_.obsIoInParameters().maxFrameSize;
 
     // Create the dimension specs for obs_group_
     NewDimensionScales_t newDims;
-    for (auto & dimNameObject : obsFrame->ioDimVarList()) {
+    for (auto & dimNameObject : obsFrame.ioDimVarList()) {
         std::string dimName = dimNameObject.first;
         Variable srcDimVar = dimNameObject.second;
         Dimensions_t dimSize = srcDimVar.getDimensions().dimsCur[0];
@@ -432,7 +429,7 @@ void ObsData::createObsGroupFromObsFrame(const std::shared_ptr<ObsFrame> & obsFr
     obs_group_ = ObsGroup::generate(backend, newDims);
 
     // fill in dimension coordinate values
-    for (auto & dimNameObject : obsFrame->ioDimVarList()) {
+    for (auto & dimNameObject : obsFrame.ioDimVarList()) {
         std::string dimName = dimNameObject.first;
         Variable srcDimVar = dimNameObject.second;
         Variable destDimVar = obs_group_.vars.open(dimName);
@@ -467,12 +464,12 @@ void ObsData::createObsGroupFromObsFrame(const std::shared_ptr<ObsFrame> & obsFr
 
 // -----------------------------------------------------------------------------
 template<typename VarType>
-bool ObsData::readObsSource(const std::shared_ptr<ObsFrame> & obsFrame,
+bool ObsData::readObsSource(ObsFrameRead & obsFrame,
                             const std::string & varName, std::vector<VarType> & varValues) {
-    Variable sourceVar = obsFrame->vars().open(varName);
+    Variable sourceVar = obsFrame.vars().open(varName);
 
     // Read the variable
-    bool gotVarData = obsFrame->readFrameVar(varName, varValues);
+    bool gotVarData = obsFrame.readFrameVar(varName, varValues);
 
     // Replace source fill values with corresponding missing marks
     if ((gotVarData) && (sourceVar.hasFillValue())) {
@@ -491,12 +488,12 @@ bool ObsData::readObsSource(const std::shared_ptr<ObsFrame> & obsFrame,
 }
 
 template<>
-bool ObsData::readObsSource(const std::shared_ptr<ObsFrame> & obsFrame,
+bool ObsData::readObsSource(ObsFrameRead & obsFrame,
                             const std::string & varName, std::vector<std::string> & varValues) {
-    Variable sourceVar = obsFrame->vars().open(varName);
+    Variable sourceVar = obsFrame.vars().open(varName);
 
     // Read the variable
-    bool gotVarData = obsFrame->readFrameVar(varName, varValues);
+    bool gotVarData = obsFrame.readFrameVar(varName, varValues);
 
     // Replace source fill values with corresponding missing marks
     if ((gotVarData) && (sourceVar.hasFillValue())) {
@@ -514,37 +511,37 @@ bool ObsData::readObsSource(const std::shared_ptr<ObsFrame> & obsFrame,
 }
 
 // -----------------------------------------------------------------------------
-void ObsData::initFromObsSource(const std::shared_ptr<ObsFrame> & obsFrame) {
+void ObsData::initFromObsSource(ObsFrameRead & obsFrame) {
     // Walk through the frames and copy the data to the obs_group_ storage
-    dims_attached_to_vars_ = obsFrame->ioVarDimMap();
+    dims_attached_to_vars_ = obsFrame.ioVarDimMap();
 
     // Create variables in obs_group_ based on those in the obs source
-    createVariables(obsFrame->vars(), obs_group_.vars, dims_attached_to_vars_);
+    createVariables(obsFrame.vars(), obs_group_.vars, dims_attached_to_vars_);
 
-    Variable nlocsVar = obsFrame->vars().open(dim_info_.get_dim_name(ObsDimensionId::Nlocs));
+    Variable nlocsVar = obsFrame.vars().open(dim_info_.get_dim_name(ObsDimensionId::Nlocs));
     int iframe = 1;
-    for (obsFrame->frameInit(); obsFrame->frameAvailable(); obsFrame->frameNext()) {
-        Dimensions_t frameStart = obsFrame->frameStart();
+    for (obsFrame.frameInit(); obsFrame.frameAvailable(); obsFrame.frameNext()) {
+        Dimensions_t frameStart = obsFrame.frameStart();
 
         // Resize the nlocs dimesion according to the adjusted frame size produced
         // genFrameIndexRecNums. The second argument is to tell resizeNlocs whether
         // to append or reset to the size given by the first arguemnt.
-        resizeNlocs(obsFrame->adjNlocsFrameCount(), (iframe > 1));
+        resizeNlocs(obsFrame.adjNlocsFrameCount(), (iframe > 1));
 
         // Clear out the selection caches
         known_fe_selections_.clear();
         known_be_selections_.clear();
 
-        for (auto & varNameObject : obsFrame->ioVarList()) {
+        for (auto & varNameObject : obsFrame.ioVarList()) {
             std::string varName = varNameObject.first;
             Variable var = varNameObject.second;
             Dimensions_t beFrameStart;
-            if (obsFrame->ioIsVarDimByNlocs(varName)) {
-                beFrameStart = obsFrame->adjNlocsFrameStart();
+            if (obsFrame.ioIsVarDimByNlocs(varName)) {
+                beFrameStart = obsFrame.adjNlocsFrameStart();
             } else {
                 beFrameStart = frameStart;
             }
-            Dimensions_t frameCount = obsFrame->frameCount(varName);
+            Dimensions_t frameCount = obsFrame.frameCount(varName);
 
             // Transfer the variable to the in-memory storage
             if (var.isA<int>()) {
@@ -579,9 +576,9 @@ void ObsData::initFromObsSource(const std::shared_ptr<ObsFrame> & obsFrame) {
     }
 
     // Record record information
-    nrecs_ = obsFrame->frameNumRecs();
-    indx_ = obsFrame->index();
-    recnums_ = obsFrame->recnums();
+    nrecs_ = obsFrame.frameNumRecs();
+    indx_ = obsFrame.index();
+    recnums_ = obsFrame.recnums();
 
     // TODO(SRH) Eliminate this temporary fix. Some files do not have ISO 8601 date time
     // strings. Instead they have a reference date time and time offset. If there is no
@@ -590,7 +587,7 @@ void ObsData::initFromObsSource(const std::shared_ptr<ObsFrame> & obsFrame) {
     std::string dtVarName = fullVarName("MetaData", "datetime");
     if (!obs_group_.vars.exists(dtVarName)) {
         int refDtime;
-        obsFrame->atts().open("date_time").read<int>(refDtime);
+        obsFrame.atts().open("date_time").read<int>(refDtime);
 
         std::vector<float> timeOffset;
         Variable timeVar = obs_group_.vars.open(fullVarName("MetaData", "time"));
@@ -996,45 +993,44 @@ void ObsData::saveToFile() {
     obs_params_.setMaxVarSize(maxVarSize);
 
     // Open the file for output
-    std::shared_ptr<ObsFrame> obsFrame = ObsFrameFactory::create(ObsIoModes::WRITE,
-                                                                 obs_params_, dist_);
+    ObsFrameWrite obsFrame(obs_params_);
 
     // Iterate through the frames and variables moving data from the database into
     // the file.
     int iframe = 0;
-    for (obsFrame->frameInit(varList, dimVarList, dimsAttachedToVars, maxVarSize);
-         obsFrame->frameAvailable(); obsFrame->frameNext(varList)) {
-        Dimensions_t frameStart = obsFrame->frameStart();
+    for (obsFrame.frameInit(varList, dimVarList, dimsAttachedToVars, maxVarSize);
+         obsFrame.frameAvailable(); obsFrame.frameNext(varList)) {
+        Dimensions_t frameStart = obsFrame.frameStart();
         for (auto & varNameObject : varList) {
             // form the destination (ObsFrame) variable name
             std::string destVarName = varNameObject.first;
 
             // open the destination variable and get the associate count
-            Variable destVar = obsFrame->vars().open(destVarName);
-            Dimensions_t frameCount = obsFrame->frameCount(destVarName);
+            Variable destVar = obsFrame.vars().open(destVarName);
+            Dimensions_t frameCount = obsFrame.frameCount(destVarName);
 
             // transfer data if we haven't gone past the end of the variable yet
             if (frameCount > 0) {
                 // Form the hyperslab selection for this frame
                 Variable srcVar = varNameObject.second;
                 std::vector<Dimensions_t> varShape = srcVar.getDimensions().dimsCur;
-                ioda::Selection memSelect = obsFrame->createMemSelection(varShape, frameCount);
+                ioda::Selection memSelect = obsFrame.createMemSelection(varShape, frameCount);
                 ioda::Selection varSelect =
-                    obsFrame->createVarSelection(varShape, frameStart, frameCount);
+                    obsFrame.createVarSelection(varShape, frameStart, frameCount);
 
                 // transfer the data
                 if (srcVar.isA<int>()) {
                     std::vector<int> varValues;
                     srcVar.read<int>(varValues, memSelect, varSelect);
-                    obsFrame->writeFrameVar(destVarName, varValues);
+                    obsFrame.writeFrameVar(destVarName, varValues);
                 } else if (srcVar.isA<float>()) {
                     std::vector<float> varValues;
                     srcVar.read<float>(varValues, memSelect, varSelect);
-                    obsFrame->writeFrameVar(destVarName, varValues);
+                    obsFrame.writeFrameVar(destVarName, varValues);
                 } else if (srcVar.isA<std::string>()) {
                     std::vector<std::string> varValues;
                     srcVar.read<std::string>(varValues, memSelect, varSelect);
-                    obsFrame->writeFrameVar(destVarName, varValues);
+                    obsFrame.writeFrameVar(destVarName, varValues);
                 }
             }
         }

@@ -24,6 +24,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsspace_index_recnum.yml
   testinput/iodatest_obsspace_index_recnum_twfilt.yml
   testinput/iodatest_obsspace_invalid_numeric.yml
+  testinput/iodatest_obsspace_index_recnum_read_distributed_files.yml
   testinput/iodatest_obsspace_marine.yml
   testinput/iodatest_obsspace_mpi.yml
   testinput/iodatest_obsspace_fortran.yml
@@ -284,6 +285,13 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_index_recnum_twfilt_mpi_4
 ecbuild_add_test( TARGET  test_ioda_obsspace_invalid_numeric
                   SOURCES mains/TestObsSpaceInvalidNumeric.cc
                   ARGS    "testinput/iodatest_obsspace_invalid_numeric.yml"
+                  LIBS  ioda_test
+                  TEST_DEPENDS get_ioda_test_data )
+
+ecbuild_add_test( TARGET  test_ioda_obsspace_index_recnum_read_distributed_files
+                  MPI 3
+                  COMMAND test_ioda_obsspace_index_recnum
+                  ARGS    "testinput/iodatest_obsspace_index_recnum_read_distributed_files.yml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
