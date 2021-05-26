@@ -125,7 +125,7 @@ void testConstructor() {
     // for Halo distr this record will be considered unique on each PE
     if (DistMethod != "Halo") {
       std::size_t Nrecs = odb.nrecs();
-      odb.distribution().allReduceInPlace(Nrecs, eckit::mpi::sum());
+      odb.distribution()->allReduceInPlace(Nrecs, eckit::mpi::sum());
       std::size_t ExpectedNrecs = testConfig.getUnsigned("nrecs");
       oops::Log::debug() << "Nrecs, ExpectedNrecs: " << Nrecs << ", "
                        << ExpectedNrecs << std::endl;
@@ -204,7 +204,7 @@ void testGetDb() {
 
         // Calculate the norm of the vector
         double ExpectedVnorm = varconf[i].getDouble("norm");
-        double Vnorm = Odb->distribution().dot_product(TestVec, TestVec);
+        double Vnorm = Odb->distribution()->dot_product(TestVec, TestVec);
         Vnorm = sqrt(Vnorm);
 
         EXPECT(oops::is_close(Vnorm, ExpectedVnorm, Tol));
@@ -219,7 +219,7 @@ void testGetDb() {
 
         // Calculate the norm of the vector
         double ExpectedVnorm = varconf[i].getDouble("norm");
-        double Vnorm = Odb->distribution().dot_product(TestVec, TestVec);
+        double Vnorm = Odb->distribution()->dot_product(TestVec, TestVec);
         Vnorm = sqrt(Vnorm);
 
         EXPECT(oops::is_close(Vnorm, ExpectedVnorm, Tol));

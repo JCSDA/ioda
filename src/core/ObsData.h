@@ -299,7 +299,7 @@ namespace ioda {
        const oops::Variables & obsvariables() const {return obsvars_;}
 
        /// \brief return MPI distribution object
-       const Distribution & distribution() const { return *dist_;}
+       std::shared_ptr<const Distribution> distribution() const { return dist_;}
 
      private:
         // ----------------------------- private data members ---------------------------

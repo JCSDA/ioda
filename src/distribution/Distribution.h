@@ -177,6 +177,9 @@ class Distribution {
     // return the name of the distribution
     virtual std::string name() const = 0;
 
+    /// Deprecated accessor to MPI communicator (added temporarily, to be removed soon, May 2021)
+    const eckit::mpi::Comm & comm() const {return comm_;}
+
  protected:
      /*! \brief Local MPI communicator */
      const eckit::mpi::Comm & comm_;

@@ -228,7 +228,7 @@ void printNonnumericObsDataVectorStats(const ObsDataVector<DATATYPE> &obsdatavec
   for (size_t jv = 0; jv < obsdatavector.nvars(); ++jv) {
     int nloc = obsdb.globalNumLocs();
     // collect nobs on all processors
-    int nobs = obsdb.distribution().globalNumNonMissingObs(obsdatavector[jv]);
+    int nobs = obsdb.distribution()->globalNumNonMissingObs(obsdatavector[jv]);
 
     os << obsdb.obsname() << " " << obsdatavector.varnames()[jv] << " nlocs = " << nloc
        << ", nobs = " << nobs << std::endl;
@@ -263,10 +263,10 @@ void printNumericObsDataVectorStats(const ObsDataVector<DATATYPE> &obsdatavector
       }
     }
     // collect zmin, zmax, zavg, globalNumNonMissingObs on all processors
-    obsdb.distribution().allReduceInPlace(zmin, eckit::mpi::min());
-    obsdb.distribution().allReduceInPlace(zmax, eckit::mpi::max());
-    obsdb.distribution().allReduceInPlace(zavg, eckit::mpi::sum());
-    int nobs = obsdb.distribution().globalNumNonMissingObs(vector);
+    obsdb.distribution()->allReduceInPlace(zmin, eckit::mpi::min());
+    obsdb.distribution()->allReduceInPlace(zmax, eckit::mpi::max());
+    obsdb.distribution()->allReduceInPlace(zavg, eckit::mpi::sum());
+    int nobs = obsdb.distribution()->globalNumNonMissingObs(vector);
 
     os << std::endl << obsdb.obsname() << " " << obsdatavector.varnames()[jv]
        << " nlocs = " << nloc << ", nobs = " << nobs;

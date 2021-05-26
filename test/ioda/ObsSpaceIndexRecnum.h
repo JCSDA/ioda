@@ -106,9 +106,9 @@ void testConstructor() {
     EXPECT(ObsAreSorted == ExpectedObsAreSorted);
 
     // records are ambigious and not implemented for halo distribution
-    if (Test_::obspace(jj).distribution().name() != "Halo") {
+    if (Test_::obspace(jj).distribution()->name() != "Halo") {
       std::size_t Nrecs = Test_::obspace(jj).nrecs();
-      Test_::obspace(jj).distribution().allReduceInPlace(Nrecs, eckit::mpi::sum());
+      Test_::obspace(jj).distribution()->allReduceInPlace(Nrecs, eckit::mpi::sum());
       std::size_t ExpectedNrecs = testConfig.getUnsigned("nrecs");
       oops::Log::debug() << "Nrecs, ExpectedNrecs: " << Nrecs << ", "
                        << ExpectedNrecs << std::endl;

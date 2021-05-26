@@ -155,21 +155,21 @@ void testExtendedObsSpace(const eckit::LocalConfiguration &conf) {
   const std::vector<std::size_t> recidx_all_recnums = obsdata.recidx_all_recnums();
   // Determine the original record numbers by dividing the global number of records by two.
   std::size_t gnrecs_original = nrecs / 2;
-  obsdata.distribution().allReduceInPlace(gnrecs_original, eckit::mpi::sum());
+  obsdata.distribution()->allReduceInPlace(gnrecs_original, eckit::mpi::sum());
   // Expected record numbers on this processor.
   std::vector<std::size_t> recidx_all_recnums_expected;
   for (size_t irec = 0; irec < gnrecs_original; ++irec) {
-    if (obsdata.distribution().isMyRecord(irec)) {
+    if (obsdata.distribution()->isMyRecord(irec)) {
       recidx_all_recnums_expected.push_back(irec);
     }
   }
   // Determine the offset for the extended records using the same method as in the
   // ObsSpace extension code.
   std::size_t maxOriginalRecordId = *recidx_all_recnums_expected.rbegin();
-  obsdata.distribution().allReduceInPlace(maxOriginalRecordId, eckit::mpi::max());
+  obsdata.distribution()->allReduceInPlace(maxOriginalRecordId, eckit::mpi::max());
   // Determine the extended record numbers.
   for (size_t irec = 0; irec < gnrecs_original; ++irec) {
-    if (obsdata.distribution().isMyRecord(irec)) {
+    if (obsdata.distribution()->isMyRecord(irec)) {
       recidx_all_recnums_expected.push_back(irec + maxOriginalRecordId + 1);
     }
   }
@@ -179,7 +179,7 @@ void testExtendedObsSpace(const eckit::LocalConfiguration &conf) {
   // Compare indices across all processors.
   // Gather all indices, sort them, and produce a vector of unique indices.
   std::vector <size_t> index_processors = obsdata.index();
-  obsdata.distribution().allGatherv(index_processors);
+  obsdata.distribution()->allGatherv(index_processors);
   std::sort(index_processors.begin(), index_processors.end());
   auto it_unique = std::unique(index_processors.begin(), index_processors.end());
   index_processors.erase(it_unique, index_processors.end());
