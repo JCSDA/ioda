@@ -54,7 +54,7 @@ namespace ioda {
  *  \param RecNum Record Number       
  */
 
-/*! \fn std::size_t computePatchLocs(const std::size_t nglocs)
+/*! \fn void computePatchLocs(const std::size_t nglocs)
  *  \brief computes internal index (if needed) of patch locations for this PE
  *         assumed that this function is called before dot_product, globalNumNonMissingObs
  *  \param nglocs total number of global locations
@@ -99,7 +99,7 @@ class Distribution {
     virtual ~Distribution();
 
     virtual bool isMyRecord(std::size_t RecNum) const = 0;
-    virtual std::size_t computePatchLocs(const std::size_t nglocs) {return 0;}
+    virtual void computePatchLocs(const std::size_t nglocs) {}
     virtual void assignRecord(const std::size_t RecNum, const std::size_t LocNum,
               const eckit::geometry::Point2 & point) {}
     virtual void patchObs(std::vector<bool> &) const = 0;
@@ -151,10 +151,12 @@ class Distribution {
      * all processes.
      *
      * \param[inout] x
-     *   On input: a vector of data associated with observations held by the calling process.
-     *   On output: a concatenation of the vectors x passed by all calling processes, in the order
+     *   On input: a vector whose ith element is associated with the ith observation held by the
+     *   calling process.
+     *   On output: a concatenation of the vectors `x` passed by all calling processes, in the order
      *   of process ranks, with duplicates removed (i.e. if any observations are duplicated across
-     *   multiple processes, the elements of x corresponding to these data are included only once).
+     *   multiple processes, the elements of `x` corresponding to these data are included only
+     *   once).
      */
     virtual void allGatherv(std::vector<size_t> &x) const = 0;
     virtual void allGatherv(std::vector<int> &x) const = 0;
@@ -164,15 +166,10 @@ class Distribution {
     virtual void allGatherv(std::vector<std::string> &x) const = 0;
 
     /*!
-     * \brief Compute the exclusive scan (partial sums) of data on the calling processes.
-     *
-     * \param[inout] x
-     *   On input: a number associated in some way with the observations held by the calling
-     *   process. On output: the sum of the values of \p x sent by all processes of lower rank than
-     *   the calling process, *excluding those that hold the same observations as the calling
-     *   process*.
+     * \brief Map the index of a location held on the calling process to the index of the
+     * corresponding element of any vector produced by allGatherv().
      */
-    virtual void exclusiveScan(size_t &x) const = 0;
+    virtual size_t globalUniqueConsecutiveLocationIndex(size_t loc) const = 0;
 
     // return the name of the distribution
     virtual std::string name() const = 0;

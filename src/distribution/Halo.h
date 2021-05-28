@@ -36,7 +36,7 @@ class Halo: public Distribution {
      void assignRecord(const std::size_t RecNum, const std::size_t LocNum,
                       const eckit::geometry::Point2 & point) override;
      bool isMyRecord(std::size_t RecNum) const override;
-     std::size_t computePatchLocs(const std::size_t nglocs) override;
+     void computePatchLocs(const std::size_t nglocs) override;
      void patchObs(std::vector<bool> &) const override;
 
      double dot_product(const std::vector<double> &v1, const std::vector<double> &v2)
@@ -52,6 +52,8 @@ class Halo: public Distribution {
      size_t globalNumNonMissingObs(const std::vector<std::string> &v) const override;
      size_t globalNumNonMissingObs(const std::vector<util::DateTime> &v) const override;
 
+     // function allReduceInPlace only works correctly with op == eckit::mpi::sum()
+     // if x represents the result of a local reduction only over locations belonging to the patch.
      void allReduceInPlace(double &x, eckit::mpi::Operation::Code op) const override;
      void allReduceInPlace(float &x, eckit::mpi::Operation::Code op) const override;
      void allReduceInPlace(int &x, eckit::mpi::Operation::Code op) const override;
@@ -67,7 +69,7 @@ class Halo: public Distribution {
      void allGatherv(std::vector<util::DateTime> &x) const override;
      void allGatherv(std::vector<std::string> &x) const override;
 
-     void exclusiveScan(size_t &x) const override;
+     size_t globalUniqueConsecutiveLocationIndex(size_t loc) const override;
 
      std::string name() const override {return distName_;}
 
@@ -80,16 +82,24 @@ class Halo: public Distribution {
      void allReduceInPlaceImpl(T &x, eckit::mpi::Operation::Code op) const;
      template <typename T>
      void allReduceInPlaceImpl(std::vector<T> &x, eckit::mpi::Operation::Code op) const;
+     template <typename T>
+     void allGathervImpl(std::vector<T> &x) const;
+
+     void computeGlobalUniqueConsecutiveLocIndices(
+         const std::vector<std::pair<double, int>> &dist_and_lidx_glb);
 
      double radius_;
      eckit::geometry::Point2 center_;
-     // storage container for halo ids
+     // Indices of records held on this PE
      std::unordered_set<std::size_t> haloObsRecord_;
      std::unordered_map<std::size_t, double> haloObsLoc_;
+     // During record assignment holds indices of locations held on this PE
      std::vector<size_t> haloLocVector_;
-     // storage container for patch ids
-     std::unordered_set<std::size_t> patchObsLoc_;
+     // Indicates which observations held on this PE are "patch obs".
      std::vector<bool> patchObsBool_;
+     // Maps indices of locations held on this PE to corresponding elements of vectors
+     // produced by allGatherv()
+     std::vector<size_t> globalUniqueConsecutiveLocIndices_;
      // Earth radius in m
      const double radius_earth_ = 6.371e6;
      // dist name

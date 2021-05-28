@@ -67,7 +67,8 @@ class InefficientDistribution: public Distribution {
      void allGatherv(std::vector<util::DateTime> &x) const override {}
      void allGatherv(std::vector<std::string> &x) const override {}
 
-     void exclusiveScan(size_t &x) const override;
+     size_t globalUniqueConsecutiveLocationIndex(size_t loc) const override;
+
      std::string name() const override {return distName_;}
 
  private:

@@ -28,7 +28,10 @@ class NonoverlappingDistribution : public Distribution {
                                         const eckit::Configuration & config);
     ~NonoverlappingDistribution() override;
 
+    void assignRecord(const std::size_t RecNum, const std::size_t LocNum,
+                      const eckit::geometry::Point2 & point) override;
     void patchObs(std::vector<bool> & patchObsVec) const override;
+    void computePatchLocs(const std::size_t nglocs) override;
 
     double dot_product(const std::vector<double> &v1, const std::vector<double> &v2) const override;
     double dot_product(const std::vector<float> &v1, const std::vector<float> &v2) const override;
@@ -55,13 +58,17 @@ class NonoverlappingDistribution : public Distribution {
     void allGatherv(std::vector<util::DateTime> &x) const override;
     void allGatherv(std::vector<std::string> &x) const override;
 
-    void exclusiveScan(size_t &x) const override;
+    size_t globalUniqueConsecutiveLocationIndex(size_t loc) const override;
 
  private:
     template <typename T>
     size_t globalNumNonMissingObsImpl(const std::vector<T> &v) const;
     template <typename T>
     double dot_productImpl(const std::vector<T> &v1, const std::vector<T> &v2) const;
+
+ private:
+    size_t numLocationsOnThisRank_ = 0;
+    size_t numLocationsOnLowerRanks_ = 0;
 };
 
 }  // namespace ioda

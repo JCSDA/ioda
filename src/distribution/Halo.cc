@@ -92,8 +92,7 @@ bool Halo::isMyRecord(std::size_t RecNum) const {
 }
 
 // -----------------------------------------------------------------------------
-std::size_t Halo::computePatchLocs(const std::size_t nglocs) {
-  size_t nPatchObsLoc = nglocs;
+void Halo::computePatchLocs(const std::size_t nglocs) {
   // define some constants for this PE
   double inf = std::numeric_limits<double>::infinity();
   size_t myRank = comm_.rank();
@@ -115,32 +114,68 @@ std::size_t Halo::computePatchLocs(const std::size_t nglocs) {
     // use reduce operation to find PE rank with minimal distance
     comm_.allReduce(dist_and_lidx_loc, dist_and_lidx_glb, eckit::mpi::minloc());
 
+    // ids of patch observations owned by this PE
+    std::unordered_set<std::size_t> patchObsLoc;
+
     // if this PE has the minimum distance then this PE owns this ob. as patch
     for (auto i : haloObsLoc_) {
       if ( dist_and_lidx_glb[i.first].second == myRank ) {
-        patchObsLoc_.insert(i.first);
+        patchObsLoc.insert(i.first);
       }
     }
 
     // convert storage from unodered sets to a bool vector
     for (size_t jj = 0; jj < haloLocVector_.size(); ++jj) {
-      if ( patchObsLoc_.count(haloLocVector_[jj]) ) {
+      if ( patchObsLoc.count(haloLocVector_[jj]) ) {
         patchObsBool_.push_back(true);
       } else {
         patchObsBool_.push_back(false);
       }
     }
 
-    // Number of Obs within/on Patch.
-    nPatchObsLoc = patchObsLoc_.size();
+    computeGlobalUniqueConsecutiveLocIndices(dist_and_lidx_glb);
 
     // now that we have patchObsBool_ computed we can free memory for temp objects
     haloObsLoc_.clear();
     haloLocVector_.clear();
-    patchObsLoc_.clear();
+  }
+}
+
+// -----------------------------------------------------------------------------
+void Halo::computeGlobalUniqueConsecutiveLocIndices(
+    const std::vector<std::pair<double, int>> &dist_and_lidx_glb) {
+  globalUniqueConsecutiveLocIndices_.reserve(haloLocVector_.size());
+
+  // Step 1: index patch observations owned by each rank consecutively (starting from 0 on each
+  // rank). For each observation i held on this rank, set globalConsecutiveLocIndices_[i] to
+  // the index of the corresponding patch observation on the rank that owns it.
+  std::vector<size_t> patchObsCountOnRank(comm_.size(), 0);
+  for (size_t gloc = 0, nglocs = dist_and_lidx_glb.size(); gloc < nglocs; ++gloc) {
+    const size_t rankOwningPatchObs = dist_and_lidx_glb[gloc].second;
+    if (haloObsLoc_.find(gloc) != haloObsLoc_.end()) {
+      // This obs is held on the current PE (but not necessarily as a patch obs)
+      globalUniqueConsecutiveLocIndices_.push_back(patchObsCountOnRank[rankOwningPatchObs]);
+    }
+    ++patchObsCountOnRank[rankOwningPatchObs];
   }
 
-  return nPatchObsLoc;
+  // Step 2: make indices of patch observations globally unique by incrementing the index
+  // of each patch observation held by rank r by the total number of patch observations owned
+  // by ranks r' < r.
+
+  // Perform an exclusive scan
+  std::vector<size_t> numPatchObsCountOnPreviousRanks(patchObsCountOnRank.size(), 0);
+  for (size_t rank = 1; rank < patchObsCountOnRank.size(); ++rank) {
+    numPatchObsCountOnPreviousRanks[rank] =
+        numPatchObsCountOnPreviousRanks[rank - 1] + patchObsCountOnRank[rank - 1];
+  }
+
+  // Increment patch observation indices
+  for (size_t loc = 0; loc < globalUniqueConsecutiveLocIndices_.size(); ++loc) {
+    const size_t gloc = haloLocVector_[loc];
+    const size_t rankOwningPatchObs = dist_and_lidx_glb[gloc].second;
+    globalUniqueConsecutiveLocIndices_[loc] += numPatchObsCountOnPreviousRanks[rankOwningPatchObs];
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -257,8 +292,11 @@ void Halo::allReduceInPlace(std::vector<size_t> &x, eckit::mpi::Operation::Code 
 
 template<typename T>
 void Halo::allReduceInPlaceImpl(T &x, eckit::mpi::Operation::Code op) const {
-  // reduce is well defined only for min & max for Halo distribution
+  // reduce is well defined only for min & max for Halo distribution within patch.
   if ((op == eckit::mpi::min()) || (op == eckit::mpi::max())) {
+    comm_.allReduceInPlace(x, op);
+  // reduce for sum should only count those within patch.
+  } else if (op == eckit::mpi::sum()) {
     comm_.allReduceInPlace(x, op);
   } else {
     throw eckit::NotImplemented("Reduce operation is not defined for Halo distribution", Here());
@@ -284,32 +322,59 @@ void Halo::allReduceInPlaceImpl(std::vector<T> &x, eckit::mpi::Operation::Code o
   }
 }
 
+// Implementation of allGatherv
+//
 void Halo::allGatherv(std::vector<size_t> &x) const {
-  throw eckit::NotImplemented("allGatherv not implemented for Halo distribution", Here());
+  allGathervImpl(x);
 }
 
 void Halo::allGatherv(std::vector<int> &x) const {
-  throw eckit::NotImplemented("allGatherv not implemented for Halo distribution", Here());
+  allGathervImpl(x);
 }
 
 void Halo::allGatherv(std::vector<float> &x) const {
-  throw eckit::NotImplemented("allGatherv not implemented for Halo distribution", Here());
+  allGathervImpl(x);
 }
 
 void Halo::allGatherv(std::vector<double> &x) const {
-  throw eckit::NotImplemented("allGatherv not implemented for Halo distribution", Here());
+  allGathervImpl(x);
 }
 
+/// overloading for util::DateTime
 void Halo::allGatherv(std::vector<util::DateTime> &x) const {
-  throw eckit::NotImplemented("allGatherv not implemented for Halo distribution", Here());
+  allGathervImpl(x);
 }
 
+/// overloading for std::string
 void Halo::allGatherv(std::vector<std::string> &x) const {
-  throw eckit::NotImplemented("allGatherv not implemented for Halo distribution", Here());
+  allGathervImpl(x);
 }
 
-void Halo::exclusiveScan(size_t &x) const {
-  throw eckit::NotImplemented("exclusiveScan not implemented for Halo distribution", Here());
+template <typename T>
+void Halo::allGathervImpl(std::vector<T> &x) const {
+  // operation is only well defined if size x is the size of local obs
+  ASSERT(x.size() == patchObsBool_.size());
+
+  // make a temp vector that only holds patch obs.
+  std::vector<T> xtmp(std::count(patchObsBool_.begin(), patchObsBool_.end(), true));
+  size_t counter = 0;
+  for (size_t ii = 0; ii < x.size(); ++ii) {
+    if ( patchObsBool_[ii] ) {
+      xtmp[counter] = x[ii];
+      ++counter;
+    }
+  }
+  // gather all patch obs into a single vector
+  oops::mpi::allGatherv(comm_, xtmp);
+
+  // return the result
+  x = xtmp;
+}
+
+// -----------------------------------------------------------------------------
+
+size_t Halo::globalUniqueConsecutiveLocationIndex(size_t loc) const {
+  return globalUniqueConsecutiveLocIndices_[loc];
 }
 
 // -----------------------------------------------------------------------------

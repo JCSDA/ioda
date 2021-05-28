@@ -32,6 +32,20 @@ NonoverlappingDistribution::~NonoverlappingDistribution() {
 }
 
 // -----------------------------------------------------------------------------
+void NonoverlappingDistribution::assignRecord(const std::size_t RecNum,
+                                              const std::size_t /*LocNum*/,
+                                              const eckit::geometry::Point2 & /*point*/) {
+  if (isMyRecord(RecNum))
+    ++numLocationsOnThisRank_;
+}
+
+// -----------------------------------------------------------------------------
+void NonoverlappingDistribution::computePatchLocs(const std::size_t /*nglocs*/) {
+  numLocationsOnLowerRanks_ = numLocationsOnThisRank_;
+  oops::mpi::exclusiveScan(comm_, numLocationsOnLowerRanks_);
+}
+
+// -----------------------------------------------------------------------------
 void NonoverlappingDistribution::patchObs(std::vector<bool> & patchObsVec) const {
   std::fill(patchObsVec.begin(), patchObsVec.end(), true);
 }
@@ -142,35 +156,31 @@ void NonoverlappingDistribution::allReduceInPlace(std::vector<size_t> &x,
 
 // -----------------------------------------------------------------------------
 void NonoverlappingDistribution::allGatherv(std::vector<size_t> &x) const {
-    oops::mpi::allGatherv(comm_, x);
+  oops::mpi::allGatherv(comm_, x);
 }
 
 void NonoverlappingDistribution::allGatherv(std::vector<int> &x) const {
-    oops::mpi::allGatherv(comm_, x);
+  oops::mpi::allGatherv(comm_, x);
 }
 
 void NonoverlappingDistribution::allGatherv(std::vector<float> &x) const {
-    oops::mpi::allGatherv(comm_, x);
+  oops::mpi::allGatherv(comm_, x);
 }
 
 void NonoverlappingDistribution::allGatherv(std::vector<double> &x) const {
-    oops::mpi::allGatherv(comm_, x);
+  oops::mpi::allGatherv(comm_, x);
 }
 
 void NonoverlappingDistribution::allGatherv(std::vector<util::DateTime> &x) const {
-    oops::mpi::allGatherv(comm_, x);
+  oops::mpi::allGatherv(comm_, x);
 }
 
 void NonoverlappingDistribution::allGatherv(std::vector<std::string> &x) const {
-    oops::mpi::allGatherv(comm_, x);
+  oops::mpi::allGatherv(comm_, x);
 }
 
-void NonoverlappingDistribution::exclusiveScan(size_t &x) const {
-    // Could be done with MPI_Exscan, but there's no wrapper for it in eckit::mpi.
-
-    std::vector<size_t> xs(comm_.size());
-    comm_.allGather(x, xs.begin(), xs.end());
-    x = std::accumulate(xs.begin(), xs.begin() + comm_.rank(), 0);
+size_t NonoverlappingDistribution::globalUniqueConsecutiveLocationIndex(size_t loc) const {
+  return numLocationsOnLowerRanks_ + loc;
 }
 
 // -----------------------------------------------------------------------------

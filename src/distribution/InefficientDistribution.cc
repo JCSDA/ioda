@@ -116,8 +116,8 @@ size_t InefficientDistribution::globalNumNonMissingObsImpl(const std::vector<T> 
 }
 
 // -----------------------------------------------------------------------------
-void InefficientDistribution::exclusiveScan(size_t &x) const {
-  x = 0;
+size_t InefficientDistribution::globalUniqueConsecutiveLocationIndex(size_t loc) const {
+  return loc;
 }
 
 // -----------------------------------------------------------------------------
