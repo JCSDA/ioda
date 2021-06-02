@@ -236,7 +236,11 @@ void HH_HasVariables::attachDimensionScales(
         throw Exception("There are more scales than variable dimensions.", ioda_Here());
       }
       hid_t scale_ht = scales[i]->get()();
+#if H5_VERSION_GE(1, 12, 0)
       H5O_info1_t info;
+#else
+      H5O_info_t info;
+#endif
       if (H5Oget_info1(scale_ht, &info) < 0) throw Exception("H5Oget_info failed.", ioda_Here());
 
       // Forward mapping
