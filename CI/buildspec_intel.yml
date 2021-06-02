@@ -79,9 +79,6 @@ phases:
       # cdash upload setup
       - cp /jcsda/ioda-bundle/cmake/CTestConfig.cmake /jcsda/ioda-bundle/
 
-      - sed -i "/^ecbuild_bundle( PROJECT ioda/a set( IODA_BRANCH ${CODEBUILD_GIT_BRANCH} )" CMakeLists.txt
-      - cat CMakeLists.txt
-
       - chmod 777 -R /jcsda/ioda-bundle
       - cd /jcsda/ioda-bundle
       - ls
