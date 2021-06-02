@@ -62,8 +62,8 @@ CASE("ioda/ObsSpace/testPutDb") {
       EXPECT_THROWS(obsspace->put_db("DummyGroup", "single_dimensional_var_2", testVec1));
     }
 
-    // Destroy the ObsSpace to force an output file to be written
-    obsspace = nullptr;
+    // Call the ObsSpace close function to force an output file to be written
+    obsspace->save();
 
     // Read the output file and check its contents are correct
 

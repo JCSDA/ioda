@@ -40,6 +40,13 @@ class ObsSpaceTestFixture : private boost::noncopyable {
     return *getInstance().ospaces_.at(ii);
   }
   static std::size_t size() {return getInstance().ospaces_.size();}
+  static void cleanup() {
+    auto &spaces = getInstance().ospaces_;
+    for (auto &space : spaces) {
+      space->save();
+      space.reset();
+    }
+  }
 
  private:
   static ObsSpaceTestFixture & getInstance() {
@@ -186,6 +193,16 @@ void testIndexRecnum() {
 
 // -----------------------------------------------------------------------------
 
+void testCleanup() {
+  // This test removes the obsspaces and ensures that they evict their contents
+  // to disk successfully.
+  typedef ObsSpaceTestFixture Test_;
+
+  Test_::cleanup();
+}
+
+// -----------------------------------------------------------------------------
+
 class ObsSpaceIndexRecnum : public oops::Test {
  public:
   ObsSpaceIndexRecnum() {}
@@ -200,6 +217,8 @@ class ObsSpaceIndexRecnum : public oops::Test {
       { testConstructor(); });
     ts.emplace_back(CASE("ioda/ObsSpaceIndexRecnum/testIndexRecnum")
       { testIndexRecnum(); });
+    ts.emplace_back(CASE("ioda/ObsSpaceIndexRecnum/testCleanup")
+      { testCleanup(); });
   }
 
   void clear() const override {}

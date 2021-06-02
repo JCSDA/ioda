@@ -136,7 +136,7 @@ namespace ioda {
                 const util::DateTime & bgn, const util::DateTime & end,
                 const eckit::mpi::Comm & timeComm);
         ObsData(const ObsData &);
-        ~ObsData();
+        virtual ~ObsData() {}
 
         /// \details This method will return the start of the DA timing window
         const util::DateTime & windowStart() const {return winbgn_;}
@@ -149,6 +149,19 @@ namespace ioda {
 
         /// \details This method will return the associated parameters
         const ObsSpaceParameters & params() const {return obs_params_;}
+
+        /// \brief save the obs space data into a file (if obsdataout specified)
+        /// \details This function will save the obs space data into a file, but only if
+        ///          the obsdataout parameter is specified in the YAML configuration.
+        ///          Note that this function will do nothing if the obsdataout specification
+        ///          is not present.
+        ///
+        ///          The purpose of this save function is to fix an issue where the hdf5
+        ///          library closes the file (via a C API) during the time when the
+        ///          ObsSpace destructor (C++) is still writing to that file. These
+        ///          actions can sometimes get out of sync since they are being triggered
+        ///          from different sources during the clean up after a job completes.
+        void save();
 
         /// \brief return the total number of locations in the corresponding obs spaces
         ///        across all MPI tasks

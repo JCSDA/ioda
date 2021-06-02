@@ -183,6 +183,8 @@ void testExtendedObsSpace(const eckit::LocalConfiguration &conf) {
   std::iota(index_processors_expected.begin(), index_processors_expected.end(), 0);
   // Compare actual and expected indices.
   EXPECT_EQUAL(index_processors, index_processors_expected);
+
+  obsdata.save();
 }
 
 class ExtendedObsSpace : public oops::Test {

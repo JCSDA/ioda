@@ -119,6 +119,8 @@ class ObsSpace : public oops::ObsSpaceBase {
 
   const ObsSpaceParameters & params() const {return obsspace_->params();}
 
+  void save() {obsspace_->save();}
+
   const oops::Variables & obsvariables() const {return obsspace_->obsvariables();}
 
   std::shared_ptr<const Distribution> distribution() const {return obsspace_->distribution();}

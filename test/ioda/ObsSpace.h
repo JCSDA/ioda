@@ -44,6 +44,7 @@ class ObsSpaceTestFixture : private boost::noncopyable {
   static void cleanup() {
     auto &spaces = getInstance().ospaces_;
     for (auto &space : spaces) {
+      space->save();
       space.reset();
     }
   }
@@ -430,9 +431,7 @@ void testMultiDimTransfer() {
 
 void testCleanup() {
   // This test removes the obsspaces and ensures that they evict their contents
-  // to disk successfully. The saveToFile logic runs in a destructor, so this
-  // test ensures that we are not executing features that we want to test after
-  // the eckit testing environment reports success.
+  // to disk successfully.
   typedef ObsSpaceTestFixture Test_;
 
   Test_::cleanup();

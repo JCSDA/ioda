@@ -54,7 +54,7 @@ void ObsFrameRead::frameInit() {
     }
     unique_rec_nums_.clear();
     max_var_size_ = obs_io_->maxVarSize();
-    nlocs_ = frameCount("nlocs");
+    nlocs_ = 0;
     adjusted_nlocs_frame_start_ = 0;
     gnlocs_ = 0;
 
@@ -68,7 +68,6 @@ void ObsFrameRead::frameInit() {
 //------------------------------------------------------------------------------------
 void ObsFrameRead::frameNext() {
     frame_start_ += max_frame_size_;
-    nlocs_ += frameCount("nlocs");
     adjusted_nlocs_frame_start_ += adjusted_nlocs_frame_count_;
 }
 
@@ -481,6 +480,7 @@ void ObsFrameRead::applyMpiDistribution(const std::shared_ptr<Distribution> & di
             recnums_.push_back(recNum);
             unique_rec_nums_.insert(recNum);
             frame_loc_index_.push_back(frameIndex);
+            nlocs_++;
         }
     }
     nrecs_ = unique_rec_nums_.size();

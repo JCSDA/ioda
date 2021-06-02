@@ -98,6 +98,10 @@ CASE("ioda/ObsDataVector/printDateTime") {
   testPrint<util::DateTime>("datetime");
 }
 
+CASE("ioda/ObsDataVector/closeObsSpace") {
+  // In case the obsdataout spec is ever used
+  ObsDataVecTestFixture::obspace().save();
+}
 
 class ObsDataVector : public oops::Test {
  private:

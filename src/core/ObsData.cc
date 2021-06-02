@@ -145,31 +145,20 @@ ObsData::ObsData(const eckit::Configuration & config, const eckit::mpi::Comm & c
 }
 
 // -----------------------------------------------------------------------------
-/// \details Destructor for an ObsData object. This destructor will clean up the ObsData
-///          object and optionally write out the contents of the obs container into
-///          the output file. The save-to-file operation is invoked when an output obs
-///          file is specified in the ECKIT configuration segment associated with the
-///          ObsData object.
-ObsData::~ObsData() {
-    // Destructors are not supposed to throw exceptions so use a try..catch structure
-    // to prevent this destructor from thowing and exception.
-    try {
-        if (obs_params_.top_level_.obsOutFile.value() != boost::none) {
-            std::string fileName = obs_params_.top_level_.obsOutFile.value()->fileName;
-            oops::Log::info() << obsname() << ": save database to " << fileName << std::endl;
-            saveToFile();
-        } else {
-            oops::Log::info() << obsname() << " :  no output" << std::endl;
-        }
-        oops::Log::trace() << "ObsData::ObsData destructor" << std::endl;
-    }
-    catch (std::exception& e) {
-        oops::Log::info()
-            << "ObsData::ObsData destructor has caught exception:" << e.what() << std::endl;
-    }
-    catch(...) {
-        oops::Log::info()
-            << "ObsData::ObsData destructor has caught an unknown exception" << std::endl;
+void ObsData::save() {
+    if (obs_params_.top_level_.obsOutFile.value() != boost::none) {
+        std::string fileName = obs_params_.top_level_.obsOutFile.value()->fileName;
+        oops::Log::info() << obsname() << ": save database to " << fileName << std::endl;
+        saveToFile();
+        // Call the mpi barrier command here to force all processes to wait until
+        // all processes have finished writing their files. This is done to prevent
+        // the early processes continuing and potentially executing their obs space
+        // destructor before others finish writing. This situation is known to have
+        // issues with hdf file handles getting deallocated before some of the MPI
+        // processes are finished with them.
+        this->distribution()->comm().barrier();
+    } else {
+        oops::Log::info() << obsname() << " :  no output" << std::endl;
     }
 }
 
@@ -566,8 +555,12 @@ void ObsData::initFromObsSource(ObsFrameRead & obsFrame) {
     }
 
     // Record locations and channels dimension sizes
+    // The HDF library has an issue when a dimension marked UNLIMITED is queried for its
+    // size a zero is returned instead of the proper current size. As a workaround for this
+    // ask the frame how many locations it kept instead of asking the nlocs dimension for
+    // its size.
     std::string nlocsName = dim_info_.get_dim_name(ObsDimensionId::Nlocs);
-    std::size_t nLocs = obs_group_.vars.open(nlocsName).getDimensions().dimsCur[0];
+    std::size_t nLocs = obsFrame.frameNumLocs();
     dim_info_.set_dim_size(ObsDimensionId::Nlocs, nLocs);
 
     std::string nchansName = dim_info_.get_dim_name(ObsDimensionId::Nchans);
@@ -984,10 +977,13 @@ void ObsData::saveToFile() {
         std::string dimName = dimNameObject.first;
         Dimensions_t dimSize = dimNameObject.second.getDimensions().dimsCur[0];
         Dimensions_t dimMaxSize = dimSize;
+        Dimensions_t dimChunkSize = dimSize;
         if (dimName == dim_info_.get_dim_name(ObsDimensionId::Nlocs)) {
+            dimSize = this->nlocs();
             dimMaxSize = Unlimited;
+            dimChunkSize = this->globalNumLocs();
         }
-        obs_params_.setDimScale(dimName, dimSize, dimMaxSize, dimSize);
+        obs_params_.setDimScale(dimName, dimSize, dimMaxSize, dimChunkSize);
     }
 
     // Record the maximum variable size
@@ -1006,7 +1002,7 @@ void ObsData::saveToFile() {
             // form the destination (ObsFrame) variable name
             std::string destVarName = varNameObject.first;
 
-            // open the destination variable and get the associate count
+            // open the destination variable and get the associated count
             Variable destVar = obsFrame.vars().open(destVarName);
             Dimensions_t frameCount = obsFrame.frameCount(destVarName);
 

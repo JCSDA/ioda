@@ -162,19 +162,21 @@ void ObsFrame::createFrameFromObsGroup(const VarNameObjectList & varList,
         std::vector<Dimensions_t> srcDimShape = srcDimVar.getDimensions().dimsCur;
         std::vector<Dimensions_t> destDimShape = destDimVar.getDimensions().dimsCur;
         Dimensions_t frameCount = destDimShape[0];
-        Selection srcSelect = createObsIoSelection(srcDimShape, 0, frameCount);
-        Selection memSelect = createMemSelection(destDimShape, frameCount);
-        Selection destSelect = createEntireFrameSelection(destDimShape, frameCount);
-
         // Transfer the coordinate values
-        if (srcDimVar.isA<int>()) {
-            std::vector<int> dimCoords;
-            srcDimVar.read<int>(dimCoords, memSelect, srcSelect);
-            destDimVar.write<int>(dimCoords, memSelect, destSelect);
-        } else if (srcDimVar.isA<float>()) {
-            std::vector<float> dimCoords;
-            srcDimVar.read<float>(dimCoords, memSelect, srcSelect);
-            destDimVar.write<float>(dimCoords, memSelect, destSelect);
+        if (frameCount > 0) {
+            Selection srcSelect = createObsIoSelection(srcDimShape, 0, frameCount);
+            Selection memSelect = createMemSelection(destDimShape, frameCount);
+            Selection destSelect = createEntireFrameSelection(destDimShape, frameCount);
+
+            if (srcDimVar.isA<int>()) {
+                std::vector<int> dimCoords;
+                srcDimVar.read<int>(dimCoords, memSelect, srcSelect);
+                destDimVar.write<int>(dimCoords, memSelect, destSelect);
+            } else if (srcDimVar.isA<float>()) {
+                std::vector<float> dimCoords;
+                srcDimVar.read<float>(dimCoords, memSelect, srcSelect);
+                destDimVar.write<float>(dimCoords, memSelect, destSelect);
+            }
         }
     }
 

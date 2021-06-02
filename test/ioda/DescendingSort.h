@@ -73,6 +73,7 @@ void testDescendingSort(const eckit::LocalConfiguration &conf) {
                                   expectedRecordIndices.begin());
     EXPECT(equal);
   }
+  obsdata.save();
 }
 
 class DescendingSort : public oops::Test {
