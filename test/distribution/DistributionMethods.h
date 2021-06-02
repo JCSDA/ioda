@@ -8,6 +8,8 @@
 #ifndef TEST_DISTRIBUTION_DISTRIBUTIONMETHODS_H_
 #define TEST_DISTRIBUTION_DISTRIBUTIONMETHODS_H_
 
+#include <algorithm>
+#include <limits>
 #include <memory>
 #include <string>
 #include <vector>
@@ -23,6 +25,7 @@
 #include "oops/test/TestEnvironment.h"
 #include "oops/util/Logger.h"
 
+#include "ioda/distribution/Accumulator.h"
 #include "ioda/distribution/Distribution.h"
 #include "ioda/distribution/DistributionFactory.h"
 
@@ -30,6 +33,115 @@ namespace ioda {
 namespace test {
 
 // -----------------------------------------------------------------------------
+
+template <typename T>
+void testAccumulateScalar(const Distribution &TestDist, const std::vector<size_t> &myRecords,
+                          size_t expectedSum) {
+  auto accumulator = TestDist.createAccumulator<T>();
+  for (size_t loc = 0; loc < myRecords.size(); ++loc)
+    accumulator->addTerm(loc, myRecords[loc]);
+  const T sum = accumulator->computeResult();
+  EXPECT_EQUAL(sum, static_cast<T>(expectedSum));
+}
+
+template <typename T>
+void testAccumulateVector(const Distribution &TestDist, const std::vector<size_t> &myRecords,
+                          size_t expectedSum) {
+  const size_t numSums = 3;
+  std::vector<T> expectedSums(numSums);
+  for (size_t i = 0; i < numSums; ++i)
+    expectedSums[i] = (i + 1) * expectedSum;
+
+  // Part 1: two-argument addTerm overload
+  {
+    auto accumulator = TestDist.createAccumulator<T>(numSums);
+    std::vector<T> terms(numSums);
+    for (size_t loc = 0; loc < myRecords.size(); ++loc) {
+      for (size_t i = 0; i < numSums; ++i)
+        terms[i] = (i + 1) * myRecords[loc];
+      accumulator->addTerm(loc, terms);
+    }
+    std::vector<T> sums = accumulator->computeResult();
+
+    EXPECT_EQUAL(sums, expectedSums);
+  }
+
+  // Part 2: three-argument addTerm overload
+  {
+    auto accumulator = TestDist.createAccumulator<T>(numSums);
+    std::vector<T> terms(numSums);
+    for (size_t loc = 0; loc < myRecords.size(); ++loc)
+      for (size_t i = 0; i < numSums; ++i)
+        accumulator->addTerm(loc, i, (i + 1) * myRecords[loc]);
+    std::vector<T> sums = accumulator->computeResult();
+
+    EXPECT_EQUAL(sums, expectedSums);
+  }
+}
+
+template <typename T>
+void testMaxScalar(const Distribution &TestDist, const std::vector<size_t> &myRecords,
+                   size_t expectedMax) {
+  // Perform a local reduction
+  T max = std::numeric_limits<T>::lowest();
+  for (size_t loc = 0; loc < myRecords.size(); ++loc)
+    max = std::max<T>(max, myRecords[loc]);
+
+  // Perform a global reduction
+  TestDist.max(max);
+
+  EXPECT_EQUAL(max, expectedMax);
+}
+
+template <typename T>
+void testMaxVector(const Distribution &TestDist, const std::vector<size_t> &myRecords,
+                   size_t expectedMax) {
+  // Perform a local reduction
+  T max = std::numeric_limits<T>::lowest();
+  for (size_t loc = 0; loc < myRecords.size(); ++loc)
+    max = std::max<T>(max, myRecords[loc]);
+
+  // Perform a global reduction
+  const T shift = 10;
+  std::vector<T> maxes{max, max + shift};
+  TestDist.max(maxes);
+  const std::vector<T> expectedMaxes{static_cast<T>(expectedMax),
+                                     static_cast<T>(expectedMax + shift)};
+
+  EXPECT_EQUAL(maxes, expectedMaxes);
+}
+
+template <typename T>
+void testMinScalar(const Distribution &TestDist, const std::vector<size_t> &myRecords,
+                   size_t expectedMin) {
+  // Perform a local reduction
+  T min = std::numeric_limits<T>::max();
+  for (size_t loc = 0; loc < myRecords.size(); ++loc)
+    min = std::min<T>(min, myRecords[loc]);
+
+  // Perform a global reduction
+  TestDist.min(min);
+
+  EXPECT_EQUAL(min, expectedMin);
+}
+
+template <typename T>
+void testMinVector(const Distribution &TestDist, const std::vector<size_t> &myRecords,
+                   size_t expectedMin) {
+  // Perform a local reduction
+  T min = std::numeric_limits<T>::max();
+  for (size_t loc = 0; loc < myRecords.size(); ++loc)
+    min = std::min<T>(min, myRecords[loc]);
+
+  // Perform a global reduction
+  const T shift = 10;
+  std::vector<T> mins{min, min + shift};
+  TestDist.min(mins);
+  const std::vector<T> expectedMins{static_cast<T>(expectedMin),
+                                    static_cast<T>(expectedMin + shift)};
+
+  EXPECT_EQUAL(mins, expectedMins);
+}
 
 void testDistributionMethods() {
   eckit::LocalConfiguration conf(::test::TestEnvironment::config());
@@ -56,102 +168,53 @@ void testDistributionMethods() {
     size_t Gnlocs = nprocs;
     std::vector<double> glats(Gnlocs, 0.0);
     std::vector<double> glons(Gnlocs, 0.0);
+    std::vector<size_t> myRecords;
     for (std::size_t j = 0; j < Gnlocs; ++j) {
       glons[j] = j*360.0/Gnlocs;
       eckit::geometry::Point2 point(glons[j], glats[j]);
       TestDist->assignRecord(j, j, point);
+      if (TestDist->isMyRecord(j))
+        myRecords.push_back(j);
     }
     TestDist->computePatchLocs(Gnlocs);
 
-    // Inputs for the tests: double, float, int, vector double, vector size_t
-    // set up a,b,c on each processor
-    double a = MyRank;
-    float b = MyRank;
-    int c = MyRank;
-    std::vector<double> va(Gnlocs, MyRank);
-    std::vector<size_t> vb(Gnlocs, MyRank);
-
-    // Test result: sum (0 + 1 + ..  nprocs -1)
-    double result = 0;
+    // Expected results
+    // Accumulate: sum (0 + 1 + ... + nprocs - 1)
+    size_t expectedSum = 0;
     for (std::size_t i = 0; i < nprocs; i++) {
-       result = result + i;
+       expectedSum += i;
     }
+    // Max: max (0, 1, ..., nprocs - 1)
+    const size_t expectedMax = nprocs - 1;
+    // Min: min (0, 1, ..., nprocs - 1)
+    const size_t expectedMin = 0;
 
-    // vector solutions for sum
-    std::vector<double> vaRefInefficient(Gnlocs, MyRank);
-    std::vector<size_t> vbRefInefficient(Gnlocs, MyRank);
-    std::vector<double> vaRef(Gnlocs, result);
-    std::vector<size_t> vbRef(Gnlocs, result);
+    testAccumulateScalar<double>(*TestDist, myRecords, expectedSum);
+    testAccumulateScalar<float>(*TestDist, myRecords, expectedSum);
+    testAccumulateScalar<int>(*TestDist, myRecords, expectedSum);
+    testAccumulateScalar<size_t>(*TestDist, myRecords, expectedSum);
+    testAccumulateVector<double>(*TestDist, myRecords, expectedSum);
+    testAccumulateVector<float>(*TestDist, myRecords, expectedSum);
+    testAccumulateVector<int>(*TestDist, myRecords, expectedSum);
+    testAccumulateVector<size_t>(*TestDist, myRecords, expectedSum);
 
-    if (DistName == "InefficientDistribution") {
-        // sum
-        TestDist->allReduceInPlace(a, eckit::mpi::sum());
-        EXPECT(a == MyRank);  // MyRank (sum should do nothing for Inefficient)
-        TestDist->allReduceInPlace(c, eckit::mpi::sum());
-        EXPECT(c == MyRank);
-        TestDist->allReduceInPlace(va, eckit::mpi::sum());
-        EXPECT(va == vaRefInefficient);
-        TestDist->allReduceInPlace(vb, eckit::mpi::sum());
-        EXPECT(vb == vbRefInefficient);
+    testMaxScalar<double>(*TestDist, myRecords, expectedMax);
+    testMaxScalar<float>(*TestDist, myRecords, expectedMax);
+    testMaxScalar<int>(*TestDist, myRecords, expectedMax);
+    testMaxScalar<size_t>(*TestDist, myRecords, expectedMax);
+    testMaxVector<double>(*TestDist, myRecords, expectedMax);
+    testMaxVector<float>(*TestDist, myRecords, expectedMax);
+    testMaxVector<int>(*TestDist, myRecords, expectedMax);
+    testMaxVector<size_t>(*TestDist, myRecords, expectedMax);
 
-        // min
-        a = MyRank;
-        b = MyRank;
-        c = MyRank;
-        TestDist->allReduceInPlace(a, eckit::mpi::min());
-        EXPECT(a == MyRank);
-        TestDist->allReduceInPlace(b, eckit::mpi::min());
-        EXPECT(b == MyRank);
-        TestDist->allReduceInPlace(c, eckit::mpi::min());
-        EXPECT(c == MyRank);
-
-        // max
-        a = MyRank;
-        b = MyRank;
-        c = MyRank;
-        TestDist->allReduceInPlace(a, eckit::mpi::max());
-        EXPECT(a == MyRank);
-        TestDist->allReduceInPlace(b, eckit::mpi::max());
-        EXPECT(b == MyRank);
-        TestDist->allReduceInPlace(c, eckit::mpi::max());
-        EXPECT(c == MyRank);
-
-    } else {
-        if (DistName != "Halo") {
-          // sum
-          TestDist->allReduceInPlace(a, eckit::mpi::sum());
-          EXPECT(a == result);  // 0 + 1 + .. nprocs-1 (sum across tasks)
-          TestDist->allReduceInPlace(c, eckit::mpi::sum());
-          EXPECT(c == result);
-          TestDist->allReduceInPlace(va, eckit::mpi::sum());
-          TestDist->allReduceInPlace(vb, eckit::mpi::sum());
-          oops::Log::debug() << "va=" << va << " vaRef=" << vaRef << std::endl;
-          EXPECT(va == vaRef);
-          EXPECT(vb == vbRef);
-        }
-
-        // min
-        a = MyRank;
-        b = MyRank;
-        c = MyRank;
-        TestDist->allReduceInPlace(a, eckit::mpi::min());
-        EXPECT(a == 0);
-        TestDist->allReduceInPlace(b, eckit::mpi::min());
-        EXPECT(b == 0);
-        TestDist->allReduceInPlace(c, eckit::mpi::min());
-        EXPECT(c == 0);
-
-        // max
-        a = MyRank;
-        b = MyRank;
-        c = MyRank;
-        TestDist->allReduceInPlace(a, eckit::mpi::max());
-        EXPECT(a == nprocs -1);
-        TestDist->allReduceInPlace(b, eckit::mpi::max());
-        EXPECT(b == nprocs -1);
-        TestDist->allReduceInPlace(c, eckit::mpi::max());
-        EXPECT(c == nprocs -1);
-    }
+    testMinScalar<double>(*TestDist, myRecords, expectedMin);
+    testMinScalar<float>(*TestDist, myRecords, expectedMin);
+    testMinScalar<int>(*TestDist, myRecords, expectedMin);
+    testMinScalar<size_t>(*TestDist, myRecords, expectedMin);
+    testMinVector<double>(*TestDist, myRecords, expectedMin);
+    testMinVector<float>(*TestDist, myRecords, expectedMin);
+    testMinVector<int>(*TestDist, myRecords, expectedMin);
+    testMinVector<size_t>(*TestDist, myRecords, expectedMin);
   }
 }
 

@@ -27,6 +27,4 @@ Distribution::~Distribution() {
   oops::Log::trace() << "Distribtion destructed" << std::endl;
 }
 
-// -----------------------------------------------------------------------------
-
 }  // namespace ioda

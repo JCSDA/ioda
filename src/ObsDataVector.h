@@ -25,6 +25,8 @@
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
 
+#include "ioda/distribution/Accumulator.h"
+#include "ioda/distribution/DistributionUtils.h"
 #include "ioda/ObsSpace.h"
 #include "ioda/ObsVector.h"
 
@@ -228,7 +230,8 @@ void printNonnumericObsDataVectorStats(const ObsDataVector<DATATYPE> &obsdatavec
   for (size_t jv = 0; jv < obsdatavector.nvars(); ++jv) {
     int nloc = obsdb.globalNumLocs();
     // collect nobs on all processors
-    int nobs = obsdb.distribution()->globalNumNonMissingObs(obsdatavector[jv]);
+    int nobs = globalNumNonMissingObs(*obsdb.distribution(),
+                                      obsdatavector.nvars(), obsdatavector[jv]);
 
     os << obsdb.obsname() << " " << obsdatavector.varnames()[jv] << " nlocs = " << nloc
        << ", nobs = " << nobs << std::endl;
@@ -250,7 +253,8 @@ void printNumericObsDataVectorStats(const ObsDataVector<DATATYPE> &obsdatavector
   for (size_t jv = 0; jv < obsdatavector.nvars(); ++jv) {
     DATATYPE zmin = std::numeric_limits<DATATYPE>::max();
     DATATYPE zmax = std::numeric_limits<DATATYPE>::lowest();
-    DATATYPE zavg = 0;
+    std::unique_ptr<Accumulator<DATATYPE>> accumulator =
+        obsdb.distribution()->createAccumulator<DATATYPE>();
     int nloc = obsdb.globalNumLocs();
 
     const std::vector<DATATYPE> &vector = obsdatavector[jv];
@@ -259,19 +263,19 @@ void printNumericObsDataVectorStats(const ObsDataVector<DATATYPE> &obsdatavector
       if (zz != missing) {
         if (zz < zmin) zmin = zz;
         if (zz > zmax) zmax = zz;
-        zavg += zz;
+        accumulator->addTerm(jj, zz);
       }
     }
     // collect zmin, zmax, zavg, globalNumNonMissingObs on all processors
-    obsdb.distribution()->allReduceInPlace(zmin, eckit::mpi::min());
-    obsdb.distribution()->allReduceInPlace(zmax, eckit::mpi::max());
-    obsdb.distribution()->allReduceInPlace(zavg, eckit::mpi::sum());
-    int nobs = obsdb.distribution()->globalNumNonMissingObs(vector);
+    obsdb.distribution()->min(zmin);
+    obsdb.distribution()->max(zmax);
+    DATATYPE zsum = accumulator->computeResult();
+    int nobs = globalNumNonMissingObs(*obsdb.distribution(), 1, vector);
 
     os << std::endl << obsdb.obsname() << " " << obsdatavector.varnames()[jv]
        << " nlocs = " << nloc << ", nobs = " << nobs;
     if (nobs > 0) {
-      os << ", min = " << zmin << ", max = " << zmax << ", avg = " << zavg/nobs;
+      os << ", min = " << zmin << ", max = " << zmax << ", avg = " << zsum/nobs;
     } else {
       os << " : No observations.";
     }

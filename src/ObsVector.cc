@@ -11,6 +11,7 @@
 #include <limits>
 
 #include "eckit/config/LocalConfiguration.h"
+#include "ioda/distribution/DistributionUtils.h"
 #include "ioda/ObsDataVector.h"
 #include "ioda/ObsSpace.h"
 #include "oops/base/Variables.h"
@@ -161,7 +162,7 @@ void ObsVector::random() {
 }
 // -----------------------------------------------------------------------------
 double ObsVector::dot_product_with(const ObsVector & other) const {
-  double zz =  obsdb_.distribution()->dot_product(values_, other.values_);
+  double zz = dotProduct(*obsdb_.distribution(), nvars_, values_, other.values_);
   return zz;
 }
 // -----------------------------------------------------------------------------
@@ -177,7 +178,7 @@ std::vector<double> ObsVector::multivar_dot_product_with(const ObsVector & other
       x1[jloc] = values_[jvar + (jloc * nvars_)];
       x2[jloc] = other.values_[jvar + (jloc*nvars_)];
     }
-    result[jvar] = obsdb_.distribution()->dot_product(x1, x2);
+    result[jvar] = dotProduct(*obsdb_.distribution(), 1, x1, x2);
   }
   return result;
 }
@@ -294,7 +295,7 @@ void ObsVector::mask(const ObsDataVector<int> & flags) {
 }
 // -----------------------------------------------------------------------------
 unsigned int ObsVector::nobs() const {
-  int nobs = obsdb_.distribution()->globalNumNonMissingObs(values_);
+  int nobs = globalNumNonMissingObs(*obsdb_.distribution(), nvars_, values_);
 
   return nobs;
 }
@@ -319,8 +320,8 @@ void ObsVector::print(std::ostream & os) const {
     }
   }
 
-  obsdb_.distribution()->allReduceInPlace(zmin, eckit::mpi::min());
-  obsdb_.distribution()->allReduceInPlace(zmax, eckit::mpi::max());
+  obsdb_.distribution()->min(zmin);
+  obsdb_.distribution()->max(zmax);
 
   if (nobs > 0) {
     os << obsdb_.obsname() << " nobs= " << nobs << " Min="

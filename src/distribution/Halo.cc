@@ -13,11 +13,14 @@
 #include <set>
 #include <vector>
 
+#include <boost/make_unique.hpp>
+
 #include "oops/mpi/mpi.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
 
 #include "ioda/distribution/DistributionFactory.h"
+#include "ioda/distribution/GeneralDistributionAccumulator.h"
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/exception/Exceptions.h"
 
@@ -144,7 +147,7 @@ void Halo::computePatchLocs(const std::size_t nglocs) {
 // -----------------------------------------------------------------------------
 void Halo::computeGlobalUniqueConsecutiveLocIndices(
     const std::vector<std::pair<double, int>> &dist_and_lidx_glb) {
-  globalUniqueConsecutiveLocIndices_.reserve(haloLocVector_.size());
+  globalUniqueConsecutiveLocIndices_.reserve(haloObsLoc_.size());
 
   // Step 1: index patch observations owned by each rank consecutively (starting from 0 on each
   // rank). For each observation i held on this rank, set globalConsecutiveLocIndices_[i] to
@@ -164,17 +167,17 @@ void Halo::computeGlobalUniqueConsecutiveLocIndices(
   // by ranks r' < r.
 
   // Perform an exclusive scan
-  std::vector<size_t> numPatchObsCountOnPreviousRanks(patchObsCountOnRank.size(), 0);
+  std::vector<size_t> patchObsCountOnPreviousRanks(patchObsCountOnRank.size(), 0);
   for (size_t rank = 1; rank < patchObsCountOnRank.size(); ++rank) {
-    numPatchObsCountOnPreviousRanks[rank] =
-        numPatchObsCountOnPreviousRanks[rank - 1] + patchObsCountOnRank[rank - 1];
+    patchObsCountOnPreviousRanks[rank] =
+        patchObsCountOnPreviousRanks[rank - 1] + patchObsCountOnRank[rank - 1];
   }
 
   // Increment patch observation indices
   for (size_t loc = 0; loc < globalUniqueConsecutiveLocIndices_.size(); ++loc) {
     const size_t gloc = haloLocVector_[loc];
     const size_t rankOwningPatchObs = dist_and_lidx_glb[gloc].second;
-    globalUniqueConsecutiveLocIndices_[loc] += numPatchObsCountOnPreviousRanks[rankOwningPatchObs];
+    globalUniqueConsecutiveLocIndices_[loc] += patchObsCountOnPreviousRanks[rankOwningPatchObs];
   }
 }
 
@@ -184,146 +187,140 @@ void Halo::patchObs(std::vector<bool> & patchObsVec) const {
 }
 
 // -----------------------------------------------------------------------------
-double Halo::dot_product(const std::vector<double> &v1, const std::vector<double> &v2)
-                const {
-  return dot_productImpl(v1, v2);
+void Halo::min(int & x) const {
+  minImpl(x);
 }
 
-// -----------------------------------------------------------------------------
-double Halo::dot_product(const std::vector<float> &v1, const std::vector<float> &v2)
-                const {
-  return dot_productImpl(v1, v2);
+void Halo::min(std::size_t & x) const {
+  minImpl(x);
 }
 
-// -----------------------------------------------------------------------------
-double Halo::dot_product(const std::vector<int> &v1, const std::vector<int> &v2) const {
-  return dot_productImpl(v1, v2);
+void Halo::min(float & x) const {
+  minImpl(x);
 }
 
-template <typename T>
-double Halo::dot_productImpl(const std::vector<T> &v1, const std::vector<T> &v2) const {
-  ASSERT(v1.size() == v2.size());
-  T missingValue = util::missingValue(missingValue);
-
-  double zz = 0.0;
-  if (patchObsBool_.size() > 0) {
-    size_t nvars = v1.size()/patchObsBool_.size();
-    for (size_t jj = 0; jj < v1.size() ; ++jj) {
-      size_t iLoc = jj / nvars;
-      if (v1[jj] != missingValue && v2[jj] != missingValue &&
-          patchObsBool_[iLoc]) {
-        zz += v1[jj] * v2[jj];
-      }
-    }
-  }
-
-  comm_.allReduceInPlace(zz, eckit::mpi::sum());
-
-  return zz;
+void Halo::min(double & x) const {
+  minImpl(x);
 }
 
-// -----------------------------------------------------------------------------
-size_t Halo::globalNumNonMissingObs(const std::vector<double> &v) const {
-  return globalNumNonMissingObsImpl(v);
+void Halo::min(std::vector<int> & x) const {
+  minImpl(x);
 }
 
-size_t Halo::globalNumNonMissingObs(const std::vector<float> &v) const {
-  return globalNumNonMissingObsImpl(v);
+void Halo::min(std::vector<std::size_t> & x) const {
+  minImpl(x);
 }
 
-size_t Halo::globalNumNonMissingObs(const std::vector<int> &v) const {
-  return globalNumNonMissingObsImpl(v);
+void Halo::min(std::vector<float> & x) const {
+  minImpl(x);
 }
 
-size_t Halo::globalNumNonMissingObs(const std::vector<std::string> &v) const {
-  return globalNumNonMissingObsImpl(v);
-}
-
-size_t Halo::globalNumNonMissingObs(const std::vector<util::DateTime> &v) const {
-  return globalNumNonMissingObsImpl(v);
+void Halo::min(std::vector<double> & x) const {
+  minImpl(x);
 }
 
 template <typename T>
-size_t Halo::globalNumNonMissingObsImpl(const std::vector<T> &v) const {
-  T missingValue = util::missingValue(missingValue);
-
-  size_t nobs = 0;
-  if (patchObsBool_.size() > 0) {
-    size_t nvars = v.size()/patchObsBool_.size();
-    for (size_t jj = 0; jj < v.size(); ++jj) {
-      size_t iLoc = jj / nvars;
-      if (v[jj] != missingValue && patchObsBool_[iLoc]) ++nobs;
-    }
-  }
-
-  comm_.allReduceInPlace(nobs, eckit::mpi::sum());
-  return nobs;
+void Halo::minImpl(T & x) const {
+  reductionImpl(x, eckit::mpi::min());
 }
 
 // -----------------------------------------------------------------------------
-void Halo::allReduceInPlace(double &x, eckit::mpi::Operation::Code op) const {
-  allReduceInPlaceImpl(x, op);
+void Halo::max(int & x) const {
+  maxImpl(x);
 }
 
-void Halo::allReduceInPlace(float &x, eckit::mpi::Operation::Code op) const {
-  allReduceInPlaceImpl(x, op);
+void Halo::max(std::size_t & x) const {
+  maxImpl(x);
 }
 
-void Halo::allReduceInPlace(int &x, eckit::mpi::Operation::Code op) const {
-  allReduceInPlaceImpl(x, op);
+void Halo::max(float & x) const {
+  maxImpl(x);
 }
 
-void Halo::allReduceInPlace(size_t &x, eckit::mpi::Operation::Code op) const {
-  allReduceInPlaceImpl(x, op);
+void Halo::max(double & x) const {
+  maxImpl(x);
 }
 
-void Halo::allReduceInPlace(std::vector<double> &x, eckit::mpi::Operation::Code op) const {
-  allReduceInPlaceImpl(x, op);
+void Halo::max(std::vector<int> & x) const {
+  maxImpl(x);
 }
 
-
-void Halo::allReduceInPlace(std::vector<float> &x, eckit::mpi::Operation::Code op) const {
-  allReduceInPlaceImpl(x, op);
+void Halo::max(std::vector<std::size_t> & x) const {
+  maxImpl(x);
 }
 
-void Halo::allReduceInPlace(std::vector<size_t> &x, eckit::mpi::Operation::Code op) const {
-  allReduceInPlaceImpl(x, op);
+void Halo::max(std::vector<float> & x) const {
+  maxImpl(x);
 }
 
-template<typename T>
-void Halo::allReduceInPlaceImpl(T &x, eckit::mpi::Operation::Code op) const {
-  // reduce is well defined only for min & max for Halo distribution within patch.
-  if ((op == eckit::mpi::min()) || (op == eckit::mpi::max())) {
-    comm_.allReduceInPlace(x, op);
-  // reduce for sum should only count those within patch.
-  } else if (op == eckit::mpi::sum()) {
-    comm_.allReduceInPlace(x, op);
-  } else {
-    throw eckit::NotImplemented("Reduce operation is not defined for Halo distribution", Here());
-  }
+void Halo::max(std::vector<double> & x) const {
+  maxImpl(x);
 }
 
-template<typename T>
-void Halo::allReduceInPlaceImpl(std::vector<T> &x, eckit::mpi::Operation::Code op) const {
-  if ((op == eckit::mpi::min()) || (op == eckit::mpi::max())) {
-    comm_.allReduceInPlace(x.begin(), x.end(), op);
-  } else if (op == eckit::mpi::sum()) {
-    // reduce for vector is well defined only when values passed in \p x are corresponding
-    // to global locations. the below check for sizes is not safe if size(\p x) is only
-    // coincidentally same as size(patchObsBool_)
-    ASSERT(x.size() == patchObsBool_.size());
-    for (size_t i = 0; i < x.size(); ++i) {
-      if (!patchObsBool_[i])    x[i] = 0.0;
-    }
-    comm_.allReduceInPlace(x.begin(), x.end(), op);
-  } else {
-    throw eckit::NotImplemented(std::to_string(op) + " reduce operation is not defined " +
-                                "for Halo distribution", Here());
-  }
+template <typename T>
+void Halo::maxImpl(T & x) const {
+  reductionImpl(x, eckit::mpi::max());
 }
 
-// Implementation of allGatherv
-//
+// -----------------------------------------------------------------------------
+template <typename T>
+void Halo::reductionImpl(T & x, eckit::mpi::Operation::Code op) const {
+  comm_.allReduceInPlace(x, op);
+}
+
+template <typename T>
+void Halo::reductionImpl(std::vector<T> & x, eckit::mpi::Operation::Code op) const {
+  comm_.allReduceInPlace(x.begin(), x.end(), op);
+}
+
+// -----------------------------------------------------------------------------
+std::unique_ptr<Accumulator<int>>
+Halo::createAccumulatorImpl(int init) const {
+  return createAccumulatorImplT(init);
+}
+
+std::unique_ptr<Accumulator<std::size_t>>
+Halo::createAccumulatorImpl(std::size_t init) const {
+  return createAccumulatorImplT(init);
+}
+
+std::unique_ptr<Accumulator<float>>
+Halo::createAccumulatorImpl(float init) const {
+  return createAccumulatorImplT(init);
+}
+
+std::unique_ptr<Accumulator<double>>
+Halo::createAccumulatorImpl(double init) const {
+  return createAccumulatorImplT(init);
+}
+
+std::unique_ptr<Accumulator<std::vector<int>>>
+Halo::createAccumulatorImpl(const std::vector<int> &init) const {
+  return createAccumulatorImplT(init);
+}
+
+std::unique_ptr<Accumulator<std::vector<std::size_t>>>
+Halo::createAccumulatorImpl(const std::vector<std::size_t> &init) const {
+  return createAccumulatorImplT(init);
+}
+
+std::unique_ptr<Accumulator<std::vector<float>>>
+Halo::createAccumulatorImpl(const std::vector<float> &init) const {
+  return createAccumulatorImplT(init);
+}
+
+std::unique_ptr<Accumulator<std::vector<double>>>
+Halo::createAccumulatorImpl(const std::vector<double> &init) const {
+  return createAccumulatorImplT(init);
+}
+
+template <typename T>
+std::unique_ptr<Accumulator<T>>
+Halo::createAccumulatorImplT(const T &init) const {
+  return boost::make_unique<GeneralDistributionAccumulator<T>>(init, comm_, patchObsBool_);
+}
+
+// -----------------------------------------------------------------------------
 void Halo::allGatherv(std::vector<size_t> &x) const {
   allGathervImpl(x);
 }

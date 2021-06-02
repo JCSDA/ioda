@@ -39,28 +39,23 @@ class Halo: public Distribution {
      void computePatchLocs(const std::size_t nglocs) override;
      void patchObs(std::vector<bool> &) const override;
 
-     double dot_product(const std::vector<double> &v1, const std::vector<double> &v2)
-                      const override;
-     double dot_product(const std::vector<float> &v1, const std::vector<float> &v2)
-                      const override;
-     double dot_product(const std::vector<int> &v1, const std::vector<int> &v2)
-                      const override;
+     void min(int & x) const override;
+     void min(std::size_t & x) const override;
+     void min(float & x) const override;
+     void min(double & x) const override;
+     void min(std::vector<int> & x) const override;
+     void min(std::vector<std::size_t> & x) const override;
+     void min(std::vector<float> & x) const override;
+     void min(std::vector<double> & x) const override;
 
-     size_t globalNumNonMissingObs(const std::vector<double> &v) const override;
-     size_t globalNumNonMissingObs(const std::vector<float> &v) const override;
-     size_t globalNumNonMissingObs(const std::vector<int> &v) const override;
-     size_t globalNumNonMissingObs(const std::vector<std::string> &v) const override;
-     size_t globalNumNonMissingObs(const std::vector<util::DateTime> &v) const override;
-
-     // function allReduceInPlace only works correctly with op == eckit::mpi::sum()
-     // if x represents the result of a local reduction only over locations belonging to the patch.
-     void allReduceInPlace(double &x, eckit::mpi::Operation::Code op) const override;
-     void allReduceInPlace(float &x, eckit::mpi::Operation::Code op) const override;
-     void allReduceInPlace(int &x, eckit::mpi::Operation::Code op) const override;
-     void allReduceInPlace(size_t &x, eckit::mpi::Operation::Code op) const override;
-     void allReduceInPlace(std::vector<double> &x, eckit::mpi::Operation::Code op) const override;
-     void allReduceInPlace(std::vector<float> &x, eckit::mpi::Operation::Code op) const override;
-     void allReduceInPlace(std::vector<size_t> &x, eckit::mpi::Operation::Code op) const override;
+     void max(int & x) const override;
+     void max(std::size_t & x) const override;
+     void max(float & x) const override;
+     void max(double & x) const override;
+     void max(std::vector<int> & x) const override;
+     void max(std::vector<std::size_t> & x) const override;
+     void max(std::vector<float> & x) const override;
+     void max(std::vector<double> & x) const override;
 
      void allGatherv(std::vector<size_t> &x) const override;
      void allGatherv(std::vector<int> &x) const override;
@@ -75,13 +70,37 @@ class Halo: public Distribution {
 
  private:
      template <typename T>
-     double dot_productImpl(const std::vector<T> &v1, const std::vector<T> &v2) const;
+     void minImpl(T & x) const;
+
      template <typename T>
-     size_t globalNumNonMissingObsImpl(const std::vector<T> &v) const;
+     void maxImpl(T & x) const;
+
      template <typename T>
-     void allReduceInPlaceImpl(T &x, eckit::mpi::Operation::Code op) const;
+     void reductionImpl(T & x, eckit::mpi::Operation::Code op) const;
+
      template <typename T>
-     void allReduceInPlaceImpl(std::vector<T> &x, eckit::mpi::Operation::Code op) const;
+     void reductionImpl(std::vector<T> & x, eckit::mpi::Operation::Code op) const;
+
+     std::unique_ptr<Accumulator<int>>
+         createAccumulatorImpl(int init) const override;
+     std::unique_ptr<Accumulator<std::size_t>>
+         createAccumulatorImpl(std::size_t init) const override;
+     std::unique_ptr<Accumulator<float>>
+         createAccumulatorImpl(float init) const override;
+     std::unique_ptr<Accumulator<double>>
+         createAccumulatorImpl(double init) const override;
+     std::unique_ptr<Accumulator<std::vector<int>>>
+         createAccumulatorImpl(const std::vector<int> &init) const override;
+     std::unique_ptr<Accumulator<std::vector<std::size_t>>>
+         createAccumulatorImpl(const std::vector<std::size_t> &init) const override;
+     std::unique_ptr<Accumulator<std::vector<float>>>
+         createAccumulatorImpl(const std::vector<float> &init) const override;
+     std::unique_ptr<Accumulator<std::vector<double>>>
+         createAccumulatorImpl(const std::vector<double> &init) const override;
+
+     template <typename T>
+     std::unique_ptr<Accumulator<T>> createAccumulatorImplT(const T &init) const;
+
      template <typename T>
      void allGathervImpl(std::vector<T> &x) const;
 

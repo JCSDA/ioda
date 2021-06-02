@@ -9,6 +9,7 @@
 #define TEST_IODA_OBSSPACE_H_
 
 #include <cmath>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -24,6 +25,8 @@
 #include "oops/runs/Test.h"
 #include "oops/test/TestEnvironment.h"
 
+#include "ioda/distribution/Accumulator.h"
+#include "ioda/distribution/DistributionUtils.h"
 #include "ioda/IodaTrait.h"
 #include "ioda/ObsSpace.h"
 
@@ -92,14 +95,15 @@ void testConstructor() {
     const ObsSpace &odb = Test_::obspace(jj);
 
     // Get the numbers of locations (nlocs) from the ObsSpace object
-    std::size_t Nlocs = odb.globalNumLocs();
+    std::size_t GlobalNlocs = odb.globalNumLocs();
+    std::size_t Nlocs = odb.nlocs();
     std::size_t Nvars = odb.nvars();
 
     // Get the purturbation seed from the ObsSpace object
     int obsPertSeed = odb.params().obsPertSeed();
 
     // Get the expected nlocs from the obspace object's configuration
-    std::size_t ExpectedNlocs = testConfig.getUnsigned("nlocs");
+    std::size_t ExpectedGlobalNlocs = testConfig.getUnsigned("nlocs");
     std::size_t ExpectedNvars = testConfig.getUnsigned("nvars");
 
     // Get the expected purturbation seed from the config object
@@ -116,20 +120,30 @@ void testConstructor() {
     std::string ExpectedObsSortVar = testConfig.getString("expected sort variable");
     std::string ExpectedObsSortOrder = testConfig.getString("expected sort order");
 
-    oops::Log::debug() << "Nlocs, ExpectedNlocs: " << Nlocs << ", "
-                       << ExpectedNlocs << std::endl;
+    oops::Log::debug() << "GlobalNlocs, ExpectedGlobalNlocs: " << GlobalNlocs << ", "
+                       << ExpectedGlobalNlocs << std::endl;
     oops::Log::debug() << "Nvars, ExpectedNvars: " << Nvars << ", "
                        << ExpectedNvars << std::endl;
     // records are ambigious for halo distribution
     // e.g. consider airplane (a single record in round robin) flying accros the globe
     // for Halo distr this record will be considered unique on each PE
     if (DistMethod != "Halo") {
-      std::size_t Nrecs = odb.nrecs();
-      odb.distribution()->allReduceInPlace(Nrecs, eckit::mpi::sum());
-      std::size_t ExpectedNrecs = testConfig.getUnsigned("nrecs");
-      oops::Log::debug() << "Nrecs, ExpectedNrecs: " << Nrecs << ", "
-                       << ExpectedNrecs << std::endl;
-      EXPECT(Nrecs == ExpectedNrecs);
+      std::size_t NRecs = 0;
+      std::set<std::size_t> recIndices;
+      auto accumulator = odb.distribution()->createAccumulator<std::size_t>();
+      for (std::size_t loc = 0; loc < Nlocs; ++loc) {
+        if (bool isNewRecord = recIndices.insert(odb.recnum()[loc]).second) {
+          accumulator->addTerm(loc, 1);
+          ++NRecs;
+        }
+      }
+      std::size_t ExpectedNRecs = odb.nrecs();
+      EXPECT_EQUAL(NRecs, ExpectedNRecs);
+
+      // Calculate the global number of unique records
+      std::size_t GlobalNRecs = accumulator->computeResult();
+      std::size_t ExpectedGlobalNrecs = testConfig.getUnsigned("nrecs");
+      EXPECT_EQUAL(GlobalNRecs, ExpectedGlobalNrecs);
     }
 
     oops::Log::debug() << "ObsGroupVars, ExpectedObsGroupVars: " << ObsGroupVars << ", "
@@ -143,7 +157,7 @@ void testConstructor() {
     std::string nlocsName = odb.get_dim_name(ioda::ObsDimensionId::Nlocs);
     std::string nchansName = odb.get_dim_name(ioda::ObsDimensionId::Nchans);
 
-    EXPECT(Nlocs == ExpectedNlocs);
+    EXPECT(GlobalNlocs == ExpectedGlobalNlocs);
     EXPECT(Nvars == ExpectedNvars);
 
     EXPECT(obsPertSeed == ExpectedObsPertSeed);
@@ -204,7 +218,7 @@ void testGetDb() {
 
         // Calculate the norm of the vector
         double ExpectedVnorm = varconf[i].getDouble("norm");
-        double Vnorm = Odb->distribution()->dot_product(TestVec, TestVec);
+        double Vnorm = dotProduct(*Odb->distribution(), 1, TestVec, TestVec);
         Vnorm = sqrt(Vnorm);
 
         EXPECT(oops::is_close(Vnorm, ExpectedVnorm, Tol));
@@ -219,7 +233,7 @@ void testGetDb() {
 
         // Calculate the norm of the vector
         double ExpectedVnorm = varconf[i].getDouble("norm");
-        double Vnorm = Odb->distribution()->dot_product(TestVec, TestVec);
+        double Vnorm = dotProduct(*Odb->distribution(), 1, TestVec, TestVec);
         Vnorm = sqrt(Vnorm);
 
         EXPECT(oops::is_close(Vnorm, ExpectedVnorm, Tol));

@@ -11,7 +11,10 @@
 #include <iostream>
 #include <numeric>
 
+#include <boost/make_unique.hpp>
+
 #include "ioda/distribution/DistributionFactory.h"
+#include "ioda/distribution/InefficientDistributionAccumulator.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
 
@@ -53,66 +56,50 @@ void InefficientDistribution::patchObs(std::vector<bool> & patchObsVec) const {
 }
 
 // -----------------------------------------------------------------------------
-double InefficientDistribution::dot_product(
-                const std::vector<double> &v1, const std::vector<double> &v2) const {
-  return dot_productImpl(v1, v2);
+std::unique_ptr<Accumulator<int>>
+InefficientDistribution::createAccumulatorImpl(int init) const {
+  return createAccumulatorImplT(init);
 }
 
-// -----------------------------------------------------------------------------
-double InefficientDistribution::dot_product(
-                const std::vector<float> &v1, const std::vector<float> &v2) const {
-  return dot_productImpl(v1, v2);
+std::unique_ptr<Accumulator<std::size_t>>
+InefficientDistribution::createAccumulatorImpl(std::size_t init) const {
+  return createAccumulatorImplT(init);
 }
 
-// -----------------------------------------------------------------------------
-double InefficientDistribution::dot_product(
-                const std::vector<int> &v1, const std::vector<int> &v2) const {
-  return dot_productImpl(v1, v2);
+std::unique_ptr<Accumulator<float>>
+InefficientDistribution::createAccumulatorImpl(float init) const {
+  return createAccumulatorImplT(init);
 }
 
-template <typename T>
-double InefficientDistribution::dot_productImpl(const std::vector<T> &v1,
-                                                const std::vector<T> &v2) const {
-  ASSERT(v1.size() == v2.size());
-  T missingValue = util::missingValue(missingValue);
-  double zz = 0.0;
-  for (size_t jj = 0; jj < v1.size(); ++jj) {
-    if (v1[jj] != missingValue && v2[jj] != missingValue) {
-      zz += v1[jj] * v2[jj];
-    }
-  }
-  return zz;
+std::unique_ptr<Accumulator<double>>
+InefficientDistribution::createAccumulatorImpl(double init) const {
+  return createAccumulatorImplT(init);
 }
 
-// -----------------------------------------------------------------------------
-size_t InefficientDistribution::globalNumNonMissingObs(const std::vector<double> &v) const {
-  return globalNumNonMissingObsImpl(v);
+std::unique_ptr<Accumulator<std::vector<int>>>
+InefficientDistribution::createAccumulatorImpl(const std::vector<int> &init) const {
+  return createAccumulatorImplT(init);
 }
 
-size_t InefficientDistribution::globalNumNonMissingObs(const std::vector<float> &v) const {
-  return globalNumNonMissingObsImpl(v);
+std::unique_ptr<Accumulator<std::vector<std::size_t>>>
+InefficientDistribution::createAccumulatorImpl(const std::vector<std::size_t> &init) const {
+  return createAccumulatorImplT(init);
 }
 
-size_t InefficientDistribution::globalNumNonMissingObs(const std::vector<int> &v) const {
-  return globalNumNonMissingObsImpl(v);
+std::unique_ptr<Accumulator<std::vector<float>>>
+InefficientDistribution::createAccumulatorImpl(const std::vector<float> &init) const {
+  return createAccumulatorImplT(init);
 }
 
-size_t InefficientDistribution::globalNumNonMissingObs(const std::vector<std::string> &v) const {
-  return globalNumNonMissingObsImpl(v);
-}
-
-size_t InefficientDistribution::globalNumNonMissingObs(const std::vector<util::DateTime> &v) const {
-  return globalNumNonMissingObsImpl(v);
+std::unique_ptr<Accumulator<std::vector<double>>>
+InefficientDistribution::createAccumulatorImpl(const std::vector<double> &init) const {
+  return createAccumulatorImplT(init);
 }
 
 template <typename T>
-size_t InefficientDistribution::globalNumNonMissingObsImpl(const std::vector<T> &v) const {
-  T missingValue = util::missingValue(missingValue);
-  size_t nobs = 0;
-  for (size_t jj = 0; jj < v.size(); ++jj) {
-    if (v[jj] != missingValue) ++nobs;
-  }
-  return nobs;
+std::unique_ptr<Accumulator<T>>
+InefficientDistribution::createAccumulatorImplT(const T &init) const {
+  return boost::make_unique<InefficientDistributionAccumulator<T>>(init);
 }
 
 // -----------------------------------------------------------------------------

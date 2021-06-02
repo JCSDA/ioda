@@ -8,6 +8,7 @@
 #ifndef DISTRIBUTION_DISTRIBUTION_H_
 #define DISTRIBUTION_DISTRIBUTION_H_
 
+#include <memory>
 #include <vector>
 
 #include "eckit/config/Configuration.h"
@@ -15,12 +16,16 @@
 #include "eckit/geometry/Point2.h"
 #include "eckit/mpi/Comm.h"
 #include "oops/util/missingValues.h"
+#include "oops/util/TypeTraits.h"
 
 namespace util {
 class DateTime;
 }
 
 namespace ioda {
+
+template <typename T>
+class Accumulator;
 
 // ---------------------------------------------------------------------
 /*!
@@ -33,9 +38,8 @@ namespace ioda {
  *           The client will use the isMyRecord method to determine what records to keep
  *           when reading in observations.
  *
- *           for distributions sensitive to lat/lon locations of the ob.
- *           assignRecord() must be called before isMyRecord or isMyPatchRecord 
- *           can be called 
+ *           assignRecord() must be called before isMyRecord() can be called.
+ *           computePatchLocs() should be called when all records have been assigned.
  *
  *           for distributions with observations duplicated on multiple PEs 
  *           (currently Inefficient and Halo) the following terminology/logic is used:
@@ -46,105 +50,144 @@ namespace ioda {
  *           patch obs form complete, non-overlapping partition of the global set of obs. 
  *
  * \author Xin Zhang (JCSDA)
- */
-
-/*! \fn bool isMyRecord(std::size_t RecNum)
- *  \brief The client will use the isMyRecord method to determine what records to 
- *         keep when reading in observations.
- *  \param RecNum Record Number       
- */
-
-/*! \fn void computePatchLocs(const std::size_t nglocs)
- *  \brief computes internal index (if needed) of patch locations for this PE
- *         assumed that this function is called before dot_product, globalNumNonMissingObs
- *  \param nglocs total number of global locations
-*/
-
-/*! \fn void assignRecord(const std::size_t RecNum, const std::size_t LocNum,
-                          const eckit::geometry::Point2 & point)
- *  \brief for Halo distribution, computes if this recNumber locNumber belong to this PE
- *         empty function for other distributions
- *  \param point Point2 object describing location of this LocNum/RecNum
- */
-
-/*! \fn void patchObs(std::vector<bool> & vecIn) 
- *  \brief returns vector<bool> that is true for patch obs on this PE and false otherwise
- *         currently only used in tests 
- *  \param  vecIn(nobs) preallocated vector of length == to number of obs on this PE
- */
-
-/*! \fn double dot_product(const std::vector<double> &v1, const std::vector<double> &v2)
- *  \brief computes dot product between two vectors of obs distributed accross PEs
- *         assumes that data vectors have the following layout values[iloc*nvars + ivar] 
- */
-
-/*! \fn size_t globalNumNonMissingObs(const std::vector<double> &v) const
- *  \brief Counts unique non-missing observations in \p v.
  *
- *  \param v
- *    A vector assumed to contain observations of a single variable or interleaved observations of
- *    multiple variables (so that the observations of variable `ivar` at location `iloc` in the
- *    halo of this PE is stored at `v[iloc * nvars + ivar]`, where `nvars` is the number of
- *    variables stored in `v`).
- *
- *  \return The number of unique observations on all PEs set to something else than the missing
- *  value indicator. "Unique" means that observations taken at locations belonging to the halos of
- *  multiple PEs are counted only once.
+ * \see Functions defined in DistributionUtils.h.
  */
-
 class Distribution {
  public:
     explicit Distribution(const eckit::mpi::Comm & Comm,
                           const eckit::Configuration & config);
     virtual ~Distribution();
 
-    virtual bool isMyRecord(std::size_t RecNum) const = 0;
-    virtual void computePatchLocs(const std::size_t nglocs) {}
+    /*!
+     * \brief If the record \p RecNum has not yet been assigned to a PE, assigns it to the
+     * appropriate PE. Informs the distribution that location \p LocNum belongs to this record.
+     *
+     * \param RecNum Record containing the location \p LocNum.
+     * \param LocNum (Global) location index.
+     * \param point Latitude and longitude of this location.
+     */
     virtual void assignRecord(const std::size_t RecNum, const std::size_t LocNum,
-              const eckit::geometry::Point2 & point) {}
-    virtual void patchObs(std::vector<bool> &) const = 0;
-
-
-    // operations for computing RMSE and globalNumNonMissingObs in presence of overlapping obs.
-    virtual double dot_product(const std::vector<double> &v1, const std::vector<double> &v2)
-                      const = 0;
-    virtual double dot_product(const std::vector<float> &v1, const std::vector<float> &v2)
-                      const = 0;
-    virtual double dot_product(const std::vector<int> &v1, const std::vector<int> &v2)
-                      const = 0;
-
-    virtual size_t globalNumNonMissingObs(const std::vector<double> &v) const = 0;
-    virtual size_t globalNumNonMissingObs(const std::vector<float> &v) const = 0;
-    virtual size_t globalNumNonMissingObs(const std::vector<int> &v) const = 0;
-    virtual size_t globalNumNonMissingObs(const std::vector<std::string> &v) const = 0;
-    virtual size_t globalNumNonMissingObs(const std::vector<util::DateTime> &v) const = 0;
+                              const eckit::geometry::Point2 & point) {}
 
     /*!
-     * \brief All reduce operation on a scalar
+     * \brief Returns true if record \p RecNum has been assigned to the calling PE during a
+     * previous call to assignRecord().
      *
-     * \param[inout] x
-     *   On input: a scalar associated with observations held by the calling process.
-     *   On output: a result of reduction operation on \p x passed by all calling processes.
-     * \param[in] op
-     *   Reduction operation (e.g. eckit::mpi::sum(), eckit::mpi::min(), eckit::mpi::max()
+     * Clients can use this function to determine which records to keep when reading in
+     * observations.
      */
-    virtual void allReduceInPlace(double &x, eckit::mpi::Operation::Code op) const = 0;
-    virtual void allReduceInPlace(float &x, eckit::mpi::Operation::Code op) const = 0;
-    virtual void allReduceInPlace(int &x, eckit::mpi::Operation::Code op) const = 0;
-    virtual void allReduceInPlace(size_t &x, eckit::mpi::Operation::Code op) const = 0;
+    virtual bool isMyRecord(std::size_t RecNum) const = 0;
 
     /*!
-     * \brief All reduce operation on a vector
+     * \brief If necessary, identifies locations of "patch obs", i.e. locations belonging to
+     * records owned by this PE.
+     *
+     * This function must be called when all records have been assigned, and in particular
+     * before any calls to the createAccumulator() and globalUniqueConsecutiveLocationIndex()
+     * member functions or the global functions and dotProduct(), globalNumNonMissingObs().
+     *
+     * \param nglocs Total number of global locations.
+     */
+    virtual void computePatchLocs(const std::size_t nglocs) {}
+
+    /*!
+     * \brief Sets each element of the provided vector to true if the corresponding location is a
+     * "patch obs", i.e. it belongs to a record owned by this PE, and to false otherwise.
+     *
+     * \param isPatchObs Preallocated vector of as many elements as there are locations on this PE.
+     */
+    virtual void patchObs(std::vector<bool> & isPatchObs) const = 0;
+
+    /*!
+     * \brief Calculates the global minimum (over all locations on all PEs) of a
+     * location-dependent quantity.
      *
      * \param[inout] x
-     *   On input: a standard vector associated with observations held by the calling process.
-     *   On output: a result of reduction operation on \p x passed by all calling processes.
-     * \param[in] op
-     *   Reduction operation (e.g. eckit::mpi::sum(), eckit::mpi::min(), eckit::mpi::max()
+     *   On input, the local minimum (over all locations on the current PE) of a location-dependent
+     *   quantity. On output, its global minimum.
      */
-    virtual void allReduceInPlace(std::vector<double> &x, eckit::mpi::Operation::Code op) const = 0;
-    virtual void allReduceInPlace(std::vector<float> &x, eckit::mpi::Operation::Code op) const = 0;
-    virtual void allReduceInPlace(std::vector<size_t> &x, eckit::mpi::Operation::Code op) const = 0;
+    virtual void min(int & x) const = 0;
+    virtual void min(std::size_t & x) const = 0;
+    virtual void min(float & x) const = 0;
+    virtual void min(double & x) const = 0;
+
+    /*!
+     * \brief Calculates the global minima (over all locations on all PEs) of multiple
+     * location-dependent quantities.
+     *
+     * \param[inout] x
+     *   On input, each element of `x` should be the local minimum (over all locations on the
+     *   current PE) of a location-dependent quantity. On output, that element will be set to the
+     *   global minimum of that quantity.
+     */
+    virtual void min(std::vector<int> & x) const = 0;
+    virtual void min(std::vector<std::size_t> & x) const = 0;
+    virtual void min(std::vector<float> & x) const = 0;
+    virtual void min(std::vector<double> & x) const = 0;
+
+    /*!
+     * \brief Calculates the global maximum (over all locations on all PEs) of a
+     * location-dependent quantity.
+     *
+     * \param[inout] x
+     *   On input, the local maximum (over all locations on the current PE) of a location-dependent
+     *   quantity. On output, its global maximum.
+     */
+    virtual void max(int & x) const = 0;
+    virtual void max(std::size_t & x) const = 0;
+    virtual void max(float & x) const = 0;
+    virtual void max(double & x) const = 0;
+
+    /*!
+     * \brief Calculates the global maxima (over all locations on all PEs) of multiple
+     * location-dependent quantities.
+     *
+     * \param[inout] x
+     *   On input, each element of `x` should be the local maximum (over all locations on the
+     *   current PE) of a location-dependent quantity. On output, that element will be set to the
+     *   global maximum of that quantity.
+     */
+    virtual void max(std::vector<int> & x) const = 0;
+    virtual void max(std::vector<std::size_t> & x) const = 0;
+    virtual void max(std::vector<float> & x) const = 0;
+    virtual void max(std::vector<double> & x) const = 0;
+
+    /*!
+     * \brief Create an object that can be used to calculate the sum of a location-dependent
+     * quantity over locations held on all PEs, each taken into account only once even if it's
+     * held on multiple PEs.
+     *
+     * \tparam T
+     *   Must be either `int`, `size_t`, `float` or `double`.
+     * \param init
+     *   Used only to select the right overload -- the value is ignored.
+     */
+    template <typename T>
+    std::unique_ptr<Accumulator<T>> createAccumulator() const {
+        static_assert(util::any_is_same<T, int, std::size_t, float, double>::value,
+                      "in the call to createAccumulator<T>(), "
+                      "T must be int, size_t, float or double");
+        return createAccumulatorImpl(T());
+    }
+
+    /*!
+     * \brief Create an object that can be used to calculate the sums of `n`
+     * location-dependent quantities over locations held on all PEs, each taken into account only
+     * once even if it's held on multiple PEs.
+     *
+     * \tparam T
+     *   Must be either `int`, `size_t`, `float` or `double`.
+     * \param n
+     *   The number of quantities to be summed up.
+     */
+    template <typename T>
+    std::unique_ptr<Accumulator<std::vector<T>>> createAccumulator(std::size_t n) const {
+        static_assert(util::any_is_same<T, int, std::size_t, float, double>::value,
+                      "in the call to createAccumulator<T>(size_t n), "
+                      "T must be int, size_t, float or double");
+        return createAccumulatorImpl(std::vector<T>(n));
+    }
 
     /*!
      * \brief Gather observation data from all processes and deliver the combined data to
@@ -176,6 +219,42 @@ class Distribution {
 
     /// Deprecated accessor to MPI communicator (added temporarily, to be removed soon, May 2021)
     const eckit::mpi::Comm & comm() const {return comm_;}
+
+ private:
+  /*!
+   * \brief Create an object that can be used to calculate the sum of a location-dependent
+   * quantity over locations held on all PEs, each taken into account only once even if it's
+   * held on multiple PEs.
+   *
+   * \param init
+   *   Used only to select the right overload -- the value is ignored.
+   */
+  virtual std::unique_ptr<Accumulator<int>>
+      createAccumulatorImpl(int init) const = 0;
+  virtual std::unique_ptr<Accumulator<std::size_t>>
+      createAccumulatorImpl(std::size_t init) const = 0;
+  virtual std::unique_ptr<Accumulator<float>>
+      createAccumulatorImpl(float init) const = 0;
+  virtual std::unique_ptr<Accumulator<double>>
+      createAccumulatorImpl(double init) const = 0;
+
+  /*!
+   * \brief Create an object that can be used to calculate the sums of multiple
+   * location-dependent quantities over locations held on all PEs, each taken into account only
+   * once even if it's held on multiple PEs.
+   *
+   * \param init
+   *   A vector of as many elements as there are sums to calculate. The values of these elements
+   *   are ignored.
+   */
+  virtual std::unique_ptr<Accumulator<std::vector<int>>>
+      createAccumulatorImpl(const std::vector<int> & init) const = 0;
+  virtual std::unique_ptr<Accumulator<std::vector<std::size_t>>>
+      createAccumulatorImpl(const std::vector<std::size_t> & init) const = 0;
+  virtual std::unique_ptr<Accumulator<std::vector<float>>>
+      createAccumulatorImpl(const std::vector<float> & init) const = 0;
+  virtual std::unique_ptr<Accumulator<std::vector<double>>>
+      createAccumulatorImpl(const std::vector<double> & init) const = 0;
 
  protected:
      /*! \brief Local MPI communicator */

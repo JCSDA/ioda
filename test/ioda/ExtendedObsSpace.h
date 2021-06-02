@@ -164,7 +164,7 @@ void testExtendedObsSpace(const eckit::LocalConfiguration &conf) {
   const std::vector<std::size_t> extended_recnums(recidx_all_recnums.begin() + nrecs / 2,
                                                   recidx_all_recnums.end());
   std::size_t gnrecs_original = original_recnums.empty() ? 0 : (original_recnums.back() + 1);
-  obsdata.distribution()->allReduceInPlace(gnrecs_original, eckit::mpi::max());
+  obsdata.distribution()->max(gnrecs_original);
 
   std::vector<std::size_t> extended_recnums_expected;
   for (std::size_t i : original_recnums)

@@ -18,16 +18,22 @@ core/obsspace_f.h
 core/ParameterTraitsObsDtype.cc
 core/ParameterTraitsObsDtype.h
 
+distribution/Accumulator.h
 distribution/Distribution.cc
 distribution/Distribution.h
 distribution/DistributionFactory.cc
 distribution/DistributionFactory.h
+distribution/DistributionUtils.cc
+distribution/DistributionUtils.h
 distribution/InefficientDistribution.cc
 distribution/InefficientDistribution.h
+distribution/InefficientDistributionAccumulator.h
+distribution/GeneralDistributionAccumulator.h
 distribution/Halo.cc
 distribution/Halo.h
 distribution/NonoverlappingDistribution.cc
 distribution/NonoverlappingDistribution.h
+distribution/NonoverlappingDistributionAccumulator.h
 distribution/RoundRobin.cc
 distribution/RoundRobin.h
 

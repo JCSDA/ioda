@@ -30,6 +30,7 @@
 #include "oops/util/Random.h"
 #include "oops/util/stringFunctions.h"
 
+#include "ioda/distribution/Accumulator.h"
 #include "ioda/distribution/DistributionFactory.h"
 #include "ioda/Engines/HH.h"
 #include "ioda/io/ObsFrameRead.h"
@@ -1071,11 +1072,11 @@ void ObsData::extendObsSpace(const ObsExtendParameters & params) {
     const std::size_t nlocsext = nlocs + nrecs_ * nlevs;
     // Find starting index (in the extended section) across all processors.
     size_t indxstart = indx_.back() + 1;
-    dist_->allReduceInPlace(indxstart, eckit::mpi::max());
+    dist_->max(indxstart);
     // Maximum unique record ID across all processors.
     std::set<std::size_t> uniqueRecNums(recnums_.begin(), recnums_.end());
     std::size_t maxOriginalRecordId = *uniqueRecNums.rbegin();
-    dist_->allReduceInPlace(maxOriginalRecordId, eckit::mpi::max());
+    dist_->max(maxOriginalRecordId);
     // Produce the indices and record numbers in the extended ObsSpace for this processor.
     // Place each extended record on the same processor as the equivalent original one.
     const std::vector <std::size_t> vec_unique_rec_nums(uniqueRecNums.begin(),
@@ -1133,9 +1134,11 @@ void ObsData::extendObsSpace(const ObsExtendParameters & params) {
     put_db("MetaData", "extended_obs_space", extended_obs_space);
     // Extend nlocs on this processor.
     dim_info_.set_dim_size(ObsDimensionId::Nlocs, nlocsext);
-    // Extend gnlocs_ by summing nlocs_ across all processors.
-    gnlocs_ = nlocsext;
-    dist_->allReduceInPlace(gnlocs_, eckit::mpi::sum());
+    // Recalculate gnlocs_.
+    std::unique_ptr<Accumulator<size_t>> accumulator = dist_->createAccumulator<size_t>();
+    for (size_t i = 0; i < nlocsext; ++i)
+      accumulator->addTerm(i, 1);
+    gnlocs_ = accumulator->computeResult();
   }
 }
 // -----------------------------------------------------------------------------

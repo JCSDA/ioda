@@ -12,7 +12,10 @@
 #include <numeric>
 #include <set>
 
+#include <boost/make_unique.hpp>
+
 #include "ioda/distribution/DistributionFactory.h"
+#include "ioda/distribution/NonoverlappingDistributionAccumulator.h"
 #include "oops/mpi/mpi.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
@@ -51,107 +54,138 @@ void NonoverlappingDistribution::patchObs(std::vector<bool> & patchObsVec) const
 }
 
 // -----------------------------------------------------------------------------
-double NonoverlappingDistribution::dot_product(
-                const std::vector<double> &v1, const std::vector<double> &v2) const {
-  return dot_productImpl(v1, v2);
+void NonoverlappingDistribution::min(int & x) const {
+  minImpl(x);
+}
+
+void NonoverlappingDistribution::min(std::size_t & x) const {
+  minImpl(x);
+}
+
+void NonoverlappingDistribution::min(float & x) const {
+  minImpl(x);
+}
+
+void NonoverlappingDistribution::min(double & x) const {
+  minImpl(x);
+}
+
+void NonoverlappingDistribution::min(std::vector<int> & x) const {
+  minImpl(x);
+}
+
+void NonoverlappingDistribution::min(std::vector<std::size_t> & x) const {
+  minImpl(x);
+}
+
+void NonoverlappingDistribution::min(std::vector<float> & x) const {
+  minImpl(x);
+}
+
+void NonoverlappingDistribution::min(std::vector<double> & x) const {
+  minImpl(x);
+}
+
+template <typename T>
+void NonoverlappingDistribution::minImpl(T & x) const {
+  reductionImpl(x, eckit::mpi::min());
 }
 
 // -----------------------------------------------------------------------------
-double NonoverlappingDistribution::dot_product(
-                const std::vector<float> &v1, const std::vector<float> &v2) const {
-  return dot_productImpl(v1, v2);
+void NonoverlappingDistribution::max(int & x) const {
+  maxImpl(x);
 }
 
-// -----------------------------------------------------------------------------
-double NonoverlappingDistribution::dot_product(
-                const std::vector<int> &v1, const std::vector<int> &v2) const {
-  return dot_productImpl(v1, v2);
+void NonoverlappingDistribution::max(std::size_t & x) const {
+  maxImpl(x);
+}
+
+void NonoverlappingDistribution::max(float & x) const {
+  maxImpl(x);
+}
+
+void NonoverlappingDistribution::max(double & x) const {
+  maxImpl(x);
+}
+
+void NonoverlappingDistribution::max(std::vector<int> & x) const {
+  maxImpl(x);
+}
+
+void NonoverlappingDistribution::max(std::vector<std::size_t> & x) const {
+  maxImpl(x);
+}
+
+void NonoverlappingDistribution::max(std::vector<float> & x) const {
+  maxImpl(x);
+}
+
+void NonoverlappingDistribution::max(std::vector<double> & x) const {
+  maxImpl(x);
+}
+
+template <typename T>
+void NonoverlappingDistribution::maxImpl(T & x) const {
+  reductionImpl(x, eckit::mpi::max());
 }
 
 // -----------------------------------------------------------------------------
 template <typename T>
-double NonoverlappingDistribution::dot_productImpl(
-                   const std::vector<T> &v1, const std::vector<T> &v2) const {
-  ASSERT(v1.size() == v2.size());
-  T missingValue = util::missingValue(missingValue);
-
-  double zz = 0.0;
-  for (size_t jj = 0; jj < v1.size(); ++jj) {
-    if (v1[jj] != missingValue && v2[jj] != missingValue) {
-      zz += v1[jj] * v2[jj];
-    }
-  }
-
-  comm_.allReduceInPlace(zz, eckit::mpi::sum());
-  return zz;
-}
-
-// -----------------------------------------------------------------------------
-size_t NonoverlappingDistribution::globalNumNonMissingObs(const std::vector<double> &v) const {
-  return globalNumNonMissingObsImpl(v);
-}
-
-size_t NonoverlappingDistribution::globalNumNonMissingObs(const std::vector<float> &v) const {
-  return globalNumNonMissingObsImpl(v);
-}
-
-size_t NonoverlappingDistribution::globalNumNonMissingObs(const std::vector<int> &v) const {
-  return globalNumNonMissingObsImpl(v);
-}
-
-size_t NonoverlappingDistribution::globalNumNonMissingObs(
-    const std::vector<std::string> &v) const {
-  return globalNumNonMissingObsImpl(v);
-}
-
-size_t NonoverlappingDistribution::globalNumNonMissingObs(
-    const std::vector<util::DateTime> &v) const {
-  return globalNumNonMissingObsImpl(v);
+void NonoverlappingDistribution::reductionImpl(T & x, eckit::mpi::Operation::Code op) const {
+  comm_.allReduceInPlace(x, op);
 }
 
 template <typename T>
-size_t NonoverlappingDistribution::globalNumNonMissingObsImpl(const std::vector<T> &v) const {
-  T missingValue = util::missingValue(missingValue);
-
-  size_t nobs = 0;
-  for (size_t jj = 0; jj < v.size() ; ++jj) {
-    if (v[jj] != missingValue) ++nobs;
-  }
-
-  comm_.allReduceInPlace(nobs, eckit::mpi::sum());
-  return nobs;
+void NonoverlappingDistribution::reductionImpl(std::vector<T> & x,
+                                               eckit::mpi::Operation::Code op) const {
+  comm_.allReduceInPlace(x.begin(), x.end(), op);
 }
 
 // -----------------------------------------------------------------------------
-void NonoverlappingDistribution::allReduceInPlace(double &x, eckit::mpi::Operation::Code op) const {
-  comm_.allReduceInPlace(x, op);
+std::unique_ptr<Accumulator<int>>
+NonoverlappingDistribution::createAccumulatorImpl(int init) const {
+  return createAccumulatorImplT(init);
 }
 
-void NonoverlappingDistribution::allReduceInPlace(float &x, eckit::mpi::Operation::Code op) const {
-  comm_.allReduceInPlace(x, op);
+std::unique_ptr<Accumulator<std::size_t>>
+NonoverlappingDistribution::createAccumulatorImpl(std::size_t init) const {
+  return createAccumulatorImplT(init);
 }
 
-void NonoverlappingDistribution::allReduceInPlace(int &x, eckit::mpi::Operation::Code op) const {
-  comm_.allReduceInPlace(x, op);
+std::unique_ptr<Accumulator<float>>
+NonoverlappingDistribution::createAccumulatorImpl(float init) const {
+  return createAccumulatorImplT(init);
 }
 
-void NonoverlappingDistribution::allReduceInPlace(size_t &x, eckit::mpi::Operation::Code op) const {
-  comm_.allReduceInPlace(x, op);
+std::unique_ptr<Accumulator<double>>
+NonoverlappingDistribution::createAccumulatorImpl(double init) const {
+  return createAccumulatorImplT(init);
 }
 
-void NonoverlappingDistribution::allReduceInPlace(std::vector<double> &x,
-                                                  eckit::mpi::Operation::Code op) const {
-  comm_.allReduceInPlace(x.begin(), x.end(), op);
+std::unique_ptr<Accumulator<std::vector<int>>>
+NonoverlappingDistribution::createAccumulatorImpl(const std::vector<int> &init) const {
+  return createAccumulatorImplT(init);
 }
 
-void NonoverlappingDistribution::allReduceInPlace(std::vector<float> &x,
-                                                  eckit::mpi::Operation::Code op) const {
-  comm_.allReduceInPlace(x.begin(), x.end(), op);
+std::unique_ptr<Accumulator<std::vector<std::size_t>>>
+NonoverlappingDistribution::createAccumulatorImpl(const std::vector<std::size_t> &init) const {
+  return createAccumulatorImplT(init);
 }
 
-void NonoverlappingDistribution::allReduceInPlace(std::vector<size_t> &x,
-                                                  eckit::mpi::Operation::Code op) const {
-  comm_.allReduceInPlace(x.begin(), x.end(), op);
+std::unique_ptr<Accumulator<std::vector<float>>>
+NonoverlappingDistribution::createAccumulatorImpl(const std::vector<float> &init) const {
+  return createAccumulatorImplT(init);
+}
+
+std::unique_ptr<Accumulator<std::vector<double>>>
+NonoverlappingDistribution::createAccumulatorImpl(const std::vector<double> &init) const {
+  return createAccumulatorImplT(init);
+}
+
+template <typename T>
+std::unique_ptr<Accumulator<T>>
+NonoverlappingDistribution::createAccumulatorImplT(const T &init) const {
+  return boost::make_unique<NonoverlappingDistributionAccumulator<T>>(init, comm_);
 }
 
 // -----------------------------------------------------------------------------

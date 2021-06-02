@@ -9,6 +9,7 @@
 #define TEST_IODA_OBSSPACEINDEXRECNUM_H_
 
 #include <cmath>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -24,6 +25,7 @@
 #include "oops/runs/Test.h"
 #include "oops/test/TestEnvironment.h"
 
+#include "ioda/distribution/Accumulator.h"
 #include "ioda/IodaTrait.h"
 #include "ioda/ObsSpace.h"
 
@@ -80,36 +82,49 @@ void testConstructor() {
     conf[jj].get("test data", testConfig);
     oops::Log::debug() << "Test data configuration: " << testConfig << std::endl;
 
-    // Get the numbers of locations (nlocs) from the ObsSpace object
-    std::size_t Nlocs = Test_::obspace(jj).globalNumLocs();
-    std::size_t Nvars = Test_::obspace(jj).nvars();
-    bool ObsAreSorted = Test_::obspace(jj).obsAreSorted();
+    const ObsSpace &odb = Test_::obspace(jj);
+
+    // Get the number of locations (nlocs) from the ObsSpace object
+    std::size_t GlobalNlocs = odb.globalNumLocs();
+    std::size_t Nlocs = odb.nlocs();
+    std::size_t Nvars = odb.nvars();
+    bool ObsAreSorted = odb.obsAreSorted();
 
     // Get the expected nlocs from the obspace object's configuration
-    std::size_t ExpectedNlocs = testConfig.getUnsigned("nlocs");
+    std::size_t ExpectedGlobalNlocs = testConfig.getUnsigned("nlocs");
     std::size_t ExpectedNvars = testConfig.getUnsigned("nvars");
     bool ExpectedObsAreSorted = testConfig.getBool("obs are sorted");
 
-    oops::Log::debug() << "Nlocs, ExpectedNlocs: " << Nlocs << ", "
-                       << ExpectedNlocs << std::endl;
+    oops::Log::debug() << "GlobalNlocs, ExpectedGlobalNlocs: " << GlobalNlocs << ", "
+                       << ExpectedGlobalNlocs << std::endl;
     oops::Log::debug() << "Nvars, ExpectedNvars: " << Nvars << ", "
                        << ExpectedNvars << std::endl;
     oops::Log::debug() << "ObsAreSorted, ExpectedObsAreSorted: " << ObsAreSorted << ", "
                        << ExpectedObsAreSorted << std::endl;
 
-    EXPECT(Nlocs == ExpectedNlocs);
+    EXPECT(GlobalNlocs == ExpectedGlobalNlocs);
     if (Nlocs > 0)
       EXPECT(Nvars == ExpectedNvars);
     EXPECT(ObsAreSorted == ExpectedObsAreSorted);
 
     // records are ambigious and not implemented for halo distribution
-    if (Test_::obspace(jj).distribution()->name() != "Halo") {
-      std::size_t Nrecs = Test_::obspace(jj).nrecs();
-      Test_::obspace(jj).distribution()->allReduceInPlace(Nrecs, eckit::mpi::sum());
-      std::size_t ExpectedNrecs = testConfig.getUnsigned("nrecs");
-      oops::Log::debug() << "Nrecs, ExpectedNrecs: " << Nrecs << ", "
-                       << ExpectedNrecs << std::endl;
-      EXPECT(Nrecs == ExpectedNrecs);
+    if (odb.distribution()->name() != "Halo") {
+      std::size_t Nrecs = 0;
+      std::set<std::size_t> recIndices;
+      auto accumulator = odb.distribution()->createAccumulator<std::size_t>();
+      for (std::size_t loc = 0; loc < Nlocs; ++loc) {
+        if (bool isNewRecord = recIndices.insert(odb.recnum()[loc]).second) {
+          accumulator->addTerm(loc, 1);
+          ++Nrecs;
+        }
+      }
+      const size_t ExpectedNrecs = odb.nrecs();
+      EXPECT_EQUAL(Nrecs, ExpectedNrecs);
+
+      // Calculate the global number of unique records
+      std::size_t GlobalNrecs = accumulator->computeResult();
+      std::size_t ExpectedGlobalNrecs = testConfig.getUnsigned("nrecs");
+      EXPECT_EQUAL(GlobalNrecs, ExpectedGlobalNrecs);
     }
   }
 }
