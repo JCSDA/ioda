@@ -32,6 +32,8 @@ class InefficientDistribution: public Distribution {
                            const eckit::Configuration & config);
      ~InefficientDistribution();
 
+     bool isIdentity() const override {return true;}
+
      bool isMyRecord(std::size_t RecNum) const override {return true;};
 
      void patchObs(std::vector<bool> &) const override;

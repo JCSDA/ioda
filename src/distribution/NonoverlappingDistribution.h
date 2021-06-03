@@ -24,9 +24,10 @@ namespace ioda {
  */
 class NonoverlappingDistribution : public Distribution {
  public:
-    explicit NonoverlappingDistribution(const eckit::mpi::Comm & Comm,
-                                        const eckit::Configuration & config);
+    explicit NonoverlappingDistribution(const eckit::mpi::Comm & Comm);
     ~NonoverlappingDistribution() override;
+
+    bool isNonoverlapping() const override { return true; }
 
     void assignRecord(const std::size_t RecNum, const std::size_t LocNum,
                       const eckit::geometry::Point2 & point) override;

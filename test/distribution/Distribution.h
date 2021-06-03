@@ -36,6 +36,7 @@
 
 #include "ioda/distribution/Distribution.h"
 #include "ioda/distribution/DistributionFactory.h"
+#include "ioda/ObsSpace.h"
 
 namespace eckit
 {
@@ -75,12 +76,142 @@ void testConstructor() {
     DistConfig.set("distribution", DistName);
     TestDist = DistributionFactory::create(MpiComm, DistConfig);
     EXPECT(TestDist.get());
-    }
   }
+}
 
 // -----------------------------------------------------------------------------
 
-void testDistribution() {
+void testDistribution(const eckit::Configuration &config,
+                      const eckit::Configuration &MyRankConfig,
+                      const ioda::Distribution *TestDist,
+                      const std::vector<std::size_t> &Index,
+                      const std::vector<std::size_t> &Recnums) {
+  // expected answers
+  std::size_t ExpectedNlocs = MyRankConfig.getUnsigned("nlocs");
+  std::size_t ExpectedNrecs = MyRankConfig.getUnsigned("nrecs");
+  std::size_t ExpectedNPatchLocs = MyRankConfig.getUnsigned("nPatchLocs");
+  std::vector<std::size_t> ExpectedIndex =
+                               MyRankConfig.getUnsignedVector("index");
+  std::vector<std::size_t> ExpectedRecnums =
+                               MyRankConfig.getUnsignedVector("recnums");
+  std::vector<std::size_t> ExpectedPatchIndex =
+                               MyRankConfig.getUnsignedVector("patchIndex");
+  const std::vector<std::size_t> ExpectedAllGatherv =
+      config.getUnsignedVector("specs.allgatherv");
+
+  std::vector<bool> patchBool(Index.size());
+  std::vector<std::size_t> PatchLocsThisPE;
+  TestDist->patchObs(patchBool);
+  for (std::size_t j = 0; j < Index.size(); ++j) {
+    if (patchBool[j]) {PatchLocsThisPE.push_back(Index[j]);}
+  }
+
+  // Check the location and record counts
+  std::size_t Nlocs = Index.size();
+  std::size_t Nrecs = std::set<std::size_t>(Recnums.begin(), Recnums.end()).size();
+  std::size_t NPatchLocs = PatchLocsThisPE.size();
+
+  oops::Log::debug() << "Location Index: " << Index << std::endl;
+  oops::Log::debug() << "PatchLocsThisPE: " << PatchLocsThisPE << std::endl;
+  oops::Log::debug() << "Nlocs: " << Nlocs << " Nrecs: " << Nrecs
+                     << " NPatchLocs" << NPatchLocs << std::endl;
+
+  EXPECT_EQUAL(Nlocs, ExpectedNlocs);
+  EXPECT_EQUAL(Nrecs, ExpectedNrecs);
+  EXPECT_EQUAL(NPatchLocs, ExpectedNPatchLocs);
+
+  // Check the resulting index and recnum vectors
+  EXPECT_EQUAL(Index, ExpectedIndex);
+  EXPECT_EQUAL(Recnums, ExpectedRecnums);
+  EXPECT_EQUAL(PatchLocsThisPE, ExpectedPatchIndex);
+
+  // Test overloads of the allGatherv() method. We will pass to it vectors derived from the
+  // Index vector and compare the results against vectors derived from ExpectedAllGatherv.
+
+  // Overload taking an std::vector<size_t>
+  {
+    const std::vector<std::size_t> ExpectedAllGathervSizeT = ExpectedAllGatherv;
+    std::vector<size_t> AllGathervSizeT = Index;
+    TestDist->allGatherv(AllGathervSizeT);
+    EXPECT_EQUAL(AllGathervSizeT, ExpectedAllGathervSizeT);
+
+    // Take advantage of the output produced by allGatherv() to test
+    // globalUniqueConsecutiveLocationIndex(). This function is expected to map the index of each
+    // location held on the calling process to the index of the corresponding element of the vector
+    // produced by allGatherv().
+
+    std::vector<size_t> ExpectedGlobalUniqueConsecutiveLocationIndices(Nlocs);
+    std::vector<size_t> GlobalUniqueConsecutiveLocationIndices(Nlocs);
+    for (size_t loc = 0; loc < Nlocs; ++loc) {
+      const std::vector<size_t>::iterator it = std::find(
+            AllGathervSizeT.begin(), AllGathervSizeT.end(), Index[loc]);
+      ASSERT(it != AllGathervSizeT.end());
+      ExpectedGlobalUniqueConsecutiveLocationIndices[loc] = it - AllGathervSizeT.begin();
+      GlobalUniqueConsecutiveLocationIndices[loc] =
+          TestDist->globalUniqueConsecutiveLocationIndex(loc);
+    }
+
+    EXPECT_EQUAL(GlobalUniqueConsecutiveLocationIndices,
+                 ExpectedGlobalUniqueConsecutiveLocationIndices);
+  }
+
+  // Overload taking an std::vector<int>
+  {
+    std::vector<int> ExpectedAllGathervInt(ExpectedAllGatherv.begin(),
+                                           ExpectedAllGatherv.end());
+    std::vector<int> AllGathervInt(Index.begin(), Index.end());
+    TestDist->allGatherv(AllGathervInt);
+    EXPECT_EQUAL(AllGathervInt, ExpectedAllGathervInt);
+  }
+
+  // Overload taking an std::vector<float>
+  {
+    std::vector<float> ExpectedAllGathervFloat(ExpectedAllGatherv.begin(),
+                                               ExpectedAllGatherv.end());
+    std::vector<float> AllGathervFloat(Index.begin(), Index.end());
+    TestDist->allGatherv(AllGathervFloat);
+    EXPECT_EQUAL(AllGathervFloat, ExpectedAllGathervFloat);
+  }
+
+  // Overload taking an std::vector<double>
+  {
+    std::vector<double> ExpectedAllGathervDouble(ExpectedAllGatherv.begin(),
+                                                 ExpectedAllGatherv.end());
+    std::vector<double> AllGathervDouble(Index.begin(), Index.end());
+    TestDist->allGatherv(AllGathervDouble);
+    EXPECT_EQUAL(AllGathervDouble, ExpectedAllGathervDouble);
+  }
+
+  // Overload taking an std::vector<std::string>
+  {
+    auto numberToString = [](std::size_t x) { return std::to_string(x); };
+    std::vector<std::string> ExpectedAllGathervString;
+    std::transform(ExpectedAllGatherv.begin(), ExpectedAllGatherv.end(),
+                   std::back_inserter(ExpectedAllGathervString), numberToString);
+    std::vector<std::string> AllGathervString;
+    std::transform(Index.begin(), Index.end(),
+                   std::back_inserter(AllGathervString), numberToString);
+    TestDist->allGatherv(AllGathervString);
+    EXPECT_EQUAL(AllGathervString, ExpectedAllGathervString);
+  }
+
+  // Overload taking an std::vector<util::DateTime>
+  {
+    auto numberToDateTime = [](std::size_t x) { return util::DateTime(2000, 1, 1, 0, 0, x); };
+    std::vector<util::DateTime> ExpectedAllGathervDateTime;
+    std::transform(ExpectedAllGatherv.begin(), ExpectedAllGatherv.end(),
+                   std::back_inserter(ExpectedAllGathervDateTime), numberToDateTime);
+    std::vector<util::DateTime> AllGathervDateTime;
+    std::transform(Index.begin(), Index.end(),
+                   std::back_inserter(AllGathervDateTime), numberToDateTime);
+    TestDist->allGatherv(AllGathervDateTime);
+    EXPECT_EQUAL(AllGathervDateTime, ExpectedAllGathervDateTime);
+  }
+}
+
+// -----------------------------------------------------------------------------
+
+void testDistributionConstructedManually() {
   const eckit::LocalConfiguration conf(::test::TestEnvironment::config());
   std::vector<eckit::LocalConfiguration> dist_types;
   const eckit::mpi::Comm & MpiComm = oops::mpi::world();
@@ -88,7 +219,6 @@ void testDistribution() {
   std::string TestDistType;
   std::string DistName;
   std::unique_ptr<ioda::Distribution> TestDist;
-  DistributionFactory * DistFactory = nullptr;
 
   std::size_t MyRank = MpiComm.rank();
 
@@ -122,19 +252,6 @@ void testDistribution() {
     TestDist = DistributionFactory::create(MpiComm, MyRankConfig);
     EXPECT(TestDist.get());
 
-    // expected answers
-    std::size_t ExpectedNlocs = MyRankConfig.getUnsigned("nlocs");
-    std::size_t ExpectedNrecs = MyRankConfig.getUnsigned("nrecs");
-    std::size_t ExpectedNPatchLocs = MyRankConfig.getUnsigned("nPatchLocs");
-    std::vector<std::size_t> ExpectedIndex =
-                                 MyRankConfig.getUnsignedVector("index");
-    std::vector<std::size_t> ExpectedRecnums =
-                                 MyRankConfig.getUnsignedVector("recnums");
-    std::vector<std::size_t> ExpectedPatchIndex =
-                                 MyRankConfig.getUnsignedVector("patchIndex");
-    const std::vector<std::size_t> ExpectedAllGatherv =
-        dist_types[i].getUnsignedVector("specs.allgatherv");
-
     // If obsgrouping is specified then read the record grouping directly from
     // the config file. Otherwise, assign 0 to Gnlocs-1 into the record grouping
     // vector.
@@ -148,7 +265,6 @@ void testDistribution() {
     // Loop on gnlocs, and keep the indecies according to the distribution type.
     std::vector<std::size_t> Index;
     std::vector<std::size_t> Recnums;
-    std::set<std::size_t> PatchRecnums;
     for (std::size_t j = 0; j < Gnlocs; ++j) {
       std::size_t RecNum = Groups[j];
       eckit::geometry::Point2 point(glons[j], glats[j]);
@@ -156,130 +272,45 @@ void testDistribution() {
       if (TestDist->isMyRecord(RecNum)) {
         Index.push_back(j);
         Recnums.push_back(RecNum);
-        PatchRecnums.insert(RecNum);
       }
     }
     TestDist->computePatchLocs(Gnlocs);
 
-    std::vector<bool> patchBool(Index.size());
-    std::vector<std::size_t> PatchLocsThisPE;
-    TestDist->patchObs(patchBool);
-    for (std::size_t j = 0; j < Index.size(); ++j) {
-      if (patchBool[j]) {PatchLocsThisPE.push_back(Index[j]);}
-    }
-
-    // Check the location and record counts
-    std::size_t Nlocs = Index.size();
-    std::size_t Nrecs = PatchRecnums.size();
-    std::size_t NPatchLocs = PatchLocsThisPE.size();
-
-    oops::Log::debug() << "Location Index: " << Index << std::endl;
-    oops::Log::debug() << "PatchLocsThisPE: " << PatchLocsThisPE << std::endl;
-    oops::Log::debug() << "Nlocs: " << Nlocs << " Nrecs: " << Nrecs
-                       << " NPatchLocs" << NPatchLocs << std::endl;
-
-    EXPECT(Nlocs == ExpectedNlocs);
-    EXPECT(Nrecs == ExpectedNrecs);
-    EXPECT(NPatchLocs == ExpectedNPatchLocs);
-
-    // Check the resulting index and recnum vectors
-    for (std::size_t j = 0; j < ExpectedIndex.size(); ++j) {
-      EXPECT(Index[j] == ExpectedIndex[j]);
-    }
-
-    for (std::size_t j = 0; j < ExpectedRecnums.size(); ++j) {
-      EXPECT(Recnums[j] == ExpectedRecnums[j]);
-    }
-
-    for (std::size_t j = 0; j < ExpectedPatchIndex.size(); ++j) {
-      EXPECT(PatchLocsThisPE[j] == ExpectedPatchIndex[j]);
-    }
-
-    // Test overloads of the allGatherv() method. We will pass to it vectors derived from the
-    // Index vector and compare the results against vectors derived from ExpectedAllGatherv.
-
-    // Overload taking an std::vector<size_t>
-    {
-      const std::vector<std::size_t> ExpectedAllGathervSizeT = ExpectedAllGatherv;
-      std::vector<size_t> AllGathervSizeT = Index;
-      oops::Log::debug() << "AllGathervSizeT = " << AllGathervSizeT << std::endl;
-      TestDist->allGatherv(AllGathervSizeT);
-      oops::Log::debug() << "AllGathervSizeT = " << AllGathervSizeT << std::endl;
-      EXPECT_EQUAL(AllGathervSizeT, ExpectedAllGathervSizeT);
-
-      // We'll also test globalUniqueConsecutiveLocationIndex() here.
-      // This function is expected to map the index of each location held on the calling process to
-      // the index of the corresponding element of the vector produced by allGatherv().
-
-      std::vector<size_t> ExpectedGlobalUniqueConsecutiveLocationIndices(Nlocs);
-      std::vector<size_t> GlobalUniqueConsecutiveLocationIndices(Nlocs);
-      for (size_t loc = 0; loc < Nlocs; ++loc) {
-        const std::vector<size_t>::iterator it = std::find(
-              AllGathervSizeT.begin(), AllGathervSizeT.end(), Index[loc]);
-        ASSERT(it != AllGathervSizeT.end());
-        ExpectedGlobalUniqueConsecutiveLocationIndices[loc] = it - AllGathervSizeT.begin();
-        GlobalUniqueConsecutiveLocationIndices[loc] =
-            TestDist->globalUniqueConsecutiveLocationIndex(loc);
-      }
-
-      EXPECT_EQUAL(GlobalUniqueConsecutiveLocationIndices,
-                   ExpectedGlobalUniqueConsecutiveLocationIndices);
-    }
-
-    // Overload taking an std::vector<int>
-    {
-      std::vector<int> ExpectedAllGathervInt(ExpectedAllGatherv.begin(),
-                                             ExpectedAllGatherv.end());
-      std::vector<int> AllGathervInt(Index.begin(), Index.end());
-      TestDist->allGatherv(AllGathervInt);
-      EXPECT_EQUAL(AllGathervInt, ExpectedAllGathervInt);
-    }
-
-    // Overload taking an std::vector<float>
-    {
-      std::vector<float> ExpectedAllGathervFloat(ExpectedAllGatherv.begin(),
-                                                 ExpectedAllGatherv.end());
-      std::vector<float> AllGathervFloat(Index.begin(), Index.end());
-      TestDist->allGatherv(AllGathervFloat);
-      EXPECT_EQUAL(AllGathervFloat, ExpectedAllGathervFloat);
-    }
-
-    // Overload taking an std::vector<double>
-    {
-      std::vector<double> ExpectedAllGathervDouble(ExpectedAllGatherv.begin(),
-                                                   ExpectedAllGatherv.end());
-      std::vector<double> AllGathervDouble(Index.begin(), Index.end());
-      TestDist->allGatherv(AllGathervDouble);
-      EXPECT_EQUAL(AllGathervDouble, ExpectedAllGathervDouble);
-    }
-
-    // Overload taking an std::vector<std::string>
-    {
-      auto numberToString = [](std::size_t x) { return std::to_string(x); };
-      std::vector<std::string> ExpectedAllGathervString;
-      std::transform(ExpectedAllGatherv.begin(), ExpectedAllGatherv.end(),
-                     std::back_inserter(ExpectedAllGathervString), numberToString);
-      std::vector<std::string> AllGathervString;
-      std::transform(Index.begin(), Index.end(),
-                     std::back_inserter(AllGathervString), numberToString);
-      TestDist->allGatherv(AllGathervString);
-      EXPECT_EQUAL(AllGathervString, ExpectedAllGathervString);
-    }
-
-    // Overload taking an std::vector<util::DateTime>
-    {
-      auto numberToDateTime = [](std::size_t x) { return util::DateTime(2000, 1, 1, 0, 0, x); };
-      std::vector<util::DateTime> ExpectedAllGathervDateTime;
-      std::transform(ExpectedAllGatherv.begin(), ExpectedAllGatherv.end(),
-                     std::back_inserter(ExpectedAllGathervDateTime), numberToDateTime);
-      std::vector<util::DateTime> AllGathervDateTime;
-      std::transform(Index.begin(), Index.end(),
-                     std::back_inserter(AllGathervDateTime), numberToDateTime);
-      TestDist->allGatherv(AllGathervDateTime);
-      EXPECT_EQUAL(AllGathervDateTime, ExpectedAllGathervDateTime);
-    }
+    testDistribution(dist_types[i], MyRankConfig, TestDist.get(), Index, Recnums);
   }    // loop distributions
-}      // testDistribution
+}      // testDistributionConstructedManually
+
+// -----------------------------------------------------------------------------
+
+// This test can be used to test distributions that cannot be constructed by the
+// DistributionFactory, but need to be constructed by an ObsSpace. For example, the
+// MasterAndReplicaDistribution.
+void testDistributionConstructedByObsSpace() {
+  const eckit::LocalConfiguration topLevelConf(::test::TestEnvironment::config());
+
+  const util::DateTime winBegin(topLevelConf.getString("window begin"));
+  const util::DateTime winEnd(topLevelConf.getString("window end"));
+
+  const eckit::mpi::Comm & MpiComm = oops::mpi::world();
+  const std::size_t MyRank = MpiComm.rank();
+
+  const eckit::LocalConfiguration & obsConf = topLevelConf.getSubConfiguration("observations");
+
+  for (const eckit::LocalConfiguration & conf : obsConf.getSubConfigurations()) {
+    eckit::LocalConfiguration obsspaceConf(conf, "obs space");
+    ioda::ObsSpace obsspace(obsspaceConf, MpiComm, winBegin, winEnd, oops::mpi::myself());
+
+    // Expected results are listed in "specs.index" with the MPI rank number
+    // appended on the end.
+    std::string MyRankConfName = "specs.rank" + std::to_string(MyRank);
+    eckit::LocalConfiguration MyRankConf(conf, MyRankConfName);
+    oops::Log::debug() << "MyRankConf: "
+                       << MyRankConfName << ": " << MyRankConf << std::endl;
+
+    testDistribution(conf, MyRankConf, obsspace.distribution().get(),
+                     obsspace.index(), obsspace.recnum());
+  }
+}
 
 // -----------------------------------------------------------------------------
 
@@ -295,8 +326,10 @@ class Distribution : public oops::Test {
 
     ts.emplace_back(CASE("distribution/Distribution/testConstructor")
       { testConstructor(); });
-    ts.emplace_back(CASE("distribution/Distribution/testDistribution")
-      { testDistribution(); });
+    ts.emplace_back(CASE("distribution/Distribution/testDistributionConstructedManually")
+      { testDistributionConstructedManually(); });
+    ts.emplace_back(CASE("distribution/Distribution/testDistributionConstructedByObsSpace")
+      { testDistributionConstructedByObsSpace(); });
   }
 
   void clear() const override {}

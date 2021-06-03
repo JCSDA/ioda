@@ -23,9 +23,8 @@
 namespace ioda {
 
 // -----------------------------------------------------------------------------
-NonoverlappingDistribution::NonoverlappingDistribution(const eckit::mpi::Comm & Comm,
-                                                       const eckit::Configuration & config)
-  : Distribution(Comm, config) {
+NonoverlappingDistribution::NonoverlappingDistribution(const eckit::mpi::Comm & Comm)
+  : Distribution(Comm) {
     oops::Log::trace() << "NonoverlappingDistribution constructed" << std::endl;
 }
 
@@ -190,26 +189,32 @@ NonoverlappingDistribution::createAccumulatorImplT(const T &init) const {
 
 // -----------------------------------------------------------------------------
 void NonoverlappingDistribution::allGatherv(std::vector<size_t> &x) const {
+  ASSERT(x.size() == numLocationsOnThisRank_);
   oops::mpi::allGatherv(comm_, x);
 }
 
 void NonoverlappingDistribution::allGatherv(std::vector<int> &x) const {
+  ASSERT(x.size() == numLocationsOnThisRank_);
   oops::mpi::allGatherv(comm_, x);
 }
 
 void NonoverlappingDistribution::allGatherv(std::vector<float> &x) const {
+  ASSERT(x.size() == numLocationsOnThisRank_);
   oops::mpi::allGatherv(comm_, x);
 }
 
 void NonoverlappingDistribution::allGatherv(std::vector<double> &x) const {
+  ASSERT(x.size() == numLocationsOnThisRank_);
   oops::mpi::allGatherv(comm_, x);
 }
 
 void NonoverlappingDistribution::allGatherv(std::vector<util::DateTime> &x) const {
+  ASSERT(x.size() == numLocationsOnThisRank_);
   oops::mpi::allGatherv(comm_, x);
 }
 
 void NonoverlappingDistribution::allGatherv(std::vector<std::string> &x) const {
+  ASSERT(x.size() == numLocationsOnThisRank_);
   oops::mpi::allGatherv(comm_, x);
 }
 

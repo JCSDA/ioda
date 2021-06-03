@@ -5,9 +5,14 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
+#include "eckit/config/LocalConfiguration.h"
+
 #include "ioda/distribution/Accumulator.h"
 #include "ioda/distribution/Distribution.h"
 #include "ioda/distribution/DistributionUtils.h"
+#include "ioda/distribution/InefficientDistribution.h"
+#include "ioda/distribution/ReplicaOfNonoverlappingDistribution.h"
+#include "ioda/distribution/ReplicaOfGeneralDistribution.h"
 
 #include "oops/util/DateTime.h"
 #include "oops/util/missingValues.h"
@@ -110,6 +115,20 @@ std::size_t globalNumNonMissingObs(const Distribution &dist,
                                    std::size_t numVariables,
                                    const std::vector<util::DateTime> &v) {
   return globalNumNonMissingObsImpl(dist, numVariables, v);
+}
+
+// -----------------------------------------------------------------------------
+std::shared_ptr<Distribution> createReplicaDistribution(
+    const eckit::mpi::Comm & comm,
+    std::shared_ptr<const Distribution> master,
+    const std::vector<std::size_t> &masterRecordNums) {
+  if (master->isNonoverlapping())
+    return std::make_shared<ReplicaOfNonoverlappingDistribution>(comm, std::move(master));
+  else if (master->isIdentity())
+    return std::make_shared<InefficientDistribution>(comm, eckit::LocalConfiguration());
+  else
+    return std::make_shared<ReplicaOfGeneralDistribution>(comm, std::move(master),
+                                                          masterRecordNums);
 }
 
 }  // namespace ioda

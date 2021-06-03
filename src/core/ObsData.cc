@@ -32,6 +32,8 @@
 
 #include "ioda/distribution/Accumulator.h"
 #include "ioda/distribution/DistributionFactory.h"
+#include "ioda/distribution/DistributionUtils.h"
+#include "ioda/distribution/PairOfDistributions.h"
 #include "ioda/Engines/HH.h"
 #include "ioda/io/ObsFrameRead.h"
 #include "ioda/io/ObsFrameWrite.h"
@@ -1056,44 +1058,83 @@ void ObsData::extendVariable(Variable & extendVar, const size_t startFill) {
 
 // -----------------------------------------------------------------------------
 void ObsData::extendObsSpace(const ObsExtendParameters & params) {
-  const int nlevs = params.numModelLevels;
-  const std::vector <std::string> &nonMissingExtendedVars = params.nonMissingExtendedVars;
+  // In this function we use the following terminology:
+  // * The word 'original' refers to locations and records present in the ObsSpace before its
+  //   extension.
+  // * The word 'averaged' refers to locations and records created when extending the ObsSpace
+  //   (they will represent data averaged onto model levels).
+  // * The word 'extended' refers to the original and averaged locations and records taken
+  //   together.
+  // * The word 'local` refers to locations and records held on the current process.
+  // * The word 'global` refers to locations and records held on any process.
 
-  const std::size_t nlocs = this->nlocs();
-  const std::vector<std::string> obsGroupVars = this->obs_group_vars();
+  const int nlevs = params.numModelLevels;
+
+  const size_t numOriginalLocs = this->nlocs();
+  const bool recordsExist = !this->obs_group_vars().empty();
   if (nlevs > 0 &&
-      nlocs > 0 &&
-      !obsGroupVars.empty()) {
-    // Number of extended locations on this processor.
-    const std::size_t nlocsext = nlocs + nrecs_ * nlevs;
-    // Find starting index (in the extended section) across all processors.
-    size_t indxstart = indx_.back() + 1;
-    dist_->max(indxstart);
-    // Maximum unique record ID across all processors.
-    std::set<std::size_t> uniqueRecNums(recnums_.begin(), recnums_.end());
-    std::size_t maxOriginalRecordId = *uniqueRecNums.rbegin();
-    dist_->max(maxOriginalRecordId);
-    // Produce the indices and record numbers in the extended ObsSpace for this processor.
-    // Place each extended record on the same processor as the equivalent original one.
-    const std::vector <std::size_t> vec_unique_rec_nums(uniqueRecNums.begin(),
-                                                        uniqueRecNums.end());
-    for (std::size_t irec : vec_unique_rec_nums) {
-      const size_t irec_ext = irec + maxOriginalRecordId + 1;
+      gnlocs_ > 0 &&
+      recordsExist) {
+    // Identify the indices of all local original records.
+    const std::set<size_t> uniqueOriginalRecs(recnums_.begin(), recnums_.end());
+
+    // Find the largest global indices of locations and records in the original ObsSpace.
+    // Increment them by one to produce the initial values for the global indices of locations
+    // and records in the averaged ObsSpace.
+
+    // These are *upper bounds* on the global numbers of original locations and records
+    // because the sequences of global location indices and records may contain gaps.
+    size_t upperBoundOnGlobalNumOriginalLocs = 0;
+    size_t upperBoundOnGlobalNumOriginalRecs = 0;
+    if (numOriginalLocs > 0) {
+      upperBoundOnGlobalNumOriginalLocs = indx_.back() + 1;
+      upperBoundOnGlobalNumOriginalRecs = *uniqueOriginalRecs.rbegin() + 1;
+    }
+    dist_->max(upperBoundOnGlobalNumOriginalLocs);
+    dist_->max(upperBoundOnGlobalNumOriginalRecs);
+
+    // The replica distribution will be used to place each averaged record on the same process
+    // as the corresponding original record.
+    std::shared_ptr<Distribution> replicaDist = createReplicaDistribution(
+          commMPI_, dist_, recnums_);
+
+    // Create averaged locations and records.
+
+    // Local index of an averaged location. Note that these indices, like local indices of
+    // original locations, start from 0.
+    size_t averagedLoc = 0;
+    for (size_t originalRec : uniqueOriginalRecs) {
+      ASSERT(dist_->isMyRecord(originalRec));
+      const size_t averagedRec = originalRec;
+      const size_t extendedRec = upperBoundOnGlobalNumOriginalRecs + averagedRec;
       nrecs_++;
-      for (size_t ilev = 0; ilev < nlevs; ++ilev) {
-        recnums_.push_back(irec_ext);
-        indx_.push_back(indxstart + irec * nlevs + ilev);
+      // recidx_ stores the locations belonging to each record on the local processor.
+      std::vector<size_t> &locsInRecord = recidx_[extendedRec];
+      for (int ilev = 0; ilev < nlevs; ++ilev, ++averagedLoc) {
+        const size_t extendedLoc = numOriginalLocs + averagedLoc;
+        const size_t globalAveragedLoc = originalRec * nlevs + ilev;
+        const size_t globalExtendedLoc = upperBoundOnGlobalNumOriginalLocs + globalAveragedLoc;
+        // Geographical position shouldn't matter -- the replica distribution is expected
+        // to assign records to processors solely on the basis of their indices.
+        replicaDist->assignRecord(averagedRec, globalAveragedLoc, eckit::geometry::Point2());
+        ASSERT(replicaDist->isMyRecord(averagedRec));
+        recnums_.push_back(extendedRec);
+        indx_.push_back(globalExtendedLoc);
+        locsInRecord.push_back(extendedLoc);
       }
     }
-    // Extend recidx_, which maps indices to records on the local processor.
-    for (size_t iloc = nlocs; iloc < nlocsext; ++iloc)
-      recidx_[recnums_[iloc]].push_back(iloc);
+    const size_t upperBoundOnGlobalNumAveragedLocs = upperBoundOnGlobalNumOriginalRecs * nlevs;
+    replicaDist->computePatchLocs(upperBoundOnGlobalNumAveragedLocs);
+
+    const size_t numAveragedLocs = averagedLoc;
+    const size_t numExtendedLocs = numOriginalLocs + numAveragedLocs;
+
     // Extend all existing vectors with missing values.
     // Only vectors with (at least) one dimension equal to nlocs are modified.
     // Second argument (bool) to resizeNlocs tells function:
     //       true -> append the amount in first argument to the existing size
     //      false -> reset the existing size to the amount in the first argument
-    this->resizeNlocs(nlocsext, false);
+    this->resizeNlocs(numExtendedLocs, false);
 
     // Extend all existing vectors with missing values, excepting those
     // that have been selected to be filled with non-missing values.
@@ -1104,37 +1145,49 @@ void ObsData::extendObsSpace(const ObsExtendParameters & params) {
     // missing values. Go through the list of variables that are to be filled with
     // non-missing values, check if they exist and if so fill in the extended section
     // with non-missing values.
+    const std::vector <std::string> &nonMissingExtendedVars = params.nonMissingExtendedVars;
     for (auto & varName : nonMissingExtendedVars) {
-        // It is implied that these variables are in the MetaData group
-        std::string groupName = "MetaData";
-        std::string fullVname = fullVarName(groupName, varName);
-        if (obs_group_.vars.exists(fullVname)) {
-            // Note nlocs at this point holds the original size before extending.
-            // Pass nlocs into extendVariable to indicate where to start filling.
-            Variable extendVar = obs_group_.vars.open(fullVname);
-            if (extendVar.isA<int>()) {
-                extendVariable<int>(extendVar, nlocs);
-            } else if (extendVar.isA<float>()) {
-                extendVariable<float>(extendVar, nlocs);
-            } else if (extendVar.isA<std::string>()) {
-                extendVariable<std::string>(extendVar, nlocs);
-            }
+      // It is implied that these variables are in the MetaData group
+      const std::string groupName = "MetaData";
+      const std::string fullVname = fullVarName(groupName, varName);
+      if (obs_group_.vars.exists(fullVname)) {
+        // Note nlocs at this point holds the original size before extending.
+        // The numOriginalLocs argument passed to extendVariable indicates where to start filling.
+        Variable extendVar = obs_group_.vars.open(fullVname);
+        if (extendVar.isA<int>()) {
+          extendVariable<int>(extendVar, numOriginalLocs);
+        } else if (extendVar.isA<float>()) {
+          extendVariable<float>(extendVar, numOriginalLocs);
+        } else if (extendVar.isA<std::string>()) {
+          extendVariable<std::string>(extendVar, numOriginalLocs);
         }
+      }
     }
 
     // Fill extended_obs_space with 0, which indicates the standard section of the ObsSpace,
     // and 1, which indicates the extended section.
-    std::vector <int> extended_obs_space(nlocsext, 0);
-    std::fill(extended_obs_space.begin() + nlocs, extended_obs_space.begin() + nlocsext, 1);
+    std::vector <int> extended_obs_space(numExtendedLocs, 0);
+    std::fill(extended_obs_space.begin() + numOriginalLocs, extended_obs_space.end(), 1);
     // Save extended_obs_space for use in filters.
     put_db("MetaData", "extended_obs_space", extended_obs_space);
-    // Extend nlocs on this processor.
-    dim_info_.set_dim_size(ObsDimensionId::Nlocs, nlocsext);
-    // Recalculate gnlocs_.
-    std::unique_ptr<Accumulator<size_t>> accumulator = dist_->createAccumulator<size_t>();
-    for (size_t i = 0; i < nlocsext; ++i)
-      accumulator->addTerm(i, 1);
-    gnlocs_ = accumulator->computeResult();
+
+    // Calculate the number of newly created locations on all processes (counting those
+    // held on multiple processes only once).
+    std::unique_ptr<Accumulator<size_t>> accumulator = replicaDist->createAccumulator<size_t>();
+    for (size_t averagedLoc = 0; averagedLoc < numAveragedLocs; ++averagedLoc)
+      accumulator->addTerm(averagedLoc, 1);
+    size_t globalNumAveragedLocs = accumulator->computeResult();
+
+    // Replace the original distribution with a PairOfDistributions, covering
+    // both the original and averaged locations.
+    dist_ = std::make_shared<PairOfDistributions>(commMPI_, dist_, replicaDist,
+                                                  numOriginalLocs,
+                                                  upperBoundOnGlobalNumOriginalRecs);
+
+    // Increment nlocs on this processor.
+    dim_info_.set_dim_size(ObsDimensionId::Nlocs, numExtendedLocs);
+    // Increment gnlocs_.
+    gnlocs_ += globalNumAveragedLocs;
   }
 }
 // -----------------------------------------------------------------------------

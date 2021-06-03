@@ -24,7 +24,10 @@ namespace ioda {
 /*!
  * \brief Halo distribution
  *
- * \details All obs. are divided into compact overlaping sets assigned to each PE 
+ * \details All obs. are divided into compact overlapping sets assigned to each PE.
+ * Specifically, a record is assigned to a PE if the first location belonging to that record
+ * lies at most a certain distance (controlled by the option `radius`) from the center of the halo
+ * associated with that PE (controlled by the option `center`).
  *
  * \author Sergey Frolov (CIRES)
  */
@@ -33,6 +36,7 @@ class Halo: public Distribution {
      explicit Halo(const eckit::mpi::Comm & Comm,
                    const eckit::Configuration & config);
      ~Halo();
+
      void assignRecord(const std::size_t RecNum, const std::size_t LocNum,
                       const eckit::geometry::Point2 & point) override;
      bool isMyRecord(std::size_t RecNum) const override;
@@ -109,16 +113,27 @@ class Halo: public Distribution {
 
      double radius_;
      eckit::geometry::Point2 center_;
-     // Indices of records held on this PE
-     std::unordered_set<std::size_t> haloObsRecord_;
-     std::unordered_map<std::size_t, double> haloObsLoc_;
-     // During record assignment holds indices of locations held on this PE
-     std::vector<size_t> haloLocVector_;
+     // Record numbers held on this PE
+     std::unordered_set<std::size_t> recordsInHalo_;
      // Indicates which observations held on this PE are "patch obs".
      std::vector<bool> patchObsBool_;
      // Maps indices of locations held on this PE to corresponding elements of vectors
      // produced by allGatherv()
      std::vector<size_t> globalUniqueConsecutiveLocIndices_;
+
+     // The following four member variables are valid only during record assignment,
+     // i.e. until the call to computePatchLocs().
+
+     // Record numbers not to be held on this PE
+     std::unordered_set<std::size_t> recordsOutsideHalo_;
+     // The distance of the first location of each record held on this PE
+     // to the center of this PE's halo.
+     std::unordered_map<std::size_t, double> recordDistancesFromCenter_;
+     // Record numbers of locations held on this PE
+     std::vector<size_t> haloLocRecords_;
+     // Indices of locations held on this PE
+     std::vector<size_t> haloLocVector_;
+
      // Earth radius in m
      const double radius_earth_ = 6.371e6;
      // dist name

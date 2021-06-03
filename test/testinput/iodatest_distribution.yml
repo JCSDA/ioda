@@ -54,6 +54,51 @@ distribution types:
         recnums: [  ]
         patchIndex: [ ]
 
+  - distribution: "Halo 10 Grouping"
+    specs:
+      name: "Halo"
+      gnlocs: 10
+      obsgrouping: [ 0,    1,   2, 0, 1, 2,  3,   4, 3, 4 ]
+      longitude:   [ 20, 200, 110, 0, 1, 2, 10, 190, 0, 1 ]
+      latitude:    [ 0,    0,   0, 0, 0, 0,  0,  0,  0, 0 ]
+      allgatherv:  [ 0, 3, 6, 8, 2, 5, 1, 4, 7, 9 ] # concatenation of the patchIndex entries below
+      rank0:
+        center: [0, 0] # lon, lat
+        radius: 10000000
+        nlocs: 4
+        nrecs: 2
+        nPatchLocs: 4
+        index: [ 0, 3, 6, 8 ]
+        recnums: [ 0, 0, 3, 3 ]
+        patchIndex: [ 0, 3, 6, 8 ]
+      rank1:
+        center: [90, 0]
+        radius: 10000000
+        nlocs: 6
+        nrecs: 3
+        nPatchLocs: 2
+        index: [ 0, 2, 3, 5, 6, 8 ]
+        recnums: [ 0, 2, 0, 2, 3, 3 ]
+        patchIndex: [ 2, 5 ]
+      rank2:
+        center: [180, 0]
+        radius: 10000000
+        nlocs: 6
+        nrecs: 3
+        nPatchLocs: 4
+        index: [ 1, 2, 4, 5, 7, 9 ]
+        recnums: [ 1, 2, 1, 2, 4, 4 ]
+        patchIndex: [ 1, 4, 7, 9 ]
+      rank3:
+        center: [270, 0]
+        radius: 10000000
+        nlocs: 4
+        nrecs: 2
+        nPatchLocs: 0
+        index: [ 1, 4, 7, 9 ]
+        recnums: [ 1, 1, 4, 4 ]
+        patchIndex: [ ]
+
   - distribution: "Round Robin 8"
     specs:
       name: "RoundRobin"

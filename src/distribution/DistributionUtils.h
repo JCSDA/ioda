@@ -8,8 +8,15 @@
 #ifndef DISTRIBUTION_DISTRIBUTIONUTILS_H_
 #define DISTRIBUTION_DISTRIBUTIONUTILS_H_
 
+#include <memory>
 #include <string>
 #include <vector>
+
+namespace eckit {
+namespace mpi {
+class Comm;
+}
+}
 
 namespace util {
 class DateTime;
@@ -68,6 +75,22 @@ std::size_t globalNumNonMissingObs(const Distribution &dist,
                                    size_t numVariables, const std::vector<std::string> &v);
 std::size_t globalNumNonMissingObs(const Distribution &dist,
                                    size_t numVariables, const std::vector<util::DateTime> &v);
+
+/// \brief Create a suitable replica distribution for the distribution `master`.
+///
+/// A replica distribution assigns each record `r` to a process if and only if another distribution
+/// (the _master distribution_) has assigned the same record to that process.
+///
+/// \param comm
+///   Communicator used by the master distribution.
+/// \param master
+///   Master distribution.
+/// \param masterRecordNums
+///   Records of all observations assigned by the master distribution to the calling process.
+std::shared_ptr<Distribution> createReplicaDistribution(
+    const eckit::mpi::Comm & comm,
+    std::shared_ptr<const Distribution> master,
+    const std::vector<std::size_t> &masterRecordNums);
 
 }  // namespace ioda
 

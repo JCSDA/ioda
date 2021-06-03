@@ -26,7 +26,7 @@ static DistributionMaker<RoundRobin> maker(DIST_NAME);
 // -----------------------------------------------------------------------------
 RoundRobin::RoundRobin(const eckit::mpi::Comm & Comm,
                        const eckit::Configuration & config)
-                       : NonoverlappingDistribution(Comm, config) {
+                       : NonoverlappingDistribution(Comm) {
   oops::Log::trace() << "RoundRobin constructed" << std::endl;
 }
 

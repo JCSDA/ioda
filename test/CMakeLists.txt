@@ -16,6 +16,9 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsframe_read.yml
   testinput/iodatest_obsframe_write.yml
   testinput/iodatest_distribution.yml
+  testinput/iodatest_distribution_masterandreplica_mpi_2.yml
+  testinput/iodatest_distribution_masterandreplica_mpi_3.yml
+  testinput/iodatest_distribution_masterandreplica_mpi_4.yml
   testinput/iodatest_distribution_methods.yml
   testinput/iodatest_obsdatavector.yml
   testinput/iodatest_obsdtype.yml
@@ -34,6 +37,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsvector_pio_read_distributed_files.yml
   testinput/iodatest_descendingsort.yml
   testinput/iodatest_extendedobsspace.yml
+  testinput/iodatest_extendedobsspace_halo.yml
 )
 
 # Set up test input files (YAML configuration)
@@ -210,6 +214,27 @@ ecbuild_add_test( TARGET  test_ioda_distribution
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
+ecbuild_add_test( TARGET  test_ioda_distribution_masterandreplica_mpi_2
+                  MPI     2
+                  COMMAND test_ioda_distribution
+                  ARGS    "testinput/iodatest_distribution_masterandreplica_mpi_2.yml"
+                  LIBS  ioda_test
+                  TEST_DEPENDS get_ioda_test_data )
+
+ecbuild_add_test( TARGET  test_ioda_distribution_masterandreplica_mpi_3
+                  MPI     3
+                  COMMAND test_ioda_distribution
+                  ARGS    "testinput/iodatest_distribution_masterandreplica_mpi_3.yml"
+                  LIBS  ioda_test
+                  TEST_DEPENDS get_ioda_test_data )
+
+ecbuild_add_test( TARGET  test_ioda_distribution_masterandreplica_mpi_4
+                  MPI     4
+                  COMMAND test_ioda_distribution
+                  ARGS    "testinput/iodatest_distribution_masterandreplica_mpi_4.yml"
+                  LIBS  ioda_test
+                  TEST_DEPENDS get_ioda_test_data )
+
 # Disrtibution method tests
 ecbuild_add_test( TARGET  test_ioda_distribution_methods
                   MPI     4
@@ -340,18 +365,31 @@ ecbuild_add_test( TARGET  test_ioda_extendedobsspace
 
 ecbuild_add_test( TARGET  test_ioda_extendedobsspace_MPI_2
                   MPI     2
-                  SOURCES mains/TestExtendedObsSpace.cc
+                  COMMAND test_ioda_extendedobsspace
                   ARGS    "testinput/iodatest_extendedobsspace.yml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
 ecbuild_add_test( TARGET  test_ioda_extendedobsspace_MPI_3
                   MPI     3
-                  SOURCES mains/TestExtendedObsSpace.cc
+                  COMMAND test_ioda_extendedobsspace
                   ARGS    "testinput/iodatest_extendedobsspace.yml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
+ecbuild_add_test( TARGET  test_ioda_extendedobsspace_halo_MPI_2
+                  MPI     2
+                  COMMAND test_ioda_extendedobsspace
+                  ARGS    "testinput/iodatest_extendedobsspace_halo.yml"
+                  LIBS  ioda_test
+                  TEST_DEPENDS get_ioda_test_data )
+
+ecbuild_add_test( TARGET  test_ioda_extendedobsspace_halo_MPI_3
+                  MPI     3
+                  COMMAND test_ioda_extendedobsspace
+                  ARGS    "testinput/iodatest_extendedobsspace_halo.yml"
+                  LIBS  ioda_test
+                  TEST_DEPENDS get_ioda_test_data )
 
 #####################################################################
 # ObsVector tests

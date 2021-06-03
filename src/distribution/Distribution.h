@@ -55,9 +55,19 @@ class Accumulator;
  */
 class Distribution {
  public:
-    explicit Distribution(const eckit::mpi::Comm & Comm,
-                          const eckit::Configuration & config);
+    explicit Distribution(const eckit::mpi::Comm & Comm);
     virtual ~Distribution();
+
+    /*!
+     * \brief Returns true if the distribution assigns all records to all PEs, false otherwise.
+     */
+    virtual bool isIdentity() const { return false; }
+
+    /*!
+     * \brief Returns true if the distribution does not assign any record to more than one PE,
+     * false otherwise.
+     */
+    virtual bool isNonoverlapping() const { return false; }
 
     /*!
      * \brief If the record \p RecNum has not yet been assigned to a PE, assigns it to the
@@ -196,10 +206,9 @@ class Distribution {
      * \param[inout] x
      *   On input: a vector whose ith element is associated with the ith observation held by the
      *   calling process.
-     *   On output: a concatenation of the vectors `x` passed by all calling processes, in the order
-     *   of process ranks, with duplicates removed (i.e. if any observations are duplicated across
-     *   multiple processes, the elements of `x` corresponding to these data are included only
-     *   once).
+     *   On output: a concatenation of the vectors `x` passed by all calling processes, with
+     *   duplicates removed (i.e. if any observations are duplicated across multiple processes, the
+     *   elements of `x` corresponding to these data are included only once).
      */
     virtual void allGatherv(std::vector<size_t> &x) const = 0;
     virtual void allGatherv(std::vector<int> &x) const = 0;

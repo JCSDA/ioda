@@ -31,6 +31,13 @@ distribution/InefficientDistributionAccumulator.h
 distribution/GeneralDistributionAccumulator.h
 distribution/Halo.cc
 distribution/Halo.h
+distribution/PairOfDistributions.cc
+distribution/PairOfDistributions.h
+distribution/PairOfDistributionsAccumulator.h
+distribution/ReplicaOfGeneralDistribution.cc
+distribution/ReplicaOfGeneralDistribution.h
+distribution/ReplicaOfNonoverlappingDistribution.cc
+distribution/ReplicaOfNonoverlappingDistribution.h
 distribution/NonoverlappingDistribution.cc
 distribution/NonoverlappingDistribution.h
 distribution/NonoverlappingDistributionAccumulator.h

@@ -41,7 +41,7 @@ static DistributionMaker<Halo> maker("Halo");
 // -----------------------------------------------------------------------------
 Halo::Halo(const eckit::mpi::Comm & Comm,
            const eckit::Configuration & config) :
-          Distribution(Comm, config) {
+          Distribution(Comm) {
   // extract center point from configuration
   // if no patch center defined, distribute centers equi-distant along the equator
   std::vector<double> centerd(2, 0.0);
@@ -78,20 +78,36 @@ Halo::~Halo() {
 // -----------------------------------------------------------------------------
 void Halo::assignRecord(const std::size_t RecNum, const std::size_t LocNum,
                         const eckit::geometry::Point2 & point) {
-    double dist = eckit::geometry::Sphere::distance(radius_earth_, center_, point);
+  if (recordsOutsideHalo_.find(RecNum) != recordsOutsideHalo_.end()) {
+    // We've already seen the first location in this record, and it was too far away from center_.
+    return;
+  }
 
+  if (recordsInHalo_.find(RecNum) == recordsInHalo_.end()) {
+    // This is the first location from this record. Find out whether to assign it to this PE.
+
+    const double dist = eckit::geometry::Sphere::distance(radius_earth_, center_, point);
     oops::Log::debug() << "Point: " << point << " distance to center: " << center_
           << " = " << dist << std::endl;
     if (dist <= radius_) {
-      haloObsRecord_.insert(RecNum);
-      haloObsLoc_[LocNum] = dist;
-      haloLocVector_.push_back(LocNum);
+      // Yes!
+      recordsInHalo_.insert(RecNum);
+      recordDistancesFromCenter_[RecNum] = dist;
+    } else {
+      // No, it's too far from center_.
+      recordsOutsideHalo_.insert(RecNum);
+      return;
     }
+  }
+
+  // Now we know this record has been assigned to this PE. Store information about location LocNum.
+  haloLocVector_.push_back(LocNum);
+  haloLocRecords_.push_back(RecNum);
 }
 
 // -----------------------------------------------------------------------------
 bool Halo::isMyRecord(std::size_t RecNum) const {
-    return (haloObsRecord_.count(RecNum) > 0);
+    return (recordsInHalo_.count(RecNum) > 0);
 }
 
 // -----------------------------------------------------------------------------
@@ -99,6 +115,9 @@ void Halo::computePatchLocs(const std::size_t nglocs) {
   // define some constants for this PE
   double inf = std::numeric_limits<double>::infinity();
   size_t myRank = comm_.rank();
+
+  // All records have now been assigned, so this container is no longer needed.
+  recordsOutsideHalo_.clear();
 
   if ( nglocs > 0 ) {
     // make structures holding pairs of {distance,rank} for reduce operation later
@@ -109,9 +128,12 @@ void Halo::computePatchLocs(const std::size_t nglocs) {
       dist_and_lidx_loc[jj] = std::make_pair(inf, myRank);
     }
 
-    // populate local obs (stored in haloObsLoc_) with actual distances
-    for (auto i : haloObsLoc_) {
-      dist_and_lidx_loc[i.first] = std::make_pair(i.second, myRank);
+    // assign actual distances to local obs (stored in haloLocVector_)
+    for (size_t loc = 0; loc < haloLocVector_.size(); ++loc) {
+      const size_t gloc = haloLocVector_[loc];
+      const size_t recNum = haloLocRecords_[loc];
+      const double dist = recordDistancesFromCenter_.at(recNum);
+      dist_and_lidx_loc[gloc] = std::make_pair(dist, myRank);
     }
 
     // use reduce operation to find PE rank with minimal distance
@@ -121,9 +143,9 @@ void Halo::computePatchLocs(const std::size_t nglocs) {
     std::unordered_set<std::size_t> patchObsLoc;
 
     // if this PE has the minimum distance then this PE owns this ob. as patch
-    for (auto i : haloObsLoc_) {
-      if ( dist_and_lidx_glb[i.first].second == myRank ) {
-        patchObsLoc.insert(i.first);
+    for (auto i : haloLocVector_) {
+      if ( dist_and_lidx_glb[i].second == myRank ) {
+        patchObsLoc.insert(i);
       }
     }
 
@@ -136,18 +158,26 @@ void Halo::computePatchLocs(const std::size_t nglocs) {
       }
     }
 
+    // now that we have patchObsBool_ computed we can free memory occupied by some temp objects
+    recordDistancesFromCenter_.clear();
+    haloLocRecords_.clear();
+    haloLocRecords_.shrink_to_fit();
+
     computeGlobalUniqueConsecutiveLocIndices(dist_and_lidx_glb);
 
-    // now that we have patchObsBool_ computed we can free memory for temp objects
-    haloObsLoc_.clear();
+    // and now the remaining temp object
     haloLocVector_.clear();
+    haloLocVector_.shrink_to_fit();
   }
 }
 
 // -----------------------------------------------------------------------------
 void Halo::computeGlobalUniqueConsecutiveLocIndices(
     const std::vector<std::pair<double, int>> &dist_and_lidx_glb) {
-  globalUniqueConsecutiveLocIndices_.reserve(haloObsLoc_.size());
+  globalUniqueConsecutiveLocIndices_.reserve(haloLocVector_.size());
+
+  // Step 0: enable quick checks of whether a location belongs to this rank's halo.
+  std::unordered_set<size_t> haloLocSet(haloLocVector_.begin(), haloLocVector_.end());
 
   // Step 1: index patch observations owned by each rank consecutively (starting from 0 on each
   // rank). For each observation i held on this rank, set globalConsecutiveLocIndices_[i] to
@@ -155,7 +185,7 @@ void Halo::computeGlobalUniqueConsecutiveLocIndices(
   std::vector<size_t> patchObsCountOnRank(comm_.size(), 0);
   for (size_t gloc = 0, nglocs = dist_and_lidx_glb.size(); gloc < nglocs; ++gloc) {
     const size_t rankOwningPatchObs = dist_and_lidx_glb[gloc].second;
-    if (haloObsLoc_.find(gloc) != haloObsLoc_.end()) {
+    if (haloLocSet.find(gloc) != haloLocSet.end()) {
       // This obs is held on the current PE (but not necessarily as a patch obs)
       globalUniqueConsecutiveLocIndices_.push_back(patchObsCountOnRank[rankOwningPatchObs]);
     }

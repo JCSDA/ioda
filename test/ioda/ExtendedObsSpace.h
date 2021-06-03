@@ -65,21 +65,21 @@ void testExtendedObsSpace(const eckit::LocalConfiguration &conf) {
   std::stringstream expectednumber;
   expectednumber << "expected nlocs (" << MPIsize << " PE, rank " << MPIrank << ")";
   const int nlocs_expected = conf.getInt(expectednumber.str());
-  EXPECT(nlocs == nlocs_expected);
+  EXPECT_EQUAL(nlocs, nlocs_expected);
 
   // Compare global number of locations with expected value.
   const int gnlocs = static_cast<int>(obsdata.globalNumLocs());
   expectednumber.str("");
   expectednumber << "expected gnlocs (" << MPIsize << " PE, rank " << MPIrank << ")";
   const int gnlocs_expected = conf.getInt(expectednumber.str());
-  EXPECT(gnlocs == gnlocs_expected);
+  EXPECT_EQUAL(gnlocs, gnlocs_expected);
 
   // Compare number of records with expected value.
   const int nrecs = static_cast<int>(obsdata.nrecs());
   expectednumber.str("");
   expectednumber << "expected nrecs (" << MPIsize << " PE, rank " << MPIrank << ")";
   const int nrecs_expected = conf.getInt(expectednumber.str());
-  EXPECT(nrecs == nrecs_expected);
+  EXPECT_EQUAL(nrecs, nrecs_expected);
 
   // Given the extended records have nlevs entries each,
   // calculate the corresponding index at which extended_obs_space switches from 0 to 1.
@@ -90,12 +90,12 @@ void testExtendedObsSpace(const eckit::LocalConfiguration &conf) {
               extended_obs_space.end(), 1) - extended_obs_space.begin();
   // Check the index of the start of the extended ObsSpace is
   // a multiple of nlevs from the final index.
-  EXPECT((nlocs - extendedObsSpaceStart) % nlevs == 0);
+  EXPECT_EQUAL((nlocs - extendedObsSpaceStart) % nlevs, 0);
   // Check the values of extended_obs_space.
   for (int iloc = 0; iloc < extendedObsSpaceStart; ++iloc)
-    EXPECT(extended_obs_space[iloc] == 0);
+    EXPECT_EQUAL(extended_obs_space[iloc], 0);
   for (int iloc = extendedObsSpaceStart; iloc < nlocs; ++iloc)
-    EXPECT(extended_obs_space[iloc] == 1);
+    EXPECT_EQUAL(extended_obs_space[iloc], 1);
 
   // Get all ObsValue and ObsError vectors that will be simulated.
   // For each vector check that the values in the extended ObsSpace are all missing.
@@ -108,8 +108,8 @@ void testExtendedObsSpace(const eckit::LocalConfiguration &conf) {
     obsdata.get_db("ObsValue", varname, val);
     obsdata.get_db("ObsError", varname, err);
     for (int iloc = extendedObsSpaceStart; iloc < nlocs; ++iloc) {
-      EXPECT(val[iloc] == missingValueFloat);
-      EXPECT(err[iloc] == missingValueFloat);
+      EXPECT_EQUAL(val[iloc], missingValueFloat);
+      EXPECT_EQUAL(err[iloc], missingValueFloat);
     }
   }
 
@@ -120,7 +120,7 @@ void testExtendedObsSpace(const eckit::LocalConfiguration &conf) {
     std::vector <std::string> statid(nlocs);
     obsdata.get_db("MetaData", "station_id", statid);
     for (int iloc = extendedObsSpaceStart; iloc < nlocs; ++iloc)
-      EXPECT(statid[iloc] == missingValueString);
+      EXPECT_EQUAL(statid[iloc], missingValueString);
   }
 
   // Check the values of any variables that have been filled with non-missing
@@ -146,7 +146,7 @@ void testExtendedObsSpace(const eckit::LocalConfiguration &conf) {
           EXPECT(val_extended[iloc] != missingValueFloat);
       } else {
         for (int iloc = extendedObsSpaceStart; iloc < nlocs; ++iloc)
-          EXPECT(val_extended[iloc] == missingValueFloat);
+          EXPECT_EQUAL(val_extended[iloc], missingValueFloat);
       }
     }
   }
