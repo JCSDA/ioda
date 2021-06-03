@@ -158,7 +158,7 @@ void ObsData::save() {
         // destructor before others finish writing. This situation is known to have
         // issues with hdf file handles getting deallocated before some of the MPI
         // processes are finished with them.
-        this->distribution()->comm().barrier();
+        this->comm().barrier();
     } else {
         oops::Log::info() << obsname() << " :  no output" << std::endl;
     }
