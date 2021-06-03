@@ -20,17 +20,17 @@ observations:
       - name: "varWithInf"
         group: "TestVariables"
         type: "float"
-        values: [ -3.368795e+38, 2.5, 3.5, -3.368795e+38, 5.5 ]
+        values: [ -3.36879526e+38, 2.5, 3.5, -3.36879526e+38, 5.5 ]
 
       - name: "varWithNan"
         group: "TestVariables"
         type: "float"
-        values: [ 1.5, -3.368795e+38, -3.368795e+38, 2.5, 5.5 ]
+        values: [ 1.5, -3.36879526e+38, -3.36879526e+38, 2.5, 5.5 ]
 
       - name: "varWithInfAndNan"
         group: "TestVariables"
         type: "float"
-        values: [ -3.368795e+38, -3.368795e+38, -3.368795e+38, -3.368795e+38, 5.5 ]
+        values: [ -3.36879526e+38, -3.36879526e+38, -3.36879526e+38, -3.36879526e+38, 5.5 ]
     tolerance:
       - 1.0e-14
 
