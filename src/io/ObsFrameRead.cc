@@ -128,7 +128,7 @@ bool ObsFrameRead::frameAvailable() {
         params_.comm().allReduceInPlace(gnlocs_outside_timewindow_, eckit::mpi::sum());
       }
       // assign each record to the patch of a unique PE
-      dist_->computePatchLocs(gnlocs_);
+      dist_->computePatchLocs();
     }
     return (haveAnotherFrame);
 }

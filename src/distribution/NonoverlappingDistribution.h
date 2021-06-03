@@ -32,7 +32,7 @@ class NonoverlappingDistribution : public Distribution {
     void assignRecord(const std::size_t RecNum, const std::size_t LocNum,
                       const eckit::geometry::Point2 & point) override;
     void patchObs(std::vector<bool> & patchObsVec) const override;
-    void computePatchLocs(const std::size_t nglocs) override;
+    void computePatchLocs() override;
 
     void min(int & x) const override;
     void min(std::size_t & x) const override;

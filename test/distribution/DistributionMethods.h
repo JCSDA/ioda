@@ -176,7 +176,7 @@ void testDistributionMethods() {
       if (TestDist->isMyRecord(j))
         myRecords.push_back(j);
     }
-    TestDist->computePatchLocs(Gnlocs);
+    TestDist->computePatchLocs();
 
     // Expected results
     // Accumulate: sum (0 + 1 + ... + nprocs - 1)

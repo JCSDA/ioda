@@ -1123,8 +1123,7 @@ void ObsData::extendObsSpace(const ObsExtendParameters & params) {
         locsInRecord.push_back(extendedLoc);
       }
     }
-    const size_t upperBoundOnGlobalNumAveragedLocs = upperBoundOnGlobalNumOriginalRecs * nlevs;
-    replicaDist->computePatchLocs(upperBoundOnGlobalNumAveragedLocs);
+    replicaDist->computePatchLocs();
 
     const size_t numAveragedLocs = averagedLoc;
     const size_t numExtendedLocs = numOriginalLocs + numAveragedLocs;

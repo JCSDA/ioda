@@ -25,7 +25,7 @@ class ReplicaOfGeneralDistribution : public Distribution {
   void assignRecord(const std::size_t RecNum, const std::size_t LocNum,
                    const eckit::geometry::Point2 & point) override;
   bool isMyRecord(std::size_t RecNum) const override;
-  void computePatchLocs(const std::size_t nglocs) override;
+  void computePatchLocs() override;
   void patchObs(std::vector<bool> &) const override;
 
   void min(int & x) const override;

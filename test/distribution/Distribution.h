@@ -274,7 +274,7 @@ void testDistributionConstructedManually() {
         Recnums.push_back(RecNum);
       }
     }
-    TestDist->computePatchLocs(Gnlocs);
+    TestDist->computePatchLocs();
 
     testDistribution(dist_types[i], MyRankConfig, TestDist.get(), Index, Recnums);
   }    // loop distributions

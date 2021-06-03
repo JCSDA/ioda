@@ -96,10 +96,8 @@ class Distribution {
      * This function must be called when all records have been assigned, and in particular
      * before any calls to the createAccumulator() and globalUniqueConsecutiveLocationIndex()
      * member functions or the global functions and dotProduct(), globalNumNonMissingObs().
-     *
-     * \param nglocs Total number of global locations.
      */
-    virtual void computePatchLocs(const std::size_t nglocs) {}
+    virtual void computePatchLocs() {}
 
     /*!
      * \brief Sets each element of the provided vector to true if the corresponding location is a

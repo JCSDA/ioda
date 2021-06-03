@@ -20,6 +20,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_distribution_masterandreplica_mpi_3.yml
   testinput/iodatest_distribution_masterandreplica_mpi_4.yml
   testinput/iodatest_distribution_methods.yml
+  testinput/iodatest_distribution_timewindow.yml
   testinput/iodatest_obsdatavector.yml
   testinput/iodatest_obsdtype.yml
   testinput/iodatest_obsspace.yml
@@ -232,6 +233,13 @@ ecbuild_add_test( TARGET  test_ioda_distribution_masterandreplica_mpi_4
                   MPI     4
                   COMMAND test_ioda_distribution
                   ARGS    "testinput/iodatest_distribution_masterandreplica_mpi_4.yml"
+                  LIBS  ioda_test
+                  TEST_DEPENDS get_ioda_test_data )
+
+ecbuild_add_test( TARGET  test_ioda_distribution_timewindow
+                  MPI     4
+                  COMMAND test_ioda_distribution
+                  ARGS    "testinput/iodatest_distribution_timewindow.yml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 

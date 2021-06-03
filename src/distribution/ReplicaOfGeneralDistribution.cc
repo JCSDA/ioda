@@ -62,9 +62,12 @@ bool ReplicaOfGeneralDistribution::isMyRecord(std::size_t RecNum) const {
 }
 
 // -----------------------------------------------------------------------------
-void ReplicaOfGeneralDistribution::computePatchLocs(const std::size_t nglocs) {
-  ASSERT(std::all_of(myGlobalLocs_.begin(), myGlobalLocs_.end(),
-                     [=](std::size_t gloc) { return gloc < nglocs; }));
+void ReplicaOfGeneralDistribution::computePatchLocs() {
+  // Find the maximum global location index (plus 1)
+  size_t nglocs = 0;
+  if (!myGlobalLocs_.empty())
+    nglocs = myGlobalLocs_.back() + 1;
+  comm_.allReduceInPlace(nglocs, eckit::mpi::max());
 
   // Collect the global location indices of all patch obs on the current process.
   std::vector<std::size_t> patchObsGlobalLocs;

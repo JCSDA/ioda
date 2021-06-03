@@ -111,13 +111,19 @@ bool Halo::isMyRecord(std::size_t RecNum) const {
 }
 
 // -----------------------------------------------------------------------------
-void Halo::computePatchLocs(const std::size_t nglocs) {
+void Halo::computePatchLocs() {
   // define some constants for this PE
   double inf = std::numeric_limits<double>::infinity();
   size_t myRank = comm_.rank();
 
   // All records have now been assigned, so this container is no longer needed.
   recordsOutsideHalo_.clear();
+
+  // Find the maximum global location index (plus 1)
+  size_t nglocs = 0;
+  if (!haloLocVector_.empty())
+    nglocs = haloLocVector_.back() + 1;
+  comm_.allReduceInPlace(nglocs, eckit::mpi::max());
 
   if ( nglocs > 0 ) {
     // make structures holding pairs of {distance,rank} for reduce operation later
@@ -174,6 +180,8 @@ void Halo::computePatchLocs(const std::size_t nglocs) {
 // -----------------------------------------------------------------------------
 void Halo::computeGlobalUniqueConsecutiveLocIndices(
     const std::vector<std::pair<double, int>> &dist_and_lidx_glb) {
+  const double inf = std::numeric_limits<double>::infinity();
+
   globalUniqueConsecutiveLocIndices_.reserve(haloLocVector_.size());
 
   // Step 0: enable quick checks of whether a location belongs to this rank's halo.
@@ -184,12 +192,16 @@ void Halo::computeGlobalUniqueConsecutiveLocIndices(
   // the index of the corresponding patch observation on the rank that owns it.
   std::vector<size_t> patchObsCountOnRank(comm_.size(), 0);
   for (size_t gloc = 0, nglocs = dist_and_lidx_glb.size(); gloc < nglocs; ++gloc) {
-    const size_t rankOwningPatchObs = dist_and_lidx_glb[gloc].second;
-    if (haloLocSet.find(gloc) != haloLocSet.end()) {
-      // This obs is held on the current PE (but not necessarily as a patch obs)
-      globalUniqueConsecutiveLocIndices_.push_back(patchObsCountOnRank[rankOwningPatchObs]);
+    if (dist_and_lidx_glb[gloc].first < inf) {
+      // This obs is held on at least one rank (this won't be the case e.g. for observations
+      // outside the assimilation window)
+      const size_t rankOwningPatchObs = dist_and_lidx_glb[gloc].second;
+      if (haloLocSet.find(gloc) != haloLocSet.end()) {
+        // This obs is held on the current PE (but not necessarily as a patch obs)
+        globalUniqueConsecutiveLocIndices_.push_back(patchObsCountOnRank[rankOwningPatchObs]);
+      }
+      ++patchObsCountOnRank[rankOwningPatchObs];
     }
-    ++patchObsCountOnRank[rankOwningPatchObs];
   }
 
   // Step 2: make indices of patch observations globally unique by incrementing the index
