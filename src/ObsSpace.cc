@@ -32,8 +32,13 @@ namespace ioda {
  *          discarded before storing them in the obs container.
  *
  * \param[in] config ECKIT configuration segment holding obs types specs
+ * \param[in] comm   MPI communicator containing all processes that hold the observations for a
+ *                   given time slot or sub-window.
  * \param[in] bgn    DateTime object holding the start of the DA timing window
  * \param[in] end    DateTime object holding the end of the DA timing window
+ * \param[in] time   MPI communicator across time so that the 2D array of processes represented by
+ *                   the product of the comm and time communicators hold all observations in the
+ *                   ObsSpace.
  */
 ObsSpace::ObsSpace(const eckit::Configuration & config, const eckit::mpi::Comm & comm,
                    const util::DateTime & bgn, const util::DateTime & end,
