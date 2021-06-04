@@ -512,12 +512,31 @@ bool upgradeFile(const std::string& inputName, const std::string& outputName, co
 
   // Create the output file
 
+  // TODO(ryan): Fix this odd workaround where the map searches fail oddly.
+  map<string, Vec_Named_Variable> dimsAttachedToVars_bystring;
+  for (const auto& val : dimsAttachedToVars)
+    dimsAttachedToVars_bystring[convertV1PathToV2Path(val.first.name)] = val.second;
+
   // Construct the ObsGroup with the same scales as the input file.
+  //
+  // There are some cases where extraneous dimensions get included. An extraneous
+  // dimension is one that is not attached to any variable in the file. Exclude defining
+  // extraneous dimensions in the output file. To help with this, create a set
+  // of dim names and use this to mark which dimensions are being used.
+  set<string> attachedDims;
+  for (const auto & ivar : dimsAttachedToVars_bystring) {
+      for (const auto & idim : dimsAttachedToVars_bystring.at(ivar.first)) {
+          attachedDims.insert(idim.name);
+      }
+  }
+
   NewDimensionScales_t newdims;
   for (const auto& dim : dimVarList) {
     // GMI data bug: nchans already exists. Suppress creation of this scale if
     // we are grouping new data to nchans (below).
-    if (!(dim.name == "nchans" && old_grouped_vars.size()))
+    // Also suppress creation of any scales not being used in the input file.
+    if (!(dim.name == "nchans" && old_grouped_vars.size()) &&
+         (attachedDims.find(dim.name) != attachedDims.end()))
       newdims.push_back(
         NewDimensionScale(dim.name, dim.var, ScaleSizes{Unspecified, Unspecified, 100}));
   }
@@ -568,7 +587,9 @@ bool upgradeFile(const std::string& inputName, const std::string& outputName, co
   for (const auto& dim : newdims) newscales[dim->name_] = out.vars[dim->name_];
   // Copy missing attributes from old scales.
   for (const Named_Variable& d : dimVarList) {
-    copyAttributes(d.var.atts, newscales.at(d.name).atts);
+    if (attachedDims.find(d.name) != attachedDims.end()) {
+        copyAttributes(d.var.atts, newscales.at(d.name).atts);
+    }
   }
   
   
@@ -626,12 +647,6 @@ bool upgradeFile(const std::string& inputName, const std::string& outputName, co
     }
   };
   VarDimMap dimsForNewVars;
-
-  // TODO(ryan): Fix this odd workaround where the map searches fail oddly.
-  map<string, Vec_Named_Variable> dimsAttachedToVars_bystring;
-  for (const auto& val : dimsAttachedToVars)
-    dimsAttachedToVars_bystring[convertV1PathToV2Path(val.first.name)] = val.second;
-  //cout << "Debug pause\n";
 
 
   // create vars in the ungrouped list, including copy of their attributes
@@ -747,7 +762,7 @@ int main(int argc, char** argv) {
     // Program options
     auto doHelp = []() {
       cerr << "Usage: ioda-upgrade.x [-n] input_file output_file\n"
-           << "       -n: do not group similiar variables into one 2D varible\n";
+           << "       -n: do not group similar variables into one 2D varible\n";
       exit(1);
     };
     // quick and dirty argument parsing meant to hold us over until the YAML
