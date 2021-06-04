@@ -528,6 +528,16 @@ ecbuild_add_test( TARGET  test_ioda_upgrader_aod
                           upgrader_aod.nc4
                   TEST_DEPENDS get_ioda_test_data )
 
+ecbuild_add_test( TARGET  test_ioda_upgrader_gnssro
+                  TYPE    SCRIPT
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                  ARGS    hdf5
+                          "${CMAKE_BINARY_DIR}/bin/ioda-upgrade.x
+                          Data/testinput_tier_1/upgrader_gnssro.nc4
+                          testoutput/upgrader_gnssro.nc4"
+                          upgrader_gnssro.nc4
+                  TEST_DEPENDS get_ioda_test_data )
+
 ecbuild_add_test( TARGET  test_ioda_upgrader_amsua_n19_nc_compat
                   TYPE    SCRIPT
                   COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
@@ -567,6 +577,14 @@ ecbuild_add_test( TARGET  test_ioda_upgrader_aod_nc_compat
                           "echo INFO: aod netcdf compatibilty check"
                           upgrader_aod.nc4
                   TEST_DEPENDS get_ioda_test_data test_ioda_upgrader_aod )
+
+ecbuild_add_test( TARGET  test_ioda_upgrader_gnssro_nc_compat
+                  TYPE    SCRIPT
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                  ARGS    netcdf
+                          "echo INFO: gnssro netcdf compatibilty check"
+                          upgrader_gnssro.nc4
+                  TEST_DEPENDS get_ioda_test_data test_ioda_upgrader_gnssro )
 
 #####################################################################
 # ObsDtype tests

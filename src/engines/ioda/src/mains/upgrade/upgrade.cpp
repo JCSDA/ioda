@@ -457,7 +457,8 @@ void copyAttributes(const ioda::Has_Attributes& src, ioda::Has_Attributes& dest)
         "NAME",
         "REFERENCE_LIST",
         "_Netcdf4Coordinates",
-        "_Netcdf4Dimid"
+        "_Netcdf4Dimid",
+        "_nc3_strict"
         };
     if (ignored_names.count(s.first)) continue;
     if (dest.exists(s.first)) continue;
