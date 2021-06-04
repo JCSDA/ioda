@@ -11,8 +11,6 @@ ObsVector.h
 
 core/IodaUtils.cc
 core/IodaUtils.h
-core/ObsData.cc
-core/ObsData.h
 core/obsspace_f.cc
 core/obsspace_f.h
 core/ParameterTraitsObsDtype.cc

@@ -31,20 +31,20 @@ namespace ioda {
 namespace test {
 
 void testExtendedObsSpace(const eckit::LocalConfiguration &conf) {
-  // Produce and configure ObsData object
+  // Produce and configure ObsSpace object
   util::DateTime bgn(conf.getString("window begin"));
   util::DateTime end(conf.getString("window end"));
   const eckit::LocalConfiguration obsSpaceConf(conf, "obs space");
 
-  // Instantiate ObsData, allowing for exceptions to be thrown.
+  // Instantiate ObsSpace, allowing for exceptions to be thrown.
   const bool expectThrows = conf.getBool("expectThrows", false);
   if (expectThrows) {
-    EXPECT_THROWS(ioda::ObsData obsDataThrow(obsSpaceConf,
-                                             oops::mpi::world(),
-                                             bgn, end, oops::mpi::myself()));
+    EXPECT_THROWS(ioda::ObsSpace obsDataThrow(obsSpaceConf,
+                                              oops::mpi::world(),
+                                              bgn, end, oops::mpi::myself()));
     return;
   }
-  ioda::ObsData obsdata(obsSpaceConf, oops::mpi::world(), bgn, end, oops::mpi::myself());
+  ioda::ObsSpace obsdata(obsSpaceConf, oops::mpi::world(), bgn, end, oops::mpi::myself());
 
   // This test only works for grouped data.
   if (obsdata.obs_group_vars().empty())
