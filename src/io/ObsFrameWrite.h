@@ -85,7 +85,15 @@ class ObsFrameWrite : public ObsFrame, private util::ObjectCounter<ObsFrameWrite
 
     //--------------------- private functions ------------------------------
 
-    /// \brief create set of variables from source variables and lists
+    /// \brief copy dimension coordinate values from the frame to the ObsIo backend
+    /// \param srcVarContainer Has_Variables object from source
+    /// \param destVarContainer Has_Variables object from destination
+    /// \param dimVarList Map containing list of dimension variables
+    void copyObsIoDimCoords(const Has_Variables & srcVarContainer,
+                            Has_Variables & destVarContainer,
+                            const VarNameObjectList & dimVarList);
+
+    /// \brief create set of variables from source variables and lists in the ObsIo backend
     /// \param srcVarContainer Has_Variables object from source
     /// \param destVarContainer Has_Variables object from destination
     /// \param dimsAttachedToVars Map containing list of attached dims for each variable

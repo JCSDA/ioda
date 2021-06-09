@@ -24,6 +24,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsdatavector.yml
   testinput/iodatest_obsdtype.yml
   testinput/iodatest_obsspace.yml
+  testinput/iodatest_obsspace_out_dims_check.yml
   testinput/iodatest_obsspace_grouping.yml
   testinput/iodatest_obsspace_index_recnum.yml
   testinput/iodatest_obsspace_index_recnum_twfilt.yml
@@ -343,6 +344,15 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_put_db_channels
                   SOURCES mains/TestIodaObsSpacePutDbChannels.cc
                   ARGS    "testinput/iodatest_obsspace_put_db_channels.yml"
                   LIBS  ioda_test
+                  TEST_DEPENDS get_ioda_test_data )
+
+ecbuild_add_test( TARGET  test_ioda_obsspace_out_dims_check
+                  TYPE    SCRIPT
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                  ARGS    hdf5
+                          "${CMAKE_CURRENT_BINARY_DIR}/test_ioda_oops_obsspace
+                          testinput/iodatest_obsspace_out_dims_check.yml"
+                          out_dims_check_0000.nc4
                   TEST_DEPENDS get_ioda_test_data )
 
 

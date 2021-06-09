@@ -36,6 +36,9 @@ void ObsFrameWrite::frameInit(const VarNameObjectList & varList,
     // create an ObsGroup based frame with an in-memory backend
     createFrameFromObsGroup(varList, dimVarList, varDimMap);
 
+    // copy dimension coordinates from the newly created frame to the ObsIo backend
+    copyObsIoDimCoords(obs_frame_.vars, obs_io_->vars(), dimVarList);
+
     // create variables in the ObsIo backend
     createObsIoVariables(obs_frame_.vars, obs_io_->vars(), varDimMap);
 }
@@ -120,6 +123,40 @@ void ObsFrameWrite::writeFrameVar(const std::string & varName,
 }
 
 //--------------------------- private functions --------------------------------------
+
+// -----------------------------------------------------------------------------
+void ObsFrameWrite::copyObsIoDimCoords(const Has_Variables & srcVarContainer,
+                                       Has_Variables & destVarContainer,
+                                       const VarNameObjectList & dimVarList) {
+    // fill in dimension coordinate values
+    for (auto & dimVarNameObject : dimVarList) {
+        std::string dimVarName = dimVarNameObject.first;
+        Variable srcDimVar = srcVarContainer.open(dimVarName);
+        Variable destDimVar = destVarContainer.open(dimVarName);
+        std::cout << "DEBUG: dim var name: " << dimVarName << std::endl;
+
+        // Set up the dimension selection objects.
+        std::vector<Dimensions_t> srcDimShape = srcDimVar.getDimensions().dimsCur;
+        std::vector<Dimensions_t> destDimShape = destDimVar.getDimensions().dimsCur;
+        Dimensions_t frameCount = srcDimShape[0];
+        // Transfer the coordinate values
+        if (frameCount > 0) {
+            Selection srcSelect = createEntireFrameSelection(srcDimShape, frameCount);
+            Selection memSelect = createMemSelection(destDimShape, frameCount);
+            Selection destSelect = createObsIoSelection(destDimShape, 0, frameCount);
+
+            if (srcDimVar.isA<int>()) {
+                std::vector<int> dimCoords;
+                srcDimVar.read<int>(dimCoords, memSelect, srcSelect);
+                destDimVar.write<int>(dimCoords, memSelect, destSelect);
+            } else if (srcDimVar.isA<float>()) {
+                std::vector<float> dimCoords;
+                srcDimVar.read<float>(dimCoords, memSelect, srcSelect);
+                destDimVar.write<float>(dimCoords, memSelect, destSelect);
+            }
+        }
+    }
+}
 
 // -----------------------------------------------------------------------------
 void ObsFrameWrite::createObsIoVariables(const Has_Variables & srcVarContainer,
