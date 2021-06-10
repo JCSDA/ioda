@@ -5,19 +5,19 @@
 
 include(Targets)
 
-macro(AddPyExample_base name testname)
+macro(AddPyExample_base name testname args)
 	add_test(NAME ${testname}
 		COMMAND #${Python3_EXECUTABLE}
-        python3 ${CMAKE_CURRENT_SOURCE_DIR}/${name}.py )
+        python3 ${CMAKE_CURRENT_SOURCE_DIR}/${name}.py ${args} )
 	set_tests_properties(${testname} PROPERTIES
 		ENVIRONMENT "LIBDIR=$<TARGET_FILE_DIR:_ioda_python>/../;LD_LIBRARY_PATH=${CMAKE_BINARY_DIR}/lib:$ENV{LD_LIBRARY_PATH}"
 		WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
 		)
 endmacro()
 
-macro(AddPyExample name )
+macro(AddPyExample name args)
 	set(testname Example_ioda_engines_${name}_python)
-    AddPyExample_base(${name} ${testname})
+    AddPyExample_base(${name} ${testname} "${args}")
 endmacro()
 
 if(BUILD_TESTING)
@@ -25,12 +25,14 @@ if(BUILD_TESTING)
     #set_tests_properties(ioda_check_cartopy PROPERTIES
     #    SKIP_RETURN_CODE 1
     #    FIXTURES_SETUP PLOTS)
+	set( IODA_TEST_DATA_DIR ${CMAKE_BINARY_DIR}/ioda/test/Data/testinput_tier_1 )
 
-	AddPyExample(01-GroupsAndObsSpaces)
-	AddPyExample(02-Attributes)
-	AddPyExample(03-VariablesIntro)
-	AddPyExample(04-VariablesAttributesAndDimensions)
-	AddPyExample(05-ObsGroup)
+	AddPyExample(01-GroupsAndObsSpaces "")
+	AddPyExample(02-Attributes "")
+	AddPyExample(03-VariablesIntro "")
+	AddPyExample(04-VariablesAttributesAndDimensions "")
+	AddPyExample(05-ObsGroup "")
+	AddPyExample(06-ReadIodaOutputFile ${IODA_TEST_DATA_DIR}/sample_hofx_output_amsua_n19.nc4 )
     #AddPyExample(plotting-05-ObsGroup)
     #set_tests_properties(Example_ioda_engines_plotting-05-ObsGroup_python
     #    PROPERTIES
