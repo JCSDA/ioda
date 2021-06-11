@@ -99,26 +99,26 @@ if( DEFINED ENV{LOCAL_PATH_JEDI_TESTFILES} )
       ${TESTFILE_DIR_IODA} )
   set ( IODA_DATA_DOWNLOADER ioda_data_checker.py )
 
-elseif( DEFINED ${GIT_TAG_FUNC} )
+elseif( DEFINED GIT_TAG_FUNC )
   # Any tagged version of IODA is being built.
   # Build get_ioda_test_data test to download test data from DASH.
   message( STATUS "Tagged version of IODA is used" )
 
   # set ARGS for get_ioda_test_data
-  set( IODA_DOWNLOAD_BASE_URL https://dashrepo.ucar.edu/dataset/147_miesch/file )
+  set( IODA_DOWNLOAD_BASE_URL https://dashrepo.ucar.edu/api/v1/dataset/147_miesch/version/1.1.0/file )
   set( DIRNAME ${GIT_TAG_FUNC} )
   set( checksum "0" )
   set( TESTFILE_DIR_IODA "${CMAKE_SOURCE_DIR}/test-data-release/ioda/${DIRNAME}" )
 
   list( APPEND IODA_DATA_DOWNLOADER_ARGS
         ${IODA_DOWNLOAD_BASE_URL}
-        ${TESTFILE_DIR_IODA}
+        ${CMAKE_SOURCE_DIR}/test-data-release
         ${ioda_test_data}
         ${checksum} )
   message( STATUS "Test data will be downloaded from: ${IODA_DOWNLOAD_BASE_URL}" )
 
   # Create test-data-release in source directory
-  file( MAKE_DIRECTORY ${TESTFILE_DIR_IODA} )
+  file( MAKE_DIRECTORY ${CMAKE_SOURCE_DIR}/test-data-release )
 
   set ( IODA_DATA_DOWNLOADER ioda_data_downloader.py )
 else()
