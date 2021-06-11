@@ -9,7 +9,7 @@ CodeCov:[![codecov](https://codecov.io/gh/JCSDA-internal/ioda/branch/develop/gra
 
 JEDI Interface for Observation Data Access (IODA)
 
-(C) Copyright 2017-2020 UCAR.
+(C) Copyright 2017-2021 UCAR.
 
 This software is licensed under the terms of the Apache Licence Version 2.0
 which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.

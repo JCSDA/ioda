@@ -19,13 +19,6 @@
 #include "oops/util/Logger.h"
 
 // -----------------------------------------------------------------------------
-/*!
- * \brief Inefficient distribution
- *
- * \details This method distributes all observations to all processes.
- */
-
-// -----------------------------------------------------------------------------
 
 namespace ioda {
 

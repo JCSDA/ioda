@@ -1,12 +1,8 @@
-# ioda-engines
+# IODA-engines
 
-ioda-engines provides unified in-memory and in-file data storage. The rest of jedi
-depends on ioda to provide the data that different applications need, and ioda uses
-ioda-engines to manipulate the data.
-
-This repository represents part of the OOPS/IODA/UFO changes. Documentation is still being
-written. Basically, we wanted to refactor ioda and provide a common observation store that
-was aware of metadata and could store multidimensional data.
+IODA-engines provides unified in-memory and in-file data storage. The rest of JEDI
+depends on IODA to provide the data that different applications need, and IODA uses
+IODA-engines to manipulate the data.
 
 ## Quick start
 
@@ -15,8 +11,6 @@ Most of the library is implemented in a few key classes under namespace ```ioda`
 - ioda::Group is a container. ioda::Group objects may contain Variables (ioda::Variable), Attributes (ioda::Attribute), and other Groups.
 - ioda::Variable represents a single variable. It may also contain Attributes (ioda::Attribute).
 - The ioda::Has_Attributes and ioda::Has_Variables classes are helper classes.
-
-See [the Walkthrough page](@ref Walkthrough) for tutorials and usage guides.
 
 
 Errata:

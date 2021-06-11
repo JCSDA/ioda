@@ -22,9 +22,9 @@ endif()
 
 # Versioning. This is not part of a project line due to conflicts with how ioda can
 # include this code in-source.
-set(IODA_ENGINES_MAJOR 0 CACHE INTERNAL "ioda engines major version" FORCE)
-set(IODA_ENGINES_MINOR 9 CACHE INTERNAL "ioda engines minor version" FORCE)
-set(IODA_ENGINES_REVISION 9 CACHE INTERNAL "ioda engines revision version" FORCE)
+set(IODA_ENGINES_MAJOR 2 CACHE INTERNAL "ioda engines major version" FORCE)
+set(IODA_ENGINES_MINOR 0 CACHE INTERNAL "ioda engines minor version" FORCE)
+set(IODA_ENGINES_REVISION 0 CACHE INTERNAL "ioda engines revision version" FORCE)
 set(IODA_ENGINES_TWEAK 0 CACHE INTERNAL "ioda engines tweak version" FORCE)
 set(IODA_ENGINES_VERSION ${IODA_ENGINES_MAJOR}.${IODA_ENGINES_MINOR}.${IODA_ENGINES_REVISION}.${IODA_ENGINES_TWEAK}
 	CACHE INTERNAL "ioda engines version" FORCE)
@@ -32,7 +32,7 @@ set(IODA_ENGINES_VERSION ${IODA_ENGINES_MAJOR}.${IODA_ENGINES_MINOR}.${IODA_ENGI
 set( CMAKE_DIRECTORY_LABELS "ioda-engines" )
 
 if(IODA_ENGINES_IS_PROJECT)
-	project(ioda_engines VERSION 0.9.9 LANGUAGES C CXX)
+	project(ioda_engines VERSION 2.0.0 LANGUAGES C CXX)
 	set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 	if(NOT CMAKE_BUILD_TYPE)
 		set(CMAKE_BUILD_TYPE "RelWithDebInfo" CACHE STRING "Choose the type of build, options are: None(CMAKE_CXX_FLAGS or CMAKE_C_FLAGS used) Debug Release RelWithDebInfo MinSizeRel." FORCE)

@@ -114,6 +114,5 @@ your data.
 ## Variable data space selectors
 
 Variables support partial reads and writes through the "file_space" and "mem_space" parameters in
-their read and write functions. 
+their read and write functions. See the existing implementations or contact the authors for hints here.
 
-TODO: Finish this.
