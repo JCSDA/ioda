@@ -22,14 +22,20 @@ public obsspace_obsname
 public obsspace_obsvariables
 public obsspace_get_gnlocs
 public obsspace_get_nlocs
+public obsspace_get_nchans
 public obsspace_get_nrecs
 public obsspace_get_nvars
+public obsspace_get_dim_name
+public obsspace_get_dim_size
+public obsspace_get_dim_id
 public obsspace_get_comm
 public obsspace_get_recnum
 public obsspace_get_index
 public obsspace_get_db
 public obsspace_put_db
 public obsspace_has
+public obsspace_get_nlocs_dim_id
+public obsspace_get_nchans_dim_id
 
 #include "ioda/obsspace_interface.f"
 
@@ -124,7 +130,7 @@ integer function obsspace_get_gnlocs(c_obss)
 end function obsspace_get_gnlocs
 
 !-------------------------------------------------------------------------------
-!>  Return the number of observational locations in this ObsSpace object
+!>  Return the number of observational locations in the obs space
 
 integer function obsspace_get_nlocs(c_obss)
   implicit none
@@ -133,6 +139,17 @@ integer function obsspace_get_nlocs(c_obss)
   ! Implicit conversion from c_size_t to integer which is safe in this case
   obsspace_get_nlocs = c_obsspace_get_nlocs(c_obss)
 end function obsspace_get_nlocs
+
+!-------------------------------------------------------------------------------
+!>  Return the number of channels in obs space (zero if conventional obs type)
+
+integer function obsspace_get_nchans(c_obss)
+  implicit none
+  type(c_ptr), intent(in) :: c_obss
+
+  ! Implicit conversion from c_size_t to integer which is safe in this case
+  obsspace_get_nchans = c_obsspace_get_nchans(c_obss)
+end function obsspace_get_nchans
 
 !-------------------------------------------------------------------------------
 !>  Return the number of observational records (profiles)
@@ -155,6 +172,57 @@ integer function obsspace_get_nvars(c_obss)
   ! Implicit conversion from c_size_t to integer which is safe in this case
   obsspace_get_nvars = c_obsspace_get_nvars(c_obss)
 end function obsspace_get_nvars
+
+!-------------------------------------------------------------------------------
+!>  Return the ObsSpace dimension name given the dimension id
+
+subroutine obsspace_get_dim_name(obss, dim_id, dim_name)
+  use string_f_c_mod
+  implicit none
+
+  type(c_ptr), value, intent(in) :: obss
+  integer, intent(in)            :: dim_id
+  character(*), intent(inout)    :: dim_name
+
+  integer(c_size_t) :: len_dim_name
+
+  !< If changing the length of dim_name and c_dim_name, need to change the ASSERT in
+  !obsspace_f.cc also
+  character(kind=c_char,len=1) :: c_dim_name(101)
+
+  call c_obsspace_get_dim_name(obss, dim_id, len_dim_name, c_dim_name)
+  call c_f_string(c_dim_name, dim_name)
+  dim_name = dim_name(1:len_dim_name)
+
+end subroutine obsspace_get_dim_name
+
+!-------------------------------------------------------------------------------
+!>  Return the size of the ObsSpace dimension given the dimension id
+
+integer function obsspace_get_dim_size(obss, dim_id)
+  implicit none
+  type(c_ptr), intent(in) :: obss
+  integer, intent(in)     :: dim_id
+
+  ! Implicit conversion from c_size_t to integer which is safe in this case
+  obsspace_get_dim_size = c_obsspace_get_dim_size(obss, dim_id)
+end function obsspace_get_dim_size
+
+!-------------------------------------------------------------------------------
+!>  Return the ObsSpace dimension id given the dimension name
+
+integer function obsspace_get_dim_id(obss, dim_name)
+  use string_f_c_mod
+  implicit none
+  type(c_ptr), intent(in) :: obss
+  character(len=*), intent(in) :: dim_name
+
+  character(kind=c_char,len=1), allocatable :: c_dim_name(:)
+  call f_c_string(dim_name, c_dim_name)
+
+  ! Implicit conversion from c_size_t to integer which is safe in this case
+  obsspace_get_dim_id = c_obsspace_get_dim_id(obss, c_dim_name)
+end function obsspace_get_dim_id
 
 !-------------------------------------------------------------------------------
 !>  Return the name and name length of obsspace communicator
@@ -226,22 +294,31 @@ end function obsspace_has
 
 !> Get a variable from the ObsSapce database
 
-subroutine obsspace_get_db_int32(obss, group, vname, vect)
+subroutine obsspace_get_db_int32(obss, group, vname, vect, chan_select)
   implicit none
   type(c_ptr), value, intent(in) :: obss
   character(len=*), intent(in) :: group
   character(len=*), intent(in) :: vname
   integer(c_int32_t), intent(inout) :: vect(:)
+  integer(c_int), intent(in), optional :: chan_select(:)
 
   character(kind=c_char,len=1), allocatable :: c_group(:), c_vname(:)
   integer(c_size_t) :: length
+  integer(c_size_t) :: len_cs
+  integer(c_int)    :: dummy_chan_select(1)  ! used as a fallback if chan_select is not present
 
   !  Translate query from Fortran string to C++ char[].
   call f_c_string(group, c_group)
   call f_c_string(vname, c_vname)
   length = size(vect)
-
-  call c_obsspace_get_int32(obss, c_group, c_vname, length, vect)
+  if (present(chan_select)) then
+    len_cs = size(chan_select)
+    call c_obsspace_get_int32(obss, c_group, c_vname, length, vect, len_cs, chan_select)
+  else
+    ! Note: we say that the number of channels is zero, which means that the contents of
+    ! dummy_chan_select won't actually be accessed.
+    call c_obsspace_get_int32(obss, c_group, c_vname, length, vect, 0_c_size_t, dummy_chan_select)
+  endif
 
   deallocate(c_group, c_vname)
 end subroutine obsspace_get_db_int32
@@ -251,22 +328,31 @@ end subroutine obsspace_get_db_int32
 
 !> Get a variable from the ObsSapce database
 
-subroutine obsspace_get_db_int64(obss, group, vname, vect)
+subroutine obsspace_get_db_int64(obss, group, vname, vect, chan_select)
   implicit none
   type(c_ptr), value, intent(in) :: obss
   character(len=*), intent(in) :: group
   character(len=*), intent(in) :: vname
   integer(c_int64_t), intent(inout) :: vect(:)
+  integer(c_int), intent(in), optional :: chan_select(:)
 
   character(kind=c_char,len=1), allocatable :: c_group(:), c_vname(:)
   integer(c_size_t) :: length
+  integer(c_size_t) :: len_cs
+  integer(c_int)    :: dummy_chan_select(1)  ! used as a fallback if chan_select is not present
 
   !  Translate query from Fortran string to C++ char[].
   call f_c_string(group, c_group)
   call f_c_string(vname, c_vname)
   length = size(vect)
-
-  call c_obsspace_get_int64(obss, c_group, c_vname, length, vect)
+  if (present(chan_select)) then
+    len_cs = size(chan_select)
+    call c_obsspace_get_int64(obss, c_group, c_vname, length, vect, len_cs, chan_select)
+  else
+    ! Note: we say that the number of channels is zero, which means that the contents of
+    ! dummy_chan_select won't actually be accessed.
+    call c_obsspace_get_int64(obss, c_group, c_vname, length, vect, 0_c_size_t, dummy_chan_select)
+  endif
 
   deallocate(c_group, c_vname)
 end subroutine obsspace_get_db_int64
@@ -275,22 +361,31 @@ end subroutine obsspace_get_db_int64
 
 !> Get a variable from the ObsSapce database
 
-subroutine obsspace_get_db_real32(obss, group, vname, vect)
+subroutine obsspace_get_db_real32(obss, group, vname, vect, chan_select)
   implicit none
   type(c_ptr), value, intent(in) :: obss
   character(len=*), intent(in) :: group
   character(len=*), intent(in) :: vname
   real(c_float), intent(inout) :: vect(:)
+  integer(c_int), intent(in), optional :: chan_select(:)
 
   character(kind=c_char,len=1), allocatable :: c_group(:), c_vname(:)
   integer(c_size_t) :: length
+  integer(c_size_t) :: len_cs
+  integer(c_int)    :: dummy_chan_select(1)  ! used as a fallback if chan_select is not present
 
   !  Translate query from Fortran string to C++ char[].
   call f_c_string(group, c_group)
   call f_c_string(vname, c_vname)
   length = size(vect)
-
-  call c_obsspace_get_real32(obss, c_group, c_vname, length, vect)
+  if (present(chan_select)) then
+    len_cs = size(chan_select)
+    call c_obsspace_get_real32(obss, c_group, c_vname, length, vect, len_cs, chan_select)
+  else
+    ! Note: we say that the number of channels is zero, which means that the contents of
+    ! dummy_chan_select won't actually be accessed.
+    call c_obsspace_get_real32(obss, c_group, c_vname, length, vect, 0_c_size_t, dummy_chan_select)
+  endif
 
   deallocate(c_group, c_vname)
 end subroutine obsspace_get_db_real32
@@ -299,22 +394,33 @@ end subroutine obsspace_get_db_real32
 
 !> Get a variable from the ObsSapce database
 
-subroutine obsspace_get_db_real64(obss, group, vname, vect)
+subroutine obsspace_get_db_real64(obss, group, vname, vect, chan_select)
   implicit none
   type(c_ptr), value, intent(in) :: obss
   character(len=*), intent(in) :: group
   character(len=*), intent(in) :: vname
   real(c_double), intent(inout) :: vect(:)
+  ! optional; if omitted, all channels will be retrieved
+  integer(c_int), intent(in), optional :: chan_select(:)
 
   character(kind=c_char,len=1), allocatable :: c_group(:), c_vname(:)
   integer(c_size_t) :: length
+  integer(c_size_t) :: len_cs
+  integer(c_int)    :: dummy_chan_select(1)  ! used as a fallback if chan_select is not present
 
   !  Translate query from Fortran string to C++ char[].
   call f_c_string(group, c_group)
   call f_c_string(vname, c_vname)
   length = size(vect)
 
-  call c_obsspace_get_real64(obss, c_group, c_vname, length, vect)
+  if (present(chan_select)) then
+    len_cs = size(chan_select)
+    call c_obsspace_get_real64(obss, c_group, c_vname, length, vect, len_cs, chan_select)
+  else
+    ! Note: we say that the number of channels is zero, which means that the contents of
+    ! dummy_chan_select won't actually be accessed.
+    call c_obsspace_get_real64(obss, c_group, c_vname, length, vect, 0_c_size_t, dummy_chan_select)
+  endif
 
   deallocate(c_group, c_vname)
 end subroutine obsspace_get_db_real64
@@ -323,14 +429,17 @@ end subroutine obsspace_get_db_real64
 
 !> Get datetime from the ObsSapce database
 
-subroutine obsspace_get_db_datetime(obss, group, vname, vect)
+subroutine obsspace_get_db_datetime(obss, group, vname, vect, chan_select)
   implicit none
   type(c_ptr), value, intent(in) :: obss
   character(len=*), intent(in) :: group
   character(len=*), intent(in) :: vname
   type(datetime), intent(inout) :: vect(:)
+  integer(c_int), intent(in), optional :: chan_select(:)
 
   integer(c_size_t) :: length, i
+  integer(c_size_t) :: len_cs
+  integer(c_int)    :: dummy_chan_select(1)  ! used as a fallback if chan_select is not present
   character(kind=c_char,len=1), allocatable :: c_group(:), c_vname(:)
   integer(c_int32_t), dimension(:), allocatable :: date
   integer(c_int32_t), dimension(:), allocatable :: time
@@ -341,7 +450,16 @@ subroutine obsspace_get_db_datetime(obss, group, vname, vect)
   length = size(vect)
 
   allocate(date(length), time(length))
-  call c_obsspace_get_datetime(obss, c_group, c_vname, length, date, time)
+
+  if (present(chan_select)) then
+    len_cs = size(chan_select)
+    call c_obsspace_get_datetime(obss, c_group, c_vname, length, date, time, len_cs, chan_select)
+  else
+    ! Note: we say that the number of channels is zero, which means that the contents of
+    ! dummy_chan_select won't actually be accessed.
+    call c_obsspace_get_datetime(obss, c_group, c_vname, length, date, time, &
+                                 0_c_size_t, dummy_chan_select)
+  endif
 
   ! Constrct datatime based on date and time
   do i = 1, length
@@ -359,22 +477,31 @@ end subroutine obsspace_get_db_datetime
 
 !>  Store a vector in ObsSpace database
 
-subroutine obsspace_put_db_int32(obss, group, vname, vect)
+subroutine obsspace_put_db_int32(obss, group, vname, vect, dim_ids)
   implicit none
   type(c_ptr), value, intent(in) :: obss
   character(len=*), intent(in) :: group
   character(len=*), intent(in) :: vname
   integer(c_int32_t), intent(in) :: vect(:)
+  integer(c_int), intent(in), optional :: dim_ids(:)  ! if not set, defaults to nlocs
 
   character(kind=c_char,len=1), allocatable :: c_group(:), c_vname(:)
   integer(c_size_t) :: length
+  integer(c_size_t) :: ndims
+  integer(c_int) :: fallback_dim_ids(1)
 
   !  Translate query from Fortran string to C++ char[].
   call f_c_string(group, c_group)
   call f_c_string(vname, c_vname)
   length = size(vect)
-
-  call c_obsspace_put_int32(obss, c_group, c_vname, length, vect)
+  if (present(dim_ids)) then
+    ndims = size(dim_ids)
+    call c_obsspace_put_int32(obss, c_group, c_vname, length, vect, ndims, dim_ids)
+  else
+    ndims = 1
+    fallback_dim_ids = (/ obsspace_get_nlocs_dim_id() /)
+    call c_obsspace_put_int32(obss, c_group, c_vname, length, vect, ndims, fallback_dim_ids)
+  endif
 
   deallocate(c_group, c_vname)
 end subroutine obsspace_put_db_int32
@@ -383,22 +510,32 @@ end subroutine obsspace_put_db_int32
 
 !>  Store a vector in ObsSpace database
 
-subroutine obsspace_put_db_int64(obss, group, vname, vect)
+subroutine obsspace_put_db_int64(obss, group, vname, vect, dim_ids)
   implicit none
   type(c_ptr), value, intent(in) :: obss
   character(len=*), intent(in) :: group
   character(len=*), intent(in) :: vname
   integer(c_int64_t), intent(in) :: vect(:)
+  integer(c_int), intent(in), optional :: dim_ids(:)  ! if not set, defaults to nlocs
 
   character(kind=c_char,len=1), allocatable :: c_group(:), c_vname(:)
   integer(c_size_t) :: length
+  integer(c_size_t) :: ndims
+  integer(c_int) :: fallback_dim_ids(1)
 
   !  Translate query from Fortran string to C++ char[].
   call f_c_string(group, c_group)
   call f_c_string(vname, c_vname)
   length = size(vect)
 
-  call c_obsspace_put_int64(obss, c_group, c_vname, length, vect)
+  if (present(dim_ids)) then
+    ndims = size(dim_ids)
+    call c_obsspace_put_int64(obss, c_group, c_vname, length, vect, ndims, dim_ids)
+  else
+    ndims = 1
+    fallback_dim_ids = (/ obsspace_get_nlocs_dim_id() /)
+    call c_obsspace_put_int64(obss, c_group, c_vname, length, vect, ndims, fallback_dim_ids)
+  endif
 
   deallocate(c_group, c_vname)
 end subroutine obsspace_put_db_int64
@@ -407,22 +544,33 @@ end subroutine obsspace_put_db_int64
 
 !>  Store a vector in ObsSpace database
 
-subroutine obsspace_put_db_real32(obss, group, vname, vect)
+subroutine obsspace_put_db_real32(obss, group, vname, vect, dim_ids)
   implicit none
   type(c_ptr), value, intent(in) :: obss
   character(len=*), intent(in) :: group
   character(len=*), intent(in) :: vname
   real(c_float), intent(in) :: vect(:)
+  integer(c_int), intent(in), optional :: dim_ids(:)  ! if not set, defaults to nlocs
 
   character(kind=c_char,len=1), allocatable :: c_group(:), c_vname(:)
   integer(c_size_t) :: length
+  integer(c_size_t) :: ndims
+  integer(c_int) :: fallback_dim_ids(1)
 
   !  Translate query from Fortran string to C++ char[].
   call f_c_string(group, c_group)
   call f_c_string(vname, c_vname)
   length = size(vect)
+  ndims = size(dim_ids)
 
-  call c_obsspace_put_real32(obss, c_group, c_vname, length, vect)
+  if (present(dim_ids)) then
+    ndims = size(dim_ids)
+    call c_obsspace_put_real32(obss, c_group, c_vname, length, vect, ndims, dim_ids)
+  else
+    ndims = 1
+    fallback_dim_ids = (/ obsspace_get_nlocs_dim_id() /)
+    call c_obsspace_put_real32(obss, c_group, c_vname, length, vect, ndims, fallback_dim_ids)
+  endif
 
   deallocate(c_group, c_vname)
 end subroutine obsspace_put_db_real32
@@ -431,26 +579,50 @@ end subroutine obsspace_put_db_real32
 
 !>  Store a vector in ObsSpace database
 
-subroutine obsspace_put_db_real64(obss, group, vname, vect)
+subroutine obsspace_put_db_real64(obss, group, vname, vect, dim_ids)
   implicit none
   type(c_ptr), value, intent(in) :: obss
   character(len=*), intent(in) :: group
   character(len=*), intent(in) :: vname
   real(c_double), intent(in) :: vect(:)
+  integer(c_int), intent(in), optional :: dim_ids(:)  ! if not set, defaults to nlocs
 
   character(kind=c_char,len=1), allocatable :: c_group(:), c_vname(:)
   integer(c_size_t) :: length
+  integer(c_size_t) :: ndims
+  integer(c_int) :: fallback_dim_ids(1)
 
   !  Translate query from Fortran string to C++ char[].
   call f_c_string(group, c_group)
   call f_c_string(vname, c_vname)
   length = size(vect)
 
-  call c_obsspace_put_real64(obss, c_group, c_vname, length, vect)
+  if (present(dim_ids)) then
+    ndims = size(dim_ids)
+    call c_obsspace_put_real64(obss, c_group, c_vname, length, vect, ndims, dim_ids)
+  else
+    ndims = 1
+    fallback_dim_ids = (/ obsspace_get_nlocs_dim_id() /)
+    call c_obsspace_put_real64(obss, c_group, c_vname, length, vect, ndims, fallback_dim_ids)
+  endif
 
   deallocate(c_group, c_vname)
 end subroutine obsspace_put_db_real64
 
 !-------------------------------------------------------------------------------
+
+!>  Return the identifier of the nlocs dimension.
+integer(c_int) function obsspace_get_nlocs_dim_id()
+  implicit none
+  obsspace_get_nlocs_dim_id = c_obsspace_get_nlocs_dim_id()
+end function obsspace_get_nlocs_dim_id
+
+!-------------------------------------------------------------------------------
+
+!>  Return the identifier of the nchans dimension.
+integer(c_int) function obsspace_get_nchans_dim_id()
+  implicit none
+  obsspace_get_nchans_dim_id = c_obsspace_get_nchans_dim_id()
+end function obsspace_get_nchans_dim_id
 
 end module obsspace_mod

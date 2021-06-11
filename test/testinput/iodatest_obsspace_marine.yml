@@ -7,153 +7,160 @@ observations:
     simulated variables: ['adt']
     obsdatain:
       obsfile: Data/testinput_tier_1/Jason-2-2018-04-15.nc
-    test data:
-      nlocs: 160607
-      nlocs_local: 1930
-      nrecs: 160607
-      nvars: 1
-      expected group variable: ""
-      expected sort variable: ""
-      expected sort order: "ascending"
-      variables:
-        - name: "latitude"
-          group: "MetaData"
-          type: "float"
-          norm: 16692.109207962403
+  test data:
+    nlocs: 160607
+    nlocs_local: 1930
+    nrecs: 160607
+    nvars: 1
+    obs perturbations seed: 0
+    expected group variables: []
+    expected sort variable: ""
+    expected sort order: "ascending"
+    variables:
+      - name: "latitude"
+        group: "MetaData"
+        type: "float"
+        norm: 16692.109207962403
 
-        - name: "longitude"
-          group: "MetaData"
-          type: "float"
-          norm: 89252.131593209342
-      tolerance:
-        - 1.0e-13
+      - name: "longitude"
+        group: "MetaData"
+        type: "float"
+        norm: 89252.131593209342
+    tolerance:
+      - 1.0e-13
 
 - obs space:
     name: InsituTemperature
     simulated variables: ['temperature']
     obsdatain:
       obsfile: Data/testinput_tier_1/profile_2018-04-15.nc
-    test data:
-      nlocs: 918
-      nlocs_local: 0
-      nrecs: 918
-      nvars: 1
-      expected group variable: ""
-      expected sort variable: ""
-      expected sort order: "ascending"
-      variables:
-        - name: "latitude"
-          group: "MetaData"
-          type: "float"
-          norm: 732.46544677303257
+  test data:
+    nlocs: 918
+    nlocs_local: 0
+    nrecs: 918
+    nvars: 1
+    obs perturbations seed: 0
+    expected group variables: []
+    expected sort variable: ""
+    expected sort order: "ascending"
+    variables:
+      - name: "latitude"
+        group: "MetaData"
+        type: "float"
+        norm: 732.46544677303257
 
-        - name: "longitude"
-          group: "MetaData"
-          type: "float"
-          norm: 3530.8881463212083
-      tolerance:
-        - 1.0e-14
+      - name: "longitude"
+        group: "MetaData"
+        type: "float"
+        norm: 3530.8881463212083
+    tolerance:
+      - 1.0e-14
 
 - obs space:
     name: SeaSurfaceTemp
     simulated variables: ['sea_surface_temperature']
     obsdatain:
       obsfile: Data/testinput_tier_1/sst_obs-2018-04-15.nc4
-    test data:
-      nlocs: 200
-      nlocs_local: 0
-      nrecs: 200
-      nvars: 1
-      expected group variable: ""
-      expected sort variable: ""
-      expected sort order: "ascending"
-      variables:
-        - name: "latitude"
-          group: "MetaData"
-          type: "float"
-          norm: 943.46741129348698
+  test data:
+    nlocs: 200
+    nlocs_local: 0
+    nrecs: 200
+    nvars: 1
+    obs perturbations seed: 0
+    expected group variables: []
+    expected sort variable: ""
+    expected sort order: "ascending"
+    variables:
+      - name: "latitude"
+        group: "MetaData"
+        type: "float"
+        norm: 943.46741129348698
 
-        - name: "longitude"
-          group: "MetaData"
-          type: "float"
-          norm: 1206.468598455715
-      tolerance:
-        - 1.0e-13
+      - name: "longitude"
+        group: "MetaData"
+        type: "float"
+        norm: 1206.468598455715
+    tolerance:
+      - 1.0e-13
 
 - obs space:
     name: SeaIceFraction
     simulated variables: ['sea_ice_fraction']
     obsdatain:
       obsfile: Data/testinput_tier_1/icec-2018-04-15.nc
-    test data:
-      nlocs: 71558
-      nlocs_local: 41757
-      nrecs: 71558
-      nvars: 1
-      expected group variable: ""
-      expected sort variable: ""
-      expected sort order: "ascending"
-      variables:
-        - name: "latitude"
-          group: "MetaData"
-          type: "float"
-          norm: 19778.589152003486
+  test data:
+    nlocs: 71558
+    nlocs_local: 41757
+    nrecs: 71558
+    nvars: 1
+    obs perturbations seed: 0
+    expected group variables: []
+    expected sort variable: ""
+    expected sort order: "ascending"
+    variables:
+      - name: "latitude"
+        group: "MetaData"
+        type: "float"
+        norm: 19778.589152003486
 
-        - name: "longitude"
-          group: "MetaData"
-          type: "float"
-          norm: 57917.351481173151
-      tolerance:
-        - 1.0e-14
+      - name: "longitude"
+        group: "MetaData"
+        type: "float"
+        norm: 57917.351481173151
+    tolerance:
+      - 1.0e-14
 
 - obs space:
     name: SeaIceThickness
     simulated variables: ['sea_ice_thickness']
     obsdatain:
       obsfile: Data/testinput_tier_1/cryosat2-2018-04-15.nc
-    test data:
-      nlocs: 8065
-      nlocs_local: 8065
-      nrecs: 8065
-      nvars: 2
-      expected group variable: ""
-      expected sort variable: ""
-      expected sort order: "ascending"
-      variables:
-        - name: "latitude"
-          group: "MetaData"
-          type: "float"
-          norm: 7581.3030036861646
+  test data:
+    nlocs: 8065
+    nlocs_local: 8065
+    nrecs: 8065
+    nvars: 2
+    obs perturbations seed: 0
+    expected group variables: []
+    expected sort variable: ""
+    expected sort order: "ascending"
+    variables:
+      - name: "latitude"
+        group: "MetaData"
+        type: "float"
+        norm: 7581.3030036861646
 
-        - name: "longitude"
-          group: "MetaData"
-          type: "float"
-          norm: 13972.379294774455
-      tolerance:
-        - 1.0e-14
+      - name: "longitude"
+        group: "MetaData"
+        type: "float"
+        norm: 13972.379294774455
+    tolerance:
+      - 1.0e-14
 
 - obs space:
     name: SeaSurfaceSalinity
     simulated variables: ['sea_surface_salinity']
     obsdatain:
       obsfile: Data/testinput_tier_1/sss_obs_20180415_m.nc4
-    test data:
-      nlocs: 100
-      nlocs_local: 0
-      nrecs: 100
-      nvars: 1
-      expected group variable: ""
-      expected sort variable: ""
-      expected sort order: "ascending"
-      variables:
-        - name: "latitude"
-          group: "MetaData"
-          type: "float"
-          norm: 865.73306254079102
+    obs perturbations seed: -99999
+  test data:
+    nlocs: 100
+    nlocs_local: 0
+    nrecs: 100
+    nvars: 1
+    obs perturbations seed: -99999
+    expected group variables: []
+    expected sort variable: ""
+    expected sort order: "ascending"
+    variables:
+      - name: "latitude"
+        group: "MetaData"
+        type: "float"
+        norm: 865.73306254079102
 
-        - name: "longitude"
-          group: "MetaData"
-          type: "float"
-          norm: 3328.6794406815029
-      tolerance:
-        - 1.0e-13
+      - name: "longitude"
+        group: "MetaData"
+        type: "float"
+        norm: 3328.6794406815029
+    tolerance:
+      - 1.0e-13

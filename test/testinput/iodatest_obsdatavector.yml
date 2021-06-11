@@ -1,0 +1,39 @@
+---
+window begin: "2018-04-16T00:00:00Z"
+window end:   "2018-12-12T23:59:59Z"
+
+obs space:
+  name: Test
+  simulated variables: [air_temperature]
+  obsdatain:
+    obsfile: "Data/testinput_tier_1/variable_assignment_testdata.nc"
+print:
+  float:
+    variables: [assigned_float_variable_1, assigned_float_variable_2]
+    group: TestReference
+    expected output: |
+      Test assigned_float_variable_1 nlocs = 4, nobs = 4, min = 9, max = 75.5, avg = 58.875
+      Test assigned_float_variable_2 nlocs = 4, nobs = 3, min = 75.5, max = 75.5, avg = 75.5
+  double:
+    variables: [assigned_float_variable_1, assigned_float_variable_2]
+    group: TestReference
+    expected output: |
+      Test assigned_float_variable_1 nlocs = 4, nobs = 4, min = 9, max = 75.5, avg = 58.875
+      Test assigned_float_variable_2 nlocs = 4, nobs = 3, min = 75.5, max = 75.5, avg = 75.5
+  int:
+    variables: [assigned_int_variable_1, assigned_int_variable_2]
+    group: TestReference
+    expected output: |
+      Test assigned_int_variable_1 nlocs = 4, nobs = 4, min = 5, max = 75, avg = 57
+      Test assigned_int_variable_2 nlocs = 4, nobs = 3, min = 75, max = 75, avg = 75
+  string:
+    variables: [assigned_string_variable_1, assigned_string_variable_2]
+    group: TestReference
+    expected output: |
+      Test assigned_string_variable_1 nlocs = 4, nobs = 4
+      Test assigned_string_variable_2 nlocs = 4, nobs = 3
+  datetime:
+    variables: [datetime]
+    group: MetaData
+    expected output: |
+      Test datetime nlocs = 4, nobs = 4

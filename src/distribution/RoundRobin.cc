@@ -7,22 +7,37 @@
 
 #include "ioda/distribution/RoundRobin.h"
 
-#include <algorithm>
 #include <iostream>
-#include <numeric>
-#include <set>
 
+#include "eckit/mpi/Comm.h"
+#include "ioda/distribution/DistributionFactory.h"
 #include "oops/util/Logger.h"
 
 namespace ioda {
+
 // -----------------------------------------------------------------------------
-RoundRobin::RoundRobin(const eckit::mpi::Comm & Comm) : Distribution(Comm) {
+namespace {
+const char DIST_NAME[] = "RoundRobin";
+}  // namespace
+
+// -----------------------------------------------------------------------------
+static DistributionMaker<RoundRobin> maker(DIST_NAME);
+
+// -----------------------------------------------------------------------------
+RoundRobin::RoundRobin(const eckit::mpi::Comm & Comm,
+                       const eckit::Configuration & config)
+                       : NonoverlappingDistribution(Comm) {
   oops::Log::trace() << "RoundRobin constructed" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 RoundRobin::~RoundRobin() {
   oops::Log::trace() << "RoundRobin destructed" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+std::string RoundRobin::name() const {
+  return DIST_NAME;
 }
 
 // -----------------------------------------------------------------------------

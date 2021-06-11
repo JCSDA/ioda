@@ -10,7 +10,7 @@ version1:
     obsdatain:
       obsfile: Data/testinput_tier_1/ioda_test_descending_sort.nc4
       obsgrouping:
-        group variable: "group"
+        group variables: [ "group" ]
         sort variable: "air_pressure"
         sort order: "descending"
     simulated variables: [air_temperature]

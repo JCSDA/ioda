@@ -7,17 +7,17 @@ observations:
     simulated variables: [air_temperature, eastward_wind, northward_wind]
     obsdatain:
       obsfile: Data/testinput_tier_1/sondes_obs_2018041500_m.nc4
-    test data:
-      nlocs: 974
-      nvars: 5
-      nvars obsvars: 3
+  test data:
+    nlocs: 974
+    nvars: 5
+    nvars obsvars: 3
 - obs space:
     name: Radiance
     simulated variables: [brightness_temperature]
     channels: 1-10, 15
     obsdatain:
       obsfile: Data/testinput_tier_1/amsua_n19_obs_2018041500_m.nc4
-    test data:
-      nlocs: 100
-      nvars: 15
-      nvars obsvars: 11
+  test data:
+    nlocs: 100
+    nvars: 15
+    nvars obsvars: 11

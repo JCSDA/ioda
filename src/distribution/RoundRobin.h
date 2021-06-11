@@ -8,12 +8,7 @@
 #ifndef DISTRIBUTION_ROUNDROBIN_H_
 #define DISTRIBUTION_ROUNDROBIN_H_
 
-#include <vector>
-
-#include "eckit/mpi/Comm.h"
-#include "oops/util/Logger.h"
-
-#include "ioda/distribution/Distribution.h"
+#include "ioda/distribution/NonoverlappingDistribution.h"
 
 namespace ioda {
 
@@ -22,16 +17,19 @@ namespace ioda {
  * \brief Round robin distribution
  *
  * \details This class implements a round-robin style of distribution which
- *          optimzes load balancing.
+ *          optimizes load balancing.
  *
  * \author Xin Zhang (JCSDA)
  */
-class RoundRobin: public Distribution {
+class RoundRobin: public NonoverlappingDistribution {
  public:
-     explicit RoundRobin(const eckit::mpi::Comm & Comm);
-     ~RoundRobin();
-     bool isMyRecord(std::size_t RecNum) const override;
-     bool isDistributed() const override { return true; }
+    RoundRobin(const eckit::mpi::Comm & Comm,
+               const eckit::Configuration & config);
+    ~RoundRobin() override;
+
+    bool isMyRecord(std::size_t RecNum) const override;
+
+    std::string name() const override;
 };
 
 }  // namespace ioda

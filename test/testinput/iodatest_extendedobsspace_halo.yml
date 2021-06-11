@@ -1,0 +1,42 @@
+#
+#=== Tests of extended ObsSpace with the Halo distribution ===#
+#
+# Please note that the expected values listed below are only valid when
+# the test is run on two or three PEs and the data are taken from sondes_obs_2018041500_m.nc4.
+# If the number of PEs or the input data sets change then the expected numbers should be modified
+# accordingly. (It does not make sense to run this test on a single PE with the chosen halo radius,
+# since the halo does not then cover the whole Earth.)
+
+extend obs space, Halo, 71 entries per averaged profile:
+  window begin: 2018-04-14T20:30:00Z
+  window end: 2018-04-15T03:30:00Z
+  obs space:
+    name: Sondes
+    obsdatain:
+      obsfile: Data/testinput_tier_1/sondes_obs_2018041500_m.nc4
+      obsgrouping:
+        group variables: [ "station_id" ]
+        sort variable: "air_pressure"
+        sort order: "descending"
+    simulated variables: [air_temperature]
+    distribution: "Halo"
+    radius: 13000000 # 13,000 km, so each halo covers most but not all of the Earth's surface
+    extension:
+      average profiles onto model levels: 71
+
+  expected nlocs (2 PE, rank 0):  2901 # 771 original locs + 30 original recs * 71 levels
+  expected gnlocs (2 PE, rank 0): 3530 # 974 + 36 * 71
+  expected nrecs (2 PE, rank 0):    60 # 30 + 30
+  expected nlocs (2 PE, rank 1):  2822 # 763 + 29 * 71
+  expected gnlocs (2 PE, rank 1): 3530 # 974 + 36 * 71
+  expected nrecs (2 PE, rank 1):    58 # 29 + 29
+
+  expected nlocs (3 PE, rank 0):  2901 # 771 original locs + 30 original recs * 71 levels
+  expected gnlocs (3 PE, rank 0): 3530 # 974 + 36 * 71
+  expected nrecs (3 PE, rank 0):    60 # 30 + 30
+  expected nlocs (3 PE, rank 1):  2996 # 866 + 30 * 71
+  expected gnlocs (3 PE, rank 1): 3530 # 974 + 36 * 71
+  expected nrecs (3 PE, rank 1):    60 # 30 + 30
+  expected nlocs (3 PE, rank 2):  2296 # 663 + 23 * 71
+  expected gnlocs (3 PE, rank 2): 3530 # 974 + 36 * 71
+  expected nrecs (3 PE, rank 2):    46 # 23 + 23

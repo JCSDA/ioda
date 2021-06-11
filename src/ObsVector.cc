@@ -11,7 +11,8 @@
 #include <limits>
 
 #include "eckit/config/LocalConfiguration.h"
-#include "eckit/mpi/Comm.h"
+#include "ioda/distribution/DistributionUtils.h"
+#include "ioda/ObsDataVector.h"
 #include "ioda/ObsSpace.h"
 #include "oops/base/Variables.h"
 #include "oops/util/abor1_cpp.h"
@@ -22,13 +23,13 @@
 namespace ioda {
 // -----------------------------------------------------------------------------
 ObsVector::ObsVector(ObsSpace & obsdb,
-                     const std::string & name, const bool fail)
+                     const std::string & name)
   : obsdb_(obsdb), obsvars_(obsdb.obsvariables()),
     nvars_(obsvars_.variables().size()), nlocs_(obsdb_.nlocs()),
     values_(nlocs_ * nvars_),
     missing_(util::missingValue(missing_)) {
   oops::Log::trace() << "ObsVector::ObsVector " << name << std::endl;
-  if (!name.empty()) this->read(name, fail);
+  if (!name.empty()) this->read(name);
 }
 // -----------------------------------------------------------------------------
 ObsVector::ObsVector(const ObsVector & other)
@@ -36,17 +37,6 @@ ObsVector::ObsVector(const ObsVector & other)
     nlocs_(other.nlocs_), values_(nlocs_ * nvars_), missing_(other.missing_) {
   values_ = other.values_;
   oops::Log::trace() << "ObsVector copied " << std::endl;
-}
-// -----------------------------------------------------------------------------
-ObsVector::ObsVector(ObsSpace & obsdb, const ObsVector & other)
-  : obsdb_(obsdb), obsvars_(other.obsvars_), nvars_(other.nvars_),
-    nlocs_(obsdb.localobs().size()), values_(nlocs_ * nvars_), missing_(other.missing_) {
-  for (size_t ii = 0; ii < nlocs_; ++ii) {
-    for (size_t vv = 0; vv < nvars_; ++vv) {
-      values_[ii*nvars_ + vv] = other.values_[obsdb.localobs()[ii]*nvars_ + vv];
-    }
-  }
-  oops::Log::trace() << "Local ObsVector copied " << std::endl;
 }
 // -----------------------------------------------------------------------------
 ObsVector::~ObsVector() {
@@ -124,6 +114,10 @@ void ObsVector::zero() {
   }
 }
 // -----------------------------------------------------------------------------
+void ObsVector::ones() {
+  std::fill(values_.begin(), values_.end(), 1.0);
+}
+// -----------------------------------------------------------------------------
 void ObsVector::axpy(const double & zz, const ObsVector & rhs) {
   const size_t nn = values_.size();
   ASSERT(rhs.values_.size() == nn);
@@ -132,6 +126,22 @@ void ObsVector::axpy(const double & zz, const ObsVector & rhs) {
       values_[jj] = missing_;
     } else {
       values_[jj] += zz * rhs.values_[jj];
+    }
+  }
+}
+// -----------------------------------------------------------------------------
+void ObsVector::axpy(const std::vector<double> & beta, const ObsVector & y) {
+  ASSERT(y.values_.size() == values_.size());
+  ASSERT(beta.size() == nvars_);
+
+  size_t ivec = 0;
+  for (size_t jloc = 0; jloc < nlocs_; ++jloc) {
+    for (size_t jvar = 0; jvar < nvars_; ++jvar, ++ivec) {
+      if (values_[ivec] == missing_ || y.values_[ivec] == missing_) {
+        values_[ivec] = missing_;
+      } else {
+        values_[ivec] += beta[jvar] * y.values_[ivec];
+      }
     }
   }
 }
@@ -152,38 +162,36 @@ void ObsVector::random() {
 }
 // -----------------------------------------------------------------------------
 double ObsVector::dot_product_with(const ObsVector & other) const {
-  const size_t nn = values_.size();
-  ASSERT(other.values_.size() == nn);
-  double zz = 0.0;
-  for (size_t jj = 0; jj < nn ; ++jj) {
-    if (values_[jj] != missing_ && other.values_[jj] != missing_) {
-      zz += values_[jj] * other.values_[jj];
-    }
-  }
-  if (obsdb_.isDistributed()) {
-    obsdb_.comm().allReduceInPlace(zz, eckit::mpi::sum());
-  }
+  double zz = dotProduct(*obsdb_.distribution(), nvars_, values_, other.values_);
   return zz;
 }
 // -----------------------------------------------------------------------------
-double ObsVector::rms() const {
-  double zrms = 0.0;
-  int nobs = 0;
-  for (size_t jj = 0; jj < values_.size() ; ++jj) {
-    if (values_[jj] != missing_) {
-      zrms += values_[jj] * values_[jj];
-      ++nobs;
+std::vector<double> ObsVector::multivar_dot_product_with(const ObsVector & other) const {
+  std::vector<double> result(nvars_, 0);
+  for (size_t jvar = 0; jvar < nvars_; ++jvar) {
+    // fill vectors for current variable (note: if elements in values_
+    // were distributed as all locs for var1; all locs for var2; etc, we
+    // wouldn't need copies here).
+    std::vector<double> x1(nlocs_);
+    std::vector<double> x2(nlocs_);
+    for (size_t jloc = 0; jloc < nlocs_; ++jloc) {
+      x1[jloc] = values_[jvar + (jloc * nvars_)];
+      x2[jloc] = other.values_[jvar + (jloc*nvars_)];
     }
+    result[jvar] = dotProduct(*obsdb_.distribution(), 1, x1, x2);
   }
-  if (obsdb_.isDistributed()) {
-    obsdb_.comm().allReduceInPlace(zrms, eckit::mpi::sum());
-    obsdb_.comm().allReduceInPlace(nobs, eckit::mpi::sum());
-  }
+  return result;
+}
+// -----------------------------------------------------------------------------
+double ObsVector::rms() const {
+  double zrms = dot_product_with(*this);
+  int nobs = this->nobs();
   if (nobs > 0) zrms = sqrt(zrms / static_cast<double>(nobs));
+
   return zrms;
 }
 // -----------------------------------------------------------------------------
-void ObsVector::read(const std::string & name, const bool fail) {
+void ObsVector::read(const std::string & name) {
   oops::Log::trace() << "ObsVector::read, name = " << name << std::endl;
 
   // Read in the variables stored in obsvars_ from the group given by "name".
@@ -197,13 +205,11 @@ void ObsVector::read(const std::string & name, const bool fail) {
   std::size_t nlocs = obsdb_.nlocs();
   std::vector<double> tmp(nlocs);
   for (std::size_t jv = 0; jv < nvars_; ++jv) {
-    if (fail || obsdb_.has(name, obsvars_.variables()[jv])) {
-      obsdb_.get_db(name, obsvars_.variables()[jv], tmp);
+    obsdb_.get_db(name, obsvars_.variables()[jv], tmp);
 
-      for (std::size_t jj = 0; jj < nlocs; ++jj) {
-        std::size_t ivec = jv + (jj * nvars_);
-        values_[ivec] = tmp[jj];
-      }
+    for (std::size_t jj = 0; jj < nlocs; ++jj) {
+      std::size_t ivec = jv + (jj * nvars_);
+      values_[ivec] = tmp[jj];
     }
   }
 }
@@ -215,34 +221,73 @@ void ObsVector::save(const std::string & name) const {
   // then all variables at the next location, etc.
   std::size_t nlocs = obsdb_.nlocs();
   std::size_t ivec;
+
   for (std::size_t jv = 0; jv < nvars_; ++jv) {
     std::vector<double> tmp(nlocs);
     for (std::size_t jj = 0; jj < tmp.size(); ++jj) {
       ivec = jv + (jj * nvars_);
       tmp[jj] = values_[ivec];
     }
-
     obsdb_.put_db(name, obsvars_.variables()[jv], tmp);
   }
 }
 // -----------------------------------------------------------------------------
-Eigen::VectorXd ObsVector::packEigen() const {
-  Eigen::VectorXd vec(nobs());
+size_t ObsVector::packEigenSize(const ObsDataVector<int> & mask) const {
+  size_t nlocs = 0;
   size_t ii = 0;
-  for (const double & val : values_) {
-    if (val != missing_) {
-      vec(ii++) = val;
+  for (size_t jloc = 0; jloc < mask.nlocs(); ++jloc) {
+    for (size_t jvar = 0; jvar < mask.nvars(); ++jvar) {
+      if ((mask[jvar][jloc] <= 0) && (values_[ii] != missing_)) nlocs++;
+      ++ii;
+    }
+  }
+  return nlocs;
+}
+// -----------------------------------------------------------------------------
+Eigen::VectorXd ObsVector::packEigen(const ObsDataVector<int> & mask) const {
+  Eigen::VectorXd vec(packEigenSize(mask));
+  size_t ii = 0;
+  size_t vecindex = 0;
+  for (size_t jloc = 0; jloc < mask.nlocs(); ++jloc) {
+    for (size_t jvar = 0; jvar < mask.nvars(); ++jvar) {
+      if ((mask[jvar][jloc] <= 0) && (values_[ii] != missing_)) {
+        vec(vecindex++) = values_[ii];
+      }
+      ++ii;
     }
   }
   return vec;
+}
+// -----------------------------------------------------------------------------
+ObsVector & ObsVector::operator=(const ObsDataVector<float> & rhs) {
+  oops::Log::trace() << "ObsVector::operator= start" << std::endl;
+  ASSERT(&rhs.space() == &obsdb_);
+  ASSERT(rhs.nvars() == nvars_);
+  ASSERT(rhs.nlocs() == nlocs_);
+  const float  fmiss = util::missingValue(fmiss);
+  const double dmiss = util::missingValue(dmiss);
+  size_t ii = 0;
+  for (size_t jl = 0; jl < nlocs_; ++jl) {
+    for (size_t jv = 0; jv < nvars_; ++jv) {
+       if (rhs[jv][jl] == fmiss) {
+         values_[ii] = dmiss;
+       } else {
+         values_[ii] = static_cast<double>(rhs[jv][jl]);
+       }
+       ++ii;
+    }
+  }
+  oops::Log::trace() << "ObsVector::operator= done" << std::endl;
+
+  return *this;
 }
 // -----------------------------------------------------------------------------
 void ObsVector::mask(const ObsDataVector<int> & flags) {
   oops::Log::trace() << "ObsVector::mask" << std::endl;
   ASSERT(values_.size() == flags.nvars() * flags.nlocs());
   size_t ii = 0;
-  for (size_t jv = 0; jv < flags.nvars(); ++jv) {
-    for (size_t jj = 0; jj < flags.nlocs(); ++jj) {
+  for (size_t jj = 0; jj < flags.nlocs(); ++jj) {
+    for (size_t jv = 0; jv < flags.nvars(); ++jv) {
       if (flags[jv][jj] > 0) values_[ii] = missing_;
       ++ii;
     }
@@ -250,13 +295,8 @@ void ObsVector::mask(const ObsDataVector<int> & flags) {
 }
 // -----------------------------------------------------------------------------
 unsigned int ObsVector::nobs() const {
-  int nobs = 0;
-  for (size_t jj = 0; jj < values_.size() ; ++jj) {
-    if (values_[jj] != missing_) ++nobs;
-  }
-  if (obsdb_.isDistributed()) {
-    obsdb_.comm().allReduceInPlace(nobs, eckit::mpi::sum());
-  }
+  int nobs = globalNumNonMissingObs(*obsdb_.distribution(), nvars_, values_);
+
   return nobs;
 }
 // -----------------------------------------------------------------------------
@@ -271,24 +311,19 @@ double & ObsVector::toFortran() {
 void ObsVector::print(std::ostream & os) const {
   double zmin = std::numeric_limits<double>::max();
   double zmax = std::numeric_limits<double>::lowest();
-  double zrms = 0.0;
-  int nobs = 0;
+  double zrms = rms();
+  int nobs = this->nobs();
   for (size_t jj = 0; jj < values_.size() ; ++jj) {
     if (values_[jj] != missing_) {
       if (values_[jj] < zmin) zmin = values_[jj];
       if (values_[jj] > zmax) zmax = values_[jj];
-      zrms += values_[jj] * values_[jj];
-      ++nobs;
     }
   }
-  if (obsdb_.isDistributed()) {
-    obsdb_.comm().allReduceInPlace(zmin, eckit::mpi::min());
-    obsdb_.comm().allReduceInPlace(zmax, eckit::mpi::max());
-    obsdb_.comm().allReduceInPlace(zrms, eckit::mpi::sum());
-    obsdb_.comm().allReduceInPlace(nobs, eckit::mpi::sum());
-  }
+
+  obsdb_.distribution()->min(zmin);
+  obsdb_.distribution()->max(zmax);
+
   if (nobs > 0) {
-    zrms = sqrt(zrms / static_cast<double>(nobs));
     os << obsdb_.obsname() << " nobs= " << nobs << " Min="
        << zmin << ", Max=" << zmax << ", RMS=" << zrms << std::endl;
   } else {

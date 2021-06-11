@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2018 UCAR
+ * (C) Copyright 2018-2021 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -9,6 +9,7 @@
 #define TEST_IODA_OBSSPACE_H_
 
 #include <cmath>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -24,6 +25,8 @@
 #include "oops/runs/Test.h"
 #include "oops/test/TestEnvironment.h"
 
+#include "ioda/distribution/Accumulator.h"
+#include "ioda/distribution/DistributionUtils.h"
 #include "ioda/IodaTrait.h"
 #include "ioda/ObsSpace.h"
 
@@ -38,6 +41,13 @@ class ObsSpaceTestFixture : private boost::noncopyable {
     return *getInstance().ospaces_.at(ii);
   }
   static std::size_t size() {return getInstance().ospaces_.size();}
+  static void cleanup() {
+    auto &spaces = getInstance().ospaces_;
+    for (auto &space : spaces) {
+      space->save();
+      space.reset();
+    }
+  }
 
  private:
   static ObsSpaceTestFixture & getInstance() {
@@ -54,6 +64,7 @@ class ObsSpaceTestFixture : private boost::noncopyable {
 
     for (std::size_t jj = 0; jj < conf.size(); ++jj) {
       eckit::LocalConfiguration obsconf(conf[jj], "obs space");
+      std::string distname = obsconf.getString("distribution", "RoundRobin");
       boost::shared_ptr<ioda::ObsSpace> tmp(new ioda::ObsSpace(obsconf, oops::mpi::world(),
                                                                bgn, end, oops::mpi::myself()));
       ospaces_.push_back(tmp);
@@ -74,61 +85,93 @@ void testConstructor() {
   ::test::TestEnvironment::config().get("observations", conf);
 
   for (std::size_t jj = 0; jj < Test_::size(); ++jj) {
-    // Get the distribution method. If the method is "InefficientDistribution", then
-    // don't do the mpi allreduce calls. What is going on is that InefficientDistribution
-    // is distributing all observations to all mpi tasks, so if you do the allreduce
-    // calls you will overcount the sums (double count when 2 mpi tasks, triple count
-    // with 3 mpi tasks, etc.)
-    std::string DistMethod = conf[jj].getString("obs space.distribution", "RoundRobin");
+    // Grab the obs space and test data configurations
+    eckit::LocalConfiguration obsConfig;
+    eckit::LocalConfiguration testConfig;
+    conf[jj].get("obs space", obsConfig);
+    conf[jj].get("test data", testConfig);
+
+    std::string DistMethod = obsConfig.getString("distribution", "RoundRobin");
+
+    const ObsSpace &odb = Test_::obspace(jj);
 
     // Get the numbers of locations (nlocs) from the ObsSpace object
-    std::size_t Nlocs = Test_::obspace(jj).nlocs();
-    std::size_t Nrecs = Test_::obspace(jj).nrecs();
-    std::size_t Nvars = Test_::obspace(jj).nvars();
-    if (DistMethod != "InefficientDistribution") {
-      Test_::obspace(jj).comm().allReduceInPlace(Nlocs, eckit::mpi::sum());
-      Test_::obspace(jj).comm().allReduceInPlace(Nrecs, eckit::mpi::sum());
-    }
+    std::size_t GlobalNlocs = odb.globalNumLocs();
+    std::size_t Nlocs = odb.nlocs();
+    std::size_t Nvars = odb.nvars();
+
+    // Get the purturbation seed from the ObsSpace object
+    int obsPertSeed = odb.params().obsPertSeed();
 
     // Get the expected nlocs from the obspace object's configuration
-    std::size_t ExpectedNlocs = conf[jj].getUnsigned("obs space.test data.nlocs");
-    std::size_t ExpectedNrecs = conf[jj].getUnsigned("obs space.test data.nrecs");
-    std::size_t ExpectedNvars = conf[jj].getUnsigned("obs space.test data.nvars");
+    std::size_t ExpectedGlobalNlocs = testConfig.getUnsigned("nlocs");
+    std::size_t ExpectedNvars = testConfig.getUnsigned("nvars");
+
+    // Get the expected purturbation seed from the config object
+    int ExpectedObsPertSeed = testConfig.getUnsigned("obs perturbations seed");
 
     // Get the obs grouping/sorting parameters from the ObsSpace object
-    std::string ObsGroupVar = Test_::obspace(jj).obs_group_var();
-    std::string ObsSortVar = Test_::obspace(jj).obs_sort_var();
-    std::string ObsSortOrder = Test_::obspace(jj).obs_sort_order();
+    std::vector<std::string> ObsGroupVars = odb.obs_group_vars();
+    std::string ObsSortVar = odb.obs_sort_var();
+    std::string ObsSortOrder = odb.obs_sort_order();
 
     // Get the expected obs grouping/sorting parameters from the configuration
-    std::string ExpectedObsGroupVar =
-      conf[jj].getString("obs space.test data.expected group variable");
-    std::string ExpectedObsSortVar =
-      conf[jj].getString("obs space.test data.expected sort variable");
-    std::string ExpectedObsSortOrder =
-      conf[jj].getString("obs space.test data.expected sort order");
+    std::vector<std::string> ExpectedObsGroupVars =
+      testConfig.getStringVector("expected group variables");
+    std::string ExpectedObsSortVar = testConfig.getString("expected sort variable");
+    std::string ExpectedObsSortOrder = testConfig.getString("expected sort order");
 
-    oops::Log::debug() << "Nlocs, ExpectedNlocs: " << Nlocs << ", "
-                       << ExpectedNlocs << std::endl;
-    oops::Log::debug() << "Nrecs, ExpectedNrecs: " << Nrecs << ", "
-                       << ExpectedNrecs << std::endl;
+    oops::Log::debug() << "GlobalNlocs, ExpectedGlobalNlocs: " << GlobalNlocs << ", "
+                       << ExpectedGlobalNlocs << std::endl;
     oops::Log::debug() << "Nvars, ExpectedNvars: " << Nvars << ", "
                        << ExpectedNvars << std::endl;
+    // records are ambigious for halo distribution
+    // e.g. consider airplane (a single record in round robin) flying accros the globe
+    // for Halo distr this record will be considered unique on each PE
+    if (DistMethod != "Halo") {
+      std::size_t NRecs = 0;
+      std::set<std::size_t> recIndices;
+      auto accumulator = odb.distribution()->createAccumulator<std::size_t>();
+      for (std::size_t loc = 0; loc < Nlocs; ++loc) {
+        if (bool isNewRecord = recIndices.insert(odb.recnum()[loc]).second) {
+          accumulator->addTerm(loc, 1);
+          ++NRecs;
+        }
+      }
+      std::size_t ExpectedNRecs = odb.nrecs();
+      EXPECT_EQUAL(NRecs, ExpectedNRecs);
 
-    oops::Log::debug() << "ObsGroupVar, ExpectedObsGroupVar: " << ObsGroupVar << ", "
-                       << ExpectedObsGroupVar << std::endl;
+      // Calculate the global number of unique records
+      std::size_t GlobalNRecs = accumulator->computeResult();
+      std::size_t ExpectedGlobalNrecs = testConfig.getUnsigned("nrecs");
+      EXPECT_EQUAL(GlobalNRecs, ExpectedGlobalNrecs);
+    }
+
+    oops::Log::debug() << "ObsGroupVars, ExpectedObsGroupVars: " << ObsGroupVars << ", "
+                       << ExpectedObsGroupVars << std::endl;
     oops::Log::debug() << "ObsSortVar, ExpectedObsSortVar: " << ObsSortVar << ", "
                        << ExpectedObsSortVar << std::endl;
     oops::Log::debug() << "ObsSortOrder, ExpectedObsSortOrder: " << ObsSortOrder << ", "
                        << ExpectedObsSortOrder << std::endl;
 
-    EXPECT(Nlocs == ExpectedNlocs);
-    EXPECT(Nrecs == ExpectedNrecs);
+    // get the standard nlocs and nchans dimension names and compare with expected values
+    std::string nlocsName = odb.get_dim_name(ioda::ObsDimensionId::Nlocs);
+    std::string nchansName = odb.get_dim_name(ioda::ObsDimensionId::Nchans);
+
+    EXPECT(GlobalNlocs == ExpectedGlobalNlocs);
     EXPECT(Nvars == ExpectedNvars);
 
-    EXPECT(ObsGroupVar == ExpectedObsGroupVar);
+    EXPECT(obsPertSeed == ExpectedObsPertSeed);
+
+    EXPECT(ObsGroupVars == ExpectedObsGroupVars);
     EXPECT(ObsSortVar == ExpectedObsSortVar);
     EXPECT(ObsSortOrder == ExpectedObsSortOrder);
+
+    EXPECT(nlocsName == "nlocs");
+    EXPECT(nchansName == "nchans");
+
+    EXPECT(odb.get_dim_id("nlocs") == ioda::ObsDimensionId::Nlocs);
+    EXPECT(odb.get_dim_id("nchans") == ioda::ObsDimensionId::Nchans);
   }
 }
 
@@ -141,7 +184,13 @@ void testGetDb() {
   ::test::TestEnvironment::config().get("observations", conf);
 
   for (std::size_t jj = 0; jj < Test_::size(); ++jj) {
-    std::string DistMethod = conf[jj].getString("obs space.distribution", "RoundRobin");
+    // Grab the obs space and test data configurations
+    eckit::LocalConfiguration obsConfig;
+    eckit::LocalConfiguration testConfig;
+    conf[jj].get("obs space", obsConfig);
+    conf[jj].get("test data", testConfig);
+
+    std::string DistMethod = obsConfig.getString("distribution", "RoundRobin");
 
     // Set up a pointer to the ObsSpace object for convenience
     ioda::ObsSpace * Odb = &(Test_::obspace(jj));
@@ -149,8 +198,8 @@ void testGetDb() {
 
     // Get the variables section from the test data and perform checks accordingly
     std::vector<eckit::LocalConfiguration> varconf =
-                            conf[jj].getSubConfigurations("obs space.test data.variables");
-    double Tol = conf[jj].getDouble("obs space.test data.tolerance");
+                            testConfig.getSubConfigurations("variables");
+    double Tol = testConfig.getDouble("tolerance");
     for (std::size_t i = 0; i < varconf.size(); ++i) {
       // Read in the variable group, name and expected norm values from the configuration
       std::string VarName = varconf[i].getString("name");
@@ -170,13 +219,7 @@ void testGetDb() {
 
         // Calculate the norm of the vector
         double ExpectedVnorm = varconf[i].getDouble("norm");
-        double Vnorm = 0.0;
-        for (std::size_t j = 0; j < Nlocs; ++j) {
-          Vnorm += pow(TestVec[j], 2.0);
-        }
-        if (DistMethod != "InefficientDistribution") {
-          Test_::obspace(jj).comm().allReduceInPlace(Vnorm, eckit::mpi::sum());
-        }
+        double Vnorm = dotProduct(*Odb->distribution(), 1, TestVec, TestVec);
         Vnorm = sqrt(Vnorm);
 
         EXPECT(oops::is_close(Vnorm, ExpectedVnorm, Tol));
@@ -191,13 +234,7 @@ void testGetDb() {
 
         // Calculate the norm of the vector
         double ExpectedVnorm = varconf[i].getDouble("norm");
-        double Vnorm = 0.0;
-        for (std::size_t j = 0; j < Nlocs; ++j) {
-          Vnorm += pow(static_cast<double>(TestVec[j]), 2.0);
-        }
-        if (DistMethod != "InefficientDistribution") {
-          Test_::obspace(jj).comm().allReduceInPlace(Vnorm, eckit::mpi::sum());
-        }
+        double Vnorm = dotProduct(*Odb->distribution(), 1, TestVec, TestVec);
         Vnorm = sqrt(Vnorm);
 
         EXPECT(oops::is_close(Vnorm, ExpectedVnorm, Tol));
@@ -211,7 +248,6 @@ void testGetDb() {
         std::string ExpectedLastValue = varconf[i].getString("last value");
         std::vector<std::string> TestVec(Nlocs);
         Odb->get_db(GroupName, VarName, TestVec);
-
         EXPECT(TestVec[0] == ExpectedFirstValue);
         EXPECT(TestVec[Nlocs-1] == ExpectedLastValue);
       }
@@ -306,10 +342,108 @@ void testWriteableGroup() {
 
 // -----------------------------------------------------------------------------
 
+void testMultiDimTransfer() {
+  typedef ObsSpaceTestFixture Test_;
+
+  for (std::size_t jj = 0; jj < Test_::size(); ++jj) {
+    // Set up a pointer to the ObsSpace object for convenience
+    ioda::ObsSpace * Odb = &(Test_::obspace(jj));
+
+    // Create a dummy array to put into the database
+    // Load up the array with contrived data, put the array then
+    // get the array and see if the contrived data made it through.
+    // If Nchans comes back equal to zero, it means that this obs space does not
+    // have an nchans dimension. In this case, this test is reduced to testing
+    // a 1D vector.
+    std::size_t Nlocs = Odb->nlocs();
+    std::size_t Nchans = Odb->nchans();
+
+    std::vector<int> TestValues;
+    std::vector<int> ExpectedValues;
+    std::vector<std::string> dimList;
+
+    int numElements = Nlocs;
+    dimList.push_back(Odb->get_dim_name(ObsDimensionId::Nlocs));
+    if (Nchans > 0) {
+        numElements *= Nchans;
+        dimList.push_back(Odb->get_dim_name(ObsDimensionId::Nchans));
+    }
+
+    // Load up the expected values with numbers 0..n-1.
+    TestValues.resize(numElements);
+    ExpectedValues.resize(numElements);
+    int testValue = 0;
+    for (std::size_t i = 0; i < numElements; ++i) {
+      ExpectedValues[i] = testValue;
+      testValue++;
+    }
+
+    // Put the data into the ObsSpace, then get the data back from the ObsSpace and
+    // compare to the original.
+    Odb->put_db("MultiDimData", "DummyVar", ExpectedValues, dimList);
+    Odb->get_db("MultiDimData", "DummyVar", TestValues, {} /*select all channels*/);
+    EXPECT(TestValues == ExpectedValues);
+
+    const int numOddChannels = Nchans/2;
+    if (numOddChannels > 0) {
+      // Test retrieval of only the odd channels.
+
+      const std::vector<int>& channels = Odb->obsvariables().channels();
+      ASSERT(channels.size() == Nchans);
+
+      std::vector<int> chanSelect;
+      for (int i = 0; i < numOddChannels; ++i) {
+        const std::size_t channelIndex = 1 + 2 * i;
+        chanSelect.push_back(channels[channelIndex]);
+      }
+
+      ExpectedValues.clear();
+      for (std::size_t loc = 0; loc < Nlocs; ++loc) {
+        for (int i = 0; i < numOddChannels; ++i) {
+          const std::size_t channelIndex = 1 + 2 * i;
+          ExpectedValues.push_back(loc * Nchans + channelIndex);
+        }
+      }
+
+      Odb->get_db("MultiDimData", "DummyVar", TestValues, chanSelect);
+      EXPECT_EQUAL(TestValues, ExpectedValues);
+    }
+
+    if (numOddChannels > 0) {
+      // Test retrieval of a single channel using the old syntax
+      // (variable name with a channel suffix)
+
+      const std::vector<int>& channels = Odb->obsvariables().channels();
+      const int channelIndex = 1;
+      const int channelNumber = channels[channelIndex];
+
+      ExpectedValues.clear();
+      for (std::size_t loc = 0; loc < Nlocs; ++loc)
+        ExpectedValues.push_back(loc * Nchans + channelIndex);
+
+      Odb->get_db("MultiDimData", "DummyVar_" + std::to_string(channelNumber), TestValues);
+      EXPECT_EQUAL(TestValues, ExpectedValues);
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+
+void testCleanup() {
+  // This test removes the obsspaces and ensures that they evict their contents
+  // to disk successfully.
+  typedef ObsSpaceTestFixture Test_;
+
+  Test_::cleanup();
+}
+
+// -----------------------------------------------------------------------------
+
 class ObsSpace : public oops::Test {
  public:
   ObsSpace() {}
   virtual ~ObsSpace() {}
+
  private:
   std::string testid() const override {return "test::ObsSpace<ioda::IodaTrait>";}
 
@@ -324,6 +458,10 @@ class ObsSpace : public oops::Test {
       { testPutDb(); });
     ts.emplace_back(CASE("ioda/ObsSpace/testWriteableGroup")
       { testWriteableGroup(); });
+    ts.emplace_back(CASE("ioda/ObsSpace/testMultiDimTransfer")
+      { testMultiDimTransfer(); });
+    ts.emplace_back(CASE("ioda/ObsSpace/testCleanup")
+      { testCleanup(); });
   }
 
   void clear() const override {}

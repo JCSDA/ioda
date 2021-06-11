@@ -1,0 +1,137 @@
+---
+window begin: 2021-01-15T15:15:02Z
+window end:   2021-01-15T15:15:08Z
+
+# Expected indices are based on 4 PE's during an MPI run. If you change
+# the number of PE in the ecbuild_add_test in the ../CMakeLists.txt file,
+# then the expected indices below need to change accordingly.
+#
+# The test is coded so that the keyword "rank" + (MPI Rank Number) is used from this
+# file to get the expected result. If you are MPI rank 0, then you read the keywords
+# under "rank0:" from this file; MPI rank 1, keywords from "rank1:"; etc.
+
+observations:
+
+- obs space:
+    name: Halo
+    obsdatain:
+      obsfile: Data/testinput_tier_1/obsspace_grouping_wider_longitude_range.nc4
+      obsgrouping:
+        # At present Halo is not guaranteed to keep records on a single PE, so
+        # we're forced to put each location in a separate record.
+        group variables: [longitude]
+        # longitude@MetaData = 1, 21, 41, 61, 81, 101, 121, 141, 161, 181
+        # datetime@MetaData = 2021-01-15T15:15:00Z, ...:01Z, ..., ...:09Z
+    simulated variables: [temperature]
+    distribution: Halo
+    radius: 8000000  # a bit less than 1/4 of equator length
+  specs:
+    gnlocs: 6
+    allgatherv: [ 3, 4, 5, 6, 7, 8 ]
+    rank0:
+      nlocs: 1
+      nrecs: 1
+      nPatchLocs: 0
+      index: [ 3 ]
+      recnums: [ 0 ]
+      patchIndex: [  ]
+    rank1:
+      nlocs: 6
+      nrecs: 6
+      nPatchLocs: 4
+      index: [ 3, 4, 5, 6, 7, 8 ]
+      recnums: [ 0, 1, 2, 3, 4, 5 ]
+      patchIndex: [ 3, 4, 5, 6 ]
+    rank2:
+      nlocs: 3
+      nrecs: 3
+      nPatchLocs: 2
+      index: [ 6, 7, 8 ]
+      recnums: [ 3, 4, 5 ]
+      patchIndex: [ 7, 8 ]
+    rank3:
+      nlocs: 0
+      nrecs: 0
+      nPatchLocs: 0
+      index: [ ]
+      recnums: [ ]
+      patchIndex: [ ]
+
+- obs space:
+    name: Halo, with extension
+    obsdatain:
+      obsfile: Data/testinput_tier_1/obsspace_grouping_wider_longitude_range.nc4
+      obsgrouping:
+        # At present Halo is not guaranteed to keep records on a single PE, so
+        # we're forced to put each location in a separate record.
+        group variables: [longitude]
+        # longitude@MetaData = 1, 21, 41, 61, 81, 101, 121, 141, 161, 181
+        # datetime@MetaData = 2021-01-15T15:15:00Z, ...:01Z, ..., ...:09Z
+    simulated variables: [temperature]
+    distribution: Halo
+    radius: 8000000  # a bit less than 1/4 of equator length
+    extension:
+      average profiles onto model levels: 3
+  specs:
+    gnlocs: 24  # 6 original obs + 18 averaged obs (3 levels * 6 records)
+    allgatherv: [ 3, 4, 5, 6, 7, 8,
+                  9, 10, 11,
+                  12, 13, 14,
+                  15, 16, 17,
+                  18, 19, 20,
+                  21, 22, 23,
+                  24, 25, 26 ]
+    rank0:
+      nlocs: 4 # 1 original + 3 averaged
+      nrecs: 2  # 1 original + 3 averaged
+      nPatchLocs: 0
+      index: [ 3,
+               9, 10, 11 ]
+      recnums: [ 0,
+                 6, 6, 6 ]
+      patchIndex: [  ]
+    rank1:
+      nlocs: 24 # 6 original + 18 averaged
+      nrecs: 12  # 6 original + 6 averaged
+      nPatchLocs: 16 # 4 original + 12 averaged
+      index: [ 3, 4, 5, 6, 7, 8,
+               9, 10, 11,
+               12, 13, 14,
+               15, 16, 17,
+               18, 19, 20,
+               21, 22, 23,
+               24, 25, 26 ]
+      recnums: [ 0, 1, 2, 3, 4, 5,
+                 6, 6, 6,
+                 7, 7, 7,
+                 8, 8, 8,
+                 9, 9, 9,
+                 10, 10, 10,
+                 11, 11, 11]
+      patchIndex: [ 3, 4, 5, 6,
+                    9, 10, 11,
+                    12, 13, 14,
+                    15, 16, 17,
+                    18, 19, 20 ]
+    rank2:
+      nlocs: 12 # 3 original + 9 averaged
+      nrecs: 6  # 3 original + 3 averaged
+      nPatchLocs: 8 # 2 original + 6 averaged
+      index: [ 6, 7, 8,
+               18, 19, 20,
+               21, 22, 23,
+               24, 25, 26 ]
+      recnums: [ 3, 4, 5,
+                 9, 9, 9,
+                 10, 10, 10,
+                 11, 11, 11 ]
+      patchIndex: [ 7, 8,
+                    21, 22, 23,
+                    24, 25, 26 ]
+    rank3:
+      nlocs: 0
+      nrecs: 0
+      nPatchLocs: 0
+      index: [ ]
+      recnums: [ ]
+      patchIndex: [ ]

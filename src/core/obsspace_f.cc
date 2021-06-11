@@ -48,11 +48,15 @@ const oops::Variables * obsspace_obsvariables_f(const ObsSpace & obss) {
 
 // -----------------------------------------------------------------------------
 std::size_t obsspace_get_gnlocs_f(const ObsSpace & obss) {
-  return obss.gnlocs();
+  return obss.globalNumLocs();
 }
 // -----------------------------------------------------------------------------
 std::size_t obsspace_get_nlocs_f(const ObsSpace & obss) {
   return obss.nlocs();
+}
+// -----------------------------------------------------------------------------
+std::size_t obsspace_get_nchans_f(const ObsSpace & obss) {
+  return obss.nchans();
 }
 // -----------------------------------------------------------------------------
 std::size_t obsspace_get_nrecs_f(const ObsSpace & obss) {
@@ -62,6 +66,24 @@ std::size_t obsspace_get_nrecs_f(const ObsSpace & obss) {
 std::size_t obsspace_get_nvars_f(const ObsSpace & obss) {
   return obss.nvars();
 }
+
+// -----------------------------------------------------------------------------
+void obsspace_get_dim_name_f(const ObsSpace & obss, const int & dim_id,
+                             std::size_t & len_dim_name, char * dim_name) {
+  std::string dimName = obss.get_dim_name(static_cast<ioda::ObsDimensionId>(dim_id));
+  len_dim_name = dimName.size();
+  ASSERT(len_dim_name < 100);  // to not overflow the associated fortran string
+  strncpy(dim_name, dimName.c_str(), len_dim_name);
+}
+// -----------------------------------------------------------------------------
+std::size_t obsspace_get_dim_size_f(const ObsSpace & obss, const int & dim_id) {
+  return obss.get_dim_size(static_cast<ioda::ObsDimensionId>(dim_id));
+}
+// -----------------------------------------------------------------------------
+int obsspace_get_dim_id_f(const ObsSpace & obss, const char * dim_name) {
+  return static_cast<int>(obss.get_dim_id(std::string(dim_name)));
+}
+
 // -----------------------------------------------------------------------------
 void obsspace_get_comm_f(const ObsSpace & obss, int & lcname, char * cname) {
   lcname = obss.comm().name().size();
@@ -92,43 +114,63 @@ bool obsspace_has_f(const ObsSpace & obss, const char * group, const char * vnam
 }
 // -----------------------------------------------------------------------------
 void obsspace_get_int32_f(const ObsSpace & obss, const char * group, const char * vname,
-                          const std::size_t & length, int32_t* vec) {
+                          const std::size_t & length, int32_t* vec,
+                          const std::size_t & len_cs, int* chan_select) {
+  ASSERT(len_cs <= obss.nchans());
+  std::vector<int> chanSelect(len_cs);
+  chanSelect.assign(chan_select, chan_select + len_cs);
   if (std::string(group) == "VarMetaData") ASSERT(length >= obss.nvars());
   else
     ASSERT(length >= obss.nlocs());
   std::vector<int32_t> vdata(length);
-  obss.get_db(std::string(group), std::string(vname), vdata);
+  obss.get_db(std::string(group), std::string(vname), vdata, chanSelect);
   std::copy(vdata.begin(), vdata.end(), vec);
 }
 // -----------------------------------------------------------------------------
 void obsspace_get_int64_f(const ObsSpace & obss, const char * group, const char * vname,
-                          const std::size_t & length, int64_t* vec) {
+                          const std::size_t & length, int64_t* vec,
+                          const std::size_t & len_cs, int* chan_select) {
+  ASSERT(len_cs <= obss.nchans());
+  std::vector<int> chanSelect(len_cs);
+  chanSelect.assign(chan_select, chan_select + len_cs);
   if (std::string(group) == "VarMetaData") ASSERT(length >= obss.nvars());
   else
     ASSERT(length >= obss.nlocs());
-//  obss.get_db(std::string(group), std::string(vname), vec);
+//  obss.get_db(std::string(group), std::string(vname), vec, chanSelect);
 }
 // -----------------------------------------------------------------------------
 void obsspace_get_real32_f(const ObsSpace & obss, const char * group, const char * vname,
-                           const std::size_t & length, float* vec) {
+                           const std::size_t & length, float* vec,
+                          const std::size_t & len_cs, int* chan_select) {
+  ASSERT(len_cs <= obss.nchans());
+  std::vector<int> chanSelect(len_cs);
+  chanSelect.assign(chan_select, chan_select + len_cs);
   if (std::string(group) == "VarMetaData") ASSERT(length >= obss.nvars());
   else
     ASSERT(length >= obss.nlocs());
-//  obss.get_db(std::string(group), std::string(vname), vec);
+//  obss.get_db(std::string(group), std::string(vname), vec, chanSelect);
 }
 // -----------------------------------------------------------------------------
 void obsspace_get_real64_f(const ObsSpace & obss, const char * group, const char * vname,
-                           const std::size_t & length, double* vec) {
+                           const std::size_t & length, double* vec,
+                          const std::size_t & len_cs, int* chan_select) {
+  ASSERT(len_cs <= obss.nchans());
+  std::vector<int> chanSelect(len_cs);
+  chanSelect.assign(chan_select, chan_select + len_cs);
   if (std::string(group) == "VarMetaData") ASSERT(length >= obss.nvars());
   else
     ASSERT(length >= obss.nlocs());
   std::vector<double> vdata(length);
-  obss.get_db(std::string(group), std::string(vname), vdata);
+  obss.get_db(std::string(group), std::string(vname), vdata, chanSelect);
   std::copy(vdata.begin(), vdata.end(), vec);
 }
 // -----------------------------------------------------------------------------
 void obsspace_get_datetime_f(const ObsSpace & obss, const char * group, const char * vname,
-                             const std::size_t & length, int32_t* date, int32_t* time) {
+                             const std::size_t & length, int32_t* date, int32_t* time,
+                          const std::size_t & len_cs, int* chan_select) {
+  ASSERT(len_cs <= obss.nchans());
+  std::vector<int> chanSelect(len_cs);
+  chanSelect.assign(chan_select, chan_select + len_cs);
   if (std::string(group) == "VarMetaData") ASSERT(length >= obss.nvars());
   else
     ASSERT(length >= obss.nlocs());
@@ -137,7 +179,7 @@ void obsspace_get_datetime_f(const ObsSpace & obss, const char * group, const ch
   // vector which are then returned.
   util::DateTime temp_dt("0000-01-01T00:00:00Z");
   std::vector<util::DateTime> dt_vect(length, temp_dt);
-  obss.get_db(std::string(group), std::string(vname), dt_vect);
+  obss.get_db(std::string(group), std::string(vname), dt_vect, chanSelect);
 
   // Convert to date and time values. The DateTime utilities can return year, month,
   // day, hour, minute second.
@@ -155,39 +197,97 @@ void obsspace_get_datetime_f(const ObsSpace & obss, const char * group, const ch
 }
 // -----------------------------------------------------------------------------
 void obsspace_put_int32_f(ObsSpace & obss, const char * group, const char * vname,
-                          const std::size_t & length, int32_t* vec) {
+                          const std::size_t & length, int32_t* vec,
+                          const std::size_t & ndims, int* dim_ids) {
+  // Generate the dimension list (names) and the total number of elements required
+  // (product of dimension sizes). vec is just an allocated memory buffer in which
+  // to place the data from the ObsSpace variable.
+  std::vector<std::string> dimList;
+  int numElements = (ndims > 0) ? 1 : 0;
+  for (std::size_t i = 0; i < ndims; ++i) {
+      ObsDimensionId dimId = static_cast<ioda::ObsDimensionId>(dim_ids[i]);
+      dimList.push_back(obss.get_dim_name(dimId));
+      numElements *= obss.get_dim_size(dimId);
+  }
+
   if (std::string(group) == "VarMetaData") ASSERT(length >= obss.nvars());
   else
-    ASSERT(length >= obss.nlocs());
+    ASSERT(length >= numElements);
   std::vector<int32_t> vdata;
   vdata.assign(vec, vec + length);
-  obss.put_db(std::string(group), std::string(vname), vdata);
+
+  obss.put_db(std::string(group), std::string(vname), vdata, dimList);
 }
 // -----------------------------------------------------------------------------
 void obsspace_put_int64_f(ObsSpace & obss, const char * group, const char * vname,
-                          const std::size_t & length, int64_t* vec) {
+                          const std::size_t & length, int64_t* vec,
+                          const std::size_t & ndims, int* dim_ids) {
+  // Generate the dimension list (names) and the total number of elements required
+  // (product of dimension sizes). vec is just an allocated memory buffer in which
+  // to place the data from the ObsSpace variable.
+  std::vector<std::string> dimList;
+  int numElements = (ndims > 0) ? 1 : 0;
+  for (std::size_t i = 0; i < ndims; ++i) {
+      ObsDimensionId dimId = static_cast<ioda::ObsDimensionId>(dim_ids[i]);
+      dimList.push_back(obss.get_dim_name(dimId));
+      numElements *= obss.get_dim_size(dimId);
+  }
+
   if (std::string(group) == "VarMetaData") ASSERT(length >= obss.nvars());
   else
-    ASSERT(length >= obss.nlocs());
-//  obss.put_db(std::string(group), std::string(vname), vec);
+    ASSERT(length >= numElements);
+//  obss.put_db(std::string(group), std::string(vname), vec, dimList);
 }
 // -----------------------------------------------------------------------------
 void obsspace_put_real32_f(ObsSpace & obss, const char * group, const char * vname,
-                           const std::size_t & length, float* vec) {
+                           const std::size_t & length, float* vec,
+                           const std::size_t & ndims, int* dim_ids) {
+  // Generate the dimension list (names) and the total number of elements required
+  // (product of dimension sizes). vec is just an allocated memory buffer in which
+  // to place the data from the ObsSpace variable.
+  std::vector<std::string> dimList;
+  int numElements = (ndims > 0) ? 1 : 0;
+  for (std::size_t i = 0; i < ndims; ++i) {
+      ObsDimensionId dimId = static_cast<ioda::ObsDimensionId>(dim_ids[i]);
+      dimList.push_back(obss.get_dim_name(dimId));
+      numElements *= obss.get_dim_size(dimId);
+  }
+
   if (std::string(group) == "VarMetaData") ASSERT(length >= obss.nvars());
   else
-    ASSERT(length >= obss.nlocs());
-//  obss.put_db(std::string(group), std::string(vname), vec);
+    ASSERT(length >= numElements);
+//  obss.put_db(std::string(group), std::string(vname), vec, dimList);
 }
 // -----------------------------------------------------------------------------
 void obsspace_put_real64_f(ObsSpace & obss, const char * group, const char * vname,
-                           const std::size_t & length, double* vec) {
+                           const std::size_t & length, double* vec,
+                           const std::size_t & ndims, int* dim_ids) {
+  // Generate the dimension list (names) and the total number of elements required
+  // (product of dimension sizes). vec is just an allocated memory buffer in which
+  // to place the data from the ObsSpace variable.
+  std::vector<std::string> dimList;
+  int numElements = (ndims > 0) ? 1 : 0;
+  for (std::size_t i = 0; i < ndims; ++i) {
+      ObsDimensionId dimId = static_cast<ioda::ObsDimensionId>(dim_ids[i]);
+      dimList.push_back(obss.get_dim_name(dimId));
+      numElements *= obss.get_dim_size(dimId);
+  }
+
   if (std::string(group) == "VarMetaData") ASSERT(length >= obss.nvars());
   else
-    ASSERT(length >= obss.nlocs());
+    ASSERT(length >= numElements);
   std::vector<double> vdata;
   vdata.assign(vec, vec + length);
-  obss.put_db(std::string(group), std::string(vname), vdata);
+
+  obss.put_db(std::string(group), std::string(vname), vdata, dimList);
+}
+// -----------------------------------------------------------------------------
+int obsspace_get_nlocs_dim_id_f() {
+  return static_cast<int>(ObsDimensionId::Nlocs);
+}
+// -----------------------------------------------------------------------------
+int obsspace_get_nchans_dim_id_f() {
+  return static_cast<int>(ObsDimensionId::Nchans);
 }
 // -----------------------------------------------------------------------------
 

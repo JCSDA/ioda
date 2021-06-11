@@ -1,5 +1,5 @@
 version: 0.2
-  
+
 env:
   parameter-store:
     GIT_USER: "/CodeBuild/Git_USER"
@@ -22,8 +22,11 @@ phases:
       - echo $CODEBUILD_WEBHOOK_TRIGGER
       - echo $CODEBUILD_WEBHOOK_BASE_REF
 
-      - ls
-      - if [ "$CODEBUILD_WEBHOOK_EVENT" = "PULL_REQUEST_MERGED" ];
+      # Codebuild only runs on PUSH events if HEAD_REF
+      # is refs/heads/develop (merge to develop). In this
+      # case CODEBUILD_GIT_BRANCH="develop"
+
+      - if [ "$CODEBUILD_WEBHOOK_EVENT" = "PUSH" ];
         then export CODEBUILD_GIT_BRANCH="develop";
         echo "Merging to develop";
         else export CODEBUILD_GIT_BRANCH=${CODEBUILD_WEBHOOK_HEAD_REF#refs/heads/};
@@ -37,13 +40,102 @@ phases:
       - echo Executing pre_build phase
       - git lfs install # creates .gitconfig
       - cp ~/.gitconfig .
+      - mkdir /build_container
+      - mkdir /jcsda
 
+      - if [ "$CODEBUILD_GIT_BRANCH" = "develop" ];
+        then export CODEBUILD_GIT_BRANCH_FORK="release-stable";
+        export CODEBUILD_GIT_BRANCH_CRTM=${CRTM_JEDI_BRANCH};
+        else export CODEBUILD_GIT_BRANCH_FORK=${CODEBUILD_GIT_BRANCH};
+        export CODEBUILD_GIT_BRANCH_CRTM=${CODEBUILD_GIT_BRANCH};
+        echo "CODEBUILD_GIT_BRANCH_FORK=${CODEBUILD_GIT_BRANCH_FORK}";
+        fi
 
-      # get jedi-build-package
-      - git clone https://$GIT_USER:$GIT_PASS@github.com/jcsda-internal/jedi-build-package
-      - cd jedi-build-package
-      - pip install --user -e .
+      # Upload branch name and commit sha as CodeBuild artifact to S3
+      - mkdir -p /jcsda/artifacts
+      - echo ${CODEBUILD_GIT_BRANCH} > /jcsda/artifacts/branch_name.txt
+      - echo ${CODEBUILD_RESOLVED_SOURCE_VERSION} > /jcsda/artifacts/commit_sha.tx
+
+      - cd CI
+
+      # jedi-cmake
+      - ./clone.sh $GIT_USER $GIT_PASS jcsda-internal/jedi-cmake $CODEBUILD_GIT_BRANCH jedicmake /jcsda/ioda-bundle develop
+
+      # ioda
+      - ./clone.sh $GIT_USER $GIT_PASS jcsda-internal/ioda $CODEBUILD_GIT_BRANCH ioda /jcsda/ioda-bundle develop
+
+      # oops
+      - ./clone.sh $GIT_USER $GIT_PASS jcsda-internal/oops $CODEBUILD_GIT_BRANCH oops /jcsda/ioda-bundle develop
+
+      # internal repos
+      #fckit
+      - ./clone.sh $GIT_USER $GIT_PASS jcsda-internal/fckit $CODEBUILD_GIT_BRANCH_FORK fckit /jcsda/ioda-bundle release-stable
+
+      # atlas
+      - ./clone.sh $GIT_USER $GIT_PASS jcsda-internal/atlas $CODEBUILD_GIT_BRANCH_FORK atlas /jcsda/ioda-bundle release-stable
+
+      # ioda-test
+      - ./clone.sh $GIT_USER $GIT_PASS jcsda-internal/ioda-data $CODEBUILD_GIT_BRANCH ioda-data /jcsda/ioda-bundle develop
+
+      - cp CMakeLists.txt /jcsda/ioda-bundle
+      - cp -r cmake /jcsda/ioda-bundle/
+      # cdash upload setup
+      - cp /jcsda/ioda-bundle/cmake/CTestConfig.cmake /jcsda/ioda-bundle
+ 
+      - chmod 777 -R /jcsda/ioda-bundle
+      - cd /jcsda/ioda-bundle
+      - ls
+
   build:
+    on-failure: CONTINUE
     commands:
-      - ~/.local/bin/jedi-build --gh-token=$GIT_PASS -j 4 --env-id=docker-clang --branch-map atlas:release-stable fckit:release-stable -br ${CODEBUILD_GIT_BRANCH} -p ioda -vvv -3 -u --submit-dashboard --site AWS --abort-on-build-errors --abort-on-test-errors
+      - echo Executing build phase
+      - echo $CODEBUILD_BUILD_SUCCEEDING
+      - export BUILD_STATUS="0"
+      - echo $BUILD_STATUS
 
+      # configure and build
+      - cd /build_container
+      - ecbuild -Wno-dev -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCDASH_OVERRIDE_GIT_BRANCH=$CODEBUILD_GIT_BRANCH -DCTEST_UPDATE_VERSION_ONLY=FALSE -DBUILD_PYTHON_BINDINGS=ON /jcsda/ioda-bundle
+      - cd /build_container/ioda
+      - cp ../DartConfiguration.tcl .
+      - sed -i 's/ioda-bundle/ioda-bundle\/ioda/' DartConfiguration.tcl
+      - sed -i 's/build_container/build_container\/ioda/' DartConfiguration.tcl
+      - cat DartConfiguration.tcl
+      - make -j4
+
+      - if [ "$CODEBUILD_BUILD_SUCCEEDING" = "1" ];
+        then export BUILD_STATUS="1";
+        echo "Build passed";
+        fi
+      - echo $BUILD_STATUS
+
+      # run ctest
+      - cd /build_container/ioda
+      - ctest -C RelWithDebInfo -D ExperimentalTest
+
+    finally:
+      - cd /build_container/ioda
+      - ctest -C RelWithDebInfo -D ExperimentalSubmit -M Continuous -- --track Continuous --group Continuous
+
+  post_build:
+    commands:
+      - echo Executing post_build phase
+      - echo $CODEBUILD_BUILD_SUCCEEDING
+      - echo $BUILD_STATUS
+
+      # upload find cdash url and upload it as CodeBuild artifact to S3
+      - if [ "$BUILD_STATUS" = "1" ];
+        then echo "Build & tests passed, find cdash url";
+        bash /jcsda/ioda-bundle/ioda/CI/cdash-url.sh /build_container/ioda/Testing;
+        url=$(bash /jcsda/ioda-bundle/ioda/CI/cdash-url.sh /build_container/ioda/Testing);
+        echo $url;
+        echo ${url} > /jcsda/artifacts/cdash-url.txt;
+        cat /jcsda/artifacts/cdash-url.txt;
+        else echo "Build failed";
+        fi
+
+artifacts:
+  files:
+    - '/jcsda/artifacts/*'
+  name: ioda-clang-url

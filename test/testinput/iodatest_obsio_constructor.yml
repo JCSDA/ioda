@@ -1,0 +1,100 @@
+---
+window begin: "2018-04-14T21:00:00Z"
+window end: "2018-04-15T03:00:00Z"
+
+observations:
+
+- obs space:
+    name: "Radiosonde"
+    simulated variables: ['temperature']
+    obsdatain:
+      obsfile: "Data/testinput_tier_1/sondes_obs_2018041500_m.nc4"
+      max frame size: 200
+    obsdataout:
+      obsfile: "testoutput/obsio_ctor_sonde_test.nc4"
+      max frame size: 5
+  test data:
+    nlocs: 974
+    nvars: 65
+    ndvars: 5
+    max var size: 974
+    write dimensions:
+      - name: "nlocs"
+        size: 8
+        unlimited: true
+      - name: "nvars"
+        size: 4
+    write variables:
+      - name: "air_temperature@ObsValue"
+        type: "float"
+        dims: [ "nlocs" ]
+        values: [ 275.0 , 291.7, 286.9, 278.7, 302.1, 305.8, 298.3, 278.6 ]
+      - name: "latitude@MetaData"
+        type: "float"
+        dims: [ "nlocs" ]
+        values: [ -21.0, -14.0 , -7.0, 0.0, 7.0, 14.0, 21.0, 28.0 ]
+      - name: "longitude@MetaData"
+        type: "float"
+        dims: [ "nlocs" ]
+        values: [ -4.0, -3.0 , -2.0, -1.0, 0.0, 1.0, 2.0, 3.0 ]
+      - name: "datetime@MetaData"
+        type: "string"
+        dims: [ "nlocs" ]
+        values: 
+          - "2018-04-15T00:01:00Z"
+          - "2018-04-15T00:01:20Z"
+          - "2018-04-15T00:01:40Z"
+          - "2018-04-15T00:02:00Z"
+          - "2018-04-15T00:02:20Z"
+          - "2018-04-15T00:02:40Z"
+          - "2018-04-15T00:03:00Z"
+          - "2018-04-15T00:03:20Z"
+      - name: "varid@MetaData"
+        type: "int"
+        dims: [ "nvars" ]
+        values:  [ 1, 2, 3, 4 ]
+
+- obs space:
+    name: "Synthetic Random"
+    simulated variables: [air_temperature, eastward_wind]
+    generate:
+      random:
+        nobs: 10   # generate 10 obs
+        lat1: 0    # with lat ranging form 0-10.
+        lat2: 10   #
+        lon1: 0    # and lon ranging from 0-10.
+        lon2: 10
+        random seed: 29837
+      obs errors: [1.0, 2.0]
+  test data:
+    nlocs: 10
+    nvars: 5
+    ndvars: 1
+    max var size: 10
+
+- obs space:
+    name: "Synthetic List"
+    simulated variables: [air_temperature, eastward_wind]
+    generate:
+      list:
+        lats: [ 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14 ]
+        lons: [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 ]
+        datetimes:
+        - "2010-01-01T00:04:00Z"
+        - "2010-01-01T00:04:12Z"
+        - "2010-01-01T00:04:24Z"
+        - "2010-01-01T00:04:36Z"
+        - "2010-01-01T00:04:48Z"
+        - "2010-01-01T00:05:00Z"
+        - "2010-01-01T00:05:12Z"
+        - "2010-01-01T00:05:24Z"
+        - "2010-01-01T00:05:36Z"
+        - "2010-01-01T00:05:48Z"
+        - "2010-01-01T00:06:00Z"
+      obs errors: [1.0, 2.0]
+  test data:
+    nlocs: 11
+    nvars: 5
+    ndvars: 1
+    max var size: 11
+

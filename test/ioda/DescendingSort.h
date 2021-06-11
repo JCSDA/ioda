@@ -29,17 +29,17 @@ namespace ioda {
 namespace test {
 
 void testDescendingSort(const eckit::LocalConfiguration &conf) {
-  // Produce and configure ObsData object
+  // Produce and configure ObsSpace object
   util::DateTime bgn(conf.getString("window begin"));
   util::DateTime end(conf.getString("window end"));
   const eckit::LocalConfiguration obsSpaceConf(conf, "obs space");
-  ioda::ObsData obsdata(obsSpaceConf, oops::mpi::world(), bgn, end, oops::mpi::myself());
+  ioda::ObsSpace obsdata(obsSpaceConf, oops::mpi::world(), bgn, end, oops::mpi::myself());
 
   // This test only works for grouped data with descending sort order
   if (obsdata.obs_sort_order() != "descending") {
     throw eckit::BadValue("Must set sort_order to descending", Here());
   }
-  if (obsdata.obs_group_var().empty()) {
+  if (obsdata.obs_group_vars().empty()) {
     throw eckit::BadValue("Must set group_variable", Here());
   }
 
@@ -49,7 +49,7 @@ void testDescendingSort(const eckit::LocalConfiguration &conf) {
   // All expected sort indices, obtained from input file
   std::vector <int> expectedIndicesAll;
   expectedIndicesAll.assign(nlocs, 0);
-  obsdata.get_db("MetaData", "expected_indices", expectedIndicesAll);
+  obsdata.get_db("MetaData", "expected_indices", expectedIndicesAll, { });
 
   // Record index for each location
   const std::vector <size_t> recnums = obsdata.recnum();
@@ -73,6 +73,7 @@ void testDescendingSort(const eckit::LocalConfiguration &conf) {
                                   expectedRecordIndices.begin());
     EXPECT(equal);
   }
+  obsdata.save();
 }
 
 class DescendingSort : public oops::Test {

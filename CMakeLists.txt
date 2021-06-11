@@ -1,5 +1,5 @@
 #
-# (C) Copyright 2017-2020 UCAR.
+# (C) Copyright 2017-2021 UCAR.
 #
 # This software is licensed under the terms of the Apache Licence Version 2.0
 # which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -9,7 +9,13 @@
 ################################################################################
 
 cmake_minimum_required( VERSION 3.12 )
-project( ioda VERSION 1.0.0 LANGUAGES CXX Fortran )
+option(IODA_BUILD_LANGUAGE_FORTRAN "Build Fortran bindings." ON)
+list( APPEND IODA_LANGUAGES CXX)
+if (IODA_BUILD_LANGUAGE_FORTRAN)
+	list( APPEND IODA_LANGUAGES Fortran)
+endif()
+
+project( ioda VERSION 2.0.0 LANGUAGES ${IODA_LANGUAGES} )
 
 ## Ecbuild integration
 find_package( ecbuild QUIET )
@@ -25,14 +31,23 @@ option( ENABLE_IODA_DOC "Build IODA documentation" OFF )
 ## Dependencies
 
 # Required
+find_package( jedicmake QUIET )  # Prefer find modules from jedi-cmake
+find_package( OpenMP COMPONENTS C CXX Fortran )
+set(HDF5_PREFER_PARALLEL true) # CMake sometimes mistakenly finds a serial system-provided HDF5.
+find_package( HDF5 REQUIRED COMPONENTS C HL )
+find_package( MPI REQUIRED )
 find_package( NetCDF REQUIRED COMPONENTS C )
+find_package( jedicmake REQUIRED )
+find_package( eckit 1.11.6 REQUIRED )
 find_package( fckit 0.7.0 REQUIRED )
 find_package( oops 1.0.0 REQUIRED )
 
 ## Sources
-add_subdirectory( src )
-add_subdirectory( test )
-add_subdirectory( tools )
+add_subdirectory( src/engines ) # `ioda_engines` target
+add_subdirectory( src )         # `ioda` target
+add_subdirectory( src/mains )    # ioda executable targets
+add_subdirectory( test )        # ioda ctests
+add_subdirectory( tools )       # misc tools
 
 if( ENABLE_IODA_DOC )
     add_subdirectory( docs )
@@ -49,3 +64,4 @@ ecbuild_add_test( TARGET ${PROJECT_NAME}_coding_norms
 ecbuild_install_project( NAME ${PROJECT_NAME} )
 
 ecbuild_print_summary()
+

@@ -13,13 +13,13 @@
 #include <string>
 #include <vector>
 
-#include "ioda/ObsDataVector.h"
 #include "ioda/ObsSpace.h"
 #include "oops/base/Variables.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
 
 namespace ioda {
+  template <typename DATATYPE> class ObsDataVector;
 
 //-----------------------------------------------------------------------------
 /*! \brief ObsVector class to handle vectors in observation space for IODA
@@ -35,10 +35,8 @@ class ObsVector : public util::Printable,
  public:
   static const std::string classname() {return "ioda::ObsVector";}
 
-  ObsVector(ObsSpace &,
-            const std::string & name = "", const bool fail = true);
+  explicit ObsVector(ObsSpace &, const std::string & name = "");
   ObsVector(const ObsVector &);
-  ObsVector(ObsSpace &, const ObsVector &);
   ~ObsVector();
 
   ObsVector & operator = (const ObsVector &);
@@ -48,22 +46,47 @@ class ObsVector : public util::Printable,
   ObsVector & operator*= (const ObsVector &);
   ObsVector & operator/= (const ObsVector &);
 
+  ObsVector & operator = (const ObsDataVector<float> &);
+
   void zero();
-  void axpy(const double &, const ObsVector &);
+  /// set all elements to one (used in tests)
+  void ones();
+  /// adds \p beta * \p y to the current vector
+  void axpy(const double & beta, const ObsVector & y);
+  /// adds \p beta[ivar] * \p y[ivar] for each variable in the current
+  /// vector. \p beta has to be size of variables
+  void axpy(const std::vector<double> & beta, const ObsVector & y);
+
   void invert();
   void random();
-  double dot_product_with(const ObsVector &) const;
+
+  /// global (across all MPI tasks) dot product of this with \p other
+  double dot_product_with(const ObsVector & other) const;
+  /// global (across all MPI tasks) dot product of this with \p other,
+  /// variable by variable. Returns vectors size of nvars_
+  std::vector<double> multivar_dot_product_with(const ObsVector & other) const;
+
   double rms() const;
 
   std::size_t size() const {return values_.size();}  // Size of vector in local memory
   const double & operator[](const std::size_t ii) const {return values_.at(ii);}
   double & operator[](const std::size_t ii) {return values_.at(ii);}
-  unsigned int nobs() const;  // Number of active observations (missing values not included)
-  Eigen::VectorXd  packEigen() const;
+
+  /// Number of active observations (missing values not included) across all MPI tasks
+  unsigned int nobs() const;
+
+  /// Pack observations local to this MPI task into an Eigen vector
+  /// (excluding vector elements that are masked out)
+  Eigen::VectorXd  packEigen(const ObsDataVector<int> &) const;
+  /// Number of non-masked out observations local to this MPI task
+  /// (size of an Eigen vector returned by `packEigen`
+  size_t packEigenSize(const ObsDataVector<int> &) const;
 
   const double & toFortran() const;
   double & toFortran();
 
+  ObsSpace & space() {return obsdb_;}
+  const ObsSpace & space() const {return obsdb_;}
   const std::string & obstype() const {return obsdb_.obsname();}
   const oops::Variables & varnames() const {return obsvars_;}
   std::size_t nvars() const {return nvars_;}
@@ -75,7 +98,7 @@ class ObsVector : public util::Printable,
 
 // I/O
   void save(const std::string &) const;
-  void read(const std::string &, const bool fail = true);
+  void read(const std::string &);
 
  private:
   void print(std::ostream &) const;
