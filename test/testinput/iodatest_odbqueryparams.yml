@@ -1,0 +1,12 @@
+ODB Parameters:
+  - where:
+    - varno: ALL
+      variable:
+      - name: "obsvalue"
+        min value: 1
+      - name: "fg_depar"
+        is defined: true
+    - varno: [1, 3]
+      variable:
+      - name: "obsvalue"
+        max value: 5

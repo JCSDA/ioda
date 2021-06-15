@@ -40,6 +40,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_descendingsort.yml
   testinput/iodatest_extendedobsspace.yml
   testinput/iodatest_extendedobsspace_halo.yml
+  testinput/iodatest_odbqueryparams.yml
 )
 
 # Set up test input files (YAML configuration)
@@ -251,7 +252,13 @@ ecbuild_add_test( TARGET  test_ioda_distribution_methods
                   ARGS    "testinput/iodatest_distribution_methods.yml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
-
+#####################################################################
+# Parameters tests
+#####################################################################
+ecbuild_add_test( TARGET  test_ioda_odbquery_parameters
+                  SOURCES mains/TestOdbQueryParameters.cc
+                  ARGS    "testinput/iodatest_odbqueryparams.yml"
+                  LIBS    ioda_test )
 #####################################################################
 # ObsSpace tests
 #####################################################################

@@ -8,6 +8,8 @@ ObsSpaceParameters.cc
 ObsSpaceParameters.h
 ObsVector.cc
 ObsVector.h
+OdbQueryParameters.h
+OdbQueryParameters.cc
 
 core/IodaUtils.cc
 core/IodaUtils.h
