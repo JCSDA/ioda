@@ -56,7 +56,7 @@ CASE("Convert variables") {
           {
             NewDimensionScale<int>("nlocs", locations, ioda::Unlimited, locations),
             NewDimensionScale<int>("nchans", channels, channels, channels) },
-          detail::DataLayoutPolicy::generate(detail::DataLayoutPolicy::Policies::ObsGroupODB,
+          detail::DataLayoutPolicy::generate("ObsGroupODB",
                                              mappingFile));
 
   std::vector<double> expectedValue = {0.0, 50.0, 100.0};

@@ -14,6 +14,7 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 #include <typeindex>
 #include <utility>
 
@@ -56,15 +57,21 @@ public:
   /// Factory generator (ODB-specific)
   /// \p mapPath path to a yaml file that defines how input file variables should be renamed
   ///   upon import to ioda.
-  static std::shared_ptr<const DataLayoutPolicy> generate(const std::string &polid,
-                                                          const std::string &mapPath);
+  /// \p nonODBVariables variables such as nlocs which are not declared as either keys or
+  /// values in the mapping yaml file. Needs to be filled out to prevent an exception.
+  static std::shared_ptr<const DataLayoutPolicy> generate(
+      const std::string &polid, const std::string &mapPath,
+      const std::vector<std::string> &nonODBVariables = {});
   /// Factory generator.
   static std::shared_ptr<const DataLayoutPolicy> generate(Policies pol = Policies::None);
   /// Factory generator (ODB-specific)
   /// \p mapPath path to a yaml file that defines how input file variables should be renamed
   ///   upon import to ioda.
-  static std::shared_ptr<const DataLayoutPolicy> generate(Policies pol,
-                                                          const std::string &mapPath);
+  /// \p nonODBVariables variables such as nlocs which are not declared as either keys or
+  /// values in the mapping yaml file. Needs to be filled out to prevent an exception.
+  static std::shared_ptr<const DataLayoutPolicy> generate(
+      Policies pol, const std::string &mapPath,
+      const std::vector<std::string> &nonODBVariables = {});
   /// \internal pybind11 overload casts do not work on some compilers.
   static inline std::shared_ptr<const DataLayoutPolicy> _py_generate1(const std::string &polid) {
     return generate(polid);
@@ -97,6 +104,9 @@ public:
 
   /// Check if the named variable is in the Variables section of the ODB mapping file.
   virtual bool isMapped(const std::string &) const;
+
+  /// Check if the named variable matches one of the output (ioda) names.
+  virtual bool isMapOutput(const std::string &) const;
 
   /// Returns the position of the input variable in the derived variable.
   /// \throws If the input is not part of a derived variable.

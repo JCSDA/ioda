@@ -55,17 +55,19 @@ class IODA_DL DataLayoutPolicy_ObsGroup_ODB : public DataLayoutPolicy {
   std::string doMap(const std::string &) const override;
   bool isComplementary(const std::string &) const override;
   bool isMapped(const std::string &) const override;
+  bool isMapOutput(const std::string &) const override;
   size_t getComplementaryPosition(const std::string &) const override;
   size_t getInputsNeeded(const std::string &) const override;
   DataLayoutPolicy::MergeMethod getMergeMethod(const std::string &) const override;
   std::pair<bool,std::string> getUnit(const std::string &) const override;
   std::string getOutputNameFromComponent(const std::string &) const override;
   std::type_index getOutputVariableDataType(const std::string &) const override;
-  DataLayoutPolicy_ObsGroup_ODB(const std::string &);
+  DataLayoutPolicy_ObsGroup_ODB(const std::string &, const std::vector<std::string> & = {});
   /// A descriptive name for the policy.
   std::string name() const override;
  private:
   void parseMappingFile(const std::string &);
+  void addUnchangedVariableName(const std::string &);
   void parseNameChanges();
   void parseComponentVariables();
   DataLayoutPolicy::MergeMethod parseMergeMethod(const std::string &);

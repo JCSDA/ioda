@@ -53,7 +53,7 @@ CASE("Stitch variables, remove originals defaulted as true") {
   ObsGroup og = ObsGroup::generate(
           backend, newDims,
           detail::DataLayoutPolicy::generate(detail::DataLayoutPolicy::Policies::ObsGroupODB,
-                                             mappingFile));
+                                             mappingFile, {"nlocs", "nchans"}));
 
   EXPECT(og.vars.exists(str("completeCombinationPart1")));
   EXPECT(og.vars.exists(str("completeCombinationPart2")));
@@ -115,7 +115,7 @@ CASE("Stitch variables, remove originals set to false") {
   ObsGroup og = ObsGroup::generate(
           backend, newDims,
           detail::DataLayoutPolicy::generate(detail::DataLayoutPolicy::Policies::ObsGroupODB,
-                                             mappingFile));
+                                             mappingFile, {"nlocs", "nchans"}));
   EXPECT(og.vars.exists(str("completeCombinationPart1")));
   EXPECT(og.vars.exists(str("completeCombinationPart2")));
   EXPECT(og.vars.exists(str("completeCombinationPart3")));

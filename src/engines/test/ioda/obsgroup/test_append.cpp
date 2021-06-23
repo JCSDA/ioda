@@ -14,6 +14,7 @@
 #include <typeinfo>
 
 #include "Eigen/Dense"
+#include "eckit/testing/Test.h"
 #include "ioda/Engines/Factory.h"
 #include "ioda/Exception.h"
 #include "ioda/Layout.h"
@@ -95,12 +96,6 @@ void test_obsgroup_helper_funcs(std::string backendType, std::string fileName,
             NewDimensionScale<int>("nlocs", locations, ioda::Unlimited, locations),
             NewDimensionScale<int>("nchans", channels, channels, channels)
           });
-  } else if (mappingFile == "") {
-    og = ObsGroup::generate(
-          backend, {
-            NewDimensionScale<int>("nlocs", locations, ioda::Unlimited, locations),
-            NewDimensionScale<int>("nchans", channels, channels, channels)
-          });
   } else {
     og = ObsGroup::generate(
           backend,
@@ -110,7 +105,7 @@ void test_obsgroup_helper_funcs(std::string backendType, std::string fileName,
             NewDimensionScale<int>(
             "nchans", channels, channels, channels) },
           detail::DataLayoutPolicy::generate(detail::DataLayoutPolicy::Policies::ObsGroupODB,
-                                             mappingFile));
+                                             mappingFile, {"nlocs", "nchans"}));
   }
   Variable nlocs_var = og.vars.open("nlocs");
   nlocs_var.write(nLocs1);
@@ -124,13 +119,37 @@ void test_obsgroup_helper_funcs(std::string backendType, std::string fileName,
   float_params.compressWithGZIP();
   float_params.setFillValue<float>(-999);
 
-  Variable obs_var = og.vars.createWithScales<float>("ObsValue/myObs", {nlocs_var, nchans_var}, float_params);
+  Variable obs_var;
+  Variable lat_var;
+  Variable lon_var;
+  if (backendType == "fileRemapped") {
+    obs_var = og.vars.createWithScales<float>("ObsValue_renamed/myObs_renamed", {nlocs_var, nchans_var}, float_params);
 
-  og.vars.createWithScales<float>("MetaData/latitude", {nlocs_var}, float_params);
-  Variable lat_var = og.vars.open("MetaData/latitude");
+    og.vars.createWithScales<float>("MetaData_renamed/latitude_renamed", {nlocs_var}, float_params);
+    lat_var = og.vars.open("MetaData/latitude");
 
-  og.vars.createWithScales<float>("MetaData/longitude", {nlocs_var}, float_params);
-  Variable lon_var = og.vars["MetaData/longitude"];
+    og.vars.createWithScales<float>("MetaData_renamed/longitude_renamed", {nlocs_var}, float_params);
+    lon_var = og.vars["MetaData/longitude"];
+
+    // Now testing that creating a variable not specified in mapping throws an exception
+    bool unspecifiedVariableThrows = false;
+    try {
+      og.vars.createWithScales<float>("Foo/bar", {nlocs_var}, float_params);
+    } catch (Exception) {
+      unspecifiedVariableThrows = true;
+    }
+    if (!unspecifiedVariableThrows) {
+      throw Exception("Foo/bar did not throw an exception");
+    }
+  } else {
+    obs_var = og.vars.createWithScales<float>("ObsValue/myObs", {nlocs_var, nchans_var}, float_params);
+
+    og.vars.createWithScales<float>("MetaData/latitude", {nlocs_var}, float_params);
+    lat_var = og.vars.open("MetaData/latitude");
+
+    og.vars.createWithScales<float>("MetaData/longitude", {nlocs_var}, float_params);
+    lon_var = og.vars["MetaData/longitude"];
+  }
 
   // Add attributes to variables
   obs_var.atts.add<std::string>("coordinates", {"longitude latitude nchans"}, {1})
@@ -230,12 +249,27 @@ int main(int argc, char** argv) {
       std::cout << "Testing memory backend" << std::endl;
       test_obsgroup_helper_funcs(backendType, {""});
     } else if (backendType == "fileRemapped") {
-      test_obsgroup_helper_funcs(backendType, {"ioda-engines_obsgroup_append-remapped-file.hdf5"});
-      // Layout_ObsGroup_ODB runs identically to Layout_ObsGroup if a yaml file is not provided
       std::cout << "Testing ODB Data Layout Policy with explicit mapping file" << std::endl;
       std::string mappingFile = std::string(IODA_ENGINES_TEST_SOURCE_DIR)
         + "/obsgroup/odb_default_name_map.yaml";
       test_obsgroup_helper_funcs(backendType, {"append-remapped.hdf5"}, mappingFile);
+      std::cout << "Testing ODB Data Layout Policy with explicit mapping file" << std::endl;
+      mappingFile = std::string(IODA_ENGINES_TEST_SOURCE_DIR)
+        + "/obsgroup/odb_incomplete_name_map.yaml";
+      bool failedWhenNotAllVarsRemapped = false;
+      try {
+        test_obsgroup_helper_funcs(backendType, {"append-remapped.hdf5"}, mappingFile);
+      } catch (const std::exception &e) {
+        failedWhenNotAllVarsRemapped = true;
+      }
+      bool odbGroupFailedWithoutMapping = false;
+      // Layout_ObsGroup_ODB throws an exception if mapping yaml file not provided
+      try {
+        test_obsgroup_helper_funcs(backendType, {"ioda-engines_obsgroup_append-remapped-file.hdf5"});
+      } catch (const std::exception& e) {
+        odbGroupFailedWithoutMapping = true;
+      }
+      assert(odbGroupFailedWithoutMapping && failedWhenNotAllVarsRemapped);
     } else {
       throw ioda::Exception("Unrecognized backend type:", ioda_Here())
               .add("Backend type", backendType);

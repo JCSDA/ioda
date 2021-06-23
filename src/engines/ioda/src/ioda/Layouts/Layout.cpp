@@ -26,36 +26,60 @@
 namespace ioda {
 namespace detail {
 std::shared_ptr<const DataLayoutPolicy> DataLayoutPolicy::generate(const std::string &polid) {
-  if (polid == "ObsGroup" || polid == "ObsGroupODB")
+  if (polid == "ObsGroup") {
     return std::make_shared<DataLayoutPolicy_ObsGroup>();
+  } else if (polid == "ObsGroupODB") {
+    throw Exception("A mapping file is required for the ODB Data Layout Policy.", ioda_Here());
+  }
   return std::make_shared<DataLayoutPolicy>();
 }
 
 std::shared_ptr<const DataLayoutPolicy> DataLayoutPolicy::generate(Policies pol) {
-  if (pol == Policies::ObsGroup || pol == Policies::ObsGroupODB) return std::make_shared<DataLayoutPolicy_ObsGroup>();
+  if (pol == Policies::ObsGroup) {
+    return std::make_shared<DataLayoutPolicy_ObsGroup>();
+  } else if (pol == Policies::ObsGroupODB) {
+    throw Exception("A mapping file is required for the ODB Data Layout Policy.", ioda_Here());
+  }
   return std::make_shared<DataLayoutPolicy>();
 }
 
-std::shared_ptr<const DataLayoutPolicy> DataLayoutPolicy::generate(const std::string &polid, const std::string &mapPath) {
+std::shared_ptr<const DataLayoutPolicy> DataLayoutPolicy::generate(
+    const std::string &polid, const std::string &mapPath,
+    const std::vector<std::string> &nonODBVariables) {
+  std::string errorMessage;
   if (polid != "ObsGroupODB")
-    throw Exception("A mapping file is only relevant for the ODB Data Layout.", ioda_Here());
+    errorMessage = "A mapping file is not relevant for the policy '" + polid + "'.";
+
+    throw Exception(errorMessage.c_str(), ioda_Here());
 #ifdef ENABLE_ODB_LAYOUT
-  return std::make_shared<DataLayoutPolicy_ObsGroup_ODB>(mapPath);
+  return std::make_shared<DataLayoutPolicy_ObsGroup_ODB>(mapPath, nonODBVariables);
 #else
-  throw Exception("Cannot generate this policy, as either eckit or oops are disabled.",
-                  ioda_Here());
+  errorMessage = "Cannot generate the policy '" + polid + "', as either eckit or oops are disabled.";
+  throw Exception(errorMessage.c_str(), ioda_Here());
 #endif
 }
 
-std::shared_ptr<const DataLayoutPolicy> DataLayoutPolicy::generate(Policies pol,
-                                                                   const std::string &mapPath) {
-  if (pol != Policies::ObsGroupODB)
-    throw Exception("A mapping file is only relevant for the ODB Data Layout.", ioda_Here());
+std::shared_ptr<const DataLayoutPolicy> DataLayoutPolicy::generate(
+    Policies pol, const std::string &mapPath, const std::vector<std::string> &nonODBVariables) {
+  std::string policyId;
+  if (pol == Policies::None) {
+    policyId = "None";
+  } else if (pol == Policies::ObsGroup) {
+    policyId = "ObsGroup";
+  } else if (pol == Policies::ObsGroupODB) {
+    policyId = "ObsGroupODB";
+  }
+  std::string errorMessage;
+  if (pol != Policies::ObsGroupODB) {
+    errorMessage = "A mapping file is not relevant for the policy '" + policyId + "'.";
+    throw Exception(errorMessage.c_str(), ioda_Here());
+  }
 #ifdef ENABLE_ODB_LAYOUT
-  return std::make_shared<DataLayoutPolicy_ObsGroup_ODB>(mapPath);
+  return std::make_shared<DataLayoutPolicy_ObsGroup_ODB>(mapPath, nonODBVariables);
 #else
-  throw Exception("Cannot generate this policy, as either eckit or oops are disabled.",
-                  ioda_Here());
+  errorMessage = "Cannot generate the policy '" + policyId +
+      "', as eckit or oops are disabled.";
+  throw Exception(errorMessage.c_str(), ioda_Here());
 #endif
 }
 
@@ -72,6 +96,8 @@ std::string DataLayoutPolicy::doMap(const std::string &str) const { return str; 
 bool DataLayoutPolicy::isComplementary(const std::string &str) const { return false; }
 
 bool DataLayoutPolicy::isMapped(const std::string &) const { return false; }
+
+bool DataLayoutPolicy::isMapOutput(const std::string &) const { return false; }
 
 size_t DataLayoutPolicy::getComplementaryPosition(const std::string &str) const {
   throw Exception("Illogical operation for non-ODB data layout policies.", ioda_Here());

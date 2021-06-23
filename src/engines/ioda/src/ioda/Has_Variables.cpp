@@ -374,6 +374,13 @@ Variable Has_Variables_Base::create(const std::string& name, const Type& in_memo
     auto newVar = backend_->create(layout_->doMap(name), in_memory_dataType, dimensions,
                                    fixed_max_dimensions, params);
     params.applyImmediatelyAfterVariableCreation(newVar);
+    if (layout_->name() == std::string("ObsGroup ODB v1") && !(layout_->isMapped(name) ||
+                                                               layout_->isComplementary(name) ||
+                                                               layout_->isMapOutput(name))) {
+      std::string eMessage = "The following variable was not remapped in the YAML file: '" + name +
+        "'. Ensure that the fundamental dimensions are declared in 'generate'.";
+      throw Exception(eMessage.c_str());
+    }
     return newVar;
   } catch (...) {
     std::throw_with_nested(Exception(
