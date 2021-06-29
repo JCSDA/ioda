@@ -133,7 +133,6 @@ void ObsFrameWrite::copyObsIoDimCoords(const Has_Variables & srcVarContainer,
         std::string dimVarName = dimVarNameObject.first;
         Variable srcDimVar = srcVarContainer.open(dimVarName);
         Variable destDimVar = destVarContainer.open(dimVarName);
-        std::cout << "DEBUG: dim var name: " << dimVarName << std::endl;
 
         // Set up the dimension selection objects.
         std::vector<Dimensions_t> srcDimShape = srcDimVar.getDimensions().dimsCur;
