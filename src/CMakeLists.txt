@@ -19,6 +19,8 @@ core/ParameterTraitsObsDtype.cc
 core/ParameterTraitsObsDtype.h
 
 distribution/Accumulator.h
+distribution/AtlasDistribution.cc
+distribution/AtlasDistribution.h
 distribution/Distribution.cc
 distribution/Distribution.h
 distribution/DistributionFactory.cc

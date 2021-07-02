@@ -4,10 +4,16 @@ window end: "2015-08-10T03:00:00Z"
 
 # 
 distribution types:
-  - distribution: "Round Robin"
-    name: "RoundRobin"
-  - distribution: "Inefficient"
-    name: "InefficientDistribution"
+  - distribution: "RoundRobin"
+  - distribution: "InefficientDistribution"
   - distribution: "Halo"
-    name: "Halo"
+  - distribution: "Atlas"
+    grid:
+      type: regular_lonlat
+      nx: 6
+      ny: 8
+      halo: 1
+      global: true
+      include_pole: false
+      partitioner: equal_regions
 
