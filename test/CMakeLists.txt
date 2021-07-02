@@ -115,13 +115,14 @@ elseif( DEFINED GIT_TAG_FUNC )
         ${IODA_DOWNLOAD_BASE_URL}
         ${CMAKE_SOURCE_DIR}/test-data-release
         ${ioda_test_data}
-        ${checksum} )
+        ${GIT_TAG_FUNC}
+        ioda)
   message( STATUS "Test data will be downloaded from: ${IODA_DOWNLOAD_BASE_URL}" )
 
   # Create test-data-release in source directory
   file( MAKE_DIRECTORY ${CMAKE_SOURCE_DIR}/test-data-release )
 
-  set ( IODA_DATA_DOWNLOADER ioda_data_downloader.py )
+  set ( IODA_DATA_DOWNLOADER ioda_dash_downloader.py.in )
 else()
   # Any branch of IODA is being built.
   # ioda-data repository is already cloned by bundle/CMakeLists.txt.

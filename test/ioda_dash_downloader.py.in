@@ -1,0 +1,48 @@
+#!/usr/bin/env python3
+
+import os
+import sys
+import stat
+import tarfile
+import urllib.request
+import shutil
+
+bucket_name = "jedi-test-files"
+
+download_base_url = sys.argv[1]
+testfiles_path = sys.argv[2]
+testfiles_name = sys.argv[3]
+repo_branch = sys.argv[4]
+repo_name = sys.argv[5]
+
+def DownloadUntar(download_base_url, testfiles_path, testfiles_name):
+  urllib.request.urlretrieve( download_base_url+"/"+testfiles_name, testfiles_path+"/"+testfiles_name)
+  tar_file = tarfile.open(testfiles_path+"/"+testfiles_name)
+  # untar dash data in a clean dash_data directory 
+  if os.path.exists(testfiles_path+"/dash_data"):
+    shutil.rmtree(testfiles_path+"/dash_data", ignore_errors=False, onerror=None)
+  tar_file.extractall(testfiles_path+"/dash_data")
+  tar_file.close()
+
+
+def CheckTag(testfiles_path, testfiles_name, repo_branch):
+  # determine test data tag version after untar
+  # if test data tag version is different from repo tag, link
+  data_branch = os.listdir(testfiles_path+"/dash_data/"+repo_name)
+  if data_branch[0] != repo_branch:
+    print("Latest tag available for "+repo_name+" test data is "+data_branch[0])
+    if not os.path.exists(testfiles_path+"/"+repo_name):
+      os.mkdir(testfiles_path+"/"+repo_name)
+    
+    # removing the existing link and creating a new one 
+    if os.path.exists(testfiles_path+"/"+repo_name+"/"+repo_branch):
+      os.remove(testfiles_path+"/"+repo_name+"/"+repo_branch) 
+    os.symlink(testfiles_path+"/dash_data/"+repo_name+"/"+data_branch[0], testfiles_path+"/"+repo_name+"/"+repo_branch)
+
+# downloading release data from DASH
+if os.path.isfile(testfiles_path+"/"+testfiles_name):
+  print("local RELEASE file found in "+ testfiles_path+"/"+testfiles_name)
+else:
+  print ("downloading RELEASE data from "+download_base_url+"/"+testfiles_name)
+  DownloadUntar(download_base_url, testfiles_path, testfiles_name)
+  CheckTag(testfiles_path, testfiles_name, repo_branch)
