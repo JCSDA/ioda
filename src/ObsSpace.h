@@ -240,13 +240,20 @@ namespace ioda {
         /// `ObsSpace::index()` will return `0, 1, 4, 5, 6, 8, 9`.
         const std::vector<std::size_t> & index() const {return indx_;}
 
-        /// \brief return true if group/variable exists
-        bool has(const std::string & group, const std::string & name) const;
+        /// \brief return true if variable `name` exists in group `group` or (unless `skipDerived`
+        /// is set to true) `"Derived" + `group`.
+        bool has(const std::string & group, const std::string & name,
+                 bool skipDerived = false) const;
 
         /// \brief return data type for group/variable
         /// \param group Group name containting the variable
         /// \param name Variable name
-        ObsDtype dtype(const std::string & group, const std::string & name) const;
+        /// \param skipDerived
+        ///   By default, this function will look for the variable `name` in the group `"Derived" +
+        ///   group` first and only if it doesn't exist will it look in the group `group`. Set this
+        ///   parameter to `true` to look only in the group `group`.
+        ObsDtype dtype(const std::string & group, const std::string & name,
+                       bool skipDerived = false) const;
 
         /// \brief transfer data from the obs container to vdata
         ///
@@ -258,21 +265,30 @@ namespace ioda {
         /// \param name  Name of container variable
         /// \param vdata Vector where container data is being transferred to
         /// \param chanSelect Channel selection (list of channel numbers)
+        /// \param skipDerived
+        ///   By default, this function will look for the variable `name` in the group `"Derived" +
+        ///   group` first and only if it doesn't exist will it look in the group `group`. Set this
+        ///   parameter to `true` to look only in the group `group`.
         void get_db(const std::string & group, const std::string & name,
                     std::vector<int> & vdata,
-                    const std::vector<int> & chanSelect = { }) const;
+                    const std::vector<int> & chanSelect = { },
+                    bool skipDerived = false) const;
         void get_db(const std::string & group, const std::string & name,
                     std::vector<float> & vdata,
-                    const std::vector<int> & chanSelect = { }) const;
+                    const std::vector<int> & chanSelect = { },
+                    bool skipDerived = false) const;
         void get_db(const std::string & group, const std::string & name,
                     std::vector<double> & vdata,
-                    const std::vector<int> & chanSelect = { }) const;
+                    const std::vector<int> & chanSelect = { },
+                    bool skipDerived = false) const;
         void get_db(const std::string & group, const std::string & name,
                     std::vector<std::string> & vdata,
-                    const std::vector<int> & chanSelect = { }) const;
+                    const std::vector<int> & chanSelect = { },
+                    bool skipDerived = false) const;
         void get_db(const std::string & group, const std::string & name,
                     std::vector<util::DateTime> & vdata,
-                    const std::vector<int> & chanSelect = { }) const;
+                    const std::vector<int> & chanSelect = { },
+                    bool skipDerived = false) const;
 
         /// \brief transfer data from vdata to the obs container
         ///
@@ -328,11 +344,20 @@ namespace ioda {
         /// \brief return all record numbers from the recidx_ data member
         std::vector<std::size_t> recidx_all_recnums() const;
 
-        /// \brief return oops variables object (simulated variables)
-       const oops::Variables & obsvariables() const {return obsvars_;}
+        /// \brief return the collection of all simulated variables
+        const oops::Variables & obsvariables() const {return obsvars_;}
 
-       /// \brief return MPI distribution object
-       std::shared_ptr<const Distribution> distribution() const { return dist_;}
+        /// \brief return the collection of simulated variables loaded from the input file
+        const oops::Variables & initial_obsvariables() const
+        { return obs_params_.top_level_.simVars; }
+
+        /// \brief return the collection of derived simulated variables (variables computed
+        /// after loading the input file)
+        const oops::Variables & derived_obsvariables() const
+        { return obs_params_.top_level_.derivedSimVars; }
+
+        /// \brief return MPI distribution object
+        std::shared_ptr<const Distribution> distribution() const { return dist_;}
 
      private:
         // ----------------------------- private data members ---------------------------
@@ -417,6 +442,10 @@ namespace ioda {
         /// \param params object containing specs for extending the ObsSpace
         void extendObsSpace(const ObsExtendParameters & params);
 
+        /// \brief For each derived simulated variable that doesn't have an accompanying array
+        /// in the ObsError group, create one and fill it with missing values.
+        void createObsErrorsForDerivedSimulatedVariables();
+
         /// \brief Dump the database into the output file
         void saveToFile();
 
@@ -475,10 +504,14 @@ namespace ioda {
         /// \param name Name of Variable in group
         /// \param selectChan Vector of channel numbers for selection
         /// \param varValues memory to load from obs_group_ variable
+        /// \param skipDerived
+        ///   By default, this function will search for the variable `name` both in the group
+        ///   `group` and `"Derived" + group`. Set this parameter to `true` to search only in the
+        ///   group `group`.
         template<typename VarType>
         void loadVar(const std::string & group, const std::string & name,
                      const std::vector<int> & chanSelect,
-                     std::vector<VarType> & varValues) const;
+                     std::vector<VarType> & varValues, bool skipDerived = false) const;
 
         /// \brief save a variable to the obs_group_ object
         /// \param group Name of Group in obs_group_
@@ -558,9 +591,14 @@ namespace ioda {
         /// \param name Name of Variable in group
         /// \param selectChan Vector of channel numbers for selection
         /// \param varName Name of Variable after splitting off the channel number
+        /// \param skipDerived
+        ///   By default, this function will search for the variable `name` both in the group
+        ///   `group` and `"Derived" + group`. Set this parameter to `true` to search only in the
+        ///   group `group`.
         void splitChanSuffix(const std::string & group, const std::string & name,
-                     const std::vector<int> & chanSelect, std::string & nameToUse,
-                     std::vector<int> & chanSelectToUse) const;
+                             const std::vector<int> & chanSelect, std::string & nameToUse,
+                             std::vector<int> & chanSelectToUse,
+                             bool skipDerived = false) const;
 
         /// \brief Extend the given variable
         /// \param extendVar database variable to be extended

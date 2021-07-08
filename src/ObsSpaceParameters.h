@@ -189,6 +189,10 @@ class ObsTopLevelParameters : public oops::Parameters {
     /// simulated variables
     oops::RequiredParameter<oops::Variables> simVars{"simulated variables", this};
 
+    /// Simulated variables whose observed values may be absent from the input file, but must be
+    /// created (computed) by the start of the data assimilation stage.
+    oops::Parameter<oops::Variables> derivedSimVars{"derived simulated variables", {}, this};
+
     /// Halo distribution center
     oops::OptionalParameter<std::vector<float>> haloCenter{"center", this};
 

@@ -124,6 +124,12 @@ ObsSpace::ObsSpace(const eckit::Configuration & config, const eckit::mpi::Comm &
 
     obsname_ = obs_params_.top_level_.obsSpaceName;
     obsvars_ = obs_params_.top_level_.simVars;
+    if (obs_params_.top_level_.derivedSimVars.value().size() != 0) {
+      // As things stand, this assert cannot fail, since both variables take the list of channels
+      // from the same "channels" YAML option.
+      ASSERT(obs_params_.top_level_.derivedSimVars.value().channels() == obsvars_.channels());
+      obsvars_ += obs_params_.top_level_.derivedSimVars;
+    }
     oops::Log::info() << this->obsname() << " vars: " << obsvars_ << std::endl;
 
     // Open the source (ObsFrame) of the data for initializing the obs_group_ (ObsGroup)
@@ -158,6 +164,8 @@ ObsSpace::ObsSpace(const eckit::Configuration & config, const eckit::mpi::Comm &
     if (obs_params_.top_level_.obsExtend.value() != boost::none) {
         extendObsSpace(*(obs_params_.top_level_.obsExtend.value()));
     }
+
+    createObsErrorsForDerivedSimulatedVariables();
 
     oops::Log::debug() << obsname() << ": " << globalNumLocsOutsideTimeWindow()
       << " observations are outside of time window out of "
@@ -227,27 +235,33 @@ std::string ObsSpace::obs_sort_order() const {
  *          in the obs container. If the combination exists, "true" is returned,
  *          otherwise "false" is returned.
  */
-bool ObsSpace::has(const std::string & group, const std::string & name) const {
+bool ObsSpace::has(const std::string & group, const std::string & name, bool skipDerived) const {
     // For backward compatibility, recognize and handle appropriately variable names with
     // channel suffixes.
     std::string nameToUse;
     std::vector<int> chanSelectToUse;
-    splitChanSuffix(group, name, { }, nameToUse, chanSelectToUse);
-    return obs_group_.vars.exists(fullVarName(group, nameToUse));
+    splitChanSuffix(group, name, { }, nameToUse, chanSelectToUse, skipDerived);
+    return obs_group_.vars.exists(fullVarName(group, nameToUse)) ||
+           (!skipDerived && obs_group_.vars.exists(fullVarName("Derived" + group, nameToUse)));
 }
 
 // -----------------------------------------------------------------------------
-ObsDtype ObsSpace::dtype(const std::string & group, const std::string & name) const {
+ObsDtype ObsSpace::dtype(const std::string & group, const std::string & name,
+                         bool skipDerived) const {
     // For backward compatibility, recognize and handle appropriately variable names with
     // channel suffixes.
     std::string nameToUse;
     std::vector<int> chanSelectToUse;
-    splitChanSuffix(group, name, { }, nameToUse, chanSelectToUse);
+    splitChanSuffix(group, name, { }, nameToUse, chanSelectToUse, skipDerived);
+
+    std::string groupToUse = "Derived" + group;
+    if (skipDerived || !obs_group_.vars.exists(fullVarName(groupToUse, nameToUse)))
+      groupToUse = group;
 
     // Set the type to None if there is no type from the backend
     ObsDtype VarType = ObsDtype::None;
-    if (has(group, nameToUse)) {
-        Variable var = obs_group_.vars.open(fullVarName(group, nameToUse));
+    if (has(groupToUse, nameToUse, skipDerived)) {
+        Variable var = obs_group_.vars.open(fullVarName(groupToUse, nameToUse));
         if (var.isA<int>()) {
             VarType = ObsDtype::Integer;
         } else if (var.isA<float>()) {
@@ -269,36 +283,36 @@ ObsDtype ObsSpace::dtype(const std::string & group, const std::string & name) co
 // -----------------------------------------------------------------------------
 void ObsSpace::get_db(const std::string & group, const std::string & name,
                      std::vector<int> & vdata,
-                     const std::vector<int> & chanSelect) const {
-    loadVar<int>(group, name, chanSelect, vdata);
+                     const std::vector<int> & chanSelect, bool skipDerived) const {
+    loadVar<int>(group, name, chanSelect, vdata, skipDerived);
 }
 
 void ObsSpace::get_db(const std::string & group, const std::string & name,
                      std::vector<float> & vdata,
-                     const std::vector<int> & chanSelect) const {
-    loadVar<float>(group, name, chanSelect, vdata);
+                     const std::vector<int> & chanSelect, bool skipDerived) const {
+    loadVar<float>(group, name, chanSelect, vdata, skipDerived);
 }
 
 void ObsSpace::get_db(const std::string & group, const std::string & name,
                      std::vector<double> & vdata,
-                     const std::vector<int> & chanSelect) const {
+                     const std::vector<int> & chanSelect, bool skipDerived) const {
     // load the float values from the database and convert to double
     std::vector<float> floatData;
-    loadVar<float>(group, name, chanSelect, floatData);
+    loadVar<float>(group, name, chanSelect, floatData, skipDerived);
     ConvertVarType<float, double>(floatData, vdata);
 }
 
 void ObsSpace::get_db(const std::string & group, const std::string & name,
                      std::vector<std::string> & vdata,
-                     const std::vector<int> & chanSelect) const {
-    loadVar<std::string>(group, name, chanSelect, vdata);
+                     const std::vector<int> & chanSelect, bool skipDerived) const {
+    loadVar<std::string>(group, name, chanSelect, vdata, skipDerived);
 }
 
 void ObsSpace::get_db(const std::string & group, const std::string & name,
                      std::vector<util::DateTime> & vdata,
-                     const std::vector<int> & chanSelect) const {
+                     const std::vector<int> & chanSelect, bool skipDerived) const {
     std::vector<std::string> dtStrings;
-    loadVar<std::string>(group, name, chanSelect, dtStrings);
+    loadVar<std::string>(group, name, chanSelect, dtStrings, skipDerived);
     vdata = convertDtStringsToDtime(dtStrings);
 }
 
@@ -658,15 +672,23 @@ void ObsSpace::resizeNlocs(const Dimensions_t nlocsSize, const bool append) {
 
 template<typename VarType>
 void ObsSpace::loadVar(const std::string & group, const std::string & name,
-                      const std::vector<int> & chanSelect,
-                      std::vector<VarType> & varValues) const {
+                       const std::vector<int> & chanSelect,
+                       std::vector<VarType> & varValues,
+                       bool skipDerived) const {
     // For backward compatibility, recognize and handle appropriately variable names with
     // channel suffixes.
     std::string nameToUse;
     std::vector<int> chanSelectToUse;
     splitChanSuffix(group, name, chanSelect, nameToUse, chanSelectToUse);
 
-    Variable var = obs_group_.vars.open(fullVarName(group, nameToUse));
+    // Prefer variables from Derived* groups.
+    std::string groupToUse = "Derived" + group;
+    if (skipDerived || !obs_group_.vars.exists(fullVarName(groupToUse, nameToUse)))
+      groupToUse = group;
+
+    // Try to open the variable.
+    ioda::Variable var = obs_group_.vars.open(fullVarName(groupToUse, nameToUse));
+
     std::string nchansVarName = this->get_dim_name(ObsDimensionId::Nchans);
 
     // In the following code, assume that if a variable has channels, the
@@ -929,13 +951,16 @@ void ObsSpace::fillChanNumToIndexMap() {
 
 // -----------------------------------------------------------------------------
 void ObsSpace::splitChanSuffix(const std::string & group, const std::string & name,
-                              const std::vector<int> & chanSelect, std::string & nameToUse,
-                              std::vector<int> & chanSelectToUse) const {
+                               const std::vector<int> & chanSelect, std::string & nameToUse,
+                               std::vector<int> & chanSelectToUse,
+                               bool skipDerived) const {
     nameToUse = name;
     chanSelectToUse = chanSelect;
     // For backward compatibility, recognize and handle appropriately variable names with
     // channel suffixes.
-    if (chanSelect.empty() && !obs_group_.vars.exists(fullVarName(group, name))) {
+    if (chanSelect.empty() &&
+        !obs_group_.vars.exists(fullVarName(group, name)) &&
+        (skipDerived || !obs_group_.vars.exists(fullVarName("Derived" + group, name)))) {
         int channelNumber;
         if (extractChannelSuffixIfPresent(name, nameToUse, channelNumber))
             chanSelectToUse = {channelNumber};
@@ -1221,6 +1246,19 @@ void ObsSpace::extendObsSpace(const ObsExtendParameters & params) {
     dim_info_.set_dim_size(ObsDimensionId::Nlocs, numExtendedLocs);
     // Increment gnlocs_.
     gnlocs_ += globalNumAveragedLocs;
+  }
+}
+
+// -----------------------------------------------------------------------------
+void ObsSpace::createObsErrorsForDerivedSimulatedVariables() {
+  const oops::Variables &derivedSimVars = obs_params_.top_level_.derivedSimVars;
+  if (derivedSimVars.size() == 0)
+    return;
+
+  const std::vector<float> obserror(nlocs(), util::missingValue(float()));
+  for (size_t i = 0; i < derivedSimVars.size(); ++i) {
+    if (!has("ObsError", derivedSimVars[i]))
+      put_db("DerivedObsError", derivedSimVars[i], obserror);
   }
 }
 // -----------------------------------------------------------------------------
