@@ -35,6 +35,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsspace_fortran.yml
   testinput/iodatest_obsspace_put_db_channels.yml
   testinput/iodatest_obsvector.yml
+  testinput/iodatest_obsvector_packeigen.yml
   testinput/iodatest_obsvector_pio_observer.yml
   testinput/iodatest_obsvector_pio_read_distributed_files.yml
   testinput/iodatest_descendingsort.yml
@@ -423,7 +424,7 @@ ecbuild_add_test( TARGET  test_ioda_extendedobsspace_halo_MPI_3
 
 # OOPS ObsVector interface
 ecbuild_add_test( TARGET  test_ioda_oops_obsvector
-                  MPI     2
+                  MPI     4
                   SOURCES mains/TestObsVector.cc
                   ARGS    "testinput/iodatest_obsvector.yml"
                   LIBS  ioda_test
@@ -440,6 +441,14 @@ ecbuild_add_test( TARGET  test_ioda_obsvector
                   MPI     4
                   SOURCES mains/TestIodaObsVector.cc
                   ARGS    "testinput/iodatest_obsvector.yml"
+                  LIBS  ioda_test
+                  TEST_DEPENDS get_ioda_test_data )
+
+# IODA ObsVector class (packEigen method)
+ecbuild_add_test( TARGET  test_ioda_obsvector_packeigen
+                  MPI     4
+                  SOURCES mains/TestIodaObsVectorPackEigen.cc
+                  ARGS    "testinput/iodatest_obsvector_packeigen.yml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 

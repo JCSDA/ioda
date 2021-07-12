@@ -16,8 +16,8 @@ observations:
   reference nobs: 974
   reference global nobs: 974
   mask variable: GsiUseFlag
-  reference global masked nobs: 819
-  reference local masked nobs: [408, 411]
+  reference global masked nobs: 30
+  reference local masked nobs: [10, 6, 7, 7]
 
 - obs space:
     name: "Radiosonde_2vars"
@@ -32,8 +32,8 @@ observations:
   reference nobs: 1948
   reference global nobs: 1948
   mask variable: GsiUseFlag
-  reference global masked nobs: 1633
-  reference local masked nobs: [815, 818]
+  reference global masked nobs: 182
+  reference local masked nobs: [49, 47, 45, 41]
 
 - obs space:
     name: "Radiosonde_4vars"
@@ -50,8 +50,8 @@ observations:
   reference nobs: 3896
   reference global nobs: 3896
   mask variable: GsiUseFlag
-  reference global masked nobs: 2587
-  reference local masked nobs: [1299, 1288]
+  reference global masked nobs: 232
+  reference local masked nobs: [63, 63, 53, 53]
 
 distributions:
   - RoundRobin

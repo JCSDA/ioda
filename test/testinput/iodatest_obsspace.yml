@@ -201,7 +201,7 @@ observations:
       - name: "longitude"
         group: "MetaData"
         type: "float"
-        norm: 6076.2659622388919
+        norm: 6076.2659260213959
 
       - name: "station_id"
         group: "MetaData"
@@ -247,7 +247,7 @@ observations:
       - name: "longitude"
         group: "MetaData"
         type: "float"
-        norm: 6076.2659622388919
+        norm: 6076.2659260213959
     tolerance:
       - 1.0e-11
 
