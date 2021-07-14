@@ -9,6 +9,20 @@ set(pyver python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR})
 AddPyLib(_ioda_python ioda ${pyver})
 target_compile_features(_ioda_python PUBLIC cxx_std_14) # C++14 or greater is needed to parse the headers.
 
+if(APPLE)
+	set_target_properties(_ioda_python PROPERTIES
+		BUILD_RPATH_USE_ORIGIN TRUE
+		BUILD_WITH_INSTALL_RPATH TRUE
+		INSTALL_RPATH "@rpath/../../"
+		)
+else()
+	set_target_properties(_ioda_python PROPERTIES
+		BUILD_RPATH_USE_ORIGIN TRUE # $ORIGIN
+		BUILD_WITH_INSTALL_RPATH TRUE
+		INSTALL_RPATH "\$ORIGIN/../../"
+		)
+endif()
+
 add_custom_command(TARGET _ioda_python POST_BUILD
 	COMMAND ${CMAKE_COMMAND} -E copy
 	${CMAKE_CURRENT_SOURCE_DIR}/pyioda/ioda/__init__.py $<TARGET_FILE_DIR:_ioda_python>/__init__.py)

@@ -1,4 +1,4 @@
-# (C) Copyright 2020 UCAR.
+# (C) Copyright 2020-2021 UCAR.
 #
 # This software is licensed under the terms of the Apache Licence Version 2.0
 # which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -8,10 +8,11 @@ include(Targets)
 macro(AddPyExample_base name testname args)
 	add_test(NAME ${testname}
 		COMMAND #${Python3_EXECUTABLE}
-        python3 ${CMAKE_CURRENT_SOURCE_DIR}/${name}.py ${args} )
-	set_tests_properties(${testname} PROPERTIES
-		ENVIRONMENT "LIBDIR=$<TARGET_FILE_DIR:_ioda_python>/../;LD_LIBRARY_PATH=${CMAKE_BINARY_DIR}/lib:$ENV{LD_LIBRARY_PATH}"
-		WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+			python3 ${CMAKE_CURRENT_SOURCE_DIR}/${name}.py ${args}
+		)
+	set_tests_properties(${testname}
+		PROPERTIES
+		ENVIRONMENT "PYTHONPATH=$<TARGET_FILE_DIR:_ioda_python>/../"
 		)
 endmacro()
 
