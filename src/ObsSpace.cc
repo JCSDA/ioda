@@ -165,7 +165,7 @@ ObsSpace::ObsSpace(const eckit::Configuration & config, const eckit::mpi::Comm &
         extendObsSpace(*(obs_params_.top_level_.obsExtend.value()));
     }
 
-    createObsErrorsForDerivedSimulatedVariables();
+    createMissingObsErrors();
 
     oops::Log::debug() << obsname() << ": " << globalNumLocsOutsideTimeWindow()
       << " observations are outside of time window out of "
@@ -1250,15 +1250,15 @@ void ObsSpace::extendObsSpace(const ObsExtendParameters & params) {
 }
 
 // -----------------------------------------------------------------------------
-void ObsSpace::createObsErrorsForDerivedSimulatedVariables() {
-  const oops::Variables &derivedSimVars = obs_params_.top_level_.derivedSimVars;
-  if (derivedSimVars.size() == 0)
-    return;
+void ObsSpace::createMissingObsErrors() {
+  std::vector<float> obserror;  // Will be initialized only if necessary
 
-  const std::vector<float> obserror(nlocs(), util::missingValue(float()));
-  for (size_t i = 0; i < derivedSimVars.size(); ++i) {
-    if (!has("ObsError", derivedSimVars[i]))
-      put_db("DerivedObsError", derivedSimVars[i], obserror);
+  for (size_t i = 0; i < obsvars_.size(); ++i) {
+    if (!has("ObsError", obsvars_[i])) {
+      if (obserror.empty())
+        obserror.assign(nlocs(), util::missingValue(float()));
+      put_db("DerivedObsError", obsvars_[i], obserror);
+    }
   }
 }
 // -----------------------------------------------------------------------------

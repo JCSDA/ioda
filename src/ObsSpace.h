@@ -442,9 +442,10 @@ namespace ioda {
         /// \param params object containing specs for extending the ObsSpace
         void extendObsSpace(const ObsExtendParameters & params);
 
-        /// \brief For each derived simulated variable that doesn't have an accompanying array
-        /// in the ObsError group, create one and fill it with missing values.
-        void createObsErrorsForDerivedSimulatedVariables();
+        /// \brief For each simulated variable that doesn't have an accompanying array
+        /// in the ObsError or DerivedObsError group, create one, fill it with missing values
+        /// and add it to the DerivedObsError group.
+        void createMissingObsErrors();
 
         /// \brief Dump the database into the output file
         void saveToFile();
