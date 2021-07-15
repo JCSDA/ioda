@@ -14,6 +14,7 @@
  * \brief HDF5 engine
  */
 
+#include <iostream>
 #include <string>
 #include <utility>
 
@@ -29,6 +30,7 @@ namespace Engines {
 namespace HH {
 /// \brief HDF5 library format versions
 /// \ingroup ioda_cxx_engines_pub_HH
+/// \note When changing, you need to update the ostream operators.
 enum class HDF5_Version {
   Earliest,  ///< Use the earliest possible HDF5 format for storing objects.
   V18,       ///< Use the latest HDF5 v1.8 format for storing objects.
@@ -113,8 +115,16 @@ IODA_DL Capabilities getCapabilitiesFileEngine();
 /// \brief Get capabilities of the HDF5 memory-backed engine
 /// \ingroup ioda_cxx_engines_pub_HH
 IODA_DL Capabilities getCapabilitiesInMemoryEngine();
+
+/// stream operator
+IODA_DL std::ostream& operator<<(std::ostream& os, const HDF5_Version& ver);
+/// stream operator
+IODA_DL std::ostream& operator<<(std::ostream& os, const HDF5_Version_Range& range);
+
 }  // namespace HH
 }  // namespace Engines
 }  // namespace ioda
 
 /// @}
+
+

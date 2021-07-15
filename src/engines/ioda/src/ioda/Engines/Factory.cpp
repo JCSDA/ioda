@@ -7,6 +7,7 @@
 
 #include "ioda/Engines/Factory.h"
 
+#include <iostream>
 #include <string>
 
 #include "ioda/Engines/HH.h"
@@ -143,5 +144,32 @@ Group constructBackend(BackendNames name, BackendCreationParameters& params) {
   // not implemented yet.
   throw Exception("Backend not implemented yet", ioda_Here());
 }
+
+std::ostream& operator<<(std::ostream& os, const ioda::Engines::BackendCreateModes& mode)
+{
+  using namespace ioda::Engines;
+  static const std::map<BackendCreateModes, std::string> names {
+    {BackendCreateModes::Truncate_If_Exists, "Truncate_If_Exists"},
+    {BackendCreateModes::Fail_If_Exists, "Fail_If_Exists"}
+  };
+
+  if (names.count(mode) == 0) throw Exception("Unhandled backend creation mode", ioda_Here());
+  os << "ioda::Engines::BackendCreateModes::" << names.at(mode);
+  return os;
+}
+
+std::ostream& operator<<(std::ostream& os, const ioda::Engines::BackendOpenModes& mode)
+{
+  using namespace ioda::Engines;
+  static const std::map<BackendOpenModes, std::string> names {
+    {BackendOpenModes::Read_Only, "Read_Only"},
+    {BackendOpenModes::Read_Write, "Read_Write"}
+  };
+  if (names.count(mode) == 0) throw Exception("Unhandled backend open mode", ioda_Here());
+  os << "ioda::Engines::BackendOpenModes::" << names.at(mode);
+  return os;
+}
+
 }  // namespace Engines
 }  // namespace ioda
+
