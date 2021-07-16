@@ -42,6 +42,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_extendedobsspace.yml
   testinput/iodatest_extendedobsspace_halo.yml
   testinput/iodatest_odbqueryparams.yml
+  testinput/iodatest_time_io.yml
 )
 
 # Set up test input files (YAML configuration)
@@ -495,11 +496,28 @@ ecbuild_add_test( TARGET  test_ioda_oops_obserrorcovariance
 # Test the time_IodaIO.x app
 #####################################################################
 
+# this test creates the output files
 ecbuild_add_test( TARGET  test_ioda_time_io
                   COMMAND ${CMAKE_BINARY_DIR}/bin/time_IodaIO.x
-                  ARGS    "testinput/iodatest_obsspace.yml"
+                  ARGS    "testinput/iodatest_time_io.yml"
                   TEST_DEPENDS get_ioda_test_data )
 
+# the following tests compare the output files
+ecbuild_add_test( TARGET  test_ioda_time_io_cmp_sondes
+                  TYPE    SCRIPT
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                  ARGS    hdf5
+                          "echo Checking time io sondes"
+                          sondes_obs_2018041500_m_time_0000.nc4
+                  TEST_DEPENDS get_ioda_test_data test_ioda_time_io)
+
+ecbuild_add_test( TARGET  test_ioda_time_io_cmp_amsua_n19
+                  TYPE    SCRIPT
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                  ARGS    hdf5
+                          "echo Checking time io AMSU-A NOAA19"
+                          amsua_n19_obs_2018041500_m_time_0000.nc4
+                  TEST_DEPENDS get_ioda_test_data test_ioda_time_io)
 
 #####################################################################
 # Test the ioda-upgrade.x app

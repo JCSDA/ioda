@@ -24,6 +24,15 @@
 #include "ioda/core/IodaUtils.h"
 #include "ioda/ObsSpace.h"
 
+// This application initially served the purpose of being able to do a simple and easy
+// performance comparison for different file formats (netcdf, odb) in the context of
+// ObsSpace construction (file read) and destruction (file write).
+//
+// Over the course of time, this application has proved useful for debugging ioda file IO
+// issues, both functional and performance related. These kinds of issues typically surface
+// during DA flow exercising, and this application provides a simple and direct way to run
+// just the file IO piece of the flow without having to build, configure and run the DA flow.
+
 namespace ioda {
 
 template <typename MODEL> class TimeIodaIO : public oops::Application {
@@ -55,6 +64,9 @@ template <typename MODEL> class TimeIodaIO : public oops::Application {
                         << std::endl;
       oops::Log::info() << "  Number of records: " << obsdb[jj].obsspace().nrecs()
                         << std::endl;
+
+      // write the output file if "obsdataout" was specified
+      obsdb[jj].obsspace().save();
     }
   return 0;
   }
