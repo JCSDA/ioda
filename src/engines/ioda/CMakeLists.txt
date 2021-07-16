@@ -151,6 +151,17 @@ list(APPEND SRCS_ENGINES_OBS_STORE
 	src/ioda/Engines/ObsStore/Selection.cpp
 	src/ioda/Engines/ObsStore/Variables.cpp
 	)
+list(APPEND SRCS_ENGINES_ODC
+        include/ioda/Engines/ODC.h
+        include/ioda/Engines/OdbQueryParameters.h
+        src/ioda/Engines/ODC/ODC.cpp
+        src/ioda/Engines/ODC/OdbQueryParameters.cpp
+        )
+# Source files depending on the ODC library
+list(APPEND SRCS_ENGINES_ODC_ODC_DEPENDENT
+        src/ioda/Engines/ODC/DataFromSQL.cpp
+        src/ioda/Engines/ODC/DataFromSQL.h
+        )
 
 source_group("Attributes" FILES ${SRCS_ATTRIBUTES})
 source_group("C Bindings" FILES ${SRCS_C_BINDINGS})
@@ -162,6 +173,7 @@ source_group("Variables" FILES ${SRCS_VARIABLES})
 source_group("Engines" FILES ${SRCS_ENGINES_TOP})
 source_group("Engines\\HH" FILES ${SRCS_ENGINES_HH})
 source_group("Engines\\ObsStore" FILES ${SRCS_ENGINES_OBS_STORE})
+source_group("Engines\\ODC" FILES ${SRCS_ENGINES_ODC}  ${SRCS_ENGINES_ODC_ODC_DEPENDENT})
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/ioda/config.h.in
 	${CMAKE_CURRENT_BINARY_DIR}/config/ioda/config.h)
@@ -173,12 +185,15 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/ioda/testconfig.h.in
 list(APPEND SRCS_IODA_ENGINES
 	${SRCS_ATTRIBUTES} ${SRCS_C_BINDINGS} ${SRCS_GROUPS}
 	${SRCS_LAYOUTS} ${SRCS_MISC} ${SRCS_TYPES} ${SRCS_VARIABLES}
-	${SRCS_ENGINES_TOP} ${SRCS_ENGINES_OBS_STORE}
+    ${SRCS_ENGINES_TOP} ${SRCS_ENGINES_OBS_STORE} ${SRCS_ENGINES_ODC}
 	${CMAKE_CURRENT_BINARY_DIR}/config/ioda/config.h
 	${CMAKE_CURRENT_BINARY_DIR}/config/ioda/testconfig.h
 	)
 if (eckit_FOUND AND oops_FOUND)
 	list(APPEND SRCS_IODA_ENGINES ${SRCS_LAYOUTS_ODB})
+endif()
+if (odc_FOUND)
+    list(APPEND SRCS_IODA_ENGINES ${SRCS_ENGINES_ODC_ODC_DEPENDENT})
 endif()
 if (HDF5_FOUND)
 	list(APPEND SRCS_IODA_ENGINES ${SRCS_ENGINES_HH})

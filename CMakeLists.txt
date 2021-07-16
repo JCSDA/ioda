@@ -31,7 +31,6 @@ option( ENABLE_IODA_DOC "Build IODA documentation" OFF )
 ## Dependencies
 
 # Required
-find_package( jedicmake QUIET )  # Prefer find modules from jedi-cmake
 find_package( OpenMP COMPONENTS C CXX Fortran )
 set(HDF5_PREFER_PARALLEL true) # CMake sometimes mistakenly finds a serial system-provided HDF5.
 find_package( HDF5 REQUIRED COMPONENTS C HL )
@@ -41,13 +40,23 @@ find_package( jedicmake REQUIRED )
 find_package( eckit 1.11.6 REQUIRED )
 find_package( fckit 0.7.0 REQUIRED )
 find_package( oops 1.0.0 REQUIRED )
+find_package( Eigen3 REQUIRED NO_MODULE HINTS
+              $ENV{Eigen3_ROOT} $ENV{EIGEN3_ROOT} $ENV{Eigen_ROOT} $ENV{EIGEN_ROOT}
+              $ENV{Eigen3_PATH} $ENV{EIGEN3_PATH} $ENV{Eigen_PATH} $ENV{EIGEN_PATH} )
+find_package( gsl-lite REQUIRED HINTS $ENV{gsl_lite_DIR} )
+
+# Optional
+find_package( odc 1.0.2 )         # Needed for odc
+find_package( Boost 1.64.0 )      # Provides an implementation of optional
+find_package( Python3 COMPONENTS Interpreter Development )
+find_package( pybind11 )
 
 ## Sources
-add_subdirectory( src/engines ) # `ioda_engines` target
-add_subdirectory( src )         # `ioda` target
-add_subdirectory( src/mains )    # ioda executable targets
-add_subdirectory( test )        # ioda ctests
-add_subdirectory( tools )       # misc tools
+add_subdirectory( src/engines )   # `ioda_engines` target
+add_subdirectory( src )           # `ioda` target
+add_subdirectory( src/mains )     # ioda executable targets
+add_subdirectory( test )          # ioda ctests
+add_subdirectory( tools )         # misc tools
 
 if( ENABLE_IODA_DOC )
     add_subdirectory( docs )

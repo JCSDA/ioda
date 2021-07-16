@@ -8,13 +8,15 @@ ObsSpaceParameters.cc
 ObsSpaceParameters.h
 ObsVector.cc
 ObsVector.h
-OdbQueryParameters.h
-OdbQueryParameters.cc
 
+core/FileFormat.cc
+core/FileFormat.h
 core/IodaUtils.cc
 core/IodaUtils.h
 core/obsspace_f.cc
 core/obsspace_f.h
+core/ParameterTraitsFileFormat.cc
+core/ParameterTraitsFileFormat.h
 core/ParameterTraitsObsDtype.cc
 core/ParameterTraitsObsDtype.h
 

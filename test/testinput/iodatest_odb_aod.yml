@@ -1,0 +1,26 @@
+where:
+  varno: [174]
+variables:
+- name: aerosol_confidence_flag
+- name: aerosol_effective_radius
+- name: aerosol_mass_concentration
+- name: aerosol_small_mode_fraction
+- name: aerosol_type
+- name: angstrom_exponent
+- name: land_sea
+- name: satellite_identifier
+- name: satellite_instrument
+- name: solar_zenith
+- name: viewing_zenith_angle
+- name: time
+- name: date
+- name: receipt_time
+- name: receipt_date
+- name: initial_obsvalue
+- name: ops_obsgroup
+- name: vertco_type
+- name: entryno
+- name: seqno
+- name: varno
+- name: lat
+- name: lon

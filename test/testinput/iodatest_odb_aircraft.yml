@@ -1,0 +1,23 @@
+where:
+  varno: [2,29,41,42,111,112]
+variables:
+- name: "aircraft_data_relay_system"
+- name: "aircraft_tail_number"
+- name: "beacon_report_name"
+- name: "collection_centre"
+- name: "collection_identifier"
+- name: "flight_phase"
+- name: "stalt"
+- name: "statid"
+- name: "time"
+- name: "date"
+- name: "receipt_time"
+- name: "receipt_date"
+- name: "initial_obsvalue"
+- name: "ops_obsgroup"
+- name: "vertco_type"
+- name: "entryno"
+- name: "seqno"
+- name: "varno"
+- name: "lat"
+- name: "lon"

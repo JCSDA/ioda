@@ -5,44 +5,42 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
  */
 
-#include "ioda/Engines/Factory.h"
+#include "eckit/config/YAMLConfiguration.h"
 
+#include "ioda/core/FileFormat.h"
+#include "ioda/Engines/Factory.h"
+#include "ioda/Engines/HH.h"  // for genUniqueName()
+#include "ioda/Engines/ODC.h"
 #include "ioda/io/ObsIoFileRead.h"
 
 namespace ioda {
 
+//--------------------------------------------------------------------------------
 static ObsIoMaker<ObsIoFileRead> maker("FileRead");
 
 //------------------------------ public functions --------------------------------
 //--------------------------------------------------------------------------------
 ObsIoFileRead::ObsIoFileRead(const Parameters_ & ioParams,
                              const ObsSpaceParameters & obsSpaceParams) : ObsIo() {
-    Engines::BackendNames backendName;
-    Engines::BackendCreationParameters backendParams;
-    Group backend;
-
     std::string fileName = ioParams.fileName;
+
     oops::Log::trace() << "Constructing ObsIoFileRead: Opening file for read: "
                        << fileName << std::endl;
 
-    // Open an hdf5 file, read only
-    backendName = Engines::BackendNames::Hdf5File;
+    const bool odb = (determineFileFormat(fileName, ioParams.format) == FileFormat::ODB);
+
     if (ioParams.readFromSeparateFiles) {
         // We are initializing from a prior run and therefore reading in the
         // separate ioda files produced from that prior run.
-        backendParams.fileName = uniquifyFileName(fileName, obsSpaceParams.getMpiRank(),
-                                                  obsSpaceParams.getMpiTimeRank());
+        fileName = uniquifyFileName(fileName, obsSpaceParams.getMpiRank(),
+                                    obsSpaceParams.getMpiTimeRank());
         read_separate_files_ = true;
-    } else {
-        backendParams.fileName = fileName;
     }
-    backendParams.action = Engines::BackendFileActions::Open;
-    backendParams.openMode = Engines::BackendOpenModes::Read_Only;
 
-    // Create the backend and attach it to an ObsGroup
-    backend = constructBackend(backendName, backendParams);
-    ObsGroup og(backend);
-    obs_group_ = og;
+    if (odb)
+      createObsGroupFromOdbFile(fileName, ioParams);
+    else
+      createObsGroupFromHdf5File(fileName);
 
     // Collect variable and dimension infomation for downstream use
     collectVarDimInfo(obs_group_, var_list_, dim_var_list_, dims_attached_to_vars_,
@@ -65,6 +63,47 @@ bool ObsIoFileRead::eachProcessGeneratesSeparateObs() const {
 //-----------------------------------------------------------------------------------
 void ObsIoFileRead::print(std::ostream & os) const {
     os << "ObsIoFileRead: " << std::endl;
+}
+
+void ObsIoFileRead::createObsGroupFromHdf5File(const std::string & fileName) {
+    // Prepare to create a backend backed by an existing read-only hdf5 file
+    Engines::BackendNames backendName = Engines::BackendNames::Hdf5File;
+    Engines::BackendCreationParameters backendParams;
+    backendParams.fileName = fileName;
+    backendParams.action = Engines::BackendFileActions::Open;
+    backendParams.openMode = Engines::BackendOpenModes::Read_Only;
+
+    // Create the backend and attach it to an ObsGroup
+    Group backend = constructBackend(backendName, backendParams);
+    obs_group_ = ObsGroup(backend);
+}
+
+void ObsIoFileRead::createObsGroupFromOdbFile(const std::string & fileName,
+                                              const Parameters_ & ioParams) {
+    if (ioParams.mappingFile.value().empty())
+        throw ioda::Exception("The 'obsdatain.mapping file' option "
+                              "must be set for obs files in the ODB format.", ioda_Here());
+    if (ioParams.queryFile.value().empty())
+        throw ioda::Exception("The 'obsdatain.query file' option "
+                              "must be set for obs files in the ODB format.", ioda_Here());
+
+    // Create an in-memory backend
+    Engines::BackendNames backendName = Engines::BackendNames::ObsStore;
+    Engines::BackendCreationParameters backendParams;
+    backendParams.fileName = ioda::Engines::HH::genUniqueName();
+    backendParams.action = Engines::BackendFileActions::Create;
+    backendParams.createMode = Engines::BackendCreateModes::Truncate_If_Exists;
+    backendParams.allocBytes = 1024*1024*50;
+    backendParams.flush = false;
+    Group backend = constructBackend(backendName, backendParams);
+
+    // And load the ODB file into it
+    Engines::ODC::ODC_Parameters odcparams;
+    odcparams.filename    = fileName;
+    odcparams.mappingFile = ioParams.mappingFile;
+    odcparams.queryFile   = ioParams.queryFile;
+
+    obs_group_ = Engines::ODC::openFile(odcparams, backend);
 }
 
 }  // namespace ioda

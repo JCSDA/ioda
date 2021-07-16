@@ -1,12 +1,10 @@
+#pragma once
 /*
  * (C) Crown Copyright Met Office 2021
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
-
-#ifndef ODBQUERYPARAMETERS_H_
-#define ODBQUERYPARAMETERS_H_
 
 #include <string>
 #include <utility>
@@ -25,6 +23,8 @@ namespace eckit {
 }
 
 namespace ioda {
+namespace Engines {
+namespace ODC {
 
 enum class StarParameter {
   ALL
@@ -38,21 +38,25 @@ struct StarParameterTraitsHelper{
   };
 };
 
+}  // namespace ODC
+}  // namespace Engines
 }  // namespace ioda
 
 namespace oops {
 
 template<>
-struct ParameterTraits<ioda::StarParameter> :
-    public EnumParameterTraits<ioda::StarParameterTraitsHelper>
+struct ParameterTraits<ioda::Engines::ODC::StarParameter> :
+    public EnumParameterTraits<ioda::Engines::ODC::StarParameterTraitsHelper>
 {};
 
 }  // namespace oops
 
 namespace ioda {
+namespace Engines {
+namespace ODC {
 
-class ODBVariableParameters : public oops::Parameters {
-  OOPS_CONCRETE_PARAMETERS(ODBVariableParameters, Parameters)
+class OdbVariableParameters : public oops::Parameters {
+  OOPS_CONCRETE_PARAMETERS(OdbVariableParameters, Parameters)
 
  public:
   /// The column to use to match the conditions
@@ -82,11 +86,19 @@ class OdbWhereParameters : public oops::Parameters {
   /// The varnos to query data from
   oops::RequiredParameter<util::AnyOf<StarParameter, std::vector<int>>> varno{
       "varno", this};
-
-  /// Variables to use to filter data from queried varnos
-  oops::OptionalParameter<std::vector<ODBVariableParameters>> variable{ "variable", this };
 };
 
-}  // namespace ioda
+class OdbQueryParameters : public oops::Parameters {
+  OOPS_CONCRETE_PARAMETERS(OdbQueryParameters, Parameters)
 
-#endif  // ODBQUERYPARAMETERS_H_
+ public:
+  /// Variables to select
+  oops::Parameter<std::vector<OdbVariableParameters>> variables{ "variables", {}, this };
+
+  /// Selection criteria
+  oops::RequiredParameter<OdbWhereParameters> where{"where", this};
+};
+
+}  // namespace ODC
+}  // namespace Engines
+}  // namespace ioda

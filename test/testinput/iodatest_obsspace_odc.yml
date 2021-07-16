@@ -1,0 +1,38 @@
+---
+window begin: "2018-04-14T21:00:00Z"
+window end: "2018-04-15T03:00:00Z"
+
+observations:
+- obs space:
+    name: "Aircraft"
+    simulated variables: ['air_temperature']
+    obsdatain:
+      obsfile: "Data/testinput_tier_1/aircraft.odb"
+      mapping file: testinput/odb_default_name_map.yml
+      query file: testinput/iodatest_odb_aircraft.yml
+  test data:
+    nlocs: 157
+    nrecs: 157
+    nvars: 3
+    obs perturbations seed: 0
+    expected group variables: []
+    expected sort variable: ""
+    expected sort order: "ascending"
+    variables:
+      - name: "latitude"
+        group: "MetaData"
+        type: "float"
+        norm: 516.381719370864
+
+      - name: "longitude"
+        group: "MetaData"
+        type: "float"
+        norm: 1077.97295968985
+
+      - name: "air_temperature"
+        group: "ObsValue"
+        type: "float"
+        norm: 2976.96363204444
+    tolerance:
+      - 1.0e-7
+

@@ -11,6 +11,8 @@
 #include <string>
 #include <vector>
 
+#include "ioda/core/FileFormat.h"
+#include "ioda/core/ParameterTraitsFileFormat.h"
 #include "ioda/Misc/DimensionScales.h"
 #include "ioda/Misc/Dimensions.h"
 #include "ioda/io/ObsIoFactory.h"
@@ -35,7 +37,6 @@ namespace eckit {
 
 namespace ioda {
 
-
 class ObsFileInParameters : public ObsIoParametersBase {
      OOPS_CONCRETE_PARAMETERS(ObsFileInParameters, ObsIoParametersBase)
 
@@ -43,12 +44,30 @@ class ObsFileInParameters : public ObsIoParametersBase {
     /// input obs file name
     oops::RequiredParameter<std::string> fileName{"obsfile", this};
 
+    /// input obs file format
+    ///
+    /// Possible values:
+    /// * `hdf5`: HDF5 file format
+    /// * `odb`: ODB file format
+    /// * `auto` (default): file format determined automatically from the file name extension
+    ///   (`.odb` -- ODB, everything else -- HDF5).
+    oops::Parameter<FileFormat> format{"format", FileFormat::AUTO, this};
+
     /// reading from multiple files (1 per MPI task)
     /// This option is not typically used. It is used to tell the system
     /// to read observations from the ioda output files (one per MPI task)
     /// from a prior run instead of reading and distributing from the original
     /// file. This is currently being used in LETKF applictions.
     oops::Parameter<bool> readFromSeparateFiles{"read obs from separate file", false, this};
+
+    /// file with variable name mapping rules
+    ///
+    /// Required for obs files in the ODB format, unused otherwise.
+    oops::Parameter<std::string> mappingFile{"mapping file", "", this};
+    /// file with query parameters
+    ///
+    /// Required for obs files in the ODB format, unused otherwise.
+    oops::Parameter<std::string> queryFile{"query file", "", this};
 };
 
 class ObsFileOutParameters : public ObsIoParametersBase {

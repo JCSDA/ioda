@@ -1,0 +1,20 @@
+where:
+  varno: [229]
+variables:
+- name: numlev
+- name: site_name_1
+- name: site_name_2
+- name: site_name_3
+- name: stalt
+- name: time
+- name: date
+- name: receipt_time
+- name: receipt_date
+- name: initial_obsvalue
+- name: ops_obsgroup
+- name: vertco_type
+- name: entryno
+- name: seqno
+- name: varno
+- name: lat
+- name: lon

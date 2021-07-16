@@ -1,0 +1,29 @@
+where:
+  varno: [1,2,3,4,29,41,42,111,112]
+variables:
+- name: ident
+- name: initial_vertco_reference
+- name: level_condition_code
+- name: numlev
+- name: pressure_sensor_alt
+- name: pressure_sensor_flag
+- name: sonde_rad_corr
+- name: sonde_report_identifier
+- name: sonde_tracking_system
+- name: sonde_type
+- name: stalt
+- name: station_type
+- name: wmo_block_number
+- name: wmo_station_number
+- name: time
+- name: date
+- name: receipt_time
+- name: receipt_date
+- name: initial_obsvalue
+- name: ops_obsgroup
+- name: vertco_type
+- name: entryno
+- name: seqno
+- name: varno
+- name: lat
+- name: lon

@@ -1,0 +1,26 @@
+where:
+  varno: [162]
+variables:
+- name: confidence
+- name: gen_centre
+- name: numlev
+- name: platform_id
+- name: qc_flags
+- name: radcurv
+- name: satellite_classification
+- name: satellite_identifier
+- name: software_identifier
+- name: time_difference
+- name: undulation
+- name: time
+- name: date
+- name: receipt_time
+- name: receipt_date
+- name: initial_obsvalue
+- name: ops_obsgroup
+- name: vertco_type
+- name: entryno
+- name: seqno
+- name: varno
+- name: lat
+- name: lon

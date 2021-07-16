@@ -1,0 +1,26 @@
+where:
+  varno: [119]
+variables:
+- name: azimuth
+      - geometric_rotational_angle
+      - land_sea
+      - satellite_instrument
+      - satellite_identifier
+      - scanline
+      - scanpos
+      - solar_azimuth
+      - solar_zenith
+      - surface_height
+      - zenith
+      - time
+      - date
+      - receipt_time
+      - receipt_date
+      - initial_obsvalue
+      - ops_obsgroup
+      - vertco_type
+      - entryno
+      - seqno
+      - varno
+- name: lat
+- name: lon

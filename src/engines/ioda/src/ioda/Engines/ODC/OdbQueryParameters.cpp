@@ -5,11 +5,17 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#include "ioda/OdbQueryParameters.h"
+#include "ioda/Engines/OdbQueryParameters.h"
 
 #include <utility>
 
 namespace ioda {
+namespace Engines {
+namespace ODC {
+
 constexpr char StarParameterTraitsHelper::enumTypeName[];
 constexpr util::NamedEnumerator<StarParameter> StarParameterTraitsHelper::namedValues[];
+
+}  // namespace ODC
+}  // namespace Engines
 }  // namespace ioda

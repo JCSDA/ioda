@@ -8,6 +8,7 @@ include( git_functions )
 # Create Data directory for test input config and symlink all files
 list( APPEND ioda_test_input
   testinput/iodatest.yml
+  testinput/iodatest_fileformat.yml
   testinput/iodatest_obserror.yml
   testinput/iodatest_obsio_constructor.yml
   testinput/iodatest_obsio_read.yml
@@ -32,6 +33,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsspace_index_recnum_read_distributed_files.yml
   testinput/iodatest_obsspace_marine.yml
   testinput/iodatest_obsspace_mpi.yml
+  testinput/iodatest_obsspace_odc.yml
   testinput/iodatest_obsspace_fortran.yml
   testinput/iodatest_obsspace_put_db_channels.yml
   testinput/iodatest_obsvector.yml
@@ -41,7 +43,32 @@ list( APPEND ioda_test_input
   testinput/iodatest_descendingsort.yml
   testinput/iodatest_extendedobsspace.yml
   testinput/iodatest_extendedobsspace_halo.yml
-  testinput/iodatest_odbqueryparams.yml
+  testinput/iodatest_odb_abiclear.yml
+  testinput/iodatest_odb_ahiclear.yml
+  testinput/iodatest_odb_aircraft.yml
+  testinput/iodatest_odb_airs.yml
+  testinput/iodatest_odb_amsr.yml
+  testinput/iodatest_odb_aod.yml
+  testinput/iodatest_odb_atms.yml
+  testinput/iodatest_odb_atovs.yml
+  testinput/iodatest_odb_cris.yml
+  testinput/iodatest_odb_crisfsr.yml
+  testinput/iodatest_odb_gmihigh.yml
+  testinput/iodatest_odb_gmilow.yml
+  testinput/iodatest_odb_gpsro.yml
+  testinput/iodatest_odb_groundgps.yml
+  testinput/iodatest_odb_hirasfsr.yml
+  testinput/iodatest_odb_hloswind.yml
+  testinput/iodatest_odb_iasi.yml
+  testinput/iodatest_odb_mwri.yml
+  testinput/iodatest_odb_mwsfy3.yml
+  testinput/iodatest_odb_satwind.yml
+  testinput/iodatest_odb_scatwind.yml
+  testinput/iodatest_odb_seviriclear.yml
+  testinput/iodatest_odb_sonde.yml
+  testinput/iodatest_odb_ssmis.yml
+  testinput/iodatest_odb_surface.yml
+  testinput/odb_default_name_map.yml
   testinput/iodatest_time_io.yml
 )
 
@@ -255,13 +282,7 @@ ecbuild_add_test( TARGET  test_ioda_distribution_methods
                   ARGS    "testinput/iodatest_distribution_methods.yml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
-#####################################################################
-# Parameters tests
-#####################################################################
-ecbuild_add_test( TARGET  test_ioda_odbquery_parameters
-                  SOURCES mains/TestOdbQueryParameters.cc
-                  ARGS    "testinput/iodatest_odbqueryparams.yml"
-                  LIBS    ioda_test )
+
 #####################################################################
 # ObsSpace tests
 #####################################################################
@@ -349,6 +370,13 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_marine
                   COMMAND test_ioda_obsspace
                   ARGS    "testinput/iodatest_obsspace_marine.yml"
                   TEST_DEPENDS get_ioda_test_data )
+
+if (odc_FOUND)
+  ecbuild_add_test( TARGET  test_ioda_obsspace_odc
+                    COMMAND test_ioda_obsspace
+                    ARGS    "testinput/iodatest_obsspace_odc.yml"
+                    TEST_DEPENDS get_ioda_test_data )
+endif()
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_put_db_channels
                   SOURCES mains/TestIodaObsSpacePutDbChannels.cc
@@ -631,11 +659,293 @@ ecbuild_add_test( TARGET  test_ioda_upgrader_gnssro_nc_compat
                           upgrader_gnssro.nc4
                   TEST_DEPENDS get_ioda_test_data test_ioda_upgrader_gnssro )
 
+if (odc_FOUND)
+  ecbuild_add_test( TARGET  test_ioda-convert_aircraft_odc
+                    TYPE    SCRIPT
+                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                    ARGS    hdf5
+                            "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
+                            Aircraft
+                            Data/testinput_tier_1/aircraft.odb
+                            testinput/odb_default_name_map.yml testinput/iodatest_odb_aircraft.yml"
+                            test-Aircraft.hdf
+                    TEST_DEPENDS get_ioda_test_data )
+
+  ecbuild_add_test( TARGET  test_ioda-convert_surface_odc
+                    TYPE    SCRIPT
+                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                    ARGS    hdf5
+                            "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
+                            Surface
+                            Data/testinput_tier_1/surface.odb
+                            testinput/odb_default_name_map.yml testinput/iodatest_odb_surface.yml"
+                            test-Surface.hdf
+                    TEST_DEPENDS get_ioda_test_data )
+
+  ecbuild_add_test( TARGET  test_ioda-convert_sonde_odc
+                    TYPE    SCRIPT
+                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                    ARGS    hdf5
+                            "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
+                            Sonde
+                            Data/testinput_tier_1/sonde.odb
+                            testinput/odb_default_name_map.yml testinput/iodatest_odb_sonde.yml"
+                            test-Sonde.hdf
+                    TEST_DEPENDS get_ioda_test_data )
+
+  ecbuild_add_test( TARGET  test_ioda-convert_abiclear_odc
+                    TYPE    SCRIPT
+                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                    ARGS    hdf5
+                            "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
+                            ABIClear
+                            Data/testinput_tier_1/abiclear.odb
+                            testinput/odb_default_name_map.yml testinput/iodatest_odb_abiclear.yml"
+                            test-ABIClear.hdf
+                    TEST_DEPENDS get_ioda_test_data )
+
+  ecbuild_add_test( TARGET  test_ioda-convert_ahiclear_odc
+                    TYPE    SCRIPT
+                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                    ARGS    hdf5
+                            "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
+                            AHIClear
+                            Data/testinput_tier_1/ahiclear.odb
+                            testinput/odb_default_name_map.yml testinput/iodatest_odb_ahiclear.yml"
+                            test-AHIClear.hdf
+                    TEST_DEPENDS get_ioda_test_data )
+
+  ecbuild_add_test( TARGET  test_ioda-convert_amsr_odc
+                    TYPE    SCRIPT
+                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                    ARGS    hdf5
+                            "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
+                            AMSR
+                            Data/testinput_tier_1/amsr.odb
+                            testinput/odb_default_name_map.yml testinput/iodatest_odb_amsr.yml"
+                            test-AMSR.hdf
+                    TEST_DEPENDS get_ioda_test_data )
+
+  ecbuild_add_test( TARGET  test_ioda-convert_airs_odc
+                    TYPE    SCRIPT
+                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                    ARGS    hdf5
+                            "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
+                            AIRS
+                            Data/testinput_tier_1/airs.odb
+                            testinput/odb_default_name_map.yml testinput/iodatest_odb_airs.yml"
+                            test-AIRS.hdf
+                    TEST_DEPENDS get_ioda_test_data )
+
+  ecbuild_add_test( TARGET  test_ioda-convert_atovs_odc
+                    TYPE    SCRIPT
+                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                    ARGS    hdf5
+                            "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
+                            ATOVS
+                            Data/testinput_tier_1/atovs.odb
+                            testinput/odb_default_name_map.yml testinput/iodatest_odb_atovs.yml"
+                            test-ATOVS.hdf
+                    TEST_DEPENDS get_ioda_test_data )
+
+  ecbuild_add_test( TARGET  test_ioda-convert_gmihigh_odc
+                    TYPE    SCRIPT
+                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                    ARGS    hdf5
+                            "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
+                            GMIHigh
+                            Data/testinput_tier_1/gmihigh.odb
+                            testinput/odb_default_name_map.yml testinput/iodatest_odb_gmihigh.yml"
+                            test-GMIHigh.hdf
+                    TEST_DEPENDS get_ioda_test_data )
+
+  ecbuild_add_test( TARGET  test_ioda-convert_gmilow_odc
+                    TYPE    SCRIPT
+                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                    ARGS    hdf5
+                            "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
+                            GMILow
+                            Data/testinput_tier_1/gmilow.odb
+                            testinput/odb_default_name_map.yml testinput/iodatest_odb_gmilow.yml"
+                            test-GMILow.hdf
+                    TEST_DEPENDS get_ioda_test_data )
+
+  ecbuild_add_test( TARGET  test_ioda-convert_ssmis_odc
+                    TYPE    SCRIPT
+                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                    ARGS    hdf5
+                            "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
+                            SSMIS
+                            Data/testinput_tier_1/ssmis.odb
+                            testinput/odb_default_name_map.yml testinput/iodatest_odb_ssmis.yml"
+                            test-SSMIS.hdf
+                    TEST_DEPENDS get_ioda_test_data )
+
+  ecbuild_add_test( TARGET  test_ioda-convert_satwind_odc
+                    TYPE    SCRIPT
+                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                    ARGS    hdf5
+                            "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
+                            Satwind
+                            Data/testinput_tier_1/satwind.odb
+                            testinput/odb_default_name_map.yml testinput/iodatest_odb_satwind.yml"
+                            test-Satwind.hdf
+                    TEST_DEPENDS get_ioda_test_data )
+
+  ecbuild_add_test( TARGET  test_ioda-convert_scatwind_odc
+                    TYPE    SCRIPT
+                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                    ARGS    hdf5
+                            "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
+                            Scatwind
+                            Data/testinput_tier_1/scatwind.odb
+                            testinput/odb_default_name_map.yml testinput/iodatest_odb_scatwind.yml"
+                            test-Scatwind.hdf
+                    TEST_DEPENDS get_ioda_test_data )
+
+  ecbuild_add_test( TARGET  test_ioda-convert_gpsro_odc
+                    TYPE    SCRIPT
+                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                    ARGS    hdf5
+                            "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
+                            GPSRO
+                            Data/testinput_tier_1/gpsro.odb
+                            testinput/odb_default_name_map.yml testinput/iodatest_odb_gpsro.yml"
+                            test-GPSRO.hdf
+                    TEST_DEPENDS get_ioda_test_data )
+
+  ecbuild_add_test( TARGET  test_ioda-convert_groundgps_odc
+                    TYPE    SCRIPT
+                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                    ARGS    hdf5
+                            "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
+                            GroundGPS
+                            Data/testinput_tier_1/groundgps.odb
+                            testinput/odb_default_name_map.yml testinput/iodatest_odb_groundgps.yml"
+                            test-GroundGPS.hdf
+                    TEST_DEPENDS get_ioda_test_data )
+
+  ecbuild_add_test( TARGET  test_ioda-convert_aod_odc
+                    TYPE    SCRIPT
+                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                    ARGS    hdf5
+                            "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
+                            AOD
+                            Data/testinput_tier_1/aod.odb
+                            testinput/odb_default_name_map.yml testinput/iodatest_odb_aod.yml"
+                            test-AOD.hdf
+                    TEST_DEPENDS get_ioda_test_data )
+
+  ecbuild_add_test( TARGET  test_ioda-convert_cris_odc
+                    TYPE    SCRIPT
+                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                    ARGS    hdf5
+                            "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
+                            CrIS
+                            Data/testinput_tier_1/cris.odb
+                            testinput/odb_default_name_map.yml testinput/iodatest_odb_cris.yml"
+                            test-CrIS.hdf
+                    TEST_DEPENDS get_ioda_test_data )
+
+  #ecbuild_add_test( TARGET  test_ioda-convert_crisfsr_odc
+  #                  TYPE    SCRIPT
+  #                  COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+  #                  ARGS    hdf5
+  #                          "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
+  #                          CrISFSR
+  #                          Data/testinput_tier_1/crisfsr.odb
+  #                          testinput/odb_default_name_map.yml testinput/iodatest_odb_crisfsr.yml"
+  #                          test-CrISFSR.hdf
+  #                  TEST_DEPENDS get_ioda_test_data )
+
+  #ecbuild_add_test( TARGET  test_ioda-convert_hirasfsr_odc
+  #                  TYPE    SCRIPT
+  #                  COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+  #                  ARGS    hdf5
+  #                          "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
+  #                          HIRASFSR
+  #                          Data/testinput_tier_1/hirasfsr.odb
+  #                          testinput/odb_default_name_map.yml testinput/iodatest_odb_hirasfsr.yml"
+  #                          test-HIRASFSR.hdf
+  #                  TEST_DEPENDS get_ioda_test_data )
+
+  #ecbuild_add_test( TARGET  test_ioda-convert_hloswind_odc
+  #                  TYPE    SCRIPT
+  #                  COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+  #                  ARGS    hdf5
+  #                          "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
+  #                          HLOSWind
+  #                          Data/testinput_tier_1/hloswind.odb
+  #                          testinput/odb_default_name_map.yml testinput/iodatest_odb_hloswind.yml"
+  #                          test-HLOSWind.hdf
+  #                  TEST_DEPENDS get_ioda_test_data )
+
+  #ecbuild_add_test( TARGET  test_ioda-convert_mwri_odc
+  #                  TYPE    SCRIPT
+  #                  COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+  #                  ARGS    hdf5
+  #                          "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
+  #                          MWRI
+  #                          Data/testinput_tier_1/mwri.odb
+  #                          testinput/odb_default_name_map.yml testinput/iodatest_odb_mwri.yml"
+  #                          test-MWRI.hdf
+  #                  TEST_DEPENDS get_ioda_test_data )
+
+  ecbuild_add_test( TARGET  test_ioda-convert_iasi_odc
+                    TYPE    SCRIPT
+                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                    ARGS    hdf5
+                            "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
+                            IASI
+                            Data/testinput_tier_1/iasi.odb
+                            testinput/odb_default_name_map.yml testinput/iodatest_odb_iasi.yml"
+                            test-IASI.hdf
+                    TEST_DEPENDS get_ioda_test_data )
+
+  ecbuild_add_test( TARGET  test_ioda-convert_mwsfy3_odc
+                    TYPE    SCRIPT
+                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                    ARGS    hdf5
+                            "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
+                            MWSFY3
+                            Data/testinput_tier_1/mwsfy3.odb
+                            testinput/odb_default_name_map.yml testinput/iodatest_odb_mwsfy3.yml"
+                            test-MWSFY3.hdf
+                    TEST_DEPENDS get_ioda_test_data )
+
+  ecbuild_add_test( TARGET  test_ioda-convert_seviriclear_odc
+                    TYPE    SCRIPT
+                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                    ARGS    hdf5
+                            "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
+                            SEVIRIClear
+                            Data/testinput_tier_1/seviriclear.odb
+                            testinput/odb_default_name_map.yml testinput/iodatest_odb_seviriclear.yml"
+                            test-SEVIRIClear.hdf
+                    TEST_DEPENDS get_ioda_test_data )
+
+  ecbuild_add_test( TARGET  test_ioda-convert_atms_odc
+                    TYPE    SCRIPT
+                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                    ARGS    hdf5
+                            "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
+                            ATMS
+                            Data/testinput_tier_1/atms.odb
+                            testinput/odb_default_name_map.yml testinput/iodatest_odb_atms.yml"
+                            test-ATMS.hdf
+                    TEST_DEPENDS get_ioda_test_data )
+endif()
+
 #####################################################################
-# ObsDtype tests
+# String-to-enum conversion tests
 #####################################################################
 
 ecbuild_add_test( TARGET  test_ioda_obsdtype
                   SOURCES mains/TestIodaObsDtype.cc
                   ARGS    "testinput/iodatest_obsdtype.yml"
+                  LIBS    ioda_test )
+
+ecbuild_add_test( TARGET  test_ioda_fileformat
+                  SOURCES mains/TestIodaFileFormat.cc
+                  ARGS    "testinput/iodatest_fileformat.yml"
                   LIBS    ioda_test )

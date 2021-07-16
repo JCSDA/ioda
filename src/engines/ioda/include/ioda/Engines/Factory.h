@@ -28,7 +28,7 @@ namespace Engines {
 enum class BackendNames {
   Hdf5File,  ///< HDF5 file access
   Hdf5Mem,   ///< HDF5 in-memory "file"
-  ObsStore   ///< ObsStore in-memory
+  ObsStore,  ///< ObsStore in-memory
 };
 
 /// Actions for accessing a file
@@ -58,12 +58,18 @@ enum class BackendOpenModes {
 /// \ingroup ioda_cxx_engines_pub
 struct BackendCreationParameters {
 public:
+  /// @name General
+  /// @{
   std::string fileName;
   BackendFileActions action;
   BackendCreateModes createMode;
   BackendOpenModes openMode;
+  /// @}
+  /// @name HH / HDF5
+  /// @{
   std::size_t allocBytes;
   bool flush;
+  /// @}
 };
 
 /// \brief This is a wrapper function around the constructBackend
