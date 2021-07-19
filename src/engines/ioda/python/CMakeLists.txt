@@ -27,7 +27,11 @@ add_custom_command(TARGET _ioda_python POST_BUILD
 	COMMAND ${CMAKE_COMMAND} -E copy
 	${CMAKE_CURRENT_SOURCE_DIR}/pyioda/ioda/__init__.py $<TARGET_FILE_DIR:_ioda_python>/__init__.py)
 
+add_custom_command(TARGET _ioda_python POST_BUILD
+	COMMAND ${CMAKE_COMMAND} -E copy
+	${CMAKE_CURRENT_SOURCE_DIR}/pyioda/ioda/ioda.py $<TARGET_FILE_DIR:_ioda_python>/ioda.py)
+
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/pyioda/ioda/__init__.py
+  ${CMAKE_CURRENT_SOURCE_DIR}/pyioda/ioda/ioda.py
 	DESTINATION ${CMAKE_INSTALL_LIBDIR}/${pyver}/ioda/
 	)
-

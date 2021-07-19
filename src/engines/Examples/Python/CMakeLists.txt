@@ -34,6 +34,7 @@ if(BUILD_TESTING)
 	AddPyExample(04-VariablesAttributesAndDimensions "")
 	AddPyExample(05-ObsGroup "")
 	AddPyExample(06-ReadIodaOutputFile ${IODA_TEST_DATA_DIR}/sample_hofx_output_amsua_n19.nc4 )
+	AddPyExample(07-ObsSpaceClass ${IODA_TEST_DATA_DIR}/sample_hofx_output_amsua_n19.nc4 )
     #AddPyExample(plotting-05-ObsGroup)
     #set_tests_properties(Example_ioda_engines_plotting-05-ObsGroup_python
     #    PROPERTIES
@@ -42,4 +43,3 @@ if(BUILD_TESTING)
     #    ATTACHED_FILES ${PROJECT_BINARY_DIR}/plotting-Example-05a-python.png
     #    SKIP_RETURN_CODE 1)
 endif()
-
