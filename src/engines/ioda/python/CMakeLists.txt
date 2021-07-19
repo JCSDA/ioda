@@ -13,7 +13,7 @@ if(APPLE)
 	set_target_properties(_ioda_python PROPERTIES
 		BUILD_RPATH_USE_ORIGIN TRUE
 		BUILD_WITH_INSTALL_RPATH TRUE
-		INSTALL_RPATH "@rpath/../../"
+		INSTALL_RPATH "@loader_path/../../"
 		)
 else()
 	set_target_properties(_ioda_python PROPERTIES
