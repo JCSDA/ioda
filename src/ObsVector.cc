@@ -232,28 +232,24 @@ void ObsVector::save(const std::string & name) const {
   }
 }
 // -----------------------------------------------------------------------------
-size_t ObsVector::packEigenSize(const ObsDataVector<int> & mask) const {
+size_t ObsVector::packEigenSize(const ObsVector & mask) const {
+  const size_t nn = values_.size();
+  assert(mask.values_.size() == nn);
   size_t nlocs = 0;
-  size_t ii = 0;
-  for (size_t jloc = 0; jloc < mask.nlocs(); ++jloc) {
-    for (size_t jvar = 0; jvar < mask.nvars(); ++jvar) {
-      if ((mask[jvar][jloc] == 0) && (values_[ii] != missing_)) nlocs++;
-      ++ii;
-    }
+  for (size_t jj = 0; jj < nn; ++jj) {
+    if ((mask.values_[jj] != missing_) && (values_[jj] != missing_)) nlocs++;
   }
   return nlocs;
 }
 // -----------------------------------------------------------------------------
-Eigen::VectorXd ObsVector::packEigen(const ObsDataVector<int> & mask) const {
+Eigen::VectorXd ObsVector::packEigen(const ObsVector & mask) const {
+  const size_t nn = values_.size();
+  assert(mask.values_.size() == nn);
   Eigen::VectorXd vec(packEigenSize(mask));
-  size_t ii = 0;
   size_t vecindex = 0;
-  for (size_t jloc = 0; jloc < mask.nlocs(); ++jloc) {
-    for (size_t jvar = 0; jvar < mask.nvars(); ++jvar) {
-      if ((mask[jvar][jloc] == 0) && (values_[ii] != missing_)) {
-        vec(vecindex++) = values_[ii];
-      }
-      ++ii;
+  for (size_t jj = 0; jj < nn; ++jj) {
+    if ((mask.values_[jj] != missing_) && (values_[jj] != missing_)) {
+      vec(vecindex++) = values_[jj];
     }
   }
   return vec;
@@ -291,6 +287,14 @@ void ObsVector::mask(const ObsDataVector<int> & flags) {
       if (flags[jv][jj] > 0) values_[ii] = missing_;
       ++ii;
     }
+  }
+}
+// -----------------------------------------------------------------------------
+void ObsVector::mask(const ObsVector & mask) {
+  const size_t nn = values_.size();
+  assert(mask.values_.size() == nn);
+  for (size_t jj = 0; jj < nn; ++jj) {
+    if (mask[jj] == missing_) values_[jj] = missing_;
   }
 }
 // -----------------------------------------------------------------------------
