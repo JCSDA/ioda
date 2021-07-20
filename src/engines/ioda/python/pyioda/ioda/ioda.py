@@ -240,7 +240,7 @@ class ObsSpace:
             if self._iodavar.isA2(_iodapy.Types.float):
                 # float
                 data = self._iodavar.readNPArray.float()
-                data[data > 9e36] = np.nan # undefined values
+                data[np.abs(data) > 9e36] = np.nan # undefined values
             elif self._iodavar.isA2(_iodapy.Types.int):
                 # integer
                 data = self._iodavar.readNPArray.int()
