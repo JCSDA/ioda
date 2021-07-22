@@ -1044,6 +1044,13 @@ void ObsSpace::saveToFile() {
             dimMaxSize = Unlimited;
             dimChunkSize = this->globalNumLocs();
         }
+        // It's possible that dimChunkSize is set to zero which is an illegal value
+        // for the chunk size. If the current dimension size is zero, then it's okay
+        // to set chunk size to an arbitrary small size since you don't need to be
+        // particularly efficient about it.
+        if (dimChunkSize == 0) {
+            dimChunkSize = 5;
+        }
         obs_params_.setDimScale(dimName, dimSize, dimMaxSize, dimChunkSize);
     }
 
