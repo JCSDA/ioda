@@ -78,15 +78,17 @@ public:
   /// \param m_select Selection ojbect: how to select from data argument
   /// \param f_select Selection ojbect: how to select to storage vector
   void write(gsl::span<char> data, Selection &m_select, Selection &f_select) override {
-    std::size_t numObjects = data.size() / sizeof(DataType);
-    gsl::span<DataType> d_span(reinterpret_cast<DataType *>(data.data()), numObjects);
-    // assumes m_select and f_select have same number of points
-    m_select.init_lin_indx();
-    f_select.init_lin_indx();
-    while (!m_select.end_lin_indx()) {
-      std::size_t m_indx     = m_select.next_lin_indx();
-      std::size_t f_indx     = f_select.next_lin_indx();
-      var_attr_data_[f_indx] = d_span[m_indx];
+    if (data.size() > 0) {
+      std::size_t numObjects = data.size() / sizeof(DataType);
+      gsl::span<DataType> d_span(reinterpret_cast<DataType *>(data.data()), numObjects);
+      // assumes m_select and f_select have same number of points
+      m_select.init_lin_indx();
+      f_select.init_lin_indx();
+      while (!m_select.end_lin_indx()) {
+        std::size_t m_indx     = m_select.next_lin_indx();
+        std::size_t f_indx     = f_select.next_lin_indx();
+        var_attr_data_[f_indx] = d_span[m_indx];
+      }
     }
   }
 
@@ -97,16 +99,18 @@ public:
   void read(gsl::span<char> data, Selection &m_select, Selection &f_select) const override {
     std::size_t datumLen = sizeof(DataType);
     std::size_t numChars = var_attr_data_.size() * datumLen;
-    gsl::span<char> c_span(
-      const_cast<char *>(reinterpret_cast<const char *>(var_attr_data_.data())), numChars);
-    // assumes m_select and f_select have same number of points
-    m_select.init_lin_indx();
-    f_select.init_lin_indx();
-    while (!m_select.end_lin_indx()) {
-      std::size_t m_indx = m_select.next_lin_indx() * datumLen;
-      std::size_t f_indx = f_select.next_lin_indx() * datumLen;
-      for (std::size_t i = 0; i < datumLen; ++i) {
-        data[m_indx + i] = c_span[f_indx + i];
+    if (data.size() > 0) {
+      gsl::span<char> c_span(
+        const_cast<char *>(reinterpret_cast<const char *>(var_attr_data_.data())), numChars);
+      // assumes m_select and f_select have same number of points
+      m_select.init_lin_indx();
+      f_select.init_lin_indx();
+      while (!m_select.end_lin_indx()) {
+        std::size_t m_indx = m_select.next_lin_indx() * datumLen;
+        std::size_t f_indx = f_select.next_lin_indx() * datumLen;
+        for (std::size_t i = 0; i < datumLen; ++i) {
+          data[m_indx + i] = c_span[f_indx + i];
+        }
       }
     }
   }
@@ -145,20 +149,22 @@ public:
   void write(gsl::span<char> data, Selection &m_select, Selection &f_select) override {
     // data is a series of char * pointing to null terminated strings
     // first place the char * values in a vector
-    std::size_t numObjects = data.size() / sizeof(char *);
-    gsl::span<char *> d_span(reinterpret_cast<char **>(data.data()), numObjects);
-    std::vector<char *> inStrings(numObjects);
-    for (std::size_t i = 0; i < numObjects; ++i) {
-      inStrings[i] = d_span[i];
-    }
+    if (data.size() > 0) {
+      std::size_t numObjects = data.size() / sizeof(char *);
+      gsl::span<char *> d_span(reinterpret_cast<char **>(data.data()), numObjects);
+      std::vector<char *> inStrings(numObjects);
+      for (std::size_t i = 0; i < numObjects; ++i) {
+        inStrings[i] = d_span[i];
+      }
 
-    // assumes m_select and f_select have same number of points
-    m_select.init_lin_indx();
-    f_select.init_lin_indx();
-    while (!m_select.end_lin_indx()) {
-      std::size_t m_indx     = m_select.next_lin_indx();
-      std::size_t f_indx     = f_select.next_lin_indx();
-      var_attr_data_[f_indx] = inStrings[m_indx];
+      // assumes m_select and f_select have same number of points
+      m_select.init_lin_indx();
+      f_select.init_lin_indx();
+      while (!m_select.end_lin_indx()) {
+        std::size_t m_indx     = m_select.next_lin_indx();
+        std::size_t f_indx     = f_select.next_lin_indx();
+        var_attr_data_[f_indx] = inStrings[m_indx];
+      }
     }
   }
 
@@ -169,22 +175,24 @@ public:
   void read(gsl::span<char> data, Selection &m_select, Selection &f_select) const override {
     // First create a vector of char * pointers to each item in var_attr_data_.
     std::size_t numObjects = var_attr_data_.size();
-    std::vector<const char *> outStrings(numObjects);
-    for (std::size_t i = 0; i < numObjects; ++i) {
-      outStrings[i] = var_attr_data_[i].data();
-    }
+    if (data.size() > 0) {
+      std::vector<const char *> outStrings(numObjects);
+      for (std::size_t i = 0; i < numObjects; ++i) {
+        outStrings[i] = var_attr_data_[i].data();
+      }
 
-    std::size_t datumLen = sizeof(char *);
-    std::size_t numChars = outStrings.size() * datumLen;
-    gsl::span<char> c_span(reinterpret_cast<char *>(outStrings.data()), numChars);
-    // assumes m_select and f_select have same number of points
-    m_select.init_lin_indx();
-    f_select.init_lin_indx();
-    while (!m_select.end_lin_indx()) {
-      std::size_t m_indx = m_select.next_lin_indx() * datumLen;
-      std::size_t f_indx = f_select.next_lin_indx() * datumLen;
-      for (std::size_t i = 0; i < datumLen; ++i) {
-        data[m_indx + i] = c_span[f_indx + i];
+      std::size_t datumLen = sizeof(char *);
+      std::size_t numChars = outStrings.size() * datumLen;
+      gsl::span<char> c_span(reinterpret_cast<char *>(outStrings.data()), numChars);
+      // assumes m_select and f_select have same number of points
+      m_select.init_lin_indx();
+      f_select.init_lin_indx();
+      while (!m_select.end_lin_indx()) {
+        std::size_t m_indx = m_select.next_lin_indx() * datumLen;
+        std::size_t f_indx = f_select.next_lin_indx() * datumLen;
+        for (std::size_t i = 0; i < datumLen; ++i) {
+          data[m_indx + i] = c_span[f_indx + i];
+        }
       }
     }
   }

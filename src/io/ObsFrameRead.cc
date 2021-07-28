@@ -21,17 +21,23 @@ ObsFrameRead::ObsFrameRead(const ObsSpaceParameters & params) :
     ObsFrame(params) {
     // Create the ObsIo object
     obs_io_ = ObsIoFactory::create(ObsIoModes::READ, params);
+    eckit::LocalConfiguration distConf = params.top_level_.toConfiguration();
+    distname_ = distConf.getString("distribution", "RoundRobin");
 
     // Create an MPI distribution
     each_process_reads_separate_obs_ = obs_io_->eachProcessGeneratesSeparateObs();
     if (each_process_reads_separate_obs_) {
-      // On each process the obs_io_ object will produce a separate series of observations, so
-      // we need to use a non-overlapping distribution. The RoundRobin will do.
-      eckit::LocalConfiguration distConf;
-      distConf.set("distribution", "RoundRobin");
-      dist_ = DistributionFactory::create(params.comm(), distConf);
+      if ("Halo" == distname_) {
+         dist_ = DistributionFactory::create(params.comm(), distConf);
+      } else {
+        // On each process the obs_io_ object will produce a separate series of observations,
+        // so we need to use a non-overlapping distribution. The RoundRobin will do.
+        eckit::LocalConfiguration rrConf;
+        rrConf.set("distribution", "RoundRobin");
+        dist_ = DistributionFactory::create(params.comm(), rrConf);
+      }
     } else {
-      dist_ = DistributionFactory::create(params.comm(), params.top_level_.toConfiguration());
+      dist_ = DistributionFactory::create(params.comm(), distConf);
     }
 
     max_frame_size_ = params.top_level_.obsIoInParameters().maxFrameSize;
@@ -455,20 +461,64 @@ void ObsFrameRead::applyMpiDistribution(const std::shared_ptr<Distribution> & di
     latLonVar.read(lats, memSelect, frameSelect);
     lats.resize(frameCount);
 
+    /// If "save obs distribution" is set to true in a previous run,
+    /// global location indices and record numbers have stored
+    /// in the MetaData/saved_index and MetaData/saved_record_number variables,
+    /// along with all other variables in separate files.
+    ///
+    /// When the "obsdatain.read obs from separate file" option is set,
+    /// each process reads a separate input file generated previously,
+    /// to use the stored index and record_number.
+
+    std::vector<int> saved_index(locSize, 0);
+    std::vector<int> saved_record_number(locSize, 0);
+
+    if (each_process_reads_separate_obs_ && ("Halo" == distname_)) {
+      // Assume that saved_index and saved_record_number variables are shaped the same
+      if (!obs_frame_.vars.exists("MetaData/saved_record_number")) {
+        throw eckit::UserError("MetaData/saved_record_number not found in observations file",
+                                Here());
+      }
+      Variable locVar = obs_frame_.vars.open("MetaData/saved_record_number");
+      varShape = locVar.getDimensions().dimsCur;
+      Selection locMemSelect = createMemSelection(varShape, frameCount);
+      Selection locFrameSelect = createEntireFrameSelection(varShape, frameCount);
+      locVar.read(saved_record_number, locMemSelect, locFrameSelect);
+      saved_record_number.resize(frameCount);
+
+      if (!obs_frame_.vars.exists("MetaData/saved_index")) {
+        throw eckit::UserError("MetaData/saved_index not found in observations file", Here());
+      }
+      locVar = obs_frame_.vars.open("MetaData/saved_index");
+      locVar.read(saved_index, locMemSelect, locFrameSelect);
+      saved_index.resize(frameCount);
+    }
+
     // Generate the index and recnums for this frame.
     const std::size_t commSize = params_.comm().size();
     const std::size_t commRank = params_.comm().rank();
+    std::size_t rowNum = 0;
+    std::size_t recNum = 0;
+    std::size_t frameIndex = 0;
+    std::size_t globalLocIndex = 0;
     frame_loc_index_.clear();
     for (std::size_t i = 0; i < locSize; ++i) {
-        std::size_t rowNum = locIndex[i];
-        std::size_t recNum = records[i];
-        // The current frame storage always starts at zero so frameIndex
-        // needs to be the offset from the ObsIo frame start.
-        std::size_t frameIndex = rowNum - frameStart;
+        if (each_process_reads_separate_obs_ && ("Halo" == distname_)) {
+          rowNum = saved_index[i];
+          recNum = saved_record_number[i];
+          frameIndex = i;
+        } else {
+          rowNum = locIndex[i];
+          recNum = records[i];
+          // The current frame storage always starts at zero so frameIndex
+          // needs to be the offset from the ObsIo frame start.
+          frameIndex = rowNum - frameStart;
+        }
+
         eckit::geometry::Point2 point(lons[frameIndex], lats[frameIndex]);
 
         std::size_t globalLocIndex = rowNum;
-        if (each_process_reads_separate_obs_) {
+        if (each_process_reads_separate_obs_ && ("Halo" != distname_)) {
           // Each process reads a different set of observations. Make sure all of them are assigned
           // different global location indices
           globalLocIndex = rowNum * commSize + commRank;

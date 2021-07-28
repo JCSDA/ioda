@@ -165,6 +165,34 @@ ObsSpace::ObsSpace(const eckit::Configuration & config, const eckit::mpi::Comm &
         extendObsSpace(*(obs_params_.top_level_.obsExtend.value()));
     }
 
+    /// If save_obs_distribution set to true,
+    /// global location indices and record numbers will be stored
+    /// in the MetaData/saved_index and MetaData/saved_record_number variables, respectively.
+    /// These variables will be saved along with all other variables
+    /// to the output files generated if the obsdataout.obsfile option is set.
+    ///
+    /// When the "obsdatain.read obs from separate file" option is set for later runs,
+    /// each process reads a separate input file directly,
+    /// the presence of these variables makes it possible
+    /// to identify observations stored in more than one input file.
+
+    bool save_obs_distribution = config.getBool("save obs distribution", false);
+    if (save_obs_distribution && "Halo" == config.getString("distribution", "RoundRobin")) {
+      const size_t nlocs = this->nlocs();
+
+      std::vector<int> idx2int(nlocs);
+      std::vector<int> rec2int(nlocs);
+
+      for (size_t loc = 0; loc < nlocs; ++loc) {
+        idx2int[loc] = static_cast<int>(indx_[loc]);
+        rec2int[loc] = static_cast<int>(recnums_[loc]);
+      }
+
+      // Save Index and Records
+      put_db("MetaData", "saved_index", idx2int);
+      put_db("MetaData", "saved_record_number", rec2int);
+    }
+
     createMissingObsErrors();
 
     oops::Log::debug() << obsname() << ": " << globalNumLocsOutsideTimeWindow()

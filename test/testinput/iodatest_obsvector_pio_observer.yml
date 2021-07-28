@@ -5,6 +5,7 @@ observations:
 - obs space:
     name: "Radiosonde_4vars"
     distribution: "Halo"
+    save obs distribution: true
     simulated variables:
     - air_temperature
     - specific_humidity

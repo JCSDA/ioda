@@ -205,6 +205,19 @@ class ObsTopLevelParameters : public oops::Parameters {
     /// name of MPI distribution
     oops::Parameter<std::string> distName{"distribution", "RoundRobin", this};
 
+    /// If saveObsDistribution/"save obs distribution" set to true,
+    /// global location indices and record numbers will be stored
+    /// in the MetaData/saved_index and MetaData/saved_record_number variables, respectively.
+    /// These variables will be saved along with all other variables
+    /// to the output files generated if the obsdataout.obsfile option is set.
+    ///
+    /// When the "obsdatain.read obs from separate file" option is set
+    /// and hence each process reads a separate input file,
+    /// the presence of these variables makes it possible
+    /// to identify observations stored in more than one input file.
+
+    oops::Parameter<bool> saveObsDistribution{"save obs distribution", false, this};
+
     /// simulated variables
     oops::RequiredParameter<oops::Variables> simVars{"simulated variables", this};
 
