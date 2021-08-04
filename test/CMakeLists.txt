@@ -135,7 +135,18 @@ elseif( DEFINED GIT_TAG_FUNC )
   message( STATUS "Tagged version of IODA is used" )
 
   # set ARGS for get_ioda_test_data
-  set( IODA_DOWNLOAD_BASE_URL https://dashrepo.ucar.edu/api/v1/dataset/147_miesch/version/1.1.0/file )
+
+  # ECBUILD_DOWNLOAD_BASE_URL env var can be used to force test files and
+  # crtm coef to be downloaded from other databases such as S3 instead of DASH
+  # example ECBUILD_DOWNLOAD_BASE_URL=https://jedi-test-files.s3.amazonaws.com
+
+  if( DEFINED ENV{ECBUILD_DOWNLOAD_BASE_URL} )
+    set( ECBUILD_DOWNLOAD_BASE_URL "$ENV{ECBUILD_DOWNLOAD_BASE_URL}/ioda/${GIT_TAG_FUNC}" )
+  else()
+    set( ECBUILD_DOWNLOAD_BASE_URL https://dashrepo.ucar.edu/api/v1/dataset/147_miesch/version/1.1.0/file )
+  endif()
+
+
   set( DIRNAME ${GIT_TAG_FUNC} )
   set( checksum "0" )
   set( TESTFILE_DIR_IODA "${CMAKE_SOURCE_DIR}/test-data-release/ioda/${DIRNAME}" )
