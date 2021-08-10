@@ -287,21 +287,14 @@ void DataFromSQL::select(const std::vector<std::string>& columns, const std::str
     }
   }
   number_of_varnos_ = varnos_.size();
-  int seqno_column  = getColumnIndex("seqno");
-  for (size_t i = 0; i < number_of_rows_; i++) {
-    int seqno = getData(i, seqno_column);
-    if (std::find(seqnos_.begin(), seqnos_.end(), seqno) == seqnos_.end()) {
-      seqnos_.push_back(seqno);
-    }
-  }
-  number_of_obs_           = seqnos_.size();
   number_of_metadata_rows_ = 0;
-  int seqno_index          = getColumnIndex("seqno");
-  size_t seqno             = -1;
+
   if (obsgroup_ == obsgroup_sonde || obsgroup_ == obsgroup_scatwind
       || obsgroup_ == obsgroup_gpsro) {
     number_of_metadata_rows_ = number_of_rows_ / number_of_varnos_;
   } else {
+    int seqno_index          = getColumnIndex("seqno");
+    size_t seqno             = -1;
     for (size_t i = 0; i < number_of_rows_; i++) {
       size_t seqno_new = getData(i, seqno_index);
       if (seqno != seqno_new) {
@@ -310,8 +303,6 @@ void DataFromSQL::select(const std::vector<std::string>& columns, const std::str
       }
     }
   }
-  number_of_rows_per_ob_    = number_of_rows_ / number_of_obs_;
-  number_of_rows_per_varno_ = number_of_rows_per_ob_ / number_of_varnos_;
 }
 
 int DataFromSQL::getObsgroup() const { return obsgroup_; }

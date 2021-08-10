@@ -66,14 +66,10 @@ private:
   std::vector<std::string> columns_;
   std::vector<int> column_types_;
   std::vector<int> varnos_;
-  std::vector<size_t> seqnos_;
   std::vector<double> data_;
   size_t number_of_rows_           = 0;
   size_t number_of_metadata_rows_  = 0;
   size_t number_of_varnos_         = 0;
-  size_t number_of_obs_            = 0;
-  size_t number_of_rows_per_ob_    = 0;
-  size_t number_of_rows_per_varno_ = 0;
   int obsgroup_                    = 0;
 
   /// \brief Returns a count of the rows extracted by an sql
