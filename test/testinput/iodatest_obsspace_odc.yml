@@ -18,7 +18,7 @@ observations:
     expected group variables: []
     expected sort variable: ""
     expected sort order: "ascending"
-    variables:
+    variables for get test:
       - name: "latitude"
         group: "MetaData"
         type: "float"
@@ -35,4 +35,4 @@ observations:
         norm: 2976.96363204444
     tolerance:
       - 1.0e-7
-
+    variables for putget test: []

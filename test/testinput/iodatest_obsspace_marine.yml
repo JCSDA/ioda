@@ -16,7 +16,7 @@ observations:
     expected group variables: []
     expected sort variable: ""
     expected sort order: "ascending"
-    variables:
+    variables for get test:
       - name: "latitude"
         group: "MetaData"
         type: "float"
@@ -28,6 +28,7 @@ observations:
         norm: 89252.131593209342
     tolerance:
       - 1.0e-13
+    variables for putget test: []
 
 - obs space:
     name: InsituTemperature
@@ -43,7 +44,7 @@ observations:
     expected group variables: []
     expected sort variable: ""
     expected sort order: "ascending"
-    variables:
+    variables for get test:
       - name: "latitude"
         group: "MetaData"
         type: "float"
@@ -55,6 +56,7 @@ observations:
         norm: 3530.8881463212083
     tolerance:
       - 1.0e-14
+    variables for putget test: []
 
 - obs space:
     name: SeaSurfaceTemp
@@ -70,7 +72,7 @@ observations:
     expected group variables: []
     expected sort variable: ""
     expected sort order: "ascending"
-    variables:
+    variables for get test:
       - name: "latitude"
         group: "MetaData"
         type: "float"
@@ -82,6 +84,7 @@ observations:
         norm: 1206.468598455715
     tolerance:
       - 1.0e-13
+    variables for putget test: []
 
 - obs space:
     name: SeaIceFraction
@@ -97,7 +100,7 @@ observations:
     expected group variables: []
     expected sort variable: ""
     expected sort order: "ascending"
-    variables:
+    variables for get test:
       - name: "latitude"
         group: "MetaData"
         type: "float"
@@ -109,6 +112,7 @@ observations:
         norm: 57917.351481173151
     tolerance:
       - 1.0e-14
+    variables for putget test: []
 
 - obs space:
     name: SeaIceThickness
@@ -124,7 +128,7 @@ observations:
     expected group variables: []
     expected sort variable: ""
     expected sort order: "ascending"
-    variables:
+    variables for get test:
       - name: "latitude"
         group: "MetaData"
         type: "float"
@@ -136,6 +140,7 @@ observations:
         norm: 13972.379294774455
     tolerance:
       - 1.0e-14
+    variables for putget test: []
 
 - obs space:
     name: SeaSurfaceSalinity
@@ -152,7 +157,7 @@ observations:
     expected group variables: []
     expected sort variable: ""
     expected sort order: "ascending"
-    variables:
+    variables for get test:
       - name: "latitude"
         group: "MetaData"
         type: "float"
@@ -164,3 +169,4 @@ observations:
         norm: 3328.6794406815029
     tolerance:
       - 1.0e-13
+    variables for putget test: []

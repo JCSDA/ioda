@@ -849,10 +849,23 @@ std::size_t ObsSpace::createChannelSelections(const Variable & variable,
     memSelect.extent(memCounts)
              .select({SelectionOperator::SET, memStarts, memCounts});
 
-    obsGroupSelect.extent(varDims)
-                  .select({SelectionOperator::SET, 0, dimSelects[0]});
-    for (std::size_t i = 1; i < dimSelects.size(); ++i) {
-        obsGroupSelect.select({SelectionOperator::AND, i, dimSelects[i]});
+    // If numElements is zero, can't use the dimension selection style for
+    // the ObsStore backend. In this case use a hyperslab style selection with
+    // zero counts along each dimension which will produce the desired effect
+    // (of the selection specifying zero elements).
+    if (numElements == 0) {
+        // hyperslab style selection
+        std::vector<Dimensions_t> obsGroupStarts(varDims.size(), 0);
+        std::vector<Dimensions_t> obsGroupCounts(varDims.size(), 0);
+        obsGroupSelect.extent(varDims)
+                      .select({SelectionOperator::SET, obsGroupStarts, obsGroupCounts});
+    } else {
+        // dimension style selection
+        obsGroupSelect.extent(varDims)
+                      .select({SelectionOperator::SET, 0, dimSelects[0]});
+        for (std::size_t i = 1; i < dimSelects.size(); ++i) {
+            obsGroupSelect.select({SelectionOperator::AND, i, dimSelects[i]});
+        }
     }
 
     return numElements;

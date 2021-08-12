@@ -17,7 +17,7 @@ observations:
     expected group variables: []
     expected sort variable: ""
     expected sort order: "ascending"
-    variables:
+    variables for get test:
       - name: "latitude"
         group: "MetaData"
         type: "float"
@@ -34,6 +34,7 @@ observations:
         norm: 10.099504938362077
     tolerance:
       - 1.0e-14
+    variables for putget test: []
 
 - obs space:
     name: "AOD VIIRS"
@@ -49,7 +50,7 @@ observations:
     expected group variables: []
     expected sort variable: ""
     expected sort order: "ascending"
-    variables:
+    variables for get test:
       - name: "latitude"
         group: "MetaData"
         type: "float"
@@ -66,6 +67,7 @@ observations:
         norm: 6.4807406984078604
     tolerance:
       - 1.0e-14
+    variables for putget test: []
 
 - obs space:
     name: "AMSUA NOAA19"
@@ -83,7 +85,7 @@ observations:
     expected group variables: []
     expected sort variable: ""
     expected sort order: "ascending"
-    variables:
+    variables for get test:
       - name: "latitude"
         group: "MetaData"
         type: "float"
@@ -95,6 +97,15 @@ observations:
         norm: 1661.1529210392009
     tolerance:
       - 1.0e-11
+    variables for putget test:
+      # have to use float variables, and only one channel at a time
+      - name: "brightness_temperature"
+        group: "ObsValue"
+        channels: [ 4 ]
+
+      - name: "brightness_temperature"
+        group: "ObsValue"
+        channels: [ 11 ]
 
 - obs space:
     name: "AMSUA NOAA19"
@@ -111,7 +122,7 @@ observations:
     expected group variables: []
     expected sort variable: ""
     expected sort order: "ascending"
-    variables:
+    variables for get test:
       - name: "latitude"
         group: "MetaData"
         type: "float"
@@ -123,6 +134,7 @@ observations:
         norm: 1661.1529210392009
     tolerance:
       - 1.0e-11
+    variables for putget test: []
 
 - obs space:
     name: "SMAP"
@@ -138,7 +150,7 @@ observations:
     expected group variables: []
     expected sort variable: ""
     expected sort order: "ascending"
-    variables:
+    variables for get test:
       - name: "latitude"
         group: "MetaData"
         type: "float"
@@ -150,6 +162,7 @@ observations:
         norm: 2835.0339068827361
     tolerance:
       - 1.0e-11
+    variables for putget test: []
 
 - obs space:
     name: "GMI GPM"
@@ -165,7 +178,7 @@ observations:
     expected group variables: []
     expected sort variable: ""
     expected sort order: "ascending"
-    variables:
+    variables for get test:
       - name: "latitude"
         group: "MetaData"
         type: "float"
@@ -177,6 +190,7 @@ observations:
         norm: 172.29837728971688
     tolerance:
       - 1.0e-11
+    variables for putget test: []
 
 - obs space:
     name: "Radiosonde"
@@ -192,7 +206,7 @@ observations:
     expected group variables: []
     expected sort variable: ""
     expected sort order: "ascending"
-    variables:
+    variables for get test:
       - name: "latitude"
         group: "MetaData"
         type: "float"
@@ -215,6 +229,14 @@ observations:
         norm: 6.32455532034
     tolerance:
       - 1.0e-11
+    variables for putget test:
+      - name: "air_temperature"
+        group: "ObsValue"
+        channels: []
+
+      - name: "specific_humidity"
+        group: "ObsValue"
+        channels: []
     obsdataout:
       obsfile: "testoutput/diagout.nc4"
       max frame size: 300
@@ -238,7 +260,7 @@ observations:
     expected group variables: [ "station_id" ]
     expected sort variable: "air_pressure"
     expected sort order: "descending"
-    variables:
+    variables for get test:
       - name: "latitude"
         group: "MetaData"
         type: "float"
@@ -250,6 +272,7 @@ observations:
         norm: 6076.2659260213959
     tolerance:
       - 1.0e-11
+    variables for putget test: []
 
 - obs space:
     name: "Radiosonde with grouping and tw filtering"
@@ -268,7 +291,7 @@ observations:
     expected group variables: [ "station_id" ]
     expected sort variable: ""
     expected sort order: "ascending"
-    variables:
+    variables for get test:
       - name: "latitude"
         group: "MetaData"
         type: "float"
@@ -280,6 +303,7 @@ observations:
         norm: 6065.3117664336605
     tolerance:
       - 1.0e-11
+    variables for putget test: []
 
 - obs space:
     name: "AOD GOES"
@@ -294,7 +318,7 @@ observations:
     expected group variables: []
     expected sort variable: ""
     expected sort order: "ascending"
-    variables:
+    variables for get test:
       - name: "latitude"
         group: "MetaData"
         type: "float"
@@ -306,6 +330,7 @@ observations:
         norm: 1793.5631154126893
     tolerance:
       - 1.0e-11
+    variables for putget test: []
 
 - obs space:
     name: "Derived variables"
@@ -320,7 +345,7 @@ observations:
     expected group variables: []
     expected sort variable: ""
     expected sort order: "ascending"
-    variables:
+    variables for get test:
       # Variables present both in the MetaData and DerivedMetaData groups.
 
       - name: float_var
@@ -425,6 +450,7 @@ observations:
         type: none
     tolerance:
       - 1.0e-7
+    variables for putget test: []
 
 # The purpose of the following two tests is to verify that the obs space is "aware" of any
 # specified derived simulated variables (the obsvariables(), derived_obsvariables() and
@@ -445,9 +471,10 @@ observations:
     expected group variables: []
     expected sort variable: ""
     expected sort order: "ascending"
-    variables: []
+    variables for get test: []
     tolerance:
       - 1.0e-7
+    variables for putget test: []
 
 - obs space:
     name: "Derived multi-channel simulated variables"
@@ -464,6 +491,7 @@ observations:
     expected group variables: []
     expected sort variable: ""
     expected sort order: "ascending"
-    variables: []
+    variables for get test: []
     tolerance:
       - 1.0e-7
+    variables for putget test: []

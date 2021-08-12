@@ -36,6 +36,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsspace_odc.yml
   testinput/iodatest_obsspace_fortran.yml
   testinput/iodatest_obsspace_put_db_channels.yml
+  testinput/iodatest_obsspace_zero_obs.yml
   testinput/iodatest_obsvector.yml
   testinput/iodatest_obsvector_packeigen.yml
   testinput/iodatest_obsvector_pio_observer.yml
@@ -392,6 +393,12 @@ endif()
 ecbuild_add_test( TARGET  test_ioda_obsspace_put_db_channels
                   SOURCES mains/TestIodaObsSpacePutDbChannels.cc
                   ARGS    "testinput/iodatest_obsspace_put_db_channels.yml"
+                  LIBS  ioda_test
+                  TEST_DEPENDS get_ioda_test_data )
+
+ecbuild_add_test( TARGET  test_ioda_obsspace_zero_obs
+                  COMMAND test_ioda_obsspace
+                  ARGS    "testinput/iodatest_obsspace_zero_obs.yml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
