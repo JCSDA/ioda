@@ -48,28 +48,28 @@ class ObsSpace:
         try:
             attrType = self.NumpyToIodaDtype(attrVal)
             if attrType == _iodapy.Types.float:
-                if len(attrVal) == 1:
+                if np.array(attrVal).size == 1:
                     self.obsgroup.atts.create(attrName, attrType,
                                      [1]).writeDatum.float(attrVal)
                 else:
                     self.obsgroup.atts.create(attrName, attrType,
                                      len(attrVal)).writeVector.float(attrVal)
             elif attrType == _iodapy.Types.double:
-                if len(attrVal) == 1:
+                if np.array(attrVal).size == 1:
                     self.obsgroup.atts.create(attrName, attrType,
                                      [1]).writeDatum.double(attrVal)
                 else:
                     self.obsgroup.atts.create(attrName, attrType,
                                      len(attrVal)).writeVector.double(attrVal)
             elif attrType == _iodapy.Types.int64:
-                if len(attrVal) == 1:
+                if np.array(attrVal).size == 1:
                     self.obsgroup.atts.create(attrName, attrType,
                                      [1]).writeDatum.int64(attrVal)
                 else:
                     self.obsgroup.atts.create(attrName, attrType,
                                      len(attrVal)).writeVector.int64(attrVal)
             elif attrType == _iodapy.Types.int32:
-                if len(attrVal) == 1:
+                if np.array(attrVal).size == 1:
                     self.obsgroup.atts.create(attrName, attrType,
                                      [1]).writeDatum.int32(attrVal)
                 else:
@@ -151,13 +151,15 @@ class ObsSpace:
             IodaDtype = _iodapy.Types.int32
         elif (NumpyDtype == np.dtype('int16')):
             IodaDtype = _iodapy.Types.int16
-        elif (NumpyDtype == _iodapy.dtype('int8')):
+        elif (NumpyDtype == np.dtype('int8')):
             IodaDtype = _iodapy.Types.int16
         elif (NumpyDtype == np.dtype('S1')):
             IodaDtype = _iodapy.Types.str
+        elif (NumpyDtype == np.dtype('object')):
+            IodaDtype = _iodapy.Types.str
         else:
             try:
-                a = str(NumpyArr[0, ...])
+                a = str(NumpyArr[0])
                 IodaDtype = _iodapy.Types.str
             except TypeError:
                 print("ERROR: Unrecognized numpy data type: ", NumpyDtype)
