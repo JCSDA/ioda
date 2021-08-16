@@ -22,9 +22,14 @@ rc="-1"
 testRefDir="Data/testinput_tier_1/test_reference"
 case $file_type in
   hdf5)
-    $cmd && \
-    h5diff testoutput/$file_name $testRefDir/$file_name
+    $cmd
+    set +e
+    h5diff -v testoutput/$file_name $testRefDir/$file_name
     rc=${?}
+    if [[ $rc != 0 ]]; then
+      h5dump testoutput/$file_name
+      exit 1
+    fi
     ;;
   netcdf)
     $cmd && \

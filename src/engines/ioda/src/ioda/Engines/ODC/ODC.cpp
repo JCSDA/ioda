@@ -13,6 +13,7 @@
 #include <set>
 #include <string>
 #include <vector>
+#include <algorithm>
 
 #include "DataFromSQL.h"
 
@@ -69,10 +70,14 @@ ObsGroup openFile(const ODC_Parameters& odcparams,
   OdbQueryParameters queryParameters;
   queryParameters.validateAndDeserialize(conf);
 
-  vector<std::string> columns;
+  vector<std::string> columns = {"lat", "lon", "date", "time", "seqno", "varno", "ops_obsgroup", "vertco_type", "initial_obsvalue"};
   for (const OdbVariableParameters &varParameters : queryParameters.variables.value()) {
     columns.push_back(varParameters.name);
   }
+  std::sort(columns.begin(), columns.end());
+  auto last = std::unique(columns.begin(), columns.end());
+  columns.erase(last, columns.end());
+
   // TODO(someone): Handle the case of the 'varno' option being set to ALL.
   const vector<int> &varnos = queryParameters.where.value().varno.value().as<std::vector<int>>();
 
@@ -89,10 +94,6 @@ ObsGroup openFile(const ODC_Parameters& odcparams,
   ignores.push_back("MetaData/datetime");
   ignores.push_back("MetaData/receiptdatetime");
   ignores.push_back("nchans");
-  ignores.push_back("MetaData/impact_parameters");
-  ignores.push_back("Channels");
-  ignores.push_back("ChannelsRadiance");
-  ignores.push_back("ChannelsAMSU");
 
   auto og = ObsGroup::generate(
     storageGroup,

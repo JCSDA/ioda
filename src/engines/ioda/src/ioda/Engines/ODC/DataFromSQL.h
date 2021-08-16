@@ -11,6 +11,7 @@
 
 #include <cctype>
 #include <iomanip>
+#include <map>
 #include <string>
 #include <vector>
 
@@ -61,6 +62,9 @@ namespace ODC {
   static constexpr int odb_type_string   = 3;
   static constexpr int odb_type_bitfield = 4;
 
+  static constexpr float odb_missing_float = -2147483648.0f;
+  static constexpr int odb_missing_int = 2147483647;
+
 class DataFromSQL {
 private:
   std::vector<std::string> columns_;
@@ -71,6 +75,7 @@ private:
   size_t number_of_metadata_rows_  = 0;
   size_t number_of_varnos_         = 0;
   int obsgroup_                    = 0;
+  std::map<int, size_t> varnos_and_levels_;
 
   /// \brief Returns a count of the rows extracted by an sql
   /// \param sql The SQL to check
@@ -108,17 +113,8 @@ private:
   /// \param column The column to check
   int getColumnIndex(const std::string& column) const;
 
-  /// \brief Returns the number of distinct varnos
-  size_t numberOfVarnos() const;
-
-  /// \brief Returns the number of columns
-  size_t numberOfColumns() const;
-
-  /// \brief Returns the number of rows
-  size_t numberOfRows() const;
-
   /// \brief Returns the number of levels for each varno
-  size_t numberOfLevels(size_t varno) const;
+  size_t numberOfLevels(int varno) const;
 
   /// \brief Returns data for a (metadata) column
   /// \param column Get data for this column
@@ -135,7 +131,10 @@ private:
   /// \brief Returns data for a varno for a varno column
   /// \param varno Get data for this varno
   /// \param column Get data for this column
-  Eigen::ArrayXf getVarnoColumn(const std::vector<int>& varnos, std::string const& column) const;
+  /// \param nchans Number of channels to store
+  /// \param nchans_actual Actual number of channels
+  Eigen::ArrayXf getVarnoColumn(const std::vector<int>& varnos, std::string const& column,
+                                           const int nchans, const int nchans_actual) const;
 
 public:
   /// \brief Simple constructor

@@ -8,6 +8,8 @@
  * @brief implements ODC bindings
 **/
 
+#include <algorithm>
+
 #include "./DataFromSQL.h"
 
 #include "odc/Select.h"
@@ -19,10 +21,7 @@ namespace ODC {
 
 DataFromSQL::DataFromSQL() {}
 
-size_t DataFromSQL::numberOfRows() const { return number_of_rows_; }
 size_t DataFromSQL::numberOfMetadataRows() const { return number_of_metadata_rows_; }
-size_t DataFromSQL::numberOfVarnos() const { return number_of_varnos_; }
-size_t DataFromSQL::numberOfColumns() const { return columns_.size(); }
 
 int DataFromSQL::getColumnIndex(const std::string& col) const {
   for (int i = 0; i < columns_.size(); i++) {
@@ -52,9 +51,9 @@ bool DataFromSQL::hasVarno(const int varno) const {
   return false;
 }
 
-size_t DataFromSQL::numberOfLevels(const size_t varno) const {
+size_t DataFromSQL::numberOfLevels(const int varno) const {
   if (hasVarno(varno) && number_of_metadata_rows_ > 0) {
-    return numberOfRowsForVarno(varno) / number_of_metadata_rows_;
+    return varnos_and_levels_.at(varno);
   }
   return 0;
 }
@@ -79,27 +78,18 @@ void DataFromSQL::setData(const std::string& sql) {
 }
 
 int DataFromSQL::getColumnTypeByName(std::string const& column) const {
-  size_t col_index = getColumnIndex(column);
-  return column_types_.at(col_index);
+  return column_types_.at(getColumnIndex(column));
 }
 
 NewDimensionScales_t DataFromSQL::getVertcos() const {
   NewDimensionScales_t vertcos;
-  const int num_rows = numberOfMetadataRows();
+  const int num_rows = number_of_metadata_rows_;
   vertcos.push_back(
     NewDimensionScale<int>("nlocs", num_rows, num_rows, num_rows));
   if (obsgroup_ == obsgroup_iasi || obsgroup_ == obsgroup_cris || obsgroup_ == obsgroup_hiras) {
-    int number_of_levels = numberOfLevels(varno_rawbt);
-    vertcos.push_back(NewDimensionScale<int>("Channels", number_of_levels,
+    int number_of_levels = std::max(numberOfLevels(varno_rawbt), numberOfLevels(varno_rawsca));
+    vertcos.push_back(NewDimensionScale<int>("nchans", number_of_levels,
                                              number_of_levels, number_of_levels));
-    number_of_levels = numberOfLevels(varno_rawsca);
-    vertcos.push_back(NewDimensionScale<int>("ChannelsRadiance", number_of_levels,
-                                             number_of_levels, number_of_levels));
-    if (obsgroup_ == obsgroup_iasi) {
-      number_of_levels = numberOfLevels(varno_rawbt_amsu);
-      vertcos.push_back(NewDimensionScale<int>(
-        "ChannelsAMSU", number_of_levels, number_of_levels, number_of_levels));
-    }
   } else if (obsgroup_ == obsgroup_atovs) {
     int number_of_levels = numberOfLevels(varno_rawbt_hirs) + numberOfLevels(varno_rawbt_amsu);
     vertcos.push_back(NewDimensionScale<int>("nchans", number_of_levels,
@@ -120,10 +110,6 @@ NewDimensionScales_t DataFromSQL::getVertcos() const {
     int number_of_levels = numberOfLevels(varno_rawbt_mwts) + numberOfLevels(varno_rawbt_mwhs);
     vertcos.push_back(NewDimensionScale<int>("nchans", number_of_levels,
                                              number_of_levels, number_of_levels));
-  } else if (obsgroup_ == obsgroup_gpsro) {
-    int number_of_levels = numberOfLevels(varno_bending_angle);
-    vertcos.push_back(NewDimensionScale<int>(
-      "MetaData/impact_parameters", number_of_levels, number_of_levels, number_of_levels));
   }
   return vertcos;
 }
@@ -133,8 +119,7 @@ double DataFromSQL::getData(const size_t row, const size_t column) const {
 }
 
 double DataFromSQL::getData(const size_t row, const std::string& column) const {
-  int column_index = getColumnIndex(column);
-  return data_.at(row * columns_.size() + column_index);
+  return getData(row, getColumnIndex(column));
 }
 
 Eigen::ArrayXf DataFromSQL::getMetadataColumn(std::string const& col) const {
@@ -234,24 +219,49 @@ std::vector<std::string> DataFromSQL::getMetadataStringColumn(std::string const&
 const std::vector<std::string>& DataFromSQL::getColumns() const { return columns_; }
 
 Eigen::ArrayXf DataFromSQL::getVarnoColumn(const std::vector<int>& varnos,
-                                           std::string const& col) const {
+                                           std::string const& col,
+                                           const int nchans = 1,
+                                           const int nchans_actual = 1) const {
   int column_index = getColumnIndex(col);
   int varno_index  = getColumnIndex("varno");
   size_t num_rows  = 0;
-  for (auto& it : varnos) {
-    num_rows = num_rows + numberOfRowsForVarno(it);
-  }
-  Eigen::ArrayXf arr(num_rows);
-  if (column_index != -1 && varno_index != -1) {
-    size_t j = 0;
-    for (size_t i = 0; i < number_of_rows_; i++) {
-      if (std::find(varnos.begin(), varnos.end(), getData(i, varno_index)) != varnos.end()) {
-        arr[j] = getData(i, column_index);
-        j++;
-      }
+  if (nchans > 1) {
+    num_rows = nchans * number_of_metadata_rows_;
+  } else {
+    for (auto& it : varnos) {
+      num_rows = num_rows + numberOfRowsForVarno(it);
     }
   }
-  return arr;
+  Eigen::ArrayXf arr = Eigen::ArrayXf::Constant(num_rows, odb_missing_float);
+  if (nchans == 1) {
+    if (column_index != -1 && varno_index != -1) {
+      size_t j = 0;
+      for (size_t i = 0; i < number_of_rows_; i++) {
+        if (std::find(varnos.begin(), varnos.end(), getData(i, varno_index)) != varnos.end()) {
+          arr[j] = getData(i, column_index);
+          j++;
+        }
+      }
+    }
+    return arr;
+  } else {
+    if (column_index != -1 && varno_index != -1) {
+      size_t j = 0;
+      size_t k_chan = 1;
+      for (size_t i = 0; i < number_of_rows_; i++) {
+        if (std::find(varnos.begin(), varnos.end(), getData(i, varno_index)) != varnos.end()) {
+          k_chan++;
+          arr[j] = getData(i, column_index);
+          j++;
+          if (k_chan > nchans_actual) {
+            j += (nchans - nchans_actual);  // skip unused channels
+            k_chan = 1;
+          }
+        }
+      }
+    }
+    return arr;
+  }
 }
 
 void DataFromSQL::select(const std::vector<std::string>& columns, const std::string& filename,
@@ -303,6 +313,12 @@ void DataFromSQL::select(const std::vector<std::string>& columns, const std::str
       }
     }
   }
+
+  for (size_t i = 0; i < number_of_varnos_; i++) {
+    if (hasVarno(varnos_[i]) && number_of_metadata_rows_ > 0) {
+      varnos_and_levels_[varnos_[i]] = numberOfRowsForVarno(varnos_[i]) / number_of_metadata_rows_;
+    }
+  }
 }
 
 int DataFromSQL::getObsgroup() const { return obsgroup_; }
@@ -345,13 +361,15 @@ ioda::Variable DataFromSQL::getIodaVariable(std::string const& column, ioda::Obs
     vard = getMetadataStringColumn(column);
   }
   if (col_type == odb_type_int || col_type == odb_type_bitfield) {
-    v = og.vars.createWithScales<int>(column, {og.vars["nlocs"]}, params);
+    VariableCreationParameters params_copy = params;
+    params_copy.setFillValue<int>(odb_missing_int);
+    v = og.vars.createWithScales<int>(column, {og.vars["nlocs"]}, params_copy);
     v.writeWithEigenRegular(vari);
-    v.atts.add<int>("_FillValue", 2147483647);
   } else if (col_type == odb_type_real) {
-    v = og.vars.createWithScales<float>(column, {og.vars["nlocs"]}, params);
+    VariableCreationParameters params_copy = params;
+    params_copy.setFillValue<int>(odb_missing_float);
+    v = og.vars.createWithScales<float>(column, {og.vars["nlocs"]}, params_copy);
     v.writeWithEigenRegular(var);
-    v.atts.add<float>("_FillValue", -2147483648.0f);
   } else {
     v = og.vars.createWithScales<std::string>(column, {og.vars["nlocs"]}, params);
     v.write(vard);
@@ -381,6 +399,18 @@ ioda::Variable DataFromSQL::getIodaObsvalue(const int varno, ioda::ObsGroup og,
   } else if (obsgroup_ == obsgroup_mwsfy3 && varno != varno_rawbt_mwts) {
     const std::vector<int> varnos{varno_rawbt_mwts, varno_rawbt_mwhs};
     var = getVarnoColumn(varnos, "initial_obsvalue");
+  } else if (obsgroup_ == obsgroup_cris && varno == varno_rawbt) {
+    const std::vector<int> varnos{varno_rawbt};
+    var = getVarnoColumn(varnos, "initial_obsvalue");
+  } else if (obsgroup_ == obsgroup_cris && varno == varno_rawsca) {
+    const std::vector<int> varnos{varno_rawsca};
+    var = getVarnoColumn(varnos, "initial_obsvalue", numberOfLevels(varno_rawbt), numberOfLevels(varno_rawsca));
+  } else if (obsgroup_ == obsgroup_iasi && varno == varno_rawbt_amsu) {
+    const std::vector<int> varnos{varno_rawbt_amsu};
+    var = getVarnoColumn(varnos, "initial_obsvalue", numberOfLevels(varno_rawbt), numberOfLevels(varno_rawbt_amsu));
+  } else if (obsgroup_ == obsgroup_iasi && varno == varno_rawsca) {
+    const std::vector<int> varnos{varno_rawsca};
+    var = getVarnoColumn(varnos, "initial_obsvalue", numberOfLevels(varno_rawbt), numberOfLevels(varno_rawsca));
   } else {
     const std::vector<int> varnos{varno};
     var = getVarnoColumn(varnos, "initial_obsvalue");
@@ -397,12 +427,8 @@ ioda::Variable DataFromSQL::getIodaObsvalue(const int varno, ioda::ObsGroup og,
   } else {
     std::string vertco_type;
     if (obsgroup_ == obsgroup_iasi || obsgroup_ == obsgroup_cris || obsgroup_ == obsgroup_hiras) {
-      if (varno == varno_rawbt) {
-        vertco_type = "Channels";
-      } else if (varno == varno_rawsca) {
-        vertco_type = "ChannelsRadiance";
-      } else if (varno == varno_rawbt_amsu) {
-        vertco_type = "ChannelsAMSU";
+      if (varno == varno_rawbt || varno == varno_rawsca || varno == varno_rawbt_amsu) {
+        vertco_type = "nchans";
       }
     } else if (obsgroup_ == obsgroup_atovs) {
       if (varno == varno_rawbt_hirs) {
@@ -424,10 +450,6 @@ ioda::Variable DataFromSQL::getIodaObsvalue(const int varno, ioda::ObsGroup og,
       if (varno == varno_rawbt) {
         vertco_type = "nchans";
       }
-    } else if (obsgroup_ == obsgroup_gpsro) {
-      if (varno == varno_bending_angle) {
-        vertco_type = "MetaData/impact_parameters";
-      }
     }
     if (vertco_type == "") {
       v = og.vars.createWithScales<float>(std::to_string(varno), {og.vars["nlocs"]},
@@ -445,7 +467,7 @@ ioda::Variable DataFromSQL::getIodaObsvalue(const int varno, ioda::ObsGroup og,
     }
   }
   v.writeWithEigenRegular(var);
-  v.atts.add<float>("_FillValue", -2147483648.0f);
+  v.atts.add<float>("_FillValue", odb_missing_float);
   return v;
 }
 
