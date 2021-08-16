@@ -109,18 +109,15 @@ void ObsDimInfo::set_dim_size(const ObsDimensionId dimId, std::size_t dimSize) {
  *                   the product of the comm and time communicators hold all observations in the
  *                   ObsSpace.
  */
-ObsSpace::ObsSpace(const eckit::Configuration & config, const eckit::mpi::Comm & comm,
+ObsSpace::ObsSpace(const Parameters_ & params, const eckit::mpi::Comm & comm,
                    const util::DateTime & bgn, const util::DateTime & end,
                    const eckit::mpi::Comm & timeComm)
-                     : oops::ObsSpaceBase(config, comm, bgn, end),
-                       config_(config), winbgn_(bgn), winend_(end), commMPI_(comm),
+                     : oops::ObsSpaceBase(params, comm, bgn, end),
+                       winbgn_(bgn), winend_(end), commMPI_(comm),
                        gnlocs_(0), nrecs_(0), obsvars_(),
-                       obs_group_(), obs_params_(bgn, end, comm, timeComm)
+                       obs_group_(), obs_params_(params, bgn, end, comm, timeComm)
 {
-    oops::Log::trace() << "ObsSpace::ObsSpace config  = " << config << std::endl;
-
-    // transfer the input config to the ObsSpaceParameters object data member
-    obs_params_.deserialize(config);
+    oops::Log::trace() << "ObsSpace::ObsSpace config  = " << obs_params_.top_level_ << std::endl;
 
     obsname_ = obs_params_.top_level_.obsSpaceName;
     obsvars_ = obs_params_.top_level_.simVars;
@@ -176,8 +173,8 @@ ObsSpace::ObsSpace(const eckit::Configuration & config, const eckit::mpi::Comm &
     /// the presence of these variables makes it possible
     /// to identify observations stored in more than one input file.
 
-    bool save_obs_distribution = config.getBool("save obs distribution", false);
-    if (save_obs_distribution && "Halo" == config.getString("distribution", "RoundRobin")) {
+    const bool save_obs_distribution = obs_params_.top_level_.saveObsDistribution;
+    if (save_obs_distribution && "Halo" == obs_params_.top_level_.distName.value()) {
       const size_t nlocs = this->nlocs();
 
       std::vector<int> idx2int(nlocs);

@@ -24,7 +24,9 @@ namespace ioda {
 const ObsSpace * obsspace_construct_f(const eckit::Configuration * conf,
                                       const util::DateTime * begin,
                                       const util::DateTime * end) {
-  return new ObsSpace(*conf, oops::mpi::world(), *begin, *end, oops::mpi::myself());
+  ObsTopLevelParameters params;
+  params.validateAndDeserialize(*conf);
+  return new ObsSpace(params, oops::mpi::world(), *begin, *end, oops::mpi::myself());
 }
 
 // -----------------------------------------------------------------------------

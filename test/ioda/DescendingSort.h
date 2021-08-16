@@ -33,7 +33,9 @@ void testDescendingSort(const eckit::LocalConfiguration &conf) {
   util::DateTime bgn(conf.getString("window begin"));
   util::DateTime end(conf.getString("window end"));
   const eckit::LocalConfiguration obsSpaceConf(conf, "obs space");
-  ioda::ObsSpace obsdata(obsSpaceConf, oops::mpi::world(), bgn, end, oops::mpi::myself());
+  ioda::ObsTopLevelParameters obsParams;
+  obsParams.validateAndDeserialize(obsSpaceConf);
+  ioda::ObsSpace obsdata(obsParams, oops::mpi::world(), bgn, end, oops::mpi::myself());
 
   // This test only works for grouped data with descending sort order
   if (obsdata.obs_sort_order() != "descending") {

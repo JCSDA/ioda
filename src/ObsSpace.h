@@ -118,6 +118,7 @@ namespace ioda {
         //---------------------------- typedefs -------------------------------
         typedef std::map<std::size_t, std::vector<std::size_t>> RecIdxMap;
         typedef RecIdxMap::const_iterator RecIdxIter;
+        typedef ObsTopLevelParameters Parameters_;
 
         //---------------------------- functions ------------------------------
         /// \brief Config based constructor for an ObsSpace object.
@@ -127,12 +128,12 @@ namespace ioda {
         /// specified by bgn and end, will be discarded before storing them in the
         /// obs container.
         ///
-        /// \param config eckit configuration segment holding obs types specs
+        /// \param params Configuration parameters (an instance of ObsTopLevelParameters)
         /// \param comm MPI communicator for model grouping
         /// \param bgn DateTime object holding the start of the DA timing window
         /// \param end DateTime object holding the end of the DA timing window
         /// \param timeComm MPI communicator for ensemble
-        ObsSpace(const eckit::Configuration & config, const eckit::mpi::Comm & comm,
+        ObsSpace(const Parameters_ & params, const eckit::mpi::Comm & comm,
                 const util::DateTime & bgn, const util::DateTime & end,
                 const eckit::mpi::Comm & timeComm);
         ObsSpace(const ObsSpace &);
@@ -361,9 +362,6 @@ namespace ioda {
 
      private:
         // ----------------------------- private data members ---------------------------
-        /// \brief Configuration file
-        const eckit::LocalConfiguration config_;
-
         /// \brief Beginning of DA timing window
         const util::DateTime winbgn_;
 

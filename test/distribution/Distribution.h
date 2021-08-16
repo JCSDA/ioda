@@ -291,7 +291,9 @@ void testDistributionConstructedByObsSpace() {
 
   for (const eckit::LocalConfiguration & conf : obsConf.getSubConfigurations()) {
     eckit::LocalConfiguration obsspaceConf(conf, "obs space");
-    ioda::ObsSpace obsspace(obsspaceConf, MpiComm, winBegin, winEnd, oops::mpi::myself());
+    ioda::ObsTopLevelParameters obsParams;
+    obsParams.validateAndDeserialize(obsspaceConf);
+    ioda::ObsSpace obsspace(obsParams, MpiComm, winBegin, winEnd, oops::mpi::myself());
 
     // Expected results are listed in "specs.index" with the MPI rank number
     // appended on the end.

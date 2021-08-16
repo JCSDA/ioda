@@ -21,6 +21,7 @@
 #include "eckit/exception/Exceptions.h"
 #include "eckit/mpi/Comm.h"
 
+#include "oops/base/ObsSpaceBase.h"  // for ObsSpaceParametersBase
 #include "oops/base/ParameterTraitsVariables.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
@@ -186,8 +187,8 @@ class ObsIoParametersWrapper : public oops::Parameters {
       obsIoInParameters{"type", this};
 };
 
-class ObsTopLevelParameters : public oops::Parameters {
-    OOPS_CONCRETE_PARAMETERS(ObsTopLevelParameters, Parameters)
+class ObsTopLevelParameters : public oops::ObsSpaceParametersBase {
+    OOPS_CONCRETE_PARAMETERS(ObsTopLevelParameters, ObsSpaceParametersBase)
 
  public:
     /// Reimplemented to store contents of the `obsdatain` or `generate` section (if present)
@@ -198,9 +199,6 @@ class ObsTopLevelParameters : public oops::Parameters {
 
     /// name of obs space
     oops::RequiredParameter<std::string> obsSpaceName{"name", this};
-
-    /// perturbation seed
-    oops::Parameter<int> obsPertSeed{"obs perturbations seed", 0, this};
 
     /// name of MPI distribution
     oops::Parameter<std::string> distName{"distribution", "RoundRobin", this};
@@ -262,8 +260,10 @@ class ObsSpaceParameters {
     ObsTopLevelParameters top_level_;
 
     /// Constructor
-    ObsSpaceParameters(const util::DateTime & winStart, const util::DateTime & winEnd,
+    ObsSpaceParameters(const ObsTopLevelParameters &topLevelParams,
+                       const util::DateTime & winStart, const util::DateTime & winEnd,
                        const eckit::mpi::Comm & comm, const eckit::mpi::Comm & timeComm) :
+                           top_level_(topLevelParams),
                            win_start_(winStart), win_end_(winEnd), comm_(comm),
                            time_comm_(timeComm),
                            new_dims_(), max_var_size_(0) {
@@ -285,13 +285,6 @@ class ObsSpaceParameters {
         }
     }
 
-    /// \brief deserialize the parameter sub groups
-    /// \param config "obs space" level configuration
-    void deserialize(const eckit::Configuration & config) {
-        oops::Log::trace() << "ObsSpaceParameters config: " << config << std::endl;
-        top_level_.validateAndDeserialize(config);
-    }
-
     /// \brief return the start of the DA timing window
     const util::DateTime & windowStart() const {return win_start_;}
 
@@ -302,7 +295,7 @@ class ObsSpaceParameters {
     const eckit::mpi::Comm & comm() const {return comm_;}
 
     /// \brief return the associated perturbations seed
-    int  obsPertSeed() const {return top_level_.obsPertSeed;}
+    int  obsPertSeed() const {return top_level_.obsPerturbationsSeed;}
 
     /// \brief return the associated MPI time communicator
     const eckit::mpi::Comm & timeComm() const {return time_comm_;}

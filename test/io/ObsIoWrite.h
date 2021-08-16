@@ -65,8 +65,10 @@ void testWrite() {
         oops::Log::trace() << "ObsIo testWrite test data config: " << i << ": "
                            << obsConfig << std::endl;
 
-        ioda::ObsSpaceParameters obsParams(bgn, end, oops::mpi::world(), oops::mpi::myself());
-        obsParams.deserialize(obsConfig);
+        ioda::ObsTopLevelParameters topParams;
+        topParams.validateAndDeserialize(obsConfig);
+        ioda::ObsSpaceParameters obsParams(topParams, bgn, end,
+                                           oops::mpi::world(), oops::mpi::myself());
 
         if (obsParams.top_level_.obsOutFile.value() != boost::none) {
             std::vector<eckit::LocalConfiguration> writeVarConfigs =

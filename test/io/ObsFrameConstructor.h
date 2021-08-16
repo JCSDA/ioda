@@ -63,8 +63,10 @@ void testConstructor() {
         oops::Log::trace() << "ObsFrame obs space config: " << i << ": " << obsConfig << std::endl;
         oops::Log::trace() << "ObsFrame test data config: " << i << ": " << testConfig << std::endl;
 
-        ioda::ObsSpaceParameters obsParams(bgn, end, oops::mpi::world(), oops::mpi::myself());
-        obsParams.deserialize(obsConfig);
+        ioda::ObsTopLevelParameters topParams;
+        topParams.validateAndDeserialize(obsConfig);
+        ioda::ObsSpaceParameters obsParams(topParams, bgn, end,
+                                           oops::mpi::world(), oops::mpi::myself());
 
         // Try the input constructor first - should have one to try if we got here
         std::shared_ptr<ObsFrame> obsFrame = std::make_shared<ObsFrameRead>(obsParams);
