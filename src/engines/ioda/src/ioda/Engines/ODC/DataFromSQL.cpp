@@ -325,23 +325,31 @@ int DataFromSQL::getObsgroup() const { return obsgroup_; }
 
 std::vector<std::string> DataFromSQL::getDates(std::string const& date_col,
                                                std::string const& time_col) const {
-  Eigen::ArrayXf var_date = getMetadataColumn(date_col);
-  Eigen::ArrayXf var_time = getMetadataColumn(time_col);
+  Eigen::ArrayXi var_date = getMetadataColumnInt(date_col);
+  Eigen::ArrayXi var_time = getMetadataColumnInt(time_col);
   std::vector<std::string> date_strings;
+  date_strings.reserve(var_date.size());
+
+  const std::string missingDateTime = "9996-02-29T23:58:57Z";  // same as oops
   for (int i = 0; i < var_date.size(); i++) {
-    int year   = var_date[i] / 10000;
-    int month  = var_date[i] / 100 - year * 100;
-    int day    = var_date[i] - 10000 * year - 100 * month;
-    int hour   = var_time[i] / 10000;
-    int minute = var_time[i] / 100 - hour * 100;
-    int second = var_time[i] - 10000 * hour - 100 * minute;
-    std::ostringstream stream;
-    stream << year << "-" << std::setfill('0') << std::setw(2) << month << "-" << std::setfill('0')
-           << std::setw(2) << day << "T" << std::setfill('0') << std::setw(2) << hour << ":"
-           << std::setfill('0') << std::setw(2) << minute << ":" << std::setfill('0')
-           << std::setw(2) << second << "Z";
-    std::string datetimestring = stream.str();
-    date_strings.push_back(datetimestring);
+    std::string datetimestring;
+    if (var_date[i] != odb_missing_int && var_time[i] != odb_missing_int) {
+      int year   = var_date[i] / 10000;
+      int month  = var_date[i] / 100 - year * 100;
+      int day    = var_date[i] - 10000 * year - 100 * month;
+      int hour   = var_time[i] / 10000;
+      int minute = var_time[i] / 100 - hour * 100;
+      int second = var_time[i] - 10000 * hour - 100 * minute;
+      std::ostringstream stream;
+      stream << year << "-" << std::setfill('0') << std::setw(2) << month << "-" << std::setfill('0')
+             << std::setw(2) << day << "T" << std::setfill('0') << std::setw(2) << hour << ":"
+             << std::setfill('0') << std::setw(2) << minute << ":" << std::setfill('0')
+             << std::setw(2) << second << "Z";
+      datetimestring = stream.str();
+    } else {
+      datetimestring = missingDateTime;
+    }
+    date_strings.push_back(std::move(datetimestring));
   }
   return date_strings;
 }

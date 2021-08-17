@@ -104,6 +104,9 @@ ObsGroup openFile(const ODC_Parameters& odcparams,
   ioda::VariableCreationParameters params;
   // Writing in the data
   ioda::Variable v;
+
+  // Datetime variables are handled specially -- date and time are stored in separate ODB columns,
+  // but ioda represents them in a single variable.
   v = og.vars.createWithScales<std::string>(
     "MetaData/datetime", {og.vars["nlocs"]}, params);
   v.write(sql_data.getDates("date", "time"));
