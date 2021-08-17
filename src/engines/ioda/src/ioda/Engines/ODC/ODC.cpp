@@ -131,9 +131,7 @@ ObsGroup openFile(const ODC_Parameters& odcparams,
                                    "ops_obsgroup"};
 
     if (ignoredNames.count(sqlColumns.at(i))) continue;
-    int col_type = sql_data.getColumnTypeByName(sqlColumns.at(i));
-    const set<int> validColTypes{odb_type_int, odb_type_real, odb_type_bitfield};
-    if (validColTypes.count(col_type)) sql_data.getIodaVariable(sqlColumns.at(i), og, params);
+    sql_data.getIodaVariable(sqlColumns.at(i), og, params);
   }
 
   groups = og.listObjects();
