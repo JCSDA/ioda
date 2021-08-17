@@ -198,6 +198,9 @@ observations:
     obsdatain:
       obsfile: "Data/testinput_tier_1/sondes_obs_2018041500_m.nc4"
       max frame size: 200
+    obsdataout:
+      obsfile: "testoutput/diagout.nc4"
+      max frame size: 300
   test data:
     nlocs: 974
     nrecs: 974
@@ -237,9 +240,6 @@ observations:
       - name: "specific_humidity"
         group: "ObsValue"
         channels: []
-    obsdataout:
-      obsfile: "testoutput/diagout.nc4"
-      max frame size: 300
 
 - obs space:
     name: "Radiosonde with grouping"

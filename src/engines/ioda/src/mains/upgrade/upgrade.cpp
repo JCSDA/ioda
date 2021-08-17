@@ -615,6 +615,14 @@ bool upgradeFile(const std::string& inputName, const std::string& outputName, co
         adjustedParams.chunks = mod_dims.dimsCur;  // A suggestion.
       }
 
+      // Set the fill value to an empty string. The calls to getCreationParameters()
+      // on the ioda v1 variables that preceed the call to this function set the fill
+      // value to a null character (\0) since the ioda v1 format for strings is a
+      // character array style. We are going to convert that character array to a vector
+      // of strings and the fill value needs to use the special string container instead
+      // of the union (which the character uses).
+      adjustedParams.setFillValue<string>("");
+
       cout << " Converting old-format string variable: " << oldVar.name << "\n";
 
       newvars[oldVar.name] = out.vars.create<string>(oldVar.name, mod_dims, adjustedParams);

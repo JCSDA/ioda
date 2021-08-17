@@ -367,7 +367,7 @@ ioda::Variable DataFromSQL::getIodaVariable(std::string const& column, ioda::Obs
     v.writeWithEigenRegular(vari);
   } else if (col_type == odb_type_real) {
     VariableCreationParameters params_copy = params;
-    params_copy.setFillValue<int>(odb_missing_float);
+    params_copy.setFillValue<float>(odb_missing_float);
     v = og.vars.createWithScales<float>(column, {og.vars["nlocs"]}, params_copy);
     v.writeWithEigenRegular(var);
   } else {
@@ -415,6 +415,10 @@ ioda::Variable DataFromSQL::getIodaObsvalue(const int varno, ioda::ObsGroup og,
     const std::vector<int> varnos{varno};
     var = getVarnoColumn(varnos, "initial_obsvalue");
   }
+
+  VariableCreationParameters params_copy = params;
+  params_copy.setFillValue<float>(odb_missing_float);
+
   int number_of_levels;
   if (obsgroup_ == obsgroup_atovs && varno == varno_rawbt_hirs) {
     number_of_levels = numberOfLevels(varno_rawbt_hirs) + numberOfLevels(varno_rawbt_amsu);
@@ -423,7 +427,7 @@ ioda::Variable DataFromSQL::getIodaObsvalue(const int varno, ioda::ObsGroup og,
   }
   if (number_of_levels <= 0) return v;
   if (number_of_levels == 1) {
-    v = og.vars.createWithScales<float>(std::to_string(varno), {og.vars["nlocs"]}, params);
+    v = og.vars.createWithScales<float>(std::to_string(varno), {og.vars["nlocs"]}, params_copy);
   } else {
     std::string vertco_type;
     if (obsgroup_ == obsgroup_iasi || obsgroup_ == obsgroup_cris || obsgroup_ == obsgroup_hiras) {
@@ -453,21 +457,20 @@ ioda::Variable DataFromSQL::getIodaObsvalue(const int varno, ioda::ObsGroup og,
     }
     if (vertco_type == "") {
       v = og.vars.createWithScales<float>(std::to_string(varno), {og.vars["nlocs"]},
-                                          params);
+                                          params_copy);
     } else if (obsgroup_ == obsgroup_abiclr || obsgroup_ == obsgroup_ahiclr
                || obsgroup_ == obsgroup_airs || obsgroup_ == obsgroup_atms
                || obsgroup_ == obsgroup_gmihigh || obsgroup_ == obsgroup_gmilow
                || obsgroup_ == obsgroup_mwri || obsgroup_ == obsgroup_mwsfy3
                || obsgroup_ == obsgroup_seviriclr || obsgroup_ == obsgroup_ssmis) {
       v = og.vars.createWithScales<float>(std::to_string(varno),
-                                          {og.vars["nlocs"], og.vars["nchans"]}, params);
+                                          {og.vars["nlocs"], og.vars["nchans"]}, params_copy);
     } else {
       v = og.vars.createWithScales<float>(
-        std::to_string(varno), {og.vars["nlocs"], og.vars[vertco_type]}, params);
+        std::to_string(varno), {og.vars["nlocs"], og.vars[vertco_type]}, params_copy);
     }
   }
   v.writeWithEigenRegular(var);
-  v.atts.add<float>("_FillValue", odb_missing_float);
   return v;
 }
 

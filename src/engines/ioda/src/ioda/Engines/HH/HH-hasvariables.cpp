@@ -163,6 +163,17 @@ Variable HH_HasVariables::create(const std::string& name, const Type& in_memory_
 
     auto b = std::make_shared<HH_Variable>(res, shared_from_this());
     Variable var{ b };
+
+    // One last thing: if the fill value is set, then we need to add an attribute
+    // called "_FillValue" for NetCDF readers.
+    if (params.fillValue_.set_) {
+      Attribute fv = var.atts.create("_FillValue", in_memory_dataType);
+      const FillValueData_t::FillValueUnion_t fvdata = params.fillValue_.finalize();
+      fv.write(gsl::make_span<char>(
+        const_cast<char*>(reinterpret_cast<const char*>(&fvdata)),
+        sizeof(FillValueData_t::FillValueUnion_t)),in_memory_dataType);
+    }
+
     return var;
   }
   catch (std::bad_cast&) {
