@@ -83,13 +83,14 @@ class ObsExtendParameters : public oops::Parameters {
     OOPS_CONCRETE_PARAMETERS(ObsExtendParameters, oops::Parameters)
 
  public:
-    /// number of model levels in target of the averaging function
+    /// Number of model levels onto which original profiles are averaged.
     oops::RequiredParameter<int> numModelLevels{"average profiles onto model levels", this};
 
-    /// number of model levels in target of the averaging function
+    /// Variables that are filled with non-missing values when producing averaged profiles.
     oops::Parameter<std::vector<std::string>> nonMissingExtendedVars
         {"variables filled with non-missing values",
-            { "latitude", "longitude", "datetime", "air_pressure", "air_pressure_levels" },
+            { "latitude", "longitude", "datetime", "air_pressure",
+                "air_pressure_levels", "station_id" },
             this};
 };
 

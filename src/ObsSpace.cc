@@ -1142,7 +1142,8 @@ void ObsSpace::saveToFile() {
 
 // -----------------------------------------------------------------------------
 template <typename DataType>
-void ObsSpace::extendVariable(Variable & extendVar, const size_t startFill) {
+void ObsSpace::extendVariable(Variable & extendVar,
+                              const size_t upperBoundOnGlobalNumOriginalRecs) {
     const DataType missing = util::missingValue(missing);
 
     // Read in variable data values. At this point the values will contain
@@ -1151,13 +1152,30 @@ void ObsSpace::extendVariable(Variable & extendVar, const size_t startFill) {
     std::vector<DataType> varVals;
     extendVar.read<DataType>(varVals);
 
-    // Iterator pointing to the first non-missing value in the input vector.
-    auto it_nonmissing = std::find_if(varVals.begin(), varVals.end(),
-                                      [&missing](DataType x){return x != missing;});
-    if (it_nonmissing != varVals.end()) {
-        std::fill(varVals.begin() + startFill, varVals.end(), *it_nonmissing);
-        extendVar.write<DataType>(varVals);
+    for (const auto & recordindex : recidx_) {
+      // Only deal with records in the original ObsSpace.
+      if (recordindex.first >= upperBoundOnGlobalNumOriginalRecs) break;
+
+      // Find the first non-missing value in the original record.
+      DataType fillValue = missing;
+      for (const auto & jloc : recordindex.second) {
+        if (varVals[jloc] != missing) {
+          fillValue = varVals[jloc];
+          break;
+        }
+      }
+
+      // Fill the averaged record with the first non-missing value in the original record.
+      // (If all values are missing, do nothing.)
+      if (fillValue != missing) {
+        for (const auto & jloc : recidx_[recordindex.first + upperBoundOnGlobalNumOriginalRecs]) {
+          varVals[jloc] = fillValue;
+        }
+      }
     }
+
+    // Write out values of the averaged record.
+    extendVar.write<DataType>(varVals);
 }
 
 // -----------------------------------------------------------------------------
@@ -1258,11 +1276,11 @@ void ObsSpace::extendObsSpace(const ObsExtendParameters & params) {
         // The numOriginalLocs argument passed to extendVariable indicates where to start filling.
         Variable extendVar = obs_group_.vars.open(fullVname);
         if (extendVar.isA<int>()) {
-          extendVariable<int>(extendVar, numOriginalLocs);
+          extendVariable<int>(extendVar, upperBoundOnGlobalNumOriginalRecs);
         } else if (extendVar.isA<float>()) {
-          extendVariable<float>(extendVar, numOriginalLocs);
+          extendVariable<float>(extendVar, upperBoundOnGlobalNumOriginalRecs);
         } else if (extendVar.isA<std::string>()) {
-          extendVariable<std::string>(extendVar, numOriginalLocs);
+          extendVariable<std::string>(extendVar, upperBoundOnGlobalNumOriginalRecs);
         }
       }
     }

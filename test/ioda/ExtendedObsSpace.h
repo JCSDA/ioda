@@ -115,44 +115,6 @@ void testExtendedObsSpace(const eckit::LocalConfiguration &conf) {
     }
   }
 
-  // If the variable station_id@MetaData is present,
-  // check that its values in the extended ObsSpace are all missing.
-  if (obsdata.has("MetaData", "station_id")) {
-    const std::string missingValueString = util::missingValue(missingValueString);
-    std::vector <std::string> statid(nlocs);
-    obsdata.get_db("MetaData", "station_id", statid);
-    for (int iloc = extendedObsSpaceStart; iloc < nlocs; ++iloc)
-      EXPECT_EQUAL(statid[iloc], missingValueString);
-  }
-
-  // Check the values of any variables that have been filled with non-missing
-  // values in the extended section.
-  // List of variables to check.
-  const std::vector <std::string> extendedVarsToCheck =
-    {"latitude", "longitude", "air_pressure"};
-  // List of variables that should be filled with non-missing values.
-  const std::vector <std::string> &nonMissingExtendedVars =
-    obsSpaceConf.getStringVector("extension.variables filled with non-missing values",
-                                 {"latitude", "longitude", "datetime",
-                                     "air_pressure", "air_pressure_levels"});
-  std::vector <float> val_extended(nlocs);
-  for (auto &varname : extendedVarsToCheck) {
-    // Only variables that are present in the ObsSpace are checked.
-    if (obsdata.has("MetaData", varname)) {
-      const bool filledWithNonMissing =
-        std::find(nonMissingExtendedVars.begin(), nonMissingExtendedVars.end(), varname) !=
-        nonMissingExtendedVars.end();
-      obsdata.get_db("MetaData", varname, val_extended);
-      if (filledWithNonMissing) {
-        for (int iloc = extendedObsSpaceStart; iloc < nlocs; ++iloc)
-          EXPECT(val_extended[iloc] != missingValueFloat);
-      } else {
-        for (int iloc = extendedObsSpaceStart; iloc < nlocs; ++iloc)
-          EXPECT_EQUAL(val_extended[iloc], missingValueFloat);
-      }
-    }
-  }
-
   // Compare record numbers on this processor.
   // There should be an even number of records; the second half should have indices shifted
   // by a constant offset with respect to the first half. This offset should be equal to the
@@ -185,6 +147,57 @@ void testExtendedObsSpace(const eckit::LocalConfiguration &conf) {
   std::iota(index_processors_expected.begin(), index_processors_expected.end(), 0);
   // Compare actual and expected indices.
   EXPECT_EQUAL(index_processors, index_processors_expected);
+
+  // Check that values in each averaged profile have been set as desired.
+
+  // User-configured list of variables that should be filled with non-missing values.
+  const std::vector <std::string> &nonMissingExtendedVars =
+    obsSpaceConf.getStringVector("extension.variables filled with non-missing values",
+                                 {"latitude", "longitude", "datetime",
+                                     "air_pressure", "air_pressure_levels", "station_id"});
+  // List of variables to check.
+  // It is required that these are all floating-point variables in the MetaData group.
+  const std::vector <std::string> extendedVarsToCheck =
+    {"latitude", "longitude", "air_pressure"};
+  // Retrieve all station IDs in the sample.
+  std::vector <std::string> statids(obsdata.nlocs());
+  obsdata.get_db("MetaData", "station_id", statids);
+  // Unique station IDs are taken from the configuration file.
+  // The IDs are loaded in this way in order to guarantee a particular correspondence
+  // with the reference vectors.
+  const std::vector <std::string> uniqueStatids =
+    conf.getStringVector("unique statids");
+
+  // Vector holding values of any variables to check.
+  std::vector <float> varToCheck(obsdata.nlocs());
+  // Loop over all variables to check.
+  for (const auto & extendedVar : extendedVarsToCheck) {
+    obsdata.get_db("MetaData", extendedVar, varToCheck);
+    // Check whether this variable should have been filled.
+    const bool nonMissing =
+      std::find(nonMissingExtendedVars.begin(), nonMissingExtendedVars.end(), extendedVar)
+      != nonMissingExtendedVars.end();
+    // Loop over each original profile in the sample.
+    for (std::size_t jprof = 0; jprof < nrecs_original; ++jprof) {
+      // Locations corresponding to the original profile.
+      const std::vector<std::size_t> locsOriginal =
+        obsdata.recidx_vector(recidx_all_recnums[jprof]);
+      // Locations corresponding to the averaged profile.
+      const std::vector<std::size_t> locsExtended =
+        obsdata.recidx_vector(recidx_all_recnums[jprof + nrecs_original]);
+      // Obtain comparison value from configuration file.
+      float valueToCompare = missingValueFloat;
+      if (nonMissing) {
+        const std::vector <float> expectedValues = conf.getFloatVector("expected " + extendedVar);
+        const std::string statid_prof = statids[locsOriginal.front()];
+        auto it_statid_prof = std::find(uniqueStatids.begin(), uniqueStatids.end(), statid_prof);
+        valueToCompare = expectedValues[it_statid_prof - uniqueStatids.begin()];
+      }
+      // Compare values in the averaged profile to the expected value.
+      for (const auto jloc : locsExtended)
+        EXPECT(varToCheck[jloc] == valueToCompare);
+    }
+  }
 
   obsdata.save();
 }

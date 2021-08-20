@@ -601,9 +601,10 @@ namespace ioda {
 
         /// \brief Extend the given variable
         /// \param extendVar database variable to be extended
-        /// \param startFill nlocs index indicating the start of the extended region
+        /// \param upperBoundOnGlobalNumOriginalRecs upper bound, across all processors,
+        ///        of the number of records in the original ObsSpace.
         template <typename DataType>
-        void extendVariable(Variable & extendVar, const size_t startFill);
+        void extendVariable(Variable & extendVar, const size_t upperBoundOnGlobalNumOriginalRecs);
     };
 
 }  // namespace ioda
