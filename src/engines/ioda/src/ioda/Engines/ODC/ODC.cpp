@@ -136,11 +136,7 @@ ObsGroup openFile(const ODC_Parameters& odcparams,
 
   groups = og.listObjects();
   for (int i = 0; i < varnos.size(); i++) {
-    if (sql_data.getObsgroup() == obsgroup_atovs) {
-      if (varnos.at(i) == varno_rawbt_hirs) {
-        sql_data.getIodaObsvalue(varnos.at(i), og, params);
-      }
-    } else if (sql_data.getObsgroup() == obsgroup_amsr) {
+    if (sql_data.getObsgroup() == obsgroup_amsr) {
       if (varnos.at(i) == varno_rawbt) {
         sql_data.getIodaObsvalue(varnos.at(i), og, params);
       }

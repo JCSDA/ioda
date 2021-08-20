@@ -1,22 +1,11 @@
 where:
-  varno: [244,246,248,249]
+  varno: [249]
 variables:
 - name: amsua1_temp
 - name: amsua2_temp
 - name: amsub_temp
 - name: amsuscatindex
 - name: azimuth
-- name: emissivity_param_1
-- name: emissivity_param_2
-- name: emissivity_param_3
-- name: emissivity_param_4
-- name: emissivity_param_5
-- name: emissivity_param_6
-- name: emissivity_param_7
-- name: emissivity_param_8
-- name: emissivity_param_9
-- name: emissivity_param_10
-- name: hirs_temp
 - name: land_sea
 - name: qchirsfov
 - name: qcprepro
@@ -32,7 +21,6 @@ variables:
 - name: surface_land_fraction
 - name: surface_land_indicator
 - name: vnatovspp
-- name: water_fraction
 - name: zenith
 - name: receipt_time
 - name: receipt_date

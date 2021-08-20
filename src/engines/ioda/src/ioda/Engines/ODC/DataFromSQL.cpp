@@ -91,7 +91,7 @@ NewDimensionScales_t DataFromSQL::getVertcos() const {
     vertcos.push_back(NewDimensionScale<int>("nchans", number_of_levels,
                                              number_of_levels, number_of_levels));
   } else if (obsgroup_ == obsgroup_atovs) {
-    int number_of_levels = numberOfLevels(varno_rawbt_hirs) + numberOfLevels(varno_rawbt_amsu);
+    int number_of_levels = numberOfLevels(varno_rawbt_amsu);
     vertcos.push_back(NewDimensionScale<int>("nchans", number_of_levels,
                                              number_of_levels, number_of_levels));
   } else if (obsgroup_ == obsgroup_amsr) {
@@ -389,11 +389,8 @@ ioda::Variable DataFromSQL::getIodaObsvalue(const int varno, ioda::ObsGroup og,
                                             ioda::VariableCreationParameters params) const {
   ioda::Variable v;
   Eigen::ArrayXf var;
-  if (obsgroup_ == obsgroup_atovs && varno == varno_rawbt_hirs) {
-    const std::vector<int> varnos{varno_rawbt_hirs, varno_rawbt_amsu};
-    var = getVarnoColumn(varnos, "initial_obsvalue");
-  } else if (obsgroup_ == obsgroup_atovs && varno == varno_rawbt_amsu) {
-    const std::vector<int> varnos{varno_rawbt_hirs, varno_rawbt_amsu};
+  if (obsgroup_ == obsgroup_atovs && varno == varno_rawbt_amsu) {
+    const std::vector<int> varnos{varno_rawbt_amsu};
     var = getVarnoColumn(varnos, "initial_obsvalue");
   } else if (obsgroup_ == obsgroup_amsr && varno == varno_rawbt) {
     const std::vector<int> varnos{varno_rawbt, varno_rawbt_amsr_89ghz};
@@ -428,11 +425,7 @@ ioda::Variable DataFromSQL::getIodaObsvalue(const int varno, ioda::ObsGroup og,
   params_copy.setFillValue<float>(odb_missing_float);
 
   int number_of_levels;
-  if (obsgroup_ == obsgroup_atovs && varno == varno_rawbt_hirs) {
-    number_of_levels = numberOfLevels(varno_rawbt_hirs) + numberOfLevels(varno_rawbt_amsu);
-  } else {
-    number_of_levels = numberOfLevels(varno);
-  }
+  number_of_levels = numberOfLevels(varno);
   if (number_of_levels <= 0) return v;
   if (number_of_levels == 1) {
     v = og.vars.createWithScales<float>(std::to_string(varno), {og.vars["nlocs"]}, params_copy);
@@ -443,9 +436,7 @@ ioda::Variable DataFromSQL::getIodaObsvalue(const int varno, ioda::ObsGroup og,
         vertco_type = "nchans";
       }
     } else if (obsgroup_ == obsgroup_atovs) {
-      if (varno == varno_rawbt_hirs) {
-        vertco_type = "nchans";
-      }
+      vertco_type = "nchans";
     } else if (obsgroup_ == obsgroup_amsr) {
       if (varno == varno_rawbt) {
         vertco_type = "nchans";
