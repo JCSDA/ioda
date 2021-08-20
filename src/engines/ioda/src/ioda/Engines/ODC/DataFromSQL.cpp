@@ -265,7 +265,7 @@ Eigen::ArrayXf DataFromSQL::getVarnoColumn(const std::vector<int>& varnos,
 }
 
 void DataFromSQL::select(const std::vector<std::string>& columns, const std::string& filename,
-                         const std::vector<int>& varnos) {
+                         const std::vector<int>& varnos, const std::string& query) {
   columns_ = columns;
   std::string sql = "select ";
   for (int i = 0; i < columns_.size(); i++) {
@@ -283,7 +283,12 @@ void DataFromSQL::select(const std::vector<std::string>& columns, const std::str
       sql = sql + " or varno = " + std::to_string(varnos.at(i));
     }
   }
-  sql              = sql + ");";
+  sql              = sql + ")";
+  if (!query.empty()) {
+    sql = sql + " and (" + query + ");";
+  } else {
+    sql = sql + ";";
+  }
   size_t totalRows = countRows(sql);
   data_.resize(totalRows * columns_.size());
   setData(sql);

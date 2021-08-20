@@ -86,6 +86,9 @@ class OdbWhereParameters : public oops::Parameters {
   /// The varnos to query data from
   oops::RequiredParameter<util::AnyOf<StarParameter, std::vector<int>>> varno{
       "varno", this};
+  /// Optional free-form query
+  oops::Parameter<std::string> query{
+    "query", "", this};
 };
 
 class OdbQueryParameters : public oops::Parameters {

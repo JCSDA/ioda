@@ -82,7 +82,7 @@ ObsGroup openFile(const ODC_Parameters& odcparams,
   const vector<int> &varnos = queryParameters.where.value().varno.value().as<std::vector<int>>();
 
   DataFromSQL sql_data;
-  sql_data.select(columns, odcparams.filename, varnos);
+  sql_data.select(columns, odcparams.filename, varnos, queryParameters.where.value().query);
 
   const int num_rows = sql_data.numberOfMetadataRows();
   if (num_rows <= 0) return storageGroup;

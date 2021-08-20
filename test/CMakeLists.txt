@@ -70,6 +70,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_odb_sonde.yml
   testinput/iodatest_odb_ssmis.yml
   testinput/iodatest_odb_surface.yml
+  testinput/iodatest_odb_surface_with_query.yml
   testinput/iodatest_odb_surfacecloud.yml
   testinput/odb_default_name_map.yml
   testinput/iodatest_time_io.yml
@@ -700,6 +701,17 @@ if (odc_FOUND)
                             Data/testinput_tier_1/surface.odb
                             testinput/odb_default_name_map.yml testinput/iodatest_odb_surface.yml"
                             test-Surface.hdf
+                    TEST_DEPENDS get_ioda_test_data )
+
+  ecbuild_add_test( TARGET  test_ioda-convert_surface_with_query_odc
+                    TYPE    SCRIPT
+                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                    ARGS    hdf5
+                            "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
+                            Surface-with-query
+                            Data/testinput_tier_1/surface.odb
+                            testinput/odb_default_name_map.yml testinput/iodatest_odb_surface_with_query.yml"
+                            test-Surface-with-query.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
   ecbuild_add_test( TARGET  test_ioda-convert_sonde_odc

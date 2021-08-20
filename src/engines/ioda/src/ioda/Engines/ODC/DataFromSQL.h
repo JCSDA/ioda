@@ -151,7 +151,7 @@ public:
   /// \param filename Extract from this file
   /// \param varnos List of varnos to extract
   void select(const std::vector<std::string>& columns, const std::string& filename,
-              const std::vector<int>& varnos);
+              const std::vector<int>& varnos, const std::string& query);
 
   /// \brief Returns a vector of date strings
   std::vector<std::string> getDates(std::string const& date_col, std::string const& time_col) const;
