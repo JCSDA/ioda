@@ -54,6 +54,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_odb_atovs.yml
   testinput/iodatest_odb_cris.yml
   testinput/iodatest_odb_crisfsr.yml
+  testinput/iodatest_odb_geocloud.yml
   testinput/iodatest_odb_gmihigh.yml
   testinput/iodatest_odb_gmilow.yml
   testinput/iodatest_odb_gpsro.yml
@@ -69,6 +70,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_odb_sonde.yml
   testinput/iodatest_odb_ssmis.yml
   testinput/iodatest_odb_surface.yml
+  testinput/iodatest_odb_surfacecloud.yml
   testinput/odb_default_name_map.yml
   testinput/iodatest_time_io.yml
 )
@@ -887,16 +889,16 @@ if (odc_FOUND)
   #                          test-HIRASFSR.hdf
   #                  TEST_DEPENDS get_ioda_test_data )
 
-  #ecbuild_add_test( TARGET  test_ioda-convert_hloswind_odc
-  #                  TYPE    SCRIPT
-  #                  COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
-  #                  ARGS    hdf5
-  #                          "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
-  #                          HLOSWind
-  #                          Data/testinput_tier_1/hloswind.odb
-  #                          testinput/odb_default_name_map.yml testinput/iodatest_odb_hloswind.yml"
-  #                          test-HLOSWind.hdf
-  #                  TEST_DEPENDS get_ioda_test_data )
+  ecbuild_add_test( TARGET  test_ioda-convert_hloswind_odc
+                    TYPE    SCRIPT
+                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                    ARGS    hdf5
+                            "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
+                            HLOSWind
+                            Data/testinput_tier_1/hloswind.odb
+                            testinput/odb_default_name_map.yml testinput/iodatest_odb_hloswind.yml"
+                            test-HLOSWind.hdf
+                    TEST_DEPENDS get_ioda_test_data )
 
   #ecbuild_add_test( TARGET  test_ioda-convert_mwri_odc
   #                  TYPE    SCRIPT
@@ -951,6 +953,28 @@ if (odc_FOUND)
                             Data/testinput_tier_1/atms.odb
                             testinput/odb_default_name_map.yml testinput/iodatest_odb_atms.yml"
                             test-ATMS.hdf
+                    TEST_DEPENDS get_ioda_test_data )
+
+  ecbuild_add_test( TARGET  test_ioda-convert_geocloud_odc
+                    TYPE    SCRIPT
+                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                    ARGS    hdf5
+                            "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
+                            GeoCloud
+                            Data/testinput_tier_1/geocloud.odb
+                            testinput/odb_default_name_map.yml testinput/iodatest_odb_geocloud.yml"
+                            test-GeoCloud.hdf
+                    TEST_DEPENDS get_ioda_test_data )
+
+  ecbuild_add_test( TARGET  test_ioda-convert_surfacecloud_odc
+                    TYPE    SCRIPT
+                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                    ARGS    hdf5
+                            "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
+                            SurfaceCloud
+                            Data/testinput_tier_1/surfacecloud.odb
+                            testinput/odb_default_name_map.yml testinput/iodatest_odb_surfacecloud.yml"
+                            test-SurfaceCloud.hdf
                     TEST_DEPENDS get_ioda_test_data )
 endif()
 

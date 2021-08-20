@@ -1,0 +1,15 @@
+where:
+  varno: [63,64,65,67,91,266,290,291,292,293,294]
+variables:
+- name: buoy_identifier
+- name: ident
+- name: lowest_cloud_base_height
+- name: pressure_sensor_alt
+- name: receipt_date
+- name: receipt_time
+- name: stalt
+- name: statid
+- name: station_type
+- name: wmo_block_number
+- name: wmo_region_number
+- name: wmo_station_number
