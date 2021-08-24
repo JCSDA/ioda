@@ -879,27 +879,27 @@ if (odc_FOUND)
                             test-CrIS.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
-  #ecbuild_add_test( TARGET  test_ioda-convert_crisfsr_odc
-  #                  TYPE    SCRIPT
-  #                  COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
-  #                  ARGS    hdf5
-  #                          "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
-  #                          CrISFSR
-  #                          Data/testinput_tier_1/crisfsr.odb
-  #                          testinput/odb_default_name_map.yml testinput/iodatest_odb_crisfsr.yml"
-  #                          test-CrISFSR.hdf
-  #                  TEST_DEPENDS get_ioda_test_data )
+  ecbuild_add_test( TARGET  test_ioda-convert_crisfsr_odc
+                    TYPE    SCRIPT
+                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                    ARGS    hdf5
+                            "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
+                            CrISFSR
+                            Data/testinput_tier_1/crisfsr.odb
+                            testinput/odb_default_name_map.yml testinput/iodatest_odb_crisfsr.yml"
+                            test-CrISFSR.hdf
+                    TEST_DEPENDS get_ioda_test_data )
 
-  #ecbuild_add_test( TARGET  test_ioda-convert_hirasfsr_odc
-  #                  TYPE    SCRIPT
-  #                  COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
-  #                  ARGS    hdf5
-  #                          "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
-  #                          HIRASFSR
-  #                          Data/testinput_tier_1/hirasfsr.odb
-  #                          testinput/odb_default_name_map.yml testinput/iodatest_odb_hirasfsr.yml"
-  #                          test-HIRASFSR.hdf
-  #                  TEST_DEPENDS get_ioda_test_data )
+  ecbuild_add_test( TARGET  test_ioda-convert_hirasfsr_odc
+                    TYPE    SCRIPT
+                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                    ARGS    hdf5
+                            "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
+                            HIRASFSR
+                            Data/testinput_tier_1/hirasfsr.odb
+                            testinput/odb_default_name_map.yml testinput/iodatest_odb_hirasfsr.yml"
+                            test-HIRASFSR.hdf
+                    TEST_DEPENDS get_ioda_test_data )
 
   ecbuild_add_test( TARGET  test_ioda-convert_hloswind_odc
                     TYPE    SCRIPT
@@ -912,16 +912,16 @@ if (odc_FOUND)
                             test-HLOSWind.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
-  #ecbuild_add_test( TARGET  test_ioda-convert_mwri_odc
-  #                  TYPE    SCRIPT
-  #                  COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
-  #                  ARGS    hdf5
-  #                          "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
-  #                          MWRI
-  #                          Data/testinput_tier_1/mwri.odb
-  #                          testinput/odb_default_name_map.yml testinput/iodatest_odb_mwri.yml"
-  #                          test-MWRI.hdf
-  #                  TEST_DEPENDS get_ioda_test_data )
+  ecbuild_add_test( TARGET  test_ioda-convert_mwri_odc
+                    TYPE    SCRIPT
+                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                    ARGS    hdf5
+                            "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
+                            MWRI
+                            Data/testinput_tier_1/mwri.odb
+                            testinput/odb_default_name_map.yml testinput/iodatest_odb_mwri.yml"
+                            test-MWRI.hdf
+                    TEST_DEPENDS get_ioda_test_data )
 
   ecbuild_add_test( TARGET  test_ioda-convert_iasi_odc
                     TYPE    SCRIPT

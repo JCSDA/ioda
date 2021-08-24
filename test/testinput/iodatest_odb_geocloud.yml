@@ -1,5 +1,5 @@
 where:
-  varno: [91,119,121,231,257,266,269]
+  varno: [119,121,231,257,266,269]
 variables:
 - name: satellite_identifier
 - name: zenith
