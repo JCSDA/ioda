@@ -1,5 +1,8 @@
 # Adding a Backend Engine (Advanced)
 
+For Doxygen users, the text contained here is shown under 
+the IODA/Engines/"Adding a Backend Engine (Advanced)" module.
+
 \addtogroup ioda_engines_grp_adding
 
 These are sketched out notes for what has to be part of a fully-working backend. Before starting, you should probably ask the repository maintainers for advice, since they have already written several engines. Implementing a new backend correctly will probably take 1-2 months. Good luck.
