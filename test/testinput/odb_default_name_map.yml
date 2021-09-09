@@ -828,6 +828,8 @@ ioda:
       source: "242"
     - name: "ObsValue/v_ambivalent_wind"
       source: "243"
+    - name: "ObsValue/total_column_water_vapour"
+      source: "245"
     - name: "ObsValue/liquid_water_pressure"
       source: "244"
     - name: "ObsValue/liquid_water_pressure_retrieved"
