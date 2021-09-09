@@ -4,7 +4,15 @@
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
-
+/*! \defgroup ioda_cxx_obsspace Observation Spaces
+ * \brief Provides the ioda::ObsSpace interface
+ * \ingroup ioda_cxx_api
+ *
+ * @{
+ * \file ObsSpace.h
+ * \brief Observation Spaces
+ * \ingroup ioda_cxx_obsspace
+ */
 #ifndef OBSSPACE_H_
 #define OBSSPACE_H_
 
@@ -45,7 +53,7 @@ namespace ioda {
     class ObsVector;
 
     //-------------------------------------------------------------------------------------
-    // Enum type for obs variable data types
+    /// Enum type for obs variable data types
     enum class ObsDtype {
         None,
         Float,
@@ -54,15 +62,16 @@ namespace ioda {
         DateTime
     };
 
-    // Enum type for obs dimension ids
-    // The first two dimension names for now are nlocs and nchans. This will likely expand
-    // in the future, so make sure that this enum class and the following initializer
-    // function stay in sync.
+    /// \brief Enum type for obs dimension ids
+    /// \details The first two dimension names for now are nlocs and nchans. This will
+    /// likely expand in the future, so make sure that this enum class and the following
+    /// initializer function stay in sync.
     enum class ObsDimensionId {
         Nlocs,
         Nchans
     };
 
+    /// \brief Wrapper class that maps dimension ids to names.
     class ObsDimInfo {
      public:
         ObsDimInfo();
@@ -121,6 +130,9 @@ namespace ioda {
         typedef ObsTopLevelParameters Parameters_;
 
         //---------------------------- functions ------------------------------
+        /// \name Constructors and destructors
+        /// @{
+
         /// \brief Config based constructor for an ObsSpace object.
         ///
         /// \details This constructor will read in from the obs file and transfer the
@@ -139,6 +151,10 @@ namespace ioda {
         ObsSpace(const ObsSpace &);
         virtual ~ObsSpace() {}
 
+        /// @}
+        /// @name Constructor-defined parameters
+        /// @{
+
         /// \details This method will return the start of the DA timing window
         const util::DateTime & windowStart() const {return winbgn_;}
 
@@ -150,6 +166,13 @@ namespace ioda {
 
         /// \details This method will return the associated parameters
         const ObsSpaceParameters & params() const {return obs_params_;}
+
+        /// \brief return MPI distribution object
+        std::shared_ptr<const Distribution> distribution() const { return dist_;}
+
+        /// @}
+        /// @name Closeout functions
+        /// @{
 
         /// \brief save the obs space data into a file (if obsdataout specified)
         /// \details This function will save the obs space data into a file, but only if
@@ -163,6 +186,10 @@ namespace ioda {
         ///          actions can sometimes get out of sync since they are being triggered
         ///          from different sources during the clean up after a job completes.
         void save();
+
+        /// @}
+        /// @name General querying functions
+        /// @{
 
         /// \brief return the total number of locations in the corresponding obs spaces
         ///        across all MPI tasks
@@ -256,6 +283,32 @@ namespace ioda {
         ObsDtype dtype(const std::string & group, const std::string & name,
                        bool skipDerived = false) const;
 
+        /// \brief return the collection of all simulated variables
+        const oops::Variables & obsvariables() const {return obsvars_;}
+
+        /// \brief return the collection of simulated variables loaded from the input file
+        const oops::Variables & initial_obsvariables() const
+        { return obs_params_.top_level_.simVars; }
+
+        /// \brief return the collection of derived simulated variables (variables computed
+        /// after loading the input file)
+        const oops::Variables & derived_obsvariables() const
+        { return obs_params_.top_level_.derivedSimVars; }
+
+        /// @}
+        /// @name Functions to access the behind-the-scenes ObsGroup
+        /// @{
+
+        /// \brief return the ObsGroup that stores the data
+        inline ObsGroup getObsGroup() { return obs_group_; }
+
+        /// \brief return the ObsGroup that stores the data
+        inline const ObsGroup getObsGroup() const { return obs_group_; }
+
+        /// @}
+        /// @name IO functions
+        /// @{
+
         /// \brief transfer data from the obs container to vdata
         ///
         /// \details The following get_db methods are the same except for the data type
@@ -317,6 +370,10 @@ namespace ioda {
                     const std::vector<util::DateTime> & vdata,
                     const std::vector<std::string> & dimList = { "nlocs" });
 
+        /// @}
+        /// @name Record index and sorting functions
+        /// @{
+
         /// \brief Return the begin iterator associated with the recidx_ data member
         const RecIdxIter recidx_begin() const;
 
@@ -345,20 +402,8 @@ namespace ioda {
         /// \brief return all record numbers from the recidx_ data member
         std::vector<std::size_t> recidx_all_recnums() const;
 
-        /// \brief return the collection of all simulated variables
-        const oops::Variables & obsvariables() const {return obsvars_;}
+        /// @}
 
-        /// \brief return the collection of simulated variables loaded from the input file
-        const oops::Variables & initial_obsvariables() const
-        { return obs_params_.top_level_.simVars; }
-
-        /// \brief return the collection of derived simulated variables (variables computed
-        /// after loading the input file)
-        const oops::Variables & derived_obsvariables() const
-        { return obs_params_.top_level_.derivedSimVars; }
-
-        /// \brief return MPI distribution object
-        std::shared_ptr<const Distribution> distribution() const { return dist_;}
 
      private:
         // ----------------------------- private data members ---------------------------
