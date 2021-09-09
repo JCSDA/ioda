@@ -10,9 +10,10 @@ macro(AddPyExample_base name testname args)
 		COMMAND #${Python3_EXECUTABLE}
 			python3 ${CMAKE_CURRENT_SOURCE_DIR}/${name}.py ${args}
 		)
+	set(IODA_PYTHONPATH "$<TARGET_FILE_DIR:_ioda_python>/../:$ENV{PYTHONPATH}")
 	set_tests_properties(${testname}
 		PROPERTIES
-		ENVIRONMENT "PYTHONPATH=$<TARGET_FILE_DIR:_ioda_python>/../"
+		ENVIRONMENT "PYTHONPATH=${IODA_PYTHONPATH}"
 		)
 endmacro()
 
