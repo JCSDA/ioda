@@ -9,7 +9,12 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 # ioda-engines options
 
 ## TODO: Rename to BUILD_IODA_PYTHON_BINDINGS?
-option(BUILD_PYTHON_BINDINGS "Build Python bindings using pybind11?" ON)
+# If pybind11 is present, then build the bindings.
+if (pybind11_FOUND)
+  option(BUILD_PYTHON_BINDINGS "Build Python bindings using pybind11?" ON)
+else()
+  option(BUILD_PYTHON_BINDINGS "Build Python bindings using pybind11?" OFF)
+endif()
 
 # Record whether this is the top-level project
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)

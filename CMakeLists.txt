@@ -49,7 +49,7 @@ find_package( gsl-lite REQUIRED HINTS $ENV{gsl_lite_DIR} )
 find_package( odc 1.0.2 )         # Needed for odc
 find_package( Boost 1.64.0 )      # Provides an implementation of optional
 find_package( Python3 COMPONENTS Interpreter Development )
-find_package( pybind11 )
+find_package( pybind11 QUIET)
 
 ## Sources
 add_subdirectory( src/engines )   # `ioda_engines` target
