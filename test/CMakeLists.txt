@@ -49,6 +49,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_odb_ahiclear.yml
   testinput/iodatest_odb_aircraft.yml
   testinput/iodatest_odb_airs.yml
+  testinput/iodatest_odb_altimeter.yml
   testinput/iodatest_odb_amsr.yml
   testinput/iodatest_odb_aod.yml
   testinput/iodatest_odb_atms.yml
@@ -65,15 +66,20 @@ list( APPEND ioda_test_input
   testinput/iodatest_odb_iasi.yml
   testinput/iodatest_odb_mwri.yml
   testinput/iodatest_odb_mwsfy3.yml
+  testinput/iodatest_odb_oceancolour.yml
+  testinput/iodatest_odb_oceansound.yml
+  testinput/iodatest_odb_satsst.yml
   testinput/iodatest_odb_olci.yml
   testinput/iodatest_odb_satwind.yml
   testinput/iodatest_odb_scatwind.yml
+  testinput/iodatest_odb_seaice.yml
   testinput/iodatest_odb_seviriclear.yml
   testinput/iodatest_odb_sonde.yml
   testinput/iodatest_odb_ssmis.yml
   testinput/iodatest_odb_surface.yml
   testinput/iodatest_odb_surface_with_query.yml
   testinput/iodatest_odb_surfacecloud.yml
+  testinput/iodatest_odb_surfacesst.yml
   testinput/odb_default_name_map.yml
   testinput/iodatest_time_io.yml
 )
@@ -1017,6 +1023,72 @@ if (odc_FOUND)
                             Data/testinput_tier_1/surfacecloud.odb
                             testinput/odb_default_name_map.yml testinput/iodatest_odb_surfacecloud.yml"
                             test-SurfaceCloud.hdf
+                    TEST_DEPENDS get_ioda_test_data )
+
+  ecbuild_add_test( TARGET  test_ioda-convert_altimeter_odc
+                    TYPE    SCRIPT
+                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                    ARGS    hdf5
+                            "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
+                            Altimeter
+                            Data/testinput_tier_1/altimeter.odb
+                            testinput/odb_default_name_map.yml testinput/iodatest_odb_altimeter.yml"
+                            test-Altimeter.hdf
+                    TEST_DEPENDS get_ioda_test_data )
+
+  ecbuild_add_test( TARGET  test_ioda-convert_oceancolour_odc
+                    TYPE    SCRIPT
+                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                    ARGS    hdf5
+                            "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
+                            OceanColour
+                            Data/testinput_tier_1/oceancol.odb
+                            testinput/odb_default_name_map.yml testinput/iodatest_odb_oceancolour.yml"
+                            test-OceanColour.hdf
+                    TEST_DEPENDS get_ioda_test_data )
+
+  ecbuild_add_test( TARGET  test_ioda-convert_satsst_odc
+                    TYPE    SCRIPT
+                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                    ARGS    hdf5
+                            "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
+                            SatSST
+                            Data/testinput_tier_1/satsst.odb
+                            testinput/odb_default_name_map.yml testinput/iodatest_odb_satsst.yml"
+                            test-SatSST.hdf
+                    TEST_DEPENDS get_ioda_test_data )
+
+  ecbuild_add_test( TARGET  test_ioda-convert_seaice_odc
+                    TYPE    SCRIPT
+                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                    ARGS    hdf5
+                            "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
+                            SeaIce
+                            Data/testinput_tier_1/seaice.odb
+                            testinput/odb_default_name_map.yml testinput/iodatest_odb_seaice.yml"
+                            test-SeaIce.hdf
+                    TEST_DEPENDS get_ioda_test_data )
+
+  ecbuild_add_test( TARGET  test_ioda-convert_surfacesst_odc
+                    TYPE    SCRIPT
+                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                    ARGS    hdf5
+                            "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
+                            SurfaceSST
+                            Data/testinput_tier_1/surfacesst.odb
+                            testinput/odb_default_name_map.yml testinput/iodatest_odb_surfacesst.yml"
+                            test-SurfaceSST.hdf
+                    TEST_DEPENDS get_ioda_test_data )
+
+  ecbuild_add_test( TARGET  test_ioda-convert_oceansound_odc
+                    TYPE    SCRIPT
+                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                    ARGS    hdf5
+                            "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
+                            OceanSound
+                            Data/testinput_tier_1/oceansound.odb
+                            testinput/odb_default_name_map.yml testinput/iodatest_odb_oceansound.yml"
+                            test-OceanSound.hdf
                     TEST_DEPENDS get_ioda_test_data )
 endif()
 

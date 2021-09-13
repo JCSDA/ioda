@@ -1,0 +1,16 @@
+where:
+  varno: [12]
+variables:
+- name: receipt_date
+- name: receipt_time
+- name: statid
+- name: buoy_identifier
+- name: position_accuracy_flag
+- name: buoy_speed
+- name: buoy_direction
+- name: ob_practice
+- name: hours_since_last_position
+- name: buoy_type
+- name: pressure_sensor_alt
+- name: sst_measurement_method
+- name: present_weather_type

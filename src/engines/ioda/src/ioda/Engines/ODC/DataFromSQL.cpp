@@ -145,6 +145,8 @@ Eigen::ArrayXf DataFromSQL::getMetadataColumn(std::string const& col) const {
           || (varnos_[0] == varno && obsgroup_ == obsgroup_sonde)
           || (seqno != seqno_new && obsgroup_ != obsgroup_scatwind)
           || (varnos_[0] == varno && obsgroup_ == obsgroup_scatwind)
+          || (seqno != seqno_new && obsgroup_ != obsgroup_oceansound)
+          || (varnos_[0] == varno && obsgroup_ == obsgroup_oceansound)
           || (seqno != seqno_new && obsgroup_ != obsgroup_geocloud)
           || (varnos_[0] == varno && obsgroup_ == obsgroup_geocloud)
           || (seqno != seqno_new && obsgroup_ != obsgroup_gpsro)
@@ -173,6 +175,8 @@ Eigen::ArrayXi DataFromSQL::getMetadataColumnInt(std::string const& col) const {
           || (varnos_[0] == varno && obsgroup_ == obsgroup_sonde)
           || (seqno != seqno_new && obsgroup_ != obsgroup_scatwind)
           || (varnos_[0] == varno && obsgroup_ == obsgroup_scatwind)
+          || (seqno != seqno_new && obsgroup_ != obsgroup_oceansound)
+          || (varnos_[0] == varno && obsgroup_ == obsgroup_oceansound)
           || (seqno != seqno_new && obsgroup_ != obsgroup_geocloud)
           || (varnos_[0] == varno && obsgroup_ == obsgroup_geocloud)
           || (seqno != seqno_new && obsgroup_ != obsgroup_gpsro)
@@ -200,6 +204,8 @@ std::vector<std::string> DataFromSQL::getMetadataStringColumn(std::string const&
           || (varnos_[0] == varno && obsgroup_ == obsgroup_sonde)
           || (seqno != seqno_new && obsgroup_ != obsgroup_scatwind)
           || (varnos_[0] == varno && obsgroup_ == obsgroup_scatwind)
+          || (seqno != seqno_new && obsgroup_ != obsgroup_oceansound)
+          || (varnos_[0] == varno && obsgroup_ == obsgroup_oceansound)
           || (seqno != seqno_new && obsgroup_ != obsgroup_geocloud)
           || (varnos_[0] == varno && obsgroup_ == obsgroup_geocloud)
           || (seqno != seqno_new && obsgroup_ != obsgroup_gpsro)
@@ -319,7 +325,7 @@ void DataFromSQL::select(const std::vector<std::string>& columns, const std::str
   number_of_metadata_rows_ = 0;
 
   if (obsgroup_ == obsgroup_sonde || obsgroup_ == obsgroup_scatwind
-      || obsgroup_ == obsgroup_gpsro) {
+      || obsgroup_ == obsgroup_gpsro || obsgroup_ == obsgroup_oceansound) {
     number_of_metadata_rows_ = number_of_rows_ / number_of_varnos_;
   } else {
     int seqno_index          = getColumnIndex("seqno");

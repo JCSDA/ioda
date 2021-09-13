@@ -1,0 +1,12 @@
+where:
+  varno: [1,2,224,225]
+variables:
+- name: receipt_time
+- name: receipt_date
+- name: statid
+- name: argo_identifier
+- name: numlev
+- name: instrument_type
+- name: sea_depth
+- name: buoy_type
+- name: buoy_identifier

@@ -1,0 +1,5 @@
+where:
+  varno: [253]
+variables:
+- name: receipt_time
+- name: receipt_date

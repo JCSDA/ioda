@@ -1,0 +1,11 @@
+where:
+  varno: [11,112]
+variables:
+- name: receipt_time
+- name: receipt_date
+- name: satellite_identifier
+- name: satellite_instrument
+- name: sst_bias
+- name: sst_quality
+- name: sst_algorithm_type
+- name: instrument_type

@@ -30,6 +30,7 @@ namespace ODC {
   static constexpr int obsgroup_aircraft     = 4;
   static constexpr int obsgroup_sonde        = 5;
   static constexpr int obsgroup_atovs        = 7;
+  static constexpr int obsgroup_oceansound   = 11;
   static constexpr int obsgroup_airs         = 16;
   static constexpr int obsgroup_gpsro        = 18;
   static constexpr int obsgroup_ssmis        = 19;

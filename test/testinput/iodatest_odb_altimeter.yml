@@ -1,0 +1,9 @@
+where:
+  varno: [273]
+variables:
+- name: receipt_time
+- name: receipt_date
+- name: satellite_identifier
+- name: dynamic_atmosphere_correction
+- name: long_wave_error
+- name: ocean_tide
