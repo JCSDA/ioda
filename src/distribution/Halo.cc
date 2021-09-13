@@ -42,6 +42,7 @@ static DistributionMaker<Halo> maker("Halo");
 Halo::Halo(const eckit::mpi::Comm & Comm,
            const eckit::Configuration & config) :
           Distribution(Comm) {
+  oops::Log::debug() << "config in Halo: " << config << std::endl;
   // extract center point from configuration
   // if no patch center defined, distribute centers equi-distant along the equator
   std::vector<double> centerd(2, 0.0);
@@ -55,15 +56,10 @@ Halo::Halo(const eckit::mpi::Comm & Comm,
   eckit::geometry::Point2 center(centerd[0], centerd[1]);
   center_ = center;
 
-  // assign radius that is a sum of the patch and localization radii
-  // (1) this radius is the radius of the "patch"
-  //     if not specified, use radius big enough to encompass all obs. on Earth
+  // Note radius here is a sum of the patchRadius and localization radii
+  // which has updated in "oops/src/oops/runs/LocalEnsembleDA.h",
+  // when "update obs config with geometry info" is set to true.
   double radius = config.getDouble("radius", 50000000.0);
-
-  // (2) add localization radius (i.e. the "halo" radius)
-  double locRadius = config.getDouble("obs localization.lengthscale", 0.0);
-  radius += locRadius;
-
   radius_ = radius;
 
   oops::Log::debug() << "Halo constructed: center: " << center_ << " radius: "
