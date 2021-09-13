@@ -1,5 +1,6 @@
 where:
   varno: [162]
+  query: mean_frequency = 0
 variables:
 - name: confidence
 - name: gen_centre
