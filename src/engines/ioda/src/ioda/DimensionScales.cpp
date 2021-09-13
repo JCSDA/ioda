@@ -56,4 +56,36 @@ std::shared_ptr<NewDimensionScale_Base> NewDimensionScale(const std::string& nam
     std::throw_with_nested(Exception("An exception occurred inside ioda.", ioda_Here(), errOpts));
   }
 }
+
+// Partially copied from IodaUtils.cpp
+std::list<ioda::Named_Variable> identifyDimensionScales(
+  const ioda::detail::Has_Variables_Base &hasVars, std::vector<std::string> &allVarNames) {
+  // Convenience lambda to hint if a variable is a scale. This is not definitive,
+  // but has a high likelihood of being correct. The idea is that dimension scales
+  // will have neither "@" nor "/" in their names, whereas most other variables will.
+  // This lambda returns true if the name constains neither "@" nor "/".
+  auto isPossiblyScale = [](const std::string& name) -> bool {
+      return (std::string::npos == name.find('@')) &&
+             (std::string::npos == name.find('/')) ? true : false;
+  };
+
+  std::list<ioda::Named_Variable> dimensionScales;
+  for (const auto& vname : allVarNames) {
+    Variable v = hasVars.open(vname);
+    const auto dims = v.getDimensions();
+
+    // Expensive function call.
+    // Only 1-D variables can be scales. Also pre-filter based on name.
+    if (dims.dimensionality == 1 && isPossiblyScale(vname)) {
+        if (v.isDimensionScale()) {
+            (vname == "nlocs")   // true / false ternary
+            ? dimensionScales.push_front(ioda::Named_Variable(vname, v))
+            : dimensionScales.push_back(ioda::Named_Variable(vname, v));
+        }
+    }
+  }
+
+  return dimensionScales;
+}
+
 }  // namespace ioda

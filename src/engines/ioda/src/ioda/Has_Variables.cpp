@@ -8,6 +8,7 @@
 
 #include "ioda/Exception.h"
 #include "ioda/Layout.h"
+#include "ioda/Misc/DimensionScales.h"
 #include "ioda/Misc/MergeMethods.h"
 #include "ioda/Misc/StringFuncs.h"
 #include "ioda/Misc/UnitConversions.h"
@@ -113,6 +114,9 @@ void Has_Variables_Base::stitchComplementaryVariables(bool removeOriginals) {
   try {
     if (layout_->name() != std::string("ObsGroup ODB v1")) return;
     std::vector<std::string> variableList = list();
+    // Unique pointer used for lazy initialization. std::optional is not in C++14 and we don't want
+    // to introduce a dependency on Boost.
+    std::unique_ptr<std::list<Named_Variable>> dimScales;
     for (auto const& name : variableList) {
       const std::string destinationName = layout_->doMap(name);
       if (layout_->isComplementary(destinationName)) {
@@ -151,13 +155,38 @@ void Has_Variables_Base::stitchComplementaryVariables(bool removeOriginals) {
           }
           std::vector<std::vector<std::string>> mergeMethodInput
             = loadComponentVariableData(*derivedVariableParams);
+
           Variable derivedVariable;
           if (derivedVariableParams->mergeMethod
               == ioda::detail::DataLayoutPolicy::MergeMethod::Concat) {
             std::vector<std::string> derivedVector = concatenateStringVectors(mergeMethodInput);
-            derivedVariable
-              = this->create<std::string>(derivedVariableParams->outputName,
-                                          {gsl::narrow<ioda::Dimensions_t>(derivedVector.size())});
+
+            const Variable firstInputVariable = this->open(
+                  derivedVariableParams->inputVariableNames.front());
+            // Retrieval of creation attributes and dimensions seems not to be implemented yet
+            const VariableCreationParameters creationParams =
+                firstInputVariable.getCreationParameters(false /*doAtts?*/, false /*doDims?*/);
+
+            if (!dimScales) {
+              // Identify all existing dimension scales
+              dimScales = std::make_unique<std::list<Named_Variable>>(
+                                                      identifyDimensionScales(*this, variableList));
+            }
+
+            const std::vector<std::vector<Named_Variable>> inputDimScales =
+                firstInputVariable.getDimensionScaleMappings(*dimScales);
+
+            std::vector<Variable> derivedDimScales;
+            if (inputDimScales.at(0).size() == 1)
+              derivedVariable = this->createWithScales<std::string>(
+                    derivedVariableParams->outputName, {inputDimScales[0][0].var}, creationParams);
+            else
+              derivedVariable = this->create<std::string>(
+                    derivedVariableParams->outputName,
+                    {gsl::narrow<ioda::Dimensions_t>(derivedVector.size())},
+                    {},  // max dimension
+                    creationParams);
+
             derivedVariable.write(derivedVector);
           }
           if (removeOriginals) {

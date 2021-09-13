@@ -656,12 +656,6 @@ ioda:
       source: "scanpos"
     - name: "MetaData/selected_wind_index"
       source: "sel_wnd_indx"
-    - name: "MetaData/site_name1"
-      source: "site_name_1"
-    - name: "MetaData/site_name2"
-      source: "site_name_2"
-    - name: "MetaData/site_name3"
-      source: "site_name_3"
     - name: "MetaData/software_identifier"
       source: "software_identifier"
     - name: "MetaData/solar_azimuth_angle"
@@ -920,3 +914,8 @@ ioda:
       source: "274_error"
     - name: "ObsError/brightness_temperature_mwhs"
       source: "275_error"
+  complementary variables:
+    - output name: "MetaData/site_name"
+      output variable data type: "string"
+      input names: ["site_name_1", "site_name_2", "site_name_3"]
+      merge method: "concat"

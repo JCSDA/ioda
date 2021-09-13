@@ -149,6 +149,8 @@ ObsGroup openFile(const ODC_Parameters& odcparams,
     }
   }
 
+  og.vars.stitchComplementaryVariables();
+
   return og;
 #else
   throw Exception(odcMissingMessage, ioda_Here());

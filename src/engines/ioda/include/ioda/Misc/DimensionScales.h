@@ -15,11 +15,13 @@
 #include "../defs.h"
 #include "Dimensions.h"
 #include "../Types/Type.h"
+#include "../Variables/Has_Variables.h"
 #include "../Variables/Variable.h"
 
 namespace ioda {
 class Type;
 class Variable;
+class Has_Variables;
 
 /// Specifies that a dimension is resizable to infinity.
 constexpr int Unlimited = -1;
@@ -142,5 +144,12 @@ IODA_DL std::shared_ptr<NewDimensionScale_Base> NewDimensionScale(
 
 IODA_DL std::shared_ptr<NewDimensionScale_Base> NewDimensionScale(
   const std::string& name, const Variable& scale, const ScaleSizes &overrides = ScaleSizes());
+
+/// \brief Return the list of all variables among \p allVarNames that belong to \p hasVars and
+/// are dimension scales.
+//
+// Partially copied from IodaUtils.cpp
+IODA_DL std::list<ioda::Named_Variable> identifyDimensionScales(
+  const detail::Has_Variables_Base &hasVars, std::vector<std::string> &allVarNames);
 
 }  // namespace ioda

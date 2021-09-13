@@ -9,6 +9,7 @@ include( git_functions )
 list( APPEND ioda_test_input
   testinput/iodatest.yml
   testinput/iodatest_fileformat.yml
+  testinput/iodatest_remove_hdf5_variable.yml
   testinput/iodatest_obserror.yml
   testinput/iodatest_obsio_constructor.yml
   testinput/iodatest_obsio_read.yml
@@ -298,6 +299,23 @@ ecbuild_add_test( TARGET  test_ioda_distribution_methods
                   ARGS    "testinput/iodatest_distribution_methods.yml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
+
+#####################################################################
+# ioda engines tests
+#####################################################################
+
+ecbuild_add_test( TARGET  test_ioda_remove_hdf5_variable
+                  SOURCES mains/TestRemoveHdf5Variable.cc
+                  ARGS    "testinput/iodatest_remove_hdf5_variable.yml"
+                  LIBS  ioda_engines ioda_test )
+
+ecbuild_add_test( TARGET  test_ioda_remove_hdf5_variable_cmp
+                  TYPE    SCRIPT
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                  ARGS    hdf5
+                          "echo Checking remove hdf5 variable test output"
+                          remove_variable.hdf
+                  TEST_DEPENDS get_ioda_test_data test_ioda_remove_hdf5_variable )
 
 #####################################################################
 # ObsSpace tests
