@@ -81,6 +81,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_odb_surfacecloud.yml
   testinput/iodatest_odb_surfacesst.yml
   testinput/odb_default_name_map.yml
+  testinput/odb_sonde_name_map.yml
   testinput/iodatest_time_io.yml
 )
 
@@ -746,7 +747,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             Sonde
                             Data/testinput_tier_1/sonde.odb
-                            testinput/odb_default_name_map.yml testinput/iodatest_odb_sonde.yml"
+                            testinput/odb_sonde_name_map.yml testinput/iodatest_odb_sonde.yml"
                             test-Sonde.hdf
                     TEST_DEPENDS get_ioda_test_data )
 

@@ -26,3 +26,4 @@ variables:
 - name: winpro_flags_usa
 - name: wmo_block_number
 - name: wmo_station_number
+ignored names: [initial_obsvalue,date,time,receipt_date,receipt_time,seqno,varno,vertco_type,entryno,ops_obsgroup]

@@ -117,19 +117,11 @@ ObsGroup openFile(const ODC_Parameters& odcparams,
   auto groups = og.listObjects();
 
   auto sqlColumns = sql_data.getColumns();
-  for (int i = 0; i < sqlColumns.size(); i++) {
-    const set<string> ignoredNames{"initial_obsvalue",
-                                   "initial_vertco_reference",
-                                   "date",
-                                   "time",
-                                   "receipt_date",
-                                   "receipt_time",
-                                   "seqno",
-                                   "varno",
-                                   "vertco_type",
-                                   "entryno",
-                                   "ops_obsgroup"};
 
+  const std::vector<std::string> ignoredNamesVector = queryParameters.ignoredNames.value();
+  const std::set<std::string> ignoredNames(ignoredNamesVector.begin(), ignoredNamesVector.end());
+
+  for (int i = 0; i < sqlColumns.size(); i++) {
     if (ignoredNames.count(sqlColumns.at(i))) continue;
     sql_data.getIodaVariable(sqlColumns.at(i), og, params);
   }
