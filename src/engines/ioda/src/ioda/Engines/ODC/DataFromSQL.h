@@ -81,10 +81,6 @@ private:
   int obsgroup_                    = 0;
   std::map<int, size_t> varnos_and_levels_;
 
-  /// \brief Returns a count of the rows extracted by an sql
-  /// \param sql The SQL to check
-  static size_t countRows(const std::string& sql);
-
   /// \brief Returns the value for a particular row/column
   /// \param row Get data for this row
   /// \param column Get data for this column
@@ -94,12 +90,6 @@ private:
   /// \param row Get data for this row
   /// \param column Get data for this column
   double getData(size_t row, const std::string& column) const;
-
-  /// \brief Set a value for a row,column element
-  /// \param row The row to set
-  /// \param column The column to set
-  /// \param val Set this value
-  void setData(size_t row, size_t column, double val);
 
   /// \brief Populate structure with data from an sql
   /// \param sql The SQL string to generate the data for the structure

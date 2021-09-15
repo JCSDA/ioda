@@ -58,23 +58,23 @@ size_t DataFromSQL::numberOfLevels(const int varno) const {
   return 0;
 }
 
-void DataFromSQL::setData(const size_t row, const size_t column, const double val) {
-  data_.at(row * columns_.size() + column) = val;
-}
-
 void DataFromSQL::setData(const std::string& sql) {
   odc::Select sodb(sql);
   odc::Select::iterator begin = sodb.begin();
-  size_t rowNumber            = 0;
-  for (size_t i = 0; i < begin->columns().size(); i++) {
-    column_types_.push_back(begin->columns().at(i)->type());
+  const size_t number_of_columns = columns_.size();
+  ASSERT(begin->columns().size() == number_of_columns);
+  column_types_.clear();
+  for (const odc::core::Column *column : begin->columns()) {
+    column_types_.push_back(column->type());
   }
+  data_.clear();
   for (auto &row : sodb) {
-    for (size_t i = 0; i < begin->columns().size(); i++) {
-      setData(rowNumber, i, (row)[i]);
+    ASSERT(row.columns().size() == number_of_columns);
+    for (size_t i = 0; i < number_of_columns; i++) {
+      data_.push_back(row[i]);
     }
-    rowNumber++;
   }
+  data_.shrink_to_fit();
 }
 
 int DataFromSQL::getColumnTypeByName(std::string const& column) const {
@@ -195,6 +195,7 @@ std::vector<std::string> DataFromSQL::getMetadataStringColumn(std::string const&
   int seqno_index  = getColumnIndex("seqno");
   int varno_index  = getColumnIndex("varno");
   std::vector<std::string> arr;
+  arr.reserve(number_of_metadata_rows_);
   if (column_index != -1) {
     size_t seqno = -1;
     for (size_t i = 0; i < number_of_rows_; i++) {
@@ -309,8 +310,6 @@ void DataFromSQL::select(const std::vector<std::string>& columns, const std::str
   } else {
     sql = sql + ";";
   }
-  size_t totalRows = countRows(sql);
-  data_.resize(totalRows * columns_.size());
   setData(sql);
   obsgroup_        = getData(0, getColumnIndex("ops_obsgroup"));
   number_of_rows_  = data_.size() / columns_.size();
@@ -470,17 +469,6 @@ ioda::Variable DataFromSQL::getIodaObsvalue(const int varno, ioda::ObsGroup og,
   }
   v.writeWithEigenRegular(var);
   return v;
-}
-
-size_t DataFromSQL::countRows(const std::string& sql) {
-  odc::Select sodb(sql);
-  odc::Select::iterator it  = sodb.begin();
-  odc::Select::iterator end = sodb.end();
-  size_t totalRows          = 0;
-  for (; it != end; ++it) {
-    totalRows++;
-  }
-  return totalRows;
 }
 
 }  // namespace ODC
