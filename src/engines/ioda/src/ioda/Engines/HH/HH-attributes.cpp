@@ -60,8 +60,116 @@ Attribute HH_Attribute::write(gsl::span<char> data, const Type& in_memory_dataTy
 }
 
 void HH_Attribute::read(gsl::span<char> data, HH_hid_t in_memory_dataType) const {
-  herr_t ret = H5Aread(attr_(), in_memory_dataType(), static_cast<void*>(data.data()));
-  if (ret < 0) throw Exception("H5Aread failed.", ioda_Here());
+  herr_t ret;
+  // Need to determine the memory and attribute (from backend) data types to figure
+  // out what to do with string types, primarily with fixed- vs variable-length strings.
+  hid_t memType = in_memory_dataType();
+  H5T_class_t memTypeClass = H5Tget_class(memType);
+
+  hid_t attrType = H5Aget_type(attr_());
+  H5T_class_t attrTypeClass = H5Tget_class(attrType);
+
+
+  if ((memTypeClass == H5T_STRING) && (attrTypeClass == H5T_STRING)) {
+    // Both memory and attribute types are string. Need to check fixed vs variable length
+    // string types to decide what to do. In the case of when the ioda::Attribute::read
+    // function was called with a variable length string type (eg, std::string), a pointer
+    // to a C style string needs to be passed back through the data paramter. In the case
+    // where a fixed length string type (eg, std::vector<char>), the actual characters need
+    // to be passed back (instead of a pointer to a string).
+    //
+    // The H5Tis_variable_str function returns:
+    //    > 0 --> variable length string
+    //   == 0 --> fixed length string
+    //    < 0 --> error
+    htri_t isMemStrVar = H5Tis_variable_str(memType);
+    htri_t isAttrStrVar = H5Tis_variable_str(attrType);
+    if (isMemStrVar < 0) {
+      throw Exception("H5Tis_variable_str failed on memory data type.", ioda_Here());
+    }
+    if (isAttrStrVar < 0)  {
+      throw Exception("H5Tis_variable_str failed on backend attribute data type.", ioda_Here());
+    }
+    if (isMemStrVar > 0) {
+      if (isAttrStrVar > 0) {
+        // memory is variable length string
+        // attribute is variable length string
+        ret = H5Aread(attr_(), memType, static_cast<void*>(data.data()));
+        if (ret < 0) {
+          throw Exception("H5Aread of string failed (mem: vlen, attr: vlen).", ioda_Here());
+        }
+      } else {
+        // memory is variable length string
+        // attribute is fixed length string
+        //
+        // We need to return a char pointer (to a copy of the attribute value) in data.
+        // First get the length of the string, and allocate on the heap a buffer to hold
+        // the resulting string value. Then pass a pointer to that string data back in
+        // the parameter "data". Note initialization of stringValue heap allocation to
+        // all zeros (string terminator).
+        size_t strLen = H5Tget_size(attrType);
+        char * stringValue = new char[strLen + 1]{ '\0' };
+        ret = H5Aread(attr_(), attrType, static_cast<void*>(stringValue));
+        if (ret < 0) throw Exception("H5Aread fixed length string failed.", ioda_Here());
+
+        // At this point we have stringValue which is a (char *) and the output data which is
+        // a char span. In the case of strings, data will be 8 bytes long with the intention
+        // of placing a (char *) pointing to the string value.
+        size_t strPtrSize = sizeof(char *);
+        gsl::span<char> strPtrSpan(reinterpret_cast<char*>(&stringValue), strPtrSize);
+        for (size_t i = 0; i < strPtrSize; ++i) {
+          data[i] = strPtrSpan[i];
+        }
+      }
+    } else {
+      if (isAttrStrVar > 0) {
+        // memory is fixed length string
+        // attribute is variable length string
+        //
+        // attribute read will return a char * pointing to the string value
+        char * stringValue;
+        ret = H5Aread(attr_(), attrType, static_cast<void *>(&stringValue));
+        if (ret < 0) throw Exception("H5Aread variable length string failed.", ioda_Here());
+
+        // At this point, we don't know the actual size of the string in the attribute
+        // since it is recorded as a variable length string. To determine this, we can
+        // use stringValue to initialize a std::string and then check that we have room
+        // in the memory buffer.
+        std::string attrStringValue(stringValue);
+        if (attrStringValue.size() > data.size()) {
+          throw Exception(
+            "H5Aread of string: attr string length is greater than mem allocation).",
+            ioda_Here());
+        }
+
+        // Copy string into memory buffer
+        for (size_t i = 0; i < attrStringValue.size(); ++i) {
+          data[i] = attrStringValue[i];
+        }
+      } else {
+        // memory is fixed length string
+        // attribute is fixed length string
+        size_t strLen = H5Tget_size(attrType);
+        if (strLen > data.size()) {
+          throw Exception(
+            "H5Aread of string: attr string length is greater than mem allocation).",
+            ioda_Here());
+        }
+
+        ret = H5Aread(attr_(), attrType, static_cast<void*>(data.data()));
+        if (ret < 0) {
+          throw Exception("H5Aread of string failed (mem: flen, attr: flen).", ioda_Here());
+        }
+      }
+    }
+  } else if ((memTypeClass == H5T_STRING) || (attrTypeClass == H5T_STRING)) {
+    // One of memory or attribute types is a string while the other is numeric.
+    throw Exception("H5Aread: memory and attribute data types are inconsistent.", ioda_Here());
+  } else {
+    // Have numeric types for both memory and file
+    ret = H5Aread(attr_(), memType, static_cast<void*>(data.data()));
+    if (ret < 0) throw Exception("H5Aread failed.", ioda_Here());
+  }
 }
 
 Attribute HH_Attribute::read(gsl::span<char> data, const Type& in_memory_dataType) const {
