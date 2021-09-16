@@ -718,8 +718,6 @@ ioda:
       source: "start_chan_scale_9"
     - name: "MetaData/start_channel_scale10"
       source: "start_chan_scale_10"
-    - name: "MetaData/height"
-      source: "stalt"
     - name: "MetaData/station_id"
       source: "statid"
     - name: "MetaData/station_type"
