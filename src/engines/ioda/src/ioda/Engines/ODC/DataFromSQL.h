@@ -50,6 +50,7 @@ namespace ODC {
   static constexpr int obsgroup_hiras        = 60;
 
   static constexpr int varno_dd                     = 111;
+  static constexpr int varno_ff                     = 112;
   static constexpr int varno_rawbt                  = 119;
   static constexpr int varno_bending_angle          = 162;
   static constexpr int varno_rawsca                 = 233;

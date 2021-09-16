@@ -131,6 +131,10 @@ NewDimensionScales_t DataFromSQL::getVertcos() const {
     int number_of_levels = numberOfLevels(varno_cloud_fraction_covered);
     vertcos.push_back(NewDimensionScale<int>("nchans", number_of_levels,
                                              number_of_levels, number_of_levels));
+  } else if (obsgroup_ == obsgroup_scatwind) {
+    int number_of_levels = numberOfLevels(varno_dd);
+    vertcos.push_back(NewDimensionScale<int>("nchans", number_of_levels,
+                                             number_of_levels, number_of_levels));
   }
   return vertcos;
 }
@@ -156,8 +160,6 @@ Eigen::ArrayXf DataFromSQL::getMetadataColumn(std::string const& col) const {
       int varno        = getData(i, varno_index);
       if ((seqno != seqno_new && obsgroup_ != obsgroup_sonde)
           || (varnos_[0] == varno && obsgroup_ == obsgroup_sonde)
-          || (seqno != seqno_new && obsgroup_ != obsgroup_scatwind)
-          || (varnos_[0] == varno && obsgroup_ == obsgroup_scatwind)
           || (seqno != seqno_new && obsgroup_ != obsgroup_oceansound)
           || (varnos_[0] == varno && obsgroup_ == obsgroup_oceansound)
           || (seqno != seqno_new && obsgroup_ != obsgroup_geocloud)
@@ -186,8 +188,6 @@ Eigen::ArrayXi DataFromSQL::getMetadataColumnInt(std::string const& col) const {
       int varno        = getData(i, varno_index);
       if ((seqno != seqno_new && obsgroup_ != obsgroup_sonde)
           || (varnos_[0] == varno && obsgroup_ == obsgroup_sonde)
-          || (seqno != seqno_new && obsgroup_ != obsgroup_scatwind)
-          || (varnos_[0] == varno && obsgroup_ == obsgroup_scatwind)
           || (seqno != seqno_new && obsgroup_ != obsgroup_oceansound)
           || (varnos_[0] == varno && obsgroup_ == obsgroup_oceansound)
           || (seqno != seqno_new && obsgroup_ != obsgroup_geocloud)
@@ -216,8 +216,6 @@ std::vector<std::string> DataFromSQL::getMetadataStringColumn(std::string const&
       int varno        = getData(i, varno_index);
       if ((seqno != seqno_new && obsgroup_ != obsgroup_sonde)
           || (varnos_[0] == varno && obsgroup_ == obsgroup_sonde)
-          || (seqno != seqno_new && obsgroup_ != obsgroup_scatwind)
-          || (varnos_[0] == varno && obsgroup_ == obsgroup_scatwind)
           || (seqno != seqno_new && obsgroup_ != obsgroup_oceansound)
           || (varnos_[0] == varno && obsgroup_ == obsgroup_oceansound)
           || (seqno != seqno_new && obsgroup_ != obsgroup_geocloud)
@@ -336,8 +334,8 @@ void DataFromSQL::select(const std::vector<std::string>& columns, const std::str
   number_of_varnos_ = varnos_.size();
   number_of_metadata_rows_ = 0;
 
-  if (obsgroup_ == obsgroup_sonde || obsgroup_ == obsgroup_scatwind
-      || obsgroup_ == obsgroup_gpsro || obsgroup_ == obsgroup_oceansound) {
+  if (obsgroup_ == obsgroup_sonde || obsgroup_ == obsgroup_gpsro ||
+      obsgroup_ == obsgroup_oceansound) {
     number_of_metadata_rows_ = number_of_rows_ / number_of_varnos_;
   } else {
     int seqno_index          = getColumnIndex("seqno");
