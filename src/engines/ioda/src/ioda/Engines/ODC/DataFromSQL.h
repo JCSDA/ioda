@@ -74,7 +74,8 @@ private:
   std::vector<std::string> columns_;
   std::vector<int> column_types_;
   std::vector<int> varnos_;
-  std::vector<double> data_;
+  /// Each element contains values from a particular column
+  std::vector<std::vector<double>> data_;
   size_t number_of_rows_           = 0;
   size_t number_of_metadata_rows_  = 0;
   size_t number_of_varnos_         = 0;
@@ -94,6 +95,11 @@ private:
   /// \brief Populate structure with data from an sql
   /// \param sql The SQL string to generate the data for the structure
   void setData(const std::string& sql);
+
+  /// \brief Append a new value to a particular column
+  /// \param column Column to append data to
+  /// \param value  Value to append
+  void appendData(size_t column, double value);
 
   /// \brief Returns the number of rows for a particular varno
   /// \param varno The varno to check

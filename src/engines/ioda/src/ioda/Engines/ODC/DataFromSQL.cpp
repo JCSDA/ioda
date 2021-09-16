@@ -63,18 +63,31 @@ void DataFromSQL::setData(const std::string& sql) {
   odc::Select::iterator begin = sodb.begin();
   const size_t number_of_columns = columns_.size();
   ASSERT(begin->columns().size() == number_of_columns);
+
+  // Determine column types
   column_types_.clear();
   for (const odc::core::Column *column : begin->columns()) {
     column_types_.push_back(column->type());
   }
+
+  // Retrieve data
   data_.clear();
+  data_.resize(number_of_columns);
   for (auto &row : sodb) {
     ASSERT(row.columns().size() == number_of_columns);
     for (size_t i = 0; i < number_of_columns; i++) {
-      data_.push_back(row[i]);
+      appendData(i, row[i]);
     }
   }
-  data_.shrink_to_fit();
+
+  // Free unused memory
+  for (auto &column : data_) {
+    column.shrink_to_fit();
+  }
+}
+
+void DataFromSQL::appendData(size_t column, double value) {
+  data_.at(column).push_back(value);
 }
 
 int DataFromSQL::getColumnTypeByName(std::string const& column) const {
@@ -123,7 +136,7 @@ NewDimensionScales_t DataFromSQL::getVertcos() const {
 }
 
 double DataFromSQL::getData(const size_t row, const size_t column) const {
-  return data_.at(row * columns_.size() + column);
+  return data_.at(column).at(row);
 }
 
 double DataFromSQL::getData(const size_t row, const std::string& column) const {
@@ -312,7 +325,7 @@ void DataFromSQL::select(const std::vector<std::string>& columns, const std::str
   }
   setData(sql);
   obsgroup_        = getData(0, getColumnIndex("ops_obsgroup"));
-  number_of_rows_  = data_.size() / columns_.size();
+  number_of_rows_  = data_.empty() ? 0 : data_.front().size();
   int varno_column = getColumnIndex("varno");
   for (size_t i = 0; i < number_of_rows_; i++) {
     int varno = getData(i, varno_column);
