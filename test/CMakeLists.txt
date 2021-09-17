@@ -147,21 +147,22 @@ elseif( DEFINED GIT_TAG_FUNC )
   if( DEFINED ENV{ECBUILD_DOWNLOAD_BASE_URL} )
     set( ECBUILD_DOWNLOAD_BASE_URL "$ENV{ECBUILD_DOWNLOAD_BASE_URL}/ioda/${GIT_TAG_FUNC}" )
   else()
-    set( ECBUILD_DOWNLOAD_BASE_URL https://dashrepo.ucar.edu/api/v1/dataset/147_miesch/version/1.1.0/file )
+    set( ECBUILD_DOWNLOAD_BASE_URL https://dashrepo.ucar.edu/api/v1/dataset/147b_jcsda/file )
   endif()
 
 
   set( DIRNAME ${GIT_TAG_FUNC} )
+  set( TESTFILE_DIR_IODA "${CMAKE_SOURCE_DIR}/test-data-release/ioda/${GIT_TAG_FUNC}" )
   set( checksum "0" )
-  set( TESTFILE_DIR_IODA "${CMAKE_SOURCE_DIR}/test-data-release/ioda/${DIRNAME}" )
 
   list( APPEND IODA_DATA_DOWNLOADER_ARGS
-        ${IODA_DOWNLOAD_BASE_URL}
+        ${ECBUILD_DOWNLOAD_BASE_URL}
         ${CMAKE_SOURCE_DIR}/test-data-release
         ${ioda_test_data}
-        ${GIT_TAG_FUNC}
-        ioda)
-  message( STATUS "Test data will be downloaded from: ${IODA_DOWNLOAD_BASE_URL}" )
+        ${checksum} )
+
+  message( STATUS "Test files will be downloaded from DASH and
+  saved to ${TESTFILE_DIR_IODA} for ioda")
 
   # Create test-data-release in source directory
   file( MAKE_DIRECTORY ${CMAKE_SOURCE_DIR}/test-data-release )
