@@ -1,0 +1,22 @@
+where:
+  varno: [39,40,41,42,58,107,108,110,111,112]
+  query: ops_subtype = 10100
+variables:
+- name: buoy_direction
+- name: buoy_identifier
+- name: buoy_speed
+- name: buoy_type
+- name: hours_since_last_position
+- name: ident
+- name: ob_practice
+- name: position_accuracy_flag
+- name: pressure_sensor_alt
+- name: present_weather_type
+- name: sst_measurement_method
+- name: stalt
+- name: station_type
+- name: wmo_block_number
+- name: wmo_region_number
+- name: wmo_station_number
+- name: receipt_time
+- name: receipt_date

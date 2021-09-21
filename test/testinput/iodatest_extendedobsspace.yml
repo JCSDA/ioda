@@ -38,6 +38,22 @@ extend obs space, RoundRobin, 71 entries per averaged profile:
   expected nlocs (3 PE, rank 2): 1136
   expected gnlocs (3 PE, rank 2): 3530
   expected nrecs (3 PE, rank 2): 24
+  unique statids: &unique_statids ['07510', '12120', '24959', '25123', '30965', '31300', '40437', '43110', '43279',
+    '43346', '45004', '47138', '47418', '52267', '54342', '54857', '57083', '57749',
+    '58633', '59663', '64400', '71917', '72340', '72469', '72694', '82281', '83612',
+    '83899', '87344', '91680', '94332', '94995', '96195', '96253', '96935', '97530']
+  expected air_pressure: &expected_air_pressure [101100.0, 101900.0, 99600.0, 27400.0, 93600.0, 28000.0, 94100.0, 100000.0, 100700.0,
+    100700.0, 100600.0, 25500.0, 25000.0, 90900.0, 101000.0, 101000.0, 100900.0, 99200.0,
+    15000.0, 15000.0, 101300.0, 100600.0, 99100.0, 21500.0, 101400.0, 100700.0, 95400.0,
+    8090.0, 96700.0, 101500.0, 97500.0, 100900.0, 100398.9, 100500.0, 100800.0, 98032.91]
+  expected latitude: &expected_latitude [44.83, 54.75, 62.08, 68.69463, 50.38, 53.60339, 24.93, 16.98, 13.0,
+    10.92, 22.32, 36.04781, 43.21716, 41.98, 41.82, 36.07, 34.72, 27.57,
+    28.96323, 21.86256, -4.82, 80.0, 34.84, 39.28313, 44.91, -2.6, -20.47,
+    -27.60057, -31.31, -17.75, -20.68, -31.53, -1.63, -3.87, -7.37, -0.88]
+  expected longitude: &expected_longitude [359.32, 17.53, 129.75, 160.6873, 116.52, 127.2292, 46.72, 73.33, 80.18,
+    79.83, 114.17, 129.9456, 144.9913, 101.07, 123.55, 120.33, 113.65, 110.0,
+    118.8593, 111.9674, 11.9, 274.07, 267.74, 255.4557, 236.99, 315.77, 305.33,
+    311.7622, 295.79, 177.45, 139.48, 159.07, 103.65, 102.33, 112.77, 134.05]
 
 extend obs space, InefficientDistribution, 71 entries per averaged profile:
   window begin: 2018-04-14T20:30:00Z
@@ -72,6 +88,10 @@ extend obs space, InefficientDistribution, 71 entries per averaged profile:
   expected nlocs (3 PE, rank 2): 3530
   expected gnlocs (3 PE, rank 2): 3530
   expected nrecs (3 PE, rank 2): 72
+  unique statids: *unique_statids
+  expected air_pressure: *expected_air_pressure
+  expected latitude: *expected_latitude
+  expected longitude: *expected_longitude
 
 extend obs space, 0 entries per averaged profile:
   window begin: 2018-04-14T20:30:00Z
@@ -122,6 +142,10 @@ extend obs space, RoundRobin, 71 entries per averaged profile, alternative data 
   expected nlocs (3 PE, rank 2): 137
   expected gnlocs (3 PE, rank 2): 375
   expected nrecs (3 PE, rank 2): 2
+  unique statids: ['47418', '54857', '94332', '96935']
+  expected air_pressure: [25000.0, 101000.0, 97500.0, 100800.0]
+  expected latitude: [43.21716, 36.07, -20.68, -7.37]
+  expected longitude: [144.99133, 120.33, 139.48, 112.77]
 
 extend obs space, RoundRobin, 71 entries per averaged profile, only pressure filled with non-missing values:
   window begin: 2018-04-14T20:30:00Z
@@ -157,6 +181,10 @@ extend obs space, RoundRobin, 71 entries per averaged profile, only pressure fil
   expected nlocs (3 PE, rank 2): 1136
   expected gnlocs (3 PE, rank 2): 3530
   expected nrecs (3 PE, rank 2): 24
+  unique statids: *unique_statids
+  expected air_pressure: *expected_air_pressure
+  expected latitude: *expected_latitude
+  expected longitude: *expected_longitude
 
 extend obs space, RoundRobin, 71 entries per averaged profile, no variables filled with non-missing values:
   window begin: 2018-04-14T20:30:00Z
@@ -192,3 +220,7 @@ extend obs space, RoundRobin, 71 entries per averaged profile, no variables fill
   expected nlocs (3 PE, rank 2): 1136
   expected gnlocs (3 PE, rank 2): 3530
   expected nrecs (3 PE, rank 2): 24
+  unique statids: *unique_statids
+  expected air_pressure: *expected_air_pressure
+  expected latitude: *expected_latitude
+  expected longitude: *expected_longitude

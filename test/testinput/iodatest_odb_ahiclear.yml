@@ -1,0 +1,7 @@
+where:
+  varno: [119]
+variables:
+- name: satellite_identifier
+- name: zenith
+- name: receipt_time
+- name: receipt_date

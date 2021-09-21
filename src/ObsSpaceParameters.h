@@ -11,6 +11,8 @@
 #include <string>
 #include <vector>
 
+#include "ioda/core/FileFormat.h"
+#include "ioda/core/ParameterTraitsFileFormat.h"
 #include "ioda/Misc/DimensionScales.h"
 #include "ioda/Misc/Dimensions.h"
 #include "ioda/io/ObsIoFactory.h"
@@ -19,6 +21,7 @@
 #include "eckit/exception/Exceptions.h"
 #include "eckit/mpi/Comm.h"
 
+#include "oops/base/ObsSpaceBase.h"  // for ObsSpaceParametersBase
 #include "oops/base/ParameterTraitsVariables.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
@@ -35,7 +38,6 @@ namespace eckit {
 
 namespace ioda {
 
-
 class ObsFileInParameters : public ObsIoParametersBase {
      OOPS_CONCRETE_PARAMETERS(ObsFileInParameters, ObsIoParametersBase)
 
@@ -43,12 +45,30 @@ class ObsFileInParameters : public ObsIoParametersBase {
     /// input obs file name
     oops::RequiredParameter<std::string> fileName{"obsfile", this};
 
+    /// input obs file format
+    ///
+    /// Possible values:
+    /// * `hdf5`: HDF5 file format
+    /// * `odb`: ODB file format
+    /// * `auto` (default): file format determined automatically from the file name extension
+    ///   (`.odb` -- ODB, everything else -- HDF5).
+    oops::Parameter<FileFormat> format{"format", FileFormat::AUTO, this};
+
     /// reading from multiple files (1 per MPI task)
     /// This option is not typically used. It is used to tell the system
     /// to read observations from the ioda output files (one per MPI task)
     /// from a prior run instead of reading and distributing from the original
     /// file. This is currently being used in LETKF applictions.
     oops::Parameter<bool> readFromSeparateFiles{"read obs from separate file", false, this};
+
+    /// file with variable name mapping rules
+    ///
+    /// Required for obs files in the ODB format, unused otherwise.
+    oops::Parameter<std::string> mappingFile{"mapping file", "", this};
+    /// file with query parameters
+    ///
+    /// Required for obs files in the ODB format, unused otherwise.
+    oops::Parameter<std::string> queryFile{"query file", "", this};
 };
 
 class ObsFileOutParameters : public ObsIoParametersBase {
@@ -63,13 +83,14 @@ class ObsExtendParameters : public oops::Parameters {
     OOPS_CONCRETE_PARAMETERS(ObsExtendParameters, oops::Parameters)
 
  public:
-    /// number of model levels in target of the averaging function
+    /// Number of model levels onto which original profiles are averaged.
     oops::RequiredParameter<int> numModelLevels{"average profiles onto model levels", this};
 
-    /// number of model levels in target of the averaging function
+    /// Variables that are filled with non-missing values when producing averaged profiles.
     oops::Parameter<std::vector<std::string>> nonMissingExtendedVars
         {"variables filled with non-missing values",
-            { "latitude", "longitude", "datetime", "air_pressure", "air_pressure_levels" },
+            { "latitude", "longitude", "datetime", "air_pressure",
+                "air_pressure_levels", "station_id" },
             this};
 };
 
@@ -167,8 +188,8 @@ class ObsIoParametersWrapper : public oops::Parameters {
       obsIoInParameters{"type", this};
 };
 
-class ObsTopLevelParameters : public oops::Parameters {
-    OOPS_CONCRETE_PARAMETERS(ObsTopLevelParameters, Parameters)
+class ObsTopLevelParameters : public oops::ObsSpaceParametersBase {
+    OOPS_CONCRETE_PARAMETERS(ObsTopLevelParameters, ObsSpaceParametersBase)
 
  public:
     /// Reimplemented to store contents of the `obsdatain` or `generate` section (if present)
@@ -180,14 +201,28 @@ class ObsTopLevelParameters : public oops::Parameters {
     /// name of obs space
     oops::RequiredParameter<std::string> obsSpaceName{"name", this};
 
-    /// perturbation seed
-    oops::Parameter<int> obsPertSeed{"obs perturbations seed", 0, this};
-
     /// name of MPI distribution
     oops::Parameter<std::string> distName{"distribution", "RoundRobin", this};
 
+    /// If saveObsDistribution/"save obs distribution" set to true,
+    /// global location indices and record numbers will be stored
+    /// in the MetaData/saved_index and MetaData/saved_record_number variables, respectively.
+    /// These variables will be saved along with all other variables
+    /// to the output files generated if the obsdataout.obsfile option is set.
+    ///
+    /// When the "obsdatain.read obs from separate file" option is set
+    /// and hence each process reads a separate input file,
+    /// the presence of these variables makes it possible
+    /// to identify observations stored in more than one input file.
+
+    oops::Parameter<bool> saveObsDistribution{"save obs distribution", false, this};
+
     /// simulated variables
     oops::RequiredParameter<oops::Variables> simVars{"simulated variables", this};
+
+    /// Simulated variables whose observed values may be absent from the input file, but must be
+    /// created (computed) by the start of the data assimilation stage.
+    oops::Parameter<oops::Variables> derivedSimVars{"derived simulated variables", {}, this};
 
     /// Halo distribution center
     oops::OptionalParameter<std::vector<float>> haloCenter{"center", this};
@@ -226,8 +261,10 @@ class ObsSpaceParameters {
     ObsTopLevelParameters top_level_;
 
     /// Constructor
-    ObsSpaceParameters(const util::DateTime & winStart, const util::DateTime & winEnd,
+    ObsSpaceParameters(const ObsTopLevelParameters &topLevelParams,
+                       const util::DateTime & winStart, const util::DateTime & winEnd,
                        const eckit::mpi::Comm & comm, const eckit::mpi::Comm & timeComm) :
+                           top_level_(topLevelParams),
                            win_start_(winStart), win_end_(winEnd), comm_(comm),
                            time_comm_(timeComm),
                            new_dims_(), max_var_size_(0) {
@@ -249,13 +286,6 @@ class ObsSpaceParameters {
         }
     }
 
-    /// \brief deserialize the parameter sub groups
-    /// \param config "obs space" level configuration
-    void deserialize(const eckit::Configuration & config) {
-        oops::Log::trace() << "ObsSpaceParameters config: " << config << std::endl;
-        top_level_.validateAndDeserialize(config);
-    }
-
     /// \brief return the start of the DA timing window
     const util::DateTime & windowStart() const {return win_start_;}
 
@@ -266,7 +296,7 @@ class ObsSpaceParameters {
     const eckit::mpi::Comm & comm() const {return comm_;}
 
     /// \brief return the associated perturbations seed
-    int  obsPertSeed() const {return top_level_.obsPertSeed;}
+    int  obsPertSeed() const {return top_level_.obsPerturbationsSeed;}
 
     /// \brief return the associated MPI time communicator
     const eckit::mpi::Comm & timeComm() const {return time_comm_;}

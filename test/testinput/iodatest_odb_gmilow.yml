@@ -1,0 +1,11 @@
+where:
+  varno: [119]
+variables:
+- name: chan_freq
+- name: satellite_identifier
+- name: satellite_instrument
+- name: scanline
+- name: scanpos
+- name: zenith
+- name: receipt_time
+- name: receipt_date

@@ -13,6 +13,7 @@
  * \file Factory.h
  * \brief Definitions for setting up backends with file and memory I/O.
  */
+#include <iostream>
 #include <string>
 
 #include "../defs.h"
@@ -27,7 +28,7 @@ namespace Engines {
 enum class BackendNames {
   Hdf5File,  ///< HDF5 file access
   Hdf5Mem,   ///< HDF5 in-memory "file"
-  ObsStore   ///< ObsStore in-memory
+  ObsStore,  ///< ObsStore in-memory
 };
 
 /// Actions for accessing a file
@@ -39,6 +40,7 @@ enum class BackendFileActions {
 
 /// Options when creating a new file.
 /// \ingroup ioda_cxx_engines_pub
+/// \note When changing, you need to update the ostream operators.
 enum class BackendCreateModes {
   Truncate_If_Exists,  ///< If the file already exists, overwrite it.
   Fail_If_Exists       ///< If the file already exists, fail with an error.
@@ -46,6 +48,7 @@ enum class BackendCreateModes {
 
 /// Options when opening an file that already exists.
 /// \ingroup ioda_cxx_engines_pub
+/// \note When changing, you need to update the ostream operators.
 enum class BackendOpenModes {
   Read_Only,  ///< Open the file in read-only mode.
   Read_Write  ///< Open the file in read-write mode.
@@ -55,12 +58,18 @@ enum class BackendOpenModes {
 /// \ingroup ioda_cxx_engines_pub
 struct BackendCreationParameters {
 public:
+  /// @name General
+  /// @{
   std::string fileName;
   BackendFileActions action;
   BackendCreateModes createMode;
   BackendOpenModes openMode;
+  /// @}
+  /// @name HH / HDF5
+  /// @{
   std::size_t allocBytes;
   bool flush;
+  /// @}
 };
 
 /// \brief This is a wrapper function around the constructBackend
@@ -73,7 +82,15 @@ IODA_DL Group constructFromCmdLine(int argc, char** argv, const std::string& def
 ///   different backend based on a given name an parameters.
 /// \ingroup ioda_cxx_engines_pub
 IODA_DL Group constructBackend(BackendNames name, BackendCreationParameters& params);
+
+/// stream operator
+IODA_DL std::ostream& operator<<(std::ostream& os, const BackendCreateModes& mode);
+/// stream operator
+IODA_DL std::ostream& operator<<(std::ostream& os, const BackendOpenModes& mode);
+
 }  // namespace Engines
 }  // namespace ioda
 
 /// @}
+
+

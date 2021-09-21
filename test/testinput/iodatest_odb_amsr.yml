@@ -1,0 +1,15 @@
+where:
+  varno: [119,267]
+variables:
+- name: amsr_89ghz_fov_number_1
+- name: amsr_89ghz_fov_number_2
+- name: amsr_89ghz_latitude_1
+- name: amsr_89ghz_latitude_2
+- name: amsr_89ghz_longitude_1
+- name: amsr_89ghz_longitude_2
+- name: azimuth
+- name: qchirsfov
+- name: satellite_identifier
+- name: scanpos
+- name: receipt_time
+- name: receipt_date

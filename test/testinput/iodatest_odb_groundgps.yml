@@ -1,0 +1,10 @@
+where:
+  varno: [229]
+variables:
+- name: numlev
+- name: site_name_1
+- name: site_name_2
+- name: site_name_3
+- name: stalt
+- name: receipt_time
+- name: receipt_date

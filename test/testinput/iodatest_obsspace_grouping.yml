@@ -18,7 +18,7 @@ observations:
     expected group variables: []
     expected sort variable: ""
     expected sort order: "ascending"
-    variables:
+    variables for get test:
       - name: "latitude"
         group: "MetaData"
         type: "float"
@@ -31,6 +31,7 @@ observations:
 
     tolerance:
       - 1.0e-14
+    variables for putget test: []
 
 - obs space:
     name: "One Grouping Var (string)"
@@ -48,7 +49,7 @@ observations:
     expected group variables: [ "group_by_string" ]
     expected sort variable: ""
     expected sort order: "ascending"
-    variables:
+    variables for get test:
       - name: "latitude"
         group: "MetaData"
         type: "float"
@@ -61,6 +62,7 @@ observations:
 
     tolerance:
       - 1.0e-14
+    variables for putget test: []
 
 - obs space:
     name: "One Grouping Var (int)"
@@ -77,7 +79,7 @@ observations:
     expected group variables: [ "group_by_int" ]
     expected sort variable: ""
     expected sort order: "ascending"
-    variables:
+    variables for get test:
       - name: "latitude"
         group: "MetaData"
         type: "float"
@@ -90,6 +92,7 @@ observations:
 
     tolerance:
       - 1.0e-14
+    variables for putget test: []
 
 - obs space:
     name: "One Grouping Var (float)"
@@ -106,7 +109,7 @@ observations:
     expected group variables: [ "group_by_float" ]
     expected sort variable: ""
     expected sort order: "ascending"
-    variables:
+    variables for get test:
       - name: "latitude"
         group: "MetaData"
         type: "float"
@@ -119,6 +122,7 @@ observations:
 
     tolerance:
       - 1.0e-14
+    variables for putget test: []
 
 - obs space:
     name: "Two Grouping Vars (string, int)"
@@ -135,7 +139,7 @@ observations:
     expected group variables: [ "group_by_string", "group_by_int" ]
     expected sort variable: ""
     expected sort order: "ascending"
-    variables:
+    variables for get test:
       - name: "latitude"
         group: "MetaData"
         type: "float"
@@ -148,6 +152,7 @@ observations:
 
     tolerance:
       - 1.0e-14
+    variables for putget test: []
 
 - obs space:
     name: "Two Grouping Vars (string, float)"
@@ -164,7 +169,7 @@ observations:
     expected group variables: [ "group_by_string", "group_by_float" ]
     expected sort variable: ""
     expected sort order: "ascending"
-    variables:
+    variables for get test:
       - name: "latitude"
         group: "MetaData"
         type: "float"
@@ -177,6 +182,7 @@ observations:
 
     tolerance:
       - 1.0e-14
+    variables for putget test: []
 
 - obs space:
     name: "Two Grouping Vars (float, int)"
@@ -193,7 +199,7 @@ observations:
     expected group variables: [ "group_by_float", "group_by_int" ]
     expected sort variable: ""
     expected sort order: "ascending"
-    variables:
+    variables for get test:
       - name: "latitude"
         group: "MetaData"
         type: "float"
@@ -206,6 +212,7 @@ observations:
 
     tolerance:
       - 1.0e-14
+    variables for putget test: []
 
 - obs space:
     name: "Three Grouping Vars (string, float, int)"
@@ -222,7 +229,7 @@ observations:
     expected group variables: [ "group_by_string", "group_by_float", "group_by_int" ]
     expected sort variable: ""
     expected sort order: "ascending"
-    variables:
+    variables for get test:
       - name: "latitude"
         group: "MetaData"
         type: "float"
@@ -235,6 +242,7 @@ observations:
 
     tolerance:
       - 1.0e-14
+    variables for putget test: []
 
 observations:
 - obs space:
@@ -262,7 +270,7 @@ observations:
     expected group variables: []
     expected sort variable: ""
     expected sort order: "ascending"
-    variables:
+    variables for get test:
       - name: "latitude"
         group: "MetaData"
         type: "float"
@@ -275,6 +283,7 @@ observations:
 
     tolerance:
       - 1.0e-14
+    variables for putget test: []
 
 - obs space:
     name: "Generated, One Grouping Var (float), 'source' Option"
@@ -301,7 +310,7 @@ observations:
     expected group variables: [ "latitude" ]
     expected sort variable: ""
     expected sort order: "ascending"
-    variables:
+    variables for get test:
       - name: "latitude"
         group: "MetaData"
         type: "float"
@@ -314,6 +323,7 @@ observations:
 
     tolerance:
       - 1.0e-14
+    variables for putget test: []
 
 - obs space:
     name: "Generated, One Grouping Var (float), 'generate' Option"
@@ -340,7 +350,7 @@ observations:
     expected group variables: [ "latitude" ]
     expected sort variable: ""
     expected sort order: "ascending"
-    variables:
+    variables for get test:
       - name: "latitude"
         group: "MetaData"
         type: "float"
@@ -353,3 +363,4 @@ observations:
 
     tolerance:
       - 1.0e-14
+    variables for putget test: []

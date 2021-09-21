@@ -22,7 +22,7 @@ using namespace eckit::testing;
 namespace ioda {
 namespace test {
 
-CASE("Derived variable and unit conversion methods") {
+CASE("Derived variable, unit conversion, and exception checking methods") {
   ioda::detail::DataLayoutPolicy_ObsGroup dataLayoutPolicy;
   EXPECT_NOT(dataLayoutPolicy.isComplementary("anyVariable"));
   EXPECT_THROWS(dataLayoutPolicy.getComplementaryPosition("anyVariable"));
@@ -33,6 +33,18 @@ CASE("Derived variable and unit conversion methods") {
   // unit conversion methods
   EXPECT_NOT(dataLayoutPolicy.isMapped("anyVariable"));
   EXPECT_THROWS(dataLayoutPolicy.getUnit("anyVariable"));
+  // exception checking method
+  EXPECT_NOT(dataLayoutPolicy.isMapOutput("anyVariable"));
+}
+
+CASE("Generate variants") {
+  detail::DataLayoutPolicy::generate("ObsGroup");
+  detail::DataLayoutPolicy::generate(detail::DataLayoutPolicy::Policies::ObsGroup);
+  std::string str;
+  EXPECT_THROWS(detail::DataLayoutPolicy::generate("ObsGroup", str));
+  EXPECT_THROWS(detail::DataLayoutPolicy::generate(detail::DataLayoutPolicy::Policies::ObsGroup,
+                                                   str));
+  EXPECT_THROWS(detail::DataLayoutPolicy::generate(detail::DataLayoutPolicy::Policies::None, str));
 }
 
 }  // namespace test

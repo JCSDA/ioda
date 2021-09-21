@@ -103,6 +103,9 @@ class ObsFrameRead : public ObsFrame, private util::ObjectCounter<ObsFrameRead> 
     /// false if they are all the same
     bool each_process_reads_separate_obs_;
 
+    /// \Brief Distribution Name
+    std::string distname_;
+
     /// \brief current frame start for variable dimensioned along nlocs
     /// \details This data member is keeping track of the frame start for
     /// the contiguous storage where the obs source data will be moved to.

@@ -30,6 +30,12 @@
 #include "ioda/IodaTrait.h"
 #include "ioda/ObsSpace.h"
 
+namespace eckit
+{
+  // Don't use contracted output for floats -- the current implementation works only for integers.
+  template <> struct VectorPrintSelector<float> { typedef VectorPrintSimple selector; };
+}  // namespace eckit
+
 namespace ioda {
 namespace test {
 
@@ -39,6 +45,9 @@ class ObsSpaceTestFixture : private boost::noncopyable {
  public:
   static ioda::ObsSpace & obspace(const std::size_t ii) {
     return *getInstance().ospaces_.at(ii);
+  }
+  static const eckit::LocalConfiguration & config(const std::size_t ii) {
+    return getInstance().configs_.at(ii);
   }
   static std::size_t size() {return getInstance().ospaces_.size();}
   static void cleanup() {
@@ -59,13 +68,13 @@ class ObsSpaceTestFixture : private boost::noncopyable {
     util::DateTime bgn(::test::TestEnvironment::config().getString("window begin"));
     util::DateTime end(::test::TestEnvironment::config().getString("window end"));
 
-    std::vector<eckit::LocalConfiguration> conf;
-    ::test::TestEnvironment::config().get("observations", conf);
+    ::test::TestEnvironment::config().get("observations", configs_);
 
-    for (std::size_t jj = 0; jj < conf.size(); ++jj) {
-      eckit::LocalConfiguration obsconf(conf[jj], "obs space");
-      std::string distname = obsconf.getString("distribution", "RoundRobin");
-      boost::shared_ptr<ioda::ObsSpace> tmp(new ioda::ObsSpace(obsconf, oops::mpi::world(),
+    for (std::size_t jj = 0; jj < configs_.size(); ++jj) {
+      eckit::LocalConfiguration obsconf(configs_[jj], "obs space");
+      ioda::ObsTopLevelParameters obsparams;
+      obsparams.validateAndDeserialize(obsconf);
+      boost::shared_ptr<ioda::ObsSpace> tmp(new ioda::ObsSpace(obsparams, oops::mpi::world(),
                                                                bgn, end, oops::mpi::myself()));
       ospaces_.push_back(tmp);
     }
@@ -73,6 +82,7 @@ class ObsSpaceTestFixture : private boost::noncopyable {
 
   ~ObsSpaceTestFixture() {}
 
+  std::vector<eckit::LocalConfiguration> configs_;
   std::vector<boost::shared_ptr<ioda::ObsSpace> > ospaces_;
 };
 
@@ -190,32 +200,34 @@ void testGetDb() {
     conf[jj].get("obs space", obsConfig);
     conf[jj].get("test data", testConfig);
 
-    std::string DistMethod = obsConfig.getString("distribution", "RoundRobin");
-
     // Set up a pointer to the ObsSpace object for convenience
     ioda::ObsSpace * Odb = &(Test_::obspace(jj));
     std::size_t Nlocs = Odb->nlocs();
 
     // Get the variables section from the test data and perform checks accordingly
     std::vector<eckit::LocalConfiguration> varconf =
-                            testConfig.getSubConfigurations("variables");
+                            testConfig.getSubConfigurations("variables for get test");
     double Tol = testConfig.getDouble("tolerance");
     for (std::size_t i = 0; i < varconf.size(); ++i) {
       // Read in the variable group, name and expected norm values from the configuration
       std::string VarName = varconf[i].getString("name");
       std::string GroupName = varconf[i].getString("group");
       std::string VarType = varconf[i].getString("type");
+      bool SkipDerived = varconf[i].getBool("skip derived", false);
 
       // Do different checks according to type
       if (VarType == "float") {
+        // Check if the variable exists
+        EXPECT(Odb->has(GroupName, VarName, SkipDerived));
+
         // Check the type from ObsSpace
-        ObsDtype VarDataType = Odb->dtype(GroupName, VarName);
+        ObsDtype VarDataType = Odb->dtype(GroupName, VarName, SkipDerived);
         EXPECT(VarDataType == ObsDtype::Float);
 
         // Check auto-conversion to double from ObsSpace float
         // Check the norm
         std::vector<double> TestVec(Nlocs);
-        Odb->get_db(GroupName, VarName, TestVec);
+        Odb->get_db(GroupName, VarName, TestVec, {}, SkipDerived);
 
         // Calculate the norm of the vector
         double ExpectedVnorm = varconf[i].getDouble("norm");
@@ -224,13 +236,16 @@ void testGetDb() {
 
         EXPECT(oops::is_close(Vnorm, ExpectedVnorm, Tol));
       } else if (VarType == "integer") {
+        // Check if the variable exists
+        EXPECT(Odb->has(GroupName, VarName, SkipDerived));
+
         // Check the type from ObsSpace
-        ObsDtype VarDataType = Odb->dtype(GroupName, VarName);
+        ObsDtype VarDataType = Odb->dtype(GroupName, VarName, SkipDerived);
         EXPECT(VarDataType == ObsDtype::Integer);
 
         // Check the norm
         std::vector<int> TestVec(Nlocs);
-        Odb->get_db(GroupName, VarName, TestVec);
+        Odb->get_db(GroupName, VarName, TestVec, {}, SkipDerived);
 
         // Calculate the norm of the vector
         double ExpectedVnorm = varconf[i].getDouble("norm");
@@ -239,17 +254,41 @@ void testGetDb() {
 
         EXPECT(oops::is_close(Vnorm, ExpectedVnorm, Tol));
       } else if (VarType == "string") {
+        // Check if the variable exists
+        EXPECT(Odb->has(GroupName, VarName, SkipDerived));
+
         // Check the type from ObsSpace
-        ObsDtype VarDataType = Odb->dtype(GroupName, VarName);
+        ObsDtype VarDataType = Odb->dtype(GroupName, VarName, SkipDerived);
         EXPECT(VarDataType == ObsDtype::String);
 
         // Check the first and last values of the vector
         std::string ExpectedFirstValue = varconf[i].getString("first value");
         std::string ExpectedLastValue = varconf[i].getString("last value");
         std::vector<std::string> TestVec(Nlocs);
-        Odb->get_db(GroupName, VarName, TestVec);
+        Odb->get_db(GroupName, VarName, TestVec, {}, SkipDerived);
         EXPECT(TestVec[0] == ExpectedFirstValue);
         EXPECT(TestVec[Nlocs-1] == ExpectedLastValue);
+      } else if (VarType == "none") {
+        // Check if the variable exists
+        EXPECT_NOT(Odb->has(GroupName, VarName, SkipDerived));
+
+        // Check the type from ObsSpace
+        ObsDtype VarDataType = Odb->dtype(GroupName, VarName, SkipDerived);
+        EXPECT(VarDataType == ObsDtype::None);
+
+        // A call to get_db should produce an exception
+        {
+          std::vector<float> TestVec(Nlocs);
+          EXPECT_THROWS(Odb->get_db(GroupName, VarName, TestVec, {}, SkipDerived));
+        }
+        {
+          std::vector<int> TestVec(Nlocs);
+          EXPECT_THROWS(Odb->get_db(GroupName, VarName, TestVec, {}, SkipDerived));
+        }
+        {
+          std::vector<std::string> TestVec(Nlocs);
+          EXPECT_THROWS(Odb->get_db(GroupName, VarName, TestVec, {}, SkipDerived));
+        }
       }
     }
   }
@@ -288,6 +327,71 @@ void testPutDb() {
     }
 
     EXPECT(VecMatch);
+  }
+}
+
+// -----------------------------------------------------------------------------
+
+void testPutGetChanSelect() {
+  typedef ObsSpaceTestFixture Test_;
+
+  std::vector<eckit::LocalConfiguration> conf;
+  ::test::TestEnvironment::config().get("observations", conf);
+
+  for (std::size_t jj = 0; jj < Test_::size(); ++jj) {
+    // Grab the obs space and test data configurations
+    eckit::LocalConfiguration obsConfig;
+    eckit::LocalConfiguration testConfig;
+    conf[jj].get("obs space", obsConfig);
+    conf[jj].get("test data", testConfig);
+
+    // Set up a pointer to the ObsSpace object for convenience
+    ioda::ObsSpace * Odb = &(Test_::obspace(jj));
+    std::size_t Nlocs = Odb->nlocs();
+
+    // Get the variables section from the test data and perform checks accordingly
+    std::vector<eckit::LocalConfiguration> varconf =
+                            testConfig.getSubConfigurations("variables for putget test");
+    for (std::size_t i = 0; i < varconf.size(); ++i) {
+      // Read in the variables from the ObsSpace (get_db) and use put_db to
+      // place a copy in a new group. Then read the new variable back
+      // in and see if you get the same values.
+      std::string VarName = varconf[i].getString("name");
+      std::string GroupName = varconf[i].getString("group");
+      std::vector<int> Channels = varconf[i].getIntVector("channels", { });
+      oops::Log::debug() << "Reading: " << GroupName << ", " << VarName << ", "
+                         << Channels << std::endl;
+
+      // Check if the variable exists
+      EXPECT(Odb->has(GroupName, VarName));
+
+      // Check the type from ObsSpace
+      ObsDtype VarDataType = Odb->dtype(GroupName, VarName);
+      EXPECT(VarDataType == ObsDtype::Float);
+
+      // Read in the variable
+      std::vector<float> OrigVec(Nlocs);
+      Odb->get_db(GroupName, VarName, OrigVec, Channels);
+
+      // Write the variable into the new group
+      std::string TestGroupName = GroupName + "_Test";
+      std::string PutDbVarName = VarName;
+      std::vector<std::string> DimList = { "nlocs" };
+      if (!Channels.empty()) {
+        PutDbVarName += "_" + std::to_string(Channels[0]);
+        DimList.push_back("nchans");
+      }
+      oops::Log::debug() << "Writing: " << TestGroupName << ", " << PutDbVarName << ", "
+                         << DimList << std::endl;
+
+      Odb->put_db(TestGroupName, PutDbVarName, OrigVec, DimList);
+
+      // Read in what was just written and compare to original data
+      std::vector<float> TestVec(Nlocs);
+      Odb->get_db(TestGroupName, VarName, TestVec, Channels);
+
+      EXPECT(TestVec == OrigVec);
+    }
   }
 }
 
@@ -429,6 +533,50 @@ void testMultiDimTransfer() {
 
 // -----------------------------------------------------------------------------
 
+// Test the obsvariables(), initial_obsvariables() and derived_obsvariables() methods.
+void testObsVariables() {
+  typedef ObsSpaceTestFixture Test_;
+
+  for (std::size_t jj = 0; jj < Test_::size(); ++jj) {
+    const ioda::ObsSpace & Odb = Test_::obspace(jj);
+
+    ObsTopLevelParameters obsparams;
+    obsparams.validateAndDeserialize(Test_::config(jj));
+
+    const oops::Variables & allSimVars = Odb.obsvariables();
+    const oops::Variables & initialSimVars = Odb.initial_obsvariables();
+    const oops::Variables & derivedSimVars = Odb.derived_obsvariables();
+
+    EXPECT_EQUAL(initialSimVars, obsparams.simVars);
+    EXPECT_EQUAL(derivedSimVars, obsparams.derivedSimVars);
+    EXPECT_EQUAL(allSimVars.size(), initialSimVars.size() + derivedSimVars.size());
+  }
+}
+
+// -----------------------------------------------------------------------------
+
+// Verify that for any derived simulated variable <var> a newly created ObsSpace has a variable
+// <var> in the ObsError group and that it is filled with missing values.
+void testDerivedObsError() {
+  typedef ObsSpaceTestFixture Test_;
+
+  for (std::size_t jj = 0; jj < Test_::size(); ++jj) {
+    const ioda::ObsSpace & Odb = Test_::obspace(jj);
+
+    const oops::Variables & derivedSimVars = Odb.derived_obsvariables();
+    for (size_t i = 0; i < derivedSimVars.size(); ++i) {
+      EXPECT(Odb.has("ObsError", derivedSimVars[i]));
+      std::vector<float> values(Odb.nlocs());
+      Odb.get_db("ObsError", derivedSimVars[i], values);
+
+      std::vector<float> expectedValues(Odb.nlocs(), util::missingValue(float()));
+      EXPECT_EQUAL(values, expectedValues);
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+
 void testCleanup() {
   // This test removes the obsspaces and ensures that they evict their contents
   // to disk successfully.
@@ -456,6 +604,8 @@ class ObsSpace : public oops::Test {
       { testGetDb(); });
     ts.emplace_back(CASE("ioda/ObsSpace/testPutDb")
       { testPutDb(); });
+    ts.emplace_back(CASE("ioda/ObsSpace/testPutGetChanSelect")
+      { testPutGetChanSelect(); });
     ts.emplace_back(CASE("ioda/ObsSpace/testWriteableGroup")
       { testWriteableGroup(); });
     ts.emplace_back(CASE("ioda/ObsSpace/testMultiDimTransfer")

@@ -65,8 +65,10 @@ void testRead() {
         oops::Log::trace() << "ObsIo testRead test data config: " << i << ": "
                            << testConfig << std::endl;
 
-        ioda::ObsSpaceParameters obsParams(bgn, end, oops::mpi::world(), oops::mpi::myself());
-        obsParams.deserialize(obsConfig);
+        ioda::ObsTopLevelParameters topParams;
+        topParams.validateAndDeserialize(obsConfig);
+        ioda::ObsSpaceParameters obsParams(topParams, bgn, end,
+                                           oops::mpi::world(), oops::mpi::myself());
 
         // Input constructor
         std::shared_ptr<ObsIo> obsIo;

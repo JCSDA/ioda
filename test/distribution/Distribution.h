@@ -55,26 +55,22 @@ namespace test {
 
 void testConstructor() {
   const eckit::LocalConfiguration conf(::test::TestEnvironment::config());
-  std::vector<eckit::LocalConfiguration> dist_types;
-  const eckit::mpi::Comm & MpiComm = oops::mpi::world();
 
-  std::string TestDistType;
-  std::string DistName;
-  std::unique_ptr<ioda::Distribution> TestDist;
-  DistributionFactory * DistFactory = nullptr;
+  const eckit::mpi::Comm & MpiComm = oops::mpi::world();
+  const std::size_t MyRank = MpiComm.rank();
 
   // Walk through the different distribution types and try constructing.
+  std::vector<eckit::LocalConfiguration> dist_types;
   conf.get("distribution types", dist_types);
   for (std::size_t i = 0; i < dist_types.size(); ++i) {
     oops::Log::debug() << "Distribution::DistributionTypes: conf: " << dist_types[i] << std::endl;
 
-    TestDistType = dist_types[i].getString("distribution");
+    const std::string MyRankCfgName = "specs.rank" + std::to_string(MyRank) + ".config";
+    eckit::LocalConfiguration DistConfig(dist_types[i], MyRankCfgName);
+    const std::string TestDistType = DistConfig.getString("distribution");
     oops::Log::debug() << "Distribution::DistType: " << TestDistType << std::endl;
 
-    DistName = dist_types[i].getString("specs.name");
-    eckit::LocalConfiguration DistConfig;
-    DistConfig.set("distribution", DistName);
-    TestDist = DistributionFactory::create(MpiComm, DistConfig);
+    std::unique_ptr<ioda::Distribution> TestDist = DistributionFactory::create(MpiComm, DistConfig);
     EXPECT(TestDist.get());
   }
 }
@@ -213,44 +209,41 @@ void testDistribution(const eckit::Configuration &config,
 
 void testDistributionConstructedManually() {
   const eckit::LocalConfiguration conf(::test::TestEnvironment::config());
-  std::vector<eckit::LocalConfiguration> dist_types;
+
   const eckit::mpi::Comm & MpiComm = oops::mpi::world();
+  const std::size_t MyRank = MpiComm.rank();
 
   std::string TestDistType;
   std::string DistName;
   std::unique_ptr<ioda::Distribution> TestDist;
 
-  std::size_t MyRank = MpiComm.rank();
-
   // Walk through the different distribution types and try constructing.
+  std::vector<eckit::LocalConfiguration> dist_types;
   conf.get("distribution types", dist_types);
   for (std::size_t i = 0; i < dist_types.size(); ++i) {
     oops::Log::debug() << "Distribution::DistributionTypes: conf: "
                        << dist_types[i] << std::endl;
 
-    TestDistType = dist_types[i].getString("distribution");
-    oops::Log::debug() << "Distribution::DistType: " << TestDistType << std::endl;
-
-    // Expected results are listed in "specs.index" with the MPI rank number
-    // appended on the end.
-    std::string MyRankCfgName = "specs.rank" + std::to_string(MyRank);
-    eckit::LocalConfiguration MyRankConfig = dist_types[i].getSubConfiguration(MyRankCfgName);
+    // Expected results are listed in "specs.rank*", where * stands for the MPI rank number
+    const std::string MyRankCfgName = "specs.rank" + std::to_string(MyRank);
+    const eckit::LocalConfiguration MyRankConfig = dist_types[i].getSubConfiguration(MyRankCfgName);
     oops::Log::debug() << "Distribution::DistributionTypes: "
                        << MyRankCfgName << ": " << MyRankConfig << std::endl;
+
+    const eckit::LocalConfiguration DistConfig(MyRankConfig, "config");
+    const std::string DistName = DistConfig.getString("distribution");
+    oops::Log::debug() << "Distribution::DistType: " << DistName << std::endl;
+
+    std::unique_ptr<ioda::Distribution> TestDist = DistributionFactory::create(MpiComm, DistConfig);
+    EXPECT(TestDist.get());
 
     // read lat/lon
     std::size_t Gnlocs = dist_types[i].getInt("specs.gnlocs");
     std::vector<double> glats(Gnlocs, 0);
     std::vector<double> glons(Gnlocs, 0);
 
-    DistName = dist_types[i].getString("specs.name");
-    if (DistName == "Halo") {
-      glats = dist_types[i].getDoubleVector("specs.latitude");
-      glons = dist_types[i].getDoubleVector("specs.longitude");
-    }
-    MyRankConfig.set("distribution", DistName);
-    TestDist = DistributionFactory::create(MpiComm, MyRankConfig);
-    EXPECT(TestDist.get());
+    dist_types[i].get("specs.latitude", glats);
+    dist_types[i].get("specs.longitude", glons);
 
     // If obsgrouping is specified then read the record grouping directly from
     // the config file. Otherwise, assign 0 to Gnlocs-1 into the record grouping
@@ -298,7 +291,9 @@ void testDistributionConstructedByObsSpace() {
 
   for (const eckit::LocalConfiguration & conf : obsConf.getSubConfigurations()) {
     eckit::LocalConfiguration obsspaceConf(conf, "obs space");
-    ioda::ObsSpace obsspace(obsspaceConf, MpiComm, winBegin, winEnd, oops::mpi::myself());
+    ioda::ObsTopLevelParameters obsParams;
+    obsParams.validateAndDeserialize(obsspaceConf);
+    ioda::ObsSpace obsspace(obsParams, MpiComm, winBegin, winEnd, oops::mpi::myself());
 
     // Expected results are listed in "specs.index" with the MPI rank number
     // appended on the end.

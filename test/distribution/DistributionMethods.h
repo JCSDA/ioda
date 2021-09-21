@@ -96,14 +96,16 @@ void testMaxScalar(const Distribution &TestDist, const std::vector<size_t> &myRe
 template <typename T>
 void testMaxVector(const Distribution &TestDist, const std::vector<size_t> &myRecords,
                    size_t expectedMax) {
+  const T shift = 10;
+
   // Perform a local reduction
-  T max = std::numeric_limits<T>::lowest();
-  for (size_t loc = 0; loc < myRecords.size(); ++loc)
-    max = std::max<T>(max, myRecords[loc]);
+  std::vector<T> maxes(2, std::numeric_limits<T>::lowest());
+  for (size_t loc = 0; loc < myRecords.size(); ++loc) {
+    maxes[0] = std::max<T>(maxes[0], myRecords[loc]);
+    maxes[1] = std::max<T>(maxes[1], myRecords[loc] + shift);
+  }
 
   // Perform a global reduction
-  const T shift = 10;
-  std::vector<T> maxes{max, max + shift};
   TestDist.max(maxes);
   const std::vector<T> expectedMaxes{static_cast<T>(expectedMax),
                                      static_cast<T>(expectedMax + shift)};
@@ -128,14 +130,16 @@ void testMinScalar(const Distribution &TestDist, const std::vector<size_t> &myRe
 template <typename T>
 void testMinVector(const Distribution &TestDist, const std::vector<size_t> &myRecords,
                    size_t expectedMin) {
+  const T shift = 10;
+
   // Perform a local reduction
-  T min = std::numeric_limits<T>::max();
-  for (size_t loc = 0; loc < myRecords.size(); ++loc)
-    min = std::min<T>(min, myRecords[loc]);
+  std::vector<T> mins(2, std::numeric_limits<T>::max());
+  for (size_t loc = 0; loc < myRecords.size(); ++loc) {
+    mins[0] = std::min<T>(mins[0], myRecords[loc]);
+    mins[1] = std::min<T>(mins[1], myRecords[loc] + shift);
+  }
 
   // Perform a global reduction
-  const T shift = 10;
-  std::vector<T> mins{min, min + shift};
   TestDist.min(mins);
   const std::vector<T> expectedMins{static_cast<T>(expectedMin),
                                     static_cast<T>(expectedMin + shift)};
@@ -145,24 +149,20 @@ void testMinVector(const Distribution &TestDist, const std::vector<size_t> &myRe
 
 void testDistributionMethods() {
   eckit::LocalConfiguration conf(::test::TestEnvironment::config());
-  std::vector<eckit::LocalConfiguration> dist_types;
-  const eckit::mpi::Comm & MpiComm = oops::mpi::world();
 
-  std::string DistName;
-  std::unique_ptr<ioda::Distribution> TestDist;
-  std::size_t MyRank = MpiComm.rank();
-  std::size_t nprocs = MpiComm.size();
+  const eckit::mpi::Comm & MpiComm = oops::mpi::world();
+  const std::size_t MyRank = MpiComm.rank();
+  const std::size_t nprocs = MpiComm.size();
+
+  std::vector<eckit::LocalConfiguration> dist_types;
   conf.get("distribution types", dist_types);
   for (std::size_t i = 0; i < dist_types.size(); ++i) {
-    conf.get("distribution", dist_types);
+    eckit::LocalConfiguration DistConfig = dist_types[i];
     oops::Log::debug() << "Distribution::DistributionTypes: conf: "
-                       << dist_types[i] << std::endl;
-    DistName = dist_types[i].getString("name");
+                       << DistConfig << std::endl;
 
-    eckit::LocalConfiguration DistConfig;
-    DistConfig.set("distribution", DistName);
-
-    TestDist = DistributionFactory::create(MpiComm, DistConfig);
+    std::unique_ptr<ioda::Distribution> TestDist = DistributionFactory::create(MpiComm, DistConfig);
+    const std::string DistName = TestDist->name();
 
     // initialize distributions
     size_t Gnlocs = nprocs;

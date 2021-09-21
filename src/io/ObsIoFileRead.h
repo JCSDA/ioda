@@ -49,6 +49,13 @@ class ObsIoFileRead : public ObsIo, private util::ObjectCounter<ObsIoFileRead> {
     /// \brief print routine for oops::Printable base class
     /// \param ostream output stream
     void print(std::ostream & os) const override;
+
+    /// \brief Read the contents of an HDF5 file into obs_group_.
+    void createObsGroupFromHdf5File(const std::string & fileName);
+
+    /// \brief Read the contents of an ODB file into obs_group_.
+    void createObsGroupFromOdbFile(const std::string & fileName,
+                                   const Parameters_ & ioParams);
 };
 
 }  // namespace ioda

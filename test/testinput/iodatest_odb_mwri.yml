@@ -1,0 +1,16 @@
+where:
+  varno: [119]
+variables:
+- name: azimuth
+- name: geometric_rotational_angle
+- name: land_sea
+- name: satellite_instrument
+- name: satellite_identifier
+- name: scanline
+- name: scanpos
+- name: solar_azimuth
+- name: solar_zenith
+- name: surface_height
+- name: zenith
+- name: receipt_time
+- name: receipt_date

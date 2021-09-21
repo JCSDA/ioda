@@ -1,0 +1,14 @@
+where:
+  varno: [187]
+variables:
+- name: aladin_confidence_flag
+- name: azimuth_cog
+- name: dwind_dp
+- name: dwind_dt
+- name: height_cog
+- name: lidar_class
+- name: profile_number
+- name: satellite_identifier
+- name: wind_error
+- name: receipt_time
+- name: receipt_date

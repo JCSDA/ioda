@@ -164,6 +164,10 @@ void Halo::computePatchLocs() {
       }
     }
 
+    size_t npatchobs = std::count(patchObsBool_.begin(), patchObsBool_.end(), true);
+    oops::Log::debug() << "npatchobs: " << npatchobs << std::endl;
+    oops::Log::debug() << "patchObsBool_.size(): " << patchObsBool_.size() << std::endl;
+
     // now that we have patchObsBool_ computed we can free memory occupied by some temp objects
     recordDistancesFromCenter_.clear();
     haloLocRecords_.clear();

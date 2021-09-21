@@ -27,6 +27,9 @@ CASE("Concatenation mapping file; error checks of unit conversion methods") {
   std::string yamlMappingFile
     = std::string(IODA_ENGINES_TEST_SOURCE_DIR) + "/layouts/odb_concat_name_map.yaml";
   ioda::detail::DataLayoutPolicy_ObsGroup_ODB dataLayoutPolicy(yamlMappingFile);
+  // Manually adding a variable which was already included in the mapping file
+  EXPECT_THROWS(ioda::detail::DataLayoutPolicy::generate("ObsGroupODB", yamlMappingFile,
+                                                         {"firstPart"}));
   //existent variable in mapping file
   EXPECT(dataLayoutPolicy.isComplementary("firstPart"));
   EXPECT(dataLayoutPolicy.isComplementary("secondPart"));
@@ -75,6 +78,12 @@ CASE("Vertical coordinate mapping file") {
   std::string yamlMappingFile = std::string(IODA_ENGINES_TEST_SOURCE_DIR)
     + "/layouts/odb_verticalreference_name_map.yaml";
   EXPECT_THROWS(ioda::detail::DataLayoutPolicy_ObsGroup_ODB dataLayoutPolicy(yamlMappingFile));
+}
+
+CASE("Missing YAML on generate") {
+  EXPECT_THROWS(detail::DataLayoutPolicy::generate("ObsGroupODB"));
+  EXPECT_THROWS(detail::DataLayoutPolicy::generate(
+                  detail::DataLayoutPolicy::Policies::ObsGroupODB));
 }
 
 }  // namespace test

@@ -66,13 +66,6 @@ phases:
       # oops
       - ./clone.sh $GIT_USER $GIT_PASS jcsda-internal/oops $CODEBUILD_GIT_BRANCH oops /jcsda/ioda-bundle develop
 
-      # internal repos
-      #fckit
-      - ./clone.sh $GIT_USER $GIT_PASS jcsda-internal/fckit $CODEBUILD_GIT_BRANCH_FORK fckit /jcsda/ioda-bundle release-stable
-
-      # atlas
-      - ./clone.sh $GIT_USER $GIT_PASS jcsda-internal/atlas $CODEBUILD_GIT_BRANCH_FORK atlas /jcsda/ioda-bundle release-stable
-
       # ioda-test
       - ./clone.sh $GIT_USER $GIT_PASS jcsda-internal/ioda-data $CODEBUILD_GIT_BRANCH ioda-data /jcsda/ioda-bundle develop
 

@@ -39,9 +39,11 @@ CASE("ioda/ObsSpace/testPutDb") {
 
   for (const eckit::LocalConfiguration & conf : confs) {
     eckit::LocalConfiguration obsconf(conf, "obs space");
+    ioda::ObsTopLevelParameters obsparams;
+    obsparams.validateAndDeserialize(obsconf);
 
     std::unique_ptr<ObsSpace> obsspace = boost::make_unique<ObsSpace>(
-          obsconf, oops::mpi::world(), bgn, end, oops::mpi::myself());
+          obsparams, oops::mpi::world(), bgn, end, oops::mpi::myself());
 
     const Dimensions_t nlocs = obsspace->nlocs();
     const Dimensions_t nchans = obsspace->nchans();

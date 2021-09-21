@@ -29,17 +29,21 @@
 #include <exception>
 #include <string>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 namespace ioda {
 namespace detail {
 DataLayoutPolicy_ObsGroup_ODB::~DataLayoutPolicy_ObsGroup_ODB(){}
 
-DataLayoutPolicy_ObsGroup_ODB::DataLayoutPolicy_ObsGroup_ODB(const std::string &fileMappingName)
+DataLayoutPolicy_ObsGroup_ODB::DataLayoutPolicy_ObsGroup_ODB(
+    const std::string &fileMappingName, const std::vector<std::string> &nonODBVariables)
   : mappingParams_(new ODBLayoutParameters())
 {
-
   parseMappingFile(fileMappingName);
+  for (auto const &str : nonODBVariables) {
+    addUnchangedVariableName(str);
+  }
 }
 
 DataLayoutPolicy::MergeMethod DataLayoutPolicy_ObsGroup_ODB::parseMergeMethod(
@@ -72,6 +76,15 @@ void DataLayoutPolicy_ObsGroup_ODB::parseNameChanges()
   }
 }
 
+/// Add an unchanged variable to the mapping. Used to ensure that
+/// all of the fundamental variables do not falsely throw an exception.
+void DataLayoutPolicy_ObsGroup_ODB::addUnchangedVariableName(const std::string &str) {
+  if (isComplementary(str) || isMapped(str) || isMapOutput(str)) {
+    throw Exception("Attempting to re-add existing variable to mapping", ioda_Here());
+  }
+  Mapping[str] = {str, {false, ""}};
+}
+
 void DataLayoutPolicy_ObsGroup_ODB::parseComponentVariables()
 {
   for (ComplementaryVariablesParameters const& variable :
@@ -88,8 +101,6 @@ void DataLayoutPolicy_ObsGroup_ODB::parseComponentVariables()
                              std::string("matching a derived variable name."));
     }
     std::type_index outputTypeIndex = typeid(std::string);
-    //augustweinbren: outputTypeIndex will be defined using outputVariableDataType when other
-    //merge methods are available
 
     std::shared_ptr<ComplementaryVariableOutputMetadata> sharedOutputMetaData(
           new ComplementaryVariableOutputMetadata{
@@ -122,7 +133,7 @@ void DataLayoutPolicy_ObsGroup_ODB::initializeStructure(Group_Base &g) const {
 
 std::string DataLayoutPolicy_ObsGroup_ODB::doMap(const std::string &str) const {
   // If the string contains '@', then it needs to be broken into
-  // components and reversed. Additionally, if the string is a key in the mapping file,
+  // components and reversed. Additionally, if the string is a key (ODB name) in the mapping file,
   // it is replaced with its value. All other strings are passed through untouched.
   std::string mappedStr;
   auto it = Mapping.find(str);
@@ -131,21 +142,31 @@ std::string DataLayoutPolicy_ObsGroup_ODB::doMap(const std::string &str) const {
   } else {
     mappedStr = str;
   }
-
   mappedStr = convertV1PathToV2Path(mappedStr);
   return mappedStr;
 }
 
 bool DataLayoutPolicy_ObsGroup_ODB::isComplementary(const std::string &inputVariable) const
 {
-  if (complementaryVariableDataMap.find(inputVariable) != complementaryVariableDataMap.end())
-    return true;
-  else
-    return false;
+  return (complementaryVariableDataMap.find(inputVariable) != complementaryVariableDataMap.end());
 }
 
 bool DataLayoutPolicy_ObsGroup_ODB::isMapped(const std::string &input) const {
   return (Mapping.find(input) != Mapping.end());
+}
+
+bool DataLayoutPolicy_ObsGroup_ODB::isMapOutput(const std::string &output) const
+{
+  for (const std::pair<std::string, variableStorageInformation> &entry : Mapping) {
+    if (entry.second.iodaName == output)
+      return true;
+  }
+  for (const std::pair<std::string, complementaryVariableMetaData> &entry :
+       complementaryVariableDataMap) {
+    if (entry.second.second->outputName == output)
+      return true;
+  }
+  return false;
 }
 
 size_t DataLayoutPolicy_ObsGroup_ODB::getComplementaryPosition(const std::string &input) const

@@ -9,14 +9,20 @@ ObsSpaceParameters.h
 ObsVector.cc
 ObsVector.h
 
+core/FileFormat.cc
+core/FileFormat.h
 core/IodaUtils.cc
 core/IodaUtils.h
 core/obsspace_f.cc
 core/obsspace_f.h
+core/ParameterTraitsFileFormat.cc
+core/ParameterTraitsFileFormat.h
 core/ParameterTraitsObsDtype.cc
 core/ParameterTraitsObsDtype.h
 
 distribution/Accumulator.h
+distribution/AtlasDistribution.cc
+distribution/AtlasDistribution.h
 distribution/Distribution.cc
 distribution/Distribution.h
 distribution/DistributionFactory.cc

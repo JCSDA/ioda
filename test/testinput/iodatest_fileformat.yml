@@ -1,0 +1,23 @@
+---
+auto:
+  format: auto
+hdf5:
+  format: hdf5
+odb:
+  format: odb
+determine format:
+- format: auto
+  path: myfile.odb
+  expected format: odb
+- format: auto
+  path: myfile.ODB
+  expected format: odb
+- format: auto
+  path: myfile
+  expected format: hdf5
+- format: hdf5
+  path: myfile
+  expected format: hdf5
+- format: odb
+  path: myfile
+  expected format: odb

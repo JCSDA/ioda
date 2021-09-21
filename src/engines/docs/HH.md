@@ -1,5 +1,8 @@
 # The HDF5 / HH Backend
 
+For Doxygen users, the text contained here is shown under 
+the IODA/Engines/"HDF5/HDFforHumans" module
+
 \addtogroup ioda_engines_grp_HH
 
 ## Ancient history

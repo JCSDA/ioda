@@ -69,6 +69,14 @@ PYBIND11_MODULE(_ioda_python, m) {
   auto mPy  = mDetail.def_submodule("python_bindings");
   mPy.doc() = "Python binding helper classes";
 
+  py::enum_<ioda::ObjectType> eObjType(m, "ObjectType");
+  eObjType
+    .value("Ignored", ObjectType::Ignored, "ObjectType is ignored in search.")
+    .value("Unimplemented", ObjectType::Unimplemented, "Support for this ObjectType is "
+           "unimplemented in this ioda version")
+    .value("Group", ObjectType::Group, "Object is a group")
+    .value("Variable", ObjectType::Variable, "Object is a variable");
+
   setupTypeSystem(m);
   setupDimensions(m);
   setupAttributes(m, mDetail, mPy);

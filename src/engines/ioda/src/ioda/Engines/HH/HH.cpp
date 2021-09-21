@@ -91,19 +91,26 @@ Group createMemoryFile(const std::string& filename, BackendCreateModes mode, boo
     {BackendCreateModes::Truncate_If_Exists, H5F_ACC_TRUNC},
     {BackendCreateModes::Fail_If_Exists, H5F_ACC_CREAT}};
 
+  Options errOpts;
+  errOpts.add("filename", filename);
+  errOpts.add("mode", mode);
+  errOpts.add("flush_on_close", flush_on_close);
+  errOpts.add("increment_len", increment_len);
+  errOpts.add("compat", compat);
+
   hid_t plid = H5Pcreate(H5P_FILE_ACCESS);
   Expects(plid >= 0);
   HH_hid_t pl(plid, Handles::Closers::CloseHDF5PropertyList::CloseP);
 
   if (0 > H5Pset_fapl_core(pl.get(), increment_len, flush_on_close))
-    throw Exception("H5Pset_fapl_core failed", ioda_Here());
+    throw Exception("H5Pset_fapl_core failed", ioda_Here(), errOpts);
   // H5F_LIBVER_V18, H5F_LIBVER_V110, H5F_LIBVER_V112, H5F_LIBVER_LATEST.
   // Note: this propagates to any files flushed to disk.
   if (0 > H5Pset_libver_bounds(pl.get(), map_h5ver.at(compat.first), map_h5ver.at(compat.second)))
-    throw Exception("H5Pset_libver_bounds failed", ioda_Here());
+    throw Exception("H5Pset_libver_bounds failed", ioda_Here(), errOpts);
 
   HH_hid_t f = H5Fcreate(filename.c_str(), m.at(mode), H5P_DEFAULT, pl.get());
-  if (f() < 0) throw Exception("H5Fcreate failed", ioda_Here());
+  if (f() < 0) throw Exception("H5Fcreate failed", ioda_Here(), errOpts);
 
   auto backend
     = std::make_shared<detail::Engines::HH::HH_Group>(f, getCapabilitiesInMemoryEngine(), f);
@@ -117,16 +124,21 @@ Group createFile(const std::string& filename, BackendCreateModes mode, HDF5_Vers
     {BackendCreateModes::Truncate_If_Exists, H5F_ACC_TRUNC},
     {BackendCreateModes::Fail_If_Exists, H5F_ACC_CREAT}};
 
+  Options errOpts;
+  errOpts.add("filename", filename);
+  errOpts.add("mode", mode);
+  errOpts.add("compat", compat);
+
   hid_t plid = H5Pcreate(H5P_FILE_ACCESS);
-  if (plid < 0) throw Exception("H5Pcreate failed", ioda_Here());
+  if (plid < 0) throw Exception("H5Pcreate failed", ioda_Here(), errOpts);
   HH_hid_t pl(plid, Handles::Closers::CloseHDF5PropertyList::CloseP);
   // H5F_LIBVER_V18, H5F_LIBVER_V110, H5F_LIBVER_V112, H5F_LIBVER_LATEST.
   // Note: this propagates to any files flushed to disk.
   if (0 > H5Pset_libver_bounds(pl.get(), map_h5ver.at(compat.first), map_h5ver.at(compat.second)))
-    throw Exception("H5Pset_libver_bounds failed", ioda_Here());
+    throw Exception("H5Pset_libver_bounds failed", ioda_Here(), errOpts);
 
   HH_hid_t f = H5Fcreate(filename.c_str(), m.at(mode), H5P_DEFAULT, pl.get());
-  if (f() < 0) throw Exception("H5Fcreate failed", ioda_Here());
+  if (f() < 0) throw Exception("H5Fcreate failed", ioda_Here(), errOpts);
 
   auto backend = std::make_shared<detail::Engines::HH::HH_Group>(f, getCapabilitiesFileEngine(), f);
   return ::ioda::Group{backend};
@@ -137,14 +149,19 @@ Group openFile(const std::string& filename, BackendOpenModes mode, HDF5_Version_
   static const std::map<BackendOpenModes, unsigned int> m{
     {BackendOpenModes::Read_Only, H5F_ACC_RDONLY}, {BackendOpenModes::Read_Write, H5F_ACC_RDWR}};
 
+  Options errOpts;
+  errOpts.add("filename", filename);
+  errOpts.add("mode", mode);
+  errOpts.add("compat", compat);
+
   hid_t plid = H5Pcreate(H5P_FILE_ACCESS);
-  if (plid < 0) throw Exception("H5Pcreate failed", ioda_Here());
+  if (plid < 0) throw Exception("H5Pcreate failed", ioda_Here(), errOpts);
   HH_hid_t pl(plid, Handles::Closers::CloseHDF5PropertyList::CloseP);
   if (0 > H5Pset_libver_bounds(pl.get(), map_h5ver.at(compat.first), map_h5ver.at(compat.second)))
-    throw Exception("H5Pset_libver_bounds failed", ioda_Here());
+    throw Exception("H5Pset_libver_bounds failed", ioda_Here(), errOpts);
 
   HH_hid_t f = H5Fopen(filename.c_str(), m.at(mode), pl.get());
-  if (f() < 0) throw Exception("H5Fopen failed", ioda_Here());
+  if (f() < 0) throw Exception("H5Fopen failed", ioda_Here(), errOpts);
 
   auto backend = std::make_shared<detail::Engines::HH::HH_Group>(f, getCapabilitiesFileEngine(), f);
 
@@ -157,17 +174,24 @@ Group openMemoryFile(const std::string& filename, BackendOpenModes mode, bool fl
   static const std::map<BackendOpenModes, unsigned int> m{
     {BackendOpenModes::Read_Only, H5F_ACC_RDONLY}, {BackendOpenModes::Read_Write, H5F_ACC_RDWR}};
 
+  Options errOpts;
+  errOpts.add("filename", filename);
+  errOpts.add("mode", mode);
+  errOpts.add("flush_on_close", flush_on_close);
+  errOpts.add("increment_len", increment_len);
+  errOpts.add("compat", compat);
+
   hid_t plid = H5Pcreate(H5P_FILE_ACCESS);
   Expects(plid >= 0);
   HH_hid_t pl(plid, Handles::Closers::CloseHDF5PropertyList::CloseP);
 
   const auto h5Result = H5Pset_fapl_core(pl.get(), increment_len, flush_on_close);
-  if (h5Result < 0) throw Exception("H5Pset_fapl_core failed", ioda_Here());
+  if (h5Result < 0) throw Exception("H5Pset_fapl_core failed", ioda_Here(), errOpts);
   if (0 > H5Pset_libver_bounds(pl.get(), map_h5ver.at(compat.first), map_h5ver.at(compat.second)))
-    throw Exception("H5Pset_libver_bounds failed", ioda_Here());
+    throw Exception("H5Pset_libver_bounds failed", ioda_Here(), errOpts);
 
   HH_hid_t f = H5Fopen(filename.c_str(), m.at(mode), pl.get());
-  if (f() < 0) throw Exception("H5Fopen failed", ioda_Here());
+  if (f() < 0) throw Exception("H5Fopen failed", ioda_Here(), errOpts);
 
   auto backend
     = std::make_shared<detail::Engines::HH::HH_Group>(f, getCapabilitiesInMemoryEngine(), f);
@@ -207,8 +231,40 @@ Capabilities getCapabilitiesInMemoryEngine() {
   return caps;
 }
 
+std::ostream& operator<<(std::ostream& os, const ioda::Engines::HH::HDF5_Version& ver)
+{
+  using namespace ioda::Engines::HH;
+  static const std::map<HDF5_Version, std::string> names {
+    {HDF5_Version::Earliest, "Earliest"},
+    {HDF5_Version::V18, "V18"},
+    {HDF5_Version::V110, "V110"},
+    {HDF5_Version::V112, "V112"},
+    {HDF5_Version::Latest, "Latest"}
+  };
+  if (names.count(ver) == 0) throw Exception("Unhandled HDF5 version", ioda_Here());
+  os << names.at(ver);
+
+  // For Latest, get the current library version and add this to the output.
+  if (ver == HDF5_Version::Latest) {
+    unsigned maj = 0, min = 0, rel = 0;
+    if (H5get_libversion(&maj, &min, &rel) < 0) throw Exception("Bad HDF5 return value", ioda_Here());
+    os << " (" << maj << "." << min << "." << rel << ")";
+  }
+
+  return os;
+}
+
+std::ostream& operator<<(std::ostream& os, const ioda::Engines::HH::HDF5_Version_Range& range)
+{
+  using namespace ioda::Engines::HH;
+  os << "HDF5_Version_Range: [" << range.first << ", " << range.second << "]";
+  return os;
+}
+
 }  // namespace HH
 }  // namespace Engines
 }  // namespace ioda
 
 /// @}
+
+

@@ -30,6 +30,14 @@ void setupGroups(pybind11::module& m) {
   grp.doc() = "A group";
 
   grp.def("list", &Group::list, "The names of all child groups")
+    .def("listGroups", &Group::listObjects<ObjectType::Group>, "List the names of all groups",
+        py::arg("recurse") = false)
+    .def("listVars", &Group::listObjects<ObjectType::Variable>, "List the names of all variables",
+        py::arg("recurse") = false)
+    //.def("listObjects", static_cast< std::map<ObjectType, std::vector<std::string>>
+    //     (Group::*)(ObjectType, bool)>(&Group::listObjects),
+    //     "List all child objects (groups, variables), with or without recursion",
+    //      py::arg("filter") = ObjectType::Ignored, py::arg("recurse") = false)
     .def("exists", &Group::exists, "Does a group exist with the specified name?", py::arg("name"))
     .def("create", &Group::create, "Create a group", py::arg("name"))
     .def("open", &Group::open, "Open a group", py::arg("name"))

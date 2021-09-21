@@ -1,5 +1,5 @@
 #
-# (C) Copyright 2020 UCAR
+# (C) Copyright 2020-2021 UCAR
 #
 # This software is licensed under the terms of the Apache Licence Version 2.0
 # which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -11,9 +11,6 @@ import os
 import sys
 import numpy as np
 
-if os.environ.get('LIBDIR') is not None:
-    sys.path.append(os.environ['LIBDIR'])
-    
 import ioda
 
 # grab arguments

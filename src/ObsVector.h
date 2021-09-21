@@ -76,11 +76,12 @@ class ObsVector : public util::Printable,
   unsigned int nobs() const;
 
   /// Pack observations local to this MPI task into an Eigen vector
-  /// (excluding vector elements that are masked out)
-  Eigen::VectorXd  packEigen(const ObsDataVector<int> &) const;
+  /// (excluding vector elements that are missing values, or where mask is equal to
+  /// missing values
+  Eigen::VectorXd packEigen(const ObsVector & mask) const;
   /// Number of non-masked out observations local to this MPI task
-  /// (size of an Eigen vector returned by `packEigen`
-  size_t packEigenSize(const ObsDataVector<int> &) const;
+  /// (size of an Eigen vector returned by `packEigen`)
+  size_t packEigenSize(const ObsVector & mask) const;
 
   const double & toFortran() const;
   double & toFortran();
@@ -91,7 +92,12 @@ class ObsVector : public util::Printable,
   const oops::Variables & varnames() const {return obsvars_;}
   std::size_t nvars() const {return nvars_;}
   std::size_t nlocs() const {return nlocs_;}
-  void mask(const ObsDataVector<int> &);
+
+  /// Set this ObsVector values to missing where \p mask is non-zero
+  void mask(const ObsDataVector<int> & mask);
+  /// Set this ObsVector values to missing where \p mask has missing values
+  void mask(const ObsVector & mask);
+
   bool has(const std::string & var) const {return obsvars_.has(var);}
 
   int64_t getSeed() const {return obsdb_.getSeed();}

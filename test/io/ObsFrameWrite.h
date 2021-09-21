@@ -185,8 +185,10 @@ void testWrite() {
         oops::Log::trace() << "ObsFrame testWrite test data config: " << i << ": "
                            << testConfig << std::endl;
 
-        ioda::ObsSpaceParameters obsParams(bgn, end, oops::mpi::world(), oops::mpi::myself());
-        obsParams.deserialize(obsConfig);
+        ioda::ObsTopLevelParameters topParams;
+        topParams.validateAndDeserialize(obsConfig);
+        ioda::ObsSpaceParameters obsParams(topParams, bgn, end,
+                                           oops::mpi::world(), oops::mpi::myself());
 
         if (obsParams.top_level_.obsOutFile.value() != boost::none) {
             // Get dimensions and variables sub configurations

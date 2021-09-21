@@ -109,21 +109,24 @@ void ObsDimInfo::set_dim_size(const ObsDimensionId dimId, std::size_t dimSize) {
  *                   the product of the comm and time communicators hold all observations in the
  *                   ObsSpace.
  */
-ObsSpace::ObsSpace(const eckit::Configuration & config, const eckit::mpi::Comm & comm,
+ObsSpace::ObsSpace(const Parameters_ & params, const eckit::mpi::Comm & comm,
                    const util::DateTime & bgn, const util::DateTime & end,
                    const eckit::mpi::Comm & timeComm)
-                     : oops::ObsSpaceBase(config, comm, bgn, end),
-                       config_(config), winbgn_(bgn), winend_(end), commMPI_(comm),
+                     : oops::ObsSpaceBase(params, comm, bgn, end),
+                       winbgn_(bgn), winend_(end), commMPI_(comm),
                        gnlocs_(0), nrecs_(0), obsvars_(),
-                       obs_group_(), obs_params_(bgn, end, comm, timeComm)
+                       obs_group_(), obs_params_(params, bgn, end, comm, timeComm)
 {
-    oops::Log::trace() << "ObsSpace::ObsSpace config  = " << config << std::endl;
-
-    // transfer the input config to the ObsSpaceParameters object data member
-    obs_params_.deserialize(config);
+    oops::Log::trace() << "ObsSpace::ObsSpace config  = " << obs_params_.top_level_ << std::endl;
 
     obsname_ = obs_params_.top_level_.obsSpaceName;
     obsvars_ = obs_params_.top_level_.simVars;
+    if (obs_params_.top_level_.derivedSimVars.value().size() != 0) {
+      // As things stand, this assert cannot fail, since both variables take the list of channels
+      // from the same "channels" YAML option.
+      ASSERT(obs_params_.top_level_.derivedSimVars.value().channels() == obsvars_.channels());
+      obsvars_ += obs_params_.top_level_.derivedSimVars;
+    }
     oops::Log::info() << this->obsname() << " vars: " << obsvars_ << std::endl;
 
     // Open the source (ObsFrame) of the data for initializing the obs_group_ (ObsGroup)
@@ -158,6 +161,36 @@ ObsSpace::ObsSpace(const eckit::Configuration & config, const eckit::mpi::Comm &
     if (obs_params_.top_level_.obsExtend.value() != boost::none) {
         extendObsSpace(*(obs_params_.top_level_.obsExtend.value()));
     }
+
+    /// If save_obs_distribution set to true,
+    /// global location indices and record numbers will be stored
+    /// in the MetaData/saved_index and MetaData/saved_record_number variables, respectively.
+    /// These variables will be saved along with all other variables
+    /// to the output files generated if the obsdataout.obsfile option is set.
+    ///
+    /// When the "obsdatain.read obs from separate file" option is set for later runs,
+    /// each process reads a separate input file directly,
+    /// the presence of these variables makes it possible
+    /// to identify observations stored in more than one input file.
+
+    const bool save_obs_distribution = obs_params_.top_level_.saveObsDistribution;
+    if (save_obs_distribution && "Halo" == obs_params_.top_level_.distName.value()) {
+      const size_t nlocs = this->nlocs();
+
+      std::vector<int> idx2int(nlocs);
+      std::vector<int> rec2int(nlocs);
+
+      for (size_t loc = 0; loc < nlocs; ++loc) {
+        idx2int[loc] = static_cast<int>(indx_[loc]);
+        rec2int[loc] = static_cast<int>(recnums_[loc]);
+      }
+
+      // Save Index and Records
+      put_db("MetaData", "saved_index", idx2int);
+      put_db("MetaData", "saved_record_number", rec2int);
+    }
+
+    createMissingObsErrors();
 
     oops::Log::debug() << obsname() << ": " << globalNumLocsOutsideTimeWindow()
       << " observations are outside of time window out of "
@@ -227,27 +260,33 @@ std::string ObsSpace::obs_sort_order() const {
  *          in the obs container. If the combination exists, "true" is returned,
  *          otherwise "false" is returned.
  */
-bool ObsSpace::has(const std::string & group, const std::string & name) const {
+bool ObsSpace::has(const std::string & group, const std::string & name, bool skipDerived) const {
     // For backward compatibility, recognize and handle appropriately variable names with
     // channel suffixes.
     std::string nameToUse;
     std::vector<int> chanSelectToUse;
-    splitChanSuffix(group, name, { }, nameToUse, chanSelectToUse);
-    return obs_group_.vars.exists(fullVarName(group, nameToUse));
+    splitChanSuffix(group, name, { }, nameToUse, chanSelectToUse, skipDerived);
+    return obs_group_.vars.exists(fullVarName(group, nameToUse)) ||
+           (!skipDerived && obs_group_.vars.exists(fullVarName("Derived" + group, nameToUse)));
 }
 
 // -----------------------------------------------------------------------------
-ObsDtype ObsSpace::dtype(const std::string & group, const std::string & name) const {
+ObsDtype ObsSpace::dtype(const std::string & group, const std::string & name,
+                         bool skipDerived) const {
     // For backward compatibility, recognize and handle appropriately variable names with
     // channel suffixes.
     std::string nameToUse;
     std::vector<int> chanSelectToUse;
-    splitChanSuffix(group, name, { }, nameToUse, chanSelectToUse);
+    splitChanSuffix(group, name, { }, nameToUse, chanSelectToUse, skipDerived);
+
+    std::string groupToUse = "Derived" + group;
+    if (skipDerived || !obs_group_.vars.exists(fullVarName(groupToUse, nameToUse)))
+      groupToUse = group;
 
     // Set the type to None if there is no type from the backend
     ObsDtype VarType = ObsDtype::None;
-    if (has(group, nameToUse)) {
-        Variable var = obs_group_.vars.open(fullVarName(group, nameToUse));
+    if (has(groupToUse, nameToUse, skipDerived)) {
+        Variable var = obs_group_.vars.open(fullVarName(groupToUse, nameToUse));
         if (var.isA<int>()) {
             VarType = ObsDtype::Integer;
         } else if (var.isA<float>()) {
@@ -269,36 +308,36 @@ ObsDtype ObsSpace::dtype(const std::string & group, const std::string & name) co
 // -----------------------------------------------------------------------------
 void ObsSpace::get_db(const std::string & group, const std::string & name,
                      std::vector<int> & vdata,
-                     const std::vector<int> & chanSelect) const {
-    loadVar<int>(group, name, chanSelect, vdata);
+                     const std::vector<int> & chanSelect, bool skipDerived) const {
+    loadVar<int>(group, name, chanSelect, vdata, skipDerived);
 }
 
 void ObsSpace::get_db(const std::string & group, const std::string & name,
                      std::vector<float> & vdata,
-                     const std::vector<int> & chanSelect) const {
-    loadVar<float>(group, name, chanSelect, vdata);
+                     const std::vector<int> & chanSelect, bool skipDerived) const {
+    loadVar<float>(group, name, chanSelect, vdata, skipDerived);
 }
 
 void ObsSpace::get_db(const std::string & group, const std::string & name,
                      std::vector<double> & vdata,
-                     const std::vector<int> & chanSelect) const {
+                     const std::vector<int> & chanSelect, bool skipDerived) const {
     // load the float values from the database and convert to double
     std::vector<float> floatData;
-    loadVar<float>(group, name, chanSelect, floatData);
+    loadVar<float>(group, name, chanSelect, floatData, skipDerived);
     ConvertVarType<float, double>(floatData, vdata);
 }
 
 void ObsSpace::get_db(const std::string & group, const std::string & name,
                      std::vector<std::string> & vdata,
-                     const std::vector<int> & chanSelect) const {
-    loadVar<std::string>(group, name, chanSelect, vdata);
+                     const std::vector<int> & chanSelect, bool skipDerived) const {
+    loadVar<std::string>(group, name, chanSelect, vdata, skipDerived);
 }
 
 void ObsSpace::get_db(const std::string & group, const std::string & name,
                      std::vector<util::DateTime> & vdata,
-                     const std::vector<int> & chanSelect) const {
+                     const std::vector<int> & chanSelect, bool skipDerived) const {
     std::vector<std::string> dtStrings;
-    loadVar<std::string>(group, name, chanSelect, dtStrings);
+    loadVar<std::string>(group, name, chanSelect, dtStrings, skipDerived);
     vdata = convertDtStringsToDtime(dtStrings);
 }
 
@@ -658,15 +697,23 @@ void ObsSpace::resizeNlocs(const Dimensions_t nlocsSize, const bool append) {
 
 template<typename VarType>
 void ObsSpace::loadVar(const std::string & group, const std::string & name,
-                      const std::vector<int> & chanSelect,
-                      std::vector<VarType> & varValues) const {
+                       const std::vector<int> & chanSelect,
+                       std::vector<VarType> & varValues,
+                       bool skipDerived) const {
     // For backward compatibility, recognize and handle appropriately variable names with
     // channel suffixes.
     std::string nameToUse;
     std::vector<int> chanSelectToUse;
     splitChanSuffix(group, name, chanSelect, nameToUse, chanSelectToUse);
 
-    Variable var = obs_group_.vars.open(fullVarName(group, nameToUse));
+    // Prefer variables from Derived* groups.
+    std::string groupToUse = "Derived" + group;
+    if (skipDerived || !obs_group_.vars.exists(fullVarName(groupToUse, nameToUse)))
+      groupToUse = group;
+
+    // Try to open the variable.
+    ioda::Variable var = obs_group_.vars.open(fullVarName(groupToUse, nameToUse));
+
     std::string nchansVarName = this->get_dim_name(ObsDimensionId::Nchans);
 
     // In the following code, assume that if a variable has channels, the
@@ -799,10 +846,23 @@ std::size_t ObsSpace::createChannelSelections(const Variable & variable,
     memSelect.extent(memCounts)
              .select({SelectionOperator::SET, memStarts, memCounts});
 
-    obsGroupSelect.extent(varDims)
-                  .select({SelectionOperator::SET, 0, dimSelects[0]});
-    for (std::size_t i = 1; i < dimSelects.size(); ++i) {
-        obsGroupSelect.select({SelectionOperator::AND, i, dimSelects[i]});
+    // If numElements is zero, can't use the dimension selection style for
+    // the ObsStore backend. In this case use a hyperslab style selection with
+    // zero counts along each dimension which will produce the desired effect
+    // (of the selection specifying zero elements).
+    if (numElements == 0) {
+        // hyperslab style selection
+        std::vector<Dimensions_t> obsGroupStarts(varDims.size(), 0);
+        std::vector<Dimensions_t> obsGroupCounts(varDims.size(), 0);
+        obsGroupSelect.extent(varDims)
+                      .select({SelectionOperator::SET, obsGroupStarts, obsGroupCounts});
+    } else {
+        // dimension style selection
+        obsGroupSelect.extent(varDims)
+                      .select({SelectionOperator::SET, 0, dimSelects[0]});
+        for (std::size_t i = 1; i < dimSelects.size(); ++i) {
+            obsGroupSelect.select({SelectionOperator::AND, i, dimSelects[i]});
+        }
     }
 
     return numElements;
@@ -929,13 +989,16 @@ void ObsSpace::fillChanNumToIndexMap() {
 
 // -----------------------------------------------------------------------------
 void ObsSpace::splitChanSuffix(const std::string & group, const std::string & name,
-                              const std::vector<int> & chanSelect, std::string & nameToUse,
-                              std::vector<int> & chanSelectToUse) const {
+                               const std::vector<int> & chanSelect, std::string & nameToUse,
+                               std::vector<int> & chanSelectToUse,
+                               bool skipDerived) const {
     nameToUse = name;
     chanSelectToUse = chanSelect;
     // For backward compatibility, recognize and handle appropriately variable names with
     // channel suffixes.
-    if (chanSelect.empty() && !obs_group_.vars.exists(fullVarName(group, name))) {
+    if (chanSelect.empty() &&
+        !obs_group_.vars.exists(fullVarName(group, name)) &&
+        (skipDerived || !obs_group_.vars.exists(fullVarName("Derived" + group, name)))) {
         int channelNumber;
         if (extractChannelSuffixIfPresent(name, nameToUse, channelNumber))
             chanSelectToUse = {channelNumber};
@@ -1019,6 +1082,13 @@ void ObsSpace::saveToFile() {
             dimMaxSize = Unlimited;
             dimChunkSize = this->globalNumLocs();
         }
+        // It's possible that dimChunkSize is set to zero which is an illegal value
+        // for the chunk size. If the current dimension size is zero, then it's okay
+        // to set chunk size to an arbitrary small size since you don't need to be
+        // particularly efficient about it.
+        if (dimChunkSize == 0) {
+            dimChunkSize = 5;
+        }
         obs_params_.setDimScale(dimName, dimSize, dimMaxSize, dimChunkSize);
     }
 
@@ -1072,7 +1142,8 @@ void ObsSpace::saveToFile() {
 
 // -----------------------------------------------------------------------------
 template <typename DataType>
-void ObsSpace::extendVariable(Variable & extendVar, const size_t startFill) {
+void ObsSpace::extendVariable(Variable & extendVar,
+                              const size_t upperBoundOnGlobalNumOriginalRecs) {
     const DataType missing = util::missingValue(missing);
 
     // Read in variable data values. At this point the values will contain
@@ -1081,13 +1152,30 @@ void ObsSpace::extendVariable(Variable & extendVar, const size_t startFill) {
     std::vector<DataType> varVals;
     extendVar.read<DataType>(varVals);
 
-    // Iterator pointing to the first non-missing value in the input vector.
-    auto it_nonmissing = std::find_if(varVals.begin(), varVals.end(),
-                                      [&missing](DataType x){return x != missing;});
-    if (it_nonmissing != varVals.end()) {
-        std::fill(varVals.begin() + startFill, varVals.end(), *it_nonmissing);
-        extendVar.write<DataType>(varVals);
+    for (const auto & recordindex : recidx_) {
+      // Only deal with records in the original ObsSpace.
+      if (recordindex.first >= upperBoundOnGlobalNumOriginalRecs) break;
+
+      // Find the first non-missing value in the original record.
+      DataType fillValue = missing;
+      for (const auto & jloc : recordindex.second) {
+        if (varVals[jloc] != missing) {
+          fillValue = varVals[jloc];
+          break;
+        }
+      }
+
+      // Fill the averaged record with the first non-missing value in the original record.
+      // (If all values are missing, do nothing.)
+      if (fillValue != missing) {
+        for (const auto & jloc : recidx_[recordindex.first + upperBoundOnGlobalNumOriginalRecs]) {
+          varVals[jloc] = fillValue;
+        }
+      }
     }
+
+    // Write out values of the averaged record.
+    extendVar.write<DataType>(varVals);
 }
 
 // -----------------------------------------------------------------------------
@@ -1188,11 +1276,11 @@ void ObsSpace::extendObsSpace(const ObsExtendParameters & params) {
         // The numOriginalLocs argument passed to extendVariable indicates where to start filling.
         Variable extendVar = obs_group_.vars.open(fullVname);
         if (extendVar.isA<int>()) {
-          extendVariable<int>(extendVar, numOriginalLocs);
+          extendVariable<int>(extendVar, upperBoundOnGlobalNumOriginalRecs);
         } else if (extendVar.isA<float>()) {
-          extendVariable<float>(extendVar, numOriginalLocs);
+          extendVariable<float>(extendVar, upperBoundOnGlobalNumOriginalRecs);
         } else if (extendVar.isA<std::string>()) {
-          extendVariable<std::string>(extendVar, numOriginalLocs);
+          extendVariable<std::string>(extendVar, upperBoundOnGlobalNumOriginalRecs);
         }
       }
     }
@@ -1221,6 +1309,19 @@ void ObsSpace::extendObsSpace(const ObsExtendParameters & params) {
     dim_info_.set_dim_size(ObsDimensionId::Nlocs, numExtendedLocs);
     // Increment gnlocs_.
     gnlocs_ += globalNumAveragedLocs;
+  }
+}
+
+// -----------------------------------------------------------------------------
+void ObsSpace::createMissingObsErrors() {
+  std::vector<float> obserror;  // Will be initialized only if necessary
+
+  for (size_t i = 0; i < obsvars_.size(); ++i) {
+    if (!has("ObsError", obsvars_[i])) {
+      if (obserror.empty())
+        obserror.assign(nlocs(), util::missingValue(float()));
+      put_db("DerivedObsError", obsvars_[i], obserror);
+    }
   }
 }
 // -----------------------------------------------------------------------------

@@ -1,0 +1,32 @@
+where:
+  varno: [119,233]
+variables:
+- name: amsua_zenith
+- name: azimuth
+- name: emissivity_param_1
+- name: emissivity_param_2
+- name: emissivity_param_3
+- name: emissivity_param_4
+- name: emissivity_param_5
+- name: emissivity_param_6
+- name: emissivity_param_7
+- name: emissivity_param_8
+- name: emissivity_param_9
+- name: emissivity_param_10
+- name: emissivity_param_11
+- name: emissivity_param_12
+- name: emissivity_param_13
+- name: emissivity_param_14
+- name: emissivity_param_15
+- name: numlev
+- name: satellite_identifier
+- name: scanpos
+- name: solar_azimuth
+- name: solar_zenith
+- name: surface_height
+- name: surface_land_fraction
+- name: surface_land_indicator
+- name: water_fraction
+- name: zenith
+- name: receipt_time
+- name: receipt_date
