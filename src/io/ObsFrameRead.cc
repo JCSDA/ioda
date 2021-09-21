@@ -213,13 +213,13 @@ void ObsFrameRead::genFrameIndexRecNums(std::shared_ptr<Distribution> & dist) {
     std::vector<Dimensions_t> locIndex;
     std::vector<Dimensions_t> frameIndex;
 
-    // Apply the timing window. Need to filter out locations that are outside the
-    // timing window before generating record numbers. This is because
-    // we are generating record numbers on the fly since we want to get to the point where
-    // we can do the MPI distribution without knowing how many obs (and records) we are going
-    // to encounter. Only apply the timing window in the case of reading from a file.
-    if (obs_io_->applyTimingWindow()) {
-        genFrameLocationsTimeWindow(locIndex, frameIndex);
+    // Apply locations checking. Need to filter out locations that are outside
+    // the timing window or that contain missing values before generating record
+    // numbers. This is because we are generating record numbers on the fly
+    // since we want to get to the point where we can do the MPI distribution
+    // without knowing how many obs (and records) we are going to encounter.
+    if (obs_io_->applyLocationsCheck()) {
+        genFrameLocationsWithQcheck(locIndex, frameIndex);
     } else {
         genFrameLocationsAll(locIndex, frameIndex);
     }
@@ -256,7 +256,7 @@ void ObsFrameRead::genFrameLocationsAll(std::vector<Dimensions_t> & locIndex,
 }
 
 //------------------------------------------------------------------------------------
-void ObsFrameRead::genFrameLocationsTimeWindow(std::vector<Dimensions_t> & locIndex,
+void ObsFrameRead::genFrameLocationsWithQcheck(std::vector<Dimensions_t> & locIndex,
                                                std::vector<Dimensions_t> & frameIndex) {
     Dimensions_t frameCount = this->frameCount("nlocs");
     Dimensions_t frameStart = this->frameStart();
@@ -269,7 +269,7 @@ void ObsFrameRead::genFrameLocationsTimeWindow(std::vector<Dimensions_t> & locIn
         dtVarName = std::string("MetaData/time");
     } else {
         std::string ErrMsg =
-            std::string("ERROR: ObsFrameRead::genFrameLocationsTimeWindow: ") +
+            std::string("ERROR: ObsFrameRead::genFrameLocationsWithQcheck: ") +
             std::string("date time information does not exist, ") +
             std::string("cannot perform time window filtering");
         throw eckit::UserError(ErrMsg, Here());
@@ -299,6 +299,19 @@ void ObsFrameRead::genFrameLocationsTimeWindow(std::vector<Dimensions_t> & locIn
         dtimeVals = convertRefOffsetToDtime(refDtime, dtValues);
     }
 
+    // Need to check the latitude and longitude values too.
+    std::vector<float> lats;
+    Variable latVar = obs_frame_.vars.open("MetaData/latitude");
+    latVar.read<float>(lats, memSelect, frameSelect);
+    detail::FillValueData_t latFvData = latVar.getFillValue();
+    float latFillValue = detail::getFillValue<float>(latFvData);
+
+    std::vector<float> lons;
+    Variable lonVar = obs_frame_.vars.open("MetaData/longitude");
+    lonVar.read<float>(lons, memSelect, frameSelect);
+    detail::FillValueData_t lonFvData = lonVar.getFillValue();
+    float lonFillValue = detail::getFillValue<float>(lonFvData);
+
     // Keep all locations that fall inside the timing window. Note iloc will be set
     // to the number of locations stored in the output vectors after exiting the
     // following for loop.
@@ -306,12 +319,36 @@ void ObsFrameRead::genFrameLocationsTimeWindow(std::vector<Dimensions_t> & locIn
     frameIndex.resize(frameCount);
     std::size_t iloc = 0;
     for (std::size_t i = 0; i < frameCount; ++i) {
-      if (this->insideTimingWindow(dtimeVals[i])) {
+      // Check the timing window first since having a location outside the timing
+      // window likely occurs more than having issues with the lat and lon values.
+      bool keepThisLocation = this->insideTimingWindow(dtimeVals[i]);
+      if (!keepThisLocation) {
+        // Keep a count of how many obs were rejected due to being outside
+        // the timing window
+        gnlocs_outside_timewindow_++;
+      }
+
+      // Check the latitude value if we made it through the timing window check.
+      // Reject the obs if the latitude value is the fill value (missing data)
+      if (keepThisLocation) {
+        if (lats[i] == latFillValue) {
+           keepThisLocation = false;
+        }
+      }
+
+      // Check the longitude value if we made it through the prior checks.
+      // Reject the obs if the longitude value is the fill value (missing data)
+      if (keepThisLocation) {
+        if (lons[i] == lonFillValue) {
+           keepThisLocation = false;
+        }
+      }
+
+      // Obs has passed all of the quality checks so add it to the list of records
+      if (keepThisLocation) {
         locIndex[iloc] = frameStart + i;
         frameIndex[iloc] = i;
         iloc++;
-      } else {
-        gnlocs_outside_timewindow_++;
       }
     }
     locIndex.resize(iloc);

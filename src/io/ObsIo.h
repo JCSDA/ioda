@@ -80,9 +80,8 @@ class ObsIo : public util::Printable {
     /// \brief return the names of variables to be used to group observations into records
     const std::vector<std::string> &obsGroupingVars() const { return obs_grouping_vars_; }
 
-    /// \brief return true if only observations within the timing window should be retained,
-    /// false otherwise.
-    virtual bool applyTimingWindow() const { return true; }
+    /// \brief return true if the locations data (lat, lon, datetime) need to be checked
+    virtual bool applyLocationsCheck() const { return true; }
 
     /// \brief return true if each process generates a separate series of observations
     /// (e.g. read from different files).

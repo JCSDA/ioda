@@ -42,7 +42,7 @@ class ObsIoGenerateRandom : public ObsIo, private util::ObjectCounter<ObsIoGener
                                  const ObsSpaceParameters & obsSpaceParams);
     ~ObsIoGenerateRandom();
 
-    bool applyTimingWindow() const override { return false; }
+    bool applyLocationsCheck() const override { return false; }
 
  private:
     //-------------------------- private data members -------------------------------

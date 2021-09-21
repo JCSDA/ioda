@@ -180,10 +180,19 @@ class ObsFrameRead : public ObsFrame, private util::ObjectCounter<ObsFrameRead> 
                               std::vector<Dimensions_t> & frameIndex);
 
     /// \brief generate indices for locations in current frame after filtering out
-    ///  obs outside DA timing window
+    ///  obs failing a quality check
+    /// \details For now, variables being checked are:
+    ///    MetaData/latitude
+    ///    MetaData/longitude
+    ///    MetaData/datetime
+    ///
+    /// and the quality checks include:
+    ///    locations outside the DA timing window
+    ///    locations with missing values
+    ///
     /// \param locIndex vector of location indices relative to entire obs source
     /// \param frameIndex vector of location indices relative to current frame
-    void genFrameLocationsTimeWindow(std::vector<Dimensions_t> & locIndex,
+    void genFrameLocationsWithQcheck(std::vector<Dimensions_t> & locIndex,
                                      std::vector<Dimensions_t> & frameIndex);
 
     /// \brief generate record numbers where each location is a unique record (no grouping)

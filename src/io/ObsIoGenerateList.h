@@ -44,7 +44,7 @@ class ObsIoGenerateList : public ObsIo, private util::ObjectCounter<ObsIoGenerat
                                const ObsSpaceParameters & obsSpaceParams);
     ~ObsIoGenerateList();
 
-    bool applyTimingWindow() const override { return false; }
+    bool applyLocationsCheck() const override { return false; }
 
  private:
     //-------------------------- private data members -------------------------------
