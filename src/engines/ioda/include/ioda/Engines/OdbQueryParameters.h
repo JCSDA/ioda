@@ -112,8 +112,7 @@ class OdbQueryParameters : public oops::Parameters {
           "varno",
           "vertco_type",
           "entryno",
-          "ops_obsgroup",
-          "initial_vertco_reference"}, this};
+          "ops_obsgroup"}, this};
 };
 
 }  // namespace ODC

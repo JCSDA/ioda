@@ -87,13 +87,13 @@ ObsGroup openFile(const ODC_Parameters& odcparams,
   const int num_rows = sql_data.numberOfMetadataRows();
   if (num_rows <= 0) return storageGroup;
 
-  NewDimensionScales_t vertcos = sql_data.getVertcos();
-
   std::vector<std::string> ignores;
   ignores.push_back("nlocs");
   ignores.push_back("MetaData/datetime");
   ignores.push_back("MetaData/receiptdatetime");
   ignores.push_back("nchans");
+
+  NewDimensionScales_t vertcos = sql_data.getVertcos();
 
   auto og = ObsGroup::generate(
     storageGroup,
@@ -123,7 +123,15 @@ ObsGroup openFile(const ODC_Parameters& odcparams,
 
   for (int i = 0; i < sqlColumns.size(); i++) {
     if (ignoredNames.count(sqlColumns.at(i))) continue;
-    sql_data.getIodaVariable(sqlColumns.at(i), og, params);
+    if (sqlColumns.at(i) == "initial_vertco_reference" && sql_data.getObsgroup() == obsgroup_airs) {
+      sql_data.assignChannelNumbers(varno_rawbt, og);
+    } else if (sqlColumns.at(i) == "initial_vertco_reference" && (sql_data.getObsgroup() == obsgroup_iasi ||
+                                                                  sql_data.getObsgroup() == obsgroup_cris ||
+                                                                  sql_data.getObsgroup() == obsgroup_hiras)) {
+      sql_data.assignChannelNumbers(varno_rawsca, og);
+    } else {
+      sql_data.getIodaVariable(sqlColumns.at(i), og, params);
+    }
   }
 
   groups = og.listObjects();

@@ -1,5 +1,5 @@
 where:
-  varno: [119,233,249]
+  varno: [233]
 variables:
 - name: amsuscatindex
 - name: azimuth
@@ -25,6 +25,7 @@ variables:
 - name: end_chan_scale_9
 - name: end_chan_scale_10
 - name: general_quality_flag
+- name: initial_vertco_reference
 - name: land_sea
 - name: meto_cloud_flags
 - name: meto_cloud_tests

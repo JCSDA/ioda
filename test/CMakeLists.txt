@@ -82,6 +82,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_odb_surfacecloud.yml
   testinput/iodatest_odb_surfacesst.yml
   testinput/odb_default_name_map.yml
+  testinput/odb_radiance_name_map.yml
   testinput/odb_sonde_name_map.yml
   testinput/iodatest_time_io.yml
 )
@@ -798,7 +799,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             AIRS
                             Data/testinput_tier_1/airs.odb
-                            testinput/odb_default_name_map.yml testinput/iodatest_odb_airs.yml"
+                            testinput/odb_radiance_name_map.yml testinput/iodatest_odb_airs.yml"
                             test-AIRS.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -908,7 +909,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             CrIS
                             Data/testinput_tier_1/cris.odb
-                            testinput/odb_default_name_map.yml testinput/iodatest_odb_cris.yml"
+                            testinput/odb_radiance_name_map.yml testinput/iodatest_odb_cris.yml"
                             test-CrIS.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -919,7 +920,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             CrISFSR
                             Data/testinput_tier_1/crisfsr.odb
-                            testinput/odb_default_name_map.yml testinput/iodatest_odb_crisfsr.yml"
+                            testinput/odb_radiance_name_map.yml testinput/iodatest_odb_crisfsr.yml"
                             test-CrISFSR.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -930,7 +931,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             HIRASFSR
                             Data/testinput_tier_1/hirasfsr.odb
-                            testinput/odb_default_name_map.yml testinput/iodatest_odb_hirasfsr.yml"
+                            testinput/odb_radiance_name_map.yml  testinput/iodatest_odb_hirasfsr.yml"
                             test-HIRASFSR.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -963,7 +964,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             IASI
                             Data/testinput_tier_1/iasi.odb
-                            testinput/odb_default_name_map.yml testinput/iodatest_odb_iasi.yml"
+                            testinput/odb_radiance_name_map.yml testinput/iodatest_odb_iasi.yml"
                             test-IASI.hdf
                     TEST_DEPENDS get_ioda_test_data )
 

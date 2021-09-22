@@ -165,6 +165,9 @@ public:
   ioda::Variable getIodaVariable(std::string const& column, ioda::ObsGroup og,
                                  ioda::VariableCreationParameters params) const;
 
+  /// \brief Returns a list of channels associated with a particular varno.
+  ioda::Variable assignChannelNumbers(int varno, ioda::ObsGroup og) const;
+
   /// \brief Returns an ioda variable for a specified column
   ioda::Variable getIodaObsvalue(int varno, ioda::ObsGroup og,
                                  ioda::VariableCreationParameters params) const;

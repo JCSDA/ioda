@@ -100,7 +100,7 @@ NewDimensionScales_t DataFromSQL::getVertcos() const {
   vertcos.push_back(
     NewDimensionScale<int>("nlocs", num_rows, num_rows, num_rows));
   if (obsgroup_ == obsgroup_iasi || obsgroup_ == obsgroup_cris || obsgroup_ == obsgroup_hiras) {
-    int number_of_levels = std::max(numberOfLevels(varno_rawbt), numberOfLevels(varno_rawsca));
+    int number_of_levels = numberOfLevels(varno_rawsca);
     vertcos.push_back(NewDimensionScale<int>("nchans", number_of_levels,
                                              number_of_levels, number_of_levels));
   } else if (obsgroup_ == obsgroup_atovs) {
@@ -420,6 +420,20 @@ ioda::Variable DataFromSQL::getIodaVariable(std::string const& column, ioda::Obs
   return v;
 }
 
+ioda::Variable DataFromSQL::assignChannelNumbers(const int varno, ioda::ObsGroup og) const {
+  const std::vector<int> varnos{varno};
+  Eigen::ArrayXf var = getVarnoColumn(varnos, std::string("initial_vertco_reference"), numberOfLevels(varno), numberOfLevels(varno));
+
+  int number_of_levels = numberOfLevels(varno);
+  ioda::Variable v = og.vars["nchans"];
+  Eigen::ArrayXf var_single(number_of_levels);
+  for (size_t i = 0; i < number_of_levels; i++) {
+    var_single[i] = var[i];
+  }
+  v.writeWithEigenRegular(var_single);
+  return v;
+}
+
 ioda::Variable DataFromSQL::getIodaObsvalue(const int varno, ioda::ObsGroup og,
                                             ioda::VariableCreationParameters params) const {
   ioda::Variable v;
@@ -439,18 +453,9 @@ ioda::Variable DataFromSQL::getIodaObsvalue(const int varno, ioda::ObsGroup og,
   } else if (obsgroup_ == obsgroup_mwsfy3 && varno != varno_rawbt_mwts) {
     const std::vector<int> varnos{varno_rawbt_mwts, varno_rawbt_mwhs};
     var = getVarnoColumn(varnos, "initial_obsvalue");
-  } else if (obsgroup_ == obsgroup_cris) {
+  } else if (obsgroup_ == obsgroup_cris || obsgroup_ == obsgroup_hiras || obsgroup_ == obsgroup_iasi) {
     const std::vector<int> varnos{varno};
-    var = getVarnoColumn(varnos, "initial_obsvalue", std::max(numberOfLevels(varno_rawbt), numberOfLevels(varno_rawsca)), numberOfLevels(varno));
-  } else if (obsgroup_ == obsgroup_hiras) {
-    const std::vector<int> varnos{varno};
-    var = getVarnoColumn(varnos, "initial_obsvalue", std::max(numberOfLevels(varno_rawbt), numberOfLevels(varno_rawsca)), numberOfLevels(varno));
-  } else if (obsgroup_ == obsgroup_iasi && varno == varno_rawbt_amsu) {
-    const std::vector<int> varnos{varno_rawbt_amsu};
-    var = getVarnoColumn(varnos, "initial_obsvalue", numberOfLevels(varno_rawbt), numberOfLevels(varno_rawbt_amsu));
-  } else if (obsgroup_ == obsgroup_iasi && varno == varno_rawsca) {
-    const std::vector<int> varnos{varno_rawsca};
-    var = getVarnoColumn(varnos, "initial_obsvalue", numberOfLevels(varno_rawbt), numberOfLevels(varno_rawsca));
+    var = getVarnoColumn(varnos, "initial_obsvalue", numberOfLevels(varno_rawsca), numberOfLevels(varno));
   } else if (obsgroup_ == obsgroup_geocloud) {
     const std::vector<int> varnos{varno};
     var = getVarnoColumn(varnos, "initial_obsvalue", numberOfLevels(varno_cloud_fraction_covered), numberOfLevels(varno));
