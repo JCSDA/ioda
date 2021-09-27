@@ -9,3 +9,6 @@ variables:
 - name: zenith
 - name: receipt_time
 - name: receipt_date
+- name: satellite_height
+- name: initial_vertco_reference
+- name: channel_quality_flags

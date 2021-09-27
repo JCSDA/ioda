@@ -13,3 +13,4 @@ variables:
 - name: scanpos
 - name: receipt_time
 - name: receipt_date
+- name: channel_quality_flags
