@@ -21,6 +21,7 @@ namespace detail {
 Group_Base::Group_Base(std::shared_ptr<Group_Backend> backend)
     : backend_(backend),
       atts((backend) ? backend->atts : Has_Attributes()),
+      types((backend) ? backend->types : Has_Types()),
       vars((backend) ? backend->vars : Has_Variables()) {}
 
 Group_Base::~Group_Base() = default;

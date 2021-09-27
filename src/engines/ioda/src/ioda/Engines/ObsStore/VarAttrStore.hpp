@@ -41,7 +41,7 @@ public:
   /// \param data contiguous block of data to transfer
   /// \param m_select Selection ojbect: how to select from data argument
   /// \param f_select Selection ojbect: how to select to storage vector
-  virtual void write(gsl::span<char> data, Selection &m_select, Selection &f_select) = 0;
+  virtual void write(gsl::span<const char> data, Selection &m_select, Selection &f_select) = 0;
   /// \brief transfer data from data storage vector
   /// \param data contiguous block of data to transfer
   /// \param m_select Selection ojbect: how to select to data argument
@@ -77,10 +77,10 @@ public:
   /// \param data contiguous block of data to transfer
   /// \param m_select Selection ojbect: how to select from data argument
   /// \param f_select Selection ojbect: how to select to storage vector
-  void write(gsl::span<char> data, Selection &m_select, Selection &f_select) override {
+  void write(gsl::span<const char> data, Selection &m_select, Selection &f_select) override {
     if (data.size() > 0) {
       std::size_t numObjects = data.size() / sizeof(DataType);
-      gsl::span<DataType> d_span(reinterpret_cast<DataType *>(data.data()), numObjects);
+      gsl::span<const DataType> d_span(reinterpret_cast<const DataType *>(data.data()), numObjects);
       // assumes m_select and f_select have same number of points
       m_select.init_lin_indx();
       f_select.init_lin_indx();
@@ -146,15 +146,15 @@ public:
   /// \param data contiguous block of data to transfer
   /// \param m_select Selection object: how to select from data argument
   /// \param f_select Selection object: how to select to storage vector
-  void write(gsl::span<char> data, Selection &m_select, Selection &f_select) override {
+  void write(gsl::span<const char> data, Selection &m_select, Selection &f_select) override {
     // data is a series of char * pointing to null terminated strings
     // first place the char * values in a vector
     if (data.size() > 0) {
       std::size_t numObjects = data.size() / sizeof(char *);
-      gsl::span<char *> d_span(reinterpret_cast<char **>(data.data()), numObjects);
+      auto data_pointer = reinterpret_cast<const char* const*>(data.data());
       std::vector<char *> inStrings(numObjects);
       for (std::size_t i = 0; i < numObjects; ++i) {
-        inStrings[i] = d_span[i];
+        inStrings[i] = const_cast<char*>(data_pointer[i]);
       }
 
       // assumes m_select and f_select have same number of points

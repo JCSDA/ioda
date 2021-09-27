@@ -16,7 +16,8 @@
 #include "oops/runs/Test.h"
 #include "oops/test/TestEnvironment.h"
 
-#include "ioda/Engines/OdbQueryParameters.h"
+// Private header file used by this test. See CMakeLists.txt.
+#include "Engines/ODC/OdbQueryParameters.h"
 
 // -----------------------------------------------------------------------------
 

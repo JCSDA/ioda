@@ -1,13 +1,19 @@
 /*
- * (C) Copyright 2020 UCAR
+ * (C) Copyright 2020-2021 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
-/// \file Layout_ObsGroup.cpp
-/// \brief Contains implementations for how data are arranged in ioda internally.
+/*! \defgroup ioda_cxx_layout_internal Internal Groups and Data Layout
+ * \brief Private API
+ * \ingroup ioda_internals
+ *
+ * @{
+ * \file Layout_ObsGroup.cpp
+ * \brief Contains definitions for how data are arranged in ioda internally.
+ */
 
-#include "ioda/Layouts/Layout_ObsGroup.h"
+#include "./Layout_ObsGroup.h"
 
 #include "ioda/Group.h"
 #include "ioda/Layout.h"

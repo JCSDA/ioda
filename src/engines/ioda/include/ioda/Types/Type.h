@@ -23,16 +23,17 @@
 #include <typeinfo>
 #include <vector>
 
-#include "ioda/Types/Type_Provider.h"
 #include "ioda/Exception.h"
+#include "ioda/Types/Type_Provider.h"
 #include "ioda/defs.h"
 
 namespace ioda {
+class Group;
 class Type;
 
 /// Basic pre-defined types (Python convenience wrappers)
 /// \see py_ioda.cpp
-/// \note Names here do not match the python equivalents. The
+/// \note Names here do not match the Python equivalents. The
 ///   Python names match numpy's definitions.
 enum class BasicTypes {
   undefined_,  ///< Internal use only
@@ -58,7 +59,24 @@ enum class BasicTypes {
   str_
 };
 
+/// \brief Data Types can be grouped into a few categories. These are the categories.
+/// \note  Not all backends implement all types.
+enum class TypeClass {
+  Unknown,    ///< Unsupported / unhandled type
+  Integer,    ///< All integer types
+  Float,      ///< All floating-point types
+  String,     ///< All string types (fixed-length, variable, ASCII, UTF-8)
+  Bitfield,   ///< All bit fields
+  Opaque,     ///< All binary blobs
+  Compound,   ///< All compound types (types with member elements)
+  Reference,  ///< All object references
+  Enum,       ///< All enumerated types
+  VlenArray,  ///< All variable-length array types (not strings)
+  FixedArray  ///< All fixed-length array types
+};
+
 namespace detail {
+/// \brief Convenience function to safely copy a string.
 IODA_DL size_t COMPAT_strncpy_s(char* dest, size_t destSz, const char* src, size_t srcSz);
 
 class Type_Backend;
@@ -80,35 +98,74 @@ protected:
   /// Get the type provider.
   inline detail::Type_Provider* getTypeProvider() const { return provider_; }
 
-  /*
-  /// \brief Convenience function to check a type.
-  /// \param DataType is the type of the data. I.e. float, int, int32_t, uint16_t, std::string, etc.
-  /// \returns True if the type matches
-  /// \returns False (0) if the type does not match
-  /// \throws if an error occurred.
-  template <class DataType>
-  bool isA() const {
-    Type templateType = Types::GetType_Wrapper<DataType>::GetType(getTypeProvider());
-
-    return isA(templateType);
-  }
-  /// Hand-off to the backend to check equivalence
-  virtual bool isA(Type lhs) const;
-
-  /// Python compatability function
-  inline bool isA(BasicTypes dataType) const { return isA(Type(dataType, getTypeProvider())); }
-  */
 public:
   virtual ~Type_Base() {}
   std::shared_ptr<Type_Backend> getBackend() const { return backend_; }
   bool isValid() const { return (backend_.use_count() > 0); }
 
-  /// \brief Get the size of a single element of a type, in bytes.
+  /// @}
+  /// @name General functions
+  /// @{
+
+  /// \brief Get the size of a type, in bytes.
   /// \details This function is paired with the read and write functions to allow you to
   /// read and write data in a type-agnostic manner.
   /// This size report is a bit complicated when variable-length strings are encountered.
   /// In these cases, the size of the string pointer is returned.
   virtual size_t getSize() const;
+
+  /// \brief Does this type represent a string, an integer, a float, an array, an
+  ///   enumeration, a bitset, or any other type?
+  virtual TypeClass getClass() const;
+
+  /// \brief Save (commit) the type to a backend
+  /// \details From the HDF5 docs:
+  ///   Committed datatypes can be used to save space in a file where many
+  ///   datasets or attributes use the same datatype or to avoid defining a complex
+  ///   compound datatype more than once. Committed datatypes can also be used to ensure
+  ///   that multiple instances of the same datatype are truly identical.
+  ///
+  ///   This is used extensively for enumerated types.
+  virtual void commitToBackend(Group& d, const std::string& name) const;
+
+  /// @}
+  /// @name Numeric type functions
+  /// @{
+
+  /// \brief Is this type signed or unsigned?
+  /// \returns true if signed, false if unsigned.
+  /// \throws if the type is not a numeric type (i.e. not a simple integer or float).
+  virtual bool isTypeSigned() const;
+
+  /// @}
+  /// @name String type functions
+  /// @{
+
+  /// \brief Is this a variable-length string type?
+  /// \returns true if a variable-length string type, false if not.
+  ///   False can imply either that the type is a fixed-length string type (if getClass() == TypeClass::String),
+  ///   or that the type is not a string type at all.
+  virtual bool isVariableLengthStringType() const;
+
+  /// \brief Get the character set of this string type.
+  /// \returns Ascii or Unicode.
+  /// \throws ioda::Exception on error, or if the type is not a string type.
+  /// \note Currently, there is no way to set the character set. Everything is
+  ///   assumed to be a UTF-8 string in IODA.
+  virtual StringCSet getStringCSet() const;
+
+  /// @}
+  /// @name Array type functions
+  /// @{
+
+  /// \brief Get the "base" type of an object. For an array, this is the type of
+  ///   the array's elements. I.e. an array of int32_t has a base type of int32_t.
+  ///   For an enumerated type, this is the type used for the enumeration.
+  virtual Type_Implementation getBaseType() const;
+
+  /// \brief Get the dimensions of an array type.
+  /// \returns A vector of the dimensions. vector::size() is the rank (dimensionality).
+  virtual std::vector<Dimensions_t> getDimensions() const;
 
   /// @}
 };
@@ -149,7 +206,7 @@ namespace detail {
 class IODA_DL Type_Backend : public Type_Base<> {
 public:
   virtual ~Type_Backend();
-  size_t getSize() const override;
+  StringCSet getStringCSet() const override;
 
 protected:
   Type_Backend();
@@ -191,19 +248,21 @@ Type GetType(gsl::not_null<const ::ioda::detail::Type_Provider*> t,
              typename std::enable_if<!is_string<DataType>::value>::type* = 0) {
   if (Array_Type_Dimensionality <= 0)
     throw Exception(
-      "Bad assertion / unsupported fundamental type at the frontend side "
-      "of the ioda type system.", ioda_Here());
+      "Bad assertion / unsupported type at the frontend side "
+      "of the ioda type system.",
+      ioda_Here());
   else
     return t->makeArrayType(Adims, typeid(DataType[]), typeid(DataType));
 }
 /// \brief For fundamental string types. These are either constant or variable length arrays.
 /// Separate handling elsewhere.
 /// \ingroup ioda_cxx_types
+/// \todo Once C++20 support is added, make a distinction between std::string and std::u8string.
 template <class DataType, int String_Type_Length = constants::_Variable_Length>
 Type GetType(gsl::not_null<const ::ioda::detail::Type_Provider*> t,
              std::initializer_list<Dimensions_t>                        = {},
              typename std::enable_if<is_string<DataType>::value>::type* = 0) {
-  return t->makeStringType(String_Type_Length, typeid(DataType));
+  return t->makeStringType(typeid(DataType), String_Type_Length);
 }
 
 // This macro just repeats a long definition

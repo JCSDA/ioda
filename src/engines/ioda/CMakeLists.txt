@@ -49,13 +49,13 @@ list(APPEND SRCS_GROUPS
 	)
 list(APPEND SRCS_LAYOUTS
 	include/ioda/Layout.h
-	private/ioda/Layouts/Layout_ObsGroup.h
+	src/ioda/Layouts/Layout_ObsGroup.h
 	src/ioda/Layouts/Layout.cpp
 	src/ioda/Layouts/Layout_ObsGroup.cpp
 	)
 list(APPEND SRCS_LAYOUTS_ODB
-	private/ioda/Layouts/Layout_ObsGroup_ODB.h
-	private/ioda/Layouts/Layout_ObsGroup_ODB_Params.h
+	src/ioda/Layouts/Layout_ObsGroup_ODB.h
+	src/ioda/Layouts/Layout_ObsGroup_ODB_Params.h
 	src/ioda/Layouts/Layout_ObsGroup_ODB.cpp
 	)
 list(APPEND SRCS_MISC
@@ -78,10 +78,12 @@ list(APPEND SRCS_MISC
 list(APPEND SRCS_TYPES
 	include/ioda/Misc/Eigen_Compat.h
 	include/ioda/Types/Complex.h
+	include/ioda/Types/Has_Types.h
 	include/ioda/Types/Marshalling.h
 	include/ioda/Types/Sample.h
 	include/ioda/Types/Type.h
 	include/ioda/Types/Type_Provider.h
+	src/ioda/Has_Types.cpp
 	src/ioda/Type.cpp
 	src/ioda/Type_Provider.cpp
 	)
@@ -102,6 +104,7 @@ list(APPEND SRCS_ENGINES_TOP
 	include/ioda/Engines/Capabilities.h
 	include/ioda/Engines/Factory.h
 	src/ioda/Engines/Factory.cpp)
+
 list(APPEND SRCS_ENGINES_HH 
 	include/ioda/Engines/HH.h
 	src/ioda/Engines/HH/HH.cpp
@@ -117,6 +120,8 @@ list(APPEND SRCS_ENGINES_HH
 	src/ioda/Engines/HH/HH/HH-groups.h
 	src/ioda/Engines/HH/HH-hasattributes.cpp
 	src/ioda/Engines/HH/HH/HH-hasattributes.h
+	src/ioda/Engines/HH/HH-hastypes.cpp
+	src/ioda/Engines/HH/HH/HH-hastypes.h
 	src/ioda/Engines/HH/HH-hasvariables.cpp
 	src/ioda/Engines/HH/HH/HH-hasvariables.h
 	src/ioda/Engines/HH/HH-types.cpp
@@ -128,6 +133,7 @@ list(APPEND SRCS_ENGINES_HH
 	src/ioda/Engines/HH/HH-variables.cpp
 	src/ioda/Engines/HH/HH/HH-variables.h
 	)
+
 list(APPEND SRCS_ENGINES_OBS_STORE 
 	include/ioda/Engines/ObsStore.h
 	src/ioda/Engines/ObsStore/ObsStore.cpp
@@ -151,17 +157,21 @@ list(APPEND SRCS_ENGINES_OBS_STORE
 	src/ioda/Engines/ObsStore/Selection.cpp
 	src/ioda/Engines/ObsStore/Variables.cpp
 	)
+
 list(APPEND SRCS_ENGINES_ODC
-        include/ioda/Engines/ODC.h
-        include/ioda/Engines/OdbQueryParameters.h
-        src/ioda/Engines/ODC/ODC.cpp
-        src/ioda/Engines/ODC/OdbQueryParameters.cpp
-        )
+	include/ioda/Engines/ODC.h
+	src/ioda/Engines/ODC/ODC.cpp
+	)
 # Source files depending on the ODC library
 list(APPEND SRCS_ENGINES_ODC_ODC_DEPENDENT
-        src/ioda/Engines/ODC/DataFromSQL.cpp
-        src/ioda/Engines/ODC/DataFromSQL.h
-        )
+	src/ioda/Engines/ODC/DataFromSQL.cpp
+	src/ioda/Engines/ODC/DataFromSQL.h
+	)
+# Source files that need odc, eckit, and oops
+list(APPEND SRCS_ENGINES_ODC_ODC_OOPS_DEPENDENT
+	src/ioda/Engines/ODC/OdbQueryParameters.h
+	src/ioda/Engines/ODC/OdbQueryParameters.cpp
+	)
 
 source_group("Attributes" FILES ${SRCS_ATTRIBUTES})
 source_group("C Bindings" FILES ${SRCS_C_BINDINGS})
@@ -173,7 +183,8 @@ source_group("Variables" FILES ${SRCS_VARIABLES})
 source_group("Engines" FILES ${SRCS_ENGINES_TOP})
 source_group("Engines\\HH" FILES ${SRCS_ENGINES_HH})
 source_group("Engines\\ObsStore" FILES ${SRCS_ENGINES_OBS_STORE})
-source_group("Engines\\ODC" FILES ${SRCS_ENGINES_ODC}  ${SRCS_ENGINES_ODC_ODC_DEPENDENT})
+source_group("Engines\\ODC" FILES ${SRCS_ENGINES_ODC} ${SRCS_ENGINES_ODC_ODC_DEPENDENT} 
+	${SRCS_ENGINES_ODC_ODC_OOPS_DEPENDENT})
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/ioda/config.h.in
 	${CMAKE_CURRENT_BINARY_DIR}/config/ioda/config.h)
@@ -194,6 +205,9 @@ if (eckit_FOUND AND oops_FOUND)
 endif()
 if (odc_FOUND)
     list(APPEND SRCS_IODA_ENGINES ${SRCS_ENGINES_ODC_ODC_DEPENDENT})
+endif()
+if (odc_FOUND AND eckit_FOUND AND oops_FOUND)
+	list(APPEND SRCS_IODA_ENGINES ${SRCS_ENGINES_ODC_ODC_OOPS_DEPENDENT})
 endif()
 if (HDF5_FOUND)
 	list(APPEND SRCS_IODA_ENGINES ${SRCS_ENGINES_HH})

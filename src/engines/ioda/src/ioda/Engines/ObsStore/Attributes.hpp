@@ -60,7 +60,7 @@ public:
   /// \brief transfer data into attribute
   /// \param data contiguous block of data to transfer
   /// \param dtype ObsStore Type
-  std::shared_ptr<Attribute> write(gsl::span<char> data, ObsTypes dtype);
+  std::shared_ptr<Attribute> write(gsl::span<const char> data, ObsTypes dtype);
   /// \brief transfer data from attribute
   /// \param data contiguous block of data to transfer
   /// \param dtype ObsStore Type

@@ -25,7 +25,7 @@ Type Type_Provider::makeArrayType(std::initializer_list<Dimensions_t>, std::type
   throw Exception("Backend does not implement array types.", ioda_Here());
 }
 
-Type Type_Provider::makeStringType(size_t, std::type_index) const {
+Type Type_Provider::makeStringType(std::type_index, size_t, StringCSet) const {
   throw Exception("Backend does not implement string types.", ioda_Here());
 }
 

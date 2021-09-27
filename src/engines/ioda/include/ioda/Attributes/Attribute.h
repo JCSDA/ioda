@@ -81,9 +81,9 @@ public:
   /// \param data is a span of data.
   /// \param in_memory_datatype is an opaque (backend-level) object that describes the placement of
   ///   the data in memory. Usually ignorable - needed for complex data structures.
-  /// \throws jedi::xError if data has the wrong size.
+  /// \throws ioda::Exception if data has the wrong size.
   /// \returns The attribute (for chaining).
-  virtual Attribute_Implementation write(gsl::span<char> data, const Type& type);
+  virtual Attribute_Implementation write(gsl::span<const char> data, const Type& type);
 
   /// \brief Write data.
   /// \tparam DataType is the type of the data. I.e. float, int, int32_t, uint16_t, std::string, etc.
@@ -93,7 +93,7 @@ public:
   /// \param data is a gsl::span (a pointer-length pair) that contains the data to be written.
   /// \param in_memory_dataType is the memory layout needed to parse data's type.
   /// \returns Another instance of this Attribute. Used for operation chaining.
-  /// \throws jedi::xError if data.size() does not match getDimensions().numElements.
+  /// \throws ioda::Exception if data.size() does not match getDimensions().numElements.
   /// \see gsl::span for details of how to make a span.
   /// \see gsl::make_span
   template <class DataType, class Marshaller = ioda::Object_Accessor<DataType>,
@@ -101,11 +101,10 @@ public:
   Attribute_Implementation write(gsl::span<const DataType> data) {
     try {
       Marshaller m;
-      auto d = m.serialize(data);
-      write(gsl::make_span<char>(
-              const_cast<char*>(reinterpret_cast<const char*>(d->DataPointers.data())),
-              d->DataPointers.size() * sizeof(typename Marshaller::mutable_value_type)),
-            TypeWrapper::GetType(getTypeProvider()));
+      auto d   = m.serialize(data);
+      auto spn = gsl::make_span<const char>(reinterpret_cast<const char*>(d->DataPointers.data()),
+                                            d->DataPointers.size() * Marshaller::bytesPerObject_);
+      write(spn, TypeWrapper::GetType(getTypeProvider()));
       return Attribute_Implementation{backend_};
     } catch (...) {
       std::throw_with_nested(Exception(ioda_Here()));
@@ -121,14 +120,14 @@ public:
   /// \param data is a std::vector that contains the data to be written.
   /// \param in_memory_dataType is the memory layout needed to parse data's type.
   /// \returns Another instance of this Attribute. Used for operation chaining.
-  /// \throws jedi::xError if data.size() does not match getDimensions().numElements.
+  /// \throws ioda::Exception if data.size() does not match getDimensions().numElements.
   /// \see gsl::span for details of how to make a span.
   /// \see gsl::make_span for details on how to make a span.
   template <class DataType, class Marshaller = ioda::Object_Accessor<DataType>,
             class TypeWrapper = Types::GetType_Wrapper<DataType>>
   Attribute_Implementation write(const std::vector<DataType>& data) {
     std::vector<DataType> vd = data;
-    return this->write<DataType>(gsl::make_span(vd));
+    return this->write<DataType, Marshaller, TypeWrapper>(gsl::make_span(vd));
   }
 
   /// \brief Write data.
@@ -136,7 +135,7 @@ public:
   /// \param data is an initializer list that contains the data to be written.
   /// \param in_memory_dataType is the memory layout needed to parse data's type.
   /// \returns Another instance of this Attribute. Used for operation chaining.
-  /// \throws jedi::xError if data.size() does not match getDimensions().numElements.
+  /// \throws ioda::Exception if data.size() does not match getDimensions().numElements.
   /// \see gsl::span for details of how to make a span.
   template <class DataType>
   Attribute_Implementation write(std::initializer_list<DataType> data) {
@@ -148,7 +147,7 @@ public:
   /// \tparam DataType is the type of the data. I.e. float, int, int32_t, uint16_t, std::string, etc.
   /// \param data is the data to be written.
   /// \returns Another instance of this Attribute. Used for operation chaining.
-  /// \throws jedi::xError if the Attribute dimensions are larger than a single point.
+  /// \throws ioda::Exception if the Attribute dimensions are larger than a single point.
   template <class DataType>  //, class Marshaller = HH::Types::Object_Accessor<DataType> >
   Attribute_Implementation write(DataType data) {
     try {
@@ -163,7 +162,7 @@ public:
   /// \brief Write an Eigen object (a Matrix, an Array, a Block, a Map).
   /// \tparam EigenClass is the Eigen object to write.
   /// \param d is the data to be written.
-  /// \throws jedi::xError on a dimension mismatch.
+  /// \throws ioda::Exception on a dimension mismatch.
   /// \returns the attribute
   template <class EigenClass>
   Attribute_Implementation writeWithEigenRegular(const EigenClass& d) {
@@ -189,7 +188,7 @@ public:
   /// \brief Write an Eigen Tensor-like object
   /// \tparam EigenClass is the Eigen tensor to write.
   /// \param d is the data to be written.
-  /// \throws jedi::xError on a dimension mismatch.
+  /// \throws ioda::Exception on a dimension mismatch.
   /// \returns the attribute
   template <class EigenClass>
   Attribute_Implementation writeWithEigenTensor(const EigenClass& d) {
@@ -223,7 +222,7 @@ public:
   /// \param data is a span of data that has length of getStorageSize().
   /// \param in_memory_datatype is an opaque (backend-level) object that describes the placement of
   ///   the data in memory. Usually ignorable - needed for complex data structures.
-  /// \throws jedi::xError if data has the wrong size.
+  /// \throws ioda::Exception if data has the wrong size.
   /// \returns The attribute (for chaining).
   virtual Attribute_Implementation read(gsl::span<char> data, const Type& in_memory_dataType) const;
 
@@ -244,7 +243,7 @@ public:
   ///   the data in memory. Usually this does not need to be set to anything other than its default
   ///   value. Kept as a parameter for debugging purposes.
   /// \returns Another instance of this Attribute. Used for operation chaining.
-  /// \throws jedi::xError if data.size() != getDimensions().numElements.
+  /// \throws ioda::Exception if data.size() != getDimensions().numElements.
   /// \see getDimensions for buffer size information.
   template <class DataType, class Marshaller = ioda::Object_Accessor<DataType>,
             class TypeWrapper = Types::GetType_Wrapper<DataType>>
@@ -253,14 +252,13 @@ public:
       const size_t numObjects = data.size();
       if (getDimensions().numElements != gsl::narrow<ioda::Dimensions_t>(numObjects))
         throw Exception("Size mismatch between underlying object and user-provided data range.",
-          ioda_Here());
+                        ioda_Here());
 
       detail::PointerOwner pointerOwner = getTypeProvider()->getReturnedPointerOwner();
       Marshaller m(pointerOwner);
       auto p = m.prep_deserialize(numObjects);
-      read(gsl::make_span<char>(
-             reinterpret_cast<char*>(p->DataPointers.data()),
-             p->DataPointers.size() * sizeof(typename Marshaller::mutable_value_type)),
+      read(gsl::make_span<char>(reinterpret_cast<char*>(p->DataPointers.data()),
+                                p->DataPointers.size() * Marshaller::bytesPerObject_),
            TypeWrapper::GetType(getTypeProvider()));
       m.deserialize(p, data);
 
@@ -298,7 +296,7 @@ public:
   /// \tparam DataType is the type of the data. I.e. float, int, int32_t, uint16_t, std::string, etc.
   /// \param data is where the datum is read to.
   /// \returns Another instance of this Attribute. Used for operation chaining.
-  /// \throws jedi::xError if the underlying data have multiple elements.
+  /// \throws ioda::Exception if the underlying data have multiple elements.
   template <class DataType>
   Attribute_Implementation read(DataType& data) const {
     try {
@@ -313,7 +311,7 @@ public:
   /// \brief Read a single value (convenience function).
   /// \tparam DataType is the type of the data. I.e. float, int, int32_t, uint16_t, std::string, etc.
   /// \returns A datum of type DataType.
-  /// \throws jedi::xError if the underlying data have size greater than 1.
+  /// \throws ioda::Exception if the underlying data have size greater than 1.
   /// \note The Python function is read_datum_*
   template <class DataType>
   DataType read() const {
@@ -339,9 +337,9 @@ public:
   ///   if there is a dimension mismatch. Not all Eigen objects can be resized.
   /// \param res is the Eigen object.
   /// \returns Another instance of this Attribute. Used for operation chaining.
-  /// \throws jedi::xError if the attribute's dimensionality is
+  /// \throws ioda::Exception if the attribute's dimensionality is
   ///   too high.
-  /// \throws jedi::xError if resize = false and there is a dimension mismatch.
+  /// \throws ioda::Exception if resize = false and there is a dimension mismatch.
   /// \note When reading in a 1-D object, the data are read as a column vector.
   template <class EigenClass, bool Resize = detail::EigenCompat::CanResize<EigenClass>::value>
   Attribute_Implementation readWithEigenRegular(EigenClass& res) const {
@@ -356,8 +354,10 @@ public:
       // Check that the dimensionality is 1 or 2.
       const auto dims = getDimensions();
       if (dims.dimensionality > 2)
-        throw Exception("Dimensionality too high for a regular Eigen read. Use "
-          "Eigen::Tensor reads instead.", ioda_Here());
+        throw Exception(
+          "Dimensionality too high for a regular Eigen read. Use "
+          "Eigen::Tensor reads instead.",
+          ioda_Here());
 
       int nDims[2] = {1, 1};
       if (dims.dimsCur.size() >= 1) nDims[0] = gsl::narrow<int>(dims.dimsCur[0]);
@@ -395,7 +395,7 @@ public:
   ///   This template must provide the EigenClass::Scalar typedef.
   /// \param res is the Eigen object.
   /// \returns Another instance of this Attribute. Used for operation chaining.
-  /// \throws jedi::xError if there is a size mismatch.
+  /// \throws ioda::Exception if there is a size mismatch.
   /// \note When reading in a 1-D object, the data are read as a column vector.
   template <class EigenClass>
   Attribute_Implementation readWithEigenTensor(EigenClass& res) const {
@@ -442,7 +442,7 @@ public:
   /// \tparam DataType is the type of the data. I.e. float, int, int32_t, uint16_t, std::string, etc.
   /// \returns True if the type matches
   /// \returns False (0) if the type does not match
-  /// \throws jedi::xError if an error occurred.
+  /// \throws ioda::Exception if an error occurred.
   template <class DataType>
   bool isA() const {
     Type templateType = Types::GetType_Wrapper<DataType>::GetType(getTypeProvider());
@@ -488,7 +488,7 @@ public:
  * \note Multidimensional attributes are supported by some of the underlying backends,
  * like HDF5, but are incompatible with the NetCDF file format.
  * \see Has_Attribute for the class that can create and open new Attribute objects.
- * \throws jedi::xError on all exceptions.
+ * \throws ioda::Exception on all exceptions.
  **/
 class IODA_DL Attribute : public detail::Attribute_Base<> {
 public:

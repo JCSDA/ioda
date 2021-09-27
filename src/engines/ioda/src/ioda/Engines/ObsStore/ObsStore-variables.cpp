@@ -141,7 +141,8 @@ bool ObsStore_Variable_Backend::isDimensionScaleAttached(unsigned int DimensionN
   return backend_->isDimensionScaleAttached(DimensionNumber, scaleBackendDerived->backend_);
 }
 
-Variable ObsStore_Variable_Backend::write(gsl::span<char> data, const Type& in_memory_dataType,
+Variable ObsStore_Variable_Backend::write(gsl::span<const char> data,
+                                          const Type& in_memory_dataType,
                                           const Selection& mem_selection,
                                           const Selection& file_selection) {
   // Convert to an obs store data type

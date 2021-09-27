@@ -135,7 +135,7 @@ public:
   /// \param data contiguous block of data to transfer
   /// \param m_select Selection ojbect: how to select from data argument
   /// \param f_select Selection ojbect: how to select to variable storage
-  std::shared_ptr<Variable> write(gsl::span<char> data, ObsTypes dtype, Selection& m_select,
+  std::shared_ptr<Variable> write(gsl::span<const char> data, ObsTypes dtype, Selection& m_select,
                                   Selection& f_select);
   /// \brief transfer data from variable storage
   /// \param data contiguous block of data to transfer

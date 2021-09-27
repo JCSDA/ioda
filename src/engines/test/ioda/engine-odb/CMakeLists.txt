@@ -11,6 +11,7 @@ if(eckit_FOUND AND oops_FOUND)
   add_executable(ioda-engines_odb-query-parameters test_odb_query_parameters.cpp)
   addapp(ioda-engines_odb-query-parameters)
   target_link_libraries(ioda-engines_odb-query-parameters PUBLIC ioda_engines)
+  target_include_directories(ioda-engines_odb-query-parameters PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../../../ioda/src/ioda)
 
   if(BUILD_TESTING)
     add_test(NAME test_ioda-engines_odb-query-parameters

@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2020 UCAR
+ * (C) Copyright 2020-2021 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -42,49 +42,9 @@ int main(int argc, char** argv) {
   using namespace std;
   try {
     // HDF5 file backend
-    auto f = Engines::constructFromCmdLine(argc, argv, "test-complex-objects.hdf5");
+    auto f = Engines::constructFromCmdLine(argc, argv, "test-complex-objects-strings.hdf5");
 
-    // These tests try to read and write non-fundamental datatypes.
-    // These types may be enums, complex structures, strings or arrays.
-
-    // We try to both write and read these with both attributes and variables.
-
-    // Array types
-    // TODO(rhoneyager): Marshalling.h needs better template expansion to handle these types automatically.
-    /*
-    {
-            const int adata[2]{ 1,2 };
-            f.atts.create<int[2], Types::GetType_Wrapper<int,2>>("c_array_int_2")
-                    .write<int[2], ioda::Object_Accessor<int[2]>, Types::GetType_Wrapper<int, 2>>(adata);
-    }
-    {
-            int check_adata[2]{ 0,0 };
-            auto a = f.atts.open("c_array_int_2");
-            a.read<int[2], ioda::Object_Accessor<int[2]>, Types::GetType_Wrapper<int, 2>>(check_adata);
-            check_equal("c_array_int_2", std::vector<int>{check_adata[0], check_adata[1]}, { 1,2 });
-    }
-    {
-            const array<int, 2> adata{ 3,4 };
-            f.atts.add<array<int, 2>>("std_array_int_2", adata); // 3, 4 is a single datum.
-
-            f.vars.create<array<int, 2>>("v_std_array_int_2", { 1 }).write<array<int, 2>>(adata);
-    }
-    {
-            // Check the attribute read
-            int check_adata[2]; // Can't use std::array<int,2> because I need to expand. See a.read<int[2]...>
-            auto a = f.atts.open("std_array_int_2");
-            a.read<int[2], ioda::Object_Accessor<int[2]>, Types::GetType_Wrapper<int, 2>>(check_adata);
-            check_equal("std_array_int_2", std::vector<int>{check_adata[0], check_adata[1]}, { 3,4 });
-
-            // Check the string read
-            auto v = f.vars["v_std_array_int_2"];
-            v.read<int[2], ioda::Object_Accessor<int[2]>, Types::GetType_Wrapper<int, 2>>(check_adata);
-            check_equal("v_std_array_int_2", std::vector<int>{check_adata[0], check_adata[1]}, { 3,4 });
-    }
-
-    */
-
-    // String types
+    // These tests try to read and write string datatypes.
 
     // Note the curly braces around "String 1". Needed because we are constructing a
     // string from a character array, and we don't want to clash with the span-based

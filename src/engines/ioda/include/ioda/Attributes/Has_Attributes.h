@@ -54,7 +54,7 @@ public:
   /// \param dimensions is an initializer list representing the size of the metadata. Each element
   /// is a dimension with a certain size.
   /// \returns Another instance of this Has_Attribute. Used for operation chaining.
-  /// \throws jedi::xError if data.size() does not match the number of total elements
+  /// \throws ioda::Exception if data.size() does not match the number of total elements
   ///   described by dimensions.
   /// \see gsl::span for details of how to make a span.
   template <class DataType>
@@ -73,7 +73,7 @@ public:
   /// \param dimensions is an initializer list representing the size of the metadata. Each
   ///   element is a dimension with a certain size.
   /// \returns Another instance of this Has_Attribute. Used for operation chaining.
-  /// \throws jedi::xError if data.size() does not match the number of total
+  /// \throws ioda::Exception if data.size() does not match the number of total
   ///   elements described by dimensions.
   template <class DataType>
   DerivedHasAtts add(const std::string& attrname, ::std::initializer_list<DataType> data,
@@ -185,7 +185,7 @@ public:
   /// \param data is a pointer-size pair to the data buffer that is filled with the metadata's
   ///   contents. It should be pre-sized to accomodate all of the matadata. See
   ///   getDimensions().numElements. Data will be filled in row-major order.
-  /// \throws jedi::xError on a size mismatch between Attribute dimensions and data.size().
+  /// \throws ioda::Exception on a size mismatch between Attribute dimensions and data.size().
   template <class DataType>
   const DerivedHasAtts read(const std::string& attrname, gsl::span<DataType> data) const {
     // Attribute att = this->open(attrname);
@@ -222,7 +222,7 @@ public:
   /// \tparam DataType is the type of the data. I.e. float, int, int32_t, uint16_t, std::string, etc.
   /// \param attrname is the name of the Attribute to be read.
   /// \param data is a datum of type DataType.
-  /// \throws jedi::xError if the underlying data have size > 1.
+  /// \throws ioda::Exception if the underlying data have size > 1.
   template <class DataType>
   const DerivedHasAtts read(const std::string& attrname, DataType& data) const {
     Attribute att = static_cast<const DerivedHasAtts*>(this)->open(attrname);
@@ -234,7 +234,7 @@ public:
   /// \tparam DataType is the type of the data. I.e. float, int, int32_t, uint16_t, std::string, etc.
   /// \param attrname is the name of the Attribute to be read.
   /// \returns A datum of type DataType.
-  /// \throws jedi::xError if the underlying data have size > 1.
+  /// \throws ioda::Exception if the underlying data have size > 1.
   template <class DataType>
   DataType read(const std::string& attrname) const {
     Attribute att = static_cast<const DerivedHasAtts*>(this)->open(attrname);
@@ -304,7 +304,7 @@ public:
   virtual bool exists(const std::string& attname) const;
   /// \brief Delete an Attribute with the specified name.
   /// \param attname is the name of the Attribute that we are deleting.
-  /// \throws jedi::xError if no such attribute exists.
+  /// \throws ioda::Exception if no such attribute exists.
   virtual void remove(const std::string& attname);
   /// \brief Open an Attribute by name
   /// \param name is the name of the Attribute to be opened.
@@ -356,8 +356,8 @@ public:
   /// \brief Rename an Attribute
   /// \param oldName is the name of the Attribute to be changed.
   /// \param newName is the new name of the Attribute.
-  /// \throws jedi::xError if oldName is not found.
-  /// \throws jedi::xError if newName already exists.
+  /// \throws ioda::Exception if oldName is not found.
+  /// \throws ioda::Exception if newName already exists.
   virtual void rename(const std::string& oldName, const std::string& newName);
 
   /// @}
@@ -383,7 +383,7 @@ public:
  * \note It should only be constructed inside of a Group or Variable.
  *       It has no meaning elsewhere.
  * \see Attribute for the class that represents individual attributes.
- * \throws jedi::xError on all exceptions.
+ * \throws ioda::Exception on all exceptions.
  **/
 class IODA_DL Has_Attributes : public detail::CanAddAttributes<Has_Attributes>,
                                public detail::CanReadAttributes<Has_Attributes>,

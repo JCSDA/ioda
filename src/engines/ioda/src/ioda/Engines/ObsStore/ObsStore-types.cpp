@@ -89,8 +89,9 @@ Type ObsStore_Type_Provider::makeFundamentalType(std::type_index type) const {
 //                         std::type_index typeInner) const {
 // }
 
-Type ObsStore_Type_Provider::makeStringType(size_t /*string_length*/,
-                                            std::type_index typeOuter) const {
+Type ObsStore_Type_Provider::makeStringType(std::type_index typeOuter,
+                                            size_t /*string_length*/,
+                                            StringCSet /*cset*/) const {
   ObsTypeInfo tinfo(std::make_pair(ioda::ObsStore::ObsTypes::STRING, sizeof(char*)));
   return Type{std::make_shared<ObsStore_Type>(tinfo), typeOuter};
 }

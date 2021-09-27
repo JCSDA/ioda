@@ -41,7 +41,7 @@ public:
 
   std::string getName() const;
 
-  Attribute write(gsl::span<char> data, const Type& in_memory_dataType) final;
+  Attribute write(gsl::span<const char> data, const Type& in_memory_dataType) final;
   void write(gsl::span<const char> data, HH_hid_t in_memory_dataType);
 
   void read(gsl::span<char> data, HH_hid_t in_memory_dataType) const;

@@ -21,6 +21,7 @@
 #include <vector>
 
 #include "ioda/Attributes/Has_Attributes.h"
+#include "ioda/Types/Has_Types.h"
 #include "ioda/Variables/FillPolicy.h"
 #include "ioda/Variables/Has_Variables.h"
 #include "ioda/defs.h"
@@ -47,6 +48,8 @@ protected:
 
 public:
   virtual ~Group_Base();
+
+  std::shared_ptr<Group_Backend> getBackend() const { return backend_; }
 
   /// Get capabilities of the Engine backing this Group
   virtual ::ioda::Engines::Capabilities getCapabilities() const;
@@ -118,6 +121,9 @@ public:
 
   /// Use this to access the metadata for the group / ObsSpace.
   Has_Attributes atts;
+
+  /// Use this to access named data types.
+  Has_Types types;
 
   /// Use this to access variables
   Has_Variables vars;

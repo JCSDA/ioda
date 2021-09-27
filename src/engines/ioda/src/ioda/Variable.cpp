@@ -314,7 +314,7 @@ std::vector<std::vector<Named_Variable>> Variable_Base<>::getDimensionScaleMappi
 }
 
 template <>
-Variable Variable_Base<>::write(gsl::span<char> data, const Type& in_memory_dataType,
+Variable Variable_Base<>::write(gsl::span<const char> data, const Type& in_memory_dataType,
                                 const Selection& mem_selection, const Selection& file_selection) {
   try {
     if (backend_ == nullptr)

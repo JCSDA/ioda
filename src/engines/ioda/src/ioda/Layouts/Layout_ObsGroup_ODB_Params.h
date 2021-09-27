@@ -5,8 +5,14 @@
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
-/// \file Layout_ObsGroup_ODB_Params.h
-/// \brief Defines all of the information which should be stored in the YAML mapping file.
+/*! \defgroup ioda_cxx_layout_internal Internal Groups and Data Layout
+ * \brief Private API
+ * \ingroup ioda_internals
+ *
+ * @{
+ * \file Layout_ObsGroup_ODB_Params.h
+ * \brief Defines all of the information which should be stored in the YAML mapping file.
+ */
 
 #include <string>
 #include <vector>

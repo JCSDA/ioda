@@ -30,7 +30,7 @@ detail::Type_Provider* ObsStore_Attribute_Backend::getTypeProvider() const {
   return ObsStore_Type_Provider::instance();
 }
 
-Attribute ObsStore_Attribute_Backend::write(gsl::span<char> data, const Type& in_memory_dataType) {
+Attribute ObsStore_Attribute_Backend::write(gsl::span<const char> data, const Type& in_memory_dataType) {
   // Convert to an obs store data type
   auto typeBackend = std::dynamic_pointer_cast<ObsStore_Type>(in_memory_dataType.getBackend());
   ioda::ObsStore::ObsTypes dtype = typeBackend->dtype();

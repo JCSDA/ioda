@@ -94,7 +94,7 @@ public:
   /// \param DataType is the type of the data. I.e. float, int, int32_t, uint16_t, std::string, etc.
   /// \returns True if the type matches
   /// \returns False (0) if the type does not match
-  /// \throws jedi::xError if an error occurred.
+  /// \throws ioda::Exception if an error occurred.
   template <class DataType>
   bool isA() const {
     Type templateType = Types::GetType_Wrapper<DataType>::GetType(getTypeProvider());
@@ -259,7 +259,7 @@ public:
   ///   location where the data are written to.
   /// \throws ioda::xError if data has the wrong size.
   /// \returns The variable (for chaining).
-  virtual Variable write(gsl::span<char> data, const Type& in_memory_dataType,
+  virtual Variable write(gsl::span<const char> data, const Type& in_memory_dataType,
                          const Selection& mem_selection  = Selection::all,
                          const Selection& file_selection = Selection::all);
 
@@ -284,9 +284,9 @@ public:
     try {
       Marshaller m;
       auto d = m.serialize(data);
-      return write(gsl::make_span<char>(
-                     const_cast<char*>(reinterpret_cast<const char*>(d->DataPointers.data())),
-                     d->DataPointers.size() * sizeof(typename Marshaller::mutable_value_type)),
+      return write(gsl::make_span<const char>(
+                      reinterpret_cast<const char*>(d->DataPointers.data()),
+                     d->DataPointers.size() * Marshaller::bytesPerObject_),
                    TypeWrapper::GetType(getTypeProvider()), mem_selection, file_selection);
     } catch (...) {
       std::throw_with_nested(Exception(ioda_Here()));
@@ -314,9 +314,9 @@ public:
     try {
       Marshaller m;
       auto d = m.serialize(data);
-      return write(gsl::make_span<char>(
-                     const_cast<char*>(reinterpret_cast<const char*>(d->DataPointers.data())),
-                     d->DataPointers.size() * sizeof(typename Marshaller::mutable_value_type)),
+      return write(gsl::make_span<const char>(
+                      reinterpret_cast<const char*>(d->DataPointers.data()),
+                     d->DataPointers.size() * Marshaller::bytesPerObject_),
                    TypeWrapper::GetType(getTypeProvider()), mem_selection, file_selection);
     } catch (...) {
       std::throw_with_nested(Exception(ioda_Here()));
@@ -455,7 +455,7 @@ public:
              // Logic note: sizeof mutable data type. If we are
              // reading in a string, then mutable data type is char*,
              // which works because address pointers have the same size.
-             p->DataPointers.size() * sizeof(typename Marshaller::mutable_value_type)),
+             p->DataPointers.size() * Marshaller::bytesPerObject_),
            TypeWrapper::GetType(getTypeProvider()), mem_selection, file_selection);
       m.deserialize(p, data);
 
@@ -609,7 +609,7 @@ public:
   /// \param file_selection is the backend's memory layout representing the
   ///   location where the data are written to.
   /// \returns Another instance of this Variable. Used for operation chaining.
-  /// \throws jedi::xError if there is a size mismatch.
+  /// \throws ioda::Exception if there is a size mismatch.
   /// \note When reading in a 1-D object, the data are read as a column vector.
   template <class EigenClass>
   Variable_Implementation readWithEigenTensor(EigenClass& res,

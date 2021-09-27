@@ -36,9 +36,15 @@ enum class FillValuePolicy {
 /// \details This matters for netCDF4 vs HDF5-produced files. They have different default
 ///   fill values.
 namespace FillValuePolicies {
+
+template <class T>
+T FillValue_default() {
+  return 0;
+}
+
 template <class T>
 T HDF5_default() {
-  return 0;
+  return FillValue_default<T>();
 }
 template <>
 inline std::string HDF5_default<std::string>() {
@@ -50,7 +56,7 @@ inline std::string HDF5_default<std::string>() {
 ///   netcdf uses "ints" and "shorts", but these are all defined as fixed-width types.
 template <class T>
 T netCDF4_default() {
-  return 0;
+  return FillValue_default<T>();
 }
 template <>
 inline std::string netCDF4_default<std::string>() {

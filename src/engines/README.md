@@ -25,13 +25,14 @@ The [Related Pages](./pages.html) tab lists an introduction to how we use [the G
 Required:
 
 - A C++ 2014-conformant compiler. Provided by gcc 6+, clang 6+, Apple clang 6+, Intel C++ 18+, or MSVC 2019+. Other compiler families may work, but are untested. [This](https://en.cppreference.com/w/cpp/compiler_support) may help.
-- [HDF5](https://www.hdfgroup.org/solutions/hdf5/). Only the C and HL libraries are needed (HH provides a vastly better C++ binding.) Versions 1.8, 1.10 and 1.12 all should work. 1.12 is preferred.
-- HDFforHumans (HH; included automatically in deps/HH)
-- [The Guideline Support Library](@ref GSL) (included in deps/gsl-single)
+- [HDF5](https://www.hdfgroup.org/solutions/hdf5/). Only the C and HL libraries are needed. Version 1.12 or greater is preferred. Not all functions are available in versions 1.8 and 1.10.
+- [The Guideline Support Library](@ref GSL)
 - [Eigen3](https://eigen.tuxfamily.org/) (we need both the core and unsupported headers)
 
 Optional:
-- [Doxygen](http://www.doxygen.nl/) and [Graphviz](https://www.graphviz.org/)
+- [Doxygen](http://www.doxygen.nl/) and [Graphviz](https://www.graphviz.org/) are needed to generate the html documentation.
+- [ODC](https://github.com/ecmwf/odc) + [eckit](https://github.com/ecmwf/eckit) + oops are needed to enable ODC support.
+- [eckit](https://github.com/ecmwf/eckit) is needed for some of the unit tests.
 
 ## Build instructions
 

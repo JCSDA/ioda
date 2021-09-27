@@ -37,7 +37,7 @@ std::vector<std::size_t> Attribute::get_dimensions() const { return dimensions_;
 
 bool Attribute::isOfType(ObsTypes dtype) const { return (dtype == dtype_); }
 
-std::shared_ptr<Attribute> Attribute::write(gsl::span<char> data, ObsTypes dtype) {
+std::shared_ptr<Attribute> Attribute::write(gsl::span<const char> data, ObsTypes dtype) {
   if (dtype != dtype_)
     throw Exception("Requested data type not equal to storage datatype.", ioda_Here());
   

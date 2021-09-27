@@ -126,7 +126,8 @@ bool Variable::isDimensionScaleAttached(const std::size_t dim_number,
   return (dim_scales_[dim_number] == scale);
 }
 
-std::shared_ptr<Variable> Variable::write(gsl::span<char> data, ObsTypes dtype, Selection& m_select,
+std::shared_ptr<Variable> Variable::write(gsl::span<const char> data, ObsTypes dtype,
+                                          Selection& m_select,
                                           Selection& f_select) {
   if (dtype != dtype_)
     throw Exception("Requested data type not equal to storage datatype", ioda_Here());

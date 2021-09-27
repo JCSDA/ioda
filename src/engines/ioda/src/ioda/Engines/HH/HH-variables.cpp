@@ -589,122 +589,159 @@ HH_hid_t HH_Variable::getSpaceWithSelection(const Selection& sel) const {
   return spc;
 }
 
-Variable HH_Variable::write(gsl::span<char> data, const Type& in_memory_dataType,
+Variable HH_Variable::write(gsl::span<const char> data, const Type& in_memory_dataType,
                             const Selection& mem_selection, const Selection& file_selection) {
-  auto typeBackend = std::dynamic_pointer_cast<HH_Type>(in_memory_dataType.getBackend());
+  auto memTypeBackend = std::dynamic_pointer_cast<HH_Type>(in_memory_dataType.getBackend());
   auto memSpace    = getSpaceWithSelection(mem_selection);
   auto fileSpace   = getSpaceWithSelection(file_selection);
-  auto ret         = H5Dwrite(var_(),                 // dataset id
-                      typeBackend->handle(),  // mem_type_id
-                      memSpace(),             // mem_space_id
-                      fileSpace(),            // file_space_id
-                      H5P_DEFAULT,            // xfer_plist_id
-                      data.data()             // data
-  );
-  if (ret < 0) throw Exception(ioda_Here());
+
+  H5T_class_t memTypeClass = H5Tget_class(memTypeBackend->handle());
+  HH_hid_t varType(H5Dget_type(var_()), Handles::Closers::CloseHDF5Datatype::CloseP);
+  H5T_class_t varTypeClass = H5Tget_class(varType());
+
+
+  if ((memTypeClass == H5T_STRING) && (varTypeClass == H5T_STRING)) {
+    // Both memory and file types are strings. Need to check fixed vs variable length.
+    // Variable-length strings (default) are packed as an array of pointers.
+    // Fixed-length strings are just a sequence of characters.
+    htri_t isMemStrVar = H5Tis_variable_str(memTypeBackend->handle());
+    htri_t isVarStrVar = H5Tis_variable_str(varType());
+    if (isMemStrVar < 0)
+      throw Exception("H5Tis_variable_str failed on memory data type.", ioda_Here());
+    if (isVarStrVar < 0)
+      throw Exception("H5Tis_variable_str failed on backend (file) variable data type.", ioda_Here());
+    
+    if ((isMemStrVar && isVarStrVar) || (!isMemStrVar && !isVarStrVar)) {
+      // No need to change anything. Pass through.
+      // NOTE: Using varType instead of memTypeBackend->handle! This is because strings can have
+      //   different character sets (ASCII vs UTF-8), which is entirely unhandled in IODA.
+      if (H5Dwrite(var_(), varType(), memSpace(), fileSpace(), H5P_DEFAULT, data.data()) < 0)
+        throw Exception("H5Dwrite failed.", ioda_Here());
+    }
+    else if (isMemStrVar) {
+      // Variable-length in memory. Fixed-length in var.
+      size_t strLen = H5Tget_size(varType());
+      size_t numStrs = getDimensions().numElements;
+
+      std::vector<char> out_buf = convertVariableLengthToFixedLength(data, strLen, false);
+
+      if (H5Dwrite(var_(), varType(), memSpace(), fileSpace(), H5P_DEFAULT, out_buf.data()) < 0)
+        throw Exception("H5Dwrite failed.", ioda_Here());
+    }
+    else if (isVarStrVar) {
+      // Fixed-length in memory. Variable-length in file.
+      // Rare conversion. Included for completeness.
+
+      size_t strLen      = H5Tget_size(memTypeBackend->handle());
+      size_t numStrs     = getDimensions().numElements;
+      size_t totalStrLen = strLen * numStrs;
+
+      auto converted_data_holder = convertFixedLengthToVariableLength(data, strLen);
+      char* converted_data = reinterpret_cast<char*>(converted_data_holder.DataPointers.data());
+
+      if (H5Dwrite(var_(), varType(), memSpace(), fileSpace(), H5P_DEFAULT, converted_data) < 0)
+        throw Exception("H5Dwrite failed.", ioda_Here());
+    }
+
+  } else {
+    // Pass-through case
+    auto ret = H5Dwrite(var_(),                   // dataset id
+                        memTypeBackend->handle(), // mem_type_id
+                        memSpace(),               // mem_space_id
+                        fileSpace(),              // file_space_id
+                        H5P_DEFAULT,              // xfer_plist_id
+                        data.data()               // data
+    );
+    if (ret < 0) throw Exception("H5Dwrite failure.", ioda_Here());
+  }
   return Variable{shared_from_this()};
 }
 
 Variable HH_Variable::read(gsl::span<char> data, const Type& in_memory_dataType,
-                           const Selection& mem_selection, const Selection& file_selection) const {
-  auto memSpace  = getSpaceWithSelection(mem_selection);
-  auto fileSpace = getSpaceWithSelection(file_selection);
+                           const Selection& mem_selection, const Selection& file_selection) const
+{
+  auto memTypeBackend = std::dynamic_pointer_cast<HH_Type>(in_memory_dataType.getBackend());
+  auto memSpace    = getSpaceWithSelection(mem_selection);
+  auto fileSpace   = getSpaceWithSelection(file_selection);
 
-  // Override for old-format ioda files:
-  // Unfortunately, v0 ioda files have an odd mixture of ascii vs unicode strings, as well as
-  // fixed and variable-length strings. We try and fix a few of these issues here.
+  H5T_class_t memTypeClass = H5Tget_class(memTypeBackend->handle());
+  HH_hid_t varType(H5Dget_type(var_()), Handles::Closers::CloseHDF5Datatype::CloseP);
+  H5T_class_t varTypeClass = H5Tget_class(varType());
 
-  // Apologies for the complexity of what would otherwise be a straightforward function.
+  if ((memTypeClass == H5T_STRING) && (varTypeClass == H5T_STRING)) {
+    // Both memory and file types are strings. Need to check fixed vs variable length.
+    // Variable-length strings (default) are packed as an array of pointers.
+    // Fixed-length strings are just a sequence of characters.
+    htri_t isMemStrVar = H5Tis_variable_str(memTypeBackend->handle());
+    htri_t isVarStrVar = H5Tis_variable_str(varType());
+    if (isMemStrVar < 0)
+      throw Exception("H5Tis_variable_str failed on memory data type.", ioda_Here());
+    if (isVarStrVar < 0)
+      throw Exception("H5Tis_variable_str failed on backend (file) variable data type.", ioda_Here());
+    
+    if ((isMemStrVar && isVarStrVar) || (!isMemStrVar && !isVarStrVar)) {
+      // No need to change anything. Pass through.
+      // NOTE: Using varType instead of memTypeBackend->handle! This is because strings can have
+      //   different character sets (ASCII vs UTF-8), which is entirely unhandled in IODA.
+      if (H5Dread(var_(), varType(), memSpace(), fileSpace(), H5P_DEFAULT, data.data()) < 0)
+        throw Exception("H5Dread failed.", ioda_Here());
+    }
+    else if (isMemStrVar) {
+      // Variable-length in memory. Fixed-length in file.
 
-  // Is this a string of any type?
-  H5T_class_t cls_my = H5Tget_class(internalType().get());
-  if (cls_my == H5T_STRING) {
-    // The type *is* a string type.
+      size_t strLen = H5Tget_size(varType());
+      size_t numStrs = getDimensions().numElements;
+      std::vector<char> in_buf(numStrs * strLen);
 
-    // We always load strings using the hdf5-provided
-    // type. This way, we ignore character set flags
-    // and other string properties that do not matter
-    // in ioda.
-    auto file_type = internalType();
+      if (H5Dread(var_(), varType(), memSpace(), fileSpace(), H5P_DEFAULT, in_buf.data()) < 0)
+        throw Exception("H5Dread failed.", ioda_Here());
 
-    // However, fixed and variable-length strings need
-    // slightly different read calls.
-
-    if (H5Tis_variable_str(file_type.get()) > 0) {
-      // Variable-length string.
-      // No special read is needed.
-      // Character set is specified correctly by
-      // matching file_type above.
-      auto ret = H5Dread(var_(),       // dataset id
-                         file_type(),  // mem_type_id
-                         memSpace(),   // mem_space_id
-                         fileSpace(),  // file_space_id
-                         H5P_DEFAULT,  // xfer_plist_id
-                         data.data()   // data
-      );
-      if (ret < 0) throw Exception("Failure in H5Dread", ioda_Here());
-
-    } else {
-      // Fixed-length string
-      // Special read is needed.
-
-      // Figure out the size of the data being read.
-      // The data space selections can be a space or numeric identifier H5S_ALL.
-      // If H5S_ALL, then return the maximum size.
-      // Otherwise, call H5Sget_select_type, H5Sget_select_npoints to compute size.
-      hssize_t sz = (memSpace.get() == H5S_ALL)
-                      ? gsl::narrow<hssize_t>(getDimensions().numElements)
-                      : [&memSpace]() {
-                          H5S_sel_type st = H5Sget_select_type(memSpace.get());
-                          return (st == H5S_SEL_NONE) ? 0 : H5Sget_select_npoints(memSpace.get());
-                        }();
-      if (sz < 0) throw Exception(ioda_Here());
-
-      // This is all of the strings concatenated.
-      std::vector<char> tmp_buf(gsl::narrow<size_t>(sz));
-      auto ret = H5Dread(var_(),         // dataset id
-                         file_type(),    // mem_type_id
-                         memSpace(),     // mem_space_id
-                         fileSpace(),    // file_space_id
-                         H5P_DEFAULT,    // xfer_plist_id
-                         tmp_buf.data()  // data
-      );
-      if (ret < 0) throw Exception(ioda_Here());
-
-      // From here, we must "fake" the structure that we fill so that
-      // it looks like a variable-length string. Basically, we want to present a
-      // uniform view to the caller.
-
-      // We have a set of fixed-length strings that we read
-      // as characters. We can turn this into strings.
-
-      // Get the size of the enclosed strings, in bytes.
-      // This leaves off the terminating NULL.
-      const size_t sz_each_str = H5Tget_size(file_type.get());
-      const size_t num_strs    = tmp_buf.size() / sz_each_str;
-
-      // Reinterpret the input buffer as a sequence of char*s.
-      // Assign each string to the appropriate value.
+      // This block of code is a bit of a kludge in that we are switching from a packed
+      // structure of strings to a packed structure of pointers of strings.
+      // The Marshaller code in ioda/Types/Marshalling.h expects this format.
+      // In the future, the string read interface in the frontend should use the Marshalling
+      // interface to pass these objects back and forth without excessive data element copies.
 
       char** reint_buf = reinterpret_cast<char**>(data.data());  // NOLINT: casting
-      for (size_t i = 0; i < num_strs; ++i) {
-        std::string s(tmp_buf.data() + (sz_each_str * i), sz_each_str);
-        reint_buf[i]
-          = (char*)malloc(sz_each_str + 1);  // NOLINT: quite a deliberate call to malloc here.
-        ioda::detail::COMPAT_strncpy_s(reint_buf[i], sz_each_str + 1, s.data(), s.size() + 1);
+      for (size_t i = 0; i < numStrs; ++i) {
+        // The malloced strings will be released in Marshalling.h.
+        reint_buf[i] = (char*)malloc(strLen + 1);  // NOLINT: quite a deliberate call to malloc here.
+        memset(reint_buf[i], 0, strLen+1);
+        memcpy(reint_buf[i], in_buf.data() + (strLen * i), strLen);
       }
     }
+    else if (isVarStrVar) {
+      // Fixed-length in memory. Variable-length in file.
+      // Rare conversion. Included for completeness.
+
+      size_t strLen      = H5Tget_size(memTypeBackend->handle());
+      size_t numStrs     = getDimensions().numElements;  // !!!
+      size_t totalStrLen = strLen * numStrs;
+
+      std::vector<char> in_buf(numStrs * sizeof(char*));
+
+      if (H5Dread(var_(), varType(), memSpace(), fileSpace(), H5P_DEFAULT, in_buf.data()) < 0)
+        throw Exception("H5Dread failed.", ioda_Here());
+
+      // We could avoid using the temporary out_buf and write
+      // directly to "data", but there is no strong need to do this, as
+      // this is a very rare type conversion. C++ lacks a fixed-length string type!
+      std::vector<char> out_buf = convertVariableLengthToFixedLength(in_buf, strLen, false);
+      if (out_buf.size() != data.size())
+        throw Exception("Unexpected sizes.", ioda_Here())
+          .add("data.size()", data.size()).add("out_buf.size()", out_buf.size());
+      std::copy(out_buf.begin(), out_buf.end(), data.begin());
+    }
   } else {
-    // The type *is not* a string type.
-    auto typeBackend = std::dynamic_pointer_cast<HH_Type>(in_memory_dataType.getBackend());
-    auto ret         = H5Dread(var_(),                 // dataset id
-                       typeBackend->handle(),  // mem_type_id
-                       memSpace(),             // mem_space_id
-                       fileSpace(),            // file_space_id
-                       H5P_DEFAULT,            // xfer_plist_id
-                       data.data()             // data
+    // Pass-through case
+    auto ret = H5Dread( var_(),                   // dataset id
+                        memTypeBackend->handle(), // mem_type_id
+                        memSpace(),               // mem_space_id
+                        fileSpace(),              // file_space_id
+                        H5P_DEFAULT,              // xfer_plist_id
+                        data.data()               // data
     );
-    if (ret < 0) throw Exception(ioda_Here());
+    if (ret < 0) throw Exception("H5Dread failure.", ioda_Here());
   }
 
   return Variable{std::make_shared<HH_Variable>(*this)};

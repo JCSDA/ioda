@@ -31,7 +31,7 @@ public:
   Type makeFundamentalType(std::type_index type) const final;
   Type makeArrayType(std::initializer_list<Dimensions_t> dimensions, std::type_index typeOuter,
                      std::type_index typeInner) const final;
-  Type makeStringType(size_t string_length, std::type_index typeOuter) const final;
+  Type makeStringType(std::type_index typeOuter, size_t string_length, StringCSet cset) const final;
   static HH_Type_Provider* instance();
 };
 
@@ -43,6 +43,13 @@ public:
   HH_hid_t handle;
   HH_Type(HH_hid_t h);
   size_t getSize() const final;
+  TypeClass getClass() const final;
+  void commitToBackend(Group &d, const std::string &name) const final;
+  bool isTypeSigned() const final;
+  bool isVariableLengthStringType() const final;
+  StringCSet getStringCSet() const final;
+  Type getBaseType() const final;
+  std::vector<Dimensions_t> getDimensions() const final;
 };
 }  // namespace HH
 }  // namespace Engines

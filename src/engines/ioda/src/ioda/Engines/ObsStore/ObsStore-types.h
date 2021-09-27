@@ -44,9 +44,10 @@ public:
   // typeOuter, std::type_index typeInner) const override final;
 
   /// \brief create mapping between ioda string type and ObsStore string type
-  /// \param string_length length, in characters, of string
   /// \param typeOuter C++ fundamental type of characters in the string
-  Type makeStringType(size_t string_length, std::type_index typeOuter) const final;
+  /// \param string_length length, in characters, of string
+  /// \param cset character set of the string (ignored)
+  Type makeStringType(std::type_index typeOuter, size_t string_length, StringCSet cset) const final;
 
   /// \brief return owner (responsible for destructing) of memory holding strings in ObsStore
   ioda::detail::PointerOwner getReturnedPointerOwner() const final;

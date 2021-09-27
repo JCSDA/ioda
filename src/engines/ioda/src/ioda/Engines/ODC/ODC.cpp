@@ -17,19 +17,18 @@
 
 #include "DataFromSQL.h"
 
-#include "eckit/config/LocalConfiguration.h"
-#include "eckit/config/YAMLConfiguration.h"
-#include "eckit/filesystem/PathName.h"
-
 #include "ioda/Engines/ODC.h"
 #include "ioda/Exception.h"
 #include "ioda/Group.h"
-#include "ioda/config.h"
+#include "ioda/config.h"  // Auto-generated. Defines *_FOUND.
 
-#if odc_FOUND
-#include "odc/api/odc.h"
-#include "./DataFromSQL.h"
-#include "ioda/Engines/OdbQueryParameters.h"
+#if odc_FOUND && eckit_FOUND && oops_FOUND
+# include "eckit/config/LocalConfiguration.h"
+# include "eckit/config/YAMLConfiguration.h"
+# include "eckit/filesystem/PathName.h"
+# include "odc/api/odc.h"
+# include "./DataFromSQL.h"
+# include "./OdbQueryParameters.h"
 #endif
 
 namespace ioda {
@@ -38,13 +37,13 @@ namespace ODC {
 
 /// @brief Standard message when the ODC API is unavailable.
 const char odcMissingMessage[] {
-  "The ODB / ODC engine is disabled. odc was "
+  "The ODB / ODC engine is disabled. Either odc, eckit, or oops were "
   "not found at compile time."};
 
 /// @brief Function initializes the ODC API, just once.
 void initODC() { static bool inited = false;
   if (!inited) {
-#if odc_FOUND
+#if odc_FOUND && eckit_FOUND && oops_FOUND
     odc_initialise_api();
 #else
     throw Exception(odcMissingMessage, ioda_Here());
@@ -58,7 +57,7 @@ ObsGroup openFile(const ODC_Parameters& odcparams,
 {
   // Check first that the ODB engine is enabled. If the engine
   // is not enabled, then throw an exception.
-#if odc_FOUND
+#if odc_FOUND && oops_FOUND && eckit_FOUND
   initODC();
 
   using std::set;

@@ -12,9 +12,11 @@
  */
 #include "./HH/HH-types.h"
 
+#include <array>
 #include <map>
 
 #include "./HH/Handles.h"
+#include "./HH/HH-groups.h"
 #include "ioda/Types/Type.h"
 #include "ioda/Exception.h"
 #include "ioda/defs.h"
@@ -29,6 +31,87 @@ HH_Type::HH_Type(HH_hid_t h) : handle(h) {}
 size_t HH_Type::getSize() const {
   size_t res = H5Tget_size(handle.get());
   if (res == 0) throw Exception("H5Tget_size failed.", ioda_Here());
+  return res;
+}
+
+TypeClass HH_Type::getClass() const {
+  H5T_class_t cls = H5Tget_class(handle.get());
+  // Enums are in H5Tpublic.h, and are ordered. We can use
+  // a std::array to store the lookup result. 
+  const std::array<TypeClass, H5T_NCLASSES> typemap {
+    TypeClass::Integer,
+    TypeClass::Float,
+    TypeClass::Unknown,    // H5T_TIME is deprecated.
+    TypeClass::String,
+    TypeClass::Bitfield,
+    TypeClass::Opaque,
+    TypeClass::Compound,
+    TypeClass::Reference,
+    TypeClass::Enum,
+    TypeClass::VlenArray,
+    TypeClass::FixedArray
+  };
+  if (cls < 0 || cls >= H5T_NCLASSES)
+    throw Exception("Cannot get class. Unknown HDF5 type.", ioda_Here());
+  return typemap.at(cls);
+}
+
+void HH_Type::commitToBackend(Group &g, const std::string &name) const {
+  // Check that the Group is an HDF5-backed group.
+  try {
+    auto groupBackend = std::dynamic_pointer_cast<HH_Group>(g.getBackend());
+    herr_t res = H5Tcommit2(groupBackend->get()(),
+                            name.c_str(),
+                            handle.get(),
+                            H5P_DEFAULT,
+                            H5P_DEFAULT,
+                            H5P_DEFAULT);
+    if (res < 0) throw Exception("H5Tcommit2 failed.", ioda_Here());
+  } catch (std::bad_cast) {
+    throw Exception("Group passed to function is not an HDF5 group.", ioda_Here());
+  }
+}
+
+bool HH_Type::isTypeSigned() const {
+  if (getClass() != TypeClass::Integer) throw Exception("Non-integer data type.", ioda_Here());
+  return H5Tget_sign(handle.get()) == H5T_SGN_2;
+}
+
+bool HH_Type::isVariableLengthStringType() const {
+  htri_t res = H5Tis_variable_str(handle.get());
+  if (res < 0) throw Exception("HDF5 type is not a string type, or another error has occurred.", ioda_Here());
+  return (res > 0);
+}
+
+StringCSet HH_Type::getStringCSet() const {
+  H5T_cset_t res = H5Tget_cset(handle.get());
+  const std::map<H5T_cset_t, StringCSet> csmap {
+    {H5T_CSET_ASCII, StringCSet::ASCII},
+    {H5T_CSET_UTF8, StringCSet::UTF8}
+  };
+  if (!csmap.count(res)) throw Exception("Error in H5Tget_cset. Likely bad HDF5 type.", ioda_Here());
+  return csmap.at(res);
+}
+
+Type HH_Type::getBaseType() const {
+  hid_t h = H5Tget_super(handle.get());
+  if (h < 0)
+    throw Exception("Error in H5Tget_super. Likely not an enumeration or array type.", ioda_Here());
+  auto hnd = HH_hid_t(h, Handles::Closers::CloseHDF5Datatype::CloseP);
+
+  return Type{std::make_shared<HH_Type>(hnd), typeid(void)};
+}
+
+std::vector<Dimensions_t> HH_Type::getDimensions() const {
+  int ndims = H5Tget_array_ndims(handle.get());
+  if (ndims < 0) throw Exception("Error in H5Tget_array_ndims. Likely bad HDF5 type.", ioda_Here());
+  std::vector<hsize_t> hdims(static_cast<size_t>(ndims));
+  if (H5Tget_array_dims2(handle.get(), hdims.data()) < 0)
+    throw Exception("Error in H5Tget_array_dims2.", ioda_Here());
+
+  std::vector<Dimensions_t> res(hdims.size());
+  for (size_t i=0; i < hdims.size(); ++i)
+    res[i] = gsl::narrow<Dimensions_t>(hdims[i]);
   return res;
 }
 
@@ -85,12 +168,18 @@ Type HH_Type_Provider::makeArrayType(std::initializer_list<Dimensions_t> dimensi
   return Type{std::make_shared<HH_Type>(hnd), typeOuter};
 }
 
-Type HH_Type_Provider::makeStringType(size_t string_length, std::type_index typeOuter) const {
+Type HH_Type_Provider::makeStringType(
+    std::type_index typeOuter,
+    size_t string_length, 
+    StringCSet cset) const
+{
   if (string_length == Types::constants::_Variable_Length) string_length = H5T_VARIABLE;
   hid_t t = H5Tcreate(H5T_STRING, string_length);
   if (t < 0) throw Exception("Failed call to H5Tcreate.", ioda_Here());
-  if (H5Tset_cset(t, H5T_CSET_UTF8) < 0)
-    throw Exception("Failed call to H5Tset_cset.", ioda_Here());
+  if (cset == StringCSet::UTF8) {
+    if (H5Tset_cset(t, H5T_CSET_UTF8) < 0)
+      throw Exception("Failed call to H5Tset_cset.", ioda_Here());
+  }
   auto hnd = HH_hid_t(t, Handles::Closers::CloseHDF5Datatype::CloseP);
 
   return Type{std::make_shared<HH_Type>(hnd), typeOuter};

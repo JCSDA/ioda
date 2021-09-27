@@ -66,6 +66,7 @@ template <class DataType, class value_type = DataType>
 struct Object_Accessor_Regular {
   typedef typename std::remove_const<DataType>::type mutable_DataType;
   typedef typename std::remove_const<value_type>::type mutable_value_type;
+  static constexpr size_t bytesPerObject_ = sizeof(mutable_value_type);
 
   typedef std::shared_ptr<Marshalled_Data<DataType, mutable_DataType>> serialized_type;
   typedef std::shared_ptr<const Marshalled_Data<DataType, mutable_DataType>> const_serialized_type;
@@ -113,6 +114,7 @@ template <class DataType, class value_type = std::remove_pointer<std::decay<Data
 struct Object_Accessor_Fixed_Array {
   typedef typename std::remove_const<DataType>::type mutable_DataType;
   typedef typename std::remove_const<value_type>::type mutable_value_type;
+  static constexpr size_t bytesPerObject_ = sizeof(mutable_value_type);
   typedef std::shared_ptr<Marshalled_Data<DataType, mutable_DataType>> serialized_type;
   typedef std::shared_ptr<const Marshalled_Data<DataType, mutable_DataType>> const_serialized_type;
   detail::PointerOwner pointerOwner_;
@@ -161,6 +163,7 @@ template <class DataType, class value_type = DataType*>
 struct Object_Accessor_Variable_Array_With_Data_Method {
   typedef typename std::remove_const<DataType>::type mutable_DataType;
   typedef typename std::remove_const<value_type>::type mutable_value_type;
+  static constexpr size_t bytesPerObject_ = sizeof(mutable_value_type);
   typedef std::shared_ptr<const Marshalled_Data<DataType, mutable_value_type, false>>
     const_serialized_type;
   typedef std::shared_ptr<Marshalled_Data<DataType, mutable_value_type, true>> serialized_type;
@@ -197,6 +200,7 @@ template <class DataType, class value_type = DataType*>
 struct Object_Accessor_Variable_Raw_Array {
   typedef typename std::remove_const<DataType>::type mutable_DataType;
   typedef typename std::remove_const<value_type>::type mutable_value_type;
+  static constexpr size_t bytesPerObject_ = sizeof(mutable_value_type);
   typedef std::shared_ptr<const Marshalled_Data<DataType, mutable_value_type, false>>
     const_serialized_type;
   typedef std::shared_ptr<Marshalled_Data<DataType, mutable_value_type, true>> serialized_type;
