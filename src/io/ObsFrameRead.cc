@@ -15,6 +15,15 @@
 
 namespace ioda {
 
+namespace detail {
+  using std::to_string;
+
+  /// An overload of to_string() taking a string and returning the same string.
+  std::string to_string(std::string s) {
+    return s;
+  }
+}  // namespace detail
+
 //--------------------------- public functions ---------------------------------------
 //------------------------------------------------------------------------------------
 ObsFrameRead::ObsFrameRead(const ObsSpaceParameters & params) :
@@ -105,19 +114,16 @@ bool ObsFrameRead::frameAvailable() {
 
                 // Transfer the data
                 Variable destVar = obs_frame_.vars.open(varName);
-                if (destVar.isA<int>()) {
-                    std::vector<int> varValues;
-                    sourceVar.read<int>(varValues, memBufferSelect, obsIoSelect);
-                    destVar.write<int>(varValues, memBufferSelect, obsFrameSelect);
-                } else if (destVar.isA<float>()) {
-                    std::vector<float> varValues;
-                    sourceVar.read<float>(varValues, memBufferSelect, obsIoSelect);
-                    destVar.write<float>(varValues, memBufferSelect, obsFrameSelect);
-                } else if (destVar.isA<std::string>()) {
-                    std::vector<std::string> varValues;
-                    sourceVar.read<std::string>(varValues, memBufferSelect, obsIoSelect);
-                    destVar.write<std::string>(varValues, memBufferSelect, obsFrameSelect);
-                }
+
+                forAnySupportedVariableType(
+                      destVar,
+                      [&](auto typeDiscriminator) {
+                          typedef decltype(typeDiscriminator) T;
+                          std::vector<T> varValues;
+                          sourceVar.read<T>(varValues, memBufferSelect, obsIoSelect);
+                          destVar.write<T>(varValues, memBufferSelect, obsFrameSelect);
+                      },
+                      ThrowIfVariableIsOfUnsupportedType(varName));
             }
         }
 
@@ -416,54 +422,31 @@ void ObsFrameRead::buildObsGroupingKeys(const std::vector<std::string> & obsGrou
         }
 
         // Form selection objects to grab the current frame values
-        Dimensions_t frameStart = this->frameStart();
         Dimensions_t frameCount = this->frameCount("nlocs");
 
         std::vector<Dimensions_t> varShape = groupVar.getDimensions().dimsCur;
         Selection memSelect = createMemSelection(varShape, frameCount);
         Selection frameSelect = createEntireFrameSelection(varShape, frameCount);
 
-        std::string keySegment;
-        if (groupVar.isA<int>()) {
-            std::vector<int> groupVarValues;
-            groupVar.read<int>(groupVarValues, memSelect, frameSelect);
-            groupVarValues.resize(frameCount);
-            for (std::size_t j = 0; j < frameIndex.size(); ++j) {
-                keySegment = std::to_string(groupVarValues[frameIndex[j]]);
-                if (i == 0) {
-                    groupingKeys[j] = keySegment;
-                } else {
-                    groupingKeys[j] += ":";
-                    groupingKeys[j] += keySegment;
-                }
-            }
-        } else if (groupVar.isA<float>()) {
-            std::vector<float> groupVarValues;
-            groupVar.read<float>(groupVarValues, memSelect, frameSelect);
-            groupVarValues.resize(frameCount);
-            for (std::size_t j = 0; j < frameIndex.size(); ++j) {
-                keySegment = std::to_string(groupVarValues[frameIndex[j]]);
-                if (i == 0) {
-                    groupingKeys[j] = keySegment;
-                } else {
-                    groupingKeys[j] += ":";
-                    groupingKeys[j] += keySegment;
-                }
-            }
-        } else if (groupVar.isA<std::string>()) {
-            std::vector<std::string> groupVarValues;
-            groupVar.read<std::string>(groupVarValues, memSelect, frameSelect);
-            groupVarValues.resize(frameCount);
-            for (std::size_t j = 0; j < frameIndex.size(); ++j) {
-                keySegment = groupVarValues[frameIndex[j]];
-                if (i == 0) {
-                    groupingKeys[j] = keySegment;
-                } else {
-                    groupingKeys[j] += ":";
-                    groupingKeys[j] += keySegment;
-                }
-            }
-        }
+        forAnySupportedVariableType(
+              groupVar,
+              [&](auto typeDiscriminator) {
+                  typedef decltype(typeDiscriminator) T;
+                  std::vector<T> groupVarValues;
+                  groupVar.read<T>(groupVarValues, memSelect, frameSelect);
+                  groupVarValues.resize(frameCount);
+                  std::string keySegment;
+                  for (std::size_t j = 0; j < frameIndex.size(); ++j) {
+                      keySegment = detail::to_string(groupVarValues[frameIndex[j]]);
+                      if (i == 0) {
+                          groupingKeys[j] = keySegment;
+                      } else {
+                          groupingKeys[j] += ":";
+                          groupingKeys[j] += keySegment;
+                      }
+                  }
+              },
+              ThrowIfVariableIsOfUnsupportedType(varName));
     }
 }
 

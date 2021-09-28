@@ -286,21 +286,27 @@ ObsDtype ObsSpace::dtype(const std::string & group, const std::string & name,
     // Set the type to None if there is no type from the backend
     ObsDtype VarType = ObsDtype::None;
     if (has(groupToUse, nameToUse, skipDerived)) {
-        Variable var = obs_group_.vars.open(fullVarName(groupToUse, nameToUse));
-        if (var.isA<int>()) {
-            VarType = ObsDtype::Integer;
-        } else if (var.isA<float>()) {
-            VarType = ObsDtype::Float;
-        } else if (var.isA<std::string>()) {
-            if ((group == "MetaData") && (nameToUse == "datetime")) {
-                // TODO(srh) Workaround to cover when datetime was stored
-                // as a util::DateTime object. For now, ioda will store datetimes
-                // as strings and convert to DateTime objects for client access.
-                VarType = ObsDtype::DateTime;
-            } else {
-                VarType = ObsDtype::String;
-            }
-        }
+        const std::string varNameToUse = fullVarName(groupToUse, nameToUse);
+        Variable var = obs_group_.vars.open(varNameToUse);
+        switchOnSupportedVariableType(
+              var,
+              [&] (int)   {
+                  VarType = ObsDtype::Integer;
+              },
+              [&] (float) {
+                  VarType = ObsDtype::Float;
+              },
+              [&] (std::string) {
+                  if ((group == "MetaData") && (nameToUse == "datetime")) {
+                      // TODO(srh) Workaround to cover when datetime was stored
+                      // as a util::DateTime object. For now, ioda will store datetimes
+                      // as strings and convert to DateTime objects for client access.
+                      VarType = ObsDtype::DateTime;
+                  } else {
+                      VarType = ObsDtype::String;
+                  }
+              },
+              ThrowIfVariableIsOfUnsupportedType(varNameToUse));
     }
     return VarType;
 }
@@ -609,22 +615,16 @@ void ObsSpace::initFromObsSource(ObsFrameRead & obsFrame) {
             Dimensions_t frameCount = obsFrame.frameCount(varName);
 
             // Transfer the variable to the in-memory storage
-            if (var.isA<int>()) {
-                std::vector<int> varValues;
-                if (readObsSource<int>(obsFrame, varName, varValues)) {
-                    storeVar<int>(varName, varValues, beFrameStart, frameCount);
-                }
-            } else if (var.isA<float>()) {
-                std::vector<float> varValues;
-                if (readObsSource<float>(obsFrame, varName, varValues)) {
-                    storeVar<float>(varName, varValues, beFrameStart, frameCount);
-                }
-            } else if (var.isA<std::string>()) {
-                std::vector<std::string> varValues;
-                if (readObsSource<std::string>(obsFrame, varName, varValues)) {
-                    storeVar<std::string>(varName, varValues, beFrameStart, frameCount);
-                }
-            }
+            forAnySupportedVariableType(
+                  var,
+                  [&](auto typeDiscriminator) {
+                      typedef decltype(typeDiscriminator) T;
+                      std::vector<T> varValues;
+                      if (readObsSource<T>(obsFrame, varName, varValues)) {
+                          storeVar<T>(varName, varValues, beFrameStart, frameCount);
+                      }
+                  },
+                  ThrowIfVariableIsOfUnsupportedType(varName));
         }
         iframe++;
     }
@@ -925,13 +925,13 @@ void ObsSpace::createVariables(const Has_Variables & srcVarContainer,
                               const VarDimMap & dimsAttachedToVars) {
     // Set up reusable creation parameters for the loop below. Use the JEDI missing
     // values for the fill values.
-    VariableCreationParameters paramsInt = VariableCreationParameters::defaults<int>();
-    VariableCreationParameters paramsFloat = VariableCreationParameters::defaults<float>();
-    VariableCreationParameters paramsStr = VariableCreationParameters::defaults<std::string>();
-
-    paramsInt.setFillValue<int>(this->getFillValue<int>());
-    paramsFloat.setFillValue<float>(this->getFillValue<float>());
-    paramsStr.setFillValue<std::string>(this->getFillValue<std::string>());
+    std::map<std::type_index, VariableCreationParameters> paramsByType;
+    forEachSupportedVariableType(
+          [&](auto typeDiscriminator) {
+              typedef decltype(typeDiscriminator) T;
+              paramsByType[typeid(T)] = VariableCreationParameters::defaults<T>();
+              paramsByType.at(typeid(T)).setFillValue<T>(this->getFillValue<T>());
+          });
 
     // Walk through map to get list of variables to create along with
     // their dimensions. Use the srcVarContainer to get the var data type.
@@ -946,19 +946,19 @@ void ObsSpace::createVariables(const Has_Variables & srcVarContainer,
         }
 
         Variable srcVar = srcVarContainer.open(varName);
-        if (srcVar.isA<int>()) {
-            destVarContainer.createWithScales<int>(varName, varDims, paramsInt);
-        } else if (srcVar.isA<float>()) {
-            destVarContainer.createWithScales<float>(varName, varDims, paramsFloat);
-        } else if (srcVar.isA<std::string>()) {
-            destVarContainer.createWithScales<std::string>(varName, varDims, paramsStr);
-        } else {
-            if (this->comm().rank() == 0) {
-                oops::Log::warning() << "WARNING: ObsSpace::createVariables: "
-                    << "Skipping variable due to an unexpected data type for variable: "
-                    << varName << std::endl;
-            }
-        }
+        forAnySupportedVariableType(
+              srcVar,
+              [&](auto typeDiscriminator) {
+                  typedef decltype(typeDiscriminator) T;
+                  destVarContainer.createWithScales<T>(varName, varDims,
+                                                       paramsByType.at(typeid(T)));
+              },
+              [&] (const eckit::CodeLocation &) {
+                  if (this->comm().rank() == 0)
+                      oops::Log::warning() << "WARNING: ObsSpace::createVariables: "
+                          << "Skipping variable due to an unexpected data type for variable: "
+                          << varName << std::endl;
+            });
     }
 }
 
@@ -1122,19 +1122,15 @@ void ObsSpace::saveToFile() {
                     obsFrame.createVarSelection(varShape, frameStart, frameCount);
 
                 // transfer the data
-                if (srcVar.isA<int>()) {
-                    std::vector<int> varValues;
-                    srcVar.read<int>(varValues, memSelect, varSelect);
-                    obsFrame.writeFrameVar(destVarName, varValues);
-                } else if (srcVar.isA<float>()) {
-                    std::vector<float> varValues;
-                    srcVar.read<float>(varValues, memSelect, varSelect);
-                    obsFrame.writeFrameVar(destVarName, varValues);
-                } else if (srcVar.isA<std::string>()) {
-                    std::vector<std::string> varValues;
-                    srcVar.read<std::string>(varValues, memSelect, varSelect);
-                    obsFrame.writeFrameVar(destVarName, varValues);
-                }
+                forAnySupportedVariableType(
+                      srcVar,
+                      [&](auto typeDiscriminator) {
+                          typedef decltype(typeDiscriminator) T;
+                          std::vector<T> varValues;
+                          srcVar.read<T>(varValues, memSelect, varSelect);
+                          obsFrame.writeFrameVar(destVarName, varValues);
+                      },
+                      ThrowIfVariableIsOfUnsupportedType(varNameObject.first));
             }
         }
     }
@@ -1275,13 +1271,13 @@ void ObsSpace::extendObsSpace(const ObsExtendParameters & params) {
         // Note nlocs at this point holds the original size before extending.
         // The numOriginalLocs argument passed to extendVariable indicates where to start filling.
         Variable extendVar = obs_group_.vars.open(fullVname);
-        if (extendVar.isA<int>()) {
-          extendVariable<int>(extendVar, upperBoundOnGlobalNumOriginalRecs);
-        } else if (extendVar.isA<float>()) {
-          extendVariable<float>(extendVar, upperBoundOnGlobalNumOriginalRecs);
-        } else if (extendVar.isA<std::string>()) {
-          extendVariable<std::string>(extendVar, upperBoundOnGlobalNumOriginalRecs);
-        }
+        forAnySupportedVariableType(
+              extendVar,
+              [&](auto typeDiscriminator) {
+                  typedef decltype(typeDiscriminator) T;
+                  extendVariable<T>(extendVar, upperBoundOnGlobalNumOriginalRecs);
+              },
+              ThrowIfVariableIsOfUnsupportedType(fullVname));
       }
     }
 

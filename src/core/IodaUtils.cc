@@ -221,11 +221,12 @@ void collectVarDimInfo(const ObsGroup & obsGroup, VarNameObjectList & varObjectL
 std::type_index varDtype(const Group & group, const std::string & varName) {
     Variable var = group.vars.open(varName);
     std::type_index varType(typeid(std::string));
-    if (var.isA<int>()) {
-        varType = typeid(int);
-    } else if (var.isA<float>()) {
-        varType = typeid(float);
-    }
+    forAnySupportedVariableType(
+          var,
+          [&](auto typeDiscriminator) {
+              varType = typeid(typeDiscriminator);
+          },
+          ThrowIfVariableIsOfUnsupportedType(varName));
     return varType;
 }
 

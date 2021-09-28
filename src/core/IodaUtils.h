@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "eckit/config/LocalConfiguration.h"
+#include "eckit/exception/Exceptions.h"
 
 #include "ioda/Misc/Dimensions.h"
 #include "ioda/ObsGroup.h"
@@ -178,6 +179,108 @@ namespace ioda {
          FromTypeName + " to " + ToTypeName;
       ABORT(ErrorMsg);
     }
+  }
+
+  /// \brief A function object that can be passed to the third parameter of
+  /// forAnySupportedVariableType() or switchOnVariableType() to throw an exception if the variable
+  /// is of an unsupported type.
+  class ThrowIfVariableIsOfUnsupportedType {
+   public:
+    explicit ThrowIfVariableIsOfUnsupportedType(const std::string &varName) : varName_(varName) {}
+
+    void operator()(const eckit::CodeLocation &) const {
+      throw eckit::BadValue("Variable '" + varName_ + "' is not of any supported type", Here());
+    }
+
+   private:
+    std::string varName_;
+  };
+
+  /// \brief Perform an action dependent on the type of an ObsSpace variable \p var.
+  ///
+  /// \param var
+  ///   Variable expected to be of one of the types that can be stored in an ObsSpace (`int`,
+  ///   `float` or `std::string`).
+  /// \param action
+  ///   A function object callable with a single argument of any type from the list above.
+  ///   If the variable `var` is of type `int`, this function will be given a default-initialized
+  ///   `int`; if it is of type `float` the function will be given a default-initialized `float`,
+  ///   and so on. In practice, it is likely to be a generic lambda expression taking a single
+  ///   parameter of type auto whose value is ignored, but whose type is used in the implementation.
+  /// \param errorHandler
+  ///   A function object callable with a single argument of type eckit::CodeLocation, called if
+  ///   `var` is not of a type that can be stored in an ObsSpace.
+  ///
+  /// Example of use:
+  ///
+  ///     Variable sourceVar = ...;
+  ///     std::string varName = ...;
+  ///     std::vector<Variable> dimVars = ...;
+  ///     forAnySupportedVariableType(
+  ///       sourceVar,
+  ///       [&](auto typeDiscriminator) {
+  ///           typedef decltype(typeDiscriminator) T;  // type of the variable sourceVar
+  ///           obs_frame_.vars.createWithScales<T>(varName, dimVars, VariableCreationParameters());
+  ///       },
+  ///       ThrowIfVariableIsOfUnsupportedType(varName));
+  template <typename Action, typename ErrorHandler>
+  auto forAnySupportedVariableType(const ioda::Variable &var, const Action &action,
+                                   const ErrorHandler &typeErrorHandler) {
+    if (var.isA<int>())
+      return action(int());
+    if (var.isA<float>())
+      return action(float());
+    if (var.isA<std::string>())
+      return action(std::string());
+    typeErrorHandler(Here());
+  }
+
+  /// \brief Perform an action dependent on the type of an ObsSpace variable \p var.
+  ///
+  /// \param var
+  ///   Variable expected to be of one of the types that can be stored in an ObsSpace (`int`,
+  ///   `float` or `std::string`).
+  /// \param intAction
+  ///   A function object taking an argument of type `int`, which will be called and given a
+  ///   default-initialized `int` if the variable `var` is of type `int`.
+  /// \param floatAction
+  ///   A function object taking an argument of type `float`, which will be called and given a
+  ///   default-initialized `float` if the variable `var` is of type `float`.
+  /// \param stringAction
+  ///   A function object taking an argument of type `std::string`, which will be called and given a
+  ///   default-initialized `std:::string` if the variable `var` is of type `std::string`.
+  /// \param errorHandler
+  ///   A function object callable with a single argument of type eckit::CodeLocation, called if
+  ///   `var` is not of a type that can be stored in an ObsSpace.
+  template <typename IntAction, typename FloatAction, typename StringAction, typename ErrorHandler>
+  auto switchOnSupportedVariableType(const ioda::Variable &var,
+                                     const IntAction &intAction,
+                                     const FloatAction &floatAction,
+                                     const StringAction &stringAction,
+                                     const ErrorHandler &typeErrorHandler) {
+    if (var.isA<int>())
+      return intAction(int());
+    if (var.isA<float>())
+      return floatAction(float());
+    if (var.isA<std::string>())
+      return stringAction(std::string());
+    typeErrorHandler(Here());
+  }
+
+  /// \brief Perform an variable-type-dependent action for all types that can be stored in an
+  /// ObsSpace (`int`, `float` or `std::string`).
+  ///
+  /// \param action
+  ///   A function object callable with a single argument of any type from the list above. It will
+  ///   be called as many times as there are types of variables that can be stored in an ObsSpace;
+  ///   each time it will received a default-initialized value of that type. In practice, it is
+  ///   likely to be a generic lambda expression taking a single parameter of type auto whose value
+  ///   is ignored, but whose type is used in the implementation.
+  template <typename Action>
+  void forEachSupportedVariableType(const Action &action) {
+    action(int());
+    action(float());
+    action(std::string());
   }
 }  // namespace ioda
 

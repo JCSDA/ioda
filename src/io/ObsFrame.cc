@@ -192,29 +192,18 @@ void ObsFrame::createFrameFromObsGroup(const VarNameObjectList & varList,
         }
 
         Variable sourceVar = varNameObject.second;
-        if (sourceVar.isA<int>()) {
-            VariableCreationParameters params;
-            if (sourceVar.hasFillValue()) {
-                auto varFillValue = sourceVar.getFillValue();
-                params.setFillValue<int>(ioda::detail::getFillValue<int>(varFillValue));
-            }
-            obs_frame_.vars.createWithScales<int>(varName, dimVars, params);
-        } else if (sourceVar.isA<float>()) {
-            VariableCreationParameters params;
-            if (sourceVar.hasFillValue()) {
-                auto varFillValue = sourceVar.getFillValue();
-                params.setFillValue<float>(ioda::detail::getFillValue<float>(varFillValue));
-            }
-            obs_frame_.vars.createWithScales<float>(varName, dimVars, params);
-        } else if (sourceVar.isA<std::string>()) {
-            VariableCreationParameters params;
-            if (sourceVar.hasFillValue()) {
-                auto varFillValue = sourceVar.getFillValue();
-                params.setFillValue<std::string>(
-                    ioda::detail::getFillValue<std::string>(varFillValue));
-            }
-            obs_frame_.vars.createWithScales<std::string>(varName, dimVars, params);
-        }
+        forAnySupportedVariableType(
+              sourceVar,
+              [&](auto typeDiscriminator) {
+                  typedef decltype(typeDiscriminator) T;
+                  VariableCreationParameters params;
+                  if (sourceVar.hasFillValue()) {
+                      auto varFillValue = sourceVar.getFillValue();
+                      params.setFillValue<T>(ioda::detail::getFillValue<T>(varFillValue));
+                  }
+                  obs_frame_.vars.createWithScales<T>(varName, dimVars, params);
+              },
+              ThrowIfVariableIsOfUnsupportedType(varName));
     }
 }
 

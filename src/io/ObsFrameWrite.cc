@@ -65,19 +65,15 @@ void ObsFrameWrite::frameNext(const VarNameObjectList & varList) {
             Selection obsIoSelect = createObsIoSelection(destVarShape, frameStart, frameCount);
 
             // Transfer the data
-            if (destVar.isA<int>()) {
-                std::vector<int> varValues;
-                sourceVar.read<int>(varValues, memBufferSelect, obsFrameSelect);
-                destVar.write<int>(varValues, memBufferSelect, obsIoSelect);
-            } else if (destVar.isA<float>()) {
-                std::vector<float> varValues;
-                sourceVar.read<float>(varValues, memBufferSelect, obsFrameSelect);
-                destVar.write<float>(varValues, memBufferSelect, obsIoSelect);
-            } else if (destVar.isA<std::string>()) {
-                std::vector<std::string> varValues;
-                sourceVar.read<std::string>(varValues, memBufferSelect, obsFrameSelect);
-                destVar.write<std::string>(varValues, memBufferSelect, obsIoSelect);
-            }
+            forAnySupportedVariableType(
+                  destVar,
+                  [&](auto typeDiscriminator) {
+                      typedef decltype(typeDiscriminator) T;
+                      std::vector<T> varValues;
+                      sourceVar.read<T>(varValues, memBufferSelect, obsFrameSelect);
+                      destVar.write<T>(varValues, memBufferSelect, obsIoSelect);
+                  },
+                  ThrowIfVariableIsOfUnsupportedType(varName));
         }
     }
 
@@ -178,30 +174,23 @@ void ObsFrameWrite::createObsIoVariables(const Has_Variables & srcVarContainer,
         }
 
         Variable srcVar = srcVarContainer.open(varName);
-        if (srcVar.isA<int>()) {
-            if (srcVar.hasFillValue()) {
-                auto varFillValue = srcVar.getFillValue();
-                params.setFillValue<int>(ioda::detail::getFillValue<int>(varFillValue));
-            }
-            destVarContainer.createWithScales<int>(varName, varDims, params);
-        } else if (srcVar.isA<float>()) {
-            if (srcVar.hasFillValue()) {
-                auto varFillValue = srcVar.getFillValue();
-                params.setFillValue<float>(ioda::detail::getFillValue<float>(varFillValue));
-            }
-            destVarContainer.createWithScales<float>(varName, varDims, params);
-        } else if (srcVar.isA<std::string>()) {
-            if (srcVar.hasFillValue()) {
-                auto varFillValue = srcVar.getFillValue();
-                params.setFillValue<std::string>(
-                    ioda::detail::getFillValue<std::string>(varFillValue));
-            }
-            destVarContainer.createWithScales<std::string>(varName, varDims, params);
-        } else {
-            oops::Log::warning() << "WARNING: ObsWriteFrame::createObsIoVariables: "
-                << "Skipping variable due to an unexpected data type for variable: "
-                << varName << std::endl;
-        }
+        forAnySupportedVariableType(
+              srcVar,
+              // Action
+              [&](auto typeDiscriminator) {
+                  typedef decltype(typeDiscriminator) T;
+                  if (srcVar.hasFillValue()) {
+                      auto varFillValue = srcVar.getFillValue();
+                      params.setFillValue<T>(ioda::detail::getFillValue<T>(varFillValue));
+                  }
+                  destVarContainer.createWithScales<T>(varName, varDims, params);
+              },
+              // Error handler
+              [&varName] (const eckit::CodeLocation &) {
+                  oops::Log::warning() << "WARNING: ObsWriteFrame::createObsIoVariables: "
+                     << "Skipping variable due to an unexpected data type for variable: "
+                     << varName << std::endl;
+              });
     }
 }
 
