@@ -103,7 +103,7 @@ public:
       Marshaller m;
       auto d   = m.serialize(data);
       auto spn = gsl::make_span<const char>(reinterpret_cast<const char*>(d->DataPointers.data()),
-                                            d->DataPointers.size() * Marshaller::bytesPerObject_);
+                                            d->DataPointers.size() * Marshaller::bytesPerElement_);
       write(spn, TypeWrapper::GetType(getTypeProvider()));
       return Attribute_Implementation{backend_};
     } catch (...) {
@@ -258,7 +258,7 @@ public:
       Marshaller m(pointerOwner);
       auto p = m.prep_deserialize(numObjects);
       read(gsl::make_span<char>(reinterpret_cast<char*>(p->DataPointers.data()),
-                                p->DataPointers.size() * Marshaller::bytesPerObject_),
+                                p->DataPointers.size() * Marshaller::bytesPerElement_),
            TypeWrapper::GetType(getTypeProvider()));
       m.deserialize(p, data);
 

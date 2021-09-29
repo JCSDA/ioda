@@ -22,8 +22,9 @@ namespace ObsStore {
 //*********************************************************************
 //                          Attribute functions
 //*********************************************************************
-Attribute::Attribute(const std::vector<std::size_t>& dimensions, const ObsTypes& dtype)
-    : dimensions_(dimensions), dtype_(dtype), attr_data_() {
+Attribute::Attribute(const std::vector<std::size_t>& dimensions,
+                     const std::shared_ptr<Type> dtype)
+                         : dimensions_(dimensions), dtype_(std::move(dtype)), attr_data_() {
   // Get a typed storage object based on dtype
   attr_data_.reset(createVarAttrStore(dtype_));
 
@@ -35,12 +36,15 @@ Attribute::Attribute(const std::vector<std::size_t>& dimensions, const ObsTypes&
 
 std::vector<std::size_t> Attribute::get_dimensions() const { return dimensions_; }
 
-bool Attribute::isOfType(ObsTypes dtype) const { return (dtype == dtype_); }
+bool Attribute::isOfType(const Type & dtype) const {
+  return (dtype == *dtype_);
+}
 
-std::shared_ptr<Attribute> Attribute::write(gsl::span<const char> data, ObsTypes dtype) {
-  if (dtype != dtype_)
+std::shared_ptr<Attribute> Attribute::write(gsl::span<const char> data,
+                                            const Type & dtype) {
+  if (dtype != *dtype_)
     throw Exception("Requested data type not equal to storage datatype.", ioda_Here());
-  
+
   // Create select objects for all elements. Ie, attributes don't use
   // selection, but the VarAttrStore object is also used by variables which
   // do use selection.
@@ -55,10 +59,10 @@ std::shared_ptr<Attribute> Attribute::write(gsl::span<const char> data, ObsTypes
   return shared_from_this();
 }
 
-std::shared_ptr<Attribute> Attribute::read(gsl::span<char> data, ObsTypes dtype) {
-  if (dtype != dtype_) 
+std::shared_ptr<Attribute> Attribute::read(gsl::span<char> data, const Type & dtype) {
+  if (dtype != *dtype_)
     throw Exception("Requested data type not equal to storage datatype", ioda_Here());
-  
+ 
   // Create select objects for all elements. Ie, attributes don't use
   // selection, but the VarAttrStore object is also used by variables which
   // do use selection.
@@ -77,7 +81,7 @@ std::shared_ptr<Attribute> Attribute::read(gsl::span<char> data, ObsTypes dtype)
 //                        Has_Attributes function
 //*********************************************************************
 std::shared_ptr<Attribute> Has_Attributes::create(const std::string& name,
-                                                  const ioda::ObsStore::ObsTypes& dtype,
+                                                  const std::shared_ptr<Type> & dtype,
                                                   const std::vector<std::size_t>& dims) {
   std::shared_ptr<Attribute> att(new Attribute(dims, dtype));
   attributes_.insert(std::pair<std::string, std::shared_ptr<Attribute>>(name, att));

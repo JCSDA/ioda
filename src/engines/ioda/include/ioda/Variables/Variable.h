@@ -286,7 +286,7 @@ public:
       auto d = m.serialize(data);
       return write(gsl::make_span<const char>(
                       reinterpret_cast<const char*>(d->DataPointers.data()),
-                     d->DataPointers.size() * Marshaller::bytesPerObject_),
+                     d->DataPointers.size() * Marshaller::bytesPerElement_),
                    TypeWrapper::GetType(getTypeProvider()), mem_selection, file_selection);
     } catch (...) {
       std::throw_with_nested(Exception(ioda_Here()));
@@ -316,7 +316,7 @@ public:
       auto d = m.serialize(data);
       return write(gsl::make_span<const char>(
                       reinterpret_cast<const char*>(d->DataPointers.data()),
-                     d->DataPointers.size() * Marshaller::bytesPerObject_),
+                     d->DataPointers.size() * Marshaller::bytesPerElement_),
                    TypeWrapper::GetType(getTypeProvider()), mem_selection, file_selection);
     } catch (...) {
       std::throw_with_nested(Exception(ioda_Here()));
@@ -455,7 +455,7 @@ public:
              // Logic note: sizeof mutable data type. If we are
              // reading in a string, then mutable data type is char*,
              // which works because address pointers have the same size.
-             p->DataPointers.size() * Marshaller::bytesPerObject_),
+             p->DataPointers.size() * Marshaller::bytesPerElement_),
            TypeWrapper::GetType(getTypeProvider()), mem_selection, file_selection);
       m.deserialize(p, data);
 

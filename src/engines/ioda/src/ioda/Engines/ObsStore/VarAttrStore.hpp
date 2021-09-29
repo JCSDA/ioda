@@ -18,7 +18,7 @@
 #include "gsl/gsl-lite.hpp"
 
 #include "./Selection.hpp"
-#include "./Types.hpp"
+#include "./Type.hpp"
 #include "ioda/Exception.h"
 
 namespace ioda {
@@ -57,20 +57,24 @@ private:
   /// \brief data storage mechanism (vector)
   std::vector<DataType> var_attr_data_;
 
+  /// \brief number of elements in one data piece (for arrayed types)
+  std::size_t num_elements_;
+
 public:
-  VarAttrStore() {}
+  VarAttrStore() : num_elements_(1) {}
+  VarAttrStore(const std::size_t numElements) : num_elements_(numElements) {}
   ~VarAttrStore() {}
 
   /// \brief resizes memory allocated for data storage (vector)
   /// \param newSize new size for allocated memory in number of vector elements
-  void resize(std::size_t newSize) override { var_attr_data_.resize(newSize); }
+  void resize(std::size_t newSize) override { var_attr_data_.resize(newSize * num_elements_); }
 
   /// \brief resizes memory allocated for data storage (vector)
   /// \param newSize new size for allocated memory in number of vector elements
   /// \param fillvalue new elements get initialized to fillValue
   void resize(std::size_t newSize, gsl::span<char> &fillValue) override {
     gsl::span<DataType> fv_span(reinterpret_cast<DataType *>(fillValue.data()), 1);
-    var_attr_data_.resize(newSize, fv_span[0]);
+    var_attr_data_.resize(newSize * num_elements_, fv_span[0]);
   }
 
   /// \brief transfer data to data storage vector
@@ -85,9 +89,11 @@ public:
       m_select.init_lin_indx();
       f_select.init_lin_indx();
       while (!m_select.end_lin_indx()) {
-        std::size_t m_indx     = m_select.next_lin_indx();
-        std::size_t f_indx     = f_select.next_lin_indx();
-        var_attr_data_[f_indx] = d_span[m_indx];
+        std::size_t m_indx     = m_select.next_lin_indx() * num_elements_;
+        std::size_t f_indx     = f_select.next_lin_indx() * num_elements_;
+        for (std::size_t i = 0; i < num_elements_; ++i) {
+          var_attr_data_[f_indx + i] = d_span[m_indx + i];
+        }
       }
     }
   }
@@ -97,12 +103,12 @@ public:
   /// \param m_select Selection ojbect: how to select to data argument
   /// \param f_select Selection ojbect: how to select from storage vector
   void read(gsl::span<char> data, Selection &m_select, Selection &f_select) const override {
-    std::size_t datumLen = sizeof(DataType);
-    std::size_t numChars = var_attr_data_.size() * datumLen;
     if (data.size() > 0) {
+      std::size_t numChars = var_attr_data_.size() * sizeof(DataType);
       gsl::span<char> c_span(
         const_cast<char *>(reinterpret_cast<const char *>(var_attr_data_.data())), numChars);
       // assumes m_select and f_select have same number of points
+      std::size_t datumLen = num_elements_ * sizeof(DataType);
       m_select.init_lin_indx();
       f_select.init_lin_indx();
       while (!m_select.end_lin_indx()) {
@@ -124,13 +130,17 @@ private:
   /// \brief data storage mechanism (vector)
   std::vector<std::string> var_attr_data_;
 
+  /// \brief number of elements in one data piece (for arrayed types)
+  std::size_t num_elements_;
+
 public:
-  VarAttrStore() {}
+  VarAttrStore() : num_elements_(1) {}
+  VarAttrStore(const std::size_t numElements) : num_elements_(numElements) {}
   ~VarAttrStore() {}
 
   /// \brief resizes memory allocated for data storage (vector)
   /// \param newSize new size for allocated memory in number of vector elements
-  void resize(std::size_t newSize) override { var_attr_data_.resize(newSize); }
+  void resize(std::size_t newSize) override { var_attr_data_.resize(newSize * num_elements_); }
 
   /// \brief resizes memory allocated for data storage (vector)
   /// \param newSize new size for allocated memory in number of vector elements
@@ -139,7 +149,7 @@ public:
     // At this point, fillValue[0] is a char * pointing to the string
     // to be used for a fill value.
     gsl::span<char *> fv_span(reinterpret_cast<char **>(fillValue.data()), 1);
-    var_attr_data_.resize(newSize, fv_span[0]);
+    var_attr_data_.resize(newSize * num_elements_, fv_span[0]);
   }
 
   /// \brief transfer data to data storage vector
@@ -161,9 +171,11 @@ public:
       m_select.init_lin_indx();
       f_select.init_lin_indx();
       while (!m_select.end_lin_indx()) {
-        std::size_t m_indx     = m_select.next_lin_indx();
-        std::size_t f_indx     = f_select.next_lin_indx();
-        var_attr_data_[f_indx] = inStrings[m_indx];
+        std::size_t m_indx     = m_select.next_lin_indx() * num_elements_;
+        std::size_t f_indx     = f_select.next_lin_indx() * num_elements_;
+        for (std::size_t i = 0; i < num_elements_; ++i) {
+          var_attr_data_[f_indx + i] = inStrings[m_indx + i];
+        }
       }
     }
   }
@@ -174,17 +186,17 @@ public:
   /// \param f_select Selection ojbect: how to select from storage vector
   void read(gsl::span<char> data, Selection &m_select, Selection &f_select) const override {
     // First create a vector of char * pointers to each item in var_attr_data_.
-    std::size_t numObjects = var_attr_data_.size();
     if (data.size() > 0) {
+      std::size_t numObjects = var_attr_data_.size();
       std::vector<const char *> outStrings(numObjects);
       for (std::size_t i = 0; i < numObjects; ++i) {
         outStrings[i] = var_attr_data_[i].data();
       }
 
-      std::size_t datumLen = sizeof(char *);
-      std::size_t numChars = outStrings.size() * datumLen;
+      std::size_t numChars = outStrings.size() * sizeof(char *);
       gsl::span<char> c_span(reinterpret_cast<char *>(outStrings.data()), numChars);
       // assumes m_select and f_select have same number of points
+      std::size_t datumLen = num_elements_ * sizeof(char *);
       m_select.init_lin_indx();
       f_select.init_lin_indx();
       while (!m_select.end_lin_indx()) {
@@ -200,53 +212,7 @@ public:
 
 /// \brief factory style function to create a new templated object
 /// \ingroup ioda_internals_engines_obsstore
-inline VarAttrStore_Base *createVarAttrStore(ObsTypes dtype) {
-  VarAttrStore_Base *newStore = nullptr;
-
-  // Use the dtype value to determine which templated version of the data store
-  // to instantiate.
-  if (dtype == ObsTypes::FLOAT) {
-    newStore = new VarAttrStore<float>;
-  } else if (dtype == ObsTypes::DOUBLE) {
-    newStore = new VarAttrStore<double>;
-  } else if (dtype == ObsTypes::LDOUBLE) {
-    newStore = new VarAttrStore<long double>;
-  } else if (dtype == ObsTypes::SCHAR) {
-    newStore = new VarAttrStore<signed char>;
-  } else if (dtype == ObsTypes::SHORT) {
-    newStore = new VarAttrStore<short>;
-  } else if (dtype == ObsTypes::INT) {
-    newStore = new VarAttrStore<int>;
-  } else if (dtype == ObsTypes::LONG) {
-    newStore = new VarAttrStore<long>;
-  } else if (dtype == ObsTypes::LLONG) {
-    newStore = new VarAttrStore<long long>;
-  } else if (dtype == ObsTypes::UCHAR) {
-    newStore = new VarAttrStore<unsigned char>;
-  } else if (dtype == ObsTypes::USHORT) {
-    newStore = new VarAttrStore<unsigned short>;
-  } else if (dtype == ObsTypes::UINT) {
-    newStore = new VarAttrStore<unsigned int>;
-  } else if (dtype == ObsTypes::ULONG) {
-    newStore = new VarAttrStore<unsigned long>;
-  } else if (dtype == ObsTypes::ULLONG) {
-    newStore = new VarAttrStore<unsigned long long>;
-  } else if (dtype == ObsTypes::CHAR) {
-    newStore = new VarAttrStore<char>;
-  } else if (dtype == ObsTypes::WCHAR) {
-    newStore = new VarAttrStore<wchar_t>;
-  } else if (dtype == ObsTypes::CHAR16) {
-    newStore = new VarAttrStore<char16_t>;
-  } else if (dtype == ObsTypes::CHAR32) {
-    newStore = new VarAttrStore<char32_t>;
-  } else if (dtype == ObsTypes::STRING) {
-    newStore = new VarAttrStore<std::string>;
-  } else
-    throw Exception("Unrecognized data type encountered during "
-      "Attribute object construnction", ioda_Here());
-
-  return newStore;
-}
+VarAttrStore_Base *createVarAttrStore(const std::shared_ptr<Type> & dtype);
 
 }  // namespace ObsStore
 }  // namespace ioda

@@ -19,7 +19,7 @@
 #include <vector>
 
 #include "./Selection.hpp"
-#include "./Types.hpp"
+#include "./Type.hpp"
 #include "./VarAttrStore.hpp"
 
 namespace ioda {
@@ -33,38 +33,36 @@ namespace ObsStore {
 /// \ingroup ioda_internals_engines_obsstore
 class Attribute : public std::enable_shared_from_this<Attribute> {
 private:
-  /// \brief holds dimension sizes (vector length is rank of dimensions)
+  /// \brief dimensions of attribute
   std::vector<std::size_t> dimensions_;
+
   /// \brief holds ObsStore data type
-  ObsTypes dtype_ = ObsTypes::NOTYPE;
-  /// \brief ObsStore data type
-  /// \note Unused for now.
-  std::size_t dtype_size_ = 0;
+  std::shared_ptr<Type> dtype_;
 
   /// \brief container for attribute data values
   std::unique_ptr<VarAttrStore_Base> attr_data_;
 
 public:
   Attribute() {}
-  Attribute(const std::vector<std::size_t>& dimensions, const ObsTypes& dtype);
+  Attribute(const std::vector<std::size_t>& dimensions, const std::shared_ptr<Type> dtype);
   ~Attribute() {}
 
   /// \brief returns dimensions vector
   std::vector<std::size_t> get_dimensions() const;
   /// \brief returns true if requested type matches stored type
   /// \param dtype ObsStore Type being checked
-  bool isOfType(ObsTypes dtype) const;
+  bool isOfType(const Type & dtype) const;
   /// \brief returns the data type.
-  inline std::pair<ObsTypes, size_t> dtype() const { return std::make_pair(dtype_, dtype_size_); }
+  inline std::shared_ptr<Type> dtype() const { return dtype_; }
 
   /// \brief transfer data into attribute
   /// \param data contiguous block of data to transfer
   /// \param dtype ObsStore Type
-  std::shared_ptr<Attribute> write(gsl::span<const char> data, ObsTypes dtype);
+  std::shared_ptr<Attribute> write(gsl::span<const char> data, const Type & dtype);
   /// \brief transfer data from attribute
   /// \param data contiguous block of data to transfer
   /// \param dtype ObsStore Type
-  std::shared_ptr<Attribute> read(gsl::span<char> data, ObsTypes dtype);
+  std::shared_ptr<Attribute> read(gsl::span<char> data, const Type & dtype);
 };
 
 /// \ingroup ioda_internals_engines_obsstore
@@ -81,7 +79,8 @@ public:
   /// \param name name of new attribute
   /// \param dtype ObsStore Type of new attribute
   /// \param dims shape of new attribute
-  std::shared_ptr<Attribute> create(const std::string& name, const ioda::ObsStore::ObsTypes& dtype,
+  std::shared_ptr<Attribute> create(const std::string& name,
+                                    const std::shared_ptr<Type> & dtype,
                                     const std::vector<std::size_t>& dims);
 
   /// \brief open an exsiting attribute (throws exception if not found)

@@ -145,7 +145,7 @@ list(APPEND SRCS_ENGINES_OBS_STORE
 	src/ioda/Engines/ObsStore/VarAttrStore.hpp
 	src/ioda/Engines/ObsStore/Group.hpp
 	src/ioda/Engines/ObsStore/Selection.hpp
-	src/ioda/Engines/ObsStore/Types.hpp
+	src/ioda/Engines/ObsStore/Type.hpp
 	src/ioda/Engines/ObsStore/Variables.hpp
 	src/ioda/Engines/ObsStore/ObsStore-attributes.h
 	src/ioda/Engines/ObsStore/ObsStore-groups.h
@@ -153,8 +153,10 @@ list(APPEND SRCS_ENGINES_OBS_STORE
 	src/ioda/Engines/ObsStore/ObsStore-types.h
 	src/ioda/Engines/ObsStore/ObsStore-variables.h
 	src/ioda/Engines/ObsStore/Attributes.cpp
+	src/ioda/Engines/ObsStore/VarAttrStore.cpp
 	src/ioda/Engines/ObsStore/Group.cpp
 	src/ioda/Engines/ObsStore/Selection.cpp
+	src/ioda/Engines/ObsStore/Type.cpp
 	src/ioda/Engines/ObsStore/Variables.cpp
 	)
 

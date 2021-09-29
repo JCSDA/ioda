@@ -22,7 +22,7 @@
 #include "./ObsStore-selection.h"
 #include "./ObsStore-types.h"
 #include "./Selection.hpp"
-#include "./Types.hpp"
+#include "./Type.hpp"
 #include "./Variables.hpp"
 #include "ioda/Group.h"
 #include "ioda/Misc/Dimensions.h"

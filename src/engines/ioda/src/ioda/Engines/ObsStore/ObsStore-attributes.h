@@ -17,7 +17,7 @@
 #include <vector>
 
 #include "./Attributes.hpp"
-#include "./Types.hpp"
+#include "./Type.hpp"
 #include "ioda/Group.h"
 #include "ioda/defs.h"
 

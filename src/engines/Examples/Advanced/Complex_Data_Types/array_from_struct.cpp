@@ -133,8 +133,15 @@ struct Object_Accessor_Something_Like_DateTime {
   /// Who owns the data pointers? Is this data produced by a backend (usually from a read operation) or is it
   /// coming from the caller (usually when writing)? This tells us when the data can be freed.
   detail::PointerOwner pointerOwner_;
-  /// How big is each object?
-  static constexpr size_t bytesPerObject_ = 2;  // Each object has a date and a time.
+  /// How big is each object? The serialization of the Something_Like_DateTime data uses a
+  /// vector of uint64_t, while the non-serialized data is a vector of Something_Like_DateTime
+  /// struct object. This means that each element of the non-serialized vector has two elements
+  /// in the serialized vector. The serialized vector gets passed to the attribute/variable
+  /// read/write routines which create a span of char (1 byte elements) on top of the vector
+  /// of uint64_t. The bytesPerElement_ setting gets used in the creation of the span of char
+  /// so it needs to be set to the size of a unit64_t.
+  static constexpr size_t elementsPerObject_ = 2;
+  static constexpr size_t bytesPerElement_ = sizeof(uint64_t);
 
   Object_Accessor_Something_Like_DateTime(detail::PointerOwner pointerOwner
                                           = detail::PointerOwner::Caller)
@@ -147,7 +154,7 @@ struct Object_Accessor_Something_Like_DateTime {
     // Marshalled_Data implements a vector of values. These values are numbers for fundamental numeric types,
     // but are typically pointers for more complex types.
     auto res          = std::make_shared<Marshalled_Data<uint64_t>>();
-    res->DataPointers = std::vector<uint64_t>(d.size() * bytesPerObject_);
+    res->DataPointers = std::vector<uint64_t>(d.size() * elementsPerObject_);
 
     for (size_t i = 0; i < (size_t)d.size(); ++i) {
       res->DataPointers[2 * i + 0] = d[i].date;
@@ -164,7 +171,7 @@ struct Object_Accessor_Something_Like_DateTime {
   ///   two uint64_t data fields (date and time).
   serialized_type prep_deserialize(size_t numObjects) {
     auto res          = std::make_shared<Marshalled_Data<uint64_t>>(pointerOwner_);
-    res->DataPointers = std::vector<uint64_t>(numObjects * bytesPerObject_);
+    res->DataPointers = std::vector<uint64_t>(numObjects * elementsPerObject_);
     return res;
   }
 
@@ -172,7 +179,7 @@ struct Object_Accessor_Something_Like_DateTime {
   ///   already exist, thanks to prep_deserialize. The deserialize function fills in data members.
   void deserialize(serialized_type p, gsl::span<Something_Like_DateTime> data) {
     const size_t ds = data.size(), dp = p->DataPointers.size();
-    if (ds != dp / bytesPerObject_)
+    if (ds != dp / elementsPerObject_)
       throw Exception("You are reading the wrong amount of data!", ioda_Here())
         .add("data.size()", ds)
         .add("p->DataPointers.size()", dp);
@@ -245,7 +252,17 @@ int main(int argc, char** argv) {
       }
 
       // For debugging, write the type to the file.
-      typ.commitToBackend(f, "Debug_array_type");
+      // TODO(srh): The commitToBackend() function is not implemented yet in the ObsStore
+      // backend. If testing the ObsStore backend, skip the following call to
+      // commitToBackend. Once commitToBackend() is finished, then change the following
+      // to always call commitToBackend();
+      bool testingObsStore = false;
+      if (argc >= 3) {
+        testingObsStore = (strcmp(argv[2], "obs-store") == 0);
+      }
+      if (!testingObsStore) {
+        typ.commitToBackend(f, "Debug_array_type");
+      }
     }
 
     {  // Read and check an attribute

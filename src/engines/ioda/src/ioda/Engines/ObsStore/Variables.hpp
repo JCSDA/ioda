@@ -20,7 +20,7 @@
 
 #include "./Attributes.hpp"
 #include "./Selection.hpp"
-#include "./Types.hpp"
+#include "./Type.hpp"
 #include "./VarAttrStore.hpp"
 #include "ioda/Variables/Fill.h"
 #include "ioda/defs.h"
@@ -37,9 +37,6 @@ namespace ObsStore {
 /// \ingroup ioda_internals_engines_obsstore
 struct VarCreateParams {
 public:
-  // Data type element size
-  std::size_t dtype_size = 0;
-
   // Fill value
   detail::FillValueData_t fvdata;
   gsl::span<char> fill_value;
@@ -53,9 +50,7 @@ private:
   /// \brief maximum dimension sizes (for resizing)
   std::vector<Dimensions_t> max_dimensions_;
   /// \brief ObsStore data type
-  ObsTypes dtype_ = ObsTypes::NOTYPE;
-  /// \brief ObsStore data type
-  std::size_t dtype_size_ = 0;
+  std::shared_ptr<Type> dtype_;
 
   /// \brief Fill value information
   detail::FillValueData_t fvdata_;
@@ -75,7 +70,8 @@ private:
 public:
   Variable() : atts(std::make_shared<Has_Attributes>()) {}
   Variable(const std::vector<Dimensions_t>& dimensions,
-           const std::vector<Dimensions_t>& max_dimensions, const ObsTypes& dtype,
+           const std::vector<Dimensions_t>& max_dimensions,
+           const std::shared_ptr<Type> dtype,
            const VarCreateParams& params);
   ~Variable() {}
 
@@ -94,9 +90,9 @@ public:
   /// \param new_dim_sizes new extents for each dimension
   void resize(const std::vector<Dimensions_t>& new_dim_sizes);
   /// \brief returns true if requested type matches stored type
-  bool isOfType(ObsTypes dtype) const;
-  /// \brief returns the data type.
-  inline std::pair<ObsTypes, size_t> dtype() const { return std::make_pair(dtype_, dtype_size_); }
+  bool isOfType(const Type & dtype) const;
+  /// \brief returns the ObsStore data type.
+  inline std::shared_ptr<Type> dtype() const { return dtype_; }
 
   /// \brief Is there an associated fill value?
   /// \returns true if yes, false if no.
@@ -135,14 +131,14 @@ public:
   /// \param data contiguous block of data to transfer
   /// \param m_select Selection ojbect: how to select from data argument
   /// \param f_select Selection ojbect: how to select to variable storage
-  std::shared_ptr<Variable> write(gsl::span<const char> data, ObsTypes dtype, Selection& m_select,
-                                  Selection& f_select);
+  std::shared_ptr<Variable> write(gsl::span<const char> data, const Type & dtype,
+                                  Selection & m_select, Selection & f_select);
   /// \brief transfer data from variable storage
   /// \param data contiguous block of data to transfer
   /// \param m_select Selection ojbect: how to select to data argument
   /// \param f_select Selection ojbect: how to select from variable storage
-  std::shared_ptr<Variable> read(gsl::span<char> data, ObsTypes dtype, Selection& m_select,
-                                 Selection& f_select);
+  std::shared_ptr<Variable> read(gsl::span<char> data, const Type & dtype,
+                                 Selection & m_select, Selection & f_select);
 };
 
 class Group;
@@ -169,7 +165,8 @@ public:
   /// \param dims dimensions of new variable (length is rank of dimensions)
   /// \param max_dims maximum dimensions of new variable (for resizing)
   /// \param params parameters for creating new variable
-  std::shared_ptr<Variable> create(const std::string& name, const ioda::ObsStore::ObsTypes& dtype,
+  std::shared_ptr<Variable> create(const std::string& name,
+                                   const std::shared_ptr<Type> & dtype,
                                    const std::vector<Dimensions_t>& dims,
                                    const std::vector<Dimensions_t>& max_dims,
                                    const VarCreateParams& params);

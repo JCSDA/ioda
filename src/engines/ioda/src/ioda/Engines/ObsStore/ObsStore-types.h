@@ -13,7 +13,7 @@
 #pragma once
 #include <utility>
 
-#include "./Types.hpp"
+#include "./Type.hpp"
 #include "ioda/Types/Type.h"
 #include "ioda/Types/Type_Provider.h"
 #include "ioda/defs.h"
@@ -21,11 +21,25 @@
 namespace ioda {
 namespace Engines {
 namespace ObsStore {
-typedef std::pair<ioda::ObsStore::ObsTypes, std::size_t> ObsTypeInfo;
 
 /// \brief set of functions to return ObsStore Types
 /// \ingroup ioda_internals_engines_obsstore
 class IODA_DL ObsStore_Type_Provider : public detail::Type_Provider {
+private:
+  typedef struct ObsTypeInfo {
+    ioda::ObsStore::ObsTypes type;
+    ioda::ObsStore::ObsTypeClasses type_class;
+    std::size_t size;
+    bool is_signed;
+
+    ObsTypeInfo(const ioda::ObsStore::ObsTypes obsType,
+                const ioda::ObsStore::ObsTypeClasses obsTypeClass,
+                const std::size_t obsTypeSize, const bool isSigned)
+        : type(obsType), type_class(obsTypeClass), size(obsTypeSize), is_signed(isSigned) {
+    }
+
+  } ObsTypeInfo;
+
 public:
   virtual ~ObsStore_Type_Provider();
 
@@ -37,11 +51,12 @@ public:
   /// \param type C++ fundamtentl type
   Type makeFundamentalType(std::type_index type) const final;
 
-  // Leave makeArrayType undeclared for now. Add in later if needed.
-  // Let makeArrayType method in ioda::TypeProvider handle this case
-  // which will issue an error.
-  // virtual Type makeArrayType(std::initializer_list<Dimensions_t> dimensions, std::type_index
-  // typeOuter, std::type_index typeInner) const override final;
+  // \brief create mapping between array type and ObsStore type
+  // \param dimensions sizes of dimensions (note length of list corresponds to rank)
+  // \param typeOuter data type of array itself
+  // \param typeInner data type of elements in the array
+  Type makeArrayType(std::initializer_list<Dimensions_t> dimensions,
+      std::type_index typeOuter, std::type_index typeInner) const final;
 
   /// \brief create mapping between ioda string type and ObsStore string type
   /// \param typeOuter C++ fundamental type of characters in the string
@@ -59,22 +74,31 @@ public:
 /// \ingroup ioda_internals_engines_obsstore
 class IODA_DL ObsStore_Type : public detail::Type_Backend {
 private:
-  /// \brief holds ObsStore type for mapping with corresponding ioda::Type
-  ioda::ObsStore::ObsTypes dtype_;
-
-  /// \brief size in bytes of stored type
-  std::size_t dtype_size_;
+  /// \brief holds ObsStore data type for mapping with corresponding ioda::Type
+  std::shared_ptr<ioda::ObsStore::Type> type_;
 
 public:
-  ObsStore_Type(ObsTypeInfo& h);
-  virtual ~ObsStore_Type();
+  ObsStore_Type(std::shared_ptr<ioda::ObsStore::Type> type);
+  ~ObsStore_Type() {}
 
-  /// \brief holds ObsStore type for mapping with corresponding ioda::Type
-  ioda::ObsStore::ObsTypes dtype() const;
+  /// \brief return backend data type
+  const ioda::ObsStore::Type & getType() const { return *type_; }
 
   /// \brief return size (in bytes) of given type
-  std::size_t dtype_size() const;
-  size_t getSize() const final;
+  std::size_t getSize() const final { return type_->getSize(); }
+
+  /// \brief return backend type class
+  TypeClass getClass() const final;
+
+  /// \brief return base type
+  Type getBaseType() const final;
+
+  /// \brief true if type is a signed type, such as int (as opposed to unsigned int)
+  bool isTypeSigned() const final { return type_->isTypeSigned(); }
+
+  /// \brief return backend type dimensions
+  std::vector<Dimensions_t> getDimensions() const final;
+
 };
 }  // namespace ObsStore
 }  // namespace Engines
