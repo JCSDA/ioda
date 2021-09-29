@@ -12,6 +12,7 @@
  * \brief Classes and functions that implement the type system and allow
  *   for frontend/backend communication.
  */
+#include <algorithm>
 #include <complex>
 #include <cstring>
 #include <exception>
