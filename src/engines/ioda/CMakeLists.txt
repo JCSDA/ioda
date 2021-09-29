@@ -161,16 +161,13 @@ list(APPEND SRCS_ENGINES_OBS_STORE
 list(APPEND SRCS_ENGINES_ODC
 	include/ioda/Engines/ODC.h
 	src/ioda/Engines/ODC/ODC.cpp
+	src/ioda/Engines/ODC/OdbQueryParameters.h
+	src/ioda/Engines/ODC/OdbQueryParameters.cpp
 	)
 # Source files depending on the ODC library
 list(APPEND SRCS_ENGINES_ODC_ODC_DEPENDENT
 	src/ioda/Engines/ODC/DataFromSQL.cpp
 	src/ioda/Engines/ODC/DataFromSQL.h
-	)
-# Source files that need odc, eckit, and oops
-list(APPEND SRCS_ENGINES_ODC_ODC_OOPS_DEPENDENT
-	src/ioda/Engines/ODC/OdbQueryParameters.h
-	src/ioda/Engines/ODC/OdbQueryParameters.cpp
 	)
 
 source_group("Attributes" FILES ${SRCS_ATTRIBUTES})
@@ -183,8 +180,7 @@ source_group("Variables" FILES ${SRCS_VARIABLES})
 source_group("Engines" FILES ${SRCS_ENGINES_TOP})
 source_group("Engines\\HH" FILES ${SRCS_ENGINES_HH})
 source_group("Engines\\ObsStore" FILES ${SRCS_ENGINES_OBS_STORE})
-source_group("Engines\\ODC" FILES ${SRCS_ENGINES_ODC} ${SRCS_ENGINES_ODC_ODC_DEPENDENT} 
-	${SRCS_ENGINES_ODC_ODC_OOPS_DEPENDENT})
+source_group("Engines\\ODC" FILES ${SRCS_ENGINES_ODC} ${SRCS_ENGINES_ODC_ODC_DEPENDENT})
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/ioda/config.h.in
 	${CMAKE_CURRENT_BINARY_DIR}/config/ioda/config.h)
@@ -196,7 +192,7 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/ioda/testconfig.h.in
 list(APPEND SRCS_IODA_ENGINES
 	${SRCS_ATTRIBUTES} ${SRCS_C_BINDINGS} ${SRCS_GROUPS}
 	${SRCS_LAYOUTS} ${SRCS_MISC} ${SRCS_TYPES} ${SRCS_VARIABLES}
-    ${SRCS_ENGINES_TOP} ${SRCS_ENGINES_OBS_STORE} ${SRCS_ENGINES_ODC}
+	${SRCS_ENGINES_TOP} ${SRCS_ENGINES_OBS_STORE} ${SRCS_ENGINES_ODC}
 	${CMAKE_CURRENT_BINARY_DIR}/config/ioda/config.h
 	${CMAKE_CURRENT_BINARY_DIR}/config/ioda/testconfig.h
 	)
@@ -205,9 +201,6 @@ if (eckit_FOUND AND oops_FOUND)
 endif()
 if (odc_FOUND)
     list(APPEND SRCS_IODA_ENGINES ${SRCS_ENGINES_ODC_ODC_DEPENDENT})
-endif()
-if (odc_FOUND AND eckit_FOUND AND oops_FOUND)
-	list(APPEND SRCS_IODA_ENGINES ${SRCS_ENGINES_ODC_ODC_OOPS_DEPENDENT})
 endif()
 if (HDF5_FOUND)
 	list(APPEND SRCS_IODA_ENGINES ${SRCS_ENGINES_HH})

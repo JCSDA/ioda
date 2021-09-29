@@ -46,7 +46,7 @@ find_package( Eigen3 REQUIRED NO_MODULE HINTS
 find_package( gsl-lite REQUIRED HINTS $ENV{gsl_lite_DIR} )
 
 # Optional
-find_package( odc 1.0.2 )         # Needed for odc
+find_package( odc 1.0.2 QUIET )   # Needed for odc
 find_package( Boost 1.64.0 )      # Provides an implementation of optional
 find_package( Python3 COMPONENTS Interpreter Development )
 find_package( pybind11 QUIET)
