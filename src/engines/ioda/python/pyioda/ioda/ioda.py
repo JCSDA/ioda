@@ -1,4 +1,5 @@
 import ioda._ioda_python as _iodapy
+import copy
 import datetime as dt
 import numpy as np
 import os
@@ -120,7 +121,8 @@ class ObsSpace:
         self._p1.compressWithGZIP()
         return g, og
 
-    def create_var(self, varname, groupname=None, dtype=np.dtype('float32'), dim_list=['nlocs']):
+    def create_var(self, varname, groupname=None, dtype=np.dtype('float32'),
+                   dim_list=['nlocs'], fillval=None):
         dtype_tmp = np.array([],dtype=dtype)
         typeVar = self.NumpyToIodaDtype(dtype_tmp)
         _varstr = varname
@@ -128,8 +130,29 @@ class ObsSpace:
             _varstr = f"{groupname}/{varname}"
         # get list of dimension variables
         dims = [self.obsgroup.vars.open(dim) for dim in dim_list]
+        fparams = copy.deepcopy(self._p1) # default values
+        # replace default fill value
+        if fillval is not None:
+            fparams = setFillValue(fparams, typeVar, fillval)
         newVar = self.file.vars.create(_varstr, typeVar,
-                                       scales=dims, params=self._p1)
+                                       scales=dims, params=fparams)
+
+    def setFillValue(params, datatype, value):
+        # set fill value for input VariableCreationParameters,
+        # datatype, and value and return a new VariableCreationParameters
+        # object with the new fill value
+        if datatype == _iodapy.Types.float:
+            params.setFillValue.float(value)
+        elif datatype == _iodapy.Types.double:
+            params.setFillValue.double(value)
+        elif datatype == _iodapy.Types.int64:
+            params.setFillValue.int64(value)
+        elif datatype == _iodapy.Types.int32:
+            params.setFillValue.int32(value)
+        elif datatype == _iodapy.Types.str:
+            params.setFillValue.str(value)
+        # add other elif here TODO
+        return params
 
     def Variable(self, varname, groupname=None):
         return self._Variable(self, varname, groupname)
