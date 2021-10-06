@@ -75,6 +75,8 @@ std::size_t globalNumNonMissingObs(const Distribution &dist,
                                    size_t numVariables, const std::vector<std::string> &v);
 std::size_t globalNumNonMissingObs(const Distribution &dist,
                                    size_t numVariables, const std::vector<util::DateTime> &v);
+std::size_t globalNumNonMissingObs(const Distribution &dist,
+                                   size_t numVariables, const std::vector<bool> &v);
 
 /// \brief Create a suitable replica distribution for the distribution `master`.
 ///

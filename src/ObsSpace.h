@@ -59,7 +59,8 @@ namespace ioda {
         Float,
         Integer,
         String,
-        DateTime
+        DateTime,
+        Bool
     };
 
     /// \brief Enum type for obs dimension ids
@@ -343,6 +344,10 @@ namespace ioda {
                     std::vector<util::DateTime> & vdata,
                     const std::vector<int> & chanSelect = { },
                     bool skipDerived = false) const;
+        void get_db(const std::string & group, const std::string & name,
+                    std::vector<bool> & vdata,
+                    const std::vector<int> & chanSelect = { },
+                    bool skipDerived = false) const;
 
         /// \brief transfer data from vdata to the obs container
         ///
@@ -368,6 +373,9 @@ namespace ioda {
                     const std::vector<std::string> & dimList = { "nlocs" });
         void put_db(const std::string & group, const std::string & name,
                     const std::vector<util::DateTime> & vdata,
+                    const std::vector<std::string> & dimList = { "nlocs" });
+        void put_db(const std::string & group, const std::string & name,
+                    const std::vector<bool> & vdata,
                     const std::vector<std::string> & dimList = { "nlocs" });
 
         /// @}

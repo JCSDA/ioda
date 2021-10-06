@@ -117,6 +117,10 @@ void ObsFrameWrite::writeFrameVar(const std::string & varName,
                                   const std::vector<std::string> & varData) {
     writeFrameVarHelper<std::string>(varName, varData);
 }
+void ObsFrameWrite::writeFrameVar(const std::string & varName,
+                                  const std::vector<char> & varData) {
+    writeFrameVarHelper<char>(varName, varData);
+}
 
 //--------------------------- private functions --------------------------------------
 

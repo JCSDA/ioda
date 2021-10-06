@@ -26,7 +26,8 @@ struct ObsDtypeParameterTraitsHelper {
     { EnumType::Float, "float" },
     { EnumType::Integer, "int" },
     { EnumType::String, "string" },
-    { EnumType::DateTime, "datetime" }
+    { EnumType::DateTime, "datetime" },
+    { EnumType::Bool, "bool" }
   };
 };
 

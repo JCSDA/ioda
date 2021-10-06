@@ -306,6 +306,9 @@ ObsDtype ObsSpace::dtype(const std::string & group, const std::string & name,
                       VarType = ObsDtype::String;
                   }
               },
+              [&] (char) {
+                  VarType = ObsDtype::Bool;
+              },
               ThrowIfVariableIsOfUnsupportedType(varNameToUse));
     }
     return VarType;
@@ -347,6 +350,18 @@ void ObsSpace::get_db(const std::string & group, const std::string & name,
     vdata = convertDtStringsToDtime(dtStrings);
 }
 
+void ObsSpace::get_db(const std::string & group, const std::string & name,
+                      std::vector<bool> & vdata,
+                      const std::vector<int> & chanSelect, bool skipDerived) const {
+    // Boolean variables are currently stored internally as arrays of bytes (with each byte
+    // holding one element of the variable).
+    // TODO(wsmigaj): Store them as arrays of bits instead, at least in the ObsStore backend,
+    // to reduce memory consumption and speed up the get_db and put_db functions.
+    std::vector<char> charData(vdata.size());
+    loadVar<char>(group, name, chanSelect, charData, skipDerived);
+    vdata.assign(charData.begin(), charData.end());
+}
+
 // -----------------------------------------------------------------------------
 void ObsSpace::put_db(const std::string & group, const std::string & name,
                      const std::vector<int> & vdata,
@@ -383,6 +398,17 @@ void ObsSpace::put_db(const std::string & group, const std::string & name,
       dtStrings[i] = vdata[i].toString();
     }
     saveVar(group, name, dtStrings, dimList);
+}
+
+void ObsSpace::put_db(const std::string & group, const std::string & name,
+                      const std::vector<bool> & vdata,
+                      const std::vector<std::string> & dimList) {
+    // Boolean variables are currently stored internally as arrays of bytes (with each byte
+    // holding one element of the variable).
+    // TODO(wsmigaj): Store them as arrays of bits instead, at least in the ObsStore backend,
+    // to reduce memory consumption and speed up the get_db and put_db functions.
+    std::vector<char> boolsAsBytes(vdata.begin(), vdata.end());
+    saveVar(group, name, boolsAsBytes, dimList);
 }
 
 // -----------------------------------------------------------------------------

@@ -1,6 +1,7 @@
 ---
-window begin: "2018-04-16T00:00:00Z"
-window end:   "2018-12-12T23:59:59Z"
+# Note: the first observation lies outside the window
+window begin: "2018-04-14T21:00:00Z"
+window end: "2018-04-15T03:00:00Z"
 
 obs space:
   name: Test
@@ -37,3 +38,8 @@ print:
     group: MetaData
     expected output: |
       Test datetime nlocs = 4, nobs = 4
+  bool:
+    variables: [bool_variable_1]
+    group: MetaData
+    expected output: |
+      Test bool_variable_1 nlocs = 4, nobs = 4

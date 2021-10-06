@@ -69,7 +69,7 @@ class ObsFrameWrite : public ObsFrame, private util::ObjectCounter<ObsFrameWrite
 
     /// \brief write a frame variable
     /// \details This function requires the caller to allocate the proper amount of
-    ///          memory for the intput vector varData.
+    ///          memory for the input vector varData.
     ///          The following signatures are for different variable data types.
     /// \param varName variable name
     /// \param varData varible data
@@ -79,6 +79,8 @@ class ObsFrameWrite : public ObsFrame, private util::ObjectCounter<ObsFrameWrite
                        const std::vector<float> & varData);
     void writeFrameVar(const std::string & varName,
                        const std::vector<std::string> & varData);
+    void writeFrameVar(const std::string & varName,
+                       const std::vector<char> & varData);
 
  private:
     //------------------ private data members ------------------------------

@@ -117,6 +117,20 @@ std::size_t globalNumNonMissingObs(const Distribution &dist,
   return globalNumNonMissingObsImpl(dist, numVariables, v);
 }
 
+std::size_t globalNumNonMissingObs(const Distribution &dist,
+                                   std::size_t numVariables,
+                                   const std::vector<bool> &v) {
+  const std::size_t numLocations = v.size() / numVariables;
+
+  // Local reduction
+  std::unique_ptr<Accumulator<std::size_t>> accumulator = dist.createAccumulator<std::size_t>();
+  for (size_t loc = 0; loc < numLocations; ++loc)
+    accumulator->addTerm(loc, numVariables);
+
+  // Global reduction
+  return accumulator->computeResult();
+}
+
 // -----------------------------------------------------------------------------
 std::shared_ptr<Distribution> createReplicaDistribution(
     const eckit::mpi::Comm & comm,

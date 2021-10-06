@@ -452,6 +452,29 @@ observations:
       - 1.0e-7
     variables for putget test: []
 
+- obs space:
+    name: "Boolean variable"
+    simulated variables: [air_temperature]
+    obsdatain:
+      obsfile: "Data/testinput_tier_1/variable_assignment_testdata.nc"
+  test data:
+    nlocs: 4
+    nrecs: 4
+    nvars: 1
+    obs perturbations seed: 0
+    expected group variables: []
+    expected sort variable: ""
+    expected sort order: "ascending"
+    variables for get test:
+    - name: bool_variable_1
+      group: MetaData
+      type: bool
+      first value: false
+      last value: true
+    tolerance:
+      - 1.0e-7
+    variables for putget test: []
+
 # The purpose of the following two tests is to verify that the obs space is "aware" of any
 # specified derived simulated variables (the obsvariables(), derived_obsvariables() and
 # initial_obsvariables() work correctly) and that it initially fills arrays from the ObsError group

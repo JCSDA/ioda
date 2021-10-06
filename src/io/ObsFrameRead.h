@@ -89,6 +89,7 @@ class ObsFrameRead : public ObsFrame, private util::ObjectCounter<ObsFrameRead> 
     bool readFrameVar(const std::string & varName, std::vector<int> & varData);
     bool readFrameVar(const std::string & varName, std::vector<float> & varData);
     bool readFrameVar(const std::string & varName, std::vector<std::string> & varData);
+    bool readFrameVar(const std::string & varName, std::vector<char> & varData);
 
     /// \brief return the MPI distribution
     std::shared_ptr<const Distribution> distribution() {return dist_;}

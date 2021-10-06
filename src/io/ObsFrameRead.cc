@@ -177,6 +177,9 @@ bool ObsFrameRead::readFrameVar(const std::string & varName,
                                 std::vector<std::string> & varData) {
     return readFrameVarHelper<std::string>(varName, varData);
 }
+bool ObsFrameRead::readFrameVar(const std::string & varName, std::vector<char> & varData) {
+    return readFrameVarHelper<char>(varName, varData);
+}
 
 //--------------------------- private functions --------------------------------------
 //-----------------------------------------------------------------------------------

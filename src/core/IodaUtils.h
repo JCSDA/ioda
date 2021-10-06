@@ -200,7 +200,7 @@ namespace ioda {
   ///
   /// \param var
   ///   Variable expected to be of one of the types that can be stored in an ObsSpace (`int`,
-  ///   `float` or `std::string`).
+  ///   `float`, `std::string` or `char`).
   /// \param action
   ///   A function object callable with a single argument of any type from the list above.
   ///   If the variable `var` is of type `int`, this function will be given a default-initialized
@@ -232,6 +232,8 @@ namespace ioda {
       return action(float());
     if (var.isA<std::string>())
       return action(std::string());
+    if (var.isA<char>())
+      return action(char());
     typeErrorHandler(Here());
   }
 
@@ -239,7 +241,7 @@ namespace ioda {
   ///
   /// \param var
   ///   Variable expected to be of one of the types that can be stored in an ObsSpace (`int`,
-  ///   `float` or `std::string`).
+  ///   `float`, `std::string` or `char`).
   /// \param intAction
   ///   A function object taking an argument of type `int`, which will be called and given a
   ///   default-initialized `int` if the variable `var` is of type `int`.
@@ -249,14 +251,19 @@ namespace ioda {
   /// \param stringAction
   ///   A function object taking an argument of type `std::string`, which will be called and given a
   ///   default-initialized `std:::string` if the variable `var` is of type `std::string`.
+  /// \param charAction
+  ///   A function object taking an argument of type `char`, which will be called and given a
+  ///   default-initialized `char` if the variable `var` is of type `char`.
   /// \param errorHandler
   ///   A function object callable with a single argument of type eckit::CodeLocation, called if
   ///   `var` is not of a type that can be stored in an ObsSpace.
-  template <typename IntAction, typename FloatAction, typename StringAction, typename ErrorHandler>
+  template <typename IntAction, typename FloatAction, typename StringAction, typename CharAction,
+            typename ErrorHandler>
   auto switchOnSupportedVariableType(const ioda::Variable &var,
                                      const IntAction &intAction,
                                      const FloatAction &floatAction,
                                      const StringAction &stringAction,
+                                     const CharAction &charAction,
                                      const ErrorHandler &typeErrorHandler) {
     if (var.isA<int>())
       return intAction(int());
@@ -264,11 +271,13 @@ namespace ioda {
       return floatAction(float());
     if (var.isA<std::string>())
       return stringAction(std::string());
+    if (var.isA<char>())
+      return charAction(char());
     typeErrorHandler(Here());
   }
 
-  /// \brief Perform an variable-type-dependent action for all types that can be stored in an
-  /// ObsSpace (`int`, `float` or `std::string`).
+  /// \brief Perform a variable-type-dependent action for all types that can be stored in an
+  /// ObsSpace (`int`, `float`, `std::string` or `char`).
   ///
   /// \param action
   ///   A function object callable with a single argument of any type from the list above. It will
@@ -281,6 +290,7 @@ namespace ioda {
     action(int());
     action(float());
     action(std::string());
+    action(char());
   }
 }  // namespace ioda
 
