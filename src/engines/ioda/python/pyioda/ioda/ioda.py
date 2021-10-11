@@ -1,5 +1,4 @@
 import ioda._ioda_python as _iodapy
-import copy
 import datetime as dt
 import numpy as np
 import os
@@ -130,14 +129,17 @@ class ObsSpace:
             _varstr = f"{groupname}/{varname}"
         # get list of dimension variables
         dims = [self.obsgroup.vars.open(dim) for dim in dim_list]
-        fparams = copy.deepcopy(self._p1) # default values
+        fparams = self._p1 # default values
         # replace default fill value
         if fillval is not None:
-            fparams = setFillValue(fparams, typeVar, fillval)
+            _p1 = _iodapy.VariableCreationParameters()
+            _p1.compressWithGZIP()
+            _p1 = self.setFillValue(fparams, typeVar, fillval)
+            fparams = _p1
         newVar = self.file.vars.create(_varstr, typeVar,
                                        scales=dims, params=fparams)
 
-    def setFillValue(params, datatype, value):
+    def setFillValue(self, params, datatype, value):
         # set fill value for input VariableCreationParameters,
         # datatype, and value and return a new VariableCreationParameters
         # object with the new fill value
