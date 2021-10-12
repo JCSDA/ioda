@@ -14,14 +14,14 @@ import numpy as np
 if os.environ.get('LIBDIR') is not None:
     sys.path.append(os.environ['LIBDIR'])
 
-import ioda
+import ioda_obs_space as ioda_ospace
 
 # grab arguments
 print(sys.argv)
 InFile = sys.argv[1]
 
 # create an obsspace object
-obsspace = ioda.ObsSpace(InFile, mode='r', name='IODA Test ObsSpace')
+obsspace = ioda_ospace.ObsSpace(InFile, mode='r', name='IODA Test ObsSpace')
 
 # print some info about this file
 print(f"INFO: nlocs={obsspace.nlocs}")

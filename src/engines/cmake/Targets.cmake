@@ -86,23 +86,23 @@ macro(AddPyLib libname pyname pybasename)
 
     set_target_properties( ${libname} PROPERTIES FOLDER "Libs/Python/${pybasename}")
 	set_target_properties( ${libname} PROPERTIES
-		ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/${pybasename}/${pyname}"
-		LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/${pybasename}/${pyname}"
-		RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/${pybasename}/${pyname}"
+		ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/${pybasename}/pyioda/${pyname}"
+		LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/${pybasename}/pyioda/${pyname}"
+		RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/${pybasename}/pyioda/${pyname}"
 		INSTALL_RPATH "${CMAKE_INSTALL_FULL_LIBDIR}"
 		)
 
 	INSTALL(TARGETS ${libname}
 		EXPORT ioda_engines-targets
 		#RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} # See NSIS below
-		LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/${pybasename}/${pyname}
-		ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}/${pybasename}/${pyname}
+		LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/${pybasename}/pyioda/${pyname}
+		ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}/${pybasename}/pyioda/${pyname}
 		COMPONENT Libraries)
 	# NSIS bug. Have to do this twice.
 	if (WIN32 AND NOT CYGWIN)
 		if("SHARED" STREQUAL "${libshared}")
 			# Don't export this one for NSIS.
-			INSTALL(TARGETS ${libname} RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}/${pybasename}/${pyname})
+			INSTALL(TARGETS ${libname} RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}/${pybasename}/pyioda/${pyname})
 		endif()
 	endif()
 endmacro(AddPyLib)

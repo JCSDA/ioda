@@ -1,7 +1,7 @@
-import ioda._ioda_python as _iodapy
 import datetime as dt
 import numpy as np
 import os
+import ioda
 
 class ObsSpace:
 
@@ -47,28 +47,28 @@ class ObsSpace:
         # get type of variable
         try:
             attrType = self.NumpyToIodaDtype(attrVal)
-            if attrType == _iodapy.Types.float:
+            if attrType == ioda.Types.float:
                 if np.array(attrVal).size == 1:
                     self.obsgroup.atts.create(attrName, attrType,
                                      [1]).writeDatum.float(attrVal)
                 else:
                     self.obsgroup.atts.create(attrName, attrType,
                                      len(attrVal)).writeVector.float(attrVal)
-            elif attrType == _iodapy.Types.double:
+            elif attrType == ioda.Types.double:
                 if np.array(attrVal).size == 1:
                     self.obsgroup.atts.create(attrName, attrType,
                                      [1]).writeDatum.double(attrVal)
                 else:
                     self.obsgroup.atts.create(attrName, attrType,
                                      len(attrVal)).writeVector.double(attrVal)
-            elif attrType == _iodapy.Types.int64:
+            elif attrType == ioda.Types.int64:
                 if np.array(attrVal).size == 1:
                     self.obsgroup.atts.create(attrName, attrType,
                                      [1]).writeDatum.int64(attrVal)
                 else:
                     self.obsgroup.atts.create(attrName, attrType,
                                      len(attrVal)).writeVector.int64(attrVal)
-            elif attrType == _iodapy.Types.int32:
+            elif attrType == ioda.Types.int32:
                 if np.array(attrVal).size == 1:
                     self.obsgroup.atts.create(attrName, attrType,
                                      [1]).writeDatum.int32(attrVal)
@@ -78,45 +78,45 @@ class ObsSpace:
             # add other elif here TODO
         except AttributeError:  # if string
             if (type(attrVal) == str):
-                attrType = _iodapy.Types.str
+                attrType = ioda.Types.str
                 self.obsgroup.atts.create(
                     attrName, attrType, [1]).writeDatum.str(attrVal)
 
     def _read_obsgroup(self, path):
         # open the obs group for a specified file and return file and obsgroup objects
         if self.write:
-            iodamode = _iodapy.Engines.BackendOpenModes.Read_Write
+            iodamode = ioda.Engines.BackendOpenModes.Read_Write
         else:
-            iodamode = _iodapy.Engines.BackendOpenModes.Read_Only
-        g = _iodapy.Engines.HH.openFile(
+            iodamode = ioda.Engines.BackendOpenModes.Read_Only
+        g = ioda.Engines.HH.openFile(
                         name=path,
                         mode=iodamode,
                         )
-        dlp = _iodapy.DLP.DataLayoutPolicy.generate(
-                  _iodapy.DLP.DataLayoutPolicy.Policies(self.iodalayout))
-        og = _iodapy.ObsGroup(g, dlp)
+        dlp = ioda.DLP.DataLayoutPolicy.generate(
+                  ioda.DLP.DataLayoutPolicy.Policies(self.iodalayout))
+        og = ioda.ObsGroup(g, dlp)
         return g, og
 
     def _create_obsgroup(self, path, dim_dict):
         # open a new file for writing and return file and obsgroup objects
-        g = _iodapy.Engines.HH.createFile(
+        g = ioda.Engines.HH.createFile(
                         name=path,
-                        mode=_iodapy.Engines.BackendCreateModes.Truncate_If_Exists,
+                        mode=ioda.Engines.BackendCreateModes.Truncate_If_Exists,
                         )
         # create list of dims in obs group
         _dim_list = []
         for key, value in dim_dict.items():
             if key == 'nlocs':
-                _nlocs_var = _iodapy.NewDimensionScale.int32(
-                    'nlocs', value, _iodapy.Unlimited, value)
+                _nlocs_var = ioda.NewDimensionScale.int32(
+                    'nlocs', value, ioda.Unlimited, value)
                 _dim_list.append(_nlocs_var)
             else:
-                _dim_list.append(_iodapy.NewDimensionScale.int32(
+                _dim_list.append(ioda.NewDimensionScale.int32(
                 key, value, value, value))
         # create obs group
-        og = _iodapy.ObsGroup.generate(g, _dim_list)
+        og = ioda.ObsGroup.generate(g, _dim_list)
         # default compression option
-        self._p1 = _iodapy.VariableCreationParameters()
+        self._p1 = ioda.VariableCreationParameters()
         self._p1.compressWithGZIP()
         return g, og
 
@@ -132,7 +132,7 @@ class ObsSpace:
         fparams = self._p1 # default values
         # replace default fill value
         if fillval is not None:
-            _p1 = _iodapy.VariableCreationParameters()
+            _p1 = ioda.VariableCreationParameters()
             _p1.compressWithGZIP()
             _p1 = self.setFillValue(fparams, typeVar, fillval)
             fparams = _p1
@@ -143,15 +143,15 @@ class ObsSpace:
         # set fill value for input VariableCreationParameters,
         # datatype, and value and return a new VariableCreationParameters
         # object with the new fill value
-        if datatype == _iodapy.Types.float:
+        if datatype == ioda.Types.float:
             params.setFillValue.float(value)
-        elif datatype == _iodapy.Types.double:
+        elif datatype == ioda.Types.double:
             params.setFillValue.double(value)
-        elif datatype == _iodapy.Types.int64:
+        elif datatype == ioda.Types.int64:
             params.setFillValue.int64(value)
-        elif datatype == _iodapy.Types.int32:
+        elif datatype == ioda.Types.int32:
             params.setFillValue.int32(value)
-        elif datatype == _iodapy.Types.str:
+        elif datatype == ioda.Types.str:
             params.setFillValue.str(value)
         # add other elif here TODO
         return params
@@ -167,25 +167,25 @@ class ObsSpace:
         NumpyDtype = NumpyArr.dtype
 
         if (NumpyDtype == np.dtype('float64')):
-            IodaDtype = _iodapy.Types.double    # convert double to float
+            IodaDtype = ioda.Types.double    # convert double to float
         elif (NumpyDtype == np.dtype('float32')):
-            IodaDtype = _iodapy.Types.float
+            IodaDtype = ioda.Types.float
         elif (NumpyDtype == np.dtype('int64')):
-            IodaDtype = _iodapy.Types.int64    # convert long to int
+            IodaDtype = ioda.Types.int64    # convert long to int
         elif (NumpyDtype == np.dtype('int32')):
-            IodaDtype = _iodapy.Types.int32
+            IodaDtype = ioda.Types.int32
         elif (NumpyDtype == np.dtype('int16')):
-            IodaDtype = _iodapy.Types.int16
+            IodaDtype = ioda.Types.int16
         elif (NumpyDtype == np.dtype('int8')):
-            IodaDtype = _iodapy.Types.int16
+            IodaDtype = ioda.Types.int16
         elif (NumpyDtype == np.dtype('S1')):
-            IodaDtype = _iodapy.Types.str
+            IodaDtype = ioda.Types.str
         elif (NumpyDtype == np.dtype('object')):
-            IodaDtype = _iodapy.Types.str
+            IodaDtype = ioda.Types.str
         else:
             try:
                 a = str(NumpyArr[0])
-                IodaDtype = _iodapy.Types.str
+                IodaDtype = ioda.Types.str
             except TypeError:
                 print("ERROR: Unrecognized numpy data type: ", NumpyDtype)
                 exit(-2)
@@ -208,15 +208,15 @@ class ObsSpace:
 
         def write_data(self, npArray):
             datatype = self.obsspace.NumpyToIodaDtype(npArray)
-            if datatype == _iodapy.Types.float:
+            if datatype == ioda.Types.float:
                 self._iodavar.writeNPArray.float(npArray)
-            elif datatype == _iodapy.Types.double:
+            elif datatype == ioda.Types.double:
                 self._iodavar.writeNPArray.double(npArray)
-            elif datatype == _iodapy.Types.int64:
+            elif datatype == ioda.Types.int64:
                 self._iodavar.writeNPArray.int64(npArray)
-            elif datatype == _iodapy.Types.int32:
+            elif datatype == ioda.Types.int32:
                 self._iodavar.writeNPArray.int32(npArray)
-            elif datatype == _iodapy.Types.str:
+            elif datatype == ioda.Types.str:
                 self._iodavar.writeVector.str(npArray)
             # add other elif here TODO
 
@@ -224,28 +224,28 @@ class ObsSpace:
             # get type of variable
             try:
                 attrType = self.obsspace.NumpyToIodaDtype(attrVal)
-                if attrType == _iodapy.Types.float:
+                if attrType == ioda.Types.float:
                     if len(attrVal) == 1:
                         self._iodavar.atts.create(attrName, attrType,
                                          [1]).writeDatum.float(attrVal)
                     else:
                         self._iodavar.atts.create(attrName, attrType,
                                          len(attrVal)).writeVector.float(attrVal)
-                elif attrType == _iodapy.Types.double:
+                elif attrType == ioda.Types.double:
                     if len(attrVal) == 1:
                         self._iodavar.atts.create(attrName, attrType,
                                          [1]).writeDatum.double(attrVal)
                     else:
                         self._iodavar.atts.create(attrName, attrType,
                                          len(attrVal)).writeVector.double(attrVal)
-                elif attrType == _iodapy.Types.int64:
+                elif attrType == ioda.Types.int64:
                     if len(attrVal) == 1:
                         self._iodavar.atts.create(attrName, attrType,
                                          [1]).writeDatum.int64(attrVal)
                     else:
                         self._iodavar.atts.create(attrName, attrType,
                                          len(attrVal)).writeVector.int64(attrVal)
-                elif attrType == _iodapy.Types.int32:
+                elif attrType == ioda.Types.int32:
                     if len(attrVal) == 1:
                         self._iodavar.atts.create(attrName, attrType,
                                          [1]).writeDatum.int32(attrVal)
@@ -255,7 +255,7 @@ class ObsSpace:
                 # add other elif here TODO
             except AttributeError:  # if string
                 if (type(attrVal) == str):
-                    attrType = _iodapy.Types.str
+                    attrType = ioda.Types.str
                     self._iodavar.atts.create(
                         attrName, attrType, [1]).writeDatum.str(attrVal)
 
@@ -264,14 +264,14 @@ class ObsSpace:
               returns numpy array/python list of variable data
             """
             # figure out what datatype the variable is
-            if self._iodavar.isA2(_iodapy.Types.float):
+            if self._iodavar.isA2(ioda.Types.float):
                 # float
                 data = self._iodavar.readNPArray.float()
                 data[np.abs(data) > 9e36] = np.nan # undefined values
-            elif self._iodavar.isA2(_iodapy.Types.int):
+            elif self._iodavar.isA2(ioda.Types.int):
                 # integer
                 data = self._iodavar.readNPArray.int()
-            elif self._iodavar.isA2(_iodapy.Types.str):
+            elif self._iodavar.isA2(ioda.Types.str):
                 # string
                 data = self._iodavar.readVector.str() # ioda cannot read str to datetime...
                 # convert to datetimes if applicable
