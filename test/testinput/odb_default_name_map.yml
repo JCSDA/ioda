@@ -858,6 +858,8 @@ ioda:
       source: "244"
     - name: "ObsValue/liquid_water_pressure_retrieved"
       source: "246"
+    - name: "ObsValue/cloud_clear_fraction"
+      source: "247"
     - name: "ObsValue/brightness_temperature"
       source: "248"
     - name: "ObsValue/brightness_temperature_amsu"
