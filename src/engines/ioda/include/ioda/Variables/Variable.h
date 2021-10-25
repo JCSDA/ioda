@@ -445,7 +445,6 @@ public:
                                const Selection& file_selection = Selection::all) const {
     try {
       const size_t numObjects = data.size();
-      Dimensions_t ne         = getDimensions().numElements;
 
       detail::PointerOwner pointerOwner = getTypeProvider()->getReturnedPointerOwner();
       Marshaller m(pointerOwner);

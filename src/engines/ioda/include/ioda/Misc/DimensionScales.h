@@ -82,8 +82,8 @@ struct IODA_DL NewDimensionScale_Base : std::enable_shared_from_this<NewDimensio
   NewDimensionScale_Base(const std::string& name, const Type& dataType,
                          Dimensions_t size, Dimensions_t maxSize, Dimensions_t chunkingSize)
       : name_(name),
-        dataTypeKnown_(dataType),
         dataType_(typeid(void)),
+        dataTypeKnown_(dataType),
         size_(size),
         maxSize_(maxSize),
         chunkingSize_(chunkingSize) {}
