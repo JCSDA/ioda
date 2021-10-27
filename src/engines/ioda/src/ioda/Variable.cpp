@@ -82,28 +82,67 @@ BasicTypes Variable_Base<>::getBasicType() const {
 }
 
 template <>
-VariableCreationParameters Variable_Base<>::getCreationParameters(bool doAtts, bool doDims) const {
-  try {
-    if (backend_ == nullptr)
-      throw Exception("Missing backend or unimplemented backend function.", ioda_Here());
-    return backend_->getCreationParameters(doAtts, doDims);
-  } catch (...) {
-    std::throw_with_nested(Exception(
-      "An exception occurred inside ioda while getting creation-time metadata of a variable.",
-      ioda_Here()));
-  }
-}
-
-template <>
 bool Variable_Base<>::hasFillValue() const {
   try {
     if (backend_ == nullptr)
       throw Exception("Missing backend or unimplemented backend function.", ioda_Here());
-    return backend_->hasFillValue();
+    // In the case of the HH backend, calling the backend hasFillValue() routine will
+    // consider only the hdf5 fill value property. We want to also consider the existence
+    // of the netcdf _FillValue attribute.
+    return (backend_->hasFillValue() || atts.exists("_FillValue"));
   } catch (...) {
     std::throw_with_nested(Exception(
       "An exception occurred inside ioda while determining if a variable has a fill value.",
       ioda_Here()));
+  }
+}
+
+template<>
+Variable_Base<>::FillValueData_t Variable_Base<>::getNcFillValue() const {
+  Variable_Base<>::FillValueData_t res;
+  res.set_ = false;
+  if (atts.exists("_FillValue")) {
+    Attribute fvAttr = atts.open("_FillValue");
+
+    // The runForVarType function will pass in an expression matching
+    // the variable data type through the parameter typeDiscriminator.
+    // runForVarType() supports more data types than are supported by
+    // netcdf fill values, but it is expected to only enter this function
+    // for the set of netcdf fill value types.
+    runForVarType(
+        [&](auto typeDiscriminator) {
+           typedef decltype(typeDiscriminator) VarType;
+           VarType fillVal;
+           fvAttr.read<VarType>(fillVal);
+           assignFillValue<VarType>(res, fillVal);
+        });
+  }
+  return res;
+}
+
+template <>
+void Variable_Base<>::checkWarnFillValue(FillValueData_t & hdfFill,
+                                         FillValueData_t & ncFill) const {
+  if (hdfFill.set_ && ncFill.set_) {
+    // The runForVarType function will pass in an expression matching
+    // the variable data type through the parameter typeDiscriminator.
+    // runForVarType() supports more data types than are supported by
+    // netcdf fill values, but it is expected to only enter this function
+    // for the set of netcdf fill value types.
+    runForVarType(
+        [&](auto typeDiscriminator) {
+           typedef decltype(typeDiscriminator) FillType;
+           FillType hdfFillValue = ioda::detail::getFillValue<FillType>(hdfFill);
+           FillType ncFillValue = ioda::detail::getFillValue<FillType>(ncFill);
+           if (hdfFillValue != ncFillValue) {
+             std::cout << "WARNING: ioda::Variable: hdf and netcdf fill value specifications "
+                       << "do not match." << std::endl
+                       << "    hdf fill value property: " << hdfFillValue << std::endl
+                       << "    netcdf _FillValue attribute: " << ncFillValue << std::endl
+                       << "WARNING: selecting the netcdf _FillValue attribute value: "
+                       << ncFillValue << std::endl;
+           }
+        });
   }
 }
 
@@ -112,10 +151,42 @@ Variable_Base<>::FillValueData_t Variable_Base<>::getFillValue() const {
   try {
     if (backend_ == nullptr)
       throw Exception("Missing backend or unimplemented backend function.", ioda_Here());
-    return backend_->getFillValue();
+    // Need to check both the hdf5 fill value property and the netcdf _FillValue var
+    // attribute. The precedence is given to the netcdf _FillValue property.
+    // Issue a warning if you received fill values from both the property and attribute
+    // and those two values don't match.
+    Variable_Base<>::FillValueData_t res = backend_->getFillValue();
+    Variable_Base<>::FillValueData_t ncRes = getNcFillValue();
+    checkWarnFillValue(res, ncRes);
+
+    // The netcdf fill value takes precendence
+    if (ncRes.set_) {
+      res = ncRes;
+    }
+    
+    return res;
   } catch (...) {
     std::throw_with_nested(Exception(
       "An exception occurred inside ioda while reading a variable's fill value.", ioda_Here()));
+  }
+}
+
+template <>
+VariableCreationParameters Variable_Base<>::getCreationParameters(bool doAtts, bool doDims) const {
+  try {
+    if (backend_ == nullptr)
+      throw Exception("Missing backend or unimplemented backend function.", ioda_Here());
+    // If the backend is HH, then it's possible that the hdf5 fill value property is
+    // not set (which results in using the netcdf defalut fill value) and we want to check
+    // if the netcdf _FillValue variable attribute is being used and if so have that value
+    // take precedence. This can be done by calling this object's getFillValue function.
+    VariableCreationParameters res = backend_->getCreationParameters(doAtts, doDims);
+    res.fillValue_ = getFillValue();
+    return res;
+  } catch (...) {
+    std::throw_with_nested(Exception(
+      "An exception occurred inside ioda while getting creation-time metadata of a variable.",
+      ioda_Here()));
   }
 }
 

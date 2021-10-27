@@ -39,6 +39,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsspace_fortran.yml
   testinput/iodatest_obsspace_put_db_channels.yml
   testinput/iodatest_obsspace_zero_obs.yml
+  testinput/iodatest_obsspace_fill_value.yml
   testinput/iodatest_obsvector.yml
   testinput/iodatest_obsvector_packeigen.yml
   testinput/iodatest_obsvector_pio_observer.yml
@@ -440,6 +441,12 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_zero_obs
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
+ecbuild_add_test( TARGET  test_ioda_obsspace_fill_value
+                  COMMAND test_ioda_obsspace
+                  ARGS    "testinput/iodatest_obsspace_fill_value.yml"
+                  LIBS  ioda_test
+                  TEST_DEPENDS get_ioda_test_data )
+
 ecbuild_add_test( TARGET  test_ioda_obsspace_out_dims_check
                   TYPE    SCRIPT
                   COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
@@ -667,11 +674,21 @@ ecbuild_add_test( TARGET  test_ioda_upgrader_gnssro
                           upgrader_gnssro.nc4
                   TEST_DEPENDS get_ioda_test_data )
 
+ecbuild_add_test( TARGET  test_ioda_upgrader_met_office_gpsro
+                  TYPE    SCRIPT
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                  ARGS    hdf5
+                          "${CMAKE_BINARY_DIR}/bin/ioda-upgrade.x
+                          Data/testinput_tier_1/upgrader_met_office_gpsro.nc4
+                          testoutput/upgrader_met_office_gpsro.nc4"
+                          upgrader_met_office_gpsro.nc4
+                  TEST_DEPENDS get_ioda_test_data )
+
 ecbuild_add_test( TARGET  test_ioda_upgrader_amsua_n19_nc_compat
                   TYPE    SCRIPT
                   COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
                   ARGS    netcdf
-                          "echo INFO: amsua_n19 netcdf compatibilty check"
+                          "echo INFO: amsua_n19 netcdf compatibility check"
                           upgrader_amsua_n19.nc4
                   TEST_DEPENDS get_ioda_test_data test_ioda_upgrader_amsua_n19 )
 
@@ -679,7 +696,7 @@ ecbuild_add_test( TARGET  test_ioda_upgrader_gmi_gpm_nc_compat
                   TYPE    SCRIPT
                   COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
                   ARGS    netcdf
-                          "echo INFO: gmi_gpm netcdf compatibilty check"
+                          "echo INFO: gmi_gpm netcdf compatibility check"
                           upgrader_gmi_gpm.nc4
                   TEST_DEPENDS get_ioda_test_data test_ioda_upgrader_gmi_gpm )
 
@@ -687,7 +704,7 @@ ecbuild_add_test( TARGET  test_ioda_upgrader_mhs_metop-b_nc_compat
                   TYPE    SCRIPT
                   COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
                   ARGS    netcdf
-                          "echo INFO: mhs_metop-b netcdf compatibilty check"
+                          "echo INFO: mhs_metop-b netcdf compatibility check"
                           upgrader_mhs_metop-b.nc4
                   TEST_DEPENDS get_ioda_test_data test_ioda_upgrader_mhs_metop-b )
 
@@ -695,7 +712,7 @@ ecbuild_add_test( TARGET  test_ioda_upgrader_sondes_nc_compat
                   TYPE    SCRIPT
                   COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
                   ARGS    netcdf
-                          "echo INFO: sondes netcdf compatibilty check"
+                          "echo INFO: sondes netcdf compatibility check"
                           upgrader_sondes.nc4
                   TEST_DEPENDS get_ioda_test_data test_ioda_upgrader_sondes )
 
@@ -703,7 +720,7 @@ ecbuild_add_test( TARGET  test_ioda_upgrader_aod_nc_compat
                   TYPE    SCRIPT
                   COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
                   ARGS    netcdf
-                          "echo INFO: aod netcdf compatibilty check"
+                          "echo INFO: aod netcdf compatibility check"
                           upgrader_aod.nc4
                   TEST_DEPENDS get_ioda_test_data test_ioda_upgrader_aod )
 
@@ -711,9 +728,17 @@ ecbuild_add_test( TARGET  test_ioda_upgrader_gnssro_nc_compat
                   TYPE    SCRIPT
                   COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
                   ARGS    netcdf
-                          "echo INFO: gnssro netcdf compatibilty check"
+                          "echo INFO: gnssro netcdf compatibility check"
                           upgrader_gnssro.nc4
                   TEST_DEPENDS get_ioda_test_data test_ioda_upgrader_gnssro )
+
+ecbuild_add_test( TARGET  test_ioda_upgrader_met_office_gpsro_nc_compat
+                  TYPE    SCRIPT
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                  ARGS    netcdf
+                          "echo INFO: met_office_gpsro netcdf compatibility check"
+                          upgrader_met_office_gpsro.nc4
+                  TEST_DEPENDS get_ioda_test_data test_ioda_upgrader_met_office_gpsro )
 
 if (odc_FOUND)
   ecbuild_add_test( TARGET  test_ioda-convert_aircraft_odc

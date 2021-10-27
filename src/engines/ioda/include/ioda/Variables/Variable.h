@@ -649,6 +649,91 @@ public:
   virtual Selections::SelectionBackend_t instantiateSelection(const Selection& sel) const;
 
   /// @}
+
+private:
+  /// \brief get the fill value from the netcdf specification (_FillValue attribute)
+  FillValueData_t getNcFillValue() const;
+
+  /// \brief check if fill data objects match, print warning if they don't match
+  /// \param hdfFill fill value obtained from the hdf fill value property
+  /// \param ncFill fill value obtained from the netcdf fill value attribute
+  void checkWarnFillValue(FillValueData_t & hdfFill, FillValueData_t & ncFill) const;
+
+  /// \brief run an action according to the current variable data type
+  /// \details this function will call the function passed to it through the action
+  /// parameter, giving this action a typed entity that can be identified by decltype.
+  /// At this point, all of the types supported by Variable_Base::getBasicType() except
+  /// for bool are handled in this function.
+  /// \param action Function object callable with a single argument which is identifiable
+  /// by decltype
+  // TODO(srh) Additional development is required to properly handle the bool data type.
+  template <typename Action>
+  auto runForVarType(const Action & action) const {
+    if (isA<int>()) {
+      int typeMe;
+      return action(typeMe);
+    } else if (isA<unsigned int>()) {
+      unsigned int typeMe;
+      return action(typeMe);
+    } else if (isA<float>()) {
+      float typeMe;
+      return action(typeMe);
+    } else if (isA<double>()) {
+      double typeMe;
+      return action(typeMe);
+    } else if (isA<std::string>()) {
+      std::string typeMe;
+      return action(typeMe);
+    } else if (isA<long>()) {
+      long typeMe;
+      return action(typeMe);
+    } else if (isA<unsigned long>()) {
+      unsigned long typeMe;
+      return action(typeMe);
+    } else if (isA<short>()) {
+      short typeMe;
+      return action(typeMe);
+    } else if (isA<unsigned short>()) {
+      unsigned short typeMe;
+      return action(typeMe);
+    } else if (isA<long long>()) {
+      long long typeMe;
+      return action(typeMe);
+    } else if (isA<unsigned long long>()) {
+      unsigned long long typeMe;
+      return action(typeMe);
+    } else if (isA<int32_t>()) {
+      int32_t typeMe;
+      return action(typeMe);
+    } else if (isA<uint32_t>()) {
+      uint32_t typeMe;
+      return action(typeMe);
+    } else if (isA<int16_t>()) {
+      int16_t typeMe;
+      return action(typeMe);
+    } else if (isA<uint16_t>()) {
+      uint16_t typeMe;
+      return action(typeMe);
+    } else if (isA<int64_t>()) {
+      int64_t typeMe;
+      return action(typeMe);
+    } else if (isA<uint64_t>()) {
+      uint64_t typeMe;
+      return action(typeMe);
+    } else if (isA<long double>()) {
+      long double typeMe;
+      return action(typeMe);
+    } else if (isA<char>()) {
+      char typeMe;
+      return action(typeMe);
+    } else if (isA<unsigned char>()) {
+      unsigned char typeMe;
+      return action(typeMe);
+    } else {
+      std::throw_with_nested(Exception("Unsupported variable data type", ioda_Here()));
+    }
+  }
+
 };
 // extern template class Variable_Base<Variable>;
 }  // namespace detail
