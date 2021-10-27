@@ -235,28 +235,28 @@ class ObsSpace:
             try:
                 attrType = self.obsspace.NumpyToIodaDtype(attrVal)
                 if attrType == ioda.Types.float:
-                    if len(attrVal) == 1:
+                    if np.array(attrVal).size == 1:
                         self._iodavar.atts.create(attrName, attrType,
                                          [1]).writeDatum.float(attrVal)
                     else:
                         self._iodavar.atts.create(attrName, attrType,
                                          len(attrVal)).writeVector.float(attrVal)
                 elif attrType == ioda.Types.double:
-                    if len(attrVal) == 1:
+                    if np.array(attrVal).size == 1:
                         self._iodavar.atts.create(attrName, attrType,
                                          [1]).writeDatum.double(attrVal)
                     else:
                         self._iodavar.atts.create(attrName, attrType,
                                          len(attrVal)).writeVector.double(attrVal)
                 elif attrType == ioda.Types.int64:
-                    if len(attrVal) == 1:
+                    if np.array(attrVal).size == 1:
                         self._iodavar.atts.create(attrName, attrType,
                                          [1]).writeDatum.int64(attrVal)
                     else:
                         self._iodavar.atts.create(attrName, attrType,
                                          len(attrVal)).writeVector.int64(attrVal)
                 elif attrType == ioda.Types.int32:
-                    if len(attrVal) == 1:
+                    if np.array(attrVal).size == 1:
                         self._iodavar.atts.create(attrName, attrType,
                                          [1]).writeDatum.int32(attrVal)
                     else:
