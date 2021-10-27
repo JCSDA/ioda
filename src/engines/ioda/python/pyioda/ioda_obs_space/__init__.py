@@ -31,6 +31,11 @@ class ObsSpace:
         else:
             if dim_dict is not None:
                 self.file, self.obsgroup = self._create_obsgroup(self.iodafile, dim_dict)
+                # insert dimension values if necessary
+                for key, value in dim_dict.items():
+                    if isinstance(value, (list, np.ndarray)):
+                        _tmpvar = self.obsgroup.vars.open(key)
+                        _tmpvar.writeNPArray.int32(value)
             else:
                 raise TypeError("dim_dict is not defined")
 
@@ -106,13 +111,18 @@ class ObsSpace:
         # create list of dims in obs group
         _dim_list = []
         for key, value in dim_dict.items():
+            # figure out size of dimension
+            if isinstance(value, (list, np.ndarray)):
+                dimlen = len(value)
+            else:
+                dimlen = int(value)
             if key == 'nlocs':
                 _nlocs_var = ioda.NewDimensionScale.int32(
-                    'nlocs', value, ioda.Unlimited, value)
+                    'nlocs', dimlen, ioda.Unlimited, dimlen)
                 _dim_list.append(_nlocs_var)
             else:
                 _dim_list.append(ioda.NewDimensionScale.int32(
-                key, value, value, value))
+                key, dimlen, dimlen, dimlen))
         # create obs group
         og = ioda.ObsGroup.generate(g, _dim_list)
         # default compression option
