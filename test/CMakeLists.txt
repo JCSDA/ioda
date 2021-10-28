@@ -458,15 +458,12 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_out_dims_check
 
 
 # IODA ObsSpace class - Fortran interface test
-if( HAVE_FCTEST )
 add_fctest( TARGET  test_ioda_obsspace_fortran
             SOURCES ioda/obsspace.F90
             ARGS    --config testinput/iodatest_obsspace_fortran.yml
-            CONDITION HAVE_FCTEST
             LINKER_LANGUAGE Fortran
             LIBS  ioda_test
             TEST_DEPENDS get_ioda_test_data )
-endif()
 
 # IODA ObsSpace sorting of obs groups
 ecbuild_add_test( TARGET  test_ioda_descendingsort

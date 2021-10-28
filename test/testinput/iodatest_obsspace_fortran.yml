@@ -19,5 +19,5 @@ observations:
       obsfile: Data/testinput_tier_1/amsua_n19_obs_2018041500_m.nc4
   test data:
     nlocs: 100
-    nvars: 15
+    nvars: 1
     nvars obsvars: 11

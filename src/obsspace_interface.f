@@ -203,6 +203,19 @@ subroutine c_obsspace_get_datetime(obss, group, vname, length, date, time, len_c
   integer(c_int), intent(in) :: chan_select(len_cs)
 end subroutine c_obsspace_get_datetime
 
+subroutine c_obsspace_get_bool(obss, group, vname, length, vect, len_cs, chan_select) &
+              & bind(C,name='obsspace_get_bool_f')
+  use, intrinsic :: iso_c_binding, only : c_ptr,c_char,c_int,c_size_t,c_bool
+  implicit none
+  type(c_ptr), value :: obss
+  character(kind=c_char, len=1), intent(in) :: group(*)
+  character(kind=c_char, len=1), intent(in) :: vname(*)
+  integer(c_size_t), intent(in) :: length
+  logical(c_bool), intent(inout) :: vect(length)
+  integer(c_size_t), intent(in) :: len_cs
+  integer(c_int), intent(in) :: chan_select(len_cs)
+end subroutine c_obsspace_get_bool
+
 !-------------------------------------------------------------------------------
 ! store data in ObsSpace
 
@@ -257,6 +270,19 @@ subroutine c_obsspace_put_real64(obss, group, vname, length, vect, ndims, dim_id
   integer(c_size_t), intent(in) :: ndims
   integer(c_int), intent(in) :: dim_ids(ndims)
 end subroutine c_obsspace_put_real64
+
+subroutine c_obsspace_put_bool(obss, group, vname, length, vect, ndims, dim_ids) &
+              & bind(C,name='obsspace_put_bool_f')
+  use, intrinsic :: iso_c_binding, only : c_ptr,c_char,c_size_t,c_int,c_bool
+  implicit none
+  type(c_ptr), value :: obss
+  character(kind=c_char, len=1), intent(in) :: group(*)
+  character(kind=c_char, len=1), intent(in) :: vname(*)
+  integer(c_size_t), intent(in) :: length
+  logical(c_bool), intent(in) :: vect(length)
+  integer(c_size_t), intent(in) :: ndims
+  integer(c_int), intent(in) :: dim_ids(ndims)
+end subroutine c_obsspace_put_bool
 
 !-------------------------------------------------------------------------------
 
