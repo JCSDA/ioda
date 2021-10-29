@@ -1,6 +1,7 @@
 where:
   varno: [12]
 variables:
+- name: initial_obsvalue
 - name: receipt_date
 - name: receipt_time
 - name: statid

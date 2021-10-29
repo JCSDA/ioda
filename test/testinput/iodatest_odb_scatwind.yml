@@ -2,6 +2,7 @@ where:
   varno: [111,112]
 variables:
 - name: cellno
+- name: initial_obsvalue
 - name: invresid_1
 - name: invresid_2
 - name: invresid_3

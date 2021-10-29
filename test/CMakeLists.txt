@@ -3,9 +3,62 @@
 # This software is licensed under the terms of the Apache Licence Version 2.0
 # which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
 
+# Includes
 include( git_functions )
 
-# Create Data directory for test input config and symlink all files
+# Function definitions
+
+if (odc_FOUND)
+  set(ODC_TOOL_PATH "${odc_BASE_DIR}/bin/odc")
+
+  if (NOT ${Python3_FOUND})
+    message(WARNING "Python3 executable not found. Some ODC tests will be disabled.")
+  endif()
+
+  function( add_test_checking_odb_to_netcdf_conversion_results_against_odb_sql_queries )
+    set( options )
+    set( single_value_args TEST_NAME )
+    set( multi_value_args  ODB_FILE )
+
+    cmake_parse_arguments( _PAR "${options}" "${single_value_args}" "${multi_value_args}"
+                           ${_FIRST_ARG} ${ARGN} )
+    if(_PAR_UNPARSED_ARGUMENTS)
+      ecbuild_critical("Unknown keywords given to add_test_comparing_netcdf_variables_with_odb_sql_queries(): \"${_PAR_UNPARSED_ARGUMENTS}\"")
+    endif()
+
+    if (${Python3_FOUND})
+      ecbuild_add_test( TARGET  test_ioda-convert_${_PAR_TEST_NAME}_odc
+                        COMMAND ${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
+                        ARGS    convert_${_PAR_TEST_NAME}
+                                Data/testinput_tier_1/${_PAR_ODB_FILE}
+                                testinput/iodatest_odb_convert_${_PAR_TEST_NAME}_name_map.yml
+                                testinput/iodatest_odb_convert_${_PAR_TEST_NAME}_query.yml
+                        TEST_DEPENDS get_ioda_test_data )
+      set_tests_properties( test_ioda-convert_${_PAR_TEST_NAME}_odc
+                            PROPERTIES FIXTURES_SETUP ioda-convert_${_PAR_TEST_NAME}_odc )
+      ecbuild_add_test( TARGET  test_ioda-convert_${_PAR_TEST_NAME}_odc_compare
+                        COMMAND ${Python3_EXECUTABLE}
+                        ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare_odc_with_netcdf.py
+                                --odc ${ODC_TOOL_PATH}
+                                testinput/iodatest_odb_convert_${_PAR_TEST_NAME}_comparison.conf
+                                Data/testinput_tier_1/${_PAR_ODB_FILE}
+                                testoutput/test-convert_${_PAR_TEST_NAME}.hdf
+                        TEST_DEPENDS get_ioda_test_data )
+      set_tests_properties( test_ioda-convert_${_PAR_TEST_NAME}_odc_compare
+                            PROPERTIES FIXTURES_REQUIRED ioda-convert_${_PAR_TEST_NAME}_odc )
+    endif()
+
+    list( APPEND ioda_test_input
+      testinput/iodatest_odb_convert_${_PAR_TEST_NAME}_name_map.yml
+      testinput/iodatest_odb_convert_${_PAR_TEST_NAME}_query.yml
+      testinput/iodatest_odb_convert_${_PAR_TEST_NAME}_comparison.conf )
+    set( ioda_test_input ${ioda_test_input} PARENT_SCOPE )
+  endfunction()
+endif()
+
+# The list of all test input config files, which need to be symlinked from the build folder.
+# (These symlinks are created at the end of this file, to give CMake functions setting up certain
+# tests a chance to append items to this list).
 list( APPEND ioda_test_input
   testinput/iodatest.yml
   testinput/iodatest_fileformat.yml
@@ -87,22 +140,6 @@ list( APPEND ioda_test_input
   testinput/odb_sonde_name_map.yml
   testinput/iodatest_time_io.yml
 )
-
-# Set up test input files (YAML configuration)
-file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/testinput)
-
-foreach(FILENAME ${ioda_test_input})
-    execute_process( COMMAND ${CMAKE_COMMAND} -E create_symlink
-           ${CMAKE_CURRENT_SOURCE_DIR}/${FILENAME}
-           ${CMAKE_CURRENT_BINARY_DIR}/${FILENAME} )
-endforeach()
-
-# Set up test output directory
-file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/testoutput)
-
-# Add files to cmake resources
-ecbuild_add_resources( TARGET ioda_test_scripts
-                       SOURCES_PACK ${ioda_test_input} )
 
 # Create Data directory for test data and symlink files
 # Set list of test file tar balls
@@ -1122,6 +1159,30 @@ if (odc_FOUND)
                             testinput/odb_default_name_map.yml testinput/iodatest_odb_oceansound.yml"
                             test-OceanSound.hdf
                     TEST_DEPENDS get_ioda_test_data )
+
+  add_test_checking_odb_to_netcdf_conversion_results_against_odb_sql_queries(
+    TEST_NAME varno_independent_column
+    ODB_FILE  sonde.odb )
+
+  add_test_checking_odb_to_netcdf_conversion_results_against_odb_sql_queries(
+    TEST_NAME varno_dependent_column
+    ODB_FILE  sonde.odb )
+
+  add_test_checking_odb_to_netcdf_conversion_results_against_odb_sql_queries(
+    TEST_NAME varno_independent_bitfield_column
+    ODB_FILE  sonde.odb )
+
+  add_test_checking_odb_to_netcdf_conversion_results_against_odb_sql_queries(
+    TEST_NAME varno_dependent_bitfield_column
+    ODB_FILE  sonde.odb )
+
+  add_test_checking_odb_to_netcdf_conversion_results_against_odb_sql_queries(
+    TEST_NAME varno_independent_bitfield_column_members
+    ODB_FILE  sonde.odb )
+
+  add_test_checking_odb_to_netcdf_conversion_results_against_odb_sql_queries(
+    TEST_NAME varno_dependent_bitfield_column_members
+    ODB_FILE  sonde.odb )
 endif()
 
 #####################################################################
@@ -1137,3 +1198,23 @@ ecbuild_add_test( TARGET  test_ioda_fileformat
                   SOURCES mains/TestIodaFileFormat.cc
                   ARGS    "testinput/iodatest_fileformat.yml"
                   LIBS    ioda_test )
+
+#####################################################################
+# Set up the testinput and testoutput directories
+#####################################################################
+
+# Create symlinks to input YAML configuration files
+file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/testinput)
+
+foreach(FILENAME ${ioda_test_input})
+    execute_process( COMMAND ${CMAKE_COMMAND} -E create_symlink
+           ${CMAKE_CURRENT_SOURCE_DIR}/${FILENAME}
+           ${CMAKE_CURRENT_BINARY_DIR}/${FILENAME} )
+endforeach()
+
+# Set up test output directory
+file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/testoutput)
+
+# Add files to cmake resources
+ecbuild_add_resources( TARGET ioda_test_scripts
+                       SOURCES_PACK ${ioda_test_input} )

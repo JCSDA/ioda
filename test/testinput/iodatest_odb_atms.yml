@@ -5,6 +5,7 @@ variables:
 - name: aapp_cirrus_index
 - name: amsuscatindex
 - name: azimuth
+- name: initial_obsvalue
 - name: land_sea
 - name: level_1b_creation_centre
 - name: level_1b_creation_subcentre

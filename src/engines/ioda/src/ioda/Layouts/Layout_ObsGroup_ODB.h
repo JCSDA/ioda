@@ -16,6 +16,10 @@
 #include "ioda/Layout.h"
 #include "ioda/defs.h"
 
+namespace boost {
+template <class T> class optional;
+}
+
 namespace eckit {
 class LocalConfiguration;
 }
@@ -25,18 +29,17 @@ namespace detail {
 
 class ODBLayoutParameters;
 
-struct variableStorageInformation {
-  std::string iodaName;
-  std::pair<bool,std::string> inputUnit;
-};
-
 /// Layout for ObsGroup-like data.
 class IODA_DL DataLayoutPolicy_ObsGroup_ODB : public DataLayoutPolicy {
+  struct variableStorageInformation {
+    std::string iodaName;
+    std::pair<bool,std::string> inputUnit;
+  };
+
   /// \brief Record versioning information for this layout in the ioda object. Provides forward compatability.
   const int32_t ObsGroup_ODB_Layout_Version = 0;
   /// \brief Mapping with ODB equivalents as keys and IODA naming/unit pairs as values
   std::unordered_map<std::string, variableStorageInformation> Mapping;
-  std::shared_ptr<ODBLayoutParameters> mappingParams_;
   /// \brief Metadata for generating a variable in IODA from multiple component variables (same across components).
   struct ComplementaryVariableOutputMetadata {
     std::string outputName;
@@ -68,8 +71,12 @@ class IODA_DL DataLayoutPolicy_ObsGroup_ODB : public DataLayoutPolicy {
  private:
   void parseMappingFile(const std::string &);
   void addUnchangedVariableName(const std::string &);
-  void parseNameChanges();
-  void parseComponentVariables();
+  void addMapping(const std::string &inputName,
+                  const std::string &outputName,
+                  const boost::optional<std::string> &unit);
+  void parseNameChanges(const ODBLayoutParameters &params);
+  void parseComponentVariables(const ODBLayoutParameters &params);
+  void parseVarnoDependentColumns(const ODBLayoutParameters &params);
   DataLayoutPolicy::MergeMethod parseMergeMethod(const std::string &);
 };
 

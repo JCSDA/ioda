@@ -5,6 +5,7 @@ variables:
 - name: initial_level_lat
 - name: initial_level_lon
 - name: initial_level_time
+- name: initial_obsvalue
 - name: initial_vertco_reference
 - name: instrument_type
 - name: level
@@ -26,4 +27,4 @@ variables:
 - name: winpro_flags_usa
 - name: wmo_block_number
 - name: wmo_station_number
-ignored names: [initial_obsvalue,date,time,receipt_date,receipt_time,seqno,varno,vertco_type,entryno,ops_obsgroup]
+ignored names: [date,time,receipt_date,receipt_time,seqno,varno,vertco_type,entryno,ops_obsgroup]

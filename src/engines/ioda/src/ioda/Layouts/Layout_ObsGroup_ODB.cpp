@@ -43,7 +43,6 @@ DataLayoutPolicy_ObsGroup_ODB::~DataLayoutPolicy_ObsGroup_ODB(){}
 
 DataLayoutPolicy_ObsGroup_ODB::DataLayoutPolicy_ObsGroup_ODB(
     const std::string &fileMappingName, const std::vector<std::string> &nonODBVariables)
-  : mappingParams_(new ODBLayoutParameters())
 {
   parseMappingFile(fileMappingName);
   for (auto const &str : nonODBVariables) {
@@ -62,22 +61,17 @@ DataLayoutPolicy::MergeMethod DataLayoutPolicy_ObsGroup_ODB::parseMergeMethod(
 void DataLayoutPolicy_ObsGroup_ODB::parseMappingFile(const std::string &nameMapFile) {
   eckit::PathName yamlPath = nameMapFile;
   eckit::YAMLConfiguration conf(yamlPath);
-  eckit::LocalConfiguration ioda(conf, "ioda");
-  mappingParams_->validateAndDeserialize(ioda);
-  if (mappingParams_->variables.value() != boost::none)
-    parseNameChanges();
-  if (mappingParams_->complementaryVariables.value() != boost::none)
-    parseComponentVariables();
+  ODBLayoutParameters mappingParams;
+  mappingParams.validateAndDeserialize(conf);
+  parseNameChanges(mappingParams);
+  parseComponentVariables(mappingParams);
+  parseVarnoDependentColumns(mappingParams);
 }
 
-void DataLayoutPolicy_ObsGroup_ODB::parseNameChanges()
+void DataLayoutPolicy_ObsGroup_ODB::parseNameChanges(const ODBLayoutParameters &params)
 {
-  for (VariableParameters const& variable : *(mappingParams_->variables.value())) {
-    if (variable.unit.value())
-      Mapping[variable.source] = {variable.name, {true, *(variable.unit.value())}};
-    else
-      Mapping[variable.source] = {variable.name, {false, ""}};
-    //Mapping[variable.source] = {variable.name, variable.unit};
+  for (VariableParameters const& variable : params.variables.value()) {
+    addMapping(variable.source, variable.name, variable.unit);
   }
 }
 
@@ -90,10 +84,18 @@ void DataLayoutPolicy_ObsGroup_ODB::addUnchangedVariableName(const std::string &
   Mapping[str] = {str, {false, ""}};
 }
 
-void DataLayoutPolicy_ObsGroup_ODB::parseComponentVariables()
+void DataLayoutPolicy_ObsGroup_ODB::addMapping(const std::string &inputName,
+                                               const std::string &outputName,
+                                               const boost::optional<std::string> &unit) {
+  if (unit)
+    Mapping[inputName] = {outputName, {true, *unit}};
+  else
+    Mapping[inputName] = {outputName, {false, ""}};
+}
+
+void DataLayoutPolicy_ObsGroup_ODB::parseComponentVariables(const ODBLayoutParameters &params)
 {
-  for (ComplementaryVariablesParameters const& variable :
-       *(mappingParams_->complementaryVariables.value())) {
+  for (ComplementaryVariablesParameters const& variable : params.complementaryVariables.value()) {
     if (variable.outputVariableDataType.value() != "string") {
       throw eckit::MethodNotYetImplemented("YAML mapping file: the output variable "
                                            "data type for a derived variable is not "
@@ -119,6 +121,18 @@ void DataLayoutPolicy_ObsGroup_ODB::parseComponentVariables()
   }
 }
 
+void DataLayoutPolicy_ObsGroup_ODB::parseVarnoDependentColumns(const ODBLayoutParameters &params) {
+  for (VarnoDependentColumnParameters const& column : params.varnoDependentColumns.value()) {
+    const std::string inputPrefix = column.source.value() + "/";
+    const std::string outputPrefix = convertV1PathToV2Path(column.groupName.value()) + "/";
+    for (VarnoToVariableNameMappingParameters const& mapping : column.mappings.value()) {
+      addMapping(inputPrefix + std::to_string(mapping.varno.value()),
+                 outputPrefix + mapping.name.value(),
+                 mapping.unit);
+    }
+  }
+}
+
 void DataLayoutPolicy_ObsGroup_ODB::initializeStructure(Group_Base &g) const {
   // First, set an attribute to indicate that the data are managed
   // by this data policy.
@@ -140,13 +154,16 @@ std::string DataLayoutPolicy_ObsGroup_ODB::doMap(const std::string &str) const {
   // If the string contains '@', then it needs to be broken into
   // components and reversed. Additionally, if the string is a key (ODB name) in the mapping file,
   // it is replaced with its value. All other strings are passed through untouched.
+
   std::string mappedStr;
+
   auto it = Mapping.find(str);
   if (it != Mapping.end()) {
     mappedStr = (it->second).iodaName;
   } else {
     mappedStr = str;
   }
+
   mappedStr = convertV1PathToV2Path(mappedStr);
   return mappedStr;
 }
@@ -162,15 +179,16 @@ bool DataLayoutPolicy_ObsGroup_ODB::isMapped(const std::string &input) const {
 
 bool DataLayoutPolicy_ObsGroup_ODB::isMapOutput(const std::string &output) const
 {
-  for (const std::pair<std::string, variableStorageInformation> &entry : Mapping) {
+  for (const std::pair<const std::string, variableStorageInformation> &entry : Mapping) {
     if (entry.second.iodaName == output)
       return true;
   }
-  for (const std::pair<std::string, complementaryVariableMetaData> &entry :
+  for (const std::pair<const std::string, complementaryVariableMetaData> &entry :
        complementaryVariableDataMap) {
     if (entry.second.second->outputName == output)
       return true;
   }
+
   return false;
 }
 
@@ -214,10 +232,11 @@ DataLayoutPolicy::MergeMethod DataLayoutPolicy_ObsGroup_ODB::getMergeMethod(
 
 std::pair<bool, std::string> DataLayoutPolicy_ObsGroup_ODB::getUnit(
     const std::string & input) const {
-  if (Mapping.find(input) == Mapping.end()) {
-    throw eckit::ReadError(input + " was not found to to be an ODB source variable.");
+  auto mappingIt = Mapping.find(input);
+  if (mappingIt != Mapping.end()) {
+    return mappingIt->second.inputUnit;
   }
-  return (Mapping.at(input)).inputUnit;
+  throw eckit::ReadError(input + " was not found to to be an ODB source variable.");
 }
 
 std::string DataLayoutPolicy_ObsGroup_ODB::name() const { return std::string{"ObsGroup ODB v1"}; }

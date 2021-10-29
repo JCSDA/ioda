@@ -12,6 +12,7 @@
 #include <cctype>
 #include <iomanip>
 #include <map>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -72,8 +73,21 @@ namespace ODC {
 
 class DataFromSQL {
 private:
+  template <typename T>
+  using ArrayX = Eigen::Array<T, Eigen::Dynamic, 1>;
+
+  /// Member of a bitfield column
+  struct BitfieldMember {
+    std::string name;
+    std::int32_t start = 0;  // index of the first bit belonging to the member
+    std::int32_t size = 1;   // number of bits belonging to the member
+  };
+  /// All members of a bitfield column
+  typedef std::vector<BitfieldMember> Bitfield;
+
   std::vector<std::string> columns_;
   std::vector<int> column_types_;
+  std::vector<Bitfield> column_bitfield_defs_;
   std::vector<int> varnos_;
   /// Each element contains values from a particular column
   std::vector<std::vector<double>> data_;
@@ -117,25 +131,55 @@ private:
   /// \brief Returns the number of levels for each varno
   size_t numberOfLevels(int varno) const;
 
-  /// \brief Returns data for a (metadata) column
+  /// \brief Returns data for a metadata (varno-independent) column
   /// \param column Get data for this column
   Eigen::ArrayXf getMetadataColumn(std::string const& column) const;
 
-  /// \brief Returns data for a (metadata) column
+  /// \brief Returns data for a metadata (varno-independent) column
   /// \param column Get data for this column
   Eigen::ArrayXi getMetadataColumnInt(std::string const& column) const;
 
-  /// \brief Returns data for a (metadata) column
+  /// \brief Returns data for a metadata (varno-independent) column
   /// \param column Get data for this column
   std::vector<std::string> getMetadataStringColumn(std::string const& column) const;
+
+  /// \brief Returns data for a metadata (varno-independent) column
+  /// \param column Get data for this column
+  template <typename T>
+  ArrayX<T> getNumericMetadataColumn(std::string const& column) const;
+
+  /// \brief Create an ioda variable for a specified varno-independent column
+  /// \param column Column to create a variable for
+  template <typename T>
+  void createNumericVarnoIndependentIodaVariable(
+      std::string const& column, ioda::ObsGroup og,
+      const ioda::VariableCreationParameters &params) const;
 
   /// \brief Returns data for a varno for a varno column
   /// \param varno Get data for this varno
   /// \param column Get data for this column
   /// \param nchans Number of channels to store
   /// \param nchans_actual Actual number of channels
-  Eigen::ArrayXf getVarnoColumn(const std::vector<int>& varnos, std::string const& column,
-                                           const int nchans, const int nchans_actual) const;
+  template <typename T>
+  Eigen::Array<T, Eigen::Dynamic, 1> getVarnoColumn(const std::vector<int>& varnos,
+                                                    std::string const& column,
+                                                    const int nchans,
+                                                    const int nchans_actual) const;
+
+  /// \brief Returns the dimension scales to attach to a variable holding the restriction of
+  /// a varno-dependent column to rows with the specified varno
+  std::vector<ioda::Variable> getVarnoDependentVariableDimensionScales(
+      int varno, const ObsGroup &og) const;
+
+  /// \brief Produces the arguments that createVarnoDependentIodaVariable() should pass to
+  /// getVarnoColumn().
+  ///
+  /// \param[in] varno
+  ///   Varno to retrieve.
+  /// \param[out] varnos, nchans, nchans_actual
+  ///   Arguments to be passed to getVarnoColumn().
+  void getVarnoColumnCallArguments(int varno, std::vector<int> &varnos,
+                                   int &nchans, int &nchans_actual) const;
 
 public:
   /// \brief Simple constructor
@@ -157,20 +201,43 @@ public:
   /// \brief Returns a vector of date strings
   std::vector<std::string> getDates(std::string const& date_col, std::string const& time_col) const;
 
-  /// \brief Returns a vector of columns
+  /// \brief Returns the vector of names of columns selected by the SQL query
   const std::vector<std::string>& getColumns() const;
 
-  /// \brief Returns an ioda variable for a specified column
-  /// \param column Get data for this column
-  ioda::Variable getIodaVariable(std::string const& column, ioda::ObsGroup og,
-                                 ioda::VariableCreationParameters params) const;
+  /// \brief Creates an ioda variable for a specified varno-independent column
+  /// \param column Column to be converted into an ioda variable
+  void createVarnoIndependentIodaVariable(std::string const& column, ioda::ObsGroup og,
+                                          const ioda::VariableCreationParameters &params) const;
+
+  /// \brief Converts specified varno-independent bitfield column members into ioda variables
+  ///
+  /// \param column   Bitfield column name
+  /// \param members  Names of the column members to be converted into ioda variables
+  /// \param og       ObsGroup receiving the new ioda variables
+  /// \param params   Creation parameters for the ioda variables
+  void createVarnoIndependentIodaVariables(
+      const std::string &column, const std::set<std::string> &members,
+      ioda::ObsGroup og, const ioda::VariableCreationParameters &params) const;
 
   /// \brief Returns a list of channels associated with a particular varno.
   ioda::Variable assignChannelNumbers(int varno, ioda::ObsGroup og) const;
 
-  /// \brief Returns an ioda variable for a specified column
-  ioda::Variable getIodaObsvalue(int varno, ioda::ObsGroup og,
-                                 ioda::VariableCreationParameters params) const;
+  /// \brief Creates an ioda variable for a specified column
+  void createVarnoDependentIodaVariable(std::string const &column, int varno,
+                                        ioda::ObsGroup og,
+                                        const VariableCreationParameters &params) const;
+
+  /// \brief Converts specified varno-dependent bitfield column members into ioda variables
+  /// containing the values from rows with a specified varno
+  ///
+  /// \param column   Bitfield column name
+  /// \param members  Names of the column members to be converted into ioda variables
+  /// \param varno    Varno to select
+  /// \param og       ObsGroup receiving the new ioda variables
+  /// \param params   Creation parameters for the ioda variables
+  void createVarnoDependentIodaVariables(
+      const std::string &column, const std::set<std::string> &members, int varno,
+      ioda::ObsGroup og, const VariableCreationParameters &params) const;
 
   /// \brief Returns the type of a specified column
   /// \param column The column to check

@@ -1,0 +1,98 @@
+varno-independent columns:
+- name: "MetaData/identifier"
+  source: "ident"
+- name: "MetaData/level_latitude_displacement"
+  source: "initial_level_lat"
+- name: "MetaData/level_longtitude_displacement"
+  source: "initial_level_lon"
+- name: "MetaData/level_time_displacement"
+  source: "initial_level_time"
+- name: "MetaData/air_pressure"
+  source: "initial_vertco_reference"
+- name: "MetaData/instrument_type"
+  source: "instrument_type"
+- name: "MetaData/latitude"
+  source: "lat"
+- name: "MetaData/longitude"
+  source: "lon"
+- name: "MetaData/level_condition_code"
+  source: "level_condition_code"
+- name: "MetaData/number_of_levels"
+  source: "numlev"
+- name: "MetaData/ops_subtype"
+  source: "ops_subtype"
+- name: "MetaData/pressure_sensor_altitude"
+  source: "pressure_sensor_alt"
+- name: "MetaData/pressure_sensor_flag"
+  source: "pressure_sensor_flag"
+- name: "MetaData/sonde_rad_correction"
+  source: "sonde_rad_corr"
+- name: "MetaData/sonde_report_identifier"
+  source: "sonde_report_identifier"
+- name: "MetaData/sonde_tracking_system"
+  source: "sonde_tracking_system"
+- name: "MetaData/sonde_type"
+  source: "sonde_type"
+- name: "MetaData/station_altitude"
+  source: "stalt"
+- name: "MetaData/station_id"
+  source: "statid"
+- name: "MetaData/station_type"
+  source: "station_type"
+- name: "MetaData/winpro_flags_eu"
+  source: "winpro_flags_eu"
+- name: "MetaData/winpro_flags_usa"
+  source: "winpro_flags_usa"
+- name: "MetaData/wmo_block_number"
+  source: "wmo_block_number"
+- name: "MetaData/wmo_station_number"
+  source: "wmo_station_number"
+varno-dependent columns:
+- source: "initial_obsvalue"
+  group name: "ObsValue"
+  varno-to-variable-name mapping: &obsvalue_varnos
+  - name: "height"
+    varno: 1
+  - name: "air_temperature"
+    varno: 2
+  - name: "u_wind_component"
+    varno: 3
+  - name: "v_wind_component"
+    varno: 4
+  - name: "air_dew_point_temperature"
+    varno: 59
+  - name: "wind_direction"
+    varno: 111
+  - name: "wind_speed"
+    varno: 112
+# Map initial_obsvalue at varno 29 to MetaData/relative_humidity rather than
+# ObsValue/relative_humidity (to check if the same approach will work for varno 235, air pressure)
+- source: "initial_obsvalue"
+  group name: "MetaData"
+  varno-to-variable-name mapping:
+  - name: "relative_humidity"
+    varno: 29
+- source: "obs_error"
+  group name: "ObsError"
+  varno-to-variable-name mapping: *obsvalue_varnos
+- source: "entryno"
+  group name: "MetaData/EntryNo"
+  varno-to-variable-name mapping: &entryno_varnos
+  - name: "height"
+    varno: 1
+  - name: "air_temperature"
+    varno: 2
+  - name: "u_wind_component"
+    varno: 3
+  - name: "v_wind_component"
+    varno: 4
+  - name: "relative_humidity"
+    varno: 29
+  # Entry for varno 59 deliberately omitted
+  - name: "wind_direction"
+    varno: 111
+  - name: "wind_speed"
+    varno: 112
+- source: "level"
+  group name: "MetaData/LevelFlags"
+  varno-to-variable-name mapping: *entryno_varnos

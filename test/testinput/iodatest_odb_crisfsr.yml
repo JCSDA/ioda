@@ -6,6 +6,7 @@ variables:
 - name: chan_sel_version
 - name: field_of_regard
 - name: general_quality_flag
+- name: initial_obsvalue
 - name: initial_vertco_reference
 - name: land_sea
 - name: meto_cloud_flags

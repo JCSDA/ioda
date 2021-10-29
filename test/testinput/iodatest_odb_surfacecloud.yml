@@ -3,6 +3,7 @@ where:
 variables:
 - name: buoy_identifier
 - name: ident
+- name: initial_obsvalue
 - name: lowest_cloud_base_height
 - name: pressure_sensor_alt
 - name: receipt_date

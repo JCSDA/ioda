@@ -5,6 +5,7 @@ variables:
 - name: comp_method
 - name: gen_centre
 - name: gen_subcentre
+- name: initial_obsvalue
 - name: percent_confidence_1
 - name: percent_confidence_2
 - name: percent_confidence_3

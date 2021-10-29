@@ -7,6 +7,7 @@ variables:
 - name: "collection_centre"
 - name: "collection_identifier"
 - name: "flight_phase"
+- name: "initial_obsvalue"
 - name: "stalt"
 - name: "statid"
 - name: "receipt_time"

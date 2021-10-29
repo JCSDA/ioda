@@ -1,6 +1,7 @@
 where:
   varno: [119,247]
 variables:
+- name: initial_obsvalue
 - name: satellite_identifier
 - name: zenith
 - name: receipt_time

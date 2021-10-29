@@ -3,6 +3,7 @@ where:
 variables:
 - name: azimuth
 - name: geometric_rotational_angle
+- name: initial_obsvalue
 - name: land_sea
 - name: satellite_instrument
 - name: satellite_identifier

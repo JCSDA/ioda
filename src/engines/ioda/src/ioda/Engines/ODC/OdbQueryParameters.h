@@ -109,16 +109,15 @@ class OdbQueryParameters : public oops::Parameters {
 
   /// Variable names which are ignored when requested in the mapping file
   oops::Parameter<std::vector<std::string>> ignoredNames{"ignored names",
-      {"initial_obsvalue",
-          "date",
-          "time",
-          "receipt_date",
-          "receipt_time",
-          "seqno",
-          "varno",
-          "vertco_type",
-          "entryno",
-          "ops_obsgroup"}, this};
+      {"date",
+       "time",
+       "receipt_date",
+       "receipt_time",
+       "seqno",
+       "varno",
+       "vertco_type",
+       "entryno",
+       "ops_obsgroup"}, this};
 };
 
 }  // namespace ODC

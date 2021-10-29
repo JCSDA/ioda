@@ -4,6 +4,7 @@ where:
 variables:
 - name: confidence
 - name: gen_centre
+- name: initial_obsvalue
 - name: numlev
 - name: platform_id
 - name: qc_flags

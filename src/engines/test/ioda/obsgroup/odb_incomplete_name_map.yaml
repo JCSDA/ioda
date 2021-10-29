@@ -1,6 +1,5 @@
-ioda:
-  variables:
-    - name: "/MetaData/latitude"
-      source: "/MetaData_renamed/latitude_renamed"
-    - name: "/MetaData/longitude"
-      source: "/MetaData_renamed/longitude_renamed"
+varno-independent columns:
+  - name: "/MetaData/latitude"
+    source: "/MetaData_renamed/latitude_renamed"
+  - name: "/MetaData/longitude"
+    source: "/MetaData_renamed/longitude_renamed"

@@ -3,4 +3,5 @@ where:
 variables:
 - name: receipt_time
 - name: receipt_date
+- name: initial_obsvalue
 - name: instrument_type

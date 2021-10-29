@@ -8,6 +8,7 @@ variables:
 - name: amsr_89ghz_longitude_1
 - name: amsr_89ghz_longitude_2
 - name: azimuth
+- name: initial_obsvalue
 - name: qchirsfov
 - name: satellite_identifier
 - name: scanpos
