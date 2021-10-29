@@ -59,6 +59,8 @@ void initODC() { static bool inited = false;
   }
 }
 
+#if odc_FOUND && eckit_FOUND && oops_FOUND
+
 // -------------------------------------------------------------------------------------------------
 // (Very simple) SQL expression parsing
 
@@ -365,6 +367,8 @@ ColumnMappings collectColumnMappings(const detail::ODBLayoutParameters &layoutPa
 }
 
 // -------------------------------------------------------------------------------------------------
+
+#endif  // odc_FOUND && eckit_FOUND && oops_FOUND
 
 }  // namespace
 
