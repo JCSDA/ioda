@@ -101,9 +101,7 @@ struct NewDimensionScale_Object : public NewDimensionScale_Base {
   NewDimensionScale_Object(const std::string& name, Dimensions_t size,
                     Dimensions_t maxSize, Dimensions_t chunkingSize)
       : NewDimensionScale_Base(name, typeid(DataType), size, maxSize, chunkingSize),
-        initdata_(gsl::narrow<size_t>(size)) {
-    for (size_t i = 0; i < initdata_.size(); ++i) initdata_[i] = gsl::narrow<DataType>(i + 1);
-  }
+        initdata_(gsl::narrow<size_t>(size)) {}
 
   void writeInitialData(Variable& v) const override { v.write<DataType>(initdata_); }
 
