@@ -35,7 +35,6 @@ find_package( OpenMP COMPONENTS C CXX Fortran )
 set(HDF5_PREFER_PARALLEL true) # CMake sometimes mistakenly finds a serial system-provided HDF5.
 find_package( HDF5 REQUIRED COMPONENTS C HL )
 find_package( MPI REQUIRED )
-find_package( NetCDF REQUIRED COMPONENTS C )
 find_package( jedicmake REQUIRED )
 find_package( eckit 1.11.6 REQUIRED )
 find_package( fckit 0.7.0 REQUIRED )

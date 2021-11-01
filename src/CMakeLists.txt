@@ -87,7 +87,6 @@ ecbuild_add_library( TARGET ${PROJECT_NAME}
                      LINKER_LANGUAGE CXX )
 
 target_link_libraries( ${PROJECT_NAME} PUBLIC ioda_engines )
-target_link_libraries( ${PROJECT_NAME} PUBLIC NetCDF::NetCDF_C )
 target_link_libraries( ${PROJECT_NAME} PUBLIC fckit )
 target_link_libraries( ${PROJECT_NAME} PUBLIC ${oops_LIBRARIES} )
 

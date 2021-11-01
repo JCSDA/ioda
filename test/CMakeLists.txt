@@ -9,6 +9,8 @@ include( git_functions )
 # Function definitions
 
 if (odc_FOUND)
+  find_package( NetCDF REQUIRED ) # need this for the ncdump executable
+
   set(ODC_TOOL_PATH "${odc_BASE_DIR}/bin/odc")
 
   if (NOT ${Python3_FOUND})
