@@ -65,6 +65,7 @@ list( APPEND ioda_test_input
   testinput/iodatest.yml
   testinput/iodatest_fileformat.yml
   testinput/iodatest_remove_hdf5_variable.yml
+  testinput/iodatest_copy_attributes.yml
   testinput/iodatest_obserror.yml
   testinput/iodatest_obsio_constructor.yml
   testinput/iodatest_obsio_read.yml
@@ -366,6 +367,15 @@ ecbuild_add_test( TARGET  test_ioda_remove_hdf5_variable_cmp
                           "echo Checking remove hdf5 variable test output"
                           remove_variable.hdf
                   TEST_DEPENDS get_ioda_test_data test_ioda_remove_hdf5_variable )
+
+#####################################################################
+# ioda utilities tests
+#####################################################################
+
+ecbuild_add_test( TARGET  test_ioda_copy_attributes
+                  SOURCES mains/TestCopyAttributes.cc
+                  ARGS    "testinput/iodatest_copy_attributes.yml"
+                  LIBS  ioda_engines ioda_test )
 
 #####################################################################
 # ObsSpace tests

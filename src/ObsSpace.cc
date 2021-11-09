@@ -35,6 +35,7 @@
 #include "ioda/distribution/DistributionUtils.h"
 #include "ioda/distribution/PairOfDistributions.h"
 #include "ioda/Engines/HH.h"
+#include "ioda/Exception.h"
 #include "ioda/io/ObsFrameRead.h"
 #include "ioda/io/ObsFrameWrite.h"
 #include "ioda/Variables/Variable.h"
@@ -979,7 +980,7 @@ void ObsSpace::createVariables(const Has_Variables & srcVarContainer,
                   destVarContainer.createWithScales<T>(varName, varDims,
                                                        paramsByType.at(typeid(T)));
               },
-              [&] (const eckit::CodeLocation &) {
+              [&] (const ioda::source_location &) {
                   if (this->comm().rank() == 0)
                       oops::Log::warning() << "WARNING: ObsSpace::createVariables: "
                           << "Skipping variable due to an unexpected data type for variable: "

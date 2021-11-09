@@ -9,6 +9,7 @@
 
 #include "oops/util/Logger.h"
 
+#include "ioda/Exception.h"
 #include "ioda/io/ObsFrameWrite.h"
 
 namespace ioda {
@@ -190,7 +191,7 @@ void ObsFrameWrite::createObsIoVariables(const Has_Variables & srcVarContainer,
                   destVarContainer.createWithScales<T>(varName, varDims, params);
               },
               // Error handler
-              [&varName] (const eckit::CodeLocation &) {
+              [&varName] (const ioda::source_location &) {
                   oops::Log::warning() << "WARNING: ObsWriteFrame::createObsIoVariables: "
                      << "Skipping variable due to an unexpected data type for variable: "
                      << varName << std::endl;

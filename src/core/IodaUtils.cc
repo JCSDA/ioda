@@ -209,7 +209,9 @@ void collectVarDimInfo(const ObsGroup & obsGroup, VarNameObjectList & varObjectL
         dimVarNames.reserve(dims.dimensionality);
         for (const auto& dim_scales_along_axis : attached_dimensions) {
             if (dim_scales_along_axis.empty()) {
-                throw;
+                std::string errorMsg =
+                    std::string("Empty dimension scales for variable: ") + vname;
+                throw ioda::Exception(errorMsg.c_str(), ioda_Here());
             }
             dimVarNames.push_back(dim_scales_along_axis[0].name);
         }
@@ -376,6 +378,31 @@ std::string convertNewVnameToOldVname(const std::string & varName) {
         oldFormat = vname + std::string("@") + gname;
     }
     return oldFormat;
+}
+
+// -----------------------------------------------------------------------------
+void copyAttributes(const ioda::Has_Attributes & srcAttrs, ioda::Has_Attributes & destAttrs) {
+  for (const auto & attrName : srcAttrs.list()) {
+    if (destAttrs.exists(attrName)) {
+      std::string errorMsg = std::string("Destination attribute, ") + attrName +
+          std::string(", already exists. Cannot copy from source");
+      throw ioda::Exception(errorMsg.c_str(), ioda_Here());
+    }
+
+    ioda::Attribute srcAttr = srcAttrs.open(attrName);
+    const std::vector<ioda::Dimensions_t> & attrDims = srcAttr.getDimensions().dimsCur;
+    ioda::Dimensions_t numElements = srcAttr.getDimensions().numElements;
+    forAnySupportedAttributeType(
+        srcAttr,
+        [&](auto typeDiscriminator) {
+          typedef decltype(typeDiscriminator) AttrType;  // type of sourceAttr
+          std::vector<AttrType> attrData(numElements);
+          gsl::span<AttrType> attrSpan(attrData);
+          srcAttrs.read<AttrType>(attrName, attrSpan);
+          destAttrs.add<AttrType>(attrName, attrSpan, attrDims);
+        },
+        ThrowIfAttributeIsOfUnsupportedType(attrName));
+  }
 }
 
 // -----------------------------------------------------------------------------
