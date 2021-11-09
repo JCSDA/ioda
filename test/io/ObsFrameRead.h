@@ -31,6 +31,8 @@
 
 #include "ioda/core/IodaUtils.h"
 #include "ioda/distribution/DistributionFactory.h"
+#include "ioda/Engines/Factory.h"
+#include "ioda/Engines/ObsStore.h"
 #include "ioda/io/ObsFrameRead.h"
 #include "ioda/ObsGroup.h"
 #include "ioda/ObsSpaceParameters.h"
@@ -45,14 +47,14 @@ namespace test {
 
 // -----------------------------------------------------------------------------
 void testFrameRead(ObsFrameRead & obsFrame, eckit::LocalConfiguration & obsConfig,
-                   ioda::ObsSpaceParameters & obsParams) {
+                   ioda::ObsSpaceParameters & obsParams, ioda::Has_Attributes & destAttrs) {
     float floatTol = obsConfig.getFloat("tolerance", 1.0e-5);
     std::vector<eckit::LocalConfiguration> readVarConfigs =
         obsConfig.getSubConfigurations("read variables");
 
     // Test reading from frames
     int iframe = 0;
-    for (obsFrame.frameInit(); obsFrame.frameAvailable(); obsFrame.frameNext()) {
+    for (obsFrame.frameInit(destAttrs); obsFrame.frameAvailable(); obsFrame.frameNext()) {
         Dimensions_t frameStart = obsFrame.frameStart();
         oops::Log::debug() << "testRead: Frame number: " << iframe << std::endl
             << "    frameStart: " << frameStart << std::endl;
@@ -143,8 +145,13 @@ void testRead() {
         ioda::Dimensions_t maxVarSize = obsFrame.ioMaxVarSize();
         EXPECT_EQUAL(maxVarSize, expectedMaxVarSize);
 
-        // Test reading frames
-        testFrameRead(obsFrame, testConfig, obsParams);
+        // Test reading frames. Create a container for capturing the global attributes.
+        Engines::BackendNames backendName;
+        Engines::BackendCreationParameters backendParams;
+        backendName = ioda::Engines::BackendNames::ObsStore;
+        Group backend = constructBackend(backendName, backendParams);
+        ObsGroup testObsGroup = ObsGroup::generate(backend, { });
+        testFrameRead(obsFrame, testConfig, obsParams, testObsGroup.atts);
     }
 }
 

@@ -201,7 +201,9 @@ void ObsFrame::createFrameFromObsGroup(const VarNameObjectList & varList,
                       auto varFillValue = sourceVar.getFillValue();
                       params.setFillValue<T>(ioda::detail::getFillValue<T>(varFillValue));
                   }
-                  obs_frame_.vars.createWithScales<T>(varName, dimVars, params);
+                  Variable destVar = obs_frame_.vars.createWithScales<T>(
+                      varName, dimVars, params);
+                  copyAttributes(sourceVar.atts, destVar.atts);
               },
               ThrowIfVariableIsOfUnsupportedType(varName));
     }

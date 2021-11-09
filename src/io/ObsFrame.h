@@ -58,7 +58,7 @@ class ObsFrame : public util::Printable {
     Has_Variables & vars() const {return obs_io_->vars();}
 
     /// \brief return attributes container from ObsIo
-    Has_Attributes & atts() const {return obs_io_->atts();}
+    Has_Attributes & atts() {return obs_io_->atts();}
 
     /// \brief return list of regular variables from ObsIo
     const VarNameObjectList & ioVarList() const {return obs_io_->varList();}
@@ -94,28 +94,6 @@ class ObsFrame : public util::Printable {
 
     /// \brief return list of record numbers from ObsIo
     virtual std::vector<std::size_t> recnums() const {return std::vector<std::size_t>{};}
-
-    /// \brief initialize frame for a read frame object
-    virtual void frameInit() {}
-
-    /// \brief initialize for a write frame object
-    /// \param varList source ObsGroup list of regular variables
-    /// \param dimVarList source ObsGroup list of dimension variables
-    /// \param varDimMap source ObsGroup map showing variables with associated dimensions
-    /// \param maxVarSize source ObsGroup maximum variable size along the first dimension
-    virtual void frameInit(const VarNameObjectList & varList,
-                           const VarNameObjectList & varDimList,
-                           const VarDimMap & varDimMap, const Dimensions_t maxVarSize) {}
-
-    /// \brief move to the next frame for a read frame object
-    virtual void frameNext() {}
-
-    /// \brief move to the next frame for a write frame object
-    /// \param varList source ObsGroup list variable names
-    virtual void frameNext(const VarNameObjectList & varList) {}
-
-    /// \brief true if a frame is available (not past end of frames)
-    virtual bool frameAvailable() = 0;
 
     /// \brief return current frame starting index
     /// \param varName name of variable

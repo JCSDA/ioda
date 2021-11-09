@@ -232,6 +232,8 @@ namespace ioda {
                                     const ErrorHandler &typeErrorHandler) {
     if (attr.isA<int>())
       return action(int());
+    if (attr.isA<long>())          // NOLINT
+      return action(long());       // NOLINT
     if (attr.isA<float>())
       return action(float());
     if (attr.isA<double>())

@@ -45,15 +45,17 @@ class ObsFrameWrite : public ObsFrame, private util::ObjectCounter<ObsFrameWrite
     /// \param dimVarList source ObsGroup list of dimension variable names
     /// \param varDimMap source ObsGroup map showing variables with associated dimensions
     /// \param maxVarSize source ObsGroup maximum variable size along the first dimension
+    /// \param srcAttrs source ObsGroup global attributes container
     void frameInit(const VarNameObjectList & varList,
                    const VarNameObjectList & dimVarList,
-                   const VarDimMap & varDimMap, const Dimensions_t maxVarSize) override;
+                   const VarDimMap & varDimMap, const Dimensions_t maxVarSize,
+                   const ioda::Has_Attributes & srcAttrs);
 
     /// \brief move to the next frame
-    void frameNext(const VarNameObjectList & varList) override;
+    void frameNext(const VarNameObjectList & varList);
 
     /// \brief true if a frame is available (not past end of frames)
-    bool frameAvailable() override;
+    bool frameAvailable();
 
     /// \brief return current frame starting index
     /// \param varName name of variable

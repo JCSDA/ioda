@@ -56,7 +56,7 @@ ObsFrameRead::ObsFrameRead(const ObsSpaceParameters & params) :
 ObsFrameRead::~ObsFrameRead() {}
 
 //------------------------------------------------------------------------------------
-void ObsFrameRead::frameInit() {
+void ObsFrameRead::frameInit(Has_Attributes & destAttrs) {
     // reset counters, etc.
     frame_start_ = 0;
     if (each_process_reads_separate_obs_) {
@@ -75,6 +75,9 @@ void ObsFrameRead::frameInit() {
 
     // create an ObsGroup based frame with an in-memory backend
     createFrameFromObsGroup(obs_io_->varList(), obs_io_->dimVarList(), obs_io_->varDimMap());
+
+    // copy the global attributes
+    copyAttributes(obs_io_->atts(), destAttrs);
 
     // record the variable name <-> dim names associations.
     dims_attached_to_vars_ = this->ioVarDimMap();

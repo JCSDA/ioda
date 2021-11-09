@@ -114,12 +114,13 @@ ObsGroup buildTestObsGroup(const std::vector<eckit::LocalConfiguration> & dimCon
 void frameWrite(ObsFrameWrite & obsFrame, eckit::LocalConfiguration & testConfig,
                 const Has_Variables & sourceVars, const VarNameObjectList & varList,
                 const VarNameObjectList & dimVarList,
-                const VarDimMap & varDimMap, const Dimensions_t maxVarSize) {
+                const VarDimMap & varDimMap, const Dimensions_t maxVarSize,
+                const Has_Attributes & sourceAttrs) {
     std::vector<eckit::LocalConfiguration> writeVarConfigs =
         testConfig.getSubConfigurations("write variables");
 
     int iframe = 0;
-    for (obsFrame.frameInit(varList, dimVarList, varDimMap, maxVarSize);
+    for (obsFrame.frameInit(varList, dimVarList, varDimMap, maxVarSize, sourceAttrs);
          obsFrame.frameAvailable(); obsFrame.frameNext(varList)) {
         Dimensions_t frameStart = obsFrame.frameStart();
         oops::Log::debug() << "testWrite: Frame number: " << iframe << std::endl
@@ -227,7 +228,7 @@ void testWrite() {
 
             // Write contents of file
             frameWrite(obsFrame, testConfig, testObsGroup.vars, varList, dimVarList,
-                       dimsAttachedToVars, maxVarSize);
+                       dimsAttachedToVars, maxVarSize, testObsGroup.atts);
             obsFrame.ioUpdateVarDimInfo();
 
             // Check if all the variables got written into the file

@@ -30,12 +30,16 @@ ObsFrameWrite::~ObsFrameWrite() {}
 //------------------------------------------------------------------------------------
 void ObsFrameWrite::frameInit(const VarNameObjectList & varList,
                               const VarNameObjectList & dimVarList,
-                              const VarDimMap & varDimMap, const Dimensions_t maxVarSize) {
+                              const VarDimMap & varDimMap, const Dimensions_t maxVarSize,
+                              const ioda::Has_Attributes & srcAttrs) {
     frame_start_ = 0;
     max_var_size_ = maxVarSize;
 
     // create an ObsGroup based frame with an in-memory backend
     createFrameFromObsGroup(varList, dimVarList, varDimMap);
+
+    // copy the global attributes
+    copyAttributes(srcAttrs, obs_io_->atts());
 
     // copy dimension coordinates from the newly created frame to the ObsIo backend
     copyObsIoDimCoords(obs_frame_.vars, obs_io_->vars(), dimVarList);
@@ -188,7 +192,9 @@ void ObsFrameWrite::createObsIoVariables(const Has_Variables & srcVarContainer,
                       auto varFillValue = srcVar.getFillValue();
                       params.setFillValue<T>(ioda::detail::getFillValue<T>(varFillValue));
                   }
-                  destVarContainer.createWithScales<T>(varName, varDims, params);
+                  Variable destVar = destVarContainer.createWithScales<T>(
+                                                     varName, varDims, params);
+                  copyAttributes(srcVar.atts, destVar.atts);
               },
               // Error handler
               [&varName] (const ioda::source_location &) {

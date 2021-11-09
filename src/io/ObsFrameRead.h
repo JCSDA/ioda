@@ -48,13 +48,14 @@ class ObsFrameRead : public ObsFrame, private util::ObjectCounter<ObsFrameRead> 
     std::vector<std::size_t> recnums() const override {return recnums_;}
 
     /// \brief initialize for walking through the frames
-    void frameInit() override;
+    /// \param destAttrs destination ObsGroup global attributes container
+    void frameInit(Has_Attributes & destAttrs);
 
     /// \brief move to the next frame
-    void frameNext() override;
+    void frameNext();
 
     /// \brief true if a frame is available (not past end of frames)
-    bool frameAvailable() override;
+    bool frameAvailable();
 
     /// \brief return current frame starting index
     /// \param varName name of variable

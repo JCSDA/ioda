@@ -618,7 +618,7 @@ void ObsSpace::initFromObsSource(ObsFrameRead & obsFrame) {
 
     Variable nlocsVar = obsFrame.vars().open(dim_info_.get_dim_name(ObsDimensionId::Nlocs));
     int iframe = 1;
-    for (obsFrame.frameInit(); obsFrame.frameAvailable(); obsFrame.frameNext()) {
+    for (obsFrame.frameInit(obs_group_.atts); obsFrame.frameAvailable(); obsFrame.frameNext()) {
         Dimensions_t frameStart = obsFrame.frameStart();
 
         // Resize the nlocs dimesion according to the adjusted frame size produced
@@ -977,8 +977,9 @@ void ObsSpace::createVariables(const Has_Variables & srcVarContainer,
               srcVar,
               [&](auto typeDiscriminator) {
                   typedef decltype(typeDiscriminator) T;
-                  destVarContainer.createWithScales<T>(varName, varDims,
+                  Variable destVar = destVarContainer.createWithScales<T>(varName, varDims,
                                                        paramsByType.at(typeid(T)));
+                  copyAttributes(srcVar.atts, destVar.atts);
               },
               [&] (const ioda::source_location &) {
                   if (this->comm().rank() == 0)
@@ -1127,8 +1128,7 @@ void ObsSpace::saveToFile() {
 
     // Iterate through the frames and variables moving data from the database into
     // the file.
-    int iframe = 0;
-    for (obsFrame.frameInit(varList, dimVarList, dimsAttachedToVars, maxVarSize);
+    for (obsFrame.frameInit(varList, dimVarList, dimsAttachedToVars, maxVarSize, obs_group_.atts);
          obsFrame.frameAvailable(); obsFrame.frameNext(varList)) {
         Dimensions_t frameStart = obsFrame.frameStart();
         for (auto & varNameObject : varList) {
