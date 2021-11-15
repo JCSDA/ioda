@@ -354,9 +354,16 @@ void DataFromSQL::select(const std::vector<std::string>& columns, const std::str
     }
   }
 
-  for (size_t i = 0; i < number_of_varnos_; i++) {
-    if (hasVarno(varnos_[i]) && number_of_metadata_rows_ > 0) {
-      varnos_and_levels_[varnos_[i]] = numberOfRowsForVarno(varnos_[i]) / number_of_metadata_rows_;
+  for (const int varno : varnos_) {
+    if (hasVarno(varno) && number_of_metadata_rows_ > 0) {
+      const size_t number_of_varno_rows = numberOfRowsForVarno(varno);
+      if (number_of_varno_rows % number_of_metadata_rows_ != 0)
+        throw eckit::UnexpectedState("Not all observation sequences have the same number of rows "
+                                     "with varno " + std::to_string(varno) + ". This is currently "
+                                     "unsupported. As a workaround, modify the elements file used "
+                                     "to generate the ODB file to ensure each observation sequence "
+                                     "contains the same varnos");
+      varnos_and_levels_[varno] = number_of_varno_rows / number_of_metadata_rows_;
     }
   }
 }

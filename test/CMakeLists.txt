@@ -1172,6 +1172,17 @@ if (odc_FOUND)
                             test-OceanSound.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
+  # Test error reporting for an ODB file in which the number of rows per varno varies from one seqno to another
+  ecbuild_add_test( TARGET  test_ioda-convert_truncated_aircraft_odc
+                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
+                    ARGS    TruncatedAircraft
+                            Data/testinput_tier_1/truncatedaircraft.odb
+                            testinput/odb_default_name_map.yml testinput/iodatest_odb_aircraft.yml
+                    TEST_DEPENDS get_ioda_test_data )
+  set_tests_properties(test_ioda-convert_truncated_aircraft_odc
+                       PROPERTIES
+                       PASS_REGULAR_EXPRESSION ".*Not all observation sequences have the same number of rows with varno.*")
+
   add_test_checking_odb_to_netcdf_conversion_results_against_odb_sql_queries(
     TEST_NAME varno_independent_column
     ODB_FILE  sonde.odb )
