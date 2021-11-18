@@ -456,11 +456,11 @@ observations:
     name: "Boolean variable"
     simulated variables: [air_temperature]
     obsdatain:
-      obsfile: "Data/testinput_tier_1/variable_assignment_testdata.nc"
+      obsfile: "Data/testinput_tier_1/variable_assignment_testdata.nc4"
   test data:
     nlocs: 4
     nrecs: 4
-    nvars: 1
+    nvars: 4
     obs perturbations seed: 0
     expected group variables: []
     expected sort variable: ""

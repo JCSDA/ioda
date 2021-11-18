@@ -5,9 +5,9 @@ window end: "2018-04-15T03:00:00Z"
 
 obs space:
   name: Test
-  simulated variables: [air_temperature]
+  simulated variables: [air_temperature, float_variable_3, float_variable_2]
   obsdatain:
-    obsfile: "Data/testinput_tier_1/variable_assignment_testdata.nc"
+    obsfile: "Data/testinput_tier_1/variable_assignment_testdata.nc4"
 print:
   float:
     variables: [assigned_float_variable_1, assigned_float_variable_2]
@@ -43,3 +43,13 @@ print:
     group: MetaData
     expected output: |
       Test bool_variable_1 nlocs = 4, nobs = 4
+assignToExistingVariables:
+  multiple variables disordered:
+    ObsDataVector variables: [float_variable_2, float_variable_3, air_temperature]
+    group: ObsValue
+  excess variables in ObsVector:
+    ObsDataVector variables: [float_variable_2]
+    group: ObsValue
+  variables not found in ObsVector:
+    ObsDataVector variables: [float_variable_1, float_variable_3, float_variable_2]
+    group: ObsValue

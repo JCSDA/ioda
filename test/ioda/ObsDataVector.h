@@ -20,6 +20,7 @@
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Test.h"
 #include "oops/test/TestEnvironment.h"
+#include "oops/util/Expect.h"
 
 #include "ioda/ObsDataVector.h"
 #include "ioda/ObsSpace.h"
@@ -80,6 +81,40 @@ void testPrint(const std::string &datatype) {
   EXPECT_EQUAL(output, expectedOutput);
 }
 
+void testAssignToExistingVariables(const std::string &testtype) {
+  eckit::LocalConfiguration conf(::test::TestEnvironment::config(),
+                                "assignToExistingVariables." + testtype);
+
+  oops::Variables ObsDataVectorVars;
+  for (const std::string &var : conf.getStringVector("ObsDataVector variables"))
+    ObsDataVectorVars.push_back(var);
+  const std::string group = conf.getString("group");
+  // known good output:
+  ioda::ObsDataVector<float> ObsDataVect(ObsDataVecTestFixture::obspace(),
+                                         ObsDataVectorVars, group);
+  // empty ObsDataVector, which should become kgo if assignToExistingVariables works:
+  ioda::ObsDataVector<float> ObsDataVect0(ObsDataVecTestFixture::obspace(), ObsDataVectorVars);
+
+  const ioda::ObsVector ObsVect(ObsDataVecTestFixture::obspace(), group);
+
+  if (testtype == "variables not found in ObsVector") {
+    EXPECT_THROWS_MSG(ObsDataVect0.assignToExistingVariables(ObsVect), "not found in ObsVector");
+  } else {
+    std::stringstream stream1;
+    stream1 << ObsDataVect;
+    std::string expectedOutput = trim(stream1.str());
+
+    ObsDataVect0.assignToExistingVariables(ObsVect);
+
+    std::stringstream stream2;
+    stream2 << ObsDataVect0;
+    std::string output = trim(stream2.str());
+
+    EXPECT_EQUAL(output, expectedOutput);
+  }
+}
+
+
 CASE("ioda/ObsDataVector/printFloat") {
   testPrint<float>("float");
 }
@@ -102,6 +137,18 @@ CASE("ioda/ObsDataVector/printDateTime") {
 
 CASE("ioda/ObsDataVector/printBool") {
   testPrint<bool>("bool");
+}
+
+CASE("ioda/ObsDataVector/assignToExistingVariablesMulti") {
+  testAssignToExistingVariables("multiple variables disordered");
+}
+
+CASE("ioda/ObsDataVector/assignToExistingVariablesExcess") {
+  testAssignToExistingVariables("excess variables in ObsVector");
+}
+
+CASE("ioda/ObsDataVector/assignToExistingVariablesNotFound") {
+  testAssignToExistingVariables("variables not found in ObsVector");
 }
 
 CASE("ioda/ObsDataVector/closeObsSpace") {
