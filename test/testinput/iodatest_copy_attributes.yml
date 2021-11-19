@@ -27,7 +27,7 @@ variable copy:
           - name: "longname"
             type: "string"
             values: [ "water vapor content in air" ]
-          - name: "_FillValue"
+          - name: "testFillValue"     # the _FillValue attribute is ignored by design
             type: "float"
             values: [ -999.0 ]
       - name: "instrumentIdentifier"
@@ -40,7 +40,7 @@ variable copy:
           - name: "longname"
             type: "string"
             values: [ "instrument identifier enumeration key" ]
-          - name: "_FillValue"
+          - name: "testFillValue"
             type: "int"
             values: [ -999 ]
     tolerance: 1.0e-6

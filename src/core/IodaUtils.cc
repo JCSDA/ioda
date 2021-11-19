@@ -398,6 +398,7 @@ void copyAttributes(const ioda::Has_Attributes & srcAttrs, ioda::Has_Attributes 
     "DIMENSION_LIST",
     "NAME",
     "REFERENCE_LIST",
+    "_FillValue",
     "_NCProperties",
     "_Netcdf4Coordinates",
     "_Netcdf4Dimid",
