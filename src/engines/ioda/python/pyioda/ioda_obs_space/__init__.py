@@ -48,6 +48,27 @@ class ObsSpace:
         self.variables = self.file.listVars(recurse=True)
         self.nvars = len(self.variables)
 
+    def read_attr(self, attrName):
+        """
+          returns single value or array of values of requested attribute
+        """
+        _attr = self.obsgroup.atts.open(attrName)
+        # figure out what datatype the attribute is
+        if _attr.isA2(ioda.Types.float):
+            # float
+            attrval = _attr.readVector.float()
+        elif _attr.isA2(ioda.Types.int):
+            # integer
+            attrval = _attr.readVector.int()
+        elif _attr.isA2(ioda.Types.str):
+            # string
+            attrval = _attr.readVector.str()
+        else:
+            raise TypeError(f"Attribute {attrName} type not supported")
+        if len(attrval) == 1:
+            attrval = attrval[0]
+        return attrval
+
     def write_attr(self, attrName, attrVal):
         # get type of variable
         try:
@@ -229,6 +250,27 @@ class ObsSpace:
             elif datatype == ioda.Types.str:
                 self._iodavar.writeVector.str(npArray)
             # add other elif here TODO
+
+        def read_attr(self, attrName):
+            """
+              returns single value or array of values of requested attribute
+            """
+            _attr = self._iodavar.atts.open(attrName)
+            # figure out what datatype the attribute is
+            if _attr.isA2(ioda.Types.float):
+                # float
+                attrval = _attr.readVector.float()
+            elif _attr.isA2(ioda.Types.int):
+                # integer
+                attrval = _attr.readVector.int()
+            elif _attr.isA2(ioda.Types.str):
+                # string
+                attrval = _attr.readVector.str()
+            else:
+                raise TypeError(f"Attribute {attrName} type not supported")
+            if len(attrval) == 1:
+                attrval = attrval[0]
+            return attrval
 
         def write_attr(self, attrName, attrVal):
             # get type of variable
