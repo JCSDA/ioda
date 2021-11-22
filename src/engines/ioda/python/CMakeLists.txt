@@ -49,9 +49,9 @@ add_custom_command(TARGET _ioda_python POST_BUILD
 	${CMAKE_CURRENT_SOURCE_DIR}/pyioda/ioda_obs_space/__init__.py ${PYIODA_DIR}/ioda_obs_space/__init__.py)
 
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/pyioda/ioda/__init__.py
-	DESTINATION ${CMAKE_INSTALL_LIBDIR}/${pyver}/ioda/
+	DESTINATION ${CMAKE_INSTALL_LIBDIR}/${pyver}/pyioda/ioda/
 	)
 
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/pyioda/ioda_obs_space/__init__.py
-	DESTINATION ${CMAKE_INSTALL_LIBDIR}/${pyver}/ioda_obs_space/
+	DESTINATION ${CMAKE_INSTALL_LIBDIR}/${pyver}/pyioda/ioda_obs_space/
 	)
