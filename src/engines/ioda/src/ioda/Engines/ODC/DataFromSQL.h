@@ -70,6 +70,7 @@ namespace ODC {
 
   static constexpr float odb_missing_float = -2147483648.0f;
   static constexpr int odb_missing_int = 2147483647;
+  static constexpr char* odb_missing_string = "*** MISSING ***";
 
 class DataFromSQL {
 private:
@@ -200,6 +201,9 @@ public:
 
   /// \brief Returns a vector of date strings
   std::vector<std::string> getDates(std::string const& date_col, std::string const& time_col) const;
+
+  /// \brief Returns a vector of station IDs
+  std::vector<std::string> getStationIDs() const;
 
   /// \brief Returns the vector of names of columns selected by the SQL query
   const std::vector<std::string>& getColumns() const;

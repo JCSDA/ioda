@@ -430,6 +430,13 @@ ObsGroup openFile(const ODC_Parameters& odcparams,
   ignores.push_back("MetaData/receiptdatetime");
   ignores.push_back("nchans");
 
+  // Station ID is constructed from other variables for certain observation types.
+  const bool constructStationID =
+    sql_data.getObsgroup() == obsgroup_sonde ||
+    sql_data.getObsgroup() == obsgroup_oceansound;
+  if (constructStationID)
+    ignores.push_back("MetaData/station_id");
+
   NewDimensionScales_t vertcos = sql_data.getVertcos();
 
   auto og = ObsGroup::generate(
@@ -457,6 +464,12 @@ ObsGroup openFile(const ODC_Parameters& odcparams,
     v = og.vars.createWithScales<std::string>(
           "MetaData/receiptdatetime", {og.vars["nlocs"]}, params);
     v.write(sql_data.getDates("receipt_date", "receipt_time"));
+  }
+
+  if (constructStationID) {
+    ioda::Variable v = og.vars.createWithScales<std::string>(
+    "MetaData/station_id", {og.vars["nlocs"]}, params);
+    v.write(sql_data.getStationIDs());
   }
 
   const std::vector<std::string> &ignoredNamesVector = queryParameters.ignoredNames.value();

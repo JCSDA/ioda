@@ -401,6 +401,38 @@ std::vector<std::string> DataFromSQL::getDates(std::string const& date_col,
   return date_strings;
 }
 
+std::vector<std::string> DataFromSQL::getStationIDs() const {
+  std::ostringstream stream;
+  std::vector<std::string> stationIDs;
+  if (obsgroup_ == obsgroup_sonde) {
+    const Eigen::ArrayXi var_wmo_block_number = getMetadataColumnInt("wmo_block_number");
+    const Eigen::ArrayXi var_wmo_station_number = getMetadataColumnInt("wmo_station_number");
+    const size_t nlocs = var_wmo_block_number.size();
+    stationIDs.assign(nlocs, odb_missing_string);
+    for (int loc = 0; loc < nlocs; loc++) {
+      if (var_wmo_block_number[loc] != odb_missing_int &&
+          var_wmo_station_number[loc] != odb_missing_int) {
+        stream.str("");
+        stream << std::setfill('0') << std::setw(2) << var_wmo_block_number[loc]
+               << std::setfill('0') << std::setw(3) << var_wmo_station_number[loc];
+        stationIDs[loc] = stream.str();
+      }
+    }
+  } else if (obsgroup_ == obsgroup_oceansound) {
+    const Eigen::ArrayXi var_argo_identifier = getMetadataColumnInt("argo_identifier");
+    const size_t nlocs = var_argo_identifier.size();
+    stationIDs.assign(nlocs, odb_missing_string);
+    for (int loc = 0; loc < nlocs; loc++) {
+      if (var_argo_identifier[loc] != odb_missing_int) {
+        stream.str("");
+        stream << std::setfill('0') << std::setw(8) << var_argo_identifier[loc];
+        stationIDs[loc] = stream.str();
+      }
+    }
+  }
+  return stationIDs;
+}
+
 void DataFromSQL::createVarnoIndependentIodaVariable(
     std::string const& column, ioda::ObsGroup og,
     const ioda::VariableCreationParameters &params) const {

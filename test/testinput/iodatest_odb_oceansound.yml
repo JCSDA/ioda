@@ -3,7 +3,6 @@ where:
 variables:
 - name: receipt_time
 - name: receipt_date
-- name: statid
 - name: argo_identifier
 - name: numlev
 - name: initial_obsvalue

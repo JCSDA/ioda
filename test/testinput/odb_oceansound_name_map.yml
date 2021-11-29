@@ -1,0 +1,32 @@
+varno-independent columns:
+  - name: "MetaData/argo_identifier"
+    source: "argo_identifier"
+  - name: "MetaData/number_of_levels"
+    source: "numlev"
+  - name: "MetaData/instrument_type"
+    source: "instrument_type"
+  - name: "MetaData/sea_depth"
+    source: "sea_depth"
+  - name: "MetaData/buoy_type"
+    source: "buoy_type"
+  - name: "MetaData/buoy_identifier"
+    source: "buoy_identifier"
+  - name: "MetaData/latitude"
+    source: "lat"
+  - name: "MetaData/longitude"
+    source: "lon"
+varno-dependent columns:
+  - source: "initial_obsvalue"
+    group name: "ObsValue"
+    varno-to-variable-name mapping: &obsvalue_varnos
+      - name: "height"
+        varno: 1
+      - name: "air_temperature"
+        varno: 2
+      - name: "salinity"
+        varno: 224
+      - name: "theta"
+        varno: 225
+  - source: "obs_error"
+    group name: "ObsError"
+    varno-to-variable-name mapping: *obsvalue_varnos
