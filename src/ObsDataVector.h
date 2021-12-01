@@ -46,9 +46,11 @@ class ObsDataVector: public util::Printable,
   static const std::string classname() {return "ioda::ObsDataVector";}
 
   ObsDataVector(ObsSpace &, const oops::Variables &,
-                const std::string & grp = "", const bool fail = true);
+                const std::string & grp = "", const bool fail = true,
+                const bool skipDerived = false);
   ObsDataVector(ObsSpace &, const std::string &,
-                const std::string & grp = "", const bool fail = true);
+                const std::string & grp = "", const bool fail = true,
+                const bool skipDerived = false);
   explicit ObsDataVector(ObsVector &);
   ObsDataVector(const ObsDataVector &);
   ~ObsDataVector();
@@ -58,7 +60,9 @@ class ObsDataVector: public util::Printable,
   void zero();
   void mask(const ObsDataVector<int> &);
 
-  void read(const std::string &, const bool fail = true);  // only used in GNSSRO QC
+  // Read ObsDataVector.
+  void read(const std::string &, const bool fail = true,
+            const bool skipDerived = false);
   void save(const std::string &) const;
 
 /// \brief   Assign to all variables of this ObsDataVector, the values in the ObsVector vect
@@ -99,7 +103,8 @@ class ObsDataVector: public util::Printable,
 // -----------------------------------------------------------------------------
 template <typename DATATYPE>
 ObsDataVector<DATATYPE>::ObsDataVector(ObsSpace & obsdb, const oops::Variables & vars,
-                                       const std::string & grp, const bool fail)
+                                       const std::string & grp, const bool fail,
+                                       const bool skipDerived)
   : obsdb_(obsdb), obsvars_(vars), nvars_(obsvars_.size()),
     nlocs_(obsdb_.nlocs()), rows_(nvars_),
     missing_(util::missingValue(missing_))
@@ -108,20 +113,21 @@ ObsDataVector<DATATYPE>::ObsDataVector(ObsSpace & obsdb, const oops::Variables &
   for (size_t jj = 0; jj < nvars_; ++jj) {
     rows_[jj].resize(nlocs_);
   }
-  if (!grp.empty()) this->read(grp, fail);
+  if (!grp.empty()) this->read(grp, fail, skipDerived);
   oops::Log::trace() << "ObsDataVector::ObsDataVector done" << std::endl;
 }
 // -----------------------------------------------------------------------------
 template <typename DATATYPE>
 ObsDataVector<DATATYPE>::ObsDataVector(ObsSpace & obsdb, const std::string & var,
-                                       const std::string & grp, const bool fail)
+                                       const std::string & grp, const bool fail,
+                                       const bool skipDerived)
   : obsdb_(obsdb), obsvars_(std::vector<std::string>(1, var)), nvars_(1),
     nlocs_(obsdb_.nlocs()), rows_(1),
     missing_(util::missingValue(missing_))
 {
   oops::Log::trace() << "ObsDataVector::ObsDataVector start" << std::endl;
   rows_[0].resize(nlocs_);
-  if (!grp.empty()) this->read(grp, fail);
+  if (!grp.empty()) this->read(grp, fail, skipDerived);
   oops::Log::trace() << "ObsDataVector::ObsDataVector done" << std::endl;
 }
 // -----------------------------------------------------------------------------
@@ -192,7 +198,8 @@ void ObsDataVector<DATATYPE>::mask(const ObsDataVector<int> & flags) {
 }
 // -----------------------------------------------------------------------------
 template <typename DATATYPE>
-void ObsDataVector<DATATYPE>::read(const std::string & name, const bool fail) {
+void ObsDataVector<DATATYPE>::read(const std::string & name, const bool fail,
+                                   const bool skipDerived) {
   oops::Log::trace() << "ObsDataVector::read, name = " << name << std::endl;
   const DATATYPE missing = util::missingValue(missing);
 
@@ -203,7 +210,7 @@ void ObsDataVector<DATATYPE>::read(const std::string & name, const bool fail) {
 
     for (size_t jv = 0; jv < nvars_; ++jv) {
       if (fail || obsdb_.has(name, obsvars_.variables()[jv])) {
-        obsdb_.get_db(name, obsvars_.variables()[jv], tmp);
+        obsdb_.get_db(name, obsvars_.variables()[jv], tmp, {}, skipDerived);
         for (size_t jj = 0; jj < nlocs_; ++jj) {
           rows_.at(jv).at(jj) = tmp.at(jj);
         }

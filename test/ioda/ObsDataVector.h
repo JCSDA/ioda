@@ -68,11 +68,9 @@ template <typename T>
 void testPrint(const std::string &datatype) {
   eckit::LocalConfiguration conf(::test::TestEnvironment::config(), "print." + datatype);
 
-  oops::Variables vars;
-  for (const std::string &var : conf.getStringVector("variables"))
-    vars.push_back(var);
+  const oops::Variables vars(conf, "variables");
   const std::string group = conf.getString("group");
-  ioda::ObsDataVector<T> vector(ObsDataVecTestFixture::obspace(), vars, group);
+  const ioda::ObsDataVector<T> vector(ObsDataVecTestFixture::obspace(), vars, group);
 
   std::stringstream stream;
   stream << vector;
@@ -85,13 +83,11 @@ void testAssignToExistingVariables(const std::string &testtype) {
   eckit::LocalConfiguration conf(::test::TestEnvironment::config(),
                                 "assignToExistingVariables." + testtype);
 
-  oops::Variables ObsDataVectorVars;
-  for (const std::string &var : conf.getStringVector("ObsDataVector variables"))
-    ObsDataVectorVars.push_back(var);
+  const oops::Variables ObsDataVectorVars(conf, "ObsDataVector variables");
   const std::string group = conf.getString("group");
   // known good output:
-  ioda::ObsDataVector<float> ObsDataVect(ObsDataVecTestFixture::obspace(),
-                                         ObsDataVectorVars, group);
+  const ioda::ObsDataVector<float> ObsDataVect(ObsDataVecTestFixture::obspace(),
+                                               ObsDataVectorVars, group);
   // empty ObsDataVector, which should become kgo if assignToExistingVariables works:
   ioda::ObsDataVector<float> ObsDataVect0(ObsDataVecTestFixture::obspace(), ObsDataVectorVars);
 
@@ -114,6 +110,23 @@ void testAssignToExistingVariables(const std::string &testtype) {
   }
 }
 
+void testRead(const std::string & description) {
+  eckit::LocalConfiguration conf(::test::TestEnvironment::config(), "read." + description);
+
+  const oops::Variables vars(conf, "variables");
+  const std::string group = conf.getString("group");
+  ioda::ObsDataVector<float> vector(ObsDataVecTestFixture::obspace(), vars, group);
+
+  const bool fail = false;
+  const bool skipDerived = conf.getBool("skipDerived");
+  vector.read(group, fail, skipDerived);
+
+  std::stringstream stream;
+  stream << vector;
+  std::string output = trim(stream.str());
+  std::string expectedOutput = trim(conf.getString("expected output"));
+  EXPECT_EQUAL(output, expectedOutput);
+}
 
 CASE("ioda/ObsDataVector/printFloat") {
   testPrint<float>("float");
@@ -154,6 +167,14 @@ CASE("ioda/ObsDataVector/assignToExistingVariablesNotFound") {
 CASE("ioda/ObsDataVector/closeObsSpace") {
   // In case the obsdataout spec is ever used
   ObsDataVecTestFixture::obspace().save();
+}
+
+CASE("ioda/ObsDataVector/readObsValue, skipDerived false") {
+  testRead("ObsValue, skipDerived false");
+}
+
+CASE("ioda/ObsDataVector/readObsValue, skipDerived true") {
+  testRead("ObsValue, skipDerived true");
 }
 
 class ObsDataVector : public oops::Test {

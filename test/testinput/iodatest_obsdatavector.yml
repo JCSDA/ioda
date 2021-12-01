@@ -53,3 +53,16 @@ assignToExistingVariables:
   variables not found in ObsVector:
     ObsDataVector variables: [float_variable_1, float_variable_3, float_variable_2]
     group: ObsValue
+read:
+  ObsValue, skipDerived false:
+    variables: [air_temperature]
+    group: ObsValue
+    skipDerived: false
+    expected output: |
+      Test air_temperature nlocs = 4, nobs = 4, min = 402.5, max = 410, avg = 406.25
+  ObsValue, skipDerived true:
+    variables: [air_temperature]
+    group: ObsValue
+    skipDerived: true
+    expected output: |
+      Test air_temperature nlocs = 4, nobs = 4, min = 302.5, max = 310, avg = 306.25
