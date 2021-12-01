@@ -502,6 +502,20 @@ ioda::Variable DataFromSQL::assignChannelNumbers(const int varno, ioda::ObsGroup
   return v;
 }
 
+ioda::Variable DataFromSQL::assignChannelNumbersSeq(const std::vector<int> varnos, const ioda::ObsGroup og) const {
+  int number_of_levels = 0;
+  for (size_t i = 0; i < varnos.size(); i++) {
+    number_of_levels += numberOfLevels(varnos[i]);
+  }
+  ioda::Variable v = og.vars["nchans"];
+  Eigen::ArrayXi var_single(number_of_levels);
+  for (size_t i = 0; i < number_of_levels; i++) {
+    var_single[i] = i+1;
+  }
+  v.writeWithEigenRegular(var_single);
+  return v;
+}
+
 void DataFromSQL::createVarnoDependentIodaVariable(
     std::string const &column, const int varno,
     ioda::ObsGroup og, const ioda::VariableCreationParameters &params) const {

@@ -48,6 +48,7 @@ namespace ODC {
   static constexpr int obsgroup_mwri         = 55;
   static constexpr int obsgroup_gmilow       = 56;
   static constexpr int obsgroup_gmihigh      = 57;
+  static constexpr int obsgroup_olci         = 58;
   static constexpr int obsgroup_hiras        = 60;
 
   static constexpr int varno_dd                     = 111;
@@ -225,6 +226,9 @@ public:
 
   /// \brief Returns a list of channels associated with a particular varno.
   ioda::Variable assignChannelNumbers(int varno, ioda::ObsGroup og) const;
+
+  /// \brief Returns a list of channels associated with a particular varno.
+  ioda::Variable assignChannelNumbersSeq(const std::vector<int> varnos, const ioda::ObsGroup og) const;
 
   /// \brief Creates an ioda variable for a specified column
   void createVarnoDependentIodaVariable(std::string const &column, int varno,

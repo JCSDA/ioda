@@ -123,6 +123,7 @@ variables:
 - name: ephemeris_longitude_2
 - name: ephemeris_longitude_3
 - name: initial_obsvalue
+- name: initial_vertco_reference
 - name: numlev
 - name: rain_flag
 - name: satellite_identifier

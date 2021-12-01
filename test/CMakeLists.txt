@@ -92,6 +92,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsspace_marine.yml
   testinput/iodatest_obsspace_mpi.yml
   testinput/iodatest_obsspace_odc.yml
+  testinput/iodatest_obsspace_odc_atms.yml
   testinput/iodatest_obsspace_fortran.yml
   testinput/iodatest_obsspace_put_db_channels.yml
   testinput/iodatest_obsspace_zero_obs.yml
@@ -476,6 +477,10 @@ if (odc_FOUND)
   ecbuild_add_test( TARGET  test_ioda_obsspace_odc
                     COMMAND test_ioda_obsspace
                     ARGS    "testinput/iodatest_obsspace_odc.yml"
+                    TEST_DEPENDS get_ioda_test_data )
+  ecbuild_add_test( TARGET  test_ioda_obsspace_odc_atms
+                    COMMAND test_ioda_obsspace
+                    ARGS    "testinput/iodatest_obsspace_odc_atms.yml"
                     TEST_DEPENDS get_ioda_test_data )
 endif()
 

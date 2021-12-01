@@ -1,8 +1,8 @@
 where:
   varno: [245]
 variables:
-- name: viewing_zenith_angle
 - name: initial_obsvalue
 - name: satellite_identifier
 - name: receipt_time
 - name: receipt_date
+- name: viewing_zenith_angle

@@ -484,6 +484,19 @@ ObsGroup openFile(const ODC_Parameters& odcparams,
                                                            sql_data.getObsgroup() == obsgroup_cris ||
                                                            sql_data.getObsgroup() == obsgroup_hiras)) {
       sql_data.assignChannelNumbers(varno_rawsca, og);
+    } else if (column == "initial_vertco_reference" && (sql_data.getObsgroup() == obsgroup_abiclr || 
+                                                        sql_data.getObsgroup() == obsgroup_ahiclr || 
+                                                        sql_data.getObsgroup() == obsgroup_atms || 
+                                                        sql_data.getObsgroup() == obsgroup_mwri || 
+                                                        sql_data.getObsgroup() == obsgroup_seviriclr || 
+                                                        sql_data.getObsgroup() == obsgroup_ssmis)) {
+      sql_data.assignChannelNumbersSeq(std::vector<int>({varno_rawbt}), og);
+    } else if (column == "initial_vertco_reference" && sql_data.getObsgroup() == obsgroup_atovs) {
+      sql_data.assignChannelNumbersSeq(std::vector<int>({varno_rawbt_amsu}), og);
+    } else if (column == "initial_vertco_reference" && sql_data.getObsgroup() == obsgroup_mwsfy3) {
+      sql_data.assignChannelNumbersSeq(std::vector<int>(varno_rawbt_mwts,varno_rawbt_mwhs), og);
+    } else if (column == "initial_vertco_reference" && sql_data.getObsgroup() == obsgroup_amsr) {
+      sql_data.assignChannelNumbersSeq(std::vector<int>(varno_rawbt,varno_rawbt_amsr_89ghz), og);
     // ... no, it does not.
     } else {      
       // This loop handles columns whose cells should be transferred in their entirety into ioda
