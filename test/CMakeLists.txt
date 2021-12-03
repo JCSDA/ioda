@@ -128,7 +128,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_odb_oceancolour.yml
   testinput/iodatest_odb_oceansound.yml
   testinput/iodatest_odb_satsst.yml
-  testinput/iodatest_odb_olci.yml
+  testinput/iodatest_odb_sattcwv.yml
   testinput/iodatest_odb_satwind.yml
   testinput/iodatest_odb_scatwind.yml
   testinput/iodatest_odb_seaice.yml
@@ -1057,15 +1057,15 @@ if (odc_FOUND)
                             test-MWSFY3.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
-  ecbuild_add_test( TARGET  test_ioda-convert_olci_odc
+  ecbuild_add_test( TARGET  test_ioda-convert_sattcwv_odc
                     TYPE    SCRIPT
                     COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
                     ARGS    hdf5
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
-                            OLCI
-                            Data/testinput_tier_1/olci.odb
-                            testinput/odb_default_name_map.yml testinput/iodatest_odb_olci.yml"
-                            test-OLCI.hdf
+                            SatTCWV
+                            Data/testinput_tier_1/sattcwv.odb
+                            testinput/odb_default_name_map.yml testinput/iodatest_odb_sattcwv.yml"
+                            test-SatTCWV.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
   ecbuild_add_test( TARGET  test_ioda-convert_seviriclear_odc
