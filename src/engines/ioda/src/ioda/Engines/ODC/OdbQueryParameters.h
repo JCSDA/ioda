@@ -106,18 +106,6 @@ class OdbQueryParameters : public oops::Parameters {
 
   /// Selection criteria
   oops::RequiredParameter<OdbWhereParameters> where{"where", this};
-
-  /// Variable names which are ignored when requested in the mapping file
-  oops::Parameter<std::vector<std::string>> ignoredNames{"ignored names",
-      {"date",
-       "time",
-       "receipt_date",
-       "receipt_time",
-       "seqno",
-       "varno",
-       "vertco_type",
-       "entryno",
-       "ops_obsgroup"}, this};
 };
 
 }  // namespace ODC

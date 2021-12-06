@@ -7,4 +7,3 @@ variables:
 # bitfield member variables
 - name: level.surface
 - name: level.max_wind_level
-ignored names: [date,time,receipt_date,receipt_time,seqno,varno,vertco_type,entryno,ops_obsgroup]

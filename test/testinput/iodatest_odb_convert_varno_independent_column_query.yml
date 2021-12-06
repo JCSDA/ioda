@@ -14,4 +14,3 @@ variables:
 # (the level bitfield is in fact varno-dependent, but it's the same
 # for varnos 111 and 112, i.e. wind direction and speed)
 - name: level
-ignored names: [date,time,receipt_date,receipt_time,seqno,varno,vertco_type,entryno,ops_obsgroup]

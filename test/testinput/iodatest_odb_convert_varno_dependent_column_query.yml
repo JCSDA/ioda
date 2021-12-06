@@ -11,6 +11,3 @@ variables:
 # bitfield variables treated as ints
 - name: level
 # note: varno-dependent string variables are not currently supported
-
-# entryno removed from this list
-ignored names: [date,time,receipt_date,receipt_time,seqno,varno,vertco_type,ops_obsgroup]

@@ -472,12 +472,8 @@ ObsGroup openFile(const ODC_Parameters& odcparams,
     v.write(sql_data.getStationIDs());
   }
 
-  const std::vector<std::string> &ignoredNamesVector = queryParameters.ignoredNames.value();
-  const std::set<std::string> ignoredNames(ignoredNamesVector.begin(), ignoredNamesVector.end());
-
   for (const std::string &column : sql_data.getColumns()) {
     // Check if this column requires special treatment...
-    if (ignoredNames.count(column)) continue;
     if (column == "initial_vertco_reference" && sql_data.getObsgroup() == obsgroup_airs) {
       sql_data.assignChannelNumbers(varno_rawbt, og);
     } else if (column == "initial_vertco_reference" && (sql_data.getObsgroup() == obsgroup_iasi ||

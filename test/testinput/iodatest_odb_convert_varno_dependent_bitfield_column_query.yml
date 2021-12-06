@@ -6,4 +6,3 @@ variables:
 - name: receipt_time
 # bitfield variables
 - name: level
-ignored names: [date,time,receipt_date,receipt_time,seqno,varno,vertco_type,entryno,ops_obsgroup]
