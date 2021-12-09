@@ -237,6 +237,23 @@ class ObsSpace:
             self._iodavar = self.obsspace.obsgroup.vars.open(self._varstr)
             self.attrs = self._iodavar.atts.list()
 
+        def numpy_dtype(self):
+            if self._iodavar.isA2(ioda.Types.float):
+                dtype = np.dtype('float32')
+            elif self._iodavar.isA2(ioda.Types.double):
+                dtype = np.dtype('float64')
+            elif self._iodavar.isA2(ioda.Types.int64):
+                dtype = np.dtype('int64')
+            elif self._iodavar.isA2(ioda.Types.int32):
+                dtype = np.dtype('int32')
+            elif self._iodavar.isA2(ioda.Types.int16):
+                dtype = np.dtype('int16')
+            elif self._iodavar.isA2(ioda.Types.str):
+                dtype = np.dtype('object')
+            else:
+                raise TypeError("Unrecognized IODA type")
+            return dtype
+
         def write_data(self, npArray):
             datatype = self.obsspace.NumpyToIodaDtype(npArray)
             if datatype == ioda.Types.float:
