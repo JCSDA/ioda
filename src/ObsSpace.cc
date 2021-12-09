@@ -294,14 +294,26 @@ ObsDtype ObsSpace::dtype(const std::string & group, const std::string & name,
               [&] (int)   {
                   VarType = ObsDtype::Integer;
               },
+              [&] (int64_t)   {
+                  if ((group == "MetaData") && (nameToUse == "dateTime")) {
+                      VarType = ObsDtype::DateTime;
+                      // TODO(srh) Workaround to cover when datetime was stored
+                      // as a util::DateTime object (back when the obs space container
+                      // was a boost::multiindex container). For now, ioda accepts
+                      // int64_t offset times with its epoch datetime representation.
+                  } else {
+                      VarType = ObsDtype::Integer_64;
+                  }
+              },
               [&] (float) {
                   VarType = ObsDtype::Float;
               },
               [&] (std::string) {
                   if ((group == "MetaData") && (nameToUse == "datetime")) {
                       // TODO(srh) Workaround to cover when datetime was stored
-                      // as a util::DateTime object. For now, ioda will store datetimes
-                      // as strings and convert to DateTime objects for client access.
+                      // as a util::DateTime object (back when the obs space container
+                      // was a boost::multiindex container). For now ioda accepts
+                      // string datetime representation.
                       VarType = ObsDtype::DateTime;
                   } else {
                       VarType = ObsDtype::String;
@@ -320,6 +332,12 @@ void ObsSpace::get_db(const std::string & group, const std::string & name,
                      std::vector<int> & vdata,
                      const std::vector<int> & chanSelect, bool skipDerived) const {
     loadVar<int>(group, name, chanSelect, vdata, skipDerived);
+}
+
+void ObsSpace::get_db(const std::string & group, const std::string & name,
+                     std::vector<int64_t> & vdata,
+                     const std::vector<int> & chanSelect, bool skipDerived) const {
+    loadVar<int64_t>(group, name, chanSelect, vdata, skipDerived);
 }
 
 void ObsSpace::get_db(const std::string & group, const std::string & name,
@@ -346,9 +364,11 @@ void ObsSpace::get_db(const std::string & group, const std::string & name,
 void ObsSpace::get_db(const std::string & group, const std::string & name,
                      std::vector<util::DateTime> & vdata,
                      const std::vector<int> & chanSelect, bool skipDerived) const {
-    std::vector<std::string> dtStrings;
-    loadVar<std::string>(group, name, chanSelect, dtStrings, skipDerived);
-    vdata = convertDtStringsToDtime(dtStrings);
+    std::vector<int64_t> timeOffsets;
+    loadVar<int64_t>(group, name, chanSelect, timeOffsets, skipDerived);
+    Variable dtVar = obs_group_.vars.open(group + std::string("/") + name);
+    util::DateTime epochDt = getEpochAsDtime(dtVar);
+    vdata = convertEpochDtToDtime(epochDt, timeOffsets);
 }
 
 void ObsSpace::get_db(const std::string & group, const std::string & name,
@@ -366,6 +386,12 @@ void ObsSpace::get_db(const std::string & group, const std::string & name,
 // -----------------------------------------------------------------------------
 void ObsSpace::put_db(const std::string & group, const std::string & name,
                      const std::vector<int> & vdata,
+                     const std::vector<std::string> & dimList) {
+    saveVar(group, name, vdata, dimList);
+}
+
+void ObsSpace::put_db(const std::string & group, const std::string & name,
+                     const std::vector<int64_t> & vdata,
                      const std::vector<std::string> & dimList) {
     saveVar(group, name, vdata, dimList);
 }
@@ -394,11 +420,15 @@ void ObsSpace::put_db(const std::string & group, const std::string & name,
 void ObsSpace::put_db(const std::string & group, const std::string & name,
                      const std::vector<util::DateTime> & vdata,
                      const std::vector<std::string> & dimList) {
-    std::vector<std::string> dtStrings(vdata.size(), "");
-    for (std::size_t i = 0; i < vdata.size(); ++i) {
-      dtStrings[i] = vdata[i].toString();
-    }
-    saveVar(group, name, dtStrings, dimList);
+    // Make sure the variable exists before calling saveVar. Doing it this way instead
+    // of through the openCreateVar call in saveVar because of the need to get the
+    // epoch value for converting the data before calling saveVar. Use the window starting
+    // DateTime for the units ("seconds since _____") if creating a new variable.
+    Variable dtVar;
+    openCreateEpochDtimeVar(group, name, winbgn_, dtVar, obs_group_.vars);
+    util::DateTime epochDtime = getEpochAsDtime(dtVar);
+    std::vector<int64_t> timeOffsets = convertDtimeToTimeOffsets(epochDtime, vdata);
+    saveVar(group, name, timeOffsets, dimList);
 }
 
 void ObsSpace::put_db(const std::string & group, const std::string & name,
@@ -564,7 +594,7 @@ void ObsSpace::createObsGroupFromObsFrame(ObsFrameRead & obsFrame) {
 template<typename VarType>
 bool ObsSpace::readObsSource(ObsFrameRead & obsFrame,
                             const std::string & varName, std::vector<VarType> & varValues) {
-    Variable sourceVar = obsFrame.vars().open(varName);
+    Variable sourceVar = obsFrame.getObsGroup().vars.open(varName);
 
     // Read the variable
     bool gotVarData = obsFrame.readFrameVar(varName, varValues);
@@ -588,7 +618,7 @@ bool ObsSpace::readObsSource(ObsFrameRead & obsFrame,
 template<>
 bool ObsSpace::readObsSource(ObsFrameRead & obsFrame,
                             const std::string & varName, std::vector<std::string> & varValues) {
-    Variable sourceVar = obsFrame.vars().open(varName);
+    Variable sourceVar = obsFrame.getObsGroup().vars.open(varName);
 
     // Read the variable
     bool gotVarData = obsFrame.readFrameVar(varName, varValues);
@@ -611,14 +641,20 @@ bool ObsSpace::readObsSource(ObsFrameRead & obsFrame,
 // -----------------------------------------------------------------------------
 void ObsSpace::initFromObsSource(ObsFrameRead & obsFrame) {
     // Walk through the frames and copy the data to the obs_group_ storage
-    dims_attached_to_vars_ = obsFrame.ioVarDimMap();
-
-    // Create variables in obs_group_ based on those in the obs source
-    createVariables(obsFrame.vars(), obs_group_.vars, dims_attached_to_vars_);
-
-    Variable nlocsVar = obsFrame.vars().open(dim_info_.get_dim_name(ObsDimensionId::Nlocs));
     int iframe = 1;
-    for (obsFrame.frameInit(obs_group_.atts); obsFrame.frameAvailable(); obsFrame.frameNext()) {
+    for (obsFrame.frameInit(obs_group_.atts);
+         obsFrame.frameAvailable(); obsFrame.frameNext()) {
+        // If this is the first frame, create the variables and initialize the data
+        // structure containing the dimension names attached to each variable. These
+        // calls are done here since frameInit needs to be called to get the frame's
+        // variables created.
+        if (iframe == 1) {
+            // Create variables in obs_group_ based on those in the obs source
+            dims_attached_to_vars_ = obsFrame.varDimMap();
+            createVariables(obsFrame.getObsGroup().vars,
+                            obs_group_.vars, dims_attached_to_vars_);
+        }
+
         Dimensions_t frameStart = obsFrame.frameStart();
 
         // Resize the nlocs dimesion according to the adjusted frame size produced
@@ -630,11 +666,19 @@ void ObsSpace::initFromObsSource(ObsFrameRead & obsFrame) {
         known_fe_selections_.clear();
         known_be_selections_.clear();
 
-        for (auto & varNameObject : obsFrame.ioVarList()) {
+        // If the ioda input file only contained the string datetime representation
+        // (variable MetaData/datetime), it has been converted to the epoch representation
+        // (variable MetaData/dateTime) so the string datetime variable can be omitted
+        // from the ObsSpace container. Same for the offset datetime representation
+        // (variable MetaData/time)
+        for (auto & varNameObject : obsFrame.varList()) {
             std::string varName = varNameObject.first;
+            if ((varName == "MetaData/datetime") || (varName == "MetaData/time")) {
+              continue;
+            }
             Variable var = varNameObject.second;
             Dimensions_t beFrameStart;
-            if (obsFrame.ioIsVarDimByNlocs(varName)) {
+            if (obsFrame.isVarDimByNlocs(varName)) {
                 beFrameStart = obsFrame.adjNlocsFrameStart();
             } else {
                 beFrameStart = frameStart;
@@ -675,36 +719,6 @@ void ObsSpace::initFromObsSource(ObsFrameRead & obsFrame) {
     nrecs_ = obsFrame.frameNumRecs();
     indx_ = obsFrame.index();
     recnums_ = obsFrame.recnums();
-
-    // TODO(SRH) Eliminate this temporary fix. Some files do not have ISO 8601 date time
-    // strings. Instead they have a reference date time and time offset. If there is no
-    // datetime variable in the obs_group_ after reading in the file, then create one
-    // from the reference/offset time values.
-    std::string dtVarName = fullVarName("MetaData", "datetime");
-    if (!obs_group_.vars.exists(dtVarName)) {
-        int refDtime;
-        obsFrame.atts().open("date_time").read<int>(refDtime);
-
-        std::vector<float> timeOffset;
-        Variable timeVar = obs_group_.vars.open(fullVarName("MetaData", "time"));
-        timeVar.read<float>(timeOffset);
-
-        std::vector<util::DateTime> dtVals = convertRefOffsetToDtime(refDtime, timeOffset);
-        std::vector<std::string> dtStrings(dtVals.size(), "");
-        for (std::size_t i = 0; i < dtVals.size(); ++i) {
-            dtStrings[i] = dtVals[i].toString();
-        }
-
-        VariableCreationParameters params;
-        params.chunk = true;
-        params.compressWithGZIP();
-        params.setFillValue<std::string>(this->getFillValue<std::string>());
-        std::vector<Variable>
-            dimVars(1, obs_group_.vars.open(dim_info_.get_dim_name(ObsDimensionId::Nlocs)));
-        obs_group_.vars
-            .createWithScales<std::string>(dtVarName, dimVars, params)
-            .write<std::string>(dtStrings);
-    }
 }
 
 // -----------------------------------------------------------------------------
@@ -962,8 +976,17 @@ void ObsSpace::createVariables(const Has_Variables & srcVarContainer,
 
     // Walk through map to get list of variables to create along with
     // their dimensions. Use the srcVarContainer to get the var data type.
+    //
+    // If the ioda input file only contained the string datetime representation
+    // (variable MetaData/datetime), it has been converted to the epoch representation
+    // (variable MetaData/dateTime) so the string datetime variable can be omitted
+    // from the ObsSpace container. Same for the offset datetime representation
+    // (variable MetaData/time). Note this function is only called by the ioda reader.
     for (auto & ivar : dimsAttachedToVars) {
         std::string varName = ivar.first;
+        if ((varName == "MetaData/datetime") || (varName == "MetaData/time")) {
+          continue;
+        }
         std::vector<std::string> varDimNames = ivar.second;
 
         // Create a vector with dimension scale vector from destination container
@@ -1041,7 +1064,7 @@ void ObsSpace::buildSortedObsGroups() {
     // Get the sort variable from the data store, and convert to a vector of floats.
     std::size_t nLocs = this->nlocs();
     std::vector<float> SortValues(nLocs);
-    if (this->obs_sort_var() == "datetime") {
+    if (this->obs_sort_var() == "dateTime") {
         std::vector<util::DateTime> Dates(nLocs);
         get_db("MetaData", this->obs_sort_var(), Dates);
         for (std::size_t iloc = 0; iloc < nLocs; iloc++) {
@@ -1099,6 +1122,8 @@ void ObsSpace::saveToFile() {
     Dimensions_t maxVarSize;
     collectVarDimInfo(obs_group_, varList, dimVarList, dimsAttachedToVars, maxVarSize);
 
+    Dimensions_t maxFrameSize = obs_params_.top_level_.obsOutFile.value()->maxFrameSize;
+
     // Record dimension scale variables for the output file creation.
     for (auto & dimNameObject : dimVarList) {
         std::string dimName = dimNameObject.first;
@@ -1116,6 +1141,11 @@ void ObsSpace::saveToFile() {
         // particularly efficient about it.
         if (dimChunkSize == 0) {
             dimChunkSize = 5;
+        }
+        // Limit the chunk size to the maximum frame size. For large nlocs, this will
+        // help keep the file io efficient (by avoiding a too large chunk size).
+        if (dimChunkSize > maxFrameSize) {
+            dimChunkSize = maxFrameSize;
         }
         obs_params_.setDimScale(dimName, dimSize, dimMaxSize, dimChunkSize);
     }
@@ -1136,7 +1166,7 @@ void ObsSpace::saveToFile() {
             std::string destVarName = varNameObject.first;
 
             // open the destination variable and get the associated count
-            Variable destVar = obsFrame.vars().open(destVarName);
+            Variable destVar = obsFrame.getObsGroup().vars.open(destVarName);
             Dimensions_t frameCount = obsFrame.frameCount(destVarName);
 
             // transfer data if we haven't gone past the end of the variable yet

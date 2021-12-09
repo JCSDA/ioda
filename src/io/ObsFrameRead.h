@@ -8,6 +8,8 @@
 #ifndef IO_OBSFRAMEREAD_H_
 #define IO_OBSFRAMEREAD_H_
 
+#include <vector>
+
 #include "eckit/config/LocalConfiguration.h"
 
 #include "ioda/core/IodaUtils.h"
@@ -88,6 +90,7 @@ class ObsFrameRead : public ObsFrame, private util::ObjectCounter<ObsFrameRead> 
     /// \param varDataSelect selection information for the selection in memory
     /// \param frameSelect selection information for the selection in frame
     bool readFrameVar(const std::string & varName, std::vector<int> & varData);
+    bool readFrameVar(const std::string & varName, std::vector<int64_t> & varData);
     bool readFrameVar(const std::string & varName, std::vector<float> & varData);
     bool readFrameVar(const std::string & varName, std::vector<std::string> & varData);
     bool readFrameVar(const std::string & varName, std::vector<char> & varData);
@@ -142,9 +145,6 @@ class ObsFrameRead : public ObsFrame, private util::ObjectCounter<ObsFrameRead> 
 
     /// \brief location indices for current frame
     std::vector<Dimensions_t> frame_loc_index_;
-
-    /// \brief map showing association of dim names with each variable name
-    VarDimMap dims_attached_to_vars_;
 
     /// \brief cache for frame selection
     std::map<std::vector<std::string>, Selection> known_frame_selections_;
@@ -247,7 +247,7 @@ class ObsFrameRead : public ObsFrame, private util::ObjectCounter<ObsFrameRead> 
             std::vector<std::string> &dims = dims_attached_to_vars_.at(varName);
             if (!known_mem_selections_.count(dims)) {
                 known_mem_selections_[dims] = createMemSelection(varShape, frameCount);
-                if (obs_io_->isVarDimByNlocs(varName)) {
+                if (isVarDimByNlocs(varName)) {
                   known_frame_selections_[dims] =
                       createIndexedFrameSelection(varShape);
                 } else {

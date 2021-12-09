@@ -5,11 +5,13 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
  */
 
-#include "oops/util/abor1_cpp.h"
+#include <algorithm>
+#include <cmath>
 
 #include "oops/util/Logger.h"
 
 #include "ioda/distribution/DistributionFactory.h"
+#include "ioda/Exception.h"
 #include "ioda/io/ObsFrameRead.h"
 #include "ioda/io/ObsIoFactory.h"
 
@@ -30,6 +32,50 @@ ObsFrameRead::ObsFrameRead(const ObsSpaceParameters & params) :
     ObsFrame(params) {
     // Create the ObsIo object
     obs_io_ = ObsIoFactory::create(ObsIoModes::READ, params);
+
+    // Find out what datetime representation exists in the input
+    // Precedence is epoch first, then string, then offset.
+    use_epoch_datetime_ = obs_io_->vars().exists("MetaData/dateTime");
+    use_string_datetime_ = obs_io_->vars().exists("MetaData/datetime");
+    use_offset_datetime_ = obs_io_->vars().exists("MetaData/time");
+    if (use_epoch_datetime_) {
+      use_string_datetime_ = false;
+      use_offset_datetime_ = false;
+    } else if (use_string_datetime_) {
+      use_offset_datetime_ = false;
+    }
+
+    // Check to see if required metadata variables exist
+    bool haveRequiredMetadata =
+        use_epoch_datetime_ || use_string_datetime_ || use_offset_datetime_;
+    haveRequiredMetadata = haveRequiredMetadata && obs_io_->vars().exists("MetaData/latitude");
+    haveRequiredMetadata = haveRequiredMetadata && obs_io_->vars().exists("MetaData/longitude");
+    if (!haveRequiredMetadata) {
+      std::string errorMsg =
+          std::string("\nOne or more of the following metadata variables are missing ") +
+          std::string("from the input obs data source:\n") +
+          std::string("    MetaData/dateTime (preferred) or MetaData/datetime or MetaData/time\n") +
+          std::string("    MetaData/latitude\n") +
+          std::string("    MetaData/longitude\n");
+      throw Exception(errorMsg.c_str(), ioda_Here());
+    }
+
+    if (use_string_datetime_) {
+      oops::Log::info() << "WARNING: string style datetime will cause performance degredation "
+                        << "and will eventually be deprecated." << std::endl
+                        << "WARNING: Please update your datetime data to the epoch style "
+                        << "representation using the new variable: MetaData/dateTime."
+                        << std::endl;
+    }
+
+    if (use_offset_datetime_) {
+      oops::Log::info() << "WARNING: the reference/offset style datetime will be deprecated soon."
+                        << std::endl
+                        << "WARNING: Please update your datetime data to the epoch style "
+                        << "representation using the new variable: MetaData/dateTime."
+                        << std::endl;
+    }
+
     eckit::LocalConfiguration distConf = params.top_level_.toConfiguration();
     distname_ = distConf.getString("distribution", "RoundRobin");
 
@@ -68,6 +114,8 @@ void ObsFrameRead::frameInit(Has_Attributes & destAttrs) {
       rec_num_increment_ = 1;
     }
     unique_rec_nums_.clear();
+    // It's important to grab maximum var size from obs_io_ since it is being used to
+    // determine when there are no more frames from obs_io_.
     max_var_size_ = obs_io_->maxVarSize();
     nlocs_ = 0;
     adjusted_nlocs_frame_start_ = 0;
@@ -79,8 +127,13 @@ void ObsFrameRead::frameInit(Has_Attributes & destAttrs) {
     // copy the global attributes
     copyAttributes(obs_io_->atts(), destAttrs);
 
-    // record the variable name <-> dim names associations.
-    dims_attached_to_vars_ = this->ioVarDimMap();
+    // Collect variable and dimension information for downstream use. Don't use the
+    // max_var_size_ from obs_frame_ since it is artificially cropped to the max_frame_size_.
+    // max_var_size_ is being used to determine when there are no more frames left from
+    // obs_io_ so it needs to be set from obs_io_.
+    Dimensions_t dummyMaxVarSize;
+    collectVarDimInfo(obs_frame_, var_list_, dim_var_list_,
+                      dims_attached_to_vars_, dummyMaxVarSize);
 }
 
 //------------------------------------------------------------------------------------
@@ -130,6 +183,37 @@ bool ObsFrameRead::frameAvailable() {
             }
         }
 
+        // If using the string or offset datetimes, convert those to epoch datetimes
+        if (use_string_datetime_) {
+          // Read in string datetimes and convert to time offsets. Use the window
+          // start time as the epoch.
+          std::vector<std::string> dtStrings;
+          Variable stringDtVar = obs_frame_.vars.open("MetaData/datetime");
+          stringDtVar.read<std::string>(dtStrings);
+          std::vector<int64_t> timeOffsets = convertDtStringsToTimeOffsets(
+              params_.windowStart(), dtStrings);
+
+          // Transfer the epoch datetime to the new variable.
+          Variable epochDtVar = obs_frame_.vars.open("MetaData/dateTime");
+          epochDtVar.write<int64_t>(timeOffsets);
+        } else if (use_offset_datetime_) {
+          // Use the date_time global attribute as the epoch. This means that
+          // we just need to convert the float offset times in hours to an
+          // int64_t offset in seconds.
+          std::vector<float> dtTimeOffsets;
+          Variable offsetDtVar = obs_frame_.vars.open("MetaData/time");
+          offsetDtVar.read<float>(dtTimeOffsets);
+
+          std::vector<int64_t> timeOffsets(dtTimeOffsets.size());
+          for (std::size_t i = 0; i < dtTimeOffsets.size(); ++i) {
+            timeOffsets[i] = static_cast<int64_t>(lround(dtTimeOffsets[i] * 3600.0));
+          }
+
+          // Transfer the epoch datetime to the new variable.
+          Variable epochDtVar = obs_frame_.vars.open("MetaData/dateTime");
+          epochDtVar.write<int64_t>(timeOffsets);
+        }
+
         // generate the frame index and record numbers for this frame
         genFrameIndexRecNums(dist_);
 
@@ -155,12 +239,22 @@ Dimensions_t ObsFrameRead::frameStart() {
 
 //------------------------------------------------------------------------------------
 Dimensions_t ObsFrameRead::frameCount(const std::string & varName) {
-    Variable var = obs_io_->vars().open(varName);
+    // We need to query the full size of the variable from obs_io_, but we may
+    // have created MetaData/dateTime from MetaData/datetime inside the frame.
+    // If we are asking for MetaData/dateTime, but we used MetaData/datetime from
+    // obs_io_, then substitue in MetaData/datetime for this check.
+    std::string useVarName = varName;
+    if (use_string_datetime_ && (varName == "MetaData/dateTime")) {
+        useVarName = "MetaData/datetime";
+    } else if (use_offset_datetime_ && (varName == "MetaData/dateTime")) {
+        useVarName = "MetaData/time";
+    }
+    Variable var = obs_io_->vars().open(useVarName);
     Dimensions_t  fCount;
     if (var.isDimensionScale()) {
         fCount = basicFrameCount(var);
     } else {
-        if (obs_io_->isVarDimByNlocs(varName)) {
+        if (obs_io_->isVarDimByNlocs(useVarName)) {
             fCount = adjusted_nlocs_frame_count_;
         } else {
             fCount = basicFrameCount(var);
@@ -172,6 +266,9 @@ Dimensions_t ObsFrameRead::frameCount(const std::string & varName) {
 //-----------------------------------------------------------------------------------
 bool ObsFrameRead::readFrameVar(const std::string & varName, std::vector<int> & varData) {
     return readFrameVarHelper<int>(varName, varData);
+}
+bool ObsFrameRead::readFrameVar(const std::string & varName, std::vector<int64_t> & varData) {
+    return readFrameVarHelper<int64_t>(varName, varData);
 }
 bool ObsFrameRead::readFrameVar(const std::string & varName, std::vector<float> & varData) {
     return readFrameVarHelper<float>(varName, varData);
@@ -273,43 +370,22 @@ void ObsFrameRead::genFrameLocationsWithQcheck(std::vector<Dimensions_t> & locIn
     Dimensions_t frameCount = this->frameCount("nlocs");
     Dimensions_t frameStart = this->frameStart();
 
-    // Prefer MetaData/datetime. Eventually "MetaData/time" will be obsoleted.
-    std::string dtVarName;
-    if (obs_frame_.vars.exists("MetaData/datetime")) {
-        dtVarName = std::string("MetaData/datetime");
-    } else if (obs_frame_.vars.exists("MetaData/time")) {
-        dtVarName = std::string("MetaData/time");
-    } else {
-        std::string ErrMsg =
-            std::string("ERROR: ObsFrameRead::genFrameLocationsWithQcheck: ") +
-            std::string("date time information does not exist, ") +
-            std::string("cannot perform time window filtering");
-        throw eckit::UserError(ErrMsg, Here());
-    }
+    // Reader code will have thrown an exception before getting here if datetime information
+    // is mising from the input obs source. Also the epoch style datetime values have
+    // been generated by now so we can assume that the variable "MetaData/dateTime" exists
+    // along with the epoch style datetime values.
 
     // Build the selection objects
-    Variable dtVar = obs_frame_.vars.open(dtVarName);
+    Variable dtVar = obs_frame_.vars.open("MetaData/dateTime");
     std::vector<Dimensions_t> varShape = dtVar.getDimensions().dimsCur;
     Selection memSelect = createMemSelection(varShape, frameCount);
     Selection frameSelect = createEntireFrameSelection(varShape, frameCount);
 
     // convert ref, offset time to datetime objects
-    std::vector<util::DateTime> dtimeVals;
-    if (dtVarName == "MetaData/datetime") {
-        std::vector<std::string> dtValues;
-        dtVar.read<std::string>(dtValues, memSelect, frameSelect);
-        dtValues.resize(frameCount);
-
-        dtimeVals = convertDtStringsToDtime(dtValues);
-    } else {
-        std::vector<float> dtValues;
-        dtVar.read<float>(dtValues, memSelect, frameSelect);
-        dtValues.resize(frameCount);
-
-        int refDtime;
-        this->obs_io_->atts().open("date_time").read<int>(refDtime);
-        dtimeVals = convertRefOffsetToDtime(refDtime, dtValues);
-    }
+    std::vector<int64_t> timeOffsets;
+    dtVar.read<int64_t>(timeOffsets);
+    util::DateTime epochDt = getEpochAsDtime(dtVar);
+    std::vector<util::DateTime> dtimeVals = convertEpochDtToDtime(epochDt, timeOffsets);
 
     // Need to check the latitude and longitude values too.
     std::vector<float> lats;
@@ -424,7 +500,7 @@ void ObsFrameRead::buildObsGroupingKeys(const std::vector<std::string> & obsGrou
                 std::string("ERROR: ObsFrameRead::genRecordNumbersGrouping: ") +
                 std::string("obs grouping variable (") + obsGroupVarName +
                 std::string(") must have 'nlocs' as first dimension");
-            ABORT(ErrMsg);
+            Exception(ErrMsg.c_str(), ioda_Here());
         }
 
         // Form selection objects to grab the current frame values

@@ -83,15 +83,47 @@ namespace ioda {
   /// \brief true if variable is a dimension scale
   bool varIsDimScale(const Group & group, const std::string & varName);
 
+  /// \brief transform variable's units epoch string to an epoch DateTime object
+  /// \param dtVar input epoch style datetime variable
+  util::DateTime getEpochAsDtime(const Variable & dtVar);
+
+  /// \brief open or create an epoch style datetime variable
+  /// \param groupName name of group in which to open or create variable
+  /// \param varName name of variable to open or create
+  /// \param newEpoch DateTime object used for the epoch if creating a new variable
+  /// \param epochDtVar requested datetime variable
+  /// \param destVarContainer Has_Variables object in which to open/create the variable
+  void openCreateEpochDtimeVar(const std::string & groupName, const std::string & varName,
+                               const util::DateTime & newEpoch, Variable & epochDtVar,
+                               Has_Variables & destVarContainer);
+
   /// \brief convert reference, time to DateTime object
   /// \param refDtime reference date time
   /// \param timeOffets offset time values (in hours)
   std::vector<util::DateTime> convertRefOffsetToDtime(const int refIntDtime,
                                                       const std::vector<float> & timeOffsets);
 
-  /// \brief convert datetime strings to DateTime object
+  /// \brief convert datetime strings to DateTime objects
   /// \param dtStrings datetime strings
   std::vector<util::DateTime> convertDtStringsToDtime(const std::vector<std::string> & dtStrings);
+
+  /// \brief convert epoch datetimes to DateTime objects
+  /// \param epochDtime datetime object holding the epoch datetime value
+  /// \param timeOffsets int64_t vector holding the time offsets in seconds from epochDtime
+  std::vector<util::DateTime> convertEpochDtToDtime(const util::DateTime epochDtime,
+                                                    const std::vector<int64_t> & timeOffsets);
+
+  /// \brief convert DateTime objects to epoch time offsets
+  /// \param epochDtime datetime object holding the epoch datetime value
+  /// \param dtimes vector of DateTime objects
+  std::vector<int64_t> convertDtimeToTimeOffsets(const util::DateTime epochDtime,
+                                                 const std::vector<util::DateTime> & dtimes);
+
+  /// \brief convert datetime strings to epoch time offsets
+  /// \param epochDtime datetime object holding the epoch datetime value
+  /// \param dtStrings vector of datetime strings
+  std::vector<int64_t> convertDtStringsToTimeOffsets(const util::DateTime epochDtime,
+                                                 const std::vector<std::string> & dtStrings);
 
   /// \brief convert 2D string array to a vector of strings
   /// \details The incoming 2D strings array is passed in through the arrayData argument
@@ -203,7 +235,7 @@ namespace ioda {
   ///
   /// \param attr
   ///   Attribute expected to be of one of the types that can be stored in an ObsSpace
-  ///   variable (`int`, `float`, `double`, `std::string` or `char`).
+  ///   variable (`int`, `int64_t`, `float`, `double`, `std::string` or `char`).
   /// \param action
   ///   A function object callable with a single argument of any type from the list above.
   ///   If the attribute `attr` is of type `int`, this function will be given a
@@ -274,7 +306,7 @@ namespace ioda {
   ///
   /// \param var
   ///   Variable expected to be of one of the types that can be stored in an ObsSpace (`int`,
-  ///   `float`, `std::string` or `char`).
+  ///   `int64_t`, `float`, `std::string` or `char`).
   /// \param action
   ///   A function object callable with a single argument of any type from the list above.
   ///   If the variable `var` is of type `int`, this function will be given a default-initialized
@@ -302,6 +334,8 @@ namespace ioda {
                                    const ErrorHandler &typeErrorHandler) {
     if (var.isA<int>())
       return action(int());
+    if (var.isA<int64_t>())
+      return action(int64_t());
     if (var.isA<float>())
       return action(float());
     if (var.isA<std::string>())
@@ -315,10 +349,13 @@ namespace ioda {
   ///
   /// \param var
   ///   Variable expected to be of one of the types that can be stored in an ObsSpace (`int`,
-  ///   `float`, `std::string` or `char`).
+  ///   `int64_t`, `float`, `std::string` or `char`).
   /// \param intAction
   ///   A function object taking an argument of type `int`, which will be called and given a
   ///   default-initialized `int` if the variable `var` is of type `int`.
+  /// \param int64Action
+  ///   A function object taking an argument of type `int64_t`, which will be called and given a
+  ///   default-initialized `int64_t` if the variable `var` is of type `int64_t`.
   /// \param floatAction
   ///   A function object taking an argument of type `float`, which will be called and given a
   ///   default-initialized `float` if the variable `var` is of type `float`.
@@ -331,16 +368,19 @@ namespace ioda {
   /// \param errorHandler
   ///   A function object callable with a single argument of type eckit::CodeLocation, called if
   ///   `var` is not of a type that can be stored in an ObsSpace.
-  template <typename IntAction, typename FloatAction, typename StringAction, typename CharAction,
-            typename ErrorHandler>
+  template <typename IntAction, typename Int64Action, typename FloatAction,
+            typename StringAction, typename CharAction, typename ErrorHandler>
   auto switchOnSupportedVariableType(const ioda::Variable &var,
                                      const IntAction &intAction,
+                                     const Int64Action &int64Action,
                                      const FloatAction &floatAction,
                                      const StringAction &stringAction,
                                      const CharAction &charAction,
                                      const ErrorHandler &typeErrorHandler) {
     if (var.isA<int>())
       return intAction(int());
+    if (var.isA<int64_t>())
+      return int64Action(int64_t());
     if (var.isA<float>())
       return floatAction(float());
     if (var.isA<std::string>())
@@ -351,7 +391,7 @@ namespace ioda {
   }
 
   /// \brief Perform a variable-type-dependent action for all types that can be stored in an
-  /// ObsSpace (`int`, `float`, `std::string` or `char`).
+  /// ObsSpace (`int`, `int64_t`, `float`, `std::string` or `char`).
   ///
   /// \param action
   ///   A function object callable with a single argument of any type from the list above. It will
@@ -362,6 +402,7 @@ namespace ioda {
   template <typename Action>
   void forEachSupportedVariableType(const Action &action) {
     action(int());
+    action(int64_t());
     action(float());
     action(std::string());
     action(char());

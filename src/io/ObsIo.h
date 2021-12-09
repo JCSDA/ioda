@@ -66,6 +66,7 @@ class ObsIo : public util::Printable {
     VarDimMap varDimMap() const {return dims_attached_to_vars_;}
 
     /// \brief return true if variable's first dimension is nlocs
+    /// \param varName variable name to check
     bool isVarDimByNlocs(const std::string & varName) const;
 
     /// \brief access to the variables container in the associated ObsGroup

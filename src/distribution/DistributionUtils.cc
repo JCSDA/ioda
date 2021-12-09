@@ -86,6 +86,13 @@ double dotProduct(const Distribution &dist,
   return dotProductImpl(dist, numVariables, v1, v2);
 }
 
+double dotProduct(const Distribution &dist,
+                  std::size_t numVariables,
+                  const std::vector<int64_t> &v1,
+                  const std::vector<int64_t> &v2) {
+  return dotProductImpl(dist, numVariables, v1, v2);
+}
+
 // -----------------------------------------------------------------------------
 std::size_t globalNumNonMissingObs(const Distribution &dist,
                                    std::size_t numVariables,

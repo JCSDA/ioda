@@ -93,6 +93,15 @@ void testRead() {
                 for (std::size_t ival = 0; ival < expectedVarValues.size(); ++ival) {
                     EXPECT_EQUAL(varValues[ival], expectedVarValues[ival]);
                 }
+            } else if (expectedVarType == "int64") {
+                EXPECT(var.isA<int64_t>());
+                std::vector<int64_t> expectedVarValues =
+                    readVarConfigs[ivar].getInt64Vector("values");
+                std::vector<int64_t> varValues;
+                var.read<int64_t>(varValues);
+                for (std::size_t ival = 0; ival < expectedVarValues.size(); ++ival) {
+                    EXPECT_EQUAL(varValues[ival], expectedVarValues[ival]);
+                }
             } else if (expectedVarType == "float") {
                 EXPECT(var.isA<float>());
                 std::vector<float> expectedVarValues =

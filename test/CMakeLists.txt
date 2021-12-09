@@ -82,6 +82,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsdatavector.yml
   testinput/iodatest_obsdtype.yml
   testinput/iodatest_obsspace.yml
+  testinput/iodatest_obsspace_datetime.yml
   testinput/iodatest_obsspace_out_dims_check.yml
   testinput/iodatest_obsspace_grouping.yml
   testinput/iodatest_obsspace_index_recnum.yml
@@ -395,6 +396,12 @@ ecbuild_add_test( TARGET  test_ioda_oops_obsspace
 ecbuild_add_test( TARGET  test_ioda_obsspace
                   SOURCES mains/TestIodaObsSpace.cc
                   ARGS    "testinput/iodatest_obsspace.yml"
+                  LIBS  ioda_test
+                  TEST_DEPENDS get_ioda_test_data )
+
+ecbuild_add_test( TARGET  test_ioda_obsspace_datetime
+                  COMMAND test_ioda_obsspace
+                  ARGS    "testinput/iodatest_obsspace_datetime.yml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 

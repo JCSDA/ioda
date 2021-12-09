@@ -1,0 +1,72 @@
+---
+window begin: "2018-04-14T21:00:00Z"
+window end: "2018-04-15T03:00:00Z"
+
+observations:
+- obs space:
+    name: "New datetime format"
+    simulated variables: ['myObs']
+    obsdatain:
+      obsfile: "Data/testinput_tier_1/datetime_new.nc4"
+    obs perturbations seed: 0
+  test data:
+    nlocs: 9
+    nrecs: 9
+    nvars: 1
+    obs perturbations seed: 0
+    expected group variables: []
+    expected sort variable: ""
+    expected sort order: "ascending"
+    variables for get test:
+      - name: "latitude"
+        group: "MetaData"
+        type: "float"
+        norm: 16.881943016134134
+
+      - name: "longitude"
+        group: "MetaData"
+        type: "float"
+        norm: 315.09522370229604
+
+      - name: "dateTime"
+        group: "MetaData"
+        type: "datetime"
+        first value: "2018-04-14T21:30:00Z"
+        last value: "2018-04-15T01:30:00Z"
+    tolerance:
+      - 1.0e-14
+    variables for putget test: []
+
+- obs space:
+    name: "Old datetime format"
+    simulated variables: ['myObs']
+    obsdatain:
+      obsfile: "Data/testinput_tier_1/datetime_old.nc4"
+    obs perturbations seed: 0
+  test data:
+    nlocs: 10
+    nrecs: 10
+    nvars: 1
+    obs perturbations seed: 0
+    expected group variables: []
+    expected sort variable: ""
+    expected sort order: "ascending"
+    variables for get test:
+      - name: "latitude"
+        group: "MetaData"
+        type: "float"
+        norm: 16.881943016134134
+
+      - name: "longitude"
+        group: "MetaData"
+        type: "float"
+        norm: 330.58281867029933
+
+      - name: "dateTime"
+        group: "MetaData"
+        type: "datetime"
+        first value: "2018-04-15T01:00:00Z"
+        last value: "2018-04-15T02:30:00Z"
+    tolerance:
+      - 1.0e-14
+    variables for putget test: []

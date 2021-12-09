@@ -240,6 +240,41 @@ bool varIsDimScale(const Group & group, const std::string & varName) {
 }
 
 //------------------------------------------------------------------------------------
+util::DateTime getEpochAsDtime(const Variable & dtVar) {
+  // get the units attribute and strip off the "seconds since " part. For now,
+  // we are restricting the units to "seconds since " and will be expanding that
+  // in the future to other time units (hours, days, minutes, etc).
+  std::string epochString = dtVar.atts.open("units").read<std::string>();
+  std::size_t pos = epochString.find("seconds since ");
+  if (pos == std::string::npos) {
+    std::string errorMsg =
+        std::string("For now, only supporting 'seconds since' form of ") +
+        std::string("units for MetaData/dateTime variable");
+    Exception(errorMsg.c_str(), ioda_Here());
+  }
+  epochString.replace(pos, pos+14, "");
+
+  return util::DateTime(epochString);
+}
+
+//------------------------------------------------------------------------------------
+void openCreateEpochDtimeVar(const std::string & groupName, const std::string & varName,
+                             const util::DateTime & newEpoch, Variable & epochDtVar,
+                             Has_Variables & destVarContainer) {
+  std::string fullVarName = groupName + "/" + varName;
+  if (destVarContainer.exists(fullVarName)) {
+    // Variable already exists, simply open it.
+    epochDtVar = destVarContainer.open(fullVarName);
+  } else {
+    // Variable does not exist, need to create it. Use the newEpoch for the units attribute.
+    std::vector<Variable> dimVars(1, destVarContainer.open("nlocs"));
+    epochDtVar = destVarContainer.createWithScales<int64_t>(fullVarName, dimVars);
+    std::string epochString = "seconds since " + newEpoch.toString();
+    epochDtVar.atts.add("units", epochString);
+  }
+}
+
+//------------------------------------------------------------------------------------
 std::vector<util::DateTime> convertDtStringsToDtime(const std::vector<std::string> & dtStrings) {
     // Convert ISO 8601 strings directly to DateTime objects
     std::size_t dtimeSize = dtStrings.size();
@@ -272,6 +307,41 @@ std::vector<util::DateTime> convertRefOffsetToDtime(const int refIntDtime,
         dateTimeValues[i] = dateTime;
     }
     return dateTimeValues;
+}
+
+//------------------------------------------------------------------------------------
+std::vector<util::DateTime> convertEpochDtToDtime(const util::DateTime epochDtime,
+                                                  const std::vector<int64_t> & timeOffsets) {
+  std::vector<util::DateTime> dateTimes;
+  dateTimes.reserve(timeOffsets.size());
+  for (std::size_t i = 0; i < timeOffsets.size(); ++i) {
+    util::Duration timeDiff(timeOffsets[i]);
+    dateTimes.emplace_back(epochDtime + timeDiff);
+  }
+  return dateTimes;
+}
+
+//------------------------------------------------------------------------------------
+std::vector<int64_t> convertDtimeToTimeOffsets(const util::DateTime epochDtime,
+                                               const std::vector<util::DateTime> & dtimes) {
+  std::vector<int64_t> timeOffsets(dtimes.size());
+  for (std::size_t i = 0; i < dtimes.size(); ++i) {
+    util::Duration timeDiff = dtimes[i] - epochDtime;
+    timeOffsets[i] = timeDiff.toSeconds();
+  }
+  return timeOffsets;
+}
+
+//------------------------------------------------------------------------------------
+std::vector<int64_t> convertDtStringsToTimeOffsets(const util::DateTime epochDtime,
+                                                   const std::vector<std::string> & dtStrings) {
+  std::vector<int64_t> timeOffsets(dtStrings.size());
+  for (std::size_t i = 0; i < dtStrings.size(); ++i) {
+    util::DateTime dtime(dtStrings[i]);
+    util::Duration timeDiff = dtime - epochDtime;
+    timeOffsets[i] = timeDiff.toSeconds();
+  }
+  return timeOffsets;
 }
 
 //------------------------------------------------------------------------------------

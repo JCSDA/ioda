@@ -35,6 +35,11 @@ void ObsFrameWrite::frameInit(const VarNameObjectList & varList,
     frame_start_ = 0;
     max_var_size_ = maxVarSize;
 
+    // Always have epoch style datetimes for the ioda writer
+    use_epoch_datetime_ = true;
+    use_string_datetime_ = false;
+    use_offset_datetime_ = false;
+
     // create an ObsGroup based frame with an in-memory backend
     createFrameFromObsGroup(varList, dimVarList, varDimMap);
 
@@ -113,6 +118,10 @@ Dimensions_t ObsFrameWrite::frameCount(const std::string & varName) {
 void ObsFrameWrite::writeFrameVar(const std::string & varName,
                                   const std::vector<int> & varData) {
     writeFrameVarHelper<int>(varName, varData);
+}
+void ObsFrameWrite::writeFrameVar(const std::string & varName,
+                                  const std::vector<int64_t> & varData) {
+    writeFrameVarHelper<int64_t>(varName, varData);
 }
 void ObsFrameWrite::writeFrameVar(const std::string & varName,
                                   const std::vector<float> & varData) {

@@ -23,6 +23,18 @@ namespace ioda {
 }
 
 //------------------------------------------------------------------------------------
+bool ObsFrame::isVarDimByNlocs(const std::string & varName) const {
+    bool isDimByNlocs = false;
+    auto ivar = dims_attached_to_vars_.find(varName);
+    if (ivar != dims_attached_to_vars_.end()) {
+        if (ivar->second[0] == "nlocs") {
+            isDimByNlocs = true;
+        }
+    }
+    return isDimByNlocs;
+}
+
+//------------------------------------------------------------------------------------
 Selection ObsFrame::createMemSelection(const std::vector<Dimensions_t> & varShape,
                                            const Dimensions_t frameCount) {
     // Use hyperslab selection on the memory side to make sure a slab selected
@@ -206,6 +218,39 @@ void ObsFrame::createFrameFromObsGroup(const VarNameObjectList & varList,
                   copyAttributes(sourceVar.atts, destVar.atts);
               },
               ThrowIfVariableIsOfUnsupportedType(varName));
+    }
+
+    // If we are using the string or offset datetimes from obs_io_, then create the
+    // epoch datetime variable. ObsSpace::initFromObsSource will expect the epoch
+    // datetime and ignore the string datetime. Use a default fill value for now.
+    if (use_string_datetime_ || use_offset_datetime_) {
+      VariableCreationParameters params;
+      std::vector<Variable> dimVars;
+      dimVars.push_back(obs_frame_.vars.open("nlocs"));
+      Variable destVar =
+          obs_frame_.vars.createWithScales<int64_t>("MetaData/dateTime", dimVars, params);
+
+      std::string epochDatetime;
+      if (use_string_datetime_) {
+        // Using string datetime, set the epoch to the window start
+        epochDatetime =
+            std::string("seconds since ") + params_.windowStart().toString();
+      } else {
+        // Using offset datetime, set the epoch to the "date_time" global attribute
+        int refDtimeInt;
+        this->obs_io_->atts().open("date_time").read<int>(refDtimeInt);
+
+        int year = refDtimeInt / 1000000;     // refDtimeInt contains YYYYMMDDhh
+        int tempInt = refDtimeInt % 1000000;
+        int month = tempInt / 10000;       // tempInt contains MMDDhh
+        tempInt = tempInt % 10000;
+        int day = tempInt / 100;           // tempInt contains DDhh
+        int hour = tempInt % 100;
+        util::DateTime refDtime(year, month, day, hour, 0, 0);
+
+        epochDatetime = std::string("seconds since ") + refDtime.toString();
+      }
+      destVar.atts.add<std::string>("units", epochDatetime);
     }
 }
 

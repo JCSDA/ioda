@@ -57,6 +57,7 @@ namespace ioda {
         None,
         Float,
         Integer,
+        Integer_64,
         String,
         DateTime,
         Bool
@@ -328,6 +329,10 @@ namespace ioda {
                     const std::vector<int> & chanSelect = { },
                     bool skipDerived = false) const;
         void get_db(const std::string & group, const std::string & name,
+                    std::vector<int64_t> & vdata,
+                    const std::vector<int> & chanSelect = { },
+                    bool skipDerived = false) const;
+        void get_db(const std::string & group, const std::string & name,
                     std::vector<float> & vdata,
                     const std::vector<int> & chanSelect = { },
                     bool skipDerived = false) const;
@@ -360,6 +365,9 @@ namespace ioda {
         /// \param dimList Vector of dimension names (for creating variable if needed)
         void put_db(const std::string & group, const std::string & name,
                     const std::vector<int> & vdata,
+                    const std::vector<std::string> & dimList = { "nlocs" });
+        void put_db(const std::string & group, const std::string & name,
+                    const std::vector<int64_t> & vdata,
                     const std::vector<std::string> & dimList = { "nlocs" });
         void put_db(const std::string & group, const std::string & name,
                     const std::vector<float> & vdata,

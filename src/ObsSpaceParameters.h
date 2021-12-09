@@ -144,8 +144,11 @@ class EmbeddedObsGenerateListParameters : public oops::Parameters {
     /// longitude values
     oops::RequiredParameter<std::vector<float>> lons{"lons", this};
 
-    /// datetime values
-    oops::RequiredParameter<std::vector<std::string>> datetimes{"datetimes", this};
+    /// time offsets (s) relative to epoch
+    oops::RequiredParameter<std::vector<int64_t>> dateTimes{"dateTimes", this};
+
+    /// epoch (ISO 8601 string) relative to which datetimes are computed
+    oops::Parameter<std::string> epoch{"epoch", "seconds since 1970-01-01T00:00:00Z", this};
 };
 
 /// Options controlling the ObsIoGenerateList class

@@ -78,6 +78,8 @@ class ObsFrameWrite : public ObsFrame, private util::ObjectCounter<ObsFrameWrite
     void writeFrameVar(const std::string & varName,
                        const std::vector<int> & varData);
     void writeFrameVar(const std::string & varName,
+                       const std::vector<int64_t> & varData);
+    void writeFrameVar(const std::string & varName,
                        const std::vector<float> & varData);
     void writeFrameVar(const std::string & varName,
                        const std::vector<std::string> & varData);

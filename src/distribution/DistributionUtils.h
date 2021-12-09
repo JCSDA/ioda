@@ -48,6 +48,8 @@ double dotProduct(const Distribution &dist, std::size_t numVariables,
                   const std::vector<float> &v1, const std::vector<float> &v2);
 double dotProduct(const Distribution &dist, std::size_t numVariables,
                   const std::vector<int> &v1, const std::vector<int> &v2);
+double dotProduct(const Distribution &dist, std::size_t numVariables,
+                  const std::vector<int64_t> &v1, const std::vector<int64_t> &v2);
 
 /// \brief Counts unique non-missing observations in a vector.
 ///

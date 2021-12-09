@@ -34,10 +34,10 @@ print:
       Test assigned_string_variable_1 nlocs = 4, nobs = 4
       Test assigned_string_variable_2 nlocs = 4, nobs = 3
   datetime:
-    variables: [datetime]
+    variables: [dateTime]
     group: MetaData
     expected output: |
-      Test datetime nlocs = 4, nobs = 4
+      Test dateTime nlocs = 4, nobs = 4
   bool:
     variables: [bool_variable_1]
     group: MetaData

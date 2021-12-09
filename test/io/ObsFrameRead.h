@@ -63,7 +63,7 @@ void testFrameRead(ObsFrameRead & obsFrame, eckit::LocalConfiguration & obsConfi
         for (std::size_t j = 0; j < readVarConfigs.size(); ++j) {
             std::string varName = readVarConfigs[j].getString("name");
             std::string expectedVarType = readVarConfigs[j].getString("type");
-            ioda::Variable var = obsFrame.vars().open(varName);
+            ioda::Variable var = obsFrame.ioVars().open(varName);
 
             oops::Log::debug() << "    Variable: " << varName
                 << ", frameCount: " << obsFrame.frameCount(varName) << std::endl;
@@ -73,6 +73,14 @@ void testFrameRead(ObsFrameRead & obsFrame, eckit::LocalConfiguration & obsConfi
                 std::vector<int> expectedVarValue0 =
                     readVarConfigs[j].getIntVector("value0");
                 std::vector<int> varValues;
+                if (obsFrame.readFrameVar(varName, varValues)) {
+                    EXPECT_EQUAL(varValues[0], expectedVarValue0[iframe]);
+                }
+            } else if (expectedVarType == "int64") {
+                EXPECT(var.isA<int64_t>());
+                std::vector<int64_t> expectedVarValue0 =
+                    readVarConfigs[j].getInt64Vector("value0");
+                std::vector<int64_t> varValues;
                 if (obsFrame.readFrameVar(varName, varValues)) {
                     EXPECT_EQUAL(varValues[0], expectedVarValue0[iframe]);
                 }

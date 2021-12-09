@@ -252,13 +252,14 @@ observations:
       type: GenerateList
       lats: [ 3, 4, 5, 3, 4, 5 ]
       lons: [ 60, 80, 0, 0, 0, 0 ]
-      datetimes:
-      - "2010-01-01T00:04:00Z"
-      - "2010-01-01T00:04:12Z"
-      - "2010-01-01T00:04:24Z"
-      - "2010-01-01T00:04:36Z"
-      - "2010-01-01T00:04:48Z"
-      - "2010-01-01T00:05:00Z"
+      dateTimes:
+      - 240
+      - 252
+      - 264
+      - 276
+      - 288
+      - 300
+      epoch: "seconds since 2010-01-01T00:00:00Z"
       obsgrouping:
         group variables: []
       obs errors: [1.0]
@@ -292,13 +293,14 @@ observations:
       type: GenerateList
       lats: [ 3, 4, 5, 3, 4, 5 ]
       lons: [ 60, 80, 0, 0, 0, 0 ]
-      datetimes:
-      - "2010-01-01T00:04:00Z"
-      - "2010-01-01T00:04:12Z"
-      - "2010-01-01T00:04:24Z"
-      - "2010-01-01T00:04:36Z"
-      - "2010-01-01T00:04:48Z"
-      - "2010-01-01T00:05:00Z"
+      dateTimes:
+      - 240
+      - 252
+      - 264
+      - 276
+      - 288
+      - 300
+      epoch: "seconds since 2010-01-01T00:00:00Z"
       obsgrouping:
         group variables: [ "latitude" ]
       obs errors: [1.0]
@@ -332,13 +334,14 @@ observations:
       list:
         lats: [ 3, 4, 5, 3, 4, 5 ]
         lons: [ 60, 80, 0, 0, 0, 0 ]
-        datetimes:
-        - "2010-01-01T00:04:00Z"
-        - "2010-01-01T00:04:12Z"
-        - "2010-01-01T00:04:24Z"
-        - "2010-01-01T00:04:36Z"
-        - "2010-01-01T00:04:48Z"
-        - "2010-01-01T00:05:00Z"
+        dateTimes:
+        - 240
+        - 252
+        - 264
+        - 276
+        - 288
+        - 300
+        epoch: "seconds since 2010-01-01T00:00:00Z"
       obsgrouping:
         group variables: [ "latitude" ]
       obs errors: [1.0]

@@ -55,10 +55,10 @@ class ObsFrame : public util::Printable {
     Dimensions_t ioNumDimVars() const {return obs_io_->numDimVars();}
 
     /// \brief return variables container from ObsIo
-    Has_Variables & vars() const {return obs_io_->vars();}
+    Has_Variables & ioVars() const {return obs_io_->vars();}
 
     /// \brief return attributes container from ObsIo
-    Has_Attributes & atts() {return obs_io_->atts();}
+    Has_Attributes & ioAtts() {return obs_io_->atts();}
 
     /// \brief return list of regular variables from ObsIo
     const VarNameObjectList & ioVarList() const {return obs_io_->varList();}
@@ -76,6 +76,22 @@ class ObsFrame : public util::Printable {
     bool ioIsVarDimByNlocs(const std::string & varName) const {
         return obs_io_->isVarDimByNlocs(varName);
     }
+
+    /// \brief return the ObsGroup that stores the frame data
+    inline ObsGroup getObsGroup() { return obs_frame_; }
+
+    /// \brief return the ObsGroup that stores the frame data
+    inline const ObsGroup getObsGroup() const { return obs_frame_; }
+
+    /// \brief return the list of variables with their associated dimensions
+    VarDimMap varDimMap() const {return dims_attached_to_vars_;}
+
+    /// \brief return list of regular variables
+    const VarNameObjectList & varList() const {return var_list_; }
+
+    /// \brief return true if variable's first dimension is nlocs
+    /// \param varName variable name to check
+    bool isVarDimByNlocs(const std::string & varName) const;
 
     /// \brief return number of locations
     virtual std::size_t frameNumLocs() const {return nlocs_;}
@@ -165,6 +181,24 @@ class ObsFrame : public util::Printable {
 
     /// \brief current frame starting index
     Dimensions_t frame_start_;
+
+    /// \brief true if obs_io_ contains an epoch style datetime variable
+    bool use_epoch_datetime_;
+
+    /// \brief true if obs_io_ contains a string style datetime variable
+    bool use_string_datetime_;
+
+    /// \brief true if obs_io_ contains an offset style datetime variable
+    bool use_offset_datetime_;
+
+    /// \brief list of regular variables from source (file or generator)
+    VarNameObjectList var_list_;
+
+    /// \brief list of dimension scale variables from source (file or generator)
+    VarNameObjectList dim_var_list_;
+
+    /// \brief map containing variables with their attached dimension scales
+    VarDimMap dims_attached_to_vars_;
 
     //------------------ protected functions ----------------------------------
 

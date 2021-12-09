@@ -133,7 +133,7 @@ void frameWrite(ObsFrameWrite & obsFrame, eckit::LocalConfiguration & testConfig
             std::vector<std::string> varDimNames =
                 writeVarConfigs[j].getStringVector("dims");
 
-            ioda::Variable var = obsFrame.vars().open(varName);
+            ioda::Variable var = obsFrame.ioVars().open(varName);
 
             Dimensions_t frameCount = obsFrame.frameCount(varName);
             if (frameCount > 0) {

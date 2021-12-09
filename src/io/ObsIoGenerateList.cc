@@ -68,12 +68,13 @@ void ObsIoGenerateList::genDistList(const EmbeddedObsGenerateListParameters & pa
     ASSERT(obsErrors.size() == simVarNames.size());
 
     // Grab the parameters
-    std::vector<float> latVals = params.lats;
-    std::vector<float> lonVals = params.lons;
-    std::vector<std::string> dtStrings = params.datetimes;
+    const std::vector<float> latVals = params.lats;
+    const std::vector<float> lonVals = params.lons;
+    const std::vector<int64_t> dts = params.dateTimes;
+    const std::string epoch = params.epoch.value();
 
     // Transfer the specified values to the ObsGroup
-    storeGenData(latVals, lonVals, dtStrings, simVarNames, obsErrors, obs_group_);
+    storeGenData(latVals, lonVals, dts, epoch, simVarNames, obsErrors, obs_group_);
 }
 
 //-----------------------------------------------------------------------------------

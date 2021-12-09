@@ -254,6 +254,24 @@ void testGetDb() {
         Vnorm = sqrt(Vnorm);
 
         EXPECT(oops::is_close(Vnorm, ExpectedVnorm, Tol));
+      } else if (VarType == "integer_64") {
+        // Check if the variable exists
+        EXPECT(Odb->has(GroupName, VarName, SkipDerived));
+
+        // Check the type from ObsSpace
+        ObsDtype VarDataType = Odb->dtype(GroupName, VarName, SkipDerived);
+        EXPECT(VarDataType == ObsDtype::Integer_64);
+
+        // Check the norm
+        std::vector<int64_t> TestVec(Nlocs);
+        Odb->get_db(GroupName, VarName, TestVec, {}, SkipDerived);
+
+        // Calculate the norm of the vector
+        double ExpectedVnorm = varconf[i].getDouble("norm");
+        double Vnorm = dotProduct(*Odb->distribution(), 1, TestVec, TestVec);
+        Vnorm = sqrt(Vnorm);
+
+        EXPECT(oops::is_close(Vnorm, ExpectedVnorm, Tol));
       } else if (VarType == "string") {
         // Check if the variable exists
         EXPECT(Odb->has(GroupName, VarName, SkipDerived));
@@ -269,6 +287,21 @@ void testGetDb() {
         Odb->get_db(GroupName, VarName, TestVec, {}, SkipDerived);
         EXPECT(TestVec[0] == ExpectedFirstValue);
         EXPECT(TestVec[Nlocs-1] == ExpectedLastValue);
+      } else if (VarType == "datetime") {
+        // Check if the variable exists
+        EXPECT(Odb->has(GroupName, VarName, SkipDerived));
+
+        // Check the type from ObsSpace
+        ObsDtype VarDataType = Odb->dtype(GroupName, VarName, SkipDerived);
+        EXPECT(VarDataType == ObsDtype::DateTime);
+
+        // Check the first and last values of the vector
+        std::string ExpectedFirstValue = varconf[i].getString("first value");
+        std::string ExpectedLastValue = varconf[i].getString("last value");
+        std::vector<util::DateTime> TestVec(Nlocs);
+        Odb->get_db(GroupName, VarName, TestVec, {}, SkipDerived);
+        EXPECT(TestVec[0].toString() == ExpectedFirstValue);
+        EXPECT(TestVec[Nlocs-1].toString() == ExpectedLastValue);
       } else if (VarType == "bool") {
         // Check if the variable exists
         EXPECT(Odb->has(GroupName, VarName, SkipDerived));
