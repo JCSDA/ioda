@@ -236,6 +236,8 @@ class ObsSpace:
                 self._varstr = f"{groupname}/{varname}"
             self._iodavar = self.obsspace.obsgroup.vars.open(self._varstr)
             self.attrs = self._iodavar.atts.list()
+            self.dims = self._iodavar.dims
+            self.dimsizes = self._iodavar.dims.dimsCur
 
         def numpy_dtype(self):
             if self._iodavar.isA2(ioda.Types.float):
