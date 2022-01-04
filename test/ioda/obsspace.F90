@@ -1,5 +1,5 @@
 !
-! (C) Copyright 2019 UCAR
+! (C) Copyright 2019-2022 UCAR
 !
 ! This software is licensed under the terms of the Apache Licence Version 2.0
 ! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -15,16 +15,16 @@ TESTSUITE_INIT
   use fckit_module
   use liboops_mod
 
-  call liboops_initialise()
   call fckit_main%init()
+  call liboops_initialise()
 END_TESTSUITE_INIT
 
 TESTSUITE_FINALIZE
   use fckit_module
   use liboops_mod
 
-  call fckit_main%final()
   call liboops_finalise()
+  call fckit_main%final()
 END_TESTSUITE_FINALIZE
 
 !> Test obsspace_construct
