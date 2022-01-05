@@ -13,6 +13,7 @@
 #include "ioda/ObsSpaceParameters.h"
 
 #include "oops/util/DateTime.h"
+#include "oops/util/missingValues.h"
 
 namespace ioda {
 
@@ -287,36 +288,19 @@ std::vector<util::DateTime> convertDtStringsToDtime(const std::vector<std::strin
 }
 
 //------------------------------------------------------------------------------------
-std::vector<util::DateTime> convertRefOffsetToDtime(const int refIntDtime,
-                                                    const std::vector<float> & timeOffsets) {
-    // convert refDtime to a DateTime object
-    int Year = refIntDtime / 1000000;
-    int TempInt = refIntDtime % 1000000;
-    int Month = TempInt / 10000;
-    TempInt = TempInt % 10000;
-    int Day = TempInt / 100;
-    int Hour = TempInt % 100;
-    util::DateTime refDtime(Year, Month, Day, Hour, 0, 0);
-
-    // Convert offset time to a Duration and add to RefDate.
-    std::size_t dtimeSize = timeOffsets.size();
-    std::vector<util::DateTime> dateTimeValues(dtimeSize);
-    for (std::size_t i = 0; i < dtimeSize; ++i) {
-        util::DateTime dateTime =
-            refDtime + util::Duration(round(timeOffsets[i] * 3600));
-        dateTimeValues[i] = dateTime;
-    }
-    return dateTimeValues;
-}
-
-//------------------------------------------------------------------------------------
 std::vector<util::DateTime> convertEpochDtToDtime(const util::DateTime epochDtime,
                                                   const std::vector<int64_t> & timeOffsets) {
+  const util::DateTime missingDateTime = util::missingValue(missingDateTime);
+  const int64_t missingInt64 = util::missingValue(missingInt64);
   std::vector<util::DateTime> dateTimes;
   dateTimes.reserve(timeOffsets.size());
   for (std::size_t i = 0; i < timeOffsets.size(); ++i) {
-    util::Duration timeDiff(timeOffsets[i]);
-    dateTimes.emplace_back(epochDtime + timeDiff);
+    if (timeOffsets[i] == missingInt64) {
+      dateTimes.emplace_back(missingDateTime);
+    } else {
+      const util::Duration timeDiff(timeOffsets[i]);
+      dateTimes.emplace_back(epochDtime + timeDiff);
+    }
   }
   return dateTimes;
 }
@@ -324,10 +308,16 @@ std::vector<util::DateTime> convertEpochDtToDtime(const util::DateTime epochDtim
 //------------------------------------------------------------------------------------
 std::vector<int64_t> convertDtimeToTimeOffsets(const util::DateTime epochDtime,
                                                const std::vector<util::DateTime> & dtimes) {
+  const util::DateTime missingDateTime = util::missingValue(missingDateTime);
+  const int64_t missingInt64 = util::missingValue(missingInt64);
   std::vector<int64_t> timeOffsets(dtimes.size());
   for (std::size_t i = 0; i < dtimes.size(); ++i) {
-    util::Duration timeDiff = dtimes[i] - epochDtime;
-    timeOffsets[i] = timeDiff.toSeconds();
+    if (dtimes[i] == missingDateTime) {
+      timeOffsets[i] = missingInt64;
+    } else {
+      const util::Duration timeDiff = dtimes[i] - epochDtime;
+      timeOffsets[i] = timeDiff.toSeconds();
+    }
   }
   return timeOffsets;
 }

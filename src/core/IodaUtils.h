@@ -97,12 +97,6 @@ namespace ioda {
                                const util::DateTime & newEpoch, Variable & epochDtVar,
                                Has_Variables & destVarContainer);
 
-  /// \brief convert reference, time to DateTime object
-  /// \param refDtime reference date time
-  /// \param timeOffets offset time values (in hours)
-  std::vector<util::DateTime> convertRefOffsetToDtime(const int refIntDtime,
-                                                      const std::vector<float> & timeOffsets);
-
   /// \brief convert datetime strings to DateTime objects
   /// \param dtStrings datetime strings
   std::vector<util::DateTime> convertDtStringsToDtime(const std::vector<std::string> & dtStrings);
