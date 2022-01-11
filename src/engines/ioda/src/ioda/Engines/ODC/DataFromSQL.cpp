@@ -8,6 +8,7 @@
  * @brief implements ODC bindings
 **/
 
+#include <fstream>
 #include <algorithm>
 
 #include "./DataFromSQL.h"
@@ -163,7 +164,11 @@ NewDimensionScales_t DataFromSQL::getVertcos() const {
 }
 
 double DataFromSQL::getData(const size_t row, const size_t column) const {
-  return data_.at(column).at(row);
+  if (data_.size() > 0) {
+    return data_.at(column).at(row);
+  } else {
+    return odb_missing_float;
+  }
 }
 
 double DataFromSQL::getData(const size_t row, const std::string& column) const {
@@ -326,7 +331,16 @@ void DataFromSQL::select(const std::vector<std::string>& columns, const std::str
   } else {
     sql = sql + ";";
   }
-  setData(sql);
+  std::ifstream ifile;
+  ifile.open(filename);
+  if (ifile) {
+    if (ifile.peek() == std::ifstream::traits_type::eof()) {
+      ifile.close();
+    } else {
+      ifile.close();
+      setData(sql);
+    }
+  }
   obsgroup_        = getData(0, getColumnIndex("ops_obsgroup"));
   number_of_rows_  = data_.empty() ? 0 : data_.front().size();
   int varno_column = getColumnIndex("varno");

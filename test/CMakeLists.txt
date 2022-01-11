@@ -834,6 +834,22 @@ if (odc_FOUND)
                             test-Surface-with-query.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
+  ecbuild_add_test( TARGET  test_ioda-convert_surface_missing_odc
+                    TYPE    SCRIPT
+                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
+                    ARGS    Surface
+                            Data/testinput_tier_1/surface-missing.odb
+                            testinput/odb_default_name_map.yml testinput/iodatest_odb_surface.yml
+                    TEST_DEPENDS get_ioda_test_data )
+
+  ecbuild_add_test( TARGET  test_ioda-convert_surface_empty_odc
+                    TYPE    SCRIPT
+                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
+                    ARGS    Surface
+                            Data/testinput_tier_1/surface-empty.odb
+                            testinput/odb_default_name_map.yml testinput/iodatest_odb_surface.yml
+                    TEST_DEPENDS get_ioda_test_data )
+
   ecbuild_add_test( TARGET  test_ioda-convert_sonde_odc
                     TYPE    SCRIPT
                     COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
