@@ -422,10 +422,11 @@ void ObsSpace::put_db(const std::string & group, const std::string & name,
                      const std::vector<std::string> & dimList) {
     // Make sure the variable exists before calling saveVar. Doing it this way instead
     // of through the openCreateVar call in saveVar because of the need to get the
-    // epoch value for converting the data before calling saveVar. Use the window starting
-    // DateTime for the units ("seconds since _____") if creating a new variable.
+    // epoch value for converting the data before calling saveVar. Use the epoch DateTime
+    // parameter for the units if creating a new variable.
     Variable dtVar;
-    openCreateEpochDtimeVar(group, name, winbgn_, dtVar, obs_group_.vars);
+    openCreateEpochDtimeVar(group, name, obs_params_.top_level_.epochDateTime,
+                            dtVar, obs_group_.vars);
     util::DateTime epochDtime = getEpochAsDtime(dtVar);
     std::vector<int64_t> timeOffsets = convertDtimeToTimeOffsets(epochDtime, vdata);
     saveVar(group, name, timeOffsets, dimList);

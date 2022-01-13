@@ -97,6 +97,20 @@ class OdbWhereParameters : public oops::Parameters {
     "query", "", this};
 };
 
+class OdbVariableCreationParameters : public oops::Parameters {
+  OOPS_CONCRETE_PARAMETERS(OdbVariableCreationParameters, Parameters)
+
+ public:
+  /// The epoch to use for DateTime variables
+  oops::Parameter<std::string> epoch{"epoch",
+                                     "seconds since 1970-01-01T00:00:00Z", this};
+
+  /// The int64 missing value
+  oops::Parameter<int64_t> missingInt64{"missingInt64",
+                                        -9223372036854775806, this};
+
+};
+
 class OdbQueryParameters : public oops::Parameters {
   OOPS_CONCRETE_PARAMETERS(OdbQueryParameters, Parameters)
 
@@ -106,6 +120,9 @@ class OdbQueryParameters : public oops::Parameters {
 
   /// Selection criteria
   oops::RequiredParameter<OdbWhereParameters> where{"where", this};
+
+  /// Parameters related to variable creation
+  OdbVariableCreationParameters variableCreation{this};
 };
 
 }  // namespace ODC

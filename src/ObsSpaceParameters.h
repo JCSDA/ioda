@@ -239,6 +239,11 @@ class ObsTopLevelParameters : public oops::ObsSpaceParametersBase {
     /// extend the ObsSpace with extra fixed-size records
     oops::OptionalParameter<ObsExtendParameters> obsExtend{"extension", this};
 
+    /// DateTime of epoch to use when storing dateTime variables.
+    /// Note that this should not be prefixed with "seconds since"
+    oops::Parameter<util::DateTime> epochDateTime{"epoch DateTime",
+                                                  util::DateTime("1970-01-01T00:00:00Z"), this};
+
     /// parameters indicating where to load data from
     const ObsIoParametersBase &obsIoInParameters() const {
       if (source.value() != boost::none)

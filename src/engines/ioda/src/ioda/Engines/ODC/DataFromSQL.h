@@ -18,6 +18,9 @@
 
 #include "ioda/defs.h"
 #include "ioda/ObsGroup.h"
+
+#include "oops/util/DateTime.h"
+
 #include "unsupported/Eigen/CXX11/Tensor"
 
 namespace ioda {
@@ -201,7 +204,10 @@ public:
               const std::vector<int>& varnos, const std::string& query);
 
   /// \brief Returns a vector of date strings
-  std::vector<std::string> getDates(std::string const& date_col, std::string const& time_col) const;
+  std::vector<int64_t> getDates(std::string const& date_col,
+                                std::string const& time_col,
+                                util::DateTime const& epoch,
+                                int64_t const missingInt64) const;
 
   /// \brief Returns a vector of station IDs
   std::vector<std::string> getStationIDs() const;

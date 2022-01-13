@@ -62,6 +62,27 @@ void initODC() { static bool inited = false;
 #if odc_FOUND && eckit_FOUND && oops_FOUND
 
 // -------------------------------------------------------------------------------------------------
+
+/// Convert an epoch to a util::DateTime
+// todo: keep unified with the version in IodaUtils.cc
+util::DateTime getEpochAsDtime(const Variable & dtVar) {
+  // get the units attribute and strip off the "seconds since " part. For now,
+  // we are restricting the units to "seconds since " and will be expanding that
+  // in the future to other time units (hours, days, minutes, etc).
+  std::string epochString = dtVar.atts.open("units").read<std::string>();
+  std::size_t pos = epochString.find("seconds since ");
+  if (pos == std::string::npos) {
+    std::string errorMsg =
+        std::string("For now, only supporting 'seconds since' form of ") +
+        std::string("units for MetaData/dateTime variable");
+    Exception(errorMsg.c_str(), ioda_Here());
+  }
+  epochString.replace(pos, pos+14, "");
+
+  return util::DateTime(epochString);
+}
+
+// -------------------------------------------------------------------------------------------------
 // (Very simple) SQL expression parsing
 
 /// Parsed SQL column expression.
@@ -426,8 +447,8 @@ ObsGroup openFile(const ODC_Parameters& odcparams,
 
   std::vector<std::string> ignores;
   ignores.push_back("nlocs");
-  ignores.push_back("MetaData/datetime");
-  ignores.push_back("MetaData/receiptdatetime");
+  ignores.push_back("MetaData/dateTime");
+  ignores.push_back("MetaData/receiptdateTime");
   ignores.push_back("nchans");
 
   // Station ID is constructed from other variables for certain observation types.
@@ -458,12 +479,24 @@ ObsGroup openFile(const ODC_Parameters& odcparams,
   // Begin with datetime variables, which are handled specially -- date and time are stored in
   // separate ODB columns, but ioda represents them in a single variable.
   {
-    ioda::Variable v = og.vars.createWithScales<std::string>(
-    "MetaData/datetime", {og.vars["nlocs"]}, params);
-    v.write(sql_data.getDates("date", "time"));
-    v = og.vars.createWithScales<std::string>(
-          "MetaData/receiptdatetime", {og.vars["nlocs"]}, params);
-    v.write(sql_data.getDates("receipt_date", "receipt_time"));
+    ioda::VariableCreationParameters params_dates = params;
+    params_dates.setFillValue<int64_t>(queryParameters.variableCreation.missingInt64);
+    // MetaData/dateTime
+    ioda::Variable v = og.vars.createWithScales<int64_t>(
+    "MetaData/dateTime", {og.vars["nlocs"]}, params_dates);
+    v.atts.add<std::string>("units",
+                            queryParameters.variableCreation.epoch);
+    v.write(sql_data.getDates("date", "time",
+                              getEpochAsDtime(v),
+                              queryParameters.variableCreation.missingInt64));
+    // MetaData/receiptdateTime
+    v = og.vars.createWithScales<int64_t>(
+    "MetaData/receiptdateTime", {og.vars["nlocs"]}, params_dates);
+    v.atts.add<std::string>("units",
+                            queryParameters.variableCreation.epoch);
+    v.write(sql_data.getDates("receipt_date", "receipt_time",
+                              getEpochAsDtime(v),
+                              queryParameters.variableCreation.missingInt64));
   }
 
   if (constructStationID) {
