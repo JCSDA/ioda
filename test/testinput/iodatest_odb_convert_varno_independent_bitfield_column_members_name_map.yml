@@ -35,6 +35,8 @@ varno-independent columns:
   source: "sonde_tracking_system"
 - name: "MetaData/sonde_type"
   source: "sonde_type"
+- name: "MetaData/statid"
+  source: "statid"
 - name: "MetaData/station_altitude"
   source: "stalt"
 - name: "MetaData/station_type"

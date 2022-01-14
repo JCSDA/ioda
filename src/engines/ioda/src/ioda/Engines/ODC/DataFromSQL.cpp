@@ -416,11 +416,17 @@ std::vector<std::string> DataFromSQL::getStationIDs() const {
   std::ostringstream stream;
   std::vector<std::string> stationIDs;
   if (obsgroup_ == obsgroup_sonde) {
+    const std::vector<std::string> var_statid = getMetadataStringColumn("statid");
     const Eigen::ArrayXi var_wmo_block_number = getMetadataColumnInt("wmo_block_number");
     const Eigen::ArrayXi var_wmo_station_number = getMetadataColumnInt("wmo_station_number");
     const size_t nlocs = var_wmo_block_number.size();
     stationIDs.assign(nlocs, odb_missing_string);
     for (int loc = 0; loc < nlocs; loc++) {
+      // If statid is not empty, use that to fill the station ID.
+      if (var_statid[loc] != "")
+        stationIDs[loc] = var_statid[loc];
+      // If WMO block and station numbers are present, use those to fill the station ID.
+      // (This can override the assignment based on statid.)
       if (var_wmo_block_number[loc] != odb_missing_int &&
           var_wmo_station_number[loc] != odb_missing_int) {
         stream.str("");

@@ -20,6 +20,7 @@ variables:
 - name: sonde_report_identifier
 - name: sonde_tracking_system
 - name: sonde_type
+- name: statid
 - name: stalt
 - name: station_type
 - name: winpro_flags_eu
