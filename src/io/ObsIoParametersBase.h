@@ -30,6 +30,9 @@ class ObsGroupingParameters : public oops::Parameters {
     /// variable of which to base obs record sorting
     oops::Parameter<std::string> obsSortVar{"sort variable", "", this};
 
+    /// name of group of which to base obs record sorting
+    oops::Parameter<std::string> obsSortGroup{"sort group", "MetaData", this};
+
     /// direction for sort
     oops::Parameter<std::string> obsSortOrder{"sort order", "ascending", this};
 };

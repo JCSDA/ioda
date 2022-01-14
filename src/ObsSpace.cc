@@ -251,6 +251,11 @@ std::string ObsSpace::obs_sort_var() const {
 }
 
 // -----------------------------------------------------------------------------
+std::string ObsSpace::obs_sort_group() const {
+    return obs_params_.top_level_.obsIoInParameters().obsGrouping.value().obsSortGroup;
+}
+
+// -----------------------------------------------------------------------------
 std::string ObsSpace::obs_sort_order() const {
     return obs_params_.top_level_.obsIoInParameters().obsGrouping.value().obsSortOrder;
 }
@@ -1072,7 +1077,7 @@ void ObsSpace::buildSortedObsGroups() {
             SortValues[iloc] = (Dates[iloc] - Dates[0]).toSeconds();
         }
     } else {
-        get_db("MetaData", this->obs_sort_var(), SortValues);
+        get_db(this->obs_sort_group(), this->obs_sort_var(), SortValues);
     }
 
     // Construct a temporary structure to do the sorting, then transfer the results

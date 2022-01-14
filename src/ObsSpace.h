@@ -238,6 +238,9 @@ namespace ioda {
         /// \brief return YAML configuration parameter: obsdatain.obsgrouping.sort variable
         std::string obs_sort_var() const;
 
+        /// \brief return YAML configuration parameter: obsdatain.obsgrouping.sort group
+        std::string obs_sort_group() const;
+
         /// \brief return YAML configuration parameter: obsdatain.obsgrouping.sort order
         std::string obs_sort_order() const;
 
