@@ -26,20 +26,17 @@ const int32_t DataLayoutPolicy_ObsGroup::ObsGroup_Layout_Version = 0;
 DataLayoutPolicy_ObsGroup::~DataLayoutPolicy_ObsGroup()    = default;
 DataLayoutPolicy_ObsGroup::DataLayoutPolicy_ObsGroup()     = default;
 void DataLayoutPolicy_ObsGroup::initializeStructure(Group_Base &g) const {
-  // First, set an attribute to indicate that the data are managed
+  // Set attributes to indicate that the data are managed
   // by this data policy.
+
+  // Old names. To be deprecated.
   g.atts.add<std::string>("_ioda_layout", std::string("ObsGroup"));
   g.atts.add<int32_t>("_ioda_layout_version", ObsGroup_Layout_Version);
 
-  // Create the default containers - currently ignored as these are
-  // dynamically created.
-  /*
-  g.create("MetaData");
-  g.create("ObsBias");
-  g.create("ObsError");
-  g.create("ObsValue");
-  g.create("PreQC");
-  */
+  // New names. These will invalidate the ioda converters tests.
+  //g.atts.add<std::string>("ioda_object_type", std::string("ObsGroup"));
+  //g.atts.add<int32_t>("ioda_object_version", ObsGroup_Layout_Version);
+
 }
 
 std::string DataLayoutPolicy_ObsGroup::doMap(const std::string &str) const {

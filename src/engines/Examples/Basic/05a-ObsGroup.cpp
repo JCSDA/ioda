@@ -180,8 +180,8 @@ int main(int argc, char** argv) {
     //              the initial size is zero, it must be explicitly specified.
     //
     ioda::NewDimensionScales_t newDims;
-    newDims.push_back(NewDimensionScale<int>("nlocs", numLocs, Unlimited, numLocs));
-    newDims.push_back(NewDimensionScale<int>("nchans", numChans, numChans, numChans));
+    newDims.push_back(NewDimensionScale<int>("Location", numLocs, Unlimited, numLocs));
+    newDims.push_back(NewDimensionScale<int>("Channel", numChans, numChans, numChans));
 
     // Construct an ObsGroup object, with 2 dimensions nlocs, nchans, and attach
     // the backend we constructed above. Under the hood, the ObsGroup::generate function
@@ -192,15 +192,16 @@ int main(int argc, char** argv) {
     // We now have the top-level group containing the two dimension scales. We need
     // Variable objects for these dimension scales later on for creating variables so
     // build those now.
-    ioda::Variable nlocsVar  = og.vars["nlocs"];
-    ioda::Variable nchansVar = og.vars["nchans"];
+    ioda::Variable nlocsVar  = og.vars["Location"];
+    ioda::Variable nchansVar = og.vars["Channel"];
 
     // Next let's create the variables. The variable names should be specified using the
-    // hierarchy as described above. For example, the variable brightness_temperature
-    // in the group ObsValue is specified in a string as "ObsValue/brightness_temperature".
-    string tbName  = "ObsValue/brightness_temperature";
-    string latName = "MetaData/latitude";
-    string lonName = "MetaData/longitude";
+    // hierarchy as described above. For example, the variable brightnessTemperature
+    // in the group ObsValue is specified in a string as "ObsValue/brightnessTemperature".
+    string tbName  = "ObsValue/brightnessTemperature";
+    string tmName = "Metadata/dateTime";
+    string latName = "Metadata/latitude";
+    string lonName = "Metadata/longitude";
 
     // Set up the creation parameters for the variables. All three variables in this case
     // are float types, so they can share the same creation parameters object.
@@ -212,6 +213,7 @@ int main(int argc, char** argv) {
     // Create the variables. Note the use of the createWithScales function. This should
     // always be used when working with an ObsGroup object.
     Variable tbVar  = og.vars.createWithScales<float>(tbName, {nlocsVar, nchansVar}, float_params);
+    Variable tmVar  = og.vars.createWithScales<float>(tmName, {nlocsVar}, float_params);
     Variable latVar = og.vars.createWithScales<float>(latName, {nlocsVar}, float_params);
     Variable lonVar = og.vars.createWithScales<float>(lonName, {nlocsVar}, float_params);
 
@@ -226,6 +228,7 @@ int main(int argc, char** argv) {
       .add<std::string>("long_name", {"ficticious brightness temperature"}, {1})
       .add<std::string>("units", {"K"}, {1})
       .add<float>("valid_range", {100.0, 400.0}, {2});
+    tmVar.atts.add<std::string>("units", {"seconds since 2021-12-20"}, {1});
     latVar.atts.add<std::string>("long_name", {"latitude"}, {1})
       .add<std::string>("units", {"degrees_north"}, {1})
       .add<float>("valid_range", {-90.0, 90.0}, {2});

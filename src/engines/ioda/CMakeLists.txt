@@ -94,10 +94,12 @@ list(APPEND SRCS_VARIABLES
 	include/ioda/Variables/Has_Variables.h
 	include/ioda/Variables/Selection.h
 	include/ioda/Variables/Variable.h
+	include/ioda/Variables/VarUtils.h
 	src/ioda/Fill.cpp
 	src/ioda/Has_Variables.cpp
 	src/ioda/Selection.cpp
 	src/ioda/Variable.cpp
+	src/ioda/VarUtils.cpp
 	)
 
 list(APPEND SRCS_ENGINES_TOP
@@ -163,13 +165,13 @@ list(APPEND SRCS_ENGINES_OBS_STORE
 list(APPEND SRCS_ENGINES_ODC
 	include/ioda/Engines/ODC.h
 	src/ioda/Engines/ODC/ODC.cpp
-	src/ioda/Engines/ODC/OdbQueryParameters.h
-	src/ioda/Engines/ODC/OdbQueryParameters.cpp
 	)
-# Source files depending on the ODC library
+# Source files that should only be built when ODC is enabled
 list(APPEND SRCS_ENGINES_ODC_ODC_DEPENDENT
 	src/ioda/Engines/ODC/DataFromSQL.cpp
 	src/ioda/Engines/ODC/DataFromSQL.h
+	src/ioda/Engines/ODC/OdbQueryParameters.h
+	src/ioda/Engines/ODC/OdbQueryParameters.cpp
 	)
 
 source_group("Attributes" FILES ${SRCS_ATTRIBUTES})
@@ -201,7 +203,7 @@ list(APPEND SRCS_IODA_ENGINES
 if (eckit_FOUND AND oops_FOUND)
 	list(APPEND SRCS_IODA_ENGINES ${SRCS_LAYOUTS_ODB})
 endif()
-if (odc_FOUND)
+if (odc_FOUND AND oops_FOUND AND eckit_FOUND)
     list(APPEND SRCS_IODA_ENGINES ${SRCS_ENGINES_ODC_ODC_DEPENDENT})
 endif()
 if (HDF5_FOUND)

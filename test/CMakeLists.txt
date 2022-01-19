@@ -1264,6 +1264,20 @@ ecbuild_add_test( TARGET  test_ioda_fileformat
                   LIBS    ioda_test )
 
 #####################################################################
+# ioda-validate code coverage test
+#####################################################################
+# Actual file tests are in ufo-data and in ioda-converters.
+# - IODA_YAML_ROOT is set in the top-level ioda CMakeLists.txt file.
+# - Future: IODA_DATA_TEST_ROOT is set by the ioda-data project.
+ecbuild_add_test(
+	TARGET test_ioda-validate
+	COMMAND ioda-validate.x
+	ARGS "${IODA_YAML_ROOT}/validation/ObsSpace.yaml"
+             "Data/testinput_tier_1/sample_hofx_output_amsua_n19.nc4"
+	     # Future: "${IODA_DATA_TEST_ROOT}/testinput_tier_1/sample_hofx_output_amsua_n19.nc4"
+	)
+
+#####################################################################
 # Set up the testinput and testoutput directories
 #####################################################################
 

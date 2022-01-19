@@ -1,5 +1,5 @@
 #
-# (C) Copyright 2017-2021 UCAR.
+# (C) Copyright 2017-2022 UCAR.
 #
 # This software is licensed under the terms of the Apache Licence Version 2.0
 # which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -43,12 +43,25 @@ find_package( Eigen3 REQUIRED NO_MODULE HINTS
               $ENV{Eigen3_ROOT} $ENV{EIGEN3_ROOT} $ENV{Eigen_ROOT} $ENV{EIGEN_ROOT}
               $ENV{Eigen3_PATH} $ENV{EIGEN3_PATH} $ENV{Eigen_PATH} $ENV{EIGEN_PATH} )
 find_package( gsl-lite REQUIRED HINTS $ENV{gsl_lite_DIR} )
+find_package( udunits 2.2.0 REQUIRED )  # Needed for unit conversions
 
 # Optional
+
+### The ioda_data package is problematic in bundles because it has some special CMake logic
+### at the root bundle location. So, we cannot find the ioda data while in ioda!
+### Basically, with the current logic ioda_data must be loaded after ioda.
+#find_package( ioda_data QUIET )   # Needed for tests
+
 find_package( odc 1.0.2 QUIET )   # Needed for odc
 find_package( Boost 1.64.0 )      # Provides an implementation of optional
 find_package( Python3 COMPONENTS Interpreter Development )
 find_package( pybind11 QUIET)
+
+## Files used by both test and in non-test executables
+install(DIRECTORY share/ioda
+        TYPE DATA
+        COMPONENT share )
+set( IODA_YAML_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/share/ioda/yaml )
 
 ## Sources
 add_subdirectory( src/engines )   # `ioda_engines` target

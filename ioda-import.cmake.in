@@ -1,5 +1,8 @@
 # ioda-import.cmake
 # find_dependency calls for IODA target dependencies
+#
+# Sets these CMake variables:
+# - IODA_YAML_ROOT
 
 include(CMakeFindDependencyMacro)
 
@@ -24,3 +27,25 @@ if(NOT @PROJECT_NAME@_MODULES_Fortran_COMPILER_ID STREQUAL CMAKE_Fortran_COMPILE
             "${@PROJECT_NAME@_MODULES_Fortran_COMPILER_ID}-${@PROJECT_NAME@_MODULES_Fortran_COMPILER_VERSION} "
             "but this build for ${PROJECT_NAME} uses incompatible compiler ${CMAKE_Fortran_COMPILER_ID}-${CMAKE_Fortran_COMPILER_VERSION}")
 endif()
+
+# Export ioda YAML validation files directory
+if( IS_ABSOLUTE "@CMAKE_INSTALL_DATADIR@")
+	set( IODA_YAML_ROOT "@CMAKE_INSTALL_DATADIR@/ioda/yaml" )
+else()
+	if ( DEFINED _IMPORT_PREFIX )
+		# We are in a CMake install tree
+		set( IODA_YAML_ROOT "${_IMPORT_PREFIX}/@CMAKE_INSTALL_DATADIR@/ioda/yaml" )
+	else()
+		# We are in a CMake build tree. Ergo, we can use the variable set in
+		# IODA's top-level CMakeLists.txt that points to the YAML root path
+		# in the source tree.
+		#
+		# Note: a small downside of this approach is that a source tree path is hardcoded
+		# in the ioda-post-import.cmake file, even if it is never again used. Some
+		# tools (like Spack) will complain about this path and may indicate that ioda
+		# is a non-relocatable package, even though it is completely relocatable.
+		set( IODA_YAML_ROOT "@IODA_YAML_ROOT@" )
+	endif()
+endif()
+
+
