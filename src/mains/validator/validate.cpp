@@ -366,9 +366,9 @@ class Validator : public eckit::Main {
           }
 
           // Can this variable be in the Metadata group?
-          if (group == "Metadata" && (varparams.base.canBeMetadata.value() == false))
+          if (group == "MetaData" && (varparams.base.canBeMetadata.value() == false))
             log(params_.policies.value().VariableCanBeMetadata, res_)
-              << "Variable '" << v.name << "' should not be in Metadata.\n";
+              << "Variable '" << v.name << "' should not be in MetaData.\n";
 
           // Recommended dimension scales check
           if (varparams.base.dimNames.value()) {

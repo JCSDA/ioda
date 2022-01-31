@@ -57,7 +57,7 @@ Groups:
     # described under the "Dimensions" key (below).
   # Other known groups
   - Group: [ "HofX" ]
-  - Group: [ "Metadata", "MetaData" ]
+  - Group: [ "MetaData" ]
     Required: true
     Required Variables: [ "latitude", "longitude" ]  # "dateTime" is left out because the name changed from "datetime", and both are valid in ioda for now.
   - Group: [ "ObsValue" ]
@@ -71,7 +71,7 @@ Groups:
     OverrideType: Int32
   # Deprecated
   - Group: [ "VarMetaData" ]
-    Remove: "Variables in this group should be relocated to Metadata."
+    Remove: "Variables in this group should be relocated to MetaData."
   # These are EMC-related. Deprecated in the future.
   - Group: [ "GsiAdjustObsError" ]
   - Group: [ "GsiFinalObsError" ]
@@ -84,7 +84,7 @@ Groups:
   - Group: [ "PreUseFlag" ]
     OverrideType: Int32
   - Group: [ "RecMetaData" ]
-    Remove: "Variables in this group should be relocated to Metadata."
+    Remove: "Variables in this group should be relocated to MetaData."
 Dimensions:
   # All known dimensions are described here.
   # - Name is a set of names for this dimension. Newest name goes first. Old names will
@@ -118,7 +118,7 @@ Variable Defaults:
   # Defaults are normally specified in C++. Overridable here.
   Dimensions: [ "Location" ]
   Type: Float
-  Metadata: false                  # Can this variable be in the Metadata group?
+  MetaData: false                  # Can this variable be in the MetaData group?
   Valid Attributes:
     Required: [ "_FillValue" ]     # Required atts for all variables.
     RequiredNotEnum: [ "units" ]   # Required atts for non-enumerated-type variables.
@@ -145,17 +145,17 @@ Variables:
   #   lots of old vars in amsr2_obs_20191230T0000Z_100subset.nc4 (also still a IODAv1 file; is it a dead file?)
   #   bathymetry, obs_absolute_dynamic_topography (Jason-2)
   - Variable: [ "dateTime", "datetime" ]
-    Metadata: true
+    MetaData: true
     Type: Datetime
     Check Exact Units: false  # Check only that units are convertible, not that the reference is identical to this one.
     Attributes:
       units: "seconds since 2021-12-21"
   # Deprecated.
   - Variable: [ "time" ]
-    Metadata: true
+    MetaData: true
     Remove: true
   - Variable: [ "record_number", "rec_id" ]  # TODO: Should this be kept?
-    Metadata: true
+    MetaData: true
     Force Units: false
   - Variable: [ "Observation_Class_maxstrlen" ]
     Remove: true
@@ -307,7 +307,7 @@ Variables:
     Attributes: { units: "Pa" }
   - Variable: [ "pressure", "air_pressure" ]
     Attributes: { units: "Pa" }
-    Metadata: true
+    MetaData: true
   - Variable: [ "stationPressure" ]
     Attributes: { units: "Pa" }
   - Variable: [ "pressureChange" ]
@@ -522,232 +522,232 @@ Variables:
     Dimensions: [ "Location", "Layer" ]
     Attributes: { units: "DU" }
   - Variable: [ "observationTypeNum" ]
-    Metadata: true
+    MetaData: true
     Type: Enum
     Attributes: { units: "unitless" }
   - Variable: [ "observationSubTypeNum" ]
-    Metadata: true
+    MetaData: true
     Type: Enum
     Attributes: { units: "unitless" }
   - Variable: [ "instrumentPackage" ]
-    Metadata: true
+    MetaData: true
     Type: Enum
     Attributes: { units: "unitless" }
   - Variable: [ "instrumentIdentifier" ]
-    Metadata: true
+    MetaData: true
     Type: Enum
     Attributes: { units: "unitless" }
   - Variable: [ "instrumentManufacturer" ]
-    Metadata: true
+    MetaData: true
     Type: Enum
     Attributes: { units: "unitless" }
   - Variable: [ "instrumentModelInfo" ]
-    Metadata: true
+    MetaData: true
     Type: Enum
     Attributes: { units: "unitless" }
   - Variable: [ "instrumentSerialNumber" ]
-    Metadata: true
+    MetaData: true
     Type: StringVLen
   - Variable: [ "instrumentCorrectionInfo" ]
-    Metadata: true
+    MetaData: true
     Type: Enum
     Attributes: { units: "unitless" }
   - Variable: [ "satelliteIdentifier" ]
-    Metadata: true
+    MetaData: true
     Type: Enum
     Attributes: { units: "unitless" }
   - Variable: [ "satelliteTransmitterId" ]
-    Metadata: true
+    MetaData: true
     Type: Enum
     Attributes: { units: "unitless" }
   - Variable: [ "satelliteReceiverId" ]
-    Metadata: true
+    MetaData: true
     Type: Enum
     Attributes: { units: "unitless" }
   - Variable: [ "satelliteAscendingFlag", "ascending_flag" ]
-    Metadata: true
+    MetaData: true
     Type: Enum
     Attributes: { units: "unitless" }
   - Variable: [ "impactHeightRO" ]
-    Metadata: true
+    MetaData: true
   - Variable: [ "impactParameterRO", "impact_parameter" ]
-    Metadata: true
+    MetaData: true
   - Variable: [ "profileNumberRO" ]
-    Metadata: true
+    MetaData: true
     Type: UInt16
     Attributes: { units: "unitless" }
     Force Units: false
   - Variable: [ "sensorAzimuthAngle", "sensor_azimuth_angle" ]
-    Metadata: true
+    MetaData: true
     Attributes: { units: "degree" }
   - Variable: [ "sensorZenithAngle", "sensor_zenith_angle" ]
-    Metadata: true
+    MetaData: true
     Attributes: { units: "degree" }
   - Variable: [ "sensorPixelSizeHorizontal" ]
-    Metadata: true
+    MetaData: true
     Attributes: { units: "m" }
   - Variable: [ "sensorViewAngle", "sensor_view_angle" ]
-    Metadata: true
+    MetaData: true
     Attributes: { units: "degree" }
   - Variable: [ "sensorScanPosition", "scan_position" ]
-    Metadata: true
+    MetaData: true
     Type: UInt32
     Attributes: { units: "unitless" }
     Force Units: false
   - Variable: [ "scanLineNumber", "scan_line" ]
-    Metadata: true
+    MetaData: true
     Type: UInt32
     Attributes: { units: "unitless" }
     Force Units: false
   - Variable: [ "fieldOfViewNumber" ]
-    Metadata: true
+    MetaData: true
     Type: UInt32
     Attributes: { units: "unitless" }
     Force Units: false
   - Variable: [ "sensorChannelNumber", "sensor_channel", "chans" ]  # chans from geos aod
-    Metadata: true
+    MetaData: true
     Type: UInt32
     Attributes: { units: "unitless" }
     Dimensions: [ "Channel" ]
     Force Units: false
   - Variable: [ "sensorCentralFrequency", "sensor_band_central_radiation_frequency", "frequency" ]
-    Metadata: true
+    MetaData: true
     Type: Double
     Attributes: { units: "Hz" }
     Dimensions: [ "Channel" ]
   - Variable: [ "sensorCentralWavenumber", "sensor_band_central_radiation_wavenumber", "wavenumber" ]
-    Metadata: true
+    MetaData: true
     Attributes: { units: "m-1" }
     Dimensions: [ "Channel" ]
   - Variable: [ "sensorCentralWavelength", "channel_wavelength" ]
-    Metadata: true
+    MetaData: true
     Attributes: { units: "microns" }
     Dimensions: [ "Channel" ]
   - Variable: [ "sensorPolarizationDirection", "polarization" ]
-    Metadata: true
+    MetaData: true
     Type: Enum
     Attributes: { units: "unitless" }
     Dimensions: [ "Channel" ]
     Force Units: false
   - Variable: [ "solarZenithAngle", "solar_zenith_angle", "sol_zenith_angle" ]
-    Metadata: true
+    MetaData: true
     Attributes: { units: "degree" }
   - Variable: [ "solarAzimuthAngle", "solar_azimuth_angle", "sol_azimuth_angle" ]
-    Metadata: true
+    MetaData: true
     Attributes: { units: "degree" }
   - Variable: [ "stationICAO" ]
-    Metadata: true
+    MetaData: true
     Type: StringFixedLen
   - Variable: [ "stationWMONumber" ]
-    Metadata: true
+    MetaData: true
     Type: UInt32
     Attributes: { units: "unitless" }
   - Variable: [ "stationWIGOSId" ]
-    Metadata: true
+    MetaData: true
     Type: StringFixedLen
   - Variable: [ "stationIdentification", "station_id", "Station_ID" ]
-    Metadata: true
+    MetaData: true
     Type: StringFixedLen
   - Variable: [ "stationLongName" ]
-    Metadata: true
+    MetaData: true
     Type: StringFixedLen
   - Variable: [ "stationElevation", "station_elevation" ]
-    Metadata: true
+    MetaData: true
     Attributes: { units: "m" }
   - Variable: [ "stationType" ]
-    Metadata: true
+    MetaData: true
     Type: Enum
     Attributes: { units: "unitless" }
   - Variable: [ "sensorThermoHeight" ]
-    Metadata: true
+    MetaData: true
     Attributes: { units: "m" }
   - Variable: [ "sensorMomentumHeight" ]
-    Metadata: true
+    MetaData: true
     Attributes: { units: "m" }
   - Variable: [ "latitude" ]
-    Metadata: true
+    MetaData: true
     Attributes: { units: "degree_north" }
   - Variable: [ "longitude" ]
-    Metadata: true
+    MetaData: true
     Attributes: { units: "degree_east" }
   - Variable: [ "height" ]  # TODO: surface altitude?
-    Metadata: true
+    MetaData: true
     Attributes: { units: "m" }
   - Variable: [ "altitudeIndicator" ]  # TODO: altitude vs height
-    Metadata: true
+    MetaData: true
     Type: Enum
     Attributes: { units: "unitless" }
   - Variable: [ "heightOfSurface" ]
-    Metadata: true
+    MetaData: true
     Attributes: { units: "m" }
   - Variable: [ "heightOfLandSurface" ]
-    Metadata: true
+    MetaData: true
     Attributes: { units: "m" }
   - Variable: [ "distanceToCoastline" ]
-    Metadata: true
+    MetaData: true
     Attributes: { units: "m" }
   - Variable: [ "releaseTime" ]
-    Metadata: true
+    MetaData: true
     Type: Datetime
     Attributes: { units: "seconds since 2021-01-01" }
     Check Exact Units: false
   - Variable: [ "aircraftIdentifier" ]
-    Metadata: true
+    MetaData: true
     Type: StringFixedLen
   - Variable: [ "aircraftHeading" ]
-    Metadata: true
+    MetaData: true
     Attributes: { units: "degree" }
   - Variable: [ "aircraftVelocity" ]
-    Metadata: true
+    MetaData: true
     Attributes: { units: "m s-1" }
   - Variable: [ "aircraftFlightPhase" ]
-    Metadata: true
+    MetaData: true
     Type: Enum
     Attributes: { units: "unitless" }
   - Variable: [ "shipHeading" ]
-    Metadata: true
+    MetaData: true
     Attributes: { units: "degree" }
   - Variable: [ "shipVelocity" ]
-    Metadata: true
+    MetaData: true
     Attributes: { units: "m s-1" }
   - Variable: [ "windComputationMethod" ]
-    Metadata: true
+    MetaData: true
     Type: Enum
     Attributes: { units: "unitless" }
   - Variable: [ "windHeightAssignMethod" ]
-    Metadata: true
+    MetaData: true
     Type: Enum
     Attributes: { units: "unitless" }
   - Variable: [ "windProcessingMethod" ]
-    Metadata: true
+    MetaData: true
     Type: Enum
     Attributes: { units: "unitless" }
   - Variable: [ "windTrackingCorrrelation" ]
-    Metadata: true
+    MetaData: true
     Attributes: { units: "1" }
   - Variable: [ "landOrSeaQualifier", "land_sea" ]  # TODO: land_sea needs enum conversion (ATMS)
-    Metadata: true
+    MetaData: true
     Type: Enum
     Attributes: { units: "unitless" }
   - Variable: [ "dayOrNightQualifier" ]
-    Metadata: true
+    MetaData: true
     Type: Enum
     Attributes: { units: "unitless" }
   - Variable: [ "verticalResolution" ]
-    Metadata: true
+    MetaData: true
     Attributes: { units: "m" }
   - Variable: [ "viewingZenithAngle" ]
-    Metadata: true
+    MetaData: true
     Attributes: { units: "degree" }
   - Variable: [ "instrumentTemperature" ]
-    Metadata: true
+    MetaData: true
     Attributes: { units: "K" }
   - Variable: [ "antennaTemperature" ]
-    Metadata: true
+    MetaData: true
     Attributes: { units: "K" }
   - Variable: [ "atmosphereLayerThicknessZ" ]
-    Metadata: true
+    MetaData: true
     Attributes: { units: "m" }
   - Variable: [ "atmosphereLayerThicknessP" ]
-    Metadata: true
+    MetaData: true
     Attributes: { units: "Pa" }

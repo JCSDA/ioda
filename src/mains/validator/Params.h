@@ -61,7 +61,7 @@ class PolicyParameters : public oops::Parameters {
   oops::Parameter<Severity> RequiredVariables{"RequiredVariables", Severity::Error, this};
   oops::Parameter<Severity> KnownVariableNames{"KnownVariableNames", Severity::Warn, this};
   oops::Parameter<Severity> VariableUseNewName{"PreferredVariableNames", Severity::Warn, this};
-  oops::Parameter<Severity> VariableCanBeMetadata{"VariableCanBeMetadata", Severity::Warn, this};
+  oops::Parameter<Severity> VariableCanBeMetadata{"VariableCanBeMetaData", Severity::Warn, this};
   oops::Parameter<Severity> VariableTypeCheck{"VariableTypeCheck", Severity::Trace, this};
   oops::Parameter<Severity> VariableDimensionCheck{"VariableDimensionCheck", Severity::Warn, this};
   oops::Parameter<Severity> VariableHasReqAtts{"VariableHasReqAtts", Severity::Error, this};
@@ -185,7 +185,7 @@ class VariableOrDefaultVarParameters : public oops::Parameters {
   typedef util::AnyOf<Type, TypeParameters> TypeType_;
   oops::OptionalParameter<std::vector<std::string>> dimNames{"Dimensions", this};
   oops::OptionalParameter<TypeType_> type{"Type", this};
-  oops::Parameter<bool> canBeMetadata{"Metadata", false, this};
+  oops::Parameter<bool> canBeMetadata{"MetaData", false, this};
   oops::OptionalParameter<AttributeListReqOptionalParameters> atts{"Valid Attributes", this};
 };
 
