@@ -139,7 +139,7 @@ class ObsSpace:
                 dimlen = int(value)
             if key == 'nlocs':
                 _nlocs_var = ioda.NewDimensionScale.int32(
-                    'nlocs', dimlen, ioda.Unlimited, dimlen)
+                    'nlocs', dimlen, ioda.Unlimited, min(dimlen, 10000))
                 _dim_list.append(_nlocs_var)
             else:
                 _dim_list.append(ioda.NewDimensionScale.int32(
