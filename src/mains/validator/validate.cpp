@@ -21,7 +21,6 @@
 #include "./AttributeChecks.h"
 #include "./Log.h"
 #include "./Params.h"
-#include "./Units.h"
 #include "eckit/config/YAMLConfiguration.h"
 #include "eckit/log/Colour.h"
 #include "eckit/runtime/Main.h"
@@ -31,6 +30,7 @@
 #include "ioda/Group.h"
 #include "ioda/Misc/StringFuncs.h"
 #include "ioda/Variables/VarUtils.h"
+#include "ioda/Units.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Application.h"
 #include "oops/util/LibOOPS.h"
@@ -499,47 +499,47 @@ class Validator : public eckit::Main {
           }
           if (checkUnits) {
             // LogContext lg("Checking units");
-            string varUnits, YAMLunits;
+            string sVarUnits, sYAMLunits;
             if (v.var.atts.exists("units"))
-              varUnits = v.var.atts.read<string>("units");
+              sVarUnits = v.var.atts.read<string>("units");
             else
               log(params_.policies.value().VariableHasValidUnits, res_)
                 << "Variable '" << v.name
                 << "' needs units, but the 'units' attribute does not exist in the file.\n";
             if (varparamsAtts.count("units"))
-              YAMLunits = varparamsAtts.at("units");
+              sYAMLunits = varparamsAtts.at("units");
             else
               log(params_.policies.value().VariableHasValidUnits, res_)
                 << "Variable '" << v.name
                 << "' needs units, but the 'units' attribute does not exist in the YAML.\n";
 
-            if (varUnits.size() && YAMLunits.size()) {
-              const auto &udunits           = ioda_validate::units::udunits_interface::instance();
-              const auto convertible_result = udunits.canConvert(varUnits, YAMLunits);
+            if (sVarUnits.size() && sYAMLunits.size()) {
+              const auto varUnits = ioda::udunits::Units(sVarUnits);
+              const auto YAMLUnits = ioda::udunits::Units(sYAMLunits);
 
               // Check for valid units
-              if (!convertible_result.validInputUnits)
+              if (!varUnits.isValid())
                 log(params_.policies.value().VariableHasConvertibleUnits, res_)
-                  << "File variable '" << v.name << "' has units of '" << varUnits
+                  << "File variable '" << v.name << "' has units of '" << sVarUnits
                   << "', which are invalid.\n";
-              if (!convertible_result.validOutputUnits)
+              if (!YAMLUnits.isValid())
                 log(params_.policies.value().VariableHasConvertibleUnits, res_)
-                  << "The YAML spec for variable '" << v.name << "' has units of '" << YAMLunits
+                  << "The YAML spec for variable '" << v.name << "' has units of '" << sYAMLunits
                   << "', which are invalid.\n";
 
-              if (convertible_result.validInputUnits && convertible_result.validOutputUnits) {
+              if (varUnits.isValid() && YAMLUnits.isValid()) {
                 // Check for convertible units
-                if (!convertible_result.canConvert)
+                if (!varUnits.isConvertibleWith(YAMLUnits))
                   log(params_.policies.value().VariableHasConvertibleUnits, res_)
                     << "Variable '" << v.name << "' has units of '" << varUnits
-                    << "', which are not convertible to the YAML-specified units of '" << YAMLunits
+                    << "', which are not convertible to the YAML-specified units of '" << sYAMLunits
                     << "'.\n";
 
                 // Check for exact units
-                if (!convertible_result.equivalentUnits && varparams.checkExactUnits.value())
+                if (!(varUnits == YAMLUnits) && varparams.checkExactUnits.value())
                   log(params_.policies.value().VariableHasExactUnits, res_)
                     << "Variable '" << v.name << "' has units of '" << varUnits
-                    << "'. The YAML-specified units are '" << YAMLunits
+                    << "'. The YAML-specified units are '" << sYAMLunits
                     << "'."
                        " Although convertible, these units are not equivalent.\n";
               }

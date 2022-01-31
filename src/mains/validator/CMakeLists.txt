@@ -13,8 +13,6 @@ ecbuild_add_executable( TARGET  ioda-validate.x
                           Log.h
                           Params.cpp
                           Params.h
-                          Units.cpp
-                          Units.h
-                        LIBS    ioda udunits::udunits )
+                        LIBS    ioda )
 
 

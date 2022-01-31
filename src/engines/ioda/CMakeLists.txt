@@ -58,6 +58,14 @@ list(APPEND SRCS_LAYOUTS_ODB
 	src/ioda/Layouts/Layout_ObsGroup_ODB_Params.h
 	src/ioda/Layouts/Layout_ObsGroup_ODB.cpp
 	)
+list(APPEND SRCS_MATH
+	include/ioda/Math.h
+	include/ioda/Units.h
+	src/ioda/Units.cpp
+	# These files are deprecated and will be removed once the Transform engine is ready
+	include/ioda/Misc/UnitConversions.h
+	src/ioda/UnitConversions.cpp
+	)
 list(APPEND SRCS_MISC
 	include/ioda/defs.h
 	include/ioda/Exception.h
@@ -69,11 +77,9 @@ list(APPEND SRCS_MISC
 	include/ioda/Misc/MergeMethods.h
 	include/ioda/Misc/Options.h
 	include/ioda/Misc/StringFuncs.h
-	include/ioda/Misc/UnitConversions.h
 	src/ioda/DimensionScales.cpp
 	src/ioda/Exception.cpp
 	src/ioda/StringFuncs.cpp
-	src/ioda/UnitConversions.cpp
 	)
 list(APPEND SRCS_TYPES
 	include/ioda/Misc/Eigen_Compat.h
@@ -178,6 +184,7 @@ source_group("Attributes" FILES ${SRCS_ATTRIBUTES})
 source_group("C Bindings" FILES ${SRCS_C_BINDINGS})
 source_group("Groups" FILES ${SRCS_GROUPS})
 source_group("Layouts" FILES ${SRCS_LAYOUTS} ${SRCS_LAYOUTS_ODB})
+source_group("Math" FILES ${SRCS_MATH})
 source_group("Misc" FILES ${SRCS_MISC})
 source_group("Type System" FILES ${SRCS_TYPES})
 source_group("Variables" FILES ${SRCS_VARIABLES})
@@ -195,7 +202,7 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/ioda/testconfig.h.in
 
 list(APPEND SRCS_IODA_ENGINES
 	${SRCS_ATTRIBUTES} ${SRCS_C_BINDINGS} ${SRCS_GROUPS}
-	${SRCS_LAYOUTS} ${SRCS_MISC} ${SRCS_TYPES} ${SRCS_VARIABLES}
+	${SRCS_LAYOUTS} ${SRCS_MATH} ${SRCS_MISC} ${SRCS_TYPES} ${SRCS_VARIABLES}
 	${SRCS_ENGINES_TOP} ${SRCS_ENGINES_OBS_STORE} ${SRCS_ENGINES_ODC}
 	${CMAKE_CURRENT_BINARY_DIR}/config/ioda/config.h
 	${CMAKE_CURRENT_BINARY_DIR}/config/ioda/testconfig.h
@@ -233,6 +240,8 @@ set_property(TARGET ioda_engines APPEND PROPERTY
 
 target_link_libraries(ioda_engines PUBLIC gsl::gsl-lite)
 target_link_libraries(ioda_engines PUBLIC Eigen3::Eigen)
+target_link_libraries(ioda_engines PUBLIC udunits::udunits)
+
 
 if (eckit_FOUND)
 	target_link_libraries(ioda_engines PUBLIC eckit)

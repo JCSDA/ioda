@@ -25,12 +25,15 @@
 
 #include "ioda/Attributes/Has_Attributes.h"
 #include "ioda/Exception.h"
+#include "ioda/Math.h"
 #include "ioda/Misc/Eigen_Compat.h"
 #include "ioda/Python/Var_ext.h"
 #include "ioda/Types/Marshalling.h"
 #include "ioda/Types/Type.h"
 #include "ioda/Types/Type_Provider.h"
+#include "ioda/Units.h"
 #include "ioda/Variables/Fill.h"
+#include "ioda/Variables/FillPolicy.h"
 #include "ioda/Variables/Selection.h"
 #include "ioda/defs.h"
 
@@ -380,6 +383,32 @@ public:
 #endif
   }
 
+  
+  template <class EigenClass>
+  Variable_Implementation writeFromMath(
+    const EigenMath<EigenClass> &eigendata,
+    const Selection& mem_selection = Selection::all,
+    const Selection& file_selection = Selection::all)
+  {
+    // Determine output units. If unset, then just return eigendata's units.
+    auto outUnits = (atts.exists("units"))
+                    ? atts["units"].template read<std::string>() : eigendata.units;
+
+    // Convert to output units. If no conversion, this falls through.
+    auto dataNewUnits = eigendata.asUnits(outUnits);
+
+    // Extract the EigenClass::data object and switch missing values to match the output variable.
+    typedef typename EigenClass::Scalar ScalarType;
+    ScalarType varmissing = (hasFillValue())
+      ? detail::getFillValue<ScalarType>(getFillValue())
+      : FillValuePolicies::netCDF4_default<ScalarType>();
+    auto dataCorrectUnitsAndMissingValue
+      = (dataNewUnits.data == dataNewUnits.missingValue).select(varmissing, dataNewUnits.data);
+    
+    // Write
+    return writeWithEigenRegular(dataCorrectUnitsAndMissingValue, mem_selection, file_selection);
+  }
+
   /// \brief Write an Eigen Tensor-like object
   /// \tparam EigenClass is the type of the Eigen object being written.
   /// \param d is the data to be written.
@@ -597,6 +626,28 @@ public:
 #else
     static_assert(false, "The Eigen headers cannot be found, so this function cannot be used.");
 #endif
+  }
+
+  template <class EigenClass>
+  EigenMath<EigenClass> readForMath(
+    const Selection& mem_selection = Selection::all,
+    const Selection& file_selection = Selection::all) const
+  {
+    EigenClass data;
+    readWithEigenRegular(data, mem_selection, file_selection);
+    auto units = (atts.exists("units"))
+      ? udunits::Units(atts["units"].template read<std::string>())
+      : udunits::Units();
+    
+    typedef typename EigenClass::Scalar ScalarType;
+    // detail::getFillValue<ScalarType>(getFillValue()) is slightly awkward.
+    // Both a class function and a non-class function have the same name.
+    // See Fill.h and Variable.h.
+    ScalarType missing = (hasFillValue())
+      ? detail::getFillValue<ScalarType>(getFillValue())
+      : FillValuePolicies::netCDF4_default<ScalarType>();
+
+    return ToEigenMath(std::move(data), units, missing);
   }
 
   /// \brief Read data into an Eigen::Array, Eigen::Matrix, Eigen::Map, etc.
