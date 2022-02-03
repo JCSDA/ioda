@@ -1,10 +1,14 @@
-# (C) Copyright 2020-2021 UCAR.
+# (C) Copyright 2020-2022 UCAR.
 #
 # This software is licensed under the terms of the Apache Licence Version 2.0
 # which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
 
 
 # Required packages
+
+## jedi-cmake provides some find_package scripts that we need
+find_package( jedicmake REQUIRED )
+
 
 ## gsl-lite is an implementation of the guidelines support library.
 ## We use this for gsl::span and gsl::narrow.
@@ -66,3 +70,4 @@ find_package(Boost 1.64.0 QUIET)
 #find_package( OpenMP COMPONENTS CXX Fortran )
 # oops is used for YAML validation
 #find_package(oops 1.0.0 QUIET)
+
