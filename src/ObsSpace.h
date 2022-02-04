@@ -41,6 +41,7 @@
 #include "ioda/ObsGroup.h"
 #include "ioda/ObsSpaceParameters.h"
 #include "ioda/Variables/Fill.h"
+#include "ioda/Variables/VarUtils.h"
 
 // Forward declarations
 namespace eckit {
@@ -478,13 +479,13 @@ namespace ioda {
         bool recidx_is_sorted_;
 
         /// \brief map showing association of dim names with each variable name
-        VarDimMap dims_attached_to_vars_;
+        VarUtils::VarDimMap dims_attached_to_vars_;
 
         /// \brief cache for frontend selection
-        std::map<std::vector<std::string>, Selection> known_fe_selections_;
+        std::map<VarUtils::Vec_Named_Variable, Selection> known_fe_selections_;
 
         /// \brief cache for backend selection
-        std::map<std::vector<std::string>, Selection> known_be_selections_;
+        std::map<VarUtils::Vec_Named_Variable, Selection> known_be_selections_;
 
         /// \brief disable the "=" operator
         ObsSpace & operator= (const ObsSpace &) = delete;
@@ -607,7 +608,7 @@ namespace ioda {
         /// \param dimsAttachedToVars Map containing list of attached dims for each variable
         void createVariables(const Has_Variables & srcVarContainer,
                              Has_Variables & destVarContainer,
-                             const VarDimMap & dimsAttachedToVars);
+                             const VarUtils::VarDimMap & dimsAttachedToVars);
 
         /// \brief open an obs_group_ variable, create the varialbe if necessary
         template<typename VarType>

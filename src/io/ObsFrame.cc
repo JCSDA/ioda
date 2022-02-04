@@ -25,10 +25,12 @@ namespace ioda {
 //------------------------------------------------------------------------------------
 bool ObsFrame::isVarDimByNlocs(const std::string & varName) const {
     bool isDimByNlocs = false;
-    auto ivar = dims_attached_to_vars_.find(varName);
-    if (ivar != dims_attached_to_vars_.end()) {
-        if (ivar->second[0] == "nlocs") {
-            isDimByNlocs = true;
+    for (auto & ivar : dims_attached_to_vars_) {
+        if (ivar.first.name == varName) {
+            // Found varName, now check if first dimension is "nlocs"
+            if (ivar.second[0].name == "nlocs") {
+                isDimByNlocs = true;
+            }
         }
     }
     return isDimByNlocs;
@@ -118,9 +120,9 @@ Selection ObsFrame::createObsIoSelection(const std::vector<Dimensions_t> & varSh
 }
 
 //------------------------------------------------------------------------------------
-void ObsFrame::createFrameFromObsGroup(const VarNameObjectList & varList,
-                                       const VarNameObjectList & dimVarList,
-                                       const VarDimMap & varDimMap) {
+void ObsFrame::createFrameFromObsGroup(const VarUtils::Vec_Named_Variable & varList,
+                                       const VarUtils::Vec_Named_Variable & dimVarList,
+                                       const VarUtils::VarDimMap & varDimMap) {
     // create an ObsGroup with an in-memory backend
     Engines::BackendNames backendName;
     Engines::BackendCreationParameters backendParams;
@@ -136,9 +138,9 @@ void ObsFrame::createFrameFromObsGroup(const VarNameObjectList & varList,
     // create dimensions for frame
     NewDimensionScales_t newDims;
     for (auto & dimNameObject : dimVarList) {
-        std::string dimName = dimNameObject.first;
-        Variable srcDimVar = dimNameObject.second;
-        Dimensions_t dimSize = dimNameObject.second.getDimensions().dimsCur[0];
+        std::string dimName = dimNameObject.name;
+        Variable srcDimVar = dimNameObject.var;
+        Dimensions_t dimSize = dimNameObject.var.getDimensions().dimsCur[0];
         // Don't allow nchans to be limited by the frame size since nchans is
         // the second dimension (and we are only limiting the frame size on
         // the first dimension, typically nlocs).
@@ -164,8 +166,8 @@ void ObsFrame::createFrameFromObsGroup(const VarNameObjectList & varList,
 
     // fill in dimension coordinate values
     for (auto & dimVarNameObject : dimVarList) {
-        std::string dimVarName = dimVarNameObject.first;
-        Variable srcDimVar = dimVarNameObject.second;
+        std::string dimVarName = dimVarNameObject.name;
+        Variable srcDimVar = dimVarNameObject.var;
         Variable destDimVar = obs_frame_.vars.open(dimVarName);
 
         // Set up the dimension selection objects. The prior loop declared the
@@ -194,16 +196,16 @@ void ObsFrame::createFrameFromObsGroup(const VarNameObjectList & varList,
 
     // create variables for frame
     for (auto & varNameObject : varList) {
-        std::string varName = varNameObject.first;
+        std::string varName = varNameObject.name;
 
         // get the dimensions attached to this variable
-        std::vector<std::string> dimVarNames = varDimMap.at(varName);
+        VarUtils::Vec_Named_Variable dimVarNames = varDimMap.at(varNameObject);
         std::vector<Variable> dimVars;
         for (auto & dimVarName : dimVarNames) {
-          dimVars.push_back(obs_frame_.vars.open(dimVarName));
+          dimVars.push_back(obs_frame_.vars.open(dimVarName.name));
         }
 
-        Variable sourceVar = varNameObject.second;
+        Variable sourceVar = varNameObject.var;
         forAnySupportedVariableType(
               sourceVar,
               [&](auto typeDiscriminator) {

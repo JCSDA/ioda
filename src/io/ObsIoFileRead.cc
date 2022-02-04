@@ -43,8 +43,8 @@ ObsIoFileRead::ObsIoFileRead(const Parameters_ & ioParams,
       createObsGroupFromHdf5File(fileName);
 
     // Collect variable and dimension infomation for downstream use
-    collectVarDimInfo(obs_group_, var_list_, dim_var_list_, dims_attached_to_vars_,
-                      max_var_size_);
+    VarUtils::collectVarDimInfo(obs_group_, var_list_, dim_var_list_, dims_attached_to_vars_,
+                                max_var_size_);
 
     // record number of locations
     nlocs_ = obs_group_.vars.open("nlocs").getDimensions().dimsCur[0];

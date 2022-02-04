@@ -16,6 +16,7 @@
 #include "ioda/distribution/Distribution.h"
 #include "ioda/io/ObsFrame.h"
 #include "ioda/ObsSpaceParameters.h"
+#include "ioda/Variables/VarUtils.h"
 
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"
@@ -147,10 +148,10 @@ class ObsFrameRead : public ObsFrame, private util::ObjectCounter<ObsFrameRead> 
     std::vector<Dimensions_t> frame_loc_index_;
 
     /// \brief cache for frame selection
-    std::map<std::vector<std::string>, Selection> known_frame_selections_;
+    std::map<VarUtils::Vec_Named_Variable, Selection> known_frame_selections_;
 
     /// \brief cache for memory buffer selection
-    std::map<std::vector<std::string>, Selection> known_mem_selections_;
+    std::map<VarUtils::Vec_Named_Variable, Selection> known_mem_selections_;
 
     //--------------------- private functions ------------------------------
     /// \brief print routine for oops::Printable base class
@@ -244,7 +245,13 @@ class ObsFrameRead : public ObsFrame, private util::ObjectCounter<ObsFrameRead> 
             // Form the selection objects for this variable
 
             // Check the cache for the selection
-            std::vector<std::string> &dims = dims_attached_to_vars_.at(varName);
+            VarUtils::Vec_Named_Variable dims;
+            for (auto & ivar : dims_attached_to_vars_) {
+                if (ivar.first.name == varName) {
+                    dims = ivar.second;
+                    break;
+                }
+            }
             if (!known_mem_selections_.count(dims)) {
                 known_mem_selections_[dims] = createMemSelection(varShape, frameCount);
                 if (isVarDimByNlocs(varName)) {

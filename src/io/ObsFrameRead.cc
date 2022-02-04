@@ -132,8 +132,8 @@ void ObsFrameRead::frameInit(Has_Attributes & destAttrs) {
     // max_var_size_ is being used to determine when there are no more frames left from
     // obs_io_ so it needs to be set from obs_io_.
     Dimensions_t dummyMaxVarSize;
-    collectVarDimInfo(obs_frame_, var_list_, dim_var_list_,
-                      dims_attached_to_vars_, dummyMaxVarSize);
+    VarUtils::collectVarDimInfo(obs_frame_, var_list_, dim_var_list_,
+                                dims_attached_to_vars_, dummyMaxVarSize);
 }
 
 //------------------------------------------------------------------------------------
@@ -155,8 +155,8 @@ bool ObsFrameRead::frameAvailable() {
         // Transfer all variable data
         Dimensions_t frameStart = this->frameStart();
         for (auto & varNameObject : obs_io_->varList()) {
-            std::string varName = varNameObject.first;
-            Variable sourceVar = varNameObject.second;
+            std::string varName = varNameObject.name;
+            Variable sourceVar = varNameObject.var;
             Dimensions_t frameCount = this->basicFrameCount(sourceVar);
             if (frameCount > 0) {
                 // Transfer the variable data for this frame. Do this in two steps:

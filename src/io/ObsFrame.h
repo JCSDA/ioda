@@ -20,6 +20,7 @@
 #include "ioda/ObsGroup.h"
 #include "ioda/ObsSpaceParameters.h"
 #include "ioda/Variables/Variable.h"
+#include "ioda/Variables/VarUtils.h"
 
 #include "oops/util/Logger.h"
 #include "oops/util/Printable.h"
@@ -61,13 +62,13 @@ class ObsFrame : public util::Printable {
     Has_Attributes & ioAtts() {return obs_io_->atts();}
 
     /// \brief return list of regular variables from ObsIo
-    const VarNameObjectList & ioVarList() const {return obs_io_->varList();}
+    const VarUtils::Vec_Named_Variable & ioVarList() const {return obs_io_->varList();}
 
     /// \brief return list of dimension scale variables from ObsIo
-    const VarNameObjectList & ioDimVarList() const {return obs_io_->dimVarList();}
+    const VarUtils::Vec_Named_Variable & ioDimVarList() const {return obs_io_->dimVarList();}
 
     /// \brief return map from variables to their attached dimension scales
-    VarDimMap ioVarDimMap() const {return obs_io_->varDimMap();}
+    VarUtils::VarDimMap ioVarDimMap() const {return obs_io_->varDimMap();}
 
     /// \brief update variable, dimension info in the ObsIo object
     void ioUpdateVarDimInfo() const {obs_io_->updateVarDimInfo();}
@@ -84,10 +85,10 @@ class ObsFrame : public util::Printable {
     inline const ObsGroup getObsGroup() const { return obs_frame_; }
 
     /// \brief return the list of variables with their associated dimensions
-    VarDimMap varDimMap() const {return dims_attached_to_vars_;}
+    VarUtils::VarDimMap varDimMap() const {return dims_attached_to_vars_;}
 
     /// \brief return list of regular variables
-    const VarNameObjectList & varList() const {return var_list_; }
+    const VarUtils::Vec_Named_Variable & varList() const {return var_list_; }
 
     /// \brief return true if variable's first dimension is nlocs
     /// \param varName variable name to check
@@ -192,13 +193,13 @@ class ObsFrame : public util::Printable {
     bool use_offset_datetime_;
 
     /// \brief list of regular variables from source (file or generator)
-    VarNameObjectList var_list_;
+    VarUtils::Vec_Named_Variable var_list_;
 
     /// \brief list of dimension scale variables from source (file or generator)
-    VarNameObjectList dim_var_list_;
+    VarUtils::Vec_Named_Variable dim_var_list_;
 
     /// \brief map containing variables with their attached dimension scales
-    VarDimMap dims_attached_to_vars_;
+    VarUtils::VarDimMap dims_attached_to_vars_;
 
     //------------------ protected functions ----------------------------------
 
@@ -214,13 +215,13 @@ class ObsFrame : public util::Printable {
     /// \details This function is used to set up a temprary ObsGroup based frame in memory
     ///          which is to be used for processing and transferring data between ObsIo
     ///          and ObsSpace variables. The two parameters dimVarList and varDimMap can
-    ///          be created with IodaUtils::collectVarDimInfo() in IodaUtils.h.
+    ///          be created with VarUtils::collectVarDimInfo() in VarUtils.h.
     /// \param varList source ObsGroup list of regular variables
     /// \param dimVarList source ObsGroup list of dimension variable names
     /// \param varDimMap source ObsGroup map showing variables with associated dimensions
-    void createFrameFromObsGroup(const VarNameObjectList & varList,
-                                 const VarNameObjectList & dimVarList,
-                                 const VarDimMap & varDimMap);
+    void createFrameFromObsGroup(const VarUtils::Vec_Named_Variable & varList,
+                                 const VarUtils::Vec_Named_Variable & dimVarList,
+                                 const VarUtils::VarDimMap & varDimMap);
 
     /// \brief print() for oops::Printable base class
     /// \param ostream output stream

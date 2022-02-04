@@ -11,6 +11,8 @@
 
 #include "ioda/Exception.h"
 #include "ioda/io/ObsFrameWrite.h"
+#include "ioda/Variables/Variable.h"
+#include "ioda/Variables/VarUtils.h"
 
 namespace ioda {
 
@@ -28,9 +30,10 @@ namespace ioda {
 ObsFrameWrite::~ObsFrameWrite() {}
 
 //------------------------------------------------------------------------------------
-void ObsFrameWrite::frameInit(const VarNameObjectList & varList,
-                              const VarNameObjectList & dimVarList,
-                              const VarDimMap & varDimMap, const Dimensions_t maxVarSize,
+void ObsFrameWrite::frameInit(const VarUtils::Vec_Named_Variable & varList,
+                              const VarUtils::Vec_Named_Variable & dimVarList,
+                              const VarUtils::VarDimMap & varDimMap,
+                              const Dimensions_t maxVarSize,
                               const ioda::Has_Attributes & srcAttrs) {
     frame_start_ = 0;
     max_var_size_ = maxVarSize;
@@ -54,11 +57,11 @@ void ObsFrameWrite::frameInit(const VarNameObjectList & varList,
 }
 
 //------------------------------------------------------------------------------------
-void ObsFrameWrite::frameNext(const VarNameObjectList & varList) {
+void ObsFrameWrite::frameNext(const VarUtils::Vec_Named_Variable & varList) {
     // Transfer the current frame variable data to the ObsIo backend.
     Dimensions_t frameStart = this->frameStart();
     for (auto & varNameObject : varList) {
-        std::string varName = varNameObject.first;
+        std::string varName = varNameObject.name;
         Variable sourceVar = obs_frame_.vars.open(varName);
         Dimensions_t frameCount = this->frameCount(varName);
         if (frameCount > 0) {
@@ -141,10 +144,10 @@ void ObsFrameWrite::writeFrameVar(const std::string & varName,
 // -----------------------------------------------------------------------------
 void ObsFrameWrite::copyObsIoDimCoords(const Has_Variables & srcVarContainer,
                                        Has_Variables & destVarContainer,
-                                       const VarNameObjectList & dimVarList) {
+                                       const VarUtils::Vec_Named_Variable & dimVarList) {
     // fill in dimension coordinate values
     for (auto & dimVarNameObject : dimVarList) {
-        std::string dimVarName = dimVarNameObject.first;
+        std::string dimVarName = dimVarNameObject.name;
         Variable srcDimVar = srcVarContainer.open(dimVarName);
         Variable destDimVar = destVarContainer.open(dimVarName);
 
@@ -174,12 +177,12 @@ void ObsFrameWrite::copyObsIoDimCoords(const Has_Variables & srcVarContainer,
 // -----------------------------------------------------------------------------
 void ObsFrameWrite::createObsIoVariables(const Has_Variables & srcVarContainer,
                                          Has_Variables & destVarContainer,
-                                         const VarDimMap & dimsAttachedToVars) {
+                                         const VarUtils::VarDimMap & dimsAttachedToVars) {
     // Walk through map to get list of variables to create along with
     // their dimensions. Use the srcVarContainer to get the var data type.
     for (auto & ivar : dimsAttachedToVars) {
-        std::string varName = ivar.first;
-        std::vector<std::string> varDimNames = ivar.second;
+        std::string varName = ivar.first.name;
+        VarUtils::Vec_Named_Variable srcDimVarList = ivar.second;
 
         VariableCreationParameters params;
         params.chunk = true;
@@ -187,8 +190,8 @@ void ObsFrameWrite::createObsIoVariables(const Has_Variables & srcVarContainer,
 
         // Create a vector with dimension scale vector from destination container
         std::vector<Variable> varDims;
-        for (auto & dimVarName : varDimNames) {
-            varDims.push_back(destVarContainer.open(dimVarName));
+        for (auto & srcDimVar : srcDimVarList) {
+            varDims.push_back(destVarContainer.open(srcDimVar.name));
         }
 
         Variable srcVar = srcVarContainer.open(varName);

@@ -36,6 +36,7 @@
 #include "ioda/ObsGroup.h"
 #include "ioda/ObsSpaceParameters.h"
 #include "ioda/Variables/Variable.h"
+#include "ioda/Variables/VarUtils.h"
 
 namespace ioda {
 namespace test {
@@ -112,9 +113,9 @@ ObsGroup buildTestObsGroup(const std::vector<eckit::LocalConfiguration> & dimCon
 
 // -----------------------------------------------------------------------------
 void frameWrite(ObsFrameWrite & obsFrame, eckit::LocalConfiguration & testConfig,
-                const Has_Variables & sourceVars, const VarNameObjectList & varList,
-                const VarNameObjectList & dimVarList,
-                const VarDimMap & varDimMap, const Dimensions_t maxVarSize,
+                const Has_Variables & sourceVars, const VarUtils::Vec_Named_Variable & varList,
+                const VarUtils::Vec_Named_Variable & dimVarList,
+                const VarUtils::VarDimMap & varDimMap, const Dimensions_t maxVarSize,
                 const Has_Attributes & sourceAttrs) {
     std::vector<eckit::LocalConfiguration> writeVarConfigs =
         testConfig.getSubConfigurations("write variables");
@@ -202,17 +203,17 @@ void testWrite() {
             ObsGroup testObsGroup = buildTestObsGroup(writeDimConfigs, writeVarConfigs);
 
             // Form lists of regular and dimension scale variables
-            VarNameObjectList varList;
-            VarNameObjectList dimVarList;
-            VarDimMap dimsAttachedToVars;
+            VarUtils::Vec_Named_Variable varList;
+            VarUtils::Vec_Named_Variable dimVarList;
+            VarUtils::VarDimMap dimsAttachedToVars;
             Dimensions_t maxVarSize;
-            collectVarDimInfo(testObsGroup, varList, dimVarList,
-                              dimsAttachedToVars, maxVarSize);
+            VarUtils::collectVarDimInfo(testObsGroup, varList, dimVarList,
+                                        dimsAttachedToVars, maxVarSize);
 
             // Record dimension scale variables for the output file creation.
             for (auto & dimNameObject : dimVarList) {
-                std::string dimName = dimNameObject.first;
-                Dimensions_t dimSize = dimNameObject.second.getDimensions().dimsCur[0];
+                std::string dimName = dimNameObject.name;
+                Dimensions_t dimSize = dimNameObject.var.getDimensions().dimsCur[0];
                 Dimensions_t dimMaxSize = dimSize;
                 if (dimName == "nlocs") {
                     dimMaxSize = Unlimited;
@@ -240,7 +241,7 @@ void testWrite() {
             std::sort(expectedDimList.begin(), expectedDimList.end());
             std::vector<std::string> dimList;
             for (auto & dimVarNameObject : obsFrame.ioDimVarList()) {
-                dimList.push_back(dimVarNameObject.first);
+                dimList.push_back(dimVarNameObject.name);
             }
             std::sort(dimList.begin(), dimList.end());
             for (size_t i = 0; i < expectedDimList.size(); ++i) {
@@ -255,7 +256,7 @@ void testWrite() {
             std::sort(expectedVariableList.begin(), expectedVariableList.end());
             std::vector<std::string> variableList;
             for (auto & varNameObject : obsFrame.ioVarList()) {
-                variableList.push_back(varNameObject.first);
+                variableList.push_back(varNameObject.name);
             }
             std::sort(variableList.begin(), variableList.end());
             EXPECT_EQUAL(variableList, expectedVariableList);

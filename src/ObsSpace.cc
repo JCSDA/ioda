@@ -519,8 +519,8 @@ void ObsSpace::createObsGroupFromObsFrame(ObsFrameRead & obsFrame) {
     // Create the dimension specs for obs_group_
     NewDimensionScales_t newDims;
     for (auto & dimNameObject : obsFrame.ioDimVarList()) {
-        std::string dimName = dimNameObject.first;
-        Variable srcDimVar = dimNameObject.second;
+        std::string dimName = dimNameObject.name;
+        Variable srcDimVar = dimNameObject.var;
         Dimensions_t dimSize = srcDimVar.getDimensions().dimsCur[0];
         Dimensions_t maxDimSize = dimSize;
         Dimensions_t chunkSize = dimSize;
@@ -564,8 +564,8 @@ void ObsSpace::createObsGroupFromObsFrame(ObsFrameRead & obsFrame) {
 
     // fill in dimension coordinate values
     for (auto & dimNameObject : obsFrame.ioDimVarList()) {
-        std::string dimName = dimNameObject.first;
-        Variable srcDimVar = dimNameObject.second;
+        std::string dimName = dimNameObject.name;
+        Variable srcDimVar = dimNameObject.var;
         Variable destDimVar = obs_group_.vars.open(dimName);
 
         // Set up the dimension selection objects. The prior loop declared the
@@ -678,11 +678,11 @@ void ObsSpace::initFromObsSource(ObsFrameRead & obsFrame) {
         // from the ObsSpace container. Same for the offset datetime representation
         // (variable MetaData/time)
         for (auto & varNameObject : obsFrame.varList()) {
-            std::string varName = varNameObject.first;
+            std::string varName = varNameObject.name;
             if ((varName == "MetaData/datetime") || (varName == "MetaData/time")) {
               continue;
             }
-            Variable var = varNameObject.second;
+            Variable var = varNameObject.var;
             Dimensions_t beFrameStart;
             if (obsFrame.isVarDimByNlocs(varName)) {
                 beFrameStart = obsFrame.adjNlocsFrameStart();
@@ -933,7 +933,13 @@ void ObsSpace::storeVar(const std::string & varName, std::vector<VarType> & varV
     std::vector<Dimensions_t> varDims = var.getDimensions().dimsCur;
 
     // check the caches for the selectors
-    std::vector<std::string> &dims = dims_attached_to_vars_.at(varName);
+    VarUtils::Vec_Named_Variable dims;
+    for (auto & ivar : dims_attached_to_vars_) {
+        if (ivar.first.name == varName) {
+            dims = ivar.second;
+            break;
+        }
+    }
     if (!known_fe_selections_.count(dims)) {
         // backend starts at frameStart, and the count for the first dimension
         // is the frame count
@@ -969,7 +975,7 @@ void ObsSpace::storeVar(const std::string & varName, std::vector<VarType> & varV
 // TODO(?): Batch variable creation so that the collective function is used.
 void ObsSpace::createVariables(const Has_Variables & srcVarContainer,
                               Has_Variables & destVarContainer,
-                              const VarDimMap & dimsAttachedToVars) {
+                              const VarUtils::VarDimMap & dimsAttachedToVars) {
     // Set up reusable creation parameters for the loop below. Use the JEDI missing
     // values for the fill values.
     std::map<std::type_index, VariableCreationParameters> paramsByType;
@@ -989,16 +995,16 @@ void ObsSpace::createVariables(const Has_Variables & srcVarContainer,
     // from the ObsSpace container. Same for the offset datetime representation
     // (variable MetaData/time). Note this function is only called by the ioda reader.
     for (auto & ivar : dimsAttachedToVars) {
-        std::string varName = ivar.first;
+        std::string varName = ivar.first.name;
         if ((varName == "MetaData/datetime") || (varName == "MetaData/time")) {
           continue;
         }
-        std::vector<std::string> varDimNames = ivar.second;
+        VarUtils::Vec_Named_Variable srcVarDimNames = ivar.second;
 
         // Create a vector with dimension scale vector from destination container
         std::vector<Variable> varDims;
-        for (auto & dimVarName : varDimNames) {
-            varDims.push_back(destVarContainer.open(dimVarName));
+        for (auto & srcDimVar : srcVarDimNames) {
+            varDims.push_back(destVarContainer.open(srcDimVar.name));
         }
 
         Variable srcVar = srcVarContainer.open(varName);
@@ -1122,18 +1128,18 @@ void ObsSpace::buildRecIdxUnsorted() {
 // -----------------------------------------------------------------------------
 void ObsSpace::saveToFile() {
     // Form lists of regular and dimension scale variables
-    VarNameObjectList varList;
-    VarNameObjectList dimVarList;
-    VarDimMap dimsAttachedToVars;
+    VarUtils::Vec_Named_Variable varList;
+    VarUtils::Vec_Named_Variable dimVarList;
+    VarUtils::VarDimMap dimsAttachedToVars;
     Dimensions_t maxVarSize;
-    collectVarDimInfo(obs_group_, varList, dimVarList, dimsAttachedToVars, maxVarSize);
+    VarUtils::collectVarDimInfo(obs_group_, varList, dimVarList, dimsAttachedToVars, maxVarSize);
 
     Dimensions_t maxFrameSize = obs_params_.top_level_.obsOutFile.value()->maxFrameSize;
 
     // Record dimension scale variables for the output file creation.
     for (auto & dimNameObject : dimVarList) {
-        std::string dimName = dimNameObject.first;
-        Dimensions_t dimSize = dimNameObject.second.getDimensions().dimsCur[0];
+        std::string dimName = dimNameObject.name;
+        Dimensions_t dimSize = dimNameObject.var.getDimensions().dimsCur[0];
         Dimensions_t dimMaxSize = dimSize;
         Dimensions_t dimChunkSize = dimSize;
         if (dimName == dim_info_.get_dim_name(ObsDimensionId::Nlocs)) {
@@ -1169,7 +1175,7 @@ void ObsSpace::saveToFile() {
         Dimensions_t frameStart = obsFrame.frameStart();
         for (auto & varNameObject : varList) {
             // form the destination (ObsFrame) variable name
-            std::string destVarName = varNameObject.first;
+            std::string destVarName = varNameObject.name;
 
             // open the destination variable and get the associated count
             Variable destVar = obsFrame.getObsGroup().vars.open(destVarName);
@@ -1178,7 +1184,7 @@ void ObsSpace::saveToFile() {
             // transfer data if we haven't gone past the end of the variable yet
             if (frameCount > 0) {
                 // Form the hyperslab selection for this frame
-                Variable srcVar = varNameObject.second;
+                Variable srcVar = varNameObject.var;
                 std::vector<Dimensions_t> varShape = srcVar.getDimensions().dimsCur;
                 ioda::Selection memSelect = obsFrame.createMemSelection(varShape, frameCount);
                 ioda::Selection varSelect =
@@ -1193,7 +1199,7 @@ void ObsSpace::saveToFile() {
                           srcVar.read<T>(varValues, memSelect, varSelect);
                           obsFrame.writeFrameVar(destVarName, varValues);
                       },
-                      ThrowIfVariableIsOfUnsupportedType(varNameObject.first));
+                      ThrowIfVariableIsOfUnsupportedType(varNameObject.name));
             }
         }
     }

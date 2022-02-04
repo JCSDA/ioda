@@ -30,12 +30,6 @@
 namespace ioda {
   class ObsSpaceParameters;
 
-  /// \brief typedef for holding list of variable names with associated variable object
-  typedef std::vector<std::pair<std::string, Variable>> VarNameObjectList;
-
-  /// \brief typedef for holding dim names attached to variables
-  typedef std::map<std::string, std::vector<std::string>> VarDimMap;
-
   // Utilities for converting back and forth between vector of strings and
   // a 2D character array.
   std::vector<std::size_t> CharShapeFromStringVector(
@@ -56,26 +50,6 @@ namespace ioda {
   /// \param groupName name of group
   /// \param varName name of variable
   std::string fullVarName(const std::string & groupName, const std::string & varName);
-
-  /// \brief collect variable and dimension information from a ioda ObsGroup
-  /// \details It is assumed that the input ObsGroup has been populated. For example
-  ///          you open an existing hdf5 file, and then call this routing to collect
-  ///          the information. The information collected is passed back through the
-  ///          output parameters (last 4 parameters) of this routine.
-  ///
-  ///          The reason for collecting all of this information in a single routine is
-  ///          to handle severe performance issues with the HDF5 library when inspecting
-  ///          an ObsGroup based on an HDF5 backend.
-  ///
-  /// \param obsGroup ioda ObsGroup object
-  /// \param varObjectList list of regular variable names with associated Variable objects
-  /// \param dimVarObjectList list of dimension variable names with associated Variable objects
-  /// \param dimsAttachedToVars map structure holding list of dimension scale names attached
-  ///        each regular variable
-  /// \param maxVarSize0 maximum var length along the first (0th) dimension
-  void collectVarDimInfo(const ObsGroup & obsGroup, VarNameObjectList & varObjectList,
-                         VarNameObjectList & dimVarObjectList, VarDimMap & dimsAttachedToVars,
-                         Dimensions_t & maxVarSize0);
 
   /// \brief get variable data type
   std::type_index varDtype(const Group & group, const std::string & varName);
@@ -146,15 +120,6 @@ namespace ioda {
   /// \param timeRankNum MPI time communicator rank number
   std::string uniquifyFileName(const std::string & fileName, const std::size_t rankNum,
                                const int timeRankNum);
-
-  /// \brief form a map containing lists of dimension variables that are attached to each
-  /// variable
-  /// \param varContainer Has_Variables object with variables to check
-  /// \param varList list of regular variables
-  /// \param dimVarList list of dimension scale variables
-  VarDimMap genDimsAttachedToVars(const Has_Variables & varContainer,
-                                  const std::vector<std::string> & varList,
-                                  const std::vector<std::string> & dimVarList);
 
   /// \brief convert the new format varible name to the old format
   /// \param varName new format variable name

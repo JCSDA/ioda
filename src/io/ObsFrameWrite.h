@@ -19,6 +19,8 @@
 #include "oops/util/Printable.h"
 
 namespace ioda {
+    class Vec_Named_Variable;
+    class VarDimMap;
 
 /// \brief Implementation of ObsFrameWrite class
 /// \details This class manages one frame of obs data (subset of locations) when
@@ -46,13 +48,13 @@ class ObsFrameWrite : public ObsFrame, private util::ObjectCounter<ObsFrameWrite
     /// \param varDimMap source ObsGroup map showing variables with associated dimensions
     /// \param maxVarSize source ObsGroup maximum variable size along the first dimension
     /// \param srcAttrs source ObsGroup global attributes container
-    void frameInit(const VarNameObjectList & varList,
-                   const VarNameObjectList & dimVarList,
-                   const VarDimMap & varDimMap, const Dimensions_t maxVarSize,
+    void frameInit(const VarUtils::Vec_Named_Variable & varList,
+                   const VarUtils::Vec_Named_Variable & dimVarList,
+                   const VarUtils::VarDimMap & varDimMap, const Dimensions_t maxVarSize,
                    const ioda::Has_Attributes & srcAttrs);
 
     /// \brief move to the next frame
-    void frameNext(const VarNameObjectList & varList);
+    void frameNext(const VarUtils::Vec_Named_Variable & varList);
 
     /// \brief true if a frame is available (not past end of frames)
     bool frameAvailable();
@@ -97,7 +99,7 @@ class ObsFrameWrite : public ObsFrame, private util::ObjectCounter<ObsFrameWrite
     /// \param dimVarList Map containing list of dimension variables
     void copyObsIoDimCoords(const Has_Variables & srcVarContainer,
                             Has_Variables & destVarContainer,
-                            const VarNameObjectList & dimVarList);
+                            const VarUtils::Vec_Named_Variable & dimVarList);
 
     /// \brief create set of variables from source variables and lists in the ObsIo backend
     /// \param srcVarContainer Has_Variables object from source
@@ -105,7 +107,7 @@ class ObsFrameWrite : public ObsFrame, private util::ObjectCounter<ObsFrameWrite
     /// \param dimsAttachedToVars Map containing list of attached dims for each variable
     void createObsIoVariables(const Has_Variables & srcVarContainer,
                               Has_Variables & destVarContainer,
-                              const VarDimMap & dimsAttachedToVars);
+                              const VarUtils::VarDimMap & dimsAttachedToVars);
 
     /// \brief set up frontend and backend selection objects for the given variable
     /// \param varName ObsGroup variable name
