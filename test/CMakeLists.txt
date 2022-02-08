@@ -366,8 +366,9 @@ ecbuild_add_test( TARGET  test_ioda_remove_hdf5_variable
 
 ecbuild_add_test( TARGET  test_ioda_remove_hdf5_variable_cmp
                   TYPE    SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
-                  ARGS    hdf5
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          hdf5
                           "echo Checking remove hdf5 variable test output"
                           remove_variable.hdf
                   TEST_DEPENDS get_ioda_test_data test_ioda_remove_hdf5_variable )
@@ -512,8 +513,9 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_fill_value
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_out_dims_check
                   TYPE    SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
-                  ARGS    hdf5
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          hdf5
                           "${CMAKE_CURRENT_BINARY_DIR}/test_ioda_oops_obsspace
                           testinput/iodatest_obsspace_out_dims_check.yml"
                           out_dims_check_0000.nc4
@@ -656,16 +658,18 @@ ecbuild_add_test( TARGET  test_ioda_time_io
 # the following tests compare the output files
 ecbuild_add_test( TARGET  test_ioda_time_io_cmp_sondes
                   TYPE    SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
-                  ARGS    hdf5
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          hdf5
                           "echo Checking time io sondes"
                           sondes_obs_2018041500_m_time_0000.nc4
                   TEST_DEPENDS get_ioda_test_data test_ioda_time_io)
 
 ecbuild_add_test( TARGET  test_ioda_time_io_cmp_amsua_n19
                   TYPE    SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
-                  ARGS    hdf5
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          hdf5
                           "echo Checking time io AMSU-A NOAA19"
                           amsua_n19_obs_2018041500_m_time_0000.nc4
                   TEST_DEPENDS get_ioda_test_data test_ioda_time_io)
@@ -676,8 +680,9 @@ ecbuild_add_test( TARGET  test_ioda_time_io_cmp_amsua_n19
 
 ecbuild_add_test( TARGET  test_ioda_upgrader_amsua_n19
                   TYPE    SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
-                  ARGS    hdf5
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          hdf5
                           "${CMAKE_BINARY_DIR}/bin/ioda-upgrade.x
                           Data/testinput_tier_1/upgrader_amsua_n19.nc4
                           testoutput/upgrader_amsua_n19.nc4"
@@ -686,8 +691,9 @@ ecbuild_add_test( TARGET  test_ioda_upgrader_amsua_n19
 
 ecbuild_add_test( TARGET  test_ioda_upgrader_gmi_gpm
                   TYPE    SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
-                  ARGS    hdf5
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          hdf5
                           "${CMAKE_BINARY_DIR}/bin/ioda-upgrade.x
                           Data/testinput_tier_1/upgrader_gmi_gpm.nc4
                           testoutput/upgrader_gmi_gpm.nc4"
@@ -696,8 +702,9 @@ ecbuild_add_test( TARGET  test_ioda_upgrader_gmi_gpm
 
 ecbuild_add_test( TARGET  test_ioda_upgrader_mhs_metop-b
                   TYPE    SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
-                  ARGS    hdf5
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          hdf5
                           "${CMAKE_BINARY_DIR}/bin/ioda-upgrade.x
                           Data/testinput_tier_1/upgrader_mhs_metop-b.nc4
                           testoutput/upgrader_mhs_metop-b.nc4"
@@ -706,8 +713,9 @@ ecbuild_add_test( TARGET  test_ioda_upgrader_mhs_metop-b
 
 ecbuild_add_test( TARGET  test_ioda_upgrader_sondes
                   TYPE    SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
-                  ARGS    hdf5
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          hdf5
                           "${CMAKE_BINARY_DIR}/bin/ioda-upgrade.x
                           Data/testinput_tier_1/upgrader_sondes.nc4
                           testoutput/upgrader_sondes.nc4"
@@ -716,8 +724,9 @@ ecbuild_add_test( TARGET  test_ioda_upgrader_sondes
 
 ecbuild_add_test( TARGET  test_ioda_upgrader_aod
                   TYPE    SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
-                  ARGS    hdf5
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          hdf5
                           "${CMAKE_BINARY_DIR}/bin/ioda-upgrade.x
                           Data/testinput_tier_1/upgrader_aod.nc4
                           testoutput/upgrader_aod.nc4"
@@ -726,8 +735,9 @@ ecbuild_add_test( TARGET  test_ioda_upgrader_aod
 
 ecbuild_add_test( TARGET  test_ioda_upgrader_gnssro
                   TYPE    SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
-                  ARGS    hdf5
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          hdf5
                           "${CMAKE_BINARY_DIR}/bin/ioda-upgrade.x
                           Data/testinput_tier_1/upgrader_gnssro.nc4
                           testoutput/upgrader_gnssro.nc4"
@@ -736,8 +746,9 @@ ecbuild_add_test( TARGET  test_ioda_upgrader_gnssro
 
 ecbuild_add_test( TARGET  test_ioda_upgrader_met_office_gpsro
                   TYPE    SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
-                  ARGS    hdf5
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          hdf5
                           "${CMAKE_BINARY_DIR}/bin/ioda-upgrade.x
                           Data/testinput_tier_1/upgrader_met_office_gpsro.nc4
                           testoutput/upgrader_met_office_gpsro.nc4"
