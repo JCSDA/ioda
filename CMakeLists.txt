@@ -44,6 +44,7 @@ find_package( Eigen3 REQUIRED NO_MODULE HINTS
               $ENV{Eigen3_PATH} $ENV{EIGEN3_PATH} $ENV{Eigen_PATH} $ENV{EIGEN_PATH} )
 find_package( gsl-lite REQUIRED HINTS $ENV{gsl_lite_DIR} )
 find_package( udunits 2.2.0 REQUIRED )
+#find_package( libxml2 REQUIRED )
 
 # Optional
 

@@ -241,6 +241,7 @@ set_property(TARGET ioda_engines APPEND PROPERTY
 target_link_libraries(ioda_engines PUBLIC gsl::gsl-lite)
 target_link_libraries(ioda_engines PUBLIC Eigen3::Eigen)
 target_link_libraries(ioda_engines PUBLIC udunits::udunits)
+target_link_libraries(ioda_engines PUBLIC -lexpat)
 
 
 if (eckit_FOUND)
