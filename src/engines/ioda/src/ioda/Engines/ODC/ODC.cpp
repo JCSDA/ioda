@@ -516,6 +516,8 @@ ObsGroup openFile(const ODC_Parameters& odcparams,
     } else if (column == "initial_vertco_reference" && (sql_data.getObsgroup() == obsgroup_abiclr || 
                                                         sql_data.getObsgroup() == obsgroup_ahiclr || 
                                                         sql_data.getObsgroup() == obsgroup_atms || 
+                                                        sql_data.getObsgroup() == obsgroup_gmihigh || 
+                                                        sql_data.getObsgroup() == obsgroup_gmilow || 
                                                         sql_data.getObsgroup() == obsgroup_mwri || 
                                                         sql_data.getObsgroup() == obsgroup_seviriclr || 
                                                         sql_data.getObsgroup() == obsgroup_ssmis)) {

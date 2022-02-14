@@ -527,7 +527,13 @@ ioda::Variable DataFromSQL::assignChannelNumbersSeq(const std::vector<int> varno
   ioda::Variable v = og.vars["nchans"];
   Eigen::ArrayXi var_single(number_of_levels);
   for (size_t i = 0; i < number_of_levels; i++) {
-    var_single[i] = i+1;
+    if (obsgroup_ == obsgroup_abiclr || obsgroup_ == obsgroup_ahiclr) {
+      var_single[i] = i+7;
+    } else if (obsgroup_ == obsgroup_gmihigh) {
+      var_single[i] = i+10;
+    } else {
+      var_single[i] = i+1;
+    }
   }
   v.writeWithEigenRegular(var_single);
   return v;
