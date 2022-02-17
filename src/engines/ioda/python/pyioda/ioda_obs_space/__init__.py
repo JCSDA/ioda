@@ -17,9 +17,13 @@ class ObsSpace:
             raise TypeError(f"{mode} not one of 'r','w','rw'")
         self.write = True if 'w' in mode else False
         self.read = True if 'r' in mode else False
+        # It's possible that path actually is just a file name (without a leading path)
+        # when writing to the current working directory. We want to check in the write case
+        # that the directory where we want the output to be created exists. If there is no
+        # leading path then we are okay since we are in that directory running this script.
         if  os.path.isfile(path) and self.read:
             self.iodafile = path
-        elif os.path.exists(os.path.dirname(path)) and self.write:
+        elif (os.path.basename(path) == path or os.path.exists(os.path.dirname(path))) and self.write:
             self.iodafile = path
         else:
             raise OSError(f"{path} does not specify a valid path to a file")
