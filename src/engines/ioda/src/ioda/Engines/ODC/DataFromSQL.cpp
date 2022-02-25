@@ -436,15 +436,26 @@ std::vector<std::string> DataFromSQL::getStationIDs() const {
       }
     }
   } else if (obsgroup_ == obsgroup_oceansound) {
+    const std::vector<std::string> var_statid = getMetadataStringColumn("statid");
     const Eigen::ArrayXi var_argo_identifier = getMetadataColumnInt("argo_identifier");
+    const Eigen::ArrayXi var_buoy_identifier = getMetadataColumnInt("buoy_identifier");
     const size_t nlocs = var_argo_identifier.size();
     stationIDs.assign(nlocs, odb_missing_string);
     for (int loc = 0; loc < nlocs; loc++) {
+      // If Argo identifier present, use those to fill the station ID.
       if (var_argo_identifier[loc] != odb_missing_int) {
         stream.str("");
         stream << std::setfill('0') << std::setw(8) << var_argo_identifier[loc];
         stationIDs[loc] = stream.str();
-      }
+      // If Buoy identifier present, use those to fill the station ID.
+      } else if (var_buoy_identifier[loc] != odb_missing_int) {
+        stream.str("");
+        stream << std::setfill('0') << std::setw(8) << var_buoy_identifier[loc];
+        stationIDs[loc] = stream.str();
+      // Neither Argo nor buoy identifier present; fill with statid
+      } else if (var_statid[loc] != "") {
+        stationIDs[loc] = var_statid[loc];
+      }  // if statid empty, stationIDs[loc] defaults to missing string
     }
   }
   return stationIDs;

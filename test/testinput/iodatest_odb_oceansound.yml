@@ -10,3 +10,4 @@ variables:
 - name: sea_depth
 - name: buoy_type
 - name: buoy_identifier
+- name: statid
