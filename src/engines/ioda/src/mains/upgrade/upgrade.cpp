@@ -41,6 +41,28 @@
 
 using namespace ioda::VarUtils;
 
+constexpr ioda::Dimensions_t defaultChunkSize = 100;
+
+/// @brief Check and adjust the chunk sizes used in the VariableCreationParameters struct
+/// @details A chunk size of zero is not acceptable, so in the case when a dimension is of
+/// zero size, we still want to use a non-zero chunk size spec. This function will simply
+/// check the chunk size specs in a VariableCreationParameter spec and change zero sizes
+/// to the newChunkSize argument value.
+/// @param[out] params The VariabelCreationParameters struct that is being checked/adjusted
+/// @param[in] newChunkSize the value to be used for the adjusted chunk size
+void checkAdjustChunkSizes(ioda::VariableCreationParameters & params,
+                           const ioda::Dimensions_t & newChunkSize) {
+  // A chunk size of zero is not acceptable. Also all of the dimensions scales and
+  // and variables are set up to use chunking (which is necessary to use unlimited
+  // max size) and potentially use the unlimited max size feature. So, if the chunks
+  // parameter is set to zero, change it to the newChunkSize parameter.
+  for (auto & i : params.chunks) {
+    if (i == 0) {
+      i = newChunkSize;
+    }
+  }
+}
+
 /// @brief Determine which variables may be grouped.
 /// @param[in] inVarList is the list of all variables.
 std::size_t getChanSuffixPos(const std::string & name) {
@@ -397,7 +419,7 @@ bool upgradeFile(const std::string& inputName, const std::string& outputName, co
     if (!(dim.name == "nchans" && old_grouped_vars.size()) &&
          (attachedDims.find(dim.name) != attachedDims.end()))
       newdims.push_back(
-        NewDimensionScale(dim.name, dim.var, ScaleSizes{Unspecified, Unspecified, 100}));
+        NewDimensionScale(dim.name, dim.var, ScaleSizes{Unspecified, Unspecified, defaultChunkSize}));
   }
   if (old_grouped_vars.size()) {
     cout << " Creating nchans variable.\n";
@@ -474,6 +496,9 @@ bool upgradeFile(const std::string& inputName, const std::string& outputName, co
         adjustedParams.chunks = mod_dims.dimsCur;  // A suggestion.
       }
 
+      // make sure we are not specifying zero chunk sizes
+      checkAdjustChunkSizes(adjustedParams, defaultChunkSize);
+
       // Set the fill value to an empty string. The calls to getCreationParameters()
       // on the ioda v1 variables that preceed the call to this function set the fill
       // value to a null character (\0) since the ioda v1 format for strings is a
@@ -505,7 +530,12 @@ bool upgradeFile(const std::string& inputName, const std::string& outputName, co
           while (*dim == 1) dim++;
           *dim /= 2;
         }
+
       }
+
+      // make sure we are not specifying zero chunk sizes
+      checkAdjustChunkSizes(adjustedParams, defaultChunkSize);
+
       adjustedParams.compressWithGZIP();
 
       newvars[oldVar.name]
@@ -529,7 +559,7 @@ bool upgradeFile(const std::string& inputName, const std::string& outputName, co
   }
 
   const Dimensions_t suggested_chan_chunking
-    = (newscales.count("nchans")) ? newscales["nchans"].atts["suggested_chunk_dim"].read<Dimensions_t>() : 100;
+    = (newscales.count("nchans")) ? newscales["nchans"].atts["suggested_chunk_dim"].read<Dimensions_t>() : defaultChunkSize;
   map<string, Named_Variable> new_grouped_vars;
   Dimensions_t numChans;
   if (old_grouped_vars.size() > 0) {

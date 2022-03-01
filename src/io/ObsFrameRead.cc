@@ -121,6 +121,7 @@ void ObsFrameRead::frameInit(Has_Attributes & destAttrs) {
     nlocs_ = 0;
     adjusted_nlocs_frame_start_ = 0;
     gnlocs_ = 0;
+    nrecs_ = 0;
 
     // create an ObsGroup based frame with an in-memory backend
     createFrameFromObsGroup(obs_io_->varList(), obs_io_->dimVarList(), obs_io_->varDimMap());

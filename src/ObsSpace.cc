@@ -649,19 +649,14 @@ bool ObsSpace::readObsSource(ObsFrameRead & obsFrame,
 void ObsSpace::initFromObsSource(ObsFrameRead & obsFrame) {
     // Walk through the frames and copy the data to the obs_group_ storage
     int iframe = 1;
-    for (obsFrame.frameInit(obs_group_.atts);
-         obsFrame.frameAvailable(); obsFrame.frameNext()) {
-        // If this is the first frame, create the variables and initialize the data
-        // structure containing the dimension names attached to each variable. These
-        // calls are done here since frameInit needs to be called to get the frame's
-        // variables created.
-        if (iframe == 1) {
-            // Create variables in obs_group_ based on those in the obs source
-            dims_attached_to_vars_ = obsFrame.varDimMap();
-            createVariables(obsFrame.getObsGroup().vars,
-                            obs_group_.vars, dims_attached_to_vars_);
-        }
-
+    // Create the frame and the variables in obs_group_ based on those in the obs source.
+    // Need to call frameInit before createVariables to get the frame established.
+    // Make these calls outside the for loop so that the obs_group_ container will
+    // get its variables created in the case that nlocs == 0.
+    obsFrame.frameInit(obs_group_.atts);
+    dims_attached_to_vars_ = obsFrame.varDimMap();
+    createVariables(obsFrame.getObsGroup().vars, obs_group_.vars, dims_attached_to_vars_);
+    for ( ; obsFrame.frameAvailable(); obsFrame.frameNext()) {
         Dimensions_t frameStart = obsFrame.frameStart();
 
         // Resize the nlocs dimesion according to the adjusted frame size produced
@@ -722,7 +717,7 @@ void ObsSpace::initFromObsSource(ObsFrameRead & obsFrame) {
         dim_info_.set_dim_size(ObsDimensionId::Nchans, nChans);
     }
 
-    // Record record information
+    // Record "record" information
     nrecs_ = obsFrame.frameNumRecs();
     indx_ = obsFrame.index();
     recnums_ = obsFrame.recnums();
