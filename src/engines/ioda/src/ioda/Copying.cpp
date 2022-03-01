@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2020 UCAR
+ * (C) Copyright 2022 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -7,217 +7,162 @@
 /// \file Copying.cpp
 /// \brief Generic copying facility
 
+#include "ioda/Attributes/Attribute.h"
 #include "ioda/Copying.h"
+#include "ioda/Types/Type.h"
+#include "ioda/Types/Type_Provider.h"
+#include "ioda/Variables/Variable.h"
+#include "ioda/Variables/VarUtils.h"
 
 namespace ioda {
-ObjectSelection::~ObjectSelection() {}
-ObjectSelection::ObjectSelection() {}
-ObjectSelection::ObjectSelection(const Group& g, bool recurse) : g_(g), recurse_(recurse) {}
 
-/*
-void ObjectSelection::insert(const ObjectSelection&);
-void ObjectSelection::insert(const Variable&);
-void ObjectSelection::insert(const std::vector<Variable>&);
-void ObjectSelection::insert(const Has_Variables&);
-void ObjectSelection::insert(const Group&, bool recurse);
-void ObjectSelection::insert(const Group&, const std::vector<std::string>&);
-*/
-/*
-template <class T> ObjectSelection add(
-        const ObjectSelection &src, const T& obj) {
-        ObjectSelection res = src;
-        res.insert(obj);
-        return res;
+// private functions
+template <typename AttrType>
+void transferAttribute(const std::string & attrName, const Attribute & srcAttr,
+                       Has_Attributes & destAttrs) {
+    const std::vector<ioda::Dimensions_t> & attrDims = srcAttr.getDimensions().dimsCur;
+    Dimensions_t numElements = srcAttr.getDimensions().numElements;
+
+    // Use span to handle scalar case
+    std::vector<AttrType> attrData(numElements);
+    gsl::span<AttrType> attrSpan(attrData);
+    srcAttr.read<AttrType>(attrSpan);
+    destAttrs.add<AttrType>(attrName, attrSpan, attrDims);
 }
-*/
-/*
-ObjectSelection ObjectSelection::operator+(const ObjectSelection& obj) const { return add(*this,
-obj); } ObjectSelection ObjectSelection::operator+(const Variable& obj) const { return add(*this,
-obj); } ObjectSelection ObjectSelection::operator+(const std::vector<Variable>& obj) const { return
-add(*this, obj); } ObjectSelection ObjectSelection::operator+(const Has_Variables& obj) const {
-return add(*this, obj); }
-*/
 
-/*
-template <class T> ObjectSelection& emplace(ObjectSelection& src, const T& obj) {
-        src.insert(obj);
-        return src;
+template <typename VarType>
+void transferVariable(const std::string & varName, const Variable & srcVar,
+                       Has_Variables & destVars) {
+    VariableCreationParameters params = srcVar.getCreationParameters(false, false);
+    Dimensions varDims = srcVar.getDimensions();
+    Dimensions_t numElements = varDims.numElements;
+
+    // Use span to handle scalar case
+    Variable destVar = destVars.create<VarType>(varName, varDims, params);
+    std::vector<VarType> varData(numElements);
+    gsl::span<VarType> varSpan(varData);
+    srcVar.read<VarType>(varSpan);
+    destVar.write<VarType>(varSpan);
+
+    copyAttributes(srcVar.atts, destVar.atts);
 }
-*/
 
-/*
-template<> ObjectSelection& emplace<ObjectSelection>(ObjectSelection& src, const T& obj) {
-        if (&src == &obj) return src;
-        src.insert(obj);
-        return src;
+// public functions
+
+void copyAttributes(const ioda::Has_Attributes& src, ioda::Has_Attributes& dest) {
+  using namespace ioda;
+  using namespace std;
+  vector<pair<string, Attribute>> srcAtts = src.openAll();
+
+  for (const auto &s : srcAtts) {
+    // This set contains the names of atttributes that need to be stripped off of
+    // variables coming from the input file. The items in the list are related to
+    // dimension scales. In general, when copying attributes, the dimension
+    // associations in the output file need to be re-created since they are encoded
+    // as object references.
+    const set<string> ignored_names{
+        "CLASS",
+        "DIMENSION_LIST",
+        "NAME",
+        "REFERENCE_LIST",
+        "_FillValue",
+        "_NCProperties",
+        "_Netcdf4Coordinates",
+        "_Netcdf4Dimid",
+        "_nc3_strict",
+        "suggested_chunk_dim"
+        };
+    if (ignored_names.count(s.first)) continue;
+    if (dest.exists(s.first)) continue;
+
+    if (s.second.isA<int>()) {
+        transferAttribute<int>(s.first, s.second, dest);
+    } else if (s.second.isA<long>()) {                       // NOLINT
+        transferAttribute<long>(s.first, s.second, dest);    // NOLINT
+    } else if (s.second.isA<float>()) {
+        transferAttribute<float>(s.first, s.second, dest);
+    } else if (s.second.isA<double>()) {
+        transferAttribute<double>(s.first, s.second, dest);
+    } else if (s.second.isA<std::string>()) {
+        transferAttribute<std::string>(s.first, s.second, dest);
+    } else if (s.second.isA<char>()) {
+        transferAttribute<char>(s.first, s.second, dest);
+    } else {
+        std::string ErrorMsg = std::string("Attribute '") + s.first +
+                               std::string("' is not of any supported type");
+        throw Exception(ErrorMsg.c_str(), ioda_Here());
+    }
+  }
 }
-ObjectSelection& ObjectSelection::operator+=(const ObjectSelection& obj) { return emplace(*this,
-obj); } ObjectSelection& ObjectSelection::operator+=(const Variable& obj) { return emplace(*this,
-obj); } ObjectSelection& ObjectSelection::operator+=(const std::vector<Variable>& obj) { return
-emplace(*this, obj); } ObjectSelection& ObjectSelection::operator+=(const Has_Variables& obj) {
-return emplace(*this, obj); }
-*/
 
-ScaleMapping::~ScaleMapping() {}
-
-void copy(const ObjectSelection& from, ObjectSelection& to, const ScaleMapping&) {
+void copyGroup(const ioda::Group& src, ioda::Group& dest) {
+  using namespace ioda;
   using namespace std;
 
-  // We really want to maximize performance here and avoid excessive variable
-  // re-opens and closures that would kill the HDF5 backend.
-  // We want to:
-  // 1) separate the dimension scales from the regular variables.
-  // 2) determine the maximum size along the 0-th dimension.
-  // 3) determine which dimensions are attached to which variable axes.
+  // NOTE: This routine does not respect hard links for groups,
+  // types, and variables. Once hard link support is added to IODA,
+  // we will need an expanded listObjects function that
+  // respects references.
 
-  // Convenience lambda to hint if a variable is a scale.
-  auto isPossiblyScale = [](const std::string& name) -> bool {
-    return (std::string::npos == name.find('@')) && (std::string::npos == name.find('/')) ? true
-                                                                                          : false;
-  };
+  // Get all variable and group names
+  const auto objs = src.listObjects(ObjectType::Ignored, true);
 
-  // We start with the names of all of the variables.
-  const std::vector<std::string> allVars = from.g_.listObjects<ObjectType::Variable>(true);
+  // Make all groups and copy global group attributes.
+  copyAttributes(src.atts, dest.atts);
+  for (const auto &g_name : objs.at(ObjectType::Group)) {
+      Group old_g = src.open(g_name);
+      Group new_g = dest.create(g_name);
+      copyAttributes(old_g.atts, new_g.atts);
+  }
 
-  size_t max_var_size_ = 0;
-  std::vector<std::string> var_list_, dim_var_list_;
-  var_list_.reserve(allVars.size());
-  dim_var_list_.reserve(allVars.size());
-  std::map<std::string, std::vector<std::string>> dims_attached_to_vars_;
-
-  // In our processing loop, we want to ideally open each variable only once.
-  // But, the variables and dimension scales are mixed together. To give a "hint"
-  // for where to start, we can partially sort allVars. Our dimension scales all
-  // lack '@' and '/' in their path listings. "nlocs" should always come first,
-  // since this is the most frequently-occurring dimension.
-  std::list<std::string> sortedAllVars;
-  for (const auto& name : allVars) {
-    if (sortedAllVars.empty())
-      sortedAllVars.push_back(name);
-    else {
-      if (isPossiblyScale(name)) {
-        auto second = sortedAllVars.begin();
-        second++;
-        if (sortedAllVars.front() == "nlocs")
-          sortedAllVars.insert(second, name);
-        else
-          sortedAllVars.push_front(name);
-      } else
-        sortedAllVars.push_back(name);
+  // Make all variables and copy data and most attributes.
+  // Dimension mappings & scales are handled later.
+  for (const auto& var_name : objs.at(ObjectType::Variable)) {
+    const Variable old_var = src.vars.open(var_name);
+    if (old_var.isA<int>()) {
+        transferVariable<int>(var_name, old_var, dest.vars);
+    } else if (old_var.isA<float>()) {
+        transferVariable<float>(var_name, old_var, dest.vars);
+    } else if (old_var.isA<int64_t>()) {
+        transferVariable<int64_t>(var_name, old_var, dest.vars);
+    } else if (old_var.isA<char>()) {
+        transferVariable<char>(var_name, old_var, dest.vars);
+    } else if (old_var.isA<std::string>()) {
+        transferVariable<std::string>(var_name, old_var, dest.vars);
+    } else {
+        std::string ErrorMsg = std::string("Variable '") + var_name +
+                               std::string("' is not of any supported type");
+        throw Exception(ErrorMsg.c_str(), ioda_Here());
     }
   }
 
-  // Now for the main processing loop.
-  // We separate dimension scales from non-dimension scale variables.
-  // We record the maximum sizes of variables.
-  // We construct the in-memory mapping of dimension scales and variable axes.
-  // Keep track of these to avoid re-opening the scales repeatedly.
-  std::list<std::pair<std::string, Variable>> dimension_scales;
+  // TODO(future): Copy named types
 
-  auto group = from.g_;
+  // TODO(future): Copy soft links and external links
 
-  for (const auto& vname : sortedAllVars) {
-    Variable v      = group.vars.open(vname);
-    const auto dims = v.getDimensions();
-    if (dims.dimensionality >= 1) {
-#ifdef max
-#  undef max
-#endif
-      max_var_size_ = std::max(max_var_size_, (size_t)dims.dimsCur[0]);
+  // Query old data for dimension mappings
+  VarUtils::Vec_Named_Variable regularVarList, dimVarList;
+  VarUtils::VarDimMap dimsAttachedToVars;
+  Dimensions_t maxVarSize0;  // unused in this function
+  VarUtils::collectVarDimInfo(src, regularVarList, dimVarList, dimsAttachedToVars, maxVarSize0);
+
+  // Make new dimension scales
+  for (auto& dim : dimVarList)
+      dest.vars[dim.name].setIsDimensionScale(dim.var.getDimensionScaleName());
+
+  // Attach all dimension scales to all variables.
+  // We separate this from the variable creation (above)
+  // since we use a collective call for performance.
+  vector<pair<Variable, vector<Variable>>> dimsAttachedToNewVars;
+  for (const auto &old : dimsAttachedToVars) {
+    Variable new_var = dest.vars[old.first.name];
+    vector<Variable> new_dims;
+    for (const auto &old_dim : old.second) {
+        new_dims.push_back(dest.vars[old_dim.name]);
     }
-    // Expensive function call.
-    // Only 1-D variables can be scales. Also pre-filter based on name.
-    if (dims.dimensionality == 1 && isPossiblyScale(vname)) {
-      if (v.isDimensionScale()) {
-        (vname == "nlocs")  // true / false ternary
-          ? dimension_scales.push_front(std::make_pair(vname, v))
-          : dimension_scales.push_back(std::make_pair(vname, v));
-        dim_var_list_.push_back(vname);
-        continue;  // Move on to next variable in the for loop.
-      }
-    }
-    // See above block. By this point in execution, we know that this variable
-    // is not a dimension scale.
-    var_list_.push_back(vname);
-    // Let's figure out which scales are attached to which dimensions.
-    auto attached_dimensions = v.getDimensionScaleMappings(dimension_scales);
-    std::vector<std::string> dimVarNames;
-    dimVarNames.reserve(dims.dimensionality);
-    for (const auto& dim_scales_along_axis : attached_dimensions) {
-      if (dim_scales_along_axis.empty())
-        throw jedi_throw.add("Reason",
-                             "Bad dimension mapping. Not all dimension scales are known.");
-      dimVarNames.push_back(dim_scales_along_axis[0].first);
-    }
-    dims_attached_to_vars_.emplace(vname, dimVarNames);
+    dimsAttachedToNewVars.push_back(make_pair(new_var, std::move(new_dims)));
   }
-  // record lists of regular variables and dimension scale variables
-  // this->resetVarLists();
-  // this->resetVarDimMap();
-
-  /*
-  // Find the dimension scales
-  const map<string, Variable> scale_id_var_from
-          = [](const Group& baseGrp)
-  {
-          map<string, Variable> res;
-          auto basevars = baseGrp.vars.list();
-          //std::cerr << "Finding dim scales. There are " << basevars.size() << " candidates." <<
-  std::endl; for (const auto& name : basevars) { auto v = baseGrp.vars.open(name); if
-  (v.isDimensionScale()) { string id = name;
-                          //string id_scale = v.getDimensionScaleName();
-                          //if (id_scale.size()) id = id_scale;
-                          res[id] = v;
-                          //std::cerr << "\tAdded scale var " << id << std::endl;
-                  }
-          }
-          return res;
-  }(from.g_);
-
-  //std::cerr << "Creating scales in destination." << std::endl;
-
-  const map<string, Variable> scale_id_var_to
-          = [](Group& destGrp, const map<string, Variable>& srcScales)
-  {
-          map<string, Variable> res;
-          for (const auto& src : srcScales) {
-                  //std::cerr << "\tCreating scale " << src.first << std::endl;
-                  VariableCreationParameters params;
-                  params.chunk = true;
-                  params.chunks = src.second.getChunkSizes();
-                  params.compressWithGZIP();
-                  params.setIsDimensionScale(src.second.getDimensionScaleName());
-                  // TODO: Propagate attributes
-                  // TODO: Propagate fill value
-                  BasicTypes typ = src.second.getBasicType();
-                  if (typ == BasicTypes::undefined_)
-                          throw jedi_throw.add("Reason", "Unrecognized basic type");
-                  const auto dims = src.second.getDimensions();
-
-                  auto newscale = destGrp.vars._create_py(src.first, typ, dims.dimsCur,
-  dims.dimsMax, {}, params); res[src.first] = newscale;
-          }
-          return res;
-  }(to.g_, scale_id_var_from);
-
-  // Iterate over all of the variables.
-  // Select those that are not dimension scales, and get a few properties.
-  //std::cerr << "Iterating over variables to copy." << std::endl;
-  auto basevars = from.g_.vars.list(); //std::vector<std::string>{ "datetime@MetaData"}; //
-  from.g_.vars.list(); for (const auto& name : basevars) { Variable v = from.g_.vars.open(name); if
-  (!v.isDimensionScale()) {
-                  //std::cerr << "\t" << name << "\n";  //std::endl;
-                  for (size_t i = 0; i < (size_t)v.getDimensions().dimensionality; ++i) {
-                          for (const auto& scales_from : scale_id_var_from) {
-                                  if (v.isDimensionScaleAttached((unsigned)i, scales_from.second)) {
-                                          //std::cerr << "\t\t" << i << "\t" << scales_from.first <<
-  "\n"; // std::endl;
-                                  }
-                          }
-
-                  }
-          }
-  }
-  */
+  dest.vars.attachDimensionScales(dimsAttachedToNewVars);
 }
+
 }  // namespace ioda

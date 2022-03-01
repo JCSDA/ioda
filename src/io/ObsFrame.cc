@@ -11,6 +11,7 @@
 #include "ioda/Engines/HH.h"
 #include "ioda/io/ObsFrame.h"
 #include "ioda/Layout.h"
+#include "ioda/Copying.h"
 #include "ioda/Variables/Variable.h"
 
 namespace ioda {

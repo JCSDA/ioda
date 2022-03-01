@@ -36,7 +36,6 @@
 #include "oops/util/Logger.h"
 #include "ioda/core/IodaUtils.h"
 #include "ioda/distribution/Distribution.h"
-#include "ioda/Engines/Factory.h"
 #include "ioda/Misc/Dimensions.h"
 #include "ioda/ObsGroup.h"
 #include "ioda/ObsSpaceParameters.h"
@@ -510,7 +509,14 @@ namespace ioda {
         void createMissingObsErrors();
 
         /// \brief Dump the database into the output file
-        void saveToFile();
+        /// \param baseFileName Path to output file where file name part is a base name
+        /// \detail This function saves the obs space data into a ioda formatted file.
+        /// The parameter baseFileName will get an MPI rank number appended to it so that
+        /// the multiple output files (from each MPI rank) will have unique names. Eventually,
+        /// the ioda writer will gather data from all the ranks into a single output
+        /// file which will then be able to use baseFileName as is (ie, no appending of
+        /// the rank number).
+        void saveToFile(const std::string & baseFileName) const;
 
         /// \brief Create the recidx data structure holding sorted record groups
         /// \details This method will construct a data structure that holds the

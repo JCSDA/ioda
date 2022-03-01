@@ -72,7 +72,6 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsio_write.yml
   testinput/iodatest_obsframe_constructor.yml
   testinput/iodatest_obsframe_read.yml
-  testinput/iodatest_obsframe_write.yml
   testinput/iodatest_distribution.yml
   testinput/iodatest_distribution_masterandreplica_mpi_2.yml
   testinput/iodatest_distribution_masterandreplica_mpi_3.yml
@@ -105,6 +104,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_descendingsort.yml
   testinput/iodatest_extendedobsspace.yml
   testinput/iodatest_extendedobsspace_halo.yml
+  testinput/iodatest_writer_sondes.yml
   testinput/iodatest_odb_abiclear.yml
   testinput/iodatest_odb_ahiclear.yml
   testinput/iodatest_odb_aircraft.yml
@@ -300,12 +300,6 @@ ecbuild_add_test( TARGET  test_ioda_obsframe_constructor
 ecbuild_add_test( TARGET  test_ioda_obsframe_read
                   SOURCES mains/TestObsFrameRead.cc
                   ARGS    "testinput/iodatest_obsframe_read.yml"
-                  LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data )
-
-ecbuild_add_test( TARGET  test_ioda_obsframe_write
-                  SOURCES mains/TestObsFrameWrite.cc
-                  ARGS    "testinput/iodatest_obsframe_write.yml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
@@ -521,6 +515,15 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_out_dims_check
                           out_dims_check_0000.nc4
                   TEST_DEPENDS get_ioda_test_data )
 
+ecbuild_add_test( TARGET  test_ioda_writer_sondes
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "${CMAKE_CURRENT_BINARY_DIR}/test_ioda_oops_obsspace
+                          testinput/iodatest_writer_sondes.yml"
+                          ioda_writer_sondes_0000.nc4
+                  TEST_DEPENDS get_ioda_test_data )
 
 # IODA ObsSpace class - Fortran interface test
 add_fctest( TARGET  test_ioda_obsspace_fortran

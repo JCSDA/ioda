@@ -30,14 +30,15 @@
 #include "oops/util/Random.h"
 #include "oops/util/stringFunctions.h"
 
+#include "ioda/Copying.h"
 #include "ioda/distribution/Accumulator.h"
 #include "ioda/distribution/DistributionFactory.h"
 #include "ioda/distribution/DistributionUtils.h"
 #include "ioda/distribution/PairOfDistributions.h"
+#include "ioda/Engines/Factory.h"
 #include "ioda/Engines/HH.h"
 #include "ioda/Exception.h"
 #include "ioda/io/ObsFrameRead.h"
-#include "ioda/io/ObsFrameWrite.h"
 #include "ioda/Variables/Variable.h"
 
 namespace ioda {
@@ -204,9 +205,9 @@ ObsSpace::ObsSpace(const Parameters_ & params, const eckit::mpi::Comm & comm,
 // -----------------------------------------------------------------------------
 void ObsSpace::save() {
     if (obs_params_.top_level_.obsOutFile.value() != boost::none) {
-        std::string fileName = obs_params_.top_level_.obsOutFile.value()->fileName;
-        oops::Log::info() << obsname() << ": save database to " << fileName << std::endl;
-        saveToFile();
+        std::string baseFileName = obs_params_.top_level_.obsOutFile.value()->fileName;
+        oops::Log::info() << obsname() << ": save database to " << baseFileName << std::endl;
+        saveToFile(baseFileName);
         // Call the mpi barrier command here to force all processes to wait until
         // all processes have finished writing their files. This is done to prevent
         // the early processes continuing and potentially executing their obs space
@@ -1126,83 +1127,28 @@ void ObsSpace::buildRecIdxUnsorted() {
 }
 
 // -----------------------------------------------------------------------------
-void ObsSpace::saveToFile() {
-    // Form lists of regular and dimension scale variables
-    VarUtils::Vec_Named_Variable varList;
-    VarUtils::Vec_Named_Variable dimVarList;
-    VarUtils::VarDimMap dimsAttachedToVars;
-    Dimensions_t maxVarSize;
-    VarUtils::collectVarDimInfo(obs_group_, varList, dimVarList, dimsAttachedToVars, maxVarSize);
+void ObsSpace::saveToFile(const std::string & baseFileName) const {
+    // Open the output file and copy the ObsSpace top level group to the file top level group.
+    Engines::BackendNames backendName = Engines::BackendNames::Hdf5File;
+    Engines::BackendCreationParameters backendParams;
 
-    Dimensions_t maxFrameSize = obs_params_.top_level_.obsOutFile.value()->maxFrameSize;
+    // Create an hdf5 file, and allow overwriting an existing file (for now)
+    // Tag on the rank number to the output file name to avoid collisions if running
+    // with multiple MPI tasks.
+    backendParams.fileName =
+        uniquifyFileName(baseFileName, obs_params_.getMpiRank(), obs_params_.getMpiTimeRank());
+    backendParams.action = Engines::BackendFileActions::Create;
+    backendParams.createMode = Engines::BackendCreateModes::Truncate_If_Exists;
 
-    // Record dimension scale variables for the output file creation.
-    for (auto & dimNameObject : dimVarList) {
-        std::string dimName = dimNameObject.name;
-        Dimensions_t dimSize = dimNameObject.var.getDimensions().dimsCur[0];
-        Dimensions_t dimMaxSize = dimSize;
-        Dimensions_t dimChunkSize = dimSize;
-        if (dimName == dim_info_.get_dim_name(ObsDimensionId::Nlocs)) {
-            dimSize = this->nlocs();
-            dimMaxSize = Unlimited;
-            dimChunkSize = this->globalNumLocs();
-        }
-        // It's possible that dimChunkSize is set to zero which is an illegal value
-        // for the chunk size. If the current dimension size is zero, then it's okay
-        // to set chunk size to an arbitrary small size since you don't need to be
-        // particularly efficient about it.
-        if (dimChunkSize == 0) {
-            dimChunkSize = 5;
-        }
-        // Limit the chunk size to the maximum frame size. For large nlocs, this will
-        // help keep the file io efficient (by avoiding a too large chunk size).
-        if (dimChunkSize > maxFrameSize) {
-            dimChunkSize = maxFrameSize;
-        }
-        obs_params_.setDimScale(dimName, dimSize, dimMaxSize, dimChunkSize);
-    }
+    // Create the backend group
+    // Use the None DataLyoutPolicy for now to accommodate the current file format
+    Group writerGroup = constructBackend(backendName, backendParams);
 
-    // Record the maximum variable size
-    obs_params_.setMaxVarSize(maxVarSize);
-
-    // Open the file for output
-    ObsFrameWrite obsFrame(obs_params_);
-
-    // Iterate through the frames and variables moving data from the database into
-    // the file.
-    for (obsFrame.frameInit(varList, dimVarList, dimsAttachedToVars, maxVarSize, obs_group_.atts);
-         obsFrame.frameAvailable(); obsFrame.frameNext(varList)) {
-        Dimensions_t frameStart = obsFrame.frameStart();
-        for (auto & varNameObject : varList) {
-            // form the destination (ObsFrame) variable name
-            std::string destVarName = varNameObject.name;
-
-            // open the destination variable and get the associated count
-            Variable destVar = obsFrame.getObsGroup().vars.open(destVarName);
-            Dimensions_t frameCount = obsFrame.frameCount(destVarName);
-
-            // transfer data if we haven't gone past the end of the variable yet
-            if (frameCount > 0) {
-                // Form the hyperslab selection for this frame
-                Variable srcVar = varNameObject.var;
-                std::vector<Dimensions_t> varShape = srcVar.getDimensions().dimsCur;
-                ioda::Selection memSelect = obsFrame.createMemSelection(varShape, frameCount);
-                ioda::Selection varSelect =
-                    obsFrame.createVarSelection(varShape, frameStart, frameCount);
-
-                // transfer the data
-                forAnySupportedVariableType(
-                      srcVar,
-                      [&](auto typeDiscriminator) {
-                          typedef decltype(typeDiscriminator) T;
-                          std::vector<T> varValues;
-                          srcVar.read<T>(varValues, memSelect, varSelect);
-                          obsFrame.writeFrameVar(destVarName, varValues);
-                      },
-                      ThrowIfVariableIsOfUnsupportedType(varNameObject.name));
-            }
-        }
-    }
+    // Copy the ObsSpace ObsGroup to the output file Group. Copy the top-level
+    // attributes here so that copyGroup could be called recursively some day. The
+    // copyGroup function copies all of the immediate child groups and their
+    // associated attributes.
+    copyGroup(obs_group_, writerGroup);
 }
 
 // -----------------------------------------------------------------------------

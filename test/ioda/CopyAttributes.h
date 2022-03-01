@@ -18,6 +18,7 @@
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/testing/Test.h"
 
+#include "ioda/Copying.h"
 #include "ioda/core/IodaUtils.h"
 #include "ioda/Engines/Factory.h"
 #include "ioda/Exception.h"

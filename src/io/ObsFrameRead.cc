@@ -12,6 +12,7 @@
 
 #include "ioda/distribution/DistributionFactory.h"
 #include "ioda/Exception.h"
+#include "ioda/Copying.h"
 #include "ioda/io/ObsFrameRead.h"
 #include "ioda/io/ObsIoFactory.h"
 
