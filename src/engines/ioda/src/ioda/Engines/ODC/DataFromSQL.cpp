@@ -309,7 +309,8 @@ Eigen::Array<T, Eigen::Dynamic, 1> DataFromSQL::getVarnoColumn(const std::vector
 }
 
 void DataFromSQL::select(const std::vector<std::string>& columns, const std::string& filename,
-                         const std::vector<int>& varnos, const std::string& query) {
+                         const std::vector<int>& varnos, const std::string& query,
+                         const bool truncateProfilesToNumLev) {
   columns_ = columns;
   std::string sql = "select ";
   for (int i = 0; i < columns_.size(); i++) {
@@ -370,6 +371,100 @@ void DataFromSQL::select(const std::vector<std::string>& columns, const std::str
     }
   }
 
+  // Truncate profile data according to the number of reported levels, which
+  // is contained in the `numlev` ODB variable.
+  // This number can be different to the number of levels assigned in the
+  // retrieval algorithm. For example, all TEMP sondes are assigned 200 levels
+  // in the retrieval, but observation data are quite often reported on fewer than 200 levels.
+  // In such cases each column of data is truncated.
+  // If the number of reported levels is greater than the number of assigned levels,
+  // no action is taken.
+  // The truncation is performed after all of the profile data have been placed into the
+  // `data_` member variable. This ensures that auxiliary variables such as `seqno` and `varno` are
+  // fully assigned prior to reducing the size of `data_`.
+  if (data_.size() > 0 &&
+      truncateProfilesToNumLev &&
+      (obsgroup_ == obsgroup_sonde || obsgroup_ == obsgroup_oceansound)) {
+
+    // Initial indices of each assigned profile.
+    std::vector<int> indices_initial;
+    // Final indices of each assigned profile.
+    std::vector<int> indices_final;
+    // Number of levels per reported profile.
+    std::vector<int> numlevs;
+
+    // Fill the number of reported levels and the initial and final assigned indices.
+    // Use the `seqno` ODB variable to determine when each profile terminates.
+    const int seqno_index = getColumnIndex("seqno");
+    int seqno = -1;
+    for (size_t idx = 0; idx < number_of_rows_; ++idx) {
+      const int seqno_new = getData(idx, seqno_index);
+      if (seqno != seqno_new) {
+        const int numlev = getData(idx, getColumnIndex("numlev"));
+        numlevs.push_back(numlev);
+        // The number of entries in each column of `data_` is equal to the product of
+        // `number_of_metadata_rows_` and `number_of_varnos_`.
+        // The initial and final indices are computed for each subset of `data_` that corresponds
+        // to a unique varno, which is why the index is divided by `number_of_varnos_`.
+        indices_initial.push_back(idx / number_of_varnos_);
+        if (indices_initial.size() > 1)
+          indices_final.push_back(indices_initial.back());
+        seqno = seqno_new;
+      }
+    }
+    indices_final.push_back(number_of_metadata_rows_);
+
+    // Determine the indices of `data_` that are associated with each varno.
+    std::map <int, std::vector<int>> varno_indices;
+    const auto & data_varno = data_.at(getColumnIndex("varno"));
+    for (size_t idx = 0; idx < number_of_rows_; ++idx) {
+      const int varno = data_varno.at(idx);
+      varno_indices[varno].push_back(idx);
+    }
+
+    // Determine vector of indices to be removed for each varno.
+    // This vector is concatenated over all varnos.
+    std::vector<int> varno_indices_to_remove;
+    for (int varno : varnos) {
+      for (int jprof = 0; jprof < indices_initial.size(); ++jprof) {
+        // Initial and final assigned indices for this profile.
+        const int index_initial = indices_initial[jprof];
+        const int index_final = indices_final[jprof];
+        // Number of reported levels for this profile.
+        const int numlev = numlevs[jprof];
+        // Record any assigned indices which are superfluous.
+        if (numlev < index_final - index_initial) {
+          for (int idx = index_initial + numlev; idx < index_final; ++idx) {
+            varno_indices_to_remove.push_back(varno_indices[varno][idx]);
+          }
+        }
+      }
+    }
+
+    // Erase entries from each column of varno_indices.
+    std::sort(varno_indices_to_remove.begin(), varno_indices_to_remove.end());
+    for (int col = 0; col < data_.size(); ++col) {
+      std::size_t current_index = 0;
+      auto current_iter = std::begin(varno_indices_to_remove);
+      auto end_iter = std::end(varno_indices_to_remove);
+      const auto pred = [&](const double &) {
+        // Advance current iterator if there are still more indices to remove.
+        if (current_iter != end_iter && *current_iter == current_index++) {
+          return ++current_iter, true;
+        }
+        return false;
+      };
+      // Remove entries from this column of `data_` according to the above predicate.
+      auto & data_col = data_[col];
+      data_col.erase(std::remove_if(data_col.begin(), data_col.end(), pred), data_col.end());
+    }
+
+    // Reassign counts to reflect truncated columns in `data_`.
+    number_of_rows_ = data_.empty() ? 0 : data_.front().size();
+    number_of_metadata_rows_ = number_of_rows_ / number_of_varnos_;
+  }
+
+  // Check number of rows is consistent for each varno.
   for (const int varno : varnos_) {
     if (hasVarno(varno) && number_of_metadata_rows_ > 0) {
       const size_t number_of_varno_rows = numberOfRowsForVarno(varno);

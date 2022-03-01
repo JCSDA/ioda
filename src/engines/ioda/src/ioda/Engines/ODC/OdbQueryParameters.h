@@ -123,6 +123,10 @@ class OdbQueryParameters : public oops::Parameters {
 
   /// Parameters related to variable creation
   OdbVariableCreationParameters variableCreation{this};
+
+  /// Truncate multi-level profiles to the `numlev` parameter.
+  /// This parameter only has an effect for sonde and oceansound data.
+  oops::Parameter<bool> truncateProfilesToNumLev{"truncate profiles to numlev", false, this};
 };
 
 }  // namespace ODC

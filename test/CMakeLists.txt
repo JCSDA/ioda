@@ -128,6 +128,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_odb_mwsfy3.yml
   testinput/iodatest_odb_oceancolour.yml
   testinput/iodatest_odb_oceansound.yml
+  testinput/iodatest_odb_oceansound_truncate_profiles.yml
   testinput/iodatest_odb_satsst.yml
   testinput/iodatest_odb_sattcwv.yml
   testinput/iodatest_odb_satwind.yml
@@ -135,6 +136,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_odb_seaice.yml
   testinput/iodatest_odb_seviriclear.yml
   testinput/iodatest_odb_sonde.yml
+  testinput/iodatest_odb_sonde_truncate_profiles.yml
   testinput/iodatest_odb_ssmis.yml
   testinput/iodatest_odb_surface.yml
   testinput/iodatest_odb_surface_with_query.yml
@@ -886,6 +888,17 @@ if (odc_FOUND)
                             test-Sonde-artificial.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
+  ecbuild_add_test( TARGET  test_ioda-convert_sonde_truncate_profiles_odc
+                    TYPE    SCRIPT
+                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                    ARGS    hdf5
+                            "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
+                            Sonde-truncate-profiles
+                            Data/testinput_tier_1/sonde.odb
+                            testinput/odb_sonde_name_map.yml testinput/iodatest_odb_sonde_truncate_profiles.yml"
+                            test-Sonde-truncate-profiles.hdf
+                    TEST_DEPENDS get_ioda_test_data )
+
   ecbuild_add_test( TARGET  test_ioda-convert_abiclear_odc
                     TYPE    SCRIPT
                     COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
@@ -1225,6 +1238,17 @@ if (odc_FOUND)
                             Data/testinput_tier_1/oceansound.odb
                             testinput/odb_oceansound_name_map.yml testinput/iodatest_odb_oceansound.yml"
                             test-OceanSound.hdf
+                    TEST_DEPENDS get_ioda_test_data )
+
+  ecbuild_add_test( TARGET  test_ioda-convert_oceansound_truncate_profiles_odc
+                    TYPE    SCRIPT
+                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                    ARGS    hdf5
+                            "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
+                            OceanSound-truncate-profiles
+                            Data/testinput_tier_1/oceansound.odb
+                            testinput/odb_oceansound_name_map.yml testinput/iodatest_odb_oceansound_truncate_profiles.yml"
+                            test-OceanSound-truncate-profiles.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
   # Test error reporting for an ODB file in which the number of rows per varno varies from one seqno to another

@@ -200,8 +200,11 @@ public:
   /// \param columns List of columns to extract
   /// \param filename Extract from this file
   /// \param varnos List of varnos to extract
+  /// \param query Selection criteria to apply
+  /// \param truncateProfilesToNumLev Truncate multi-level profiles using the `numlev` variable.
   void select(const std::vector<std::string>& columns, const std::string& filename,
-              const std::vector<int>& varnos, const std::string& query);
+              const std::vector<int>& varnos, const std::string& query,
+              const bool truncateProfilesToNumLev);
 
   /// \brief Returns a vector of date strings
   std::vector<int64_t> getDates(std::string const& date_col,

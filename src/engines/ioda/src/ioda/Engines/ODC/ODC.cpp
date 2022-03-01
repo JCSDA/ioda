@@ -436,7 +436,11 @@ ObsGroup openFile(const ODC_Parameters& odcparams,
         std::rotate(it, it + 1, columnNames.end());
       }
     }
-    sql_data.select(columnNames, odcparams.filename, varnos, queryParameters.where.value().query);
+    sql_data.select(columnNames,
+                    odcparams.filename,
+                    varnos,
+                    queryParameters.where.value().query,
+                    queryParameters.truncateProfilesToNumLev.value());
   }
 
   const size_t num_rows = sql_data.numberOfMetadataRows();
