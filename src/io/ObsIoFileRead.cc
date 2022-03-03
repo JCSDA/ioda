@@ -48,6 +48,10 @@ ObsIoFileRead::ObsIoFileRead(const Parameters_ & ioParams,
 
     // record number of locations
     nlocs_ = obs_group_.vars.open("nlocs").getDimensions().dimsCur[0];
+    if (nlocs_ == 0) {
+      oops::Log::info() << "WARNING: Input file " << fileName << " contains zero observations"
+          << std::endl;
+    }
 
     // record variables by which observations should be grouped into records
     obs_grouping_vars_ = ioParams.obsGrouping.value().obsGroupVars;
