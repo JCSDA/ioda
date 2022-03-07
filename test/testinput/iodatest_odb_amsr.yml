@@ -16,3 +16,5 @@ variables:
 - name: receipt_time
 - name: receipt_date
 - name: channel_quality_flags
+- name: zenith
+- name: ops_subtype 
