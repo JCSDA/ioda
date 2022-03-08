@@ -72,7 +72,8 @@ observations:
     name: "AMSUA NOAA19"
     simulated variables: ['brightness_temperature']
     channels: 1-15
-    distribution: "InefficientDistribution"
+    distribution:
+      name: "InefficientDistribution"
     obsdatain:
       obsfile: "Data/testinput_tier_1/amsua_n19_obs_2018041500_m.nc4"
   test data:

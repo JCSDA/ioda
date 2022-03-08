@@ -4,7 +4,8 @@ window end: '2018-04-15T03:00:00Z'
 observations:
 - obs space:
     name: "Radiosonde_4vars"
-    distribution: "Halo"
+    distribution:
+      name: "Halo"
     save obs distribution: true
     simulated variables:
     - air_temperature

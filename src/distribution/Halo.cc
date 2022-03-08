@@ -21,7 +21,6 @@
 
 #include "ioda/distribution/DistributionFactory.h"
 #include "ioda/distribution/GeneralDistributionAccumulator.h"
-#include "eckit/config/LocalConfiguration.h"
 #include "eckit/exception/Exceptions.h"
 
 namespace ioda {
@@ -40,14 +39,14 @@ static DistributionMaker<Halo> maker("Halo");
  */
 // -----------------------------------------------------------------------------
 Halo::Halo(const eckit::mpi::Comm & Comm,
-           const eckit::Configuration & config) :
+           const Parameters_ & params) :
           Distribution(Comm) {
-  oops::Log::debug() << "config in Halo: " << config << std::endl;
+  oops::Log::debug() << "config in Halo: " << params << std::endl;
   // extract center point from configuration
   // if no patch center defined, distribute centers equi-distant along the equator
   std::vector<double> centerd(2, 0.0);
-  if (config.has("center")) {
-    centerd = config.getDoubleVector("center", centerd);
+  if (params.center.value() != boost::none) {
+    centerd = *params.center.value();
   } else {
     centerd[0] = static_cast<double>(comm_.rank())*
                              (360.0/static_cast<double>(comm_.size()));
@@ -59,8 +58,7 @@ Halo::Halo(const eckit::mpi::Comm & Comm,
   // Note radius here is a sum of the patchRadius and localization radii
   // which has updated in "oops/src/oops/runs/LocalEnsembleDA.h",
   // when "update obs config with geometry info" is set to true.
-  double radius = config.getDouble("radius", 50000000.0);
-  radius_ = radius;
+  radius_ = params.radius;
 
   oops::Log::debug() << "Halo constructed: center: " << center_ << " radius: "
                      << radius_ << std::endl;

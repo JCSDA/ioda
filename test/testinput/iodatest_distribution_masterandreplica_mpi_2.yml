@@ -20,7 +20,8 @@ observations:
         group variables: [group_by_int]
         # group_by_int@MetaData = 1, 1, 1, 2, 3, 3, 1, 1, 1, 1 ;
     simulated variables: [temperature]
-    distribution: RoundRobin
+    distribution:
+      name: RoundRobin
     extension:
       average profiles onto model levels: 3
   specs:
@@ -49,7 +50,8 @@ observations:
         group variables: [group_by_int]
         # group_by_int@MetaData = 1, 1, 1, 2, 3, 3, 1, 1, 1, 1 ;
     simulated variables: [temperature]
-    distribution: InefficientDistribution
+    distribution:
+      name: InefficientDistribution
     extension:
       average profiles onto model levels: 3
   specs:

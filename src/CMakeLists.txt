@@ -27,6 +27,7 @@ distribution/Distribution.cc
 distribution/Distribution.h
 distribution/DistributionFactory.cc
 distribution/DistributionFactory.h
+distribution/DistributionParametersBase.h
 distribution/DistributionUtils.cc
 distribution/DistributionUtils.h
 distribution/InefficientDistribution.cc

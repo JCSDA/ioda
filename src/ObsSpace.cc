@@ -175,8 +175,9 @@ ObsSpace::ObsSpace(const Parameters_ & params, const eckit::mpi::Comm & comm,
     /// the presence of these variables makes it possible
     /// to identify observations stored in more than one input file.
 
+    const auto & distParams = obs_params_.top_level_.distribution.value().params.value();
     const bool save_obs_distribution = obs_params_.top_level_.saveObsDistribution;
-    if (save_obs_distribution && "Halo" == obs_params_.top_level_.distName.value()) {
+    if (save_obs_distribution && "Halo" == distParams.name.value()) {
       const size_t nlocs = this->nlocs();
 
       std::vector<int> idx2int(nlocs);

@@ -322,7 +322,7 @@ void testDistributedMath() {
        // names in the YAML. Note that this also prevents clobbering any output files
        // specfied in the YAML.
        eckit::LocalConfiguration obsconf(conf[jj], "obs space");
-       obsconf.set("distribution", dist_names[dd]);
+       obsconf.set("distribution.name", dist_names[dd]);
        if (obsconf.has("obsdataout.obsfile")) {
            std::string fileName = obsconf.getString("obsdataout.obsfile");
            std::string fileTag = std::string("_Dist_") + dist_names[dd];

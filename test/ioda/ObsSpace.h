@@ -96,13 +96,9 @@ void testConstructor() {
   ::test::TestEnvironment::config().get("observations", conf);
 
   for (std::size_t jj = 0; jj < Test_::size(); ++jj) {
-    // Grab the obs space and test data configurations
-    eckit::LocalConfiguration obsConfig;
+    // Grab the test data configuration
     eckit::LocalConfiguration testConfig;
-    conf[jj].get("obs space", obsConfig);
     conf[jj].get("test data", testConfig);
-
-    std::string DistMethod = obsConfig.getString("distribution", "RoundRobin");
 
     const ObsSpace &odb = Test_::obspace(jj);
 
@@ -139,7 +135,7 @@ void testConstructor() {
     // records are ambigious for halo distribution
     // e.g. consider airplane (a single record in round robin) flying accros the globe
     // for Halo distr this record will be considered unique on each PE
-    if (DistMethod != "Halo") {
+    if (odb.distribution()->name() != "Halo") {
       std::size_t NRecs = 0;
       std::set<std::size_t> recIndices;
       auto accumulator = odb.distribution()->createAccumulator<std::size_t>();
@@ -195,10 +191,8 @@ void testGetDb() {
   ::test::TestEnvironment::config().get("observations", conf);
 
   for (std::size_t jj = 0; jj < Test_::size(); ++jj) {
-    // Grab the obs space and test data configurations
-    eckit::LocalConfiguration obsConfig;
+    // Grab the test data configuration
     eckit::LocalConfiguration testConfig;
-    conf[jj].get("obs space", obsConfig);
     conf[jj].get("test data", testConfig);
 
     // Set up a pointer to the ObsSpace object for convenience
@@ -492,10 +486,8 @@ void testPutGetChanSelect() {
   ::test::TestEnvironment::config().get("observations", conf);
 
   for (std::size_t jj = 0; jj < Test_::size(); ++jj) {
-    // Grab the obs space and test data configurations
-    eckit::LocalConfiguration obsConfig;
+    // Grab the test data configurations
     eckit::LocalConfiguration testConfig;
-    conf[jj].get("obs space", obsConfig);
     conf[jj].get("test data", testConfig);
 
     // Set up a pointer to the ObsSpace object for convenience

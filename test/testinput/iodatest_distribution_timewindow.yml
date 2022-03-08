@@ -23,8 +23,9 @@ observations:
         # longitude@MetaData = 1, 21, 41, 61, 81, 101, 121, 141, 161, 181
         # datetime@MetaData = 2021-01-15T15:15:00Z, ...:01Z, ..., ...:09Z
     simulated variables: [temperature]
-    distribution: Halo
-    radius: 8000000  # a bit less than 1/4 of equator length
+    distribution:
+      name: Halo
+      radius: 8000000  # a bit less than 1/4 of equator length
   specs:
     gnlocs: 6
     allgatherv: [ 3, 4, 5, 6, 7, 8 ]
@@ -68,8 +69,9 @@ observations:
         # longitude@MetaData = 1, 21, 41, 61, 81, 101, 121, 141, 161, 181
         # datetime@MetaData = 2021-01-15T15:15:00Z, ...:01Z, ..., ...:09Z
     simulated variables: [temperature]
-    distribution: Halo
-    radius: 8000000  # a bit less than 1/4 of equator length
+    distribution:
+      name: Halo
+      radius: 8000000  # a bit less than 1/4 of equator length
     extension:
       average profiles onto model levels: 3
   specs:

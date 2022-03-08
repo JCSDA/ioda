@@ -9,7 +9,8 @@ observations:
     - specific_humidity
     - eastward_wind
     - northward_wind
-    distribution: "Halo"
+    distribution:
+      name: "Halo"
     obsdatain:
       obsfile: testoutput/obsvector_pio_observer.nc4
       read obs from separate file: true

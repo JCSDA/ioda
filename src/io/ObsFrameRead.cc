@@ -77,23 +77,21 @@ ObsFrameRead::ObsFrameRead(const ObsSpaceParameters & params) :
                         << std::endl;
     }
 
-    eckit::LocalConfiguration distConf = params.top_level_.toConfiguration();
-    distname_ = distConf.getString("distribution", "RoundRobin");
+    const auto & distParams = params.top_level_.distribution.value().params.value();
+    distname_ = distParams.name;
 
     // Create an MPI distribution
     each_process_reads_separate_obs_ = obs_io_->eachProcessGeneratesSeparateObs();
     if (each_process_reads_separate_obs_) {
       if ("Halo" == distname_) {
-         dist_ = DistributionFactory::create(params.comm(), distConf);
+         dist_ = DistributionFactory::create(params.comm(), distParams);
       } else {
         // On each process the obs_io_ object will produce a separate series of observations,
         // so we need to use a non-overlapping distribution. The RoundRobin will do.
-        eckit::LocalConfiguration rrConf;
-        rrConf.set("distribution", "RoundRobin");
-        dist_ = DistributionFactory::create(params.comm(), rrConf);
+        dist_ = DistributionFactory::create(params.comm(), EmptyDistributionParameters());
       }
     } else {
-      dist_ = DistributionFactory::create(params.comm(), distConf);
+      dist_ = DistributionFactory::create(params.comm(), distParams);
     }
 
     max_frame_size_ = params.top_level_.obsIoInParameters().maxFrameSize;

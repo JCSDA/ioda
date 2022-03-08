@@ -248,7 +248,7 @@ namespace ioda {
         const std::string & obsname() const {return obsname_;}
 
         /// \brief return the name of the MPI distribution
-        std::string distname() const {return obs_params_.top_level_.distName;}
+        std::string distname() const {return dist_->name();}
 
         /// \brief return reference to the record number vector
         const std::vector<std::size_t> & recnum() const {return recnums_;}

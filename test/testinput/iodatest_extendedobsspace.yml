@@ -17,7 +17,8 @@ extend obs space, RoundRobin, 71 entries per averaged profile:
         sort variable: "air_pressure"
         sort order: "descending"
     simulated variables: [air_temperature]
-    distribution: "RoundRobin"
+    distribution:
+      name: "RoundRobin"
     extension:
       average profiles onto model levels: 71
   expected nlocs (1 PE, rank 0): 3530
@@ -67,7 +68,8 @@ extend obs space, InefficientDistribution, 71 entries per averaged profile:
         sort variable: "air_pressure"
         sort order: "descending"
     simulated variables: [air_temperature]
-    distribution: "InefficientDistribution"
+    distribution:
+      name: "InefficientDistribution"
     extension:
       average profiles onto model levels: 71
   expected nlocs (1 PE, rank 0): 3530
@@ -121,7 +123,8 @@ extend obs space, RoundRobin, 71 entries per averaged profile, alternative data 
         sort variable: "air_pressure"
         sort order: "descending"
     simulated variables: [air_temperature]
-    distribution: "RoundRobin"
+    distribution:
+      name: "RoundRobin"
     extension:
       average profiles onto model levels: 71
   expected nlocs (1 PE, rank 0): 375
@@ -159,7 +162,8 @@ extend obs space, RoundRobin, 71 entries per averaged profile, only pressure fil
         sort variable: "air_pressure"
         sort order: "descending"
     simulated variables: [air_temperature]
-    distribution: "RoundRobin"
+    distribution:
+      name: "RoundRobin"
     extension:
       average profiles onto model levels: 71
       variables filled with non-missing values: [air_pressure]
@@ -198,7 +202,8 @@ extend obs space, RoundRobin, 71 entries per averaged profile, no variables fill
         sort variable: "air_pressure"
         sort order: "descending"
     simulated variables: [air_temperature]
-    distribution: "RoundRobin"
+    distribution:
+      name: "RoundRobin"
     extension:
       average profiles onto model levels: 71
       variables filled with non-missing values: []

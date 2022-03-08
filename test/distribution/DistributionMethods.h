@@ -157,11 +157,14 @@ void testDistributionMethods() {
   std::vector<eckit::LocalConfiguration> dist_types;
   conf.get("distribution types", dist_types);
   for (std::size_t i = 0; i < dist_types.size(); ++i) {
-    eckit::LocalConfiguration DistConfig = dist_types[i];
+    eckit::LocalConfiguration DistConfig(dist_types[i], "distribution");
     oops::Log::debug() << "Distribution::DistributionTypes: conf: "
                        << DistConfig << std::endl;
 
-    std::unique_ptr<ioda::Distribution> TestDist = DistributionFactory::create(MpiComm, DistConfig);
+    DistributionParametersWrapper params;
+    params.validateAndDeserialize(DistConfig);
+    std::unique_ptr<ioda::Distribution> TestDist =
+         DistributionFactory::create(MpiComm, params.params);
     const std::string DistName = TestDist->name();
 
     // initialize distributions

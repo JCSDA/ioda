@@ -5,10 +5,9 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#include "eckit/config/LocalConfiguration.h"
-
 #include "ioda/distribution/Accumulator.h"
 #include "ioda/distribution/Distribution.h"
+#include "ioda/distribution/DistributionParametersBase.h"
 #include "ioda/distribution/DistributionUtils.h"
 #include "ioda/distribution/InefficientDistribution.h"
 #include "ioda/distribution/ReplicaOfNonoverlappingDistribution.h"
@@ -146,7 +145,7 @@ std::shared_ptr<Distribution> createReplicaDistribution(
   if (master->isNonoverlapping())
     return std::make_shared<ReplicaOfNonoverlappingDistribution>(comm, std::move(master));
   else if (master->isIdentity())
-    return std::make_shared<InefficientDistribution>(comm, eckit::LocalConfiguration());
+    return std::make_shared<InefficientDistribution>(comm, EmptyDistributionParameters());
   else
     return std::make_shared<ReplicaOfGeneralDistribution>(comm, std::move(master),
                                                           masterRecordNums);

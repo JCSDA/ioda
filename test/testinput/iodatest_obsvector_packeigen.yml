@@ -8,7 +8,8 @@ observations:
     - air_temperature
     obsdatain:
       obsfile: Data/testinput_tier_1/sondes_obs_2018041500_m.nc4
-    distribution: RoundRobin
+    distribution:
+      name: RoundRobin
   mask variable: GsiUseFlag
   reference local masked nobs: [10, 6, 7, 7]
   reference local masked norm: [669.808, 518.574, 561.086, 562.164]
@@ -22,7 +23,8 @@ observations:
     - northward_wind
     obsdatain:
       obsfile: Data/testinput_tier_1/sondes_obs_2018041500_m.nc4
-    distribution: RoundRobin
+    distribution:
+      name: RoundRobin
   mask variable: GsiUseFlag
   reference local masked nobs: [63, 63, 53, 53]
   reference local masked norm: [670.868, 519.644, 561.659, 563.098]
@@ -33,7 +35,8 @@ observations:
     - air_temperature
     obsdatain:
       obsfile: Data/testinput_tier_1/sondes_obs_2018041500_m.nc4
-    distribution: InefficientDistribution
+    distribution:
+      name: InefficientDistribution
   mask variable: GsiUseFlag
   reference local masked nobs: [30, 30, 30, 30]
   reference local masked norm: [1161.21, 1161.21, 1161.21, 1161.21]
@@ -47,7 +50,8 @@ observations:
     - northward_wind
     obsdatain:
       obsfile: Data/testinput_tier_1/sondes_obs_2018041500_m.nc4
-    distribution: InefficientDistribution
+    distribution:
+      name: InefficientDistribution
   mask variable: GsiUseFlag
   reference local masked nobs: [232, 232, 232, 232]
   reference local masked norm: [1163.03, 1163.03, 1163.03, 1163.03]
@@ -58,7 +62,8 @@ observations:
     - air_temperature
     obsdatain:
       obsfile: Data/testinput_tier_1/sondes_obs_2018041500_m.nc4
-    distribution: Halo
+    distribution:
+      name: Halo
   mask variable: GsiUseFlag
   reference local masked nobs: [30, 30, 30, 30] 
   reference local masked norm: [1161.21, 1161.21, 1161.21, 1161.21]
@@ -72,7 +77,8 @@ observations:
     - northward_wind
     obsdatain:
       obsfile: Data/testinput_tier_1/sondes_obs_2018041500_m.nc4
-    distribution: Halo
+    distribution:
+      name: Halo
   mask variable: GsiUseFlag
   reference local masked nobs: [232, 232, 232, 232]
   reference local masked norm: [1163.03, 1163.03, 1163.03, 1163.03]

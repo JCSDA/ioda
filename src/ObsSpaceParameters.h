@@ -13,6 +13,7 @@
 
 #include "ioda/core/FileFormat.h"
 #include "ioda/core/ParameterTraitsFileFormat.h"
+#include "ioda/distribution/DistributionFactory.h"
 #include "ioda/Misc/DimensionScales.h"
 #include "ioda/Misc/Dimensions.h"
 #include "ioda/io/ObsIoFactory.h"
@@ -204,8 +205,8 @@ class ObsTopLevelParameters : public oops::ObsSpaceParametersBase {
     /// name of obs space
     oops::RequiredParameter<std::string> obsSpaceName{"name", this};
 
-    /// name of MPI distribution
-    oops::Parameter<std::string> distName{"distribution", "RoundRobin", this};
+    /// parameters of the MPI distribution
+    oops::Parameter<DistributionParametersWrapper> distribution{"distribution", {}, this};
 
     /// If saveObsDistribution/"save obs distribution" set to true,
     /// global location indices and record numbers will be stored
@@ -226,12 +227,6 @@ class ObsTopLevelParameters : public oops::ObsSpaceParametersBase {
     /// Simulated variables whose observed values may be absent from the input file, but must be
     /// created (computed) by the start of the data assimilation stage.
     oops::Parameter<oops::Variables> derivedSimVars{"derived simulated variables", {}, this};
-
-    /// Halo distribution center
-    oops::OptionalParameter<std::vector<float>> haloCenter{"center", this};
-
-    /// Halo distribution radius
-    oops::OptionalParameter<float> haloRadius{"radius", this};
 
     /// output specification by writing to a file
     oops::OptionalParameter<ObsFileOutParameters> obsOutFile{"obsdataout", this};

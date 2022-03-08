@@ -43,7 +43,8 @@ observations:
     # Distribution name specified here should not matter -- the "read obs from separate file"
     # option should force the RoundRobin distribution to be used instead.
     name: "Inefficient"
-    distribution: InefficientDistribution
+    distribution:
+      name: InefficientDistribution
     simulated variables: ['temperature']
     obsdatain:
       read obs from separate file: true

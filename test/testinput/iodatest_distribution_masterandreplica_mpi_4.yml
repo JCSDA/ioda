@@ -19,7 +19,8 @@ observations:
         group variables: [group_by_int]
         # group_by_int@MetaData = 1, 1, 1, 2, 3, 3, 1, 1, 1, 1 ;
     simulated variables: [temperature]
-    distribution: RoundRobin
+    distribution:
+      name: RoundRobin
     extension:
       average profiles onto model levels: 3
   specs:
@@ -64,8 +65,9 @@ observations:
         group variables: [longitude]
         # longitude@MetaData = 1, 21, 41, 61, 81, 101, 121, 141, 161, 181
     simulated variables: [temperature]
-    distribution: Halo
-    radius: 8000000
+    distribution:
+      name: Halo
+      radius: 8000000
   specs:
     gnlocs: 10
     allgatherv: [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ]
@@ -108,8 +110,9 @@ observations:
         group variables: [longitude]
         # longitude@MetaData = 1, 21, 41, 61, 81, 101, 121, 141, 161, 181
     simulated variables: [temperature]
-    distribution: Halo
-    radius: 8000000  # a bit less than 1/4 of equator length
+    distribution:
+      name: Halo
+      radius: 8000000  # a bit less than 1/4 of equator length
     extension:
       average profiles onto model levels: 3
   specs:
