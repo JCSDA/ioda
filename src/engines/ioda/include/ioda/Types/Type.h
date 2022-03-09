@@ -14,6 +14,7 @@
  * \brief Interfaces for ioda::Type and related classes. Implements the type system.
  */
 #include <array>
+#include <chrono>
 #include <cstring>
 #include <functional>
 #include <gsl/gsl-lite.hpp>
@@ -56,7 +57,8 @@ enum class BasicTypes {
   int64_,
   uint64_,
   bool_,
-  str_
+  str_,
+  datetime_
 };
 
 /// \brief Data Types can be grouped into a few categories. These are the categories.
@@ -308,27 +310,21 @@ IODA_ADD_FUNDAMENTAL_TYPE(long double);
 
 #undef IODA_ADD_FUNDAMENTAL_TYPE
 
-/*
-/// Used in an example. Incomplete.
-/// \todo Pop off std::array as a 1-D object
-template<> inline Type GetType<std::array<int,2>, 0>
-        (gsl::not_null<const ::ioda::detail::Type_Provider*> t,
-        std::initializer_list<Dimensions_t>, void*) {
-        return t->makeArrayType({2}, typeid(std::array<int,2>), typeid(int)); }
+// Time types
+typedef std::chrono::time_point<std::chrono::system_clock> Chrono_Time_Point_default_t;
+typedef int64_t Chrono_Time_Storage_t;
+constexpr char Chrono_Time_Format[] = "%Y-%m-%dT%H:%M:%SZ";
 
-*/
+/// \brief Instructs IODA how to create a Data Type that can handle time_point.
+template <>
+inline Type GetType<Chrono_Time_Point_default_t, 0>(
+  gsl::not_null<const ::ioda::detail::Type_Provider*> t, std::initializer_list<Dimensions_t>,
+  void*) {
+  return t->makeFundamentalType(typeid(Chrono_Time_Storage_t));
+}
 
-/*
-template <class DataType, int Array_Type_Dimensionality = 0>
-Type GetType(
-        gsl::not_null<const ::ioda::detail::Type_Provider*> t,
-        std::initializer_list<Dimensions_t> Adims = {},
-        typename std::enable_if<!is_string<DataType>::value>::type* = 0);
-template <class DataType, int String_Type_Length = constants::_Variable_Length>
-Type GetType(
-        gsl::not_null<const ::ioda::detail::Type_Provider*> t,
-        typename std::enable_if<is_string<DataType>::value>::type* = 0);
-        */
+
+// Wrappers to make GetType work
 
 /// \brief Wrapper struct to call GetType. Needed because of C++ template rules.
 /// \ingroup ioda_cxx_types
@@ -344,17 +340,7 @@ struct GetType_Wrapper {
 /// \ingroup ioda_cxx_types
 typedef std::function<Type(gsl::not_null<const ::ioda::detail::Type_Provider*>)>
   TypeWrapper_function;
-/*
-template <class DataType, int Length = 0, typename = std::enable_if_t<is_string<DataType>::value>>
-struct GetType_Wrapper {
-        Type GetType(gsl::not_null<const ::ioda::detail::Type_Provider*> t) const {
-                // string split
-                return ::ioda::Types::GetType<DataType, Length>(t);
-        }
-};
-*/
 
-// inline Encapsulated_Handle GetTypeFixedString(Dimensions_t sz);
 }  // namespace Types
 }  // namespace ioda
 

@@ -34,12 +34,26 @@ void setupHasVariables(pybind11::module& m) {
     .def("remove", &Has_Variables::remove, "Remove a variable", py::arg("name"))
     .def("open", &Has_Variables::open, "Open a variable", py::arg("name"))
     .def("list", &Has_Variables::list, "The names of all variables")
-
+    .def("getTypeProvider",
+         &Has_Variables::getTypeProvider,
+         py::return_value_policy::reference_internal,
+         "Get an interface for creating new data types for this backend")
     .def("create", &Has_Variables::_create_py, "Create a variable", py::arg("name"),
-         py::arg("dtype"), py::arg("dimsCur") = std::vector<Dimensions_t>{1},
+         py::arg("dtype"),
+         py::arg("dimsCur") = std::vector<Dimensions_t>{1},
          py::arg("dimsMax") = std::vector<Dimensions_t>{},
          py::arg("scales")  = std::vector<Variable>{},
-         py::arg("params")  = VariableCreationParameters())
+         py::arg("params")  = VariableCreationParameters()
+         )
+    .def("create",
+         static_cast<Variable (Has_Variables::*)(const std::string&, const Type&, const std::vector<Dimensions_t>&, const std::vector<Dimensions_t>&, const VariableCreationParameters&)>(&Has_Variables::create),
+         "Create a variable",
+         py::arg("name"),
+         py::arg("dtype"),
+         py::arg("dimsCur") = std::vector<Dimensions_t>{1},
+         py::arg("dimsMax") = std::vector<Dimensions_t>{},
+         py::arg("params")  = VariableCreationParameters()
+         )
     .def("__repr__",
          [](const Has_Variables& g) {
            std::ostringstream out;

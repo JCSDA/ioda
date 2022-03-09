@@ -1,6 +1,6 @@
 #pragma once
 /*
- * (C) Copyright 2020 UCAR
+ * (C) Copyright 2020-2022 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -8,8 +8,12 @@
 /// \file macros.h
 /// \brief Python bindings - macros
 
+#include <chrono>
 #include <string>
 #include <vector>
+
+#include <pybind11/chrono.h>
+#include <pybind11/stl.h>
 
 #ifdef _MSC_FULL_VER
 #pragma warning(disable : 4267)  // Python interface
@@ -101,7 +105,8 @@ PATTERN("bool", funcname, classname, bool)   \
   PATTERN("lint", actualname, classname, long int)                            \
   PATTERN("ulint", actualname, classname, unsigned long int)                  \
   PATTERN("llint", actualname, classname, long long int)                      \
-  PATTERN("ullint", actualname, classname, unsigned long long int)
+  PATTERN("ullint", actualname, classname, unsigned long long int)            \
+  PATTERN("datetime", actualname, classname, std::chrono::time_point<std::chrono::system_clock>)
 
 #define CLASS_TEMPLATE_FUNCTION_PATTERN(actualname, classname, PATTERN) \
   PATTERN("str", actualname, classname, std::string)                    \

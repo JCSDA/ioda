@@ -19,6 +19,7 @@ macro(AddExample ExName SourceFile Group IncludeObsStore)
     endif()
 endmacro()
 
+AddExample(ioda-engines_chrono chrono.cpp "ioda/Advanced/Complex Data Types" NO)
 AddExample(ioda-engines_complex_objects_array_from_struct array_from_struct.cpp "ioda/Advanced/Complex Data Types" YES)
 AddExample(ioda-engines_fixed_length_strings fixed_length_strings.cpp "ioda/Advanced/Complex Data Types" NO)
 AddExample(ioda-engines_fixed_length_strings_client fixed_length_strings_client.cpp "ioda/Advanced/Complex Data Types" NO)

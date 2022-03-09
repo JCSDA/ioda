@@ -351,7 +351,9 @@ void Has_Variables_Base::_py_fvp_helper(BasicTypes dataType, FillValuePolicy& fv
               {BasicTypes::uint_, applyFillValuePolicy<unsigned int>},
               {BasicTypes::ulint_, applyFillValuePolicy<unsigned long int>},
               {BasicTypes::ullint_, applyFillValuePolicy<unsigned long long int>},
-              {BasicTypes::ushort_, applyFillValuePolicy<unsigned short int>}};
+              {BasicTypes::ushort_, applyFillValuePolicy<unsigned short int>},
+              {BasicTypes::datetime_, applyFillValuePolicy<int64_t>}
+              };
     if (fvp_map.count(dataType))
       fvp_map.at(dataType)(fvp, params.fillValue_);
     else

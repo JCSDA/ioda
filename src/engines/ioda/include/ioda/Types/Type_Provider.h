@@ -1,6 +1,6 @@
 #pragma once
 /*
- * (C) Copyright 2020-2021 UCAR
+ * (C) Copyright 2020-2022 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -63,6 +63,10 @@ public:
   /// \param cset is the character set used by the string type. ASCII or UTF8.
   virtual Type makeStringType(std::type_index typeOuter, size_t string_length = 0,
                               StringCSet cset = StringCSet::UTF8) const;
+
+  /// \brief Python convenience function.
+  /// \deprecated This will by superseded very soon by the IODA type system refactor.
+  Type _py_makeStringType(size_t stringLength = 0, StringCSet cset = StringCSet::UTF8) const;
 
   /// When a pointer is passed from the backend to the frontend, who has to free it?
   virtual PointerOwner getReturnedPointerOwner() const;

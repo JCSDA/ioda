@@ -39,16 +39,12 @@ namespace FillValuePolicies {
 
 template <class T>
 T FillValue_default() {
-  return 0;
+  return T{}; // Zero for most types. Default construction for others.
 }
 
 template <class T>
 T HDF5_default() {
   return FillValue_default<T>();
-}
-template <>
-inline std::string HDF5_default<std::string>() {
-  return std::string();
 }
 
 /// \ingroup ioda_cxx_variable
@@ -59,16 +55,8 @@ T netCDF4_default() {
   return FillValue_default<T>();
 }
 template <>
-inline std::string netCDF4_default<std::string>() {
-  return std::string();
-}
-template <>
 inline signed char netCDF4_default<signed char>() {
   return static_cast<signed char>(-127);
-}
-template <>
-inline char netCDF4_default<char>() {
-  return static_cast<char>(0);
 }
 template <>
 inline int16_t netCDF4_default<int16_t>() {

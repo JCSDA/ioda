@@ -92,6 +92,7 @@ list(APPEND SRCS_TYPES
 	include/ioda/Types/Type.h
 	include/ioda/Types/Type_Provider.h
 	src/ioda/Has_Types.cpp
+	src/ioda/Marshalling.cpp
 	src/ioda/Type.cpp
 	src/ioda/Type_Provider.cpp
 	)

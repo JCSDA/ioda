@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2020 UCAR
+ * (C) Copyright 2020-2022 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -27,6 +27,11 @@ Type Type_Provider::makeArrayType(std::initializer_list<Dimensions_t>, std::type
 
 Type Type_Provider::makeStringType(std::type_index, size_t, StringCSet) const {
   throw Exception("Backend does not implement string types.", ioda_Here());
+}
+
+Type Type_Provider::_py_makeStringType(size_t stringLength, StringCSet cset) const
+{
+  return makeStringType(typeid(std::string), stringLength, cset);
 }
 
 PointerOwner Type_Provider::getReturnedPointerOwner() const { return PointerOwner::Caller; }

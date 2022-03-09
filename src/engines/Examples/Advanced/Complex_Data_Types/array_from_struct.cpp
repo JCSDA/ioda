@@ -150,7 +150,7 @@ struct Object_Accessor_Something_Like_DateTime {
   /// \note const_serialized_type is self-destructing and takes care of deallocation when we no longer
   ///   need the serialized buffer.
   /// \see Marshalled_Data in Marshalling.h.
-  const_serialized_type serialize(::gsl::span<const Something_Like_DateTime> d) {
+  const_serialized_type serialize(::gsl::span<const Something_Like_DateTime> d, const ioda::Has_Attributes* = nullptr) {
     // Marshalled_Data implements a vector of values. These values are numbers for fundamental numeric types,
     // but are typically pointers for more complex types.
     auto res          = std::make_shared<Marshalled_Data<uint64_t>>();
@@ -177,7 +177,7 @@ struct Object_Accessor_Something_Like_DateTime {
 
   /// \brief Function that converts the data from a stream into distinct objects. These objects
   ///   already exist, thanks to prep_deserialize. The deserialize function fills in data members.
-  void deserialize(serialized_type p, gsl::span<Something_Like_DateTime> data) {
+  void deserialize(serialized_type p, gsl::span<Something_Like_DateTime> data, const ioda::Has_Attributes* = nullptr) {
     const size_t ds = data.size(), dp = p->DataPointers.size();
     if (ds != dp / elementsPerObject_)
       throw Exception("You are reading the wrong amount of data!", ioda_Here())

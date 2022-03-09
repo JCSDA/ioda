@@ -286,7 +286,7 @@ public:
                                 const Selection& file_selection = Selection::all) {
     try {
       Marshaller m;
-      auto d = m.serialize(data);
+      auto d = m.serialize(data, &atts);
       return write(gsl::make_span<const char>(
                       reinterpret_cast<const char*>(d->DataPointers.data()),
                      d->DataPointers.size() * Marshaller::bytesPerElement_),
@@ -316,7 +316,7 @@ public:
                                 const Selection& file_selection = Selection::all) {
     try {
       Marshaller m;
-      auto d = m.serialize(data);
+      auto d = m.serialize(data, &atts);
       return write(gsl::make_span<const char>(
                       reinterpret_cast<const char*>(d->DataPointers.data()),
                      d->DataPointers.size() * Marshaller::bytesPerElement_),
@@ -485,7 +485,7 @@ public:
              // which works because address pointers have the same size.
              p->DataPointers.size() * Marshaller::bytesPerElement_),
            TypeWrapper::GetType(getTypeProvider()), mem_selection, file_selection);
-      m.deserialize(p, data);
+      m.deserialize(p, data, &atts);
 
       return Variable_Implementation{backend_};
     } catch (...) {

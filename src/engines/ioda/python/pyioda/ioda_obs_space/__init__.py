@@ -107,6 +107,7 @@ class ObsSpace:
                                      len(attrVal)).writeVector.int32(attrVal)
             # add other elif here TODO
         except AttributeError:  # if string
+            # TODO(CoryMartin-NOAA): Sprint PR: see chrono.py for how to write fixed-length string attributes.
             if (type(attrVal) == str):
                 attrType = ioda.Types.str
                 self.obsgroup.atts.create(
