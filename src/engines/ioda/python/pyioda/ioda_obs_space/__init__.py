@@ -58,17 +58,28 @@ class ObsSpace:
         """
         _attr = self.obsgroup.atts.open(attrName)
         # figure out what datatype the attribute is
-        if _attr.isA2(ioda.Types.float):
-            # float
-            attrval = _attr.readVector.float()
-        elif _attr.isA2(ioda.Types.int):
-            # integer
-            attrval = _attr.readVector.int()
-        elif _attr.isA2(ioda.Types.str):
+        attrType = _attr.getType()
+        attrTypeSize = attrType.getSize()
+        if (attrType.getClass() == ioda.TypeClass.Integer):
+            if (attrTypeSize == 4):
+                # int
+                attrval = _attr.readVector.int()
+            elif (attrTypeSize == 8):
+                # long
+                attrval = _attr.readVector.int64()
+        elif (attrType.getClass() == ioda.TypeClass.Float):
+            if (attrTypeSize == 4):
+                # float
+                attrval = _attr.readVector.float()
+            elif (attrTypeSize == 8):
+                # float
+                attrval = _attr.readVector.double()
+        elif (attrType.getClass() == ioda.TypeClass.String):
             # string
             attrval = _attr.readVector.str()
         else:
             raise TypeError(f"Attribute {attrName} type not supported")
+
         if len(attrval) == 1:
             attrval = attrval[0]
         return attrval
@@ -158,6 +169,10 @@ class ObsSpace:
 
     def create_var(self, varname, groupname=None, dtype=np.dtype('float32'),
                    dim_list=['nlocs'], fillval=None):
+        # If the variable is dateTime and it is not already in the native int64
+        # form, then change the dtype to 'M' which is the numpy datetime object type.
+        if (varname == 'MetaData/dateTime') and (dtype != np.dtype('int64')):
+            dtype = np.dtype('M')
         dtype_tmp = np.array([],dtype=dtype)
         typeVar = self.NumpyToIodaDtype(dtype_tmp)
         _varstr = varname
@@ -189,6 +204,8 @@ class ObsSpace:
             params.setFillValue.int32(value)
         elif datatype == ioda.Types.str:
             params.setFillValue.str(value)
+        elif datatype == ioda.Types.datetime:
+            params.setFillValue.datetime(dt.datetime(9999,1,1))
         # add other elif here TODO
         return params
 
@@ -216,8 +233,16 @@ class ObsSpace:
             IodaDtype = ioda.Types.int16
         elif (NumpyDtype == np.dtype('S1')):
             IodaDtype = ioda.Types.str
+        elif (NumpyDtype == np.dtype('M')):
+            IodaDtype = ioda.Types.datetime
         elif (NumpyDtype == np.dtype('object')):
-            IodaDtype = ioda.Types.str
+            try:
+                if (isinstance(NumpyArr[0], dt.datetime)):
+                    IodaDtype = ioda.Types.datetime
+                else:
+                    IodaDtype = ioda.Types.str
+            except IndexError:
+                IodaDtype = ioda.Types.str
         else:
             try:
                 a = str(NumpyArr[0])
@@ -273,6 +298,14 @@ class ObsSpace:
                 self._iodavar.writeNPArray.int32(npArray)
             elif datatype == ioda.Types.str:
                 self._iodavar.writeVector.str(npArray)
+            elif datatype == ioda.Types.datetime:
+                self._iodavar.writeVector.datetime(npArray)
+                epochstr = 'seconds since 1970-01-01T00:00:00Z'
+                self._iodavar.atts.create(
+                    'units', ioda.Types.str, [1]).writeDatum.str(epochstr)
+                # update the attributes data member since we have added this attribute
+                # after we created the variable
+                self.attrs = self._iodavar.atts.list()
             # add other elif here TODO
 
         def read_attr(self, attrName):
@@ -281,17 +314,28 @@ class ObsSpace:
             """
             _attr = self._iodavar.atts.open(attrName)
             # figure out what datatype the attribute is
-            if _attr.isA2(ioda.Types.float):
-                # float
-                attrval = _attr.readVector.float()
-            elif _attr.isA2(ioda.Types.int):
-                # integer
-                attrval = _attr.readVector.int()
-            elif _attr.isA2(ioda.Types.str):
+            attrType = _attr.getType()
+            attrTypeSize = attrType.getSize()
+            if (attrType.getClass() == ioda.TypeClass.Integer):
+                if (attrTypeSize == 4):
+                    # int
+                    attrval = _attr.readVector.int()
+                elif (attrTypeSize == 8):
+                    # long
+                    attrval = _attr.readVector.int64()
+            elif (attrType.getClass() == ioda.TypeClass.Float):
+                if (attrTypeSize == 4):
+                    # float
+                    attrval = _attr.readVector.float()
+                elif (attrTypeSize == 8):
+                    # float
+                    attrval = _attr.readVector.double()
+            elif (attrType.getClass() == ioda.TypeClass.String):
                 # string
                 attrval = _attr.readVector.str()
             else:
                 raise TypeError(f"Attribute {attrName} type not supported")
+
             if len(attrval) == 1:
                 attrval = attrval[0]
             return attrval
@@ -340,14 +384,38 @@ class ObsSpace:
               returns numpy array/python list of variable data
             """
             # figure out what datatype the variable is
-            if self._iodavar.isA2(ioda.Types.float):
-                # float
-                data = self._iodavar.readNPArray.float()
-                data[np.abs(data) > 9e36] = np.nan # undefined values
-            elif self._iodavar.isA2(ioda.Types.int):
-                # integer
-                data = self._iodavar.readNPArray.int()
-            elif self._iodavar.isA2(ioda.Types.str):
+            varType = self._iodavar.getType()
+            varTypeSize = varType.getSize()
+            if (varType.getClass() == ioda.TypeClass.Integer):
+                if (varTypeSize == 4):
+                    # int
+                    data = self._iodavar.readNPArray.int32()
+                elif (varTypeSize == 8):
+                    # long
+                    if 'units' in self.attrs:
+                        varunits = self.read_attr('units')
+                        if 'since' in varunits:
+                            data = self._iodavar.readVector.datetime()
+                            # Ioda stores datetimes as int64 with the assumption that
+                            # they are UTC times. If we get a naive object (no time zone
+                            # specified, tzinfo == None), change it to UTC.
+                            if data[0].tzinfo is None:
+                                for i in range(len(data)):
+                                    data[i] = data[i].replace(tzinfo=dt.timezone.utc)
+                        else:
+                            data = self._iodavar.readNPArray.int64()
+                    else:
+                        data = self._iodavar.readNPArray.int64()
+            elif (varType.getClass() == ioda.TypeClass.Float):
+                if (varTypeSize == 4):
+                    # float
+                    data = self._iodavar.readNPArray.float()
+                    data[np.abs(data) > 9e36] = np.nan # undefined values
+                elif (varTypeSize == 8):
+                    # float
+                    data = self._iodavar.readNPArray.double()
+                    data[np.abs(data) > 9e36] = np.nan # undefined values
+            elif (varType.getClass() == ioda.TypeClass.String):
                 # string
                 data = self._iodavar.readVector.str() # ioda cannot read str to datetime...
                 # convert to datetimes if applicable
@@ -355,6 +423,7 @@ class ObsSpace:
                     data = self._str_to_datetime(data)
             else:
                 raise TypeError(f"Variable {self._varstr} type not supported")
+
             # reshape if it is a 2D array with second dim size 1
             try:
                 if data.shape[1] == 1:

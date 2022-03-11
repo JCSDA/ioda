@@ -35,7 +35,8 @@ if(BUILD_TESTING)
 	AddPyExample(04-VariablesAttributesAndDimensions "")
 	AddPyExample(05-ObsGroup "")
 	AddPyExample(06-ReadIodaOutputFile ${IODA_TEST_DATA_DIR}/sample_hofx_output_amsua_n19.nc4 )
-	AddPyExample(07-ObsSpaceClass ${IODA_TEST_DATA_DIR}/sample_hofx_output_amsua_n19.nc4 )
+	AddPyExample(07a-ObsSpaceClass ${IODA_TEST_DATA_DIR}/sample_hofx_output_amsua_n19.nc4 )
+	AddPyExample(07b-ObsSpaceClassDataTypes "")
 
 	AddPyExample(chrono "")
 	

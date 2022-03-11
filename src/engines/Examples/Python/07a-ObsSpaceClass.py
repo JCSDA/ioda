@@ -38,3 +38,11 @@ testdata = testvar.read_data()
 print(f"INFO: hofx/brightness_temperature min: {np.nanmin(testdata)}")
 print(f"INFO: hofx/brightness_temperature max: {np.nanmax(testdata)}")
 print(f"INFO: hofx/brightness_temperature mean: {np.nanmean(testdata)}")
+
+# read the times
+timevar = obsspace.Variable('MetaData/datetime')
+timedata = timevar.read_data()
+
+# print the first and last times
+print(f"INFO: MetaData/dateTime first: {timedata[0].strftime('%Y-%m-%d %H:%M:%S UTC')}")
+print(f"INFO: MetaData/dateTime last: {timedata[-1].strftime('%Y-%m-%d %H:%M:%S UTC')}")
