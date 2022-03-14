@@ -55,13 +55,20 @@ Halo::Halo(const eckit::mpi::Comm & Comm,
   eckit::geometry::Point2 center(centerd[0], centerd[1]);
   center_ = center;
 
-  // Note radius here is a sum of the patchRadius and localization radii
-  // which has updated in "oops/src/oops/runs/LocalEnsembleDA.h",
+  // Note, params.radius here is the patchRadius (e.g. encircles grid points on this PE),
+  // params.radius is updated in "oops/src/oops/runs/LocalEnsembleDA.h"
   // when "update obs config with geometry info" is set to true.
+  // To include observations outside of the local patch in a region(called "halo"),
+  // params.haloSize is added to radius to cover the halo region.
+  // The default value of params.haloSize is zero.
+
   radius_ = params.radius;
+  double haloSize = params.haloSize;
+
+  radius_ += haloSize;
 
   oops::Log::debug() << "Halo constructed: center: " << center_ << " radius: "
-                     << radius_ << std::endl;
+                     << radius_ << " haloSize: " << haloSize << std::endl;
 }
 
 // -----------------------------------------------------------------------------

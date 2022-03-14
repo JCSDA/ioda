@@ -29,6 +29,7 @@ class HaloDistributionParameters : public DistributionParametersBase {
  public:
   oops::OptionalParameter<std::vector<double>> center{"center", this};
   oops::Parameter<double> radius{"radius", 50000000.0, this};
+  oops::Parameter<double> haloSize{"halo size", 0.0, this};
 };
 
 

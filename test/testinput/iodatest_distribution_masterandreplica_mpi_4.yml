@@ -67,7 +67,8 @@ observations:
     simulated variables: [temperature]
     distribution:
       name: Halo
-      radius: 8000000
+      radius: 7000000
+      halo size: 1000000
   specs:
     gnlocs: 10
     allgatherv: [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ]
@@ -112,7 +113,8 @@ observations:
     simulated variables: [temperature]
     distribution:
       name: Halo
-      radius: 8000000  # a bit less than 1/4 of equator length
+      radius: 7000000  # a bit less than 1/4 of equator length
+      halo size: 1000000
     extension:
       average profiles onto model levels: 3
   specs:
