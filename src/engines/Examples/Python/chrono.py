@@ -10,17 +10,10 @@
 # of the chrono.cpp example.
 
 import datetime
-import os
 import sys
-import time
 
 import ioda
 import numpy as np
-
-# Needed for now because of how pybind11 calls localtime.
-# See https://github.com/pybind/pybind11/blob/master/include/pybind11/chrono.h#L120
-os.environ['TZ'] = 'UTC'
-time.tzset()
 
 f = ioda.Engines.HH.createFile(
     name = "chrono-python.hdf5",

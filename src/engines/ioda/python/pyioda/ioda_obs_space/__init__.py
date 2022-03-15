@@ -205,7 +205,7 @@ class ObsSpace:
         elif datatype == ioda.Types.str:
             params.setFillValue.str(value)
         elif datatype == ioda.Types.datetime:
-            params.setFillValue.datetime(dt.datetime(9999,1,1))
+            params.setFillValue.datetime(dt.datetime(9999, 1, 1, tzinfo=dt.timezone.utc))
         # add other elif here TODO
         return params
 
@@ -299,6 +299,9 @@ class ObsSpace:
             elif datatype == ioda.Types.str:
                 self._iodavar.writeVector.str(npArray)
             elif datatype == ioda.Types.datetime:
+                if npArray[0].tzinfo is None:
+                    for i in range(len(npArray)):
+                        npArray[i] = npArray[i].replace(tzinfo=dt.timezone.utc)
                 self._iodavar.writeVector.datetime(npArray)
                 epochstr = 'seconds since 1970-01-01T00:00:00Z'
                 self._iodavar.atts.create(

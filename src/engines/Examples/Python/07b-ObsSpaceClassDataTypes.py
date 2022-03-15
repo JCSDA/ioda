@@ -13,17 +13,11 @@ import os
 import sys
 import numpy as np
 import datetime
-import time
 
 if os.environ.get('LIBDIR') is not None:
     sys.path.append(os.environ['LIBDIR'])
 
 import ioda_obs_space as ioda_ospace
-
-# Needed for now because of how pybind11 calls localtime.
-# See https://github.com/pybind/pybind11/blob/master/include/pybind11/chrono.h#L120
-os.environ['TZ'] = 'UTC'
-time.tzset()
 
 testFile = "Example-07b-python.hdf5"
 
