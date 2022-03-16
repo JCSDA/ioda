@@ -276,17 +276,42 @@ Eigen::Array<T, Eigen::Dynamic, 1> DataFromSQL::getVarnoColumn(const std::vector
       num_rows = num_rows + numberOfRowsForVarno(it);
     }
   }
+
+  // Number of entries for each varno.
+  std::map <int, int> varno_size;
+  for (const int varno : varnos)
+    varno_size[varno] = numberOfRowsForVarno(varno) / number_of_metadata_rows_;
+
+  // Mapping between user-desired varno order and the order in the data set.
+  std::map <int, std::vector<int>> varno_order_map;
+  for (const int varno_requested_order : varnos) {
+    for (size_t irow = 0; irow < number_of_rows_; irow++) {
+      if (varno_requested_order == getData(irow, varno_index))
+        varno_order_map[varno_requested_order].push_back(irow);
+    }
+  }
+
+  // Current index for each vector associated with a varno.
+  std::map <int, int> varno_current_index;
+  for (const int varno : varnos)
+    varno_current_index[varno] = 0;
+
+  // Final ordering of indices to use when filling array of data.
+  std::vector <int> varno_index_order;
+  for (int i = 0; i < number_of_metadata_rows_; ++i) {
+    for (const int varno : varnos) {
+      for (int j = 0; j < varno_size[varno]; ++j) {
+        varno_index_order.push_back(varno_order_map[varno][varno_current_index[varno]++]);
+      }
+    }
+  }
+
   typedef Eigen::Array<T, Eigen::Dynamic, 1> Array;
   Array arr = Array::Constant(num_rows, odb_missing<T>());
   if (nchans == 1) {
     if (column_index != -1 && varno_index != -1) {
-      size_t j = 0;
-      for (size_t i = 0; i < number_of_rows_; i++) {
-        if (std::find(varnos.begin(), varnos.end(), getData(i, varno_index)) != varnos.end()) {
-          arr[j] = getData(i, column_index);
-          j++;
-        }
-      }
+      for (int j = 0; j < varno_index_order.size(); ++j)
+        arr[j] = getData(varno_index_order[j], column_index);
     }
   } else {
     if (column_index != -1 && varno_index != -1) {
