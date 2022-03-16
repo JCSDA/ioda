@@ -487,6 +487,10 @@ std::vector<int64_t> DataFromSQL::getDates(std::string const& date_col,
                                            int64_t const missingInt64) const {
   const Eigen::ArrayXi var_date = getMetadataColumnInt(date_col);
   const Eigen::ArrayXi var_time = getMetadataColumnInt(time_col);
+  Eigen::ArrayXi time_difference;
+  if (obsgroup_ == obsgroup_gpsro) {
+     time_difference = getMetadataColumnInt(std::string("time_difference"));
+  }
   std::vector<int64_t> offsets;
   offsets.reserve(var_date.size());
   for (int i = 0; i < var_date.size(); i++) {
@@ -497,7 +501,10 @@ std::vector<int64_t> DataFromSQL::getDates(std::string const& date_col,
       const int hour   = var_time[i] / 10000;
       const int minute = var_time[i] / 100 - hour * 100;
       const int second = var_time[i] - 10000 * hour - 100 * minute;
-      const util::DateTime datetime(year, month, day, hour, minute, second);
+      util::DateTime datetime(year, month, day, hour, minute, second);
+      if (obsgroup_ == obsgroup_gpsro) {
+        datetime += util::Duration(time_difference[i] * 60);
+      }
       const int64_t offset = (datetime - epoch).toSeconds();
       offsets.push_back(offset);
     } else {
