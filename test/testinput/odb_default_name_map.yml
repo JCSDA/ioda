@@ -713,6 +713,8 @@ varno-independent columns:
     source: "statid"
   - name: "MetaData/station_type"
     source: "station_type"
+  - name: "MetaData/std_dev"
+    source: "std_dev"
   - name: "MetaData/wind_generating_application_1"
     source: "std_gen_app_1"
   - name: "MetaData/wind_generating_application_2"

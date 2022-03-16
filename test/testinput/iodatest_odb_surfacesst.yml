@@ -15,3 +15,5 @@ variables:
 - name: pressure_sensor_alt
 - name: sst_measurement_method
 - name: present_weather_type
+- name: ops_subtype
+- name: station_type
