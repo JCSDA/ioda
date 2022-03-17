@@ -513,7 +513,8 @@ std::vector<int64_t> DataFromSQL::getDates(std::string const& date_col,
   const Eigen::ArrayXi var_date = getMetadataColumnInt(date_col);
   const Eigen::ArrayXi var_time = getMetadataColumnInt(time_col);
   Eigen::ArrayXi time_difference;
-  if (obsgroup_ == obsgroup_gpsro) {
+  bool add_time_diff = obsgroup_ == obsgroup_gpsro && date_col == std::string("date");
+  if (add_time_diff) {
      time_difference = getMetadataColumnInt(std::string("time_difference"));
   }
   std::vector<int64_t> offsets;
@@ -527,7 +528,7 @@ std::vector<int64_t> DataFromSQL::getDates(std::string const& date_col,
       const int minute = var_time[i] / 100 - hour * 100;
       const int second = var_time[i] - 10000 * hour - 100 * minute;
       util::DateTime datetime(year, month, day, hour, minute, second);
-      if (obsgroup_ == obsgroup_gpsro) {
+      if (add_time_diff) {
         datetime += util::Duration(time_difference[i] * 60);
       }
       const int64_t offset = (datetime - epoch).toSeconds();
