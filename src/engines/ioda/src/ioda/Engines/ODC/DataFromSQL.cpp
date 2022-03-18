@@ -529,7 +529,7 @@ std::vector<int64_t> DataFromSQL::getDates(std::string const& date_col,
       const int second = var_time[i] - 10000 * hour - 100 * minute;
       util::DateTime datetime(year, month, day, hour, minute, second);
       if (add_time_diff) {
-        datetime += util::Duration(time_difference[i] * 60);
+        datetime += util::Duration(time_difference[i]);
       }
       const int64_t offset = (datetime - epoch).toSeconds();
       offsets.push_back(offset);
