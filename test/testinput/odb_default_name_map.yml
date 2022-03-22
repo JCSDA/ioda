@@ -849,7 +849,7 @@ varno-dependent columns:
         varno: 242
       - name: "v_ambiguous_wind"
         varno: 243
-      - name: "total_column_water_vapour"
+      - name: "precipitableWater"
         varno: 245
       - name: "liquid_water_pressure"
         varno: 244
