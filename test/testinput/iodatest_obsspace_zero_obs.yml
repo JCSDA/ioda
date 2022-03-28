@@ -9,6 +9,8 @@ observations:
     channels: 1-15
     obsdatain:
       obsfile: "Data/testinput_tier_1/zero_obs_v2.nc4"
+    obsdataout:
+      obsfile: "testoutput/zero_obs_v2_out.nc4"
   test data:
     nlocs: 0
     nrecs: 0
