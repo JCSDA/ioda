@@ -16,3 +16,7 @@ variables:
 - name: undulation
 - name: receipt_time
 - name: receipt_date
+- name: seqno
+- name: initial_level_lat
+- name: initial_level_lon
+- name: initial_vertco_reference
