@@ -17,6 +17,7 @@
 #include "odc/api/odc.h"
 
 #include "oops/util/Duration.h"
+#include "oops/util/Logger.h"
 
 namespace ioda {
 namespace Engines {
@@ -359,6 +360,7 @@ void DataFromSQL::select(const std::vector<std::string>& columns, const std::str
   } else {
     sql = sql + ";";
   }
+  oops::Log::info() << "Using SQL: " << sql << std::endl;
   std::ifstream ifile;
   ifile.open(filename);
   if (ifile) {
