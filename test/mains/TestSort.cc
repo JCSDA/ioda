@@ -7,10 +7,10 @@
 
 #include "oops/runs/Run.h"
 
-#include "ioda/test/ioda/DescendingSort.h"
+#include "ioda/test/ioda/Sort.h"
 
 int main(int argc,  char ** argv) {
   oops::Run run(argc, argv);
-  ioda::test::DescendingSort tests;
+  ioda::test::Sort tests;
   return run.execute(tests);
 }

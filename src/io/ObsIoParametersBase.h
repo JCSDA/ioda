@@ -17,6 +17,35 @@
 
 namespace ioda {
 
+enum class MissingSortValueTreatment {
+  SORT, NO_SORT, IGNORE_MISSING
+};
+
+struct MissingSortValueTreatmentParameterTraitsHelper {
+  typedef MissingSortValueTreatment EnumType;
+  static constexpr char enumTypeName[] = "MissingSortValueTreatment";
+  static constexpr util::NamedEnumerator<MissingSortValueTreatment> namedValues[] = {
+    { MissingSortValueTreatment::SORT, "sort" },
+    { MissingSortValueTreatment::NO_SORT, "do not sort" },
+    { MissingSortValueTreatment::IGNORE_MISSING, "ignore missing" }
+  };
+};
+
+}  // namespace ioda
+
+
+namespace oops {
+
+template <>
+struct ParameterTraits<ioda::MissingSortValueTreatment> :
+    public EnumParameterTraits<ioda::MissingSortValueTreatmentParameterTraitsHelper>
+{};
+
+}  // namespace oops
+
+
+namespace ioda {
+
 constexpr int DEFAULT_FRAME_SIZE = 10000;
 
 /// \brief Options controlling the manner in which observations are grouped into records.
@@ -35,6 +64,10 @@ class ObsGroupingParameters : public oops::Parameters {
 
     /// direction for sort
     oops::Parameter<std::string> obsSortOrder{"sort order", "ascending", this};
+
+    /// treatment of missing sort values
+    oops::Parameter<MissingSortValueTreatment> missingSortValueTreatment{
+      "missing sort value treatment", MissingSortValueTreatment::SORT, this};
 };
 
 /// \brief Base of classes storing the configuration parameters of ObsIo subclasses.

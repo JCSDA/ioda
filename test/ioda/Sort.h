@@ -5,8 +5,8 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#ifndef TEST_IODA_DESCENDINGSORT_H_
-#define TEST_IODA_DESCENDINGSORT_H_
+#ifndef TEST_IODA_SORT_H_
+#define TEST_IODA_SORT_H_
 
 #include <string>
 #include <vector>
@@ -28,7 +28,7 @@ namespace ioda {
 
 namespace test {
 
-void testDescendingSort(const eckit::LocalConfiguration &conf) {
+void testSort(const eckit::LocalConfiguration &conf) {
   // Produce and configure ObsSpace object
   util::DateTime bgn(conf.getString("window begin"));
   util::DateTime end(conf.getString("window end"));
@@ -37,10 +37,7 @@ void testDescendingSort(const eckit::LocalConfiguration &conf) {
   obsParams.validateAndDeserialize(obsSpaceConf);
   ioda::ObsSpace obsdata(obsParams, oops::mpi::world(), bgn, end, oops::mpi::myself());
 
-  // This test only works for grouped data with descending sort order
-  if (obsdata.obs_sort_order() != "descending") {
-    throw eckit::BadValue("Must set sort_order to descending", Here());
-  }
+  // This test only works for grouped data
   if (obsdata.obs_group_vars().empty()) {
     throw eckit::BadValue("Must set group_variable", Here());
   }
@@ -51,7 +48,8 @@ void testDescendingSort(const eckit::LocalConfiguration &conf) {
   // All expected sort indices, obtained from input file
   std::vector <int> expectedIndicesAll;
   expectedIndicesAll.assign(nlocs, 0);
-  obsdata.get_db("MetaData", "expected_indices", expectedIndicesAll, { });
+  const std::string expected_indices_name = conf.getString("expected indices name");
+  obsdata.get_db("MetaData", expected_indices_name, expectedIndicesAll, { });
 
   // Record index for each location
   const std::vector <size_t> recnums = obsdata.recnum();
@@ -78,9 +76,9 @@ void testDescendingSort(const eckit::LocalConfiguration &conf) {
   obsdata.save();
 }
 
-class DescendingSort : public oops::Test {
+class Sort : public oops::Test {
  private:
-  std::string testid() const override {return "ioda::test::DescendingSort";}
+  std::string testid() const override {return "ioda::test::Sort";}
 
   void register_tests() const override {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
@@ -89,9 +87,9 @@ class DescendingSort : public oops::Test {
     for (const std::string & testCaseName : conf.keys())
     {
       const eckit::LocalConfiguration testCaseConf(::test::TestEnvironment::config(), testCaseName);
-      ts.emplace_back(CASE("ioda/DescendingSort/" + testCaseName, testCaseConf)
+      ts.emplace_back(CASE("ioda/Sort/" + testCaseName, testCaseConf)
                       {
-                        testDescendingSort(testCaseConf);
+                        testSort(testCaseConf);
                       });
     }
   }
@@ -102,4 +100,4 @@ class DescendingSort : public oops::Test {
 }  // namespace test
 }  // namespace ioda
 
-#endif  // TEST_IODA_DESCENDINGSORT_H_
+#endif  // TEST_IODA_SORT_H_

@@ -43,6 +43,10 @@
 
 namespace ioda {
 
+constexpr char MissingSortValueTreatmentParameterTraitsHelper::enumTypeName[];
+constexpr util::NamedEnumerator<MissingSortValueTreatment>
+  MissingSortValueTreatmentParameterTraitsHelper::namedValues[];
+
 namespace {
 
 // If the variable name \p name ends with an underscore followed by a number (potentially a channel
@@ -1070,27 +1074,67 @@ void ObsSpace::buildSortedObsGroups() {
     typedef std::map<std::size_t, std::vector<std::pair<float, std::size_t>>> TmpRecIdxMap;
     typedef TmpRecIdxMap::iterator TmpRecIdxIter;
 
+    const float missingFloat = util::missingValue(missingFloat);
+    const util::DateTime missingDateTime = util::missingValue(missingDateTime);
+    const MissingSortValueTreatment missingSortValueTreatment =
+      obs_params_.top_level_.obsIoInParameters().obsGrouping.value().missingSortValueTreatment;
+
     // Get the sort variable from the data store, and convert to a vector of floats.
     std::size_t nLocs = this->nlocs();
     std::vector<float> SortValues(nLocs);
+    std::vector<bool> sortValueMissing(nLocs, false);
     if (this->obs_sort_var() == "dateTime") {
         std::vector<util::DateTime> Dates(nLocs);
         get_db("MetaData", this->obs_sort_var(), Dates);
         for (std::size_t iloc = 0; iloc < nLocs; iloc++) {
             SortValues[iloc] = (Dates[iloc] - Dates[0]).toSeconds();
+            if (Dates[iloc] == missingDateTime)
+              sortValueMissing[iloc] = true;
         }
     } else {
         get_db(this->obs_sort_group(), this->obs_sort_var(), SortValues);
+        for (std::size_t iloc = 0; iloc < nLocs; iloc++) {
+          if (SortValues[iloc] == missingFloat)
+            sortValueMissing[iloc] = true;
+        }
     }
 
     // Construct a temporary structure to do the sorting, then transfer the results
     // to the data member recidx_.
     TmpRecIdxMap TmpRecIdx;
+    // Indices of missing sort values for each record number.
+    std::map<std::size_t, std::vector<std::size_t>> TmpRecIdx_missing;
+    // Whether or not each location in a record has a missing sort value.
+    std::map<std::size_t, std::vector<bool>> sortValueMissingInRecord;
+    // Indicates whether a particular record has at least one missing sort value.
+    std::map<std::size_t, bool> recordContainsAtLeastOneMissingSortValue;
+
     for (size_t iloc = 0; iloc < nLocs; iloc++) {
-        TmpRecIdx[recnums_[iloc]].push_back(std::make_pair(SortValues[iloc], iloc));
+        const std::size_t recnum = recnums_[iloc];
+        if (missingSortValueTreatment == MissingSortValueTreatment::SORT) {
+          TmpRecIdx[recnum].push_back(std::make_pair(SortValues[iloc], iloc));
+        } else if (missingSortValueTreatment == MissingSortValueTreatment::NO_SORT) {
+          TmpRecIdx[recnum].push_back(std::make_pair(SortValues[iloc], iloc));
+          if (sortValueMissing[iloc])
+            recordContainsAtLeastOneMissingSortValue[recnum] = true;
+        } else if (missingSortValueTreatment == MissingSortValueTreatment::IGNORE_MISSING) {
+          if (sortValueMissing[iloc]) {
+            TmpRecIdx_missing[recnum].push_back(iloc);
+            sortValueMissingInRecord[recnum].push_back(true);
+          } else {
+            TmpRecIdx[recnum].push_back(std::make_pair(SortValues[iloc], iloc));
+            sortValueMissingInRecord[recnum].push_back(false);
+          }
+        }
     }
 
     for (TmpRecIdxIter irec = TmpRecIdx.begin(); irec != TmpRecIdx.end(); ++irec) {
+        // Check if any values of the sort variable in this profile are missing.
+        // If so, do not proceed with the sort.
+        if (missingSortValueTreatment == MissingSortValueTreatment::NO_SORT &&
+            recordContainsAtLeastOneMissingSortValue[irec->first])
+          continue;
+
         if (this->obs_sort_order() == "ascending") {
             sort(irec->second.begin(), irec->second.end());
         } else {
@@ -1107,9 +1151,36 @@ void ObsSpace::buildSortedObsGroups() {
 
     // Copy indexing to the recidx_ data member.
     for (TmpRecIdxIter irec = TmpRecIdx.begin(); irec != TmpRecIdx.end(); ++irec) {
-        recidx_[irec->first].resize(irec->second.size());
-        for (std::size_t iloc = 0; iloc < irec->second.size(); iloc++) {
-            recidx_[irec->first][iloc] = irec->second[iloc].second;
+        const size_t recnum = irec->first;
+        recidx_[recnum].resize(irec->second.size());
+        if (missingSortValueTreatment == MissingSortValueTreatment::SORT ||
+            missingSortValueTreatment == MissingSortValueTreatment::NO_SORT) {
+          for (std::size_t iloc = 0; iloc < irec->second.size(); iloc++) {
+            recidx_[recnum][iloc] = irec->second[iloc].second;
+          }
+        } else if (missingSortValueTreatment == MissingSortValueTreatment::IGNORE_MISSING) {
+          // Locations with missing sort values in this record.
+          const std::vector<std::size_t> locations_missing = TmpRecIdx_missing[recnum];
+          // Locations with non-missing sort values in this record.
+          const std::vector<std::pair<float, std::size_t>> locations_present = TmpRecIdx[recnum];
+          // Whether or not sort values are missing at each location in this record.
+          const std::vector<bool> sortValueMissingInThisRecord = sortValueMissingInRecord[recnum];
+          recidx_[recnum].resize(sortValueMissingInThisRecord.size());
+          // Indices of locations with a non-missing sort value.
+          std::vector<std::size_t> locations_present_vector;
+          for (std::size_t iloc = 0; iloc < locations_present.size(); ++iloc) {
+            locations_present_vector.push_back(locations_present[iloc].second);
+          }
+          // Counts of missing and non-missing locations.
+          std::size_t count_present = 0;
+          std::size_t count_missing = 0;
+          for (std::size_t iloc = 0; iloc < sortValueMissingInThisRecord.size(); ++iloc) {
+            if (sortValueMissingInThisRecord[iloc]) {
+              recidx_[recnum][iloc] = locations_missing[count_missing++];
+            } else {
+              recidx_[recnum][iloc] = locations_present_vector[count_present++];
+            }
+          }
         }
     }
 }

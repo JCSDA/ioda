@@ -102,9 +102,9 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsvector_packeigen.yml
   testinput/iodatest_obsvector_pio_observer.yml
   testinput/iodatest_obsvector_pio_read_distributed_files.yml
-  testinput/iodatest_descendingsort.yml
   testinput/iodatest_extendedobsspace.yml
   testinput/iodatest_extendedobsspace_halo.yml
+  testinput/iodatest_sort.yml
   testinput/iodatest_writer_sondes.yml
   testinput/iodatest_odb_abiclear.yml
   testinput/iodatest_odb_ahiclear.yml
@@ -543,9 +543,9 @@ add_fctest( TARGET  test_ioda_obsspace_fortran
             TEST_DEPENDS get_ioda_test_data )
 
 # IODA ObsSpace sorting of obs groups
-ecbuild_add_test( TARGET  test_ioda_descendingsort
-                  SOURCES mains/TestDescendingSort.cc
-                  ARGS    "testinput/iodatest_descendingsort.yml"
+ecbuild_add_test( TARGET  test_ioda_sort
+                  SOURCES mains/TestSort.cc
+                  ARGS    "testinput/iodatest_sort.yml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
