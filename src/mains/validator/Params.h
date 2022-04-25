@@ -161,6 +161,8 @@ class GroupParameters : public oops::Parameters {
   oops::Parameter<ListReqOptionalParameters> atts{"Valid Attributes", ListReqOptionalParameters(),
                                                   this};
   oops::OptionalParameter<TypeType_> type{"OverrideType", this};
+  oops::OptionalParameter<bool> forceunits{"Force Units", this};
+  oops::OptionalParameter<std::string> units{"OverrideUnits", this};
   oops::Parameter<bool> required{"Required", false, this};
   oops::Parameter<bool> dimensionsAllowed{"Dimension Scale Variables Allowed", false, this};
   oops::Parameter<bool> regularVariablesAllowed{"Non Dimension Scale Variables Allowed", true,
@@ -183,7 +185,7 @@ class VariableOrDefaultVarParameters : public oops::Parameters {
   OOPS_CONCRETE_PARAMETERS(VariableOrDefaultVarParameters, Parameters)
  public:
   typedef util::AnyOf<Type, TypeParameters> TypeType_;
-  oops::OptionalParameter<std::vector<std::string>> dimNames{"Dimensions", this};
+  oops::OptionalParameter<std::vector<std::vector<std::string>>> dimNames{"Dimensions", this};
   oops::OptionalParameter<TypeType_> type{"Type", this};
   oops::Parameter<bool> canBeMetadata{"MetaData", false, this};
   oops::OptionalParameter<AttributeListReqOptionalParameters> atts{"Valid Attributes", this};
@@ -199,6 +201,7 @@ class VariableParameters : public oops::Parameters {
   // oops::OptionalParameter<std::string> units{"Units", this};
   oops::Parameter<bool> remove{"Remove", false, this};
   oops::Parameter<bool> checkExactUnits{"Check Exact Units", true, this};
+  // attributes contain units
   oops::Parameter<std::map<std::string, std::string>> attributes{
     "Attributes", std::map<std::string, std::string>(), this};
 };

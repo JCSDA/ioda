@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2021 UCAR
+ * (C) Copyright 2021-2022 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -29,8 +29,8 @@
 #include "ioda/Exception.h"
 #include "ioda/Group.h"
 #include "ioda/Misc/StringFuncs.h"
-#include "ioda/Variables/VarUtils.h"
 #include "ioda/Units.h"
+#include "ioda/Variables/VarUtils.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Application.h"
 #include "oops/util/LibOOPS.h"
@@ -44,12 +44,12 @@ class Validator : public eckit::Main {
   explicit Validator(int argc, char **argv) : eckit::Main(argc, argv) {}
 
   int execute() {
-    using std::cout;
+    using ioda::Exception;
     using std::cerr;
+    using std::cout;
     using std::endl;
     using std::exception;
     using std::string;
-    using ioda::Exception;
     int ret = 0;
     try {
       if (argc() != 3) throw Exception("Usage: ioda-validate.x yaml-file input-file", ioda_Here());
@@ -96,10 +96,10 @@ class Validator : public eckit::Main {
     using ioda_validate::AttributeParameters;
     using ioda_validate::DimensionParameters;
     using ioda_validate::GroupParameters;
-    using ioda_validate::VariableParameters;
     using ioda_validate::Severity;
-    using Log::LogContext;
+    using ioda_validate::VariableParameters;
     using Log::log;
+    using Log::LogContext;
     using std::map;
     using std::set;
     using std::string;
@@ -205,8 +205,7 @@ class Validator : public eckit::Main {
     {
       VarDimMap dimsAttachedToVars_;
       ioda::Dimensions_t maxVarSize0;  // junk
-      ioda::VarUtils::collectVarDimInfo(
-        base, fileVars, fileDims, dimsAttachedToVars_, maxVarSize0);
+      ioda::VarUtils::collectVarDimInfo(base, fileVars, fileDims, dimsAttachedToVars_, maxVarSize0);
       for (const auto &m : dimsAttachedToVars_) dimsAttachedToVars[m.first.name] = m.second;
     }
 
@@ -348,7 +347,7 @@ class Validator : public eckit::Main {
           }
 
           // Apply group-specific overrides (type)
-
+          string sYAMLgroupUnits;
           if (YAMLgroups.count(group)) {
             auto YAMLgroup = YAMLgroups.at(group);
 
@@ -360,6 +359,10 @@ class Validator : public eckit::Main {
 
             // Override type
             if (YAMLgroup.type.value()) varparams.base.type = YAMLgroup.type;
+
+            // Override units
+            if (YAMLgroup.forceunits.value()) varparams.forceunits = YAMLgroup.forceunits;
+            if (YAMLgroup.units.value()) sYAMLgroupUnits = *(YAMLgroup.units.value());
           } else {
             log(params_.policies.value().GroupsKnown, res_)
               << "Variable '" << v.name << "' is in unknown group '" << group << "'.\n";
@@ -372,7 +375,7 @@ class Validator : public eckit::Main {
 
           // Recommended dimension scales check
           if (varparams.base.dimNames.value()) {
-            const vector<string> recommendedDimensions = *(varparams.base.dimNames.value());
+            const vector<vector<string>> recommendedDimensions = *(varparams.base.dimNames.value());
             auto varDimensionsCur_
               = dimsAttachedToVars.at(v.name);  // Dimensions attached, but perhaps with old names
             vector<string> varDimensionsCur;
@@ -380,37 +383,40 @@ class Validator : public eckit::Main {
               varDimensionsCur.emplace_back(
                 (mOldNewVarNames.count(d.name)) ? mOldNewVarNames.at(d.name) : d.name);
 
-            // TODO(ryan) for future: some variables like scanAngle can have different dimensions
-            //  depending on instrument. The YAML spec should be adapted in these cases
-            //  to allow a boost::variant of either a vector<string>
-            //  or a vector<vector<string>>.
-
-            // Are the dimensions the same size?
-            if ((recommendedDimensions.size() == varDimensionsCur.size())
-                && (static_cast<size_t>(v.var.getDimensions().dimensionality))
-                     == varDimensionsCur.size()) {
-              for (size_t i = 0; i < recommendedDimensions.size(); ++i) {
-                string curDim = varDimensionsCur[i];
-                if (sOldNewDimNames.count(curDim))
-                  curDim = sOldNewDimNames.at(curDim);  // Old to new name.
-                if (recommendedDimensions[i] != curDim) {
-                  log(params_.policies.value().VariableDimensionCheck, res_)
-                    << "Variable '" << v.name
-                    << "' does not have recommended dimensions along "
-                       "index "
-                    << i << ". Recommended [i]: " << recommendedDimensions[i]
-                    << ", and actual [i]: " << varDimensionsCur[i] << ".\n";
+            // Iterate over the possible dimensions and check for matches
+            bool matchedDimensions = false;
+            for (const auto &recDimsIt : recommendedDimensions) {
+              // Are the dimensions the same size?
+              if ((recDimsIt.size() == varDimensionsCur.size())
+                  && (static_cast<size_t>(v.var.getDimensions().dimensionality))
+                       == varDimensionsCur.size()) {
+                bool mismatchedDimensions = false;
+                for (size_t i = 0; i < recDimsIt.size(); ++i) {
+                  string curDim = varDimensionsCur[i];
+                  if (sOldNewDimNames.count(curDim))
+                    curDim = sOldNewDimNames.at(curDim);  // Old to new name.
+                  if (recDimsIt[i] != curDim) {
+                    mismatchedDimensions = true;
+                    break;
+                  }
                 }
+                if (!mismatchedDimensions) matchedDimensions = true;
               }
-            } else {
+            }
+            if (!matchedDimensions) {
+              std::ostringstream outVarDims;
+              outVarDims << "Variable dimensions: [";
+              for (const auto &v : varDimensionsCur) outVarDims << " " << v;
+              outVarDims << " ]. Recommended dimensions:";
+              for (const auto &recDimsIt : recommendedDimensions) {
+                outVarDims << " [";
+                for (const auto &r : recDimsIt) outVarDims << " " << r;
+                outVarDims << " ]";
+              }
               log(params_.policies.value().VariableDimensionCheck, res_)
                 << "Variable '" << v.name
-                << "' has a mismatch in "
-                   "attached dimensions vs those specified in the YAML. YAML dimensionality is "
-                << recommendedDimensions.size() << ", variable dimensionality is "
-                << v.var.getDimensions().dimensionality
-                << ", and the attached dimensions along the variable have dimensionality "
-                << varDimensionsCur.size() << ".\n";
+                << "' does not have match any of the recommended dimensions. " << outVarDims.str()
+                << "\n";
             }
           }
 
@@ -474,21 +480,16 @@ class Validator : public eckit::Main {
             if (varparams.base.type.value()) {
               // The type parameter can either be an enum or a full type description
               ioda_validate::Type typ = ioda_validate::Type::Unspecified;
-              // try {
-              typ = varparams.base.type.value()->as<ioda_validate::Type>();
-              /*} catch (...) {
-                            typ = *(varparams.base.type.value()->as<TypeParameters>().type.value());
-                        }*/
-              if (typ != ioda_validate::Type::Enum && typ != ioda_validate::Type::StringVLen
-                  && typ != ioda_validate::Type::StringFixedLen)
-                unitsRequired = true;
+              typ                     = varparams.base.type.value()->as<ioda_validate::Type>();
+              const std::set<ioda_validate::Type> NoUnitsTypes{ioda_validate::Type::Enum,
+                                                               ioda_validate::Type::StringVLen,
+                                                               ioda_validate::Type::StringFixedLen};
+              if (!NoUnitsTypes.count(typ)) unitsRequired = true;
             }
           }
 
           const auto varparamsAtts = varparams.attributes.value();
-          bool checkUnits          = (unitsDisabled) ? false
-                                                     : v.var.atts.exists("units")
-                                                || varparamsAtts.count("units") || unitsRequired;
+          bool checkUnits = (unitsDisabled) ? false : v.var.atts.exists("units") || unitsRequired;
 
           if (unitsDisabled) {
             if (v.var.atts.exists("units"))
@@ -499,22 +500,22 @@ class Validator : public eckit::Main {
           }
           if (checkUnits) {
             // LogContext lg("Checking units");
-            string sVarUnits, sYAMLunits;
+            string sVarUnits, sYAMLunits = sYAMLgroupUnits;
+            if (varparamsAtts.count("units") && !sYAMLunits.size())
+              sYAMLunits = varparamsAtts.at("units");
+            if (sYAMLunits.size() == 0)
+              log(params_.policies.value().VariableHasValidUnits, res_)
+                << "Variable '" << v.name
+                << "' needs units, but the 'units' attribute does not exist in the YAML.\n";
+
             if (v.var.atts.exists("units"))
               sVarUnits = v.var.atts.read<string>("units");
             else
               log(params_.policies.value().VariableHasValidUnits, res_)
                 << "Variable '" << v.name
                 << "' needs units, but the 'units' attribute does not exist in the file.\n";
-            if (varparamsAtts.count("units"))
-              sYAMLunits = varparamsAtts.at("units");
-            else
-              log(params_.policies.value().VariableHasValidUnits, res_)
-                << "Variable '" << v.name
-                << "' needs units, but the 'units' attribute does not exist in the YAML.\n";
-
             if (sVarUnits.size() && sYAMLunits.size()) {
-              const auto varUnits = ioda::udunits::Units(sVarUnits);
+              const auto varUnits  = ioda::udunits::Units(sVarUnits);
               const auto YAMLUnits = ioda::udunits::Units(sYAMLunits);
 
               // Check for valid units
