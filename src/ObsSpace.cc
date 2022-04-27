@@ -38,6 +38,7 @@
 #include "ioda/Engines/Factory.h"
 #include "ioda/Engines/HH.h"
 #include "ioda/Exception.h"
+#include "ioda/Misc/IoPool.h"
 #include "ioda/io/ObsFrameRead.h"
 #include "ioda/Variables/Variable.h"
 
@@ -210,9 +211,15 @@ ObsSpace::ObsSpace(const Parameters_ & params, const eckit::mpi::Comm & comm,
 // -----------------------------------------------------------------------------
 void ObsSpace::save() {
     if (obs_params_.top_level_.obsOutFile.value() != boost::none) {
-        std::string baseFileName = obs_params_.top_level_.obsOutFile.value()->fileName;
-        oops::Log::info() << obsname() << ": save database to " << baseFileName << std::endl;
-        saveToFile(baseFileName);
+        std::string fileName = obs_params_.top_level_.obsOutFile.value()->fileName;
+
+        // Write the output file
+        IoPool obsPool(commMPI_, nlocs(), fileName, obs_params_.top_level_.ioPool);
+        oops::Log::info() << obsname() << ": save database to " << fileName
+                          << " (io pool size: " << obsPool.size_pool() << ")" << std::endl;
+        obsPool.save(obs_group_);
+        obsPool.finalize();
+
         // Call the mpi barrier command here to force all processes to wait until
         // all processes have finished writing their files. This is done to prevent
         // the early processes continuing and potentially executing their obs space
@@ -300,7 +307,7 @@ ObsDtype ObsSpace::dtype(const std::string & group, const std::string & name,
     if (has(groupToUse, nameToUse, skipDerived)) {
         const std::string varNameToUse = fullVarName(groupToUse, nameToUse);
         Variable var = obs_group_.vars.open(varNameToUse);
-        switchOnSupportedVariableType(
+        VarUtils::switchOnSupportedVariableType(
               var,
               [&] (int)   {
                   VarType = ObsDtype::Integer;
@@ -333,7 +340,7 @@ ObsDtype ObsSpace::dtype(const std::string & group, const std::string & name,
               [&] (char) {
                   VarType = ObsDtype::Bool;
               },
-              ThrowIfVariableIsOfUnsupportedType(varNameToUse));
+              VarUtils::ThrowIfVariableIsOfUnsupportedType(varNameToUse));
     }
     return VarType;
 }
@@ -693,7 +700,7 @@ void ObsSpace::initFromObsSource(ObsFrameRead & obsFrame) {
             Dimensions_t frameCount = obsFrame.frameCount(varName);
 
             // Transfer the variable to the in-memory storage
-            forAnySupportedVariableType(
+            VarUtils::forAnySupportedVariableType(
                   var,
                   [&](auto typeDiscriminator) {
                       typedef decltype(typeDiscriminator) T;
@@ -702,7 +709,7 @@ void ObsSpace::initFromObsSource(ObsFrameRead & obsFrame) {
                           storeVar<T>(varName, varValues, beFrameStart, frameCount);
                       }
                   },
-                  ThrowIfVariableIsOfUnsupportedType(varName));
+                  VarUtils::ThrowIfVariableIsOfUnsupportedType(varName));
         }
         iframe++;
     }
@@ -980,7 +987,7 @@ void ObsSpace::createVariables(const Has_Variables & srcVarContainer,
     // Set up reusable creation parameters for the loop below. Use the JEDI missing
     // values for the fill values.
     std::map<std::type_index, VariableCreationParameters> paramsByType;
-    forEachSupportedVariableType(
+    VarUtils::forEachSupportedVariableType(
           [&](auto typeDiscriminator) {
               typedef decltype(typeDiscriminator) T;
               paramsByType[typeid(T)] = VariableCreationParameters::defaults<T>();
@@ -1009,7 +1016,7 @@ void ObsSpace::createVariables(const Has_Variables & srcVarContainer,
         }
 
         Variable srcVar = srcVarContainer.open(varName);
-        forAnySupportedVariableType(
+        VarUtils::forAnySupportedVariableType(
               srcVar,
               [&](auto typeDiscriminator) {
                   typedef decltype(typeDiscriminator) T;
@@ -1194,31 +1201,6 @@ void ObsSpace::buildRecIdxUnsorted() {
 }
 
 // -----------------------------------------------------------------------------
-void ObsSpace::saveToFile(const std::string & baseFileName) const {
-    // Open the output file and copy the ObsSpace top level group to the file top level group.
-    Engines::BackendNames backendName = Engines::BackendNames::Hdf5File;
-    Engines::BackendCreationParameters backendParams;
-
-    // Create an hdf5 file, and allow overwriting an existing file (for now)
-    // Tag on the rank number to the output file name to avoid collisions if running
-    // with multiple MPI tasks.
-    backendParams.fileName =
-        uniquifyFileName(baseFileName, obs_params_.getMpiRank(), obs_params_.getMpiTimeRank());
-    backendParams.action = Engines::BackendFileActions::Create;
-    backendParams.createMode = Engines::BackendCreateModes::Truncate_If_Exists;
-
-    // Create the backend group
-    // Use the None DataLyoutPolicy for now to accommodate the current file format
-    Group writerGroup = constructBackend(backendName, backendParams);
-
-    // Copy the ObsSpace ObsGroup to the output file Group. Copy the top-level
-    // attributes here so that copyGroup could be called recursively some day. The
-    // copyGroup function copies all of the immediate child groups and their
-    // associated attributes.
-    copyGroup(obs_group_, writerGroup);
-}
-
-// -----------------------------------------------------------------------------
 template <typename DataType>
 void ObsSpace::extendVariable(Variable & extendVar,
                               const size_t upperBoundOnGlobalNumOriginalRecs) {
@@ -1353,13 +1335,13 @@ void ObsSpace::extendObsSpace(const ObsExtendParameters & params) {
         // Note nlocs at this point holds the original size before extending.
         // The numOriginalLocs argument passed to extendVariable indicates where to start filling.
         Variable extendVar = obs_group_.vars.open(fullVname);
-        forAnySupportedVariableType(
+        VarUtils::forAnySupportedVariableType(
               extendVar,
               [&](auto typeDiscriminator) {
                   typedef decltype(typeDiscriminator) T;
                   extendVariable<T>(extendVar, upperBoundOnGlobalNumOriginalRecs);
               },
-              ThrowIfVariableIsOfUnsupportedType(fullVname));
+              VarUtils::ThrowIfVariableIsOfUnsupportedType(fullVname));
       }
     }
 

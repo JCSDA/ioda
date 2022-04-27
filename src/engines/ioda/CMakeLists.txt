@@ -75,12 +75,17 @@ list(APPEND SRCS_MISC
 	include/ioda/Misc/Dimensions.h
 	include/ioda/Misc/DimensionScales.h
 	include/ioda/Misc/Eigen_Compat.h
+	include/ioda/Misc/IoPool.h
+	include/ioda/Misc/IoPoolParameters.h
+	include/ioda/Misc/IoPoolUtils.h
 	include/ioda/Misc/MergeMethods.h
 	include/ioda/Misc/Options.h
 	include/ioda/Misc/StringFuncs.h
         src/ioda/Copying.cpp
 	src/ioda/DimensionScales.cpp
 	src/ioda/Exception.cpp
+	src/ioda/IoPool.cpp
+	src/ioda/IoPoolUtils.cpp
 	src/ioda/StringFuncs.cpp
 	)
 list(APPEND SRCS_TYPES

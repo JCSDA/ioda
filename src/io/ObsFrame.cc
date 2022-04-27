@@ -13,6 +13,7 @@
 #include "ioda/Layout.h"
 #include "ioda/Copying.h"
 #include "ioda/Variables/Variable.h"
+#include "ioda/Variables/VarUtils.h"
 
 namespace ioda {
 
@@ -207,7 +208,7 @@ void ObsFrame::createFrameFromObsGroup(const VarUtils::Vec_Named_Variable & varL
         }
 
         Variable sourceVar = varNameObject.var;
-        forAnySupportedVariableType(
+        VarUtils::forAnySupportedVariableType(
               sourceVar,
               [&](auto typeDiscriminator) {
                   typedef decltype(typeDiscriminator) T;
@@ -220,7 +221,7 @@ void ObsFrame::createFrameFromObsGroup(const VarUtils::Vec_Named_Variable & varL
                       varName, dimVars, params);
                   copyAttributes(sourceVar.atts, destVar.atts);
               },
-              ThrowIfVariableIsOfUnsupportedType(varName));
+              VarUtils::ThrowIfVariableIsOfUnsupportedType(varName));
     }
 
     // If we are using the string or offset datetimes from obs_io_, then create the

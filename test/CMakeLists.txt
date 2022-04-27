@@ -88,6 +88,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsspace_index_recnum_twfilt.yml
   testinput/iodatest_obsspace_invalid_numeric.yml
   testinput/iodatest_obsspace_index_recnum_read_distributed_files.yml
+  testinput/iodatest_obsspace_io_pool_sondes.yml
   testinput/iodatest_obsspace_locations_qc.yml
   testinput/iodatest_obsspace_marine.yml
   testinput/iodatest_obsspace_mpi.yml
@@ -533,6 +534,51 @@ ecbuild_add_test( TARGET  test_ioda_writer_sondes
                           testinput/iodatest_writer_sondes.yml"
                           ioda_writer_sondes_0000.nc4
                   TEST_DEPENDS get_ioda_test_data )
+
+# This test creates four output files (7 tasks, 4 tasks in the io pool)
+# and the following 4 tests check the output files.
+ecbuild_add_test( TARGET  test_ioda_obsspace_io_pool_sondes
+                  MPI     7
+                  COMMAND time_IodaIO.x
+                  ARGS    "testinput/iodatest_obsspace_io_pool_sondes.yml"
+                  LIBS  ioda_test
+                  TEST_DEPENDS get_ioda_test_data )
+
+ecbuild_add_test( TARGET  test_ioda_obsspace_io_pool_sondes_file_0000
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking io pool io sondes"
+                          io_pool_sondes_out_0000.nc4
+                  TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_io_pool_sondes)
+
+ecbuild_add_test( TARGET  test_ioda_obsspace_io_pool_sondes_file_0001
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking io pool io sondes"
+                          io_pool_sondes_out_0001.nc4
+                  TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_io_pool_sondes)
+
+ecbuild_add_test( TARGET  test_ioda_obsspace_io_pool_sondes_file_0002
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking io pool io sondes"
+                          io_pool_sondes_out_0002.nc4
+                  TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_io_pool_sondes)
+
+ecbuild_add_test( TARGET  test_ioda_obsspace_io_pool_sondes_file_0003
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking io pool io sondes"
+                          io_pool_sondes_out_0003.nc4
+                  TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_io_pool_sondes)
 
 # IODA ObsSpace class - Fortran interface test
 add_fctest( TARGET  test_ioda_obsspace_fortran

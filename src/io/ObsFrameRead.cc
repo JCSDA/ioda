@@ -15,6 +15,7 @@
 #include "ioda/Copying.h"
 #include "ioda/io/ObsFrameRead.h"
 #include "ioda/io/ObsIoFactory.h"
+#include "ioda/Variables/VarUtils.h"
 
 namespace ioda {
 
@@ -171,7 +172,7 @@ bool ObsFrameRead::frameAvailable() {
                 // Transfer the data
                 Variable destVar = obs_frame_.vars.open(varName);
 
-                forAnySupportedVariableType(
+                VarUtils::forAnySupportedVariableType(
                       destVar,
                       [&](auto typeDiscriminator) {
                           typedef decltype(typeDiscriminator) T;
@@ -179,7 +180,7 @@ bool ObsFrameRead::frameAvailable() {
                           sourceVar.read<T>(varValues, memBufferSelect, obsIoSelect);
                           destVar.write<T>(varValues, memBufferSelect, obsFrameSelect);
                       },
-                      ThrowIfVariableIsOfUnsupportedType(varName));
+                      VarUtils::ThrowIfVariableIsOfUnsupportedType(varName));
             }
         }
 
@@ -510,7 +511,7 @@ void ObsFrameRead::buildObsGroupingKeys(const std::vector<std::string> & obsGrou
         Selection memSelect = createMemSelection(varShape, frameCount);
         Selection frameSelect = createEntireFrameSelection(varShape, frameCount);
 
-        forAnySupportedVariableType(
+        VarUtils::forAnySupportedVariableType(
               groupVar,
               [&](auto typeDiscriminator) {
                   typedef decltype(typeDiscriminator) T;
@@ -528,7 +529,7 @@ void ObsFrameRead::buildObsGroupingKeys(const std::vector<std::string> & obsGrou
                       }
                   }
               },
-              ThrowIfVariableIsOfUnsupportedType(varName));
+              VarUtils::ThrowIfVariableIsOfUnsupportedType(varName));
     }
 }
 

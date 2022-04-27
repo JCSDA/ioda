@@ -222,7 +222,6 @@ void testUnsupportedType() {
   ioda::Group destGroup = topLevelGroup.create("destination");
 
   // Need to keep this in sync with the supported attribute types in
-  // IodaUtils.h (forAnySupportedAttributeType function).
   // Currently, uint64_t is not a supported attribute type.
   std::string attrName("uint64_t_attr");
   srcGroup.atts.add<uint64_t>(attrName, { 1, 2, 3 }, { 3 });

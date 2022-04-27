@@ -11,6 +11,7 @@
 #include "ioda/Engines/Factory.h"
 #include "ioda/Engines/HH.h"  // for genUniqueName()
 #include "ioda/Engines/ODC.h"
+#include "ioda/Misc/IoPoolUtils.h"
 #include "ioda/io/ObsIoFileRead.h"
 
 namespace ioda {

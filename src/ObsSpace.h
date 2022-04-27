@@ -508,16 +508,6 @@ namespace ioda {
         /// and add it to the DerivedObsError group.
         void createMissingObsErrors();
 
-        /// \brief Dump the database into the output file
-        /// \param baseFileName Path to output file where file name part is a base name
-        /// \detail This function saves the obs space data into a ioda formatted file.
-        /// The parameter baseFileName will get an MPI rank number appended to it so that
-        /// the multiple output files (from each MPI rank) will have unique names. Eventually,
-        /// the ioda writer will gather data from all the ranks into a single output
-        /// file which will then be able to use baseFileName as is (ie, no appending of
-        /// the rank number).
-        void saveToFile(const std::string & baseFileName) const;
-
         /// \brief Create the recidx data structure holding sorted record groups
         /// \details This method will construct a data structure that holds the
         /// location order within each group sorted by the values of the specified

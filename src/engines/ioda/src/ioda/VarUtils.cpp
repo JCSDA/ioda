@@ -8,9 +8,7 @@
 
 #include "ioda/Variables/VarUtils.h"
 #include "ioda/Group.h"
-#include "ioda/Variables/Variable.h"
 #include "ioda/Variables/Has_Variables.h"
-#include "ioda/Exception.h"
 
 namespace ioda {
 namespace VarUtils {

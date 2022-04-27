@@ -21,11 +21,13 @@
 
 #include "../defs.h"
 
+#include "ioda/Exception.h"
+#include "ioda/Variables/Variable.h"
+
 namespace ioda {
 
 class Group;
 class Named_Variable;
-class Variable;
 
 namespace VarUtils {
 
@@ -62,6 +64,129 @@ IODA_DL void collectVarDimInfo(const ioda::Group& grp, Vec_Named_Variable& varLi
                        Vec_Named_Variable& dimVarList, VarDimMap& dimsAttachedToVars,
                        ioda::Dimensions_t& maxVarSize0);
 
+/// \brief A function object that can be passed to the third parameter of
+/// forAnySupportedVariableType() or switchOnVariableType() to throw an exception
+/// if the variable is of an unsupported type.
+class ThrowIfVariableIsOfUnsupportedType {
+ public:
+  explicit ThrowIfVariableIsOfUnsupportedType(
+      const std::string &varName) : varName_(varName) {}
+
+  void operator()(const ioda::source_location & codeLocation) const {
+    std::string ErrorMsg = std::string("Variable '") + varName_ +
+                           std::string("' is not of any supported type");
+    throw ioda::Exception(ErrorMsg.c_str(), codeLocation);
+  }
+
+ private:
+  std::string varName_;
+};
+
+/// \brief Perform an action dependent on the type of an ObsSpace variable \p var.
+///
+/// \param var
+///   Variable expected to be of one of the types that can be stored in an ObsSpace (`int`,
+///   `int64_t`, `float`, `std::string` or `char`).
+/// \param action
+///   A function object callable with a single argument of any type from the list above.
+///   If the variable `var` is of type `int`, this function will be given a default-initialized
+///   `int`; if it is of type `float` the function will be given a default-initialized `float`,
+///   and so on. In practice, it is likely to be a generic lambda expression taking a single
+///   parameter of type auto whose value is ignored, but whose type is used in the implementation.
+/// \param errorHandler
+///   A function object callable with a single argument of type eckit::CodeLocation, called if
+///   `var` is not of a type that can be stored in an ObsSpace.
+///
+/// Example of use:
+///
+///     Variable sourceVar = ...;
+///     std::string varName = ...;
+///     std::vector<Variable> dimVars = ...;
+///     forAnySupportedVariableType(
+///       sourceVar,
+///       [&](auto typeDiscriminator) {
+///           typedef decltype(typeDiscriminator) T;  // type of the variable sourceVar
+///           obs_frame_.vars.createWithScales<T>(varName, dimVars, VariableCreationParameters());
+///       },
+///       ThrowIfVariableIsOfUnsupportedType(varName));
+template <typename Action, typename ErrorHandler>
+auto forAnySupportedVariableType(const ioda::Variable &var, const Action &action,
+                                 const ErrorHandler &typeErrorHandler) {
+  if (var.isA<int>())
+    return action(int());
+  if (var.isA<int64_t>())
+    return action(int64_t());
+  if (var.isA<float>())
+    return action(float());
+  if (var.isA<std::string>())
+    return action(std::string());
+  if (var.isA<char>())
+    return action(char());
+  typeErrorHandler(ioda_Here());
+}
+
+/// \brief Perform an action dependent on the type of an ObsSpace variable \p var.
+///
+/// \param var
+///   Variable expected to be of one of the types that can be stored in an ObsSpace (`int`,
+///   `int64_t`, `float`, `std::string` or `char`).
+/// \param intAction
+///   A function object taking an argument of type `int`, which will be called and given a
+///   default-initialized `int` if the variable `var` is of type `int`.
+/// \param int64Action
+///   A function object taking an argument of type `int64_t`, which will be called and given a
+///   default-initialized `int64_t` if the variable `var` is of type `int64_t`.
+/// \param floatAction
+///   A function object taking an argument of type `float`, which will be called and given a
+///   default-initialized `float` if the variable `var` is of type `float`.
+/// \param stringAction
+///   A function object taking an argument of type `std::string`, which will be called and given a
+///   default-initialized `std:::string` if the variable `var` is of type `std::string`.
+/// \param charAction
+///   A function object taking an argument of type `char`, which will be called and given a
+///   default-initialized `char` if the variable `var` is of type `char`.
+/// \param errorHandler
+///   A function object callable with a single argument of type eckit::CodeLocation, called if
+///   `var` is not of a type that can be stored in an ObsSpace.
+template <typename IntAction, typename Int64Action, typename FloatAction,
+          typename StringAction, typename CharAction, typename ErrorHandler>
+auto switchOnSupportedVariableType(const ioda::Variable &var,
+                                   const IntAction &intAction,
+                                   const Int64Action &int64Action,
+                                   const FloatAction &floatAction,
+                                   const StringAction &stringAction,
+                                   const CharAction &charAction,
+                                   const ErrorHandler &typeErrorHandler) {
+  if (var.isA<int>())
+    return intAction(int());
+  if (var.isA<int64_t>())
+    return int64Action(int64_t());
+  if (var.isA<float>())
+    return floatAction(float());
+  if (var.isA<std::string>())
+    return stringAction(std::string());
+  if (var.isA<char>())
+    return charAction(char());
+  typeErrorHandler(ioda_Here());
+}
+
+/// \brief Perform a variable-type-dependent action for all types that can be stored in an
+/// ObsSpace (`int`, `int64_t`, `float`, `std::string` or `char`).
+///
+/// \param action
+///   A function object callable with a single argument of any type from the list above. It will
+///   be called as many times as there are types of variables that can be stored in an ObsSpace;
+///   each time it will received a default-initialized value of that type. In practice, it is
+///   likely to be a generic lambda expression taking a single parameter of type auto whose value
+///   is ignored, but whose type is used in the implementation.
+template <typename Action>
+void forEachSupportedVariableType(const Action &action) {
+  action(int());
+  action(int64_t());
+  action(float());
+  action(std::string());
+  action(char());
+}
 
 }  // end namespace VarUtils
 }  // end namespace ioda

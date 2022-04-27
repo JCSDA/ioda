@@ -6,6 +6,7 @@
  */
 
 #include "ioda/Engines/Factory.h"
+#include "ioda/Misc/IoPoolUtils.h"
 #include "ioda/io/ObsIoFileCreate.h"
 
 namespace ioda {

@@ -16,8 +16,10 @@
 #include "ioda/distribution/DistributionFactory.h"
 #include "ioda/Misc/DimensionScales.h"
 #include "ioda/Misc/Dimensions.h"
+#include "ioda/Misc/IoPoolParameters.h"
 #include "ioda/io/ObsIoFactory.h"
 #include "ioda/io/ObsIoParametersBase.h"
+
 
 #include "eckit/exception/Exceptions.h"
 #include "eckit/mpi/Comm.h"
@@ -227,6 +229,9 @@ class ObsTopLevelParameters : public oops::ObsSpaceParametersBase {
     /// Simulated variables whose observed values may be absent from the input file, but must be
     /// created (computed) by the start of the data assimilation stage.
     oops::Parameter<oops::Variables> derivedSimVars{"derived simulated variables", {}, this};
+
+    /// Io pool parameters
+    oops::Parameter<IoPoolParameters> ioPool{"io pool", {}, this};
 
     /// output specification by writing to a file
     oops::OptionalParameter<ObsFileOutParameters> obsOutFile{"obsdataout", this};
