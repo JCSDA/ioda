@@ -99,8 +99,14 @@ void matchingAttributesCheck(const std::map<std::string, AttributeParameters> &Y
                                        "is unspecified in the YAML file.\n";
         }
         if (YAMLdims && (dimensionality > 0)) {
+          // Check that the dimension sizes match. There might have been a mismatch in
+          // the dimensionality specified in the YAML compared to the dimensionality of
+          // the attribute. To cover that case, just check dimension sizes up to the
+          // minimum rank (dimensionality) of the YAML and attribute.
           bool haserror = false;
-          for (size_t i = 0; i < static_cast<size_t>(dimensionality); ++i) {
+          size_t minDimensionality = ((dimensionality < attdims.dimensionality) ?
+                                         dimensionality : attdims.dimensionality);
+          for (size_t i = 0; i < minDimensionality; ++i) {
             if (attdims.dimsCur[i] != static_cast<ioda::Dimensions_t>((*YAMLdims).at(i))) {
               Log::log(params.policies.value().AttributeHasCorrectDims.value(), res)
                 << "Attribute '" << attname << "' has the wrong dimensions at index " << i
