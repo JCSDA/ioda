@@ -228,7 +228,10 @@ class ObsTopLevelParameters : public oops::ObsSpaceParametersBase {
 
     /// Simulated variables whose observed values may be absent from the input file, but must be
     /// created (computed) by the start of the data assimilation stage.
-    oops::Parameter<oops::Variables> derivedSimVars{"derived simulated variables", {}, this};
+    oops::Parameter<oops::Variables> derivedSimVars{"derived variables", {}, this};
+
+    /// Observation variables whose observed values are to be processed.
+    oops::Parameter<oops::Variables> ObservedVars{"observed variables", {}, this};
 
     /// Io pool parameters
     oops::Parameter<IoPoolParameters> ioPool{"io pool", {}, this};

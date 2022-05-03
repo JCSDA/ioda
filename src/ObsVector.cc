@@ -23,14 +23,20 @@
 namespace ioda {
 // -----------------------------------------------------------------------------
 ObsVector::ObsVector(ObsSpace & obsdb,
-                     const std::string & name)
-  : obsdb_(obsdb), obsvars_(obsdb.obsvariables()),
-    nvars_(obsvars_.variables().size()), nlocs_(obsdb_.nlocs()),
-    values_(nlocs_ * nvars_),
-    missing_(util::missingValue(missing_)) {
+                     const std::string & name, const bool useObservedVariables)
+  : obsdb_(obsdb), obsvars_(obsdb.obsvariables()), nvars_(obsvars_.variables().size()),
+    nlocs_(obsdb_.nlocs()), values_(nlocs_ * nvars_), missing_(util::missingValue(missing_)) {
   oops::Log::trace() << "ObsVector::ObsVector " << name << std::endl;
+  // Modify the member varaible defintions if the simulated variables rather than observed
+  // variables are to be used in the ObsVector
+  if (!useObservedVariables) {
+    obsvars_ = obsdb.assimvariables();
+    nvars_ = obsvars_.variables().size();
+    values_.assign(nvars_ * nlocs_, 0.0);
+  }
   if (!name.empty()) this->read(name);
 }
+
 // -----------------------------------------------------------------------------
 ObsVector::ObsVector(const ObsVector & other)
   : obsdb_(other.obsdb_), obsvars_(other.obsvars_), nvars_(other.nvars_),

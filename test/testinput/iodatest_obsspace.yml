@@ -6,6 +6,7 @@ observations:
 - obs space:
     name: "AOD"
     simulated variables: ['temperature']
+    observed variables: ['temperature']
     obsdatain:
       obsfile: "Data/testinput_tier_1/aod_obs_2018041500_m.nc4"
     obs perturbations seed: 25
@@ -39,6 +40,7 @@ observations:
 - obs space:
     name: "AOD VIIRS"
     simulated variables: ['temperature']
+    observed variables: ['temperature']
     obsdatain:
       obsfile: "Data/testinput_tier_1/aod_viirs_obs_2018041500_sf42.nc4"
     obs perturbations seed: -40000
@@ -196,7 +198,7 @@ observations:
 
 - obs space:
     name: "Radiosonde"
-    simulated variables: ['temperature']
+    simulated variables: ['air_temperature']
     obsdatain:
       obsfile: "Data/testinput_tier_1/sondes_obs_2018041500_m.nc4"
       max frame size: 200
@@ -245,7 +247,7 @@ observations:
 
 - obs space:
     name: "Radiosonde with grouping"
-    simulated variables: ['temperature']
+    simulated variables: ['air_temperature']
     obsdatain:
       obsfile: "Data/testinput_tier_1/sondes_obs_2018041500_m.nc4"
       obsgrouping:
@@ -278,7 +280,7 @@ observations:
 
 - obs space:
     name: "Radiosonde with grouping and tw filtering"
-    simulated variables: ['temperature']
+    simulated variables: ['air_temperature']
     obsdatain:
       obsfile: "Data/testinput_tier_1/sondes_obs_2018041500_m_twfilt.nc4"
       obsgrouping:
@@ -478,14 +480,15 @@ observations:
     variables for putget test: []
 
 # The purpose of the following two tests is to verify that the obs space is "aware" of any
-# specified derived simulated variables (the obsvariables(), derived_obsvariables() and
+# specified derived variables (the obsvariables(), derived_obsvariables() and
 # initial_obsvariables() work correctly) and that it initially fills arrays from the ObsError group
 # corresponding to such variables with missing values.
 
 - obs space:
     name: "Derived single-channel simulated variables"
-    simulated variables: [surface_pressure, air_temperature]
-    derived simulated variables: [relative_humidity, dew_point] # not present in the input file
+    simulated variables: [surface_pressure, air_temperature, relative_humidity, dew_point]
+    derived variables: [relative_humidity, dew_point] # not present in the input file
+    observed variables: [surface_pressure, air_temperature]
     obsdatain:
       obsfile: "Data/testinput_tier_1/sondes_obs_2018041500_s.nc4"
   test data:
@@ -502,9 +505,10 @@ observations:
     variables for putget test: []
 
 - obs space:
-    name: "Derived multi-channel simulated variables"
-    simulated variables: []
-    derived simulated variables: [bias_corrected_brightness_temperature] # not present in the input file
+    name: "Derived multi-channel variables"
+    simulated variables: [bias_corrected_brightness_temperature]
+    derived variables: [bias_corrected_brightness_temperature] # not present in the input file
+    observed variables: []
     channels: 1-13
     obsdatain:
       obsfile: "Data/testinput_tier_1/gmi_gpm_obs_2018041500_m.nc4"

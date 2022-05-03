@@ -5,6 +5,7 @@ observations:
 - obs space:
     name: ADT
     simulated variables: ['adt']
+    observed variables: ['adt']
     obsdatain:
       obsfile: Data/testinput_tier_1/Jason-2-2018-04-15.nc
   test data:
@@ -33,6 +34,7 @@ observations:
 - obs space:
     name: InsituTemperature
     simulated variables: ['temperature']
+    observed variables: ['temperature']
     obsdatain:
       obsfile: Data/testinput_tier_1/profile_2018-04-15.nc
   test data:
@@ -89,6 +91,7 @@ observations:
 - obs space:
     name: SeaIceFraction
     simulated variables: ['sea_ice_fraction']
+    observed variables: ['sea_ice_fraction']
     obsdatain:
       obsfile: Data/testinput_tier_1/icec-2018-04-15.nc
   test data:

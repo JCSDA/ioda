@@ -6,6 +6,7 @@ observations:
 - obs space:
     name: "fill value"
     simulated variables: ['temperature']
+    observed variables: ['temperature']
     obsdatain:
       obsfile: "Data/testinput_tier_1/fill_value.nc4"
   test data:

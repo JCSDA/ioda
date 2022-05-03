@@ -210,6 +210,7 @@ void testAxpy() {
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     ioda::ObsSpace & obspace = *Test_::obspace()[jj];
+    // First test using simulated variables
     ObsVector_ vec1(obspace);
     vec1.random();
 
@@ -217,8 +218,8 @@ void testAxpy() {
     ObsVector_ vec2(vec1);
     vec2.axpy(2.0, vec1);
     ObsVector_ vec3(vec1);
-    std::vector<double> beta(obspace.obsvariables().size(), 2.0);
-    vec3.axpy(beta, vec1);
+    std::vector<double> beta_a(obspace.assimvariables().size(), 2.0);
+    vec3.axpy(beta_a, vec1);
     oops::Log::test() << "Testing ObsVector::axpy" << std::endl;
     oops::Log::test() << "x = " << vec1 << std::endl;
     oops::Log::test() << "x.axpy(2, x) = " << vec2 << std::endl;
@@ -226,8 +227,8 @@ void testAxpy() {
     EXPECT(oops::is_close(vec2.rms(), vec3.rms(), 1.0e-8));
 
     // call axpy with vector of different values
-    std::vector<double> beta1(obspace.obsvariables().size());
-    std::vector<double> beta2(obspace.obsvariables().size());
+    std::vector<double> beta1(obspace.assimvariables().size());
+    std::vector<double> beta2(obspace.assimvariables().size());
     for (size_t jj = 0; jj < beta1.size(); ++jj) {
       beta1[jj] = static_cast<double>(jj)/beta1.size();
       beta2[jj] = 2.0 - beta1[jj];
@@ -239,6 +240,37 @@ void testAxpy() {
     vec4.axpy(beta2, vec1);
     oops::Log::test() << "x.axpy(beta2, x) = " << vec4 << std::endl;
     EXPECT(oops::is_close(vec4.rms(), vec3.rms(), 1.0e-8));
+
+    // Repeat tests using observed variables
+    ObsVector_ vec5(obspace, "", true);
+    vec5.random();
+
+    // call axpy with coefficient 2.0 two different ways
+    ObsVector_ vec6(vec5);
+    vec6.axpy(2.0, vec5);
+    ObsVector_ vec7(vec5);
+    std::vector<double> beta_b(obspace.obsvariables().size(), 2.0);
+    vec7.axpy(beta_b, vec5);
+    oops::Log::test() << "Testing ObsVector::axpy" << std::endl;
+    oops::Log::test() << "x = " << vec5 << std::endl;
+    oops::Log::test() << "x.axpy(2, x) = " << vec6 << std::endl;
+    oops::Log::test() << "x.axpy(vector of 2, x) = " << vec7 << std::endl;
+    EXPECT(oops::is_close(vec6.rms(), vec7.rms(), 1.0e-8));
+
+    // call axpy with vector of different values
+    std::vector<double> beta3(obspace.obsvariables().size());
+    std::vector<double> beta4(obspace.obsvariables().size());
+    for (size_t jj = 0; jj < beta3.size(); ++jj) {
+      beta3[jj] = static_cast<double>(jj)/beta3.size();
+      beta4[jj] = 2.0 - beta3[jj];
+    }
+    oops::Log::test() << "beta3 = " << beta3 << ", beta4 = " << beta4 << std::endl;
+    ObsVector_ vec8(vec5);
+    vec8.axpy(beta3, vec5);
+    oops::Log::test() << "x.axpy(beta3, x) = " << vec8 << std::endl;
+    vec8.axpy(beta4, vec5);
+    oops::Log::test() << "x.axpy(beta4, x) = " << vec8 << std::endl;
+    EXPECT(oops::is_close(vec8.rms(), vec7.rms(), 1.0e-8));
   }
 }
 

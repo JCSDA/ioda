@@ -124,17 +124,8 @@ ObsSpace::ObsSpace(const Parameters_ & params, const eckit::mpi::Comm & comm,
                        gnlocs_(0), nrecs_(0), obsvars_(),
                        obs_group_(), obs_params_(params, bgn, end, comm, timeComm)
 {
-    oops::Log::trace() << "ObsSpace::ObsSpace config  = " << obs_params_.top_level_ << std::endl;
-
+    // Read the obs space name
     obsname_ = obs_params_.top_level_.obsSpaceName;
-    obsvars_ = obs_params_.top_level_.simVars;
-    if (obs_params_.top_level_.derivedSimVars.value().size() != 0) {
-      // As things stand, this assert cannot fail, since both variables take the list of channels
-      // from the same "channels" YAML option.
-      ASSERT(obs_params_.top_level_.derivedSimVars.value().channels() == obsvars_.channels());
-      obsvars_ += obs_params_.top_level_.derivedSimVars;
-    }
-    oops::Log::info() << this->obsname() << " vars: " << obsvars_ << std::endl;
 
     // Open the source (ObsFrame) of the data for initializing the obs_group_ (ObsGroup)
     ObsFrameRead obsFrame(obs_params_);
@@ -144,6 +135,81 @@ ObsSpace::ObsSpace(const Parameters_ & params, const eckit::mpi::Comm & comm,
 
     createObsGroupFromObsFrame(obsFrame);
     initFromObsSource(obsFrame);
+
+    // Get list of variables to be simulated
+    assimvars_ = obs_params_.top_level_.simVars;
+
+    // Get list of derived variables
+    derived_obsvars_ = obs_params_.top_level_.derivedSimVars;
+
+    // Get list of observed variables
+    // Either read from yaml list, or use all variables in input file.
+    if (obs_params_.top_level_.ObservedVars.value().size()
+            + obs_params_.top_level_.derivedSimVars.value().size() != 0) {
+      // Read from yaml
+      obsvars_ = obs_params_.top_level_.ObservedVars;
+    } else {
+      // Use simulated - derived varaibles
+      obsvars_ = assimvars_;
+      obsvars_ -= derived_obsvars_;
+    }
+
+    // Store the intial list of variables read from the yaml of input file.
+    initial_obsvars_ = obsvars_;
+
+    // Add derived varible names to observed variables list
+    if (obs_params_.top_level_.derivedSimVars.value().size() != 0) {
+      // As things stand, this assert cannot fail, since both variables take the list of channels
+      // from the same "channels" YAML option.
+      ASSERT(obs_params_.top_level_.derivedSimVars.value().channels() == obsvars_.channels());
+      obsvars_ += obs_params_.top_level_.derivedSimVars;
+    }
+    // ToDo (JAW): Reinstate the below definition of obsvars_ once assimilation for different
+    // lists is sorted.
+    /*
+    // Get list of observed variables
+    // Either read from yaml list, or use all variables in input file.
+    if (obs_params_.top_level_.ObservedVars.value().size()
+            + obs_params_.top_level_.derivedSimVars.value().size() != 0) {
+      // Read from yaml
+      obsvars_ = obs_params_.top_level_.ObservedVars;
+    } else {
+      // Use everything in file
+      Group obsValueGroup = obs_group_.open("ObsValue");
+      const std::vector<std::string>
+              allObsVars = obsValueGroup.listObjects<ObjectType::Variable>(false);
+      // ToDo (JAW): Get the channels from the input file (currently using the ones from simVars)
+      std::vector<int> channels = obs_params_.top_level_.simVars.value().channels();
+      oops::Variables obVars(allObsVars, channels);
+      obsvars_ = obVars;
+    }
+
+    // Store the intial list of variables read from the yaml of input file.
+    initial_obsvars_ = obsvars_;
+
+    // Add derived varible names to observed variables list
+    if (obs_params_.top_level_.derivedSimVars.value().size() != 0) {
+      // As things stand, this assert cannot fail, since both variables take the list of channels
+      // from the same "channels" YAML option.
+      ASSERT(obs_params_.top_level_.derivedSimVars.value().channels() == obsvars_.channels());
+      obsvars_ += obs_params_.top_level_.derivedSimVars;
+      derived_obsvars_ = obs_params_.top_level_.derivedSimVars;
+    }
+
+    // Get list of variables to be simulated
+    assimvars_ = obs_params_.top_level_.simVars;
+    */
+
+    oops::Log::info() << this->obsname() << " processed vars: " << obsvars_ << std::endl;
+    oops::Log::info() << this->obsname() << " assimilated vars: " << assimvars_ << std::endl;
+
+    for (size_t jv = 0; jv < assimvars_.size(); ++jv) {
+      if (!obsvars_.has(assimvars_[jv])) {
+          throw eckit::UserError(assimvars_[jv] + " is specified as a simulated variable"
+                                 " but it has not been specified as an observed or"
+                                 " a derived variable." , Here());
+      }
+    }
 
     // After walking through all the frames, gnlocs_ and gnlocs_outside_timewindow_
     // are set representing the entire file. This is because they are calculated
