@@ -214,7 +214,8 @@ void ObsSpace::save() {
         std::string fileName = obs_params_.top_level_.obsOutFile.value()->fileName;
 
         // Write the output file
-        IoPool obsPool(commMPI_, nlocs(), fileName, obs_params_.top_level_.ioPool);
+        IoPool obsPool(commMPI_, obs_params_.getMpiTimeRank(), nlocs(), fileName,
+                       obs_params_.top_level_.ioPool);
         oops::Log::info() << obsname() << ": save database to " << fileName
                           << " (io pool size: " << obsPool.size_pool() << ")" << std::endl;
         obsPool.save(obs_group_);

@@ -42,10 +42,11 @@ class IODA_DL IoPool {
 public:
   /// \brief construct an IoPool object
   /// \param commAll MPI communicator group containing all of the tasks involved in the DA run
+  /// \param timeRank rank number in time communicator group (for 4DEnVar runs)
   /// \param nlocs Number of locations in the obs space piece on this MPI task
   /// \param fileName Output file name
   /// \param params Parameter specifications (from the input YAML config) for this io pool
-  IoPool(const eckit::mpi::Comm & commAll, const std::size_t nlocs,
+  IoPool(const eckit::mpi::Comm & commAll, int timeRank, std::size_t nlocs,
          const std::string & fileName, const oops::Parameter<IoPoolParameters> & params);
   ~IoPool();
 

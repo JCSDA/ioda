@@ -210,7 +210,7 @@ void IoPool::setTotalNlocs(const std::size_t nlocs) {
 }
 
 //--------------------------------------------------------------------------------------
-IoPool::IoPool(const eckit::mpi::Comm & commAll, const std::size_t nlocs,
+IoPool::IoPool(const eckit::mpi::Comm & commAll, int timeRank, std::size_t nlocs,
                const std::string & fileName, const oops::Parameter<IoPoolParameters> & params)
                    : nlocs_(nlocs), filename_(fileName), comm_all_(commAll),
                      rank_all_(commAll.rank()), size_all_(commAll.size()), params_(params) {
@@ -237,7 +237,7 @@ IoPool::IoPool(const eckit::mpi::Comm & commAll, const std::size_t nlocs,
     setTotalNlocs(nlocs);
 
     // Uniquify the file name using the pool rank number.
-    filename_ = uniquifyFileName(filename_, rank_pool_, -1);
+    filename_ = uniquifyFileName(filename_, rank_pool_, timeRank);
 }
 
 IoPool::~IoPool() = default;
