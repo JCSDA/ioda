@@ -27,7 +27,7 @@ observations:
         # group_by_int@MetaData = 2 ;
     simulated variables: [temperature]
     extension:
-      average profiles onto model levels: 3
+      allocate companion records with length: 3
   specs:
     gnlocs: 19  # 10 original obs + 9 averaged obs (3 levels * 3 records)
     allgatherv: [  0, 3, 6, 9, 12, 15, 18, 21, 24,  # original obs from rank 0

@@ -73,7 +73,7 @@ observations:
       name: Halo
       radius: 8000000  # a bit less than 1/4 of equator length
     extension:
-      average profiles onto model levels: 3
+      allocate companion records with length: 3
   specs:
     gnlocs: 24  # 6 original obs + 18 averaged obs (3 levels * 6 records)
     allgatherv: [ 3, 4, 5, 6, 7, 8,

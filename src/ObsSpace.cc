@@ -1292,7 +1292,7 @@ void ObsSpace::extendVariable(Variable & extendVar,
         }
       }
 
-      // Fill the averaged record with the first non-missing value in the original record.
+      // Fill the companion record with the first non-missing value in the original record.
       // (If all values are missing, do nothing.)
       if (fillValue != missing) {
         for (const auto & jloc : recidx_[recordindex.first + upperBoundOnGlobalNumOriginalRecs]) {
@@ -1301,7 +1301,7 @@ void ObsSpace::extendVariable(Variable & extendVar,
       }
     }
 
-    // Write out values of the averaged record.
+    // Write out values of the companion record.
     extendVar.write<DataType>(varVals);
 }
 
@@ -1310,14 +1310,13 @@ void ObsSpace::extendObsSpace(const ObsExtendParameters & params) {
   // In this function we use the following terminology:
   // * The word 'original' refers to locations and records present in the ObsSpace before its
   //   extension.
-  // * The word 'averaged' refers to locations and records created when extending the ObsSpace
-  //   (they will represent data averaged onto model levels).
-  // * The word 'extended' refers to the original and averaged locations and records taken
+  // * The word 'companion' refers to locations and records created when extending the ObsSpace.
+  // * The word 'extended' refers to the original and companion locations and records taken
   //   together.
   // * The word 'local` refers to locations and records held on the current process.
   // * The word 'global` refers to locations and records held on any process.
 
-  const int nlevs = params.numModelLevels;
+  const int nlevs = params.companionRecordLength;
 
   const size_t numOriginalLocs = this->nlocs();
   const bool recordsExist = !this->obs_group_vars().empty();
@@ -1329,7 +1328,7 @@ void ObsSpace::extendObsSpace(const ObsExtendParameters & params) {
 
     // Find the largest global indices of locations and records in the original ObsSpace.
     // Increment them by one to produce the initial values for the global indices of locations
-    // and records in the averaged ObsSpace.
+    // and records in the companion ObsSpace.
 
     // These are *upper bounds* on the global numbers of original locations and records
     // because the sequences of global location indices and records may contain gaps.
@@ -1342,31 +1341,31 @@ void ObsSpace::extendObsSpace(const ObsExtendParameters & params) {
     dist_->max(upperBoundOnGlobalNumOriginalLocs);
     dist_->max(upperBoundOnGlobalNumOriginalRecs);
 
-    // The replica distribution will be used to place each averaged record on the same process
+    // The replica distribution will be used to place each companion record on the same process
     // as the corresponding original record.
     std::shared_ptr<Distribution> replicaDist = createReplicaDistribution(
           commMPI_, dist_, recnums_);
 
-    // Create averaged locations and records.
+    // Create companion locations and records.
 
-    // Local index of an averaged location. Note that these indices, like local indices of
+    // Local index of a companion location. Note that these indices, like local indices of
     // original locations, start from 0.
-    size_t averagedLoc = 0;
+    size_t companionLoc = 0;
     for (size_t originalRec : uniqueOriginalRecs) {
       ASSERT(dist_->isMyRecord(originalRec));
-      const size_t averagedRec = originalRec;
-      const size_t extendedRec = upperBoundOnGlobalNumOriginalRecs + averagedRec;
+      const size_t companionRec = originalRec;
+      const size_t extendedRec = upperBoundOnGlobalNumOriginalRecs + companionRec;
       nrecs_++;
       // recidx_ stores the locations belonging to each record on the local processor.
       std::vector<size_t> &locsInRecord = recidx_[extendedRec];
-      for (int ilev = 0; ilev < nlevs; ++ilev, ++averagedLoc) {
-        const size_t extendedLoc = numOriginalLocs + averagedLoc;
-        const size_t globalAveragedLoc = originalRec * nlevs + ilev;
-        const size_t globalExtendedLoc = upperBoundOnGlobalNumOriginalLocs + globalAveragedLoc;
+      for (int ilev = 0; ilev < nlevs; ++ilev, ++companionLoc) {
+        const size_t extendedLoc = numOriginalLocs + companionLoc;
+        const size_t globalCompanionLoc = originalRec * nlevs + ilev;
+        const size_t globalExtendedLoc = upperBoundOnGlobalNumOriginalLocs + globalCompanionLoc;
         // Geographical position shouldn't matter -- the replica distribution is expected
         // to assign records to processors solely on the basis of their indices.
-        replicaDist->assignRecord(averagedRec, globalAveragedLoc, eckit::geometry::Point2());
-        ASSERT(replicaDist->isMyRecord(averagedRec));
+        replicaDist->assignRecord(companionRec, globalCompanionLoc, eckit::geometry::Point2());
+        ASSERT(replicaDist->isMyRecord(companionRec));
         recnums_.push_back(extendedRec);
         indx_.push_back(globalExtendedLoc);
         locsInRecord.push_back(extendedLoc);
@@ -1374,8 +1373,8 @@ void ObsSpace::extendObsSpace(const ObsExtendParameters & params) {
     }
     replicaDist->computePatchLocs();
 
-    const size_t numAveragedLocs = averagedLoc;
-    const size_t numExtendedLocs = numOriginalLocs + numAveragedLocs;
+    const size_t numCompanionLocs = companionLoc;
+    const size_t numExtendedLocs = numOriginalLocs + numCompanionLocs;
 
     // Extend all existing vectors with missing values.
     // Only vectors with (at least) one dimension equal to nlocs are modified.
@@ -1422,12 +1421,12 @@ void ObsSpace::extendObsSpace(const ObsExtendParameters & params) {
     // Calculate the number of newly created locations on all processes (counting those
     // held on multiple processes only once).
     std::unique_ptr<Accumulator<size_t>> accumulator = replicaDist->createAccumulator<size_t>();
-    for (size_t averagedLoc = 0; averagedLoc < numAveragedLocs; ++averagedLoc)
-      accumulator->addTerm(averagedLoc, 1);
-    size_t globalNumAveragedLocs = accumulator->computeResult();
+    for (size_t companionLoc = 0; companionLoc < numCompanionLocs; ++companionLoc)
+      accumulator->addTerm(companionLoc, 1);
+    size_t globalNumCompanionLocs = accumulator->computeResult();
 
     // Replace the original distribution with a PairOfDistributions, covering
-    // both the original and averaged locations.
+    // both the original and companion locations.
     dist_ = std::make_shared<PairOfDistributions>(commMPI_, dist_, replicaDist,
                                                   numOriginalLocs,
                                                   upperBoundOnGlobalNumOriginalRecs);
@@ -1435,7 +1434,7 @@ void ObsSpace::extendObsSpace(const ObsExtendParameters & params) {
     // Increment nlocs on this processor.
     dim_info_.set_dim_size(ObsDimensionId::Nlocs, numExtendedLocs);
     // Increment gnlocs_.
-    gnlocs_ += globalNumAveragedLocs;
+    gnlocs_ += globalNumCompanionLocs;
   }
 }
 

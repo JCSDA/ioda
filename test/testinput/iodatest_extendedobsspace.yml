@@ -20,7 +20,7 @@ extend obs space, RoundRobin, 71 entries per averaged profile:
     distribution:
       name: "RoundRobin"
     extension:
-      average profiles onto model levels: 71
+      allocate companion records with length: 71
   expected nlocs (1 PE, rank 0): 3530
   expected gnlocs (1 PE, rank 0): 3530
   expected nrecs (1 PE, rank 0): 72
@@ -71,7 +71,7 @@ extend obs space, InefficientDistribution, 71 entries per averaged profile:
     distribution:
       name: "InefficientDistribution"
     extension:
-      average profiles onto model levels: 71
+      allocate companion records with length: 71
   expected nlocs (1 PE, rank 0): 3530
   expected gnlocs (1 PE, rank 0): 3530
   expected nrecs (1 PE, rank 0): 72
@@ -108,7 +108,7 @@ extend obs space, 0 entries per averaged profile:
         sort order: "descending"
     simulated variables: [air_temperature]
     extension:
-      average profiles onto model levels: 0
+      allocate companion records with length: 0
   # the test exits if nlevs <= 0, so there are no expected values
 
 extend obs space, RoundRobin, 71 entries per averaged profile, alternative data set:
@@ -126,7 +126,7 @@ extend obs space, RoundRobin, 71 entries per averaged profile, alternative data 
     distribution:
       name: "RoundRobin"
     extension:
-      average profiles onto model levels: 71
+      allocate companion records with length: 71
   expected nlocs (1 PE, rank 0): 375
   expected gnlocs (1 PE, rank 0): 375
   expected nrecs (1 PE, rank 0): 8
@@ -165,7 +165,7 @@ extend obs space, RoundRobin, 71 entries per averaged profile, only pressure fil
     distribution:
       name: "RoundRobin"
     extension:
-      average profiles onto model levels: 71
+      allocate companion records with length: 71
       variables filled with non-missing values: [air_pressure]
   expected nlocs (1 PE, rank 0): 3530
   expected gnlocs (1 PE, rank 0): 3530
@@ -205,7 +205,7 @@ extend obs space, RoundRobin, 71 entries per averaged profile, no variables fill
     distribution:
       name: "RoundRobin"
     extension:
-      average profiles onto model levels: 71
+      allocate companion records with length: 71
       variables filled with non-missing values: []
   expected nlocs (1 PE, rank 0): 3530
   expected gnlocs (1 PE, rank 0): 3530

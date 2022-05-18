@@ -86,13 +86,14 @@ class ObsExtendParameters : public oops::Parameters {
     OOPS_CONCRETE_PARAMETERS(ObsExtendParameters, oops::Parameters)
 
  public:
-    /// Number of model levels onto which original profiles are averaged.
-    oops::RequiredParameter<int> numModelLevels{"average profiles onto model levels", this};
+    /// Number of locations allocated to each companion record produced when extending the ObsSpace.
+    oops::RequiredParameter<int> companionRecordLength
+        {"allocate companion records with length", this};
 
-    /// Variables that are filled with non-missing values when producing averaged profiles.
+    /// Variables that are filled with non-missing values when producing companion profiles.
     oops::Parameter<std::vector<std::string>> nonMissingExtendedVars
         {"variables filled with non-missing values",
-            { "latitude", "longitude", "datetime", "air_pressure",
+            { "latitude", "longitude", "dateTime", "air_pressure",
                 "air_pressure_levels", "station_id" },
             this};
 };
