@@ -3,6 +3,7 @@ where:
 variables:
 - name: cellno
 - name: initial_obsvalue
+- name: initial_vertco_reference
 - name: invresid_1
 - name: invresid_2
 - name: invresid_3

@@ -532,6 +532,9 @@ ObsGroup openFile(const ODC_Parameters& odcparams,
       sql_data.assignChannelNumbersSeq(std::vector<int>({varno_rawbt_mwts,varno_rawbt_mwhs}), og);
     } else if (column == "initial_vertco_reference" && sql_data.getObsgroup() == obsgroup_amsr) {
       sql_data.assignChannelNumbersSeq(std::vector<int>({varno_rawbt,varno_rawbt_amsr_89ghz}), og);
+    // For Scatwind, channels dimension is being used to store wind ambiguities
+    } else if (column == "initial_vertco_reference" && sql_data.getObsgroup() == obsgroup_scatwind) {
+      sql_data.assignChannelNumbersSeq(std::vector<int>({varno_dd}), og);
     // ... no, it does not.
     } else {      
       // This loop handles columns whose cells should be transferred in their entirety into ioda
