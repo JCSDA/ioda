@@ -813,6 +813,12 @@ varno-dependent columns:
         varno: 65
       - name: "low_cloud_amount"
         varno: 67
+      - name: "additional_cloud_group_height"
+        varno: 68
+      - name: "additional_cloud_group_type"
+        varno: 69
+      - name: "additional_cloud_group_amount"
+        varno: 70
       - name: "total_amount_of_clouds"
         varno: 91
       - name: "station_pressure"
