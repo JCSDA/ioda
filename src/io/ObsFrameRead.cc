@@ -82,18 +82,7 @@ ObsFrameRead::ObsFrameRead(const ObsSpaceParameters & params) :
     distname_ = distParams.name;
 
     // Create an MPI distribution
-    each_process_reads_separate_obs_ = obs_io_->eachProcessGeneratesSeparateObs();
-    if (each_process_reads_separate_obs_) {
-      if ("Halo" == distname_) {
-         dist_ = DistributionFactory::create(params.comm(), distParams);
-      } else {
-        // On each process the obs_io_ object will produce a separate series of observations,
-        // so we need to use a non-overlapping distribution. The RoundRobin will do.
-        dist_ = DistributionFactory::create(params.comm(), EmptyDistributionParameters());
-      }
-    } else {
-      dist_ = DistributionFactory::create(params.comm(), distParams);
-    }
+    dist_ = DistributionFactory::create(params.comm(), distParams);
 
     max_frame_size_ = params.top_level_.obsIoInParameters().maxFrameSize;
     oops::Log::debug() << "ObsFrameRead: maximum frame size: " << max_frame_size_ << std::endl;
@@ -105,14 +94,8 @@ ObsFrameRead::~ObsFrameRead() {}
 void ObsFrameRead::frameInit(Has_Attributes & destAttrs) {
     // reset counters, etc.
     frame_start_ = 0;
-    if (each_process_reads_separate_obs_) {
-      // Ensure record numbers assigned on different processes don't overlap
-      next_rec_num_ = params_.comm().rank();
-      rec_num_increment_ = params_.comm().size();
-    } else {
-      next_rec_num_ = 0;
-      rec_num_increment_ = 1;
-    }
+    next_rec_num_ = 0;
+    rec_num_increment_ = 1;
     unique_rec_nums_.clear();
     // It's important to grab maximum var size from obs_io_ since it is being used to
     // determine when there are no more frames from obs_io_.
@@ -222,11 +205,6 @@ bool ObsFrameRead::frameAvailable() {
         known_frame_selections_.clear();
         known_mem_selections_.clear();
     } else {
-      if (obs_io_->eachProcessGeneratesSeparateObs()) {
-        // sum up global location counts on all PEs
-        params_.comm().allReduceInPlace(gnlocs_, eckit::mpi::sum());
-        params_.comm().allReduceInPlace(gnlocs_outside_timewindow_, eckit::mpi::sum());
-      }
       // assign each record to the patch of a unique PE
       dist_->computePatchLocs();
     }
@@ -564,39 +542,6 @@ void ObsFrameRead::applyMpiDistribution(const std::shared_ptr<Distribution> & di
     latLonVar.read(lats, memSelect, frameSelect);
     lats.resize(frameCount);
 
-    /// If "save obs distribution" is set to true in a previous run,
-    /// global location indices and record numbers have stored
-    /// in the MetaData/saved_index and MetaData/saved_record_number variables,
-    /// along with all other variables in separate files.
-    ///
-    /// When the "obsdatain.read obs from separate file" option is set,
-    /// each process reads a separate input file generated previously,
-    /// to use the stored index and record_number.
-
-    std::vector<int> saved_index(locSize, 0);
-    std::vector<int> saved_record_number(locSize, 0);
-
-    if (each_process_reads_separate_obs_ && ("Halo" == distname_)) {
-      // Assume that saved_index and saved_record_number variables are shaped the same
-      if (!obs_frame_.vars.exists("MetaData/saved_record_number")) {
-        throw eckit::UserError("MetaData/saved_record_number not found in observations file",
-                                Here());
-      }
-      Variable locVar = obs_frame_.vars.open("MetaData/saved_record_number");
-      varShape = locVar.getDimensions().dimsCur;
-      Selection locMemSelect = createMemSelection(varShape, frameCount);
-      Selection locFrameSelect = createEntireFrameSelection(varShape, frameCount);
-      locVar.read(saved_record_number, locMemSelect, locFrameSelect);
-      saved_record_number.resize(frameCount);
-
-      if (!obs_frame_.vars.exists("MetaData/saved_index")) {
-        throw eckit::UserError("MetaData/saved_index not found in observations file", Here());
-      }
-      locVar = obs_frame_.vars.open("MetaData/saved_index");
-      locVar.read(saved_index, locMemSelect, locFrameSelect);
-      saved_index.resize(frameCount);
-    }
-
     // Generate the index and recnums for this frame.
     const std::size_t commSize = params_.comm().size();
     const std::size_t commRank = params_.comm().rank();
@@ -606,26 +551,15 @@ void ObsFrameRead::applyMpiDistribution(const std::shared_ptr<Distribution> & di
     std::size_t globalLocIndex = 0;
     frame_loc_index_.clear();
     for (std::size_t i = 0; i < locSize; ++i) {
-        if (each_process_reads_separate_obs_ && ("Halo" == distname_)) {
-          rowNum = saved_index[i];
-          recNum = saved_record_number[i];
-          frameIndex = i;
-        } else {
-          rowNum = locIndex[i];
-          recNum = records[i];
-          // The current frame storage always starts at zero so frameIndex
-          // needs to be the offset from the ObsIo frame start.
-          frameIndex = rowNum - frameStart;
-        }
+        rowNum = locIndex[i];
+        recNum = records[i];
+        // The current frame storage always starts at zero so frameIndex
+        // needs to be the offset from the ObsIo frame start.
+        frameIndex = rowNum - frameStart;
 
         eckit::geometry::Point2 point(lons[frameIndex], lats[frameIndex]);
 
         std::size_t globalLocIndex = rowNum;
-        if (each_process_reads_separate_obs_ && ("Halo" != distname_)) {
-          // Each process reads a different set of observations. Make sure all of them are assigned
-          // different global location indices
-          globalLocIndex = rowNum * commSize + commRank;
-        }
         dist_->assignRecord(recNum, globalLocIndex, point);
 
         if (dist->isMyRecord(recNum)) {

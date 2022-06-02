@@ -177,8 +177,6 @@ void testSave() {
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     Odb = Test_::obspace()[jj].get();
-    bool read_obs_from_separate_file =
-      conf[jj].getBool("obs space.read obs from separate file", false);
 
     // Read in a vector and save the rms value. Then write the vector into a
     // test group, read it out of the test group and compare the rms of the
@@ -186,8 +184,7 @@ void testSave() {
     std::unique_ptr<ObsVector_> ov_orig(new ObsVector_(*Odb, "ObsValue"));
     ExpectedRms = ov_orig->rms();
 
-    if (!read_obs_from_separate_file)
-      ov_orig->save("ObsTest");
+    ov_orig->save("ObsTest");
 
     std::unique_ptr<ObsVector_> ov_test(new ObsVector_(*Odb, "ObsTest"));
     Rms = ov_test->rms();

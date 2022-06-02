@@ -57,13 +57,6 @@ class ObsFileInParameters : public ObsIoParametersBase {
     ///   (`.odb` -- ODB, everything else -- HDF5).
     oops::Parameter<FileFormat> format{"format", FileFormat::AUTO, this};
 
-    /// reading from multiple files (1 per MPI task)
-    /// This option is not typically used. It is used to tell the system
-    /// to read observations from the ioda output files (one per MPI task)
-    /// from a prior run instead of reading and distributing from the original
-    /// file. This is currently being used in LETKF applictions.
-    oops::Parameter<bool> readFromSeparateFiles{"read obs from separate file", false, this};
-
     /// file with variable name mapping rules
     ///
     /// Required for obs files in the ODB format, unused otherwise.
@@ -210,19 +203,6 @@ class ObsTopLevelParameters : public oops::ObsSpaceParametersBase {
 
     /// parameters of the MPI distribution
     oops::Parameter<DistributionParametersWrapper> distribution{"distribution", {}, this};
-
-    /// If saveObsDistribution/"save obs distribution" set to true,
-    /// global location indices and record numbers will be stored
-    /// in the MetaData/saved_index and MetaData/saved_record_number variables, respectively.
-    /// These variables will be saved along with all other variables
-    /// to the output files generated if the obsdataout.obsfile option is set.
-    ///
-    /// When the "obsdatain.read obs from separate file" option is set
-    /// and hence each process reads a separate input file,
-    /// the presence of these variables makes it possible
-    /// to identify observations stored in more than one input file.
-
-    oops::Parameter<bool> saveObsDistribution{"save obs distribution", false, this};
 
     /// simulated variables
     oops::RequiredParameter<oops::Variables> simVars{"simulated variables", this};

@@ -30,14 +30,6 @@ ObsIoFileRead::ObsIoFileRead(const Parameters_ & ioParams,
 
     const bool odb = (determineFileFormat(fileName, ioParams.format) == FileFormat::ODB);
 
-    if (ioParams.readFromSeparateFiles) {
-        // We are initializing from a prior run and therefore reading in the
-        // separate ioda files produced from that prior run.
-        fileName = uniquifyFileName(fileName, obsSpaceParams.getMpiRank(),
-                                    obsSpaceParams.getMpiTimeRank());
-        read_separate_files_ = true;
-    }
-
     if (odb)
       createObsGroupFromOdbFile(fileName, ioParams);
     else
@@ -59,10 +51,6 @@ ObsIoFileRead::ObsIoFileRead(const Parameters_ & ioParams,
 }
 
 ObsIoFileRead::~ObsIoFileRead() {}
-
-bool ObsIoFileRead::eachProcessGeneratesSeparateObs() const {
-  return read_separate_files_;
-}
 
 //------------------------------ private functions ----------------------------------
 //-----------------------------------------------------------------------------------

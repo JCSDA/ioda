@@ -87,7 +87,6 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsspace_index_recnum.yml
   testinput/iodatest_obsspace_index_recnum_twfilt.yml
   testinput/iodatest_obsspace_invalid_numeric.yml
-  testinput/iodatest_obsspace_index_recnum_read_distributed_files.yml
   testinput/iodatest_obsspace_io_pool_sondes.yml
   testinput/iodatest_obsspace_locations_qc.yml
   testinput/iodatest_obsspace_marine.yml
@@ -101,8 +100,6 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsspace_fill_value.yml
   testinput/iodatest_obsvector.yml
   testinput/iodatest_obsvector_packeigen.yml
-  testinput/iodatest_obsvector_pio_observer.yml
-  testinput/iodatest_obsvector_pio_read_distributed_files.yml
   testinput/iodatest_extendedobsspace.yml
   testinput/iodatest_extendedobsspace_halo.yml
   testinput/iodatest_sort.yml
@@ -462,13 +459,6 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_invalid_numeric
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
-ecbuild_add_test( TARGET  test_ioda_obsspace_index_recnum_read_distributed_files
-                  MPI 3
-                  COMMAND test_ioda_obsspace_index_recnum
-                  ARGS    "testinput/iodatest_obsspace_index_recnum_read_distributed_files.yml"
-                  LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data )
-
 ecbuild_add_test( TARGET  test_ioda_obsspace_mpi
                   MPI     2
                   COMMAND test_ioda_obsspace
@@ -663,22 +653,6 @@ ecbuild_add_test( TARGET  test_ioda_obsvector_packeigen
                   ARGS    "testinput/iodatest_obsvector_packeigen.yml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
-
-# IODA ObsVector class (Halo) parallel IO Observer
-ecbuild_add_test( TARGET  test_ioda_obsvector_pio_observer
-                  MPI     4
-                  SOURCES mains/TestIodaObsVector.cc
-                  ARGS    "testinput/iodatest_obsvector_pio_observer.yml"
-                  LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data )
-
-# IODA ObsVector class (Halo) parallel IO read from distributed files.
-ecbuild_add_test( TARGET  test_ioda_obsvector_pio_read_distributed_files
-                  MPI     4
-                  SOURCES mains/TestIodaObsVector.cc
-                  ARGS    "testinput/iodatest_obsvector_pio_read_distributed_files.yml"
-                  LIBS  ioda_test
-                  TEST_DEPENDS test_ioda_obsvector_pio_observer )
 
 #####################################################################
 # ObsDataVector tests
