@@ -30,8 +30,6 @@ namespace ObsStore {
 enum class ObsTypes {
   NOTYPE,
 
-  BOOL,
-
   FLOAT,
   DOUBLE,
   LDOUBLE,
@@ -68,8 +66,6 @@ enum class ObsTypeClasses {
   INTEGER,
   FLOAT,
   STRING,
-
-  LOGICAL,
 
   BITFIELD,
   OPAQUE,

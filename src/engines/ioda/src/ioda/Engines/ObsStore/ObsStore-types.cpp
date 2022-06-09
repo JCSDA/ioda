@@ -103,11 +103,7 @@ ObsStore_Type_Provider::getFundamentalObsStoreType(std::type_index type) {
   // is signed or false if the type is unsigned (or the quality of being signed
   // doesn't apply such as the case of a string).
   static const std::map<std::type_index, ObsTypeInfo> fundamental_types
-    = {{typeid(bool), {ioda::ObsStore::ObsTypes::BOOL,
-                       ioda::ObsStore::ObsTypeClasses::LOGICAL,
-                       sizeof(bool), false}},
-
-       {typeid(float), {ioda::ObsStore::ObsTypes::FLOAT,
+    = {{typeid(float), {ioda::ObsStore::ObsTypes::FLOAT,
                         ioda::ObsStore::ObsTypeClasses::FLOAT,
                         sizeof(float), false}},
        {typeid(double), {ioda::ObsStore::ObsTypes::DOUBLE,
