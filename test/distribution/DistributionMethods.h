@@ -33,6 +33,23 @@ namespace ioda {
 namespace test {
 
 // -----------------------------------------------------------------------------
+// On some platforms, the openMPI implementation doesn't handle
+// std::numeric_limits<size_t>() properly which causes the testMinScalar
+// and testMinVector tests to fail. Use a template specialization for size_t
+// to avoid std::numeric_limits<size_t>() and instead use a very large
+// number that works with openMPI.
+
+template <typename T>
+T bigNumber() {
+  return std::numeric_limits<T>::max();
+}
+
+template <>
+size_t bigNumber<size_t>() {
+  return std::numeric_limits<size_t>::max() * 99 / 100;
+}
+
+// -----------------------------------------------------------------------------
 
 template <typename T>
 void testAccumulateScalar(const Distribution &TestDist, const std::vector<size_t> &myRecords,
@@ -117,7 +134,7 @@ template <typename T>
 void testMinScalar(const Distribution &TestDist, const std::vector<size_t> &myRecords,
                    size_t expectedMin) {
   // Perform a local reduction
-  T min = std::numeric_limits<T>::max();
+  T min = bigNumber<T>();
   for (size_t loc = 0; loc < myRecords.size(); ++loc)
     min = std::min<T>(min, myRecords[loc]);
 
@@ -133,7 +150,7 @@ void testMinVector(const Distribution &TestDist, const std::vector<size_t> &myRe
   const T shift = 10;
 
   // Perform a local reduction
-  std::vector<T> mins(2, std::numeric_limits<T>::max());
+  std::vector<T> mins(2, bigNumber<T>());
   for (size_t loc = 0; loc < myRecords.size(); ++loc) {
     mins[0] = std::min<T>(mins[0], myRecords[loc]);
     mins[1] = std::min<T>(mins[1], myRecords[loc] + shift);
