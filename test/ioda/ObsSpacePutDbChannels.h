@@ -30,6 +30,9 @@ namespace ioda {
 namespace test {
 
 CASE("ioda/ObsSpace/testPutDb") {
+  constexpr float testVec1Start = 1.0;
+  constexpr float testVec2Start = 2.0;
+
   const auto &topLevelConf = ::test::TestEnvironment::config();
 
   util::DateTime bgn(topLevelConf.getString("window begin"));
@@ -43,66 +46,111 @@ CASE("ioda/ObsSpace/testPutDb") {
     ioda::ObsTopLevelParameters obsparams;
     obsparams.validateAndDeserialize(obsconf);
 
-    std::unique_ptr<ObsSpace> obsspace = boost::make_unique<ObsSpace>(
-          obsparams, oops::mpi::world(), bgn, end, oops::mpi::myself());
+    eckit::LocalConfiguration testconf(conf, "test data");
+    bool createFile = testconf.getBool("create file", true);
+    const Dimensions_t expectedNlocs = testconf.getUnsigned("expected nlocs", 0);
+    const Dimensions_t expectedNchans = testconf.getUnsigned("expected nchans", 0);
 
-    const Dimensions_t nlocs = obsspace->nlocs();
-    const Dimensions_t nchans = obsspace->nchans();
-    const bool hasChannels = nchans != 0;
+    if (createFile) {
+      // Create a ioda file which will be checked on a future invocation of this
+      // test with createFile set to false
 
-    std::vector<float> testVec1(nlocs), testVec2(nlocs);
-    std::iota(testVec1.begin(), testVec1.end(), 1.0f);
-    std::iota(testVec2.begin(), testVec2.end(), 2.0f);
-    obsspace->put_db("DummyGroup", "multi_dimensional_var_2", testVec1);
-    obsspace->put_db("DummyGroup", "multi_dimensional_var_4", testVec2);
-    obsspace->put_db("MetaData", "single_dimensional_var_2", testVec1);
-    obsspace->put_db("DummyGroup", "single_dimensional_var", testVec1);
-    if (hasChannels) {
-      // Channel 1000000 does not exist
-      EXPECT_THROWS(obsspace->put_db("DummyGroup", "multi_dimensional_var_1000000", testVec1));
-      // The variable single_dimensional_var already exists, but is not associated with the
-      // nchans dimension
-      EXPECT_THROWS(obsspace->put_db("DummyGroup", "single_dimensional_var_2", testVec1));
-    }
+      std::unique_ptr<ObsSpace> obsspace = boost::make_unique<ObsSpace>(
+            obsparams, oops::mpi::world(), bgn, end, oops::mpi::myself());
 
-    // Call the ObsSpace close function to force an output file to be written
-    obsspace->save();
+      const Dimensions_t nlocs = obsspace->nlocs();
+      const Dimensions_t nchans = obsspace->nchans();
+      const bool hasChannels = nchans != 0;
+      EXPECT_EQUAL(nlocs, expectedNlocs);
 
-    // Read the output file and check its contents are correct
+      std::vector<float> testVec1(nlocs), testVec2(nlocs);
+      std::iota(testVec1.begin(), testVec1.end(), testVec1Start);
+      std::iota(testVec2.begin(), testVec2.end(), testVec2Start);
+      obsspace->put_db("DummyGroup", "multi_dimensional_var_2", testVec1);
+      obsspace->put_db("DummyGroup", "multi_dimensional_var_4", testVec2);
+      obsspace->put_db("MetaData", "single_dimensional_var_2", testVec1);
+      obsspace->put_db("DummyGroup", "single_dimensional_var", testVec1);
+      if (hasChannels) {
+        EXPECT_EQUAL(nchans, expectedNchans);
 
-    const std::string fileName = uniquifyFileName(obsconf.getString("obsdataout.obsfile"), 0, -1);
-    const ioda::Group group = ioda::Engines::HH::openFile(
-          fileName, ioda::Engines::BackendOpenModes::Read_Only);
-
-    if (hasChannels) {
-      const Variable nchansVar = group.vars.open("nchans");
-      const std::vector<int> channels = nchansVar.readAsVector<int>();
-      const std::size_t channel2Index =
-          std::find(channels.begin(), channels.end(), 2) - channels.begin();
-      const std::size_t channel4Index =
-          std::find(channels.begin(), channels.end(), 4) - channels.begin();
-
-      {
-        const Variable var = group.vars.open("DummyGroup/multi_dimensional_var");
-        const Dimensions dims = var.getDimensions();
-        EXPECT_EQUAL(dims.dimensionality, 2);
-        const std::vector<Dimensions_t> expectedDimsCur{nlocs, nchans};
-        EXPECT_EQUAL(dims.dimsCur, expectedDimsCur);
-
-        Eigen::ArrayXXf values;
-        var.readWithEigenRegular(values);
-        std::vector<float> channelValues(nlocs);
-        for (std::size_t loc = 0; loc < nlocs; ++loc)
-          channelValues[loc] = values(loc, channel2Index);
-        EXPECT_EQUAL(channelValues, testVec1);
-
-        for (std::size_t loc = 0; loc < nlocs; ++loc)
-          channelValues[loc] = values(loc, channel4Index);
-        EXPECT_EQUAL(channelValues, testVec2);
+        // Channel 1000000 does not exist
+        EXPECT_THROWS(obsspace->put_db("DummyGroup", "multi_dimensional_var_1000000", testVec1));
+        // The variable single_dimensional_var already exists, but is not associated with the
+        // nchans dimension
+        EXPECT_THROWS(obsspace->put_db("DummyGroup", "single_dimensional_var_2", testVec1));
       }
-    } else {  // has no channels
+
+      // Call the ObsSpace close function to force an output file to be written
+      obsspace->save();
+    } else {
+      // Read the output file and check that its contents are correct
+      const std::string fileName = uniquifyFileName(obsconf.getString("obsdataout.obsfile"), 0, -1);
+      const ioda::Group group = ioda::Engines::HH::openFile(
+            fileName, ioda::Engines::BackendOpenModes::Read_Only);
+
+      const Variable nlocsVar = group.vars.open("nlocs");
+      const Dimensions_t nlocs = nlocsVar.getDimensions().dimsCur[0];
+      EXPECT_EQUAL(nlocs, expectedNlocs);
+
+      std::vector<float> testVec1(nlocs), testVec2(nlocs);
+      std::iota(testVec1.begin(), testVec1.end(), testVec1Start);
+      std::iota(testVec2.begin(), testVec2.end(), testVec2Start);
+
+      if (group.vars.exists("nchans")) {
+        const Variable nchansVar = group.vars.open("nchans");
+        const Dimensions_t nchans = nchansVar.getDimensions().dimsCur[0];
+        EXPECT_EQUAL(nchans, expectedNchans);
+
+        const std::vector<int> channels = nchansVar.readAsVector<int>();
+        const std::size_t channel2Index =
+            std::find(channels.begin(), channels.end(), 2) - channels.begin();
+        const std::size_t channel4Index =
+            std::find(channels.begin(), channels.end(), 4) - channels.begin();
+
+        {
+          const Variable var = group.vars.open("DummyGroup/multi_dimensional_var");
+          const Dimensions dims = var.getDimensions();
+          EXPECT_EQUAL(dims.dimensionality, 2);
+          const std::vector<Dimensions_t> expectedDimsCur{nlocs, nchans};
+          EXPECT_EQUAL(dims.dimsCur, expectedDimsCur);
+
+          Eigen::ArrayXXf values;
+          var.readWithEigenRegular(values);
+          std::vector<float> channelValues(nlocs);
+          for (std::size_t loc = 0; loc < nlocs; ++loc)
+            channelValues[loc] = values(loc, channel2Index);
+          EXPECT_EQUAL(channelValues, testVec1);
+
+          for (std::size_t loc = 0; loc < nlocs; ++loc)
+            channelValues[loc] = values(loc, channel4Index);
+          EXPECT_EQUAL(channelValues, testVec2);
+        }
+      } else {  // has no channels
+        {
+          const Variable var = group.vars.open("DummyGroup/multi_dimensional_var_2");
+          const Dimensions dims = var.getDimensions();
+          EXPECT_EQUAL(dims.dimensionality, 1);
+          const std::vector<Dimensions_t> expectedDimsCur{nlocs};
+          EXPECT_EQUAL(dims.dimsCur, expectedDimsCur);
+
+          const std::vector<float> values = var.readAsVector<float>();
+          EXPECT_EQUAL(values, testVec1);
+        }
+
+        {
+          const Variable var = group.vars.open("DummyGroup/multi_dimensional_var_4");
+          const Dimensions dims = var.getDimensions();
+          EXPECT_EQUAL(dims.dimensionality, 1);
+          const std::vector<Dimensions_t> expectedDimsCur{nlocs};
+          EXPECT_EQUAL(dims.dimsCur, expectedDimsCur);
+
+          const std::vector<float> values = var.readAsVector<float>();
+          EXPECT_EQUAL(values, testVec2);
+        }
+      }
+
       {
-        const Variable var = group.vars.open("DummyGroup/multi_dimensional_var_2");
+        const Variable var = group.vars.open("DummyGroup/single_dimensional_var");
         const Dimensions dims = var.getDimensions();
         EXPECT_EQUAL(dims.dimensionality, 1);
         const std::vector<Dimensions_t> expectedDimsCur{nlocs};
@@ -113,40 +161,19 @@ CASE("ioda/ObsSpace/testPutDb") {
       }
 
       {
-        const Variable var = group.vars.open("DummyGroup/multi_dimensional_var_4");
+        const Variable var = group.vars.open("MetaData/single_dimensional_var_2");
         const Dimensions dims = var.getDimensions();
         EXPECT_EQUAL(dims.dimensionality, 1);
         const std::vector<Dimensions_t> expectedDimsCur{nlocs};
         EXPECT_EQUAL(dims.dimsCur, expectedDimsCur);
 
         const std::vector<float> values = var.readAsVector<float>();
-        EXPECT_EQUAL(values, testVec2);
+        EXPECT_EQUAL(values, testVec1);
       }
-    }
-
-    {
-      const Variable var = group.vars.open("DummyGroup/single_dimensional_var");
-      const Dimensions dims = var.getDimensions();
-      EXPECT_EQUAL(dims.dimensionality, 1);
-      const std::vector<Dimensions_t> expectedDimsCur{nlocs};
-      EXPECT_EQUAL(dims.dimsCur, expectedDimsCur);
-
-      const std::vector<float> values = var.readAsVector<float>();
-      EXPECT_EQUAL(values, testVec1);
-    }
-
-    {
-      const Variable var = group.vars.open("MetaData/single_dimensional_var_2");
-      const Dimensions dims = var.getDimensions();
-      EXPECT_EQUAL(dims.dimensionality, 1);
-      const std::vector<Dimensions_t> expectedDimsCur{nlocs};
-      EXPECT_EQUAL(dims.dimsCur, expectedDimsCur);
-
-      const std::vector<float> values = var.readAsVector<float>();
-      EXPECT_EQUAL(values, testVec1);
     }
   }
 }
+
 
 class ObsSpacePutDbChannels : public oops::Test {
  private:

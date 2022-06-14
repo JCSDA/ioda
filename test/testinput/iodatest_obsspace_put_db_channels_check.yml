@@ -17,7 +17,7 @@ observations:
     #    true - read the input file and create a ioda output file
     #    false - check the ioda output file after an invocation of
     #            this test with create file set to true
-    create file: true
+    create file: false
     expected nlocs: 100
     expected nchans: 15
 
@@ -30,5 +30,5 @@ observations:
     obsdataout:
       obsfile: "testoutput/sondes_obs_2018041500_m_put_db.nc4"
   test data:
-    create file: true     # create a ioda file to be checked on a subsequent test
+    create file: false     # check the file created by a prior test
     expected nlocs: 974

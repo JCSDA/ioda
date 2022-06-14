@@ -95,6 +95,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsspace_odc_atms.yml
   testinput/iodatest_obsspace_fortran.yml
   testinput/iodatest_obsspace_put_db_channels.yml
+  testinput/iodatest_obsspace_put_db_channels_check.yml
   testinput/iodatest_obsspace_zero_obs.yml
   testinput/iodatest_obsspace_filter_to_zero_obs.yml
   testinput/iodatest_obsspace_fill_value.yml
@@ -486,6 +487,12 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_put_db_channels
                   ARGS    "testinput/iodatest_obsspace_put_db_channels.yml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
+
+ecbuild_add_test( TARGET  test_ioda_obsspace_put_db_channels_check
+                  COMMAND test_ioda_obsspace_put_db_channels
+                  ARGS    "testinput/iodatest_obsspace_put_db_channels_check.yml"
+                  LIBS  ioda_test
+                  TEST_DEPENDS test_ioda_obsspace_put_db_channels get_ioda_test_data )
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_zero_obs
                   COMMAND test_ioda_obsspace
