@@ -35,8 +35,7 @@ class ObsVector : public util::Printable,
  public:
   static const std::string classname() {return "ioda::ObsVector";}
 
-  explicit ObsVector(ObsSpace &, const std::string & name = "",
-                     const bool useObservedVariables = false);
+  explicit ObsVector(ObsSpace &, const std::string & name = "");
   ObsVector(const ObsVector &);
   ~ObsVector();
 

@@ -136,52 +136,29 @@ ObsSpace::ObsSpace(const Parameters_ & params, const eckit::mpi::Comm & comm,
     createObsGroupFromObsFrame(obsFrame);
     initFromObsSource(obsFrame);
 
-    // Get list of variables to be simulated
-    assimvars_ = obs_params_.top_level_.simVars;
-
-    // Get list of derived variables
-    derived_obsvars_ = obs_params_.top_level_.derivedSimVars;
-
     // Get list of observed variables
-    // Either read from yaml list, or use all variables in input file.
+    // Either read from yaml list, use all variables in input file if 'obsdatain' is specified
+    // or set to simulated variables if 'generate' is specified.
     if (obs_params_.top_level_.ObservedVars.value().size()
             + obs_params_.top_level_.derivedSimVars.value().size() != 0) {
       // Read from yaml
       obsvars_ = obs_params_.top_level_.ObservedVars;
+    } else if (obs_params_.top_level_.obsGenerate.value() != boost::none) {
+      obsvars_ = obs_params_.top_level_.simVars;
     } else {
-      // Use simulated - derived varaibles
-      obsvars_ = assimvars_;
-      obsvars_ -= derived_obsvars_;
-    }
-
-    // Store the intial list of variables read from the yaml of input file.
-    initial_obsvars_ = obsvars_;
-
-    // Add derived varible names to observed variables list
-    if (obs_params_.top_level_.derivedSimVars.value().size() != 0) {
-      // As things stand, this assert cannot fail, since both variables take the list of channels
-      // from the same "channels" YAML option.
-      ASSERT(obs_params_.top_level_.derivedSimVars.value().channels() == obsvars_.channels());
-      obsvars_ += obs_params_.top_level_.derivedSimVars;
-    }
-    // ToDo (JAW): Reinstate the below definition of obsvars_ once assimilation for different
-    // lists is sorted.
-    /*
-    // Get list of observed variables
-    // Either read from yaml list, or use all variables in input file.
-    if (obs_params_.top_level_.ObservedVars.value().size()
-            + obs_params_.top_level_.derivedSimVars.value().size() != 0) {
-      // Read from yaml
-      obsvars_ = obs_params_.top_level_.ObservedVars;
-    } else {
-      // Use everything in file
-      Group obsValueGroup = obs_group_.open("ObsValue");
-      const std::vector<std::string>
-              allObsVars = obsValueGroup.listObjects<ObjectType::Variable>(false);
-      // ToDo (JAW): Get the channels from the input file (currently using the ones from simVars)
-      std::vector<int> channels = obs_params_.top_level_.simVars.value().channels();
-      oops::Variables obVars(allObsVars, channels);
-      obsvars_ = obVars;
+      // Use all variables found in the ObsValue group in the file. If there is no ObsValue
+      // group (rare), then copy the simulated variables list.
+      if (obs_group_.exists("ObsValue")) {
+        Group obsValueGroup = obs_group_.open("ObsValue");
+        const std::vector<std::string>
+                allObsVars = obsValueGroup.listObjects<ObjectType::Variable>(false);
+        // ToDo (JAW): Get the channels from the input file (currently using the ones from simVars)
+        std::vector<int> channels = obs_params_.top_level_.simVars.value().channels();
+        oops::Variables obVars(allObsVars, channels);
+        obsvars_ = obVars;
+      } else {
+        obsvars_ = obs_params_.top_level_.simVars;
+      }
     }
 
     // Store the intial list of variables read from the yaml of input file.
@@ -198,7 +175,7 @@ ObsSpace::ObsSpace(const Parameters_ & params, const eckit::mpi::Comm & comm,
 
     // Get list of variables to be simulated
     assimvars_ = obs_params_.top_level_.simVars;
-    */
+
 
     oops::Log::info() << this->obsname() << " processed vars: " << obsvars_ << std::endl;
     oops::Log::info() << this->obsname() << " assimilated vars: " << assimvars_ << std::endl;

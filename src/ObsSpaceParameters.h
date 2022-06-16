@@ -235,12 +235,12 @@ class ObsTopLevelParameters : public oops::ObsSpaceParametersBase {
       throw eckit::BadValue("obsIoInParameters() must not be called before deserialize()", Here());
     }
 
+    /// \brief Fill this section to generate observations on the fly.
+    oops::OptionalParameter<LegacyObsGenerateParameters> obsGenerate{"generate", this};
+
  private:
     /// \brief Fill this section to read observations from a file.
     oops::OptionalParameter<ObsFileInParameters> obsInFile{"obsdatain", this};
-
-    /// \brief Fill this section to generate observations on the fly.
-    oops::OptionalParameter<LegacyObsGenerateParameters> obsGenerate{"generate", this};
 
     /// \brief Fill this section instead of `obsdatain` and `generate` to load observations from
     /// any other source.
