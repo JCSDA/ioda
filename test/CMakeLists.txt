@@ -643,7 +643,7 @@ ecbuild_add_test( TARGET  test_ioda_oops_obsdatavector
                   SOURCES mains/TestObsDataVector.cc
                   ARGS    "testinput/iodatest_obsvector.yml"
                   LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data )
+                  TEST_DEPENDS get_ioda_test_data test_ioda_oops_obsvector )
 
 # IODA ObsVector class
 ecbuild_add_test( TARGET  test_ioda_obsvector
@@ -651,7 +651,7 @@ ecbuild_add_test( TARGET  test_ioda_obsvector
                   SOURCES mains/TestIodaObsVector.cc
                   ARGS    "testinput/iodatest_obsvector.yml"
                   LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data )
+                  TEST_DEPENDS get_ioda_test_data test_ioda_oops_obsvector test_ioda_oops_obsdatavector )
 
 # IODA ObsVector class (packEigen method)
 ecbuild_add_test( TARGET  test_ioda_obsvector_packeigen
@@ -906,7 +906,7 @@ if (odc_FOUND)
   ecbuild_add_test( TARGET  test_ioda-convert_surface_missing_odc
                     TYPE    SCRIPT
                     COMMAND ${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
-                    ARGS    Surface
+                    ARGS    Surface-missing
                             Data/testinput_tier_1/surface-missing.odb
                             testinput/odb_default_name_map.yml testinput/iodatest_odb_surface.yml
                     TEST_DEPENDS get_ioda_test_data )
@@ -914,7 +914,7 @@ if (odc_FOUND)
   ecbuild_add_test( TARGET  test_ioda-convert_surface_empty_odc
                     TYPE    SCRIPT
                     COMMAND ${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
-                    ARGS    Surface
+                    ARGS    Surface-empty
                             Data/testinput_tier_1/surface-empty.odb
                             testinput/odb_default_name_map.yml testinput/iodatest_odb_surface.yml
                     TEST_DEPENDS get_ioda_test_data )
