@@ -837,7 +837,7 @@ varno-dependent columns:
         varno: 121
       - name: "bending_angle"
         varno: 162
-      - name: "aerosol_optical_depth"
+      - name: "aerosolOpticalDepth"
         varno: 174
       - name: "hlos_wind_component"
         varno: 187
