@@ -17,6 +17,8 @@ endif()
 
 project( ioda VERSION 2.1.0 LANGUAGES ${IODA_LANGUAGES} )
 
+option(OPENMP "Build ioda with OpenMP support" ON)
+
 ## Ecbuild integration
 find_package( ecbuild QUIET )
 include( ecbuild_system NO_POLICY_SCOPE )
@@ -31,7 +33,9 @@ option( ENABLE_IODA_DOC "Build IODA documentation" OFF )
 ## Dependencies
 
 # Required
-find_package( OpenMP COMPONENTS C CXX Fortran )
+if(OPENMP)
+  find_package( OpenMP COMPONENTS C CXX Fortran )
+endif()
 set(HDF5_PREFER_PARALLEL true) # CMake sometimes mistakenly finds a serial system-provided HDF5.
 find_package( HDF5 REQUIRED COMPONENTS C HL )
 find_package( MPI REQUIRED )
