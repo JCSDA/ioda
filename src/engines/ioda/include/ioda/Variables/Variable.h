@@ -25,7 +25,7 @@
 
 #include "ioda/Attributes/Has_Attributes.h"
 #include "ioda/Exception.h"
-#include "ioda/Math.h"
+#include "ioda/MathOps.h"
 #include "ioda/Misc/Eigen_Compat.h"
 #include "ioda/Python/Var_ext.h"
 #include "ioda/Types/Marshalling.h"

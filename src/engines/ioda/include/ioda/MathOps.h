@@ -5,7 +5,7 @@
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
-/*! @file Math.h
+/*! @file MathOps.h
 * @brief Eigen wrappers for unit-aware, type-aware, and missing value-aware math!
 */
 

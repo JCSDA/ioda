@@ -24,7 +24,7 @@
 #include <vector>
 
 #include "ioda/Exception.h"
-#include "ioda/Math.h"
+#include "ioda/MathOps.h"
 #include "ioda/Units.h"
 
 int main(int, char **) {
@@ -41,7 +41,7 @@ int main(int, char **) {
     // https://eigen.tuxfamily.org/dox/group__DenseMatrixManipulation__chapter.html
 
     // IODA provides a facility for wrapping any Eigen object for use in unit-aware and
-    // missing value-aware math. This is in "ioda/Math.h".
+    // missing value-aware math. This is in "ioda/MathOps.h".
 
     // ------------------------------------------------
     // Basic math

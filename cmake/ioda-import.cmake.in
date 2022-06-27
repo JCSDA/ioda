@@ -6,8 +6,30 @@
 
 include(CMakeFindDependencyMacro)
 
+
+# These instructions parallel ioda's top-level CMakeLists.txt dependencies
+
+# Required packages
+
+if(NOT HDF5_FOUND)
+    set(HDF5_PREFER_PARALLEL true) # CMake sometimes mistakenly finds a serial system-provided HDF5.
+    find_dependency( HDF5 REQUIRED COMPONENTS C HL )
+endif()
+
+if(NOT MPI_FOUND)
+    find_dependency( MPI REQUIRED )
+endif()
+
+if(NOT jedicmake_FOUND)
+    find_dependency( jedicmake REQUIRED )
+endif()
+
 if(NOT NetCDF_C_FOUND)
     find_dependency( NetCDF REQUIRED COMPONENTS C )
+endif()
+
+if(NOT eckit_FOUND)
+    find_dependency( eckit 1.11.6 REQUIRED )
 endif()
 
 if(NOT fckit_FOUND)
@@ -15,12 +37,38 @@ if(NOT fckit_FOUND)
 endif()
 
 if(NOT oops_FOUND)
-    find_dependency( oops REQUIRED )
+    find_dependency( oops 1.0.0 REQUIRED )
+endif()
+
+if(NOT Eigen3_FOUND)
+find_dependency( Eigen3 REQUIRED NO_MODULE HINTS
+              $ENV{Eigen3_ROOT} $ENV{EIGEN3_ROOT} $ENV{Eigen_ROOT} $ENV{EIGEN_ROOT}
+              $ENV{Eigen3_PATH} $ENV{EIGEN3_PATH} $ENV{Eigen_PATH} $ENV{EIGEN_PATH} )
+endif()
+
+if(NOT gsl-lite_FOUND)
+    find_dependency( gsl-lite REQUIRED HINTS $ENV{gsl_lite_DIR} )
 endif()
 
 if(NOT udunits_FOUND)
     find_dependency( udunits 2.2.0 REQUIRED )
 endif()
+
+
+
+# Optional packages
+
+if(@OpenMP_FOUND@)
+    find_dependency( OpenMP COMPONENTS C CXX Fortran )
+endif()
+
+if(@odc_FOUND@)
+    find_dependency( odc 1.0.2 REQUIRED )
+endif()
+# Header-only. Not exposed.
+#find_dependency( Boost 1.64.0 )
+
+
 
 #Export Fortran compiler version for checking module compatibility
 set(@PROJECT_NAME@_MODULES_Fortran_COMPILER_ID @CMAKE_Fortran_COMPILER_ID@)

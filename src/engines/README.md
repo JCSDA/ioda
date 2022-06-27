@@ -25,7 +25,7 @@ The [Related Pages](./pages.html) tab lists an introduction to how we use [the G
 Required:
 
 - A C++ 2014-conformant compiler. Provided by gcc 6+, clang 6+, Apple clang 6+, Intel C++ 18+, or MSVC 2019+. Other compiler families may work, but are untested. [This](https://en.cppreference.com/w/cpp/compiler_support) may help.
-- [HDF5](https://www.hdfgroup.org/solutions/hdf5/). Only the C and HL libraries are needed. Version 1.12 or greater is preferred. Not all functions are available in versions 1.8 and 1.10.
+- [HDF5](https://www.hdfgroup.org/solutions/hdf5/). Only the C and HL libraries are needed. Version 1.12 or greater is required.
 - [The Guideline Support Library](@ref GSL)
 - [Eigen3](https://eigen.tuxfamily.org/) (we need both the core and unsupported headers)
 

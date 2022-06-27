@@ -1,11 +1,14 @@
 include(Targets)
 
+# We cannot call ecbuild_add_library here since it conflicts with pybind11_add_module.
 pybind11_add_module(_ioda_python py_ioda.cpp py_types.cpp py_dimensions.cpp py_attributes.cpp
 	py_has_attributes.cpp py_selections.cpp py_variables.cpp py_vcps.cpp py_has_variables.cpp
 	py_groups.cpp py_engines.cpp py_dlp.cpp py_scales.cpp py_obsgroup.cpp)
 target_link_libraries(_ioda_python PUBLIC ioda_engines Python3::Module)
 target_link_libraries(_ioda_python PUBLIC Eigen3::Eigen)
 set(pyver python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR})
+
+# TODO: Make an alias to ioda::Python
 
 # AddPyLib will set the target file for _ioda_python to the subdirectory:
 #
@@ -50,8 +53,11 @@ add_custom_command(TARGET _ioda_python POST_BUILD
 
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/pyioda/ioda/__init__.py
 	DESTINATION ${CMAKE_INSTALL_LIBDIR}/${pyver}/pyioda/ioda/
+        COMPONENT Python
 	)
 
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/pyioda/ioda_obs_space/__init__.py
 	DESTINATION ${CMAKE_INSTALL_LIBDIR}/${pyver}/pyioda/ioda_obs_space/
+        COMPONENT Python
 	)
+

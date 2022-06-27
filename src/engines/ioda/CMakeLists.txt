@@ -59,7 +59,7 @@ list(APPEND SRCS_LAYOUTS_ODB
 	src/ioda/Layouts/Layout_ObsGroup_ODB.cpp
 	)
 list(APPEND SRCS_MATH
-	include/ioda/Math.h
+	include/ioda/MathOps.h
 	include/ioda/Units.h
 	src/ioda/Units.cpp
 	# These files are deprecated and will be removed once the Transform engine is ready
@@ -231,18 +231,14 @@ endif()
 
 ## Create the library
 
-add_library(ioda_engines SHARED ${SRCS_IODA_ENGINES})
-# Macro to set libary paths (since we are not using ecbuild)
-addlib(ioda_engines SHARED ioda ioda_engines-targets)
-# Set lib versioning information
-set_property(TARGET ioda_engines PROPERTY VERSION ${IODA_ENGINES_VERSION})
-set_property(TARGET ioda_engines PROPERTY SOVERSION ${IODA_ENGINES_TWEAK})
-set_property(TARGET ioda_engines PROPERTY
-	INTERFACE_ioda_engines_MAJOR_VERSION ${IODA_ENGINES_MAJOR})
-set_property(TARGET ioda_engines APPEND PROPERTY
-	COMPATIBLE_INTERFACE_STRING ioda_engines_MAJOR_VERSION
-	)
+ecbuild_add_library( TARGET ioda_engines
+                     SOURCES ${SRCS_IODA_ENGINES}
+                     INSTALL_HEADERS LISTED
+                     HEADER_DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}
+                     LINKER_LANGUAGE CXX )
 
+
+AddLib(ioda_engines SHARED ioda ${PROJECT_NAME}-targets)
 
 ## Linking options
 
@@ -310,57 +306,5 @@ if (BUILD_PYTHON_BINDINGS)
 	add_subdirectory(python)
 endif()
 
-
-## Installation and cpack options
-
-
-if (IODA_ENGINES_IS_PROJECT)
-	include(CMakePackageConfigHelpers)
-	write_basic_package_version_file(
-		"${PROJECT_BINARY_DIR}/ioda_engines/ioda_enginesConfigVersion.cmake"
-		VERSION ${IODA_ENGINES_VERSION}
-		COMPATIBILITY AnyNewerVersion
-		)
-
-	export(EXPORT ioda_engines-targets
-		FILE "${PROJECT_BINARY_DIR}/ioda_engines-targets.cmake"
-		NAMESPACE ioda_engines::
-		)
-
-	configure_file(${PROJECT_SOURCE_DIR}/cmake/ioda_engines-config.cmake
-		"${PROJECT_BINARY_DIR}/ioda_engines-config.cmake"
-		COPYONLY
-		)
-
-	set(ConfigPackageLocation lib/cmake/ioda_engines)
-	install(EXPORT ioda_engines-targets
-		FILE ioda_engines-targets.cmake
-		NAMESPACE ioda_engines::
-		DESTINATION ${ConfigPackageLocation}
-		)
-
-	install(
-		FILES
-			"${PROJECT_SOURCE_DIR}/cmake/ioda_engines-config.cmake"
-			"${PROJECT_BINARY_DIR}/ioda_engines/ioda_enginesConfigVersion.cmake"
-		DESTINATION ${ConfigPackageLocation}
-		COMPONENT Headers
-		)
-
-	# Install the share/ directory
-	install(DIRECTORY ${PROJECT_SOURCE_DIR}/share/ioda_engines DESTINATION ${CMAKE_INSTALL_DATAROOTDIR})
-else()
-	# This is a subproject of ioda, and the targets need to be exported to
-	# the ioda packaging.
-	list(APPEND IodaEnginesTargets
-		ioda_engines
-		)
-
-	install(TARGETS ${IodaEnginesTargets}
-		EXPORT  ${PROJECT_NAME}-targets
-		RUNTIME DESTINATION ${INSTALL_BIN_DIR}
-		LIBRARY DESTINATION ${INSTALL_LIB_DIR}
-		ARCHIVE DESTINATION ${INSTALL_LIB_DIR} )
-endif()
-
 add_subdirectory(src/mains)
+

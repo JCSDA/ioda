@@ -24,7 +24,7 @@
 #include "ioda/Engines/Factory.h"
 #include "ioda/Exception.h"
 #include "ioda/Group.h"
-#include "ioda/Math.h"
+#include "ioda/MathOps.h"
 #include "ioda/ObsGroup.h"
 #include "ioda/Units.h"
 
@@ -79,7 +79,7 @@ int main(int argc, char** argv) {
 
     // Read the u and v wind components.
     // The readForMath function gathers the data, missing values, and units, and
-    // encapsulates these three parameters into ioda's EigenMath class (ioda/Math.h).
+    // encapsulates these three parameters into ioda's EigenMath class (ioda/MathOps.h).
     const auto mU = u.readForMath<Eigen::ArrayXf>();
     const auto mV = v.readForMath<Eigen::ArrayXf>();
 
