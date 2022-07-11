@@ -1,6 +1,7 @@
 where:
   varno: [229]
 variables:
+- name: initial_obsvalue
 - name: numlev
 - name: site_name_1
 - name: site_name_2

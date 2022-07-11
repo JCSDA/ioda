@@ -62,7 +62,7 @@ detail::Type_Provider* Attribute_Base<>::getTypeProvider() const {
 }
 
 template <>
-Attribute Attribute_Base<>::write(gsl::span<char> data, const Type& in_memory_dataType) {
+Attribute Attribute_Base<>::write(gsl::span<const char> data, const Type& in_memory_dataType) {
   try {
     if (backend_ == nullptr) throw Exception("Missing backend.", ioda_Here());
     return backend_->write(data, in_memory_dataType);

@@ -1,0 +1,870 @@
+---
+Policies:
+  # This default is reproduced here as an example.
+  GroupHasRequiredAttributes: Error
+Attributes:
+  # All known attributes are described here.
+  # Attributes may be attached to Groups or Variables later.
+  # Low-level HDF5 stuff
+  - Attribute: [ "DIMENSION_LIST" ]
+  - Attribute: [ "REFERENCE_LIST" ]
+  - Attribute: [ "_NCProperties" ]
+  - Attribute: [ "_Netcdf4Dimid" ]
+  - Attribute: [ "_Netcdf4Coordinates" ]
+  - Attribute: [ "long_name" ]
+    Type: StringVLen
+  - Attribute: [ "coordinates" ]
+    Type: StringVLen
+  - Attribute: [ "valid_range" ]
+    Type: SameAsVariable
+  # Globals
+  - Attribute: [ "ioda_object_type", "_ioda_layout" ]
+    Type: StringVLen
+    Dimensions: [ 1 ]
+  - Attribute: [ "ioda_object_version", "_ioda_layout_version" ]
+    Type: Int32
+    Dimensions: [ 1 ]
+  - Attribute: [ "platform", "satellite" ]
+    Type: Enum
+  - Attribute: [ "sensor" ]
+    Type: Enum
+  - Attribute: [ "converter" ]
+    Type: StringVLen
+    Dimensions: [ 1 ]
+  - Attribute: [ "description" ]
+    Type: StringVLen
+    Dimensions: [ 1 ]
+  - Attribute: [ "source" ]
+    Type: StringVLen
+    Dimensions: [ 1 ]
+  - Attribute: [ "sourceFiles" ]
+    Type: StringVLen
+    Dimensionality: 1
+  - Attribute: [ "datetimeRange" ]
+    Type: StringVLen
+    Dimensions: [ 2 ]
+  - Attribute: [ "datetimeReference" ]
+    Type: StringVLen
+    Dimensions: [ 1 ]
+  - Attribute: [ "platformCommonName" ]
+    Type: StringVLen
+    Dimensions: [ 1 ]
+  - Attribute: [ "platformLongDescription" ]
+    Type: StringVLen
+    Dimensions: [ 1 ]
+  # Old globals
+  - Attribute: [ "nvars" ]
+    Remove: true
+  - Attribute: [ "nlocs" ]
+    Remove: true
+  - Attribute: [ "date_time" ]
+    Remove: true
+  - Attribute: [ "satellite" ]
+    Deprecated: true
+  - Attribute: [ "observation_type" ]
+    Deprecated: true
+  - Attribute: [ "date_time_string" ]
+    Deprecated: true
+  # Variables
+  - Attribute: [ "units" ]
+    Type: StringVLen  # Unsure if this is fixed or variable-length.
+  - Attribute: [ "_FillValue" ]
+    Type: SameAsVariable
+  - Attribute: [ "ExpectedRange" ]
+    Type: SameAsVariable
+    Dimensions: [ 2 ]
+Groups:
+  # All known groups are described here.
+  # The default top-level group
+  - Group: [ "/" ]
+    Valid Attributes:
+      Required: [ ]
+      Optional: [ "platform", "sensor", "ioda_object_type", "ioda_object_version", "_ioda_layout", "_ioda_layout_version", "_NCProperties", "_Netcdf4Dimid", "converter", "description", "source", "sourceFiles", "datetimeRange", "datetimeReference", "platformCommonName", "platformLongDescription" ]
+    Dimension Scale Variables Allowed: true        # TODO
+    Non Dimension Scale Variables Allowed: false   # TODO
+    # Only dimension scales are allowed at the top-level group. Required scales are
+    # described under the "Dimensions" key (below).
+  # Other known groups
+  - Group: [ "HofX" ]
+  - Group: [ "MetaData" ]
+    Required: true
+    Required Variables: [ "latitude", "longitude" ]  # "dateTime" is left out because the name changed from "datetime", and both are valid in ioda for now.
+  - Group: [ "ObsValue" ]
+  - Group: [ "DerivedObsValue" ]
+  - Group: [ "EffectiveObsValue" ]
+  - Group: [ "ObsError" ]
+  - Group: [ "EffectiveError" ]
+  - Group: [ "QualityMarker" ]
+    OverrideType: Enum
+  - Group: [ "PreQC" ]
+    OverrideType: Enum
+  # Deprecated
+  - Group: [ "VarMetaData" ]
+    Remove: "Variables in this group should be relocated to MetaData."
+  # These are EMC-related. Deprecated in the future.
+  - Group: [ "GsiAdjustObsError" ]
+  - Group: [ "GsiFinalObsError" ]
+  - Group: [ "GsiInputObsError" ]
+  - Group: [ "GsiHofX" ]
+  - Group: [ "GsiHofXClr" ]
+  - Group: [ "GsiHofXBc" ]
+  - Group: [ "GsiBc" ]
+  - Group: [ "GsiQCWeight" ]
+    OverrideType: Float
+    OverrideUnits: "1"    ## can set to force units of "1" for all variables in this group
+    Force Units: false  ## can set to false to disable units for this group
+  - Group: [ "GsiEffectiveQC" ]
+    OverrideType: Enum  #   OverrideType: Float
+  - Group: [ "GsiUseFlag" ]
+    OverrideType: Enum
+  - Group: [ "PreUseFlag" ]
+    OverrideType: Enum
+  - Group: [ "ObsType" ]
+    OverrideType: Enum
+  - Group: [ "RecMetaData" ]
+    Remove: "Variables in this group should be relocated to MetaData."
+Dimensions:
+  # All known dimensions are described here.
+  # - Name is a set of names for this dimension. Newest name goes first. Old names will
+  #   be converted to the new name upon upgrade.
+  # - Required specifies if a dimension is absolutely required in the file.
+  # - Type defaults to Int32. Otherwise specifies the type used to denote this dimension.
+  - Dimension: [ "Location", "nlocs" ]
+    Required: true
+    Type: Int64
+  - Dimension: [ "Channel", "nchans" ]
+  - Dimension: [ "Level", "nlevs", "Levels" ]
+  - Dimension: [ "Layer", "nlays", "Layers" ]
+  - Dimension: [ "SoilLayer" ]
+  - Dimension: [ "OceanLayer" ]
+  - Dimension: [ "Confidence" ]   # Satellite-derived winds (AMV) typically have up to 4 values for this.
+  # Deprecated
+  - Dimension: [ "ndatetime" ]
+    Remove: true
+  - Dimension: [ "nrecs" ]
+    Remove: true
+  - Dimension: [ "nstring" ]
+    Remove: true
+  - Dimension: [ "nvars" ]
+    Remove: true
+  - Dimension: [ "nobs" ]  # seen in gnssro files
+    Remove: true
+  - Dimension: [ "num_profile_levels" ]    # TODO: gmi
+    Remove: true
+  - Dimension: [ "num_profile_levels+1" ]  # TODO: from gmi
+    Remove: true
+Variable Defaults:
+  # Defaults are normally specified in C++. Overridable here.
+  Dimensions: [ [ "Location" ] ]
+  Type: Float
+  MetaData: false                  # Can this variable be in the MetaData group?
+  Valid Attributes:
+    Required: [ "_FillValue" ]     # Required atts for all variables.
+    RequiredNotEnum: [ "units" ]   # Required atts for non-enumerated-type variables.
+    Optional: [ "ExpectedRange", "coordinates", "valid_range", "long_name", "_Netcdf4Dimid", "_Netcdf4Coordinates" ]  # Optional attributes for all variables.
+Variables:
+  # Missing or needs categorization:
+  #   landAreaFraction
+  #   geopotentialHeight
+  #   surfaceGropotentialHeight
+  #   surfacePressure / surface_pressure (vs stationPressure and pressure)
+  #   surfaceRoughnessLength / surface_roughness_length
+  #   surfaceTemperature / surface_temperature
+  #   wind_reduction_factor_at_10m
+  #   mean_lapse_rate (mhs, ssmis)
+  #   gsi_use_flag
+  #   bottom_level_pressure, top_level_pressure (omps, omi)
+  #   row_anomaly_index (omps, omi)
+  #   height_above_mean_sea_level
+  #   tao, cloud_level, cloud_top_pressure, cloudy_channel, ermax_rad, etc. (iasi metop-a)
+  #   geoid_height_above_reference_ellipsoid, earth_radius_of_curvature, gnss_sat_class, occulting_sat_id, reference_sat_id (gnssro)
+  #   chaninfoidx, error_variance, satinfo_chan, sensor_chan, use_flag (gmi)
+  #   aapp_bennartz_index, aapp_cirrus_index, amsuscatindex, sequence_number, surface_class, surface_cost_fn, surface_type (atms)
+  #   modis_deep_blue_flag (VIIRS AOD)
+  #   lots of old vars in amsr2_obs_20191230T0000Z_100subset.nc4 (also still a IODAv1 file; is it a dead file?)
+  #   bathymetry, obs_absolute_dynamic_topography (Jason-2)
+  - Variable: [ "dateTime" ]
+    MetaData: true
+    Type: Datetime
+    Check Exact Units: false  # Check only that units are convertible, not that the reference is identical to this one.
+    Attributes:
+      units: "seconds since 2021-12-21"
+  # Deprecated.
+  - Variable: [ "datetime" ]
+    MetaData: true
+    Type: StringVLen
+  - Variable: [ "time" ]
+    MetaData: true
+    Remove: true
+  - Variable: [ "record_number", "rec_id" ]  # TODO: Should this be kept?
+    MetaData: true
+    Force Units: false
+  - Variable: [ "Observation_Class_maxstrlen" ]
+    Remove: true
+  - Variable: [ "Station_ID_maxstrlen" ]
+    Remove: true
+  - Variable: [ "variable_names" ]
+    Remove: true
+  # All known variables are described here.
+  - Variable: [ "radiance" ]
+    Dimensions: [ [ "Location", "Channel" ] ]
+    Attributes: { units: "W m-2 sr-1" }
+  - Variable: [ "brightnessTemperature", "brightness_temperature" ]
+    Dimensions: [ [ "Location", "Channel" ] ]
+    Attributes: { units: "K" }
+  - Variable: [ "emissivity" ]
+    Dimensions: [ [ "Location", "Channel" ] ]
+    Attributes: { units: "1" }
+  - Variable: [ "bendingAngle", "bending_angle" ]
+    Attributes: { units: "radians" }
+  - Variable: [ "zenithTotalDelay" ]
+    Attributes: { units: "m" }
+  - Variable: [ "slantPathDelay" ]
+    Attributes: { units: "m" }
+  - Variable: [ "atmosphericRefractivity", "refractivity" ]
+    Attributes: { units: "INVALID N units" }  # TODO: Fix unit parsing here
+  - Variable: [ "albedo" ]
+    Dimensions: [ [ "Location", "Channel" ] ]
+    Attributes: { units: "1" }
+  - Variable: [ "reflectivity" ]
+    Dimensions: [ [ "Location", "Layer" ] ]
+    Attributes: { units: "dBZ" }
+  - Variable: [ "horizontalReflectivity" ]
+    Dimensions: [ [ "Location", "Layer" ] ]
+    Attributes: { units: "dBZ" }
+  - Variable: [ "verticalReflectivity" ]
+    Dimensions: [ [ "Location", "Layer" ] ]
+    Attributes: { units: "dBZ" }
+  - Variable: [ "differentialReflectivity" ]
+    Dimensions: [ [ "Location", "Layer" ] ]
+    Attributes: { units: "dBZ" }
+  - Variable: [ "reflectivityMaxInColumn" ]
+    Attributes: { units: "dBZ" }
+  - Variable: [ "reflectivityLowestScanLevel" ]
+    Attributes: { units: "dBZ" }
+  - Variable: [ "radialVelocity" ]
+    Dimensions: [ [ "Location", "Layer" ] ]
+    Attributes: { units: "m s-1" }
+  - Variable: [ "differentialPhase" ]
+    Attributes: { units: "degree" }
+  - Variable: [ "crossCorrelation" ]
+    Attributes: { units: "1" }
+  - Variable: [ "signalToNoiseRatio" ]
+    Attributes: { units: "0.1 lg(re 0.001 m2 kg s-3)" }
+  - Variable: [ "backscatter" ]
+    Attributes: { units: "dB" }
+  - Variable: [ "backscatterRatio" ]
+    Attributes: { units: "1" }
+  - Variable: [ "airDensity" ]
+    Attributes: { units: "kg m-3" }
+  - Variable: [ "dryAirDensity" ]
+    Attributes: { units: "kg m-3" }
+  - Variable: [ "airTemperature", "air_temperature" ]
+    Attributes: { units: "K" }
+    Dimensions: [ [ "Location" ], [ "Location", "Level" ] ]
+  - Variable: [ "wetBulbTemperature" ]
+    Attributes: { units: "K" }
+  - Variable: [ "dewpointTemperature" ]
+    Attributes: { units: "K" }
+    Dimensions: [ [ "Location" ], [ "Location", "Level" ] ]
+  - Variable: [ "airTemperatureAt2M" ]
+    Attributes: { units: "K" }
+  - Variable: [ "wetBulbTemperatureAt2M" ]
+    Attributes: { units: "K" }
+  - Variable: [ "dewpointTemperatureAt2M" ]
+    Attributes: { units: "K" }
+  - Variable: [ "virtualTemperature", "virtual_temperature" ]
+    Attributes: { units: "K" }
+    Dimensions: [ [ "Location" ], [ "Location", "Level" ] ]
+  - Variable: [ "virtualTemperatureAt2M" ]
+    Attributes: { units: "K" }
+  - Variable: [ "soilTemperature" ]
+    Dimensions: [ [ "Location", "SoilLayer" ] ]
+    Attributes: { units: "K" }
+  - Variable: [ "skinTemperature" ]
+    Attributes: { units: "K" }
+  - Variable: [ "snowTemperature" ]
+    Attributes: { units: "K" }
+  - Variable: [ "iceSurfaceTemperature" ]
+    Attributes: { units: "K" }
+  - Variable: [ "waterTemperature" ]
+    Dimensions: [ [ "Location" ], [ "Location", "Level" ] ]
+    Attributes: { units: "K" }
+  - Variable: [ "seaSurfaceTemperature" ]
+    Attributes: { units: "K" }
+  - Variable: [ "potentialTemperature" ]
+    Attributes: { units: "K" }
+  - Variable: [ "virtualPotentialTemperature" ]
+    Attributes: { units: "K" }
+  - Variable: [ "equivalentPotentialTemperature" ]
+    Attributes: { units: "K" }
+  - Variable: [ "relativeHumidity" ]
+    Dimensions: [ [ "Location" ], [ "Location", "Level" ] ]
+    Attributes: { units: "1" }
+  - Variable: [ "relativeHumidityAt2M" ]
+    Attributes: { units: "1" }
+  - Variable: [ "specificHumidity", "specific_humidity" ]
+    Dimensions: [ [ "Location" ], [ "Location", "Level" ] ]
+    Attributes: { units: "kg kg-1" }
+  - Variable: [ "specificHumidityAt2M" ]
+    Attributes: { units: "kg kg-1" }
+  - Variable: [ "waterVaporMixingRatio" ]
+    Attributes: { units: "kg kg-1" }
+  - Variable: [ "soilMoisture" ]
+    Attributes: { units: "kg m-3" }
+  - Variable: [ "soilMoistureVolumetric" ]
+    Attributes: { units: "m3 m-3" }
+  - Variable: [ "soilMoistureNormalized" ]
+    Attributes: { units: "1" }
+  - Variable: [ "leafAreaIndex" ]
+    Attributes: { units: "1" }
+  - Variable: [ "depthBelowSoilSurface" ]
+    Attributes: { units: "m" }
+  - Variable: [ "snowCoverFraction" ]
+    Attributes: { units: "1" }
+  - Variable: [ "windDirection" ]
+    Attributes: { units: "degree" }
+    Dimensions: [ [ "Location" ], [ "Location", "Level" ] ]
+  - Variable: [ "windSpeed" ]
+    Attributes: { units: "m s-1" }
+    Dimensions: [ [ "Location" ], [ "Location", "Level" ] ]
+  - Variable: [ "windEastward", "eastward_wind" ]
+    Attributes: { units: "m s-1" }
+  - Variable: [ "windNorthward", "northward_wind" ]
+    Attributes: { units: "m s-1" }
+  - Variable: [ "windUpward" ]
+    Attributes: { units: "m s-1" }
+  - Variable: [ "windDirectionAt10M" ]
+    Attributes: { units: "degree" }
+  - Variable: [ "windSpeedAt10M" ]
+    Attributes: { units: "m s-1" }
+  - Variable: [ "windEastwardAt10M" ]
+    Attributes: { units: "m s-1" }
+  - Variable: [ "windNorthwardAt10M" ]
+    Attributes: { units: "m s-1" }
+  - Variable: [ "windUpwardAt10M" ]
+    Attributes: { units: "m s-1" }
+  - Variable: [ "verticalGustVelocity" ]
+    Attributes: { units: "m s-1" }
+  - Variable: [ "maximumWindGustSpeed" ]
+    Attributes: { units: "m s-1" }
+  - Variable: [ "windShearEastward" ]
+    Attributes: { units: "m s-1" }
+  - Variable: [ "windShearNorthward" ]
+    Attributes: { units: "m s-1" }
+  - Variable: [ "altimeterSetting" ]
+    Attributes: { units: "Pa" }
+  - Variable: [ "pressure", "air_pressure" ]
+    Attributes: { units: "Pa" }
+    Dimensions: [ [ "Location" ], [ "Location", "Level" ] ]
+    MetaData: true
+  - Variable: [ "stationPressure" ]
+    Attributes: { units: "Pa" }
+  - Variable: [ "pressureChange" ]
+    Attributes: { units: "Pa s-1" }
+  - Variable: [ "pressureReducedToMeanSeaLevel" ]
+    Attributes: { units: "Pa" }
+  - Variable: [ "horizontalVisibility" ]
+    Attributes: { units: "m" }
+  - Variable: [ "verticalVisibility" ]
+    Attributes: { units: "m" }
+  - Variable: [ "visibilityWater" ]
+    Attributes: { units: "m" }
+  - Variable: [ "presentWeather" ]
+    Type: Enum
+  - Variable: [ "pastWeather1" ]
+    Type: Enum
+  - Variable: [ "pastWeather2" ]
+    Type: Enum
+  - Variable: [ "cloudDistributionForAviation" ]
+    Type: Enum
+  - Variable: [ "cloudCoverTotal" ]
+    Attributes: { units: "1" }
+  - Variable: [ "cloudAmount" ]
+    Dimensions: [ [ "Location" ],  [ "Location", "Layer" ], [ "Location", "Channel"] ]
+    Attributes: { units: "1" }
+  - Variable: [ "cloudType" ]
+    Type: Enum
+  - Variable: [ "heightOfBaseOfCloud" ]
+    Attributes: { units: "m" }
+  - Variable: [ "heightOfTopOfCloud" ]
+    Attributes: { units: "m" }
+  - Variable: [ "pressureAtBaseOfCloud" ]
+    Attributes: { units: "Pa" }
+  - Variable: [ "pressureAtTopOfCloud" ]
+    Attributes: { units: "Pa" }
+  - Variable: [ "cloudPhase" ]
+    Type: Enum
+  - Variable: [ "cloudOpticalDepth" ]
+    Attributes: { units: "1" }
+  - Variable: [ "cloudClearMask" ]
+    Type: Enum
+  - Variable: [ "cloudTopTemperature" ]
+    Attributes: { units: "K" }
+  - Variable: [ "cloudFree" ]
+    Attributes: { units: "1" }
+  - Variable: [ "cloudThickness" ]
+    Attributes: { units: "m" }
+  - Variable: [ "obscuration" ]
+    Type: Enum
+  - Variable: [ "intensityOfPrecipitation" ]
+    Attributes: { units: "mm h-1" }
+  - Variable: [ "totalPrecipitation" ]
+    Attributes: { units: "kg m-2" }
+  - Variable: [ "totalPrecipitationPast1Hour" ]
+    Attributes: { units: "kg m-2" }
+  - Variable: [ "totalPrecipitationPast3Hour" ]
+    Attributes: { units: "kg m-2" }
+  - Variable: [ "totalPrecipitationPast6Hour" ]
+    Attributes: { units: "kg m-2" }
+  - Variable: [ "totalPrecipitationPast12Hour" ]
+    Attributes: { units: "kg m-2" }
+  - Variable: [ "totalPrecipitationPast24Hour" ]
+    Attributes: { units: "kg m-2" }
+  - Variable: [ "precipitationLiquid" ]
+    Attributes: { units: "kg m-2" }
+  - Variable: [ "precipitationLiquidEquiv" ]
+    Attributes: { units: "kg m-2" }
+  - Variable: [ "precipitationFrozen" ]
+    Attributes: { units: "kg m-2" }
+  - Variable: [ "precipitationVelocity" ]
+    Attributes: { units: "m s-1" }
+  - Variable: [ "snowWaterEquivalent" ]
+    Attributes: { units: "kg m-2" }
+  - Variable: [ "sizeOfPrecipitatingElement" ]
+    Attributes: { units: "m" }
+  - Variable: [ "precipitableWater" ]
+    Attributes: { units: "kg m-2" }
+  - Variable: [ "totalSnowDepth" ]
+    Attributes: { units: "m" }
+  - Variable: [ "freshSnowDepth" ]
+    Attributes: { units: "m" }
+  - Variable: [ "liquidWaterContent", "clw" ]  # Old var is for the column
+    Attributes: { units: "kg m-3" }
+  - Variable: [ "iceWaterContent" ]
+    Attributes: { units: "kg m-3" }
+  - Variable: [ "cloudWaterMixingRatio" ]
+    Dimensions: [ [ "Location", "Layer" ] ]
+    Attributes: { units: "kg kg-1" }
+  - Variable: [ "cloudWaterContent" ]
+    Dimensions: [ [ "Location", "Layer" ] ]
+    Attributes: { units: "kg m-3" }
+  - Variable: [ "cloudIceMixingRatio" ]
+    Dimensions: [ [ "Location", "Layer" ] ]
+    Attributes: { units: "kg kg-1" }
+  - Variable: [ "cloudIceContent" ]
+    Dimensions: [ [ "Location", "Layer" ] ]
+    Attributes: { units: "kg m-3" }
+  - Variable: [ "rainMixingRatio" ]
+    Dimensions: [ [ "Location", "Layer" ] ]
+    Attributes: { units: "kg kg-1" }
+  - Variable: [ "rainContent" ]
+    Dimensions: [ [ "Location", "Layer" ] ]
+    Attributes: { units: "kg m-3" }
+  - Variable: [ "snowMixingRatio" ]
+    Dimensions: [ [ "Location", "Layer" ] ]
+    Attributes: { units: "kg kg-1" }
+  - Variable: [ "snowContent" ]
+    Dimensions: [ [ "Location", "Layer" ] ]
+    Attributes: { units: "kg m-3" }
+  - Variable: [ "graupelMixingRatio" ]
+    Dimensions: [ [ "Location", "Layer" ] ]
+    Attributes: { units: "kg kg-1" }
+  - Variable: [ "graupelContent" ]
+    Dimensions: [ [ "Location", "Layer" ] ]
+    Attributes: { units: "kg m-3" }
+  - Variable: [ "hailMixingRatio" ]
+    Dimensions: [ [ "Location", "Layer" ] ]
+    Attributes: { units: "kg kg-1" }
+  - Variable: [ "hailContent" ]
+    Dimensions: [ [ "Location", "Layer" ] ]
+    Attributes: { units: "kg m-3" }
+  - Variable: [ "iceThickness" ]
+    Attributes: { units: "m" }
+  - Variable: [ "iceType" ]
+    Type: Enum
+  - Variable: [ "depthBelowWaterSurface" ]
+    MetaData: true
+    Attributes: { units: "m" }
+  - Variable: [ "seaState" ]
+    Type: Enum
+  - Variable: [ "seaSurfaceHeightAnomaly" ]
+    Attributes: { units: "m" }
+  - Variable: [ "absoluteDynamicTopography" ]
+    Attributes: { units: "m" }
+  - Variable: [ "seaIceFraction" ]
+    Attributes: { units: "1" }
+  - Variable: [ "seaIceFreeboard" ]
+    Attributes: { units: "m" }
+  - Variable: [ "iceDensity" ]
+    Attributes: { units: "kg m-3" }
+  - Variable: [ "meanWavePropagationDirection" ]
+    Attributes: { units: "degree" }
+  - Variable: [ "meanWavenumber" ]
+    Attributes: { units: "m-1" }
+  - Variable: [ "waveSpeed" ]
+    Attributes: { units: "m s-1" }
+  - Variable: [ "meanPeriodOfWaves" ]
+    Attributes: { units: "s" }
+  - Variable: [ "heightOfWaves" ]
+    Attributes: { units: "m" }
+  - Variable: [ "waveHeightSignificant" ]
+    Attributes: { units: "m" }
+  - Variable: [ "salinity" ]
+    Attributes: { units: "1" }
+  - Variable: [ "seaSurfaceSalinity" ]
+    Attributes: { units: "1" }
+  - Variable: [ "seaSurfaceZonalWind" ]
+    Attributes: { units: "m s-1" }
+  - Variable: [ "seaSurfaceMeridionalWind" ]
+    Attributes: { units: "m s-1" }
+  - Variable: [ "waterZonalVelocity" ]
+    Attributes: { units: "m s-1" }
+  - Variable: [ "waterMeridionalVelocity" ]
+    Attributes: { units: "m s-1" }
+  - Variable: [ "chlorophyllMassConcentration" ]
+    Attributes: { units: "mg m-3" }
+  - Variable: [ "solarIrradianceDirect" ]
+    Attributes: { units: "W m-2" }
+  - Variable: [ "solarIrradianceDiffuse" ]
+    Attributes: { units: "W m-2" }
+  - Variable: [ "solarIrradianceGlobalHorizontal" ]
+    Attributes: { units: "W m-2" }
+  - Variable: [ "longwaveRadiation" ]
+    Attributes: { units: "W m-2" }
+  - Variable: [ "shortwaveRadiation" ]
+    Attributes: { units: "W m-2" }
+  - Variable: [ "tropopauseHeight" ]
+    Attributes: { units: "m" }
+  - Variable: [ "tropopausePressure" ]
+    Attributes: { units: "Pa" }
+  - Variable: [ "degreeOfTurbulence" ]
+    Type: Enum
+  - Variable: [ "turbulenceType" ]
+    Type: Enum
+  - Variable: [ "eddyDissipationRate" ]
+    Attributes: { units: "m2/3 s-1" }
+  - Variable: [ "airframeIcing" ]
+    Type: Enum
+  - Variable: [ "icingType" ]
+    Type: Enum
+  - Variable: [ "moistureFlux" ]
+    Attributes: { units: "kg kg-1 s-1" }
+  - Variable: [ "temperatureFlux" ]
+    Attributes: { units: "K s-1" }
+  - Variable: [ "salinityFlux" ]
+    Attributes: { units: "g kg-1 s-1" }
+  - Variable: [ "lightningStroke" ]
+    Type: Enum
+  - Variable: [ "lightningFlashDensity" ]
+    Attributes: { units: "m-2" }
+  - Variable: [ "lightningDischargePolarity" ]
+    Type: Enum
+  - Variable: [ "amplitudeOfLightningStrike" ]
+    Attributes: { units: "amps" }
+  - Variable: [ "lightningMultiStrikes" ]
+    Type: UInt16
+    Attributes: { units: "1" }
+  - Variable: [ "aerosolOpticalDepth", "Total_Aerosol_Optical_Depth_550" ]  # Long name from GEOS AOD
+    Dimensions: [ ["Location"], [ "Location", "Channel" ] ]
+    Attributes: { units: "1" }
+  - Variable: [ "absorptionAerosolOpticalDepth" ]
+    Dimensions: [ ["Location"], [ "Location", "Channel" ] ]
+    Attributes: { units: "1" }
+  - Variable: [ "ozoneTotal", "integrated_layer_ozone_in_air" ]  # TODO: check old name. Same variable? OMPS, OMI.
+    Attributes: { units: "DU" }
+  - Variable: [ "ozoneLayer" ]
+    Dimensions: [ [ "Location", "Layer" ] ]
+    Attributes: { units: "DU" }
+  - Variable: [ "observationTypeNum" ]
+    MetaData: true
+    Type: Enum
+  - Variable: [ "observationSubTypeNum" ]
+    MetaData: true
+    Type: Enum
+  - Variable: [ "instrumentPackage" ]
+    MetaData: true
+    Type: Enum
+  - Variable: [ "instrumentIdentifier" ]
+    MetaData: true
+    Type: Enum
+  - Variable: [ "instrumentManufacturer" ]
+    MetaData: true
+    Type: Enum
+  - Variable: [ "instrumentModelInfo" ]
+    MetaData: true
+    Type: Enum
+  - Variable: [ "instrumentSerialNumber" ]
+    MetaData: true
+    Type: StringVLen
+  - Variable: [ "instrumentCorrectionInfo" ]
+    MetaData: true
+    Type: Enum
+  - Variable: [ "satelliteIdentifier" ]
+    MetaData: true
+    Type: Enum
+  - Variable: [ "satelliteTransmitterId" ]
+    MetaData: true
+    Type: Enum
+  - Variable: [ "satelliteReceiverId" ]
+    MetaData: true
+    Type: Enum
+  - Variable: [ "satelliteAscendingFlag", "ascending_flag" ]
+    MetaData: true
+    Type: Enum
+  - Variable: [ "impactHeightRO" ]
+    MetaData: true
+  - Variable: [ "impactParameterRO", "impact_parameter" ]
+    MetaData: true
+  - Variable: [ "profileNumberRO" ]
+    MetaData: true
+    Type: UInt16
+    Force Units: false
+  - Variable: [ "geoidUndulation" ]
+    MetaData: true
+  - Variable: [ "earthRadiusCurvature" ]
+    MetaData: true
+  - Variable: [ "platformTransmitterId" ]
+    MetaData: true
+    Type: Enum
+  - Variable: [ "dataProviderOrigin" ]
+    MetaData: true
+    Type: Enum
+  - Variable: [ "dataReceiptTime" ]
+    MetaData: true
+    Type: Datetime
+    Check Exact Units: false  # Check only that units are convertible, not that the reference is identical to this one.
+    Attributes:
+      units: "seconds since 2021-12-21"
+  - Variable: [ "generatingApplication" ]
+    MetaData: true
+    Type: Enum
+  - Variable: [ "sensorAzimuthAngle", "sensor_azimuth_angle" ]
+    MetaData: true
+    Attributes: { units: "degree" }
+  - Variable: [ "sensorZenithAngle", "sensor_zenith_angle" ]
+    MetaData: true
+    Attributes: { units: "degree" }
+  - Variable: [ "sensorPixelSizeHorizontal" ]
+    MetaData: true
+    Attributes: { units: "m" }
+  - Variable: [ "sensorViewAngle", "sensor_view_angle" ]
+    MetaData: true
+    Attributes: { units: "degree" }
+  - Variable: [ "sensorScanPosition", "scan_position" ]
+    MetaData: true
+    Type: UInt32
+    Force Units: false
+  - Variable: [ "scanLineNumber", "scan_line" ]
+    MetaData: true
+    Type: UInt32
+    Force Units: false
+  - Variable: [ "fieldOfViewNumber" ]
+    MetaData: true
+    Type: UInt32
+    Force Units: false
+  - Variable: [ "sensorChannelNumber", "sensor_channel", "chans" ]  # chans from geos aod
+    Dimensions: [ [ "Channel" ], [ "Location" ], [ "Location", "Channel" ] ]
+    MetaData: true
+    Type: UInt32
+    Force Units: false
+  - Variable: [ "sensorCentralFrequency", "sensor_band_central_radiation_frequency", "frequency" ]
+#   Dimensions: [ [ "Channel" ] ]
+    Dimensions: [ [ "Channel" ], [ "Location" ], [ "Location", "Channel" ] ]
+    MetaData: true
+    Type: Double
+    Attributes: { units: "Hz" }
+  - Variable: [ "sensorCentralWavenumber", "sensor_band_central_radiation_wavenumber", "wavenumber" ]
+    Dimensions: [ [ "Channel" ], [ "Location" ], [ "Location", "Channel" ] ]
+    MetaData: true
+    Attributes: { units: "m-1" }
+  - Variable: [ "sensorCentralWavelength", "channel_wavelength" ]
+    Dimensions: [ [ "Channel" ], [ "Location" ], [ "Location", "Channel" ] ]
+    MetaData: true
+    Attributes: { units: "microns" }
+  - Variable: [ "sensorPolarizationDirection", "polarization" ]
+    MetaData: true
+    Type: Enum
+    Dimensions: [ [ "Channel" ] ]
+    Force Units: false
+  - Variable: [ "solarZenithAngle", "solar_zenith_angle", "sol_zenith_angle" ]
+    MetaData: true
+    Attributes: { units: "degree" }
+  - Variable: [ "solarAzimuthAngle", "solar_azimuth_angle", "sol_azimuth_angle" ]
+    MetaData: true
+    Attributes: { units: "degree" }
+  - Variable: [ "stationICAO" ]
+    MetaData: true
+    Type: StringFixedLen   # 4-character string
+  - Variable: [ "wmoBlockNumber" ]
+    MetaData: true
+    Type: UInt32     # 2 digits (1-99 only)
+    Force Units: false
+  - Variable: [ "wmoStationNumber" ]
+    MetaData: true
+    Type: UInt32     # 3 digits (1-999 only)
+    Force Units: false
+  - Variable: [ "stationWMO" ]
+    MetaData: true
+    Type: StringFixedLen   # 5-character string, leading zeroes of the two above
+    Force Units: false
+  - Variable: [ "stationWIGOSId" ]
+    MetaData: true
+    Type: StringFixedLen
+  - Variable: [ "stationIdentification", "station_id", "Station_ID" ]
+    MetaData: true
+    Type: StringFixedLen
+  - Variable: [ "stationLongName" ]
+    MetaData: true
+    Type: StringFixedLen
+  - Variable: [ "instantaneousAltitudeRate" ]
+    MetaData: true
+    Attributes: { units: "m s-1" }
+  - Variable: [ "stationElevation", "station_elevation" ]
+    MetaData: true
+    Attributes: { units: "m" }
+  - Variable: [ "stationType" ]
+    MetaData: true
+    Type: Enum
+  - Variable: [ "sensorThermoHeight" ]
+    MetaData: true
+    Attributes: { units: "m" }
+  - Variable: [ "sensorMomentumHeight" ]
+    MetaData: true
+    Attributes: { units: "m" }
+  - Variable: [ "latitude" ]
+    MetaData: true
+    Attributes: { units: "degree_north" }
+  - Variable: [ "longitude" ]
+    MetaData: true
+    Attributes: { units: "degree_east" }
+  - Variable: [ "height" ]  # TODO: surface altitude?
+    MetaData: true
+    Attributes: { units: "m" }
+  - Variable: [ "geopotentialHeight" ]
+    MetaData: true
+    Attributes: { units: "m" }
+  - Variable: [ "altitudeIndicator" ]  # TODO: altitude vs height
+    MetaData: true
+    Type: Enum
+  - Variable: [ "heightOfSurface" ]
+    MetaData: true
+    Attributes: { units: "m" }
+  - Variable: [ "heightOfLandSurface" ]
+    MetaData: true
+    Attributes: { units: "m" }
+  - Variable: [ "distanceToCoastline" ]
+    MetaData: true
+    Attributes: { units: "m" }
+  - Variable: [ "releaseTime" ]
+    MetaData: true
+    Type: Datetime
+    Attributes: { units: "seconds since 2021-01-01" }
+    Check Exact Units: false
+  - Variable: [ "aircraftIdentifier" ]
+    MetaData: true
+    Type: StringFixedLen
+  - Variable: [ "aircraftTailNumber" ]
+    MetaData: true
+    Type: StringFixedLen
+  - Variable: [ "aircraftFlightNumber" ]
+    MetaData: true
+    Type: StringFixedLen
+  - Variable: [ "observationSequenceNum" ]
+    MetaData: true
+    Force Units: false
+    Type: UInt32
+  - Variable: [ "aircraftRollAngle" ]
+    MetaData: true
+    Type: UInt32
+    Attributes: { units: "degrees" }
+  - Variable: [ "aircraftRollAngleQuality" ]
+    MetaData: true
+    Type: Enum
+  - Variable: [ "aircraftHeading" ]
+    MetaData: true
+    Attributes: { units: "degree" }
+  - Variable: [ "aircraftVelocity" ]
+    MetaData: true
+    Attributes: { units: "m s-1" }
+  - Variable: [ "aircraftFlightPhase" ]
+    MetaData: true
+    Type: Enum
+  - Variable: [ "shipHeading" ]
+    MetaData: true
+    Attributes: { units: "degree" }
+  - Variable: [ "shipVelocity" ]
+    MetaData: true
+    Attributes: { units: "m s-1" }
+  - Variable: [ "windComputationMethod", "satelliteDerivedWindComputationMethod" ]
+    MetaData: true
+    Type: Enum
+  - Variable: [ "windHeightAssignMethod" ]
+    MetaData: true
+    Type: Enum
+  - Variable: [ "windProcessingMethod" ]
+    MetaData: true
+    Type: Enum
+  - Variable: [ "windPercentConfidence" ]
+    Dimensions: [ [ "Location", "Confidence" ] ]
+    MetaData: true
+    Attributes: { units: "percent" }
+    Type: UInt32
+  - Variable: [ "windTrackingCorrelation" ]
+    MetaData: true
+    Attributes: { units: "1" }
+  - Variable: [ "qualityFlags" ]
+    MetaData: true
+    Type: Enum
+  - Variable: [ "landOrSeaQualifier", "land_sea" ]  # TODO: land_sea needs enum conversion (ATMS)
+    MetaData: true
+    Type: Enum
+  - Variable: [ "earthSurfaceType" ]  # TODO:  BUFR table 008029 or 013040 (among others)
+    MetaData: true
+    Type: Enum
+  - Variable: [ "dayOrNightQualifier" ]
+    MetaData: true
+    Type: Enum
+  - Variable: [ "verticalResolution" ]
+    MetaData: true
+    Attributes: { units: "m" }
+  - Variable: [ "viewingZenithAngle" ]
+    MetaData: true
+    Attributes: { units: "degree" }
+  - Variable: [ "instrumentTemperature" ]
+    MetaData: true
+    Attributes: { units: "K" }
+  - Variable: [ "antennaTemperature" ]
+    MetaData: true
+    Attributes: { units: "K" }
+  - Variable: [ "atmosphereLayerThicknessZ" ]
+    MetaData: true
+    Attributes: { units: "m" }
+  - Variable: [ "atmosphereLayerThicknessP" ]
+    MetaData: true
+    Attributes: { units: "Pa" }
+  - Variable: [ "cloudWaterRetrievedFromObservation" ]
+    MetaData: true
+    Attributes: { units: "kg m-2" }
+  - Variable: [ "cloudWaterRetrievedFromSimulatedObservation" ]
+    MetaData: true
+    Attributes: { units: "kg m-2" }
+  - Variable: [ "scatteringIndexRetrievedFromObservation" ]
+    MetaData: true
+    Attributes: { units: "1" }
+    Force Units: false
+  - Variable: [ "percentConfidenceWithForecast" ]
+    MetaData: true
+    Attributes: { units: "percent" }
+  - Variable: [ "percentConfidenceWithoutForecast" ]
+    MetaData: true
+    Attributes: { units: "percent" }
+  - Variable: [ "topographyComplexity" ]
+    MetaData: true
+    Attributes: { units: "1" }
+  - Variable: [ "wetlandFraction" ]
+    MetaData: true
+    Attributes: { units: "1" }
+  - Variable: [ "vegetationOpacity" ]
+    MetaData: true
+    Type: Enum

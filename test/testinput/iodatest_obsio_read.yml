@@ -19,17 +19,12 @@ observations:
       - name: "air_pressure@MetaData"
         type: "float"
         values: [ 12900.0, 15000.0, 15000.0, 15300.0, 10900.0 ]
-      - name: "datetime@MetaData"
-        type: "string"
-        values:
-          - "2018-04-15T00:07:54Z"
-          - "2018-04-15T00:04:42Z"
-          - "2018-04-15T00:04:42Z"
-          - "2018-04-15T00:04:16Z"
-          - "2018-04-15T00:11:29Z"
+      - name: "dateTime@MetaData"
+        type: "int64"
+        values: [ 11274, 11082, 11082, 11056, 11489 ]
       - name: "northward_wind@PreQC"
         type: "int"
-        values: [ 2, 2, -2147483647, 2, 2 ]
+        values: [ 2, 2, -2147483643, 2, 2 ]
     tolerance: 1.0e-6
 
 - obs space:
@@ -53,14 +48,9 @@ observations:
       - name: "MetaData/latitude"
         type: "float"
         values: [ 8.80016517, 6.47274542, 8.11081027, 7.75301551, 5.23049402 ]
-      - name: "MetaData/datetime"
-        type: "string"
-        values:
-          - "2018-04-15T02:16:48Z"
-          - "2018-04-15T00:53:01Z"
-          - "2018-04-15T01:51:59Z"
-          - "2018-04-15T01:39:06Z"
-          - "2018-04-15T00:08:17Z"
+      - name: "MetaData/dateTime"
+        type: "int64"
+        values: [ 19008, 13981, 17519, 16746, 11297 ]
       - name: "ObsError/air_temperature"
         type: "float"
         values: [ 1.0, 1.0, 1.0, 1.0, 1.0 ]
@@ -73,18 +63,19 @@ observations:
       list:
         lats: [ 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14 ]
         lons: [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 ]
-        datetimes:
-        - "2010-01-01T00:04:00Z"
-        - "2010-01-01T00:04:12Z"
-        - "2010-01-01T00:04:24Z"
-        - "2010-01-01T00:04:36Z"
-        - "2010-01-01T00:04:48Z"
-        - "2010-01-01T00:05:00Z"
-        - "2010-01-01T00:05:12Z"
-        - "2010-01-01T00:05:24Z"
-        - "2010-01-01T00:05:36Z"
-        - "2010-01-01T00:05:48Z"
-        - "2010-01-01T00:06:00Z"
+        dateTimes:
+        - 240
+        - 252
+        - 264
+        - 276
+        - 288
+        - 300
+        - 312
+        - 324
+        - 336
+        - 348
+        - 360
+        epoch: "seconds since 2010-01-01T00:00:00Z"
       obs errors: [1.0, 2.0]
   test data:
     nlocs: 11
@@ -95,14 +86,9 @@ observations:
       - name: "MetaData/latitude"
         type: "float"
         values: [ 4.0, 5.0, 6.0, 7.0, 8.0 ]
-      - name: "MetaData/datetime"
-        type: "string"
-        values:
-          - "2010-01-01T00:04:00Z"
-          - "2010-01-01T00:04:12Z"
-          - "2010-01-01T00:04:24Z"
-          - "2010-01-01T00:04:36Z"
-          - "2010-01-01T00:04:48Z"
+      - name: "MetaData/dateTime"
+        type: "int64"
+        values: [ 240, 252, 264, 276, 288 ]
       - name: "ObsError/eastward_wind"
         type: "float"
         values: [ 2.0, 2.0, 2.0, 2.0, 2.0 ]
@@ -128,17 +114,12 @@ observations:
       - name: "air_pressure@MetaData"
         type: "float"
         values: [ 12900.0, 15000.0, 15000.0, 15300.0, 10900.0 ]
-      - name: "datetime@MetaData"
-        type: "string"
-        values:
-          - "2018-04-15T00:07:54Z"
-          - "2018-04-15T00:04:42Z"
-          - "2018-04-15T00:04:42Z"
-          - "2018-04-15T00:04:16Z"
-          - "2018-04-15T00:11:29Z"
+      - name: "dateTime@MetaData"
+        type: "int64"
+        values: [ 11274, 11082, 11082, 11056, 11489 ]
       - name: "northward_wind@PreQC"
         type: "int"
-        values: [ 2, 2, -2147483647, 2, 2 ]
+        values: [ 2, 2, -2147483643, 2, 2 ]
     tolerance: 1.0e-6
 
 - obs space:
@@ -148,18 +129,19 @@ observations:
       type: GenerateList
       lats: [ 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14 ]
       lons: [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 ]
-      datetimes:
-      - "2010-01-01T00:04:00Z"
-      - "2010-01-01T00:04:12Z"
-      - "2010-01-01T00:04:24Z"
-      - "2010-01-01T00:04:36Z"
-      - "2010-01-01T00:04:48Z"
-      - "2010-01-01T00:05:00Z"
-      - "2010-01-01T00:05:12Z"
-      - "2010-01-01T00:05:24Z"
-      - "2010-01-01T00:05:36Z"
-      - "2010-01-01T00:05:48Z"
-      - "2010-01-01T00:06:00Z"
+      dateTimes:
+      - 240
+      - 252
+      - 264
+      - 276
+      - 288
+      - 300
+      - 312
+      - 324
+      - 336
+      - 348
+      - 360
+      epoch: "seconds since 2010-01-01T00:00:00Z"
       obs errors: [1.0, 2.0]
   test data:
     nlocs: 11
@@ -170,14 +152,9 @@ observations:
       - name: "MetaData/latitude"
         type: "float"
         values: [ 4.0, 5.0, 6.0, 7.0, 8.0 ]
-      - name: "MetaData/datetime"
-        type: "string"
-        values:
-          - "2010-01-01T00:04:00Z"
-          - "2010-01-01T00:04:12Z"
-          - "2010-01-01T00:04:24Z"
-          - "2010-01-01T00:04:36Z"
-          - "2010-01-01T00:04:48Z"
+      - name: "MetaData/dateTime"
+        type: "int64"
+        values: [ 240, 252, 264, 276, 288 ]
       - name: "ObsError/eastward_wind"
         type: "float"
         values: [ 2.0, 2.0, 2.0, 2.0, 2.0 ]

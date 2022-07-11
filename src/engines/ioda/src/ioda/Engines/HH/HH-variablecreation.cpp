@@ -30,6 +30,7 @@ namespace ioda {
 namespace detail {
 namespace Engines {
 namespace HH {
+
 VariableCreation::VariableCreation(const VariableCreationParameters& p, const Vec_t& dims,
                                    const Vec_t& max_dims, std::shared_ptr<HH_Type> data_type) {
   // This constructor generates and stores the dataset creation property list.
@@ -63,15 +64,33 @@ VariableCreation::VariableCreation(const VariableCreationParameters& p, const Ve
     // Bit of an awkward call. If chunks are manually set, it uses those. Otherwise,
     // it uses the initial variable size as a hint. Problematic because we get to override it
     // if zero.
+    //
+    // Need to handle case where a dimension size and corresponding max dimension size
+    // are both zero. This comes up for example when an obs space contains zero obs and
+    // we are copying the obs space to a file (ioda writer).
+    //
+    // We need to avoid setting the chunk size to zero.
+    //   First off check if the chunk size in the variable creation parameters is set
+    //   to a size > 0. If so use it; if not use the correspoding dims size.
+    //
+    //   Second limit the chunk size to the max_dims size, unless max_dims size is
+    //   is set to unlimited (== -1).
+    //
+    //   If we still have the chunksize set to zero, use an arbitrary default size
+    //   for now (100).
 
     auto chunksizes = p.getChunks(dims);
     std::vector<hsize_t> hcs(chunksizes.size());  // chunksizes converted to hsize_t.
     for (size_t i = 0; i < chunksizes.size(); ++i) {
       hcs[i] = gsl::narrow<hsize_t>(  // Always narrow to hsize_t.
         (chunksizes[i] > 0) ? chunksizes[i] : dims_[i]);
-      if (hcs[i] == 0) throw;  // We need a hint at this point.
-      if (max_dims_[i] >= 0) {
-        if (hcs[i] > max_dims_[i]) hcs[i] = max_dims_[i];
+
+      if (max_dims_[i] > 0) {
+        if (hcs[i] > max_dims_[i]) hcs[i] = gsl::narrow<hsize_t>(max_dims_[i]);
+      }
+
+      if (hcs[i] == 0) {
+        hcs[i] = 100;
       }
     }
     final_chunks_ = hcs;

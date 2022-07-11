@@ -244,7 +244,7 @@ public:
   virtual bool exists(const std::string& name) const;
   /// \brief Delete an Attribute with the specified name.
   /// \param attname is the name of the Variable that we are deleting.
-  /// \throws jedi::xError if no such attribute exists.
+  /// \throws ioda::Exception if no such attribute exists.
   virtual void remove(const std::string& name);
   /// \brief Open a Variable by name
   /// \param name is the name of the Variable to be opened.
@@ -408,7 +408,7 @@ public:
 ///
 /// \note It should only be constructed inside of a Group. It has no meaning elsewhere.
 /// \see ioda::Variable for the class that represents individual variables.
-/// \throws jedi::xError on all exceptions.
+/// \throws ioda::Exception on all exceptions.
 class IODA_DL Has_Variables : public detail::Has_Variables_Base {
 public:
   virtual ~Has_Variables();

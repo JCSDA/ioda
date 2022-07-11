@@ -15,11 +15,13 @@
 #include "../defs.h"
 #include "Dimensions.h"
 #include "../Types/Type.h"
+#include "../Variables/Has_Variables.h"
 #include "../Variables/Variable.h"
 
 namespace ioda {
 class Type;
 class Variable;
+class Has_Variables;
 
 /// Specifies that a dimension is resizable to infinity.
 constexpr int Unlimited = -1;
@@ -80,8 +82,8 @@ struct IODA_DL NewDimensionScale_Base : std::enable_shared_from_this<NewDimensio
   NewDimensionScale_Base(const std::string& name, const Type& dataType,
                          Dimensions_t size, Dimensions_t maxSize, Dimensions_t chunkingSize)
       : name_(name),
-        dataTypeKnown_(dataType),
         dataType_(typeid(void)),
+        dataTypeKnown_(dataType),
         size_(size),
         maxSize_(maxSize),
         chunkingSize_(chunkingSize) {}
@@ -99,9 +101,7 @@ struct NewDimensionScale_Object : public NewDimensionScale_Base {
   NewDimensionScale_Object(const std::string& name, Dimensions_t size,
                     Dimensions_t maxSize, Dimensions_t chunkingSize)
       : NewDimensionScale_Base(name, typeid(DataType), size, maxSize, chunkingSize),
-        initdata_(gsl::narrow<size_t>(size)) {
-    for (size_t i = 0; i < initdata_.size(); ++i) initdata_[i] = gsl::narrow<DataType>(i + 1);
-  }
+        initdata_(gsl::narrow<size_t>(size)) {}
 
   void writeInitialData(Variable& v) const override { v.write<DataType>(initdata_); }
 
@@ -142,5 +142,12 @@ IODA_DL std::shared_ptr<NewDimensionScale_Base> NewDimensionScale(
 
 IODA_DL std::shared_ptr<NewDimensionScale_Base> NewDimensionScale(
   const std::string& name, const Variable& scale, const ScaleSizes &overrides = ScaleSizes());
+
+/// \brief Return the list of all variables among \p allVarNames that belong to \p hasVars and
+/// are dimension scales.
+//
+// Partially copied from IodaUtils.cpp
+IODA_DL std::list<ioda::Named_Variable> identifyDimensionScales(
+  const detail::Has_Variables_Base &hasVars, std::vector<std::string> &allVarNames);
 
 }  // namespace ioda

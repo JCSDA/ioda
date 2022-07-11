@@ -13,7 +13,7 @@
 
 // This header is internal to ioda. It is not callable by end-users outside of the
 // testing environment.
-#include "ioda/Layouts/Layout_ObsGroup.h"
+#include "Layouts/Layout_ObsGroup.h"
 
 #include "eckit/testing/Test.h"
 

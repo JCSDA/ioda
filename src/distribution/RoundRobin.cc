@@ -16,16 +16,11 @@
 namespace ioda {
 
 // -----------------------------------------------------------------------------
-namespace {
-const char DIST_NAME[] = "RoundRobin";
-}  // namespace
-
-// -----------------------------------------------------------------------------
-static DistributionMaker<RoundRobin> maker(DIST_NAME);
+static DistributionMaker<RoundRobin> maker("RoundRobin");
 
 // -----------------------------------------------------------------------------
 RoundRobin::RoundRobin(const eckit::mpi::Comm & Comm,
-                       const eckit::Configuration & config)
+                       const Parameters_ &)
                        : NonoverlappingDistribution(Comm) {
   oops::Log::trace() << "RoundRobin constructed" << std::endl;
 }
@@ -37,7 +32,7 @@ RoundRobin::~RoundRobin() {
 
 // -----------------------------------------------------------------------------
 std::string RoundRobin::name() const {
-  return DIST_NAME;
+  return "RoundRobin";
 }
 
 // -----------------------------------------------------------------------------

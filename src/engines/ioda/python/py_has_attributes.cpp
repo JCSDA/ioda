@@ -29,8 +29,19 @@ void setupHasAttributes(pybind11::module& m) {
     .def("rename", &Has_Attributes::rename, "Rename an attribute", py::arg("oldname"),
          py::arg("newname"))
     .def("open", &Has_Attributes::open, "Open an attribute", py::arg("name"))
-    .def("create", &Has_Attributes::_create_py, "Create an attribute", py::arg("name"),
-         py::arg("dtype"), py::arg("dims") = std::vector<Dimensions_t>{1})
+    .def("create", &Has_Attributes::_create_py,
+         "Create an attribute",
+         py::arg("name"),
+         py::arg("dtype"),
+         py::arg("dims") = std::vector<Dimensions_t>{1}
+         )
+    .def("create",
+         static_cast<Attribute (Has_Attributes::*)(const std::string&, const Type&, const std::vector<Dimensions_t>&)>(&Has_Attributes::create),
+         "Create an attribute",
+         py::arg("name"),
+         py::arg("dtype"),
+         py::arg("dims") = std::vector<Dimensions_t>{1}
+         )
     // CLASS_TEMPLATE_FUNCTION_PATTERN(create, create, Has_Attributes,
     // CREATE_CLASS_TEMPLATE_FUNCTION_T) Convenience functions, add and read
     //.def("read", &Has_Attributes::read)

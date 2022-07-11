@@ -6,6 +6,7 @@ observations:
 - obs space:
     name: "AOD"
     simulated variables: ['temperature']
+    observed variables: ['temperature']
     obsdatain:
       obsfile: "Data/testinput_tier_1/aod_obs_2018041500_m.nc4"
     obs perturbations seed: 77
@@ -39,6 +40,7 @@ observations:
 - obs space:
     name: "AOD VIIRS"
     simulated variables: ['temperature']
+    observed variables: ['temperature']
     obsdatain:
       obsfile: "Data/testinput_tier_1/aod_viirs_obs_2018041500_sf42.nc4"
   test data:
@@ -72,7 +74,8 @@ observations:
     name: "AMSUA NOAA19"
     simulated variables: ['brightness_temperature']
     channels: 1-15
-    distribution: "InefficientDistribution"
+    distribution:
+      name: "InefficientDistribution"
     obsdatain:
       obsfile: "Data/testinput_tier_1/amsua_n19_obs_2018041500_m.nc4"
   test data:
@@ -127,7 +130,7 @@ observations:
 
 - obs space:
     name: "GMI GPM"
-    simulated variables: ['temperature']
+    simulated variables: ['brightness_temperature']
     channels: 1-13
     obsdatain:
       obsfile: "Data/testinput_tier_1/gmi_gpm_obs_2018041500_m.nc4"
@@ -157,6 +160,7 @@ observations:
 - obs space:
     name: "Radiosonde"
     simulated variables: ['temperature']
+    observed variables: ['temperature']
     obsdatain:
       obsfile: "Data/testinput_tier_1/sondes_obs_2018041500_m.nc4"
       max frame size: 200
@@ -199,6 +203,7 @@ observations:
 - obs space:
     name: "Synthetic Random"
     simulated variables: [air_temperature, eastward_wind]
+    observed variables: [air_temperature, eastward_wind]
     generate:
       random:
         nobs: 10   # generate 10 obs
@@ -245,22 +250,24 @@ observations:
 - obs space:
     name: "Synthetic List"
     simulated variables: [air_temperature, eastward_wind]
+    observed variables: [air_temperature, eastward_wind]
     generate:
       list:
         lats: [ 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 ]
         lons: [ 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 ]
-        datetimes:
-        - '2010-01-01T00:04:00Z'
-        - '2010-01-01T00:04:12Z'
-        - '2010-01-01T00:04:24Z'
-        - '2010-01-01T00:04:36Z'
-        - '2010-01-01T00:04:48Z'
-        - '2010-01-01T00:05:00Z'
-        - '2010-01-01T00:05:12Z'
-        - '2010-01-01T00:05:24Z'
-        - '2010-01-01T00:05:36Z'
-        - '2010-01-01T00:05:48Z'
-        - '2010-01-01T00:06:00Z'
+        dateTimes:
+        - 240
+        - 252
+        - 264
+        - 276
+        - 288
+        - 300
+        - 312
+        - 324
+        - 336
+        - 348
+        - 360
+        epoch: "seconds since 2010-01-01T00:00:00Z"
       obs errors: [1.0, 2.0]
     obsdataout:
       obsfile: "testoutput/ospace.generate.list.mpi.nc4"
@@ -299,6 +306,7 @@ observations:
 - obs space:
     name: "Radiosonde with grouping"
     simulated variables: ['temperature']
+    observed variables: ['temperature']
     obsdatain:
       obsfile: "Data/testinput_tier_1/sondes_obs_2018041500_m.nc4"
       obsgrouping:
@@ -332,6 +340,7 @@ observations:
 - obs space:
     name: "Radiosonde with grouping and tw filtering"
     simulated variables: ['temperature']
+    observed variables: ['temperature']
     obsdatain:
       obsfile: "Data/testinput_tier_1/sondes_obs_2018041500_m_twfilt.nc4"
       obsgrouping:
@@ -363,6 +372,7 @@ observations:
 - obs space:
     name: "AOD GOES"
     simulated variables: ['temperature']
+    observed variables: ['temperature']
     obsdatain:
       obsfile: "Data/testinput_tier_1/geos_aod_obs_2018041500_m.nc4"
   test data:

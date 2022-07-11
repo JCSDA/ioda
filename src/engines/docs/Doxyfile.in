@@ -32,7 +32,7 @@ PROJECT_NAME           = "ioda-engines"
 # This could be handy for archiving the generated documentation or
 # if some version control system is used.
 
-PROJECT_NUMBER         = "version 0.9.0"
+PROJECT_NUMBER         = "version 2.0.0"
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer
@@ -652,7 +652,7 @@ WARN_LOGFILE           =
 # directories like "/usr/src/myproject". Separate the files or directories
 # with spaces.
 
-INPUT                  = "@PROJECT_SOURCE_DIR@/docs" "@PROJECT_SOURCE_DIR@/jedi" "@PROJECT_SOURCE_DIR@/Examples" "@PROJECT_SOURCE_DIR@/ioda" "@PROJECT_SOURCE_DIR@/test" "@PROJECT_SOURCE_DIR@/README.md" "@PROJECT_SOURCE_DIR@/LICENSE.md"
+INPUT                  = "@PROJECT_SOURCE_DIR@/docs" "@PROJECT_SOURCE_DIR@/Examples" "@PROJECT_SOURCE_DIR@/ioda" "@PROJECT_SOURCE_DIR@/test" "@PROJECT_SOURCE_DIR@/README.md" "@PROJECT_SOURCE_DIR@/LICENSE.md"
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding, which is

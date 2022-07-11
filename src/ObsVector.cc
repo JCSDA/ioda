@@ -24,13 +24,14 @@ namespace ioda {
 // -----------------------------------------------------------------------------
 ObsVector::ObsVector(ObsSpace & obsdb,
                      const std::string & name)
-  : obsdb_(obsdb), obsvars_(obsdb.obsvariables()),
-    nvars_(obsvars_.variables().size()), nlocs_(obsdb_.nlocs()),
-    values_(nlocs_ * nvars_),
-    missing_(util::missingValue(missing_)) {
+                       : obsdb_(obsdb), obsvars_(obsdb.assimvariables()),
+                         nvars_(obsvars_.variables().size()), nlocs_(obsdb_.nlocs()),
+                         values_(nlocs_ * nvars_),
+                         missing_(util::missingValue(missing_)) {
   oops::Log::trace() << "ObsVector::ObsVector " << name << std::endl;
   if (!name.empty()) this->read(name);
 }
+
 // -----------------------------------------------------------------------------
 ObsVector::ObsVector(const ObsVector & other)
   : obsdb_(other.obsdb_), obsvars_(other.obsvars_), nvars_(other.nvars_),
@@ -258,17 +259,16 @@ Eigen::VectorXd ObsVector::packEigen(const ObsVector & mask) const {
 ObsVector & ObsVector::operator=(const ObsDataVector<float> & rhs) {
   oops::Log::trace() << "ObsVector::operator= start" << std::endl;
   ASSERT(&rhs.space() == &obsdb_);
-  ASSERT(rhs.nvars() == nvars_);
   ASSERT(rhs.nlocs() == nlocs_);
   const float  fmiss = util::missingValue(fmiss);
   const double dmiss = util::missingValue(dmiss);
   size_t ii = 0;
   for (size_t jl = 0; jl < nlocs_; ++jl) {
     for (size_t jv = 0; jv < nvars_; ++jv) {
-       if (rhs[jv][jl] == fmiss) {
+       if (rhs[this->obsvars_[jv]][jl] == fmiss) {
          values_[ii] = dmiss;
        } else {
-         values_[ii] = static_cast<double>(rhs[jv][jl]);
+         values_[ii] = static_cast<double>(rhs[this->obsvars_[jv]][jl]);
        }
        ++ii;
     }
@@ -278,6 +278,8 @@ ObsVector & ObsVector::operator=(const ObsDataVector<float> & rhs) {
   return *this;
 }
 // -----------------------------------------------------------------------------
+
+// TODO(JAW): Check if this function be removed.
 void ObsVector::mask(const ObsDataVector<int> & flags) {
   oops::Log::trace() << "ObsVector::mask" << std::endl;
   ASSERT(values_.size() == flags.nvars() * flags.nlocs());

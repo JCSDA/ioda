@@ -5,6 +5,7 @@ variables:
 - name: azimuth_cog
 - name: dwind_dp
 - name: dwind_dt
+- name: initial_obsvalue
 - name: height_cog
 - name: lidar_class
 - name: profile_number

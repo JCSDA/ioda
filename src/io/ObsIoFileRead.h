@@ -39,11 +39,8 @@ class ObsIoFileRead : public ObsIo, private util::ObjectCounter<ObsIoFileRead> {
                            const ObsSpaceParameters & obsSpaceParams);
     ~ObsIoFileRead();
 
-    bool eachProcessGeneratesSeparateObs() const override;
-
  private:
     //-------------------------- private data members -------------------------------
-    bool read_separate_files_ = false;
 
     //-------------------------- private functions ----------------------------------
     /// \brief print routine for oops::Printable base class

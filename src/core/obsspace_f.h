@@ -57,6 +57,9 @@ extern "C" {
   void obsspace_get_datetime_f(const ObsSpace &, const char *, const char *,
                                const std::size_t &, int32_t*, int32_t*,
                                const std::size_t &, int*);
+  void obsspace_get_bool_f(const ObsSpace &, const char *, const char *,
+                           const std::size_t &, bool*,
+                           const std::size_t &, int*);
 
   void obsspace_put_int32_f(ObsSpace &, const char *, const char *,
                             const std::size_t &, int32_t*,
@@ -70,6 +73,9 @@ extern "C" {
   void obsspace_put_real64_f(ObsSpace &, const char *, const char *,
                              const std::size_t &, double*,
                              const std::size_t &, int*);
+  void obsspace_put_bool_f(ObsSpace &, const char *, const char *,
+                           const std::size_t &, bool*,
+                           const std::size_t &, int*);
 
   int obsspace_get_nlocs_dim_id_f();
   int obsspace_get_nchans_dim_id_f();

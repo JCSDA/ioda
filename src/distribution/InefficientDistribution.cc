@@ -27,7 +27,7 @@ static DistributionMaker<InefficientDistribution> maker("InefficientDistribution
 
 // -----------------------------------------------------------------------------
 InefficientDistribution::InefficientDistribution(const eckit::mpi::Comm & Comm,
-                                                 const eckit::Configuration & config)
+                                                 const Parameters_ &)
   : Distribution(Comm) {
   oops::Log::trace() << "InefficientDistribution constructed" << std::endl;
 }

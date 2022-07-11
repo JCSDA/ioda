@@ -25,10 +25,12 @@ ObsIo::ObsIo() {
 //------------------------------------------------------------------------------------
 bool ObsIo::isVarDimByNlocs(const std::string & varName) const {
     bool isDimByNlocs = false;
-    auto ivar = dims_attached_to_vars_.find(varName);
-    if (ivar != dims_attached_to_vars_.end()) {
-        if (ivar->second[0] == "nlocs") {
-            isDimByNlocs = true;
+    for (auto & ivar : dims_attached_to_vars_) {
+        if (ivar.first.name == varName) {
+            // Found varName, now check if first dimension is "nlocs"
+            if (ivar.second[0].name == "nlocs") {
+                isDimByNlocs = true;
+            }
         }
     }
     return isDimByNlocs;
@@ -36,7 +38,7 @@ bool ObsIo::isVarDimByNlocs(const std::string & varName) const {
 
 //------------------------------------------------------------------------------------
 void ObsIo::updateVarDimInfo() {
-    collectVarDimInfo(obs_group_, var_list_, dim_var_list_, dims_attached_to_vars_,
+    VarUtils::collectVarDimInfo(obs_group_, var_list_, dim_var_list_, dims_attached_to_vars_,
                       max_var_size_);
 }
 

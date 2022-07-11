@@ -31,7 +31,12 @@ phases:
         echo "Merging to develop";
         else export CODEBUILD_GIT_BRANCH=${CODEBUILD_WEBHOOK_HEAD_REF#refs/heads/};
         fi
+        
+      # Determine the git base branch. This is the branch we are merging into.
+      # It can be develop or another branch. It will be used as a fall back branch in clone.sh
+      - export GIT_BASE_BRANCH=${CODEBUILD_WEBHOOK_BASE_REF#refs/heads/}
 
+      - echo "GIT_BASE_BRANCH=${GIT_BASE_BRANCH}"
       - echo "CODEBUILD_GIT_BRANCH=${CODEBUILD_GIT_BRANCH}"
       - echo "CODEBUILD_SOURCE_VERSION=${CODEBUILD_SOURCE_VERSION}"
 
@@ -54,22 +59,36 @@ phases:
       - cd CI
       - . /etc/profile.d/intel.sh
 
+      # read cdash url from s3
+      - wget https://ci-test-cdash-url.s3.amazonaws.com/cdash_url.txt
+      - CDASH_URL=$(cat cdash_url.txt)
+
+      #  Setting git credentials
+      - sed -i '/ssh/d' ~/.gitconfig
+      - sed '/instead/d' ~/.gitconfig
+      - git config --global credential.helper store
+      - touch ~/.git-credentials
+      - chmod 0700 ~/.git-credentials
+      - echo "https://${GIT_USER}:${GIT_PASS}@github.com" >~/.git-credentials
+
       # jedi-cmake
-      - ./clone.sh $GIT_USER $GIT_PASS jcsda-internal/jedi-cmake $CODEBUILD_GIT_BRANCH jedicmake /jcsda/ioda-bundle develop
+      - ./clone.sh jcsda-internal/jedi-cmake $CODEBUILD_GIT_BRANCH  /jcsda/ioda-bundle jedicmake ${GIT_BASE_BRANCH} develop
 
       # ioda
-      - ./clone.sh $GIT_USER $GIT_PASS jcsda-internal/ioda $CODEBUILD_GIT_BRANCH ioda /jcsda/ioda-bundle develop
+      - ./clone.sh jcsda-internal/ioda $CODEBUILD_GIT_BRANCH  /jcsda/ioda-bundle ioda ${GIT_BASE_BRANCH} develop
 
       # oops
-      - ./clone.sh $GIT_USER $GIT_PASS jcsda-internal/oops $CODEBUILD_GIT_BRANCH oops /jcsda/ioda-bundle develop
+      - ./clone.sh jcsda-internal/oops $CODEBUILD_GIT_BRANCH  /jcsda/ioda-bundle oops ${GIT_BASE_BRANCH} develop
 
       # ioda-test
-      - ./clone.sh $GIT_USER $GIT_PASS jcsda-internal/ioda-data $CODEBUILD_GIT_BRANCH ioda-data /jcsda/ioda-bundle develop
+      - ./clone.sh jcsda-internal/ioda-data $CODEBUILD_GIT_BRANCH /jcsda/ioda-bundle ioda-data ${GIT_BASE_BRANCH} develop
 
       - cp CMakeLists.txt /jcsda/ioda-bundle
       - cp -r cmake /jcsda/ioda-bundle/
       # cdash upload setup
       - cp /jcsda/ioda-bundle/cmake/CTestConfig.cmake /jcsda/ioda-bundle/
+      - sed -i "s@CDASH_URL@$CDASH_URL@g" /jcsda/ioda-bundle/CTestConfig.cmake
+
 
       - chmod 777 -R /jcsda/ioda-bundle
       - cd /jcsda/ioda-bundle
@@ -90,7 +109,7 @@ phases:
         && export PATH=/usr/local/lib:$PATH
         && export PYTHONPATH=/usr/local/lib:/usr/local/lib/python3.8/site-packages:$PYTHONPATH
         && cd /home/jedi
-        && ecbuild -Wno-dev -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCDASH_OVERRIDE_GIT_BRANCH=$CODEBUILD_GIT_BRANCH -DCTEST_UPDATE_VERSION_ONLY=FALSE -DBUILD_PYTHON_BINDINGS=ON /jcsda/ioda-bundle/"
+        && ecbuild -Wno-dev -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCDASH_OVERRIDE_SITE=CodeBuild -DCDASH_OVERRIDE_GIT_BRANCH=$CODEBUILD_GIT_BRANCH -DCTEST_UPDATE_VERSION_ONLY=FALSE /jcsda/ioda-bundle/"
 
       - su - jedi -c "export CC=mpiicc
         && export FC=mpiifort
@@ -132,8 +151,7 @@ phases:
 
       - if [ "$BUILD_STATUS" = "1" ];
         then echo "Build & tests passed, find cdash url";
-        bash /jcsda/ioda-bundle/ioda/CI/cdash-url.sh /home/jedi/ioda/Testing;
-        url=$(bash /jcsda/ioda-bundle/ioda/CI/cdash-url.sh /home/jedi/ioda/Testing);
+        url=$(bash /jcsda/ioda-bundle/ioda/CI/cdash-url.sh /home/jedi/ioda/Testing $CDASH_URL);
         echo $url;
         echo ${url} > /jcsda/artifacts/cdash-url.txt;
         cat /jcsda/artifacts/cdash-url.txt;

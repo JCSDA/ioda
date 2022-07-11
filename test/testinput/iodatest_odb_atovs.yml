@@ -6,6 +6,8 @@ variables:
 - name: amsub_temp
 - name: amsuscatindex
 - name: azimuth
+- name: initial_obsvalue
+- name: initial_vertco_reference
 - name: land_sea
 - name: qchirsfov
 - name: qcprepro

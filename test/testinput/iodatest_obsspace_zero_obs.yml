@@ -1,18 +1,21 @@
 ---
-window begin: "2010-04-14T21:00:00Z" # filters out all obs
-window end: "2010-04-15T03:00:00Z"
+window begin: "2018-04-14T21:00:00Z"
+window end: "2018-04-15T03:00:00Z"
 
 observations:
 - obs space:
-    name: "AMSUA NOAA19"
+    name: "Zero Obs"
     simulated variables: ['brightness_temperature']
+    observed variables: ['brightness_temperature']
     channels: 1-15
     obsdatain:
-      obsfile: "Data/testinput_tier_1/amsua_n19_obs_2018041500_m.nc4"
+      obsfile: "Data/testinput_tier_1/zero_obs_v2.nc4"
+    obsdataout:
+      obsfile: "testoutput/zero_obs_v2_out.nc4"
   test data:
     nlocs: 0
     nrecs: 0
-    nvars: 1
+    nvars: 2
     obs perturbations seed: 0
     expected group variables: []
     expected sort variable: ""
@@ -30,50 +33,10 @@ observations:
     tolerance:
       - 1.0e-11
     variables for putget test:
-      # have to use float variables, and only one channel at a time
-      - name: "brightness_temperature"
-        group: "ObsValue"
-        channels: [ 4 ]
-
-      - name: "brightness_temperature"
-        group: "ObsValue"
-        channels: [ 11 ]
-
-- obs space:
-    name: "Radiosonde"
-    simulated variables: ['air_temperature']
-    obsdatain:
-      obsfile: "Data/testinput_tier_1/sondes_obs_2018041500_m.nc4"
-  test data:
-    nlocs: 0
-    nrecs: 0
-    nvars: 5
-    obs perturbations seed: 0
-    expected group variables: []
-    expected sort variable: ""
-    expected sort order: "ascending"
-    variables for get test:
-      - name: "latitude"
-        group: "MetaData"
-        type: "float"
-        norm: 0.0
-
-      - name: "longitude"
-        group: "MetaData"
-        type: "float"
-        norm: 0.0
-
-      - name: "surface_pressure"
-        group: "PreQC"
-        type: "integer"
-        norm: 0
-    tolerance:
-      - 1.0e-11
-    variables for putget test:
-      - name: "air_temperature"
+      - name: "bending_angle"
         group: "ObsValue"
         channels: []
 
-      - name: "specific_humidity"
+      - name: "refractivity"
         group: "ObsValue"
         channels: []

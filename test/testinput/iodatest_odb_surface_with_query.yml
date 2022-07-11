@@ -8,6 +8,7 @@ variables:
 - name: buoy_type
 - name: hours_since_last_position
 - name: ident
+- name: initial_obsvalue
 - name: ob_practice
 - name: position_accuracy_flag
 - name: pressure_sensor_alt

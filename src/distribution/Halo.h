@@ -15,10 +15,23 @@
 #include "eckit/geometry/Sphere.h"
 #include "eckit/mpi/Comm.h"
 #include "oops/util/Logger.h"
+#include "oops/util/parameters/OptionalParameter.h"
+#include "oops/util/parameters/Parameter.h"
 
 #include "ioda/distribution/Distribution.h"
+#include "ioda/distribution/DistributionParametersBase.h"
 
 namespace ioda {
+
+class HaloDistributionParameters : public DistributionParametersBase {
+  OOPS_CONCRETE_PARAMETERS(HaloDistributionParameters, DistributionParametersBase)
+
+ public:
+  oops::OptionalParameter<std::vector<double>> center{"center", this};
+  oops::Parameter<double> radius{"radius", 50000000.0, this};
+  oops::Parameter<double> haloSize{"halo size", 0.0, this};
+};
+
 
 // ---------------------------------------------------------------------
 /*!
@@ -33,8 +46,8 @@ namespace ioda {
  */
 class Halo: public Distribution {
  public:
-     explicit Halo(const eckit::mpi::Comm & Comm,
-                   const eckit::Configuration & config);
+     typedef HaloDistributionParameters Parameters_;
+     Halo(const eckit::mpi::Comm & Comm, const Parameters_ &);
      ~Halo();
 
      void assignRecord(const std::size_t RecNum, const std::size_t LocNum,

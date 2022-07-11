@@ -20,6 +20,7 @@
 #include <utility>
 
 #include "./HH/HH-hasattributes.h"
+#include "./HH/HH-hastypes.h"
 #include "./HH/HH-hasvariables.h"
 #include "./HH/Handles.h"
 #include "ioda/Exception.h"
@@ -33,6 +34,7 @@ namespace HH {
 HH_Group::HH_Group(HH_hid_t grp, ::ioda::Engines::Capabilities caps, HH_hid_t fileroot)
     : backend_(grp), fileroot_(fileroot), caps_(caps) {
   atts = Has_Attributes(std::make_shared<HH_HasAttributes>(grp));
+  types = Has_Types(std::make_shared<HH_HasTypes>(grp));
   vars = Has_Variables(std::make_shared<HH_HasVariables>(grp, fileroot));
 }
 
@@ -138,6 +140,8 @@ herr_t iterate_find_by_link(hid_t g_id, const char* name, const H5L_info_t* info
     op->lists[ObjectType::Group].emplace_back(name);
   else if (oinfo.type == H5O_type_t::H5O_TYPE_DATASET)
     op->lists[ObjectType::Variable].emplace_back(name);
+  else if (oinfo.type == H5O_type_t::H5O_TYPE_NAMED_DATATYPE)
+    op->lists[ObjectType::Type].emplace_back(name);
   else
     op->lists[ObjectType::Unimplemented].emplace_back(name);
 

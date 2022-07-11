@@ -15,6 +15,7 @@
 #include "./HH/HH-attributes.h"
 
 #include "./HH/HH-types.h"
+#include "./HH/HH-util.h"
 #include "ioda/Exception.h"
 #include "ioda/Misc/Dimensions.h"
 
@@ -48,20 +49,146 @@ std::string HH_Attribute::getName() const {
   return std::string(v.data());
 }
 
+/**
+ * @details This function is somewhat complicated because we perform special
+ * handling / reprocessing when writing fixed-length string types. This is
+ * done as a convenience to end users, since they should not need to
+ * use different in-memory data representations for variable-length and
+ * fixed-length strings.
+ */
 void HH_Attribute::write(gsl::span<const char> data, HH_hid_t in_memory_dataType) {
-  if (H5Awrite(attr_(), in_memory_dataType(), data.data()) < 0)
-    throw Exception("H5Awrite failed.", ioda_Here());
+  H5T_class_t memTypeClass = H5Tget_class(in_memory_dataType());
+  HH_hid_t attrType(H5Aget_type(attr_()), Handles::Closers::CloseHDF5Datatype::CloseP);
+  H5T_class_t attrTypeClass = H5Tget_class(attrType());
+
+  if ((memTypeClass == H5T_STRING) && (attrTypeClass == H5T_STRING)) {
+    // Both memory and attribute types are strings. Need to check fixed vs variable length.
+    // Variable-length strings (default) are packed as an array of pointers.
+    // Fixed-length strings are just a sequence of characters.
+    htri_t isMemStrVar  = H5Tis_variable_str(in_memory_dataType());
+    htri_t isAttrStrVar = H5Tis_variable_str(attrType());
+    if (isMemStrVar < 0)
+      throw Exception("H5Tis_variable_str failed on memory data type.", ioda_Here());
+    if (isAttrStrVar < 0)
+      throw Exception("H5Tis_variable_str failed on backend attribute data type.", ioda_Here());
+
+    if ((isMemStrVar && isAttrStrVar) || (!isMemStrVar && !isAttrStrVar)) {
+      // No need to change anything. Pass through.
+      // NOTE: Using attrType instead of in_memory_dataType! This is because strings can have
+      //   different character sets (ASCII vs UTF-8), which is entirely unhandled in IODA.
+      if (H5Awrite(attr_(), attrType(), data.data()) < 0)
+        throw Exception("H5Awrite failed.", ioda_Here());
+    } else if (isMemStrVar) {
+      // Variable-length in memory. Fixed-length in attribute.
+      size_t strLen  = H5Tget_size(attrType());
+      size_t numStrs = getDimensions().numElements;
+
+      std::vector<char> out_buf = convertVariableLengthToFixedLength(data, strLen, false);
+
+      if (H5Awrite(attr_(), attrType(), out_buf.data()) < 0)
+        throw Exception("H5Awrite failed.", ioda_Here());
+    } else if (isAttrStrVar) {
+      // Fixed-length in memory. Variable-length in attribute.
+
+      size_t strLen      = H5Tget_size(in_memory_dataType());
+      size_t numStrs     = getDimensions().numElements;
+      size_t totalStrLen = strLen * numStrs;
+
+      auto converted_data_holder = convertFixedLengthToVariableLength(data, strLen);
+      char* converted_data = reinterpret_cast<char*>(converted_data_holder.DataPointers.data());
+
+      if (H5Awrite(attr_(), attrType(), converted_data) < 0)
+        throw Exception("H5Awrite failed.", ioda_Here());
+    }
+  } else {
+    // Pass-through case.
+    if (H5Awrite(attr_(), in_memory_dataType(), data.data()) < 0)
+      throw Exception("H5Awrite failed.", ioda_Here());
+  }
 }
 
-Attribute HH_Attribute::write(gsl::span<char> data, const Type& in_memory_dataType) {
+Attribute HH_Attribute::write(gsl::span<const char> data, const Type& in_memory_dataType) {
   auto typeBackend = std::dynamic_pointer_cast<HH_Type>(in_memory_dataType.getBackend());
   write(data, typeBackend->handle);
   return Attribute{shared_from_this()};
 }
 
 void HH_Attribute::read(gsl::span<char> data, HH_hid_t in_memory_dataType) const {
-  herr_t ret = H5Aread(attr_(), in_memory_dataType(), static_cast<void*>(data.data()));
-  if (ret < 0) throw Exception("H5Aread failed.", ioda_Here());
+  H5T_class_t memTypeClass = H5Tget_class(in_memory_dataType());
+  HH_hid_t attrType(H5Aget_type(attr_()), Handles::Closers::CloseHDF5Datatype::CloseP);
+  H5T_class_t attrTypeClass = H5Tget_class(attrType());
+
+  if ((memTypeClass == H5T_STRING) && (attrTypeClass == H5T_STRING)) {
+    // Both memory and attribute types are strings. Need to check fixed vs variable length.
+    // Variable-length strings (default) are packed as an array of pointers.
+    // Fixed-length strings are just a sequence of characters.
+    htri_t isMemStrVar  = H5Tis_variable_str(in_memory_dataType());
+    htri_t isAttrStrVar = H5Tis_variable_str(attrType());
+    if (isMemStrVar < 0)
+      throw Exception("H5Tis_variable_str failed on memory data type.", ioda_Here());
+    if (isAttrStrVar < 0)
+      throw Exception("H5Tis_variable_str failed on backend attribute data type.", ioda_Here());
+
+    if ((isMemStrVar && isAttrStrVar) || (!isMemStrVar && !isAttrStrVar)) {
+      // No need to change anything. Pass through.
+      // NOTE: Using attrType instead of in_memory_dataType! This is because strings can have
+      //   different character sets (ASCII vs UTF-8), which is entirely unhandled in IODA.
+      herr_t ret = H5Aread(attr_(), attrType(), static_cast<void*>(data.data()));
+      if (ret < 0) throw Exception("H5Aread failed.", ioda_Here());
+    } else if (isMemStrVar) {
+      // Variable-length in memory. Fixed-length in attribute.
+      size_t strLen  = H5Tget_size(attrType());
+      size_t numStrs = getDimensions().numElements;
+      std::vector<char> in_buf(numStrs * strLen);
+
+      if (H5Aread(attr_(), attrType(), in_buf.data()) < 0)
+        throw Exception("H5Aread failed.", ioda_Here());
+
+      // This block of code is a bit of a kludge in that we are switching from a packed
+      // structure of strings to a packed structure of pointers of strings.
+      // The Marshaller code in ioda/Types/Marshalling.h expects this format.
+      // In the future, the string read interface in the frontend should use the Marshalling
+      // interface to pass these objects back and forth without excessive data element copies.
+
+      char** reint_buf = reinterpret_cast<char**>(data.data());  // NOLINT: casting
+      for (size_t i = 0; i < numStrs; ++i) {
+        // The malloced strings will be released in Marshalling.h.
+        reint_buf[i]
+          = (char*)malloc(strLen + 1);  // NOLINT: quite a deliberate call to malloc here.
+        memset(reint_buf[i], 0, strLen + 1);
+        memcpy(reint_buf[i], in_buf.data() + (strLen * i), strLen);
+      }
+    } else if (isAttrStrVar) {
+      // Fixed-length in memory. Variable-length in attribute.
+      // Rare conversion. Included for completeness. Read into a std::array? There is no
+      // fixed-length string type in C++.
+
+      size_t strLen      = H5Tget_size(in_memory_dataType());
+      size_t numStrs     = getDimensions().numElements;
+      size_t totalStrLen = strLen * numStrs;
+
+      std::vector<char> in_buf(numStrs * sizeof(char *));
+
+      if (H5Aread(attr_(), attrType(), in_buf.data()) < 0)
+        throw Exception("H5Aread failed.", ioda_Here());
+
+      // We could avoid using the temporary out_buf and write
+      // directly to "data", but there is no strong need to do this.
+      // 1. This is a very rare type conversion. C++ lacks a fixed-length string type.
+      // 2. We are reading an attribute, which by definition is small.
+      std::vector<char> out_buf
+        = convertVariableLengthToFixedLength(in_buf, strLen, false);
+      if (out_buf.size() != data.size())
+        throw Exception("Unexpected sizes.", ioda_Here())
+          .add("data.size()", data.size())
+          .add("out_buf.size()", out_buf.size());
+      std::copy(out_buf.begin(), out_buf.end(), data.begin());
+    }
+  } else {
+    // Pass-through case
+    herr_t ret = H5Aread(attr_(), in_memory_dataType(), static_cast<void*>(data.data()));
+    if (ret < 0) throw Exception("H5Aread failed.", ioda_Here());
+  }
 }
 
 Attribute HH_Attribute::read(gsl::span<char> data, const Type& in_memory_dataType) const {

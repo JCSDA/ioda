@@ -7,5 +7,7 @@ string:
   dtype: string
 datetime:
   dtype: datetime
+bool:
+  dtype: bool
 invalid:
   dtype: invalid

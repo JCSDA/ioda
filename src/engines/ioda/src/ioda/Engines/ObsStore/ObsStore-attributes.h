@@ -17,7 +17,7 @@
 #include <vector>
 
 #include "./Attributes.hpp"
-#include "./Types.hpp"
+#include "./Type.hpp"
 #include "ioda/Group.h"
 #include "ioda/defs.h"
 
@@ -50,7 +50,7 @@ public:
   /// \brief transfer data into the ObsStore Attribute
   /// \param data contiguous block of data to transfer
   /// \param in_memory_dataType frontend type marker
-  Attribute write(gsl::span<char> data, const Type& in_memory_dataType) final;
+  Attribute write(gsl::span<const char> data, const Type& in_memory_dataType) final;
   /// \brief transfer data from the ObsStore Attribute
   /// \param data contiguous block of data to transfer
   /// \param in_memory_dataType frontend type marker

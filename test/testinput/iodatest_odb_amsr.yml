@@ -8,8 +8,13 @@ variables:
 - name: amsr_89ghz_longitude_1
 - name: amsr_89ghz_longitude_2
 - name: azimuth
+- name: initial_obsvalue
+- name: initial_vertco_reference
 - name: qchirsfov
 - name: satellite_identifier
 - name: scanpos
 - name: receipt_time
 - name: receipt_date
+- name: channel_quality_flags
+- name: zenith
+- name: ops_subtype 

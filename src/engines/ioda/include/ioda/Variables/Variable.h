@@ -25,12 +25,15 @@
 
 #include "ioda/Attributes/Has_Attributes.h"
 #include "ioda/Exception.h"
+#include "ioda/MathOps.h"
 #include "ioda/Misc/Eigen_Compat.h"
 #include "ioda/Python/Var_ext.h"
 #include "ioda/Types/Marshalling.h"
 #include "ioda/Types/Type.h"
 #include "ioda/Types/Type_Provider.h"
+#include "ioda/Units.h"
 #include "ioda/Variables/Fill.h"
+#include "ioda/Variables/FillPolicy.h"
 #include "ioda/Variables/Selection.h"
 #include "ioda/defs.h"
 
@@ -94,7 +97,7 @@ public:
   /// \param DataType is the type of the data. I.e. float, int, int32_t, uint16_t, std::string, etc.
   /// \returns True if the type matches
   /// \returns False (0) if the type does not match
-  /// \throws jedi::xError if an error occurred.
+  /// \throws ioda::Exception if an error occurred.
   template <class DataType>
   bool isA() const {
     Type templateType = Types::GetType_Wrapper<DataType>::GetType(getTypeProvider());
@@ -259,7 +262,7 @@ public:
   ///   location where the data are written to.
   /// \throws ioda::xError if data has the wrong size.
   /// \returns The variable (for chaining).
-  virtual Variable write(gsl::span<char> data, const Type& in_memory_dataType,
+  virtual Variable write(gsl::span<const char> data, const Type& in_memory_dataType,
                          const Selection& mem_selection  = Selection::all,
                          const Selection& file_selection = Selection::all);
 
@@ -283,10 +286,10 @@ public:
                                 const Selection& file_selection = Selection::all) {
     try {
       Marshaller m;
-      auto d = m.serialize(data);
-      return write(gsl::make_span<char>(
-                     const_cast<char*>(reinterpret_cast<const char*>(d->DataPointers.data())),
-                     d->DataPointers.size() * sizeof(typename Marshaller::mutable_value_type)),
+      auto d = m.serialize(data, &atts);
+      return write(gsl::make_span<const char>(
+                      reinterpret_cast<const char*>(d->DataPointers.data()),
+                     d->DataPointers.size() * Marshaller::bytesPerElement_),
                    TypeWrapper::GetType(getTypeProvider()), mem_selection, file_selection);
     } catch (...) {
       std::throw_with_nested(Exception(ioda_Here()));
@@ -313,10 +316,10 @@ public:
                                 const Selection& file_selection = Selection::all) {
     try {
       Marshaller m;
-      auto d = m.serialize(data);
-      return write(gsl::make_span<char>(
-                     const_cast<char*>(reinterpret_cast<const char*>(d->DataPointers.data())),
-                     d->DataPointers.size() * sizeof(typename Marshaller::mutable_value_type)),
+      auto d = m.serialize(data, &atts);
+      return write(gsl::make_span<const char>(
+                      reinterpret_cast<const char*>(d->DataPointers.data()),
+                     d->DataPointers.size() * Marshaller::bytesPerElement_),
                    TypeWrapper::GetType(getTypeProvider()), mem_selection, file_selection);
     } catch (...) {
       std::throw_with_nested(Exception(ioda_Here()));
@@ -378,6 +381,32 @@ public:
 #else
     static_assert(false, "The Eigen headers cannot be found, so this function cannot be used.");
 #endif
+  }
+
+  
+  template <class EigenClass>
+  Variable_Implementation writeFromMath(
+    const EigenMath<EigenClass> &eigendata,
+    const Selection& mem_selection = Selection::all,
+    const Selection& file_selection = Selection::all)
+  {
+    // Determine output units. If unset, then just return eigendata's units.
+    auto outUnits = (atts.exists("units"))
+                    ? atts["units"].template read<std::string>() : eigendata.units;
+
+    // Convert to output units. If no conversion, this falls through.
+    auto dataNewUnits = eigendata.asUnits(outUnits);
+
+    // Extract the EigenClass::data object and switch missing values to match the output variable.
+    typedef typename EigenClass::Scalar ScalarType;
+    ScalarType varmissing = (hasFillValue())
+      ? detail::getFillValue<ScalarType>(getFillValue())
+      : FillValuePolicies::netCDF4_default<ScalarType>();
+    auto dataCorrectUnitsAndMissingValue
+      = (dataNewUnits.data == dataNewUnits.missingValue).select(varmissing, dataNewUnits.data);
+    
+    // Write
+    return writeWithEigenRegular(dataCorrectUnitsAndMissingValue, mem_selection, file_selection);
   }
 
   /// \brief Write an Eigen Tensor-like object
@@ -445,7 +474,6 @@ public:
                                const Selection& file_selection = Selection::all) const {
     try {
       const size_t numObjects = data.size();
-      Dimensions_t ne         = getDimensions().numElements;
 
       detail::PointerOwner pointerOwner = getTypeProvider()->getReturnedPointerOwner();
       Marshaller m(pointerOwner);
@@ -455,9 +483,9 @@ public:
              // Logic note: sizeof mutable data type. If we are
              // reading in a string, then mutable data type is char*,
              // which works because address pointers have the same size.
-             p->DataPointers.size() * sizeof(typename Marshaller::mutable_value_type)),
+             p->DataPointers.size() * Marshaller::bytesPerElement_),
            TypeWrapper::GetType(getTypeProvider()), mem_selection, file_selection);
-      m.deserialize(p, data);
+      m.deserialize(p, data, &atts);
 
       return Variable_Implementation{backend_};
     } catch (...) {
@@ -600,6 +628,28 @@ public:
 #endif
   }
 
+  template <class EigenClass>
+  EigenMath<EigenClass> readForMath(
+    const Selection& mem_selection = Selection::all,
+    const Selection& file_selection = Selection::all) const
+  {
+    EigenClass data;
+    readWithEigenRegular(data, mem_selection, file_selection);
+    auto units = (atts.exists("units"))
+      ? udunits::Units(atts["units"].template read<std::string>())
+      : udunits::Units();
+    
+    typedef typename EigenClass::Scalar ScalarType;
+    // detail::getFillValue<ScalarType>(getFillValue()) is slightly awkward.
+    // Both a class function and a non-class function have the same name.
+    // See Fill.h and Variable.h.
+    ScalarType missing = (hasFillValue())
+      ? detail::getFillValue<ScalarType>(getFillValue())
+      : FillValuePolicies::netCDF4_default<ScalarType>();
+
+    return ToEigenMath(std::move(data), units, missing);
+  }
+
   /// \brief Read data into an Eigen::Array, Eigen::Matrix, Eigen::Map, etc.
   /// \tparam EigenClass is a template pointing to the Eigen object.
   ///   This template must provide the EigenClass::Scalar typedef.
@@ -609,7 +659,7 @@ public:
   /// \param file_selection is the backend's memory layout representing the
   ///   location where the data are written to.
   /// \returns Another instance of this Variable. Used for operation chaining.
-  /// \throws jedi::xError if there is a size mismatch.
+  /// \throws ioda::Exception if there is a size mismatch.
   /// \note When reading in a 1-D object, the data are read as a column vector.
   template <class EigenClass>
   Variable_Implementation readWithEigenTensor(EigenClass& res,
@@ -650,6 +700,91 @@ public:
   virtual Selections::SelectionBackend_t instantiateSelection(const Selection& sel) const;
 
   /// @}
+
+private:
+  /// \brief get the fill value from the netcdf specification (_FillValue attribute)
+  FillValueData_t getNcFillValue() const;
+
+  /// \brief check if fill data objects match, print warning if they don't match
+  /// \param hdfFill fill value obtained from the hdf fill value property
+  /// \param ncFill fill value obtained from the netcdf fill value attribute
+  void checkWarnFillValue(FillValueData_t & hdfFill, FillValueData_t & ncFill) const;
+
+  /// \brief run an action according to the current variable data type
+  /// \details this function will call the function passed to it through the action
+  /// parameter, giving this action a typed entity that can be identified by decltype.
+  /// At this point, all of the types supported by Variable_Base::getBasicType() except
+  /// for bool are handled in this function.
+  /// \param action Function object callable with a single argument which is identifiable
+  /// by decltype
+  // TODO(srh) Additional development is required to properly handle the bool data type.
+  template <typename Action>
+  auto runForVarType(const Action & action) const {
+    if (isA<int>()) {
+      int typeMe;
+      return action(typeMe);
+    } else if (isA<unsigned int>()) {
+      unsigned int typeMe;
+      return action(typeMe);
+    } else if (isA<float>()) {
+      float typeMe;
+      return action(typeMe);
+    } else if (isA<double>()) {
+      double typeMe;
+      return action(typeMe);
+    } else if (isA<std::string>()) {
+      std::string typeMe;
+      return action(typeMe);
+    } else if (isA<long>()) {
+      long typeMe;
+      return action(typeMe);
+    } else if (isA<unsigned long>()) {
+      unsigned long typeMe;
+      return action(typeMe);
+    } else if (isA<short>()) {
+      short typeMe;
+      return action(typeMe);
+    } else if (isA<unsigned short>()) {
+      unsigned short typeMe;
+      return action(typeMe);
+    } else if (isA<long long>()) {
+      long long typeMe;
+      return action(typeMe);
+    } else if (isA<unsigned long long>()) {
+      unsigned long long typeMe;
+      return action(typeMe);
+    } else if (isA<int32_t>()) {
+      int32_t typeMe;
+      return action(typeMe);
+    } else if (isA<uint32_t>()) {
+      uint32_t typeMe;
+      return action(typeMe);
+    } else if (isA<int16_t>()) {
+      int16_t typeMe;
+      return action(typeMe);
+    } else if (isA<uint16_t>()) {
+      uint16_t typeMe;
+      return action(typeMe);
+    } else if (isA<int64_t>()) {
+      int64_t typeMe;
+      return action(typeMe);
+    } else if (isA<uint64_t>()) {
+      uint64_t typeMe;
+      return action(typeMe);
+    } else if (isA<long double>()) {
+      long double typeMe;
+      return action(typeMe);
+    } else if (isA<char>()) {
+      char typeMe;
+      return action(typeMe);
+    } else if (isA<unsigned char>()) {
+      unsigned char typeMe;
+      return action(typeMe);
+    } else {
+      std::throw_with_nested(Exception("Unsupported variable data type", ioda_Here()));
+    }
+  }
+
 };
 // extern template class Variable_Base<Variable>;
 }  // namespace detail

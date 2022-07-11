@@ -54,9 +54,9 @@ void testExtendedObsSpace(const eckit::LocalConfiguration &conf) {
   // This test only works if the correct ObsSpace extension options have been supplied.
   if (!obsSpaceConf.has("extension"))
     throw eckit::BadValue("Must set 'extension' configuration option", Here());
-  // Number of levels per record in the extended ObsSpace.
-  const int nlevs = obsSpaceConf.getInt("extension.average profiles onto model levels", 0);
-  // The extension is not performed if the number of levels is less than or equal to zero.
+  // Number of locations per companion record in the extended ObsSpace.
+  const int nlevs = obsSpaceConf.getInt("extension.allocate companion records with length", 0);
+  // The extension is not performed if the number of locations is less than or equal to zero.
   if (nlevs <= 0) return;
 
   const int MPIsize = obsdata.comm().size();

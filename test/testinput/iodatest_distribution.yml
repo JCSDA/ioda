@@ -18,9 +18,10 @@ distribution types:
       allgatherv: [ 0, 3, 1, 2 ]
       rank0:
         config:
-          distribution: "Halo"
-          center: [0.0, 45.0]
-          radius: 7000000.0
+          distribution:
+            name: "Halo"
+            center: [0.0, 45.0]
+            radius: 7000000.0
         nlocs: 3
         nrecs: 3
         nPatchLocs: 1
@@ -29,9 +30,10 @@ distribution types:
         patchIndex: [0]
       rank1:
         config:
-          distribution: "Halo"
-          center: [0.0, -45.0]
-          radius: 7000000.0
+          distribution:
+            name: "Halo"
+            center: [0.0, -45.0]
+            radius: 7000000.0
         nlocs: 3
         nrecs: 3
         nPatchLocs: 1
@@ -40,9 +42,10 @@ distribution types:
         patchIndex: [3]
       rank2:
         config:
-          distribution: "Halo"
-          center: [0.0, 0.0]
-          radius: 2000000.0
+          distribution:
+            name: "Halo"
+            center: [0.0, 0.0]
+            radius: 2000000.0
         nlocs: 2
         nrecs: 2
         nPatchLocs: 2
@@ -51,9 +54,10 @@ distribution types:
         patchIndex: [1, 2]
       rank3:
         config:
-          distribution: "Halo"
-          center: [180.0, 0.0]
-          radius: 100.0
+          distribution:
+            name: "Halo"
+            center: [180.0, 0.0]
+            radius: 100.0
         nlocs: 0
         nrecs: 0
         nPatchLocs: 0
@@ -71,9 +75,10 @@ distribution types:
       allgatherv:  [ 0, 3, 6, 8, 2, 5, 1, 4, 7, 9 ] # concatenation of the patchIndex entries below
       rank0:
         config:
-          distribution: "Halo"
-          center: [0, 0] # lon, lat
-          radius: 10000000
+          distribution:
+            name: "Halo"
+            center: [0, 0] # lon, lat
+            radius: 10000000
         nlocs: 4
         nrecs: 2
         nPatchLocs: 4
@@ -82,9 +87,10 @@ distribution types:
         patchIndex: [ 0, 3, 6, 8 ]
       rank1:
         config:
-          distribution: "Halo"
-          center: [90, 0]
-          radius: 10000000
+          distribution:
+            name: "Halo"
+            center: [90, 0]
+            radius: 10000000
         nlocs: 6
         nrecs: 3
         nPatchLocs: 2
@@ -93,9 +99,10 @@ distribution types:
         patchIndex: [ 2, 5 ]
       rank2:
         config:
-          distribution: "Halo"
-          center: [180, 0]
-          radius: 10000000
+          distribution:
+            name: "Halo"
+            center: [180, 0]
+            radius: 10000000
         nlocs: 6
         nrecs: 3
         nPatchLocs: 4
@@ -104,9 +111,10 @@ distribution types:
         patchIndex: [ 1, 4, 7, 9 ]
       rank3:
         config:
-          distribution: "Halo"
-          center: [270, 0]
-          radius: 10000000
+          distribution:
+            name: "Halo"
+            center: [270, 0]
+            radius: 10000000
         nlocs: 4
         nrecs: 2
         nPatchLocs: 0
@@ -120,7 +128,8 @@ distribution types:
       allgatherv: [ 0, 4, 1, 5, 2, 6, 3, 7 ]
       rank0:
         config: &roundrobin
-          distribution: "RoundRobin"
+          distribution:
+            name: "RoundRobin"
         nlocs: 2
         nrecs: 2
         nPatchLocs: 2
@@ -195,7 +204,8 @@ distribution types:
       allgatherv: [ 0, 1, 2, 3 ]
       rank0:
         config: &inefficient
-          distribution: "InefficientDistribution"
+          distribution:
+            name: "InefficientDistribution"
         nlocs: 4
         nrecs: 4
         nPatchLocs: 4
@@ -311,15 +321,16 @@ distribution types:
       allgatherv: [3, 1, 2, 0]
       rank0:
         config: &atlas
-          distribution: "Atlas"
-          grid:
-            type: regular_lonlat
-            nx: 6
-            ny: 8
-            halo: 1
-            global: true
-            include_pole: false
-            partitioner: equal_regions
+          distribution:
+            name: "Atlas"
+            grid:
+              type: regular_lonlat
+              nx: 6
+              ny: 8
+              halo: 1
+              global: true
+              include_pole: false
+              partitioner: equal_regions
         nlocs: 1
         nrecs: 1
         nPatchLocs: 1
@@ -405,18 +416,19 @@ distribution types:
       allgatherv: [3, 2, 1, 0]
       rank0:
         config: &atlas_rotated
-          distribution: "Atlas"
-          grid:
-            type: regular_lonlat
-            nx: 6
-            ny: 8
-            halo: 1
-            global: true
-            include_pole: false
-            partitioner: equal_regions
-            projection:
-              type: rotated_lonlat
-              rotation_angle: 180.0
+          distribution:
+            name: "Atlas"
+            grid:
+              type: regular_lonlat
+              nx: 6
+              ny: 8
+              halo: 1
+              global: true
+              include_pole: false
+              partitioner: equal_regions
+              projection:
+                type: rotated_lonlat
+                rotation_angle: 180.0
         nlocs: 1
         nrecs: 1
         nPatchLocs: 1

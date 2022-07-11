@@ -1,6 +1,5 @@
-ioda:
-  complementary variables:
-    - output name: "firstPart"
-      output variable data type: "string"
-      input names: ["firstPart", "secondPart", "thirdPart"]
-      merge method: "concat"
+complementary variables:
+  - output name: "firstPart"
+    output variable data type: "string"
+    input names: ["firstPart", "secondPart", "thirdPart"]
+    merge method: "concat"

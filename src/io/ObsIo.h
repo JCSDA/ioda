@@ -18,6 +18,7 @@
 #include "ioda/distribution/Distribution.h"
 #include "ioda/Misc/Dimensions.h"
 #include "ioda/Variables/Variable.h"
+#include "ioda/Variables/VarUtils.h"
 
 #include "oops/util/Logger.h"
 #include "oops/util/Printable.h"
@@ -54,18 +55,19 @@ class ObsIo : public util::Printable {
     /// \details This routine is only guarenteed to return correct results if
     ///          updateVarDimInfo has been called and the variables and dimensions
     ///          haven't been modified since.
-    const VarNameObjectList & varList() const {return var_list_;}
+    const VarUtils::Vec_Named_Variable & varList() const {return var_list_;}
 
     /// \brief return list of dimension scale variable names
     /// \details This routine is only guarenteed to return correct results if
     ///          updateVarDimInfo has been called and the variables and dimensions
     ///          haven't been modified since.
-    const VarNameObjectList & dimVarList() const {return dim_var_list_;}
+    const VarUtils::Vec_Named_Variable & dimVarList() const {return dim_var_list_;}
 
     /// \brief return map of variables to attached dimension scales
-    VarDimMap varDimMap() const {return dims_attached_to_vars_;}
+    VarUtils::VarDimMap varDimMap() const {return dims_attached_to_vars_;}
 
     /// \brief return true if variable's first dimension is nlocs
+    /// \param varName variable name to check
     bool isVarDimByNlocs(const std::string & varName) const;
 
     /// \brief access to the variables container in the associated ObsGroup
@@ -80,13 +82,8 @@ class ObsIo : public util::Printable {
     /// \brief return the names of variables to be used to group observations into records
     const std::vector<std::string> &obsGroupingVars() const { return obs_grouping_vars_; }
 
-    /// \brief return true if only observations within the timing window should be retained,
-    /// false otherwise.
-    virtual bool applyTimingWindow() const { return true; }
-
-    /// \brief return true if each process generates a separate series of observations
-    /// (e.g. read from different files).
-    virtual bool eachProcessGeneratesSeparateObs() const { return false; }
+    /// \brief return true if the locations data (lat, lon, datetime) need to be checked
+    virtual bool applyLocationsCheck() const { return true; }
 
  protected:
     //------------------ protected data members ------------------------------
@@ -100,13 +97,13 @@ class ObsIo : public util::Printable {
     Dimensions_t nlocs_;
 
     /// \brief list of regular variables from source (file or generator)
-    VarNameObjectList var_list_;
+    VarUtils::Vec_Named_Variable var_list_;
 
     /// \brief list of dimension scale variables from source (file or generator)
-    VarNameObjectList dim_var_list_;
+    VarUtils::Vec_Named_Variable dim_var_list_;
 
     /// \brief map containing variables with their attached dimension scales
-    VarDimMap dims_attached_to_vars_;
+    VarUtils::VarDimMap dims_attached_to_vars_;
 
     /// \brief names of variables to be used to group observations into records
     std::vector<std::string> obs_grouping_vars_;

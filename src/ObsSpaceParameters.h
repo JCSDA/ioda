@@ -13,10 +13,13 @@
 
 #include "ioda/core/FileFormat.h"
 #include "ioda/core/ParameterTraitsFileFormat.h"
+#include "ioda/distribution/DistributionFactory.h"
 #include "ioda/Misc/DimensionScales.h"
 #include "ioda/Misc/Dimensions.h"
+#include "ioda/Misc/IoPoolParameters.h"
 #include "ioda/io/ObsIoFactory.h"
 #include "ioda/io/ObsIoParametersBase.h"
+
 
 #include "eckit/exception/Exceptions.h"
 #include "eckit/mpi/Comm.h"
@@ -54,13 +57,6 @@ class ObsFileInParameters : public ObsIoParametersBase {
     ///   (`.odb` -- ODB, everything else -- HDF5).
     oops::Parameter<FileFormat> format{"format", FileFormat::AUTO, this};
 
-    /// reading from multiple files (1 per MPI task)
-    /// This option is not typically used. It is used to tell the system
-    /// to read observations from the ioda output files (one per MPI task)
-    /// from a prior run instead of reading and distributing from the original
-    /// file. This is currently being used in LETKF applictions.
-    oops::Parameter<bool> readFromSeparateFiles{"read obs from separate file", false, this};
-
     /// file with variable name mapping rules
     ///
     /// Required for obs files in the ODB format, unused otherwise.
@@ -83,13 +79,14 @@ class ObsExtendParameters : public oops::Parameters {
     OOPS_CONCRETE_PARAMETERS(ObsExtendParameters, oops::Parameters)
 
  public:
-    /// Number of model levels onto which original profiles are averaged.
-    oops::RequiredParameter<int> numModelLevels{"average profiles onto model levels", this};
+    /// Number of locations allocated to each companion record produced when extending the ObsSpace.
+    oops::RequiredParameter<int> companionRecordLength
+        {"allocate companion records with length", this};
 
-    /// Variables that are filled with non-missing values when producing averaged profiles.
+    /// Variables that are filled with non-missing values when producing companion profiles.
     oops::Parameter<std::vector<std::string>> nonMissingExtendedVars
         {"variables filled with non-missing values",
-            { "latitude", "longitude", "datetime", "air_pressure",
+            { "latitude", "longitude", "dateTime", "air_pressure",
                 "air_pressure_levels", "station_id" },
             this};
 };
@@ -144,8 +141,11 @@ class EmbeddedObsGenerateListParameters : public oops::Parameters {
     /// longitude values
     oops::RequiredParameter<std::vector<float>> lons{"lons", this};
 
-    /// datetime values
-    oops::RequiredParameter<std::vector<std::string>> datetimes{"datetimes", this};
+    /// time offsets (s) relative to epoch
+    oops::RequiredParameter<std::vector<int64_t>> dateTimes{"dateTimes", this};
+
+    /// epoch (ISO 8601 string) relative to which datetimes are computed
+    oops::Parameter<std::string> epoch{"epoch", "seconds since 1970-01-01T00:00:00Z", this};
 };
 
 /// Options controlling the ObsIoGenerateList class
@@ -201,40 +201,32 @@ class ObsTopLevelParameters : public oops::ObsSpaceParametersBase {
     /// name of obs space
     oops::RequiredParameter<std::string> obsSpaceName{"name", this};
 
-    /// name of MPI distribution
-    oops::Parameter<std::string> distName{"distribution", "RoundRobin", this};
-
-    /// If saveObsDistribution/"save obs distribution" set to true,
-    /// global location indices and record numbers will be stored
-    /// in the MetaData/saved_index and MetaData/saved_record_number variables, respectively.
-    /// These variables will be saved along with all other variables
-    /// to the output files generated if the obsdataout.obsfile option is set.
-    ///
-    /// When the "obsdatain.read obs from separate file" option is set
-    /// and hence each process reads a separate input file,
-    /// the presence of these variables makes it possible
-    /// to identify observations stored in more than one input file.
-
-    oops::Parameter<bool> saveObsDistribution{"save obs distribution", false, this};
+    /// parameters of the MPI distribution
+    oops::Parameter<DistributionParametersWrapper> distribution{"distribution", {}, this};
 
     /// simulated variables
     oops::RequiredParameter<oops::Variables> simVars{"simulated variables", this};
 
     /// Simulated variables whose observed values may be absent from the input file, but must be
     /// created (computed) by the start of the data assimilation stage.
-    oops::Parameter<oops::Variables> derivedSimVars{"derived simulated variables", {}, this};
+    oops::Parameter<oops::Variables> derivedSimVars{"derived variables", {}, this};
 
-    /// Halo distribution center
-    oops::OptionalParameter<std::vector<float>> haloCenter{"center", this};
+    /// Observation variables whose observed values are to be processed.
+    oops::Parameter<oops::Variables> ObservedVars{"observed variables", {}, this};
 
-    /// Halo distribution radius
-    oops::OptionalParameter<float> haloRadius{"radius", this};
+    /// Io pool parameters
+    oops::Parameter<IoPoolParameters> ioPool{"io pool", {}, this};
 
     /// output specification by writing to a file
     oops::OptionalParameter<ObsFileOutParameters> obsOutFile{"obsdataout", this};
 
     /// extend the ObsSpace with extra fixed-size records
     oops::OptionalParameter<ObsExtendParameters> obsExtend{"extension", this};
+
+    /// DateTime of epoch to use when storing dateTime variables.
+    /// Note that this should not be prefixed with "seconds since"
+    oops::Parameter<util::DateTime> epochDateTime{"epoch DateTime",
+                                                  util::DateTime("1970-01-01T00:00:00Z"), this};
 
     /// parameters indicating where to load data from
     const ObsIoParametersBase &obsIoInParameters() const {
@@ -243,12 +235,12 @@ class ObsTopLevelParameters : public oops::ObsSpaceParametersBase {
       throw eckit::BadValue("obsIoInParameters() must not be called before deserialize()", Here());
     }
 
+    /// \brief Fill this section to generate observations on the fly.
+    oops::OptionalParameter<LegacyObsGenerateParameters> obsGenerate{"generate", this};
+
  private:
     /// \brief Fill this section to read observations from a file.
     oops::OptionalParameter<ObsFileInParameters> obsInFile{"obsdatain", this};
-
-    /// \brief Fill this section to generate observations on the fly.
-    oops::OptionalParameter<LegacyObsGenerateParameters> obsGenerate{"generate", this};
 
     /// \brief Fill this section instead of `obsdatain` and `generate` to load observations from
     /// any other source.

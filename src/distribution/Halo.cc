@@ -21,7 +21,6 @@
 
 #include "ioda/distribution/DistributionFactory.h"
 #include "ioda/distribution/GeneralDistributionAccumulator.h"
-#include "eckit/config/LocalConfiguration.h"
 #include "eckit/exception/Exceptions.h"
 
 namespace ioda {
@@ -40,13 +39,14 @@ static DistributionMaker<Halo> maker("Halo");
  */
 // -----------------------------------------------------------------------------
 Halo::Halo(const eckit::mpi::Comm & Comm,
-           const eckit::Configuration & config) :
+           const Parameters_ & params) :
           Distribution(Comm) {
+  oops::Log::debug() << "config in Halo: " << params << std::endl;
   // extract center point from configuration
   // if no patch center defined, distribute centers equi-distant along the equator
   std::vector<double> centerd(2, 0.0);
-  if (config.has("center")) {
-    centerd = config.getDoubleVector("center", centerd);
+  if (params.center.value() != boost::none) {
+    centerd = *params.center.value();
   } else {
     centerd[0] = static_cast<double>(comm_.rank())*
                              (360.0/static_cast<double>(comm_.size()));
@@ -55,19 +55,20 @@ Halo::Halo(const eckit::mpi::Comm & Comm,
   eckit::geometry::Point2 center(centerd[0], centerd[1]);
   center_ = center;
 
-  // assign radius that is a sum of the patch and localization radii
-  // (1) this radius is the radius of the "patch"
-  //     if not specified, use radius big enough to encompass all obs. on Earth
-  double radius = config.getDouble("radius", 50000000.0);
+  // Note, params.radius here is the patchRadius (e.g. encircles grid points on this PE),
+  // params.radius is updated in "oops/src/oops/runs/LocalEnsembleDA.h"
+  // when "update obs config with geometry info" is set to true.
+  // To include observations outside of the local patch in a region(called "halo"),
+  // params.haloSize is added to radius to cover the halo region.
+  // The default value of params.haloSize is zero.
 
-  // (2) add localization radius (i.e. the "halo" radius)
-  double locRadius = config.getDouble("obs localization.lengthscale", 0.0);
-  radius += locRadius;
+  radius_ = params.radius;
+  double haloSize = params.haloSize;
 
-  radius_ = radius;
+  radius_ += haloSize;
 
   oops::Log::debug() << "Halo constructed: center: " << center_ << " radius: "
-                     << radius_ << std::endl;
+                     << radius_ << " haloSize: " << haloSize << std::endl;
 }
 
 // -----------------------------------------------------------------------------

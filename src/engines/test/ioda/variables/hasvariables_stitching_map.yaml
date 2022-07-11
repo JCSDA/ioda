@@ -1,14 +1,13 @@
-ioda:
-  complementary variables:
-    - output name: "completeCombination"
-      output variable data type: "string"
-      input names: ["completeCombinationPart1", "completeCombinationPart2", "completeCombinationPart3"]
-      merge method: "concat"
-    - output name: "incompleteCombination"
-      output variable data type: "string"
-      input names: ["incompleteCombinationPart1", "incompleteCombinationPart2", "incompleteCombinationPart3"]
-      merge method: "concat"
-    - output name: "oneVariableDerivedVariable"
-      output variable data type: "string"
-      input names: ["oneVariableCombination"]
-      merge method: "concat"
+complementary variables:
+  - output name: "completeCombination"
+    output variable data type: "string"
+    input names: ["completeCombinationPart1", "completeCombinationPart2", "completeCombinationPart3"]
+    merge method: "concat"
+  - output name: "incompleteCombination"
+    output variable data type: "string"
+    input names: ["incompleteCombinationPart1", "incompleteCombinationPart2", "incompleteCombinationPart3"]
+    merge method: "concat"
+  - output name: "oneVariableDerivedVariable"
+    output variable data type: "string"
+    input names: ["oneVariableCombination"]
+    merge method: "concat"

@@ -65,12 +65,16 @@ void testConstructor() {
   for (std::size_t i = 0; i < dist_types.size(); ++i) {
     oops::Log::debug() << "Distribution::DistributionTypes: conf: " << dist_types[i] << std::endl;
 
-    const std::string MyRankCfgName = "specs.rank" + std::to_string(MyRank) + ".config";
+    const std::string MyRankCfgName = "specs.rank" + std::to_string(MyRank) +
+                                      ".config.distribution";
     eckit::LocalConfiguration DistConfig(dist_types[i], MyRankCfgName);
-    const std::string TestDistType = DistConfig.getString("distribution");
+    const std::string TestDistType = DistConfig.getString("name");
     oops::Log::debug() << "Distribution::DistType: " << TestDistType << std::endl;
 
-    std::unique_ptr<ioda::Distribution> TestDist = DistributionFactory::create(MpiComm, DistConfig);
+    DistributionParametersWrapper params;
+    params.validateAndDeserialize(DistConfig);
+    std::unique_ptr<ioda::Distribution> TestDist =
+                    DistributionFactory::create(MpiComm, params.params);
     EXPECT(TestDist.get());
   }
 }
@@ -230,11 +234,14 @@ void testDistributionConstructedManually() {
     oops::Log::debug() << "Distribution::DistributionTypes: "
                        << MyRankCfgName << ": " << MyRankConfig << std::endl;
 
-    const eckit::LocalConfiguration DistConfig(MyRankConfig, "config");
-    const std::string DistName = DistConfig.getString("distribution");
+    const eckit::LocalConfiguration DistConfig(MyRankConfig, "config.distribution");
+    const std::string DistName = DistConfig.getString("name");
     oops::Log::debug() << "Distribution::DistType: " << DistName << std::endl;
 
-    std::unique_ptr<ioda::Distribution> TestDist = DistributionFactory::create(MpiComm, DistConfig);
+    DistributionParametersWrapper params;
+    params.validateAndDeserialize(DistConfig);
+    std::unique_ptr<ioda::Distribution> TestDist =
+                    DistributionFactory::create(MpiComm, params.params);
     EXPECT(TestDist.get());
 
     // read lat/lon

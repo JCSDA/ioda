@@ -62,7 +62,7 @@ void Group::listObjects(ObjectType filter, bool recurse,
 
     if (recurse) {
       for (const auto& child : oneLevelChildren)
-        child_groups_.at(child)->listObjects(filter, recurse, res, std::string(child) + "/");
+        child_groups_.at(child)->listObjects(filter, recurse, res, prefix + std::string(child) + "/");
     }
   }
 }
@@ -112,7 +112,7 @@ std::shared_ptr<Group> Group::open(const std::string& name, const bool throwIfNo
 
   // Recurse if there are more levels in the input name
   if ((pathSections.size() > 1) && (childGroup != nullptr)) {
-    childGroup = childGroup->open(pathSections[1]);
+    childGroup = childGroup->open(pathSections[1], throwIfNotFound);
   }
 
   if (throwIfNotFound && (childGroup == nullptr)) {

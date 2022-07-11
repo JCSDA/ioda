@@ -65,6 +65,7 @@ void setupAttributes(pybind11::module& m, pybind11::module& mDetail, pybind11::m
   att.doc() = "A small tag on a variable or group that describes how to interpret data.";
   att.def("isA2", &Attribute::_py_isA2, "Query the data type", py::arg("dtype"))
     .def_readwrite("isA", &Attribute::_py_isA, "Query the data type")
+    .def("getType", &Attribute::getType, "Get the data type")
     .def_property_readonly("dims", &Attribute::getDimensions, "The dimensions of the attribute")
     .def_readwrite("readDatum", &Attribute::_py_readSingle, "Read a single value (a datum)")
     .def_readwrite("readVector", &Attribute::_py_readVector, "Read data as a 1-D vector")

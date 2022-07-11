@@ -16,6 +16,7 @@
 
 #include "eckit/config/LocalConfiguration.h"
 
+#include "ioda/Exception.h"
 #include "ioda/Misc/Dimensions.h"
 #include "ioda/ObsGroup.h"
 #include "ioda/Variables/Variable.h"
@@ -28,12 +29,6 @@
 
 namespace ioda {
   class ObsSpaceParameters;
-
-  /// \brief typedef for holding list of variable names with associated variable object
-  typedef std::vector<std::pair<std::string, Variable>> VarNameObjectList;
-
-  /// \brief typedef for holding dim names attached to variables
-  typedef std::map<std::string, std::vector<std::string>> VarDimMap;
 
   // Utilities for converting back and forth between vector of strings and
   // a 2D character array.
@@ -56,41 +51,47 @@ namespace ioda {
   /// \param varName name of variable
   std::string fullVarName(const std::string & groupName, const std::string & varName);
 
-  /// \brief collect variable and dimension information from a ioda ObsGroup
-  /// \details It is assumed that the input ObsGroup has been populated. For example
-  ///          you open an existing hdf5 file, and then call this routing to collect
-  ///          the information. The information collected is passed back through the
-  ///          output parameters (last 4 parameters) of this routine.
-  ///
-  ///          The reason for collecting all of this information in a single routine is
-  ///          to handle severe performance issues with the HDF5 library when inspecting
-  ///          an ObsGroup based on an HDF5 backend.
-  ///
-  /// \param obsGroup ioda ObsGroup object
-  /// \param varObjectList list of regular variable names with associated Variable objects
-  /// \param dimVarObjectList list of dimension variable names with associated Variable objects
-  /// \param dimsAttachedToVars map structure holding list of dimension scale names attached
-  ///        each regular variable
-  /// \param maxVarSize0 maximum var length along the first (0th) dimension
-  void collectVarDimInfo(const ObsGroup & obsGroup, VarNameObjectList & varObjectList,
-                         VarNameObjectList & dimVarObjectList, VarDimMap & dimsAttachedToVars,
-                         Dimensions_t & maxVarSize0);
-
   /// \brief get variable data type
   std::type_index varDtype(const Group & group, const std::string & varName);
 
   /// \brief true if variable is a dimension scale
   bool varIsDimScale(const Group & group, const std::string & varName);
 
-  /// \brief convert reference, time to DateTime object
-  /// \param refDtime reference date time
-  /// \param timeOffets offset time values (in hours)
-  std::vector<util::DateTime> convertRefOffsetToDtime(const int refIntDtime,
-                                                      const std::vector<float> & timeOffsets);
+  /// \brief transform variable's units epoch string to an epoch DateTime object
+  /// \param dtVar input epoch style datetime variable
+  util::DateTime getEpochAsDtime(const Variable & dtVar);
 
-  /// \brief convert datetime strings to DateTime object
+  /// \brief open or create an epoch style datetime variable
+  /// \param groupName name of group in which to open or create variable
+  /// \param varName name of variable to open or create
+  /// \param newEpoch DateTime object used for the epoch if creating a new variable
+  /// \param epochDtVar requested datetime variable
+  /// \param destVarContainer Has_Variables object in which to open/create the variable
+  void openCreateEpochDtimeVar(const std::string & groupName, const std::string & varName,
+                               const util::DateTime & newEpoch, Variable & epochDtVar,
+                               Has_Variables & destVarContainer);
+
+  /// \brief convert datetime strings to DateTime objects
   /// \param dtStrings datetime strings
   std::vector<util::DateTime> convertDtStringsToDtime(const std::vector<std::string> & dtStrings);
+
+  /// \brief convert epoch datetimes to DateTime objects
+  /// \param epochDtime datetime object holding the epoch datetime value
+  /// \param timeOffsets int64_t vector holding the time offsets in seconds from epochDtime
+  std::vector<util::DateTime> convertEpochDtToDtime(const util::DateTime epochDtime,
+                                                    const std::vector<int64_t> & timeOffsets);
+
+  /// \brief convert DateTime objects to epoch time offsets
+  /// \param epochDtime datetime object holding the epoch datetime value
+  /// \param dtimes vector of DateTime objects
+  std::vector<int64_t> convertDtimeToTimeOffsets(const util::DateTime epochDtime,
+                                                 const std::vector<util::DateTime> & dtimes);
+
+  /// \brief convert datetime strings to epoch time offsets
+  /// \param epochDtime datetime object holding the epoch datetime value
+  /// \param dtStrings vector of datetime strings
+  std::vector<int64_t> convertDtStringsToTimeOffsets(const util::DateTime epochDtime,
+                                                 const std::vector<std::string> & dtStrings);
 
   /// \brief convert 2D string array to a vector of strings
   /// \details The incoming 2D strings array is passed in through the arrayData argument
@@ -110,24 +111,6 @@ namespace ioda {
   /// \param obsParams output params
   void setOfileParamsFromTestConfig(const eckit::LocalConfiguration & obsConfig,
                                     ioda::ObsSpaceParameters & obsParams);
-
-  /// \brief uniquify the output file name
-  /// \details This function will tag on the MPI task number to the end of the file name
-  /// to avoid collisions when running with multiple MPI tasks.
-  /// \param fileName raw output file name
-  /// \param rankNum MPI group communicator rank number
-  /// \param timeRankNum MPI time communicator rank number
-  std::string uniquifyFileName(const std::string & fileName, const std::size_t rankNum,
-                               const int timeRankNum);
-
-  /// \brief form a map containing lists of dimension variables that are attached to each
-  /// variable
-  /// \param varContainer Has_Variables object with variables to check
-  /// \param varList list of regular variables
-  /// \param dimVarList list of dimension scale variables
-  VarDimMap genDimsAttachedToVars(const Has_Variables & varContainer,
-                                  const std::vector<std::string> & varList,
-                                  const std::vector<std::string> & dimVarList);
 
   /// \brief convert the new format varible name to the old format
   /// \param varName new format variable name
@@ -179,6 +162,7 @@ namespace ioda {
       ABORT(ErrorMsg);
     }
   }
+
 }  // namespace ioda
 
 #endif  // CORE_IODAUTILS_H_

@@ -2,8 +2,11 @@ where:
   varno: [274,275]
 variables:
 - name: geometric_rotational_angle
+- name: initial_obsvalue
+- name: initial_vertco_reference
 - name: land_sea
 - name: satellite_identifier
+- name: satellite_instrument
 - name: scanline
 - name: scanpos
 - name: solar_azimuth

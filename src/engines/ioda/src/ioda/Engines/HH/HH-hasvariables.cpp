@@ -84,6 +84,22 @@ bool HH_HasVariables::exists(const std::string& dsetname) const {
 }
 
 void HH_HasVariables::remove(const std::string& name) {
+  // Detach any dimension scales associated with "name", then delete the dataset.
+  //
+  // Form a list of dimension scales (names with associated variables) in the file.
+  std::vector<std::string> allVarNames = list();
+  std::list<Named_Variable> dimScales = identifyDimensionScales(*this, allVarNames);
+
+  // Open the variable and obtain the list of dimension scale variables attached to
+  // this variable. Then walk through the attached dim scales and detach them.
+  Variable rmVar = open(name);
+  auto attachedDims = rmVar.getDimensionScaleMappings(dimScales);
+  for (size_t i = 0; i < attachedDims.size(); ++i) {
+    for (const auto & varDimStruct : attachedDims[i]) {
+      rmVar.detachDimensionScale(i, varDimStruct.var);
+    }
+  }
+
   auto ret = H5Ldelete(base_(), name.c_str(), H5P_DEFAULT);
   if (ret < 0) throw Exception("Failed to remove link to dataset.", ioda_Here()).add("name", name);
 }

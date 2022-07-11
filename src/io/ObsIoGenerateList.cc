@@ -10,6 +10,7 @@
 #include "ioda/Engines/Factory.h"
 #include "ioda/io/ObsIoGenerateUtils.h"
 #include "ioda/Misc/Dimensions.h"
+#include "ioda/Variables/VarUtils.h"
 
 #include "oops/util/missingValues.h"
 
@@ -49,8 +50,8 @@ ObsIoGenerateList::ObsIoGenerateList(const Parameters_ &ioParams,
     nlocs_ = obs_group_.vars.open("nlocs").getDimensions().dimsCur[0];
 
     // Collect variable and dimension infomation for downstream use
-    collectVarDimInfo(obs_group_, var_list_, dim_var_list_, dims_attached_to_vars_,
-                      max_var_size_);
+    VarUtils::collectVarDimInfo(obs_group_, var_list_, dim_var_list_, dims_attached_to_vars_,
+                                max_var_size_);
 
     // record variables by which observations should be grouped into records
     obs_grouping_vars_ = ioParams.obsGrouping.value().obsGroupVars;
@@ -68,12 +69,13 @@ void ObsIoGenerateList::genDistList(const EmbeddedObsGenerateListParameters & pa
     ASSERT(obsErrors.size() == simVarNames.size());
 
     // Grab the parameters
-    std::vector<float> latVals = params.lats;
-    std::vector<float> lonVals = params.lons;
-    std::vector<std::string> dtStrings = params.datetimes;
+    const std::vector<float> latVals = params.lats;
+    const std::vector<float> lonVals = params.lons;
+    const std::vector<int64_t> dts = params.dateTimes;
+    const std::string epoch = params.epoch.value();
 
     // Transfer the specified values to the ObsGroup
-    storeGenData(latVals, lonVals, dtStrings, simVarNames, obsErrors, obs_group_);
+    storeGenData(latVals, lonVals, dts, epoch, simVarNames, obsErrors, obs_group_);
 }
 
 //-----------------------------------------------------------------------------------

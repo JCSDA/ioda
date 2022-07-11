@@ -1,0 +1,91 @@
+---
+window begin: "2018-04-14T21:00:00Z"
+window end: "2018-04-15T03:00:00Z"
+
+observations:
+- obs space:
+    name: "fill value"
+    simulated variables: ['temperature']
+    observed variables: ['temperature']
+    obsdatain:
+      obsfile: "Data/testinput_tier_1/fill_value.nc4"
+  test data:
+    nlocs: 5
+    nrecs: 5
+    nvars: 0
+    obs perturbations seed: 0
+    expected group variables: []
+    expected sort variable: ""
+    expected sort order: "ascending"
+    variables for get test:
+      # no fill values specified -> use default netcdf fill values
+      - name: "float_var"
+        group: "NoFillValue"
+        type: "float"
+        norm: 0.67823300292634514
+
+      - name: "int_var"
+        group: "NoFillValue"
+        type: "integer"
+        norm: 6.2449979983983983
+
+      - name: "string_var"
+        group: "NoFillValue"
+        type: "string"
+        first value: "ABC"
+        last value: "*** MISSING ***"
+
+      # only the hdf fill values specified -> use them
+      - name: "float_var"
+        group: "HdfFillValue"
+        type: "float"
+        norm: 0.67823300292634514
+
+      - name: "int_var"
+        group: "HdfFillValue"
+        type: "integer"
+        norm: 6.2449979983983983
+
+      - name: "string_var"
+        group: "HdfFillValue"
+        type: "string"
+        first value: "ABC"
+        last value: "*** MISSING ***"
+
+      # only the nc fill values specified -> use them
+      - name: "float_var"
+        group: "NcFillValue"
+        type: "float"
+        norm: 0.67823300292634514
+
+      - name: "int_var"
+        group: "NcFillValue"
+        type: "integer"
+        norm: 6.2449979983983983
+
+      - name: "string_var"
+        group: "NcFillValue"
+        type: "string"
+        first value: "ABC"
+        last value: "*** MISSING ***"
+
+      # both hdf and netcdf fill values specified -> use netcdf fill values
+      - name: "float_var"
+        group: "BothFillValue"
+        type: "float"
+        norm: 0.67823300292634514
+
+      - name: "int_var"
+        group: "BothFillValue"
+        type: "integer"
+        norm: 6.2449979983983983
+
+      - name: "string_var"
+        group: "BothFillValue"
+        type: "string"
+        first value: "ABC"
+        last value: "*** MISSING ***"
+
+    tolerance:
+      - 1.0e-14
+    variables for putget test: []

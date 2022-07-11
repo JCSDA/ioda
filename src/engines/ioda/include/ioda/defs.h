@@ -127,7 +127,9 @@ enum class ObjectType {
   /// Object is a Group
   Group,
   /// Object is a Variable
-  Variable
+  Variable,
+  /// Object is a data Type
+  Type
 };
 }  // namespace ioda
 

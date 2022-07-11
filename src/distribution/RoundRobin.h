@@ -9,6 +9,7 @@
 #define DISTRIBUTION_ROUNDROBIN_H_
 
 #include "ioda/distribution/NonoverlappingDistribution.h"
+#include "ioda/distribution/DistributionParametersBase.h"
 
 namespace ioda {
 
@@ -23,8 +24,10 @@ namespace ioda {
  */
 class RoundRobin: public NonoverlappingDistribution {
  public:
+    typedef EmptyDistributionParameters Parameters_;
+
     RoundRobin(const eckit::mpi::Comm & Comm,
-               const eckit::Configuration & config);
+               const Parameters_ &);
     ~RoundRobin() override;
 
     bool isMyRecord(std::size_t RecNum) const override;

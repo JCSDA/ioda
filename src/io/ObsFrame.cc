@@ -11,7 +11,9 @@
 #include "ioda/Engines/HH.h"
 #include "ioda/io/ObsFrame.h"
 #include "ioda/Layout.h"
+#include "ioda/Copying.h"
 #include "ioda/Variables/Variable.h"
+#include "ioda/Variables/VarUtils.h"
 
 namespace ioda {
 
@@ -20,6 +22,20 @@ namespace ioda {
   ObsFrame::ObsFrame(const ObsSpaceParameters & params) :
       params_(params), gnlocs_(0), gnlocs_outside_timewindow_(0) {
     oops::Log::trace() << "Constructing ObsFrame" << std::endl;
+}
+
+//------------------------------------------------------------------------------------
+bool ObsFrame::isVarDimByNlocs(const std::string & varName) const {
+    bool isDimByNlocs = false;
+    for (auto & ivar : dims_attached_to_vars_) {
+        if (ivar.first.name == varName) {
+            // Found varName, now check if first dimension is "nlocs"
+            if (ivar.second[0].name == "nlocs") {
+                isDimByNlocs = true;
+            }
+        }
+    }
+    return isDimByNlocs;
 }
 
 //------------------------------------------------------------------------------------
@@ -106,9 +122,9 @@ Selection ObsFrame::createObsIoSelection(const std::vector<Dimensions_t> & varSh
 }
 
 //------------------------------------------------------------------------------------
-void ObsFrame::createFrameFromObsGroup(const VarNameObjectList & varList,
-                                       const VarNameObjectList & dimVarList,
-                                       const VarDimMap & varDimMap) {
+void ObsFrame::createFrameFromObsGroup(const VarUtils::Vec_Named_Variable & varList,
+                                       const VarUtils::Vec_Named_Variable & dimVarList,
+                                       const VarUtils::VarDimMap & varDimMap) {
     // create an ObsGroup with an in-memory backend
     Engines::BackendNames backendName;
     Engines::BackendCreationParameters backendParams;
@@ -124,9 +140,9 @@ void ObsFrame::createFrameFromObsGroup(const VarNameObjectList & varList,
     // create dimensions for frame
     NewDimensionScales_t newDims;
     for (auto & dimNameObject : dimVarList) {
-        std::string dimName = dimNameObject.first;
-        Variable srcDimVar = dimNameObject.second;
-        Dimensions_t dimSize = dimNameObject.second.getDimensions().dimsCur[0];
+        std::string dimName = dimNameObject.name;
+        Variable srcDimVar = dimNameObject.var;
+        Dimensions_t dimSize = dimNameObject.var.getDimensions().dimsCur[0];
         // Don't allow nchans to be limited by the frame size since nchans is
         // the second dimension (and we are only limiting the frame size on
         // the first dimension, typically nlocs).
@@ -152,8 +168,8 @@ void ObsFrame::createFrameFromObsGroup(const VarNameObjectList & varList,
 
     // fill in dimension coordinate values
     for (auto & dimVarNameObject : dimVarList) {
-        std::string dimVarName = dimVarNameObject.first;
-        Variable srcDimVar = dimVarNameObject.second;
+        std::string dimVarName = dimVarNameObject.name;
+        Variable srcDimVar = dimVarNameObject.var;
         Variable destDimVar = obs_frame_.vars.open(dimVarName);
 
         // Set up the dimension selection objects. The prior loop declared the
@@ -182,39 +198,63 @@ void ObsFrame::createFrameFromObsGroup(const VarNameObjectList & varList,
 
     // create variables for frame
     for (auto & varNameObject : varList) {
-        std::string varName = varNameObject.first;
+        std::string varName = varNameObject.name;
 
         // get the dimensions attached to this variable
-        std::vector<std::string> dimVarNames = varDimMap.at(varName);
+        VarUtils::Vec_Named_Variable dimVarNames = varDimMap.at(varNameObject);
         std::vector<Variable> dimVars;
         for (auto & dimVarName : dimVarNames) {
-          dimVars.push_back(obs_frame_.vars.open(dimVarName));
+          dimVars.push_back(obs_frame_.vars.open(dimVarName.name));
         }
 
-        Variable sourceVar = varNameObject.second;
-        if (sourceVar.isA<int>()) {
-            VariableCreationParameters params;
-            if (sourceVar.hasFillValue()) {
-                auto varFillValue = sourceVar.getFillValue();
-                params.setFillValue<int>(ioda::detail::getFillValue<int>(varFillValue));
-            }
-            obs_frame_.vars.createWithScales<int>(varName, dimVars, params);
-        } else if (sourceVar.isA<float>()) {
-            VariableCreationParameters params;
-            if (sourceVar.hasFillValue()) {
-                auto varFillValue = sourceVar.getFillValue();
-                params.setFillValue<float>(ioda::detail::getFillValue<float>(varFillValue));
-            }
-            obs_frame_.vars.createWithScales<float>(varName, dimVars, params);
-        } else if (sourceVar.isA<std::string>()) {
-            VariableCreationParameters params;
-            if (sourceVar.hasFillValue()) {
-                auto varFillValue = sourceVar.getFillValue();
-                params.setFillValue<std::string>(
-                    ioda::detail::getFillValue<std::string>(varFillValue));
-            }
-            obs_frame_.vars.createWithScales<std::string>(varName, dimVars, params);
-        }
+        Variable sourceVar = varNameObject.var;
+        VarUtils::forAnySupportedVariableType(
+              sourceVar,
+              [&](auto typeDiscriminator) {
+                  typedef decltype(typeDiscriminator) T;
+                  VariableCreationParameters params;
+                  if (sourceVar.hasFillValue()) {
+                      auto varFillValue = sourceVar.getFillValue();
+                      params.setFillValue<T>(ioda::detail::getFillValue<T>(varFillValue));
+                  }
+                  Variable destVar = obs_frame_.vars.createWithScales<T>(
+                      varName, dimVars, params);
+                  copyAttributes(sourceVar.atts, destVar.atts);
+              },
+              VarUtils::ThrowIfVariableIsOfUnsupportedType(varName));
+    }
+
+    // If we are using the string or offset datetimes from obs_io_, then create the
+    // epoch datetime variable. ObsSpace::initFromObsSource will expect the epoch
+    // datetime and ignore the string datetime. Use a default fill value for now.
+    if (use_string_datetime_ || use_offset_datetime_) {
+      VariableCreationParameters params;
+      std::vector<Variable> dimVars;
+      dimVars.push_back(obs_frame_.vars.open("nlocs"));
+      Variable destVar =
+          obs_frame_.vars.createWithScales<int64_t>("MetaData/dateTime", dimVars, params);
+
+      std::string epochDatetime;
+      if (use_string_datetime_) {
+        // Using string datetime, set the epoch to the window start
+        epochDatetime =
+            std::string("seconds since ") + params_.windowStart().toString();
+      } else {
+        // Using offset datetime, set the epoch to the "date_time" global attribute
+        int refDtimeInt;
+        this->obs_io_->atts().open("date_time").read<int>(refDtimeInt);
+
+        int year = refDtimeInt / 1000000;     // refDtimeInt contains YYYYMMDDhh
+        int tempInt = refDtimeInt % 1000000;
+        int month = tempInt / 10000;       // tempInt contains MMDDhh
+        tempInt = tempInt % 10000;
+        int day = tempInt / 100;           // tempInt contains DDhh
+        int hour = tempInt % 100;
+        util::DateTime refDtime(year, month, day, hour, 0, 0);
+
+        epochDatetime = std::string("seconds since ") + refDtime.toString();
+      }
+      destVar.atts.add<std::string>("units", epochDatetime);
     }
 }
 

@@ -15,6 +15,7 @@
 #include "oops/util/Logger.h"
 
 #include "ioda/distribution/Distribution.h"
+#include "ioda/distribution/DistributionParametersBase.h"
 
 namespace ioda {
 
@@ -28,8 +29,10 @@ namespace ioda {
  */
 class InefficientDistribution: public Distribution {
  public:
-     explicit InefficientDistribution(const eckit::mpi::Comm & Comm,
-                           const eckit::Configuration & config);
+     typedef EmptyDistributionParameters Parameters_;
+
+     InefficientDistribution(const eckit::mpi::Comm & Comm,
+                             const Parameters_ &);
      ~InefficientDistribution();
 
      bool isIdentity() const override {return true;}
