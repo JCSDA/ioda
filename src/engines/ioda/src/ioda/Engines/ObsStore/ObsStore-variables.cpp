@@ -35,15 +35,12 @@ detail::Type_Provider* ObsStore_Variable_Backend::getTypeProvider() const {
 }
 
 Type ObsStore_Variable_Backend::getType() const {
-  auto backend_type = backend_->dtype();
-  ObsTypeInfo typ{backend_type.first, backend_type.second};
-  return Type{std::make_shared<ObsStore_Type>(typ), typeid(ObsStore_Type)};
+  return Type{std::make_shared<ObsStore_Type>(backend_->dtype()), typeid(ObsStore_Type)};
 }
 
 bool ObsStore_Variable_Backend::isA(Type lhs) const {
-  auto typeBackend               = std::dynamic_pointer_cast<ObsStore_Type>(lhs.getBackend());
-  ioda::ObsStore::ObsTypes dtype = typeBackend->dtype();
-  return backend_->isOfType(dtype);
+  auto typeBackend = std::dynamic_pointer_cast<ObsStore_Type>(lhs.getBackend());
+  return backend_->isOfType(typeBackend->getType());
 }
 
 bool ObsStore_Variable_Backend::hasFillValue() const {
@@ -141,13 +138,14 @@ bool ObsStore_Variable_Backend::isDimensionScaleAttached(unsigned int DimensionN
   return backend_->isDimensionScaleAttached(DimensionNumber, scaleBackendDerived->backend_);
 }
 
-Variable ObsStore_Variable_Backend::write(gsl::span<char> data, const Type& in_memory_dataType,
+Variable ObsStore_Variable_Backend::write(gsl::span<const char> data,
+                                          const Type& in_memory_dataType,
                                           const Selection& mem_selection,
                                           const Selection& file_selection) {
   // Convert to an obs store data type
   auto typeBackend = std::dynamic_pointer_cast<ObsStore_Type>(in_memory_dataType.getBackend());
-  ioda::ObsStore::ObsTypes dtype = typeBackend->dtype();
-  std::size_t dtype_size         = typeBackend->dtype_size();
+  const ioda::ObsStore::Type & dtype = typeBackend->getType();
+  std::size_t dtype_size = dtype.getSize();
 
   // Convert to obs store selection
   //
@@ -194,8 +192,8 @@ Variable ObsStore_Variable_Backend::read(gsl::span<char> data, const Type& in_me
                                          const Selection& file_selection) const {
   // Convert to an obs store data type
   auto typeBackend = std::dynamic_pointer_cast<ObsStore_Type>(in_memory_dataType.getBackend());
-  ioda::ObsStore::ObsTypes dtype = typeBackend->dtype();
-  std::size_t dtype_size         = typeBackend->dtype_size();
+  const ioda::ObsStore::Type & dtype = typeBackend->getType();
+  std::size_t dtype_size = dtype.getSize();
 
   // Convert to obs store selection
   //
@@ -274,7 +272,7 @@ Variable ObsStore_HasVariables_Backend::create(const std::string& name,
                                                const VariableCreationParameters& params) {
   // Convert to an obs store data type
   auto typeBackend = std::dynamic_pointer_cast<ObsStore_Type>(in_memory_dataType.getBackend());
-  ioda::ObsStore::ObsTypes dtype = typeBackend->dtype();
+  const ioda::ObsStore::Type & dtype = typeBackend->getType();
 
   // If max_dimensions not specified (empty), then copy from dimensions
   std::vector<Dimensions_t> max_dims;
@@ -286,7 +284,6 @@ Variable ObsStore_HasVariables_Backend::create(const std::string& name,
 
   // Convert to obs store create parameters.
   ioda::ObsStore::VarCreateParams os_params;
-  os_params.dtype_size = typeBackend->dtype_size();
 
   os_params.fvdata        = params.fillValue_;
   const auto fvdata_final = params.finalize();  // Using in a span. Keep in scope.
@@ -296,7 +293,8 @@ Variable ObsStore_HasVariables_Backend::create(const std::string& name,
   }
 
   // Call backend create
-  auto res = backend_->create(name, dtype, dimensions, max_dims, os_params);
+  auto res = backend_->create(name, std::make_shared<ioda::ObsStore::Type>(dtype),
+                              dimensions, max_dims, os_params);
   auto b   = std::make_shared<ObsStore_Variable_Backend>(res);
 
   // Also set the chunking and compression parameters

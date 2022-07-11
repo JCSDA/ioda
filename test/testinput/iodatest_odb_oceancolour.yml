@@ -1,0 +1,7 @@
+where:
+  varno: [288,289]
+variables:
+- name: receipt_time
+- name: receipt_date
+- name: initial_obsvalue
+- name: instrument_type

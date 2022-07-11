@@ -5,6 +5,7 @@ variables:
 - name: initial_level_lat
 - name: initial_level_lon
 - name: initial_level_time
+- name: initial_obsvalue
 - name: initial_vertco_reference
 - name: instrument_type
 - name: level
@@ -19,8 +20,8 @@ variables:
 - name: sonde_report_identifier
 - name: sonde_tracking_system
 - name: sonde_type
-- name: stalt
 - name: statid
+- name: stalt
 - name: station_type
 - name: winpro_flags_eu
 - name: winpro_flags_usa

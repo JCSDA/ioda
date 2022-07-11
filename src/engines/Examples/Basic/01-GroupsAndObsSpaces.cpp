@@ -9,10 +9,15 @@
  * \ingroup ioda_cxx
  *
  * @{
+ * 
+ * \defgroup ioda_cxx_ex_basic Basic usage examples
  * \dir Basic
  * \brief Basic C++ ioda-engines usage tutorials
+ * 
+ * @{
  *
  * \defgroup ioda_cxx_ex_1 Ex 1: Groups and ObsSpaces
+ * \ingroup ioda_cxx_ex_basic
  * \brief Group manipulation using the C++ interface
  * \see 01-GroupsAndObsSpaces.cpp for the example.
  *

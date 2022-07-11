@@ -36,6 +36,7 @@
 #include "ioda/ObsGroup.h"
 #include "ioda/ObsSpaceParameters.h"
 #include "ioda/Variables/Variable.h"
+#include "ioda/Variables/VarUtils.h"
 
 namespace ioda {
 namespace test {
@@ -138,11 +139,11 @@ void testWrite() {
                 expectedDimList.push_back(writeDimConfigs[i].getString("name"));
             }
             std::sort(expectedDimList.begin(), expectedDimList.end());
-            VarNameObjectList dimList = obsIo->dimVarList();
+            VarUtils::Vec_Named_Variable dimList = obsIo->dimVarList();
             std::sort(dimList.begin(), dimList.end(), [](auto & p1, auto & p2) {
-                return (p1.first < p2.first); });
+                return (p1.name < p2.name); });
             for (size_t i = 0; i < dimList.size(); ++i) {
-                EXPECT_EQUAL(dimList[i].first, expectedDimList[i]);
+                EXPECT_EQUAL(dimList[i].name, expectedDimList[i]);
             }
 
             // Regular variables
@@ -151,11 +152,11 @@ void testWrite() {
                 expectedVarList.push_back(writeVarConfigs[i].getString("name"));
             }
             std::sort(expectedVarList.begin(), expectedVarList.end());
-            VarNameObjectList varList = obsIo->varList();
+            VarUtils::Vec_Named_Variable varList = obsIo->varList();
             std::sort(varList.begin(), varList.end(), [](auto & p1, auto & p2) {
-                return (p1.first < p2.first); });
+                return (p1.name < p2.name); });
             for (size_t i = 0; i < dimList.size(); ++i) {
-                EXPECT_EQUAL(varList[i].first, expectedVarList[i]);
+                EXPECT_EQUAL(varList[i].name, expectedVarList[i]);
             }
 
             // Check if the values of the variables got written correctly

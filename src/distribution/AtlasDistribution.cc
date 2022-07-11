@@ -22,10 +22,6 @@
 
 namespace ioda {
 
-namespace  {
-const char DIST_NAME[] = "Atlas";
-}  // namespace
-
 // -----------------------------------------------------------------------------
 
 /// \brief Assigns records to MPI ranks for the AtlasDistribution.
@@ -34,7 +30,7 @@ class AtlasDistribution::RecordAssigner {
   /// Constructs an Atlas grid and mesh using settings loaded from the `grid` section
   /// of `config`; then partitions the mesh across processes making up the `atlas::mpi::Comm()`
   /// communicator.
-  explicit RecordAssigner(const eckit::Configuration & config);
+  explicit RecordAssigner(const Parameters_ & params);
 
   /// If this record hasn't been assigned to any process yet, assigns it to the process
   /// owning the partition containing `point`.
@@ -56,9 +52,9 @@ class AtlasDistribution::RecordAssigner {
   std::size_t nextRecordToAssign_ = 0;
 };
 
-AtlasDistribution::RecordAssigner::RecordAssigner(const eckit::Configuration & config)
+AtlasDistribution::RecordAssigner::RecordAssigner(const Parameters_ & params)
 {
-  eckit::LocalConfiguration gridConfig(config, "grid");
+  eckit::LocalConfiguration gridConfig = params.grid;
   atlas::util::Config atlasConfig(gridConfig);
 
   atlas::Grid grid(atlasConfig);
@@ -106,12 +102,12 @@ bool AtlasDistribution::RecordAssigner::isInMyDomain(const eckit::geometry::Poin
 
 // -----------------------------------------------------------------------------
 
-static DistributionMaker<AtlasDistribution> maker(DIST_NAME);
+static DistributionMaker<AtlasDistribution> maker("Atlas");
 
 AtlasDistribution::AtlasDistribution(const eckit::mpi::Comm & comm,
-                                   const eckit::Configuration & config)
+                                     const Parameters_ & params)
   : NonoverlappingDistribution(comm),
-    recordAssigner_(boost::make_unique<RecordAssigner>(config))
+    recordAssigner_(boost::make_unique<RecordAssigner>(params))
 {
   oops::Log::trace() << "AtlasDistribution constructed" << std::endl;
 }
@@ -132,7 +128,7 @@ bool AtlasDistribution::isMyRecord(std::size_t RecNum) const {
 }
 
 std::string AtlasDistribution::name() const {
-  return DIST_NAME;
+  return "Atlas";
 }
 // -----------------------------------------------------------------------------
 

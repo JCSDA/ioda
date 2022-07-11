@@ -51,6 +51,9 @@ public:
   HH_Group(HH_hid_t grp, ::ioda::Engines::Capabilities caps, HH_hid_t fileroot);
 
   virtual ~HH_Group() {}
+
+  HH_hid_t get() const { return backend_; }
+
   inline ::ioda::Engines::Capabilities getCapabilities() const final { return caps_; };
   bool exists(const std::string& name) const final;
   Group create(const std::string& name) final;

@@ -60,6 +60,11 @@ CASE("ioda/ObsDtype") {
   }
   {
     MyParameters params;
+    params.validateAndDeserialize(conf.getSubConfiguration("bool"));
+    EXPECT(params.dtype == ObsDtype::Bool);
+  }
+  {
+    MyParameters params;
     EXPECT_THROWS(params.validateAndDeserialize(conf.getSubConfiguration("invalid")));
   }
 }

@@ -5,10 +5,9 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#include "eckit/config/LocalConfiguration.h"
-
 #include "ioda/distribution/Accumulator.h"
 #include "ioda/distribution/Distribution.h"
+#include "ioda/distribution/DistributionParametersBase.h"
 #include "ioda/distribution/DistributionUtils.h"
 #include "ioda/distribution/InefficientDistribution.h"
 #include "ioda/distribution/ReplicaOfNonoverlappingDistribution.h"
@@ -86,6 +85,13 @@ double dotProduct(const Distribution &dist,
   return dotProductImpl(dist, numVariables, v1, v2);
 }
 
+double dotProduct(const Distribution &dist,
+                  std::size_t numVariables,
+                  const std::vector<int64_t> &v1,
+                  const std::vector<int64_t> &v2) {
+  return dotProductImpl(dist, numVariables, v1, v2);
+}
+
 // -----------------------------------------------------------------------------
 std::size_t globalNumNonMissingObs(const Distribution &dist,
                                    std::size_t numVariables,
@@ -117,6 +123,20 @@ std::size_t globalNumNonMissingObs(const Distribution &dist,
   return globalNumNonMissingObsImpl(dist, numVariables, v);
 }
 
+std::size_t globalNumNonMissingObs(const Distribution &dist,
+                                   std::size_t numVariables,
+                                   const std::vector<bool> &v) {
+  const std::size_t numLocations = v.size() / numVariables;
+
+  // Local reduction
+  std::unique_ptr<Accumulator<std::size_t>> accumulator = dist.createAccumulator<std::size_t>();
+  for (size_t loc = 0; loc < numLocations; ++loc)
+    accumulator->addTerm(loc, numVariables);
+
+  // Global reduction
+  return accumulator->computeResult();
+}
+
 // -----------------------------------------------------------------------------
 std::shared_ptr<Distribution> createReplicaDistribution(
     const eckit::mpi::Comm & comm,
@@ -125,7 +145,7 @@ std::shared_ptr<Distribution> createReplicaDistribution(
   if (master->isNonoverlapping())
     return std::make_shared<ReplicaOfNonoverlappingDistribution>(comm, std::move(master));
   else if (master->isIdentity())
-    return std::make_shared<InefficientDistribution>(comm, eckit::LocalConfiguration());
+    return std::make_shared<InefficientDistribution>(comm, EmptyDistributionParameters());
   else
     return std::make_shared<ReplicaOfGeneralDistribution>(comm, std::move(master),
                                                           masterRecordNums);

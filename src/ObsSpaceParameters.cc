@@ -26,6 +26,12 @@ void ObsTopLevelParameters::deserialize(util::CompositePath &path,
             path.path() + ": Exactly one of the following options must be set: "
             "obsdatain, generate.list, generate.random, source", Here());
 
+    // If the derived variables list is present, check that the observed variables list
+    // is also present.
+    if (config.has("derived variables") && !(config.has("observed variables")))
+        throw eckit::UserError("If a derived variables list is specified then the"
+                          " observed variables list must also be specified.", Here());
+
     // Store the contents of the `obsdatain` or `generate` section (if present)
     // in the `source` member variable.
     if (obsInFile.value() != boost::none) {

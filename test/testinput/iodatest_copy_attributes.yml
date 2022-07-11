@@ -1,0 +1,47 @@
+---
+group copy:
+   attributes:
+     - name: "int_attr"
+       type: "int"
+       values: [ 6 ]
+     - name: "float_attr"
+       type: "float"
+       values: [ 0.0, 0.1, 0.2, 0.3 ]
+     - name: "string_attr"
+       type: "string"
+       values: [ "This is a test" ]
+     - name: "double_attr"
+       type: "double"
+       values: [ 3.14159 ]
+   tolerance: 1.0e-6
+
+variable copy:
+    variables:
+      - name: "waterVaporMixingRatio"
+        type: "float"
+        values: [ 0.1, 0.2, 0.3 ]
+        attributes:
+          - name: "units"
+            type: "string"
+            values: [ "kg kg-1" ]
+          - name: "longname"
+            type: "string"
+            values: [ "water vapor content in air" ]
+          - name: "testFillValue"     # the _FillValue attribute is ignored by design
+            type: "float"
+            values: [ -999.0 ]
+      - name: "instrumentIdentifier"
+        type: "int"
+        values: [ 1, 2, 3 ]
+        attributes:
+          - name: "units"
+            type: "string"
+            values: [ "unitless" ]
+          - name: "longname"
+            type: "string"
+            values: [ "instrument identifier enumeration key" ]
+          - name: "testFillValue"
+            type: "int"
+            values: [ -999 ]
+    tolerance: 1.0e-6
+

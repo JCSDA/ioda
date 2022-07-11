@@ -5,8 +5,9 @@ window end: "2021-01-15T15:15:15Z"
 observations:
 - obs space:
     name: "Round robin distribution"
-    simulated variables: ['temperature']
-    distribution: "RoundRobin"
+    simulated variables: ['eastward_wind']
+    distribution:
+      name: "RoundRobin"
     obsdatain:
       obsfile: "Data/testinput_tier_1/obsspace_index_recnum.nc4"
   test data:

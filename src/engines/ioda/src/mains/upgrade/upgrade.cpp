@@ -28,6 +28,7 @@
 #include "ioda/ObsGroup.h"
 #include "ioda/Misc/DimensionScales.h"
 #include "ioda/Misc/StringFuncs.h"
+#include "ioda/Variables/VarUtils.h"
 
 // Annoying header junk on Windows. Who in their right mind defines a macro with
 // the same name as a standard library function?
@@ -38,148 +39,28 @@
 #undef min
 #endif
 
-/*! @brief Convenience lambda to hint if a variable @b might be a scale.
- *
- * @details This is not definitive,
- * but has a high likelihood of being correct. The idea is that all variables
- * will have either a "@" or "/" in their names, whereas dimension scales
- * will not. This lambda returns true if the name has neither "@" nor "/" in
- * its value.
- * @param name is the variable name
- * @returns true if yes, false if no.
-*/
-bool isPossiblyScale(const std::string& name)
-{
-  return (std::string::npos == name.find('@'))
-    && (std::string::npos == name.find('/')) ? true : false;
-}
+using namespace ioda::VarUtils;
 
-/*! @brief Sort variable names in a preferential way so that likely scales end up first. For speed.
-* @param allVars is an unordered vector of all variables.
-* @returns an ordered list. "nlocs" is first, then all potential scales, then all other variables.
-*/
-std::list<std::string> preferentialSortVariableNames(const std::vector<std::string>& allVars) {
-  std::list<std::string> sortedAllVars;
-  for (const auto& name : allVars) {
-    if (sortedAllVars.empty()) {
-      sortedAllVars.push_back(name);
-    } else {
-      if (isPossiblyScale(name)) {
-        auto second = sortedAllVars.begin();
-        second++;
-        if (sortedAllVars.front() == "nlocs") {
-          sortedAllVars.insert(second, name);
-        } else {
-          sortedAllVars.push_front(name);
-        }
-      } else {
-        sortedAllVars.push_back(name);
-      }
+constexpr ioda::Dimensions_t defaultChunkSize = 100;
+
+/// @brief Check and adjust the chunk sizes used in the VariableCreationParameters struct
+/// @details A chunk size of zero is not acceptable, so in the case when a dimension is of
+/// zero size, we still want to use a non-zero chunk size spec. This function will simply
+/// check the chunk size specs in a VariableCreationParameter spec and change zero sizes
+/// to the newChunkSize argument value.
+/// @param[out] params The VariabelCreationParameters struct that is being checked/adjusted
+/// @param[in] newChunkSize the value to be used for the adjusted chunk size
+void checkAdjustChunkSizes(ioda::VariableCreationParameters & params,
+                           const ioda::Dimensions_t & newChunkSize) {
+  // A chunk size of zero is not acceptable. Also all of the dimensions scales and
+  // and variables are set up to use chunking (which is necessary to use unlimited
+  // max size) and potentially use the unlimited max size feature. So, if the chunks
+  // parameter is set to zero, change it to the newChunkSize parameter.
+  for (auto & i : params.chunks) {
+    if (i == 0) {
+      i = newChunkSize;
     }
   }
-  return sortedAllVars;
-}
-
-
-
-typedef std::vector<ioda::Named_Variable> Vec_Named_Variable;
-typedef std::map<ioda::Named_Variable, Vec_Named_Variable> VarDimMap;
-
-/// @brief Traverse file structure and determine dimension scales and regular variables. Also
-///   determine which dimensions are attached to which variables at which dimension numbers.
-/// @param[in] obsGroup is the incoming group. Really any group works.
-/// @param[out] varList is the list of variables (not dimension scales).
-/// @param[out] dimVarList is the list of dimension scales.
-/// @param[out] dimsAttachedToVars is the mapping of the scales attached to each variable.
-/// @param[out] maxVarSize0 is the max dimension length (nlocs). Unused here, but used in ioda.
-void collectVarDimInfo(const ioda::Group& obsGroup, Vec_Named_Variable& varList,
-                       Vec_Named_Variable& dimVarList, VarDimMap& dimsAttachedToVars,
-                       ioda::Dimensions_t& maxVarSize0) {
-  using namespace ioda;
-  // We really want to maximize performance here and avoid excessive variable
-  // re-opens and closures that would kill the HDF5 backend.
-  // We want to:
-  // 1) separate the dimension scales from the regular variables.
-  // 2) determine the maximum size along the 0-th dimension.
-  // 3) determine which dimensions are attached to which variable axes.
- 
-  // Retrieve all variable names from the input file. Argument to listObjects is bool
-  // and when true will cause listObjects to recurse through the entire Group hierarchy.
-  std::vector<std::string> allVars = obsGroup.listObjects<ObjectType::Variable>(true);
-
-  // A sorted list of all variable names that will help optimize the actual processing.
-  std::list<std::string> sortedAllVars = preferentialSortVariableNames(allVars);
-  
-  // TODO(ryan): refactor
-  // GeoVaLs fix: all variables appear at the same level, and this is problematic.
-  // Detect these files and do some extra sorting.
-  if (obsGroup.list().empty()) { // No Groups under the ObsGroup
-    std::list<std::string> fix_known_scales, fix_known_nonscales;
-    for (const auto& vname : sortedAllVars) {
-      Named_Variable v{vname, obsGroup.vars.open(vname)};
-      if (v.var.isDimensionScale()) {
-        (v.name == "nlocs")  // true / false ternary
-          ? fix_known_scales.push_front(v.name)
-          : fix_known_scales.push_back(v.name);
-      } else
-        fix_known_nonscales.push_back(v.name);
-    }
-    sortedAllVars.clear();
-    for (const auto& e : fix_known_scales) sortedAllVars.push_back(e);
-    for (const auto& e : fix_known_nonscales) sortedAllVars.push_back(e);
-  }
-
-  // Now for the main processing loop.
-  // We separate dimension scales from non-dimension scale variables.
-  // We record the maximum sizes of variables.
-  // We construct the in-memory mapping of dimension scales and variable axes.
-  // Keep track of these to avoid re-opening the scales repeatedly.
-  std::list<Named_Variable> dimension_scales;
-
-  varList.reserve(allVars.size());
-  dimVarList.reserve(allVars.size());
-  maxVarSize0 = 0;
-  for (const auto& vname : sortedAllVars) {
-    Named_Variable v{vname, obsGroup.vars.open(vname)};
-    const auto dims = v.var.getDimensions();
-    if (dims.dimensionality >= 1) {
-      maxVarSize0 = std::max(maxVarSize0, dims.dimsCur[0]);
-    }
-
-    // Expensive function call.
-    // Only 1-D variables can be scales. Also pre-filter based on name.
-    if (dims.dimensionality == 1 && isPossiblyScale(vname)) {
-      if (v.var.isDimensionScale()) {
-        (v.name == "nlocs")  // true / false ternary
-          ? dimension_scales.push_front(v)
-          : dimension_scales.push_back(v);
-        dimVarList.push_back(v);
-
-        //std::cout << "Dimension: " << v.name << " - size " << dims.numElements << "\n";
-        continue;  // Move on to next variable in the for loop.
-      }
-    }
-
-    // See above block. By this point in execution, we know that this variable
-    // is not a dimension scale.
-    varList.push_back(v);
-
-    // Let's figure out which scales are attached to which dimensions.
-    auto attached_dimensions = v.var.getDimensionScaleMappings(dimension_scales);
-    std::vector<Named_Variable> dimVars;
-    dimVars.reserve(dims.dimensionality);
-    for (const auto& dim_scales_along_axis : attached_dimensions) {
-      if (dim_scales_along_axis.empty()) {
-        throw Exception("Unexpected size of dim_scales_along_axis", ioda_Here());
-      }
-      dimVars.push_back(dim_scales_along_axis[0]);
-    }
-    //std::cout << "\nVar " << v.name << ": |";
-    //  for (const auto& i : dimVars) std::cout << " " << i.name << " |";
-
-    dimsAttachedToVars.emplace(v, dimVars);
-  }
-  //std::cout << std::endl;
 }
 
 /// @brief Determine which variables may be grouped.
@@ -538,7 +419,7 @@ bool upgradeFile(const std::string& inputName, const std::string& outputName, co
     if (!(dim.name == "nchans" && old_grouped_vars.size()) &&
          (attachedDims.find(dim.name) != attachedDims.end()))
       newdims.push_back(
-        NewDimensionScale(dim.name, dim.var, ScaleSizes{Unspecified, Unspecified, 100}));
+        NewDimensionScale(dim.name, dim.var, ScaleSizes{Unspecified, Unspecified, defaultChunkSize}));
   }
   if (old_grouped_vars.size()) {
     cout << " Creating nchans variable.\n";
@@ -615,6 +496,9 @@ bool upgradeFile(const std::string& inputName, const std::string& outputName, co
         adjustedParams.chunks = mod_dims.dimsCur;  // A suggestion.
       }
 
+      // make sure we are not specifying zero chunk sizes
+      checkAdjustChunkSizes(adjustedParams, defaultChunkSize);
+
       // Set the fill value to an empty string. The calls to getCreationParameters()
       // on the ioda v1 variables that preceed the call to this function set the fill
       // value to a null character (\0) since the ioda v1 format for strings is a
@@ -646,7 +530,12 @@ bool upgradeFile(const std::string& inputName, const std::string& outputName, co
           while (*dim == 1) dim++;
           *dim /= 2;
         }
+
       }
+
+      // make sure we are not specifying zero chunk sizes
+      checkAdjustChunkSizes(adjustedParams, defaultChunkSize);
+
       adjustedParams.compressWithGZIP();
 
       newvars[oldVar.name]
@@ -670,7 +559,7 @@ bool upgradeFile(const std::string& inputName, const std::string& outputName, co
   }
 
   const Dimensions_t suggested_chan_chunking
-    = (newscales.count("nchans")) ? newscales["nchans"].atts["suggested_chunk_dim"].read<Dimensions_t>() : 100;
+    = (newscales.count("nchans")) ? newscales["nchans"].atts["suggested_chunk_dim"].read<Dimensions_t>() : defaultChunkSize;
   map<string, Named_Variable> new_grouped_vars;
   Dimensions_t numChans;
   if (old_grouped_vars.size() > 0) {

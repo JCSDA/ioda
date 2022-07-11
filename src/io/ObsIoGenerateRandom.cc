@@ -10,6 +10,7 @@
 #include "ioda/Engines/Factory.h"
 #include "ioda/io/ObsIoGenerateUtils.h"
 #include "ioda/Misc/Dimensions.h"
+#include "ioda/Variables/VarUtils.h"
 
 #include "oops/util/missingValues.h"
 #include "oops/util/Random.h"
@@ -51,8 +52,8 @@ ObsIoGenerateRandom::ObsIoGenerateRandom(const Parameters_ &ioParams,
     nlocs_ = obs_group_.vars.open("nlocs").getDimensions().dimsCur[0];
 
     // Collect variable and dimension infomation for downstream use
-    collectVarDimInfo(obs_group_, var_list_, dim_var_list_, dims_attached_to_vars_,
-                      max_var_size_);
+    VarUtils::collectVarDimInfo(obs_group_, var_list_, dim_var_list_, dims_attached_to_vars_,
+                                max_var_size_);
 
     // record variables by which observations should be grouped into records
     obs_grouping_vars_ = ioParams.obsGrouping.value().obsGroupVars;
@@ -124,7 +125,7 @@ void ObsIoGenerateRandom::genDistRandom(const EmbeddedObsGenerateRandomParameter
     // inside their respective ranges, and put results into the obs container.
     std::vector<float> latVals(numLocs, 0.0);
     std::vector<float> lonVals(numLocs, 0.0);
-    std::vector<std::string> dtStrings(numLocs, "");
+    std::vector<int64_t> dts(numLocs, 0.0);
 
     util::Duration durZero(0);
     util::Duration durOneSec(1);
@@ -136,19 +137,16 @@ void ObsIoGenerateRandom::genDistRandom(const EmbeddedObsGenerateRandomParameter
         //
         //     windowStart < ObsTime <= windowEnd
         //
+        int64_t offsetDt = static_cast<int64_t>(ranVals[ii] * timeRange);
         // If we get a zero offsetDt, then change it to 1 second so that the observation
         // will remain inside the timing window.
-        util::Duration offsetDt(static_cast<int64_t>(ranVals[ii] * timeRange));
-        if (offsetDt == durZero) {
-            offsetDt = durOneSec;
-        }
-        // convert result to ISO 8601 string
-        util::DateTime dtVal = winStart + offsetDt;
-        dtStrings[ii] = dtVal.toString();
+        if (offsetDt == 0) offsetDt = 1;
+        dts[ii] = offsetDt;
     }
 
+    std::string epoch = std::string("seconds since ") + winStart.toString();
     // Transfer the generated values to the ObsGroup
-    storeGenData(latVals, lonVals, dtStrings, simVarNames, obsErrors, obs_group_);
+    storeGenData(latVals, lonVals, dts, epoch, simVarNames, obsErrors, obs_group_);
 }
 
 //-----------------------------------------------------------------------------------

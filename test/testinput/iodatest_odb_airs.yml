@@ -18,6 +18,8 @@ variables:
 - name: emissivity_param_13
 - name: emissivity_param_14
 - name: emissivity_param_15
+- name: initial_obsvalue
+- name: initial_vertco_reference
 - name: numlev
 - name: satellite_identifier
 - name: scanpos

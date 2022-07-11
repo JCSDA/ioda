@@ -75,11 +75,100 @@ size_t Type_Base<>::getSize() const {
   }
 }
 
+template <>
+TypeClass Type_Base<>::getClass() const {
+  try {
+    if (backend_ == nullptr)
+      throw Exception("Missing backend or unimplemented backend function.", ioda_Here());
+    return backend_->getClass();
+  } catch (...) {
+    std::throw_with_nested(Exception(
+      "An exception occurred inside ioda while getting the class of a data type.", ioda_Here()));
+  }
+}
+
+template <>
+void Type_Base<>::commitToBackend(Group &d, const std::string &name) const {
+  try {
+    if (backend_ == nullptr)
+      throw Exception("Missing backend or unimplemented backend function.", ioda_Here());
+    backend_->commitToBackend(d, name);
+  } catch (...) {
+    std::throw_with_nested(Exception(
+      "An exception occurred inside ioda while committing a datatype to a backend.", ioda_Here()));
+  }
+}
+
+template <>
+bool Type_Base<>::isTypeSigned() const {
+  try {
+    if (backend_ == nullptr)
+      throw Exception("Missing backend or unimplemented backend function.", ioda_Here());
+    return backend_->isTypeSigned();
+  } catch (...) {
+    std::throw_with_nested(Exception(
+      "An exception occurred inside ioda while checking if a "
+      "numeric type is signed or unsigned.", ioda_Here()));
+  }
+}
+
+template <>
+bool Type_Base<>::isVariableLengthStringType() const {
+  try {
+    if (backend_ == nullptr)
+      throw Exception("Missing backend or unimplemented backend function.", ioda_Here());
+    return backend_->isVariableLengthStringType();
+  } catch (...) {
+    std::throw_with_nested(Exception(
+      "An exception occurred inside ioda while checking if a "
+      "string type is of variable length.", ioda_Here()));
+  }
+}
+
+template <>
+StringCSet Type_Base<>::getStringCSet() const {
+  try {
+    if (backend_ == nullptr)
+      throw Exception("Missing backend or unimplemented backend function.", ioda_Here());
+    return backend_->getStringCSet();
+  } catch (...) {
+    std::throw_with_nested(Exception(
+      "An exception occurred inside ioda while determining the "
+      "character set used in a string type.", ioda_Here()));
+  }
+}
+
+template <>
+Type Type_Base<>::getBaseType() const {
+  try {
+    if (backend_ == nullptr)
+      throw Exception("Missing backend or unimplemented backend function.", ioda_Here());
+    return backend_->getBaseType();
+  } catch (...) {
+    std::throw_with_nested(Exception(
+      "An exception occurred inside ioda while determining the "
+      "base type used in an array or enumeration type.", ioda_Here()));
+  }
+}
+
+template <>
+std::vector<Dimensions_t> Type_Base<>::getDimensions() const {
+  try {
+    if (backend_ == nullptr)
+      throw Exception("Missing backend or unimplemented backend function.", ioda_Here());
+    return backend_->getDimensions();
+  } catch (...) {
+    std::throw_with_nested(Exception(
+      "An exception occurred inside ioda while determining the "
+      "array dimensions of a type.", ioda_Here()));
+  }
+}
+
 Type_Backend::Type_Backend() : Type_Base{nullptr, nullptr} {}
 Type_Backend::~Type_Backend() = default;
 
-size_t Type_Backend::getSize() const {
-  throw Exception("This function must be implemented in the backend engine.", ioda_Here());
+StringCSet Type_Backend::getStringCSet() const {
+  return StringCSet::UTF8;
 }
 
 }  // namespace detail
@@ -110,12 +199,13 @@ Type::Type(BasicTypes typ, gsl::not_null<::ioda::detail::Type_Provider*> t)
        {BasicTypes::int64_, typeid(int64_t)},
        {BasicTypes::uint64_, typeid(uint64_t)},
        {BasicTypes::bool_, typeid(bool)},  // NOLINT
+       {BasicTypes::datetime_, typeid(int64_t)},
        {BasicTypes::str_, typeid(std::string)}};
   as_type_index_ = workable_types.at(typ);
 
   if (typ == BasicTypes::undefined_) throw Exception("Bad input", ioda_Here());
   if (typ == BasicTypes::str_)
-    *this = t->makeStringType(Types::constants::_Variable_Length, typeid(std::string));
+    *this = t->makeStringType(typeid(std::string), Types::constants::_Variable_Length);
   else
     *this = t->makeFundamentalType(workable_types.at(typ));
 }

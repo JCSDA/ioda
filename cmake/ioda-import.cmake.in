@@ -1,0 +1,103 @@
+# ioda-import.cmake
+# find_dependency calls for IODA target dependencies
+#
+# Sets these CMake variables:
+# - IODA_YAML_ROOT
+
+include(CMakeFindDependencyMacro)
+
+
+# These instructions parallel ioda's top-level CMakeLists.txt dependencies
+
+# Required packages
+
+if(NOT HDF5_FOUND)
+    set(HDF5_PREFER_PARALLEL true) # CMake sometimes mistakenly finds a serial system-provided HDF5.
+    find_dependency( HDF5 REQUIRED COMPONENTS C HL )
+endif()
+
+if(NOT MPI_FOUND)
+    find_dependency( MPI REQUIRED )
+endif()
+
+if(NOT jedicmake_FOUND)
+    find_dependency( jedicmake REQUIRED )
+endif()
+
+if(NOT NetCDF_C_FOUND)
+    find_dependency( NetCDF REQUIRED COMPONENTS C )
+endif()
+
+if(NOT eckit_FOUND)
+    find_dependency( eckit 1.11.6 REQUIRED )
+endif()
+
+if(NOT fckit_FOUND)
+    find_dependency( fckit REQUIRED )
+endif()
+
+if(NOT oops_FOUND)
+    find_dependency( oops 1.0.0 REQUIRED )
+endif()
+
+if(NOT Eigen3_FOUND)
+find_dependency( Eigen3 REQUIRED NO_MODULE HINTS
+              $ENV{Eigen3_ROOT} $ENV{EIGEN3_ROOT} $ENV{Eigen_ROOT} $ENV{EIGEN_ROOT}
+              $ENV{Eigen3_PATH} $ENV{EIGEN3_PATH} $ENV{Eigen_PATH} $ENV{EIGEN_PATH} )
+endif()
+
+if(NOT gsl-lite_FOUND)
+    find_dependency( gsl-lite REQUIRED HINTS $ENV{gsl_lite_DIR} )
+endif()
+
+if(NOT udunits_FOUND)
+    find_dependency( udunits 2.2.0 REQUIRED )
+endif()
+
+
+
+# Optional packages
+
+if(@OpenMP_FOUND@)
+    find_dependency( OpenMP COMPONENTS C CXX Fortran )
+endif()
+
+if(@odc_FOUND@)
+    find_dependency( odc 1.0.2 REQUIRED )
+endif()
+# Header-only. Not exposed.
+#find_dependency( Boost 1.64.0 )
+
+
+
+#Export Fortran compiler version for checking module compatibility
+set(@PROJECT_NAME@_MODULES_Fortran_COMPILER_ID @CMAKE_Fortran_COMPILER_ID@)
+set(@PROJECT_NAME@_MODULES_Fortran_COMPILER_VERSION @CMAKE_Fortran_COMPILER_VERSION@)
+if(NOT @PROJECT_NAME@_MODULES_Fortran_COMPILER_ID STREQUAL CMAKE_Fortran_COMPILER_ID
+   OR NOT @PROJECT_NAME@_MODULES_Fortran_COMPILER_VERSION VERSION_EQUAL CMAKE_Fortran_COMPILER_VERSION)
+    message(SEND_ERROR "Package @PROJECT_NAME@ provides Fortran modules built with "
+            "${@PROJECT_NAME@_MODULES_Fortran_COMPILER_ID}-${@PROJECT_NAME@_MODULES_Fortran_COMPILER_VERSION} "
+            "but this build for ${PROJECT_NAME} uses incompatible compiler ${CMAKE_Fortran_COMPILER_ID}-${CMAKE_Fortran_COMPILER_VERSION}")
+endif()
+
+# Export ioda YAML validation files directory
+if( IS_ABSOLUTE "@CMAKE_INSTALL_DATADIR@")
+	set( IODA_YAML_ROOT "@CMAKE_INSTALL_DATADIR@/ioda/yaml" )
+else()
+	if ( DEFINED _IMPORT_PREFIX )
+		# We are in a CMake install tree
+		set( IODA_YAML_ROOT "${_IMPORT_PREFIX}/@CMAKE_INSTALL_DATADIR@/ioda/yaml" )
+	else()
+		# We are in a CMake build tree. Ergo, we can use the variable set in
+		# IODA's top-level CMakeLists.txt that points to the YAML root path
+		# in the source tree.
+		#
+		# Note: a small downside of this approach is that a source tree path is hardcoded
+		# in the ioda-post-import.cmake file, even if it is never again used. Some
+		# tools (like Spack) will complain about this path and may indicate that ioda
+		# is a non-relocatable package, even though it is completely relocatable.
+		set( IODA_YAML_ROOT "@IODA_YAML_ROOT@" )
+	endif()
+endif()
+
+

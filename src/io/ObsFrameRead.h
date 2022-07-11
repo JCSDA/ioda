@@ -8,12 +8,15 @@
 #ifndef IO_OBSFRAMEREAD_H_
 #define IO_OBSFRAMEREAD_H_
 
+#include <vector>
+
 #include "eckit/config/LocalConfiguration.h"
 
 #include "ioda/core/IodaUtils.h"
 #include "ioda/distribution/Distribution.h"
 #include "ioda/io/ObsFrame.h"
 #include "ioda/ObsSpaceParameters.h"
+#include "ioda/Variables/VarUtils.h"
 
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"
@@ -48,13 +51,14 @@ class ObsFrameRead : public ObsFrame, private util::ObjectCounter<ObsFrameRead> 
     std::vector<std::size_t> recnums() const override {return recnums_;}
 
     /// \brief initialize for walking through the frames
-    void frameInit() override;
+    /// \param destAttrs destination ObsGroup global attributes container
+    void frameInit(Has_Attributes & destAttrs);
 
     /// \brief move to the next frame
-    void frameNext() override;
+    void frameNext();
 
     /// \brief true if a frame is available (not past end of frames)
-    bool frameAvailable() override;
+    bool frameAvailable();
 
     /// \brief return current frame starting index
     /// \param varName name of variable
@@ -87,8 +91,10 @@ class ObsFrameRead : public ObsFrame, private util::ObjectCounter<ObsFrameRead> 
     /// \param varDataSelect selection information for the selection in memory
     /// \param frameSelect selection information for the selection in frame
     bool readFrameVar(const std::string & varName, std::vector<int> & varData);
+    bool readFrameVar(const std::string & varName, std::vector<int64_t> & varData);
     bool readFrameVar(const std::string & varName, std::vector<float> & varData);
     bool readFrameVar(const std::string & varName, std::vector<std::string> & varData);
+    bool readFrameVar(const std::string & varName, std::vector<char> & varData);
 
     /// \brief return the MPI distribution
     std::shared_ptr<const Distribution> distribution() {return dist_;}
@@ -141,14 +147,11 @@ class ObsFrameRead : public ObsFrame, private util::ObjectCounter<ObsFrameRead> 
     /// \brief location indices for current frame
     std::vector<Dimensions_t> frame_loc_index_;
 
-    /// \brief map showing association of dim names with each variable name
-    VarDimMap dims_attached_to_vars_;
-
     /// \brief cache for frame selection
-    std::map<std::vector<std::string>, Selection> known_frame_selections_;
+    std::map<VarUtils::Vec_Named_Variable, Selection> known_frame_selections_;
 
     /// \brief cache for memory buffer selection
-    std::map<std::vector<std::string>, Selection> known_mem_selections_;
+    std::map<VarUtils::Vec_Named_Variable, Selection> known_mem_selections_;
 
     //--------------------- private functions ------------------------------
     /// \brief print routine for oops::Printable base class
@@ -180,10 +183,19 @@ class ObsFrameRead : public ObsFrame, private util::ObjectCounter<ObsFrameRead> 
                               std::vector<Dimensions_t> & frameIndex);
 
     /// \brief generate indices for locations in current frame after filtering out
-    ///  obs outside DA timing window
+    ///  obs failing a quality check
+    /// \details For now, variables being checked are:
+    ///    MetaData/latitude
+    ///    MetaData/longitude
+    ///    MetaData/datetime
+    ///
+    /// and the quality checks include:
+    ///    locations outside the DA timing window
+    ///    locations with missing values
+    ///
     /// \param locIndex vector of location indices relative to entire obs source
     /// \param frameIndex vector of location indices relative to current frame
-    void genFrameLocationsTimeWindow(std::vector<Dimensions_t> & locIndex,
+    void genFrameLocationsWithQcheck(std::vector<Dimensions_t> & locIndex,
                                      std::vector<Dimensions_t> & frameIndex);
 
     /// \brief generate record numbers where each location is a unique record (no grouping)
@@ -233,10 +245,16 @@ class ObsFrameRead : public ObsFrame, private util::ObjectCounter<ObsFrameRead> 
             // Form the selection objects for this variable
 
             // Check the cache for the selection
-            std::vector<std::string> &dims = dims_attached_to_vars_.at(varName);
+            VarUtils::Vec_Named_Variable dims;
+            for (auto & ivar : dims_attached_to_vars_) {
+                if (ivar.first.name == varName) {
+                    dims = ivar.second;
+                    break;
+                }
+            }
             if (!known_mem_selections_.count(dims)) {
                 known_mem_selections_[dims] = createMemSelection(varShape, frameCount);
-                if (obs_io_->isVarDimByNlocs(varName)) {
+                if (isVarDimByNlocs(varName)) {
                   known_frame_selections_[dims] =
                       createIndexedFrameSelection(varShape);
                 } else {

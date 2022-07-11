@@ -109,7 +109,8 @@ Group createMemoryFile(const std::string& filename, BackendCreateModes mode, boo
   if (0 > H5Pset_libver_bounds(pl.get(), map_h5ver.at(compat.first), map_h5ver.at(compat.second)))
     throw Exception("H5Pset_libver_bounds failed", ioda_Here(), errOpts);
 
-  HH_hid_t f = H5Fcreate(filename.c_str(), m.at(mode), H5P_DEFAULT, pl.get());
+  HH_hid_t f(H5Fcreate(filename.c_str(), m.at(mode), H5P_DEFAULT, pl.get()),
+             Handles::Closers::CloseHDF5File::CloseP);
   if (f() < 0) throw Exception("H5Fcreate failed", ioda_Here(), errOpts);
 
   auto backend
@@ -137,7 +138,8 @@ Group createFile(const std::string& filename, BackendCreateModes mode, HDF5_Vers
   if (0 > H5Pset_libver_bounds(pl.get(), map_h5ver.at(compat.first), map_h5ver.at(compat.second)))
     throw Exception("H5Pset_libver_bounds failed", ioda_Here(), errOpts);
 
-  HH_hid_t f = H5Fcreate(filename.c_str(), m.at(mode), H5P_DEFAULT, pl.get());
+  HH_hid_t f(H5Fcreate(filename.c_str(), m.at(mode), H5P_DEFAULT, pl.get()),
+             Handles::Closers::CloseHDF5File::CloseP);
   if (f() < 0) throw Exception("H5Fcreate failed", ioda_Here(), errOpts);
 
   auto backend = std::make_shared<detail::Engines::HH::HH_Group>(f, getCapabilitiesFileEngine(), f);
@@ -160,7 +162,8 @@ Group openFile(const std::string& filename, BackendOpenModes mode, HDF5_Version_
   if (0 > H5Pset_libver_bounds(pl.get(), map_h5ver.at(compat.first), map_h5ver.at(compat.second)))
     throw Exception("H5Pset_libver_bounds failed", ioda_Here(), errOpts);
 
-  HH_hid_t f = H5Fopen(filename.c_str(), m.at(mode), pl.get());
+  HH_hid_t f(H5Fopen(filename.c_str(), m.at(mode), pl.get()),
+             Handles::Closers::CloseHDF5File::CloseP);
   if (f() < 0) throw Exception("H5Fopen failed", ioda_Here(), errOpts);
 
   auto backend = std::make_shared<detail::Engines::HH::HH_Group>(f, getCapabilitiesFileEngine(), f);
@@ -190,7 +193,8 @@ Group openMemoryFile(const std::string& filename, BackendOpenModes mode, bool fl
   if (0 > H5Pset_libver_bounds(pl.get(), map_h5ver.at(compat.first), map_h5ver.at(compat.second)))
     throw Exception("H5Pset_libver_bounds failed", ioda_Here(), errOpts);
 
-  HH_hid_t f = H5Fopen(filename.c_str(), m.at(mode), pl.get());
+  HH_hid_t f(H5Fopen(filename.c_str(), m.at(mode), pl.get()),
+             Handles::Closers::CloseHDF5File::CloseP);
   if (f() < 0) throw Exception("H5Fopen failed", ioda_Here(), errOpts);
 
   auto backend

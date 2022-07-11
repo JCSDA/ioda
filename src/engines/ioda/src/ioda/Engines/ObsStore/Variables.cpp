@@ -26,25 +26,24 @@ namespace ObsStore {
 // Variable methods
 //****************************************************************************
 Variable::Variable(const std::vector<Dimensions_t>& dimensions,
-                   const std::vector<Dimensions_t>& max_dimensions, const ObsTypes& dtype,
+                   const std::vector<Dimensions_t>& max_dimensions,
+                   const std::shared_ptr<Type> dtype,
                    const VarCreateParams& params)
     : dimensions_(dimensions),
       max_dimensions_(max_dimensions),
-      dtype_(dtype),
-      dtype_size_(0),
+      dtype_(std::move(dtype)),
       var_data_(),
       is_scale_(false),
       atts(std::make_shared<Has_Attributes>()),
       impl_atts(std::make_shared<Has_Attributes>()) {
   // Get a typed storage object based on dtype
   var_data_.reset(createVarAttrStore(dtype_));
-  dtype_size_ = params.dtype_size;
 
   // If have a fill value, save in an attribute. Do this before resizing
   // because resize() will check for the fill value.
   if (params.fvdata.set_) {
     auto fv = impl_atts->create("_fillValue", dtype_, {1});
-    fv->write(params.fill_value, dtype_);
+    fv->write(params.fill_value, *dtype_);
 
     this->fvdata_ = params.fvdata;
   }
@@ -80,20 +79,23 @@ void Variable::resize(const std::vector<Dimensions_t>& new_dim_sizes) {
   // Allow for the total number of elements to change. If there are
   // addtional elements (total size is growing), then fill those elements
   // with the variable's fill value (if exists).
-  std::size_t numElements = std::accumulate(new_dim_sizes.begin(), new_dim_sizes.end(), (size_t)1,
+  std::size_t numElements =
+      std::accumulate(new_dim_sizes.begin(), new_dim_sizes.end(), (std::size_t)1,
                                             std::multiplies<std::size_t>());
 
   if (impl_atts->exists("_fillValue")) {
-    std::vector<char> fvalue(dtype_size_);
-    gsl::span<char> fillValue(fvalue.data(), dtype_size_);
-    impl_atts->open("_fillValue")->read(fillValue, dtype_);
+    std::vector<char> fvalue(dtype_->getSize());
+    gsl::span<char> fillValue(fvalue.data(), dtype_->getSize());
+    impl_atts->open("_fillValue")->read(fillValue, *dtype_);
     var_data_->resize(numElements, fillValue);
   } else {
     var_data_->resize(numElements);
   }
 }
 
-bool Variable::isOfType(ObsTypes dtype) const { return (dtype == dtype_); }
+bool Variable::isOfType(const Type & dtype) const {
+  return (dtype == *dtype_);
+}
 
 bool Variable::hasFillValue() const { return fvdata_.set_; }
 
@@ -126,18 +128,18 @@ bool Variable::isDimensionScaleAttached(const std::size_t dim_number,
   return (dim_scales_[dim_number] == scale);
 }
 
-std::shared_ptr<Variable> Variable::write(gsl::span<char> data, ObsTypes dtype, Selection& m_select,
-                                          Selection& f_select) {
-  if (dtype != dtype_)
+std::shared_ptr<Variable> Variable::write(gsl::span<const char> data, const Type & dtype,
+                                          Selection & m_select, Selection & f_select) {
+  if (dtype != *dtype_)
     throw Exception("Requested data type not equal to storage datatype", ioda_Here());
 
   var_data_->write(data, m_select, f_select);
   return shared_from_this();
 }
 
-std::shared_ptr<Variable> Variable::read(gsl::span<char> data, ObsTypes dtype, Selection& m_select,
-                                         Selection& f_select) {
-  if (dtype != dtype_)
+std::shared_ptr<Variable> Variable::read(gsl::span<char> data, const Type & dtype,
+                                         Selection& m_select, Selection& f_select) {
+  if (dtype != *dtype_)
     throw Exception("Requested data type not equal to storage datatype.", ioda_Here());
 
   var_data_->read(data, m_select, f_select);
@@ -148,7 +150,7 @@ std::shared_ptr<Variable> Variable::read(gsl::span<char> data, ObsTypes dtype, S
 // Has_Variable methods
 //****************************************************************************
 std::shared_ptr<Variable> Has_Variables::create(const std::string& name,
-                                                const ioda::ObsStore::ObsTypes& dtype,
+                                                const std::shared_ptr<Type> & dtype,
                                                 const std::vector<Dimensions_t>& dims,
                                                 const std::vector<Dimensions_t>& max_dims,
                                                 const VarCreateParams& params) {

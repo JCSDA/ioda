@@ -30,10 +30,11 @@
 #include "ioda/IodaTrait.h"
 #include "ioda/ObsSpace.h"
 
-namespace eckit
-{
-  // Don't use contracted output for floats -- the current implementation works only for integers.
+namespace eckit {
+  // Don't use the contracted output for these types: the current implementation works only
+  // with integer types.
   template <> struct VectorPrintSelector<float> { typedef VectorPrintSimple selector; };
+  template <> struct VectorPrintSelector<util::DateTime> { typedef VectorPrintSimple selector; };
 }  // namespace eckit
 
 namespace ioda {
@@ -95,13 +96,9 @@ void testConstructor() {
   ::test::TestEnvironment::config().get("observations", conf);
 
   for (std::size_t jj = 0; jj < Test_::size(); ++jj) {
-    // Grab the obs space and test data configurations
-    eckit::LocalConfiguration obsConfig;
+    // Grab the test data configuration
     eckit::LocalConfiguration testConfig;
-    conf[jj].get("obs space", obsConfig);
     conf[jj].get("test data", testConfig);
-
-    std::string DistMethod = obsConfig.getString("distribution", "RoundRobin");
 
     const ObsSpace &odb = Test_::obspace(jj);
 
@@ -138,7 +135,7 @@ void testConstructor() {
     // records are ambigious for halo distribution
     // e.g. consider airplane (a single record in round robin) flying accros the globe
     // for Halo distr this record will be considered unique on each PE
-    if (DistMethod != "Halo") {
+    if (odb.distribution()->name() != "Halo") {
       std::size_t NRecs = 0;
       std::set<std::size_t> recIndices;
       auto accumulator = odb.distribution()->createAccumulator<std::size_t>();
@@ -194,10 +191,8 @@ void testGetDb() {
   ::test::TestEnvironment::config().get("observations", conf);
 
   for (std::size_t jj = 0; jj < Test_::size(); ++jj) {
-    // Grab the obs space and test data configurations
-    eckit::LocalConfiguration obsConfig;
+    // Grab the test data configuration
     eckit::LocalConfiguration testConfig;
-    conf[jj].get("obs space", obsConfig);
     conf[jj].get("test data", testConfig);
 
     // Set up a pointer to the ObsSpace object for convenience
@@ -253,6 +248,24 @@ void testGetDb() {
         Vnorm = sqrt(Vnorm);
 
         EXPECT(oops::is_close(Vnorm, ExpectedVnorm, Tol));
+      } else if (VarType == "integer_64") {
+        // Check if the variable exists
+        EXPECT(Odb->has(GroupName, VarName, SkipDerived));
+
+        // Check the type from ObsSpace
+        ObsDtype VarDataType = Odb->dtype(GroupName, VarName, SkipDerived);
+        EXPECT(VarDataType == ObsDtype::Integer_64);
+
+        // Check the norm
+        std::vector<int64_t> TestVec(Nlocs);
+        Odb->get_db(GroupName, VarName, TestVec, {}, SkipDerived);
+
+        // Calculate the norm of the vector
+        double ExpectedVnorm = varconf[i].getDouble("norm");
+        double Vnorm = dotProduct(*Odb->distribution(), 1, TestVec, TestVec);
+        Vnorm = sqrt(Vnorm);
+
+        EXPECT(oops::is_close(Vnorm, ExpectedVnorm, Tol));
       } else if (VarType == "string") {
         // Check if the variable exists
         EXPECT(Odb->has(GroupName, VarName, SkipDerived));
@@ -268,6 +281,36 @@ void testGetDb() {
         Odb->get_db(GroupName, VarName, TestVec, {}, SkipDerived);
         EXPECT(TestVec[0] == ExpectedFirstValue);
         EXPECT(TestVec[Nlocs-1] == ExpectedLastValue);
+      } else if (VarType == "datetime") {
+        // Check if the variable exists
+        EXPECT(Odb->has(GroupName, VarName, SkipDerived));
+
+        // Check the type from ObsSpace
+        ObsDtype VarDataType = Odb->dtype(GroupName, VarName, SkipDerived);
+        EXPECT(VarDataType == ObsDtype::DateTime);
+
+        // Check the first and last values of the vector
+        std::string ExpectedFirstValue = varconf[i].getString("first value");
+        std::string ExpectedLastValue = varconf[i].getString("last value");
+        std::vector<util::DateTime> TestVec(Nlocs);
+        Odb->get_db(GroupName, VarName, TestVec, {}, SkipDerived);
+        EXPECT(TestVec[0].toString() == ExpectedFirstValue);
+        EXPECT(TestVec[Nlocs-1].toString() == ExpectedLastValue);
+      } else if (VarType == "bool") {
+        // Check if the variable exists
+        EXPECT(Odb->has(GroupName, VarName, SkipDerived));
+
+        // Check the type from ObsSpace
+        const ObsDtype VarDataType = Odb->dtype(GroupName, VarName, SkipDerived);
+        EXPECT(VarDataType == ObsDtype::Bool);
+
+        // Check the first and last values of the vector
+        const bool ExpectedFirstValue = varconf[i].getBool("first value");
+        const bool ExpectedLastValue = varconf[i].getBool("last value");
+        std::vector<bool> TestVec(Nlocs);
+        Odb->get_db(GroupName, VarName, TestVec, {}, SkipDerived);
+        EXPECT(TestVec[0] == ExpectedFirstValue);
+        EXPECT(TestVec[Nlocs-1] == ExpectedLastValue);
       } else if (VarType == "none") {
         // Check if the variable exists
         EXPECT_NOT(Odb->has(GroupName, VarName, SkipDerived));
@@ -276,7 +319,12 @@ void testGetDb() {
         ObsDtype VarDataType = Odb->dtype(GroupName, VarName, SkipDerived);
         EXPECT(VarDataType == ObsDtype::None);
 
+
         // A call to get_db should produce an exception
+        {
+          std::vector<double> TestVec(Nlocs);
+          EXPECT_THROWS(Odb->get_db(GroupName, VarName, TestVec, {}, SkipDerived));
+        }
         {
           std::vector<float> TestVec(Nlocs);
           EXPECT_THROWS(Odb->get_db(GroupName, VarName, TestVec, {}, SkipDerived));
@@ -289,6 +337,14 @@ void testGetDb() {
           std::vector<std::string> TestVec(Nlocs);
           EXPECT_THROWS(Odb->get_db(GroupName, VarName, TestVec, {}, SkipDerived));
         }
+        {
+          std::vector<util::DateTime> TestVec(Nlocs);
+          EXPECT_THROWS(Odb->get_db(GroupName, VarName, TestVec, {}, SkipDerived));
+        }
+        {
+          std::vector<bool> TestVec(Nlocs);
+          EXPECT_THROWS(Odb->get_db(GroupName, VarName, TestVec, {}, SkipDerived));
+        }
       }
     }
   }
@@ -299,34 +355,125 @@ void testGetDb() {
 void testPutDb() {
   typedef ObsSpaceTestFixture Test_;
 
-  std::string VarName("DummyVar");
+  const std::string GroupName("MetaData");
 
   for (std::size_t jj = 0; jj < Test_::size(); ++jj) {
     // Set up a pointer to the ObsSpace object for convenience
-    ioda::ObsSpace * Odb = &(Test_::obspace(jj));
+    ioda::ObsSpace & Odb = Test_::obspace(jj);
+    const std::size_t Nlocs = Odb.nlocs();
 
-    // Create a dummy vector to put into the database
-    // Load up the vector with contrived data, put the vector then
+    // Create a dummy vector of each supported type to put into the database.
+    // Load up the vector with contrived data, put the vector, then
     // get the vector and see if the contrived data made it through.
-    std::size_t Nlocs = Odb->nlocs();
-    std::vector<double> TestVec(Nlocs);
-    std::vector<double> ExpectedVec(Nlocs);
 
-    for (std::size_t i = 0; i < Nlocs; ++i) {
-      ExpectedVec[i] = static_cast<double>(i);
+    // double
+    {
+      const std::string VarName("DummyDoubleVar");
+      std::vector<double> TestVec(Nlocs);
+      std::vector<double> ExpectedVec(Nlocs);
+
+      for (std::size_t i = 0; i < Nlocs; ++i) {
+        ExpectedVec[i] = i * 0.5;
+      }
+
+      // Put the vector into the database. Then read the vector back from the database
+      // and compare to the original
+      Odb.put_db(GroupName, VarName, ExpectedVec);
+      Odb.get_db(GroupName, VarName, TestVec);
+
+      EXPECT_EQUAL(ExpectedVec, TestVec);
     }
 
-    // Put the vector into the database. Then read the vector back from the database
-    // and compare to the original
-    Odb->put_db("MetaData", VarName, ExpectedVec);
-    Odb->get_db("MetaData", VarName, TestVec);
+    // float
+    {
+      const std::string VarName("DummyFloatVar");
+      std::vector<float> TestVec(Nlocs);
+      std::vector<float> ExpectedVec(Nlocs);
 
-    bool VecMatch = true;
-    for (std::size_t i = 0; i < Nlocs; ++i) {
-      VecMatch = VecMatch && (static_cast<int>(ExpectedVec[i]) == static_cast<int>(TestVec[i]));
+      for (std::size_t i = 0; i < Nlocs; ++i) {
+        ExpectedVec[i] = i * 0.5f;
+      }
+
+      // Put the vector into the database. Then read the vector back from the database
+      // and compare to the original
+      Odb.put_db(GroupName, VarName, ExpectedVec);
+      Odb.get_db(GroupName, VarName, TestVec);
+
+      EXPECT_EQUAL(ExpectedVec, TestVec);
     }
 
-    EXPECT(VecMatch);
+    // int
+    {
+      const std::string VarName("DummyIntVar");
+      std::vector<int> TestVec(Nlocs);
+      std::vector<int> ExpectedVec(Nlocs);
+
+      for (std::size_t i = 0; i < Nlocs; ++i) {
+        ExpectedVec[i] = i;
+      }
+
+      // Put the vector into the database. Then read the vector back from the database
+      // and compare to the original
+      Odb.put_db(GroupName, VarName, ExpectedVec);
+      Odb.get_db(GroupName, VarName, TestVec);
+
+      EXPECT_EQUAL(ExpectedVec, TestVec);
+    }
+
+    // string
+    {
+      const std::string VarName("DummyStringVar");
+      std::vector<std::string> TestVec(Nlocs);
+      std::vector<std::string> ExpectedVec(Nlocs);
+
+      for (std::size_t i = 0; i < Nlocs; ++i) {
+        ExpectedVec[i] = "location " + std::to_string(i);
+      }
+
+      // Put the vector into the database. Then read the vector back from the database
+      // and compare to the original
+      Odb.put_db(GroupName, VarName, ExpectedVec);
+      Odb.get_db(GroupName, VarName, TestVec);
+
+      EXPECT_EQUAL(ExpectedVec, TestVec);
+    }
+
+    // datetime
+    {
+      const std::string VarName("DummyDateTimeVar");
+      std::vector<util::DateTime> TestVec(Nlocs);
+      std::vector<util::DateTime> ExpectedVec(Nlocs);
+
+      const util::DateTime start(2001, 1, 1, 0, 0, 0);
+      for (std::size_t i = 0; i < Nlocs; ++i) {
+        ExpectedVec[i] = start + util::Duration(i);
+      }
+
+      // Put the vector into the database. Then read the vector back from the database
+      // and compare to the original
+      Odb.put_db(GroupName, VarName, ExpectedVec);
+      Odb.get_db(GroupName, VarName, TestVec);
+
+      EXPECT_EQUAL(ExpectedVec, TestVec);
+    }
+
+    // bool
+    {
+      const std::string VarName("DummyBoolVar");
+      std::vector<bool> TestVec(Nlocs);
+      std::vector<bool> ExpectedVec(Nlocs);
+
+      for (std::size_t i = 0; i < Nlocs; ++i) {
+        ExpectedVec[i] = (i % 2) == 0;
+      }
+
+      // Put the vector into the database. Then read the vector back from the database
+      // and compare to the original
+      Odb.put_db(GroupName, VarName, ExpectedVec);
+      Odb.get_db(GroupName, VarName, TestVec);
+
+      EXPECT_EQUAL(ExpectedVec, TestVec);
+    }
   }
 }
 
@@ -339,10 +486,8 @@ void testPutGetChanSelect() {
   ::test::TestEnvironment::config().get("observations", conf);
 
   for (std::size_t jj = 0; jj < Test_::size(); ++jj) {
-    // Grab the obs space and test data configurations
-    eckit::LocalConfiguration obsConfig;
+    // Grab the test data configurations
     eckit::LocalConfiguration testConfig;
-    conf[jj].get("obs space", obsConfig);
     conf[jj].get("test data", testConfig);
 
     // Set up a pointer to the ObsSpace object for convenience

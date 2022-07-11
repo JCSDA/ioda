@@ -22,7 +22,7 @@
 #include "./ObsStore-selection.h"
 #include "./ObsStore-types.h"
 #include "./Selection.hpp"
-#include "./Types.hpp"
+#include "./Type.hpp"
 #include "./Variables.hpp"
 #include "ioda/Group.h"
 #include "ioda/Misc/Dimensions.h"
@@ -122,7 +122,7 @@ public:
   /// \param in_memory_dataType frontend type marker
   /// \param mem_selection ioda::Selection for incoming data
   /// \param file_selection ioda::Selection for target Variable data
-  Variable write(gsl::span<char> data, const Type& in_memory_dataType,
+  Variable write(gsl::span<const char> data, const Type& in_memory_dataType,
                  const Selection& mem_selection, const Selection& file_selection) final;
   /// \brief transfer data from the ObsStore Variable
   /// \param data contiguous block of data to transfer

@@ -19,10 +19,11 @@ extend obs space, Halo, 71 entries per averaged profile:
         sort variable: "air_pressure"
         sort order: "descending"
     simulated variables: [air_temperature]
-    distribution: "Halo"
-    radius: 13000000 # 13,000 km, so each halo covers most but not all of the Earth's surface
+    distribution:
+      name: "Halo"
+      radius: 13000000 # 13,000 km, so each halo covers most but not all of the Earth's surface
     extension:
-      average profiles onto model levels: 71
+      allocate companion records with length: 71
 
   expected nlocs (2 PE, rank 0):  2901 # 771 original locs + 30 original recs * 71 levels
   expected gnlocs (2 PE, rank 0): 3530 # 974 + 36 * 71

@@ -3,6 +3,8 @@ where:
 variables:
 - name: azimuth
 - name: geometric_rotational_angle
+- name: initial_obsvalue
+- name: initial_vertco_reference
 - name: land_sea
 - name: satellite_instrument
 - name: satellite_identifier
@@ -14,3 +16,4 @@ variables:
 - name: zenith
 - name: receipt_time
 - name: receipt_date
+- name: ops_subtype 

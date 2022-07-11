@@ -5,13 +5,15 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#include <fstream>
 #include <iomanip>
+#include <set>
 
 #include "ioda/core/IodaUtils.h"
 #include "ioda/ObsSpaceParameters.h"
+#include "ioda/Variables/VarUtils.h"
 
 #include "oops/util/DateTime.h"
+#include "oops/util/missingValues.h"
 
 namespace ioda {
 
@@ -121,111 +123,16 @@ std::string fullVarName(const std::string & groupName, const std::string & varNa
     return groupName + std::string("/") + varName;
 }
 
-// -----------------------------------------------------------------------------
-void collectVarDimInfo(const ObsGroup & obsGroup, VarNameObjectList & varObjectList,
-                       VarNameObjectList & dimVarObjectList, VarDimMap & dimsAttachedToVars,
-                       Dimensions_t & maxVarSize0) {
-    // We really want to maximize performance here and avoid excessive variable
-    // re-opens and closures that would kill the HDF5 backend.
-    // We want to:
-    // 1) separate the dimension scales from the regular variables.
-    // 2) determine the maximum size along the 0-th dimension.
-    // 3) determine which dimensions are attached to which variable axes.
-
-    // Convenience lambda to hint if a variable is a scale. This is not definitive,
-    // but has a high likelihood of being correct. The idea is that all variables
-    // will have either a "@" or "/" in their names, whereas dimension scales
-    // will not. This lambda returns true if the name has neither "@" nor "/" in
-    // its value.
-    auto isPossiblyScale = [](const std::string& name) -> bool {
-        return (std::string::npos == name.find('@')) &&
-               (std::string::npos == name.find('/')) ? true : false;
-    };
-
-    // Retrieve all variable names from the input file. Argument to listObjects is bool
-    // and when true will cause listObjects to recurse through the entire Group hierarchy.
-    std::vector<std::string> allVars = obsGroup.listObjects<ObjectType::Variable>(true);
-
-    // Create a list that will help optimize the actual processing (below). In this
-    // list place "nlocs" first (since it is by far the most commonly occurring
-    // dimension scale), and try to follow that by the remain dimension scales and finally
-    // the variables using those dimension scales. Use the convenience lambda above for
-    // "identifying" dimension scales.
-    std::list<std::string> sortedAllVars;
-    for (const auto& name : allVars) {
-        if (sortedAllVars.empty()) {
-            sortedAllVars.push_back(name);
-        } else {
-            if (isPossiblyScale(name)) {
-                auto second = sortedAllVars.begin();
-                second++;
-                if (sortedAllVars.front() == "nlocs") {
-                    sortedAllVars.insert(second, name);
-                } else {
-                    sortedAllVars.push_front(name);
-                }
-            } else {
-                sortedAllVars.push_back(name);
-            }
-        }
-    }
-
-    // Now for the main processing loop.
-    // We separate dimension scales from non-dimension scale variables.
-    // We record the maximum sizes of variables.
-    // We construct the in-memory mapping of dimension scales and variable axes.
-    // Keep track of these to avoid re-opening the scales repeatedly.
-    std::list<ioda::Named_Variable> dimension_scales;
-
-    varObjectList.reserve(allVars.size());
-    dimVarObjectList.reserve(allVars.size());
-    maxVarSize0 = 0;
-    for (const auto& vname : sortedAllVars) {
-        Variable v = obsGroup.vars.open(vname);
-        const auto dims = v.getDimensions();
-        if (dims.dimensionality >= 1) {
-            maxVarSize0 = std::max(maxVarSize0, dims.dimsCur[0]);
-        }
-
-        // Expensive function call.
-        // Only 1-D variables can be scales. Also pre-filter based on name.
-        if (dims.dimensionality == 1 && isPossiblyScale(vname)) {
-            if (v.isDimensionScale()) {
-                (vname == "nlocs")   // true / false ternary
-                ? dimension_scales.push_front(ioda::Named_Variable(vname, v))
-                : dimension_scales.push_back(ioda::Named_Variable(vname, v));
-            dimVarObjectList.push_back(std::make_pair(vname, v));
-            continue;   // Move on to next variable in the for loop.
-            }
-        }
-
-        // See above block. By this point in execution, we know that this variable
-        // is not a dimension scale.
-        varObjectList.push_back(std::make_pair(vname, v));
-
-        // Let's figure out which scales are attached to which dimensions.
-        auto attached_dimensions = v.getDimensionScaleMappings(dimension_scales);
-        std::vector<std::string> dimVarNames;
-        dimVarNames.reserve(dims.dimensionality);
-        for (const auto& dim_scales_along_axis : attached_dimensions) {
-            if (dim_scales_along_axis.empty()) {
-                throw;
-            }
-            dimVarNames.push_back(dim_scales_along_axis[0].name);
-        }
-        dimsAttachedToVars.emplace(vname, dimVarNames);
-    }
-}
-
 //------------------------------------------------------------------------------------
 std::type_index varDtype(const Group & group, const std::string & varName) {
     Variable var = group.vars.open(varName);
     std::type_index varType(typeid(std::string));
-    if (var.isA<int>()) {
-        varType = typeid(int);
-    } else if (var.isA<float>()) {
-        varType = typeid(float);
-    }
+    VarUtils::forAnySupportedVariableType(
+          var,
+          [&](auto typeDiscriminator) {
+              varType = typeid(typeDiscriminator);
+          },
+          VarUtils::ThrowIfVariableIsOfUnsupportedType(varName));
     return varType;
 }
 
@@ -233,6 +140,41 @@ std::type_index varDtype(const Group & group, const std::string & varName) {
 bool varIsDimScale(const Group & group, const std::string & varName) {
     Variable var = group.vars.open(varName);
     return var.isDimensionScale();
+}
+
+//------------------------------------------------------------------------------------
+util::DateTime getEpochAsDtime(const Variable & dtVar) {
+  // get the units attribute and strip off the "seconds since " part. For now,
+  // we are restricting the units to "seconds since " and will be expanding that
+  // in the future to other time units (hours, days, minutes, etc).
+  std::string epochString = dtVar.atts.open("units").read<std::string>();
+  std::size_t pos = epochString.find("seconds since ");
+  if (pos == std::string::npos) {
+    std::string errorMsg =
+        std::string("For now, only supporting 'seconds since' form of ") +
+        std::string("units for MetaData/dateTime variable");
+    Exception(errorMsg.c_str(), ioda_Here());
+  }
+  epochString.replace(pos, pos+14, "");
+
+  return util::DateTime(epochString);
+}
+
+//------------------------------------------------------------------------------------
+void openCreateEpochDtimeVar(const std::string & groupName, const std::string & varName,
+                             const util::DateTime & newEpoch, Variable & epochDtVar,
+                             Has_Variables & destVarContainer) {
+  std::string fullVarName = groupName + "/" + varName;
+  if (destVarContainer.exists(fullVarName)) {
+    // Variable already exists, simply open it.
+    epochDtVar = destVarContainer.open(fullVarName);
+  } else {
+    // Variable does not exist, need to create it. Use the newEpoch for the units attribute.
+    std::vector<Variable> dimVars(1, destVarContainer.open("nlocs"));
+    epochDtVar = destVarContainer.createWithScales<int64_t>(fullVarName, dimVars);
+    std::string epochString = "seconds since " + newEpoch.toString();
+    epochDtVar.atts.add("units", epochString);
+  }
 }
 
 //------------------------------------------------------------------------------------
@@ -248,26 +190,50 @@ std::vector<util::DateTime> convertDtStringsToDtime(const std::vector<std::strin
 }
 
 //------------------------------------------------------------------------------------
-std::vector<util::DateTime> convertRefOffsetToDtime(const int refIntDtime,
-                                                    const std::vector<float> & timeOffsets) {
-    // convert refDtime to a DateTime object
-    int Year = refIntDtime / 1000000;
-    int TempInt = refIntDtime % 1000000;
-    int Month = TempInt / 10000;
-    TempInt = TempInt % 10000;
-    int Day = TempInt / 100;
-    int Hour = TempInt % 100;
-    util::DateTime refDtime(Year, Month, Day, Hour, 0, 0);
-
-    // Convert offset time to a Duration and add to RefDate.
-    std::size_t dtimeSize = timeOffsets.size();
-    std::vector<util::DateTime> dateTimeValues(dtimeSize);
-    for (std::size_t i = 0; i < dtimeSize; ++i) {
-        util::DateTime dateTime =
-            refDtime + util::Duration(round(timeOffsets[i] * 3600));
-        dateTimeValues[i] = dateTime;
+std::vector<util::DateTime> convertEpochDtToDtime(const util::DateTime epochDtime,
+                                                  const std::vector<int64_t> & timeOffsets) {
+  const util::DateTime missingDateTime = util::missingValue(missingDateTime);
+  const int64_t missingInt64 = util::missingValue(missingInt64);
+  std::vector<util::DateTime> dateTimes;
+  dateTimes.reserve(timeOffsets.size());
+  for (std::size_t i = 0; i < timeOffsets.size(); ++i) {
+    if (timeOffsets[i] == missingInt64) {
+      dateTimes.emplace_back(missingDateTime);
+    } else {
+      const util::Duration timeDiff(timeOffsets[i]);
+      dateTimes.emplace_back(epochDtime + timeDiff);
     }
-    return dateTimeValues;
+  }
+  return dateTimes;
+}
+
+//------------------------------------------------------------------------------------
+std::vector<int64_t> convertDtimeToTimeOffsets(const util::DateTime epochDtime,
+                                               const std::vector<util::DateTime> & dtimes) {
+  const util::DateTime missingDateTime = util::missingValue(missingDateTime);
+  const int64_t missingInt64 = util::missingValue(missingInt64);
+  std::vector<int64_t> timeOffsets(dtimes.size());
+  for (std::size_t i = 0; i < dtimes.size(); ++i) {
+    if (dtimes[i] == missingDateTime) {
+      timeOffsets[i] = missingInt64;
+    } else {
+      const util::Duration timeDiff = dtimes[i] - epochDtime;
+      timeOffsets[i] = timeDiff.toSeconds();
+    }
+  }
+  return timeOffsets;
+}
+
+//------------------------------------------------------------------------------------
+std::vector<int64_t> convertDtStringsToTimeOffsets(const util::DateTime epochDtime,
+                                                   const std::vector<std::string> & dtStrings) {
+  std::vector<int64_t> timeOffsets(dtStrings.size());
+  for (std::size_t i = 0; i < dtStrings.size(); ++i) {
+    util::DateTime dtime(dtStrings[i]);
+    util::Duration timeDiff = dtime - epochDtime;
+    timeOffsets[i] = timeDiff.toSeconds();
+  }
+  return timeOffsets;
 }
 
 //------------------------------------------------------------------------------------
@@ -336,29 +302,6 @@ void setOfileParamsFromTestConfig(const eckit::LocalConfiguration & obsConfig,
         }
     }
     obsParams.setMaxVarSize(maxVarSize);
-}
-
-
-// -----------------------------------------------------------------------------
-std::string uniquifyFileName(const std::string & fileName, const std::size_t rankNum,
-                             const int timeRankNum) {
-    // Attach the rank number to the output file name to avoid collisions when running
-    // with multiple MPI tasks.
-    std::string uniqueFileName = fileName;
-
-    // Find the left-most dot in the file name, and use that to pick off the file name
-    // and file extension.
-    std::size_t found = uniqueFileName.find_last_of(".");
-    if (found == std::string::npos)
-      found = uniqueFileName.length();
-
-    // Get the process rank number and format it
-    std::ostringstream ss;
-    ss << "_" << std::setw(4) << std::setfill('0') << rankNum;
-    if (timeRankNum >= 0) ss << "_" << timeRankNum;
-
-    // Construct the output file name
-    return uniqueFileName.insert(found, ss.str());
 }
 
 // -----------------------------------------------------------------------------

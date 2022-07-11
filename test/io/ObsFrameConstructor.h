@@ -32,7 +32,6 @@
 #include "ioda/core/IodaUtils.h"
 #include "ioda/distribution/DistributionFactory.h"
 #include "ioda/io/ObsFrameRead.h"
-#include "ioda/io/ObsFrameWrite.h"
 #include "ioda/ObsGroup.h"
 #include "ioda/ObsSpaceParameters.h"
 #include "ioda/Variables/Variable.h"
@@ -87,27 +86,6 @@ void testConstructor() {
         ioda::Dimensions_t expectedNumDimVars = testConfig.getInt("ndvars", 0);
         ioda::Dimensions_t numDimVars = obsFrame->ioNumDimVars();
         EXPECT_EQUAL(numDimVars, expectedNumDimVars);
-
-        // Try the output constructor, if one was specified
-        if (obsParams.top_level_.obsOutFile.value() != boost::none) {
-            setOfileParamsFromTestConfig(testConfig, obsParams);
-            obsFrame = std::make_shared<ObsFrameWrite>(obsParams);
-
-            // See if we get expected number of locations
-            std::vector<eckit::LocalConfiguration> writeDimConfigs =
-                testConfig.getSubConfigurations("write dimensions");
-            ioda::Dimensions_t expectedNumLocs = 0;
-            for (std::size_t j = 0; j < writeDimConfigs.size(); ++j) {
-                std::string dimName = writeDimConfigs[i].getString("name");
-                Dimensions_t dimSize = writeDimConfigs[i].getInt("size");
-                if (dimName == "nlocs") {
-                    expectedNumLocs = dimSize;
-                }
-            }
-
-            ioda::Dimensions_t numLocs = obsFrame->ioNumLocs();
-            EXPECT_EQUAL(numLocs, expectedNumLocs);
-        }
     }
 }
 

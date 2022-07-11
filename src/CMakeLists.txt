@@ -27,6 +27,7 @@ distribution/Distribution.cc
 distribution/Distribution.h
 distribution/DistributionFactory.cc
 distribution/DistributionFactory.h
+distribution/DistributionParametersBase.h
 distribution/DistributionUtils.cc
 distribution/DistributionUtils.h
 distribution/InefficientDistribution.cc
@@ -52,8 +53,6 @@ io/ObsFrame.cc
 io/ObsFrame.h
 io/ObsFrameRead.cc
 io/ObsFrameRead.h
-io/ObsFrameWrite.cc
-io/ObsFrameWrite.h
 io/ObsIo.cc
 io/ObsIo.h
 io/ObsIoFactory.cc
@@ -87,7 +86,6 @@ ecbuild_add_library( TARGET ${PROJECT_NAME}
                      LINKER_LANGUAGE CXX )
 
 target_link_libraries( ${PROJECT_NAME} PUBLIC ioda_engines )
-target_link_libraries( ${PROJECT_NAME} PUBLIC NetCDF::NetCDF_C )
 target_link_libraries( ${PROJECT_NAME} PUBLIC fckit )
 target_link_libraries( ${PROJECT_NAME} PUBLIC ${oops_LIBRARIES} )
 
@@ -97,7 +95,9 @@ add_custom_target(${PROJECT_NAME}_headers ALL
                     COMMAND ${CMAKE_COMMAND} -E make_directory ${BUILD_DIR_INCLUDE_PATH}
                     COMMAND ${CMAKE_COMMAND} -E create_symlink ${CMAKE_CURRENT_SOURCE_DIR} ${BUILD_DIR_INCLUDE_PATH}/${PROJECT_NAME})
 add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_headers)
+
 target_include_directories(${PROJECT_NAME} PUBLIC $<BUILD_INTERFACE:${BUILD_DIR_INCLUDE_PATH}>)
+#  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/engines/ioda/include>)
 
 #Fortran file interfaces templates
 install(FILES ${ioda_fortran_interface_includes} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/ioda)

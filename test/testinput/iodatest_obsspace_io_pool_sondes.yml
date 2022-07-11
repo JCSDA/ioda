@@ -1,0 +1,16 @@
+---
+window begin: "2018-04-14T21:00:00Z"
+window end: "2018-04-15T03:00:00Z"
+
+observations:
+- obs space:
+    name: "Radiosonde"
+    simulated variables: ['air_temperature']
+    obsdatain:
+      obsfile: "Data/testinput_tier_1/io_pool_sondes.nc4"
+    obsdataout:
+      obsfile: "testoutput/io_pool_sondes_out.nc4"
+    # Set up a pool of size 4 for this test. The test is run with 7 MPI tasks
+    # so the "max pool size" parameter set to 4 will limit the pool to 4 tasks.
+    io pool:
+      max pool size: 4

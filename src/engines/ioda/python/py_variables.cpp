@@ -82,6 +82,9 @@ void setupVariables(pybind11::module& m, pybind11::module& mDetail, pybind11::mo
     .def_readwrite("isA", &Variable::_py_isA, "Query the data type")
     .def("isA2", &Variable::_py_isA2, "Query the data type", py::arg("dtype"))
     .def_readwrite("scales", &Variable::_py_scales, "Manipulate this variable's dimension scales")
+
+    .def("getType", &Variable::getType, "Get the data type")
+
     .def_readwrite("readVector", &Variable::_py_readVector, "Read data as a 1-D vector")
     .def_readwrite("readNPArray", &Variable::_py_readNPArray, "Read data as a numpy array")
     .def_readwrite("writeVector", &Variable::_py_writeVector, "Write data as a 1-D vector")

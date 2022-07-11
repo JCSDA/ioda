@@ -20,6 +20,7 @@
 #include "ioda/ObsGroup.h"
 #include "ioda/ObsSpaceParameters.h"
 #include "ioda/Variables/Variable.h"
+#include "ioda/Variables/VarUtils.h"
 
 #include "oops/util/Logger.h"
 #include "oops/util/Printable.h"
@@ -55,19 +56,19 @@ class ObsFrame : public util::Printable {
     Dimensions_t ioNumDimVars() const {return obs_io_->numDimVars();}
 
     /// \brief return variables container from ObsIo
-    Has_Variables & vars() const {return obs_io_->vars();}
+    Has_Variables & ioVars() const {return obs_io_->vars();}
 
     /// \brief return attributes container from ObsIo
-    Has_Attributes & atts() const {return obs_io_->atts();}
+    Has_Attributes & ioAtts() {return obs_io_->atts();}
 
     /// \brief return list of regular variables from ObsIo
-    const VarNameObjectList & ioVarList() const {return obs_io_->varList();}
+    const VarUtils::Vec_Named_Variable & ioVarList() const {return obs_io_->varList();}
 
     /// \brief return list of dimension scale variables from ObsIo
-    const VarNameObjectList & ioDimVarList() const {return obs_io_->dimVarList();}
+    const VarUtils::Vec_Named_Variable & ioDimVarList() const {return obs_io_->dimVarList();}
 
     /// \brief return map from variables to their attached dimension scales
-    VarDimMap ioVarDimMap() const {return obs_io_->varDimMap();}
+    VarUtils::VarDimMap ioVarDimMap() const {return obs_io_->varDimMap();}
 
     /// \brief update variable, dimension info in the ObsIo object
     void ioUpdateVarDimInfo() const {obs_io_->updateVarDimInfo();}
@@ -76,6 +77,22 @@ class ObsFrame : public util::Printable {
     bool ioIsVarDimByNlocs(const std::string & varName) const {
         return obs_io_->isVarDimByNlocs(varName);
     }
+
+    /// \brief return the ObsGroup that stores the frame data
+    inline ObsGroup getObsGroup() { return obs_frame_; }
+
+    /// \brief return the ObsGroup that stores the frame data
+    inline const ObsGroup getObsGroup() const { return obs_frame_; }
+
+    /// \brief return the list of variables with their associated dimensions
+    VarUtils::VarDimMap varDimMap() const {return dims_attached_to_vars_;}
+
+    /// \brief return list of regular variables
+    const VarUtils::Vec_Named_Variable & varList() const {return var_list_; }
+
+    /// \brief return true if variable's first dimension is nlocs
+    /// \param varName variable name to check
+    bool isVarDimByNlocs(const std::string & varName) const;
 
     /// \brief return number of locations
     virtual std::size_t frameNumLocs() const {return nlocs_;}
@@ -94,28 +111,6 @@ class ObsFrame : public util::Printable {
 
     /// \brief return list of record numbers from ObsIo
     virtual std::vector<std::size_t> recnums() const {return std::vector<std::size_t>{};}
-
-    /// \brief initialize frame for a read frame object
-    virtual void frameInit() {}
-
-    /// \brief initialize for a write frame object
-    /// \param varList source ObsGroup list of regular variables
-    /// \param dimVarList source ObsGroup list of dimension variables
-    /// \param varDimMap source ObsGroup map showing variables with associated dimensions
-    /// \param maxVarSize source ObsGroup maximum variable size along the first dimension
-    virtual void frameInit(const VarNameObjectList & varList,
-                           const VarNameObjectList & varDimList,
-                           const VarDimMap & varDimMap, const Dimensions_t maxVarSize) {}
-
-    /// \brief move to the next frame for a read frame object
-    virtual void frameNext() {}
-
-    /// \brief move to the next frame for a write frame object
-    /// \param varList source ObsGroup list variable names
-    virtual void frameNext(const VarNameObjectList & varList) {}
-
-    /// \brief true if a frame is available (not past end of frames)
-    virtual bool frameAvailable() = 0;
 
     /// \brief return current frame starting index
     /// \param varName name of variable
@@ -188,6 +183,24 @@ class ObsFrame : public util::Printable {
     /// \brief current frame starting index
     Dimensions_t frame_start_;
 
+    /// \brief true if obs_io_ contains an epoch style datetime variable
+    bool use_epoch_datetime_;
+
+    /// \brief true if obs_io_ contains a string style datetime variable
+    bool use_string_datetime_;
+
+    /// \brief true if obs_io_ contains an offset style datetime variable
+    bool use_offset_datetime_;
+
+    /// \brief list of regular variables from source (file or generator)
+    VarUtils::Vec_Named_Variable var_list_;
+
+    /// \brief list of dimension scale variables from source (file or generator)
+    VarUtils::Vec_Named_Variable dim_var_list_;
+
+    /// \brief map containing variables with their attached dimension scales
+    VarUtils::VarDimMap dims_attached_to_vars_;
+
     //------------------ protected functions ----------------------------------
 
     /// \brief create selection object for accessing an ObsIo variable
@@ -202,13 +215,13 @@ class ObsFrame : public util::Printable {
     /// \details This function is used to set up a temprary ObsGroup based frame in memory
     ///          which is to be used for processing and transferring data between ObsIo
     ///          and ObsSpace variables. The two parameters dimVarList and varDimMap can
-    ///          be created with IodaUtils::collectVarDimInfo() in IodaUtils.h.
+    ///          be created with VarUtils::collectVarDimInfo() in VarUtils.h.
     /// \param varList source ObsGroup list of regular variables
     /// \param dimVarList source ObsGroup list of dimension variable names
     /// \param varDimMap source ObsGroup map showing variables with associated dimensions
-    void createFrameFromObsGroup(const VarNameObjectList & varList,
-                                 const VarNameObjectList & dimVarList,
-                                 const VarDimMap & varDimMap);
+    void createFrameFromObsGroup(const VarUtils::Vec_Named_Variable & varList,
+                                 const VarUtils::Vec_Named_Variable & dimVarList,
+                                 const VarUtils::VarDimMap & varDimMap);
 
     /// \brief print() for oops::Printable base class
     /// \param ostream output stream

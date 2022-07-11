@@ -1,0 +1,15 @@
+where:
+  varno: [1,2,224,225]
+variables:
+- name: receipt_time
+- name: receipt_date
+- name: argo_identifier
+- name: argo_position_qc
+- name: argo_qc
+- name: numlev
+- name: initial_obsvalue
+- name: instrument_type
+- name: buoy_type
+- name: buoy_identifier
+- name: statid
+truncate profiles to numlev: true

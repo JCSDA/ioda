@@ -11,6 +11,7 @@
 #include "ioda/Engines/Factory.h"
 #include "ioda/Engines/HH.h"  // for genUniqueName()
 #include "ioda/Engines/ODC.h"
+#include "ioda/Misc/IoPoolUtils.h"
 #include "ioda/io/ObsIoFileRead.h"
 
 namespace ioda {
@@ -29,35 +30,27 @@ ObsIoFileRead::ObsIoFileRead(const Parameters_ & ioParams,
 
     const bool odb = (determineFileFormat(fileName, ioParams.format) == FileFormat::ODB);
 
-    if (ioParams.readFromSeparateFiles) {
-        // We are initializing from a prior run and therefore reading in the
-        // separate ioda files produced from that prior run.
-        fileName = uniquifyFileName(fileName, obsSpaceParams.getMpiRank(),
-                                    obsSpaceParams.getMpiTimeRank());
-        read_separate_files_ = true;
-    }
-
     if (odb)
       createObsGroupFromOdbFile(fileName, ioParams);
     else
       createObsGroupFromHdf5File(fileName);
 
     // Collect variable and dimension infomation for downstream use
-    collectVarDimInfo(obs_group_, var_list_, dim_var_list_, dims_attached_to_vars_,
-                      max_var_size_);
+    VarUtils::collectVarDimInfo(obs_group_, var_list_, dim_var_list_, dims_attached_to_vars_,
+                                max_var_size_);
 
     // record number of locations
     nlocs_ = obs_group_.vars.open("nlocs").getDimensions().dimsCur[0];
+    if (nlocs_ == 0) {
+      oops::Log::info() << "WARNING: Input file " << fileName << " contains zero observations"
+          << std::endl;
+    }
 
     // record variables by which observations should be grouped into records
     obs_grouping_vars_ = ioParams.obsGrouping.value().obsGroupVars;
 }
 
 ObsIoFileRead::~ObsIoFileRead() {}
-
-bool ObsIoFileRead::eachProcessGeneratesSeparateObs() const {
-  return read_separate_files_;
-}
 
 //------------------------------ private functions ----------------------------------
 //-----------------------------------------------------------------------------------

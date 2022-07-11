@@ -10,9 +10,24 @@
 
 #include <memory>
 
+#include "ioda/distribution/DistributionParametersBase.h"
 #include "ioda/distribution/NonoverlappingDistribution.h"
+#include "oops/util/parameters/RequiredParameter.h"
+
+namespace eckit {
+  class LocalConfiguration;
+}
 
 namespace ioda {
+
+/// \brief Parameters describing the AtlasDistribution.
+class AtlasDistributionParameters : public DistributionParametersBase {
+  OOPS_CONCRETE_PARAMETERS(AtlasDistributionParameters, DistributionParametersBase)
+
+ public:
+  oops::RequiredParameter<eckit::LocalConfiguration> grid{"grid",
+                                                          "atlas grid and mesh parameters", this};
+};
 
 /// \brief Distribution assigning each record to the process owning the Atlas mesh partition
 /// containing the location of the first observation in that record.
@@ -21,8 +36,9 @@ namespace ioda {
 /// of the Configuration passed to the constructor.
 class AtlasDistribution: public NonoverlappingDistribution {
  public:
-    explicit AtlasDistribution(const eckit::mpi::Comm & comm,
-                               const eckit::Configuration & config);
+    typedef AtlasDistributionParameters Parameters_;
+
+    AtlasDistribution(const eckit::mpi::Comm & comm, const Parameters_ &);
     ~AtlasDistribution() override;
 
     void assignRecord(const std::size_t recNum, const std::size_t locNum,

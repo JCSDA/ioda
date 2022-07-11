@@ -60,19 +60,19 @@ struct IODA_DL FillValueData_t {
 
 /// \ingroup ioda_cxx_variable
 template <class T>
-T getFillValue(FillValueData_t& data) {
+T getFillValue(const FillValueData_t& data) {
   if (sizeof(T) > sizeof(uint64_t)) {
-    long double* ldp = &(data.fillValue_.ld);
+    const long double* ldp = &(data.fillValue_.ld);
     return *(T*)(ldp);  // NOLINT: compilers may complain if I try to use a reinterpret_cast.
   } else {
-    uint64_t* up = &(data.fillValue_.ui64);
+    const uint64_t* up = &(data.fillValue_.ui64);
     return *(T*)(up);  // NOLINT: see above comment
   }
 }
 
 /// \ingroup ioda_cxx_variable
 template <>
-inline std::string getFillValue(FillValueData_t& data) {
+inline std::string getFillValue(const FillValueData_t& data) {
   return data.stringFillValue_;
 }
 

@@ -133,7 +133,7 @@ public:
     const std::list<Named_Variable>& scalesToQueryAgainst,
     bool firstOnly = true) const final;
 
-  Variable write(gsl::span<char> data, const Type& in_memory_dataType,
+  Variable write(gsl::span<const char> data, const Type& in_memory_dataType,
                  const Selection& mem_selection, const Selection& file_selection) final;
   Variable read(gsl::span<char> data, const Type& in_memory_dataType,
                 const Selection& mem_selection, const Selection& file_selection) const final;

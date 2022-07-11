@@ -13,47 +13,75 @@ window end:   2021-01-16T00:00:00Z
 observations:
 
 - obs space:
-    name: RoundRobin, with extension, each process reads a separate file
+    name: RoundRobin, with extension
     obsdatain:
-      read obs from separate file: true
-      obsfile: Data/testinput_tier_1/obsspace_grouping_distributed.nc4
+      obsfile: Data/testinput_tier_1/obsspace_grouping.nc4
       obsgrouping:
         group variables: [group_by_int]
-        # Task 0:
-        # group_by_int@MetaData = 1, 1, 1, 3, 3, 1, 1, 1, 1 ;
-        # Task 1:
-        # group_by_int@MetaData = ;  // all obs outside window
-        # Task 0:
-        # group_by_int@MetaData = 2 ;
+        # group_by_int@MetaData = 1, 1, 1, 2, 3, 3, 1, 1, 1, 1 ;
     simulated variables: [temperature]
+    distribution:
+      name: RoundRobin
     extension:
-      average profiles onto model levels: 3
+      allocate companion records with length: 3
   specs:
     gnlocs: 19  # 10 original obs + 9 averaged obs (3 levels * 3 records)
-    allgatherv: [  0, 3, 6, 9, 12, 15, 18, 21, 24,  # original obs from rank 0
-                                                    # no original obs from rank 1
-                   2,                               # original obs from rank 2
-                  25, 26, 27, 34, 35, 36,           # averaged obs from rank 0
-                                                    # no averaged obs from rank 1
-                  31, 32, 33 ]                      # averaged obs from rank 2
+    allgatherv: [ 0, 1, 2, 6, 7, 8, 9, 3, 4, 5, 10, 11, 12, 13, 14, 15, 16, 17, 18 ]
     rank0:
-      nlocs: 15  # 9 original + 6 averaged
-      nrecs: 4
-      nPatchLocs: 15
-      index: [ 0, 3, 6, 9, 12, 15, 18, 21, 24, 25, 26, 27, 34, 35, 36 ]
-      recnums: [ 0, 0, 0, 3, 3, 0, 0, 0, 0, 4, 4, 4, 7, 7, 7 ]
-      patchIndex: [ 0, 3, 6, 9, 12, 15, 18, 21, 24, 25, 26, 27, 34, 35, 36 ]
+      nlocs: 10
+      nrecs: 2
+      nPatchLocs: 10
+      index: [ 0, 1, 2, 6, 7, 8, 9, 10, 11, 12 ]
+      recnums: [ 0, 0, 0, 0, 0, 0, 0, 3, 3, 3 ]
+      patchIndex: [ 0, 1, 2, 6, 7, 8, 9, 10, 11, 12 ]
     rank1:
-      nlocs: 0
-      nrecs: 0
-      nPatchLocs: 0
-      index: [ ]
-      recnums: [ ]
-      patchIndex: [ ]
-    rank2:
-      nlocs: 4  # 1 original + 3 averaged
+      nlocs: 4
       nrecs: 2
       nPatchLocs: 4
-      index: [ 2, 31, 32, 33 ]
-      recnums: [ 2, 6, 6, 6 ]
-      patchIndex: [ 2, 31, 32, 33 ]
+      index: [ 3, 13, 14, 15 ]
+      recnums: [ 1, 4, 4, 4 ]
+      patchIndex: [ 3, 13, 14, 15 ]
+    rank2:
+      nlocs: 5
+      nrecs: 2
+      nPatchLocs: 5
+      index: [ 4, 5, 16, 17, 18 ]
+      recnums: [ 2, 2, 5, 5, 5 ]
+      patchIndex: [ 4, 5, 16, 17, 18 ]
+
+- obs space:
+    name: Inefficient, with extension
+    obsdatain:
+      obsfile: Data/testinput_tier_1/obsspace_grouping.nc4
+      obsgrouping:
+        group variables: [group_by_int]
+        # group_by_int@MetaData = 1, 1, 1, 2, 3, 3, 1, 1, 1, 1 ;
+    simulated variables: [temperature]
+    distribution:
+      name: InefficientDistribution
+    extension:
+      allocate companion records with length: 3
+  specs:
+    gnlocs: 19  # 10 original obs + 9 averaged obs (3 levels * 3 records)
+    allgatherv: [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18 ]
+    rank0:
+      nlocs: 19
+      nrecs: 6
+      nPatchLocs: 19
+      index: [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18 ]
+      recnums: [ 0, 0, 0, 1, 2, 2, 0, 0, 0, 0, 3, 3, 3, 4, 4, 4, 5, 5, 5 ]
+      patchIndex: [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18 ]
+    rank1:
+      nlocs: 19
+      nrecs: 6
+      nPatchLocs: 0
+      index: [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18 ]
+      recnums: [ 0, 0, 0, 1, 2, 2, 0, 0, 0, 0, 3, 3, 3, 4, 4, 4, 5, 5, 5 ]
+      patchIndex: [ ]
+    rank2:
+      nlocs: 19
+      nrecs: 6
+      nPatchLocs: 0
+      index: [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18 ]
+      recnums: [ 0, 0, 0, 1, 2, 2, 0, 0, 0, 0, 3, 3, 3, 4, 4, 4, 5, 5, 5 ]
+      patchIndex: [ ]

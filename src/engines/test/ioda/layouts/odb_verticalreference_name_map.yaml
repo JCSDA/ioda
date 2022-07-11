@@ -1,6 +1,5 @@
-ioda:
-  complementary variables:
-    - output name: "output"
-      output variable data type: "string"
-      input names: ["firstPart", "secondPart", "thirdPart"]
-      merge method: "vertical reference"
+complementary variables:
+  - output name: "output"
+    output variable data type: "string"
+    input names: ["firstPart", "secondPart", "thirdPart"]
+    merge method: "vertical reference"

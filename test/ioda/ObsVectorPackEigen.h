@@ -59,7 +59,7 @@ void testPackEigen() {
 
      // test packEigenSize
      const std::string maskname = conf[jj].getString("mask variable");
-     ioda::ObsDataVector<int> mask(obsdb, obsdb.obsvariables(), maskname);
+     ioda::ObsDataVector<int> mask(obsdb, obsdb.assimvariables(), maskname);
      ioda::ObsVector maskvector(obsdb);
      maskvector.mask(mask);
      const size_t size = obsvec.packEigenSize(maskvector);

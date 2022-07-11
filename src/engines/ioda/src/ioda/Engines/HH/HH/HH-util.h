@@ -17,10 +17,12 @@
 #include <vector>
 
 #include <hdf5.h>
+#include <gsl/gsl-lite.hpp>
 
 #include "./Handles.h"
 #include "ioda/defs.h"
 #include "ioda/Exception.h"
+#include "ioda/Types/Marshalling.h"
 
 namespace ioda {
 namespace detail {
@@ -202,6 +204,23 @@ struct IODA_HIDDEN Vlen_data {
 /// @return One of the possible object names.
 /// @throws ioda::Exception if obj_id is invalid.
 IODA_HIDDEN std::string getNameFromIdentifier(hid_t obj_id);
+
+/// @brief Convert from variable-length data to fixed-length data.
+/// @param in_buf is the input buffer. Buffer has a sequence of pointers, serialized as chars.
+/// @param unitLength is the length of each fixed-length element.
+/// @param lengthsAreExact signifies that padding is not needed between elements. Each
+///   variable-length string is already of length unitLength. If false, then strlen
+///   is calculated for each element (which finds the first null byte).
+/// @returns the output buffer.
+IODA_HIDDEN std::vector<char> convertVariableLengthToFixedLength(
+  gsl::span<const char> in_buf, size_t unitLength, bool lengthsAreExact);
+
+/// @brief Convert from fixed-length data to variable-length data.
+/// @param in_buf is the input buffer. Buffer is a sequence of fixed-length elements (*not* pointers).
+/// @param unitLength is the length of each fixed-length element.
+/// @returns the converted buffer.
+IODA_HIDDEN Marshalled_Data<char*, char*, true> convertFixedLengthToVariableLength(
+  gsl::span<const char> in_buf, size_t unitLength);
 
 }  // namespace HH
 }  // namespace Engines

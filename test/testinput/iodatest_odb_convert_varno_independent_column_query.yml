@@ -1,0 +1,17 @@
+where:
+  varno: [111,112]
+variables:
+# mandatory variables
+- name: receipt_date
+- name: receipt_time
+- name: statid
+# float variables
+- name: stalt
+- name: initial_level_lat
+# int variables
+- name: numlev
+- name: sonde_type
+# bitfield variables treated as ints
+# (the level bitfield is in fact varno-dependent, but it's the same
+# for varnos 111 and 112, i.e. wind direction and speed)
+- name: level

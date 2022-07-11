@@ -177,8 +177,6 @@ void testSave() {
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     Odb = Test_::obspace()[jj].get();
-    bool read_obs_from_separate_file =
-      conf[jj].getBool("obs space.read obs from separate file", false);
 
     // Read in a vector and save the rms value. Then write the vector into a
     // test group, read it out of the test group and compare the rms of the
@@ -186,8 +184,7 @@ void testSave() {
     std::unique_ptr<ObsVector_> ov_orig(new ObsVector_(*Odb, "ObsValue"));
     ExpectedRms = ov_orig->rms();
 
-    if (!read_obs_from_separate_file)
-      ov_orig->save("ObsTest");
+    ov_orig->save("ObsTest");
 
     std::unique_ptr<ObsVector_> ov_test(new ObsVector_(*Odb, "ObsTest"));
     Rms = ov_test->rms();
@@ -217,8 +214,8 @@ void testAxpy() {
     ObsVector_ vec2(vec1);
     vec2.axpy(2.0, vec1);
     ObsVector_ vec3(vec1);
-    std::vector<double> beta(obspace.obsvariables().size(), 2.0);
-    vec3.axpy(beta, vec1);
+    std::vector<double> beta_a(obspace.assimvariables().size(), 2.0);
+    vec3.axpy(beta_a, vec1);
     oops::Log::test() << "Testing ObsVector::axpy" << std::endl;
     oops::Log::test() << "x = " << vec1 << std::endl;
     oops::Log::test() << "x.axpy(2, x) = " << vec2 << std::endl;
@@ -226,8 +223,8 @@ void testAxpy() {
     EXPECT(oops::is_close(vec2.rms(), vec3.rms(), 1.0e-8));
 
     // call axpy with vector of different values
-    std::vector<double> beta1(obspace.obsvariables().size());
-    std::vector<double> beta2(obspace.obsvariables().size());
+    std::vector<double> beta1(obspace.assimvariables().size());
+    std::vector<double> beta2(obspace.assimvariables().size());
     for (size_t jj = 0; jj < beta1.size(); ++jj) {
       beta1[jj] = static_cast<double>(jj)/beta1.size();
       beta2[jj] = 2.0 - beta1[jj];
@@ -322,7 +319,7 @@ void testDistributedMath() {
        // names in the YAML. Note that this also prevents clobbering any output files
        // specfied in the YAML.
        eckit::LocalConfiguration obsconf(conf[jj], "obs space");
-       obsconf.set("distribution", dist_names[dd]);
+       obsconf.set("distribution.name", dist_names[dd]);
        if (obsconf.has("obsdataout.obsfile")) {
            std::string fileName = obsconf.getString("obsdataout.obsfile");
            std::string fileTag = std::string("_Dist_") + dist_names[dd];

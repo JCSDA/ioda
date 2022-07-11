@@ -17,7 +17,8 @@ namespace ioda {
 
 void storeGenData(const std::vector<float> & latVals,
                   const std::vector<float> & lonVals,
-                  const std::vector<std::string> & dtStrings,
+                  const std::vector<int64_t> & dts,
+                  const std::string & epoch,
                   const std::vector<std::string> & obsVarNames,
                   const std::vector<float> & obsErrors,
                   ObsGroup &obsGroup) {
@@ -32,22 +33,23 @@ void storeGenData(const std::vector<float> & latVals,
 
     Variable nlocsVar = obsGroup.vars["nlocs"];
 
-    float missingFloat = util::missingValue(missingFloat);
-    std::string missingString("missing");
+    const float missingFloat = util::missingValue(missingFloat);
+    const std::string missingString("missing");
+    const int64_t missingInt64 = util::missingValue(missingInt64);
 
     ioda::VariableCreationParameters float_params;
     float_params.chunk = true;
     float_params.compressWithGZIP();
     float_params.setFillValue<float>(missingFloat);
 
-    ioda::VariableCreationParameters string_params;
-    float_params.chunk = true;
-    float_params.compressWithGZIP();
-    float_params.setFillValue<std::string>(missingString);
+    ioda::VariableCreationParameters int64_params;
+    int64_params.chunk = true;
+    int64_params.compressWithGZIP();
+    int64_params.setFillValue<int64_t>(missingInt64);
 
     std::string latName("MetaData/latitude");
     std::string lonName("MetaData/longitude");
-    std::string dtName("MetaData/datetime");
+    std::string dtName("MetaData/dateTime");
 
     // Create, write and attach units attributes to the variables
     obsGroup.vars.createWithScales<float>(latName, { nlocsVar }, float_params)
@@ -56,9 +58,9 @@ void storeGenData(const std::vector<float> & latVals,
     obsGroup.vars.createWithScales<float>(lonName, { nlocsVar }, float_params)
         .write<float>(lonVals)
         .atts.add<std::string>("units", std::string("degrees_north"));
-    obsGroup.vars.createWithScales<std::string>(dtName, { nlocsVar }, string_params)
-        .write<std::string>(dtStrings)
-        .atts.add<std::string>("units", std::string("ISO 8601 format"));
+    obsGroup.vars.createWithScales<int64_t>(dtName, { nlocsVar }, int64_params)
+        .write<int64_t>(dts)
+        .atts.add<std::string>("units", epoch);
 
     for (std::size_t i = 0; i < obsVarNames.size(); ++i) {
         std::string varName = std::string("ObsError/") + obsVarNames[i];

@@ -15,6 +15,7 @@
 
 #include <hdf5_hl.h>
 #include <algorithm>
+#include <cstring>
 #include <iterator>
 #include <string>
 #include <utility>
@@ -267,6 +268,55 @@ std::string getNameFromIdentifier(hid_t obj_id) {
   ssize_t ret = H5Iget_name(obj_id, data.data(), data.size());
   if (ret < 0) throw Exception("Cannot get object name", ioda_Here());
   return std::string(data.data());
+}
+
+std::vector<char> convertVariableLengthToFixedLength(
+  gsl::span<const char> in_buf, size_t unitLength, bool lengthsAreExact)
+{
+  // in_buf is pointer to plain old data (POD). Guaranteed by the marshalling operation at the
+  // frontend / backend interface. Assuming that all POD data types have the same pointer size.
+  // This is a reasonable assumption.
+  const size_t ptrSize = sizeof(char *);
+  if (in_buf.size() % ptrSize) throw Exception("In-memory variable-length buffer has "
+    "the wrong number of elements. Should be a multiple of the size of a pointer.",
+    ioda_Here()).add("in_buf.size()", in_buf.size()).add("ptrSize", ptrSize);
+
+  const size_t numObjs = in_buf.size() / ptrSize;
+  gsl::span<const char* const> data_as_ptrs(
+    reinterpret_cast<const char* const*>(in_buf.data()), numObjs);
+
+  // Construct the output buffer
+  std::vector<char> buffer(numObjs * unitLength);
+  for (size_t i=0; i < data_as_ptrs.size(); ++i) {
+    // strlen is not quite the length of a string. It is the number of bytes until a NULL is found.
+    size_t len = (lengthsAreExact) ? unitLength : std::min(unitLength, strlen(data_as_ptrs[i]));
+    std::memcpy(buffer.data() + (i*unitLength), data_as_ptrs[i], len);
+  }
+  return buffer;
+}
+
+Marshalled_Data<char*, char*, true> convertFixedLengthToVariableLength(
+  gsl::span<const char> in_buf, size_t unitLength)
+{
+  if (in_buf.size() % unitLength) throw Exception("In-memory variable-length buffer has "
+    "the wrong number of elements. Should be a multiple of unitLength.",
+    ioda_Here()).add("in_buf.size()", in_buf.size()).add("unitLength", unitLength);
+  const size_t numObjs = in_buf.size() / unitLength;
+  
+  // Construct the output buffer
+  Marshalled_Data<char*, char*, true> out_buf;
+  out_buf.DataPointers.resize(numObjs);
+
+  for (size_t i=0; i < out_buf.DataPointers.size(); ++i) {
+    // Select a span. Trim multiple trailing nulls and use in construction of a new null-terminated string.
+    gsl::span<const char> untrimmed(in_buf.data() + (unitLength * i), unitLength);
+    auto pos_first_null = std::find(untrimmed.begin(), untrimmed.end(), '\0');
+    const size_t sz = (pos_first_null != untrimmed.end()) ? pos_first_null - untrimmed.begin() : unitLength;
+    out_buf.DataPointers[i] = (char*)malloc(sz+1);  // NOLINT: deliberate malloc call.
+    strncpy(out_buf.DataPointers[i], untrimmed.data(), sz);
+  }
+
+  return out_buf;
 }
 
 }  // namespace HH
