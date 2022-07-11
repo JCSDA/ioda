@@ -15,7 +15,7 @@ if (IODA_BUILD_LANGUAGE_FORTRAN)
 	list( APPEND IODA_LANGUAGES Fortran)
 endif()
 
-project( ioda VERSION 2.1.0 LANGUAGES ${IODA_LANGUAGES} )
+project( ioda VERSION 2.2.0 LANGUAGES ${IODA_LANGUAGES} )
 
 include( FeatureSummary )
 
@@ -46,7 +46,7 @@ find_package( MPI REQUIRED )
 find_package( jedicmake REQUIRED )
 find_package( eckit 1.11.6 REQUIRED )
 find_package( fckit 0.7.0 REQUIRED )
-find_package( oops 1.0.0 REQUIRED )
+find_package( oops 1.3.0 REQUIRED )
 find_package( Eigen3 REQUIRED NO_MODULE HINTS
               $ENV{Eigen3_ROOT} $ENV{EIGEN3_ROOT} $ENV{Eigen_ROOT} $ENV{EIGEN_ROOT}
               $ENV{Eigen3_PATH} $ENV{EIGEN3_PATH} $ENV{Eigen_PATH} $ENV{EIGEN_PATH} )
