@@ -152,7 +152,7 @@ list( APPEND ioda_test_input
 
 # Create Data directory for test data and symlink files
 # Set list of test file tar balls
-list( APPEND ioda_test_data ioda_testinput_tier_1.tar.gz )
+list( APPEND ioda_test_data ioda_testinput_tier_1_2.2.0.tar.gz )
 
 ###############################
 # Download/link ioda test files
@@ -205,7 +205,7 @@ elseif( DEFINED GIT_TAG_FUNC )
   if( DEFINED ENV{ECBUILD_DOWNLOAD_BASE_URL} )
     set( ECBUILD_DOWNLOAD_BASE_URL "$ENV{ECBUILD_DOWNLOAD_BASE_URL}/ioda/${GIT_TAG_FUNC}" )
   else()
-    set( ECBUILD_DOWNLOAD_BASE_URL https://dashrepo.ucar.edu/api/v1/dataset/147b_jcsda/version/1.0.0/file )
+    set( ECBUILD_DOWNLOAD_BASE_URL https://gdex.ucar.edu/dataset/jedi-skylab/file )
   endif()
 
 
