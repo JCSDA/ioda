@@ -93,8 +93,6 @@ class ObsVector : public util::Printable,
   std::size_t nvars() const {return nvars_;}
   std::size_t nlocs() const {return nlocs_;}
 
-  /// Set this ObsVector values to missing where \p mask is non-zero
-  void mask(const ObsDataVector<int> & mask);
   /// Set this ObsVector values to missing where \p mask has missing values
   void mask(const ObsVector & mask);
 
