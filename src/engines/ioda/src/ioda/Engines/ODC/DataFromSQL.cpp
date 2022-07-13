@@ -68,7 +68,11 @@ bool DataFromSQL::hasVarno(const int varno) const {
 
 size_t DataFromSQL::numberOfLevels(const int varno) const {
   if (hasVarno(varno) && number_of_metadata_rows_ > 0) {
-    return varnos_and_levels_.at(varno);
+    if (obsgroup_ == obsgroup_surfacecloud) {
+      return varnos_and_levels_.at(varno);
+    } else {
+      return varnos_and_levels_to_use_.at(varno);
+    }
   }
   return 0;
 }
@@ -192,6 +196,7 @@ DataFromSQL::ArrayX<T> DataFromSQL::getNumericMetadataColumn(std::string const& 
   int seqno_index  = getColumnIndex("seqno");
   int varno_index  = getColumnIndex("varno");
   ArrayX<T> arr(number_of_metadata_rows_);
+  arr = odb_missing_int;
   if (column_index != -1) {
     size_t seqno = -1;
     size_t j     = 0;
@@ -257,6 +262,9 @@ std::vector<std::string> DataFromSQL::getMetadataStringColumn(std::string const&
       }
     }
   }
+  for (int i = arr.size(); i < number_of_metadata_rows_; i++) {
+    arr.push_back(std::string(""));
+  }
   return arr;
 }
 
@@ -280,8 +288,13 @@ Eigen::Array<T, Eigen::Dynamic, 1> DataFromSQL::getVarnoColumn(const std::vector
 
   // Number of entries for each varno.
   std::map <int, int> varno_size;
-  for (const int varno : varnos)
-    varno_size[varno] = numberOfRowsForVarno(varno) / number_of_metadata_rows_;
+  for (const int varno : varnos) {
+    if (obsgroup_ == obsgroup_surfacecloud) {
+      varno_size[varno] = numberOfRowsForVarno(varno) / number_of_metadata_rows_;
+    } else {
+      varno_size[varno] = std::max(1,static_cast<int>(numberOfRowsForVarno(varno) / number_of_metadata_rows_));
+    }
+  }
 
   // Mapping between user-desired varno order and the order in the data set.
   std::map <int, std::vector<int>> varno_order_map;
@@ -308,11 +321,27 @@ Eigen::Array<T, Eigen::Dynamic, 1> DataFromSQL::getVarnoColumn(const std::vector
   }
 
   typedef Eigen::Array<T, Eigen::Dynamic, 1> Array;
-  Array arr = Array::Constant(num_rows, odb_missing<T>());
+  Array arr;
+  if (obsgroup_ == obsgroup_surface || obsgroup_ == obsgroup_aircraft) {
+    arr = Array::Constant(number_of_metadata_rows_, odb_missing<T>());
+  } else {
+    if (nchans == 1) {
+      arr = Array::Constant(varno_index_order.size(), odb_missing<T>());
+    } else {
+      arr = Array::Constant(num_rows, odb_missing<T>());
+    }
+  }
   if (nchans == 1) {
     if (column_index != -1 && varno_index != -1) {
-      for (int j = 0; j < varno_index_order.size(); ++j)
-        arr[j] = getData(varno_index_order[j], column_index);
+      if (obsgroup_ == obsgroup_surface || obsgroup_ == obsgroup_aircraft) {
+        for (int j = 0; j < num_rows; ++j) {
+          arr[j] = getData(varno_index_order[j], column_index);
+        }
+      } else {
+        for (int j = 0; j < varno_index_order.size(); ++j) {
+          arr[j] = getData(varno_index_order[j], column_index);
+        }
+      }
     }
   } else {
     if (column_index != -1 && varno_index != -1) {
@@ -495,13 +524,8 @@ void DataFromSQL::select(const std::vector<std::string>& columns, const std::str
   for (const int varno : varnos_) {
     if (hasVarno(varno) && number_of_metadata_rows_ > 0) {
       const size_t number_of_varno_rows = numberOfRowsForVarno(varno);
-      if (number_of_varno_rows % number_of_metadata_rows_ != 0)
-        throw eckit::UnexpectedState("Not all observation sequences have the same number of rows "
-                                     "with varno " + std::to_string(varno) + ". This is currently "
-                                     "unsupported. As a workaround, modify the elements file used "
-                                     "to generate the ODB file to ensure each observation sequence "
-                                     "contains the same varnos");
       varnos_and_levels_[varno] = number_of_varno_rows / number_of_metadata_rows_;
+      varnos_and_levels_to_use_[varno] = std::max(1,static_cast<int>(varnos_and_levels_[varno]));
     }
   }
 }

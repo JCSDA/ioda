@@ -139,6 +139,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_odb_sonde_truncate_profiles.yml
   testinput/iodatest_odb_ssmis.yml
   testinput/iodatest_odb_surface.yml
+  testinput/iodatest_odb_surface_tcbogus.yml
   testinput/iodatest_odb_surface_with_query.yml
   testinput/iodatest_odb_surfacecloud.yml
   testinput/iodatest_odb_surfacesst.yml
@@ -881,6 +882,17 @@ if (odc_FOUND)
                             test-Aircraft.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
+  ecbuild_add_test( TARGET  test_ioda-convert_aircraft_mixed_odc
+                    TYPE    SCRIPT
+                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                    ARGS    hdf5
+                            "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
+                            Mixed-Aircraft
+                            Data/testinput_tier_1/aircraft-mixed-elements.odb
+                            testinput/odb_default_name_map.yml testinput/iodatest_odb_aircraft.yml"
+                            test-Mixed-Aircraft.hdf
+                    TEST_DEPENDS get_ioda_test_data )
+
   ecbuild_add_test( TARGET  test_ioda-convert_surface_odc
                     TYPE    SCRIPT
                     COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
@@ -890,6 +902,17 @@ if (odc_FOUND)
                             Data/testinput_tier_1/surface.odb
                             testinput/odb_default_name_map.yml testinput/iodatest_odb_surface.yml"
                             test-Surface.hdf
+                    TEST_DEPENDS get_ioda_test_data )
+
+  ecbuild_add_test( TARGET  test_ioda-convert_surface_tcbogus_odc
+                    TYPE    SCRIPT
+                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                    ARGS    hdf5
+                            "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
+                            Surface-TCBOGUS
+                            Data/testinput_tier_1/surface-tcbogus.odb
+                            testinput/odb_default_name_map.yml testinput/iodatest_odb_surface_tcbogus.yml"
+                            test-Surface-TCBOGUS.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
   ecbuild_add_test( TARGET  test_ioda-convert_surface_with_query_odc
@@ -1303,17 +1326,6 @@ if (odc_FOUND)
                             testinput/odb_oceansound_name_map.yml testinput/iodatest_odb_oceansound_truncate_profiles.yml"
                             test-OceanSound-truncate-profiles.hdf
                     TEST_DEPENDS get_ioda_test_data )
-
-  # Test error reporting for an ODB file in which the number of rows per varno varies from one seqno to another
-  ecbuild_add_test( TARGET  test_ioda-convert_truncated_aircraft_odc
-                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
-                    ARGS    TruncatedAircraft
-                            Data/testinput_tier_1/truncatedaircraft.odb
-                            testinput/odb_default_name_map.yml testinput/iodatest_odb_aircraft.yml
-                    TEST_DEPENDS get_ioda_test_data )
-  set_tests_properties(test_ioda-convert_truncated_aircraft_odc
-                       PROPERTIES
-                       PASS_REGULAR_EXPRESSION ".*Not all observation sequences have the same number of rows with varno.*")
 
   add_test_checking_odb_to_netcdf_conversion_results_against_odb_sql_queries(
     TEST_NAME varno_independent_column

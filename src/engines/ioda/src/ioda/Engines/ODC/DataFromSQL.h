@@ -30,6 +30,7 @@ namespace ODC {
   // TODO(DJDavies2): Take these obsgroup and varno
   // definitions and encapsulate these into the YAML
   // file structure.
+  static constexpr int obsgroup_surface      = 1;
   static constexpr int obsgroup_scatwind     = 2;
   static constexpr int obsgroup_aircraft     = 4;
   static constexpr int obsgroup_sonde        = 5;
@@ -101,6 +102,7 @@ private:
   size_t number_of_varnos_         = 0;
   int obsgroup_                    = 0;
   std::map<int, size_t> varnos_and_levels_;
+  std::map<int, size_t> varnos_and_levels_to_use_;
 
   /// \brief Returns the value for a particular row/column
   /// \param row Get data for this row
