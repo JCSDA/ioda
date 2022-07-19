@@ -13,3 +13,5 @@ variables:
 - name: satellite_height
 - name: initial_vertco_reference
 - name: channel_quality_flags
+- name: zenith
+- name: ops_subtype
