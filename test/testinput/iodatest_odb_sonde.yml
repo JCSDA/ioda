@@ -16,6 +16,7 @@ variables:
 - name: pressure_sensor_flag
 - name: receipt_date
 - name: receipt_time
+- name: seqno
 - name: sonde_rad_corr
 - name: sonde_report_identifier
 - name: sonde_tracking_system

@@ -1,16 +1,16 @@
 varno-independent columns:
+  - name: "MetaData/data_selection"
+    source: "instrument_type"
   - name: "MetaData/identifier"
     source: "ident"
   - name: "MetaData/level_latitude_displacement"
     source: "initial_level_lat"
-  - name: "MetaData/level_longtitude_displacement"
+  - name: "MetaData/level_longitude_displacement"
     source: "initial_level_lon"
   - name: "MetaData/level_time_displacement"
     source: "initial_level_time"
   - name: "MetaData/air_pressure"
     source: "initial_vertco_reference"
-  - name: "MetaData/instrument_type"
-    source: "instrument_type"
   - name: "MetaData/latitude"
     source: "lat"
   - name: "MetaData/level_type"
@@ -29,11 +29,13 @@ varno-independent columns:
     source: "pressure_sensor_flag"
   - name: "MetaData/sonde_rad_correction"
     source: "sonde_rad_corr"
+  - name: "MetaData/record_number"
+    source: "seqno"
   - name: "MetaData/sonde_report_identifier"
     source: "sonde_report_identifier"
   - name: "MetaData/sonde_tracking_system"
     source: "sonde_tracking_system"
-  - name: "MetaData/sonde_type"
+  - name: "MetaData/instrument_type"
     source: "sonde_type"
   - name: "MetaData/statid"
     source: "statid"
@@ -49,6 +51,7 @@ varno-independent columns:
     source: "wmo_block_number"
   - name: "MetaData/wmo_station_number"
     source: "wmo_station_number"
+
 varno-dependent columns:
   - source: "initial_obsvalue"
     group name: "ObsValue"
@@ -57,15 +60,15 @@ varno-dependent columns:
         varno: 1
       - name: "air_temperature"
         varno: 2
-      - name: "u_wind_component"
+      - name: "eastward_wind"
         varno: 3
-      - name: "v_wind_component"
+      - name: "northward_wind"
         varno: 4
       - name: "relative_humidity"
         varno: 29
-      - name: "air_dew_point_temperature"
+      - name: "dew_point_temperature"
         varno: 59
-      - name: "wind_direction"
+      - name: "wind_from_direction"
         varno: 111
       - name: "wind_speed"
         varno: 112
