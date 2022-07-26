@@ -873,8 +873,9 @@ ecbuild_add_test( TARGET  test_ioda_upgrader_zero_obs_compat
 if (odc_FOUND)
   ecbuild_add_test( TARGET  test_ioda-convert_aircraft_odc
                     TYPE    SCRIPT
-                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
-                    ARGS    hdf5
+                    COMMAND bash
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                            hdf5
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             Aircraft
                             Data/testinput_tier_1/aircraft.odb
@@ -884,8 +885,9 @@ if (odc_FOUND)
 
   ecbuild_add_test( TARGET  test_ioda-convert_aircraft_mixed_odc
                     TYPE    SCRIPT
-                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
-                    ARGS    hdf5
+                    COMMAND bash
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                            hdf5
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             Mixed-Aircraft
                             Data/testinput_tier_1/aircraft-mixed-elements.odb
@@ -895,8 +897,9 @@ if (odc_FOUND)
 
   ecbuild_add_test( TARGET  test_ioda-convert_surface_odc
                     TYPE    SCRIPT
-                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
-                    ARGS    hdf5
+                    COMMAND bash
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                            hdf5
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             Surface
                             Data/testinput_tier_1/surface.odb
@@ -906,8 +909,9 @@ if (odc_FOUND)
 
   ecbuild_add_test( TARGET  test_ioda-convert_surface_tcbogus_odc
                     TYPE    SCRIPT
-                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
-                    ARGS    hdf5
+                    COMMAND bash
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                            hdf5
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             Surface-TCBOGUS
                             Data/testinput_tier_1/surface-tcbogus.odb
@@ -917,8 +921,9 @@ if (odc_FOUND)
 
   ecbuild_add_test( TARGET  test_ioda-convert_surface_with_query_odc
                     TYPE    SCRIPT
-                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
-                    ARGS    hdf5
+                    COMMAND bash
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                            hdf5
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             Surface-with-query
                             Data/testinput_tier_1/surface.odb
@@ -944,8 +949,9 @@ if (odc_FOUND)
 
   ecbuild_add_test( TARGET  test_ioda-convert_sonde_odc
                     TYPE    SCRIPT
-                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
-                    ARGS    hdf5
+                    COMMAND bash
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                            hdf5
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             Sonde
                             Data/testinput_tier_1/sonde.odb
@@ -955,8 +961,9 @@ if (odc_FOUND)
 
   ecbuild_add_test( TARGET  test_ioda-convert_sonde_artificial_odc
                     TYPE    SCRIPT
-                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
-                    ARGS    hdf5
+                    COMMAND bash
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                            hdf5
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             Sonde-artificial
                             Data/testinput_tier_1/sonde-artificial.odb
@@ -966,8 +973,9 @@ if (odc_FOUND)
 
   ecbuild_add_test( TARGET  test_ioda-convert_sonde_truncate_profiles_odc
                     TYPE    SCRIPT
-                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
-                    ARGS    hdf5
+                    COMMAND bash
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                            hdf5
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             Sonde-truncate-profiles
                             Data/testinput_tier_1/sonde.odb
@@ -977,8 +985,9 @@ if (odc_FOUND)
 
   ecbuild_add_test( TARGET  test_ioda-convert_abiclear_odc
                     TYPE    SCRIPT
-                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
-                    ARGS    hdf5
+                    COMMAND bash
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                            hdf5
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             ABIClear
                             Data/testinput_tier_1/abiclear.odb
@@ -988,8 +997,9 @@ if (odc_FOUND)
 
   ecbuild_add_test( TARGET  test_ioda-convert_ahiclear_odc
                     TYPE    SCRIPT
-                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
-                    ARGS    hdf5
+                    COMMAND bash
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                            hdf5
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             AHIClear
                             Data/testinput_tier_1/ahiclear.odb
@@ -999,8 +1009,9 @@ if (odc_FOUND)
 
   ecbuild_add_test( TARGET  test_ioda-convert_amsr_odc
                     TYPE    SCRIPT
-                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
-                    ARGS    hdf5
+                    COMMAND bash
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                            hdf5
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             AMSR
                             Data/testinput_tier_1/amsr.odb
@@ -1010,8 +1021,9 @@ if (odc_FOUND)
 
   ecbuild_add_test( TARGET  test_ioda-convert_airs_odc
                     TYPE    SCRIPT
-                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
-                    ARGS    hdf5
+                    COMMAND bash
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                            hdf5
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             AIRS
                             Data/testinput_tier_1/airs.odb
@@ -1021,8 +1033,9 @@ if (odc_FOUND)
 
   ecbuild_add_test( TARGET  test_ioda-convert_atovs_odc
                     TYPE    SCRIPT
-                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
-                    ARGS    hdf5
+                    COMMAND bash
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                            hdf5
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             ATOVS
                             Data/testinput_tier_1/atovs.odb
@@ -1032,8 +1045,9 @@ if (odc_FOUND)
 
   ecbuild_add_test( TARGET  test_ioda-convert_gmihigh_odc
                     TYPE    SCRIPT
-                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
-                    ARGS    hdf5
+                    COMMAND bash
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                            hdf5
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             GMIHigh
                             Data/testinput_tier_1/gmihigh.odb
@@ -1043,8 +1057,9 @@ if (odc_FOUND)
 
   ecbuild_add_test( TARGET  test_ioda-convert_gmilow_odc
                     TYPE    SCRIPT
-                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
-                    ARGS    hdf5
+                    COMMAND bash
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                            hdf5
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             GMILow
                             Data/testinput_tier_1/gmilow.odb
@@ -1054,8 +1069,9 @@ if (odc_FOUND)
 
   ecbuild_add_test( TARGET  test_ioda-convert_ssmis_odc
                     TYPE    SCRIPT
-                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
-                    ARGS    hdf5
+                    COMMAND bash
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                            hdf5
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             SSMIS
                             Data/testinput_tier_1/ssmis.odb
@@ -1065,8 +1081,9 @@ if (odc_FOUND)
 
   ecbuild_add_test( TARGET  test_ioda-convert_satwind_odc
                     TYPE    SCRIPT
-                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
-                    ARGS    hdf5
+                    COMMAND bash
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                            hdf5
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             Satwind
                             Data/testinput_tier_1/satwind.odb
@@ -1076,8 +1093,9 @@ if (odc_FOUND)
 
   ecbuild_add_test( TARGET  test_ioda-convert_scatwind_odc
                     TYPE    SCRIPT
-                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
-                    ARGS    hdf5
+                    COMMAND bash
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                            hdf5
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             Scatwind
                             Data/testinput_tier_1/scatwind.odb
@@ -1087,8 +1105,9 @@ if (odc_FOUND)
 
   ecbuild_add_test( TARGET  test_ioda-convert_gpsro_odc
                     TYPE    SCRIPT
-                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
-                    ARGS    hdf5
+                    COMMAND bash
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                            hdf5
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             GPSRO
                             Data/testinput_tier_1/gpsro.odb
@@ -1098,8 +1117,9 @@ if (odc_FOUND)
 
   ecbuild_add_test( TARGET  test_ioda-convert_groundgps_odc
                     TYPE    SCRIPT
-                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
-                    ARGS    hdf5
+                    COMMAND bash
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                            hdf5
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             GroundGPS
                             Data/testinput_tier_1/groundgps.odb
@@ -1109,8 +1129,9 @@ if (odc_FOUND)
 
   ecbuild_add_test( TARGET  test_ioda-convert_aod_odc
                     TYPE    SCRIPT
-                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
-                    ARGS    hdf5
+                    COMMAND bash
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                            hdf5
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             AOD
                             Data/testinput_tier_1/aod.odb
@@ -1120,8 +1141,9 @@ if (odc_FOUND)
 
   ecbuild_add_test( TARGET  test_ioda-convert_cris_odc
                     TYPE    SCRIPT
-                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
-                    ARGS    hdf5
+                    COMMAND bash
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                            hdf5
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             CrIS
                             Data/testinput_tier_1/cris.odb
@@ -1131,8 +1153,9 @@ if (odc_FOUND)
 
   ecbuild_add_test( TARGET  test_ioda-convert_crisfsr_odc
                     TYPE    SCRIPT
-                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
-                    ARGS    hdf5
+                    COMMAND bash
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                            hdf5
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             CrISFSR
                             Data/testinput_tier_1/crisfsr.odb
@@ -1142,8 +1165,9 @@ if (odc_FOUND)
 
   ecbuild_add_test( TARGET  test_ioda-convert_hirasfsr_odc
                     TYPE    SCRIPT
-                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
-                    ARGS    hdf5
+                    COMMAND bash
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                            hdf5
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             HIRASFSR
                             Data/testinput_tier_1/hirasfsr.odb
@@ -1153,8 +1177,9 @@ if (odc_FOUND)
 
   ecbuild_add_test( TARGET  test_ioda-convert_hloswind_odc
                     TYPE    SCRIPT
-                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
-                    ARGS    hdf5
+                    COMMAND bash
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                            hdf5
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             HLOSWind
                             Data/testinput_tier_1/hloswind.odb
@@ -1164,8 +1189,9 @@ if (odc_FOUND)
 
   ecbuild_add_test( TARGET  test_ioda-convert_mwri_odc
                     TYPE    SCRIPT
-                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
-                    ARGS    hdf5
+                    COMMAND bash
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                            hdf5
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             MWRI
                             Data/testinput_tier_1/mwri.odb
@@ -1175,8 +1201,9 @@ if (odc_FOUND)
 
   ecbuild_add_test( TARGET  test_ioda-convert_iasi_odc
                     TYPE    SCRIPT
-                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
-                    ARGS    hdf5
+                    COMMAND bash
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                            hdf5
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             IASI
                             Data/testinput_tier_1/iasi.odb
@@ -1186,8 +1213,9 @@ if (odc_FOUND)
 
   ecbuild_add_test( TARGET  test_ioda-convert_mwsfy3_odc
                     TYPE    SCRIPT
-                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
-                    ARGS    hdf5
+                    COMMAND bash
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                            hdf5
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             MWSFY3
                             Data/testinput_tier_1/mwsfy3.odb
@@ -1197,8 +1225,9 @@ if (odc_FOUND)
 
   ecbuild_add_test( TARGET  test_ioda-convert_sattcwv_odc
                     TYPE    SCRIPT
-                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
-                    ARGS    hdf5
+                    COMMAND bash
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                            hdf5
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             SatTCWV
                             Data/testinput_tier_1/sattcwv.odb
@@ -1208,8 +1237,9 @@ if (odc_FOUND)
 
   ecbuild_add_test( TARGET  test_ioda-convert_seviriclear_odc
                     TYPE    SCRIPT
-                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
-                    ARGS    hdf5
+                    COMMAND bash
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                            hdf5
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             SEVIRIClear
                             Data/testinput_tier_1/seviriclear.odb
@@ -1219,8 +1249,9 @@ if (odc_FOUND)
 
   ecbuild_add_test( TARGET  test_ioda-convert_atms_odc
                     TYPE    SCRIPT
-                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
-                    ARGS    hdf5
+                    COMMAND bash
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                            hdf5
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             ATMS
                             Data/testinput_tier_1/atms.odb
@@ -1230,8 +1261,9 @@ if (odc_FOUND)
 
   ecbuild_add_test( TARGET  test_ioda-convert_geocloud_odc
                     TYPE    SCRIPT
-                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
-                    ARGS    hdf5
+                    COMMAND bash
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                            hdf5
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             GeoCloud
                             Data/testinput_tier_1/geocloud.odb
@@ -1241,8 +1273,9 @@ if (odc_FOUND)
 
   ecbuild_add_test( TARGET  test_ioda-convert_surfacecloud_odc
                     TYPE    SCRIPT
-                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
-                    ARGS    hdf5
+                    COMMAND bash
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                            hdf5
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             SurfaceCloud
                             Data/testinput_tier_1/surfacecloud.odb
@@ -1252,8 +1285,9 @@ if (odc_FOUND)
 
   ecbuild_add_test( TARGET  test_ioda-convert_altimeter_odc
                     TYPE    SCRIPT
-                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
-                    ARGS    hdf5
+                    COMMAND bash
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                            hdf5
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             Altimeter
                             Data/testinput_tier_1/altimeter.odb
@@ -1263,8 +1297,9 @@ if (odc_FOUND)
 
   ecbuild_add_test( TARGET  test_ioda-convert_oceancolour_odc
                     TYPE    SCRIPT
-                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
-                    ARGS    hdf5
+                    COMMAND bash
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                            hdf5
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             OceanColour
                             Data/testinput_tier_1/oceancol.odb
@@ -1274,8 +1309,9 @@ if (odc_FOUND)
 
   ecbuild_add_test( TARGET  test_ioda-convert_satsst_odc
                     TYPE    SCRIPT
-                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
-                    ARGS    hdf5
+                    COMMAND bash
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                            hdf5
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             SatSST
                             Data/testinput_tier_1/satsst.odb
@@ -1285,8 +1321,9 @@ if (odc_FOUND)
 
   ecbuild_add_test( TARGET  test_ioda-convert_seaice_odc
                     TYPE    SCRIPT
-                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
-                    ARGS    hdf5
+                    COMMAND bash
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                            hdf5
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             SeaIce
                             Data/testinput_tier_1/seaice.odb
@@ -1296,8 +1333,9 @@ if (odc_FOUND)
 
   ecbuild_add_test( TARGET  test_ioda-convert_surfacesst_odc
                     TYPE    SCRIPT
-                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
-                    ARGS    hdf5
+                    COMMAND bash
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                            hdf5
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             SurfaceSST
                             Data/testinput_tier_1/surfacesst.odb
@@ -1307,8 +1345,9 @@ if (odc_FOUND)
 
   ecbuild_add_test( TARGET  test_ioda-convert_oceansound_odc
                     TYPE    SCRIPT
-                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
-                    ARGS    hdf5
+                    COMMAND bash
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                            hdf5
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             OceanSound
                             Data/testinput_tier_1/oceansound.odb
@@ -1318,8 +1357,9 @@ if (odc_FOUND)
 
   ecbuild_add_test( TARGET  test_ioda-convert_oceansound_truncate_profiles_odc
                     TYPE    SCRIPT
-                    COMMAND ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
-                    ARGS    hdf5
+                    COMMAND bash
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                            hdf5
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             OceanSound-truncate-profiles
                             Data/testinput_tier_1/oceansound.odb
