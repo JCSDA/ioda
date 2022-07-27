@@ -865,7 +865,7 @@ varno-dependent columns:
         varno: 247
       - name: "brightness_temperature"
         varno: 248
-      - name: "brightness_temperature_amsu"
+      - name: "brightness_temperature"
         varno: 249
       - name: "ice_area_fraction"
         varno: 253
