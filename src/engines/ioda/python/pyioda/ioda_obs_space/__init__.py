@@ -205,7 +205,7 @@ class ObsSpace:
         elif datatype == ioda.Types.str:
             params.setFillValue.str(value)
         elif datatype == ioda.Types.datetime:
-            params.setFillValue.datetime(dt.datetime(9999, 1, 1, tzinfo=dt.timezone.utc))
+            params.setFillValue.datetime(dt.datetime(2200, 1, 1, tzinfo=dt.timezone.utc))
         # add other elif here TODO
         return params
 
