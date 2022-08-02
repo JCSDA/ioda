@@ -32,3 +32,4 @@ variables:
 - name: zenith
 - name: receipt_time
 - name: receipt_date
+- name: ops_subtype
