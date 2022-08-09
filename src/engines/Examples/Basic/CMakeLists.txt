@@ -7,7 +7,7 @@ include(Targets)
 
 set( IODA_TEST_DATA_DIR ${CMAKE_BINARY_DIR}/ioda/test/Data/testinput_tier_1 )
 
-macro(AddExample_CXX ExName SourceFile )
+macro(AddExample_Base ExName SourceFile )
 	add_executable(${ExName} ${SourceFile})
 	ApplyBaseSettings(${ExName})
 	# ecbuild does something odd to the RPATHs, breaking this.
@@ -19,6 +19,10 @@ macro(AddExample_CXX ExName SourceFile )
 	#    endif()
 	set_target_properties( ${ExName} PROPERTIES FOLDER "Examples/ioda/Basic")
 	target_link_libraries(${ExName} PUBLIC ioda_engines)
+endmacro()
+
+macro(AddExample_CXX ExName SourceFile )
+    AddExample_Base( ${ExName} ${SourceFile} )
 
 	add_test(NAME test_${ExName}-default COMMAND ${ExName})
 	add_test(NAME test_${ExName}-h5file COMMAND ${ExName} --ioda-engine-options HDF5-file "${ExName}-h5file.hdf5" create truncate)
@@ -27,7 +31,7 @@ macro(AddExample_CXX ExName SourceFile )
 endmacro()
 
 macro(AddExample_C ExName SourceFile )
-	AddExample_CXX( ${ExName} ${SourceFile} )
+	AddExample_Base( ${ExName} ${SourceFile} )
 	# MSVC has a really bad and old C compiler. Instead use the C++ compiler.
 	# For other compilers, force C11, which is the CMake max version.
 	if (MSVC)
@@ -35,6 +39,13 @@ macro(AddExample_C ExName SourceFile )
 	else()
 		set_property(TARGET ${ExName} PROPERTY C_STANDARD 11)
 	endif()
+	add_test(NAME test_${ExName} COMMAND ${ExName})
+endmacro()
+
+macro(AddExample_F ExName SourceFile )
+	AddExample_Base( ${ExName} ${SourceFile} )
+	target_link_libraries(${ExName} PUBLIC ioda_fortran)
+	add_test(NAME test_${ExName} COMMAND ${ExName})
 endmacro()
 
 macro(AddExample_Py testname cmd args)
@@ -57,11 +68,19 @@ AddExample_CXX (ioda-engines-04 04-VariablesAttributesAndDimensions.cpp)
 AddExample_CXX (ioda-engines-05a 05a-ObsGroup.cpp)
 AddExample_CXX (ioda-engines-05b 05b-ObsGroupAppend.cpp)
 
-AddExample_C   (ioda-engines-01a-C 01a-GroupsAndObsSpaces.c)
-AddExample_C   (ioda-engines-01b-C 01b-GroupsAndObsSpaces.c)
-AddExample_C   (ioda-engines-02-C 02-Attributes.c)
-AddExample_C   (ioda-engines-03-C 03-VariablesIntro.c)
-AddExample_C   (ioda-engines-04-C 04-VariablesAttributesAndDimensions.c)
+AddExample_C   (ioda-engines-00-Strings-C 00-Strings.c)
+AddExample_C   (ioda-engines-00-VecStrings-C 00-VecStrings.c)
+AddExample_C   (ioda-engines-01-C 01-GroupsAndObsSpaces.c)
+# Disabled, pending future PRs to update the C interfaces.
+#AddExample_C   (ioda-engines-02-C 02-Attributes.c)
+#AddExample_C   (ioda-engines-03-C 03-VariablesIntro.c)
+#AddExample_C   (ioda-engines-04-C 04-VariablesAttributesAndDimensions.c)
+
+if (IODA_BUILD_LANGUAGE_FORTRAN)
+	AddExample_F   (ioda-engines-00-Strings-F 00-Strings.f90)
+	AddExample_F   (ioda-engines-00-VecStrings-F 00-VecStrings.f90)
+	AddExample_F   (ioda-engines-01-GroupsAndObsSpaces-F 01-GroupsAndObsSpaces.f90)
+endif()
 
 if(BUILD_PYTHON_BINDINGS)
 	AddExample_Py  (ioda-engines-01-Py 01-GroupsAndObsSpaces.py "")

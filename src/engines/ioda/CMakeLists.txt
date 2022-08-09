@@ -1,4 +1,4 @@
-# (C) Copyright 2020-2021 UCAR.
+# (C) Copyright 2020-2022 UCAR.
 #
 # This software is licensed under the terms of the Apache Licence Version 2.0
 # which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -29,17 +29,19 @@ list(APPEND SRCS_C_BINDINGS
 	include/ioda/C/String_c.h
 	include/ioda/C/Variable_c.h
 	include/ioda/C/Variable_Creation_Parameters_c.h
+	include/ioda/C/VecString_c.h
 	src/ioda/C/structs_c.h
-	src/ioda/C/Attribute_c.cpp
-	src/ioda/C/Dimensions_c.cpp
+	#src/ioda/C/Attribute_c.cpp
+	#src/ioda/C/Dimensions_c.cpp
 	src/ioda/C/Engines_c.cpp
 	src/ioda/C/Group_c.cpp
-	src/ioda/C/Has_Attributes_c.cpp
+	#src/ioda/C/Has_Attributes_c.cpp
 	src/ioda/C/ioda_c.cpp
 	src/ioda/C/String_c.cpp
-	src/ioda/C/Variable_Creation_Parameters_c.cpp
-	src/ioda/C/Has_Variables_c.cpp
-	src/ioda/C/Variable_c.cpp
+	#src/ioda/C/Variable_Creation_Parameters_c.cpp
+	#src/ioda/C/Has_Variables_c.cpp
+	#src/ioda/C/Variable_c.cpp
+	src/ioda/C/VecString_c.cpp
 	)
 list(APPEND SRCS_GROUPS
 	include/ioda/Group.h
@@ -68,7 +70,7 @@ list(APPEND SRCS_MATH
 	)
 list(APPEND SRCS_MISC
 	include/ioda/defs.h
-        include/ioda/Copying.h
+	include/ioda/Copying.h
 	include/ioda/Exception.h
 	include/ioda/iodaNamespaceDoc.h
 	include/ioda/Misc/compat/std/source_location_compat.h
@@ -81,7 +83,7 @@ list(APPEND SRCS_MISC
 	include/ioda/Misc/MergeMethods.h
 	include/ioda/Misc/Options.h
 	include/ioda/Misc/StringFuncs.h
-        src/ioda/Copying.cpp
+	src/ioda/Copying.cpp
 	src/ioda/DimensionScales.cpp
 	src/ioda/Exception.cpp
 	src/ioda/IoPool.cpp
@@ -300,7 +302,11 @@ INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/config/ioda/config.h
 	COMPONENT Headers)
 
 
-## Python library is built separately.
+## Fortran and Python libraries are built separately.
+
+if (IODA_BUILD_LANGUAGE_FORTRAN)  # TODO: Rename?
+    add_subdirectory(fortran)
+endif()
 
 if (BUILD_PYTHON_BINDINGS)
 	add_subdirectory(python)
