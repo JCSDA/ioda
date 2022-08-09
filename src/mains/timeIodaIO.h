@@ -66,7 +66,7 @@ template <typename MODEL> class TimeIodaIO : public oops::Application {
                         << std::endl;
 
       // write the output file if "obsdataout" was specified
-      obsdb[jj].obsspace().save();
+      obsdb[jj].save();
     }
   return 0;
   }
