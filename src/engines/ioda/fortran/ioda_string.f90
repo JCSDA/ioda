@@ -102,7 +102,7 @@ module ioda_string_f
       type(c_ptr) :: ioda_c                                 =  c_null_ptr
       type(ioda_c_interface_t), pointer :: ioda_c_fp        => null()
       type(ioda_string_c), pointer :: stringc               => null()
-      procedure(ioda_string_c_construct_f), pointer :: ctor => null()
+      procedure(ioda_string_c_construct_f), pointer :: ctor
   
       if (present(ptr)) then
         s%data_c = ptr
@@ -199,9 +199,9 @@ module ioda_string_f
       type(c_ptr) :: ioda_c = c_null_ptr
       type(ioda_c_interface_t), pointer :: ioda_c_fp => null()
       type(ioda_string_c), pointer :: stringc => null()
-      procedure(ioda_string_c_construct_f), pointer :: ctor => null()
+      procedure(ioda_string_c_construct_f), pointer :: ctor
   
-      procedure(ioda_string_c_copy_f), pointer :: f => null()
+      procedure(ioda_string_c_copy_f), pointer :: f
       type(ioda_string_c), pointer :: data_f => null()
   
       ! Slightly awkwardly constructing a string to get pointers
