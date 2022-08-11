@@ -95,6 +95,7 @@ void ObsIoFileRead::createObsGroupFromOdbFile(const std::string & fileName,
     odcparams.filename    = fileName;
     odcparams.mappingFile = ioParams.mappingFile;
     odcparams.queryFile   = ioParams.queryFile;
+    odcparams.maxNumberChannels = ioParams.maxNumberChannels;
 
     obs_group_ = Engines::ODC::openFile(odcparams, backend);
 }

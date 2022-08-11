@@ -119,7 +119,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_odb_geocloud.yml
   testinput/iodatest_odb_gmihigh.yml
   testinput/iodatest_odb_gmilow.yml
-  testinput/iodatest_odb_gpsro.yml
+  testinput/iodatest_odb_gnssro.yml
   testinput/iodatest_odb_groundgps.yml
   testinput/iodatest_odb_hirasfsr.yml
   testinput/iodatest_odb_hloswind.yml
@@ -144,7 +144,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_odb_surfacecloud.yml
   testinput/iodatest_odb_surfacesst.yml
   testinput/odb_default_name_map.yml
-  testinput/odb_gpsro_name_map.yml
+  testinput/odb_gnssro_name_map.yml
   testinput/odb_oceansound_name_map.yml
   testinput/odb_radiance_name_map.yml
   testinput/odb_sonde_name_map.yml
@@ -1103,16 +1103,28 @@ if (odc_FOUND)
                             test-Scatwind.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
-  ecbuild_add_test( TARGET  test_ioda-convert_gpsro_odc
+  ecbuild_add_test( TARGET  test_ioda-convert_gnssro_odc
                     TYPE    SCRIPT
                     COMMAND bash
                     ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
                             hdf5
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
-                            GPSRO
-                            Data/testinput_tier_1/gpsro.odb
-                            testinput/odb_gpsro_name_map.yml testinput/iodatest_odb_gpsro.yml"
-                            test-GPSRO.hdf
+                            GNSSRO
+                            Data/testinput_tier_1/gnssro.odb
+                            testinput/odb_gnssro_name_map.yml testinput/iodatest_odb_gnssro.yml"
+                            test-GNSSRO.hdf
+                    TEST_DEPENDS get_ioda_test_data )
+
+  ecbuild_add_test( TARGET  test_ioda-convert_gnssro_profile_odc
+                    TYPE    SCRIPT
+                    COMMAND bash
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                            hdf5
+                            "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
+                            GNSSRO-profile
+                            Data/testinput_tier_1/gnssro.odb
+                            testinput/odb_gnssro_name_map.yml testinput/iodatest_odb_gnssro.yml 333"
+                            test-GNSSRO.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
   ecbuild_add_test( TARGET  test_ioda-convert_groundgps_odc

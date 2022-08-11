@@ -527,8 +527,6 @@ varno-independent columns:
     source: "initial_level_lon"
   - name: "MetaData/level_time_displacement"
     source: "initial_level_time"
-  - name: "MetaData/impact_parameter"
-    source: "initial_vertco_reference"
   - name: "MetaData/backscatter_distance_1"
     source: "invresid_1"
   - name: "MetaData/backscatter_distance_2"
@@ -900,6 +898,11 @@ varno-dependent columns:
   - source: "obs_error"
     group name: "ObsError"
     varno-to-variable-name mapping: *obsvalue_varnos
+  - source: "initial_vertco_reference"
+    group name: "ObsValue"
+    varno-to-variable-name mapping:
+      - name: "impact_parameter"
+        varno: 162
 complementary variables:
   - output name: "MetaData/site_name"
     output variable data type: "string"

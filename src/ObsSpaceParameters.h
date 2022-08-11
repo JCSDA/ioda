@@ -65,6 +65,10 @@ class ObsFileInParameters : public ObsIoParametersBase {
     ///
     /// Required for obs files in the ODB format, unused otherwise.
     oops::Parameter<std::string> queryFile{"query file", "", this};
+    /// Maximum number of channels (levels) allowed in any profile.  Used to even out profiles which
+    /// contain a varying number of levels.
+    /// Optional: defaults to zero.
+    oops::Parameter<int> maxNumberChannels{"max number channels", 0, this};
 };
 
 class ObsFileOutParameters : public ObsIoParametersBase {
