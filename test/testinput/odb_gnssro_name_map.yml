@@ -899,7 +899,7 @@ varno-dependent columns:
     group name: "ObsError"
     varno-to-variable-name mapping: *obsvalue_varnos
   - source: "initial_vertco_reference"
-    group name: "ObsValue"
+    group name: "MetaData"
     varno-to-variable-name mapping:
       - name: "impact_parameter"
         varno: 162
