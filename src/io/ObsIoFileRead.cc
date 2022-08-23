@@ -8,7 +8,7 @@
 #include "eckit/config/YAMLConfiguration.h"
 
 #include "ioda/core/FileFormat.h"
-#include "ioda/Engines/Factory.h"
+#include "ioda/Engines/EngineUtils.h"
 #include "ioda/Engines/HH.h"  // for genUniqueName()
 #include "ioda/Engines/ODC.h"
 #include "ioda/Misc/IoPoolUtils.h"

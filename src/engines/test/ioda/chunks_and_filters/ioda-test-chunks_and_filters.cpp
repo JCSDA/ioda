@@ -8,7 +8,7 @@
 #include <vector>
 
 #include "ioda/Engines/Capabilities.h"
-#include "ioda/Engines/Factory.h"
+#include "ioda/Engines/EngineUtils.h"
 #include "ioda/Exception.h"
 #include "ioda/Group.h"
 

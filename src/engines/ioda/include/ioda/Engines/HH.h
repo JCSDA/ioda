@@ -20,7 +20,7 @@
 
 #include "../defs.h"
 #include "Capabilities.h"
-#include "Factory.h"
+#include "EngineUtils.h"
 
 namespace ioda {
 class Group;

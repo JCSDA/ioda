@@ -15,7 +15,7 @@
 
 #include "Eigen/Dense"
 #include "eckit/testing/Test.h"
-#include "ioda/Engines/Factory.h"
+#include "ioda/Engines/EngineUtils.h"
 #include "ioda/Exception.h"
 #include "ioda/Layout.h"
 #include "ioda/ObsGroup.h"

@@ -8,7 +8,7 @@
 #include <iostream>
 #include <vector>
 #include "ioda/Exception.h"
-#include "ioda/Engines/Factory.h"
+#include "ioda/Engines/EngineUtils.h"
 #include "ioda/Group.h"
 
 void test_group_backend_engine(ioda::Group g) {

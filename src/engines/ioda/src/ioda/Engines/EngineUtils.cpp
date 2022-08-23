@@ -5,7 +5,7 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#include "ioda/Engines/Factory.h"
+#include "ioda/Engines/EngineUtils.h"
 
 #include <iostream>
 #include <string>

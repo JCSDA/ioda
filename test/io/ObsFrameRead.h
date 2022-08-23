@@ -31,7 +31,7 @@
 
 #include "ioda/core/IodaUtils.h"
 #include "ioda/distribution/DistributionFactory.h"
-#include "ioda/Engines/Factory.h"
+#include "ioda/Engines/EngineUtils.h"
 #include "ioda/Engines/ObsStore.h"
 #include "ioda/io/ObsFrameRead.h"
 #include "ioda/ObsGroup.h"

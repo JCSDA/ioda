@@ -10,7 +10,7 @@
 #include <numeric>
 
 #include "ioda/Copying.h"
-#include "ioda/Engines/Factory.h"
+#include "ioda/Engines/EngineUtils.h"
 #include "ioda/Engines/HH.h"
 #include "ioda/Misc/IoPool.h"
 #include "ioda/Misc/IoPoolUtils.h"

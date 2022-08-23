@@ -120,8 +120,8 @@ list(APPEND SRCS_VARIABLES
 
 list(APPEND SRCS_ENGINES_TOP
 	include/ioda/Engines/Capabilities.h
-	include/ioda/Engines/Factory.h
-	src/ioda/Engines/Factory.cpp)
+	include/ioda/Engines/EngineUtils.h
+	src/ioda/Engines/EngineUtils.cpp)
 
 list(APPEND SRCS_ENGINES_HH 
 	include/ioda/Engines/HH.h

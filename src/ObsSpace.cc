@@ -35,7 +35,7 @@
 #include "ioda/distribution/DistributionFactory.h"
 #include "ioda/distribution/DistributionUtils.h"
 #include "ioda/distribution/PairOfDistributions.h"
-#include "ioda/Engines/Factory.h"
+#include "ioda/Engines/EngineUtils.h"
 #include "ioda/Engines/HH.h"
 #include "ioda/Exception.h"
 #include "ioda/Misc/IoPool.h"
