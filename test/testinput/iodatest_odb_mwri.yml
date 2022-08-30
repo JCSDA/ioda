@@ -1,7 +1,6 @@
 where:
   varno: [119]
 variables:
-- name: azimuth
 - name: geometric_rotational_angle
 - name: initial_obsvalue
 - name: initial_vertco_reference
