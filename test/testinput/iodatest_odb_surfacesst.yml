@@ -1,5 +1,6 @@
 where:
   varno: [12]
+  query: (year(date) != 0) AND (month(date) != 0) AND (day(date) != 0)
 variables:
 - name: initial_obsvalue
 - name: receipt_date
