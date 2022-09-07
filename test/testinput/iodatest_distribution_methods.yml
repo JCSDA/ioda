@@ -10,6 +10,7 @@ distribution types:
       name: "InefficientDistribution"
   - distribution:
       name: "Halo"
+      halo size: 0
   - distribution:
       name: "Atlas"
       grid:

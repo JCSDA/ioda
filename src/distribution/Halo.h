@@ -17,6 +17,7 @@
 #include "oops/util/Logger.h"
 #include "oops/util/parameters/OptionalParameter.h"
 #include "oops/util/parameters/Parameter.h"
+#include "oops/util/parameters/RequiredParameter.h"
 
 #include "ioda/distribution/Distribution.h"
 #include "ioda/distribution/DistributionParametersBase.h"
@@ -29,7 +30,7 @@ class HaloDistributionParameters : public DistributionParametersBase {
  public:
   oops::OptionalParameter<std::vector<double>> center{"center", this};
   oops::Parameter<double> radius{"radius", 50000000.0, this};
-  oops::Parameter<double> haloSize{"halo size", 0.0, this};
+  oops::RequiredParameter<double> haloSize{"halo size", "halo size [m]", this};
 };
 
 

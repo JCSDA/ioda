@@ -116,6 +116,7 @@ observations:
     channels: 1-15
     distribution:
       name: Halo
+      halo size: 0
     obsdatain:
       obsfile: "Data/testinput_tier_1/amsua_n19_obs_2018041500_m.nc4"
   test data:

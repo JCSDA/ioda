@@ -64,6 +64,7 @@ observations:
       obsfile: Data/testinput_tier_1/sondes_obs_2018041500_m.nc4
     distribution:
       name: Halo
+      halo size: 0
   mask variable: GsiUseFlag
   reference local masked nobs: [30, 30, 30, 30] 
   reference local masked norm: [1161.21, 1161.21, 1161.21, 1161.21]
@@ -79,6 +80,7 @@ observations:
       obsfile: Data/testinput_tier_1/sondes_obs_2018041500_m.nc4
     distribution:
       name: Halo
+      halo size: 0
   mask variable: GsiUseFlag
   reference local masked nobs: [232, 232, 232, 232]
   reference local masked norm: [1163.03, 1163.03, 1163.03, 1163.03]
