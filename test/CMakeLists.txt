@@ -1124,7 +1124,7 @@ if (odc_FOUND)
                             GNSSRO-profile
                             Data/testinput_tier_1/gnssro.odb
                             testinput/odb_gnssro_name_map.yml testinput/iodatest_odb_gnssro.yml 333"
-                            test-GNSSRO.hdf
+                            test-GNSSRO-profile.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
   ecbuild_add_test( TARGET  test_ioda-convert_groundgps_odc
