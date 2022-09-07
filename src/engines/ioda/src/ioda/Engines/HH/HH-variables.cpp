@@ -760,7 +760,7 @@ bool HH_Variable::isA(Type lhs) const {
   // Is the object a string of any type?
   // If both are true, then we just return true.
   H5T_class_t cls_lhs = H5Tget_class(typeBackend->handle.get());
-  H5T_class_t cls_my  = H5Tget_class(internalType()());
+  H5T_class_t cls_my  = H5Tget_class(internalType().get());
   if (cls_lhs == H5T_STRING && cls_my == H5T_STRING) return true;
 
   // Another issue: are the types equivalent but not
@@ -769,11 +769,21 @@ bool HH_Variable::isA(Type lhs) const {
   if (cls_lhs != cls_my) return false;
   // Now the data are either both integers or floats.
   // For both, are the size (in bytes) the same?
-  if (H5Tget_size(typeBackend->handle.get()) != H5Tget_size(internalType()())) return false;
+  size_t backendTypeSize = H5Tget_size(typeBackend->handle.get());
+  size_t internalTypeSize = H5Tget_size(internalType().get());
+  if (backendTypeSize != internalTypeSize) return false;
 
-  // For integers, are they both signed or unsigned?
-  if (cls_lhs == H5T_INTEGER)
-    if (H5Tget_sign(typeBackend->handle.get()) != H5Tget_sign(internalType()())) return false;
+  // For integers, there are two cases to check.
+  //   1. The integers are both 1 byte which get interpreted as a native char types.
+  //      In this case different platforms set their char type to either signed or
+  //      unsigned making H5T_NATIVE_CHAR type platform dependent. Because of this,
+  //      and for now, we will accept that signed and unsigned chars are equivalent
+  //      which boils down to skipping the sign check for 1 byte size.
+  //   2. The integers are larger than 1 byte which get interpreted as native integer types.
+  //      In this case want to ensure check that both are signed or both are unsigned.
+  if ((cls_lhs == H5T_INTEGER) && (backendTypeSize > 1)) {
+    if (H5Tget_sign(typeBackend->handle.get()) != H5Tget_sign(internalType().get())) return false;
+  }
 
   // Ignored:
   // Are the precisions the same?
