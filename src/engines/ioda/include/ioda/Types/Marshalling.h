@@ -252,41 +252,43 @@ public:
 ///   becomes widely available, then we should switch to a better system.
 /// \todo Allow prefixes other than "seconds since ". This change will require broader OOPS and
 ///   IODA changes outside of the scope of ioda-engines.
-IODA_DL std::chrono::time_point<std::chrono::system_clock> getEpoch(const Has_Attributes *atts = nullptr);
+IODA_DL ioda::Types::Chrono_Time_Point_t getEpoch(const Has_Attributes *atts = nullptr);
 
 
 /// \brief Binding code to allow reads and writes directly to
-///   std::chrono::time_point<std::chrono::system_clock> objects.
-struct Object_Accessor_Chrono_Time_Point_default_t {
-  typedef std::shared_ptr<Marshalled_Data<ioda::Types::Chrono_Time_Storage_t>> serialized_type;
-  typedef std::shared_ptr<const Marshalled_Data<ioda::Types::Chrono_Time_Storage_t>> const_serialized_type;
+/// Chrono_Time_Point_t objects
+/// \details See Type.h for the definition of the Chrono_Time_Point_t type. This
+/// Accessor is for the C++ API where the caller is using std::chrono objects.
+struct Object_Accessor_Chrono_Time_Point_t {
+  typedef std::shared_ptr<Marshalled_Data<ioda::Types::Chrono_Time_Rep_t>> serialized_type;
+  typedef std::shared_ptr<const Marshalled_Data<ioda::Types::Chrono_Time_Rep_t>> const_serialized_type;
   detail::PointerOwner pointerOwner_;
   static constexpr size_t elementsPerObject_ = 1;
-  static constexpr size_t bytesPerElement_ = sizeof(ioda::Types::Chrono_Time_Storage_t);
+  static constexpr size_t bytesPerElement_ = sizeof(ioda::Types::Chrono_Time_Rep_t);
 
-  Object_Accessor_Chrono_Time_Point_default_t(detail::PointerOwner pointerOwner
+  Object_Accessor_Chrono_Time_Point_t(detail::PointerOwner pointerOwner
                                           = detail::PointerOwner::Caller)
       : pointerOwner_(pointerOwner) {}
 
-  const_serialized_type serialize(::gsl::span<const ioda::Types::Chrono_Time_Point_default_t> d, const Has_Attributes* atts = nullptr) {
-    auto res          = std::make_shared<Marshalled_Data<Types::Chrono_Time_Storage_t>>();
-    res->DataPointers = std::vector<Types::Chrono_Time_Storage_t>(d.size() * elementsPerObject_);
+  const_serialized_type serialize(::gsl::span<const ioda::Types::Chrono_Time_Point_t> d, const Has_Attributes* atts = nullptr) {
+    auto res          = std::make_shared<Marshalled_Data<Types::Chrono_Time_Rep_t>>();
+    res->DataPointers = std::vector<Types::Chrono_Time_Rep_t>(d.size() * elementsPerObject_);
 
     const auto epoch = getEpoch(atts);
 
     for (size_t i = 0; i < (size_t)d.size(); ++i) {
-      res->DataPointers[i] = static_cast<Types::Chrono_Time_Storage_t>(
+      res->DataPointers[i] = static_cast<Types::Chrono_Time_Rep_t>(
         std::chrono::duration_cast<std::chrono::seconds>(d[i] - epoch).count());
     }
 
     return res;
   }
   serialized_type prep_deserialize(size_t numObjects) {
-    auto res          = std::make_shared<Marshalled_Data<Types::Chrono_Time_Storage_t>>(pointerOwner_);
-    res->DataPointers = std::vector<Types::Chrono_Time_Storage_t>(numObjects * elementsPerObject_);
+    auto res          = std::make_shared<Marshalled_Data<Types::Chrono_Time_Rep_t>>(pointerOwner_);
+    res->DataPointers = std::vector<Types::Chrono_Time_Rep_t>(numObjects * elementsPerObject_);
     return res;
   }
-  void deserialize(serialized_type p, gsl::span<Types::Chrono_Time_Point_default_t> data, const Has_Attributes * atts = nullptr) {
+  void deserialize(serialized_type p, gsl::span<Types::Chrono_Time_Point_t> data, const Has_Attributes * atts = nullptr) {
     const size_t ds = data.size(), dp = p->DataPointers.size();
     if (ds != dp / elementsPerObject_)
       throw Exception("You are reading the wrong amount of data!", ioda_Here())
@@ -302,7 +304,6 @@ struct Object_Accessor_Chrono_Time_Point_default_t {
 };
 
 
-
 /// \ingroup ioda_cxx_types
 template <typename T>
 struct Object_AccessorTypedef {
@@ -315,8 +316,8 @@ struct Object_AccessorTypedef<std::string> {
 };
 /// \ingroup ioda_cxx_types
 template <>
-struct Object_AccessorTypedef<Types::Chrono_Time_Point_default_t> {
-  typedef Object_Accessor_Chrono_Time_Point_default_t type;
+struct Object_AccessorTypedef<Types::Chrono_Time_Point_t> {
+  typedef Object_Accessor_Chrono_Time_Point_t type;
 };
 
 // Used in an example

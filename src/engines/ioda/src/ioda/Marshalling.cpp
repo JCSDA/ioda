@@ -50,7 +50,7 @@ namespace ioda {
 namespace detail {
 
 /// \todo Refactor once C++20 is available.
-std::chrono::time_point<std::chrono::system_clock> getEpoch(const Has_Attributes *atts)
+ioda::Types::Chrono_Time_Point_t getEpoch(const Has_Attributes *atts)
 {
   if (atts) {
     if (atts->exists("units")) {
@@ -72,11 +72,14 @@ std::chrono::time_point<std::chrono::system_clock> getEpoch(const Has_Attributes
         tm.tm_isdst = 0;
 
         std::time_t time = mktime(&tm);
-        return std::chrono::system_clock::from_time_t(time);
+        ioda::Types::Chrono_Time_Point_t epoch =
+            std::chrono::time_point_cast<ioda::Types::Chrono_Duration_t>(
+            std::chrono::system_clock::from_time_t(time));
+        return epoch;
       }
     }
   }
-  return std::chrono::time_point<std::chrono::system_clock>{};
+  return ioda::Types::Chrono_Time_Point_t{};
 };
 
 }  // end namespace detail

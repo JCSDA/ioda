@@ -52,6 +52,9 @@ Attributes:
   - Attribute: [ "platformLongDescription" ]
     Type: StringVLen
     Dimensions: [ 1 ]
+  - Attribute: [ "processingLevel" ]
+    Type: StringVLen
+    Dimensions: [ 1 ]
   # Old globals
   - Attribute: [ "nvars" ]
     Remove: true
@@ -79,7 +82,7 @@ Groups:
   - Group: [ "/" ]
     Valid Attributes:
       Required: [ ]
-      Optional: [ "platform", "sensor", "ioda_object_type", "ioda_object_version", "_ioda_layout", "_ioda_layout_version", "_NCProperties", "_Netcdf4Dimid", "converter", "description", "source", "sourceFiles", "datetimeRange", "datetimeReference", "platformCommonName", "platformLongDescription" ]
+      Optional: [ "platform", "sensor", "ioda_object_type", "ioda_object_version", "_ioda_layout", "_ioda_layout_version", "_NCProperties", "_Netcdf4Dimid", "converter", "description", "source", "sourceFiles", "datetimeRange", "datetimeReference", "platformCommonName", "platformLongDescription", "processingLevel" ]
     Dimension Scale Variables Allowed: true        # TODO
     Non Dimension Scale Variables Allowed: false   # TODO
     # Only dimension scales are allowed at the top-level group. Required scales are
@@ -138,6 +141,17 @@ Dimensions:
   - Dimension: [ "SoilLayer" ]
   - Dimension: [ "OceanLayer" ]
   - Dimension: [ "Confidence" ]   # Satellite-derived winds (AMV) typically have up to 4 values for this.
+  - Dimension: [ "Cluster" ]      # NCEP BUFR - RADIANCE 
+  - Dimension: [ "Band" ]         # NCEP BUFR - RADIANCE
+  # NCEP BUFR/PREPBUFR
+  - Dimension: [ "CloudSequence" ]
+  - Dimension: [ "WaveSequence" ]
+  - Dimension: [ "HeightEvent" ]
+  - Dimension: [ "HumidityEvent" ]
+  - Dimension: [ "PressureEvent" ]
+  - Dimension: [ "TemperatureEvent" ]
+  - Dimension: [ "WindEvent" ]
+  - Dimension: [ "WaterTemperatureEvent" ]
   # Deprecated
   - Dimension: [ "ndatetime" ]
     Remove: true
@@ -153,6 +167,21 @@ Dimensions:
     Remove: true
   - Dimension: [ "num_profile_levels+1" ]  # TODO: from gmi
     Remove: true
+#NCEP adpsfc bufr
+  - Dimension: [ "CloudSequence" ]
+  - Dimension: [ "MaxMinTemperatureSequence" ]
+  - Dimension: [ "SynopticWindSequence" ]
+  - Dimension: [ "MetarSequence" ]
+#NCEP adpsfc prepbufr
+  - Dimension: [ "PresentWeatherSequence" ]
+  - Dimension: [ "HeightEvent" ]
+  - Dimension: [ "PressureEvent" ]
+  - Dimension: [ "TemperatureEvent" ]
+  - Dimension: [ "HumidityEvent" ]
+  - Dimension: [ "WaterTemperatureEvent" ]
+  - Dimension: [ "WindEvent" ]
+#NCEP aircft bufr
+  - Dimension: [ "AmdarSequence" ]  #NCEP BUFR - AIRCFT.
 Variable Defaults:
   # Defaults are normally specified in C++. Overridable here.
   Dimensions: [ [ "Location" ] ]
@@ -261,7 +290,7 @@ Variables:
     Attributes: { units: "kg m-3" }
   - Variable: [ "airTemperature", "air_temperature" ]
     Attributes: { units: "K" }
-    Dimensions: [ [ "Location" ], [ "Location", "Level" ] ]
+    Dimensions: [ [ "Location" ], [ "Location", "Level" ], [ "Location", "TemperatureEvent" ], [ "Location", "AmdarSequence" ] ] # NCEP BUFR/PREPBUFR
   - Variable: [ "wetBulbTemperature" ]
     Attributes: { units: "K" }
   - Variable: [ "dewpointTemperature" ]
@@ -288,9 +317,12 @@ Variables:
   - Variable: [ "iceSurfaceTemperature" ]
     Attributes: { units: "K" }
   - Variable: [ "waterTemperature" ]
-    Dimensions: [ [ "Location" ], [ "Location", "Level" ] ]
+    Dimensions: [ [ "Location" ], [ "Location", "Level" ], [ "Location", "WaterTemperatureEvent" ] ] # NCEP BUFR/PREPBUFR
     Attributes: { units: "K" }
   - Variable: [ "seaSurfaceTemperature" ]
+    Dimensions: [ [ "Location" ], [ "Location", "WaterTemperatureEvent" ] ] # NCEP BUFR/PREPBUFR
+    Attributes: { units: "K" }
+  - Variable: [ "seaSurfaceSkinTemperature" ]
     Attributes: { units: "K" }
   - Variable: [ "potentialTemperature" ]
     Attributes: { units: "K" }
@@ -304,12 +336,13 @@ Variables:
   - Variable: [ "relativeHumidityAt2M" ]
     Attributes: { units: "1" }
   - Variable: [ "specificHumidity", "specific_humidity" ]
-    Dimensions: [ [ "Location" ], [ "Location", "Level" ] ]
+    Dimensions: [ [ "Location" ], [ "Location", "Level" ], [ "Location", "HumidityEvent" ] ] # NCEP BUFR/PREPBUFR
     Attributes: { units: "kg kg-1" }
   - Variable: [ "specificHumidityAt2M" ]
     Attributes: { units: "kg kg-1" }
   - Variable: [ "waterVaporMixingRatio" ]
     Attributes: { units: "kg kg-1" }
+    Dimensions: [ [ "Location" ], [ "Location", "AmdarSequence" ] ] # NCEP BUFR/PREPBUFR
   - Variable: [ "soilMoisture" ]
     Attributes: { units: "kg m-3" }
   - Variable: [ "soilMoistureVolumetric" ]
@@ -324,13 +357,15 @@ Variables:
     Attributes: { units: "1" }
   - Variable: [ "windDirection" ]
     Attributes: { units: "degree" }
-    Dimensions: [ [ "Location" ], [ "Location", "Level" ] ]
+    Dimensions: [ [ "Location" ], [ "Location", "Level" ], [ "Location", "AmdarSequence" ] ] #NCEP BUFR
   - Variable: [ "windSpeed" ]
     Attributes: { units: "m s-1" }
-    Dimensions: [ [ "Location" ], [ "Location", "Level" ] ]
+    Dimensions: [ [ "Location" ], [ "Location", "Level" ], [ "Location", "AmdarSequence" ] ] #NCEP BUFR
   - Variable: [ "windEastward", "eastward_wind" ]
+    Dimensions: [ [ "Location" ], [ "Location", "WindEvent" ] ] # NCEP BUFR/PREPBUFR
     Attributes: { units: "m s-1" }
   - Variable: [ "windNorthward", "northward_wind" ]
+    Dimensions: [ [ "Location" ], [ "Location", "WindEvent" ] ] # NCEP BUFR/PREPBUFR
     Attributes: { units: "m s-1" }
   - Variable: [ "windUpward" ]
     Attributes: { units: "m s-1" }
@@ -348,6 +383,7 @@ Variables:
     Attributes: { units: "m s-1" }
   - Variable: [ "maximumWindGustSpeed" ]
     Attributes: { units: "m s-1" }
+    Dimensions: [ [ "Location" ], [ "Location", "SynopticWindSequence" ] ]
   - Variable: [ "windShearEastward" ]
     Attributes: { units: "m s-1" }
   - Variable: [ "windShearNorthward" ]
@@ -356,7 +392,7 @@ Variables:
     Attributes: { units: "Pa" }
   - Variable: [ "pressure", "air_pressure" ]
     Attributes: { units: "Pa" }
-    Dimensions: [ [ "Location" ], [ "Location", "Level" ] ]
+    Dimensions: [ [ "Location" ], [ "Location", "Level" ], [ "Location", "PressureEvent" ] ] # NCEP BUFR/PREPBUFR
     MetaData: true
   - Variable: [ "stationPressure" ]
     Attributes: { units: "Pa" }
@@ -372,6 +408,7 @@ Variables:
     Attributes: { units: "m" }
   - Variable: [ "presentWeather" ]
     Type: Enum
+    Dimensions: [ [ "Location" ], [ "Location", "PresentWeatherSequence" ] ] # NCEP BUFR/PREPBUFR
   - Variable: [ "pastWeather1" ]
     Type: Enum
   - Variable: [ "pastWeather2" ]
@@ -384,9 +421,12 @@ Variables:
     Dimensions: [ [ "Location" ],  [ "Location", "Layer" ], [ "Location", "Channel"] ]
     Attributes: { units: "1" }
   - Variable: [ "cloudType" ]
+    Dimensions: [ [ "Location" ],  [ "Location", "CloudSequence" ] ] # NCEP BUFR/PREPBUFR
     Type: Enum
   - Variable: [ "heightOfBaseOfCloud" ]
+    Dimensions: [ [ "Location" ],  [ "Location", "CloudSequence" ] ] # NCEP BUFR/PREPBUFR
     Attributes: { units: "m" }
+    Dimensions: [ [ "Location" ],  [ "Location", "CloudSequence" ] ] # NCEP BUFR/PREPBUFR
   - Variable: [ "heightOfTopOfCloud" ]
     Attributes: { units: "m" }
   - Variable: [ "pressureAtBaseOfCloud" ]
@@ -523,6 +563,8 @@ Variables:
   - Variable: [ "waterMeridionalVelocity" ]
     Attributes: { units: "m s-1" }
   - Variable: [ "chlorophyllMassConcentration" ]
+    Attributes: { units: "mg m-3" }
+  - Variable: [ "oceanMassParticulateAsCarbon" ]
     Attributes: { units: "mg m-3" }
   - Variable: [ "solarIrradianceDirect" ]
     Attributes: { units: "W m-2" }
@@ -739,6 +781,7 @@ Variables:
     MetaData: true
     Attributes: { units: "degree_east" }
   - Variable: [ "height" ]  # TODO: surface altitude?
+    Dimensions: [ [ "Location" ], [ "Location", "HeightEvent" ] ] # NCEP BUFR/PREPBUFR
     MetaData: true
     Attributes: { units: "m" }
   - Variable: [ "geopotentialHeight" ]
@@ -834,8 +877,9 @@ Variables:
   - Variable: [ "instrumentTemperature" ]
     MetaData: true
     Attributes: { units: "K" }
-  - Variable: [ "antennaTemperature" ]
-    MetaData: true
+# note: antennaTemperature should be ObsValue with dimensions: ["Location", "Channel"]
+# - Variable: [ "antennaTemperature" ]
+#   MetaData: true
     Attributes: { units: "K" }
   - Variable: [ "atmosphereLayerThicknessZ" ]
     MetaData: true
@@ -868,3 +912,211 @@ Variables:
   - Variable: [ "vegetationOpacity" ]
     MetaData: true
     Type: Enum
+  - Variable: [ "easeRowIndex" ]
+    MetaData: true
+    Attributes: { units: "1" }
+  - Variable: [ "easeColumnIndex" ]
+    MetaData: true
+    Attributes: { units: "1" }
+  # NCEP BUFR - SATWIND 
+  - Variable: [ "satelliteZenithAngle", "satellite_zenith_angle" ]
+    MetaData: true
+    Attributes: { units: "degree" }
+  - Variable: [ "pressureGeneratingApplication" ]
+    Dimensions: [ [ "Location", "Confidence" ] ]
+    MetaData: true
+    Type: Enum
+  - Variable: [ "coldClusterTemperatureGeneratingApplication" ]
+    Dimensions: [ [ "Location", "Confidence" ] ]
+    MetaData: true
+    Type: Enum
+  - Variable: [ "windSpeedGeneratingApplication" ]
+    Dimensions: [ [ "Location", "Confidence" ] ]
+    MetaData: true
+    Type: Enum
+  - Variable: [ "windDirectionGeneratingApplication" ]
+    Dimensions: [ [ "Location", "Confidence" ] ]
+    MetaData: true
+    Type: Enum
+  - Variable: [ "pressurePercentConfidence" ]
+    Dimensions: [ [ "Location", "Confidence" ] ]
+    MetaData: true
+    Attributes: { units: "percent" }
+    Type: UInt32
+  - Variable: [ "coldClusterTemperaturePercentConfidence" ]
+    Dimensions: [ [ "Location", "Confidence" ] ]
+    MetaData: true
+    Attributes: { units: "percent" }
+    Type: UInt32
+  - Variable: [ "windDirectionPercentConfidence" ]
+    Dimensions: [ [ "Location", "Confidence" ] ]
+    MetaData: true
+    Attributes: { units: "percent" }
+    Type: UInt32
+  - Variable: [ "windSpeedPercentConfidence" ]
+    Dimensions: [ [ "Location", "Confidence" ] ]
+    MetaData: true
+    Attributes: { units: "percent" }
+    Type: UInt32
+  # NCEP BUFR - RADIANCE
+  - Variable: [ "spectralRadiance" ]
+    Dimensions: [ [ "Location", "Channel" ] ]
+    Attributes: { units: "W m-2 sr-1 m" }
+  - Variable: [ "scaledSpectralRadiance" ]
+    Dimensions: [ [ "Location", "Channel" ] ]
+    Attributes: { units: "W m-2 sr-1 m" }
+  - Variable: [ "heightOfStation" ]
+    MetaData: true
+    Attributes: { units: "m" }
+  - Variable: [ "satelliteInstrument" ]
+    MetaData: true
+    Type: Enum
+  - Variable: [ "orbitNumber" ]
+    MetaData: true
+    Type: Enum
+  - Variable: [ "satelliteAntennaCorrectionsVersionNumber" ]
+    MetaData: true
+    Type: Enum
+  - Variable: [ "antennaTemperature" ]
+    Dimensions: [ [ "Location", "Channel" ] ]
+    Attributes: { units: "K" }
+  - Variable: [ "fractionOfClearPixelsInFov" ]  # Q: ObsValue or MetaData ?
+    Dimensions: [ [ "Location", "Cluster" ] ]
+#   MetaData: true
+    Attributes: { units: "1" }
+  - Variable: [ "startChannel" ]
+    Dimensions: [ [ "Location", "Band" ] ]
+    MetaData: true
+    Type: UInt32
+    Force Units: false
+  - Variable: [ "endChannel" ]
+    Dimensions: [ [ "Location", "Band" ] ]
+    MetaData: true
+    Type: UInt32
+    Force Units: false
+  - Variable: [ "channelScaleFactor" ]
+    Dimensions: [ [ "Location", "Band" ] ]
+    MetaData: true
+    Force Units: false
+  # NCEP BUFR - SEVCSR
+  - Variable: [ "brightnessTemperatureStandardDeviation"]
+    Dimensions: [ [ "Location", "Channel" ] ]
+    Attributes: { units: "K" }
+  # NCEP BUFR/PREPBUFR
+  - Variable: [ "cloudAmountDescription" ]
+    Dimensions: [ [ "Location" ], [ "Location", "CloudSequence"] ]
+    Type: Enum
+  # NCEP BUFR - ADPSFC - added by Nick E
+  - Variable: [ "verticalSignificanceSurfaceObservations" ]
+    Type: Enum
+    Dimensions: [ [ "Location" ], [ "Location", "CloudSequence" ] ]
+  - Variable: [ "minimumTemperature" ]
+    Dimensions: [ [ "Location" ], [ "Location", "MaxMinTemperatureSequence" ] ]
+    Attributes: { units: "K" }
+  - Variable: [ "maximumTemperature" ]
+    Dimensions: [ [ "Location" ], [ "Location", "MaxMinTemperatureSequence" ] ]
+    Attributes: { units: "K" }
+  - Variable: [ "altimeterSettingQnh" ]
+    Type: Enum
+  - Variable: [ "heightAboveSurfaceOfBaseOfLowestCloud" ]
+    Attributes: { units: "m" }
+    Dimensions: [ [ "Location" ], [ "Location", "CloudSequence" ] ]
+  - Variable: [ "cloudAmountDescription" ]
+    Type: Enum
+    Dimensions: [ [ "Location" ], [ "Location", "CloudSequence" ] ]
+  # NCEP PREPBUFR - ADPSFC - added by Nick E
+  - Variable: [ "prepbufrDataLevelCategory" ]
+    Type: Enum
+    MetaData: true
+  - Variable: [ "obsTimeMinusCycleTime" ]
+    Attributes: { units: "Hour" }
+    MetaData: true
+  - Variable: [ "prepbufrReportType" ]
+    Type: Enum
+    MetaData: true
+  - Variable: [ "waterTemperatureMethod" ]
+    MetaData: true
+    Type: Enum
+  - Variable: [ "dumpReportType" ]
+    Type: Enum
+    MetaData: true
+  - Variable: [ "heightOfObservation" ]
+    Dimensions: [ [ "Location" ], [ "Location", "HeightEvent" ] ] # NCEP BUFR/PREPBUFR
+    Attributes: { units: "m" }
+  - Variable: [ "windSpeedPeak" ]
+    Attributes: { units: "m s-1" }
+  - Variable: [ "cloudCeiling" ]
+    Attributes: { units: "m" }
+  #NCEP BUFR/PREPBUFR - AIRCFT - added by Nick E
+  - Variable: [ "observerIdentification" ]
+    Type: Enum
+    MetaData: true
+  - Variable: [ "reportIdentifier" ]
+    Type: Enum
+    MetaData: true
+  - Variable: [ "aircraftNavigationalSystem" ]
+    Type: Enum
+    MetaData: true
+  - Variable: [ "commercialAircraftType" ]
+    Type: Enum
+    MetaData: true
+  - Variable: [ "aircraftRegistrationNumberOrOtherIdentification" ]
+    Type: Enum
+    MetaData: true
+  - Variable: [ "detailedPhaseOfFlight" ]
+    Type: Enum
+    MetaData: true
+  - Variable: [ "aircraftPhase" ]
+    Type: Enum
+    MetaData: true
+  - Variable: [ "dataReceiptTimeHour" ]
+    Attributes: { units: "Hour" }
+    MetaData: true
+  - Variable: [ "dataReceiptTimeMinute" ]
+    Attributes: { units: "Minute" }
+    MetaData: true
+  - Variable: [ "dataReceiptTimeSignificance" ]
+    Type: Enum
+    MetaData: true
+  - Variable: [ "timeProfileLevel" ]
+    Attributes: { units: "Hour" }
+    MetaData: true
+  - Variable: [ "dataRestrictedExpiration" ]
+    Attributes: { units: "Hour" }
+    MetaData: true
+  - Variable: [ "dataProviderRestricted" ]
+    Type: Enum
+    MetaData: true
+  - Variable: [ "heightOrAltitude" ]
+    Attributes: { units: "m" }
+    MetaData: true
+  - Variable: [ "flightLevel" ]
+    Attributes: { units: "m" }
+    MetaData: true
+  - Variable: [ "flightLevelST" ]
+    Attributes: { units: "m" }
+    MetaData: true
+    Dimensions: [ [ "Location" ], [ "Location", "AmdarSequence" ] ] # NCEP BUFR/PREPBUFR
+  - Variable: [ "aircraftIndicatedAltitude" ]
+    Attributes: { units: "m" }
+    MetaData: true
+  - Variable: [ "pressureAltitudeRelativeToMeanSeaLevel" ]
+    Attributes: { units: "m" }
+    MetaData: true
+  - Variable: [ "temperatureObservationPrecision" ]
+    Attributes: { units: "K" }
+  - Variable: [ "moisture" ]
+    Type: Enum
+  - Variable: [ "moistureQuality" ]
+    Type: Enum
+  - Variable: [ "airTemperatureQualityInformation" ]
+    Type: Enum
+  - Variable: [ "windDirectionQualityInformation" ]
+    Type: Enum
+  - Variable: [ "windSpeedQualityInformation" ]
+    Type: Enum
+  - Variable: [ "moisture" ]
+    Type: Enum
+  - Variable: [ "percentConfidence" ]
+    Attributes: { units: "1" }
+    MetaData: true

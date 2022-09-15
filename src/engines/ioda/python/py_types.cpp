@@ -92,5 +92,6 @@ void setupTypeSystem(pybind11::module& m) {
     .value("bool", BasicTypes::bool_, "Boolean (True or False) stored as a byte")
     .value("str", BasicTypes::str_, "Variable-length UTF-8 string")
     .value("datetime", BasicTypes::datetime_, "datetime")
+    .value("duration", BasicTypes::duration_, "duration")
     ;
 }

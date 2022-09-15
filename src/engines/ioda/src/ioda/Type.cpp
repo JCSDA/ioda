@@ -200,6 +200,7 @@ Type::Type(BasicTypes typ, gsl::not_null<::ioda::detail::Type_Provider*> t)
        {BasicTypes::uint64_, typeid(uint64_t)},
        {BasicTypes::bool_, typeid(bool)},  // NOLINT
        {BasicTypes::datetime_, typeid(int64_t)},
+       {BasicTypes::duration_, typeid(int64_t)},
        {BasicTypes::str_, typeid(std::string)}};
   as_type_index_ = workable_types.at(typ);
 

@@ -97,13 +97,14 @@ stringVarValues = np.array(["a", "b", "c", "d", "e"], dtype=object)
 # https://pybind11.readthedocs.io/en/stable/advanced/cast/chrono.html#provided-conversions
 refDt = datetime.datetime(1970, 1, 1, 0, 0, 0, tzinfo=datetime.timezone.utc)
 refDt.replace(microsecond=0)
+fillDt = datetime.datetime(2200, 1, 1, 0, 0, 0, tzinfo=datetime.timezone.utc)
 dtimeVarName = "MetaData/dateTime"
 dtimeVarValues = np.array([
     refDt,
     refDt + datetime.timedelta(hours=1),
     refDt + datetime.timedelta(hours=2),
     refDt + datetime.timedelta(hours=3),
-    refDt + datetime.timedelta(hours=4) ])
+    fillDt ])
 
 obsspace.create_var(intVarName, dtype=np.int32, dim_list=VarDims, fillval=VarFillValue)
 intVar = obsspace.Variable(intVarName)
@@ -120,7 +121,7 @@ doubleVar.write_data(doubleVarValues)
 obsspace.create_var(stringVarName, dtype=object, dim_list=VarDims, fillval="")
 stringVar = obsspace.Variable(stringVarName)
 stringVar.write_data(stringVarValues)
-obsspace.create_var(dtimeVarName, dtype=object, dim_list=VarDims, fillval="")
+obsspace.create_var(dtimeVarName, dtype=object, dim_list=VarDims, fillval=fillDt)
 dtimeVar = obsspace.Variable(dtimeVarName)
 dtimeVar.write_data(dtimeVarValues)
 

@@ -13,6 +13,7 @@ class ObsSpace:
 
     def __init__(self, path, dim_dict=None, mode='r', name="NoName", iodalayout=0):
         self.name = name
+        self.epoch = dt.datetime(1970, 1, 1, tzinfo=dt.timezone.utc)
         if mode not in ['r', 'w' ,'rw']:
             raise TypeError(f"{mode} not one of 'r','w','rw'")
         self.write = True if 'w' in mode else False
@@ -51,6 +52,12 @@ class ObsSpace:
         self.nlocs = len(self.obsgroup.vars.open('nlocs').readVector.int())
         self.variables = self.file.listVars(recurse=True)
         self.nvars = len(self.variables)
+
+    def set_epoch(self, epochDateTime):
+        """
+          Set datetime epoch value: default is Jan 1, 1970 0Z
+        """
+        self.epoch = epochDateTime
 
     def read_attr(self, attrName):
         """
@@ -190,6 +197,11 @@ class ObsSpace:
         newVar = self.file.vars.create(_varstr, typeVar,
                                        scales=dims, params=fparams)
 
+        # If this was a type of datetime, add the epoch string in the units attribute
+        if (typeVar == ioda.Types.datetime):
+            epochstr = "seconds since " + self.epoch.strftime("%Y-%m-%dT%H:%M:%SZ")
+            newVar.atts.create('units', ioda.Types.str, [1]).writeDatum.str(epochstr)
+
     def setFillValue(self, params, datatype, value):
         # set fill value for input VariableCreationParameters,
         # datatype, and value and return a new VariableCreationParameters
@@ -205,7 +217,9 @@ class ObsSpace:
         elif datatype == ioda.Types.str:
             params.setFillValue.str(value)
         elif datatype == ioda.Types.datetime:
-            params.setFillValue.datetime(dt.datetime(2200, 1, 1, tzinfo=dt.timezone.utc))
+            params.setFillValue.duration(value - self.epoch)
+        elif datatype == ioda.Types.duration:
+            params.setFillValue.duration(value)
         # add other elif here TODO
         return params
 
@@ -303,12 +317,6 @@ class ObsSpace:
                     for i in range(len(npArray)):
                         npArray[i] = npArray[i].replace(tzinfo=dt.timezone.utc)
                 self._iodavar.writeVector.datetime(npArray)
-                epochstr = 'seconds since 1970-01-01T00:00:00Z'
-                self._iodavar.atts.create(
-                    'units', ioda.Types.str, [1]).writeDatum.str(epochstr)
-                # update the attributes data member since we have added this attribute
-                # after we created the variable
-                self.attrs = self._iodavar.atts.list()
             # add other elif here TODO
 
         def read_attr(self, attrName):
