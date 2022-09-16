@@ -1,0 +1,25 @@
+---
+window begin: '2018-04-14T21:00:00Z'
+window end: '2018-04-15T03:00:00Z'
+observations:
+- obs space:
+    name: Radiance (1 channel)
+    simulated variables: [brightness_temperature_1]
+    observed variables: [brightness_temperature_1]
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: Data/testinput_tier_1/amsua_n15_obs_2018041500_m.nc4
+  obs error:
+    covariance model: diagonal
+
+- obs space:
+    name: Radiance
+    simulated variables: [brightness_temperature]
+    channels: 1-7, 15
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: Data/testinput_tier_1/amsua_n15_obs_2018041500_m.nc4
+  obs error:
+    covariance model: diagonal

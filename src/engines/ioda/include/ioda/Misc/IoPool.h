@@ -22,11 +22,15 @@
 #include "eckit/mpi/Comm.h"
 
 #include "ioda/defs.h"
+#include "ioda/Engines/WriterBase.h"
 #include "ioda/Group.h"
 #include "ioda/Misc/IoPoolParameters.h"
 
+#include "oops/util/DateTime.h"
 #include "oops/util/parameters/Parameters.h"
 #include "oops/util/parameters/OptionalParameter.h"
+#include "oops/util/parameters/RequiredPolymorphicParameter.h"
+#include "oops/util/Printable.h"
 
 namespace ioda {
 
@@ -38,16 +42,21 @@ namespace ioda {
 /// the pool interact with the pool tasks to get their individual pieces of the data being
 /// transferred.
 /// \ingroup ioda_cxx_io
-class IODA_DL IoPool {
+class IODA_DL IoPool : public util::Printable {
 public:
   /// \brief construct an IoPool object
-  /// \param commAll MPI communicator group containing all of the tasks involved in the DA run
-  /// \param timeRank rank number in time communicator group (for 4DEnVar runs)
+  /// \param ioPoolParams Parameters for this io pool
+  /// \param writerParams Parameters for the associated backend writer engine
+  /// \param commAll MPI "all" communicator group (all tasks in DA run)
+  /// \param commTime MPI "time" communicator group (tasks in current time bin for 4DEnVar)
+  /// \param winStart DA timing window start
+  /// \param winEnd DA timing window end
   /// \param nlocs Number of locations in the obs space piece on this MPI task
-  /// \param fileName Output file name
-  /// \param params Parameter specifications (from the input YAML config) for this io pool
-  IoPool(const eckit::mpi::Comm & commAll, int timeRank, std::size_t nlocs,
-         const std::string & fileName, const oops::Parameter<IoPoolParameters> & params);
+  IoPool(const oops::Parameter<IoPoolParameters> & ioPoolParams,
+         const oops::RequiredPolymorphicParameter
+             <Engines::WriterParametersBase, Engines::WriterFactory> & writerParams,
+         const eckit::mpi::Comm & commAll, const eckit::mpi::Comm & commTime,
+         const util::DateTime & winStart, const util::DateTime & winEnd, std::size_t nlocs);
   ~IoPool();
 
   /// \brief return nlocs for this object
@@ -84,14 +93,24 @@ public:
   /// split communicator groups.
   void finalize();
 
+  /// \brief fill in print routine for the util::Printable base class
+  void print(std::ostream & os) const;
+
 private:
   typedef std::map<int, std::vector<int>> IoPoolGroupMap;
 
-  /// \brief uniquified file name
-  std::string filename_;
-
   /// \brief io pool parameters
   const oops::Parameter<IoPoolParameters> & params_;
+
+  /// \brief writer parameters
+  const oops::RequiredPolymorphicParameter
+      <Engines::WriterParametersBase, Engines::WriterFactory> & writer_params_;
+
+  /// \brief DA timing window start
+  util::DateTime win_start_;
+
+  /// \brief DA timing window end
+  util::DateTime win_end_;
 
   /// \brief target pool size
   int target_pool_size_;
@@ -111,6 +130,15 @@ private:
   /// \brief size of MPI communicator group for all processes
   int size_all_;
 
+  /// \brief MPI time communicator group
+  const eckit::mpi::Comm & comm_time_;
+
+  /// \brief rank in MPI time communicator group
+  int rank_time_;
+
+  /// \brief size of MPI communicator group
+  int size_time_;
+
   /// \brief MPI communicator group for all processes in the i/o pool
   /// \details This communicator group will hold a subset of the world communicator
   /// group. If an MPI task is not a member of the i/o pool, then this pointer will
@@ -122,6 +150,9 @@ private:
 
   /// \brief size of MPI communicator group for this pool
   int size_pool_;
+
+  /// \brief writer engine destination for printing (eg, output file name)
+  std::string writerDest_;
 
   /// \brief ranks in the all_comm_ group that this rank transfers data
   /// \detail Each pair in this vector contains as the first element the rank number

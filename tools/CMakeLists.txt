@@ -4,6 +4,7 @@ set(_programs
     check_ioda_nc.py
     ioda_compare.sh
     ioda_compare_odc_with_netcdf.py
+    refactor-yaml.py
 )
 
 foreach(_f IN LISTS _programs)

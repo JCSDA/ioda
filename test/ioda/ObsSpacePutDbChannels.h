@@ -80,11 +80,12 @@ CASE("ioda/ObsSpace/testPutDb") {
         EXPECT_THROWS(obsspace->put_db("DummyGroup", "single_dimensional_var_2", testVec1));
       }
 
-      // Call the ObsSpace close function to force an output file to be written
+      // Call the ObsSpace save function to force an output file to be written
       obsspace->save();
     } else {
       // Read the output file and check that its contents are correct
-      const std::string fileName = uniquifyFileName(obsconf.getString("obsdataout.obsfile"), 0, -1);
+      const std::string fileName =
+          uniquifyFileName(obsconf.getString("obsdataout.engine.obsfile"), 0, -1);
       const ioda::Group group = ioda::Engines::HH::openFile(
             fileName, ioda::Engines::BackendOpenModes::Read_Only);
 

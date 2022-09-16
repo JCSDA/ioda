@@ -4,7 +4,8 @@ IodaTrait.h
 ObsDataVector.h
 ObsSpace.cc
 ObsSpace.h
-ObsSpaceParameters.cc
+ObsDataIoParameters.cc
+ObsDataIoParameters.h
 ObsSpaceParameters.h
 ObsVector.cc
 ObsVector.h
@@ -53,21 +54,6 @@ io/ObsFrame.cc
 io/ObsFrame.h
 io/ObsFrameRead.cc
 io/ObsFrameRead.h
-io/ObsIo.cc
-io/ObsIo.h
-io/ObsIoFactory.cc
-io/ObsIoFactory.h
-io/ObsIoFileCreate.cc
-io/ObsIoFileCreate.h
-io/ObsIoFileRead.cc
-io/ObsIoFileRead.h
-io/ObsIoParametersBase.h
-io/ObsIoGenerateList.cc
-io/ObsIoGenerateList.h
-io/ObsIoGenerateRandom.cc
-io/ObsIoGenerateRandom.h
-io/ObsIoGenerateUtils.cc
-io/ObsIoGenerateUtils.h
 )
 
 if (IODA_BUILD_LANGUAGE_FORTRAN)

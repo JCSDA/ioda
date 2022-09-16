@@ -63,7 +63,7 @@ void testFrameRead(ObsFrameRead & obsFrame, eckit::LocalConfiguration & obsConfi
         for (std::size_t j = 0; j < readVarConfigs.size(); ++j) {
             std::string varName = readVarConfigs[j].getString("name");
             std::string expectedVarType = readVarConfigs[j].getString("type");
-            ioda::Variable var = obsFrame.ioVars().open(varName);
+            ioda::Variable var = obsFrame.backendObsGroup().vars.open(varName);
 
             oops::Log::debug() << "    Variable: " << varName
                 << ", frameCount: " << obsFrame.frameCount(varName) << std::endl;
@@ -138,19 +138,19 @@ void testRead() {
 
         // Check the counts
         ioda::Dimensions_t expectedNumLocs = testConfig.getInt("nlocs", 0);
-        ioda::Dimensions_t numLocs = obsFrame.ioNumLocs();
+        ioda::Dimensions_t numLocs = obsFrame.backendNumLocs();
         EXPECT_EQUAL(numLocs, expectedNumLocs);
 
         ioda::Dimensions_t expectedNumVars = testConfig.getInt("nvars", 0);
-        ioda::Dimensions_t numVars = obsFrame.ioNumVars();
+        ioda::Dimensions_t numVars = obsFrame.backendNumVars();
         EXPECT_EQUAL(numVars, expectedNumVars);
 
         ioda::Dimensions_t expectedNumDimVars = testConfig.getInt("ndvars", 0);
-        ioda::Dimensions_t numDimVars = obsFrame.ioNumDimVars();
+        ioda::Dimensions_t numDimVars = obsFrame.backendNumDimVars();
         EXPECT_EQUAL(numDimVars, expectedNumDimVars);
 
         ioda::Dimensions_t expectedMaxVarSize = testConfig.getInt("max var size", 0);
-        ioda::Dimensions_t maxVarSize = obsFrame.ioMaxVarSize();
+        ioda::Dimensions_t maxVarSize = obsFrame.backendMaxVarSize();
         EXPECT_EQUAL(maxVarSize, expectedMaxVarSize);
 
         // Test reading frames. Create a container for capturing the global attributes.

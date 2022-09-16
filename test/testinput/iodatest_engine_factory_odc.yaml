@@ -1,0 +1,29 @@
+---
+engine factory tests:
+    # Odb file backend in read mode
+    - case:
+        name: "ODB file in read mode"
+        simulated variables: ['air_temperature']
+        obsdatain:
+          engine:
+            type: ODB
+            obsfile: "Data/testinput_tier_1/aircraft.odb"
+            mapping file: "testinput/odb_default_name_map.yaml"
+            query file: "testinput/iodatest_odb_aircraft.yaml"
+        global attribute check:
+          attr name: "_ioda_layout"
+          attr value: "ObsGroup_ODB"
+
+    # ODB file backend in write mode
+    - case:
+        name: "ODB file in write mode"
+        simulated variables: [ "air_temperature" ]
+        obsdataout:
+          engine:
+            type: ODB
+            obsfile: "testoutput/test-engine-factory.odb"
+            mapping file: "testinput/odb_default_name_map.yaml"
+        global attribute check:
+          attr name: "_ioda_layout"
+          attr value: "ObsGroup_ODB"
+

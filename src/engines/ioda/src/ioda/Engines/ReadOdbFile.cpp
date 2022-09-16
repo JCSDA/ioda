@@ -1,0 +1,53 @@
+/*
+ * (C) Copyright 2022 UCAR
+ * 
+ * This software is licensed under the terms of the Apache Licence Version 2.0
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
+ */
+
+#include "oops/util/Logger.h"
+
+#include "ioda/Engines/ReadOdbFile.h"
+
+namespace ioda {
+namespace Engines {
+
+//---------------------------------------------------------------------
+// ReadOdbFile
+//---------------------------------------------------------------------
+
+static ReaderMaker<ReadOdbFile> maker("ODB");
+
+// Parameters
+
+// Classes
+
+ReadOdbFile::ReadOdbFile(const Parameters_ & params, const util::DateTime & winStart,
+                         const util::DateTime & winEnd, const eckit::mpi::Comm & comm,
+                         const eckit::mpi::Comm & timeComm,
+                         const std::vector<std::string> & obsVarNames)
+                             : ReaderBase(winStart, winEnd, comm, timeComm, obsVarNames),
+                               fileName_(params.fileName) {
+    oops::Log::trace() << "ioda::Engines::ReadOdbFile start constructor" << std::endl;
+    // Create an in-memory backend
+    Engines::BackendNames backendName = Engines::BackendNames::ObsStore;
+    Engines::BackendCreationParameters backendParams;
+    Group backend = constructBackend(backendName, backendParams);
+
+    // And load the ODB file into it
+    Engines::ODC::ODC_Parameters odcparams;
+    odcparams.filename    = params.fileName;
+    odcparams.mappingFile = params.mappingFileName;
+    odcparams.queryFile   = params.queryFileName;
+    odcparams.maxNumberChannels = params.maxNumberChannels;
+
+    obs_group_ = Engines::ODC::openFile(odcparams, backend);
+    oops::Log::trace() << "ioda::Engines::ReadOdbFile end constructor" << std::endl;
+}
+
+void ReadOdbFile::print(std::ostream & os) const {
+  os << fileName_;
+}
+
+}  // namespace Engines
+}  // namespace ioda

@@ -33,8 +33,8 @@ if (odc_FOUND)
                         COMMAND ${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                         ARGS    convert_${_PAR_TEST_NAME}
                                 Data/testinput_tier_1/${_PAR_ODB_FILE}
-                                testinput/iodatest_odb_convert_${_PAR_TEST_NAME}_name_map.yml
-                                testinput/iodatest_odb_convert_${_PAR_TEST_NAME}_query.yml
+                                testinput/iodatest_odb_convert_${_PAR_TEST_NAME}_name_map.yaml
+                                testinput/iodatest_odb_convert_${_PAR_TEST_NAME}_query.yaml
                         TEST_DEPENDS get_ioda_test_data )
       set_tests_properties( test_ioda-convert_${_PAR_TEST_NAME}_odc
                             PROPERTIES FIXTURES_SETUP ioda-convert_${_PAR_TEST_NAME}_odc )
@@ -51,104 +51,103 @@ if (odc_FOUND)
     endif()
 
     list( APPEND ioda_test_input
-      testinput/iodatest_odb_convert_${_PAR_TEST_NAME}_name_map.yml
-      testinput/iodatest_odb_convert_${_PAR_TEST_NAME}_query.yml
+      testinput/iodatest_odb_convert_${_PAR_TEST_NAME}_name_map.yaml
+      testinput/iodatest_odb_convert_${_PAR_TEST_NAME}_query.yaml
       testinput/iodatest_odb_convert_${_PAR_TEST_NAME}_comparison.conf )
     set( ioda_test_input ${ioda_test_input} PARENT_SCOPE )
   endfunction()
 endif()
 
-# The list of all test input config files, which need to be symlinked from the build folder.
-# (These symlinks are created at the end of this file, to give CMake functions setting up certain
+# The list of all test input config files, which need to be symlink from the build folder.
+# (These symlink are created at the end of this file, to give CMake functions setting up certain
 # tests a chance to append items to this list).
 list( APPEND ioda_test_input
-  testinput/iodatest.yml
-  testinput/iodatest_fileformat.yml
-  testinput/iodatest_remove_hdf5_variable.yml
-  testinput/iodatest_copy_attributes.yml
-  testinput/iodatest_obserror.yml
-  testinput/iodatest_obsio_constructor.yml
-  testinput/iodatest_obsio_read.yml
-  testinput/iodatest_obsio_write.yml
-  testinput/iodatest_obsframe_constructor.yml
-  testinput/iodatest_obsframe_read.yml
-  testinput/iodatest_distribution.yml
-  testinput/iodatest_distribution_masterandreplica_mpi_2.yml
-  testinput/iodatest_distribution_masterandreplica_mpi_3.yml
-  testinput/iodatest_distribution_masterandreplica_mpi_4.yml
-  testinput/iodatest_distribution_methods.yml
-  testinput/iodatest_distribution_timewindow.yml
-  testinput/iodatest_obsdatavector.yml
-  testinput/iodatest_obsdtype.yml
-  testinput/iodatest_obsspace.yml
-  testinput/iodatest_obsspace_datetime.yml
-  testinput/iodatest_obsspace_out_dims_check.yml
-  testinput/iodatest_obsspace_grouping.yml
-  testinput/iodatest_obsspace_index_recnum.yml
-  testinput/iodatest_obsspace_index_recnum_twfilt.yml
-  testinput/iodatest_obsspace_invalid_numeric.yml
-  testinput/iodatest_obsspace_io_pool_sondes.yml
-  testinput/iodatest_obsspace_locations_qc.yml
-  testinput/iodatest_obsspace_marine.yml
-  testinput/iodatest_obsspace_mpi.yml
-  testinput/iodatest_obsspace_odc.yml
-  testinput/iodatest_obsspace_odc_atms.yml
-  testinput/iodatest_obsspace_fortran.yml
-  testinput/iodatest_obsspace_put_db_channels.yml
-  testinput/iodatest_obsspace_put_db_channels_check.yml
-  testinput/iodatest_obsspace_zero_obs.yml
-  testinput/iodatest_obsspace_filter_to_zero_obs.yml
-  testinput/iodatest_obsspace_fill_value.yml
-  testinput/iodatest_obsvector.yml
-  testinput/iodatest_obsvector_packeigen.yml
-  testinput/iodatest_extendedobsspace.yml
-  testinput/iodatest_extendedobsspace_halo.yml
-  testinput/iodatest_sort.yml
-  testinput/iodatest_writer_sondes.yml
-  testinput/iodatest_odb_abiclear.yml
-  testinput/iodatest_odb_ahiclear.yml
-  testinput/iodatest_odb_aircraft.yml
-  testinput/iodatest_odb_airs.yml
-  testinput/iodatest_odb_altimeter.yml
-  testinput/iodatest_odb_amsr.yml
-  testinput/iodatest_odb_aod.yml
-  testinput/iodatest_odb_atms.yml
-  testinput/iodatest_odb_atovs.yml
-  testinput/iodatest_odb_cris.yml
-  testinput/iodatest_odb_crisfsr.yml
-  testinput/iodatest_odb_geocloud.yml
-  testinput/iodatest_odb_gmihigh.yml
-  testinput/iodatest_odb_gmilow.yml
-  testinput/iodatest_odb_gnssro.yml
-  testinput/iodatest_odb_groundgps.yml
-  testinput/iodatest_odb_hirasfsr.yml
-  testinput/iodatest_odb_hloswind.yml
-  testinput/iodatest_odb_iasi.yml
-  testinput/iodatest_odb_mwri.yml
-  testinput/iodatest_odb_mwsfy3.yml
-  testinput/iodatest_odb_oceancolour.yml
-  testinput/iodatest_odb_oceansound.yml
-  testinput/iodatest_odb_oceansound_truncate_profiles.yml
-  testinput/iodatest_odb_satsst.yml
-  testinput/iodatest_odb_sattcwv.yml
-  testinput/iodatest_odb_satwind.yml
-  testinput/iodatest_odb_scatwind.yml
-  testinput/iodatest_odb_seaice.yml
-  testinput/iodatest_odb_seviriclear.yml
-  testinput/iodatest_odb_sonde.yml
-  testinput/iodatest_odb_sonde_truncate_profiles.yml
-  testinput/iodatest_odb_ssmis.yml
-  testinput/iodatest_odb_surface.yml
-  testinput/iodatest_odb_surface_tcbogus.yml
-  testinput/iodatest_odb_surface_with_query.yml
-  testinput/iodatest_odb_surfacecloud.yml
-  testinput/iodatest_odb_surfacesst.yml
-  testinput/odb_default_name_map.yml
-  testinput/odb_gnssro_name_map.yml
-  testinput/odb_oceansound_name_map.yml
-  testinput/odb_radiance_name_map.yml
-  testinput/odb_sonde_name_map.yml
-  testinput/iodatest_time_io.yml
+  testinput/iodatest.yaml
+  testinput/iodatest_fileformat.yaml
+  testinput/iodatest_remove_hdf5_variable.yaml
+  testinput/iodatest_engine_factory.yaml
+  testinput/iodatest_engine_factory_odc.yaml
+  testinput/iodatest_copy_attributes.yaml
+  testinput/iodatest_obserror.yaml
+  testinput/iodatest_obsframe_constructor.yaml
+  testinput/iodatest_obsframe_read.yaml
+  testinput/iodatest_distribution.yaml
+  testinput/iodatest_distribution_masterandreplica_mpi_2.yaml
+  testinput/iodatest_distribution_masterandreplica_mpi_3.yaml
+  testinput/iodatest_distribution_masterandreplica_mpi_4.yaml
+  testinput/iodatest_distribution_methods.yaml
+  testinput/iodatest_distribution_timewindow.yaml
+  testinput/iodatest_obsdatavector.yaml
+  testinput/iodatest_obsdtype.yaml
+  testinput/iodatest_obsspace.yaml
+  testinput/iodatest_obsspace_datetime.yaml
+  testinput/iodatest_obsspace_out_dims_check.yaml
+  testinput/iodatest_obsspace_grouping.yaml
+  testinput/iodatest_obsspace_index_recnum.yaml
+  testinput/iodatest_obsspace_index_recnum_twfilt.yaml
+  testinput/iodatest_obsspace_invalid_numeric.yaml
+  testinput/iodatest_obsspace_io_pool_sondes.yaml
+  testinput/iodatest_obsspace_locations_qc.yaml
+  testinput/iodatest_obsspace_marine.yaml
+  testinput/iodatest_obsspace_mpi.yaml
+  testinput/iodatest_obsspace_odc.yaml
+  testinput/iodatest_obsspace_odc_atms.yaml
+  testinput/iodatest_obsspace_fortran.yaml
+  testinput/iodatest_obsspace_put_db_channels.yaml
+  testinput/iodatest_obsspace_put_db_channels_check.yaml
+  testinput/iodatest_obsspace_zero_obs.yaml
+  testinput/iodatest_obsspace_filter_to_zero_obs.yaml
+  testinput/iodatest_obsspace_fill_value.yaml
+  testinput/iodatest_obsvector.yaml
+  testinput/iodatest_obsvector_packeigen.yaml
+  testinput/iodatest_extendedobsspace.yaml
+  testinput/iodatest_extendedobsspace_halo.yaml
+  testinput/iodatest_sort.yaml
+  testinput/iodatest_writer_sondes.yaml
+  testinput/iodatest_odb_abiclear.yaml
+  testinput/iodatest_odb_ahiclear.yaml
+  testinput/iodatest_odb_aircraft.yaml
+  testinput/iodatest_odb_airs.yaml
+  testinput/iodatest_odb_altimeter.yaml
+  testinput/iodatest_odb_amsr.yaml
+  testinput/iodatest_odb_aod.yaml
+  testinput/iodatest_odb_atms.yaml
+  testinput/iodatest_odb_atovs.yaml
+  testinput/iodatest_odb_cris.yaml
+  testinput/iodatest_odb_crisfsr.yaml
+  testinput/iodatest_odb_geocloud.yaml
+  testinput/iodatest_odb_gmihigh.yaml
+  testinput/iodatest_odb_gmilow.yaml
+  testinput/iodatest_odb_gnssro.yaml
+  testinput/iodatest_odb_groundgps.yaml
+  testinput/iodatest_odb_hirasfsr.yaml
+  testinput/iodatest_odb_hloswind.yaml
+  testinput/iodatest_odb_iasi.yaml
+  testinput/iodatest_odb_mwri.yaml
+  testinput/iodatest_odb_mwsfy3.yaml
+  testinput/iodatest_odb_oceancolour.yaml
+  testinput/iodatest_odb_oceansound.yaml
+  testinput/iodatest_odb_oceansound_truncate_profiles.yaml
+  testinput/iodatest_odb_satsst.yaml
+  testinput/iodatest_odb_sattcwv.yaml
+  testinput/iodatest_odb_satwind.yaml
+  testinput/iodatest_odb_scatwind.yaml
+  testinput/iodatest_odb_seaice.yaml
+  testinput/iodatest_odb_seviriclear.yaml
+  testinput/iodatest_odb_sonde.yaml
+  testinput/iodatest_odb_sonde_truncate_profiles.yaml
+  testinput/iodatest_odb_ssmis.yaml
+  testinput/iodatest_odb_surface.yaml
+  testinput/iodatest_odb_surface_tcbogus.yaml
+  testinput/iodatest_odb_surface_with_query.yaml
+  testinput/iodatest_odb_surfacecloud.yaml
+  testinput/iodatest_odb_surfacesst.yaml
+  testinput/odb_default_name_map.yaml
+  testinput/odb_gnssro_name_map.yaml
+  testinput/odb_oceansound_name_map.yaml
+  testinput/odb_radiance_name_map.yaml
+  testinput/odb_sonde_name_map.yaml
+  testinput/iodatest_time_io.yaml
 )
 
 # Create Data directory for test data and symlink files
@@ -276,33 +275,15 @@ target_link_libraries(ioda_test INTERFACE ioda)
 #####################################################################
 # IO tests
 #####################################################################
-ecbuild_add_test( TARGET  test_ioda_obsio_constructor
-                  SOURCES mains/TestObsIoConstructor.cc
-                  ARGS    "testinput/iodatest_obsio_constructor.yml"
-                  LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data )
-
-ecbuild_add_test( TARGET  test_ioda_obsio_read
-                  SOURCES mains/TestObsIoRead.cc
-                  ARGS    "testinput/iodatest_obsio_read.yml"
-                  LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data )
-
-ecbuild_add_test( TARGET  test_ioda_obsio_write
-                  SOURCES mains/TestObsIoWrite.cc
-                  ARGS    "testinput/iodatest_obsio_write.yml"
-                  LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data )
-
 ecbuild_add_test( TARGET  test_ioda_obsframe_constructor
                   SOURCES mains/TestObsFrameConstructor.cc
-                  ARGS    "testinput/iodatest_obsframe_constructor.yml"
+                  ARGS    "testinput/iodatest_obsframe_constructor.yaml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
 ecbuild_add_test( TARGET  test_ioda_obsframe_read
                   SOURCES mains/TestObsFrameRead.cc
-                  ARGS    "testinput/iodatest_obsframe_read.yml"
+                  ARGS    "testinput/iodatest_obsframe_read.yaml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
@@ -312,35 +293,35 @@ ecbuild_add_test( TARGET  test_ioda_obsframe_read
 ecbuild_add_test( TARGET  test_ioda_distribution
                   MPI     4
                   SOURCES mains/TestDistribution.cc
-                  ARGS    "testinput/iodatest_distribution.yml"
+                  ARGS    "testinput/iodatest_distribution.yaml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
 ecbuild_add_test( TARGET  test_ioda_distribution_masterandreplica_mpi_2
                   MPI     2
                   COMMAND test_ioda_distribution
-                  ARGS    "testinput/iodatest_distribution_masterandreplica_mpi_2.yml"
+                  ARGS    "testinput/iodatest_distribution_masterandreplica_mpi_2.yaml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
 ecbuild_add_test( TARGET  test_ioda_distribution_masterandreplica_mpi_3
                   MPI     3
                   COMMAND test_ioda_distribution
-                  ARGS    "testinput/iodatest_distribution_masterandreplica_mpi_3.yml"
+                  ARGS    "testinput/iodatest_distribution_masterandreplica_mpi_3.yaml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
 ecbuild_add_test( TARGET  test_ioda_distribution_masterandreplica_mpi_4
                   MPI     4
                   COMMAND test_ioda_distribution
-                  ARGS    "testinput/iodatest_distribution_masterandreplica_mpi_4.yml"
+                  ARGS    "testinput/iodatest_distribution_masterandreplica_mpi_4.yaml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
 ecbuild_add_test( TARGET  test_ioda_distribution_timewindow
                   MPI     4
                   COMMAND test_ioda_distribution
-                  ARGS    "testinput/iodatest_distribution_timewindow.yml"
+                  ARGS    "testinput/iodatest_distribution_timewindow.yaml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
@@ -348,7 +329,7 @@ ecbuild_add_test( TARGET  test_ioda_distribution_timewindow
 ecbuild_add_test( TARGET  test_ioda_distribution_methods
                   MPI     4
                   SOURCES mains/TestDistributionMethods.cc
-                  ARGS    "testinput/iodatest_distribution_methods.yml"
+                  ARGS    "testinput/iodatest_distribution_methods.yaml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
@@ -358,8 +339,9 @@ ecbuild_add_test( TARGET  test_ioda_distribution_methods
 
 ecbuild_add_test( TARGET  test_ioda_remove_hdf5_variable
                   SOURCES mains/TestRemoveHdf5Variable.cc
-                  ARGS    "testinput/iodatest_remove_hdf5_variable.yml"
-                  LIBS  ioda_engines ioda_test )
+                  ARGS    "testinput/iodatest_remove_hdf5_variable.yaml"
+                  LIBS  ioda_engines ioda_test
+                  TEST_DEPENDS get_ioda_test_data )
 
 ecbuild_add_test( TARGET  test_ioda_remove_hdf5_variable_cmp
                   TYPE    SCRIPT
@@ -370,13 +352,27 @@ ecbuild_add_test( TARGET  test_ioda_remove_hdf5_variable_cmp
                           remove_variable.hdf
                   TEST_DEPENDS get_ioda_test_data test_ioda_remove_hdf5_variable )
 
+ecbuild_add_test( TARGET  test_ioda_engine_factory
+                  SOURCES mains/TestEngineFactory.cc
+                  ARGS    "testinput/iodatest_engine_factory.yaml"
+                  LIBS  ioda_engines ioda_test
+                  TEST_DEPENDS get_ioda_test_data )
+
+if (odc_FOUND)
+    ecbuild_add_test( TARGET  test_ioda_engine_factory_odc
+                      COMMAND test_ioda_engine_factory
+                      ARGS    "testinput/iodatest_engine_factory_odc.yaml"
+                      LIBS  ioda_engines ioda_test
+                      TEST_DEPENDS get_ioda_test_data test_ioda_engine_factory )
+endif()
+
 #####################################################################
 # ioda utilities tests
 #####################################################################
 
 ecbuild_add_test( TARGET  test_ioda_copy_attributes
                   SOURCES mains/TestCopyAttributes.cc
-                  ARGS    "testinput/iodatest_copy_attributes.yml"
+                  ARGS    "testinput/iodatest_copy_attributes.yaml"
                   LIBS  ioda_engines ioda_test )
 
 #####################################################################
@@ -386,130 +382,130 @@ ecbuild_add_test( TARGET  test_ioda_copy_attributes
 # OOPS ObsSpace interface
 ecbuild_add_test( TARGET  test_ioda_oops_obsspace
                   SOURCES mains/TestObsSpace.cc
-                  ARGS    "testinput/iodatest.yml"
+                  ARGS    "testinput/iodatest.yaml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
 # IODA ObsSpace class
 ecbuild_add_test( TARGET  test_ioda_obsspace
                   SOURCES mains/TestIodaObsSpace.cc
-                  ARGS    "testinput/iodatest_obsspace.yml"
+                  ARGS    "testinput/iodatest_obsspace.yaml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_datetime
                   COMMAND test_ioda_obsspace
-                  ARGS    "testinput/iodatest_obsspace_datetime.yml"
+                  ARGS    "testinput/iodatest_obsspace_datetime.yaml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_grouping
                   COMMAND test_ioda_obsspace
-                  ARGS    "testinput/iodatest_obsspace_grouping.yml"
+                  ARGS    "testinput/iodatest_obsspace_grouping.yaml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_index_recnum
                   SOURCES mains/TestIodaObsSpaceIndexRecnum.cc
-                  ARGS    "testinput/iodatest_obsspace_index_recnum.yml"
+                  ARGS    "testinput/iodatest_obsspace_index_recnum.yaml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_index_recnum_mpi_2
                   MPI 2
                   COMMAND test_ioda_obsspace_index_recnum
-                  ARGS    "testinput/iodatest_obsspace_index_recnum.yml"
+                  ARGS    "testinput/iodatest_obsspace_index_recnum.yaml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_index_recnum_mpi_4
                   MPI 4
                   COMMAND test_ioda_obsspace_index_recnum
-                  ARGS    "testinput/iodatest_obsspace_index_recnum.yml"
+                  ARGS    "testinput/iodatest_obsspace_index_recnum.yaml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_index_recnum_twfilt
                   COMMAND test_ioda_obsspace_index_recnum
-                  ARGS    "testinput/iodatest_obsspace_index_recnum_twfilt.yml"
+                  ARGS    "testinput/iodatest_obsspace_index_recnum_twfilt.yaml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_index_recnum_twfilt_mpi_2
                   MPI 2
                   COMMAND test_ioda_obsspace_index_recnum
-                  ARGS    "testinput/iodatest_obsspace_index_recnum_twfilt.yml"
+                  ARGS    "testinput/iodatest_obsspace_index_recnum_twfilt.yaml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_index_recnum_twfilt_mpi_4
                   MPI 4
                   COMMAND test_ioda_obsspace_index_recnum
-                  ARGS    "testinput/iodatest_obsspace_index_recnum_twfilt.yml"
+                  ARGS    "testinput/iodatest_obsspace_index_recnum_twfilt.yaml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_locations_qc
                   COMMAND test_ioda_obsspace
-                  ARGS    "testinput/iodatest_obsspace_locations_qc.yml"
+                  ARGS    "testinput/iodatest_obsspace_locations_qc.yaml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_invalid_numeric
                   SOURCES mains/TestObsSpaceInvalidNumeric.cc
-                  ARGS    "testinput/iodatest_obsspace_invalid_numeric.yml"
+                  ARGS    "testinput/iodatest_obsspace_invalid_numeric.yaml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_mpi
                   MPI     2
                   COMMAND test_ioda_obsspace
-                  ARGS    "testinput/iodatest_obsspace_mpi.yml"
+                  ARGS    "testinput/iodatest_obsspace_mpi.yaml"
                   TEST_DEPENDS get_ioda_test_data )
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_marine
                   COMMAND test_ioda_obsspace
-                  ARGS    "testinput/iodatest_obsspace_marine.yml"
+                  ARGS    "testinput/iodatest_obsspace_marine.yaml"
                   TEST_DEPENDS get_ioda_test_data )
 
 if (odc_FOUND)
   ecbuild_add_test( TARGET  test_ioda_obsspace_odc
                     COMMAND test_ioda_obsspace
-                    ARGS    "testinput/iodatest_obsspace_odc.yml"
+                    ARGS    "testinput/iodatest_obsspace_odc.yaml"
                     TEST_DEPENDS get_ioda_test_data )
   ecbuild_add_test( TARGET  test_ioda_obsspace_odc_atms
                     COMMAND test_ioda_obsspace
-                    ARGS    "testinput/iodatest_obsspace_odc_atms.yml"
+                    ARGS    "testinput/iodatest_obsspace_odc_atms.yaml"
                     TEST_DEPENDS get_ioda_test_data )
 endif()
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_put_db_channels
                   SOURCES mains/TestIodaObsSpacePutDbChannels.cc
-                  ARGS    "testinput/iodatest_obsspace_put_db_channels.yml"
+                  ARGS    "testinput/iodatest_obsspace_put_db_channels.yaml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_put_db_channels_check
                   COMMAND test_ioda_obsspace_put_db_channels
-                  ARGS    "testinput/iodatest_obsspace_put_db_channels_check.yml"
+                  ARGS    "testinput/iodatest_obsspace_put_db_channels_check.yaml"
                   LIBS  ioda_test
                   TEST_DEPENDS test_ioda_obsspace_put_db_channels get_ioda_test_data )
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_zero_obs
                   COMMAND test_ioda_obsspace
-                  ARGS    "testinput/iodatest_obsspace_zero_obs.yml"
+                  ARGS    "testinput/iodatest_obsspace_zero_obs.yaml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_filter_to_zero_obs
                   COMMAND test_ioda_obsspace
-                  ARGS    "testinput/iodatest_obsspace_filter_to_zero_obs.yml"
+                  ARGS    "testinput/iodatest_obsspace_filter_to_zero_obs.yaml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_fill_value
                   COMMAND test_ioda_obsspace
-                  ARGS    "testinput/iodatest_obsspace_fill_value.yml"
+                  ARGS    "testinput/iodatest_obsspace_fill_value.yaml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
@@ -519,7 +515,7 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_out_dims_check
                   ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
                           hdf5
                           "${CMAKE_CURRENT_BINARY_DIR}/test_ioda_oops_obsspace
-                          testinput/iodatest_obsspace_out_dims_check.yml"
+                          testinput/iodatest_obsspace_out_dims_check.yaml"
                           out_dims_check_0000.nc4
                   TEST_DEPENDS get_ioda_test_data )
 
@@ -529,7 +525,7 @@ ecbuild_add_test( TARGET  test_ioda_writer_sondes
                   ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
                           netcdf
                           "${CMAKE_CURRENT_BINARY_DIR}/test_ioda_oops_obsspace
-                          testinput/iodatest_writer_sondes.yml"
+                          testinput/iodatest_writer_sondes.yaml"
                           ioda_writer_sondes_0000.nc4
                   TEST_DEPENDS get_ioda_test_data )
 
@@ -538,7 +534,7 @@ ecbuild_add_test( TARGET  test_ioda_writer_sondes
 ecbuild_add_test( TARGET  test_ioda_obsspace_io_pool_sondes
                   MPI     7
                   COMMAND time_IodaIO.x
-                  ARGS    "testinput/iodatest_obsspace_io_pool_sondes.yml"
+                  ARGS    "testinput/iodatest_obsspace_io_pool_sondes.yaml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
@@ -581,7 +577,7 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_io_pool_sondes_file_0003
 # IODA ObsSpace class - Fortran interface test
 add_fctest( TARGET  test_ioda_obsspace_fortran
             SOURCES ioda/obsspace.F90
-            ARGS    --config testinput/iodatest_obsspace_fortran.yml
+            ARGS    --config testinput/iodatest_obsspace_fortran.yaml
             LINKER_LANGUAGE Fortran
             LIBS  ioda_test
             TEST_DEPENDS get_ioda_test_data )
@@ -589,42 +585,42 @@ add_fctest( TARGET  test_ioda_obsspace_fortran
 # IODA ObsSpace sorting of obs groups
 ecbuild_add_test( TARGET  test_ioda_sort
                   SOURCES mains/TestSort.cc
-                  ARGS    "testinput/iodatest_sort.yml"
+                  ARGS    "testinput/iodatest_sort.yaml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
 # IODA extended ObsSpace
 ecbuild_add_test( TARGET  test_ioda_extendedobsspace
                   SOURCES mains/TestExtendedObsSpace.cc
-                  ARGS    "testinput/iodatest_extendedobsspace.yml"
+                  ARGS    "testinput/iodatest_extendedobsspace.yaml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
 ecbuild_add_test( TARGET  test_ioda_extendedobsspace_MPI_2
                   MPI     2
                   COMMAND test_ioda_extendedobsspace
-                  ARGS    "testinput/iodatest_extendedobsspace.yml"
+                  ARGS    "testinput/iodatest_extendedobsspace.yaml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
 ecbuild_add_test( TARGET  test_ioda_extendedobsspace_MPI_3
                   MPI     3
                   COMMAND test_ioda_extendedobsspace
-                  ARGS    "testinput/iodatest_extendedobsspace.yml"
+                  ARGS    "testinput/iodatest_extendedobsspace.yaml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
 ecbuild_add_test( TARGET  test_ioda_extendedobsspace_halo_MPI_2
                   MPI     2
                   COMMAND test_ioda_extendedobsspace
-                  ARGS    "testinput/iodatest_extendedobsspace_halo.yml"
+                  ARGS    "testinput/iodatest_extendedobsspace_halo.yaml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
 ecbuild_add_test( TARGET  test_ioda_extendedobsspace_halo_MPI_3
                   MPI     3
                   COMMAND test_ioda_extendedobsspace
-                  ARGS    "testinput/iodatest_extendedobsspace_halo.yml"
+                  ARGS    "testinput/iodatest_extendedobsspace_halo.yaml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
@@ -636,13 +632,13 @@ ecbuild_add_test( TARGET  test_ioda_extendedobsspace_halo_MPI_3
 ecbuild_add_test( TARGET  test_ioda_oops_obsvector
                   MPI     4
                   SOURCES mains/TestObsVector.cc
-                  ARGS    "testinput/iodatest_obsvector.yml"
+                  ARGS    "testinput/iodatest_obsvector.yaml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
 ecbuild_add_test( TARGET  test_ioda_oops_obsdatavector
                   SOURCES mains/TestObsDataVector.cc
-                  ARGS    "testinput/iodatest_obsvector.yml"
+                  ARGS    "testinput/iodatest_obsvector.yaml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data test_ioda_oops_obsvector )
 
@@ -650,7 +646,7 @@ ecbuild_add_test( TARGET  test_ioda_oops_obsdatavector
 ecbuild_add_test( TARGET  test_ioda_obsvector
                   MPI     4
                   SOURCES mains/TestIodaObsVector.cc
-                  ARGS    "testinput/iodatest_obsvector.yml"
+                  ARGS    "testinput/iodatest_obsvector.yaml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data test_ioda_oops_obsvector test_ioda_oops_obsdatavector )
 
@@ -658,7 +654,7 @@ ecbuild_add_test( TARGET  test_ioda_obsvector
 ecbuild_add_test( TARGET  test_ioda_obsvector_packeigen
                   MPI     4
                   SOURCES mains/TestIodaObsVectorPackEigen.cc
-                  ARGS    "testinput/iodatest_obsvector_packeigen.yml"
+                  ARGS    "testinput/iodatest_obsvector_packeigen.yaml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
@@ -670,7 +666,7 @@ ecbuild_add_test( TARGET  test_ioda_obsvector_packeigen
 ecbuild_add_test( TARGET  test_ioda_obsdatavector
                   MPI     2
                   SOURCES mains/TestIodaObsDataVector.cc
-                  ARGS    "testinput/iodatest_obsdatavector.yml"
+                  ARGS    "testinput/iodatest_obsdatavector.yaml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
@@ -681,7 +677,7 @@ ecbuild_add_test( TARGET  test_ioda_obsdatavector
 # OOPS ObsErrorCovariance interface (dependent on ObsVector)
 ecbuild_add_test( TARGET  test_ioda_oops_obserrorcovariance
                   SOURCES mains/TestObsErrorCovariance.cc
-                  ARGS    "testinput/iodatest_obserror.yml"
+                  ARGS    "testinput/iodatest_obserror.yaml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
@@ -692,7 +688,7 @@ ecbuild_add_test( TARGET  test_ioda_oops_obserrorcovariance
 # this test creates the output files
 ecbuild_add_test( TARGET  test_ioda_time_io
                   COMMAND ${CMAKE_BINARY_DIR}/bin/time_IodaIO.x
-                  ARGS    "testinput/iodatest_time_io.yml"
+                  ARGS    "testinput/iodatest_time_io.yaml"
                   TEST_DEPENDS get_ioda_test_data )
 
 # the following tests compare the output files
@@ -879,7 +875,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             Aircraft
                             Data/testinput_tier_1/aircraft.odb
-                            testinput/odb_default_name_map.yml testinput/iodatest_odb_aircraft.yml"
+                            testinput/odb_default_name_map.yaml testinput/iodatest_odb_aircraft.yaml"
                             test-Aircraft.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -891,7 +887,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             Mixed-Aircraft
                             Data/testinput_tier_1/aircraft-mixed-elements.odb
-                            testinput/odb_default_name_map.yml testinput/iodatest_odb_aircraft.yml"
+                            testinput/odb_default_name_map.yaml testinput/iodatest_odb_aircraft.yaml"
                             test-Mixed-Aircraft.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -903,7 +899,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             Surface
                             Data/testinput_tier_1/surface.odb
-                            testinput/odb_default_name_map.yml testinput/iodatest_odb_surface.yml"
+                            testinput/odb_default_name_map.yaml testinput/iodatest_odb_surface.yaml"
                             test-Surface.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -915,7 +911,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             Surface-TCBOGUS
                             Data/testinput_tier_1/surface-tcbogus.odb
-                            testinput/odb_default_name_map.yml testinput/iodatest_odb_surface_tcbogus.yml"
+                            testinput/odb_default_name_map.yaml testinput/iodatest_odb_surface_tcbogus.yaml"
                             test-Surface-TCBOGUS.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -927,7 +923,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             Surface-with-query
                             Data/testinput_tier_1/surface.odb
-                            testinput/odb_default_name_map.yml testinput/iodatest_odb_surface_with_query.yml"
+                            testinput/odb_default_name_map.yaml testinput/iodatest_odb_surface_with_query.yaml"
                             test-Surface-with-query.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -936,7 +932,7 @@ if (odc_FOUND)
                     COMMAND ${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                     ARGS    Surface-missing
                             Data/testinput_tier_1/surface-missing.odb
-                            testinput/odb_default_name_map.yml testinput/iodatest_odb_surface.yml
+                            testinput/odb_default_name_map.yaml testinput/iodatest_odb_surface.yaml
                     TEST_DEPENDS get_ioda_test_data )
 
   ecbuild_add_test( TARGET  test_ioda-convert_surface_empty_odc
@@ -944,7 +940,7 @@ if (odc_FOUND)
                     COMMAND ${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                     ARGS    Surface-empty
                             Data/testinput_tier_1/surface-empty.odb
-                            testinput/odb_default_name_map.yml testinput/iodatest_odb_surface.yml
+                            testinput/odb_default_name_map.yaml testinput/iodatest_odb_surface.yaml
                     TEST_DEPENDS get_ioda_test_data )
 
   ecbuild_add_test( TARGET  test_ioda-convert_sonde_odc
@@ -955,7 +951,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             Sonde
                             Data/testinput_tier_1/sonde.odb
-                            testinput/odb_sonde_name_map.yml testinput/iodatest_odb_sonde.yml"
+                            testinput/odb_sonde_name_map.yaml testinput/iodatest_odb_sonde.yaml"
                             test-Sonde.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -967,7 +963,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             Sonde-artificial
                             Data/testinput_tier_1/sonde-artificial.odb
-                            testinput/odb_sonde_name_map.yml testinput/iodatest_odb_sonde.yml"
+                            testinput/odb_sonde_name_map.yaml testinput/iodatest_odb_sonde.yaml"
                             test-Sonde-artificial.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -979,7 +975,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             Sonde-truncate-profiles
                             Data/testinput_tier_1/sonde.odb
-                            testinput/odb_sonde_name_map.yml testinput/iodatest_odb_sonde_truncate_profiles.yml"
+                            testinput/odb_sonde_name_map.yaml testinput/iodatest_odb_sonde_truncate_profiles.yaml"
                             test-Sonde-truncate-profiles.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -991,7 +987,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             ABIClear
                             Data/testinput_tier_1/abiclear.odb
-                            testinput/odb_default_name_map.yml testinput/iodatest_odb_abiclear.yml"
+                            testinput/odb_default_name_map.yaml testinput/iodatest_odb_abiclear.yaml"
                             test-ABIClear.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -1003,7 +999,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             AHIClear
                             Data/testinput_tier_1/ahiclear.odb
-                            testinput/odb_default_name_map.yml testinput/iodatest_odb_ahiclear.yml"
+                            testinput/odb_default_name_map.yaml testinput/iodatest_odb_ahiclear.yaml"
                             test-AHIClear.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -1015,7 +1011,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             AMSR
                             Data/testinput_tier_1/amsr.odb
-                            testinput/odb_default_name_map.yml testinput/iodatest_odb_amsr.yml"
+                            testinput/odb_default_name_map.yaml testinput/iodatest_odb_amsr.yaml"
                             test-AMSR.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -1027,7 +1023,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             AIRS
                             Data/testinput_tier_1/airs.odb
-                            testinput/odb_radiance_name_map.yml testinput/iodatest_odb_airs.yml"
+                            testinput/odb_radiance_name_map.yaml testinput/iodatest_odb_airs.yaml"
                             test-AIRS.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -1039,7 +1035,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             ATOVS
                             Data/testinput_tier_1/atovs.odb
-                            testinput/odb_default_name_map.yml testinput/iodatest_odb_atovs.yml"
+                            testinput/odb_default_name_map.yaml testinput/iodatest_odb_atovs.yaml"
                             test-ATOVS.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -1051,7 +1047,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             GMIHigh
                             Data/testinput_tier_1/gmihigh.odb
-                            testinput/odb_default_name_map.yml testinput/iodatest_odb_gmihigh.yml"
+                            testinput/odb_default_name_map.yaml testinput/iodatest_odb_gmihigh.yaml"
                             test-GMIHigh.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -1063,7 +1059,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             GMILow
                             Data/testinput_tier_1/gmilow.odb
-                            testinput/odb_default_name_map.yml testinput/iodatest_odb_gmilow.yml"
+                            testinput/odb_default_name_map.yaml testinput/iodatest_odb_gmilow.yaml"
                             test-GMILow.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -1075,7 +1071,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             SSMIS
                             Data/testinput_tier_1/ssmis.odb
-                            testinput/odb_default_name_map.yml testinput/iodatest_odb_ssmis.yml"
+                            testinput/odb_default_name_map.yaml testinput/iodatest_odb_ssmis.yaml"
                             test-SSMIS.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -1087,7 +1083,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             Satwind
                             Data/testinput_tier_1/satwind.odb
-                            testinput/odb_default_name_map.yml testinput/iodatest_odb_satwind.yml"
+                            testinput/odb_default_name_map.yaml testinput/iodatest_odb_satwind.yaml"
                             test-Satwind.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -1099,7 +1095,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             Scatwind
                             Data/testinput_tier_1/scatwind.odb
-                            testinput/odb_default_name_map.yml testinput/iodatest_odb_scatwind.yml"
+                            testinput/odb_default_name_map.yaml testinput/iodatest_odb_scatwind.yaml"
                             test-Scatwind.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -1111,7 +1107,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             GNSSRO
                             Data/testinput_tier_1/gnssro.odb
-                            testinput/odb_gnssro_name_map.yml testinput/iodatest_odb_gnssro.yml"
+                            testinput/odb_gnssro_name_map.yaml testinput/iodatest_odb_gnssro.yaml"
                             test-GNSSRO.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -1123,7 +1119,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             GNSSRO-profile
                             Data/testinput_tier_1/gnssro.odb
-                            testinput/odb_gnssro_name_map.yml testinput/iodatest_odb_gnssro.yml 333"
+                            testinput/odb_gnssro_name_map.yaml testinput/iodatest_odb_gnssro.yaml 333"
                             test-GNSSRO-profile.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -1135,7 +1131,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             GroundGPS
                             Data/testinput_tier_1/groundgps.odb
-                            testinput/odb_default_name_map.yml testinput/iodatest_odb_groundgps.yml"
+                            testinput/odb_default_name_map.yaml testinput/iodatest_odb_groundgps.yaml"
                             test-GroundGPS.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -1147,7 +1143,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             AOD
                             Data/testinput_tier_1/aod.odb
-                            testinput/odb_default_name_map.yml testinput/iodatest_odb_aod.yml"
+                            testinput/odb_default_name_map.yaml testinput/iodatest_odb_aod.yaml"
                             test-AOD.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -1159,7 +1155,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             CrIS
                             Data/testinput_tier_1/cris.odb
-                            testinput/odb_radiance_name_map.yml testinput/iodatest_odb_cris.yml"
+                            testinput/odb_radiance_name_map.yaml testinput/iodatest_odb_cris.yaml"
                             test-CrIS.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -1171,7 +1167,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             CrISFSR
                             Data/testinput_tier_1/crisfsr.odb
-                            testinput/odb_radiance_name_map.yml testinput/iodatest_odb_crisfsr.yml"
+                            testinput/odb_radiance_name_map.yaml testinput/iodatest_odb_crisfsr.yaml"
                             test-CrISFSR.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -1183,7 +1179,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             HIRASFSR
                             Data/testinput_tier_1/hirasfsr.odb
-                            testinput/odb_radiance_name_map.yml  testinput/iodatest_odb_hirasfsr.yml"
+                            testinput/odb_radiance_name_map.yaml  testinput/iodatest_odb_hirasfsr.yaml"
                             test-HIRASFSR.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -1195,7 +1191,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             HLOSWind
                             Data/testinput_tier_1/hloswind.odb
-                            testinput/odb_default_name_map.yml testinput/iodatest_odb_hloswind.yml"
+                            testinput/odb_default_name_map.yaml testinput/iodatest_odb_hloswind.yaml"
                             test-HLOSWind.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -1207,7 +1203,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             MWRI
                             Data/testinput_tier_1/mwri.odb
-                            testinput/odb_default_name_map.yml testinput/iodatest_odb_mwri.yml"
+                            testinput/odb_default_name_map.yaml testinput/iodatest_odb_mwri.yaml"
                             test-MWRI.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -1219,7 +1215,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             IASI
                             Data/testinput_tier_1/iasi.odb
-                            testinput/odb_radiance_name_map.yml testinput/iodatest_odb_iasi.yml"
+                            testinput/odb_radiance_name_map.yaml testinput/iodatest_odb_iasi.yaml"
                             test-IASI.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -1231,7 +1227,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             MWSFY3
                             Data/testinput_tier_1/mwsfy3.odb
-                            testinput/odb_default_name_map.yml testinput/iodatest_odb_mwsfy3.yml"
+                            testinput/odb_default_name_map.yaml testinput/iodatest_odb_mwsfy3.yaml"
                             test-MWSFY3.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -1243,7 +1239,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             SatTCWV
                             Data/testinput_tier_1/sattcwv.odb
-                            testinput/odb_default_name_map.yml testinput/iodatest_odb_sattcwv.yml"
+                            testinput/odb_default_name_map.yaml testinput/iodatest_odb_sattcwv.yaml"
                             test-SatTCWV.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -1255,7 +1251,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             SEVIRIClear
                             Data/testinput_tier_1/seviriclear.odb
-                            testinput/odb_default_name_map.yml testinput/iodatest_odb_seviriclear.yml"
+                            testinput/odb_default_name_map.yaml testinput/iodatest_odb_seviriclear.yaml"
                             test-SEVIRIClear.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -1267,7 +1263,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             ATMS
                             Data/testinput_tier_1/atms.odb
-                            testinput/odb_default_name_map.yml testinput/iodatest_odb_atms.yml"
+                            testinput/odb_default_name_map.yaml testinput/iodatest_odb_atms.yaml"
                             test-ATMS.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -1279,7 +1275,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             GeoCloud
                             Data/testinput_tier_1/geocloud.odb
-                            testinput/odb_default_name_map.yml testinput/iodatest_odb_geocloud.yml"
+                            testinput/odb_default_name_map.yaml testinput/iodatest_odb_geocloud.yaml"
                             test-GeoCloud.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -1291,7 +1287,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             SurfaceCloud
                             Data/testinput_tier_1/surfacecloud.odb
-                            testinput/odb_default_name_map.yml testinput/iodatest_odb_surfacecloud.yml"
+                            testinput/odb_default_name_map.yaml testinput/iodatest_odb_surfacecloud.yaml"
                             test-SurfaceCloud.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -1303,7 +1299,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             Altimeter
                             Data/testinput_tier_1/altimeter.odb
-                            testinput/odb_default_name_map.yml testinput/iodatest_odb_altimeter.yml"
+                            testinput/odb_default_name_map.yaml testinput/iodatest_odb_altimeter.yaml"
                             test-Altimeter.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -1315,7 +1311,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             OceanColour
                             Data/testinput_tier_1/oceancol.odb
-                            testinput/odb_default_name_map.yml testinput/iodatest_odb_oceancolour.yml"
+                            testinput/odb_default_name_map.yaml testinput/iodatest_odb_oceancolour.yaml"
                             test-OceanColour.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -1327,7 +1323,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             SatSST
                             Data/testinput_tier_1/satsst.odb
-                            testinput/odb_default_name_map.yml testinput/iodatest_odb_satsst.yml"
+                            testinput/odb_default_name_map.yaml testinput/iodatest_odb_satsst.yaml"
                             test-SatSST.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -1339,7 +1335,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             SeaIce
                             Data/testinput_tier_1/seaice.odb
-                            testinput/odb_default_name_map.yml testinput/iodatest_odb_seaice.yml"
+                            testinput/odb_default_name_map.yaml testinput/iodatest_odb_seaice.yaml"
                             test-SeaIce.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -1351,7 +1347,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             SurfaceSST
                             Data/testinput_tier_1/surfacesst.odb
-                            testinput/odb_default_name_map.yml testinput/iodatest_odb_surfacesst.yml"
+                            testinput/odb_default_name_map.yaml testinput/iodatest_odb_surfacesst.yaml"
                             test-SurfaceSST.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -1363,7 +1359,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             OceanSound
                             Data/testinput_tier_1/oceansound.odb
-                            testinput/odb_oceansound_name_map.yml testinput/iodatest_odb_oceansound.yml"
+                            testinput/odb_oceansound_name_map.yaml testinput/iodatest_odb_oceansound.yaml"
                             test-OceanSound.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -1375,7 +1371,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             OceanSound-truncate-profiles
                             Data/testinput_tier_1/oceansound.odb
-                            testinput/odb_oceansound_name_map.yml testinput/iodatest_odb_oceansound_truncate_profiles.yml"
+                            testinput/odb_oceansound_name_map.yaml testinput/iodatest_odb_oceansound_truncate_profiles.yaml"
                             test-OceanSound-truncate-profiles.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -1410,12 +1406,12 @@ endif()
 
 ecbuild_add_test( TARGET  test_ioda_obsdtype
                   SOURCES mains/TestIodaObsDtype.cc
-                  ARGS    "testinput/iodatest_obsdtype.yml"
+                  ARGS    "testinput/iodatest_obsdtype.yaml"
                   LIBS    ioda_test )
 
 ecbuild_add_test( TARGET  test_ioda_fileformat
                   SOURCES mains/TestIodaFileFormat.cc
-                  ARGS    "testinput/iodatest_fileformat.yml"
+                  ARGS    "testinput/iodatest_fileformat.yaml"
                   LIBS    ioda_test )
 
 #####################################################################
@@ -1436,7 +1432,7 @@ ecbuild_add_test(
 # Set up the testinput and testoutput directories
 #####################################################################
 
-# Create symlinks to input YAML configuration files
+# Create symlink to input YAML configuration files
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/testinput)
 
 foreach(FILENAME ${ioda_test_input})

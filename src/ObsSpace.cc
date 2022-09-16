@@ -43,11 +43,6 @@
 #include "ioda/Variables/Variable.h"
 
 namespace ioda {
-
-constexpr char MissingSortValueTreatmentParameterTraitsHelper::enumTypeName[];
-constexpr util::NamedEnumerator<MissingSortValueTreatment>
-  MissingSortValueTreatmentParameterTraitsHelper::namedValues[];
-
 namespace {
 
 // If the variable name \p name ends with an underscore followed by a number (potentially a channel
@@ -139,11 +134,17 @@ ObsSpace::ObsSpace(const Parameters_ & params, const eckit::mpi::Comm & comm,
     // Get list of observed variables
     // Either read from yaml list, use all variables in input file if 'obsdatain' is specified
     // or set to simulated variables if 'generate' is specified.
+    const bool usingObsGenerator =
+      ((obs_params_.top_level_.obsDataIn.value().engine.value()
+                   .engineParameters.value().type.value() == "GenList") ||
+       (obs_params_.top_level_.obsDataIn.value().engine.value()
+                   .engineParameters.value().type.value() == "GenRandom"));
+
     if (obs_params_.top_level_.ObservedVars.value().size()
             + obs_params_.top_level_.derivedSimVars.value().size() != 0) {
       // Read from yaml
       obsvars_ = obs_params_.top_level_.ObservedVars;
-    } else if (obs_params_.top_level_.obsGenerate.value() != boost::none) {
+    } else if (usingObsGenerator) {
       obsvars_ = obs_params_.top_level_.simVars;
     } else {
       // Use all variables found in the ObsValue group in the file. If there is no ObsValue
@@ -226,15 +227,14 @@ ObsSpace::ObsSpace(const Parameters_ & params, const eckit::mpi::Comm & comm,
 
 // -----------------------------------------------------------------------------
 void ObsSpace::save() {
-    if (obs_params_.top_level_.obsOutFile.value() != boost::none) {
-        std::string fileName = obs_params_.top_level_.obsOutFile.value()->fileName;
-
+    if (obs_params_.top_level_.obsDataOut.value() != boost::none) {
         // Write the output file
-        IoPool obsPool(commMPI_, obs_params_.getMpiTimeRank(), nlocs(), fileName,
-                       obs_params_.top_level_.ioPool);
-        oops::Log::info() << obsname() << ": save database to " << fileName
-                          << " (io pool size: " << obsPool.size_pool() << ")" << std::endl;
+        IoPool obsPool(obs_params_.top_level_.ioPool,
+            obs_params_.top_level_.obsDataOut.value()->engine.value().engineParameters,
+            obs_params_.comm(), obs_params_.timeComm() ,
+            obs_params_.windowStart(), obs_params_.windowEnd(), nlocs());
         obsPool.save(obs_group_);
+        oops::Log::info() << obsname() << ": save database to " << obsPool << std::endl;
         obsPool.finalize();
 
         // Call the mpi barrier command here to force all processes to wait until
@@ -272,22 +272,22 @@ std::size_t ObsSpace::nvars() const {
 
 // -----------------------------------------------------------------------------
 const std::vector<std::string> & ObsSpace::obs_group_vars() const {
-    return obs_params_.top_level_.obsIoInParameters().obsGrouping.value().obsGroupVars;
+    return obs_params_.top_level_.obsDataIn.value().obsGrouping.value().obsGroupVars;
 }
 
 // -----------------------------------------------------------------------------
 std::string ObsSpace::obs_sort_var() const {
-    return obs_params_.top_level_.obsIoInParameters().obsGrouping.value().obsSortVar;
+    return obs_params_.top_level_.obsDataIn.value().obsGrouping.value().obsSortVar;
 }
 
 // -----------------------------------------------------------------------------
 std::string ObsSpace::obs_sort_group() const {
-    return obs_params_.top_level_.obsIoInParameters().obsGrouping.value().obsSortGroup;
+    return obs_params_.top_level_.obsDataIn.value().obsGrouping.value().obsSortGroup;
 }
 
 // -----------------------------------------------------------------------------
 std::string ObsSpace::obs_sort_order() const {
-    return obs_params_.top_level_.obsIoInParameters().obsGrouping.value().obsSortOrder;
+    return obs_params_.top_level_.obsDataIn.value().obsGrouping.value().obsSortOrder;
 }
 
 // -----------------------------------------------------------------------------
@@ -544,11 +544,11 @@ void ObsSpace::print(std::ostream & os) const {
 // -----------------------------------------------------------------------------
 void ObsSpace::createObsGroupFromObsFrame(ObsFrameRead & obsFrame) {
     // Determine the maximum frame size
-    Dimensions_t maxFrameSize = obs_params_.top_level_.obsIoInParameters().maxFrameSize;
+    Dimensions_t maxFrameSize = obs_params_.top_level_.obsDataIn.value().maxFrameSize;
 
     // Create the dimension specs for obs_group_
     NewDimensionScales_t newDims;
-    for (auto & dimNameObject : obsFrame.ioDimVarList()) {
+    for (auto & dimNameObject : obsFrame.backendDimVarList()) {
         std::string dimName = dimNameObject.name;
         Variable srcDimVar = dimNameObject.var;
         Dimensions_t dimSize = srcDimVar.getDimensions().dimsCur[0];
@@ -593,7 +593,7 @@ void ObsSpace::createObsGroupFromObsFrame(ObsFrameRead & obsFrame) {
     obs_group_ = ObsGroup::generate(backend, newDims);
 
     // fill in dimension coordinate values
-    for (auto & dimNameObject : obsFrame.ioDimVarList()) {
+    for (auto & dimNameObject : obsFrame.backendDimVarList()) {
         std::string dimName = dimNameObject.name;
         Variable srcDimVar = dimNameObject.var;
         Variable destDimVar = obs_group_.vars.open(dimName);
@@ -1101,7 +1101,7 @@ void ObsSpace::buildSortedObsGroups() {
     const float missingFloat = util::missingValue(missingFloat);
     const util::DateTime missingDateTime = util::missingValue(missingDateTime);
     const MissingSortValueTreatment missingSortValueTreatment =
-      obs_params_.top_level_.obsIoInParameters().obsGrouping.value().missingSortValueTreatment;
+      obs_params_.top_level_.obsDataIn.value().obsGrouping.value().missingSortValueTreatment;
 
     // Get the sort variable from the data store, and convert to a vector of floats.
     std::size_t nLocs = this->nlocs();

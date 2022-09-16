@@ -14,7 +14,6 @@
 #include "ioda/Exception.h"
 #include "ioda/Copying.h"
 #include "ioda/io/ObsFrameRead.h"
-#include "ioda/io/ObsIoFactory.h"
 #include "ioda/Variables/VarUtils.h"
 
 namespace ioda {
@@ -32,14 +31,23 @@ namespace detail {
 //------------------------------------------------------------------------------------
 ObsFrameRead::ObsFrameRead(const ObsSpaceParameters & params) :
     ObsFrame(params) {
-    // Create the ObsIo object
-    obs_io_ = ObsIoFactory::create(ObsIoModes::READ, params);
+    // Create the backend engine object. Use the "simulated variables" spec from
+    // the YAML (params.top_level_.simVars) since that is the required spec, thus
+    // the only list guaranteed to be available at this time (ie, before reading
+    // the obs input and constructing the ObsSpace).
+    obs_data_in_ = Engines::ReaderFactory::create(
+        params.top_level_.obsDataIn.value().engine.value().engineParameters,
+        params.windowStart(), params.windowEnd(),
+        params.comm(), params.timeComm(),
+        params.top_level_.simVars.value().variables());
+
+    ObsGroup og = obs_data_in_->getObsGroup();
 
     // Find out what datetime representation exists in the input
     // Precedence is epoch first, then string, then offset.
-    use_epoch_datetime_ = obs_io_->vars().exists("MetaData/dateTime");
-    use_string_datetime_ = obs_io_->vars().exists("MetaData/datetime");
-    use_offset_datetime_ = obs_io_->vars().exists("MetaData/time");
+    use_epoch_datetime_ = og.vars.exists("MetaData/dateTime");
+    use_string_datetime_ = og.vars.exists("MetaData/datetime");
+    use_offset_datetime_ = og.vars.exists("MetaData/time");
     if (use_epoch_datetime_) {
       use_string_datetime_ = false;
       use_offset_datetime_ = false;
@@ -50,8 +58,8 @@ ObsFrameRead::ObsFrameRead(const ObsSpaceParameters & params) :
     // Check to see if required metadata variables exist
     bool haveRequiredMetadata =
         use_epoch_datetime_ || use_string_datetime_ || use_offset_datetime_;
-    haveRequiredMetadata = haveRequiredMetadata && obs_io_->vars().exists("MetaData/latitude");
-    haveRequiredMetadata = haveRequiredMetadata && obs_io_->vars().exists("MetaData/longitude");
+    haveRequiredMetadata = haveRequiredMetadata && og.vars.exists("MetaData/latitude");
+    haveRequiredMetadata = haveRequiredMetadata && og.vars.exists("MetaData/longitude");
     if (!haveRequiredMetadata) {
       std::string errorMsg =
           std::string("\nOne or more of the following metadata variables are missing ") +
@@ -78,13 +86,29 @@ ObsFrameRead::ObsFrameRead(const ObsSpaceParameters & params) :
                         << std::endl;
     }
 
-    const auto & distParams = params.top_level_.distribution.value().params.value();
-    distname_ = distParams.name;
+    // Collect information from the backend which will help with frame initialization
+    // and frame looping. Note the call to collectVarDimInfo will cache variable
+    // and dimension information from the backend since doing these on the fly is
+    // very slow with the HDF5 backend.
+    VarUtils::collectVarDimInfo(og, backend_var_list_, backend_dim_var_list_,
+                                backend_dims_attached_to_vars_, backend_max_var_size_);
+
+    // record number of locations from backend
+    backend_nlocs_ = og.vars.open("nlocs").getDimensions().dimsCur[0];
+    if (backend_nlocs_ == 0) {
+      oops::Log::info() << "WARNING: Input file " << obs_data_in_->fileName()
+                        << " contains zero observations" << std::endl;
+    }
+
+    // record variables by which observations should be grouped into records
+    obs_grouping_vars_ = params.top_level_.obsDataIn.value().obsGrouping.value().obsGroupVars;
 
     // Create an MPI distribution
+    const auto & distParams = params.top_level_.distribution.value().params.value();
+    distname_ = distParams.name;
     dist_ = DistributionFactory::create(params.comm(), distParams);
 
-    max_frame_size_ = params.top_level_.obsIoInParameters().maxFrameSize;
+    max_frame_size_ = params.top_level_.obsDataIn.value().maxFrameSize;
     oops::Log::debug() << "ObsFrameRead: maximum frame size: " << max_frame_size_ << std::endl;
 }
 
@@ -97,24 +121,25 @@ void ObsFrameRead::frameInit(Has_Attributes & destAttrs) {
     next_rec_num_ = 0;
     rec_num_increment_ = 1;
     unique_rec_nums_.clear();
-    // It's important to grab maximum var size from obs_io_ since it is being used to
-    // determine when there are no more frames from obs_io_.
-    max_var_size_ = obs_io_->maxVarSize();
+    // It's important to grab maximum var size from the backend since it is being used to
+    // determine when there are no more frames from the backend.
+    max_var_size_ = backend_max_var_size_;
     nlocs_ = 0;
     adjusted_nlocs_frame_start_ = 0;
     gnlocs_ = 0;
     nrecs_ = 0;
 
     // create an ObsGroup based frame with an in-memory backend
-    createFrameFromObsGroup(obs_io_->varList(), obs_io_->dimVarList(), obs_io_->varDimMap());
+    createFrameFromObsGroup(backend_var_list_, backend_dim_var_list_,
+                            backend_dims_attached_to_vars_);
 
     // copy the global attributes
-    copyAttributes(obs_io_->atts(), destAttrs);
+    copyAttributes(obs_data_in_->getObsGroup().atts, destAttrs);
 
     // Collect variable and dimension information for downstream use. Don't use the
     // max_var_size_ from obs_frame_ since it is artificially cropped to the max_frame_size_.
     // max_var_size_ is being used to determine when there are no more frames left from
-    // obs_io_ so it needs to be set from obs_io_.
+    // the backend so it needs to be set from the backend.
     Dimensions_t dummyMaxVarSize;
     VarUtils::collectVarDimInfo(obs_frame_, var_list_, dim_var_list_,
                                 dims_attached_to_vars_, dummyMaxVarSize);
@@ -138,7 +163,7 @@ bool ObsFrameRead::frameAvailable() {
 
         // Transfer all variable data
         Dimensions_t frameStart = this->frameStart();
-        for (auto & varNameObject : obs_io_->varList()) {
+        for (auto & varNameObject : backend_var_list_) {
             std::string varName = varNameObject.name;
             Variable sourceVar = varNameObject.var;
             Dimensions_t frameCount = this->basicFrameCount(sourceVar);
@@ -218,22 +243,22 @@ Dimensions_t ObsFrameRead::frameStart() {
 
 //------------------------------------------------------------------------------------
 Dimensions_t ObsFrameRead::frameCount(const std::string & varName) {
-    // We need to query the full size of the variable from obs_io_, but we may
+    // We need to query the full size of the variable from the backend, but we may
     // have created MetaData/dateTime from MetaData/datetime inside the frame.
     // If we are asking for MetaData/dateTime, but we used MetaData/datetime from
-    // obs_io_, then substitue in MetaData/datetime for this check.
+    // the backend, then substitue in MetaData/datetime for this check.
     std::string useVarName = varName;
     if (use_string_datetime_ && (varName == "MetaData/dateTime")) {
         useVarName = "MetaData/datetime";
     } else if (use_offset_datetime_ && (varName == "MetaData/dateTime")) {
         useVarName = "MetaData/time";
     }
-    Variable var = obs_io_->vars().open(useVarName);
+    Variable var = obs_data_in_->getObsGroup().vars.open(useVarName);
     Dimensions_t  fCount;
     if (var.isDimensionScale()) {
         fCount = basicFrameCount(var);
     } else {
-        if (obs_io_->isVarDimByNlocs(useVarName)) {
+        if (isVarDimByNlocs_Impl(useVarName, backend_dims_attached_to_vars_)) {
             fCount = adjusted_nlocs_frame_count_;
         } else {
             fCount = basicFrameCount(var);
@@ -306,7 +331,7 @@ void ObsFrameRead::genFrameIndexRecNums(std::shared_ptr<Distribution> & dist) {
     // numbers. This is because we are generating record numbers on the fly
     // since we want to get to the point where we can do the MPI distribution
     // without knowing how many obs (and records) we are going to encounter.
-    if (obs_io_->applyLocationsCheck()) {
+    if (obs_data_in_->applyLocationsCheck()) {
         genFrameLocationsWithQcheck(locIndex, frameIndex);
     } else {
         genFrameLocationsAll(locIndex, frameIndex);
@@ -314,7 +339,7 @@ void ObsFrameRead::genFrameIndexRecNums(std::shared_ptr<Distribution> & dist) {
 
     // Generate record numbers for this frame. Consider obs grouping.
     std::vector<Dimensions_t> records;
-    const std::vector<std::string> &obsGroupVarList = obs_io_->obsGroupingVars();
+    const std::vector<std::string> & obsGroupVarList = obs_grouping_vars_;
     if (obsGroupVarList.empty()) {
         genRecordNumbersAll(locIndex, records);
     } else {
@@ -474,7 +499,7 @@ void ObsFrameRead::buildObsGroupingKeys(const std::vector<std::string> & obsGrou
         std::string obsGroupVarName = obsGroupVarList[i];
         std::string varName = std::string("MetaData/") + obsGroupVarName;
         Variable groupVar = obs_frame_.vars.open(varName);
-        if (!obs_io_->isVarDimByNlocs(varName)) {
+        if (!isVarDimByNlocs_Impl(varName, backend_dims_attached_to_vars_)) {
             std::string ErrMsg =
                 std::string("ERROR: ObsFrameRead::genRecordNumbersGrouping: ") +
                 std::string("obs grouping variable (") + obsGroupVarName +

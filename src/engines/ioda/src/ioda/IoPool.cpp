@@ -210,10 +210,17 @@ void IoPool::setTotalNlocs(const std::size_t nlocs) {
 }
 
 //--------------------------------------------------------------------------------------
-IoPool::IoPool(const eckit::mpi::Comm & commAll, int timeRank, std::size_t nlocs,
-               const std::string & fileName, const oops::Parameter<IoPoolParameters> & params)
-                   : nlocs_(nlocs), filename_(fileName), comm_all_(commAll),
-                     rank_all_(commAll.rank()), size_all_(commAll.size()), params_(params) {
+IoPool::IoPool(const oops::Parameter<IoPoolParameters> & ioPoolParams,
+               const oops::RequiredPolymorphicParameter
+                   <Engines::WriterParametersBase, Engines::WriterFactory> & writerParams,
+               const eckit::mpi::Comm & commAll, const eckit::mpi::Comm & commTime,
+               const util::DateTime & winStart, const util::DateTime & winEnd,
+               std::size_t nlocs)
+                   : params_(ioPoolParams), writer_params_(writerParams),
+                     comm_all_(commAll), rank_all_(commAll.rank()), size_all_(commAll.size()),
+                     comm_time_(commTime), rank_time_(commTime.rank()),
+                     size_time_(commTime.size()), win_start_(winStart), win_end_(winEnd),
+                     nlocs_(nlocs) {
     // For now, the target pool size is simply the minumum of the specified (or default) max
     // pool size and the size of the comm_all_ communicator group.
     setTargetPoolSize();
@@ -235,9 +242,6 @@ IoPool::IoPool(const eckit::mpi::Comm & commAll, int timeRank, std::size_t nlocs
 
     // Calculate the total nlocs for each rank in the io pool.
     setTotalNlocs(nlocs);
-
-    // Uniquify the file name using the pool rank number.
-    filename_ = uniquifyFileName(filename_, rank_pool_, timeRank);
 }
 
 IoPool::~IoPool() = default;
@@ -248,21 +252,16 @@ IoPool::~IoPool() = default;
 void IoPool::save(const Group & srcGroup) {
     Group fileGroup;
     if (comm_pool_ != nullptr) {
+        std::unique_ptr<Engines::WriterBase> writerEngine =
+            Engines::WriterFactory::create(writer_params_, win_start_, win_end_,
+                                           *comm_pool_, comm_time_, { });
 
-        // Open the output file and copy the ObsSpace top level group to the file top level group.
-        Engines::BackendNames backendName = Engines::BackendNames::Hdf5File;
-        Engines::BackendCreationParameters backendParams;
+        fileGroup = writerEngine->getObsGroup();
 
-        // Create an hdf5 file, and allow overwriting an existing file (for now)
-        // Tag on the rank number to the output file name to avoid collisions if running
-        // with multiple MPI tasks.
-        backendParams.fileName = filename_;
-        backendParams.action = Engines::BackendFileActions::Create;
-        backendParams.createMode = Engines::BackendCreateModes::Truncate_If_Exists;
-
-        // Create the backend group
-        // Use the None DataLyoutPolicy for now to accommodate the current file format
-        fileGroup = constructBackend(backendName, backendParams);
+        // collect the destination from the writer engine instance
+        std::ostringstream ss;
+        ss << *writerEngine;
+        writerDest_ = ss.str();
     }
 
     // Copy the ObsSpace ObsGroup to the output file Group.
@@ -279,6 +278,11 @@ void IoPool::finalize() {
     if (eckit::mpi::hasComm(nonPoolCommName)) {
         eckit::mpi::deleteComm(nonPoolCommName);
     }
+}
+
+//--------------------------------------------------------------------------------------
+void IoPool::print(std::ostream & os) const {
+  os << writerDest_ << " (io pool size: " << size_pool_ << ")";
 }
 
 }  // namespace ioda

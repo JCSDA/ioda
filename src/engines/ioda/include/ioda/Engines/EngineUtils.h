@@ -15,11 +15,15 @@
  */
 #include <iostream>
 #include <string>
+#include <vector>
 
 #include "../defs.h"
 
+#include "oops/util/parameters/ParameterTraits.h"
+
 namespace ioda {
 class Group;
+class ObsGroup;
 
 /// The backends that implement the ioda-engines functionality.
 namespace Engines {
@@ -34,14 +38,16 @@ enum class BackendNames {
 /// Actions for accessing a file
 /// \ingroup ioda_cxx_engines_pub
 enum class BackendFileActions {
-  Create,  ///< Create a new file
-  Open     ///< Open an existing file
+  Undefined,  ///< Action has not be set
+  Create,     ///< Create a new file
+  Open        ///< Open an existing file
 };
 
 /// Options when creating a new file.
 /// \ingroup ioda_cxx_engines_pub
 /// \note When changing, you need to update the ostream operators.
 enum class BackendCreateModes {
+  Undefined,           ///< Mode has not be set
   Truncate_If_Exists,  ///< If the file already exists, overwrite it.
   Fail_If_Exists       ///< If the file already exists, fail with an error.
 };
@@ -50,6 +56,7 @@ enum class BackendCreateModes {
 /// \ingroup ioda_cxx_engines_pub
 /// \note When changing, you need to update the ostream operators.
 enum class BackendOpenModes {
+  Undefined,           ///< Mode has not be set
   Read_Only,  ///< Open the file in read-only mode.
   Read_Write  ///< Open the file in read-write mode.
 };
@@ -71,6 +78,22 @@ public:
   bool flush;
   /// @}
 };
+
+/// \brief store generated data into an ObsGroup
+/// \param latVals vector of latitude values
+/// \param lonVals vector of longitude values
+/// \param dts vector of time offsets (s) relative to \p epoch
+/// \param epoch (ISO 8601 string) relative to which datetimes are computed
+/// \param obsVarNames vector (string) of simulated variable names
+/// \param obsErrors vector of obs error estimates
+/// \param[out] obsGroup destination for the generated data
+void storeGenData(const std::vector<float> & latVals,
+                  const std::vector<float> & lonVals,
+                  const std::vector<int64_t> & dts,
+                  const std::string & epoch,
+                  const std::vector<std::string> & obsVarNames,
+                  const std::vector<float> & obsErrors,
+                  ObsGroup &obsGroup);
 
 /// \brief This is a wrapper function around the constructBackend
 ///   function for creating a backend based on command-line options.

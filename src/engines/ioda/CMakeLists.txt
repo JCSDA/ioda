@@ -120,7 +120,23 @@ list(APPEND SRCS_VARIABLES
 
 list(APPEND SRCS_ENGINES_TOP
 	include/ioda/Engines/Capabilities.h
+	include/ioda/Engines/GenList.h
+	include/ioda/Engines/GenRandom.h
+	include/ioda/Engines/ReaderBase.h
+	include/ioda/Engines/ReadH5File.h
+	include/ioda/Engines/ReadOdbFile.h
+	include/ioda/Engines/WriterBase.h
+	include/ioda/Engines/WriteH5File.h
+	include/ioda/Engines/WriteOdbFile.h
 	include/ioda/Engines/EngineUtils.h
+	src/ioda/Engines/GenList.cpp
+	src/ioda/Engines/GenRandom.cpp
+	src/ioda/Engines/ReaderBase.cpp
+	src/ioda/Engines/ReadH5File.cpp
+	src/ioda/Engines/ReadOdbFile.cpp
+	src/ioda/Engines/WriterBase.cpp
+	src/ioda/Engines/WriteH5File.cpp
+	src/ioda/Engines/WriteOdbFile.cpp
 	src/ioda/Engines/EngineUtils.cpp)
 
 list(APPEND SRCS_ENGINES_HH 
