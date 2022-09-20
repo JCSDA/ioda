@@ -57,6 +57,7 @@ extern "C" {
   void obsspace_get_datetime_f(const ObsSpace &, const char *, const char *,
                                const std::size_t &, int32_t*, int32_t*,
                                const std::size_t &, int*);
+  void obsspace_get_window_f(const ObsSpace &, util::DateTime *, util::DateTime *);
   void obsspace_get_bool_f(const ObsSpace &, const char *, const char *,
                            const std::size_t &, bool*,
                            const std::size_t &, int*);

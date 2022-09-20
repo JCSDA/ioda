@@ -36,6 +36,7 @@ public obsspace_put_db
 public obsspace_has
 public obsspace_get_nlocs_dim_id
 public obsspace_get_nchans_dim_id
+public obsspace_get_window
 
 #include "ioda/obsspace_interface.f"
 
@@ -474,6 +475,36 @@ subroutine obsspace_get_db_datetime(obss, group, vname, vect, chan_select)
   ! Clean up
   deallocate(date, time)
 end subroutine obsspace_get_db_datetime
+
+!-------------------------------------------------------------------------------
+
+!>  Return the DA timing window (start, end)
+
+subroutine obsspace_get_window(obss, tbegin, tend)
+  use datetime_mod, only: datetime
+  implicit none
+  type(c_ptr), intent(in)     :: obss
+  type(datetime), intent(out) :: tbegin
+  type(datetime), intent(out) :: tend
+
+  type(c_ptr) :: c_tbegin, c_tend
+
+  ! Initialize
+  call datetime_create("0001-01-01T01:01:01Z", tbegin)
+  call datetime_create("0001-01-01T01:01:01Z", tend)
+
+  ! Copy to c++
+  call f_c_datetime(tbegin, c_tbegin)
+  call f_c_datetime(tend, c_tend)
+
+  ! Copy correct value into c++ object
+  call c_obsspace_get_window(obss, c_tbegin, c_tend)
+
+  ! Copy back to Fortran
+  call c_f_datetime(c_tbegin, tbegin)
+  call c_f_datetime(c_tend, tend)
+
+end subroutine obsspace_get_window
 
 !-------------------------------------------------------------------------------
 

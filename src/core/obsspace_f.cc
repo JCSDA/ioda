@@ -202,6 +202,12 @@ void obsspace_get_datetime_f(const ObsSpace & obss, const char * group, const ch
   }
 }
 // -----------------------------------------------------------------------------
+void obsspace_get_window_f(const ObsSpace & obss, util::DateTime * begin,
+                           util::DateTime * end) {
+  *begin = obss.windowStart();
+  *end = obss.windowEnd();
+}
+// -----------------------------------------------------------------------------
 void obsspace_get_bool_f(const ObsSpace & obss, const char * group, const char * vname,
                          const std::size_t & length, bool* vec,
                          const std::size_t & len_cs, int* chan_select) {
