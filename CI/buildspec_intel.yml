@@ -57,7 +57,10 @@ phases:
       - echo ${CODEBUILD_RESOLVED_SOURCE_VERSION} > /jcsda/artifacts/commit_sha.txt
 
       - cd CI
-      - . /etc/profile.d/intel.sh
+      - source /etc/profile.d/z10_spack_environment.sh
+      - cat /etc/profile.d/z10_spack_environment.sh
+      - source /opt/intel/oneapi/compiler/latest/env/vars.sh
+      - source /opt/intel/oneapi/mpi/latest/env/vars.sh
 
       # read cdash url from s3
       - wget https://ci-test-cdash-url.s3.amazonaws.com/cdash_url.txt
@@ -102,27 +105,17 @@ phases:
       - export BUILD_STATUS="0"
       - echo $BUILD_STATUS
 
-      - su - jedi -c "export CC=mpiicc
-        && export FC=mpiifort
-        && export CXX=mpiicpc
-        && export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
-        && export PATH=/usr/local/lib:$PATH
-        && export PYTHONPATH=/usr/local/lib:/usr/local/lib/python3.8/site-packages:$PYTHONPATH
-        && cd /home/jedi
-        && ecbuild -Wno-dev -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCDASH_OVERRIDE_SITE=CodeBuild -DCDASH_OVERRIDE_GIT_BRANCH=$CODEBUILD_GIT_BRANCH -DCTEST_UPDATE_VERSION_ONLY=FALSE /jcsda/ioda-bundle/"
+      - mkdir /build_container
+      - chmod 777 /build_container
 
-      - su - jedi -c "export CC=mpiicc
-        && export FC=mpiifort
-        && export CXX=mpiicpc
-        && export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
-        && export PATH=/usr/local/lib:$PATH
-        && export PYTHONPATH=/usr/local/lib:/usr/local/lib/python3.8/site-packages:$PYTHONPATH
-        && cd /home/jedi/ioda
-        && cp ../DartConfiguration.tcl .
-        && sed -i 's/ioda-bundle/ioda-bundle\/ioda/' DartConfiguration.tcl
-        && sed -i 's/jedi/jedi\/ioda/' DartConfiguration.tcl
-        && cat DartConfiguration.tcl
-        && make -j4"
+      - cd /build_container
+      - ecbuild -Wno-dev -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCDASH_OVERRIDE_SITE=CodeBuild -DCDASH_OVERRIDE_SYSTEM_NAME="IntelContainer" -DCDASH_OVERRIDE_GIT_BRANCH=$CODEBUILD_GIT_BRANCH -DCTEST_UPDATE_VERSION_ONLY=FALSE /jcsda/ioda-bundle
+
+      - cd /build_container/ioda
+      - cp ../DartConfiguration.tcl .
+      - sed -i 's/ioda-bundle/ioda-bundle\/ioda/' DartConfiguration.tcl
+      - sed -i 's/build_container/build_container\/ioda/' DartConfiguration.tcl
+      - make -j4
 
       - if [ "$CODEBUILD_BUILD_SUCCEEDING" = "1" ];
         then export BUILD_STATUS="1";
@@ -130,19 +123,13 @@ phases:
         fi
       - echo $BUILD_STATUS
 
-      - su - jedi -c "export CC=mpiicc
-        && export FC=mpiifort
-        && export CXX=mpiicpc
-        && export LD_LIBRARY_PATH=/usr/local/lib:/home/jedi/lib:$LD_LIBRARY_PATH
-        && export PATH=/usr/local/lib:$PATH
-        && cd /home/jedi/ioda
-        && ctest -C RelWithDebInfo -D ExperimentalTest"
+      - cd /build_container/ioda
+      - ctest -C RelWithDebInfo -D ExperimentalTest
 
     finally:
       # upload ctest report to CDASH
-      - su - jedi -c "CC=mpicc CXX=mpicxx FC=mpifort
-        && cd /home/jedi/ioda
-        && ctest -C RelWithDebInfo -D ExperimentalSubmit -M Continuous -- --track Continuous --group Continuous"
+      - cd /build_container/ioda
+      - ctest -C RelWithDebInfo -D ExperimentalSubmit -M Continuous -- --track Continuous --group Continuous
 
   post_build:
     commands:
@@ -151,7 +138,7 @@ phases:
 
       - if [ "$BUILD_STATUS" = "1" ];
         then echo "Build & tests passed, find cdash url";
-        url=$(bash /jcsda/ioda-bundle/ioda/CI/cdash-url.sh /home/jedi/ioda/Testing $CDASH_URL);
+        url=$(. /jcsda/ioda-bundle/ioda/CI/cdash-url.sh /build_container/ioda/Testing $CDASH_URL);
         echo $url;
         echo ${url} > /jcsda/artifacts/cdash-url.txt;
         cat /jcsda/artifacts/cdash-url.txt;

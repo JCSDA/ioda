@@ -48,7 +48,6 @@ phases:
     commands:
       - echo Executing pre_build phase
       - git lfs install # creates .gitconfig
-      - cp ~/.gitconfig .
       - mkdir /build_container
       - mkdir /jcsda
 
@@ -106,8 +105,11 @@ phases:
       - echo $BUILD_STATUS
 
       # configure and build
+      - ls /etc/profile.d
+      - . /etc/profile.d/z10_spack_environment.sh
       - cd /build_container
-      - ecbuild -Wno-dev -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCDASH_OVERRIDE_SITE=CodeBuild -DCDASH_OVERRIDE_GIT_BRANCH=$CODEBUILD_GIT_BRANCH -DCTEST_UPDATE_VERSION_ONLY=FALSE /jcsda/ioda-bundle
+      - ecbuild -Wno-dev -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCDASH_OVERRIDE_SITE=CodeBuild -DCDASH_OVERRIDE_SYSTEM_NAME="ClangContainer" -DCDASH_OVERRIDE_GIT_BRANCH=$CODEBUILD_GIT_BRANCH -DCTEST_UPDATE_VERSION_ONLY=FALSE /jcsda/ioda-bundle
+
       - cd /build_container/ioda
       - cp ../DartConfiguration.tcl .
       - sed -i 's/ioda-bundle/ioda-bundle\/ioda/' DartConfiguration.tcl
@@ -135,10 +137,14 @@ phases:
       - echo $CODEBUILD_BUILD_SUCCEEDING
       - echo $BUILD_STATUS
 
+      - tag=$(head -1 /build_container/ioda/Testing/TAG)
+      - cat /build_container/ioda/Testing/TAG
+      - cat /build_container/ioda/Testing/$tag/Done.xml
+
       # upload find cdash url and upload it as CodeBuild artifact to S3
       - if [ "$BUILD_STATUS" = "1" ];
         then echo "Build & tests passed, find cdash url";
-        url=$(bash /jcsda/ioda-bundle/ioda/CI/cdash-url.sh /build_container/ioda/Testing $CDASH_URL);
+        url=$(. /jcsda/ioda-bundle/ioda/CI/cdash-url.sh /build_container/ioda/Testing $CDASH_URL);
         echo $url;
         echo ${url} > /jcsda/artifacts/cdash-url.txt;
         cat /jcsda/artifacts/cdash-url.txt;
