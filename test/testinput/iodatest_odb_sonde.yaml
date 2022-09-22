@@ -28,3 +28,4 @@ variables:
 - name: winpro_flags_usa
 - name: wmo_block_number
 - name: wmo_station_number
+truncate profiles to numlev: true
