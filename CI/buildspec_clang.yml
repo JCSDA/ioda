@@ -74,9 +74,6 @@ phases:
       - chmod 0700 ~/.git-credentials
       - echo "https://${GIT_USER}:${GIT_PASS}@github.com" >~/.git-credentials
 
-      # jedi-cmake
-      - ./clone.sh jcsda-internal/jedi-cmake $CODEBUILD_GIT_BRANCH  /jcsda/ioda-bundle jedicmake ${GIT_BASE_BRANCH} develop
-
       # ioda
       - ./clone.sh jcsda-internal/ioda $CODEBUILD_GIT_BRANCH  /jcsda/ioda-bundle ioda ${GIT_BASE_BRANCH} develop
 
