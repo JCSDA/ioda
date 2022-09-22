@@ -1019,7 +1019,7 @@ Variables:
   - Variable: [ "altimeterSettingQnh" ]
     Type: Enum
   - Variable: [ "heightAboveSurfaceOfBaseOfLowestCloud" ]
-    Attributes: { units: "m" }
+    Type: Enum
     Dimensions: [ [ "Location" ], [ "Location", "CloudSequence" ] ]
   - Variable: [ "cloudAmountDescription" ]
     Type: Enum
