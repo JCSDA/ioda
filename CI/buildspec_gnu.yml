@@ -155,7 +155,7 @@ phases:
         fi
 
       - cd /home/nonroot/ioda
-      - bash /jcsda/ioda-bundle/ioda/CI/codecov_script_$org_name.sh
+      - bash /jcsda/ioda-bundle/ioda/CI/codecov_script.sh
 
 artifacts:
   files:

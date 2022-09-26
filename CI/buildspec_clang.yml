@@ -141,7 +141,7 @@ phases:
       # upload find cdash url and upload it as CodeBuild artifact to S3
       - if [ "$BUILD_STATUS" = "1" ];
         then echo "Build & tests passed, find cdash url";
-        url=$(. /jcsda/ioda-bundle/ioda/CI/cdash-url.sh /build_container/ioda/Testing $CDASH_URL);
+        url=$(bash /jcsda/ioda-bundle/ioda/CI/cdash-url.sh /build_container/ioda/Testing $CDASH_URL);
         echo $url;
         echo ${url} > /jcsda/artifacts/cdash-url.txt;
         cat /jcsda/artifacts/cdash-url.txt;
