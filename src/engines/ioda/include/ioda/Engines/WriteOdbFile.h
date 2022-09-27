@@ -23,12 +23,6 @@ class WriteOdbFileParameters : public WriterParametersBase {
     OOPS_CONCRETE_PARAMETERS(WriteOdbFileParameters, WriterParametersBase)
 
   public:
-    /// \brief Allow an existing file to be overwritten
-    oops::Parameter<bool> allowOverwrite{"allow overwrite", true, this};
-
-    /// \brief Path to input file
-    oops::RequiredParameter<std::string> fileName{"obsfile", this};
-
     /// \brief Path to varno mapping file
     oops::RequiredParameter<std::string> mappingFileName{"mapping file", this};
 };
@@ -40,14 +34,12 @@ class WriteOdbFile : public WriterBase {
   typedef WriteOdbFileParameters Parameters_;
 
   // Constructor via parameters
-  WriteOdbFile(const Parameters_ & params, const util::DateTime & winStart,
-               const util::DateTime & winEnd, const eckit::mpi::Comm & comm,
-               const eckit::mpi::Comm & timeComm, const std::vector<std::string> & obsVarNames);
+  WriteOdbFile(const Parameters_ & params, const WriterCreationParameters & createParams);
 
   void print(std::ostream & os) const override;
 
  private:
-  std::string fileName_;
+  Parameters_ params_;
 };
 
 }  // namespace Engines

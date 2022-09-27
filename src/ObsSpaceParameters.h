@@ -12,9 +12,9 @@
 #include "ioda/core/FileFormat.h"
 #include "ioda/core/ParameterTraitsFileFormat.h"
 #include "ioda/distribution/DistributionFactory.h"
+#include "ioda/Io/IoPoolParameters.h"
 #include "ioda/Misc/DimensionScales.h"
 #include "ioda/Misc/Dimensions.h"
-#include "ioda/Misc/IoPoolParameters.h"
 #include "ioda/ObsDataIoParameters.h"
 
 #include "eckit/exception/Exceptions.h"

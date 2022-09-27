@@ -23,7 +23,7 @@
 #include "oops/test/TestEnvironment.h"
 
 #include "ioda/Engines/HH.h"
-#include "ioda/Misc/IoPoolUtils.h"
+#include "ioda/Io/IoPoolUtils.h"
 #include "ioda/ObsSpace.h"
 
 namespace ioda {

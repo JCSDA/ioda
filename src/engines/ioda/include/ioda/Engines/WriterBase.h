@@ -28,7 +28,7 @@ class Printable;
 class WriterFactory;
 
 //----------------------------------------------------------------------------------------
-// Writer parameters base class
+// Writer configuration parameters base class
 //----------------------------------------------------------------------------------------
 
 /// \brief Parameters base class for the parameters subclasses associated with the
@@ -39,6 +39,12 @@ class WriterParametersBase : public oops::Parameters {
  public:
     /// \brief Type of the WriterBase subclass to use.
     oops::RequiredParameter<std::string> type{"type", this};
+
+    /// \brief Path to input file
+    oops::RequiredParameter<std::string> fileName{"obsfile", this};
+
+    /// \brief Allow an existing file to be overwritten
+    oops::Parameter<bool> allowOverwrite{"allow overwrite", true, this};
 };
 
 /// \brief Polymorphic parameter holding an instance of a subclass of WriterParametersBase.
@@ -54,6 +60,37 @@ class WriterParametersWrapper : public oops::Parameters {
 };
 
 //----------------------------------------------------------------------------------------
+// Writer creation parameters base class
+//----------------------------------------------------------------------------------------
+
+class WriterCreationParameters {
+  public:
+    WriterCreationParameters(const eckit::mpi::Comm & comm, const eckit::mpi::Comm & timeComm,
+                             const bool createMultipleFiles, const bool isParallelIo);
+    virtual ~WriterCreationParameters() {}
+
+    /// \brief io pool communicator group
+    const eckit::mpi::Comm & comm;
+
+    /// \brief time communicator group
+    const eckit::mpi::Comm & timeComm;
+
+    /// \brief flag indicating how many files to write
+    /// \details This flag is being used to handle the case where we have a very large
+    /// number of locations to write. This situation could create a file so big that it
+    /// becomes unwieldy to handle, so we want a control to be able to choose between
+    /// writing one file per MPI task versus writing a single output file (default).
+    const bool createMultipleFiles;
+
+    /// \brief flag indicating whether a parallel io backend is to be used
+    /// \details This flag is set to true to indicate a parallel io backend (if available)
+    /// should be used. In the case of the ODB writer, this flag being true would indicate
+    /// that the multiple files created by the io pool should be concatenated together
+    /// in the IoPool::finalize() function.
+    const bool isParallelIo;
+};
+
+//----------------------------------------------------------------------------------------
 // Writer base class
 //----------------------------------------------------------------------------------------
 
@@ -65,9 +102,7 @@ class WriterParametersWrapper : public oops::Parameters {
 
 class WriterBase : public util::Printable {
  public:
-    WriterBase(const util::DateTime & winStart, const util::DateTime & winEnd,
-               const eckit::mpi::Comm & comm, const eckit::mpi::Comm & timeComm,
-               const std::vector<std::string> & obsVarNames);
+    WriterBase(const WriterCreationParameters & createParams);
     virtual ~WriterBase() {}
 
     /// \brief return the backend that stores the data
@@ -86,20 +121,8 @@ class WriterBase : public util::Printable {
     /// \brief ObsGroup container associated with the selected backend engine
     ioda::ObsGroup obs_group_;
 
-    /// \brief DA window start
-    const util::DateTime winStart_;
-
-    /// \brief DA window end
-    const util::DateTime winEnd_;
-
-    /// \brief primary MPI communicator
-    const eckit::mpi::Comm & comm_;
-
-    /// \brief time bin MPI communicator
-    const eckit::mpi::Comm & timeComm_;
-
-    /// \brief list of varible names that will be used downstream
-    const std::vector<std::string> obsVarNames_;
+    /// \brief creation parameters
+    WriterCreationParameters createParams_;
 };
 
 //----------------------------------------------------------------------------------------
@@ -111,11 +134,7 @@ class WriterFactory {
   /// \brief Create and return a new instance of an WriterBase subclass.
   /// \param params Parameters object for the engine creation
   static std::unique_ptr<WriterBase> create(const WriterParametersBase & params,
-                                            const util::DateTime & winStart,
-                                            const util::DateTime & winEnd,
-                                            const eckit::mpi::Comm & comm,
-                                            const eckit::mpi::Comm & timeComm,
-                                            const std::vector<std::string> & obsVarNames);
+                                            const WriterCreationParameters & createParams);
 
   /// \brief Create and return an instance of the subclass of ObsOperatorParametersBase
   /// storing parameters of observation operators of the specified type.
@@ -135,11 +154,7 @@ class WriterFactory {
   /// \brief Construct a new instance of an WriterBase subclass.
   /// \param params Parameters object for the engine construction
   virtual std::unique_ptr<WriterBase> make(const WriterParametersBase & params,
-                                           const util::DateTime & winStart,
-                                           const util::DateTime & winEnd,
-                                           const eckit::mpi::Comm & comm,
-                                           const eckit::mpi::Comm & timeComm,
-                                           const std::vector<std::string> & obsVarNames) = 0;
+                                           const WriterCreationParameters & createParams) = 0;
 
   /// \brief Construct a new instance of an WriterParametersBase subclass.
   virtual std::unique_ptr<WriterParametersBase> makeParameters() const = 0;
@@ -158,14 +173,9 @@ class WriterMaker : public WriterFactory {
   /// \brief Construct a new instance of an WriterBase subclass.
   /// \param params Parameters object for the engine construction
   std::unique_ptr<WriterBase> make(const WriterParametersBase & params,
-                                   const util::DateTime & winStart,
-                                   const util::DateTime & winEnd,
-                                   const eckit::mpi::Comm & comm,
-                                   const eckit::mpi::Comm & timeComm,
-                                   const std::vector<std::string> & obsVarNames) override {
+                                   const WriterCreationParameters & createParams) override {
     const auto &stronglyTypedParameters = dynamic_cast<const Parameters_&>(params);
-    return std::make_unique<T>(stronglyTypedParameters, winStart, winEnd,
-                               comm, timeComm, obsVarNames);
+    return std::make_unique<T>(stronglyTypedParameters, createParams);
   }
 
   /// \brief Construct a new instance of an WriterParametersBase subclass.

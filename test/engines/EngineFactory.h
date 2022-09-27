@@ -93,10 +93,12 @@ CASE("ioda/GlobalAttributeCheck") {
           oops::mpi::world(), oops::mpi::myself(), params.obsVarNames);
       oops::Log::info() << "Reader source: " << *testReaderEngine << std::endl;
     } else if (params.obsDataOut.value() != boost::none) {
+      bool createMultipleFiles = false;
+      bool isParallelIo = (oops::mpi::world().size() > 1);
+      Engines::WriterCreationParameters createParams(oops::mpi::world(), oops::mpi::myself(),
+                                        createMultipleFiles, isParallelIo);
       testWriterEngine = Engines::WriterFactory::create(
-          params.obsDataOut.value()->engine.value().engineParameters,
-          util::DateTime("2018-04-14T21:00:00Z"), util::DateTime("2018-04-15T03:00:00Z"),
-          oops::mpi::world(), oops::mpi::myself(), params.obsVarNames);
+          params.obsDataOut.value()->engine.value().engineParameters, createParams);
       oops::Log::info() << "Writer destination: " << *testWriterEngine << std::endl;
     }
 

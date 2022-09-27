@@ -189,21 +189,33 @@ Group constructFromCmdLine(int argc, char** argv, const std::string& defaultFile
 Group constructBackend(BackendNames name, BackendCreationParameters& params) {
   Group backend;
   if (name == BackendNames::Hdf5File) {
-    if (params.action == BackendFileActions::Open)
+    if (params.action == BackendFileActions::Open) {
       return HH::openFile(params.fileName, params.openMode);
-    if (params.action == BackendFileActions::Create)
-      return HH::createFile(params.fileName, params.createMode, HH::HDF5_Version_Range(HH::HDF5_Version::V18, HH::HDF5_Version::V110));
+    }
+    if (params.action == BackendFileActions::Create) {
+      return HH::createFile(params.fileName, params.createMode,
+                 HH::HDF5_Version_Range(HH::HDF5_Version::V18, HH::HDF5_Version::V110));
+    }
+    if (params.action == BackendFileActions::CreateParallel) {
+      return HH::createParallelFile(params.fileName, params.createMode, params.comm,
+                 HH::HDF5_Version_Range(HH::HDF5_Version::V18, HH::HDF5_Version::V110));
+    }
     throw Exception("Unknown BackendFileActions value", ioda_Here());
   }
   if (name == BackendNames::Hdf5Mem) {
-    if (params.action == BackendFileActions::Open)
-      return HH::openMemoryFile(params.fileName, params.openMode, params.flush, params.allocBytes);
-    if (params.action == BackendFileActions::Create)
+    if (params.action == BackendFileActions::Open) {
+      return HH::openMemoryFile(params.fileName, params.openMode, params.flush,
+                                params.allocBytes);
+    }
+    if (params.action == BackendFileActions::Create) {
       return HH::createMemoryFile(params.fileName, params.createMode, params.flush,
                                   params.allocBytes);
+    }
     throw Exception("Unknown BackendFileActions value", ioda_Here());
   }
-  if (name == BackendNames::ObsStore) return ObsStore::createRootGroup();
+  if (name == BackendNames::ObsStore) {
+    return ObsStore::createRootGroup();
+  }
 
   // If we get to here, then we have a backend name that is
   // not implemented yet.
