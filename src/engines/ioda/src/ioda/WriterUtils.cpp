@@ -117,7 +117,8 @@ void transferVarDataMPI(const IoPool & ioPool, const Variable & srcVar,
                         const std::string & varName, int varNumber,
                         const std::vector<std::size_t> & varStarts,
                         const std::vector<std::size_t> & varCounts,
-                        Dimensions_t dimFactor, Group & dest, const bool isParallelIo) {
+                        Dimensions_t dimFactor, Group & dest,
+                        const bool isParallelIo, const std::size_t strLen) {
 
     std::vector<VarType> varData;
     srcVar.read<VarType>(varData);
@@ -165,8 +166,9 @@ void transferVarDataMPI<std::string>(const IoPool & ioPool, const Variable & src
                         const std::string & varName, const int varNumber,
                         const std::vector<std::size_t> & varStarts,
                         const std::vector<std::size_t> & varCounts,
-                        const Dimensions_t dimFactor, Group & dest, const bool isParallelIo) {
-    constexpr int maxStringLength = 256;
+                        const Dimensions_t dimFactor, Group & dest,
+                        const bool isParallelIo, const std::size_t strLen) {
+    int maxStringLength = strLen + 1;
 
     std::vector<std::string> varData;
     srcVar.read<std::string>(varData);
@@ -285,7 +287,8 @@ void identifyVarsUsingNlocs(const ioda::VarUtils::VarDimMap & varDimMap,
 void copyVarData(const ioda::IoPool & ioPool, const ioda::Group & src, ioda::Group & dest,
                  const VarUtils::Vec_Named_Variable & srcNamedVars,
                  const std::unordered_set<std::string> & varsUsingNlocs,
-                 const bool isParallelIo){
+                 const bool isParallelIo,
+                 const std::map<std::string, std::size_t> & maxStringLengths){
   // For ranks in the io pool, collect the variable data and write out to the file. The
   // ranks not in the io pool will participate only in the MPI send/recv calls.
   int varNumber = 1;
@@ -303,12 +306,18 @@ void copyVarData(const ioda::IoPool & ioPool, const ioda::Group & src, ioda::Gro
         Dimensions_t dimFactor;
         calcVarStartsCounts(ioPool, srcVar, varStarts, varCounts, dimFactor);
 
+        std::size_t strLen = 0;
+        if (maxStringLengths.find(varName) != maxStringLengths.end()) {
+            strLen = maxStringLengths.at(varName);
+        }
+
         VarUtils::forAnySupportedVariableType(
             srcVar,
             [&](auto typeDiscriminator) {
                 typedef decltype(typeDiscriminator) T;
                 transferVarDataMPI<T>(ioPool, srcVar, varName, varNumber,
-                                      varStarts, varCounts, dimFactor, dest, isParallelIo);
+                                      varStarts, varCounts, dimFactor, dest,
+                                      isParallelIo, strLen);
             },
             VarUtils::ThrowIfVariableIsOfUnsupportedType(varName));
 
@@ -333,35 +342,37 @@ void copyVarData(const ioda::IoPool & ioPool, const ioda::Group & src, ioda::Gro
 void calcMaxStringLengths(const ioda::IoPool & ioPool,
                           const VarUtils::Vec_Named_Variable & allVarsList,
                           std::map<std::string, std::size_t> & maxStringLengths) {
-    // Only want the members of the io pool participating in this function.
+    // Want to collect from every mpi task (comm_all_ communicator group).
     //
     // Walk through all variables and figure out the max string length which must
-    // be done over the entire io pool.
-    if (ioPool.comm_pool() != nullptr) {
-        maxStringLengths.clear();
-        for (auto & namedVar : allVarsList) {
-            std::string varName = namedVar.name;
-            Variable var = namedVar.var;
-            bool isString = var.isA<std::string>();
-
-            if (isString) {
-                // Variable is a string type. Read in the values and find the maximum
-                // string length. Then do an allReduce to send the maximum of all ranks
-                // to every rank.
-                std::vector<std::string> varData;
-                var.read(varData);
-                std::size_t maxStringLen = 0;
-                for (std::size_t i = 0; i < varData.size(); ++i) {
-                    if (varData[i].size() > maxStringLen) {
-                        maxStringLen = varData[i].size();
-                    }
+    // be done over the entire set of obs spaces.
+    maxStringLengths.clear();
+    for (auto & namedVar : allVarsList) {
+        std::string varName = namedVar.name;
+        Variable var = namedVar.var;
+        if (var.isA<std::string>()) {
+            // Variable is a string type. Read in the values and find the maximum
+            // string length. Then do an allReduce to send the maximum of all ranks
+            // to every rank.
+            std::vector<std::string> varData;
+            var.read(varData);
+            std::size_t maxStringLen = 0;
+            for (std::size_t i = 0; i < varData.size(); ++i) {
+                if (varData[i].size() > maxStringLen) {
+                    maxStringLen = varData[i].size();
                 }
-                std::size_t globalMaxStringLen;
-                ioPool.comm_pool()->
-                    allReduce(maxStringLen, globalMaxStringLen, eckit::mpi::max());
-                maxStringLengths
-                    .insert(std::pair<std::string, std::size_t>(varName, globalMaxStringLen));
             }
+            std::size_t globalMaxStringLen;
+            ioPool.comm_all()
+                .allReduce(maxStringLen, globalMaxStringLen, eckit::mpi::max());
+            // If all of the strings are empty, then globalMaxStringLen is set to
+            // zero which causes problems with the fixed length string type. In this
+            // case, set the globalMaxStringLen to 1.
+            if (globalMaxStringLen == 0) {
+                globalMaxStringLen = 1;
+            }
+            maxStringLengths
+                .insert(std::pair<std::string, std::size_t>(varName, globalMaxStringLen));
         }
     }
 }
@@ -376,12 +387,33 @@ void ioWriteGroup(const ioda::IoPool & ioPool, const ioda::Group& memGroup,
   // we will need an expanded listObjects function that
   // respects references.
 
-  // For the ranks in the io pool, we need to first create a file (one per rank) containing
-  // the groups, attributes and variables. Ie, a complete file except that the variable
-  // data has not been collected and written into the file.
-  std::unordered_set<std::string> varsUsingNlocs;
+  // Query old data for variable lists and dimension mappings
   VarUtils::Vec_Named_Variable allVarsList;
+  VarUtils::Vec_Named_Variable regularVarList;
+  VarUtils::Vec_Named_Variable dimVarList;
+  VarUtils::VarDimMap dimsAttachedToVars;
+  Dimensions_t maxVarSize0;  // unused in this function
+  VarUtils::collectVarDimInfo(memGroup, regularVarList, dimVarList,
+                                dimsAttachedToVars, maxVarSize0);
+
+  allVarsList = regularVarList;
+  allVarsList.insert(allVarsList.end(), dimVarList.begin(), dimVarList.end());
+
+  // Record in an unordered set the names of variables that are associated with
+  // the "nlocs" dimension.
+  std::unordered_set<std::string> varsUsingNlocs;
+  identifyVarsUsingNlocs(dimsAttachedToVars, varsUsingNlocs);
+
+  // We need to adjust any string variables to be output as fixed length strings which
+  // entails knowing the maximum string length.
   std::map<std::string, std::size_t> maxStringLengths;
+  calcMaxStringLengths(ioPool, allVarsList, maxStringLengths);
+
+  // For the ranks in the io pool, we need to first create a file (either a single file
+  // or one file per rank in the io pool) containing the groups, attributes and variables.
+  // Ie, a complete file except that the variable data has not been collected and written
+  // into the file. Once that is completed, then the variable data is transfered from
+  // the source group to the file(s).
   if (ioPool.rank_pool() >= 0) {
     // Get all variable and group names
     const auto memObjects = memGroup.listObjects(ObjectType::Ignored, true);
@@ -393,24 +425,6 @@ void ioWriteGroup(const ioda::IoPool & ioPool, const ioda::Group& memGroup,
         Group new_g = fileGroup.create(g_name);
         copyAttributes(old_g.atts, new_g.atts);
     }
-
-    // Query old data for dimension mappings
-    VarUtils::Vec_Named_Variable regularVarList, dimVarList;
-    VarUtils::VarDimMap dimsAttachedToVars;
-    Dimensions_t maxVarSize0;  // unused in this function
-    VarUtils::collectVarDimInfo(memGroup, regularVarList, dimVarList,
-                                dimsAttachedToVars, maxVarSize0);
-
-    allVarsList = regularVarList;
-    allVarsList.insert(allVarsList.end(), dimVarList.begin(), dimVarList.end());
-
-    // We need to adjust any string variables to be output as char arrays which
-    // entails adding an extra dimension for the maximum string length.
-    calcMaxStringLengths(ioPool, allVarsList, maxStringLengths);
-
-    // Record in an unordered set the names of variables that are associated with
-    // the "nlocs" dimension.
-    identifyVarsUsingNlocs(dimsAttachedToVars, varsUsingNlocs);
 
     // Get the total number of locations from the io pool. Use this to adjust
     // the size of the nlocs dimension. If we are writing one file, use the global nlocs
@@ -470,26 +484,12 @@ void ioWriteGroup(const ioda::IoPool & ioPool, const ioda::Group& memGroup,
       dimsAttachedToNewVars.push_back(make_pair(new_var, std::move(new_dims)));
     }
     fileGroup.vars.attachDimensionScales(dimsAttachedToNewVars);
-  } else {
-    // Not a member of the io pool. Need to set the allVarsList and varsUsingNlocs
-    // Call collectVarDimInfo to get the regular and dimension variables lists which
-    // can be concatenated to form the proper allVarsList value.
-    // Then call identifyVarsUsingNlocs to set varsUsingNlocs.
-    VarUtils::Vec_Named_Variable regularVarList, dimVarList;
-    VarUtils::VarDimMap dimsAttachedToVars;
-    Dimensions_t maxVarSize0;  // unused in this function
-    VarUtils::collectVarDimInfo(memGroup, regularVarList, dimVarList,
-                                dimsAttachedToVars, maxVarSize0);
-
-    allVarsList = regularVarList;
-    allVarsList.insert(allVarsList.end(), dimVarList.begin(), dimVarList.end());
-
-    identifyVarsUsingNlocs(dimsAttachedToVars, varsUsingNlocs);
   }
 
   // Next for the ranks in the "all" communicator group, we collectively transfer the
   // variable data and write it into the file. 
-  copyVarData(ioPool, memGroup, fileGroup, allVarsList, varsUsingNlocs, isParallelIo);
+  copyVarData(ioPool, memGroup, fileGroup, allVarsList, varsUsingNlocs,
+              isParallelIo, maxStringLengths);
 }
 
 }  // namespace ioda
