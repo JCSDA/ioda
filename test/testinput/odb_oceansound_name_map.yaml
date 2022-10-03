@@ -15,6 +15,8 @@ varno-independent columns:
     source: "lat"
   - name: "MetaData/longitude"
     source: "lon"
+  - name: "MetaData/observation_type"
+    source: "ops_subtype"
 varno-dependent columns:
   - source: "initial_obsvalue"
     group name: "ObsValue"

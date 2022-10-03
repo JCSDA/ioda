@@ -12,4 +12,5 @@ variables:
 - name: buoy_type
 - name: buoy_identifier
 - name: statid
+- name: ops_subtype
 truncate profiles to numlev: true
