@@ -99,6 +99,8 @@ Groups:
   - Group: [ "EffectiveError" ]
   - Group: [ "QualityMarker" ]
     OverrideType: Enum
+  - Group: [ "QualityInformation" ]
+    OverrideType: Enum
   - Group: [ "PreQC" ]
     OverrideType: Enum
   # Deprecated
@@ -168,7 +170,6 @@ Dimensions:
   - Dimension: [ "num_profile_levels+1" ]  # TODO: from gmi
     Remove: true
 #NCEP adpsfc bufr
-  - Dimension: [ "CloudSequence" ]
   - Dimension: [ "MaxMinTemperatureSequence" ]
   - Dimension: [ "SynopticWindSequence" ]
   - Dimension: [ "MetarSequence" ]
@@ -1002,11 +1003,7 @@ Variables:
   - Variable: [ "brightnessTemperatureStandardDeviation"]
     Dimensions: [ [ "Location", "Channel" ] ]
     Attributes: { units: "K" }
-  # NCEP BUFR/PREPBUFR
-  - Variable: [ "cloudAmountDescription" ]
-    Dimensions: [ [ "Location" ], [ "Location", "CloudSequence"] ]
-    Type: Enum
-  # NCEP BUFR - ADPSFC - added by Nick E
+  # NCEP BUFR - ADPSFC
   - Variable: [ "verticalSignificanceSurfaceObservations" ]
     Type: Enum
     Dimensions: [ [ "Location" ], [ "Location", "CloudSequence" ] ]
@@ -1024,7 +1021,7 @@ Variables:
   - Variable: [ "cloudAmountDescription" ]
     Type: Enum
     Dimensions: [ [ "Location" ], [ "Location", "CloudSequence" ] ]
-  # NCEP PREPBUFR - ADPSFC - added by Nick E
+  # NCEP PREPBUFR - ADPSFC
   - Variable: [ "prepbufrDataLevelCategory" ]
     Type: Enum
     MetaData: true
@@ -1047,26 +1044,14 @@ Variables:
     Attributes: { units: "m s-1" }
   - Variable: [ "cloudCeiling" ]
     Attributes: { units: "m" }
-  #NCEP BUFR/PREPBUFR - AIRCFT - added by Nick E
-  - Variable: [ "observerIdentification" ]
-    Type: Enum
-    MetaData: true
-  - Variable: [ "reportIdentifier" ]
-    Type: Enum
+  #NCEP BUFR/PREPBUFR - AIRCFT
+  - Variable: [ "flightLevel" ]
+    Attributes: { units: "m" }
     MetaData: true
   - Variable: [ "aircraftNavigationalSystem" ]
     Type: Enum
     MetaData: true
   - Variable: [ "commercialAircraftType" ]
-    Type: Enum
-    MetaData: true
-  - Variable: [ "aircraftRegistrationNumberOrOtherIdentification" ]
-    Type: Enum
-    MetaData: true
-  - Variable: [ "detailedPhaseOfFlight" ]
-    Type: Enum
-    MetaData: true
-  - Variable: [ "aircraftPhase" ]
     Type: Enum
     MetaData: true
   - Variable: [ "dataReceiptTimeHour" ]
@@ -1087,36 +1072,6 @@ Variables:
   - Variable: [ "dataProviderRestricted" ]
     Type: Enum
     MetaData: true
-  - Variable: [ "heightOrAltitude" ]
-    Attributes: { units: "m" }
-    MetaData: true
-  - Variable: [ "flightLevel" ]
-    Attributes: { units: "m" }
-    MetaData: true
-  - Variable: [ "flightLevelST" ]
-    Attributes: { units: "m" }
-    MetaData: true
-    Dimensions: [ [ "Location" ], [ "Location", "AmdarSequence" ] ] # NCEP BUFR/PREPBUFR
-  - Variable: [ "aircraftIndicatedAltitude" ]
-    Attributes: { units: "m" }
-    MetaData: true
-  - Variable: [ "pressureAltitudeRelativeToMeanSeaLevel" ]
-    Attributes: { units: "m" }
-    MetaData: true
-  - Variable: [ "temperatureObservationPrecision" ]
-    Attributes: { units: "K" }
-  - Variable: [ "moisture" ]
-    Type: Enum
-  - Variable: [ "moistureQuality" ]
-    Type: Enum
-  - Variable: [ "airTemperatureQualityInformation" ]
-    Type: Enum
-  - Variable: [ "windDirectionQualityInformation" ]
-    Type: Enum
-  - Variable: [ "windSpeedQualityInformation" ]
-    Type: Enum
-  - Variable: [ "moisture" ]
-    Type: Enum
-  - Variable: [ "percentConfidence" ]
+  - Variable: [ "relativeHumidityPercentConfidence" ]
     Attributes: { units: "1" }
     MetaData: true
