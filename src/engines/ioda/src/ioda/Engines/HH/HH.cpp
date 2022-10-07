@@ -119,6 +119,19 @@ Group createMemoryFile(const std::string& filename, BackendCreateModes mode, boo
 }
 
 Group createFile(const std::string& filename, BackendCreateModes mode, HDF5_Version_Range compat) {
+  // last argument is false signifying to open in single process access
+  MPI_Comm dummyComm;
+  return createFileImpl(filename, mode, compat, dummyComm, false);
+}
+
+Group createParallelFile(const std::string& filename, BackendCreateModes mode,
+                         const MPI_Comm mpiComm, HDF5_Version_Range compat) {
+  // last argument is true signifying to open in multi-process access
+  return createFileImpl(filename, mode, compat, mpiComm , true);
+}
+
+Group createFileImpl(const std::string& filename, BackendCreateModes mode,
+      HDF5_Version_Range compat, const MPI_Comm mpiComm, const bool isParallelIo) {
   using namespace ioda::detail::Engines::HH;
 
   static const std::map<BackendCreateModes, unsigned int> m{
@@ -132,6 +145,11 @@ Group createFile(const std::string& filename, BackendCreateModes mode, HDF5_Vers
 
   hid_t plid = H5Pcreate(H5P_FILE_ACCESS);
   if (plid < 0) throw Exception("H5Pcreate failed", ioda_Here(), errOpts);
+  if (isParallelIo) {
+    herr_t rc = H5Pset_fapl_mpio(plid, mpiComm, MPI_INFO_NULL);
+    if (rc < 0) throw Exception("H5Pset_fapl_mpio failed", ioda_Here(), errOpts);
+  }
+
   HH_hid_t pl(plid, Handles::Closers::CloseHDF5PropertyList::CloseP);
   // H5F_LIBVER_V18, H5F_LIBVER_V110, H5F_LIBVER_V112, H5F_LIBVER_LATEST.
   // Note: this propagates to any files flushed to disk.

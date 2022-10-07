@@ -386,11 +386,25 @@ std::vector<std::vector<Named_Variable>> Variable_Base<>::getDimensionScaleMappi
 
 template <>
 Variable Variable_Base<>::write(gsl::span<const char> data, const Type& in_memory_dataType,
-                                const Selection& mem_selection, const Selection& file_selection) {
+                          const Selection& mem_selection, const Selection& file_selection) {
   try {
     if (backend_ == nullptr)
       throw Exception("Missing backend or unimplemented backend function.", ioda_Here());
     return backend_->write(data, in_memory_dataType, mem_selection, file_selection);
+  } catch (...) {
+    std::throw_with_nested(Exception(
+      "An exception occurred inside ioda while writing data to a variable.", ioda_Here()));
+  }
+}
+
+template <>
+Variable Variable_Base<>::parallelWrite(gsl::span<const char> data,
+                          const Type& in_memory_dataType,
+                          const Selection& mem_selection, const Selection& file_selection) {
+  try {
+    if (backend_ == nullptr)
+      throw Exception("Missing backend or unimplemented backend function.", ioda_Here());
+    return backend_->parallelWrite(data, in_memory_dataType, mem_selection, file_selection);
   } catch (...) {
     std::throw_with_nested(Exception(
       "An exception occurred inside ioda while writing data to a variable.", ioda_Here()));

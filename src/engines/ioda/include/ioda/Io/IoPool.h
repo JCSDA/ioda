@@ -22,9 +22,10 @@
 #include "eckit/mpi/Comm.h"
 
 #include "ioda/defs.h"
+#include "ioda/Engines/ReaderBase.h"
 #include "ioda/Engines/WriterBase.h"
 #include "ioda/Group.h"
-#include "ioda/Misc/IoPoolParameters.h"
+#include "ioda/Io/IoPoolParameters.h"
 
 #include "oops/util/DateTime.h"
 #include "oops/util/parameters/Parameters.h"
@@ -62,8 +63,21 @@ public:
   /// \brief return nlocs for this object
   const int nlocs() const { return nlocs_; }
 
-  /// \brief return the total nlocs in the pool
+  /// \brief return the total nlocs for this rank
   const int total_nlocs() const { return total_nlocs_; }
+
+  /// \brief return the global nlocs in the pool
+  const int global_nlocs() const { return global_nlocs_; }
+
+  /// \brief return the nlocs start position
+  /// \details The nlocs start position refers to the position along the nlocs dimension
+  /// in the output file (when writing a single output file) where this rank's data
+  /// (collected from other non io pool MPI processes) goes. For example, io pool rank 0
+  /// data goes at nlocs position 0 in the file. Then if io pool rank 0 data is 10 locations
+  /// long, io pool rank 1 data goes in the file at nlocs position 10 and so forth. In other
+  /// words, the io pool ranks are stacking their blocks of data together (in series)
+  /// in the output file.
+  const int nlocs_start() const { return nlocs_start_; }
 
   /// \brief return the "all" mpi communicator
   const eckit::mpi::Comm & comm_all() const { return comm_all_; }
@@ -73,6 +87,9 @@ public:
 
   /// \brief return the number of processes for the all communicator group
   const int size_all() const { return size_all_; }
+
+  /// \brief return the pool mpi communicator
+  const eckit::mpi::Comm * comm_pool() const { return comm_pool_; }
 
   /// \brief return the rank number for the pool communicator group
   const int rank_pool() const { return rank_pool_; }
@@ -112,6 +129,12 @@ private:
   /// \brief DA timing window end
   util::DateTime win_end_;
 
+  /// \brief parallel io flag, true -> write output file in parallel mode
+  bool is_parallel_io_;
+
+  /// \brief mulitiple files flag, true -> will be creating a set of output files
+  bool create_multiple_files_;
+
   /// \brief target pool size
   int target_pool_size_;
 
@@ -120,6 +143,12 @@ private:
 
   /// \brief total number of locations (sum of this rank nlocs + assigned ranks nlocs)
   std::size_t total_nlocs_;
+
+  /// \brief global number of locations (sum of total_nlocs_ from all ranks in the io pool)
+  std::size_t global_nlocs_;
+
+  /// \brief starting point along the nlocs dimension (for single file output)
+  std::size_t nlocs_start_;
 
   /// \brief MPI communicator group for all processes
   const eckit::mpi::Comm & comm_all_;
@@ -197,6 +226,38 @@ private:
   /// \param nlocs Number of locations for this rank.
   void setTotalNlocs(const std::size_t nlocs);
 
+  /// \brief collect information related to a single file output from all ranks in the io pool
+  /// \detail This function will collect two pieces of information. The first is the sum
+  /// total nlocs for all ranks in the io pool. This value represents the total amount
+  /// of nlocs from all obs spaces in the all communicator group. The global nlocs value
+  /// is used to properly size the variables when writing to a single output file.
+  /// The second piece of information is the proper start values for each rank in regard
+  /// to the nlocs dimension when writing to a single output file.
+  void collectSingleFileInfo();
+
+  /// \brief create file names for the fixed length string workaround
+  /// \details The workaround entails moving the newly written file name to a temporary
+  /// file and then copying the temp file back to the intended file name while changing
+  /// the fixed length strings to variable length strings.
+  /// \param finalFileName final (intended) output file name
+  /// \param tempFileName temporary output file name
+  void workaroundGenFileNames(std::string & finalFileName, std::string & tempFileName);
+
+  /// \brief create file names for the fixed length string workaround
+  void workaroundFixToVarLenStrings(const std::string & finalFileName,
+                                    const std::string & tempFileName);
+};
+
+class WorkaroundReaderParameters : public oops::Parameters {
+  OOPS_CONCRETE_PARAMETERS(WorkaroundReaderParameters, Parameters)
+ public:
+  oops::RequiredParameter<Engines::ReaderParametersWrapper> engine{"engine", this};
+};
+
+class WorkaroundWriterParameters : public oops::Parameters {
+  OOPS_CONCRETE_PARAMETERS(WorkaroundWriterParameters, Parameters)
+ public:
+  oops::RequiredParameter<Engines::WriterParametersWrapper> engine{"engine", this};
 };
 
 }  // namespace ioda
