@@ -14,6 +14,7 @@
  * \brief Definitions for setting up backends with file and memory I/O.
  */
 #include <iostream>
+#include <mpi.h>
 #include <string>
 #include <vector>
 
@@ -38,9 +39,11 @@ enum class BackendNames {
 /// Actions for accessing a file
 /// \ingroup ioda_cxx_engines_pub
 enum class BackendFileActions {
-  Undefined,  ///< Action has not be set
-  Create,     ///< Create a new file
-  Open        ///< Open an existing file
+  Undefined,      ///< Action has not be set
+  Create,         ///< Create a new file - single process access
+  CreateParallel, ///< Create a new file - multi-process access
+  Open,           ///< Open an existing file - single process access
+  OpenParallel    ///< Open an existing file - multi-process access
 };
 
 /// Options when creating a new file.
@@ -74,9 +77,12 @@ public:
   /// @}
   /// @name HH / HDF5
   /// @{
+  MPI_Comm comm;
   std::size_t allocBytes;
   bool flush;
   /// @}
+
+  BackendCreationParameters() { }
 };
 
 /// \brief store generated data into an ObsGroup

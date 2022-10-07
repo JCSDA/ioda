@@ -7,7 +7,7 @@
 
 #include "ioda/Engines/WriteOdbFile.h"
 
-#include "ioda/Misc/IoPoolUtils.h"
+#include "ioda/Io/IoPoolUtils.h"
 
 #include "oops/util/Logger.h"
 
@@ -25,13 +25,8 @@ static WriterMaker<WriteOdbFile> maker("ODB");
 // Classes
 
 WriteOdbFile::WriteOdbFile(const Parameters_ & params,
-                           const util::DateTime & winStart,
-                           const util::DateTime & winEnd,
-                           const eckit::mpi::Comm & comm,
-                           const eckit::mpi::Comm & timeComm,
-                           const std::vector<std::string> & obsVarNames)
-                               : WriterBase(winStart, winEnd, comm, timeComm, obsVarNames),
-                                 fileName_(params.fileName) {
+                           const WriterCreationParameters & createParams)
+                               : WriterBase(createParams), params_(params) {
     oops::Log::trace() << "ioda::Engines::WriteOdbFile start constructor" << std::endl;
     // TODO(srh) Placeholder for now. This gets the engine factory test to pass, but we may
     // actually want it organized like this as the writer gets developed.
@@ -46,7 +41,7 @@ WriteOdbFile::WriteOdbFile(const Parameters_ & params,
 }
 
 void WriteOdbFile::print(std::ostream & os) const {
-  os << fileName_;
+  os << params_.fileName.value();
 }
 
 }  // namespace Engines

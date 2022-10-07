@@ -7,7 +7,9 @@
 
 #include "ioda/Engines/WriteH5File.h"
 
-#include "ioda/Misc/IoPoolUtils.h"
+#include "eckit/mpi/Parallel.h"
+
+#include "ioda/Io/IoPoolUtils.h"
 
 #include "oops/util/Logger.h"
 
@@ -25,30 +27,44 @@ static WriterMaker<WriteH5File> maker("H5File");
 // Classes
 
 WriteH5File::WriteH5File(const Parameters_ & params,
-                         const util::DateTime & winStart,
-                         const util::DateTime & winEnd,
-                         const eckit::mpi::Comm & comm,
-                         const eckit::mpi::Comm & timeComm,
-                         const std::vector<std::string> & obsVarNames)
-                             : WriterBase(winStart, winEnd, comm, timeComm, obsVarNames),
-                               fileName_(params.fileName) {
+                         const WriterCreationParameters & createParams)
+                             : WriterBase(createParams), params_(params) {
     oops::Log::trace() << "ioda::Engines::WriteH5File start constructor" << std::endl;
     // Create a backend to write to a new hdf5 file. If the allowOverwrite parameter is
     // true, then it is okay to clobber an existing file.
     Engines::BackendNames backendName = Engines::BackendNames::Hdf5File;
 
-    // Tag on the rank number to the output file name to avoid collisions if running
-    // with multiple MPI tasks. Don't use the time communicator rank number in the
-    // suffix if the size of the time communicator is 1.
-    std::size_t mpiRank = comm_.rank();
+    // Figure out the output file name.
+    std::string outFileName;
+    std::size_t mpiRank = createParams_.comm.rank();
     int mpiTimeRank = -1; // a value of -1 tells uniquifyFileName to skip this value
-    if (timeComm_.size() > 1) {
-        mpiTimeRank = timeComm_.rank();
+    if (createParams_.timeComm.size() > 1) {
+        mpiTimeRank = createParams_.timeComm.rank();
     }
+    if (createParams_.createMultipleFiles) {
+        // Tag on the rank number to the output file name to avoid collisions.
+        // Don't use the time communicator rank number in the suffix if the size of
+        // the time communicator is 1.
+        outFileName = uniquifyFileName(params_.fileName, mpiRank, mpiTimeRank);
+    } else {
+        // TODO(srh) With the upcoming release (Sep 2022) we need to keep the uniquified
+        // file name in order to prevent thrasing downstream tools. We can get rid of
+        // the file suffix after the release.
+        // If we got to here, we either have just one process in io pool, or we
+        // are going to write out the file in parallel mode. In either case, we want
+        // the suffix part related to mpiRank to always be zero.
+        outFileName = uniquifyFileName(params_.fileName, 0, mpiTimeRank);
+    }
+
     Engines::BackendCreationParameters backendParams;
-    std::string fileName = params.fileName;
-    backendParams.fileName = uniquifyFileName(fileName, mpiRank, mpiTimeRank);
-    backendParams.action = Engines::BackendFileActions::Create;
+    backendParams.fileName = outFileName;
+    if (createParams_.isParallelIo) {
+        backendParams.action = Engines::BackendFileActions::CreateParallel;
+        backendParams.comm = 
+            dynamic_cast<const eckit::mpi::Parallel &>(createParams_.comm).MPIComm();
+    } else {
+        backendParams.action = Engines::BackendFileActions::Create;
+    }
     if (params.allowOverwrite) {
         backendParams.createMode = Engines::BackendCreateModes::Truncate_If_Exists;
     } else {
@@ -61,7 +77,7 @@ WriteH5File::WriteH5File(const Parameters_ & params,
 }
 
 void WriteH5File::print(std::ostream & os) const {
-  os << fileName_;
+  os << params_.fileName.value();
 }
 
 }  // namespace Engines

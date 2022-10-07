@@ -38,7 +38,7 @@
 #include "ioda/Engines/EngineUtils.h"
 #include "ioda/Engines/HH.h"
 #include "ioda/Exception.h"
-#include "ioda/Misc/IoPool.h"
+#include "ioda/Io/IoPool.h"
 #include "ioda/io/ObsFrameRead.h"
 #include "ioda/Variables/Variable.h"
 
@@ -234,16 +234,11 @@ void ObsSpace::save() {
             obs_params_.comm(), obs_params_.timeComm() ,
             obs_params_.windowStart(), obs_params_.windowEnd(), nlocs());
         obsPool.save(obs_group_);
+        // Wait for all processes to finish the save call so that we know the file
+        // is complete and closed.
+        this->comm().barrier();
         oops::Log::info() << obsname() << ": save database to " << obsPool << std::endl;
         obsPool.finalize();
-
-        // Call the mpi barrier command here to force all processes to wait until
-        // all processes have finished writing their files. This is done to prevent
-        // the early processes continuing and potentially executing their obs space
-        // destructor before others finish writing. This situation is known to have
-        // issues with hdf file handles getting deallocated before some of the MPI
-        // processes are finished with them.
-        this->comm().barrier();
     } else {
         oops::Log::info() << obsname() << " :  no output" << std::endl;
     }

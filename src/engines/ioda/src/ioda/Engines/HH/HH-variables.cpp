@@ -590,7 +590,18 @@ HH_hid_t HH_Variable::getSpaceWithSelection(const Selection& sel) const {
 }
 
 Variable HH_Variable::write(gsl::span<const char> data, const Type& in_memory_dataType,
-                            const Selection& mem_selection, const Selection& file_selection) {
+                      const Selection& mem_selection, const Selection& file_selection) {
+  // last arg set to false means we are not using parallel IO
+  return writeImpl(data, in_memory_dataType, mem_selection, file_selection, false);
+}
+Variable HH_Variable::parallelWrite(gsl::span<const char> data, const Type& in_memory_dataType,
+                      const Selection& mem_selection, const Selection& file_selection) {
+  // last arg set to true means we are using parallel IO
+  return writeImpl(data, in_memory_dataType, mem_selection, file_selection, true);
+}
+Variable HH_Variable::writeImpl(gsl::span<const char> data, const Type& in_memory_dataType,
+                      const Selection& mem_selection, const Selection& file_selection,
+                      const bool isParallelIo) {
   auto memTypeBackend = std::dynamic_pointer_cast<HH_Type>(in_memory_dataType.getBackend());
   auto memSpace    = getSpaceWithSelection(mem_selection);
   auto fileSpace   = getSpaceWithSelection(file_selection);
@@ -599,6 +610,16 @@ Variable HH_Variable::write(gsl::span<const char> data, const Type& in_memory_da
   HH_hid_t varType(H5Dget_type(var_()), Handles::Closers::CloseHDF5Datatype::CloseP);
   H5T_class_t varTypeClass = H5Tget_class(varType());
 
+  // Create a data transfer property list to be used in all of the following H5Dwrite
+  // commands. If running in parallel io mode, we will use the collective style of
+  // writing.
+  hid_t plist_id = H5Pcreate(H5P_DATASET_XFER);
+  if (plist_id < 0) throw Exception("H5Pcreate failed", ioda_Here());
+  if (isParallelIo) {
+    herr_t rc = H5Pset_dxpl_mpio(plist_id, H5FD_MPIO_COLLECTIVE);
+    if (rc < 0) throw Exception("H5Pset_fapl_mpio failed", ioda_Here());
+  }
+  HH_hid_t xfer_plist(plist_id, Handles::Closers::CloseHDF5PropertyList::CloseP);
 
   if ((memTypeClass == H5T_STRING) && (varTypeClass == H5T_STRING)) {
     // Both memory and file types are strings. Need to check fixed vs variable length.
@@ -615,7 +636,7 @@ Variable HH_Variable::write(gsl::span<const char> data, const Type& in_memory_da
       // No need to change anything. Pass through.
       // NOTE: Using varType instead of memTypeBackend->handle! This is because strings can have
       //   different character sets (ASCII vs UTF-8), which is entirely unhandled in IODA.
-      if (H5Dwrite(var_(), varType(), memSpace(), fileSpace(), H5P_DEFAULT, data.data()) < 0)
+      if (H5Dwrite(var_(), varType(), memSpace(), fileSpace(), xfer_plist(), data.data()) < 0)
         throw Exception("H5Dwrite failed.", ioda_Here());
     }
     else if (isMemStrVar) {
@@ -625,7 +646,7 @@ Variable HH_Variable::write(gsl::span<const char> data, const Type& in_memory_da
 
       std::vector<char> out_buf = convertVariableLengthToFixedLength(data, strLen, false);
 
-      if (H5Dwrite(var_(), varType(), memSpace(), fileSpace(), H5P_DEFAULT, out_buf.data()) < 0)
+      if (H5Dwrite(var_(), varType(), memSpace(), fileSpace(), xfer_plist(), out_buf.data()) < 0)
         throw Exception("H5Dwrite failed.", ioda_Here());
     }
     else if (isVarStrVar) {
@@ -639,7 +660,7 @@ Variable HH_Variable::write(gsl::span<const char> data, const Type& in_memory_da
       auto converted_data_holder = convertFixedLengthToVariableLength(data, strLen);
       char* converted_data = reinterpret_cast<char*>(converted_data_holder.DataPointers.data());
 
-      if (H5Dwrite(var_(), varType(), memSpace(), fileSpace(), H5P_DEFAULT, converted_data) < 0)
+      if (H5Dwrite(var_(), varType(), memSpace(), fileSpace(), xfer_plist(), converted_data) < 0)
         throw Exception("H5Dwrite failed.", ioda_Here());
     }
 
@@ -649,7 +670,7 @@ Variable HH_Variable::write(gsl::span<const char> data, const Type& in_memory_da
                         memTypeBackend->handle(), // mem_type_id
                         memSpace(),               // mem_space_id
                         fileSpace(),              // file_space_id
-                        H5P_DEFAULT,              // xfer_plist_id
+                        xfer_plist(),             // xfer_plist_id
                         data.data()               // data
     );
     if (ret < 0) throw Exception("H5Dwrite failure.", ioda_Here());

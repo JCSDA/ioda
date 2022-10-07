@@ -18,16 +18,23 @@ namespace Engines {
 //---------------------------------------------------------------------
 
 //---------------------------------------------------------------------
+// WriterCreationParameters
+//---------------------------------------------------------------------
+WriterCreationParameters::WriterCreationParameters(const eckit::mpi::Comm & comm,
+                          const eckit::mpi::Comm & timeComm, const bool createMultipleFiles,
+                          const bool isParallelIo)
+                              : comm(comm), timeComm(timeComm),
+                                createMultipleFiles(createMultipleFiles),
+                                isParallelIo(isParallelIo) {
+}
+
+//---------------------------------------------------------------------
 // WriterBase 
 //---------------------------------------------------------------------
 
 //--------------------------- public functions ---------------------------------------
-WriterBase::WriterBase(const util::DateTime & winStart, const util::DateTime & winEnd,
-                       const eckit::mpi::Comm & comm, const eckit::mpi::Comm & timeComm,
-                       const std::vector<std::string> & obsVarNames)
-                           : winStart_(winStart), winEnd_(winEnd),
-                             comm_(comm), timeComm_(timeComm),
-                             obsVarNames_(obsVarNames) {
+WriterBase::WriterBase(const WriterCreationParameters & createParams)
+                           : createParams_(createParams) {
 }
 
 
@@ -45,16 +52,11 @@ WriterFactory::WriterFactory(const std::string & type) {
 
 //-----------------------------------------------------------------------------------------
 std::unique_ptr<WriterBase> WriterFactory::create(const WriterParametersBase & params,
-                                                  const util::DateTime & winStart,
-                                                  const util::DateTime & winEnd,
-                                                  const eckit::mpi::Comm & comm,
-                                                  const eckit::mpi::Comm & timeComm,
-                                                  const std::vector<std::string> & obsVarNames) {
+                                      const WriterCreationParameters & createParams) {
   oops::Log::trace() << "WriterFactory::create starting" << std::endl;
 
   const std::string type = params.type;
-  std::unique_ptr<WriterBase> ptr = getMaker(type).make(params, winStart, winEnd,
-                                                        comm, timeComm, obsVarNames);
+  std::unique_ptr<WriterBase> ptr = getMaker(type).make(params, createParams);
   oops::Log::trace() << "WriterFactory::create done" << std::endl;
   return ptr;
 }

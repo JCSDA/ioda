@@ -265,6 +265,9 @@ public:
   virtual Variable write(gsl::span<const char> data, const Type& in_memory_dataType,
                          const Selection& mem_selection  = Selection::all,
                          const Selection& file_selection = Selection::all);
+  virtual Variable parallelWrite(gsl::span<const char> data, const Type& in_memory_dataType,
+                                 const Selection& mem_selection  = Selection::all,
+                                 const Selection& file_selection = Selection::all);
 
   /// \brief Write the Variable
   /// \note Ensure that the correct dimension ordering is preserved.
@@ -288,6 +291,22 @@ public:
       Marshaller m;
       auto d = m.serialize(data, &atts);
       return write(gsl::make_span<const char>(
+                      reinterpret_cast<const char*>(d->DataPointers.data()),
+                     d->DataPointers.size() * Marshaller::bytesPerElement_),
+                   TypeWrapper::GetType(getTypeProvider()), mem_selection, file_selection);
+    } catch (...) {
+      std::throw_with_nested(Exception(ioda_Here()));
+    }
+  }
+  template <class DataType, class Marshaller = Object_Accessor<DataType>,
+            class TypeWrapper = Types::GetType_Wrapper<DataType>>
+  Variable_Implementation parallelWrite(const gsl::span<DataType> data,
+                                        const Selection& mem_selection  = Selection::all,
+                                        const Selection& file_selection = Selection::all) {
+    try {
+      Marshaller m;
+      auto d = m.serialize(data, &atts);
+      return parallelWrite(gsl::make_span<const char>(
                       reinterpret_cast<const char*>(d->DataPointers.data()),
                      d->DataPointers.size() * Marshaller::bytesPerElement_),
                    TypeWrapper::GetType(getTypeProvider()), mem_selection, file_selection);
@@ -325,6 +344,22 @@ public:
       std::throw_with_nested(Exception(ioda_Here()));
     }
   }
+  template <class DataType, class Marshaller = Object_Accessor<DataType>,
+            class TypeWrapper = Types::GetType_Wrapper<DataType>>
+  Variable_Implementation parallelWrite(const gsl::span<const DataType> data,
+                                        const Selection& mem_selection  = Selection::all,
+                                        const Selection& file_selection = Selection::all) {
+    try {
+      Marshaller m;
+      auto d = m.serialize(data, &atts);
+      return parallelWrite(gsl::make_span<const char>(
+                      reinterpret_cast<const char*>(d->DataPointers.data()),
+                     d->DataPointers.size() * Marshaller::bytesPerElement_),
+                   TypeWrapper::GetType(getTypeProvider()), mem_selection, file_selection);
+    } catch (...) {
+      std::throw_with_nested(Exception(ioda_Here()));
+    }
+  }
 
   /// \brief Write the variable
   /// \tparam DataType is the type of the data to be written.
@@ -346,6 +381,18 @@ public:
     try {
       return this->write<DataType, Marshaller, TypeWrapper>(gsl::make_span(data), mem_selection,
                                                             file_selection);
+    } catch (...) {
+      std::throw_with_nested(Exception(ioda_Here()));
+    }
+  }
+  template <class DataType, class Marshaller = Object_Accessor<DataType>,
+            class TypeWrapper = Types::GetType_Wrapper<DataType>>
+  Variable_Implementation parallelWrite(const std::vector<DataType>& data,
+                                        const Selection& mem_selection  = Selection::all,
+                                        const Selection& file_selection = Selection::all) {
+    try {
+      return this->parallelWrite<DataType, Marshaller, TypeWrapper>(gsl::make_span(data),
+                                 mem_selection, file_selection);
     } catch (...) {
       std::throw_with_nested(Exception(ioda_Here()));
     }

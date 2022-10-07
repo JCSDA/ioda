@@ -15,6 +15,7 @@
  */
 
 #include <iostream>
+#include <mpi.h>
 #include <string>
 #include <utility>
 
@@ -48,13 +49,38 @@ IODA_DL HDF5_Version_Range defaultVersionRange();
 /// \ingroup ioda_cxx_engines_pub_HH
 IODA_DL std::string genUniqueName();
 
-/// \brief Create a ioda::Group backed by an HDF5 file.
+/// \brief Create a ioda::Group backed by an HDF5 file (serial access mode).
 /// \ingroup ioda_cxx_engines_pub_HH
 /// \param filename is the file name.
 /// \param mode is the creation mode.
 /// \param compat is the range of HDF5 versions that should be able to access this file.
+// (TODO srh) The createFile function is currently bound to the Python, C and Fortan APIs
+// so, for now, want to preserve its signature. To do this the createFileImpl function is
+// created which can handle either serial or parallel access, and createFile calls
+// createFileImpl in its "serial" mode. In the future it would be good if possible
+// to encapsulate createFile so that the backends can be made more consistent in
+// the Python, C, and Fortran APIs. 
 IODA_DL Group createFile(const std::string& filename, BackendCreateModes mode,
                          HDF5_Version_Range compat = defaultVersionRange());
+
+/// \brief Create a ioda::Group backed by an HDF5 file (parallel access mode).
+/// \ingroup ioda_cxx_engines_pub_HH
+/// \param filename is the file name.
+/// \param mode is the creation mode.
+/// \param compat is the range of HDF5 versions that should be able to access this file.
+/// \param comm is the MPI communicator group
+IODA_DL Group createParallelFile(const std::string& filename, BackendCreateModes mode,
+              const MPI_Comm mpiComm, HDF5_Version_Range compat = defaultVersionRange());
+
+/// \brief Create a ioda::Group backed by an HDF5 file (with either serial or parallel access).
+/// \ingroup ioda_cxx_engines_pub_HH
+/// \param filename is the file name.
+/// \param mode is the creation mode.
+/// \param compat is the range of HDF5 versions that should be able to access this file.
+/// \param mpiComm is the MPI communicator group (for parallel access)
+/// \param isParallelIo when true create the file for parallel access (by all ranks in comm)
+IODA_DL Group createFileImpl(const std::string& filename, BackendCreateModes mode,
+              HDF5_Version_Range compat, const MPI_Comm mpiComm, const bool isParallelIo);
 
 /// \brief Open a ioda::Group backed by an HDF5 file.
 /// \ingroup ioda_cxx_engines_pub_HH

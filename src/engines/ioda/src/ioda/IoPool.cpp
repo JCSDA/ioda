@@ -5,17 +5,24 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
+#include <cstdio>
 #include <memory>
 #include <mpi.h>
 #include <numeric>
+#include <sstream>
+
+#include "eckit/config/LocalConfiguration.h"
 
 #include "ioda/Copying.h"
 #include "ioda/Engines/EngineUtils.h"
 #include "ioda/Engines/HH.h"
-#include "ioda/Misc/IoPool.h"
-#include "ioda/Misc/IoPoolUtils.h"
-
 #include "ioda/Exception.h"
+#include "ioda/Io/IoPool.h"
+#include "ioda/Io/IoPoolUtils.h"
+#include "ioda/Io/WriterUtils.h"
+
+
+#include "oops/util/Logger.h"
 
 namespace ioda {
 
@@ -210,6 +217,36 @@ void IoPool::setTotalNlocs(const std::size_t nlocs) {
 }
 
 //--------------------------------------------------------------------------------------
+void IoPool::collectSingleFileInfo() {
+    // Want to determine two pieces of information:
+    //   1. global nlocs which is the sum of all nlocs in all ranks in the io pool
+    //   2. starting point along nlocs dimension for each rank in the io pool
+    //
+    // Only the ranks in the io pool should participate in this function
+    //
+    // Need the total_nlocs_ values from all ranks for both pieces of information.
+    // Have rank 0 do the processing and then send the information back to the other ranks.
+    if (comm_pool_ != nullptr) {
+        std::size_t root = 0;
+        std::vector<std::size_t> totalNlocs(size_pool_);
+        std::vector<std::size_t> nlocsStarts(size_pool_);
+
+        comm_pool_->gather(total_nlocs_, totalNlocs, root);
+        if (rank_pool_ == root) {
+            global_nlocs_ = 0;
+            std::size_t nlocsStartingPoint = 0;
+            for(std::size_t i = 0; i < totalNlocs.size(); ++i) {
+                global_nlocs_ += totalNlocs[i];
+                nlocsStarts[i] = nlocsStartingPoint;
+                nlocsStartingPoint += totalNlocs[i];
+            }
+        }
+        comm_pool_->broadcast(global_nlocs_, root);
+        comm_pool_->scatter(nlocsStarts, nlocs_start_, root);
+    }
+}
+
+//--------------------------------------------------------------------------------------
 IoPool::IoPool(const oops::Parameter<IoPoolParameters> & ioPoolParams,
                const oops::RequiredPolymorphicParameter
                    <Engines::WriterParametersBase, Engines::WriterFactory> & writerParams,
@@ -220,7 +257,7 @@ IoPool::IoPool(const oops::Parameter<IoPoolParameters> & ioPoolParams,
                      comm_all_(commAll), rank_all_(commAll.rank()), size_all_(commAll.size()),
                      comm_time_(commTime), rank_time_(commTime.rank()),
                      size_time_(commTime.size()), win_start_(winStart), win_end_(winEnd),
-                     nlocs_(nlocs) {
+                     nlocs_(nlocs), total_nlocs_(0), global_nlocs_(0) {
     // For now, the target pool size is simply the minumum of the specified (or default) max
     // pool size and the size of the comm_all_ communicator group.
     setTargetPoolSize();
@@ -241,7 +278,35 @@ IoPool::IoPool(const oops::Parameter<IoPoolParameters> & ioPoolParams,
     createIoPool(rankGrouping);
 
     // Calculate the total nlocs for each rank in the io pool.
+    // This sets the total_nlocs_ data member and that holds the sum of
+    // the nlocs from each rank (from comm_all_) that is assigned to this rank.
     setTotalNlocs(nlocs);
+
+    // Calculate the "global nlocs" which is the sum of total_nlocs_ from each rank
+    // in the io pool. This is used to set the sizes of the variables (dimensioned
+    // by nlocs) for the single file output. Also calculate the nlocs starting point
+    // (offset) into the single file output for this rank.
+    collectSingleFileInfo();
+
+    // Set the is_parallel_io_ flag. If a rank is not in the io pool, this gets set to
+    // false, which is okay since the non io pool ranks do not use it.
+    if (comm_pool_ != nullptr) {
+        is_parallel_io_ = ((!params_.value().writeMultipleFiles) && (comm_pool_->size() > 1));
+    } else {
+        is_parallel_io_ = false;
+    }
+    oops::Log::debug() << "is_parallel_io_: " << is_parallel_io_ << std::endl;
+
+    // Set the create_multiple_files_ flag. If rank is not in the io pool, this gets
+    // set to false which is okay since the non io pool ranks do not use it.
+    if (comm_pool_ != nullptr) {
+        create_multiple_files_ =
+            ((params_.value().writeMultipleFiles) && (comm_pool_->size() > 1));
+    } else {
+        create_multiple_files_ = false;
+    }
+    oops::Log::debug() << "create_multiple_files_: " << create_multiple_files_
+                       << std::endl;
 }
 
 IoPool::~IoPool() = default;
@@ -252,9 +317,10 @@ IoPool::~IoPool() = default;
 void IoPool::save(const Group & srcGroup) {
     Group fileGroup;
     if (comm_pool_ != nullptr) {
+        Engines::WriterCreationParameters createParams(*comm_pool_, comm_time_,
+                                          create_multiple_files_, is_parallel_io_);
         std::unique_ptr<Engines::WriterBase> writerEngine =
-            Engines::WriterFactory::create(writer_params_, win_start_, win_end_,
-                                           *comm_pool_, comm_time_, { });
+            Engines::WriterFactory::create(writer_params_, createParams);
 
         fileGroup = writerEngine->getObsGroup();
 
@@ -265,11 +331,130 @@ void IoPool::save(const Group & srcGroup) {
     }
 
     // Copy the ObsSpace ObsGroup to the output file Group.
-    ioWriteGroup(*this, srcGroup, fileGroup);
+    ioWriteGroup(*this, srcGroup, fileGroup, is_parallel_io_);
+}
+
+void IoPool::workaroundGenFileNames(std::string & finalFileName, std::string & tempFileName) {
+    tempFileName = writer_params_.value().fileName;
+    finalFileName = tempFileName;
+
+    // Append "_flenstr" (fixed length strings) to the temp file name, then uniquify
+    // in the same manner as the writer backend.
+    std::size_t found = tempFileName.find_last_of(".");
+    if (found == std::string::npos)
+        found = tempFileName.length();
+    tempFileName.insert(found, "_flenstr");
+
+    std::size_t mpiRank = comm_pool_->rank();
+    int mpiTimeRank = -1; // a value of -1 tells uniquifyFileName to skip this value
+    if (comm_time_.size() > 1) {
+        mpiTimeRank = comm_time_.rank();
+    }
+    if (create_multiple_files_) {
+        // Tag on the rank number to the output file name to avoid collisions.
+        // Don't use the time communicator rank number in the suffix if the size of
+        // the time communicator is 1.
+        tempFileName = uniquifyFileName(tempFileName, mpiRank, mpiTimeRank);
+        finalFileName = uniquifyFileName(finalFileName, mpiRank, mpiTimeRank);
+    } else {
+        // TODO(srh) With the upcoming release (Sep 2022) we need to keep the uniquified
+        // file name in order to prevent trashing downstream tools. We can get rid of
+        // the file suffix after the release.
+        // If we got to here, we either have just one process in io pool, or we
+        // are going to write out the file in parallel mode. In either case, we want
+        // the suffix part related to mpiRank to always be zero.
+        tempFileName = uniquifyFileName(tempFileName, 0, mpiTimeRank);
+        finalFileName = uniquifyFileName(finalFileName, 0, mpiTimeRank);
+    }
+}
+
+void IoPool::workaroundFixToVarLenStrings(const std::string & finalFileName,
+                                          const std::string & tempFileName) {
+    oops::Log::debug() << "IoPool::finalize: applying flen to vlen strings workaround: "
+                       << tempFileName << " -> "
+                       << finalFileName << std::endl;
+
+    // Rename the output file, then copy back to the original name while changing the
+    // strings back to variable length strings.
+    if (std::rename(finalFileName.c_str(), tempFileName.c_str()) != 0) {
+        throw Exception("Unable to rename output file.", ioda_Here());
+    }
+
+    // Create backends for reading the temp file and writing the final file.
+    // Reader backend
+    eckit::LocalConfiguration readerConfig;
+    eckit::LocalConfiguration readerSubConfig;
+    readerSubConfig.set("type", "H5File");
+    readerSubConfig.set("obsfile", tempFileName);
+    readerConfig.set("engine", readerSubConfig);
+    oops::Log::debug() << "Workaround reader config: " << readerConfig << std::endl;
+
+    WorkaroundReaderParameters readerParams;
+    readerParams.validateAndDeserialize(readerConfig);
+    std::unique_ptr<Engines::ReaderBase> readerEngine = Engines::ReaderFactory::create(
+          readerParams.engine.value().engineParameters, win_start_, win_end_,
+          *comm_pool_, comm_time_, {});
+
+    // Writer backend
+    WorkaroundWriterParameters writerParams;
+    eckit::LocalConfiguration writerConfig;
+    eckit::LocalConfiguration writerSubConfig;
+    writerSubConfig.set("type", "H5File");
+    writerSubConfig.set("obsfile", writer_params_.value().fileName);
+    writerConfig.set("engine", writerSubConfig);
+    oops::Log::debug() << "Workaround writer config: " << writerConfig << std::endl;
+    std::unique_ptr<Engines::WriterBase> workaroundWriter;
+
+    // We want each rank to write its own corresponding file, and that can be accomplished
+    // in telling the writer that we are to create multiple files and not use the parallel
+    // io mode.
+    writerParams.validateAndDeserialize(writerConfig);
+    bool createMultipleFiles = true;
+    bool isParallel = false;
+    Engines::WriterCreationParameters createParams(*comm_pool_, comm_time_,
+                                      createMultipleFiles, isParallel);
+    std::unique_ptr<Engines::WriterBase> writerEngine = Engines::WriterFactory::create(
+          writerParams.engine.value().engineParameters, createParams);
+
+    // Copy the contents from the temp file to the final file.
+    Group readerTopGroup = readerEngine->getObsGroup();
+    Group writerTopGroup = writerEngine->getObsGroup();
+    copyGroup(readerTopGroup, writerTopGroup);
+
+    // If we made it to here, we successfully copied the file, so we can remove
+    // the temporary file.
+    if (std::remove(tempFileName.c_str()) != 0) {
+        oops::Log::info() << "WARNING: Unable to remove temporary output file: "
+                          << tempFileName << std::endl;
+    }
 }
 
 //--------------------------------------------------------------------------------------
 void IoPool::finalize() {
+    // TODO(srh) Workaround until we get fixed length string support in the netcdf-c
+    // library. This is expected to be available in the 4.9.1 release of netcdf-c.
+    // For now move the file with fixed length strings to a temporary
+    // file (obsdataout.obsfile spec with "_flenstr" appended to the filename) and
+    // then copy that file to the intended output file while changing the fixed
+    // length strings to variable length strings.
+    if (comm_pool_ != nullptr) {
+        // Create the temp file name, move the output file to the temp file name,
+        // then copy the file to the intended file name.
+        std::string tempFileName;
+        std::string finalFileName;
+        workaroundGenFileNames(finalFileName, tempFileName);
+
+        // If the output file was created using parallel io, then we only need rank 0
+        // to do the rename, copy workaround.
+        if (is_parallel_io_) {
+            if (comm_pool_->rank() == 0) {
+                workaroundFixToVarLenStrings(finalFileName, tempFileName);
+            }
+        } else {
+            workaroundFixToVarLenStrings(finalFileName, tempFileName);
+        }
+    }
+
     // At this point there are two split communicator groups: one for the io pool and the
     // other for the processes not included in the io pool.
     if (eckit::mpi::hasComm(poolCommName)) {
