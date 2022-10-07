@@ -58,7 +58,8 @@ enum class BasicTypes {
   uint64_,
   bool_,
   str_,
-  datetime_
+  datetime_,
+  duration_
 };
 
 /// \brief Data Types can be grouped into a few categories. These are the categories.
@@ -311,18 +312,26 @@ IODA_ADD_FUNDAMENTAL_TYPE(long double);
 #undef IODA_ADD_FUNDAMENTAL_TYPE
 
 // Time types
-typedef std::chrono::time_point<std::chrono::system_clock> Chrono_Time_Point_default_t;
-typedef int64_t Chrono_Time_Storage_t;
+// For now, time values are going to be stored as int64_t data type with offsets (from
+// the epoch) in seconds so set up the std::chrono types accordingly. Later on we can
+// add in more flexibility with this storage scheme.
+typedef int64_t Chrono_Time_Rep_t;
+typedef std::ratio<1,1> Chrono_Time_Period_t;
+typedef std::chrono::system_clock Chrono_Clock_t;
+
+typedef std::chrono::duration<Chrono_Time_Rep_t, Chrono_Time_Period_t> Chrono_Duration_t;
+typedef std::chrono::time_point<Chrono_Clock_t, Chrono_Duration_t> Chrono_Time_Point_t;
+
+// For conversion between std::chrono and std::string
 constexpr char Chrono_Time_Format[] = "%Y-%m-%dT%H:%M:%SZ";
 
 /// \brief Instructs IODA how to create a Data Type that can handle time_point.
 template <>
-inline Type GetType<Chrono_Time_Point_default_t, 0>(
+inline Type GetType<Chrono_Time_Point_t, 0>(
   gsl::not_null<const ::ioda::detail::Type_Provider*> t, std::initializer_list<Dimensions_t>,
   void*) {
-  return t->makeFundamentalType(typeid(Chrono_Time_Storage_t));
+  return t->makeFundamentalType(typeid(Chrono_Time_Rep_t));
 }
-
 
 // Wrappers to make GetType work
 

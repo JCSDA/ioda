@@ -77,7 +77,7 @@
 #include <vector>    // We want vectors
 
 #include "Eigen/Dense"             // Eigen Arrays and Matrices
-#include "ioda/Engines/Factory.h"  // Used to kickstart the Group engine.
+#include "ioda/Engines/EngineUtils.h"  // Used to kickstart the Group engine.
 #include "ioda/Exception.h"        // Exceptions and debugging
 #include "ioda/Group.h"            // Groups have attributes.
 #include "ioda/ObsGroup.h"

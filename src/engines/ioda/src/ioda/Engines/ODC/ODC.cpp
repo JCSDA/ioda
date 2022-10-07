@@ -22,6 +22,7 @@
 #include "ioda/Exception.h"
 #include "ioda/Group.h"
 #include "ioda/config.h"  // Auto-generated. Defines *_FOUND.
+#include "oops/util/Logger.h"
 
 #if odc_FOUND && eckit_FOUND && oops_FOUND
 # include "eckit/config/LocalConfiguration.h"
@@ -405,6 +406,10 @@ ObsGroup openFile(const ODC_Parameters& odcparams,
   using std::string;
   using std::vector;
 
+  oops::Log::debug() << "ODC called with " << odcparams.queryFile << "  " <<
+                        odcparams.mappingFile << "  " << odcparams.maxNumberChannels <<
+                        std::endl;
+
   // 2. Extract the lists of columns and varnos to select from the query file.
 
   eckit::YAMLConfiguration conf(eckit::PathName(odcparams.queryFile));
@@ -420,7 +425,7 @@ ObsGroup openFile(const ODC_Parameters& odcparams,
 
   // 3. Perform the SQL query.
 
-  DataFromSQL sql_data;
+  DataFromSQL sql_data(odcparams.maxNumberChannels);
   {
     std::vector<std::string> columnNames = columnSelection.columns();
 
@@ -535,6 +540,9 @@ ObsGroup openFile(const ODC_Parameters& odcparams,
     // For Scatwind, channels dimension is being used to store wind ambiguities
     } else if (column == "initial_vertco_reference" && sql_data.getObsgroup() == obsgroup_scatwind) {
       sql_data.assignChannelNumbersSeq(std::vector<int>({varno_dd}), og);
+    // For GNSS-RO, channels dimension is being used to the observations through the profile
+    } else if (column == "vertco_reference_2" && sql_data.getObsgroup() == obsgroup_gnssro) {
+      sql_data.assignChannelNumbersSeq(std::vector<int>({varno_bending_angle}), og);
     // ... no, it does not.
     } else {      
       // This loop handles columns whose cells should be transferred in their entirety into ioda

@@ -203,6 +203,14 @@ subroutine c_obsspace_get_datetime(obss, group, vname, length, date, time, len_c
   integer(c_int), intent(in) :: chan_select(len_cs)
 end subroutine c_obsspace_get_datetime
 
+subroutine c_obsspace_get_window(obss, wnd_bgn, wnd_end) bind(C,name='obsspace_get_window_f')
+  use, intrinsic :: iso_c_binding, only : c_ptr
+  implicit none
+  type(c_ptr), value :: obss
+  type(c_ptr), value :: wnd_bgn
+  type(c_ptr), value :: wnd_end
+end subroutine c_obsspace_get_window
+
 subroutine c_obsspace_get_bool(obss, group, vname, length, vect, len_cs, chan_select) &
               & bind(C,name='obsspace_get_bool_f')
   use, intrinsic :: iso_c_binding, only : c_ptr,c_char,c_int,c_size_t,c_bool

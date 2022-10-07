@@ -1,3 +1,4 @@
+#pragma once
 /*
  * (C) Copyright 2020 UCAR
  *
@@ -5,21 +6,16 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#ifndef OBSSPACEPARAMETERS_H_
-#define OBSSPACEPARAMETERS_H_
-
 #include <string>
 #include <vector>
 
 #include "ioda/core/FileFormat.h"
 #include "ioda/core/ParameterTraitsFileFormat.h"
 #include "ioda/distribution/DistributionFactory.h"
+#include "ioda/Io/IoPoolParameters.h"
 #include "ioda/Misc/DimensionScales.h"
 #include "ioda/Misc/Dimensions.h"
-#include "ioda/Misc/IoPoolParameters.h"
-#include "ioda/io/ObsIoFactory.h"
-#include "ioda/io/ObsIoParametersBase.h"
-
+#include "ioda/ObsDataIoParameters.h"
 
 #include "eckit/exception/Exceptions.h"
 #include "eckit/mpi/Comm.h"
@@ -41,45 +37,12 @@ namespace eckit {
 
 namespace ioda {
 
-class ObsFileInParameters : public ObsIoParametersBase {
-     OOPS_CONCRETE_PARAMETERS(ObsFileInParameters, ObsIoParametersBase)
-
- public:
-    /// input obs file name
-    oops::RequiredParameter<std::string> fileName{"obsfile", this};
-
-    /// input obs file format
-    ///
-    /// Possible values:
-    /// * `hdf5`: HDF5 file format
-    /// * `odb`: ODB file format
-    /// * `auto` (default): file format determined automatically from the file name extension
-    ///   (`.odb` -- ODB, everything else -- HDF5).
-    oops::Parameter<FileFormat> format{"format", FileFormat::AUTO, this};
-
-    /// file with variable name mapping rules
-    ///
-    /// Required for obs files in the ODB format, unused otherwise.
-    oops::Parameter<std::string> mappingFile{"mapping file", "", this};
-    /// file with query parameters
-    ///
-    /// Required for obs files in the ODB format, unused otherwise.
-    oops::Parameter<std::string> queryFile{"query file", "", this};
-};
-
-class ObsFileOutParameters : public ObsIoParametersBase {
-    OOPS_CONCRETE_PARAMETERS(ObsFileOutParameters, ObsIoParametersBase)
-
- public:
-    /// output obs file name
-    oops::RequiredParameter<std::string> fileName{"obsfile", this};
-};
-
 class ObsExtendParameters : public oops::Parameters {
     OOPS_CONCRETE_PARAMETERS(ObsExtendParameters, oops::Parameters)
 
  public:
-    /// Number of locations allocated to each companion record produced when extending the ObsSpace.
+    /// Number of locations allocated to each companion record produced when
+    /// extending the ObsSpace.
     oops::RequiredParameter<int> companionRecordLength
         {"allocate companion records with length", this};
 
@@ -91,113 +54,10 @@ class ObsExtendParameters : public oops::Parameters {
             this};
 };
 
-class ObsGenerateParametersBase : public ObsIoParametersBase {
-    OOPS_ABSTRACT_PARAMETERS(ObsGenerateParametersBase, ObsIoParametersBase)
-
- public:
-    /// obs error estimates
-    oops::Parameter<std::vector<float>> obsErrors{"obs errors", { }, this};
-};
-
-class EmbeddedObsGenerateRandomParameters : public oops::Parameters {
-    OOPS_CONCRETE_PARAMETERS(EmbeddedObsGenerateRandomParameters, Parameters)
-
- public:
-    /// number of observations
-    oops::RequiredParameter<int> numObs{"nobs", this};
-
-    /// latitude range start
-    oops::RequiredParameter<float> latStart{"lat1", this};
-
-    /// latitude range end
-    oops::RequiredParameter<float> latEnd{"lat2", this};
-
-    /// longitude range start
-    oops::RequiredParameter<float> lonStart{"lon1", this};
-
-    /// longitude range end
-    oops::RequiredParameter<float> lonEnd{"lon2", this};
-
-    /// random seed
-    oops::OptionalParameter<int> ranSeed{"random seed", this};
-};
-
-/// Options controlling the ObsIoGenerateRandom class
-class ObsGenerateRandomParameters : public ObsGenerateParametersBase {
-    OOPS_CONCRETE_PARAMETERS(ObsGenerateRandomParameters, ObsGenerateParametersBase)
-
- public:
-    /// options shared by this class and the legacy implementation (LegacyObsGenerateParameters)
-    EmbeddedObsGenerateRandomParameters random{this};
-};
-
-class EmbeddedObsGenerateListParameters : public oops::Parameters {
-    OOPS_CONCRETE_PARAMETERS(EmbeddedObsGenerateListParameters, Parameters)
-
- public:
-    /// latitude values
-    oops::RequiredParameter<std::vector<float>> lats{"lats", this};
-
-    /// longitude values
-    oops::RequiredParameter<std::vector<float>> lons{"lons", this};
-
-    /// time offsets (s) relative to epoch
-    oops::RequiredParameter<std::vector<int64_t>> dateTimes{"dateTimes", this};
-
-    /// epoch (ISO 8601 string) relative to which datetimes are computed
-    oops::Parameter<std::string> epoch{"epoch", "seconds since 1970-01-01T00:00:00Z", this};
-};
-
-/// Options controlling the ObsIoGenerateList class
-class ObsGenerateListParameters : public ObsGenerateParametersBase {
-    OOPS_CONCRETE_PARAMETERS(ObsGenerateListParameters, ObsGenerateParametersBase)
-
- public:
-    /// options shared by this class and the legacy implementation (LegacyObsGenerateParameters)
-    EmbeddedObsGenerateListParameters list{this};
-};
-
-/// \brief Options in the 'generate' YAML section.
-///
-/// \note If you add or remove any Parameter member variables from this class, be sure to update
-/// ObsTopLevelParameters::deserialize() to match.
-class LegacyObsGenerateParameters : public oops::Parameters {
-    OOPS_CONCRETE_PARAMETERS(LegacyObsGenerateParameters, Parameters)
-
- public:
-    /// specification for generating using the random method
-    oops::OptionalParameter<EmbeddedObsGenerateRandomParameters> random{"random", this};
-
-    /// specification for generating using the list method
-    oops::OptionalParameter<EmbeddedObsGenerateListParameters> list{"list", this};
-
-    /// options controlling obs record grouping
-    oops::Parameter<ObsGroupingParameters> obsGrouping{"obsgrouping", { }, this};
-
-    /// obs error estimates
-    oops::Parameter<std::vector<float>> obsErrors{"obs errors", { }, this};
-
-    /// maximum frame size
-    oops::Parameter<int> maxFrameSize{"max frame size", DEFAULT_FRAME_SIZE, this};
-};
-
-class ObsIoParametersWrapper : public oops::Parameters {
-    OOPS_CONCRETE_PARAMETERS(ObsIoParametersWrapper, Parameters)
- public:
-    oops::RequiredPolymorphicParameter<ObsIoParametersBase, ObsIoFactory>
-      obsIoInParameters{"type", this};
-};
-
 class ObsTopLevelParameters : public oops::ObsSpaceParametersBase {
     OOPS_CONCRETE_PARAMETERS(ObsTopLevelParameters, ObsSpaceParametersBase)
 
  public:
-    /// Reimplemented to store contents of the `obsdatain` or `generate` section (if present)
-    /// in the source member variable. This makes it possible for the options related to the source
-    /// of input data to be accessed in a uniform way (regardless of in which section they were
-    /// specified) by calling obsIoInParameters().
-    void deserialize(util::CompositePath &path, const eckit::Configuration &config) override;
-
     /// name of obs space
     oops::RequiredParameter<std::string> obsSpaceName{"name", this};
 
@@ -217,9 +77,6 @@ class ObsTopLevelParameters : public oops::ObsSpaceParametersBase {
     /// Io pool parameters
     oops::Parameter<IoPoolParameters> ioPool{"io pool", {}, this};
 
-    /// output specification by writing to a file
-    oops::OptionalParameter<ObsFileOutParameters> obsOutFile{"obsdataout", this};
-
     /// extend the ObsSpace with extra fixed-size records
     oops::OptionalParameter<ObsExtendParameters> obsExtend{"extension", this};
 
@@ -228,23 +85,11 @@ class ObsTopLevelParameters : public oops::ObsSpaceParametersBase {
     oops::Parameter<util::DateTime> epochDateTime{"epoch DateTime",
                                                   util::DateTime("1970-01-01T00:00:00Z"), this};
 
-    /// parameters indicating where to load data from
-    const ObsIoParametersBase &obsIoInParameters() const {
-      if (source.value() != boost::none)
-        return source.value()->obsIoInParameters.value();
-      throw eckit::BadValue("obsIoInParameters() must not be called before deserialize()", Here());
-    }
-
-    /// \brief Fill this section to generate observations on the fly.
-    oops::OptionalParameter<LegacyObsGenerateParameters> obsGenerate{"generate", this};
-
- private:
     /// \brief Fill this section to read observations from a file.
-    oops::OptionalParameter<ObsFileInParameters> obsInFile{"obsdatain", this};
+    oops::RequiredParameter<ObsDataInParameters> obsDataIn{"obsdatain", this};
 
-    /// \brief Fill this section instead of `obsdatain` and `generate` to load observations from
-    /// any other source.
-    oops::OptionalParameter<ObsIoParametersWrapper> source{"source", this};
+    /// output specification by writing to a file
+    oops::OptionalParameter<ObsDataOutParameters> obsDataOut{"obsdataout", this};
 };
 
 class ObsSpaceParameters {
@@ -342,5 +187,3 @@ class ObsSpaceParameters {
 };
 
 }  // namespace ioda
-
-#endif  // OBSSPACEPARAMETERS_H_

@@ -9,7 +9,7 @@
 #include <numeric>
 
 #include "Eigen/Dense"
-#include "ioda/Engines/Factory.h"
+#include "ioda/Engines/EngineUtils.h"
 #include "ioda/Exception.h"
 #include "ioda/ObsGroup.h"
 #include "ioda/defs.h"

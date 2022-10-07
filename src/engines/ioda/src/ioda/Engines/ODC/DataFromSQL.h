@@ -30,13 +30,14 @@ namespace ODC {
   // TODO(DJDavies2): Take these obsgroup and varno
   // definitions and encapsulate these into the YAML
   // file structure.
+  static constexpr int obsgroup_surface      = 1;
   static constexpr int obsgroup_scatwind     = 2;
   static constexpr int obsgroup_aircraft     = 4;
   static constexpr int obsgroup_sonde        = 5;
   static constexpr int obsgroup_atovs        = 7;
   static constexpr int obsgroup_oceansound   = 11;
   static constexpr int obsgroup_airs         = 16;
-  static constexpr int obsgroup_gpsro        = 18;
+  static constexpr int obsgroup_gnssro       = 18;
   static constexpr int obsgroup_ssmis        = 19;
   static constexpr int obsgroup_iasi         = 26;
   static constexpr int obsgroup_seviriclr    = 27;
@@ -99,8 +100,10 @@ private:
   size_t number_of_rows_           = 0;
   size_t number_of_metadata_rows_  = 0;
   size_t number_of_varnos_         = 0;
+  size_t max_number_channels_      = 0;
   int obsgroup_                    = 0;
   std::map<int, size_t> varnos_and_levels_;
+  std::map<int, size_t> varnos_and_levels_to_use_;
 
   /// \brief Returns the value for a particular row/column
   /// \param row Get data for this row
@@ -148,6 +151,10 @@ private:
   /// \param column Get data for this column
   std::vector<std::string> getMetadataStringColumn(std::string const& column) const;
 
+  /// \brief Strings are read about doubles from the ODB. Re-interpret this as a string and trim any spaces.
+  /// \param ud The double which is to be re-interpreted.
+  std::string reinterpretString(double ud) const;
+
   /// \brief Returns data for a metadata (varno-independent) column
   /// \param column Get data for this column
   template <typename T>
@@ -188,7 +195,7 @@ private:
 
 public:
   /// \brief Simple constructor
-  DataFromSQL();
+  DataFromSQL(int maxNumberChannels);
 
   /// \brief Returns the number of "metadata" rows, i.e. hdr-type rows
   size_t numberOfMetadataRows() const;

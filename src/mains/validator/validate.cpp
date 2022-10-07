@@ -24,7 +24,7 @@
 #include "eckit/config/YAMLConfiguration.h"
 #include "eckit/log/Colour.h"
 #include "eckit/runtime/Main.h"
-#include "ioda/Engines/Factory.h"
+#include "ioda/Engines/EngineUtils.h"
 #include "ioda/Engines/HH.h"
 #include "ioda/Exception.h"
 #include "ioda/Group.h"

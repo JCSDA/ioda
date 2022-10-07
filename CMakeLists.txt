@@ -15,7 +15,7 @@ if (IODA_BUILD_LANGUAGE_FORTRAN)
 	list( APPEND IODA_LANGUAGES Fortran)
 endif()
 
-project( ioda VERSION 2.2.0 LANGUAGES ${IODA_LANGUAGES} )
+project( ioda VERSION 2.3.0 LANGUAGES ${IODA_LANGUAGES} )
 
 include( FeatureSummary )
 
@@ -52,9 +52,9 @@ find_package( Eigen3 REQUIRED NO_MODULE HINTS
               $ENV{Eigen3_PATH} $ENV{EIGEN3_PATH} $ENV{Eigen_PATH} $ENV{EIGEN_PATH} )
 find_package( gsl-lite REQUIRED HINTS $ENV{gsl_lite_DIR} )
 find_package( udunits 2.2.0 REQUIRED )
+find_package( NetCDF REQUIRED COMPONENTS Fortran )  # No idea why oops is not importing this correctly
 
 # Optional
-find_package( OpenMP COMPONENTS C CXX Fortran )
 find_package( odc 1.0.2 QUIET )   # Needed for odc
 find_package( Boost 1.64.0 )      # Provides an implementation of optional
 find_package( Python3 COMPONENTS Interpreter Development )
@@ -96,7 +96,7 @@ ecbuild_add_test( TARGET ${PROJECT_NAME}_coding_norms
                   COMMAND ${PROJECT_NAME}_cpplint.py
                   ARGS --quiet --recursive ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_SOURCE_DIR}/test
                   WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/bin )
-set_tests_properties( ${PROJECT_NAME}_coding_norms PROPERTIES TIMEOUT 30 )
+set_tests_properties( ${PROJECT_NAME}_coding_norms PROPERTIES TIMEOUT 90 )
 
 ## Package Config
 ecbuild_install_project( NAME ${PROJECT_NAME} )

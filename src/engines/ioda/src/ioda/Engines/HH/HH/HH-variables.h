@@ -135,6 +135,12 @@ public:
 
   Variable write(gsl::span<const char> data, const Type& in_memory_dataType,
                  const Selection& mem_selection, const Selection& file_selection) final;
+  Variable parallelWrite(gsl::span<const char> data, const Type& in_memory_dataType,
+                 const Selection& mem_selection, const Selection& file_selection) final;
+  Variable writeImpl(gsl::span<const char> data, const Type& in_memory_dataType,
+                 const Selection& mem_selection, const Selection& file_selection,
+                 const bool isParallelIo);
+
   Variable read(gsl::span<char> data, const Type& in_memory_dataType,
                 const Selection& mem_selection, const Selection& file_selection) const final;
 

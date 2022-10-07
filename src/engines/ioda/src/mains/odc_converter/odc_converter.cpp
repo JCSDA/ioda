@@ -21,10 +21,10 @@ int main(int argc, char** argv) {
   try {
     using namespace ioda;
 
-    if (argc != 5) {
+    if (argc != 5 && argc != 6) {
       std::cerr << "Usage: " << argv[0]
                 << " subtype_str "
-                   "filename mappingFile queryFile"
+                   "filename mappingFile queryFile [maxNumberChannels]"
                 << std::endl;
       return 1;
     }
@@ -33,7 +33,12 @@ int main(int argc, char** argv) {
     const std::string subtype_str = argv[1];
     odcparams.filename    = argv[2];
     odcparams.mappingFile = argv[3];
-    odcparams.queryFile = argv[4];
+    odcparams.queryFile   = argv[4];
+    if (argc == 6) {
+      odcparams.maxNumberChannels = std::stoi(argv[5]);
+    } else {
+      odcparams.maxNumberChannels = 0;
+    }
 
     auto f = Engines::HH::createFile("testoutput/test-" + subtype_str + ".hdf",
                Engines::BackendCreateModes::Truncate_If_Exists);

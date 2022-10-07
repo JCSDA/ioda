@@ -1,4 +1,4 @@
-# (C) Copyright 2020-2021 UCAR.
+# (C) Copyright 2020-2022 UCAR.
 #
 # This software is licensed under the terms of the Apache Licence Version 2.0
 # which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -29,17 +29,19 @@ list(APPEND SRCS_C_BINDINGS
 	include/ioda/C/String_c.h
 	include/ioda/C/Variable_c.h
 	include/ioda/C/Variable_Creation_Parameters_c.h
+	include/ioda/C/VecString_c.h
 	src/ioda/C/structs_c.h
-	src/ioda/C/Attribute_c.cpp
-	src/ioda/C/Dimensions_c.cpp
+	#src/ioda/C/Attribute_c.cpp
+	#src/ioda/C/Dimensions_c.cpp
 	src/ioda/C/Engines_c.cpp
 	src/ioda/C/Group_c.cpp
-	src/ioda/C/Has_Attributes_c.cpp
+	#src/ioda/C/Has_Attributes_c.cpp
 	src/ioda/C/ioda_c.cpp
 	src/ioda/C/String_c.cpp
-	src/ioda/C/Variable_Creation_Parameters_c.cpp
-	src/ioda/C/Has_Variables_c.cpp
-	src/ioda/C/Variable_c.cpp
+	#src/ioda/C/Variable_Creation_Parameters_c.cpp
+	#src/ioda/C/Has_Variables_c.cpp
+	#src/ioda/C/Variable_c.cpp
+	src/ioda/C/VecString_c.cpp
 	)
 list(APPEND SRCS_GROUPS
 	include/ioda/Group.h
@@ -47,6 +49,15 @@ list(APPEND SRCS_GROUPS
 	src/ioda/Group.cpp
 	src/ioda/ObsGroup.cpp
 	)
+list(APPEND SRCS_IO
+	include/ioda/Io/IoPool.h
+	include/ioda/Io/IoPoolParameters.h
+	include/ioda/Io/IoPoolUtils.h
+	include/ioda/Io/WriterUtils.h
+	src/ioda/IoPool.cpp
+	src/ioda/IoPoolUtils.cpp
+	src/ioda/WriterUtils.cpp
+        )
 list(APPEND SRCS_LAYOUTS
 	include/ioda/Layout.h
 	src/ioda/Layouts/Layout_ObsGroup.h
@@ -68,24 +79,19 @@ list(APPEND SRCS_MATH
 	)
 list(APPEND SRCS_MISC
 	include/ioda/defs.h
-        include/ioda/Copying.h
+	include/ioda/Copying.h
 	include/ioda/Exception.h
 	include/ioda/iodaNamespaceDoc.h
 	include/ioda/Misc/compat/std/source_location_compat.h
 	include/ioda/Misc/Dimensions.h
 	include/ioda/Misc/DimensionScales.h
 	include/ioda/Misc/Eigen_Compat.h
-	include/ioda/Misc/IoPool.h
-	include/ioda/Misc/IoPoolParameters.h
-	include/ioda/Misc/IoPoolUtils.h
 	include/ioda/Misc/MergeMethods.h
 	include/ioda/Misc/Options.h
 	include/ioda/Misc/StringFuncs.h
-        src/ioda/Copying.cpp
+	src/ioda/Copying.cpp
 	src/ioda/DimensionScales.cpp
 	src/ioda/Exception.cpp
-	src/ioda/IoPool.cpp
-	src/ioda/IoPoolUtils.cpp
 	src/ioda/StringFuncs.cpp
 	)
 list(APPEND SRCS_TYPES
@@ -118,8 +124,24 @@ list(APPEND SRCS_VARIABLES
 
 list(APPEND SRCS_ENGINES_TOP
 	include/ioda/Engines/Capabilities.h
-	include/ioda/Engines/Factory.h
-	src/ioda/Engines/Factory.cpp)
+	include/ioda/Engines/GenList.h
+	include/ioda/Engines/GenRandom.h
+	include/ioda/Engines/ReaderBase.h
+	include/ioda/Engines/ReadH5File.h
+	include/ioda/Engines/ReadOdbFile.h
+	include/ioda/Engines/WriterBase.h
+	include/ioda/Engines/WriteH5File.h
+	include/ioda/Engines/WriteOdbFile.h
+	include/ioda/Engines/EngineUtils.h
+	src/ioda/Engines/GenList.cpp
+	src/ioda/Engines/GenRandom.cpp
+	src/ioda/Engines/ReaderBase.cpp
+	src/ioda/Engines/ReadH5File.cpp
+	src/ioda/Engines/ReadOdbFile.cpp
+	src/ioda/Engines/WriterBase.cpp
+	src/ioda/Engines/WriteH5File.cpp
+	src/ioda/Engines/WriteOdbFile.cpp
+	src/ioda/Engines/EngineUtils.cpp)
 
 list(APPEND SRCS_ENGINES_HH 
 	include/ioda/Engines/HH.h
@@ -191,6 +213,7 @@ list(APPEND SRCS_ENGINES_ODC_ODC_DEPENDENT
 source_group("Attributes" FILES ${SRCS_ATTRIBUTES})
 source_group("C Bindings" FILES ${SRCS_C_BINDINGS})
 source_group("Groups" FILES ${SRCS_GROUPS})
+source_group("IO" FILES ${SRCS_IO})
 source_group("Layouts" FILES ${SRCS_LAYOUTS} ${SRCS_LAYOUTS_ODB})
 source_group("Math" FILES ${SRCS_MATH})
 source_group("Misc" FILES ${SRCS_MISC})
@@ -209,7 +232,7 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/ioda/testconfig.h.in
 ## Define which source files are compiled.
 
 list(APPEND SRCS_IODA_ENGINES
-	${SRCS_ATTRIBUTES} ${SRCS_C_BINDINGS} ${SRCS_GROUPS}
+	${SRCS_ATTRIBUTES} ${SRCS_C_BINDINGS} ${SRCS_GROUPS} ${SRCS_IO}
 	${SRCS_LAYOUTS} ${SRCS_MATH} ${SRCS_MISC} ${SRCS_TYPES} ${SRCS_VARIABLES}
 	${SRCS_ENGINES_TOP} ${SRCS_ENGINES_OBS_STORE} ${SRCS_ENGINES_ODC}
 	${CMAKE_CURRENT_BINARY_DIR}/config/ioda/config.h
@@ -300,7 +323,11 @@ INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/config/ioda/config.h
 	COMPONENT Headers)
 
 
-## Python library is built separately.
+## Fortran and Python libraries are built separately.
+
+if (IODA_BUILD_LANGUAGE_FORTRAN)  # TODO: Rename?
+    add_subdirectory(fortran)
+endif()
 
 if (BUILD_PYTHON_BINDINGS)
 	add_subdirectory(python)

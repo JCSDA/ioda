@@ -79,7 +79,7 @@ is accomplished, see the **TODO(Ryan): Add link to class structure design docume
 ### More implementation specifics
 
 A new HH engine is instantiated when the user calls an entry function, usually
-located in [ioda/Engines/Factory.h](https://github.com/JCSDA-internal/ioda/blob/develop/src/engines/ioda/include/ioda/Engines/Factory.h)
+located in [ioda/Engines/EngineUtils.h](https://github.com/JCSDA-internal/ioda/blob/develop/src/engines/ioda/include/ioda/Engines/EngineUtils.h)
 or [ioda/Engines/HH.h](https://github.com/JCSDA-internal/ioda/blob/develop/src/engines/ioda/include/ioda/Engines/HH.h).
 The create and open calls are implemented in [src/ioda/engines/HH.cpp](https://github.com/JCSDA-internal/ioda/blob/develop/src/engines/ioda/src/ioda/Engines/HH.cpp).
 The entry functions create a new HH backend and encapsulate it within a Group object. From

@@ -24,6 +24,8 @@
 #include <string.h>
 
 #include "ioda/C/ioda_c.h"
+#include "ioda/C/Group_c.h"
+#include "ioda/C/Engines_c.h"
 #include "ioda/defs.h"  // Always include this first.
 
 #define sslin(x) #x
@@ -35,11 +37,11 @@
   }
 
 int main(int argc, char** argv) {
-  int errval                        = 0;
-  const char* errlin                = NULL;
-  struct c_ioda ioda                = use_c_ioda();
-  struct ioda_group* g              = NULL;
-  struct ioda_has_attributes* gatts = NULL;
+  int errval                           = 0;
+  const char* errlin                   = NULL;
+  const struct ioda_c_interface* ioda  = get_ioda_c_interface();
+  struct ioda_group* g                 = NULL;
+  struct ioda_has_attributes* gatts    = NULL;
   struct ioda_attribute *intatt1 = NULL, *intatt2 = NULL, *intatt3 = NULL, *intatt4 = NULL;
   struct ioda_attribute *intatt5 = NULL, *intatt6 = NULL, *intatt7 = NULL, *intatt8 = NULL;
   struct ioda_attribute *floatatt1 = NULL, *doubleatt1 = NULL, *stratt1 = NULL, *charatt1 = NULL;
@@ -47,10 +49,10 @@ int main(int argc, char** argv) {
   struct ioda_dimensions* f1_dims    = NULL;
   struct ioda_string_ret_t *att_list = NULL, *str_list = NULL;
 
-  g = ioda.Engines.constructFromCmdLine(argc, argv, "Example-02-C.hdf5");
+  g = ioda->Engines->constructFromCmdLine(argc, argv, "Example-02-C.hdf5");
   if (!g) doErr;
 
-  gatts = ioda.Group.getAtts(g);
+  gatts = ioda->Groups->getAtts(g);
   if (!gatts) doErr;
 
   long intatt1_dims[1] = {1};

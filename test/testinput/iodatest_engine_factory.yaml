@@ -1,0 +1,72 @@
+---
+engine factory tests:
+    # HDF5 file backend in read mode
+    - case:
+        name: "HDF5 file in read mode"
+        simulated variables: [ "air_temperature" ]
+        obsdatain:
+          engine:
+            type: H5File
+            obsfile: "Data/testinput_tier_1/sondes_obs_2018041500_m.nc4"
+        global attribute check:
+          attr name: "_ioda_layout"
+          attr value: "ObsGroup"
+
+    # HDF5 file backend in write mode
+    - case:
+        name: "HDF5 file in write mode"
+        simulated variables: [ "air_temperature" ]
+        obsdataout:
+          engine:
+            type: H5File
+            obsfile: "testoutput/test-engine-factory.h5"
+        global attribute check:
+          attr name: "_ioda_layout"
+          attr value: "ObsGroup"
+
+    # Generate using list mode
+    - case:
+        name: "Generate using list mode"
+        simulated variables: [ "var1", "var2" ]
+        obsdatain:
+          engine:
+            type: GenList
+            lats: [ 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 ]
+            lons: [ 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 ]
+            dateTimes:
+            - 240
+            - 252
+            - 264
+            - 276
+            - 288
+            - 300
+            - 312
+            - 324
+            - 336
+            - 348
+            - 360
+            epoch: "seconds since 2010-01-01T00:00:00Z"
+            obs errors: [1.0, 2.0]
+        global attribute check:
+          attr name: "_ioda_layout"
+          attr value: "ObsGroup"
+
+
+    # Generate using random mode
+    - case:
+        name: "Generate using random mode"
+        simulated variables: [ "var1", "var2" ]
+        obsdatain:
+          engine:
+            type: GenRandom
+            nobs: 10   # generate 10 obs
+            lat1: 0    # with lat ranging form 0-10.
+            lat2: 10   #
+            lon1: 0    # and lon ranging from 0-10.
+            lon2: 10
+            random seed: 29837
+            obs errors: [1.0, 2.0]
+        global attribute check:
+          attr name: "_ioda_layout"
+          attr value: "ObsGroup"
+

@@ -1,0 +1,166 @@
+---
+window begin: 2021-01-15T00:00:00Z
+window end:   2021-01-16T00:00:00Z
+
+# Expected indices are based on 4 PE's during an MPI run. If you change
+# the number of PE in the ecbuild_add_test in the ../CMakeLists.txt file,
+# then the expected indices below need to change accordingly.
+#
+# The test is coded so that the keyword "rank" + (MPI Rank Number) is used from this
+# file to get the expected result. If you are MPI rank 0, then you read the keywords
+# under "rank0:" from this file; MPI rank 1, keywords from "rank1:"; etc.
+
+observations:
+- obs space:
+    name: RoundRobin, with extension
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: Data/testinput_tier_1/obsspace_grouping.nc4
+      obsgrouping:
+        group variables: [group_by_int]
+        # group_by_int@MetaData = 1, 1, 1, 2, 3, 3, 1, 1, 1, 1 ;
+    simulated variables: [temperature]
+    distribution:
+      name: RoundRobin
+    extension:
+      allocate companion records with length: 3
+  specs:
+    gnlocs: 19  # 10 original obs + 9 averaged obs (3 levels * 3 records)
+    allgatherv: [ 0, 1, 2, 6, 7, 8, 9, 3, 4, 5, 10, 11, 12, 13, 14, 15, 16, 17, 18 ]
+    rank0:
+      nlocs: 10  # 7 original + 3 averaged
+      nrecs: 2
+      nPatchLocs: 10
+      index: [ 0, 1, 2, 6, 7, 8, 9, 10, 11, 12 ]
+      recnums: [ 0, 0, 0, 0, 0, 0, 0, 3, 3, 3 ]
+      patchIndex: [ 0, 1, 2, 6, 7, 8, 9, 10, 11, 12 ]
+    rank1:
+      nlocs: 4  # 1 original + 3 averaged
+      nrecs: 2
+      nPatchLocs: 4
+      index: [ 3, 13, 14, 15 ]
+      recnums: [ 1, 4, 4, 4 ]
+      patchIndex: [ 3, 13, 14, 15 ]
+    rank2:
+      nlocs: 5  # 2 original + 3 averaged
+      nrecs: 2
+      nPatchLocs: 5
+      index: [ 4, 5, 16, 17, 18 ]
+      recnums: [ 2, 2, 5, 5, 5 ]
+      patchIndex: [ 4, 5, 16, 17, 18 ]
+    rank3:
+      nlocs: 0
+      nrecs: 0
+      nPatchLocs: 0
+      index: [ ]
+      recnums: [ ]
+      patchIndex: [ ]
+
+- obs space:
+    name: Halo
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: Data/testinput_tier_1/obsspace_grouping_wider_longitude_range.nc4
+      obsgrouping:
+        # At present Halo is not guaranteed to keep records on a single PE, so
+        # we're forced to put each location in a separate record.
+        group variables: [longitude]
+        # longitude@MetaData = 1, 21, 41, 61, 81, 101, 121, 141, 161, 181
+    simulated variables: [temperature]
+    distribution:
+      name: Halo
+      radius: 7000000
+      halo size: 1000000
+  specs:
+    gnlocs: 10
+    allgatherv: [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ]
+    rank0:
+      nlocs: 4
+      nrecs: 4
+      nPatchLocs: 3
+      index: [ 0, 1, 2, 3 ]
+      recnums: [ 0, 1, 2, 3 ]
+      patchIndex: [ 0, 1, 2 ]
+    rank1:
+      nlocs: 8
+      nrecs: 8
+      nPatchLocs: 4
+      index: [ 1, 2, 3, 4, 5, 6, 7, 8 ]
+      recnums: [ 1, 2, 3, 4, 5, 6, 7, 8 ]
+      patchIndex: [ 3, 4, 5, 6 ]
+    rank2:
+      nlocs: 4
+      nrecs: 4
+      nPatchLocs: 3
+      index: [ 6, 7, 8, 9 ]
+      recnums: [ 6, 7, 8, 9 ]
+      patchIndex: [ 7, 8, 9 ]
+    rank3:
+      nlocs: 0
+      nrecs: 0
+      nPatchLocs: 0
+      index: [ ]
+      recnums: [ ]
+      patchIndex: [ ]
+
+- obs space:
+    name: Halo, with extension
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: Data/testinput_tier_1/obsspace_grouping_wider_longitude_range.nc4
+      obsgrouping:
+        # At present Halo is not guaranteed to keep records on a single PE, so
+        # we're forced to put each location in a separate record.
+        group variables: [longitude]
+        # longitude@MetaData = 1, 21, 41, 61, 81, 101, 121, 141, 161, 181
+    simulated variables: [temperature]
+    distribution:
+      name: Halo
+      radius: 7000000  # a bit less than 1/4 of equator length
+      halo size: 1000000
+    extension:
+      allocate companion records with length: 3
+  specs:
+    gnlocs: 40  # 10 original obs + 30 averaged obs (3 levels * 10 records)
+    allgatherv: [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
+                  10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
+                  20, 21, 22, 23, 24, 25, 26, 27, 28, 29,
+                  30, 31, 32, 33, 34, 35, 36, 37, 38, 39 ]
+    rank0:
+      nlocs: 16 # 4 original + 12 averaged
+      nrecs: 8  # 4 original + 4 averaged
+      nPatchLocs: 12 # 3 original + 9 averaged
+      index: [ 0, 1, 2, 3, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21 ]
+      recnums: [ 0, 1, 2, 3, 10, 10, 10, 11, 11, 11, 12, 12, 12, 13, 13, 13 ]
+      patchIndex: [ 0, 1, 2, 10, 11, 12, 13, 14, 15, 16, 17, 18 ]
+    rank1:
+      nlocs: 32 # 8 original + 24 averaged
+      nrecs: 16  # 8 original + 8 averaged
+      nPatchLocs: 16 # 4 original + 12 averaged
+      index: [ 1, 2, 3, 4, 5, 6, 7, 8,
+               13, 14, 15,  16, 17, 18,  19, 20, 21,  22, 23, 24,
+               25, 26, 27,  28, 29, 30,  31, 32, 33,  34, 35, 36 ]
+      recnums: [ 1, 2, 3, 4, 5, 6, 7, 8,
+                 11, 11, 11,  12, 12, 12,  13, 13, 13,  14, 14, 14,
+                 15, 15, 15,  16, 16, 16,  17, 17, 17,  18, 18, 18]
+      patchIndex: [ 3, 4, 5, 6,
+                    19, 20, 21,  22, 23, 24,  25, 26, 27,  28, 29, 30 ]
+    rank2:
+      nlocs: 16 # 4 original + 12 averaged
+      nrecs: 8  # 4 original + 4 averaged
+      nPatchLocs: 12 # 3 original + 9 averaged
+      index: [ 6, 7, 8, 9,
+               28, 29, 30,  31, 32, 33,  34, 35, 36,  37, 38, 39 ]
+      recnums: [ 6, 7, 8, 9,
+                 16, 16, 16,  17, 17, 17,  18, 18, 18,  19, 19, 19 ]
+      patchIndex: [ 7, 8, 9,  31, 32, 33,  34, 35, 36,  37, 38, 39 ]
+    rank3:
+      nlocs: 0
+      nrecs: 0
+      nPatchLocs: 0
+      index: [ ]
+      recnums: [ ]
+      patchIndex: [ ]

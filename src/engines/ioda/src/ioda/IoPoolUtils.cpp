@@ -8,7 +8,7 @@
 #include <iomanip>
 #include <sstream>
 
-#include "ioda/Misc/IoPoolUtils.h"
+#include "ioda/Io/IoPoolUtils.h"
 
 namespace ioda {
 

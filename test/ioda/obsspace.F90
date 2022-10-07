@@ -124,6 +124,8 @@ TEST(test_obsspace_get_db_put_db)
   character(kind=c_char,len=:), allocatable :: winbgnstr
   character(kind=c_char,len=:), allocatable :: winendstr
   type(datetime) :: winbgn, winend
+  character(len=20) :: winbgnreadstr, winendreadstr
+  type(datetime) :: winbgnread, winendread
 
   type(c_ptr), allocatable, dimension(:) :: obsspace
   integer :: nlocs, nlocs_id
@@ -204,6 +206,16 @@ TEST(test_obsspace_get_db_put_db)
       CHECK(input_bool_var(iloc) .eqv. output_bool_var(iloc))
     enddo
     deallocate(input_bool_var, output_bool_var)
+
+    !> test get method for datetime produces equivalent ouput to input string
+    call obsspace_get_window(obsspace(iobstype), winbgnread, winendread)
+    call datetime_to_string(winbgnread, winbgnreadstr)
+    CHECK_EQUAL(winbgnstr, winbgnreadstr)
+    call datetime_to_string(winendread, winendreadstr)
+    CHECK_EQUAL(winendstr, winendreadstr)
+    call datetime_delete(winbgnread)
+    call datetime_delete(winendread)
+
   enddo
 
   !> destruct all obsspaces

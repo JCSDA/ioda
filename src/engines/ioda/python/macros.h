@@ -15,6 +15,8 @@
 #include <pybind11/chrono.h>
 #include <pybind11/stl.h>
 
+#include "ioda/Types/Type.h"
+
 #ifdef _MSC_FULL_VER
 #pragma warning(disable : 4267)  // Python interface
 #endif
@@ -96,17 +98,18 @@
 PATTERN("bool", funcname, classname, bool)   \
 */
 
-#define CLASS_TEMPLATE_FUNCTION_PATTERN_NOSTR(actualname, classname, PATTERN) \
-  CLASS_TEMPLATE_FUNCTION_PATTERN_NOALIASES(actualname, classname, PATTERN)   \
-  PATTERN("short", actualname, classname, short int)                          \
-  PATTERN("ushort", actualname, classname, unsigned short int)                \
-  PATTERN("int", actualname, classname, int)                                  \
-  PATTERN("uint", actualname, classname, unsigned int)                        \
-  PATTERN("lint", actualname, classname, long int)                            \
-  PATTERN("ulint", actualname, classname, unsigned long int)                  \
-  PATTERN("llint", actualname, classname, long long int)                      \
-  PATTERN("ullint", actualname, classname, unsigned long long int)            \
-  PATTERN("datetime", actualname, classname, std::chrono::time_point<std::chrono::system_clock>)
+#define CLASS_TEMPLATE_FUNCTION_PATTERN_NOSTR(actualname, classname, PATTERN)         \
+  CLASS_TEMPLATE_FUNCTION_PATTERN_NOALIASES(actualname, classname, PATTERN)           \
+  PATTERN("short", actualname, classname, short int)                                  \
+  PATTERN("ushort", actualname, classname, unsigned short int)                        \
+  PATTERN("int", actualname, classname, int)                                          \
+  PATTERN("uint", actualname, classname, unsigned int)                                \
+  PATTERN("lint", actualname, classname, long int)                                    \
+  PATTERN("ulint", actualname, classname, unsigned long int)                          \
+  PATTERN("llint", actualname, classname, long long int)                              \
+  PATTERN("ullint", actualname, classname, unsigned long long int)                    \
+  PATTERN("datetime", actualname, classname, ioda::Types::Chrono_Time_Point_t) \
+  PATTERN("duration", actualname, classname, ioda::Types::Chrono_Duration_t)
 
 #define CLASS_TEMPLATE_FUNCTION_PATTERN(actualname, classname, PATTERN) \
   PATTERN("str", actualname, classname, std::string)                    \

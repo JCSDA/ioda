@@ -278,20 +278,6 @@ ObsVector & ObsVector::operator=(const ObsDataVector<float> & rhs) {
   return *this;
 }
 // -----------------------------------------------------------------------------
-
-// TODO(JAW): Check if this function be removed.
-void ObsVector::mask(const ObsDataVector<int> & flags) {
-  oops::Log::trace() << "ObsVector::mask" << std::endl;
-  ASSERT(values_.size() == flags.nvars() * flags.nlocs());
-  size_t ii = 0;
-  for (size_t jj = 0; jj < flags.nlocs(); ++jj) {
-    for (size_t jv = 0; jv < flags.nvars(); ++jv) {
-      if (flags[jv][jj] > 0) values_[ii] = missing_;
-      ++ii;
-    }
-  }
-}
-// -----------------------------------------------------------------------------
 void ObsVector::mask(const ObsVector & mask) {
   const size_t nn = values_.size();
   assert(mask.values_.size() == nn);

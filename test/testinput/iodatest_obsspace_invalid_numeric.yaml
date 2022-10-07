@@ -1,0 +1,41 @@
+---
+window begin: "2018-04-14T21:00:00Z"
+window end: "2018-04-15T03:00:00Z"
+
+observations:
+- obs space:
+    name: "Invalid Numeric"
+    simulated variables: ['cleanVar']
+    observed variables: ['cleanVar']
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: "Data/testinput_tier_1/invalid_numeric_test.nc4"
+    obsdataout:
+      engine:
+        type: H5File
+        obsfile: "testoutput/invalid_numeric_test_out.nc4"
+  test data:
+    variables:
+      - name: "cleanVar"
+        group: "TestVariables"
+        type: "float"
+        values: [ 1.5, 2.5, 3.5, 4.5, 5.5 ]
+
+      - name: "varWithInf"
+        group: "TestVariables"
+        type: "float"
+        values: [ -3.36879526e+38, 2.5, 3.5, -3.36879526e+38, 5.5 ]
+
+      - name: "varWithNan"
+        group: "TestVariables"
+        type: "float"
+        values: [ 1.5, -3.36879526e+38, -3.36879526e+38, 2.5, 5.5 ]
+
+      - name: "varWithInfAndNan"
+        group: "TestVariables"
+        type: "float"
+        values: [ -3.36879526e+38, -3.36879526e+38, -3.36879526e+38, -3.36879526e+38, 5.5 ]
+    tolerance:
+      - 1.0e-14
+

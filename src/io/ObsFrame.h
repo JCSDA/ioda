@@ -16,7 +16,6 @@
 
 #include "ioda/Misc/Dimensions.h"
 #include "ioda/core/IodaUtils.h"
-#include "ioda/io/ObsIo.h"
 #include "ioda/ObsGroup.h"
 #include "ioda/ObsSpaceParameters.h"
 #include "ioda/Variables/Variable.h"
@@ -43,68 +42,54 @@ class ObsFrame : public util::Printable {
     explicit ObsFrame(const ObsSpaceParameters & params);
     ~ObsFrame() {}
 
-    /// \brief return number of maximum variable size (along first dimension) from ObsIo
-    Dimensions_t ioMaxVarSize() const {return obs_io_->maxVarSize();}
-
-    /// \brief return number of locations from ObsIo
-    Dimensions_t ioNumLocs() const {return obs_io_->numLocs();}
-
-    /// \brief return number of regular variables from ObsIo
-    Dimensions_t ioNumVars() const {return obs_io_->numVars();}
-
-    /// \brief return number of dimension scale variables from ObsIo
-    Dimensions_t ioNumDimVars() const {return obs_io_->numDimVars();}
-
-    /// \brief return variables container from ObsIo
-    Has_Variables & ioVars() const {return obs_io_->vars();}
-
-    /// \brief return attributes container from ObsIo
-    Has_Attributes & ioAtts() {return obs_io_->atts();}
-
-    /// \brief return list of regular variables from ObsIo
-    const VarUtils::Vec_Named_Variable & ioVarList() const {return obs_io_->varList();}
-
-    /// \brief return list of dimension scale variables from ObsIo
-    const VarUtils::Vec_Named_Variable & ioDimVarList() const {return obs_io_->dimVarList();}
-
-    /// \brief return map from variables to their attached dimension scales
-    VarUtils::VarDimMap ioVarDimMap() const {return obs_io_->varDimMap();}
-
-    /// \brief update variable, dimension info in the ObsIo object
-    void ioUpdateVarDimInfo() const {obs_io_->updateVarDimInfo();}
-
-    /// \brief return true if variable is dimensioned by nlocs
-    bool ioIsVarDimByNlocs(const std::string & varName) const {
-        return obs_io_->isVarDimByNlocs(varName);
-    }
-
     /// \brief return the ObsGroup that stores the frame data
     inline ObsGroup getObsGroup() { return obs_frame_; }
 
     /// \brief return the ObsGroup that stores the frame data
     inline const ObsGroup getObsGroup() const { return obs_frame_; }
 
-    /// \brief return the list of variables with their associated dimensions
+    /// \brief return the list of variables with their associated dimensions from the frame
     VarUtils::VarDimMap varDimMap() const {return dims_attached_to_vars_;}
+
+    /// \brief return the list of variables from the backend
+    VarUtils::Vec_Named_Variable backendDimVarList() const {return backend_dim_var_list_;}
 
     /// \brief return list of regular variables
     const VarUtils::Vec_Named_Variable & varList() const {return var_list_; }
+
+    /// \brief return number of maximum variable size (along first dimension)
+    Dimensions_t maxVarSize() const {return max_var_size_;}
 
     /// \brief return true if variable's first dimension is nlocs
     /// \param varName variable name to check
     bool isVarDimByNlocs(const std::string & varName) const;
 
     /// \brief return number of locations
-    virtual std::size_t frameNumLocs() const {return nlocs_;}
+    std::size_t frameNumLocs() const {return nlocs_;}
 
     /// \brief return number of records
-    virtual std::size_t frameNumRecs() const {return nrecs_;}
+    std::size_t frameNumRecs() const {return nrecs_;}
 
     /// \brief return number of locations that were selected from ObsIo
     Dimensions_t globalNumLocs() const {return gnlocs_;}
 
     /// \brief return number of locations from obs source that were outside the time window
     Dimensions_t globalNumLocsOutsideTimeWindow() const {return gnlocs_outside_timewindow_;}
+
+    /// \brief return number of locations from backend
+    std::size_t backendNumLocs() const {return backend_nlocs_;}
+
+    /// \brief return number of variables from backend
+    std::size_t backendNumVars() const {return backend_var_list_.size();}
+
+    /// \brief return number of dimension variables from backend
+    std::size_t backendNumDimVars() const {return backend_dim_var_list_.size();}
+
+    /// \brief return number of maximum variable size (along first dimension) from backend
+    Dimensions_t backendMaxVarSize() const {return backend_max_var_size_;}
+
+    /// \brief return the backend (not the frame) obs group
+    ObsGroup backendObsGroup() const {return obs_data_in_->getObsGroup();}
 
     /// \brief return list of indices indicating which locations were selected from ObsIo
     virtual std::vector<std::size_t> index() const {return std::vector<std::size_t>{};}
@@ -152,16 +137,16 @@ class ObsFrame : public util::Printable {
 
  protected:
     //------------------ protected data members ------------------------------
-    /// \brief ObsIo object
-    std::shared_ptr<ObsIo> obs_io_;
+    /// \brief ioda engines backend for reading obs data
+    std::unique_ptr<Engines::ReaderBase> obs_data_in_;
 
     /// \brief ObsGroup object (temporary storage for a single frame)
     ObsGroup obs_frame_;
 
-    /// \brief number of records from source (file or generator)
+    /// \brief number of records from frame
     Dimensions_t nrecs_;
 
-    /// \brief number of locations from source (file or generator)
+    /// \brief number of locations from frame
     Dimensions_t nlocs_;
 
     /// \brief total number of locations from source (file or generator) that were
@@ -170,6 +155,9 @@ class ObsFrame : public util::Printable {
 
     /// \brief number of nlocs from the file (gnlocs) that are outside the time window
     Dimensions_t gnlocs_outside_timewindow_;
+
+    /// \brief number of locations from backend
+    Dimensions_t backend_nlocs_;
 
     /// \brief ObsIo parameter specs
     ObsSpaceParameters params_;
@@ -180,28 +168,51 @@ class ObsFrame : public util::Printable {
     /// \brief maximum variable size
     Dimensions_t max_var_size_;
 
+    /// \brief maximum variable size
+    Dimensions_t backend_max_var_size_;
+
     /// \brief current frame starting index
     Dimensions_t frame_start_;
 
-    /// \brief true if obs_io_ contains an epoch style datetime variable
+    /// \brief true if the backend contains an epoch style datetime variable
     bool use_epoch_datetime_;
 
-    /// \brief true if obs_io_ contains a string style datetime variable
+    /// \brief true if the backend contains a string style datetime variable
     bool use_string_datetime_;
 
-    /// \brief true if obs_io_ contains an offset style datetime variable
+    /// \brief true if the backend contains an offset style datetime variable
     bool use_offset_datetime_;
 
-    /// \brief list of regular variables from source (file or generator)
+    /// \brief list of regular variables from the frame
     VarUtils::Vec_Named_Variable var_list_;
 
-    /// \brief list of dimension scale variables from source (file or generator)
+    /// \brief list of dimension scale variables from the frame
     VarUtils::Vec_Named_Variable dim_var_list_;
 
-    /// \brief map containing variables with their attached dimension scales
+    /// \brief map containing variables with their attached dimension scales from the frame
     VarUtils::VarDimMap dims_attached_to_vars_;
 
+    /// \brief list of regular variables from the backend (file or generator)
+    VarUtils::Vec_Named_Variable backend_var_list_;
+
+    /// \brief list of dimension scale variables from the backend
+    VarUtils::Vec_Named_Variable backend_dim_var_list_;
+
+    /// \brief map containing variables with their attached dimension scales from the backend
+    VarUtils::VarDimMap backend_dims_attached_to_vars_;
+
+    /// \brief names of variables to be used to group observations into records
+    std::vector<std::string> obs_grouping_vars_;
+
     //------------------ protected functions ----------------------------------
+
+    /// \brief internal implementation of isVarDimByNlocs
+    /// \details This function checks to see if the first dimension of the given variable
+    /// (varName) is the nlocs dimension, and if so returns true.
+    /// \param varName Name of variable to check
+    /// \param varDimMap Map with each variable and its associated dimensions
+    bool isVarDimByNlocs_Impl(const std::string & varName,
+                              const VarUtils::VarDimMap & varDimMap) const;
 
     /// \brief create selection object for accessing an ObsIo variable
     /// \param varShape dimension sizes for variable being transferred

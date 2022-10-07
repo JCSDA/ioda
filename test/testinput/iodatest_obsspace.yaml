@@ -1,0 +1,560 @@
+---
+window begin: "2018-04-14T21:00:00Z"
+window end: "2018-04-15T03:00:00Z"
+
+observations:
+- obs space:
+    name: "AOD"
+    simulated variables: ['temperature']
+    observed variables: ['temperature']
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: "Data/testinput_tier_1/aod_obs_2018041500_m.nc4"
+    obs perturbations seed: 25
+  test data:
+    nlocs: 100
+    nrecs: 100
+    nvars: 1
+    obs perturbations seed: 25
+    expected group variables: []
+    expected sort variable: ""
+    expected sort order: "ascending"
+    variables for get test:
+      - name: "latitude"
+        group: "MetaData"
+        type: "float"
+        norm: 353.11505923005967
+
+      - name: "longitude"
+        group: "MetaData"
+        type: "float"
+        norm: 1981.4147543887036
+
+      - name: "surface_type"
+        group: "MetaData"
+        type: "integer"
+        norm: 10.099504938362077
+    tolerance:
+      - 1.0e-14
+    variables for putget test: []
+
+- obs space:
+    name: "AOD VIIRS"
+    simulated variables: ['temperature']
+    observed variables: ['temperature']
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: "Data/testinput_tier_1/aod_viirs_obs_2018041500_sf42.nc4"
+    obs perturbations seed: -40000
+  test data:
+    nlocs: 42
+    nrecs: 42
+    nvars: 1
+    obs perturbations seed: -40000
+    expected group variables: []
+    expected sort variable: ""
+    expected sort order: "ascending"
+    variables for get test:
+      - name: "latitude"
+        group: "MetaData"
+        type: "float"
+        norm: 352.09867487082062
+
+      - name: "longitude"
+        group: "MetaData"
+        type: "float"
+        norm: 476.7772684375891
+
+      - name: "surface_type"
+        group: "MetaData"
+        type: "integer"
+        norm: 6.4807406984078604
+    tolerance:
+      - 1.0e-14
+    variables for putget test: []
+
+- obs space:
+    name: "AMSUA NOAA19"
+    simulated variables: ['brightness_temperature']
+    channels: 1-15
+    distribution:
+      name: InefficientDistribution
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: "Data/testinput_tier_1/amsua_n19_obs_2018041500_m.nc4"
+    obs perturbations seed: 250
+  test data:
+    nlocs: 100
+    nrecs: 100
+    nvars: 1
+    obs perturbations seed: 250
+    expected group variables: []
+    expected sort variable: ""
+    expected sort order: "ascending"
+    variables for get test:
+      - name: "latitude"
+        group: "MetaData"
+        type: "float"
+        norm: 432.95617402805823
+
+      - name: "longitude"
+        group: "MetaData"
+        type: "float"
+        norm: 1661.1529210392009
+    tolerance:
+      - 1.0e-11
+    variables for putget test:
+      # have to use float variables, and only one channel at a time
+      - name: "brightness_temperature"
+        group: "ObsValue"
+        channels: [ 4 ]
+
+      - name: "brightness_temperature"
+        group: "ObsValue"
+        channels: [ 11 ]
+
+- obs space:
+    name: "AMSUA NOAA19"
+    simulated variables: ['brightness_temperature']
+    channels: 1-15
+    distribution:
+      name: Halo
+      halo size: 0
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: "Data/testinput_tier_1/amsua_n19_obs_2018041500_m.nc4"
+  test data:
+    nlocs: 100
+    nrecs: 100
+    nvars: 1
+    obs perturbations seed: 0
+    expected group variables: []
+    expected sort variable: ""
+    expected sort order: "ascending"
+    variables for get test:
+      - name: "latitude"
+        group: "MetaData"
+        type: "float"
+        norm: 432.95617402805823
+
+      - name: "longitude"
+        group: "MetaData"
+        type: "float"
+        norm: 1661.1529210392009
+    tolerance:
+      - 1.0e-11
+    variables for putget test: []
+
+- obs space:
+    name: "SMAP"
+    simulated variables: ['brightness_temperature']
+    channels: 1-4
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: "Data/testinput_tier_1/smap_obs_2018041500_m.nc4"
+  test data:
+    nlocs: 100
+    nrecs: 100
+    nvars: 1
+    obs perturbations seed: 0
+    expected group variables: []
+    expected sort variable: ""
+    expected sort order: "ascending"
+    variables for get test:
+      - name: "latitude"
+        group: "MetaData"
+        type: "float"
+        norm: 694.93010245335154
+
+      - name: "longitude"
+        group: "MetaData"
+        type: "float"
+        norm: 2835.0339068827361
+    tolerance:
+      - 1.0e-11
+    variables for putget test: []
+
+- obs space:
+    name: "GMI GPM"
+    simulated variables: ['brightness_temperature']
+    channels: 1-13
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: "Data/testinput_tier_1/gmi_gpm_obs_2018041500_m.nc4"
+  test data:
+    nlocs: 12
+    nrecs: 12
+    nvars: 1
+    obs perturbations seed: 0
+    expected group variables: []
+    expected sort variable: ""
+    expected sort order: "ascending"
+    variables for get test:
+      - name: "latitude"
+        group: "MetaData"
+        type: "float"
+        norm: 211.00380053756118
+
+      - name: "longitude"
+        group: "MetaData"
+        type: "float"
+        norm: 172.29837728971688
+    tolerance:
+      - 1.0e-11
+    variables for putget test: []
+
+- obs space:
+    name: "Radiosonde"
+    simulated variables: ['air_temperature']
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: "Data/testinput_tier_1/sondes_obs_2018041500_m.nc4"
+      max frame size: 200
+    obsdataout:
+      engine:
+        type: H5File
+        obsfile: "testoutput/diagout.nc4"
+  test data:
+    nlocs: 974
+    nrecs: 974
+    nvars: 5
+    obs perturbations seed: 0
+    expected group variables: []
+    expected sort variable: ""
+    expected sort order: "ascending"
+    variables for get test:
+      - name: "latitude"
+        group: "MetaData"
+        type: "float"
+        norm: 1254.66336565038
+
+      - name: "longitude"
+        group: "MetaData"
+        type: "float"
+        norm: 6076.2659260213959
+
+      - name: "station_id"
+        group: "MetaData"
+        type: "string"
+        first value: "07510"
+        last value: "97530"
+
+      - name: "surface_pressure"
+        group: "PreQC"
+        type: "integer"
+        norm: 6.32455532034
+    tolerance:
+      - 1.0e-11
+    variables for putget test:
+      - name: "air_temperature"
+        group: "ObsValue"
+        channels: []
+
+      - name: "specific_humidity"
+        group: "ObsValue"
+        channels: []
+
+- obs space:
+    name: "Radiosonde with grouping"
+    simulated variables: ['air_temperature']
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: "Data/testinput_tier_1/sondes_obs_2018041500_m.nc4"
+      obsgrouping:
+        group variables: [ "station_id" ]
+        sort variable: "air_pressure"
+        sort order: "descending"
+    obsdataout:
+      engine:
+        type: H5File
+        obsfile: "testoutput/diagout_with_groups.nc4"
+  test data:
+    nlocs: 974
+    nrecs: 36
+    nvars: 5
+    obs perturbations seed: 0
+    expected group variables: [ "station_id" ]
+    expected sort variable: "air_pressure"
+    expected sort order: "descending"
+    variables for get test:
+      - name: "latitude"
+        group: "MetaData"
+        type: "float"
+        norm: 1254.66336565038
+
+      - name: "longitude"
+        group: "MetaData"
+        type: "float"
+        norm: 6076.2659260213959
+    tolerance:
+      - 1.0e-11
+    variables for putget test: []
+
+- obs space:
+    name: "Radiosonde with grouping and tw filtering"
+    simulated variables: ['air_temperature']
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: "Data/testinput_tier_1/sondes_obs_2018041500_m_twfilt.nc4"
+      obsgrouping:
+        group variables: [ "station_id" ]
+    obsdataout:
+      engine:
+        type: H5File
+        obsfile: "testoutput/diagout_with_groups_twfilt.nc4"
+  test data:
+    nlocs: 968
+    nrecs: 31
+    nvars: 5
+    obs perturbations seed: 0
+    expected group variables: [ "station_id" ]
+    expected sort variable: ""
+    expected sort order: "ascending"
+    variables for get test:
+      - name: "latitude"
+        group: "MetaData"
+        type: "float"
+        norm: 1252.0139923322768
+
+      - name: "longitude"
+        group: "MetaData"
+        type: "float"
+        norm: 6065.3117664336605
+    tolerance:
+      - 1.0e-11
+    variables for putget test: []
+
+- obs space:
+    name: "AOD GOES"
+    simulated variables: ['Total_Aerosol_Optical_Depth_550']
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: "Data/testinput_tier_1/geos_aod_obs_2018041500_m.nc4"
+  test data:
+    nlocs: 100
+    nrecs: 100
+    nvars: 1
+    obs perturbations seed: 0
+    expected group variables: []
+    expected sort variable: ""
+    expected sort order: "ascending"
+    variables for get test:
+      - name: "latitude"
+        group: "MetaData"
+        type: "float"
+        norm: 567.88380247048008
+
+      - name: "longitude"
+        group: "MetaData"
+        type: "float"
+        norm: 1793.5631154126893
+    tolerance:
+      - 1.0e-11
+    variables for putget test: []
+
+- obs space:
+    name: "Derived variables"
+    simulated variables: ['temperature']
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: "Data/testinput_tier_1/derived_variables.nc4"
+  test data:
+    nlocs: 2
+    nrecs: 2
+    nvars: 1
+    obs perturbations seed: 0
+    expected group variables: []
+    expected sort variable: ""
+    expected sort order: "ascending"
+    variables for get test:
+      # Variables present both in the MetaData and DerivedMetaData groups.
+
+      - name: float_var
+        group: MetaData  # test should actually find float_var@DerivedMetaData
+        type: float
+        norm: 0.05
+      - name: float_var
+        group: DerivedMetaData
+        type: float
+        norm: 0.05
+      - name: float_var
+        group: MetaData  # test should find float_var@MetaData
+        skip derived: true
+        type: float
+        norm: 0.0005
+
+      - name: int_var
+        group: MetaData  # test should actually find int_var@DerivedMetaData
+        type: int
+        norm: 5
+      - name: int_var
+        group: DerivedMetaData
+        type: int
+        norm: 5
+      - name: int_var
+        group: MetaData  # test should find int_var@MetaData
+        skip derived: true
+        type: int
+        norm: 50
+
+      - name: string_var
+        group: MetaData  # test should actually find string_var@DerivedMetaData
+        type: string
+        first value: abc
+        last value: xyz
+      - name: string_var
+        group: DerivedMetaData
+        type: string
+        first value: abc
+        last value: xyz
+      - name: string_var
+        group: MetaData  # test should find string_var@MetaData
+        skip derived: true
+        type: string
+        first value: ABC
+        last value: XYZ
+
+      # Variables present only in the DerivedMetaData group.
+
+      - name: another_float_var
+        group: MetaData  # test should actually find float_var@DerivedMetaData
+        type: float
+        norm: 0.05
+      - name: another_float_var
+        group: MetaData  # test should not find any matching variable
+        type: none
+        skip derived: true
+
+      - name: another_int_var
+        group: MetaData  # test should actually find int_var@DerivedMetaData
+        type: int
+        norm: 5
+      - name: another_int_var
+        group: MetaData  # test should not find any matching variable
+        type: none
+        skip derived: true
+
+      - name: another_string_var
+        group: MetaData  # test should actually find string_var@DerivedMetaData
+        type: string
+        first value: abc
+        last value: xyz
+      - name: another_string_var
+        group: MetaData  # test should not find any matching variable
+        skip derived: true
+        type: none
+
+      # Variables present neither in the DerivedMetaData nor in the MetaData group.
+
+      - name: imaginary_float_var
+        group: MetaData
+        type: none
+      - name: imaginary_float_var
+        group: MetaData
+        skip derived: true
+        type: none
+
+      - name: imaginary_int_var
+        group: MetaData
+        type: none
+      - name: imaginary_int_var
+        group: MetaData
+        skip derived: true
+        type: none
+
+      - name: imaginary_string_var
+        group: MetaData
+        type: none
+      - name: imaginary_string_var
+        group: MetaData
+        skip derived: true
+        type: none
+    tolerance:
+      - 1.0e-7
+    variables for putget test: []
+
+- obs space:
+    name: "Boolean variable"
+    simulated variables: [air_temperature]
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: "Data/testinput_tier_1/variable_assignment_testdata.nc4"
+  test data:
+    nlocs: 4
+    nrecs: 4
+    nvars: 4
+    obs perturbations seed: 0
+    expected group variables: []
+    expected sort variable: ""
+    expected sort order: "ascending"
+    variables for get test:
+    - name: bool_variable_1
+      group: MetaData
+      type: bool
+      first value: false
+      last value: true
+    tolerance:
+      - 1.0e-7
+    variables for putget test: []
+
+# The purpose of the following two tests is to verify that the obs space is "aware" of any
+# specified derived variables (the obsvariables(), derived_obsvariables() and
+# initial_obsvariables() work correctly) and that it initially fills arrays from the ObsError group
+# corresponding to such variables with missing values.
+
+- obs space:
+    name: "Derived single-channel simulated variables"
+    simulated variables: [surface_pressure, air_temperature, relative_humidity, dew_point]
+    derived variables: [relative_humidity, dew_point] # not present in the input file
+    observed variables: [surface_pressure, air_temperature]
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: "Data/testinput_tier_1/sondes_obs_2018041500_s.nc4"
+  test data:
+    nlocs: 91
+    nrecs: 91
+    nvars: 5  # Note: this isn't linked to the number of *simulated* variables.
+    obs perturbations seed: 0
+    expected group variables: []
+    expected sort variable: ""
+    expected sort order: "ascending"
+    variables for get test: []
+    tolerance:
+      - 1.0e-7
+    variables for putget test: []
+
+- obs space:
+    name: "Derived multi-channel variables"
+    simulated variables: [bias_corrected_brightness_temperature]
+    derived variables: [bias_corrected_brightness_temperature] # not present in the input file
+    observed variables: []
+    channels: 1-13
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: "Data/testinput_tier_1/gmi_gpm_obs_2018041500_m.nc4"
+  test data:
+    nlocs: 12
+    nrecs: 12
+    nvars: 1
+    obs perturbations seed: 0
+    expected group variables: []
+    expected sort variable: ""
+    expected sort order: "ascending"
+    variables for get test: []
+    tolerance:
+      - 1.0e-7
+    variables for putget test: []

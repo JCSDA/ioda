@@ -34,7 +34,7 @@ constexpr int odb_missing<int>() { return odb_missing_int; }
 
 }  // namespace
 
-DataFromSQL::DataFromSQL() {}
+DataFromSQL::DataFromSQL(int maxNumberChannels) : max_number_channels_(maxNumberChannels) {}
 
 size_t DataFromSQL::numberOfMetadataRows() const { return number_of_metadata_rows_; }
 
@@ -68,7 +68,11 @@ bool DataFromSQL::hasVarno(const int varno) const {
 
 size_t DataFromSQL::numberOfLevels(const int varno) const {
   if (hasVarno(varno) && number_of_metadata_rows_ > 0) {
-    return varnos_and_levels_.at(varno);
+    if (obsgroup_ == obsgroup_surfacecloud) {
+      return varnos_and_levels_.at(varno);
+    } else {
+      return varnos_and_levels_to_use_.at(varno);
+    }
   }
   return 0;
 }
@@ -162,6 +166,10 @@ NewDimensionScales_t DataFromSQL::getVertcos() const {
     int number_of_levels = numberOfLevels(varno_dd);
     vertcos.push_back(NewDimensionScale<int>("nchans", number_of_levels,
                                              number_of_levels, number_of_levels));
+  } else if (obsgroup_ == obsgroup_gnssro && max_number_channels_ > 0) {
+    int number_of_levels = numberOfLevels(varno_bending_angle);
+    vertcos.push_back(NewDimensionScale<int>("nchans", number_of_levels,
+                                             number_of_levels, number_of_levels));
   }
   return vertcos;
 }
@@ -192,23 +200,34 @@ DataFromSQL::ArrayX<T> DataFromSQL::getNumericMetadataColumn(std::string const& 
   int seqno_index  = getColumnIndex("seqno");
   int varno_index  = getColumnIndex("varno");
   ArrayX<T> arr(number_of_metadata_rows_);
+  arr = odb_missing_int;
+  bool still_looking = false;
   if (column_index != -1) {
-    size_t seqno = -1;
-    size_t j     = 0;
+    size_t seqno    = -1;
+    size_t j        = 0;
+    size_t chan_num = 0;
     for (size_t i = 0; i < number_of_rows_; i++) {
       size_t seqno_new = getData(i, seqno_index);
       int varno        = getData(i, varno_index);
-      if ((seqno != seqno_new && obsgroup_ != obsgroup_sonde)
-          || (varnos_[0] == varno && obsgroup_ == obsgroup_sonde)
-          || (seqno != seqno_new && obsgroup_ != obsgroup_oceansound)
-          || (varnos_[0] == varno && obsgroup_ == obsgroup_oceansound)
-          || (seqno != seqno_new && obsgroup_ != obsgroup_geocloud)
-          || (varnos_[0] == varno && obsgroup_ == obsgroup_geocloud)
-          || (seqno != seqno_new && obsgroup_ != obsgroup_gpsro)
-          || (varnos_[0] == varno && obsgroup_ == obsgroup_gpsro)) {
-        arr[j] = getData(i, column_index);
-        j++;
-        seqno = seqno_new;
+      chan_num++;
+      if (obsgroup_ == obsgroup_sonde || obsgroup_ == obsgroup_oceansound || obsgroup_ == obsgroup_geocloud ||
+          (obsgroup_ == obsgroup_gnssro && max_number_channels_ == 0)) {
+        if (varnos_[0] == varno) {
+          arr[j] = getData(i, column_index);
+          j++;
+          seqno = seqno_new;
+        }
+      } else {
+        if (seqno != seqno_new || (max_number_channels_ > 0 && chan_num > max_number_channels_)) {
+          arr[j] = getData(i, column_index);
+          j++;
+          seqno = seqno_new;
+          chan_num = 1;
+          if (arr[j-1] == odb_missing<T>()) still_looking = true;
+        } else if (still_looking) {
+          arr[j-1] = getData(i, column_index);
+          if (arr[j-1] != odb_missing<T>()) still_looking = false;
+        }
       }
     }
   }
@@ -221,43 +240,61 @@ std::vector<std::string> DataFromSQL::getMetadataStringColumn(std::string const&
   int varno_index  = getColumnIndex("varno");
   std::vector<std::string> arr;
   arr.reserve(number_of_metadata_rows_);
+  bool still_looking = false;
   if (column_index != -1) {
     size_t seqno = -1;
+    size_t chan_num = 0;
     for (size_t i = 0; i < number_of_rows_; i++) {
       size_t seqno_new = getData(i, seqno_index);
       int varno        = getData(i, varno_index);
-      if ((seqno != seqno_new && obsgroup_ != obsgroup_sonde)
-          || (varnos_[0] == varno && obsgroup_ == obsgroup_sonde)
-          || (seqno != seqno_new && obsgroup_ != obsgroup_oceansound)
-          || (varnos_[0] == varno && obsgroup_ == obsgroup_oceansound)
-          || (seqno != seqno_new && obsgroup_ != obsgroup_geocloud)
-          || (varnos_[0] == varno && obsgroup_ == obsgroup_geocloud)
-          || (seqno != seqno_new && obsgroup_ != obsgroup_gpsro)
-          || (varnos_[0] == varno && obsgroup_ == obsgroup_gpsro)) {
-        // In ODB data is retrieved as doubles but character data is stored as ASCII bits.
-        // A reinterpret_cast is used here to re-interpret the retrieved doubles as 8 character chunks.
-        char uc[9];
-        double ud = getData(i, column_index);
-        strncpy(uc, reinterpret_cast<char*>(&ud), 8);
-        uc[8] = '\0';
-
-        // This attempts to trim the string.
-        std::string s   = std::string(uc);
-        size_t endpos   = s.find_last_not_of(" ");
-        size_t startpos = s.find_first_not_of(" ");
-        if (std::string::npos != endpos) {
-          s = s.substr(0, endpos + 1);
-          s = s.substr(startpos);
-        } else {
-          s.erase(std::remove(std::begin(s), std::end(s), ' '), std::end(s));
+      chan_num++;
+      if (obsgroup_ == obsgroup_sonde || obsgroup_ == obsgroup_oceansound || obsgroup_ == obsgroup_geocloud ||
+          (obsgroup_ == obsgroup_gnssro && max_number_channels_ == 0)) {
+        if (varnos_[0] == varno) {
+          arr.push_back(reinterpretString(getData(i, column_index)));
+          seqno = seqno_new;
         }
-
-        arr.push_back(s);
-        seqno = seqno_new;
+      } else {
+        if (seqno != seqno_new || (max_number_channels_ > 0 && chan_num > max_number_channels_)) {
+          double ud = getData(i, column_index);
+          arr.push_back(reinterpretString(ud));
+          seqno = seqno_new;
+          chan_num = 1;
+          if (ud == odb_missing_float) still_looking = true;
+        } else if (still_looking) {
+          double ud = getData(i, column_index);
+          if (ud != odb_missing_float) {
+            still_looking = false;
+            arr.back() = reinterpretString(ud);
+          }
+        }
       }
     }
   }
+  for (int i = arr.size(); i < number_of_metadata_rows_; i++) {
+    arr.push_back(std::string(""));
+  }
   return arr;
+}
+
+std::string DataFromSQL::reinterpretString(double ud) const {
+  // In ODB data is retrieved as doubles but character data is stored as ASCII bits.
+  // A reinterpret_cast is used here to re-interpret the retrieved doubles as 8 character chunks.
+  char uc[9];
+  strncpy(uc, reinterpret_cast<char*>(&ud), 8);
+  uc[8] = '\0';
+
+  // This attempts to trim the string.
+  std::string s   = std::string(uc);
+  size_t endpos   = s.find_last_not_of(" ");
+  size_t startpos = s.find_first_not_of(" ");
+  if (std::string::npos != endpos) {
+    s = s.substr(0, endpos + 1);
+    s = s.substr(startpos);
+  } else {
+    s.erase(std::remove(std::begin(s), std::end(s), ' '), std::end(s));
+  }
+  return s;
 }
 
 const std::vector<std::string>& DataFromSQL::getColumns() const { return columns_; }
@@ -280,8 +317,13 @@ Eigen::Array<T, Eigen::Dynamic, 1> DataFromSQL::getVarnoColumn(const std::vector
 
   // Number of entries for each varno.
   std::map <int, int> varno_size;
-  for (const int varno : varnos)
-    varno_size[varno] = numberOfRowsForVarno(varno) / number_of_metadata_rows_;
+  for (const int varno : varnos) {
+    if (obsgroup_ == obsgroup_surfacecloud) {
+      varno_size[varno] = numberOfRowsForVarno(varno) / number_of_metadata_rows_;
+    } else {
+      varno_size[varno] = std::max(1,static_cast<int>(numberOfRowsForVarno(varno) / number_of_metadata_rows_));
+    }
+  }
 
   // Mapping between user-desired varno order and the order in the data set.
   std::map <int, std::vector<int>> varno_order_map;
@@ -308,23 +350,47 @@ Eigen::Array<T, Eigen::Dynamic, 1> DataFromSQL::getVarnoColumn(const std::vector
   }
 
   typedef Eigen::Array<T, Eigen::Dynamic, 1> Array;
-  Array arr = Array::Constant(num_rows, odb_missing<T>());
+  Array arr;
+  if (obsgroup_ == obsgroup_surface || obsgroup_ == obsgroup_aircraft) {
+    arr = Array::Constant(number_of_metadata_rows_, odb_missing<T>());
+  } else {
+    if (nchans == 1) {
+      arr = Array::Constant(varno_index_order.size(), odb_missing<T>());
+    } else {
+      arr = Array::Constant(num_rows, odb_missing<T>());
+    }
+  }
   if (nchans == 1) {
     if (column_index != -1 && varno_index != -1) {
-      for (int j = 0; j < varno_index_order.size(); ++j)
-        arr[j] = getData(varno_index_order[j], column_index);
+      if (obsgroup_ == obsgroup_surface || obsgroup_ == obsgroup_aircraft) {
+        for (int j = 0; j < num_rows; ++j) {
+          arr[j] = getData(varno_index_order[j], column_index);
+        }
+      } else {
+        for (int j = 0; j < varno_index_order.size(); ++j) {
+          arr[j] = getData(varno_index_order[j], column_index);
+        }
+      }
     }
   } else {
     if (column_index != -1 && varno_index != -1) {
       size_t j = 0;
       int k_chan = 1;
+      int seqno_index = getColumnIndex("seqno");
+      size_t seqno = getData(0, seqno_index);
       for (size_t i = 0; i < number_of_rows_; i++) {
         if (std::find(varnos.begin(), varnos.end(), getData(i, varno_index)) != varnos.end()) {
           k_chan++;
           arr[j] = getData(i, column_index);
+          size_t seqno_new = getData(i, seqno_index);
           j++;
           if (k_chan > nchans_actual) {
             j += (nchans - nchans_actual);  // skip unused channels
+            k_chan = 1;
+          }
+          if (seqno != seqno_new && max_number_channels_ > 0) {
+            j += (nchans - k_chan + 1);
+            seqno = seqno_new;
             k_chan = 1;
           }
         }
@@ -383,17 +449,20 @@ void DataFromSQL::select(const std::vector<std::string>& columns, const std::str
   number_of_varnos_ = varnos_.size();
   number_of_metadata_rows_ = 0;
 
-  if (obsgroup_ == obsgroup_sonde || obsgroup_ == obsgroup_gpsro ||
-      obsgroup_ == obsgroup_oceansound) {
+  if (obsgroup_ == obsgroup_sonde || obsgroup_ == obsgroup_oceansound ||
+      (obsgroup_ == obsgroup_gnssro && max_number_channels_ == 0)) {
     number_of_metadata_rows_ = number_of_rows_ / number_of_varnos_;
   } else {
     int seqno_index          = getColumnIndex("seqno");
     size_t seqno             = -1;
+    size_t chan_num          = 0;
     for (size_t i = 0; i < number_of_rows_; i++) {
       size_t seqno_new = getData(i, seqno_index);
-      if (seqno != seqno_new) {
+      chan_num++;
+      if (seqno != seqno_new || (max_number_channels_ > 0 && chan_num > max_number_channels_)) {
         number_of_metadata_rows_++;
         seqno = seqno_new;
+        chan_num = 1;
       }
     }
   }
@@ -494,14 +563,14 @@ void DataFromSQL::select(const std::vector<std::string>& columns, const std::str
   // Check number of rows is consistent for each varno.
   for (const int varno : varnos_) {
     if (hasVarno(varno) && number_of_metadata_rows_ > 0) {
-      const size_t number_of_varno_rows = numberOfRowsForVarno(varno);
-      if (number_of_varno_rows % number_of_metadata_rows_ != 0)
-        throw eckit::UnexpectedState("Not all observation sequences have the same number of rows "
-                                     "with varno " + std::to_string(varno) + ". This is currently "
-                                     "unsupported. As a workaround, modify the elements file used "
-                                     "to generate the ODB file to ensure each observation sequence "
-                                     "contains the same varnos");
-      varnos_and_levels_[varno] = number_of_varno_rows / number_of_metadata_rows_;
+      if (max_number_channels_ > 0) {
+        varnos_and_levels_[varno] = max_number_channels_;
+        varnos_and_levels_to_use_[varno] = max_number_channels_;
+      } else {
+        const size_t number_of_varno_rows = numberOfRowsForVarno(varno);
+        varnos_and_levels_[varno] = number_of_varno_rows / number_of_metadata_rows_;
+        varnos_and_levels_to_use_[varno] = std::max(1,static_cast<int>(varnos_and_levels_[varno]));
+      }
     }
   }
 }
@@ -791,6 +860,9 @@ void DataFromSQL::getVarnoColumnCallArguments(int varno, std::vector<int> &varno
     nchans_actual = numberOfLevels(varno);
   } else if (obsgroup_ == obsgroup_geocloud || obsgroup_ == obsgroup_surfacecloud) {
     nchans = numberOfLevels(varno_cloud_fraction_covered);
+    nchans_actual = numberOfLevels(varno);
+  } else if (obsgroup_ == obsgroup_gnssro) {
+    nchans = numberOfLevels(varno_bending_angle);
     nchans_actual = numberOfLevels(varno);
   }
 }

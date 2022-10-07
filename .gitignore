@@ -8,3 +8,5 @@ build
 /jedicmake
 /CMakeSettings.json
 .vs
+*.mod
+.vscode

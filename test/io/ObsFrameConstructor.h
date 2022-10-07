@@ -31,6 +31,8 @@
 
 #include "ioda/core/IodaUtils.h"
 #include "ioda/distribution/DistributionFactory.h"
+#include "ioda/Engines/EngineUtils.h"
+#include "ioda/Engines/ReaderBase.h"
 #include "ioda/io/ObsFrameRead.h"
 #include "ioda/ObsGroup.h"
 #include "ioda/ObsSpaceParameters.h"
@@ -72,19 +74,19 @@ void testConstructor() {
 
         // Test the counts that should be set on construction
         ioda::Dimensions_t expectedMaxVarSize = testConfig.getInt("max var size", 0);
-        ioda::Dimensions_t maxVarSize = obsFrame->ioMaxVarSize();
+        ioda::Dimensions_t maxVarSize = obsFrame->backendMaxVarSize();
         EXPECT_EQUAL(maxVarSize, expectedMaxVarSize);
 
         ioda::Dimensions_t expectedNumLocs = testConfig.getInt("nlocs", 0);
-        ioda::Dimensions_t numLocs = obsFrame->ioNumLocs();
+        ioda::Dimensions_t numLocs = obsFrame->backendNumLocs();
         EXPECT_EQUAL(numLocs, expectedNumLocs);
 
         ioda::Dimensions_t expectedNumVars = testConfig.getInt("nvars", 0);
-        ioda::Dimensions_t numVars = obsFrame->ioNumVars();
+        ioda::Dimensions_t numVars = obsFrame->backendNumVars();
         EXPECT_EQUAL(numVars, expectedNumVars);
 
         ioda::Dimensions_t expectedNumDimVars = testConfig.getInt("ndvars", 0);
-        ioda::Dimensions_t numDimVars = obsFrame->ioNumDimVars();
+        ioda::Dimensions_t numDimVars = obsFrame->backendNumDimVars();
         EXPECT_EQUAL(numDimVars, expectedNumDimVars);
     }
 }

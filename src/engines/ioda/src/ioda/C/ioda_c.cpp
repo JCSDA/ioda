@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2020-2021 UCAR
+ * (C) Copyright 2020-2022 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -9,13 +9,45 @@
  * \file ioda_c.cpp
  * \brief C bindings for ioda-engines. Provides a class-like structure.
  */
+#include <iostream>
 #include "ioda/C/ioda_c.h"
+#include "ioda/C/String_c.h"
 
-/** \brief Creates and returns a c_ioda struct that has all of the function pointers filled in.
- *
- * Unfortunately, you can't have a default initializer in a struct in C.
- **/
-extern "C" c_ioda use_c_ioda() {
+namespace ioda {
+namespace C {
+namespace Engines {
+extern ioda_engines instance_c_ioda_engines;
+}  // end namespace Engines
+namespace Groups {
+extern ioda_group general_c_ioda_group;
+}  // end namespace Groups
+namespace Strings {
+extern ioda_string general_c_ioda_string;
+}  // end namespace Strings
+namespace VecStrings {
+extern ioda_VecString general_c_ioda_vecstring;
+}  // end namespace VecStrings
+}  // end namespace C
+}  // end namespace ioda
+
+static ioda_c_interface c_ioda_instance{ 
+  &ioda::C::Engines::instance_c_ioda_engines,        // Engines
+  &ioda::C::Groups::general_c_ioda_group,            // Groups
+  &ioda::C::Strings::general_c_ioda_string,          // Strings
+  &ioda::C::VecStrings::general_c_ioda_vecstring     // VecStrings
+  //nullptr,  // Attributes
+  //nullptr,  // Has_Attributes
+  //nullptr,  // Dimensions
+  //nullptr,  // Variable
+  //nullptr,  // VariableCreationParams
+  //nullptr   // Has_Variables
+};
+
+extern "C" const struct ioda_c_interface* get_ioda_c_interface() {
+  return &c_ioda_instance; }
+
+/*
+extern "C" const c_ioda* use_c_ioda() {
   c_ioda res;  // NOLINT: Obviously uninitialized. That's the purpose of this function.
 
   // Strings
@@ -165,5 +197,7 @@ extern "C" c_ioda use_c_ioda() {
 
   return res;
 }
+
+*/
 
 /// @}

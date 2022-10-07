@@ -1,6 +1,6 @@
 #pragma once
 /*
- * (C) Copyright 2020 UCAR
+ * (C) Copyright 2020-2022 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -17,29 +17,38 @@
 #include "ioda/Group.h"
 
 extern "C" {
-struct ioda_group {
+struct ioda_VecString;
+
+struct c_ioda_group {
   ioda::Group g;
 };
-struct ioda_has_attributes {
+struct c_ioda_has_attributes {
   ioda::Has_Attributes atts;
 };
-struct ioda_has_variables {
+struct c_ioda_has_variables {
   ioda::Has_Variables vars;
 };
-struct ioda_attribute {
+struct c_ioda_attribute {
   ioda::Attribute att;
 };
-struct ioda_variable {
+struct c_ioda_variable {
   ioda::Variable var;
 };
-struct ioda_dimensions {
+struct c_ioda_dimensions {
   ioda::Dimensions d;
 };
-struct ioda_variable_creation_parameters {
+struct c_ioda_variable_creation_parameters {
   ioda::VariableCreationParameters params;
+};
+struct c_ioda_string {
+  std::string str;
+};
+struct c_ioda_VecString {
+  std::vector<std::string> vec;
 };
 }
 
+// Deprecated
 inline ioda_string_ret_t* create_str_vector_c(const std::vector<std::string>& vdata) noexcept {
   ioda_string_ret_t* res = nullptr;
 
@@ -73,3 +82,13 @@ hadError_Strings:
 
   return nullptr;
 }
+
+namespace ioda {
+namespace C {
+namespace VecStrings {
+
+ioda_VecString* vecToVecString(const std::vector<std::string>&);
+
+}  // end namespace VecStrings
+}  // end namespace C
+}  // end namespace ioda

@@ -105,7 +105,7 @@ class ObsFrameRead : public ObsFrame, private util::ObjectCounter<ObsFrameRead> 
     /// \brief MPI distribution object
     std::shared_ptr<Distribution> dist_;
 
-    /// \brief true if obs_io_ produces a different series of observations on each process,
+    /// \brief true if the backend produces a different series of observations on each process,
     /// false if they are all the same
     bool each_process_reads_separate_obs_;
 

@@ -34,6 +34,7 @@ struct ODC_Parameters {
   std::string filename;
   std::string mappingFile;
   std::string queryFile;
+  int maxNumberChannels = 0;
 };
 
 /// \brief Import an ODB file.

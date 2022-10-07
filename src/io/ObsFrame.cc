@@ -26,16 +26,7 @@ namespace ioda {
 
 //------------------------------------------------------------------------------------
 bool ObsFrame::isVarDimByNlocs(const std::string & varName) const {
-    bool isDimByNlocs = false;
-    for (auto & ivar : dims_attached_to_vars_) {
-        if (ivar.first.name == varName) {
-            // Found varName, now check if first dimension is "nlocs"
-            if (ivar.second[0].name == "nlocs") {
-                isDimByNlocs = true;
-            }
-        }
-    }
-    return isDimByNlocs;
+    return isVarDimByNlocs_Impl(varName, dims_attached_to_vars_);
 }
 
 //------------------------------------------------------------------------------------
@@ -103,6 +94,21 @@ Selection ObsFrame::createVarSelection(const std::vector<Dimensions_t> & varShap
 }
 
 //--------------------------- protected functions ---------------------------------------
+//------------------------------------------------------------------------------------
+bool ObsFrame::isVarDimByNlocs_Impl(const std::string & varName,
+                                    const VarUtils::VarDimMap & varDimMap) const {
+    bool isDimByNlocs = false;
+    for (auto & ivar : varDimMap) {
+        if (ivar.first.name == varName) {
+            // Found varName, now check if first dimension is "nlocs"
+            if (ivar.second[0].name == "nlocs") {
+                isDimByNlocs = true;
+            }
+        }
+    }
+    return isDimByNlocs;
+}
+
 //------------------------------------------------------------------------------------
 Selection ObsFrame::createObsIoSelection(const std::vector<Dimensions_t> & varShape,
                                              const Dimensions_t frameStart,
@@ -224,7 +230,7 @@ void ObsFrame::createFrameFromObsGroup(const VarUtils::Vec_Named_Variable & varL
               VarUtils::ThrowIfVariableIsOfUnsupportedType(varName));
     }
 
-    // If we are using the string or offset datetimes from obs_io_, then create the
+    // If we are using the string or offset datetimes from the backend, then create the
     // epoch datetime variable. ObsSpace::initFromObsSource will expect the epoch
     // datetime and ignore the string datetime. Use a default fill value for now.
     if (use_string_datetime_ || use_offset_datetime_) {
@@ -242,7 +248,7 @@ void ObsFrame::createFrameFromObsGroup(const VarUtils::Vec_Named_Variable & varL
       } else {
         // Using offset datetime, set the epoch to the "date_time" global attribute
         int refDtimeInt;
-        this->obs_io_->atts().open("date_time").read<int>(refDtimeInt);
+        this->obs_data_in_->getObsGroup().atts.open("date_time").read<int>(refDtimeInt);
 
         int year = refDtimeInt / 1000000;     // refDtimeInt contains YYYYMMDDhh
         int tempInt = refDtimeInt % 1000000;

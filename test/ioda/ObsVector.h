@@ -320,6 +320,8 @@ void testDistributedMath() {
        // specfied in the YAML.
        eckit::LocalConfiguration obsconf(conf[jj], "obs space");
        obsconf.set("distribution.name", dist_names[dd]);
+       // "halo size" is a required parameter and needs to be set if Halo distribution is used
+       if (dist_names[dd] == "Halo") { obsconf.set("distribution.halo size", 0); }
        if (obsconf.has("obsdataout.obsfile")) {
            std::string fileName = obsconf.getString("obsdataout.obsfile");
            std::string fileTag = std::string("_Dist_") + dist_names[dd];

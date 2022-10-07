@@ -48,7 +48,6 @@ phases:
     commands:
       - echo Executing pre_build phase
       - git lfs install # creates .gitconfig
-      - cp ~/.gitconfig .
       - mkdir /build_container
       - mkdir /jcsda
 
@@ -74,9 +73,6 @@ phases:
       - touch ~/.git-credentials
       - chmod 0700 ~/.git-credentials
       - echo "https://${GIT_USER}:${GIT_PASS}@github.com" >~/.git-credentials
-
-      # jedi-cmake
-      - ./clone.sh jcsda-internal/jedi-cmake $CODEBUILD_GIT_BRANCH  /jcsda/ioda-bundle jedicmake ${GIT_BASE_BRANCH} develop
 
       # ioda
       - ./clone.sh jcsda-internal/ioda $CODEBUILD_GIT_BRANCH  /jcsda/ioda-bundle ioda ${GIT_BASE_BRANCH} develop
@@ -106,8 +102,11 @@ phases:
       - echo $BUILD_STATUS
 
       # configure and build
+      - ls /etc/profile.d
+      - . /etc/profile.d/z10_spack_environment.sh
       - cd /build_container
-      - ecbuild -Wno-dev -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCDASH_OVERRIDE_SITE=CodeBuild -DCDASH_OVERRIDE_GIT_BRANCH=$CODEBUILD_GIT_BRANCH -DCTEST_UPDATE_VERSION_ONLY=FALSE /jcsda/ioda-bundle
+      - ecbuild -Wno-dev -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCDASH_OVERRIDE_SITE=CodeBuild -DCDASH_OVERRIDE_SYSTEM_NAME="ClangContainer" -DCDASH_OVERRIDE_GIT_BRANCH=$CODEBUILD_GIT_BRANCH -DCTEST_UPDATE_VERSION_ONLY=FALSE /jcsda/ioda-bundle
+
       - cd /build_container/ioda
       - cp ../DartConfiguration.tcl .
       - sed -i 's/ioda-bundle/ioda-bundle\/ioda/' DartConfiguration.tcl
@@ -134,6 +133,10 @@ phases:
       - echo Executing post_build phase
       - echo $CODEBUILD_BUILD_SUCCEEDING
       - echo $BUILD_STATUS
+
+      - tag=$(head -1 /build_container/ioda/Testing/TAG)
+      - cat /build_container/ioda/Testing/TAG
+      - cat /build_container/ioda/Testing/$tag/Done.xml
 
       # upload find cdash url and upload it as CodeBuild artifact to S3
       - if [ "$BUILD_STATUS" = "1" ];

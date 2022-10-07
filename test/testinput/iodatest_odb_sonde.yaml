@@ -1,0 +1,31 @@
+where:
+  varno: [1,2,3,4,29,59,111,112]
+variables:
+- name: ident
+- name: initial_level_lat
+- name: initial_level_lon
+- name: initial_level_time
+- name: initial_obsvalue
+- name: initial_vertco_reference
+- name: instrument_type
+- name: level
+- name: level_condition_code
+- name: numlev
+- name: ops_subtype
+- name: pressure_sensor_alt
+- name: pressure_sensor_flag
+- name: receipt_date
+- name: receipt_time
+- name: seqno
+- name: sonde_rad_corr
+- name: sonde_report_identifier
+- name: sonde_tracking_system
+- name: sonde_type
+- name: statid
+- name: stalt
+- name: station_type
+- name: winpro_flags_eu
+- name: winpro_flags_usa
+- name: wmo_block_number
+- name: wmo_station_number
+truncate profiles to numlev: true

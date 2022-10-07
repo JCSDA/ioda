@@ -1,0 +1,42 @@
+---
+window begin: "2018-04-14T21:00:00Z"
+window end: "2018-04-15T03:00:00Z"
+
+observations:
+
+- obs space:
+    name: "AMSUA NOAA19"
+    simulated variables: ['brightness_temperature']
+    channels: 1,2,4,5
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: "Data/testinput_tier_1/amsua_n19_obs_2018041500_m.nc4"
+    obsdataout:
+      engine:
+        type: H5File
+        obsfile: "testoutput/amsua_n19_obs_2018041500_m_put_db.nc4"
+  test data:
+    # create file spec
+    #    true - read the input file and create a ioda output file
+    #    false - check the ioda output file after an invocation of
+    #            this test with create file set to true
+    create file: true
+    expected nlocs: 100
+    expected nchans: 15
+
+- obs space:
+    name: "Radiosonde"
+    simulated variables: ['temperature']
+    observed variables: ['temperature']
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: "Data/testinput_tier_1/sondes_obs_2018041500_m.nc4"
+    obsdataout:
+      engine:
+        type: H5File
+        obsfile: "testoutput/sondes_obs_2018041500_m_put_db.nc4"
+  test data:
+    create file: true     # create a ioda file to be checked on a subsequent test
+    expected nlocs: 974
