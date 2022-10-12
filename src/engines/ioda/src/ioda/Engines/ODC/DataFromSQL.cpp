@@ -200,7 +200,7 @@ DataFromSQL::ArrayX<T> DataFromSQL::getNumericMetadataColumn(std::string const& 
   int seqno_index  = getColumnIndex("seqno");
   int varno_index  = getColumnIndex("varno");
   ArrayX<T> arr(number_of_metadata_rows_);
-  arr = odb_missing_int;
+  arr = odb_missing<T>();
   bool still_looking = false;
   if (column_index != -1) {
     size_t seqno    = -1;
