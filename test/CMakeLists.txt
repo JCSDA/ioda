@@ -137,6 +137,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_odb_seviriclear.yaml
   testinput/iodatest_odb_sonde.yaml
   testinput/iodatest_odb_sonde_history.yaml
+  testinput/iodatest_odb_sonde_time_displacement.yaml
   testinput/iodatest_odb_sonde_truncate_profiles.yaml
   testinput/iodatest_odb_ssmis.yaml
   testinput/iodatest_odb_surface.yaml
@@ -1014,6 +1015,17 @@ if (odc_FOUND)
                             test-Sonde-history.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
+  ecbuild_add_test( TARGET  test_ioda-convert_sonde_time_displacement_odc
+                    TYPE    SCRIPT
+                    COMMAND bash
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                            hdf5
+                            "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
+                            Sonde-time-displacement
+                            Data/testinput_tier_1/sonde.odb
+                            testinput/odb_sonde_name_map.yaml testinput/iodatest_odb_sonde_time_displacement.yaml"
+                            test-Sonde-time-displacement.hdf
+                    TEST_DEPENDS get_ioda_test_data )
 
   ecbuild_add_test( TARGET  test_ioda-convert_abiclear_odc
                     TYPE    SCRIPT

@@ -580,9 +580,14 @@ int DataFromSQL::getObsgroup() const { return obsgroup_; }
 std::vector<int64_t> DataFromSQL::getDates(std::string const& date_col,
                                            std::string const& time_col,
                                            util::DateTime const& epoch,
-                                           int64_t const missingInt64) const {
+                                           int64_t const missingInt64,
+                                           std::string const& time_disp_col) const {
   const Eigen::ArrayXi var_date = getMetadataColumnInt(date_col);
   const Eigen::ArrayXi var_time = getMetadataColumnInt(time_col);
+  const int time_disp_col_index = getColumnIndex(time_disp_col);
+  const Eigen::ArrayXi var_time_disp = time_disp_col_index > -1 ?
+    getMetadataColumnInt(time_disp_col) :
+    Eigen::ArrayXi::Constant(var_date.size(), odb_missing_int);
   std::vector<int64_t> offsets;
   offsets.reserve(var_date.size());
   for (int i = 0; i < var_date.size(); i++) {
@@ -593,7 +598,11 @@ std::vector<int64_t> DataFromSQL::getDates(std::string const& date_col,
       const int hour   = var_time[i] / 10000;
       const int minute = var_time[i] / 100 - hour * 100;
       const int second = var_time[i] - 10000 * hour - 100 * minute;
-      const util::DateTime datetime(year, month, day, hour, minute, second);
+      util::DateTime datetime(year, month, day, hour, minute, second);
+      if (var_time_disp[i] != odb_missing_int) {
+        const util::Duration displacement(var_time_disp[i]);
+        datetime += displacement;
+      }
       const int64_t offset = (datetime - epoch).toSeconds();
       offsets.push_back(offset);
     } else {

@@ -109,6 +109,9 @@ class OdbVariableCreationParameters : public oops::Parameters {
   oops::Parameter<int64_t> missingInt64{"missingInt64",
                                         -9223372036854775806, this};
 
+  /// The name of a time displacement variable which is added to the dateTime at each location.
+  /// If this name is blank (the default) then no displacement will be applied.
+  oops::Parameter<std::string> timeDisplacement{"time displacement variable", "", this};
 };
 
 class OdbQueryParameters : public oops::Parameters {

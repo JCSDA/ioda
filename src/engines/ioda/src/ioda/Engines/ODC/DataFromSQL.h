@@ -217,7 +217,8 @@ public:
   std::vector<int64_t> getDates(std::string const& date_col,
                                 std::string const& time_col,
                                 util::DateTime const& epoch,
-                                int64_t const missingInt64) const;
+                                int64_t const missingInt64,
+                                std::string const& time_disp_col = "") const;
 
   /// \brief Returns a vector of station IDs
   std::vector<std::string> getStationIDs() const;

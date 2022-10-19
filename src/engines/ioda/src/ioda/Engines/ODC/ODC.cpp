@@ -497,7 +497,8 @@ ObsGroup openFile(const ODC_Parameters& odcparams,
                             queryParameters.variableCreation.epoch);
     v.write(sql_data.getDates("date", "time",
                               getEpochAsDtime(v),
-                              queryParameters.variableCreation.missingInt64));
+                              queryParameters.variableCreation.missingInt64,
+                              queryParameters.variableCreation.timeDisplacement));
     // MetaData/receiptdateTime
     v = og.vars.createWithScales<int64_t>(
     "MetaData/receiptdateTime", {og.vars["nlocs"]}, params_dates);
