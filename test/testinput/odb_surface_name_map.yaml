@@ -1,0 +1,107 @@
+varno-independent columns:
+  - name: "MetaData/buoy_direction"
+    source: "buoy_direction"
+  - name: "MetaData/buoy_identifier"
+    source: "buoy_identifier"
+  - name: "MetaData/buoy_speed"
+    source: "buoy_speed"
+  - name: "MetaData/buoy_type"
+    source: "buoy_type"
+  - name: "MetaData/hours_since_last_position"
+    source: "hours_since_last_position"
+  - name: "MetaData/identifier"
+    source: "ident"
+  - name: "MetaData/instrument_type"
+    source: "instrument_type"
+  - name: "MetaData/latitude"
+    source: "lat"
+  - name: "MetaData/local_station_code"
+    source: "local_station_code"
+  - name: "MetaData/longitude"
+    source: "lon"
+  - name: "MetaData/lowest_cloud_base_height"
+    source: "lowest_cloud_base_height"
+  - name: "MetaData/ob_practice"
+    source: "ob_practice"
+  - name: "MetaData/ops_subtype"
+    source: "ops_subtype"
+  - name: "MetaData/platform_identifier"
+    source: "platform_id"
+  - name: "MetaData/precipitation_probability"
+    source: "prcp_prob"
+  - name: "MetaData/precipitation_rate"
+    source: "precip_rate"
+  - name: "MetaData/pressure_sensor_altitude"
+    source: "pressure_sensor_alt"
+  - name: "MetaData/pressure_sensor_flag"
+    source: "pressure_sensor_flag"
+  - name: "MetaData/present_weather_type"
+    source: "present_weather_type"
+  - name: "MetaData/qc_flags"
+    source: "qc_flags"
+  - name: "MetaData/rain_flag"
+    source: "rain_flag"
+  - name: "MetaData/solar_azimuth_angle"
+    source: "solar_azimuth"
+  - name: "MetaData/solarZenithAngle"
+    source: "solar_zenith"
+  - name: "MetaData/stationAltitude"
+    source: "stalt"
+  - name: "MetaData/station_id"
+    source: "statid"
+  - name: "MetaData/station_type"
+    source: "station_type"
+  - name: "MetaData/surface_class"
+    source: "surface_class"
+  - name: "MetaData/surface_flag"
+    source: "surface_flag"
+  - name: "MetaData/surface_height"
+    source: "surface_height"
+  - name: "MetaData/wmo_block_number"
+    source: "wmo_block_number"
+  - name: "MetaData/wmo_region_number"
+    source: "wmo_region_number"
+  - name: "MetaData/wmo_station_number"
+    source: "wmo_station_number"
+  - name: "MetaData/sensor_zenith_angle"
+    source: "zenith"
+varno-dependent columns:
+  - source: "initial_obsvalue"
+    group name: "ObsValue"
+    varno-to-variable-name mapping: &obsvalue_varnos
+      - name: "height"
+        varno: 1
+      - name: "airTemperatureAt2M"
+        varno: 39
+      - name: "dewpointTemperatureAt2M"
+        varno: 40
+      - name: "windEastwardAt10M"
+        varno: 41
+      - name: "windNorthwardAt10M"
+        varno: 42
+      - name: "relativeHumidityAt2M"
+        varno: 58
+      - name: "air_dew_point_temperature"
+        varno: 59
+      - name: "horizontalVisibility"
+        varno: 62
+      - name: "stationPressure"
+        varno: 107
+      - name: "pressureReducedToMeanSeaLevel"
+        varno: 108
+      - name: "standardPressure"
+        varno: 109
+      - name: "surface_pressure"
+        varno: 110
+      - name: "windDirectionAt10M"
+        varno: 111
+      - name: "windSpeedAt10M"
+        varno: 112
+  - source: "obs_error"
+    group name: "ObsError"
+    varno-to-variable-name mapping: *obsvalue_varnos
+complementary variables:
+  - output name: "MetaData/site_name"
+    output variable data type: "string"
+    input names: ["site_name_1", "site_name_2", "site_name_3"]
+    merge method: "concat"

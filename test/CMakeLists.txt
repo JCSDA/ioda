@@ -141,7 +141,6 @@ list( APPEND ioda_test_input
   testinput/iodatest_odb_sonde_truncate_profiles.yaml
   testinput/iodatest_odb_ssmis.yaml
   testinput/iodatest_odb_surface.yaml
-  testinput/iodatest_odb_surface_tcbogus.yaml
   testinput/iodatest_odb_surface_with_query.yaml
   testinput/iodatest_odb_surfacecloud.yaml
   testinput/iodatest_odb_surfacesst.yaml
@@ -150,6 +149,7 @@ list( APPEND ioda_test_input
   testinput/odb_oceansound_name_map.yaml
   testinput/odb_radiance_name_map.yaml
   testinput/odb_sonde_name_map.yaml
+  testinput/odb_surface_name_map.yaml
   testinput/iodatest_time_io.yaml
 )
 
@@ -923,7 +923,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             Surface
                             Data/testinput_tier_1/surface.odb
-                            testinput/odb_default_name_map.yaml testinput/iodatest_odb_surface.yaml"
+                            testinput/odb_surface_name_map.yaml testinput/iodatest_odb_surface.yaml"
                             test-Surface.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -935,7 +935,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             Surface-TCBOGUS
                             Data/testinput_tier_1/surface-tcbogus.odb
-                            testinput/odb_default_name_map.yaml testinput/iodatest_odb_surface_tcbogus.yaml"
+                            testinput/odb_surface_name_map.yaml testinput/iodatest_odb_surface.yaml"
                             test-Surface-TCBOGUS.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -947,7 +947,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             Surface-with-query
                             Data/testinput_tier_1/surface.odb
-                            testinput/odb_default_name_map.yaml testinput/iodatest_odb_surface_with_query.yaml"
+                            testinput/odb_surface_name_map.yaml testinput/iodatest_odb_surface_with_query.yaml"
                             test-Surface-with-query.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
