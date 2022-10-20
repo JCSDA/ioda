@@ -1,0 +1,12 @@
+---
+window begin: "2018-04-14T21:00:00Z"
+window end: "2018-04-15T03:00:00Z"
+
+observations:
+- obs space:
+    name: "Empty obs file"
+    simulated variables: ['dummy_variable']
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: "Data/testinput_tier_1/empty_obs_file.nc4"

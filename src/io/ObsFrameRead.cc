@@ -43,6 +43,13 @@ ObsFrameRead::ObsFrameRead(const ObsSpaceParameters & params) :
 
     ObsGroup og = obs_data_in_->getObsGroup();
 
+    // record number of locations from backend
+    backend_nlocs_ = og.vars.open("nlocs").getDimensions().dimsCur[0];
+    if (backend_nlocs_ == 0) {
+      oops::Log::warning() << "WARNING: Input file " << obs_data_in_->fileName()
+                           << " contains zero observations" << std::endl;
+    }
+
     // Find out what datetime representation exists in the input
     // Precedence is epoch first, then string, then offset.
     use_epoch_datetime_ = og.vars.exists("MetaData/dateTime");
@@ -60,7 +67,12 @@ ObsFrameRead::ObsFrameRead(const ObsSpaceParameters & params) :
         use_epoch_datetime_ || use_string_datetime_ || use_offset_datetime_;
     haveRequiredMetadata = haveRequiredMetadata && og.vars.exists("MetaData/latitude");
     haveRequiredMetadata = haveRequiredMetadata && og.vars.exists("MetaData/longitude");
-    if (!haveRequiredMetadata) {
+
+    // Only do this check if there are more than zero obs in the file (backend_nlocs_ > 0)
+    // When a file does contain zero obs, we want to allow for an "empty" file with
+    // no variables. This makes it easier for r2d2 to provide a valid "empty" file when there
+    // are no obs available.
+    if ((backend_nlocs_ > 0) && (!haveRequiredMetadata)) {
       std::string errorMsg =
           std::string("\nOne or more of the following metadata variables are missing ") +
           std::string("from the input obs data source:\n") +
@@ -92,13 +104,6 @@ ObsFrameRead::ObsFrameRead(const ObsSpaceParameters & params) :
     // very slow with the HDF5 backend.
     VarUtils::collectVarDimInfo(og, backend_var_list_, backend_dim_var_list_,
                                 backend_dims_attached_to_vars_, backend_max_var_size_);
-
-    // record number of locations from backend
-    backend_nlocs_ = og.vars.open("nlocs").getDimensions().dimsCur[0];
-    if (backend_nlocs_ == 0) {
-      oops::Log::info() << "WARNING: Input file " << obs_data_in_->fileName()
-                        << " contains zero observations" << std::endl;
-    }
 
     // record variables by which observations should be grouped into records
     obs_grouping_vars_ = params.top_level_.obsDataIn.value().obsGrouping.value().obsGroupVars;
