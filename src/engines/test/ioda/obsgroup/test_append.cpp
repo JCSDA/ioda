@@ -11,16 +11,24 @@
 #include <cstdlib>
 #include <iostream>
 #include <numeric>
+#include <string>
 #include <typeinfo>
+#include <vector>
+
+#include "eckit/config/LocalConfiguration.h"
+#include "eckit/testing/Test.h"
 
 #include "Eigen/Dense"
-#include "eckit/testing/Test.h"
 #include "ioda/Engines/EngineUtils.h"
 #include "ioda/Exception.h"
 #include "ioda/Layout.h"
 #include "ioda/ObsGroup.h"
 
 #include "ioda/testconfig.h"
+
+#include "oops/util/Logger.h"
+#include "oops/runs/Run.h"
+#include "oops/runs/Test.h"
 
 void test_obsgroup_helper_funcs(std::string backendType, std::string fileName,
                                 const std::string mappingFile = "") {
@@ -235,27 +243,29 @@ void test_obsgroup_helper_funcs(std::string backendType, std::string fileName,
   Expects(og.open("ObsValue").vars["myObs"].isDimensionScaleAttached(1, og.vars["nchans"]));
 }
 
-int main(int argc, char** argv) {
-  if (argc < 2) {
-    std::cerr << "Need to specify backend type (file, memory)" << std::endl;
-    return 1;
-  }
-  std::string backendType(argv[1]);
+int runTest(const std::string & backendType, const std::string & defaultMappingFile,
+            const std::string & incompleteMappingFile) {
   try {
     if (backendType == "file") {
-      std::cout << "Testing file backend" << std::endl;
+      oops::Log::info() << "Testing file backend, "
+                        << "using the default Data Layout Policy" << std::endl;
       test_obsgroup_helper_funcs(backendType, {"ioda-engines_obsgroup_append-file.hdf5"});
     } else if (backendType == "memory") {
-      std::cout << "Testing memory backend" << std::endl;
+      oops::Log::info() << "Testing memory backend, "
+                        << "using the default Data Layout Policy" << std::endl;
       test_obsgroup_helper_funcs(backendType, {""});
     } else if (backendType == "fileRemapped") {
-      std::cout << "Testing ODB Data Layout Policy with explicit mapping file" << std::endl;
+      oops::Log::info() << "Testing file backend, remapped, "
+                        << "using the ODB Data Layout Policy with a complete "
+                        << "mapping file" << std::endl;
       std::string mappingFile = std::string(IODA_ENGINES_TEST_SOURCE_DIR)
-        + "/obsgroup/odb_default_name_map.yaml";
+        + "/obsgroup/" + defaultMappingFile;
       test_obsgroup_helper_funcs(backendType, {"append-remapped.hdf5"}, mappingFile);
-      std::cout << "Testing ODB Data Layout Policy with explicit mapping file" << std::endl;
+      oops::Log::info() << "Testing file backend, remapped, "
+                        << "using the ODB Data Layout Policy with an incomplete "
+                        << "mapping file" << std::endl;
       mappingFile = std::string(IODA_ENGINES_TEST_SOURCE_DIR)
-        + "/obsgroup/odb_incomplete_name_map.yaml";
+        + "/obsgroup/" + incompleteMappingFile;
       bool failedWhenNotAllVarsRemapped = false;
       try {
         test_obsgroup_helper_funcs(backendType, {"append-remapped.hdf5"}, mappingFile);
@@ -279,4 +289,39 @@ int main(int argc, char** argv) {
     return 1;
   }
   return 0;
+}
+
+// -----------------------------------------------------------------------------
+
+CASE("AppendTests") {
+  const eckit::Configuration &conf = ::test::TestEnvironment::config();
+  std::vector<eckit::LocalConfiguration> confs;
+  std::string defaultMappingFile = conf.getString("default mapping file");
+  std::string incompleteMappingFile = conf.getString("incomplete mapping file");
+  conf.get("test cases", confs);
+  for (size_t jconf = 0; jconf < confs.size(); ++jconf) {
+    eckit::LocalConfiguration config = confs[jconf];
+    std::string testName = config.getString("name");
+    std::string testBackend = config.getString("backend");
+    runTest(testBackend, defaultMappingFile, incompleteMappingFile);
+  }
+}
+
+// -----------------------------------------------------------------------------
+
+class ObsGroupAppend : public oops::Test {
+ private:
+  std::string testid() const override {return "ioda::test::obsgroup-append";}
+
+  void register_tests() const override {}
+
+  void clear() const override {}
+};
+
+// -----------------------------------------------------------------------------
+
+int main(int argc, char **argv) {
+  oops::Run run(argc, argv);
+  ObsGroupAppend tests;
+  return run.execute(tests);
 }

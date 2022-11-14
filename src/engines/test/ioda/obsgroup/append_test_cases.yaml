@@ -1,0 +1,18 @@
+# The default mapping file is a complete spec, and the incomplete mapping file is
+# there to test error handling. The incomplete mapping file is missing the ObsValue
+# variable spec.
+default mapping file: "odb_default_name_map.yaml"
+incomplete mapping file: "odb_incomplete_name_map.yaml"
+
+test cases:
+  # This case uses no mapping file
+  - name: "File backend"
+    backend: "file"
+
+  # This case uses no mapping file
+  - name: "Memory backend"
+    backend: "memory"
+
+  # This case uses both the default mapping file and the incomplete mapping file
+  - name: "File backend, remapped, ODB data layout policy"
+    backend: "fileRemapped"
