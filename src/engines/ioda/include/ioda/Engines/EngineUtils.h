@@ -34,6 +34,7 @@ enum class BackendNames {
   Hdf5File,  ///< HDF5 file access
   Hdf5Mem,   ///< HDF5 in-memory "file"
   ObsStore,  ///< ObsStore in-memory
+  ODB,       ///< ODB in-memory
 };
 
 /// Actions for accessing a file

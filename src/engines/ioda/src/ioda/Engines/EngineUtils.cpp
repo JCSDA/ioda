@@ -12,6 +12,7 @@
 
 #include "ioda/defs.h"
 #include "ioda/Engines/HH.h"
+#include "ioda/Engines/ODC.h"
 #include "ioda/Engines/ObsStore.h"
 #include "ioda/Exception.h"
 #include "ioda/Group.h"
@@ -213,8 +214,14 @@ Group constructBackend(BackendNames name, BackendCreationParameters& params) {
     }
     throw Exception("Unknown BackendFileActions value", ioda_Here());
   }
-  if (name == BackendNames::ObsStore) {
-    return ObsStore::createRootGroup();
+  if (name == BackendNames::ObsStore) return ObsStore::createRootGroup();
+  if (name == BackendNames::ODB) {
+    Engines::ODC::ODC_Parameters odcparams;
+    odcparams.mappingFile = "testinput/odb_default_name_map.yml";
+    if (params.action == BackendFileActions::Create) {
+      return ODC::createFile(odcparams);
+    }
+    throw Exception("Unknown BackendFileActions value", ioda_Here());
   }
 
   // If we get to here, then we have a backend name that is

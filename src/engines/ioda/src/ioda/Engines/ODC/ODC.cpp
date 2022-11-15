@@ -14,14 +14,18 @@
 #include <regex>
 #include <set>
 #include <string>
+#include <typeinfo>
 #include <vector>
+#include <ctime>
 
 #include "DataFromSQL.h"
 
+#include "eckit/io/MemoryHandle.h"
 #include "ioda/Engines/ODC.h"
 #include "ioda/Exception.h"
 #include "ioda/Group.h"
 #include "ioda/config.h"  // Auto-generated. Defines *_FOUND.
+#include "ioda/Types/Type.h"
 #include "oops/util/Logger.h"
 
 #if odc_FOUND && eckit_FOUND && oops_FOUND
@@ -29,6 +33,7 @@
 # include "eckit/config/YAMLConfiguration.h"
 # include "eckit/filesystem/PathName.h"
 # include "odc/api/odc.h"
+# include "odc/Writer.h"
 # include "./DataFromSQL.h"
 # include "./OdbQueryParameters.h"
 # include "../../Layouts/Layout_ObsGroup_ODB_Params.h"
@@ -388,11 +393,624 @@ ColumnMappings collectColumnMappings(const detail::ODBLayoutParameters &layoutPa
   return mappings;
 }
 
+struct ReverseColumnMappings {
+  std::map<std::string, std::string> nonbitfieldColumns;
+};
+
+/// Parse the mapping file and return an object
+/// * listing columns and bitfield column members for which a mapping to ioda variables has
+///   been defined,
+/// * indicating which of them should be treated as varno-dependent, and
+/// * listing the varnos for which a mapping of each varno-dependent column or column member has
+///   been defined.
+ReverseColumnMappings collectReverseColumnMappings(const detail::ODBLayoutParameters &layoutParams) {
+  ReverseColumnMappings mappings;
+
+  // Process varno-independent columns
+  for (const detail::VariableParameters &columnParams : layoutParams.variables.value()) {
+    mappings.nonbitfieldColumns[columnParams.name.value()] = columnParams.source.value();
+  }
+  for (const detail::VarnoDependentColumnParameters &columnParams :
+       layoutParams.varnoDependentColumns.value()) {
+    if (columnParams.source.value() == std::string("initial_obsvalue")) {
+      for (const auto &mappingParams : columnParams.mappings.value()) {
+        mappings.nonbitfieldColumns[mappingParams.name.value()] = std::to_string(mappingParams.varno);
+      }
+    }
+  }
+
+  return mappings;
+}
+
+struct ColumnInfo {
+  std::string column_name;
+  TypeClass column_type;
+  int column_size;
+  int string_length;
+  int epoch_year;
+  int epoch_month;
+  int epoch_day;
+  int epoch_hour;
+  int epoch_minute;
+  int epoch_second;
+};
+
+void readColumn(Group storageGroup, const ColumnInfo column, std::vector<std::vector<double>> &data_store, int number_of_rows) {
+  if (column.column_name == "date") {
+    std::vector<int64_t> buf;
+    std::vector<double> data_store_tmp(number_of_rows);
+    storageGroup.vars["MetaData/dateTime"].read<int64_t>(buf);
+    float ff = ioda::detail::getFillValue<float>(storageGroup.vars["MetaData/dateTime"].getFillValue());
+    for (int j = 0; j < number_of_rows; j++) {
+      if (ff == buf[j]) {
+        data_store_tmp[j] = odb_missing_float;
+      } else {
+        // struct tm is being used purely for time arithmetic.  The offset is incorrect but it
+        // doesn't matter in this context.
+        struct tm time = { 0 };
+        time.tm_year = column.epoch_year;
+        time.tm_mon = column.epoch_month;
+        time.tm_mday = column.epoch_day;
+        time.tm_hour = column.epoch_hour;
+        time.tm_min = column.epoch_minute;
+        time.tm_sec = column.epoch_second + static_cast<int>(buf[j]);
+        timegm(&time);
+        data_store_tmp[j] = time.tm_year * 10000 + time.tm_mon * 100 + time.tm_mday;
+      }
+    }
+    data_store.push_back(data_store_tmp);
+  } else if (column.column_name == "time") {
+    std::vector<int64_t> buf;
+    std::vector<double> data_store_tmp(number_of_rows);
+    storageGroup.vars["MetaData/dateTime"].read<int64_t>(buf);
+    float ff = ioda::detail::getFillValue<float>(storageGroup.vars["MetaData/dateTime"].getFillValue());
+    for (int j = 0; j < number_of_rows; j++) {
+      if (ff == buf[j]) {
+        data_store_tmp[j] = odb_missing_float;
+      } else {
+        // struct tm is being used purely for time arithmetic.  The offset is incorrect but it
+        // doesn't matter in this context.
+        struct tm time = { 0 };
+        time.tm_year = column.epoch_year;
+        time.tm_mon = column.epoch_month;
+        time.tm_mday = column.epoch_day;
+        time.tm_hour = column.epoch_hour;
+        time.tm_min = column.epoch_minute;
+        time.tm_sec = column.epoch_second + static_cast<int>(buf[j]);
+        timegm(&time);
+        data_store_tmp[j] = time.tm_hour * 10000 + time.tm_min * 100 + time.tm_sec;
+      }
+    }
+    data_store.push_back(data_store_tmp);
+  } else if (column.column_type == TypeClass::Float) {
+    std::vector<float> buf;
+    std::vector<double> data_store_tmp(number_of_rows);
+    storageGroup.vars[column.column_name].read<float>(buf);
+    float ff = ioda::detail::getFillValue<float>(storageGroup.vars[column.column_name].getFillValue());
+    for (int j = 0; j < number_of_rows; j++) {
+      if (ff == buf[j]) {
+        data_store_tmp[j] = odb_missing_float;
+      } else {
+        data_store_tmp[j] = buf[j];
+      }
+    }
+    data_store.push_back(data_store_tmp);
+  } else if (column.column_type == TypeClass::Integer) {
+    if (column.column_size == 4) {
+      std::vector<int> buf;
+      std::vector<double> data_store_tmp(number_of_rows);
+      storageGroup.vars[column.column_name].read<int>(buf);
+      int ff = ioda::detail::getFillValue<int>(storageGroup.vars[column.column_name].getFillValue());
+      for (int j = 0; j < number_of_rows; j++) {
+        if (ff == buf[j]) {
+          data_store_tmp[j] = odb_missing_int;
+        } else {
+          data_store_tmp[j] = buf[j];
+        }
+      }
+      data_store.push_back(data_store_tmp);
+    } else if (column.column_size == 8) {
+      std::vector<long> buf;
+      std::vector<double> data_store_tmp(number_of_rows);
+      long ff;
+      Variable var = storageGroup.vars.open(column.column_name);
+      if (var.isA<long>()) {
+        var.read<long>(buf);
+        ff = ioda::detail::getFillValue<long>(var.getFillValue());
+      } else if (var.isA<int64_t>()) {
+        std::vector<int64_t> buf64;
+        var.read<int64_t>(buf64);
+        buf.reserve(buf64.size());
+        buf.assign(buf64.begin(), buf64.end());
+        ff = ioda::detail::getFillValue<int64_t>(var.getFillValue());
+      } else {
+        std::string errMsg("ODB Writer: Unrecognized data type for column size of 8");
+        throw Exception(errMsg.c_str(), ioda_Here());
+      }
+      for (int j = 0; j < number_of_rows; j++) {
+        if (ff == buf[j]) {
+          data_store_tmp[j] = odb_missing_int;
+        } else {
+          data_store_tmp[j] = buf[j];
+        }
+      }
+      data_store.push_back(data_store_tmp);
+    }
+  } else if (column.column_type == TypeClass::String) {
+    std::vector<std::string> buf;
+    storageGroup.vars[column.column_name].read<std::string>(buf);
+    int num_cols = 1+((column.string_length-1)/8);
+    for (int c = 0; c < num_cols; c++) {
+      std::vector<double> data_store_tmp(number_of_rows);
+      for (int j = 0; j < number_of_rows; j++) {
+         unsigned char uc[8];
+         double dat;
+         for (int k = 8 * c; k < std::min(8 * (c+1),static_cast<int>(buf[j].size())); k++) {
+           uc[k-c*8] = buf[j][k];
+         }
+         for (int k = std::min(8 * (c+1),static_cast<int>(buf[j].size())); k < 8*(c+1); k++) {
+           uc[k-c*8] = '\0';
+         }
+         memcpy(&dat, uc, 8);
+         data_store_tmp[j] = dat;
+      }
+      data_store.push_back(data_store_tmp);
+    }
+  } else if (column.column_type == TypeClass::Unknown) {
+    std::vector<double> data_store_tmp(number_of_rows);
+    for (int j = 0; j < number_of_rows; j++) {
+      data_store_tmp[j] = -1.0;
+    }
+    data_store.push_back(data_store_tmp);
+  }
+}
+
+int getNumberOfRows(Group storageGroup) {
+  TypeClass t = storageGroup.vars["nlocs"].getType().getClass();
+  if (t == TypeClass::Integer) {
+    std::vector<int> nlocs;
+    storageGroup.vars["nlocs"].read<int>(nlocs);
+    return nlocs.size();
+  } else {
+    std::vector<float> nlocs;
+    storageGroup.vars["nlocs"].read<float>(nlocs);
+    return nlocs.size();
+  }
+}
+
+void setupColumnInfo(Group storageGroup, std::vector<ColumnInfo> &column_infos, int number_of_rows, int &num_columns) {
+  const auto objs = storageGroup.listObjects(ObjectType::Variable, true);
+  for (auto it = objs.cbegin(); it != objs.cend(); it++) {
+    for (int i = 0; i < it->second.size(); i++) {
+      if (!it->second[i].compare(0, metadata_prefix_size, metadata_prefix)) {
+        if (!it->second[i].compare(metadata_prefix_size,it->second[i].size(),"dateTime")) {
+          ColumnInfo date, time;
+          date.column_name = "date";
+          date.column_type = storageGroup.vars["MetaData/dateTime"].getType().getClass();
+          date.column_size = storageGroup.vars["MetaData/dateTime"].getType().getSize();
+          std::string epochString = storageGroup.vars["MetaData/dateTime"].atts.open("units").read<std::string>();
+          std::size_t pos = epochString.find("seconds since ");
+          epochString = epochString.substr(pos+14);
+          const char *year = epochString.substr(0,4).c_str();
+          date.epoch_year = std::stoi(year);
+          time.epoch_year = std::stoi(year);
+          const char *month = epochString.substr(5,2).c_str();
+          date.epoch_month = std::stoi(month);
+          time.epoch_month = std::stoi(month);
+          const char *day = epochString.substr(8,2).c_str();
+          date.epoch_day = std::stoi(day);
+          time.epoch_day = std::stoi(day);
+          const char *hour = epochString.substr(11,2).c_str();
+          date.epoch_hour = std::stoi(hour);
+          time.epoch_hour = std::stoi(hour);
+          const char *minute = epochString.substr(14,2).c_str();
+          date.epoch_minute = std::stoi(minute);
+          time.epoch_minute = std::stoi(minute);
+          const char *second = epochString.substr(17,2).c_str();
+          date.epoch_second = std::stoi(second);
+          time.epoch_second = std::stoi(second);
+          date.string_length = 0;
+          num_columns++;
+          time.column_name = "time";
+          time.column_type = storageGroup.vars["MetaData/dateTime"].getType().getClass();
+          time.column_size = storageGroup.vars["MetaData/dateTime"].getType().getSize();
+          time.string_length = 0;
+          num_columns++;
+          column_infos.push_back(date);
+          column_infos.push_back(time);
+        } else {
+          ColumnInfo col;
+          col.column_name = it->second[i];
+          col.column_type = storageGroup.vars[col.column_name].getType().getClass();
+          col.column_size = storageGroup.vars[col.column_name].getType().getSize();
+          if (col.column_type == TypeClass::String) {
+            std::vector<std::string> buf;
+            storageGroup.vars[col.column_name].read<std::string>(buf);
+            int len = 0;
+            for (int j = 0; j < number_of_rows; j++) {
+              if (buf[j].size() > len) {
+                len = buf[j].size();
+              }
+            }
+            col.string_length = len;
+            num_columns += 1+((col.string_length-1)/8);
+          } else {
+            col.string_length = 0;
+            num_columns++;
+          }
+          column_infos.push_back(col);
+        }
+      }
+    }
+  }
+}
+
+void setODBColumn(ReverseColumnMappings columnMappings, const ColumnInfo v, odc::Writer<>::iterator writer, int &column_number) {
+  std::map<std::string,std::string>::iterator it2;
+  std::string colname2 = "";
+  for (it2 = columnMappings.nonbitfieldColumns.begin(); it2 != columnMappings.nonbitfieldColumns.end(); it2++) {
+    if (it2->first == v.column_name) {
+      colname2 = it2->second;
+    }
+  }
+  if (colname2 == "") {
+    std::string colname3 = v.column_name;
+    if (colname3 != "date" && colname3 != "time") {
+      colname3.erase(0, metadata_prefix_size);
+    }
+    if (v.column_type == TypeClass::Integer) {
+      writer->setColumn(column_number, colname3, odc::api::INTEGER);
+      column_number++;
+    } else if (v.column_type == TypeClass::String) {
+      if (v.string_length <= 8) {
+        writer->setColumn(column_number, colname3 + std::string("_0"), odc::api::STRING);
+        column_number++;
+      } else {
+        for (int i = 0; i < 1+((v.string_length-1)/8); i++) {
+          writer->setColumn(column_number, colname3 + std::string("_") + std::to_string(i), odc::api::STRING);
+          column_number++;
+        }
+      }
+    } else {
+      writer->setColumn(column_number, colname3, odc::api::REAL);
+      column_number++;
+    }
+  } else {
+    if (v.column_type == TypeClass::Integer) {
+      writer->setColumn(column_number, colname2, odc::api::INTEGER);
+      column_number++;
+    } else if (v.column_type == TypeClass::String) {
+      if (v.string_length <= 8) {
+        writer->setColumn(column_number, colname2 + std::string("_0"), odc::api::STRING);
+        column_number++;
+      } else {
+        for (int i = 0; i < 1+((v.string_length-1)/8); i++) {
+          writer->setColumn(column_number, colname2 + std::string("_") + std::to_string(i), odc::api::STRING);
+          column_number++;
+        }
+      }
+    } else {
+      writer->setColumn(column_number, colname2, odc::api::REAL);
+      column_number++;
+    }
+  }
+}
+
+void setupVarnos(Group storageGroup, std::vector<std::string> &obsvalue_columns, ReverseColumnMappings columnMappings, size_t &num_varnos, std::vector<int> &varnos) {
+  const auto objs = storageGroup.listObjects(ObjectType::Variable, true);
+  for (auto it = objs.cbegin(); it != objs.cend(); it++) {
+    for (int i = 0; i < it->second.size(); i++) {
+      std::string s = it->second[i];
+      if (!s.compare(0, obsvalue_prefix_size, obsvalue_prefix)) {
+        std::map<std::string,std::string>::iterator it2;
+        std::string colname = s;
+        colname.erase(0, obsvalue_prefix_size);
+        obsvalue_columns.push_back(colname);
+        int colname2;
+        for (it2 = columnMappings.nonbitfieldColumns.begin(); it2 != columnMappings.nonbitfieldColumns.end(); it2++) {
+          if (it2->first == colname) {
+            colname2 = std::stoi(it2->second);
+            num_varnos++;
+            varnos.push_back(colname2);
+          }
+        }
+      }
+    }
+  }
+}
+
+void readBodyColumns(Group storageGroup, const std::string v, int number_of_rows, std::vector<std::vector<double>> &obsvalue_store, std::vector<std::vector<double>> &effective_error_store, std::vector<std::vector<int>> &diagnosticflags_store, std::vector<std::vector<double>> &initial_obsvalue_store, std::vector<std::vector<int>> &effective_qc, std::vector<std::vector<double>> &obserror_store, std::vector<std::vector<double>> &derived_obserror_store, std::vector<std::vector<double>> &hofx_store, std::vector<std::vector<double>> &obsbias_store) {
+    std::string effective_error_name = std::string(effective_error_prefix) + v;
+    std::string obserror_name = std::string(obserror_prefix) + v;
+    std::string derived_obserror_name = std::string(derived_obserror_prefix) + v;
+    std::string hofx_name = std::string(hofx_prefix) + v;
+    std::string obsbias_name = std::string(obsbias_prefix) + v;
+    std::string qc_name = std::string(qc_prefix) + v;
+    std::string derived_obsvalue_name;
+    std::string initial_obsvalue_name;
+    if (storageGroup.vars.exists(std::string(derived_obsvalue_prefix)+v)) {
+      derived_obsvalue_name = std::string(derived_obsvalue_prefix) + v;
+      initial_obsvalue_name = std::string(obsvalue_prefix) + v;
+    } else {
+      derived_obsvalue_name = std::string(obsvalue_prefix) + v;
+      initial_obsvalue_name = std::string("");
+    }
+    std::vector<std::string> flags{"BackPerfFlag","BackRejectFlag","BuddyPerfFlag","BuddyRejectFlag","ClimPerfFlag","ClimRejectFlag","ConsistencyFlag","DataCorrectFlag","ExtremeValueFlag","FinalRejectFlag","NoAssimFlag","PermCorrectFlag","PermRejectFlag"};
+    TypeClass t = storageGroup.vars[derived_obsvalue_name].getType().getClass();
+    if (t == TypeClass::Float) {
+      std::vector<float> buf;
+      std::vector<int> buf_int;
+      std::vector<char> buf_char;
+      std::vector<double> obsvalue_store_tmp(number_of_rows);
+      std::vector<double> initial_obsvalue_store_tmp(number_of_rows);
+      std::vector<double> effective_error_store_tmp(number_of_rows);
+      std::vector<double> hofx_store_tmp(number_of_rows);
+      std::vector<double> obsbias_store_tmp(number_of_rows);
+      std::vector<double> obserror_store_tmp(number_of_rows);
+      std::vector<double> derived_obserror_store_tmp(number_of_rows);
+      std::vector<int> diagnosticflags_store_tmp(number_of_rows);
+      std::vector<int> effective_qc_tmp(number_of_rows);
+      storageGroup.vars[derived_obsvalue_name].read<float>(buf);
+      ioda::Variable var = storageGroup.vars[derived_obsvalue_name];
+      float ff = ioda::detail::getFillValue<float>(var.getFillValue());
+      for (int j = 0; j < number_of_rows; j++) {
+        if (ff == buf[j]) {
+          obsvalue_store_tmp[j] = odb_missing_float;
+        } else {
+          obsvalue_store_tmp[j] = buf[j];
+        }
+      }
+      if (storageGroup.vars.exists(initial_obsvalue_name)) {
+        storageGroup.vars[initial_obsvalue_name].read<float>(buf);
+        var = storageGroup.vars[initial_obsvalue_name];
+        ff = ioda::detail::getFillValue<float>(var.getFillValue());
+        for (int j = 0; j < number_of_rows; j++) {
+          if (ff == buf[j]) {
+            initial_obsvalue_store_tmp[j] = odb_missing_float;
+          } else {
+            initial_obsvalue_store_tmp[j] = buf[j];
+          }
+        }
+      } else {
+        for (int j = 0; j < number_of_rows; j++) {
+          initial_obsvalue_store_tmp[j] = odb_missing_float;
+        }
+      }
+      if (storageGroup.vars.exists(effective_error_name)) {
+        storageGroup.vars[effective_error_name].read<float>(buf);
+        var = storageGroup.vars[effective_error_name];
+        ff = ioda::detail::getFillValue<float>(var.getFillValue());
+        for (int j = 0; j < number_of_rows; j++) {
+          if (ff == buf[j]) {
+            effective_error_store_tmp[j] = odb_missing_float;
+          } else {
+            effective_error_store_tmp[j] = buf[j];
+          }
+        }
+      } else {
+        for (int j = 0; j < number_of_rows; j++) {
+          effective_error_store_tmp[j] = odb_missing_float;
+        }
+      }
+      if (storageGroup.vars.exists(hofx_name)) {
+        storageGroup.vars[hofx_name].read<float>(buf);
+        var = storageGroup.vars[hofx_name];
+        ff = ioda::detail::getFillValue<float>(var.getFillValue());
+        for (int j = 0; j < number_of_rows; j++) {
+          if (ff == buf[j]) {
+            hofx_store_tmp[j] = odb_missing_float;
+          } else {
+            hofx_store_tmp[j] = buf[j];
+          }
+        }
+      } else {
+        for (int j = 0; j < number_of_rows; j++) {
+          hofx_store_tmp[j] = odb_missing_float;
+        }
+      }
+      if (storageGroup.vars.exists(obsbias_name)) {
+        storageGroup.vars[obsbias_name].read<float>(buf);
+        var = storageGroup.vars[obsbias_name];
+        ff = ioda::detail::getFillValue<float>(var.getFillValue());
+        for (int j = 0; j < number_of_rows; j++) {
+          if (ff == buf[j]) {
+            obsbias_store_tmp[j] = odb_missing_float;
+          } else {
+            obsbias_store_tmp[j] = buf[j];
+          }
+        }
+      } else {
+        for (int j = 0; j < number_of_rows; j++) {
+          obsbias_store_tmp[j] = odb_missing_float;
+        }
+      }
+      if (storageGroup.vars.exists(obserror_name)) {
+        storageGroup.vars[obserror_name].read<float>(buf);
+        var = storageGroup.vars[obserror_name];
+        ff = ioda::detail::getFillValue<float>(var.getFillValue());
+        for (int j = 0; j < number_of_rows; j++) {
+          if (ff == buf[j]) {
+            obserror_store_tmp[j] = odb_missing_float;
+          } else {
+            obserror_store_tmp[j] = buf[j];
+          }
+        }
+      } else {
+        for (int j = 0; j < number_of_rows; j++) {
+          obserror_store_tmp[j] = odb_missing_float;
+        }
+      }
+      if (storageGroup.vars.exists(derived_obserror_name)) {
+        storageGroup.vars[derived_obserror_name].read<float>(buf);
+        var = storageGroup.vars[derived_obserror_name];
+        ff = ioda::detail::getFillValue<float>(var.getFillValue());
+        for (int j = 0; j < number_of_rows; j++) {
+          if (ff == buf[j]) {
+            derived_obserror_store_tmp[j] = odb_missing_float;
+          } else {
+            derived_obserror_store_tmp[j] = buf[j];
+          }
+        }
+      } else {
+        for (int j = 0; j < number_of_rows; j++) {
+          derived_obserror_store_tmp[j] = odb_missing_float;
+        }
+      }
+      if (storageGroup.vars.exists(qc_name)) {
+        storageGroup.vars[qc_name].read<int>(buf_int);
+        var = storageGroup.vars[qc_name];
+        ff = ioda::detail::getFillValue<int>(var.getFillValue());
+        for (int j = 0; j < number_of_rows; j++) {
+          if (ff == buf_int[j]) {
+            effective_qc_tmp[j] = odb_missing_int;
+          } else {
+            effective_qc_tmp[j] = buf_int[j];
+          }
+        }
+      } else {
+        for (int j = 0; j < number_of_rows; j++) {
+          effective_qc_tmp[j] = odb_missing_int;
+        }
+      }
+      bool first_flag = true;
+      for (int ii = 0; ii < flags.size(); ii++) {
+        std::string diagnosticflags_name = std::string("DiagnosticFlags/") + flags[ii] + "/" + v;
+        if (first_flag) {
+          if (storageGroup.vars.exists(diagnosticflags_name)) {
+            storageGroup.vars[diagnosticflags_name].read<char>(buf_char);
+            var = storageGroup.vars[diagnosticflags_name];
+            char ff = ioda::detail::getFillValue<char>(var.getFillValue());
+            for (int j = 0; j < number_of_rows; j++) {
+              if (ff == buf_char[j]) {
+                diagnosticflags_store_tmp[j] = 0;
+              } else {
+                int flag = 0;
+                if (buf_char[j] > 0) flag = flag | 1;
+                diagnosticflags_store_tmp[j] = flag;
+              }
+            }
+          } else {
+            for (int j = 0; j < number_of_rows; j++) {
+              diagnosticflags_store_tmp[j] = 0;
+            }
+          }
+        } else {
+          if (storageGroup.vars.exists(diagnosticflags_name)) {
+            storageGroup.vars[diagnosticflags_name].read<char>(buf_char);
+            var = storageGroup.vars[diagnosticflags_name];
+            char ff = ioda::detail::getFillValue<char>(var.getFillValue());
+            for (int j = 0; j < number_of_rows; j++) {
+              if (ff != buf_char[j]) {
+                if (buf_char[j] > 0) diagnosticflags_store_tmp[j] = diagnosticflags_store_tmp[j] | (ii+1);
+              }
+            }
+          }
+        }
+        first_flag = false;
+      }
+      obsvalue_store.push_back(obsvalue_store_tmp);
+      if (storageGroup.vars.exists(initial_obsvalue_name)) {
+        initial_obsvalue_store.push_back(initial_obsvalue_store_tmp);
+      } else {
+        std::vector<double> tmp;
+        initial_obsvalue_store.push_back(tmp);
+      }
+      effective_error_store.push_back(effective_error_store_tmp);
+      hofx_store.push_back(hofx_store_tmp);
+      obsbias_store.push_back(obsbias_store_tmp);
+      obserror_store.push_back(obserror_store_tmp);
+      derived_obserror_store.push_back(derived_obserror_store_tmp);
+      diagnosticflags_store.push_back(diagnosticflags_store_tmp);
+      effective_qc.push_back(effective_qc_tmp);
+    }
+}
+
+void writeODB(size_t num_varnos, int number_of_rows, odc::Writer<>::iterator writer, std::vector<std::vector<double>> &data_store, std::vector<std::vector<double>> &obsvalue_store, std::vector<std::vector<double>> &effective_error_store, std::vector<std::vector<int>> &diagnosticflags_store, std::vector<std::vector<double>> &initial_obsvalue_store, std::vector<std::vector<int>> &effective_qc, std::vector<std::vector<double>> &obserror_store, std::vector<std::vector<double>> &derived_obserror_store, std::vector<std::vector<double>> &hofx_store, std::vector<std::vector<double>> &obsbias_store, int num_columns, std::vector<int> varnos) {
+  for (int varno = 0; varno < num_varnos; varno++) {
+    for (int row = 0; row < number_of_rows; row++) {
+      for (int column = 0; column < num_columns-10; column++) {
+        (*writer)[column] = data_store[column][row];
+      }
+      (*writer)[num_columns-1] = obsbias_store[varno][row];
+      (*writer)[num_columns-2] = hofx_store[varno][row];
+      (*writer)[num_columns-7] = effective_error_store[varno][row];
+      (*writer)[num_columns-6] = obserror_store[varno][row];
+      (*writer)[num_columns-5] = derived_obserror_store[varno][row];
+      (*writer)[num_columns-8] = obsvalue_store[varno][row];
+      if (initial_obsvalue_store[varno].size() > 0) (*writer)[num_columns-9] = initial_obsvalue_store[varno][row];
+      if (num_varnos > 0) (*writer)[num_columns-10] = varnos[varno];
+      (*writer)[num_columns-4] = diagnosticflags_store[varno][row];
+      (*writer)[num_columns-3] = effective_qc[varno][row];
+      ++writer;
+    }
+  }
+}
+
 // -------------------------------------------------------------------------------------------------
 
 #endif  // odc_FOUND && eckit_FOUND && oops_FOUND
 
 }  // namespace
+
+Group createFile(const ODC_Parameters& odcparams,Group storageGroup) {
+
+#if odc_FOUND && oops_FOUND && eckit_FOUND
+  std::vector<ColumnInfo> column_infos;
+
+  int number_of_rows = getNumberOfRows(storageGroup);
+  int num_columns = 0;
+  setupColumnInfo(storageGroup, column_infos, number_of_rows, num_columns);
+  if (num_columns == 0) return storageGroup;
+  num_columns +=10;
+  detail::ODBLayoutParameters layoutParams;
+  layoutParams.validateAndDeserialize(
+        eckit::YAMLConfiguration(eckit::PathName(odcparams.mappingFile)));
+  ReverseColumnMappings columnMappings = collectReverseColumnMappings(layoutParams);
+  eckit::PathName p(odcparams.outputFile);
+  odc::Writer<> oda(p);
+  odc::Writer<>::iterator writer = oda.begin();
+  writer->setNumberOfColumns(num_columns);
+
+  int column_number = 0;
+  for (const auto& v: column_infos) {
+    setODBColumn(columnMappings, v, writer, column_number);
+  }
+  writer->setColumn(column_number, "varno", odc::api::INTEGER);
+  writer->setColumn(column_number+1, "initial_obsvalue", odc::api::REAL);
+  writer->setColumn(column_number+2, "obsvalue", odc::api::REAL);
+  writer->setColumn(column_number+3, "effective_error", odc::api::REAL);
+  writer->setColumn(column_number+4, "obs_error", odc::api::REAL);
+  writer->setColumn(column_number+5, "derived_obs_error", odc::api::REAL);
+  writer->setColumn(column_number+6, "datum_flags", odc::api::INTEGER);
+  writer->setColumn(column_number+7, "effective_qc", odc::api::INTEGER);
+  writer->setColumn(column_number+8, "bgvalue", odc::api::REAL);
+  writer->setColumn(column_number+9, "obsbias", odc::api::REAL);
+  std::vector<std::vector<double>> data_store;
+  writer->writeHeader();
+  for (const auto& v: column_infos) {
+    readColumn(storageGroup, v, data_store, number_of_rows);
+  }
+
+  size_t num_varnos = 0;
+  std::vector<int> varnos;
+  std::vector<std::string> obsvalue_columns;
+  setupVarnos(storageGroup, obsvalue_columns, columnMappings, num_varnos, varnos);
+  std::vector<std::vector<double>> obsvalue_store;
+  std::vector<std::vector<double>> initial_obsvalue_store;
+  std::vector<std::vector<double>> effective_error_store;
+  std::vector<std::vector<double>> hofx_store;
+  std::vector<std::vector<double>> obsbias_store;
+  std::vector<std::vector<double>> obserror_store;
+  std::vector<std::vector<double>> derived_obserror_store;
+  std::vector<std::vector<int>> diagnosticflags_store;
+  std::vector<std::vector<int>> effective_qc;
+  for (const auto& v: obsvalue_columns) {
+    readBodyColumns(storageGroup, v, number_of_rows, obsvalue_store, effective_error_store, diagnosticflags_store, initial_obsvalue_store, effective_qc, obserror_store, derived_obserror_store, hofx_store, obsbias_store);
+  }
+  writeODB(num_varnos, number_of_rows, writer, data_store, obsvalue_store, effective_error_store, diagnosticflags_store, initial_obsvalue_store, effective_qc, obserror_store, derived_obserror_store, hofx_store, obsbias_store, num_columns, varnos);
+#endif
+  return storageGroup;
+}
 
 ObsGroup openFile(const ODC_Parameters& odcparams,
   Group storageGroup)
@@ -429,7 +1047,7 @@ ObsGroup openFile(const ODC_Parameters& odcparams,
   {
     std::vector<std::string> columnNames = columnSelection.columns();
 
-    // Temporary: Ensure that initial_obsvalue, if present, is the last item. This ensures ODB
+    // Temporary: Ensure that obsvalue, if present, is the last item. This ensures ODB
     // conversion tests produce output files with variables arranged in the same order as a previous
     // version of this code. The h5diff tool used by these tests is oddly sensitive to variable order.
     // In case of a future major change necessitating regeneration of the reference output files

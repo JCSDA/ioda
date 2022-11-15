@@ -65,8 +65,6 @@ list( APPEND ioda_test_input
   testinput/iodatest.yaml
   testinput/iodatest_fileformat.yaml
   testinput/iodatest_remove_hdf5_variable.yaml
-  testinput/iodatest_engine_factory.yaml
-  testinput/iodatest_engine_factory_odc.yaml
   testinput/iodatest_copy_attributes.yaml
   testinput/iodatest_obserror.yaml
   testinput/iodatest_obsframe_constructor.yaml
@@ -77,6 +75,8 @@ list( APPEND ioda_test_input
   testinput/iodatest_distribution_masterandreplica_mpi_4.yaml
   testinput/iodatest_distribution_methods.yaml
   testinput/iodatest_distribution_timewindow.yaml
+  testinput/iodatest_engine_factory.yaml
+  testinput/iodatest_engine_factory_odc.yaml
   testinput/iodatest_obsdatavector.yaml
   testinput/iodatest_obsdtype.yaml
   testinput/iodatest_obsspace.yaml
@@ -95,6 +95,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsspace_odc.yaml
   testinput/iodatest_obsspace_odc_atms.yaml
   testinput/iodatest_obsspace_fortran.yaml
+  testinput/iodatest_obsspace_out_odc.yml
   testinput/iodatest_obsspace_put_db_channels.yaml
   testinput/iodatest_obsspace_put_db_channels_check.yaml
   testinput/iodatest_obsspace_zero_obs.yaml
@@ -145,6 +146,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_odb_surface_with_query.yaml
   testinput/iodatest_odb_surfacecloud.yaml
   testinput/iodatest_odb_surfacesst.yaml
+  testinput/odb_default_name_map.yml
   testinput/odb_default_name_map.yaml
   testinput/odb_gnssro_name_map.yaml
   testinput/odb_oceansound_name_map.yaml
@@ -396,6 +398,46 @@ ecbuild_add_test( TARGET  test_ioda_obsspace
                   ARGS    "testinput/iodatest_obsspace.yaml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
+
+if (odc_FOUND)
+ecbuild_add_test( TARGET  test_ioda_obsspace_out_odc
+                  SOURCES mains/TestIodaObsSpace.cc
+                  ARGS    "testinput/iodatest_obsspace_out_odc.yml"
+                  LIBS  ioda_test
+                  TEST_DEPENDS get_ioda_test_data )
+endif()
+
+if (odc_FOUND)
+  ecbuild_add_test( TARGET  test_ioda_obsspace_out_odc_compare_aircraft
+                    COMMAND odc
+                    ARGS    compare "testoutput/diagout-aircraft.odc" "Data/testinput_tier_1/test_reference/diagout-aircraft.odc"
+                    TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_out_odc )
+
+  ecbuild_add_test( TARGET  test_ioda_obsspace_out_odc_compare_atms
+                    COMMAND odc
+                    ARGS    compare "testoutput/diagout-atms.odc" "Data/testinput_tier_1/test_reference/diagout-atms.odc"
+                    TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_out_odc )
+
+  ecbuild_add_test( TARGET  test_ioda_obsspace_out_odc_compare_gmi
+                    COMMAND odc
+                    ARGS    compare "testoutput/diagout-gmi.odc" "Data/testinput_tier_1/test_reference/diagout-gmi.odc"
+                    TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_out_odc )
+
+  ecbuild_add_test( TARGET  test_ioda_obsspace_out_odc_compare_amsua
+                    COMMAND odc
+                    ARGS    compare "testoutput/diagout-amsua.odc" "Data/testinput_tier_1/test_reference/diagout-amsua.odc"
+                    TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_out_odc )
+
+  ecbuild_add_test( TARGET  test_ioda_obsspace_out_odc_compare_sonde
+                    COMMAND odc
+                    ARGS    compare "testoutput/diagout-sonde.odc" "Data/testinput_tier_1/test_reference/diagout-sonde.odc"
+                    TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_out_odc )
+
+  ecbuild_add_test( TARGET  test_ioda_obsspace_out_odc_compare_aod
+                    COMMAND odc
+                    ARGS    compare "testoutput/diagout-aod.odc" "Data/testinput_tier_1/test_reference/diagout-aod.odc"
+                    TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_out_odc )
+endif()
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_datetime
                   COMMAND test_ioda_obsspace

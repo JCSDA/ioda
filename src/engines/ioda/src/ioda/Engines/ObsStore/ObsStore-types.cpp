@@ -38,6 +38,9 @@ TypeClass ObsStore_Type::getClass() const {
     case ioda::ObsStore::ObsTypeClasses::INTEGER :
       res = TypeClass::Integer;
       break;
+    case ioda::ObsStore::ObsTypeClasses::NOCLASS :
+      res = TypeClass::Unknown;
+      break;
     case ioda::ObsStore::ObsTypeClasses::FLOAT :
       res = TypeClass::Float;
       break;

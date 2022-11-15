@@ -37,6 +37,7 @@
 #include "ioda/distribution/PairOfDistributions.h"
 #include "ioda/Engines/EngineUtils.h"
 #include "ioda/Engines/HH.h"
+#include "ioda/Engines/ODC.h"
 #include "ioda/Exception.h"
 #include "ioda/Io/IoPool.h"
 #include "ioda/io/ObsFrameRead.h"
@@ -228,17 +229,37 @@ ObsSpace::ObsSpace(const Parameters_ & params, const eckit::mpi::Comm & comm,
 // -----------------------------------------------------------------------------
 void ObsSpace::save() {
     if (obs_params_.top_level_.obsDataOut.value() != boost::none) {
-        // Write the output file
-        IoPool obsPool(obs_params_.top_level_.ioPool,
-            obs_params_.top_level_.obsDataOut.value()->engine.value().engineParameters,
-            obs_params_.comm(), obs_params_.timeComm() ,
-            obs_params_.windowStart(), obs_params_.windowEnd(), nlocs());
-        obsPool.save(obs_group_);
-        // Wait for all processes to finish the save call so that we know the file
-        // is complete and closed.
+        std::string odc_file_suffix = ".odc";
+        std::string baseFileName =
+        obs_params_.top_level_.obsDataOut.value()->engine.value().engineParameters.value().fileName;
+
+        if (!baseFileName.compare(baseFileName.size()-odc_file_suffix.size(),
+                                  odc_file_suffix.size(), std::string(odc_file_suffix))) {
+          Engines::ODC::ODC_Parameters odcparams;
+          odcparams.mappingFile = "testinput/odb_default_name_map.yml";
+          odcparams.outputFile = baseFileName;
+          Group writerGroup = ioda::Engines::ODC::createFile(odcparams, obs_group_);
+        } else {
+          // Write the output file
+          IoPool obsPool(obs_params_.top_level_.ioPool,
+              obs_params_.top_level_.obsDataOut.value()->engine.value().engineParameters,
+              obs_params_.comm(), obs_params_.timeComm() ,
+              obs_params_.windowStart(), obs_params_.windowEnd(), nlocs());
+          obsPool.save(obs_group_);
+          // Wait for all processes to finish the save call so that we know the file
+          // is complete and closed.
+          oops::Log::info() << obsname() << ": save database to " << obsPool << std::endl;
+          this->comm().barrier();
+          obsPool.finalize();
+        }
+
+        // Call the mpi barrier command here to force all processes to wait until
+        // all processes have finished writing their files. This is done to prevent
+        // the early processes continuing and potentially executing their obs space
+        // destructor before others finish writing. This situation is known to have
+        // issues with hdf file handles getting deallocated before some of the MPI
+        // processes are finished with them.
         this->comm().barrier();
-        oops::Log::info() << obsname() << ": save database to " << obsPool << std::endl;
-        obsPool.finalize();
     } else {
         oops::Log::info() << obsname() << " :  no output" << std::endl;
     }
