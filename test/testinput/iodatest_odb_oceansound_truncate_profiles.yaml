@@ -1,5 +1,6 @@
 where:
-  varno: [1,2,224,225]
+  varno: [1,2,224]
+  query: (year(date) != 0) AND (month(date) != 0) AND (day(date) != 0)
 variables:
 - name: receipt_time
 - name: receipt_date
