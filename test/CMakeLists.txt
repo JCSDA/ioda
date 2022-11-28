@@ -435,7 +435,7 @@ if (odc_FOUND)
 
   ecbuild_add_test( TARGET  test_ioda_obsspace_out_odc_compare_aod
                     COMMAND odc
-                    ARGS    compare "testoutput/diagout-aod.odc" "Data/testinput_tier_1/test_reference/diagout-aod.odc"
+                    ARGS    compare "testoutput/diagout-aod" "Data/testinput_tier_1/test_reference/diagout-aod.odc"
                     TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_out_odc )
 endif()
 

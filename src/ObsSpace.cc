@@ -229,15 +229,14 @@ ObsSpace::ObsSpace(const Parameters_ & params, const eckit::mpi::Comm & comm,
 // -----------------------------------------------------------------------------
 void ObsSpace::save() {
     if (obs_params_.top_level_.obsDataOut.value() != boost::none) {
-        std::string odc_file_suffix = ".odc";
-        std::string baseFileName =
-        obs_params_.top_level_.obsDataOut.value()->engine.value().engineParameters.value().fileName;
+        const std::string baseFiletype =
+        obs_params_.top_level_.obsDataOut.value()->engine.value().engineParameters.value().type;
 
-        if (!baseFileName.compare(baseFileName.size()-odc_file_suffix.size(),
-                                  odc_file_suffix.size(), std::string(odc_file_suffix))) {
+        if (!baseFiletype.compare("ODB")) {
           Engines::ODC::ODC_Parameters odcparams;
           odcparams.mappingFile = "testinput/odb_default_name_map.yml";
-          odcparams.outputFile = baseFileName;
+          odcparams.outputFile =
+        obs_params_.top_level_.obsDataOut.value()->engine.value().engineParameters.value().fileName;
           Group writerGroup = ioda::Engines::ODC::createFile(odcparams, obs_group_);
         } else {
           // Write the output file

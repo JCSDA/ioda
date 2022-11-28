@@ -13,7 +13,7 @@ observations:
     obsdataout:
       engine:
         type: ODB
-        obsfile: "testoutput/diagout-aod.odc"
+        obsfile: "testoutput/diagout-aod"
         mapping file: testinput/odb_default_name_map.yml
   test data:
     nlocs: 100
