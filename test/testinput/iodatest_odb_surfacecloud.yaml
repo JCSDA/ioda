@@ -5,6 +5,7 @@ variables:
 - name: ident
 - name: initial_obsvalue
 - name: lowest_cloud_base_height
+- name: ops_subtype
 - name: pressure_sensor_alt
 - name: receipt_date
 - name: receipt_time
