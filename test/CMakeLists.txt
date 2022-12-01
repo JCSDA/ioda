@@ -1527,7 +1527,9 @@ ecbuild_add_test( TARGET  test_ioda_fileformat
 ecbuild_add_test(
 	TARGET test_ioda-validate
 	COMMAND ioda-validate.x
-	ARGS "${IODA_YAML_ROOT}/validation/ObsSpace.yaml"
+	ARGS "--ignore-warn"
+             "--ignore-error"
+             "${IODA_YAML_ROOT}/validation/ObsSpace.yaml"
              "Data/testinput_tier_1/sample_hofx_output_amsua_n19.nc4"
 	     # Future: "${IODA_DATA_TEST_ROOT}/testinput_tier_1/sample_hofx_output_amsua_n19.nc4"
 	)

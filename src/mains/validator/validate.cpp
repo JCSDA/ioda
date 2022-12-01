@@ -50,12 +50,38 @@ class Validator : public eckit::Main {
     using std::endl;
     using std::exception;
     using std::string;
-    int ret = 0;
-    try {
-      if (argc() != 3) throw Exception("Usage: ioda-validate.x yaml-file input-file", ioda_Here());
 
-      eckit::PathName yamlfilename(argv(1));
-      std::string datafilename(argv(2));
+    std::string UsageString =
+      std::string("Usage: ioda-validate.x [--ignore-warn --ignore-error] yaml-file input-file\n") +
+      std::string("    --ignore-warn: ignore warnings when forming the return code\n") +
+      std::string("    --ignore-error: ignore errors when forming the return code\n");
+
+    int ret = 0;
+    bool ignoreWarn;
+    bool ignoreError;
+    try {
+      // Valid values for argc are 3 (no options), 4 (one option), 5 (both options)
+      eckit::PathName yamlfilename;
+      std::string datafilename;
+
+      if (argc() == 3) {
+          ignoreWarn = false;
+          ignoreError = false;
+          yamlfilename = std::string(argv(1));
+          datafilename = std::string(argv(2));
+      } else if (argc() == 4) {
+          ignoreWarn = (argv(1) == "--ignore-warn");
+          ignoreError = (argv(1) == "--ignore-error");
+          yamlfilename = std::string(argv(2));
+          datafilename = std::string(argv(3));
+      } else if (argc() == 5) {
+          ignoreWarn = ((argv(1) == "--ignore-warn") || (argv(2) == "--ignore-warn"));
+          ignoreError = ((argv(1) == "--ignore-error") || (argv(2) == "--ignore-error"));
+          yamlfilename = std::string(argv(3));
+          datafilename = std::string(argv(4));
+      } else {
+          throw Exception("Improper command usage", ioda_Here());
+      }
 
       cout << "Reading YAML from " << yamlfilename << endl;
 
@@ -67,6 +93,7 @@ class Validator : public eckit::Main {
       validate(base);
     } catch (const exception &e) {
       cerr << e.what() << endl;
+      cerr << UsageString << endl;
       res_.numErrors++;
       ret = 1;
     }
@@ -82,10 +109,9 @@ class Validator : public eckit::Main {
     eckit::Colour::reset(cout);
     cout << "\nCTEST_FULL_OUTPUT\n";
 
-    // TODO(ryan): Once the number of errors and warnings in the
-    //   ufo-data and ioda-converters repositories are at a minimal
-    //   level, replace with (res_.numErrors || res_.numWarnings) ? 1 : 0;
-    //   or with (res_.numErrors) ? 1 : 0;
+    // Add in warning and error counts if these are not to be ignored
+    if (!ignoreWarn) { ret += res_.numWarnings; }
+    if (!ignoreError) { ret += res_.numErrors; }
     return ret;
   }
 
