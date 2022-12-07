@@ -797,6 +797,9 @@ Variables:
   - Variable: [ "heightOfLandSurface" ]
     MetaData: true
     Attributes: { units: "m" }
+  - Variable: [ "aircraftAltitude" ]
+    MetaData: true
+    Attributes: { units: "m" }
   - Variable: [ "distanceToCoastline" ]
     MetaData: true
     Attributes: { units: "m" }
@@ -1073,5 +1076,5 @@ Variables:
     Type: Enum
     MetaData: true
   - Variable: [ "relativeHumidityPercentConfidence" ]
-    Attributes: { units: "1" }
+    Attributes: { units: "percent" }
     MetaData: true
