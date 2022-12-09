@@ -240,10 +240,12 @@ void ObsSpace::save() {
           Group writerGroup = ioda::Engines::ODC::createFile(odcparams, obs_group_);
         } else {
           // Write the output file
+          std::vector<bool> patchObsVec(nlocs());
+          dist_->patchObs(patchObsVec);
           IoPool obsPool(obs_params_.top_level_.ioPool,
               obs_params_.top_level_.obsDataOut.value()->engine.value().engineParameters,
               obs_params_.comm(), obs_params_.timeComm() ,
-              obs_params_.windowStart(), obs_params_.windowEnd(), nlocs());
+              obs_params_.windowStart(), obs_params_.windowEnd(), patchObsVec);
           obsPool.save(obs_group_);
           // Wait for all processes to finish the save call so that we know the file
           // is complete and closed.

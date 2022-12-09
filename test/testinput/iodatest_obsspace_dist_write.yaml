@@ -1,0 +1,79 @@
+---
+window begin: "2018-04-14T21:00:00Z"
+window end: "2018-04-15T03:00:00Z"
+
+observations:
+
+- obs space:
+    name: "Writer distributed obs - RoundRobin"
+    distribution:
+      name: RoundRobin
+    simulated variables: ['myObs']
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: "Data/testinput_tier_1/dist_write_testdata.nc4"
+    obsdataout:
+      engine:
+        type: H5File
+        obsfile: "testoutput/dist_write_round_robin_out.nc4"
+    io pool:
+      max pool size: 2
+
+- obs space:
+    name: "Writer distributed obs - Halo"
+    distribution:
+      name: Halo
+      radius: 10.0e6
+      halo size: 0.0
+    simulated variables: ['myObs']
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: "Data/testinput_tier_1/dist_write_testdata.nc4"
+    obsdataout:
+      engine:
+        type: H5File
+        obsfile: "testoutput/dist_write_halo_out.nc4"
+    io pool:
+      max pool size: 2
+
+- obs space:
+    name: "Writer distributed obs - Inefficient"
+    distribution:
+      name: InefficientDistribution
+    simulated variables: ['myObs']
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: "Data/testinput_tier_1/dist_write_testdata.nc4"
+    obsdataout:
+      engine:
+        type: H5File
+        obsfile: "testoutput/dist_write_inefficient_out.nc4"
+    io pool:
+      max pool size: 2
+
+- obs space:
+    name: "Writer distributed obs - Atlas"
+    distribution:
+      name: Atlas
+      grid:
+        type: regular_lonlat
+        nx: 6
+        ny: 8
+        halo: 1
+        global: true
+        include_pole: false
+        partitioner: equal_regions
+    simulated variables: ['myObs']
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: "Data/testinput_tier_1/dist_write_testdata.nc4"
+    obsdataout:
+      engine:
+        type: H5File
+        obsfile: "testoutput/dist_write_atlas_out.nc4"
+    io pool:
+      max pool size: 2

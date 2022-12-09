@@ -52,22 +52,29 @@ public:
   /// \param commTime MPI "time" communicator group (tasks in current time bin for 4DEnVar)
   /// \param winStart DA timing window start
   /// \param winEnd DA timing window end
-  /// \param nlocs Number of locations in the obs space piece on this MPI task
+  /// \param patchObsVec Boolean vector showing which locations belong to this MPI task
   IoPool(const oops::Parameter<IoPoolParameters> & ioPoolParams,
          const oops::RequiredPolymorphicParameter
              <Engines::WriterParametersBase, Engines::WriterFactory> & writerParams,
          const eckit::mpi::Comm & commAll, const eckit::mpi::Comm & commTime,
-         const util::DateTime & winStart, const util::DateTime & winEnd, std::size_t nlocs);
+         const util::DateTime & winStart, const util::DateTime & winEnd,
+         const std::vector<bool> & patchObsVec);
   ~IoPool();
 
+  /// \brief return reference to the patch obs vector
+  const std::vector<bool> & patchObsVec() const { return patch_obs_vec_; }
+
   /// \brief return nlocs for this object
-  const int nlocs() const { return nlocs_; }
+  int nlocs() const { return nlocs_; }
+
+  /// \brief return the number of locations in the patch (ie owned) by this object
+  int patch_nlocs() const { return patch_nlocs_; }
 
   /// \brief return the total nlocs for this rank
-  const int total_nlocs() const { return total_nlocs_; }
+  int total_nlocs() const { return total_nlocs_; }
 
   /// \brief return the global nlocs in the pool
-  const int global_nlocs() const { return global_nlocs_; }
+  int global_nlocs() const { return global_nlocs_; }
 
   /// \brief return the nlocs start position
   /// \details The nlocs start position refers to the position along the nlocs dimension
@@ -77,25 +84,25 @@ public:
   /// long, io pool rank 1 data goes in the file at nlocs position 10 and so forth. In other
   /// words, the io pool ranks are stacking their blocks of data together (in series)
   /// in the output file.
-  const int nlocs_start() const { return nlocs_start_; }
+  int nlocs_start() const { return nlocs_start_; }
 
   /// \brief return the "all" mpi communicator
   const eckit::mpi::Comm & comm_all() const { return comm_all_; }
 
   /// \brief return the rank number for the all communicator group
-  const int rank_all() const { return rank_all_; }
+  int rank_all() const { return rank_all_; }
 
   /// \brief return the number of processes for the all communicator group
-  const int size_all() const { return size_all_; }
+  int size_all() const { return size_all_; }
 
   /// \brief return the pool mpi communicator
   const eckit::mpi::Comm * comm_pool() const { return comm_pool_; }
 
   /// \brief return the rank number for the pool communicator group
-  const int rank_pool() const { return rank_pool_; }
+  int rank_pool() const { return rank_pool_; }
 
   /// \brief return the number of processes for the pool communicator group
-  const int size_pool() const { return size_pool_; }
+  int size_pool() const { return size_pool_; }
 
   /// \brief return the rank assignment for this object.
   const std::vector<std::pair<int, int>> & rank_assignment() const { return rank_assignment_; }
@@ -138,8 +145,17 @@ private:
   /// \brief target pool size
   int target_pool_size_;
 
+  /// \brief patch vector for this rank
+  /// \details The patch vector shows which locations are owned by this rank
+  /// as opposed to locations that are duplicates of a neighboring rank. This is relavent
+  /// for distributions like Halo where the halo regions can overlap.
+  const std::vector<bool> & patch_obs_vec_;
+
   /// \brief number of locations for this rank
-  const std::size_t nlocs_;
+  std::size_t nlocs_;
+
+  /// \brief number of patch locations for this rank
+  std::size_t patch_nlocs_;
 
   /// \brief total number of locations (sum of this rank nlocs + assigned ranks nlocs)
   std::size_t total_nlocs_;
