@@ -986,7 +986,7 @@ Variables:
     Attributes: { units: "K" }
   - Variable: [ "fractionOfClearPixelsInFov" ]  # Q: ObsValue or MetaData ?
     Dimensions: [ [ "Location", "Cluster" ] ]
-#   MetaData: true
+    MetaData: true
     Attributes: { units: "1" }
   - Variable: [ "startChannel" ]
     Dimensions: [ [ "Location", "Band" ] ]
