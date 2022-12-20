@@ -159,7 +159,7 @@ list( APPEND ioda_test_input
 
 # Create Data directory for test data and symlink files
 # Set list of test file tar balls
-list( APPEND ioda_test_data ioda_testinput_tier_1_2.3.0.tar.gz )
+list( APPEND ioda_test_data ioda_testinput_tier_1_2.4.0.tar.gz )
 
 ###############################
 # Download/link ioda test files
