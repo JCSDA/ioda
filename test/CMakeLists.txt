@@ -81,6 +81,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsdtype.yaml
   testinput/iodatest_obsspace.yaml
   testinput/iodatest_obsspace_datetime.yaml
+  testinput/iodatest_obsspace_dist_write.yaml
   testinput/iodatest_obsspace_empty_obs_file.yaml
   testinput/iodatest_obsspace_out_dims_check.yaml
   testinput/iodatest_obsspace_grouping.yaml
@@ -158,7 +159,7 @@ list( APPEND ioda_test_input
 
 # Create Data directory for test data and symlink files
 # Set list of test file tar balls
-list( APPEND ioda_test_data ioda_testinput_tier_1_2.3.0.tar.gz )
+list( APPEND ioda_test_data ioda_testinput_tier_1_2.4.0.tar.gz )
 
 ###############################
 # Download/link ioda test files
@@ -653,6 +654,55 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_io_pool_sondes_multi_file_0003
                           "echo Checking io pool io sondes"
                           io_pool_sondes_multi_out_0003.nc4
                   TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_io_pool_sondes_multi_files)
+
+# These tests check that the writer does not create duplicate obs for all of the
+# distribution types (currently, RoundRobin, Inefficient, Halo and Atlas).
+# The first test creates 4 files each based on the 4 different distribution types,
+# and the next 4 tests check those files. Inefficient, Halo and Atlas preserve the
+# order of the obs in the input file so they can be checked with the same reference file.
+# RoundRobin interleaves the input obs order, so it needs its own reference file.
+ecbuild_add_test( TARGET  test_ioda_obsspace_dist_write
+                  MPI     4
+                  COMMAND time_IodaIO.x
+                  ARGS    "testinput/iodatest_obsspace_dist_write.yaml"
+                  LIBS  ioda_test
+                  TEST_DEPENDS get_ioda_test_data test_ioda_time_io)
+
+ecbuild_add_test( TARGET  test_ioda_obsspace_dist_write_round_robin_0000
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking distributed write - Round Robin"
+                          dist_write_round_robin_out_0000.nc4
+                  TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_dist_write)
+
+ecbuild_add_test( TARGET  test_ioda_obsspace_dist_write_inefficient_0000
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking distributed write - Inefficient"
+                          dist_write_inefficient_out_0000.nc4
+                  TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_dist_write)
+
+ecbuild_add_test( TARGET  test_ioda_obsspace_dist_write_halo_0000
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking distributed write - Halo"
+                          dist_write_halo_out_0000.nc4
+                  TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_dist_write)
+
+ecbuild_add_test( TARGET  test_ioda_obsspace_dist_write_atlas_0000
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking distributed write - Atlas"
+                          dist_write_atlas_out_0000.nc4
+                  TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_dist_write)
 
 # IODA ObsSpace class - Fortran interface test
 add_fctest( TARGET  test_ioda_obsspace_fortran

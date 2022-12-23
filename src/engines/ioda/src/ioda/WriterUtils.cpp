@@ -87,24 +87,31 @@ void calcVarStartsCounts(const IoPool & ioPool, const Variable & srcVar,
             std::multiplies<Dimensions_t>());
     }
     std::size_t start;
+    // Set the initial start value. We are stacking up the slices in the order: this rank's
+    // slice, then the first assigned (non io pool) rank slice, then the next assigned rank
+    // slice etc.
     if (ioPool.rank_pool() >= 0) {
-        // For ranks in the pool, we are placing the data from the non-pool ranks into
-        // a slice of the total data vector. The first rank from the assignment will get
-        // its data placed at the end of the data from this rank so it's starting value
-        // is at this ranks nlocs value.
-        start = ioPool.nlocs() * dimFactor;
+        // For ranks in the pool, we are placing the data from itself first in the stack.
+        // The first rank from the assigned (non io pool) ranks will get its data
+        // placed at the end of the data from this rank so it's starting value
+        // is at this ranks patch nlocs value.
+        start = ioPool.patch_nlocs() * dimFactor;
     } else {
         // For ranks not in the pool, only sending their slice of data, so the initial
         // start value is always zero.
         start = 0;
     }
-    // Walk through the rank assignments and issue receive commands.
+
+    // Walk through the rank assignments and calculate the start, count values.
     for (auto & rankAssignment : ioPool.rank_assignment()) {
         std::size_t count;
         if (ioPool.rank_pool() >= 0) {
+            // on an io pool rank: count is patch nlocs from the non io pool rank
+            // for the current assignment
             count = rankAssignment.second * dimFactor;
         } else {
-            count = ioPool.nlocs() * dimFactor;
+            // on a non io pool rank: count is patch nlocs from this rank
+            count = ioPool.patch_nlocs() * dimFactor;
         }
         varStarts.push_back(start);
         varCounts.push_back(count);
@@ -113,15 +120,37 @@ void calcVarStartsCounts(const IoPool & ioPool, const Variable & srcVar,
 }
 
 template <typename VarType>
+void selectPatchValues(const IoPool & ioPool, const Variable & srcVar,
+                       const Dimensions_t & dimFactor, std::vector<VarType> & varData) {
+    // Read all the values from the source variable
+    std::vector<VarType> totalVarData;
+    srcVar.read<VarType>(totalVarData);
+
+    // Use this rank's patchObsVec to select the patch ("owned") values only. patchObsVec
+    // hold boolean values, and the patch locations are where the entries are set to "true".
+    varData.clear();
+    varData.reserve(ioPool.patch_nlocs() * dimFactor);
+    auto patchObsVec = ioPool.patchObsVec();
+    for (std::size_t i = 0; i < patchObsVec.size(); ++i) {
+        if (patchObsVec[i]) {
+            std::size_t indx = i * dimFactor;
+            for (std::size_t j = 0; j < dimFactor; ++j) {
+                varData.push_back(totalVarData[indx + j]);
+            }
+        }
+    }
+}
+
+template <typename VarType>
 void transferVarDataMPI(const IoPool & ioPool, const Variable & srcVar,
                         const std::string & varName, int varNumber,
                         const std::vector<std::size_t> & varStarts,
                         const std::vector<std::size_t> & varCounts,
-                        Dimensions_t dimFactor, Group & dest,
+                        const Dimensions_t & dimFactor, Group & dest,
                         const bool isParallelIo, const std::size_t strLen) {
 
     std::vector<VarType> varData;
-    srcVar.read<VarType>(varData);
+    selectPatchValues<VarType>(ioPool, srcVar, dimFactor, varData);
     if (ioPool.rank_pool() >= 0) {
         // Resize varData according to total nlocs.
         Dimensions_t numElements = ioPool.total_nlocs() * dimFactor;
@@ -166,12 +195,12 @@ void transferVarDataMPI<std::string>(const IoPool & ioPool, const Variable & src
                         const std::string & varName, const int varNumber,
                         const std::vector<std::size_t> & varStarts,
                         const std::vector<std::size_t> & varCounts,
-                        const Dimensions_t dimFactor, Group & dest,
+                        const Dimensions_t & dimFactor, Group & dest,
                         const bool isParallelIo, const std::size_t strLen) {
     int maxStringLength = strLen + 1;
 
     std::vector<std::string> varData;
-    srcVar.read<std::string>(varData);
+    selectPatchValues<std::string>(ioPool, srcVar, dimFactor, varData);
     if (ioPool.rank_pool() >= 0) {
         // Resize varData according to total nlocs.
         Dimensions_t numElements = ioPool.total_nlocs() * dimFactor;

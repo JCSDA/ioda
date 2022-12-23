@@ -5,11 +5,13 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
+#include <algorithm>
 #include <cstdio>
 #include <memory>
 #include <mpi.h>
 #include <numeric>
 #include <sstream>
+#include <utility>
 
 #include "eckit/config/LocalConfiguration.h"
 
@@ -252,12 +254,14 @@ IoPool::IoPool(const oops::Parameter<IoPoolParameters> & ioPoolParams,
                    <Engines::WriterParametersBase, Engines::WriterFactory> & writerParams,
                const eckit::mpi::Comm & commAll, const eckit::mpi::Comm & commTime,
                const util::DateTime & winStart, const util::DateTime & winEnd,
-               std::size_t nlocs)
+               const std::vector<bool> & patchObsVec)
                    : params_(ioPoolParams), writer_params_(writerParams),
                      comm_all_(commAll), rank_all_(commAll.rank()), size_all_(commAll.size()),
                      comm_time_(commTime), rank_time_(commTime.rank()),
                      size_time_(commTime.size()), win_start_(winStart), win_end_(winEnd),
-                     nlocs_(nlocs), total_nlocs_(0), global_nlocs_(0) {
+                     patch_obs_vec_(patchObsVec), total_nlocs_(0), global_nlocs_(0) {
+    nlocs_ = patchObsVec.size();
+    patch_nlocs_ = std::count(patchObsVec.begin(), patchObsVec.end(), true);
     // For now, the target pool size is simply the minumum of the specified (or default) max
     // pool size and the size of the comm_all_ communicator group.
     setTargetPoolSize();
@@ -271,8 +275,10 @@ IoPool::IoPool(const oops::Parameter<IoPoolParameters> & ioPoolParams,
 
     // This call will fill in the vector data member rank_assignment_, which holds all of
     // the ranks each member of the io pool needs to communicate with to collect the
-    // variable data.
-    assignRanksToIoPool(nlocs, rankGrouping);
+    // variable data. Use the patch nlocs (ie, the number of locations "owned" by this
+    // rank) to represent the number of locations after any duplicated locations are
+    // removed.
+    assignRanksToIoPool(patch_nlocs(), rankGrouping);
 
     // Create the io pool communicator group using the split communicator command.
     createIoPool(rankGrouping);
@@ -280,7 +286,8 @@ IoPool::IoPool(const oops::Parameter<IoPoolParameters> & ioPoolParams,
     // Calculate the total nlocs for each rank in the io pool.
     // This sets the total_nlocs_ data member and that holds the sum of
     // the nlocs from each rank (from comm_all_) that is assigned to this rank.
-    setTotalNlocs(nlocs);
+    // Use patch nlocs to get proper count after duplicate obs are removed.
+    setTotalNlocs(patch_nlocs());
 
     // Calculate the "global nlocs" which is the sum of total_nlocs_ from each rank
     // in the io pool. This is used to set the sizes of the variables (dimensioned
@@ -295,7 +302,6 @@ IoPool::IoPool(const oops::Parameter<IoPoolParameters> & ioPoolParams,
     } else {
         is_parallel_io_ = false;
     }
-    oops::Log::debug() << "is_parallel_io_: " << is_parallel_io_ << std::endl;
 
     // Set the create_multiple_files_ flag. If rank is not in the io pool, this gets
     // set to false which is okay since the non io pool ranks do not use it.
@@ -305,8 +311,6 @@ IoPool::IoPool(const oops::Parameter<IoPoolParameters> & ioPoolParams,
     } else {
         create_multiple_files_ = false;
     }
-    oops::Log::debug() << "create_multiple_files_: " << create_multiple_files_
-                       << std::endl;
 }
 
 IoPool::~IoPool() = default;
@@ -387,7 +391,6 @@ void IoPool::workaroundFixToVarLenStrings(const std::string & finalFileName,
     readerSubConfig.set("type", "H5File");
     readerSubConfig.set("obsfile", tempFileName);
     readerConfig.set("engine", readerSubConfig);
-    oops::Log::debug() << "Workaround reader config: " << readerConfig << std::endl;
 
     WorkaroundReaderParameters readerParams;
     readerParams.validateAndDeserialize(readerConfig);
@@ -402,7 +405,6 @@ void IoPool::workaroundFixToVarLenStrings(const std::string & finalFileName,
     writerSubConfig.set("type", "H5File");
     writerSubConfig.set("obsfile", writer_params_.value().fileName);
     writerConfig.set("engine", writerSubConfig);
-    oops::Log::debug() << "Workaround writer config: " << writerConfig << std::endl;
     std::unique_ptr<Engines::WriterBase> workaroundWriter;
 
     // We want each rank to write its own corresponding file, and that can be accomplished
