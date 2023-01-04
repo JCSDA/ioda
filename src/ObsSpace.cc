@@ -38,6 +38,7 @@
 #include "ioda/Engines/EngineUtils.h"
 #include "ioda/Engines/HH.h"
 #include "ioda/Engines/ODC.h"
+#include "ioda/Engines/WriteOdbFile.h"
 #include "ioda/Exception.h"
 #include "ioda/Io/IoPool.h"
 #include "ioda/io/ObsFrameRead.h"
@@ -234,9 +235,24 @@ void ObsSpace::save() {
 
         if (!baseFiletype.compare("ODB")) {
           Engines::ODC::ODC_Parameters odcparams;
-          odcparams.mappingFile = "testinput/odb_default_name_map.yml";
-          odcparams.outputFile =
-        obs_params_.top_level_.obsDataOut.value()->engine.value().engineParameters.value().fileName;
+          // TODO(srh, djd) Following is a workaround to get access to the specific odb writer
+          // parameters. The engines parameters factory returns a base class
+          // (WriterParametersBase) object which does not contain the specific parameter
+          // settings for the odb writer backend. The idea here is to dynamic_cast a pointer
+          // to the enginesParameters object to the subclass (WriteOdbFileParameters) which
+          // then gives access to the parameters defined in that subclass.
+          // The long term plan is to refactoring the odb writer code to encapsulate the
+          // odb specific code (such as here) in the odb writer backend object. This will
+          // resolve the odb writer parameter access issue here since the odb writer backend
+          // object is already given access to the WriteOdbFileParameters object.
+          const Engines::WriteOdbFileParameters * odbWriterParams =
+              dynamic_cast<const Engines::WriteOdbFileParameters *>(&(obs_params_.top_level_.
+                  obsDataOut.value()->engine.value().engineParameters.value()));
+          if (odbWriterParams == nullptr) {
+              throw Exception("Did not get expected WriteOdbFileParameters object", ioda_Here());
+          }
+          odcparams.mappingFile = odbWriterParams->mappingFileName.value();
+          odcparams.outputFile = odbWriterParams->fileName.value();
           Group writerGroup = ioda::Engines::ODC::createFile(odcparams, obs_group_);
         } else {
           // Write the output file
