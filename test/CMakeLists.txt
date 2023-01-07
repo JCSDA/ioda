@@ -1133,6 +1133,53 @@ if (odc_FOUND)
                             test-Sonde-time-displacement.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
+  ecbuild_add_test( TARGET  test_ioda-convert_sonde_time_displacement_odc_extended_time_window_equal_to_window_start
+                    TYPE    SCRIPT
+                    COMMAND bash
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                            hdf5
+                            "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
+                            Sonde-time-displacement-extended-time-window-equal-to-window-start
+                            Data/testinput_tier_1/sonde.odb
+                            testinput/odb_sonde_name_map.yaml testinput/iodatest_odb_sonde_time_displacement.yaml
+                            2018-04-14T21:00:00Z 2018-04-14T21:00:00Z"
+                            test-Sonde-time-displacement-extended-time-window-equal-to-window-start.hdf
+                    TEST_DEPENDS get_ioda_test_data )
+
+  ecbuild_add_test( TARGET  test_ioda-convert_sonde_time_displacement_odc_extended_time_window_before_window_start
+                    TYPE    SCRIPT
+                    COMMAND bash
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                            hdf5
+                            "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
+                            Sonde-time-displacement-extended-time-window-before-window-start
+                            Data/testinput_tier_1/sonde.odb
+                            testinput/odb_sonde_name_map.yaml testinput/iodatest_odb_sonde_time_displacement.yaml
+                            2018-04-14T23:00:00Z 2018-04-14T21:00:00Z"
+                            test-Sonde-time-displacement-extended-time-window-before-window-start.hdf
+                    TEST_DEPENDS get_ioda_test_data )
+
+  # This test is designed to throw an exception.
+  # The exception occurs because the extended lower bound of the time window has been set to
+  # a value later than the start of the window.
+  # The ioda_compare.sh script checks than an error has occurred and reports success if so.
+  # An output file is not produced so the test reference file is just a placeholder.
+  ecbuild_add_test( TARGET  test_ioda-convert_sonde_time_displacement_odc_extended_time_window_invalid_datetime
+                    TYPE    SCRIPT
+                    COMMAND bash
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                            hdf5
+                            "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
+                            Sonde-time-displacement-extended-time-window-invalid-datetime
+                            Data/testinput_tier_1/sonde.odb
+                            testinput/odb_sonde_name_map.yaml testinput/iodatest_odb_sonde_time_displacement.yaml
+                            2018-04-14T21:00:00Z 2018-04-14T23:00:00Z"
+                            test-Sonde-time-displacement-extended-time-window-invalid-datetime.hdf
+                            0.0
+                            N
+                            Y
+                    TEST_DEPENDS get_ioda_test_data )
+
   ecbuild_add_test( TARGET  test_ioda-convert_abiclear_odc
                     TYPE    SCRIPT
                     COMMAND bash

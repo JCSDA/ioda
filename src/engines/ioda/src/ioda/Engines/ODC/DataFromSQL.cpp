@@ -18,6 +18,7 @@
 
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
+#include "oops/util/missingValues.h"
 
 namespace ioda {
 namespace Engines {
@@ -581,7 +582,17 @@ std::vector<int64_t> DataFromSQL::getDates(std::string const& date_col,
                                            std::string const& time_col,
                                            util::DateTime const& epoch,
                                            int64_t const missingInt64,
-                                           std::string const& time_disp_col) const {
+                                           util::DateTime const timeWindowStart,
+                                           util::DateTime const timeWindowExtendedLowerBound,
+                                           std::string const& time_disp_col ) const {
+  const util::DateTime missingDate = util::missingValue(missingDate);
+  const bool useTimeWindowExtendedLowerBound = timeWindowExtendedLowerBound != missingDate &&
+    timeWindowStart != missingDate;
+  if (useTimeWindowExtendedLowerBound && timeWindowExtendedLowerBound > timeWindowStart) {
+    throw eckit::UserError("'time window extended lower bound' must be less than or equal to "
+                           "the start of the DA window.", Here());
+  }
+
   const Eigen::ArrayXi var_date = getMetadataColumnInt(date_col);
   const Eigen::ArrayXi var_time = getMetadataColumnInt(time_col);
   const int time_disp_col_index = getColumnIndex(time_disp_col);
@@ -603,6 +614,16 @@ std::vector<int64_t> DataFromSQL::getDates(std::string const& date_col,
         const util::Duration displacement(var_time_disp[i]);
         datetime += displacement;
       }
+      // If an extended lower bound on the time window has been set,
+      // and this observation's datetime lies between that bound and the start of the
+      // time window, move the datetime to the start of the time window.
+      // This ensures that the observation will be accepted by the time
+      // window cutoff that is applied in oops.
+      // The original value of the datetime is stored in MetaData/initialDateTime.
+      if (useTimeWindowExtendedLowerBound &&
+          datetime > timeWindowExtendedLowerBound &&
+          datetime <= timeWindowStart)
+        datetime = timeWindowStart;
       const int64_t offset = (datetime - epoch).toSeconds();
       offsets.push_back(offset);
     } else {

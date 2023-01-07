@@ -20,6 +20,7 @@
 #include "ioda/ObsGroup.h"
 
 #include "oops/util/DateTime.h"
+#include "oops/util/missingValues.h"
 
 #include "unsupported/Eigen/CXX11/Tensor"
 
@@ -218,6 +219,10 @@ public:
                                 std::string const& time_col,
                                 util::DateTime const& epoch,
                                 int64_t const missingInt64,
+                                util::DateTime const timeWindowStart =
+                                util::missingValue(util::DateTime()),
+                                util::DateTime const timeWindowExtendedLowerBound =
+                                util::missingValue(util::DateTime()),
                                 std::string const& time_disp_col = "") const;
 
   /// \brief Returns a vector of station IDs

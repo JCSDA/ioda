@@ -17,14 +17,20 @@
 #include "ioda/defs.h"
 #include "eckit/filesystem/PathName.h"
 
+#include "oops/util/missingValues.h"
+
 int main(int argc, char** argv) {
   try {
     using namespace ioda;
 
-    if (argc != 5 && argc != 6) {
+    // Assume that unit tests will either set maxNumberChannels or
+    // timeWindowStart and timeWindowExtendedLowerBound.
+    // In other words all three optional arguments are never set together.
+    if (argc != 5 && argc != 6 && argc != 7) {
       std::cerr << "Usage: " << argv[0]
                 << " subtype_str "
                    "filename mappingFile queryFile [maxNumberChannels]"
+                << " [timeWindowStart] [timeWindowExtendedLowerBound]"
                 << std::endl;
       return 1;
     }
@@ -38,6 +44,15 @@ int main(int argc, char** argv) {
       odcparams.maxNumberChannels = std::stoi(argv[5]);
     } else {
       odcparams.maxNumberChannels = 0;
+    }
+
+    if (argc == 7) {
+      odcparams.timeWindowStart = util::DateTime(argv[5]);
+      odcparams.timeWindowExtendedLowerBound = util::DateTime(argv[6]);
+    } else {
+      const util::DateTime missingDate = util::missingValue(missingDate);
+      odcparams.timeWindowStart = missingDate;
+      odcparams.timeWindowExtendedLowerBound = missingDate;
     }
 
     auto f = Engines::HH::createFile("testoutput/test-" + subtype_str + ".hdf",

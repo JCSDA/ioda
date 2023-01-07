@@ -55,6 +55,8 @@ struct ODC_Parameters {
   std::string queryFile;
   std::string outputFile;
   int maxNumberChannels = 0;
+  util::DateTime timeWindowStart;
+  util::DateTime timeWindowExtendedLowerBound;
 };
 
 /// \brief Import an ODB file.

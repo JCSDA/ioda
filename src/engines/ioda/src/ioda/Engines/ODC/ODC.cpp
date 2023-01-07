@@ -1076,6 +1076,12 @@ ObsGroup openFile(const ODC_Parameters& odcparams,
   ignores.push_back("nlocs");
   ignores.push_back("MetaData/dateTime");
   ignores.push_back("MetaData/receiptdateTime");
+  // Write out MetaData/initialDateTime if 'time window extended lower bound' is non-missing.
+  const util::DateTime missingDate = util::missingValue(missingDate);
+  const bool writeInitialDateTime =
+    odcparams.timeWindowExtendedLowerBound != missingDate;
+  if (writeInitialDateTime)
+    ignores.push_back("MetaData/initialDateTime");
   ignores.push_back("nchans");
 
   // Station ID is constructed from other variables for certain observation types.
@@ -1116,6 +1122,8 @@ ObsGroup openFile(const ODC_Parameters& odcparams,
     v.write(sql_data.getDates("date", "time",
                               getEpochAsDtime(v),
                               queryParameters.variableCreation.missingInt64,
+                              odcparams.timeWindowStart,
+                              odcparams.timeWindowExtendedLowerBound,
                               queryParameters.variableCreation.timeDisplacement));
     // MetaData/receiptdateTime
     v = og.vars.createWithScales<int64_t>(
@@ -1125,6 +1133,16 @@ ObsGroup openFile(const ODC_Parameters& odcparams,
     v.write(sql_data.getDates("receipt_date", "receipt_time",
                               getEpochAsDtime(v),
                               queryParameters.variableCreation.missingInt64));
+    // MetaData/initialDateTime
+    if (writeInitialDateTime) {
+      v = og.vars.createWithScales<int64_t>
+        ("MetaData/initialDateTime", {og.vars["nlocs"]}, params_dates);
+      v.atts.add<std::string>("units",
+                              queryParameters.variableCreation.epoch);
+      v.write(sql_data.getDates("date", "time",
+                                getEpochAsDtime(v),
+                                queryParameters.variableCreation.missingInt64));
+    }
   }
 
   if (constructStationID) {

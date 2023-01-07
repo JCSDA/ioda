@@ -6,6 +6,7 @@
  */
 
 #include "oops/util/Logger.h"
+#include "oops/util/missingValues.h"
 
 #include "ioda/Engines/ReadOdbFile.h"
 
@@ -40,7 +41,11 @@ ReadOdbFile::ReadOdbFile(const Parameters_ & params, const util::DateTime & winS
     odcparams.mappingFile = params.mappingFileName;
     odcparams.queryFile   = params.queryFileName;
     odcparams.maxNumberChannels = params.maxNumberChannels;
-
+    const util::DateTime missingDate = util::missingValue(missingDate);
+    odcparams.timeWindowStart = winStart + util::Duration(1);
+    odcparams.timeWindowExtendedLowerBound =
+      params.timeWindowExtendedLowerBound.value() != boost::none ?
+      params.timeWindowExtendedLowerBound.value().value() : missingDate;
     obs_group_ = Engines::ODC::openFile(odcparams, backend);
     oops::Log::trace() << "ioda::Engines::ReadOdbFile end constructor" << std::endl;
 }
