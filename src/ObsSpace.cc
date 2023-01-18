@@ -27,6 +27,7 @@
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
 #include "oops/util/missingValues.h"
+#include "oops/util/printRunStats.h"
 #include "oops/util/Random.h"
 #include "oops/util/stringFunctions.h"
 
@@ -123,6 +124,7 @@ ObsSpace::ObsSpace(const Parameters_ & params, const eckit::mpi::Comm & comm,
 {
     // Read the obs space name
     obsname_ = obs_params_.top_level_.obsSpaceName;
+    util::printRunStats("ObsSpace::ObsSpace: start " + obsname_ + ": ", true);
 
     // Open the source (ObsFrame) of the data for initializing the obs_group_ (ObsGroup)
     ObsFrameRead obsFrame(obs_params_);
@@ -225,11 +227,13 @@ ObsSpace::ObsSpace(const Parameters_ & params, const eckit::mpi::Comm & comm,
       << std::endl;
 
     oops::Log::trace() << "ObsSpace::ObsSpace constructed name = " << obsname() << std::endl;
+    util::printRunStats("ObsSpace::ObsSpace: end: ", true);
 }
 
 // -----------------------------------------------------------------------------
 void ObsSpace::save() {
     if (obs_params_.top_level_.obsDataOut.value() != boost::none) {
+        util::printRunStats("ObsSpace::save: start " + obsname_ + ": ", true);
         const std::string baseFiletype =
         obs_params_.top_level_.obsDataOut.value()->engine.value().engineParameters.value().type;
 
@@ -277,6 +281,7 @@ void ObsSpace::save() {
         // issues with hdf file handles getting deallocated before some of the MPI
         // processes are finished with them.
         this->comm().barrier();
+        util::printRunStats("ObsSpace::save: end: ", true);
     } else {
         oops::Log::info() << obsname() << " :  no output" << std::endl;
     }
