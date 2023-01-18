@@ -35,6 +35,7 @@
 #include "ioda/ObsGroup.h"
 #include "ioda/Misc/DimensionScales.h"
 #include "ioda/Misc/StringFuncs.h"
+#include "ioda/Variables/Fill.h"
 #include "ioda/Variables/VarUtils.h"
 
 // Annoying header junk on Windows. Who in their right mind defines a macro with
@@ -398,8 +399,8 @@ bool upgradeFile(const std::string& inputName, const std::string& outputName,
         oldVar.var,
         [&](auto typeDiscriminator) {
             typedef decltype(typeDiscriminator) T;
-            detail::FillValueData_t oldVarFvData = oldVar.var.getFillValue();
-            T oldVarFillValue = detail::getFillValue<T>(oldVarFvData);
+            ioda::detail::FillValueData_t oldVarFvData = oldVar.var.getFillValue();
+            T oldVarFillValue = ioda::detail::getFillValue<T>(oldVarFvData);
             adjustedParams.setFillValue<T>(oldVarFillValue);
         },
         ThrowIfVariableIsOfUnsupportedType(oldVar.name));
