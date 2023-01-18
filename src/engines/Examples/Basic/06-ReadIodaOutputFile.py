@@ -28,11 +28,11 @@ g = ioda.Engines.HH.openFile(
 og = ioda.ObsGroup(g)
 
 # The radiance data is organized as a 2D array (locations X channels). The dimension
-# names are "nlocs" and "nchans" for locataion and channels respectively.
+# names are "Location" and "Channel" for locataion and channels respectively.
 
 # You can access the dimension variables to get coordinate values
-locsDimName = "nlocs"
-chansDimName = "nchans"
+locsDimName = "Location"
+chansDimName = "Channel"
 
 locsDimVar = og.vars.open(locsDimName)
 chansDimVar = og.vars.open(chansDimName)
@@ -56,13 +56,13 @@ for i in range(numChans):
 print("")
 
 # We are interested in the following variables for diagnostics:
-#      ObsValue/brightness_temperature --> y
-#      hofx/brightness_temperature --> H(x)
+#      ObsValue/brightnessTemperature --> y
+#      HofX/brightnessTemperature --> H(x)
 #      MetaData/latitude
 #      MeatData/lognitude
 
-tbName = "ObsValue/brightness_temperature"
-hofxName = "hofx/brightness_temperature"
+tbName = "ObsValue/brightnessTemperature"
+hofxName = "HofX/brightnessTemperature"
 latName = "MetaData/latitude"
 lonName = "MetaData/longitude"
 

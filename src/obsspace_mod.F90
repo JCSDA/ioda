@@ -34,8 +34,8 @@ public obsspace_get_index
 public obsspace_get_db
 public obsspace_put_db
 public obsspace_has
-public obsspace_get_nlocs_dim_id
-public obsspace_get_nchans_dim_id
+public obsspace_get_location_dim_id
+public obsspace_get_channel_dim_id
 public obsspace_get_window
 
 #include "ioda/obsspace_interface.f"
@@ -549,7 +549,7 @@ subroutine obsspace_put_db_int32(obss, group, vname, vect, dim_ids)
   character(len=*), intent(in) :: group
   character(len=*), intent(in) :: vname
   integer(c_int32_t), intent(in) :: vect(:)
-  integer(c_int), intent(in), optional :: dim_ids(:)  ! if not set, defaults to nlocs
+  integer(c_int), intent(in), optional :: dim_ids(:)  ! if not set, defaults to Location
 
   character(kind=c_char,len=1), allocatable :: c_group(:), c_vname(:)
   integer(c_size_t) :: length
@@ -566,7 +566,7 @@ subroutine obsspace_put_db_int32(obss, group, vname, vect, dim_ids)
     call c_obsspace_put_int32(obss, c_group, c_vname, length, vect, ndims, dim_ids)
   else
     ndims = 1
-    fallback_dim_ids = (/ obsspace_get_nlocs_dim_id() /)
+    fallback_dim_ids = (/ obsspace_get_location_dim_id() /)
     call c_obsspace_put_int32(obss, c_group, c_vname, length, vect, ndims, fallback_dim_ids)
   endif
 
@@ -583,7 +583,7 @@ subroutine obsspace_put_db_int64(obss, group, vname, vect, dim_ids)
   character(len=*), intent(in) :: group
   character(len=*), intent(in) :: vname
   integer(c_int64_t), intent(in) :: vect(:)
-  integer(c_int), intent(in), optional :: dim_ids(:)  ! if not set, defaults to nlocs
+  integer(c_int), intent(in), optional :: dim_ids(:)  ! if not set, defaults to Location
 
   character(kind=c_char,len=1), allocatable :: c_group(:), c_vname(:)
   integer(c_size_t) :: length
@@ -600,7 +600,7 @@ subroutine obsspace_put_db_int64(obss, group, vname, vect, dim_ids)
     call c_obsspace_put_int64(obss, c_group, c_vname, length, vect, ndims, dim_ids)
   else
     ndims = 1
-    fallback_dim_ids = (/ obsspace_get_nlocs_dim_id() /)
+    fallback_dim_ids = (/ obsspace_get_location_dim_id() /)
     call c_obsspace_put_int64(obss, c_group, c_vname, length, vect, ndims, fallback_dim_ids)
   endif
 
@@ -617,7 +617,7 @@ subroutine obsspace_put_db_real32(obss, group, vname, vect, dim_ids)
   character(len=*), intent(in) :: group
   character(len=*), intent(in) :: vname
   real(c_float), intent(in) :: vect(:)
-  integer(c_int), intent(in), optional :: dim_ids(:)  ! if not set, defaults to nlocs
+  integer(c_int), intent(in), optional :: dim_ids(:)  ! if not set, defaults to Location
 
   character(kind=c_char,len=1), allocatable :: c_group(:), c_vname(:)
   integer(c_size_t) :: length
@@ -634,7 +634,7 @@ subroutine obsspace_put_db_real32(obss, group, vname, vect, dim_ids)
     call c_obsspace_put_real32(obss, c_group, c_vname, length, vect, ndims, dim_ids)
   else
     ndims = 1
-    fallback_dim_ids = (/ obsspace_get_nlocs_dim_id() /)
+    fallback_dim_ids = (/ obsspace_get_location_dim_id() /)
     call c_obsspace_put_real32(obss, c_group, c_vname, length, vect, ndims, fallback_dim_ids)
   endif
 
@@ -651,7 +651,7 @@ subroutine obsspace_put_db_real64(obss, group, vname, vect, dim_ids)
   character(len=*), intent(in) :: group
   character(len=*), intent(in) :: vname
   real(c_double), intent(in) :: vect(:)
-  integer(c_int), intent(in), optional :: dim_ids(:)  ! if not set, defaults to nlocs
+  integer(c_int), intent(in), optional :: dim_ids(:)  ! if not set, defaults to Location
 
   character(kind=c_char,len=1), allocatable :: c_group(:), c_vname(:)
   integer(c_size_t) :: length
@@ -668,7 +668,7 @@ subroutine obsspace_put_db_real64(obss, group, vname, vect, dim_ids)
     call c_obsspace_put_real64(obss, c_group, c_vname, length, vect, ndims, dim_ids)
   else
     ndims = 1
-    fallback_dim_ids = (/ obsspace_get_nlocs_dim_id() /)
+    fallback_dim_ids = (/ obsspace_get_location_dim_id() /)
     call c_obsspace_put_real64(obss, c_group, c_vname, length, vect, ndims, fallback_dim_ids)
   endif
 
@@ -684,7 +684,7 @@ subroutine obsspace_put_db_bool(obss, group, vname, vect, dim_ids)
   character(len=*), intent(in) :: group
   character(len=*), intent(in) :: vname
   logical(c_bool), intent(in) :: vect(:)
-  integer(c_int), intent(in), optional :: dim_ids(:)  ! if not set, defaults to nlocs
+  integer(c_int), intent(in), optional :: dim_ids(:)  ! if not set, defaults to Location
 
   character(kind=c_char,len=1), allocatable :: c_group(:), c_vname(:)
   integer(c_size_t) :: length
@@ -701,7 +701,7 @@ subroutine obsspace_put_db_bool(obss, group, vname, vect, dim_ids)
     call c_obsspace_put_bool(obss, c_group, c_vname, length, vect, ndims, dim_ids)
   else
     ndims = 1
-    fallback_dim_ids = (/ obsspace_get_nlocs_dim_id() /)
+    fallback_dim_ids = (/ obsspace_get_location_dim_id() /)
     call c_obsspace_put_bool(obss, c_group, c_vname, length, vect, ndims, fallback_dim_ids)
   endif
 
@@ -710,18 +710,18 @@ end subroutine obsspace_put_db_bool
 
 !-------------------------------------------------------------------------------
 
-!>  Return the identifier of the nlocs dimension.
-integer(c_int) function obsspace_get_nlocs_dim_id()
+!>  Return the identifier of the Location dimension.
+integer(c_int) function obsspace_get_location_dim_id()
   implicit none
-  obsspace_get_nlocs_dim_id = c_obsspace_get_nlocs_dim_id()
-end function obsspace_get_nlocs_dim_id
+  obsspace_get_location_dim_id = c_obsspace_get_location_dim_id()
+end function obsspace_get_location_dim_id
 
 !-------------------------------------------------------------------------------
 
-!>  Return the identifier of the nchans dimension.
-integer(c_int) function obsspace_get_nchans_dim_id()
+!>  Return the identifier of the Channel dimension.
+integer(c_int) function obsspace_get_channel_dim_id()
   implicit none
-  obsspace_get_nchans_dim_id = c_obsspace_get_nchans_dim_id()
-end function obsspace_get_nchans_dim_id
+  obsspace_get_channel_dim_id = c_obsspace_get_channel_dim_id()
+end function obsspace_get_channel_dim_id
 
 end module obsspace_mod

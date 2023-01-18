@@ -64,7 +64,7 @@ OOPS_CONCRETE_PARAMETERS(ComplementaryVariablesParameters, Parameters)
 class VarnoToVariableNameMappingParameters : public oops::Parameters {
 OOPS_CONCRETE_PARAMETERS(VarnoToVariableNameMappingParameters, Parameters)
  public:
-  /// ioda variable name. Example: \c brightness_temperature.
+  /// ioda variable name. Example: \c brightnessTemperature.
   oops::RequiredParameter<std::string> name {"name", this};
   /// ODB identifier of an observed variable. Example: \c 119.
   oops::RequiredParameter<int> varno {"varno", this};

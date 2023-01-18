@@ -5,7 +5,7 @@ observations:
 - obs space:
     name: Radiosonde_1var_RoundRobin
     simulated variables:
-    - air_temperature
+    - airTemperature
     obsdatain:
       engine:
         type: H5File
@@ -19,10 +19,10 @@ observations:
 - obs space:
     name: Radiosonde_4vars_RoundRobin
     simulated variables:
-    - air_temperature
-    - specific_humidity
-    - eastward_wind
-    - northward_wind
+    - airTemperature
+    - specificHumidity
+    - windEastward
+    - windNorthward
     obsdatain:
       engine:
         type: H5File
@@ -36,7 +36,7 @@ observations:
 - obs space:
     name: Radiosonde_1var_Inefficient
     simulated variables:
-    - air_temperature
+    - airTemperature
     obsdatain:
       engine:
         type: H5File
@@ -50,10 +50,10 @@ observations:
 - obs space:
     name: Radiosonde_4vars_Inefficient
     simulated variables:
-    - air_temperature
-    - specific_humidity
-    - eastward_wind
-    - northward_wind
+    - airTemperature
+    - specificHumidity
+    - windEastward
+    - windNorthward
     obsdatain:
       engine:
         type: H5File
@@ -67,7 +67,7 @@ observations:
 - obs space:
     name: Radiosonde_1var_Halo
     simulated variables:
-    - air_temperature
+    - airTemperature
     obsdatain:
       engine:
         type: H5File
@@ -82,10 +82,10 @@ observations:
 - obs space:
     name: Radiosonde_4vars_Halo
     simulated variables:
-    - air_temperature
-    - specific_humidity
-    - eastward_wind
-    - northward_wind
+    - airTemperature
+    - specificHumidity
+    - windEastward
+    - windNorthward
     obsdatain:
       engine:
         type: H5File

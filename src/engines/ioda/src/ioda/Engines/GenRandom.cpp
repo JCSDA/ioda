@@ -43,7 +43,7 @@ GenRandom::GenRandom(const Parameters_ & params, const util::DateTime & winStart
     // Create the in-memory ObsGroup
     NewDimensionScales_t newDims;
     Dimensions_t numLocs = params.numObs;
-    newDims.push_back(ioda::NewDimensionScale<int>("nlocs", numLocs, numLocs, numLocs));
+    newDims.push_back(ioda::NewDimensionScale<int>("Location", numLocs, numLocs, numLocs));
     obs_group_ = ObsGroup::generate(backend, newDims);
 
    // Fill in the ObsGroup with the generated data

@@ -46,7 +46,7 @@ class PolicyParameters : public oops::Parameters {
   OOPS_CONCRETE_PARAMETERS(PolicyParameters, Parameters)
 
  public:
-  oops::Parameter<Severity> GroupsKnown{"KnownGroupNames", Severity::Warn, this};
+  oops::Parameter<Severity> GroupsKnown{"KnownGroupNames", Severity::Error, this};
   oops::Parameter<Severity> RequiredGroups{"RequiredGroups", Severity::Error, this};
   oops::Parameter<Severity> GroupHasRequiredAttributes{"GroupHasRequiredAttributes",
                                                        Severity::Error, this};
@@ -59,14 +59,14 @@ class PolicyParameters : public oops::Parameters {
                                                     this};
   oops::Parameter<Severity> RequiredDimensions{"RequiredDimensions", Severity::Error, this};
   oops::Parameter<Severity> RequiredVariables{"RequiredVariables", Severity::Error, this};
-  oops::Parameter<Severity> KnownVariableNames{"KnownVariableNames", Severity::Warn, this};
-  oops::Parameter<Severity> VariableUseNewName{"PreferredVariableNames", Severity::Warn, this};
+  oops::Parameter<Severity> KnownVariableNames{"KnownVariableNames", Severity::Error, this};
+  oops::Parameter<Severity> VariableUseNewName{"PreferredVariableNames", Severity::Error, this};
   oops::Parameter<Severity> VariableCanBeMetadata{"VariableCanBeMetaData", Severity::Warn, this};
   oops::Parameter<Severity> VariableTypeCheck{"VariableTypeCheck", Severity::Trace, this};
   oops::Parameter<Severity> VariableDimensionCheck{"VariableDimensionCheck", Severity::Warn, this};
   oops::Parameter<Severity> VariableHasReqAtts{"VariableHasReqAtts", Severity::Error, this};
   oops::Parameter<Severity> VariableKnownAtts{"VariableHasKnownAtts", Severity::Warn, this};
-  oops::Parameter<Severity> VariableHasValidUnits{"VariableHasValidUnits", Severity::Error, this};
+  oops::Parameter<Severity> VariableHasValidUnits{"VariableHasValidUnits", Severity::Warn, this};
   oops::Parameter<Severity> VariableHasConvertibleUnits{"VariableHasConvertibleUnits",
                                                         Severity::Error, this};
   oops::Parameter<Severity> VariableHasExactUnits{"VariableHasExactUnits", Severity::Warn, this};

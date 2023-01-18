@@ -44,7 +44,7 @@ ObsFrameRead::ObsFrameRead(const ObsSpaceParameters & params) :
     ObsGroup og = obs_data_in_->getObsGroup();
 
     // record number of locations from backend
-    backend_nlocs_ = og.vars.open("nlocs").getDimensions().dimsCur[0];
+    backend_nlocs_ = og.vars.open("Location").getDimensions().dimsCur[0];
     if (backend_nlocs_ == 0) {
       oops::Log::warning() << "WARNING: Input file " << obs_data_in_->fileName()
                            << " contains zero observations" << std::endl;
@@ -130,7 +130,7 @@ void ObsFrameRead::frameInit(Has_Attributes & destAttrs) {
     // determine when there are no more frames from the backend.
     max_var_size_ = backend_max_var_size_;
     nlocs_ = 0;
-    adjusted_nlocs_frame_start_ = 0;
+    adjusted_location_frame_start_ = 0;
     gnlocs_ = 0;
     nrecs_ = 0;
 
@@ -153,7 +153,7 @@ void ObsFrameRead::frameInit(Has_Attributes & destAttrs) {
 //------------------------------------------------------------------------------------
 void ObsFrameRead::frameNext() {
     frame_start_ += max_frame_size_;
-    adjusted_nlocs_frame_start_ += adjusted_nlocs_frame_count_;
+    adjusted_location_frame_start_ += adjusted_location_frame_count_;
 }
 
 //------------------------------------------------------------------------------------
@@ -161,10 +161,10 @@ bool ObsFrameRead::frameAvailable() {
     bool haveAnotherFrame = (frame_start_ < max_var_size_);
     // If there is another frame, then read it into obs_frame_
     if (haveAnotherFrame) {
-        // Resize along the nlocs dimension
-        Variable nlocsVar = obs_frame_.vars.open("nlocs");
+        // Resize along the Location dimension
+        Variable LocationVar = obs_frame_.vars.open("Location");
         obs_frame_.resize(
-            { std::pair<Variable, Dimensions_t>(nlocsVar, frameCount("nlocs")) });
+            { std::pair<Variable, Dimensions_t>(LocationVar, frameCount("Location")) });
 
         // Transfer all variable data
         Dimensions_t frameStart = this->frameStart();
@@ -263,8 +263,8 @@ Dimensions_t ObsFrameRead::frameCount(const std::string & varName) {
     if (var.isDimensionScale()) {
         fCount = basicFrameCount(var);
     } else {
-        if (isVarDimByNlocs_Impl(useVarName, backend_dims_attached_to_vars_)) {
-            fCount = adjusted_nlocs_frame_count_;
+        if (isVarDimByLocation_Impl(useVarName, backend_dims_attached_to_vars_)) {
+            fCount = adjusted_location_frame_count_;
         } else {
             fCount = basicFrameCount(var);
         }
@@ -356,14 +356,14 @@ void ObsFrameRead::genFrameIndexRecNums(std::shared_ptr<Distribution> & dist) {
 
     // New frame count is the number of entries in the frame_loc_index_ vector
     // This will be handed to callers through the frameCount function for all
-    // variables with nlocs as their first dimension.
-    adjusted_nlocs_frame_count_ = frame_loc_index_.size();
+    // variables with Location as their first dimension.
+    adjusted_location_frame_count_ = frame_loc_index_.size();
 }
 
 //------------------------------------------------------------------------------------
 void ObsFrameRead::genFrameLocationsAll(std::vector<Dimensions_t> & locIndex,
                                         std::vector<Dimensions_t> & frameIndex) {
-    Dimensions_t locSize = this->frameCount("nlocs");
+    Dimensions_t locSize = this->frameCount("Location");
     gnlocs_ += locSize;
 
     locIndex.resize(locSize);
@@ -376,7 +376,7 @@ void ObsFrameRead::genFrameLocationsAll(std::vector<Dimensions_t> & locIndex,
 //------------------------------------------------------------------------------------
 void ObsFrameRead::genFrameLocationsWithQcheck(std::vector<Dimensions_t> & locIndex,
                                                std::vector<Dimensions_t> & frameIndex) {
-    Dimensions_t frameCount = this->frameCount("nlocs");
+    Dimensions_t frameCount = this->frameCount("Location");
     Dimensions_t frameStart = this->frameStart();
 
     // Reader code will have thrown an exception before getting here if datetime information
@@ -504,16 +504,16 @@ void ObsFrameRead::buildObsGroupingKeys(const std::vector<std::string> & obsGrou
         std::string obsGroupVarName = obsGroupVarList[i];
         std::string varName = std::string("MetaData/") + obsGroupVarName;
         Variable groupVar = obs_frame_.vars.open(varName);
-        if (!isVarDimByNlocs_Impl(varName, backend_dims_attached_to_vars_)) {
+        if (!isVarDimByLocation_Impl(varName, backend_dims_attached_to_vars_)) {
             std::string ErrMsg =
                 std::string("ERROR: ObsFrameRead::genRecordNumbersGrouping: ") +
                 std::string("obs grouping variable (") + obsGroupVarName +
-                std::string(") must have 'nlocs' as first dimension");
+                std::string(") must have 'Location' as first dimension");
             Exception(ErrMsg.c_str(), ioda_Here());
         }
 
         // Form selection objects to grab the current frame values
-        Dimensions_t frameCount = this->frameCount("nlocs");
+        Dimensions_t frameCount = this->frameCount("Location");
 
         std::vector<Dimensions_t> varShape = groupVar.getDimensions().dimsCur;
         Selection memSelect = createMemSelection(varShape, frameCount);
@@ -551,7 +551,7 @@ void ObsFrameRead::applyMpiDistribution(const std::shared_ptr<Distribution> & di
     std::vector<float> lons(locSize, 0);
     Dimensions_t frameStart = this->frameStart();
     // Form selection objects to grab the current frame values
-    Dimensions_t frameCount = this->frameCount("nlocs");
+    Dimensions_t frameCount = this->frameCount("Location");
 
     // Assume that lat and lon variables are shaped the same
     if (!obs_frame_.vars.exists("MetaData/longitude")) {

@@ -48,12 +48,12 @@ CASE("Stitch variables, remove originals defaulted as true") {
   oneVar.write<str>({str("foo"), str("bar"), str("baz"), str("lorem"), str("ipsum")});
 
   NewDimensionScales_t newDims;
-  newDims.push_back(NewDimensionScale<int>("nlocs", locations, ioda::Unlimited, locations));
-  newDims.push_back(NewDimensionScale<int>("nchans", channels, channels, channels));
+  newDims.push_back(NewDimensionScale<int>("Location", locations, ioda::Unlimited, locations));
+  newDims.push_back(NewDimensionScale<int>("Channel", channels, channels, channels));
   ObsGroup og = ObsGroup::generate(
           backend, newDims,
           detail::DataLayoutPolicy::generate(detail::DataLayoutPolicy::Policies::ObsGroupODB,
-                                             mappingFile, {"nlocs", "nchans"}));
+                                             mappingFile, {"Location", "Channel"}));
 
   EXPECT(og.vars.exists(str("completeCombinationPart1")));
   EXPECT(og.vars.exists(str("completeCombinationPart2")));
@@ -110,12 +110,12 @@ CASE("Stitch variables, remove originals set to false") {
   oneVar.write<str>({str("foo"), str("bar"), str("baz"), str("lorem"), str("ipsum")});
 
   NewDimensionScales_t newDims;
-  newDims.push_back(NewDimensionScale<int>("nlocs", locations, ioda::Unlimited, locations));
-  newDims.push_back(NewDimensionScale<int>("nchans", channels, channels, channels));
+  newDims.push_back(NewDimensionScale<int>("Location", locations, ioda::Unlimited, locations));
+  newDims.push_back(NewDimensionScale<int>("Channel", channels, channels, channels));
   ObsGroup og = ObsGroup::generate(
           backend, newDims,
           detail::DataLayoutPolicy::generate(detail::DataLayoutPolicy::Policies::ObsGroupODB,
-                                             mappingFile, {"nlocs", "nchans"}));
+                                             mappingFile, {"Location", "Channel"}));
   EXPECT(og.vars.exists(str("completeCombinationPart1")));
   EXPECT(og.vars.exists(str("completeCombinationPart2")));
   EXPECT(og.vars.exists(str("completeCombinationPart3")));

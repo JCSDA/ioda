@@ -39,7 +39,7 @@ int main(int argc, char** argv) {
       NewVariable<float>("Metadata/Latitude", {sLocation}, vcpf),
       NewVariable<float>("Metadata/Longitude", {sLocation}, vcpf),
       NewVariable<float>("Metadata/Pressure_Level", {sLevel}, vcpf),
-      NewVariable<double>("ObsValue/Brightness_Temperature", {sLocation, sChannel}, vcpd),
+      NewVariable<double>("ObsValue/brightnessTemperature", {sLocation, sChannel}, vcpd),
       NewVariable<float>("Metadata/Altitude", {sLocation, sLevel}, vcpf)
     };
    

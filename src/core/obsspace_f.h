@@ -78,8 +78,8 @@ extern "C" {
                            const std::size_t &, bool*,
                            const std::size_t &, int*);
 
-  int obsspace_get_nlocs_dim_id_f();
-  int obsspace_get_nchans_dim_id_f();
+  int obsspace_get_location_dim_id_f();
+  int obsspace_get_channel_dim_id_f();
 }
 
 }  // namespace ioda

@@ -49,7 +49,7 @@ TEST(test_obsspace_construct)
   type(datetime) :: winbgn, winend
 
   type(c_ptr), allocatable, dimension(:) :: obsspace
-  integer :: nlocs, nlocs_ref, nlocs_id
+  integer :: nlocs, nlocs_ref, location_id
   integer :: nvars, nvars_ref
   integer :: iobstype
   character(len=100) :: obsname
@@ -83,8 +83,8 @@ TEST(test_obsspace_construct)
     CHECK_EQUAL(obsname, obsname_ref)
 
     !> test if nlocs and nvars are the same as reference
-    nlocs_id = obsspace_get_dim_id(obsspace(iobstype), "nlocs")
-    nlocs = obsspace_get_dim_size(obsspace(iobstype), nlocs_id)
+    location_id = obsspace_get_dim_id(obsspace(iobstype), "Location")
+    nlocs = obsspace_get_dim_size(obsspace(iobstype), location_id)
     nvars = obsspace_get_nvars(obsspace(iobstype))
     call testconfig%get_or_die("nlocs", nlocs_ref)
     call testconfig%get_or_die("nvars", nvars_ref)
@@ -128,7 +128,7 @@ TEST(test_obsspace_get_db_put_db)
   type(datetime) :: winbgnread, winendread
 
   type(c_ptr), allocatable, dimension(:) :: obsspace
-  integer :: nlocs, nlocs_id
+  integer :: nlocs, location_id
   integer :: iobstype, iloc
 
   integer(c_int32_t), allocatable :: input_int32_var(:),  output_int32_var(:)
@@ -157,8 +157,8 @@ TEST(test_obsspace_get_db_put_db)
     !> construct obsspace
     obsspace(iobstype) = obsspace_construct(obsconfig, winbgn, winend)
 
-    nlocs_id = obsspace_get_dim_id(obsspace(iobstype), "nlocs")
-    nlocs = obsspace_get_dim_size(obsspace(iobstype), nlocs_id)
+    location_id = obsspace_get_dim_id(obsspace(iobstype), "Location")
+    nlocs = obsspace_get_dim_size(obsspace(iobstype), location_id)
 
     !> test putting and getting a 32-bit int variable
     allocate(input_int32_var(nlocs), output_int32_var(nlocs))

@@ -40,7 +40,10 @@ class ObsSpace:
                 for key, value in dim_dict.items():
                     if isinstance(value, (list, np.ndarray)):
                         _tmpvar = self.obsgroup.vars.open(key)
-                        _tmpvar.writeNPArray.int32(value)
+                        if key == 'Location':
+                            _tmpvar.writeNPArray.int64(value)
+                        else:
+                            _tmpvar.writeNPArray.int32(value)
             else:
                 raise TypeError("dim_dict is not defined")
 
@@ -49,7 +52,7 @@ class ObsSpace:
         self.dimensions = self.obsgroup.vars.list()
         self.groups = self.file.listGroups(recurse=True)
         self.attrs = self.obsgroup.atts.list()
-        self.nlocs = len(self.obsgroup.vars.open('nlocs').readVector.int())
+        self.nlocs = len(self.obsgroup.vars.open('Location').readVector.int())
         self.variables = self.file.listVars(recurse=True)
         self.nvars = len(self.variables)
 
@@ -160,10 +163,10 @@ class ObsSpace:
                 dimlen = len(value)
             else:
                 dimlen = int(value)
-            if key == 'nlocs':
-                _nlocs_var = ioda.NewDimensionScale.int32(
-                    'nlocs', dimlen, ioda.Unlimited, min(dimlen, 10000))
-                _dim_list.append(_nlocs_var)
+            if key == 'Location':
+                _locs_var = ioda.NewDimensionScale.int64(
+                    'Location', dimlen, ioda.Unlimited, min(dimlen, 10000))
+                _dim_list.append(_locs_var)
             else:
                 _dim_list.append(ioda.NewDimensionScale.int32(
                 key, dimlen, dimlen, dimlen))
@@ -175,7 +178,7 @@ class ObsSpace:
         return g, og
 
     def create_var(self, varname, groupname=None, dtype=np.dtype('float32'),
-                   dim_list=['nlocs'], fillval=None):
+                   dim_list=['Location'], fillval=None):
         # If the variable is dateTime and it is not already in the native int64
         # form, then change the dtype to 'M' which is the numpy datetime object type.
         if (varname == 'MetaData/dateTime') and (dtype != np.dtype('int64')):

@@ -130,18 +130,18 @@ NewDimensionScales_t DataFromSQL::getVertcos() const {
   NewDimensionScales_t vertcos;
   const int num_rows = number_of_metadata_rows_;
   vertcos.push_back(
-    NewDimensionScale<int>("nlocs", num_rows, num_rows, num_rows));
+    NewDimensionScale<int>("Location", num_rows, num_rows, num_rows));
   if (obsgroup_ == obsgroup_iasi || obsgroup_ == obsgroup_cris || obsgroup_ == obsgroup_hiras) {
     int number_of_levels = numberOfLevels(varno_rawsca);
-    vertcos.push_back(NewDimensionScale<int>("nchans", number_of_levels,
+    vertcos.push_back(NewDimensionScale<int>("Channel", number_of_levels,
                                              number_of_levels, number_of_levels));
   } else if (obsgroup_ == obsgroup_atovs) {
     int number_of_levels = numberOfLevels(varno_rawbt_amsu);
-    vertcos.push_back(NewDimensionScale<int>("nchans", number_of_levels,
+    vertcos.push_back(NewDimensionScale<int>("Channel", number_of_levels,
                                              number_of_levels, number_of_levels));
   } else if (obsgroup_ == obsgroup_amsr) {
     int number_of_levels = numberOfLevels(varno_rawbt) + numberOfLevels(varno_rawbt_amsr_89ghz);
-    vertcos.push_back(NewDimensionScale<int>("nchans", number_of_levels,
+    vertcos.push_back(NewDimensionScale<int>("Channel", number_of_levels,
                                              number_of_levels, number_of_levels));
   } else if (obsgroup_ == obsgroup_abiclr || obsgroup_ == obsgroup_ahiclr
              || obsgroup_ == obsgroup_airs || obsgroup_ == obsgroup_atms
@@ -149,27 +149,27 @@ NewDimensionScales_t DataFromSQL::getVertcos() const {
              || obsgroup_ == obsgroup_mwri || obsgroup_ == obsgroup_seviriclr
              || obsgroup_ == obsgroup_ssmis) {
     int number_of_levels = numberOfLevels(varno_rawbt);
-    vertcos.push_back(NewDimensionScale<int>("nchans", number_of_levels,
+    vertcos.push_back(NewDimensionScale<int>("Channel", number_of_levels,
                                              number_of_levels, number_of_levels));
   } else if (obsgroup_ == obsgroup_mwsfy3) {
     int number_of_levels = numberOfLevels(varno_rawbt_mwts) + numberOfLevels(varno_rawbt_mwhs);
-    vertcos.push_back(NewDimensionScale<int>("nchans", number_of_levels,
+    vertcos.push_back(NewDimensionScale<int>("Channel", number_of_levels,
                                              number_of_levels, number_of_levels));
   } else if (obsgroup_ == obsgroup_geocloud) {
     int number_of_levels = numberOfLevels(varno_cloud_fraction_covered);
-    vertcos.push_back(NewDimensionScale<int>("nchans", number_of_levels,
+    vertcos.push_back(NewDimensionScale<int>("Channel", number_of_levels,
                                              number_of_levels, number_of_levels));
   } else if (obsgroup_ == obsgroup_surfacecloud) {
     int number_of_levels = numberOfLevels(varno_cloud_fraction_covered);
-    vertcos.push_back(NewDimensionScale<int>("nchans", number_of_levels,
+    vertcos.push_back(NewDimensionScale<int>("Channel", number_of_levels,
                                              number_of_levels, number_of_levels));
   } else if (obsgroup_ == obsgroup_scatwind) {
     int number_of_levels = numberOfLevels(varno_dd);
-    vertcos.push_back(NewDimensionScale<int>("nchans", number_of_levels,
+    vertcos.push_back(NewDimensionScale<int>("Channel", number_of_levels,
                                              number_of_levels, number_of_levels));
   } else if (obsgroup_ == obsgroup_gnssro && max_number_channels_ > 0) {
     int number_of_levels = numberOfLevels(varno_bending_angle);
-    vertcos.push_back(NewDimensionScale<int>("nchans", number_of_levels,
+    vertcos.push_back(NewDimensionScale<int>("Channel", number_of_levels,
                                              number_of_levels, number_of_levels));
   }
   return vertcos;
@@ -692,7 +692,7 @@ void DataFromSQL::createVarnoIndependentIodaVariable(
     createNumericVarnoIndependentIodaVariable<float>(column, og, params);
   } else {
     const std::vector<std::string> var = getMetadataStringColumn(column);
-    ioda::Variable v = og.vars.createWithScales<std::string>(column, {og.vars["nlocs"]}, params);
+    ioda::Variable v = og.vars.createWithScales<std::string>(column, {og.vars["Location"]}, params);
     v.write(var);
   }
 }
@@ -704,7 +704,7 @@ void DataFromSQL::createNumericVarnoIndependentIodaVariable(
   const ArrayX<T> var = getNumericMetadataColumn<T>(column);
   VariableCreationParameters params_copy = params;
   params_copy.setFillValue<T>(odb_missing<T>());
-  ioda::Variable v = og.vars.createWithScales<T>(column, {og.vars["nlocs"]}, params_copy);
+  ioda::Variable v = og.vars.createWithScales<T>(column, {og.vars["Location"]}, params_copy);
   v.writeWithEigenRegular(var);
 }
 
@@ -731,7 +731,7 @@ void DataFromSQL::createVarnoIndependentIodaVariables(
     for (size_t loc = 0; loc < member_values.size(); ++loc)
       member_values[loc] = (var(loc) != odb_missing_int && (var(loc) & mask)) ? 1 : 0;
     ioda::Variable v = og.vars.createWithScales<char>(
-          column + "." + member.name, {og.vars["nlocs"]}, params);
+          column + "." + member.name, {og.vars["Location"]}, params);
     v.write(member_values);
   }
 }
@@ -742,7 +742,7 @@ ioda::Variable DataFromSQL::assignChannelNumbers(const int varno, ioda::ObsGroup
                                            numberOfLevels(varno), numberOfLevels(varno));
 
   int number_of_levels = numberOfLevels(varno);
-  ioda::Variable v = og.vars["nchans"];
+  ioda::Variable v = og.vars["Channel"];
   Eigen::ArrayXi var_single(number_of_levels);
   for (size_t i = 0; i < number_of_levels; i++) {
     var_single[i] = var[i];
@@ -756,7 +756,7 @@ ioda::Variable DataFromSQL::assignChannelNumbersSeq(const std::vector<int> varno
   for (size_t i = 0; i < varnos.size(); i++) {
     number_of_levels += numberOfLevels(varnos[i]);
   }
-  ioda::Variable v = og.vars["nchans"];
+  ioda::Variable v = og.vars["Channel"];
   Eigen::ArrayXi var_single(number_of_levels);
   for (size_t i = 0; i < number_of_levels; i++) {
     if (obsgroup_ == obsgroup_abiclr || obsgroup_ == obsgroup_ahiclr) {
@@ -860,9 +860,9 @@ std::vector<ioda::Variable> DataFromSQL::getVarnoDependentVariableDimensionScale
   if (number_of_levels == 0) {
     // Leave dimensionScales empty
   } else if (number_of_levels == 1 && obsgroup_ != obsgroup_geocloud && obsgroup_ != obsgroup_surfacecloud) {
-    dimensionScales = {og.vars["nlocs"]};
+    dimensionScales = {og.vars["Location"]};
   } else {
-    dimensionScales = {og.vars["nlocs"], og.vars["nchans"]};
+    dimensionScales = {og.vars["Location"], og.vars["Channel"]};
   }
 
   return dimensionScales;

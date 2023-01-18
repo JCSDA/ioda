@@ -566,15 +566,15 @@ void readColumn(Group storageGroup, const ColumnInfo column, std::vector<std::ve
 }
 
 int getNumberOfRows(Group storageGroup) {
-  TypeClass t = storageGroup.vars["nlocs"].getType().getClass();
+  TypeClass t = storageGroup.vars["Location"].getType().getClass();
   if (t == TypeClass::Integer) {
-    std::vector<int> nlocs;
-    storageGroup.vars["nlocs"].read<int>(nlocs);
-    return nlocs.size();
+    std::vector<int> Location;
+    storageGroup.vars["Location"].read<int>(Location);
+    return Location.size();
   } else {
-    std::vector<float> nlocs;
-    storageGroup.vars["nlocs"].read<float>(nlocs);
-    return nlocs.size();
+    std::vector<float> Location;
+    storageGroup.vars["Location"].read<float>(Location);
+    return Location.size();
   }
 }
 
@@ -1073,7 +1073,7 @@ ObsGroup openFile(const ODC_Parameters& odcparams,
   // to ioda variable names
 
   std::vector<std::string> ignores;
-  ignores.push_back("nlocs");
+  ignores.push_back("Location");
   ignores.push_back("MetaData/dateTime");
   ignores.push_back("MetaData/receiptdateTime");
   // Write out MetaData/initialDateTime if 'time window extended lower bound' is non-missing.
@@ -1082,14 +1082,14 @@ ObsGroup openFile(const ODC_Parameters& odcparams,
     odcparams.timeWindowExtendedLowerBound != missingDate;
   if (writeInitialDateTime)
     ignores.push_back("MetaData/initialDateTime");
-  ignores.push_back("nchans");
+  ignores.push_back("Channel");
 
   // Station ID is constructed from other variables for certain observation types.
   const bool constructStationID =
     sql_data.getObsgroup() == obsgroup_sonde ||
     sql_data.getObsgroup() == obsgroup_oceansound;
   if (constructStationID)
-    ignores.push_back("MetaData/station_id");
+    ignores.push_back("MetaData/stationIdentification");
 
   NewDimensionScales_t vertcos = sql_data.getVertcos();
 
@@ -1116,7 +1116,7 @@ ObsGroup openFile(const ODC_Parameters& odcparams,
     params_dates.setFillValue<int64_t>(queryParameters.variableCreation.missingInt64);
     // MetaData/dateTime
     ioda::Variable v = og.vars.createWithScales<int64_t>(
-    "MetaData/dateTime", {og.vars["nlocs"]}, params_dates);
+    "MetaData/dateTime", {og.vars["Location"]}, params_dates);
     v.atts.add<std::string>("units",
                             queryParameters.variableCreation.epoch);
     v.write(sql_data.getDates("date", "time",
@@ -1127,7 +1127,7 @@ ObsGroup openFile(const ODC_Parameters& odcparams,
                               queryParameters.variableCreation.timeDisplacement));
     // MetaData/receiptdateTime
     v = og.vars.createWithScales<int64_t>(
-    "MetaData/receiptdateTime", {og.vars["nlocs"]}, params_dates);
+    "MetaData/receiptdateTime", {og.vars["Location"]}, params_dates);
     v.atts.add<std::string>("units",
                             queryParameters.variableCreation.epoch);
     v.write(sql_data.getDates("receipt_date", "receipt_time",
@@ -1136,7 +1136,7 @@ ObsGroup openFile(const ODC_Parameters& odcparams,
     // MetaData/initialDateTime
     if (writeInitialDateTime) {
       v = og.vars.createWithScales<int64_t>
-        ("MetaData/initialDateTime", {og.vars["nlocs"]}, params_dates);
+        ("MetaData/initialDateTime", {og.vars["Location"]}, params_dates);
       v.atts.add<std::string>("units",
                               queryParameters.variableCreation.epoch);
       v.write(sql_data.getDates("date", "time",
@@ -1147,7 +1147,7 @@ ObsGroup openFile(const ODC_Parameters& odcparams,
 
   if (constructStationID) {
     ioda::Variable v = og.vars.createWithScales<std::string>(
-    "MetaData/station_id", {og.vars["nlocs"]}, params);
+    "MetaData/stationIdentification", {og.vars["Location"]}, params);
     v.write(sql_data.getStationIDs());
   }
 

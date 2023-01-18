@@ -54,8 +54,8 @@ CASE("Convert variables") {
   ObsGroup og = ObsGroup::generate(
           backend,
           {
-            NewDimensionScale<int>("nlocs", locations, ioda::Unlimited, locations),
-            NewDimensionScale<int>("nchans", channels, channels, channels) },
+            NewDimensionScale<int>("Location", locations, ioda::Unlimited, locations),
+            NewDimensionScale<int>("Channel", channels, channels, channels) },
           detail::DataLayoutPolicy::generate("ObsGroupODB",
                                              mappingFile));
 

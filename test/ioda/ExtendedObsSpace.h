@@ -84,20 +84,20 @@ void testExtendedObsSpace(const eckit::LocalConfiguration &conf) {
   EXPECT_EQUAL(nrecs, nrecs_expected);
 
   // Given the extended records have nlevs entries each,
-  // calculate the corresponding index at which extended_obs_space switches from 0 to 1.
-  std::vector <int> extended_obs_space(nlocs);
-  obsdata.get_db("MetaData", "extended_obs_space", extended_obs_space);
+  // calculate the corresponding index at which extendedObsSpace switches from 0 to 1.
+  std::vector <int> extendedObsSpace(nlocs);
+  obsdata.get_db("MetaData", "extendedObsSpace", extendedObsSpace);
   const size_t extendedObsSpaceStart =
-    std::find(extended_obs_space.begin(),
-              extended_obs_space.end(), 1) - extended_obs_space.begin();
+    std::find(extendedObsSpace.begin(),
+              extendedObsSpace.end(), 1) - extendedObsSpace.begin();
   // Check the index of the start of the extended ObsSpace is
   // a multiple of nlevs from the final index.
   EXPECT_EQUAL((nlocs - extendedObsSpaceStart) % nlevs, 0);
-  // Check the values of extended_obs_space.
+  // Check the values of extendedObsSpace.
   for (int iloc = 0; iloc < extendedObsSpaceStart; ++iloc)
-    EXPECT_EQUAL(extended_obs_space[iloc], 0);
+    EXPECT_EQUAL(extendedObsSpace[iloc], 0);
   for (int iloc = extendedObsSpaceStart; iloc < nlocs; ++iloc)
-    EXPECT_EQUAL(extended_obs_space[iloc], 1);
+    EXPECT_EQUAL(extendedObsSpace[iloc], 1);
 
   // Get all ObsValue and ObsError vectors that will be simulated.
   // For each vector check that the values in the extended ObsSpace are all missing.
@@ -154,14 +154,14 @@ void testExtendedObsSpace(const eckit::LocalConfiguration &conf) {
   const std::vector <std::string> &nonMissingExtendedVars =
     obsSpaceConf.getStringVector("extension.variables filled with non-missing values",
                                  {"latitude", "longitude", "datetime",
-                                     "air_pressure", "air_pressure_levels", "station_id"});
+                                     "pressure", "air_pressure_levels", "stationIdentification"});
   // List of variables to check.
   // It is required that these are all floating-point variables in the MetaData group.
   const std::vector <std::string> extendedVarsToCheck =
-    {"latitude", "longitude", "air_pressure"};
+    {"latitude", "longitude", "pressure"};
   // Retrieve all station IDs in the sample.
   std::vector <std::string> statids(obsdata.nlocs());
-  obsdata.get_db("MetaData", "station_id", statids);
+  obsdata.get_db("MetaData", "stationIdentification", statids);
   // Unique station IDs are taken from the configuration file.
   // The IDs are loaded in this way in order to guarantee a particular correspondence
   // with the reference vectors.

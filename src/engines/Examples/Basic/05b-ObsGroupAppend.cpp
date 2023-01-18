@@ -31,19 +31,19 @@
  *   layout                                    notes
  *
  *     /                                   top-level group
- *      nlocs                              dimension scales (variables, coordinate values)
- *      nchans
+ *      Location                           dimension scales (variables, coordinate values)
+ *      Channel
  *      ...
  *      ObsValue/                          group: observational measurement values
- *               brightness_temperature    variable: Tb, 2D, nlocs X nchans
- *               air_temperature           variable: T, 1D, nlocs
+ *               brightnessTemperature    variable: Tb, 2D, Location X Channel
+ *               air_temperature           variable: T, 1D, Location
  *               ...
  *      ObsError/                          group: observational error estimates
- *               brightness_temperature
+ *               brightnessTemperature
  *               air_temperature
  *               ...
  *      PreQC/                             group: observational QC marks from data provider
- *               brightness_temperature
+ *               brightnessTemperature
  *               air_temperature
  *               ...
  *      MetaData/                          group: meta data associated with locations
@@ -61,11 +61,11 @@
  * a dimension is resized, the ObsGroup::resize function will resize the dimension scale
  * along with all variables that use that dimension scale.
  *
- * The basic ideas is to dimension observation data with nlocs as the first dimension, and
- * allow nlocs to be resizable so that it's possible to incrementally append data along
- * the nlocs (1st) dimension. For data that have rank > 1, the second through nth dimensions
- * are of fixed size. For example, brightness_temperature can be store as 2D data with
- * dimensions (nlocs, nchans).
+ * The basic ideas is to dimension observation data with Location as the first dimension, and
+ * allow Location to be resizable so that it's possible to incrementally append data along
+ * the Location (1st) dimension. For data that have rank > 1, the second through nth dimensions
+ * are of fixed size. For example, brightnessTemperature can be store as 2D data with
+ * dimensions (Location, Channel).
  *
  * \author Stephen Herbener (stephenh@ucar.edu), Ryan Honeyager (honeyage@ucar.edu)
  **/
@@ -95,7 +95,7 @@ int main(int argc, char** argv) {
     // It's possible to transfer data in smaller pieces so you can, for example, avoid
     // reading the whole input file into memory. Transferring by pieces can also be useful
     // when you don't know a priori how many locations are going to be read in. To accomplish
-    // this, you set the maximum size of the nlocs dimension to Unlimited and use the
+    // this, you set the maximum size of the Location dimension to Unlimited and use the
     // ObsSpace::generate function to allocate more space at the end of each variable for
     // the incoming section.
     //
@@ -192,14 +192,14 @@ int main(int argc, char** argv) {
     //              This defaults to the initial size. This parameter must be nonzero. If
     //              the initial size is zero, it must be explicitly specified.
     //
-    // For transferring data in pieces, make sure that nlocs maximum dimension size is
-    // set to Unlimited. We'll set the initial size of nlocs to the sectionSize (10).
+    // For transferring data in pieces, make sure that Location maximum dimension size is
+    // set to Unlimited. We'll set the initial size of Location to the sectionSize (10).
     ioda::NewDimensionScales_t newDims{
-      NewDimensionScale<int>("nlocs", sectionSize, Unlimited),
-      NewDimensionScale<int>("nchans", numChans)
+      NewDimensionScale<int>("Location", sectionSize, Unlimited),
+      NewDimensionScale<int>("Channel", numChans)
     };
 
-    // Construct an ObsGroup object, with 2 dimensions nlocs, nchans, and attach
+    // Construct an ObsGroup object, with 2 dimensions Location, Channel, and attach
     // the backend we constructed above. Under the hood, the ObsGroup::generate function
     // initializes the dimension coordinate values to index numbering 1..n. This can be
     // overwritten with other coordinate values if desired.
@@ -208,13 +208,13 @@ int main(int argc, char** argv) {
     // We now have the top-level group containing the two dimension scales. We need
     // Variable objects for these dimension scales later on for creating variables so
     // build those now.
-    ioda::Variable nlocsVar  = og.vars["nlocs"];
-    ioda::Variable nchansVar = og.vars["nchans"];
+    ioda::Variable LocationVar  = og.vars["Location"];
+    ioda::Variable ChannelVar = og.vars["Channel"];
 
     // Next let's create the variables. The variable names should be specified using the
-    // hierarchy as described above. For example, the variable brightness_temperature
-    // in the group ObsValue is specified in a string as "ObsValue/brightness_temperature".
-    string tbName  = "ObsValue/brightness_temperature";
+    // hierarchy as described above. For example, the variable brightnessTemperature
+    // in the group ObsValue is specified in a string as "ObsValue/brightnessTemperature".
+    string tbName  = "ObsValue/brightnessTemperature";
     string latName = "MetaData/latitude";
     string lonName = "MetaData/longitude";
 
@@ -227,18 +227,18 @@ int main(int argc, char** argv) {
 
     // Create the variables. Note the use of the createWithScales function. This should
     // always be used when working with an ObsGroup object.
-    Variable tbVar  = og.vars.createWithScales<float>(tbName, {nlocsVar, nchansVar}, float_params);
-    Variable latVar = og.vars.createWithScales<float>(latName, {nlocsVar}, float_params);
-    Variable lonVar = og.vars.createWithScales<float>(lonName, {nlocsVar}, float_params);
+    Variable tbVar  = og.vars.createWithScales<float>(tbName, {LocationVar, ChannelVar}, float_params);
+    Variable latVar = og.vars.createWithScales<float>(latName, {LocationVar}, float_params);
+    Variable lonVar = og.vars.createWithScales<float>(lonName, {LocationVar}, float_params);
 
     // Add attributes to variables. In this example, we are adding enough attribute
-    // information to allow Panoply to be able to plot the ObsValue/brightness_temperature
+    // information to allow Panoply to be able to plot the ObsValue/brightnessTemperature
     // variable. Note the "coordinates" attribute on tbVar. It is sufficient to just
     // give the variable names (without the group structure) to Panoply (which apparently
     // searches the entire group structure for these names). If you want to follow this
     // example in your code, just give the variable names without the group prefixes
     // to insulate your code from any subsequent group structure changes that might occur.
-    tbVar.atts.add<std::string>("coordinates", {"longitude latitude nchans"}, {1})
+    tbVar.atts.add<std::string>("coordinates", {"longitude latitude Channel"}, {1})
       .add<std::string>("long_name", {"ficticious brightness temperature"}, {1})
       .add<std::string>("units", {"K"}, {1})
       .add<float>("valid_range", {100.0, 400.0}, {2});
@@ -292,18 +292,18 @@ int main(int argc, char** argv) {
         sectionCount = numLocs - sectionStart;
       }
 
-      // Figure out the new size for the nlocs dimension
-      Dimensions nlocsDims = nlocsVar.getDimensions();
-      Dimensions_t nlocsNewSize
-        = (isection == 1) ? sectionCount : nlocsDims.dimsCur[0] + sectionCount;
+      // Figure out the new size for the Location dimension
+      Dimensions LocationDims = LocationVar.getDimensions();
+      Dimensions_t LocationNewSize
+        = (isection == 1) ? sectionCount : LocationDims.dimsCur[0] + sectionCount;
 
       // Print out stats so you can see what's going on
       std::cout << std::setw(fwidth) << isection << std::setw(fwidth) << sectionStart
-                << std::setw(fwidth) << sectionCount << std::setw(fwidth) << nlocsNewSize
+                << std::setw(fwidth) << sectionCount << std::setw(fwidth) << LocationNewSize
                 << std::endl;
 
-      // Resize the nlocs dimension
-      og.resize({std::pair<Variable, Dimensions_t>(nlocsVar, nlocsNewSize)});
+      // Resize the Location dimension
+      og.resize({std::pair<Variable, Dimensions_t>(LocationVar, LocationNewSize)});
 
       // Create selection objects for transferring the data
       // We'll use the HDF5 hyperslab style of selection which denotes a start index
@@ -318,7 +318,7 @@ int main(int argc, char** argv) {
       std::vector<Dimensions_t> counts(1, sectionCount);
 
       Selection feSelect;
-      feSelect.extent({nlocsNewSize}).select({SelectionOperator::SET, starts, counts});
+      feSelect.extent({LocationNewSize}).select({SelectionOperator::SET, starts, counts});
       Selection beSelect;
       beSelect.select({SelectionOperator::SET, starts, counts});
 
@@ -331,7 +331,7 @@ int main(int argc, char** argv) {
       counts.push_back(numChans);
 
       Selection feSelect2D;
-      feSelect2D.extent({nlocsNewSize, numChans}).select({SelectionOperator::SET, starts, counts});
+      feSelect2D.extent({LocationNewSize, numChans}).select({SelectionOperator::SET, starts, counts});
       Selection beSelect2D;
       beSelect2D.select({SelectionOperator::SET, starts, counts});
 
@@ -342,22 +342,22 @@ int main(int argc, char** argv) {
     }
 
     // The ObsGroup::generate program has, under the hood, automatically assigned
-    // the coordinate values for nlocs and nchans dimension scale variables. The
-    // auto-assignment uses the values 1..n upon creation. Since we resized nlocs,
+    // the coordinate values for Location and Channel dimension scale variables. The
+    // auto-assignment uses the values 1..n upon creation. Since we resized Location,
     // the coordinates at this point will be set to 1..sectionSize followed by all
     // zeros to the end of the variable. This can be addressed two ways:
     //
-    //    1. In the above loop, add a write to the nlocs variable with the corresponding
+    //    1. In the above loop, add a write to the Location variable with the corresponding
     //       coordinate values for each section.
     //    2. In the case where you simply want 1..n as the coordinate values, wait
     //       until transferring all the sections of variable data, check the size
-    //       of the nlocs variable, and write the entire 1..n values to the variable.
+    //       of the Location variable, and write the entire 1..n values to the variable.
     //
     // We'll do option 2 here
-    int nlocsSize = gsl::narrow<int>(nlocsVar.getDimensions().dimsCur[0]);
-    std::vector<int> nlocsVals(nlocsSize);
-    std::iota(nlocsVals.begin(), nlocsVals.end(), 1);
-    nlocsVar.write(nlocsVals);
+    int LocationSize = gsl::narrow<int>(LocationVar.getDimensions().dimsCur[0]);
+    std::vector<int> LocationVals(LocationSize);
+    std::iota(LocationVals.begin(), LocationVals.end(), 1);
+    LocationVar.write(LocationVals);
 
     // Done!
   } catch (const std::exception& e) {

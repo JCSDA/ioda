@@ -78,7 +78,7 @@ std::list<ioda::Named_Variable> identifyDimensionScales(
     // Only 1-D variables can be scales. Also pre-filter based on name.
     if (dims.dimensionality == 1 && isPossiblyScale(vname)) {
         if (v.isDimensionScale()) {
-            (vname == "nlocs")   // true / false ternary
+            (vname == "Location")   // true / false ternary
             ? dimensionScales.push_front(ioda::Named_Variable(vname, v))
             : dimensionScales.push_back(ioda::Named_Variable(vname, v));
         }

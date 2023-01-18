@@ -60,9 +60,9 @@ class ObsFrame : public util::Printable {
     /// \brief return number of maximum variable size (along first dimension)
     Dimensions_t maxVarSize() const {return max_var_size_;}
 
-    /// \brief return true if variable's first dimension is nlocs
+    /// \brief return true if variable's first dimension is Location
     /// \param varName variable name to check
-    bool isVarDimByNlocs(const std::string & varName) const;
+    bool isVarDimByLocation(const std::string & varName) const;
 
     /// \brief return number of locations
     std::size_t frameNumLocs() const {return nlocs_;}
@@ -109,11 +109,11 @@ class ObsFrame : public util::Printable {
     /// \param varName variable name
     virtual Dimensions_t frameCount(const std::string & varName) = 0;
 
-    /// \brief return adjusted nlocs frame start
-    virtual Dimensions_t adjNlocsFrameStart() const {return 0;}
+    /// \brief return adjusted Location frame start
+    virtual Dimensions_t adjLocationFrameStart() const {return 0;}
 
-    /// \brief return adjusted nlocs frame count
-    virtual Dimensions_t adjNlocsFrameCount() const {return 0;}
+    /// \brief return adjusted Location frame count
+    virtual Dimensions_t adjLocationFrameCount() const {return 0;}
 
     /// \brief create selection object for accessing a memory buffer
     /// \param varShape dimension sizes for variable being transferred
@@ -206,13 +206,13 @@ class ObsFrame : public util::Printable {
 
     //------------------ protected functions ----------------------------------
 
-    /// \brief internal implementation of isVarDimByNlocs
+    /// \brief internal implementation of isVarDimByLocation
     /// \details This function checks to see if the first dimension of the given variable
-    /// (varName) is the nlocs dimension, and if so returns true.
+    /// (varName) is the Location dimension, and if so returns true.
     /// \param varName Name of variable to check
     /// \param varDimMap Map with each variable and its associated dimensions
-    bool isVarDimByNlocs_Impl(const std::string & varName,
-                              const VarUtils::VarDimMap & varDimMap) const;
+    bool isVarDimByLocation_Impl(const std::string & varName,
+                                 const VarUtils::VarDimMap & varDimMap) const;
 
     /// \brief create selection object for accessing an ObsIo variable
     /// \param varShape dimension sizes for variable being transferred

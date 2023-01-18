@@ -17,10 +17,10 @@ extend obs space, Halo, 71 entries per averaged profile:
         type: H5File
         obsfile: Data/testinput_tier_1/sondes_obs_2018041500_m.nc4
       obsgrouping:
-        group variables: [ "station_id" ]
-        sort variable: "air_pressure"
+        group variables: [ "stationIdentification" ]
+        sort variable: "pressure"
         sort order: "descending"
-    simulated variables: [air_temperature]
+    simulated variables: [airTemperature]
     distribution:
       name: "Halo"
       radius: 13000000 # 13,000 km, so each halo covers most but not all of the Earth's surface
@@ -49,7 +49,7 @@ extend obs space, Halo, 71 entries per averaged profile:
     '43346', '45004', '47138', '47418', '52267', '54342', '54857', '57083', '57749',
     '58633', '59663', '64400', '71917', '72340', '72469', '72694', '82281', '83612',
     '83899', '87344', '91680', '94332', '94995', '96195', '96253', '96935', '97530']
-  expected air_pressure: [101100.0, 101900.0, 99600.0, 27400.0, 93600.0, 28000.0, 94100.0, 100000.0, 100700.0,
+  expected pressure: [101100.0, 101900.0, 99600.0, 27400.0, 93600.0, 28000.0, 94100.0, 100000.0, 100700.0,
     100700.0, 100600.0, 25500.0, 25000.0, 90900.0, 101000.0, 101000.0, 100900.0, 99200.0,
     15000.0, 15000.0, 101300.0, 100600.0, 99100.0, 21500.0, 101400.0, 100700.0, 95400.0,
     8090.0, 96700.0, 101500.0, 97500.0, 100900.0, 100398.9, 100500.0, 100800.0, 98032.91]

@@ -3,7 +3,7 @@ engine factory tests:
     # HDF5 file backend in read mode
     - case:
         name: "HDF5 file in read mode"
-        simulated variables: [ "air_temperature" ]
+        simulated variables: [ "airTemperature" ]
         obsdatain:
           engine:
             type: H5File
@@ -15,7 +15,7 @@ engine factory tests:
     # HDF5 file backend in write mode
     - case:
         name: "HDF5 file in write mode"
-        simulated variables: [ "air_temperature" ]
+        simulated variables: [ "airTemperature" ]
         obsdataout:
           engine:
             type: H5File

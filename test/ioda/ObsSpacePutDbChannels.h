@@ -89,20 +89,20 @@ CASE("ioda/ObsSpace/testPutDb") {
       const ioda::Group group = ioda::Engines::HH::openFile(
             fileName, ioda::Engines::BackendOpenModes::Read_Only);
 
-      const Variable nlocsVar = group.vars.open("nlocs");
-      const Dimensions_t nlocs = nlocsVar.getDimensions().dimsCur[0];
+      const Variable LocationVar = group.vars.open("Location");
+      const Dimensions_t nlocs = LocationVar.getDimensions().dimsCur[0];
       EXPECT_EQUAL(nlocs, expectedNlocs);
 
       std::vector<float> testVec1(nlocs), testVec2(nlocs);
       std::iota(testVec1.begin(), testVec1.end(), testVec1Start);
       std::iota(testVec2.begin(), testVec2.end(), testVec2Start);
 
-      if (group.vars.exists("nchans")) {
-        const Variable nchansVar = group.vars.open("nchans");
-        const Dimensions_t nchans = nchansVar.getDimensions().dimsCur[0];
+      if (group.vars.exists("Channel")) {
+        const Variable ChannelVar = group.vars.open("Channel");
+        const Dimensions_t nchans = ChannelVar.getDimensions().dimsCur[0];
         EXPECT_EQUAL(nchans, expectedNchans);
 
-        const std::vector<int> channels = nchansVar.readAsVector<int>();
+        const std::vector<int> channels = ChannelVar.readAsVector<int>();
         const std::size_t channel2Index =
             std::find(channels.begin(), channels.end(), 2) - channels.begin();
         const std::size_t channel4Index =

@@ -72,11 +72,11 @@ class ObsFrameRead : public ObsFrame, private util::ObjectCounter<ObsFrameRead> 
     /// \param varName variable name
     Dimensions_t frameCount(const std::string & varName) override;
 
-    /// \brief return adjusted nlocs frame start
-    Dimensions_t adjNlocsFrameStart() const override {return adjusted_nlocs_frame_start_;}
+    /// \brief return adjusted Location frame start
+    Dimensions_t adjLocationFrameStart() const override {return adjusted_location_frame_start_;}
 
-    /// \brief return adjusted nlocs frame count
-    Dimensions_t adjNlocsFrameCount() const override {return adjusted_nlocs_frame_count_;}
+    /// \brief return adjusted Location frame count
+    Dimensions_t adjLocationFrameCount() const override {return adjusted_location_frame_count_;}
 
     /// \brief read a frame variable
     /// \details It's possible for some variables to not be included in the
@@ -112,15 +112,15 @@ class ObsFrameRead : public ObsFrame, private util::ObjectCounter<ObsFrameRead> 
     /// \Brief Distribution Name
     std::string distname_;
 
-    /// \brief current frame start for variable dimensioned along nlocs
+    /// \brief current frame start for variable dimensioned along Location
     /// \details This data member is keeping track of the frame start for
     /// the contiguous storage where the obs source data will be moved to.
     /// Note that the start_ data member is keeping track of the frame start
     /// for the obs source itself.
-    Dimensions_t adjusted_nlocs_frame_start_;
+    Dimensions_t adjusted_location_frame_start_;
 
-    /// \brief current frame count for variable dimensioned along nlocs
-    Dimensions_t adjusted_nlocs_frame_count_;
+    /// \brief current frame count for variable dimensioned along Location
+    Dimensions_t adjusted_location_frame_count_;
 
     /// \brief map for obs grouping via string keys
     std::map<std::string, std::size_t> obs_grouping_;
@@ -254,7 +254,7 @@ class ObsFrameRead : public ObsFrame, private util::ObjectCounter<ObsFrameRead> 
             }
             if (!known_mem_selections_.count(dims)) {
                 known_mem_selections_[dims] = createMemSelection(varShape, frameCount);
-                if (isVarDimByNlocs(varName)) {
+                if (isVarDimByLocation(varName)) {
                   known_frame_selections_[dims] =
                       createIndexedFrameSelection(varShape);
                 } else {

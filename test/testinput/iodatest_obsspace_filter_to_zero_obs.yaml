@@ -5,7 +5,7 @@ window end: "2010-04-15T03:00:00Z"
 observations:
 - obs space:
     name: "AMSUA NOAA19"
-    simulated variables: ['brightness_temperature']
+    simulated variables: ['brightnessTemperature']
     channels: 1-15
     obsdatain:
       engine:
@@ -33,17 +33,17 @@ observations:
       - 1.0e-11
     variables for putget test:
       # have to use float variables, and only one channel at a time
-      - name: "brightness_temperature"
+      - name: "brightnessTemperature"
         group: "ObsValue"
         channels: [ 4 ]
 
-      - name: "brightness_temperature"
+      - name: "brightnessTemperature"
         group: "ObsValue"
         channels: [ 11 ]
 
 - obs space:
     name: "Radiosonde"
-    simulated variables: ['air_temperature']
+    simulated variables: ['airTemperature']
     obsdatain:
       engine:
         type: H5File
@@ -67,17 +67,17 @@ observations:
         type: "float"
         norm: 0.0
 
-      - name: "surface_pressure"
+      - name: "stationPressure"
         group: "PreQC"
         type: "integer"
         norm: 0
     tolerance:
       - 1.0e-11
     variables for putget test:
-      - name: "air_temperature"
+      - name: "airTemperature"
         group: "ObsValue"
         channels: []
 
-      - name: "specific_humidity"
+      - name: "specificHumidity"
         group: "ObsValue"
         channels: []

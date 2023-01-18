@@ -64,12 +64,12 @@ namespace ioda {
     };
 
     /// \brief Enum type for obs dimension ids
-    /// \details The first two dimension names for now are nlocs and nchans. This will
+    /// \details The first two dimension names for now are Location and Channel. This will
     /// likely expand in the future, so make sure that this enum class and the following
     /// initializer function stay in sync.
     enum class ObsDimensionId {
-        Nlocs,
-        Nchans
+        Location,
+        Channel
     };
 
     /// \brief Wrapper class that maps dimension ids to names.
@@ -202,11 +202,11 @@ namespace ioda {
         /// \brief return the number of locations in the obs space.
         /// Note that nlocs may be smaller than global unique nlocs due to distribution of obs
         /// across multiple process elements.
-        inline size_t nlocs() const { return get_dim_size(ObsDimensionId::Nlocs); }
+        inline size_t nlocs() const { return get_dim_size(ObsDimensionId::Location); }
 
         /// \brief return the number of channels in the container. If this is not a radiance
         /// obs type, then this will return zero.
-        inline size_t nchans() const { return get_dim_size(ObsDimensionId::Nchans); }
+        inline size_t nchans() const { return get_dim_size(ObsDimensionId::Channel); }
 
         /// \brief return the number of records in the obs space container
         /// \details This is the number of sets of locations after applying the
@@ -373,25 +373,25 @@ namespace ioda {
         /// \param dimList Vector of dimension names (for creating variable if needed)
         void put_db(const std::string & group, const std::string & name,
                     const std::vector<int> & vdata,
-                    const std::vector<std::string> & dimList = { "nlocs" });
+                    const std::vector<std::string> & dimList = { "Location" });
         void put_db(const std::string & group, const std::string & name,
                     const std::vector<int64_t> & vdata,
-                    const std::vector<std::string> & dimList = { "nlocs" });
+                    const std::vector<std::string> & dimList = { "Location" });
         void put_db(const std::string & group, const std::string & name,
                     const std::vector<float> & vdata,
-                    const std::vector<std::string> & dimList = { "nlocs" });
+                    const std::vector<std::string> & dimList = { "Location" });
         void put_db(const std::string & group, const std::string & name,
                     const std::vector<double> & vdata,
-                    const std::vector<std::string> & dimList = { "nlocs" });
+                    const std::vector<std::string> & dimList = { "Location" });
         void put_db(const std::string & group, const std::string & name,
                     const std::vector<std::string> & vdata,
-                    const std::vector<std::string> & dimList = { "nlocs" });
+                    const std::vector<std::string> & dimList = { "Location" });
         void put_db(const std::string & group, const std::string & name,
                     const std::vector<util::DateTime> & vdata,
-                    const std::vector<std::string> & dimList = { "nlocs" });
+                    const std::vector<std::string> & dimList = { "Location" });
         void put_db(const std::string & group, const std::string & name,
                     const std::vector<bool> & vdata,
-                    const std::vector<std::string> & dimList = { "nlocs" });
+                    const std::vector<std::string> & dimList = { "Location" });
 
         /// @}
         /// @name Record index and sorting functions
@@ -539,10 +539,10 @@ namespace ioda {
         /// \param obsIo obs source object
         void initFromObsSource(ObsFrameRead & obsFrame);
 
-        /// \brief resize along nlocs dimension
-        /// \param nlocsSize new size to either append or reset
-        /// \param append when true append nlocsSize to current size, otherwise reset size
-        void resizeNlocs(const Dimensions_t nlocsSize, const bool append);
+        /// \brief resize along Location dimension
+        /// \param LocationSize new size to either append or reset
+        /// \param append when true append LocationSize to current size, otherwise reset size
+        void resizeLocation(const Dimensions_t LocationSize, const bool append);
 
         /// \brief read in values for variable from obs source
         /// \param obsFrame obs frame object
@@ -572,7 +572,7 @@ namespace ioda {
         /// \brief load a variable from the obs_group_ object
         /// \details This function will load data from the obs_group_ object into
         ///          the memory buffer (vector) varValues. The chanSelect parameter
-        ///          is only used when the variable is 2D radiance data (nlocs X nchans),
+        ///          is only used when the variable is 2D radiance data (Location X Channel),
         ///          and contains a list of channel numbers to be selected from the
         ///          obs_group_ variable.
         /// \param group Name of Group in obs_group_
@@ -595,21 +595,21 @@ namespace ioda {
         /// \param dimList Vector of dimension names (for creating variable if needed)
         ///
         /// If the group `group` does not contain a variable with the specified name, but this name
-        /// has the form <string>_<integer> and `obs_group_` contains an `nchans` dimension, this
+        /// has the form <string>_<integer> and `obs_group_` contains an `Channel` dimension, this
         /// function will save `varValues` in the slice of variable <string> corresponding to
         /// channel <integer>. If channel <integer> does not exist or the variable <string> already
-        /// exists but is not associated with the `nchans` dimension, an exception will be thrown.
+        /// exists but is not associated with the `Channel` dimension, an exception will be thrown.
         template<typename VarType>
         void saveVar(const std::string & group, std::string name,
                      const std::vector<VarType> & varValues,
                      const std::vector<std::string> & dimList);
 
         /// \brief Create selections of slices of the variable \p variable along dimension
-        /// \p nchansDimIndex corresponding to channels \p channels.
+        /// \p ChannelDimIndex corresponding to channels \p channels.
         ///
         /// \returns The number of elements in each selection.
         std::size_t createChannelSelections(const Variable & variable,
-                                            std::size_t nchansDimIndex,
+                                            std::size_t ChannelDimIndex,
                                             const std::vector<int> & channels,
                                             Selection & memSelect,
                                             Selection & obsGroupSelect) const;

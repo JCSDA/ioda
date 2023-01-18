@@ -6,7 +6,7 @@ observations:
 
 - obs space:
     name: "AMSUA NOAA19"
-    simulated variables: ['brightness_temperature']
+    simulated variables: ['brightnessTemperature']
     channels: 1,2,4,5
     obsdatain:
       engine:
@@ -27,8 +27,8 @@ observations:
 
 - obs space:
     name: "Radiosonde"
-    simulated variables: ['temperature']
-    observed variables: ['temperature']
+    simulated variables: ['airTemperature']
+    observed variables: ['airTemperature']
     obsdatain:
       engine:
         type: H5File

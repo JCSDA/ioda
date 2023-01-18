@@ -44,7 +44,7 @@ void storeGenData(const std::vector<float> & latVals,
     //     ObsError group
     //        list of simulated variables in obsVarNames
 
-    Variable nlocsVar = obsGroup.vars["nlocs"];
+    Variable LocationVar = obsGroup.vars["Location"];
 
     const float missingFloat = util::missingValue(missingFloat);
     const std::string missingString("missing");
@@ -65,20 +65,20 @@ void storeGenData(const std::vector<float> & latVals,
     std::string dtName("MetaData/dateTime");
 
     // Create, write and attach units attributes to the variables
-    obsGroup.vars.createWithScales<float>(latName, { nlocsVar }, float_params)
+    obsGroup.vars.createWithScales<float>(latName, { LocationVar }, float_params)
         .write<float>(latVals)
         .atts.add<std::string>("units", std::string("degrees_east"));
-    obsGroup.vars.createWithScales<float>(lonName, { nlocsVar }, float_params)
+    obsGroup.vars.createWithScales<float>(lonName, { LocationVar }, float_params)
         .write<float>(lonVals)
         .atts.add<std::string>("units", std::string("degrees_north"));
-    obsGroup.vars.createWithScales<int64_t>(dtName, { nlocsVar }, int64_params)
+    obsGroup.vars.createWithScales<int64_t>(dtName, { LocationVar }, int64_params)
         .write<int64_t>(dts)
         .atts.add<std::string>("units", epoch);
 
     for (std::size_t i = 0; i < obsVarNames.size(); ++i) {
         std::string varName = std::string("ObsError/") + obsVarNames[i];
         std::vector<float> obsErrVals(latVals.size(), obsErrors[i]);
-        obsGroup.vars.createWithScales<float>(varName, { nlocsVar }, float_params)
+        obsGroup.vars.createWithScales<float>(varName, { LocationVar }, float_params)
             .write<float>(obsErrVals);
     }
 }

@@ -5,7 +5,7 @@ observations:
 - obs space:
     name: "Radiosonde_1var"
     simulated variables:
-    - air_temperature
+    - airTemperature
     obsdatain:
       engine:
         type: H5File
@@ -26,8 +26,8 @@ observations:
 - obs space:
     name: "Radiosonde_2vars"
     simulated variables:
-    - air_temperature
-    - specific_humidity
+    - airTemperature
+    - specificHumidity
     obsdatain:
       engine:
         type: H5File
@@ -44,10 +44,10 @@ observations:
 - obs space:
     name: "Radiosonde_4vars"
     simulated variables:
-    - air_temperature
-    - specific_humidity
-    - eastward_wind
-    - northward_wind
+    - airTemperature
+    - specificHumidity
+    - windEastward
+    - windNorthward
     obsdatain:
       engine:
         type: H5File

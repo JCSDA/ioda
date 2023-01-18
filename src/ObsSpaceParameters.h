@@ -49,8 +49,8 @@ class ObsExtendParameters : public oops::Parameters {
     /// Variables that are filled with non-missing values when producing companion profiles.
     oops::Parameter<std::vector<std::string>> nonMissingExtendedVars
         {"variables filled with non-missing values",
-            { "latitude", "longitude", "dateTime", "air_pressure",
-                "air_pressure_levels", "station_id" },
+            { "latitude", "longitude", "dateTime", "pressure",
+                "air_pressure_levels", "stationIdentification" },
             this};
 };
 

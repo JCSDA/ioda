@@ -170,7 +170,7 @@ void openCreateEpochDtimeVar(const std::string & groupName, const std::string & 
     epochDtVar = destVarContainer.open(fullVarName);
   } else {
     // Variable does not exist, need to create it. Use the newEpoch for the units attribute.
-    std::vector<Variable> dimVars(1, destVarContainer.open("nlocs"));
+    std::vector<Variable> dimVars(1, destVarContainer.open("Location"));
     epochDtVar = destVarContainer.createWithScales<int64_t>(fullVarName, dimVars);
     std::string epochString = "seconds since " + newEpoch.toString();
     epochDtVar.atts.add("units", epochString);

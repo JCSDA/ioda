@@ -6,7 +6,7 @@ observations:
 
 - obs space:
     name: "Radiosonde"
-    simulated variables: ['temperature']
+    simulated variables: ['airTemperature']
     obsdatain:
       engine:
         type: H5File
@@ -19,12 +19,12 @@ observations:
   test data:
     nlocs: 974
     nvars: 64
-    ndvars: 5
+    ndvars: 2
     max var size: 974
 
 - obs space:
     name: "Synthetic Random"
-    simulated variables: [air_temperature, eastward_wind]
+    simulated variables: [airTemperature, windEastward]
     obsdatain:
       engine:
         type: GenRandom
@@ -43,7 +43,7 @@ observations:
 
 - obs space:
     name: "Synthetic List"
-    simulated variables: [air_temperature, eastward_wind]
+    simulated variables: [airTemperature, windEastward]
     obsdatain:
       engine:
         type: GenList

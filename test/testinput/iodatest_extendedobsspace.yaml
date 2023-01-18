@@ -15,10 +15,10 @@ extend obs space, RoundRobin, 71 entries per averaged profile:
         type: H5File
         obsfile: Data/testinput_tier_1/sondes_obs_2018041500_m.nc4
       obsgrouping:
-        group variables: [ "station_id" ]
-        sort variable: "air_pressure"
+        group variables: [ "stationIdentification" ]
+        sort variable: "pressure"
         sort order: "descending"
-    simulated variables: [air_temperature]
+    simulated variables: [airTemperature]
     distribution:
       name: "RoundRobin"
     extension:
@@ -45,7 +45,7 @@ extend obs space, RoundRobin, 71 entries per averaged profile:
     '43346', '45004', '47138', '47418', '52267', '54342', '54857', '57083', '57749',
     '58633', '59663', '64400', '71917', '72340', '72469', '72694', '82281', '83612',
     '83899', '87344', '91680', '94332', '94995', '96195', '96253', '96935', '97530']
-  expected air_pressure: &expected_air_pressure [101100.0, 101900.0, 99600.0, 27400.0, 93600.0, 28000.0, 94100.0, 100000.0, 100700.0,
+  expected pressure: &expected_pressure [101100.0, 101900.0, 99600.0, 27400.0, 93600.0, 28000.0, 94100.0, 100000.0, 100700.0,
     100700.0, 100600.0, 25500.0, 25000.0, 90900.0, 101000.0, 101000.0, 100900.0, 99200.0,
     15000.0, 15000.0, 101300.0, 100600.0, 99100.0, 21500.0, 101400.0, 100700.0, 95400.0,
     8090.0, 96700.0, 101500.0, 97500.0, 100900.0, 100398.9, 100500.0, 100800.0, 98032.91]
@@ -68,10 +68,10 @@ extend obs space, InefficientDistribution, 71 entries per averaged profile:
         type: H5File
         obsfile: Data/testinput_tier_1/sondes_obs_2018041500_m.nc4
       obsgrouping:
-        group variables: [ "station_id" ]
-        sort variable: "air_pressure"
+        group variables: [ "stationIdentification" ]
+        sort variable: "pressure"
         sort order: "descending"
-    simulated variables: [air_temperature]
+    simulated variables: [airTemperature]
     distribution:
       name: "InefficientDistribution"
     extension:
@@ -95,7 +95,7 @@ extend obs space, InefficientDistribution, 71 entries per averaged profile:
   expected gnlocs (3 PE, rank 2): 3530
   expected nrecs (3 PE, rank 2): 72
   unique statids: *unique_statids
-  expected air_pressure: *expected_air_pressure
+  expected pressure: *expected_pressure
   expected latitude: *expected_latitude
   expected longitude: *expected_longitude
 
@@ -109,10 +109,10 @@ extend obs space, 0 entries per averaged profile:
         type: H5File
         obsfile: Data/testinput_tier_1/sondes_obs_2018041500_m.nc4
       obsgrouping:
-        group variables: [ "station_id" ]
-        sort variable: "air_pressure"
+        group variables: [ "stationIdentification" ]
+        sort variable: "pressure"
         sort order: "descending"
-    simulated variables: [air_temperature]
+    simulated variables: [airTemperature]
     extension:
       allocate companion records with length: 0
   # the test exits if nlevs <= 0, so there are no expected values
@@ -127,10 +127,10 @@ extend obs space, RoundRobin, 71 entries per averaged profile, alternative data 
         type: H5File
         obsfile: Data/testinput_tier_1/sondes_obs_2018041500_s.nc4
       obsgrouping:
-        group variables: [ "station_id" ]
-        sort variable: "air_pressure"
+        group variables: [ "stationIdentification" ]
+        sort variable: "pressure"
         sort order: "descending"
-    simulated variables: [air_temperature]
+    simulated variables: [airTemperature]
     distribution:
       name: "RoundRobin"
     extension:
@@ -154,9 +154,9 @@ extend obs space, RoundRobin, 71 entries per averaged profile, alternative data 
   expected gnlocs (3 PE, rank 2): 375
   expected nrecs (3 PE, rank 2): 2
   unique statids: ['47418', '54857', '94332', '96935']
-  expected air_pressure: [25000.0, 101000.0, 97500.0, 100800.0]
+  expected pressure: [25000.0, 101000.0, 97500.0, 100800.0]
   expected latitude: [43.21716, 36.07, -20.68, -7.37]
-  expected longitude: [144.99133, 120.33, 139.48, 112.77]
+  expected longitude: [144.9913, 120.33, 139.48, 112.77]
 
 extend obs space, RoundRobin, 71 entries per averaged profile, only pressure filled with non-missing values:
   window begin: 2018-04-14T20:30:00Z
@@ -168,15 +168,15 @@ extend obs space, RoundRobin, 71 entries per averaged profile, only pressure fil
         type: H5File
         obsfile: Data/testinput_tier_1/sondes_obs_2018041500_m.nc4
       obsgrouping:
-        group variables: [ "station_id" ]
-        sort variable: "air_pressure"
+        group variables: [ "stationIdentification" ]
+        sort variable: "pressure"
         sort order: "descending"
-    simulated variables: [air_temperature]
+    simulated variables: [airTemperature]
     distribution:
       name: "RoundRobin"
     extension:
       allocate companion records with length: 71
-      variables filled with non-missing values: [air_pressure]
+      variables filled with non-missing values: [pressure]
   expected nlocs (1 PE, rank 0): 3530
   expected gnlocs (1 PE, rank 0): 3530
   expected nrecs (1 PE, rank 0): 72
@@ -196,7 +196,7 @@ extend obs space, RoundRobin, 71 entries per averaged profile, only pressure fil
   expected gnlocs (3 PE, rank 2): 3530
   expected nrecs (3 PE, rank 2): 24
   unique statids: *unique_statids
-  expected air_pressure: *expected_air_pressure
+  expected pressure: *expected_pressure
   expected latitude: *expected_latitude
   expected longitude: *expected_longitude
 
@@ -210,10 +210,10 @@ extend obs space, RoundRobin, 71 entries per averaged profile, no variables fill
         type: H5File
         obsfile: Data/testinput_tier_1/sondes_obs_2018041500_m.nc4
       obsgrouping:
-        group variables: [ "station_id" ]
-        sort variable: "air_pressure"
+        group variables: [ "stationIdentification" ]
+        sort variable: "pressure"
         sort order: "descending"
-    simulated variables: [air_temperature]
+    simulated variables: [airTemperature]
     distribution:
       name: "RoundRobin"
     extension:
@@ -238,6 +238,6 @@ extend obs space, RoundRobin, 71 entries per averaged profile, no variables fill
   expected gnlocs (3 PE, rank 2): 3530
   expected nrecs (3 PE, rank 2): 24
   unique statids: *unique_statids
-  expected air_pressure: *expected_air_pressure
+  expected pressure: *expected_pressure
   expected latitude: *expected_latitude
   expected longitude: *expected_longitude

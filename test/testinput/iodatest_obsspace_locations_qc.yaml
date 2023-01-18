@@ -5,7 +5,7 @@ window end: "2020-12-15T21:00:00Z"
 observations:
 - obs space:
     name: "Locations QC (GOES ABI example)"
-    simulated variables: ['brightness_temperature']
+    simulated variables: ['brightnessTemperature']
     channels: 7-16
     obsdatain:
       engine:

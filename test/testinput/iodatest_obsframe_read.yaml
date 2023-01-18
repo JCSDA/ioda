@@ -6,7 +6,7 @@ observations:
 
 - obs space:
     name: "Radiosonde"
-    simulated variables: ['temperature']
+    simulated variables: ['airTemperature']
     obsdatain:
       engine:
         type: H5File
@@ -15,23 +15,23 @@ observations:
   test data:
     nlocs: 974
     nvars: 64
-    ndvars: 5
+    ndvars: 2
     max var size: 974
     read variables:
-      - name: "MetaData/air_pressure"
+      - name: "MetaData/pressure"
         type: "float"
         value0: [ 12900.0, 39400.0, 45800.0, 59830.0, 13800.0 ]
       - name: "MetaData/dateTime"
         type: "int64"
         value0: [ 11274, 10901, 9345, 9048, 13020 ]
-      - name: "PreQC/northward_wind"
+      - name: "PreQC/windNorthward"
         type: "int"
         value0: [ 2, 2, -2147483643, 2, 2 ]
     tolerance: 1.0e-6
 
 - obs space:
     name: "Synthetic Random"
-    simulated variables: [air_temperature, eastward_wind]
+    simulated variables: [airTemperature, windEastward]
     obsdatain:
       engine:
         type: GenRandom
@@ -54,14 +54,14 @@ observations:
       - name: "MetaData/dateTime"
         type: "int64"
         value0: [ 19008 ]
-      - name: "ObsError/air_temperature"
+      - name: "ObsError/airTemperature"
         type: "float"
         value0: [ 1.0 ]
     tolerance: 1.0e-6
 
 - obs space:
     name: "Synthetic List"
-    simulated variables: [air_temperature, eastward_wind]
+    simulated variables: [airTemperature, windEastward]
     obsdatain:
       engine:
         type: GenList
@@ -93,7 +93,7 @@ observations:
       - name: "MetaData/dateTime"
         type: "int64"
         value0: [ 240 ]
-      - name: "ObsError/eastward_wind"
+      - name: "ObsError/windEastward"
         type: "float"
         value0: [ 2.0 ]
     tolerance: 1.0e-6

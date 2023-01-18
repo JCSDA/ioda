@@ -21,7 +21,7 @@ g = ioda.Engines.HH.openFile(
     mode = ioda.Engines.BackendOpenModes.Read_Only)
 og = ioda.ObsGroup(g)
 
-tbName = "ObsValue/brightness_temperature"
+tbName = "ObsValue/brightnessTemperature"
 latName = "MetaData/latitude"
 lonName = "MetaData/longitude"
 

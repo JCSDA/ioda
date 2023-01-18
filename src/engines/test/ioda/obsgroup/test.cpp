@@ -136,7 +136,7 @@ int main(int argc, char** argv) {
 
     // Note again the ordering.
     og.vars
-      .createWithScales<float>("ObsValue/Inst_Brightness_Temperature_Uncorrected",
+      .createWithScales<float>("ObsValue/Inst_brightnessTemperature_Uncorrected",
                                {og.vars["ScanLine"], og.vars["ScanPosition"], og.vars["Channel"]},
                                params_float)
       .writeWithEigenTensor(eBTs)
@@ -148,7 +148,7 @@ int main(int argc, char** argv) {
 
     // Some tests
     Expects(!og.vars["ScanLine"].getDimensionScaleName().empty());
-    Expects(og.vars["ObsValue/Inst_Brightness_Temperature_Uncorrected"].isDimensionScaleAttached(
+    Expects(og.vars["ObsValue/Inst_brightnessTemperature_Uncorrected"].isDimensionScaleAttached(
       0, og.vars["ScanLine"]));
   } catch (const std::exception& e) {
     ioda::unwind_exception_stack(e);

@@ -101,7 +101,7 @@ void testConstructor() {
             for (std::size_t j = 0; j < writeDimConfigs.size(); ++j) {
                 std::string dimName = writeDimConfigs[i].getString("name");
                 Dimensions_t dimSize = writeDimConfigs[i].getInt("size");
-                if (dimName == "nlocs") {
+                if (dimName == "Location") {
                     expectedNumLocs = dimSize;
                 }
             }

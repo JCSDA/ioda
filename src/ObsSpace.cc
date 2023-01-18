@@ -70,15 +70,15 @@ bool extractChannelSuffixIfPresent(const std::string &name,
 ObsDimInfo::ObsDimInfo() {
     // The following code needs to stay in sync with the ObsDimensionId enum object.
     // The entries are the standard dimension names according to the unified naming convention.
-    std::string dimName = "nlocs";
-    dim_id_name_[ObsDimensionId::Nlocs] = dimName;
-    dim_id_size_[ObsDimensionId::Nlocs] = 0;
-    dim_name_id_[dimName] = ObsDimensionId::Nlocs;
+    std::string dimName = "Location";
+    dim_id_name_[ObsDimensionId::Location] = dimName;
+    dim_id_size_[ObsDimensionId::Location] = 0;
+    dim_name_id_[dimName] = ObsDimensionId::Location;
 
-    dimName = "nchans";
-    dim_id_name_[ObsDimensionId::Nchans] = dimName;
-    dim_id_size_[ObsDimensionId::Nchans] = 0;
-    dim_name_id_[dimName] = ObsDimensionId::Nchans;
+    dimName = "Channel";
+    dim_id_name_[ObsDimensionId::Channel] = dimName;
+    dim_id_size_[ObsDimensionId::Channel] = 0;
+    dim_name_id_[dimName] = ObsDimensionId::Channel;
 }
 
 ObsDimensionId ObsDimInfo::get_dim_id(const std::string & dimName) const {
@@ -588,13 +588,13 @@ void ObsSpace::createObsGroupFromObsFrame(ObsFrameRead & obsFrame) {
         Dimensions_t maxDimSize = dimSize;
         Dimensions_t chunkSize = dimSize;
 
-        // If the dimension is nlocs, we want to avoid allocating the file's entire
+        // If the dimension is Location, we want to avoid allocating the file's entire
         // size because we could be taking a subset of the locations (MPI distribution,
         // removal of obs outside the DA window).
         //
-        // Make nlocs unlimited size, and start with its size limited by the
+        // Make Location unlimited size, and start with its size limited by the
         // max_frame_size parameter.
-        if (dimName == dim_info_.get_dim_name(ObsDimensionId::Nlocs)) {
+        if (dimName == dim_info_.get_dim_name(ObsDimensionId::Location)) {
             if (dimSize > maxFrameSize) {
                 dimSize = maxFrameSize;
             }
@@ -721,10 +721,10 @@ void ObsSpace::initFromObsSource(ObsFrameRead & obsFrame) {
     for ( ; obsFrame.frameAvailable(); obsFrame.frameNext()) {
         Dimensions_t frameStart = obsFrame.frameStart();
 
-        // Resize the nlocs dimesion according to the adjusted frame size produced
-        // genFrameIndexRecNums. The second argument is to tell resizeNlocs whether
+        // Resize the Location dimesion according to the adjusted frame size produced
+        // genFrameIndexRecNums. The second argument is to tell resizeLocation whether
         // to append or reset to the size given by the first arguemnt.
-        resizeNlocs(obsFrame.adjNlocsFrameCount(), (iframe > 1));
+        resizeLocation(obsFrame.adjLocationFrameCount(), (iframe > 1));
 
         // Clear out the selection caches
         known_fe_selections_.clear();
@@ -742,8 +742,8 @@ void ObsSpace::initFromObsSource(ObsFrameRead & obsFrame) {
             }
             Variable var = varNameObject.var;
             Dimensions_t beFrameStart;
-            if (obsFrame.isVarDimByNlocs(varName)) {
-                beFrameStart = obsFrame.adjNlocsFrameStart();
+            if (obsFrame.isVarDimByLocation(varName)) {
+                beFrameStart = obsFrame.adjLocationFrameStart();
             } else {
                 beFrameStart = frameStart;
             }
@@ -767,16 +767,16 @@ void ObsSpace::initFromObsSource(ObsFrameRead & obsFrame) {
     // Record locations and channels dimension sizes
     // The HDF library has an issue when a dimension marked UNLIMITED is queried for its
     // size a zero is returned instead of the proper current size. As a workaround for this
-    // ask the frame how many locations it kept instead of asking the nlocs dimension for
+    // ask the frame how many locations it kept instead of asking the Location dimension for
     // its size.
-    std::string nlocsName = dim_info_.get_dim_name(ObsDimensionId::Nlocs);
+    std::string LocationName = dim_info_.get_dim_name(ObsDimensionId::Location);
     std::size_t nLocs = obsFrame.frameNumLocs();
-    dim_info_.set_dim_size(ObsDimensionId::Nlocs, nLocs);
+    dim_info_.set_dim_size(ObsDimensionId::Location, nLocs);
 
-    std::string nchansName = dim_info_.get_dim_name(ObsDimensionId::Nchans);
-    if (obs_group_.vars.exists(nchansName)) {
-        std::size_t nChans = obs_group_.vars.open(nchansName).getDimensions().dimsCur[0];
-        dim_info_.set_dim_size(ObsDimensionId::Nchans, nChans);
+    std::string ChannelName = dim_info_.get_dim_name(ObsDimensionId::Channel);
+    if (obs_group_.vars.exists(ChannelName)) {
+        std::size_t nChans = obs_group_.vars.open(ChannelName).getDimensions().dimsCur[0];
+        dim_info_.set_dim_size(ObsDimensionId::Channel, nChans);
     }
 
     // Record "record" information
@@ -786,16 +786,16 @@ void ObsSpace::initFromObsSource(ObsFrameRead & obsFrame) {
 }
 
 // -----------------------------------------------------------------------------
-void ObsSpace::resizeNlocs(const Dimensions_t nlocsSize, const bool append) {
-    Variable nlocsVar = obs_group_.vars.open(dim_info_.get_dim_name(ObsDimensionId::Nlocs));
-    Dimensions_t nlocsResize;
+void ObsSpace::resizeLocation(const Dimensions_t LocationSize, const bool append) {
+    Variable LocationVar = obs_group_.vars.open(dim_info_.get_dim_name(ObsDimensionId::Location));
+    Dimensions_t LocationResize;
     if (append) {
-        nlocsResize = nlocsVar.getDimensions().dimsCur[0] + nlocsSize;
+        LocationResize = LocationVar.getDimensions().dimsCur[0] + LocationSize;
     } else {
-        nlocsResize = nlocsSize;
+        LocationResize = LocationSize;
     }
     obs_group_.resize(
-        { std::pair<Variable, Dimensions_t>(nlocsVar, nlocsResize) });
+        { std::pair<Variable, Dimensions_t>(LocationVar, LocationResize) });
 }
 
 // -----------------------------------------------------------------------------
@@ -819,22 +819,22 @@ void ObsSpace::loadVar(const std::string & group, const std::string & name,
     // Try to open the variable.
     ioda::Variable var = obs_group_.vars.open(fullVarName(groupToUse, nameToUse));
 
-    std::string nchansVarName = this->get_dim_name(ObsDimensionId::Nchans);
+    std::string ChannelVarName = this->get_dim_name(ObsDimensionId::Channel);
 
     // In the following code, assume that if a variable has channels, the
-    // nchans dimension will be the second dimension.
-    if (obs_group_.vars.exists(nchansVarName)) {
-        Variable nchansVar = obs_group_.vars.open(nchansVarName);
+    // Channel dimension will be the second dimension.
+    if (obs_group_.vars.exists(ChannelVarName)) {
+        Variable ChannelVar = obs_group_.vars.open(ChannelVarName);
         if (var.getDimensions().dimensionality > 1) {
-            if (var.isDimensionScaleAttached(1, nchansVar) && (chanSelectToUse.size() > 0)) {
-                // This variable has nchans as the second dimension, and channel
+            if (var.isDimensionScaleAttached(1, ChannelVar) && (chanSelectToUse.size() > 0)) {
+                // This variable has Channel as the second dimension, and channel
                 // selection has been specified. Build selection objects based on the
                 // channel numbers. For now, select all locations (first dimension).
-                const std::size_t nchansDimIndex = 1;
+                const std::size_t ChannelDimIndex = 1;
                 Selection memSelect;
                 Selection obsGroupSelect;
                 const std::size_t numElements = createChannelSelections(
-                      var, nchansDimIndex, chanSelectToUse, memSelect, obsGroupSelect);
+                      var, ChannelDimIndex, chanSelectToUse, memSelect, obsGroupSelect);
 
                 var.read<VarType>(varValues, memSelect, obsGroupSelect);
                 varValues.resize(numElements);
@@ -863,10 +863,10 @@ void ObsSpace::saveVar(const std::string & group, std::string name,
 
     std::vector<int> channels;
 
-    const std::string nchansVarName = this->get_dim_name(ObsDimensionId::Nchans);
-    if (group != "MetaData" && obs_group_.vars.exists(nchansVarName)) {
+    const std::string ChannelVarName = this->get_dim_name(ObsDimensionId::Channel);
+    if (group != "MetaData" && obs_group_.vars.exists(ChannelVarName)) {
         // If the variable does not already exist and its name ends with an underscore followed by
-        // a number, interpret the latter as a channel number selecting a slice of the "nchans"
+        // a number, interpret the latter as a channel number selecting a slice of the "Channel"
         // dimension.
         std::string nameToUse;
         splitChanSuffix(group, name, {}, nameToUse, channels);
@@ -878,31 +878,31 @@ void ObsSpace::saveVar(const std::string & group, std::string name,
     std::vector<std::string> dimListToUse = dimList;
     if (!obs_group_.vars.exists(fullName) && !channels.empty()) {
         // Append "channels" to the dimensions list if not already present.
-        const size_t nchansDimIndex =
-            std::find(dimListToUse.begin(), dimListToUse.end(), nchansVarName) -
+        const size_t ChannelDimIndex =
+            std::find(dimListToUse.begin(), dimListToUse.end(), ChannelVarName) -
             dimListToUse.begin();
-        if (nchansDimIndex == dimListToUse.size())
-            dimListToUse.push_back(nchansVarName);
+        if (ChannelDimIndex == dimListToUse.size())
+            dimListToUse.push_back(ChannelVarName);
     }
     Variable var = openCreateVar<VarType>(fullName, dimListToUse);
 
     if (channels.empty()) {
         var.write<VarType>(varValues);
     } else {
-        // Find the index of the nchans dimension
-        Variable nchansVar = obs_group_.vars.open(nchansVarName);
+        // Find the index of the Channel dimension
+        Variable ChannelVar = obs_group_.vars.open(ChannelVarName);
         std::vector<std::vector<Named_Variable>> dimScales =
-            var.getDimensionScaleMappings({Named_Variable(nchansVarName, nchansVar)});
-        size_t nchansDimIndex = std::find_if(dimScales.begin(), dimScales.end(),
+            var.getDimensionScaleMappings({Named_Variable(ChannelVarName, ChannelVar)});
+        size_t ChannelDimIndex = std::find_if(dimScales.begin(), dimScales.end(),
                                              [](const std::vector<Named_Variable> &x)
                                              { return !x.empty(); }) - dimScales.begin();
-        if (nchansDimIndex == dimScales.size())
+        if (ChannelDimIndex == dimScales.size())
             throw eckit::UserError("Variable " + fullName +
                                    " is not indexed by channel numbers", Here());
 
         Selection memSelect;
         Selection obsGroupSelect;
-        createChannelSelections(var, nchansDimIndex, channels,
+        createChannelSelections(var, ChannelDimIndex, channels,
                                 memSelect, obsGroupSelect);
         var.write<VarType>(varValues, memSelect, obsGroupSelect);
     }
@@ -911,7 +911,7 @@ void ObsSpace::saveVar(const std::string & group, std::string name,
 // -----------------------------------------------------------------------------
 
 std::size_t ObsSpace::createChannelSelections(const Variable & variable,
-                                             std::size_t nchansDimIndex,
+                                             std::size_t ChannelDimIndex,
                                              const std::vector<int> & channels,
                                              Selection & memSelect,
                                              Selection & obsGroupSelect) const {
@@ -934,7 +934,7 @@ std::size_t ObsSpace::createChannelSelections(const Variable & variable,
     std::vector<std::vector<Dimensions_t>> dimSelects(varDims.size());
     Dimensions_t numElements = 1;
     for (std::size_t i = 0; i < varDims.size(); ++i) {
-        if (i == nchansDimIndex) {
+        if (i == ChannelDimIndex) {
             // channels are the second dimension
             numElements *= chanIndices.size();
             dimSelects[i] = chanIndices;
@@ -1087,16 +1087,16 @@ void ObsSpace::createVariables(const Has_Variables & srcVarContainer,
 void ObsSpace::fillChanNumToIndexMap() {
     // If there is a channels dimension, load up the channel number to index map
     // for channel selection feature.
-    std::string nchansVarName = this->get_dim_name(ObsDimensionId::Nchans);
-    if (obs_group_.vars.exists(nchansVarName)) {
+    std::string ChannelVarName = this->get_dim_name(ObsDimensionId::Channel);
+    if (obs_group_.vars.exists(ChannelVarName)) {
         // Get the vector of channel numbers
-        Variable nchansVar = obs_group_.vars.open(nchansVarName);
+        Variable ChannelVar = obs_group_.vars.open(ChannelVarName);
         std::vector<int> chanNumbers;
-        if (nchansVar.isA<int>()) {
-            nchansVar.read<int>(chanNumbers);
-        } else if (nchansVar.isA<float>()) {
+        if (ChannelVar.isA<int>()) {
+            ChannelVar.read<int>(chanNumbers);
+        } else if (ChannelVar.isA<float>()) {
             std::vector<float> floatChanNumbers;
-            nchansVar.read<float>(floatChanNumbers);
+            ChannelVar.read<float>(floatChanNumbers);
             ConvertVarType<float, int>(floatChanNumbers, chanNumbers);
         }
 
@@ -1361,17 +1361,17 @@ void ObsSpace::extendObsSpace(const ObsExtendParameters & params) {
 
     // Extend all existing vectors with missing values.
     // Only vectors with (at least) one dimension equal to nlocs are modified.
-    // Second argument (bool) to resizeNlocs tells function:
+    // Second argument (bool) to resizeLocation tells function:
     //       true -> append the amount in first argument to the existing size
     //      false -> reset the existing size to the amount in the first argument
-    this->resizeNlocs(numExtendedLocs, false);
+    this->resizeLocation(numExtendedLocs, false);
 
     // Extend all existing vectors with missing values, excepting those
     // that have been selected to be filled with non-missing values.
     // By default, some spatial and temporal coordinates are filled in this way.
     //
-    // The resizeNlocs() call above has extended all variables with nlocs as a first
-    // dimension to the new nlocsext size, and filled all the extended parts with
+    // The resizeLocation() call above has extended all variables with Location as a first
+    // dimension to the new Locationext size, and filled all the extended parts with
     // missing values. Go through the list of variables that are to be filled with
     // non-missing values, check if they exist and if so fill in the extended section
     // with non-missing values.
@@ -1381,7 +1381,7 @@ void ObsSpace::extendObsSpace(const ObsExtendParameters & params) {
       const std::string groupName = "MetaData";
       const std::string fullVname = fullVarName(groupName, varName);
       if (obs_group_.vars.exists(fullVname)) {
-        // Note nlocs at this point holds the original size before extending.
+        // Note Location at this point holds the original size before extending.
         // The numOriginalLocs argument passed to extendVariable indicates where to start filling.
         Variable extendVar = obs_group_.vars.open(fullVname);
         VarUtils::forAnySupportedVariableType(
@@ -1394,12 +1394,12 @@ void ObsSpace::extendObsSpace(const ObsExtendParameters & params) {
       }
     }
 
-    // Fill extended_obs_space with 0, which indicates the standard section of the ObsSpace,
+    // Fill extendedObsSpace with 0, which indicates the standard section of the ObsSpace,
     // and 1, which indicates the extended section.
-    std::vector <int> extended_obs_space(numExtendedLocs, 0);
-    std::fill(extended_obs_space.begin() + numOriginalLocs, extended_obs_space.end(), 1);
-    // Save extended_obs_space for use in filters.
-    put_db("MetaData", "extended_obs_space", extended_obs_space);
+    std::vector <int> extendedObsSpace(numExtendedLocs, 0);
+    std::fill(extendedObsSpace.begin() + numOriginalLocs, extendedObsSpace.end(), 1);
+    // Save extendedObsSpace for use in filters.
+    put_db("MetaData", "extendedObsSpace", extendedObsSpace);
 
     // Calculate the number of newly created locations on all processes (counting those
     // held on multiple processes only once).
@@ -1415,7 +1415,7 @@ void ObsSpace::extendObsSpace(const ObsExtendParameters & params) {
                                                   upperBoundOnGlobalNumOriginalRecs);
 
     // Increment nlocs on this processor.
-    dim_info_.set_dim_size(ObsDimensionId::Nlocs, numExtendedLocs);
+    dim_info_.set_dim_size(ObsDimensionId::Location, numExtendedLocs);
     // Increment gnlocs_.
     gnlocs_ += globalNumCompanionLocs;
   }

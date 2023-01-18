@@ -294,15 +294,15 @@ end subroutine c_obsspace_put_bool
 
 !-------------------------------------------------------------------------------
 
-integer(kind=c_int) function c_obsspace_get_nlocs_dim_id() bind(C,name='obsspace_get_nlocs_dim_id_f')
+integer(kind=c_int) function c_obsspace_get_location_dim_id() bind(C,name='obsspace_get_location_dim_id_f')
   use, intrinsic :: iso_c_binding, only: c_int
   implicit none
-end function c_obsspace_get_nlocs_dim_id
+end function c_obsspace_get_location_dim_id
 
-integer(kind=c_int) function c_obsspace_get_nchans_dim_id() bind(C,name='obsspace_get_nchans_dim_id_f')
+integer(kind=c_int) function c_obsspace_get_channel_dim_id() bind(C,name='obsspace_get_channel_dim_id_f')
   use, intrinsic :: iso_c_binding, only: c_int
   implicit none
-end function c_obsspace_get_nchans_dim_id
+end function c_obsspace_get_channel_dim_id
 
 !-------------------------------------------------------------------------------
 end interface

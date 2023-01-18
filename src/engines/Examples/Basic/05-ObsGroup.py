@@ -19,19 +19,19 @@
 #    layout                                    notes
 # 
 #      /                                   top-level group
-#       nlocs                              dimension scales (variables, coordinate values)
-#       nchans
+#       Location                           dimension scales (variables, coordinate values)
+#       Channel
 #       ...
 #       ObsValue/                          group: observational measurement values
-#                brightness_temperature    variable: Tb, 2D, nlocs X nchans
-#                air_temperature           variable: T, 1D, nlocs
+#                brightnessTemperature    variable: Tb, 2D, Location X Channel
+#                air_temperature           variable: T, 1D, Location
 #                ...
 #       ObsError/                          group: observational error estimates
-#                brightness_temperature
+#                brightnessTemperature
 #                air_temperature
 #                ...
 #       PreQC/                             group: observational QC marks from data provider
-#                brightness_temperature
+#                brightnessTemperature
 #                air_temperature
 #                ...
 #       MetaData/                          group: meta data associated with locations
@@ -49,11 +49,11 @@
 #  a dimension is resized, the ObsGroup::resize function will resize the dimension scale
 #  along with all variables that use that dimension scale.
 # 
-#  The basic ideas is to dimension observation data with nlocs as the first dimension, and
-#  allow nlocs to be resizable so that it's possible to incrementally append data along
-#  the nlocs (1st) dimension. For data that have rank > 1, the second through nth dimensions
-#  are of fixed size. For example, brightness_temperature can be store as 2D data with
-#  dimensions (nlocs, nchans).
+#  The basic ideas is to dimension observation data with Location as the first dimension, and
+#  allow Location to be resizable so that it's possible to incrementally append data along
+#  the Location (1st) dimension. For data that have rank > 1, the second through nth dimensions
+#  are of fixed size. For example, brightnessTemperature can be store as 2D data with
+#  dimensions (Location, Channel).
 
 import os
 import sys
@@ -75,12 +75,12 @@ numChans = 30
 
 # This is a list of the dimensions that we want in our ObsGroup.
 # Both dimensions can be represented as 32-bit integers.
-# They are called 'nlocs' and 'nchans'.
+# They are called 'Location' and 'Channel'.
 #
 # The NewDimensionScale.* functions take four parameters:
 #  1. The name of the dimension scale.
 #  2. The initial length (size) of this scale. If you have 40 locations,
-#     then the nlocs scale's initial size should be 40.
+#     then the Location scale's initial size should be 40.
 #  3. The maximum length of the scale. By setting this to ioda.Unlimited,
 #     you can resize all of the variables depending on a scale and
 #     append new data without recreating the ObsSpace. This doesn't make
@@ -92,8 +92,8 @@ numChans = 30
 #     For details on block sizes see https://support.hdfgroup.org/HDF5/doc/Advanced/Chunking/
 # 
 # Let's make a list of the new dimension scales.
-newDims = [ioda.NewDimensionScale.int32('nlocs', numLocs, ioda.Unlimited, numLocs),
-          ioda.NewDimensionScale.int32('nchans', numChans, numChans, numChans)]
+newDims = [ioda.NewDimensionScale.int32('Location', numLocs, ioda.Unlimited, numLocs),
+          ioda.NewDimensionScale.int32('Channel', numChans, numChans, numChans)]
 
 # ObsGroup.generate takes a Group argument (the backend we just created
 # above) and a list of dimension creation scales. It then creates the dimensions
@@ -102,8 +102,8 @@ og = ioda.ObsGroup.generate(g, newDims)
 
 # You can open the scales using the names that you provided in the
 # NewDimensionScale calls.
-nlocsVar = og.vars.open('nlocs')
-nchansVar = og.vars.open('nchans')
+LocationVar = og.vars.open('Location')
+ChannelVar = og.vars.open('Channel')
 
 # Just setting some sensible defaults: compress the stored data and use
 # a fill value of -999.
@@ -112,21 +112,21 @@ p1.compressWithGZIP()
 p1.setFillValue.float(-999)
 
 #  Next let's create the variables. The variable names should be specified using the
-#  hierarchy as described above. For example, the variable brightness_temperature
-#  in the group ObsValue is specified in a string as "ObsValue/brightness_temperature".
-tbName = "ObsValue/brightness_temperature"
+#  hierarchy as described above. For example, the variable brightnessTemperature
+#  in the group ObsValue is specified in a string as "ObsValue/brightnessTemperature".
+tbName = "ObsValue/brightnessTemperature"
 latName = "MetaData/latitude"
 lonName = "MetaData/longitude"
 
 # We create three variables to store brightness temperature, latitude and longitude.
 # We attach the appropriate scales with the scales option.
-tbVar = g.vars.create(tbName, ioda.Types.float, scales=[nlocsVar, nchansVar], params=p1)
-latVar = g.vars.create(latName, ioda.Types.float, scales=[nlocsVar], params=p1)
-lonVar = g.vars.create(lonName, ioda.Types.float, scales=[nlocsVar], params=p1)
+tbVar = g.vars.create(tbName, ioda.Types.float, scales=[LocationVar, ChannelVar], params=p1)
+latVar = g.vars.create(latName, ioda.Types.float, scales=[LocationVar], params=p1)
+lonVar = g.vars.create(lonName, ioda.Types.float, scales=[LocationVar], params=p1)
 
 # Let's set some attributes on the variables to describe what they mean,
 # their ranges, their units, et cetera.
-tbVar.atts.create("coordinates", ioda.Types.str, [1]).writeDatum.str("longitude latitude nchans")
+tbVar.atts.create("coordinates", ioda.Types.str, [1]).writeDatum.str("longitude latitude Channel")
 tbVar.atts.create("long_name", ioda.Types.str, [1]).writeDatum.str("fictional brightness temperature")
 tbVar.atts.create("units", ioda.Types.str, [1]).writeDatum.str("K")
 tbVar.atts.create("valid_range", ioda.Types.float, [2]).writeVector.float([100.0, 400.0])

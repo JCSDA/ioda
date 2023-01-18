@@ -5,7 +5,7 @@ window end: "2018-04-15T03:00:00Z"
 observations:
 - obs space:
     name: "AMSUA NOAA19"
-    simulated variables: ['brightness_temperature']
+    simulated variables: ['brightnessTemperature']
     channels: 1-15
     obsdatain:
       engine:
@@ -18,7 +18,7 @@ observations:
 
 - obs space:
     name: "Radiosonde"
-    simulated variables: ['air_temperature']
+    simulated variables: ['airTemperature']
     obsdatain:
       engine:
         type: H5File

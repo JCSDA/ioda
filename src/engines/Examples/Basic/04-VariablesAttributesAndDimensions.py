@@ -50,14 +50,14 @@ g = ioda.Engines.HH.createFile(
 #  Let's create a few dimensions... Note: when working with an already-existing Obs Space,
 #  (covered later), these dimensions may already be present.
 #
-#  Create two dimensions, "nlocs", and "ATMS Channel". Set distinct values within
+#  Create two dimensions, "Location", and "ATMS Channel". Set distinct values within
 #  these dimensions.
 
 num_locs = 3000
 num_channels = 23
 
-dim_location = g.vars.create('nlocs', ioda.Types.int32, [ num_locs ])
-dim_location.scales.setIsScale('nlocs')
+dim_location = g.vars.create('Location', ioda.Types.int32, [ num_locs ])
+dim_location.scales.setIsScale('Location')
 
 dim_channel = g.vars.create('ATMS Channel', ioda.Types.int32, [num_channels])
 dim_channel.scales.setIsScale('ATMS Channel')
@@ -79,7 +79,7 @@ dim_channel.scales.setIsScale('ATMS Channel')
 #  There are two ways to define a variable that has attached dimensions.
 #  First, we can explicitly create a variable and set its dimensions.
 #
-#  Longitude has dimensions of nlocs. It has units of degrees_east, and has
+#  Longitude has dimensions of Location. It has units of degrees_east, and has
 #  a valid_range of (-180,180).
 
 longitude = g.vars.create('MetaData/Longitude', ioda.Types.float, [num_locs])
@@ -98,7 +98,7 @@ latitude.atts.create('units', ioda.Types.str).writeVector.str(['degrees_north'])
 latitude.atts.create('long_name', ioda.Types.str).writeVector.str(['Latitude'])
 
 # The ATMS Brightness Temperature depends on both location and instrument channel number.
-tb = g.vars.create('ObsValue/Brightness_Temperature', ioda.Types.float, scales=[dim_location, dim_channel])
+tb = g.vars.create('ObsValue/brightnessTemperature', ioda.Types.float, scales=[dim_location, dim_channel])
 tb.atts.create('valid_range', ioda.Types.float, [2]).writeVector.float([100,500])
 tb.atts.create('units', ioda.Types.str).writeVector.str(['K'])
 tb.atts.create('long_name', ioda.Types.str).writeVector.str(['ATMS Observed (Uncorrected) Brightness Temperature'])

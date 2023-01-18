@@ -96,7 +96,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsspace_odc.yaml
   testinput/iodatest_obsspace_odc_atms.yaml
   testinput/iodatest_obsspace_fortran.yaml
-  testinput/iodatest_obsspace_out_odc.yml
+  testinput/iodatest_obsspace_out_odc.yaml
   testinput/iodatest_obsspace_put_db_channels.yaml
   testinput/iodatest_obsspace_put_db_channels_check.yaml
   testinput/iodatest_obsspace_zero_obs.yaml
@@ -147,7 +147,6 @@ list( APPEND ioda_test_input
   testinput/iodatest_odb_surface_with_query.yaml
   testinput/iodatest_odb_surfacecloud.yaml
   testinput/iodatest_odb_surfacesst.yaml
-  testinput/odb_default_name_map.yml
   testinput/odb_default_name_map.yaml
   testinput/odb_gnssro_name_map.yaml
   testinput/odb_oceansound_name_map.yaml
@@ -403,7 +402,7 @@ ecbuild_add_test( TARGET  test_ioda_obsspace
 if (odc_FOUND)
 ecbuild_add_test( TARGET  test_ioda_obsspace_out_odc
                   SOURCES mains/TestIodaObsSpace.cc
-                  ARGS    "testinput/iodatest_obsspace_out_odc.yml"
+                  ARGS    "testinput/iodatest_obsspace_out_odc.yaml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 endif()
@@ -841,7 +840,7 @@ ecbuild_add_test( TARGET  test_ioda_time_io_cmp_amsua_n19
                   TEST_DEPENDS get_ioda_test_data test_ioda_time_io)
 
 #####################################################################
-# Test the ioda-upgrade.x app
+# Test the ioda-upgrade-v1-to-v2.x app
 #####################################################################
 
 ecbuild_add_test( TARGET  test_ioda_upgrader_amsua_n19
@@ -849,7 +848,7 @@ ecbuild_add_test( TARGET  test_ioda_upgrader_amsua_n19
                   COMMAND bash
                   ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
                           hdf5
-                          "${CMAKE_BINARY_DIR}/bin/ioda-upgrade.x
+                          "${CMAKE_BINARY_DIR}/bin/ioda-upgrade-v1-to-v2.x
                           Data/testinput_tier_1/upgrader_amsua_n19.nc4
                           testoutput/upgrader_amsua_n19.nc4"
                           upgrader_amsua_n19.nc4
@@ -860,7 +859,7 @@ ecbuild_add_test( TARGET  test_ioda_upgrader_gmi_gpm
                   COMMAND bash
                   ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
                           hdf5
-                          "${CMAKE_BINARY_DIR}/bin/ioda-upgrade.x
+                          "${CMAKE_BINARY_DIR}/bin/ioda-upgrade-v1-to-v2.x
                           Data/testinput_tier_1/upgrader_gmi_gpm.nc4
                           testoutput/upgrader_gmi_gpm.nc4"
                           upgrader_gmi_gpm.nc4
@@ -871,7 +870,7 @@ ecbuild_add_test( TARGET  test_ioda_upgrader_mhs_metop-b
                   COMMAND bash
                   ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
                           hdf5
-                          "${CMAKE_BINARY_DIR}/bin/ioda-upgrade.x
+                          "${CMAKE_BINARY_DIR}/bin/ioda-upgrade-v1-to-v2.x
                           Data/testinput_tier_1/upgrader_mhs_metop-b.nc4
                           testoutput/upgrader_mhs_metop-b.nc4"
                           upgrader_mhs_metop-b.nc4
@@ -882,7 +881,7 @@ ecbuild_add_test( TARGET  test_ioda_upgrader_sondes
                   COMMAND bash
                   ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
                           hdf5
-                          "${CMAKE_BINARY_DIR}/bin/ioda-upgrade.x
+                          "${CMAKE_BINARY_DIR}/bin/ioda-upgrade-v1-to-v2.x
                           Data/testinput_tier_1/upgrader_sondes.nc4
                           testoutput/upgrader_sondes.nc4"
                           upgrader_sondes.nc4
@@ -893,7 +892,7 @@ ecbuild_add_test( TARGET  test_ioda_upgrader_aod
                   COMMAND bash
                   ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
                           hdf5
-                          "${CMAKE_BINARY_DIR}/bin/ioda-upgrade.x
+                          "${CMAKE_BINARY_DIR}/bin/ioda-upgrade-v1-to-v2.x
                           Data/testinput_tier_1/upgrader_aod.nc4
                           testoutput/upgrader_aod.nc4"
                           upgrader_aod.nc4
@@ -904,7 +903,7 @@ ecbuild_add_test( TARGET  test_ioda_upgrader_gnssro
                   COMMAND bash
                   ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
                           hdf5
-                          "${CMAKE_BINARY_DIR}/bin/ioda-upgrade.x
+                          "${CMAKE_BINARY_DIR}/bin/ioda-upgrade-v1-to-v2.x
                           Data/testinput_tier_1/upgrader_gnssro.nc4
                           testoutput/upgrader_gnssro.nc4"
                           upgrader_gnssro.nc4
@@ -915,7 +914,7 @@ ecbuild_add_test( TARGET  test_ioda_upgrader_met_office_gpsro
                   COMMAND bash
                   ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
                           hdf5
-                          "${CMAKE_BINARY_DIR}/bin/ioda-upgrade.x
+                          "${CMAKE_BINARY_DIR}/bin/ioda-upgrade-v1-to-v2.x
                           Data/testinput_tier_1/upgrader_met_office_gpsro.nc4
                           testoutput/upgrader_met_office_gpsro.nc4"
                           upgrader_met_office_gpsro.nc4
@@ -926,7 +925,7 @@ ecbuild_add_test( TARGET  test_ioda_upgrader_zero_obs
                   COMMAND bash
                   ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
                           hdf5
-                          "${CMAKE_BINARY_DIR}/bin/ioda-upgrade.x
+                          "${CMAKE_BINARY_DIR}/bin/ioda-upgrade-v1-to-v2.x
                           Data/testinput_tier_1/upgrader_zero_obs.nc4
                           testoutput/upgrader_zero_obs.nc4"
                           upgrader_zero_obs.nc4
@@ -995,6 +994,75 @@ ecbuild_add_test( TARGET  test_ioda_upgrader_zero_obs_compat
                           "echo INFO: zero_obs netcdf compatibility check"
                           upgrader_zero_obs.nc4
                   TEST_DEPENDS get_ioda_test_data test_ioda_upgrader_zero_obs )
+
+#####################################################################
+# Test the ioda-upgrade-v2-to-v3.x app
+#####################################################################
+
+# test converting offset date time to epoch datetime
+ecbuild_add_test( TARGET  test_ioda_upgrader_dtime_offset_v2_to_v3
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          hdf5
+                          "${CMAKE_BINARY_DIR}/bin/ioda-upgrade-v2-to-v3.x
+                          Data/testinput_tier_1/upgrader_dtime_offset_v2_to_v3.nc4
+                          testoutput/upgrader_dtime_offset_v2_to_v3.nc4
+                          ${IODA_YAML_ROOT}/validation/ObsSpace.yaml"
+                          upgrader_dtime_offset_v2_to_v3.nc4
+                  TEST_DEPENDS get_ioda_test_data )
+
+# test converting string date time to epoch datetime
+# when both offset and string exist in the input file
+ecbuild_add_test( TARGET  test_ioda_upgrader_dtime_offstr_v2_to_v3
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          hdf5
+                          "${CMAKE_BINARY_DIR}/bin/ioda-upgrade-v2-to-v3.x
+                          Data/testinput_tier_1/upgrader_dtime_offstr_v2_to_v3.nc4
+                          testoutput/upgrader_dtime_offstr_v2_to_v3.nc4
+                          ${IODA_YAML_ROOT}/validation/ObsSpace.yaml"
+                          upgrader_dtime_offstr_v2_to_v3.nc4
+                  TEST_DEPENDS get_ioda_test_data )
+
+# test using epoch date time to epoch datetime
+# when all of offset, string and epoch exist in the input file
+ecbuild_add_test( TARGET  test_ioda_upgrader_dtime_all_v2_to_v3
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          hdf5
+                          "${CMAKE_BINARY_DIR}/bin/ioda-upgrade-v2-to-v3.x
+                          Data/testinput_tier_1/upgrader_dtime_all_v2_to_v3.nc4
+                          testoutput/upgrader_dtime_all_v2_to_v3.nc4
+                          ${IODA_YAML_ROOT}/validation/ObsSpace.yaml"
+                          upgrader_dtime_all_v2_to_v3.nc4
+                  TEST_DEPENDS get_ioda_test_data )
+
+ecbuild_add_test( TARGET  test_ioda_upgrader_amsua_n19_v2_to_v3
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          hdf5
+                          "${CMAKE_BINARY_DIR}/bin/ioda-upgrade-v2-to-v3.x
+                          Data/testinput_tier_1/upgrader_amsua_n19_v2_to_v3.nc4
+                          testoutput/upgrader_amsua_n19_v2_to_v3.nc4
+                          ${IODA_YAML_ROOT}/validation/ObsSpace.yaml"
+                          upgrader_amsua_n19_v2_to_v3.nc4
+                  TEST_DEPENDS get_ioda_test_data )
+
+ecbuild_add_test( TARGET  test_ioda_upgrader_met_office_gpsro_v2_to_v3
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          hdf5
+                          "${CMAKE_BINARY_DIR}/bin/ioda-upgrade-v2-to-v3.x
+                          Data/testinput_tier_1/upgrader_met_office_gpsro_v2_to_v3.nc4
+                          testoutput/upgrader_met_office_gpsro_v2_to_v3.nc4
+                          ${IODA_YAML_ROOT}/validation/ObsSpace.yaml"
+                          upgrader_met_office_gpsro_v2_to_v3.nc4
+                  TEST_DEPENDS get_ioda_test_data )
 
 if (odc_FOUND)
   ecbuild_add_test( TARGET  test_ioda-convert_aircraft_odc

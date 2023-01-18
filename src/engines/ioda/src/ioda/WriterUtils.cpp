@@ -301,21 +301,21 @@ void createVariable<std::string>(const std::string & varName, const Variable & s
     destVar.atts.add<std::string>("_orig_fill_value", origFillValue);
 }
 
-void identifyVarsUsingNlocs(const ioda::VarUtils::VarDimMap & varDimMap,
-                            std::unordered_set<std::string> & varsUsingNlocs) {
-    // start with nlocs itself
-    varsUsingNlocs.clear();
-    varsUsingNlocs.insert("nlocs");
+void identifyVarsUsingLocation(const ioda::VarUtils::VarDimMap & varDimMap,
+                            std::unordered_set<std::string> & varsUsingLocation) {
+    // start with Location itself
+    varsUsingLocation.clear();
+    varsUsingLocation.insert("Location");
     for (auto & varPair : varDimMap) {
-        if (varPair.second[0].name == "nlocs") {
-            varsUsingNlocs.insert(varPair.first.name);
+        if (varPair.second[0].name == "Location") {
+            varsUsingLocation.insert(varPair.first.name);
         }
     }
 }
 
 void copyVarData(const ioda::IoPool & ioPool, const ioda::Group & src, ioda::Group & dest,
                  const VarUtils::Vec_Named_Variable & srcNamedVars,
-                 const std::unordered_set<std::string> & varsUsingNlocs,
+                 const std::unordered_set<std::string> & varsUsingLocation,
                  const bool isParallelIo,
                  const std::map<std::string, std::size_t> & maxStringLengths){
   // For ranks in the io pool, collect the variable data and write out to the file. The
@@ -325,10 +325,10 @@ void copyVarData(const ioda::IoPool & ioPool, const ioda::Group & src, ioda::Gro
     std::string varName = srcNamedVar.name;
     Variable srcVar = srcNamedVar.var;
     bool varTypeSupported = true;
-    // Only the variable using the nlocs dimension will need to use MPI send/recv.
-    // If the variable is not using nlocs, then simply transfer data from src to dest.
-    if(varsUsingNlocs.count(varName) > 0) {
-        // Using nlocs -> calculate the starts and counts for each of the ranks
+    // Only the variable using the Location dimension will need to use MPI send/recv.
+    // If the variable is not using Location, then simply transfer data from src to dest.
+    if(varsUsingLocation.count(varName) > 0) {
+        // Using Location -> calculate the starts and counts for each of the ranks
         // in the rank_assignment_ structure.
         std::vector<std::size_t> varStarts;
         std::vector<std::size_t> varCounts;
@@ -351,7 +351,7 @@ void copyVarData(const ioda::IoPool & ioPool, const ioda::Group & src, ioda::Gro
             VarUtils::ThrowIfVariableIsOfUnsupportedType(varName));
 
     } else {
-        // Var is not using nlocs -> simply transfer data from this process. Ie, the
+        // Var is not using Location -> simply transfer data from this process. Ie, the
         // assumption is that all ranks have the same identical copies of this variable
         // so it works to only write the copy on this process.
         VarUtils::forAnySupportedVariableType(
@@ -429,9 +429,9 @@ void ioWriteGroup(const ioda::IoPool & ioPool, const ioda::Group& memGroup,
   allVarsList.insert(allVarsList.end(), dimVarList.begin(), dimVarList.end());
 
   // Record in an unordered set the names of variables that are associated with
-  // the "nlocs" dimension.
-  std::unordered_set<std::string> varsUsingNlocs;
-  identifyVarsUsingNlocs(dimsAttachedToVars, varsUsingNlocs);
+  // the "Location" dimension.
+  std::unordered_set<std::string> varsUsingLocation;
+  identifyVarsUsingLocation(dimsAttachedToVars, varsUsingLocation);
 
   // We need to adjust any string variables to be output as fixed length strings which
   // entails knowing the maximum string length.
@@ -456,7 +456,7 @@ void ioWriteGroup(const ioda::IoPool & ioPool, const ioda::Group& memGroup,
     }
 
     // Get the total number of locations from the io pool. Use this to adjust
-    // the size of the nlocs dimension. If we are writing one file, use the global nlocs
+    // the size of the Location dimension. If we are writing one file, use the global nlocs
     // value from the pool. If we are writing multiple files, use the total nlocs value
     // from the pool.
     int poolNlocs;
@@ -474,7 +474,7 @@ void ioWriteGroup(const ioda::IoPool & ioPool, const ioda::Group& memGroup,
       // MPI tasks.
       std::string var_name = namedVar.name;
       int adjustNlocs = -1;
-      if (varsUsingNlocs.count(var_name)) {
+      if (varsUsingLocation.count(var_name)) {
           adjustNlocs = poolNlocs;
       }
       const Variable old_var = namedVar.var;
@@ -517,7 +517,7 @@ void ioWriteGroup(const ioda::IoPool & ioPool, const ioda::Group& memGroup,
 
   // Next for the ranks in the "all" communicator group, we collectively transfer the
   // variable data and write it into the file. 
-  copyVarData(ioPool, memGroup, fileGroup, allVarsList, varsUsingNlocs,
+  copyVarData(ioPool, memGroup, fileGroup, allVarsList, varsUsingLocation,
               isParallelIo, maxStringLengths);
 }
 

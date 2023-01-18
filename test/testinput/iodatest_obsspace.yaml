@@ -77,7 +77,7 @@ observations:
 
 - obs space:
     name: "AMSUA NOAA19"
-    simulated variables: ['brightness_temperature']
+    simulated variables: ['brightnessTemperature']
     channels: 1-15
     distribution:
       name: InefficientDistribution
@@ -108,17 +108,17 @@ observations:
       - 1.0e-11
     variables for putget test:
       # have to use float variables, and only one channel at a time
-      - name: "brightness_temperature"
+      - name: "brightnessTemperature"
         group: "ObsValue"
         channels: [ 4 ]
 
-      - name: "brightness_temperature"
+      - name: "brightnessTemperature"
         group: "ObsValue"
         channels: [ 11 ]
 
 - obs space:
     name: "AMSUA NOAA19"
-    simulated variables: ['brightness_temperature']
+    simulated variables: ['brightnessTemperature']
     channels: 1-15
     distribution:
       name: Halo
@@ -151,7 +151,7 @@ observations:
 
 - obs space:
     name: "SMAP"
-    simulated variables: ['brightness_temperature']
+    simulated variables: ['brightnessTemperature']
     channels: 1-4
     obsdatain:
       engine:
@@ -181,7 +181,7 @@ observations:
 
 - obs space:
     name: "GMI GPM"
-    simulated variables: ['brightness_temperature']
+    simulated variables: ['brightnessTemperature']
     channels: 1-13
     obsdatain:
       engine:
@@ -211,7 +211,7 @@ observations:
 
 - obs space:
     name: "Radiosonde"
-    simulated variables: ['air_temperature']
+    simulated variables: ['airTemperature']
     obsdatain:
       engine:
         type: H5File
@@ -240,37 +240,37 @@ observations:
         type: "float"
         norm: 6076.2659260213959
 
-      - name: "station_id"
+      - name: "stationIdentification"
         group: "MetaData"
         type: "string"
         first value: "07510"
         last value: "97530"
 
-      - name: "surface_pressure"
+      - name: "stationPressure"
         group: "PreQC"
         type: "integer"
         norm: 6.32455532034
     tolerance:
       - 1.0e-11
     variables for putget test:
-      - name: "air_temperature"
+      - name: "airTemperature"
         group: "ObsValue"
         channels: []
 
-      - name: "specific_humidity"
+      - name: "specificHumidity"
         group: "ObsValue"
         channels: []
 
 - obs space:
     name: "Radiosonde with grouping"
-    simulated variables: ['air_temperature']
+    simulated variables: ['airTemperature']
     obsdatain:
       engine:
         type: H5File
         obsfile: "Data/testinput_tier_1/sondes_obs_2018041500_m.nc4"
       obsgrouping:
-        group variables: [ "station_id" ]
-        sort variable: "air_pressure"
+        group variables: [ "stationIdentification" ]
+        sort variable: "pressure"
         sort order: "descending"
     obsdataout:
       engine:
@@ -281,8 +281,8 @@ observations:
     nrecs: 36
     nvars: 5
     obs perturbations seed: 0
-    expected group variables: [ "station_id" ]
-    expected sort variable: "air_pressure"
+    expected group variables: [ "stationIdentification" ]
+    expected sort variable: "pressure"
     expected sort order: "descending"
     variables for get test:
       - name: "latitude"
@@ -335,7 +335,7 @@ observations:
 
 - obs space:
     name: "AOD GOES"
-    simulated variables: ['Total_Aerosol_Optical_Depth_550']
+    simulated variables: ['aerosolOpticalDepth']
     obsdatain:
       engine:
         type: H5File
@@ -344,7 +344,7 @@ observations:
       engine:
         type: ODB
         obsfile: "testoutput/diagout.odc"
-        mapping file: testinput/odb_default_name_map.yml
+        mapping file: testinput/odb_default_name_map.yaml
   test data:
     nlocs: 100
     nrecs: 100
@@ -521,9 +521,9 @@ observations:
 
 - obs space:
     name: "Derived single-channel simulated variables"
-    simulated variables: [surface_pressure, air_temperature, relative_humidity, dew_point]
-    derived variables: [relative_humidity, dew_point] # not present in the input file
-    observed variables: [surface_pressure, air_temperature]
+    simulated variables: [stationPressure, airTemperature, relativeHumidity, dewPointTemperature]
+    derived variables: [relativeHumidity, dewPointTemperature] # not present in the input file
+    observed variables: [stationPressure, airTemperature]
     obsdatain:
       engine:
         type: H5File
@@ -543,8 +543,8 @@ observations:
 
 - obs space:
     name: "Derived multi-channel variables"
-    simulated variables: [bias_corrected_brightness_temperature]
-    derived variables: [bias_corrected_brightness_temperature] # not present in the input file
+    simulated variables: [bias_corrected_brightnessTemperature]
+    derived variables: [bias_corrected_brightnessTemperature] # not present in the input file
     observed variables: []
     channels: 1-13
     obsdatain:

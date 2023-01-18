@@ -162,8 +162,8 @@ void testConstructor() {
                        << ExpectedObsSortOrder << std::endl;
 
     // get the standard nlocs and nchans dimension names and compare with expected values
-    std::string nlocsName = odb.get_dim_name(ioda::ObsDimensionId::Nlocs);
-    std::string nchansName = odb.get_dim_name(ioda::ObsDimensionId::Nchans);
+    std::string LocationName = odb.get_dim_name(ioda::ObsDimensionId::Location);
+    std::string ChannelName = odb.get_dim_name(ioda::ObsDimensionId::Channel);
 
     EXPECT(GlobalNlocs == ExpectedGlobalNlocs);
     EXPECT(Nvars == ExpectedNvars);
@@ -174,11 +174,11 @@ void testConstructor() {
     EXPECT(ObsSortVar == ExpectedObsSortVar);
     EXPECT(ObsSortOrder == ExpectedObsSortOrder);
 
-    EXPECT(nlocsName == "nlocs");
-    EXPECT(nchansName == "nchans");
+    EXPECT(LocationName == "Location");
+    EXPECT(ChannelName == "Channel");
 
-    EXPECT(odb.get_dim_id("nlocs") == ioda::ObsDimensionId::Nlocs);
-    EXPECT(odb.get_dim_id("nchans") == ioda::ObsDimensionId::Nchans);
+    EXPECT(odb.get_dim_id("Location") == ioda::ObsDimensionId::Location);
+    EXPECT(odb.get_dim_id("Channel") == ioda::ObsDimensionId::Channel);
   }
 }
 
@@ -521,10 +521,10 @@ void testPutGetChanSelect() {
       // Write the variable into the new group
       std::string TestGroupName = GroupName + "_Test";
       std::string PutDbVarName = VarName;
-      std::vector<std::string> DimList = { "nlocs" };
+      std::vector<std::string> DimList = { "Location" };
       if (!Channels.empty()) {
         PutDbVarName += "_" + std::to_string(Channels[0]);
-        DimList.push_back("nchans");
+        DimList.push_back("Channel");
       }
       oops::Log::debug() << "Writing: " << TestGroupName << ", " << PutDbVarName << ", "
                          << DimList << std::endl;
@@ -612,10 +612,10 @@ void testMultiDimTransfer() {
     std::vector<std::string> dimList;
 
     int numElements = Nlocs;
-    dimList.push_back(Odb->get_dim_name(ObsDimensionId::Nlocs));
+    dimList.push_back(Odb->get_dim_name(ObsDimensionId::Location));
     if (Nchans > 0) {
         numElements *= Nchans;
-        dimList.push_back(Odb->get_dim_name(ObsDimensionId::Nchans));
+        dimList.push_back(Odb->get_dim_name(ObsDimensionId::Channel));
     }
 
     // Load up the expected values with numbers 0..n-1.

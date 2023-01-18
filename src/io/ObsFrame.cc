@@ -25,8 +25,8 @@ namespace ioda {
 }
 
 //------------------------------------------------------------------------------------
-bool ObsFrame::isVarDimByNlocs(const std::string & varName) const {
-    return isVarDimByNlocs_Impl(varName, dims_attached_to_vars_);
+bool ObsFrame::isVarDimByLocation(const std::string & varName) const {
+    return isVarDimByLocation_Impl(varName, dims_attached_to_vars_);
 }
 
 //------------------------------------------------------------------------------------
@@ -95,18 +95,18 @@ Selection ObsFrame::createVarSelection(const std::vector<Dimensions_t> & varShap
 
 //--------------------------- protected functions ---------------------------------------
 //------------------------------------------------------------------------------------
-bool ObsFrame::isVarDimByNlocs_Impl(const std::string & varName,
+bool ObsFrame::isVarDimByLocation_Impl(const std::string & varName,
                                     const VarUtils::VarDimMap & varDimMap) const {
-    bool isDimByNlocs = false;
+    bool isDimByLocation = false;
     for (auto & ivar : varDimMap) {
         if (ivar.first.name == varName) {
-            // Found varName, now check if first dimension is "nlocs"
-            if (ivar.second[0].name == "nlocs") {
-                isDimByNlocs = true;
+            // Found varName, now check if first dimension is "Location"
+            if (ivar.second[0].name == "Location") {
+                isDimByLocation = true;
             }
         }
     }
-    return isDimByNlocs;
+    return isDimByLocation;
 }
 
 //------------------------------------------------------------------------------------
@@ -149,10 +149,10 @@ void ObsFrame::createFrameFromObsGroup(const VarUtils::Vec_Named_Variable & varL
         std::string dimName = dimNameObject.name;
         Variable srcDimVar = dimNameObject.var;
         Dimensions_t dimSize = dimNameObject.var.getDimensions().dimsCur[0];
-        // Don't allow nchans to be limited by the frame size since nchans is
+        // Don't allow Channel to be limited by the frame size since Channel is
         // the second dimension (and we are only limiting the frame size on
-        // the first dimension, typically nlocs).
-        if (dimName != "nchans") {
+        // the first dimension, typically Location).
+        if (dimName != "Channel") {
             if (dimSize > max_frame_size_) {
                 dimSize = max_frame_size_;
             }
@@ -236,7 +236,7 @@ void ObsFrame::createFrameFromObsGroup(const VarUtils::Vec_Named_Variable & varL
     if (use_string_datetime_ || use_offset_datetime_) {
       VariableCreationParameters params;
       std::vector<Variable> dimVars;
-      dimVars.push_back(obs_frame_.vars.open("nlocs"));
+      dimVars.push_back(obs_frame_.vars.open("Location"));
       Variable destVar =
           obs_frame_.vars.createWithScales<int64_t>("MetaData/dateTime", dimVars, params);
 

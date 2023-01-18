@@ -658,7 +658,7 @@ int main(int argc, char** argv) {
   try {
     // Program options
     auto doHelp = []() {
-      cerr << "Usage: ioda-upgrade.x [-n] input_file output_file\n"
+      cerr << "Usage: ioda-upgrade-v1-to-v2.x [-n] input_file output_file\n"
            << "       -n: do not group similar variables into one 2D varible\n";
       exit(1);
     };

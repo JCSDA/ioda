@@ -43,13 +43,13 @@ void test_obsgroup_helper_funcs(std::string backendType, std::string fileName,
   // to see if can write the first chunk, resize the variable and write
   // the second chunk.
 
-  // Set nlocs (size: 2*locations) and nchans (size: channels) coordinate values
-  // nlocs set to 0..nlocs-1, and nchans set to 1..nchans
+  // Set nlocs (size: 2*locations) and Channel (size: channels) coordinate values
+  // nlocs set to 0..nlocs-1, and Channel set to 1..nchans
   std::vector<int> nLocs(locationsX2);
   std::iota(nLocs.begin(), nLocs.end(), 0);
 
-  std::vector<int> nChans(channels);
-  std::iota(nChans.begin(), nChans.end(), 1);
+  std::vector<int> Channel(channels);
+  std::iota(Channel.begin(), Channel.end(), 1);
 
   Eigen::ArrayXXf myDataExpected(locationsX2, channels);
   std::vector<float> myLonExpected(locationsX2);
@@ -101,25 +101,25 @@ void test_obsgroup_helper_funcs(std::string backendType, std::string fileName,
   if (backendType != "fileRemapped") {
     og = ObsGroup::generate(
           backend, {
-            NewDimensionScale<int>("nlocs", locations, ioda::Unlimited, locations),
-            NewDimensionScale<int>("nchans", channels, channels, channels)
+            NewDimensionScale<int>("Location", locations, ioda::Unlimited, locations),
+            NewDimensionScale<int>("Channel", channels, channels, channels)
           });
   } else {
     og = ObsGroup::generate(
           backend,
           {
             NewDimensionScale<int>(
-            "nlocs", locations, ioda::Unlimited, locations),
+            "Location", locations, ioda::Unlimited, locations),
             NewDimensionScale<int>(
-            "nchans", channels, channels, channels) },
+            "Channel", channels, channels, channels) },
           detail::DataLayoutPolicy::generate(detail::DataLayoutPolicy::Policies::ObsGroupODB,
-                                             mappingFile, {"nlocs", "nchans"}));
+                                             mappingFile, {"Location", "Channel"}));
   }
-  Variable nlocs_var = og.vars.open("nlocs");
-  nlocs_var.write(nLocs1);
+  Variable Location_var = og.vars.open("Location");
+  Location_var.write(nLocs1);
 
-  Variable nchans_var = og.vars["nchans"];
-  nchans_var.write(nChans);
+  Variable Channel_var = og.vars["Channel"];
+  Channel_var.write(Channel);
 
   // Set up creation parameters for variables
   ioda::VariableCreationParameters float_params;
@@ -131,18 +131,18 @@ void test_obsgroup_helper_funcs(std::string backendType, std::string fileName,
   Variable lat_var;
   Variable lon_var;
   if (backendType == "fileRemapped") {
-    obs_var = og.vars.createWithScales<float>("ObsValue_renamed/myObs_renamed", {nlocs_var, nchans_var}, float_params);
+    obs_var = og.vars.createWithScales<float>("ObsValue_renamed/myObs_renamed", {Location_var, Channel_var}, float_params);
 
-    og.vars.createWithScales<float>("MetaData_renamed/latitude_renamed", {nlocs_var}, float_params);
+    og.vars.createWithScales<float>("MetaData_renamed/latitude_renamed", {Location_var}, float_params);
     lat_var = og.vars.open("MetaData/latitude");
 
-    og.vars.createWithScales<float>("MetaData_renamed/longitude_renamed", {nlocs_var}, float_params);
+    og.vars.createWithScales<float>("MetaData_renamed/longitude_renamed", {Location_var}, float_params);
     lon_var = og.vars["MetaData/longitude"];
 
     // Now testing that creating a variable not specified in mapping throws an exception
     bool unspecifiedVariableThrows = false;
     try {
-      og.vars.createWithScales<float>("Foo/bar", {nlocs_var}, float_params);
+      og.vars.createWithScales<float>("Foo/bar", {Location_var}, float_params);
     } catch (Exception) {
       unspecifiedVariableThrows = true;
     }
@@ -150,17 +150,17 @@ void test_obsgroup_helper_funcs(std::string backendType, std::string fileName,
       throw Exception("Foo/bar did not throw an exception");
     }
   } else {
-    obs_var = og.vars.createWithScales<float>("ObsValue/myObs", {nlocs_var, nchans_var}, float_params);
+    obs_var = og.vars.createWithScales<float>("ObsValue/myObs", {Location_var, Channel_var}, float_params);
 
-    og.vars.createWithScales<float>("MetaData/latitude", {nlocs_var}, float_params);
+    og.vars.createWithScales<float>("MetaData/latitude", {Location_var}, float_params);
     lat_var = og.vars.open("MetaData/latitude");
 
-    og.vars.createWithScales<float>("MetaData/longitude", {nlocs_var}, float_params);
+    og.vars.createWithScales<float>("MetaData/longitude", {Location_var}, float_params);
     lon_var = og.vars["MetaData/longitude"];
   }
 
   // Add attributes to variables
-  obs_var.atts.add<std::string>("coordinates", {"longitude latitude nchans"}, {1})
+  obs_var.atts.add<std::string>("coordinates", {"longitude latitude Channel"}, {1})
     .add<std::string>("long_name", {"obs I made up"}, {1})
     .add<std::string>("units", {"K"}, {1})
     .add<float>("valid_range", {0.0, 50.0}, {2});
@@ -177,8 +177,8 @@ void test_obsgroup_helper_funcs(std::string backendType, std::string fileName,
   lon_var.write(myLonExpected1);
 
   // Append the second data chunk
-  // resize the nlocs variable - do this before writing
-  og.resize({std::pair<ioda::Variable, ioda::Dimensions_t>(nlocs_var, locationsX2)});
+  // resize the Location variable - do this before writing
+  og.resize({std::pair<ioda::Variable, ioda::Dimensions_t>(Location_var, locationsX2)});
 
   // 1D vector selection objects
   std::vector<ioda::Dimensions_t> memStarts(1, 0);
@@ -203,7 +203,7 @@ void test_obsgroup_helper_funcs(std::string backendType, std::string fileName,
   fileSelect2D.select({ioda::SelectionOperator::SET, fileStarts, fileCounts});
 
   // Write the sencond data chunk
-  nlocs_var.write(nLocs2, memSelect1D, fileSelect1D);
+  Location_var.write(nLocs2, memSelect1D, fileSelect1D);
   obs_var.writeWithEigenRegular(myDataExpected2, memSelect2D, fileSelect2D);
   lat_var.write(myLatExpected2, memSelect1D, fileSelect1D);
   lon_var.write(myLonExpected2, memSelect1D, fileSelect1D);
@@ -240,7 +240,7 @@ void test_obsgroup_helper_funcs(std::string backendType, std::string fileName,
   }
 
   // Some more checks
-  Expects(og.open("ObsValue").vars["myObs"].isDimensionScaleAttached(1, og.vars["nchans"]));
+  Expects(og.open("ObsValue").vars["myObs"].isDimensionScaleAttached(1, og.vars["Channel"]));
 }
 
 int runTest(const std::string & backendType, const std::string & defaultMappingFile,
