@@ -607,13 +607,17 @@ void ObsSpace::createObsGroupFromObsFrame(ObsFrameRead & obsFrame) {
             chunkSize = dimSize;
         }
 
-        if (srcDimVar.isA<int>()) {
-            newDims.push_back(ioda::NewDimensionScale<int>(
-                dimName, dimSize, maxDimSize, chunkSize));
-        } else if (srcDimVar.isA<float>()) {
-            newDims.push_back(ioda::NewDimensionScale<float>(
-                dimName, dimSize, maxDimSize, chunkSize));
-        }
+        // Since different platforms equate types to different fundamental
+        // C++ data types (eg, int64_t is sometimes a long and other times a long long)
+        // allow for a wide range of data types for a dimension variable.
+        VarUtils::forAnySupportedVariableType(
+              srcDimVar,
+              [&](auto typeDiscriminator) {
+                  typedef decltype(typeDiscriminator) T;
+                  newDims.push_back(ioda::NewDimensionScale<T>(
+                      dimName, dimSize, maxDimSize, chunkSize));
+              },
+              VarUtils::ThrowIfVariableIsOfUnsupportedType(dimName));
     }
 
     // Create the backend for obs_group_
@@ -652,15 +656,18 @@ void ObsSpace::createObsGroupFromObsFrame(ObsFrameRead & obsFrame) {
         Selection destSelect;
         destSelect.extent(destDimShape).select({SelectionOperator::SET, starts, counts });
 
-        if (srcDimVar.isA<int>()) {
-            std::vector<int> dimCoords;
-            srcDimVar.read<int>(dimCoords, memSelect, srcSelect);
-            destDimVar.write<int>(dimCoords, memSelect, destSelect);
-        } else if (srcDimVar.isA<float>()) {
-            std::vector<float> dimCoords;
-            srcDimVar.read<float>(dimCoords, memSelect, srcSelect);
-            destDimVar.write<float>(dimCoords, memSelect, destSelect);
-        }
+        // Since different platforms equate types to different fundamental
+        // C++ data types (eg, int64_t is sometimes a long and other times a long long)
+        // allow for a wide range of data types for a dimension variable.
+        VarUtils::forAnySupportedVariableType(
+              srcDimVar,
+              [&](auto typeDiscriminator) {
+                  typedef decltype(typeDiscriminator) T;
+                  std::vector<T> dimCoords;
+                  srcDimVar.read<T>(dimCoords, memSelect, srcSelect);
+                  destDimVar.write<T>(dimCoords, memSelect, destSelect);
+              },
+              VarUtils::ThrowIfVariableIsOfUnsupportedType(dimName));
     }
 }
 
