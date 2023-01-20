@@ -464,6 +464,9 @@ namespace ioda {
         /// \brief name of obs space
         std::string obsname_;
 
+        /// \brief When greater than zero print run stats (runtime, memory usage)
+        int print_run_stats_;
+
         /// \brief Initial observation variables to be processed (observations
         /// present in input file)
         oops::Variables initial_obsvars_;

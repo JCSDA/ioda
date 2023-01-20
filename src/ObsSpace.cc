@@ -9,6 +9,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdlib>
 #include <fstream>
 #include <iomanip>
 #include <map>
@@ -122,9 +123,28 @@ ObsSpace::ObsSpace(const Parameters_ & params, const eckit::mpi::Comm & comm,
                        gnlocs_(0), nrecs_(0), obsvars_(),
                        obs_group_(), obs_params_(params, bgn, end, comm, timeComm)
 {
+    // Determine if run stats should be dumped out from the environment variable
+    // IODA_PRINT_RUNSTATS.
+    //    IODA_PRINT_RUNSTATS == 0 -> disable printing of run stats
+    //    IODA_PRINT_RUNSTATS > 0 -> enable printing of run stats
+    //         Leave open the possibility of setting verbosity levels in this case
+    //             1 - print runstats at beginning and end of both ObsSpace constructor
+    //                 and ObsSpace save function.
+    //            >1 - for now, same as level 1
+    char * iodaPrintRunstats = std::getenv("IODA_PRINT_RUNSTATS");
+    if (iodaPrintRunstats == nullptr) {
+        print_run_stats_ = 0;
+    } else {
+        // strtol returns zero if a conversion from the input string could not be made
+        // this will result in the print stats being disabled
+        print_run_stats_ = std::strtol(iodaPrintRunstats, nullptr, 10);
+    }
+
     // Read the obs space name
     obsname_ = obs_params_.top_level_.obsSpaceName;
-    util::printRunStats("ObsSpace::ObsSpace: start " + obsname_ + ": ", true);
+    if (print_run_stats_ > 0) {
+        util::printRunStats("ioda::ObsSpace::ObsSpace: start " + obsname_ + ": ", true);
+    }
 
     // Open the source (ObsFrame) of the data for initializing the obs_group_ (ObsGroup)
     ObsFrameRead obsFrame(obs_params_);
@@ -227,13 +247,17 @@ ObsSpace::ObsSpace(const Parameters_ & params, const eckit::mpi::Comm & comm,
       << std::endl;
 
     oops::Log::trace() << "ObsSpace::ObsSpace constructed name = " << obsname() << std::endl;
-    util::printRunStats("ObsSpace::ObsSpace: end: ", true);
+    if (print_run_stats_ > 0) {
+        util::printRunStats("ioda::ObsSpace::ObsSpace: end " + obsname_ + ": ", true);
+    }
 }
 
 // -----------------------------------------------------------------------------
 void ObsSpace::save() {
     if (obs_params_.top_level_.obsDataOut.value() != boost::none) {
-        util::printRunStats("ObsSpace::save: start " + obsname_ + ": ", true);
+        if (print_run_stats_ > 0) {
+            util::printRunStats("ioda::ObsSpace::save: start " + obsname_ + ": ", true);
+        }
         const std::string baseFiletype =
         obs_params_.top_level_.obsDataOut.value()->engine.value().engineParameters.value().type;
 
@@ -281,7 +305,9 @@ void ObsSpace::save() {
         // issues with hdf file handles getting deallocated before some of the MPI
         // processes are finished with them.
         this->comm().barrier();
-        util::printRunStats("ObsSpace::save: end: ", true);
+        if (print_run_stats_ > 0) {
+            util::printRunStats("ioda::ObsSpace::save: end " + obsname_ + ": ", true);
+        }
     } else {
         oops::Log::info() << obsname() << " :  no output" << std::endl;
     }
