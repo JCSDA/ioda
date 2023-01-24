@@ -143,7 +143,7 @@ ObsSpace::ObsSpace(const Parameters_ & params, const eckit::mpi::Comm & comm,
     // Read the obs space name
     obsname_ = obs_params_.top_level_.obsSpaceName;
     if (print_run_stats_ > 0) {
-        util::printRunStats("ioda::ObsSpace::ObsSpace: start " + obsname_ + ": ", true);
+        util::printRunStats("ioda::ObsSpace::ObsSpace: start " + obsname_ + ": ", true, comm);
     }
 
     // Open the source (ObsFrame) of the data for initializing the obs_group_ (ObsGroup)
@@ -248,7 +248,7 @@ ObsSpace::ObsSpace(const Parameters_ & params, const eckit::mpi::Comm & comm,
 
     oops::Log::trace() << "ObsSpace::ObsSpace constructed name = " << obsname() << std::endl;
     if (print_run_stats_ > 0) {
-        util::printRunStats("ioda::ObsSpace::ObsSpace: end " + obsname_ + ": ", true);
+        util::printRunStats("ioda::ObsSpace::ObsSpace: end " + obsname_ + ": ", true, comm);
     }
 }
 
@@ -256,7 +256,7 @@ ObsSpace::ObsSpace(const Parameters_ & params, const eckit::mpi::Comm & comm,
 void ObsSpace::save() {
     if (obs_params_.top_level_.obsDataOut.value() != boost::none) {
         if (print_run_stats_ > 0) {
-            util::printRunStats("ioda::ObsSpace::save: start " + obsname_ + ": ", true);
+            util::printRunStats("ioda::ObsSpace::save: start " + obsname_ + ": ", true, comm());
         }
         const std::string baseFiletype =
         obs_params_.top_level_.obsDataOut.value()->engine.value().engineParameters.value().type;
@@ -306,7 +306,7 @@ void ObsSpace::save() {
         // processes are finished with them.
         this->comm().barrier();
         if (print_run_stats_ > 0) {
-            util::printRunStats("ioda::ObsSpace::save: end " + obsname_ + ": ", true);
+            util::printRunStats("ioda::ObsSpace::save: end " + obsname_ + ": ", true, comm());
         }
     } else {
         oops::Log::info() << obsname() << " :  no output" << std::endl;
