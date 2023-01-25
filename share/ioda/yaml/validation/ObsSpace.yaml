@@ -781,13 +781,13 @@ Variables:
   - Variable: [ "satelliteIdentifier", "satellite_identifier", "satellite_id", "occulting_sat_id" ]
     MetaData: true
     Type: Enum
-  - Variable: [ "satelliteTransmitterId", "reference_sat_id" ]
+  - Variable: [ "satelliteTransmitterId", "reference_sat_id", "platform_id" ]
     MetaData: true
     Type: Enum
   - Variable: [ "satelliteAscendingFlag", "ascending_flag" ]
     MetaData: true
     Type: Enum
-  - Variable: [ "satelliteConstellationRO", "gnss_sat_class" ]
+  - Variable: [ "satelliteConstellationRO", "gnss_sat_class", "satellite_classification" ]
     MetaData: true
     Type: UInt32
     Force Units: false
@@ -826,7 +826,7 @@ Variables:
     Check Exact Units: false  # Check only that units are convertible, not that the reference is identical to this one.
     Attributes:
       units: "seconds since 1970-01-01T00:00:00Z"
-  - Variable: [ "timeOffset" ]
+  - Variable: [ "timeOffset", "time_difference" ]
     Dimensions: [ [ "Location" ], [ "Location", "Level" ] ]
     Attributes: { units: "s" }
     MetaData: true
