@@ -435,11 +435,13 @@ Variables:
     MetaData: true
   - Variable: [ "stationPressure", "surface_pressure", "pressure_station" ]
     Attributes: { units: "Pa" }
-  - Variable: [ "pressureSurface", "pressure_surface" ]    # Only for use by UKMO
+  - Variable: [ "surfacePressure", "pressure_surface" ]    # Only for use by UKMO
     Attributes: { units: "Pa" }
   - Variable: [ "pressureChange" ]
     Attributes: { units: "Pa s-1" }
   - Variable: [ "pressureReducedToMeanSeaLevel" ]
+    Attributes: { units: "Pa" }
+  - Variable: [ "standardPressure"]
     Attributes: { units: "Pa" }
   - Variable: [ "horizontalVisibility" ]
     Attributes: { units: "m" }
@@ -1200,7 +1202,7 @@ Variables:
     MetaData: true
   - Variable: [ "selectedWindVectorIndex", "selected_wind_vector_index" ]
     Type: UInt32
-  # Sonde specific UKMO
+  # Conventional specific UKMO
   - Variable: [ "levelType", "level_type"]
     Type: Enum
     MetaData: true
@@ -1228,6 +1230,13 @@ Variables:
   - Variable: [ "sondeReportIdentifier", "sonde_report_identifier"]
     Type: Enum
     MetaData: true
+  - Variable: [ "buoyType", "buoy_type"]
+    Type: Enum
+    MetaData: true
+  - Variable: [ "obPractice", "ob_practice"]
+    Type: Enum
+    MetaData: true
+
   # Variables UKMO may deprecate later
   - Variable: [ "OPS_airTemperature", "OPS_air_temperature" ]
   - Variable: [ "OPS_windEastward", "OPS_eastward_wind" ]
