@@ -255,6 +255,11 @@ void createVariable(const std::string & varName, const Variable & srcVar,
                     const int adjustNlocs, Has_Variables & destVars,
                     const std::size_t strLen) {
     VariableCreationParameters params = srcVar.getCreationParameters(false, false);
+    // For now we want to use mpio independent writing style which doesn't support
+    // compression. This is currently being mitigated since we have to run a 
+    // workaround to convert fixed length strings to variable length strings for
+    // netcdf compatibility. And in this workaround, we can turn on compression.
+    params.noCompress();
     Dimensions varDims = srcVar.getDimensions();
     // If adjust Nlocs is >= 0, this means that this is a variable that needs
     // to be created with the total number of locations from the MPI tasks in the pool.
@@ -280,6 +285,11 @@ void createVariable<std::string>(const std::string & varName, const Variable & s
     // The origFillValue attribute can be used by the "convert back to variable length
     // string" application to restore the fill value.
     VariableCreationParameters params = srcVar.getCreationParameters(false, false);
+    // For now we want to use mpio independent writing style which doesn't support
+    // compression. This is currently being mitigated since we have to run a 
+    // workaround to convert fixed length strings to variable length strings for
+    // netcdf compatibility. And in this workaround, we can turn on compression.
+    params.noCompress();
     auto fv = srcVar.getFillValue();
     std::string origFillValue = detail::getFillValue<std::string>(fv);
     params.unsetFillValue();

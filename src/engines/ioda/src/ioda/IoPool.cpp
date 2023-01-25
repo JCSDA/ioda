@@ -319,6 +319,7 @@ IoPool::~IoPool() = default;
 
 //--------------------------------------------------------------------------------------
 void IoPool::save(const Group & srcGroup) {
+    oops::Log::trace() << "IoPool::save, start" << std::endl;
     Group fileGroup;
     if (comm_pool_ != nullptr) {
         Engines::WriterCreationParameters createParams(*comm_pool_, comm_time_,
@@ -336,6 +337,7 @@ void IoPool::save(const Group & srcGroup) {
 
     // Copy the ObsSpace ObsGroup to the output file Group.
     ioWriteGroup(*this, srcGroup, fileGroup, is_parallel_io_);
+    oops::Log::trace() << "IoPool::save, end" << std::endl;
 }
 
 void IoPool::workaroundGenFileNames(std::string & finalFileName, std::string & tempFileName) {
@@ -433,6 +435,7 @@ void IoPool::workaroundFixToVarLenStrings(const std::string & finalFileName,
 
 //--------------------------------------------------------------------------------------
 void IoPool::finalize() {
+    oops::Log::trace() << "IoPool::finalize, start" << std::endl;
     // TODO(srh) Workaround until we get fixed length string support in the netcdf-c
     // library. This is expected to be available in the 4.9.1 release of netcdf-c.
     // For now move the file with fixed length strings to a temporary
@@ -465,6 +468,7 @@ void IoPool::finalize() {
     if (eckit::mpi::hasComm(nonPoolCommName)) {
         eckit::mpi::deleteComm(nonPoolCommName);
     }
+    oops::Log::trace() << "IoPool::finalize, end" << std::endl;
 }
 
 //--------------------------------------------------------------------------------------

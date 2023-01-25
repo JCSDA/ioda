@@ -611,12 +611,13 @@ Variable HH_Variable::writeImpl(gsl::span<const char> data, const Type& in_memor
   H5T_class_t varTypeClass = H5Tget_class(varType());
 
   // Create a data transfer property list to be used in all of the following H5Dwrite
-  // commands. If running in parallel io mode, we will use the collective style of
-  // writing.
+  // commands. If running in parallel io mode, we will use the independent style of
+  // writing. We are using independent for now since we have discovered issues on
+  // some platforms with collective style.
   hid_t plist_id = H5Pcreate(H5P_DATASET_XFER);
   if (plist_id < 0) throw Exception("H5Pcreate failed", ioda_Here());
   if (isParallelIo) {
-    herr_t rc = H5Pset_dxpl_mpio(plist_id, H5FD_MPIO_COLLECTIVE);
+    herr_t rc = H5Pset_dxpl_mpio(plist_id, H5FD_MPIO_INDEPENDENT);
     if (rc < 0) throw Exception("H5Pset_fapl_mpio failed", ioda_Here());
   }
   HH_hid_t xfer_plist(plist_id, Handles::Closers::CloseHDF5PropertyList::CloseP);
