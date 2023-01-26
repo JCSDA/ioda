@@ -751,14 +751,14 @@ Variables:
   - Variable: [ "observationSubTypeNum", "ops_subtype", "obs_subtype" ]
     MetaData: true
     Type: Enum
-  - Variable: [ "observationReport", "observation_report" ] 
+  - Variable: [ "observationReport", "observation_report" ]
     Type: UInt32
-  - Variable: [ "thinningPriority", "thinning_priority", "priority", "thin_score" ] 
+  - Variable: [ "thinningPriority", "thinning_priority", "priority", "thin_score" ]
     Type: UInt32
   - Variable: [ "superObservation", "is_superob" ]         # TODO:  should someday be logical/byte=0 false, 1=true
     Type: UInt16
     MetaData: true
-  - Variable: [ "windProfiler", "wind_profiler" ] 
+  - Variable: [ "windProfiler", "wind_profiler" ]
     Type: UInt32
   - Variable: [ "instrumentPackage" ]
     MetaData: true
@@ -839,6 +839,18 @@ Variables:
     MetaData: true
     Attributes: { units: "degree" }
   - Variable: [ "sensorZenithAngle", "sensor_zenith_angle" ]
+    MetaData: true
+    Attributes: { units: "degree" }
+  - Variable: [ "solarZenithAngle1", "solar_zenith_angle1" ]
+    MetaData: true
+    Attributes: { units: "degree" }
+  - Variable: [ "solarAzimuthAngle1", "solar_azimuth_angle1" ]
+    MetaData: true
+    Attributes: { units: "degree" }
+  - Variable: [ "sensorZenithAngle1", "sensor_zenith_angle1" ]
+    MetaData: true
+    Attributes: { units: "degree" }
+  - Variable: [ "sensorAzimuthAngle1", "sensor_azimuth_angle1" ]
     MetaData: true
     Attributes: { units: "degree" }
   - Variable: [ "satelliteZenithAngle", "satellite_zenith_angle" ]
