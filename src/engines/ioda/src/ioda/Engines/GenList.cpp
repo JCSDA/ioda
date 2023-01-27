@@ -23,10 +23,8 @@ static ReaderMaker<GenList> maker("GenList");
 // Classes
 
 //-------------------- public functions --------------------------------
-GenList::GenList(const Parameters_ & params, const util::DateTime & winStart,
-                 const util::DateTime & winEnd, const eckit::mpi::Comm & comm,
-                 const eckit::mpi::Comm & timeComm, const std::vector<std::string> & obsVarNames)
-                     : ReaderBase(winStart, winEnd, comm, timeComm, obsVarNames) {
+GenList::GenList(const Parameters_ & params, const ReaderCreationParameters & createParams)
+                     : ReaderBase(createParams) {
     oops::Log::trace() << "ioda::Engines::GenList start constructor" << std::endl;
     // Create a backend backed by memory, and fill with results from the list style generator
     Engines::BackendNames backendName = BackendNames::ObsStore;
@@ -49,7 +47,7 @@ GenList::GenList(const Parameters_ & params, const util::DateTime & winStart,
 void GenList::genDistList(const GenList::Parameters_ & params) {
     // Grab the parameters
     const std::vector<float> obsErrors = params.obsErrors;
-    ASSERT(obsErrors.size() == obsVarNames_.size());
+    ASSERT(obsErrors.size() == createParams_.obsVarNames.size());
 
     const std::vector<float> latVals = params.lats;
     const std::vector<float> lonVals = params.lons;
@@ -57,7 +55,8 @@ void GenList::genDistList(const GenList::Parameters_ & params) {
     const std::string epoch = params.epoch.value();
 
     // Transfer the specified values to the ObsGroup
-    storeGenData(latVals, lonVals, dts, epoch, obsVarNames_, obsErrors, obs_group_);
+    storeGenData(latVals, lonVals, dts, epoch, createParams_.obsVarNames,
+                 obsErrors, obs_group_);
 }
 
 void GenList::print(std::ostream & os) const {

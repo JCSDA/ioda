@@ -59,9 +59,7 @@ class GenRandom: public ReaderBase {
   typedef GenRandomParameters Parameters_;
 
   // Constructor via parameters
-  GenRandom(const Parameters_ & params, const util::DateTime & winStart,
-            const util::DateTime & winEnd, const eckit::mpi::Comm & comm,
-            const eckit::mpi::Comm & timeComm, const std::vector<std::string> & obsVarNames);
+  GenRandom(const Parameters_ & params, const ReaderCreationParameters & createParams);
 
   bool applyLocationsCheck() const override { return false; }
 

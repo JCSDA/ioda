@@ -35,9 +35,7 @@ class ReadH5File: public ReaderBase {
   typedef ReadH5FileParameters Parameters_;
 
   // Constructor via parameters
-  ReadH5File(const Parameters_ & params, const util::DateTime & winStart,
-             const util::DateTime & winEnd, const eckit::mpi::Comm & comm,
-             const eckit::mpi::Comm & timeComm, const std::vector<std::string> &obsVarNames);
+  ReadH5File(const Parameters_ & params, const ReaderCreationParameters & createParams);
 
   void print(std::ostream & os) const override;
 

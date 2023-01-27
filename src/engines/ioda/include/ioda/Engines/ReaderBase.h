@@ -54,6 +54,37 @@ class ReaderParametersWrapper : public oops::Parameters {
 };
 
 //----------------------------------------------------------------------------------------
+// Reader creation parameters
+//----------------------------------------------------------------------------------------
+
+class ReaderCreationParameters {
+  public:
+    ReaderCreationParameters(const util::DateTime & winStart, const util::DateTime & winEnd,
+                             const eckit::mpi::Comm & comm, const eckit::mpi::Comm & timeComm,
+                             const std::vector<std::string> & obsVarNames,
+                             const bool isParallelIo);
+    /// \brief DA timing window start
+    const util::DateTime & winStart;
+
+    /// \brief DA timing window end
+    const util::DateTime & winEnd;
+
+    /// \brief io pool communicator group
+    const eckit::mpi::Comm & comm;
+
+    /// \brief time communicator group
+    const eckit::mpi::Comm & timeComm;
+
+    /// \brief list of variables to be simulated from the obs source
+    const std::vector<std::string> & obsVarNames;
+
+    /// \brief flag indicating whether a parallel io backend is to be used
+    /// \details This flag is set to true to indicate a parallel io backend (if available)
+    /// should be used.
+    const bool isParallelIo;
+};
+
+//----------------------------------------------------------------------------------------
 // Reader base class
 //----------------------------------------------------------------------------------------
 
@@ -65,9 +96,7 @@ class ReaderParametersWrapper : public oops::Parameters {
 
 class ReaderBase : public util::Printable {
  public:
-    ReaderBase(const util::DateTime & winStart, const util::DateTime & winEnd,
-               const eckit::mpi::Comm & comm, const eckit::mpi::Comm & timeComm,
-               const std::vector<std::string> & obsVarNames);
+    ReaderBase(const ReaderCreationParameters & createParams);
     virtual ~ReaderBase() {}
 
     /// \brief return the backend that stores the data
@@ -97,23 +126,11 @@ class ReaderBase : public util::Printable {
     /// \brief ObsGroup container associated with the selected backend engine
     ioda::ObsGroup obs_group_;
 
-    /// \brief DA window start
-    const util::DateTime winStart_;
-
-    /// \brief DA window end
-    const util::DateTime winEnd_;
-
-    /// \brief primary MPI communicator
-    const eckit::mpi::Comm & comm_;
-
-    /// \brief time bin MPI communicator
-    const eckit::mpi::Comm & timeComm_;
-
-    /// \brief list of varible names that will be used downstream
-    const std::vector<std::string> obsVarNames_;
-
     /// \brief input file name for those readers that use a file
     std::string fileName_;
+
+    /// \brief creation parameters
+    ReaderCreationParameters createParams_;
 };
 
 //----------------------------------------------------------------------------------------
@@ -125,11 +142,7 @@ class ReaderFactory {
   /// \brief Create and return a new instance of an ReaderBase subclass.
   /// \param params Parameters object for the engine creation
   static std::unique_ptr<ReaderBase> create(const ReaderParametersBase & params,
-                                            const util::DateTime & winStart,
-                                            const util::DateTime & winEnd,
-                                            const eckit::mpi::Comm & comm,
-                                            const eckit::mpi::Comm & timeComm,
-                                            const std::vector<std::string> & obsVarNames);
+                                            const ReaderCreationParameters & createParams);
 
   /// \brief Create and return an instance of the subclass of ObsOperatorParametersBase
   /// storing parameters of observation operators of the specified type.
@@ -149,11 +162,7 @@ class ReaderFactory {
   /// \brief Construct a new instance of an ReaderBase subclass.
   /// \param params Parameters object for the engine construction
   virtual std::unique_ptr<ReaderBase> make(const ReaderParametersBase & params,
-                                           const util::DateTime & winStart,
-                                           const util::DateTime & winEnd,
-                                           const eckit::mpi::Comm & comm,
-                                           const eckit::mpi::Comm & timeComm,
-                                           const std::vector<std::string> & obsVarNames) = 0;
+                                           const ReaderCreationParameters & createParams) = 0;
 
   /// \brief Construct a new instance of an ReaderParametersBase subclass.
   virtual std::unique_ptr<ReaderParametersBase> makeParameters() const = 0;
@@ -172,14 +181,9 @@ class ReaderMaker : public ReaderFactory {
   /// \brief Construct a new instance of an ReaderBase subclass.
   /// \param params Parameters object for the engine construction
   std::unique_ptr<ReaderBase> make(const ReaderParametersBase & params,
-                                   const util::DateTime & winStart,
-                                   const util::DateTime & winEnd,
-                                   const eckit::mpi::Comm & comm,
-                                   const eckit::mpi::Comm & timeComm,
-                                   const std::vector<std::string> & obsVarNames) override {
+                                   const ReaderCreationParameters & createParams) override {
     const auto &stronglyTypedParameters = dynamic_cast<const Parameters_&>(params);
-    return std::make_unique<T>(stronglyTypedParameters, winStart, winEnd,
-                               comm, timeComm, obsVarNames);
+    return std::make_unique<T>(stronglyTypedParameters, createParams);
   }
 
   /// \brief Construct a new instance of an ReaderParametersBase subclass.

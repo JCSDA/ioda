@@ -22,16 +22,10 @@ static ReaderMaker<ReadH5File> maker("H5File");
 
 // Classes
 
-ReadH5File::ReadH5File(const Parameters_ & params, const util::DateTime & winStart,
-                       const util::DateTime & winEnd, const eckit::mpi::Comm & comm,
-                       const eckit::mpi::Comm & timeComm,
-                       const std::vector<std::string> & obsVarNames)
-                           : ReaderBase(winStart, winEnd, comm, timeComm, obsVarNames),
-                             fileName_(params.fileName) {
+ReadH5File::ReadH5File(const Parameters_ & params,
+                       const ReaderCreationParameters & createParams)
+                           : ReaderBase(createParams), fileName_(params.fileName) {
     oops::Log::trace() << "ioda::Engines::ReadH5File start constructor" << std::endl;
-    // Record the file name for reporting
-    fileName_ = params.fileName;
-
     // Create a backend backed by an existing read-only hdf5 file
     Engines::BackendNames backendName = BackendNames::Hdf5File;
     Engines::BackendCreationParameters backendParams;

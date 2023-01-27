@@ -84,17 +84,18 @@ CASE("ioda/GlobalAttributeCheck") {
     EngineFactoryTestCaseParameters params;
     params.validateAndDeserialize(testCaseConfig);
 
+    bool isParallelIo = (oops::mpi::world().size() > 1);
     std::unique_ptr<Engines::ReaderBase> testReaderEngine;
     std::unique_ptr<Engines::WriterBase> testWriterEngine;
     if (params.obsDataIn.value() != boost::none) {
-      testReaderEngine = Engines::ReaderFactory::create(
-          params.obsDataIn.value()->engine.value().engineParameters,
+      Engines::ReaderCreationParameters createParams(
           util::DateTime("2018-04-14T21:00:00Z"), util::DateTime("2018-04-15T03:00:00Z"),
-          oops::mpi::world(), oops::mpi::myself(), params.obsVarNames);
+          oops::mpi::world(), oops::mpi::myself(), params.obsVarNames, isParallelIo);
+      testReaderEngine = Engines::ReaderFactory::create(
+          params.obsDataIn.value()->engine.value().engineParameters, createParams);
       oops::Log::info() << "Reader source: " << *testReaderEngine << std::endl;
     } else if (params.obsDataOut.value() != boost::none) {
       bool createMultipleFiles = false;
-      bool isParallelIo = (oops::mpi::world().size() > 1);
       Engines::WriterCreationParameters createParams(oops::mpi::world(), oops::mpi::myself(),
                                         createMultipleFiles, isParallelIo);
       testWriterEngine = Engines::WriterFactory::create(

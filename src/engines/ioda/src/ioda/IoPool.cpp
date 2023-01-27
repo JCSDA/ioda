@@ -396,9 +396,11 @@ void IoPool::workaroundFixToVarLenStrings(const std::string & finalFileName,
 
     WorkaroundReaderParameters readerParams;
     readerParams.validateAndDeserialize(readerConfig);
+    const bool isParallel = false;
+    Engines::ReaderCreationParameters readerCreateParams(win_start_, win_end_,
+                                      *comm_pool_, comm_time_, {}, isParallel);
     std::unique_ptr<Engines::ReaderBase> readerEngine = Engines::ReaderFactory::create(
-          readerParams.engine.value().engineParameters, win_start_, win_end_,
-          *comm_pool_, comm_time_, {});
+          readerParams.engine.value().engineParameters, readerCreateParams);
 
     // Writer backend
     WorkaroundWriterParameters writerParams;
@@ -413,12 +415,11 @@ void IoPool::workaroundFixToVarLenStrings(const std::string & finalFileName,
     // in telling the writer that we are to create multiple files and not use the parallel
     // io mode.
     writerParams.validateAndDeserialize(writerConfig);
-    bool createMultipleFiles = true;
-    bool isParallel = false;
-    Engines::WriterCreationParameters createParams(*comm_pool_, comm_time_,
+    const bool createMultipleFiles = true;
+    Engines::WriterCreationParameters writerCreateParams(*comm_pool_, comm_time_,
                                       createMultipleFiles, isParallel);
     std::unique_ptr<Engines::WriterBase> writerEngine = Engines::WriterFactory::create(
-          writerParams.engine.value().engineParameters, createParams);
+          writerParams.engine.value().engineParameters, writerCreateParams);
 
     // Copy the contents from the temp file to the final file.
     Group readerTopGroup = readerEngine->getObsGroup();

@@ -29,11 +29,8 @@ static ReaderMaker<GenRandom> maker("GenRandom");
 // Classes
 
 //------------------------ public functions ----------------------------------
-GenRandom::GenRandom(const Parameters_ & params, const util::DateTime & winStart,
-                     const util::DateTime & winEnd, const eckit::mpi::Comm & comm,
-                     const eckit::mpi::Comm & timeComm,
-                     const std::vector<std::string> & obsVarNames)
-                         : ReaderBase(winStart, winEnd, comm, timeComm, obsVarNames) {
+GenRandom::GenRandom(const Parameters_ & params, const ReaderCreationParameters & createParams)
+                         : ReaderBase(createParams) {
     oops::Log::trace() << "ioda::Engines::GenRandom start constructor" << std::endl;
     // Create a backend backed by memory and fill with results from a random style generator
     Engines::BackendNames backendName = BackendNames::ObsStore;
@@ -56,7 +53,7 @@ GenRandom::GenRandom(const Parameters_ & params, const util::DateTime & winStart
 void GenRandom::genDistRandom(const GenRandom::Parameters_ & params) {
     /// Grab the parameter values
     const std::vector<float> obsErrors = params.obsErrors;
-    ASSERT(obsErrors.size() == obsVarNames_.size());
+    ASSERT(obsErrors.size() == createParams_.obsVarNames.size());
 
     const int numLocs = params.numObs;
     const float latStart = params.latStart;
@@ -89,20 +86,20 @@ void GenRandom::genDistRandom(const GenRandom::Parameters_ & params) {
     // would be different in the case where random_seed is not specified.
     std::vector<float> ranVals(numLocs, 0.0);
     std::vector<float> ranVals2(numLocs, 0.0);
-    if (comm_.rank() == 0) {
+    if (createParams_.comm.rank() == 0) {
         util::UniformDistribution<float> ranUD(numLocs, 0.0, 1.0, ranSeed);
         util::UniformDistribution<float> ranUD2(numLocs, 0.0, 1.0, ranSeed+1);
 
         ranVals = ranUD.data();
         ranVals2 = ranUD2.data();
     }
-    comm_.broadcast(ranVals, 0);
-    comm_.broadcast(ranVals2, 0);
+    createParams_.comm.broadcast(ranVals, 0);
+    createParams_.comm.broadcast(ranVals2, 0);
 
     // Form the ranges val2-val for lat, lon, time
     float latRange = latEnd - latStart;
     float lonRange = lonEnd - lonStart;
-    util::Duration windowDuration(winEnd_ - winStart_);
+    util::Duration windowDuration(createParams_.winEnd - createParams_.winStart);
     float timeRange = static_cast<float>(windowDuration.toSeconds());
 
     // Create vectors for lat, lon, time, fill them with random values
@@ -128,9 +125,10 @@ void GenRandom::genDistRandom(const GenRandom::Parameters_ & params) {
         dts[ii] = offsetDt;
     }
 
-    std::string epoch = std::string("seconds since ") + winStart_.toString();
+    const std::string epoch = std::string("seconds since ") + createParams_.winStart.toString();
     // Transfer the generated values to the ObsGroup
-    storeGenData(latVals, lonVals, dts, epoch, obsVarNames_, obsErrors, obs_group_);
+    storeGenData(latVals, lonVals, dts, epoch, createParams_.obsVarNames,
+                 obsErrors, obs_group_);
 }
 
 void GenRandom::print(std::ostream & os) const {

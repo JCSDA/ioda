@@ -35,11 +35,12 @@ ObsFrameRead::ObsFrameRead(const ObsSpaceParameters & params) :
     // the YAML (params.top_level_.simVars) since that is the required spec, thus
     // the only list guaranteed to be available at this time (ie, before reading
     // the obs input and constructing the ObsSpace).
-    obs_data_in_ = Engines::ReaderFactory::create(
-        params.top_level_.obsDataIn.value().engine.value().engineParameters,
+    Engines::ReaderCreationParameters createParams(
         params.windowStart(), params.windowEnd(),
         params.comm(), params.timeComm(),
-        params.top_level_.simVars.value().variables());
+        params.top_level_.simVars.value().variables(), false);
+    obs_data_in_ = Engines::ReaderFactory::create(
+        params.top_level_.obsDataIn.value().engine.value().engineParameters, createParams);
 
     ObsGroup og = obs_data_in_->getObsGroup();
 

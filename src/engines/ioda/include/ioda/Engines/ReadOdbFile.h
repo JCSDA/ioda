@@ -51,9 +51,7 @@ class ReadOdbFile: public ReaderBase {
   typedef ReadOdbFileParameters Parameters_;
 
   // Constructor via parameters
-  ReadOdbFile(const Parameters_ & params, const util::DateTime & winStart,
-              const util::DateTime & winEnd, const eckit::mpi::Comm & comm,
-              const eckit::mpi::Comm & timeComm, const std::vector<std::string> & obsVarNames);
+  ReadOdbFile(const Parameters_ & params, const ReaderCreationParameters & createParams);
 
   void print(std::ostream & os) const override;
 

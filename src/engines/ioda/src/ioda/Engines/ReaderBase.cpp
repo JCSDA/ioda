@@ -18,16 +18,26 @@ namespace Engines {
 //---------------------------------------------------------------------
 
 //---------------------------------------------------------------------
+// ReaderCreationParameters
+//---------------------------------------------------------------------
+
+ReaderCreationParameters::ReaderCreationParameters(
+                             const util::DateTime & winStart, const util::DateTime & winEnd,
+                             const eckit::mpi::Comm & comm, const eckit::mpi::Comm & timeComm,
+                             const std::vector<std::string> & obsVarNames,
+                             const bool isParallelIo)
+                                 : winStart(winStart), winEnd(winEnd),
+                                   comm(comm), timeComm(timeComm),
+                                   obsVarNames(obsVarNames), isParallelIo(isParallelIo) {
+}
+
+//---------------------------------------------------------------------
 // ReaderBase 
 //---------------------------------------------------------------------
 
 //--------------------------- public functions ---------------------------------------
-ReaderBase::ReaderBase(const util::DateTime & winStart, const util::DateTime & winEnd,
-                       const eckit::mpi::Comm & comm, const eckit::mpi::Comm & timeComm,
-                       const std::vector<std::string> & obsVarNames)
-                           : winStart_(winStart), winEnd_(winEnd),
-                             comm_(comm), timeComm_(timeComm),
-                             obsVarNames_(obsVarNames) {
+ReaderBase::ReaderBase(const ReaderCreationParameters & createParams)
+                           : createParams_(createParams) {
 }
 
 
@@ -45,16 +55,11 @@ ReaderFactory::ReaderFactory(const std::string & type) {
 
 //-----------------------------------------------------------------------------------------
 std::unique_ptr<ReaderBase> ReaderFactory::create(const ReaderParametersBase & params,
-                                                  const util::DateTime & winStart,
-                                                  const util::DateTime & winEnd,
-                                                  const eckit::mpi::Comm & comm,
-                                                  const eckit::mpi::Comm & timeComm,
-                                                  const std::vector<std::string> & obsVarNames) {
+                                             const ReaderCreationParameters & createParams) {
   oops::Log::trace() << "ReaderFactory::create starting" << std::endl;
 
   const std::string type = params.type;
-  std::unique_ptr<ReaderBase> ptr = getMaker(type).make(params, winStart, winEnd,
-                                                        comm, timeComm, obsVarNames);
+  std::unique_ptr<ReaderBase> ptr = getMaker(type).make(params, createParams);
   oops::Log::trace() << "ReaderFactory::create done" << std::endl;
   return ptr;
 }

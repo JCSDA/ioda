@@ -23,12 +23,9 @@ static ReaderMaker<ReadOdbFile> maker("ODB");
 
 // Classes
 
-ReadOdbFile::ReadOdbFile(const Parameters_ & params, const util::DateTime & winStart,
-                         const util::DateTime & winEnd, const eckit::mpi::Comm & comm,
-                         const eckit::mpi::Comm & timeComm,
-                         const std::vector<std::string> & obsVarNames)
-                             : ReaderBase(winStart, winEnd, comm, timeComm, obsVarNames),
-                               fileName_(params.fileName) {
+ReadOdbFile::ReadOdbFile(const Parameters_ & params,
+                         const ReaderCreationParameters & createParams)
+                             : ReaderBase(createParams), fileName_(params.fileName) {
     oops::Log::trace() << "ioda::Engines::ReadOdbFile start constructor" << std::endl;
     // Create an in-memory backend
     Engines::BackendNames backendName = Engines::BackendNames::ObsStore;
@@ -42,7 +39,7 @@ ReadOdbFile::ReadOdbFile(const Parameters_ & params, const util::DateTime & winS
     odcparams.queryFile   = params.queryFileName;
     odcparams.maxNumberChannels = params.maxNumberChannels;
     const util::DateTime missingDate = util::missingValue(missingDate);
-    odcparams.timeWindowStart = winStart + util::Duration(1);
+    odcparams.timeWindowStart = createParams_.winStart + util::Duration(1);
     odcparams.timeWindowExtendedLowerBound =
       params.timeWindowExtendedLowerBound.value() != boost::none ?
       params.timeWindowExtendedLowerBound.value().value() : missingDate;

@@ -47,9 +47,7 @@ class GenList: public ReaderBase {
   typedef GenListParameters Parameters_;
 
   // Constructor via parameters
-  GenList(const Parameters_ & params, const util::DateTime & winStart,
-          const util::DateTime & winEnd, const eckit::mpi::Comm & comm,
-          const eckit::mpi::Comm & timeComm, const std::vector<std::string> & obsVarNames);
+  GenList(const Parameters_ & params, const ReaderCreationParameters & createParams);
 
   bool applyLocationsCheck() const override { return false; }
 
