@@ -18,7 +18,7 @@
 #include "ioda/Copying.h"
 #include "ioda/Exception.h"
 #include "ioda/Group.h"
-#include "ioda/Io/IoPool.h"
+#include "ioda/Io/WriterPool.h"
 #include "ioda/Misc/DimensionScales.h"
 #include "ioda/Types/Type.h"
 #include "ioda/Types/Type_Provider.h"
@@ -57,7 +57,7 @@ Selection createBlockSelection(const std::vector<Dimensions_t> & varShape,
 }
 
 template <typename VarType>
-void transferVarData(const IoPool & ioPool, const Variable & srcVar,
+void transferVarData(const WriterPool & ioPool, const Variable & srcVar,
                      const std::string & varName, Group & dest, const bool isParallelIo) {
     if (ioPool.rank_pool() >= 0) {
 
@@ -72,7 +72,7 @@ void transferVarData(const IoPool & ioPool, const Variable & srcVar,
     }
 }
 
-void calcVarStartsCounts(const IoPool & ioPool, const Variable & srcVar,
+void calcVarStartsCounts(const WriterPool & ioPool, const Variable & srcVar,
                          std::vector<std::size_t> & varStarts,
                          std::vector<std::size_t> & varCounts,
                          Dimensions_t & dimFactor) {
@@ -120,7 +120,7 @@ void calcVarStartsCounts(const IoPool & ioPool, const Variable & srcVar,
 }
 
 template <typename VarType>
-void selectPatchValues(const IoPool & ioPool, const Variable & srcVar,
+void selectPatchValues(const WriterPool & ioPool, const Variable & srcVar,
                        const Dimensions_t & dimFactor, std::vector<VarType> & varData) {
     // Read all the values from the source variable
     std::vector<VarType> totalVarData;
@@ -142,7 +142,7 @@ void selectPatchValues(const IoPool & ioPool, const Variable & srcVar,
 }
 
 template <typename VarType>
-void transferVarDataMPI(const IoPool & ioPool, const Variable & srcVar,
+void transferVarDataMPI(const WriterPool & ioPool, const Variable & srcVar,
                         const std::string & varName, int varNumber,
                         const std::vector<std::size_t> & varStarts,
                         const std::vector<std::size_t> & varCounts,
@@ -191,7 +191,7 @@ void transferVarDataMPI(const IoPool & ioPool, const Variable & srcVar,
 
 // template specialization for std::string
 template <>
-void transferVarDataMPI<std::string>(const IoPool & ioPool, const Variable & srcVar,
+void transferVarDataMPI<std::string>(const WriterPool & ioPool, const Variable & srcVar,
                         const std::string & varName, const int varNumber,
                         const std::vector<std::size_t> & varStarts,
                         const std::vector<std::size_t> & varCounts,
@@ -323,7 +323,7 @@ void identifyVarsUsingLocation(const ioda::VarUtils::VarDimMap & varDimMap,
     }
 }
 
-void copyVarData(const ioda::IoPool & ioPool, const ioda::Group & src, ioda::Group & dest,
+void copyVarData(const ioda::WriterPool & ioPool, const ioda::Group & src, ioda::Group & dest,
                  const VarUtils::Vec_Named_Variable & srcNamedVars,
                  const std::unordered_set<std::string> & varsUsingLocation,
                  const bool isParallelIo,
@@ -378,7 +378,7 @@ void copyVarData(const ioda::IoPool & ioPool, const ioda::Group & src, ioda::Gro
 
 // public functions
 
-void calcMaxStringLengths(const ioda::IoPool & ioPool,
+void calcMaxStringLengths(const ioda::WriterPool & ioPool,
                           const VarUtils::Vec_Named_Variable & allVarsList,
                           std::map<std::string, std::size_t> & maxStringLengths) {
     // Want to collect from every mpi task (comm_all_ communicator group).
@@ -416,7 +416,7 @@ void calcMaxStringLengths(const ioda::IoPool & ioPool,
     }
 }
 
-void ioWriteGroup(const ioda::IoPool & ioPool, const ioda::Group& memGroup,
+void ioWriteGroup(const ioda::WriterPool & ioPool, const ioda::Group& memGroup,
                   ioda::Group& fileGroup, const bool isParallelIo) {
   using namespace ioda;
   using namespace std;

@@ -5,13 +5,13 @@
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
-/*! \defgroup ioda_cxx_io IoPool
- * \brief Public API for ioda::IoPool
+/*! \defgroup ioda_cxx_io IoPoolBase
+ * \brief Public API for ioda::IoPoolBase
  * \ingroup ioda_cxx_api
  *
  * @{
- * \file IoPool.h
- * \brief Interfaces for ioda::IoPool and related classes.
+ * \file IoPoolBase.h
+ * \brief Interfaces for ioda::IoPoolBase and related classes.
  */
 
 #include <map>
@@ -35,7 +35,7 @@
 
 namespace ioda {
 
-/// \brief IO pool class
+/// \brief IO pool base class
 /// \details This class holds a single io pool which consists of a small number of MPI tasks.
 /// The tasks assigned to an io pool object are selected from the total MPI tasks working on
 /// the DA run. The tasks in the pool are used to transfer data to/from memory from/to a
@@ -43,32 +43,21 @@ namespace ioda {
 /// the pool interact with the pool tasks to get their individual pieces of the data being
 /// transferred.
 /// \ingroup ioda_cxx_io
-class IODA_DL IoPool : public util::Printable {
+class IODA_DL IoPoolBase : public util::Printable {
 public:
-  /// \brief construct an IoPool object
+  /// \brief construct an IoPoolBase object
   /// \param ioPoolParams Parameters for this io pool
-  /// \param writerParams Parameters for the associated backend writer engine
   /// \param commAll MPI "all" communicator group (all tasks in DA run)
   /// \param commTime MPI "time" communicator group (tasks in current time bin for 4DEnVar)
   /// \param winStart DA timing window start
   /// \param winEnd DA timing window end
-  /// \param patchObsVec Boolean vector showing which locations belong to this MPI task
-  IoPool(const oops::Parameter<IoPoolParameters> & ioPoolParams,
-         const oops::RequiredPolymorphicParameter
-             <Engines::WriterParametersBase, Engines::WriterFactory> & writerParams,
-         const eckit::mpi::Comm & commAll, const eckit::mpi::Comm & commTime,
-         const util::DateTime & winStart, const util::DateTime & winEnd,
-         const std::vector<bool> & patchObsVec);
-  ~IoPool();
-
-  /// \brief return reference to the patch obs vector
-  const std::vector<bool> & patchObsVec() const { return patch_obs_vec_; }
+  IoPoolBase(const oops::Parameter<IoPoolParameters> & ioPoolParams,
+             const eckit::mpi::Comm & commAll, const eckit::mpi::Comm & commTime,
+             const util::DateTime & winStart, const util::DateTime & winEnd);
+  ~IoPoolBase();
 
   /// \brief return nlocs for this object
   int nlocs() const { return nlocs_; }
-
-  /// \brief return the number of locations in the patch (ie owned) by this object
-  int patch_nlocs() const { return patch_nlocs_; }
 
   /// \brief return the total nlocs for this rank
   int total_nlocs() const { return total_nlocs_; }
@@ -107,28 +96,17 @@ public:
   /// \brief return the rank assignment for this object.
   const std::vector<std::pair<int, int>> & rank_assignment() const { return rank_assignment_; }
 
-  /// \brief save obs data to output file
-  /// \param srcGroup source ioda group to be saved into the output file
-  void save(const Group & srcGroup);
-
   /// \brief finalize the io pool before destruction
-  /// \detail This routine is here to do specialized clean up after the save function has been
-  /// called and before the destructor is called. The primary task is to clean up the eckit
-  /// split communicator groups.
-  void finalize();
+  virtual void finalize() = 0;
 
   /// \brief fill in print routine for the util::Printable base class
-  void print(std::ostream & os) const;
+  virtual void print(std::ostream & os) const = 0;
 
-private:
+protected:
   typedef std::map<int, std::vector<int>> IoPoolGroupMap;
 
   /// \brief io pool parameters
   const oops::Parameter<IoPoolParameters> & params_;
-
-  /// \brief writer parameters
-  const oops::RequiredPolymorphicParameter
-      <Engines::WriterParametersBase, Engines::WriterFactory> & writer_params_;
 
   /// \brief DA timing window start
   util::DateTime win_start_;
@@ -136,20 +114,11 @@ private:
   /// \brief DA timing window end
   util::DateTime win_end_;
 
-  /// \brief parallel io flag, true -> write output file in parallel mode
+  /// \brief parallel io flag, true -> read/write in parallel mode
   bool is_parallel_io_;
-
-  /// \brief mulitiple files flag, true -> will be creating a set of output files
-  bool create_multiple_files_;
 
   /// \brief target pool size
   int target_pool_size_;
-
-  /// \brief patch vector for this rank
-  /// \details The patch vector shows which locations are owned by this rank
-  /// as opposed to locations that are duplicates of a neighboring rank. This is relavent
-  /// for distributions like Halo where the halo regions can overlap.
-  const std::vector<bool> & patch_obs_vec_;
 
   /// \brief number of locations for this rank
   std::size_t nlocs_;
@@ -181,7 +150,7 @@ private:
   /// \brief rank in MPI time communicator group
   int rank_time_;
 
-  /// \brief size of MPI communicator group
+  /// \brief size of MPI time communicator group
   int size_time_;
 
   /// \brief MPI communicator group for all processes in the i/o pool
@@ -195,9 +164,6 @@ private:
 
   /// \brief size of MPI communicator group for this pool
   int size_pool_;
-
-  /// \brief writer engine destination for printing (eg, output file name)
-  std::string writerDest_;
 
   /// \brief ranks in the all_comm_ group that this rank transfers data
   /// \detail Each pair in this vector contains as the first element the rank number
@@ -216,7 +182,7 @@ private:
   /// shows how to form the io pool and how to assign the non io pool ranks to each
   /// of the ranks in the io pool.
   /// \param rankGrouping structure that maps ranks outside the pool to ranks in the pool
-  void groupRanks(IoPoolGroupMap & rankGrouping);
+  virtual void groupRanks(IoPoolGroupMap & rankGrouping) = 0;
 
   /// \brief assign ranks in the comm_all_ comm group to each of the ranks in the io pool
   /// \detail This function will dole out the ranks within the comm_all_ group, that are
@@ -225,7 +191,8 @@ private:
   /// comm_all_ group will have a list of all the ranks that the send to or receive from.
   /// \param nlocs number of locations on this MPI rank
   /// \param rankGrouping structure that maps ranks outside the pool to ranks in the pool
-  void assignRanksToIoPool(const std::size_t nlocs, const IoPoolGroupMap & rankGrouping);
+  virtual void assignRanksToIoPool(const std::size_t nlocs,
+                                   const IoPoolGroupMap & rankGrouping) = 0;
 
   /// \brief create the io pool communicator group
   /// \detail This function will create the io pool communicator group using the eckit
@@ -250,30 +217,6 @@ private:
   /// The second piece of information is the proper start values for each rank in regard
   /// to the nlocs dimension when writing to a single output file.
   void collectSingleFileInfo();
-
-  /// \brief create file names for the fixed length string workaround
-  /// \details The workaround entails moving the newly written file name to a temporary
-  /// file and then copying the temp file back to the intended file name while changing
-  /// the fixed length strings to variable length strings.
-  /// \param finalFileName final (intended) output file name
-  /// \param tempFileName temporary output file name
-  void workaroundGenFileNames(std::string & finalFileName, std::string & tempFileName);
-
-  /// \brief create file names for the fixed length string workaround
-  void workaroundFixToVarLenStrings(const std::string & finalFileName,
-                                    const std::string & tempFileName);
-};
-
-class WorkaroundReaderParameters : public oops::Parameters {
-  OOPS_CONCRETE_PARAMETERS(WorkaroundReaderParameters, Parameters)
- public:
-  oops::RequiredParameter<Engines::ReaderParametersWrapper> engine{"engine", this};
-};
-
-class WorkaroundWriterParameters : public oops::Parameters {
-  OOPS_CONCRETE_PARAMETERS(WorkaroundWriterParameters, Parameters)
- public:
-  oops::RequiredParameter<Engines::WriterParametersWrapper> engine{"engine", this};
 };
 
 }  // namespace ioda

@@ -19,14 +19,14 @@
 
 namespace ioda {
     class Group;
-    class IoPool;
+    class WriterPool;
 
 /// @brief Transfer group contents from in memory group to a file group using an io pool
-/// @param ioPool ioda IoPool object
+/// @param ioPool ioda WriterPool object
 /// @param memGroup is the source in memory group
 /// @param fileGroup is the destination file group
 /// @param isParallelIo true if writing the output file in parallel IO mode
-IODA_DL void ioWriteGroup(const ioda::IoPool & ioPool, const ioda::Group& memGroup,
+IODA_DL void ioWriteGroup(const ioda::WriterPool & ioPool, const ioda::Group& memGroup,
                           ioda::Group& fileGroup, const bool isParallelIo);
 
 }  // namespace ioda

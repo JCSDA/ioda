@@ -42,7 +42,7 @@
 #include "ioda/Engines/ODC.h"
 #include "ioda/Engines/WriteOdbFile.h"
 #include "ioda/Exception.h"
-#include "ioda/Io/IoPool.h"
+#include "ioda/Io/WriterPool.h"
 #include "ioda/io/ObsFrameRead.h"
 #include "ioda/Variables/Variable.h"
 
@@ -286,7 +286,7 @@ void ObsSpace::save() {
           // Write the output file
           std::vector<bool> patchObsVec(nlocs());
           dist_->patchObs(patchObsVec);
-          IoPool obsPool(obs_params_.top_level_.ioPool,
+          WriterPool obsPool(obs_params_.top_level_.ioPool,
               obs_params_.top_level_.obsDataOut.value()->engine.value().engineParameters,
               obs_params_.comm(), obs_params_.timeComm() ,
               obs_params_.windowStart(), obs_params_.windowEnd(), patchObsVec);

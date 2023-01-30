@@ -50,12 +50,18 @@ list(APPEND SRCS_GROUPS
 	src/ioda/ObsGroup.cpp
 	)
 list(APPEND SRCS_IO
-	include/ioda/Io/IoPool.h
+	include/ioda/Io/IoPoolBase.h
 	include/ioda/Io/IoPoolParameters.h
 	include/ioda/Io/IoPoolUtils.h
+	include/ioda/Io/ReaderPool.h
+	include/ioda/Io/ReaderUtils.h
+	include/ioda/Io/WriterPool.h
 	include/ioda/Io/WriterUtils.h
-	src/ioda/IoPool.cpp
+	src/ioda/IoPoolBase.cpp
 	src/ioda/IoPoolUtils.cpp
+	src/ioda/ReaderPool.cpp
+	src/ioda/ReaderUtils.cpp
+	src/ioda/WriterPool.cpp
 	src/ioda/WriterUtils.cpp
         )
 list(APPEND SRCS_LAYOUTS

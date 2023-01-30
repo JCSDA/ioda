@@ -5,6 +5,8 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
+#include "ioda/Io/WriterPool.h"
+
 #include <algorithm>
 #include <cstdio>
 #include <memory>
@@ -19,7 +21,6 @@
 #include "ioda/Engines/EngineUtils.h"
 #include "ioda/Engines/HH.h"
 #include "ioda/Exception.h"
-#include "ioda/Io/IoPool.h"
 #include "ioda/Io/IoPoolUtils.h"
 #include "ioda/Io/WriterUtils.h"
 
@@ -42,33 +43,7 @@ const char poolCommName[] = "IoPool";
 const char nonPoolCommName[] = "NonIoPool";
 
 //--------------------------------------------------------------------------------------
-void IoPool::setTargetPoolSize() {
-    if (rank_all_ == 0) {
-        // Determine the maximum pool size. Use the default if the io pool spec is not
-        // present, which is done for backward compatibility.
-        int maxPoolSize = defaultMaxPoolSize;
-        if (params_.value().maxPoolSize.value() > 0) {
-            maxPoolSize = params_.value().maxPoolSize.value();
-        }
-
-        // The pool size will be the minimum of the maxPoolSize or the entire size of the
-        // comm_all_ communicator group (ie, size_all_).
-        int poolSize = maxPoolSize;
-        if (size_all_ <= maxPoolSize) {
-            poolSize = size_all_;
-        }
-
-        // Broadcast the target pool size to the other ranks
-        target_pool_size_ = poolSize;
-        comm_all_.broadcast(target_pool_size_, 0);
-    } else {
-        // Receive the broadcast of the target pool size
-        comm_all_.broadcast(target_pool_size_, 0);
-    }
-}
- 
-//--------------------------------------------------------------------------------------
-void IoPool::groupRanks(IoPoolGroupMap & rankGrouping) {
+void WriterPool::groupRanks(IoPoolGroupMap & rankGrouping) {
     rankGrouping.clear();
     if (rank_all_ == 0) {
         // We want the order of the locations in the resulting single output file after
@@ -107,7 +82,8 @@ void IoPool::groupRanks(IoPoolGroupMap & rankGrouping) {
 }
 
 //--------------------------------------------------------------------------------------
-void IoPool::assignRanksToIoPool(const std::size_t nlocs, const IoPoolGroupMap & rankGrouping) {
+void WriterPool::assignRanksToIoPool(const std::size_t nlocs,
+                                     const IoPoolGroupMap & rankGrouping) {
     constexpr int mpiTagBase = 10000;
 
     // Collect the nlocs from all of the other ranks.
@@ -173,93 +149,14 @@ void IoPool::assignRanksToIoPool(const std::size_t nlocs, const IoPoolGroupMap &
 }
 
 //--------------------------------------------------------------------------------------
-void IoPool::createIoPool(IoPoolGroupMap & rankGrouping) {
-    int myColor;
-    if (rank_all_ == 0) {
-        // Create the split communicator for the io pool. The rankGrouping structure contains
-        // the distinction between pool ranks and non pool ranks. The eckit split communicator
-        // command doesn't yet handle the MPI_UNDEFINED spec for a color value, so for now
-        // create a pool communicator group and a non pool communicator group.
-        std::vector<int> splitColors(size_all_, nonPoolColor);
-        for (auto & rankGroup : rankGrouping) {
-            splitColors[rankGroup.first] = poolColor;
-        }
-        comm_all_.scatter(splitColors, myColor, 0);
-    } else {
-        // Create the split. Receive the split color from a scatter, then call the split
-        // command
-        std::vector<int> dummyColors(size_all_);
-        comm_all_.scatter(dummyColors, myColor, 0);
-    }
-
-    if (myColor == nonPoolColor) {
-        comm_all_.split(myColor, nonPoolCommName);
-        comm_pool_ = nullptr;  // mark that this rank does not belong to an io pool
-        rank_pool_ = -1;
-        size_pool_ = -1;
-    } else {
-        comm_pool_ = &(comm_all_.split(myColor, poolCommName));
-        rank_pool_ = comm_pool_->rank();
-        size_pool_ = comm_pool_->size();
-    }
-}
-
-//--------------------------------------------------------------------------------------
-void IoPool::setTotalNlocs(const std::size_t nlocs) {
-    // Sum up the nlocs from assigned ranks. Set total_nlocs_ to zero for ranks not in
-    // the io pool.
-    if (comm_pool_ == nullptr) {
-        total_nlocs_ = 0;
-    } else {
-        total_nlocs_ = nlocs;
-        for (std::size_t i = 0; i < rank_assignment_.size(); ++i) {
-            total_nlocs_ += rank_assignment_[i].second;
-        }
-    }
-}
-
-//--------------------------------------------------------------------------------------
-void IoPool::collectSingleFileInfo() {
-    // Want to determine two pieces of information:
-    //   1. global nlocs which is the sum of all nlocs in all ranks in the io pool
-    //   2. starting point along nlocs dimension for each rank in the io pool
-    //
-    // Only the ranks in the io pool should participate in this function
-    //
-    // Need the total_nlocs_ values from all ranks for both pieces of information.
-    // Have rank 0 do the processing and then send the information back to the other ranks.
-    if (comm_pool_ != nullptr) {
-        std::size_t root = 0;
-        std::vector<std::size_t> totalNlocs(size_pool_);
-        std::vector<std::size_t> nlocsStarts(size_pool_);
-
-        comm_pool_->gather(total_nlocs_, totalNlocs, root);
-        if (rank_pool_ == root) {
-            global_nlocs_ = 0;
-            std::size_t nlocsStartingPoint = 0;
-            for(std::size_t i = 0; i < totalNlocs.size(); ++i) {
-                global_nlocs_ += totalNlocs[i];
-                nlocsStarts[i] = nlocsStartingPoint;
-                nlocsStartingPoint += totalNlocs[i];
-            }
-        }
-        comm_pool_->broadcast(global_nlocs_, root);
-        comm_pool_->scatter(nlocsStarts, nlocs_start_, root);
-    }
-}
-
-//--------------------------------------------------------------------------------------
-IoPool::IoPool(const oops::Parameter<IoPoolParameters> & ioPoolParams,
+WriterPool::WriterPool(const oops::Parameter<IoPoolParameters> & ioPoolParams,
                const oops::RequiredPolymorphicParameter
                    <Engines::WriterParametersBase, Engines::WriterFactory> & writerParams,
                const eckit::mpi::Comm & commAll, const eckit::mpi::Comm & commTime,
                const util::DateTime & winStart, const util::DateTime & winEnd,
                const std::vector<bool> & patchObsVec)
-                   : params_(ioPoolParams), writer_params_(writerParams),
-                     comm_all_(commAll), rank_all_(commAll.rank()), size_all_(commAll.size()),
-                     comm_time_(commTime), rank_time_(commTime.rank()),
-                     size_time_(commTime.size()), win_start_(winStart), win_end_(winEnd),
-                     patch_obs_vec_(patchObsVec), total_nlocs_(0), global_nlocs_(0) {
+                   : IoPoolBase(ioPoolParams, commAll, commTime, winStart, winEnd),
+                     writer_params_(writerParams), patch_obs_vec_(patchObsVec) {
     nlocs_ = patchObsVec.size();
     patch_nlocs_ = std::count(patchObsVec.begin(), patchObsVec.end(), true);
     // For now, the target pool size is simply the minumum of the specified (or default) max
@@ -313,13 +210,13 @@ IoPool::IoPool(const oops::Parameter<IoPoolParameters> & ioPoolParams,
     }
 }
 
-IoPool::~IoPool() = default;
+WriterPool::~WriterPool() = default;
 
 //--------------------------------------------------------------------------------------
 
 //--------------------------------------------------------------------------------------
-void IoPool::save(const Group & srcGroup) {
-    oops::Log::trace() << "IoPool::save, start" << std::endl;
+void WriterPool::save(const Group & srcGroup) {
+    oops::Log::trace() << "WriterPool::save, start" << std::endl;
     Group fileGroup;
     if (comm_pool_ != nullptr) {
         Engines::WriterCreationParameters createParams(*comm_pool_, comm_time_,
@@ -337,10 +234,11 @@ void IoPool::save(const Group & srcGroup) {
 
     // Copy the ObsSpace ObsGroup to the output file Group.
     ioWriteGroup(*this, srcGroup, fileGroup, is_parallel_io_);
-    oops::Log::trace() << "IoPool::save, end" << std::endl;
+    oops::Log::trace() << "WriterPool::save, end" << std::endl;
 }
 
-void IoPool::workaroundGenFileNames(std::string & finalFileName, std::string & tempFileName) {
+void WriterPool::workaroundGenFileNames(std::string & finalFileName,
+                                        std::string & tempFileName) {
     tempFileName = writer_params_.value().fileName;
     finalFileName = tempFileName;
 
@@ -374,9 +272,9 @@ void IoPool::workaroundGenFileNames(std::string & finalFileName, std::string & t
     }
 }
 
-void IoPool::workaroundFixToVarLenStrings(const std::string & finalFileName,
-                                          const std::string & tempFileName) {
-    oops::Log::debug() << "IoPool::finalize: applying flen to vlen strings workaround: "
+void WriterPool::workaroundFixToVarLenStrings(const std::string & finalFileName,
+                                              const std::string & tempFileName) {
+    oops::Log::debug() << "WriterPool::finalize: applying flen to vlen strings workaround: "
                        << tempFileName << " -> "
                        << finalFileName << std::endl;
 
@@ -435,8 +333,8 @@ void IoPool::workaroundFixToVarLenStrings(const std::string & finalFileName,
 }
 
 //--------------------------------------------------------------------------------------
-void IoPool::finalize() {
-    oops::Log::trace() << "IoPool::finalize, start" << std::endl;
+void WriterPool::finalize() {
+    oops::Log::trace() << "WriterPool::finalize, start" << std::endl;
     // TODO(srh) Workaround until we get fixed length string support in the netcdf-c
     // library. This is expected to be available in the 4.9.1 release of netcdf-c.
     // For now move the file with fixed length strings to a temporary
@@ -469,11 +367,11 @@ void IoPool::finalize() {
     if (eckit::mpi::hasComm(nonPoolCommName)) {
         eckit::mpi::deleteComm(nonPoolCommName);
     }
-    oops::Log::trace() << "IoPool::finalize, end" << std::endl;
+    oops::Log::trace() << "WriterPool::finalize, end" << std::endl;
 }
 
 //--------------------------------------------------------------------------------------
-void IoPool::print(std::ostream & os) const {
+void WriterPool::print(std::ostream & os) const {
   os << writerDest_ << " (io pool size: " << size_pool_ << ")";
 }
 
