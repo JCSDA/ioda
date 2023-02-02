@@ -149,7 +149,7 @@ varno-independent columns:
     source: "surface_land_fraction"
   - name: "MetaData/surface_land_indicator"
     source: "surface_land_indicator"
-  - name: "MetaData/water_fraction"
+  - name: "MetaData/waterAreaFraction"
     source: "water_fraction"
   - name: "MetaData/sensorZenithAngle"
     source: "zenith"

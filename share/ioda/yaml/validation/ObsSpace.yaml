@@ -392,7 +392,7 @@ Variables:
     Attributes: { units: "1" }
   - Variable: [ "landAreaFraction", "land_area_fraction" ]
     Attributes: { units: "1" }
-  - Variable: [ "waterAreaFraction", "water_area_fraction" ]
+  - Variable: [ "waterAreaFraction", "water_area_fraction", "water_fraction" ]
     Attributes: { units: "1" }
   - Variable: [ "windDirection", "wind_direction", "wind_from_direction" ]
     Attributes: { units: "degree" }

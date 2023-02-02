@@ -743,7 +743,7 @@ varno-independent columns:
     source: "viewing_zenith_angle"
   - name: "MetaData/version_atovs_pp"
     source: "vnatovspp"
-  - name: "MetaData/water_fraction"
+  - name: "MetaData/waterAreaFraction"
     source: "water_fraction"
   - name: "MetaData/water_vapour"
     source: "water_vapour"
