@@ -9,6 +9,7 @@
 #include <string>
 
 #include "ioda/Engines/WriterBase.h"
+#include "ioda/Engines/WriterFactory.h"
 
 namespace ioda {
 namespace Engines {
@@ -35,6 +36,29 @@ class WriteOdbFile : public WriterBase {
 
   // Constructor via parameters
   WriteOdbFile(const Parameters_ & params, const WriterCreationParameters & createParams);
+
+  void print(std::ostream & os) const override;
+
+ private:
+  Parameters_ params_;
+};
+
+//----------------------------------------------------------------------------------------
+// WriteOdbProc
+//----------------------------------------------------------------------------------------
+
+class WriteOdbProc : public WriterProcBase {
+ public:
+  typedef WriteOdbFileParameters Parameters_;
+
+  // Constructor via parameters
+  WriteOdbProc(const Parameters_ & params, const WriterCreationParameters & createParams);
+
+  /// \brief post processor to be run after the WriteOdbFile object is destructed
+  /// \detail This post processor is associated with WriteH5File, but placed in a
+  /// separate class structure so that the hdf5 file can be closed before running this
+  /// post processor.
+  void post() override;
 
   void print(std::ostream & os) const override;
 

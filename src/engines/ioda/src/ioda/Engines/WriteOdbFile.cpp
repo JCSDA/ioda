@@ -7,7 +7,7 @@
 
 #include "ioda/Engines/WriteOdbFile.h"
 
-#include "ioda/Io/IoPoolUtils.h"
+#include "ioda/Engines/EngineUtils.h"
 
 #include "oops/util/Logger.h"
 
@@ -18,7 +18,7 @@ namespace Engines {
 // WriteOdbFile
 //---------------------------------------------------------------------
 
-static WriterMaker<WriteOdbFile> maker("ODB");
+static WriterMaker<WriteOdbFile> makerOdbFile("ODB");
 
 // Parameters
 
@@ -41,6 +41,31 @@ WriteOdbFile::WriteOdbFile(const Parameters_ & params,
 }
 
 void WriteOdbFile::print(std::ostream & os) const {
+  os << params_.fileName.value();
+}
+
+//---------------------------------------------------------------------
+// WriteOdbProc
+//---------------------------------------------------------------------
+
+static WriterProcMaker<WriteOdbProc> makerOdbProc("ODB");
+
+// Parameters
+
+// Classes
+
+//--------------------------------------------------------------------------------------
+WriteOdbProc::WriteOdbProc(const Parameters_ & params,
+                           const WriterCreationParameters & createParams)
+                               : WriterProcBase(createParams), params_(params) {
+}
+
+//--------------------------------------------------------------------------------------
+void WriteOdbProc::post() {
+}
+
+//--------------------------------------------------------------------------------------
+void WriteOdbProc::print(std::ostream & os) const {
   os << params_.fileName.value();
 }
 

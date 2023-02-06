@@ -6,6 +6,7 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -21,11 +22,36 @@
 #include "ioda/Engines/EngineUtils.h"
 #include "ioda/ObsGroup.h"
 
+/// This file contains the definitions of the base classes for the IODA writer backends.
+/// The backends (readers and writers) are the only place where there should exist code
+/// that is specific to storage implementations (hdf5 file, odb file, etc.) for ioda engines.
+/// Ie, all storage implementation specific code should go into the ioda::Engines namespace.
+///
+/// There are two base classes, WriterBase and WriterProcBase. The purpose of this is to
+/// separate pre- and post-processing steps (that contain storage implementation specific
+/// code) from the code that does the writing to to the storage implementation. WriterBase
+/// creates a storage backend (eg, hdf5 file) and provides access to the backend.
+/// WriteProcBase contains a post function (for now) that is called to do any steps
+/// that need to be done after the storage backend is closed (destructed). The potential
+/// to add a pre function is there which would run before the storage backend is opened,
+/// but a pre-processing step may not ever be necessary for the writers.
+///
+/// An example post function is the workaround put in place for the hdf5 file that
+/// converts fixed length strings to variable length strings. You need the file created
+/// by the storage backend to be completely written and closed before running the post step.
+///
+/// In the case of writing an odb file, you need the files to be completed and closed from
+/// all of the pool mpi tasks before you cat them together into a single file in the post
+/// function.
+///
+/// At this point, it will work to use the identical WriterParameters and
+/// WriterCreationParameters to create instances of subclasses of both WriterBase and
+/// WriteProcBase.
+
 namespace ioda {
 namespace Engines {
 
 class Printable;
-class WriterFactory;
 
 //----------------------------------------------------------------------------------------
 // Writer configuration parameters base class
@@ -47,18 +73,6 @@ class WriterParametersBase : public oops::Parameters {
     oops::Parameter<bool> allowOverwrite{"allow overwrite", true, this};
 };
 
-/// \brief Polymorphic parameter holding an instance of a subclass of WriterParametersBase.
-class WriterParametersWrapper : public oops::Parameters {
-  OOPS_CONCRETE_PARAMETERS(WriterParametersWrapper, Parameters)
- public:
-  /// After deserialization, holds an instance of a subclass of WriterParametersBase
-  /// controlling the behavior of a ioda backend engine. The type of the subclass is
-  /// determined by the value of the "type" key in the Configuration object from
-  /// which this object is deserialized.
-  oops::RequiredPolymorphicParameter<WriterParametersBase, WriterFactory>
-      engineParameters{"type", "type of the IODA backend engine", this};
-};
-
 //----------------------------------------------------------------------------------------
 // Writer creation parameters base class
 //----------------------------------------------------------------------------------------
@@ -67,7 +81,6 @@ class WriterCreationParameters {
   public:
     WriterCreationParameters(const eckit::mpi::Comm & comm, const eckit::mpi::Comm & timeComm,
                              const bool createMultipleFiles, const bool isParallelIo);
-    virtual ~WriterCreationParameters() {}
 
     /// \brief io pool communicator group
     const eckit::mpi::Comm & comm;
@@ -126,64 +139,37 @@ class WriterBase : public util::Printable {
 };
 
 //----------------------------------------------------------------------------------------
-// Writer factory classes
+// Writer pre-/post-processor base class
 //----------------------------------------------------------------------------------------
 
-class WriterFactory {
+/// \details The WriterProcBase class along with its subclasses are responsible for providing
+/// pre and post processing function that perform storage implementation specific steps
+/// associated with their corresponding WriterBase subclasses.
+///
+/// \author Stephen Herbener (JCSDA)
+
+class WriterProcBase : public util::Printable {
  public:
-  /// \brief Create and return a new instance of an WriterBase subclass.
-  /// \param params Parameters object for the engine creation
-  static std::unique_ptr<WriterBase> create(const WriterParametersBase & params,
-                                            const WriterCreationParameters & createParams);
+    WriterProcBase(const WriterCreationParameters & createParams);
+    virtual ~WriterProcBase() {}
 
-  /// \brief Create and return an instance of the subclass of ObsOperatorParametersBase
-  /// storing parameters of observation operators of the specified type.
-  static std::unique_ptr<WriterParametersBase> createParameters(const std::string & type);
-
-  /// \brief Return the names of all WriterBase subclasses that can be created by one of the
-  /// registered makers.
-  static std::vector<std::string> getMakerNames();
-
-  virtual ~WriterFactory() = default;
+    /// \brief Post processor for running after WriterBase subclasses are finsihed
+    /// \detail This post processor is placed here in a separate class structure
+    /// from the one built on the WriterBase base class. This is done so that a file
+    /// getting written can be completely closed (the WriterBase subclass is destructed)
+    /// before calling this post processor.
+    virtual void post() = 0;
 
  protected:
-  /// \brief Register a maker able to create instances of the specified WriterBase subclass.
-  explicit WriterFactory(const std::string & type);
+    //------------------ protected functions ----------------------------------
+    /// \brief print() for oops::Printable base class
+    /// \param ostream output stream
+    virtual void print(std::ostream & os) const = 0;
 
- private:
-  /// \brief Construct a new instance of an WriterBase subclass.
-  /// \param params Parameters object for the engine construction
-  virtual std::unique_ptr<WriterBase> make(const WriterParametersBase & params,
-                                           const WriterCreationParameters & createParams) = 0;
 
-  /// \brief Construct a new instance of an WriterParametersBase subclass.
-  virtual std::unique_ptr<WriterParametersBase> makeParameters() const = 0;
-
-  /// \brief Return reference to the map holding the registered makers
-  static std::map<std::string, WriterFactory*> & getMakers();
-
-  /// \brief Return reference to a registered maker
-  static WriterFactory& getMaker(const std::string & type);
-};
-
-template <class T>
-class WriterMaker : public WriterFactory {
-  typedef typename T::Parameters_ Parameters_;
-
-  /// \brief Construct a new instance of an WriterBase subclass.
-  /// \param params Parameters object for the engine construction
-  std::unique_ptr<WriterBase> make(const WriterParametersBase & params,
-                                   const WriterCreationParameters & createParams) override {
-    const auto &stronglyTypedParameters = dynamic_cast<const Parameters_&>(params);
-    return std::make_unique<T>(stronglyTypedParameters, createParams);
-  }
-
-  /// \brief Construct a new instance of an WriterParametersBase subclass.
-  std::unique_ptr<WriterParametersBase> makeParameters() const override {
-    return std::make_unique<Parameters_>();
-  }
- public:
-  explicit WriterMaker(const std::string & type) : WriterFactory(type) {}
+    //------------------ protected variables ----------------------------------
+    /// \brief creation parameters
+    WriterCreationParameters createParams_;
 };
 
 

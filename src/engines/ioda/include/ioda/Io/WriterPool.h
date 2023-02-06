@@ -10,7 +10,7 @@
  * \ingroup ioda_cxx_api
  *
  * @{
- * \file IoPoolBase.h
+ * \file WriterPool.h
  * \brief Interfaces for ioda::WriterPool and related classes.
  */
 
@@ -22,8 +22,8 @@
 #include "eckit/mpi/Comm.h"
 
 #include "ioda/defs.h"
-#include "ioda/Engines/ReaderBase.h"
 #include "ioda/Engines/WriterBase.h"
+#include "ioda/Engines/WriterFactory.h"
 #include "ioda/Group.h"
 #include "ioda/Io/IoPoolBase.h"
 #include "ioda/Io/IoPoolParameters.h"
@@ -98,6 +98,9 @@ private:
   /// \brief writer engine destination for printing (eg, output file name)
   std::string writerDest_;
 
+  /// \brief pre-/post-processor object associated with the writer engine.
+  std::shared_ptr<Engines::WriterProcBase> writer_proc_;
+
   /// \brief group ranks into sets for the io pool assignments
   /// \detail This function will create a vector of vector of ints structure which
   /// shows how to form the io pool and how to assign the non io pool ranks to each
@@ -126,18 +129,6 @@ private:
   /// \brief create file names for the fixed length string workaround
   void workaroundFixToVarLenStrings(const std::string & finalFileName,
                                     const std::string & tempFileName);
-};
-
-class WorkaroundReaderParameters : public oops::Parameters {
-  OOPS_CONCRETE_PARAMETERS(WorkaroundReaderParameters, Parameters)
- public:
-  oops::RequiredParameter<Engines::ReaderParametersWrapper> engine{"engine", this};
-};
-
-class WorkaroundWriterParameters : public oops::Parameters {
-  OOPS_CONCRETE_PARAMETERS(WorkaroundWriterParameters, Parameters)
- public:
-  oops::RequiredParameter<Engines::WriterParametersWrapper> engine{"engine", this};
 };
 
 }  // namespace ioda

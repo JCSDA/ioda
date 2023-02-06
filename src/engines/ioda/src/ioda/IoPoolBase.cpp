@@ -21,9 +21,7 @@
 #include "ioda/Engines/EngineUtils.h"
 #include "ioda/Engines/HH.h"
 #include "ioda/Exception.h"
-#include "ioda/Io/IoPoolUtils.h"
 #include "ioda/Io/WriterUtils.h"
-
 
 #include "oops/util/Logger.h"
 

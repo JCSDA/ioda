@@ -22,8 +22,8 @@
 #include "oops/runs/Test.h"
 #include "oops/test/TestEnvironment.h"
 
+#include "ioda/Engines/EngineUtils.h"
 #include "ioda/Engines/HH.h"
-#include "ioda/Io/IoPoolUtils.h"
 #include "ioda/ObsSpace.h"
 
 namespace ioda {
@@ -85,7 +85,7 @@ CASE("ioda/ObsSpace/testPutDb") {
     } else {
       // Read the output file and check that its contents are correct
       const std::string fileName =
-          uniquifyFileName(obsconf.getString("obsdataout.engine.obsfile"), 0, -1);
+          ioda::Engines::uniquifyFileName(obsconf.getString("obsdataout.engine.obsfile"), 0, -1);
       const ioda::Group group = ioda::Engines::HH::openFile(
             fileName, ioda::Engines::BackendOpenModes::Read_Only);
 

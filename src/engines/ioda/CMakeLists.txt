@@ -52,13 +52,11 @@ list(APPEND SRCS_GROUPS
 list(APPEND SRCS_IO
 	include/ioda/Io/IoPoolBase.h
 	include/ioda/Io/IoPoolParameters.h
-	include/ioda/Io/IoPoolUtils.h
 	include/ioda/Io/ReaderPool.h
 	include/ioda/Io/ReaderUtils.h
 	include/ioda/Io/WriterPool.h
 	include/ioda/Io/WriterUtils.h
 	src/ioda/IoPoolBase.cpp
-	src/ioda/IoPoolUtils.cpp
 	src/ioda/ReaderPool.cpp
 	src/ioda/ReaderUtils.cpp
 	src/ioda/WriterPool.cpp
@@ -138,6 +136,7 @@ list(APPEND SRCS_ENGINES_TOP
 	include/ioda/Engines/WriterBase.h
 	include/ioda/Engines/WriteH5File.h
 	include/ioda/Engines/WriteOdbFile.h
+	include/ioda/Engines/WriterFactory.h
 	include/ioda/Engines/EngineUtils.h
 	src/ioda/Engines/GenList.cpp
 	src/ioda/Engines/GenRandom.cpp
@@ -147,6 +146,7 @@ list(APPEND SRCS_ENGINES_TOP
 	src/ioda/Engines/WriterBase.cpp
 	src/ioda/Engines/WriteH5File.cpp
 	src/ioda/Engines/WriteOdbFile.cpp
+	src/ioda/Engines/WriterFactory.cpp
 	src/ioda/Engines/EngineUtils.cpp)
 
 list(APPEND SRCS_ENGINES_HH 

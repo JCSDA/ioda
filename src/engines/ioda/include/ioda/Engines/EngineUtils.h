@@ -10,7 +10,7 @@
  * \ingroup ioda_cxx_api
  *
  * @{
- * \file Factory.h
+ * \file EngineUtils.h
  * \brief Definitions for setting up backends with file and memory I/O.
  */
 #include <iostream>
@@ -85,6 +85,15 @@ public:
 
   BackendCreationParameters() { }
 };
+
+/// \brief uniquify the output file name
+/// \details This function will tag on the MPI task number to the end of the file name
+/// to avoid collisions when running with multiple MPI tasks.
+/// \param fileName raw output file name
+/// \param rankNum MPI group communicator rank number
+/// \param timeRankNum MPI time communicator rank number
+std::string uniquifyFileName(const std::string & fileName, std::size_t rankNum,
+                             int timeRankNum);
 
 /// \brief store generated data into an ObsGroup
 /// \param latVals vector of latitude values

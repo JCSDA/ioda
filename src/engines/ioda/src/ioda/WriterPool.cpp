@@ -21,9 +21,7 @@
 #include "ioda/Engines/EngineUtils.h"
 #include "ioda/Engines/HH.h"
 #include "ioda/Exception.h"
-#include "ioda/Io/IoPoolUtils.h"
 #include "ioda/Io/WriterUtils.h"
-
 
 #include "oops/util/Logger.h"
 
@@ -208,6 +206,15 @@ WriterPool::WriterPool(const oops::Parameter<IoPoolParameters> & ioPoolParams,
     } else {
         create_multiple_files_ = false;
     }
+
+    // Create an object of the writer pre-/post-processor here so that it can be
+    // accessed throught the lifetime of the io pool object. The lifetime of the
+    // writer engine is only during the save function. The writer pre-/post-processor
+    // and writer engine classes are separated so that the pre-/post-processor steps
+    // can manipulate files that the save command uses.
+    Engines::WriterCreationParameters createParams(*comm_pool_, comm_time_,
+                                                   create_multiple_files_, is_parallel_io_);
+    writer_proc_ = Engines::WriterProcFactory::create(writer_params_, createParams);
 }
 
 WriterPool::~WriterPool() = default;
@@ -220,7 +227,7 @@ void WriterPool::save(const Group & srcGroup) {
     Group fileGroup;
     if (comm_pool_ != nullptr) {
         Engines::WriterCreationParameters createParams(*comm_pool_, comm_time_,
-                                          create_multiple_files_, is_parallel_io_);
+                                                       create_multiple_files_, is_parallel_io_);
         std::unique_ptr<Engines::WriterBase> writerEngine =
             Engines::WriterFactory::create(writer_params_, createParams);
 
@@ -237,126 +244,13 @@ void WriterPool::save(const Group & srcGroup) {
     oops::Log::trace() << "WriterPool::save, end" << std::endl;
 }
 
-void WriterPool::workaroundGenFileNames(std::string & finalFileName,
-                                        std::string & tempFileName) {
-    tempFileName = writer_params_.value().fileName;
-    finalFileName = tempFileName;
-
-    // Append "_flenstr" (fixed length strings) to the temp file name, then uniquify
-    // in the same manner as the writer backend.
-    std::size_t found = tempFileName.find_last_of(".");
-    if (found == std::string::npos)
-        found = tempFileName.length();
-    tempFileName.insert(found, "_flenstr");
-
-    std::size_t mpiRank = comm_pool_->rank();
-    int mpiTimeRank = -1; // a value of -1 tells uniquifyFileName to skip this value
-    if (comm_time_.size() > 1) {
-        mpiTimeRank = comm_time_.rank();
-    }
-    if (create_multiple_files_) {
-        // Tag on the rank number to the output file name to avoid collisions.
-        // Don't use the time communicator rank number in the suffix if the size of
-        // the time communicator is 1.
-        tempFileName = uniquifyFileName(tempFileName, mpiRank, mpiTimeRank);
-        finalFileName = uniquifyFileName(finalFileName, mpiRank, mpiTimeRank);
-    } else {
-        // TODO(srh) With the upcoming release (Sep 2022) we need to keep the uniquified
-        // file name in order to prevent trashing downstream tools. We can get rid of
-        // the file suffix after the release.
-        // If we got to here, we either have just one process in io pool, or we
-        // are going to write out the file in parallel mode. In either case, we want
-        // the suffix part related to mpiRank to always be zero.
-        tempFileName = uniquifyFileName(tempFileName, 0, mpiTimeRank);
-        finalFileName = uniquifyFileName(finalFileName, 0, mpiTimeRank);
-    }
-}
-
-void WriterPool::workaroundFixToVarLenStrings(const std::string & finalFileName,
-                                              const std::string & tempFileName) {
-    oops::Log::debug() << "WriterPool::finalize: applying flen to vlen strings workaround: "
-                       << tempFileName << " -> "
-                       << finalFileName << std::endl;
-
-    // Rename the output file, then copy back to the original name while changing the
-    // strings back to variable length strings.
-    if (std::rename(finalFileName.c_str(), tempFileName.c_str()) != 0) {
-        throw Exception("Unable to rename output file.", ioda_Here());
-    }
-
-    // Create backends for reading the temp file and writing the final file.
-    // Reader backend
-    eckit::LocalConfiguration readerConfig;
-    eckit::LocalConfiguration readerSubConfig;
-    readerSubConfig.set("type", "H5File");
-    readerSubConfig.set("obsfile", tempFileName);
-    readerConfig.set("engine", readerSubConfig);
-
-    WorkaroundReaderParameters readerParams;
-    readerParams.validateAndDeserialize(readerConfig);
-    const bool isParallel = false;
-    Engines::ReaderCreationParameters readerCreateParams(win_start_, win_end_,
-                                      *comm_pool_, comm_time_, {}, isParallel);
-    std::unique_ptr<Engines::ReaderBase> readerEngine = Engines::ReaderFactory::create(
-          readerParams.engine.value().engineParameters, readerCreateParams);
-
-    // Writer backend
-    WorkaroundWriterParameters writerParams;
-    eckit::LocalConfiguration writerConfig;
-    eckit::LocalConfiguration writerSubConfig;
-    writerSubConfig.set("type", "H5File");
-    writerSubConfig.set("obsfile", writer_params_.value().fileName);
-    writerConfig.set("engine", writerSubConfig);
-    std::unique_ptr<Engines::WriterBase> workaroundWriter;
-
-    // We want each rank to write its own corresponding file, and that can be accomplished
-    // in telling the writer that we are to create multiple files and not use the parallel
-    // io mode.
-    writerParams.validateAndDeserialize(writerConfig);
-    const bool createMultipleFiles = true;
-    Engines::WriterCreationParameters writerCreateParams(*comm_pool_, comm_time_,
-                                      createMultipleFiles, isParallel);
-    std::unique_ptr<Engines::WriterBase> writerEngine = Engines::WriterFactory::create(
-          writerParams.engine.value().engineParameters, writerCreateParams);
-
-    // Copy the contents from the temp file to the final file.
-    Group readerTopGroup = readerEngine->getObsGroup();
-    Group writerTopGroup = writerEngine->getObsGroup();
-    copyGroup(readerTopGroup, writerTopGroup);
-
-    // If we made it to here, we successfully copied the file, so we can remove
-    // the temporary file.
-    if (std::remove(tempFileName.c_str()) != 0) {
-        oops::Log::info() << "WARNING: Unable to remove temporary output file: "
-                          << tempFileName << std::endl;
-    }
-}
-
 //--------------------------------------------------------------------------------------
 void WriterPool::finalize() {
     oops::Log::trace() << "WriterPool::finalize, start" << std::endl;
-    // TODO(srh) Workaround until we get fixed length string support in the netcdf-c
-    // library. This is expected to be available in the 4.9.1 release of netcdf-c.
-    // For now move the file with fixed length strings to a temporary
-    // file (obsdataout.obsfile spec with "_flenstr" appended to the filename) and
-    // then copy that file to the intended output file while changing the fixed
-    // length strings to variable length strings.
+    // Call the post processor associated with the backend engine being
+    // used in the save function.
     if (comm_pool_ != nullptr) {
-        // Create the temp file name, move the output file to the temp file name,
-        // then copy the file to the intended file name.
-        std::string tempFileName;
-        std::string finalFileName;
-        workaroundGenFileNames(finalFileName, tempFileName);
-
-        // If the output file was created using parallel io, then we only need rank 0
-        // to do the rename, copy workaround.
-        if (is_parallel_io_) {
-            if (comm_pool_->rank() == 0) {
-                workaroundFixToVarLenStrings(finalFileName, tempFileName);
-            }
-        } else {
-            workaroundFixToVarLenStrings(finalFileName, tempFileName);
-        }
+        writer_proc_->post();
     }
 
     // At this point there are two split communicator groups: one for the io pool and the
