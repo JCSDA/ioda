@@ -934,6 +934,10 @@ Variables:
   - Variable: [ "solarAzimuthAngle", "solar_azimuth_angle", "sol_azimuth_angle" ]
     MetaData: true
     Attributes: { units: "degree" }
+  - Variable: [ "positionEstimated" ]
+    MetaData: true
+    Type: Enum
+    Force Units: false
   - Variable: [ "stationICAO" ]
     MetaData: true
     Type: StringFixedLen   # 4-character string
