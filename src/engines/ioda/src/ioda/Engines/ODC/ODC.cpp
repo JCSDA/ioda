@@ -1180,6 +1180,9 @@ ObsGroup openFile(const ODC_Parameters& odcparams,
     // For GNSS-RO, channels dimension is being used to the observations through the profile
     } else if (column == "vertco_reference_2" && sql_data.getObsgroup() == obsgroup_gnssro) {
       sql_data.assignChannelNumbersSeq(std::vector<int>({varno_bending_angle}), og);
+    // For SurfaceCloud, channels dimension is being used for layer number for cloud layers
+    } else if (column == "initial_vertco_reference" && sql_data.getObsgroup() == obsgroup_surfacecloud) {
+      sql_data.assignChannelNumbersSeq(std::vector<int>({varno_cloud_fraction_covered}), og);
     // ... no, it does not.
     } else {      
       // This loop handles columns whose cells should be transferred in their entirety into ioda

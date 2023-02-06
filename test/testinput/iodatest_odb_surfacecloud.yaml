@@ -4,6 +4,7 @@ variables:
 - name: buoy_identifier
 - name: ident
 - name: initial_obsvalue
+- name: initial_vertco_reference
 - name: lowest_cloud_base_height
 - name: ops_subtype
 - name: pressure_sensor_alt
