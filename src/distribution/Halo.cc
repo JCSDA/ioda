@@ -88,8 +88,6 @@ void Halo::assignRecord(const std::size_t RecNum, const std::size_t LocNum,
     // This is the first location from this record. Find out whether to assign it to this PE.
 
     const double dist = eckit::geometry::Sphere::distance(radius_earth_, center_, point);
-    oops::Log::debug() << "Point: " << point << " distance to center: " << center_
-          << " = " << dist << std::endl;
     if (dist <= radius_) {
       // Yes!
       recordsInHalo_.insert(RecNum);
