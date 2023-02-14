@@ -11,6 +11,7 @@
 #ifndef TEST_IODA_OBSVECTOR_H_
 #define TEST_IODA_OBSVECTOR_H_
 
+#include <algorithm>
 #include <memory>
 #include <string>
 #include <vector>
@@ -371,6 +372,83 @@ void testDistributedMath() {
   }
 }
 
+
+// -----------------------------------------------------------------------------
+/// \brief tests ObsVector::random method with different MPI distributions
+/// \details for distributions where all obs are on all PEs, verifies that the same
+/// perturbations are found on all PEs. For distributions where this is not the case,
+/// checks that the sequence of perturbations on each PE is unique
+void testRandom() {
+  typedef ioda::ObsVector  ObsVector_;
+  typedef ioda::ObsSpace  ObsSpace_;
+
+  // get the list of distributions to test with
+  std::vector<std::string> dist_names =
+    ::test::TestEnvironment::config().getStringVector("distributions");
+  for (std::size_t ii = 0; ii < dist_names.size(); ++ii) {
+    oops::Log::debug() << "using distribution: " << dist_names[ii] << std::endl;
+  }
+
+  // Get some config information that is the same regardless of distribution
+  util::DateTime bgn((::test::TestEnvironment::config().getString("window begin")));
+  util::DateTime end((::test::TestEnvironment::config().getString("window end")));
+  std::vector<eckit::LocalConfiguration> conf;
+  ::test::TestEnvironment::config().get("observations", conf);
+
+  // for each distribution, create the set of obs vectors
+  for (std::size_t dd = 0; dd < dist_names.size(); ++dd) {
+    for (std::size_t jj = 0; jj < conf.size(); ++jj) {
+      eckit::LocalConfiguration obsconf(conf[jj], "obs space");
+      obsconf.set("distribution.name", dist_names[dd]);
+      // "halo size" is a required parameter and needs to be set if Halo distribution is used
+      // "radius" is defined to be smaller than the default value so not all obs are on all PEs
+      if (dist_names[dd] == "Halo") {
+        obsconf.set("distribution.halo size", 0);
+        obsconf.set("distribution.radius", 5000000.0);
+      }
+      if (obsconf.has("obsdataout.obsfile")) {
+        std::string fileName = obsconf.getString("obsdataout.obsfile");
+        std::string fileTag = std::string("_Dist_") + dist_names[dd];
+        std::size_t pos = fileName.find_last_of(".");
+        if (pos != std::string::npos) {
+          // have a suffix on the file name, insert tag before the suffix
+          fileName.insert(pos, fileTag);
+         } else {
+            // do not have a suffix on the file name, append tag to end of file name
+            fileName += fileTag;
+         }
+        obsconf.set("obsdataout.obsfile", fileName);
+      }
+
+      ioda::ObsTopLevelParameters obsparams;
+      obsparams.validateAndDeserialize(obsconf);
+
+      // Instantiate the obs space with the distribution we are testing
+      ObsSpace_ obsdb(obsparams, oops::mpi::world(), bgn, end, oops::mpi::myself());
+      ObsVector_ ov(obsdb);
+
+      ov.random();
+
+      for (std::size_t jrank = 0; jrank < ov.space().comm().size(); ++jrank) {
+        std::vector<double> pertvec = ov.data();
+        std::sort(pertvec.begin(), pertvec.end());
+        std::size_t jsize = ov.size();
+        ov.space().comm().broadcast(jsize, jrank);
+        std::vector<double> refvec(jsize);
+        if (ov.space().comm().rank() == jrank) {
+          refvec = pertvec;
+        }
+        ov.space().comm().broadcast(refvec, jrank);
+        if (ov.space().distribution()->isIdentity() || ov.space().comm().rank() == jrank) {
+          EXPECT(pertvec == refvec);
+        } else {
+          EXPECT(pertvec != refvec);
+        }
+      }
+    }
+  }
+}
+
 // -----------------------------------------------------------------------------
 
 void testCleanup() {
@@ -410,6 +488,8 @@ class ObsVector : public oops::Test {
       { testDotProduct(); });
      ts.emplace_back(CASE("ioda/ObsVector/testDistributedMath")
       { testDistributedMath(); });
+     ts.emplace_back(CASE("ioda/ObsVector/testRandom")
+      { testRandom(); });
      ts.emplace_back(CASE("ioda/ObsVector/testCleanup")
       { testCleanup(); });
   }

@@ -88,6 +88,7 @@ class ObsVector : public util::Printable,
 
   ObsSpace & space() {return obsdb_;}
   const ObsSpace & space() const {return obsdb_;}
+  std::vector<double> data() const {return values_;}
   const std::string & obstype() const {return obsdb_.obsname();}
   const oops::Variables & varnames() const {return obsvars_;}
   std::size_t nvars() const {return nvars_;}

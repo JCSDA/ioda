@@ -156,9 +156,21 @@ void ObsVector::invert() {
 }
 // -----------------------------------------------------------------------------
 void ObsVector::random() {
-  util::NormalDistribution<double> x(values_.size(), 0.0, 1.0, this->getSeed());
-  for (size_t jj = 0; jj < values_.size() ; ++jj) {
-    values_[jj] = x[jj];
+  const size_t globalnobs = obsdb_.globalNumLocs() * nvars_;
+  std::vector<double> perts(globalnobs);
+
+  if (obsdb_.comm().rank() == 0) {
+    util::NormalDistribution<double> x(globalnobs, 0.0, 1.0, this->getSeed());
+    perts = x.data();
+  }
+
+  obsdb_.comm().broadcast(perts, 0);
+
+  for (size_t jloc = 0; jloc < nlocs_; ++jloc) {
+    const size_t xindex = obsdb_.index()[jloc];
+    for (size_t jvar = 0; jvar < nvars_; ++jvar) {
+      values_[jloc * nvars_ + jvar] = perts[xindex * nvars_ + jvar];
+    }
   }
 }
 // -----------------------------------------------------------------------------
