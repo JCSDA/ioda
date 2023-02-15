@@ -32,8 +32,22 @@ namespace Engines {
 //----------------------------------------------------------------------
 
 // -----------------------------------------------------------------------------
-std::string uniquifyFileName(const std::string & fileName, std::size_t rankNum,
-                             int timeRankNum) {
+std::string uniquifyFileName(const std::string & fileName, const bool createMultipleFiles,
+                             const std::size_t rankNum, const int timeRankNum) {
+    // The format for the output file name is:
+    //
+    //        fileName<rankNum><timeRankNum>
+    //
+    // For <rankNum>:
+    //    If createMultipleFiles is true, then the string appended is "_0000" for rank 0,
+    //    "_0001" for rank 1, etc.
+    //    If createMultipleFiles is false, then no string is appended.
+    //
+    // For <timeRankNum>:
+    //    If timeRankNum is >= zero, then the string appended is "_0000" for time rank 0,
+    //    "_0001" for time rank 1, etc.
+    //    If timeRankNum is < zero, then no string is appended.
+
     // Attach the rank number to the output file name to avoid collisions when running
     // with multiple MPI tasks.
     std::string uniqueFileName = fileName;
@@ -41,13 +55,19 @@ std::string uniquifyFileName(const std::string & fileName, std::size_t rankNum,
     // Find the right-most dot in the file name, and use that to pick off the file name
     // and file extension.
     std::size_t found = uniqueFileName.find_last_of(".");
-    if (found == std::string::npos)
-      found = uniqueFileName.length();
+    if (found == std::string::npos) found = uniqueFileName.length();
 
-    // Get the process rank number and format it
+    // optionally include the rankNum and/or timeRankNum suffixes
     std::ostringstream ss;
-    ss << "_" << std::setw(4) << std::setfill('0') << rankNum;
-    if (timeRankNum >= 0) ss << "_" << timeRankNum;
+    ss << "";
+    if (createMultipleFiles) {
+        ss << "_" << std::setw(4) << std::setfill('0') << rankNum;
+    }
+    if (timeRankNum >= 0) {
+        // reset the width and fill character just in case they were changed above
+        ss << std::setw(0) << std::setfill(' ');
+        ss << "_" << std::setw(4) << std::setfill('0') << timeRankNum;
+    }
 
     // Construct the output file name
     return uniqueFileName.insert(found, ss.str());

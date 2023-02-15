@@ -117,18 +117,6 @@ private:
   /// \param rankGrouping structure that maps ranks outside the pool to ranks in the pool
   void assignRanksToIoPool(const std::size_t nlocs,
                            const IoPoolGroupMap & rankGrouping) override;
-
-  /// \brief create file names for the fixed length string workaround
-  /// \details The workaround entails moving the newly written file name to a temporary
-  /// file and then copying the temp file back to the intended file name while changing
-  /// the fixed length strings to variable length strings.
-  /// \param finalFileName final (intended) output file name
-  /// \param tempFileName temporary output file name
-  void workaroundGenFileNames(std::string & finalFileName, std::string & tempFileName);
-
-  /// \brief create file names for the fixed length string workaround
-  void workaroundFixToVarLenStrings(const std::string & finalFileName,
-                                    const std::string & tempFileName);
 };
 
 }  // namespace ioda

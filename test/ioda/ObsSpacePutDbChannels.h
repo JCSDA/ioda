@@ -84,8 +84,7 @@ CASE("ioda/ObsSpace/testPutDb") {
       obsspace->save();
     } else {
       // Read the output file and check that its contents are correct
-      const std::string fileName =
-          ioda::Engines::uniquifyFileName(obsconf.getString("obsdataout.engine.obsfile"), 0, -1);
+      const std::string fileName = obsconf.getString("obsdataout.engine.obsfile");
       const ioda::Group group = ioda::Engines::HH::openFile(
             fileName, ioda::Engines::BackendOpenModes::Read_Only);
 

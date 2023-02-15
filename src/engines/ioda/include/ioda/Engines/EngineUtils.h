@@ -90,10 +90,11 @@ public:
 /// \details This function will tag on the MPI task number to the end of the file name
 /// to avoid collisions when running with multiple MPI tasks.
 /// \param fileName raw output file name
+/// \param createMultipleFiles if true need to append rankNum to the file name
 /// \param rankNum MPI group communicator rank number
 /// \param timeRankNum MPI time communicator rank number
-std::string uniquifyFileName(const std::string & fileName, std::size_t rankNum,
-                             int timeRankNum);
+std::string uniquifyFileName(const std::string & fileName, const bool createMultipleFiles,
+                             const std::size_t rankNum, const int timeRankNum);
 
 /// \brief store generated data into an ObsGroup
 /// \param latVals vector of latitude values

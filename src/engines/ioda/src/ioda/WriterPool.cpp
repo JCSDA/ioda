@@ -19,7 +19,6 @@
 
 #include "ioda/Copying.h"
 #include "ioda/Engines/EngineUtils.h"
-#include "ioda/Engines/HH.h"
 #include "ioda/Exception.h"
 #include "ioda/Io/WriterUtils.h"
 

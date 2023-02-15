@@ -1,0 +1,30 @@
+---
+uniquify file name tests:
+    - case:
+        name: "rank 1, time rank -1, create multiple files false"
+        rank: 1
+        time rank: -1
+        create multiple files: false
+        file name: "test_file.nc4"
+        expected file name: "test_file.nc4"
+    - case:
+        name: "rank 1, time rank -1, create multiple files true"
+        rank: 1
+        time rank: -1
+        create multiple files: true
+        file name: "test_file.nc4"
+        expected file name: "test_file_0001.nc4"
+    - case:
+        name: "rank 1, time rank 3, create multiple files false"
+        rank: 1
+        time rank: 3
+        create multiple files: false
+        file name: "test_file.nc4"
+        expected file name: "test_file_0003.nc4"
+    - case:
+        name: "rank 1, time rank 3, create multiple files true"
+        rank: 1
+        time rank: 3
+        create multiple files: true
+        file name: "test_file.nc4"
+        expected file name: "test_file_0001_0003.nc4"

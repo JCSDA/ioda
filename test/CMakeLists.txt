@@ -77,6 +77,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_distribution_timewindow.yaml
   testinput/iodatest_engine_factory.yaml
   testinput/iodatest_engine_factory_odc.yaml
+  testinput/iodatest_engine_uniquify_file_name.yaml
   testinput/iodatest_obsdatavector.yaml
   testinput/iodatest_obsdtype.yaml
   testinput/iodatest_obsspace.yaml
@@ -364,6 +365,12 @@ ecbuild_add_test( TARGET  test_ioda_engine_factory
                   LIBS  ioda_engines ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
+ecbuild_add_test( TARGET  test_ioda_engine_uniquify_file_name
+                  SOURCES mains/TestEngineUniquifyFileName.cc
+                  ARGS    "testinput/iodatest_engine_uniquify_file_name.yaml"
+                  LIBS  ioda_engines ioda_test
+                  TEST_DEPENDS get_ioda_test_data )
+
 if (odc_FOUND)
     ecbuild_add_test( TARGET  test_ioda_engine_factory_odc
                       COMMAND test_ioda_engine_factory
@@ -575,7 +582,7 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_out_dims_check
                           hdf5
                           "${CMAKE_CURRENT_BINARY_DIR}/test_ioda_oops_obsspace
                           testinput/iodatest_obsspace_out_dims_check.yaml"
-                          out_dims_check_0000.nc4
+                          out_dims_check.nc4
                   TEST_DEPENDS get_ioda_test_data )
 
 ecbuild_add_test( TARGET  test_ioda_writer_sondes
@@ -585,7 +592,7 @@ ecbuild_add_test( TARGET  test_ioda_writer_sondes
                           netcdf
                           "${CMAKE_CURRENT_BINARY_DIR}/test_ioda_oops_obsspace
                           testinput/iodatest_writer_sondes.yaml"
-                          ioda_writer_sondes_0000.nc4
+                          ioda_writer_sondes.nc4
                   TEST_DEPENDS get_ioda_test_data )
 
 # This tests creates a single output file (7 tasks, 4 tasks in the io pool)
@@ -597,13 +604,13 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_io_pool_sondes_single_file
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data test_ioda_time_io)
 
-ecbuild_add_test( TARGET  test_ioda_obsspace_io_pool_sondes_single_file_0000
+ecbuild_add_test( TARGET  test_ioda_obsspace_io_pool_sondes_single_file_check
                   TYPE    SCRIPT
                   COMMAND bash
                   ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
                           netcdf
                           "echo Checking io pool io sondes"
-                          io_pool_sondes_single_out_0000.nc4
+                          io_pool_sondes_single_out.nc4
                   TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_io_pool_sondes_single_file)
 
 
@@ -618,7 +625,7 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_io_pool_sondes_multi_files
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data test_ioda_time_io)
 
-ecbuild_add_test( TARGET  test_ioda_obsspace_io_pool_sondes_multi_file_0000
+ecbuild_add_test( TARGET  test_ioda_obsspace_io_pool_sondes_multi_file_check_0000
                   TYPE    SCRIPT
                   COMMAND bash
                   ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
@@ -627,7 +634,7 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_io_pool_sondes_multi_file_0000
                           io_pool_sondes_multi_out_0000.nc4
                   TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_io_pool_sondes_multi_files)
 
-ecbuild_add_test( TARGET  test_ioda_obsspace_io_pool_sondes_multi_file_0001
+ecbuild_add_test( TARGET  test_ioda_obsspace_io_pool_sondes_multi_file_check_0001
                   TYPE    SCRIPT
                   COMMAND bash
                   ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
@@ -636,7 +643,7 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_io_pool_sondes_multi_file_0001
                           io_pool_sondes_multi_out_0001.nc4
                   TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_io_pool_sondes_multi_files)
 
-ecbuild_add_test( TARGET  test_ioda_obsspace_io_pool_sondes_multi_file_0002
+ecbuild_add_test( TARGET  test_ioda_obsspace_io_pool_sondes_multi_file_check_0002
                   TYPE    SCRIPT
                   COMMAND bash
                   ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
@@ -645,7 +652,7 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_io_pool_sondes_multi_file_0002
                           io_pool_sondes_multi_out_0002.nc4
                   TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_io_pool_sondes_multi_files)
 
-ecbuild_add_test( TARGET  test_ioda_obsspace_io_pool_sondes_multi_file_0003
+ecbuild_add_test( TARGET  test_ioda_obsspace_io_pool_sondes_multi_file_check_0003
                   TYPE    SCRIPT
                   COMMAND bash
                   ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
@@ -667,40 +674,40 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_dist_write
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data test_ioda_time_io)
 
-ecbuild_add_test( TARGET  test_ioda_obsspace_dist_write_round_robin_0000
+ecbuild_add_test( TARGET  test_ioda_obsspace_dist_write_round_robin
                   TYPE    SCRIPT
                   COMMAND bash
                   ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
                           netcdf
                           "echo Checking distributed write - Round Robin"
-                          dist_write_round_robin_out_0000.nc4
+                          dist_write_round_robin_out.nc4
                   TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_dist_write)
 
-ecbuild_add_test( TARGET  test_ioda_obsspace_dist_write_inefficient_0000
+ecbuild_add_test( TARGET  test_ioda_obsspace_dist_write_inefficient
                   TYPE    SCRIPT
                   COMMAND bash
                   ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
                           netcdf
                           "echo Checking distributed write - Inefficient"
-                          dist_write_inefficient_out_0000.nc4
+                          dist_write_inefficient_out.nc4
                   TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_dist_write)
 
-ecbuild_add_test( TARGET  test_ioda_obsspace_dist_write_halo_0000
+ecbuild_add_test( TARGET  test_ioda_obsspace_dist_write_halo
                   TYPE    SCRIPT
                   COMMAND bash
                   ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
                           netcdf
                           "echo Checking distributed write - Halo"
-                          dist_write_halo_out_0000.nc4
+                          dist_write_halo_out.nc4
                   TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_dist_write)
 
-ecbuild_add_test( TARGET  test_ioda_obsspace_dist_write_atlas_0000
+ecbuild_add_test( TARGET  test_ioda_obsspace_dist_write_atlas
                   TYPE    SCRIPT
                   COMMAND bash
                   ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
                           netcdf
                           "echo Checking distributed write - Atlas"
-                          dist_write_atlas_out_0000.nc4
+                          dist_write_atlas_out.nc4
                   TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_dist_write)
 
 # IODA ObsSpace class - Fortran interface test
@@ -827,7 +834,7 @@ ecbuild_add_test( TARGET  test_ioda_time_io_cmp_sondes
                   ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
                           hdf5
                           "echo Checking time io sondes"
-                          sondes_obs_2018041500_m_time_0000.nc4
+                          sondes_obs_2018041500_m_time.nc4
                   TEST_DEPENDS get_ioda_test_data test_ioda_time_io)
 
 ecbuild_add_test( TARGET  test_ioda_time_io_cmp_amsua_n19
@@ -836,7 +843,7 @@ ecbuild_add_test( TARGET  test_ioda_time_io_cmp_amsua_n19
                   ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
                           hdf5
                           "echo Checking time io AMSU-A NOAA19"
-                          amsua_n19_obs_2018041500_m_time_0000.nc4
+                          amsua_n19_obs_2018041500_m_time.nc4
                   TEST_DEPENDS get_ioda_test_data test_ioda_time_io)
 
 #####################################################################

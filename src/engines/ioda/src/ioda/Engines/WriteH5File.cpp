@@ -37,26 +37,16 @@ WriteH5File::WriteH5File(const Parameters_ & params,
     Engines::BackendNames backendName = Engines::BackendNames::Hdf5File;
 
     // Figure out the output file name.
-    std::string outFileName;
     std::size_t mpiRank = createParams_.comm.rank();
     int mpiTimeRank = -1; // a value of -1 tells uniquifyFileName to skip this value
     if (createParams_.timeComm.size() > 1) {
         mpiTimeRank = createParams_.timeComm.rank();
     }
-    if (createParams_.createMultipleFiles) {
-        // Tag on the rank number to the output file name to avoid collisions.
-        // Don't use the time communicator rank number in the suffix if the size of
-        // the time communicator is 1.
-        outFileName = uniquifyFileName(params_.fileName, mpiRank, mpiTimeRank);
-    } else {
-        // TODO(srh) With the upcoming release (Sep 2022) we need to keep the uniquified
-        // file name in order to prevent thrasing downstream tools. We can get rid of
-        // the file suffix after the release.
-        // If we got to here, we either have just one process in io pool, or we
-        // are going to write out the file in parallel mode. In either case, we want
-        // the suffix part related to mpiRank to always be zero.
-        outFileName = uniquifyFileName(params_.fileName, 0, mpiTimeRank);
-    }
+    // Tag on the rank number to the output file name to avoid collisions.
+    // Don't use the time communicator rank number in the suffix if the size of
+    // the time communicator is 1.
+    std::string outFileName = uniquifyFileName(params_.fileName,
+        createParams_.createMultipleFiles, mpiRank, mpiTimeRank);
 
     Engines::BackendCreationParameters backendParams;
     backendParams.fileName = outFileName;
@@ -149,22 +139,13 @@ void WriteH5Proc::workaroundGenFileNames(std::string & finalFileName,
     if (createParams_.timeComm.size() > 1) {
         mpiTimeRank = createParams_.timeComm.rank();
     }
-    if (createParams_.createMultipleFiles) {
-        // Tag on the rank number to the output file name to avoid collisions.
-        // Don't use the time communicator rank number in the suffix if the size of
-        // the time communicator is 1.
-        tempFileName = uniquifyFileName(tempFileName, mpiRank, mpiTimeRank);
-        finalFileName = uniquifyFileName(finalFileName, mpiRank, mpiTimeRank);
-    } else {
-        // TODO(srh) With the upcoming release (Sep 2022) we need to keep the uniquified
-        // file name in order to prevent trashing downstream tools. We can get rid of
-        // the file suffix after the release.
-        // If we got to here, we either have just one process in io pool, or we
-        // are going to write out the file in parallel mode. In either case, we want
-        // the suffix part related to mpiRank to always be zero.
-        tempFileName = uniquifyFileName(tempFileName, 0, mpiTimeRank);
-        finalFileName = uniquifyFileName(finalFileName, 0, mpiTimeRank);
-    }
+    // Tag on the rank number to the output file name to avoid collisions.
+    // Don't use the time communicator rank number in the suffix if the size of
+    // the time communicator is 1.
+    tempFileName = uniquifyFileName(tempFileName, createParams_.createMultipleFiles,
+                                    mpiRank, mpiTimeRank);
+    finalFileName = uniquifyFileName(finalFileName, createParams_.createMultipleFiles,
+                                     mpiRank, mpiTimeRank);
 }
 
 void WriteH5Proc::workaroundFixToVarLenStrings(const std::string & finalFileName,
@@ -202,7 +183,7 @@ void WriteH5Proc::workaroundFixToVarLenStrings(const std::string & finalFileName
     eckit::LocalConfiguration writerConfig;
     eckit::LocalConfiguration writerSubConfig;
     writerSubConfig.set("type", "H5File");
-    writerSubConfig.set("obsfile", params_.fileName);
+    writerSubConfig.set("obsfile", finalFileName);
     writerConfig.set("engine", writerSubConfig);
     std::unique_ptr<Engines::WriterBase> workaroundWriter;
 
@@ -210,7 +191,7 @@ void WriteH5Proc::workaroundFixToVarLenStrings(const std::string & finalFileName
     // in telling the writer that we are to create multiple files and not use the parallel
     // io mode.
     writerParams.validateAndDeserialize(writerConfig);
-    const bool createMultipleFiles = true;
+    const bool createMultipleFiles = false;
     Engines::WriterCreationParameters writerCreateParams(
         createParams_.comm, createParams_.timeComm, createMultipleFiles, isParallel);
     std::unique_ptr<Engines::WriterBase> writerEngine = Engines::WriterFactory::create(
