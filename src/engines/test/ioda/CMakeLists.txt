@@ -27,3 +27,6 @@ if(BUILD_PYTHON_BINDINGS)
 	add_subdirectory(python)
 endif(BUILD_PYTHON_BINDINGS)
 
+#if(IODA_BUILD_LANGUAGE_FORTRAN)
+#	add_subdirectory(Fortran)
+#endif(IODA_BUILD_LANGUAGE_FORTRAN)

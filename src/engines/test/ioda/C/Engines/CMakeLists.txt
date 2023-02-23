@@ -12,9 +12,7 @@ addapp(test_ioda_c_engines_create)
 target_link_libraries(test_ioda_c_engines_create PUBLIC ioda_engines)
 
 # MSVC has a really bad and old C compiler. Instead use the C++ compiler.
-if (MSVC)
-	set_source_files_properties(test-Engines.c PROPERTIES LANGUAGE CXX)
-endif()
+set_source_files_properties(test-Engines.c PROPERTIES LANGUAGE CXX)
 
 
 add_executable(test_ioda_c_engines_open test-Engines-open.c)
@@ -22,9 +20,7 @@ addapp(test_ioda_c_engines_open)
 target_link_libraries(test_ioda_c_engines_open PUBLIC ioda_engines)
 
 # MSVC has a really bad and old C compiler. Instead use the C++ compiler.
-if (MSVC)
-	set_source_files_properties(test-Engines-open.c PROPERTIES LANGUAGE CXX)
-endif()
+set_source_files_properties(test-Engines-open.c PROPERTIES LANGUAGE CXX)
 
 
 if(BUILD_TESTING)

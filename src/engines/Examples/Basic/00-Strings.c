@@ -11,42 +11,55 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "ioda/C/ioda_c.h"
-#include "ioda/C/String_c.h"
+
+#include "ioda/C/ioda_vecstring_c.hpp"
 
 int main()
 {
 	size_t ret = 0;
-	char buf[50];
-	const size_t buf_sz = sizeof(buf);
-	memset(buf, 0, buf_sz);
 
+	char * buf;
+//	const size_t buf_sz = sizeof(buf);
+//	memset(buf, 0, buf_sz);
+	const char* test1 = "This ";
+	const char* test2 = "is a test.";
 	const char* test_str = "This is a test.";
+	char * rstr;
+	int64_t sz;
+	
+	void * s = ioda_string_c_alloc();
+	
+	// set and get a string
+	ioda_string_c_set(s,(void*)test_str);
+	buf = ioda_string_c_get(s);
+         
+        if (strlen(buf) != strlen(test_str) || strcmp(test_str,buf)!= 0) goto failure;
+        printf(" %s  =? %s\n",buf,test_str);
+        free(buf);
+        
+        ioda_string_c_clear(s);
 
-	const struct ioda_c_interface* ioda  = get_ioda_c_interface();
+        sz = ioda_string_c_size((void*)s);
+        
+        if (sz!=0) {
+	    fprintf(stderr,"ioda_string_c_size or clear fun failed\n");
+	    goto failure;        
+        }
 
-	// Set and get a string.
-	struct ioda_string* s = ioda->Strings->construct();
-	if (!s->set(s, test_str, strlen(test_str))) goto failure;
-	if ((ret = s->get(s, buf, buf_sz)) != strlen(test_str)) goto failure;
-	printf("%s\n", buf);
-
-	// Test truncation when getting.
-	if ((ret = s->get(s,buf,5)) != 5) goto failure;
-	// buf would be "This"
-	if (strlen(buf) != 4) goto failure;
-
-	// Test string copy
-	struct ioda_string *s_copy = s->copy(s);
-	if (s_copy->size(s) != s->size(s)) goto failure;
-
-	// Clear a string and check length.
-	s->clear(s);
-	if (s->length(s) != 0) goto failure;
-
+	ioda_string_c_set(s,(void*)test1);
+	ioda_string_c_append(s,(void*)test2);
+	buf = ioda_string_c_get(s);
+        
+        if ( strcmp(buf,test_str)!=0) {
+           fprintf(stderr,"ioda_c_string_append does not work %s != %s\n",buf,test_str);
+           free(buf);
+           goto failure; 		
+        } 
+        ioda_string_c_dealloc(s);
 	return 0;
 
 failure:
+	ioda_string_c_dealloc(s);
 	printf("Test failed. Buf is \"%s\".\n", buf);
 	return 1;
 }

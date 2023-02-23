@@ -18,30 +18,26 @@ list(APPEND SRCS_ATTRIBUTES
 	src/ioda/Has_Attributes.cpp
 	)
 list(APPEND SRCS_C_BINDINGS
-	include/ioda/C/Attribute_c.h
-	include/ioda/C/c_binding_macros.h
-	include/ioda/C/Dimensions_c.h
-	include/ioda/C/Engines_c.h
-	include/ioda/C/Group_c.h
-	include/ioda/C/Has_Attributes_c.h
-	include/ioda/C/Has_Variables_c.h
-	include/ioda/C/ioda_c.h
-	include/ioda/C/String_c.h
-	include/ioda/C/Variable_c.h
-	include/ioda/C/Variable_Creation_Parameters_c.h
-	include/ioda/C/VecString_c.h
-	src/ioda/C/structs_c.h
-	#src/ioda/C/Attribute_c.cpp
-	#src/ioda/C/Dimensions_c.cpp
-	src/ioda/C/Engines_c.cpp
-	src/ioda/C/Group_c.cpp
-	#src/ioda/C/Has_Attributes_c.cpp
-	src/ioda/C/ioda_c.cpp
-	src/ioda/C/String_c.cpp
-	#src/ioda/C/Variable_Creation_Parameters_c.cpp
-	#src/ioda/C/Has_Variables_c.cpp
-	#src/ioda/C/Variable_c.cpp
-	src/ioda/C/VecString_c.cpp
+	include/ioda/C/ioda_attribute_c.hpp
+	include/ioda/C/ioda_vecstring_c.hpp
+	include/ioda/C/ioda_dimensions_c.hpp
+	include/ioda/C/ioda_engines_c.hpp
+	include/ioda/C/ioda_group_c.hpp
+	include/ioda/C/ioda_has_attributes_c.hpp
+	include/ioda/C/ioda_has_variables_c.hpp
+	include/ioda/C/ioda_c_utils.hpp
+	include/ioda/C/ioda_variable_c.hpp
+	include/ioda/C/ioda_variable_creation_parameters_c.hpp
+	src/ioda/C/ioda_c_utils.cpp
+	src/ioda/C/ioda_attribute_c.cpp
+	src/ioda/C/ioda_vecstring_c.cpp
+	src/ioda/C/ioda_dimensions_c.cpp
+	src/ioda/C/ioda_engines_c.cpp
+	src/ioda/C/ioda_group_c.cpp
+	src/ioda/C/ioda_has_attributes_c.cpp
+	src/ioda/C/ioda_has_variables_c.cpp
+	src/ioda/C/ioda_variable_c.cpp
+	src/ioda/C/ioda_variable_creation_parameters_c.cpp
 	)
 list(APPEND SRCS_GROUPS
 	include/ioda/Group.h
@@ -256,7 +252,6 @@ endif()
 
 ## Create options files that specify compilation options, available libraries,
 ## and test file paths.
-
 
 ## Create the library
 

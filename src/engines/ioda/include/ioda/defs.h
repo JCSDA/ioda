@@ -31,6 +31,14 @@
 #  pragma warning(disable : 4996)  // Old versions of Eigen may use C++17-deprecated functions.
 #endif
 
+/* Function attributes */
+// This is used in C code. C++ code can use [[nodiscard]].
+#if defined(__GNUC__) || defined(__clang__)
+#  define IODA_WARN_UNUSED __attribute__ ((warn_unused_result))
+#else
+#  define IODA_WARN_UNUSED
+#endif
+
 /* Symbol export / import macros */
 
 /**

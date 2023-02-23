@@ -34,18 +34,14 @@ macro(AddExample_C ExName SourceFile )
 	AddExample_Base( ${ExName} ${SourceFile} )
 	# MSVC has a really bad and old C compiler. Instead use the C++ compiler.
 	# For other compilers, force C11, which is the CMake max version.
-	if (MSVC)
-		set_source_files_properties(${SourceFile} PROPERTIES LANGUAGE CXX)
-	else()
-		set_property(TARGET ${ExName} PROPERTY C_STANDARD 11)
-	endif()
+	set_source_files_properties(${SourceFile} PROPERTIES LANGUAGE CXX)
 	add_test(NAME test_${ExName} COMMAND ${ExName})
 endmacro()
 
 macro(AddExample_F ExName SourceFile )
 	AddExample_Base( ${ExName} ${SourceFile} )
-	target_link_libraries(${ExName} PUBLIC ioda_fortran)
-	add_test(NAME test_${ExName} COMMAND ${ExName})
+	target_link_libraries(${ExName} PUBLIC ioda_engines ioda_fortran stdc++)
+	add_test(NAME test_${ExName} COMMAND ${ExName})	
 endmacro()
 
 macro(AddExample_Py testname cmd args)
