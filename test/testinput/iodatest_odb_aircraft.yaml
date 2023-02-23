@@ -1,5 +1,5 @@
 where:
-  varno: [2,29,41,42,111,112]
+  varno: [2,29,41,42,111,112,226] 
 variables:
 - name: "aircraft_data_relay_system"
 - name: "aircraft_tail_number"
@@ -12,3 +12,5 @@ variables:
 - name: "statid"
 - name: "receipt_time"
 - name: "receipt_date"
+- name: "ops_subtype"
+- name: "seqno"

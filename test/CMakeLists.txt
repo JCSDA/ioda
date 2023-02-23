@@ -149,6 +149,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_odb_surfacecloud.yaml
   testinput/iodatest_odb_surfacesst.yaml
   testinput/odb_default_name_map.yaml
+  testinput/odb_aircraft_name_map.yaml
   testinput/odb_gnssro_name_map.yaml
   testinput/odb_oceansound_name_map.yaml
   testinput/odb_radiance_name_map.yaml
@@ -1080,7 +1081,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             Aircraft
                             Data/testinput_tier_1/aircraft.odb
-                            testinput/odb_default_name_map.yaml testinput/iodatest_odb_aircraft.yaml"
+                            testinput/odb_aircraft_name_map.yaml testinput/iodatest_odb_aircraft.yaml"
                             test-Aircraft.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -1092,7 +1093,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             Mixed-Aircraft
                             Data/testinput_tier_1/aircraft-mixed-elements.odb
-                            testinput/odb_default_name_map.yaml testinput/iodatest_odb_aircraft.yaml"
+                            testinput/odb_aircraft_name_map.yaml testinput/iodatest_odb_aircraft.yaml"
                             test-Mixed-Aircraft.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
