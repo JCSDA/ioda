@@ -185,9 +185,9 @@ void * ioda_engines_c_construct_from_command_line(void *vs,const void *def_name)
         ioda::Group *res = new ioda::Group( ioda::Engines::constructFromCmdLine(argc,argv,fname) );
         for (int i=argc;i;) {    
             --i;
-            delete [] argv[i];
+            free(argv[i]);
         }
-        delete argv;
+        delete [] argv;
         return reinterpret_cast<void*>(res);
     } catch (std::exception& e) {
         std::cerr << "ioda_engines_construct_from_command_line failed\n";
