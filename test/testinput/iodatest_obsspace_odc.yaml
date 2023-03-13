@@ -13,9 +13,10 @@ observations:
         mapping file: testinput/odb_default_name_map.yaml
         query file: testinput/iodatest_odb_aircraft.yaml
   test data:
+    gnlocs: 157
+    gnlocs outside time window: 43
     nlocs: 157
     nrecs: 157
-    nvars: 3
     obs perturbations seed: 0
     expected group variables: []
     expected sort variable: ""

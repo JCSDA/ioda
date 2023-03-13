@@ -45,19 +45,6 @@ list(APPEND SRCS_GROUPS
 	src/ioda/Group.cpp
 	src/ioda/ObsGroup.cpp
 	)
-list(APPEND SRCS_IO
-	include/ioda/Io/IoPoolBase.h
-	include/ioda/Io/IoPoolParameters.h
-	include/ioda/Io/ReaderPool.h
-	include/ioda/Io/ReaderUtils.h
-	include/ioda/Io/WriterPool.h
-	include/ioda/Io/WriterUtils.h
-	src/ioda/IoPoolBase.cpp
-	src/ioda/ReaderPool.cpp
-	src/ioda/ReaderUtils.cpp
-	src/ioda/WriterPool.cpp
-	src/ioda/WriterUtils.cpp
-        )
 list(APPEND SRCS_LAYOUTS
 	include/ioda/Layout.h
 	src/ioda/Layouts/Layout_ObsGroup.h
@@ -215,7 +202,6 @@ list(APPEND SRCS_ENGINES_ODC_ODC_DEPENDENT
 source_group("Attributes" FILES ${SRCS_ATTRIBUTES})
 source_group("C Bindings" FILES ${SRCS_C_BINDINGS})
 source_group("Groups" FILES ${SRCS_GROUPS})
-source_group("IO" FILES ${SRCS_IO})
 source_group("Layouts" FILES ${SRCS_LAYOUTS} ${SRCS_LAYOUTS_ODB})
 source_group("Math" FILES ${SRCS_MATH})
 source_group("Misc" FILES ${SRCS_MISC})
@@ -234,7 +220,7 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/ioda/testconfig.h.in
 ## Define which source files are compiled.
 
 list(APPEND SRCS_IODA_ENGINES
-	${SRCS_ATTRIBUTES} ${SRCS_C_BINDINGS} ${SRCS_GROUPS} ${SRCS_IO}
+	${SRCS_ATTRIBUTES} ${SRCS_C_BINDINGS} ${SRCS_GROUPS}
 	${SRCS_LAYOUTS} ${SRCS_MATH} ${SRCS_MISC} ${SRCS_TYPES} ${SRCS_VARIABLES}
 	${SRCS_ENGINES_TOP} ${SRCS_ENGINES_OBS_STORE} ${SRCS_ENGINES_ODC}
 	${CMAKE_CURRENT_BINARY_DIR}/config/ioda/config.h

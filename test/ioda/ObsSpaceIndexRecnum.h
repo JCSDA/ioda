@@ -92,31 +92,35 @@ void testConstructor() {
 
     const ObsSpace &odb = Test_::obspace(jj);
 
-    // Get the number of locations (nlocs) from the ObsSpace object
+    // Get the global numbers of locations and vars from the ObsSpace object
+    // These values are not expected to change whether running with a single process
+    // or multiple MPI tasks. There are other tests that check local stats according to
+    // the MPI distribution.
     std::size_t GlobalNlocs = odb.globalNumLocs();
-    std::size_t Nlocs = odb.nlocs();
-    std::size_t Nvars = odb.nvars();
+    std::size_t GlobalNlocsOutsideTimeWindow = odb.globalNumLocsOutsideTimeWindow();
     bool ObsAreSorted = odb.obsAreSorted();
 
     // Get the expected nlocs from the obspace object's configuration
-    std::size_t ExpectedGlobalNlocs = testConfig.getUnsigned("nlocs");
-    std::size_t ExpectedNvars = testConfig.getUnsigned("nvars");
+    std::size_t ExpectedGlobalNlocs = testConfig.getUnsigned("gnlocs");
+    std::size_t ExpectedGlobalNlocsOutsideTimeWindow =
+        testConfig.getUnsigned("gnlocs outside time window");
     bool ExpectedObsAreSorted = testConfig.getBool("obs are sorted");
 
     oops::Log::debug() << "GlobalNlocs, ExpectedGlobalNlocs: " << GlobalNlocs << ", "
                        << ExpectedGlobalNlocs << std::endl;
-    oops::Log::debug() << "Nvars, ExpectedNvars: " << Nvars << ", "
-                       << ExpectedNvars << std::endl;
+    oops::Log::debug() << "GlobalNlocsOutsideTimeWindow, ExpectedGlobalNlocsOutsideTimeWindow: "
+                       << GlobalNlocsOutsideTimeWindow << ", "
+                       << ExpectedGlobalNlocsOutsideTimeWindow << std::endl;
     oops::Log::debug() << "ObsAreSorted, ExpectedObsAreSorted: " << ObsAreSorted << ", "
                        << ExpectedObsAreSorted << std::endl;
 
     EXPECT(GlobalNlocs == ExpectedGlobalNlocs);
-    if (Nlocs > 0)
-      EXPECT(Nvars == ExpectedNvars);
+    EXPECT(GlobalNlocsOutsideTimeWindow == ExpectedGlobalNlocsOutsideTimeWindow);
     EXPECT(ObsAreSorted == ExpectedObsAreSorted);
 
     // records are ambigious and not implemented for halo distribution
     if (odb.distribution()->name() != "Halo") {
+      std::size_t Nlocs = odb.nlocs();
       std::size_t Nrecs = 0;
       std::set<std::size_t> recIndices;
       auto accumulator = odb.distribution()->createAccumulator<std::size_t>();

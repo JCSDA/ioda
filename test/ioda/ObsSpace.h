@@ -102,17 +102,27 @@ void testConstructor() {
 
     const ObsSpace &odb = Test_::obspace(jj);
 
-    // Get the numbers of locations (nlocs) from the ObsSpace object
+    // Get the global numbers of locations and vars from the ObsSpace object
+    // These values are not expected to change whether running with a single process
+    // or multiple MPI tasks. There are other tests that check local stats according to
+    // the MPI distribution.
     std::size_t GlobalNlocs = odb.globalNumLocs();
-    std::size_t Nlocs = odb.nlocs();
-    std::size_t Nvars = odb.nvars();
+    std::size_t GlobalNlocsOutsideTimeWindow = odb.globalNumLocsOutsideTimeWindow();
 
     // Get the purturbation seed from the ObsSpace object
     int obsPertSeed = odb.params().obsPertSeed();
 
     // Get the expected nlocs from the obspace object's configuration
-    std::size_t ExpectedGlobalNlocs = testConfig.getUnsigned("nlocs");
-    std::size_t ExpectedNvars = testConfig.getUnsigned("nvars");
+    std::size_t ExpectedGlobalNlocs = testConfig.getUnsigned("gnlocs");
+    std::size_t ExpectedGlobalNlocsOutsideTimeWindow =
+        testConfig.getUnsigned("gnlocs outside time window");
+    std::size_t ExpectedNlocs = testConfig.getUnsigned("nlocs");
+
+    oops::Log::debug() << "GlobalNlocs, ExpectedGlobalNlocs: " << GlobalNlocs << ", "
+                       << ExpectedGlobalNlocs << std::endl;
+    oops::Log::debug() << "GlobalNlocsOutsideTimeWindow, ExpectedGlobalNlocsOutsideTimeWindow: "
+                       << GlobalNlocsOutsideTimeWindow << ", "
+                       << ExpectedGlobalNlocsOutsideTimeWindow << std::endl;
 
     // Get the expected purturbation seed from the config object
     int ExpectedObsPertSeed = testConfig.getUnsigned("obs perturbations seed");
@@ -128,14 +138,11 @@ void testConstructor() {
     std::string ExpectedObsSortVar = testConfig.getString("expected sort variable");
     std::string ExpectedObsSortOrder = testConfig.getString("expected sort order");
 
-    oops::Log::debug() << "GlobalNlocs, ExpectedGlobalNlocs: " << GlobalNlocs << ", "
-                       << ExpectedGlobalNlocs << std::endl;
-    oops::Log::debug() << "Nvars, ExpectedNvars: " << Nvars << ", "
-                       << ExpectedNvars << std::endl;
     // records are ambigious for halo distribution
     // e.g. consider airplane (a single record in round robin) flying accros the globe
     // for Halo distr this record will be considered unique on each PE
     if (odb.distribution()->name() != "Halo") {
+      std::size_t Nlocs = odb.nlocs();
       std::size_t NRecs = 0;
       std::set<std::size_t> recIndices;
       auto accumulator = odb.distribution()->createAccumulator<std::size_t>();
@@ -166,7 +173,7 @@ void testConstructor() {
     std::string ChannelName = odb.get_dim_name(ioda::ObsDimensionId::Channel);
 
     EXPECT(GlobalNlocs == ExpectedGlobalNlocs);
-    EXPECT(Nvars == ExpectedNvars);
+    EXPECT(GlobalNlocsOutsideTimeWindow == ExpectedGlobalNlocsOutsideTimeWindow);
 
     EXPECT(obsPertSeed == ExpectedObsPertSeed);
 

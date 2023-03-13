@@ -1,25 +1,26 @@
 ---
-window begin: "2020-12-15T15:00:00Z"
-window end: "2020-12-15T21:00:00Z"
+window begin: "2022-02-14T21:00:00Z"
+window end: "2022-02-15T03:00:00Z"
 
 observations:
 - obs space:
-    name: "Locations QC (GOES ABI example)"
-    simulated variables: ['brightnessTemperature']
-    channels: 7-16
+    name: "Locations QC with time window filtering (buoy_ldm example)"
+    simulated variables:
+      - stationPressure
+      - airTemperature
     obsdatain:
       engine:
         type: H5File
-        obsfile: "Data/testinput_tier_1/locations_qc.nc4"
+        obsfile: "Data/testinput_tier_1/locations_qc_twfilt.nc4"
     obsdataout:
       engine:
         type: H5File
-        obsfile: "testoutput/locations_qc_out.nc4"
+        obsfile: "testoutput/locations_qc_twfilt_out.nc4"
   test data:
-    gnlocs: 19
-    gnlocs outside time window: 0
-    nlocs: 19
-    nrecs: 19
+    gnlocs: 195
+    gnlocs outside time window: 41
+    nlocs: 195
+    nrecs: 195
     obs perturbations seed: 0
     expected group variables: []
     expected sort variable: ""
@@ -28,12 +29,12 @@ observations:
       - name: "latitude"
         group: "MetaData"
         type: "float"
-        norm: 296.79426760011074
+        norm: 75.148918983591756
 
       - name: "longitude"
         group: "MetaData"
         type: "float"
-        norm: 367.74836101574562
+        norm: 2012.3192771500492
 
     tolerance:
       - 1.0e-14

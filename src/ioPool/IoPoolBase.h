@@ -25,7 +25,7 @@
 #include "ioda/Engines/ReaderBase.h"
 #include "ioda/Engines/WriterBase.h"
 #include "ioda/Group.h"
-#include "ioda/Io/IoPoolParameters.h"
+#include "ioda/ioPool/IoPoolParameters.h"
 
 #include "oops/util/DateTime.h"
 #include "oops/util/parameters/Parameters.h"
@@ -44,7 +44,7 @@ namespace ioda {
 /// transferred.
 /// \ingroup ioda_cxx_io
 class IODA_DL IoPoolBase : public util::Printable {
-public:
+ public:
   /// \brief construct an IoPoolBase object
   /// \param ioPoolParams Parameters for this io pool
   /// \param commAll MPI "all" communicator group (all tasks in DA run)
@@ -53,7 +53,9 @@ public:
   /// \param winEnd DA timing window end
   IoPoolBase(const oops::Parameter<IoPoolParameters> & ioPoolParams,
              const eckit::mpi::Comm & commAll, const eckit::mpi::Comm & commTime,
-             const util::DateTime & winStart, const util::DateTime & winEnd);
+             const util::DateTime & winStart, const util::DateTime & winEnd,
+             const int poolColor, const int nonPoolColor,
+             const char * poolCommName, const char * nonPoolCommName);
   ~IoPoolBase();
 
   /// \brief return nlocs for this object
@@ -96,13 +98,25 @@ public:
   /// \brief return the rank assignment for this object.
   const std::vector<std::pair<int, int>> & rank_assignment() const { return rank_assignment_; }
 
+  /// \brief return the pool color
+  int poolColor() const { return poolColor_; }
+
+  /// \brief return the pool color
+  int nonPoolColor() const { return nonPoolColor_; }
+
+  /// \brief return the pool color
+  const char * poolCommName() const { return poolCommName_; }
+
+  /// \brief return the pool color
+  const char * nonPoolCommName() const { return nonPoolCommName_; }
+
   /// \brief finalize the io pool before destruction
   virtual void finalize() = 0;
 
   /// \brief fill in print routine for the util::Printable base class
   virtual void print(std::ostream & os) const = 0;
 
-protected:
+ protected:
   typedef std::map<int, std::vector<int>> IoPoolGroupMap;
 
   /// \brief io pool parameters
@@ -165,6 +179,24 @@ protected:
   /// \brief size of MPI communicator group for this pool
   int size_pool_;
 
+  // These next two constants are the "color" values used for the MPI split comm command.
+  // They just need to be two different numbers, which will create the pool communicator,
+  // and a second communicator that holds all of the other ranks not in the pool.
+  //
+  // Unfortunately, the eckit interface doesn't appear to support using MPI_UNDEFINED for
+  // the nonPoolColor. Ie, you need to assign all ranks into a communicator group.
+  /// \brief color value for splitting the MPI communicator (in the pool)
+  const int poolColor_;
+
+  /// \brief color value for splitting the MPI communicator (not in the pool)
+  const int nonPoolColor_;
+
+  /// \brief name for splitting the MPI commnunicator (in the pool)
+  const char * poolCommName_;
+
+  /// \brief name for splitting the MPI commnunicator (not in the pool)
+  const char * nonPoolCommName_;
+
   /// \brief ranks in the all_comm_ group that this rank transfers data
   /// \detail Each pair in this vector contains as the first element the rank number
   /// it is assigned and as the second element the number of locations for the assigned
@@ -188,17 +220,18 @@ protected:
   /// \detail This function will dole out the ranks within the comm_all_ group, that are
   /// not in the io pool, to the ranks that are in the io pool. This sets up the send/recv
   /// communication for collecting the variable data. When finished, all ranks in the
-  /// comm_all_ group will have a list of all the ranks that the send to or receive from.
+  /// comm_all_ group will have a list of all the ranks that they send to in the comm_pool_
+  /// group, and all ranks in the comm_pool_ group will have the corresponding ranks in
+  /// the comm_all_ group that they receive from.
   /// \param nlocs number of locations on this MPI rank
   /// \param rankGrouping structure that maps ranks outside the pool to ranks in the pool
-  virtual void assignRanksToIoPool(const std::size_t nlocs,
-                                   const IoPoolGroupMap & rankGrouping) = 0;
+  void assignRanksToIoPool(const std::size_t nlocs, const IoPoolGroupMap & rankGrouping);
 
   /// \brief create the io pool communicator group
   /// \detail This function will create the io pool communicator group using the eckit
   /// MPI split command. This function sets the comm_pool_, rank_pool_ and size_pool_
   /// data members. If this rank is not in the io pool communicator group comm_pool_ is
-  /// set to nullptr, and both rank_pool_ and size_pool_ are set to -1. 
+  /// set to nullptr, and both rank_pool_ and size_pool_ are set to -1.
   /// \param rankGrouping structure that maps ranks outside the pool to ranks in the pool
   void createIoPool(IoPoolGroupMap & rankGrouping);
 

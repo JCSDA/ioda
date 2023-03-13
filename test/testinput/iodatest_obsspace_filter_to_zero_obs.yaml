@@ -12,9 +12,10 @@ observations:
         type: H5File
         obsfile: "Data/testinput_tier_1/amsua_n19_obs_2018041500_m.nc4"
   test data:
+    gnlocs: 0
+    gnlocs outside time window: 100
     nlocs: 0
     nrecs: 0
-    nvars: 1
     obs perturbations seed: 0
     expected group variables: []
     expected sort variable: ""
@@ -49,9 +50,10 @@ observations:
         type: H5File
         obsfile: "Data/testinput_tier_1/sondes_obs_2018041500_m.nc4"
   test data:
+    gnlocs: 0
+    gnlocs outside time window: 974
     nlocs: 0
     nrecs: 0
-    nvars: 5
     obs perturbations seed: 0
     expected group variables: []
     expected sort variable: ""

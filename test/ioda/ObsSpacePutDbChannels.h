@@ -18,13 +18,13 @@
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/testing/Test.h"
 
-#include "oops/mpi/mpi.h"
-#include "oops/runs/Test.h"
-#include "oops/test/TestEnvironment.h"
-
 #include "ioda/Engines/EngineUtils.h"
 #include "ioda/Engines/HH.h"
 #include "ioda/ObsSpace.h"
+
+#include "oops/mpi/mpi.h"
+#include "oops/runs/Test.h"
+#include "oops/test/TestEnvironment.h"
 
 namespace ioda {
 namespace test {

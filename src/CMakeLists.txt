@@ -50,10 +50,17 @@ distribution/NonoverlappingDistributionAccumulator.h
 distribution/RoundRobin.cc
 distribution/RoundRobin.h
 
-io/ObsFrame.cc
-io/ObsFrame.h
-io/ObsFrameRead.cc
-io/ObsFrameRead.h
+ioPool/IoPoolBase.cpp
+ioPool/IoPoolBase.h
+ioPool/IoPoolParameters.h
+ioPool/ReaderPool.cpp
+ioPool/ReaderPool.h
+ioPool/ReaderUtils.cpp
+ioPool/ReaderUtils.h
+ioPool/WriterPool.cpp
+ioPool/WriterPool.h
+ioPool/WriterUtils.cpp
+ioPool/WriterUtils.h
 )
 
 if (IODA_BUILD_LANGUAGE_FORTRAN)

@@ -12,9 +12,10 @@ observations:
         obsfile: "Data/testinput_tier_1/datetime_new.nc4"
     obs perturbations seed: 0
   test data:
+    gnlocs: 9
+    gnlocs outside time window: 1
     nlocs: 9
     nrecs: 9
-    nvars: 1
     obs perturbations seed: 0
     expected group variables: []
     expected sort variable: ""
@@ -48,9 +49,10 @@ observations:
         obsfile: "Data/testinput_tier_1/datetime_old.nc4"
     obs perturbations seed: 0
   test data:
+    gnlocs: 10
+    gnlocs outside time window: 0
     nlocs: 10
     nrecs: 10
-    nvars: 1
     obs perturbations seed: 0
     expected group variables: []
     expected sort variable: ""

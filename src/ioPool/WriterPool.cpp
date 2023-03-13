@@ -5,12 +5,13 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#include "ioda/Io/WriterPool.h"
+#include "ioda/ioPool/WriterPool.h"
+
+#include <mpi.h>
 
 #include <algorithm>
 #include <cstdio>
 #include <memory>
-#include <mpi.h>
 #include <numeric>
 #include <sstream>
 #include <utility>
@@ -20,24 +21,17 @@
 #include "ioda/Copying.h"
 #include "ioda/Engines/EngineUtils.h"
 #include "ioda/Exception.h"
-#include "ioda/Io/WriterUtils.h"
+#include "ioda/ioPool/WriterUtils.h"
 
 #include "oops/util/Logger.h"
 
 namespace ioda {
 
-constexpr int defaultMaxPoolSize = 10;
-
-// These next two constants are the "color" values used for the MPI split comm command.
-// They just need to be two different numbers, which will create the pool communicator,
-// and a second communicator that holds all of the other ranks not in the pool.
-//
-// Unfortunately, the eckit interface doesn't appear to support using MPI_UNDEFINED for
-// the nonPoolColor. Ie, you need to assign all ranks into a communcator group.
-constexpr int poolColor = 1;
-constexpr int nonPoolColor = 2;
-const char poolCommName[] = "IoPool";
-const char nonPoolCommName[] = "NonIoPool";
+// For the MPI communicator splitting
+constexpr int writerPoolColor = 1;
+constexpr int writerNonPoolColor = 2;
+const char writerPoolCommName[] = "writerIoPool";
+const char writerNonPoolCommName[] = "writerNonIoPool";
 
 //--------------------------------------------------------------------------------------
 void WriterPool::groupRanks(IoPoolGroupMap & rankGrouping) {
@@ -79,80 +73,15 @@ void WriterPool::groupRanks(IoPoolGroupMap & rankGrouping) {
 }
 
 //--------------------------------------------------------------------------------------
-void WriterPool::assignRanksToIoPool(const std::size_t nlocs,
-                                     const IoPoolGroupMap & rankGrouping) {
-    constexpr int mpiTagBase = 10000;
-
-    // Collect the nlocs from all of the other ranks.
-    std::vector<std::size_t> allNlocs(size_all_);
-    comm_all_.allGather(nlocs, allNlocs.begin(), allNlocs.end());
-
-    if (rank_all_ == 0) {
-        // Follow the grouping that is contained in the rankGrouping structure to create
-        // the assignments for the MPI send/recv transfers. The rankAssignments structure
-        // contains the mapping that is required to effect the proper MPI send/recv
-        // transfers. A pool rank will receive from one or more non pool ranks and the
-        // non pool ranks will send to one pool rank. The outer vector of rankAssignments
-        // is indexed by the all_comm_ rank number, and the inner vector contains the list
-        // of ranks the outer index rank interacts with for data transfers. Once constructed,
-        // each inner vector of rankAssignments is sent to the associated rank in the
-        // comm_all_ group.
-        std::vector<std::vector<std::pair<int, int>>> rankAssignments(size_all_);
-        std::vector<int> rankAssignSizes(size_all_, 0);
-        for (auto & rankGroup : rankGrouping) {
-            // rankGroup is a std::pair<int, std::vector<int>>
-            // The first element is the pool rank, and the second element is
-            // the list of associated non pool ranks.
-            std::vector<std::pair<int, int>> rankGroupPairs(rankGroup.second.size());
-            std::size_t i = 0;
-            for (auto & nonPoolRank : rankGroup.second) {
-                rankGroupPairs[i] = std::make_pair(nonPoolRank, allNlocs[nonPoolRank]);
-                std::vector<std::pair<int, int>> associatedPoolRank;
-                associatedPoolRank.push_back(
-                    std::make_pair(rankGroup.first, allNlocs[nonPoolRank]));
-                rankAssignments[nonPoolRank] = associatedPoolRank;
-                rankAssignSizes[nonPoolRank] = 1;
-                i += 1;
-            }
-            rankAssignments[rankGroup.first] = rankGroupPairs;
-            rankAssignSizes[rankGroup.first] = rankGroupPairs.size();
-        }
-
-        // Send the rank assignments to the other ranks. Use scatter to spread the
-        // sizes (number of ranks) in each rank's assignment. Then use send/receive
-        // to transfer each ranks assignment.
-        int myRankAssignSize;
-        comm_all_.scatter(rankAssignSizes, myRankAssignSize, 0);
-
-        // Copy my assignment directory. Use MPI send/recv for all other ranks.
-        rank_assignment_ = rankAssignments[0];
-        for (std::size_t i = 1; i < rankAssignments.size(); ++i) {
-            if (rankAssignSizes[i] > 0) {
-                comm_all_.send(rankAssignments[i].data(), rankAssignSizes[i], i, mpiTagBase + i);
-            }
-        }
-    } else {
-        // Receive the rank assignments from rank 0. First use scatter to receive the
-        // sizes (number of ranks) in this rank's assignment.
-        int myRankAssignSize;
-        std::vector<int> dummyVector(size_all_);
-        comm_all_.scatter(dummyVector, myRankAssignSize, 0);
-
-        rank_assignment_.resize(myRankAssignSize);
-        if (myRankAssignSize > 0) {
-            comm_all_.receive(rank_assignment_.data(), myRankAssignSize, 0, mpiTagBase + rank_all_);
-        }
-    }
-}
-
-//--------------------------------------------------------------------------------------
 WriterPool::WriterPool(const oops::Parameter<IoPoolParameters> & ioPoolParams,
                const oops::RequiredPolymorphicParameter
                    <Engines::WriterParametersBase, Engines::WriterFactory> & writerParams,
                const eckit::mpi::Comm & commAll, const eckit::mpi::Comm & commTime,
                const util::DateTime & winStart, const util::DateTime & winEnd,
                const std::vector<bool> & patchObsVec)
-                   : IoPoolBase(ioPoolParams, commAll, commTime, winStart, winEnd),
+                   : IoPoolBase(ioPoolParams, commAll, commTime, winStart, winEnd,
+                     writerPoolColor, writerNonPoolColor,
+                     writerPoolCommName, writerNonPoolCommName),
                      writer_params_(writerParams), patch_obs_vec_(patchObsVec) {
     nlocs_ = patchObsVec.size();
     patch_nlocs_ = std::count(patchObsVec.begin(), patchObsVec.end(), true);
@@ -254,11 +183,11 @@ void WriterPool::finalize() {
 
     // At this point there are two split communicator groups: one for the io pool and the
     // other for the processes not included in the io pool.
-    if (eckit::mpi::hasComm(poolCommName)) {
-        eckit::mpi::deleteComm(poolCommName);
+    if (eckit::mpi::hasComm(poolCommName_)) {
+        eckit::mpi::deleteComm(poolCommName_);
     }
-    if (eckit::mpi::hasComm(nonPoolCommName)) {
-        eckit::mpi::deleteComm(nonPoolCommName);
+    if (eckit::mpi::hasComm(nonPoolCommName_)) {
+        eckit::mpi::deleteComm(nonPoolCommName_);
     }
     oops::Log::trace() << "WriterPool::finalize, end" << std::endl;
 }

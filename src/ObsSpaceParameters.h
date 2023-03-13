@@ -12,7 +12,7 @@
 #include "ioda/core/FileFormat.h"
 #include "ioda/core/ParameterTraitsFileFormat.h"
 #include "ioda/distribution/DistributionFactory.h"
-#include "ioda/Io/IoPoolParameters.h"
+#include "ioda/ioPool/IoPoolParameters.h"
 #include "ioda/Misc/DimensionScales.h"
 #include "ioda/Misc/Dimensions.h"
 #include "ioda/ObsDataIoParameters.h"

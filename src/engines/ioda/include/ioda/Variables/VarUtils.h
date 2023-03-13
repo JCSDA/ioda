@@ -31,6 +31,8 @@ class Named_Variable;
 
 namespace VarUtils {
 
+static int DefaultChunkSize = 10000;
+
 /*! @brief Convenience lambda to hint if a variable @b might be a scale.
  *
  * @details This is not definitive,

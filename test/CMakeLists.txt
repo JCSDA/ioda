@@ -67,8 +67,6 @@ list( APPEND ioda_test_input
   testinput/iodatest_remove_hdf5_variable.yaml
   testinput/iodatest_copy_attributes.yaml
   testinput/iodatest_obserror.yaml
-  testinput/iodatest_obsframe_constructor.yaml
-  testinput/iodatest_obsframe_read.yaml
   testinput/iodatest_distribution.yaml
   testinput/iodatest_distribution_masterandreplica_mpi_2.yaml
   testinput/iodatest_distribution_masterandreplica_mpi_3.yaml
@@ -92,6 +90,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsspace_io_pool_sondes_single_file.yaml
   testinput/iodatest_obsspace_io_pool_sondes_multi_files.yaml
   testinput/iodatest_obsspace_locations_qc.yaml
+  testinput/iodatest_obsspace_locations_qc_twfilt.yaml
   testinput/iodatest_obsspace_marine.yaml
   testinput/iodatest_obsspace_mpi.yaml
   testinput/iodatest_obsspace_odc.yaml
@@ -281,21 +280,6 @@ target_include_directories(ioda_test INTERFACE $<BUILD_INTERFACE:${BUILD_DIR_TES
 target_link_libraries(ioda_test INTERFACE ioda)
 
 #####################################################################
-# IO tests
-#####################################################################
-ecbuild_add_test( TARGET  test_ioda_obsframe_constructor
-                  SOURCES mains/TestObsFrameConstructor.cc
-                  ARGS    "testinput/iodatest_obsframe_constructor.yaml"
-                  LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data )
-
-ecbuild_add_test( TARGET  test_ioda_obsframe_read
-                  SOURCES mains/TestObsFrameRead.cc
-                  ARGS    "testinput/iodatest_obsframe_read.yaml"
-                  LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data )
-
-#####################################################################
 # Distribution tests
 #####################################################################
 ecbuild_add_test( TARGET  test_ioda_distribution
@@ -409,7 +393,7 @@ ecbuild_add_test( TARGET  test_ioda_obsspace
 
 if (odc_FOUND)
 ecbuild_add_test( TARGET  test_ioda_obsspace_out_odc
-                  SOURCES mains/TestIodaObsSpace.cc
+                  COMMAND test_ioda_obsspace
                   ARGS    "testinput/iodatest_obsspace_out_odc.yaml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
@@ -518,6 +502,12 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_locations_qc
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
+ecbuild_add_test( TARGET  test_ioda_obsspace_locations_qc_twfilt
+                  COMMAND test_ioda_obsspace
+                  ARGS    "testinput/iodatest_obsspace_locations_qc_twfilt.yaml"
+                  LIBS  ioda_test
+                  TEST_DEPENDS get_ioda_test_data )
+
 ecbuild_add_test( TARGET  test_ioda_obsspace_invalid_numeric
                   SOURCES mains/TestObsSpaceInvalidNumeric.cc
                   ARGS    "testinput/iodatest_obsspace_invalid_numeric.yaml"
@@ -540,6 +530,7 @@ if (odc_FOUND)
                     COMMAND test_ioda_obsspace
                     ARGS    "testinput/iodatest_obsspace_odc.yaml"
                     TEST_DEPENDS get_ioda_test_data )
+
   ecbuild_add_test( TARGET  test_ioda_obsspace_odc_atms
                     COMMAND test_ioda_obsspace
                     ARGS    "testinput/iodatest_obsspace_odc_atms.yaml"

@@ -85,16 +85,21 @@ public:
 
   /// \brief Manually specify the chunks. Never directly use. Use getChunks(...) instead.
   std::vector<Dimensions_t> chunks;
-  /// Set variable chunking strategy. Used only if chunk == true and chunks.size() == 0.
+  /// \brief Set variable chunking strategy. Used only if chunk == true and chunks.size() == 0.
   std::function<bool(const std::vector<Dimensions_t>&, std::vector<Dimensions_t>&)>
     fChunkingStrategy = chunking::Chunking_Max;
-  /// Figure out the chunking size
+  /// \brief Figure out the chunking size
   /// \param cur_dims are the current dimensions
   std::vector<Dimensions_t> getChunks(const std::vector<Dimensions_t>& cur_dims) const {
     if (chunks.size()) return chunks;
     std::vector<Dimensions_t> res;
     if (fChunkingStrategy(cur_dims, res)) return res;
     throw Exception("Cannot figure out an appropriate chunking size.", ioda_Here());
+  }
+  /// \brief Set chunks to specified size.
+  /// \param chunk_dims holds the chunk sizes for each dimension.
+  void setChunks(const std::vector<Dimensions_t> & chunk_dims) {
+    chunks = chunk_dims;
   }
 
   bool gzip_                        = false;

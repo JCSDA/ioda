@@ -16,9 +16,10 @@ observations:
         obsfile: "testoutput/diagout-aod"
         mapping file: testinput/odb_default_name_map.yaml
   test data:
+    gnlocs: 100
+    gnlocs outside time window: 0
     nlocs: 100
     nrecs: 100
-    nvars: 1
     obs perturbations seed: 0
     expected group variables: []
     expected sort variable: ""
@@ -51,9 +52,10 @@ observations:
         obsfile: "testoutput/diagout-sonde.odc"
         mapping file: testinput/odb_sonde_name_map.yaml
   test data:
+    gnlocs: 974
+    gnlocs outside time window: 0
     nlocs: 974
     nrecs: 974
-    nvars: 5
     obs perturbations seed: 0
     expected group variables: []
     expected sort variable: ""
@@ -107,9 +109,10 @@ observations:
         mapping file: testinput/odb_default_name_map.yaml
     obs perturbations seed: 250
   test data:
+    gnlocs: 100
+    gnlocs outside time window: 0
     nlocs: 100
     nrecs: 100
-    nvars: 1
     obs perturbations seed: 250
     expected group variables: []
     expected sort variable: ""
@@ -150,9 +153,10 @@ observations:
         obsfile: "testoutput/diagout-gmi.odc"
         mapping file: testinput/odb_radiance_name_map.yaml
   test data:
+    gnlocs: 12
+    gnlocs outside time window: 0
     nlocs: 12
     nrecs: 12
-    nvars: 1
     obs perturbations seed: 0
     expected group variables: []
     expected sort variable: ""
@@ -186,9 +190,10 @@ observations:
         obsfile: "testoutput/diagout-aircraft.odc"
         mapping file: testinput/odb_default_name_map.yaml
   test data:
+    gnlocs: 157
+    gnlocs outside time window: 43
     nlocs: 157
     nrecs: 157
-    nvars: 3
     obs perturbations seed: 0
     expected group variables: []
     expected sort variable: ""
@@ -228,9 +233,10 @@ observations:
         obsfile: "testoutput/diagout-atms.odc"
         mapping file: testinput/odb_default_name_map.yaml
   test data:
+    gnlocs: 68
+    gnlocs outside time window: 32
     nlocs: 68
     nrecs: 68
-    nvars: 1
     obs perturbations seed: 0
     expected group variables: []
     expected sort variable: ""

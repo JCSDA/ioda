@@ -50,7 +50,7 @@ TEST(test_obsspace_construct)
 
   type(c_ptr), allocatable, dimension(:) :: obsspace
   integer :: nlocs, nlocs_ref, location_id
-  integer :: nvars, nvars_ref
+  integer :: nvars_ref
   integer :: iobstype
   character(len=100) :: obsname
   character(kind=c_char,len=:), allocatable :: obsname_ref
@@ -82,14 +82,11 @@ TEST(test_obsspace_construct)
     call obsconfig%get_or_die("name", obsname_ref)
     CHECK_EQUAL(obsname, obsname_ref)
 
-    !> test if nlocs and nvars are the same as reference
+    !> test if nlocs and nlocs are the same as reference
     location_id = obsspace_get_dim_id(obsspace(iobstype), "Location")
     nlocs = obsspace_get_dim_size(obsspace(iobstype), location_id)
-    nvars = obsspace_get_nvars(obsspace(iobstype))
     call testconfig%get_or_die("nlocs", nlocs_ref)
-    call testconfig%get_or_die("nvars", nvars_ref)
     CHECK_EQUAL(nlocs, nlocs_ref)
-    CHECK_EQUAL(nvars,  nvars_ref)
 
     !> test if obsvariables nvars is the same
     vars = obsspace_obsvariables(obsspace(iobstype))

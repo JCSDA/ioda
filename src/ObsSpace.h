@@ -48,7 +48,6 @@ namespace eckit {
 }
 
 namespace ioda {
-    class ObsFrameRead;
     class ObsVector;
 
     //-------------------------------------------------------------------------------------
@@ -198,6 +197,9 @@ namespace ioda {
 
         /// \brief return number of locations from obs source that were outside the time window
         std::size_t globalNumLocsOutsideTimeWindow() const {return gnlocs_outside_timewindow_;}
+
+        /// \brief return number of locations from obs source that were outside the time window
+        std::size_t globalNumLocsRejectQC() const {return gnlocs_reject_qc_;}
 
         /// \brief return the number of locations in the obs space.
         /// Note that nlocs may be smaller than global unique nlocs due to distribution of obs
@@ -445,6 +447,9 @@ namespace ioda {
         /// \brief number of nlocs from the obs source that are outside the time window
         std::size_t gnlocs_outside_timewindow_;
 
+        /// \brief number of nlocs from the obs source that are outside the time window
+        std::size_t gnlocs_reject_qc_;
+
         /// \brief number of records
         std::size_t nrecs_;
 
@@ -482,7 +487,7 @@ namespace ioda {
         oops::Variables assimvars_;
 
         /// \brief MPI distribution object
-        std::shared_ptr<const Distribution> dist_;
+        std::shared_ptr<Distribution> dist_;
 
         /// \brief indexes of locations to extract from the input obs file
         std::vector<std::size_t> indx_;
@@ -513,9 +518,8 @@ namespace ioda {
         /// \param os output stream
         void print(std::ostream & os) const;
 
-        /// \brief Initialize the database from a source (ObsFrame ojbect)
-        /// \param obsFrame obs source object
-        void createObsGroupFromObsFrame(ObsFrameRead & obsFrame);
+        /// \brief load the obs space data from an obs source (file or generator)
+        void load();
 
         /// \brief Extend the ObsSpace according to the method requested in
         ///  the configuration file.
@@ -538,22 +542,10 @@ namespace ioda {
         /// any particular ordering of the record groups.
         void buildRecIdxUnsorted();
 
-        /// \brief initialize the in-memory obs_group_ (ObsGroup) object from the ObsIo source
-        /// \param obsIo obs source object
-        void initFromObsSource(ObsFrameRead & obsFrame);
-
         /// \brief resize along Location dimension
         /// \param LocationSize new size to either append or reset
         /// \param append when true append LocationSize to current size, otherwise reset size
         void resizeLocation(const Dimensions_t LocationSize, const bool append);
-
-        /// \brief read in values for variable from obs source
-        /// \param obsFrame obs frame object
-        /// \param varName Name of variable in obs source object
-        /// \param varValues values for variable
-        template<typename VarType>
-        bool readObsSource(ObsFrameRead & obsFrame,
-                           const std::string & varName, std::vector<VarType> & varValues);
 
         /// \brief store a variable in the obs_group_ object
         /// \param obsIo obs source object
@@ -617,15 +609,7 @@ namespace ioda {
                                             Selection & memSelect,
                                             Selection & obsGroupSelect) const;
 
-        /// \brief create set of variables from source variables and lists
-        /// \param srcVarContainer Has_Variables object from source
-        /// \param destVarContainer Has_Variables object from destination
-        /// \param dimsAttachedToVars Map containing list of attached dims for each variable
-        void createVariables(const Has_Variables & srcVarContainer,
-                             Has_Variables & destVarContainer,
-                             const VarUtils::VarDimMap & dimsAttachedToVars);
-
-        /// \brief open an obs_group_ variable, create the varialbe if necessary
+        /// \brief open an obs_group_ variable, create the variable if necessary
         template<typename VarType>
         Variable openCreateVar(const std::string & varName,
                                const std::vector<std::string> & varDimList) {
@@ -634,9 +618,23 @@ namespace ioda {
                 var = obs_group_.vars.open(varName);
             } else {
                 // Create a vector of the dimension variables
+                //
+                // TODO(srh) For now use a default chunk size (10000) for the chunk size
+                // in the creation parameters when the first dimension is Location.
+                // This is being done since the size of location can vary across MPI tasks,
+                // and we need it to be constant for the parallel io to work properly.
+                // The assigned chunk size may need to be optimized further than using a
+                // rough guess of 10000.
+                std::vector<ioda::Dimensions_t> chunkDims;
                 std::vector<Variable> varDims;
                 for (auto & dimName : varDimList) {
-                    varDims.push_back(obs_group_.vars.open(dimName));
+                    Variable dimVar = obs_group_.vars.open(dimName);
+                    if (dimName == "Location") {
+                        chunkDims.push_back(VarUtils::DefaultChunkSize);
+                    } else {
+                        chunkDims.push_back(dimVar.getDimensions().dimsCur[0]);
+                    }
+                    varDims.push_back(dimVar);
                 }
 
                 // Create the variable. Use the JEDI internal missing value marks for
@@ -644,6 +642,7 @@ namespace ioda {
                 VarType fillVal = this->getFillValue<VarType>();
                 VariableCreationParameters params;
                 params.chunk = true;
+                params.setChunks(chunkDims);
                 params.compressWithGZIP();
                 params.setFillValue<VarType>(fillVal);
 

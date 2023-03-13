@@ -14,9 +14,10 @@ observations:
       obsgrouping:
         group variables: []
   test data:
+    gnlocs: 10
+    gnlocs outside time window: 0
     nlocs: 10
     nrecs: 10
-    nvars: 1
     obs perturbations seed: 0
     expected group variables: []
     expected sort variable: ""
@@ -48,9 +49,10 @@ observations:
         group variables: [ "group_by_string" ]
     obs perturbations seed: 1001
   test data:
+    gnlocs: 10
+    gnlocs outside time window: 0
     nlocs: 10
     nrecs: 2
-    nvars: 1
     obs perturbations seed: 1001
     expected group variables: [ "group_by_string" ]
     expected sort variable: ""
@@ -81,9 +83,10 @@ observations:
       obsgrouping:
         group variables: [ "group_by_int" ]
   test data:
+    gnlocs: 10
+    gnlocs outside time window: 0
     nlocs: 10
     nrecs: 3
-    nvars: 1
     obs perturbations seed: 0
     expected group variables: [ "group_by_int" ]
     expected sort variable: ""
@@ -114,9 +117,10 @@ observations:
       obsgrouping:
         group variables: [ "group_by_float" ]
   test data:
+    gnlocs: 10
+    gnlocs outside time window: 0
     nlocs: 10
     nrecs: 4
-    nvars: 1
     obs perturbations seed: 0
     expected group variables: [ "group_by_float" ]
     expected sort variable: ""
@@ -147,9 +151,10 @@ observations:
       obsgrouping:
         group variables: [ "group_by_string", "group_by_int" ]
   test data:
+    gnlocs: 10
+    gnlocs outside time window: 0
     nlocs: 10
     nrecs: 4
-    nvars: 1
     obs perturbations seed: 0
     expected group variables: [ "group_by_string", "group_by_int" ]
     expected sort variable: ""
@@ -180,9 +185,10 @@ observations:
       obsgrouping:
         group variables: [ "group_by_string", "group_by_float" ]
   test data:
+    gnlocs: 10
+    gnlocs outside time window: 0
     nlocs: 10
     nrecs: 7
-    nvars: 1
     obs perturbations seed: 0
     expected group variables: [ "group_by_string", "group_by_float" ]
     expected sort variable: ""
@@ -213,9 +219,10 @@ observations:
       obsgrouping:
         group variables: [ "group_by_float", "group_by_int" ]
   test data:
+    gnlocs: 10
+    gnlocs outside time window: 0
     nlocs: 10
     nrecs: 5
-    nvars: 1
     obs perturbations seed: 0
     expected group variables: [ "group_by_float", "group_by_int" ]
     expected sort variable: ""
@@ -246,9 +253,10 @@ observations:
       obsgrouping:
         group variables: [ "group_by_string", "group_by_float", "group_by_int" ]
   test data:
+    gnlocs: 10
+    gnlocs outside time window: 0
     nlocs: 10
     nrecs: 7
-    nvars: 1
     obs perturbations seed: 0
     expected group variables: [ "group_by_string", "group_by_float", "group_by_int" ]
     expected sort variable: ""
@@ -290,9 +298,10 @@ observations:
       obsgrouping:
         group variables: []
   test data:
+    gnlocs: 6
+    gnlocs outside time window: 0
     nlocs: 6
     nrecs: 6
-    nvars: 1
     obs perturbations seed: 0
     expected group variables: []
     expected sort variable: ""
@@ -333,9 +342,10 @@ observations:
       obsgrouping:
         group variables: [ "latitude" ]
   test data:
+    gnlocs: 6
+    gnlocs outside time window: 0
     nlocs: 6
     nrecs: 3
-    nvars: 1
     obs perturbations seed: 0
     expected group variables: [ "latitude" ]
     expected sort variable: ""
@@ -376,9 +386,10 @@ observations:
       obsgrouping:
         group variables: [ "latitude" ]
   test data:
+    gnlocs: 6
+    gnlocs outside time window: 0
     nlocs: 6
     nrecs: 3
-    nvars: 1
     obs perturbations seed: 0
     expected group variables: [ "latitude" ]
     expected sort variable: ""

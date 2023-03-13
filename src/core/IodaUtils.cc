@@ -171,7 +171,17 @@ void openCreateEpochDtimeVar(const std::string & groupName, const std::string & 
   } else {
     // Variable does not exist, need to create it. Use the newEpoch for the units attribute.
     std::vector<Variable> dimVars(1, destVarContainer.open("Location"));
-    epochDtVar = destVarContainer.createWithScales<int64_t>(fullVarName, dimVars);
+    VariableCreationParameters params = VariableCreationParameters::defaults<int64_t>();
+    // Don't want compression in the memory image.
+    params.noCompress();
+    // TODO(srh) For now use a default chunk size for the chunk size in the creation
+    // parameters when the first dimension is Location. This is being done since the
+    // size of Location can vary across MPI tasks, and we need it to be constant for
+    // the parallel io to work properly. The assigned chunk size may need to be optimized
+    // further than using the rough guess declared in VarUtils::DefaultChunkSize.
+    std::vector<ioda::Dimensions_t> chunkDims(1, VarUtils::DefaultChunkSize);
+    params.setChunks(chunkDims);
+    epochDtVar = destVarContainer.createWithScales<int64_t>(fullVarName, dimVars, params);
     std::string epochString = "seconds since " + newEpoch.toString();
     epochDtVar.atts.add("units", epochString);
   }

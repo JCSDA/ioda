@@ -13,9 +13,10 @@ observations:
         obsfile: "Data/testinput_tier_1/aod_obs_2018041500_m.nc4"
     obs perturbations seed: 77
   test data:
+    gnlocs: 100
+    gnlocs outside time window: 0
     nlocs: 100
     nrecs: 100
-    nvars: 1
     obs perturbations seed: 77
     expected group variables: []
     expected sort variable: ""
@@ -48,9 +49,10 @@ observations:
         type: H5File
         obsfile: "Data/testinput_tier_1/aod_viirs_obs_2018041500_sf42.nc4"
   test data:
+    gnlocs: 42
+    gnlocs outside time window: 0
     nlocs: 42
     nrecs: 42
-    nvars: 1
     obs perturbations seed: 0
     expected group variables: []
     expected sort variable: ""
@@ -85,9 +87,10 @@ observations:
         type: H5File
         obsfile: "Data/testinput_tier_1/amsua_n19_obs_2018041500_m.nc4"
   test data:
+    gnlocs: 100
+    gnlocs outside time window: 0
     nlocs: 100
     nrecs: 100
-    nvars: 1
     obs perturbations seed: 0
     expected group variables: []
     expected sort variable: ""
@@ -115,9 +118,10 @@ observations:
         type: H5File
         obsfile: "Data/testinput_tier_1/smap_obs_2018041500_m.nc4"
   test data:
+    gnlocs: 100
+    gnlocs outside time window: 0
     nlocs: 100
     nrecs: 100
-    nvars: 1
     obs perturbations seed: 0
     expected group variables: []
     expected sort variable: ""
@@ -146,9 +150,10 @@ observations:
         obsfile: "Data/testinput_tier_1/gmi_gpm_obs_2018041500_m.nc4"
     obs perturbations seed: -42
   test data:
+    gnlocs: 12
+    gnlocs outside time window: 0
     nlocs: 12
     nrecs: 12
-    nvars: 1
     obs perturbations seed: -42
     expected group variables: []
     expected sort variable: ""
@@ -181,9 +186,10 @@ observations:
         type: H5File
         obsfile: "testoutput/diagout_mpi.nc4"
   test data:
+    gnlocs: 974
+    gnlocs outside time window: 0
     nlocs: 974
     nrecs: 974
-    nvars: 5
     obs perturbations seed: 0
     expected group variables: []
     expected sort variable: ""
@@ -232,9 +238,10 @@ observations:
         type: H5File
         obsfile: "testoutput/ospace.generate.random.mpi.nc4"
   test data:
+    gnlocs: 10
+    gnlocs outside time window: 0
     nlocs: 10
     nrecs: 10
-    nvars: 2
     obs perturbations seed: 0
     expected group variables: []
     expected sort variable: ""
@@ -291,9 +298,10 @@ observations:
         type: H5File
         obsfile: "testoutput/ospace.generate.list.mpi.nc4"
   test data:
+    gnlocs: 11
+    gnlocs outside time window: 0
     nlocs: 11
     nrecs: 11
-    nvars: 2
     obs perturbations seed: 0
     expected group variables: []
     expected sort variable: ""
@@ -339,9 +347,10 @@ observations:
         type: H5File
         obsfile: "testoutput/diagout_with_groups_mpi.nc4"
   test data:
+    gnlocs: 974
+    gnlocs outside time window: 0
     nlocs: 974
     nrecs: 36
-    nvars: 5
     obs perturbations seed: 0
     expected group variables: [ "stationIdentification" ]
     expected sort variable: "pressure"
@@ -375,9 +384,10 @@ observations:
         type: H5File
         obsfile: "testoutput/diagout_with_groups_twfilt_mpi.nc4"
   test data:
+    gnlocs: 968
+    gnlocs outside time window: 6
     nlocs: 968
     nrecs: 31
-    nvars: 5
     obs perturbations seed: 0
     expected group variables: [ "station_id" ]
     expected sort variable: ""
@@ -405,9 +415,10 @@ observations:
         type: H5File
         obsfile: "Data/testinput_tier_1/geos_aod_obs_2018041500_m.nc4"
   test data:
+    gnlocs: 100
+    gnlocs outside time window: 0
     nlocs: 100
     nrecs: 100
-    nvars: 1
     obs perturbations seed: 0
     expected group variables: []
     expected sort variable: ""

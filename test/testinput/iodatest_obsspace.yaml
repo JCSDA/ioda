@@ -13,9 +13,10 @@ observations:
         obsfile: "Data/testinput_tier_1/aod_obs_2018041500_m.nc4"
     obs perturbations seed: 25
   test data:
+    gnlocs: 100
+    gnlocs outside time window: 0
     nlocs: 100
     nrecs: 100
-    nvars: 1
     obs perturbations seed: 25
     expected group variables: []
     expected sort variable: ""
@@ -49,9 +50,10 @@ observations:
         obsfile: "Data/testinput_tier_1/aod_viirs_obs_2018041500_sf42.nc4"
     obs perturbations seed: -40000
   test data:
+    gnlocs: 42
+    gnlocs outside time window: 0
     nlocs: 42
     nrecs: 42
-    nvars: 1
     obs perturbations seed: -40000
     expected group variables: []
     expected sort variable: ""
@@ -76,7 +78,7 @@ observations:
     variables for putget test: []
 
 - obs space:
-    name: "AMSUA NOAA19"
+    name: "AMSUA NOAA19, Inefficient distribution"
     simulated variables: ['brightnessTemperature']
     channels: 1-15
     distribution:
@@ -87,9 +89,10 @@ observations:
         obsfile: "Data/testinput_tier_1/amsua_n19_obs_2018041500_m.nc4"
     obs perturbations seed: 250
   test data:
+    gnlocs: 100
+    gnlocs outside time window: 0
     nlocs: 100
     nrecs: 100
-    nvars: 1
     obs perturbations seed: 250
     expected group variables: []
     expected sort variable: ""
@@ -117,7 +120,7 @@ observations:
         channels: [ 11 ]
 
 - obs space:
-    name: "AMSUA NOAA19"
+    name: "AMSUA NOAA19, Halo distribution"
     simulated variables: ['brightnessTemperature']
     channels: 1-15
     distribution:
@@ -128,9 +131,10 @@ observations:
         type: H5File
         obsfile: "Data/testinput_tier_1/amsua_n19_obs_2018041500_m.nc4"
   test data:
+    gnlocs: 100
+    gnlocs outside time window: 0
     nlocs: 100
     nrecs: 100
-    nvars: 1
     obs perturbations seed: 0
     expected group variables: []
     expected sort variable: ""
@@ -158,9 +162,10 @@ observations:
         type: H5File
         obsfile: "Data/testinput_tier_1/smap_obs_2018041500_m.nc4"
   test data:
+    gnlocs: 100
+    gnlocs outside time window: 0
     nlocs: 100
     nrecs: 100
-    nvars: 1
     obs perturbations seed: 0
     expected group variables: []
     expected sort variable: ""
@@ -188,9 +193,10 @@ observations:
         type: H5File
         obsfile: "Data/testinput_tier_1/gmi_gpm_obs_2018041500_m.nc4"
   test data:
+    gnlocs: 12
+    gnlocs outside time window: 0
     nlocs: 12
     nrecs: 12
-    nvars: 1
     obs perturbations seed: 0
     expected group variables: []
     expected sort variable: ""
@@ -222,9 +228,10 @@ observations:
         type: H5File
         obsfile: "testoutput/diagout.nc4"
   test data:
+    gnlocs: 974
+    gnlocs outside time window: 0
     nlocs: 974
     nrecs: 974
-    nvars: 5
     obs perturbations seed: 0
     expected group variables: []
     expected sort variable: ""
@@ -277,9 +284,10 @@ observations:
         type: H5File
         obsfile: "testoutput/diagout_with_groups.nc4"
   test data:
+    gnlocs: 974
+    gnlocs outside time window: 0
     nlocs: 974
     nrecs: 36
-    nvars: 5
     obs perturbations seed: 0
     expected group variables: [ "stationIdentification" ]
     expected sort variable: "pressure"
@@ -312,9 +320,10 @@ observations:
         type: H5File
         obsfile: "testoutput/diagout_with_groups_twfilt.nc4"
   test data:
+    gnlocs: 968
+    gnlocs outside time window: 6
     nlocs: 968
     nrecs: 31
-    nvars: 5
     obs perturbations seed: 0
     expected group variables: [ "station_id" ]
     expected sort variable: ""
@@ -346,9 +355,10 @@ observations:
         obsfile: "testoutput/diagout.odc"
         mapping file: testinput/odb_default_name_map.yaml
   test data:
+    gnlocs: 100
+    gnlocs outside time window: 0
     nlocs: 100
     nrecs: 100
-    nvars: 1
     obs perturbations seed: 0
     expected group variables: []
     expected sort variable: ""
@@ -375,9 +385,10 @@ observations:
         type: H5File
         obsfile: "Data/testinput_tier_1/derived_variables.nc4"
   test data:
+    gnlocs: 2
+    gnlocs outside time window: 0
     nlocs: 2
     nrecs: 2
-    nvars: 1
     obs perturbations seed: 0
     expected group variables: []
     expected sort variable: ""
@@ -497,9 +508,10 @@ observations:
         type: H5File
         obsfile: "Data/testinput_tier_1/variable_assignment_testdata.nc4"
   test data:
+    gnlocs: 4
+    gnlocs outside time window: 1
     nlocs: 4
     nrecs: 4
-    nvars: 4
     obs perturbations seed: 0
     expected group variables: []
     expected sort variable: ""
@@ -529,9 +541,10 @@ observations:
         type: H5File
         obsfile: "Data/testinput_tier_1/sondes_obs_2018041500_s.nc4"
   test data:
+    gnlocs: 91
+    gnlocs outside time window: 0
     nlocs: 91
     nrecs: 91
-    nvars: 5  # Note: this isn't linked to the number of *simulated* variables.
     obs perturbations seed: 0
     expected group variables: []
     expected sort variable: ""
@@ -552,9 +565,10 @@ observations:
         type: H5File
         obsfile: "Data/testinput_tier_1/gmi_gpm_obs_2018041500_m.nc4"
   test data:
+    gnlocs: 12
+    gnlocs outside time window: 0
     nlocs: 12
     nrecs: 12
-    nvars: 1
     obs perturbations seed: 0
     expected group variables: []
     expected sort variable: ""

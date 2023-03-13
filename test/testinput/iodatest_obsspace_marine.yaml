@@ -11,10 +11,11 @@ observations:
         type: H5File
         obsfile: Data/testinput_tier_1/Jason-2-2018-04-15.nc
   test data:
+    gnlocs: 160607
+    gnlocs outside time window: 0
     nlocs: 160607
     nlocs_local: 1930
     nrecs: 160607
-    nvars: 1
     obs perturbations seed: 0
     expected group variables: []
     expected sort variable: ""
@@ -42,10 +43,11 @@ observations:
         type: H5File
         obsfile: Data/testinput_tier_1/profile_2018-04-15.nc
   test data:
+    gnlocs: 918
+    gnlocs outside time window: 0
     nlocs: 918
     nlocs_local: 0
     nrecs: 918
-    nvars: 1
     obs perturbations seed: 0
     expected group variables: []
     expected sort variable: ""
@@ -72,10 +74,11 @@ observations:
         type: H5File
         obsfile: Data/testinput_tier_1/sst_obs-2018-04-15.nc4
   test data:
+    gnlocs: 200
+    gnlocs outside time window: 0
     nlocs: 200
     nlocs_local: 0
     nrecs: 200
-    nvars: 1
     obs perturbations seed: 0
     expected group variables: []
     expected sort variable: ""
@@ -103,10 +106,11 @@ observations:
         type: H5File
         obsfile: Data/testinput_tier_1/icec-2018-04-15.nc
   test data:
+    gnlocs: 71558
+    gnlocs outside time window: 0
     nlocs: 71558
     nlocs_local: 41757
     nrecs: 71558
-    nvars: 1
     obs perturbations seed: 0
     expected group variables: []
     expected sort variable: ""
@@ -133,10 +137,11 @@ observations:
         type: H5File
         obsfile: Data/testinput_tier_1/cryosat2-2018-04-15.nc
   test data:
+    gnlocs: 8065
+    gnlocs outside time window: 0
     nlocs: 8065
     nlocs_local: 8065
     nrecs: 8065
-    nvars: 2
     obs perturbations seed: 0
     expected group variables: []
     expected sort variable: ""
@@ -164,10 +169,11 @@ observations:
         obsfile: Data/testinput_tier_1/sss_obs_20180415_m.nc4
     obs perturbations seed: -99999
   test data:
+    gnlocs: 100
+    gnlocs outside time window: 0
     nlocs: 100
     nlocs_local: 0
     nrecs: 100
-    nvars: 1
     obs perturbations seed: -99999
     expected group variables: []
     expected sort variable: ""

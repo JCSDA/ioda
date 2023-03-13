@@ -5,12 +5,13 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#include "ioda/Io/IoPoolBase.h"
+#include "ioda/ioPool/IoPoolBase.h"
+
+#include <mpi.h>
 
 #include <algorithm>
 #include <cstdio>
 #include <memory>
-#include <mpi.h>
 #include <numeric>
 #include <sstream>
 #include <utility>
@@ -21,24 +22,12 @@
 #include "ioda/Engines/EngineUtils.h"
 #include "ioda/Engines/HH.h"
 #include "ioda/Exception.h"
-#include "ioda/Io/WriterUtils.h"
 
 #include "oops/util/Logger.h"
 
 namespace ioda {
 
 constexpr int defaultMaxPoolSize = 10;
-
-// These next two constants are the "color" values used for the MPI split comm command.
-// They just need to be two different numbers, which will create the pool communicator,
-// and a second communicator that holds all of the other ranks not in the pool.
-//
-// Unfortunately, the eckit interface doesn't appear to support using MPI_UNDEFINED for
-// the nonPoolColor. Ie, you need to assign all ranks into a communcator group.
-constexpr int poolColor = 1;
-constexpr int nonPoolColor = 2;
-const char poolCommName[] = "IoPool";
-const char nonPoolCommName[] = "NonIoPool";
 
 //--------------------------------------------------------------------------------------
 void IoPoolBase::setTargetPoolSize() {
@@ -65,7 +54,74 @@ void IoPoolBase::setTargetPoolSize() {
         comm_all_.broadcast(target_pool_size_, 0);
     }
 }
- 
+
+//--------------------------------------------------------------------------------------
+void IoPoolBase::assignRanksToIoPool(const std::size_t nlocs,
+                                     const IoPoolGroupMap & rankGrouping) {
+    constexpr int mpiTagBase = 10000;
+
+    // Collect the nlocs from all of the other ranks.
+    std::vector<std::size_t> allNlocs(size_all_);
+    comm_all_.allGather(nlocs, allNlocs.begin(), allNlocs.end());
+
+    if (rank_all_ == 0) {
+        // Follow the grouping that is contained in the rankGrouping structure to create
+        // the assignments for the MPI send/recv transfers. The rankAssignments structure
+        // contains the mapping that is required to effect the proper MPI send/recv
+        // transfers. A pool rank will receive from one or more non pool ranks and the
+        // non pool ranks will send to one pool rank. The outer vector of rankAssignments
+        // is indexed by the all_comm_ rank number, and the inner vector contains the list
+        // of ranks the outer index rank interacts with for data transfers. Once constructed,
+        // each inner vector of rankAssignments is sent to the associated rank in the
+        // comm_all_ group.
+        std::vector<std::vector<std::pair<int, int>>> rankAssignments(size_all_);
+        std::vector<int> rankAssignSizes(size_all_, 0);
+        for (auto & rankGroup : rankGrouping) {
+            // rankGroup is a std::pair<int, std::vector<int>>
+            // The first element is the pool rank, and the second element is
+            // the list of associated non pool ranks.
+            std::vector<std::pair<int, int>> rankGroupPairs(rankGroup.second.size());
+            std::size_t i = 0;
+            for (auto & nonPoolRank : rankGroup.second) {
+                rankGroupPairs[i] = std::make_pair(nonPoolRank, allNlocs[nonPoolRank]);
+                std::vector<std::pair<int, int>> associatedPoolRank;
+                associatedPoolRank.push_back(
+                    std::make_pair(rankGroup.first, allNlocs[nonPoolRank]));
+                rankAssignments[nonPoolRank] = associatedPoolRank;
+                rankAssignSizes[nonPoolRank] = 1;
+                i += 1;
+            }
+            rankAssignments[rankGroup.first] = rankGroupPairs;
+            rankAssignSizes[rankGroup.first] = rankGroupPairs.size();
+        }
+
+        // Send the rank assignments to the other ranks. Use scatter to spread the
+        // sizes (number of ranks) in each rank's assignment. Then use send/receive
+        // to transfer each ranks assignment.
+        int myRankAssignSize;
+        comm_all_.scatter(rankAssignSizes, myRankAssignSize, 0);
+
+        // Copy my assignment directory. Use MPI send/recv for all other ranks.
+        rank_assignment_ = rankAssignments[0];
+        for (std::size_t i = 1; i < rankAssignments.size(); ++i) {
+            if (rankAssignSizes[i] > 0) {
+                comm_all_.send(rankAssignments[i].data(), rankAssignSizes[i], i, mpiTagBase + i);
+            }
+        }
+    } else {
+        // Receive the rank assignments from rank 0. First use scatter to receive the
+        // sizes (number of ranks) in this rank's assignment.
+        int myRankAssignSize;
+        std::vector<int> dummyVector(size_all_);
+        comm_all_.scatter(dummyVector, myRankAssignSize, 0);
+
+        rank_assignment_.resize(myRankAssignSize);
+        if (myRankAssignSize > 0) {
+            comm_all_.receive(rank_assignment_.data(), myRankAssignSize, 0, mpiTagBase + rank_all_);
+        }
+    }
+}
+
 //--------------------------------------------------------------------------------------
 void IoPoolBase::createIoPool(IoPoolGroupMap & rankGrouping) {
     int myColor;
@@ -74,9 +130,9 @@ void IoPoolBase::createIoPool(IoPoolGroupMap & rankGrouping) {
         // the distinction between pool ranks and non pool ranks. The eckit split communicator
         // command doesn't yet handle the MPI_UNDEFINED spec for a color value, so for now
         // create a pool communicator group and a non pool communicator group.
-        std::vector<int> splitColors(size_all_, nonPoolColor);
+        std::vector<int> splitColors(size_all_, nonPoolColor_);
         for (auto & rankGroup : rankGrouping) {
-            splitColors[rankGroup.first] = poolColor;
+            splitColors[rankGroup.first] = poolColor_;
         }
         comm_all_.scatter(splitColors, myColor, 0);
     } else {
@@ -86,13 +142,13 @@ void IoPoolBase::createIoPool(IoPoolGroupMap & rankGrouping) {
         comm_all_.scatter(dummyColors, myColor, 0);
     }
 
-    if (myColor == nonPoolColor) {
-        comm_all_.split(myColor, nonPoolCommName);
+    if (myColor == nonPoolColor_) {
+        comm_all_.split(myColor, nonPoolCommName_);
         comm_pool_ = nullptr;  // mark that this rank does not belong to an io pool
         rank_pool_ = -1;
         size_pool_ = -1;
     } else {
-        comm_pool_ = &(comm_all_.split(myColor, poolCommName));
+        comm_pool_ = &(comm_all_.split(myColor, poolCommName_));
         rank_pool_ = comm_pool_->rank();
         size_pool_ = comm_pool_->size();
     }
@@ -131,7 +187,7 @@ void IoPoolBase::collectSingleFileInfo() {
         if (rank_pool_ == root) {
             global_nlocs_ = 0;
             std::size_t nlocsStartingPoint = 0;
-            for(std::size_t i = 0; i < totalNlocs.size(); ++i) {
+            for (std::size_t i = 0; i < totalNlocs.size(); ++i) {
                 global_nlocs_ += totalNlocs[i];
                 nlocsStarts[i] = nlocsStartingPoint;
                 nlocsStartingPoint += totalNlocs[i];
@@ -145,11 +201,15 @@ void IoPoolBase::collectSingleFileInfo() {
 //--------------------------------------------------------------------------------------
 IoPoolBase::IoPoolBase(const oops::Parameter<IoPoolParameters> & ioPoolParams,
                const eckit::mpi::Comm & commAll, const eckit::mpi::Comm & commTime,
-               const util::DateTime & winStart, const util::DateTime & winEnd)
+               const util::DateTime & winStart, const util::DateTime & winEnd,
+               const int poolColor, const int nonPoolColor,
+               const char * poolCommName, const char * nonPoolCommName)
                    : params_(ioPoolParams),
                      comm_all_(commAll), rank_all_(commAll.rank()), size_all_(commAll.size()),
                      comm_time_(commTime), rank_time_(commTime.rank()),
                      size_time_(commTime.size()), win_start_(winStart), win_end_(winEnd),
+                     poolColor_(poolColor), nonPoolColor_(nonPoolColor),
+                     poolCommName_(poolCommName), nonPoolCommName_(nonPoolCommName),
                      total_nlocs_(0), global_nlocs_(0) {
 }
 

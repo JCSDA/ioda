@@ -11,7 +11,6 @@ observations:
         obsfile: Data/testinput_tier_1/sondes_obs_2018041500_m.nc4
   test data:
     nlocs: 974
-    nvars: 5
     nvars obsvars: 3
 - obs space:
     name: Radiance
@@ -23,5 +22,4 @@ observations:
         obsfile: Data/testinput_tier_1/amsua_n19_obs_2018041500_m.nc4
   test data:
     nlocs: 100
-    nvars: 1
     nvars obsvars: 11

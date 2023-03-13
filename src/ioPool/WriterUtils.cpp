@@ -7,7 +7,7 @@
 /// \file WriterUtils.cpp
 /// \brief Utilities for a ioda io writer backend
 
-#include "ioda/Io/WriterUtils.h"
+#include "ioda/ioPool/WriterUtils.h"
 
 #include <functional>
 #include <numeric>
@@ -18,7 +18,7 @@
 #include "ioda/Copying.h"
 #include "ioda/Exception.h"
 #include "ioda/Group.h"
-#include "ioda/Io/WriterPool.h"
+#include "ioda/ioPool/WriterPool.h"
 #include "ioda/Misc/DimensionScales.h"
 #include "ioda/Types/Type.h"
 #include "ioda/Types/Type_Provider.h"
@@ -60,7 +60,6 @@ template <typename VarType>
 void transferVarData(const WriterPool & ioPool, const Variable & srcVar,
                      const std::string & varName, Group & dest, const bool isParallelIo) {
     if (ioPool.rank_pool() >= 0) {
-
         std::vector<VarType> varData;
         srcVar.read<VarType>(varData);
         Variable destVar = dest.vars.open(varName);
@@ -83,7 +82,7 @@ void calcVarStartsCounts(const WriterPool & ioPool, const Variable & srcVar,
     // higher dimensions sizes.
     dimFactor = 1;
     if (srcDims.size() > 1) {
-         dimFactor *= std::accumulate(srcDims.begin() + 1, srcDims.end(), 1, 
+         dimFactor *= std::accumulate(srcDims.begin() + 1, srcDims.end(), 1,
             std::multiplies<Dimensions_t>());
     }
     std::size_t start;
@@ -148,7 +147,6 @@ void transferVarDataMPI(const WriterPool & ioPool, const Variable & srcVar,
                         const std::vector<std::size_t> & varCounts,
                         const Dimensions_t & dimFactor, Group & dest,
                         const bool isParallelIo, const std::size_t strLen) {
-
     std::vector<VarType> varData;
     selectPatchValues<VarType>(ioPool, srcVar, dimFactor, varData);
     if (ioPool.rank_pool() >= 0) {
@@ -157,14 +155,16 @@ void transferVarDataMPI(const WriterPool & ioPool, const Variable & srcVar,
         varData.resize(numElements);
 
         // Walk through the rank assignments and issue receive commands.
-        std::vector<eckit::mpi::Request> recvRequests(ioPool.rank_assignment().size());
-        for (std::size_t i = 0; i < ioPool.rank_assignment().size(); ++i) {
-            int fromRank = ioPool.rank_assignment()[i].first;
-            int tag = mpiTagBase + (varNumber * varNumTagFactor) + fromRank;
-            recvRequests[i] = ioPool.comm_all().iReceive(
-                varData.data() + varStarts[i], varCounts[i], fromRank, tag);
+        if (ioPool.rank_assignment().size() > 0) {
+            std::vector<eckit::mpi::Request> recvRequests(ioPool.rank_assignment().size());
+            for (std::size_t i = 0; i < ioPool.rank_assignment().size(); ++i) {
+                int fromRank = ioPool.rank_assignment()[i].first;
+                int tag = mpiTagBase + (varNumber * varNumTagFactor) + fromRank;
+                recvRequests[i] = ioPool.comm_all().iReceive(
+                    varData.data() + varStarts[i], varCounts[i], fromRank, tag);
+            }
+            ioPool.comm_all().waitAll(recvRequests);
         }
-        ioPool.comm_all().waitAll(recvRequests);
         Variable destVar = dest.vars.open(varName);
         if (isParallelIo) {
             Selection memSelect = createBlockSelection(destVar.getDimensions().dimsCur,
@@ -178,14 +178,16 @@ void transferVarDataMPI(const WriterPool & ioPool, const Variable & srcVar,
     } else {
         // Non io pool ranks. These ranks will always read their data from src, and send it as
         // is to their assigned io pool rank.
-        std::vector<eckit::mpi::Request> sendRequests(ioPool.rank_assignment().size());
-        for (std::size_t i = 0; i < ioPool.rank_assignment().size(); ++i) {
-            int toRank = ioPool.rank_assignment()[i].first;
-            int tag = mpiTagBase + (varNumber * varNumTagFactor) + ioPool.rank_all();
-            sendRequests[i] = ioPool.comm_all().iSend(
-                varData.data() + varStarts[i], varCounts[i], toRank, tag);
+        if (ioPool.rank_assignment().size() > 0) {
+            std::vector<eckit::mpi::Request> sendRequests(ioPool.rank_assignment().size());
+            for (std::size_t i = 0; i < ioPool.rank_assignment().size(); ++i) {
+                int toRank = ioPool.rank_assignment()[i].first;
+                int tag = mpiTagBase + (varNumber * varNumTagFactor) + ioPool.rank_all();
+                sendRequests[i] = ioPool.comm_all().iSend(
+                    varData.data() + varStarts[i], varCounts[i], toRank, tag);
+            }
+            ioPool.comm_all().waitAll(sendRequests);
         }
-        ioPool.comm_all().waitAll(sendRequests);
     }
 }
 
@@ -207,19 +209,22 @@ void transferVarDataMPI<std::string>(const WriterPool & ioPool, const Variable &
         varData.resize(numElements);
 
         // Walk through the rank assignments and issue receive commands.
-        for (std::size_t i = 0; i < ioPool.rank_assignment().size(); ++i) {
-            int fromRank = ioPool.rank_assignment()[i].first;
-            int tag = mpiTagBase + (varNumber * varNumTagFactor) + fromRank;
-            std::vector<char> strBuffer(varCounts[i] * maxStringLength, '\0');
-            ioPool.comm_all().receive(strBuffer.data(), strBuffer.size(), fromRank, tag);
-            for (std::size_t j = 0; j < varCounts[i]; ++j) {
-                std::size_t offset = j * maxStringLength;
-                auto strEnd = std::find(strBuffer.begin() + offset, strBuffer.end(), '\0');
-                if (strEnd == strBuffer.end()) {
-                    throw Exception("End of string not found during MPI transfer", ioda_Here());
+        if (ioPool.rank_assignment().size() > 0) {
+            for (std::size_t i = 0; i < ioPool.rank_assignment().size(); ++i) {
+                int fromRank = ioPool.rank_assignment()[i].first;
+                int tag = mpiTagBase + (varNumber * varNumTagFactor) + fromRank;
+                std::vector<char> strBuffer(varCounts[i] * maxStringLength, '\0');
+                ioPool.comm_all().receive(strBuffer.data(), strBuffer.size(), fromRank, tag);
+                for (std::size_t j = 0; j < varCounts[i]; ++j) {
+                    std::size_t offset = j * maxStringLength;
+                    auto strEnd = std::find(strBuffer.begin() + offset, strBuffer.end(), '\0');
+                    if (strEnd == strBuffer.end()) {
+                        throw Exception("End of string not found during MPI transfer",
+                                         ioda_Here());
+                    }
+                    std::string str(strBuffer.begin() + offset, strEnd);
+                    varData[varStarts[i] + j] = str;
                 }
-                std::string str(strBuffer.begin() + offset, strEnd);
-                varData[varStarts[i] + j] = str;
             }
         }
         Variable destVar = dest.vars.open(varName);
@@ -235,28 +240,30 @@ void transferVarDataMPI<std::string>(const WriterPool & ioPool, const Variable &
     } else {
         // Non io pool ranks. These ranks will always read their data from src, and send it as
         // is to their assigned io pool rank.
-        for (std::size_t i = 0; i < ioPool.rank_assignment().size(); ++i) {
-            int toRank = ioPool.rank_assignment()[i].first;
-            int tag = mpiTagBase + (varNumber * varNumTagFactor) + ioPool.rank_all();
-            std::vector<char> strBuffer(varCounts[i] * maxStringLength, '\0');
-            for (std::size_t i = 0; i < varData.size(); ++i) {
-                for (std::size_t j = 0; j < varData[i].size(); ++j) {
-                    std::size_t bufIndx = (i * maxStringLength) + j;
-                    strBuffer[(i * maxStringLength) + j] = varData[i][j];
+        if (ioPool.rank_assignment().size() > 0) {
+            for (std::size_t i = 0; i < ioPool.rank_assignment().size(); ++i) {
+                int toRank = ioPool.rank_assignment()[i].first;
+                int tag = mpiTagBase + (varNumber * varNumTagFactor) + ioPool.rank_all();
+                std::vector<char> strBuffer(varCounts[i] * maxStringLength, '\0');
+                for (std::size_t i = 0; i < varData.size(); ++i) {
+                    for (std::size_t j = 0; j < varData[i].size(); ++j) {
+                        std::size_t bufIndx = (i * maxStringLength) + j;
+                        strBuffer[(i * maxStringLength) + j] = varData[i][j];
+                    }
                 }
+                ioPool.comm_all().send(strBuffer.data(), strBuffer.size(), toRank, tag);
             }
-            ioPool.comm_all().send(strBuffer.data(), strBuffer.size(), toRank, tag);
         }
     }
 }
 
 template <typename VarType>
-void createVariable(const std::string & varName, const Variable & srcVar,
-                    const int adjustNlocs, Has_Variables & destVars,
-                    const std::size_t strLen) {
+void writerCreateVariable(const std::string & varName, const Variable & srcVar,
+                          const int adjustNlocs, Has_Variables & destVars,
+                          const std::size_t strLen) {
     VariableCreationParameters params = srcVar.getCreationParameters(false, false);
     // For now we want to use mpio independent writing style which doesn't support
-    // compression. This is currently being mitigated since we have to run a 
+    // compression. This is currently being mitigated since we have to run a
     // workaround to convert fixed length strings to variable length strings for
     // netcdf compatibility. And in this workaround, we can turn on compression.
     params.noCompress();
@@ -273,11 +280,11 @@ void createVariable(const std::string & varName, const Variable & srcVar,
     copyAttributes(srcVar.atts, destVar.atts);
 }
 
-// createVariable specialization for string
+// writerCreateVariable specialization for string
 template <>
-void createVariable<std::string>(const std::string & varName, const Variable & srcVar,
-                                 const int adjustNlocs, Has_Variables & destVars,
-                                 const std::size_t strLen) {
+void writerCreateVariable<std::string>(const std::string & varName, const Variable & srcVar,
+                                       const int adjustNlocs, Has_Variables & destVars,
+                                       const std::size_t strLen) {
     // Since the fill value is coming from a variable length string, and we are
     // writing out a fixed length string, the fill value might be a longer length
     // than the string length. For now, record the fill value in an attribute
@@ -286,7 +293,7 @@ void createVariable<std::string>(const std::string & varName, const Variable & s
     // string" application to restore the fill value.
     VariableCreationParameters params = srcVar.getCreationParameters(false, false);
     // For now we want to use mpio independent writing style which doesn't support
-    // compression. This is currently being mitigated since we have to run a 
+    // compression. This is currently being mitigated since we have to run a
     // workaround to convert fixed length strings to variable length strings for
     // netcdf compatibility. And in this workaround, we can turn on compression.
     params.noCompress();
@@ -323,11 +330,12 @@ void identifyVarsUsingLocation(const ioda::VarUtils::VarDimMap & varDimMap,
     }
 }
 
-void copyVarData(const ioda::WriterPool & ioPool, const ioda::Group & src, ioda::Group & dest,
-                 const VarUtils::Vec_Named_Variable & srcNamedVars,
-                 const std::unordered_set<std::string> & varsUsingLocation,
-                 const bool isParallelIo,
-                 const std::map<std::string, std::size_t> & maxStringLengths){
+void writerCopyVarData(const ioda::WriterPool & ioPool, const ioda::Group & src,
+                       ioda::Group & dest,
+                       const VarUtils::Vec_Named_Variable & srcNamedVars,
+                       const std::unordered_set<std::string> & varsUsingLocation,
+                       const bool isParallelIo,
+                       const std::map<std::string, std::size_t> & maxStringLengths) {
   // For ranks in the io pool, collect the variable data and write out to the file. The
   // ranks not in the io pool will participate only in the MPI send/recv calls.
   int varNumber = 1;
@@ -337,7 +345,7 @@ void copyVarData(const ioda::WriterPool & ioPool, const ioda::Group & src, ioda:
     bool varTypeSupported = true;
     // Only the variable using the Location dimension will need to use MPI send/recv.
     // If the variable is not using Location, then simply transfer data from src to dest.
-    if(varsUsingLocation.count(varName) > 0) {
+    if (varsUsingLocation.count(varName) > 0) {
         // Using Location -> calculate the starts and counts for each of the ranks
         // in the rank_assignment_ structure.
         std::vector<std::size_t> varStarts;
@@ -418,22 +426,19 @@ void calcMaxStringLengths(const ioda::WriterPool & ioPool,
 
 void ioWriteGroup(const ioda::WriterPool & ioPool, const ioda::Group& memGroup,
                   ioda::Group& fileGroup, const bool isParallelIo) {
-  using namespace ioda;
-  using namespace std;
-
   // NOTE: This routine does not respect hard links for groups,
   // types, and variables. Once hard link support is added to IODA,
   // we will need an expanded listObjects function that
   // respects references.
 
   // Query old data for variable lists and dimension mappings
-  VarUtils::Vec_Named_Variable allVarsList;
-  VarUtils::Vec_Named_Variable regularVarList;
-  VarUtils::Vec_Named_Variable dimVarList;
-  VarUtils::VarDimMap dimsAttachedToVars;
-  Dimensions_t maxVarSize0;  // unused in this function
-  VarUtils::collectVarDimInfo(memGroup, regularVarList, dimVarList,
-                                dimsAttachedToVars, maxVarSize0);
+  ioda::VarUtils::Vec_Named_Variable allVarsList;
+  ioda::VarUtils::Vec_Named_Variable regularVarList;
+  ioda::VarUtils::Vec_Named_Variable dimVarList;
+  ioda::VarUtils::VarDimMap dimsAttachedToVars;
+  ioda::Dimensions_t maxVarSize0;  // unused in this function
+  ioda::VarUtils::collectVarDimInfo(memGroup, regularVarList, dimVarList,
+                                    dimsAttachedToVars, maxVarSize0);
 
   allVarsList = regularVarList;
   allVarsList.insert(allVarsList.end(), dimVarList.begin(), dimVarList.end());
@@ -487,18 +492,18 @@ void ioWriteGroup(const ioda::WriterPool & ioPool, const ioda::Group& memGroup,
       if (varsUsingLocation.count(var_name)) {
           adjustNlocs = poolNlocs;
       }
-      const Variable old_var = namedVar.var;
+      const ioda::Variable old_var = namedVar.var;
       std::size_t strLen = 0;
       if (maxStringLengths.find(var_name) != maxStringLengths.end()) {
           strLen = maxStringLengths.at(var_name);
       }
-      VarUtils::forAnySupportedVariableType(
+      ioda::VarUtils::forAnySupportedVariableType(
           old_var,
           [&](auto typeDiscriminator) {
               typedef decltype(typeDiscriminator) T;
-              createVariable<T>(var_name, old_var, adjustNlocs, fileGroup.vars, strLen);
+              writerCreateVariable<T>(var_name, old_var, adjustNlocs, fileGroup.vars, strLen);
           },
-          VarUtils::ThrowIfVariableIsOfUnsupportedType(var_name));
+          ioda::VarUtils::ThrowIfVariableIsOfUnsupportedType(var_name));
     }
 
     // TODO(future): Copy named types
@@ -513,10 +518,10 @@ void ioWriteGroup(const ioda::WriterPool & ioPool, const ioda::Group& memGroup,
     // Attach all dimension scales to all variables.
     // We separate this from the variable creation (above)
     // since we use a collective call for performance.
-    vector<pair<Variable, vector<Variable>>> dimsAttachedToNewVars;
+    std::vector<std::pair<Variable, std::vector<Variable>>> dimsAttachedToNewVars;
     for (const auto &old : dimsAttachedToVars) {
-      Variable new_var = fileGroup.vars[old.first.name];
-      vector<Variable> new_dims;
+      ioda::Variable new_var = fileGroup.vars[old.first.name];
+      std::vector<Variable> new_dims;
       for (const auto &old_dim : old.second) {
           new_dims.push_back(fileGroup.vars[old_dim.name]);
       }
@@ -526,9 +531,9 @@ void ioWriteGroup(const ioda::WriterPool & ioPool, const ioda::Group& memGroup,
   }
 
   // Next for the ranks in the "all" communicator group, we collectively transfer the
-  // variable data and write it into the file. 
-  copyVarData(ioPool, memGroup, fileGroup, allVarsList, varsUsingLocation,
-              isParallelIo, maxStringLengths);
+  // variable data and write it into the file.
+  writerCopyVarData(ioPool, memGroup, fileGroup, allVarsList, varsUsingLocation,
+                    isParallelIo, maxStringLengths);
 }
 
 }  // namespace ioda

@@ -907,7 +907,7 @@ HH_Variable::FillValueData_t HH_Variable::getFillValue(HH_hid_t create_plist) co
 
       size_t szType_inBytes = H5Tget_size(hType());
 
-      // Basic types and string pointers fit in the union. Fixed-length string
+      // Basic types fit in the union. Fixed-length and variable-length string
       // types do not, which is why we create a special buffer to accommodate.
       std::vector<char> fvbuf(szType_inBytes, 0);
       if (H5Pget_fill_value(create_plist.get(), hType(),
@@ -930,6 +930,7 @@ HH_Variable::FillValueData_t HH_Variable::getFillValue(HH_hid_t create_plist) co
           // It makes no sense to have a multidimensional fill.
           if (ccp[0]) {
             res.stringFillValue_ = std::string(ccp[0]);
+            res.isString_ = true;
             // Do proper deallocation of the HDF5-returned string array.
             if (H5free_memory(const_cast<void*>(reinterpret_cast<const void*>(ccp[0]))) < 0)
               throw Exception(ioda_Here());
@@ -937,6 +938,7 @@ HH_Variable::FillValueData_t HH_Variable::getFillValue(HH_hid_t create_plist) co
         } else {
           // Fixed-length string
           res.stringFillValue_ = std::string(fvbuf.data(), fvbuf.size());
+          res.isString_ = true;
         }
       } else {
         if (szType_inBytes > sizeof(res.fillValue_))

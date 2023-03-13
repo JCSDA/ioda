@@ -14,9 +14,10 @@ observations:
         mapping file: testinput/odb_default_name_map.yaml
         query file: testinput/iodatest_odb_atms.yaml
   test data:
+    gnlocs: 68
+    gnlocs outside time window: 32
     nlocs: 68
     nrecs: 68
-    nvars: 1
     obs perturbations seed: 0
     expected group variables: []
     expected sort variable: ""
