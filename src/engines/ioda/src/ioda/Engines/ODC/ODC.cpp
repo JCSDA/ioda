@@ -719,13 +719,14 @@ void setupVarnos(Group storageGroup, std::vector<std::string> &obsvalue_columns,
   }
 }
 
-void readBodyColumns(Group storageGroup, const std::string v, int number_of_rows, std::vector<std::vector<double>> &obsvalue_store, std::vector<std::vector<double>> &effective_error_store, std::vector<std::vector<int>> &diagnosticflags_store, std::vector<std::vector<double>> &initial_obsvalue_store, std::vector<std::vector<int>> &effective_qc, std::vector<std::vector<double>> &obserror_store, std::vector<std::vector<double>> &derived_obserror_store, std::vector<std::vector<double>> &hofx_store, std::vector<std::vector<double>> &obsbias_store) {
+void readBodyColumns(Group storageGroup, const std::string v, int number_of_rows, std::vector<std::vector<double>> &obsvalue_store, std::vector<std::vector<double>> &effective_error_store, std::vector<std::vector<int>> &diagnosticflags_store, std::vector<std::vector<double>> &initial_obsvalue_store, std::vector<std::vector<int>> &effective_qc, std::vector<std::vector<double>> &obserror_store, std::vector<std::vector<double>> &derived_obserror_store, std::vector<std::vector<double>> &hofx_store, std::vector<std::vector<double>> &obsbias_store, std::vector<std::vector<double>> &pge_store) {
     std::string effective_error_name = std::string(effective_error_prefix) + v;
     std::string obserror_name = std::string(obserror_prefix) + v;
     std::string derived_obserror_name = std::string(derived_obserror_prefix) + v;
     std::string hofx_name = std::string(hofx_prefix) + v;
     std::string obsbias_name = std::string(obsbias_prefix) + v;
     std::string qc_name = std::string(qc_prefix) + v;
+    std::string pge_name = std::string(pge_prefix) + v;
     std::string derived_obsvalue_name;
     std::string initial_obsvalue_name;
     if (storageGroup.vars.exists(std::string(derived_obsvalue_prefix)+v)) {
@@ -746,6 +747,7 @@ void readBodyColumns(Group storageGroup, const std::string v, int number_of_rows
       std::vector<double> effective_error_store_tmp(number_of_rows);
       std::vector<double> hofx_store_tmp(number_of_rows);
       std::vector<double> obsbias_store_tmp(number_of_rows);
+      std::vector<double> pge_store_tmp(number_of_rows);
       std::vector<double> obserror_store_tmp(number_of_rows);
       std::vector<double> derived_obserror_store_tmp(number_of_rows);
       std::vector<int> diagnosticflags_store_tmp(number_of_rows);
@@ -822,6 +824,22 @@ void readBodyColumns(Group storageGroup, const std::string v, int number_of_rows
       } else {
         for (int j = 0; j < number_of_rows; j++) {
           obsbias_store_tmp[j] = odb_missing_float;
+        }
+      }
+      if (storageGroup.vars.exists(pge_name)) {
+        storageGroup.vars[pge_name].read<float>(buf);
+        var = storageGroup.vars[pge_name];
+        ff = ioda::detail::getFillValue<float>(var.getFillValue());
+        for (int j = 0; j < number_of_rows; j++) {
+          if (ff == buf[j]) {
+            pge_store_tmp[j] = odb_missing_float;
+          } else {
+            pge_store_tmp[j] = buf[j];
+          }
+        }
+      } else {
+        for (int j = 0; j < number_of_rows; j++) {
+          pge_store_tmp[j] = odb_missing_float;
         }
       }
       if (storageGroup.vars.exists(obserror_name)) {
@@ -918,6 +936,7 @@ void readBodyColumns(Group storageGroup, const std::string v, int number_of_rows
       effective_error_store.push_back(effective_error_store_tmp);
       hofx_store.push_back(hofx_store_tmp);
       obsbias_store.push_back(obsbias_store_tmp);
+      pge_store.push_back(pge_store_tmp);
       obserror_store.push_back(obserror_store_tmp);
       derived_obserror_store.push_back(derived_obserror_store_tmp);
       diagnosticflags_store.push_back(diagnosticflags_store_tmp);
@@ -925,22 +944,23 @@ void readBodyColumns(Group storageGroup, const std::string v, int number_of_rows
     }
 }
 
-void writeODB(size_t num_varnos, int number_of_rows, odc::Writer<>::iterator writer, std::vector<std::vector<double>> &data_store, std::vector<std::vector<double>> &obsvalue_store, std::vector<std::vector<double>> &effective_error_store, std::vector<std::vector<int>> &diagnosticflags_store, std::vector<std::vector<double>> &initial_obsvalue_store, std::vector<std::vector<int>> &effective_qc, std::vector<std::vector<double>> &obserror_store, std::vector<std::vector<double>> &derived_obserror_store, std::vector<std::vector<double>> &hofx_store, std::vector<std::vector<double>> &obsbias_store, int num_columns, std::vector<int> varnos) {
+void writeODB(size_t num_varnos, int number_of_rows, odc::Writer<>::iterator writer, std::vector<std::vector<double>> &data_store, std::vector<std::vector<double>> &obsvalue_store, std::vector<std::vector<double>> &effective_error_store, std::vector<std::vector<int>> &diagnosticflags_store, std::vector<std::vector<double>> &initial_obsvalue_store, std::vector<std::vector<int>> &effective_qc, std::vector<std::vector<double>> &obserror_store, std::vector<std::vector<double>> &derived_obserror_store, std::vector<std::vector<double>> &hofx_store, std::vector<std::vector<double>> &obsbias_store, std::vector<std::vector<double>> &pge_store, int num_columns, std::vector<int> varnos) {
   for (int varno = 0; varno < num_varnos; varno++) {
     for (int row = 0; row < number_of_rows; row++) {
-      for (int column = 0; column < num_columns-10; column++) {
+      for (int column = 0; column < num_columns-11; column++) {
         (*writer)[column] = data_store[column][row];
       }
-      (*writer)[num_columns-1] = obsbias_store[varno][row];
-      (*writer)[num_columns-2] = hofx_store[varno][row];
-      (*writer)[num_columns-7] = effective_error_store[varno][row];
-      (*writer)[num_columns-6] = obserror_store[varno][row];
-      (*writer)[num_columns-5] = derived_obserror_store[varno][row];
-      (*writer)[num_columns-8] = obsvalue_store[varno][row];
-      if (initial_obsvalue_store[varno].size() > 0) (*writer)[num_columns-9] = initial_obsvalue_store[varno][row];
-      if (num_varnos > 0) (*writer)[num_columns-10] = varnos[varno];
-      (*writer)[num_columns-4] = diagnosticflags_store[varno][row];
-      (*writer)[num_columns-3] = effective_qc[varno][row];
+      (*writer)[num_columns-1] = pge_store[varno][row];
+      (*writer)[num_columns-2] = obsbias_store[varno][row];
+      (*writer)[num_columns-3] = hofx_store[varno][row];
+      (*writer)[num_columns-8] = effective_error_store[varno][row];
+      (*writer)[num_columns-7] = obserror_store[varno][row];
+      (*writer)[num_columns-6] = derived_obserror_store[varno][row];
+      (*writer)[num_columns-9] = obsvalue_store[varno][row];
+      if (initial_obsvalue_store[varno].size() > 0) (*writer)[num_columns-10] = initial_obsvalue_store[varno][row];
+      if (num_varnos > 0) (*writer)[num_columns-11] = varnos[varno];
+      (*writer)[num_columns-5] = diagnosticflags_store[varno][row];
+      (*writer)[num_columns-4] = effective_qc[varno][row];
       ++writer;
     }
   }
@@ -961,7 +981,7 @@ Group createFile(const ODC_Parameters& odcparams,Group storageGroup) {
   int num_columns = 0;
   setupColumnInfo(storageGroup, column_infos, number_of_rows, num_columns);
   if (num_columns == 0) return storageGroup;
-  num_columns +=10;
+  num_columns +=11;
   detail::ODBLayoutParameters layoutParams;
   layoutParams.validateAndDeserialize(
         eckit::YAMLConfiguration(eckit::PathName(odcparams.mappingFile)));
@@ -985,6 +1005,7 @@ Group createFile(const ODC_Parameters& odcparams,Group storageGroup) {
   writer->setColumn(column_number+7, "effective_qc", odc::api::INTEGER);
   writer->setColumn(column_number+8, "bgvalue", odc::api::REAL);
   writer->setColumn(column_number+9, "obsbias", odc::api::REAL);
+  writer->setColumn(column_number+10, "pge", odc::api::REAL);
   std::vector<std::vector<double>> data_store;
   writer->writeHeader();
   for (const auto& v: column_infos) {
@@ -1000,14 +1021,15 @@ Group createFile(const ODC_Parameters& odcparams,Group storageGroup) {
   std::vector<std::vector<double>> effective_error_store;
   std::vector<std::vector<double>> hofx_store;
   std::vector<std::vector<double>> obsbias_store;
+  std::vector<std::vector<double>> pge_store;
   std::vector<std::vector<double>> obserror_store;
   std::vector<std::vector<double>> derived_obserror_store;
   std::vector<std::vector<int>> diagnosticflags_store;
   std::vector<std::vector<int>> effective_qc;
   for (const auto& v: obsvalue_columns) {
-    readBodyColumns(storageGroup, v, number_of_rows, obsvalue_store, effective_error_store, diagnosticflags_store, initial_obsvalue_store, effective_qc, obserror_store, derived_obserror_store, hofx_store, obsbias_store);
+    readBodyColumns(storageGroup, v, number_of_rows, obsvalue_store, effective_error_store, diagnosticflags_store, initial_obsvalue_store, effective_qc, obserror_store, derived_obserror_store, hofx_store, obsbias_store, pge_store);
   }
-  writeODB(num_varnos, number_of_rows, writer, data_store, obsvalue_store, effective_error_store, diagnosticflags_store, initial_obsvalue_store, effective_qc, obserror_store, derived_obserror_store, hofx_store, obsbias_store, num_columns, varnos);
+  writeODB(num_varnos, number_of_rows, writer, data_store, obsvalue_store, effective_error_store, diagnosticflags_store, initial_obsvalue_store, effective_qc, obserror_store, derived_obserror_store, hofx_store, obsbias_store, pge_store, num_columns, varnos);
 #endif
   return storageGroup;
 }

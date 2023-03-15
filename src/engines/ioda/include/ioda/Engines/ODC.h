@@ -44,6 +44,8 @@ static constexpr char* hofx_prefix = const_cast<char *>("hofx/");
 static constexpr int hofx_prefix_size = 5;
 static constexpr char* obsbias_prefix = const_cast<char *>("ObsBias/");
 static constexpr int obsbias_prefix_size = 8;
+static constexpr char* pge_prefix = const_cast<char *>("GrossErrorProbability/");
+static constexpr int pge_prefix_size = 22;
 
 /// \brief Encapsulate the parameters to make calling simpler.
 /// \todo Add a conversion function from the oops::Parameters classes.
