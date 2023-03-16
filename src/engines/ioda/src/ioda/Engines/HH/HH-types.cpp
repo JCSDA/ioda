@@ -133,8 +133,8 @@ HH_hid_t HH_Type_Provider::getFundamentalHHType(std::type_index type) {
        {typeid(long long int), {H5T_NATIVE_LLONG}},            // NOLINT
        {typeid(unsigned long long int), {H5T_NATIVE_ULLONG}},  // NOLINT
        {typeid(signed char), {H5T_NATIVE_SCHAR}},              // NOLINT
-       //{typeid(unsigned char), {H5T_NATIVE_U}},
-       {typeid(char), {H5T_NATIVE_CHAR}},  // NOLINT
+       {typeid(unsigned char), {H5T_NATIVE_UCHAR}},            // NOLINT
+       {typeid(char), {H5T_NATIVE_CHAR}},                      // NOLINT
        //{typeid(wchar_t), {H5T_NATIVE_HBOOL}},
        //{typeid(char16_t), {H5T_NATIVE_HBOOL}},
        //{typeid(char32_t), {H5T_NATIVE_HBOOL}},

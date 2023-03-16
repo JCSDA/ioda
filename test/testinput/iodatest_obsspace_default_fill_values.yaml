@@ -1,0 +1,46 @@
+---
+window begin: "2018-04-14T21:00:00Z"
+window end: "2018-04-15T03:00:00Z"
+
+observations:
+- obs space:
+    name: "Default file values"
+    simulated variables: ['int_var']
+    observed variables: ['int_var']
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: "Data/testinput_tier_1/default_fill_values.nc4"
+    obsdataout:
+      engine:
+        type: H5File
+        obsfile: "testoutput/default_fill_values_out.nc4"
+  test data:
+    gnlocs: 5
+    gnlocs outside time window: 0
+    nlocs: 5
+    nrecs: 5
+    obs perturbations seed: 0
+    expected group variables: []
+    expected sort variable: ""
+    expected sort order: "ascending"
+    variables for get test:
+      - name: "float_var"
+        group: "NoFillValue"
+        type: "float"
+        norm: 8.1578183840277614
+
+      - name: "int_var"
+        group: "NoFillValue"
+        type: "integer"
+        norm: 7.416198487095663
+
+      - name: "string_var"
+        group: "NoFillValue"
+        type: "string"
+        first value: "ABC"
+        last value: "STUVWXY"
+
+    tolerance:
+      - 1.0e-14
+    variables for putget test: []

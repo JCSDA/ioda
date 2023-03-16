@@ -81,6 +81,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsspace.yaml
   testinput/iodatest_obsspace_datetime.yaml
   testinput/iodatest_obsspace_dist_write.yaml
+  testinput/iodatest_obsspace_default_fill_values.yaml
   testinput/iodatest_obsspace_empty_obs_file.yaml
   testinput/iodatest_obsspace_out_dims_check.yaml
   testinput/iodatest_obsspace_grouping.yaml
@@ -566,6 +567,21 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_fill_value
                   ARGS    "testinput/iodatest_obsspace_fill_value.yaml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
+
+ecbuild_add_test( TARGET  test_ioda_obsspace_default_fill_values
+                  COMMAND test_ioda_obsspace
+                  ARGS    "testinput/iodatest_obsspace_default_fill_values.yaml"
+                  LIBS  ioda_test
+                  TEST_DEPENDS get_ioda_test_data )
+
+ecbuild_add_test( TARGET  test_ioda_obsspace_default_fill_values_cmp
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking io default fill values"
+                          default_fill_values_out.nc4
+                  TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_default_fill_values )
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_out_dims_check
                   TYPE    SCRIPT
