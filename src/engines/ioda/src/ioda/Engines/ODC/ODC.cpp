@@ -435,13 +435,50 @@ struct ColumnInfo {
   int epoch_second;
 };
 
-void readColumn(Group storageGroup, const ColumnInfo column, std::vector<std::vector<double>> &data_store, int number_of_rows) {
+void pushBackVector(std::vector<std::vector<double>> &data_store,
+                    const std::vector<double> & inarray,
+                    const int numlocs, const int numchans) {
+  if (numchans == 0) {
+    data_store.push_back(inarray);
+  } else if (inarray.size() == numlocs) {
+    std::vector<double> data_store_tmp_chans(numlocs * numchans);
+    // Copy each location value to all channels
+    for (int j = 0; j < inarray.size(); j++)
+      for (int i = 0; i < numchans; i++)
+        data_store_tmp_chans[j * numchans + i] = inarray[j];
+    data_store.push_back(data_store_tmp_chans);
+  } else if (inarray.size() == numchans) {
+    std::vector<double> data_store_tmp_chans(numlocs * numchans);
+    // Copy each channel value to all channels
+    for (int j = 0; j < numlocs; j++)
+      for (int i = 0; i < numchans; i++)
+        data_store_tmp_chans[j * numchans + i] = inarray[i];
+    data_store.push_back(data_store_tmp_chans);
+  }
+}
+
+std::vector<int> getChannelNumbers(Group storageGroup) {
+  TypeClass t = storageGroup.vars["Channel"].getType().getClass();
+  std::vector<int> Channel;
+  if (t == TypeClass::Integer) {
+    storageGroup.vars["Channel"].read<int>(Channel);
+  } else {
+    std::vector<float> ChannelFloat;
+    storageGroup.vars["Channel"].read<float>(ChannelFloat);
+    for (int i = 0; i < ChannelFloat.size(); ++i)
+      Channel.emplace_back(static_cast<int>(ChannelFloat[i]));
+  }
+  return Channel;
+}
+
+void readColumn(Group storageGroup, const ColumnInfo column, std::vector<std::vector<double>> &data_store,
+                int number_of_locations, int number_of_channels) {
   if (column.column_name == "date") {
     std::vector<int64_t> buf;
-    std::vector<double> data_store_tmp(number_of_rows);
+    std::vector<double> data_store_tmp(number_of_locations);
     storageGroup.vars["MetaData/dateTime"].read<int64_t>(buf);
     float ff = ioda::detail::getFillValue<float>(storageGroup.vars["MetaData/dateTime"].getFillValue());
-    for (int j = 0; j < number_of_rows; j++) {
+    for (int j = 0; j < number_of_locations; j++) {
       if (ff == buf[j]) {
         data_store_tmp[j] = odb_missing_float;
       } else {
@@ -458,13 +495,13 @@ void readColumn(Group storageGroup, const ColumnInfo column, std::vector<std::ve
         data_store_tmp[j] = time.tm_year * 10000 + time.tm_mon * 100 + time.tm_mday;
       }
     }
-    data_store.push_back(data_store_tmp);
+    pushBackVector(data_store, data_store_tmp, number_of_locations, number_of_channels);
   } else if (column.column_name == "time") {
     std::vector<int64_t> buf;
-    std::vector<double> data_store_tmp(number_of_rows);
+    std::vector<double> data_store_tmp(number_of_locations);
     storageGroup.vars["MetaData/dateTime"].read<int64_t>(buf);
     float ff = ioda::detail::getFillValue<float>(storageGroup.vars["MetaData/dateTime"].getFillValue());
-    for (int j = 0; j < number_of_rows; j++) {
+    for (int j = 0; j < number_of_locations; j++) {
       if (ff == buf[j]) {
         data_store_tmp[j] = odb_missing_float;
       } else {
@@ -481,37 +518,44 @@ void readColumn(Group storageGroup, const ColumnInfo column, std::vector<std::ve
         data_store_tmp[j] = time.tm_hour * 10000 + time.tm_min * 100 + time.tm_sec;
       }
     }
+    pushBackVector(data_store, data_store_tmp, number_of_locations, number_of_channels);
+  } else if (column.column_name == "vertco_reference_1") {
+    std::vector<int> buf = getChannelNumbers(storageGroup);
+    std::vector<double> data_store_tmp(number_of_locations * number_of_channels);
+    for (int j = 0; j < number_of_locations; j++)
+      for (int i = 0; i < number_of_channels; i++)
+        data_store_tmp[j * number_of_channels + i] = static_cast<double>(buf[i]);
     data_store.push_back(data_store_tmp);
   } else if (column.column_type == TypeClass::Float) {
     std::vector<float> buf;
-    std::vector<double> data_store_tmp(number_of_rows);
+    std::vector<double> data_store_tmp(number_of_locations);
     storageGroup.vars[column.column_name].read<float>(buf);
     float ff = ioda::detail::getFillValue<float>(storageGroup.vars[column.column_name].getFillValue());
-    for (int j = 0; j < number_of_rows; j++) {
+    for (int j = 0; j < number_of_locations; j++) {
       if (ff == buf[j]) {
         data_store_tmp[j] = odb_missing_float;
       } else {
         data_store_tmp[j] = buf[j];
       }
     }
-    data_store.push_back(data_store_tmp);
+    pushBackVector(data_store, data_store_tmp, number_of_locations, number_of_channels);
   } else if (column.column_type == TypeClass::Integer) {
     if (column.column_size == 4) {
       std::vector<int> buf;
-      std::vector<double> data_store_tmp(number_of_rows);
+      std::vector<double> data_store_tmp(number_of_locations);
       storageGroup.vars[column.column_name].read<int>(buf);
       int ff = ioda::detail::getFillValue<int>(storageGroup.vars[column.column_name].getFillValue());
-      for (int j = 0; j < number_of_rows; j++) {
+      for (int j = 0; j < number_of_locations; j++) {
         if (ff == buf[j]) {
           data_store_tmp[j] = odb_missing_int;
         } else {
           data_store_tmp[j] = buf[j];
         }
       }
-      data_store.push_back(data_store_tmp);
+      pushBackVector(data_store, data_store_tmp, number_of_locations, number_of_channels);
     } else if (column.column_size == 8) {
       std::vector<long> buf;
-      std::vector<double> data_store_tmp(number_of_rows);
+      std::vector<double> data_store_tmp(number_of_locations);
       long ff;
       Variable var = storageGroup.vars.open(column.column_name);
       if (var.isA<long>()) {
@@ -527,22 +571,22 @@ void readColumn(Group storageGroup, const ColumnInfo column, std::vector<std::ve
         std::string errMsg("ODB Writer: Unrecognized data type for column size of 8");
         throw Exception(errMsg.c_str(), ioda_Here());
       }
-      for (int j = 0; j < number_of_rows; j++) {
+      for (int j = 0; j < number_of_locations; j++) {
         if (ff == buf[j]) {
           data_store_tmp[j] = odb_missing_int;
         } else {
           data_store_tmp[j] = buf[j];
         }
       }
-      data_store.push_back(data_store_tmp);
+      pushBackVector(data_store, data_store_tmp, number_of_locations, number_of_channels);
     }
   } else if (column.column_type == TypeClass::String) {
     std::vector<std::string> buf;
     storageGroup.vars[column.column_name].read<std::string>(buf);
     int num_cols = 1+((column.string_length-1)/8);
     for (int c = 0; c < num_cols; c++) {
-      std::vector<double> data_store_tmp(number_of_rows);
-      for (int j = 0; j < number_of_rows; j++) {
+      std::vector<double> data_store_tmp(number_of_locations);
+      for (int j = 0; j < number_of_locations; j++) {
          unsigned char uc[8];
          double dat;
          for (int k = 8 * c; k < std::min(8 * (c+1),static_cast<int>(buf[j].size())); k++) {
@@ -554,18 +598,18 @@ void readColumn(Group storageGroup, const ColumnInfo column, std::vector<std::ve
          memcpy(&dat, uc, 8);
          data_store_tmp[j] = dat;
       }
-      data_store.push_back(data_store_tmp);
+      pushBackVector(data_store, data_store_tmp, number_of_locations, number_of_channels);
     }
   } else if (column.column_type == TypeClass::Unknown) {
-    std::vector<double> data_store_tmp(number_of_rows);
-    for (int j = 0; j < number_of_rows; j++) {
+    std::vector<double> data_store_tmp(number_of_locations);
+    for (int j = 0; j < number_of_locations; j++) {
       data_store_tmp[j] = -1.0;
     }
-    data_store.push_back(data_store_tmp);
+    pushBackVector(data_store, data_store_tmp, number_of_locations, number_of_channels);
   }
 }
 
-int getNumberOfRows(Group storageGroup) {
+int getNumberOfLocations(Group storageGroup) {
   TypeClass t = storageGroup.vars["Location"].getType().getClass();
   if (t == TypeClass::Integer) {
     std::vector<int> Location;
@@ -578,7 +622,7 @@ int getNumberOfRows(Group storageGroup) {
   }
 }
 
-void setupColumnInfo(Group storageGroup, std::vector<ColumnInfo> &column_infos, int number_of_rows, int &num_columns) {
+void setupColumnInfo(Group storageGroup, std::vector<ColumnInfo> &column_infos, int &num_columns) {
   const auto objs = storageGroup.listObjects(ObjectType::Variable, true);
   for (auto it = objs.cbegin(); it != objs.cend(); it++) {
     for (int i = 0; i < it->second.size(); i++) {
@@ -627,7 +671,7 @@ void setupColumnInfo(Group storageGroup, std::vector<ColumnInfo> &column_infos, 
             std::vector<std::string> buf;
             storageGroup.vars[col.column_name].read<std::string>(buf);
             int len = 0;
-            for (int j = 0; j < number_of_rows; j++) {
+            for (int j = 0; j < buf.size(); j++) {
               if (buf[j].size() > len) {
                 len = buf[j].size();
               }
@@ -640,6 +684,15 @@ void setupColumnInfo(Group storageGroup, std::vector<ColumnInfo> &column_infos, 
           }
           column_infos.push_back(col);
         }
+      }
+      if (!it->second[i].compare("Channel")) {
+        ColumnInfo col;
+        col.column_name = "vertco_reference_1";
+        col.column_type = storageGroup.vars["Channel"].getType().getClass();
+        col.column_size = storageGroup.vars["Channel"].getType().getSize();
+        col.string_length = 0;
+        num_columns++;
+        column_infos.push_back(col);
       }
     }
   }
@@ -655,7 +708,7 @@ void setODBColumn(ReverseColumnMappings columnMappings, const ColumnInfo v, odc:
   }
   if (colname2 == "") {
     std::string colname3 = v.column_name;
-    if (colname3 != "date" && colname3 != "time") {
+    if (colname3.rfind(metadata_prefix, 0) == 0) {
       colname3.erase(0, metadata_prefix_size);
     }
     if (v.column_type == TypeClass::Integer) {
@@ -719,6 +772,46 @@ void setupVarnos(Group storageGroup, std::vector<std::string> &obsvalue_columns,
   }
 }
 
+void fillDoubleArray(const Group & storageGroup, const std::string varname,
+                     const int numrows, std::vector<double> & outdata) {
+  if (storageGroup.vars.exists(varname)) {
+    std::vector<float> buffer;
+    storageGroup.vars[varname].read<float>(buffer);
+    const ioda::Variable var = storageGroup.vars[varname];
+    const float ff  = ioda::detail::getFillValue<float>(var.getFillValue());
+    for (int j = 0; j < numrows; j++) {
+      if (ff == buffer[j]) {
+        outdata[j] = odb_missing_float;
+      } else {
+        outdata[j] = buffer[j];
+      }
+    }
+  } else {
+    for (int j = 0; j < numrows; j++)
+      outdata[j] = odb_missing_float;
+  }
+}
+
+void fillIntArray(const Group & storageGroup, const std::string varname,
+                  const int numrows, std::vector<int> & outdata) {
+  if (storageGroup.vars.exists(varname)) {
+    std::vector<int> buffer;
+    storageGroup.vars[varname].read<int>(buffer);
+    const ioda::Variable var = storageGroup.vars[varname];
+    const int ff = ioda::detail::getFillValue<int>(var.getFillValue());
+    for (int j = 0; j < numrows; j++) {
+      if (ff == buffer[j]) {
+        outdata[j] = odb_missing_int;
+      } else {
+        outdata[j] = buffer[j];
+      }
+    }
+  } else {
+     for (int j = 0; j < numrows; j++)
+       outdata[j] = odb_missing_int;
+  }
+}
+
 void readBodyColumns(Group storageGroup, const std::string v, int number_of_rows, std::vector<std::vector<double>> &obsvalue_store, std::vector<std::vector<double>> &effective_error_store, std::vector<std::vector<int>> &diagnosticflags_store, std::vector<std::vector<double>> &initial_obsvalue_store, std::vector<std::vector<int>> &effective_qc, std::vector<std::vector<double>> &obserror_store, std::vector<std::vector<double>> &derived_obserror_store, std::vector<std::vector<double>> &hofx_store, std::vector<std::vector<double>> &obsbias_store, std::vector<std::vector<double>> &pge_store) {
     std::string effective_error_name = std::string(effective_error_prefix) + v;
     std::string obserror_name = std::string(obserror_prefix) + v;
@@ -739,9 +832,7 @@ void readBodyColumns(Group storageGroup, const std::string v, int number_of_rows
     std::vector<std::string> flags{"BackPerfFlag","BackRejectFlag","BuddyPerfFlag","BuddyRejectFlag","ClimPerfFlag","ClimRejectFlag","ConsistencyFlag","DataCorrectFlag","ExtremeValueFlag","FinalRejectFlag","NoAssimFlag","PermCorrectFlag","PermRejectFlag"};
     TypeClass t = storageGroup.vars[derived_obsvalue_name].getType().getClass();
     if (t == TypeClass::Float) {
-      std::vector<float> buf;
-      std::vector<int> buf_int;
-      std::vector<char> buf_char;
+      // Setup arrays
       std::vector<double> obsvalue_store_tmp(number_of_rows);
       std::vector<double> initial_obsvalue_store_tmp(number_of_rows);
       std::vector<double> effective_error_store_tmp(number_of_rows);
@@ -750,153 +841,27 @@ void readBodyColumns(Group storageGroup, const std::string v, int number_of_rows
       std::vector<double> pge_store_tmp(number_of_rows);
       std::vector<double> obserror_store_tmp(number_of_rows);
       std::vector<double> derived_obserror_store_tmp(number_of_rows);
-      std::vector<int> diagnosticflags_store_tmp(number_of_rows);
       std::vector<int> effective_qc_tmp(number_of_rows);
-      storageGroup.vars[derived_obsvalue_name].read<float>(buf);
-      ioda::Variable var = storageGroup.vars[derived_obsvalue_name];
-      float ff = ioda::detail::getFillValue<float>(var.getFillValue());
-      for (int j = 0; j < number_of_rows; j++) {
-        if (ff == buf[j]) {
-          obsvalue_store_tmp[j] = odb_missing_float;
-        } else {
-          obsvalue_store_tmp[j] = buf[j];
-        }
-      }
-      if (storageGroup.vars.exists(initial_obsvalue_name)) {
-        storageGroup.vars[initial_obsvalue_name].read<float>(buf);
-        var = storageGroup.vars[initial_obsvalue_name];
-        ff = ioda::detail::getFillValue<float>(var.getFillValue());
-        for (int j = 0; j < number_of_rows; j++) {
-          if (ff == buf[j]) {
-            initial_obsvalue_store_tmp[j] = odb_missing_float;
-          } else {
-            initial_obsvalue_store_tmp[j] = buf[j];
-          }
-        }
-      } else {
-        for (int j = 0; j < number_of_rows; j++) {
-          initial_obsvalue_store_tmp[j] = odb_missing_float;
-        }
-      }
-      if (storageGroup.vars.exists(effective_error_name)) {
-        storageGroup.vars[effective_error_name].read<float>(buf);
-        var = storageGroup.vars[effective_error_name];
-        ff = ioda::detail::getFillValue<float>(var.getFillValue());
-        for (int j = 0; j < number_of_rows; j++) {
-          if (ff == buf[j]) {
-            effective_error_store_tmp[j] = odb_missing_float;
-          } else {
-            effective_error_store_tmp[j] = buf[j];
-          }
-        }
-      } else {
-        for (int j = 0; j < number_of_rows; j++) {
-          effective_error_store_tmp[j] = odb_missing_float;
-        }
-      }
-      if (storageGroup.vars.exists(hofx_name)) {
-        storageGroup.vars[hofx_name].read<float>(buf);
-        var = storageGroup.vars[hofx_name];
-        ff = ioda::detail::getFillValue<float>(var.getFillValue());
-        for (int j = 0; j < number_of_rows; j++) {
-          if (ff == buf[j]) {
-            hofx_store_tmp[j] = odb_missing_float;
-          } else {
-            hofx_store_tmp[j] = buf[j];
-          }
-        }
-      } else {
-        for (int j = 0; j < number_of_rows; j++) {
-          hofx_store_tmp[j] = odb_missing_float;
-        }
-      }
-      if (storageGroup.vars.exists(obsbias_name)) {
-        storageGroup.vars[obsbias_name].read<float>(buf);
-        var = storageGroup.vars[obsbias_name];
-        ff = ioda::detail::getFillValue<float>(var.getFillValue());
-        for (int j = 0; j < number_of_rows; j++) {
-          if (ff == buf[j]) {
-            obsbias_store_tmp[j] = odb_missing_float;
-          } else {
-            obsbias_store_tmp[j] = buf[j];
-          }
-        }
-      } else {
-        for (int j = 0; j < number_of_rows; j++) {
-          obsbias_store_tmp[j] = odb_missing_float;
-        }
-      }
-      if (storageGroup.vars.exists(pge_name)) {
-        storageGroup.vars[pge_name].read<float>(buf);
-        var = storageGroup.vars[pge_name];
-        ff = ioda::detail::getFillValue<float>(var.getFillValue());
-        for (int j = 0; j < number_of_rows; j++) {
-          if (ff == buf[j]) {
-            pge_store_tmp[j] = odb_missing_float;
-          } else {
-            pge_store_tmp[j] = buf[j];
-          }
-        }
-      } else {
-        for (int j = 0; j < number_of_rows; j++) {
-          pge_store_tmp[j] = odb_missing_float;
-        }
-      }
-      if (storageGroup.vars.exists(obserror_name)) {
-        storageGroup.vars[obserror_name].read<float>(buf);
-        var = storageGroup.vars[obserror_name];
-        ff = ioda::detail::getFillValue<float>(var.getFillValue());
-        for (int j = 0; j < number_of_rows; j++) {
-          if (ff == buf[j]) {
-            obserror_store_tmp[j] = odb_missing_float;
-          } else {
-            obserror_store_tmp[j] = buf[j];
-          }
-        }
-      } else {
-        for (int j = 0; j < number_of_rows; j++) {
-          obserror_store_tmp[j] = odb_missing_float;
-        }
-      }
-      if (storageGroup.vars.exists(derived_obserror_name)) {
-        storageGroup.vars[derived_obserror_name].read<float>(buf);
-        var = storageGroup.vars[derived_obserror_name];
-        ff = ioda::detail::getFillValue<float>(var.getFillValue());
-        for (int j = 0; j < number_of_rows; j++) {
-          if (ff == buf[j]) {
-            derived_obserror_store_tmp[j] = odb_missing_float;
-          } else {
-            derived_obserror_store_tmp[j] = buf[j];
-          }
-        }
-      } else {
-        for (int j = 0; j < number_of_rows; j++) {
-          derived_obserror_store_tmp[j] = odb_missing_float;
-        }
-      }
-      if (storageGroup.vars.exists(qc_name)) {
-        storageGroup.vars[qc_name].read<int>(buf_int);
-        var = storageGroup.vars[qc_name];
-        ff = ioda::detail::getFillValue<int>(var.getFillValue());
-        for (int j = 0; j < number_of_rows; j++) {
-          if (ff == buf_int[j]) {
-            effective_qc_tmp[j] = odb_missing_int;
-          } else {
-            effective_qc_tmp[j] = buf_int[j];
-          }
-        }
-      } else {
-        for (int j = 0; j < number_of_rows; j++) {
-          effective_qc_tmp[j] = odb_missing_int;
-        }
-      }
+      std::vector<int> diagnosticflags_store_tmp(number_of_rows);
+      // Fill arrays with data if available
+      fillDoubleArray(storageGroup, derived_obsvalue_name, number_of_rows, obsvalue_store_tmp);
+      fillDoubleArray(storageGroup, initial_obsvalue_name, number_of_rows, initial_obsvalue_store_tmp);
+      fillDoubleArray(storageGroup, effective_error_name, number_of_rows, effective_error_store_tmp);
+      fillDoubleArray(storageGroup, hofx_name, number_of_rows, hofx_store_tmp);
+      fillDoubleArray(storageGroup, obsbias_name, number_of_rows, obsbias_store_tmp);
+      fillDoubleArray(storageGroup, pge_name, number_of_rows, pge_store_tmp);
+      fillDoubleArray(storageGroup, obserror_name, number_of_rows, obserror_store_tmp);
+      fillDoubleArray(storageGroup, derived_obserror_name, number_of_rows, derived_obserror_store_tmp);
+      fillIntArray(storageGroup, qc_name, number_of_rows, effective_qc_tmp);
+      // Fill diagnostic flags data
       bool first_flag = true;
       for (int ii = 0; ii < flags.size(); ii++) {
         std::string diagnosticflags_name = std::string("DiagnosticFlags/") + flags[ii] + "/" + v;
         if (first_flag) {
           if (storageGroup.vars.exists(diagnosticflags_name)) {
+            std::vector<char> buf_char;
             storageGroup.vars[diagnosticflags_name].read<char>(buf_char);
-            var = storageGroup.vars[diagnosticflags_name];
+            const ioda::Variable var = storageGroup.vars[diagnosticflags_name];
             char ff = ioda::detail::getFillValue<char>(var.getFillValue());
             for (int j = 0; j < number_of_rows; j++) {
               if (ff == buf_char[j]) {
@@ -914,8 +879,9 @@ void readBodyColumns(Group storageGroup, const std::string v, int number_of_rows
           }
         } else {
           if (storageGroup.vars.exists(diagnosticflags_name)) {
+            std::vector<char> buf_char;
             storageGroup.vars[diagnosticflags_name].read<char>(buf_char);
-            var = storageGroup.vars[diagnosticflags_name];
+            const ioda::Variable var = storageGroup.vars[diagnosticflags_name];
             char ff = ioda::detail::getFillValue<char>(var.getFillValue());
             for (int j = 0; j < number_of_rows; j++) {
               if (ff != buf_char[j]) {
@@ -926,6 +892,7 @@ void readBodyColumns(Group storageGroup, const std::string v, int number_of_rows
         }
         first_flag = false;
       }
+      // Add data to the obs store
       obsvalue_store.push_back(obsvalue_store_tmp);
       if (storageGroup.vars.exists(initial_obsvalue_name)) {
         initial_obsvalue_store.push_back(initial_obsvalue_store_tmp);
@@ -977,9 +944,16 @@ Group createFile(const ODC_Parameters& odcparams,Group storageGroup) {
 #if odc_FOUND && oops_FOUND && eckit_FOUND
   std::vector<ColumnInfo> column_infos;
 
-  int number_of_rows = getNumberOfRows(storageGroup);
+  const int number_of_locations = getNumberOfLocations(storageGroup);
+  int number_of_rows = number_of_locations;
+  int number_of_channels = 0;
+  if (storageGroup.vars.exists("Channel")) {
+     std::vector<int> channels = getChannelNumbers(storageGroup);
+     number_of_rows *= channels.size();
+     number_of_channels = channels.size();
+  }
   int num_columns = 0;
-  setupColumnInfo(storageGroup, column_infos, number_of_rows, num_columns);
+  setupColumnInfo(storageGroup, column_infos, num_columns);
   if (num_columns == 0) return storageGroup;
   num_columns +=11;
   detail::ODBLayoutParameters layoutParams;
@@ -1009,7 +983,7 @@ Group createFile(const ODC_Parameters& odcparams,Group storageGroup) {
   std::vector<std::vector<double>> data_store;
   writer->writeHeader();
   for (const auto& v: column_infos) {
-    readColumn(storageGroup, v, data_store, number_of_rows);
+    readColumn(storageGroup, v, data_store, number_of_locations, number_of_channels);
   }
 
   size_t num_varnos = 0;
@@ -1026,6 +1000,7 @@ Group createFile(const ODC_Parameters& odcparams,Group storageGroup) {
   std::vector<std::vector<double>> derived_obserror_store;
   std::vector<std::vector<int>> diagnosticflags_store;
   std::vector<std::vector<int>> effective_qc;
+  // Read data which is the same dimensions as variables in ObsValue
   for (const auto& v: obsvalue_columns) {
     readBodyColumns(storageGroup, v, number_of_rows, obsvalue_store, effective_error_store, diagnosticflags_store, initial_obsvalue_store, effective_qc, obserror_store, derived_obserror_store, hofx_store, obsbias_store, pge_store);
   }
@@ -1181,13 +1156,13 @@ ObsGroup openFile(const ODC_Parameters& odcparams,
                                                            sql_data.getObsgroup() == obsgroup_cris ||
                                                            sql_data.getObsgroup() == obsgroup_hiras)) {
       sql_data.assignChannelNumbers(varno_rawsca, og);
-    } else if (column == "initial_vertco_reference" && (sql_data.getObsgroup() == obsgroup_abiclr || 
-                                                        sql_data.getObsgroup() == obsgroup_ahiclr || 
-                                                        sql_data.getObsgroup() == obsgroup_atms || 
-                                                        sql_data.getObsgroup() == obsgroup_gmihigh || 
-                                                        sql_data.getObsgroup() == obsgroup_gmilow || 
-                                                        sql_data.getObsgroup() == obsgroup_mwri || 
-                                                        sql_data.getObsgroup() == obsgroup_seviriclr || 
+    } else if (column == "initial_vertco_reference" && (sql_data.getObsgroup() == obsgroup_abiclr ||
+                                                        sql_data.getObsgroup() == obsgroup_ahiclr ||
+                                                        sql_data.getObsgroup() == obsgroup_atms ||
+                                                        sql_data.getObsgroup() == obsgroup_gmihigh ||
+                                                        sql_data.getObsgroup() == obsgroup_gmilow ||
+                                                        sql_data.getObsgroup() == obsgroup_mwri ||
+                                                        sql_data.getObsgroup() == obsgroup_seviriclr ||
                                                         sql_data.getObsgroup() == obsgroup_ssmis)) {
       sql_data.assignChannelNumbersSeq(std::vector<int>({varno_rawbt}), og);
     } else if (column == "initial_vertco_reference" && sql_data.getObsgroup() == obsgroup_atovs) {
