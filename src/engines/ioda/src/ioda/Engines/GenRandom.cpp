@@ -52,8 +52,14 @@ GenRandom::GenRandom(const Parameters_ & params, const ReaderCreationParameters 
 //------------------------ private functions ----------------------------------
 void GenRandom::genDistRandom(const GenRandom::Parameters_ & params) {
     /// Grab the parameter values
+    const std::vector<float> obsValues = params.obsValues;
     const std::vector<float> obsErrors = params.obsErrors;
-    ASSERT(obsErrors.size() == createParams_.obsVarNames.size());
+    if (!obsErrors.empty()){
+        ASSERT(obsErrors.size() == createParams_.obsVarNames.size());
+    }
+    if (!obsValues.empty()){
+        ASSERT(obsValues.size() == createParams_.obsVarNames.size());
+    }
 
     const int numLocs = params.numObs;
     const float latStart = params.latStart;
@@ -127,7 +133,7 @@ void GenRandom::genDistRandom(const GenRandom::Parameters_ & params) {
 
     const std::string epoch = std::string("seconds since ") + createParams_.winStart.toString();
     // Transfer the generated values to the ObsGroup
-    storeGenData(latVals, lonVals, dts, epoch, createParams_.obsVarNames,
+    storeGenData(latVals, lonVals, dts, epoch, createParams_.obsVarNames, obsValues,
                  obsErrors, obs_group_);
 }
 

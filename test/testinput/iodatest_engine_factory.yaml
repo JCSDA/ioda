@@ -47,6 +47,7 @@ engine factory tests:
             - 360
             epoch: "seconds since 2010-01-01T00:00:00Z"
             obs errors: [1.0, 2.0]
+            obs values: [3.0, 4.0]
         global attribute check:
           attr name: "_ioda_layout"
           attr value: "ObsGroup"

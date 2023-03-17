@@ -232,6 +232,7 @@ observations:
         lon1: 0    # and lon ranging from 0-10.
         lon2: 10
         random seed: 29837
+        obs values: [3.0, 4.0]
         obs errors: [1.0, 2.0]
     obsdataout:
       engine:
@@ -256,6 +257,16 @@ observations:
         group: "MetaData"
         type: "float"
         norm: 21.063312039377447
+
+      - name: "air_temperature"
+        group: "ObsValue"
+        type: "float"
+        norm: 9.4868329805051379
+
+      - name: "eastward_wind"
+        group: "ObsValue"
+        type: "float"
+        norm: 12.649110640673517
 
       - name: "air_temperature"
         group: "ObsError"
@@ -292,6 +303,7 @@ observations:
         - 348
         - 360
         epoch: "seconds since 2010-01-01T00:00:00Z"
+        obs values: [3.0, 4.0]
         obs errors: [1.0, 2.0]
     obsdataout:
       engine:
@@ -316,6 +328,16 @@ observations:
         group: "MetaData"
         type: "float"
         norm: 16.583123951777001
+
+      - name: "air_temperature"
+        group: "ObsValue"
+        type: "float"
+        norm: 9.9498743710661995
+
+      - name: "eastward_wind"
+        group: "ObsValue"
+        type: "float"
+        norm: 13.266499161421599
 
       - name: "air_temperature"
         group: "ObsError"

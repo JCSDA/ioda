@@ -48,6 +48,9 @@ class GenRandomParameters : public ReaderParametersBase {
     /// \brief random seed
     oops::OptionalParameter<int> ranSeed{"random seed", this};
 
+    /// \brief obs values
+    oops::Parameter<std::vector<float>> obsValues{"obs values", { }, this};
+
     /// \brief obs error estimates
     oops::Parameter<std::vector<float>> obsErrors{"obs errors", { }, this};
 };

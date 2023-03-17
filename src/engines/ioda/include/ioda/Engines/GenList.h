@@ -36,6 +36,9 @@ class GenListParameters : public ReaderParametersBase {
     /// \brief epoch (ISO 8601 string) relative to which datetimes are computed
     oops::Parameter<std::string> epoch{"epoch", "seconds since 1970-01-01T00:00:00Z", this};
 
+    /// \brief obs values
+    oops::Parameter<std::vector<float>> obsValues{"obs values", { }, this};
+
     /// \brief obs error estimates
     oops::Parameter<std::vector<float>> obsErrors{"obs errors", { }, this};
 };

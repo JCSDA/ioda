@@ -102,6 +102,7 @@ std::string uniquifyFileName(const std::string & fileName, const bool createMult
 /// \param dts vector of time offsets (s) relative to \p epoch
 /// \param epoch (ISO 8601 string) relative to which datetimes are computed
 /// \param obsVarNames vector (string) of simulated variable names
+/// \param obsValues vector of observed values
 /// \param obsErrors vector of obs error estimates
 /// \param[out] obsGroup destination for the generated data
 void storeGenData(const std::vector<float> & latVals,
@@ -109,6 +110,7 @@ void storeGenData(const std::vector<float> & latVals,
                   const std::vector<int64_t> & dts,
                   const std::string & epoch,
                   const std::vector<std::string> & obsVarNames,
+                  const std::vector<float> & obsValues,
                   const std::vector<float> & obsErrors,
                   ObsGroup &obsGroup);
 

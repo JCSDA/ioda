@@ -79,6 +79,7 @@ void storeGenData(const std::vector<float> & latVals,
                   const std::vector<int64_t> & dts,
                   const std::string & epoch,
                   const std::vector<std::string> & obsVarNames,
+                  const std::vector<float> & obsValues,
                   const std::vector<float> & obsErrors,
                   ObsGroup &obsGroup) {
     // Generated data is a set of vectors for now.
@@ -122,10 +123,16 @@ void storeGenData(const std::vector<float> & latVals,
         .atts.add<std::string>("units", epoch);
 
     for (std::size_t i = 0; i < obsVarNames.size(); ++i) {
-        std::string varName = std::string("ObsError/") + obsVarNames[i];
+        const std::string varErrName = std::string("ObsError/") + obsVarNames[i];
         std::vector<float> obsErrVals(latVals.size(), obsErrors[i]);
-        obsGroup.vars.createWithScales<float>(varName, { LocationVar }, float_params)
+        obsGroup.vars.createWithScales<float>(varErrName, { LocationVar }, float_params)
             .write<float>(obsErrVals);
+        if (!obsValues.empty()){
+            const std::string varValName = std::string("ObsValue/") + obsVarNames[i];
+            std::vector<float> obsVals(latVals.size(), obsValues[i]);
+            obsGroup.vars.createWithScales<float>(varValName, {LocationVar}, float_params)
+                    .write<float>(obsVals);
+        }
     }
 }
 

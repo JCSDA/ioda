@@ -46,8 +46,15 @@ GenList::GenList(const Parameters_ & params, const ReaderCreationParameters & cr
 //-------------------- private functions -------------------------------
 void GenList::genDistList(const GenList::Parameters_ & params) {
     // Grab the parameters
+    const std::vector<float> obsVals = params.obsValues;
     const std::vector<float> obsErrors = params.obsErrors;
-    ASSERT(obsErrors.size() == createParams_.obsVarNames.size());
+
+    if (!obsErrors.empty()){
+        ASSERT(obsErrors.size() == createParams_.obsVarNames.size());
+    }
+    if (!obsVals.empty()){
+        ASSERT(obsVals.size() == createParams_.obsVarNames.size());
+    }
 
     const std::vector<float> latVals = params.lats;
     const std::vector<float> lonVals = params.lons;
@@ -56,7 +63,7 @@ void GenList::genDistList(const GenList::Parameters_ & params) {
 
     // Transfer the specified values to the ObsGroup
     storeGenData(latVals, lonVals, dts, epoch, createParams_.obsVarNames,
-                 obsErrors, obs_group_);
+                 obsVals, obsErrors, obs_group_);
 }
 
 void GenList::print(std::ostream & os) const {
