@@ -234,6 +234,15 @@ elseif( DEFINED GIT_TAG_FUNC )
   file( MAKE_DIRECTORY ${CMAKE_SOURCE_DIR}/test-data-release )
 
   set ( IODA_DATA_DOWNLOADER ioda_dash_downloader.py.in )
+elseif( DEFINED ENV{IODA_TESTFILES} )
+  # Any branch of IODA is being built.
+  # ioda-data repository is already cloned by bundle/CMakeLists.txt.
+  # Link test files in ioda-data repo to build directory.
+  # get_ioda_test_data checks the existence of test file directory.
+  set( TESTFILE_DIR_IODA $ENV{IODA_TESTFILES} )
+  list( APPEND IODA_DATA_DOWNLOADER_ARGS
+      ${TESTFILE_DIR_IODA} )
+  set (IODA_DATA_DOWNLOADER ioda_data_checker.py )
 else()
   # Any branch of IODA is being built.
   # ioda-data repository is already cloned by bundle/CMakeLists.txt.
