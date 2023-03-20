@@ -484,15 +484,28 @@ void readColumn(Group storageGroup, const ColumnInfo column, std::vector<std::ve
       } else {
         // struct tm is being used purely for time arithmetic.  The offset is incorrect but it
         // doesn't matter in this context.
+        //
+        // Note the struct tm type wants the year to be the number of years since 1900
+        // and the month to be the number of months from January (ie, Jan to Dec -> 0 to 11)
+        //
+        // In order to avoid the 2038 issue (max positive value in a signed 32-bit int
+        // offset in seconds referenced to Jan 1, 1970 represents a datetime in Jan 2038)
+        // convert the offset in seconds to a set of offsets for seconds, minutes,
+        // hours and days and add those to the repective data members of the struct tm. 
+        int64_t offset = buf[j];
         struct tm time = { 0 };
-        time.tm_year = column.epoch_year;
-        time.tm_mon = column.epoch_month;
-        time.tm_mday = column.epoch_day;
-        time.tm_hour = column.epoch_hour;
-        time.tm_min = column.epoch_minute;
-        time.tm_sec = column.epoch_second + static_cast<int>(buf[j]);
+        time.tm_sec = column.epoch_second + (offset % 60);
+        offset /= 60;
+        time.tm_min = column.epoch_minute + (offset % 60);
+        offset /= 60;
+        time.tm_hour = column.epoch_hour + (offset % 24);
+        offset /= 24;
+        time.tm_mday = column.epoch_day + offset;
+        time.tm_mon = column.epoch_month - 1;
+        time.tm_year = column.epoch_year - 1900;
         timegm(&time);
-        data_store_tmp[j] = time.tm_year * 10000 + time.tm_mon * 100 + time.tm_mday;
+        data_store_tmp[j] =
+            (time.tm_year + 1900) * 10000 + (time.tm_mon + 1) * 100 + time.tm_mday;
       }
     }
     pushBackVector(data_store, data_store_tmp, number_of_locations, number_of_channels);
@@ -505,15 +518,18 @@ void readColumn(Group storageGroup, const ColumnInfo column, std::vector<std::ve
       if (ff == buf[j]) {
         data_store_tmp[j] = odb_missing_float;
       } else {
-        // struct tm is being used purely for time arithmetic.  The offset is incorrect but it
-        // doesn't matter in this context.
+        // See comments above in the date section.
+        int64_t offset = buf[j];
         struct tm time = { 0 };
-        time.tm_year = column.epoch_year;
-        time.tm_mon = column.epoch_month;
-        time.tm_mday = column.epoch_day;
-        time.tm_hour = column.epoch_hour;
-        time.tm_min = column.epoch_minute;
-        time.tm_sec = column.epoch_second + static_cast<int>(buf[j]);
+        time.tm_sec = column.epoch_second + (offset % 60);
+        offset /= 60;
+        time.tm_min = column.epoch_minute + (offset % 60);
+        offset /= 60;
+        time.tm_hour = column.epoch_hour + (offset % 24);
+        offset /= 24;
+        time.tm_mday = column.epoch_day + offset;
+        time.tm_mon = column.epoch_month - 1;
+        time.tm_year = column.epoch_year - 1900;
         timegm(&time);
         data_store_tmp[j] = time.tm_hour * 10000 + time.tm_min * 100 + time.tm_sec;
       }
