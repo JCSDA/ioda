@@ -839,10 +839,14 @@ ecbuild_add_test( TARGET  test_ioda_oops_obserrorcovariance
 #####################################################################
 
 # this test creates the output files
+ecbuild_add_test( TARGET  test_ioda_clean_time_io_files
+                  COMMAND rm
+                  ARGS    "-f" "testoutput/amsua_n19_obs_2018041500_m_time.nc4" "testoutput/sondes_obs_2018041500_m_time.nc4" )
+
 ecbuild_add_test( TARGET  test_ioda_time_io
                   COMMAND ${CMAKE_BINARY_DIR}/bin/time_IodaIO.x
                   ARGS    "testinput/iodatest_time_io.yaml"
-                  TEST_DEPENDS get_ioda_test_data )
+                  TEST_DEPENDS get_ioda_test_data test_ioda_clean_time_io_files )
 
 # the following tests compare the output files
 ecbuild_add_test( TARGET  test_ioda_time_io_cmp_sondes

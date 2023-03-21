@@ -17,6 +17,5 @@
 int main(int argc, char ** argv) {
   oops::Run run(argc, argv);
   ioda::TimeIodaIO<ioda::IodaTrait> timeit;
-  run.execute(timeit);
-  return 0;
+  return run.execute(timeit);
 }
