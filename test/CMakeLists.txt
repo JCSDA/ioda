@@ -402,11 +402,14 @@ ecbuild_add_test( TARGET  test_ioda_obsspace
                   TEST_DEPENDS get_ioda_test_data )
 
 if (odc_FOUND)
+ecbuild_add_test( TARGET  test_ioda_clean_obsspace_out_odc_files
+                  COMMAND rm
+                  ARGS    "-f" "testoutput/diagout-aircraft.odc" "testoutput/diagout-atms.odc" "testoutput/diagout-gmi.odc" "testoutput/diagout-amsua.odc" "testoutput/diagout-sonde.odc" "testoutput/diagout-aod" )
 ecbuild_add_test( TARGET  test_ioda_obsspace_out_odc
                   COMMAND test_ioda_obsspace
                   ARGS    "testinput/iodatest_obsspace_out_odc.yaml"
                   LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data )
+                  TEST_DEPENDS get_ioda_test_data test_ioda_clean_obsspace_out_odc_files )
 endif()
 
 if (odc_FOUND)
