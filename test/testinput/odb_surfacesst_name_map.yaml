@@ -1,8 +1,6 @@
 varno-independent columns:
   - name: "MetaData/buoyType"
     source: "buoy_type"
-  - name: "MetaData/identifier"
-    source: "ident"
   - name: "MetaData/latitude"
     source: "lat"
   - name: "MetaData/longitude"
@@ -13,8 +11,6 @@ varno-independent columns:
     source: "ops_subtype"
   - name: "MetaData/pressureSensorAltitude"
     source: "pressure_sensor_alt"
-  - name: "MetaData/stationElevation"
-    source: "stalt"
   - name: "MetaData/stationType"
     source: "station_type"
   - name: "MetaData/buoyIdentifier"
@@ -23,36 +19,18 @@ varno-independent columns:
     source: "wmo_block_number"
   - name: "MetaData/wmoStationNumber"
     source: "wmo_station_number"
+  - name: "MetaData/position_accuracy_flag"
+    source: "position_accuracy_flag"
+  - name: "MetaData/sst_measurement_method"
+    source: "sst_measurement_method"
+  - name: "MetaData/present_weather_type"
+    source: "present_weather_type"
 varno-dependent columns:
   - source: "initial_obsvalue"
     group name: "ObsValue"
     varno-to-variable-name mapping: &obsvalue_varnos
-      - name: "height"
-        varno: 1
-      - name: "airTemperatureAt2M"
-        varno: 39
-      - name: "dewpointTemperatureAt2M"
-        varno: 40
-      - name: "windEastwardAt10M"
-        varno: 41
-      - name: "windNorthwardAt10M"
-        varno: 42
-      - name: "relativeHumidityAt2M"
-        varno: 58
-      - name: "horizontalVisibility"
-        varno: 62
-      - name: "stationPressure"
-        varno: 107
-      - name: "pressureReducedToMeanSeaLevel"
-        varno: 108
-      - name: "standardPressure"
-        varno: 109
-      - name: "surfacePressure"
-        varno: 110
-      - name: "windDirectionAt10M"
-        varno: 111
-      - name: "windSpeedAt10M"
-        varno: 112
+      - name: "seaSurfaceTemperature"
+        varno: 12
   - source: "obs_error"
     group name: "ObsError"
     varno-to-variable-name mapping: *obsvalue_varnos

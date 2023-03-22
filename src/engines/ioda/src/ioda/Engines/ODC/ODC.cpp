@@ -1100,7 +1100,8 @@ ObsGroup openFile(const ODC_Parameters& odcparams,
   // Station ID is constructed from other variables for certain observation types.
   const bool constructStationID =
     sql_data.getObsgroup() == obsgroup_sonde ||
-    sql_data.getObsgroup() == obsgroup_oceansound;
+    sql_data.getObsgroup() == obsgroup_oceansound ||
+    sql_data.getObsgroup() == obsgroup_surface;
   if (constructStationID)
     ignores.push_back("MetaData/stationIdentification");
 
