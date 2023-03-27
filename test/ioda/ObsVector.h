@@ -429,6 +429,7 @@ void testRandom() {
 
       ov.random();
 
+      bool myChecksPass = true;
       for (std::size_t jrank = 0; jrank < ov.space().comm().size(); ++jrank) {
         std::vector<double> pertvec = ov.data();
         std::sort(pertvec.begin(), pertvec.end());
@@ -440,11 +441,17 @@ void testRandom() {
         }
         ov.space().comm().broadcast(refvec, jrank);
         if (ov.space().distribution()->isIdentity() || ov.space().comm().rank() == jrank) {
-          EXPECT(pertvec == refvec);
+            myChecksPass = myChecksPass && (pertvec == refvec);
         } else {
-          EXPECT(pertvec != refvec);
+            // Don't do this check if both pertvec and refvec are empty. This situation
+            // can occur if two ranks get zero obs in their obs spaces, and this check
+            // will fail since the two empty vectors will match.
+            if (!pertvec.empty() || !refvec.empty()) {
+                myChecksPass = myChecksPass && (pertvec != refvec);
+            }
         }
       }
+      EXPECT(myChecksPass);
     }
   }
 }
