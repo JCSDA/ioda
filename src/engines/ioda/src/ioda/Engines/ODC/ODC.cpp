@@ -723,45 +723,30 @@ void setODBColumn(ReverseColumnMappings columnMappings, const ColumnInfo v, odc:
     }
   }
   if (colname2 == "") {
-    std::string colname3 = v.column_name;
-    if (colname3.rfind(metadata_prefix, 0) == 0) {
-      colname3.erase(0, metadata_prefix_size);
+    colname2 = v.column_name;
+    if (colname2.rfind(metadata_prefix, 0) == 0) {
+      colname2.erase(0, metadata_prefix_size);
     }
-    if (v.column_type == TypeClass::Integer) {
-      writer->setColumn(column_number, colname3, odc::api::INTEGER);
+  }
+  // transform name to lower case
+  std::transform(colname2.begin(), colname2.end(), colname2.begin(),
+      [](unsigned char c){ return std::tolower(c); });
+  if (v.column_type == TypeClass::Integer) {
+    writer->setColumn(column_number, colname2, odc::api::INTEGER);
+    column_number++;
+  } else if (v.column_type == TypeClass::String) {
+    if (v.string_length <= 8) {
+      writer->setColumn(column_number, colname2 + std::string("_0"), odc::api::STRING);
       column_number++;
-    } else if (v.column_type == TypeClass::String) {
-      if (v.string_length <= 8) {
-        writer->setColumn(column_number, colname3 + std::string("_0"), odc::api::STRING);
-        column_number++;
-      } else {
-        for (int i = 0; i < 1+((v.string_length-1)/8); i++) {
-          writer->setColumn(column_number, colname3 + std::string("_") + std::to_string(i), odc::api::STRING);
-          column_number++;
-        }
-      }
     } else {
-      writer->setColumn(column_number, colname3, odc::api::REAL);
-      column_number++;
+      for (int i = 0; i < 1+((v.string_length-1)/8); i++) {
+        writer->setColumn(column_number, colname2 + std::string("_") + std::to_string(i), odc::api::STRING);
+        column_number++;
+      }
     }
   } else {
-    if (v.column_type == TypeClass::Integer) {
-      writer->setColumn(column_number, colname2, odc::api::INTEGER);
-      column_number++;
-    } else if (v.column_type == TypeClass::String) {
-      if (v.string_length <= 8) {
-        writer->setColumn(column_number, colname2 + std::string("_0"), odc::api::STRING);
-        column_number++;
-      } else {
-        for (int i = 0; i < 1+((v.string_length-1)/8); i++) {
-          writer->setColumn(column_number, colname2 + std::string("_") + std::to_string(i), odc::api::STRING);
-          column_number++;
-        }
-      }
-    } else {
-      writer->setColumn(column_number, colname2, odc::api::REAL);
-      column_number++;
-    }
+    writer->setColumn(column_number, colname2, odc::api::REAL);
+    column_number++;
   }
 }
 
