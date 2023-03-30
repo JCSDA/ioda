@@ -9,7 +9,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <iostream>
-
+#include <string>
 #include "ioda/Attributes/Attribute.h"
 #include "ioda/Attributes/Has_Attributes.h"
 #include "ioda/C/ioda_attribute_c.hpp"
@@ -19,7 +19,6 @@
 
 extern "C"
 {
-
 void  * ioda_has_attributes_c_alloc();
 
 void ioda_has_attributes_c_dtor(void **v);
@@ -39,7 +38,7 @@ bool ioda_has_attributes_c_rename(void * v,int64_t old_sz,const char *old_name,i
 void * ioda_has_attributes_c_open(void *,int64_t n,const char *name);
 
 #define IODA_FUN(NAME,TYPE)\
-bool ioda_has_attributes_c_create##NAME (void *v,int64_t name_sz,const char *name,int64_t sz,int64_t *dims,void **va);
+bool ioda_has_attributes_c_create##NAME (void *v,int64_t name_sz,const char *name,int64_t sz,void **dims,void **va);
 
 IODA_FUN(_float,float)
 IODA_FUN(_double,double)
@@ -47,7 +46,7 @@ IODA_FUN(_char,char)
 IODA_FUN(_int16,int16)
 IODA_FUN(_int32,int32)
 IODA_FUN(_int64,int64)
-IODA_FUN(_str,std::vector<std::string>)
+IODA_FUN(_str,std::string)
 #undef IODA_FUN
 }
 

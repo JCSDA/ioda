@@ -32,5 +32,9 @@ void * ioda_group_c_open(void *p,int64_t sz,const void *name_p);
 
 void ioda_group_c_clone(void **v,void *rhs);
 
+void * ioda_group_c_has_attributes( void * g_p);
+
+void * ioda_group_c_has_variables( void *g_p);
+
 }
 

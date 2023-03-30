@@ -1,3 +1,8 @@
+!
+! (C) Copyright 2023 UCAR
+!
+! This software is licensed under the terms of the Apache Licence Version 2.0
+! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
 module ioda_vecstring_mod
    use, intrinsic :: iso_c_binding
    use, intrinsic :: iso_fortran_env
@@ -14,6 +19,7 @@ module ioda_vecstring_mod
       procedure :: set_string => ioda_string_set_string
       procedure :: clear => ioda_string_clear
       procedure :: size => ioda_string_size
+
       procedure, private, pass(this) ::ioda_string_copy
       generic, public :: assignment(=) => ioda_string_copy
    end type
@@ -28,14 +34,13 @@ module ioda_vecstring_mod
       procedure :: get_string => ioda_vecstring_get_string
       procedure :: append_string => ioda_vecstring_append_string
       procedure :: set_string => ioda_vecstring_set_string
-      procedure :: copy => ioda_vecstring_copy
       procedure :: clear => ioda_vecstring_clear
       procedure :: size => ioda_vecstring_size
       procedure :: resize => ioda_vecstring_resize
       procedure :: element_size => ioda_vecstring_element_size
       procedure :: push_back => ioda_vecstring_push_back
       procedure :: push_back_string => ioda_vecstring_push_back_string
-      procedure, private, pass(this) ::ioda_vecstring_copy
+      procedure, public, pass(this) ::ioda_vecstring_copy
       generic, public :: assignment(=) => ioda_vecstring_copy
 
    end type
@@ -49,12 +54,6 @@ module ioda_vecstring_mod
       subroutine ioda_vecstring_c_dealloc(p) bind(C, name="ioda_vecstring_c_dealloc")
          import c_ptr
          type(c_ptr), value :: p
-      end subroutine
-
-      subroutine ioda_vecstring_c_clone(this, rhs) bind(C, name="ioda_vecstring_c_clone")
-         import c_ptr
-         type(c_ptr), value :: rhs
-         type(c_ptr) :: this
       end subroutine
 
       subroutine ioda_vecstring_c_set_string(p, i, str) bind(C, name="ioda_vecstring_c_set_string_f")
@@ -99,11 +98,11 @@ module ioda_vecstring_mod
          type(c_ptr) :: str
       end function
 
-      function ioda_vecstring_c_copy(p) result(pnew) bind(C, name="ioda_vecstring_c_copy")
+      subroutine ioda_vecstring_c_copy(p,rhs_p) bind(C, name="ioda_vecstring_c_copy")
          import c_ptr
-         type(c_ptr), value :: p
-         type(c_ptr) :: pnew
-      end function
+         type(c_ptr) :: p
+         type(c_ptr),value :: rhs_p
+      end subroutine
 
       subroutine ioda_vecstring_c_clear(p) bind(C, name="ioda_vecstring_c_clear")
          import c_ptr
@@ -151,12 +150,6 @@ module ioda_vecstring_mod
          type(c_ptr), value :: p
       end subroutine
 
-      subroutine ioda_string_c_clone(this, rhs) bind(C, name="ioda_string_c_clone")
-         import c_ptr
-         type(c_ptr), value :: rhs
-         type(c_ptr) :: this
-      end subroutine
-
       subroutine ioda_string_c_set_string(p, str) bind(C, name="ioda_string_c_set_string")
          import c_ptr
          type(c_ptr), value :: p
@@ -198,11 +191,11 @@ module ioda_vecstring_mod
          integer(c_int64_t) :: sz
       end function
 
-      function ioda_string_c_copy(p, pnew) bind(C, name="ioda_string_c_copy")
+      subroutine ioda_string_c_copy(p, rhs_p) bind(C, name="ioda_string_c_copy")
          import c_ptr
-         type(C_ptr), value :: p
-         type(C_ptr), value :: pnew
-      end function
+         type(C_ptr) :: p
+         type(C_ptr), value :: rhs_p
+      end  subroutine
    end interface
 
 contains
@@ -216,13 +209,15 @@ contains
       implicit none
       class(ioda_vecstring), intent(in) :: rhs
       class(ioda_vecstring), intent(out) :: this
-      call ioda_vecstring_c_clone(this%data_ptr, rhs%data_ptr)
+      call ioda_vecstring_c_copy(this%data_ptr, rhs%data_ptr)
    end subroutine
 
    subroutine ioda_vecstring_dealloc(this)
       implicit none
       type(ioda_vecstring) :: this
-      call ioda_vecstring_c_dealloc(this%data_ptr)
+      if (c_associated(this%data_ptr) .eqv. .true.) then
+         call ioda_vecstring_c_dealloc(this%data_ptr)
+      end if
    end subroutine
 
    subroutine ioda_vecstring_set(this, i, fstr)
@@ -342,14 +337,16 @@ contains
    subroutine ioda_string_dealloc(this)
       implicit none
       type(ioda_string) :: this
-      call ioda_string_c_dealloc(this%data_ptr)
+      if (c_associated(this%data_ptr) .eqv. .true.) then
+         call ioda_string_c_dealloc(this%data_ptr)
+      end if
    end subroutine
 
-   subroutine ioda_string_copy(this, rhs)
+   subroutine ioda_string_copy(this,rhs)
       implicit none
-      class(ioda_string), intent(in) :: rhs
-      class(ioda_string), intent(out) :: this
-      call ioda_string_c_clone(this%data_ptr, rhs%data_ptr)
+      class(ioda_string),intent(out) :: this
+      class(ioda_string),intent(in) :: rhs
+      call ioda_string_c_copy(this%data_ptr,rhs%data_ptr)  
    end subroutine
 
    subroutine ioda_string_set(this, fstr)
@@ -419,28 +416,19 @@ contains
       integer :: i
 
       argc = command_argument_count()
-      write (error_unit, *) 'fargc = ', argc
       do i = 1, argc
          call get_command_argument(i, argv)
-         write (error_unit, *) i, ' ', trim(argv), ' ', len_trim(argv)
       end do
       if (.not. c_associated(vstring%data_ptr)) then
          call ioda_vecstring_init(vstring)
       end if
-      write (error_unit, *) 'R1 clearing vecstring'
       call ioda_vecstring_clear(vstring)
-      write (error_unit, *) 'r2 get count'
       argc = command_argument_count()
-      write (error_unit, *) 'argf =', argc
       do i = 1, argc
          call get_command_argument(i, argv)
-         write (error_unit, *) i, ' ', trim(argv)
          call ioda_vecstring_push_back(vstring, argv)
       end do
-      write (error_unit, *) 'r4 end loop'
-      argc = ioda_vecstring_size(vstring)
-      write (error_unit, *) 'vecstring size = ', argc
-   end subroutine
+    end subroutine
 
 end module
 

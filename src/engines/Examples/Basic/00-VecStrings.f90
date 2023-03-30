@@ -12,6 +12,7 @@ use,intrinsic :: iso_fortran_env
 use :: ioda_vecstring_mod
 use :: ioda_f_c_string_mod
     
+   implicit none  
    type(ioda_vecstring) :: vstr,vstr2
    type(ioda_string) :: str1,str2
    integer(int64) :: n,i,sz,exp_sz,m
@@ -20,6 +21,7 @@ use :: ioda_f_c_string_mod
    character(len=256) :: fstr2
    character(len=256) :: numstr
    character(len=256) :: astr
+   character(len=256) :: fstr
    type(c_ptr) :: ptr
 
    fstr1 = 'this a test string'
@@ -184,15 +186,29 @@ use :: ioda_f_c_string_mod
       write(error_unit,*)' size = 4 but got ',sz
       stop -1	
    end if
-   
+
+   write(error_unit,*)'testing element size'   
    m = 2
    sz = vstr%element_size(m)
-   m = 4
    if ( sz .ne. exp_sz ) then
       write(error_unit,*)'ioda vecstring element size failed '
       write(error_unit,*)' size = ',exp_sz,' but got ',sz
       stop -1	
    end if
+
+   write(error_unit,*)'testing copy'
+   call ioda_vecstring_init(vstr2)
+   vstr2 = vstr
+   sz = vstr%size()   
+   do i=1,sz
+     call vstr%get(i,fstr1)
+     call vstr2%get(i,fstr)
+     write(error_unit,*)i,' ',fstr1,' ',fstr
+     if ( fstr1 /= fstr) then
+	stop 'strings are not equal in copied vector string'
+     end if
+   end do    
+
    
    stop 0
 end program ioda_fortran_vecstring_test

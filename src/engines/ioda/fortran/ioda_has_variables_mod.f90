@@ -1,3 +1,8 @@
+!
+! (C) Copyright 2023 UCAR
+!
+! This software is licensed under the terms of the Apache Licence Version 2.0
+! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
 module ioda_has_variables_mod
    use, intrinsic :: iso_c_binding
    use, intrinsic :: iso_fortran_env
@@ -7,7 +12,7 @@ module ioda_has_variables_mod
    use :: ioda_f_c_string_mod
 
    type :: ioda_has_variables
-      type(c_ptr) :: data_ptr
+      type(c_ptr) :: data_ptr = c_null_ptr
    contains
       final ioda_has_variables_dtor
 
@@ -25,6 +30,13 @@ module ioda_has_variables_mod
       procedure :: create_int32 => ioda_has_variables_create_int32
       procedure :: create_int64 => ioda_has_variables_create_int64
       procedure :: create_str => ioda_has_variables_create_str
+      procedure :: create2_float => ioda_has_variables_create2_float
+      procedure :: create2_double => ioda_has_variables_create2_double
+      procedure :: create2_char => ioda_has_variables_create2_char
+      procedure :: create2_int16 => ioda_has_variables_create2_int16
+      procedure :: create2_int32 => ioda_has_variables_create2_int32
+      procedure :: create2_int64 => ioda_has_variables_create2_int64
+      procedure :: create2_str => ioda_has_variables_create2_str
    end type
 
    interface
@@ -53,21 +65,22 @@ module ioda_has_variables_mod
       function ioda_has_variables_c_remove(p, n, name_p) result(r) bind(C, name="ioda_has_variables_c_remove")
          import c_ptr, c_int64_t, c_bool
          type(c_ptr), value :: p, name_p
-         integer(c_int64_t) :: n
+         integer(c_int64_t),value :: n
          logical(c_bool) :: r
       end function
 
       function ioda_has_variables_c_exists(p, n, name_p) result(r) bind(C, name="ioda_has_variables_c_exists")
          import c_ptr, c_int64_t, c_bool
-         type(c_ptr), value :: p, name_p
-         integer(c_int64_t) :: n
+         type(c_ptr),value :: p
+         type(c_ptr),value :: name_p
+         integer(c_int64_t),value :: n
          logical(c_bool) :: r
       end function
 
       function ioda_has_variables_c_open(p, n, name_p) result(var_p) bind(C, name="ioda_has_variables_c_open")
          import c_ptr, c_int64_t, c_bool
          type(c_ptr), value :: p, name_p
-         integer(c_int64_t) :: n
+         integer(c_int64_t), value :: n
          type(c_ptr) :: var_p
          logical(c_bool) :: r
       end function
@@ -79,8 +92,8 @@ module ioda_has_variables_mod
          type(c_ptr), value :: name
          type(c_ptr), value :: c_param
          type(c_ptr) :: var
-         integer(c_int64_t) :: sz_name
-         integer(c_int64_t) :: n_dims
+         integer(c_int64_t),value :: sz_name
+         integer(c_int64_t),value :: n_dims
          integer(c_int64_t), dimension(:), intent(in) :: dims
          integer(c_int64_t), dimension(:), intent(in) :: max_dims
       end function
@@ -89,9 +102,9 @@ module ioda_has_variables_mod
       & bind(C, name="ioda_has_variables_c_create_float")
          import c_ptr, c_int64_t
          type(c_ptr), value :: p
-         integer(c_int64_t) :: sz_name
+         integer(c_int64_t),value :: sz_name
          type(c_ptr), value :: name
-         integer(c_int64_t), intent(in) :: n_dims
+         integer(c_int64_t), value :: n_dims
          integer(c_int64_t), dimension(:), intent(in) ::dims
          type(c_ptr) :: var
       end function
@@ -103,8 +116,8 @@ module ioda_has_variables_mod
          type(c_ptr), value :: name
          type(c_ptr), value :: c_param
          type(c_ptr) :: var
-         integer(c_int64_t) :: sz_name
-         integer(c_int64_t) :: n_dims
+         integer(c_int64_t),value :: sz_name
+         integer(c_int64_t),value :: n_dims
          integer(c_int64_t), dimension(:), intent(in) :: dims
          integer(c_int64_t), dimension(:), intent(in) :: max_dims
       end function
@@ -113,9 +126,9 @@ module ioda_has_variables_mod
       & bind(C, name="ioda_has_variables_c_create_double")
          import c_ptr, c_int64_t
          type(c_ptr), value :: p
-         integer(c_int64_t) :: sz_name
+         integer(c_int64_t),value :: sz_name
          type(c_ptr), value :: name
-         integer(c_int64_t), intent(in) :: n_dims
+         integer(c_int64_t), value :: n_dims
          integer(c_int64_t), dimension(:), intent(in) ::dims
          type(c_ptr) :: var
       end function
@@ -127,8 +140,8 @@ module ioda_has_variables_mod
          type(c_ptr), value :: name
          type(c_ptr), value :: c_param
          type(c_ptr) :: var
-         integer(c_int64_t) :: sz_name
-         integer(c_int64_t) :: n_dims
+         integer(c_int64_t),value :: sz_name
+         integer(c_int64_t),value :: n_dims
          integer(c_int64_t), dimension(:), intent(in) :: dims
          integer(c_int64_t), dimension(:), intent(in) :: max_dims
       end function
@@ -137,9 +150,9 @@ module ioda_has_variables_mod
       & bind(C, name="ioda_has_variables_c_create_char")
          import c_ptr, c_int64_t
          type(c_ptr), value :: p
-         integer(c_int64_t) :: sz_name
+         integer(c_int64_t),value :: sz_name
          type(c_ptr), value :: name
-         integer(c_int64_t), intent(in) :: n_dims
+         integer(c_int64_t), value :: n_dims
          integer(c_int64_t), dimension(:), intent(in) ::dims
          type(c_ptr) :: var
       end function
@@ -151,8 +164,8 @@ module ioda_has_variables_mod
          type(c_ptr), value :: name
          type(c_ptr), value :: c_param
          type(c_ptr) :: var
-         integer(c_int64_t) :: sz_name
-         integer(c_int64_t) :: n_dims
+         integer(c_int64_t),value :: sz_name
+         integer(c_int64_t),value :: n_dims
          integer(c_int64_t), dimension(:), intent(in) :: dims
          integer(c_int64_t), dimension(:), intent(in) :: max_dims
       end function
@@ -161,9 +174,9 @@ module ioda_has_variables_mod
       & bind(C, name="ioda_has_variables_c_create_int16")
          import c_ptr, c_int64_t
          type(c_ptr), value :: p
-         integer(c_int64_t) :: sz_name
+         integer(c_int64_t),value :: sz_name
          type(c_ptr), value :: name
-         integer(c_int64_t), intent(in) :: n_dims
+         integer(c_int64_t), value :: n_dims
          integer(c_int64_t), dimension(:), intent(in) ::dims
          type(c_ptr) :: var
       end function
@@ -175,8 +188,8 @@ module ioda_has_variables_mod
          type(c_ptr), value :: name
          type(c_ptr), value :: c_param
          type(c_ptr) :: var
-         integer(c_int64_t) :: sz_name
-         integer(c_int64_t) :: n_dims
+         integer(c_int64_t),value :: sz_name
+         integer(c_int64_t),value :: n_dims
          integer(c_int64_t), dimension(:), intent(in) :: dims
          integer(c_int64_t), dimension(:), intent(in) :: max_dims
       end function
@@ -185,10 +198,10 @@ module ioda_has_variables_mod
       & bind(C, name="ioda_has_variables_c_create_int32")
          import c_ptr, c_int64_t
          type(c_ptr), value :: p
-         integer(c_int64_t) :: sz_name
+         integer(c_int64_t),value :: sz_name
          type(c_ptr), value :: name
-         integer(c_int64_t), intent(in) :: n_dims
-         integer(c_int64_t), dimension(:), intent(in) ::dims
+         integer(c_int64_t), value :: n_dims
+         integer(c_int64_t), dimension(:) ::dims
          type(c_ptr) :: var
       end function
 
@@ -199,8 +212,8 @@ module ioda_has_variables_mod
          type(c_ptr), value :: name
          type(c_ptr), value :: c_param
          type(c_ptr) :: var
-         integer(c_int64_t) :: sz_name
-         integer(c_int64_t) :: n_dims
+         integer(c_int64_t),value :: sz_name
+         integer(c_int64_t),value :: n_dims
          integer(c_int64_t), dimension(:), intent(in) :: dims
          integer(c_int64_t), dimension(:), intent(in) :: max_dims
       end function
@@ -209,9 +222,9 @@ module ioda_has_variables_mod
       & bind(C, name="ioda_has_variables_c_create_int64")
          import c_ptr, c_int64_t
          type(c_ptr), value :: p
-         integer(c_int64_t) :: sz_name
+         integer(c_int64_t),value :: sz_name
          type(c_ptr), value :: name
-         integer(c_int64_t), intent(in) :: n_dims
+         integer(c_int64_t), value :: n_dims
          integer(c_int64_t), dimension(:), intent(in) ::dims
          type(c_ptr) :: var
       end function
@@ -223,8 +236,8 @@ module ioda_has_variables_mod
          type(c_ptr), value :: name
          type(c_ptr), value :: c_param
          type(c_ptr) :: var
-         integer(c_int64_t) :: sz_name
-         integer(c_int64_t) :: n_dims
+         integer(c_int64_t),value :: sz_name
+         integer(c_int64_t),value :: n_dims
          integer(c_int64_t), dimension(:), intent(in) :: dims
          integer(c_int64_t), dimension(:), intent(in) :: max_dims
       end function
@@ -233,9 +246,9 @@ module ioda_has_variables_mod
       & bind(C, name="ioda_has_variables_c_create_str")
          import c_ptr, c_int64_t
          type(c_ptr), value :: p
-         integer(c_int64_t) :: sz_name
+         integer(c_int64_t),value :: sz_name
          type(c_ptr), value :: name
-         integer(c_int64_t), intent(in) :: n_dims
+         integer(c_int64_t), value :: n_dims
          integer(c_int64_t), dimension(:), intent(in) ::dims
          type(c_ptr) :: var
       end function
@@ -246,13 +259,13 @@ contains
    subroutine ioda_has_variables_init(p)
       implicit none
       type(ioda_has_variables) :: p
-      p%data_ptr = ioda_has_variables_c_alloc()
+!      p%data_ptr = c_null_ptr
    end subroutine
 
    subroutine ioda_has_variables_dtor(this)
       implicit none
       type(ioda_has_variables) :: this
-      call ioda_has_variables_c_dtor(this%data_ptr)
+!      call ioda_has_variables_c_dtor(this%data_ptr)
    end subroutine
 
    subroutine ioda_has_variables_copy(this, rhs)
@@ -262,15 +275,12 @@ contains
       call ioda_has_variables_c_clone(this%data_ptr, rhs%data_ptr)
    end subroutine
 
-   subroutine ioda_has_variables_list(this, list_string)
+   function  ioda_has_variables_list(this) result(list_string)
       implicit none
       class(ioda_has_variables) :: this
-      class(ioda_vecstring) :: list_string
-      if (c_associated(list_string%data_ptr)) then
-         call ioda_vecstring_dealloc(list_string)
-      end if
+      type(ioda_vecstring) :: list_string
       list_string%data_ptr = ioda_has_variables_c_list(this%data_ptr)
-   end subroutine
+   end function
 
    logical function ioda_has_variables_remove(this, n, name) result(r)
       implicit none
@@ -297,45 +307,39 @@ contains
       call ioda_c_free(name_ptr)
    end function
 
-   subroutine ioda_has_variables_open(this, n, name, var)
+   function ioda_has_variables_open(this, n, name) result(var)
       implicit none
       class(ioda_has_variables) :: this
       character(len=*), intent(in) :: name
-      class(ioda_variable) :: var
+      type(ioda_variable) :: var
       integer(int64) :: n
       type(c_ptr) :: name_ptr
 
-      if (c_associated(var%data_ptr)) then
-         call ioda_variable_dtor(var)
-      end if
       name_ptr = ioda_f_string_to_c_dup(name)
       var%data_ptr = ioda_has_variables_c_open(this%data_ptr, n, name_ptr)
       call ioda_c_free(name_ptr)
-   end subroutine
+   end function
 
-   subroutine ioda_has_variables_create_float(this, name, ndim, dims, var)
+   function ioda_has_variables_create_float(this, name, ndim, dims) result(var)
       implicit none
       class(ioda_has_variables), intent(in) :: this
-      class(ioda_variable), intent(out) :: var
+      type(ioda_variable)  :: var
       character(len=*), intent(in) :: name
       integer(int64), intent(in) :: ndim
       integer(int64), dimension(:), intent(in) :: dims
       integer(int64) :: name_sz
       type(c_ptr) :: name_c
 
-      if (c_associated(var%data_ptr)) then
-         call ioda_variable_dtor(var)
-      end if
       name_c = ioda_f_string_to_c_dup(name)
       name_sz = len_trim(name, int64)
       var%data_ptr = ioda_has_variables_c_create_float(this%data_ptr, name_sz, name_c, ndim, dims)
       call ioda_c_free(name_c)
-   end subroutine
+   end function
 
-   subroutine ioda_has_variables_create2_float(this, name, ndim, dims, max_dims, cparams, var)
+   function ioda_has_variables_create2_float(this, name, ndim, dims, max_dims, cparams) result(var)
       implicit none
       class(ioda_has_variables), intent(in) :: this
-      class(ioda_variable), intent(out) :: var
+      type(ioda_variable)  :: var
       character(len=*), intent(in) :: name
       class(ioda_variable_creation_parameters), intent(in) :: cparams
       integer(int64), dimension(:), intent(in) :: max_dims
@@ -344,39 +348,33 @@ contains
       integer(int64) :: name_sz
       type(c_ptr) :: name_c
 
-      if (c_associated(var%data_ptr)) then
-         call ioda_variable_dtor(var)
-      end if
       name_sz = len_trim(name, int64)
       name_c = ioda_f_string_to_c_dup(name)
       var%data_ptr = ioda_has_variables_c_create2_float(this%data_ptr, name_sz, name_c, ndim, dims,&
               & max_dims, cparams%data_ptr)
       call ioda_c_free(name_c)
-   end subroutine
+   end function
 
-   subroutine ioda_has_variables_create_double(this, name, ndim, dims, var)
+   function ioda_has_variables_create_double(this, name, ndim, dims) result(var)
       implicit none
       class(ioda_has_variables), intent(in) :: this
-      class(ioda_variable), intent(out) :: var
+      type(ioda_variable)  :: var
       character(len=*), intent(in) :: name
       integer(int64), intent(in) :: ndim
       integer(int64), dimension(:), intent(in) :: dims
       integer(int64) :: name_sz
       type(c_ptr) :: name_c
 
-      if (c_associated(var%data_ptr)) then
-         call ioda_variable_dtor(var)
-      end if
       name_c = ioda_f_string_to_c_dup(name)
       name_sz = len_trim(name, int64)
       var%data_ptr = ioda_has_variables_c_create_double(this%data_ptr, name_sz, name_c, ndim, dims)
       call ioda_c_free(name_c)
-   end subroutine
+   end function
 
-   subroutine ioda_has_variables_create2_double(this, name, ndim, dims, max_dims, cparams, var)
+   function ioda_has_variables_create2_double(this, name, ndim, dims, max_dims, cparams) result(var)
       implicit none
       class(ioda_has_variables), intent(in) :: this
-      class(ioda_variable), intent(out) :: var
+      type(ioda_variable)  :: var
       character(len=*), intent(in) :: name
       class(ioda_variable_creation_parameters), intent(in) :: cparams
       integer(int64), dimension(:), intent(in) :: max_dims
@@ -385,39 +383,33 @@ contains
       integer(int64) :: name_sz
       type(c_ptr) :: name_c
 
-      if (c_associated(var%data_ptr)) then
-         call ioda_variable_dtor(var)
-      end if
       name_sz = len_trim(name, int64)
       name_c = ioda_f_string_to_c_dup(name)
       var%data_ptr = ioda_has_variables_c_create2_double(this%data_ptr, name_sz, name_c, ndim, dims,&
               & max_dims, cparams%data_ptr)
       call ioda_c_free(name_c)
-   end subroutine
+   end function
 
-   subroutine ioda_has_variables_create_char(this, name, ndim, dims, var)
+   function ioda_has_variables_create_char(this, name, ndim, dims) result(var)
       implicit none
       class(ioda_has_variables), intent(in) :: this
-      class(ioda_variable), intent(out) :: var
+      type(ioda_variable)  :: var
       character(len=*), intent(in) :: name
       integer(int64), intent(in) :: ndim
       integer(int64), dimension(:), intent(in) :: dims
       integer(int64) :: name_sz
       type(c_ptr) :: name_c
 
-      if (c_associated(var%data_ptr)) then
-         call ioda_variable_dtor(var)
-      end if
       name_c = ioda_f_string_to_c_dup(name)
       name_sz = len_trim(name, int64)
       var%data_ptr = ioda_has_variables_c_create_char(this%data_ptr, name_sz, name_c, ndim, dims)
       call ioda_c_free(name_c)
-   end subroutine
+   end function
 
-   subroutine ioda_has_variables_create2_char(this, name, ndim, dims, max_dims, cparams, var)
+   function ioda_has_variables_create2_char(this, name, ndim, dims, max_dims, cparams) result(var)
       implicit none
       class(ioda_has_variables), intent(in) :: this
-      class(ioda_variable), intent(out) :: var
+      type(ioda_variable)  :: var
       character(len=*), intent(in) :: name
       class(ioda_variable_creation_parameters), intent(in) :: cparams
       integer(int64), dimension(:), intent(in) :: max_dims
@@ -426,39 +418,33 @@ contains
       integer(int64) :: name_sz
       type(c_ptr) :: name_c
 
-      if (c_associated(var%data_ptr)) then
-         call ioda_variable_dtor(var)
-      end if
       name_sz = len_trim(name, int64)
       name_c = ioda_f_string_to_c_dup(name)
       var%data_ptr = ioda_has_variables_c_create2_char(this%data_ptr, name_sz, name_c, ndim, dims,&
               & max_dims, cparams%data_ptr)
       call ioda_c_free(name_c)
-   end subroutine
+   end function
 
-   subroutine ioda_has_variables_create_int16(this, name, ndim, dims, var)
+   function ioda_has_variables_create_int16(this, name, ndim, dims) result(var)
       implicit none
       class(ioda_has_variables), intent(in) :: this
-      class(ioda_variable), intent(out) :: var
+      type(ioda_variable)  :: var
       character(len=*), intent(in) :: name
       integer(int64), intent(in) :: ndim
       integer(int64), dimension(:), intent(in) :: dims
       integer(int64) :: name_sz
       type(c_ptr) :: name_c
 
-      if (c_associated(var%data_ptr)) then
-         call ioda_variable_dtor(var)
-      end if
       name_c = ioda_f_string_to_c_dup(name)
       name_sz = len_trim(name, int64)
       var%data_ptr = ioda_has_variables_c_create_int16(this%data_ptr, name_sz, name_c, ndim, dims)
       call ioda_c_free(name_c)
-   end subroutine
+   end function
 
-   subroutine ioda_has_variables_create2_int16(this, name, ndim, dims, max_dims, cparams, var)
+   function ioda_has_variables_create2_int16(this, name, ndim, dims, max_dims, cparams) result(var)
       implicit none
       class(ioda_has_variables), intent(in) :: this
-      class(ioda_variable), intent(out) :: var
+      type(ioda_variable)  :: var
       character(len=*), intent(in) :: name
       class(ioda_variable_creation_parameters), intent(in) :: cparams
       integer(int64), dimension(:), intent(in) :: max_dims
@@ -467,39 +453,33 @@ contains
       integer(int64) :: name_sz
       type(c_ptr) :: name_c
 
-      if (c_associated(var%data_ptr)) then
-         call ioda_variable_dtor(var)
-      end if
       name_sz = len_trim(name, int64)
       name_c = ioda_f_string_to_c_dup(name)
       var%data_ptr = ioda_has_variables_c_create2_int16(this%data_ptr, name_sz, name_c, ndim, dims,&
               & max_dims, cparams%data_ptr)
       call ioda_c_free(name_c)
-   end subroutine
+   end function
 
-   subroutine ioda_has_variables_create_int32(this, name, ndim, dims, var)
+   function ioda_has_variables_create_int32(this, name, ndim, dims) result(var)
       implicit none
       class(ioda_has_variables), intent(in) :: this
-      class(ioda_variable), intent(out) :: var
+      type(ioda_variable)  :: var
       character(len=*), intent(in) :: name
       integer(int64), intent(in) :: ndim
       integer(int64), dimension(:), intent(in) :: dims
       integer(int64) :: name_sz
       type(c_ptr) :: name_c
 
-      if (c_associated(var%data_ptr)) then
-         call ioda_variable_dtor(var)
-      end if
       name_c = ioda_f_string_to_c_dup(name)
       name_sz = len_trim(name, int64)
       var%data_ptr = ioda_has_variables_c_create_int32(this%data_ptr, name_sz, name_c, ndim, dims)
       call ioda_c_free(name_c)
-   end subroutine
+   end function
 
-   subroutine ioda_has_variables_create2_int32(this, name, ndim, dims, max_dims, cparams, var)
+   function ioda_has_variables_create2_int32(this, name, ndim, dims, max_dims, cparams) result(var)
       implicit none
       class(ioda_has_variables), intent(in) :: this
-      class(ioda_variable), intent(out) :: var
+      type(ioda_variable)  :: var
       character(len=*), intent(in) :: name
       class(ioda_variable_creation_parameters), intent(in) :: cparams
       integer(int64), dimension(:), intent(in) :: max_dims
@@ -508,39 +488,33 @@ contains
       integer(int64) :: name_sz
       type(c_ptr) :: name_c
 
-      if (c_associated(var%data_ptr)) then
-         call ioda_variable_dtor(var)
-      end if
       name_sz = len_trim(name, int64)
       name_c = ioda_f_string_to_c_dup(name)
       var%data_ptr = ioda_has_variables_c_create2_int32(this%data_ptr, name_sz, name_c, ndim, dims,&
               & max_dims, cparams%data_ptr)
       call ioda_c_free(name_c)
-   end subroutine
+   end function
 
-   subroutine ioda_has_variables_create_int64(this, name, ndim, dims, var)
+   function ioda_has_variables_create_int64(this, name, ndim, dims) result(var)
       implicit none
       class(ioda_has_variables), intent(in) :: this
-      class(ioda_variable), intent(out) :: var
+      type(ioda_variable)  :: var
       character(len=*), intent(in) :: name
       integer(int64), intent(in) :: ndim
       integer(int64), dimension(:), intent(in) :: dims
       integer(int64) :: name_sz
       type(c_ptr) :: name_c
 
-      if (c_associated(var%data_ptr)) then
-         call ioda_variable_dtor(var)
-      end if
       name_c = ioda_f_string_to_c_dup(name)
       name_sz = len_trim(name, int64)
       var%data_ptr = ioda_has_variables_c_create_int64(this%data_ptr, name_sz, name_c, ndim, dims)
       call ioda_c_free(name_c)
-   end subroutine
+   end function
 
-   subroutine ioda_has_variables_create2_int64(this, name, ndim, dims, max_dims, cparams, var)
+   function ioda_has_variables_create2_int64(this, name, ndim, dims, max_dims, cparams) result(var)
       implicit none
       class(ioda_has_variables), intent(in) :: this
-      class(ioda_variable), intent(out) :: var
+      type(ioda_variable)  :: var
       character(len=*), intent(in) :: name
       class(ioda_variable_creation_parameters), intent(in) :: cparams
       integer(int64), dimension(:), intent(in) :: max_dims
@@ -549,39 +523,33 @@ contains
       integer(int64) :: name_sz
       type(c_ptr) :: name_c
 
-      if (c_associated(var%data_ptr)) then
-         call ioda_variable_dtor(var)
-      end if
       name_sz = len_trim(name, int64)
       name_c = ioda_f_string_to_c_dup(name)
       var%data_ptr = ioda_has_variables_c_create2_int64(this%data_ptr, name_sz, name_c, ndim, dims,&
               & max_dims, cparams%data_ptr)
       call ioda_c_free(name_c)
-   end subroutine
+   end function
 
-   subroutine ioda_has_variables_create_str(this, name, ndim, dims, var)
+   function ioda_has_variables_create_str(this, name, ndim, dims) result(var)
       implicit none
       class(ioda_has_variables), intent(in) :: this
-      class(ioda_variable), intent(out) :: var
+      type(ioda_variable)  :: var
       character(len=*), intent(in) :: name
       integer(int64), intent(in) :: ndim
       integer(int64), dimension(:), intent(in) :: dims
       integer(int64) :: name_sz
       type(c_ptr) :: name_c
 
-      if (c_associated(var%data_ptr)) then
-         call ioda_variable_dtor(var)
-      end if
       name_c = ioda_f_string_to_c_dup(name)
       name_sz = len_trim(name, int64)
       var%data_ptr = ioda_has_variables_c_create_str(this%data_ptr, name_sz, name_c, ndim, dims)
       call ioda_c_free(name_c)
-   end subroutine
+   end function
 
-   subroutine ioda_has_variables_create2_str(this, name, ndim, dims, max_dims, cparams, var)
+   function ioda_has_variables_create2_str(this, name, ndim, dims, max_dims, cparams) result(var)
       implicit none
       class(ioda_has_variables), intent(in) :: this
-      class(ioda_variable), intent(out) :: var
+      type(ioda_variable)  :: var
       character(len=*), intent(in) :: name
       class(ioda_variable_creation_parameters), intent(in) :: cparams
       integer(int64), dimension(:), intent(in) :: max_dims
@@ -590,14 +558,11 @@ contains
       integer(int64) :: name_sz
       type(c_ptr) :: name_c
 
-      if (c_associated(var%data_ptr)) then
-         call ioda_variable_dtor(var)
-      end if
       name_sz = len_trim(name, int64)
       name_c = ioda_f_string_to_c_dup(name)
       var%data_ptr = ioda_has_variables_c_create2_str(this%data_ptr, name_sz, name_c, ndim, dims,&
               & max_dims, cparams%data_ptr)
       call ioda_c_free(name_c)
-   end subroutine
+   end function
 
 end module

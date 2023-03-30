@@ -76,6 +76,8 @@ if (IODA_BUILD_LANGUAGE_FORTRAN)
 	AddExample_F   (ioda-engines-00-Strings-F 00-Strings.f90)
 	AddExample_F   (ioda-engines-00-VecStrings-F 00-VecStrings.f90)
 	AddExample_F   (ioda-engines-01-GroupsAndObsSpaces-F 01-GroupsAndObsSpaces.f90)
+	AddExample_F   (ioda-engines-02-Attributes-F 02-Attributes.f90)
+	AddExample_F   (ioda-engines-03-Variables-F 03-VariablesIntro.f90)
 endif()
 
 if(BUILD_PYTHON_BINDINGS)

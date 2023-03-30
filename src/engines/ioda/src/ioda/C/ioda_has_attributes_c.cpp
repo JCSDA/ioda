@@ -17,9 +17,7 @@ void * ioda_has_attributes_c_alloc() {
 void ioda_has_attributes_c_dtor(void **v) {
         void *v_ = *v;
         VOID_TO_CXX(ioda::Has_Attributes,v_,p);
-        if ( p ) {
-            delete p;
-        }
+// do not delete p since it is a weak reference ?
         *v = nullptr;
 }
 
@@ -40,17 +38,19 @@ void *  ioda_has_attributes_c_list(void *v)
 void ioda_has_attributes_c_clone(void **t_p,void *rhs_p)
 {
     try {
-        ioda::Has_Attributes ** t = 
-            reinterpret_cast< ioda::Has_Attributes ** >(t_p);
-        VOID_TO_CXX(ioda::Has_Attributes,rhs_p,rhs);
-        if ( *t != nullptr) {
-            delete *t;    
+        if ( t_p == nullptr) {
+            std::cerr << "ioda has attributes clone lhs is null\n";
         }
+        VOID_TO_CXX(ioda::Has_Attributes,*t_p,lhs);
+        VOID_TO_CXX(ioda::Has_Attributes,rhs_p,rhs);
         if ( rhs == nullptr) {
+            std::cerr << "ioda has attributes clone rhs is null\n";
+            lhs = nullptr;
             return;
         }
-        *t = new ioda::Has_Attributes(*rhs);
-        t_p = reinterpret_cast< void ** >(t);
+        /// this is weird but has_attributes need to be shallow copy
+        lhs = rhs;
+        *t_p = lhs;
         return;
     } catch ( std::exception& e) {
         std::cerr << "ioda_has_attributes_c_clone exception " << e.what() << "\n";
@@ -112,13 +112,28 @@ void * ioda_has_attributes_c_open(void * v,int64_t n,const char *name)
 
 #define IODA_FUN(NAME,TYPE)\
 bool ioda_has_attributes_c_create##NAME (void *v,int64_t name_sz,const char *name,	\
-int64_t sz,int64_t *dims_,void **Attr) { 						\
+    int64_t sz,void **dims_p,void **Attr) { 						\
     try {										\
         VOID_TO_CXX(ioda::Has_Attributes,v,p);  					\
+        if ( p == nullptr ) {								\
+            std::cerr << "ioda_has_atttibute_c_create null has_attributes ptr\n"; 	\
+            throw std::exception();							\
+        }										\
         if ( p == nullptr) throw std::exception();					\
         VOID_TO_CXX(ioda::Attribute,*Attr,attr);					\
-        if ( attr != nullptr ) delete attr;						\
-        std::vector<ioda::Dimensions_t> vdims(dims_,dims_+sz);				\
+        if ( attr != nullptr ) {							\
+             delete attr;								\
+        }										\
+        if ( dims_p == nullptr ) {							\
+            std::cerr << "really bad error null array\n";				\
+            fatal_error(); 								\
+        }										\
+        VOID_TO_CXX(int64_t,(*dims_p),dims);						\
+        if ( dims == nullptr ) { 							\
+            std::cerr << "ioda_has_Variables_create dims is null\n";			\
+            throw std::exception();         						\
+        }										\
+        std::vector<ioda::Dimensions_t> vdims(dims,dims+sz);				\
         std::string vstr(name,name_sz);							\
         attr = new ioda::Attribute(p->create< TYPE >(vstr,vdims));			\
         *Attr = reinterpret_cast<void*>(attr);						\
@@ -135,7 +150,7 @@ IODA_FUN(_char,char)
 IODA_FUN(_int16,int16_t)
 IODA_FUN(_int32,int32_t)
 IODA_FUN(_int64,int64_t)
-IODA_FUN(_str,std::vector<std::string>)
+IODA_FUN(_str,std::string)
 #undef IODA_FUN
 
 }

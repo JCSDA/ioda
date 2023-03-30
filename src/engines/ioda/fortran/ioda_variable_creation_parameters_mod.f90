@@ -1,15 +1,21 @@
+!
+! (C) Copyright 2023 UCAR
+!
+! This software is licensed under the terms of the Apache Licence Version 2.0
+! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
 module ioda_variable_creation_parameters_mod
    use, intrinsic :: iso_c_binding
    use, intrinsic :: iso_fortran_env
 
    type :: ioda_variable_creation_parameters
-      type(c_ptr) :: data_ptr
+      type(c_ptr) :: data_ptr = c_null_ptr
    contains
       final ioda_variable_creation_parameters_dtor
+      procedure :: init => ioda_variable_creation_parameters_init
       procedure :: chunking => ioda_variable_creation_parameters_chunking
       procedure :: no_compress => ioda_variable_creation_parameters_no_compress
       procedure :: compress_with_szip => ioda_variable_creation_parameters_compress_with_szip
-      procedure :: compress_with_gszip => ioda_variable_creation_parameters_compress_with_gzip
+      procedure :: compress_with_gzip => ioda_variable_creation_parameters_compress_with_gzip
       procedure :: set_fill_value_float => ioda_variable_creation_parameters_set_fill_value_float
       procedure :: set_fill_value_double => ioda_variable_creation_parameters_set_fill_value_double
       procedure :: set_fill_value_char => ioda_variable_creation_parameters_set_fill_value_char
@@ -32,21 +38,18 @@ module ioda_variable_creation_parameters_mod
          type(c_ptr) :: p
       end function
 
-      subroutine ioda_variable_creation_parameters_c_dtor(p) &
-              & bind(C, name="ioda_variable_creation_parameters_c_dtor")
+      subroutine ioda_variable_creation_parameters_c_dtor(p) bind(C, name="ioda_variable_creation_parameters_c_dtor")
          import c_ptr
          type(c_ptr), value :: p
       end subroutine
 
-      subroutine ioda_variable_creation_parameters_c_clone(this, rhs) &
-              & bind(C, name="ioda_variable_creation_parameters_c_clone")
+      subroutine ioda_variable_creation_parameters_c_clone(this, rhs) bind(C, name="ioda_variable_creation_parameters_c_clone")
          import c_ptr
          type(c_ptr), value :: rhs
          type(c_ptr) :: this
       end subroutine
 
-      subroutine ioda_variable_creation_parameters_c_no_compress(p) &
-              & bind(C, name="ioda_variable_creation_parameters_c_no_compress")
+      subroutine ioda_variable_creation_parameters_c_no_compress(p) bind(C, name="ioda_variable_creation_parameters_c_no_compress")
          import c_ptr
          type(c_ptr), value :: p
       end subroutine
@@ -120,14 +123,14 @@ module ioda_variable_creation_parameters_mod
 contains
    subroutine ioda_variable_creation_parameters_init(this)
       implicit none
-      type(ioda_variable_creation_parameters) :: this
+      class(ioda_variable_creation_parameters) :: this
       this%data_ptr = ioda_variable_creation_parameters_c_alloc()
    end subroutine
 
    subroutine ioda_variable_creation_parameters_dtor(this)
       implicit none
       type(ioda_variable_creation_parameters) :: this
-      call ioda_variable_creation_parameters_c_dtor(this%data_ptr)
+!      call ioda_variable_creation_parameters_c_dtor(this%data_ptr)
    end subroutine
 
    subroutine ioda_variable_creation_parameters_copy(this, rhs)
@@ -154,7 +157,8 @@ contains
       implicit none
       class(ioda_variable_creation_parameters) :: this
       integer(int32), intent(in) :: pix_per_block, option
-      call ioda_variable_creation_parameters_c_compress_with_szip(this%data_ptr, pix_per_block, option)
+      call ioda_variable_creation_parameters_c_compress_with_szip(this%data_ptr,&
+              &  pix_per_block, option)
    end subroutine
 
    subroutine ioda_variable_creation_parameters_chunking(this, do_chunk, ndim, chunks)

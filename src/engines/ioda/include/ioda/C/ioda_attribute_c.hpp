@@ -36,33 +36,35 @@ void ioda_attribute_c_clone(void **p,void *rhs);
 // ioda::Dimensions
 void * ioda_attribute_c_get_dimensions(void *v);
 
-#define IODA_FUN(NAME,TYPE) bool ioda_attribute_c_write##NAME (void *v,int64_t n, const TYPE * data);
+
+#define IODA_FUN(NAME,TYPE)\
+bool ioda_attribute_c_write##NAME (void *v,int64_t n, void ** data_p);
+
+IODA_FUN(_float,float)
+IODA_FUN(_double,double)
+IODA_FUN(_char,char)
+IODA_FUN(_int16,int16_t)
+IODA_FUN(_int32,int32_t)
+IODA_FUN(_int64,int64_t)
+#undef IODA_FUN
+
+bool ioda_attribute_c_write_str(void *v, void **vvs);
+
+#define IODA_FUN(NAME,TYPE)\
+bool ioda_attribute_c_read##NAME (void *v,int64_t n, void ** data_p);
 
 IODA_FUN(_float,float)
 IODA_FUN(_double,double)
 IODA_FUN(_int16,int16_t)
 IODA_FUN(_int32,int32_t)
 IODA_FUN(_int64,int64_t)
+IODA_FUN(_char,char)
 #undef IODA_FUN
 
-bool ioda_attribute_c_write_char(void *v,int64_t n,const void *data);
+bool  ioda_attribute_c_read_str(void *v,void ** vvs);
 
-bool ioda_attribute_c_write_str(void *v,void *vvs);
-
-#define IODA_FUN(NAME,TYPE) bool ioda_attribute_c_read##NAME (void *v,int64_t n, TYPE * data);
-
-IODA_FUN(_float,float)
-IODA_FUN(_double,double)
-IODA_FUN(_int16,int16_t)
-IODA_FUN(_int32,int32_t)
-IODA_FUN(_int64,int64_t)
-#undef IODA_FUN
-
-bool ioda_attribute_c_read_char(void *v,int64_t n,void *data);
-
-bool  ioda_attribute_c_read_str(void *v,void * vvs);
-
-#define IODA_FUN(NAME,TYPE) int ioda_attribute_c_is_a##NAME (void *v);
+#define IODA_FUN(NAME,TYPE)\
+int ioda_attribute_c_is_a##NAME (void *v);
 
 IODA_FUN(_float,float)
 IODA_FUN(_double,double)
@@ -74,7 +76,7 @@ IODA_FUN(_int64,int64_t)
 IODA_FUN(_uint16,uint16_t)
 IODA_FUN(_uint32,uint32_t)
 IODA_FUN(_uint64,uint64_t)
-IODA_FUN(_str,std::vector<std::string>)
+IODA_FUN(_str,std::string)
 #undef IODA_FUN
 
 } // end extern "C"
