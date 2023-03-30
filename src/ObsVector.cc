@@ -156,8 +156,9 @@ void ObsVector::invert() {
 }
 // -----------------------------------------------------------------------------
 void ObsVector::random() {
-  const size_t globalnobs =
-        (obsdb_.globalNumLocs() + obsdb_.globalNumLocsOutsideTimeWindow()) * nvars_;
+  const size_t globalnobs = (obsdb_.globalNumLocs() +
+                             obsdb_.globalNumLocsOutsideTimeWindow() +
+                             obsdb_.globalNumLocsRejectQC()) * nvars_;
   std::vector<double> perts(globalnobs);
 
   if (obsdb_.comm().rank() == 0) {

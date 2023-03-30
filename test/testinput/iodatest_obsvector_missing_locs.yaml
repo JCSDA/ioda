@@ -1,0 +1,20 @@
+---
+window begin: '2020-12-15T18:00:00Z'
+window end: '2020-12-16T00:00:00Z'
+observations:
+- obs space:
+    name: "Missing Locations"
+    simulated variables: ["brightnessTemperature"]
+    channels: 7
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: Data/testinput_tier_1/locations_qc.nc4
+  test data:
+    rms ref: 240.83402815710303
+    tolerance: 1.0e-14
+
+distributions:
+  - RoundRobin
+  - InefficientDistribution
+  - Halo

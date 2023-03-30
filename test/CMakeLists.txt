@@ -104,6 +104,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsspace_filter_to_zero_obs.yaml
   testinput/iodatest_obsspace_fill_value.yaml
   testinput/iodatest_obsvector.yaml
+  testinput/iodatest_obsvector_missing_locs.yaml
   testinput/iodatest_obsvector_packeigen.yaml
   testinput/iodatest_extendedobsspace.yaml
   testinput/iodatest_extendedobsspace_halo.yaml
@@ -804,6 +805,13 @@ ecbuild_add_test( TARGET  test_ioda_obsvector
                   MPI     4
                   SOURCES mains/TestIodaObsVector.cc
                   ARGS    "testinput/iodatest_obsvector.yaml"
+                  LIBS  ioda_test
+                  TEST_DEPENDS get_ioda_test_data test_ioda_oops_obsvector test_ioda_oops_obsdatavector )
+
+ecbuild_add_test( TARGET  test_ioda_obsvector_missing_locs
+                  MPI     4
+                  COMMAND test_ioda_obsvector
+                  ARGS    "testinput/iodatest_obsvector_missing_locs.yaml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data test_ioda_oops_obsvector test_ioda_oops_obsdatavector )
 
