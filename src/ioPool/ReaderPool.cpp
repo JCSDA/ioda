@@ -120,7 +120,7 @@ void ReaderPool::load(Group & destGroup) {
     checkForRequiredVars(fileGroup, readerSrc_, dtimeFormat, emptyFile);
 
     std::vector<int64_t> dtimeValues;
-    std::string dtimeEpoch;
+    std::string dtimeEpoch("seconds since 1970-01-01T00:00:00Z");
     std::vector<float> lonValues;
     std::vector<float> latValues;
     if (!emptyFile) {

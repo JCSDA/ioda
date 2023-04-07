@@ -15,7 +15,8 @@ observations:
   test data:
     gnlocs: 100
     gnlocs outside time window: 0
-    nlocs: 100
+    gnlocs rejected by qc: 0
+    nlocs from source: 100
     nrecs: 100
     obs perturbations seed: 77
     expected group variables: []
@@ -51,7 +52,8 @@ observations:
   test data:
     gnlocs: 42
     gnlocs outside time window: 0
-    nlocs: 42
+    gnlocs rejected by qc: 0
+    nlocs from source: 42
     nrecs: 42
     obs perturbations seed: 0
     expected group variables: []
@@ -89,7 +91,8 @@ observations:
   test data:
     gnlocs: 100
     gnlocs outside time window: 0
-    nlocs: 100
+    gnlocs rejected by qc: 0
+    nlocs from source: 100
     nrecs: 100
     obs perturbations seed: 0
     expected group variables: []
@@ -120,7 +123,8 @@ observations:
   test data:
     gnlocs: 100
     gnlocs outside time window: 0
-    nlocs: 100
+    gnlocs rejected by qc: 0
+    nlocs from source: 100
     nrecs: 100
     obs perturbations seed: 0
     expected group variables: []
@@ -152,7 +156,8 @@ observations:
   test data:
     gnlocs: 12
     gnlocs outside time window: 0
-    nlocs: 12
+    gnlocs rejected by qc: 0
+    nlocs from source: 12
     nrecs: 12
     obs perturbations seed: -42
     expected group variables: []
@@ -188,7 +193,8 @@ observations:
   test data:
     gnlocs: 974
     gnlocs outside time window: 0
-    nlocs: 974
+    gnlocs rejected by qc: 0
+    nlocs from source: 974
     nrecs: 974
     obs perturbations seed: 0
     expected group variables: []
@@ -241,7 +247,8 @@ observations:
   test data:
     gnlocs: 10
     gnlocs outside time window: 0
-    nlocs: 10
+    gnlocs rejected by qc: 0
+    nlocs from source: 10
     nrecs: 10
     obs perturbations seed: 0
     expected group variables: []
@@ -312,7 +319,8 @@ observations:
   test data:
     gnlocs: 11
     gnlocs outside time window: 0
-    nlocs: 11
+    gnlocs rejected by qc: 0
+    nlocs from source: 11
     nrecs: 11
     obs perturbations seed: 0
     expected group variables: []
@@ -371,7 +379,8 @@ observations:
   test data:
     gnlocs: 974
     gnlocs outside time window: 0
-    nlocs: 974
+    gnlocs rejected by qc: 0
+    nlocs from source: 974
     nrecs: 36
     obs perturbations seed: 0
     expected group variables: [ "stationIdentification" ]
@@ -408,7 +417,8 @@ observations:
   test data:
     gnlocs: 968
     gnlocs outside time window: 6
-    nlocs: 968
+    gnlocs rejected by qc: 0
+    nlocs from source: 974
     nrecs: 31
     obs perturbations seed: 0
     expected group variables: [ "station_id" ]
@@ -439,7 +449,8 @@ observations:
   test data:
     gnlocs: 100
     gnlocs outside time window: 0
-    nlocs: 100
+    gnlocs rejected by qc: 0
+    nlocs from source: 100
     nrecs: 100
     obs perturbations seed: 0
     expected group variables: []

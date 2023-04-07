@@ -353,125 +353,179 @@ std::string ObsSpace::obs_sort_order() const {
  *          otherwise "false" is returned.
  */
 bool ObsSpace::has(const std::string & group, const std::string & name, bool skipDerived) const {
-    // For backward compatibility, recognize and handle appropriately variable names with
-    // channel suffixes.
-    std::string nameToUse;
-    std::vector<int> chanSelectToUse;
-    splitChanSuffix(group, name, { }, nameToUse, chanSelectToUse, skipDerived);
-    return obs_group_.vars.exists(fullVarName(group, nameToUse)) ||
-           (!skipDerived && obs_group_.vars.exists(fullVarName("Derived" + group, nameToUse)));
+    // For an empty obs space, make it appear that any variable exists.
+    if (this->empty()) {
+        return true;
+    } else {
+        // For backward compatibility, recognize and handle appropriately variable names with
+        // channel suffixes.
+        std::string nameToUse;
+        std::vector<int> chanSelectToUse;
+        splitChanSuffix(group, name, { }, nameToUse, chanSelectToUse, skipDerived);
+        return obs_group_.vars.exists(fullVarName(group, nameToUse)) ||
+          (!skipDerived && obs_group_.vars.exists(fullVarName("Derived" + group, nameToUse)));
+    }
 }
 
 // -----------------------------------------------------------------------------
 ObsDtype ObsSpace::dtype(const std::string & group, const std::string & name,
                          bool skipDerived) const {
-    // For backward compatibility, recognize and handle appropriately variable names with
-    // channel suffixes.
-    std::string nameToUse;
-    std::vector<int> chanSelectToUse;
-    splitChanSuffix(group, name, { }, nameToUse, chanSelectToUse, skipDerived);
-
-    std::string groupToUse = "Derived" + group;
-    if (skipDerived || !obs_group_.vars.exists(fullVarName(groupToUse, nameToUse)))
-      groupToUse = group;
-
     // Set the type to None if there is no type from the backend
     ObsDtype VarType = ObsDtype::None;
-    if (has(groupToUse, nameToUse, skipDerived)) {
-        const std::string varNameToUse = fullVarName(groupToUse, nameToUse);
-        Variable var = obs_group_.vars.open(varNameToUse);
-        VarUtils::switchOnSupportedVariableType(
-              var,
-              [&] (int)   {
-                  VarType = ObsDtype::Integer;
-              },
-              [&] (int64_t)   {
-                  if ((group == "MetaData") && (nameToUse == "dateTime")) {
-                      VarType = ObsDtype::DateTime;
-                      // TODO(srh) Workaround to cover when datetime was stored
-                      // as a util::DateTime object (back when the obs space container
-                      // was a boost::multiindex container). For now, ioda accepts
-                      // int64_t offset times with its epoch datetime representation.
-                  } else {
-                      VarType = ObsDtype::Integer_64;
-                  }
-              },
-              [&] (float) {
-                  VarType = ObsDtype::Float;
-              },
-              [&] (std::string) {
-                  if ((group == "MetaData") && (nameToUse == "datetime")) {
-                      // TODO(srh) Workaround to cover when datetime was stored
-                      // as a util::DateTime object (back when the obs space container
-                      // was a boost::multiindex container). For now ioda accepts
-                      // string datetime representation.
-                      VarType = ObsDtype::DateTime;
-                  } else {
-                      VarType = ObsDtype::String;
-                  }
-              },
-              [&] (char) {
-                  VarType = ObsDtype::Bool;
-              },
-              VarUtils::ThrowIfVariableIsOfUnsupportedType(varNameToUse));
+
+    // Want to make an empty obs space look like any variable exists. Use the special
+    // data type marker of "Empty" to distinguish from "None" which is the marker for
+    // when the backend doesn't know what type the variable is.
+    if (this->empty()) {
+        VarType = ObsDtype::Empty;
+    } else {
+        // For backward compatibility, recognize and handle appropriately variable names with
+        // channel suffixes.
+        std::string nameToUse;
+        std::vector<int> chanSelectToUse;
+        splitChanSuffix(group, name, { }, nameToUse, chanSelectToUse, skipDerived);
+
+        std::string groupToUse = "Derived" + group;
+        if (skipDerived || !obs_group_.vars.exists(fullVarName(groupToUse, nameToUse)))
+          groupToUse = group;
+
+        if (has(groupToUse, nameToUse, skipDerived)) {
+            const std::string varNameToUse = fullVarName(groupToUse, nameToUse);
+            Variable var = obs_group_.vars.open(varNameToUse);
+            VarUtils::switchOnSupportedVariableType(
+                  var,
+                  [&] (int)   {
+                      VarType = ObsDtype::Integer;
+                  },
+                  [&] (int64_t)   {
+                      if ((group == "MetaData") && (nameToUse == "dateTime")) {
+                          VarType = ObsDtype::DateTime;
+                          // TODO(srh) Workaround to cover when datetime was stored
+                          // as a util::DateTime object (back when the obs space container
+                          // was a boost::multiindex container). For now, ioda accepts
+                          // int64_t offset times with its epoch datetime representation.
+                      } else {
+                          VarType = ObsDtype::Integer_64;
+                      }
+                  },
+                  [&] (float) {
+                      VarType = ObsDtype::Float;
+                  },
+                  [&] (std::string) {
+                      if ((group == "MetaData") && (nameToUse == "datetime")) {
+                          // TODO(srh) Workaround to cover when datetime was stored
+                          // as a util::DateTime object (back when the obs space container
+                          // was a boost::multiindex container). For now ioda accepts
+                          // string datetime representation.
+                          VarType = ObsDtype::DateTime;
+                      } else {
+                          VarType = ObsDtype::String;
+                      }
+                  },
+                  [&] (char) {
+                      VarType = ObsDtype::Bool;
+                  },
+                  VarUtils::ThrowIfVariableIsOfUnsupportedType(varNameToUse));
+        }
     }
     return VarType;
 }
 
 // -----------------------------------------------------------------------------
+// TODO(srh) For now we will make it look like any variable exists when we have
+// read in an empty input file. The empty input file can minimally contain only
+// the dimension Location set to zero. This is done so that r2d2 can use the exact
+// same empty file for any obs type. If we didn't fake the existence of any variable
+// then r2d2 would have to supply an empty input file tailored to each obs type which
+// contains all of the MetaData variables expected for a particular obs type.
+//
+// To accomplish making it look like any variables exists, we will have get_db simply
+// return immediately with an zero length vector without actually accessing the
+// obs_group_ container.
+//
+// In the future, we may want r2d2 to supply obs type specific empty files. If and when
+// that happens, we can remove this "fake-it" method.
 void ObsSpace::get_db(const std::string & group, const std::string & name,
                      std::vector<int> & vdata,
                      const std::vector<int> & chanSelect, bool skipDerived) const {
-    loadVar<int>(group, name, chanSelect, vdata, skipDerived);
+    if (this->empty()) {
+        vdata.resize(0);
+    } else {
+        loadVar<int>(group, name, chanSelect, vdata, skipDerived);
+    }
 }
 
 void ObsSpace::get_db(const std::string & group, const std::string & name,
                      std::vector<int64_t> & vdata,
                      const std::vector<int> & chanSelect, bool skipDerived) const {
-    loadVar<int64_t>(group, name, chanSelect, vdata, skipDerived);
+    if (this->empty()) {
+        vdata.resize(0);
+    } else {
+        loadVar<int64_t>(group, name, chanSelect, vdata, skipDerived);
+    }
 }
 
 void ObsSpace::get_db(const std::string & group, const std::string & name,
                      std::vector<float> & vdata,
                      const std::vector<int> & chanSelect, bool skipDerived) const {
-    loadVar<float>(group, name, chanSelect, vdata, skipDerived);
+    if (this->empty()) {
+        vdata.resize(0);
+    } else {
+        loadVar<float>(group, name, chanSelect, vdata, skipDerived);
+    }
 }
 
 void ObsSpace::get_db(const std::string & group, const std::string & name,
                      std::vector<double> & vdata,
                      const std::vector<int> & chanSelect, bool skipDerived) const {
-    // load the float values from the database and convert to double
-    std::vector<float> floatData;
-    loadVar<float>(group, name, chanSelect, floatData, skipDerived);
-    ConvertVarType<float, double>(floatData, vdata);
+    if (this->empty()) {
+        vdata.resize(0);
+    } else {
+        // load the float values from the database and convert to double
+        std::vector<float> floatData;
+        loadVar<float>(group, name, chanSelect, floatData, skipDerived);
+        ConvertVarType<float, double>(floatData, vdata);
+    }
 }
 
 void ObsSpace::get_db(const std::string & group, const std::string & name,
                      std::vector<std::string> & vdata,
                      const std::vector<int> & chanSelect, bool skipDerived) const {
-    loadVar<std::string>(group, name, chanSelect, vdata, skipDerived);
+    if (this->empty()) {
+        vdata.resize(0);
+    } else {
+        loadVar<std::string>(group, name, chanSelect, vdata, skipDerived);
+    }
 }
 
 void ObsSpace::get_db(const std::string & group, const std::string & name,
                      std::vector<util::DateTime> & vdata,
                      const std::vector<int> & chanSelect, bool skipDerived) const {
-    std::vector<int64_t> timeOffsets;
-    loadVar<int64_t>(group, name, chanSelect, timeOffsets, skipDerived);
-    Variable dtVar = obs_group_.vars.open(group + std::string("/") + name);
-    util::DateTime epochDt = getEpochAsDtime(dtVar);
-    vdata = convertEpochDtToDtime(epochDt, timeOffsets);
+    if (this->empty()) {
+        vdata.resize(0);
+    } else {
+        std::vector<int64_t> timeOffsets;
+        loadVar<int64_t>(group, name, chanSelect, timeOffsets, skipDerived);
+        Variable dtVar = obs_group_.vars.open(group + std::string("/") + name);
+        util::DateTime epochDt = getEpochAsDtime(dtVar);
+        vdata = convertEpochDtToDtime(epochDt, timeOffsets);
+    }
 }
 
 void ObsSpace::get_db(const std::string & group, const std::string & name,
                       std::vector<bool> & vdata,
                       const std::vector<int> & chanSelect, bool skipDerived) const {
-    // Boolean variables are currently stored internally as arrays of bytes (with each byte
-    // holding one element of the variable).
-    // TODO(wsmigaj): Store them as arrays of bits instead, at least in the ObsStore backend,
-    // to reduce memory consumption and speed up the get_db and put_db functions.
-    std::vector<char> charData(vdata.size());
-    loadVar<char>(group, name, chanSelect, charData, skipDerived);
-    vdata.assign(charData.begin(), charData.end());
+    if (this->empty()) {
+        vdata.resize(0);
+    } else {
+        // Boolean variables are currently stored internally as arrays of bytes (with each
+        // byte holding one element of the variable).
+        // TODO(wsmigaj): Store them as arrays of bits instead, at least in the ObsStore
+        // backend, to reduce memory consumption and speed up the get_db and put_db functions.
+        std::vector<char> charData(vdata.size());
+        loadVar<char>(group, name, chanSelect, charData, skipDerived);
+        vdata.assign(charData.begin(), charData.end());
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -660,6 +714,7 @@ void ObsSpace::load() {
     gnlocs_ = readPool.globalNumLocs();
     gnlocs_outside_timewindow_ = readPool.globalNumLocsOutsideTimeWindow();
     gnlocs_reject_qc_ = readPool.globalNumLocsRejectQC();
+    source_nlocs_ = gnlocs_ + gnlocs_outside_timewindow_ + gnlocs_reject_qc_;
 
     // Wait for all processes to finish the load call so that we know the file
     // is complete and closed.
@@ -713,7 +768,8 @@ void ObsSpace::loadVar(const std::string & group, const std::string & name,
     if (obs_group_.vars.exists(ChannelVarName)) {
         Variable ChannelVar = obs_group_.vars.open(ChannelVarName);
         if (var.getDimensions().dimensionality > 1) {
-            if (var.isDimensionScaleAttached(1, ChannelVar) && (chanSelectToUse.size() > 0)) {
+            if (var.isDimensionScaleAttached(1, ChannelVar) &&
+               (chanSelectToUse.size() > 0)) {
                 // This variable has Channel as the second dimension, and channel
                 // selection has been specified. Build selection objects based on the
                 // channel numbers. For now, select all locations (first dimension).

@@ -13,7 +13,8 @@ observations:
   test data:
     gnlocs: 160607
     gnlocs outside time window: 0
-    nlocs: 160607
+    gnlocs rejected by qc: 0
+    nlocs from source: 160607
     nlocs_local: 1930
     nrecs: 160607
     obs perturbations seed: 0
@@ -45,7 +46,8 @@ observations:
   test data:
     gnlocs: 918
     gnlocs outside time window: 0
-    nlocs: 918
+    gnlocs rejected by qc: 0
+    nlocs from source: 918
     nlocs_local: 0
     nrecs: 918
     obs perturbations seed: 0
@@ -76,7 +78,8 @@ observations:
   test data:
     gnlocs: 200
     gnlocs outside time window: 0
-    nlocs: 200
+    gnlocs rejected by qc: 0
+    nlocs from source: 200
     nlocs_local: 0
     nrecs: 200
     obs perturbations seed: 0
@@ -108,7 +111,8 @@ observations:
   test data:
     gnlocs: 71558
     gnlocs outside time window: 0
-    nlocs: 71558
+    gnlocs rejected by qc: 0
+    nlocs from source: 71558
     nlocs_local: 41757
     nrecs: 71558
     obs perturbations seed: 0
@@ -139,7 +143,8 @@ observations:
   test data:
     gnlocs: 8065
     gnlocs outside time window: 0
-    nlocs: 8065
+    gnlocs rejected by qc: 0
+    nlocs from source: 8065
     nlocs_local: 8065
     nrecs: 8065
     obs perturbations seed: 0
@@ -171,7 +176,8 @@ observations:
   test data:
     gnlocs: 100
     gnlocs outside time window: 0
-    nlocs: 100
+    gnlocs rejected by qc: 0
+    nlocs from source: 100
     nlocs_local: 0
     nrecs: 100
     obs perturbations seed: -99999

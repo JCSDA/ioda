@@ -83,6 +83,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsspace_dist_write.yaml
   testinput/iodatest_obsspace_default_fill_values.yaml
   testinput/iodatest_obsspace_empty_obs_file.yaml
+  testinput/iodatest_obsspace_empty_obs_file_mpi.yaml
   testinput/iodatest_obsspace_out_dims_check.yaml
   testinput/iodatest_obsspace_grouping.yaml
   testinput/iodatest_obsspace_index_recnum.yaml
@@ -452,15 +453,15 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_datetime
                   TEST_DEPENDS get_ioda_test_data )
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_empty_obs_file
-                  COMMAND test_ioda_oops_obsspace
+                  COMMAND test_ioda_obsspace
                   ARGS    "testinput/iodatest_obsspace_empty_obs_file.yaml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_empty_obs_file_mpi
                   MPI 4
-                  COMMAND test_ioda_oops_obsspace
-                  ARGS    "testinput/iodatest_obsspace_empty_obs_file.yaml"
+                  COMMAND test_ioda_obsspace
+                  ARGS    "testinput/iodatest_obsspace_empty_obs_file_mpi.yaml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 

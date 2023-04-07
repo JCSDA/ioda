@@ -16,7 +16,8 @@ observations:
   test data:
     gnlocs: 10
     gnlocs outside time window: 0
-    nlocs: 10
+    gnlocs rejected by qc: 0
+    nlocs from source: 10
     nrecs: 10
     obs perturbations seed: 0
     expected group variables: []
@@ -51,7 +52,8 @@ observations:
   test data:
     gnlocs: 10
     gnlocs outside time window: 0
-    nlocs: 10
+    gnlocs rejected by qc: 0
+    nlocs from source: 10
     nrecs: 2
     obs perturbations seed: 1001
     expected group variables: [ "group_by_string" ]
@@ -85,7 +87,8 @@ observations:
   test data:
     gnlocs: 10
     gnlocs outside time window: 0
-    nlocs: 10
+    gnlocs rejected by qc: 0
+    nlocs from source: 10
     nrecs: 3
     obs perturbations seed: 0
     expected group variables: [ "group_by_int" ]
@@ -119,7 +122,8 @@ observations:
   test data:
     gnlocs: 10
     gnlocs outside time window: 0
-    nlocs: 10
+    gnlocs rejected by qc: 0
+    nlocs from source: 10
     nrecs: 4
     obs perturbations seed: 0
     expected group variables: [ "group_by_float" ]
@@ -153,7 +157,8 @@ observations:
   test data:
     gnlocs: 10
     gnlocs outside time window: 0
-    nlocs: 10
+    gnlocs rejected by qc: 0
+    nlocs from source: 10
     nrecs: 4
     obs perturbations seed: 0
     expected group variables: [ "group_by_string", "group_by_int" ]
@@ -187,7 +192,8 @@ observations:
   test data:
     gnlocs: 10
     gnlocs outside time window: 0
-    nlocs: 10
+    gnlocs rejected by qc: 0
+    nlocs from source: 10
     nrecs: 7
     obs perturbations seed: 0
     expected group variables: [ "group_by_string", "group_by_float" ]
@@ -221,7 +227,8 @@ observations:
   test data:
     gnlocs: 10
     gnlocs outside time window: 0
-    nlocs: 10
+    gnlocs rejected by qc: 0
+    nlocs from source: 10
     nrecs: 5
     obs perturbations seed: 0
     expected group variables: [ "group_by_float", "group_by_int" ]
@@ -255,7 +262,8 @@ observations:
   test data:
     gnlocs: 10
     gnlocs outside time window: 0
-    nlocs: 10
+    gnlocs rejected by qc: 0
+    nlocs from source: 10
     nrecs: 7
     obs perturbations seed: 0
     expected group variables: [ "group_by_string", "group_by_float", "group_by_int" ]
@@ -300,7 +308,8 @@ observations:
   test data:
     gnlocs: 6
     gnlocs outside time window: 0
-    nlocs: 6
+    gnlocs rejected by qc: 0
+    nlocs from source: 6
     nrecs: 6
     obs perturbations seed: 0
     expected group variables: []
@@ -344,7 +353,8 @@ observations:
   test data:
     gnlocs: 6
     gnlocs outside time window: 0
-    nlocs: 6
+    gnlocs rejected by qc: 0
+    nlocs from source: 6
     nrecs: 3
     obs perturbations seed: 0
     expected group variables: [ "latitude" ]
@@ -388,7 +398,8 @@ observations:
   test data:
     gnlocs: 6
     gnlocs outside time window: 0
-    nlocs: 6
+    gnlocs rejected by qc: 0
+    nlocs from source: 6
     nrecs: 3
     obs perturbations seed: 0
     expected group variables: [ "latitude" ]

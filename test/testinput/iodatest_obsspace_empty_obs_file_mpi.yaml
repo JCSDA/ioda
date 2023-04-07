@@ -13,7 +13,7 @@ observations:
     obsdataout:
       engine:
         type: H5File
-        obsfile: "testoutput/ospace.empty_obs_file.nc4"
+        obsfile: "testoutput/ospace.empty_obs_file_mpi.nc4"
         allow overwrite: true
     obs perturbations seed: 25
   test data:
@@ -63,7 +63,7 @@ observations:
     obsdataout:
       engine:
         type: H5File
-        obsfile: "testoutput/ospace.empty_obs_file_with_channels.nc4"
+        obsfile: "testoutput/ospace.empty_obs_file_with_channels_mpi.nc4"
         allow overwrite: true
   test data:
     gnlocs: 0
