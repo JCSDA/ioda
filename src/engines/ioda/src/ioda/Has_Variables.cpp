@@ -403,10 +403,10 @@ Variable Has_Variables_Base::create(const std::string& name, const Type& in_memo
 
     std::vector<Dimensions_t> fixed_max_dimensions
       = (max_dimensions.size()) ? max_dimensions : dimensions;
-    std::cerr << "check create\n";
+
     auto newVar = backend_->create(layout_->doMap(name), in_memory_dataType, dimensions,
                                    fixed_max_dimensions, params);
-    std::cerr << "check 2\n";
+
     params.applyImmediatelyAfterVariableCreation(newVar);
     if (layout_->name() == std::string("ObsGroup ODB v1") && !(layout_->isMapped(name) ||
                                                                layout_->isComplementary(name) ||
