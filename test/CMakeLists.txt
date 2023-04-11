@@ -404,45 +404,41 @@ ecbuild_add_test( TARGET  test_ioda_obsspace
                   TEST_DEPENDS get_ioda_test_data )
 
 if (odc_FOUND)
-ecbuild_add_test( TARGET  test_ioda_clean_obsspace_out_odc_files
-                  COMMAND rm
-                  ARGS    "-f" "testoutput/diagout-aircraft.odc" "testoutput/diagout-atms.odc" "testoutput/diagout-gmi.odc" "testoutput/diagout-amsua.odc" "testoutput/diagout-sonde.odc" "testoutput/diagout-aod" )
-ecbuild_add_test( TARGET  test_ioda_obsspace_out_odc
-                  COMMAND test_ioda_obsspace
-                  ARGS    "testinput/iodatest_obsspace_out_odc.yaml"
-                  LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data test_ioda_clean_obsspace_out_odc_files )
-endif()
-
-if (odc_FOUND)
+  ecbuild_add_test( TARGET  test_ioda_clean_obsspace_out_odc_files
+                    COMMAND rm
+                    ARGS    "-f" "testoutput/diagout-aircraft.odc" "testoutput/diagout-atms.odc" "testoutput/diagout-gmi.odc" "testoutput/diagout-amsua.odc" "testoutput/diagout-sonde.odc" "testoutput/diagout-aod" )
+  ecbuild_add_test( TARGET  test_ioda_obsspace_out_odc
+                    COMMAND test_ioda_obsspace
+                    ARGS    "testinput/iodatest_obsspace_out_odc.yaml"
+                    LIBS  ioda_test
+                    TEST_DEPENDS get_ioda_test_data test_ioda_clean_obsspace_out_odc_files )
   ecbuild_add_test( TARGET  test_ioda_obsspace_out_odc_compare_aircraft
-                    COMMAND odc
-                    ARGS    compare "testoutput/diagout-aircraft.odc" "Data/testinput_tier_1/test_reference/diagout-aircraft.odc"
+                    COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
+                    ARGS    "testoutput/diagout-aircraft.odc" "Data/testinput_tier_1/test_reference/diagout-aircraft.odc"
                     TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_out_odc )
-
   ecbuild_add_test( TARGET  test_ioda_obsspace_out_odc_compare_atms
-                    COMMAND odc
-                    ARGS    compare "testoutput/diagout-atms.odc" "Data/testinput_tier_1/test_reference/diagout-atms.odc"
+                    COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
+                    ARGS    "testoutput/diagout-atms.odc" "Data/testinput_tier_1/test_reference/diagout-atms.odc"
                     TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_out_odc )
 
   ecbuild_add_test( TARGET  test_ioda_obsspace_out_odc_compare_gmi
-                    COMMAND odc
-                    ARGS    compare "testoutput/diagout-gmi.odc" "Data/testinput_tier_1/test_reference/diagout-gmi.odc"
+                    COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
+                    ARGS    "testoutput/diagout-gmi.odc" "Data/testinput_tier_1/test_reference/diagout-gmi.odc"
                     TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_out_odc )
 
   ecbuild_add_test( TARGET  test_ioda_obsspace_out_odc_compare_amsua
-                    COMMAND odc
-                    ARGS    compare "testoutput/diagout-amsua.odc" "Data/testinput_tier_1/test_reference/diagout-amsua.odc"
+                    COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
+                    ARGS    "testoutput/diagout-amsua.odc" "Data/testinput_tier_1/test_reference/diagout-amsua.odc"
                     TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_out_odc )
 
   ecbuild_add_test( TARGET  test_ioda_obsspace_out_odc_compare_sonde
-                    COMMAND odc
-                    ARGS    compare "testoutput/diagout-sonde.odc" "Data/testinput_tier_1/test_reference/diagout-sonde.odc"
+                    COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
+                    ARGS    "testoutput/diagout-sonde.odc" "Data/testinput_tier_1/test_reference/diagout-sonde.odc"
                     TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_out_odc )
 
   ecbuild_add_test( TARGET  test_ioda_obsspace_out_odc_compare_aod
-                    COMMAND odc
-                    ARGS    compare "testoutput/diagout-aod" "Data/testinput_tier_1/test_reference/diagout-aod.odc"
+                    COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
+                    ARGS    "testoutput/diagout-aod" "Data/testinput_tier_1/test_reference/diagout-aod.odc"
                     TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_out_odc )
 endif()
 
