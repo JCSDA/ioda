@@ -54,6 +54,7 @@ namespace ioda {
     /// Enum type for obs variable data types
     enum class ObsDtype {
         None,
+        Empty,   // special marker for empty obs space
         Float,
         Integer,
         Integer_64,
@@ -191,6 +192,13 @@ namespace ioda {
         /// @name General querying functions
         /// @{
 
+        /// \brief true if obs space is empty (ie, zero locations in the input source)
+        bool empty() const {return (source_nlocs_ == 0);}
+
+        /// \brief return the total nubmer of locations from the obs source (input file
+        ///  or generator)
+        std::size_t sourceNumLocs() const {return source_nlocs_;}
+
         /// \brief return the total number of locations in the corresponding obs spaces
         ///        across all MPI tasks
         std::size_t globalNumLocs() const {return gnlocs_;}
@@ -198,7 +206,8 @@ namespace ioda {
         /// \brief return number of locations from obs source that were outside the time window
         std::size_t globalNumLocsOutsideTimeWindow() const {return gnlocs_outside_timewindow_;}
 
-        /// \brief return number of locations from obs source that were outside the time window
+        /// \brief return number of locations from obs source that were rejected by the
+        ///  quality checks
         std::size_t globalNumLocsRejectQC() const {return gnlocs_reject_qc_;}
 
         /// \brief return the number of locations in the obs space.
@@ -441,7 +450,10 @@ namespace ioda {
         /// \brief MPI communicator
         const eckit::mpi::Comm & commMPI_;
 
-        /// \brief total number of locations
+        /// \brief total number of locations from the input source (file or generator)
+        std::size_t source_nlocs_;
+
+        /// \brief total number of locations across all MPI tasks
         std::size_t gnlocs_;
 
         /// \brief number of nlocs from the obs source that are outside the time window

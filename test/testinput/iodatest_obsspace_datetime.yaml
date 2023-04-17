@@ -14,7 +14,8 @@ observations:
   test data:
     gnlocs: 9
     gnlocs outside time window: 1
-    nlocs: 9
+    gnlocs rejected by qc: 0
+    nlocs from source: 10
     nrecs: 9
     obs perturbations seed: 0
     expected group variables: []
@@ -51,7 +52,8 @@ observations:
   test data:
     gnlocs: 10
     gnlocs outside time window: 0
-    nlocs: 10
+    gnlocs rejected by qc: 0
+    nlocs from source: 10
     nrecs: 10
     obs perturbations seed: 0
     expected group variables: []

@@ -985,7 +985,7 @@ void ioReadGroup(const ioda::ReaderPool & ioPool, const ioda::Group& fileGroup,
     // need to create that variable here. Note that MetaData/dateTime has Location
     // as the first (and only) dimension so it needs to be set for unlimited max
     // size.
-    if (dtimeFormat != DateTimeFormat::Epoch) {
+    if ((dtimeFormat != DateTimeFormat::Epoch) && (dtimeFormat != DateTimeFormat::None)) {
         std::vector<Dimensions_t> nlocsVec(1, numLocs);
         std::vector<Dimensions_t> unlimVec(1, ioda::Unlimited);
         ioda::Dimensions varDims(nlocsVec, unlimVec, 1, numLocs);
@@ -1028,7 +1028,7 @@ void ioReadGroup(const ioda::ReaderPool & ioPool, const ioda::Group& fileGroup,
     }
     // If the obs source did not contain the epoch style date time format, then we
     // need to attach the dimension scales here.
-    if (dtimeFormat != DateTimeFormat::Epoch) {
+    if ((dtimeFormat != DateTimeFormat::Epoch) && (dtimeFormat != DateTimeFormat::None)) {
       ioda::Variable new_var = memGroup.vars.open("MetaData/dateTime");
       std::vector<ioda::Variable> new_dims(1, memGroup.vars.open("Location"));
       dimsAttachedToNewVars.push_back(make_pair(new_var, std::move(new_dims)));

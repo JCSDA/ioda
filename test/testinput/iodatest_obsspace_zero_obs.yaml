@@ -19,7 +19,8 @@ observations:
   test data:
     gnlocs: 0
     gnlocs outside time window: 0
-    nlocs: 0
+    gnlocs rejected by qc: 0
+    nlocs from source: 0
     nrecs: 0
     obs perturbations seed: 0
     expected group variables: []

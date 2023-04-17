@@ -18,7 +18,8 @@ observations:
   test data:
     gnlocs: 100
     gnlocs outside time window: 0
-    nlocs: 100
+    gnlocs rejected by qc: 0
+    nlocs from source: 100
     nrecs: 100
     obs perturbations seed: 0
     expected group variables: []
@@ -54,7 +55,8 @@ observations:
   test data:
     gnlocs: 974
     gnlocs outside time window: 0
-    nlocs: 974
+    gnlocs rejected by qc: 0
+    nlocs from source: 974
     nrecs: 974
     obs perturbations seed: 0
     expected group variables: []
@@ -111,7 +113,8 @@ observations:
   test data:
     gnlocs: 100
     gnlocs outside time window: 0
-    nlocs: 100
+    gnlocs rejected by qc: 0
+    nlocs from source: 100
     nrecs: 100
     obs perturbations seed: 250
     expected group variables: []
@@ -155,7 +158,8 @@ observations:
   test data:
     gnlocs: 12
     gnlocs outside time window: 0
-    nlocs: 12
+    gnlocs rejected by qc: 0
+    nlocs from source: 12
     nrecs: 12
     obs perturbations seed: 0
     expected group variables: []
@@ -192,7 +196,8 @@ observations:
   test data:
     gnlocs: 157
     gnlocs outside time window: 43
-    nlocs: 157
+    gnlocs rejected by qc: 0
+    nlocs from source: 200
     nrecs: 157
     obs perturbations seed: 0
     expected group variables: []
@@ -235,7 +240,8 @@ observations:
   test data:
     gnlocs: 68
     gnlocs outside time window: 32
-    nlocs: 68
+    gnlocs rejected by qc: 0
+    nlocs from source: 100
     nrecs: 68
     obs perturbations seed: 0
     expected group variables: []
