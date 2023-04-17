@@ -67,7 +67,7 @@ int main()
     ioda_vecstring_c_clear(v);
     if ( ioda_vecstring_c_size(v) != 0) doErr;
          
-    ioda_vecstring_c_clone(&v2,v);
+    ioda_vecstring_c_copy(&v2,v);
     buf = ioda_vecstring_c_get_f(v2,1);
     if (strlen(buf)!=strlen(test_str1) || strcmp(buf,test_str1)!=0) doErr;
     if (strlen(buf)!=ioda_vecstring_c_element_size_f(v2,1)) doErr;

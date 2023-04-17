@@ -22,11 +22,11 @@ void *  ioda_vecstring_c_alloc();
 
 void ioda_vecstring_c_dealloc(void **p);
 
-void ioda_vecstring_c_clone(void **p,void *rhs);
+//void ioda_vecstring_c_clone(void **p,void *rhs);
 
 // ioda_vecstring_t *
 
-void ioda_vecstring_c_copy(void *p,void *pcpy);
+void ioda_vecstring_c_copy(void **p,void *pcpy);
 
 void ioda_vecstring_c_set_string_f(void *p,int64_t i,void *pstr);
 
@@ -58,7 +58,7 @@ void * ioda_string_c_alloc();
 
 void ioda_string_c_dealloc(void *p);
 
-void ioda_string_c_clone(void **p,void *rhs);
+void ioda_string_c_copy(void **p,void *rhs);
 
 void ioda_string_c_set(void *p,void *pstr);
 

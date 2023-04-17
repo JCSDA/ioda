@@ -1,17 +1,26 @@
+!
+! (C) Copyright 2023 UCAR
+!
+! This software is licensed under the terms of the Apache Licence Version 2.0
+! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
 module ioda_group_mod
    use, intrinsic :: iso_c_binding
    use, intrinsic :: iso_fortran_env
    use :: ioda_vecstring_mod
    use :: ioda_f_c_string_mod
+   use :: ioda_has_attributes_mod
+   use :: ioda_has_variables_mod
 
    type :: ioda_group
-      type(c_ptr) :: data_ptr
+      type(c_ptr) :: data_ptr  = c_null_ptr
    contains
       final ioda_group_dtor
       procedure :: list => ioda_group_list
       procedure :: open => ioda_group_open
       procedure :: create => ioda_group_create
       procedure :: exists => ioda_group_exists
+      procedure :: has_attributes => ioda_group_has_attributes
+      procedure :: has_variables => ioda_group_has_variables
 
       procedure, private, pass(this) :: ioda_group_copy
       generic, public :: assignment(=) => ioda_group_copy
@@ -64,6 +73,18 @@ module ioda_group_mod
          integer(c_int64_t) :: sz
       end function
 
+      function ioda_group_c_has_attributes(p) result(has_p) bind(C, name="ioda_group_c_has_attributes")
+         import c_ptr
+         type(c_ptr), value :: p
+         type(c_ptr) :: has_p
+      end function
+
+      function ioda_group_c_has_variables(p) result(has_p) bind(C, name="ioda_group_c_has_variables")
+         import c_ptr
+         type(c_ptr), value :: p
+         type(c_ptr) :: has_p
+      end function
+
    end interface
 contains
    subroutine ioda_group_init(this)
@@ -85,22 +106,19 @@ contains
       call ioda_group_c_clone(this%data_ptr, rhs%data_ptr)
    end subroutine
 
-   subroutine ioda_group_list(this, vstr)
+   function ioda_group_list(this) result(vstr)
       implicit none
       class(ioda_group) :: this
-      class(ioda_vecstring) :: vstr
-      if (c_associated(vstr%data_ptr)) then
-         call ioda_vecstring_dealloc(vstr)
-      end if
+      type(ioda_vecstring) :: vstr
       vstr%data_ptr = ioda_group_c_list(this%data_ptr)
-   end subroutine
+   end function
 
    function ioda_group_exists(this, sz, name) result(r)
       implicit none
       class(ioda_group) :: this
       character(len=*), intent(in) :: name
       type(c_ptr) :: name_str
-      integer(int64) ::  sz
+      integer(int64), intent(in) ::  sz
       integer(int32) :: r
 
       name_str = ioda_f_string_to_c_dup(name)
@@ -108,37 +126,44 @@ contains
       call ioda_c_free(name_str)
    end function
 
-   subroutine ioda_group_create(this, sz, name, new_grp)
+   function ioda_group_create(this, sz, name) result(new_grp)
       implicit none
-      class(ioda_group) :: this
-      class(ioda_group) :: new_grp
+      class(ioda_group), intent(in) :: this
+      type(ioda_group) :: new_grp
       character(len=*), intent(in) :: name
       type(c_ptr) :: name_str
-      integer(int64) ::  sz
+      integer(int64), intent(in) ::  sz
 
-      if (c_associated(new_grp%data_ptr)) then
-         call ioda_group_dtor(new_grp)
-      end if
       name_str = ioda_f_string_to_c_dup(name)
       new_grp%data_ptr = ioda_group_c_create(this%data_ptr, sz, name_str)
       call ioda_c_free(name_str)
-   end subroutine
+   end function
 
-   subroutine ioda_group_open(this, sz, name, new_grp)
+   function ioda_group_open(this, sz, name) result(new_grp)
       implicit none
-      class(ioda_group) :: this
-      class(ioda_group) :: new_grp
+      class(ioda_group), intent(in) :: this
+      type(ioda_group) :: new_grp
       character(len=*), intent(in) :: name
       type(c_ptr) :: name_str
-      integer(int64) ::  sz
+      integer(int64), intent(in) ::  sz
 
-      if (c_associated(new_grp%data_ptr)) then
-         call ioda_group_dtor(new_grp)
-      end if
-      sz = len_trim(name)
       name_str = ioda_f_string_to_c_dup(name)
       new_grp%data_ptr = ioda_group_c_open(this%data_ptr, sz, name_str)
       call ioda_c_free(name_str)
-   end subroutine
+   end function
+
+   function ioda_group_has_attributes(this) result(has_att)
+      implicit none
+      class(ioda_group), intent(in) :: this
+      type(ioda_has_attributes) :: has_att
+      has_att%data_ptr = ioda_group_c_has_attributes(this%data_ptr)
+   end function
+
+   function ioda_group_has_variables(this) result(has_var)
+      implicit none
+      class(ioda_group), intent(in) :: this
+      type(ioda_has_variables) :: has_var
+      has_var%data_ptr = ioda_group_c_has_variables(this%data_ptr)
+   end function
 
 end module

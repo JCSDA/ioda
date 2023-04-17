@@ -25,9 +25,7 @@ void ioda_group_c_dtor(void **p) {
     if ( p == nullptr || *p) return;
     void *p_ = *p;
     VOID_TO_CXX(ioda::Group,p_,g);
-    if ( g != nullptr ) {
-        delete g;
-    }
+//  p is a weak reference pointer
     *p = nullptr;
 }
 
@@ -37,9 +35,6 @@ void ioda_group_c_clone(void **t_p,void *rhs_p)
         ioda::Group ** t = 
             reinterpret_cast< ioda::Group ** >(t_p);
         VOID_TO_CXX(ioda::Group,rhs_p,rhs);
-        if ( *t != nullptr) {
-            delete *t;    
-        }
         if ( rhs == nullptr) {
             return;
         }
@@ -129,6 +124,40 @@ void * ioda_group_c_open(void *p,int64_t sz,const void *name_p) {
         return reinterpret_cast<void*>(r);
     } catch (std::exception& e) {
         std::cerr << "ioda_group_c_open failed " << e.what() << "\n";
+        fatal_error();
+    }
+    return nullptr;
+}
+
+void * ioda_group_c_has_attributes(void *g_p)
+{
+    try {
+        VOID_TO_CXX(ioda::Group,g_p,g);
+        if ( g == nullptr ) {
+            std::cerr << "ioda_group_c_has_attributes null pointer\n";
+            throw std::exception();
+        }
+        ioda::Has_Attributes * has_a =  &(g->atts); 
+        return reinterpret_cast<void*>(has_a);
+    } catch (std::exception& e) {
+        std::cerr << "ioda_group_c_has_attributes failed " << e.what() << "\n";
+        fatal_error();
+    }
+    return nullptr;
+}
+
+void * ioda_group_c_has_variables(void *g_p)
+{
+     try {
+        VOID_TO_CXX(ioda::Group,g_p,g);
+        if ( g == nullptr ) {
+            std::cerr << "ioda_group_c_has_variables null pointer\n";
+            throw std::exception();
+        }
+        ioda::Has_Variables * has_v =  &(g->vars); 
+        return reinterpret_cast<void*>(has_v);
+    } catch (std::exception& e) {
+        std::cerr << "ioda_group_c_has_variables failed " << e.what() << "\n";
         fatal_error();
     }
     return nullptr;

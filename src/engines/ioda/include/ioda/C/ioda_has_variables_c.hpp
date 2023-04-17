@@ -40,11 +40,11 @@ void * ioda_has_variables_c_open(void *p,int64_t n,const void *name_str);
 
 #define IODA_FUN(NAME,TYPE)\
 void  * ioda_has_variables_c_create##NAME( void *p, int64_t name_sz, 		\
-    const void *name_p, int64_t ndim, int64_t * dims);				\
+    const void *name_p, int64_t ndim, void ** dims);				\
                                                                                 \
 void * ioda_has_variables_c_create2##NAME( void *p, int64_t name_sz, 		\
-    const void *name_p, int64_t ndim, int64_t * dims,				\
-    int64_t *max_dims,void *creation_par_p);
+    const void *name_p, int64_t ndim, void ** dims,				\
+    void ** max_dims,void *creation_par_p);
 
 IODA_FUN(_float,float)
 IODA_FUN(_double,double)

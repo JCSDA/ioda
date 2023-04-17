@@ -152,7 +152,6 @@ void BlockingRead(int fd,void *buff,size_t sz)
     twait.tv_sec = 0;
     twait.tv_nsec = 100000;
     ssize_t rem = sz;
-//    char * bp = (char*)buff;
     char * bp = reinterpret_cast<char*>(buff);
     if (sz==0) {
         fprintf(stderr,"size = 0 in read!\n");

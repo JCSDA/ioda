@@ -44,17 +44,50 @@ void ioda_variable_creation_parameters_c_clone(void **t_p,void *rhs_p)
     }
 }
 
-void ioda_variable_creation_parameters_c_chunking(void *p,bool do_chunking,int64_t ndims,const ptrdiff_t *chunks) {
+/*
+void ioda_variable_creation_parameter_c_get_chunking(void *p,int *nd,void *dims_p)
+{
     try {
         VOID_TO_CXX(ioda::VariableCreationParameters,p,c_params);
-        if ( c_params == nullptr || chunks==nullptr) {
-            std::cerr << "ioda_variable_creation_parameters_c_chunking nullptr\n";
+        if ( c_params == nullptr ) {
+            std::cerr << "ioda_variable_creation_parameters nullptr\n";
+            throw std::exception();
+        }
+        VOID_TO_CXX(const ioda::Dimensions_t,dims_p,chunks);
+        if ( chunks==nullptr) {
+            std::cerr << "ioda_variable_creation_parameters::chunking nullptr\n";
+            throw std::exception();
+        }
+        std::vector<ioda::Dimension_t> r;
+        c_params->getChunks(r);
+        *nd = r.size();
+        memcpy(chunks,r.data(),*nd*sizeof(ioda::Dimension_t));
+        return;
+    } catch (std::exception& e) {
+        std::cerr << "ioda_variable_creation_parameters_c_chunking failed\n";
+        fatal_error();        
+    }    
+} 
+*/
+
+void ioda_variable_creation_parameters_c_chunking(void *p,bool do_chunking,int64_t ndims,void **chunks_p) {
+    try {
+        VOID_TO_CXX(ioda::VariableCreationParameters,p,c_params);
+        if ( c_params == nullptr ) {
+            std::cerr << "ioda_variable_creation_parameters nullptr\n";
+            throw std::exception();
+        }
+        VOID_TO_CXX(ioda::Dimensions_t,*chunks_p,chunks);
+        if ( chunks==nullptr) {
+            std::cerr << "ioda_variable_creation_parameters::chunking nullptr\n";
             throw std::exception();
         }
         c_params->chunk = do_chunking;
         if ( do_chunking ) {
-            (c_params->chunks) = std::vector<ptrdiff_t>(chunks,chunks+ndims);
+            std::vector<ioda::Dimensions_t> cvec(chunks,(chunks)+ndims);
+            c_params->setChunks(cvec);
         }
+        return;
     } catch (std::exception& e) {
         std::cerr << "ioda_variable_creation_parameters_c_chunking failed\n";
         fatal_error();        

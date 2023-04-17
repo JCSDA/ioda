@@ -22,7 +22,7 @@ void ioda_variable_creation_parameters_c_dtor(void **p);
 //ioda_variable_creation_parameters_t *  
 void ioda_variable_creation_parameters_c_clone(void **t,void *p);
 
-void ioda_variable_creation_parameters_c_chunking(void *p,bool do_chunking,int64_t ndims,const ptrdiff_t *chunks);
+void ioda_variable_creation_parameters_c_chunking(void *p,bool do_chunking,int64_t ndims,void ** chunks_p);
 void ioda_variable_creation_parameters_c_no_compress(void *p);
 void ioda_variable_creation_parameters_c_compress_with_gzip(void *p,int32_t level);
 void ioda_variable_creation_parameters_c_compress_with_szip(void *p,int32_t pixsels_per_block,int32_t options);

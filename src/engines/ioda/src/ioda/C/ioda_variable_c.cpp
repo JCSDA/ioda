@@ -16,10 +16,9 @@ void * ioda_variable_c_alloc()
 }
 
 void ioda_variable_c_dtor(void **p) {
-    void *p_ = *p;
-    VOID_TO_CXX(ioda::Variable,p_,v);
-    if ( v != nullptr ) delete v;
-    v = nullptr;
+//    void *p_ = *p;
+//    VOID_TO_CXX(ioda::Variable,p_,v);
+//    v = nullptr;
     *p = nullptr;
 }
 
@@ -33,10 +32,10 @@ void ioda_variable_c_clone(void **t_p,void *rhs_p)
             delete *t;    
         }
         if ( rhs == nullptr) {
+            *t = nullptr;
             return;
         }
         *t = new ioda::Variable(*rhs);
-        t_p = reinterpret_cast< void ** >(t);
         return;
     } catch ( std::exception& e) {
         std::cerr << "ioda_variable_c_clone exception " << e.what() << "\n";
@@ -429,7 +428,3 @@ bool ioda_variable_c_read_str(void *p,int64_t n,void **vstr) {
 }
 
 }
-
-
-
-

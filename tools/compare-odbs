@@ -1,0 +1,15 @@
+#!/bin/bash
+
+odb_ref=$1
+odb_test=$2
+
+odc compare $1 $2
+CC=$?
+
+if [[ $CC != 0 ]]; then
+  odc ls $1 -o testoutput/$(basename $1).1.txt
+  odc ls $2 -o testoutput/$(basename $2).2.txt
+  diff testoutput/$(basename $1).1.txt testoutput/$(basename $2).2.txt
+fi
+
+exit $CC

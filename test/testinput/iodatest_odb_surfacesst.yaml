@@ -18,3 +18,7 @@ variables:
 - name: present_weather_type
 - name: ops_subtype
 - name: station_type
+- name: wmo_block_number
+- name: wmo_region_number
+- name: wmo_station_number
+

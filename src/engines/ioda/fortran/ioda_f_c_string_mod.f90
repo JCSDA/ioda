@@ -1,3 +1,8 @@
+!
+! (C) Copyright 2023 UCAR
+!
+! This software is licensed under the terms of the Apache Licence Version 2.0
+! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
 module ioda_f_c_string_mod
    use, intrinsic :: iso_c_binding
    use, intrinsic :: iso_fortran_env
@@ -77,27 +82,28 @@ contains
       cstr_ptr = ioda_c_string_alloc(clen)
       clen = clen + 1
       call c_f_pointer(cstr_ptr, cstr, [clen])
-      write (error_unit, *) "alen = ", clen, " flen = ", flen
       do i = 1, flen
-         write (*, *) i, ' ', fstr(i:i)
          cstr(i) = fstr(i:i)
       end do
       cstr(clen) = c_null_char
-      write (*, *) 'f - ', trim(fstr)
-      write (*, *) 'c - ', cstr(1:clen)
-      write (*, *) 'f2c dup'
    end function ioda_f_string_to_c_dup
 
-   subroutine ioda_c_string_print(cstr_ptr)
+   subroutine ioda_c_string_print(cstr_ptr, wunit)
       implicit none
       type(c_ptr) :: cstr_ptr
       character(kind=c_char, len=1), dimension(:), pointer :: cstr
+      integer, intent(in), optional :: wunit
       integer(int64) :: nlen
+      integer :: wr_unit
+
+      if (present(wunit) .eqv. .false.) then
+         wr_unit = output_unit
+      else
+         wr_unit = wunit
+      end if
       nlen = ioda_c_strlen(cstr_ptr)
-!      write(error_unit,*)'cstr len = ',nlen
       call c_f_pointer(cstr_ptr, cstr, [nlen])
-!      write(error_unit,*)'cstr is ',cstr
-      write (*, *) 'cstr = ', cstr(1:nlen), '>'
+      write (wr_unit, *) 'cstr = <', cstr(1:nlen),'>'
    end subroutine
 
    subroutine ioda_f_string_to_c_copy(fstr, cstr_ptr, max_c_sz)
@@ -120,14 +126,6 @@ contains
          cstr(i) = fstr(i:i)
       end do
       cstr(clen) = c_null_char
-! take the lines below out for production
-!       write(*,*)' flen = ',flen,' clen = ',clen
-!       clen = ioda_c_strlen(cstr_ptr)
-!       write(*,*)' cstrlen = ',clen
-!       write(*,*) 'f - ',trim(fstr)
-!       write(*,*) 'c - ',cstr(1:flen)
-!       call ioda_c_string_print(cstr_ptr)
-!       write(*,*) 'f2c cpy'
    end subroutine
 
    subroutine ioda_c_string_to_f_dup(cstr_ptr, fstr)
@@ -151,9 +149,6 @@ contains
       do i = 1, clen
          fstr(i:i) = cstr(i)
       end do
-!       write(*,*)'f dup  = ',trim(fstr)
-!       write(*,*)'c orig = ',cstr(1:nlen)
-!       write(*,*)'c2f dup'
    end subroutine
 
    subroutine ioda_c_string_to_f_copy(cstr_ptr, fstr)
@@ -173,19 +168,14 @@ contains
          write (error_unit, *) 'ioda_c_string_to_f_copy fortran string is too small to hold c string'
          stop - 1
       end if
-!       write(error_unit,*)'clen = ',clen
       nlen = clen + 1
       call c_f_pointer(cstr_ptr, cstr, [nlen])
-!       write(error_unit,*)' cstr = ',cstr(1:nlen)
       do i = 1, clen
          fstr(i:i) = cstr(i)
       end do
       if (flen > clen) then
          fstr(clen + 1:flen) = ' '
       end if
-!       write(*,*)'f ',trim(fstr)
-!       write(*,*)'c ',cstr
-!       write(*,*)'c2f cpy'
    end subroutine
 
 end module

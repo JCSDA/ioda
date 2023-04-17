@@ -18,8 +18,8 @@ void * ioda_vecstring_c_alloc()
 
 void ioda_vecstring_c_dealloc(void **p)
 {
-    std::vector<std::string> * vs = 
-       reinterpret_cast< std::vector<std::string> * >(*p);
+    if ( p == nullptr) return;
+    VOID_TO_CXX(std::string,*p,vs); 
     if ( vs != nullptr) {
         std::cerr << "deallocationg ptr\n";
         std::cerr << "size = " << vs->size() << "\n";
@@ -28,10 +28,9 @@ void ioda_vecstring_c_dealloc(void **p)
         std::cerr << "dealloc on null ptr\n";
     }
     vs = nullptr;
-    *p = nullptr;
 }
 
-void ioda_vecstring_c_clone(void **t_p,void *rhs_p)
+void ioda_vecstring_c_copy(void **t_p,void *rhs_p)
 {
     try {
         std::vector<std::string> ** t = 
@@ -41,33 +40,15 @@ void ioda_vecstring_c_clone(void **t_p,void *rhs_p)
             delete *t;    
         }
         if ( rhs == nullptr) {
+            *t = nullptr;
             return;
         }
         *t = new std::vector<std::string>(*rhs);
-        t_p = reinterpret_cast< void ** >(t);
         return;
     } catch ( std::exception& e) {
         std::cerr << "ioda_vecstring_c_clone exception " << e.what() << "\n";
         fatal_error();  
     }
-}
-
-
-void ioda_vecstring_c_copy(void *p,void *pcpy) 
-{
-    try {
-        VOID_TO_CXX(const std::vector<std::string>,p,vs);
-        VOID_TO_CXX(std::vector<std::string>,pcpy,cpy);
-        if ( vs == nullptr || cpy==nullptr) {
-            std::cerr << "ioda_vecstring_c_copy null pointer in argument\n";
-            throw std::exception();
-        }
-        *cpy = *vs;
-        return;
-    } catch (std::exception& e) {
-        std::cerr << "ioda_vecstring_c_clone failed " << e.what() << "\n";
-        fatal_error();
-    }    
 }
 
 void ioda_vecstring_c_set_string_f(void *p,int64_t i,void *pstr)
@@ -226,7 +207,6 @@ int64_t ioda_vecstring_c_element_size_f(void *p,int64_t i) {
         }
         --i;
         const std::string& vi = vs->at(i);
-//        std::cerr << " elem size " << i << " " << vi << " size =  " << vi.size() << "\n"; 
         return static_cast<int64_t>(vi.size());
     } catch (std::exception& e) {
         std::cerr << "ioda_vecstring_c_element_size failed " << e.what() << "\n";
@@ -285,12 +265,16 @@ void ioda_string_c_dealloc(void *p)
     s = nullptr;
 }
 
-void ioda_string_c_clone(void **t_p,void *rhs_p)
+void ioda_string_c_copy(void **t_p,void *rhs_p)
 {
     try {
         std::string ** t = 
             reinterpret_cast< std::string ** >(t_p);
         VOID_TO_CXX(std::string,rhs_p,rhs);
+        if (t == nullptr) {
+            std::cerr << "ioda_string_clone nullptr !\n";
+            throw std::exception();
+        }
         if ( *t != nullptr) {
             delete *t;    
         }
