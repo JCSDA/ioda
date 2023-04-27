@@ -32,6 +32,7 @@ module obsspace_mod
    public obsspace_get_recnum
    public obsspace_get_index
    public obsspace_get_db
+   public obsspace_get_db_2d
    public obsspace_put_db
    public obsspace_has
    public obsspace_get_location_dim_id
@@ -49,6 +50,13 @@ module obsspace_mod
       module procedure obsspace_get_db_real64
       module procedure obsspace_get_db_datetime
       module procedure obsspace_get_db_bool
+   end interface
+
+   interface obsspace_get_db_2d
+      module procedure obsspace_get_db_2d_int32
+      module procedure obsspace_get_db_2d_int64
+      module procedure obsspace_get_db_2d_real32
+      module procedure obsspace_get_db_2d_real64
    end interface
 
    interface obsspace_put_db
@@ -537,6 +545,94 @@ contains
 
       deallocate (c_group, c_vname)
    end subroutine obsspace_get_db_bool
+
+   !-------------------------------------------------------------------------------
+
+   !> Get 2D No channel hacks
+
+      subroutine obsspace_get_db_2d_int32(obss, group, vname, vect)
+         implicit none
+         type(c_ptr), value, intent(in) :: obss
+         character(len=*), intent(in) :: group
+         character(len=*), intent(in) :: vname
+         integer(c_int32_t), intent(inout) :: vect(:,:)
+
+         character(kind=c_char, len=1), allocatable :: c_group(:), c_vname(:)
+         integer(c_size_t) :: length
+
+         !  Translate query from Fortran string to C++ char[].
+         call f_c_string(group, c_group)
+         call f_c_string(vname, c_vname)
+         length = size(vect)
+         call c_obsspace_get_nd_int32(obss, c_group, c_vname, length, vect)
+         deallocate (c_group, c_vname)
+      end subroutine obsspace_get_db_2d_int32
+
+   !-------------------------------------------------------------------------------
+
+   !> No channel hacks
+
+      subroutine obsspace_get_db_2d_int64(obss, group, vname, vect)
+         implicit none
+         type(c_ptr), value, intent(in) :: obss
+         character(len=*), intent(in) :: group
+         character(len=*), intent(in) :: vname
+         integer(c_int64_t), intent(inout) :: vect(:,:)
+
+         character(kind=c_char, len=1), allocatable :: c_group(:), c_vname(:)
+         integer(c_size_t) :: length
+
+         !  Translate query from Fortran string to C++ char[].
+         call f_c_string(group, c_group)
+         call f_c_string(vname, c_vname)
+         length = size(vect)
+         call c_obsspace_get_nd_int64(obss, c_group, c_vname, length, vect)
+         deallocate (c_group, c_vname)
+      end subroutine obsspace_get_db_2d_int64
+
+   !-------------------------------------------------------------------------------
+
+   !> No channel hacks
+
+      subroutine obsspace_get_db_2d_real32(obss, group, vname, vect)
+         implicit none
+         type(c_ptr), value, intent(in) :: obss
+         character(len=*), intent(in) :: group
+         character(len=*), intent(in) :: vname
+         real(c_float), intent(inout) :: vect(:,:)
+
+         character(kind=c_char, len=1), allocatable :: c_group(:), c_vname(:)
+         integer(c_size_t) :: length
+
+         !  Translate query from Fortran string to C++ char[].
+         call f_c_string(group, c_group)
+         call f_c_string(vname, c_vname)
+         length = size(vect)
+         call c_obsspace_get_nd_real32(obss, c_group, c_vname, length, vect)
+         deallocate (c_group, c_vname)
+      end subroutine obsspace_get_db_2d_real32
+
+   !-------------------------------------------------------------------------------
+
+   !> No channels hacks
+
+      subroutine obsspace_get_db_2d_real64(obss, group, vname, vect)
+         implicit none
+         type(c_ptr), value, intent(in) :: obss
+         character(len=*), intent(in) :: group
+         character(len=*), intent(in) :: vname
+         real(c_double), intent(inout) :: vect(:,:)
+
+         character(kind=c_char, len=1), allocatable :: c_group(:), c_vname(:)
+         integer(c_size_t) :: length
+
+         !  Translate query from Fortran string to C++ char[].
+         call f_c_string(group, c_group)
+         call f_c_string(vname, c_vname)
+         length = size(vect)
+         call c_obsspace_get_nd_real64(obss, c_group, c_vname, length, vect)
+         deallocate (c_group, c_vname)
+      end subroutine obsspace_get_db_2d_real64
 
 !-------------------------------------------------------------------------------
 

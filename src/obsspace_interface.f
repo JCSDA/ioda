@@ -135,7 +135,7 @@ logical(kind=c_bool) function c_obsspace_has(obss, group, vname) bind(C,name='ob
 end function c_obsspace_has
 
 !-------------------------------------------------------------------------------
-! get data from ObsSpace
+! get data from ObsSpace with chan select hacks
 
 subroutine c_obsspace_get_int32(obss, group, vname, length, vect, len_cs, chan_select) &
               & bind(C,name='obsspace_get_int32_f')
@@ -188,6 +188,55 @@ subroutine c_obsspace_get_real64(obss, group, vname, length, vect, len_cs, chan_
   integer(c_size_t), intent(in) :: len_cs
   integer(c_int), intent(in) :: chan_select(len_cs)
 end subroutine c_obsspace_get_real64
+
+!-------------------------------------------------------------------------------
+! get data from ObsSpace without chan select hacks
+
+subroutine c_obsspace_get_nd_int32(obss, group, vname, length, vect) &
+              & bind(C,name='obsspace_get_nd_int32_f')
+  use, intrinsic :: iso_c_binding, only : c_ptr,c_char,c_int,c_size_t,c_int32_t
+  implicit none
+  type(c_ptr), value :: obss
+  character(kind=c_char, len=1), intent(in) :: group(*)
+  character(kind=c_char, len=1), intent(in) :: vname(*)
+  integer(c_size_t), intent(in) :: length
+  integer(c_int32_t), intent(inout) :: vect(length)
+end subroutine c_obsspace_get_nd_int32
+
+subroutine c_obsspace_get_nd_int64(obss, group, vname, length, vect) &
+              & bind(C,name='obsspace_get_nd_int64_f')
+  use, intrinsic :: iso_c_binding, only : c_ptr,c_char,c_int,c_size_t,c_int64_t
+  implicit none
+  type(c_ptr), value :: obss
+  character(kind=c_char, len=1), intent(in) :: group(*)
+  character(kind=c_char, len=1), intent(in) :: vname(*)
+  integer(c_size_t), intent(in) :: length
+  integer(c_int64_t), intent(inout) :: vect(length)
+end subroutine c_obsspace_get_nd_int64
+
+subroutine c_obsspace_get_nd_real32(obss, group, vname, length, vect) &
+              & bind(C,name='obsspace_get_nd_real32_f')
+  use, intrinsic :: iso_c_binding, only : c_ptr,c_char,c_int,c_size_t,c_float
+  implicit none
+  type(c_ptr), value :: obss
+  character(kind=c_char, len=1), intent(in) :: group(*)
+  character(kind=c_char, len=1), intent(in) :: vname(*)
+  integer(c_size_t), intent(in) :: length
+  real(c_float), intent(inout) :: vect(length)
+end subroutine c_obsspace_get_nd_real32
+
+subroutine c_obsspace_get_nd_real64(obss, group, vname, length, vect) &
+              & bind(C,name='obsspace_get_nd_real64_f')
+  use, intrinsic :: iso_c_binding, only : c_ptr,c_char,c_int,c_size_t,c_double
+  implicit none
+  type(c_ptr), value :: obss
+  character(kind=c_char, len=1), intent(in) :: group(*)
+  character(kind=c_char, len=1), intent(in) :: vname(*)
+  integer(c_size_t), intent(in) :: length
+  real(c_double), intent(inout) :: vect(length)
+end subroutine c_obsspace_get_nd_real64
+
+!-------------------------------------------------------------------------------
 
 subroutine c_obsspace_get_datetime(obss, group, vname, length, date, time, len_cs, chan_select) &
               & bind(C,name='obsspace_get_datetime_f')

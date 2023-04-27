@@ -5,6 +5,7 @@ set(_programs
     ioda_compare.sh
     ioda_compare_odc_with_netcdf.py
     refactor-yaml.py
+    retrieval_upgrader.py
     compare-odbs
 )
 

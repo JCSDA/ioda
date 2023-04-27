@@ -94,6 +94,7 @@ Groups:
   - Group: [ "MetaData" ]
     Required: true
     Required Variables: [ "latitude", "longitude" ]  # "dateTime" is left out because the name changed from "datetime", and both are valid in ioda for now.
+  - Group: [ "RetrievalAncillaryData" ]
   - Group: [ "ObsBias" ]
   - Group: [ "ObsValue" ]
   - Group: [ "DerivedObsValue" ]
@@ -168,7 +169,7 @@ Dimensions:
   - Dimension: [ "MetarSequence" ]
   - Dimension: [ "AmdarSequence" ]
   - Dimension: [ "dim_2" ]     # This is purely a placeholder for BUFR second dimension; should be eliminated in future.
-  - Dimension: [ "averagingKernelLevels" ]
+  - Dimension: [ "Vertice" ]
   # Deprecated
   - Dimension: [ "ndatetime" ]
     Remove: true
@@ -433,6 +434,9 @@ Variables:
     Attributes: { units: "Pa" }
     Dimensions: [ [ "Location" ], [ "Location", "Level" ], [ "Location", "Level", "PressureEvent" ] ]
     MetaData: true
+  - Variable: [ "pressureVertice" ]
+    Attributes: { units: "Pa" }
+    Dimensions: [ [ "Location", "Vertice" ] ]
   - Variable: [ "stationPressure", "surface_pressure", "pressure_station" ]
     Attributes: { units: "Pa" }
   - Variable: [ "surfacePressure", "pressure_surface" ]    # Only for use by UKMO
@@ -700,7 +704,7 @@ Variables:
     Attributes: { units: "mol m-2" }
   - Variable: [ "carbondioxideLayer", "mole_fraction_of_carbon_dioxide_in_air" ]
     Dimensions: [ [ "Location" ], [ "Location", "Layer" ] ]
-    Attributes: { units: "1" }
+    Attributes: { units: "mol m-2" }
   - Variable: [ "carbonmonoxideTotal", "carbon_monoxide_in_total_column" ]
     Dimensions: [ [ "Location" ], [ "Location", "Layer" ] ]
     Attributes: { units: "mol m-2" }
@@ -722,6 +726,12 @@ Variables:
   - Variable: [ "formaldehydeColumn" ]
     Dimensions: [ [ "Location" ], [ "Location", "Layer" ] ]
     Attributes: { units: "mol m-2" }
+  - Variable: [ "aprioriTerm" ]
+    Dimensions: [ [ "Location" ], [ "Location", "Layer" ] ]
+    Attributes: { units: "mol m-2" }
+  - Variable: [ "averagingKernel" ]
+    Dimensions: [ [ "Location" ], [ "Location", "Layer" ] ]
+    Attributes: { units: "1" }
   - Variable: [ "nitrogendioxideProfile" ]
     Dimensions: [ [ "Location" ], [ "Location", "Level" ] ]
     Attributes: { units: "mol mol-1" }

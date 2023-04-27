@@ -114,6 +114,7 @@ void obsspace_get_index_f(const ObsSpace & obss,
 bool obsspace_has_f(const ObsSpace & obss, const char * group, const char * vname) {
   return obss.has(std::string(group), std::string(vname));
 }
+// with channel hack -----------------------------------------------------------
 // -----------------------------------------------------------------------------
 void obsspace_get_int32_f(const ObsSpace & obss, const char * group, const char * vname,
                           const std::size_t & length, int32_t* vec,
@@ -158,6 +159,37 @@ void obsspace_get_real64_f(const ObsSpace & obss, const char * group, const char
   obss.get_db(std::string(group), std::string(vname), vdata, chanSelect);
   std::copy(vdata.begin(), vdata.end(), vec);
 }
+
+// without channel hack  -------------------------------------------------------
+// -----------------------------------------------------------------------------
+void obsspace_get_nd_int32_f(const ObsSpace & obss, const char * group, const char * vname,
+                          const std::size_t & length, int32_t* vec) {
+  std::vector<int32_t> vdata(length);
+  obss.get_db(std::string(group), std::string(vname), vdata);
+  std::copy(vdata.begin(), vdata.end(), vec);
+}
+// -----------------------------------------------------------------------------
+void obsspace_get_nd_int64_f(const ObsSpace & obss, const char * group, const char * vname,
+                          const std::size_t & length, int64_t* vec) {
+  std::vector<int64_t> vdata(length);
+  obss.get_db(std::string(group), std::string(vname), vdata);
+  std::copy(vdata.begin(), vdata.end(), vec);
+}
+// -----------------------------------------------------------------------------
+void obsspace_get_nd_real32_f(const ObsSpace & obss, const char * group, const char * vname,
+                           const std::size_t & length, float* vec) {
+  std::vector<float> vdata(length);
+  obss.get_db(std::string(group), std::string(vname), vdata);
+  std::copy(vdata.begin(), vdata.end(), vec);
+}
+// -----------------------------------------------------------------------------
+void obsspace_get_nd_real64_f(const ObsSpace & obss, const char * group, const char * vname,
+                           const std::size_t & length, double* vec) {
+  std::vector<double> vdata(length);
+  obss.get_db(std::string(group), std::string(vname), vdata);
+  std::copy(vdata.begin(), vdata.end(), vec);
+}
+
 // -----------------------------------------------------------------------------
 void obsspace_get_datetime_f(const ObsSpace & obss, const char * group, const char * vname,
                              const std::size_t & length, int32_t* date, int32_t* time,
