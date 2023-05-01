@@ -666,12 +666,12 @@ std::vector<std::string> DataFromSQL::getStationIDs() const {
       // If Argo identifier present, use those to fill the station ID.
       if (var_argo_identifier[loc] != odb_missing_int) {
         stream.str("");
-        stream << std::setfill('0') << std::setw(8) << var_argo_identifier[loc];
+        stream << std::right << std::setfill('0') << std::setw(8) << var_argo_identifier[loc];
         stationIDs[loc] = stream.str();
       // If Buoy identifier present, use those to fill the station ID.
       } else if (var_buoy_identifier[loc] != odb_missing_int) {
         stream.str("");
-        stream << std::setfill('0') << std::setw(8) << var_buoy_identifier[loc];
+        stream << std::right << std::setfill(' ') << std::setw(8) << var_buoy_identifier[loc];
         stationIDs[loc] = stream.str();
       // Neither Argo nor buoy identifier present; fill with statid
       } else if (var_statid[loc] != "") {

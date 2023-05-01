@@ -1259,6 +1259,9 @@ Variables:
   - Variable: [ "buoyType", "buoy_type"]
     Type: Enum
     MetaData: true
+  - Variable: [ "buoyIdentifier", "buoy_identifier"]
+    Type: Enum
+    MetaData: true
   - Variable: [ "obPractice", "ob_practice"]
     Type: Enum
     MetaData: true
