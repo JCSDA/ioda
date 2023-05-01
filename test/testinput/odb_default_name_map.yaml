@@ -805,22 +805,6 @@ varno-dependent columns:
         varno: 58
       - name: "dewPointTemperature"
         varno: 59
-      - name: "type_of_high_clouds"
-        varno: 63
-      - name: "type_of_middle_clouds"
-        varno: 64
-      - name: "type_of_low_clouds"
-        varno: 65
-      - name: "low_cloud_amount"
-        varno: 67
-      - name: "additional_cloud_group_height"
-        varno: 68
-      - name: "additional_cloud_group_type"
-        varno: 69
-      - name: "additional_cloud_group_amount"
-        varno: 70
-      - name: "total_amount_of_clouds"
-        varno: 91
       - name: "station_pressure"
         varno: 107
       - name: "mean_sea_level_pressure"
@@ -887,6 +871,28 @@ varno-dependent columns:
         varno: 288
       - name: "kd490"
         varno: 289
+  # Map initial_obsvalue at varno 235 to MetaData/air_pressure rather than ObsValue/air_pressure
+  - source: "initial_obsvalue"
+    group name: "MetaData"
+    varno-to-variable-name mapping:
+      - name: "pressure"
+        varno: 235
+      - name: "type_of_high_clouds"
+        varno: 63
+      - name: "type_of_middle_clouds"
+        varno: 64
+      - name: "type_of_low_clouds"
+        varno: 65
+      - name: "low_cloud_amount"
+        varno: 67
+      - name: "additional_cloud_group_height"
+        varno: 68
+      - name: "additional_cloud_group_type"
+        varno: 69
+      - name: "additional_cloud_group_amount"
+        varno: 70
+      - name: "total_amount_of_clouds"
+        varno: 91
       - name: "cloud_amount_id"
         varno: 290
       - name: "cloud_type_id"
@@ -897,12 +903,6 @@ varno-dependent columns:
         varno: 293
       - name: "deep_convective_base_height"
         varno: 294
-  # Map initial_obsvalue at varno 235 to MetaData/air_pressure rather than ObsValue/air_pressure
-  - source: "initial_obsvalue"
-    group name: "MetaData"
-    varno-to-variable-name mapping:
-      - name: "pressure"
-        varno: 235
   - source: "obs_error"
     group name: "ObsError"
     varno-to-variable-name mapping: *obsvalue_varnos
