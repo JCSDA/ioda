@@ -61,10 +61,13 @@ ioPool/WriterPool.cpp
 ioPool/WriterPool.h
 ioPool/WriterUtils.cpp
 ioPool/WriterUtils.h
+
+c_obsspace_get_group.cpp
+c_obsspace_get_group.hpp
 )
 
 if (IODA_BUILD_LANGUAGE_FORTRAN)
-  list( APPEND ioda_src_files obsspace_mod.F90)
+  list( APPEND ioda_src_files obsspace_mod.F90 obsspace_group_mod.f90 )
 endif()
 
 list( APPEND ioda_fortran_interface_includes
@@ -78,6 +81,10 @@ ecbuild_add_library( TARGET ${PROJECT_NAME}
                      HEADER_DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}
                      LINKER_LANGUAGE CXX )
 
+if (IODA_BUILD_LANGUAGE_FORTRAN)
+target_link_libraries( ${PROJECT_NAME} PUBLIC ioda_fortran )
+endif()
+
 target_link_libraries( ${PROJECT_NAME} PUBLIC ioda_engines )
 target_link_libraries( ${PROJECT_NAME} PUBLIC fckit )
 target_link_libraries( ${PROJECT_NAME} PUBLIC ${oops_LIBRARIES} )
@@ -89,8 +96,9 @@ add_custom_target(${PROJECT_NAME}_headers ALL
                     COMMAND ${CMAKE_COMMAND} -E create_symlink ${CMAKE_CURRENT_SOURCE_DIR} ${BUILD_DIR_INCLUDE_PATH}/${PROJECT_NAME})
 add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_headers)
 
-target_include_directories(${PROJECT_NAME} PUBLIC $<BUILD_INTERFACE:${BUILD_DIR_INCLUDE_PATH}>)
-#  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/engines/ioda/include>)
+target_include_directories(${PROJECT_NAME} PUBLIC $<BUILD_INTERFACE:${BUILD_DIR_INCLUDE_PATH}>
+	$<TARGET_PROPERTY:ioda_fortran,Fortran_MODULE_DIRECTORY>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/engines/ioda/include>)
 
 #Fortran file interfaces templates
 install(FILES ${ioda_fortran_interface_includes} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/ioda)
@@ -102,6 +110,6 @@ if (IODA_BUILD_LANGUAGE_FORTRAN)
   install(DIRECTORY ${CMAKE_BINARY_DIR}/${MODULE_DIR}/ DESTINATION ${MODULE_DIR})
   target_include_directories(${PROJECT_NAME} INTERFACE
                                 $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/${MODULE_DIR}>
-                                $<INSTALL_INTERFACE:${MODULE_DIR}>)
+                                $<INSTALL_INTERFACE:${MODULE_DIR}>) 
 endif()
 

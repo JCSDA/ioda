@@ -22,10 +22,11 @@ void * ioda_group_c_alloc()
 }
 
 void ioda_group_c_dtor(void **p) {
-    if ( p == nullptr || *p) return;
+    if ( p == nullptr) return;
     void *p_ = *p;
     VOID_TO_CXX(ioda::Group,p_,g);
-//  p is a weak reference pointer
+    if ( g == nullptr) return;
+    delete g;
     *p = nullptr;
 }
 

@@ -320,10 +320,7 @@ namespace ioda {
         /// @{
 
         /// \brief return the ObsGroup that stores the data
-        inline ObsGroup getObsGroup() { return obs_group_; }
-
-        /// \brief return the ObsGroup that stores the data
-        inline const ObsGroup getObsGroup() const { return obs_group_; }
+        ObsGroup getObsGroup() const { return ObsGroup(obs_group_); }
 
         /// @}
         /// @name IO functions
@@ -437,7 +434,6 @@ namespace ioda {
         std::vector<std::size_t> recidx_all_recnums() const;
 
         /// @}
-
 
      private:
         // ----------------------------- private data members ---------------------------

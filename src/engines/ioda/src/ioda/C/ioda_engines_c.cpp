@@ -156,7 +156,7 @@ void * ioda_engines_c_construct_from_command_line(void *vs,const void *def_name)
             auto fname = std::string(default_filename);
             ioda::Group *res = new ioda::Group( ioda::Engines::constructFromCmdLine(argc,argv,fname) );
             delete argv[0];
-            delete argv;            
+            delete [] argv;            
             return reinterpret_cast<void*>(res);
         }
         //
