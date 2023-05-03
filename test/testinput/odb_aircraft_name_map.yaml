@@ -5,6 +5,8 @@ varno-independent columns:
     source: "lon"
   - name: "MetaData/observationSubTypeNum"
     source: "ops_subtype"
+  - name: "MetaData/pressure"
+    source: "initial_vertco_reference"
   - name: "MetaData/sequenceNumber"
     source: "seqno"
   - name: "MetaData/stationElevation"
@@ -17,30 +19,14 @@ varno-dependent columns:
     varno-to-variable-name mapping: &obsvalue_varnos
       - name: "airTemperature"
         varno: 2
-      - name: "windEastward"
-        varno: 3
-      - name: "windNorthward"
-        varno: 4
       - name: "relativeHumidity"
         varno: 29
-      - name: "airTemperature"
-        varno: 39
-      - name: "dewPointTemperature"
-        varno: 59
       - name: "windDirection"
         varno: 111
       - name: "windSpeed"
         varno: 112
-      - name: "potentialTemperature"
-        varno: 225
       - name: "waterVaporMixingRatio"
         varno: 226
-  # Map initial_obsvalue at varno 235 to MetaData/pressure rather than ObsValue/pressure
-  - source: "initial_obsvalue"
-    group name: "MetaData"
-    varno-to-variable-name mapping:
-      - name: "pressure"
-        varno: 235
   - source: "obs_error"
     group name: "ObsError"
     varno-to-variable-name mapping: *obsvalue_varnos
