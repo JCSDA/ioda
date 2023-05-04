@@ -73,6 +73,50 @@ void WriterPool::groupRanks(IoPoolGroupMap & rankGrouping) {
 }
 
 //--------------------------------------------------------------------------------------
+void WriterPool::setTotalNlocs(const std::size_t nlocs) {
+    // Sum up the nlocs from assigned ranks. Set total_nlocs_ to zero for ranks not in
+    // the io pool.
+    if (comm_pool_ == nullptr) {
+        total_nlocs_ = 0;
+    } else {
+        total_nlocs_ = nlocs;
+        for (std::size_t i = 0; i < rank_assignment_.size(); ++i) {
+            total_nlocs_ += rank_assignment_[i].second;
+        }
+    }
+}
+
+//--------------------------------------------------------------------------------------
+void WriterPool::collectSingleFileInfo() {
+    // Want to determine two pieces of information:
+    //   1. global nlocs which is the sum of all nlocs in all ranks in the io pool
+    //   2. starting point along nlocs dimension for each rank in the io pool
+    //
+    // Only the ranks in the io pool should participate in this function
+    //
+    // Need the total_nlocs_ values from all ranks for both pieces of information.
+    // Have rank 0 do the processing and then send the information back to the other ranks.
+    if (comm_pool_ != nullptr) {
+        std::size_t root = 0;
+        std::vector<std::size_t> totalNlocs(size_pool_);
+        std::vector<std::size_t> nlocsStarts(size_pool_);
+
+        comm_pool_->gather(total_nlocs_, totalNlocs, root);
+        if (rank_pool_ == root) {
+            global_nlocs_ = 0;
+            std::size_t nlocsStartingPoint = 0;
+            for (std::size_t i = 0; i < totalNlocs.size(); ++i) {
+                global_nlocs_ += totalNlocs[i];
+                nlocsStarts[i] = nlocsStartingPoint;
+                nlocsStartingPoint += totalNlocs[i];
+            }
+        }
+        comm_pool_->broadcast(global_nlocs_, root);
+        comm_pool_->scatter(nlocsStarts, nlocs_start_, root);
+    }
+}
+
+//--------------------------------------------------------------------------------------
 WriterPool::WriterPool(const oops::Parameter<IoPoolParameters> & ioPoolParams,
                const oops::RequiredPolymorphicParameter
                    <Engines::WriterParametersBase, Engines::WriterFactory> & writerParams,
@@ -82,7 +126,8 @@ WriterPool::WriterPool(const oops::Parameter<IoPoolParameters> & ioPoolParams,
                    : IoPoolBase(ioPoolParams, commAll, commTime, winStart, winEnd,
                      writerPoolColor, writerNonPoolColor,
                      writerPoolCommName, writerNonPoolCommName),
-                     writer_params_(writerParams), patch_obs_vec_(patchObsVec) {
+                     writer_params_(writerParams), patch_obs_vec_(patchObsVec),
+                     total_nlocs_(0), global_nlocs_(0) {
     nlocs_ = patchObsVec.size();
     patch_nlocs_ = std::count(patchObsVec.begin(), patchObsVec.end(), true);
     // For now, the target pool size is simply the minumum of the specified (or default) max

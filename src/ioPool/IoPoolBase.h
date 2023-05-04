@@ -58,25 +58,6 @@ class IODA_DL IoPoolBase : public util::Printable {
              const char * poolCommName, const char * nonPoolCommName);
   ~IoPoolBase();
 
-  /// \brief return nlocs for this object
-  int nlocs() const { return nlocs_; }
-
-  /// \brief return the total nlocs for this rank
-  int total_nlocs() const { return total_nlocs_; }
-
-  /// \brief return the global nlocs in the pool
-  int global_nlocs() const { return global_nlocs_; }
-
-  /// \brief return the nlocs start position
-  /// \details The nlocs start position refers to the position along the nlocs dimension
-  /// in the output file (when writing a single output file) where this rank's data
-  /// (collected from other non io pool MPI processes) goes. For example, io pool rank 0
-  /// data goes at nlocs position 0 in the file. Then if io pool rank 0 data is 10 locations
-  /// long, io pool rank 1 data goes in the file at nlocs position 10 and so forth. In other
-  /// words, the io pool ranks are stacking their blocks of data together (in series)
-  /// in the output file.
-  int nlocs_start() const { return nlocs_start_; }
-
   /// \brief return the "all" mpi communicator
   const eckit::mpi::Comm & comm_all() const { return comm_all_; }
 
@@ -133,21 +114,6 @@ class IODA_DL IoPoolBase : public util::Printable {
 
   /// \brief target pool size
   int target_pool_size_;
-
-  /// \brief number of locations for this rank
-  std::size_t nlocs_;
-
-  /// \brief number of patch locations for this rank
-  std::size_t patch_nlocs_;
-
-  /// \brief total number of locations (sum of this rank nlocs + assigned ranks nlocs)
-  std::size_t total_nlocs_;
-
-  /// \brief global number of locations (sum of total_nlocs_ from all ranks in the io pool)
-  std::size_t global_nlocs_;
-
-  /// \brief starting point along the nlocs dimension (for single file output)
-  std::size_t nlocs_start_;
 
   /// \brief MPI communicator group for all processes
   const eckit::mpi::Comm & comm_all_;
@@ -234,22 +200,6 @@ class IODA_DL IoPoolBase : public util::Printable {
   /// set to nullptr, and both rank_pool_ and size_pool_ are set to -1.
   /// \param rankGrouping structure that maps ranks outside the pool to ranks in the pool
   void createIoPool(IoPoolGroupMap & rankGrouping);
-
-  /// \brief collect nlocs from assigned ranks and compute total for this rank
-  /// \detail For each of the ranks in the io pool, this function collects nlocs from
-  /// all of the assigned ranks and sums up them up to get the total nlocs for each
-  /// output file.
-  /// \param nlocs Number of locations for this rank.
-  void setTotalNlocs(const std::size_t nlocs);
-
-  /// \brief collect information related to a single file output from all ranks in the io pool
-  /// \detail This function will collect two pieces of information. The first is the sum
-  /// total nlocs for all ranks in the io pool. This value represents the total amount
-  /// of nlocs from all obs spaces in the all communicator group. The global nlocs value
-  /// is used to properly size the variables when writing to a single output file.
-  /// The second piece of information is the proper start values for each rank in regard
-  /// to the nlocs dimension when writing to a single output file.
-  void collectSingleFileInfo();
 };
 
 }  // namespace ioda
