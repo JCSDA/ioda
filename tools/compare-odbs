@@ -2,14 +2,17 @@
 
 odb_ref=$1
 odb_test=$2
+odc_exe=$3
 
-odc compare $1 $2
+$odc_exe compare "$odb_ref" "$odb_test"
 CC=$?
 
 if [[ $CC != 0 ]]; then
-  odc ls $1 -o testoutput/$(basename $1).1.txt
-  odc ls $2 -o testoutput/$(basename $2).2.txt
-  diff testoutput/$(basename $1).1.txt testoutput/$(basename $2).2.txt
+  txt_ref="testoutput/${odb_ref##*/}.1.txt"
+  txt_test="testoutput/${odb_test##*/}.2.txt"
+  $odc_exe ls "$odb_ref" -o "$txt_ref"
+  $odc_exe ls "$odb_test" -o "$txt_test"
+  diff "$txt_ref" "$txt_test"
 fi
 
 exit $CC
