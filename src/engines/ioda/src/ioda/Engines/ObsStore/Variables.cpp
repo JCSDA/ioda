@@ -40,10 +40,11 @@ Variable::Variable(const std::vector<Dimensions_t>& dimensions,
   var_data_.reset(createVarAttrStore(dtype_));
 
   // If have a fill value, save in an attribute. Do this before resizing
-  // because resize() will check for the fill value.
+  // because resize() will check for the fill value. The third argument
+  // to the fv->write() call below indicates that we are setting the fill value.
   if (params.fvdata.set_) {
     auto fv = impl_atts->create("_fillValue", dtype_, {1});
-    fv->write(params.fill_value, *dtype_);
+    fv->write(params.fill_value, *dtype_, true);
 
     this->fvdata_ = params.fvdata;
   }
@@ -133,7 +134,9 @@ std::shared_ptr<Variable> Variable::write(gsl::span<const char> data, const Type
   if (dtype != *dtype_)
     throw Exception("Requested data type not equal to storage datatype", ioda_Here());
 
-  var_data_->write(data, m_select, f_select);
+  // Fourth argument is true only when writing to the _FillValue attribute, that is
+  // it should always be false when writing to a variable.
+  var_data_->write(data, m_select, f_select, false);
   return shared_from_this();
 }
 

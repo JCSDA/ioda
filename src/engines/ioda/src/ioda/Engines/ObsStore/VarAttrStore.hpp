@@ -41,7 +41,9 @@ public:
   /// \param data contiguous block of data to transfer
   /// \param m_select Selection ojbect: how to select from data argument
   /// \param f_select Selection ojbect: how to select to storage vector
-  virtual void write(gsl::span<const char> data, Selection &m_select, Selection &f_select) = 0;
+  /// \param isFill true if setting the _FillValue attribute
+  virtual void write(gsl::span<const char> data, Selection &m_select,
+                     Selection &f_select, const bool isFill) = 0;
   /// \brief transfer data from data storage vector
   /// \param data contiguous block of data to transfer
   /// \param m_select Selection ojbect: how to select to data argument
@@ -81,18 +83,44 @@ public:
   /// \param data contiguous block of data to transfer
   /// \param m_select Selection ojbect: how to select from data argument
   /// \param f_select Selection ojbect: how to select to storage vector
-  void write(gsl::span<const char> data, Selection &m_select, Selection &f_select) override {
+  /// \param isFill true if setting the _FillValue attribute
+  void write(gsl::span<const char> data, Selection &m_select,
+             Selection &f_select, const bool isFill) override {
     if (data.size() > 0) {
       std::size_t numObjects = data.size() / sizeof(DataType);
       gsl::span<const DataType> d_span(reinterpret_cast<const DataType *>(data.data()), numObjects);
       // assumes m_select and f_select have same number of points
+      // The _FillValue attribute needs to be handled as a special case. data is a
+      // char span so it relies on the correct number of bytes per element (eg, 4 for int)
+      // to work properly in the loop below that transfers the data. Unfortunately,
+      // this is not true when the fill value is passed in. This comes from a union
+      // that is 8 bytes long so that it can accommodate double precision values (eg, double).
+      // The fill value union is a single element so its length doesn't align with
+      // the case where the data type is 4 bytes. Say you have an int and there are two
+      // elements in the target. The fill union has the correct int value in the first 4
+      // bytes and garbage in the second 4 bytes so the first element gets transferred
+      // correctly but the second element gets the garbage value. To handle this in the
+      // loop below, keep transferring the first element from the fill value union into
+      // the target. This results in repeats of the fill in each element of the target
+      // which is the desired result.
       m_select.init_lin_indx();
       f_select.init_lin_indx();
-      while (!m_select.end_lin_indx()) {
-        std::size_t m_indx     = m_select.next_lin_indx() * num_elements_;
-        std::size_t f_indx     = f_select.next_lin_indx() * num_elements_;
-        for (std::size_t i = 0; i < num_elements_; ++i) {
-          var_attr_data_[f_indx + i] = d_span[m_indx + i];
+      if (isFill) {
+        while (!f_select.end_lin_indx()) {
+          // Repeatedly transfer the value in the fill value union
+          // into the var_attr_data_ target.
+          std::size_t f_indx = f_select.next_lin_indx() * num_elements_;
+          for (std::size_t i = 0; i < num_elements_; ++i) {
+            var_attr_data_[f_indx + i] = d_span[0];
+          }
+        }
+      } else {
+        while (!m_select.end_lin_indx()) {
+          std::size_t m_indx = m_select.next_lin_indx() * num_elements_;
+          std::size_t f_indx = f_select.next_lin_indx() * num_elements_;
+          for (std::size_t i = 0; i < num_elements_; ++i) {
+            var_attr_data_[f_indx + i] = d_span[m_indx + i];
+          }
         }
       }
     }
@@ -156,7 +184,9 @@ public:
   /// \param data contiguous block of data to transfer
   /// \param m_select Selection object: how to select from data argument
   /// \param f_select Selection object: how to select to storage vector
-  void write(gsl::span<const char> data, Selection &m_select, Selection &f_select) override {
+  /// \param isFill true if setting the _FillValue attribute
+  void write(gsl::span<const char> data, Selection &m_select, Selection &f_select,
+             const bool isFill) override {
     // data is a series of char * pointing to null terminated strings
     // first place the char * values in a vector
     if (data.size() > 0) {

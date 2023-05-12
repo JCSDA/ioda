@@ -41,7 +41,7 @@ bool Attribute::isOfType(const Type & dtype) const {
 }
 
 std::shared_ptr<Attribute> Attribute::write(gsl::span<const char> data,
-                                            const Type & dtype) {
+                                            const Type & dtype, const bool isFill) {
   if (dtype != *dtype_)
     throw Exception("Requested data type not equal to storage datatype.", ioda_Here());
 
@@ -55,7 +55,7 @@ std::shared_ptr<Attribute> Attribute::write(gsl::span<const char> data,
   }
   Selection m_select(start, npoints);
   Selection f_select(start, npoints);
-  attr_data_->write(data, m_select, f_select);
+  attr_data_->write(data, m_select, f_select, isFill);
   return shared_from_this();
 }
 
