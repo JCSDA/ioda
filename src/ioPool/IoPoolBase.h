@@ -91,6 +91,9 @@ class IODA_DL IoPoolBase : public util::Printable {
   /// \brief return the pool color
   const char * nonPoolCommName() const { return nonPoolCommName_; }
 
+  /// \brief initialize the io pool after construction
+  virtual void initialize() = 0;
+
   /// \brief finalize the io pool before destruction
   virtual void finalize() = 0;
 
@@ -173,14 +176,14 @@ class IODA_DL IoPoolBase : public util::Printable {
   /// \brief set the pool size (number of MPI processes) for this instance
   /// \detail This function sets the data member target_pool_size_ to the minumum of
   /// the specified maximum pool size or the size of the comm_all_ communicator group.
-  void setTargetPoolSize();
+  virtual void setTargetPoolSize();
 
   /// \brief group ranks into sets for the io pool assignments
   /// \detail This function will create a vector of vector of ints structure which
   /// shows how to form the io pool and how to assign the non io pool ranks to each
   /// of the ranks in the io pool.
   /// \param rankGrouping structure that maps ranks outside the pool to ranks in the pool
-  virtual void groupRanks(IoPoolGroupMap & rankGrouping) = 0;
+  virtual void groupRanks(IoPoolGroupMap & rankGrouping);
 
   /// \brief assign ranks in the comm_all_ comm group to each of the ranks in the io pool
   /// \detail This function will dole out the ranks within the comm_all_ group, that are
@@ -191,7 +194,7 @@ class IODA_DL IoPoolBase : public util::Printable {
   /// the comm_all_ group that they receive from.
   /// \param nlocs number of locations on this MPI rank
   /// \param rankGrouping structure that maps ranks outside the pool to ranks in the pool
-  void assignRanksToIoPool(const std::size_t nlocs, const IoPoolGroupMap & rankGrouping);
+  virtual void assignRanksToIoPool(const std::size_t nlocs, const IoPoolGroupMap & rankGrouping);
 
   /// \brief create the io pool communicator group
   /// \detail This function will create the io pool communicator group using the eckit
@@ -199,7 +202,7 @@ class IODA_DL IoPoolBase : public util::Printable {
   /// data members. If this rank is not in the io pool communicator group comm_pool_ is
   /// set to nullptr, and both rank_pool_ and size_pool_ are set to -1.
   /// \param rankGrouping structure that maps ranks outside the pool to ranks in the pool
-  void createIoPool(IoPoolGroupMap & rankGrouping);
+  virtual void createIoPool(IoPoolGroupMap & rankGrouping);
 };
 
 }  // namespace ioda

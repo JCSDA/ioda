@@ -73,6 +73,11 @@ class ReaderPool : public IoPoolBase {
              const std::vector<std::string> & obsGroupVarList);
   ~ReaderPool();
 
+  /// \brief initialize the io pool after construction
+  /// \detail This routine is here to do specialized initialization up before the load
+  /// function has been called and after the constructor is called.
+  void initialize() override;
+
   /// \brief load obs data from the obs source (file or generator)
   /// \param destGroup destination ioda group to be loaded from the input file
   void load(Group & destGroup);

@@ -56,6 +56,49 @@ void IoPoolBase::setTargetPoolSize() {
 }
 
 //--------------------------------------------------------------------------------------
+void IoPoolBase::groupRanks(IoPoolGroupMap & rankGrouping) {
+    rankGrouping.clear();
+    if (rank_all_ == 0) {
+        // This default grouping preserves the ordering that we had before the io pool
+        // was introduced. For the reader this doesn't matter all that much since the
+        // distribution is driven by the location indices, and for the writer this
+        // preserves the order we used to get when every task wrote a file and we
+        // concatenating the output those files in rank order.
+        //
+        // To accomplish this we need to assign the tiles (block of locations from a given
+        // rank in the all_comm_ group) in numeric order since this is how the
+        // concatenator puts together the files from the current code. Ie, we want
+        // the tiles from rank 0 first, rank 1 second, rank 2 third and so on.
+        //
+        // We also want to avoid transferring data between ranks selected for the io pool
+        // since this isn't necessary. Ie, each rank in the pool should own its own tile.
+        //
+        // To accomplish this, divide the total number of ranks into groupings of an even
+        // number of ranks under the assumption that the obs are fairly well load balanced.
+        // TODO(srh) This assumption likely falls apart with the halo distribution but that
+        // can be addressed later. If needed we can do the same type of grouping but base
+        // it on the number of locations instead of the ranks which will make the MPI
+        // transfers more complicated.
+        int base_assign_size = size_all_ / target_pool_size_;
+        int rem_assign_size = size_all_ % target_pool_size_;
+        int start = 0;
+        for (std::size_t i = 0; i < target_pool_size_; ++i) {
+            int count = base_assign_size;
+            if (i < rem_assign_size) {
+                count += 1;
+            }
+            // start is the rank that goes into the pool, and the remaining sequence
+            // of count-1 numbers starting with start+1 are the non pool ranks that
+            // are associated with the pool rank (start).
+            std::vector<int> rankGroup(count - 1);
+            std::iota(rankGroup.begin(), rankGroup.end(), start + 1);
+            rankGrouping.insert(std::make_pair(start, rankGroup));
+            start += count;
+        }
+    }
+}
+
+//--------------------------------------------------------------------------------------
 void IoPoolBase::assignRanksToIoPool(const std::size_t nlocs,
                                      const IoPoolGroupMap & rankGrouping) {
     constexpr int mpiTagBase = 10000;

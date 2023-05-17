@@ -91,6 +91,11 @@ class IODA_DL WriterPool : public IoPoolBase {
   /// \param srcGroup source ioda group to be saved into the output file
   void save(const Group & srcGroup);
 
+  /// \brief initialize the io pool after construction
+  /// \detail This routine is here to do specialized initialization up before the save
+  /// function has been called and after the constructor is called.
+  void initialize() override;
+
   /// \brief finalize the io pool before destruction
   /// \detail This routine is here to do specialized clean up after the save function has been
   /// called and before the destructor is called. The primary task is to clean up the eckit
@@ -134,13 +139,6 @@ class IODA_DL WriterPool : public IoPoolBase {
 
   /// \brief pre-/post-processor object associated with the writer engine.
   std::shared_ptr<Engines::WriterProcBase> writer_proc_;
-
-  /// \brief group ranks into sets for the io pool assignments
-  /// \detail This function will create a vector of vector of ints structure which
-  /// shows how to form the io pool and how to assign the non io pool ranks to each
-  /// of the ranks in the io pool.
-  /// \param rankGrouping structure that maps ranks outside the pool to ranks in the pool
-  void groupRanks(IoPoolGroupMap & rankGrouping) override;
 
   /// \brief collect nlocs from assigned ranks and compute total for this rank
   /// \detail For each of the ranks in the io pool, this function collects nlocs from

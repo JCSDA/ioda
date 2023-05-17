@@ -72,7 +72,12 @@ ReaderPool::ReaderPool(const oops::Parameter<IoPoolParameters> & ioPoolParams,
     // to this copy of the JEDI missing value to transfer that value to the obs space
     // container.
     jedi_missing_value_string_ = std::make_shared<std::string>(util::missingValue(std::string()));
+}
 
+ReaderPool::~ReaderPool() = default;
+
+//--------------------------------------------------------------------------------------
+void ReaderPool::initialize() {
     // TODO(srh) Until the actual reader pool is implemented we need to copy the
     // comm_all_ communicator to the comm_pool_ communicator. The following
     // calls will fall into place for the io pool so use them now to accomplish the
@@ -95,8 +100,6 @@ ReaderPool::ReaderPool(const oops::Parameter<IoPoolParameters> & ioPoolParams,
     // Create the io pool communicator group using the split communicator command.
     createIoPool(rankGrouping);
 }
-
-ReaderPool::~ReaderPool() = default;
 
 //--------------------------------------------------------------------------------------
 void ReaderPool::load(Group & destGroup) {

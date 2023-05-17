@@ -34,45 +34,6 @@ const char writerPoolCommName[] = "writerIoPool";
 const char writerNonPoolCommName[] = "writerNonIoPool";
 
 //--------------------------------------------------------------------------------------
-void WriterPool::groupRanks(IoPoolGroupMap & rankGrouping) {
-    rankGrouping.clear();
-    if (rank_all_ == 0) {
-        // We want the order of the locations in the resulting single output file after
-        // concatenating the output files created by the io pool. To do this we need to
-        // assign the tiles (block of locations from a given rank in the all_comm_ group)
-        // in numeric order since this is how the concatenator puts together the files
-        // from the current code. Ie, we want the tiles from rank 0 first, rank 1 second,
-        // rank 2 third and so on.
-        //
-        // We also want to avoid transferring data between ranks selected for the io pool
-        // since this isn't necessary. Ie, each rank in the pool should own its own tile.
-        //
-        // To accomplish this, divide the total number of ranks into groupings of an even
-        // number of ranks under the assumption that the obs are fairly well load balanced.
-        // TODO(srh) This assumption likely falls apart with the halo distribution but that
-        // can be addressed later. If needed we can do the same type of grouping but base
-        // it on the number of locations instead of the ranks which will make the MPI
-        // transfers more complicated.
-        int base_assign_size = size_all_ / target_pool_size_;
-        int rem_assign_size = size_all_ % target_pool_size_;
-        int start = 0;
-        for (std::size_t i = 0; i < target_pool_size_; ++i) {
-            int count = base_assign_size;
-            if (i < rem_assign_size) {
-                count += 1;
-            }
-            // start is the rank that goes into the pool, and the remaining sequence
-            // of count-1 numbers starting with start+1 are the non pool ranks that
-            // are associated with the pool rank (start).
-            std::vector<int> rankGroup(count - 1);
-            std::iota(rankGroup.begin(), rankGroup.end(), start + 1);
-            rankGrouping.insert(std::make_pair(start, rankGroup));
-            start += count;
-        }
-    }
-}
-
-//--------------------------------------------------------------------------------------
 void WriterPool::setTotalNlocs(const std::size_t nlocs) {
     // Sum up the nlocs from assigned ranks. Set total_nlocs_ to zero for ranks not in
     // the io pool.
@@ -130,6 +91,14 @@ WriterPool::WriterPool(const oops::Parameter<IoPoolParameters> & ioPoolParams,
                      total_nlocs_(0), global_nlocs_(0) {
     nlocs_ = patchObsVec.size();
     patch_nlocs_ = std::count(patchObsVec.begin(), patchObsVec.end(), true);
+}
+
+WriterPool::~WriterPool() = default;
+
+//--------------------------------------------------------------------------------------
+void WriterPool::initialize() {
+    // Create and initialize the io pool.
+
     // For now, the target pool size is simply the minumum of the specified (or default) max
     // pool size and the size of the comm_all_ communicator group.
     setTargetPoolSize();
@@ -189,10 +158,6 @@ WriterPool::WriterPool(const oops::Parameter<IoPoolParameters> & ioPoolParams,
                                                    create_multiple_files_, is_parallel_io_);
     writer_proc_ = Engines::WriterProcFactory::create(writer_params_, createParams);
 }
-
-WriterPool::~WriterPool() = default;
-
-//--------------------------------------------------------------------------------------
 
 //--------------------------------------------------------------------------------------
 void WriterPool::save(const Group & srcGroup) {

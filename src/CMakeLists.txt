@@ -53,6 +53,8 @@ distribution/RoundRobin.h
 ioPool/IoPoolBase.cpp
 ioPool/IoPoolBase.h
 ioPool/IoPoolParameters.h
+ioPool/NewReaderPool.cpp
+ioPool/NewReaderPool.h
 ioPool/ReaderPool.cpp
 ioPool/ReaderPool.h
 ioPool/ReaderUtils.cpp
