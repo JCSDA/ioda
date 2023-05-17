@@ -424,6 +424,9 @@ Variables:
   - Variable: [ "maximumWindGustSpeed" ]
     Attributes: { units: "m s-1" }
     Dimensions: [ [ "Location" ], [ "Location", "SynopticWindSequence" ] ]
+  - Variable: [ "maximumWindGustDirection" ]
+    Attributes: { units: "degree" }
+    Dimensions: [ [ "Location" ], [ "Location", "SynopticWindSequence" ] ]
   - Variable: [ "windShearEastward" ]
     Attributes: { units: "m s-1" }
   - Variable: [ "windShearNorthward" ]
@@ -519,6 +522,8 @@ Variables:
     Attributes: { units: "m s-1" }
   - Variable: [ "snowWaterEquivalent" ]
     Attributes: { units: "kg m-2" }
+  - Variable: [ "snowWaterEquivalentRate" ]
+    Attributes: { units: "kg m-2 s-1" }
   - Variable: [ "sizeOfPrecipitatingElement" ]
     Attributes: { units: "m" }
   - Variable: [ "precipitableWater" ]
