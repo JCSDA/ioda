@@ -107,8 +107,8 @@ void DataFromSQL::setData(const std::string& sql) {
   data_.resize(number_of_columns);
   for (auto &row : sodb) {
     ASSERT(row.columns().size() == number_of_columns);
-    for (size_t i = 0; i < number_of_columns; i++) {
-      appendData(i, row[i]);
+    for (size_t i = 0; i < number_of_columns; ++i) {
+      data_[i].push_back(static_cast<double>(row[i]));
     }
   }
 
@@ -116,10 +116,6 @@ void DataFromSQL::setData(const std::string& sql) {
   for (auto &column : data_) {
     column.shrink_to_fit();
   }
-}
-
-void DataFromSQL::appendData(size_t column, double value) {
-  data_.at(column).push_back(value);
 }
 
 int DataFromSQL::getColumnTypeByName(std::string const& column) const {

@@ -120,11 +120,6 @@ private:
   /// \param sql The SQL string to generate the data for the structure
   void setData(const std::string& sql);
 
-  /// \brief Append a new value to a particular column
-  /// \param column Column to append data to
-  /// \param value  Value to append
-  void appendData(size_t column, double value);
-
   /// \brief Returns the number of rows for a particular varno
   /// \param varno The varno to check
   size_t numberOfRowsForVarno(int varno) const;
