@@ -9,7 +9,7 @@ varno-independent columns:
     source: "lon"
   - name: "MetaData/obPractice"
     source: "ob_practice"
-  - name: "MetaData/observationSubTypeNum"
+  - name: "MetaData/observationTypeNum"
     source: "ops_subtype"
   - name: "MetaData/pressureSensorAltitude"
     source: "pressure_sensor_alt"
