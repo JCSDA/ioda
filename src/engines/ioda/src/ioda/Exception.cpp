@@ -21,6 +21,12 @@ Exception::Exception(const char* msg, const ::ioda::source_location& loc, const 
   add_source_location(loc);
 }
 
+Exception::Exception(std::string msg, const ::ioda::source_location& loc, const Options& opts)
+    : opts_{opts} {
+  add("Reason", msg);
+  add_source_location(loc);
+}
+
 Exception::~Exception() noexcept = default;
 
 void Exception::invalidate() { emessage_ = ""; }
