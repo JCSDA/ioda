@@ -1,5 +1,6 @@
 where:
   varno: [1,39,40,41,42,58,62,107,108,109,110,111,112]
+  query: (year(date) != 0) AND (month(date) != 0) AND (day(date) != 0)
 variables:
 - name: buoy_direction
 - name: buoy_identifier
