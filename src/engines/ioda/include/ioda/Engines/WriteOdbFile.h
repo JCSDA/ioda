@@ -26,6 +26,13 @@ class WriteOdbFileParameters : public WriterParametersBase {
   public:
     /// \brief Path to varno mapping file
     oops::RequiredParameter<std::string> mappingFileName{"mapping file", this};
+
+    /// \brief Path to varno mapping file
+    oops::RequiredParameter<std::string> queryFileName{"query file", this};
+
+    /// \brief Abort if a value is missing in the ObsSpace that is in the mapping map
+    oops::Parameter<bool> missingObsSpaceVariableAbort{
+        "abort when variable missing", false, this};
 };
 
 // Classes

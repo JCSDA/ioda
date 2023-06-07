@@ -274,6 +274,9 @@ void ObsSpace::save() {
           }
           odcparams.mappingFile = odbWriterParams->mappingFileName.value();
           odcparams.outputFile = odbWriterParams->fileName.value();
+          odcparams.queryFile = odbWriterParams->queryFileName.value();
+          odcparams.missingObsSpaceVariableAbort =
+                  odbWriterParams->missingObsSpaceVariableAbort.value();
           Group writerGroup = ioda::Engines::ODC::createFile(odcparams, obs_group_);
         } else {
           // Write the output file

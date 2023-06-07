@@ -394,7 +394,9 @@ ColumnMappings collectColumnMappings(const detail::ODBLayoutParameters &layoutPa
 }
 
 struct ReverseColumnMappings {
-  std::map<std::string, std::string> nonbitfieldColumns;
+  std::map<std::string, std::string> varnoIndependentColumns;
+  std::map<std::string, std::string> varnoDependentColumns;
+  std::map<std::string, std::string> complimentaryVariableColumns;
 };
 
 /// Parse the mapping file and return an object
@@ -403,22 +405,43 @@ struct ReverseColumnMappings {
 /// * indicating which of them should be treated as varno-dependent, and
 /// * listing the varnos for which a mapping of each varno-dependent column or column member has
 ///   been defined.
-ReverseColumnMappings collectReverseColumnMappings(const detail::ODBLayoutParameters &layoutParams) {
+ReverseColumnMappings collectReverseColumnMappings(const detail::ODBLayoutParameters &layoutParams,
+                                                   const std::vector<std::string> &columns,
+                                                   const std::vector<int> &listOfVarNos) {
   ReverseColumnMappings mappings;
 
+  // Add variable that can't be passed via mapping file
+  // these have to be in the query file to be used
+  mappings.varnoIndependentColumns["MetaData/receiptdateTime"] = "receiptdate";
+
   // Process varno-independent columns
-  for (const detail::VariableParameters &columnParams : layoutParams.variables.value()) {
-    mappings.nonbitfieldColumns[columnParams.name.value()] = columnParams.source.value();
+  for (const detail::VariableParameters &columnParams : layoutParams.variables.value()) {      
+    auto it = std::find(columns.begin(), columns.end(), columnParams.source.value()) ;
+    if (it != columns.end())
+      mappings.varnoIndependentColumns[columnParams.name.value()] = columnParams.source.value();
   }
+
+  // Add some default ones if not present
+  if (mappings.varnoIndependentColumns.find("MetaData/latitude") == mappings.varnoIndependentColumns.end()) {
+    mappings.varnoIndependentColumns["MetaData/latitude"] = "lat";
+  }
+  if (mappings.varnoIndependentColumns.find("MetaData/longitude") == mappings.varnoIndependentColumns.end()) {
+    mappings.varnoIndependentColumns["MetaData/longitude"] = "lon";
+  }
+  if (mappings.varnoIndependentColumns.find("MetaData/dateTime") == mappings.varnoIndependentColumns.end()) {
+    mappings.varnoIndependentColumns["MetaData/dateTime"] = "date";
+  }
+
   for (const detail::VarnoDependentColumnParameters &columnParams :
        layoutParams.varnoDependentColumns.value()) {
     if (columnParams.source.value() == std::string("initial_obsvalue")) {
       for (const auto &mappingParams : columnParams.mappings.value()) {
-        mappings.nonbitfieldColumns[mappingParams.name.value()] = std::to_string(mappingParams.varno);
+        auto it = std::find(listOfVarNos.begin(), listOfVarNos.end(), mappingParams.varno);
+        if (it != listOfVarNos.end())
+            mappings.varnoDependentColumns[mappingParams.name.value()] = std::to_string(mappingParams.varno);
       }
     }
   }
-
   return mappings;
 }
 
@@ -473,11 +496,13 @@ std::vector<int> getChannelNumbers(Group storageGroup) {
 
 void readColumn(Group storageGroup, const ColumnInfo column, std::vector<std::vector<double>> &data_store,
                 int number_of_locations, int number_of_channels) {
-  if (column.column_name == "date") {
+  if (column.column_name == "date" || column.column_name == "receipt_date") {
+    std::string obsspacename = "MetaData/dateTime";
+    if (column.column_name == "receipt_date") obsspacename = "MetaData/receiptdateTime";
     std::vector<int64_t> buf;
     std::vector<double> data_store_tmp(number_of_locations);
-    storageGroup.vars["MetaData/dateTime"].read<int64_t>(buf);
-    float ff = ioda::detail::getFillValue<float>(storageGroup.vars["MetaData/dateTime"].getFillValue());
+    storageGroup.vars[obsspacename].read<int64_t>(buf);
+    float ff = ioda::detail::getFillValue<float>(storageGroup.vars[obsspacename].getFillValue());
     for (int j = 0; j < number_of_locations; j++) {
       if (ff == buf[j]) {
         data_store_tmp[j] = odb_missing_float;
@@ -509,11 +534,13 @@ void readColumn(Group storageGroup, const ColumnInfo column, std::vector<std::ve
       }
     }
     pushBackVector(data_store, data_store_tmp, number_of_locations, number_of_channels);
-  } else if (column.column_name == "time") {
+  } else if (column.column_name == "time" || column.column_name == "receipt_time") {
+    std::string obsspacename = "MetaData/dateTime";
+    if (column.column_name == "receipt_date") obsspacename = "MetaData/receiptdateTime";
     std::vector<int64_t> buf;
     std::vector<double> data_store_tmp(number_of_locations);
-    storageGroup.vars["MetaData/dateTime"].read<int64_t>(buf);
-    float ff = ioda::detail::getFillValue<float>(storageGroup.vars["MetaData/dateTime"].getFillValue());
+    storageGroup.vars[obsspacename].read<int64_t>(buf);
+    float ff = ioda::detail::getFillValue<float>(storageGroup.vars[obsspacename].getFillValue());
     for (int j = 0; j < number_of_locations; j++) {
       if (ff == buf[j]) {
         data_store_tmp[j] = odb_missing_float;
@@ -638,17 +665,28 @@ int getNumberOfLocations(Group storageGroup) {
   }
 }
 
-void setupColumnInfo(Group storageGroup, std::vector<ColumnInfo> &column_infos, int &num_columns) {
+void setupColumnInfo(const Group &storageGroup, const ReverseColumnMappings &reverseColumnMap,
+                     std::vector<ColumnInfo> &column_infos, int &num_columns,
+                     bool errorWithColumnNotInObsSpace) {
   const auto objs = storageGroup.listObjects(ObjectType::Variable, true);
   for (auto it = objs.cbegin(); it != objs.cend(); it++) {
     for (int i = 0; i < it->second.size(); i++) {
-      if (!it->second[i].compare(0, metadata_prefix_size, metadata_prefix)) {
-        if (!it->second[i].compare(metadata_prefix_size,it->second[i].size(),"dateTime")) {
+      auto found = reverseColumnMap.varnoIndependentColumns.find(it->second[i]);
+      if (found != reverseColumnMap.varnoIndependentColumns.end()) {
+        if (!it->second[i].compare(metadata_prefix_size,it->second[i].size(),"dateTime") ||
+            !it->second[i].compare(metadata_prefix_size,it->second[i].size(),"receiptdateTime")) {
+          std::string datename = "date";
+          std::string timename = "time";
+          const std::string obsspacename = it->second[i];
+          if (obsspacename == "MetaData/receiptdateTime") {
+            datename = "receipt_date";
+            timename = "receipt_time";
+          }
           ColumnInfo date, time;
-          date.column_name = "date";
-          date.column_type = storageGroup.vars["MetaData/dateTime"].getType().getClass();
-          date.column_size = storageGroup.vars["MetaData/dateTime"].getType().getSize();
-          std::string epochString = storageGroup.vars["MetaData/dateTime"].atts.open("units").read<std::string>();
+          date.column_name = datename;
+          date.column_type = storageGroup.vars[obsspacename].getType().getClass();
+          date.column_size = storageGroup.vars[obsspacename].getType().getSize();
+          std::string epochString = storageGroup.vars[obsspacename].atts.open("units").read<std::string>();
           std::size_t pos = epochString.find("seconds since ");
           epochString = epochString.substr(pos+14);
           const int year = std::stoi(epochString.substr(0,4).c_str());
@@ -671,9 +709,9 @@ void setupColumnInfo(Group storageGroup, std::vector<ColumnInfo> &column_infos, 
           time.epoch_second = second;
           date.string_length = 0;
           num_columns++;
-          time.column_name = "time";
-          time.column_type = storageGroup.vars["MetaData/dateTime"].getType().getClass();
-          time.column_size = storageGroup.vars["MetaData/dateTime"].getType().getSize();
+          time.column_name = timename;
+          time.column_type = storageGroup.vars[obsspacename].getType().getClass();
+          time.column_size = storageGroup.vars[obsspacename].getType().getSize();
           time.string_length = 0;
           num_columns++;
           column_infos.push_back(date);
@@ -712,12 +750,33 @@ void setupColumnInfo(Group storageGroup, std::vector<ColumnInfo> &column_infos, 
       }
     }
   }
+  // Check that map entry reqested is in the ObsGroup
+  for (auto const& map : reverseColumnMap.varnoIndependentColumns) {
+    bool found = false;
+    for (auto &col : column_infos) {
+      if (col.column_name == map.first) {
+        found = true;
+        continue;
+      }
+    }
+    if (!found && map.first != "MetaData/dateTime") {
+      if (errorWithColumnNotInObsSpace) {
+        throw eckit::UserError("Variable " + map.first +
+                               " requested via the query file is not in the ObsSpace " +
+                               "therefore aborting as requested", Here());
+      } else {
+        oops::Log::warning() << "WARNING: Variable " + map.first + " is in query file "
+                             << "but not in ObsSpace therefore not being written out"
+                             << std::endl;
+      }
+    } // end of if found
+  } // end of map loop
 }
 
 void setODBColumn(ReverseColumnMappings columnMappings, const ColumnInfo v, odc::Writer<>::iterator writer, int &column_number) {
   std::map<std::string,std::string>::iterator it2;
   std::string colname2 = "";
-  for (it2 = columnMappings.nonbitfieldColumns.begin(); it2 != columnMappings.nonbitfieldColumns.end(); it2++) {
+  for (it2 = columnMappings.varnoIndependentColumns.begin(); it2 != columnMappings.varnoIndependentColumns.end(); it2++) {
     if (it2->first == v.column_name) {
       colname2 = it2->second;
     }
@@ -750,24 +809,27 @@ void setODBColumn(ReverseColumnMappings columnMappings, const ColumnInfo v, odc:
   }
 }
 
-void setupVarnos(Group storageGroup, std::vector<std::string> &obsvalue_columns, ReverseColumnMappings columnMappings, size_t &num_varnos, std::vector<int> &varnos) {
-  const auto objs = storageGroup.listObjects(ObjectType::Variable, true);
-  for (auto it = objs.cbegin(); it != objs.cend(); it++) {
-    for (int i = 0; i < it->second.size(); i++) {
-      std::string s = it->second[i];
-      if (!s.compare(0, obsvalue_prefix_size, obsvalue_prefix)) {
-        std::map<std::string,std::string>::iterator it2;
-        std::string colname = s;
-        colname.erase(0, obsvalue_prefix_size);
-        obsvalue_columns.push_back(colname);
-        int colname2;
-        for (it2 = columnMappings.nonbitfieldColumns.begin(); it2 != columnMappings.nonbitfieldColumns.end(); it2++) {
-          if (it2->first == colname) {
-            colname2 = std::stoi(it2->second);
-            num_varnos++;
-            varnos.push_back(colname2);
-          }
-        }
+void setupVarnos(const Group &storageGroup, const std::vector<int> &listOfVarNos,
+                 const std::map<std::string, std::string> &mapping,
+                 const bool errorWithColumnNotInObsSpace,
+                 std::vector<int> &varnos,
+                 std::vector<std::string> &varno_names) {
+  for (auto& map : mapping) {
+    std::string derived_obsvalue_name = std::string(derived_obsvalue_prefix) + map.first;
+    std::string obsvalue_name = std::string(obsvalue_prefix) + map.first;
+    if (storageGroup.vars.exists(obsvalue_name) ||
+        storageGroup.vars.exists(derived_obsvalue_name)) {
+      varnos.push_back(std::stoi(map.second));
+      varno_names.push_back(map.first);
+    } else {
+      if (errorWithColumnNotInObsSpace) {
+        throw eckit::UserError("varno associated with " + map.first +
+                               " requested via the query file is not in the ObsSpace " +
+                               "therefore aborting as requested", Here());
+      } else {
+        oops::Log::warning() << "WARNING: varno associated with " + map.first + " is in query file "
+                             << "but not in ObsSpace therefore not being written out"
+                             << std::endl;
       }
     }
   }
@@ -813,7 +875,17 @@ void fillIntArray(const Group & storageGroup, const std::string varname,
   }
 }
 
-void readBodyColumns(Group storageGroup, const std::string v, int number_of_rows, std::vector<std::vector<double>> &obsvalue_store, std::vector<std::vector<double>> &effective_error_store, std::vector<std::vector<int>> &diagnosticflags_store, std::vector<std::vector<double>> &initial_obsvalue_store, std::vector<std::vector<int>> &effective_qc, std::vector<std::vector<double>> &obserror_store, std::vector<std::vector<double>> &derived_obserror_store, std::vector<std::vector<double>> &hofx_store, std::vector<std::vector<double>> &obsbias_store, std::vector<std::vector<double>> &pge_store) {
+void readBodyColumns(Group storageGroup, const std::string v, int number_of_rows,
+                     bool errorWithColumnNotInObsSpace, std::vector<std::vector<double>> &obsvalue_store,
+                     std::vector<std::vector<double>> &effective_error_store,
+                     std::vector<std::vector<int>> &diagnosticflags_store,
+                     std::vector<std::vector<double>> &initial_obsvalue_store,
+                     std::vector<std::vector<int>> &effective_qc,
+                     std::vector<std::vector<double>> &obserror_store,
+                     std::vector<std::vector<double>> &derived_obserror_store,
+                     std::vector<std::vector<double>> &hofx_store,
+                     std::vector<std::vector<double>> &obsbias_store,
+                     std::vector<std::vector<double>> &pge_store) {
     std::string effective_error_name = std::string(effective_error_prefix) + v;
     std::string obserror_name = std::string(obserror_prefix) + v;
     std::string derived_obserror_name = std::string(derived_obserror_prefix) + v;
@@ -953,19 +1025,69 @@ Group createFile(const ODC_Parameters& odcparams,Group storageGroup) {
      number_of_rows *= channels.size();
      number_of_channels = channels.size();
   }
-  int num_columns = 0;
-  setupColumnInfo(storageGroup, column_infos, num_columns);
-  if (num_columns == 0) return storageGroup;
-  num_columns +=11;
+
+  // Read in the query file
+  eckit::YAMLConfiguration conf(eckit::PathName(odcparams.queryFile));
+  OdbQueryParameters queryParameters;
+  queryParameters.validateAndDeserialize(conf);
+  ColumnSelection columnSelection;
+  addQueryColumns(columnSelection, queryParameters);
+  const std::vector<int> &listOfVarNos =
+          queryParameters.where.value().varno.value().as<std::vector<int>>();
+
+  // Create mapping from ObsSpace to odb name
   detail::ODBLayoutParameters layoutParams;
   layoutParams.validateAndDeserialize(
         eckit::YAMLConfiguration(eckit::PathName(odcparams.mappingFile)));
-  ReverseColumnMappings columnMappings = collectReverseColumnMappings(layoutParams);
+  ReverseColumnMappings columnMappings = collectReverseColumnMappings(layoutParams,
+                                                                      columnSelection.columns(),
+                                                                      listOfVarNos);
+
+  // Setup the varno independent columns and vectors
+  int num_columns = 0;
+  setupColumnInfo(storageGroup, columnMappings, column_infos, num_columns,
+                  odcparams.missingObsSpaceVariableAbort);
+  if (num_columns == 0) return storageGroup;
+
+  // Fill data_store with varno independent data
+  std::vector<std::vector<double>> data_store;
+  for (const auto& v: column_infos) {
+    readColumn(storageGroup, v, data_store, number_of_locations, number_of_channels);
+  }
+
+  // Setup the varno dependent columns and vectors
+  std::vector<int> varnos;
+  std::vector<std::string> varno_names;
+  setupVarnos(storageGroup, listOfVarNos,
+              columnMappings.varnoDependentColumns,
+              odcparams.missingObsSpaceVariableAbort,
+              varnos, varno_names);
+  const size_t num_varnos = varnos.size();
+  num_columns +=11; // Add 10 for the variables below and 1 for the varno array
+  std::vector<std::vector<double>> obsvalue_store;
+  std::vector<std::vector<double>> initial_obsvalue_store;
+  std::vector<std::vector<double>> effective_error_store;
+  std::vector<std::vector<double>> hofx_store;
+  std::vector<std::vector<double>> obsbias_store;
+  std::vector<std::vector<double>> pge_store;
+  std::vector<std::vector<double>> obserror_store;
+  std::vector<std::vector<double>> derived_obserror_store;
+  std::vector<std::vector<int>> diagnosticflags_store;
+  std::vector<std::vector<int>> effective_qc;
+
+  // Read data which is the same dimensions as variables in ObsValue - varno dependent
+  for (const auto& v: varno_names) {
+    readBodyColumns(storageGroup, v, number_of_rows, odcparams.missingObsSpaceVariableAbort,
+                    obsvalue_store, effective_error_store, diagnosticflags_store,
+                    initial_obsvalue_store, effective_qc, obserror_store, derived_obserror_store,
+                    hofx_store, obsbias_store, pge_store);
+  }
+
+  // Setup the odb writer object
   eckit::PathName p(odcparams.outputFile);
   odc::Writer<> oda(p);
   odc::Writer<>::iterator writer = oda.begin();
   writer->setNumberOfColumns(num_columns);
-
   int column_number = 0;
   for (const auto& v: column_infos) {
     setODBColumn(columnMappings, v, writer, column_number);
@@ -981,30 +1103,9 @@ Group createFile(const ODC_Parameters& odcparams,Group storageGroup) {
   writer->setColumn(column_number+8, "bgvalue", odc::api::REAL);
   writer->setColumn(column_number+9, "obsbias", odc::api::REAL);
   writer->setColumn(column_number+10, "pge", odc::api::REAL);
-  std::vector<std::vector<double>> data_store;
   writer->writeHeader();
-  for (const auto& v: column_infos) {
-    readColumn(storageGroup, v, data_store, number_of_locations, number_of_channels);
-  }
 
-  size_t num_varnos = 0;
-  std::vector<int> varnos;
-  std::vector<std::string> obsvalue_columns;
-  setupVarnos(storageGroup, obsvalue_columns, columnMappings, num_varnos, varnos);
-  std::vector<std::vector<double>> obsvalue_store;
-  std::vector<std::vector<double>> initial_obsvalue_store;
-  std::vector<std::vector<double>> effective_error_store;
-  std::vector<std::vector<double>> hofx_store;
-  std::vector<std::vector<double>> obsbias_store;
-  std::vector<std::vector<double>> pge_store;
-  std::vector<std::vector<double>> obserror_store;
-  std::vector<std::vector<double>> derived_obserror_store;
-  std::vector<std::vector<int>> diagnosticflags_store;
-  std::vector<std::vector<int>> effective_qc;
-  // Read data which is the same dimensions as variables in ObsValue
-  for (const auto& v: obsvalue_columns) {
-    readBodyColumns(storageGroup, v, number_of_rows, obsvalue_store, effective_error_store, diagnosticflags_store, initial_obsvalue_store, effective_qc, obserror_store, derived_obserror_store, hofx_store, obsbias_store, pge_store);
-  }
+  // Write the data to the ODB file
   writeODB(num_varnos, number_of_rows, writer, data_store, obsvalue_store, effective_error_store, diagnosticflags_store, initial_obsvalue_store, effective_qc, obserror_store, derived_obserror_store, hofx_store, obsbias_store, pge_store, num_columns, varnos);
 #endif
   return storageGroup;

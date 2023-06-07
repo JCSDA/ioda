@@ -1,0 +1,28 @@
+where:
+  varno: [119]
+variables:
+# varno dependent
+- name: initial_obsvalue
+# varno independent
+- name: aapp_bennartz_index
+- name: aapp_cirrus_index
+- name: amsuscatindex
+- name: azimuth
+- name: initial_vertco_reference
+- name: land_sea
+- name: level_1b_creation_centre
+- name: level_1b_creation_subcentre
+- name: qchirsfov
+- name: qcprepro
+- name: satellite_identifier
+- name: scanline
+- name: scanpos
+- name: solar_azimuth
+- name: solar_zenith
+- name: surface_class
+- name: surface_cost_fn
+- name: surface_height
+- name: vnatovspp
+- name: zenith
+- name: receipt_time
+- name: receipt_date

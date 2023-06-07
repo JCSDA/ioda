@@ -57,6 +57,7 @@ struct ODC_Parameters {
   std::string queryFile;
   std::string outputFile;
   int maxNumberChannels = 0;
+  bool missingObsSpaceVariableAbort;
   util::DateTime timeWindowStart;
   util::DateTime timeWindowExtendedLowerBound;
 };

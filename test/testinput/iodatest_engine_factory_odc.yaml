@@ -23,6 +23,7 @@ engine factory tests:
             type: ODB
             obsfile: "testoutput/test-engine-factory.odb"
             mapping file: "testinput/odb_default_name_map.yaml"
+            query file: "testinput/iodatest_odb_aircraft_write.yaml"
         global attribute check:
           attr name: "_ioda_layout"
           attr value: "ObsGroup_ODB"

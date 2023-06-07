@@ -1,0 +1,24 @@
+where:
+  varno: [119]
+variables:
+# varno dependent
+- name: initial_obsvalue
+# varno independent
+- name: amsuscatindex
+- name: azimuth
+- name: initial_vertco_reference
+- name: land_sea
+- name: qchirsfov
+- name: qcprepro
+- name: satellite_identifier
+- name: scanline
+- name: scanpos
+- name: solar_azimuth
+- name: solar_zenith
+- name: surface_class
+- name: surface_height
+- name: zenith
+- name: receipt_time
+- name: receipt_date
+- name: ops_subtype
+- name: skinT_onedvar

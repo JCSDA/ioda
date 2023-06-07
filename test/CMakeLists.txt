@@ -114,22 +114,29 @@ list( APPEND ioda_test_input
   testinput/iodatest_odb_abiclear.yaml
   testinput/iodatest_odb_ahiclear.yaml
   testinput/iodatest_odb_aircraft.yaml
+  testinput/iodatest_odb_aircraft_write.yaml
   testinput/iodatest_odb_airs.yaml
   testinput/iodatest_odb_altimeter.yaml
   testinput/iodatest_odb_amsr.yaml
   testinput/iodatest_odb_aod.yaml
+  testinput/iodatest_odb_aod_write.yaml
+  testinput/iodatest_odb_aod_write_testdatasets.yaml
   testinput/iodatest_odb_atms.yaml
+  testinput/iodatest_odb_atms_write.yaml
   testinput/iodatest_odb_atovs.yaml
+  testinput/iodatest_odb_atovs_write.yaml
   testinput/iodatest_odb_cris.yaml
   testinput/iodatest_odb_crisfsr.yaml
   testinput/iodatest_odb_geocloud.yaml
   testinput/iodatest_odb_gmihigh.yaml
+  testinput/iodatest_odb_gmihigh_write.yaml
   testinput/iodatest_odb_gmilow.yaml
   testinput/iodatest_odb_gnssro.yaml
   testinput/iodatest_odb_groundgps.yaml
   testinput/iodatest_odb_hirasfsr.yaml
   testinput/iodatest_odb_hloswind.yaml
   testinput/iodatest_odb_iasi.yaml
+  testinput/iodatest_odb_iasi_write.yaml
   testinput/iodatest_odb_mwri.yaml
   testinput/iodatest_odb_mwsfy3.yaml
   testinput/iodatest_odb_oceancolour.yaml
@@ -142,6 +149,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_odb_seaice.yaml
   testinput/iodatest_odb_seviriclear.yaml
   testinput/iodatest_odb_sonde.yaml
+  testinput/iodatest_odb_sonde_write.yaml
   testinput/iodatest_odb_sonde_history.yaml
   testinput/iodatest_odb_sonde_time_displacement.yaml
   testinput/iodatest_odb_sonde_truncate_profiles.yaml
@@ -407,7 +415,7 @@ ecbuild_add_test( TARGET  test_ioda_obsspace
 if (odc_FOUND)
   ecbuild_add_test( TARGET  test_ioda_clean_obsspace_out_odc_files
                     COMMAND rm
-                    ARGS    "-f" "testoutput/diagout-aircraft.odc" "testoutput/diagout-atms.odc" "testoutput/diagout-gmi.odc" "testoutput/diagout-amsua.odc" "testoutput/diagout-sonde.odc" "testoutput/diagout-aod" )
+                    ARGS    "-f" "testoutput/diagout-aircraft.odc" "testoutput/diagout-atms.odc" "testoutput/diagout-gmi.odc" "testoutput/diagout-amsua.odc" "testoutput/diagout-sonde.odc" "testoutput/diagout-aod.odc" "testoutput/diagout-iasi.odc" "testoutput/diagout-aod-testdatasets.odc" )
   ecbuild_add_test( TARGET  test_ioda_obsspace_out_odc
                     COMMAND test_ioda_obsspace
                     ARGS    "testinput/iodatest_obsspace_out_odc.yaml"
@@ -439,8 +447,19 @@ if (odc_FOUND)
 
   ecbuild_add_test( TARGET  test_ioda_obsspace_out_odc_compare_aod
                     COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
-                    ARGS    "testoutput/diagout-aod" "Data/testinput_tier_1/test_reference/diagout-aod.odc" ${ODC_TOOL_PATH}
+                    ARGS    "testoutput/diagout-aod.odc" "Data/testinput_tier_1/test_reference/diagout-aod.odc" ${ODC_TOOL_PATH}
                     TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_out_odc )
+
+  ecbuild_add_test( TARGET  test_ioda_obsspace_out_odc_compare_iasi
+                    COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
+                    ARGS    "testoutput/diagout-iasi.odc" "Data/testinput_tier_1/test_reference/diagout-iasi.odc" ${ODC_TOOL_PATH}
+                    TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_out_odc )
+
+  ecbuild_add_test( TARGET  test_ioda_obsspace_out_odc_compare_aod_testdatsets
+                    COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
+                    ARGS    "testoutput/diagout-aod-testdatasets.odc" "Data/testinput_tier_1/test_reference/diagout-aod-testdatasets.odc" ${ODC_TOOL_PATH}
+                    TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_out_odc )
+
 endif()
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_datetime

@@ -1,0 +1,18 @@
+where:
+  varno: [2,29,111,112,226]
+variables:
+# varno dependent
+- name: initial_obsvalue
+# varno independent
+- name: aircraft_data_relay_system
+- name: aircraft_tail_number
+- name: beacon_report_name
+- name: collection_centre
+- name: collection_identifier
+- name: flight_phase
+- name: initial_vertco_reference
+- name: stalt
+- name: statid
+- name: receipt_time
+- name: receipt_date
+- name: ops_subtype

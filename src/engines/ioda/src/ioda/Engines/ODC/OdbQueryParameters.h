@@ -94,7 +94,7 @@ class OdbWhereParameters : public oops::Parameters {
       "varno", this};
   /// Optional free-form query
   oops::Parameter<std::string> query{
-    "query", "", this};
+      "query", "", this};
 };
 
 class OdbVariableCreationParameters : public oops::Parameters {
