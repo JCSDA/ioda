@@ -55,7 +55,7 @@ class IoPoolParameters : public oops::Parameters {
     /// Select the reader pool
     /// Two options for now:
     ///    SinglePoolAllTasks is for the current reader where every MPI task joins the
-    ///                       the io pool (essentiall no pool)
+    ///                       the io pool (essentially no pool)
     ///    SinglePool is for the case of using the reader pool in a scheme where only one
     ///               pool is used at a time (as opposed to creating multiple pools to read
     //                in multple obs spaces in parallel)

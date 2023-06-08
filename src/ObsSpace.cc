@@ -42,9 +42,11 @@
 #include "ioda/Engines/ODC.h"
 #include "ioda/Engines/WriteOdbFile.h"
 #include "ioda/Exception.h"
-#include "ioda/ioPool/NewReaderPool.h"
-#include "ioda/ioPool/ReaderPool.h"
-#include "ioda/ioPool/WriterPool.h"
+#include "ioda/ioPool/IoPoolParameters.h"
+#include "ioda/ioPool/ReaderPoolBase.h"
+#include "ioda/ioPool/ReaderPoolFactory.h"
+#include "ioda/ioPool/WriterPoolBase.h"
+#include "ioda/ioPool/WriterPoolFactory.h"
 #include "ioda/Variables/Variable.h"
 
 namespace ioda {
@@ -282,17 +284,21 @@ void ObsSpace::save() {
           // Write the output file
           std::vector<bool> patchObsVec(nlocs());
           dist_->patchObs(patchObsVec);
-          WriterPool writePool(obs_params_.top_level_.ioPool,
-              obs_params_.top_level_.obsDataOut.value()->engine.value().engineParameters,
+
+          ioda::WriterPoolCreationParameters createParams(
               obs_params_.comm(), obs_params_.timeComm() ,
-              obs_params_.windowStart(), obs_params_.windowEnd(), patchObsVec);
-          writePool.initialize();
-          writePool.save(obs_group_);
+              obs_params_.top_level_.obsDataOut.value()->engine.value().engineParameters,
+              patchObsVec);
+          std::unique_ptr<WriterPoolBase> writePool =
+              ioda::WriterPoolFactory::create(obs_params_.top_level_.ioPool, createParams);
+
+          writePool->initialize();
+          writePool->save(obs_group_);
           // Wait for all processes to finish the save call so that we know the file
           // is complete and closed.
-          oops::Log::info() << obsname() << ": save database to " << writePool << std::endl;
+          oops::Log::info() << obsname() << ": save database to " << *writePool << std::endl;
           this->comm().barrier();
-          writePool.finalize();
+          writePool->finalize();
         }
 
         // Call the mpi barrier command here to force all processes to wait until
@@ -670,85 +676,69 @@ void ObsSpace::load() {
     // Temporarily allow for the new reader to be selected. This is done to allow
     // the new reader to be developed in parallel with the current reader. When the
     // new reader becomes fully functional it will replace the current reader.
-    if (obs_params_.top_level_.ioPool.value().readerPoolName.value() == "SinglePool") {
-        NewReaderPool readPool(obs_params_.top_level_.ioPool,
-            obs_params_.top_level_.obsDataIn.value().engine.value().engineParameters,
-            obs_params_.comm(), obs_params_.timeComm(),
-            obs_params_.windowStart(), obs_params_.windowEnd(),
-            obs_params_.top_level_.simVars.value().variables(), dist_,
-            obs_params_.top_level_.obsDataIn.value().obsGrouping.value().obsGroupVars);
 
-        readPool.initialize();
-        readPool.load(obs_group_);
-        source_nlocs_ = readPool.sourceNlocs();
+    ReaderPoolCreationParameters createParams(obs_params_.comm(), obs_params_.timeComm(),
+        obs_params_.top_level_.obsDataIn.value().engine.value().engineParameters,
+        obs_params_.windowStart(), obs_params_.windowEnd(),
+        obs_params_.top_level_.simVars.value().variables(), dist_,
+        obs_params_.top_level_.obsDataIn.value().obsGrouping.value().obsGroupVars);
 
-        // Wait for all processes to finish the load call so that we know the file
-        // is complete and closed.
-        oops::Log::info() << obsname() << ": read database from " << readPool << std::endl;
-        this->comm().barrier();
-        readPool.finalize();
-    } else {
-        ReaderPool readPool(obs_params_.top_level_.ioPool,
-            obs_params_.top_level_.obsDataIn.value().engine.value().engineParameters,
-            obs_params_.comm(), obs_params_.timeComm(),
-            obs_params_.windowStart(), obs_params_.windowEnd(),
-            obs_params_.top_level_.simVars.value().variables(), dist_,
-            obs_params_.top_level_.obsDataIn.value().obsGrouping.value().obsGroupVars);
+    std::unique_ptr<ReaderPoolBase> readPool =
+            ReaderPoolFactory::create(obs_params_.top_level_.ioPool, createParams);
 
-        // Transfer the obs data from the source to the obs space container (ObsGroup)
-        readPool.initialize();
-        readPool.load(obs_group_);
+    // Transfer the obs data from the source to the obs space container (ObsGroup)
+    readPool->initialize();
+    readPool->load(obs_group_);
 
-        // Record locations and channels dimension sizes
-        // The HDF library has an issue when a dimension marked UNLIMITED is queried for its
-        // size a zero is returned instead of the proper current size. As a workaround for this
-        // ask the frame how many locations it kept instead of asking the Location dimension for
-        // its size.
-        std::size_t nLocs = readPool.nlocs();
-        dim_info_.set_dim_size(ObsDimensionId::Location, nLocs);
+    // Record locations and channels dimension sizes
+    // The HDF library has an issue when a dimension marked UNLIMITED is queried for its
+    // size a zero is returned instead of the proper current size. As a workaround for this
+    // ask the frame how many locations it kept instead of asking the Location dimension for
+    // its size.
+    std::size_t nLocs = readPool->nlocs();
+    dim_info_.set_dim_size(ObsDimensionId::Location, nLocs);
 
-        std::string ChannelName = dim_info_.get_dim_name(ObsDimensionId::Channel);
-        if (obs_group_.vars.exists(ChannelName)) {
-            std::size_t nChans = obs_group_.vars.open(ChannelName).getDimensions().dimsCur[0];
-            dim_info_.set_dim_size(ObsDimensionId::Channel, nChans);
-        }
-
-        // Record "record" information
-        nrecs_ = readPool.nrecs();
-        indx_ = readPool.index();
-        recnums_ = readPool.recnums();
-
-        // The distribution object has a notion of patch obs which are the observations
-        // "owned" by the corresponding obs space. When an overlapping distribution (eg, Halo)
-        // is used, there is a need to identify all the unique obs (ie, locations) for functions
-        // that access obs across the MPI tasks. Computing an ObsVector dot product, and
-        // output IO are two examples. The ownership (patch) marks which obs participate in
-        // the MPI distributed functions, and collectively make up a total set of obs that contain
-        // no duplicates.
-        //
-        // Take the Halo distribution for an example. Each MPI task holds locations (obs) that
-        // are within a horizontal radius from a given center point. This brings up the situation
-        // where multiple obs spaces (geographic neighbors) can both contain the same locations
-        // since their spatial coverages can overlap. The ownership is given to the MPI task whose
-        // center is closer to that location. That way one MPI task owns the obs and the other
-        // does not which is then used to make sure the duplicate location is not used in
-        // MPI collective operations (such as the dot product function).
-        dist_->computePatchLocs();
-
-        // After loading the obs data, gnlocs_ and gnlocs_outside_timewindow_
-        // are set representing the entire obs source. This is because they are calculated
-        // before distributing the data to all of the MPI tasks.
-        gnlocs_ = readPool.globalNumLocs();
-        gnlocs_outside_timewindow_ = readPool.globalNumLocsOutsideTimeWindow();
-        gnlocs_reject_qc_ = readPool.globalNumLocsRejectQC();
-        source_nlocs_ = readPool.sourceNlocs();
-
-        // Wait for all processes to finish the load call so that we know the file
-        // is complete and closed.
-        oops::Log::info() << obsname() << ": read database from " << readPool << std::endl;
-        this->comm().barrier();
-        readPool.finalize();
+    std::string ChannelName = dim_info_.get_dim_name(ObsDimensionId::Channel);
+    if (obs_group_.vars.exists(ChannelName)) {
+        std::size_t nChans = obs_group_.vars.open(ChannelName).getDimensions().dimsCur[0];
+        dim_info_.set_dim_size(ObsDimensionId::Channel, nChans);
     }
+
+    // Record "record" information
+    nrecs_ = readPool->nrecs();
+    indx_ = readPool->index();
+    recnums_ = readPool->recnums();
+
+    // The distribution object has a notion of patch obs which are the observations
+    // "owned" by the corresponding obs space. When an overlapping distribution (eg, Halo)
+    // is used, there is a need to identify all the unique obs (ie, locations) for functions
+    // that access obs across the MPI tasks. Computing an ObsVector dot product, and
+    // output IO are two examples. The ownership (patch) marks which obs participate in
+    // the MPI distributed functions, and collectively make up a total set of obs that contain
+    // no duplicates.
+    //
+    // Take the Halo distribution for an example. Each MPI task holds locations (obs) that
+    // are within a horizontal radius from a given center point. This brings up the situation
+    // where multiple obs spaces (geographic neighbors) can both contain the same locations
+    // since their spatial coverages can overlap. The ownership is given to the MPI task whose
+    // center is closer to that location. That way one MPI task owns the obs and the other
+    // does not which is then used to make sure the duplicate location is not used in
+    // MPI collective operations (such as the dot product function).
+    dist_->computePatchLocs();
+
+    // After loading the obs data, gnlocs_ and gnlocs_outside_timewindow_
+    // are set representing the entire obs source. This is because they are calculated
+    // before distributing the data to all of the MPI tasks.
+    gnlocs_ = readPool->globalNlocs();
+    gnlocs_outside_timewindow_ = readPool->sourceNlocsOutsideTimeWindow();
+    gnlocs_reject_qc_ = readPool->sourceNlocsRejectQC();
+    source_nlocs_ = readPool->sourceNlocs();
+
+    // Wait for all processes to finish the load call so that we know the file
+    // is complete and closed.
+    oops::Log::info() << obsname() << ": read database from " << *readPool << std::endl;
+    this->comm().barrier();
+    readPool->finalize();
 
     if (print_run_stats_ > 0) {
         util::printRunStats("ioda::ObsSpace::load: end " + obsname_ + ": ", true, comm());

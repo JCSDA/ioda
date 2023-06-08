@@ -5,7 +5,7 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#include "ioda/ioPool/ReaderPool.h"
+#include "ioda/ioPool/ReaderSinglePoolAllTasks.h"
 
 #include <mpi.h>
 
@@ -24,62 +24,35 @@
 #include "ioda/Engines/EngineUtils.h"
 #include "ioda/Engines/HH.h"
 #include "ioda/Exception.h"
-#include "ioda/ioPool/ReaderUtils.h"
+#include "ioda/ioPool/ReaderPoolFactory.h"
+#include "ioda/ioPool/ReaderPoolUtils.h"
 
 #include "oops/util/Logger.h"
 #include "oops/util/missingValues.h"
 
 namespace ioda {
 
-// For the MPI communicator splitting
-constexpr int readerPoolColor = 3;
-constexpr int readerNonPoolColor = 4;
-const char readerPoolCommName[] = "readerIoPool";
-const char readerNonPoolCommName[] = "readerNonIoPool";
+// Io pool factory maker
+static ReaderPoolMaker<ReaderSinglePoolAllTasks>
+    makerReaderSinglePoolAllTasks("SinglePoolAllTasks");
 
 //--------------------------------------------------------------------------------------
-void ReaderPool::groupRanks(IoPoolGroupMap & rankGrouping) {
-    // TODO(srh) Until the actual reader pool is implemented we need to copy the
-    // comm_all_ communicator to the comm_pool_ communicator. This can be accomplished
-    // by constructing the rankGrouping map with each comm_all_ rank assigned only
-    // to itself.
-    rankGrouping.clear();
-    for (std::size_t i = 0; i < comm_all_.size(); ++i) {
-        rankGrouping[i] = std::move(std::vector<int>(1, i));
-    }
-}
-
-//--------------------------------------------------------------------------------------
-ReaderPool::ReaderPool(const oops::Parameter<IoPoolParameters> & ioPoolParams,
-               const oops::RequiredPolymorphicParameter
-                   <Engines::ReaderParametersBase, Engines::ReaderFactory> & readerParams,
-               const eckit::mpi::Comm & commAll, const eckit::mpi::Comm & commTime,
-               const util::DateTime & winStart, const util::DateTime & winEnd,
-               const std::vector<std::string> & obsVarNames,
-               const std::shared_ptr<Distribution> & distribution,
-               const std::vector<std::string> & obsGroupVarList)
-                   : IoPoolBase(ioPoolParams, commAll, commTime, winStart, winEnd,
-                     readerPoolColor, readerNonPoolColor,
-                     readerPoolCommName, readerNonPoolCommName),
-                     global_nlocs_(0), nlocs_(0), nrecs_(0), source_nlocs_(0),
-                     source_nlocs_inside_timewindow_(0), source_nlocs_outside_timewindow_(0),
-                     source_nlocs_reject_qc_(0), reader_params_(readerParams),
-                     obs_var_names_(obsVarNames), dist_(distribution),
-                     obs_group_var_list_(obsGroupVarList) {
+ReaderSinglePoolAllTasks::ReaderSinglePoolAllTasks(
+                            const IoPoolParameters & configParams,
+                            const ReaderPoolCreationParameters & createParams)
+                   : ReaderPoolBase(configParams, createParams) {
     // Save a persistent copy of the JEDI missing value for a string variable that can
     // be used to properly replace a string fill value from the obs source with this
     // JEDI missing value. The replaceFillWithMissing function needs a char * pointing
     // to this copy of the JEDI missing value to transfer that value to the obs space
     // container.
-    jedi_missing_value_string_ = std::make_shared<std::string>(util::missingValue(std::string()));
+    stringMissingValue_ = std::make_shared<std::string>(util::missingValue(std::string()));
 }
 
-ReaderPool::~ReaderPool() = default;
-
 //--------------------------------------------------------------------------------------
-void ReaderPool::initialize() {
+void ReaderSinglePoolAllTasks::initialize() {
     // TODO(srh) Until the actual reader pool is implemented we need to copy the
-    // comm_all_ communicator to the comm_pool_ communicator. The following
+    // commAll_ communicator to the commPool_ communicator. The following
     // calls will fall into place for the io pool so use them now to accomplish the
     // copy.
 
@@ -102,13 +75,13 @@ void ReaderPool::initialize() {
 }
 
 //--------------------------------------------------------------------------------------
-void ReaderPool::load(Group & destGroup) {
+void ReaderSinglePoolAllTasks::load(Group & destGroup) {
     Group fileGroup;
     Engines::ReaderCreationParameters
-        createParams(win_start_, win_end_, *comm_pool_, comm_time_,
-                     obs_var_names_, is_parallel_io_);
+        createParams(winStart_, winEnd_, *commPool_, commTime_,
+                     obsVarNames_, isParallelIo_);
     std::unique_ptr<Engines::ReaderBase> readerEngine =
-        Engines::ReaderFactory::create(reader_params_, createParams);
+        Engines::ReaderFactory::create(readerParams_, createParams);
 
     fileGroup = readerEngine->getObsGroup();
 
@@ -135,28 +108,28 @@ void ReaderPool::load(Group & destGroup) {
         // value. This will provide for a very fast "inside the timing window check".
         util::DateTime epochDt;
         convertEpochStringToDtime(dtimeEpoch, epochDt);
-        const int64_t windowStart = (win_start_ - epochDt).toSeconds();
-        const int64_t windowEnd = (win_end_ - epochDt).toSeconds();
+        const int64_t windowStart = (winStart_ - epochDt).toSeconds();
+        const int64_t windowEnd = (winEnd_ - epochDt).toSeconds();
 
         // Determine which locations will be retained by this process for its obs space
         // source_loc_indices_ holds the original source location index (position in
-        // the 1D Location variable) and recnums_ holds the assigned record number.
+        // the 1D Location variable) and recNums_ holds the assigned record number.
         //
-        // For now, use the comm_all_ (instead of comm_pool_) communicator. We are
-        // effectively making the io pool consist of all of the tasks in the comm_all_
+        // For now, use the commAll_ (instead of commPool_) communicator. We are
+        // effectively making the io pool consist of all of the tasks in the commAll_
         // communicator group.
-        setIndexAndRecordNums(fileGroup, &(comm_all_), dist_, dtimeValues,
+        setIndexAndRecordNums(fileGroup, &(commAll_), distribution_, dtimeValues,
                               windowStart, windowEnd,
-                              readerEngine->applyLocationsCheck(), obs_group_var_list_,
-                              lonValues, latValues, source_nlocs_,
-                              source_nlocs_inside_timewindow_, source_nlocs_outside_timewindow_,
-                              source_nlocs_reject_qc_, loc_indices_, recnums_,
-                              global_nlocs_, nlocs_, nrecs_);
+                              readerEngine->applyLocationsCheck(), obsGroupVarList_,
+                              lonValues, latValues, sourceNlocs_,
+                              sourceNlocsInsideTimeWindow_, sourceNlocsOutsideTimeWindow_,
+                              sourceNlocsRejectQC_, locIndices_, recNums_,
+                              globalNlocs_, nlocs_, nrecs_);
     }
     // Check for consistency of the set of nlocs counts.
-    ASSERT(source_nlocs_ == source_nlocs_inside_timewindow_ + source_nlocs_outside_timewindow_);
-    ASSERT(source_nlocs_ ==
-              global_nlocs_ + source_nlocs_outside_timewindow_ + source_nlocs_reject_qc_);
+    ASSERT(sourceNlocs_ == sourceNlocsInsideTimeWindow_ + sourceNlocsOutsideTimeWindow_);
+    ASSERT(sourceNlocs_ ==
+              globalNlocs_ + sourceNlocsOutsideTimeWindow_ + sourceNlocsRejectQC_);
 
     // Create the memory backend for the destGroup
     // TODO(srh) There needs to be a memory Engine structure created with ObsStore and
@@ -176,12 +149,12 @@ void ReaderPool::load(Group & destGroup) {
 
     // Copy the ObsSpace ObsGroup to the output file Group.
     ioReadGroup(*this, fileGroup, destGroup, dtimeFormat, dtimeValues, dtimeEpoch,
-                lonValues, latValues, is_parallel_io_, emptyFile);
+                lonValues, latValues, isParallelIo_, emptyFile);
 }
 
 //--------------------------------------------------------------------------------------
-void ReaderPool::finalize() {
-    oops::Log::trace() << "ReaderPool::finalize, start" << std::endl;
+void ReaderSinglePoolAllTasks::finalize() {
+    oops::Log::trace() << "ReaderSinglePoolAllTasks::finalize, start" << std::endl;
 
     // At this point there are two split communicator groups: one for the io pool and the
     // other for the processes not included in the io pool.
@@ -191,12 +164,28 @@ void ReaderPool::finalize() {
     if (eckit::mpi::hasComm(nonPoolCommName_)) {
         eckit::mpi::deleteComm(nonPoolCommName_);
     }
-    oops::Log::trace() << "ReaderPool::finalize, end" << std::endl;
+    oops::Log::trace() << "ReaderSinglePoolAllTasks::finalize, end" << std::endl;
 }
 
 //--------------------------------------------------------------------------------------
-void ReaderPool::print(std::ostream & os) const {
-  os << readerSrc_ << " (io pool size: " << size_pool_ << ")";
+void ReaderSinglePoolAllTasks::print(std::ostream & os) const {
+  int poolSize = 0;
+  if (this->commPool() != nullptr) {
+    poolSize = this->commPool()->size();
+  }
+  os << readerSrc_ << " (io pool size: " << poolSize << ")";
+}
+
+//--------------------------------------------------------------------------------------
+void ReaderSinglePoolAllTasks::groupRanks(IoPoolGroupMap & rankGrouping) {
+    // TODO(srh) Until the actual reader pool is implemented we need to copy the
+    // commAll_ communicator to the commPool_ communicator. This can be accomplished
+    // by constructing the rankGrouping map with each commAll_ rank assigned only
+    // to itself.
+    rankGrouping.clear();
+    for (std::size_t i = 0; i < commAll_.size(); ++i) {
+        rankGrouping[i] = std::move(std::vector<int>(1, i));
+    }
 }
 
 }  // namespace ioda

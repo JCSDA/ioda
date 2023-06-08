@@ -76,6 +76,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_engine_factory.yaml
   testinput/iodatest_engine_factory_odc.yaml
   testinput/iodatest_engine_uniquify_file_name.yaml
+  testinput/iodatest_io_pool_factory.yaml
   testinput/iodatest_obsdatavector.yaml
   testinput/iodatest_obsdtype.yaml
   testinput/iodatest_obsspace.yaml
@@ -374,6 +375,12 @@ ecbuild_add_test( TARGET  test_ioda_engine_factory
 ecbuild_add_test( TARGET  test_ioda_engine_uniquify_file_name
                   SOURCES mains/TestEngineUniquifyFileName.cc
                   ARGS    "testinput/iodatest_engine_uniquify_file_name.yaml"
+                  LIBS  ioda_engines ioda_test
+                  TEST_DEPENDS get_ioda_test_data )
+
+ecbuild_add_test( TARGET  test_ioda_io_pool_factory
+                  SOURCES mains/TestIoPoolFactory.cc
+                  ARGS    "testinput/iodatest_io_pool_factory.yaml"
                   LIBS  ioda_engines ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 

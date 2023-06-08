@@ -1,0 +1,74 @@
+---
+test engine specs:
+    # Provide the io pool with an associated engine specification
+    reader engine:
+        type: H5File
+        obsfile: "myInputObsFile.nc4"
+
+    writer engine:
+        type: H5File
+        obsfile: "myOutputObsFile.nc4"
+
+writer pool factory tests:
+    # Writer default
+    - case:
+        name: "Writer default"
+        io pool:
+        test data:
+            comm all rank: 0
+            comm all size: 1
+            patch obs vec: true
+
+    # Writer Single Pool
+    - case:
+        name: "Writer Single Pool"
+        io pool:
+            writer name: "SinglePool"
+            max pool size: 4
+            write multiple files: true
+        test data:
+            comm all rank: 0
+            comm all size: 1
+            patch obs vec: false
+
+reader pool factory tests:
+    # Reader default
+    - case:
+        name: "Reader default"
+        io pool:
+        test data:
+            comm all rank: 0
+            comm all size: 1
+            win start: "1970-01-01T00:00:00Z"
+            win end: "1971-01-01T00:00:00Z"
+            obs var names: [ "var1", "var2", "var3" ]
+            obs group var list: [ ]
+
+    # Reader Single Pool All Tasks
+    - case:
+        name: "Reader Single Pool All Tasks"
+        io pool:
+            writer name: "SinglePoolAllTasks"
+            max pool size: 4
+        test data:
+            comm all rank: 0
+            comm all size: 1
+            win start: "2020-01-01T00:00:00Z"
+            win end: "2021-01-01T00:00:00Z"
+            obs var names: [ "var5", "var6", "var7" ]
+            obs group var list: [ "stationIdentification" ]
+
+    # Reader Single Pool
+    - case:
+        name: "Reader Single Pool"
+        io pool:
+            writer name: "SinglePool"
+            max pool size: 4
+        test data:
+            comm all rank: 0
+            comm all size: 1
+            win start: "1970-01-01T00:00:00Z"
+            win end: "1971-01-01T00:00:00Z"
+            obs var names: [ "var9", "var10", "var11" ]
+            obs group var list: [ "stationIdentification", "stationLaunchTime" ]
+

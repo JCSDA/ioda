@@ -20,7 +20,7 @@ namespace ioda {
 
 class Distribution;
 class Group;
-class ReaderPool;
+class ReaderPoolBase;
 
 /// Enum type for the different formats of the datetime variable
 enum class DateTimeFormat {
@@ -168,7 +168,7 @@ void setIndexAndRecordNums(const ioda::Group & srcGroup, const eckit::mpi::Comm 
         std::size_t & globalNlocs, std::size_t & localNlocs, std::size_t & localNrecs);
 
 /// @brief Transfer group contents from a file group to a memory group using an io pool
-/// @param ioPool ioda ReaderPool object
+/// @param ioPool ioda ReaderPoolBase object
 /// @param fileGroup is the source file group
 /// @param memGroup is the destination memory group
 /// @param dtimeFormat enum value denoting which datetime format exists in the obs source
@@ -178,7 +178,7 @@ void setIndexAndRecordNums(const ioda::Group & srcGroup, const eckit::mpi::Comm 
 /// @param latValues vector of float to hold latitude values
 /// @param isParallelIo true if reading the input file in parallel IO mode
 /// @param emptyFile true if reading from an empty file
-void ioReadGroup(const ioda::ReaderPool & ioPool, const ioda::Group& fileGroup,
+void ioReadGroup(const ioda::ReaderPoolBase & ioPool, const ioda::Group& fileGroup,
                  ioda::Group& memGroup, const ioda::DateTimeFormat dtimeFormat,
                  std::vector<int64_t> & dtimeVals, const std::string & dtimeEpoch,
                  std::vector<float> & lonValues, std::vector<float> & latValues,

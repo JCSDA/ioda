@@ -35,6 +35,27 @@
 
 namespace ioda {
 
+//------------------------------------------------------------------------------------
+// Common io pool creation parameters
+//------------------------------------------------------------------------------------
+
+class IoPoolCreationParameters {
+ public:
+    IoPoolCreationParameters(const eckit::mpi::Comm & commAll,
+                             const eckit::mpi::Comm & commTime);
+    virtual ~IoPoolCreationParameters() {}
+
+    /// \brief io pool communicator group
+    const eckit::mpi::Comm & commAll;
+
+    /// \brief time communicator group
+    const eckit::mpi::Comm & commTime;
+};
+
+//------------------------------------------------------------------------------------
+// Io pool base class
+//------------------------------------------------------------------------------------
+
 /// \brief IO pool base class
 /// \details This class holds a single io pool which consists of a small number of MPI tasks.
 /// The tasks assigned to an io pool object are selected from the total MPI tasks working on
@@ -46,38 +67,30 @@ namespace ioda {
 class IODA_DL IoPoolBase : public util::Printable {
  public:
   /// \brief construct an IoPoolBase object
-  /// \param ioPoolParams Parameters for this io pool
+  /// \param configParams io pool configuration parameters
   /// \param commAll MPI "all" communicator group (all tasks in DA run)
   /// \param commTime MPI "time" communicator group (tasks in current time bin for 4DEnVar)
-  /// \param winStart DA timing window start
-  /// \param winEnd DA timing window end
-  IoPoolBase(const oops::Parameter<IoPoolParameters> & ioPoolParams,
+  /// \param poolColor "color" value for pool members when splitting commAll communicator
+  /// \param nonPoolColor "color" value for non-pool members when splitting commAll communicator
+  /// \param poolCommName name for pool MPI communicator
+  /// \param nonPoolCommName name for non-pool MPI communicator
+  IoPoolBase(const IoPoolParameters & configParams,
              const eckit::mpi::Comm & commAll, const eckit::mpi::Comm & commTime,
-             const util::DateTime & winStart, const util::DateTime & winEnd,
              const int poolColor, const int nonPoolColor,
              const char * poolCommName, const char * nonPoolCommName);
-  ~IoPoolBase();
+  virtual ~IoPoolBase() {}
 
   /// \brief return the "all" mpi communicator
-  const eckit::mpi::Comm & comm_all() const { return comm_all_; }
+  const eckit::mpi::Comm & commAll() const { return commAll_; }
 
-  /// \brief return the rank number for the all communicator group
-  int rank_all() const { return rank_all_; }
-
-  /// \brief return the number of processes for the all communicator group
-  int size_all() const { return size_all_; }
+  /// \brief return the "time" mpi communicator
+  const eckit::mpi::Comm & commTime() const { return commTime_; }
 
   /// \brief return the pool mpi communicator
-  const eckit::mpi::Comm * comm_pool() const { return comm_pool_; }
-
-  /// \brief return the rank number for the pool communicator group
-  int rank_pool() const { return rank_pool_; }
-
-  /// \brief return the number of processes for the pool communicator group
-  int size_pool() const { return size_pool_; }
+  const eckit::mpi::Comm * commPool() const { return commPool_; }
 
   /// \brief return the rank assignment for this object.
-  const std::vector<std::pair<int, int>> & rank_assignment() const { return rank_assignment_; }
+  const std::vector<std::pair<int, int>> & rankAssignment() const { return rankAssignment_; }
 
   /// \brief return the pool color
   int poolColor() const { return poolColor_; }
@@ -90,6 +103,12 @@ class IODA_DL IoPoolBase : public util::Printable {
 
   /// \brief return the pool color
   const char * nonPoolCommName() const { return nonPoolCommName_; }
+
+  /// \brief number of locations on this MPI rank
+  std::size_t nlocs() const { return nlocs_; }
+
+  /// \brief global number of locations (total across MPI tasks)
+  std::size_t globalNlocs() const { return globalNlocs_; }
 
   /// \brief initialize the io pool after construction
   virtual void initialize() = 0;
@@ -104,49 +123,25 @@ class IODA_DL IoPoolBase : public util::Printable {
   typedef std::map<int, std::vector<int>> IoPoolGroupMap;
 
   /// \brief io pool parameters
-  const oops::Parameter<IoPoolParameters> & params_;
-
-  /// \brief DA timing window start
-  util::DateTime win_start_;
-
-  /// \brief DA timing window end
-  util::DateTime win_end_;
+  const IoPoolParameters & configParams_;
 
   /// \brief parallel io flag, true -> read/write in parallel mode
-  bool is_parallel_io_;
+  bool isParallelIo_;
 
   /// \brief target pool size
-  int target_pool_size_;
+  int targetPoolSize_;
 
   /// \brief MPI communicator group for all processes
-  const eckit::mpi::Comm & comm_all_;
-
-  /// \brief rank in MPI communicator group for all processes
-  int rank_all_;
-
-  /// \brief size of MPI communicator group for all processes
-  int size_all_;
+  const eckit::mpi::Comm & commAll_;
 
   /// \brief MPI time communicator group
-  const eckit::mpi::Comm & comm_time_;
-
-  /// \brief rank in MPI time communicator group
-  int rank_time_;
-
-  /// \brief size of MPI time communicator group
-  int size_time_;
+  const eckit::mpi::Comm & commTime_;
 
   /// \brief MPI communicator group for all processes in the i/o pool
   /// \details This communicator group will hold a subset of the world communicator
   /// group. If an MPI task is not a member of the i/o pool, then this pointer will
   /// be set to nullptr to indicate that.
-  eckit::mpi::Comm *comm_pool_;
-
-  /// \brief rank in MPI communicator group for this pool
-  int rank_pool_;
-
-  /// \brief size of MPI communicator group for this pool
-  int size_pool_;
+  eckit::mpi::Comm *commPool_;
 
   // These next two constants are the "color" values used for the MPI split comm command.
   // They just need to be two different numbers, which will create the pool communicator,
@@ -171,11 +166,17 @@ class IODA_DL IoPoolBase : public util::Printable {
   /// it is assigned and as the second element the number of locations for the assigned
   /// rank. Note that the data types in the pair need to match for the eckit MPI send/recv
   /// commands.
-  std::vector<std::pair<int, int>> rank_assignment_;
+  std::vector<std::pair<int, int>> rankAssignment_;
+
+  /// \brief number of locations on this MPI rank
+  std::size_t nlocs_;
+
+  /// \brief global number of locations (total across MPI tasks)
+  std::size_t globalNlocs_;
 
   /// \brief set the pool size (number of MPI processes) for this instance
-  /// \detail This function sets the data member target_pool_size_ to the minumum of
-  /// the specified maximum pool size or the size of the comm_all_ communicator group.
+  /// \detail This function sets the data member targetPoolSize_ to the minumum of
+  /// the specified maximum pool size or the size of the commAll_ communicator group.
   virtual void setTargetPoolSize();
 
   /// \brief group ranks into sets for the io pool assignments

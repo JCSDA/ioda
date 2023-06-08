@@ -7,7 +7,7 @@
 /// \file WriterUtils.cpp
 /// \brief Utilities for a ioda io writer backend
 
-#include "ioda/ioPool/WriterUtils.h"
+#include "ioda/ioPool/WriterPoolUtils.h"
 
 #include <functional>
 #include <numeric>
@@ -18,12 +18,14 @@
 #include "ioda/Copying.h"
 #include "ioda/Exception.h"
 #include "ioda/Group.h"
-#include "ioda/ioPool/WriterPool.h"
+#include "ioda/ioPool/WriterPoolBase.h"
 #include "ioda/Misc/DimensionScales.h"
 #include "ioda/Types/Type.h"
 #include "ioda/Types/Type_Provider.h"
 #include "ioda/Variables/Variable.h"
 #include "ioda/Variables/VarUtils.h"
+
+#include "oops/util/Logger.h"
 
 namespace ioda {
 
@@ -57,9 +59,9 @@ Selection createBlockSelection(const std::vector<Dimensions_t> & varShape,
 }
 
 template <typename VarType>
-void transferVarData(const WriterPool & ioPool, const Variable & srcVar,
+void transferVarData(const WriterPoolBase & ioPool, const Variable & srcVar,
                      const std::string & varName, Group & dest, const bool isParallelIo) {
-    if (ioPool.rank_pool() >= 0) {
+    if (ioPool.commPool() != nullptr) {
         std::vector<VarType> varData;
         srcVar.read<VarType>(varData);
         Variable destVar = dest.vars.open(varName);
@@ -71,7 +73,7 @@ void transferVarData(const WriterPool & ioPool, const Variable & srcVar,
     }
 }
 
-void calcVarStartsCounts(const WriterPool & ioPool, const Variable & srcVar,
+void calcVarStartsCounts(const WriterPoolBase & ioPool, const Variable & srcVar,
                          std::vector<std::size_t> & varStarts,
                          std::vector<std::size_t> & varCounts,
                          Dimensions_t & dimFactor) {
@@ -89,12 +91,12 @@ void calcVarStartsCounts(const WriterPool & ioPool, const Variable & srcVar,
     // Set the initial start value. We are stacking up the slices in the order: this rank's
     // slice, then the first assigned (non io pool) rank slice, then the next assigned rank
     // slice etc.
-    if (ioPool.rank_pool() >= 0) {
+    if (ioPool.commPool() != nullptr) {
         // For ranks in the pool, we are placing the data from itself first in the stack.
         // The first rank from the assigned (non io pool) ranks will get its data
         // placed at the end of the data from this rank so it's starting value
         // is at this ranks patch nlocs value.
-        start = ioPool.patch_nlocs() * dimFactor;
+        start = ioPool.patchNlocs() * dimFactor;
     } else {
         // For ranks not in the pool, only sending their slice of data, so the initial
         // start value is always zero.
@@ -102,15 +104,15 @@ void calcVarStartsCounts(const WriterPool & ioPool, const Variable & srcVar,
     }
 
     // Walk through the rank assignments and calculate the start, count values.
-    for (auto & rankAssignment : ioPool.rank_assignment()) {
+    for (auto & rankAssignment : ioPool.rankAssignment()) {
         std::size_t count;
-        if (ioPool.rank_pool() >= 0) {
+        if (ioPool.commPool() != nullptr) {
             // on an io pool rank: count is patch nlocs from the non io pool rank
             // for the current assignment
             count = rankAssignment.second * dimFactor;
         } else {
             // on a non io pool rank: count is patch nlocs from this rank
-            count = ioPool.patch_nlocs() * dimFactor;
+            count = ioPool.patchNlocs() * dimFactor;
         }
         varStarts.push_back(start);
         varCounts.push_back(count);
@@ -119,7 +121,7 @@ void calcVarStartsCounts(const WriterPool & ioPool, const Variable & srcVar,
 }
 
 template <typename VarType>
-void selectPatchValues(const WriterPool & ioPool, const Variable & srcVar,
+void selectPatchValues(const WriterPoolBase & ioPool, const Variable & srcVar,
                        const Dimensions_t & dimFactor, std::vector<VarType> & varData) {
     // Read all the values from the source variable
     std::vector<VarType> totalVarData;
@@ -128,7 +130,7 @@ void selectPatchValues(const WriterPool & ioPool, const Variable & srcVar,
     // Use this rank's patchObsVec to select the patch ("owned") values only. patchObsVec
     // hold boolean values, and the patch locations are where the entries are set to "true".
     varData.clear();
-    varData.reserve(ioPool.patch_nlocs() * dimFactor);
+    varData.reserve(ioPool.patchNlocs() * dimFactor);
     auto patchObsVec = ioPool.patchObsVec();
     for (std::size_t i = 0; i < patchObsVec.size(); ++i) {
         if (patchObsVec[i]) {
@@ -141,7 +143,7 @@ void selectPatchValues(const WriterPool & ioPool, const Variable & srcVar,
 }
 
 template <typename VarType>
-void transferVarDataMPI(const WriterPool & ioPool, const Variable & srcVar,
+void transferVarDataMPI(const WriterPoolBase & ioPool, const Variable & srcVar,
                         const std::string & varName, int varNumber,
                         const std::vector<std::size_t> & varStarts,
                         const std::vector<std::size_t> & varCounts,
@@ -149,28 +151,28 @@ void transferVarDataMPI(const WriterPool & ioPool, const Variable & srcVar,
                         const bool isParallelIo, const std::size_t strLen) {
     std::vector<VarType> varData;
     selectPatchValues<VarType>(ioPool, srcVar, dimFactor, varData);
-    if (ioPool.rank_pool() >= 0) {
+    if (ioPool.commPool() != nullptr) {
         // Resize varData according to total nlocs.
-        Dimensions_t numElements = ioPool.total_nlocs() * dimFactor;
+        Dimensions_t numElements = ioPool.totalNlocs() * dimFactor;
         varData.resize(numElements);
 
         // Walk through the rank assignments and issue receive commands.
-        if (ioPool.rank_assignment().size() > 0) {
-            std::vector<eckit::mpi::Request> recvRequests(ioPool.rank_assignment().size());
-            for (std::size_t i = 0; i < ioPool.rank_assignment().size(); ++i) {
-                int fromRank = ioPool.rank_assignment()[i].first;
+        if (ioPool.rankAssignment().size() > 0) {
+            std::vector<eckit::mpi::Request> recvRequests(ioPool.rankAssignment().size());
+            for (std::size_t i = 0; i < ioPool.rankAssignment().size(); ++i) {
+                int fromRank = ioPool.rankAssignment()[i].first;
                 int tag = mpiTagBase + (varNumber * varNumTagFactor) + fromRank;
-                recvRequests[i] = ioPool.comm_all().iReceive(
+                recvRequests[i] = ioPool.commAll().iReceive(
                     varData.data() + varStarts[i], varCounts[i], fromRank, tag);
             }
-            ioPool.comm_all().waitAll(recvRequests);
+            ioPool.commAll().waitAll(recvRequests);
         }
         Variable destVar = dest.vars.open(varName);
         if (isParallelIo) {
             Selection memSelect = createBlockSelection(destVar.getDimensions().dimsCur,
-                                  0, ioPool.total_nlocs(), false);
+                                  0, ioPool.totalNlocs(), false);
             Selection fileSelect = createBlockSelection(destVar.getDimensions().dimsCur,
-                                   ioPool.nlocs_start(), ioPool.total_nlocs(), true);
+                                   ioPool.nlocsStart(), ioPool.totalNlocs(), true);
             destVar.parallelWrite<VarType>(varData, memSelect, fileSelect);
         } else {
             destVar.write<VarType>(varData);
@@ -178,22 +180,22 @@ void transferVarDataMPI(const WriterPool & ioPool, const Variable & srcVar,
     } else {
         // Non io pool ranks. These ranks will always read their data from src, and send it as
         // is to their assigned io pool rank.
-        if (ioPool.rank_assignment().size() > 0) {
-            std::vector<eckit::mpi::Request> sendRequests(ioPool.rank_assignment().size());
-            for (std::size_t i = 0; i < ioPool.rank_assignment().size(); ++i) {
-                int toRank = ioPool.rank_assignment()[i].first;
-                int tag = mpiTagBase + (varNumber * varNumTagFactor) + ioPool.rank_all();
-                sendRequests[i] = ioPool.comm_all().iSend(
+        if (ioPool.rankAssignment().size() > 0) {
+            std::vector<eckit::mpi::Request> sendRequests(ioPool.rankAssignment().size());
+            for (std::size_t i = 0; i < ioPool.rankAssignment().size(); ++i) {
+                int toRank = ioPool.rankAssignment()[i].first;
+                int tag = mpiTagBase + (varNumber * varNumTagFactor) + ioPool.commAll().rank();
+                sendRequests[i] = ioPool.commAll().iSend(
                     varData.data() + varStarts[i], varCounts[i], toRank, tag);
             }
-            ioPool.comm_all().waitAll(sendRequests);
+            ioPool.commAll().waitAll(sendRequests);
         }
     }
 }
 
 // template specialization for std::string
 template <>
-void transferVarDataMPI<std::string>(const WriterPool & ioPool, const Variable & srcVar,
+void transferVarDataMPI<std::string>(const WriterPoolBase & ioPool, const Variable & srcVar,
                         const std::string & varName, const int varNumber,
                         const std::vector<std::size_t> & varStarts,
                         const std::vector<std::size_t> & varCounts,
@@ -203,18 +205,18 @@ void transferVarDataMPI<std::string>(const WriterPool & ioPool, const Variable &
 
     std::vector<std::string> varData;
     selectPatchValues<std::string>(ioPool, srcVar, dimFactor, varData);
-    if (ioPool.rank_pool() >= 0) {
+    if (ioPool.commPool() != nullptr) {
         // Resize varData according to total nlocs.
-        Dimensions_t numElements = ioPool.total_nlocs() * dimFactor;
+        Dimensions_t numElements = ioPool.totalNlocs() * dimFactor;
         varData.resize(numElements);
 
         // Walk through the rank assignments and issue receive commands.
-        if (ioPool.rank_assignment().size() > 0) {
-            for (std::size_t i = 0; i < ioPool.rank_assignment().size(); ++i) {
-                int fromRank = ioPool.rank_assignment()[i].first;
+        if (ioPool.rankAssignment().size() > 0) {
+            for (std::size_t i = 0; i < ioPool.rankAssignment().size(); ++i) {
+                int fromRank = ioPool.rankAssignment()[i].first;
                 int tag = mpiTagBase + (varNumber * varNumTagFactor) + fromRank;
                 std::vector<char> strBuffer(varCounts[i] * maxStringLength, '\0');
-                ioPool.comm_all().receive(strBuffer.data(), strBuffer.size(), fromRank, tag);
+                ioPool.commAll().receive(strBuffer.data(), strBuffer.size(), fromRank, tag);
                 for (std::size_t j = 0; j < varCounts[i]; ++j) {
                     std::size_t offset = j * maxStringLength;
                     auto strEnd = std::find(strBuffer.begin() + offset, strBuffer.end(), '\0');
@@ -230,9 +232,9 @@ void transferVarDataMPI<std::string>(const WriterPool & ioPool, const Variable &
         Variable destVar = dest.vars.open(varName);
         if (isParallelIo) {
             Selection memSelect = createBlockSelection(destVar.getDimensions().dimsCur,
-                                  0, ioPool.total_nlocs(), false);
+                                  0, ioPool.totalNlocs(), false);
             Selection fileSelect = createBlockSelection(destVar.getDimensions().dimsCur,
-                                   ioPool.nlocs_start(), ioPool.total_nlocs(), true);
+                                   ioPool.nlocsStart(), ioPool.totalNlocs(), true);
             destVar.parallelWrite<std::string>(varData, memSelect, fileSelect);
         } else {
             destVar.write<std::string>(varData);
@@ -240,10 +242,10 @@ void transferVarDataMPI<std::string>(const WriterPool & ioPool, const Variable &
     } else {
         // Non io pool ranks. These ranks will always read their data from src, and send it as
         // is to their assigned io pool rank.
-        if (ioPool.rank_assignment().size() > 0) {
-            for (std::size_t i = 0; i < ioPool.rank_assignment().size(); ++i) {
-                int toRank = ioPool.rank_assignment()[i].first;
-                int tag = mpiTagBase + (varNumber * varNumTagFactor) + ioPool.rank_all();
+        if (ioPool.rankAssignment().size() > 0) {
+            for (std::size_t i = 0; i < ioPool.rankAssignment().size(); ++i) {
+                int toRank = ioPool.rankAssignment()[i].first;
+                int tag = mpiTagBase + (varNumber * varNumTagFactor) + ioPool.commAll().rank();
                 std::vector<char> strBuffer(varCounts[i] * maxStringLength, '\0');
                 for (std::size_t i = 0; i < varData.size(); ++i) {
                     for (std::size_t j = 0; j < varData[i].size(); ++j) {
@@ -251,7 +253,7 @@ void transferVarDataMPI<std::string>(const WriterPool & ioPool, const Variable &
                         strBuffer[(i * maxStringLength) + j] = varData[i][j];
                     }
                 }
-                ioPool.comm_all().send(strBuffer.data(), strBuffer.size(), toRank, tag);
+                ioPool.commAll().send(strBuffer.data(), strBuffer.size(), toRank, tag);
             }
         }
     }
@@ -330,7 +332,7 @@ void identifyVarsUsingLocation(const ioda::VarUtils::VarDimMap & varDimMap,
     }
 }
 
-void writerCopyVarData(const ioda::WriterPool & ioPool, const ioda::Group & src,
+void writerCopyVarData(const ioda::WriterPoolBase & ioPool, const ioda::Group & src,
                        ioda::Group & dest,
                        const VarUtils::Vec_Named_Variable & srcNamedVars,
                        const std::unordered_set<std::string> & varsUsingLocation,
@@ -347,7 +349,7 @@ void writerCopyVarData(const ioda::WriterPool & ioPool, const ioda::Group & src,
     // If the variable is not using Location, then simply transfer data from src to dest.
     if (varsUsingLocation.count(varName) > 0) {
         // Using Location -> calculate the starts and counts for each of the ranks
-        // in the rank_assignment_ structure.
+        // in the rankAssignment structure.
         std::vector<std::size_t> varStarts;
         std::vector<std::size_t> varCounts;
         Dimensions_t dimFactor;
@@ -386,10 +388,10 @@ void writerCopyVarData(const ioda::WriterPool & ioPool, const ioda::Group & src,
 
 // public functions
 
-void calcMaxStringLengths(const ioda::WriterPool & ioPool,
+void calcMaxStringLengths(const ioda::WriterPoolBase & ioPool,
                           const VarUtils::Vec_Named_Variable & allVarsList,
                           std::map<std::string, std::size_t> & maxStringLengths) {
-    // Want to collect from every mpi task (comm_all_ communicator group).
+    // Want to collect from every mpi task (commAll communicator group).
     //
     // Walk through all variables and figure out the max string length which must
     // be done over the entire set of obs spaces.
@@ -410,7 +412,7 @@ void calcMaxStringLengths(const ioda::WriterPool & ioPool,
                 }
             }
             std::size_t globalMaxStringLen;
-            ioPool.comm_all()
+            ioPool.commAll()
                 .allReduce(maxStringLen, globalMaxStringLen, eckit::mpi::max());
             // If all of the strings are empty, then globalMaxStringLen is set to
             // zero which causes problems with the fixed length string type. In this
@@ -424,7 +426,7 @@ void calcMaxStringLengths(const ioda::WriterPool & ioPool,
     }
 }
 
-void ioWriteGroup(const ioda::WriterPool & ioPool, const ioda::Group& memGroup,
+void ioWriteGroup(const ioda::WriterPoolBase & ioPool, const ioda::Group& memGroup,
                   ioda::Group& fileGroup, const bool isParallelIo) {
   // NOTE: This routine does not respect hard links for groups,
   // types, and variables. Once hard link support is added to IODA,
@@ -458,7 +460,7 @@ void ioWriteGroup(const ioda::WriterPool & ioPool, const ioda::Group& memGroup,
   // Ie, a complete file except that the variable data has not been collected and written
   // into the file. Once that is completed, then the variable data is transfered from
   // the source group to the file(s).
-  if (ioPool.rank_pool() >= 0) {
+  if (ioPool.commPool() != nullptr) {
     // Get all variable and group names
     const auto memObjects = memGroup.listObjects(ObjectType::Ignored, true);
 
@@ -476,9 +478,9 @@ void ioWriteGroup(const ioda::WriterPool & ioPool, const ioda::Group& memGroup,
     // from the pool.
     int poolNlocs;
     if (isParallelIo) {
-        poolNlocs = ioPool.global_nlocs();
+        poolNlocs = ioPool.globalNlocs();
     } else {
-        poolNlocs = ioPool.total_nlocs();
+        poolNlocs = ioPool.totalNlocs();
     }
 
     // Make all variables and copy data and most attributes.

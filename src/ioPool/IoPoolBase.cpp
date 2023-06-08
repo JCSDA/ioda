@@ -29,36 +29,60 @@ namespace ioda {
 
 constexpr int defaultMaxPoolSize = 10;
 
+//------------------------------------------------------------------------------------
+// Common io pool creation parameters
+//------------------------------------------------------------------------------------
+IoPoolCreationParameters::IoPoolCreationParameters(
+            const eckit::mpi::Comm & commAll, const eckit::mpi::Comm & commTime)
+                : commAll(commAll), commTime(commTime) {
+}
+
+//------------------------------------------------------------------------------------
+// Io pool base class
+//------------------------------------------------------------------------------------
+
+//--------------------------------------------------------------------------------------
+IoPoolBase::IoPoolBase(
+               const IoPoolParameters & configParams,
+               const eckit::mpi::Comm & commAll, const eckit::mpi::Comm & commTime,
+               const int poolColor, const int nonPoolColor,
+               const char * poolCommName, const char * nonPoolCommName)
+                   : configParams_(configParams), commAll_(commAll), commTime_(commTime),
+                     poolColor_(poolColor), nonPoolColor_(nonPoolColor),
+                     poolCommName_(poolCommName), nonPoolCommName_(nonPoolCommName),
+                     targetPoolSize_(0), nlocs_(0), globalNlocs_(0) {
+}
+
 //--------------------------------------------------------------------------------------
 void IoPoolBase::setTargetPoolSize() {
-    if (rank_all_ == 0) {
+    if (commAll().rank() == 0) {
         // Determine the maximum pool size. Use the default if the io pool spec is not
         // present, which is done for backward compatibility.
         int maxPoolSize = defaultMaxPoolSize;
-        if (params_.value().maxPoolSize.value() > 0) {
-            maxPoolSize = params_.value().maxPoolSize.value();
+        if (configParams_.maxPoolSize.value() > 0) {
+            maxPoolSize = configParams_.maxPoolSize.value();
         }
 
         // The pool size will be the minimum of the maxPoolSize or the entire size of the
-        // comm_all_ communicator group (ie, size_all_).
+        // commAll_ communicator group
         int poolSize = maxPoolSize;
-        if (size_all_ <= maxPoolSize) {
-            poolSize = size_all_;
+        if (commAll().size() <= maxPoolSize) {
+            poolSize = commAll().size();
         }
 
         // Broadcast the target pool size to the other ranks
-        target_pool_size_ = poolSize;
-        comm_all_.broadcast(target_pool_size_, 0);
+        targetPoolSize_ = poolSize;
+        commAll().broadcast(targetPoolSize_, 0);
     } else {
         // Receive the broadcast of the target pool size
-        comm_all_.broadcast(target_pool_size_, 0);
+        commAll().broadcast(targetPoolSize_, 0);
     }
 }
 
 //--------------------------------------------------------------------------------------
 void IoPoolBase::groupRanks(IoPoolGroupMap & rankGrouping) {
     rankGrouping.clear();
-    if (rank_all_ == 0) {
+    if (commAll().rank() == 0) {
         // This default grouping preserves the ordering that we had before the io pool
         // was introduced. For the reader this doesn't matter all that much since the
         // distribution is driven by the location indices, and for the writer this
@@ -79,10 +103,11 @@ void IoPoolBase::groupRanks(IoPoolGroupMap & rankGrouping) {
         // can be addressed later. If needed we can do the same type of grouping but base
         // it on the number of locations instead of the ranks which will make the MPI
         // transfers more complicated.
-        int base_assign_size = size_all_ / target_pool_size_;
-        int rem_assign_size = size_all_ % target_pool_size_;
+        ASSERT(targetPoolSize_ != 0);
+        int base_assign_size = commAll().size() / targetPoolSize_;
+        int rem_assign_size = commAll().size() % targetPoolSize_;
         int start = 0;
-        for (std::size_t i = 0; i < target_pool_size_; ++i) {
+        for (std::size_t i = 0; i < targetPoolSize_; ++i) {
             int count = base_assign_size;
             if (i < rem_assign_size) {
                 count += 1;
@@ -104,10 +129,10 @@ void IoPoolBase::assignRanksToIoPool(const std::size_t nlocs,
     constexpr int mpiTagBase = 10000;
 
     // Collect the nlocs from all of the other ranks.
-    std::vector<std::size_t> allNlocs(size_all_);
-    comm_all_.allGather(nlocs, allNlocs.begin(), allNlocs.end());
+    std::vector<std::size_t> allNlocs(commAll().size());
+    commAll().allGather(nlocs, allNlocs.begin(), allNlocs.end());
 
-    if (rank_all_ == 0) {
+    if (commAll().rank() == 0) {
         // Follow the grouping that is contained in the rankGrouping structure to create
         // the assignments for the MPI send/recv transfers. The rankAssignments structure
         // contains the mapping that is required to effect the proper MPI send/recv
@@ -116,9 +141,9 @@ void IoPoolBase::assignRanksToIoPool(const std::size_t nlocs,
         // is indexed by the all_comm_ rank number, and the inner vector contains the list
         // of ranks the outer index rank interacts with for data transfers. Once constructed,
         // each inner vector of rankAssignments is sent to the associated rank in the
-        // comm_all_ group.
-        std::vector<std::vector<std::pair<int, int>>> rankAssignments(size_all_);
-        std::vector<int> rankAssignSizes(size_all_, 0);
+        // commAll() group.
+        std::vector<std::vector<std::pair<int, int>>> rankAssignments(commAll().size());
+        std::vector<int> rankAssignSizes(commAll().size(), 0);
         for (auto & rankGroup : rankGrouping) {
             // rankGroup is a std::pair<int, std::vector<int>>
             // The first element is the pool rank, and the second element is
@@ -142,25 +167,27 @@ void IoPoolBase::assignRanksToIoPool(const std::size_t nlocs,
         // sizes (number of ranks) in each rank's assignment. Then use send/receive
         // to transfer each ranks assignment.
         int myRankAssignSize;
-        comm_all_.scatter(rankAssignSizes, myRankAssignSize, 0);
+        commAll().scatter(rankAssignSizes, myRankAssignSize, 0);
 
         // Copy my assignment directory. Use MPI send/recv for all other ranks.
-        rank_assignment_ = rankAssignments[0];
+        rankAssignment_ = rankAssignments[0];
         for (std::size_t i = 1; i < rankAssignments.size(); ++i) {
             if (rankAssignSizes[i] > 0) {
-                comm_all_.send(rankAssignments[i].data(), rankAssignSizes[i], i, mpiTagBase + i);
+                commAll().send(rankAssignments[i].data(), rankAssignSizes[i],
+                               i, mpiTagBase + i);
             }
         }
     } else {
         // Receive the rank assignments from rank 0. First use scatter to receive the
         // sizes (number of ranks) in this rank's assignment.
         int myRankAssignSize;
-        std::vector<int> dummyVector(size_all_);
-        comm_all_.scatter(dummyVector, myRankAssignSize, 0);
+        std::vector<int> dummyVector(commAll().size());
+        commAll().scatter(dummyVector, myRankAssignSize, 0);
 
-        rank_assignment_.resize(myRankAssignSize);
+        rankAssignment_.resize(myRankAssignSize);
         if (myRankAssignSize > 0) {
-            comm_all_.receive(rank_assignment_.data(), myRankAssignSize, 0, mpiTagBase + rank_all_);
+            commAll().receive(rankAssignment_.data(), myRankAssignSize,
+                              0, mpiTagBase + commAll().rank());
         }
     }
 }
@@ -168,49 +195,29 @@ void IoPoolBase::assignRanksToIoPool(const std::size_t nlocs,
 //--------------------------------------------------------------------------------------
 void IoPoolBase::createIoPool(IoPoolGroupMap & rankGrouping) {
     int myColor;
-    if (rank_all_ == 0) {
+    if (commAll().rank() == 0) {
         // Create the split communicator for the io pool. The rankGrouping structure contains
         // the distinction between pool ranks and non pool ranks. The eckit split communicator
         // command doesn't yet handle the MPI_UNDEFINED spec for a color value, so for now
         // create a pool communicator group and a non pool communicator group.
-        std::vector<int> splitColors(size_all_, nonPoolColor_);
+        std::vector<int> splitColors(commAll().size(), nonPoolColor_);
         for (auto & rankGroup : rankGrouping) {
             splitColors[rankGroup.first] = poolColor_;
         }
-        comm_all_.scatter(splitColors, myColor, 0);
+        commAll().scatter(splitColors, myColor, 0);
     } else {
         // Create the split. Receive the split color from a scatter, then call the split
         // command
-        std::vector<int> dummyColors(size_all_);
-        comm_all_.scatter(dummyColors, myColor, 0);
+        std::vector<int> dummyColors(commAll().size());
+        commAll().scatter(dummyColors, myColor, 0);
     }
 
     if (myColor == nonPoolColor_) {
-        comm_all_.split(myColor, nonPoolCommName_);
-        comm_pool_ = nullptr;  // mark that this rank does not belong to an io pool
-        rank_pool_ = -1;
-        size_pool_ = -1;
+        commAll().split(myColor, nonPoolCommName_);
+        commPool_ = nullptr;  // mark that this rank does not belong to an io pool
     } else {
-        comm_pool_ = &(comm_all_.split(myColor, poolCommName_));
-        rank_pool_ = comm_pool_->rank();
-        size_pool_ = comm_pool_->size();
+        commPool_ = &(commAll().split(myColor, poolCommName_));
     }
 }
-
-//--------------------------------------------------------------------------------------
-IoPoolBase::IoPoolBase(const oops::Parameter<IoPoolParameters> & ioPoolParams,
-               const eckit::mpi::Comm & commAll, const eckit::mpi::Comm & commTime,
-               const util::DateTime & winStart, const util::DateTime & winEnd,
-               const int poolColor, const int nonPoolColor,
-               const char * poolCommName, const char * nonPoolCommName)
-                   : params_(ioPoolParams),
-                     comm_all_(commAll), rank_all_(commAll.rank()), size_all_(commAll.size()),
-                     comm_time_(commTime), rank_time_(commTime.rank()),
-                     size_time_(commTime.size()), win_start_(winStart), win_end_(winEnd),
-                     poolColor_(poolColor), nonPoolColor_(nonPoolColor),
-                     poolCommName_(poolCommName), nonPoolCommName_(nonPoolCommName) {
-}
-
-IoPoolBase::~IoPoolBase() = default;
 
 }  // namespace ioda

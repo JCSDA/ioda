@@ -218,7 +218,13 @@ void test_obsgroup_helper_funcs(std::string backendType, std::string fileName,
   std::vector<float> myLats(locationsX2, 0.0);
   lat_var.read(myLats);
   for (std::size_t i = 0; i < locationsX2; ++i) {
-    double check = fabs((myLats[i] / myLatExpected[i]) - 1.0);
+    // Avoid divide by zero
+    double check;
+    if (myLatExpected[i] == 0.0) {
+      check = fabs(myLats[i]);
+    } else {
+      check = fabs((myLats[i] / myLatExpected[i]) - 1.0);
+    }
     if (check > 1.0e-3) {
       throw Exception("Test lats mismatch outside tolerence (1e-3)", ioda_Here())
               .add("  i", i)
@@ -230,7 +236,13 @@ void test_obsgroup_helper_funcs(std::string backendType, std::string fileName,
   std::vector<float> myLons(locationsX2, 0.0);
   lon_var.read(myLons);
   for (std::size_t i = 0; i < locationsX2; ++i) {
-    double check = fabs((myLons[i] / myLonExpected[i]) - 1.0);
+    // Avoid divide by zero
+    double check;
+    if (myLonExpected[i] == 0.0) {
+      check = fabs(myLons[i]);
+    } else {
+      check = fabs((myLons[i] / myLonExpected[i]) - 1.0);
+    }
     if (check > 1.0e-3) {
       throw Exception("Test lons mismatch outside tolerence (1e-3)", ioda_Here())
               .add("  i", i)

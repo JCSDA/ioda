@@ -7,7 +7,7 @@
 /// \file ReaderUtils.cpp
 /// \brief Utilities for a ioda io reader backend
 
-#include "ioda/ioPool/ReaderUtils.h"
+#include "ioda/ioPool/ReaderPoolUtils.h"
 
 #include <algorithm>
 #include <cmath>
@@ -24,7 +24,7 @@
 #include "ioda/Copying.h"
 #include "ioda/Exception.h"
 #include "ioda/Group.h"
-#include "ioda/ioPool/ReaderPool.h"
+#include "ioda/ioPool/ReaderPoolBase.h"
 #include "ioda/Variables/Fill.h"
 #include "ioda/Variables/Variable.h"
 #include "ioda/Variables/VarUtils.h"
@@ -53,13 +53,13 @@ DataType getMissingValue() {
 // These are special cases to get a char * pointer for the string missing value
 // to persist through the lifetime of the reader pool.
 template<typename DataType>
-DataType getMissingValue(const ioda::ReaderPool & ioPool) {
+DataType getMissingValue(const ioda::ReaderPoolBase & ioPool) {
     DataType missVal = util::missingValue(DataType());
     return missVal;
 }
 
 template<>
-std::shared_ptr<std::string> getMissingValue(const ioda::ReaderPool & ioPool) {
+std::shared_ptr<std::string> getMissingValue(const ioda::ReaderPoolBase & ioPool) {
     std::shared_ptr<std::string> missVal = ioPool.stringMissingValue();
     return missVal;
 }
@@ -652,7 +652,7 @@ void replaceFillWithMissingImpl<std::shared_ptr<std::string>>(
 // that is used by all of the variable transfers except for dateTime, longitude
 // and latitude.
 template <class VarType>
-void replaceFillWithMissing(const ioda::ReaderPool & ioPool,
+void replaceFillWithMissing(const ioda::ReaderPoolBase & ioPool,
                             const ioda::Variable & srcVar,
                             const ioda::Dimensions_t & numElements,
                             std::vector<char> & srcValues) {
@@ -674,7 +674,7 @@ void replaceFillWithMissing(const ioda::ReaderPool & ioPool,
 
 // Specialization for string
 template <>
-void replaceFillWithMissing<std::string>(const ioda::ReaderPool & ioPool,
+void replaceFillWithMissing<std::string>(const ioda::ReaderPoolBase & ioPool,
                                          const ioda::Variable & srcVar,
                                          const ioda::Dimensions_t & numElements,
                                          std::vector<char> & srcValues) {
@@ -767,7 +767,7 @@ void selectVarValues(const std::vector<DataType> & srcBuffer,
 }
 
 //--------------------------------------------------------------------------------
-void readerCopyVarData(const ioda::ReaderPool & ioPool,
+void readerCopyVarData(const ioda::ReaderPoolBase & ioPool,
                        const ioda::Group & src, ioda::Group & dest,
                        const VarUtils::Vec_Named_Variable & srcVarsList,
                        const VarUtils::VarDimMap & dimsAttachedToVars,
@@ -917,7 +917,7 @@ void readerCopyVarData(const ioda::ReaderPool & ioPool,
 }
 
 //--------------------------------------------------------------------------------
-void ioReadGroup(const ioda::ReaderPool & ioPool, const ioda::Group& fileGroup,
+void ioReadGroup(const ioda::ReaderPoolBase & ioPool, const ioda::Group& fileGroup,
                  ioda::Group& memGroup, const ioda::DateTimeFormat dtimeFormat,
                  std::vector<int64_t> & dtimeVals, const std::string & dtimeEpoch,
                  std::vector<float> & lonVals, std::vector<float> & latVals,
