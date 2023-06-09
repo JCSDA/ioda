@@ -67,7 +67,7 @@ void HH_Type::commitToBackend(Group &g, const std::string &name) const {
                             H5P_DEFAULT,
                             H5P_DEFAULT);
     if (res < 0) throw Exception("H5Tcommit2 failed.", ioda_Here());
-  } catch (std::bad_cast) {
+  } catch (const std::bad_cast&) {
     throw Exception("Group passed to function is not an HDF5 group.", ioda_Here());
   }
 }

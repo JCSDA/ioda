@@ -24,13 +24,13 @@ namespace ObsStore {
 
 //---------------------------------------------------------------------------------------
 Type::Type() : dims_({}), type_(ObsTypes::NOTYPE), class_(ObsTypeClasses::NOCLASS),
-               base_type_(nullptr), size_(0), num_elements_(0), is_signed_(false) {
+               base_type_(nullptr), num_elements_(0), size_(0), is_signed_(false) {
 }
 
 Type::Type(const ObsTypes dataType, const ObsTypeClasses typeClass,
            const std::size_t typeSize, const bool isTypeSigned)
                : dims_({}), type_(dataType), class_(typeClass), base_type_(nullptr),
-                 size_(typeSize), num_elements_(1), is_signed_(isTypeSigned) {
+                 num_elements_(1), size_(typeSize), is_signed_(isTypeSigned) {
 }
 
 Type::Type(const std::vector<std::size_t> & dims, const ObsTypes dataType,

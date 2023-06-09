@@ -40,7 +40,7 @@ DataFromSQL::DataFromSQL(int maxNumberChannels) : max_number_channels_(maxNumber
 size_t DataFromSQL::numberOfMetadataRows() const { return number_of_metadata_rows_; }
 
 int DataFromSQL::getColumnIndex(const std::string& col) const {
-  for (int i = 0; i < columns_.size(); i++) {
+  for (size_t i = 0; i < columns_.size(); i++) {
     if (columns_.at(i) == col) {
       return i;
     }
@@ -51,9 +51,9 @@ int DataFromSQL::getColumnIndex(const std::string& col) const {
 size_t DataFromSQL::numberOfRowsForVarno(const int varno) const {
   int varno_index = getColumnIndex("varno");
   size_t tot      = 0;
-  for (int i = 0; i < number_of_rows_; i++) {
+  for (size_t i = 0; i < number_of_rows_; i++) {
     size_t val = getData(i, varno_index);
-    if (val == varno) {
+    if (val == static_cast<size_t>(varno)) {
       tot++;
     }
   }
@@ -61,7 +61,7 @@ size_t DataFromSQL::numberOfRowsForVarno(const int varno) const {
 }
 
 bool DataFromSQL::hasVarno(const int varno) const {
-  for (int i = 0; i < number_of_varnos_; i++) {
+  for (size_t i = 0; i < number_of_varnos_; i++) {
     if (varno == varnos_.at(i)) return true;
   }
   return false;
@@ -268,7 +268,7 @@ std::vector<std::string> DataFromSQL::getMetadataStringColumn(std::string const&
       }
     }
   }
-  for (int i = arr.size(); i < number_of_metadata_rows_; i++) {
+  for (size_t i = arr.size(); i < number_of_metadata_rows_; i++) {
     arr.push_back(std::string(""));
   }
   return arr;
@@ -338,7 +338,7 @@ Eigen::Array<T, Eigen::Dynamic, 1> DataFromSQL::getVarnoColumn(const std::vector
 
   // Final ordering of indices to use when filling array of data.
   std::vector <int> varno_index_order;
-  for (int i = 0; i < number_of_metadata_rows_; ++i) {
+  for (size_t i = 0; i < number_of_metadata_rows_; ++i) {
     for (const int varno : varnos) {
       for (int j = 0; j < varno_size[varno]; ++j) {
         varno_index_order.push_back(varno_order_map[varno][varno_current_index[varno]++]);
@@ -360,11 +360,11 @@ Eigen::Array<T, Eigen::Dynamic, 1> DataFromSQL::getVarnoColumn(const std::vector
   if (nchans == 1) {
     if (column_index != -1 && varno_index != -1) {
       if (obsgroup_ == obsgroup_surface || obsgroup_ == obsgroup_aircraft) {
-        for (int j = 0; j < num_rows; ++j) {
+        for (size_t j = 0; j < num_rows; ++j) {
           arr[j] = getData(varno_index_order[j], column_index);
         }
       } else {
-        for (int j = 0; j < varno_index_order.size(); ++j) {
+        for (size_t j = 0; j < varno_index_order.size(); ++j) {
           arr[j] = getData(varno_index_order[j], column_index);
         }
       }
@@ -402,7 +402,7 @@ void DataFromSQL::select(const std::vector<std::string>& columns, const std::str
                          const bool truncateProfilesToNumLev) {
   columns_ = columns;
   std::string sql = "select ";
-  for (int i = 0; i < columns_.size(); i++) {
+  for (size_t i = 0; i < columns_.size(); i++) {
     if (i == 0) {
       sql = sql + columns_.at(i);
     } else {
@@ -410,7 +410,7 @@ void DataFromSQL::select(const std::vector<std::string>& columns, const std::str
     }
   }
   sql = sql + " from \"" + filename + "\" where (";
-  for (int i = 0; i < varnos.size(); i++) {
+  for (size_t i = 0; i < varnos.size(); i++) {
     if (i == 0) {
       sql = sql + "varno = " + std::to_string(varnos.at(i));
     } else {
@@ -519,7 +519,7 @@ void DataFromSQL::select(const std::vector<std::string>& columns, const std::str
     // This vector is concatenated over all varnos.
     std::vector<int> varno_indices_to_remove;
     for (int varno : varnos) {
-      for (int jprof = 0; jprof < indices_initial.size(); ++jprof) {
+      for (size_t jprof = 0; jprof < indices_initial.size(); ++jprof) {
         // Initial and final assigned indices for this profile.
         const int index_initial = indices_initial[jprof];
         const int index_final = indices_final[jprof];
@@ -536,13 +536,13 @@ void DataFromSQL::select(const std::vector<std::string>& columns, const std::str
 
     // Erase entries from each column of varno_indices.
     std::sort(varno_indices_to_remove.begin(), varno_indices_to_remove.end());
-    for (int col = 0; col < data_.size(); ++col) {
+    for (size_t col = 0; col < data_.size(); ++col) {
       std::size_t current_index = 0;
       auto current_iter = std::begin(varno_indices_to_remove);
       auto end_iter = std::end(varno_indices_to_remove);
       const auto pred = [&](const double &) {
         // Advance current iterator if there are still more indices to remove.
-        if (current_iter != end_iter && *current_iter == current_index++) {
+        if (current_iter != end_iter && static_cast<size_t>(*current_iter) == current_index++) {
           return ++current_iter, true;
         }
         return false;
@@ -638,7 +638,7 @@ std::vector<std::string> DataFromSQL::getStationIDs() const {
     const Eigen::ArrayXi var_wmo_station_number = getMetadataColumnInt("wmo_station_number");
     const size_t nlocs = var_wmo_block_number.size();
     stationIDs.assign(nlocs, odb_missing_string);
-    for (int loc = 0; loc < nlocs; loc++) {
+    for (size_t loc = 0; loc < nlocs; loc++) {
       // If statid is not empty, use that to fill the station ID.
       if (var_statid[loc] != "")
         stationIDs[loc] = var_statid[loc];
@@ -658,7 +658,7 @@ std::vector<std::string> DataFromSQL::getStationIDs() const {
     const Eigen::ArrayXi var_buoy_identifier = getMetadataColumnInt("buoy_identifier");
     const size_t nlocs = var_argo_identifier.size();
     stationIDs.assign(nlocs, odb_missing_string);
-    for (int loc = 0; loc < nlocs; loc++) {
+    for (size_t loc = 0; loc < nlocs; loc++) {
       // If Argo identifier present, use those to fill the station ID.
       if (var_argo_identifier[loc] != odb_missing_int) {
         stream.str("");
@@ -681,7 +681,7 @@ std::vector<std::string> DataFromSQL::getStationIDs() const {
       const Eigen::ArrayXi var_wmo_station_number = getMetadataColumnInt("wmo_station_number");
       const size_t nlocs = var_wmo_block_number.size();
       stationIDs.assign(nlocs, odb_missing_string);
-      for (int loc = 0; loc < nlocs; loc++) {
+      for (size_t loc = 0; loc < nlocs; loc++) {
         // If statid is not empty, use that to fill the station ID.
         if (var_statid[loc] != "")
           stationIDs[loc] = var_statid[loc];
@@ -763,7 +763,7 @@ ioda::Variable DataFromSQL::assignChannelNumbers(const int varno, ioda::ObsGroup
   Eigen::ArrayXi var = getVarnoColumn<int>(varnos, std::string("initial_vertco_reference"),
                                            numberOfLevels(varno), numberOfLevels(varno));
 
-  int number_of_levels = numberOfLevels(varno);
+  size_t number_of_levels = numberOfLevels(varno);
   ioda::Variable v = og.vars["Channel"];
   Eigen::ArrayXi var_single(number_of_levels);
   for (size_t i = 0; i < number_of_levels; i++) {
@@ -774,7 +774,7 @@ ioda::Variable DataFromSQL::assignChannelNumbers(const int varno, ioda::ObsGroup
 }
 
 ioda::Variable DataFromSQL::assignChannelNumbersSeq(const std::vector<int> varnos, const ioda::ObsGroup og) const {
-  int number_of_levels = 0;
+  size_t number_of_levels = 0;
   for (size_t i = 0; i < varnos.size(); i++) {
     number_of_levels += numberOfLevels(varnos[i]);
   }

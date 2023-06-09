@@ -94,7 +94,7 @@ void testExtendedObsSpace(const eckit::LocalConfiguration &conf) {
   // a multiple of nlevs from the final index.
   EXPECT_EQUAL((nlocs - extendedObsSpaceStart) % nlevs, 0);
   // Check the values of extendedObsSpace.
-  for (int iloc = 0; iloc < extendedObsSpaceStart; ++iloc)
+  for (size_t iloc = 0; iloc < extendedObsSpaceStart; ++iloc)
     EXPECT_EQUAL(extendedObsSpace[iloc], 0);
   for (int iloc = extendedObsSpaceStart; iloc < nlocs; ++iloc)
     EXPECT_EQUAL(extendedObsSpace[iloc], 1);
@@ -105,7 +105,7 @@ void testExtendedObsSpace(const eckit::LocalConfiguration &conf) {
   std::vector <float> val(nlocs);
   std::vector <float> err(nlocs);
   const oops::Variables& obsvars = obsdata.obsvariables();
-  for (int ivar = 0; ivar < obsvars.size(); ++ivar) {
+  for (size_t ivar = 0; ivar < obsvars.size(); ++ivar) {
     const std::string varname = obsvars[ivar];
     obsdata.get_db("ObsValue", varname, val);
     obsdata.get_db("ObsError", varname, err);

@@ -123,8 +123,9 @@ ObsSpace::ObsSpace(const Parameters_ & params, const eckit::mpi::Comm & comm,
                    const eckit::mpi::Comm & timeComm)
                      : oops::ObsSpaceBase(params, comm, bgn, end),
                        winbgn_(bgn), winend_(end), commMPI_(comm),
-                       gnlocs_(0), nrecs_(0), obsvars_(),
-                       obs_group_(), obs_params_(params, bgn, end, comm, timeComm)
+                       gnlocs_(0), nrecs_(0),
+                       obs_group_(), obs_params_(params, bgn, end, comm, timeComm),
+                       obsvars_()
 {
     // Determine if run stats should be dumped out from the environment variable
     // IODA_PRINT_RUNSTATS.
@@ -227,8 +228,6 @@ ObsSpace::ObsSpace(const Parameters_ & params, const eckit::mpi::Comm & comm,
     if (obs_params_.top_level_.obsExtend.value() != boost::none) {
         extendObsSpace(*(obs_params_.top_level_.obsExtend.value()));
     }
-
-    const auto & distParams = obs_params_.top_level_.distribution.value().params.value();
 
     createMissingObsErrors();
 
@@ -1005,7 +1004,7 @@ void ObsSpace::fillChanNumToIndexMap() {
 
         // Walk through the vector and place the number to index mapping into
         // the map structure.
-        for (int i = 0; i < chanNumbers.size(); ++i) {
+        for (size_t i = 0; i < chanNumbers.size(); ++i) {
             chan_num_to_index_[chanNumbers[i]] = i;
         }
     }

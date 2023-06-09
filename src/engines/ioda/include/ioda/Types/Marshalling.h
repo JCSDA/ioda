@@ -90,7 +90,8 @@ public:
     // bits but takes up 96 or 128 bits of storage space. This triggers a Valgrind warning for
     // uninitialized memory access by HDF5.
     // See https://en.wikipedia.org/wiki/Long_double
-    memset(res->DataPointers.data(), 0, sizeof(mutable_DataType) * d.size());
+    memset(reinterpret_cast<char*>(res->DataPointers.data()), 0,
+                                   sizeof(mutable_DataType) * d.size());
     for (size_t i = 0; i < (size_t)d.size(); ++i) res->DataPointers[i] = d[i];
     // res->DataPointers = std::vector<mutable_value_type>(d.begin(), d.end()); //return (const
     // void*)d.data();

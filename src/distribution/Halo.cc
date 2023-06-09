@@ -149,7 +149,7 @@ void Halo::computePatchLocs() {
 
     // if this PE has the minimum distance then this PE owns this ob. as patch
     for (auto i : haloLocVector_) {
-      if ( dist_and_lidx_glb[i].second == myRank ) {
+      if (static_cast<size_t>(dist_and_lidx_glb[i].second) == myRank) {
         patchObsLoc.insert(i);
       }
     }

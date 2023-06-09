@@ -143,7 +143,7 @@ void test_obsgroup_helper_funcs(std::string backendType, std::string fileName,
     bool unspecifiedVariableThrows = false;
     try {
       og.vars.createWithScales<float>("Foo/bar", {Location_var}, float_params);
-    } catch (Exception) {
+    } catch (const Exception&) {
       unspecifiedVariableThrows = true;
     }
     if (!unspecifiedVariableThrows) {

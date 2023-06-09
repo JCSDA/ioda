@@ -141,7 +141,7 @@ Variable HH_Variable::attachDimensionScale(unsigned int DimensionNumber, const V
     if (res != 0) throw Exception("Dimension scale attachment failed.", ioda_Here(), errOpts);
 
     return Variable{shared_from_this()};
-  } catch (std::bad_cast) {
+  } catch (const std::bad_cast&) {
     throw Exception("Cannot attach dimension scales across incompatible backends.",
       ioda_Here(), errOpts);
   }
@@ -165,7 +165,7 @@ Variable HH_Variable::detachDimensionScale(unsigned int DimensionNumber, const V
     if (res != 0) throw Exception("Dimension scale detachment failed", ioda_Here(), errOpts);
 
     return Variable{shared_from_this()};
-  } catch (std::bad_cast) {
+  } catch (const std::bad_cast&) {
     throw Exception("Cannot detach dimension scales across incompatible backends.",
       ioda_Here(), errOpts);
   }
@@ -444,7 +444,7 @@ HH_hid_t HH_Variable::getSpaceWithSelection(const Selection& sel) const {
       // Only return the concretized selection if this is the correct backend.
       auto csel = std::dynamic_pointer_cast<HH_Selection>(concretized);
       return csel->sel;
-    } catch (std::bad_cast) {
+    } catch (const std::bad_cast&) {
       sel.invalidate();
     }
   }
@@ -643,7 +643,6 @@ Variable HH_Variable::writeImpl(gsl::span<const char> data, const Type& in_memor
     else if (isMemStrVar) {
       // Variable-length in memory. Fixed-length in var.
       size_t strLen = H5Tget_size(varType());
-      size_t numStrs = getDimensions().numElements;
 
       std::vector<char> out_buf = convertVariableLengthToFixedLength(data, strLen, false);
 
@@ -655,8 +654,6 @@ Variable HH_Variable::writeImpl(gsl::span<const char> data, const Type& in_memor
       // Rare conversion. Included for completeness.
 
       size_t strLen      = H5Tget_size(memTypeBackend->handle());
-      size_t numStrs     = getDimensions().numElements;
-      size_t totalStrLen = strLen * numStrs;
 
       auto converted_data_holder = convertFixedLengthToVariableLength(data, strLen);
       char* converted_data = reinterpret_cast<char*>(converted_data_holder.DataPointers.data());
@@ -738,7 +735,6 @@ Variable HH_Variable::read(gsl::span<char> data, const Type& in_memory_dataType,
 
       size_t strLen      = H5Tget_size(memTypeBackend->handle());
       size_t numStrs     = getDimensions().numElements;  // !!!
-      size_t totalStrLen = strLen * numStrs;
 
       std::vector<char> in_buf(numStrs * sizeof(char*));
 

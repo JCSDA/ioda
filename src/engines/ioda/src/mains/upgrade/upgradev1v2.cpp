@@ -385,7 +385,6 @@ bool upgradeFile(const std::string& inputName, const std::string& outputName, co
   // Figure out which variables can be combined
   Vec_Named_Variable ungrouped_varList;
   VarDimMap old_grouped_vars;
-  const bool groupSimilarVariables = false;
   if (params.groupSimilarVariables)
     identifySimilarVariables(varList, old_grouped_vars, ungrouped_varList);
   else
@@ -430,7 +429,7 @@ bool upgradeFile(const std::string& inputName, const std::string& outputName, co
     // are missing in some groups. These variables will end up with missing data for the
     // channels they don't have.
     VarDimMap::iterator chanTemplate;
-    int maxChanSize = 0;
+    size_t maxChanSize = 0;
     for (VarDimMap::iterator ivar = old_grouped_vars.begin();
                              ivar != old_grouped_vars.end(); ++ivar) {
       if (ivar->second.size() > maxChanSize) {

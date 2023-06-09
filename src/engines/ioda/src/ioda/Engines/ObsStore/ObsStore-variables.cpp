@@ -46,7 +46,7 @@ bool ObsStore_Variable_Backend::isA(Type lhs) const {
 bool ObsStore_Variable_Backend::hasFillValue() const {
   try {
     return backend_->hasFillValue();
-  } catch (std::bad_cast) {
+  } catch (const std::bad_cast&) {
     std::throw_with_nested(Exception("Bad cast.", ioda_Here()));
   }
 }
@@ -54,7 +54,7 @@ bool ObsStore_Variable_Backend::hasFillValue() const {
 ObsStore_Variable_Backend::FillValueData_t ObsStore_Variable_Backend::getFillValue() const {
   try {
     return backend_->getFillValue();
-  } catch (std::bad_cast) {
+  } catch (const std::bad_cast&) {
     std::throw_with_nested(Exception("Bad cast.", ioda_Here()));
   }
 }

@@ -61,7 +61,7 @@ void GenRandom::genDistRandom(const GenRandom::Parameters_ & params) {
         ASSERT(obsValues.size() == createParams_.obsVarNames.size());
     }
 
-    const int numLocs = params.numObs;
+    const size_t numLocs = params.numObs;
     const float latStart = params.latStart;
     const float latEnd = params.latEnd;
     const float lonStart = params.lonStart;

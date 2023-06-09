@@ -74,7 +74,7 @@ void matchingAttributesCheck(const std::map<std::string, AttributeParameters> &Y
         ioda::Dimensions_t dimensionality = -1;
         if (YAMLdimensionality || YAMLdims) {
           if (YAMLdimensionality && YAMLdims) {
-            if (*YAMLdimensionality != YAMLdims->size()) {
+            if (static_cast<size_t>(*YAMLdimensionality) != YAMLdims->size()) {
               Log::log(params.policies.value().AttributeHasCorrectDims.value(), res)
                 << "Attribute '" << attname
                 << "': YAML spec has inconsistent dimensions / dimensionality parameters.\n";

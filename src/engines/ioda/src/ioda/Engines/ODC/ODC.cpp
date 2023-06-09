@@ -48,13 +48,17 @@ namespace {
 // -------------------------------------------------------------------------------------------------
 // Initialization
 
+#if odc_FOUND && eckit_FOUND && oops_FOUND
+#else
 /// @brief Standard message when the ODC API is unavailable.
 const char odcMissingMessage[] {
   "The ODB / ODC engine is disabled. Either odc, eckit, or oops were "
   "not found at compile time."};
+#endif
 
 /// @brief Function initializes the ODC API, just once.
-void initODC() { static bool inited = false;
+void initODC() {
+  static bool inited = false;
   if (!inited) {
 #if odc_FOUND && eckit_FOUND && oops_FOUND
     odc_initialise_api();
@@ -460,21 +464,21 @@ struct ColumnInfo {
 
 void pushBackVector(std::vector<std::vector<double>> &data_store,
                     const std::vector<double> & inarray,
-                    const int numlocs, const int numchans) {
+                    const size_t numlocs, const size_t numchans) {
   if (numchans == 0) {
     data_store.push_back(inarray);
   } else if (inarray.size() == numlocs) {
     std::vector<double> data_store_tmp_chans(numlocs * numchans);
     // Copy each location value to all channels
-    for (int j = 0; j < inarray.size(); j++)
-      for (int i = 0; i < numchans; i++)
+    for (size_t j = 0; j < inarray.size(); j++)
+      for (size_t i = 0; i < numchans; i++)
         data_store_tmp_chans[j * numchans + i] = inarray[j];
     data_store.push_back(data_store_tmp_chans);
   } else if (inarray.size() == numchans) {
     std::vector<double> data_store_tmp_chans(numlocs * numchans);
     // Copy each channel value to all channels
-    for (int j = 0; j < numlocs; j++)
-      for (int i = 0; i < numchans; i++)
+    for (size_t j = 0; j < numlocs; j++)
+      for (size_t i = 0; i < numchans; i++)
         data_store_tmp_chans[j * numchans + i] = inarray[i];
     data_store.push_back(data_store_tmp_chans);
   }
@@ -488,7 +492,7 @@ std::vector<int> getChannelNumbers(Group storageGroup) {
   } else {
     std::vector<float> ChannelFloat;
     storageGroup.vars["Channel"].read<float>(ChannelFloat);
-    for (int i = 0; i < ChannelFloat.size(); ++i)
+    for (size_t i = 0; i < ChannelFloat.size(); ++i)
       Channel.emplace_back(static_cast<int>(ChannelFloat[i]));
   }
   return Channel;
@@ -670,7 +674,7 @@ void setupColumnInfo(const Group &storageGroup, const ReverseColumnMappings &rev
                      bool errorWithColumnNotInObsSpace) {
   const auto objs = storageGroup.listObjects(ObjectType::Variable, true);
   for (auto it = objs.cbegin(); it != objs.cend(); it++) {
-    for (int i = 0; i < it->second.size(); i++) {
+    for (size_t i = 0; i < it->second.size(); i++) {
       auto found = reverseColumnMap.varnoIndependentColumns.find(it->second[i]);
       if (found != reverseColumnMap.varnoIndependentColumns.end()) {
         if (!it->second[i].compare(metadata_prefix_size,it->second[i].size(),"dateTime") ||
@@ -724,8 +728,8 @@ void setupColumnInfo(const Group &storageGroup, const ReverseColumnMappings &rev
           if (col.column_type == TypeClass::String) {
             std::vector<std::string> buf;
             storageGroup.vars[col.column_name].read<std::string>(buf);
-            int len = 0;
-            for (int j = 0; j < buf.size(); j++) {
+            size_t len = 0;
+            for (size_t j = 0; j < buf.size(); j++) {
               if (buf[j].size() > len) {
                 len = buf[j].size();
               }
@@ -928,7 +932,7 @@ void readBodyColumns(Group storageGroup, const std::string v, int number_of_rows
       fillIntArray(storageGroup, qc_name, number_of_rows, effective_qc_tmp);
       // Fill diagnostic flags data
       bool first_flag = true;
-      for (int ii = 0; ii < flags.size(); ii++) {
+      for (size_t ii = 0; ii < flags.size(); ii++) {
         std::string diagnosticflags_name = std::string("DiagnosticFlags/") + flags[ii] + "/" + v;
         if (first_flag) {
           if (storageGroup.vars.exists(diagnosticflags_name)) {
@@ -985,7 +989,7 @@ void readBodyColumns(Group storageGroup, const std::string v, int number_of_rows
 }
 
 void writeODB(size_t num_varnos, int number_of_rows, odc::Writer<>::iterator writer, std::vector<std::vector<double>> &data_store, std::vector<std::vector<double>> &obsvalue_store, std::vector<std::vector<double>> &effective_error_store, std::vector<std::vector<int>> &diagnosticflags_store, std::vector<std::vector<double>> &initial_obsvalue_store, std::vector<std::vector<int>> &effective_qc, std::vector<std::vector<double>> &obserror_store, std::vector<std::vector<double>> &derived_obserror_store, std::vector<std::vector<double>> &hofx_store, std::vector<std::vector<double>> &obsbias_store, std::vector<std::vector<double>> &pge_store, int num_columns, std::vector<int> varnos) {
-  for (int varno = 0; varno < num_varnos; varno++) {
+  for (size_t varno = 0; varno < num_varnos; varno++) {
     for (int row = 0; row < number_of_rows; row++) {
       for (int column = 0; column < num_columns-11; column++) {
         (*writer)[column] = data_store[column][row];

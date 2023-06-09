@@ -220,7 +220,7 @@ void Has_Variables_Base::convertVariableUnits(std::ostream& out) {
           convertColumn(unit.second, outputData);
           variableToConvert.write(outputData);
           variableToConvert.atts.add<std::string>("units", getSIUnit(unit.second));
-        } catch (std::invalid_argument) {
+        } catch (const std::invalid_argument&) {
           out << "The unit specified in ODB mapping file '" << unit.second
               << "' does not have a unit conversion defined in"
               << " UnitConversions.h, and the variable will be stored in"

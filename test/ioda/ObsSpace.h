@@ -157,7 +157,7 @@ void testConstructor() {
       std::set<std::size_t> recIndices;
       auto accumulator = odb.distribution()->createAccumulator<std::size_t>();
       for (std::size_t loc = 0; loc < Nlocs; ++loc) {
-        if (bool isNewRecord = recIndices.insert(odb.recnum()[loc]).second) {
+        if (recIndices.insert(odb.recnum()[loc]).second) {
           accumulator->addTerm(loc, 1);
           ++NRecs;
         }
@@ -688,7 +688,7 @@ void testMultiDimTransfer() {
     TestValues.resize(numElements);
     ExpectedValues.resize(numElements);
     int testValue = 0;
-    for (std::size_t i = 0; i < numElements; ++i) {
+    for (std::size_t i = 0; i < static_cast<size_t>(numElements); ++i) {
       ExpectedValues[i] = testValue;
       testValue++;
     }

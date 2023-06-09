@@ -297,7 +297,6 @@ void HH_HasVariables::attachDimensionScales(
   }
   // Scales get REFERENCE_LISTs.
   for (auto& scale_var : ScaleToVarMap) {
-    auto& scale_addr = scale_var.first;
     auto& scale      = scale_var.second.scale;
     auto& vars       = scale_var.second.vars;
 

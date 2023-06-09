@@ -607,7 +607,7 @@ void replaceFillWithMissingImpl(const VarType & fillValue, const VarType & missi
     // size allocated to hold enough memory.
     gsl::span<VarType> srcValuesSpan{reinterpret_cast<VarType *>(srcValues.data()),
                                      static_cast<gsl::index>(numElements)};
-    for (std::size_t i = 0; i < numElements; ++i) {
+    for (std::size_t i = 0; i < static_cast<size_t>(numElements); ++i) {
         if ((srcValuesSpan[i] == fillValue) || (std::isinf(srcValuesSpan[i])) ||
             (std::isnan(srcValuesSpan[i]))) {
             srcValuesSpan[i] = missingValue;
@@ -639,7 +639,7 @@ void replaceFillWithMissingImpl<std::shared_ptr<std::string>>(
     // management (ie, allocation, deallocation) of the string memory.
     gsl::span<char *> srcValuesSpan{reinterpret_cast<char **>(srcValues.data()),
                                     static_cast<gsl::index>(numElements)};
-    for (std::size_t i = 0; i < numElements; ++i) {
+    for (std::size_t i = 0; i < static_cast<size_t>(numElements); ++i) {
         if (strcmp(srcValuesSpan[i], (*fillValue).c_str()) == 0) {
             srcValuesSpan[i] = const_cast<char *>((*missingValue).c_str());
         }
@@ -714,7 +714,7 @@ void replaceFillWithMissingSpecial(const ioda::Variable & srcVar,
 
         // No need to replace if the fill value and missing value are already equal.
         if (fillValue != missingValue) {
-            for (std::size_t i = 0; i < numElements; ++i) {
+            for (std::size_t i = 0; i < static_cast<size_t>(numElements); ++i) {
                 if (srcValues[i] == fillValue) {
                     srcValues[i] = missingValue;
                 }
@@ -760,7 +760,7 @@ void selectVarValues(const std::vector<DataType> & srcBuffer,
     for (std::size_t i = 0; i < locIndices.size(); ++i) {
         ioda::Dimensions_t srcStart = locIndices[i] * count;
         ioda::Dimensions_t destStart = i * count;
-        for (std::size_t j = 0; j < count; ++j) {
+        for (std::size_t j = 0; j < static_cast<size_t>(count); ++j) {
             destBuffer[destStart + j] = srcBuffer[srcStart + j];
         }
     }

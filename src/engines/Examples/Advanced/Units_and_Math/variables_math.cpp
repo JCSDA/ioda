@@ -37,7 +37,6 @@ int main(int argc, char** argv) {
     // Make a sample output file
     Group g            = Engines::constructFromCmdLine(argc, argv, "variables_math.hdf5");
     const int numLocs  = 40;
-    const int numChans = 30;
     NewDimensionScales_t newDims;
     newDims.push_back(NewDimensionScale<int>("Location", numLocs, Unlimited, numLocs));
     ObsGroup og       = ObsGroup::generate(g, newDims);
@@ -56,8 +55,6 @@ int main(int argc, char** argv) {
     // Fill sample variables with sample data
     {
       std::vector<float> lonData(numLocs), latData(numLocs), uData(numLocs), vData(numLocs);
-      float midLoc  = static_cast<float>(numLocs) / 2.0f;
-      float midChan = static_cast<float>(numChans) / 2.0f;
       for (std::size_t i = 0; i < numLocs; ++i) {
         lonData[i] = static_cast<float>(i % 8) * 3.0f;
         // We use static code analysis tools to check for potential bugs

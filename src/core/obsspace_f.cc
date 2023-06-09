@@ -243,11 +243,9 @@ void obsspace_put_int32_f(ObsSpace & obss, const char * group, const char * vnam
   // (product of dimension sizes). vec is just an allocated memory buffer in which
   // to place the data from the ObsSpace variable.
   std::vector<std::string> dimList;
-  int numElements = (ndims > 0) ? 1 : 0;
   for (std::size_t i = 0; i < ndims; ++i) {
       ObsDimensionId dimId = static_cast<ioda::ObsDimensionId>(dim_ids[i]);
       dimList.push_back(obss.get_dim_name(dimId));
-      numElements *= obss.get_dim_size(dimId);
   }
 
   std::vector<int32_t> vdata;
@@ -263,11 +261,9 @@ void obsspace_put_int64_f(ObsSpace & obss, const char * group, const char * vnam
   // (product of dimension sizes). vec is just an allocated memory buffer in which
   // to place the data from the ObsSpace variable.
   std::vector<std::string> dimList;
-  int numElements = (ndims > 0) ? 1 : 0;
   for (std::size_t i = 0; i < ndims; ++i) {
       ObsDimensionId dimId = static_cast<ioda::ObsDimensionId>(dim_ids[i]);
       dimList.push_back(obss.get_dim_name(dimId));
-      numElements *= obss.get_dim_size(dimId);
   }
 
   std::vector<int32_t> vdata;
@@ -283,11 +279,9 @@ void obsspace_put_real32_f(ObsSpace & obss, const char * group, const char * vna
   // (product of dimension sizes). vec is just an allocated memory buffer in which
   // to place the data from the ObsSpace variable.
   std::vector<std::string> dimList;
-  int numElements = (ndims > 0) ? 1 : 0;
   for (std::size_t i = 0; i < ndims; ++i) {
       ObsDimensionId dimId = static_cast<ioda::ObsDimensionId>(dim_ids[i]);
       dimList.push_back(obss.get_dim_name(dimId));
-      numElements *= obss.get_dim_size(dimId);
   }
 
   std::vector<float> vdata;
@@ -303,11 +297,9 @@ void obsspace_put_real64_f(ObsSpace & obss, const char * group, const char * vna
   // (product of dimension sizes). vec is just an allocated memory buffer in which
   // to place the data from the ObsSpace variable.
   std::vector<std::string> dimList;
-  int numElements = (ndims > 0) ? 1 : 0;
   for (std::size_t i = 0; i < ndims; ++i) {
       ObsDimensionId dimId = static_cast<ioda::ObsDimensionId>(dim_ids[i]);
       dimList.push_back(obss.get_dim_name(dimId));
-      numElements *= obss.get_dim_size(dimId);
   }
 
   std::vector<double> vdata;
@@ -323,11 +315,9 @@ void obsspace_put_bool_f(ObsSpace & obss, const char * group, const char * vname
   // (product of dimension sizes). vec is just an allocated memory buffer in which
   // to place the data from the ObsSpace variable.
   std::vector<std::string> dimList;
-  int numElements = (ndims > 0) ? 1 : 0;
   for (std::size_t i = 0; i < ndims; ++i) {
       ObsDimensionId dimId = static_cast<ioda::ObsDimensionId>(dim_ids[i]);
       dimList.push_back(obss.get_dim_name(dimId));
-      numElements *= obss.get_dim_size(dimId);
   }
 
   std::vector<bool> vdata;

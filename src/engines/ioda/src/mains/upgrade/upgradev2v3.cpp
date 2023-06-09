@@ -425,10 +425,6 @@ bool upgradeFile(const std::string& inputName, const std::string& outputName,
     dimsForNewVars[Named_Variable{oldVar.name, newvar}] = old_attached_dims;
   }
 
-  const Dimensions_t suggested_chan_chunking
-    = (newscales.count("Channel")) ? newscales["Channel"].atts["suggested_chunk_dim"].read<Dimensions_t>() : defaultChunkSize;
-  Dimensions_t numChans;
-
   // Attach all dimension scales to all variables.
   // We separate this from the variable creation (above) since we might want to implement a
   // collective call.

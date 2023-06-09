@@ -125,7 +125,7 @@ void testConstructor() {
       std::set<std::size_t> recIndices;
       auto accumulator = odb.distribution()->createAccumulator<std::size_t>();
       for (std::size_t loc = 0; loc < Nlocs; ++loc) {
-        if (bool isNewRecord = recIndices.insert(odb.recnum()[loc]).second) {
+        if (recIndices.insert(odb.recnum()[loc]).second) {
           accumulator->addTerm(loc, 1);
           ++Nrecs;
         }

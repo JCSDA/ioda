@@ -107,7 +107,7 @@ void IoPoolBase::groupRanks(IoPoolGroupMap & rankGrouping) {
         int base_assign_size = commAll().size() / targetPoolSize_;
         int rem_assign_size = commAll().size() % targetPoolSize_;
         int start = 0;
-        for (std::size_t i = 0; i < targetPoolSize_; ++i) {
+        for (int i = 0; i < targetPoolSize_; ++i) {
             int count = base_assign_size;
             if (i < rem_assign_size) {
                 count += 1;

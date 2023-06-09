@@ -124,7 +124,7 @@ Attribute HH_HasAttributes::create(const std::string& attrname, const Type& in_m
     auto b = std::make_shared<HH_Attribute>(attI);
     Attribute att{b};
     return att;
-  } catch (std::bad_cast) {
+  } catch (const std::bad_cast&) {
     std::throw_with_nested(Exception("typeBackend is the wrong type. Expected HH_Type.",
       ioda_Here()));
   }

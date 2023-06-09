@@ -201,7 +201,6 @@ template <typename DATATYPE>
 void ObsDataVector<DATATYPE>::read(const std::string & name, const bool fail,
                                    const bool skipDerived) {
   oops::Log::trace() << "ObsDataVector::read, name = " << name << std::endl;
-  const DATATYPE missing = util::missingValue(missing);
 
   // Only need to read data when nlocs_ is greater than 0.
   // e.g. if there is no obs. on current MPI task, no read needed.

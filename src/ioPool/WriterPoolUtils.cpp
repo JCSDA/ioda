@@ -135,7 +135,7 @@ void selectPatchValues(const WriterPoolBase & ioPool, const Variable & srcVar,
     for (std::size_t i = 0; i < patchObsVec.size(); ++i) {
         if (patchObsVec[i]) {
             std::size_t indx = i * dimFactor;
-            for (std::size_t j = 0; j < dimFactor; ++j) {
+            for (std::size_t j = 0; j < static_cast<size_t>(dimFactor); ++j) {
                 varData.push_back(totalVarData[indx + j]);
             }
         }
@@ -249,7 +249,6 @@ void transferVarDataMPI<std::string>(const WriterPoolBase & ioPool, const Variab
                 std::vector<char> strBuffer(varCounts[i] * maxStringLength, '\0');
                 for (std::size_t i = 0; i < varData.size(); ++i) {
                     for (std::size_t j = 0; j < varData[i].size(); ++j) {
-                        std::size_t bufIndx = (i * maxStringLength) + j;
                         strBuffer[(i * maxStringLength) + j] = varData[i][j];
                     }
                 }
@@ -344,7 +343,6 @@ void writerCopyVarData(const ioda::WriterPoolBase & ioPool, const ioda::Group & 
   for (auto & srcNamedVar : srcNamedVars) {
     std::string varName = srcNamedVar.name;
     Variable srcVar = srcNamedVar.var;
-    bool varTypeSupported = true;
     // Only the variable using the Location dimension will need to use MPI send/recv.
     // If the variable is not using Location, then simply transfer data from src to dest.
     if (varsUsingLocation.count(varName) > 0) {

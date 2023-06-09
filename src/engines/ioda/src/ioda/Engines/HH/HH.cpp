@@ -120,7 +120,7 @@ Group createMemoryFile(const std::string& filename, BackendCreateModes mode, boo
 
 Group createFile(const std::string& filename, BackendCreateModes mode, HDF5_Version_Range compat) {
   // last argument is false signifying to open in single process access
-  MPI_Comm dummyComm;
+  MPI_Comm dummyComm{};
   return createFileImpl(filename, mode, compat, dummyComm, false);
 }
 

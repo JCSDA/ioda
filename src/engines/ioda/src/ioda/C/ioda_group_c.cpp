@@ -58,7 +58,7 @@ void * ioda_group_c_list(void *p) {
         std::vector<std::string> * vs = new std::vector<std::string>(g->list());
         size_t sz = vs->size();
         std::cerr << "list \n";
-        for (auto j=0;j<sz;++j) {
+        for (size_t j=0;j<sz;++j) {
             std::cerr << (*vs)[j] << "\n";
         }
         return reinterpret_cast<void*>(vs);

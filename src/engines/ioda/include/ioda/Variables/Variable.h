@@ -768,64 +768,64 @@ private:
   template <typename Action>
   auto runForVarType(const Action & action) const {
     if (isA<int>()) {
-      int typeMe;
+      int typeMe{};
       return action(typeMe);
     } else if (isA<unsigned int>()) {
-      unsigned int typeMe;
+      unsigned int typeMe{};
       return action(typeMe);
     } else if (isA<float>()) {
-      float typeMe;
+      float typeMe{};
       return action(typeMe);
     } else if (isA<double>()) {
-      double typeMe;
+      double typeMe{};
       return action(typeMe);
     } else if (isA<std::string>()) {
-      std::string typeMe;
+      std::string typeMe{};
       return action(typeMe);
     } else if (isA<long>()) {
-      long typeMe;
+      long typeMe{};
       return action(typeMe);
     } else if (isA<unsigned long>()) {
-      unsigned long typeMe;
+      unsigned long typeMe{};
       return action(typeMe);
     } else if (isA<short>()) {
-      short typeMe;
+      short typeMe{};
       return action(typeMe);
     } else if (isA<unsigned short>()) {
-      unsigned short typeMe;
+      unsigned short typeMe{};
       return action(typeMe);
     } else if (isA<long long>()) {
-      long long typeMe;
+      long long typeMe{};
       return action(typeMe);
     } else if (isA<unsigned long long>()) {
-      unsigned long long typeMe;
+      unsigned long long typeMe{};
       return action(typeMe);
     } else if (isA<int32_t>()) {
-      int32_t typeMe;
+      int32_t typeMe{};
       return action(typeMe);
     } else if (isA<uint32_t>()) {
-      uint32_t typeMe;
+      uint32_t typeMe{};
       return action(typeMe);
     } else if (isA<int16_t>()) {
-      int16_t typeMe;
+      int16_t typeMe{};
       return action(typeMe);
     } else if (isA<uint16_t>()) {
-      uint16_t typeMe;
+      uint16_t typeMe{};
       return action(typeMe);
     } else if (isA<int64_t>()) {
-      int64_t typeMe;
+      int64_t typeMe{};
       return action(typeMe);
     } else if (isA<uint64_t>()) {
-      uint64_t typeMe;
+      uint64_t typeMe{};
       return action(typeMe);
     } else if (isA<long double>()) {
-      long double typeMe;
+      long double typeMe{};
       return action(typeMe);
     } else if (isA<char>()) {
-      char typeMe;
+      char typeMe{};
       return action(typeMe);
     } else if (isA<unsigned char>()) {
-      unsigned char typeMe;
+      unsigned char typeMe{};
       return action(typeMe);
     } else {
       std::throw_with_nested(Exception("Unsupported variable data type", ioda_Here()));

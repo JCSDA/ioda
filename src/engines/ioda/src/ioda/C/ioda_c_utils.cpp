@@ -107,7 +107,6 @@ FILE * Fmemopen(char *b,size_t bsize,const char *mode)
 
 void Write(int fd,const void *buff,size_t sz)
 {
-    size_t e = 0;
     ssize_t c = 0;
     ssize_t rem = sz;
     const char * bp = (const char*)buff;
@@ -136,7 +135,7 @@ void Read(int fd,void *buff,size_t sz)
         return;
     }
     c = read(fd,buff,sz);
-    if (c < sz) {
+    if (static_cast<size_t>(c) < sz) {
         fprintf(stderr,"read failed %s\n",strerror(errno));
         fatal_error();
     }
@@ -187,7 +186,7 @@ void BlockingRead(int fd,void *buff,size_t sz)
 void Fwrite(const void *p,size_t osize,size_t cnt,FILE *fp)
 {
     int64_t e = fwrite(p,osize,cnt,fp);
-    if (e==cnt) return;
+    if (static_cast<size_t>(e)==cnt) return;
     e = ferror(fp);
     fprintf(stderr,"Fwrite failed ferror = %s\n",strerror(e));
     fatal_error();
@@ -196,7 +195,7 @@ void Fwrite(const void *p,size_t osize,size_t cnt,FILE *fp)
 void Fread(void *p,size_t osize,size_t cnt,FILE *fp)
 {
     int64_t e = fread(p,osize,cnt,fp);
-    if (e==cnt) return;
+    if (static_cast<size_t>(e)==cnt) return;
     e = ferror(fp);
     fprintf(stderr,"Fread failed ferror = %s\n",strerror(e));
     fatal_error();

@@ -117,11 +117,11 @@ CASE("ioda/ObsSpace/testPutDb") {
           Eigen::ArrayXXf values;
           var.readWithEigenRegular(values);
           std::vector<float> channelValues(nlocs);
-          for (std::size_t loc = 0; loc < nlocs; ++loc)
+          for (int loc = 0; loc < nlocs; ++loc)
             channelValues[loc] = values(loc, channel2Index);
           EXPECT_EQUAL(channelValues, testVec1);
 
-          for (std::size_t loc = 0; loc < nlocs; ++loc)
+          for (int loc = 0; loc < nlocs; ++loc)
             channelValues[loc] = values(loc, channel4Index);
           EXPECT_EQUAL(channelValues, testVec2);
         }

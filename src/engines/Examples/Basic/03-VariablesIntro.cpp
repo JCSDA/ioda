@@ -150,7 +150,7 @@ int main(int argc, char** argv) {
     try {
       auto bad_1 = g.vars.create<int>("bad-int-1", {1});
       bad_1.write<float>(std::vector<float>{2.2f});
-    } catch (std::exception) {
+    } catch (const std::exception&) {
     }
 
     // Writing Eigen objects
@@ -226,7 +226,7 @@ int main(int argc, char** argv) {
       H5Eset_auto(H5E_DEFAULT, NULL, NULL);  // Turn off HDF5 automatic error handling.
       ioda::Variable z2;
       z2 = g.vars.open("var-z-2");
-    } catch (std::exception) {  // This is expected.
+    } catch (const std::exception&) {  // This is expected.
     }
 
     // Get dimensions

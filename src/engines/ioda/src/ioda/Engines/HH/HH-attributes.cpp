@@ -81,7 +81,6 @@ void HH_Attribute::write(gsl::span<const char> data, HH_hid_t in_memory_dataType
     } else if (isMemStrVar) {
       // Variable-length in memory. Fixed-length in attribute.
       size_t strLen  = H5Tget_size(attrType());
-      size_t numStrs = getDimensions().numElements;
 
       std::vector<char> out_buf = convertVariableLengthToFixedLength(data, strLen, false);
 
@@ -91,8 +90,6 @@ void HH_Attribute::write(gsl::span<const char> data, HH_hid_t in_memory_dataType
       // Fixed-length in memory. Variable-length in attribute.
 
       size_t strLen      = H5Tget_size(in_memory_dataType());
-      size_t numStrs     = getDimensions().numElements;
-      size_t totalStrLen = strLen * numStrs;
 
       auto converted_data_holder = convertFixedLengthToVariableLength(data, strLen);
       char* converted_data = reinterpret_cast<char*>(converted_data_holder.DataPointers.data());
@@ -165,7 +162,6 @@ void HH_Attribute::read(gsl::span<char> data, HH_hid_t in_memory_dataType) const
 
       size_t strLen      = H5Tget_size(in_memory_dataType());
       size_t numStrs     = getDimensions().numElements;
-      size_t totalStrLen = strLen * numStrs;
 
       std::vector<char> in_buf(numStrs * sizeof(char *));
 
@@ -224,7 +220,7 @@ bool HH_Attribute::isA(Type lhs) const {
     if (cls_lhs == H5T_STRING && cls_my == H5T_STRING) return true;
 
     return isA(typeBackend->handle);
-  } catch (std::bad_cast) {
+  } catch (const std::bad_cast&) {
     std::throw_with_nested(Exception("lhs is not an HH_Type.", ioda_Here()));
   }
 }

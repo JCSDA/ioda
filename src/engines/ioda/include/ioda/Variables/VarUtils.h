@@ -27,11 +27,11 @@
 namespace ioda {
 
 class Group;
-class Named_Variable;
+struct Named_Variable;
 
 namespace VarUtils {
 
-static int DefaultChunkSize = 10000;
+static const int DefaultChunkSize = 10000;
 
 /*! @brief Convenience lambda to hint if a variable @b might be a scale.
  *
