@@ -20,7 +20,6 @@ void ioda_has_variables_c_dtor(void **p)
     VOID_TO_CXX(ioda::Has_Variables,*p,hvar);
     // this shouldn't delete anything since it points back to a smart_ptr
     hvar = nullptr;
-    (void)hvar;  // silence unused-but-set-variable warning
 }
 
 void ioda_has_variables_c_clone(void **v,void *rhs_p)

@@ -135,7 +135,8 @@ void Read(int fd,void *buff,size_t sz)
         return;
     }
     c = read(fd,buff,sz);
-    if (static_cast<size_t>(c) < sz) {
+    // c can be < 0 to indicate error
+    if (c  < static_cast<ssize_t>(sz) ) {
         fprintf(stderr,"read failed %s\n",strerror(errno));
         fatal_error();
     }
@@ -186,8 +187,7 @@ void BlockingRead(int fd,void *buff,size_t sz)
 void Fwrite(const void *p,size_t osize,size_t cnt,FILE *fp)
 {
     int64_t e = fwrite(p,osize,cnt,fp);
-    if (static_cast<size_t>(e)==cnt) return;
-    e = ferror(fp);
+    if (e==cnt) return;
     fprintf(stderr,"Fwrite failed ferror = %s\n",strerror(e));
     fatal_error();
 }
@@ -196,8 +196,11 @@ void Fread(void *p,size_t osize,size_t cnt,FILE *fp)
 {
     int64_t e = fread(p,osize,cnt,fp);
     if (static_cast<size_t>(e)==cnt) return;
-    e = ferror(fp);
-    fprintf(stderr,"Fread failed ferror = %s\n",strerror(e));
+    if ( feof(fp)) {
+        fprintf(stderr,"Fread eof before complete read\n");
+    } else {
+        fprintf(stderr,"Fread failed read error\n");
+    }
     fatal_error();
 }
 

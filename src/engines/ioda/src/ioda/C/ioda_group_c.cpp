@@ -15,8 +15,7 @@ void * ioda_group_c_alloc()
         return reinterpret_cast<void*>(new ioda::Group());
     } catch (std::exception& e) {
         std::cerr << "ioda_group_c_alloc failed\n";
-        fatal_error();
-    
+        fatal_error();    
     }
     return nullptr;
 }
@@ -27,6 +26,7 @@ void ioda_group_c_dtor(void **p) {
     VOID_TO_CXX(ioda::Group,p_,g);
     if ( g == nullptr) return;
     delete g;
+    g = nullptr;
     *p = nullptr;
 }
 
@@ -56,11 +56,6 @@ void * ioda_group_c_list(void *p) {
             throw std::exception();
         }
         std::vector<std::string> * vs = new std::vector<std::string>(g->list());
-        size_t sz = vs->size();
-        std::cerr << "list \n";
-        for (size_t j=0;j<sz;++j) {
-            std::cerr << (*vs)[j] << "\n";
-        }
         return reinterpret_cast<void*>(vs);
     } catch (std::exception& e) {
         std::cerr << "ioda_group_c_list failed " << e.what() << "\n";
@@ -82,7 +77,6 @@ int ioda_group_c_exists(void *p,int64_t sz,const void *name_p) {
             throw std::exception();
         }
         std::string name_str(name);
-        std::cerr << "string alloced\n";
         if ( g->exists(name_str) )   
         {
                 return 1;

@@ -16,15 +16,11 @@
 
 int main()
 {
-	size_t ret = 0;
 
 	char * buf;
-//	const size_t buf_sz = sizeof(buf);
-//	memset(buf, 0, buf_sz);
 	const char* test1 = "This ";
 	const char* test2 = "is a test.";
 	const char* test_str = "This is a test.";
-	char * rstr;
 	int64_t sz;
 	
 	void * s = ioda_string_c_alloc();

@@ -16,9 +16,7 @@ void * ioda_variable_c_alloc()
 }
 
 void ioda_variable_c_dtor(void **p) {
-//    void *p_ = *p;
-//    VOID_TO_CXX(ioda::Variable,p_,v);
-//    v = nullptr;
+/// weak reference so no delete
     *p = nullptr;
 }
 
@@ -205,13 +203,13 @@ int64_t ioda_variable_c_get_dimension_scale_name(void *p,int64_t n,void **out_p)
            std::cerr << "ioda_variable_c_get_dimension_scale_name name is too long\n";
            throw std::exception();
         }
-        int64_t rsz = r.size() + 1;
+        int64_t rsz = static_cast<int64_t>(r.size()) + 1L;
         if ( name_p == 0x0) {
-             name_p = reinterpret_cast<char*>(Malloc(rsz));
+             name_p = reinterpret_cast<char*>(Malloc(size_t(rsz)));
         }else{
              if ( rsz > (n+1) ) {
                 free(name_p);
-                name_p = reinterpret_cast<char*>(Malloc(rsz));
+                name_p = reinterpret_cast<char*>(Malloc(size_t(rsz)));
              } 
         }
         strncpy(name_p,r.c_str(),n);

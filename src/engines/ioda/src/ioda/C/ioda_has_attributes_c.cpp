@@ -18,8 +18,7 @@ void ioda_has_attributes_c_dtor(void **v) {
         void *v_ = *v;
         VOID_TO_CXX(ioda::Has_Attributes,v_,p);
         // do not delete p since it is a weak reference ?
-        (void)p;  // silence unused-variable warning for p
-        *v = nullptr;
+        p = nullptr;
 }
 
 void *  ioda_has_attributes_c_list(void *v)

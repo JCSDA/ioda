@@ -139,23 +139,22 @@ void * ioda_engines_c_construct_from_command_line(void *vs,const void *def_name)
         VOID_TO_CXX(const char,def_name,default_filename);
         VOID_TO_CXX(std::vector<std::string>,vs,vecstr);
         if (default_filename == nullptr) {
-            std::cerr << "ioda_engines_c_construct_from_command_line filea name null char * for filename\n";
+            std::cerr << "ioda_engines_c_construct_from_command_line file name null char * for filename\n";
             throw std::exception();
         }
         if (strlen(default_filename)==0 ) {
-            std::cerr << "ioda_engines_c_construct_from_command_line filea name is empty \n";
+            std::cerr << "ioda_engines_c_construct_from_command_line file name is empty \n";
             throw std::exception();
         }
         // allow the passing of null pointer to indicate no comamnd line args
         if (vecstr==nullptr) {
-            fprintf(stderr,"vecstring is null\n");
+            fprintf(stderr,"warning :: in ioda_engines_c_construct_from_command_line argument vecstring is null\n");
             int argc = 1;            
             char ** argv = new char*[1];
-            argv[0] = Strdup("fort_program");
-            fprintf(stderr,"argc = %d argv[0] = %s\n",argc,argv[0]);
+            argv[0] = Strdup("fortran_program_unknown");
             auto fname = std::string(default_filename);
             ioda::Group *res = new ioda::Group( ioda::Engines::constructFromCmdLine(argc,argv,fname) );
-            delete argv[0];
+            free(argv[0]);
             delete [] argv;            
             return reinterpret_cast<void*>(res);
         }
@@ -168,9 +167,7 @@ void * ioda_engines_c_construct_from_command_line(void *vs,const void *def_name)
         // 
         //  out vec_string will be ( these are options ) of len = 3 
         size_t vsize = vecstr->size();
-        fprintf(stderr,"vsize = %lu\n",vsize);
         int argc = static_cast<int>(vsize);
-        fprintf(stderr,"argc = %d\n",argc);
         // increment by 1 to get # of arguments in c
         argc += 1;
         char ** argv = new char*[argc];
@@ -178,7 +175,6 @@ void * ioda_engines_c_construct_from_command_line(void *vs,const void *def_name)
         for (int i=1;i<argc;++i) {
             auto as = (vecstr->at)(i-1); 
             const char * astr = as.c_str(); 
-            fprintf(stderr,"%i %s\n",i,astr);
             argv[i] = Strdup(astr);
         }
         std::string fname(default_filename);
