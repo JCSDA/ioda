@@ -70,18 +70,24 @@ def __write_attr(self, name, data):
     shape = _ioda_shape(data)
 
     att = self.create(name, attr_type, shape)
+
+    if not isinstance(data, (list, np.ndarray)):
+        writer = att.writeDatum
+    else:
+        writer = att.writeVector
+
     if attr_type == ioda.Types.str:
-        att.writeDatum.str(data)
+        writer.str(data)
     elif attr_type == ioda.Types.float:
-        att.writeVector.float(data)
+        writer.float(data)
     elif attr_type == ioda.Types.double:
-        att.writeVector.double(data)
+        writer.double(data)
     elif attr_type == ioda.Types.int64:
-        att.writeVector.int64(data)
+        writer.int64(data)
     elif attr_type == ioda.Types.int32:
-        att.writeVector.int32(data)
+        writer.int32(data)
     elif attr_type == ioda.Types.int16:
-        att.writeVector.int16(data)
+        writer.int16(data)
     else:
         raise TypeError(f"Attribute {name} type not supported.")
 
