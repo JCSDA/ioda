@@ -1,0 +1,48 @@
+varno-independent columns:
+  - name: "MetaData/confidence"
+    source: "confidence"
+  - name: "MetaData/dataProviderOrigin"
+    source: "gen_centre"
+  - name: "MetaData/latitude"
+    source: "lat"
+  - name: "MetaData/longitude"
+    source: "lon"
+  - name: "MetaData/numberOfLevels"
+    source: "numlev"
+  - name: "MetaData/satelliteTransmitterId"
+    source: "platform_id"
+  - name: "MetaData/qualityFlags"
+    source: "qc_flags"
+  - name: "MetaData/earthRadiusCurvature"
+    source: "radcurv"
+  - name: "MetaData/satelliteConstellationRO"
+    source: "satellite_classification"
+  - name: "MetaData/satelliteIdentifier"
+    source: "satellite_identifier"
+  - name: "MetaData/sequenceNumber"
+    source: "seqno"
+  - name: "MetaData/software_identifier"
+    source: "software_identifier"
+  - name: "MetaData/timeOffset"
+    source: "time_difference"
+  - name: "MetaData/geoidUndulation"
+    source: "undulation"
+varno-dependent columns:
+  - source: "initial_obsvalue"
+    group name: "ObsValue"
+    varno-to-variable-name mapping: &obsvalue_varnos
+      - name: "bendingAngle"
+        varno: 162
+  - source: "obs_error"
+    group name: "ObsError"
+    varno-to-variable-name mapping: *obsvalue_varnos
+  - source: "initial_vertco_reference"
+    group name: "MetaData"
+    varno-to-variable-name mapping:
+      - name: "impactParameterRO"
+        varno: 162
+complementary variables:
+  - output name: "MetaData/site_name"
+    output variable data type: "string"
+    input names: ["site_name_1", "site_name_2", "site_name_3"]
+    merge method: "concat"

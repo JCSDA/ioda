@@ -371,15 +371,14 @@ Eigen::Array<T, Eigen::Dynamic, 1> DataFromSQL::getVarnoColumn(const std::vector
     }
   } else {
     if (column_index != -1 && varno_index != -1) {
-      size_t j = 0;
-      int k_chan = 1;
+      size_t j = -1;
+      int k_chan = 0;
       int seqno_index = getColumnIndex("seqno");
       size_t seqno = getData(0, seqno_index);
       for (size_t i = 0; i < number_of_rows_; i++) {
         if (std::find(varnos.begin(), varnos.end(), getData(i, varno_index)) != varnos.end()) {
-          k_chan++;
-          arr[j] = getData(i, column_index);
           size_t seqno_new = getData(i, seqno_index);
+          k_chan++;
           j++;
           if (k_chan > nchans_actual) {
             j += (nchans - nchans_actual);  // skip unused channels
@@ -390,6 +389,7 @@ Eigen::Array<T, Eigen::Dynamic, 1> DataFromSQL::getVarnoColumn(const std::vector
             seqno = seqno_new;
             k_chan = 1;
           }
+          arr[j] = getData(i, column_index);
         }
       }
     }

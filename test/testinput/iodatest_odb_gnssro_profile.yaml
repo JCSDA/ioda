@@ -1,0 +1,21 @@
+where:
+  varno: [162]
+  query: mean_frequency = 0
+variables:
+- name: confidence
+- name: gen_centre
+- name: initial_obsvalue
+- name: numlev
+- name: platform_id
+- name: qc_flags
+- name: radcurv
+- name: satellite_classification
+- name: satellite_identifier
+- name: software_identifier
+- name: time_difference
+- name: undulation
+- name: receipt_time
+- name: receipt_date
+- name: seqno
+- name: initial_vertco_reference
+- name: vertco_reference_2
