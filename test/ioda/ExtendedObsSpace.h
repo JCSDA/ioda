@@ -101,7 +101,7 @@ void testExtendedObsSpace(const eckit::LocalConfiguration &conf) {
 
   // Get all ObsValue and ObsError vectors that will be simulated.
   // For each vector check that the values in the extended ObsSpace are all missing.
-  const float missingValueFloat = util::missingValue(missingValueFloat);
+  const float missingValueFloat = util::missingValue<float>();
   std::vector <float> val(nlocs);
   std::vector <float> err(nlocs);
   const oops::Variables& obsvars = obsdata.obsvariables();

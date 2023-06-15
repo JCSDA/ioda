@@ -133,8 +133,8 @@ namespace ioda {
 
     std::string FromTypeName = TypeIdName(typeid(FromType));
     std::string ToTypeName = TypeIdName(typeid(ToType));
-    const FromType FromMiss = util::missingValue(FromMiss);
-    const ToType ToMiss = util::missingValue(ToMiss);
+    const FromType FromMiss = util::missingValue<FromType>();
+    const ToType ToMiss = util::missingValue<ToType>();
 
     // In any type change, the missing values need to be switched.
     //

@@ -38,7 +38,7 @@ ReadOdbFile::ReadOdbFile(const Parameters_ & params,
     odcparams.mappingFile = params.mappingFileName;
     odcparams.queryFile   = params.queryFileName;
     odcparams.maxNumberChannels = params.maxNumberChannels;
-    const util::DateTime missingDate = util::missingValue(missingDate);
+    const util::DateTime missingDate = util::missingValue<util::DateTime>();
     odcparams.timeWindowStart = createParams_.winStart + util::Duration(1);
     odcparams.timeWindowExtendedLowerBound =
       params.timeWindowExtendedLowerBound.value() != boost::none ?

@@ -45,7 +45,7 @@ namespace detail {
 //--------------------------------------------------------------------------------
 template<typename DataType>
 DataType getMissingValue() {
-    DataType missVal = util::missingValue(DataType());
+    DataType missVal = util::missingValue<DataType>();
     return missVal;
 }
 
@@ -54,7 +54,7 @@ DataType getMissingValue() {
 // to persist through the lifetime of the reader pool.
 template<typename DataType>
 DataType getMissingValue(const ioda::ReaderPoolBase & ioPool) {
-    DataType missVal = util::missingValue(DataType());
+    DataType missVal = util::missingValue<DataType>();
     return missVal;
 }
 

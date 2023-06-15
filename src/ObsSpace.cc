@@ -1033,8 +1033,8 @@ void ObsSpace::buildSortedObsGroups() {
     typedef std::map<std::size_t, std::vector<std::pair<float, std::size_t>>> TmpRecIdxMap;
     typedef TmpRecIdxMap::iterator TmpRecIdxIter;
 
-    const float missingFloat = util::missingValue(missingFloat);
-    const util::DateTime missingDateTime = util::missingValue(missingDateTime);
+    const float missingFloat = util::missingValue<float>();
+    const util::DateTime missingDateTime = util::missingValue<util::DateTime>();
     const MissingSortValueTreatment missingSortValueTreatment =
       obs_params_.top_level_.obsDataIn.value().obsGrouping.value().missingSortValueTreatment;
 
@@ -1156,7 +1156,7 @@ void ObsSpace::buildRecIdxUnsorted() {
 template <typename DataType>
 void ObsSpace::extendVariable(Variable & extendVar,
                               const size_t upperBoundOnGlobalNumOriginalRecs) {
-    const DataType missing = util::missingValue(missing);
+    const DataType missing = util::missingValue<DataType>();
 
     // Read in variable data values. At this point the values will contain
     // the extended region filled with missing values. The read call will size
@@ -1330,7 +1330,7 @@ void ObsSpace::createMissingObsErrors() {
   for (size_t i = 0; i < obsvars_.size(); ++i) {
     if (!has("ObsError", obsvars_[i])) {
       if (obserror.empty())
-        obserror.assign(nlocs(), util::missingValue(float()));
+        obserror.assign(nlocs(), util::missingValue<float>());
       put_db("DerivedObsError", obsvars_[i], obserror);
     }
   }

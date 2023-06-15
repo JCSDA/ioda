@@ -27,7 +27,7 @@ ObsVector::ObsVector(ObsSpace & obsdb,
                        : obsdb_(obsdb), obsvars_(obsdb.assimvariables()),
                          nvars_(obsvars_.variables().size()), nlocs_(obsdb_.nlocs()),
                          values_(nlocs_ * nvars_),
-                         missing_(util::missingValue(missing_)) {
+                         missing_(util::missingValue<double>()) {
   oops::Log::trace() << "ObsVector::ObsVector " << name << std::endl;
   if (!name.empty()) this->read(name);
 }
@@ -274,8 +274,8 @@ ObsVector & ObsVector::operator=(const ObsDataVector<float> & rhs) {
   oops::Log::trace() << "ObsVector::operator= start" << std::endl;
   ASSERT(&rhs.space() == &obsdb_);
   ASSERT(rhs.nlocs() == nlocs_);
-  const float  fmiss = util::missingValue(fmiss);
-  const double dmiss = util::missingValue(dmiss);
+  const float  fmiss = util::missingValue<float>();
+  const double dmiss = util::missingValue<double>();
   size_t ii = 0;
   for (size_t jl = 0; jl < nlocs_; ++jl) {
     for (size_t jv = 0; jv < nvars_; ++jv) {

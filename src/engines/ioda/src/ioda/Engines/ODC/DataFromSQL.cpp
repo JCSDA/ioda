@@ -581,7 +581,7 @@ std::vector<int64_t> DataFromSQL::getDates(std::string const& date_col,
                                            util::DateTime const timeWindowStart,
                                            util::DateTime const timeWindowExtendedLowerBound,
                                            std::string const& time_disp_col ) const {
-  const util::DateTime missingDate = util::missingValue(missingDate);
+  const util::DateTime missingDate = util::missingValue<util::DateTime>();
   const bool useTimeWindowExtendedLowerBound = timeWindowExtendedLowerBound != missingDate &&
     timeWindowStart != missingDate;
   if (useTimeWindowExtendedLowerBound && timeWindowExtendedLowerBound > timeWindowStart) {

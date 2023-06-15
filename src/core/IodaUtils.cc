@@ -202,10 +202,8 @@ std::vector<util::DateTime> convertDtStringsToDtime(const std::vector<std::strin
 //------------------------------------------------------------------------------------
 std::vector<util::DateTime> convertEpochDtToDtime(const util::DateTime epochDtime,
                                                   const std::vector<int64_t> & timeOffsets) {
-  util::DateTime missingDateTime;
-  int64_t missingInt64(-1);
-  missingDateTime = util::missingValue(missingDateTime);
-  missingInt64 = util::missingValue(missingInt64);
+  const util::DateTime missingDateTime = util::missingValue<util::DateTime>();
+  const int64_t missingInt64 = util::missingValue<int64_t>();
   std::vector<util::DateTime> dateTimes;
   dateTimes.reserve(timeOffsets.size());
   for (std::size_t i = 0; i < timeOffsets.size(); ++i) {
@@ -222,10 +220,8 @@ std::vector<util::DateTime> convertEpochDtToDtime(const util::DateTime epochDtim
 //------------------------------------------------------------------------------------
 std::vector<int64_t> convertDtimeToTimeOffsets(const util::DateTime epochDtime,
                                                const std::vector<util::DateTime> & dtimes) {
-  util::DateTime missingDateTime;
-  int64_t missingInt64;
-  missingDateTime = util::missingValue(missingDateTime);
-  missingInt64 = util::missingValue(missingInt64);
+  const util::DateTime missingDateTime = util::missingValue<util::DateTime>();
+  const int64_t missingInt64 = util::missingValue<int64_t>();
   std::vector<int64_t> timeOffsets(dtimes.size());
   for (std::size_t i = 0; i < dtimes.size(); ++i) {
     if (dtimes[i] == missingDateTime) {

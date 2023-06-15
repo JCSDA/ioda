@@ -568,7 +568,7 @@ namespace ioda {
         /// \brief get fill value for use in the obs_group_ object
         template<typename DataType>
         DataType getFillValue() {
-            DataType fillVal = util::missingValue(fillVal);
+            DataType fillVal = util::missingValue<DataType>();
             return fillVal;
         }
 

@@ -23,7 +23,7 @@ namespace {
 template <typename T>
 std::size_t globalNumNonMissingObsImpl(const Distribution &dist,
                                        std::size_t numVariables, const std::vector<T> &v) {
-  const T missingValue = util::missingValue(missingValue);
+  const T missingValue = util::missingValue<T>();
   const std::size_t numLocations = v.size() / numVariables;
 
   // Local reduction
@@ -45,7 +45,7 @@ double dotProductImpl(const Distribution &dist,
                       const std::vector<T> &v1,
                       const std::vector<T> &v2) {
   ASSERT(v1.size() == v2.size());
-  const T missingValue = util::missingValue(missingValue);
+  const T missingValue = util::missingValue<T>();
   const std::size_t numLocations = v1.size() / numVariables;
 
   // Local reduction

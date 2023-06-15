@@ -50,7 +50,7 @@ int main(int argc, char** argv) {
       odcparams.timeWindowStart = util::DateTime(argv[5]);
       odcparams.timeWindowExtendedLowerBound = util::DateTime(argv[6]);
     } else {
-      const util::DateTime missingDate = util::missingValue(missingDate);
+      const util::DateTime missingDate = util::missingValue<util::DateTime>();
       odcparams.timeWindowStart = missingDate;
       odcparams.timeWindowExtendedLowerBound = missingDate;
     }

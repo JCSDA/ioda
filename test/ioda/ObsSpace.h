@@ -780,7 +780,7 @@ void testDerivedObsError() {
       std::vector<float> values(Odb.nlocs());
       Odb.get_db("ObsError", derivedSimVars[i], values);
 
-      std::vector<float> expectedValues(Odb.nlocs(), util::missingValue(float()));
+      std::vector<float> expectedValues(Odb.nlocs(), util::missingValue<float>());
       EXPECT_EQUAL(values, expectedValues);
     }
   }

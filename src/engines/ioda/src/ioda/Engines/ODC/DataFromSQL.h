@@ -215,9 +215,9 @@ public:
                                 util::DateTime const& epoch,
                                 int64_t const missingInt64,
                                 util::DateTime const timeWindowStart =
-                                util::missingValue(util::DateTime()),
+                                util::missingValue<util::DateTime>(),
                                 util::DateTime const timeWindowExtendedLowerBound =
-                                util::missingValue(util::DateTime()),
+                                util::missingValue<util::DateTime>(),
                                 std::string const& time_disp_col = "") const;
 
   /// \brief Returns a vector of station IDs

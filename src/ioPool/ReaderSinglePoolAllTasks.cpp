@@ -46,7 +46,7 @@ ReaderSinglePoolAllTasks::ReaderSinglePoolAllTasks(
     // JEDI missing value. The replaceFillWithMissing function needs a char * pointing
     // to this copy of the JEDI missing value to transfer that value to the obs space
     // container.
-    stringMissingValue_ = std::make_shared<std::string>(util::missingValue(std::string()));
+    stringMissingValue_ = std::make_shared<std::string>(util::missingValue<std::string>());
 }
 
 //--------------------------------------------------------------------------------------

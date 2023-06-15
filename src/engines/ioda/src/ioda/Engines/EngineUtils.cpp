@@ -93,9 +93,8 @@ void storeGenData(const std::vector<float> & latVals,
 
     Variable LocationVar = obsGroup.vars["Location"];
 
-    const float missingFloat = util::missingValue(missingFloat);
-    const std::string missingString("missing");
-    const int64_t missingInt64 = util::missingValue(missingInt64);
+    const float missingFloat = util::missingValue<float>();
+    const int64_t missingInt64 = util::missingValue<int64_t>();
 
     ioda::VariableCreationParameters float_params;
     float_params.chunk = true;

@@ -1180,7 +1180,7 @@ ObsGroup openFile(const ODC_Parameters& odcparams,
   ignores.push_back("MetaData/dateTime");
   ignores.push_back("MetaData/receiptdateTime");
   // Write out MetaData/initialDateTime if 'time window extended lower bound' is non-missing.
-  const util::DateTime missingDate = util::missingValue(missingDate);
+  const util::DateTime missingDate = util::missingValue<util::DateTime>();
   const bool writeInitialDateTime =
     odcparams.timeWindowExtendedLowerBound != missingDate;
   if (writeInitialDateTime)

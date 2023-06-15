@@ -107,7 +107,7 @@ ObsDataVector<DATATYPE>::ObsDataVector(ObsSpace & obsdb, const oops::Variables &
                                        const bool skipDerived)
   : obsdb_(obsdb), obsvars_(vars), nvars_(obsvars_.size()),
     nlocs_(obsdb_.nlocs()), rows_(nvars_),
-    missing_(util::missingValue(DATATYPE()))
+    missing_(util::missingValue<DATATYPE>())
 {
   oops::Log::trace() << "ObsDataVector::ObsDataVector start" << std::endl;
   for (size_t jj = 0; jj < nvars_; ++jj) {
@@ -123,7 +123,7 @@ ObsDataVector<DATATYPE>::ObsDataVector(ObsSpace & obsdb, const std::string & var
                                        const bool skipDerived)
   : obsdb_(obsdb), obsvars_(std::vector<std::string>(1, var)), nvars_(1),
     nlocs_(obsdb_.nlocs()), rows_(1),
-    missing_(util::missingValue(DATATYPE()))
+    missing_(util::missingValue<DATATYPE>())
 {
   oops::Log::trace() << "ObsDataVector::ObsDataVector start" << std::endl;
   rows_[0].resize(nlocs_);
@@ -134,10 +134,10 @@ ObsDataVector<DATATYPE>::ObsDataVector(ObsSpace & obsdb, const std::string & var
 template <typename DATATYPE>
 ObsDataVector<DATATYPE>::ObsDataVector(ObsVector & vect)
   : obsdb_(vect.space()), obsvars_(vect.varnames()), nvars_(vect.nvars()), nlocs_(vect.nlocs()),
-    rows_(nvars_), missing_(util::missingValue(DATATYPE()))
+    rows_(nvars_), missing_(util::missingValue<DATATYPE>())
 {
   oops::Log::trace() << "ObsDataVector::ObsDataVector ObsVector start" << std::endl;
-  const double dmiss = util::missingValue(dmiss);
+  const double dmiss = util::missingValue<double>();
   for (size_t jv = 0; jv < nvars_; ++jv) {
     rows_[jv].resize(nlocs_);
   }
@@ -158,7 +158,7 @@ ObsDataVector<DATATYPE>::ObsDataVector(ObsVector & vect)
 template <typename DATATYPE>
 ObsDataVector<DATATYPE>::ObsDataVector(const ObsDataVector & other)
   : obsdb_(other.obsdb_), obsvars_(other.obsvars_), nvars_(other.nvars_),
-    nlocs_(other.nlocs_), rows_(other.rows_), missing_(util::missingValue(DATATYPE())) {
+    nlocs_(other.nlocs_), rows_(other.rows_), missing_(util::missingValue<DATATYPE>()) {
   oops::Log::trace() << "ObsDataVector copied" << std::endl;
 }
 // -----------------------------------------------------------------------------
@@ -233,7 +233,7 @@ void ObsDataVector<DATATYPE>::save(const std::string & name) const {
 template <typename DATATYPE>
 void ObsDataVector<DATATYPE>::assignToExistingVariables(const ObsVector & vect) {
   oops::Log::trace() << "ObsDataVector::assignToExistingVariables start" << std::endl;
-  const double dmiss = util::missingValue(dmiss);
+  const double dmiss = util::missingValue<double>();
   std::vector<size_t> inds(nvars_);
   for (size_t jv = 0; jv < nvars_; ++jv) {
     rows_[jv].resize(nlocs_);
@@ -292,7 +292,7 @@ template <typename DATATYPE>
 void printNumericObsDataVectorStats(const ObsDataVector<DATATYPE> &obsdatavector,
                                     const ObsSpace &obsdb,
                                     std::ostream & os) {
-  const DATATYPE missing = util::missingValue(missing);
+  const DATATYPE missing = util::missingValue<DATATYPE>();
   for (size_t jv = 0; jv < obsdatavector.nvars(); ++jv) {
     DATATYPE zmin = std::numeric_limits<DATATYPE>::max();
     DATATYPE zmax = std::numeric_limits<DATATYPE>::lowest();
