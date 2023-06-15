@@ -8,6 +8,7 @@ __IodaTypeDict = {
     float: ioda.Types.float,
     str: ioda.Types.str,
     bool: ioda.Types.int32,
+    bytes: ioda.Types.str,
     dt.datetime: ioda.Types.datetime,
     np.dtype('float64'): ioda.Types.double,
     np.dtype('float32'): ioda.Types.float,
@@ -16,6 +17,7 @@ __IodaTypeDict = {
     np.dtype('int16'): ioda.Types.int16,
     np.dtype('int8'): ioda.Types.int16,
     np.dtype('S1'): ioda.Types.str,
+    np.dtype('S20'): ioda.Types.str,
     np.dtype('<U'): ioda.Types.str,
     np.dtype('M'): ioda.Types.datetime,
     np.dtype('datetime64[s]'): ioda.Types.datetime
