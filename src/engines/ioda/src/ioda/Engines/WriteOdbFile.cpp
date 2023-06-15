@@ -33,7 +33,21 @@ WriteOdbFile::WriteOdbFile(const Parameters_ & params,
 
     // Create an in-memory backend
     Engines::BackendNames backendName = Engines::BackendNames::ObsStore;
+
+    // Figure out the output file name.
+    const std::size_t mpiRank = createParams_.comm.rank();
+    int mpiTimeRank = -1;  // a value of -1 tells uniquifyFileName to skip this value
+    if (createParams_.timeComm.size() > 1) {
+        mpiTimeRank = createParams_.timeComm.rank();
+    }
+    // Tag on the rank number to the output file name to avoid collisions.
+    // Don't use the time communicator rank number in the suffix if the size of
+    // the time communicator is 1.
+    const std::string outFileName = uniquifyFileName(params_.fileName,
+        true, mpiRank, mpiTimeRank);
+
     Engines::BackendCreationParameters backendParams;
+    backendParams.fileName = outFileName;
     Group backend = constructBackend(backendName, backendParams);
 
     obs_group_ = ObsGroup(backend);

@@ -273,8 +273,21 @@ void ObsSpace::save() {
           if (odbWriterParams == nullptr) {
               throw Exception("Did not get expected WriteOdbFileParameters object", ioda_Here());
           }
+
+          // Figure out the output file name.
+          const std::size_t mpiRank = obs_params_.comm().rank();
+          int mpiTimeRank = -1;  // a value of -1 tells uniquifyFileName to skip this value
+          if (obs_params_.timeComm().size() > 1) {
+              mpiTimeRank = obs_params_.timeComm().rank();
+          }
+          // Tag on the rank number to the output file name to avoid collisions.
+          // Don't use the time communicator rank number in the suffix if the size of
+          // the time communicator is 1.
+          const std::string outFileName = Engines::uniquifyFileName(
+                      odbWriterParams->fileName.value(), true, mpiRank, mpiTimeRank);
+
           odcparams.mappingFile = odbWriterParams->mappingFileName.value();
-          odcparams.outputFile = odbWriterParams->fileName.value();
+          odcparams.outputFile = outFileName;
           odcparams.queryFile = odbWriterParams->queryFileName.value();
           odcparams.missingObsSpaceVariableAbort =
                   odbWriterParams->missingObsSpaceVariableAbort.value();
