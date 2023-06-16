@@ -31,7 +31,7 @@ set(CMAKE_CXX_FLAGS_BIT "${CMAKE_CXX_FLAGS} -O2 -ffp-model=strict")
 # LINK FLAGS
 ####################################################################
 
-set(CMAKE_CXX_LINK_FLAGS "")
+#set(CMAKE_CXX_LINK_FLAGS "")
 
 ####################################################################
 
