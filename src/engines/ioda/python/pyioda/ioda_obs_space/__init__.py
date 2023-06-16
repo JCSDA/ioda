@@ -198,6 +198,9 @@ class ObsSpace:
         :return:
         '''
         self.obsgroup.atts.write_attr(name, attrVal)
+        
+        return self
+
 
     def _read_obsgroup(self, path):
         # open the obs group for a specified file and return file and obsgroup objects
@@ -247,6 +250,7 @@ class ObsSpace:
         if groupname:
             assert '/' not in varname, f'Error create_var: {varname} cannot contain "/" if ' \
                                        f'"groupname" is specified.'
+
             varname = f"{groupname}/{varname}"
 
         # If the variable is datetime and it is not already in the native int64
@@ -275,6 +279,8 @@ class ObsSpace:
         if (var_type == ioda.Types.datetime):
             epochstr = "seconds since " + self.epoch.strftime("%Y-%m-%dT%H:%M:%SZ")
             newVar.atts.create('units', ioda.Types.str, [1]).writeDatum.str(epochstr)
+
+        return self.Variable(varname, groupname)
 
     def setFillValue(self, params, datatype, value):
         # set fill value for input VariableCreationParameters,
@@ -359,6 +365,8 @@ class ObsSpace:
                     self._iodavar.writeNPArray.int64(npArray.astype('int64'))
             # add other elif here TODO
 
+            return self
+
         def read_attr(self, attrName):
             """
               returns single value or array of values of requested attribute
@@ -399,6 +407,7 @@ class ObsSpace:
             '''
             self._iodavar.atts.write_attr(name, data)
 
+            return self
 
         def read_data(self):
             """
