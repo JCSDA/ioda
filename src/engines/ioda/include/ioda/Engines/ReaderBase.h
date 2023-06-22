@@ -99,6 +99,12 @@ class ReaderBase : public util::Printable {
     ReaderBase(const ReaderCreationParameters & createParams);
     virtual ~ReaderBase() {}
 
+    /// \brief initialize the engine backend after construction
+    virtual void initialize() {};
+
+    /// \brief finalize the engine backend before destruction
+    virtual void finalize() {};
+
     /// \brief return the backend that stores the data
     inline ioda::ObsGroup getObsGroup() { return obs_group_; }
 

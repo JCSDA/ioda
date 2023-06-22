@@ -85,6 +85,9 @@ void ReaderSinglePoolAllTasks::load(Group & destGroup) {
 
     fileGroup = readerEngine->getObsGroup();
 
+    // Engine initialization
+    readerEngine->initialize();
+
     // Collect the destination from the reader engine instance
     std::ostringstream ss;
     ss << *readerEngine;
@@ -150,6 +153,9 @@ void ReaderSinglePoolAllTasks::load(Group & destGroup) {
     // Copy the ObsSpace ObsGroup to the output file Group.
     ioReadGroup(*this, fileGroup, destGroup, dtimeFormat, dtimeValues, dtimeEpoch,
                 lonValues, latValues, isParallelIo_, emptyFile);
+
+    // Engine finalization
+    readerEngine->finalize();
 }
 
 //--------------------------------------------------------------------------------------

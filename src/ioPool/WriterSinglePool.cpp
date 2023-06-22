@@ -109,13 +109,16 @@ void WriterSinglePool::initialize() {
 void WriterSinglePool::save(const Group & srcGroup) {
     oops::Log::trace() << "WriterSinglePool::save, start" << std::endl;
     Group fileGroup;
+    std::unique_ptr<Engines::WriterBase> writerEngine = nullptr;
     if (this->commPool() != nullptr) {
         Engines::WriterCreationParameters createParams(*(this->commPool()), this->commTime(),
                                                        createMultipleFiles_, isParallelIo_);
-        std::unique_ptr<Engines::WriterBase> writerEngine =
-            Engines::WriterFactory::create(writerParams_, createParams);
+        writerEngine = Engines::WriterFactory::create(writerParams_, createParams);
 
         fileGroup = writerEngine->getObsGroup();
+
+        // Engine initialization
+        writerEngine->initialize();
 
         // collect the destination from the writer engine instance
         std::ostringstream ss;
@@ -125,6 +128,11 @@ void WriterSinglePool::save(const Group & srcGroup) {
 
     // Copy the ObsSpace ObsGroup to the output file Group.
     ioWriteGroup(*this, srcGroup, fileGroup, isParallelIo_);
+
+    // Engine finalization
+    if (this->commPool() != nullptr) {
+        writerEngine->finalize();
+    }
     oops::Log::trace() << "WriterSinglePool::save, end" << std::endl;
 }
 

@@ -48,6 +48,13 @@ void ReaderSinglePool::initialize() {
 
 //--------------------------------------------------------------------------------------
 void ReaderSinglePool::load(Group & destGroup) {
+    std::unique_ptr<Engines::ReaderBase> readerEngine = nullptr;
+
+    // Engine initialization
+    if (this->commPool() != nullptr) {
+         readerEngine->initialize();
+    }
+
     // Create the memory backend for the destGroup
     // TODO(srh) There needs to be a memory Engine structure created with ObsStore and
     // Hdf5Mem subclasses. Then call the corresponding factory function from here.
@@ -67,6 +74,11 @@ void ReaderSinglePool::load(Group & destGroup) {
     // Mark the destGroup as empty for now, until we get the reader to actually
     // load date into the destGroup
     sourceNlocs_ = 0;
+
+    // Engine finalization
+    if (this->commPool() != nullptr) {
+        readerEngine->finalize();
+    }
 }
 
 //--------------------------------------------------------------------------------------
