@@ -12,6 +12,13 @@ variables:
 - name: instrument_type
 - name: buoy_type
 - name: buoy_identifier
+- name: lat
+- name: lon
 - name: statid
 - name: ops_subtype
+- name: date
+- name: time
+- name: ops_obsgroup
+- name: varno
+- name: seqno
 truncate profiles to numlev: true

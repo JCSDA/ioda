@@ -2,8 +2,15 @@ where:
   varno: [119,121,231,257,266,269]
 variables:
 - name: initial_obsvalue
+- name: lat
+- name: lon
 - name: satellite_identifier
 - name: zenith
 - name: autosat_spatial_test
 - name: receipt_time
 - name: receipt_date
+- name: date
+- name: time
+- name: ops_obsgroup
+- name: varno
+- name: seqno

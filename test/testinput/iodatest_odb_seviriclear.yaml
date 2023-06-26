@@ -7,3 +7,10 @@ variables:
 - name: zenith
 - name: receipt_time
 - name: receipt_date
+- name: lat
+- name: lon
+- name: date
+- name: time
+- name: ops_obsgroup
+- name: varno
+- name: seqno

@@ -8,6 +8,8 @@ variables:
 - name: initial_obsvalue
 - name: initial_vertco_reference
 - name: land_sea
+- name: lat
+- name: lon
 - name: level_1b_creation_centre
 - name: level_1b_creation_subcentre
 - name: qchirsfov
@@ -24,3 +26,8 @@ variables:
 - name: zenith
 - name: receipt_time
 - name: receipt_date
+- name: date
+- name: time
+- name: ops_obsgroup
+- name: varno
+- name: seqno

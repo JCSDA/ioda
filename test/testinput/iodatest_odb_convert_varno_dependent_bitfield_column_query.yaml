@@ -7,3 +7,6 @@ variables:
 - name: statid
 # bitfield variables
 - name: level
+- name: ops_obsgroup
+- name: varno
+- name: seqno

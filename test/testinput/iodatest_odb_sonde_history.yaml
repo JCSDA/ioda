@@ -2,7 +2,14 @@ where:
   varno: [2]
 variables:
 - name: initial_obsvalue
+- name: lat
+- name: lon
 - name: receipt_date
 - name: receipt_time
 - name: seqno
 - name: statid
+- name: date
+- name: time
+- name: ops_obsgroup
+- name: varno
+- name: seqno

@@ -4,6 +4,8 @@ variables:
 # varno dependent
 - name: initial_obsvalue
 # varno independent
+- name: lat
+- name: lon
 - name: amsua1_temp
 - name: amsua2_temp
 - name: amsub_temp
@@ -31,3 +33,8 @@ variables:
 - name: receipt_date
 - name: height
 - name: sensorviewangle
+- name: date
+- name: time
+- name: ops_obsgroup
+- name: varno
+- name: seqno

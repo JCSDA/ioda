@@ -10,6 +10,8 @@ variables:
 - name: invresid_4
 - name: nretr_amb
 - name: satellite_identifier
+- name: lat
+- name: lon
 - name: sel_wnd_indx
 - name: solution_liklihood_1
 - name: solution_liklihood_2
@@ -18,3 +20,8 @@ variables:
 - name: wvc_qf
 - name: receipt_time
 - name: receipt_date
+- name: date
+- name: time
+- name: ops_obsgroup
+- name: varno
+- name: seqno

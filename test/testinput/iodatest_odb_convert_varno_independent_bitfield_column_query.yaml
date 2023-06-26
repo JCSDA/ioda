@@ -9,3 +9,6 @@ variables:
 # (the level bitfield is in fact varno-dependent, but it's the same
 # for varnos 111 and 112, i.e. wind direction and speed)
 - name: level
+- name: ops_obsgroup
+- name: varno
+- name: seqno

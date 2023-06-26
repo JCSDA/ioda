@@ -4,6 +4,9 @@ variables:
 # varno dependent
 - name: initial_obsvalue
 # varno independent
+- name: lat
+- name: lon
+- name: seqno
 - name: aircraft_data_relay_system
 - name: aircraft_tail_number
 - name: beacon_report_name
@@ -16,3 +19,8 @@ variables:
 - name: receipt_time
 - name: receipt_date
 - name: ops_subtype
+- name: date
+- name: time
+- name: ops_obsgroup
+- name: varno
+- name: seqno

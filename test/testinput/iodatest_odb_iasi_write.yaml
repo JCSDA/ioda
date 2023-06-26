@@ -4,6 +4,8 @@ variables:
 # varno dependent
 - name: initial_obsvalue
 # varno independent
+- name: lat
+- name: lon
 - name: amsuscatindex
 - name: azimuth
 - name: initial_vertco_reference
@@ -22,3 +24,8 @@ variables:
 - name: receipt_date
 - name: ops_subtype
 - name: skinT_onedvar
+- name: date
+- name: time
+- name: ops_obsgroup
+- name: varno
+- name: seqno

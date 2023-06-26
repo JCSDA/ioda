@@ -10,6 +10,8 @@ variables:
 - name: azimuth
 - name: initial_obsvalue
 - name: initial_vertco_reference
+- name: lat
+- name: lon
 - name: qchirsfov
 - name: satellite_identifier
 - name: scanpos
@@ -18,3 +20,8 @@ variables:
 - name: channel_quality_flags
 - name: zenith
 - name: ops_subtype 
+- name: date
+- name: time
+- name: ops_obsgroup
+- name: varno
+- name: seqno

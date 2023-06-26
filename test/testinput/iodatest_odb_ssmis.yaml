@@ -11,6 +11,8 @@ variables:
 - name: ephemeris_longitude_2
 - name: ephemeris_longitude_3
 - name: initial_obsvalue
+- name: lat
+- name: lon
 - name: initial_vertco_reference
 - name: numlev
 - name: rain_flag
@@ -20,3 +22,8 @@ variables:
 - name: surface_flag
 - name: receipt_time
 - name: receipt_date
+- name: date
+- name: time
+- name: ops_obsgroup
+- name: varno
+- name: seqno

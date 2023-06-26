@@ -7,6 +7,8 @@ variables:
 - name: argo_identifier
 - name: argo_position_qc
 - name: argo_qc
+- name: lat
+- name: lon
 - name: numlev
 - name: initial_obsvalue
 - name: instrument_type
@@ -14,3 +16,8 @@ variables:
 - name: buoy_identifier
 - name: statid
 - name: ops_subtype
+- name: date
+- name: time
+- name: ops_obsgroup
+- name: varno
+- name: seqno

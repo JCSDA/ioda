@@ -8,6 +8,8 @@ variables:
 - name: initial_obsvalue
 - name: initial_vertco_reference
 - name: instrument_type
+- name: lat
+- name: lon
 - name: level
 - name: level_condition_code
 - name: numlev
@@ -27,4 +29,9 @@ variables:
 - name: winpro_flags_usa
 - name: wmo_block_number
 - name: wmo_station_number
+- name: date
+- name: time
+- name: ops_obsgroup
+- name: varno
+- name: seqno
 truncate profiles to numlev: true

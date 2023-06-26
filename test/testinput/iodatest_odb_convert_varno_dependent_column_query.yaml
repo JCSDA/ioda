@@ -12,3 +12,6 @@ variables:
 # bitfield variables treated as ints
 - name: level
 # note: varno-dependent string variables are not currently supported
+- name: ops_obsgroup
+- name: varno
+- name: seqno

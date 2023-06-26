@@ -4,6 +4,8 @@ variables:
 # varno dependent
 - name: initial_obsvalue
 # varno independent
+- name: lat
+- name: lon
 - name: chan_freq
 - name: satellite_identifier
 - name: satellite_instrument
@@ -21,3 +23,8 @@ variables:
 - name: sensorviewangle
 - name: solar_azimuth
 - name: solar_zenith
+- name: date
+- name: time
+- name: ops_obsgroup
+- name: varno
+- name: seqno

@@ -9,6 +9,8 @@ variables:
 - name: hours_since_last_position
 - name: ident
 - name: initial_obsvalue
+- name: lat
+- name: lon
 - name: ob_practice
 - name: ops_subtype
 - name: pressure_sensor_alt
@@ -20,3 +22,8 @@ variables:
 - name: wmo_station_number
 - name: receipt_time
 - name: receipt_date
+- name: date
+- name: time
+- name: ops_obsgroup
+- name: varno
+- name: seqno

@@ -4,6 +4,8 @@ variables:
 # varno dependent
 - name: initial_obsvalue
 # varno independent
+- name: lat
+- name: lon
 - name: aerosol_confidence_flag
 - name: aerosol_effective_radius
 - name: aerosol_mass_concentration
@@ -24,3 +26,8 @@ variables:
 - name: dummyfloatvar
 - name: dummyintvar
 - name: dummystringvar
+- name: date
+- name: time
+- name: ops_obsgroup
+- name: varno
+- name: seqno

@@ -20,6 +20,8 @@ variables:
 - name: emissivity_param_15
 - name: initial_obsvalue
 - name: initial_vertco_reference
+- name: lat
+- name: lon
 - name: numlev
 - name: satellite_identifier
 - name: scanpos
@@ -33,3 +35,8 @@ variables:
 - name: receipt_time
 - name: receipt_date
 - name: ops_subtype
+- name: date
+- name: time
+- name: ops_obsgroup
+- name: varno
+- name: seqno

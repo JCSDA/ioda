@@ -212,14 +212,6 @@ void addQueryColumns(ColumnSelection &selection, const OdbQueryParameters &query
   }
 }
 
-/// Select columns that are required regardless of whether they are included in the query or not.
-void addMandatoryColumns(ColumnSelection &selection) {
-  for (const char* column :
-       {"lat", "lon", "date", "time", "seqno", "varno", "ops_obsgroup", "vertco_type"}) {
-    selection.addColumn(column);
-  }
-}
-
 // -------------------------------------------------------------------------------------------------
 // Mapping file parsing
 
@@ -1139,7 +1131,6 @@ ObsGroup openFile(const ODC_Parameters& odcparams,
 
   ColumnSelection columnSelection;
   addQueryColumns(columnSelection, queryParameters);
-  addMandatoryColumns(columnSelection);
 
   // TODO(someone): Handle the case of the 'varno' option being set to ALL.
   const vector<int> &varnos = queryParameters.where.value().varno.value().as<std::vector<int>>();

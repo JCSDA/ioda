@@ -9,9 +9,16 @@ variables:
 - name: angstrom_exponent
 - name: initial_obsvalue
 - name: land_sea
+- name: lat
+- name: lon
 - name: satellite_identifier
 - name: satellite_instrument
 - name: solar_zenith
 - name: viewing_zenith_angle
 - name: receipt_time
 - name: receipt_date
+- name: date
+- name: time
+- name: ops_obsgroup
+- name: varno
+- name: seqno

@@ -4,3 +4,10 @@ variables:
 - name: initial_obsvalue
 - name: receipt_time
 - name: receipt_date
+- name: lat
+- name: lon
+- name: date
+- name: time
+- name: ops_obsgroup
+- name: varno
+- name: seqno

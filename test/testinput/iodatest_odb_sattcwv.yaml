@@ -2,7 +2,14 @@ where:
   varno: [245]
 variables:
 - name: initial_obsvalue
+- name: lat
+- name: lon
 - name: satellite_identifier
 - name: receipt_time
 - name: receipt_date
 - name: viewing_zenith_angle
+- name: date
+- name: time
+- name: ops_obsgroup
+- name: varno
+- name: seqno

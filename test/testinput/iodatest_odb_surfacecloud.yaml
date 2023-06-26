@@ -16,3 +16,10 @@ variables:
 - name: wmo_block_number
 - name: wmo_region_number
 - name: wmo_station_number
+- name: lat
+- name: lon
+- name: date
+- name: time
+- name: ops_obsgroup
+- name: varno
+- name: seqno

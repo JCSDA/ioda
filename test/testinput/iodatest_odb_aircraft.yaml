@@ -9,9 +9,16 @@ variables:
 - name: "flight_phase"
 - name: "initial_obsvalue"
 - name: "initial_vertco_reference"
+- name: "lat"
+- name: "lon"
 - name: "stalt"
 - name: "statid"
 - name: "receipt_time"
 - name: "receipt_date"
 - name: "ops_subtype"
 - name: "seqno"
+- name: "date"
+- name: time
+- name: ops_obsgroup
+- name: varno
+- name: seqno

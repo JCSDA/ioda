@@ -6,6 +6,8 @@ variables:
 - name: gen_centre
 - name: gen_subcentre
 - name: initial_obsvalue
+- name: lat
+- name: lon
 - name: percent_confidence_1
 - name: percent_confidence_2
 - name: percent_confidence_3
@@ -21,3 +23,8 @@ variables:
 - name: zenith
 - name: receipt_time
 - name: receipt_date
+- name: date
+- name: time
+- name: ops_obsgroup
+- name: varno
+- name: seqno

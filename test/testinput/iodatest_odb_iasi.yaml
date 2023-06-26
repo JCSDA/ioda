@@ -18,6 +18,8 @@ variables:
 - name: initial_obsvalue
 - name: initial_vertco_reference
 - name: land_sea
+- name: lat
+- name: lon
 - name: qchirsfov
 - name: qcprepro
 - name: satellite_identifier
@@ -36,3 +38,8 @@ variables:
 - name: receipt_time
 - name: receipt_date
 - name: ops_subtype
+- name: date
+- name: time
+- name: ops_obsgroup
+- name: varno
+- name: seqno

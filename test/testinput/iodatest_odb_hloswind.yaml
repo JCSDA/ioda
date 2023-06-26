@@ -7,9 +7,16 @@ variables:
 - name: dwind_dt
 - name: initial_obsvalue
 - name: height_cog
+- name: lat
+- name: lon
 - name: lidar_class
 - name: profile_number
 - name: satellite_identifier
 - name: wind_error
 - name: receipt_time
 - name: receipt_date
+- name: date
+- name: time
+- name: ops_obsgroup
+- name: varno
+- name: seqno

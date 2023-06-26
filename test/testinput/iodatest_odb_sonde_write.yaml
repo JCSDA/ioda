@@ -4,6 +4,8 @@ variables:
 # varno dependent
 - name: initial_obsvalue
 # varno independent
+- name: lat
+- name: lon
 - name: ident
 - name: initial_level_lat
 - name: initial_level_lon
@@ -31,4 +33,9 @@ variables:
 - name: wmo_block_number
 - name: wmo_station_number
 - name: height
+- name: date
+- name: time
+- name: ops_obsgroup
+- name: varno
+- name: seqno
 truncate profiles to numlev: true

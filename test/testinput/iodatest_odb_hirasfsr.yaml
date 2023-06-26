@@ -9,6 +9,8 @@ variables:
 - name: initial_obsvalue
 - name: initial_vertco_reference
 - name: land_sea
+- name: lat
+- name: lon
 - name: meto_cloud_flags
 - name: meto_cloud_tests
 - name: qcprepro
@@ -22,3 +24,8 @@ variables:
 - name: zenith
 - name: receipt_time
 - name: receipt_date
+- name: date
+- name: time
+- name: ops_obsgroup
+- name: varno
+- name: seqno

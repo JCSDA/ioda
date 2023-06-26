@@ -5,6 +5,8 @@ variables:
 - name: confidence
 - name: gen_centre
 - name: initial_obsvalue
+- name: lat
+- name: lon
 - name: numlev
 - name: platform_id
 - name: qc_flags
@@ -19,3 +21,8 @@ variables:
 - name: seqno
 - name: initial_vertco_reference
 - name: vertco_reference_2
+- name: date
+- name: time
+- name: ops_obsgroup
+- name: varno
+- name: seqno

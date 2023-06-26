@@ -5,3 +5,10 @@ variables:
 - name: receipt_date
 - name: initial_obsvalue
 - name: instrument_type
+- name: lat
+- name: lon
+- name: date
+- name: time
+- name: ops_obsgroup
+- name: varno
+- name: seqno

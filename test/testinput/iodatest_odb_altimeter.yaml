@@ -2,6 +2,8 @@ where:
   varno: [273]
 variables:
 - name: initial_obsvalue
+- name: lat
+- name: lon
 - name: receipt_time
 - name: receipt_date
 - name: satellite_identifier
@@ -9,3 +11,8 @@ variables:
 - name: long_wave_error
 - name: instrument_type
 - name: ocean_tide
+- name: date
+- name: time
+- name: ops_obsgroup
+- name: varno
+- name: seqno

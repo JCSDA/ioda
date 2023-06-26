@@ -4,6 +4,8 @@ variables:
 # varno dependent
 - name: initial_obsvalue
 # varno independent
+- name: lat
+- name: lon
 - name: aapp_bennartz_index
 - name: aapp_cirrus_index
 - name: amsuscatindex
@@ -26,3 +28,8 @@ variables:
 - name: zenith
 - name: receipt_time
 - name: receipt_date
+- name: date
+- name: time
+- name: ops_obsgroup
+- name: varno
+- name: seqno
