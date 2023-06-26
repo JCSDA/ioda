@@ -29,7 +29,7 @@
 import os
 import sys
 
-import ioda
+from pyioda import ioda
 
 # All of the attribute information for a Group or a Variable (see later
 # tutorials) may be accessed by the ".atts" member object.

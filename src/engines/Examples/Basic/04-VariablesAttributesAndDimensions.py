@@ -27,7 +27,7 @@
 import os
 import sys
 
-import ioda
+from pyioda import ioda
 
 g = ioda.Engines.HH.createFile(
     name = "Example-04-python.hdf5",

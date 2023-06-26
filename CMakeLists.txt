@@ -46,7 +46,7 @@ find_package( MPI REQUIRED )
 find_package( jedicmake REQUIRED )
 find_package( eckit 1.23.0 REQUIRED )
 find_package( fckit 0.10.1 REQUIRED )
-find_package( oops 1.7.0 REQUIRED )
+find_package( oops REQUIRED )
 find_package( Eigen3 REQUIRED NO_MODULE HINTS
               $ENV{Eigen3_ROOT} $ENV{EIGEN3_ROOT} $ENV{Eigen_ROOT} $ENV{EIGEN_ROOT}
               $ENV{Eigen3_PATH} $ENV{EIGEN3_PATH} $ENV{Eigen_PATH} $ENV{EIGEN_PATH} )

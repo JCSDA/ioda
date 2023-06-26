@@ -11,7 +11,7 @@ import os
 import sys
 import numpy as np
 
-import ioda
+from pyioda import ioda
 
 # grab arguments
 print(sys.argv)

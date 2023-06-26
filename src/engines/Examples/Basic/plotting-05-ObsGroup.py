@@ -14,7 +14,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
 
-import ioda
+from pyioda import ioda
 
 g = ioda.Engines.HH.openFile(
     name = "Example-05a-python.hdf5",

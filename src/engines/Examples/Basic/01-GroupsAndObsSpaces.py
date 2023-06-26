@@ -65,7 +65,7 @@ import sys
 
 # Importing ioda is easy.
 
-import ioda
+from pyioda import ioda
 
 # We want to open a new file, backed by the default engine (HDF5).
 # We open this file as a root-level Group.

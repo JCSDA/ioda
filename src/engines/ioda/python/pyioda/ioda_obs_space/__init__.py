@@ -1,7 +1,7 @@
 import datetime as dt
 import numpy as np
 import os
-import ioda
+from pyioda import ioda
 
 __IodaTypeDict = {
     int: ioda.Types.int32,

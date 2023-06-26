@@ -58,7 +58,7 @@
 import os
 import sys
 
-import ioda
+from pyioda import ioda
 import numpy as np
 
 g = ioda.Engines.HH.createFile(

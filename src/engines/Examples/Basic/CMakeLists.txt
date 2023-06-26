@@ -49,7 +49,7 @@ macro(AddExample_Py testname cmd args need_test_data_prep)
 		COMMAND ${Python3_EXECUTABLE}
 			${CMAKE_CURRENT_SOURCE_DIR}/${cmd} ${args}
 		)
-	set(IODA_PYTHONPATH "$<TARGET_FILE_DIR:_ioda_python>/../:$ENV{PYTHONPATH}")
+	set(IODA_PYTHONPATH "$<TARGET_FILE_DIR:_ioda_python>/../../:$ENV{PYTHONPATH}")
 	set_tests_properties(test_${testname}
 		PROPERTIES
 		ENVIRONMENT "PYTHONPATH=${IODA_PYTHONPATH}"
