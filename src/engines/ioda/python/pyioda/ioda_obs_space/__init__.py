@@ -3,24 +3,28 @@ import numpy as np
 import os
 from pyioda import ioda
 
-__IodaTypeDict = {
+IODA_TYPE_DICT = {
     int: ioda.Types.int32,
     float: ioda.Types.float,
     str: ioda.Types.str,
     bool: ioda.Types.int32,
     bytes: ioda.Types.str,
     dt.datetime: ioda.Types.datetime,
-    np.dtype('float64'): ioda.Types.double,
-    np.dtype('float32'): ioda.Types.float,
-    np.dtype('int64'): ioda.Types.int64,
-    np.dtype('int32'): ioda.Types.int32,
-    np.dtype('int16'): ioda.Types.int16,
-    np.dtype('int8'): ioda.Types.int16,
-    np.dtype('S1'): ioda.Types.str,
-    np.dtype('S20'): ioda.Types.str,
-    np.dtype('<U'): ioda.Types.str,
-    np.dtype('M'): ioda.Types.datetime,
-    np.dtype('datetime64[s]'): ioda.Types.datetime
+    np.datetime64: ioda.Types.datetime,
+    np.float64: ioda.Types.double,
+    np.float32: ioda.Types.float,
+    np.int64: ioda.Types.int64,
+    np.int32: ioda.Types.int32,
+    np.int16: ioda.Types.int16,
+    np.int8: ioda.Types.int16,
+    np.uint64: ioda.Types.int64,
+    np.uint32: ioda.Types.int64,
+    np.uint16: ioda.Types.int32,
+    np.uint8: ioda.Types.int16,
+    np.str_: ioda.Types.str,
+    np.bytes_: ioda.Types.str,
+    np.object_: ioda.Types.str,
+    np.bool_: ioda.Types.int32
 }
 
 def _ioda_type(data):
@@ -29,21 +33,21 @@ def _ioda_type(data):
     :param data: The data
     :return: Ioda type
     '''
-    native_type = None
-    if hasattr(data, 'dtype'):
-        if data.dtype == np.dtype('object'):
-            native_type = type(data[0]) if len(data) > 0 else str
-        else:
-            native_type = data.dtype
-    elif isinstance(data, list):
-        native_type = type(data[0]) if len(data) > 0 else str
-    else:
-        try:
-            native_type = type(data)
-        except:
-            pass
 
-    return __IodaTypeDict.get(native_type)
+    if hasattr(data, 'dtype'):
+        native_type = data.dtype.type
+
+        # Check for python datetime objects
+        if native_type == np.object_ and isinstance(data, np.ndarray) and data.size > 0 and \
+           type(data[0]) == dt.datetime:
+            native_type = dt.datetime
+    else:
+        if type(data) == list:
+            native_type = type(data[0]) if len(data) > 0 else int
+        else:
+            native_type = type(data)
+
+    return IODA_TYPE_DICT[native_type]
 
 def _ioda_shape(data):
     '''
@@ -247,7 +251,7 @@ class ObsSpace:
 
     def create_var(self, varname, groupname=None, dtype=np.dtype('float32'),
                    dim_list=['Location'], fillval=None):
-        if groupname:
+        if groupname is not None:
             assert '/' not in varname, f'Error create_var: {varname} cannot contain "/" if ' \
                                        f'"groupname" is specified.'
 
@@ -265,7 +269,7 @@ class ObsSpace:
 
         # Make the parameter for the variable
         fparams = self._p1
-        if fillval:
+        if fillval is not None:
             fparams = ioda.VariableCreationParameters()
             fparams.compressWithGZIP()
             fparams = self.setFillValue(fparams, var_type, fillval)
