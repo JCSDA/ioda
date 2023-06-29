@@ -22,6 +22,7 @@
 #include "ioda/ObsGroup.h"
 #include "ioda/Variables/Variable.h"
 
+#include "oops/util/Logger.h"
 #include "oops/util/missingValues.h"
 
 namespace ioda {
@@ -146,7 +147,7 @@ Group constructFromCmdLine(int argc, char** argv, const std::string& defaultFile
   Currently supported engine names:
   1. HDF5 with file backend [HDF5-file]
   2. HDF5 in-memory backend [HDF5-mem]
-3. ObsStore in-memory backend [obs-store]
+  3. ObsStore in-memory backend [obs-store]
 
   Engine parameters:
   1. Needs a file name, file opening properties [create, open],
@@ -237,6 +238,40 @@ Group constructFromCmdLine(int argc, char** argv, const std::string& defaultFile
     }
   }
   return constructBackend(backendName, params);
+}
+
+eckit::LocalConfiguration constructFileBackendConfig(const std::string & fileType,
+                const std::string & fileName, const std::string & mapFileName,
+                const std::string & queryFileName) {
+    // For now, include just enough for file io:
+    //    HDF5 read or write:
+    //       engine:
+    //           type: H5File
+    //           obsfile: <path-to-file>
+    //
+    //    ODB read or write:
+    //       engine:
+    //           type: ODB
+    //           obsfile: <path-to-file>
+    //           mapping file: <path-to-file>
+    //           query file: <path-to-file>
+    //
+    // There are more controls available in the engine configurations, and these can be added
+    // later on an as needed basis.
+    eckit::LocalConfiguration engineConfig;
+    if (fileType == "hdf5") {
+        engineConfig.set("engine.type", "H5File");
+        engineConfig.set("engine.obsfile", fileName);
+    } else if (fileType == "odb") {
+        engineConfig.set("engine.type", "ODB");
+        engineConfig.set("engine.obsfile", fileName);
+        engineConfig.set("engine.mapping file", mapFileName);
+        engineConfig.set("engine.query file", queryFileName);
+    } else {
+        throw Exception("Unknown file type: " + fileType, ioda_Here());
+    }
+
+    return engineConfig;
 }
 
 Group constructBackend(BackendNames name, BackendCreationParameters& params) {

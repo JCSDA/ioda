@@ -20,6 +20,8 @@
 
 #include "../defs.h"
 
+#include "eckit/config/LocalConfiguration.h"
+
 #include "oops/util/parameters/ParameterTraits.h"
 
 namespace ioda {
@@ -28,6 +30,7 @@ class ObsGroup;
 
 /// The backends that implement the ioda-engines functionality.
 namespace Engines {
+
 /// \brief Backend names
 /// \ingroup ioda_cxx_engines_pub
 enum class BackendNames {
@@ -119,6 +122,21 @@ void storeGenData(const std::vector<float> & latVals,
 ///   Intended for unit testing only.
 /// \ingroup ioda_cxx_engines_pub
 IODA_DL Group constructFromCmdLine(int argc, char** argv, const std::string& defaultFilename);
+
+/// \brief create an eckit local configuration containing proper engine parameters
+/// \details This function creates a YAML engines configuration that is suitable for
+/// use with the EngineFactory functions. The purpose of this is to provide a utility
+/// that can be used to create a backend through the same process that the ioda reader
+/// and writer use. Placing this utility in the examples and tests will be more
+/// instructive on the proper way to use the Engine file io backends.
+/// \param fileType type of file, currently accepts "hdf5" or "odb".
+/// \param fileName name, including path, of file to read or write.
+/// \param mapFileName yaml containing variable number/name mappings (only for odb file)
+/// \param queryFileName yaml containing which varibles to use (only for odb file)
+/// \ingroup ioda_cxx_engines_pub
+IODA_DL eckit::LocalConfiguration constructFileBackendConfig(const std::string & fileType,
+                const std::string & fileName, const std::string & mapFileName = "",
+                const std::string & queryFileName = "");
 
 /// \brief This is a simple factory style function that will instantiate a
 ///   different backend based on a given name an parameters.

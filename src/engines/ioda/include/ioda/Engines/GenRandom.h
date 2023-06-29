@@ -12,6 +12,7 @@
 #include "eckit/mpi/Comm.h"
 
 #include "ioda/Engines/ReaderBase.h"
+#include "ioda/Engines/ReaderFactory.h"
 
 namespace util {
   class DateTime;

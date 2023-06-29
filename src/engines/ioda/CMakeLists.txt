@@ -116,6 +116,7 @@ list(APPEND SRCS_ENGINES_TOP
 	include/ioda/Engines/ReaderBase.h
 	include/ioda/Engines/ReadH5File.h
 	include/ioda/Engines/ReadOdbFile.h
+	include/ioda/Engines/ReaderFactory.h
 	include/ioda/Engines/WriterBase.h
 	include/ioda/Engines/WriteH5File.h
 	include/ioda/Engines/WriteOdbFile.h
@@ -126,6 +127,7 @@ list(APPEND SRCS_ENGINES_TOP
 	src/ioda/Engines/ReaderBase.cpp
 	src/ioda/Engines/ReadH5File.cpp
 	src/ioda/Engines/ReadOdbFile.cpp
+	src/ioda/Engines/ReaderFactory.cpp
 	src/ioda/Engines/WriterBase.cpp
 	src/ioda/Engines/WriteH5File.cpp
 	src/ioda/Engines/WriteOdbFile.cpp

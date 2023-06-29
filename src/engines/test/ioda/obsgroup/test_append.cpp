@@ -20,12 +20,14 @@
 
 #include "Eigen/Dense"
 #include "ioda/Engines/EngineUtils.h"
+#include "ioda/Engines/WriterFactory.h"
 #include "ioda/Exception.h"
 #include "ioda/Layout.h"
 #include "ioda/ObsGroup.h"
 
 #include "ioda/testconfig.h"
 
+#include "oops/mpi/mpi.h"
 #include "oops/util/Logger.h"
 #include "oops/runs/Run.h"
 #include "oops/runs/Test.h"
@@ -80,21 +82,26 @@ void test_obsgroup_helper_funcs(std::string backendType, std::string fileName,
   std::vector<int> nLocs2(nLocs.begin() + locations, nLocs.end());
 
   // Create a backend
-  Engines::BackendNames backendName;
-  Engines::BackendCreationParameters backendParams;
+  Group backend;
   if (backendType == "file" || backendType == "fileRemapped") {
-    backendName = Engines::BackendNames::Hdf5File;
-
-    backendParams.fileName = fileName;
-    backendParams.action = Engines::BackendFileActions::Create;
-    backendParams.createMode = Engines::BackendCreateModes::Truncate_If_Exists;
+    // Create an HDF5 file backend for writing and attach to an ObsGroup
+    // Third and fourth arguments to constructFileWriterFromConfig are
+    // "write multiple files" and "is parallel io" respectively.
+    eckit::LocalConfiguration engineConfig =
+        Engines::constructFileBackendConfig("hdf5", fileName);
+    std::unique_ptr<Engines::WriterBase> writerEngine =
+        Engines::constructFileWriterFromConfig(oops::mpi::world(), oops::mpi::myself(), 
+                false, false, engineConfig);
+    backend = writerEngine->getObsGroup();
   } else if (backendType == "memory") {
-    backendName = Engines::BackendNames::ObsStore;
+    // Don't have a factory for memory (readwrite) backends yet
+    Engines::BackendNames backendName = Engines::BackendNames::ObsStore;
+    Engines::BackendCreationParameters backendParams;
+    backend = constructBackend(backendName, backendParams);
   } else {
     throw Exception("Unrecognized backend type", ioda_Here())
             .add("backendType", backendType);
   }
-  Group backend = constructBackend(backendName, backendParams);
 
   // Create an ObsGroup object and attach the backend
   ObsGroup og;

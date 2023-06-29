@@ -140,6 +140,19 @@ class WriterProcMaker : public WriterProcFactory {
   explicit WriterProcMaker(const std::string & type) : WriterProcFactory(type) {}
 };
 
+//----------------------------------------------------------------------------------------
+// Writer factory utilities
+//----------------------------------------------------------------------------------------
+
+/// \brief create a file writer backend from an eckit configuration
+/// \param comm MPI communicator for model grouping or io pool
+/// \param timeComm MPI communicator for ensemble
+/// \param createMultipleFiles if true create one file per task
+/// \param isParalleIo if true use any availale parallel IO feature
+std::unique_ptr<WriterBase> constructFileWriterFromConfig(
+                const eckit::mpi::Comm & comm, const eckit::mpi::Comm & timeComm,
+                const bool createMultipleFiles, const bool isParallelIo,
+                const eckit::LocalConfiguration & config);
 
 }  // namespace Engines
 }  // namespace ioda

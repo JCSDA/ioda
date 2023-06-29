@@ -8,12 +8,15 @@
 #include "ioda/Variables/Has_Variables.h"
 
 #include "ioda/Engines/EngineUtils.h"
+#include "ioda/Engines/WriterFactory.h"
 #include "ioda/Exception.h"
 #include "ioda/Layout.h"
 #include "ioda/ObsGroup.h"
 #include "ioda/testconfig.h"
 
 #include "eckit/testing/Test.h"
+
+#include "oops/mpi/mpi.h"
 
 using namespace eckit::testing;
 using namespace ioda;
@@ -27,12 +30,15 @@ CASE("Stitch variables, remove originals defaulted as true") {
   typedef std::string str;
   str mappingFile = str(IODA_ENGINES_TEST_SOURCE_DIR)
     + "/variables/hasvariables_stitching_map.yaml";
-  Engines::BackendNames backendName = Engines::BackendNames::Hdf5File;
-  Engines::BackendCreationParameters backendParams;
-  backendParams.fileName = "ioda-engines_hasvariables_stitch-file.hdf5";
-  backendParams.action = Engines::BackendFileActions::Create;
-  backendParams.createMode = Engines::BackendCreateModes::Truncate_If_Exists;
-  Group backend = ioda::Engines::constructBackend(backendName, backendParams);
+  // Create an HDF5 file backend for writing and attach to an ObsGroup
+  // Third and fourth arguments to constructFileWriterFromConfig are
+  // "write multiple files" and "is parallel io" respectively.
+  eckit::LocalConfiguration engineConfig =
+      Engines::constructFileBackendConfig("hdf5", "ioda-engines_hasvariables_stitch-file.hdf5");
+  std::unique_ptr<Engines::WriterBase> writerEngine =
+      Engines::constructFileWriterFromConfig(oops::mpi::world(), oops::mpi::myself(), 
+              false, false, engineConfig);
+  Group backend = writerEngine->getObsGroup();
 
   ioda::Variable completePart1 = backend.vars.create<str>("completeCombinationPart1", {3});
   completePart1.write<str>({str("a"), str("A"), str("1")});
@@ -89,12 +95,16 @@ CASE("Stitch variables, remove originals set to false") {
   typedef std::string str;
   str mappingFile = str(IODA_ENGINES_TEST_SOURCE_DIR)
     + "/variables/hasvariables_stitching_map.yaml";
-  Engines::BackendNames backendName = Engines::BackendNames::Hdf5File;
-  Engines::BackendCreationParameters backendParams;
-  backendParams.fileName = "ioda-engines_hasvariables_stitch-file-originals-kept.hdf5";
-  backendParams.action = Engines::BackendFileActions::Create;
-  backendParams.createMode = Engines::BackendCreateModes::Truncate_If_Exists;
-  Group backend = ioda::Engines::constructBackend(backendName, backendParams);
+  // Create an HDF5 file backend for writing and attach to an ObsGroup
+  // Third and fourth arguments to constructFileWriterFromConfig are
+  // "write multiple files" and "is parallel io" respectively.
+  eckit::LocalConfiguration engineConfig =
+      Engines::constructFileBackendConfig("hdf5",
+          "ioda-engines_hasvariables_stitch-file-originals-kept.hdf5");
+  std::unique_ptr<Engines::WriterBase> writerEngine =
+      Engines::constructFileWriterFromConfig(oops::mpi::world(), oops::mpi::myself(), 
+              false, false, engineConfig);
+  Group backend = writerEngine->getObsGroup();
 
   ioda::Variable completePart1 = backend.vars.create<str>("completeCombinationPart1", {3});
   completePart1.write<str>({str("a"), str("A"), str("1")});

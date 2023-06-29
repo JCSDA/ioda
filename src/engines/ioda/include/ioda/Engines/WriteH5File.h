@@ -8,7 +8,8 @@
 
 #include <string>
 
-#include "ioda/Engines/ReaderBase.h"  // For the flen string to vlen string workaround
+#include "ioda/Engines/ReaderBase.h"     // For the flen string to vlen string workaround
+#include "ioda/Engines/ReaderFactory.h"  // For the flen string to vlen string workaround
 #include "ioda/Engines/WriterBase.h"
 #include "ioda/Engines/WriterFactory.h"
 

@@ -16,6 +16,7 @@
 #include "eckit/testing/Test.h"
 
 #include "ioda/Engines/EngineUtils.h"
+#include "ioda/Engines/WriterFactory.h"
 #include "ioda/Group.h"
 #include "ioda/ObsGroup.h"
 
@@ -38,14 +39,16 @@ CASE("ioda/RemoveHdf5Variable") {
   RmH5VarTestParameters params;
   params.validateAndDeserialize(conf);
 
-  // Create an HDF5 file backend and attach to an ObsGroup
-  Engines::BackendNames backendName = Engines::BackendNames::Hdf5File;
-  Engines::BackendCreationParameters backendParams;
-  backendParams.fileName = params.outFile;
-  backendParams.action = Engines::BackendFileActions::Create;
-  backendParams.createMode = Engines::BackendCreateModes::Truncate_If_Exists;
+  // Create an HDF5 file backend for writing and attach to an ObsGroup
+  // Third and fourth arguments to constructFileWriterFromConfig are
+  // "write multiple files" and "is parallel io" respectively.
+  eckit::LocalConfiguration engineConfig =
+      Engines::constructFileBackendConfig("hdf5", params.outFile);
+  std::unique_ptr<Engines::WriterBase> writerEngine =
+      Engines::constructFileWriterFromConfig(oops::mpi::world(), oops::mpi::myself(),
+              false, false, engineConfig);
 
-  ioda::Group g = constructBackend(backendName, backendParams);
+  ioda::Group g = writerEngine->getObsGroup();
 
   // Need two dimensions, Location and Channel, so we can test using 1D and 2D variables
   const int numLocs = 5;

@@ -14,8 +14,7 @@
 #include "oops/util/parameters/Parameters.h"
 
 #include "ioda/Engines/EngineUtils.h"
-#include "ioda/Engines/ReaderBase.h"
-#include "ioda/Engines/WriterBase.h"
+#include "ioda/Engines/ReaderFactory.h"
 #include "ioda/Engines/WriterFactory.h"
 
 namespace ioda {

@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "ioda/Engines/ReaderBase.h"
+#include "ioda/Engines/ReaderFactory.h"
 
 namespace ioda {
 namespace Engines {

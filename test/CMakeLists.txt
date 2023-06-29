@@ -73,6 +73,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_distribution_masterandreplica_mpi_4.yaml
   testinput/iodatest_distribution_methods.yaml
   testinput/iodatest_distribution_timewindow.yaml
+  testinput/iodatest_engine_construct_utils.yaml
   testinput/iodatest_engine_factory.yaml
   testinput/iodatest_engine_factory_odc.yaml
   testinput/iodatest_engine_uniquify_file_name.yaml
@@ -368,6 +369,12 @@ ecbuild_add_test( TARGET  test_ioda_remove_hdf5_variable_cmp
                           "echo Checking remove hdf5 variable test output"
                           remove_variable.hdf
                   TEST_DEPENDS get_ioda_test_data test_ioda_remove_hdf5_variable )
+
+ecbuild_add_test( TARGET  test_ioda_engine_construct_utils
+                  SOURCES mains/TestEngineConstructUtils.cc
+                  ARGS    "testinput/iodatest_engine_construct_utils.yaml"
+                  LIBS  ioda_engines ioda_test
+                  TEST_DEPENDS get_ioda_test_data )
 
 ecbuild_add_test( TARGET  test_ioda_engine_factory
                   SOURCES mains/TestEngineFactory.cc

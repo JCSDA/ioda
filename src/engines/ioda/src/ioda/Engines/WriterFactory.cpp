@@ -119,5 +119,24 @@ std::map <std::string, WriterProcFactory*> & WriterProcFactory::getMakers() {
   return makers_;
 }
 
+//----------------------------------------------------------------------------------------
+// Writer factory utilities
+//----------------------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------------------
+std::unique_ptr<WriterBase> constructFileWriterFromConfig(
+                const eckit::mpi::Comm & comm, const eckit::mpi::Comm & timeComm,
+                const bool createMultipleFiles, const bool isParallelIo,
+                const eckit::LocalConfiguration & config) {
+    oops::Log::debug() << "constructFileWriterFromConfig: config: " << config << std::endl;
+    // Need two sets of parameters, the engine parameters (built from the eckit config)
+    // and the creation parameters (for the reader constructor). 
+    WriterParametersWrapper writerParams;          // this will contain the engine parameters
+    writerParams.validateAndDeserialize(config.getSubConfiguration("engine"));
+    Engines::WriterCreationParameters createParams(comm, timeComm, createMultipleFiles,
+                                                   isParallelIo);
+    return WriterFactory::create(writerParams.engineParameters, createParams);
+}
+
 }  // namespace Engines
 }  // namespace ioda

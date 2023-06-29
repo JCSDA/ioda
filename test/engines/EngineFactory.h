@@ -16,8 +16,7 @@
 #include "eckit/testing/Test.h"
 
 #include "ioda/Engines/EngineUtils.h"
-#include "ioda/Engines/ReaderBase.h"
-#include "ioda/Engines/WriterBase.h"
+#include "ioda/Engines/ReaderFactory.h"
 #include "ioda/Engines/WriterFactory.h"
 #include "ioda/Exception.h"
 #include "ioda/Group.h"

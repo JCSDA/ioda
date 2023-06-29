@@ -26,6 +26,7 @@
 
 #include "ioda/defs.h"
 #include "ioda/Engines/ReaderBase.h"
+#include "ioda/Engines/ReaderFactory.h"
 #include "ioda/Group.h"
 #include "ioda/ioPool/IoPoolBase.h"
 #include "ioda/ioPool/IoPoolParameters.h"

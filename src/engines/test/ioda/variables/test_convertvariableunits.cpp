@@ -8,6 +8,7 @@
 #include "ioda/Variables/Has_Variables.h"
 
 #include "ioda/Engines/EngineUtils.h"
+#include "ioda/Engines/WriterFactory.h"
 #include "ioda/Exception.h"
 #include "ioda/Layout.h"
 #include "ioda/ObsGroup.h"
@@ -15,6 +16,7 @@
 
 #include "eckit/testing/Test.h"
 
+#include "oops/mpi/mpi.h"
 #include "oops/util/FloatCompare.h"
 
 using namespace eckit::testing;
@@ -29,12 +31,16 @@ CASE("Convert variables") {
   typedef std::string str;
   str mappingFile = str(IODA_ENGINES_TEST_SOURCE_DIR)
     + "/variables/hasvariables_unitconversion_map.yaml";
-  Engines::BackendNames backendName = Engines::BackendNames::Hdf5File;
-  Engines::BackendCreationParameters backendParams;
-  backendParams.fileName = "ioda-engines_hasvariables_unitconv-file.hdf5";
-  backendParams.action = Engines::BackendFileActions::Create;
-  backendParams.createMode = Engines::BackendCreateModes::Truncate_If_Exists;
-  Group backend = ioda::Engines::constructBackend(backendName, backendParams);
+  // Create an HDF5 file backend for writing and attach to an ObsGroup
+  // Third and fourth arguments to constructFileWriterFromConfig are
+  // "write multiple files" and "is parallel io" respectively.
+  eckit::LocalConfiguration engineConfig =
+      Engines::constructFileBackendConfig("hdf5",
+          "ioda-engines_hasvariables_unitconv-file.hdf5");
+  std::unique_ptr<Engines::WriterBase> writerEngine =
+      Engines::constructFileWriterFromConfig(oops::mpi::world(), oops::mpi::myself(), 
+              false, false, engineConfig);
+  Group backend = writerEngine->getObsGroup();
 
   ioda::Variable temp = backend.vars.create<double>("temp", {3});
   temp.write<double>({0.0, 50.0, 100.0});
