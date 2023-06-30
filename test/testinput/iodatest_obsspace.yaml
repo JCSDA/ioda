@@ -409,7 +409,7 @@ observations:
       # Variables present both in the MetaData and DerivedMetaData groups.
 
       - name: float_var
-        group: MetaData  # test should actually find float_var@DerivedMetaData
+        group: MetaData  # test should actually find DerivedMetaData/float_var
         type: float
         norm: 0.05
       - name: float_var
@@ -417,13 +417,13 @@ observations:
         type: float
         norm: 0.05
       - name: float_var
-        group: MetaData  # test should find float_var@MetaData
+        group: MetaData  # test should find MetaData/float_var
         skip derived: true
         type: float
         norm: 0.0005
 
       - name: int_var
-        group: MetaData  # test should actually find int_var@DerivedMetaData
+        group: MetaData  # test should actually find DerivedMetaData/int_var
         type: int
         norm: 5
       - name: int_var
@@ -431,13 +431,13 @@ observations:
         type: int
         norm: 5
       - name: int_var
-        group: MetaData  # test should find int_var@MetaData
+        group: MetaData  # test should find MetaData/int_var
         skip derived: true
         type: int
         norm: 50
 
       - name: string_var
-        group: MetaData  # test should actually find string_var@DerivedMetaData
+        group: MetaData  # test should actually find DerivedMetaData/string_var
         type: string
         first value: abc
         last value: xyz
@@ -447,7 +447,7 @@ observations:
         first value: abc
         last value: xyz
       - name: string_var
-        group: MetaData  # test should find string_var@MetaData
+        group: MetaData  # test should find MetaData/string_var
         skip derived: true
         type: string
         first value: ABC
@@ -456,7 +456,7 @@ observations:
       # Variables present only in the DerivedMetaData group.
 
       - name: another_float_var
-        group: MetaData  # test should actually find float_var@DerivedMetaData
+        group: MetaData  # test should actually find DerivedMetaData/float_var
         type: float
         norm: 0.05
       - name: another_float_var
@@ -465,7 +465,7 @@ observations:
         skip derived: true
 
       - name: another_int_var
-        group: MetaData  # test should actually find int_var@DerivedMetaData
+        group: MetaData  # test should actually find DerivedMetaData/int_var
         type: int
         norm: 5
       - name: another_int_var
@@ -474,7 +474,7 @@ observations:
         skip derived: true
 
       - name: another_string_var
-        group: MetaData  # test should actually find string_var@DerivedMetaData
+        group: MetaData  # test should actually find DerivedMetaData/string_var
         type: string
         first value: abc
         last value: xyz

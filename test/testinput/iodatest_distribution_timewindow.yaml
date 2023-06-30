@@ -22,8 +22,8 @@ observations:
         # At present Halo is not guaranteed to keep records on a single PE, so
         # we're forced to put each location in a separate record.
         group variables: [longitude]
-        # longitude@MetaData = 1, 21, 41, 61, 81, 101, 121, 141, 161, 181
-        # datetime@MetaData = 2021-01-15T15:15:00Z, ...:01Z, ..., ...:09Z
+        # MetaData/longitude = 1, 21, 41, 61, 81, 101, 121, 141, 161, 181
+        # MetaData/datetime = 2021-01-15T15:15:00Z, ...:01Z, ..., ...:09Z
     simulated variables: [temperature]
     distribution:
       name: Halo
@@ -71,8 +71,8 @@ observations:
         # At present Halo is not guaranteed to keep records on a single PE, so
         # we're forced to put each location in a separate record.
         group variables: [longitude]
-        # longitude@MetaData = 1, 21, 41, 61, 81, 101, 121, 141, 161, 181
-        # datetime@MetaData = 2021-01-15T15:15:00Z, ...:01Z, ..., ...:09Z
+        # MetaData/longitude = 1, 21, 41, 61, 81, 101, 121, 141, 161, 181
+        # MetaData/datetime = 2021-01-15T15:15:00Z, ...:01Z, ..., ...:09Z
     simulated variables: [temperature]
     distribution:
       name: Halo

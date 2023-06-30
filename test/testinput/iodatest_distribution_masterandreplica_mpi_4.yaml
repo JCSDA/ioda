@@ -19,7 +19,7 @@ observations:
         obsfile: Data/testinput_tier_1/obsspace_grouping.nc4
       obsgrouping:
         group variables: [group_by_int]
-        # group_by_int@MetaData = 1, 1, 1, 2, 3, 3, 1, 1, 1, 1 ;
+        # MetaData/group_by_int = 1, 1, 1, 2, 3, 3, 1, 1, 1, 1 ;
     simulated variables: [temperature]
     distribution:
       name: RoundRobin
@@ -67,7 +67,7 @@ observations:
         # At present Halo is not guaranteed to keep records on a single PE, so
         # we're forced to put each location in a separate record.
         group variables: [longitude]
-        # longitude@MetaData = 1, 21, 41, 61, 81, 101, 121, 141, 161, 181
+        # MetaData/longitude = 1, 21, 41, 61, 81, 101, 121, 141, 161, 181
     simulated variables: [temperature]
     distribution:
       name: Halo
@@ -115,7 +115,7 @@ observations:
         # At present Halo is not guaranteed to keep records on a single PE, so
         # we're forced to put each location in a separate record.
         group variables: [longitude]
-        # longitude@MetaData = 1, 21, 41, 61, 81, 101, 121, 141, 161, 181
+        # MetaData/longitude = 1, 21, 41, 61, 81, 101, 121, 141, 161, 181
     simulated variables: [temperature]
     distribution:
       name: Halo

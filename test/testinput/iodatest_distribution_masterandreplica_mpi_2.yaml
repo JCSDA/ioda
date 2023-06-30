@@ -20,7 +20,7 @@ observations:
         obsfile: Data/testinput_tier_1/obsspace_grouping.nc4
       obsgrouping:
         group variables: [group_by_int]
-        # group_by_int@MetaData = 1, 1, 1, 2, 3, 3, 1, 1, 1, 1 ;
+        # MetaData/group_by_int = 1, 1, 1, 2, 3, 3, 1, 1, 1, 1 ;
     simulated variables: [temperature]
     distribution:
       name: RoundRobin
@@ -52,7 +52,7 @@ observations:
         obsfile: Data/testinput_tier_1/obsspace_grouping.nc4
       obsgrouping:
         group variables: [group_by_int]
-        # group_by_int@MetaData = 1, 1, 1, 2, 3, 3, 1, 1, 1, 1 ;
+        # MetaData/group_by_int = 1, 1, 1, 2, 3, 3, 1, 1, 1, 1 ;
     simulated variables: [temperature]
     distribution:
       name: InefficientDistribution
