@@ -890,8 +890,26 @@ varno-dependent columns:
         varno: 293
       - name: "deep_convective_base_height"
         varno: 294
+  - source: "obsvalue"
+    group name: "DerivedObsValue"
+    varno-to-variable-name mapping: *obsvalue_varnos
   - source: "obs_error"
-    group name: "ObsError"
+    group name: "EffectiveError"
+    varno-to-variable-name mapping: *obsvalue_varnos
+  - source: "effective_qc"
+    group name: "EffectiveQC"
+    varno-to-variable-name mapping: *obsvalue_varnos
+  - source: "bgvalue"
+    group name: "hofx"
+    varno-to-variable-name mapping: *obsvalue_varnos
+  - source: "obsbias"
+    group name: "ObsBias"
+    varno-to-variable-name mapping: *obsvalue_varnos
+  - source: "pge"
+    group name: "GrossErrorProbability"
+    varno-to-variable-name mapping: *obsvalue_varnos
+  - source: "dflag_badrawbt"
+    group name: "DiagnosticFlags/BadRawBT"
     varno-to-variable-name mapping: *obsvalue_varnos
 complementary variables:
   - output name: "MetaData/stationACCombined"

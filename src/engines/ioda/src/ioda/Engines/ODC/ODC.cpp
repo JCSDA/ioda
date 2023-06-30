@@ -392,6 +392,7 @@ ColumnMappings collectColumnMappings(const detail::ODBLayoutParameters &layoutPa
 struct ReverseColumnMappings {
   std::map<std::string, std::string> varnoIndependentColumns;
   std::map<std::string, std::string> varnoDependentColumns;
+  std::map<std::string, std::string> varnoDependentColumnsNames;
   std::map<std::string, std::string> complimentaryVariableColumns;
 };
 
@@ -412,7 +413,7 @@ ReverseColumnMappings collectReverseColumnMappings(const detail::ODBLayoutParame
 
   // Process varno-independent columns
   for (const detail::VariableParameters &columnParams : layoutParams.variables.value()) {      
-    auto it = std::find(columns.begin(), columns.end(), columnParams.source.value()) ;
+    const auto it = std::find(columns.begin(), columns.end(), columnParams.source.value()) ;
     if (it != columns.end())
       mappings.varnoIndependentColumns[columnParams.name.value()] = columnParams.source.value();
   }
@@ -432,9 +433,24 @@ ReverseColumnMappings collectReverseColumnMappings(const detail::ODBLayoutParame
        layoutParams.varnoDependentColumns.value()) {
     if (columnParams.source.value() == std::string("initial_obsvalue")) {
       for (const auto &mappingParams : columnParams.mappings.value()) {
-        auto it = std::find(listOfVarNos.begin(), listOfVarNos.end(), mappingParams.varno);
+        const auto it = std::find(listOfVarNos.begin(), listOfVarNos.end(), mappingParams.varno);
         if (it != listOfVarNos.end())
             mappings.varnoDependentColumns[mappingParams.name.value()] = std::to_string(mappingParams.varno);
+      }
+    }
+  }
+  // Create name mapping for varno dependent columns
+  for (const detail::VarnoDependentColumnParameters &columnParams :
+       layoutParams.varnoDependentColumns.value()) {
+    const auto it = std::find(columns.begin(), columns.end(), columnParams.source.value());
+    if (it != columns.end()) {
+      for (const auto &map : columnParams.mappings.value()) {
+        const auto varnoIt = std::find(listOfVarNos.begin(), listOfVarNos.end(), map.varno);
+        if (varnoIt != listOfVarNos.end()) {
+          const std::string ioda_variable_name = columnParams.groupName.value() +
+                                                 "/" + map.name.value();
+          mappings.varnoDependentColumnsNames[ioda_variable_name] = columnParams.source.value();
+        }
       }
     }
   }
@@ -455,7 +471,7 @@ struct ColumnInfo {
 };
 
 void pushBackVector(std::vector<std::vector<double>> &data_store,
-                    const std::vector<double> & inarray,
+                    const std::vector<double> &inarray,
                     const size_t numlocs, const size_t numchans) {
   if (numchans == 0) {
     data_store.push_back(inarray);
@@ -476,7 +492,7 @@ void pushBackVector(std::vector<std::vector<double>> &data_store,
   }
 }
 
-std::vector<int> getChannelNumbers(Group storageGroup) {
+std::vector<int> getChannelNumbers(const Group &storageGroup) {
   TypeClass t = storageGroup.vars["Channel"].getType().getClass();
   std::vector<int> Channel;
   if (t == TypeClass::Integer) {
@@ -490,165 +506,7 @@ std::vector<int> getChannelNumbers(Group storageGroup) {
   return Channel;
 }
 
-void readColumn(Group storageGroup, const ColumnInfo column, std::vector<std::vector<double>> &data_store,
-                int number_of_locations, int number_of_channels) {
-  if (column.column_name == "date" || column.column_name == "receipt_date") {
-    std::string obsspacename = "MetaData/dateTime";
-    if (column.column_name == "receipt_date") obsspacename = "MetaData/receiptdateTime";
-    std::vector<int64_t> buf;
-    std::vector<double> data_store_tmp(number_of_locations);
-    storageGroup.vars[obsspacename].read<int64_t>(buf);
-    float ff = ioda::detail::getFillValue<float>(storageGroup.vars[obsspacename].getFillValue());
-    for (int j = 0; j < number_of_locations; j++) {
-      if (ff == buf[j]) {
-        data_store_tmp[j] = odb_missing_float;
-      } else {
-        // struct tm is being used purely for time arithmetic.  The offset is incorrect but it
-        // doesn't matter in this context.
-        //
-        // Note the struct tm type wants the year to be the number of years since 1900
-        // and the month to be the number of months from January (ie, Jan to Dec -> 0 to 11)
-        //
-        // In order to avoid the 2038 issue (max positive value in a signed 32-bit int
-        // offset in seconds referenced to Jan 1, 1970 represents a datetime in Jan 2038)
-        // convert the offset in seconds to a set of offsets for seconds, minutes,
-        // hours and days and add those to the repective data members of the struct tm. 
-        int64_t offset = buf[j];
-        struct tm time = { 0 };
-        time.tm_sec = column.epoch_second + (offset % 60);
-        offset /= 60;
-        time.tm_min = column.epoch_minute + (offset % 60);
-        offset /= 60;
-        time.tm_hour = column.epoch_hour + (offset % 24);
-        offset /= 24;
-        time.tm_mday = column.epoch_day + offset;
-        time.tm_mon = column.epoch_month - 1;
-        time.tm_year = column.epoch_year - 1900;
-        timegm(&time);
-        data_store_tmp[j] =
-            (time.tm_year + 1900) * 10000 + (time.tm_mon + 1) * 100 + time.tm_mday;
-      }
-    }
-    pushBackVector(data_store, data_store_tmp, number_of_locations, number_of_channels);
-  } else if (column.column_name == "time" || column.column_name == "receipt_time") {
-    std::string obsspacename = "MetaData/dateTime";
-    if (column.column_name == "receipt_date") obsspacename = "MetaData/receiptdateTime";
-    std::vector<int64_t> buf;
-    std::vector<double> data_store_tmp(number_of_locations);
-    storageGroup.vars[obsspacename].read<int64_t>(buf);
-    float ff = ioda::detail::getFillValue<float>(storageGroup.vars[obsspacename].getFillValue());
-    for (int j = 0; j < number_of_locations; j++) {
-      if (ff == buf[j]) {
-        data_store_tmp[j] = odb_missing_float;
-      } else {
-        // See comments above in the date section.
-        int64_t offset = buf[j];
-        struct tm time = { 0 };
-        time.tm_sec = column.epoch_second + (offset % 60);
-        offset /= 60;
-        time.tm_min = column.epoch_minute + (offset % 60);
-        offset /= 60;
-        time.tm_hour = column.epoch_hour + (offset % 24);
-        offset /= 24;
-        time.tm_mday = column.epoch_day + offset;
-        time.tm_mon = column.epoch_month - 1;
-        time.tm_year = column.epoch_year - 1900;
-        timegm(&time);
-        data_store_tmp[j] = time.tm_hour * 10000 + time.tm_min * 100 + time.tm_sec;
-      }
-    }
-    pushBackVector(data_store, data_store_tmp, number_of_locations, number_of_channels);
-  } else if (column.column_name == "vertco_reference_1") {
-    std::vector<int> buf = getChannelNumbers(storageGroup);
-    std::vector<double> data_store_tmp(number_of_locations * number_of_channels);
-    for (int j = 0; j < number_of_locations; j++)
-      for (int i = 0; i < number_of_channels; i++)
-        data_store_tmp[j * number_of_channels + i] = static_cast<double>(buf[i]);
-    data_store.push_back(data_store_tmp);
-  } else if (column.column_type == TypeClass::Float) {
-    std::vector<float> buf;
-    std::vector<double> data_store_tmp(number_of_locations);
-    storageGroup.vars[column.column_name].read<float>(buf);
-    float ff = ioda::detail::getFillValue<float>(storageGroup.vars[column.column_name].getFillValue());
-    for (int j = 0; j < number_of_locations; j++) {
-      if (ff == buf[j]) {
-        data_store_tmp[j] = odb_missing_float;
-      } else {
-        data_store_tmp[j] = buf[j];
-      }
-    }
-    pushBackVector(data_store, data_store_tmp, number_of_locations, number_of_channels);
-  } else if (column.column_type == TypeClass::Integer) {
-    if (column.column_size == 4) {
-      std::vector<int> buf;
-      std::vector<double> data_store_tmp(number_of_locations);
-      storageGroup.vars[column.column_name].read<int>(buf);
-      int ff = ioda::detail::getFillValue<int>(storageGroup.vars[column.column_name].getFillValue());
-      for (int j = 0; j < number_of_locations; j++) {
-        if (ff == buf[j]) {
-          data_store_tmp[j] = odb_missing_int;
-        } else {
-          data_store_tmp[j] = buf[j];
-        }
-      }
-      pushBackVector(data_store, data_store_tmp, number_of_locations, number_of_channels);
-    } else if (column.column_size == 8) {
-      std::vector<long> buf;
-      std::vector<double> data_store_tmp(number_of_locations);
-      long ff;
-      Variable var = storageGroup.vars.open(column.column_name);
-      if (var.isA<long>()) {
-        var.read<long>(buf);
-        ff = ioda::detail::getFillValue<long>(var.getFillValue());
-      } else if (var.isA<int64_t>()) {
-        std::vector<int64_t> buf64;
-        var.read<int64_t>(buf64);
-        buf.reserve(buf64.size());
-        buf.assign(buf64.begin(), buf64.end());
-        ff = ioda::detail::getFillValue<int64_t>(var.getFillValue());
-      } else {
-        std::string errMsg("ODB Writer: Unrecognized data type for column size of 8");
-        throw Exception(errMsg.c_str(), ioda_Here());
-      }
-      for (int j = 0; j < number_of_locations; j++) {
-        if (ff == buf[j]) {
-          data_store_tmp[j] = odb_missing_int;
-        } else {
-          data_store_tmp[j] = buf[j];
-        }
-      }
-      pushBackVector(data_store, data_store_tmp, number_of_locations, number_of_channels);
-    }
-  } else if (column.column_type == TypeClass::String) {
-    std::vector<std::string> buf;
-    storageGroup.vars[column.column_name].read<std::string>(buf);
-    int num_cols = 1+((column.string_length-1)/8);
-    for (int c = 0; c < num_cols; c++) {
-      std::vector<double> data_store_tmp(number_of_locations);
-      for (int j = 0; j < number_of_locations; j++) {
-         unsigned char uc[8];
-         double dat;
-         for (int k = 8 * c; k < std::min(8 * (c+1),static_cast<int>(buf[j].size())); k++) {
-           uc[k-c*8] = buf[j][k];
-         }
-         for (int k = std::min(8 * (c+1),static_cast<int>(buf[j].size())); k < 8*(c+1); k++) {
-           uc[k-c*8] = '\0';
-         }
-         memcpy(&dat, uc, 8);
-         data_store_tmp[j] = dat;
-      }
-      pushBackVector(data_store, data_store_tmp, number_of_locations, number_of_channels);
-    }
-  } else if (column.column_type == TypeClass::Unknown) {
-    std::vector<double> data_store_tmp(number_of_locations);
-    for (int j = 0; j < number_of_locations; j++) {
-      data_store_tmp[j] = -1.0;
-    }
-    pushBackVector(data_store, data_store_tmp, number_of_locations, number_of_channels);
-  }
-}
-
-int getNumberOfLocations(Group storageGroup) {
+int getNumberOfLocations(const Group &storageGroup) {
   TypeClass t = storageGroup.vars["Location"].getType().getClass();
   if (t == TypeClass::Integer) {
     std::vector<int> Location;
@@ -661,14 +519,14 @@ int getNumberOfLocations(Group storageGroup) {
   }
 }
 
-void setupColumnInfo(const Group &storageGroup, const ReverseColumnMappings &reverseColumnMap,
+void setupColumnInfo(const Group &storageGroup, const std::map<std::string, std::string> &reverseColumnMap,
                      std::vector<ColumnInfo> &column_infos, int &num_columns,
-                     bool errorWithColumnNotInObsSpace) {
+                     const bool errorWithColumnNotInObsSpace) {
   const auto objs = storageGroup.listObjects(ObjectType::Variable, true);
   for (auto it = objs.cbegin(); it != objs.cend(); it++) {
     for (size_t i = 0; i < it->second.size(); i++) {
-      auto found = reverseColumnMap.varnoIndependentColumns.find(it->second[i]);
-      if (found != reverseColumnMap.varnoIndependentColumns.end()) {
+      const auto found = reverseColumnMap.find(it->second[i]);
+      if (found != reverseColumnMap.end()) {
         if (!it->second[i].compare(metadata_prefix_size,it->second[i].size(),"dateTime") ||
             !it->second[i].compare(metadata_prefix_size,it->second[i].size(),"receiptdateTime")) {
           std::string datename = "date";
@@ -746,16 +604,12 @@ void setupColumnInfo(const Group &storageGroup, const ReverseColumnMappings &rev
       }
     }
   }
-  // Check that map entry reqested is in the ObsGroup
-  for (auto const& map : reverseColumnMap.varnoIndependentColumns) {
-    bool found = false;
-    for (auto &col : column_infos) {
-      if (col.column_name == map.first) {
-        found = true;
-        continue;
-      }
-    }
-    if (!found && map.first != "MetaData/dateTime") {
+  // Check that map entry requested is in the ObsGroup
+  std::vector<std::string> column_names;
+  for (const auto &col : column_infos) column_names.push_back(col.column_name);
+  for (const auto &map : reverseColumnMap) {
+    const auto found = std::find(column_names.begin(), column_names.end(), map.first);
+    if (found == column_names.end() && map.first != "MetaData/dateTime") {
       if (errorWithColumnNotInObsSpace) {
         throw eckit::UserError("Variable " + map.first +
                                " requested via the query file is not in the ObsSpace " +
@@ -769,10 +623,78 @@ void setupColumnInfo(const Group &storageGroup, const ReverseColumnMappings &rev
   } // end of map loop
 }
 
-void setODBColumn(ReverseColumnMappings columnMappings, const ColumnInfo v, odc::Writer<>::iterator writer, int &column_number) {
+void setupBodyColumnInfo(const Group &storageGroup, const std::map<std::string, std::string> &reverseColumnMap,
+                     std::vector<ColumnInfo> &column_infos, std::vector<ColumnInfo> &column_infos_missing,
+                     int &num_columns, const bool errorWithColumnNotInObsSpace) {
+  std::vector<std::string> col_names;
+  std::vector<std::string> obs_space_found;
+  const auto objs = storageGroup.listObjects(ObjectType::Variable, true);
+  for (auto it = objs.cbegin(); it != objs.cend(); it++) {
+    for (size_t i = 0; i < it->second.size(); i++) {
+      const auto found = reverseColumnMap.find(it->second[i]);
+      if (found != reverseColumnMap.end()) {
+        obs_space_found.push_back(it->second[i]);
+        const auto alreadyExists = std::find(col_names.begin(), col_names.end(), found->second);
+        if (alreadyExists != col_names.end()) continue;
+        col_names.push_back(found->second);
+        ColumnInfo col;
+        col.column_name = found->second;
+        const std::string obsspacename = it->second[i];
+        col.column_type = storageGroup.vars[obsspacename].getType().getClass();
+        col.column_size = storageGroup.vars[obsspacename].getType().getSize();
+        if (col.column_type == TypeClass::String) {
+          std::vector<std::string> buf;
+          storageGroup.vars[obsspacename].read<std::string>(buf);
+          size_t len = 0;
+          for (size_t j = 0; j < buf.size(); j++) {
+            if (buf[j].size() > len) {
+              len = buf[j].size();
+            }
+          }
+          col.string_length = len;
+          num_columns += 1+((col.string_length-1)/8);
+        } else {
+          col.string_length = 0;
+          num_columns++;
+        }
+        column_infos.push_back(col);
+      }
+    }
+  }
+  // Check that map entry requested is in the ObsGroup
+  // if not create add to the missing which will get written
+  // out with missing data
+  for (const auto& map : reverseColumnMap) {
+    const auto found = std::find(obs_space_found.begin(), obs_space_found.end(), map.first);
+    if (found == obs_space_found.end()) {
+      const auto alreadyListed = std::find(col_names.begin(), col_names.end(), map.second);
+      // Check its a new column rather than a missing varno
+      if (alreadyListed == col_names.end()) {
+        ColumnInfo col;
+        col.column_name = map.second;
+        col.column_type = TypeClass::Float;
+        col.column_size = 4;
+        column_infos_missing.push_back(col);
+        col_names.push_back(map.second);
+      }
+      if (errorWithColumnNotInObsSpace) {
+        throw eckit::UserError("Variable " + map.first +
+                               " requested via the query file is not in the ObsSpace " +
+                               "therefore aborting as requested", Here());
+      } else {
+        oops::Log::warning() << "WARNING: Variable " + map.first + " is in query file "
+                             << "but not in ObsSpace therefore assumming float and writing out with missing data"
+                             << std::endl;
+      }
+    } // end of if found
+  } // end of map loop
+}
+
+void setODBColumn(std::map<std::string, std::string> &columnMappings,
+                  const ColumnInfo v, odc::Writer<>::iterator writer, int &column_number) {
   std::map<std::string,std::string>::iterator it2;
   std::string colname2 = "";
-  for (it2 = columnMappings.varnoIndependentColumns.begin(); it2 != columnMappings.varnoIndependentColumns.end(); it2++) {
+  for (it2 = columnMappings.begin(); it2 != columnMappings.end(); it2++) {
     if (it2->first == v.column_name) {
       colname2 = it2->second;
     }
@@ -805,14 +727,35 @@ void setODBColumn(ReverseColumnMappings columnMappings, const ColumnInfo v, odc:
   }
 }
 
+void setODBBodyColumn(const ColumnInfo &v, odc::Writer<>::iterator writer, int &column_number) {
+  // Column size 1 is a bool, this will be put in the odb as an integer
+  if (v.column_type == TypeClass::Integer || v.column_size == 1) {
+    writer->setColumn(column_number, v.column_name, odc::api::INTEGER);
+    column_number++;
+  } else if (v.column_type == TypeClass::String) {
+    if (v.string_length <= 8) {
+      writer->setColumn(column_number, v.column_name + std::string("_0"), odc::api::STRING);
+      column_number++;
+    } else {
+      for (int i = 0; i < 1+((v.string_length-1)/8); i++) {
+        writer->setColumn(column_number, v.column_name + std::string("_") + std::to_string(i), odc::api::STRING);
+        column_number++;
+      }
+    }
+  } else {
+    writer->setColumn(column_number, v.column_name, odc::api::REAL);
+    column_number++;
+  }
+}
+
 void setupVarnos(const Group &storageGroup, const std::vector<int> &listOfVarNos,
                  const std::map<std::string, std::string> &mapping,
                  const bool errorWithColumnNotInObsSpace,
                  std::vector<int> &varnos,
                  std::vector<std::string> &varno_names) {
-  for (auto& map : mapping) {
-    std::string derived_obsvalue_name = std::string(derived_obsvalue_prefix) + map.first;
-    std::string obsvalue_name = std::string(obsvalue_prefix) + map.first;
+  for (const auto &map : mapping) {
+    const std::string derived_obsvalue_name = std::string(derived_obsvalue_prefix) + map.first;
+    const std::string obsvalue_name = std::string(obsvalue_prefix) + map.first;
     if (storageGroup.vars.exists(obsvalue_name) ||
         storageGroup.vars.exists(derived_obsvalue_name)) {
       varnos.push_back(std::stoi(map.second));
@@ -831,15 +774,15 @@ void setupVarnos(const Group &storageGroup, const std::vector<int> &listOfVarNos
   }
 }
 
-void fillDoubleArray(const Group & storageGroup, const std::string varname,
-                     const int numrows, std::vector<double> & outdata) {
+void fillFloatArray(const Group & storageGroup, const std::string varname,
+                    const int numrows, std::vector<double> & outdata) {
   if (storageGroup.vars.exists(varname)) {
     std::vector<float> buffer;
     storageGroup.vars[varname].read<float>(buffer);
     const ioda::Variable var = storageGroup.vars[varname];
-    const float ff  = ioda::detail::getFillValue<float>(var.getFillValue());
+    const float fillValue  = ioda::detail::getFillValue<float>(var.getFillValue());
     for (int j = 0; j < numrows; j++) {
-      if (ff == buffer[j]) {
+      if (fillValue == buffer[j]) {
         outdata[j] = odb_missing_float;
       } else {
         outdata[j] = buffer[j];
@@ -851,152 +794,255 @@ void fillDoubleArray(const Group & storageGroup, const std::string varname,
   }
 }
 
-void fillIntArray(const Group & storageGroup, const std::string varname,
-                  const int numrows, std::vector<int> & outdata) {
+void fillIntArray(const Group &storageGroup, const std::string varname,
+                  const int numrows, const int columnsize,
+                  std::vector<double> &outdata) {
   if (storageGroup.vars.exists(varname)) {
-    std::vector<int> buffer;
-    storageGroup.vars[varname].read<int>(buffer);
-    const ioda::Variable var = storageGroup.vars[varname];
-    const int ff = ioda::detail::getFillValue<int>(var.getFillValue());
-    for (int j = 0; j < numrows; j++) {
-      if (ff == buffer[j]) {
-        outdata[j] = odb_missing_int;
+    if (columnsize == 4) {
+      std::vector<int> buf;
+      storageGroup.vars[varname].read<int>(buf);
+      const int fillValue = ioda::detail::getFillValue<int>(storageGroup.vars[varname].getFillValue());
+      for (int j = 0; j < numrows; j++) {
+        if (fillValue == buf[j]) {
+          outdata[j] = odb_missing_int;
+        } else {
+          outdata[j] = buf[j];
+        }
+      }
+    } else if (columnsize == 8) {
+      std::vector<long> buf;
+      long fillValue;
+      Variable var = storageGroup.vars.open(varname);
+      if (var.isA<long>()) {
+        var.read<long>(buf);
+        fillValue = ioda::detail::getFillValue<long>(var.getFillValue());
+      } else if (var.isA<int64_t>()) {
+        std::vector<int64_t> buf64;
+        var.read<int64_t>(buf64);
+        buf.reserve(buf64.size());
+        buf.assign(buf64.begin(), buf64.end());
+        fillValue = ioda::detail::getFillValue<int64_t>(var.getFillValue());
       } else {
-        outdata[j] = buffer[j];
+        std::string errMsg("ODB Writer: Unrecognized data type for column size of 8");
+        throw Exception(errMsg.c_str(), ioda_Here());
+      }
+      for (int j = 0; j < numrows; j++) {
+        if (fillValue == buf[j]) {
+          outdata[j] = odb_missing_int;
+        } else {
+          outdata[j] = buf[j];
+        }
       }
     }
   } else {
-     for (int j = 0; j < numrows; j++)
-       outdata[j] = odb_missing_int;
+    for (int j = 0; j < numrows; j++) outdata[j] = odb_missing_int;
   }
 }
 
-void readBodyColumns(Group storageGroup, const std::string v, int number_of_rows,
-                     bool errorWithColumnNotInObsSpace, std::vector<std::vector<double>> &obsvalue_store,
-                     std::vector<std::vector<double>> &effective_error_store,
-                     std::vector<std::vector<int>> &diagnosticflags_store,
-                     std::vector<std::vector<double>> &initial_obsvalue_store,
-                     std::vector<std::vector<int>> &effective_qc,
-                     std::vector<std::vector<double>> &obserror_store,
-                     std::vector<std::vector<double>> &derived_obserror_store,
-                     std::vector<std::vector<double>> &hofx_store,
-                     std::vector<std::vector<double>> &obsbias_store,
-                     std::vector<std::vector<double>> &pge_store) {
-    std::string effective_error_name = std::string(effective_error_prefix) + v;
-    std::string obserror_name = std::string(obserror_prefix) + v;
-    std::string derived_obserror_name = std::string(derived_obserror_prefix) + v;
-    std::string hofx_name = std::string(hofx_prefix) + v;
-    std::string obsbias_name = std::string(obsbias_prefix) + v;
-    std::string qc_name = std::string(qc_prefix) + v;
-    std::string pge_name = std::string(pge_prefix) + v;
-    std::string derived_obsvalue_name;
-    std::string initial_obsvalue_name;
-    if (storageGroup.vars.exists(std::string(derived_obsvalue_prefix)+v)) {
-      derived_obsvalue_name = std::string(derived_obsvalue_prefix) + v;
-      initial_obsvalue_name = std::string(obsvalue_prefix) + v;
-    } else {
-      derived_obsvalue_name = std::string(obsvalue_prefix) + v;
-      initial_obsvalue_name = std::string("");
-    }
-    std::vector<std::string> flags{"BackPerfFlag","BackRejectFlag","BuddyPerfFlag","BuddyRejectFlag","ClimPerfFlag","ClimRejectFlag","ConsistencyFlag","DataCorrectFlag","ExtremeValueFlag","FinalRejectFlag","NoAssimFlag","PermCorrectFlag","PermRejectFlag"};
-    TypeClass t = storageGroup.vars[derived_obsvalue_name].getType().getClass();
-    if (t == TypeClass::Float) {
-      // Setup arrays
-      std::vector<double> obsvalue_store_tmp(number_of_rows);
-      std::vector<double> initial_obsvalue_store_tmp(number_of_rows);
-      std::vector<double> effective_error_store_tmp(number_of_rows);
-      std::vector<double> hofx_store_tmp(number_of_rows);
-      std::vector<double> obsbias_store_tmp(number_of_rows);
-      std::vector<double> pge_store_tmp(number_of_rows);
-      std::vector<double> obserror_store_tmp(number_of_rows);
-      std::vector<double> derived_obserror_store_tmp(number_of_rows);
-      std::vector<int> effective_qc_tmp(number_of_rows);
-      std::vector<int> diagnosticflags_store_tmp(number_of_rows);
-      // Fill arrays with data if available
-      fillDoubleArray(storageGroup, derived_obsvalue_name, number_of_rows, obsvalue_store_tmp);
-      fillDoubleArray(storageGroup, initial_obsvalue_name, number_of_rows, initial_obsvalue_store_tmp);
-      fillDoubleArray(storageGroup, effective_error_name, number_of_rows, effective_error_store_tmp);
-      fillDoubleArray(storageGroup, hofx_name, number_of_rows, hofx_store_tmp);
-      fillDoubleArray(storageGroup, obsbias_name, number_of_rows, obsbias_store_tmp);
-      fillDoubleArray(storageGroup, pge_name, number_of_rows, pge_store_tmp);
-      fillDoubleArray(storageGroup, obserror_name, number_of_rows, obserror_store_tmp);
-      fillDoubleArray(storageGroup, derived_obserror_name, number_of_rows, derived_obserror_store_tmp);
-      fillIntArray(storageGroup, qc_name, number_of_rows, effective_qc_tmp);
-      // Fill diagnostic flags data
-      bool first_flag = true;
-      for (size_t ii = 0; ii < flags.size(); ii++) {
-        std::string diagnosticflags_name = std::string("DiagnosticFlags/") + flags[ii] + "/" + v;
-        if (first_flag) {
-          if (storageGroup.vars.exists(diagnosticflags_name)) {
-            std::vector<char> buf_char;
-            storageGroup.vars[diagnosticflags_name].read<char>(buf_char);
-            const ioda::Variable var = storageGroup.vars[diagnosticflags_name];
-            char ff = ioda::detail::getFillValue<char>(var.getFillValue());
-            for (int j = 0; j < number_of_rows; j++) {
-              if (ff == buf_char[j]) {
-                diagnosticflags_store_tmp[j] = 0;
-              } else {
-                int flag = 0;
-                if (buf_char[j] > 0) flag = flag | 1;
-                diagnosticflags_store_tmp[j] = flag;
-              }
-            }
-          } else {
-            for (int j = 0; j < number_of_rows; j++) {
-              diagnosticflags_store_tmp[j] = 0;
-            }
-          }
-        } else {
-          if (storageGroup.vars.exists(diagnosticflags_name)) {
-            std::vector<char> buf_char;
-            storageGroup.vars[diagnosticflags_name].read<char>(buf_char);
-            const ioda::Variable var = storageGroup.vars[diagnosticflags_name];
-            char ff = ioda::detail::getFillValue<char>(var.getFillValue());
-            for (int j = 0; j < number_of_rows; j++) {
-              if (ff != buf_char[j]) {
-                if (buf_char[j] > 0) diagnosticflags_store_tmp[j] = diagnosticflags_store_tmp[j] | (ii+1);
-              }
-            }
-          }
-        }
-        first_flag = false;
-      }
-      // Add data to the obs store
-      obsvalue_store.push_back(obsvalue_store_tmp);
-      if (storageGroup.vars.exists(initial_obsvalue_name)) {
-        initial_obsvalue_store.push_back(initial_obsvalue_store_tmp);
+void readColumn(const Group &storageGroup, const ColumnInfo column, std::vector<std::vector<double>> &data_store,
+                const int number_of_locations, const int number_of_channels) {
+  if (column.column_name == "date" || column.column_name == "receipt_date") {
+    std::string obsspacename = "MetaData/dateTime";
+    if (column.column_name == "receipt_date") obsspacename = "MetaData/receiptdateTime";
+    std::vector<int64_t> buf;
+    std::vector<double> data_store_tmp(number_of_locations);
+    storageGroup.vars[obsspacename].read<int64_t>(buf);
+    float fillValue = ioda::detail::getFillValue<float>(storageGroup.vars[obsspacename].getFillValue());
+    for (int j = 0; j < number_of_locations; j++) {
+      if (fillValue == buf[j]) {
+        data_store_tmp[j] = odb_missing_float;
       } else {
-        std::vector<double> tmp;
-        initial_obsvalue_store.push_back(tmp);
+        // struct tm is being used purely for time arithmetic.  The offset is incorrect but it
+        // doesn't matter in this context.
+        //
+        // Note the struct tm type wants the year to be the number of years since 1900
+        // and the month to be the number of months from January (ie, Jan to Dec -> 0 to 11)
+        //
+        // In order to avoid the 2038 issue (max positive value in a signed 32-bit int
+        // offset in seconds referenced to Jan 1, 1970 represents a datetime in Jan 2038)
+        // convert the offset in seconds to a set of offsets for seconds, minutes,
+        // hours and days and add those to the repective data members of the struct tm.
+        int64_t offset = buf[j];
+        struct tm time = { 0 };
+        time.tm_sec = column.epoch_second + (offset % 60);
+        offset /= 60;
+        time.tm_min = column.epoch_minute + (offset % 60);
+        offset /= 60;
+        time.tm_hour = column.epoch_hour + (offset % 24);
+        offset /= 24;
+        time.tm_mday = column.epoch_day + offset;
+        time.tm_mon = column.epoch_month - 1;
+        time.tm_year = column.epoch_year - 1900;
+        timegm(&time);
+        data_store_tmp[j] =
+            (time.tm_year + 1900) * 10000 + (time.tm_mon + 1) * 100 + time.tm_mday;
       }
-      effective_error_store.push_back(effective_error_store_tmp);
-      hofx_store.push_back(hofx_store_tmp);
-      obsbias_store.push_back(obsbias_store_tmp);
-      pge_store.push_back(pge_store_tmp);
-      obserror_store.push_back(obserror_store_tmp);
-      derived_obserror_store.push_back(derived_obserror_store_tmp);
-      diagnosticflags_store.push_back(diagnosticflags_store_tmp);
-      effective_qc.push_back(effective_qc_tmp);
     }
+    pushBackVector(data_store, data_store_tmp, number_of_locations, number_of_channels);
+  } else if (column.column_name == "time" || column.column_name == "receipt_time") {
+    std::string obsspacename = "MetaData/dateTime";
+    if (column.column_name == "receipt_date") obsspacename = "MetaData/receiptdateTime";
+    std::vector<int64_t> buf;
+    std::vector<double> data_store_tmp(number_of_locations);
+    storageGroup.vars[obsspacename].read<int64_t>(buf);
+    const float fillValue = ioda::detail::getFillValue<float>(storageGroup.vars[obsspacename].getFillValue());
+    for (int j = 0; j < number_of_locations; j++) {
+      if (fillValue == buf[j]) {
+        data_store_tmp[j] = odb_missing_float;
+      } else {
+        // See comments above in the date section.
+        int64_t offset = buf[j];
+        struct tm time = { 0 };
+        time.tm_sec = column.epoch_second + (offset % 60);
+        offset /= 60;
+        time.tm_min = column.epoch_minute + (offset % 60);
+        offset /= 60;
+        time.tm_hour = column.epoch_hour + (offset % 24);
+        offset /= 24;
+        time.tm_mday = column.epoch_day + offset;
+        time.tm_mon = column.epoch_month - 1;
+        time.tm_year = column.epoch_year - 1900;
+        timegm(&time);
+        data_store_tmp[j] = time.tm_hour * 10000 + time.tm_min * 100 + time.tm_sec;
+      }
+    }
+    pushBackVector(data_store, data_store_tmp, number_of_locations, number_of_channels);
+  } else if (column.column_name == "vertco_reference_1") {
+    std::vector<int> buf = getChannelNumbers(storageGroup);
+    std::vector<double> data_store_tmp(number_of_locations * number_of_channels);
+    for (int j = 0; j < number_of_locations; j++)
+      for (int i = 0; i < number_of_channels; i++)
+        data_store_tmp[j * number_of_channels + i] = static_cast<double>(buf[i]);
+    data_store.push_back(data_store_tmp);
+  } else if (column.column_type == TypeClass::Float) {
+    std::vector<double> data_store_tmp(number_of_locations);
+    fillFloatArray(storageGroup, column.column_name,
+                   number_of_locations, data_store_tmp);
+    pushBackVector(data_store, data_store_tmp, number_of_locations, number_of_channels);
+  } else if (column.column_type == TypeClass::Integer) {
+    std::vector<double> data_store_tmp(number_of_locations);
+    fillIntArray(storageGroup, column.column_name,
+                 number_of_locations, column.column_size,
+                 data_store_tmp);
+    pushBackVector(data_store, data_store_tmp, number_of_locations, number_of_channels);
+  } else if (column.column_type == TypeClass::String) {
+    std::vector<std::string> buf;
+    storageGroup.vars[column.column_name].read<std::string>(buf);
+    int num_cols = 1+((column.string_length-1)/8);
+    for (int c = 0; c < num_cols; c++) {
+      std::vector<double> data_store_tmp(number_of_locations);
+      for (int j = 0; j < number_of_locations; j++) {
+         unsigned char uc[8];
+         double dat;
+         for (int k = 8 * c; k < std::min(8 * (c+1),static_cast<int>(buf[j].size())); k++) {
+           uc[k-c*8] = buf[j][k];
+         }
+         for (int k = std::min(8 * (c+1),static_cast<int>(buf[j].size())); k < 8*(c+1); k++) {
+           uc[k-c*8] = '\0';
+         }
+         memcpy(&dat, uc, 8);
+         data_store_tmp[j] = dat;
+      }
+      pushBackVector(data_store, data_store_tmp, number_of_locations, number_of_channels);
+    }
+  } else if (column.column_type == TypeClass::Unknown) {
+    std::vector<double> data_store_tmp(number_of_locations);
+    for (int j = 0; j < number_of_locations; j++) {
+      data_store_tmp[j] = -1.0;
+    }
+    pushBackVector(data_store, data_store_tmp, number_of_locations, number_of_channels);
+  }
 }
 
-void writeODB(size_t num_varnos, int number_of_rows, odc::Writer<>::iterator writer, std::vector<std::vector<double>> &data_store, std::vector<std::vector<double>> &obsvalue_store, std::vector<std::vector<double>> &effective_error_store, std::vector<std::vector<int>> &diagnosticflags_store, std::vector<std::vector<double>> &initial_obsvalue_store, std::vector<std::vector<int>> &effective_qc, std::vector<std::vector<double>> &obserror_store, std::vector<std::vector<double>> &derived_obserror_store, std::vector<std::vector<double>> &hofx_store, std::vector<std::vector<double>> &obsbias_store, std::vector<std::vector<double>> &pge_store, int num_columns, std::vector<int> varnos) {
+void readBodyColumns(const Group &storageGroup, const ColumnInfo &column, const std::string v,
+                     const int number_of_rows,
+                     const std::map<std::string, std::string> &reverseMap,
+                     std::vector<std::vector<double>> &data_store) {
+  // Work out the correct ObsSpace variable to read
+  std::string obsspacename;
+  for (auto const& x : reverseMap) {
+    auto lastslash = x.first.find_last_of("/");
+    std::string obsspacevar = x.first.substr(lastslash+1);
+    if (obsspacevar == v && x.second == column.column_name)
+        obsspacename = x.first;
+  }
+  // Create data_store_tmp
+  std::vector<double> data_store_tmp(number_of_rows);
+  if (obsspacename.substr(0, obsspacename.find("/")) == "DiagnosticFlags") {
+    std::vector<char> buf_char;
+    storageGroup.vars[obsspacename].read<char>(buf_char);
+    const ioda::Variable var = storageGroup.vars[obsspacename];
+    const char fillValue = ioda::detail::getFillValue<char>(var.getFillValue());
+    for (int j = 0; j < number_of_rows; j++) {
+      if (fillValue == buf_char[j]) {
+        data_store_tmp[j] = 0;
+      } else {
+        const int flag = buf_char[j] > 0;
+        data_store_tmp[j] = flag;
+      }
+    }
+  } else if (column.column_type == TypeClass::Float) {
+    fillFloatArray(storageGroup, obsspacename,
+                   number_of_rows, data_store_tmp);
+  } else if (column.column_type == TypeClass::Integer) {
+    fillIntArray(storageGroup, obsspacename,
+                 number_of_rows, column.column_size,
+                 data_store_tmp);
+  } else if (column.column_type == TypeClass::String) {
+    std::vector<std::string> buf;
+    storageGroup.vars[obsspacename].read<std::string>(buf);
+    int num_cols = 1+((column.string_length-1)/8);
+    for (int c = 0; c < num_cols; c++) {
+      for (int j = 0; j < number_of_rows; j++) {
+         unsigned char uc[8];
+         double dat;
+         for (int k = 8 * c; k < std::min(8 * (c+1),static_cast<int>(buf[j].size())); k++) {
+           uc[k-c*8] = buf[j][k];
+         }
+         for (int k = std::min(8 * (c+1),static_cast<int>(buf[j].size())); k < 8*(c+1); k++) {
+           uc[k-c*8] = '\0';
+         }
+         memcpy(&dat, uc, 8);
+         data_store_tmp[j] = dat;
+      }
+    }
+  } else if (column.column_type == TypeClass::Unknown) {
+    std::vector<double> data_store_tmp(number_of_rows);
+    for (int j = 0; j < number_of_rows; j++) {
+      data_store_tmp[j] = -1.0;
+    }
+  }
+  // Push back tmp vector to input vector for output
+  data_store.push_back(data_store_tmp);
+}
+
+void writeODB(const size_t num_varnos, const int number_of_rows, odc::Writer<>::iterator writer,
+              const std::vector<std::vector<double>> &data_store,
+              const std::vector<std::vector<std::vector<double>>> &data_body_store,
+              const int num_indep, const int num_body,
+              const int num_body_missing, const std::vector<int> &varnos) {
   for (size_t varno = 0; varno < num_varnos; varno++) {
     for (int row = 0; row < number_of_rows; row++) {
-      for (int column = 0; column < num_columns-11; column++) {
-        (*writer)[column] = data_store[column][row];
+      int col_num = 0;
+      // Varno independent variables
+      for (int column = 0; column < num_indep; column++) {
+        (*writer)[col_num] = data_store[column][row];
+        col_num++;        
       }
-      (*writer)[num_columns-1] = pge_store[varno][row];
-      (*writer)[num_columns-2] = obsbias_store[varno][row];
-      (*writer)[num_columns-3] = hofx_store[varno][row];
-      (*writer)[num_columns-8] = effective_error_store[varno][row];
-      (*writer)[num_columns-7] = obserror_store[varno][row];
-      (*writer)[num_columns-6] = derived_obserror_store[varno][row];
-      (*writer)[num_columns-9] = obsvalue_store[varno][row];
-      if (initial_obsvalue_store[varno].size() > 0) (*writer)[num_columns-10] = initial_obsvalue_store[varno][row];
-      if (num_varnos > 0) (*writer)[num_columns-11] = varnos[varno];
-      (*writer)[num_columns-5] = diagnosticflags_store[varno][row];
-      (*writer)[num_columns-4] = effective_qc[varno][row];
+      // Varno dependent variables
+      if (num_varnos > 0) {
+        (*writer)[col_num] = varnos[varno];
+        col_num++;
+        for (int column = 0; column < num_body; column++) {
+          (*writer)[col_num] = data_body_store[column][varno][row];
+          col_num++;
+        }
+      }
+      // Missing varno dependent variables
+      for (int column = 0; column < num_body_missing; column++) {
+        (*writer)[col_num] = odb_missing_float;
+        col_num++;
+      }
       ++writer;
     }
   }
@@ -1008,11 +1054,9 @@ void writeODB(size_t num_varnos, int number_of_rows, odc::Writer<>::iterator wri
 
 }  // namespace
 
-Group createFile(const ODC_Parameters& odcparams,Group storageGroup) {
+Group createFile(const ODC_Parameters& odcparams, Group storageGroup) {
 
 #if odc_FOUND && oops_FOUND && eckit_FOUND
-  std::vector<ColumnInfo> column_infos;
-
   const int number_of_locations = getNumberOfLocations(storageGroup);
   int number_of_rows = number_of_locations;
   int number_of_channels = 0;
@@ -1040,12 +1084,14 @@ Group createFile(const ODC_Parameters& odcparams,Group storageGroup) {
                                                                       listOfVarNos);
 
   // Setup the varno independent columns and vectors
-  int num_columns = 0;
-  setupColumnInfo(storageGroup, columnMappings, column_infos, num_columns,
-                  odcparams.missingObsSpaceVariableAbort);
-  if (num_columns == 0) return storageGroup;
+  int num_varnoIndependnet_columns = 0;
+  std::vector<ColumnInfo> column_infos;
+  setupColumnInfo(storageGroup, columnMappings.varnoIndependentColumns,
+                  column_infos, num_varnoIndependnet_columns, odcparams.missingObsSpaceVariableAbort);
+  if (num_varnoIndependnet_columns == 0) return storageGroup;
 
   // Fill data_store with varno independent data
+  // access to this store is [col][rows]
   std::vector<std::vector<double>> data_store;
   for (const auto& v: column_infos) {
     readColumn(storageGroup, v, data_store, number_of_locations, number_of_channels);
@@ -1058,51 +1104,58 @@ Group createFile(const ODC_Parameters& odcparams,Group storageGroup) {
               columnMappings.varnoDependentColumns,
               odcparams.missingObsSpaceVariableAbort,
               varnos, varno_names);
-  const size_t num_varnos = varnos.size();
-  num_columns +=11; // Add 10 for the variables below and 1 for the varno array
-  std::vector<std::vector<double>> obsvalue_store;
-  std::vector<std::vector<double>> initial_obsvalue_store;
-  std::vector<std::vector<double>> effective_error_store;
-  std::vector<std::vector<double>> hofx_store;
-  std::vector<std::vector<double>> obsbias_store;
-  std::vector<std::vector<double>> pge_store;
-  std::vector<std::vector<double>> obserror_store;
-  std::vector<std::vector<double>> derived_obserror_store;
-  std::vector<std::vector<int>> diagnosticflags_store;
-  std::vector<std::vector<int>> effective_qc;
+  std::vector<ColumnInfo> body_column_infos;
+  std::vector<ColumnInfo> body_column_missing_infos;
+  int num_body_columns = 0;
+  setupBodyColumnInfo(storageGroup, columnMappings.varnoDependentColumnsNames,
+                      body_column_infos, body_column_missing_infos, num_body_columns,
+                      odcparams.missingObsSpaceVariableAbort);
 
-  // Read data which is the same dimensions as variables in ObsValue - varno dependent
-  for (const auto& v: varno_names) {
-    readBodyColumns(storageGroup, v, number_of_rows, odcparams.missingObsSpaceVariableAbort,
-                    obsvalue_store, effective_error_store, diagnosticflags_store,
-                    initial_obsvalue_store, effective_qc, obserror_store, derived_obserror_store,
-                    hofx_store, obsbias_store, pge_store);
+  const size_t num_varnos = varnos.size();
+  const int num_body_columns_missing = body_column_missing_infos.size();
+  // 1 added on for varno col
+  int total_num_cols = num_varnoIndependnet_columns + num_body_columns +
+                       num_body_columns_missing + 1;
+
+  // Read body columns in data store for body columns
+  // access to this store is [col][varno][rows]
+  std::vector<std::vector<std::vector<double>>> data_store_body;
+  for (const auto& col: body_column_infos) {
+    std::vector<std::vector<double>> data_tmp;
+    for (const auto &varno: varno_names) {
+      readBodyColumns(storageGroup, col, varno, number_of_rows,
+                      columnMappings.varnoDependentColumnsNames, data_tmp);
+    }
+    data_store_body.push_back(data_tmp);
   }
 
   // Setup the odb writer object
   eckit::PathName p(odcparams.outputFile);
   odc::Writer<> oda(p);
   odc::Writer<>::iterator writer = oda.begin();
-  writer->setNumberOfColumns(num_columns);
-  int column_number = 0;
-  for (const auto& v: column_infos) {
-    setODBColumn(columnMappings, v, writer, column_number);
-  }
-  writer->setColumn(column_number, "varno", odc::api::INTEGER);
-  writer->setColumn(column_number+1, "initial_obsvalue", odc::api::REAL);
-  writer->setColumn(column_number+2, "obsvalue", odc::api::REAL);
-  writer->setColumn(column_number+3, "effective_error", odc::api::REAL);
-  writer->setColumn(column_number+4, "obs_error", odc::api::REAL);
-  writer->setColumn(column_number+5, "derived_obs_error", odc::api::REAL);
-  writer->setColumn(column_number+6, "datum_flags", odc::api::INTEGER);
-  writer->setColumn(column_number+7, "effective_qc", odc::api::INTEGER);
-  writer->setColumn(column_number+8, "bgvalue", odc::api::REAL);
-  writer->setColumn(column_number+9, "obsbias", odc::api::REAL);
-  writer->setColumn(column_number+10, "pge", odc::api::REAL);
-  writer->writeHeader();
 
-  // Write the data to the ODB file
-  writeODB(num_varnos, number_of_rows, writer, data_store, obsvalue_store, effective_error_store, diagnosticflags_store, initial_obsvalue_store, effective_qc, obserror_store, derived_obserror_store, hofx_store, obsbias_store, pge_store, num_columns, varnos);
+  // Setup to column information
+  writer->setNumberOfColumns(total_num_cols);
+  int column_number = 0;
+  // Varno independent
+  for (const auto& v: column_infos) {
+    setODBColumn(columnMappings.varnoIndependentColumns, v, writer, column_number);
+  }
+  // Varno dependent
+  writer->setColumn(column_number, "varno",  odc::api::INTEGER);
+  column_number++;
+  for (const auto& col: body_column_infos) {
+    setODBBodyColumn(col, writer, column_number);
+  }
+  // Varno dependent not in the ObsSpace
+  for (const auto& col: body_column_missing_infos) {
+    setODBBodyColumn(col, writer, column_number);
+  }
+  // Write header and data to the ODB file
+  writer->writeHeader();
+  writeODB(num_varnos, number_of_rows, writer, data_store, data_store_body,
+           num_varnoIndependnet_columns, num_body_columns,
+           num_body_columns_missing, varnos);
 #endif
   return storageGroup;
 }

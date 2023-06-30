@@ -3,6 +3,12 @@ where:
 variables:
 # varno dependent
 - name: initial_obsvalue
+- name: obsvalue
+- name: obs_error
+- name: effective_qc
+- name: bgvalue
+- name: obsbias
+- name: dflag_badrawbt
 # varno independent
 - name: lat
 - name: lon
