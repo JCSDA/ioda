@@ -748,6 +748,12 @@ varno-independent columns:
     source: "height"
   - name: "OneDVar/skinTemperature"
     source: "skinT_onedvar"
+  - name: "NewMetaData/sensorCentralWavenumber"
+    source: "sensor_wvn"
+  - name: "NewMetaData/sensorChannelNumber"
+    source: "sensor_chan_num"
+  - name: "NewMetaData/variable_names"
+    source: "var_names"
 # The following are only for the ctests
   - name: "MetaData/DummyBoolVar"
     source: "dummyboolvar"

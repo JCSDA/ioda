@@ -43,3 +43,6 @@ variables:
 - name: ops_obsgroup
 - name: varno
 - name: seqno
+- name: sensor_wvn
+- name: sensor_chan_num
+- name: var_names

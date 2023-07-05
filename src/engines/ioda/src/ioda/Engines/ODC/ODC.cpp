@@ -407,27 +407,23 @@ ReverseColumnMappings collectReverseColumnMappings(const detail::ODBLayoutParame
                                                    const std::vector<int> &listOfVarNos) {
   ReverseColumnMappings mappings;
 
-  // Add variable that can't be passed via mapping file
-  // these have to be in the query file to be used
-  mappings.varnoIndependentColumns["MetaData/receiptdateTime"] = "receiptdate";
-
   // Process varno-independent columns
   for (const detail::VariableParameters &columnParams : layoutParams.variables.value()) {      
-    const auto it = std::find(columns.begin(), columns.end(), columnParams.source.value()) ;
+    const auto it = std::find(columns.begin(), columns.end(), columnParams.source.value());
     if (it != columns.end())
       mappings.varnoIndependentColumns[columnParams.name.value()] = columnParams.source.value();
   }
 
-  // Add some default ones if not present
-  if (mappings.varnoIndependentColumns.find("MetaData/latitude") == mappings.varnoIndependentColumns.end()) {
+  // Add some default and an optional variables if not present
+  if (mappings.varnoIndependentColumns.find("MetaData/latitude") == mappings.varnoIndependentColumns.end())
     mappings.varnoIndependentColumns["MetaData/latitude"] = "lat";
-  }
-  if (mappings.varnoIndependentColumns.find("MetaData/longitude") == mappings.varnoIndependentColumns.end()) {
+  if (mappings.varnoIndependentColumns.find("MetaData/longitude") == mappings.varnoIndependentColumns.end())
     mappings.varnoIndependentColumns["MetaData/longitude"] = "lon";
-  }
-  if (mappings.varnoIndependentColumns.find("MetaData/dateTime") == mappings.varnoIndependentColumns.end()) {
+  if (mappings.varnoIndependentColumns.find("MetaData/dateTime") == mappings.varnoIndependentColumns.end())
     mappings.varnoIndependentColumns["MetaData/dateTime"] = "date";
-  }
+  if (std::find(columns.begin(), columns.end(), "receipt_date") != columns.end() &&
+      mappings.varnoIndependentColumns.find("MetaData/receiptdateTime") == mappings.varnoIndependentColumns.end())
+    mappings.varnoIndependentColumns["MetaData/receiptdateTime"] = "receipt_date";
 
   for (const detail::VarnoDependentColumnParameters &columnParams :
        layoutParams.varnoDependentColumns.value()) {
@@ -474,6 +470,7 @@ void pushBackVector(std::vector<std::vector<double>> &data_store,
                     const std::vector<double> &inarray,
                     const size_t numlocs, const size_t numchans) {
   if (numchans == 0) {
+    ASSERT(inarray.size() == numlocs);
     data_store.push_back(inarray);
   } else if (inarray.size() == numlocs) {
     std::vector<double> data_store_tmp_chans(numlocs * numchans);
@@ -605,11 +602,8 @@ void setupColumnInfo(const Group &storageGroup, const std::map<std::string, std:
     }
   }
   // Check that map entry requested is in the ObsGroup
-  std::vector<std::string> column_names;
-  for (const auto &col : column_infos) column_names.push_back(col.column_name);
   for (const auto &map : reverseColumnMap) {
-    const auto found = std::find(column_names.begin(), column_names.end(), map.first);
-    if (found == column_names.end() && map.first != "MetaData/dateTime") {
+    if (!storageGroup.vars.exists(map.first)) {
       if (errorWithColumnNotInObsSpace) {
         throw eckit::UserError("Variable " + map.first +
                                " requested via the query file is not in the ObsSpace " +
@@ -844,13 +838,14 @@ void readColumn(const Group &storageGroup, const ColumnInfo column, std::vector<
   if (column.column_name == "date" || column.column_name == "receipt_date") {
     std::string obsspacename = "MetaData/dateTime";
     if (column.column_name == "receipt_date") obsspacename = "MetaData/receiptdateTime";
-    std::vector<int64_t> buf;
-    std::vector<double> data_store_tmp(number_of_locations);
+    const int arraySize = storageGroup.vars[obsspacename].getDimensions().numElements;
+    std::vector<double> data_store_date(arraySize);
+    std::vector<int64_t> buf;    
     storageGroup.vars[obsspacename].read<int64_t>(buf);
     float fillValue = ioda::detail::getFillValue<float>(storageGroup.vars[obsspacename].getFillValue());
-    for (int j = 0; j < number_of_locations; j++) {
+    for (int j = 0; j < arraySize; j++) {
       if (fillValue == buf[j]) {
-        data_store_tmp[j] = odb_missing_float;
+        data_store_date[j] = odb_missing_float;
       } else {
         // struct tm is being used purely for time arithmetic.  The offset is incorrect but it
         // doesn't matter in this context.
@@ -874,21 +869,22 @@ void readColumn(const Group &storageGroup, const ColumnInfo column, std::vector<
         time.tm_mon = column.epoch_month - 1;
         time.tm_year = column.epoch_year - 1900;
         timegm(&time);
-        data_store_tmp[j] =
+        data_store_date[j] =
             (time.tm_year + 1900) * 10000 + (time.tm_mon + 1) * 100 + time.tm_mday;
       }
     }
-    pushBackVector(data_store, data_store_tmp, number_of_locations, number_of_channels);
+    pushBackVector(data_store, data_store_date, number_of_locations, number_of_channels);
   } else if (column.column_name == "time" || column.column_name == "receipt_time") {
     std::string obsspacename = "MetaData/dateTime";
     if (column.column_name == "receipt_date") obsspacename = "MetaData/receiptdateTime";
-    std::vector<int64_t> buf;
-    std::vector<double> data_store_tmp(number_of_locations);
+    const int arraySize = storageGroup.vars[obsspacename].getDimensions().numElements;
+    std::vector<double> data_store_time(arraySize);
+    std::vector<int64_t> buf;    
     storageGroup.vars[obsspacename].read<int64_t>(buf);
     const float fillValue = ioda::detail::getFillValue<float>(storageGroup.vars[obsspacename].getFillValue());
-    for (int j = 0; j < number_of_locations; j++) {
+    for (int j = 0; j < arraySize; j++) {
       if (fillValue == buf[j]) {
-        data_store_tmp[j] = odb_missing_float;
+        data_store_time[j] = odb_missing_float;
       } else {
         // See comments above in the date section.
         int64_t offset = buf[j];
@@ -903,35 +899,38 @@ void readColumn(const Group &storageGroup, const ColumnInfo column, std::vector<
         time.tm_mon = column.epoch_month - 1;
         time.tm_year = column.epoch_year - 1900;
         timegm(&time);
-        data_store_tmp[j] = time.tm_hour * 10000 + time.tm_min * 100 + time.tm_sec;
+        data_store_time[j] = time.tm_hour * 10000 + time.tm_min * 100 + time.tm_sec;
       }
     }
-    pushBackVector(data_store, data_store_tmp, number_of_locations, number_of_channels);
+    pushBackVector(data_store, data_store_time, number_of_locations, number_of_channels);
   } else if (column.column_name == "vertco_reference_1") {
     std::vector<int> buf = getChannelNumbers(storageGroup);
-    std::vector<double> data_store_tmp(number_of_locations * number_of_channels);
+    std::vector<double> data_store_chan(number_of_locations * number_of_channels);
     for (int j = 0; j < number_of_locations; j++)
       for (int i = 0; i < number_of_channels; i++)
-        data_store_tmp[j * number_of_channels + i] = static_cast<double>(buf[i]);
-    data_store.push_back(data_store_tmp);
+        data_store_chan[j * number_of_channels + i] = static_cast<double>(buf[i]);
+    data_store.push_back(data_store_chan);
   } else if (column.column_type == TypeClass::Float) {
-    std::vector<double> data_store_tmp(number_of_locations);
+    const int arraySize = storageGroup.vars[column.column_name].getDimensions().numElements;
+    std::vector<double> data_store_float(arraySize);
     fillFloatArray(storageGroup, column.column_name,
-                   number_of_locations, data_store_tmp);
-    pushBackVector(data_store, data_store_tmp, number_of_locations, number_of_channels);
+                   arraySize, data_store_float);
+    pushBackVector(data_store, data_store_float, number_of_locations, number_of_channels);
   } else if (column.column_type == TypeClass::Integer) {
-    std::vector<double> data_store_tmp(number_of_locations);
+    const int arraySize = storageGroup.vars[column.column_name].getDimensions().numElements;
+    std::vector<double> data_store_int(arraySize);
     fillIntArray(storageGroup, column.column_name,
-                 number_of_locations, column.column_size,
-                 data_store_tmp);
-    pushBackVector(data_store, data_store_tmp, number_of_locations, number_of_channels);
+                 arraySize, column.column_size,
+                 data_store_int);
+    pushBackVector(data_store, data_store_int, number_of_locations, number_of_channels);
   } else if (column.column_type == TypeClass::String) {
+    const int arraySize = storageGroup.vars[column.column_name].getDimensions().numElements;
+    std::vector<double> data_store_string(arraySize);
     std::vector<std::string> buf;
     storageGroup.vars[column.column_name].read<std::string>(buf);
     int num_cols = 1+((column.string_length-1)/8);
     for (int c = 0; c < num_cols; c++) {
-      std::vector<double> data_store_tmp(number_of_locations);
-      for (int j = 0; j < number_of_locations; j++) {
+      for (int j = 0; j < arraySize; j++) {
          unsigned char uc[8];
          double dat;
          for (int k = 8 * c; k < std::min(8 * (c+1),static_cast<int>(buf[j].size())); k++) {
@@ -941,16 +940,17 @@ void readColumn(const Group &storageGroup, const ColumnInfo column, std::vector<
            uc[k-c*8] = '\0';
          }
          memcpy(&dat, uc, 8);
-         data_store_tmp[j] = dat;
+         data_store_string[j] = dat;
       }
-      pushBackVector(data_store, data_store_tmp, number_of_locations, number_of_channels);
+      pushBackVector(data_store, data_store_string, number_of_locations, number_of_channels);
     }
   } else if (column.column_type == TypeClass::Unknown) {
-    std::vector<double> data_store_tmp(number_of_locations);
-    for (int j = 0; j < number_of_locations; j++) {
-      data_store_tmp[j] = -1.0;
+    const int arraySize = storageGroup.vars[column.column_name].getDimensions().numElements;
+    std::vector<double> data_store_unknown(arraySize);
+    for (int j = 0; j < arraySize; j++) {
+      data_store_unknown[j] = -1.0;
     }
-    pushBackVector(data_store, data_store_tmp, number_of_locations, number_of_channels);
+    pushBackVector(data_store, data_store_unknown, number_of_locations, number_of_channels);
   }
 }
 
