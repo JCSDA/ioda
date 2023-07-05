@@ -65,6 +65,21 @@ std::shared_ptr<std::string> getMissingValue(const ioda::ReaderPoolBase & ioPool
 }
 
 //--------------------------------------------------------------------------------
+// Special case for broadcasting a DateTimeFormat enum type via eckit broadcast.
+void broadcastDateTimeFormat(const eckit::mpi::Comm & comm, DateTimeFormat & enumVar,
+                             const int root) {
+    int tempInt;
+    if (comm.rank() == root) {
+        // Send enum as int since eckit MPI broadcast doesn't accept enum types
+        tempInt = static_cast<int>(enumVar);
+        comm.broadcast(tempInt, root);
+    } else {
+        comm.broadcast(tempInt, root);
+        enumVar = static_cast<DateTimeFormat>(tempInt);
+    }
+}
+
+//--------------------------------------------------------------------------------
 void convertEpochStringToDtime(const std::string & epochString, util::DateTime & epochDtime) {
      // expected format is: "seconds since YYYY-MM-DDThh:mm:ssZ"
      std::size_t pos = epochString.find_last_of(" ");
@@ -78,238 +93,283 @@ void convertEpochStringToDtime(const std::string & epochString, util::DateTime &
 }
 
 //--------------------------------------------------------------------------------
-void checkForRequiredVars(const ioda::Group & srcGroup, const std::string & sourceName,
-                          DateTimeFormat & dtimeFormat, bool & emptyFile) {
-    // Get number of locations from obs source
-    std::size_t sourceNlocs = srcGroup.vars.open("Location").getDimensions().dimsCur[0];
-    emptyFile = false;
-    if (sourceNlocs == 0) {
-        emptyFile = true;
-        oops::Log::warning() << "WARNING: Input file " << sourceName
-                             << " contains zero observations" << std::endl;
-    }
+void checkForRequiredVars(const ioda::Group & srcGroup, const eckit::mpi::Comm & commAll,
+                          std::string & sourceName, ioda::DateTimeFormat & dtimeFormat,
+                          bool & emptyFile) {
+    if (commAll.rank() == 0) {
+        // Get number of locations from obs source
+        std::size_t sourceNlocs = srcGroup.vars.open("Location").getDimensions().dimsCur[0];
+        emptyFile = false;
+        if (sourceNlocs == 0) {
+            emptyFile = true;
+            oops::Log::warning() << "WARNING: Input file " << sourceName
+                                 << " contains zero observations" << std::endl;
+        }
 
-    // Check to see which format the source data time is in. There are two old formats
-    // that need to be obsoleted soon, plus the conventional format.
-    //
-    // Old formats
-    //    offset:
-    //        datetime refrenece is in global attribute "date_time"
-    //        variable values are float offset from reference in hours
-    //
-    //    string:
-    //        variable values are ISO 8601 formatted strings
-    //
-    // Conventional format
-    //    epoch:
-    //        datetime reference (epoch) is stored in variable attribute "units"
-    //            value is "seconds since <dtime>" where <dtime> is an
-    //            ISO 8601 formatted string
-    //        variable values are int64_t holding offset in seconds from the epoch
-    //
-    // TODO(srh) For now the old formats will be automatically converted to the epoch
-    // format before storing in the obs space container. Warnings will be issued if
-    // an old format is being used. Eventually, we need to turn the warnings into
-    // errors and only allow the epoch format moving forward.
+        // Check to see which format the source data time is in. There are two old formats
+        // that need to be obsoleted soon, plus the conventional format.
+        //
+        // Old formats
+        //    offset:
+        //        datetime refrenece is in global attribute "date_time"
+        //        variable values are float offset from reference in hours
+        //
+        //    string:
+        //        variable values are ISO 8601 formatted strings
+        //
+        // Conventional format
+        //    epoch:
+        //        datetime reference (epoch) is stored in variable attribute "units"
+        //            value is "seconds since <dtime>" where <dtime> is an
+        //            ISO 8601 formatted string
+        //        variable values are int64_t holding offset in seconds from the epoch
+        //
+        // TODO(srh) For now the old formats will be automatically converted to the epoch
+        // format before storing in the obs space container. Warnings will be issued if
+        // an old format is being used. Eventually, we need to turn the warnings into
+        // errors and only allow the epoch format moving forward.
 
-    // Check for datetime formats with lowest precedence first. That way subsequent
-    // (higher precedence) can override in case several formats exist in the file.
-    dtimeFormat = DateTimeFormat::None;
-    if (srcGroup.vars.exists("MetaData/time")) { dtimeFormat = DateTimeFormat::Offset; }
-    if (srcGroup.vars.exists("MetaData/datetime")) { dtimeFormat = DateTimeFormat::String; }
-    if (srcGroup.vars.exists("MetaData/dateTime")) { dtimeFormat = DateTimeFormat::Epoch; }
+        // Check for datetime formats with lowest precedence first. That way subsequent
+        // (higher precedence) can override in case several formats exist in the file.
+        dtimeFormat = DateTimeFormat::None;
+        if (srcGroup.vars.exists("MetaData/time")) { dtimeFormat = DateTimeFormat::Offset; }
+        if (srcGroup.vars.exists("MetaData/datetime")) { dtimeFormat = DateTimeFormat::String; }
+        if (srcGroup.vars.exists("MetaData/dateTime")) { dtimeFormat = DateTimeFormat::Epoch; }
 
-    // Check to see if required metadata variables exist
-    bool haveRequiredMetadata = dtimeFormat != DateTimeFormat::None;
-    haveRequiredMetadata = haveRequiredMetadata && srcGroup.vars.exists("MetaData/latitude");
-    haveRequiredMetadata = haveRequiredMetadata && srcGroup.vars.exists("MetaData/longitude");
+        // Check to see if required metadata variables exist
+        bool haveRequiredMetadata = dtimeFormat != DateTimeFormat::None;
+        haveRequiredMetadata = haveRequiredMetadata && srcGroup.vars.exists("MetaData/latitude");
+        haveRequiredMetadata = haveRequiredMetadata && srcGroup.vars.exists("MetaData/longitude");
 
-    // Only do this check if there are more than zero obs in the file (sourceNlocs > 0)
-    // When a file does contain zero obs, we want to allow for an "empty" file with
-    // no variables. This makes it easier for r2d2 to provide a valid "empty" file when there
-    // are no obs available.
-    if ((sourceNlocs > 0) && (!haveRequiredMetadata)) {
-      std::string errorMsg =
-          std::string("\nOne or more of the following metadata variables are missing ") +
-          std::string("from the input obs data source:\n") +
-          std::string("    MetaData/dateTime (preferred) or MetaData/datetime or MetaData/time\n") +
-          std::string("    MetaData/latitude\n") +
-          std::string("    MetaData/longitude\n");
-      throw Exception(errorMsg.c_str(), ioda_Here());
-    }
+        // Only do this check if there are more than zero obs in the file (sourceNlocs > 0)
+        // When a file does contain zero obs, we want to allow for an "empty" file with
+        // no variables. This makes it easier for r2d2 to provide a valid "empty" file when there
+        // are no obs available.
+        if ((sourceNlocs > 0) && (!haveRequiredMetadata)) {
+          std::string errorMsg =
+              std::string("\nOne or more of the following metadata variables are missing ") +
+              std::string("from the input obs data source:\n") +
+              std::string("    MetaData/dateTime (preferred) or MetaData/datetime ") +
+              std::string("or MetaData/time\n") +
+              std::string("    MetaData/latitude\n") +
+              std::string("    MetaData/longitude\n");
+          throw Exception(errorMsg.c_str(), ioda_Here());
+        }
 
-    if (dtimeFormat == DateTimeFormat::String) {
-      oops::Log::info() << "WARNING: string style datetime will cause performance degredation "
-                        << "and will eventually be deprecated." << std::endl
-                        << "WARNING: Please update your datetime data to the epoch style "
-                        << "representation using the new variable: MetaData/dateTime."
-                        << std::endl;
-    }
+        if (dtimeFormat == DateTimeFormat::String) {
+          oops::Log::info() << "WARNING: string style datetime will cause performance degredation "
+                            << "and will eventually be deprecated." << std::endl
+                            << "WARNING: Please update your datetime data to the epoch style "
+                            << "representation using the new variable: MetaData/dateTime."
+                            << std::endl;
+        }
 
-    if (dtimeFormat == DateTimeFormat::Offset) {
-      oops::Log::info() << "WARNING: the reference/offset style datetime will be deprecated soon."
-                        << std::endl
-                        << "WARNING: Please update your datetime data to the epoch style "
-                        << "representation using the new variable: MetaData/dateTime."
-                        << std::endl;
+        if (dtimeFormat == DateTimeFormat::Offset) {
+          oops::Log::info() << "WARNING: the reference/offset style datetime will "
+                            << "be deprecated soon."
+                            << std::endl
+                            << "WARNING: Please update your datetime data to the epoch style "
+                            << "representation using the new variable: MetaData/dateTime."
+                            << std::endl;
+        }
+
+        oops::mpi::broadcastString(commAll, sourceName, 0);
+        broadcastDateTimeFormat(commAll, dtimeFormat, 0);
+        oops::mpi::broadcastBool(commAll, emptyFile, 0);
+    } else {
+        oops::mpi::broadcastString(commAll, sourceName, 0);
+        broadcastDateTimeFormat(commAll, dtimeFormat, 0);
+        oops::mpi::broadcastBool(commAll, emptyFile, 0);
     }
 }
 
 //--------------------------------------------------------------------------------
-void readSourceDtimeVar(const ioda::Group & srcGroup, std::vector<int64_t> & dtimeVals,
-                         std::string & dtimeEpoch, DateTimeFormat dtimeFormat) {
-    // Read in variable data (converting if necessary) and determine epoch value
-    ioda::Variable dtimeVar;
-    if (dtimeFormat == DateTimeFormat::Epoch) {
-        // Simply read in var values and copy the units attribute
-        dtimeVar = srcGroup.vars.open("MetaData/dateTime");
-        dtimeVar.atts.open("units").read<std::string>(dtimeEpoch);
-        dtimeVar.read<int64_t>(dtimeVals);
-    } else if (dtimeFormat == DateTimeFormat::String) {
-        // Set the epoch to the linux standard epoch
-        std::string epochDtimeString = std::string("1970-01-01T00:00:00Z");
-        dtimeEpoch = std::string("seconds since ") + epochDtimeString;
+void readSourceDtimeVar(const ioda::Group & srcGroup, const eckit::mpi::Comm & commAll,
+                        const bool emptyFile, const ioda::DateTimeFormat dtimeFormat,
+                        std::vector<int64_t> & dtimeVals, std::string & dtimeEpoch) {
+    // Initialize the output variables to values corresponding to an empty file. That way
+    // if we have an empty file, then we can skip the file read and broadcast steps.
+    dtimeVals.resize(0);
+    dtimeEpoch = "seconds since 1970-01-01T00:00:00Z";
 
-        std::vector<std::string> dtStrings;
-        dtimeVar = srcGroup.vars.open("MetaData/datetime");
-        dtimeVar.read<std::string>(dtStrings);
+    if (!emptyFile) {
+        if (commAll.rank() == 0) {
+            // Read in variable data (converting if necessary) and determine epoch value
+            ioda::Variable dtimeVar;
+            if (dtimeFormat == DateTimeFormat::Epoch) {
+                // Simply read in var values and copy the units attribute
+                dtimeVar = srcGroup.vars.open("MetaData/dateTime");
+                dtimeVar.atts.open("units").read<std::string>(dtimeEpoch);
+                dtimeVar.read<int64_t>(dtimeVals);
+            } else if (dtimeFormat == DateTimeFormat::String) {
+                // Set the epoch to the linux standard epoch
+                std::string epochDtimeString = std::string("1970-01-01T00:00:00Z");
+                dtimeEpoch = std::string("seconds since ") + epochDtimeString;
 
-        util::DateTime epochDtime(epochDtimeString);
-        dtimeVals =  convertDtStringsToTimeOffsets(epochDtime, dtStrings);
-    } else if (dtimeFormat == DateTimeFormat::Offset) {
-        // Set the epoch to the "date_time" global attribute
-        int refDtimeInt;
-        srcGroup.atts.open("date_time").read<int>(refDtimeInt);
+                std::vector<std::string> dtStrings;
+                dtimeVar = srcGroup.vars.open("MetaData/datetime");
+                dtimeVar.read<std::string>(dtStrings);
 
-        int year = refDtimeInt / 1000000;     // refDtimeInt contains YYYYMMDDhh
-        int tempInt = refDtimeInt % 1000000;
-        int month = tempInt / 10000;       // tempInt contains MMDDhh
-        tempInt = tempInt % 10000;
-        int day = tempInt / 100;           // tempInt contains DDhh
-        int hour = tempInt % 100;
-        util::DateTime refDtime(year, month, day, hour, 0, 0);
+                util::DateTime epochDtime(epochDtimeString);
+                dtimeVals =  convertDtStringsToTimeOffsets(epochDtime, dtStrings);
+            } else if (dtimeFormat == DateTimeFormat::Offset) {
+                // Set the epoch to the "date_time" global attribute
+                int refDtimeInt;
+                srcGroup.atts.open("date_time").read<int>(refDtimeInt);
 
-        dtimeEpoch = std::string("seconds since ") + refDtime.toString();
+                int year = refDtimeInt / 1000000;     // refDtimeInt contains YYYYMMDDhh
+                int tempInt = refDtimeInt % 1000000;
+                int month = tempInt / 10000;       // tempInt contains MMDDhh
+                tempInt = tempInt % 10000;
+                int day = tempInt / 100;           // tempInt contains DDhh
+                int hour = tempInt % 100;
+                util::DateTime refDtime(year, month, day, hour, 0, 0);
 
-        std::vector<float> dtTimeOffsets;
-        dtimeVar = srcGroup.vars.open("MetaData/time");
-        dtimeVar.read<float>(dtTimeOffsets);
-        dtimeVals.resize(dtTimeOffsets.size());
-        for (std::size_t i = 0; i < dtTimeOffsets.size(); ++i) {
-            dtimeVals[i] = static_cast<int64_t>(lround(dtTimeOffsets[i] * 3600.0));
+                dtimeEpoch = std::string("seconds since ") + refDtime.toString();
+
+                std::vector<float> dtTimeOffsets;
+                dtimeVar = srcGroup.vars.open("MetaData/time");
+                dtimeVar.read<float>(dtTimeOffsets);
+                dtimeVals.resize(dtTimeOffsets.size());
+                for (std::size_t i = 0; i < dtTimeOffsets.size(); ++i) {
+                    dtimeVals[i] = static_cast<int64_t>(lround(dtTimeOffsets[i] * 3600.0));
+                }
+            }
+
+            oops::mpi::broadcastVector<int64_t>(commAll, dtimeVals, 0);
+            oops::mpi::broadcastString(commAll, dtimeEpoch, 0);
+        } else {
+            oops::mpi::broadcastVector<int64_t>(commAll, dtimeVals, 0);
+            oops::mpi::broadcastString(commAll, dtimeEpoch, 0);
         }
     }
 }
 
 //--------------------------------------------------------------------------------
-void initSourceIndices(const ioda::Group & srcGroup, const eckit::mpi::Comm * commPool,
-        const std::vector<int64_t> & dtimeValues, const int64_t windowStart,
-        const int64_t windowEnd, const bool applyLocCheck,
+void initSourceIndices(const ioda::Group & srcGroup, const eckit::mpi::Comm & commAll,
+        const bool emptyFile, const std::vector<int64_t> & dtimeValues,
+        const int64_t windowStart, const int64_t windowEnd, const bool applyLocCheck,
         std::vector<float> & lonValues, std::vector<float> & latValues,
-        std::vector<std::size_t> & sourceLocIndices, std::size_t & srcNlocs,
-        std::size_t & srcNlocsInsideTimeWindow, std::size_t & srcNlocsOutsideTimeWindow,
-        std::size_t & srcNlocsRejectQc, std::size_t & globalNlocs) {
-    // The existence of the datetime, longitude and latitude variables have been verified
-    // at this point. Also, the datetime data has been converted to the epoch format if
-    // that was necessary. Need to read in the lon and lat values and save them for
-    // downstream processing.
-    Variable lonVar = srcGroup.vars.open("MetaData/longitude");
-    lonVar.read<float>(lonValues);
-    Variable latVar = srcGroup.vars.open("MetaData/latitude");
-    latVar.read<float>(latValues);
-
-    // Note that the time window filter hasn't been applied yet so sourceLocIndices can
-    // possibly be larger here than it should be after the time window filter is applied.
-    // Make sure all of the MPI ranks have sourceLocIndices set to the same size for
-    // the broadcast below. Also make sure that the resulting sourceLocIndices is sized
-    // appropriately on all ranks.
-    srcNlocs = dtimeValues.size();
-    sourceLocIndices.resize(srcNlocs);
+        std::vector<std::size_t> & sourceLocIndices,
+        std::size_t & srcNlocs, std::size_t & srcNlocsInsideTimeWindow,
+        std::size_t & srcNlocsOutsideTimeWindow, std::size_t & srcNlocsRejectQc,
+        std::size_t & globalNlocs) {
+    // Initialize the output variables to values corresponding to an empty file. That way
+    // if we have an empty file, then we can skip the file read and broadcast steps.
+    lonValues.resize(0);
+    latValues.resize(0);
+    sourceLocIndices.resize(0);
+    srcNlocs = 0;
     srcNlocsInsideTimeWindow = 0;
     srcNlocsOutsideTimeWindow = 0;
     srcNlocsRejectQc = 0;
     globalNlocs = 0;
 
-    // All the ranks need the exact same values for their sourceLocIndices vector, so
-    // have rank 0 do the calculations and then broadcast the results to the other ranks.
-    if (commPool->rank() == 0) {
-        if (applyLocCheck) {
-            // Currently have two filters:
-            //    1. Remove locations outside the timing window
-            //    2. Remove locations that have mising values in either of lon or lat
+    if (!emptyFile) {
+        if (commAll.rank() == 0) {
+            // The existence of the datetime, longitude and latitude variables has been
+            // verified at this point. Also, the datetime data has been converted to
+            // the epoch format if that was necessary. Need to read in the lon and lat
+            // values and save them for downstream processing.
+            Variable lonVar = srcGroup.vars.open("MetaData/longitude");
+            lonVar.read<float>(lonValues);
+            Variable latVar = srcGroup.vars.open("MetaData/latitude");
+            latVar.read<float>(latValues);
 
-            // Need the fill values for lon and lat to do the second check
-            detail::FillValueData_t lonFvData = lonVar.getFillValue();
-            float lonFillValue = detail::getFillValue<float>(lonFvData);
-            detail::FillValueData_t latFvData = latVar.getFillValue();
-            float latFillValue = detail::getFillValue<float>(latFvData);
+            // Note that the time window filter hasn't been applied yet so sourceLocIndices
+            // can possibly be larger here than it should be after the time window filter
+            // is applied. Make sure all of the MPI ranks have sourceLocIndices set to the
+            // same size for the broadcast below. Also make sure that the resulting
+            // sourceLocIndices is sized appropriately on all ranks.
+            srcNlocs = dtimeValues.size();
+            sourceLocIndices.resize(srcNlocs);
+            srcNlocsInsideTimeWindow = 0;
+            srcNlocsOutsideTimeWindow = 0;
+            srcNlocsRejectQc = 0;
+            globalNlocs = 0;
 
-            // Keep all locations that fall inside the timing window. Note numLocsSelecte
-            // will be set to the number of locations stored in the output vectors after
-            // exiting the following for loop.
-            for (std::size_t i = 0; i < dtimeValues.size(); ++i) {
-                // Check the timing window first since having a location outside the timing
-                // window likely occurs more than having issues with the lat and lon values.
-                // Note that a datetime matching the window start will be rejects. This is
-                // done to prevent such a datetime appearing in two adjecnt windows.
-                bool keepThisLocation =
-                    ((dtimeValues[i] > windowStart) && (dtimeValues[i] <= windowEnd));
-                if (keepThisLocation) {
-                    // Keep count of how many obs fall inside the time window
-                    srcNlocsInsideTimeWindow++;
-                    if ((lonValues[i] == lonFillValue) || (latValues[i] == latFillValue)) {
-                        // Keep count of how many obs get rejected by QC checks
-                        srcNlocsRejectQc++;
-                        keepThisLocation = false;
+            if (applyLocCheck) {
+                // Currently have two filters:
+                //    1. Remove locations outside the timing window
+                //    2. Remove locations that have mising values in either of lon or lat
+
+                // Need the fill values for lon and lat to do the second check
+                detail::FillValueData_t lonFvData = lonVar.getFillValue();
+                float lonFillValue = detail::getFillValue<float>(lonFvData);
+                detail::FillValueData_t latFvData = latVar.getFillValue();
+                float latFillValue = detail::getFillValue<float>(latFvData);
+
+                // Keep all locations that fall inside the timing window. Note numLocsSelecte
+                // will be set to the number of locations stored in the output vectors after
+                // exiting the following for loop.
+                for (std::size_t i = 0; i < dtimeValues.size(); ++i) {
+                    // Check the timing window first since having a location outside the timing
+                    // window likely occurs more than having issues with the lat and lon values.
+                    // Note that a datetime matching the window start will be rejects. This is
+                    // done to prevent such a datetime appearing in two adjecnt windows.
+                    bool keepThisLocation =
+                        ((dtimeValues[i] > windowStart) && (dtimeValues[i] <= windowEnd));
+                    if (keepThisLocation) {
+                        // Keep count of how many obs fall inside the time window
+                        srcNlocsInsideTimeWindow++;
+                        if ((lonValues[i] == lonFillValue) || (latValues[i] == latFillValue)) {
+                            // Keep count of how many obs get rejected by QC checks
+                            srcNlocsRejectQc++;
+                            keepThisLocation = false;
+                        }
+                    } else {
+                        // Keep a count of how many obs were rejected due to being outside
+                        // the timing window
+                       srcNlocsOutsideTimeWindow++;
                     }
-                } else {
-                    // Keep a count of how many obs were rejected due to being outside
-                    // the timing window
-                   srcNlocsOutsideTimeWindow++;
-                }
 
-                // Obs has passed all of the quality checks so add it to the list of records
-                if (keepThisLocation) {
-                    sourceLocIndices[globalNlocs] = i;
-                    globalNlocs++;
+                    // Obs has passed all of the quality checks so add it to the list of records
+                    if (keepThisLocation) {
+                        sourceLocIndices[globalNlocs] = i;
+                        globalNlocs++;
+                    }
                 }
+            } else {
+                // Skipping QC checks so set sourceLocIndices to all of the locations.
+                std::iota(sourceLocIndices.begin(), sourceLocIndices.end(), 0);
+                globalNlocs = sourceLocIndices.size();
+                srcNlocsInsideTimeWindow = globalNlocs;
             }
+            // At this point:
+            //   srcNlocs == the original total number of locations in the obs source.
+            //   srcNlocsInsideTimeWindow == the number of locations in the obs source that
+            //                               fall inside the time window.
+            //   srcNlocsOutsideTimeWindow == the number of locations in the obs source that
+            //                                fall outside the time window.
+            //   srcNlocsRejectQc == the number of locations in the obs source that
+            //                       got rejected by the QC checks
+            //   globalNlocs == the number of locations that made it through the time window
+            //                  filter and the check on lat, lon for missing values
+            //   sourceLocIndices is sized with the original total number of locations in the
+            //                    obs source
+            //
+            // We need to resize sourceLocIndices to globalNlocs since this vector's size
+            // is used to set the local number of nlocs for the obs space on this MPI task.
+            sourceLocIndices.resize(globalNlocs);
+
+            oops::mpi::broadcastVector<float>(commAll, lonValues, 0);
+            oops::mpi::broadcastVector<float>(commAll, latValues, 0);
+            oops::mpi::broadcastVector<std::size_t>(commAll, sourceLocIndices, 0);
+            commAll.broadcast(srcNlocs, 0);
+            commAll.broadcast(srcNlocsInsideTimeWindow, 0);
+            commAll.broadcast(srcNlocsOutsideTimeWindow, 0);
+            commAll.broadcast(srcNlocsRejectQc, 0);
+            commAll.broadcast(globalNlocs, 0);
         } else {
-            // Skipping QC checks so set sourceLocIndices to all of the locations.
-            std::iota(sourceLocIndices.begin(), sourceLocIndices.end(), 0);
-            globalNlocs = sourceLocIndices.size();
-            srcNlocsInsideTimeWindow = globalNlocs;
+            oops::mpi::broadcastVector<float>(commAll, lonValues, 0);
+            oops::mpi::broadcastVector<float>(commAll, latValues, 0);
+            oops::mpi::broadcastVector<std::size_t>(commAll, sourceLocIndices, 0);
+            commAll.broadcast(srcNlocs, 0);
+            commAll.broadcast(srcNlocsInsideTimeWindow, 0);
+            commAll.broadcast(srcNlocsOutsideTimeWindow, 0);
+            commAll.broadcast(srcNlocsRejectQc, 0);
+            commAll.broadcast(globalNlocs, 0);
         }
-        // At this point:
-        //   srcNlocs == the original total number of locations in the obs source.
-        //   srcNlocsInsideTimeWindow == the number of locations in the obs source that
-        //                               fall inside the time window.
-        //   srcNlocsOutsideTimeWindow == the number of locations in the obs source that
-        //                                fall outside the time window.
-        //   srcNlocsRejectQc == the number of locations in the obs source that
-        //                       got rejected by the QC checks
-        //   globalNlocs == the number of locations that made it through the time window
-        //                  filter and the check on lat, lon for missing values
-        //   sourceLocIndices is sized with the original total number of locations in the
-        //                    obs source
-        //
-        // We need to resize sourceLocIndices to globalNlocs since this vector's size
-        // is used to set the local number of nlocs for the obs space on this MPI task.
-        commPool->broadcast(srcNlocs, 0);
-        commPool->broadcast(srcNlocsInsideTimeWindow, 0);
-        commPool->broadcast(srcNlocsOutsideTimeWindow, 0);
-        commPool->broadcast(srcNlocsRejectQc, 0);
-        commPool->broadcast(globalNlocs, 0);
-        sourceLocIndices.resize(globalNlocs);
-        commPool->broadcast(sourceLocIndices, 0);
-    } else {
-        commPool->broadcast(srcNlocs, 0);
-        commPool->broadcast(srcNlocsInsideTimeWindow, 0);
-        commPool->broadcast(srcNlocsOutsideTimeWindow, 0);
-        commPool->broadcast(srcNlocsRejectQc, 0);
-        commPool->broadcast(globalNlocs, 0);
-        sourceLocIndices.resize(globalNlocs);
-        commPool->broadcast(sourceLocIndices, 0);
     }
 }
 
@@ -389,103 +449,117 @@ void buildObsGroupingKeys(const ioda::Group & srcGroup,
 }
 
 //--------------------------------------------------------------------------------
-void assignRecordNumbers(const ioda::Group & srcGroup, const eckit::mpi::Comm * commPool,
-                         const std::vector<int64_t> & dtimeValues,
+void assignRecordNumbers(const ioda::Group & srcGroup, const eckit::mpi::Comm & commAll,
+                         const bool emptyFile, const std::vector<int64_t> & dtimeValues,
                          const std::vector<float> & lonValues,
                          const std::vector<float> & latValues,
                          const std::vector<std::size_t> & sourceLocIndices,
                          const std::vector<std::string> & obsGroupVarList,
                          std::vector<std::size_t> & sourceRecNums) {
-    // If the obsGroupVarList is empty, then the obs grouping feature is not being
-    // used and the record number assignment can simply be sequential numbering
-    // starting with zero. Otherwise, assign unique record numbers to each unique
-    // combination of the values in the obsGroupVarList.
-    std::size_t locSize = sourceLocIndices.size();
-    sourceRecNums.resize(locSize);
+    // Initialize the output variables to values corresponding to an empty file. That way
+    // if we have an empty file, then we can skip the file read and broadcast steps.
+    sourceRecNums.resize(0);
 
-    // All the ranks need the exact same values for their sourceLocIndices vector, so
-    // have rank 0 do the calculations and then broadcast the results to the other ranks.
-    if (commPool->rank() == 0) {
-        if (obsGroupVarList.size() == 0) {
-            // Do not apply obs grouping. Simply assign sequential numbering.
-            std::iota(sourceRecNums.begin(), sourceRecNums.end(), 0);
-        } else {
-            // Apply obs grouping. First convert all of the group variable data values for this
-            // frame into string key values. This is done in one call to minimize accessing the
-            // frame data for the grouping variables.
-            std::vector<std::string> obsGroupingKeys(locSize);
-            buildObsGroupingKeys(srcGroup, dtimeValues, lonValues, latValues,
-                                 obsGroupVarList, sourceLocIndices, obsGroupingKeys);
+    if (!emptyFile) {
+        if (commAll.rank() == 0) {
+            // If the obsGroupVarList is empty, then the obs grouping feature is not being
+            // used and the record number assignment can simply be sequential numbering
+            // starting with zero. Otherwise, assign unique record numbers to each unique
+            // combination of the values in the obsGroupVarList.
+            std::size_t locSize = sourceLocIndices.size();
+            sourceRecNums.resize(locSize);
 
-            std::size_t recnum = 0;
-            std::map<std::string, std::size_t> obsGroupingMap;
-            for (std::size_t i = 0; i < locSize; ++i) {
-              if (obsGroupingMap.find(obsGroupingKeys[i]) == obsGroupingMap.end()) {
-                // key is not present in the map -> assign current record number to
-                // the current key and move to the next record number
-                obsGroupingMap.insert(
-                    std::pair<std::string, std::size_t>(obsGroupingKeys[i], recnum));
-                recnum += 1;
-              }
-              sourceRecNums[i] = obsGroupingMap.at(obsGroupingKeys[i]);
+            if (obsGroupVarList.size() == 0) {
+                // Do not apply obs grouping. Simply assign sequential numbering.
+                std::iota(sourceRecNums.begin(), sourceRecNums.end(), 0);
+            } else {
+                // Apply obs grouping. First convert all of the group variable data values for this
+                // frame into string key values. This is done in one call to minimize accessing the
+                // frame data for the grouping variables.
+                std::vector<std::string> obsGroupingKeys(locSize);
+                buildObsGroupingKeys(srcGroup, dtimeValues, lonValues, latValues,
+                                     obsGroupVarList, sourceLocIndices, obsGroupingKeys);
+
+                std::size_t recnum = 0;
+                std::map<std::string, std::size_t> obsGroupingMap;
+                for (std::size_t i = 0; i < locSize; ++i) {
+                  if (obsGroupingMap.find(obsGroupingKeys[i]) == obsGroupingMap.end()) {
+                    // key is not present in the map -> assign current record number to
+                    // the current key and move to the next record number
+                    obsGroupingMap.insert(
+                        std::pair<std::string, std::size_t>(obsGroupingKeys[i], recnum));
+                    recnum += 1;
+                  }
+                  sourceRecNums[i] = obsGroupingMap.at(obsGroupingKeys[i]);
+                }
             }
+            oops::mpi::broadcastVector<std::size_t>(commAll, sourceRecNums, 0);
+        } else {
+            oops::mpi::broadcastVector<std::size_t>(commAll, sourceRecNums, 0);
         }
-        commPool->broadcast(sourceRecNums, 0);
-    } else {
-        commPool->broadcast(sourceRecNums, 0);
     }
 }
 
 //------------------------------------------------------------------------------------
-void applyMpiDistribution(const std::shared_ptr<Distribution> & dist,
+void applyMpiDistribution(const std::shared_ptr<Distribution> & dist, const bool emptyFile,
                           const std::vector<float> & lonValues,
                           const std::vector<float> & latValues,
                           const std::vector<std::size_t> & sourceLocIndices,
                           const std::vector<std::size_t> & sourceRecNums,
                           std::vector<std::size_t> & localLocIndices,
                           std::vector<std::size_t> & localRecNums,
-                          std::size_t & localNlocs, std::size_t & localNumRecs) {
-    // Walk through each location and record the index and record number that
-    // the distribution object determines to keep.
-    std::size_t rowNum = 0;
-    std::size_t recNum = 0;
-    std::set<std::size_t> uniqueRecNums;
-    for (std::size_t i = 0; i < sourceLocIndices.size(); ++i) {
-        rowNum = sourceLocIndices[i];
-        recNum = sourceRecNums[i];
+                          std::size_t & localNlocs, std::size_t & localNrecs) {
+    // Initialize the output variables to values corresponding to an empty file. That way
+    // if we have an empty file, then we can skip the file read and broadcast steps.
+    localLocIndices.resize(0);
+    localRecNums.resize(0);
+    localNlocs = 0;
+    localNrecs = 0;
 
-        eckit::geometry::Point2 point(lonValues[rowNum], latValues[rowNum]);
+    if (!emptyFile) {
+        // Walk through each location and record the index and record number that
+        // the distribution object determines to keep.
+        std::size_t rowNum = 0;
+        std::size_t recNum = 0;
+        std::set<std::size_t> uniqueRecNums;
+        for (std::size_t i = 0; i < sourceLocIndices.size(); ++i) {
+            rowNum = sourceLocIndices[i];
+            recNum = sourceRecNums[i];
 
-        dist->assignRecord(recNum, rowNum, point);
+            eckit::geometry::Point2 point(lonValues[rowNum], latValues[rowNum]);
 
-        if (dist->isMyRecord(recNum)) {
-            localLocIndices.push_back(rowNum);
-            localRecNums.push_back(recNum);
-            uniqueRecNums.insert(recNum);
+            dist->assignRecord(recNum, rowNum, point);
+
+            if (dist->isMyRecord(recNum)) {
+                localLocIndices.push_back(rowNum);
+                localRecNums.push_back(recNum);
+                uniqueRecNums.insert(recNum);
+            }
         }
+        localNlocs = localLocIndices.size();
+        localNrecs = uniqueRecNums.size();
     }
-    localNlocs = localLocIndices.size();
-    localNumRecs = uniqueRecNums.size();
 }
 
 //--------------------------------------------------------------------------------
-void setIndexAndRecordNums(const ioda::Group & srcGroup, const eckit::mpi::Comm * commPool,
-        const std::shared_ptr<Distribution> & distribution,
-        const std::vector<int64_t> & dtimeValues, const int64_t windowStart,
-        const int64_t windowEnd, const bool applyLocCheck,
+void setIndexAndRecordNums(const ioda::Group & srcGroup, const eckit::mpi::Comm & commAll,
+        const bool emptyFile, const std::shared_ptr<Distribution> & distribution,
+        const std::vector<int64_t> & dtimeValues,
+        const int64_t windowStart, const int64_t windowEnd, const bool applyLocCheck,
         const std::vector<std::string> & obsGroupVarList,
         std::vector<float> & lonValues, std::vector<float> & latValues,
         std::size_t & srcNlocs, std::size_t & srcNlocsInsideTimeWindow,
         std::size_t & srcNlocsOutsideTimeWindow, std::size_t & srcNlocsRejectQc,
-        std::vector<std::size_t> & localLocIndices, std::vector<std::size_t> & localRecNums,
+        std::vector<std::size_t> & localLocIndices,
+        std::vector<std::size_t> & localRecNums,
         std::size_t & globalNlocs, std::size_t & localNlocs, std::size_t & localNrecs) {
     // The initSourceIndices function will skip QC checks if applyLocCheck is false.
     // in this case the sourceLocIndices vector is initialized to the entire set from
     // the obs source. The initSourceIndices uses the lon and lat values so it
     // also will read in those values from the obs source.
     std::vector<std::size_t> sourceLocIndices;
-    initSourceIndices(srcGroup, commPool, dtimeValues, windowStart, windowEnd, applyLocCheck,
-                      lonValues, latValues, sourceLocIndices, srcNlocs,
+    initSourceIndices(srcGroup, commAll, emptyFile, dtimeValues, windowStart, windowEnd,
+                      applyLocCheck, lonValues, latValues, sourceLocIndices, srcNlocs,
                       srcNlocsInsideTimeWindow, srcNlocsOutsideTimeWindow,
                       srcNlocsRejectQc, globalNlocs);
 
@@ -493,12 +567,12 @@ void setIndexAndRecordNums(const ioda::Group & srcGroup, const eckit::mpi::Comm 
     // feature if obsGroupVarList is not empty. Otherwise assign sequential
     // nubmers starting with zero.
     std::vector<std::size_t> sourceRecNums;
-    assignRecordNumbers(srcGroup, commPool, dtimeValues, lonValues, latValues,
+    assignRecordNumbers(srcGroup, commAll, emptyFile, dtimeValues, lonValues, latValues,
                         sourceLocIndices, obsGroupVarList, sourceRecNums);
 
     // Apply the MPI distribution which will result in the setting of the local location
     // indices and their corresponding record numbers.
-    applyMpiDistribution(distribution, lonValues, latValues, sourceLocIndices,
+    applyMpiDistribution(distribution, emptyFile, lonValues, latValues, sourceLocIndices,
                          sourceRecNums, localLocIndices, localRecNums,
                          localNlocs, localNrecs);
 }

@@ -14,6 +14,7 @@
 
 #include "eckit/mpi/Comm.h"
 
+#include "oops/mpi/mpi.h"
 #include "oops/util/DateTime.h"
 
 namespace ioda {
@@ -37,26 +38,32 @@ void convertEpochStringToDtime(const std::string & epochString, util::DateTime &
 
 /// @brief Check obs source for required variables
 /// @param srcGroup ioda Group object holding obs source data (file or generator)
+/// @param commAll mpi communicator group holding all MPI tasks
 /// @param sourceName name of the input obs source
 /// @param dtimeFormat format of the datetime variable in the obs source
 /// @param emptyFile flag when true have a file with zero obs
-void checkForRequiredVars(const ioda::Group & srcGroup, const std::string & sourceName,
-                          ioda::DateTimeFormat & dtimeFormat, bool & emptyFile);
+void checkForRequiredVars(const ioda::Group & srcGroup, const eckit::mpi::Comm & commAll,
+                          std::string & sourceName, ioda::DateTimeFormat & dtimeFormat,
+                          bool & emptyFile);
 
 /// @brief Read date time variable values from obs source
 /// @param obsSource ioda Group object holding obs source data (file or generator)
+/// @param commAll mpi communicator group holding all MPI tasks
+/// @param emptyFile flag when true have a file with zero obs
+/// @param dtimeFormat enum value denoting which datetime format exists in the obs source
 /// @param dtimeVals vector of int64_t to hold date time values
 /// @param dtimeEpoch string value for datetime variable units
-/// @param dtimeFormat enum value denoting which datetime format exists in the obs source
-void readSourceDtimeVar(const ioda::Group & srcGroup, std::vector<int64_t> & dtimeVals,
-                        std::string & dtimeEpoch, ioda::DateTimeFormat dtimeFormat);
+void readSourceDtimeVar(const ioda::Group & srcGroup, const eckit::mpi::Comm & commAll,
+                        const bool emptyFile, const ioda::DateTimeFormat dtimeFormat,
+                        std::vector<int64_t> & dtimeVals, std::string & dtimeEpoch);
 
 /// @brief Initialize the location indices
 /// @detail If applyLocCheck is false, then sourceLocIndices is initialize to the entire
 /// set of locations in the obs source. Otherwise the timing window filter is applied
 /// along with the removal of locations with missing lon and lat values.
 /// @param obsSource ioda Group object holding obs source data (file or generator)
-/// @param commPool communicator group for the io pool
+/// @param commAll mpi communicator group holding all MPI tasks
+/// @param emptyFile flag when true have a file with zero obs
 /// @param dtimeValues vector of int64_t to hold date time values
 /// @param windowStart int64_t timing window start relative to the dtimeValues epoch
 /// @param windowEnd int64_t timing window end relative to the dtimeValues epoch
@@ -69,9 +76,9 @@ void readSourceDtimeVar(const ioda::Group & srcGroup, std::vector<int64_t> & dti
 /// @param srcNlocsOutsideTimeWindow count of locations that are outside the time window
 /// @param srcNlocsRejectQc count of locations that were rejected by the QC checks
 /// @param globalNlocs total number of locations kept (before MPI distribution)
-void initSourceIndices(const ioda::Group & srcGroup, const eckit::mpi::Comm * commPool,
-        const std::vector<int64_t> & dtimeValues, const int64_t windowStart,
-        const int64_t windowEnd, const bool applyLocCheck,
+void initSourceIndices(const ioda::Group & srcGroup, const eckit::mpi::Comm & commAll,
+        const bool emptyFile, const std::vector<int64_t> & dtimeValues,
+        const int64_t windowStart, const int64_t windowEnd, const bool applyLocCheck,
         std::vector<float> & lonValues, std::vector<float> & latValues,
         std::vector<std::size_t> & sourceLocIndices,
         std::size_t & srcNlocs, std::size_t & srcNlocsInsideTimeWindow,
@@ -101,7 +108,8 @@ void buildObsGroupingKeys(const ioda::Group & srcGroup,
 /// with the location indices). Do either of these algorithms with awareness of any
 /// locations that got filtered out during the QC checks (eg., outside the timing window).
 /// @param srcGroup ioda Group object holding obs source data (file or generator)
-/// @param commPool communicator group for the io pool
+/// @param commAll mpi communicator group holding all MPI tasks
+/// @param emptyFile flag when true have a file with zero obs
 /// @param dtimeValues vector of int64_t to hold date time values
 /// @param lonValues vector of float to hold longitude values
 /// @param latValues vector of float to hold latitude values
@@ -109,8 +117,8 @@ void buildObsGroupingKeys(const ioda::Group & srcGroup,
 /// @param obsGroupVarList list of groupgin vars from YAML spec
 /// "obs space.obsdatain.obsgrouping.group variables"
 /// @param sourceRecNums assigned record number for each entry in sourceLocIndices
-void assignRecordNumbers(const ioda::Group & srcGroup, const eckit::mpi::Comm * commPool,
-                         const std::vector<int64_t> & dtimeValues,
+void assignRecordNumbers(const ioda::Group & srcGroup, const eckit::mpi::Comm & commAll,
+                         const bool emptyFile, const std::vector<int64_t> & dtimeValues,
                          const std::vector<float> & lonValues,
                          const std::vector<float> & latValues,
                          const std::vector<std::size_t> & sourceLocIndices,
@@ -119,6 +127,7 @@ void assignRecordNumbers(const ioda::Group & srcGroup, const eckit::mpi::Comm * 
 
 /// @brief Determine which locations and records belong to this MPI process
 /// @param dist MPI distribution object
+/// @param emptyFile flag when true have a file with zero obs
 /// @param lonValues vector of float to hold longitude values
 /// @param latValues vector of float to hold latitude values
 /// @param sourceLocIndices index list generated by initSourceIndices
@@ -127,18 +136,19 @@ void assignRecordNumbers(const ioda::Group & srcGroup, const eckit::mpi::Comm * 
 /// @param localRecNums list of record numbers to keep on this MPI process
 /// @param localNlocs number of locations kept on this MPI process
 /// @param localNrecs number of unique record numbers kept on this MPI process
-void applyMpiDistribution(const std::shared_ptr<Distribution> & dist,
+void applyMpiDistribution(const std::shared_ptr<Distribution> & dist, const bool emptyFile,
                           const std::vector<float> & lonValues,
                           const std::vector<float> & latValues,
                           const std::vector<std::size_t> & sourceLocIndices,
                           const std::vector<std::size_t> & sourceRecNums,
                           std::vector<std::size_t> & localLocIndices,
                           std::vector<std::size_t> & localRecNums,
-                          std::size_t & localNlocs, std::size_t & localNumRecs);
+                          std::size_t & localNlocs, std::size_t & localNrecs);
 
 /// @brief Determine the location indices and record numbers of locations to keep
 /// @param srcGroup ioda Group object holding obs source data (file or generator)
-/// @param commPool communicator group for the io pool
+/// @param commAll mpi communicator group holding all MPI tasks
+/// @param emptyFile flag when true have a file with zero obs
 /// @param dtimeValues vector of int64_t to hold date time values
 /// @param windowStart int64_t timing window start relative to the dtimeValues epoch
 /// @param windowEnd int64_t timing window end relative to the dtimeValues epoch
@@ -155,8 +165,8 @@ void applyMpiDistribution(const std::shared_ptr<Distribution> & dist,
 /// @param globalNlocs total number of locations kept (before MPI distribution)
 /// @param localNlocs number of locations kept on this MPI process
 /// @param localNrecs number of records kept on this MPI process
-void setIndexAndRecordNums(const ioda::Group & srcGroup, const eckit::mpi::Comm * commPool,
-        const std::shared_ptr<Distribution> & distribution,
+void setIndexAndRecordNums(const ioda::Group & srcGroup, const eckit::mpi::Comm & commAll,
+        const bool emptyFile, const std::shared_ptr<Distribution> & distribution,
         const std::vector<int64_t> & dtimeValues,
         const int64_t windowStart, const int64_t windowEnd, const bool applyLocCheck,
         const std::vector<std::string> & obsGroupVarList,

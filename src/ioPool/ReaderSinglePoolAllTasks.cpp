@@ -11,6 +11,7 @@
 
 #include <algorithm>
 #include <cstdio>
+#include <cstring>
 #include <memory>
 #include <numeric>
 #include <sstream>
@@ -18,6 +19,8 @@
 
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/exception/Exceptions.h"
+#include "eckit/mpi/Comm.h"
+#include "eckit/mpi/DataType.h"
 
 #include "ioda/Copying.h"
 #include "ioda/distribution/Distribution.h"
@@ -93,46 +96,48 @@ void ReaderSinglePoolAllTasks::load(Group & destGroup) {
     ss << *readerEngine;
     readerSrc_ = ss.str();
 
-    // Check for the required variables in the obs source
-    DateTimeFormat dtimeFormat;
-    bool emptyFile;
-    checkForRequiredVars(fileGroup, readerSrc_, dtimeFormat, emptyFile);
+    // Rank 0 does the preliminary checking and formation of the source location
+    // indices and source record numbers. These are identical operations on each
+    // MPI task so file io can be reduced by having rank 0 only do the io, generate
+    // the indices and record numbers and broadcast that information to the other
+    // ranks.
 
+    // Check for required variables
+    DateTimeFormat dtimeFormat;  // which format the source date time variable is using
+    bool emptyFile;              // true if the source is empty
+    checkForRequiredVars(fileGroup, this->commAll(), readerSrc_, dtimeFormat, emptyFile);
+
+    // Read and convert the dtimeValues to the current epoch format if older formats are
+    // being used in the source.
     std::vector<int64_t> dtimeValues;
-    std::string dtimeEpoch("seconds since 1970-01-01T00:00:00Z");
+    std::string dtimeEpoch("");
+    readSourceDtimeVar(fileGroup, this->commAll(), emptyFile, dtimeFormat,
+                       dtimeValues, dtimeEpoch);
+
+
+    // Convert the window start and end times to int64_t offsets from the dtimeEpoch
+    // value. This will provide for a very fast "inside the timing window check".
+    util::DateTime epochDt;
+    convertEpochStringToDtime(dtimeEpoch, epochDt);
+    const int64_t windowStart = (winStart_ - epochDt).toSeconds();
+    const int64_t windowEnd = (winEnd_ - epochDt).toSeconds();
+
+    // Determine which locations will be retained by this process for its obs space
+    // source_loc_indices_ holds the original source location index (position in
+    // the 1D Location variable) and recNums_ holds the assigned record number.
     std::vector<float> lonValues;
     std::vector<float> latValues;
-    if (!emptyFile) {
-        // Read the datetime variable in the obs source. This function will convert the
-        // older formats (offset, string) to the conventional epoch format.
-        readSourceDtimeVar(fileGroup, dtimeValues, dtimeEpoch, dtimeFormat);
+    setIndexAndRecordNums(fileGroup, this->commAll(), emptyFile, distribution_, dtimeValues,
+                          windowStart, windowEnd,
+                          readerEngine->applyLocationsCheck(), obsGroupVarList_,
+                          lonValues, latValues, sourceNlocs_,
+                          sourceNlocsInsideTimeWindow_, sourceNlocsOutsideTimeWindow_,
+                          sourceNlocsRejectQC_, locIndices_, recNums_,
+                          globalNlocs_, nlocs_, nrecs_);
 
-        // Convert the window start and end times to int64_t offsets from the dtimeEpoch
-        // value. This will provide for a very fast "inside the timing window check".
-        util::DateTime epochDt;
-        convertEpochStringToDtime(dtimeEpoch, epochDt);
-        const int64_t windowStart = (winStart_ - epochDt).toSeconds();
-        const int64_t windowEnd = (winEnd_ - epochDt).toSeconds();
-
-        // Determine which locations will be retained by this process for its obs space
-        // source_loc_indices_ holds the original source location index (position in
-        // the 1D Location variable) and recNums_ holds the assigned record number.
-        //
-        // For now, use the commAll_ (instead of commPool_) communicator. We are
-        // effectively making the io pool consist of all of the tasks in the commAll_
-        // communicator group.
-        setIndexAndRecordNums(fileGroup, &(commAll_), distribution_, dtimeValues,
-                              windowStart, windowEnd,
-                              readerEngine->applyLocationsCheck(), obsGroupVarList_,
-                              lonValues, latValues, sourceNlocs_,
-                              sourceNlocsInsideTimeWindow_, sourceNlocsOutsideTimeWindow_,
-                              sourceNlocsRejectQC_, locIndices_, recNums_,
-                              globalNlocs_, nlocs_, nrecs_);
-    }
     // Check for consistency of the set of nlocs counts.
     ASSERT(sourceNlocs_ == sourceNlocsInsideTimeWindow_ + sourceNlocsOutsideTimeWindow_);
-    ASSERT(sourceNlocs_ ==
-              globalNlocs_ + sourceNlocsOutsideTimeWindow_ + sourceNlocsRejectQC_);
+    ASSERT(sourceNlocs_ == globalNlocs_ + sourceNlocsOutsideTimeWindow_ + sourceNlocsRejectQC_);
 
     // Create the memory backend for the destGroup
     // TODO(srh) There needs to be a memory Engine structure created with ObsStore and
@@ -190,7 +195,7 @@ void ReaderSinglePoolAllTasks::groupRanks(IoPoolGroupMap & rankGrouping) {
     // to itself.
     rankGrouping.clear();
     for (std::size_t i = 0; i < commAll_.size(); ++i) {
-        rankGrouping[i] = std::move(std::vector<int>(1, i));
+        rankGrouping[i] = std::vector<int>(1, i);
     }
 }
 

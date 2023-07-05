@@ -149,6 +149,15 @@ class ReaderPoolBase : public IoPoolBase {
   /// \brief time window end
   const util::DateTime & winEnd_;
 
+  /// \brief list of variables being assimilated (used by the generator engines)
+  const std::vector<std::string> & obsVarNames_;
+
+  /// \brief ioda Distribution object associated with the ObsSpace object
+  const std::shared_ptr<Distribution> & distribution_;
+
+  /// \brief list of variables used for the obs grouping function
+  const std::vector<std::string> & obsGroupVarList_;
+
   /// \brief missing value for string variables
   std::shared_ptr<std::string> stringMissingValue_;
 
@@ -172,15 +181,6 @@ class ReaderPoolBase : public IoPoolBase {
 
   /// \brief assigned record numbers for indices in locIndices_
   std::vector<std::size_t> recNums_;
-
-  /// \brief list of variables being assimilated (used by the generator engines)
-  const std::vector<std::string> & obsVarNames_;
-
-  /// \brief ioda Distribution object associated with the ObsSpace object
-  const std::shared_ptr<Distribution> & distribution_;
-
-  /// \brief list of variables used for the obs grouping function
-  const std::vector<std::string> & obsGroupVarList_;
 };
 
 }  // namespace ioda

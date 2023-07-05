@@ -113,7 +113,7 @@ void ReaderSinglePool::groupRanks(IoPoolGroupMap & rankGrouping) {
     // to itself.
     rankGrouping.clear();
     for (std::size_t i = 0; i < commAll_.size(); ++i) {
-        rankGrouping[i] = std::move(std::vector<int>(1, i));
+        rankGrouping[i] = std::vector<int>(1, i);
     }
 }
 
