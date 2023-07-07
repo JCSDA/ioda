@@ -232,13 +232,9 @@ ObsSpace::ObsSpace(const Parameters_ & params, const eckit::mpi::Comm & comm,
     createMissingObsErrors();
 
     oops::Log::debug() << obsname() << ": " << globalNumLocsOutsideTimeWindow()
-      << " observations are outside of time window out of "
-      << (globalNumLocs() + globalNumLocsOutsideTimeWindow() + globalNumLocsRejectQC())
-      << std::endl;
+      << " observations are outside of time window out of " << sourceNumLocs() << std::endl;
     oops::Log::debug() << obsname() << ": " << globalNumLocsRejectQC()
-      << " observations were rejected by QC checks out of "
-      << (globalNumLocs() + globalNumLocsOutsideTimeWindow() + globalNumLocsRejectQC())
-      << std::endl;
+      << " observations were rejected by QC checks out of " << sourceNumLocs() << std::endl;
 
     oops::Log::trace() << "ObsSpace::ObsSpace constructed name = " << obsname() << std::endl;
     if (print_run_stats_ > 0) {
@@ -1331,8 +1327,9 @@ void ObsSpace::extendObsSpace(const ObsExtendParameters & params) {
 
     // Increment nlocs on this processor.
     dim_info_.set_dim_size(ObsDimensionId::Location, numExtendedLocs);
-    // Increment gnlocs_.
+    // Increment gnlocs_ and source_nlocs_.
     gnlocs_ += globalNumCompanionLocs;
+    source_nlocs_ += globalNumCompanionLocs;
   }
 }
 

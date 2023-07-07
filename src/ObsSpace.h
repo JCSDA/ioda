@@ -197,10 +197,14 @@ namespace ioda {
 
         /// \brief return the total nubmer of locations from the obs source (input file
         ///  or generator)
+        /// \details Note that this value includes the additional number of locations due to
+        ///  extending the obs space
         std::size_t sourceNumLocs() const {return source_nlocs_;}
 
         /// \brief return the total number of locations in the corresponding obs spaces
-        ///        across all MPI tasks
+        ///  across all MPI tasks
+        /// \details Note that this value includes the additional number of locations due to
+        ///  extending the obs space
         std::size_t globalNumLocs() const {return gnlocs_;}
 
         /// \brief return number of locations from obs source that were outside the time window
@@ -271,6 +275,12 @@ namespace ioda {
         /// locations from the input ioda file corresponding to locations stored in this
         /// ObsSpace object -- i.e. those that were selected by the timing window filter
         /// and the MPI distribution.
+        ///
+        /// Note that the original indices from the input file can range from 0 to
+        /// sourceNumLocs() - 1, so care must be taken to allow for that range of index
+        /// values even when some of the original locations have been removed due to
+        /// the timing window filtering and/or missing values in the dateTime, latitude,
+        /// or longitude values.
         ///
         /// Example 1: Suppose the RoundRobin distribution is used and and there are two
         /// MPI tasks (ranks 0 and 1). The even-numbered locations from the file will go
