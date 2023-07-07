@@ -578,6 +578,42 @@ void setIndexAndRecordNums(const ioda::Group & srcGroup, const eckit::mpi::Comm 
 }
 
 //--------------------------------------------------------------------------------
+void setDistributionMap(const ReaderPoolBase & ioPool,
+                        const std::vector<std::size_t> & localLocIndices,
+                        const std::vector<std::pair<int, int>> & rankAssignment,
+                        std::map<int, std::vector<std::size_t>> & distributionMap) {
+    const int msgIsSize = 1;
+    const int msgIsData = 2;
+
+    // Note that all of the exchange will be done using the "All" communicator, and
+    // we are simply using the "Pool" communicator to identify if this rank is a
+    // member of the io pool.
+    int dataSize;
+    distributionMap.empty();
+    if (ioPool.commPool() != nullptr) {
+        // On an io pool member, need to collect the local source indices from
+        // all of the associated non io pool members.
+        for (auto & rankAssign : rankAssignment) {
+            int fromRankNum = rankAssign.first;
+            ioPool.commAll().receive(&dataSize, 1, fromRankNum, msgIsSize);
+            distributionMap[fromRankNum].resize(dataSize);
+            ioPool.commAll().receive(distributionMap[fromRankNum].data(), dataSize,
+                                     fromRankNum, msgIsData);
+        }
+    } else {
+        // On a non io pool member, need to send local source indices to the
+        // associated io pool member. The rankAssignment structure should contain
+        // only one rank.
+        for (auto & rankAssign : rankAssignment) {
+            int toRankNum = rankAssign.first;
+            dataSize = localLocIndices.size();
+            ioPool.commAll().send(&dataSize, 1, toRankNum, msgIsSize);
+            ioPool.commAll().send(localLocIndices.data(), dataSize, toRankNum, msgIsData);
+        }
+    }
+}
+
+//--------------------------------------------------------------------------------
 template <typename VarType>
 void readerCreateVariable(const std::string & varName, const Variable & srcVar,
                           const ioda::Dimensions_t adjustNlocs, Has_Variables & destVars,

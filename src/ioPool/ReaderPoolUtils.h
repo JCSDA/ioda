@@ -177,6 +177,17 @@ void setIndexAndRecordNums(const ioda::Group & srcGroup, const eckit::mpi::Comm 
         std::vector<std::size_t> & localRecNums,
         std::size_t & globalNlocs, std::size_t & localNlocs, std::size_t & localNrecs);
 
+/// @brief gather local index values on rank 0
+/// @param ioPool ReaderPoolBase object
+/// @param localLocIndices list of indices to keep on this MPI process
+/// @param rankAssignment structure that indicates which ranks are associated with each other
+/// @param distributionMap map describing which source locations go to each associated
+/// non pool member
+void setDistributionMap(const ReaderPoolBase & ioPool,
+                        const std::vector<std::size_t> & localLocIndices,
+                        const std::vector<std::pair<int, int>> & rankAssignment,
+                        std::map<int, std::vector<std::size_t>> & distributionMap);
+
 /// @brief Transfer group contents from a file group to a memory group using an io pool
 /// @param ioPool ioda ReaderPoolBase object
 /// @param fileGroup is the source file group

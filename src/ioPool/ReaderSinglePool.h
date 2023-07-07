@@ -81,12 +81,11 @@ class ReaderSinglePool : public ReaderPoolBase {
   /// \brief reader engine source for printing (eg, input file name)
   std::string readerSrc_;
 
-  /// \brief group ranks into sets for the io pool assignments
-  /// \detail This function will create a vector of vector of ints structure which
-  /// shows how to form the io pool and how to assign the non io pool ranks to each
-  /// of the ranks in the io pool.
-  /// \param rankGrouping structure that maps ranks outside the pool to ranks in the pool
-  void groupRanks(IoPoolGroupMap & rankGrouping) override;
+  /// \brief mapping that shows which source location indices go to which ranks
+  /// \detail This structure is a map of size_t vectors where the index of
+  /// the outer vector denotes the rank in the commAll communicator, and the
+  /// entries in the inner vector denote which locations need to go to that rank.
+  std::map<int, std::vector<std::size_t>> distributionMap_;
 };
 
 }  // namespace ioda
