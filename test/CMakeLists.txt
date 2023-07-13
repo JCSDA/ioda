@@ -114,8 +114,8 @@ list( APPEND ioda_test_input
   testinput/iodatest_extendedobsspace_halo.yaml
   testinput/iodatest_sort.yaml
   testinput/iodatest_writer_sondes.yaml
-  testinput/iodatest_odb_abiclear.yaml
-  testinput/iodatest_odb_ahiclear.yaml
+  testinput/iodatest_odb_abiclr.yaml
+  testinput/iodatest_odb_ahiclr.yaml
   testinput/iodatest_odb_aircraft.yaml
   testinput/iodatest_odb_aircraft_write.yaml
   testinput/iodatest_odb_airs.yaml
@@ -151,7 +151,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_odb_satwind.yaml
   testinput/iodatest_odb_scatwind.yaml
   testinput/iodatest_odb_seaice.yaml
-  testinput/iodatest_odb_seviriclear.yaml
+  testinput/iodatest_odb_seviriclr.yaml
   testinput/iodatest_odb_sonde.yaml
   testinput/iodatest_odb_sonde_write.yaml
   testinput/iodatest_odb_sonde_history.yaml
@@ -1332,28 +1332,28 @@ if (odc_FOUND)
                             Y
                     TEST_DEPENDS get_ioda_test_data )
 
-  ecbuild_add_test( TARGET  test_ioda-convert_abiclear_odc
+  ecbuild_add_test( TARGET  test_ioda-convert_abiclr_odc
                     TYPE    SCRIPT
                     COMMAND bash
                     ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
                             hdf5
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
-                            ABIClear
-                            Data/testinput_tier_1/abiclear.odb
-                            testinput/odb_default_name_map.yaml testinput/iodatest_odb_abiclear.yaml"
-                            test-ABIClear.hdf
+                            ABIClr
+                            Data/testinput_tier_1/abiclr.odb
+                            testinput/odb_default_name_map.yaml testinput/iodatest_odb_abiclr.yaml"
+                            test-ABIClr.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
-  ecbuild_add_test( TARGET  test_ioda-convert_ahiclear_odc
+  ecbuild_add_test( TARGET  test_ioda-convert_ahiclr_odc
                     TYPE    SCRIPT
                     COMMAND bash
                     ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
                             hdf5
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
-                            AHIClear
-                            Data/testinput_tier_1/ahiclear.odb
-                            testinput/odb_default_name_map.yaml testinput/iodatest_odb_ahiclear.yaml"
-                            test-AHIClear.hdf
+                            AHIClr
+                            Data/testinput_tier_1/ahiclr.odb
+                            testinput/odb_default_name_map.yaml testinput/iodatest_odb_ahiclr.yaml"
+                            test-AHIClr.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
   ecbuild_add_test( TARGET  test_ioda-convert_amsr_odc
@@ -1596,16 +1596,16 @@ if (odc_FOUND)
                             test-SatTCWV.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
-  ecbuild_add_test( TARGET  test_ioda-convert_seviriclear_odc
+  ecbuild_add_test( TARGET  test_ioda-convert_seviriclr_odc
                     TYPE    SCRIPT
                     COMMAND bash
                     ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
                             hdf5
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
-                            SEVIRIClear
-                            Data/testinput_tier_1/seviriclear.odb
-                            testinput/odb_default_name_map.yaml testinput/iodatest_odb_seviriclear.yaml"
-                            test-SEVIRIClear.hdf
+                            SEVIRIClr
+                            Data/testinput_tier_1/seviriclr.odb
+                            testinput/odb_default_name_map.yaml testinput/iodatest_odb_seviriclr.yaml"
+                            test-SEVIRIClr.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
   ecbuild_add_test( TARGET  test_ioda-convert_atms_odc
