@@ -76,7 +76,7 @@ namespace ODC {
 
   static constexpr float odb_missing_float = -2147483648.0f;
   static constexpr int odb_missing_int = 2147483647;
-  static constexpr char* odb_missing_string = const_cast<char *>("*** MISSING ***");
+  static constexpr char* odb_missing_string = const_cast<char *>("MISSING*");
 
 class DataFromSQL {
 private:

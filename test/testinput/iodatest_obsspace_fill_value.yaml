@@ -37,7 +37,7 @@ observations:
         group: "NoFillValue"
         type: "string"
         first value: "ABC"
-        last value: "*** MISSING ***"
+        last value: "MISSING*"
 
       # only the hdf fill values specified -> use them
       - name: "float_var"
@@ -54,7 +54,7 @@ observations:
         group: "HdfFillValue"
         type: "string"
         first value: "ABC"
-        last value: "*** MISSING ***"
+        last value: "MISSING*"
 
       # only the nc fill values specified -> use them
       - name: "float_var"
@@ -71,7 +71,7 @@ observations:
         group: "NcFillValue"
         type: "string"
         first value: "ABC"
-        last value: "*** MISSING ***"
+        last value: "MISSING*"
 
       # both hdf and netcdf fill values specified -> use netcdf fill values
       - name: "float_var"
@@ -88,7 +88,7 @@ observations:
         group: "BothFillValue"
         type: "string"
         first value: "ABC"
-        last value: "*** MISSING ***"
+        last value: "MISSING*"
 
     tolerance:
       - 1.0e-14
