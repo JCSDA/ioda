@@ -707,11 +707,12 @@ void setODBColumn(std::map<std::string, std::string> &columnMappings,
     column_number++;
   } else if (v.column_type == TypeClass::String) {
     if (v.string_length <= 8) {
-      writer->setColumn(column_number, colname2 + std::string("_0"), odc::api::STRING);
+      writer->setColumn(column_number, colname2, odc::api::STRING);
       column_number++;
     } else {
       for (int i = 0; i < 1+((v.string_length-1)/8); i++) {
-        writer->setColumn(column_number, colname2 + std::string("_") + std::to_string(i), odc::api::STRING);
+        writer->setColumn(column_number, colname2 + std::string("_") + std::to_string(i + 1),
+                          odc::api::STRING);
         column_number++;
       }
     }
@@ -728,11 +729,12 @@ void setODBBodyColumn(const ColumnInfo &v, odc::Writer<>::iterator writer, int &
     column_number++;
   } else if (v.column_type == TypeClass::String) {
     if (v.string_length <= 8) {
-      writer->setColumn(column_number, v.column_name + std::string("_0"), odc::api::STRING);
+      writer->setColumn(column_number, v.column_name, odc::api::STRING);
       column_number++;
     } else {
       for (int i = 0; i < 1+((v.string_length-1)/8); i++) {
-        writer->setColumn(column_number, v.column_name + std::string("_") + std::to_string(i), odc::api::STRING);
+        writer->setColumn(column_number, v.column_name + std::string("_") + std::to_string(i + 1),
+                          odc::api::STRING);
         column_number++;
       }
     }
