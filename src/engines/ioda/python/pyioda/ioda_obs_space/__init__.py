@@ -358,13 +358,18 @@ class ObsSpace:
             elif datatype == ioda.Types.int32:
                 self._iodavar.writeNPArray.int32(npArray)
             elif datatype == ioda.Types.str:
-                self._iodavar.writeVector.str(npArray)
+                npArray = npArray.filled() if isinstance(npArray, np.ma.MaskedArray) else npArray
+                val_list = npArray.tolist() if isinstance(npArray, np.ndarray) else npArray
+                self._iodavar.writeVector.str(val_list)
             elif datatype == ioda.Types.datetime:
                 if isinstance(npArray[0], dt.datetime):
                     if not npArray[0].tzinfo:
                         for i in range(len(npArray)):
                             npArray[i] = npArray[i].replace(tzinfo=dt.timezone.utc)
-                    self._iodavar.writeVector.datetime(npArray)
+                    npArray = npArray.filled() if isinstance(npArray, np.ma.MaskedArray) \
+                                               else npArray
+                    val_list = npArray.tolist() if isinstance(npArray, np.ndarray) else npArray
+                    self._iodavar.writeVector.datetime(val_list)
                 elif npArray.dtype == np.dtype('datetime64[s]'):
                     self._iodavar.writeNPArray.int64(npArray.astype('int64'))
             # add other elif here TODO

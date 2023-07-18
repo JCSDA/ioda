@@ -77,12 +77,16 @@ def test_basic():
             .write_data(my_str)
     assert np.all(np.ma.array(var.read_data(), dtype=np.dtype('object')) == my_str)
 
-
     my_str = np.ma.array(['bla bla']*100, fill_value=' ', dtype=np.dtype('<U10'))
     var = obsspace.create_var('MetaData/MyStr_U10', dtype=my_str.dtype, fillval=my_str.fill_value) \
         .write_data(my_str)
     assert np.all(np.ma.array(var.read_data(), dtype=np.dtype('<U10')) == my_str)
 
+    # Check string array with missing values
+    my_str = np.ma.array([' ']*100, fill_value=' ', dtype=np.dtype('object'), mask=[True]*100)
+    var = obsspace.create_var('MetaData/MyStr_missing_vals', dtype=my_str.dtype, fillval=my_str.fill_value) \
+        .write_data(my_str)
+    assert np.all(np.ma.array(var.read_data(), dtype=np.dtype('object')) == my_str.filled())
 
     # Write other random data
     lat = np.ma.array(np.random.randn(100)*10, fill_value=FILL_VALUE_NUM, dtype=np.int32)
