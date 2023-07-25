@@ -1,6 +1,6 @@
 #pragma once
 /*
- * (C) Copyright 2020-2021 UCAR
+ * (C) Copyright 2020-2023 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -121,6 +121,15 @@
 #ifdef __cplusplus
 
 namespace ioda {
+
+namespace constants {
+// Constants for formatting YAML (and possibly other textual data)
+const char indent0[] = "";
+const char indent4[] = "    ";
+const char indent8[] = "        ";
+const char indent12[] = "            ";
+
+}
 
 /// Defines the dimensions for a bunch of objects.
 typedef ptrdiff_t Dimensions_t;

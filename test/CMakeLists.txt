@@ -172,6 +172,7 @@ list( APPEND ioda_test_input
   testinput/odb_surface_name_map.yaml
   testinput/odb_surfacesst_name_map.yaml
   testinput/iodatest_time_io.yaml
+  testinput/iodatest_time_io_new_reader.yaml
 )
 
 # Create Data directory for test data and symlink files
@@ -894,11 +895,16 @@ ecbuild_add_test( TARGET  test_ioda_oops_obserrorcovariance
 # Test the time_IodaIO.x app
 #####################################################################
 
-# this test creates the output files
+# this test removes the output files from prior testing
 ecbuild_add_test( TARGET  test_ioda_clean_time_io_files
                   COMMAND rm
-                  ARGS    "-f" "testoutput/amsua_n19_obs_2018041500_m_time.nc4" "testoutput/sondes_obs_2018041500_m_time.nc4" )
+                  ARGS    "-f"
+                          "testoutput/amsua_n19_obs_2018041500_m_time.nc4"
+                          "testoutput/sondes_obs_2018041500_m_time.nc4"
+                          "testouput/amsua_n19_obs_2018041500_m_time_new_reader.nc4"
+                          "testoutput/sondes_obs_2018041500_m_time_new_reader.nc4" )
 
+# this test creates new output files
 ecbuild_add_test( TARGET  test_ioda_time_io
                   COMMAND ${CMAKE_BINARY_DIR}/bin/time_IodaIO.x
                   ARGS    "testinput/iodatest_time_io.yaml"
@@ -922,6 +928,31 @@ ecbuild_add_test( TARGET  test_ioda_time_io_cmp_amsua_n19
                           "echo Checking time io AMSU-A NOAA19"
                           amsua_n19_obs_2018041500_m_time.nc4
                   TEST_DEPENDS get_ioda_test_data test_ioda_time_io)
+
+# this test creates new output files
+ecbuild_add_test( TARGET  test_ioda_time_io_new_reader
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/time_IodaIO.x
+                  ARGS    "testinput/iodatest_time_io_new_reader.yaml"
+                  TEST_DEPENDS get_ioda_test_data test_ioda_clean_time_io_files )
+
+# the following tests compare the output files
+ecbuild_add_test( TARGET  test_ioda_time_io_cmp_sondes_new_reader
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          hdf5
+                          "echo Checking time io (new reader) sondes"
+                          sondes_obs_2018041500_m_time_new_reader.nc4
+                  TEST_DEPENDS get_ioda_test_data test_ioda_time_io_new_reader)
+
+ecbuild_add_test( TARGET  test_ioda_time_io_cmp_amsua_n19_new_reader
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          hdf5
+                          "echo Checking time io (new reader) AMSU-A NOAA19"
+                          amsua_n19_obs_2018041500_m_time_new_reader.nc4
+                  TEST_DEPENDS get_ioda_test_data test_ioda_time_io_new_reader)
 
 #####################################################################
 # Test the ioda-upgrade-v1-to-v2.x app

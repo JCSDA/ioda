@@ -13,12 +13,16 @@
 #include <cmath>
 #include <cstring>
 #include <numeric>
+#include <sstream>
 
 #include "gsl/gsl-lite.hpp"
 
 #include "eckit/geometry/Point2.h"
 #include "eckit/mpi/Comm.h"
+#include "eckit/config/YAMLConfiguration.h"
 
+#include "ioda/Attributes/AttrUtils.h"
+#include "ioda/defs.h"
 #include "ioda/distribution/Distribution.h"
 #include "ioda/core/IodaUtils.h"
 #include "ioda/Copying.h"
@@ -41,6 +45,10 @@ namespace detail {
     return s;
   }
 }  // namespace detail
+
+// Tag values for send/receive MPI communications.
+static const int msgIsSize = 1;
+static const int msgIsData = 2;
 
 //--------------------------------------------------------------------------------
 template<typename DataType>
@@ -582,9 +590,6 @@ void setDistributionMap(const ReaderPoolBase & ioPool,
                         const std::vector<std::size_t> & localLocIndices,
                         const std::vector<std::pair<int, int>> & rankAssignment,
                         std::map<int, std::vector<std::size_t>> & distributionMap) {
-    const int msgIsSize = 1;
-    const int msgIsData = 2;
-
     // Note that all of the exchange will be done using the "All" communicator, and
     // we are simply using the "Pool" communicator to identify if this rank is a
     // member of the io pool.
@@ -613,6 +618,139 @@ void setDistributionMap(const ReaderPoolBase & ioPool,
     }
 }
 
+//--------------------------------------------------------------------------------
+void readerSerializeGroupStructure(const ioda::ReaderPoolBase & ioPool,
+                                   const ioda::Group & fileGroup,
+                                   std::string & groupStructureYaml) {
+    // Have the pool member query the file to get the group structure, then
+    // serialize to yaml into a string (using a stringstream) and then
+    // use MPI send/receive to distribute the yaml string to the assigned ranks.
+    if (ioPool.commPool() != nullptr) {
+        std::stringstream yamlStream;
+        // First describe the group structure, list out group names and attributes
+        // associated with those groups.
+
+        // Top level group attributes
+        AttrUtils::listAttributesAsYaml(fileGroup.atts, constants::indent0, yamlStream);
+
+        const auto groupObjects = fileGroup.listObjects(ObjectType::Group, true);
+        yamlStream << "groups:" << std::endl;
+        for (const auto & groupName : groupObjects.at(ObjectType::Group)) {
+            yamlStream << constants::indent4 << "- group:" << std::endl
+                       << constants::indent8 << "name: " << groupName << std::endl;
+            // subgroup attributes
+            AttrUtils::listAttributesAsYaml(fileGroup.open(groupName).atts,
+                                            constants::indent8, yamlStream);
+        }
+
+        // query fileGroup for variable lists and dimension mappings
+        VarUtils::Vec_Named_Variable regularVarList;
+        VarUtils::Vec_Named_Variable dimVarList;
+        VarUtils::VarDimMap dimsAttachedToVars;
+        Dimensions_t maxVarSize0;  // unused in this function
+        VarUtils::collectVarDimInfo(fileGroup, regularVarList, dimVarList,
+                                    dimsAttachedToVars, maxVarSize0);
+
+        // List out dimension variables (these all belong in the top level group).
+        yamlStream << "dimensions:" << std::endl;
+        VarUtils::listDimensionsAsYaml(dimVarList, constants::indent4, yamlStream);
+
+        // List out regular variables
+        yamlStream << "variables:" << std::endl;
+        VarUtils::listVariablesAsYaml(regularVarList, dimsAttachedToVars,
+                                      constants::indent4, yamlStream);
+
+        // convert the stream to a string and send it to the assigned ranks
+        groupStructureYaml = yamlStream.str();
+        for (auto & rankAssign : ioPool.rankAssignment()) {
+            oops::mpi::sendString(ioPool.commAll(), groupStructureYaml, rankAssign.first);
+        }
+    } else {
+        // On a non pool task
+        for (auto & rankAssign : ioPool.rankAssignment()) {
+            oops::mpi::receiveString(ioPool.commAll(), groupStructureYaml, rankAssign.first);
+        }
+    }
+}
+
+//--------------------------------------------------------------------------------
+void readerDefineYamlAnchors(const ioda::ReaderPoolBase & ioPool,
+                             std::string & groupStructureYaml) {
+    std::stringstream yamlStream;
+    yamlStream << "definitions:" << std::endl;
+
+    // Anchor for number of locations: &numLocations
+    // Each MPI task has its own number of locations. The input yaml has an
+    // alias (*numLocations) in its definition, and this routin will add the
+    // anchor (&numLocations) that goes with that alias. This way the number of
+    // locations can change on a task-by-task basis.
+    yamlStream << constants::indent4 << "number locations: &numLocations "
+               << ioPool.nlocs() << std::endl;
+
+    // Anchor for the dateTime epoch value: &dtimeEpoch
+    yamlStream << constants::indent4 << "dtime epoch: &dtimeEpoch "
+               << ioPool.dtimeEpoch() << std::endl;
+
+    // prepend the definitions section with the anchors to the group structure YAML
+    groupStructureYaml = yamlStream.str() + groupStructureYaml;
+}
+
+//--------------------------------------------------------------------------------
+void readerDeserializeGroupStructure(ioda::Group & memGroup,
+                                     const std::string & groupStructureYaml) {
+    // Deserialize the yaml string into an eckit YAML configuration object. Then
+    // walk through that structure building the structure as you go.
+    eckit::YAMLConfiguration config(groupStructureYaml);
+
+    // create the top level group attributes from the "attributes" section
+    std::vector<eckit::LocalConfiguration> attrConfigs;
+    config.get("attributes", attrConfigs);
+    AttrUtils::createAttributesFromConfig(memGroup.atts, attrConfigs);
+
+    // create the sub groups from the "groups" section
+    std::vector<eckit::LocalConfiguration> groupConfigs;
+    config.get("groups", groupConfigs);
+    for (size_t i = 0; i < groupConfigs.size(); ++i) {
+        std::string groupName = groupConfigs[i].getString("group.name");
+        Group subGroup = memGroup.create(groupName);
+        attrConfigs.clear();
+        groupConfigs[i].get("group.attributes", attrConfigs);
+        AttrUtils::createAttributesFromConfig(subGroup.atts, attrConfigs);
+    }
+
+    // create dimensions from the "dimensions" section
+    std::vector<eckit::LocalConfiguration> dimConfigs;
+    config.get("dimensions", dimConfigs);
+    VarUtils::createDimensionsFromConfig(memGroup.vars, dimConfigs);
+
+    // create variables from the "variables" section
+    std::vector<eckit::LocalConfiguration> varConfigs;
+    config.get("variables", varConfigs);
+    VarUtils::createVariablesFromConfig(memGroup.vars, varConfigs);
+}
+
+//--------------------------------------------------------------------------------
+void readerCopyGroupStructure(const ioda::ReaderPoolBase & ioPool,
+                              const ioda::Group & fileGroup,
+                              ioda::Group & memGroup) {
+    // Serialize into a string containing YAML the structure of the fileGroup, and
+    // use MPI send/receive to transfer the YAML string to all the assigned tasks.
+    std::string groupStructureYaml;
+    readerSerializeGroupStructure(ioPool, fileGroup, groupStructureYaml);
+
+    // Each task has its own number of locations which is set by the initialize step
+    // prior to this call.
+    readerDefineYamlAnchors(ioPool, groupStructureYaml);
+    oops::Log::debug() << "groupStructureYaml: " << std::endl
+                       << groupStructureYaml << std::endl;
+
+    // Deserialize the YAML string into a constructed group structure in the memGroup
+    readerDeserializeGroupStructure(memGroup, groupStructureYaml);
+}
+
+//------------------------------------------------------------------------------------
+// Old reader functions
+//------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------
 template <typename VarType>
 void readerCreateVariable(const std::string & varName, const Variable & srcVar,

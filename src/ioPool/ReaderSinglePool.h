@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2022 UCAR
+ * (C) Copyright 2022-2023 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -80,6 +80,21 @@ class ReaderSinglePool : public ReaderPoolBase {
  private:
   /// \brief reader engine source for printing (eg, input file name)
   std::string readerSrc_;
+
+  /// \brief input file is empty when true
+  bool emptyFile_;
+
+  /// \brief input file date time format
+  DateTimeFormat dtimeFormat_;
+
+  /// \brief date time values converted to epoch representation
+  std::vector<int64_t> dtimeValues_;
+
+  /// \brief longitude values
+  std::vector<float> lonValues_;
+
+  /// \brief latitude values
+  std::vector<float> latValues_;
 
   /// \brief mapping that shows which source location indices go to which ranks
   /// \detail This structure is a map of size_t vectors where the index of

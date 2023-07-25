@@ -12,10 +12,12 @@ list(APPEND SRCS_ATTRIBUTES
 	include/ioda/Attributes/Attribute.h
 	include/ioda/Attributes/Attribute_Creator.h
 	include/ioda/Attributes/Has_Attributes.h
+	include/ioda/Attributes/AttrUtils.h
 	include/ioda/Python/Att_ext.h
 	src/ioda/Attribute.cpp
 	src/ioda/Attribute_Creator.cpp
 	src/ioda/Has_Attributes.cpp
+	src/ioda/AttrUtils.cpp
 	)
 list(APPEND SRCS_C_BINDINGS
 	include/ioda/C/ioda_attribute_c.hpp

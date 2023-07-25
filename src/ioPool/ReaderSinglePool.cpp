@@ -64,7 +64,6 @@ void ReaderSinglePool::initialize() {
     // variable data. Use the patch nlocs (ie, the number of locations "owned" by this
     // rank) to represent the number of locations after any duplicated locations are
     // removed.
-    oops::Log::debug() << "nlocs: " << this->nlocs() << std::endl;
     assignRanksToIoPool(this->nlocs(), rankGrouping);
 
     // Create the io pool communicator group using the split communicator command.
@@ -112,32 +111,26 @@ void ReaderSinglePool::initialize() {
     // ranks.
 
     // Check for required variables
-    DateTimeFormat dtimeFormat;  // which format the source date time variable is using
-    bool emptyFile;              // true if the source is empty
-    checkForRequiredVars(fileGroup, this->commAll(), readerSrc_, dtimeFormat, emptyFile);
+    checkForRequiredVars(fileGroup, this->commAll(), readerSrc_, dtimeFormat_, emptyFile_);
 
     // Read and convert the dtimeValues to the current epoch format if older formats are
     // being used in the source.
-    std::vector<int64_t> dtimeValues;
-    std::string dtimeEpoch("");
-    readSourceDtimeVar(fileGroup, this->commAll(), emptyFile, dtimeFormat,
-                       dtimeValues, dtimeEpoch);
+    readSourceDtimeVar(fileGroup, this->commAll(), emptyFile_, dtimeFormat_,
+                       dtimeValues_, dtimeEpoch_);
 
     // Convert the window start and end times to int64_t offsets from the dtimeEpoch
     // value. This will provide for a very fast "inside the timing window check".
     util::DateTime epochDt;
-    convertEpochStringToDtime(dtimeEpoch, epochDt);
+    convertEpochStringToDtime(dtimeEpoch_, epochDt);
     const int64_t windowStart = (winStart_ - epochDt).toSeconds();
     const int64_t windowEnd = (winEnd_ - epochDt).toSeconds();
 
     // Determine which locations will be retained by this process for its obs space
     // source_loc_indices_ holds the original source location index (position in
     // the 1D Location variable) and recNums_ holds the assigned record number.
-    std::vector<float> lonValues;
-    std::vector<float> latValues;
-    setIndexAndRecordNums(fileGroup, this->commAll(), emptyFile, distribution_, dtimeValues,
+    setIndexAndRecordNums(fileGroup, this->commAll(), emptyFile_, distribution_, dtimeValues_,
                           windowStart, windowEnd, applyLocationsCheck, obsGroupVarList_,
-                          lonValues, latValues, sourceNlocs_,
+                          lonValues_, latValues_, sourceNlocs_,
                           sourceNlocsInsideTimeWindow_, sourceNlocsOutsideTimeWindow_,
                           sourceNlocsRejectQC_, locIndices_, recNums_,
                           globalNlocs_, nlocs_, nrecs_);
@@ -150,7 +143,13 @@ void ReaderSinglePool::initialize() {
     // member requires. Note that the rankGrouping structure contains the information about
     // which ranks are in the pool, and the non-pool ranks those pool ranks are associated with.
     setDistributionMap(*this, locIndices_, rankAssignment_, distributionMap_);
+}
 
+//--------------------------------------------------------------------------------------
+void ReaderSinglePool::load(Group & destGroup) {
+    oops::Log::debug() << "emptyFile_ : " << static_cast<int>(emptyFile_) << std::endl;
+    oops::Log::debug() << "dtimeFormat_ : " << static_cast<int>(dtimeFormat_) << std::endl;
+    oops::Log::debug() << "readerSrc_ : " << readerSrc_ << std::endl;
     oops::Log::debug() << "rankAssignment_ size: " << rankAssignment_.size() << std::endl;
     for (auto & rankAssign : rankAssignment_) {
         oops::Log::debug() << "rankAssignment_:     assigned rank (nlocs): "
@@ -167,17 +166,19 @@ void ReaderSinglePool::initialize() {
             oops::Log::debug() << "    rank: loc indices empty: " << distMap.first << std::endl;
         }
     }
-}
 
-//--------------------------------------------------------------------------------------
-void ReaderSinglePool::load(Group & destGroup) {
+    Group fileGroup;
     std::unique_ptr<Engines::ReaderBase> readerEngine = nullptr;
-
-    // Engine initialization
     if (this->commPool() != nullptr) {
-        if (readerEngine != nullptr) {
-            readerEngine->initialize();
-        }
+        Engines::ReaderCreationParameters
+            createParams(winStart_, winEnd_, *commPool_, commTime_,
+                         obsVarNames_, isParallelIo_);
+        readerEngine = Engines::ReaderFactory::create(readerParams_, createParams);
+
+        fileGroup = readerEngine->getObsGroup();
+
+        // Engine initialization
+        readerEngine->initialize();
     }
 
     // Create the memory backend for the destGroup
@@ -196,9 +197,9 @@ void ReaderSinglePool::load(Group & destGroup) {
     // Create the ObsGroup and attach the backend.
     destGroup = ObsGroup::generate(backend, {});
 
-    // Mark the destGroup as empty for now, until we get the reader to actually
-    // load date into the destGroup
-    sourceNlocs_ = 0;
+    // Copy the group structure (groups and their attributes) contained in the fileGroup
+    // to the destGroup.
+    readerCopyGroupStructure(*this, fileGroup, destGroup);
 
     // Engine finalization
     if (this->commPool() != nullptr) {

@@ -14,6 +14,7 @@
 #include "eckit/mpi/Comm.h"
 
 #include "ioda/Attributes/Attribute.h"
+#include "ioda/Attributes/AttrUtils.h"
 #include "ioda/Copying.h"
 #include "ioda/Exception.h"
 #include "ioda/Group.h"
@@ -42,44 +43,18 @@ void copyAttributes(const ioda::Has_Attributes& src, ioda::Has_Attributes& dest)
   vector<pair<string, Attribute>> srcAtts = src.openAll();
 
   for (const auto &s : srcAtts) {
-    // This set contains the names of atttributes that need to be stripped off of
-    // variables coming from the input file. The items in the list are related to
-    // dimension scales. In general, when copying attributes, the dimension
-    // associations in the output file need to be re-created since they are encoded
-    // as object references.
-    const set<string> ignored_names{
-        "CLASS",
-        "DIMENSION_LIST",
-        "NAME",
-        "REFERENCE_LIST",
-        "_FillValue",
-        "_NCProperties",
-        "_Netcdf4Coordinates",
-        "_Netcdf4Dimid",
-        "_nc3_strict",
-        "_orig_fill_value",
-        "suggested_chunk_dim"
-        };
-    if (ignored_names.count(s.first)) continue;
+    // Some attributes need to be ignored (such as netcdf special attributes and
+    // attributes holding information about dimensions) instead of copied.
+    if (AttrUtils::ignoreThisAttribute(s.first)) continue;
     if (dest.exists(s.first)) continue;
 
-    if (s.second.isA<int>()) {
-        transferAttribute<int>(s.first, s.second, dest);
-    } else if (s.second.isA<long>()) {                       // NOLINT
-        transferAttribute<long>(s.first, s.second, dest);    // NOLINT
-    } else if (s.second.isA<float>()) {
-        transferAttribute<float>(s.first, s.second, dest);
-    } else if (s.second.isA<double>()) {
-        transferAttribute<double>(s.first, s.second, dest);
-    } else if (s.second.isA<std::string>()) {
-        transferAttribute<std::string>(s.first, s.second, dest);
-    } else if (s.second.isA<char>()) {
-        transferAttribute<char>(s.first, s.second, dest);
-    } else {
-        std::string ErrorMsg = std::string("Attribute '") + s.first +
-                               std::string("' is not of any supported type");
-        throw Exception(ErrorMsg.c_str(), ioda_Here());
-    }
+    AttrUtils::forAnySupportedAttributeType(
+        s.second,
+        [&](auto typeDiscriminator) {
+            typedef decltype(typeDiscriminator) T;
+            transferAttribute<T>(s.first, s.second, dest);
+        },
+        AttrUtils::ThrowIfAttributeIsOfUnsupportedType(s.first));
   }
 }
 

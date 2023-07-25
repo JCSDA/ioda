@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2022 UCAR
+ * (C) Copyright 2022-2023 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -134,6 +134,9 @@ class ReaderPoolBase : public IoPoolBase {
   /// \brief assigned record numbers for indices in locIndices_
   const std::vector<std::size_t> & recnums() const { return recNums_; }
 
+  /// \brief epoch string for date time variable
+  std::string dtimeEpoch() const { return dtimeEpoch_; }
+
   /// \brief save obs data to output file
   /// \param srcGroup source ioda group to be saved into the output file
   virtual void load(Group & destGroup) = 0;
@@ -181,6 +184,9 @@ class ReaderPoolBase : public IoPoolBase {
 
   /// \brief assigned record numbers for indices in locIndices_
   std::vector<std::size_t> recNums_;
+
+  /// \brief date time epoch string
+  std::string dtimeEpoch_;
 };
 
 }  // namespace ioda

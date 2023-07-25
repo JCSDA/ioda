@@ -1,6 +1,6 @@
 #pragma once
 /*
- * (C) Copyright 2022 UCAR
+ * (C) Copyright 2022-2023 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -187,6 +187,18 @@ void setDistributionMap(const ReaderPoolBase & ioPool,
                         const std::vector<std::size_t> & localLocIndices,
                         const std::vector<std::pair<int, int>> & rankAssignment,
                         std::map<int, std::vector<std::size_t>> & distributionMap);
+
+/// @brief copy the groups and attributes from fileGroup to memGroup
+/// @param ioPool ioda ReaderPoolBase object
+/// @param fileGroup is the source file group
+/// @param memGroup is the destination memory group
+void readerCopyGroupStructure(const ioda::ReaderPoolBase & ioPool,
+                              const ioda::Group & fileGroup,
+                              ioda::Group & memGroup);
+
+//------------------------------------------------------------------------------------
+// Old reader functions
+//------------------------------------------------------------------------------------
 
 /// @brief Transfer group contents from a file group to a memory group using an io pool
 /// @param ioPool ioda ReaderPoolBase object
