@@ -7,7 +7,7 @@
 # FLAGS COMMON TO ALL BUILD TYPES
 ####################################################################
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -g -traceback")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -traceback")
 
 ####################################################################
 # RELEASE FLAGS

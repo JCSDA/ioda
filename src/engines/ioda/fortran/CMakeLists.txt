@@ -28,10 +28,6 @@ if (CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
 	target_compile_options(ioda_fortran PRIVATE -ffree-line-length-none)
 endif()
 
-# TODO: Check how to set the Fortran standard. This is not a CMake option.
-set_target_properties(ioda_fortran PROPERTIES Fortran_STANDARD 18)
-set_target_properties(ioda_fortran PROPERTIES Fortran_STANDARD_REQUIRED TRUE)
-
 #Fortran module output directory for build and install interfaces
 set(MODULE_DIR module/${PROJECT_NAME}/${CMAKE_Fortran_COMPILER_ID}/${CMAKE_Fortran_COMPILER_VERSION})
 set_target_properties(ioda_fortran PROPERTIES Fortran_MODULE_DIRECTORY ${CMAKE_BINARY_DIR}/${MODULE_DIR})

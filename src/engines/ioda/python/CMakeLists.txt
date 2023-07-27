@@ -24,7 +24,6 @@ set(pyver python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR})
 # which is one directory up from the generator TARGET_FILE_DIR for the _ioda_python target.
 # Note that TARGET_FILE_DIR is like running dirname on a file path in the shell.
 AddPyLib(_ioda_python ioda ${pyver})
-target_compile_features(_ioda_python PUBLIC cxx_std_14) # C++14 or greater is needed to parse the headers.
 
 # Need to set RPATH to directory where libioda et al. got installed which is three up
 # from where _ioda_python.* got installed.

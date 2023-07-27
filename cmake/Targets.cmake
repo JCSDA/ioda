@@ -54,7 +54,6 @@ macro(ApplyBaseSettings tgt)
             >
         )
 
-    set_property(TARGET ${tgt} PROPERTY CXX_STANDARD 14) # When updating, also see below target_compile_features cxx_std_14.
     set_target_properties( ${tgt} PROPERTIES SKIP_BUILD_RPATH FALSE )
     set_target_properties( ${tgt} PROPERTIES BUILD_WITH_INSTALL_RPATH FALSE )
     set_target_properties( ${tgt} PROPERTIES INSTALL_RPATH_USE_LINK_PATH TRUE )
@@ -98,14 +97,11 @@ macro(AddLib)
     set_target_properties( ${libname} PROPERTIES FOLDER "Libs")
     target_compile_definitions(${libname} PRIVATE ${libshared}_EXPORTING)
     target_compile_definitions(${libname} PUBLIC ${libshared}_SHARED=$<STREQUAL:${isshared},SHARED>)
-    target_compile_features(${libname} PUBLIC cxx_std_14) # C++14 or greater is needed to parse the headers.
 endmacro(AddLib)
 
 macro(AddPyLib libname pyname pybasename)
 
     ApplyBaseSettings(${libname})
-    target_compile_features(${libname} PUBLIC cxx_std_14) # C++14 or greater is needed to parse the headers.
-
     set_target_properties( ${libname} PROPERTIES FOLDER "Libs/Python/${pybasename}")
     set_target_properties( ${libname} PROPERTIES
         ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/${pybasename}/pyioda/${pyname}"
