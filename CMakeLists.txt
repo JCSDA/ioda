@@ -72,14 +72,8 @@ add_feature_info(Python BUILD_PYTHON_BINDINGS "Build Python bindings using pybin
 ### Basically, with the current logic ioda_data must be loaded after ioda.
 #find_package( ioda_data QUIET )   # Needed for tests
 
-
-## Files used by both test and in non-test executables
-install(DIRECTORY share/ioda
-        TYPE DATA
-        COMPONENT share )
-set( IODA_YAML_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/share/ioda/yaml )
-
 ## Sources
+add_subdirectory( share )         # no arch data
 add_subdirectory( src/engines )   # `ioda_engines` target
 add_subdirectory( src )           # `ioda` target
 add_subdirectory( src/mains )     # ioda executable targets

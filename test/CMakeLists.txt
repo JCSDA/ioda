@@ -112,65 +112,18 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsvector_packeigen.yaml
   testinput/iodatest_extendedobsspace.yaml
   testinput/iodatest_extendedobsspace_halo.yaml
-  testinput/iodatest_sort.yaml
-  testinput/iodatest_writer_sondes.yaml
-  testinput/iodatest_odb_abiclr.yaml
-  testinput/iodatest_odb_ahiclr.yaml
-  testinput/iodatest_odb_aircraft.yaml
   testinput/iodatest_odb_aircraft_write.yaml
-  testinput/iodatest_odb_airs.yaml
-  testinput/iodatest_odb_altimeter.yaml
-  testinput/iodatest_odb_amsr.yaml
-  testinput/iodatest_odb_aod.yaml
   testinput/iodatest_odb_aod_write.yaml
   testinput/iodatest_odb_aod_write_testdatasets.yaml
-  testinput/iodatest_odb_atms.yaml
   testinput/iodatest_odb_atms_write.yaml
-  testinput/iodatest_odb_atovs.yaml
   testinput/iodatest_odb_atovs_write.yaml
-  testinput/iodatest_odb_cris.yaml
-  testinput/iodatest_odb_crisfsr.yaml
-  testinput/iodatest_odb_geocloud.yaml
-  testinput/iodatest_odb_gmihigh.yaml
   testinput/iodatest_odb_gmihigh_write.yaml
-  testinput/iodatest_odb_gmilow.yaml
-  testinput/iodatest_odb_gnssro.yaml
   testinput/iodatest_odb_gnssro_profile.yaml
-  testinput/iodatest_odb_groundgps.yaml
-  testinput/iodatest_odb_hirasfsr.yaml
-  testinput/iodatest_odb_hloswind.yaml
-  testinput/iodatest_odb_iasi.yaml
   testinput/iodatest_odb_iasi_write.yaml
-  testinput/iodatest_odb_mwri.yaml
-  testinput/iodatest_odb_mwsfy3.yaml
-  testinput/iodatest_odb_oceancolour.yaml
-  testinput/iodatest_odb_oceansound.yaml
-  testinput/iodatest_odb_oceansound_truncate_profiles.yaml
-  testinput/iodatest_odb_satsst.yaml
-  testinput/iodatest_odb_sattcwv.yaml
-  testinput/iodatest_odb_satwind.yaml
-  testinput/iodatest_odb_scatwind.yaml
-  testinput/iodatest_odb_seaice.yaml
-  testinput/iodatest_odb_seviriclr.yaml
-  testinput/iodatest_odb_sonde.yaml
   testinput/iodatest_odb_sonde_write.yaml
-  testinput/iodatest_odb_sonde_history.yaml
-  testinput/iodatest_odb_sonde_time_displacement.yaml
-  testinput/iodatest_odb_sonde_truncate_profiles.yaml
-  testinput/iodatest_odb_ssmis.yaml
-  testinput/iodatest_odb_surface.yaml
   testinput/iodatest_odb_surface_with_query.yaml
-  testinput/iodatest_odb_surfacecloud.yaml
-  testinput/iodatest_odb_surfacesst.yaml
-  testinput/odb_default_name_map.yaml
-  testinput/odb_aircraft_name_map.yaml
-  testinput/odb_gnssro_name_map.yaml
-  testinput/odb_gnssro_profile_name_map.yaml
-  testinput/odb_oceansound_name_map.yaml
-  testinput/odb_radiance_name_map.yaml
-  testinput/odb_sonde_name_map.yaml
-  testinput/odb_surface_name_map.yaml
-  testinput/odb_surfacesst_name_map.yaml
+  testinput/iodatest_sort.yaml
+  testinput/iodatest_writer_sondes.yaml
   testinput/iodatest_time_io.yaml
   testinput/iodatest_time_io_new_reader.yaml
 )
@@ -1123,7 +1076,7 @@ ecbuild_add_test( TARGET  test_ioda_upgrader_dtime_offset_v2_to_v3
                           "${CMAKE_BINARY_DIR}/bin/ioda-upgrade-v2-to-v3.x
                           Data/testinput_tier_1/upgrader_dtime_offset_v2_to_v3.nc4
                           testoutput/upgrader_dtime_offset_v2_to_v3.nc4
-                          ${IODA_YAML_ROOT}/validation/ObsSpace.yaml"
+                          testinput/validation/ObsSpace.yaml"
                           upgrader_dtime_offset_v2_to_v3.nc4
                   TEST_DEPENDS get_ioda_test_data )
 
@@ -1137,7 +1090,7 @@ ecbuild_add_test( TARGET  test_ioda_upgrader_dtime_offstr_v2_to_v3
                           "${CMAKE_BINARY_DIR}/bin/ioda-upgrade-v2-to-v3.x
                           Data/testinput_tier_1/upgrader_dtime_offstr_v2_to_v3.nc4
                           testoutput/upgrader_dtime_offstr_v2_to_v3.nc4
-                          ${IODA_YAML_ROOT}/validation/ObsSpace.yaml"
+                          testinput/validation/ObsSpace.yaml"
                           upgrader_dtime_offstr_v2_to_v3.nc4
                   TEST_DEPENDS get_ioda_test_data )
 
@@ -1151,7 +1104,7 @@ ecbuild_add_test( TARGET  test_ioda_upgrader_dtime_all_v2_to_v3
                           "${CMAKE_BINARY_DIR}/bin/ioda-upgrade-v2-to-v3.x
                           Data/testinput_tier_1/upgrader_dtime_all_v2_to_v3.nc4
                           testoutput/upgrader_dtime_all_v2_to_v3.nc4
-                          ${IODA_YAML_ROOT}/validation/ObsSpace.yaml"
+                          testinput/validation/ObsSpace.yaml"
                           upgrader_dtime_all_v2_to_v3.nc4
                   TEST_DEPENDS get_ioda_test_data )
 
@@ -1163,7 +1116,7 @@ ecbuild_add_test( TARGET  test_ioda_upgrader_amsua_n19_v2_to_v3
                           "${CMAKE_BINARY_DIR}/bin/ioda-upgrade-v2-to-v3.x
                           Data/testinput_tier_1/upgrader_amsua_n19_v2_to_v3.nc4
                           testoutput/upgrader_amsua_n19_v2_to_v3.nc4
-                          ${IODA_YAML_ROOT}/validation/ObsSpace.yaml"
+                          testinput/validation/ObsSpace.yaml"
                           upgrader_amsua_n19_v2_to_v3.nc4
                   TEST_DEPENDS get_ioda_test_data )
 
@@ -1175,7 +1128,7 @@ ecbuild_add_test( TARGET  test_ioda_upgrader_met_office_gpsro_v2_to_v3
                           "${CMAKE_BINARY_DIR}/bin/ioda-upgrade-v2-to-v3.x
                           Data/testinput_tier_1/upgrader_met_office_gpsro_v2_to_v3.nc4
                           testoutput/upgrader_met_office_gpsro_v2_to_v3.nc4
-                          ${IODA_YAML_ROOT}/validation/ObsSpace.yaml"
+                          testinput/validation/ObsSpace.yaml"
                           upgrader_met_office_gpsro_v2_to_v3.nc4
                   TEST_DEPENDS get_ioda_test_data )
 
@@ -1802,15 +1755,14 @@ ecbuild_add_test( TARGET  test_ioda_fileformat
 # ioda-validate code coverage test
 #####################################################################
 # Actual file tests are in ufo-data and in ioda-converters.
-# - IODA_YAML_ROOT is set in the top-level ioda CMakeLists.txt file.
 # - Future: IODA_DATA_TEST_ROOT is set by the ioda-data project.
 ecbuild_add_test(
 	TARGET test_ioda-validate
 	COMMAND ioda-validate.x
 	ARGS "--ignore-warn"
-             "--ignore-error"
-             "${IODA_YAML_ROOT}/validation/ObsSpace.yaml"
-             "Data/testinput_tier_1/sample_hofx_output_amsua_n19.nc4"
+       "--ignore-error"
+       "testinput/validation/ObsSpace.yaml"
+       "Data/testinput_tier_1/sample_hofx_output_amsua_n19.nc4"
 	     # Future: "${IODA_DATA_TEST_ROOT}/testinput_tier_1/sample_hofx_output_amsua_n19.nc4"
 	)
 
