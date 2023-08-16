@@ -1,0 +1,24 @@
+---
+construct config tests:
+    - case:
+        name: "ODB file"
+        file type: "odb"
+        file name: "test_obs_file.odb"
+        mapping file name: "test_odb_map.yaml"
+        query file name: "test_odb_query.yaml"
+
+construct file reader tests:
+    - case:
+        name: "ODB file"
+        file type: "odb"
+        file name: "Data/testinput_tier_1/aircraft.odb"
+        mapping file name: "testinput/odb_default_name_map.yaml"
+        query file name: "testinput/iodatest_odb_aircraft.yaml"
+
+construct file writer tests:
+    - case:
+        name: "ODB file"
+        file type: "odb"
+        file name: "testoutput/engine_construct_file_writer.odb"
+        mapping file name: "testinput/odb_default_name_map.yaml"
+        query file name: "testinput/iodatest_odb_aircraft.yaml"

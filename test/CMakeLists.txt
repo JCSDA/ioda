@@ -74,6 +74,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_distribution_methods.yaml
   testinput/iodatest_distribution_timewindow.yaml
   testinput/iodatest_engine_construct_utils.yaml
+  testinput/iodatest_engine_construct_utils_odc.yaml
   testinput/iodatest_engine_factory.yaml
   testinput/iodatest_engine_factory_odc.yaml
   testinput/iodatest_engine_uniquify_file_name.yaml
@@ -329,6 +330,13 @@ ecbuild_add_test( TARGET  test_ioda_engine_construct_utils
                   ARGS    "testinput/iodatest_engine_construct_utils.yaml"
                   LIBS  ioda_engines ioda_test
                   TEST_DEPENDS get_ioda_test_data )
+if (odc_FOUND)
+  ecbuild_add_test( TARGET  test_ioda_engine_construct_utils_odc
+                    SOURCES mains/TestEngineConstructUtils.cc
+                    ARGS    "testinput/iodatest_engine_construct_utils_odc.yaml"
+                    LIBS  ioda_engines ioda_test
+                    TEST_DEPENDS get_ioda_test_data )
+endif()
 
 ecbuild_add_test( TARGET  test_ioda_engine_factory
                   SOURCES mains/TestEngineFactory.cc
