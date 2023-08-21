@@ -24,10 +24,8 @@
 
 #include "ioda/config.h"
 
-#if (eckit_FOUND && oops_FOUND)
-#  define ENABLE_ODB_LAYOUT
-#  include "./Layout_ObsGroup_ODB.h"
-#endif
+#define ENABLE_ODB_LAYOUT
+#include "./Layout_ObsGroup_ODB.h"
 
 namespace ioda {
 namespace detail {

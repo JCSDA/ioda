@@ -28,7 +28,7 @@
 #include "ioda/Types/Type.h"
 #include "oops/util/Logger.h"
 
-#if odc_FOUND && eckit_FOUND && oops_FOUND
+#if odc_FOUND
 # include "eckit/config/LocalConfiguration.h"
 # include "eckit/config/YAMLConfiguration.h"
 # include "eckit/filesystem/PathName.h"
@@ -48,7 +48,7 @@ namespace {
 // -------------------------------------------------------------------------------------------------
 // Initialization
 
-#if odc_FOUND && eckit_FOUND && oops_FOUND
+#if odc_FOUND
 #else
 /// @brief Standard message when the ODC API is unavailable.
 const char odcMissingMessage[] {
@@ -60,7 +60,7 @@ const char odcMissingMessage[] {
 void initODC() {
   static bool inited = false;
   if (!inited) {
-#if odc_FOUND && eckit_FOUND && oops_FOUND
+#if odc_FOUND
     odc_initialise_api();
 #else
     throw Exception(odcMissingMessage, ioda_Here());
@@ -69,7 +69,7 @@ void initODC() {
   }
 }
 
-#if odc_FOUND && eckit_FOUND && oops_FOUND
+#if odc_FOUND
 
 // -------------------------------------------------------------------------------------------------
 
@@ -1052,13 +1052,13 @@ void writeODB(const size_t num_varnos, const int number_of_rows, odc::Writer<>::
 
 // -------------------------------------------------------------------------------------------------
 
-#endif  // odc_FOUND && eckit_FOUND && oops_FOUND
+#endif  // odc_FOUND
 
 }  // namespace
 
 Group createFile(const ODC_Parameters& odcparams, Group storageGroup) {
 
-#if odc_FOUND && oops_FOUND && eckit_FOUND
+#if odc_FOUND
   const int number_of_locations = getNumberOfLocations(storageGroup);
   int number_of_rows = number_of_locations;
   int number_of_channels = 0;
@@ -1167,7 +1167,7 @@ ObsGroup openFile(const ODC_Parameters& odcparams,
 {
   // 1. Check first that the ODB engine is enabled. If the engine
   // is not enabled, then throw an exception.
-#if odc_FOUND && oops_FOUND && eckit_FOUND
+#if odc_FOUND
   initODC();
 
   using std::set;

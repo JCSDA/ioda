@@ -230,10 +230,8 @@ list(APPEND SRCS_IODA_ENGINES
 	${CMAKE_CURRENT_BINARY_DIR}/config/ioda/config.h
 	${CMAKE_CURRENT_BINARY_DIR}/config/ioda/testconfig.h
 	)
-if (eckit_FOUND AND oops_FOUND)
-	list(APPEND SRCS_IODA_ENGINES ${SRCS_LAYOUTS_ODB})
-endif()
-if (odc_FOUND AND oops_FOUND AND eckit_FOUND)
+list(APPEND SRCS_IODA_ENGINES ${SRCS_LAYOUTS_ODB})
+if (odc_FOUND)
     list(APPEND SRCS_IODA_ENGINES ${SRCS_ENGINES_ODC_ODC_DEPENDENT})
 endif()
 if (HDF5_FOUND)
@@ -261,9 +259,7 @@ target_link_libraries(ioda_engines PUBLIC Eigen3::Eigen)
 target_link_libraries(ioda_engines PUBLIC udunits::udunits)
 
 
-if (eckit_FOUND)
-	target_link_libraries(ioda_engines PUBLIC eckit)
-endif()
+target_link_libraries(ioda_engines PUBLIC eckit)
 ### find_package(HDF5) may set only a subset of these. Options depend on how HDF5 was built.
 if(DEFINED HDF5_C_DEFINITIONS)
 	target_compile_options(ioda_engines PRIVATE "${HDF5_C_DEFINITIONS}")
@@ -284,10 +280,7 @@ endif()
 if (odc_FOUND)
 	target_link_libraries(ioda_engines PUBLIC odccore)
 endif()
-if (oops_FOUND)
-	target_link_libraries(ioda_engines PUBLIC oops)
-endif()
-
+target_link_libraries(ioda_engines PUBLIC oops)
 
 ## Include directories
 

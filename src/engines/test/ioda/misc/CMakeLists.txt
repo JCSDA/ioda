@@ -5,7 +5,7 @@
 
 include(Targets)
 
-if(ecbuild_FOUND AND eckit_FOUND)
+if(ecbuild_FOUND)
 
     ecbuild_add_test ( TARGET     test_ioda-engines_sfuncs_concatstringvectors
                        SOURCES    test-concatstringvecs.cpp

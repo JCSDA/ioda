@@ -21,10 +21,8 @@
 // Used to enable-disable code in factory methods.
 
 #cmakedefine01 Boost_FOUND
-#cmakedefine01 eckit_FOUND
 #cmakedefine01 Eigen3_FOUND
 #cmakedefine01 HDF5_FOUND
 #cmakedefine01 odc_FOUND
-#cmakedefine01 oops_FOUND
 #cmakedefine01 Python3_FOUND
 #cmakedefine01 pybind11_FOUND
