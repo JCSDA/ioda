@@ -1180,6 +1180,7 @@ void readerTransferBuffers(const std::vector<char> & srcBuffer,
 //------------------------------------------------------------------------------------
 void readerSaveDestVar(const std::string & varName, const std::vector<char> & destBuffer,
                        ioda::Variable & destVar) {
+    oops::Log::debug() << "readerSaveDestVar: writing: " << varName << std::endl;
     // write data into destination variable
     ioda::Selection destSelect = createEntireVarSelection(destVar);
     VarUtils::forAnySupportedVariableType(
@@ -1531,6 +1532,7 @@ void readerCreateVariable(const std::string & varName, const Variable & srcVar,
                           const ioda::Dimensions_t adjustNlocs, Has_Variables & destVars,
                           ioda::Dimensions_t & globalMaxElements,
                           ioda::Dimensions_t & maxElements) {
+    oops::Log::debug() << "readerCreateVariable: creating: " << varName << std::endl;
     // Record the max number of elements on the source side and on the destination side.
     // These values will be used by the readerCopyVarData function.
     Dimensions varDims = srcVar.getDimensions();
