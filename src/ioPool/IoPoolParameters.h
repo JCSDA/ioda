@@ -31,6 +31,7 @@ namespace eckit {
 }
 
 namespace ioda {
+namespace IoPool {
 
 class IoPoolParameters : public oops::Parameters {
      OOPS_CONCRETE_PARAMETERS(IoPoolParameters, oops::Parameters)
@@ -69,6 +70,7 @@ class IoPoolParameters : public oops::Parameters {
     oops::Parameter<std::string> writerPoolName{"writer name", "SinglePool", this};
 };
 
+}  // namespace IoPool
 }  // namespace ioda
 
 /// @}

@@ -293,12 +293,12 @@ void ObsSpace::save() {
           std::vector<bool> patchObsVec(nlocs());
           dist_->patchObs(patchObsVec);
 
-          ioda::WriterPoolCreationParameters createParams(
+          IoPool::WriterPoolCreationParameters createParams(
               obs_params_.comm(), obs_params_.timeComm() ,
               obs_params_.top_level_.obsDataOut.value()->engine.value().engineParameters,
               patchObsVec);
-          std::unique_ptr<WriterPoolBase> writePool =
-              ioda::WriterPoolFactory::create(obs_params_.top_level_.ioPool, createParams);
+          std::unique_ptr<IoPool::WriterPoolBase> writePool =
+              IoPool::WriterPoolFactory::create(obs_params_.top_level_.ioPool, createParams);
 
           writePool->initialize();
           writePool->save(obs_group_);
@@ -685,14 +685,15 @@ void ObsSpace::load() {
     // the new reader to be developed in parallel with the current reader. When the
     // new reader becomes fully functional it will replace the current reader.
 
-    ReaderPoolCreationParameters createParams(obs_params_.comm(), obs_params_.timeComm(),
+    IoPool::ReaderPoolCreationParameters createParams(
+        obs_params_.comm(), obs_params_.timeComm(),
         obs_params_.top_level_.obsDataIn.value().engine.value().engineParameters,
         obs_params_.windowStart(), obs_params_.windowEnd(),
         obs_params_.top_level_.simVars.value().variables(), dist_,
         obs_params_.top_level_.obsDataIn.value().obsGrouping.value().obsGroupVars);
 
-    std::unique_ptr<ReaderPoolBase> readPool =
-            ReaderPoolFactory::create(obs_params_.top_level_.ioPool, createParams);
+    std::unique_ptr<IoPool::ReaderPoolBase> readPool =
+            IoPool::ReaderPoolFactory::create(obs_params_.top_level_.ioPool, createParams);
 
     // Transfer the obs data from the source to the obs space container (ObsGroup)
     readPool->initialize();

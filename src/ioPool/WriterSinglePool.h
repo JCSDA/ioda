@@ -35,6 +35,7 @@
 #include "oops/util/Printable.h"
 
 namespace ioda {
+namespace IoPool {
 
 /// \brief Writer pool subclass
 /// \details This class holds a single io pool which consists of a small number of MPI tasks.
@@ -79,6 +80,7 @@ class IODA_DL WriterSinglePool : public WriterPoolBase {
   std::shared_ptr<Engines::WriterProcBase> writer_proc_;
 };
 
+}  // namespace IoPool
 }  // namespace ioda
 
 /// @}

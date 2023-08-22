@@ -27,6 +27,7 @@
 #include "oops/util/Logger.h"
 
 namespace ioda {
+namespace IoPool {
 
 // Io pool factory maker
 static WriterPoolMaker<WriterSinglePool> makerWriterSinglePool("SinglePool");
@@ -167,4 +168,5 @@ void WriterSinglePool::print(std::ostream & os) const {
   os << writerDest_ << " (io pool size: " << poolSize << ")";
 }
 
+}  // namespace IoPool
 }  // namespace ioda

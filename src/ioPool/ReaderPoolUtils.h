@@ -23,6 +23,9 @@ namespace ioda {
 
 class Distribution;
 class Group;
+
+namespace IoPool {
+
 class ReaderPoolBase;
 
 /// Enum type for the different formats of the datetime variable
@@ -45,7 +48,7 @@ void convertEpochStringToDtime(const std::string & epochString, util::DateTime &
 /// @param dtimeFormat format of the datetime variable in the obs source
 /// @param emptyFile flag when true have a file with zero obs
 void checkForRequiredVars(const ioda::Group & srcGroup, const eckit::mpi::Comm & commAll,
-                          std::string & sourceName, ioda::DateTimeFormat & dtimeFormat,
+                          std::string & sourceName, DateTimeFormat & dtimeFormat,
                           bool & emptyFile);
 
 /// @brief Read date time variable values from obs source
@@ -56,7 +59,7 @@ void checkForRequiredVars(const ioda::Group & srcGroup, const eckit::mpi::Comm &
 /// @param dtimeVals vector of int64_t to hold date time values
 /// @param dtimeEpoch string value for datetime variable units
 void readSourceDtimeVar(const ioda::Group & srcGroup, const eckit::mpi::Comm & commAll,
-                        const bool emptyFile, const ioda::DateTimeFormat dtimeFormat,
+                        const bool emptyFile, const DateTimeFormat dtimeFormat,
                         std::vector<int64_t> & dtimeVals, std::string & dtimeEpoch);
 
 /// @brief Initialize the location indices
@@ -168,7 +171,7 @@ void applyMpiDistribution(const std::shared_ptr<Distribution> & dist, const bool
 /// @param localNlocs number of locations kept on this MPI process
 /// @param localNrecs number of records kept on this MPI process
 void setIndexAndRecordNums(const ioda::Group & srcGroup, const eckit::mpi::Comm & commAll,
-        const bool emptyFile, const std::shared_ptr<Distribution> & distribution,
+        const bool emptyFile, const std::shared_ptr<ioda::Distribution> & distribution,
         const std::vector<int64_t> & dtimeValues,
         const int64_t windowStart, const int64_t windowEnd, const bool applyLocCheck,
         const std::vector<std::string> & obsGroupVarList,
@@ -196,7 +199,7 @@ void setDistributionMap(const ReaderPoolBase & ioPool,
 /// @param emptyFile true if input file is empty (ie, source nlocs is zero)
 /// @param memGroup is the destination memory group
 /// @param groupStructureYaml string holding a YAML description of the file group structure
-void readerCopyGroupStructure(const ioda::ReaderPoolBase & ioPool,
+void readerCopyGroupStructure(const ReaderPoolBase & ioPool,
                               const ioda::Group & fileGroup, const bool emptyFile,
                               ioda::Group & memGroup, std::string & groupStructureYaml);
 
@@ -206,7 +209,7 @@ void readerCopyGroupStructure(const ioda::ReaderPoolBase & ioPool,
 /// @param memGroup is the destination memory group
 /// @param groupStructureYaml string holding a YAML description of the file group structure
 /// @param dtimeValues date time values in the epoch style format
-void readerTransferVarData(const ioda::ReaderPoolBase & ioPool,
+void readerTransferVarData(const ReaderPoolBase & ioPool,
                            const ioda::Group & fileGroup, ioda::Group & memGroup,
                            std::string & groupStructureYaml,
                            std::vector<int64_t> & dtimeValues);
@@ -226,10 +229,11 @@ void readerTransferVarData(const ioda::ReaderPoolBase & ioPool,
 /// @param latValues vector of float to hold latitude values
 /// @param isParallelIo true if reading the input file in parallel IO mode
 /// @param emptyFile true if reading from an empty file
-void ioReadGroup(const ioda::ReaderPoolBase & ioPool, const ioda::Group& fileGroup,
-                 ioda::Group& memGroup, const ioda::DateTimeFormat dtimeFormat,
+void ioReadGroup(const ReaderPoolBase & ioPool, const ioda::Group& fileGroup,
+                 ioda::Group& memGroup, const DateTimeFormat dtimeFormat,
                  std::vector<int64_t> & dtimeVals, const std::string & dtimeEpoch,
                  std::vector<float> & lonValues, std::vector<float> & latValues,
                  const bool isParallelIo, const bool emptyFile);
 
+}  // namespace IoPool
 }  // namespace ioda

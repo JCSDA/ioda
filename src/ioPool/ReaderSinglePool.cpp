@@ -31,6 +31,7 @@
 #include "oops/util/missingValues.h"
 
 namespace ioda {
+namespace IoPool {
 
 // Io pool factory maker
 static ReaderPoolMaker<ReaderSinglePool> makerReaderSinglePool("SinglePool");
@@ -221,4 +222,5 @@ void ReaderSinglePool::print(std::ostream & os) const {
   os << readerSrc_ << " (io pool size: " << poolSize << ")";
 }
 
+}  // namespace IoPool
 }  // namespace ioda

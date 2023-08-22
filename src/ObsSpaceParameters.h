@@ -75,7 +75,7 @@ class ObsTopLevelParameters : public oops::ObsSpaceParametersBase {
     oops::Parameter<oops::Variables> ObservedVars{"observed variables", {}, this};
 
     /// Io pool parameters
-    oops::Parameter<IoPoolParameters> ioPool{"io pool", {}, this};
+    oops::Parameter<IoPool::IoPoolParameters> ioPool{"io pool", {}, this};
 
     /// extend the ObsSpace with extra fixed-size records
     oops::OptionalParameter<ObsExtendParameters> obsExtend{"extension", this};

@@ -26,6 +26,7 @@
 #include "oops/util/Logger.h"
 
 namespace ioda {
+namespace IoPool {
 
 constexpr int defaultMaxPoolSize = 10;
 
@@ -220,4 +221,5 @@ void IoPoolBase::createIoPool(IoPoolGroupMap & rankGrouping) {
     }
 }
 
+}  // namespace IoPool
 }  // namespace ioda

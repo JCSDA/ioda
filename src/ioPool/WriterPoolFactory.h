@@ -13,6 +13,7 @@
 #include "ioda/ioPool/WriterPoolBase.h"
 
 namespace ioda {
+namespace IoPool {
 
 //----------------------------------------------------------------------------------------
 // WriterPool factory classes
@@ -61,5 +62,6 @@ class WriterPoolMaker : public WriterPoolFactory {
   explicit WriterPoolMaker(const std::string & name) : WriterPoolFactory(name) {}
 };
 
+}  // namespace IoPool
 }  // namespace ioda
 

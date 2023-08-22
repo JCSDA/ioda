@@ -28,6 +28,7 @@
 #include "oops/util/Logger.h"
 
 namespace ioda {
+namespace IoPool {
 
 constexpr int mpiTagBase = 20000;
 constexpr int varNumTagFactor = 100;
@@ -304,7 +305,7 @@ void writerCreateVariable<std::string>(const std::string & varName, const Variab
     // netcdf compatibility. And in this workaround, we can turn on compression.
     params.noCompress();
     auto fv = srcVar.getFillValue();
-    std::string origFillValue = detail::getFillValue<std::string>(fv);
+    std::string origFillValue = ioda::detail::getFillValue<std::string>(fv);
     params.unsetFillValue();
     Dimensions varDims = srcVar.getDimensions();
     // If adjust Nlocs is >= 0, this means that this is a variable that needs
@@ -336,7 +337,7 @@ void identifyVarsUsingLocation(const ioda::VarUtils::VarDimMap & varDimMap,
     }
 }
 
-void writerCopyVarData(const ioda::WriterPoolBase & ioPool, const ioda::Group & src,
+void writerCopyVarData(const WriterPoolBase & ioPool, const ioda::Group & src,
                        ioda::Group & dest,
                        const VarUtils::Vec_Named_Variable & srcNamedVars,
                        const std::unordered_set<std::string> & varsUsingLocation,
@@ -391,7 +392,7 @@ void writerCopyVarData(const ioda::WriterPoolBase & ioPool, const ioda::Group & 
 
 // public functions
 
-void calcMaxStringLengths(const ioda::WriterPoolBase & ioPool,
+void calcMaxStringLengths(const WriterPoolBase & ioPool,
                           const VarUtils::Vec_Named_Variable & allVarsList,
                           std::map<std::string, std::size_t> & maxStringLengths) {
     // Want to collect from every mpi task (commAll communicator group).
@@ -429,7 +430,7 @@ void calcMaxStringLengths(const ioda::WriterPoolBase & ioPool,
     }
 }
 
-void ioWriteGroup(const ioda::WriterPoolBase & ioPool, const ioda::Group& memGroup,
+void ioWriteGroup(const WriterPoolBase & ioPool, const ioda::Group& memGroup,
                   ioda::Group& fileGroup, const bool isParallelIo) {
   // NOTE: This routine does not respect hard links for groups,
   // types, and variables. Once hard link support is added to IODA,
@@ -541,4 +542,5 @@ void ioWriteGroup(const ioda::WriterPoolBase & ioPool, const ioda::Group& memGro
                     isParallelIo, maxStringLengths);
 }
 
+}  // namespace IoPool
 }  // namespace ioda

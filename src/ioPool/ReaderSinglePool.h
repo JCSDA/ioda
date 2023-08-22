@@ -38,6 +38,7 @@
 #include "oops/util/Printable.h"
 
 namespace ioda {
+namespace IoPool {
 
 class Distribution;
 enum class DateTimeFormat;
@@ -104,6 +105,7 @@ class ReaderSinglePool : public ReaderPoolBase {
   std::string groupStructureYaml_;
 };
 
+}  // namespace IoPool
 }  // namespace ioda
 
 /// @}

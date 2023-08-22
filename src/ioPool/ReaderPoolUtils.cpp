@@ -35,6 +35,7 @@
 #include "oops/util/Logger.h"
 
 namespace ioda {
+namespace IoPool {
 
 namespace detail {
   using std::to_string;
@@ -66,13 +67,13 @@ DataType getMissingValue() {
 // These are special cases to get a char * pointer for the string missing value
 // to persist through the lifetime of the reader pool.
 template<typename DataType>
-DataType getMissingValue(const ioda::ReaderPoolBase & ioPool) {
+DataType getMissingValue(const ReaderPoolBase & ioPool) {
     DataType missVal = util::missingValue<DataType>();
     return missVal;
 }
 
 template<>
-std::shared_ptr<std::string> getMissingValue(const ioda::ReaderPoolBase & ioPool) {
+std::shared_ptr<std::string> getMissingValue(const ReaderPoolBase & ioPool) {
     std::shared_ptr<std::string> missVal = ioPool.stringMissingValue();
     return missVal;
 }
@@ -107,7 +108,7 @@ void convertEpochStringToDtime(const std::string & epochString, util::DateTime &
 
 //--------------------------------------------------------------------------------
 void checkForRequiredVars(const ioda::Group & srcGroup, const eckit::mpi::Comm & commAll,
-                          std::string & sourceName, ioda::DateTimeFormat & dtimeFormat,
+                          std::string & sourceName, DateTimeFormat & dtimeFormat,
                           bool & emptyFile) {
     if (commAll.rank() == 0) {
         // Get number of locations from obs source
@@ -198,7 +199,7 @@ void checkForRequiredVars(const ioda::Group & srcGroup, const eckit::mpi::Comm &
 
 //--------------------------------------------------------------------------------
 void readSourceDtimeVar(const ioda::Group & srcGroup, const eckit::mpi::Comm & commAll,
-                        const bool emptyFile, const ioda::DateTimeFormat dtimeFormat,
+                        const bool emptyFile, const DateTimeFormat dtimeFormat,
                         std::vector<int64_t> & dtimeVals, std::string & dtimeEpoch) {
     // Initialize the output variables to values corresponding to an empty file. That way
     // if we have an empty file, then we can skip the file read and broadcast steps.
@@ -307,10 +308,10 @@ void initSourceIndices(const ioda::Group & srcGroup, const eckit::mpi::Comm & co
                 //    2. Remove locations that have mising values in either of lon or lat
 
                 // Need the fill values for lon and lat to do the second check
-                detail::FillValueData_t lonFvData = lonVar.getFillValue();
-                float lonFillValue = detail::getFillValue<float>(lonFvData);
-                detail::FillValueData_t latFvData = latVar.getFillValue();
-                float latFillValue = detail::getFillValue<float>(latFvData);
+                ioda::detail::FillValueData_t lonFvData = lonVar.getFillValue();
+                float lonFillValue = ioda::detail::getFillValue<float>(lonFvData);
+                ioda::detail::FillValueData_t latFvData = latVar.getFillValue();
+                float latFillValue = ioda::detail::getFillValue<float>(latFvData);
 
                 // Keep all locations that fall inside the timing window. Note numLocsSelecte
                 // will be set to the number of locations stored in the output vectors after
@@ -556,7 +557,7 @@ void applyMpiDistribution(const std::shared_ptr<Distribution> & dist, const bool
 
 //--------------------------------------------------------------------------------
 void setIndexAndRecordNums(const ioda::Group & srcGroup, const eckit::mpi::Comm & commAll,
-        const bool emptyFile, const std::shared_ptr<Distribution> & distribution,
+        const bool emptyFile, const std::shared_ptr<ioda::Distribution> & distribution,
         const std::vector<int64_t> & dtimeValues,
         const int64_t windowStart, const int64_t windowEnd, const bool applyLocCheck,
         const std::vector<std::string> & obsGroupVarList,
@@ -624,7 +625,7 @@ void setDistributionMap(const ReaderPoolBase & ioPool,
 }
 
 //--------------------------------------------------------------------------------
-void readerSerializeGroupStructure(const ioda::ReaderPoolBase & ioPool,
+void readerSerializeGroupStructure(const ReaderPoolBase & ioPool,
                                    const ioda::Group & fileGroup,
                                    const bool emptyFile,
                                    std::string & groupStructureYaml) {
@@ -693,7 +694,7 @@ void readerSerializeGroupStructure(const ioda::ReaderPoolBase & ioPool,
 }
 
 //--------------------------------------------------------------------------------
-void readerDefineYamlAnchors(const ioda::ReaderPoolBase & ioPool,
+void readerDefineYamlAnchors(const ReaderPoolBase & ioPool,
                              std::string & groupStructureYaml) {
     std::stringstream yamlStream;
     yamlStream << "definitions:" << std::endl;
@@ -749,7 +750,7 @@ void readerDeserializeGroupStructure(ioda::Group & memGroup,
 }
 
 //--------------------------------------------------------------------------------
-void readerCopyGroupStructure(const ioda::ReaderPoolBase & ioPool,
+void readerCopyGroupStructure(const ReaderPoolBase & ioPool,
                               const ioda::Group & fileGroup, const bool emptyFile,
                               ioda::Group & memGroup, std::string & groupStructureYaml) {
     // Serialize into a string containing YAML the structure of the fileGroup, and
@@ -789,7 +790,7 @@ ioda::Dimensions_t maxDimSize(const std::map<std::string, ioda::Dimensions_t> & 
 }
 
 //------------------------------------------------------------------------------------
-ioda::Dimensions_t calcSourceMaxElements(const ioda::ReaderPoolBase & ioPool,
+ioda::Dimensions_t calcSourceMaxElements(const ReaderPoolBase & ioPool,
                                          const eckit::YAMLConfiguration & config) {
     // Record the dimension sizes in the config, then look up which dimensions are
     // attached to each variable to get the total number of elements for that variable.
@@ -827,7 +828,7 @@ ioda::Dimensions_t calcSourceMaxElements(const ioda::ReaderPoolBase & ioPool,
 }
 
 //------------------------------------------------------------------------------------
-ioda::Dimensions_t calcDestMaxElements(const ioda::ReaderPoolBase & ioPool,
+ioda::Dimensions_t calcDestMaxElements(const ReaderPoolBase & ioPool,
                                        const eckit::YAMLConfiguration & config) {
     // Record the dimension sizes in the config, then look up which dimensions are
     // attached to each variable to get the total number of elements for that variable.
@@ -988,7 +989,7 @@ void replaceFillWithMissingImpl<std::shared_ptr<std::string>>(
 // that is used by all of the variable transfers except for dateTime, longitude
 // and latitude.
 template <class VarType>
-void replaceFillWithMissing(const ioda::ReaderPoolBase & ioPool,
+void replaceFillWithMissing(const ReaderPoolBase & ioPool,
                             const ioda::Variable & srcVar,
                             const ioda::Dimensions_t & numElements,
                             std::vector<char> & srcValues) {
@@ -996,8 +997,8 @@ void replaceFillWithMissing(const ioda::ReaderPoolBase & ioPool,
     // replacement.
     if (srcVar.hasFillValue()) {
         VarType fillValue;
-        detail::FillValueData_t srcFvData = srcVar.getFillValue();
-        fillValue = detail::getFillValue<VarType>(srcFvData);
+        ioda::detail::FillValueData_t srcFvData = srcVar.getFillValue();
+        fillValue = ioda::detail::getFillValue<VarType>(srcFvData);
         VarType missingValue = getMissingValue<VarType>();
 
         // No need to replace if the fill value and missing value are already equal.
@@ -1010,7 +1011,7 @@ void replaceFillWithMissing(const ioda::ReaderPoolBase & ioPool,
 
 // Specialization for string
 template <>
-void replaceFillWithMissing<std::string>(const ioda::ReaderPoolBase & ioPool,
+void replaceFillWithMissing<std::string>(const ReaderPoolBase & ioPool,
                                          const ioda::Variable & srcVar,
                                          const ioda::Dimensions_t & numElements,
                                          std::vector<char> & srcValues) {
@@ -1018,9 +1019,9 @@ void replaceFillWithMissing<std::string>(const ioda::ReaderPoolBase & ioPool,
     // replacement.
     if (srcVar.hasFillValue()) {
         std::shared_ptr<std::string> fillValue;
-        detail::FillValueData_t srcFvData = srcVar.getFillValue();
+        ioda::detail::FillValueData_t srcFvData = srcVar.getFillValue();
         fillValue = std::make_shared<std::string>(
-            detail::getFillValue<std::string>(srcFvData));
+            ioda::detail::getFillValue<std::string>(srcFvData));
         std::shared_ptr<std::string> missingValue =
             getMissingValue<std::shared_ptr<std::string>>(ioPool);
 
@@ -1044,8 +1045,8 @@ void replaceFillWithMissingSpecial(const ioda::Variable & srcVar,
     // replacement.
     if (srcVar.hasFillValue()) {
         VarType fillValue;
-        detail::FillValueData_t srcFvData = srcVar.getFillValue();
-        fillValue = detail::getFillValue<VarType>(srcFvData);
+        ioda::detail::FillValueData_t srcFvData = srcVar.getFillValue();
+        fillValue = ioda::detail::getFillValue<VarType>(srcFvData);
         VarType missingValue = getMissingValue<VarType>();
 
         // No need to replace if the fill value and missing value are already equal.
@@ -1117,7 +1118,7 @@ ioda::Dimensions_t getVarDataTypeSize(const ioda::Variable & var,
 }
 
 //------------------------------------------------------------------------------------
-void readerLoadSourceVarReplaceFill(const ioda::ReaderPoolBase & ioPool,
+void readerLoadSourceVarReplaceFill(const ReaderPoolBase & ioPool,
                                     const ioda::Group & fileGroup,
                                     const std::string & srcVarName,
                                     std::vector<char> & srcBuffer) {
@@ -1402,7 +1403,7 @@ void readerSaveDestVarGlobal(const ReaderPoolBase & ioPool,
 }
 
 //------------------------------------------------------------------------------------
-void readerTransferVarData(const ioda::ReaderPoolBase & ioPool,
+void readerTransferVarData(const ReaderPoolBase & ioPool,
                            const ioda::Group & fileGroup, ioda::Group & memGroup,
                            std::string & groupStructureYaml,
                            std::vector<int64_t> & dtimeValues) {
@@ -1559,7 +1560,7 @@ void readerCreateVariable(const std::string & varName, const Variable & srcVar,
     }
 
     VariableCreationParameters params = VariableCreationParameters::defaults<VarType>();
-    params.setFillValue<VarType>(ioda::getMissingValue<VarType>());
+    params.setFillValue<VarType>(getMissingValue<VarType>());
     // Don't want compression in the memory image.
     params.noCompress();
     // TODO(srh) For now use a default chunk size (10000) for the chunk size in the creation
@@ -1578,7 +1579,7 @@ void readerCreateVariable(const std::string & varName, const Variable & srcVar,
 }
 
 //--------------------------------------------------------------------------------
-void readerCopyVarData(const ioda::ReaderPoolBase & ioPool,
+void readerCopyVarData(const ReaderPoolBase & ioPool,
                        const ioda::Group & src, ioda::Group & dest,
                        const VarUtils::Vec_Named_Variable & srcVarsList,
                        const VarUtils::VarDimMap & dimsAttachedToVars,
@@ -1702,8 +1703,8 @@ void readerCopyVarData(const ioda::ReaderPoolBase & ioPool,
 }
 
 //--------------------------------------------------------------------------------
-void ioReadGroup(const ioda::ReaderPoolBase & ioPool, const ioda::Group& fileGroup,
-                 ioda::Group& memGroup, const ioda::DateTimeFormat dtimeFormat,
+void ioReadGroup(const ReaderPoolBase & ioPool, const ioda::Group& fileGroup,
+                 ioda::Group& memGroup, const DateTimeFormat dtimeFormat,
                  std::vector<int64_t> & dtimeVals, const std::string & dtimeEpoch,
                  std::vector<float> & lonVals, std::vector<float> & latVals,
                  const bool isParallelIo, const bool emptyFile) {
@@ -1776,7 +1777,7 @@ void ioReadGroup(const ioda::ReaderPoolBase & ioPool, const ioda::Group& fileGro
         ioda::Dimensions varDims(nlocsVec, unlimVec, 1, numLocs);
         ioda::VariableCreationParameters params =
             VariableCreationParameters::defaults<int64_t>();
-        params.setFillValue<int64_t>(ioda::getMissingValue<int64_t>());
+        params.setFillValue<int64_t>(getMissingValue<int64_t>());
         params.noCompress();
         // TODO(srh) For now use a default chunk size (10000) for the chunk size in the creation
         // parameters when the first dimension is Location. This is being done since the size
@@ -1828,4 +1829,5 @@ void ioReadGroup(const ioda::ReaderPoolBase & ioPool, const ioda::Group& fileGro
     }
 }
 
+}  // namespace IoPool
 }  // namespace ioda

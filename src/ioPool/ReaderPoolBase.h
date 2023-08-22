@@ -41,6 +41,9 @@ namespace ioda {
 
 class Distribution;
 
+namespace IoPool {
+
+
 typedef std::map<int, std::vector<std::size_t>> ReaderDistributionMap;
 
 //------------------------------------------------------------------------------------
@@ -200,6 +203,7 @@ class ReaderPoolBase : public IoPoolBase {
   ReaderDistributionMap distributionMap_;
 };
 
+}  // namespace IoPool
 }  // namespace ioda
 
 /// @}

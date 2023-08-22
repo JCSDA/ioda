@@ -68,15 +68,15 @@ CASE("ioda/WriterPoolFactoryMakers") {
         eckit::LocalConfiguration testDataConfig =
             testCaseConfig.getSubConfiguration("test data");
 
-        ioda::IoPoolParameters configParams;
+        IoPool::IoPoolParameters configParams;
         configParams.validateAndDeserialize(ioPoolConfig);
 
         std::vector<bool> expectedPatchObsVec(5, testDataConfig.getBool("patch obs vec"));
-        ioda::WriterPoolCreationParameters createParams(
+        IoPool::WriterPoolCreationParameters createParams(
             oops::mpi::world(), oops::mpi::myself(),
             testEngineParams.writerEngine.value().engineParameters, expectedPatchObsVec);
-        std::unique_ptr<WriterPoolBase> writerPool =
-            ioda::WriterPoolFactory::create(configParams, createParams);
+        std::unique_ptr<IoPool::WriterPoolBase> writerPool =
+            IoPool::WriterPoolFactory::create(configParams, createParams);
 
         // Check if various data members got set properly
         int expectedCommAllRank = testDataConfig.getInt("comm all rank");
@@ -112,7 +112,7 @@ CASE("ioda/ReaderPoolFactoryMakers") {
         eckit::LocalConfiguration testDataConfig =
             testCaseConfig.getSubConfiguration("test data");
 
-        ioda::IoPoolParameters configParams;
+        IoPool::IoPoolParameters configParams;
         configParams.validateAndDeserialize(ioPoolConfig);
 
         util::DateTime expectedWinStart(testDataConfig.getString("win start"));
@@ -122,13 +122,13 @@ CASE("ioda/ReaderPoolFactoryMakers") {
         std::shared_ptr<Distribution> distribution;
         std::vector<std::string> expectedObsGroupVarList =
             testDataConfig.getStringVector("obs group var list");
-        ioda::ReaderPoolCreationParameters createParams(
+        IoPool::ReaderPoolCreationParameters createParams(
             oops::mpi::world(), oops::mpi::myself(),
             testEngineParams.readerEngine.value().engineParameters,
             expectedWinStart, expectedWinEnd, expectedObsVarNames,
             distribution, expectedObsGroupVarList);
-        std::unique_ptr<ReaderPoolBase> readerPool =
-            ioda::ReaderPoolFactory::create(configParams, createParams);
+        std::unique_ptr<IoPool::ReaderPoolBase> readerPool =
+            IoPool::ReaderPoolFactory::create(configParams, createParams);
 
         // Check if various data members got set properly
         int expectedCommAllRank = testDataConfig.getInt("comm all rank");

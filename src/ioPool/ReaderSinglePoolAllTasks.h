@@ -38,6 +38,7 @@
 #include "oops/util/Printable.h"
 
 namespace ioda {
+namespace IoPool {
 
 class Distribution;
 enum class DateTimeFormat;
@@ -88,6 +89,7 @@ class ReaderSinglePoolAllTasks : public ReaderPoolBase {
   void groupRanks(IoPoolGroupMap & rankGrouping) override;
 };
 
+}  // namespace IoPool
 }  // namespace ioda
 
 /// @}

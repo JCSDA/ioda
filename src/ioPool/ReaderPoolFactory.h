@@ -10,6 +10,7 @@
 #include "ioda/ioPool/ReaderPoolBase.h"
 
 namespace ioda {
+namespace IoPool {
 
 //----------------------------------------------------------------------------------------
 // ReaderPool factory classes
@@ -58,5 +59,6 @@ class ReaderPoolMaker : public ReaderPoolFactory {
   explicit ReaderPoolMaker(const std::string & name) : ReaderPoolFactory(name) {}
 };
 
+}  // namespace IoPool
 }  // namespace ioda
 

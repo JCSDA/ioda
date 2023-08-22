@@ -26,6 +26,7 @@
 #include "oops/util/Logger.h"
 
 namespace ioda {
+namespace IoPool {
 
 // For the MPI communicator splitting
 constexpr int writerPoolColor = 1;
@@ -105,4 +106,5 @@ void WriterPoolBase::collectSingleFileInfo() {
     }
 }
 
+}  // namespace IoPool
 }  // namespace ioda

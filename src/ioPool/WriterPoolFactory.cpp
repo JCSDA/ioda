@@ -11,6 +11,7 @@
 #include "oops/util/Logger.h"
 
 namespace ioda {
+namespace IoPool {
 
 //---------------------------------------------------------------------
 // WriterPoolFactory
@@ -60,4 +61,5 @@ std::map <std::string, WriterPoolFactory*> & WriterPoolFactory::getMakers() {
   return makers_;
 }
 
+}  // namespace IoPool
 }  // namespace ioda

@@ -34,6 +34,7 @@
 #include "oops/util/Printable.h"
 
 namespace ioda {
+namespace IoPool {
 
 //------------------------------------------------------------------------------------
 // Common io pool creation parameters
@@ -206,6 +207,7 @@ class IODA_DL IoPoolBase : public util::Printable {
   virtual void createIoPool(IoPoolGroupMap & rankGrouping);
 };
 
+}  // namespace IoPool
 }  // namespace ioda
 
 /// @}

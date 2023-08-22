@@ -30,6 +30,7 @@
 #include "oops/util/missingValues.h"
 
 namespace ioda {
+namespace IoPool {
 
 // For the MPI communicator splitting
 constexpr int readerPoolColor = 3;
@@ -71,4 +72,5 @@ ReaderPoolBase::ReaderPoolBase(const IoPoolParameters & configParams,
                       sourceNlocsOutsideTimeWindow_(0), sourceNlocsRejectQC_(0) {
 }
 
+}  // namespace IoPool
 }  // namespace ioda

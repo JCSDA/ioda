@@ -35,6 +35,7 @@
 #include "oops/util/Printable.h"
 
 namespace ioda {
+namespace IoPool {
 
 //------------------------------------------------------------------------------------
 // Writer pool creation parameters
@@ -125,6 +126,7 @@ class IODA_DL WriterPoolBase : public IoPoolBase {
   virtual void collectSingleFileInfo();
 };
 
+}  // namespace IoPool
 }  // namespace ioda
 
 /// @}

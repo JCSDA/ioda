@@ -34,6 +34,7 @@
 #include "oops/util/missingValues.h"
 
 namespace ioda {
+namespace IoPool {
 
 // Io pool factory maker
 static ReaderPoolMaker<ReaderSinglePoolAllTasks>
@@ -203,4 +204,5 @@ void ReaderSinglePoolAllTasks::groupRanks(IoPoolGroupMap & rankGrouping) {
     }
 }
 
+}  // namespace IoPool
 }  // namespace ioda
