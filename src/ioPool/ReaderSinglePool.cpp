@@ -39,37 +39,12 @@ static ReaderPoolMaker<ReaderSinglePool> makerReaderSinglePool("SinglePool");
 ReaderSinglePool::ReaderSinglePool(const IoPoolParameters & configParams,
                                    const ReaderPoolCreationParameters & createParams)
                                        : ReaderPoolBase(configParams, createParams) {
-    readerSrc_ = "New Reader (under development)";
 }
 
 //--------------------------------------------------------------------------------------
 void ReaderSinglePool::initialize() {
-    // First establish the reader pool which consists of assigning ranks in the "All"
-    // communicator to the "Pool" communicator and then splitting the "All" communicator
-    // to form the "Pool" communicator.
-
-    // For now, the target pool size is simply the minumum of the specified (or default) max
-    // pool size and the size of the comm_all_ communicator group.
-    setTargetPoolSize();
-
-    // This call will return a data structure that shows how to assign the ranks
-    // to the io pools, plus which non io pool ranks get associated with the io pool
-    // ranks. Only rank 0 needs to have this data since it will be used to form and
-    // send the assignments to the other ranks.
-    std::map<int, std::vector<int>> rankGrouping;
-    groupRanks(rankGrouping);
-
-    // This call will fill in the vector data member rank_assignment_, which holds all of
-    // the ranks each member of the io pool needs to communicate with to collect the
-    // variable data. Use the patch nlocs (ie, the number of locations "owned" by this
-    // rank) to represent the number of locations after any duplicated locations are
-    // removed.
-    assignRanksToIoPool(this->nlocs(), rankGrouping);
-
-    // Create the io pool communicator group using the split communicator command.
-    createIoPool(rankGrouping);
-
-    // Second, run the pre-processing steps that establish which locations go to
+    oops::Log::trace() << "ReaderSinglePool::initialize, start" << std::endl;
+    // Run the pre-processing steps that establish which locations go to
     // which ranks. These steps include the timing window filtering, quality checks,
     // obs grouping and applying the mpi distribution scheme.
 
@@ -82,7 +57,7 @@ void ReaderSinglePool::initialize() {
     bool applyLocationsCheck;
     if (this->commAll().rank() == 0) {
         Engines::ReaderCreationParameters
-            createParams(winStart_, winEnd_, *commPool_, commTime_,
+            createParams(winStart_, winEnd_, commAll_, commTime_,
                          obsVarNames_, isParallelIo_);
         std::unique_ptr<Engines::ReaderBase> readerEngine =
             Engines::ReaderFactory::create(readerParams_, createParams);
@@ -139,34 +114,41 @@ void ReaderSinglePool::initialize() {
     ASSERT(sourceNlocs_ == sourceNlocsInsideTimeWindow_ + sourceNlocsOutsideTimeWindow_);
     ASSERT(sourceNlocs_ == globalNlocs_ + sourceNlocsOutsideTimeWindow_ + sourceNlocsRejectQC_);
 
+    // Establish the reader pool which consists of assigning ranks in the "All"
+    // communicator to the "Pool" communicator and then splitting the "All" communicator
+    // to form the "Pool" communicator.
+
+    // For now, the target pool size is simply the minumum of the specified (or default) max
+    // pool size and the size of the comm_all_ communicator group.
+    setTargetPoolSize();
+
+    // This call will return a data structure that shows how to assign the ranks
+    // to the io pools, plus which non io pool ranks get associated with the io pool
+    // ranks. Only rank 0 needs to have this data since it will be used to form and
+    // send the assignments to the other ranks.
+    std::map<int, std::vector<int>> rankGrouping;
+    groupRanks(rankGrouping);
+
+    // This call will fill in the vector data member rank_assignment_, which holds all of
+    // the ranks each member of the io pool needs to communicate with to collect the
+    // variable data. Use the patch nlocs (ie, the number of locations "owned" by this
+    // rank) to represent the number of locations after any duplicated locations are
+    // removed.
+    assignRanksToIoPool(this->nlocs(), rankGrouping);
+
+    // Create the io pool communicator group using the split communicator command.
+    createIoPool(rankGrouping);
+
     // For each pool member record the source location indices that each associated non-pool
     // member requires. Note that the rankGrouping structure contains the information about
     // which ranks are in the pool, and the non-pool ranks those pool ranks are associated with.
     setDistributionMap(*this, locIndices_, rankAssignment_, distributionMap_);
+    oops::Log::trace() << "ReaderSinglePool::initialize, end" << std::endl;
 }
 
 //--------------------------------------------------------------------------------------
 void ReaderSinglePool::load(Group & destGroup) {
-    oops::Log::debug() << "emptyFile_ : " << static_cast<int>(emptyFile_) << std::endl;
-    oops::Log::debug() << "dtimeFormat_ : " << static_cast<int>(dtimeFormat_) << std::endl;
-    oops::Log::debug() << "readerSrc_ : " << readerSrc_ << std::endl;
-    oops::Log::debug() << "rankAssignment_ size: " << rankAssignment_.size() << std::endl;
-    for (auto & rankAssign : rankAssignment_) {
-        oops::Log::debug() << "rankAssignment_:     assigned rank (nlocs): "
-                           << rankAssign.first << " (" << rankAssign.second << ")" << std::endl;
-    }
-
-    oops::Log::debug() << "distributionMap_ size: " << distributionMap_.size() << std::endl;
-    for (auto & distMap : distributionMap_) {
-        if (distMap.second.size() > 0) {
-            oops::Log::debug() << "    rank: loc indices: " << distMap.first << ": "
-                               << distMap.second[0] << "..."
-                               << distMap.second[distMap.second.size()-1] << std::endl;
-        } else {
-            oops::Log::debug() << "    rank: loc indices empty: " << distMap.first << std::endl;
-        }
-    }
-
+    oops::Log::trace() << "ReaderSinglePool::load, start" << std::endl;
     Group fileGroup;
     std::unique_ptr<Engines::ReaderBase> readerEngine = nullptr;
     if (this->commPool() != nullptr) {
@@ -198,8 +180,14 @@ void ReaderSinglePool::load(Group & destGroup) {
     destGroup = ObsGroup::generate(backend, {});
 
     // Copy the group structure (groups and their attributes) contained in the fileGroup
-    // to the destGroup.
-    readerCopyGroupStructure(*this, fileGroup, destGroup);
+    // to the destGroup. Note that the readerCopyGroupStructure function will generate
+    // a string holding YAML that describes the input file group structure.
+    readerCopyGroupStructure(*this, fileGroup, emptyFile_, destGroup, groupStructureYaml_);
+
+    // Transfer the variable data from the fileGroup to the memGroup for each MPI rank
+    if (!emptyFile_) {
+        readerTransferVarData(*this, fileGroup, destGroup, groupStructureYaml_, dtimeValues_);
+    }
 
     // Engine finalization
     if (this->commPool() != nullptr) {
@@ -207,12 +195,12 @@ void ReaderSinglePool::load(Group & destGroup) {
             readerEngine->finalize();
         }
     }
+    oops::Log::trace() << "ReaderSinglePool::load, end" << std::endl;
 }
 
 //--------------------------------------------------------------------------------------
 void ReaderSinglePool::finalize() {
     oops::Log::trace() << "ReaderSinglePool::finalize, start" << std::endl;
-
     // At this point there are two split communicator groups: one for the io pool and the
     // other for the processes not included in the io pool.
     if (eckit::mpi::hasComm(poolCommName_)) {

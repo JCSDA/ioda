@@ -82,15 +82,21 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsdatavector.yaml
   testinput/iodatest_obsdtype.yaml
   testinput/iodatest_obsspace.yaml
+  testinput/iodatest_obsspace_reader_pool.yaml
   testinput/iodatest_obsspace_datetime.yaml
   testinput/iodatest_obsspace_dist_write.yaml
   testinput/iodatest_obsspace_default_fill_values.yaml
   testinput/iodatest_obsspace_empty_obs_file.yaml
   testinput/iodatest_obsspace_empty_obs_file_mpi.yaml
+  testinput/iodatest_obsspace_empty_obs_file_reader_pool.yaml
+  testinput/iodatest_obsspace_empty_obs_file_mpi_reader_pool.yaml
   testinput/iodatest_obsspace_out_dims_check.yaml
   testinput/iodatest_obsspace_grouping.yaml
+  testinput/iodatest_obsspace_grouping_reader_pool.yaml
   testinput/iodatest_obsspace_index_recnum.yaml
   testinput/iodatest_obsspace_index_recnum_twfilt.yaml
+  testinput/iodatest_obsspace_index_recnum_reader_pool.yaml
+  testinput/iodatest_obsspace_index_recnum_twfilt_reader_pool.yaml
   testinput/iodatest_obsspace_invalid_numeric.yaml
   testinput/iodatest_obsspace_io_pool_sondes_single_file.yaml
   testinput/iodatest_obsspace_io_pool_sondes_multi_files.yaml
@@ -98,8 +104,11 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsspace_locations_qc_twfilt.yaml
   testinput/iodatest_obsspace_marine.yaml
   testinput/iodatest_obsspace_mpi.yaml
+  testinput/iodatest_obsspace_mpi_reader_pool.yaml
   testinput/iodatest_obsspace_odc.yaml
+  testinput/iodatest_obsspace_odc_reader_pool.yaml
   testinput/iodatest_obsspace_odc_atms.yaml
+  testinput/iodatest_obsspace_odc_atms_reader_pool.yaml
   testinput/iodatest_obsspace_fortran.yaml
   testinput/iodatest_obsspace_out_odc.yaml
   testinput/iodatest_obsspace_out_odc_mpi_2.yaml
@@ -107,6 +116,8 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsspace_put_db_channels_check.yaml
   testinput/iodatest_obsspace_zero_obs.yaml
   testinput/iodatest_obsspace_filter_to_zero_obs.yaml
+  testinput/iodatest_obsspace_zero_obs_reader_pool.yaml
+  testinput/iodatest_obsspace_filter_to_zero_obs_reader_pool.yaml
   testinput/iodatest_obsspace_fill_value.yaml
   testinput/iodatest_obsvector.yaml
   testinput/iodatest_obsvector_missing_locs.yaml
@@ -126,7 +137,9 @@ list( APPEND ioda_test_input
   testinput/iodatest_sort.yaml
   testinput/iodatest_writer_sondes.yaml
   testinput/iodatest_time_io.yaml
-  testinput/iodatest_time_io_new_reader.yaml
+  testinput/iodatest_time_io_odc.yaml
+  testinput/iodatest_time_io_reader_pool.yaml
+  testinput/iodatest_time_io_reader_pool_odc.yaml
 )
 
 # Create Data directory for test data and symlink files
@@ -391,6 +404,12 @@ ecbuild_add_test( TARGET  test_ioda_obsspace
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
+ecbuild_add_test( TARGET  test_ioda_obsspace_reader_pool
+                  SOURCES mains/TestIodaObsSpace.cc
+                  ARGS    "testinput/iodatest_obsspace_reader_pool.yaml"
+                  LIBS  ioda_test
+                  TEST_DEPENDS get_ioda_test_data )
+
 if (odc_FOUND)
   ecbuild_add_test( TARGET  test_ioda_clean_obsspace_out_odc_files
                     COMMAND rm
@@ -471,9 +490,28 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_empty_obs_file_mpi
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
+ecbuild_add_test( TARGET  test_ioda_obsspace_empty_obs_file_reader_pool
+                  COMMAND test_ioda_obsspace
+                  ARGS    "testinput/iodatest_obsspace_empty_obs_file_reader_pool.yaml"
+                  LIBS  ioda_test
+                  TEST_DEPENDS get_ioda_test_data )
+
+ecbuild_add_test( TARGET  test_ioda_obsspace_empty_obs_file_mpi_reader_pool
+                  MPI 4
+                  COMMAND test_ioda_obsspace
+                  ARGS    "testinput/iodatest_obsspace_empty_obs_file_mpi_reader_pool.yaml"
+                  LIBS  ioda_test
+                  TEST_DEPENDS get_ioda_test_data )
+
 ecbuild_add_test( TARGET  test_ioda_obsspace_grouping
                   COMMAND test_ioda_obsspace
                   ARGS    "testinput/iodatest_obsspace_grouping.yaml"
+                  LIBS  ioda_test
+                  TEST_DEPENDS get_ioda_test_data )
+
+ecbuild_add_test( TARGET  test_ioda_obsspace_grouping_reader_pool
+                  COMMAND test_ioda_obsspace
+                  ARGS    "testinput/iodatest_obsspace_grouping_reader_pool.yaml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
@@ -517,6 +555,46 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_index_recnum_twfilt_mpi_4
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
+ecbuild_add_test( TARGET  test_ioda_obsspace_index_recnum_reader_pool
+                  COMMAND test_ioda_obsspace_index_recnum
+                  ARGS    "testinput/iodatest_obsspace_index_recnum_reader_pool.yaml"
+                  LIBS  ioda_test
+                  TEST_DEPENDS get_ioda_test_data )
+
+ecbuild_add_test( TARGET  test_ioda_obsspace_index_recnum_mpi_2_reader_pool
+                  MPI 2
+                  COMMAND test_ioda_obsspace_index_recnum
+                  ARGS    "testinput/iodatest_obsspace_index_recnum_reader_pool.yaml"
+                  LIBS  ioda_test
+                  TEST_DEPENDS get_ioda_test_data )
+
+ecbuild_add_test( TARGET  test_ioda_obsspace_index_recnum_mpi_4_reader_pool
+                  MPI 4
+                  COMMAND test_ioda_obsspace_index_recnum
+                  ARGS    "testinput/iodatest_obsspace_index_recnum_reader_pool.yaml"
+                  LIBS  ioda_test
+                  TEST_DEPENDS get_ioda_test_data )
+
+ecbuild_add_test( TARGET  test_ioda_obsspace_index_recnum_twfilt_reader_pool
+                  COMMAND test_ioda_obsspace_index_recnum
+                  ARGS    "testinput/iodatest_obsspace_index_recnum_twfilt_reader_pool.yaml"
+                  LIBS  ioda_test
+                  TEST_DEPENDS get_ioda_test_data )
+
+ecbuild_add_test( TARGET  test_ioda_obsspace_index_recnum_twfilt_mpi_2_reader_pool
+                  MPI 2
+                  COMMAND test_ioda_obsspace_index_recnum
+                  ARGS    "testinput/iodatest_obsspace_index_recnum_twfilt_reader_pool.yaml"
+                  LIBS  ioda_test
+                  TEST_DEPENDS get_ioda_test_data )
+
+ecbuild_add_test( TARGET  test_ioda_obsspace_index_recnum_twfilt_mpi_4_reader_pool
+                  MPI 4
+                  COMMAND test_ioda_obsspace_index_recnum
+                  ARGS    "testinput/iodatest_obsspace_index_recnum_twfilt_reader_pool.yaml"
+                  LIBS  ioda_test
+                  TEST_DEPENDS get_ioda_test_data )
+
 ecbuild_add_test( TARGET  test_ioda_obsspace_locations_qc
                   COMMAND test_ioda_obsspace
                   ARGS    "testinput/iodatest_obsspace_locations_qc.yaml"
@@ -541,6 +619,12 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_mpi
                   ARGS    "testinput/iodatest_obsspace_mpi.yaml"
                   TEST_DEPENDS get_ioda_test_data )
 
+ecbuild_add_test( TARGET  test_ioda_obsspace_mpi_reader_pool
+                  MPI     2
+                  COMMAND test_ioda_obsspace
+                  ARGS    "testinput/iodatest_obsspace_mpi_reader_pool.yaml"
+                  TEST_DEPENDS get_ioda_test_data )
+
 ecbuild_add_test( TARGET  test_ioda_obsspace_marine
                   COMMAND test_ioda_obsspace
                   ARGS    "testinput/iodatest_obsspace_marine.yaml"
@@ -552,9 +636,19 @@ if (odc_FOUND)
                     ARGS    "testinput/iodatest_obsspace_odc.yaml"
                     TEST_DEPENDS get_ioda_test_data )
 
+  ecbuild_add_test( TARGET  test_ioda_obsspace_odc_reader_pool
+                    COMMAND test_ioda_obsspace
+                    ARGS    "testinput/iodatest_obsspace_odc_reader_pool.yaml"
+                    TEST_DEPENDS get_ioda_test_data )
+
   ecbuild_add_test( TARGET  test_ioda_obsspace_odc_atms
                     COMMAND test_ioda_obsspace
                     ARGS    "testinput/iodatest_obsspace_odc_atms.yaml"
+                    TEST_DEPENDS get_ioda_test_data )
+
+  ecbuild_add_test( TARGET  test_ioda_obsspace_odc_atms_reader_pool
+                    COMMAND test_ioda_obsspace
+                    ARGS    "testinput/iodatest_obsspace_odc_atms_reader_pool.yaml"
                     TEST_DEPENDS get_ioda_test_data )
 endif()
 
@@ -579,6 +673,18 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_zero_obs
 ecbuild_add_test( TARGET  test_ioda_obsspace_filter_to_zero_obs
                   COMMAND test_ioda_obsspace
                   ARGS    "testinput/iodatest_obsspace_filter_to_zero_obs.yaml"
+                  LIBS  ioda_test
+                  TEST_DEPENDS get_ioda_test_data )
+
+ecbuild_add_test( TARGET  test_ioda_obsspace_zero_obs_reader_pool
+                  COMMAND test_ioda_obsspace
+                  ARGS    "testinput/iodatest_obsspace_zero_obs_reader_pool.yaml"
+                  LIBS  ioda_test
+                  TEST_DEPENDS get_ioda_test_data )
+
+ecbuild_add_test( TARGET  test_ioda_obsspace_filter_to_zero_obs_reader_pool
+                  COMMAND test_ioda_obsspace
+                  ARGS    "testinput/iodatest_obsspace_filter_to_zero_obs_reader_pool.yaml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
@@ -862,8 +968,8 @@ ecbuild_add_test( TARGET  test_ioda_clean_time_io_files
                   ARGS    "-f"
                           "testoutput/amsua_n19_obs_2018041500_m_time.nc4"
                           "testoutput/sondes_obs_2018041500_m_time.nc4"
-                          "testouput/amsua_n19_obs_2018041500_m_time_new_reader.nc4"
-                          "testoutput/sondes_obs_2018041500_m_time_new_reader.nc4" )
+                          "testouput/amsua_n19_obs_2018041500_m_time_reader_pool.nc4"
+                          "testoutput/sondes_obs_2018041500_m_time_reader_pool.nc4" )
 
 # this test creates new output files
 ecbuild_add_test( TARGET  test_ioda_time_io
@@ -891,29 +997,90 @@ ecbuild_add_test( TARGET  test_ioda_time_io_cmp_amsua_n19
                   TEST_DEPENDS get_ioda_test_data test_ioda_time_io)
 
 # this test creates new output files
-ecbuild_add_test( TARGET  test_ioda_time_io_new_reader
+ecbuild_add_test( TARGET  test_ioda_time_io_reader_pool
                   COMMAND ${CMAKE_BINARY_DIR}/bin/time_IodaIO.x
-                  ARGS    "testinput/iodatest_time_io_new_reader.yaml"
+                  ARGS    "testinput/iodatest_time_io_reader_pool.yaml"
                   TEST_DEPENDS get_ioda_test_data test_ioda_clean_time_io_files )
 
 # the following tests compare the output files
-ecbuild_add_test( TARGET  test_ioda_time_io_cmp_sondes_new_reader
+ecbuild_add_test( TARGET  test_ioda_time_io_cmp_sondes_reader_pool
                   TYPE    SCRIPT
                   COMMAND bash
                   ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
                           hdf5
-                          "echo Checking time io (new reader) sondes"
-                          sondes_obs_2018041500_m_time_new_reader.nc4
-                  TEST_DEPENDS get_ioda_test_data test_ioda_time_io_new_reader)
+                          "echo Checking time io (reader pool) sondes"
+                          sondes_obs_2018041500_m_time_reader_pool.nc4
+                  TEST_DEPENDS get_ioda_test_data test_ioda_time_io_reader_pool)
 
-ecbuild_add_test( TARGET  test_ioda_time_io_cmp_amsua_n19_new_reader
+ecbuild_add_test( TARGET  test_ioda_time_io_cmp_amsua_n19_reader_pool
                   TYPE    SCRIPT
                   COMMAND bash
                   ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
                           hdf5
-                          "echo Checking time io (new reader) AMSU-A NOAA19"
-                          amsua_n19_obs_2018041500_m_time_new_reader.nc4
-                  TEST_DEPENDS get_ioda_test_data test_ioda_time_io_new_reader)
+                          "echo Checking time io (reader pool) AMSU-A NOAA19"
+                          amsua_n19_obs_2018041500_m_time_reader_pool.nc4
+                  TEST_DEPENDS get_ioda_test_data test_ioda_time_io_reader_pool)
+
+if (odc_FOUND)
+  # this test removes the output files from prior testing
+  ecbuild_add_test( TARGET  test_ioda_clean_time_io_files_odc
+                    COMMAND rm
+                    ARGS    "-f"
+                            "testoutput/aircraft_time.odb"
+                            "testouput/aircraft_time_reader_pool.odb"
+                            "testoutput/atms_time.odb"
+                            "testoutput/atms_reader_pool.odb" )
+
+  # this test creates new output files
+  ecbuild_add_test( TARGET  test_ioda_time_io_odc
+                    COMMAND ${CMAKE_BINARY_DIR}/bin/time_IodaIO.x
+                    ARGS    "testinput/iodatest_time_io_odc.yaml"
+                    TEST_DEPENDS get_ioda_test_data test_ioda_clean_time_io_files_odc )
+
+  # the following tests compare the output files
+  ecbuild_add_test( TARGET  test_ioda_time_io_cmp_aircraft_odc
+                    TYPE    SCRIPT
+                    COMMAND bash
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                            odb
+                            "echo Checking time io aircraft"
+                            aircraft_time_0000.odb
+                    TEST_DEPENDS get_ioda_test_data test_ioda_time_io_odc)
+
+  ecbuild_add_test( TARGET  test_ioda_time_io_cmp_atms_odc
+                    TYPE    SCRIPT
+                    COMMAND bash
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                            odb
+                            "echo Checking time io ATMS"
+                            atms_time_0000.odb
+                    TEST_DEPENDS get_ioda_test_data test_ioda_time_io_odc)
+
+  # this test creates new output files
+  ecbuild_add_test( TARGET  test_ioda_time_io_reader_pool_odc
+                    COMMAND ${CMAKE_BINARY_DIR}/bin/time_IodaIO.x
+                    ARGS    "testinput/iodatest_time_io_reader_pool_odc.yaml"
+                    TEST_DEPENDS get_ioda_test_data test_ioda_clean_time_io_files_odc )
+
+  # the following tests compare the output files
+  ecbuild_add_test( TARGET  test_ioda_time_io_cmp_aircraft_reader_pool_odc
+                    TYPE    SCRIPT
+                    COMMAND bash
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                            odb
+                            "echo Checking time io (reader pool) aircraft"
+                            aircraft_time_reader_pool_0000.odb
+                    TEST_DEPENDS get_ioda_test_data test_ioda_time_io_reader_pool_odc)
+
+  ecbuild_add_test( TARGET  test_ioda_time_io_cmp_atms_reader_pool_odc
+                    TYPE    SCRIPT
+                    COMMAND bash
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                            odb
+                            "echo Checking time io (reader pool) ATMS"
+                            atms_time_reader_pool_0000.odb
+                    TEST_DEPENDS get_ioda_test_data test_ioda_time_io_reader_pool_odc)
+endif()
 
 #####################################################################
 # Test the ioda-upgrade-v1-to-v2.x app

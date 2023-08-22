@@ -54,6 +54,7 @@ ReaderSinglePoolAllTasks::ReaderSinglePoolAllTasks(
 
 //--------------------------------------------------------------------------------------
 void ReaderSinglePoolAllTasks::initialize() {
+    oops::Log::trace() << "ReaderSinglePoolAllTasks::initialize, start" << std::endl;
     // TODO(srh) Until the actual reader pool is implemented we need to copy the
     // commAll_ communicator to the commPool_ communicator. The following
     // calls will fall into place for the io pool so use them now to accomplish the
@@ -75,10 +76,12 @@ void ReaderSinglePoolAllTasks::initialize() {
 
     // Create the io pool communicator group using the split communicator command.
     createIoPool(rankGrouping);
+    oops::Log::trace() << "ReaderSinglePoolAllTasks::initialize, end" << std::endl;
 }
 
 //--------------------------------------------------------------------------------------
 void ReaderSinglePoolAllTasks::load(Group & destGroup) {
+    oops::Log::trace() << "ReaderSinglePoolAllTasks::load, start" << std::endl;
     Group fileGroup;
     Engines::ReaderCreationParameters
         createParams(winStart_, winEnd_, *commPool_, commTime_,
@@ -161,6 +164,7 @@ void ReaderSinglePoolAllTasks::load(Group & destGroup) {
 
     // Engine finalization
     readerEngine->finalize();
+    oops::Log::trace() << "ReaderSinglePoolAllTasks::load, end" << std::endl;
 }
 
 //--------------------------------------------------------------------------------------

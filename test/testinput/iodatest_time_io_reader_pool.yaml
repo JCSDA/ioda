@@ -14,7 +14,7 @@ observations:
     obsdataout:
       engine:
         type: H5File
-        obsfile: "testoutput/amsua_n19_obs_2018041500_m_time_new_reader.nc4"
+        obsfile: "testoutput/amsua_n19_obs_2018041500_m_time_reader_pool.nc4"
     io pool:
         reader name: SinglePool
 
@@ -28,6 +28,6 @@ observations:
     obsdataout:
       engine:
         type: H5File
-        obsfile: "testoutput/sondes_obs_2018041500_m_time_new_reader.nc4"
+        obsfile: "testoutput/sondes_obs_2018041500_m_time_reader_pool.nc4"
     io pool:
         reader name: SinglePool

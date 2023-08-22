@@ -1,0 +1,40 @@
+---
+window begin: "2018-04-14T21:00:00Z"
+window end: "2018-04-15T03:00:00Z"
+
+observations:
+- obs space:
+    name: ATMS
+    simulated variables: [brightnessTemperature]
+    channels: 1-22
+    obsdatain:
+      engine:
+        type: ODB
+        obsfile: "Data/testinput_tier_1/atms.odb"
+        mapping file: testinput/odb_default_name_map.yaml
+        query file: testinput/iodatest_odb_atms.yaml
+    io pool:
+      reader name: SinglePool
+  test data:
+    gnlocs: 68
+    gnlocs outside time window: 32
+    gnlocs rejected by qc: 0
+    nlocs from source: 100
+    nrecs: 68
+    obs perturbations seed: 0
+    expected group variables: []
+    expected sort variable: ""
+    expected sort order: "ascending"
+    variables for get test:
+      - name: "latitude"
+        group: "MetaData"
+        type: "float"
+        norm: 528.87376603209805
+
+      - name: "longitude"
+        group: "MetaData"
+        type: "float"
+        norm: 709.35601984373704
+    tolerance:
+      - 1.0e-7
+    variables for putget test: []

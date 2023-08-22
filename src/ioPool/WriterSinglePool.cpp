@@ -39,6 +39,7 @@ WriterSinglePool::WriterSinglePool(const IoPoolParameters & configParams,
 
 //--------------------------------------------------------------------------------------
 void WriterSinglePool::initialize() {
+    oops::Log::trace() << "WriterSinglePool::initialize, start" << std::endl;
     // Create and initialize the io pool.
     nlocs_ = patchObsVec().size();
     patchNlocs_ = std::count(patchObsVec().begin(), patchObsVec().end(), true);
@@ -103,6 +104,7 @@ void WriterSinglePool::initialize() {
                                                        createMultipleFiles_, isParallelIo_);
         writer_proc_ = Engines::WriterProcFactory::create(writerParams_, createParams);
     }
+    oops::Log::trace() << "WriterSinglePool::initialize, end" << std::endl;
 }
 
 //--------------------------------------------------------------------------------------

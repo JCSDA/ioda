@@ -85,22 +85,28 @@ void GenRandom::genDistRandom(const GenRandom::Parameters_ & params) {
     // Use different seeds for lat and lon so that in the case where lat and lon ranges
     // are the same, you get a different sequences for lat compared to lon.
     //
-    // Have rank 0 generate the full length random sequences, and then
-    // broadcast these to the other ranks. This ensures that every rank
-    // contains the same random sequences. If all ranks generated their
-    // own sequences, which they could do, the sequences between ranks
-    // would be different in the case where random_seed is not specified.
+    // Have all ranks generate their own random sequences. This supports doing the
+    // reader pool initialize step with only rank zero instantiating a GenRandom engine.
+    // The initialize step is done this way so only rank zero opens an input file
+    // (when the engine spec is for a file) which reduces much file IO.
+    //
+    // When a random seed is specified, then all ranks will get the same sequence. However,
+    // when a random seed is not specified, then all ranks will get different sequences.
+    // This doesn't really matter (except for possible confusion when debugging) since
+    // these sequences get applied to variables that use Location selection. Location
+    // selection is mutually exclusive across ranks, so the case where two ranks have
+    // different values for the same location won't occur because they won't select
+    // a common location.
+    //
+    // Use the reset flag (fifth argument, set to true) to make sure that
+    // we get the same result (with the same seed value) regardless of how many
+    // times the class is instantiated.
     std::vector<float> ranVals(numLocs, 0.0);
     std::vector<float> ranVals2(numLocs, 0.0);
-    if (createParams_.comm.rank() == 0) {
-        util::UniformDistribution<float> ranUD(numLocs, 0.0, 1.0, ranSeed);
-        util::UniformDistribution<float> ranUD2(numLocs, 0.0, 1.0, ranSeed+1);
-
-        ranVals = ranUD.data();
-        ranVals2 = ranUD2.data();
-    }
-    createParams_.comm.broadcast(ranVals, 0);
-    createParams_.comm.broadcast(ranVals2, 0);
+    util::UniformDistribution<float> ranUD(numLocs, 0.0, 1.0, ranSeed, true);
+    util::UniformDistribution<float> ranUD2(numLocs, 0.0, 1.0, ranSeed+1, true);
+    ranVals = ranUD.data();
+    ranVals2 = ranUD2.data();
 
     // Form the ranges val2-val for lat, lon, time
     float latRange = latEnd - latStart;
@@ -114,8 +120,6 @@ void GenRandom::genDistRandom(const GenRandom::Parameters_ & params) {
     std::vector<float> lonVals(numLocs, 0.0);
     std::vector<int64_t> dts(numLocs, 0.0);
 
-    util::Duration durZero(0);
-    util::Duration durOneSec(1);
     for (std::size_t ii = 0; ii < numLocs; ii++) {
         latVals[ii] = latStart + (ranVals[ii] * latRange);
         lonVals[ii] = lonStart + (ranVals2[ii] * lonRange);

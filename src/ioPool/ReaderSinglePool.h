@@ -96,11 +96,12 @@ class ReaderSinglePool : public ReaderPoolBase {
   /// \brief latitude values
   std::vector<float> latValues_;
 
-  /// \brief mapping that shows which source location indices go to which ranks
-  /// \detail This structure is a map of size_t vectors where the index of
-  /// the outer vector denotes the rank in the commAll communicator, and the
-  /// entries in the inner vector denote which locations need to go to that rank.
-  std::map<int, std::vector<std::size_t>> distributionMap_;
+  /// \brief string holding YAML description of the file group structure
+  /// \details The file group structure is everything in the file except for the variable
+  /// data. This includes the hierarchical group structure, the group attributes, the
+  /// variables in each group, the dimensions that are attached to each variable, and
+  /// the variable attributes.
+  std::string groupStructureYaml_;
 };
 
 }  // namespace ioda

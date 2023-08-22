@@ -14,6 +14,8 @@
 
 #include "eckit/mpi/Comm.h"
 
+#include "ioda/ioPool/ReaderPoolBase.h"
+
 #include "oops/mpi/mpi.h"
 #include "oops/util/DateTime.h"
 
@@ -186,15 +188,28 @@ void setIndexAndRecordNums(const ioda::Group & srcGroup, const eckit::mpi::Comm 
 void setDistributionMap(const ReaderPoolBase & ioPool,
                         const std::vector<std::size_t> & localLocIndices,
                         const std::vector<std::pair<int, int>> & rankAssignment,
-                        std::map<int, std::vector<std::size_t>> & distributionMap);
+                        ReaderDistributionMap & distributionMap);
 
 /// @brief copy the groups and attributes from fileGroup to memGroup
 /// @param ioPool ioda ReaderPoolBase object
 /// @param fileGroup is the source file group
+/// @param emptyFile true if input file is empty (ie, source nlocs is zero)
 /// @param memGroup is the destination memory group
+/// @param groupStructureYaml string holding a YAML description of the file group structure
 void readerCopyGroupStructure(const ioda::ReaderPoolBase & ioPool,
-                              const ioda::Group & fileGroup,
-                              ioda::Group & memGroup);
+                              const ioda::Group & fileGroup, const bool emptyFile,
+                              ioda::Group & memGroup, std::string & groupStructureYaml);
+
+/// @brief transfer the variable data from fileGroup to memGroup
+/// @param ioPool ioda ReaderPoolBase object
+/// @param fileGroup is the source file group
+/// @param memGroup is the destination memory group
+/// @param groupStructureYaml string holding a YAML description of the file group structure
+/// @param dtimeValues date time values in the epoch style format
+void readerTransferVarData(const ioda::ReaderPoolBase & ioPool,
+                           const ioda::Group & fileGroup, ioda::Group & memGroup,
+                           std::string & groupStructureYaml,
+                           std::vector<int64_t> & dtimeValues);
 
 //------------------------------------------------------------------------------------
 // Old reader functions

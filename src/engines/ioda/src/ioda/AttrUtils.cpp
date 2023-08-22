@@ -40,6 +40,23 @@ bool ignoreThisAttribute(const std::string & attrName) {
 }
 
 //--------------------------------------------------------------------------------
+template <typename AttrType>
+void streamAttrValueAsYaml(const AttrType & attrValue, const std::string & indent,
+                           std::stringstream & yamlStream) {
+    yamlStream << indent << constants::indent8 << "value: "
+               << attrValue << std::endl;
+}
+
+// string specialization - need to put in quotes around the string value to handle
+// complex string values (such as the history attribute from NCO tools)
+template <>
+void streamAttrValueAsYaml(const std::string & attrValue, const std::string & indent,
+                           std::stringstream & yamlStream) {
+    yamlStream << indent << constants::indent8 << "value: \""
+               << attrValue << "\"" << std::endl;
+}
+
+//--------------------------------------------------------------------------------
 void listAttributesAsYaml(const ioda::Has_Attributes& atts, const std::string & indent,
                           std::stringstream & yamlStream) {
     // Walk through the list of attributes and dump out in YAML format. Use
@@ -83,8 +100,7 @@ void listAttributesAsYaml(const ioda::Has_Attributes& atts, const std::string & 
                 typedef decltype(typeDiscriminator) T;
                 T attrValue;
                 attr.second.read<T>(attrValue);
-                yamlStream << indent << constants::indent8 << "value: "
-                           << attrValue << std::endl;
+                streamAttrValueAsYaml<T>(attrValue, indent, yamlStream);
             },
             AttrUtils::ThrowIfAttributeIsOfUnsupportedType(attr.first));
     }

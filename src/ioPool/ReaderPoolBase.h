@@ -41,6 +41,8 @@ namespace ioda {
 
 class Distribution;
 
+typedef std::map<int, std::vector<std::size_t>> ReaderDistributionMap;
+
 //------------------------------------------------------------------------------------
 // Reader pool creation parameters
 //------------------------------------------------------------------------------------
@@ -141,6 +143,9 @@ class ReaderPoolBase : public IoPoolBase {
   /// \param srcGroup source ioda group to be saved into the output file
   virtual void load(Group & destGroup) = 0;
 
+  /// \brief mapping that shows which source location indices go to which ranks
+  const ReaderDistributionMap & distributionMap() const { return distributionMap_; }
+
  protected:
   /// \brief parameters to be sent to the reader engine factory
   const oops::RequiredPolymorphicParameter
@@ -187,6 +192,12 @@ class ReaderPoolBase : public IoPoolBase {
 
   /// \brief date time epoch string
   std::string dtimeEpoch_;
+
+  /// \brief mapping that shows which source location indices go to which ranks
+  /// \detail This structure is a map of size_t vectors where the index of
+  /// the outer vector denotes the rank in the commAll communicator, and the
+  /// entries in the inner vector denote which locations need to go to that rank.
+  ReaderDistributionMap distributionMap_;
 };
 
 }  // namespace ioda

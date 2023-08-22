@@ -1,0 +1,41 @@
+---
+window begin: "2018-04-14T21:00:00Z"
+window end: "2018-04-15T03:00:00Z"
+
+observations:
+- obs space:
+    name: "ATMS"
+    simulated variables: ['brightnessTemperature']
+    channels: 1-22
+    obsdatain:
+      engine:
+        type: ODB
+        obsfile: "Data/testinput_tier_1/atms.odb"
+        mapping file: testinput/odb_default_name_map.yaml
+        query file: testinput/iodatest_odb_atms.yaml
+    obsdataout:
+      engine:
+        type: ODB
+        obsfile: "testoutput/atms_time_reader_pool.odb"
+        mapping file: testinput/odb_default_name_map.yaml
+        query file: testinput/iodatest_odb_atms.yaml
+    io pool:
+      reader name: SinglePool
+
+- obs space:
+    name: "Aircraft"
+    simulated variables: ['airTemperature']
+    obsdatain:
+      engine:
+        type: ODB
+        obsfile: "Data/testinput_tier_1/aircraft.odb"
+        mapping file: testinput/odb_default_name_map.yaml
+        query file: testinput/iodatest_odb_aircraft.yaml
+    obsdataout:
+      engine:
+        type: ODB
+        obsfile: "testoutput/aircraft_time_reader_pool.odb"
+        mapping file: testinput/odb_default_name_map.yaml
+        query file: testinput/iodatest_odb_aircraft.yaml
+    io pool:
+      reader name: SinglePool
