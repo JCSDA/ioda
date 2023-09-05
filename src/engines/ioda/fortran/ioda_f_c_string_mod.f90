@@ -109,7 +109,7 @@ contains
    subroutine ioda_f_string_to_c_copy(fstr, cstr_ptr, max_c_sz)
       implicit none
       character(len=*), intent(in) :: fstr
-      type(c_ptr), intent(out) :: cstr_ptr
+      type(c_ptr), intent(inout) :: cstr_ptr
       integer(int64), intent(inout) :: max_c_sz
       character(kind=c_char, len=1), dimension(:), pointer :: cstr
       integer(int64) :: i, clen, flen
