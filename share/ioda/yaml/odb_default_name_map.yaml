@@ -864,6 +864,9 @@ varno-dependent columns:
         varno: 288
       - name: "kd490"
         varno: 289
+      - name: "cloudAmountOfLowestLayer"
+        varno: 295
+        unit: percentage
   # Map initial_obsvalue at varno 235 to MetaData/air_pressure rather than ObsValue/air_pressure
   - source: "initial_obsvalue"
     group name: "MetaData"

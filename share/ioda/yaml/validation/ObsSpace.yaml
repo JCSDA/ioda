@@ -471,6 +471,8 @@ Variables:
   - Variable: [ "cloudAmount", "cloud_fraction", "initial_cloud_fraction", "cloud_area_fraction" ]
     Dimensions: [ [ "Location" ],  [ "Location", "Layer" ], [ "Location", "Channel"], [ "Location", "CloudSequence" ] ]
     Attributes: { units: "1" }
+  - Variable: [ "cloudAmountOfLowestLayer" ]
+    Attributes: { units: "1" }
   - Variable: [ "cloudType" ]
     Dimensions: [ [ "Location" ],  [ "Location", "CloudSequence" ] ] # NCEP BUFR/PREPBUFR
     Type: Enum

@@ -1,5 +1,5 @@
 where:
-  varno: [119,247]
+  varno: [119,247,295]
 variables:
 - name: initial_obsvalue
 - name: initial_vertco_reference
