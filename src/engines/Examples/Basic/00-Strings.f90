@@ -18,7 +18,7 @@ program ioda_fortran_string_test
 	type(c_ptr) :: cstr2
 	integer(int64) :: i
 	integer(int64) :: szz
-		
+        integer(int64) :: asz 		
 	fstr1 = 'this is my test string'
 	cstr1 = ioda_f_string_to_c_dup(fstr1)
 	if (len_trim(fstr1) /= c_strlen(cstr1)) then
@@ -47,7 +47,8 @@ program ioda_fortran_string_test
 
 	fstr1 = 'this is my test string'
 	szz = len_trim(fstr1,int64)
-	cstr2 = ioda_c_string_alloc(szz)
+	asz = szz + 1_int64
+	cstr2 = ioda_c_string_alloc(asz)
 	call ioda_f_string_to_c_copy(fstr1,cstr2,szz)
 	if (len_trim(fstr1) /= c_strlen(cstr2)) then
 	    write(error_unit,*)'ioda_f_string_to_c_copy failed'

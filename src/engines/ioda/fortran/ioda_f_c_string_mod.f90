@@ -115,12 +115,12 @@ contains
       integer(int64) :: i, clen, flen
 
       flen = len_trim(fstr)
+      clen = flen + 1;
       if (max_c_sz < flen) then
          call ioda_c_free(cstr_ptr)
-         cstr_ptr = ioda_c_string_alloc(flen)
+         cstr_ptr = ioda_c_string_alloc(clen)
          max_c_sz = flen
       end if
-      clen = flen + 1
       call c_f_pointer(cstr_ptr, cstr, [clen])
       do i = 1, flen
          cstr(i) = fstr(i:i)
