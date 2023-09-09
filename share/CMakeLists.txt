@@ -57,7 +57,7 @@ set(
   ioda/yaml/odb_surfacesst_name_map.yaml
 )
 
-set(testinput_dest "${CMAKE_BINARY_DIR}/${PROJECT_NAME}/test/testinput/")
+set(testinput_dest "${CMAKE_CURRENT_BINARY_DIR}/test/testinput/")
 
 file(INSTALL ${testinput_files} DESTINATION "${testinput_dest}")
 file(

@@ -12,13 +12,13 @@ construct file reader tests:
         name: "ODB file"
         file type: "odb"
         file name: "Data/testinput_tier_1/aircraft.odb"
-        mapping file name: "testinput/odb_default_name_map.yaml"
-        query file name: "testinput/iodatest_odb_aircraft.yaml"
+        mapping file name: "../share/test/testinput/odb_default_name_map.yaml"
+        query file name: "../share/test/testinput/iodatest_odb_aircraft.yaml"
 
 construct file writer tests:
     - case:
         name: "ODB file"
         file type: "odb"
         file name: "testoutput/engine_construct_file_writer.odb"
-        mapping file name: "testinput/odb_default_name_map.yaml"
-        query file name: "testinput/iodatest_odb_aircraft.yaml"
+        mapping file name: "../share/test/testinput/odb_default_name_map.yaml"
+        query file name: "../share/test/testinput/iodatest_odb_aircraft.yaml"

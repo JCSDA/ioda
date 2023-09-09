@@ -11,14 +11,14 @@ observations:
       engine:
         type: ODB
         obsfile: "Data/testinput_tier_1/atms.odb"
-        mapping file: testinput/odb_default_name_map.yaml
-        query file: testinput/iodatest_odb_atms.yaml
+        mapping file: ../share/test/testinput/odb_default_name_map.yaml
+        query file: ../share/test/testinput/iodatest_odb_atms.yaml
     obsdataout:
       engine:
         type: ODB
         obsfile: "testoutput/atms_time.odb"
-        mapping file: testinput/odb_default_name_map.yaml
-        query file: testinput/iodatest_odb_atms.yaml
+        mapping file: ../share/test/testinput/odb_default_name_map.yaml
+        query file: ../share/test/testinput/iodatest_odb_atms.yaml
 
 - obs space:
     name: "Aircraft"
@@ -27,11 +27,11 @@ observations:
       engine:
         type: ODB
         obsfile: "Data/testinput_tier_1/aircraft.odb"
-        mapping file: testinput/odb_default_name_map.yaml
-        query file: testinput/iodatest_odb_aircraft.yaml
+        mapping file: ../share/test/testinput/odb_default_name_map.yaml
+        query file: ../share/test/testinput/iodatest_odb_aircraft.yaml
     obsdataout:
       engine:
         type: ODB
         obsfile: "testoutput/aircraft_time.odb"
-        mapping file: testinput/odb_default_name_map.yaml
-        query file: testinput/iodatest_odb_aircraft.yaml
+        mapping file: ../share/test/testinput/odb_default_name_map.yaml
+        query file: ../share/test/testinput/iodatest_odb_aircraft.yaml

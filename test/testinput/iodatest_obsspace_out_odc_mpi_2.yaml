@@ -14,7 +14,7 @@ observations:
       engine:
         type: ODB
         obsfile: "testoutput/diagout-aod-testdatasets.odc"
-        mapping file: testinput/odb_default_name_map.yaml
+        mapping file: ../share/test/testinput/odb_default_name_map.yaml
         query file: testinput/iodatest_odb_aod_write_testdatasets.yaml
   test data:
     gnlocs: 100

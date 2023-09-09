@@ -11,8 +11,8 @@ observations:
       engine:
         type: ODB
         obsfile: "Data/testinput_tier_1/atms.odb"
-        mapping file: testinput/odb_default_name_map.yaml
-        query file: testinput/iodatest_odb_atms.yaml
+        mapping file: ../share/test/testinput/odb_default_name_map.yaml
+        query file: ../share/test/testinput/iodatest_odb_atms.yaml
     io pool:
       reader name: SinglePool
   test data:

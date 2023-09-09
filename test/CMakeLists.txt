@@ -1251,7 +1251,7 @@ ecbuild_add_test( TARGET  test_ioda_upgrader_dtime_offset_v2_to_v3
                           "${CMAKE_BINARY_DIR}/bin/ioda-upgrade-v2-to-v3.x
                           Data/testinput_tier_1/upgrader_dtime_offset_v2_to_v3.nc4
                           testoutput/upgrader_dtime_offset_v2_to_v3.nc4
-                          testinput/validation/ObsSpace.yaml"
+                          ../share/test/testinput/validation/ObsSpace.yaml"
                           upgrader_dtime_offset_v2_to_v3.nc4
                   TEST_DEPENDS get_ioda_test_data )
 
@@ -1265,7 +1265,7 @@ ecbuild_add_test( TARGET  test_ioda_upgrader_dtime_offstr_v2_to_v3
                           "${CMAKE_BINARY_DIR}/bin/ioda-upgrade-v2-to-v3.x
                           Data/testinput_tier_1/upgrader_dtime_offstr_v2_to_v3.nc4
                           testoutput/upgrader_dtime_offstr_v2_to_v3.nc4
-                          testinput/validation/ObsSpace.yaml"
+                          ../share/test/testinput/validation/ObsSpace.yaml"
                           upgrader_dtime_offstr_v2_to_v3.nc4
                   TEST_DEPENDS get_ioda_test_data )
 
@@ -1279,7 +1279,7 @@ ecbuild_add_test( TARGET  test_ioda_upgrader_dtime_all_v2_to_v3
                           "${CMAKE_BINARY_DIR}/bin/ioda-upgrade-v2-to-v3.x
                           Data/testinput_tier_1/upgrader_dtime_all_v2_to_v3.nc4
                           testoutput/upgrader_dtime_all_v2_to_v3.nc4
-                          testinput/validation/ObsSpace.yaml"
+                          ../share/test/testinput/validation/ObsSpace.yaml"
                           upgrader_dtime_all_v2_to_v3.nc4
                   TEST_DEPENDS get_ioda_test_data )
 
@@ -1291,7 +1291,7 @@ ecbuild_add_test( TARGET  test_ioda_upgrader_amsua_n19_v2_to_v3
                           "${CMAKE_BINARY_DIR}/bin/ioda-upgrade-v2-to-v3.x
                           Data/testinput_tier_1/upgrader_amsua_n19_v2_to_v3.nc4
                           testoutput/upgrader_amsua_n19_v2_to_v3.nc4
-                          testinput/validation/ObsSpace.yaml"
+                          ../share/test/testinput/validation/ObsSpace.yaml"
                           upgrader_amsua_n19_v2_to_v3.nc4
                   TEST_DEPENDS get_ioda_test_data )
 
@@ -1303,7 +1303,7 @@ ecbuild_add_test( TARGET  test_ioda_upgrader_met_office_gpsro_v2_to_v3
                           "${CMAKE_BINARY_DIR}/bin/ioda-upgrade-v2-to-v3.x
                           Data/testinput_tier_1/upgrader_met_office_gpsro_v2_to_v3.nc4
                           testoutput/upgrader_met_office_gpsro_v2_to_v3.nc4
-                          testinput/validation/ObsSpace.yaml"
+                          ../share/test/testinput/validation/ObsSpace.yaml"
                           upgrader_met_office_gpsro_v2_to_v3.nc4
                   TEST_DEPENDS get_ioda_test_data )
 
@@ -1316,7 +1316,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             Aircraft
                             Data/testinput_tier_1/aircraft.odb
-                            testinput/odb_aircraft_name_map.yaml testinput/iodatest_odb_aircraft.yaml"
+                            ../share/test/testinput/odb_aircraft_name_map.yaml ../share/test/testinput/iodatest_odb_aircraft.yaml"
                             test-Aircraft.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -1328,7 +1328,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             Mixed-Aircraft
                             Data/testinput_tier_1/aircraft-mixed-elements.odb
-                            testinput/odb_aircraft_name_map.yaml testinput/iodatest_odb_aircraft.yaml"
+                            ../share/test/testinput/odb_aircraft_name_map.yaml ../share/test/testinput/iodatest_odb_aircraft.yaml"
                             test-Mixed-Aircraft.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -1340,7 +1340,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             Surface
                             Data/testinput_tier_1/surface.odb
-                            testinput/odb_surface_name_map.yaml testinput/iodatest_odb_surface.yaml"
+                            ../share/test/testinput/odb_surface_name_map.yaml ../share/test/testinput/iodatest_odb_surface.yaml"
                             test-Surface.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -1352,7 +1352,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             Surface-TCBOGUS
                             Data/testinput_tier_1/surface-tcbogus.odb
-                            testinput/odb_surface_name_map.yaml testinput/iodatest_odb_surface.yaml"
+                            ../share/test/testinput/odb_surface_name_map.yaml ../share/test/testinput/iodatest_odb_surface.yaml"
                             test-Surface-TCBOGUS.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -1364,7 +1364,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             Surface-with-query
                             Data/testinput_tier_1/surface.odb
-                            testinput/odb_surface_name_map.yaml testinput/iodatest_odb_surface_with_query.yaml"
+                            ../share/test/testinput/odb_surface_name_map.yaml testinput/iodatest_odb_surface_with_query.yaml"
                             test-Surface-with-query.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -1373,7 +1373,7 @@ if (odc_FOUND)
                     COMMAND ${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                     ARGS    Surface-missing
                             Data/testinput_tier_1/surface-missing.odb
-                            testinput/odb_default_name_map.yaml testinput/iodatest_odb_surface.yaml
+                            ../share/test/testinput/odb_default_name_map.yaml ../share/test/testinput/iodatest_odb_surface.yaml
                     TEST_DEPENDS get_ioda_test_data )
 
   ecbuild_add_test( TARGET  test_ioda-convert_surface_empty_odc
@@ -1381,7 +1381,7 @@ if (odc_FOUND)
                     COMMAND ${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                     ARGS    Surface-empty
                             Data/testinput_tier_1/surface-empty.odb
-                            testinput/odb_default_name_map.yaml testinput/iodatest_odb_surface.yaml
+                            ../share/test/testinput/odb_default_name_map.yaml ../share/test/testinput/iodatest_odb_surface.yaml
                     TEST_DEPENDS get_ioda_test_data )
 
   ecbuild_add_test( TARGET  test_ioda-convert_sonde_odc
@@ -1392,7 +1392,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             Sonde
                             Data/testinput_tier_1/sonde.odb
-                            testinput/odb_sonde_name_map.yaml testinput/iodatest_odb_sonde.yaml"
+                            ../share/test/testinput/odb_sonde_name_map.yaml ../share/test/testinput/iodatest_odb_sonde.yaml"
                             test-Sonde.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -1404,7 +1404,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             Sonde-artificial
                             Data/testinput_tier_1/sonde-artificial.odb
-                            testinput/odb_sonde_name_map.yaml testinput/iodatest_odb_sonde.yaml"
+                            ../share/test/testinput/odb_sonde_name_map.yaml ../share/test/testinput/iodatest_odb_sonde.yaml"
                             test-Sonde-artificial.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -1416,7 +1416,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             Sonde-truncate-profiles
                             Data/testinput_tier_1/sonde.odb
-                            testinput/odb_sonde_name_map.yaml testinput/iodatest_odb_sonde_truncate_profiles.yaml"
+                            ../share/test/testinput/odb_sonde_name_map.yaml ../share/test/testinput/iodatest_odb_sonde_truncate_profiles.yaml"
                             test-Sonde-truncate-profiles.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -1428,7 +1428,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             Sonde-history
                             Data/testinput_tier_1/sonde.odb
-                            testinput/odb_sonde_name_map.yaml testinput/iodatest_odb_sonde_history.yaml"
+                            ../share/test/testinput/odb_sonde_name_map.yaml ../share/test/testinput/iodatest_odb_sonde_history.yaml"
                             test-Sonde-history.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -1440,7 +1440,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             Sonde-time-displacement
                             Data/testinput_tier_1/sonde.odb
-                            testinput/odb_sonde_name_map.yaml testinput/iodatest_odb_sonde_time_displacement.yaml"
+                            ../share/test/testinput/odb_sonde_name_map.yaml ../share/test/testinput/iodatest_odb_sonde_time_displacement.yaml"
                             test-Sonde-time-displacement.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -1452,7 +1452,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             Sonde-time-displacement-extended-time-window-equal-to-window-start
                             Data/testinput_tier_1/sonde.odb
-                            testinput/odb_sonde_name_map.yaml testinput/iodatest_odb_sonde_time_displacement.yaml
+                            ../share/test/testinput/odb_sonde_name_map.yaml ../share/test/testinput/iodatest_odb_sonde_time_displacement.yaml
                             2018-04-14T21:00:00Z 2018-04-14T21:00:00Z"
                             test-Sonde-time-displacement-extended-time-window-equal-to-window-start.hdf
                     TEST_DEPENDS get_ioda_test_data )
@@ -1465,7 +1465,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             Sonde-time-displacement-extended-time-window-before-window-start
                             Data/testinput_tier_1/sonde.odb
-                            testinput/odb_sonde_name_map.yaml testinput/iodatest_odb_sonde_time_displacement.yaml
+                            ../share/test/testinput/odb_sonde_name_map.yaml ../share/test/testinput/iodatest_odb_sonde_time_displacement.yaml
                             2018-04-14T23:00:00Z 2018-04-14T21:00:00Z"
                             test-Sonde-time-displacement-extended-time-window-before-window-start.hdf
                     TEST_DEPENDS get_ioda_test_data )
@@ -1483,7 +1483,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             Sonde-time-displacement-extended-time-window-invalid-datetime
                             Data/testinput_tier_1/sonde.odb
-                            testinput/odb_sonde_name_map.yaml testinput/iodatest_odb_sonde_time_displacement.yaml
+                            ../share/test/testinput/odb_sonde_name_map.yaml ../share/test/testinput/iodatest_odb_sonde_time_displacement.yaml
                             2018-04-14T21:00:00Z 2018-04-14T23:00:00Z"
                             test-Sonde-time-displacement-extended-time-window-invalid-datetime.hdf
                             0.0
@@ -1499,7 +1499,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             ABIClr
                             Data/testinput_tier_1/abiclr.odb
-                            testinput/odb_default_name_map.yaml testinput/iodatest_odb_abiclr.yaml"
+                            ../share/test/testinput/odb_default_name_map.yaml ../share/test/testinput/iodatest_odb_abiclr.yaml"
                             test-ABIClr.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -1511,7 +1511,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             AHIClr
                             Data/testinput_tier_1/ahiclr.odb
-                            testinput/odb_default_name_map.yaml testinput/iodatest_odb_ahiclr.yaml"
+                            ../share/test/testinput/odb_default_name_map.yaml ../share/test/testinput/iodatest_odb_ahiclr.yaml"
                             test-AHIClr.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -1523,7 +1523,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             AMSR
                             Data/testinput_tier_1/amsr.odb
-                            testinput/odb_default_name_map.yaml testinput/iodatest_odb_amsr.yaml"
+                            ../share/test/testinput/odb_default_name_map.yaml ../share/test/testinput/iodatest_odb_amsr.yaml"
                             test-AMSR.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -1535,7 +1535,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             AIRS
                             Data/testinput_tier_1/airs.odb
-                            testinput/odb_radiance_name_map.yaml testinput/iodatest_odb_airs.yaml"
+                            ../share/test/testinput/odb_radiance_name_map.yaml ../share/test/testinput/iodatest_odb_airs.yaml"
                             test-AIRS.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -1547,7 +1547,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             ATOVS
                             Data/testinput_tier_1/atovs.odb
-                            testinput/odb_default_name_map.yaml testinput/iodatest_odb_atovs.yaml"
+                            ../share/test/testinput/odb_default_name_map.yaml ../share/test/testinput/iodatest_odb_atovs.yaml"
                             test-ATOVS.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -1559,7 +1559,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             GMIHigh
                             Data/testinput_tier_1/gmihigh.odb
-                            testinput/odb_default_name_map.yaml testinput/iodatest_odb_gmihigh.yaml"
+                            ../share/test/testinput/odb_default_name_map.yaml ../share/test/testinput/iodatest_odb_gmihigh.yaml"
                             test-GMIHigh.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -1571,7 +1571,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             GMILow
                             Data/testinput_tier_1/gmilow.odb
-                            testinput/odb_default_name_map.yaml testinput/iodatest_odb_gmilow.yaml"
+                            ../share/test/testinput/odb_default_name_map.yaml ../share/test/testinput/iodatest_odb_gmilow.yaml"
                             test-GMILow.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -1583,7 +1583,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             SSMIS
                             Data/testinput_tier_1/ssmis.odb
-                            testinput/odb_default_name_map.yaml testinput/iodatest_odb_ssmis.yaml"
+                            ../share/test/testinput/odb_default_name_map.yaml ../share/test/testinput/iodatest_odb_ssmis.yaml"
                             test-SSMIS.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -1595,7 +1595,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             Satwind
                             Data/testinput_tier_1/satwind.odb
-                            testinput/odb_default_name_map.yaml testinput/iodatest_odb_satwind.yaml"
+                            ../share/test/testinput/odb_default_name_map.yaml ../share/test/testinput/iodatest_odb_satwind.yaml"
                             test-Satwind.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -1607,7 +1607,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             Scatwind
                             Data/testinput_tier_1/scatwind.odb
-                            testinput/odb_default_name_map.yaml testinput/iodatest_odb_scatwind.yaml"
+                            ../share/test/testinput/odb_default_name_map.yaml ../share/test/testinput/iodatest_odb_scatwind.yaml"
                             test-Scatwind.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -1619,7 +1619,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             GNSSRO
                             Data/testinput_tier_1/gnssro.odb
-                            testinput/odb_gnssro_name_map.yaml testinput/iodatest_odb_gnssro.yaml"
+                            ../share/test/testinput/odb_gnssro_name_map.yaml ../share/test/testinput/iodatest_odb_gnssro.yaml"
                             test-GNSSRO.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -1631,7 +1631,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             GNSSRO-profile
                             Data/testinput_tier_1/gnssro.odb
-                            testinput/odb_gnssro_profile_name_map.yaml testinput/iodatest_odb_gnssro_profile.yaml 333"
+                            ../share/test/testinput/odb_gnssro_profile_name_map.yaml testinput/iodatest_odb_gnssro_profile.yaml 333"
                             test-GNSSRO-profile.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -1643,7 +1643,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             GroundGPS
                             Data/testinput_tier_1/groundgps.odb
-                            testinput/odb_default_name_map.yaml testinput/iodatest_odb_groundgps.yaml"
+                            ../share/test/testinput/odb_default_name_map.yaml ../share/test/testinput/iodatest_odb_groundgps.yaml"
                             test-GroundGPS.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -1655,7 +1655,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             AOD
                             Data/testinput_tier_1/aod.odb
-                            testinput/odb_default_name_map.yaml testinput/iodatest_odb_aod.yaml"
+                            ../share/test/testinput/odb_default_name_map.yaml ../share/test/testinput/iodatest_odb_aod.yaml"
                             test-AOD.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -1667,7 +1667,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             CrIS
                             Data/testinput_tier_1/cris.odb
-                            testinput/odb_radiance_name_map.yaml testinput/iodatest_odb_cris.yaml"
+                            ../share/test/testinput/odb_radiance_name_map.yaml ../share/test/testinput/iodatest_odb_cris.yaml"
                             test-CrIS.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -1679,7 +1679,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             CrISFSR
                             Data/testinput_tier_1/crisfsr.odb
-                            testinput/odb_radiance_name_map.yaml testinput/iodatest_odb_crisfsr.yaml"
+                            ../share/test/testinput/odb_radiance_name_map.yaml ../share/test/testinput/iodatest_odb_crisfsr.yaml"
                             test-CrISFSR.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -1691,7 +1691,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             HIRASFSR
                             Data/testinput_tier_1/hirasfsr.odb
-                            testinput/odb_radiance_name_map.yaml  testinput/iodatest_odb_hirasfsr.yaml"
+                            ../share/test/testinput/odb_radiance_name_map.yaml  ../share/test/testinput/iodatest_odb_hirasfsr.yaml"
                             test-HIRASFSR.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -1703,7 +1703,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             HLOSWind
                             Data/testinput_tier_1/hloswind.odb
-                            testinput/odb_default_name_map.yaml testinput/iodatest_odb_hloswind.yaml"
+                            ../share/test/testinput/odb_default_name_map.yaml ../share/test/testinput/iodatest_odb_hloswind.yaml"
                             test-HLOSWind.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -1715,7 +1715,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             MWRI
                             Data/testinput_tier_1/mwri.odb
-                            testinput/odb_default_name_map.yaml testinput/iodatest_odb_mwri.yaml"
+                            ../share/test/testinput/odb_default_name_map.yaml ../share/test/testinput/iodatest_odb_mwri.yaml"
                             test-MWRI.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -1727,7 +1727,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             IASI
                             Data/testinput_tier_1/iasi.odb
-                            testinput/odb_radiance_name_map.yaml testinput/iodatest_odb_iasi.yaml"
+                            ../share/test/testinput/odb_radiance_name_map.yaml ../share/test/testinput/iodatest_odb_iasi.yaml"
                             test-IASI.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -1739,7 +1739,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             MWSFY3
                             Data/testinput_tier_1/mwsfy3.odb
-                            testinput/odb_default_name_map.yaml testinput/iodatest_odb_mwsfy3.yaml"
+                            ../share/test/testinput/odb_default_name_map.yaml ../share/test/testinput/iodatest_odb_mwsfy3.yaml"
                             test-MWSFY3.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -1751,7 +1751,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             SatTCWV
                             Data/testinput_tier_1/sattcwv.odb
-                            testinput/odb_default_name_map.yaml testinput/iodatest_odb_sattcwv.yaml"
+                            ../share/test/testinput/odb_default_name_map.yaml ../share/test/testinput/iodatest_odb_sattcwv.yaml"
                             test-SatTCWV.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -1763,7 +1763,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             SEVIRIClr
                             Data/testinput_tier_1/seviriclr.odb
-                            testinput/odb_default_name_map.yaml testinput/iodatest_odb_seviriclr.yaml"
+                            ../share/test/testinput/odb_default_name_map.yaml ../share/test/testinput/iodatest_odb_seviriclr.yaml"
                             test-SEVIRIClr.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -1775,7 +1775,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             ATMS
                             Data/testinput_tier_1/atms.odb
-                            testinput/odb_default_name_map.yaml testinput/iodatest_odb_atms.yaml"
+                            ../share/test/testinput/odb_default_name_map.yaml ../share/test/testinput/iodatest_odb_atms.yaml"
                             test-ATMS.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -1787,7 +1787,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             GeoCloud
                             Data/testinput_tier_1/geocloud.odb
-                            testinput/odb_default_name_map.yaml testinput/iodatest_odb_geocloud.yaml"
+                            ../share/test/testinput/odb_default_name_map.yaml ../share/test/testinput/iodatest_odb_geocloud.yaml"
                             test-GeoCloud.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -1799,7 +1799,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             SurfaceCloud
                             Data/testinput_tier_1/surfacecloud.odb
-                            testinput/odb_default_name_map.yaml testinput/iodatest_odb_surfacecloud.yaml"
+                            ../share/test/testinput/odb_default_name_map.yaml ../share/test/testinput/iodatest_odb_surfacecloud.yaml"
                             test-SurfaceCloud.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -1811,7 +1811,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             Altimeter
                             Data/testinput_tier_1/altimeter.odb
-                            testinput/odb_default_name_map.yaml testinput/iodatest_odb_altimeter.yaml"
+                            ../share/test/testinput/odb_default_name_map.yaml ../share/test/testinput/iodatest_odb_altimeter.yaml"
                             test-Altimeter.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -1823,7 +1823,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             OceanColour
                             Data/testinput_tier_1/oceancol.odb
-                            testinput/odb_default_name_map.yaml testinput/iodatest_odb_oceancolour.yaml"
+                            ../share/test/testinput/odb_default_name_map.yaml ../share/test/testinput/iodatest_odb_oceancolour.yaml"
                             test-OceanColour.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -1835,7 +1835,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             SatSST
                             Data/testinput_tier_1/satsst.odb
-                            testinput/odb_default_name_map.yaml testinput/iodatest_odb_satsst.yaml"
+                            ../share/test/testinput/odb_default_name_map.yaml ../share/test/testinput/iodatest_odb_satsst.yaml"
                             test-SatSST.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -1847,7 +1847,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             SeaIce
                             Data/testinput_tier_1/seaice.odb
-                            testinput/odb_default_name_map.yaml testinput/iodatest_odb_seaice.yaml"
+                            ../share/test/testinput/odb_default_name_map.yaml ../share/test/testinput/iodatest_odb_seaice.yaml"
                             test-SeaIce.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -1859,7 +1859,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             SurfaceSST
                             Data/testinput_tier_1/surfacesst.odb
-                            testinput/odb_surfacesst_name_map.yaml testinput/iodatest_odb_surfacesst.yaml"
+                            ../share/test/testinput/odb_surfacesst_name_map.yaml ../share/test/testinput/iodatest_odb_surfacesst.yaml"
                             test-SurfaceSST.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -1871,7 +1871,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             OceanSound
                             Data/testinput_tier_1/oceansound.odb
-                            testinput/odb_oceansound_name_map.yaml testinput/iodatest_odb_oceansound.yaml"
+                            ../share/test/testinput/odb_oceansound_name_map.yaml ../share/test/testinput/iodatest_odb_oceansound.yaml"
                             test-OceanSound.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -1883,7 +1883,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             OceanSound-truncate-profiles
                             Data/testinput_tier_1/oceansound.odb
-                            testinput/odb_oceansound_name_map.yaml testinput/iodatest_odb_oceansound_truncate_profiles.yaml"
+                            ../share/test/testinput/odb_oceansound_name_map.yaml ../share/test/testinput/iodatest_odb_oceansound_truncate_profiles.yaml"
                             test-OceanSound-truncate-profiles.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -1936,7 +1936,7 @@ ecbuild_add_test(
 	COMMAND ioda-validate.x
 	ARGS "--ignore-warn"
        "--ignore-error"
-       "testinput/validation/ObsSpace.yaml"
+       "../share/test/testinput/validation/ObsSpace.yaml"
        "Data/testinput_tier_1/sample_hofx_output_amsua_n19.nc4"
 	     # Future: "${IODA_DATA_TEST_ROOT}/testinput_tier_1/sample_hofx_output_amsua_n19.nc4"
 	)
