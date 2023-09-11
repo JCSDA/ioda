@@ -13,6 +13,7 @@ observations:
         obsfile: "Data/testinput_tier_1/amsua_n19_obs_2018041500_m.nc4"
     io pool:
       reader name: SinglePool
+      work directory: testwork
       write multiple files: true
   test data:
     gnlocs: 0

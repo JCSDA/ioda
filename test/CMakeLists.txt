@@ -1960,3 +1960,6 @@ file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/testoutput)
 # Add files to cmake resources
 ecbuild_add_resources( TARGET ioda_test_scripts
                        SOURCES_PACK ${ioda_test_input} )
+
+# Create a work directory for the io pool based reader
+file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/testwork)

@@ -11,6 +11,8 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <numeric>
 #include <sstream>
@@ -622,6 +624,64 @@ void setDistributionMap(const ReaderPoolBase & ioPool,
             ioPool.commAll().send(localLocIndices.data(), dataSize, toRankNum, msgIsData);
         }
     }
+}
+
+//--------------------------------------------------------------------------------
+void readerCreateWorkDirectory(const std::string & workDirBase,
+                               const std::string & fileName, std::string & workDir) {
+    // workDirBase can be either empty or a valid path to a directory that will contain
+    // the input file set.
+    //
+    // fileName can be from a generator or an input file. The generator backend will
+    // supply a representative file name that will be used for the input file set.
+    //
+    // Set workDir to workDirBase if workDirBase is not empty, otherwise use the dirname
+    // of the input file, or /tmp in the generator case. In both case, file or generator,
+    // create a subdirectory based on the file name or generator type.
+    auto const lastSlash = fileName.find_last_of("/");
+    if (workDirBase == "") {
+        // Use the directory portion of the file name
+        if (lastSlash == std::string::npos) {
+            // fileName has no directory path specified --> use current directory
+            workDir = std::string(".");
+        } else {
+            workDir = fileName.substr(0, lastSlash);
+        }
+    } else {
+        workDir = workDirBase;
+    }
+
+    // Make sure workDir at this point exists. Note we still need to create a subdirectory
+    // of workDir, but we will use mkdtemp for that which does the directory creation after
+    // generating the unique name.
+    std::string sysCommand = std::string("mkdir -p ") + workDir;
+    if (system(sysCommand.c_str()) != 0) {
+        throw Exception(std::string("Could not execute: ") + sysCommand, ioda_Here());
+    }
+
+    // Generate the subdirectory name, based on the input file name,
+    // and create the subdirectory using mkdtemp.
+    std::string workDirTemplate = workDir;
+    if (lastSlash == std::string::npos) {
+        workDirTemplate += std::string("/") + fileName;
+    } else {
+        workDirTemplate += std::string("/") + fileName.substr(lastSlash + 1);
+    }
+    workDirTemplate += ".filesetXXXXXX";
+    std::string workSubDir(mkdtemp(workDirTemplate.data()));
+    if (workSubDir.empty()) {
+        throw Exception(std::string("Could not build work subdirectory"), ioda_Here());
+    }
+
+    // mkdtemp creates the directory using mode 700, we want 755 so members in our group
+    // and other can see the directory contents
+    sysCommand = std::string("chmod 755 ") + workSubDir;
+    if (system(sysCommand.c_str()) != 0) {
+        throw Exception(std::string("Could not execute: ") + sysCommand, ioda_Here());
+    }
+
+    // return the full path to the work directory
+    workDir = workSubDir;
 }
 
 //--------------------------------------------------------------------------------

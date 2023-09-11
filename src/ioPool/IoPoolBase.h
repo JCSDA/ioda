@@ -126,12 +126,6 @@ class IODA_DL IoPoolBase : public util::Printable {
   /// \brief io pool parameters
   const IoPoolParameters & configParams_;
 
-  /// \brief parallel io flag, true -> read/write in parallel mode
-  bool isParallelIo_;
-
-  /// \brief target pool size
-  int targetPoolSize_;
-
   /// \brief MPI communicator group for all processes
   const eckit::mpi::Comm & commAll_;
 
@@ -161,6 +155,12 @@ class IODA_DL IoPoolBase : public util::Printable {
 
   /// \brief name for splitting the MPI commnunicator (not in the pool)
   const char * nonPoolCommName_;
+
+  /// \brief parallel io flag, true -> read/write in parallel mode
+  bool isParallelIo_;
+
+  /// \brief target pool size
+  int targetPoolSize_;
 
   /// \brief ranks in the all_comm_ group that this rank transfers data
   /// \detail Each pair in this vector contains as the first element the rank number

@@ -54,6 +54,7 @@ class ReadOdbFile: public ReaderBase {
   // Constructor via parameters
   ReadOdbFile(const Parameters_ & params, const ReaderCreationParameters & createParams);
 
+  std::string fileName() const override;
   void print(std::ostream & os) const override;
 
  private:

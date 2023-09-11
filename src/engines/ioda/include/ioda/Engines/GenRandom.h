@@ -82,6 +82,7 @@ class GenRandom: public ReaderBase {
   /// \param params Parameters structure specific to the generate random method
   void genDistRandom(const Parameters_ & params);
 
+  std::string fileName() const override;
   void print(std::ostream & os) const override;
 };
 

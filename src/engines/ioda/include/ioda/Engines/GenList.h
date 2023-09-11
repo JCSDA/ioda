@@ -65,6 +65,7 @@ class GenList: public ReaderBase {
   /// \param params Parameters structure specific to the generate list method
   void genDistList(const Parameters_ & params);
 
+  std::string fileName() const override;
   void print(std::ostream & os) const override;
 };
 

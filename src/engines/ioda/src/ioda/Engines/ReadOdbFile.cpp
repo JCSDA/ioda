@@ -47,6 +47,10 @@ ReadOdbFile::ReadOdbFile(const Parameters_ & params,
     oops::Log::trace() << "ioda::Engines::ReadOdbFile end constructor" << std::endl;
 }
 
+std::string ReadOdbFile::fileName() const {
+   return fileName_;
+}
+
 void ReadOdbFile::print(std::ostream & os) const {
   os << fileName_;
 }

@@ -11,6 +11,7 @@
 
 #include <algorithm>
 #include <cstdio>
+#include <cstdlib>
 #include <memory>
 #include <numeric>
 #include <sstream>
@@ -72,6 +73,9 @@ void ReaderSinglePool::initialize() {
         std::ostringstream ss;
         ss << *readerEngine;
         readerSrc_ = ss.str();
+
+        // Store the file name associated with the reader engine
+        fileName_ = readerEngine->fileName();
 
         // Send the engine applyLocationsCheck() value to the other ranks
         applyLocationsCheck = readerEngine->applyLocationsCheck();
@@ -144,6 +148,13 @@ void ReaderSinglePool::initialize() {
     // member requires. Note that the rankGrouping structure contains the information about
     // which ranks are in the pool, and the non-pool ranks those pool ranks are associated with.
     setDistributionMap(*this, locIndices_, rankAssignment_, distributionMap_);
+
+    // Set up the working directory for the io pool, and create the input file set.
+    if (this->commAll().rank() == 0) {
+        readerCreateWorkDirectory(configParams_.workDir, fileName_, workDir_);
+        oops::Log::info() << "ReaderSinglePool: reader work directory: "
+                          << workDir_ << std::endl;
+    }
     oops::Log::trace() << "ReaderSinglePool::initialize, end" << std::endl;
 }
 
@@ -202,6 +213,23 @@ void ReaderSinglePool::load(Group & destGroup) {
 //--------------------------------------------------------------------------------------
 void ReaderSinglePool::finalize() {
     oops::Log::trace() << "ReaderSinglePool::finalize, start" << std::endl;
+    // If we are not keeping the work directory contents, then remove them.
+    if (!configParams_.keepWorkDirContents) {
+        // Check for dangerous cases for an "rm -rf" command. If we have one of these,
+        // skip the remove step.
+        if ((workDir_ == "") || (workDir_ == ".") || (workDir_ == "./")) {
+            oops::Log::warning() << "WARNING: ReaderSinglePool::finalize: attempting to "
+                << "unsafely remove a work directory" << std::endl
+                << "WARNING:     Skipping removal of: '" << workDir_ << "'" << std::endl;
+        } else {
+            // Okay to remove
+            std::string sysCommand = std::string("rm -rf ") + workDir_;
+            if (system(sysCommand.c_str()) != 0) {
+                throw Exception(std::string("Could not execute: ") + sysCommand, ioda_Here());
+            }
+        }
+    }
+
     // At this point there are two split communicator groups: one for the io pool and the
     // other for the processes not included in the io pool.
     if (eckit::mpi::hasComm(poolCommName_)) {

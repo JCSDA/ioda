@@ -99,8 +99,10 @@ class ReaderBase : public util::Printable {
     /// \brief return the backend that stores the data
     inline const ioda::ObsGroup getObsGroup() const { return obs_group_; }
 
-    /// \brief return the input file name (empty string when using a generator)
-    std::string fileName() { return fileName_; }
+    /// \brief return a representative file name for the reader backend
+    /// \detail this will be the file name for file sources, and a descriptive
+    /// name for generator sources.
+    virtual std::string fileName() const = 0;
 
     /// \brief return true if the locations data (lat, lon, datetime) need to be checked
     /// \details The locations check filters out locations that:
@@ -119,9 +121,6 @@ class ReaderBase : public util::Printable {
     //------------------ protected variables ----------------------------------
     /// \brief ObsGroup container associated with the selected backend engine
     ioda::ObsGroup obs_group_;
-
-    /// \brief input file name for those readers that use a file
-    std::string fileName_;
 
     /// \brief creation parameters
     ReaderCreationParameters createParams_;

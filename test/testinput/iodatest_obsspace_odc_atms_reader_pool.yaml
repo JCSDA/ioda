@@ -15,6 +15,7 @@ observations:
         query file: ../share/test/testinput/iodatest_odb_atms.yaml
     io pool:
       reader name: SinglePool
+      work directory: testwork
   test data:
     gnlocs: 68
     gnlocs outside time window: 32

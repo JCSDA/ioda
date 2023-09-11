@@ -14,6 +14,7 @@ observations:
     obs perturbations seed: 25
     io pool:
       reader name: SinglePool
+      work directory: testwork
   test data:
     gnlocs: 100
     gnlocs outside time window: 0
@@ -54,6 +55,7 @@ observations:
     obs perturbations seed: -40000
     io pool:
       reader name: SinglePool
+      work directory: testwork
   test data:
     gnlocs: 42
     gnlocs outside time window: 0
@@ -96,6 +98,7 @@ observations:
     obs perturbations seed: 250
     io pool:
       reader name: SinglePool
+      work directory: testwork
   test data:
     gnlocs: 100
     gnlocs outside time window: 0
@@ -141,6 +144,7 @@ observations:
         obsfile: "Data/testinput_tier_1/amsua_n19_obs_2018041500_m.nc4"
     io pool:
       reader name: SinglePool
+      work directory: testwork
   test data:
     gnlocs: 100
     gnlocs outside time window: 0
@@ -175,6 +179,7 @@ observations:
         obsfile: "Data/testinput_tier_1/smap_obs_2018041500_m.nc4"
     io pool:
       reader name: SinglePool
+      work directory: testwork
   test data:
     gnlocs: 100
     gnlocs outside time window: 0
@@ -209,6 +214,7 @@ observations:
         obsfile: "Data/testinput_tier_1/gmi_gpm_obs_2018041500_m.nc4"
     io pool:
       reader name: SinglePool
+      work directory: testwork
   test data:
     gnlocs: 12
     gnlocs outside time window: 0
@@ -240,13 +246,13 @@ observations:
       engine:
         type: H5File
         obsfile: "Data/testinput_tier_1/sondes_obs_2018041500_m.nc4"
-      max frame size: 200
     obsdataout:
       engine:
         type: H5File
         obsfile: "testoutput/diagout_reader_pool.nc4"
     io pool:
       reader name: SinglePool
+      work directory: testwork
   test data:
     gnlocs: 974
     gnlocs outside time window: 0
@@ -306,6 +312,7 @@ observations:
         obsfile: "testoutput/diagout_with_groups_reader_pool.nc4"
     io pool:
       reader name: SinglePool
+      work directory: testwork
   test data:
     gnlocs: 974
     gnlocs outside time window: 0
@@ -345,6 +352,7 @@ observations:
         obsfile: "testoutput/diagout_with_groups_twfilt_reader_pool.nc4"
     io pool:
       reader name: SinglePool
+      work directory: testwork
   test data:
     gnlocs: 968
     gnlocs outside time window: 6
@@ -384,6 +392,7 @@ observations:
         query file: testinput/iodatest_odb_aod_write.yaml
     io pool:
       reader name: SinglePool
+      work directory: testwork
   test data:
     gnlocs: 100
     gnlocs outside time window: 0
@@ -417,6 +426,7 @@ observations:
         obsfile: "Data/testinput_tier_1/derived_variables.nc4"
     io pool:
       reader name: SinglePool
+      work directory: testwork
   test data:
     gnlocs: 2
     gnlocs outside time window: 0
@@ -543,6 +553,7 @@ observations:
         obsfile: "Data/testinput_tier_1/variable_assignment_testdata.nc4"
     io pool:
       reader name: SinglePool
+      work directory: testwork
   test data:
     gnlocs: 4
     gnlocs outside time window: 1
@@ -579,6 +590,7 @@ observations:
         obsfile: "Data/testinput_tier_1/sondes_obs_2018041500_s.nc4"
     io pool:
       reader name: SinglePool
+      work directory: testwork
   test data:
     gnlocs: 91
     gnlocs outside time window: 0
@@ -606,6 +618,7 @@ observations:
         obsfile: "Data/testinput_tier_1/gmi_gpm_obs_2018041500_m.nc4"
     io pool:
       reader name: SinglePool
+      work directory: testwork
   test data:
     gnlocs: 12
     gnlocs outside time window: 0

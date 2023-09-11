@@ -16,7 +16,8 @@ observations:
         type: H5File
         obsfile: "testoutput/amsua_n19_obs_2018041500_m_time_reader_pool.nc4"
     io pool:
-        reader name: SinglePool
+      reader name: SinglePool
+      work directory: testwork
 
 - obs space:
     name: "Radiosonde"
@@ -30,4 +31,5 @@ observations:
         type: H5File
         obsfile: "testoutput/sondes_obs_2018041500_m_time_reader_pool.nc4"
     io pool:
-        reader name: SinglePool
+      reader name: SinglePool
+      work directory: testwork

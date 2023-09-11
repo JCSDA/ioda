@@ -68,6 +68,18 @@ class IoPoolParameters : public oops::Parameters {
     ///               pool is used at a time (as opposed to creating multiple pools to write
     //                out multple obs spaces in parallel)
     oops::Parameter<std::string> writerPoolName{"writer name", "SinglePool", this};
+
+    /// specify a working directory, default (workDir == empty string)
+    /// is to use the directory holding the input file. Note that workDir will end
+    /// up holding subdirectories named after the input files and it is these subdirectories
+    /// that will be removed by default (or kept if "keep work directory contents"
+    /// is set to true)
+    oops::Parameter<std::string> workDir{"work directory", "", this};
+
+    /// If true, then keep the working directory contents after they are used. Note
+    /// that since workDir can be set to an existing directory with other contents
+    /// than what the io pool uses, then we don't want to blanket clear away workdDir.
+    oops::Parameter<bool> keepWorkDirContents{"keep work directory contents", false, this};
 };
 
 }  // namespace IoPool

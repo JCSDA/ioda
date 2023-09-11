@@ -18,6 +18,7 @@ observations:
         obsfile: "testoutput/zero_obs_v2_out_reader_pool.nc4"
     io pool:
       reader name: SinglePool
+      work directory: testwork
       write multiple files: true
   test data:
     gnlocs: 0

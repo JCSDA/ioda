@@ -38,6 +38,10 @@ ReadH5File::ReadH5File(const Parameters_ & params,
     oops::Log::trace() << "ioda::Engines::ReadH5File end constructor" << std::endl;
 }
 
+std::string ReadH5File::fileName() const {
+   return fileName_;
+}
+
 void ReadH5File::print(std::ostream & os) const {
   os << fileName_;
 }

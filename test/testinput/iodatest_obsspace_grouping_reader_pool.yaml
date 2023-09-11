@@ -15,6 +15,7 @@ observations:
         group variables: []
     io pool:
       reader name: SinglePool
+      work directory: testwork
       write multiple files: true
   test data:
     gnlocs: 10
@@ -54,6 +55,7 @@ observations:
     obs perturbations seed: 1001
     io pool:
       reader name: SinglePool
+      work directory: testwork
       write multiple files: true
   test data:
     gnlocs: 10
@@ -92,6 +94,7 @@ observations:
         group variables: [ "group_by_int" ]
     io pool:
       reader name: SinglePool
+      work directory: testwork
       write multiple files: true
   test data:
     gnlocs: 10
@@ -130,6 +133,7 @@ observations:
         group variables: [ "group_by_float" ]
     io pool:
       reader name: SinglePool
+      work directory: testwork
       write multiple files: true
   test data:
     gnlocs: 10
@@ -168,6 +172,7 @@ observations:
         group variables: [ "group_by_string", "group_by_int" ]
     io pool:
       reader name: SinglePool
+      work directory: testwork
       write multiple files: true
   test data:
     gnlocs: 10
@@ -206,6 +211,7 @@ observations:
         group variables: [ "group_by_string", "group_by_float" ]
     io pool:
       reader name: SinglePool
+      work directory: testwork
       write multiple files: true
   test data:
     gnlocs: 10
@@ -244,6 +250,7 @@ observations:
         group variables: [ "group_by_float", "group_by_int" ]
     io pool:
       reader name: SinglePool
+      work directory: testwork
       write multiple files: true
   test data:
     gnlocs: 10
@@ -282,6 +289,7 @@ observations:
         group variables: [ "group_by_string", "group_by_float", "group_by_int" ]
     io pool:
       reader name: SinglePool
+      work directory: testwork
       write multiple files: true
   test data:
     gnlocs: 10
@@ -331,6 +339,7 @@ observations:
         group variables: []
     io pool:
       reader name: SinglePool
+      work directory: testwork
       write multiple files: true
   test data:
     gnlocs: 6
@@ -379,6 +388,7 @@ observations:
         group variables: [ "latitude" ]
     io pool:
       reader name: SinglePool
+      work directory: testwork
       write multiple files: true
   test data:
     gnlocs: 6
@@ -427,6 +437,7 @@ observations:
         group variables: [ "latitude" ]
     io pool:
       reader name: SinglePool
+      work directory: testwork
       write multiple files: true
   test data:
     gnlocs: 6

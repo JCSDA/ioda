@@ -66,6 +66,10 @@ void GenList::genDistList(const GenList::Parameters_ & params) {
                  obsVals, obsErrors, obs_group_);
 }
 
+std::string GenList::fileName() const {
+   return std::string("/tmp/generate.list.nc4");
+}
+
 void GenList::print(std::ostream & os) const {
   os << "generate from listed locations";
 }

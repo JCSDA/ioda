@@ -14,6 +14,7 @@ observations:
     obs perturbations seed: 77
     io pool:
       reader name: SinglePool
+      work directory: testwork
       write multiple files: true
   test data:
     gnlocs: 100
@@ -54,6 +55,7 @@ observations:
         obsfile: "Data/testinput_tier_1/aod_viirs_obs_2018041500_sf42.nc4"
     io pool:
       reader name: SinglePool
+      work directory: testwork
       write multiple files: true
   test data:
     gnlocs: 42
@@ -96,6 +98,7 @@ observations:
         obsfile: "Data/testinput_tier_1/amsua_n19_obs_2018041500_m.nc4"
     io pool:
       reader name: SinglePool
+      work directory: testwork
       write multiple files: true
   test data:
     gnlocs: 100
@@ -131,6 +134,7 @@ observations:
         obsfile: "Data/testinput_tier_1/smap_obs_2018041500_m.nc4"
     io pool:
       reader name: SinglePool
+      work directory: testwork
       write multiple files: true
   test data:
     gnlocs: 100
@@ -167,6 +171,7 @@ observations:
     obs perturbations seed: -42
     io pool:
       reader name: SinglePool
+      work directory: testwork
       write multiple files: true
   test data:
     gnlocs: 12
@@ -200,13 +205,13 @@ observations:
       engine:
         type: H5File
         obsfile: "Data/testinput_tier_1/sondes_obs_2018041500_m.nc4"
-      max frame size: 200
     obsdataout:
       engine:
         type: H5File
         obsfile: "testoutput/diagout_mpi_reader_pool.nc4"
     io pool:
       reader name: SinglePool
+      work directory: testwork
       write multiple files: true
   test data:
     gnlocs: 974
@@ -264,6 +269,7 @@ observations:
         obsfile: "testoutput/ospace.generate.random.mpi_reader_pool.nc4"
     io pool:
       reader name: SinglePool
+      work directory: testwork
       write multiple files: true
   test data:
     gnlocs: 10
@@ -339,6 +345,7 @@ observations:
         obsfile: "testoutput/ospace.generate.list.mpi_reader_pool.nc4"
     io pool:
       reader name: SinglePool
+      work directory: testwork
       write multiple files: true
   test data:
     gnlocs: 11
@@ -402,6 +409,7 @@ observations:
         obsfile: "testoutput/diagout_with_groups_mpi_reader_pool.nc4"
     io pool:
       reader name: SinglePool
+      work directory: testwork
       write multiple files: true
   test data:
     gnlocs: 974
@@ -443,6 +451,7 @@ observations:
         obsfile: "testoutput/diagout_with_groups_twfilt_mpi_reader_pool.nc4"
     io pool:
       reader name: SinglePool
+      work directory: testwork
       write multiple files: true
   test data:
     gnlocs: 968
@@ -478,6 +487,7 @@ observations:
         obsfile: "Data/testinput_tier_1/geos_aod_obs_2018041500_m.nc4"
     io pool:
       reader name: SinglePool
+      work directory: testwork
       write multiple files: true
   test data:
     gnlocs: 100

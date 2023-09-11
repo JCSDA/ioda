@@ -38,6 +38,7 @@ class ReadH5File: public ReaderBase {
   // Constructor via parameters
   ReadH5File(const Parameters_ & params, const ReaderCreationParameters & createParams);
 
+  std::string fileName() const override;
   void print(std::ostream & os) const override;
 
  private:

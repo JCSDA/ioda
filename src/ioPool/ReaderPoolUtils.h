@@ -193,6 +193,13 @@ void setDistributionMap(const ReaderPoolBase & ioPool,
                         const std::vector<std::pair<int, int>> & rankAssignment,
                         ReaderDistributionMap & distributionMap);
 
+/// @brief set up the reader working directory
+/// @param workDirBase specification for the work directory ("work directory" config value)
+/// @param fileName representative file name for the source of the obs data (generator or file)
+/// @param workDir full path to the work directory
+void readerCreateWorkDirectory(const std::string & workDirBase,
+                               const std::string & fileName, std::string & workDir);
+
 /// @brief copy the groups and attributes from fileGroup to memGroup
 /// @param ioPool ioda ReaderPoolBase object
 /// @param fileGroup is the source file group

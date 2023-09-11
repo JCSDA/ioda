@@ -115,6 +115,12 @@ class ReaderPoolBase : public IoPoolBase {
   /// \brief list of variables used for the obs grouping function
   const std::vector<std::string> & obsGroupVarList() const { return obsGroupVarList_; }
 
+  /// \brief work directory base
+  const std::string & workDirBase() const { return configParams_.workDir; }
+
+  /// \brief full work directory
+  const std::string & workDir() const { return workDir_; }
+
   /// \brief missing value for string variables
   std::shared_ptr<std::string> stringMissingValue() const { return stringMissingValue_; }
 
@@ -168,6 +174,9 @@ class ReaderPoolBase : public IoPoolBase {
 
   /// \brief list of variables used for the obs grouping function
   const std::vector<std::string> & obsGroupVarList_;
+
+  /// \brief completed work directory
+  std::string workDir_;
 
   /// \brief missing value for string variables
   std::shared_ptr<std::string> stringMissingValue_;

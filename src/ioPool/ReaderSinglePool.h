@@ -82,6 +82,9 @@ class ReaderSinglePool : public ReaderPoolBase {
   /// \brief reader engine source for printing (eg, input file name)
   std::string readerSrc_;
 
+  /// \brief fileName associated with reader engine.
+  std::string fileName_;
+
   /// \brief input file is empty when true
   bool emptyFile_;
 

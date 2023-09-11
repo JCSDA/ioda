@@ -36,6 +36,7 @@ reader pool factory tests:
     - case:
         name: "Reader default"
         io pool:
+            work directory: "myWorkDir"
         test data:
             comm all rank: 0
             comm all size: 1
@@ -43,12 +44,14 @@ reader pool factory tests:
             win end: "1971-01-01T00:00:00Z"
             obs var names: [ "var1", "var2", "var3" ]
             obs group var list: [ ]
+            work directory: "myWorkDir"
 
     # Reader Single Pool All Tasks
     - case:
         name: "Reader Single Pool All Tasks"
         io pool:
-            writer name: "SinglePoolAllTasks"
+            reader name: "SinglePoolAllTasks"
+            work directory: "myWorkDirSPAT"
             max pool size: 4
         test data:
             comm all rank: 0
@@ -57,13 +60,15 @@ reader pool factory tests:
             win end: "2021-01-01T00:00:00Z"
             obs var names: [ "var5", "var6", "var7" ]
             obs group var list: [ "stationIdentification" ]
+            work directory: "myWorkDirSPAT"
 
     # Reader Single Pool
     - case:
         name: "Reader Single Pool"
         io pool:
-            writer name: "SinglePool"
+            reader name: "SinglePool"
             max pool size: 4
+            work directory: "myWorkDirSP"
         test data:
             comm all rank: 0
             comm all size: 1
@@ -71,4 +76,4 @@ reader pool factory tests:
             win end: "1971-01-01T00:00:00Z"
             obs var names: [ "var9", "var10", "var11" ]
             obs group var list: [ "stationIdentification", "stationLaunchTime" ]
-
+            work directory: "myWorkDirSP"

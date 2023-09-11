@@ -141,6 +141,10 @@ void GenRandom::genDistRandom(const GenRandom::Parameters_ & params) {
                  obsErrors, obs_group_);
 }
 
+std::string GenRandom::fileName() const {
+   return std::string("/tmp/generate.random.nc4");
+}
+
 void GenRandom::print(std::ostream & os) const {
   os << "generate from randomized locations";
 }
