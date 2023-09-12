@@ -671,6 +671,45 @@ void ObsSpace::print(std::ostream & os) const {
 }
 
 // -----------------------------------------------------------------------------
+void ObsSpace::assignLocationValues() {
+    // Only do the assignment if the Location variable exists and if there
+    // are more that zero locations.
+    if ((indx_.size() > 0) && (obs_group_.vars.exists("Location"))) {
+        // (TODO: srh) the location variable is getting defined as different types
+        // by the ioda converters. The converters need to converge on the convention
+        // type which is int64_t. But for now, Location can be int64_t, int, float.
+        // The static_cast from size_t to int, int64_t and float should be safe, but
+        // want to eventually get rid of this and expect only int64_t. The safety of
+        // the static_cast exists because the max location index value is limited by
+        // the type in the input file (float: 6 or 7 digits of precision,
+        // int: ~2 billion, etc) and we are static_cast'ing to the same type as what
+        // is in the file.
+        Variable locVar = obs_group_.vars.open("Location");
+        if (locVar.isA<int>()) {
+            std::vector<int> locValues(indx_.size());
+            for (std::size_t i = 0; i < indx_.size(); ++i) {
+                locValues[i] = static_cast<int>(indx_[i]);
+            }
+            locVar.write<int>(locValues);
+        } else if (locVar.isA<float>()) {
+            std::vector<float> locValues(indx_.size());
+            for (std::size_t i = 0; i < indx_.size(); ++i) {
+                locValues[i] = static_cast<float>(indx_[i]);
+            }
+            locVar.write<float>(locValues);
+        } else if (locVar.isA<int64_t>()) {
+            std::vector<int64_t> locValues(indx_.size());
+            for (std::size_t i = 0; i < indx_.size(); ++i) {
+                locValues[i] = static_cast<int64_t>(indx_[i]);
+            }
+            locVar.write<int64_t>(locValues);
+        } else {
+            throw Exception("Location variable has unexpected data type", ioda_Here());
+        }
+    }
+}
+
+// -----------------------------------------------------------------------------
 void ObsSpace::load() {
     if (print_run_stats_ > 0) {
         util::printRunStats("ioda::ObsSpace::load: start " + obsname_ + ": ", true, comm());
@@ -717,6 +756,9 @@ void ObsSpace::load() {
     nrecs_ = readPool->nrecs();
     indx_ = readPool->index();
     recnums_ = readPool->recnums();
+
+    // Assign Location variable with the source index numbers that were kept
+    assignLocationValues();
 
     // The distribution object has a notion of patch obs which are the observations
     // "owned" by the corresponding obs space. When an overlapping distribution (eg, Halo)

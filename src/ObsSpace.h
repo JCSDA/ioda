@@ -536,6 +536,9 @@ namespace ioda {
         /// \param os output stream
         void print(std::ostream & os) const;
 
+        /// \brief transfer values from the indx_ data member to the Location variable
+        void assignLocationValues();
+
         /// \brief load the obs space data from an obs source (file or generator)
         void load();
 
