@@ -197,7 +197,7 @@ void listVariablesAsYaml(const Vec_Named_Variable & regularVarList,
                << indent << constants::indent8 << "- attribute:" << std::endl
                << indent << constants::indent12 << "name: units" << std::endl
                << indent << constants::indent12 << "data type: string" << std::endl
-               << indent << constants::indent12 << "value: *dtimeEpoch" << std::endl;
+               << indent << constants::indent12 << "value: [ *dtimeEpoch ]" << std::endl;
 
     // Walk through the list of regular variables and write out YAML showing
     // their name, data type, and dimension list.

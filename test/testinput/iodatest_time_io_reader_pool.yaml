@@ -1,6 +1,6 @@
 ---
-window begin: "2018-04-14T21:00:00Z"
-window end: "2018-04-15T03:00:00Z"
+window begin: "2018-01-01T00:00:00Z"
+window end:   "2022-01-01T00:00:00Z"
 
 observations:
 - obs space:
@@ -30,6 +30,21 @@ observations:
       engine:
         type: H5File
         obsfile: "testoutput/sondes_obs_2018041500_m_time_reader_pool.nc4"
+    io pool:
+      reader name: SinglePool
+      work directory: testwork
+
+- obs space:
+    name: "GNSSRO"
+    simulated variables: [ 'atmosphericRefractivity', 'bendingAngle' ]
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: "Data/testinput_tier_1/gnssro_obs_2021080606_s.nc4"
+    obsdataout:
+      engine:
+        type: H5File
+        obsfile: "testoutput/gnssro_obs_2021080606_s_time_reader_pool.nc4"
     io pool:
       reader name: SinglePool
       work directory: testwork

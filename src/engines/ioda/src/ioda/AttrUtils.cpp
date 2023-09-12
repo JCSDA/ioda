@@ -41,19 +41,38 @@ bool ignoreThisAttribute(const std::string & attrName) {
 
 //--------------------------------------------------------------------------------
 template <typename AttrType>
-void streamAttrValueAsYaml(const AttrType & attrValue, const std::string & indent,
+void streamAttrValueAsYaml(const std::vector<AttrType> & attrValue, const std::string & indent,
                            std::stringstream & yamlStream) {
-    yamlStream << indent << constants::indent8 << "value: "
-               << attrValue << std::endl;
+    yamlStream << indent << constants::indent8 << "value: [ " << attrValue[0];
+    for (std::size_t i = 1; i < attrValue.size(); ++i) {
+        yamlStream << ", " << attrValue[i];
+    }
+    yamlStream << " ]" << std::endl;
+}
+
+// char specialization - don't have a char type in eckit::LocalConfiguration so use
+// a string instead.
+template <>
+void streamAttrValueAsYaml(const std::vector<char> & attrValue, const std::string & indent,
+                           std::stringstream & yamlStream) {
+    yamlStream << indent << constants::indent8 << "value: \"";
+    for (std::size_t i = 0; i < attrValue.size(); ++i) {
+        yamlStream << attrValue[i];
+    }
+    yamlStream << "\"" << std::endl;
 }
 
 // string specialization - need to put in quotes around the string value to handle
 // complex string values (such as the history attribute from NCO tools)
 template <>
-void streamAttrValueAsYaml(const std::string & attrValue, const std::string & indent,
+void streamAttrValueAsYaml(const std::vector<std::string> & attrValue,
+                           const std::string & indent,
                            std::stringstream & yamlStream) {
-    yamlStream << indent << constants::indent8 << "value: \""
-               << attrValue << "\"" << std::endl;
+    yamlStream << indent << constants::indent8 << "value: [ \"" << attrValue[0] << "\"";
+    for (std::size_t i = 1; i < attrValue.size(); ++i) {
+        yamlStream << ", \"" << attrValue[i] << "\"";
+    }
+    yamlStream << " ]" << std::endl;
 }
 
 //--------------------------------------------------------------------------------
@@ -98,7 +117,7 @@ void listAttributesAsYaml(const ioda::Has_Attributes& atts, const std::string & 
             attr.second,
             [&](auto typeDiscriminator) {
                 typedef decltype(typeDiscriminator) T;
-                T attrValue;
+                std::vector<T> attrValue;
                 attr.second.read<T>(attrValue);
                 streamAttrValueAsYaml<T>(attrValue, indent, yamlStream);
             },
@@ -115,24 +134,30 @@ void createAttributesFromConfig(ioda::Has_Attributes & atts,
         std::string attrName = attsConfig[i].getString("attribute.name");
         std::string attrDataType = attsConfig[i].getString("attribute.data type");
         if (attrDataType == "int") {
-            int attrValue = attsConfig[i].getInt("attribute.value");
+            std::vector<int> attrValue = attsConfig[i].getIntVector("attribute.value");
             atts.add<int>(attrName, attrValue);
-        } else if (attrDataType == "long") {                               // NOLINT
-            long attrValue = attsConfig[i].getLong("attribute.value");     // NOLINT
-            atts.add<long>(attrName, attrValue);                           // NOLINT
+        } else if (attrDataType == "long") {
+            std::vector<long> attrValue =                           // NOLINT
+                attsConfig[i].getLongVector("attribute.value");     // NOLINT
+            atts.add<long>(attrName, attrValue);                    // NOLINT
         } else if (attrDataType == "float") {
-            float attrValue = attsConfig[i].getFloat("attribute.value");
+            std::vector<float> attrValue = attsConfig[i].getFloatVector("attribute.value");
             atts.add<float>(attrName, attrValue);
         } else if (attrDataType == "double") {
-            double attrValue = attsConfig[i].getDouble("attribute.value");
+            std::vector<double> attrValue = attsConfig[i].getDoubleVector("attribute.value");
             atts.add<double>(attrName, attrValue);
         } else if (attrDataType == "string") {
-            std::string attrValue = attsConfig[i].getString("attribute.value");
+            std::vector<std::string> attrValue =
+                attsConfig[i].getStringVector("attribute.value");
             atts.add<std::string>(attrName, attrValue);
         } else if (attrDataType == "char") {
             // Don't have a char type in eckit::LocalConfiguration so use string
-            std::string attrValue = attsConfig[i].getString("attribute.value");
-            atts.add<char>(attrName, attrValue[0]);
+            std::string attrValueString = attsConfig[i].getString("attribute.value");
+            std::vector<char> attrValue(attrValueString.size());
+            for (std::size_t i = 0; i < attrValueString.size(); ++i) {
+                attrValue[i] = attrValueString[i];
+            }
+            atts.add<char>(attrName, attrValue);
         }
     }
 }
