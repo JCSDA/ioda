@@ -122,7 +122,7 @@ ObsSpace::ObsSpace(const Parameters_ & params, const eckit::mpi::Comm & comm,
                    const util::DateTime & bgn, const util::DateTime & end,
                    const eckit::mpi::Comm & timeComm)
                      : oops::ObsSpaceBase(params, comm, bgn, end),
-                       winbgn_(bgn), winend_(end), commMPI_(comm),
+                       winbgn_(bgn), winend_(end), commMPI_(comm), commTime_(timeComm),
                        gnlocs_(0), nrecs_(0),
                        obs_group_(), obs_params_(params, bgn, end, comm, timeComm),
                        obsvars_()

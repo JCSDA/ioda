@@ -165,6 +165,10 @@ namespace ioda {
         /// \details This method will return the associated MPI communicator
         const eckit::mpi::Comm & comm() const {return commMPI_;}
 
+        /// \details This method will return the associated MPI communicator in
+        ///          time (for the 4DEnVar and weak-constraint 4DVar applications)
+        const eckit::mpi::Comm & commTime() const {return commTime_;}
+
         /// \details This method will return the associated parameters
         const ObsSpaceParameters & params() const {return obs_params_;}
 
@@ -455,6 +459,10 @@ namespace ioda {
 
         /// \brief MPI communicator
         const eckit::mpi::Comm & commMPI_;
+
+        /// \brief MPI communicator for time decomposition (used in 4DEnVar and weak-constraint
+        ///        4DVar)
+        const eckit::mpi::Comm & commTime_;
 
         /// \brief total number of locations from the input source (file or generator)
         std::size_t source_nlocs_;

@@ -193,6 +193,12 @@ std::vector<double> ObsVector::multivar_dot_product_with(const ObsVector & other
     }
     result[jvar] = dotProduct(*obsdb_.distribution(), 1, x1, x2);
   }
+  // Communication between time subwindows is handled at oops level for `dot_product_with`,
+  // but is not handled for this method which is used in ufo to compute the bias correction
+  // coefficients updates. Handle it here.
+  // TODO(Someone): the time communicator handling needs to only happen at the oops level, the
+  // code here should not handle this at all. The code that calls this method needs refactoring.
+  obsdb_.commTime().allReduceInPlace(result.begin(), result.end(), eckit::mpi::sum());
   return result;
 }
 // -----------------------------------------------------------------------------
