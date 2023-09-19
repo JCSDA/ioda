@@ -11,22 +11,29 @@ set(
   ioda/yaml/iodatest_odb_abiclr.yaml
   ioda/yaml/iodatest_odb_ahiclr.yaml
   ioda/yaml/iodatest_odb_aircraft.yaml
+  ioda/yaml/iodatest_odb_aircraft_write.yaml
   ioda/yaml/iodatest_odb_airs.yaml
   ioda/yaml/iodatest_odb_altimeter.yaml
   ioda/yaml/iodatest_odb_amsr.yaml
   ioda/yaml/iodatest_odb_aod.yaml
+  ioda/yaml/iodatest_odb_aod_write.yaml
+  ioda/yaml/iodatest_odb_aod_write_testdatasets.yaml
   ioda/yaml/iodatest_odb_atms.yaml
+  ioda/yaml/iodatest_odb_atms_write.yaml
   ioda/yaml/iodatest_odb_atovs.yaml
+  ioda/yaml/iodatest_odb_atovs_write.yaml
   ioda/yaml/iodatest_odb_cris.yaml
   ioda/yaml/iodatest_odb_crisfsr.yaml
   ioda/yaml/iodatest_odb_geocloud.yaml
   ioda/yaml/iodatest_odb_gmihigh.yaml
+  ioda/yaml/iodatest_odb_gmihigh_write.yaml
   ioda/yaml/iodatest_odb_gmilow.yaml
   ioda/yaml/iodatest_odb_gnssro.yaml
   ioda/yaml/iodatest_odb_groundgps.yaml
   ioda/yaml/iodatest_odb_hirasfsr.yaml
   ioda/yaml/iodatest_odb_hloswind.yaml
   ioda/yaml/iodatest_odb_iasi.yaml
+  ioda/yaml/iodatest_odb_iasi_write.yaml
   ioda/yaml/iodatest_odb_mwri.yaml
   ioda/yaml/iodatest_odb_mwsfy3.yaml
   ioda/yaml/iodatest_odb_oceancolour.yaml
@@ -42,6 +49,7 @@ set(
   ioda/yaml/iodatest_odb_sonde_history.yaml
   ioda/yaml/iodatest_odb_sonde_time_displacement.yaml
   ioda/yaml/iodatest_odb_sonde_truncate_profiles.yaml
+  ioda/yaml/iodatest_odb_sonde_write.yaml
   ioda/yaml/iodatest_odb_ssmis.yaml
   ioda/yaml/iodatest_odb_surface.yaml
   ioda/yaml/iodatest_odb_surfacecloud.yaml

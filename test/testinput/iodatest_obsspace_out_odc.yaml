@@ -15,7 +15,7 @@ observations:
         type: ODB
         obsfile: "testoutput/diagout-aod.odc"
         mapping file: ../share/test/testinput/odb_default_name_map.yaml
-        query file: testinput/iodatest_odb_aod_write.yaml
+        query file: ../share/test/testinput/iodatest_odb_aod_write.yaml
   test data:
     gnlocs: 100
     gnlocs outside time window: 0
@@ -52,7 +52,7 @@ observations:
         type: ODB
         obsfile: "testoutput/diagout-sonde.odc"
         mapping file: ../share/test/testinput/odb_default_name_map.yaml
-        query file: testinput/iodatest_odb_sonde_write.yaml
+        query file: ../share/test/testinput/iodatest_odb_sonde_write.yaml
   test data:
     gnlocs: 974
     gnlocs outside time window: 0
@@ -110,7 +110,7 @@ observations:
         type: ODB
         obsfile: "testoutput/diagout-amsua.odc"
         mapping file: ../share/test/testinput/odb_default_name_map.yaml
-        query file: testinput/iodatest_odb_atovs_write.yaml
+        query file: ../share/test/testinput/iodatest_odb_atovs_write.yaml
     obs perturbations seed: 250
   test data:
     gnlocs: 100
@@ -157,7 +157,7 @@ observations:
         type: ODB
         obsfile: "testoutput/diagout-gmi.odc"
         mapping file: ../share/test/testinput/odb_default_name_map.yaml
-        query file: testinput/iodatest_odb_gmihigh_write.yaml
+        query file: ../share/test/testinput/iodatest_odb_gmihigh_write.yaml
   test data:
     gnlocs: 12
     gnlocs outside time window: 0
@@ -196,7 +196,7 @@ observations:
         type: ODB
         obsfile: "testoutput/diagout-aircraft.odc"
         mapping file: ../share/test/testinput/odb_default_name_map.yaml
-        query file: testinput/iodatest_odb_aircraft_write.yaml
+        query file: ../share/test/testinput/iodatest_odb_aircraft_write.yaml
   test data:
     gnlocs: 157
     gnlocs outside time window: 43
@@ -241,7 +241,7 @@ observations:
         type: ODB
         obsfile: "testoutput/diagout-atms.odc"
         mapping file: ../share/test/testinput/odb_default_name_map.yaml
-        query file: testinput/iodatest_odb_atms_write.yaml
+        query file: ../share/test/testinput/iodatest_odb_atms_write.yaml
   test data:
     gnlocs: 68
     gnlocs outside time window: 32
@@ -301,7 +301,7 @@ observations:
         type: ODB
         obsfile: "testoutput/diagout-iasi.odc"
         mapping file: ../share/test/testinput/odb_default_name_map.yaml
-        query file: testinput/iodatest_odb_iasi_write.yaml
+        query file: ../share/test/testinput/iodatest_odb_iasi_write.yaml
   test data:
     gnlocs: 10
     gnlocs outside time window: 0

@@ -362,7 +362,7 @@ observations:
         type: ODB
         obsfile: "testoutput/diagout.odc"
         mapping file: ../share/test/testinput/odb_default_name_map.yaml
-        query file: testinput/iodatest_odb_aod_write.yaml
+        query file: ../share/test/testinput/iodatest_odb_aod_write.yaml
   test data:
     gnlocs: 100
     gnlocs outside time window: 0

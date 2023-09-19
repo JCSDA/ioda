@@ -124,15 +124,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsvector_packeigen.yaml
   testinput/iodatest_extendedobsspace.yaml
   testinput/iodatest_extendedobsspace_halo.yaml
-  testinput/iodatest_odb_aircraft_write.yaml
-  testinput/iodatest_odb_aod_write.yaml
-  testinput/iodatest_odb_aod_write_testdatasets.yaml
-  testinput/iodatest_odb_atms_write.yaml
-  testinput/iodatest_odb_atovs_write.yaml
-  testinput/iodatest_odb_gmihigh_write.yaml
   testinput/iodatest_odb_gnssro_profile.yaml
-  testinput/iodatest_odb_iasi_write.yaml
-  testinput/iodatest_odb_sonde_write.yaml
   testinput/iodatest_odb_surface_with_query.yaml
   testinput/iodatest_sort.yaml
   testinput/iodatest_writer_sondes.yaml

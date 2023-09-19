@@ -389,7 +389,7 @@ observations:
         type: ODB
         obsfile: "testoutput/diagout_reader_pool.odc"
         mapping file: ../share/test/testinput/odb_default_name_map.yaml
-        query file: testinput/iodatest_odb_aod_write.yaml
+        query file: ../share/test/testinput/iodatest_odb_aod_write.yaml
     io pool:
       reader name: SinglePool
       work directory: testwork
