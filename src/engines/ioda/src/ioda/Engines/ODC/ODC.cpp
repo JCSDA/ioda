@@ -486,6 +486,14 @@ void pushBackVector(std::vector<std::vector<double>> &data_store,
       for (size_t i = 0; i < numchans; i++)
         data_store_tmp_chans[j * numchans + i] = inarray[i];
     data_store.push_back(data_store_tmp_chans);
+  } else if (inarray.size() == numchans * numlocs) {
+    data_store.push_back(inarray);
+  } else {
+    oops::Log::info() << "inarray.size() = " << inarray.size() << std::endl;
+    oops::Log::info() << "numlocs = " << numlocs << std::endl;
+    oops::Log::info() << "numchans = " << numchans << std::endl;
+    eckit::Abort("Attempt to write a vector that does not match a given size when writing "
+                 "to the ODB file.  Array must be of size numlocs or numchans or numchans*numlocs");
   }
 }
 

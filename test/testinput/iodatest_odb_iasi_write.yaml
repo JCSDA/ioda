@@ -30,6 +30,7 @@ variables:
 - name: receipt_date
 - name: ops_subtype
 - name: skinT_onedvar
+- name: emissivity_onedvar
 - name: date
 - name: time
 - name: ops_obsgroup

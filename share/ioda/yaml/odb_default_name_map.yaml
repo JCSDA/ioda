@@ -746,6 +746,8 @@ varno-independent columns:
     source: "initial_vertco_reference"
   - name: "MetaData/height"
     source: "height"
+  - name: "OneDVar/emissivity"
+    source: "emissivity_onedvar"
   - name: "OneDVar/skinTemperature"
     source: "skinT_onedvar"
   - name: "NewMetaData/sensorCentralWavenumber"
