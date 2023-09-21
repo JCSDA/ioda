@@ -960,6 +960,7 @@ ecbuild_add_test( TARGET  test_ioda_clean_time_io_files
                   ARGS    "-f"
                           "testoutput/amsua_n19_obs_2018041500_m_time.nc4"
                           "testoutput/sondes_obs_2018041500_m_time.nc4"
+                          "testoutput/gnssro_obs_2021080606_s_time.nc4"
                           "testoutput/amsua_n19_obs_2018041500_m_time_reader_pool.nc4"
                           "testoutput/sondes_obs_2018041500_m_time_reader_pool.nc4"
                           "testoutput/gnssro_obs_2021080606_s_time_reader_pool.nc4" )
@@ -987,6 +988,15 @@ ecbuild_add_test( TARGET  test_ioda_time_io_cmp_amsua_n19
                           hdf5
                           "echo Checking time io AMSU-A NOAA19"
                           amsua_n19_obs_2018041500_m_time.nc4
+                  TEST_DEPENDS get_ioda_test_data test_ioda_time_io)
+
+ecbuild_add_test( TARGET  test_ioda_time_io_cmp_gnssro
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          hdf5
+                          "echo Checking time io GNSSRO"
+                          gnssro_obs_2021080606_s_time.nc4
                   TEST_DEPENDS get_ioda_test_data test_ioda_time_io)
 
 # this test creates new output files

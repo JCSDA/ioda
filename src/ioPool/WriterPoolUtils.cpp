@@ -518,7 +518,7 @@ void ioWriteGroup(const WriterPoolBase & ioPool, const ioda::Group& memGroup,
 
     // Make new dimension scales
     for (auto& dim : dimVarList) {
-        fileGroup.vars[dim.name].setIsDimensionScale(dim.var.getDimensionScaleName());
+        fileGroup.vars[dim.name].setIsDimensionScale(dim.name);
     }
 
     // Attach all dimension scales to all variables.
