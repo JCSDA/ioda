@@ -214,7 +214,7 @@ void ReaderSinglePool::load(Group & destGroup) {
 void ReaderSinglePool::finalize() {
     oops::Log::trace() << "ReaderSinglePool::finalize, start" << std::endl;
     // If we are not keeping the work directory contents, then remove them.
-    if (!configParams_.keepWorkDirContents) {
+    if ((this->commAll().rank() == 0) && (!configParams_.keepWorkDirContents)) {
         // Check for dangerous cases for an "rm -rf" command. If we have one of these,
         // skip the remove step.
         if ((workDir_ == "") || (workDir_ == ".") || (workDir_ == "./")) {
