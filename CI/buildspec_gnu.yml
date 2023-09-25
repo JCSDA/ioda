@@ -103,13 +103,15 @@ phases:
       - echo $BUILD_STATUS
 
      # configure and build
-      - su - nonroot -c "cd /home/nonroot
+      - su - nonroot -c "source /opt/spack-environment/activate.sh
+        && cd /home/nonroot
         && echo $CC
         && echo $CXX
         && echo $FC
         && CC=mpicc CXX=mpicxx FC=mpifort ecbuild -Wno-dev -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCDASH_OVERRIDE_SYSTEM_NAME=GNUContainer -DCDASH_OVERRIDE_SITE=CodeBuild -DCDASH_OVERRIDE_GIT_BRANCH=$CODEBUILD_GIT_BRANCH -DCTEST_UPDATE_VERSION_ONLY=FALSE -DENABLE_GPROF=ON /jcsda/ioda-bundle/"
 
-      - su - nonroot -c "cd /home/nonroot/ioda
+      - su - nonroot -c "source /opt/spack-environment/activate.sh
+        && cd /home/nonroot/ioda
         && echo $CC
         && echo $CXX
         && echo $FC
@@ -126,12 +128,14 @@ phases:
       - echo $BUILD_STATUS
 
       # run ctest
-      - su - nonroot -c "cd /home/nonroot/ioda
+      - su - nonroot -c "source /opt/spack-environment/activate.sh
+        && cd /home/nonroot/ioda
         && ctest -C RelWithDebInfo -D ExperimentalTest"
 
     finally:
       # upload ctest report to CDASH
-      - su - nonroot -c "cd /home/nonroot/ioda
+      - su - nonroot -c "source /opt/spack-environment/activate.sh
+        && cd /home/nonroot/ioda
         && ctest -C RelWithDebInfo -D ExperimentalSubmit -M Continuous -- --track Continuous --group Continuous"
 
   post_build:
