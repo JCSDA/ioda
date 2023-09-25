@@ -1786,13 +1786,8 @@ void ioReadGroup(const ReaderPoolBase & ioPool, const ioda::Group& fileGroup,
     // Get all variable and group names
     const auto fileObjects = fileGroup.listObjects(ObjectType::Ignored, true);
 
-    // Make all groups and copy global group attributes.
-    copyAttributes(fileGroup.atts, memGroup.atts);
-    for (const auto &groupName : fileObjects.at(ObjectType::Group)) {
-        ioda::Group srcGroup = fileGroup.open(groupName);
-        ioda::Group destGroup = memGroup.create(groupName);
-        copyAttributes(srcGroup.atts, destGroup.atts);
-    }
+    // Copy hierarchical group structure from memGroup to fileGroup
+    copyGroupStructure(fileGroup, memGroup);
 
     // Make all variables and copy data and most attributes.
     // Dimension mappings & scales are handled later.

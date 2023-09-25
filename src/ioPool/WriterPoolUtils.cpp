@@ -465,16 +465,8 @@ void ioWriteGroup(const WriterPoolBase & ioPool, const ioda::Group& memGroup,
   // into the file. Once that is completed, then the variable data is transfered from
   // the source group to the file(s).
   if (ioPool.commPool() != nullptr) {
-    // Get all variable and group names
-    const auto memObjects = memGroup.listObjects(ObjectType::Ignored, true);
-
-    // Make all groups and copy global group attributes.
-    copyAttributes(memGroup.atts, fileGroup.atts);
-    for (const auto &g_name : memObjects.at(ObjectType::Group)) {
-        Group old_g = memGroup.open(g_name);
-        Group new_g = fileGroup.create(g_name);
-        copyAttributes(old_g.atts, new_g.atts);
-    }
+    // Copy hierarchical group structure from memGroup to fileGroup
+    copyGroupStructure(memGroup, fileGroup);
 
     // Get the total number of locations from the io pool. Use this to adjust
     // the size of the Location dimension. If we are writing one file, use the global nlocs

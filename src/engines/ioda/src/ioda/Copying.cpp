@@ -113,14 +113,21 @@ void createAndCopyVariable(const std::string & varName, const Variable & srcVar,
          VarUtils::ThrowIfVariableIsOfUnsupportedType(varName));
 }
 
-void copyGroup(const ioda::Group & src, ioda::Group & dest) {
-    // Copy this group and all child groups
+void copyGroupStructure(const ioda::Group & src, ioda::Group & dest) {
+    // Copy attributes for the parent groups (src, dest). Then recurse through the
+    // entire group structure underneath src and replicate that structure (groups
+    // and group attributes) in dest.
     copyAttributes(src.atts, dest.atts);
     for (auto & childGroupName : src.listObjects<ObjectType::Group>(true)) {
         Group destGroup = dest.create(childGroupName);
         Group srcGroup = src.open(childGroupName);
         copyAttributes(srcGroup.atts, destGroup.atts);
     }
+}
+
+void copyGroup(const ioda::Group & src, ioda::Group & dest) {
+    // Copy this group and all child groups.
+    copyGroupStructure(src, dest);
 
     // Collect variable, dimension information for the rest of the group contents.
     // collectVarDimInfo is used so that we search only once through the source
