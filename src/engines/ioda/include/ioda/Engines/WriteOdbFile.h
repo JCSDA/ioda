@@ -10,6 +10,7 @@
 
 #include "ioda/Engines/WriterBase.h"
 #include "ioda/Engines/WriterFactory.h"
+#include "ioda/Engines/ODC.h"
 
 namespace ioda {
 namespace Engines {
@@ -45,6 +46,8 @@ class WriteOdbFile : public WriterBase {
   WriteOdbFile(const Parameters_ & params, const WriterCreationParameters & createParams);
 
   void print(std::ostream & os) const override;
+
+  void finalize() override;
 
  private:
   Parameters_ params_;

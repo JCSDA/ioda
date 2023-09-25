@@ -28,13 +28,17 @@ WriteOdbFile::WriteOdbFile(const Parameters_ & params,
                            const WriterCreationParameters & createParams)
                                : WriterBase(createParams), params_(params) {
     oops::Log::trace() << "ioda::Engines::WriteOdbFile start constructor" << std::endl;
-    // TODO(srh) Placeholder for now. This gets the engine factory test to pass, but we may
-    // actually want it organized like this as the writer gets developed.
 
-    // Create an in-memory backend
-    Engines::BackendNames backendName = Engines::BackendNames::ObsStore;
+    obs_group_ = ObsStore::createRootGroup();
+    oops::Log::trace() << "ioda::Engines::WriteOdbFile end constructor" << std::endl;
+}
 
-    // Figure out the output file name.
+void WriteOdbFile::print(std::ostream & os) const {
+  os << params_.fileName.value();
+}
+
+void WriteOdbFile::finalize() {
+    Engines::ODC::ODC_Parameters odcparams;
     const std::size_t mpiRank = createParams_.comm.rank();
     int mpiTimeRank = -1;  // a value of -1 tells uniquifyFileName to skip this value
     if (createParams_.timeComm.size() > 1) {
@@ -45,17 +49,11 @@ WriteOdbFile::WriteOdbFile(const Parameters_ & params,
     // the time communicator is 1.
     const std::string outFileName = uniquifyFileName(params_.fileName,
         true, mpiRank, mpiTimeRank);
-
-    Engines::BackendCreationParameters backendParams;
-    backendParams.fileName = outFileName;
-    Group backend = constructBackend(backendName, backendParams);
-
-    obs_group_ = ObsGroup(backend);
-    oops::Log::trace() << "ioda::Engines::WriteOdbFile end constructor" << std::endl;
-}
-
-void WriteOdbFile::print(std::ostream & os) const {
-  os << params_.fileName.value();
+    odcparams.queryFile = params_.queryFileName;
+    odcparams.mappingFile = params_.mappingFileName;
+    odcparams.outputFile = outFileName;
+    odcparams.missingObsSpaceVariableAbort = params_.missingObsSpaceVariableAbort;
+    Group writerGroup = ioda::Engines::ODC::createFile(odcparams, obs_group_);
 }
 
 //---------------------------------------------------------------------

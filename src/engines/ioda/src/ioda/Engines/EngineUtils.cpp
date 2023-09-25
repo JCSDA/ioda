@@ -14,7 +14,6 @@
 
 #include "ioda/defs.h"
 #include "ioda/Engines/HH.h"
-#include "ioda/Engines/ODC.h"
 #include "ioda/Engines/ObsStore.h"
 #include "ioda/Exception.h"
 #include "ioda/Group.h"
@@ -301,19 +300,8 @@ Group constructBackend(BackendNames name, BackendCreationParameters& params) {
     }
     throw Exception("Unknown BackendFileActions value", ioda_Here());
   }
-  if (name == BackendNames::ObsStore) return ObsStore::createRootGroup();
-  if (name == BackendNames::ODB) {
-    Engines::ODC::ODC_Parameters odcparams;
-    // TODO(srh, djd) We need to get rid of this hard coded path/filename in the long term. 
-    // In fact, this entire function here needs to be refactored into the Engines reader
-    // and writer backend class structure (see code in src/engines/ioda/src/ioda/Engines
-    // for details). Doing that refactoring will enable the replacement of this hard
-    // coded path with a YAML configuration.
-    odcparams.mappingFile = "testinput/odb_default_name_map.yml";
-    if (params.action == BackendFileActions::Create) {
-      return ODC::createFile(odcparams);
-    }
-    throw Exception("Unknown BackendFileActions value", ioda_Here());
+  if (name == BackendNames::ObsStore) {
+    return ObsStore::createRootGroup();
   }
 
   // If we get to here, then we have a backend name that is

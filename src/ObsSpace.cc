@@ -39,8 +39,6 @@
 #include "ioda/distribution/PairOfDistributions.h"
 #include "ioda/Engines/EngineUtils.h"
 #include "ioda/Engines/HH.h"
-#include "ioda/Engines/ODC.h"
-#include "ioda/Engines/WriteOdbFile.h"
 #include "ioda/Exception.h"
 #include "ioda/ioPool/IoPoolParameters.h"
 #include "ioda/ioPool/ReaderPoolBase.h"
@@ -248,66 +246,25 @@ void ObsSpace::save() {
         if (print_run_stats_ > 0) {
             util::printRunStats("ioda::ObsSpace::save: start " + obsname_ + ": ", true, comm());
         }
-        const std::string baseFiletype =
-        obs_params_.top_level_.obsDataOut.value()->engine.value().engineParameters.value().type;
 
-        if (!baseFiletype.compare("ODB")) {
-          Engines::ODC::ODC_Parameters odcparams;
-          // TODO(srh, djd) Following is a workaround to get access to the specific odb writer
-          // parameters. The engines parameters factory returns a base class
-          // (WriterParametersBase) object which does not contain the specific parameter
-          // settings for the odb writer backend. The idea here is to dynamic_cast a pointer
-          // to the enginesParameters object to the subclass (WriteOdbFileParameters) which
-          // then gives access to the parameters defined in that subclass.
-          // The long term plan is to refactoring the odb writer code to encapsulate the
-          // odb specific code (such as here) in the odb writer backend object. This will
-          // resolve the odb writer parameter access issue here since the odb writer backend
-          // object is already given access to the WriteOdbFileParameters object.
-          const Engines::WriteOdbFileParameters * odbWriterParams =
-              dynamic_cast<const Engines::WriteOdbFileParameters *>(&(obs_params_.top_level_.
-                  obsDataOut.value()->engine.value().engineParameters.value()));
-          if (odbWriterParams == nullptr) {
-              throw Exception("Did not get expected WriteOdbFileParameters object", ioda_Here());
-          }
+        const std::size_t mpiRank = obs_params_.comm().rank();
+        std::vector<bool> patchObsVec(nlocs());
+        dist_->patchObs(patchObsVec);
 
-          // Figure out the output file name.
-          const std::size_t mpiRank = obs_params_.comm().rank();
-          int mpiTimeRank = -1;  // a value of -1 tells uniquifyFileName to skip this value
-          if (obs_params_.timeComm().size() > 1) {
-              mpiTimeRank = obs_params_.timeComm().rank();
-          }
-          // Tag on the rank number to the output file name to avoid collisions.
-          // Don't use the time communicator rank number in the suffix if the size of
-          // the time communicator is 1.
-          const std::string outFileName = Engines::uniquifyFileName(
-                      odbWriterParams->fileName.value(), true, mpiRank, mpiTimeRank);
+        IoPool::WriterPoolCreationParameters createParams(
+            obs_params_.comm(), obs_params_.timeComm() ,
+            obs_params_.top_level_.obsDataOut.value()->engine.value().engineParameters,
+            patchObsVec);
+        std::unique_ptr<IoPool::WriterPoolBase> writePool =
+            IoPool::WriterPoolFactory::create(obs_params_.top_level_.ioPool, createParams);
 
-          odcparams.mappingFile = odbWriterParams->mappingFileName.value();
-          odcparams.outputFile = outFileName;
-          odcparams.queryFile = odbWriterParams->queryFileName.value();
-          odcparams.missingObsSpaceVariableAbort =
-                  odbWriterParams->missingObsSpaceVariableAbort.value();
-          Group writerGroup = ioda::Engines::ODC::createFile(odcparams, obs_group_);
-        } else {
-          // Write the output file
-          std::vector<bool> patchObsVec(nlocs());
-          dist_->patchObs(patchObsVec);
-
-          IoPool::WriterPoolCreationParameters createParams(
-              obs_params_.comm(), obs_params_.timeComm() ,
-              obs_params_.top_level_.obsDataOut.value()->engine.value().engineParameters,
-              patchObsVec);
-          std::unique_ptr<IoPool::WriterPoolBase> writePool =
-              IoPool::WriterPoolFactory::create(obs_params_.top_level_.ioPool, createParams);
-
-          writePool->initialize();
-          writePool->save(obs_group_);
-          // Wait for all processes to finish the save call so that we know the file
-          // is complete and closed.
-          oops::Log::info() << obsname() << ": save database to " << *writePool << std::endl;
-          this->comm().barrier();
-          writePool->finalize();
-        }
+        writePool->initialize();
+        writePool->save(obs_group_);
+        // Wait for all processes to finish the save call so that we know the file
+        // is complete and closed.
+        oops::Log::info() << obsname() << ": save database to " << *writePool << std::endl;
+        this->comm().barrier();
+        writePool->finalize();
 
         // Call the mpi barrier command here to force all processes to wait until
         // all processes have finished writing their files. This is done to prevent

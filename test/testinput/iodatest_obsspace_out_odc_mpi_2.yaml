@@ -16,6 +16,8 @@ observations:
         obsfile: "testoutput/diagout-aod-testdatasets.odc"
         mapping file: ../share/test/testinput/odb_default_name_map.yaml
         query file: ../share/test/testinput/iodatest_odb_aod_write_testdatasets.yaml
+    io pool:
+      write multiple files: true
   test data:
     gnlocs: 100
     gnlocs outside time window: 0

@@ -20,6 +20,7 @@
 #include "oops/util/Printable.h"
 
 #include "ioda/Engines/EngineUtils.h"
+#include "ioda/Group.h"
 #include "ioda/ObsGroup.h"
 
 /// This file contains the definitions of the base classes for the IODA writer backends.
