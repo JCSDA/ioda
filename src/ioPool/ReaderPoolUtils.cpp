@@ -15,6 +15,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <numeric>
+#include <set>
 #include <sstream>
 
 #include "gsl/gsl-lite.hpp"
@@ -28,6 +29,8 @@
 #include "ioda/distribution/Distribution.h"
 #include "ioda/core/IodaUtils.h"
 #include "ioda/Copying.h"
+#include "ioda/Engines/EngineUtils.h"
+#include "ioda/Engines/WriterFactory.h"
 #include "ioda/Exception.h"
 #include "ioda/Group.h"
 #include "ioda/Variables/Fill.h"
@@ -35,6 +38,7 @@
 #include "ioda/Variables/VarUtils.h"
 
 #include "oops/util/Logger.h"
+#include "oops/util/missingValues.h"
 
 namespace ioda {
 namespace IoPool {
@@ -57,6 +61,69 @@ static const int msgIsData = 2;
 
 static const int msgIsVariableSize = 0;
 static const int mpiVariableNumberStart = 1;
+
+//--------------------------------------------------------------------------------
+// Function declarations for "private" functions
+//--------------------------------------------------------------------------------
+
+/// @brief Transfer source variable data into source buffer while replacing fill with missing
+/// @param ioPool reader io pool object
+/// @param srcVar source variable object
+/// @param srcVarName source variable name
+/// @param srcBuffer source memory buffer to hold srcVar data
+static void readerLoadSourceVarReplaceFill(
+            const ReaderPoolBase & ioPool, const Variable & srcVar,
+            const std::string & srcVarName, std::vector<char> & srcBuffer);
+
+/// @brief Transfer data from the source buffer to the destination variable
+/// @param varName variable name
+/// @param srcBuffer source memory buffer holding the source variable data
+/// @param index vector of location indices used for data selection
+/// @param destNlocs number of locations in destination group
+/// @param doLocSelection when true apply location index selection
+/// @param destBuffer destination memory buffer, holds values after index selection
+/// @param destVar destitination variable
+static void readerSaveDestVarLocal(
+        const std::string & varName, const std::vector<char> & srcBuffer,
+        const std::vector<std::size_t> & index, const ioda::Dimensions_t destNlocs,
+        const bool doLocSelection, std::vector<char> & destBuffer, ioda::Variable & destVar);
+
+/// @brief determine if location selection is required for the given variable
+/// @param srcNlocs number of locations in source group
+/// @param destNlocs number of locations in destination group
+/// @param varName variable name
+/// @param firstDimName name of first dimension of variable
+static bool setDoLocSelection(
+        const ioda::Dimensions_t & srcNlocs, const ioda::Dimensions_t & destNlocs,
+        const std::string & varName, const std::string & firstDimName);
+
+/// @brief apply location index selection going from srcBuffer to destBuffer
+/// @param srcBuffer source memory buffer holding the source variable data
+/// @param locIndices location index values
+/// @param dataTypeSize size (in bytes) of variable data type
+/// @param varShape variable shape (number of elements along each dimension)
+/// @param destBuffer destination memory buffer, holds values after index selection
+template <class DataType>
+void selectVarValues(const std::vector<DataType> & srcBuffer,
+                     const std::vector<std::size_t> & locIndices,
+                     const ioda::Dimensions_t dataTypeSize,
+                     const std::vector<ioda::Dimensions_t> & varShape,
+                     std::vector<DataType> & destBuffer);
+
+/// @brief get the size (in bytes) of DataType
+template <class DataType>
+ioda::Dimensions_t getDataTypeSize();
+
+/// @brief template specialization for strings
+template <>
+ioda::Dimensions_t getDataTypeSize<std::string>();
+
+/// @brief calculate the maximum data type size from the set of all supported data types
+ioda::Dimensions_t getMaxDataTypeSize();
+
+//--------------------------------------------------------------------------------
+// Definitions of private functions
+//--------------------------------------------------------------------------------
 
 //--------------------------------------------------------------------------------
 template<typename DataType>
@@ -638,7 +705,7 @@ void readerCreateWorkDirectory(const std::string & workDirBase,
     // Set workDir to workDirBase if workDirBase is not empty, otherwise use the dirname
     // of the input file, or /tmp in the generator case. In both case, file or generator,
     // create a subdirectory based on the file name or generator type.
-    auto const lastSlash = fileName.find_last_of("/");
+    const auto lastSlash = fileName.find_last_of("/");
     if (workDirBase == "") {
         // Use the directory portion of the file name
         if (lastSlash == std::string::npos) {
@@ -682,6 +749,525 @@ void readerCreateWorkDirectory(const std::string & workDirBase,
 
     // return the full path to the work directory
     workDir = workSubDir;
+}
+
+//--------------------------------------------------------------------------------
+void readerGatherAssociatedRanks(const ReaderPoolBase & ioPool,
+                                 std::vector<int> & assocAllRanks,
+                                 std::vector<int> & ioPoolRanks) {
+    // First get the local associated rank. For the purposes of this function,
+    // if you are on a rank that is in the io pool, your own rank number is the
+    // associated rank. Otherwise, the associated rank is in the first (and only)
+    // entry of your rankAssignment.
+    int assocRank;
+    int ioPoolRank;
+    if (ioPool.commPool() != nullptr) {
+        assocRank = ioPool.commAll().rank();
+        ioPoolRank = ioPool.commPool()->rank();
+    } else {
+        assocRank = ioPool.rankAssignment()[0].first;
+        ioPoolRank = -1;
+    }
+    assocAllRanks.resize(ioPool.commAll().size());
+    ioPoolRanks.resize(ioPool.commAll().size());
+    ioPool.commAll().allGather(assocRank, assocAllRanks.begin(), assocAllRanks.end());
+    ioPool.commAll().allGather(ioPoolRank, ioPoolRanks.begin(), ioPoolRanks.end());
+}
+
+//--------------------------------------------------------------------------------
+void readerGatherLocationIndices(const ReaderPoolBase & ioPool,
+                                 std::vector<std::size_t> & locIndicesAllRanks,
+                                 std::vector<int> & locIndicesStarts,
+                                 std::vector<int> & locIndicesCounts) {
+    // Gather the list of indices. This requires a variable length gather where the
+    // lists of starts and counts are given to the MPI gatherv command.
+    //
+    // Gather up each rank's count of location indices
+    const int numTasks = ioPool.commAll().size();
+    const int myLocIndicesCount = ioPool.index().size();
+    locIndicesCounts.resize(numTasks);
+    ioPool.commAll().allGather(myLocIndicesCount,
+                               locIndicesCounts.begin(), locIndicesCounts.end());
+
+    // Calculate the starting point (in a variable gather of the location indices) of
+    // each rank's vector of location indices. Then do a variable all gather of the
+    // location indices.
+    int recvSize = locIndicesCounts[0];
+    locIndicesStarts.resize(numTasks);
+    locIndicesStarts[0] = 0;
+    for (std::size_t i = 1; i < numTasks; ++i) {
+        locIndicesStarts[i] = locIndicesStarts[i - 1] + locIndicesCounts[i - 1];
+        recvSize += locIndicesCounts[i];
+    }
+    locIndicesAllRanks.resize(recvSize);
+    ioPool.commAll().allGatherv(ioPool.index().begin(), ioPool.index().end(),
+                                locIndicesAllRanks.begin(), locIndicesCounts.data(),
+                                locIndicesStarts.data());
+}
+
+//--------------------------------------------------------------------------------
+void readerSetFileSelection(const int allRank,
+                            const std::vector<int> & assocAllRanks,
+                            const std::vector<std::size_t> & locIndicesAllRanks,
+                            const std::vector<int> & locIndicesStarts,
+                            const std::vector<int> & locIndicesCounts,
+                            std::vector<std::size_t> & indices,
+                            std::vector<int> & destAllRanks,
+                            std::vector<int> & starts,
+                            std::vector<int> & counts) {
+    // Walk though the assocAllRanks and use the entries matching allRank to pull
+    // out the indices associated with allRank. Generate the start, count values as
+    // you go. Note the algorithm below is not very runtime efficient (eg. vector
+    // push_back calls) and it is relying on the io pool not getting very
+    // big (ie, 10s of ranks at the most).
+    int start = 0;
+    for (int i = 0; i < assocAllRanks.size(); ++i) {
+        if (assocAllRanks[i] == allRank) {
+            // Attach the entries in locIndices* to the output vectors.
+            const int inputStart = locIndicesStarts[i];
+            const int inputCount = locIndicesCounts[i];
+            indices.insert(indices.end(), locIndicesAllRanks.begin() + inputStart,
+                           locIndicesAllRanks.begin() + inputStart + inputCount);
+            std::vector<int> dest(inputCount, i);
+            destAllRanks.insert(destAllRanks.end(), dest.begin(), dest.end());
+            starts.push_back(start);
+            counts.push_back(inputCount);
+            start += inputCount;
+        }
+    }
+}
+
+//--------------------------------------------------------------------------------
+void readerWriteInputFileMpiMapping(const ReaderPoolBase & ioPool,
+                                    const Group & srcGroup,
+                                    const std::vector<std::size_t> & indices,
+                                    const std::vector<int> & destAllRanks,
+                                    Group & destGroup) {
+    ASSERT(indices.size() == destAllRanks.size());
+    const int nlocs = indices.size();
+
+    // Create the Location dimension
+    VariableCreationParameters int64Params = VariableCreationParameters::defaults<int64_t>();
+    int64Params.setFillValue<int64_t>(util::missingValue<int64_t>());
+    int64Params.noCompress();
+    Variable destLocVar = destGroup.vars.create<int64_t>(
+                          "Location", { nlocs }, { ioda::Unlimited }, int64Params);
+    destLocVar.setIsDimensionScale("Location");
+    Variable srcLocVar = srcGroup.vars.open("Location");
+
+    // Create and the destAllRanks variable in the top level group.
+    VariableCreationParameters intParams = VariableCreationParameters::defaults<int>();
+    intParams.setFillValue<int>(util::missingValue<int>());
+    intParams.noCompress();
+    Variable destRankVar = destGroup.vars.createWithScales<int>(
+                           "destinationRank", { destLocVar }, intParams);
+
+    // Only write out the values if nlocs > zero
+    if (nlocs > 0) {
+        // Location
+        // Conversion from size_t to int64_t should be safe. Only unsafe for values greater
+        // than ~1/2 the max size_t value.
+        std::vector<int64_t> destInt64Values(indices.begin(), indices.end());
+        destLocVar.write<int64_t>(destInt64Values);
+
+        // destinationRank
+        destRankVar.write<int>(destAllRanks);
+    }
+}
+
+//--------------------------------------------------------------------------------
+void readerWriteInputFilePreparedVars(const ReaderPoolBase & ioPool, const Group & srcGroup,
+                                      const std::vector<std::size_t> & indices,
+                                      const std::vector<int64_t> & dtimeValues,
+                                      const std::string & dtimeEpoch,
+                                      const std::vector<float> & lonValues,
+                                      const std::vector<float> & latValues,
+                                      Group & destGroup) {
+    // Open the Location dimension variable. All of these variables are 1D MetaData variables
+    // that are dimensioned by Location.
+    Variable destLocVar = destGroup.vars.open("Location");
+
+    const int destNlocs = indices.size();
+
+    // dateTime
+    VariableCreationParameters int64Params = VariableCreationParameters::defaults<int64_t>();
+    int64Params.setFillValue<int64_t>(util::missingValue<int64_t>());
+    int64Params.noCompress();
+    Variable dateTimeVar = destGroup.vars.createWithScales<int64_t>(
+                           "MetaData/dateTime", { destLocVar }, int64Params);
+    dateTimeVar.atts.add<std::string>("units", dtimeEpoch);
+
+    // longitude
+    VariableCreationParameters floatParams = VariableCreationParameters::defaults<float>();
+    floatParams.setFillValue<float>(util::missingValue<float>());
+    floatParams.noCompress();
+    Variable destLonVar = destGroup.vars.createWithScales<float>(
+                          "MetaData/longitude", { destLocVar }, floatParams);
+    if (srcGroup.vars.exists("MetaData/longitude")) {
+        Variable srcLonVar = srcGroup.vars.open("MetaData/longitude");
+        copyAttributes(srcLonVar.atts, destLonVar.atts);
+    }
+
+    // latitude
+    Variable destLatVar = destGroup.vars.createWithScales<float>(
+                          "MetaData/latitude", { destLocVar }, floatParams);
+    if (srcGroup.vars.exists("MetaData/latitude")) {
+        Variable srcLatVar = srcGroup.vars.open("MetaData/latitude");
+        copyAttributes(srcLatVar.atts, destLatVar.atts);
+    }
+
+    // Only write out the data when destNlocs > zero
+    if (destNlocs > 0) {
+        // Allocate buffers for variable data selection
+        std::vector<int64_t> destInt64Values(destNlocs);
+        std::vector<float> destFloatValues(destNlocs);
+
+        // dateTime
+        selectVarValues<int64_t>(dtimeValues, indices, 1, { destNlocs }, destInt64Values);
+        dateTimeVar.write<int64_t>(destInt64Values);
+
+        // longitude
+        selectVarValues<float>(lonValues, indices, 1, { destNlocs }, destFloatValues);
+        destLonVar.write<float>(destFloatValues);
+
+        // latitude
+        selectVarValues<float>(latValues, indices, 1, { destNlocs }, destFloatValues);
+        destLatVar.write<float>(destFloatValues);
+    }
+}
+
+//--------------------------------------------------------------------------------
+void readerCreateInputFileVariables(const VarUtils::Vec_Named_Variable & dimVarList,
+                                    const VarUtils::VarDimMap & dimsAttachedToVars,
+                                    Group & destGroup) {
+    // Create dimensions according to those from the original input file.
+    // Note that the Location variable has already been created.
+    for (const auto & dimNamedVar : dimVarList) {
+        std::string dimName = dimNamedVar.name;
+        if (dimName == "Location") {
+            continue;
+        }
+        oops::Log::trace() << "readerCreateInputFileVariables: creating: "
+                           << dimName << std::endl;
+
+        // Create the varible, mark as dimension, and copy the attributes
+        Variable srcDimVar = dimNamedVar.var;
+        Dimensions_t dimSize = srcDimVar.getDimensions().dimsCur[0];
+        Variable destDimVar;
+        VarUtils::forAnySupportedVariableType(
+            srcDimVar,
+            [&](auto typeDiscriminator) {
+                typedef decltype(typeDiscriminator) T;
+                VariableCreationParameters params = VariableCreationParameters::defaults<T>();
+                params.setFillValue<T>(getMissingValue<T>());
+                // Don't want compression in the memory image.
+                params.noCompress();
+                destDimVar = destGroup.vars
+                    .create<T>(dimName, { dimSize }, { dimSize }, params)
+                    .setIsDimensionScale(dimName);
+            },
+            VarUtils::ThrowIfVariableIsOfUnsupportedType(dimName));
+        copyAttributes(srcDimVar.atts, destDimVar.atts);
+    }
+
+    // Create the regular variables according to those from the original input file.
+    // Note that dateTime, latitude, longitude have already been created.
+    // The old date time names can show up and we want to ignore those too.
+    for (const auto & varObject : dimsAttachedToVars) {
+        std::string varName = varObject.first.name;
+        if ((varName == "MetaData/dateTime") || (varName == "MetaData/datetime") ||
+            (varName == "MetaData/time") || (varName == "MetaData/longitude") ||
+            (varName == "MetaData/latitude")) {
+            continue;
+        }
+        oops::Log::trace() << "readerCreateInputFileVariables: creating: "
+                           << varName << std::endl;
+
+        // Create a list of the dimensions to attach to the variable.
+        std::vector<Variable> dimVars;
+        for (const auto & dimNamedVar : varObject.second) {
+            std::string dimName = dimNamedVar.name;
+            dimVars.push_back(destGroup.vars.open(dimName));
+        }
+
+        // Create the variable and copy the attributes
+        Variable srcVar = varObject.first.var;
+        Variable destVar;
+        VarUtils::forAnySupportedVariableType(
+            srcVar,
+            [&](auto typeDiscriminator) {
+                typedef decltype(typeDiscriminator) T;
+                VariableCreationParameters params = VariableCreationParameters::defaults<T>();
+                params.setFillValue<T>(getMissingValue<T>());
+                // Don't want compression in the memory image.
+                params.noCompress();
+                destVar = destGroup.vars.createWithScales<T>(varName, dimVars, params);
+            },
+            VarUtils::ThrowIfVariableIsOfUnsupportedType(varName));
+        copyAttributes(srcVar.atts, destVar.atts);
+    }
+}
+
+//--------------------------------------------------------------------------------
+void getMaxNumElementsFromVarLists(const VarUtils::Vec_Named_Variable & dimVarList,
+                                   const VarUtils::VarDimMap & dimsAttachedToVars,
+                                   Dimensions_t & maxNumElements, Dimensions_t & nlocs) {
+    maxNumElements = 0;
+    nlocs = 0;
+    // check dimension sizes
+    for (const auto & dimNamedVar : dimVarList) {
+        Dimensions_t numElements = dimNamedVar.var.getDimensions().numElements;
+        if (numElements > maxNumElements) {
+            maxNumElements = numElements;
+        }
+        if (dimNamedVar.name == "Location") {
+            nlocs = numElements;
+        }
+    }
+    // check var sizes
+    for (const auto & varObject : dimsAttachedToVars) {
+        Dimensions_t numElements = varObject.first.var.getDimensions().numElements;
+        if (numElements > maxNumElements) {
+            maxNumElements = numElements;
+        }
+    }
+}
+
+//--------------------------------------------------------------------------------
+void getMaxNumElementsFromGroup(const Group & group,
+                                Dimensions_t & maxNumElements, Dimensions_t & nlocs) {
+    maxNumElements = 0;
+    nlocs = 0;
+    for (const auto & varName : group.listObjects<ObjectType::Variable>(true)) {
+        Dimensions_t numElements = group.vars.open(varName).getDimensions().numElements;
+        if (numElements > maxNumElements) {
+            maxNumElements = numElements;
+        }
+        if (varName == "Location") {
+            nlocs = numElements;
+        }
+    }
+}
+
+//--------------------------------------------------------------------------------
+void readerInputFileTransferVarData(const ReaderPoolBase & ioPool,
+                                    const VarUtils::Vec_Named_Variable & dimVarList,
+                                    const VarUtils::VarDimMap & dimsAttachedToVars,
+                                    const std::vector<std::size_t> & indices,
+                                    Group & destGroup) {
+    // Allocate two generic (vector of char) memory buffers, one for holding the source
+    // variable data, the other for holding the destination variable data. We need to
+    // avoid repeated allocations and deallocations to mitigate memory fragmentation so
+    // we want to make sure we allocate enough space. For that we need to know the maximum
+    // number of elements in all of the variables and the maximum data type size (in bytes).
+    // Note that the getMaxNumElements* functions are also used to set srcNlocs and destNlocs.
+    Dimensions_t srcNlocs;
+    Dimensions_t destNlocs;
+    Dimensions_t srcMaxNumElements;
+    Dimensions_t destMaxNumElements;
+    getMaxNumElementsFromVarLists(dimVarList, dimsAttachedToVars, srcMaxNumElements, srcNlocs);
+    getMaxNumElementsFromGroup(destGroup, destMaxNumElements, destNlocs);
+    Dimensions_t maxDataTypeSize = getMaxDataTypeSize();
+    std::vector<char> srcBuffer(srcMaxNumElements * maxDataTypeSize);
+    std::vector<char> destBuffer(destMaxNumElements * maxDataTypeSize);
+
+    // Note that the Location variable has been taken care of already.
+    for (const auto & dimNamedVar : dimVarList) {
+        std::string dimName = dimNamedVar.name;
+        if (dimName == "Location") {
+            continue;
+        }
+
+        // All dimensions besides Location (which we are skipping) need to have their
+        // entire contents transferred to the destination group (ie, no selection).
+        // No need to transfer any data if numElements is zero. This also helps with
+        // supporting the case of an empty source file.
+        // Note that dimNamedVar.var is the source variable.
+        // Fifth argument to readerSaveDestVarLocal is doLocSelection which is always
+        // false in this case.
+        Variable destDimVar = destGroup.vars.open(dimName);
+        if (destDimVar.getDimensions().numElements > 0) {
+            readerLoadSourceVarReplaceFill(ioPool, dimNamedVar.var, dimName, srcBuffer);
+            readerSaveDestVarLocal(dimName, srcBuffer, indices, destNlocs, false,
+                                   destBuffer, destDimVar);
+        }
+    }
+
+    // Note that dateTime, latitude, longitude have already had their data transferred.
+    // The old date time names can show up and we want to ignore those too.
+    for (const auto & varObject : dimsAttachedToVars) {
+        std::string varName = varObject.first.name;
+        if ((varName == "MetaData/dateTime") || (varName == "MetaData/datetime") ||
+            (varName == "MetaData/time") || (varName == "MetaData/longitude") ||
+            (varName == "MetaData/latitude")) {
+            continue;
+        }
+
+        // A variable that potentially needs location selection will have its
+        // first dimension be Location. That is why the firstDimName is passed into
+        // the setDoLocSelection function.
+        const std::string firstDimName = varObject.second[0].name;
+        const bool doLocSelection =
+            setDoLocSelection(srcNlocs, destNlocs, varName, firstDimName);
+
+        // Transfer the variable data. Skip the transfer if the destination variable
+        // has zero elements. Saves some needless function calls, and helps support
+        // the case of an empty source file.
+        Variable destVar = destGroup.vars.open(varName);
+        if (destVar.getDimensions().numElements > 0) {
+            readerLoadSourceVarReplaceFill(ioPool, varObject.first.var, varName, srcBuffer);
+            readerSaveDestVarLocal(varName, srcBuffer, indices, destNlocs, doLocSelection,
+                                   destBuffer, destVar);
+        }
+    }
+}
+
+//--------------------------------------------------------------------------------
+void readerBuildAssocInputFile(const ReaderPoolBase & ioPool, const Group & srcGroup,
+                               const int allRank, const int poolRank,
+                               const std::vector<std::size_t> & indices,
+                               const std::vector<int> & destAllRanks,
+                               const std::vector<int> & starts,
+                               const std::vector<int> & counts,
+                               const std::vector<int64_t> & dtimeValues,
+                               const std::string & dtimeEpoch,
+                               const std::vector<float> & lonValues,
+                               const std::vector<float> & latValues) {
+    // Construct the path, name to the new input file. Strip off the trailing suffix
+    // (.nc4, .odb, .nc, etc) and replace with "_<ioPoolRank>.nc4". For now, we will
+    // always use the hdf5 backend for these files.
+
+    // Get "basename" of the path in fileName
+    std::string inputFileName;
+    auto pos = ioPool.fileName().find_last_of('/');
+    if (pos == std::string::npos) {
+        inputFileName = ioPool.fileName();
+    } else {
+        // fileName contains path information, strip off every character leading
+        // up to the last '/'.
+        inputFileName = ioPool.fileName().substr(pos + 1);
+    }
+
+    // Generate a file name using the poolRank number, and the time communicator
+    // rank number. The second argument to uniquifyFileName is "write multiple files"
+    // which needs to be true to allow uniquifyFileName to tag on the poolRank number.
+    int timeRankNum = -1;
+    if (ioPool.commTime().size() > 1) {
+        timeRankNum = ioPool.commTime().rank();
+    }
+    inputFileName = ioPool.workDir() + std::string("/") + inputFileName;
+    inputFileName = Engines::uniquifyFileName(inputFileName, true, poolRank, timeRankNum);
+    oops::Log::trace() << "readerBuildAssocInputFile: inputFileName: "
+                       << inputFileName << std::endl;
+
+    // Open up an hdf5 writer backend and transfer the selected data into the
+    // output file. We need to create a new eckit configuration for the writer
+    // engine factory.
+    // Third and fourth arguments to constructFileWriterFromConfig are
+    // "write multiple files" and "is parallel" respectively. We want
+    // "write multiple files" to be false since we are tagging on the io pool
+    // rank above.
+    eckit::LocalConfiguration engineConfig =
+        Engines::constructFileBackendConfig("hdf5", inputFileName);
+    std::unique_ptr<Engines::WriterBase> writerEngine =
+        Engines::constructFileWriterFromConfig(ioPool.commAll(), ioPool.commTime(),
+                                               false, false, engineConfig);
+    Group destGroup = writerEngine->getObsGroup();
+
+    // Copy the source group hierarchical structure (all subgroups and group attributes)
+    copyGroupStructure(srcGroup, destGroup);
+
+    // Write out the mpi mapping data held in indices and destAllRanks. Place
+    // these variables in a special group in the output file.
+    // Then write out the prepared variables (dateTime, latitude, longitude)
+    readerWriteInputFileMpiMapping(ioPool, srcGroup, indices, destAllRanks, destGroup);
+    readerWriteInputFilePreparedVars(ioPool, srcGroup, indices, dtimeValues, dtimeEpoch,
+                                     lonValues, latValues, destGroup);
+
+    // Collect, from the source group, variable lists and dimension mappings
+    VarUtils::Vec_Named_Variable regularVarList;
+    VarUtils::Vec_Named_Variable dimVarList;
+    VarUtils::VarDimMap dimsAttachedToVars;
+    Dimensions_t maxVarSize0;  // unused in this function
+    VarUtils::collectVarDimInfo(srcGroup, regularVarList, dimVarList,
+                                dimsAttachedToVars, maxVarSize0);
+
+    // Create the remaining dimensions and variables. This will place everything in
+    // the new input file except for the dimension and variable data values.
+    readerCreateInputFileVariables(dimVarList, dimsAttachedToVars, destGroup);
+
+    // Transfer the variable data to the destination group
+    readerInputFileTransferVarData(ioPool, dimVarList, dimsAttachedToVars, indices, destGroup);
+}
+
+//--------------------------------------------------------------------------------
+void readerBuildInputFiles(const ReaderPoolBase & ioPool,
+                           const Group & srcGroup,
+                           const std::vector<int> & assocAllRanks,
+                           const std::vector<int> & ioPoolRanks,
+                           const std::vector<std::size_t> & locIndicesAllRanks,
+                           const std::vector<int> & locIndicesStarts,
+                           const std::vector<int> & locIndicesCounts,
+                           const std::vector<int64_t> & dtimeValues,
+                           const std::string & dtimeEpoch,
+                           const std::vector<float> & lonValues,
+                           const std::vector<float> & latValues) {
+    // First identify which ranks, from the commAll communicator group, are io pool members.
+    // These are the unique values in assocAllRanks.
+    std::set<int> ioPoolMembers(assocAllRanks.begin(), assocAllRanks.end());
+    for (const auto & i : ioPoolMembers) {
+        // For this io pool member, record the io pool rank (for the file suffix),
+        // and the list of indices that go into the associated file (with the
+        // corresponding start, count values).
+        int allRank = i;
+        int poolRank = ioPoolRanks[i];
+        std::vector<int> starts;
+        std::vector<int> counts;
+        std::vector<std::size_t> indices;
+        std::vector<int> destAllRanks;
+        readerSetFileSelection(allRank, assocAllRanks, locIndicesAllRanks, locIndicesStarts,
+                               locIndicesCounts, indices, destAllRanks, starts, counts);
+
+        // Create the associate file
+        readerBuildAssocInputFile(ioPool, srcGroup, allRank, poolRank, indices,
+                                  destAllRanks, starts, counts, dtimeValues, dtimeEpoch,
+                                  lonValues, latValues);
+    }
+}
+
+//--------------------------------------------------------------------------------
+void readerCreateFileSet(const ReaderPoolBase & ioPool, const Group & srcGroup,
+                         const std::vector<int64_t> & dtimeValues,
+                         const std::string & dtimeEpoch,
+                         const std::vector<float> & lonValues,
+                         const std::vector<float> & latValues) {
+    // We want to gather all the rank assignments and indices on rank 0 in the all
+    // communicator, since rank 0 is rank that has the input file open. This can be
+    // obtained from pairing up which ranks are grouped together, and then tagging on
+    // their location indices. Note, an entry in ioPoolRank for ranks not in the ioPool
+    // will be set to -1.
+    std::vector<int> assocAllRanks;
+    std::vector<int> ioPoolRanks;
+    readerGatherAssociatedRanks(ioPool, assocAllRanks, ioPoolRanks);
+
+    std::vector<std::size_t> locIndicesAllRanks;
+    std::vector<int> locIndicesStarts;
+    std::vector<int> locIndicesCounts;
+    readerGatherLocationIndices(ioPool, locIndicesAllRanks,
+                                locIndicesStarts, locIndicesCounts);
+
+    // Build the files. One file per io pool member, location indices in the order of
+    // the rank assignments starting with the pool member rank. Only rank 0 has the
+    // input file open, and rank 0 has all the information needed to create
+    // all of the io pool member files. So, have just rank 0 take it from here.
+    if (ioPool.commAll().rank() == 0) {
+        readerBuildInputFiles(ioPool, srcGroup, assocAllRanks, ioPoolRanks,
+                              locIndicesAllRanks, locIndicesStarts, locIndicesCounts,
+                              dtimeValues, dtimeEpoch, lonValues, latValues);
+    }
+
+    // Have the other MPI ranks wait for rank 0 to create the input files
+    ioPool.commAll().barrier();
 }
 
 //--------------------------------------------------------------------------------
@@ -780,7 +1366,7 @@ void readerDeserializeGroupStructure(ioda::Group & memGroup,
                                      const std::string & groupStructureYaml) {
     // Deserialize the yaml string into an eckit YAML configuration object. Then
     // walk through that structure building the structure as you go.
-    eckit::YAMLConfiguration config(groupStructureYaml);
+    const eckit::YAMLConfiguration config(groupStructureYaml);
 
     // create the top level group attributes from the "attributes" section
     std::vector<eckit::LocalConfiguration> attrConfigs;
@@ -791,7 +1377,7 @@ void readerDeserializeGroupStructure(ioda::Group & memGroup,
     std::vector<eckit::LocalConfiguration> groupConfigs;
     config.get("groups", groupConfigs);
     for (size_t i = 0; i < groupConfigs.size(); ++i) {
-        std::string groupName = groupConfigs[i].getString("group.name");
+        const std::string groupName = groupConfigs[i].getString("group.name");
         Group subGroup = memGroup.create(groupName);
         attrConfigs.clear();
         groupConfigs[i].get("group.attributes", attrConfigs);
@@ -832,8 +1418,8 @@ void recordDimSizes(const eckit::YAMLConfiguration & config,
     std::vector<eckit::LocalConfiguration> dimConfigs;
     config.get("dimensions", dimConfigs);
     for (std::size_t i = 0; i < dimConfigs.size(); ++i) {
-        std::string dimName = dimConfigs[i].getString("dimension.name");
-        ioda::Dimensions_t dimSize = dimConfigs[i].getLong("dimension.size");
+        const std::string dimName = dimConfigs[i].getString("dimension.name");
+        const ioda::Dimensions_t dimSize = dimConfigs[i].getLong("dimension.size");
         dimSizes[dimName] = dimSize;
     }
 }
@@ -919,7 +1505,7 @@ ioda::Dimensions_t calcDestMaxElements(const ReaderPoolBase & ioPool,
     std::vector<eckit::LocalConfiguration> varConfigs;
     config.get("variables", varConfigs);
     for (std::size_t i = 0; i < varConfigs.size(); ++i) {
-        std::vector<std::string> dimNames =
+        const std::vector<std::string> dimNames =
             varConfigs[i].getStringVector("variable.dimensions");
         ioda::Dimensions_t numDestElements = 1;
         // Number of elements is the product of all the dimension sizes
@@ -983,8 +1569,8 @@ ioda::Dimensions_t getMaxDataTypeSize() {
 //------------------------------------------------------------------------------------
 ioda::Selection createEntireVarSelection(const ioda::Variable & var) {
     // Want the selection to cover the entire data space of the variable
-    std::vector<Dimensions_t> varCounts = var.getDimensions().dimsCur;
-    std::vector<Dimensions_t> varStarts(varCounts.size(), 0);
+    const std::vector<Dimensions_t> varCounts = var.getDimensions().dimsCur;
+    const std::vector<Dimensions_t> varStarts(varCounts.size(), 0);
 
     Selection varSelect;
     varSelect.extent(varCounts).select({ SelectionOperator::SET, varStarts, varCounts });
@@ -1057,9 +1643,9 @@ void replaceFillWithMissing(const ReaderPoolBase & ioPool,
     // replacement.
     if (srcVar.hasFillValue()) {
         VarType fillValue;
-        ioda::detail::FillValueData_t srcFvData = srcVar.getFillValue();
+        const ioda::detail::FillValueData_t srcFvData = srcVar.getFillValue();
         fillValue = ioda::detail::getFillValue<VarType>(srcFvData);
-        VarType missingValue = getMissingValue<VarType>();
+        const VarType missingValue = getMissingValue<VarType>();
 
         // No need to replace if the fill value and missing value are already equal.
         if (fillValue != missingValue) {
@@ -1079,10 +1665,10 @@ void replaceFillWithMissing<std::string>(const ReaderPoolBase & ioPool,
     // replacement.
     if (srcVar.hasFillValue()) {
         std::shared_ptr<std::string> fillValue;
-        ioda::detail::FillValueData_t srcFvData = srcVar.getFillValue();
+        const ioda::detail::FillValueData_t srcFvData = srcVar.getFillValue();
         fillValue = std::make_shared<std::string>(
             ioda::detail::getFillValue<std::string>(srcFvData));
-        std::shared_ptr<std::string> missingValue =
+        const std::shared_ptr<std::string> missingValue =
             getMissingValue<std::shared_ptr<std::string>>(ioPool);
 
         // No need to replace if the fill value and missing value are already equal.
@@ -1105,9 +1691,9 @@ void replaceFillWithMissingSpecial(const ioda::Variable & srcVar,
     // replacement.
     if (srcVar.hasFillValue()) {
         VarType fillValue;
-        ioda::detail::FillValueData_t srcFvData = srcVar.getFillValue();
+        const ioda::detail::FillValueData_t srcFvData = srcVar.getFillValue();
         fillValue = ioda::detail::getFillValue<VarType>(srcFvData);
-        VarType missingValue = getMissingValue<VarType>();
+        const VarType missingValue = getMissingValue<VarType>();
 
         // No need to replace if the fill value and missing value are already equal.
         if (fillValue != missingValue) {
@@ -1155,8 +1741,8 @@ void selectVarValues(const std::vector<DataType> & srcBuffer,
     const ioda::Dimensions_t count = dataTypeSize * std::accumulate(
         varShape.begin()+1, varShape.end(), 1, std::multiplies<ioda::Dimensions_t>());
     for (std::size_t i = 0; i < locIndices.size(); ++i) {
-        ioda::Dimensions_t srcStart = locIndices[i] * count;
-        ioda::Dimensions_t destStart = i * count;
+        const ioda::Dimensions_t srcStart = locIndices[i] * count;
+        const ioda::Dimensions_t destStart = i * count;
         for (std::size_t j = 0; j < static_cast<size_t>(count); ++j) {
             destBuffer[destStart + j] = srcBuffer[srcStart + j];
         }
@@ -1179,21 +1765,20 @@ ioda::Dimensions_t getVarDataTypeSize(const ioda::Variable & var,
 
 //------------------------------------------------------------------------------------
 void readerLoadSourceVarReplaceFill(const ReaderPoolBase & ioPool,
-                                    const ioda::Group & fileGroup,
+                                    const Variable & srcVar,
                                     const std::string & srcVarName,
                                     std::vector<char> & srcBuffer) {
     // Read variable from the source (input file) and replace any fill values with
     // the corresponding JEDI missing value.
-    ioda::Variable srcVar = fileGroup.vars.open(srcVarName);
-    ioda::Selection srcSelect = createEntireVarSelection(srcVar);
+    const ioda::Selection srcSelect = createEntireVarSelection(srcVar);
     VarUtils::forAnySupportedVariableType(
         srcVar,
         [&](auto typeDiscriminator) {
             typedef decltype(typeDiscriminator) T;
-            Type srcType =
+            const Type srcType =
                 Types::GetType_Wrapper<T>::GetType(srcVar.getTypeProvider());
             srcVar.read(srcBuffer, srcType, srcSelect, srcSelect);
-            ioda::Dimensions_t numElements = srcVar.getDimensions().numElements;
+            const ioda::Dimensions_t numElements = srcVar.getDimensions().numElements;
             replaceFillWithMissing<T>(ioPool, srcVar, numElements, srcBuffer);
         },
         VarUtils::ThrowIfVariableIsOfUnsupportedType(srcVarName));
@@ -1241,14 +1826,14 @@ void readerTransferBuffers(const std::vector<char> & srcBuffer,
 //------------------------------------------------------------------------------------
 void readerSaveDestVar(const std::string & varName, const std::vector<char> & destBuffer,
                        ioda::Variable & destVar) {
-    oops::Log::debug() << "readerSaveDestVar: writing: " << varName << std::endl;
+    oops::Log::trace() << "readerSaveDestVar: writing: " << varName << std::endl;
     // write data into destination variable
-    ioda::Selection destSelect = createEntireVarSelection(destVar);
+    const ioda::Selection destSelect = createEntireVarSelection(destVar);
     VarUtils::forAnySupportedVariableType(
         destVar,
         [&](auto typeDiscriminator) {
             typedef decltype(typeDiscriminator) T;
-            Type destType =
+            const Type destType =
                     Types::GetType_Wrapper<T>::GetType(destVar.getTypeProvider());
             destVar.write(destBuffer, destType, destSelect, destSelect);
             },
@@ -1273,9 +1858,9 @@ void readerSaveDestVarLocal(const std::string & varName,
     // variables dimensioned by Location, varShape will serve as a template
     // shape of which the code will need to replace the Location (first) dimension
     // with the proper size before using.
-    ioda::Dimensions_t varDataTypeSize = getVarDataTypeSize(destVar, varName);
-    std::vector<ioda::Dimensions_t> varShape = destVar.getDimensions().dimsCur;
-    ioda::Dimensions_t numBytes = varDataTypeSize *
+    const ioda::Dimensions_t varDataTypeSize = getVarDataTypeSize(destVar, varName);
+    const std::vector<ioda::Dimensions_t> varShape = destVar.getDimensions().dimsCur;
+    const ioda::Dimensions_t numBytes = varDataTypeSize *
                                   calcAdjustedNumElements(varShape, destNlocs, doLocSelection);
     if (numBytes > 0) {
         readerTransferBuffers(srcBuffer, index, varDataTypeSize, varShape, numBytes,
@@ -1291,10 +1876,10 @@ int findMaxStringLength(std::vector<char> & destBuffer, const int numStrings) {
     // destBuff holds a series of char * pointers upon entry. Find the maximum string length
     // using a string span placed over the destBuff. Then use that maximum string length
     // to allocate a char array large enough to hold all of the strings.
-    gsl::span<char *> stringSpan(
+    const gsl::span<char *> stringSpan(
         reinterpret_cast<char **>(destBuffer.data()), numStrings);
     int maxStringLength = 0;
-    for (auto const & stringElement : stringSpan) {
+    for (const auto & stringElement : stringSpan) {
         if (strlen(stringElement) > maxStringLength) {
             maxStringLength = strlen(stringElement);
         }
@@ -1309,10 +1894,10 @@ void packStringsIntoCharArray(std::vector<char> & destBuffer,
     // Create a char * span across destBuffer which can be used to copy strings to
     // the strBuffer. charArrayShape[0] is the number of strings, charArrayShape[1]
     // is the fixed string length (which allows for a trailing null byte).
-    gsl::span<char *> stringSpan(
+    const gsl::span<char *> stringSpan(
         reinterpret_cast<char **>(destBuffer.data()), charArrayShape[0]);
     for (std::size_t i = 0; i < stringSpan.size(); ++i) {
-        int strLen = strlen(stringSpan[i]);
+        const int strLen = strlen(stringSpan[i]);
         for (std::size_t j = 0; j < strLen; ++j) {
             strBuffer[(i * charArrayShape[1]) + j] = stringSpan[i][j];
         }
@@ -1329,12 +1914,12 @@ void allocateStringMemForDestBuffer(std::vector<std::string> & strValues,
     // nice memory management (ie, to prevent leaks). Use the charArrayShape
     // values to allocate enough memory so the unpackStringsFromCharArray
     // can simply do strcpy's to transfer the data.
-    std::string fillString(charArrayShape[1], '\0');
+    const std::string fillString(charArrayShape[1], '\0');
     strValues.assign(charArrayShape[0], fillString);
 
     // Use a char * span to facilitate the assignment of the string vector's allocated
     // memory to the char * pointers in destBuffer.
-    gsl::span<char *> stringSpan(
+    const gsl::span<char *> stringSpan(
         reinterpret_cast<char **>(destBuffer.data()), charArrayShape[0]);
     for (std::size_t i = 0; i < charArrayShape[0]; ++i) {
         stringSpan[i] = strValues[i].data();
@@ -1349,11 +1934,11 @@ void unpackStringsFromCharArray(const std::vector<char> & strBuffer,
     // allocated with enough size to hold the values in strBuffer. That leaves it up
     // to this function to just do strcpy's to transfer the data. Use a char * span
     // to facilitate the transfer of the string values.
-    gsl::span<char *> stringSpan(
+    const gsl::span<char *> stringSpan(
         reinterpret_cast<char **>(destBuffer.data()), charArrayShape[0]);
     for (size_t i = 0; i < charArrayShape[0]; ++i) {
         const int offset = i * charArrayShape[1];
-        auto strEnd = std::find(strBuffer.begin() + offset, strBuffer.end(), '\0');
+        const auto strEnd = std::find(strBuffer.begin() + offset, strBuffer.end(), '\0');
         if (strEnd == strBuffer.end()) {
             throw Exception("End of string not found during MPI transfer", ioda_Here());
         }
@@ -1375,9 +1960,9 @@ void readerSaveDestVarGlobal(const ReaderPoolBase & ioPool,
     // variables dimensioned by Location, varShape will serve as a template
     // shape of which the code will need to replace the Location (first) dimension
     // with the proper size before using.
-    ioda::Dimensions_t varDataTypeSize = getVarDataTypeSize(destVar, varName);
-    std::vector<ioda::Dimensions_t> varShape = destVar.getDimensions().dimsCur;
-    bool varIsStringVector = destVar.isA<std::string>();
+    const ioda::Dimensions_t varDataTypeSize = getVarDataTypeSize(destVar, varName);
+    const std::vector<ioda::Dimensions_t> varShape = destVar.getDimensions().dimsCur;
+    const bool varIsStringVector = destVar.isA<std::string>();
 
     // Avoid unnecessary work when the destination variable in the non-pool task is empty.
     // In this case, the creation of the variable has already put the variable in the desired
@@ -1388,12 +1973,12 @@ void readerSaveDestVarGlobal(const ReaderPoolBase & ioPool,
     // a char array, transfer the char array, then convert back to a string vector.
     if (ioPool.commPool() != nullptr) {
         // Transfer the variable data to the assigned ranks' obs spaces
-        for (auto const & distMap : ioPool.distributionMap()) {
+        for (const auto & distMap : ioPool.distributionMap()) {
             ioda::Dimensions_t destVarSize;
             ioPool.commAll().receive(&destVarSize, 1, distMap.first, msgIsVariableSize);
             if (destVarSize > 0) {
                 // select variable values into the destBuffer according to the distMap.
-                int numBytes = varDataTypeSize *
+                const int numBytes = varDataTypeSize *
                     calcAdjustedNumElements(varShape, distMap.second.size(), doLocSelection);
                 readerTransferBuffers(srcBuffer, distMap.second, varDataTypeSize,
                                       varShape, numBytes, doLocSelection, destBuffer);
@@ -1429,7 +2014,7 @@ void readerSaveDestVarGlobal(const ReaderPoolBase & ioPool,
                               msgIsVariableSize);
         if (destVarSize > 0) {
             // Receive the data from the pool member rank
-            int numBytes = varDataTypeSize *
+            const int numBytes = varDataTypeSize *
                 calcAdjustedNumElements(varShape, destNlocs, doLocSelection);
             // Used for transferring string variable values.
             std::vector<std::string> strValues;
@@ -1469,7 +2054,7 @@ void readerTransferVarData(const ReaderPoolBase & ioPool,
                            std::vector<int64_t> & dtimeValues) {
     // Deserialize the yaml string into an eckit YAML configuration object which
     // can be used to figure out whether each variable is dimensioned by Location.
-    eckit::YAMLConfiguration config(groupStructureYaml);
+    const eckit::YAMLConfiguration config(groupStructureYaml);
 
     // Allocate a buffer (vector of char) for reading data from the file (srcBuffer).
     // This buffer needs to be large enough to hold any of the variables in the file
@@ -1483,9 +2068,9 @@ void readerTransferVarData(const ReaderPoolBase & ioPool,
     // Note that sourceMaxElements is based on the number of Locations in the file,
     // whereas destMaxElements is based on the number of Locations for the obs space
     // on each task.
-    ioda::Dimensions_t sourceMaxElements = calcSourceMaxElements(ioPool, config);
-    ioda::Dimensions_t destMaxElements = calcDestMaxElements(ioPool, config);
-    ioda::Dimensions_t maxDataTypeSize = getMaxDataTypeSize();
+    const ioda::Dimensions_t sourceMaxElements = calcSourceMaxElements(ioPool, config);
+    const ioda::Dimensions_t destMaxElements = calcDestMaxElements(ioPool, config);
+    const ioda::Dimensions_t maxDataTypeSize = getMaxDataTypeSize();
     std::vector<char>srcBuffer(sourceMaxElements * maxDataTypeSize);
     std::vector<char>destBuffer(destMaxElements * maxDataTypeSize);
 
@@ -1504,7 +2089,7 @@ void readerTransferVarData(const ReaderPoolBase & ioPool,
     std::vector<eckit::LocalConfiguration> dimConfigs;
     config.get("dimensions", dimConfigs);
     for (std::size_t i = 0; i < dimConfigs.size(); ++i) {
-        std::string dimName = dimConfigs[i].getString("dimension.name");
+        const std::string dimName = dimConfigs[i].getString("dimension.name");
         ioda::Variable destVar = memGroup.vars.open(dimName);
 
         // Determine if we need to do location selection on this variable.
@@ -1519,7 +2104,8 @@ void readerTransferVarData(const ReaderPoolBase & ioPool,
             if (destVar.getDimensions().numElements > 0) {
                 // Read variable from the source (input file), and replace fill with
                 // the corresponding JEDI missing value.
-                readerLoadSourceVarReplaceFill(ioPool, fileGroup, dimName, srcBuffer);
+                Variable srcVar = fileGroup.vars.open(dimName);
+                readerLoadSourceVarReplaceFill(ioPool, srcVar, dimName, srcBuffer);
 
                 // Transfer the variable data to this rank's obs space
                 readerSaveDestVarLocal(dimName, srcBuffer, ioPool.index(), destNlocs,
@@ -1541,8 +2127,8 @@ void readerTransferVarData(const ReaderPoolBase & ioPool,
     std::vector<eckit::LocalConfiguration> varConfigs;
     config.get("variables", varConfigs);
     for (std::size_t i = 0; i < varConfigs.size(); ++i) {
-        std::string varName = varConfigs[i].getString("variable.name");
-        std::vector<std::string> varDimNames =
+        const std::string varName = varConfigs[i].getString("variable.name");
+        const std::vector<std::string> varDimNames =
             varConfigs[i].getStringVector("variable.dimensions");
 
         // All ranks will need to open the destination (memGroup) variable. We can
@@ -1556,7 +2142,8 @@ void readerTransferVarData(const ReaderPoolBase & ioPool,
         ioda::Variable destVar = memGroup.vars.open(varName);
 
         // Determine if we need to do location selection on this variable.
-        bool doLocSelection = setDoLocSelection(srcNlocs, destNlocs, varName, varDimNames[0]);
+        const bool doLocSelection =
+            setDoLocSelection(srcNlocs, destNlocs, varName, varDimNames[0]);
 
         // On pool members only, read in from the source into the source buffer
         // and save in the local obs space.
@@ -1564,12 +2151,13 @@ void readerTransferVarData(const ReaderPoolBase & ioPool,
             // Read variable from the source (input file), and replace fill with
             // the corresponding JEDI missing value.
             if (varName == "MetaData/dateTime") {
-                ioda::Dimensions_t varDataTypeSize = getVarDataTypeSize(destVar, varName);
+                const ioda::Dimensions_t varDataTypeSize = getVarDataTypeSize(destVar, varName);
                 memcpy(srcBuffer.data(), dtimeValues.data(), (srcNlocs * varDataTypeSize));
             } else {
                 // Read variable from the source (input file), and replace fill with
                 // the corresponding JEDI missing value.
-                readerLoadSourceVarReplaceFill(ioPool, fileGroup, varName, srcBuffer);
+                Variable srcVar = fileGroup.vars.open(varName);
+                readerLoadSourceVarReplaceFill(ioPool, srcVar, varName, srcBuffer);
             }
 
             // Transfer the variable data to this rank's obs space
@@ -1593,7 +2181,7 @@ void readerCreateVariable(const std::string & varName, const Variable & srcVar,
                           const ioda::Dimensions_t adjustNlocs, Has_Variables & destVars,
                           ioda::Dimensions_t & globalMaxElements,
                           ioda::Dimensions_t & maxElements) {
-    oops::Log::debug() << "readerCreateVariable: creating: " << varName << std::endl;
+    oops::Log::trace() << "readerCreateVariable: creating: " << varName << std::endl;
     // Record the max number of elements on the source side and on the destination side.
     // These values will be used by the readerCopyVarData function.
     Dimensions varDims = srcVar.getDimensions();
@@ -1711,7 +2299,8 @@ void readerCopyVarData(const ReaderPoolBase & ioPool,
         if (destVar.getDimensions().numElements > 0) {
             // Read variable from the source (input file), and replace fill with
             // the corresponding JEDI missing value.
-            readerLoadSourceVarReplaceFill(ioPool, src, varName, srcBuffer);
+            Variable srcVar = src.vars.open(varName);
+            readerLoadSourceVarReplaceFill(ioPool, srcVar, varName, srcBuffer);
 
             // Determine if we need to do location selection
             std::string firstDimName = "";
@@ -1763,6 +2352,10 @@ void readerCopyVarData(const ReaderPoolBase & ioPool,
 }
 
 //--------------------------------------------------------------------------------
+// Definitions of public functions
+//--------------------------------------------------------------------------------
+
+//--------------------------------------------------------------------------------
 void ioReadGroup(const ReaderPoolBase & ioPool, const ioda::Group& fileGroup,
                  ioda::Group& memGroup, const DateTimeFormat dtimeFormat,
                  std::vector<int64_t> & dtimeVals, const std::string & dtimeEpoch,
@@ -1783,9 +2376,6 @@ void ioReadGroup(const ReaderPoolBase & ioPool, const ioda::Group& fileGroup,
     // For all ranks, create the group, variable structure. Once this
     // structure is in place, then transfer the variable data.
     //
-    // Get all variable and group names
-    const auto fileObjects = fileGroup.listObjects(ObjectType::Ignored, true);
-
     // Copy hierarchical group structure from memGroup to fileGroup
     copyGroupStructure(fileGroup, memGroup);
 

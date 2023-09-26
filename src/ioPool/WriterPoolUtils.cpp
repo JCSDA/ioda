@@ -62,7 +62,7 @@ Selection createBlockSelection(const std::vector<Dimensions_t> & varShape,
 template <typename VarType>
 void transferVarData(const WriterPoolBase & ioPool, const Variable & srcVar,
                      const std::string & varName, Group & dest, const bool isParallelIo) {
-    oops::Log::debug() << "transferVarData: writing: " << varName << std::endl;
+    oops::Log::trace() << "transferVarData: writing: " << varName << std::endl;
     if (ioPool.commPool() != nullptr) {
         std::vector<VarType> varData;
         srcVar.read<VarType>(varData);
@@ -151,7 +151,7 @@ void transferVarDataMPI(const WriterPoolBase & ioPool, const Variable & srcVar,
                         const std::vector<std::size_t> & varCounts,
                         const Dimensions_t & dimFactor, Group & dest,
                         const bool isParallelIo, const std::size_t strLen) {
-    oops::Log::debug() << "transferVarDataMPI: writing: " << varName << std::endl;
+    oops::Log::trace() << "transferVarDataMPI: writing: " << varName << std::endl;
     std::vector<VarType> varData;
     selectPatchValues<VarType>(ioPool, srcVar, dimFactor, varData);
     if (ioPool.commPool() != nullptr) {
@@ -204,7 +204,7 @@ void transferVarDataMPI<std::string>(const WriterPoolBase & ioPool, const Variab
                         const std::vector<std::size_t> & varCounts,
                         const Dimensions_t & dimFactor, Group & dest,
                         const bool isParallelIo, const std::size_t strLen) {
-    oops::Log::debug() << "transferVarDataMPI (string): writing: " << varName << std::endl;
+    oops::Log::trace() << "transferVarDataMPI (string): writing: " << varName << std::endl;
     int maxStringLength = strLen + 1;
 
     std::vector<std::string> varData;
@@ -266,7 +266,7 @@ template <typename VarType>
 void writerCreateVariable(const std::string & varName, const Variable & srcVar,
                           const int adjustNlocs, Has_Variables & destVars,
                           const std::size_t strLen) {
-    oops::Log::debug() << "writerCreateVariable: creating: " << varName << std::endl;
+    oops::Log::trace() << "writerCreateVariable: creating: " << varName << std::endl;
     VariableCreationParameters params = srcVar.getCreationParameters(false, false);
     // For now we want to use mpio independent writing style which doesn't support
     // compression. This is currently being mitigated since we have to run a
@@ -291,7 +291,7 @@ template <>
 void writerCreateVariable<std::string>(const std::string & varName, const Variable & srcVar,
                                        const int adjustNlocs, Has_Variables & destVars,
                                        const std::size_t strLen) {
-    oops::Log::debug() << "writerCreateVariable (string): creating: " << varName << std::endl;
+    oops::Log::trace() << "writerCreateVariable (string): creating: " << varName << std::endl;
     // Since the fill value is coming from a variable length string, and we are
     // writing out a fixed length string, the fill value might be a longer length
     // than the string length. For now, record the fill value in an attribute

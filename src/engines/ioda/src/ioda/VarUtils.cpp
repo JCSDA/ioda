@@ -271,7 +271,7 @@ void createDimensionsFromConfig(ioda::Has_Variables & vars,
         const std::string dimName = dimConfigs[i].getString("dimension.name");
         const ioda::Dimensions_t dimSize = dimConfigs[i].getLong("dimension.size");
         const std::string dimDataType = dimConfigs[i].getString("dimension.data type");
-        oops::Log::debug() << "createDimensionsFromConfig: dimName: " << dimName << std::endl;
+        oops::Log::trace() << "createDimensionsFromConfig: dimName: " << dimName << std::endl;
 
         // For all dimensions other than Location, set the maxDimSize to the dimSize
         // since we don't anticipate those dimensions to change, and setting the
@@ -320,7 +320,7 @@ void createVariablesFromConfig(ioda::Has_Variables & vars,
         const std::string varDataType = varConfigs[i].getString("variable.data type");
         const std::vector<std::string> varDimNames =
             varConfigs[i].getStringVector("variable.dimensions");
-        oops::Log::debug() << "createVariablesFromConfig: varName: " << varName << std::endl;
+        oops::Log::trace() << "createVariablesFromConfig: varName: " << varName << std::endl;
 
         // Create a vector of variables from the vars container.
         std::vector<Variable> varDims(varDimNames.size());

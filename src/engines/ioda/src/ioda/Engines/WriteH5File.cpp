@@ -150,7 +150,7 @@ void WriteH5Proc::workaroundGenFileNames(std::string & finalFileName,
 
 void WriteH5Proc::workaroundFixToVarLenStrings(const std::string & finalFileName,
                                                const std::string & tempFileName) {
-    oops::Log::debug() << "WriterPool::finalize: applying flen to vlen strings workaround: "
+    oops::Log::trace() << "WriterPool::finalize: applying flen to vlen strings workaround: "
                        << tempFileName << " -> "
                        << finalFileName << std::endl;
 

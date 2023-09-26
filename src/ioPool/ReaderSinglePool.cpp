@@ -41,6 +41,12 @@ static ReaderPoolMaker<ReaderSinglePool> makerReaderSinglePool("SinglePool");
 ReaderSinglePool::ReaderSinglePool(const IoPoolParameters & configParams,
                                    const ReaderPoolCreationParameters & createParams)
                                        : ReaderPoolBase(configParams, createParams) {
+    // Save a persistent copy of the JEDI missing value for a string variable that can
+    // be used to properly replace a string fill value from the obs source with this
+    // JEDI missing value. The replaceFillWithMissing function needs a char * pointing
+    // to this copy of the JEDI missing value to transfer that value to the obs space
+    // container.
+    stringMissingValue_ = std::make_shared<std::string>(util::missingValue<std::string>());
 }
 
 //--------------------------------------------------------------------------------------
@@ -155,6 +161,7 @@ void ReaderSinglePool::initialize() {
         oops::Log::info() << "ReaderSinglePool: reader work directory: "
                           << workDir_ << std::endl;
     }
+    readerCreateFileSet(*this, fileGroup, dtimeValues_, dtimeEpoch_, lonValues_, latValues_);
     oops::Log::trace() << "ReaderSinglePool::initialize, end" << std::endl;
 }
 

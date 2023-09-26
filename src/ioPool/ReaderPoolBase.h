@@ -115,6 +115,9 @@ class ReaderPoolBase : public IoPoolBase {
   /// \brief list of variables used for the obs grouping function
   const std::vector<std::string> & obsGroupVarList() const { return obsGroupVarList_; }
 
+  /// \brief file name passed in from YAML configuration
+  const std::string & fileName() const { return fileName_; }
+
   /// \brief work directory base
   const std::string & workDirBase() const { return configParams_.workDir; }
 
@@ -174,6 +177,9 @@ class ReaderPoolBase : public IoPoolBase {
 
   /// \brief list of variables used for the obs grouping function
   const std::vector<std::string> & obsGroupVarList_;
+
+  /// \brief completed work directory
+  std::string fileName_;
 
   /// \brief completed work directory
   std::string workDir_;

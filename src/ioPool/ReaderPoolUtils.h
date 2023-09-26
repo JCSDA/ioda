@@ -200,6 +200,26 @@ void setDistributionMap(const ReaderPoolBase & ioPool,
 void readerCreateWorkDirectory(const std::string & workDirBase,
                                const std::string & fileName, std::string & workDir);
 
+/// @brief create the pre-processed input files
+/// @detail This routine will create a file for each member of the io pool containing
+/// a copy of the original input file data, but containing only the locations that go
+/// to the non-pool tasks that the pool task is distributing to. The locations are also
+/// rearranged so that they appear in the file in contiguous blocks for each destination task.
+/// This routine carries over dateTime (with dateTime epoch), lat and lon values since these
+/// have already been read in and processed by the initialization steps before this function
+/// is called. This is done to avoid repeating these steps.
+/// @param ioPool reader pool object
+/// @param srcGroup ioda Group object associated with source (eg, input file)
+/// @param dtimeValues date time values in the epoch format
+/// @param dtimeEpoch date time epoch string
+/// @param lonValues longitude values
+/// @param latValues latitude values
+void readerCreateFileSet(const ReaderPoolBase & ioPool, const Group & srcGroup,
+                         const std::vector<int64_t> & dtimeValues,
+                         const std::string & dtimeEpoch,
+                         const std::vector<float> & lonValues,
+                         const std::vector<float> & latValues);
+
 /// @brief copy the groups and attributes from fileGroup to memGroup
 /// @param ioPool ioda ReaderPoolBase object
 /// @param fileGroup is the source file group
