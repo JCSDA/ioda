@@ -279,13 +279,13 @@ bool upgradeFile(const std::string& inputName, const std::string& outputName,
     // Write out dimensions making sure that Location is a 32 bit int
     // and Channel is a 32 bit int.
     if (attachedDims.find(dim.name) != attachedDims.end()) {
-      if ((dim.name == "Location") | (dim.name == "nlocs")) {
+      if ((dim.name == "Location") || (dim.name == "nlocs")) {
         auto location_size = dim.var.getDimensions().numElements;
         auto nds = NewDimensionScale<int32_t>("Location", gsl::narrow<Dimensions_t>(location_size),
                                               gsl::narrow<Dimensions_t>(location_size),
                                               gsl::narrow<Dimensions_t>(location_size));
         newdims.push_back(nds);
-      } else if ((dim.name == "Channel") | (dim.name == "nchans")) {
+      } else if ((dim.name == "Channel") || (dim.name == "nchans")) {
         auto channel_size = dim.var.getDimensions().numElements;
         auto nds = NewDimensionScale<int32_t>("Channel", gsl::narrow<Dimensions_t>(channel_size),
                                               gsl::narrow<Dimensions_t>(channel_size),
