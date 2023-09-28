@@ -2438,7 +2438,7 @@ void ioReadGroup(const ReaderPoolBase & ioPool, const ioda::Group& fileGroup,
 
     // Make new dimension scales
     for (auto& dim : dimVarList) {
-        memGroup.vars[dim.name].setIsDimensionScale(dim.var.getDimensionScaleName());
+        memGroup.vars[dim.name].setIsDimensionScale(dim.name);
     }
 
     // Attach all dimension scales to all variables.
