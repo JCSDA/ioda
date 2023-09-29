@@ -122,6 +122,11 @@ void WriteH5Proc::print(std::ostream & os) const {
 }
 
 //--------------------------------------------------------------------------------------
+bool WriteH5Proc::backendCanUseParallelIO() const {
+  return true;
+}
+
+//--------------------------------------------------------------------------------------
 void WriteH5Proc::workaroundGenFileNames(std::string & finalFileName,
                                          std::string & tempFileName) {
     tempFileName = params_.fileName;

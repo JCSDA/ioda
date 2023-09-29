@@ -167,6 +167,9 @@ class WriterProcBase : public util::Printable {
     /// before calling this post processor.
     virtual void post() = 0;
 
+    /// \brief Flag to check whether the backend can use parallel io.
+    virtual bool backendCanUseParallelIO() const = 0;
+
  protected:
     //------------------ protected functions ----------------------------------
     /// \brief print() for oops::Printable base class

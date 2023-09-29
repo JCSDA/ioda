@@ -62,6 +62,9 @@ class WriteH5Proc : public WriterProcBase {
   /// post processor.
   void post() override;
 
+  /// \brief Flag to check whether the backend can use parallel io.
+  bool backendCanUseParallelIO() const override;
+
   void print(std::ostream & os) const override;
 
  private:

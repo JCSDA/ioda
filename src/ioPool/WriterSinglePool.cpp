@@ -104,6 +104,7 @@ void WriterSinglePool::initialize() {
         Engines::WriterCreationParameters createParams(*(this->commPool()), this->commTime(),
                                                        createMultipleFiles_, isParallelIo_);
         writer_proc_ = Engines::WriterProcFactory::create(writerParams_, createParams);
+        if (!writer_proc_->backendCanUseParallelIO()) isParallelIo_ = false;
     }
     oops::Log::trace() << "WriterSinglePool::initialize, end" << std::endl;
 }

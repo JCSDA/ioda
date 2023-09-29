@@ -77,6 +77,11 @@ void WriteOdbProc::post() {
 }
 
 //--------------------------------------------------------------------------------------
+bool WriteOdbProc::backendCanUseParallelIO() const {
+  return false;
+}
+
+//--------------------------------------------------------------------------------------
 void WriteOdbProc::print(std::ostream & os) const {
   os << params_.fileName.value();
 }
