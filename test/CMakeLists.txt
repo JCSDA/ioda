@@ -189,7 +189,8 @@ elseif( DEFINED GIT_TAG_FUNC )
   if( DEFINED ENV{ECBUILD_DOWNLOAD_BASE_URL} )
     set( ECBUILD_DOWNLOAD_BASE_URL "$ENV{ECBUILD_DOWNLOAD_BASE_URL}/ioda/${GIT_TAG_FUNC}" )
   else()
-    set( ECBUILD_DOWNLOAD_BASE_URL https://gdex.ucar.edu/dataset/jedi-skylab/file )
+    #set( ECBUILD_DOWNLOAD_BASE_URL https://gdex.ucar.edu/dataset/jedi-skylab/file )
+    set( ECBUILD_DOWNLOAD_BASE_URL https://bin.ssec.wisc.edu/pub/s4/CRTM/file )
   endif()
 
 
