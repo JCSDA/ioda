@@ -57,7 +57,10 @@ find_package( NetCDF REQUIRED COMPONENTS Fortran )  # No idea why oops is not im
 # Optional
 find_package( odc 1.0.2 QUIET )   # Needed for odc
 find_package( Boost 1.64.0 )      # Provides an implementation of optional
-find_package( Python3 COMPONENTS Interpreter Development )
+# Python-finding settings
+set(Python3_FIND_REGISTRY "LAST")
+set(Python3_FIND_FRAMEWORK "LAST")
+find_package( Python3 COMPONENTS Interpreter Development)
 find_package( pybind11 QUIET)
 
 if (pybind11_FOUND)
