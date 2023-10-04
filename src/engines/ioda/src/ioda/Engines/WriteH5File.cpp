@@ -118,12 +118,12 @@ void WriteH5Proc::post() {
 
 //--------------------------------------------------------------------------------------
 void WriteH5Proc::print(std::ostream & os) const {
-  os << params_.fileName.value();
+    os << params_.fileName.value();
 }
 
 //--------------------------------------------------------------------------------------
 bool WriteH5Proc::backendCanUseParallelIO() const {
-  return true;
+    return true;
 }
 
 //--------------------------------------------------------------------------------------

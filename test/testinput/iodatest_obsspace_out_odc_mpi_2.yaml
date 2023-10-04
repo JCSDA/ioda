@@ -4,7 +4,7 @@ window end: "2018-04-15T03:00:00Z"
 
 observations:
 - obs space:
-    name: "AOD GOES"
+    name: "AOD GOES test multiple output files and io pool members = npes"
     simulated variables: ['aerosolOpticalDepth']
     obsdatain:
       engine:
@@ -13,11 +13,130 @@ observations:
     obsdataout:
       engine:
         type: ODB
-        obsfile: "testoutput/diagout-aod-testdatasets.odc"
+        obsfile: "testoutput/diagout-aod-multifiles.odc"
+        mapping file: ../share/test/testinput/odb_default_name_map.yaml
+        query file: ../share/test/testinput/iodatest_odb_aod_write_testdatasets.yaml
+    io pool:
+      write multiple files: true
+  test data:
+    gnlocs: 100
+    gnlocs outside time window: 0
+    gnlocs rejected by qc: 0
+    nlocs from source: 100
+    nrecs: 100
+    obs perturbations seed: 0
+    expected group variables: []
+    expected sort variable: ""
+    expected sort order: "ascending"
+    variables for get test:
+      - name: "latitude"
+        group: "MetaData"
+        type: "float"
+        norm: 567.88380247048008
+
+      - name: "longitude"
+        group: "MetaData"
+        type: "float"
+        norm: 1793.5631154126893
+    tolerance:
+      - 1.0e-11
+    variables for putget test: []
+
+- obs space:
+    name: "AOD GOES test multiple output files and io pool members = one"
+    simulated variables: ['aerosolOpticalDepth']
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: "Data/testinput_tier_1/geos_aod_obs_2018041500_m.nc4"
+    obsdataout:
+      engine:
+        type: ODB
+        obsfile: "testoutput/diagout-aod-multifiles-oneiopool.odc"
+        mapping file: ../share/test/testinput/odb_default_name_map.yaml
+        query file: ../share/test/testinput/iodatest_odb_aod_write_testdatasets.yaml
+    io pool:
+      write multiple files: true
+      max pool size: 1
+  test data:
+    gnlocs: 100
+    gnlocs outside time window: 0
+    gnlocs rejected by qc: 0
+    nlocs from source: 100
+    nrecs: 100
+    obs perturbations seed: 0
+    expected group variables: []
+    expected sort variable: ""
+    expected sort order: "ascending"
+    variables for get test:
+      - name: "latitude"
+        group: "MetaData"
+        type: "float"
+        norm: 567.88380247048008
+
+      - name: "longitude"
+        group: "MetaData"
+        type: "float"
+        norm: 1793.5631154126893
+    tolerance:
+      - 1.0e-11
+    variables for putget test: []
+
+- obs space:
+    name: "AOD GOES test single file output and io pool members = npes"
+    simulated variables: ['aerosolOpticalDepth']
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: "Data/testinput_tier_1/geos_aod_obs_2018041500_m.nc4"
+    obsdataout:
+      engine:
+        type: ODB
+        obsfile: "testoutput/diagout-aod-singlefile.odc"
         mapping file: ../share/test/testinput/odb_default_name_map.yaml
         query file: ../share/test/testinput/iodatest_odb_aod_write_testdatasets.yaml
     io pool:
       write multiple files: false
+  test data:
+    gnlocs: 100
+    gnlocs outside time window: 0
+    gnlocs rejected by qc: 0
+    nlocs from source: 100
+    nrecs: 100
+    obs perturbations seed: 0
+    expected group variables: []
+    expected sort variable: ""
+    expected sort order: "ascending"
+    variables for get test:
+      - name: "latitude"
+        group: "MetaData"
+        type: "float"
+        norm: 567.88380247048008
+
+      - name: "longitude"
+        group: "MetaData"
+        type: "float"
+        norm: 1793.5631154126893
+    tolerance:
+      - 1.0e-11
+    variables for putget test: []
+
+- obs space:
+    name: "AOD GOES test single file output and io pool members = 1"
+    simulated variables: ['aerosolOpticalDepth']
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: "Data/testinput_tier_1/geos_aod_obs_2018041500_m.nc4"
+    obsdataout:
+      engine:
+        type: ODB
+        obsfile: "testoutput/diagout-aod-singlefile-oneiopool.odc"
+        mapping file: ../share/test/testinput/odb_default_name_map.yaml
+        query file: ../share/test/testinput/iodatest_odb_aod_write_testdatasets.yaml
+    io pool:
+      write multiple files: false
+      max pool size: 1
   test data:
     gnlocs: 100
     gnlocs outside time window: 0
