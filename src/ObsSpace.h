@@ -34,6 +34,7 @@
 #include "oops/base/Variables.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
+#include "oops/util/TimeWindow.h"
 #include "ioda/core/IodaUtils.h"
 #include "ioda/distribution/Distribution.h"
 #include "ioda/Misc/Dimensions.h"
@@ -147,8 +148,8 @@ namespace ioda {
         /// \param end DateTime object holding the end of the DA timing window
         /// \param timeComm MPI communicator for ensemble
         ObsSpace(const Parameters_ & params, const eckit::mpi::Comm & comm,
-                const util::DateTime & bgn, const util::DateTime & end,
-                const eckit::mpi::Comm & timeComm);
+                 const util::TimeWindow timeWindow,
+                 const eckit::mpi::Comm & timeComm);
         ObsSpace(const ObsSpace &);
         virtual ~ObsSpace() {}
 
@@ -156,11 +157,7 @@ namespace ioda {
         /// @name Constructor-defined parameters
         /// @{
 
-        /// \details This method will return the start of the DA timing window
-        const util::DateTime & windowStart() const {return winbgn_;}
-
-        /// \details This method will return the end of the DA timing window
-        const util::DateTime & windowEnd() const {return winend_;}
+        const util::TimeWindow & timeWindow() const {return timeWindow_;}
 
         /// \details This method will return the associated MPI communicator
         const eckit::mpi::Comm & comm() const {return commMPI_;}
@@ -451,11 +448,8 @@ namespace ioda {
 
      private:
         // ----------------------------- private data members ---------------------------
-        /// \brief Beginning of DA timing window
-        const util::DateTime winbgn_;
-
-        /// \brief End of DA timing window
-        const util::DateTime winend_;
+        /// Time window class
+        const util::TimeWindow timeWindow_;
 
         /// \brief MPI communicator
         const eckit::mpi::Comm & commMPI_;

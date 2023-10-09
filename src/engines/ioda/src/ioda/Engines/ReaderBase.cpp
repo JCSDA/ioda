@@ -22,11 +22,11 @@ namespace Engines {
 //---------------------------------------------------------------------
 
 ReaderCreationParameters::ReaderCreationParameters(
-                             const util::DateTime & winStart, const util::DateTime & winEnd,
+                             const util::TimeWindow timeWindow,
                              const eckit::mpi::Comm & comm, const eckit::mpi::Comm & timeComm,
                              const std::vector<std::string> & obsVarNames,
                              const bool isParallelIo)
-                                 : winStart(winStart), winEnd(winEnd),
+                                 : timeWindow(timeWindow),
                                    comm(comm), timeComm(timeComm),
                                    obsVarNames(obsVarNames), isParallelIo(isParallelIo) {
 }

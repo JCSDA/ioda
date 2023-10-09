@@ -1,0 +1,45 @@
+---
+window begin: "2018-04-14T23:30:00Z"
+window end: "2018-04-15T03:00:00Z"
+window shift: true
+
+# There are 974 observations in the test file.
+# 786 of these lie within the window when an inclusive lower bound is used.
+# (When the lower bound is exclusive, only 783 lie in the window.)
+observations:
+- obs space:
+    name: "Radiosonde"
+    simulated variables: ['airTemperature']
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: "Data/testinput_tier_1/sondes_obs_2018041500_m.nc4"
+    obsdataout:
+      engine:
+        type: H5File
+        obsfile: "testoutput/diagout.nc4"
+  test data:
+    gnlocs: 786
+    gnlocs outside time window: 188
+    gnlocs rejected by qc: 0
+    nlocs from source: 974
+    nrecs: 786
+    obs perturbations seed: 0
+    expected group variables: []
+    expected sort variable: ""
+    expected sort order: "ascending"
+    variables for get test:
+      - name: "latitude"
+        group: "MetaData"
+        type: "float"
+        norm: 1134.584994544118
+      - name: "longitude"
+        group: "MetaData"
+        type: "float"
+        norm: 5526.9453305896923
+    tolerance:
+      - 1.0e-11
+    variables for putget test:
+      - name: "airTemperature"
+        group: "ObsValue"
+        channels: []

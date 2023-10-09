@@ -15,6 +15,7 @@
 #include "eckit/exception/Exceptions.h"
 
 #include "oops/util/DateTime.h"
+#include "oops/util/TimeWindow.h"
 
 #include "ioda/ObsSpace.h"
 
@@ -23,10 +24,13 @@ namespace ioda {
 // -----------------------------------------------------------------------------
 const ObsSpace * obsspace_construct_f(const eckit::Configuration * conf,
                                       const util::DateTime * begin,
-                                      const util::DateTime * end) {
+                                      const util::DateTime * end,
+                                      const bool * winshift) {
   ObsTopLevelParameters params;
   params.validateAndDeserialize(*conf);
-  return new ObsSpace(params, oops::mpi::world(), *begin, *end, oops::mpi::myself());
+  return new ObsSpace(params, oops::mpi::world(),
+                      util::TimeWindow(*begin, *end, util::boolToWindowBound(*winshift)),
+                      oops::mpi::myself());
 }
 
 // -----------------------------------------------------------------------------

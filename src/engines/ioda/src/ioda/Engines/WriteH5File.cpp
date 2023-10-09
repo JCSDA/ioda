@@ -178,7 +178,8 @@ void WriteH5Proc::workaroundFixToVarLenStrings(const std::string & finalFileName
     const bool isParallel = false;
     const util::DateTime windowStart("1000-01-01T00:00:00Z");   // use a window that will
     const util::DateTime windowEnd("3000-01-01T00:00:00Z");     // accept all of the obs
-    Engines::ReaderCreationParameters readerCreateParams(windowStart, windowEnd,
+    const util::TimeWindow timeWindow(windowStart, windowEnd);
+    Engines::ReaderCreationParameters readerCreateParams(timeWindow,
         createParams_.comm, createParams_.timeComm, {}, isParallel);
     std::unique_ptr<Engines::ReaderBase> readerEngine = Engines::ReaderFactory::create(
           readerParams.engine.value().engineParameters, readerCreateParams);

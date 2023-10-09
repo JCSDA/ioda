@@ -99,10 +99,10 @@ class ObsSpaceParameters {
 
     /// Constructor
     ObsSpaceParameters(const ObsTopLevelParameters &topLevelParams,
-                       const util::DateTime & winStart, const util::DateTime & winEnd,
+                       const util::TimeWindow timeWindow,
                        const eckit::mpi::Comm & comm, const eckit::mpi::Comm & timeComm) :
                            top_level_(topLevelParams),
-                           win_start_(winStart), win_end_(winEnd), comm_(comm),
+                           time_window_(timeWindow), comm_(comm),
                            time_comm_(timeComm),
                            new_dims_(), max_var_size_(0) {
         // Record the MPI rank number. The rank number is being saved during the
@@ -123,11 +123,8 @@ class ObsSpaceParameters {
         }
     }
 
-    /// \brief return the start of the DA timing window
-    const util::DateTime & windowStart() const {return win_start_;}
 
-    /// \brief return the end of the DA timing window
-    const util::DateTime & windowEnd() const {return win_end_;}
+    const util::TimeWindow timeWindow() const {return time_window_;}
 
     /// \brief return the associated MPI group communicator
     const eckit::mpi::Comm & comm() const {return comm_;}
@@ -161,11 +158,7 @@ class ObsSpaceParameters {
     int getMpiTimeRank() const { return mpi_time_rank_; }
 
  private:
-    /// \brief Beginning of DA timing window
-    const util::DateTime win_start_;
-
-    /// \brief End of DA timing window
-    const util::DateTime win_end_;
+    const util::TimeWindow time_window_;
 
     /// \brief MPI group communicator
     const eckit::mpi::Comm & comm_;

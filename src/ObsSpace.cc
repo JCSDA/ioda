@@ -117,12 +117,13 @@ void ObsDimInfo::set_dim_size(const ObsDimensionId dimId, std::size_t dimSize) {
  *                   ObsSpace.
  */
 ObsSpace::ObsSpace(const Parameters_ & params, const eckit::mpi::Comm & comm,
-                   const util::DateTime & bgn, const util::DateTime & end,
+                   const util::TimeWindow timeWindow,
                    const eckit::mpi::Comm & timeComm)
-                     : oops::ObsSpaceBase(params, comm, bgn, end),
-                       winbgn_(bgn), winend_(end), commMPI_(comm), commTime_(timeComm),
+                     : oops::ObsSpaceBase(params, comm, timeWindow),
+                       timeWindow_(timeWindow),
+                       commMPI_(comm), commTime_(timeComm),
                        gnlocs_(0), nrecs_(0),
-                       obs_group_(), obs_params_(params, bgn, end, comm, timeComm),
+                       obs_group_(), obs_params_(params, timeWindow_, comm, timeComm),
                        obsvars_()
 {
     // Determine if run stats should be dumped out from the environment variable
@@ -684,7 +685,7 @@ void ObsSpace::load() {
     IoPool::ReaderPoolCreationParameters createParams(
         obs_params_.comm(), obs_params_.timeComm(),
         obs_params_.top_level_.obsDataIn.value().engine.value().engineParameters,
-        obs_params_.windowStart(), obs_params_.windowEnd(),
+        obs_params_.timeWindow(),
         obs_params_.top_level_.simVars.value().variables(), dist_,
         obs_params_.top_level_.obsDataIn.value().obsGrouping.value().obsGroupVars);
 

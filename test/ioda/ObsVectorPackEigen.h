@@ -45,12 +45,13 @@ void testPackEigen() {
   ::test::TestEnvironment::config().get("observations", conf);
   util::DateTime bgn((::test::TestEnvironment::config().getString("window begin")));
   util::DateTime end((::test::TestEnvironment::config().getString("window end")));
+  const util::TimeWindow timeWindow(bgn, end);
 
   for (std::size_t jj = 0; jj < conf.size(); ++jj) {
      eckit::LocalConfiguration obsconf(conf[jj], "obs space");
      ioda::ObsTopLevelParameters obsparams;
      obsparams.validateAndDeserialize(obsconf);
-     ioda::ObsSpace obsdb(obsparams, oops::mpi::world(), bgn, end, oops::mpi::myself());
+     ioda::ObsSpace obsdb(obsparams, oops::mpi::world(), timeWindow, oops::mpi::myself());
 
      const size_t rank = obsdb.distribution()->rank();
      ioda::ObsVector obsvec(obsdb, "ObsValue");

@@ -111,7 +111,7 @@ void GenRandom::genDistRandom(const GenRandom::Parameters_ & params) {
     // Form the ranges val2-val for lat, lon, time
     float latRange = latEnd - latStart;
     float lonRange = lonEnd - lonStart;
-    util::Duration windowDuration(createParams_.winEnd - createParams_.winStart);
+    const util::Duration windowDuration(createParams_.timeWindow.length());
     float timeRange = static_cast<float>(windowDuration.toSeconds());
 
     // Create vectors for lat, lon, time, fill them with random values
@@ -135,7 +135,8 @@ void GenRandom::genDistRandom(const GenRandom::Parameters_ & params) {
         dts[ii] = offsetDt;
     }
 
-    const std::string epoch = std::string("seconds since ") + createParams_.winStart.toString();
+    const std::string epoch = std::string("seconds since ") +
+      createParams_.timeWindow.start().toString();
     // Transfer the generated values to the ObsGroup
     storeGenData(latVals, lonVals, dts, epoch, createParams_.obsVarNames, obsValues,
                  obsErrors, obs_group_);

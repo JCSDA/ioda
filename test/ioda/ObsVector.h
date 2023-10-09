@@ -61,6 +61,7 @@ class ObsVecTestFixture : private boost::noncopyable {
   ObsVecTestFixture(): ospaces_() {
     util::DateTime bgn((::test::TestEnvironment::config().getString("window begin")));
     util::DateTime end((::test::TestEnvironment::config().getString("window end")));
+    const util::TimeWindow timeWindow(bgn, end);
 
     std::vector<eckit::LocalConfiguration> conf;
     ::test::TestEnvironment::config().get("observations", conf);
@@ -70,7 +71,7 @@ class ObsVecTestFixture : private boost::noncopyable {
       ioda::ObsTopLevelParameters obsparams;
       obsparams.validateAndDeserialize(obsconf);
       boost::shared_ptr<ObsSpace_> tmp(new ObsSpace_(obsparams, oops::mpi::world(),
-                                                     bgn, end, oops::mpi::myself()));
+                                                     timeWindow, oops::mpi::myself()));
       ospaces_.push_back(tmp);
     }
   }
@@ -292,6 +293,7 @@ void testDistributedMath() {
   // Get some config information that is the same regardless of distribution
   util::DateTime bgn((::test::TestEnvironment::config().getString("window begin")));
   util::DateTime end((::test::TestEnvironment::config().getString("window end")));
+  const util::TimeWindow timeWindow(bgn, end);
   std::vector<eckit::LocalConfiguration> conf;
   ::test::TestEnvironment::config().get("observations", conf);
 
@@ -342,7 +344,7 @@ void testDistributedMath() {
 
        // Instantiate the obs space with the distribution we are testing
        std::shared_ptr<ObsSpace_> obsdb(new ObsSpace(obsparams, oops::mpi::world(),
-                                                     bgn, end, oops::mpi::myself()));
+                                                     timeWindow, oops::mpi::myself()));
        std::shared_ptr<ObsVector_> obsvec(new ObsVector_(*obsdb, "ObsValue"));
        oops::Log::debug() << dist_names[dd] << ": " << *obsvec << std::endl;
        dist_obsdbs.push_back(obsdb);
@@ -392,6 +394,8 @@ void testRandom() {
   // Get some config information that is the same regardless of distribution
   util::DateTime bgn((::test::TestEnvironment::config().getString("window begin")));
   util::DateTime end((::test::TestEnvironment::config().getString("window end")));
+  const util::TimeWindow timeWindow(bgn, end);
+
   std::vector<eckit::LocalConfiguration> conf;
   ::test::TestEnvironment::config().get("observations", conf);
 
@@ -424,7 +428,7 @@ void testRandom() {
       obsparams.validateAndDeserialize(obsconf);
 
       // Instantiate the obs space with the distribution we are testing
-      ObsSpace_ obsdb(obsparams, oops::mpi::world(), bgn, end, oops::mpi::myself());
+      ObsSpace_ obsdb(obsparams, oops::mpi::world(), timeWindow, oops::mpi::myself());
       ObsVector_ ov(obsdb);
 
       ov.random();

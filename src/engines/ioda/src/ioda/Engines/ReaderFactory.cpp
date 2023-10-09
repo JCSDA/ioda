@@ -76,7 +76,7 @@ std::map <std::string, ReaderFactory*> & ReaderFactory::getMakers() {
 //----------------------------------------------------------------------------------------
 
 std::unique_ptr<ReaderBase> constructFileReaderFromConfig(
-                const util::DateTime & winStart, const util::DateTime & winEnd,
+                const util::TimeWindow timeWindow,
                 const eckit::mpi::Comm & comm, const eckit::mpi::Comm & timeComm,
                 const std::vector<std::string> & obsVarNames,
                 const bool isParallelIo, const eckit::LocalConfiguration & config) {
@@ -86,7 +86,7 @@ std::unique_ptr<ReaderBase> constructFileReaderFromConfig(
     ReaderParametersWrapper readerParams;          // this will contain the engine parameters
     readerParams.validateAndDeserialize(config.getSubConfiguration("engine"));
     ReaderCreationParameters
-        createParams(winStart, winEnd, comm, timeComm, obsVarNames, isParallelIo);
+        createParams(timeWindow, comm, timeComm, obsVarNames, isParallelIo);
     return ReaderFactory::create(readerParams.engineParameters, createParams);
 }
 

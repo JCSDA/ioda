@@ -37,6 +37,7 @@ CASE("ioda/ObsSpace/testPutDb") {
 
   util::DateTime bgn(topLevelConf.getString("window begin"));
   util::DateTime end(topLevelConf.getString("window end"));
+  const util::TimeWindow timeWindow(bgn, end);
 
   std::vector<eckit::LocalConfiguration> confs;
   topLevelConf.get("observations", confs);
@@ -56,7 +57,7 @@ CASE("ioda/ObsSpace/testPutDb") {
       // test with createFile set to false
 
       std::unique_ptr<ObsSpace> obsspace = boost::make_unique<ObsSpace>(
-            obsparams, oops::mpi::world(), bgn, end, oops::mpi::myself());
+            obsparams, oops::mpi::world(), timeWindow, oops::mpi::myself());
 
       const Dimensions_t nlocs = obsspace->nlocs();
       const Dimensions_t nchans = obsspace->nchans();

@@ -85,7 +85,7 @@ void ReaderSinglePoolAllTasks::load(Group & destGroup) {
     oops::Log::trace() << "ReaderSinglePoolAllTasks::load, start" << std::endl;
     Group fileGroup;
     Engines::ReaderCreationParameters
-        createParams(winStart_, winEnd_, *commPool_, commTime_,
+        createParams(timeWindow_, *commPool_, commTime_,
                      obsVarNames_, isParallelIo_);
     std::unique_ptr<Engines::ReaderBase> readerEngine =
         Engines::ReaderFactory::create(readerParams_, createParams);
@@ -123,8 +123,7 @@ void ReaderSinglePoolAllTasks::load(Group & destGroup) {
     // value. This will provide for a very fast "inside the timing window check".
     util::DateTime epochDt;
     convertEpochStringToDtime(dtimeEpoch, epochDt);
-    const int64_t windowStart = (winStart_ - epochDt).toSeconds();
-    const int64_t windowEnd = (winEnd_ - epochDt).toSeconds();
+    timeWindow_.setEpoch(epochDt);
 
     // Determine which locations will be retained by this process for its obs space
     // source_loc_indices_ holds the original source location index (position in
@@ -132,7 +131,7 @@ void ReaderSinglePoolAllTasks::load(Group & destGroup) {
     std::vector<float> lonValues;
     std::vector<float> latValues;
     setIndexAndRecordNums(fileGroup, this->commAll(), emptyFile, distribution_, dtimeValues,
-                          windowStart, windowEnd,
+                          timeWindow_,
                           readerEngine->applyLocationsCheck(), obsGroupVarList_,
                           lonValues, latValues, sourceNlocs_,
                           sourceNlocsInsideTimeWindow_, sourceNlocsOutsideTimeWindow_,

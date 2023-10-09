@@ -290,6 +290,7 @@ void testDistributionConstructedByObsSpace() {
 
   const util::DateTime winBegin(topLevelConf.getString("window begin"));
   const util::DateTime winEnd(topLevelConf.getString("window end"));
+  const util::TimeWindow timeWindow(winBegin, winEnd);
 
   const eckit::mpi::Comm & MpiComm = oops::mpi::world();
   const std::size_t MyRank = MpiComm.rank();
@@ -300,7 +301,7 @@ void testDistributionConstructedByObsSpace() {
     eckit::LocalConfiguration obsspaceConf(conf, "obs space");
     ioda::ObsTopLevelParameters obsParams;
     obsParams.validateAndDeserialize(obsspaceConf);
-    ioda::ObsSpace obsspace(obsParams, MpiComm, winBegin, winEnd, oops::mpi::myself());
+    ioda::ObsSpace obsspace(obsParams, MpiComm, timeWindow, oops::mpi::myself());
 
     // Expected results are listed in "specs.index" with the MPI rank number
     // appended on the end.

@@ -117,6 +117,7 @@ CASE("ioda/ReaderPoolFactoryMakers") {
 
         util::DateTime expectedWinStart(testDataConfig.getString("win start"));
         util::DateTime expectedWinEnd(testDataConfig.getString("win end"));
+        const util::TimeWindow expectedTimeWindow(expectedWinStart, expectedWinEnd);
         std::vector<std::string> expectedObsVarNames =
             testDataConfig.getStringVector("obs var names");
         std::shared_ptr<Distribution> distribution;
@@ -125,7 +126,7 @@ CASE("ioda/ReaderPoolFactoryMakers") {
         IoPool::ReaderPoolCreationParameters createParams(
             oops::mpi::world(), oops::mpi::myself(),
             testEngineParams.readerEngine.value().engineParameters,
-            expectedWinStart, expectedWinEnd, expectedObsVarNames,
+            expectedTimeWindow, expectedObsVarNames,
             distribution, expectedObsGroupVarList);
         std::unique_ptr<IoPool::ReaderPoolBase> readerPool =
             IoPool::ReaderPoolFactory::create(configParams, createParams);
@@ -136,10 +137,10 @@ CASE("ioda/ReaderPoolFactoryMakers") {
         EXPECT(readerPool->commAll().rank() == expectedCommAllRank);
         EXPECT(readerPool->commAll().size() == expectedCommAllSize);
 
-        util::DateTime winStart = readerPool->winStart();
+        util::DateTime winStart = readerPool->timeWindow().start();
         EXPECT(winStart == expectedWinStart);
 
-        util::DateTime winEnd = readerPool->winEnd();
+        util::DateTime winEnd = readerPool->timeWindow().end();
         EXPECT(winEnd == expectedWinEnd);
 
         std::vector<std::string> obsVarNames = readerPool->obsVarNames();

@@ -65,7 +65,7 @@ void ReaderSinglePool::initialize() {
     bool applyLocationsCheck;
     if (this->commAll().rank() == 0) {
         Engines::ReaderCreationParameters
-            createParams(winStart_, winEnd_, commAll_, commTime_,
+            createParams(timeWindow_, commAll_, commTime_,
                          obsVarNames_, isParallelIo_);
         std::unique_ptr<Engines::ReaderBase> readerEngine =
             Engines::ReaderFactory::create(readerParams_, createParams);
@@ -108,14 +108,13 @@ void ReaderSinglePool::initialize() {
     // value. This will provide for a very fast "inside the timing window check".
     util::DateTime epochDt;
     convertEpochStringToDtime(dtimeEpoch_, epochDt);
-    const int64_t windowStart = (winStart_ - epochDt).toSeconds();
-    const int64_t windowEnd = (winEnd_ - epochDt).toSeconds();
+    timeWindow_.setEpoch(epochDt);
 
     // Determine which locations will be retained by this process for its obs space
     // source_loc_indices_ holds the original source location index (position in
     // the 1D Location variable) and recNums_ holds the assigned record number.
     setIndexAndRecordNums(fileGroup, this->commAll(), emptyFile_, distribution_, dtimeValues_,
-                          windowStart, windowEnd, applyLocationsCheck, obsGroupVarList_,
+                          timeWindow_, applyLocationsCheck, obsGroupVarList_,
                           lonValues_, latValues_, sourceNlocs_,
                           sourceNlocsInsideTimeWindow_, sourceNlocsOutsideTimeWindow_,
                           sourceNlocsRejectQC_, locIndices_, recNums_,
@@ -172,7 +171,7 @@ void ReaderSinglePool::load(Group & destGroup) {
     std::unique_ptr<Engines::ReaderBase> readerEngine = nullptr;
     if (this->commPool() != nullptr) {
         Engines::ReaderCreationParameters
-            createParams(winStart_, winEnd_, *commPool_, commTime_,
+            createParams(timeWindow_, *commPool_, commTime_,
                          obsVarNames_, isParallelIo_);
         readerEngine = Engines::ReaderFactory::create(readerParams_, createParams);
 

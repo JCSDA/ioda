@@ -331,7 +331,8 @@ void readSourceDtimeVar(const ioda::Group & srcGroup, const eckit::mpi::Comm & c
 //--------------------------------------------------------------------------------
 void initSourceIndices(const ioda::Group & srcGroup, const eckit::mpi::Comm & commAll,
         const bool emptyFile, const std::vector<int64_t> & dtimeValues,
-        const int64_t windowStart, const int64_t windowEnd, const bool applyLocCheck,
+        const util::TimeWindow & timeWindow,
+        const bool applyLocCheck,
         std::vector<float> & lonValues, std::vector<float> & latValues,
         std::vector<std::size_t> & sourceLocIndices,
         std::size_t & srcNlocs, std::size_t & srcNlocsInsideTimeWindow,
@@ -382,16 +383,19 @@ void initSourceIndices(const ioda::Group & srcGroup, const eckit::mpi::Comm & co
                 ioda::detail::FillValueData_t latFvData = latVar.getFillValue();
                 float latFillValue = ioda::detail::getFillValue<float>(latFvData);
 
-                // Keep all locations that fall inside the timing window. Note numLocsSelecte
+                // Keep all locations that fall inside the timing window. Note numLocsSelected
                 // will be set to the number of locations stored in the output vectors after
                 // exiting the following for loop.
+                const std::vector<bool> timeMask = timeWindow.createTimeMask(dtimeValues);
                 for (std::size_t i = 0; i < dtimeValues.size(); ++i) {
                     // Check the timing window first since having a location outside the timing
                     // window likely occurs more than having issues with the lat and lon values.
-                    // Note that a datetime matching the window start will be rejects. This is
-                    // done to prevent such a datetime appearing in two adjecnt windows.
-                    bool keepThisLocation =
-                        ((dtimeValues[i] > windowStart) && (dtimeValues[i] <= windowEnd));
+                    // Note that a datetime that appears on the lower time boundary will be
+                    // rejected if the `window shift` parameter is false, and accepted if
+                    // `window shift` is true. The opposite logic applies on the upper time
+                    // boundary. This is done to prevent such a datetime appearing in two adjacent
+                    // windows.
+                    bool keepThisLocation = timeMask[i];
                     if (keepThisLocation) {
                         // Keep count of how many obs fall inside the time window
                         srcNlocsInsideTimeWindow++;
@@ -628,7 +632,8 @@ void applyMpiDistribution(const std::shared_ptr<Distribution> & dist, const bool
 void setIndexAndRecordNums(const ioda::Group & srcGroup, const eckit::mpi::Comm & commAll,
         const bool emptyFile, const std::shared_ptr<ioda::Distribution> & distribution,
         const std::vector<int64_t> & dtimeValues,
-        const int64_t windowStart, const int64_t windowEnd, const bool applyLocCheck,
+        const util::TimeWindow & timeWindow,
+        const bool applyLocCheck,
         const std::vector<std::string> & obsGroupVarList,
         std::vector<float> & lonValues, std::vector<float> & latValues,
         std::size_t & srcNlocs, std::size_t & srcNlocsInsideTimeWindow,
@@ -641,7 +646,7 @@ void setIndexAndRecordNums(const ioda::Group & srcGroup, const eckit::mpi::Comm 
     // the obs source. The initSourceIndices uses the lon and lat values so it
     // also will read in those values from the obs source.
     std::vector<std::size_t> sourceLocIndices;
-    initSourceIndices(srcGroup, commAll, emptyFile, dtimeValues, windowStart, windowEnd,
+    initSourceIndices(srcGroup, commAll, emptyFile, dtimeValues, timeWindow,
                       applyLocCheck, lonValues, latValues, sourceLocIndices, srcNlocs,
                       srcNlocsInsideTimeWindow, srcNlocsOutsideTimeWindow,
                       srcNlocsRejectQc, globalNlocs);

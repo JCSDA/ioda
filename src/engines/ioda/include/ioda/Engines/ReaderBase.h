@@ -17,6 +17,7 @@
 #include "oops/util/parameters/RequiredParameter.h"
 #include "oops/util/parameters/RequiredPolymorphicParameter.h"
 #include "oops/util/Printable.h"
+#include "oops/util/TimeWindow.h"
 
 #include "ioda/Engines/EngineUtils.h"
 #include "ioda/ObsGroup.h"
@@ -47,15 +48,11 @@ class ReaderParametersBase : public oops::Parameters {
 
 class ReaderCreationParameters {
   public:
-    ReaderCreationParameters(const util::DateTime & winStart, const util::DateTime & winEnd,
+    ReaderCreationParameters(const util::TimeWindow timeWindow,
                              const eckit::mpi::Comm & comm, const eckit::mpi::Comm & timeComm,
                              const std::vector<std::string> & obsVarNames,
                              const bool isParallelIo);
-    /// \brief DA timing window start
-    const util::DateTime & winStart;
-
-    /// \brief DA timing window end
-    const util::DateTime & winEnd;
+    const util::TimeWindow timeWindow;
 
     /// \brief io pool communicator group
     const eckit::mpi::Comm & comm;

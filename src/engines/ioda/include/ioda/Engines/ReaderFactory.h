@@ -99,14 +99,13 @@ class ReaderParametersWrapper : public oops::Parameters {
 //----------------------------------------------------------------------------------------
 
 /// \brief create a file reader backend from an eckit configuration
-/// \param winStart time window start
-/// \param winEnd time window end
+/// \param timeWindow time window
 /// \param comm MPI communicator for model grouping or io pool
 /// \param timeComm MPI communicator for ensemble
 /// \param obsVarNames list of variables being assimilated
 /// \param isParalleIo if true use any availale parallel IO feature
 std::unique_ptr<ReaderBase> constructFileReaderFromConfig(
-                const util::DateTime & winStart, const util::DateTime & winEnd,
+                const util::TimeWindow timeWindow,
                 const eckit::mpi::Comm & comm, const eckit::mpi::Comm & timeComm,
                 const std::vector<std::string> & obsVarNames,
                 const bool isParallelIo, const eckit::LocalConfiguration & config);

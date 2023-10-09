@@ -47,6 +47,8 @@ TEST(test_obsspace_construct)
   character(kind=c_char,len=:), allocatable :: winbgnstr
   character(kind=c_char,len=:), allocatable :: winendstr
   type(datetime) :: winbgn, winend
+  character(kind=c_char,len=:), allocatable :: winshiftstr
+  logical(c_bool) :: winshift
 
   type(c_ptr), allocatable, dimension(:) :: obsspace
   integer :: nlocs, nlocs_ref, location_id
@@ -62,6 +64,16 @@ TEST(test_obsspace_construct)
 
   call config%get_or_die("window begin", winbgnstr)
   call config%get_or_die("window end", winendstr)
+  if (config%has("window shift")) then
+     call config%get_or_die("window shift", winshiftstr)
+     if (winshiftstr == "true") then
+        winshift = .true.
+     else
+        winshift = .false.
+     end if
+  else
+     winshift = .false.
+  endif
 
   call datetime_create(winbgnstr, winbgn)
   call datetime_create(winendstr, winend)
@@ -75,7 +87,7 @@ TEST(test_obsspace_construct)
     call obsconfigs(iobstype)%get_or_die("test data", testconfig)
 
     !> construct obsspace
-    obsspace(iobstype) = obsspace_construct(obsconfig, winbgn, winend)
+    obsspace(iobstype) = obsspace_construct(obsconfig, winbgn, winend, winshift)
     call obsspace_obsname(obsspace(iobstype), obsname)
 
     !> test if obsname is the same as reference
@@ -123,6 +135,8 @@ TEST(test_obsspace_get_db_put_db)
   type(datetime) :: winbgn, winend
   character(len=20) :: winbgnreadstr, winendreadstr
   type(datetime) :: winbgnread, winendread
+  character(kind=c_char,len=:), allocatable :: winshiftstr
+  logical(c_bool) :: winshift
 
   type(c_ptr), allocatable, dimension(:) :: obsspace
   integer :: nlocs, location_id
@@ -140,6 +154,16 @@ TEST(test_obsspace_get_db_put_db)
 
   call config%get_or_die("window begin", winbgnstr)
   call config%get_or_die("window end", winendstr)
+  if (config%has("window shift")) then
+     call config%get_or_die("window shift", winshiftstr)
+     if (winshiftstr == "true") then
+        winshift = .true.
+     else
+        winshift = .false.
+     end if
+  else
+     winshift = .false.
+  endif
 
   call datetime_create(winbgnstr, winbgn)
   call datetime_create(winendstr, winend)
@@ -152,7 +176,7 @@ TEST(test_obsspace_get_db_put_db)
     call obsconfigs(iobstype)%get_or_die("obs space", obsconfig)
 
     !> construct obsspace
-    obsspace(iobstype) = obsspace_construct(obsconfig, winbgn, winend)
+    obsspace(iobstype) = obsspace_construct(obsconfig, winbgn, winend, winshift)
 
     location_id = obsspace_get_dim_id(obsspace(iobstype), "Location")
     nlocs = obsspace_get_dim_size(obsspace(iobstype), location_id)

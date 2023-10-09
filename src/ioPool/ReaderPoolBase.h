@@ -36,6 +36,7 @@
 #include "oops/util/parameters/OptionalParameter.h"
 #include "oops/util/parameters/RequiredPolymorphicParameter.h"
 #include "oops/util/Printable.h"
+#include "oops/util/TimeWindow.h"
 
 namespace ioda {
 
@@ -56,7 +57,7 @@ class ReaderPoolCreationParameters : public IoPoolCreationParameters {
             const eckit::mpi::Comm & commAll, const eckit::mpi::Comm & commTime,
             const oops::RequiredPolymorphicParameter
                 <Engines::ReaderParametersBase, Engines::ReaderFactory> & readerParams,
-            const util::DateTime & winStart, const util::DateTime & winEnd,
+            const util::TimeWindow timeWindow,
             const std::vector<std::string> & obsVarNames,
             const std::shared_ptr<Distribution> & distribution,
             const std::vector<std::string> & obsGroupVarList);
@@ -66,11 +67,7 @@ class ReaderPoolCreationParameters : public IoPoolCreationParameters {
     const oops::RequiredPolymorphicParameter
                 <Engines::ReaderParametersBase, Engines::ReaderFactory> & readerParams;
 
-    /// \brief time window start
-    const util::DateTime & winStart;
-
-    /// \brief time window end
-    const util::DateTime & winEnd;
+    const util::TimeWindow timeWindow;
 
     /// \brief list of variables being assimilated (used by the generator engines)
     const std::vector<std::string> & obsVarNames;
@@ -100,11 +97,7 @@ class ReaderPoolBase : public IoPoolBase {
                  const ReaderPoolCreationParameters & createParams);
   virtual ~ReaderPoolBase() {}
 
-  /// \brief time window start
-  const util::DateTime & winStart() const { return winStart_; }
-
-  /// \brief time window end
-  const util::DateTime & winEnd() const { return winEnd_; }
+  const util::TimeWindow timeWindow() const {return timeWindow_;}
 
   /// \brief list of variables being assimilated (used by the generator engines)
   const std::vector<std::string> & obsVarNames() const { return obsVarNames_; }
@@ -163,11 +156,7 @@ class ReaderPoolBase : public IoPoolBase {
   const oops::RequiredPolymorphicParameter
               <Engines::ReaderParametersBase, Engines::ReaderFactory> & readerParams_;
 
-  /// \brief time window start
-  const util::DateTime & winStart_;
-
-  /// \brief time window end
-  const util::DateTime & winEnd_;
+  const util::TimeWindow timeWindow_;
 
   /// \brief list of variables being assimilated (used by the generator engines)
   const std::vector<std::string> & obsVarNames_;

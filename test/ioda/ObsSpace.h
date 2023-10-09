@@ -68,6 +68,8 @@ class ObsSpaceTestFixture : private boost::noncopyable {
   ObsSpaceTestFixture(): ospaces_() {
     util::DateTime bgn(::test::TestEnvironment::config().getString("window begin"));
     util::DateTime end(::test::TestEnvironment::config().getString("window end"));
+    bool winshift(::test::TestEnvironment::config().getBool("window shift", false));
+    const util::TimeWindow timeWindow(bgn, end, util::boolToWindowBound(winshift));
 
     ::test::TestEnvironment::config().get("observations", configs_);
 
@@ -76,7 +78,7 @@ class ObsSpaceTestFixture : private boost::noncopyable {
       ioda::ObsTopLevelParameters obsparams;
       obsparams.validateAndDeserialize(obsconf);
       boost::shared_ptr<ioda::ObsSpace> tmp(new ioda::ObsSpace(obsparams, oops::mpi::world(),
-                                                               bgn, end, oops::mpi::myself()));
+                                                               timeWindow, oops::mpi::myself()));
       ospaces_.push_back(tmp);
     }
   }

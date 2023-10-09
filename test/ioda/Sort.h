@@ -32,10 +32,12 @@ void testSort(const eckit::LocalConfiguration &conf) {
   // Produce and configure ObsSpace object
   util::DateTime bgn(conf.getString("window begin"));
   util::DateTime end(conf.getString("window end"));
+  const util::TimeWindow timeWindow(bgn, end);
+
   const eckit::LocalConfiguration obsSpaceConf(conf, "obs space");
   ioda::ObsTopLevelParameters obsParams;
   obsParams.validateAndDeserialize(obsSpaceConf);
-  ioda::ObsSpace obsdata(obsParams, oops::mpi::world(), bgn, end, oops::mpi::myself());
+  ioda::ObsSpace obsdata(obsParams, oops::mpi::world(), timeWindow, oops::mpi::myself());
 
   // This test only works for grouped data
   if (obsdata.obs_group_vars().empty()) {

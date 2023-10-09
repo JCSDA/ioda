@@ -45,12 +45,12 @@ ReaderPoolCreationParameters::ReaderPoolCreationParameters(
             const eckit::mpi::Comm & commAll, const eckit::mpi::Comm & commTime,
             const oops::RequiredPolymorphicParameter
                 <Engines::ReaderParametersBase, Engines::ReaderFactory> & readerParams,
-            const util::DateTime & winStart, const util::DateTime & winEnd,
+            const util::TimeWindow timeWindow,
             const std::vector<std::string> & obsVarNames,
             const std::shared_ptr<Distribution> & distribution,
             const std::vector<std::string> & obsGroupVarList)
                 : IoPoolCreationParameters(commAll, commTime),
-                  readerParams(readerParams), winStart(winStart), winEnd(winEnd),
+                  readerParams(readerParams), timeWindow(timeWindow),
                   obsVarNames(obsVarNames), distribution(distribution),
                   obsGroupVarList(obsGroupVarList) {
 }
@@ -64,7 +64,7 @@ ReaderPoolBase::ReaderPoolBase(const IoPoolParameters & configParams,
                                  readerPoolColor, readerNonPoolColor,
                                  readerPoolCommName, readerNonPoolCommName),
                       readerParams_(createParams.readerParams),
-                      winStart_(createParams.winStart), winEnd_(createParams.winEnd),
+                      timeWindow_(createParams.timeWindow),
                       obsVarNames_(createParams.obsVarNames),
                       distribution_(createParams.distribution),
                       obsGroupVarList_(createParams.obsGroupVarList),

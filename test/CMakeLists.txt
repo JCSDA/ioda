@@ -119,6 +119,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsspace_zero_obs_reader_pool.yaml
   testinput/iodatest_obsspace_filter_to_zero_obs_reader_pool.yaml
   testinput/iodatest_obsspace_fill_value.yaml
+  testinput/iodatest_obsspace_inclusive_lower_bound.yaml
   testinput/iodatest_obsvector.yaml
   testinput/iodatest_obsvector_missing_locs.yaml
   testinput/iodatest_obsvector_packeigen.yaml
@@ -705,6 +706,12 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_fill_value
 ecbuild_add_test( TARGET  test_ioda_obsspace_default_fill_values
                   COMMAND test_ioda_obsspace
                   ARGS    "testinput/iodatest_obsspace_default_fill_values.yaml"
+                  LIBS  ioda_test
+                  TEST_DEPENDS get_ioda_test_data )
+
+ecbuild_add_test( TARGET  test_ioda_obsspace_inclusive_lower_bound
+                  COMMAND test_ioda_obsspace
+                  ARGS    "testinput/iodatest_obsspace_inclusive_lower_bound.yaml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 

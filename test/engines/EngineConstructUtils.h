@@ -99,10 +99,11 @@ CASE("ioda/engine/constructFileReaderFromConfig") {
 
     util::DateTime winStart("2018-04-14T21:00:00Z");
     util::DateTime winEnd("2018-04-15T03:00:00Z");
+    const util::TimeWindow timeWindow(winStart, winEnd);
     std::vector<std::string> obsVarNames{ "airTemperature", "specificHumidity" };
     bool isParallelIo = false;
     std::unique_ptr<Engines::ReaderBase> readerEngine =
-        Engines::constructFileReaderFromConfig(winStart, winEnd, oops::mpi::world(),
+        Engines::constructFileReaderFromConfig(timeWindow, oops::mpi::world(),
                 oops::mpi::myself(), obsVarNames, isParallelIo, engineConfig);
 
     // The engine file backend objects are set up to echo the file name they are
