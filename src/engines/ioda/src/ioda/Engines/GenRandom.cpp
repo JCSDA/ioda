@@ -66,6 +66,29 @@ void GenRandom::genDistRandom(const GenRandom::Parameters_ & params) {
     const float latEnd = params.latEnd;
     const float lonStart = params.lonStart;
     const float lonEnd = params.lonEnd;
+
+    std::string vcoordType = "Undefined";
+    float vcoordStart;
+    float vcoordEnd;
+    if ( params.vcoordType.value() != boost::none ) {
+        vcoordType = params.vcoordType.value().get();        
+
+	if ( vcoordType != "pressure" && vcoordType != "height" ) {
+  	    throw Exception("Invalid vertical coordinate type, " + vcoordType + ", for GenRandom. Valid values are 'pressure' or 'height'.", ioda_Here());
+	}
+
+        if ( params.vcoordStart.value() == boost::none || params.vcoordEnd.value() == boost::none ) {
+	    throw Exception("Must specify both lower and upper limits of vertical coodinate in GenRandom.", ioda_Here());
+	} else {
+	    vcoordStart = params.vcoordStart.value().get();
+	    vcoordEnd = params.vcoordEnd.value().get();
+
+	    if ( vcoordEnd < vcoordStart ) {
+	        throw Exception("vert coord2 must be greater than or equal to vert coord1 in GenRandom.", ioda_Here());
+	    }
+	}
+    }
+
     int ranSeed;
     if (params.ranSeed.value() != boost::none) {
         ranSeed = params.ranSeed.value().get();
@@ -103,26 +126,35 @@ void GenRandom::genDistRandom(const GenRandom::Parameters_ & params) {
     // times the class is instantiated.
     std::vector<float> ranVals(numLocs, 0.0);
     std::vector<float> ranVals2(numLocs, 0.0);
+    std::vector<float> ranVals3(numLocs, 0.0);
     util::UniformDistribution<float> ranUD(numLocs, 0.0, 1.0, ranSeed, true);
     util::UniformDistribution<float> ranUD2(numLocs, 0.0, 1.0, ranSeed+1, true);
+    util::UniformDistribution<float> ranUD3(numLocs, 0.0, 1.0, ranSeed+2, true);
     ranVals = ranUD.data();
     ranVals2 = ranUD2.data();
+    ranVals3 = ranUD3.data();
 
     // Form the ranges val2-val for lat, lon, time
     float latRange = latEnd - latStart;
     float lonRange = lonEnd - lonStart;
+    float vcoordRange = vcoordEnd - vcoordStart;
     const util::Duration windowDuration(createParams_.timeWindow.length());
     float timeRange = static_cast<float>(windowDuration.toSeconds());
 
-    // Create vectors for lat, lon, time, fill them with random values
+    // Create vectors for lat, lon, vertical coordinate, time, fill them with random values
     // inside their respective ranges, and put results into the obs container.
     std::vector<float> latVals(numLocs, 0.0);
     std::vector<float> lonVals(numLocs, 0.0);
+    std::vector<float> vcoordVals(0);
     std::vector<int64_t> dts(numLocs, 0.0);
 
     for (std::size_t ii = 0; ii < numLocs; ii++) {
         latVals[ii] = latStart + (ranVals[ii] * latRange);
         lonVals[ii] = lonStart + (ranVals2[ii] * lonRange);
+	if ( params.vcoordType.value() != boost::none ) {
+            vcoordVals.resize(numLocs);
+	    vcoordVals[ii] = vcoordStart + (ranVals3[ii] * vcoordRange);
+	}
 
         // Currently the filter for time stamps on obs values is:
         //
@@ -138,8 +170,8 @@ void GenRandom::genDistRandom(const GenRandom::Parameters_ & params) {
     const std::string epoch = std::string("seconds since ") +
       createParams_.timeWindow.start().toString();
     // Transfer the generated values to the ObsGroup
-    storeGenData(latVals, lonVals, dts, epoch, createParams_.obsVarNames, obsValues,
-                 obsErrors, obs_group_);
+    storeGenData(latVals, lonVals, vcoordType, vcoordVals, dts, epoch, 
+                 createParams_.obsVarNames, obsValues, obsErrors, obs_group_);
 }
 
 std::string GenRandom::fileName() const {

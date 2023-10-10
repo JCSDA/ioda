@@ -61,9 +61,25 @@ void GenList::genDistList(const GenList::Parameters_ & params) {
     const std::vector<int64_t> dts = params.dateTimes;
     const std::string epoch = params.epoch.value();
 
+    std::string vcoordType = "Undefined";
+    std::vector<float> vcoordVals;
+    if ( params.vcoordType.value() != boost::none ) {
+        vcoordType = params.vcoordType.value().get(); 
+
+	if ( vcoordType != "pressure" && vcoordType != "height" ){
+	    throw Exception("Invalid vertical coordinate type, " + vcoordType + ", for GenList. Valid values are 'pressure' or 'height'.", ioda_Here());
+	}
+
+        if ( params.vcoordVals.value() != boost::none ) {
+	    vcoordVals = params.vcoordVals.value().get();
+	} else {
+  	    throw Exception("If vert coord type specified in GenList then vert coords must also be specified.", ioda_Here());
+	}
+    }
+
     // Transfer the specified values to the ObsGroup
-    storeGenData(latVals, lonVals, dts, epoch, createParams_.obsVarNames,
-                 obsVals, obsErrors, obs_group_);
+    storeGenData(latVals, lonVals, vcoordType, vcoordVals, dts, epoch, 
+                 createParams_.obsVarNames, obsVals, obsErrors, obs_group_);
 }
 
 std::string GenList::fileName() const {

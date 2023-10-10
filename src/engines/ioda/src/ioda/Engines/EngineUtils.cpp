@@ -76,6 +76,8 @@ std::string uniquifyFileName(const std::string & fileName, const bool createMult
 // -----------------------------------------------------------------------------
 void storeGenData(const std::vector<float> & latVals,
                   const std::vector<float> & lonVals,
+                  const std::string & vcoordType,
+                  const std::vector<float> & vcoordVals,
                   const std::vector<int64_t> & dts,
                   const std::string & epoch,
                   const std::vector<std::string> & obsVarNames,
@@ -86,10 +88,14 @@ void storeGenData(const std::vector<float> & latVals,
     //     MetaData group
     //        latitude
     //        longitude
+    //        vertical coordinate type
+    //        vertical coordinate
     //        datetime
     //
     //     ObsError group
     //        list of simulated variables in obsVarNames
+    //
+    // Valid values for vcoordType are "pressure" or "height"
 
     Variable LocationVar = obsGroup.vars["Location"];
 
@@ -108,6 +114,8 @@ void storeGenData(const std::vector<float> & latVals,
 
     std::string latName("MetaData/latitude");
     std::string lonName("MetaData/longitude");
+    std::string pressureName("MetaData/pressure");
+    std::string heightName("MetaData/height");
     std::string dtName("MetaData/dateTime");
 
     // Create, write and attach units attributes to the variables
@@ -120,6 +128,15 @@ void storeGenData(const std::vector<float> & latVals,
     obsGroup.vars.createWithScales<int64_t>(dtName, { LocationVar }, int64_params)
         .write<int64_t>(dts)
         .atts.add<std::string>("units", epoch);
+    if ( vcoordType == "pressure" ) {
+        obsGroup.vars.createWithScales<float>(pressureName, { LocationVar }, float_params)
+            .write<float>(vcoordVals)
+            .atts.add<std::string>("units", std::string("Pa"));
+    } else if ( vcoordType == "height" ) {
+	obsGroup.vars.createWithScales<float>(heightName, { LocationVar }, float_params)
+	    .write<float>(vcoordVals)
+            .atts.add<std::string>("units", std::string("m"));
+    }
 
     for (std::size_t i = 0; i < obsVarNames.size(); ++i) {
         const std::string varErrName = std::string("ObsError/") + obsVarNames[i];

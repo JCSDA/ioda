@@ -34,6 +34,12 @@ class GenListParameters : public ReaderParametersBase {
     /// \brief time offsets (s) relative to epoch
     oops::RequiredParameter<std::vector<int64_t>> dateTimes{"dateTimes", this};
 
+    /// \brief control parameter for which vertical coordinate to use
+    oops::OptionalParameter<std::string> vcoordType{"vert coord type", this};
+
+    /// \brief vertical coordinate values
+    oops::OptionalParameter<std::vector<float>> vcoordVals{"vert coords", this};
+
     /// \brief epoch (ISO 8601 string) relative to which datetimes are computed
     oops::Parameter<std::string> epoch{"epoch", "seconds since 1970-01-01T00:00:00Z", this};
 

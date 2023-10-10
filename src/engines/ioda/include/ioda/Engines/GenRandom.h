@@ -46,6 +46,15 @@ class GenRandomParameters : public ReaderParametersBase {
     /// \brief longitude range end
     oops::RequiredParameter<float> lonEnd{"lon2", this};
 
+    /// \brief control parameter for which vertical coordinate to use
+    oops::OptionalParameter<std::string> vcoordType{"vert coord type", this};
+
+    /// \brief vertical coordinate range start
+    oops::OptionalParameter<float> vcoordStart{"vert coord1", this};
+
+    /// \brief vertical coordinate range end
+    oops::OptionalParameter<float> vcoordEnd{"vert coord2", this};
+
     /// \brief random seed
     oops::OptionalParameter<int> ranSeed{"random seed", this};
 

@@ -102,6 +102,8 @@ std::string uniquifyFileName(const std::string & fileName, const bool createMult
 /// \brief store generated data into an ObsGroup
 /// \param latVals vector of latitude values
 /// \param lonVals vector of longitude values
+/// \param vcoordType string specifying type of vertical coordinate to use
+/// \param vcoordVals vector of vertical coordinate values
 /// \param dts vector of time offsets (s) relative to \p epoch
 /// \param epoch (ISO 8601 string) relative to which datetimes are computed
 /// \param obsVarNames vector (string) of simulated variable names
@@ -110,6 +112,8 @@ std::string uniquifyFileName(const std::string & fileName, const bool createMult
 /// \param[out] obsGroup destination for the generated data
 void storeGenData(const std::vector<float> & latVals,
                   const std::vector<float> & lonVals,
+                  const std::string & vcoordType,
+                  const std::vector<float> & vcoordVals,
                   const std::vector<int64_t> & dts,
                   const std::string & epoch,
                   const std::vector<std::string> & obsVarNames,

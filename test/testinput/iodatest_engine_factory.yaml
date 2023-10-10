@@ -33,6 +33,8 @@ engine factory tests:
             type: GenList
             lats: [ 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 ]
             lons: [ 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 ]
+            vert coord type: pressure
+            vert coords: [ 100, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000 ]
             dateTimes:
             - 240
             - 252
@@ -60,11 +62,14 @@ engine factory tests:
         obsdatain:
           engine:
             type: GenRandom
-            nobs: 10   # generate 10 obs
-            lat1: 0    # with lat ranging form 0-10.
-            lat2: 10   #
-            lon1: 0    # and lon ranging from 0-10.
-            lon2: 10
+            nobs: 10          # generate 10 obs
+            lat1: 0           # with lat ranging from 0-10.
+            lat2: 10          #
+            lon1: 0           # and lon ranging from 0-10.
+            lon2: 10          #
+            vert coord type: pressure
+            vert coord1: 100    # and air pressures ranging from 100-100000
+            vert coord2: 100000
             random seed: 29837
             obs errors: [1.0, 2.0]
         global attribute check:
