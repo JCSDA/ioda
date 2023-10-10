@@ -298,6 +298,9 @@ target_include_directories(ioda_engines PUBLIC
 	$<INSTALL_INTERFACE:$<INSTALL_PREFIX>/${CMAKE_INSTALL_INCLUDEDIR}>
 	)
 
+# Mark Boost as a system library to silence compiler warnings from Boost headers
+target_include_directories( ioda_engines SYSTEM PUBLIC ${Boost_INCLUDE_DIRS} )
+
 INSTALL(DIRECTORY include/ioda
 	DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 	COMPONENT Headers)

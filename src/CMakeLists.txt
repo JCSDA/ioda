@@ -91,6 +91,9 @@ ecbuild_add_library( TARGET ${PROJECT_NAME}
                      HEADER_DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}
                      LINKER_LANGUAGE CXX )
 
+# Mark Boost as a system library to silence compiler warnings from Boost headers
+target_include_directories( ${PROJECT_NAME} SYSTEM PUBLIC ${Boost_INCLUDE_DIRS} )
+
 if (IODA_BUILD_LANGUAGE_FORTRAN)
 target_link_libraries( ${PROJECT_NAME} PUBLIC ioda_fortran )
 endif()
