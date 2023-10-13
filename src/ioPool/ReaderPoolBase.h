@@ -111,6 +111,9 @@ class ReaderPoolBase : public IoPoolBase {
   /// \brief file name passed in from YAML configuration
   const std::string & fileName() const { return fileName_; }
 
+  /// \brief name of pre-processed input file (which the load function uses)
+  const std::string & newInputFileName() const { return newInputFileName_; }
+
   /// \brief work directory base
   const std::string & workDirBase() const { return configParams_.workDir; }
 
@@ -169,6 +172,9 @@ class ReaderPoolBase : public IoPoolBase {
 
   /// \brief completed work directory
   std::string fileName_;
+
+  /// \brief file name for pre-processed input file
+  std::string newInputFileName_;
 
   /// \brief completed work directory
   std::string workDir_;

@@ -103,6 +103,12 @@ class ReaderSinglePool : public ReaderPoolBase {
   /// variables in each group, the dimensions that are attached to each variable, and
   /// the variable attributes.
   std::string groupStructureYaml_;
+
+  /// \brief generate and record the new input file name associated with this rank
+  /// \detail The new input file name is set to an empty string for non pool members.
+  /// For poll members the new input file name is based on the work directory path
+  /// and original file name. For now, an hdf5 file will always be used.
+  void setNewInputFileName();
 };
 
 }  // namespace IoPool

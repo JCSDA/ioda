@@ -511,19 +511,6 @@ std::vector<int> getChannelNumbers(const Group &storageGroup) {
   return Channel;
 }
 
-int getNumberOfLocations(const Group &storageGroup) {
-  TypeClass t = storageGroup.vars["Location"].getType().getClass();
-  if (t == TypeClass::Integer) {
-    std::vector<int> Location;
-    storageGroup.vars["Location"].read<int>(Location);
-    return Location.size();
-  } else {
-    std::vector<float> Location;
-    storageGroup.vars["Location"].read<float>(Location);
-    return Location.size();
-  }
-}
-
 void setupColumnInfo(const Group &storageGroup, const std::map<std::string, std::string> &reverseColumnMap,
                      std::vector<ColumnInfo> &column_infos, int &num_columns,
                      const bool errorWithColumnNotInObsSpace) {
@@ -1067,7 +1054,7 @@ void writeODB(const size_t num_varnos, const int number_of_rows, odc::Writer<>::
 Group createFile(const ODC_Parameters& odcparams, Group storageGroup) {
 
 #if odc_FOUND
-  const int number_of_locations = getNumberOfLocations(storageGroup);
+  const int number_of_locations = storageGroup.vars["Location"].getDimensions().dimsCur[0];
   int number_of_rows = number_of_locations;
   int number_of_channels = 0;
   if (storageGroup.vars.exists("Channel")) {

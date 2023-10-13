@@ -676,8 +676,9 @@ void setDistributionMap(const ReaderPoolBase & ioPool,
     int dataSize;
     distributionMap.empty();
     if (ioPool.commPool() != nullptr) {
-        // On an io pool member, need to collect the local source indices from
-        // all of the associated non io pool members.
+        // On an io pool member, save your own local indices, then collect the local
+        // source indices from all of the associated non io pool members.
+        distributionMap[ioPool.commAll().rank()] = localLocIndices;
         for (auto & rankAssign : rankAssignment) {
             int fromRankNum = rankAssign.first;
             ioPool.commAll().receive(&dataSize, 1, fromRankNum, msgIsSize);
@@ -699,67 +700,76 @@ void setDistributionMap(const ReaderPoolBase & ioPool,
 }
 
 //--------------------------------------------------------------------------------
-void readerCreateWorkDirectory(const std::string & workDirBase,
+void readerCreateWorkDirectory(const ReaderPoolBase & ioPool, const std::string & workDirBase,
                                const std::string & fileName, std::string & workDir) {
-    // workDirBase can be either empty or a valid path to a directory that will contain
-    // the input file set.
-    //
-    // fileName can be from a generator or an input file. The generator backend will
-    // supply a representative file name that will be used for the input file set.
-    //
-    // Set workDir to workDirBase if workDirBase is not empty, otherwise use the dirname
-    // of the input file, or /tmp in the generator case. In both case, file or generator,
-    // create a subdirectory based on the file name or generator type.
-    const auto lastSlash = fileName.find_last_of("/");
-    if (workDirBase == "") {
-        // Use the directory portion of the file name
-        if (lastSlash == std::string::npos) {
-            // fileName has no directory path specified --> use current directory
-            workDir = std::string(".");
+    if (ioPool.commAll().rank() == 0) {
+        // workDirBase can be either empty or a valid path to a directory that will contain
+        // the input file set.
+        //
+        // fileName can be from a generator or an input file. The generator backend will
+        // supply a representative file name that will be used for the input file set.
+        //
+        // Set workDir to workDirBase if workDirBase is not empty, otherwise use the dirname
+        // of the input file, or /tmp in the generator case. In both case, file or generator,
+        // create a subdirectory based on the file name or generator type.
+        const std::size_t lastSlash = fileName.find_last_of("/");
+        if (workDirBase == "") {
+            // Use the directory portion of the file name
+            if (lastSlash == std::string::npos) {
+                // fileName has no directory path specified --> use current directory
+                workDir = std::string(".");
+            } else {
+                workDir = fileName.substr(0, lastSlash);
+            }
         } else {
-            workDir = fileName.substr(0, lastSlash);
+            workDir = workDirBase;
         }
+
+        // Make sure workDir at this point exists. Note we still need to create a subdirectory
+        // of workDir, but we will use mkdtemp for that which does the directory creation after
+        // generating the unique name.
+        std::string sysCommand = std::string("mkdir -p ") + workDir;
+        if (system(sysCommand.c_str()) != 0) {
+            throw Exception(std::string("Could not execute: ") + sysCommand, ioda_Here());
+        }
+
+        // Generate the subdirectory name, based on the input file name,
+        // and create the subdirectory using mkdtemp.
+        std::string workDirTemplate = workDir;
+        if (lastSlash == std::string::npos) {
+            workDirTemplate += std::string("/") + fileName;
+        } else {
+            workDirTemplate += std::string("/") + fileName.substr(lastSlash + 1);
+        }
+        workDirTemplate += ".filesetXXXXXX";
+        const std::string workSubDir(mkdtemp(workDirTemplate.data()));
+        if (workSubDir.empty()) {
+            throw Exception(std::string("Could not build work subdirectory"), ioda_Here());
+        }
+
+        // mkdtemp creates the directory using mode 700, we want 755 so members in our group
+        // and other can see the directory contents
+        sysCommand = std::string("chmod 755 ") + workSubDir;
+        if (system(sysCommand.c_str()) != 0) {
+            throw Exception(std::string("Could not execute: ") + sysCommand, ioda_Here());
+        }
+
+        // return the full path to the work directory
+        workDir = workSubDir;
+
+        // Send the workDir path to the other ranks. This is done so that the pool
+        // members have the value of workDir for their setting of the new input file.
+        oops::mpi::broadcastString(ioPool.commAll(), workDir, 0);
     } else {
-        workDir = workDirBase;
+        oops::mpi::broadcastString(ioPool.commAll(), workDir, 0);
     }
-
-    // Make sure workDir at this point exists. Note we still need to create a subdirectory
-    // of workDir, but we will use mkdtemp for that which does the directory creation after
-    // generating the unique name.
-    std::string sysCommand = std::string("mkdir -p ") + workDir;
-    if (system(sysCommand.c_str()) != 0) {
-        throw Exception(std::string("Could not execute: ") + sysCommand, ioda_Here());
-    }
-
-    // Generate the subdirectory name, based on the input file name,
-    // and create the subdirectory using mkdtemp.
-    std::string workDirTemplate = workDir;
-    if (lastSlash == std::string::npos) {
-        workDirTemplate += std::string("/") + fileName;
-    } else {
-        workDirTemplate += std::string("/") + fileName.substr(lastSlash + 1);
-    }
-    workDirTemplate += ".filesetXXXXXX";
-    std::string workSubDir(mkdtemp(workDirTemplate.data()));
-    if (workSubDir.empty()) {
-        throw Exception(std::string("Could not build work subdirectory"), ioda_Here());
-    }
-
-    // mkdtemp creates the directory using mode 700, we want 755 so members in our group
-    // and other can see the directory contents
-    sysCommand = std::string("chmod 755 ") + workSubDir;
-    if (system(sysCommand.c_str()) != 0) {
-        throw Exception(std::string("Could not execute: ") + sysCommand, ioda_Here());
-    }
-
-    // return the full path to the work directory
-    workDir = workSubDir;
 }
 
 //--------------------------------------------------------------------------------
 void readerGatherAssociatedRanks(const ReaderPoolBase & ioPool,
                                  std::vector<int> & assocAllRanks,
-                                 std::vector<int> & ioPoolRanks) {
+                                 std::vector<int> & ioPoolRanks,
+                                 std::vector<std::string> & assocFileNames) {
     // First get the local associated rank. For the purposes of this function,
     // if you are on a rank that is in the io pool, your own rank number is the
     // associated rank. Otherwise, the associated rank is in the first (and only)
@@ -777,6 +787,10 @@ void readerGatherAssociatedRanks(const ReaderPoolBase & ioPool,
     ioPoolRanks.resize(ioPool.commAll().size());
     ioPool.commAll().allGather(assocRank, assocAllRanks.begin(), assocAllRanks.end());
     ioPool.commAll().allGather(ioPoolRank, ioPoolRanks.begin(), ioPoolRanks.end());
+
+    // Gather up the associated new input file names.
+    assocFileNames = std::vector<std::string>(1, ioPool.newInputFileName());
+    oops::mpi::allGatherv(ioPool.commAll(), assocFileNames);
 }
 
 //--------------------------------------------------------------------------------
@@ -1130,6 +1144,7 @@ void readerInputFileTransferVarData(const ReaderPoolBase & ioPool,
 //--------------------------------------------------------------------------------
 void readerBuildAssocInputFile(const ReaderPoolBase & ioPool, const Group & srcGroup,
                                const int allRank, const int poolRank,
+                               const std::string & inputFileName,
                                const std::vector<std::size_t> & indices,
                                const std::vector<int> & destAllRanks,
                                const std::vector<int> & starts,
@@ -1138,33 +1153,8 @@ void readerBuildAssocInputFile(const ReaderPoolBase & ioPool, const Group & srcG
                                const std::string & dtimeEpoch,
                                const std::vector<float> & lonValues,
                                const std::vector<float> & latValues) {
-    // Construct the path, name to the new input file. Strip off the trailing suffix
-    // (.nc4, .odb, .nc, etc) and replace with "_<ioPoolRank>.nc4". For now, we will
-    // always use the hdf5 backend for these files.
-
-    // Get "basename" of the path in fileName
-    std::string inputFileName;
-    auto pos = ioPool.fileName().find_last_of('/');
-    if (pos == std::string::npos) {
-        inputFileName = ioPool.fileName();
-    } else {
-        // fileName contains path information, strip off every character leading
-        // up to the last '/'.
-        inputFileName = ioPool.fileName().substr(pos + 1);
-    }
-
-    // Generate a file name using the poolRank number, and the time communicator
-    // rank number. The second argument to uniquifyFileName is "write multiple files"
-    // which needs to be true to allow uniquifyFileName to tag on the poolRank number.
-    int timeRankNum = -1;
-    if (ioPool.commTime().size() > 1) {
-        timeRankNum = ioPool.commTime().rank();
-    }
-    inputFileName = ioPool.workDir() + std::string("/") + inputFileName;
-    inputFileName = Engines::uniquifyFileName(inputFileName, true, poolRank, timeRankNum);
     oops::Log::trace() << "readerBuildAssocInputFile: inputFileName: "
                        << inputFileName << std::endl;
-
     // Open up an hdf5 writer backend and transfer the selected data into the
     // output file. We need to create a new eckit configuration for the writer
     // engine factory.
@@ -1210,6 +1200,7 @@ void readerBuildInputFiles(const ReaderPoolBase & ioPool,
                            const Group & srcGroup,
                            const std::vector<int> & assocAllRanks,
                            const std::vector<int> & ioPoolRanks,
+                           const std::vector<std::string> & assocFileNames,
                            const std::vector<std::size_t> & locIndicesAllRanks,
                            const std::vector<int> & locIndicesStarts,
                            const std::vector<int> & locIndicesCounts,
@@ -1226,6 +1217,7 @@ void readerBuildInputFiles(const ReaderPoolBase & ioPool,
         // corresponding start, count values).
         int allRank = i;
         int poolRank = ioPoolRanks[i];
+        const std::string inputFileName = assocFileNames[i];
         std::vector<int> starts;
         std::vector<int> counts;
         std::vector<std::size_t> indices;
@@ -1234,9 +1226,11 @@ void readerBuildInputFiles(const ReaderPoolBase & ioPool,
                                locIndicesCounts, indices, destAllRanks, starts, counts);
 
         // Create the associate file
-        readerBuildAssocInputFile(ioPool, srcGroup, allRank, poolRank, indices,
-                                  destAllRanks, starts, counts, dtimeValues, dtimeEpoch,
-                                  lonValues, latValues);
+        readerBuildAssocInputFile(ioPool, srcGroup, allRank, poolRank, inputFileName,
+                                  indices, destAllRanks, starts, counts,
+                                  dtimeValues, dtimeEpoch, lonValues, latValues);
+        oops::Log::info() << "readerBuildInputFiles: created new input file: "
+                          << inputFileName << std::endl;
     }
 }
 
@@ -1253,7 +1247,8 @@ void readerCreateFileSet(const ReaderPoolBase & ioPool, const Group & srcGroup,
     // will be set to -1.
     std::vector<int> assocAllRanks;
     std::vector<int> ioPoolRanks;
-    readerGatherAssociatedRanks(ioPool, assocAllRanks, ioPoolRanks);
+    std::vector<std::string> assocFileNames;
+    readerGatherAssociatedRanks(ioPool, assocAllRanks, ioPoolRanks, assocFileNames);
 
     std::vector<std::size_t> locIndicesAllRanks;
     std::vector<int> locIndicesStarts;
@@ -1262,11 +1257,9 @@ void readerCreateFileSet(const ReaderPoolBase & ioPool, const Group & srcGroup,
                                 locIndicesStarts, locIndicesCounts);
 
     // Build the files. One file per io pool member, location indices in the order of
-    // the rank assignments starting with the pool member rank. Only rank 0 has the
-    // input file open, and rank 0 has all the information needed to create
-    // all of the io pool member files. So, have just rank 0 take it from here.
+    // the rank assignments starting with the pool member rank.
     if (ioPool.commAll().rank() == 0) {
-        readerBuildInputFiles(ioPool, srcGroup, assocAllRanks, ioPoolRanks,
+        readerBuildInputFiles(ioPool, srcGroup, assocAllRanks, ioPoolRanks, assocFileNames,
                               locIndicesAllRanks, locIndicesStarts, locIndicesCounts,
                               dtimeValues, dtimeEpoch, lonValues, latValues);
     }
@@ -1979,6 +1972,10 @@ void readerSaveDestVarGlobal(const ReaderPoolBase & ioPool,
     if (ioPool.commPool() != nullptr) {
         // Transfer the variable data to the assigned ranks' obs spaces
         for (const auto & distMap : ioPool.distributionMap()) {
+            // skip over the entry for this rank
+            if (distMap.first == ioPool.commAll().rank()) {
+                continue;
+            }
             ioda::Dimensions_t destVarSize;
             ioPool.commAll().receive(&destVarSize, 1, distMap.first, msgIsVariableSize);
             if (destVarSize > 0) {
@@ -2055,8 +2052,7 @@ void readerSaveDestVarGlobal(const ReaderPoolBase & ioPool,
 //------------------------------------------------------------------------------------
 void readerTransferVarData(const ReaderPoolBase & ioPool,
                            const ioda::Group & fileGroup, ioda::Group & memGroup,
-                           std::string & groupStructureYaml,
-                           std::vector<int64_t> & dtimeValues) {
+                           std::string & groupStructureYaml) {
     // Deserialize the yaml string into an eckit YAML configuration object which
     // can be used to figure out whether each variable is dimensioned by Location.
     const eckit::YAMLConfiguration config(groupStructureYaml);
@@ -2113,7 +2109,9 @@ void readerTransferVarData(const ReaderPoolBase & ioPool,
                 readerLoadSourceVarReplaceFill(ioPool, srcVar, dimName, srcBuffer);
 
                 // Transfer the variable data to this rank's obs space
-                readerSaveDestVarLocal(dimName, srcBuffer, ioPool.index(), destNlocs,
+                const std::vector<std::size_t> & myLocIndices =
+                    ioPool.distributionMap().at(ioPool.commAll().rank());
+                readerSaveDestVarLocal(dimName, srcBuffer, myLocIndices, destNlocs,
                                        doLocSelection, destBuffer, destVar);
             }
         }
@@ -2125,10 +2123,7 @@ void readerTransferVarData(const ReaderPoolBase & ioPool,
     }
 
     // Walk through the variables section of the configuration and transfer the data
-    // from pool member to itself and its assigned ranks. Note that date time values
-    // can be one of three formats in the input file (offset, string or epoch), and
-    // for now we are using the dtimeValues parameter (which have already been converted
-    // to the epoch format) instead of reading these from the file.
+    // from pool member to itself and its assigned ranks.
     std::vector<eckit::LocalConfiguration> varConfigs;
     config.get("variables", varConfigs);
     for (std::size_t i = 0; i < varConfigs.size(); ++i) {
@@ -2155,18 +2150,13 @@ void readerTransferVarData(const ReaderPoolBase & ioPool,
         if (ioPool.commPool() != nullptr) {
             // Read variable from the source (input file), and replace fill with
             // the corresponding JEDI missing value.
-            if (varName == "MetaData/dateTime") {
-                const ioda::Dimensions_t varDataTypeSize = getVarDataTypeSize(destVar, varName);
-                memcpy(srcBuffer.data(), dtimeValues.data(), (srcNlocs * varDataTypeSize));
-            } else {
-                // Read variable from the source (input file), and replace fill with
-                // the corresponding JEDI missing value.
-                Variable srcVar = fileGroup.vars.open(varName);
-                readerLoadSourceVarReplaceFill(ioPool, srcVar, varName, srcBuffer);
-            }
+            Variable srcVar = fileGroup.vars.open(varName);
+            readerLoadSourceVarReplaceFill(ioPool, srcVar, varName, srcBuffer);
 
             // Transfer the variable data to this rank's obs space
-            readerSaveDestVarLocal(varName, srcBuffer, ioPool.index(), destNlocs,
+            const std::vector<std::size_t> & myLocIndices =
+                ioPool.distributionMap().at(ioPool.commAll().rank());
+            readerSaveDestVarLocal(varName, srcBuffer, myLocIndices, destNlocs,
                                    doLocSelection, destBuffer, destVar);
         }
 
@@ -2174,6 +2164,51 @@ void readerTransferVarData(const ReaderPoolBase & ioPool,
         readerSaveDestVarGlobal(ioPool, varName, srcBuffer, destNlocs, doLocSelection,
                                 varNumber, destBuffer, destVar);
         varNumber += 1;
+    }
+}
+
+//------------------------------------------------------------------------------------
+void readerAdjustDistributionMap(const ReaderPoolBase & ioPool,
+                                 const ioda::Group & fileGroup,
+                                 ReaderDistributionMap & distributionMap) {
+    // The new mapping is located in the file top level variable "destinationRank".
+    // Simply need to copy this information into the distributionMap.
+    // Only do this for the io pool member ranks.
+    if (ioPool.commPool() != nullptr) {
+        // Read in the destination rank values. Use destination rank values for the keys
+        // in the distributionMap, along with the corresponding index value for the data
+        // in the distributionMap.
+        std::vector<int> destRankValues;
+        fileGroup.vars.open("destinationRank").read<int>(destRankValues);
+
+        // Don't alter the distributionMap if there are no obs left in this input file.
+        if (destRankValues.size() > 0) {
+            // Make two passes through the destination rank number. The first pass is to
+            // count up the number of occurrances of each rank number which is done
+            // to reserve the memory for the vectors in the distribution map. The second
+            // pass is to copy the corresponding indices into the distribution map.
+            std::map<int, int> destRankCounts;
+            for (int i = 0; i < destRankValues.size(); ++i) {
+                int key = destRankValues[i];
+                if (destRankCounts.find(key) == destRankCounts.end()) {
+                    // New entry, set count to 1
+                    destRankCounts[key] = 1;
+                } else {
+                    // Existing entry, increment count
+                    destRankCounts[key] += 1;
+                }
+            }
+            distributionMap.clear();
+            for (int i = 0; i < destRankValues.size(); ++i) {
+                int key = destRankValues[i];
+                if (distributionMap.find(key) == distributionMap.end()) {
+                    // New entry, allocate vector
+                    distributionMap[key].reserve(destRankCounts[key]);
+                }
+                // Add the index into the vector
+                distributionMap[key].push_back(i);
+            }
+        }
     }
 }
 
@@ -2316,7 +2351,7 @@ void readerCopyVarData(const ReaderPoolBase & ioPool,
                 setDoLocSelection(srcNlocs, destNlocs, varName, firstDimName);
 
             // Transfer the variable data to this rank's obs space
-            readerSaveDestVarLocal(varName, srcBuffer, ioPool.index(), destNlocs,
+            readerSaveDestVarLocal(varName, srcBuffer, locIndices, destNlocs,
                                    doLocSelection, destBuffer, destVar);
         }
     }

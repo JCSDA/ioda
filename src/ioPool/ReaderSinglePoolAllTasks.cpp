@@ -196,10 +196,12 @@ void ReaderSinglePoolAllTasks::groupRanks(IoPoolGroupMap & rankGrouping) {
     // TODO(srh) Until the actual reader pool is implemented we need to copy the
     // commAll_ communicator to the commPool_ communicator. This can be accomplished
     // by constructing the rankGrouping map with each commAll_ rank assigned only
-    // to itself.
+    // to itself. Note need to assign empty vector to each element of rankGrouping
+    // since these vectors represent the other ranks associated with each pool member.
+    // Ie, all ranks are in the pool, and each rank has no associated ranks.
     rankGrouping.clear();
     for (std::size_t i = 0; i < commAll_.size(); ++i) {
-        rankGrouping[i] = std::vector<int>(1, i);
+        rankGrouping[i] = std::vector<int>(0);
     }
 }
 

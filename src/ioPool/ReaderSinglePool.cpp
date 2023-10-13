@@ -50,6 +50,48 @@ ReaderSinglePool::ReaderSinglePool(const IoPoolParameters & configParams,
 }
 
 //--------------------------------------------------------------------------------------
+void ReaderSinglePool::setNewInputFileName() {
+    if (this->commPool() != nullptr) {
+        // Construct the path, name to the new input file. Strip off the trailing suffix
+        // (.nc4, .odb, .nc, etc) and replace with "_<ioPoolRank>.nc4". For now, we will
+        // always use the hdf5 backend for these files.
+
+        // Get "basename" of the path in fileName
+        std::size_t pos = this->fileName().find_last_of('/');
+        if (pos == std::string::npos) {
+            newInputFileName_ = this->fileName();
+        } else {
+            // fileName contains path information, strip off every character leading
+            // up to the last '/'.
+            newInputFileName_ = this->fileName().substr(pos + 1);
+        }
+
+        // Replace the file extension with .nc4
+        pos = newInputFileName_.find_last_of('.');
+        if (pos == std::string::npos) {
+            // No file extension, simply add the ".nc4"
+            newInputFileName_ += std::string(".nc4");
+        } else {
+            // Replace the extension with ".nc4"
+            newInputFileName_ = newInputFileName_.substr(0, pos) + std::string(".nc4");
+        }
+
+        // Generate a file name using the poolRank number, and the time communicator
+        // rank number. The second argument to uniquifyFileName is "write multiple files"
+        // which needs to be true to allow uniquifyFileName to tag on the poolRank number.
+        int timeRankNum = -1;
+        if (this->commTime().size() > 1) {
+            timeRankNum = this->commTime().rank();
+        }
+        newInputFileName_ = this->workDir() + std::string("/") + newInputFileName_;
+        newInputFileName_ = Engines::uniquifyFileName(newInputFileName_, true,
+                                                      this->commPool()->rank(), timeRankNum);
+    } else {
+        newInputFileName_ = std::string("");
+    }
+}
+
+//--------------------------------------------------------------------------------------
 void ReaderSinglePool::initialize() {
     oops::Log::trace() << "ReaderSinglePool::initialize, start" << std::endl;
     // Run the pre-processing steps that establish which locations go to
@@ -82,11 +124,13 @@ void ReaderSinglePool::initialize() {
 
         // Store the file name associated with the reader engine
         fileName_ = readerEngine->fileName();
+        oops::mpi::broadcastString(this->commAll(), fileName_, 0);
 
         // Send the engine applyLocationsCheck() value to the other ranks
         applyLocationsCheck = readerEngine->applyLocationsCheck();
         oops::mpi::broadcastBool(this->commAll(), applyLocationsCheck, 0);
     } else {
+        oops::mpi::broadcastString(this->commAll(), fileName_, 0);
         oops::mpi::broadcastBool(this->commAll(), applyLocationsCheck, 0);
     }
 
@@ -155,11 +199,14 @@ void ReaderSinglePool::initialize() {
     setDistributionMap(*this, locIndices_, rankAssignment_, distributionMap_);
 
     // Set up the working directory for the io pool, and create the input file set.
-    if (this->commAll().rank() == 0) {
-        readerCreateWorkDirectory(configParams_.workDir, fileName_, workDir_);
-        oops::Log::info() << "ReaderSinglePool: reader work directory: "
-                          << workDir_ << std::endl;
-    }
+    // Note only rank 0 runs the commands to create the directory.
+    readerCreateWorkDirectory(*this, configParams_.workDir, fileName_, workDir_);
+    oops::Log::info() << "ReaderSinglePool: reader work directory: "
+                      << workDir_ << std::endl;
+
+    // Generate and record the new input file name for use here and in the save function.
+    // Then create the new input files (one for each pool member)
+    this->setNewInputFileName();
     readerCreateFileSet(*this, fileGroup, dtimeValues_, dtimeEpoch_, lonValues_, latValues_);
     oops::Log::trace() << "ReaderSinglePool::initialize, end" << std::endl;
 }
@@ -170,11 +217,11 @@ void ReaderSinglePool::load(Group & destGroup) {
     Group fileGroup;
     std::unique_ptr<Engines::ReaderBase> readerEngine = nullptr;
     if (this->commPool() != nullptr) {
-        Engines::ReaderCreationParameters
-            createParams(timeWindow_, *commPool_, commTime_,
-                         obsVarNames_, isParallelIo_);
-        readerEngine = Engines::ReaderFactory::create(readerParams_, createParams);
-
+        // For now, the new input files will be hdf5 files.
+        eckit::LocalConfiguration engineConfig =
+            Engines::constructFileBackendConfig("hdf5", newInputFileName_);
+        readerEngine = Engines::constructFileReaderFromConfig(timeWindow_,
+            *commPool_, commTime_, obsVarNames_, isParallelIo_, engineConfig);
         fileGroup = readerEngine->getObsGroup();
 
         // Engine initialization
@@ -204,7 +251,13 @@ void ReaderSinglePool::load(Group & destGroup) {
 
     // Transfer the variable data from the fileGroup to the memGroup for each MPI rank
     if (!emptyFile_) {
-        readerTransferVarData(*this, fileGroup, destGroup, groupStructureYaml_, dtimeValues_);
+        // During the initialize() step the locations were rearranged into smaller
+        // sets according to the destination ranks. This means that the distribution
+        // maps calculated for the building the original input files
+        // (during the initialization step) need to be adjusted to distribute the
+        // locations in the new input files.
+        readerAdjustDistributionMap(*this, fileGroup, distributionMap_);
+        readerTransferVarData(*this, fileGroup, destGroup, groupStructureYaml_);
     }
 
     // Engine finalization

@@ -196,10 +196,11 @@ void setDistributionMap(const ReaderPoolBase & ioPool,
                         ReaderDistributionMap & distributionMap);
 
 /// @brief set up the reader working directory
+/// @param ioPool reader pool object
 /// @param workDirBase specification for the work directory ("work directory" config value)
 /// @param fileName representative file name for the source of the obs data (generator or file)
 /// @param workDir full path to the work directory
-void readerCreateWorkDirectory(const std::string & workDirBase,
+void readerCreateWorkDirectory(const ReaderPoolBase & ioPool, const std::string & workDirBase,
                                const std::string & fileName, std::string & workDir);
 
 /// @brief create the pre-processed input files
@@ -232,16 +233,22 @@ void readerCopyGroupStructure(const ReaderPoolBase & ioPool,
                               const ioda::Group & fileGroup, const bool emptyFile,
                               ioda::Group & memGroup, std::string & groupStructureYaml);
 
+/// @brief adjust the distribution map according to the new input file
+/// @param ioPool ioda ReaderPoolBase object
+/// @param fileGroup is the source file group
+/// @param distributionMap io pool distribution map
+void readerAdjustDistributionMap(const ReaderPoolBase & ioPool,
+                                 const ioda::Group & fileGroup,
+                                 ReaderDistributionMap & distributionMap);
+
 /// @brief transfer the variable data from fileGroup to memGroup
 /// @param ioPool ioda ReaderPoolBase object
 /// @param fileGroup is the source file group
 /// @param memGroup is the destination memory group
 /// @param groupStructureYaml string holding a YAML description of the file group structure
-/// @param dtimeValues date time values in the epoch style format
 void readerTransferVarData(const ReaderPoolBase & ioPool,
                            const ioda::Group & fileGroup, ioda::Group & memGroup,
-                           std::string & groupStructureYaml,
-                           std::vector<int64_t> & dtimeValues);
+                           std::string & groupStructureYaml);
 
 //------------------------------------------------------------------------------------
 // Old reader functions

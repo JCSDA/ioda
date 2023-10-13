@@ -248,7 +248,6 @@ void ObsSpace::save() {
             util::printRunStats("ioda::ObsSpace::save: start " + obsname_ + ": ", true, comm());
         }
 
-        const std::size_t mpiRank = obs_params_.comm().rank();
         std::vector<bool> patchObsVec(nlocs());
         dist_->patchObs(patchObsVec);
 
@@ -692,8 +691,13 @@ void ObsSpace::load() {
     std::unique_ptr<IoPool::ReaderPoolBase> readPool =
             IoPool::ReaderPoolFactory::create(obs_params_.top_level_.ioPool, createParams);
 
-    // Transfer the obs data from the source to the obs space container (ObsGroup)
+    // Make sure the initialize step completes on all tasks before moving on to the
+    // load step (with the barrier call). This is especially important for the case
+    // where files are being created in the initialize step that are used in the load step.
     readPool->initialize();
+    this->comm().barrier();
+
+    // Transfer the obs data from the source to the obs space container (ObsGroup)
     readPool->load(obs_group_);
 
     // Record locations and channels dimension sizes
