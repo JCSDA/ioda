@@ -324,8 +324,8 @@ void createVariablesFromConfig(ioda::Has_Variables & vars,
 
         // Create a vector of variables from the vars container.
         std::vector<Variable> varDims(varDimNames.size());
-        for (std::size_t i = 0; i < varDimNames.size(); ++i) {
-            varDims[i] = vars.open(varDimNames[i]);
+        for (std::size_t j = 0; j < varDimNames.size(); ++j) {
+            varDims[j] = vars.open(varDimNames[j]);
         }
 
         ioda::Variable memVar;
