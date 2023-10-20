@@ -8,7 +8,7 @@
 # IODA
 ################################################################################
 
-cmake_minimum_required( VERSION 3.12 )
+cmake_minimum_required( VERSION 3.14 )
 option(IODA_BUILD_LANGUAGE_FORTRAN "Build Fortran bindings." ON)
 list( APPEND IODA_LANGUAGES CXX)
 if (IODA_BUILD_LANGUAGE_FORTRAN)
@@ -70,10 +70,22 @@ else()
 endif()
 add_feature_info(Python BUILD_PYTHON_BINDINGS "Build Python bindings using pybind11")
 
+## Test data
+
+# DH 2023/10/06 - this is unfortunately still true ...
 ### The ioda_data package is problematic in bundles because it has some special CMake logic
 ### at the root bundle location. So, we cannot find the ioda data while in ioda!
-### Basically, with the current logic ioda_data must be loaded after ioda.
-#find_package( ioda_data QUIET )   # Needed for tests
+### Basically, with the current logic we hack ioda-data_FOUND to match ENABLE_IODA_DATA
+#find_package( ioda-data QUIET )
+if (ENABLE_IODA_DATA)
+  set (ioda-data_FOUND TRUE)
+else()
+  # Set values for downloading ioda test data from tarball
+  set (ioda_data_download_url "https://bin.ssec.wisc.edu/pub/s4/CRTM/file")
+  set (ioda_data_tag "2.7.0")
+  set (ioda_data_tarball_name "ioda_testinput_tier_1_${ioda_data_tag}.tar.gz")
+  set (ioda_data_tarball_hash "b74a3b6f5afbc9b1c94ef0b1ac58feb3")
+endif()
 
 ## Sources
 add_subdirectory( share )         # no arch data

@@ -3,8 +3,38 @@
 # This software is licensed under the terms of the Apache Licence Version 2.0
 # which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
 
-# Includes
-include( git_functions )
+# Test data - from ioda-data repo if found, from local directory, or from tarball (release/develop-in-future?)
+if (ioda-data_FOUND)
+  message(STATUS "Use test data from ioda-data repository")
+  set (ioda_data_testinput_tier_1_local "${CMAKE_SOURCE_DIR}/ioda-data/testinput_tier_1")
+# It's unclear if anyone is using the local data functionality, therefore comment it out
+# for now and add in if someone complains / remove if completely if not.
+#elseif (DEFINED ENV{IODA_TESTFILES})
+#  message(STATUS "Use test data from local directory $ENV{IODA_TESTFILES}")
+#  # A bit of guesswork here, I don't know if folks using this option stored it in the same directory structure
+#  set (ioda_data_testinput_tier_1_local "$ENV{IODA_TESTFILES}/ioda-data/testinput_tier_1")
+else()
+  set (ioda_data_testinput_tier_1_local "${CMAKE_SOURCE_DIR}/test-data-release/ioda/${ioda_data_tag}/testinput_tier_1")
+  if (EXISTS ${ioda_data_testinput_tier_1_local})
+    message(STATUS "Skipping download of test data from ${ioda_data_download_url}/${ioda_data_tarball_name} since it already exists")
+  else()
+    message(STATUS "Download test data from ${ioda_data_download_url}/${ioda_data_tarball_name}")
+    include(FetchContent)
+    FetchContent_Declare(
+      ioda-testdata
+      DOWNLOAD_DIR ${CMAKE_SOURCE_DIR}/test-data-release
+      DOWNLOAD_NO_EXTRACT ON
+      URL      ${ioda_data_download_url}/${ioda_data_tarball_name}
+      URL_HASH MD5=${ioda_data_tarball_hash}
+    )
+    FetchContent_MakeAvailable(ioda-testdata)
+    file(ARCHIVE_EXTRACT INPUT ${CMAKE_SOURCE_DIR}/test-data-release/${ioda_data_tarball_name} DESTINATION ${CMAKE_SOURCE_DIR}/test-data-release)
+  endif()
+endif()
+if (NOT EXISTS "${CMAKE_CURRENT_BINARY_DIR}/Data/testinput_tier_1")
+  file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Data)
+  file(CREATE_LINK ${ioda_data_testinput_tier_1_local} ${CMAKE_CURRENT_BINARY_DIR}/Data/testinput_tier_1 SYMBOLIC)
+endif()
 
 # Function definitions
 
@@ -134,129 +164,6 @@ list( APPEND ioda_test_input
   testinput/iodatest_time_io_reader_pool.yaml
   testinput/iodatest_time_io_reader_pool_odc.yaml
 )
-
-# Create Data directory for test data and symlink files
-# Set list of test file tar balls
-list( APPEND ioda_test_data ioda_testinput_tier_1_2.7.0.tar.gz )
-
-###############################
-# Download/link ioda test files
-###############################
-
-# If IODA branch is being built set GIT_BRANCH_FUNC to IODA's current branch.
-# If a tagged version of IODA is being built set GIT_TAG_FUNC to ioda's current tag.
-find_branch_name(REPO_DIR_NAME ioda)
-
-if( DEFINED GIT_BRANCH_FUNC )
-  set( IODA_GIT_BRANCH ${GIT_BRANCH_FUNC} )
-elseif( DEFINED GIT_TAG_FUNC )
-  set( IODA_GIT_BRANCH ${GIT_TAG_FUNC} )
-endif()
-
-message ( STATUS "IODA_GIT_BRANCH: ${IODA_GIT_BRANCH}" )
-if( DEFINED ENV{LOCAL_PATH_JEDI_TESTFILES} )
-  # When env veriable LOCAL_PATH_JEDI_TESTFILES is set simply link test files
-  # to build directory. get_ioda_test_data checks the existence of test file directory.
-  # ioda test data must be stored in
-  # ${LOCAL_PATH_JEDI_TESTFILES}/ioda/${BRANCH}/testinput_tier_1
-
-  set( LOCAL_PATH_JEDI_TESTFILES "$ENV{LOCAL_PATH_JEDI_TESTFILES}" )
-  message( STATUS "use LOCAL_PATH_JEDI_TESTFILES: ${LOCAL_PATH_JEDI_TESTFILES}" )
-
-  # If test data specific to testing branch exists locally use it.
-  # If not use test data specific to develop branch.
-  if( EXISTS ${LOCAL_PATH_JEDI_TESTFILES}/ioda/${IODA_GIT_BRANCH} )
-    set( TESTFILE_DIR_IODA "${LOCAL_PATH_JEDI_TESTFILES}/ioda/${IODA_GIT_BRANCH}" )
-  else()
-    set( TESTFILE_DIR_IODA "${LOCAL_PATH_JEDI_TESTFILES}/ioda/develop" )
-  endif()
-
-  message( STATUS "Test data in ${TESTFILE_DIR_IODA} is linked to build directory" )
-  list( APPEND IODA_DATA_DOWNLOADER_ARGS
-      ${TESTFILE_DIR_IODA} )
-  set ( IODA_DATA_DOWNLOADER ioda_data_checker.py )
-
-elseif( DEFINED GIT_TAG_FUNC )
-  # Any tagged version of IODA is being built.
-  # Build get_ioda_test_data test to download test data from DASH.
-  message( STATUS "Tagged version of IODA is used" )
-
-  # set ARGS for get_ioda_test_data
-
-  # ECBUILD_DOWNLOAD_BASE_URL env var can be used to force test files and
-  # crtm coef to be downloaded from other databases such as S3 instead of DASH
-  # example ECBUILD_DOWNLOAD_BASE_URL=https://jedi-test-files.s3.amazonaws.com
-
-  if( DEFINED ENV{ECBUILD_DOWNLOAD_BASE_URL} )
-    set( ECBUILD_DOWNLOAD_BASE_URL "$ENV{ECBUILD_DOWNLOAD_BASE_URL}/ioda/${GIT_TAG_FUNC}" )
-  else()
-    set( ECBUILD_DOWNLOAD_BASE_URL https://gdex.ucar.edu/dataset/jedi-skylab/file )
-  endif()
-
-
-  set( DIRNAME ${GIT_TAG_FUNC} )
-  set( TESTFILE_DIR_IODA "${CMAKE_SOURCE_DIR}/test-data-release/ioda/${GIT_TAG_FUNC}" )
-  set( checksum "0" )
-
-  list( APPEND IODA_DATA_DOWNLOADER_ARGS
-        ${ECBUILD_DOWNLOAD_BASE_URL}
-        ${CMAKE_SOURCE_DIR}/test-data-release
-        ${ioda_test_data}
-        ${checksum} )
-
-  message( STATUS "Test files will be downloaded from DASH and
-  saved to ${TESTFILE_DIR_IODA} for ioda")
-
-  # Create test-data-release in source directory
-  file( MAKE_DIRECTORY ${CMAKE_SOURCE_DIR}/test-data-release )
-
-  set ( IODA_DATA_DOWNLOADER ioda_dash_downloader.py.in )
-elseif( DEFINED ENV{IODA_TESTFILES} )
-  # Any branch of IODA is being built.
-  # ioda-data repository is already cloned by bundle/CMakeLists.txt.
-  # Link test files in ioda-data repo to build directory.
-  # get_ioda_test_data checks the existence of test file directory.
-  set( TESTFILE_DIR_IODA $ENV{IODA_TESTFILES} )
-  list( APPEND IODA_DATA_DOWNLOADER_ARGS
-      ${TESTFILE_DIR_IODA} )
-  set (IODA_DATA_DOWNLOADER ioda_data_checker.py )
-else()
-  # Any branch of IODA is being built.
-  # ioda-data repository is already cloned by bundle/CMakeLists.txt.
-  # Link test files in ioda-data repo to build directory.
-  # get_ioda_test_data checks the existence of test file directory.
-  set( TESTFILE_DIR_IODA ${CMAKE_SOURCE_DIR}/ioda-data )
-  list( APPEND IODA_DATA_DOWNLOADER_ARGS
-      ${TESTFILE_DIR_IODA} )
-  set (IODA_DATA_DOWNLOADER ioda_data_checker.py )
-endif()
-
-# Create download script for get_ioda_test_data test
-set ( FILENAME ${IODA_DATA_DOWNLOADER})
-set ( SOURCE_FILE ${CMAKE_CURRENT_SOURCE_DIR}/${FILENAME} )
-set ( DEST_FILE ${CMAKE_BINARY_DIR}/bin/${FILENAME} )
-list( APPEND bin_ioda_test_download_scripts_deps ${DEST_FILE} )
-
-if( EXISTS "${SOURCE_FILE}.in" )
-  configure_file( ${SOURCE_FILE}.in ${DEST_FILE} @ONLY )
-else()
-  configure_file( ${SOURCE_FILE}    ${DEST_FILE} @ONLY )
-endif()
-
-add_custom_target( bin_ioda_test_download_scripts ALL
-  COMMAND chmod +x ${bin_ioda_test_download_scripts_deps}
-  DEPENDS ${bin_ioda_test_download_scripts_deps} )
-
-
-ecbuild_add_test( TARGET    get_ioda_test_data
-                  TYPE      SCRIPT
-                  COMMAND   ${CMAKE_BINARY_DIR}/bin/${IODA_DATA_DOWNLOADER}
-                  ARGS  ${IODA_DATA_DOWNLOADER_ARGS} )
-
-execute_process( COMMAND ${CMAKE_COMMAND} -E create_symlink
-                 ${TESTFILE_DIR_IODA}
-                 ${CMAKE_CURRENT_BINARY_DIR}/Data)
-
 
 add_library(ioda_test INTERFACE)
 set(BUILD_DIR_TEST_INCLUDE_PATH ${CMAKE_BINARY_DIR}/${PROJECT_NAME}/test/include)
