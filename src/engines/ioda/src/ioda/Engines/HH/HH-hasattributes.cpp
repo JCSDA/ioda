@@ -96,9 +96,10 @@ Attribute HH_HasAttributes::open(const std::string& name) const {
     Attribute att{b};
     return att;
   } else {
-    auto ret = H5Aopen(base_(), name.c_str(), H5P_DEFAULT);
+    hid_t ret = H5Aopen(base_(), name.c_str(), H5P_DEFAULT);
     if (ret < 0) throw Exception("H5Aopen failed", ioda_Here());
-    auto b = std::make_shared<HH_Attribute>(ret);
+    auto b = std::make_shared<HH_Attribute>(
+                HH_hid_t(std::move(ret), Handles::Closers::CloseHDF5Attribute::CloseP));
     Attribute att{b};
     return att;
   }
