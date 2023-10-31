@@ -7,7 +7,7 @@ module ioda_attribute_mod
      use,intrinsic :: iso_c_binding
      use,intrinsic :: iso_fortran_env
      use :: ioda_dimensions_mod
-     use :: ioda_vecstring_mod
+     use :: cxx_string_mod
       
      type :: ioda_attribute
          type(c_ptr) :: data_ptr = c_null_ptr
@@ -130,7 +130,7 @@ interface
     function ioda_attribute_c_write_str(p,data_) result(r) bind(C,name="ioda_attribute_c_write_str")
          import c_ptr,c_int64_t,c_bool,c_double
          type(c_ptr),value :: p
-         type(c_ptr) :: data_
+         type(c_ptr),value :: data_
          logical(c_bool) :: r         
     end function
 
@@ -306,9 +306,11 @@ contains
         integer(int64),intent(in) :: n
         type(c_ptr) :: cdata_ptr
         
-        cdata_ptr = ioda_f_string_to_c_dup(data_)
+	write(error_unit,*)' ioda_attribute_write_char fort ',trim(data_)
+        cdata_ptr = f_string_to_c_dup(data_)
+        call c_string_print(cdata_ptr,error_unit)
         r = ioda_attribute_c_write_char(this%data_ptr,n,cdata_ptr) 
-        call ioda_c_free(cdata_ptr) 
+        call c_free(cdata_ptr) 
     end function      
     
     logical function ioda_attribute_write_int16(this,n,data_) result(r)
@@ -338,11 +340,11 @@ contains
     logical function ioda_attribute_write_str(this,data_) result(r)
         implicit none
         class(ioda_attribute) :: this
-        class(ioda_string),intent(in):: data_ 
+        class(cxx_string),intent(in):: data_ 
         character(len=245) :: strp
 
         call data_%get(strp)
-	write(error_unit,*)' write str ',strp
+	write(error_unit,*)' ioda_attribute_write_str fort ',trim(strp)
         r = ioda_attribute_c_write_str(this%data_ptr,data_%data_ptr) 
     end function      
 
@@ -368,11 +370,12 @@ contains
         character(len=*),intent(out) :: data_ 
         integer(int64),intent(in) :: n
         type(c_ptr) :: cdata_ptr
-        
-        cdata_ptr = ioda_c_string_alloc(n)
+        integer(int64) :: csz
+        csz = n + 1
+        cdata_ptr = c_alloc(csz)
         r = ioda_attribute_c_read_char(this%data_ptr,n,cdata_ptr) 
-        call ioda_c_string_to_f_copy(cdata_ptr,data_)
-        call ioda_c_free(cdata_ptr) 
+        call c_string_to_f_copy(cdata_ptr,data_)
+        call c_free(cdata_ptr) 
     end function      
     
     logical function ioda_attribute_read_int16(this,n,data_) result(r)
@@ -403,7 +406,7 @@ contains
     logical function ioda_attribute_read_str(this,data_) result(r)
         implicit none
         class(ioda_attribute) :: this
-        class(ioda_string),intent(out) :: data_ 	
+        class(cxx_string),intent(out) :: data_ 	
         r = ioda_attribute_c_read_str(this%data_ptr,data_%data_ptr) 
     end function      
 

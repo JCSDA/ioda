@@ -9,13 +9,13 @@
 program ioda_fortran_01_groupsandobsspaces
     use, intrinsic :: iso_c_binding
     use, intrinsic :: iso_fortran_env
-    use :: ioda_vecstring_mod
+    use :: cxx_vector_string_mod
     use :: ioda_group_mod
     use :: ioda_engines_mod
     implicit none
 
     type(ioda_group) :: groot, g1, g2, g3, g4, g5, g6, g7, g8, reopened_g4
-    type(ioda_vecstring) :: listed_groups_g3,listed_groups_g4
+    type(cxx_vector_string) :: listed_groups_g3,listed_groups_g4
     integer(int64) :: nsz
     integer(int64) :: msz
     character(len=*),parameter :: root_file = 'Example-01.hdf5'
@@ -48,7 +48,7 @@ program ioda_fortran_01_groupsandobsspaces
         stop -1
     end if
 
-    call ioda_vecstring_init(listed_groups_g3)	
+!    call ioda_vecstring_init(listed_groups_g3)	
     ! Listing groups contained within a group. See VecString example for full usage.
     listed_groups_g3 =  g3%list()
     if (listed_groups_g3%size() /= 1) then
@@ -56,7 +56,7 @@ program ioda_fortran_01_groupsandobsspaces
         stop -1
     end if
     
-    call ioda_vecstring_init(listed_groups_g4)	
+!    call ioda_vecstring_init(listed_groups_g4)	
 
     listed_groups_g4 = g4%list()
 

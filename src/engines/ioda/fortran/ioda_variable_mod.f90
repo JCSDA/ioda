@@ -8,8 +8,8 @@ module ioda_variable_mod
     use,intrinsic :: iso_fortran_env
     use :: ioda_dimensions_mod
     use :: ioda_has_attributes_mod
-    use :: ioda_vecstring_mod
-    use :: ioda_f_c_string_mod
+    use :: cxx_vector_string_mod
+    use :: f_c_string_mod
     
     type ioda_variable
         type(c_ptr) :: data_ptr = c_null_ptr
@@ -421,9 +421,9 @@ contains
        integer(int64),intent(in) :: n
        type(C_ptr) :: name_ptr
 
-       name_ptr = ioda_f_string_to_c_dup(name)
+       name_ptr = f_string_to_c_dup(name)
        r = ioda_variable_c_set_is_dim_scale(this%data_ptr,n,name_ptr)
-       call ioda_c_free(name_ptr)    
+       call c_free(name_ptr)    
     end function
          
     integer(int64) function ioda_variable_get_dim_scale_name(this,sz,name) result(r)
@@ -433,10 +433,10 @@ contains
        integer(int64),intent(in) :: sz
        type(C_ptr) :: name_ptr
         
-       name_ptr = ioda_c_string_alloc(sz)
+       name_ptr = c_alloc((sz+1))
        r = ioda_variable_c_get_dim_scale_name(this%data_ptr,sz,name_ptr)
-       call ioda_c_string_to_f_copy(name_ptr,name)
-       call ioda_c_free(name_ptr)     
+       call c_string_to_f_copy(name_ptr,name)
+       call c_free(name_ptr)     
     end function     
          
     integer(int32) function ioda_variable_is_dim_scale_attached(this,dim_n,vscale) result(r)  
@@ -559,14 +559,14 @@ contains
         logical :: r
         type(c_ptr) :: data_p
         
-        data_p = ioda_f_string_to_c_dup(data_)
+        data_p = f_string_to_c_dup(data_)
         r = ioda_variable_c_write_char(this%data_ptr,n,data_p)
-        call ioda_c_free(data_p)
+        call c_free(data_p)
     end function
     
     function ioda_variable_write_str(this,vstr) result(r)
         class(ioda_variable) :: this
-        class(ioda_vecstring),intent(in) :: vstr
+        class(cxx_vector_string),intent(in) :: vstr
         logical :: r
         r = ioda_variable_c_write_str(this%data_ptr,vstr%data_ptr) 
     end function
@@ -618,15 +618,15 @@ contains
         logical :: r
         type(c_ptr) :: data_p
 
-        data_p = ioda_c_string_alloc(n)
+        data_p = c_alloc((n+1))
         r = ioda_variable_c_read_char(this%data_ptr,n,data_p)
-        call ioda_c_string_to_f_copy(data_p,data_) 
-        call ioda_c_free(data_p)
+        call c_string_to_f_copy(data_p,data_) 
+        call c_free(data_p)
     end function
     
     function ioda_variable_read_str(this,vstr) result(r)
         class(ioda_variable) :: this
-        class(ioda_vecstring),intent(out) :: vstr
+        class(cxx_vector_string),intent(out) :: vstr
         logical :: r
         r = ioda_variable_c_read_str(this%data_ptr,vstr%data_ptr) 
     end function

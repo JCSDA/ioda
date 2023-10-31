@@ -6,16 +6,19 @@
 include(Targets)
 
 list(APPEND SRCS_FORTRAN_BINDINGS
-       ioda_f_c_string_mod.f90
-       ioda_vecstring_mod.f90
-       ioda_dimensions_mod.f90
-       ioda_attribute_mod.f90
-       ioda_has_attributes_mod.f90
-       ioda_variable_creation_parameters_mod.f90 
-       ioda_variable_mod.f90
-       ioda_has_variables_mod.f90
-       ioda_group_mod.f90
-       ioda_engines_mod.f90
+	cxx_string_mod.f90
+	cxx_vector_dbl_mod.f90
+	cxx_vector_int_mod.f90
+	cxx_vector_string_mod.f90
+	f_c_string_mod.f90	
+	ioda_dimensions_mod.f90
+	ioda_attribute_mod.f90
+	ioda_has_attributes_mod.f90
+	ioda_variable_creation_parameters_mod.f90 
+	ioda_variable_mod.f90
+	ioda_has_variables_mod.f90
+	ioda_group_mod.f90
+	ioda_engines_mod.f90
 	)
 
 ecbuild_add_library( TARGET ioda_fortran

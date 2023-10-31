@@ -10,18 +10,17 @@
 extern "C"
 {
 
-void * ioda_has_attributes_c_alloc() {
+ioda_has_attributes_t ioda_has_attributes_c_alloc() {
         return reinterpret_cast<void*>(new ioda::Has_Attributes());
 }
 
-void ioda_has_attributes_c_dtor(void **v) {
-        void *v_ = *v;
-        VOID_TO_CXX(ioda::Has_Attributes,v_,p);
-        // do not delete p since it is a weak reference ?
-        p = nullptr;
+void ioda_has_attributes_c_dtor(ioda_has_attributes_t *v_p) {
+        ioda::Has_Attributes * var = reinterpret_cast<ioda::Has_Attributes *>(*v_p);
+        // do not delete p since it is a weak ptt to reference (will be deleted on dtor of c++ class) ?
+        var = nullptr;
 }
 
-void *  ioda_has_attributes_c_list(void *v)
+ioda_has_attributes_t  ioda_has_attributes_c_list(ioda_has_attributes_t v)
 {
     try { 	
         VOID_TO_CXX(ioda::Has_Attributes,v,p);
@@ -35,7 +34,7 @@ void *  ioda_has_attributes_c_list(void *v)
     return 0x0;
 }
 
-void ioda_has_attributes_c_clone(void **t_p,void *rhs_p)
+void ioda_has_attributes_c_clone(ioda_has_attributes_t* t_p,ioda_has_attributes_t rhs_p)
 {
     try {
         if ( t_p == nullptr) {
@@ -58,46 +57,43 @@ void ioda_has_attributes_c_clone(void **t_p,void *rhs_p)
     }
 }
 
-int ioda_has_attributes_c_exists(void * v,int64_t n,void *name) {
+int ioda_has_attributes_c_exists(ioda_has_attributes_t v,int64_t n,const char  *name) {
     try { 	
         VOID_TO_CXX(ioda::Has_Attributes,v,p);
-        VOID_TO_CXX(const char,name,name_p);
         if ( p == nullptr) throw std::exception();
-        bool ex = p->exists(std::string(name_p,n));
-        return ex ? 1:0;
-    } catch (std::exception& e) {
+        bool ex = p->exists(std::string(name,n));
+        return (ex) ? 1:0;
+    } catch (const std::exception& e) {
         return -1;
     }    
 }
 
-bool ioda_has_attributes_c_remove(void *v,int64_t n,void *name)
+bool ioda_has_attributes_c_remove(ioda_has_attributes_t v,int64_t n,const char *name)
 {
     try { 	
         VOID_TO_CXX(ioda::Has_Attributes,v,p);
-        VOID_TO_CXX(const char,name,name_p);      
         if ( p == nullptr) throw std::exception();
-        p->remove(std::string(name_p,n));
+        p->remove(std::string(name,n));
         return true;
     } catch (std::exception& e) {
         return false;
     }    
 }
 
-bool ioda_has_attributes_c_rename(void * v,int64_t old_sz,const char *old_name,int64_t new_sz,const char *new_name)
+bool ioda_has_attributes_c_rename(ioda_has_attributes_t v,int64_t old_sz,
+    const char *old_name,int64_t new_sz,const char *new_name)
 {
     try { 	
         VOID_TO_CXX(ioda::Has_Attributes,v,p);
-        VOID_TO_CXX(const char,new_name,new_name_p);
-        VOID_TO_CXX(const char,old_name,old_name_p);
         if ( p == nullptr) throw std::exception();
-        p->rename(std::string(old_name_p,old_sz),std::string(new_name_p,new_sz));
+        p->rename(std::string(old_name,old_sz),std::string(new_name,new_sz));
         return true;
     } catch (std::exception& e) {
         return false;
     }    
 }
 
-void * ioda_has_attributes_c_open(void * v,int64_t n,const char *name)
+ioda_has_attributes_t ioda_has_attributes_c_open(ioda_has_attributes_t v,int64_t n,const char *name)
 {
     try { 	
         VOID_TO_CXX(ioda::Has_Attributes,v,p);
@@ -111,8 +107,8 @@ void * ioda_has_attributes_c_open(void * v,int64_t n,const char *name)
 }
 
 #define IODA_FUN(NAME,TYPE)\
-bool ioda_has_attributes_c_create##NAME (void *v,int64_t name_sz,const char *name,	\
-    int64_t sz,void **dims_p,void **Attr) { 						\
+bool ioda_has_attributes_c_create##NAME (ioda_has_attributes_t v,int64_t name_sz,	\
+    const char *name, int64_t sz,void **dims_p,ioda_attribute_t *Attr) { 		\
     try {										\
         VOID_TO_CXX(ioda::Has_Attributes,v,p);  					\
         if ( p == nullptr ) {								\

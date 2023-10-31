@@ -9,7 +9,7 @@
 
 extern "C" {
 
-void * ioda_group_c_alloc()
+ioda_group_t ioda_group_c_alloc()
 {
     try {
         return reinterpret_cast<void*>(new ioda::Group());
@@ -20,17 +20,16 @@ void * ioda_group_c_alloc()
     return nullptr;
 }
 
-void ioda_group_c_dtor(void **p) {
+void ioda_group_c_dtor(ioda_group_t *p) {
     if ( p == nullptr) return;
-    void *p_ = *p;
-    VOID_TO_CXX(ioda::Group,p_,g);
+    VOID_TO_CXX(ioda::Group,*p,g);
     if ( g == nullptr) return;
     delete g;
     g = nullptr;
     *p = nullptr;
 }
 
-void ioda_group_c_clone(void **t_p,void *rhs_p)
+void ioda_group_c_clone(ioda_group_t *t_p,ioda_group_t rhs_p)
 {
     try {
         ioda::Group ** t = 
@@ -40,7 +39,7 @@ void ioda_group_c_clone(void **t_p,void *rhs_p)
             return;
         }
         *t = new ioda::Group(*rhs);
-        t_p = reinterpret_cast< void ** >(t);
+        t_p = reinterpret_cast< ioda_group_t * >(t);
         return;
     } catch ( std::exception& e) {
         std::cerr << "ioda_group_c_clone exception " << e.what() << "\n";
@@ -48,7 +47,7 @@ void ioda_group_c_clone(void **t_p,void *rhs_p)
     }
 }
 
-void * ioda_group_c_list(void *p) {
+cxx_vector_string_t ioda_group_c_list(ioda_group_t p) {
     try {
         VOID_TO_CXX(ioda::Group,p,g);
         if ( g == nullptr ) {
@@ -64,10 +63,9 @@ void * ioda_group_c_list(void *p) {
     return nullptr;
 }
 
-int ioda_group_c_exists(void *p,int64_t sz,const void *name_p) {
+int ioda_group_c_exists(ioda_group_t p,int64_t sz,const char *name) {
     try {
         VOID_TO_CXX(ioda::Group,p,g);
-        VOID_TO_CXX(const char,name_p,name);
         if ( g == nullptr) {
             std::cerr << "ioda_group_c_exists group null pointer in arguments\n";
             throw std::exception();
@@ -90,10 +88,9 @@ int ioda_group_c_exists(void *p,int64_t sz,const void *name_p) {
     return -1;
 }
 
-void * ioda_group_c_create(void *p,int64_t sz,const void *name_p) {
+ioda_group_t ioda_group_c_create(ioda_group_t p,int64_t sz,const char *name) {
     try {
         VOID_TO_CXX(ioda::Group,p,g);
-        VOID_TO_CXX(const char,name_p,name);
         if ( g == nullptr || name == nullptr) {
             std::cerr << "ioda_group_c_create null pointer\n";
             throw std::exception();
@@ -107,10 +104,9 @@ void * ioda_group_c_create(void *p,int64_t sz,const void *name_p) {
     return nullptr;
 }
 
-void * ioda_group_c_open(void *p,int64_t sz,const void *name_p) {
+ioda_group_t  ioda_group_c_open(ioda_group_t p,int64_t sz,const char *name) {
     try {
         VOID_TO_CXX(ioda::Group,p,g);
-        VOID_TO_CXX(const char,name_p,name);
         if ( g == nullptr || name == nullptr) {
             std::cerr << "ioda_group_c_open null pointer\n";
             throw std::exception();
@@ -124,7 +120,7 @@ void * ioda_group_c_open(void *p,int64_t sz,const void *name_p) {
     return nullptr;
 }
 
-void * ioda_group_c_has_attributes(void *g_p)
+ioda_has_attributes_t ioda_group_c_has_attributes(ioda_group_t g_p)
 {
     try {
         VOID_TO_CXX(ioda::Group,g_p,g);
@@ -141,7 +137,7 @@ void * ioda_group_c_has_attributes(void *g_p)
     return nullptr;
 }
 
-void * ioda_group_c_has_variables(void *g_p)
+ioda_has_variables_t ioda_group_c_has_variables(ioda_group_t g_p)
 {
      try {
         VOID_TO_CXX(ioda::Group,g_p,g);

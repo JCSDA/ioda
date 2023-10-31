@@ -6,8 +6,8 @@
 module ioda_group_mod
    use, intrinsic :: iso_c_binding
    use, intrinsic :: iso_fortran_env
-   use :: ioda_vecstring_mod
-   use :: ioda_f_c_string_mod
+   use :: cxx_vector_string_mod
+   use :: f_c_string_mod
    use :: ioda_has_attributes_mod
    use :: ioda_has_variables_mod
 
@@ -109,7 +109,7 @@ contains
    function ioda_group_list(this) result(vstr)
       implicit none
       class(ioda_group) :: this
-      type(ioda_vecstring) :: vstr
+      type(cxx_vector_string) :: vstr
       vstr%data_ptr = ioda_group_c_list(this%data_ptr)
    end function
 
@@ -121,9 +121,9 @@ contains
       integer(int64), intent(in) ::  sz
       integer(int32) :: r
 
-      name_str = ioda_f_string_to_c_dup(name)
+      name_str = f_string_to_c_dup(name)
       r = ioda_group_c_exists(this%data_ptr, sz, name_str)
-      call ioda_c_free(name_str)
+      call c_free(name_str)
    end function
 
    function ioda_group_create(this, sz, name) result(new_grp)
@@ -134,9 +134,9 @@ contains
       type(c_ptr) :: name_str
       integer(int64), intent(in) ::  sz
 
-      name_str = ioda_f_string_to_c_dup(name)
+      name_str = f_string_to_c_dup(name)
       new_grp%data_ptr = ioda_group_c_create(this%data_ptr, sz, name_str)
-      call ioda_c_free(name_str)
+      call c_free(name_str)
    end function
 
    function ioda_group_open(this, sz, name) result(new_grp)
@@ -147,9 +147,9 @@ contains
       type(c_ptr) :: name_str
       integer(int64), intent(in) ::  sz
 
-      name_str = ioda_f_string_to_c_dup(name)
+      name_str = f_string_to_c_dup(name)
       new_grp%data_ptr = ioda_group_c_open(this%data_ptr, sz, name_str)
-      call ioda_c_free(name_str)
+      call c_free(name_str)
    end function
 
    function ioda_group_has_attributes(this) result(has_att)

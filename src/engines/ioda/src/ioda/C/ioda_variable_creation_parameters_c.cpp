@@ -9,12 +9,12 @@
 
 extern "C" {
 
-void * ioda_variable_creation_parameters_c_alloc()
+ioda_variable_creation_parameters_t ioda_variable_creation_parameters_c_alloc()
 {
         return reinterpret_cast<void*>( new ioda::VariableCreationParameters() );
 }
 
-void ioda_variable_creation_parameters_c_dtor(void **p) {
+void ioda_variable_creation_parameters_c_dtor(ioda_variable_creation_parameters_t *p) {
         if (p==nullptr || *p == nullptr) return;
         VOID_TO_CXX(ioda::VariableCreationParameters,*p,c_params);
         if ( c_params ) {
@@ -23,7 +23,8 @@ void ioda_variable_creation_parameters_c_dtor(void **p) {
         *p = nullptr;
 }
 
-void ioda_variable_creation_parameters_c_clone(void **t_p,void *rhs_p)
+void ioda_variable_creation_parameters_c_clone(ioda_variable_creation_parameters_t *t_p,
+    ioda_variable_creation_parameters_t rhs_p)
 {
     try {
         ioda::VariableCreationParameters ** t = 
@@ -36,7 +37,7 @@ void ioda_variable_creation_parameters_c_clone(void **t_p,void *rhs_p)
             return;
         }
         *t = new ioda::VariableCreationParameters(*rhs);
-        t_p = reinterpret_cast< void ** >(t);
+        t_p = reinterpret_cast< ioda_variable_creation_parameters_t * >(t);
         return;
     } catch ( std::exception& e) {
         std::cerr << "ioda_variable_creation_parameters_c_clone exception " << e.what() << "\n";
@@ -44,33 +45,8 @@ void ioda_variable_creation_parameters_c_clone(void **t_p,void *rhs_p)
     }
 }
 
-/*
-void ioda_variable_creation_parameter_c_get_chunking(void *p,int *nd,void *dims_p)
-{
-    try {
-        VOID_TO_CXX(ioda::VariableCreationParameters,p,c_params);
-        if ( c_params == nullptr ) {
-            std::cerr << "ioda_variable_creation_parameters nullptr\n";
-            throw std::exception();
-        }
-        VOID_TO_CXX(const ioda::Dimensions_t,dims_p,chunks);
-        if ( chunks==nullptr) {
-            std::cerr << "ioda_variable_creation_parameters::chunking nullptr\n";
-            throw std::exception();
-        }
-        std::vector<ioda::Dimension_t> r;
-        c_params->getChunks(r);
-        *nd = r.size();
-        memcpy(chunks,r.data(),*nd*sizeof(ioda::Dimension_t));
-        return;
-    } catch (std::exception& e) {
-        std::cerr << "ioda_variable_creation_parameters_c_chunking failed\n";
-        fatal_error();        
-    }    
-} 
-*/
-
-void ioda_variable_creation_parameters_c_chunking(void *p,bool do_chunking,int64_t ndims,void **chunks_p) {
+void ioda_variable_creation_parameters_c_chunking(ioda_variable_creation_parameters_t p,
+    bool do_chunking,int64_t ndims,void **chunks_p) {
     try {
         VOID_TO_CXX(ioda::VariableCreationParameters,p,c_params);
         if ( c_params == nullptr ) {
@@ -94,7 +70,7 @@ void ioda_variable_creation_parameters_c_chunking(void *p,bool do_chunking,int64
     }
 }
 
-void ioda_variable_creation_parameters_c_no_compress(void *p) {
+void ioda_variable_creation_parameters_c_no_compress(ioda_variable_creation_parameters_t p) {
     try {
         VOID_TO_CXX(ioda::VariableCreationParameters,p,c_params);
         if ( c_params == nullptr ) {
@@ -108,7 +84,7 @@ void ioda_variable_creation_parameters_c_no_compress(void *p) {
     }
 }
 
-void ioda_variable_creation_parameters_c_compress_with_gzip(void *p,int32_t level) {
+void ioda_variable_creation_parameters_c_compress_with_gzip(ioda_variable_creation_parameters_t p,int32_t level) {
     try {
         VOID_TO_CXX(ioda::VariableCreationParameters,p,c_params);
         if ( c_params == nullptr ) {
@@ -122,7 +98,8 @@ void ioda_variable_creation_parameters_c_compress_with_gzip(void *p,int32_t leve
     }
 }
 
-void ioda_variable_creation_parameters_c_compress_with_szip(void *p,int32_t pixels_per_block,int32_t options) {
+void ioda_variable_creation_parameters_c_compress_with_szip(ioda_variable_creation_parameters_t p,
+    int32_t pixels_per_block,int32_t options) {
     try {
         VOID_TO_CXX(ioda::VariableCreationParameters,p,c_params);
         if ( c_params == nullptr ) {
@@ -138,7 +115,8 @@ void ioda_variable_creation_parameters_c_compress_with_szip(void *p,int32_t pixe
 }
 
 #define IODA_FUN(NAME,TYPE) \
-void ioda_variable_creation_parameters_c_set_fill_value##NAME(void *p, TYPE value) {		\
+void ioda_variable_creation_parameters_c_set_fill_value##NAME(					\
+    ioda_variable_creation_parameters_t p, TYPE value) {					\
     try {											\
         VOID_TO_CXX(ioda::VariableCreationParameters,p,c_params);				\
         if ( c_params == nullptr ) {								\

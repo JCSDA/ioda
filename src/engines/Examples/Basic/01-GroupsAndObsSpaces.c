@@ -36,15 +36,15 @@ int main(int argc, char** argv) {
   int errval                     = 0;
   int r;
   int64_t sz;
-  void * g1;
-  void * g2;
-  void * groot;
-  void * g3;
-  void * g4;
-  void * g5;
-  void * g6;
-  void * open_g3;
-  void * g_list;
+  ioda_group_t g1;
+  ioda_group_t g2;
+  ioda_group_t groot;
+  ioda_group_t g3;
+  ioda_group_t g4;
+  ioda_group_t g5;
+  ioda_group_t g6;
+  ioda_group_t open_g3;
+  ioda_vecstring_t g_list;
   char * errlin = 0x0;
             
   groot = ioda_engines_c_construct_from_command_line((void*)0x0,"Example-01-C.hdf5");

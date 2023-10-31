@@ -10,17 +10,17 @@
 
 extern "C" {
 
-void * ioda_variable_c_alloc()
+ioda_variable_t  ioda_variable_c_alloc()
 {
     return reinterpret_cast<void*>(new ioda::Variable());
 }
 
-void ioda_variable_c_dtor(void **p) {
+void ioda_variable_c_dtor(ioda_variable_t *p) {
 /// weak reference so no delete
     *p = nullptr;
 }
 
-void ioda_variable_c_clone(void **t_p,void *rhs_p)
+void ioda_variable_c_clone(ioda_variable_t *t_p,ioda_variable_t rhs_p)
 {
     try {
         ioda::Variable ** t = 
@@ -41,7 +41,7 @@ void ioda_variable_c_clone(void **t_p,void *rhs_p)
     }
 }
 
-void * ioda_variable_c_has_attributes(void *p) {
+ioda_has_attributes_t ioda_variable_c_has_attributes(ioda_variable_t p) {
     try {
        VOID_TO_CXX(ioda::Variable,p,var);
        if (var==nullptr) {
@@ -56,7 +56,7 @@ void * ioda_variable_c_has_attributes(void *p) {
     return nullptr;
 }
 
-void * ioda_variable_c_get_dimensions(void *p) {
+ioda_dimensions_t ioda_variable_c_get_dimensions(ioda_variable_t p) {
     try{
         VOID_TO_CXX(ioda::Variable,p,var);
         if (var==nullptr) {
@@ -72,7 +72,7 @@ void * ioda_variable_c_get_dimensions(void *p) {
     return nullptr;
 }
 
-bool ioda_variable_c_resize(void *p,int64_t n,void *dim_ptr) {
+bool ioda_variable_c_resize(ioda_variable_t p,int64_t n,void *dim_ptr) {
     try{
         VOID_TO_CXX(ioda::Variable,p,var);
         VOID_TO_CXX(int64_t,dim_ptr,dims);
@@ -92,7 +92,7 @@ bool ioda_variable_c_resize(void *p,int64_t n,void *dim_ptr) {
     return false;
 }
 
-bool ioda_variable_c_attach_dim_scale(void *p,int32_t dim_n,void *var_ptr) {
+bool ioda_variable_c_attach_dim_scale(ioda_variable_t p,int32_t dim_n,ioda_variable_t var_ptr) {
     try{
         VOID_TO_CXX(ioda::Variable,p,var);
         VOID_TO_CXX(ioda::Variable,var_ptr,vp);
@@ -112,7 +112,7 @@ bool ioda_variable_c_attach_dim_scale(void *p,int32_t dim_n,void *var_ptr) {
     return false;
 }
 
-bool ioda_variable_c_detach_dim_scale(void *p,int32_t dim_n,void *var_ptr) {
+bool ioda_variable_c_detach_dim_scale(ioda_variable_t p,int32_t dim_n,ioda_variable_t var_ptr) {
     try{
         VOID_TO_CXX(ioda::Variable,p,var);
         VOID_TO_CXX(ioda::Variable,var_ptr,vp);
@@ -133,7 +133,7 @@ bool ioda_variable_c_detach_dim_scale(void *p,int32_t dim_n,void *var_ptr) {
     return false;
 }
 
-bool ioda_variable_c_set_dim_scale(void *p,int64_t ndim,void **var_ptr) {
+bool ioda_variable_c_set_dim_scale(ioda_variable_t p,int64_t ndim,ioda_variable_t *var_ptr) {
     try{
         VOID_TO_CXX(ioda::Variable,p,var);
         VOID_TO_CXX(ioda::Variable*,var_ptr,vp);
@@ -154,7 +154,7 @@ bool ioda_variable_c_set_dim_scale(void *p,int64_t ndim,void **var_ptr) {
     return false;
 }
 
-int32_t ioda_variable_c_is_dim_scale(void *p) {
+int32_t ioda_variable_c_is_dim_scale(ioda_variable_t p) {
     try{
         VOID_TO_CXX(ioda::Variable,p,var);
         if (var==nullptr) {
@@ -168,7 +168,7 @@ int32_t ioda_variable_c_is_dim_scale(void *p) {
     return -1;
 }
 
-bool ioda_variable_c_set_is_dimension_scale(void *p,int64_t sz,void *name_p) {
+bool ioda_variable_c_set_is_dimension_scale(ioda_variable_t p,int64_t sz,const char *name_p) {
     try{
         VOID_TO_CXX(ioda::Variable,p,var);
         VOID_TO_CXX(const char,name_p,name);
@@ -188,11 +188,9 @@ bool ioda_variable_c_set_is_dimension_scale(void *p,int64_t sz,void *name_p) {
     return false;
 }
 
-int64_t ioda_variable_c_get_dimension_scale_name(void *p,int64_t n,void **out_p) {
+int64_t ioda_variable_c_get_dimension_scale_name(ioda_variable_t p,int64_t n,char **name_p) {
     try{
         VOID_TO_CXX(ioda::Variable,p,var);
-        void * out_p_ = *out_p;
-        VOID_TO_CXX(char,out_p_,name_p);
         if (var==nullptr) {
             std::cerr << "ioda_variable_c_get_dimension_scale_name _scale ptr is null\n";
             fatal_error();
@@ -204,23 +202,22 @@ int64_t ioda_variable_c_get_dimension_scale_name(void *p,int64_t n,void **out_p)
            throw std::exception();
         }
         int64_t rsz = static_cast<int64_t>(r.size()) + 1L;
-        if ( name_p == 0x0) {
-             name_p = reinterpret_cast<char*>(Malloc(size_t(rsz)));
+        if ( *name_p == 0x0) {
+             *name_p = reinterpret_cast<char*>(Malloc(size_t(rsz)));
         }else{
              if ( rsz > (n+1) ) {
-                free(name_p);
-                name_p = reinterpret_cast<char*>(Malloc(size_t(rsz)));
+                free(*name_p);
+                *name_p = reinterpret_cast<char*>(Malloc(size_t(rsz)));
              } 
         }
-        strncpy(name_p,r.c_str(),n);
-        *out_p = reinterpret_cast<void*>(name_p);
+        strncpy(*name_p,r.c_str(),n);
         return rsz;
     } catch (std::exception& e) {
     }
     return 0;
 }
 
-int32_t ioda_variable_c_is_dimension_scale_attached(void *p,int32_t dim_num,void *scale_p) {
+int32_t ioda_variable_c_is_dimension_scale_attached(ioda_variable_t p,int32_t dim_num,ioda_variable_t scale_p) {
     try{
         VOID_TO_CXX(ioda::Variable,p,var);
         VOID_TO_CXX(ioda::Variable,scale_p,scale);
@@ -240,7 +237,7 @@ int32_t ioda_variable_c_is_dimension_scale_attached(void *p,int32_t dim_num,void
 }
 
 #define IODA_FUN(NAME,TYPE) \
-int32_t ioda_variable_c_is_a##NAME (void * p) {				\
+int32_t ioda_variable_c_is_a##NAME (ioda_variable_t  p) {		\
     try{								\
         VOID_TO_CXX(ioda::Variable,p,var);				\
         if (var==nullptr) {						\
@@ -269,7 +266,7 @@ IODA_FUN(_str,std::vector<std::string>)
 #undef IODA_FUN
     
 #define IODA_FUN(NAME,TYPE)\
-bool ioda_variable_c_write##NAME(void *p,int64_t n, const TYPE *data) {		\
+bool ioda_variable_c_write##NAME(ioda_variable_t p,int64_t n, const TYPE *data) {\
     try {									\
        VOID_TO_CXX(ioda::Variable,p,var);					\
        if ( var == nullptr ) {							\
@@ -292,7 +289,7 @@ IODA_FUN(_int64,int64_t)
 #undef IODA_FUN
 
 
-bool ioda_variable_c_write_char(void *p,int64_t n,void * vptr) {
+bool ioda_variable_c_write_char(ioda_variable_t p,int64_t n,const char * vptr) {
     try {
         VOID_TO_CXX(ioda::Variable,p,var);
         if ( var == nullptr) {
@@ -314,7 +311,7 @@ bool ioda_variable_c_write_char(void *p,int64_t n,void * vptr) {
     return false;
 }
 
-bool ioda_variable_c_write_str(void *p,void *vstr_p) {
+bool ioda_variable_c_write_str(ioda_variable_t p,cxx_vector_string_t vstr_p) {
     try {				
        VOID_TO_CXX(ioda::Variable,p,var);
        VOID_TO_CXX(std::vector<std::string>,vstr_p,vstr);
@@ -336,14 +333,14 @@ bool ioda_variable_c_write_str(void *p,void *vstr_p) {
 }
 
 #define IODA_FUN(NAME,TYPE)\
-bool ioda_variable_c_read##NAME(void *p,int64_t n,void **dptr) {\
+bool ioda_variable_c_read##NAME(ioda_variable_t p,int64_t n,void **dptr) {\
     try {										\
        VOID_TO_CXX(ioda::Variable,p,var);						\
        if (var == nullptr) {								\
            std::cerr << "ioda_variable_c_read variable pointer is null\n";		\
            fatal_error();								\
        } 										\
-       void * v_dp;									\
+       void *  v_dp;									\
        if ( dptr != nullptr) {								\
           v_dp = *dptr;									\
        }else{										\
@@ -353,7 +350,7 @@ bool ioda_variable_c_read##NAME(void *p,int64_t n,void **dptr) {\
           v_dp = Malloc(sizeof( TYPE )*n);						\
        }  										\
        VOID_TO_CXX( TYPE ,v_dp,data);							\
-       auto vr = var->read< TYPE >(gsl::span< TYPE >(data,n));				\
+       auto vr = var->read< TYPE >(gsl::span< TYPE >(data,data+n));			\
        /* make sure that vstr points to correct data pointer */				\
        *dptr = reinterpret_cast<void*>(data); 						\
        return true;									\
@@ -372,7 +369,7 @@ IODA_FUN(_int32,int32_t)
 IODA_FUN(_int64,int64_t)
 #undef IODA_FUN
 
-bool ioda_variable_c_read_char(void *p,int64_t n,void **vstr) {
+bool ioda_variable_c_read_char(ioda_variable_t p,int64_t n,void **vstr) {
     try {
        VOID_TO_CXX(ioda::Variable,p,var);
        if (var == nullptr) {
@@ -389,7 +386,7 @@ bool ioda_variable_c_read_char(void *p,int64_t n,void **vstr) {
           vs_p = Malloc(n+1); 
        }  
        VOID_TO_CXX(char,vs_p,str);
-       auto vr = var->read<char>(gsl::span<char>(str,n));
+       auto vr = var->read<char>(gsl::span<char>(str,str+n));
        // make sure that vstr points to correct char *
        *vstr = reinterpret_cast<void*>(str);
        return true;
@@ -400,7 +397,7 @@ bool ioda_variable_c_read_char(void *p,int64_t n,void **vstr) {
     return false;  
 }
 
-bool ioda_variable_c_read_str(void *p,int64_t n,void **vstr) {
+bool ioda_variable_c_read_str(void *p,int64_t n,cxx_vector_string_t *vstr) {
     try {
        VOID_TO_CXX(ioda::Variable,p,var);
        if (var == nullptr) {

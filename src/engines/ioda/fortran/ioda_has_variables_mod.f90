@@ -8,8 +8,8 @@ module ioda_has_variables_mod
    use, intrinsic :: iso_fortran_env
    use :: ioda_variable_creation_parameters_mod
    use :: ioda_variable_mod
-   use :: ioda_vecstring_mod
-   use :: ioda_f_c_string_mod
+   use :: cxx_vector_string_mod
+   use :: f_c_string_mod
 
    type :: ioda_has_variables
       type(c_ptr) :: data_ptr = c_null_ptr
@@ -278,7 +278,7 @@ contains
    function  ioda_has_variables_list(this) result(list_string)
       implicit none
       class(ioda_has_variables) :: this
-      type(ioda_vecstring) :: list_string
+      type(cxx_vector_string) :: list_string
       list_string%data_ptr = ioda_has_variables_c_list(this%data_ptr)
    end function
 
@@ -289,9 +289,9 @@ contains
       character(len=*), intent(in) :: name
       type(c_ptr) :: name_ptr
 
-      name_ptr = ioda_f_string_to_c_dup(name)
+      name_ptr = f_string_to_c_dup(name)
       r = ioda_has_variables_c_remove(this%data_ptr, n, name_ptr)
-      call ioda_c_free(name_ptr)
+      call c_free(name_ptr)
    end function
 
    function ioda_has_variables_exists(this, n, name) result(r)
@@ -302,9 +302,9 @@ contains
       logical :: r
       type(c_ptr) :: name_ptr
 
-      name_ptr = ioda_f_string_to_c_dup(name)
+      name_ptr = f_string_to_c_dup(name)
       r = ioda_has_variables_c_exists(this%data_ptr, n, name_ptr)
-      call ioda_c_free(name_ptr)
+      call c_free(name_ptr)
    end function
 
    function ioda_has_variables_open(this, n, name) result(var)
@@ -315,9 +315,9 @@ contains
       integer(int64) :: n
       type(c_ptr) :: name_ptr
 
-      name_ptr = ioda_f_string_to_c_dup(name)
+      name_ptr = f_string_to_c_dup(name)
       var%data_ptr = ioda_has_variables_c_open(this%data_ptr, n, name_ptr)
-      call ioda_c_free(name_ptr)
+      call c_free(name_ptr)
    end function
 
    function ioda_has_variables_create_float(this, name, ndim, dims) result(var)
@@ -330,10 +330,10 @@ contains
       integer(int64) :: name_sz
       type(c_ptr) :: name_c
 
-      name_c = ioda_f_string_to_c_dup(name)
+      name_c = f_string_to_c_dup(name)
       name_sz = len_trim(name, int64)
       var%data_ptr = ioda_has_variables_c_create_float(this%data_ptr, name_sz, name_c, ndim, dims)
-      call ioda_c_free(name_c)
+      call c_free(name_c)
    end function
 
    function ioda_has_variables_create2_float(this, name, ndim, dims, max_dims, cparams) result(var)
@@ -349,10 +349,10 @@ contains
       type(c_ptr) :: name_c
 
       name_sz = len_trim(name, int64)
-      name_c = ioda_f_string_to_c_dup(name)
+      name_c = f_string_to_c_dup(name)
       var%data_ptr = ioda_has_variables_c_create2_float(this%data_ptr, name_sz, name_c, ndim, dims,&
               & max_dims, cparams%data_ptr)
-      call ioda_c_free(name_c)
+      call c_free(name_c)
    end function
 
    function ioda_has_variables_create_double(this, name, ndim, dims) result(var)
@@ -365,10 +365,10 @@ contains
       integer(int64) :: name_sz
       type(c_ptr) :: name_c
 
-      name_c = ioda_f_string_to_c_dup(name)
+      name_c = f_string_to_c_dup(name)
       name_sz = len_trim(name, int64)
       var%data_ptr = ioda_has_variables_c_create_double(this%data_ptr, name_sz, name_c, ndim, dims)
-      call ioda_c_free(name_c)
+      call c_free(name_c)
    end function
 
    function ioda_has_variables_create2_double(this, name, ndim, dims, max_dims, cparams) result(var)
@@ -384,10 +384,10 @@ contains
       type(c_ptr) :: name_c
 
       name_sz = len_trim(name, int64)
-      name_c = ioda_f_string_to_c_dup(name)
+      name_c = f_string_to_c_dup(name)
       var%data_ptr = ioda_has_variables_c_create2_double(this%data_ptr, name_sz, name_c, ndim, dims,&
               & max_dims, cparams%data_ptr)
-      call ioda_c_free(name_c)
+      call c_free(name_c)
    end function
 
    function ioda_has_variables_create_char(this, name, ndim, dims) result(var)
@@ -400,10 +400,10 @@ contains
       integer(int64) :: name_sz
       type(c_ptr) :: name_c
 
-      name_c = ioda_f_string_to_c_dup(name)
+      name_c = f_string_to_c_dup(name)
       name_sz = len_trim(name, int64)
       var%data_ptr = ioda_has_variables_c_create_char(this%data_ptr, name_sz, name_c, ndim, dims)
-      call ioda_c_free(name_c)
+      call c_free(name_c)
    end function
 
    function ioda_has_variables_create2_char(this, name, ndim, dims, max_dims, cparams) result(var)
@@ -419,10 +419,10 @@ contains
       type(c_ptr) :: name_c
 
       name_sz = len_trim(name, int64)
-      name_c = ioda_f_string_to_c_dup(name)
+      name_c = f_string_to_c_dup(name)
       var%data_ptr = ioda_has_variables_c_create2_char(this%data_ptr, name_sz, name_c, ndim, dims,&
               & max_dims, cparams%data_ptr)
-      call ioda_c_free(name_c)
+      call c_free(name_c)
    end function
 
    function ioda_has_variables_create_int16(this, name, ndim, dims) result(var)
@@ -435,10 +435,10 @@ contains
       integer(int64) :: name_sz
       type(c_ptr) :: name_c
 
-      name_c = ioda_f_string_to_c_dup(name)
+      name_c = f_string_to_c_dup(name)
       name_sz = len_trim(name, int64)
       var%data_ptr = ioda_has_variables_c_create_int16(this%data_ptr, name_sz, name_c, ndim, dims)
-      call ioda_c_free(name_c)
+      call c_free(name_c)
    end function
 
    function ioda_has_variables_create2_int16(this, name, ndim, dims, max_dims, cparams) result(var)
@@ -454,10 +454,10 @@ contains
       type(c_ptr) :: name_c
 
       name_sz = len_trim(name, int64)
-      name_c = ioda_f_string_to_c_dup(name)
+      name_c = f_string_to_c_dup(name)
       var%data_ptr = ioda_has_variables_c_create2_int16(this%data_ptr, name_sz, name_c, ndim, dims,&
               & max_dims, cparams%data_ptr)
-      call ioda_c_free(name_c)
+      call c_free(name_c)
    end function
 
    function ioda_has_variables_create_int32(this, name, ndim, dims) result(var)
@@ -470,10 +470,10 @@ contains
       integer(int64) :: name_sz
       type(c_ptr) :: name_c
 
-      name_c = ioda_f_string_to_c_dup(name)
+      name_c = f_string_to_c_dup(name)
       name_sz = len_trim(name, int64)
       var%data_ptr = ioda_has_variables_c_create_int32(this%data_ptr, name_sz, name_c, ndim, dims)
-      call ioda_c_free(name_c)
+      call c_free(name_c)
    end function
 
    function ioda_has_variables_create2_int32(this, name, ndim, dims, max_dims, cparams) result(var)
@@ -489,10 +489,10 @@ contains
       type(c_ptr) :: name_c
 
       name_sz = len_trim(name, int64)
-      name_c = ioda_f_string_to_c_dup(name)
+      name_c = f_string_to_c_dup(name)
       var%data_ptr = ioda_has_variables_c_create2_int32(this%data_ptr, name_sz, name_c, ndim, dims,&
               & max_dims, cparams%data_ptr)
-      call ioda_c_free(name_c)
+      call c_free(name_c)
    end function
 
    function ioda_has_variables_create_int64(this, name, ndim, dims) result(var)
@@ -505,10 +505,10 @@ contains
       integer(int64) :: name_sz
       type(c_ptr) :: name_c
 
-      name_c = ioda_f_string_to_c_dup(name)
+      name_c = f_string_to_c_dup(name)
       name_sz = len_trim(name, int64)
       var%data_ptr = ioda_has_variables_c_create_int64(this%data_ptr, name_sz, name_c, ndim, dims)
-      call ioda_c_free(name_c)
+      call c_free(name_c)
    end function
 
    function ioda_has_variables_create2_int64(this, name, ndim, dims, max_dims, cparams) result(var)
@@ -524,10 +524,10 @@ contains
       type(c_ptr) :: name_c
 
       name_sz = len_trim(name, int64)
-      name_c = ioda_f_string_to_c_dup(name)
+      name_c = f_string_to_c_dup(name)
       var%data_ptr = ioda_has_variables_c_create2_int64(this%data_ptr, name_sz, name_c, ndim, dims,&
               & max_dims, cparams%data_ptr)
-      call ioda_c_free(name_c)
+      call c_free(name_c)
    end function
 
    function ioda_has_variables_create_str(this, name, ndim, dims) result(var)
@@ -540,10 +540,10 @@ contains
       integer(int64) :: name_sz
       type(c_ptr) :: name_c
 
-      name_c = ioda_f_string_to_c_dup(name)
+      name_c = f_string_to_c_dup(name)
       name_sz = len_trim(name, int64)
       var%data_ptr = ioda_has_variables_c_create_str(this%data_ptr, name_sz, name_c, ndim, dims)
-      call ioda_c_free(name_c)
+      call c_free(name_c)
    end function
 
    function ioda_has_variables_create2_str(this, name, ndim, dims, max_dims, cparams) result(var)
@@ -559,10 +559,10 @@ contains
       type(c_ptr) :: name_c
 
       name_sz = len_trim(name, int64)
-      name_c = ioda_f_string_to_c_dup(name)
+      name_c = f_string_to_c_dup(name)
       var%data_ptr = ioda_has_variables_c_create2_str(this%data_ptr, name_sz, name_c, ndim, dims,&
               & max_dims, cparams%data_ptr)
-      call ioda_c_free(name_c)
+      call c_free(name_c)
    end function
 
 end module

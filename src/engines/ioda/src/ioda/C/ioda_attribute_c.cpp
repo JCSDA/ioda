@@ -5,32 +5,33 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
+#include "ioda/C/ioda_decls.hpp"
 #include "ioda/C/ioda_attribute_c.hpp"
 #include <gsl/gsl-lite.hpp>
 
 extern "C" {
 
-void * ioda_attribute_c_alloc()
+ioda_attribute_t  ioda_attribute_c_alloc()
 {
      return reinterpret_cast<void*>(new ioda::Attribute());
 }
 
-void ioda_attribute_c_dtor(void **v) {
-    VOID_TO_CXX(ioda::Attribute*,v,p);
-    if ( *p == nullptr ) {
+void ioda_attribute_c_dtor(ioda_attribute_t *v) {
+    VOID_TO_CXX(ioda::Attribute**,v,p);
+    if ( *p != nullptr ) {
         delete *p;
+        *p = nullptr;
     }
-    *p = nullptr;
     *v = nullptr;
 }
 
-bool ioda_attribute_c_is_allocated(void *v)
+bool ioda_attribute_c_is_allocated(ioda_attribute_t v)
 {
     VOID_TO_CXX(ioda::Attribute,v,p);
     return (p==nullptr) ? false:true; 
 }
 
-void ioda_attribute_c_clone(void **t_p,void *rhs_p)
+void ioda_attribute_c_clone(ioda_attribute_t *t_p,ioda_attribute_t rhs_p)
 {
     try {
         ioda::Attribute ** t = 
@@ -43,7 +44,7 @@ void ioda_attribute_c_clone(void **t_p,void *rhs_p)
             return;
         }
         *t = new ioda::Attribute(*rhs);
-        t_p = reinterpret_cast< void ** >(t);
+        t_p = reinterpret_cast< ioda_attribute_t * >(t);
         return;
     } catch ( std::exception& e) {
         std::cerr << "ioda_attribute_c_clone exception " << e.what() << "\n";
@@ -51,7 +52,7 @@ void ioda_attribute_c_clone(void **t_p,void *rhs_p)
     }
 }
 
-void * ioda_attribute_c_get_dimensions(void *v)  
+ioda_dimensions_t  ioda_attribute_c_get_dimensions(ioda_attribute_t v)  
 {
     try {
         VOID_TO_CXX(ioda::Attribute,v,p);
@@ -67,20 +68,20 @@ void * ioda_attribute_c_get_dimensions(void *v)
     return 0x0;
 }
 
-bool ioda_attribute_c_write_str(void *v,void **data_p) {
+bool ioda_attribute_c_write_str(ioda_attribute_t v,cxx_string_t data_p) {
     try { 
-        VOID_TO_CXX(ioda::Attribute,v,p);
-        if (p==nullptr) {
+        VOID_TO_CXX(ioda::Attribute,v,attr);
+        if (attr==nullptr) {
             std::cerr << "ioda_attribute_c_write attr ptr null\n";
             throw std::exception();
         }
-        VOID_TO_CXX(std::string,*data_p,vs);
+        VOID_TO_CXX(std::string,data_p,vs);
         if ( vs == nullptr) {
             std::cerr << "ioda_attribute_c_write_str string ptr null\n";
             throw std::exception();
         }
-        std::cerr << "ioda_attribute_c_write_str " << *vs << "\n";
-        ioda::Attribute ax = p->write< std::string >(*vs);
+        std::cerr << "ioda_attribute_c_write_str " << (*vs) << "\n";
+        ioda::Attribute ax = attr->write< std::string >(*vs);
         return true;
     } catch (std::exception& e) {
         std::cerr << "ioda_attribute_c_write_str failed " << e.what() << "\n"; 
@@ -89,14 +90,14 @@ bool ioda_attribute_c_write_str(void *v,void **data_p) {
 }
 
 
-bool ioda_attribute_c_read_str(void *v,void **data_p) {
+bool ioda_attribute_c_read_str(ioda_attribute_t v,cxx_string_t *data_p) {
     try { 
         VOID_TO_CXX(ioda::Attribute,v,p);
         if (p==nullptr) {
             std::cerr << "ioda_attribute_c_read attr ptr null\n";
             throw std::exception();
         }
-        VOID_TO_CXX(std::string,*data_p,vs);
+        VOID_TO_CXX(std::string,(*data_p),vs);
         if ( vs == nullptr) {
             std::cerr << "ioda_attribute_c_read_str string ptr null\n";
             throw std::exception();
@@ -110,7 +111,7 @@ bool ioda_attribute_c_read_str(void *v,void **data_p) {
 
 
 #define IODA_FUN(NAME,TYPE)\
-bool ioda_attribute_c_read##NAME (void *v,int64_t n, void ** data_p) {			\
+bool ioda_attribute_c_read##NAME (ioda_attribute_t v,int64_t n, void ** data_p) {	\
     try  { 										\
         VOID_TO_CXX(TYPE,*data_p,data);							\
         if ( data == nullptr) {								\
@@ -138,7 +139,7 @@ IODA_FUN(_char,char)
 #undef IODA_FUN
 
 #define IODA_FUN(NAME,TYPE)\
-bool ioda_attribute_c_write##NAME (void *v,int64_t n, void ** data_p) {			\
+bool ioda_attribute_c_write##NAME (ioda_attribute_t v,int64_t n, void ** data_p) {	\
     try  { 										\
         VOID_TO_CXX(TYPE,*data_p,data);							\
         if ( data == nullptr) {								\
@@ -166,7 +167,7 @@ IODA_FUN(_char,char)
 #undef IODA_FUN
 
 #define IODA_FUN(NAME,TYPE)\
-int ioda_attribute_c_is_a##NAME (void *v) { 					\
+int ioda_attribute_c_is_a##NAME (ioda_attribute_t v) { 				\
     try  {									\
         VOID_TO_CXX(ioda::Attribute,v,p);					\
         if (p==nullptr) { 							\

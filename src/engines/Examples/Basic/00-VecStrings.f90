@@ -1,214 +1,146 @@
-!
-! (C) Copyright 2022 UCAR
-!
-! This software is licensed under the terms of the Apache Licence Version 2.0
-! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+!/*
+! * (C) Copyright 2022-2023 UCAR
+! *
+! * This software is licensed under the terms of the Apache Licence Version 2.0
+! * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+! */
+program vecstring_test
+	use,intrinsic :: iso_fortran_env
+	use,intrinsic :: iso_c_binding
+	use :: f_c_string_mod
+	use :: cxx_string_mod
+	use :: cxx_vector_string_mod
+	implicit none
+	type(cxx_vector_string) :: v1
+	type(cxx_vector_string) :: v2
+	type(cxx_vector_string) :: v3
+	type(cxx_vector_string) :: v4
+	type(cxx_string) :: s1
+	type(cxx_string) :: s2
+	type(cxx_string) :: s3
+	character(len=256) :: a1
+	character(len=256) :: a2
+	character(len=256) :: a3
+	character(len=256) :: a4
+	character(len=256) :: a5
+	character(len=256),dimension(4) :: arr
+	integer(int64) :: i
+	integer(int64) :: n,j
 
-!>  Test the ioda Fortran vector<string> interface
+	a1 = 'this is a test'
+	a2 = 'this is a second test'
+	a3 = 'another string to test'
+		
+	arr(1)(:) = a1
+	arr(2)(:) = a2
+	arr(3)(:) = a3
+		
+	if ( .not. v1%empty() ) then
+		write(error_unit,*)' empty failed'
+	end if	
+	write(error_unit,*)'testing push back'
+	write(error_unit,*)' '
 
-program ioda_fortran_vecstring_test
-use,intrinsic :: iso_c_binding
-use,intrinsic :: iso_fortran_env
-use :: ioda_vecstring_mod
-use :: ioda_f_c_string_mod
-    
-   implicit none  
-   type(ioda_vecstring) :: vstr,vstr2
-   type(ioda_string) :: str1,str2
-   integer(int64) :: n,i,sz,exp_sz,m
-   character(len=256) :: fstr1
-   character(len=256) :: fstr3
-   character(len=256) :: fstr2
-   character(len=256) :: numstr
-   character(len=256) :: astr
-   character(len=256) :: fstr
-   type(c_ptr) :: ptr
+	call v1%push_back(a1)
+	call v1%push_back(a2)
+	call s1%set(a3)
+	call v1%push_back(s1)
+	if ( v1%size() /= 3) then
+		write(error_unit,*)' push back failed'
+		j = v1%size()
+		write(error_unit,*)j,' != 3'
+		stop -1
+	end if	
+	do i=1,3
+		call v1%get(i,a4)
+		if ( len_trim(a4) /= len_trim(arr(i))) then
+			write(error_unit,*)' push back/get failed for i = ',i
+			write(error_unit,*)' c = ',trim(a4),' ',len_trim(a4)
+			write(error_unit,*)' f = ',trim(arr(i)),' ',len_trim(arr(i))
+			stop -1
+		end if
+		write(error_unit,*)trim(a4),' = ',trim(arr(i))
+	end do
+	do i=1,3
+		call v1%get(i,s2)
+		if ( s2%size() /= len_trim(arr(i))) then
+			write(error_unit,*)' push_back/get_str failed'
+			stop -1
+		end if
+		call s2%get(a4)
+		write(error_unit,*)trim(a4),' = ',trim(arr(i))
+	end do	
+	
+	write(error_unit,*)'testing copy'
+	write(error_unit,*)' '
+	v2 = v1
+	if ( v2%size() /= v1%size()) then
+		write(error_unit,*)'copy failed sizes not equal'
+		stop -1
+	end if
+	do i=1,3
+		call v1%get(i,a4)
+		call v2%get(i,a5)
+		if ( len_trim(a4) /= len_trim(a5)) then
+			write(error_unit,*)' copy/get failed'
+			stop -1
+		end if
+	end do
 
-   fstr1 = 'this a test string'
-      
-   call ioda_string_init(str1)
-   call str1%set(fstr1)
-   call str1%get(fstr2)
-   
-   write(*,*)' input = ',trim(fstr1)
-   write(*,*)' result = ',trim(fstr2)     
-   
-   do i=1,len_trim(fstr1)
-      if ( fstr1(i:i) .ne. fstr2(i:i) ) then
-          write(error_unit,*)'ioda_string get/set failed'
-          write(error_unit,*)'set ',trim(fstr1)
-          write(error_unit,*)'get ',trim(fstr2)
-          stop -1
-      end if
-   end do
-   
-   m = 4
-   
-   write(astr,'(a,i1)')' ',m
-   
-   write(numstr,'(a,a)')trim(fstr1),trim(astr)
-   
-   call str1%append(astr)
+	write(error_unit,*)'testing set'
+	write(error_unit,*)' '
 
-   call str1%get(fstr2) 
-   
-   write(*,*)' append input  = ',trim(astr),'_'
-   write(*,*)' append result = ',trim(fstr2),'_'     
-   write(*,*)' expected      = ',trim(numstr),'_'
-   do i=1,len_trim(fstr2)
-      if ( numstr(i:i) .ne. fstr2(i:i) ) then
-          write(error_unit,*)'ioda_string get/append failed'
-          write(error_unit,*)'app ',trim(numstr),'_'
-          write(error_unit,*)'get ',trim(fstr2),'_'
-          write(error_unit,*)'app ',numstr(i:i)
-          write(error_unit,*)'get ',fstr2(i:i)
-          stop -1
-      end if
-   end do
-   
-   sz = str1%size()
-   
-   exp_sz = len_trim(fstr2)
-   
-   if ( sz .ne. exp_sz) then
-      write(error_unit,*)' ioda string size failed'
-      write(error_unit,*)' expected ',exp_sz,' got ',sz
-      stop -1
-   else
-      write(Error_unit,*)' ioda string size worked' 
-   end if
-   
-   call str1%clear()
-   sz = str1%size()
-   exp_sz = 0
-   
-   if ( sz .ne. exp_sz) then
-      write(error_unit,*)' ioda string clear failed'
-      write(error_unit,*)' expected ',exp_sz,' got ',sz
-      stop -1
-   else
-      write(Error_unit,*)' ioda string clear worked' 
-   end if
+	j = 3
+	call v3%resize(j)
+	if ( v3%size() /= j) then
+		write(error_unit,*)' resize failed'
+		stop -1
+	end if
 
-   write(error_unit,*)'TEST OF STRING-STRING'
+	do i=1,3
+		call v3%set(i,arr(i))
+	end do
+	do i=1,3
+		call v1%get(i,a3)
+		if ( len_trim(a3) /= len_trim(arr(i))) then
+			write(error_unit,*)' set/get failed'
+			stop -1
+		end if
+	end do
+	do i=1,3
+		call v1%get(i,s2)
+		if ( s2%size() /= len_trim(arr(i))) then
+			write(error_unit,*)' set/get_str failed'
+			stop -1
+		end if
+	end do	
 
-   fstr1 = 'this a test string' 
-   
-   call ioda_string_init(str2)
-   
-   call str1%set(fstr1)
+	do i=1,3
+		call s3%set(arr(i))	
+		call v3%set(i,s3)
+	end do
+	do i=1,3
+		call v3%get(i,a3)
+		if ( len_trim(a3) /= len_trim(arr(i))) then
+			write(error_unit,*)' set/get failed'
+			stop -1
+		end if
+	end do
+	do i=1,3
+		call v3%get(i,s2)
+		if ( s2%size() /= len_trim(arr(i))) then
+			write(error_unit,*)' set/get_str failed'
+			stop -1
+		end if
+	end do	
 
-   call str1%get(fstr2)
-   
-   write(*,*)' input = ',trim(fstr1)
-   write(*,*)' result = ',trim(fstr2)     
-   
-   do i=1,len_trim(fstr1)
-      if ( fstr1(i:i) .ne. fstr2(i:i) ) then
-          write(error_unit,*)'ioda_string get/set failed'
-          write(error_unit,*)'set ',trim(fstr1)
-          write(error_unit,*)'get ',trim(fstr2)
-          stop -1
-      end if
-   end do
-      
-   call str2%set_string(str1)
-   
-   call str2%get(fstr2)
-   
-   write(*,*)' input  = ',trim(fstr1),'>'
-   write(*,*)' result = ',trim(fstr2),'>'     
-   
-   do i=1,len_trim(fstr1)
-      if ( fstr1(i:i) .ne. fstr2(i:i) ) then
-          write(error_unit,*)'ioda_string get/set_string failed'
-          write(error_unit,*)'set ',trim(fstr1)
-          write(error_unit,*)'get ',trim(fstr2)
-          write(error_unit,*)'set ',fstr1(i:i)
-          write(error_unit,*)'get ',fstr2(i:i)
-          stop -1
-      end if
-   end do
-   
-   m = 4
-   
-   write(astr,'(a,i1)')' ',m
-   
-   write(numstr,'(a,a)')trim(fstr1),trim(astr)
-
-   call str1%set(astr)
-   
-   call str2%append_string(str1)
-
-   call str2%get(fstr2) 
-   
-   write(*,*)' append input  = ',trim(astr),'_'
-   write(*,*)' append result = ',trim(fstr2),'_'     
-   write(*,*)' expected      = ',trim(numstr),'_'
-   do i=1,len_trim(fstr2)
-      if ( numstr(i:i) .ne. fstr2(i:i) ) then
-          write(error_unit,*)'ioda_string get/append failed'
-          write(error_unit,*)'app ',trim(numstr),'_'
-          write(error_unit,*)'get ',trim(fstr2),'_'
-          write(error_unit,*)'app ',numstr(i:i)
-          write(error_unit,*)'get ',fstr2(i:i)
-          stop -1
-      end if
-   end do
-   
-
-   write(error_unit,*)'TEST OF VECSTRING'
-
-!
-!  test vecstring  
-!
-   call ioda_vecstring_init(vstr) 
-
-   do i=1,4
-      m = i
-      write(fstr1,'(a,i1)')'this is a test ',m 
-      call vstr%push_back(fstr1)
-      if ( i == 2 ) then
-      	 exp_sz = len_Trim(fstr1)
-      end if
-      write(error_unit,'(i2,a,a,a)')i,' push back ',trim(fstr1),'>'
-   end do
-
-   do i=1,4
-      call vstr%get(i,fstr2) 	
-      write(error_unit,'(i2,a,a,a)')i,' got       ',trim(fstr2),'>'
-   end do
-
-   sz = vstr%size()
-   m  = 4   
-   if ( sz .ne. m ) then
-      write(error_unit,*)'ioda vecstring size failed '
-      write(error_unit,*)' size = 4 but got ',sz
-      stop -1	
-   end if
-
-   write(error_unit,*)'testing element size'   
-   m = 2
-   sz = vstr%element_size(m)
-   if ( sz .ne. exp_sz ) then
-      write(error_unit,*)'ioda vecstring element size failed '
-      write(error_unit,*)' size = ',exp_sz,' but got ',sz
-      stop -1	
-   end if
-
-   write(error_unit,*)'testing copy'
-   call ioda_vecstring_init(vstr2)
-   vstr2 = vstr
-   sz = vstr%size()   
-   do i=1,sz
-     call vstr%get(i,fstr1)
-     call vstr2%get(i,fstr)
-     write(error_unit,*)i,' ',fstr1,' ',fstr
-     if ( fstr1 /= fstr) then
-	stop 'strings are not equal in copied vector string'
-     end if
-   end do    
-
-   
-   stop 0
-end program ioda_fortran_vecstring_test
+	if ( v1%empty() ) then
+		write(error_unit,*)' empty failed'
+	end if
+	call v1%clear()
+	j = 0
+	if ( v1%size() /= j) then
+		write(error_unit,*)' clear failed'
+	end if	
+	
+end program

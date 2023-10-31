@@ -9,7 +9,7 @@ program variables_example
 	
 	use :: ioda_variable_mod
 	use :: ioda_has_variables_mod
-	use :: ioda_vecstring_mod
+	use :: cxx_vector_string_mod
         use :: ioda_group_mod
         use :: ioda_engines_mod
         use :: ioda_variable_creation_parameters_mod
@@ -20,7 +20,7 @@ program variables_example
 	type(ioda_has_variables) :: gvars
 	type(ioda_variable) :: ivar,dvar,zvar,ivar2
 	type(ioda_variable_creation_parameters) :: p1
-	type(ioda_vecstring) :: vlist
+	type(cxx_vector_string) :: vlist
         type(ioda_dimensions) :: dims 
 	logical :: r
 	integer(int64) :: ns
@@ -30,7 +30,7 @@ program variables_example
 	integer(int32),dimension(6) :: data_i
 	real(real64),dimension(6) :: data_r
         character(len=256) :: name
-        type(ioda_vecstring) :: vls
+        type(cxx_vector_string) :: vls
         integer(int64) :: i
             
 !        call ioda_variable_init(ivar)
@@ -60,7 +60,7 @@ program variables_example
       	
       	if ( r .eqv. .false.) then
 		write(error_unit,*)'fortran ioda_create_int var-1 variable does not exist'
-                call ioda_vecstring_init(vls)
+                call cxx_vector_string_init(vls)
                 vls = gvars%list() 		
 		ns = vls%size()
 		write(error_unit,*)' has_Var size = ',ns
@@ -137,7 +137,7 @@ program variables_example
 	end if
 
 
-        call ioda_vecstring_init(vlist)
+        call cxx_vector_string_init(vlist)
         vlist = gvars%list()
         
         if ( vlist%size() .ne. 3) then

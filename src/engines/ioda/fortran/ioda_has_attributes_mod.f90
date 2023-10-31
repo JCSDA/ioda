@@ -7,9 +7,9 @@ module ioda_has_attributes_mod
      use,intrinsic :: iso_c_binding
      use,intrinsic :: iso_fortran_env
      use :: ioda_dimensions_mod
-     use :: ioda_vecstring_mod
+     use :: cxx_vector_string_mod
      use :: ioda_attribute_mod
-     use :: ioda_f_c_string_mod
+     use :: f_c_string_mod
      
      type :: ioda_has_attributes
          type(c_ptr) :: data_ptr = c_null_ptr
@@ -185,7 +185,7 @@ contains
     function ioda_has_attributes_list(this) result(vstr) 
           implicit none
           class(ioda_has_attributes) :: this
-          type(ioda_vecstring) :: vstr
+          type(cxx_vector_string) :: vstr
           vstr%data_ptr =  ioda_has_attributes_c_list(this%data_ptr)
     end function
 
@@ -196,9 +196,9 @@ contains
           character(len=*),intent(in) :: fstr
           type(c_ptr) :: cstr
 
-          cstr = ioda_f_string_to_c_dup(fstr)
+          cstr = f_string_to_c_dup(fstr)
           r = ioda_has_attributes_c_exists(this%data_ptr,n,cstr)
-          call ioda_c_free(cstr)
+          call c_free(cstr)
     end function
 
     function ioda_has_attributes_open(this,n,fstr) result(att)
@@ -210,9 +210,9 @@ contains
           logical :: r
           type(c_ptr) :: cstr
 
-          cstr = ioda_f_string_to_c_dup(fstr)
+          cstr = f_string_to_c_dup(fstr)
           att%data_ptr = ioda_has_attributes_c_open(this%data_ptr,n,cstr)
-          call ioda_c_free(cstr)
+          call c_free(cstr)
     end function
     
     function ioda_has_attributes_remove(this,n,fstr) result(r)
@@ -223,9 +223,9 @@ contains
           logical :: r
           type(c_ptr) :: cstr
 
-          cstr = ioda_f_string_to_c_dup(fstr)
+          cstr = f_string_to_c_dup(fstr)
           r = ioda_has_attributes_c_remove(this%data_ptr,n,cstr)
-          call ioda_c_free(cstr)
+          call c_free(cstr)
     end function
 
     logical function ioda_has_attributes_rename(this,nold,fstr_old,nnew,fstr_new) result(r)
@@ -237,11 +237,11 @@ contains
           type(c_ptr) :: cstr_new,cstr_old
 
 
-          cstr_new = ioda_f_string_to_c_dup(fstr_new)
-          cstr_old = ioda_f_string_to_c_dup(fstr_old)
+          cstr_new = f_string_to_c_dup(fstr_new)
+          cstr_old = f_string_to_c_dup(fstr_old)
           r = ioda_has_attributes_c_rename(this%data_ptr,nold,cstr_old,nnew,cstr_new)
-          call ioda_c_free(cstr_old)
-          call ioda_c_free(cstr_new)
+          call c_free(cstr_old)
+          call c_free(cstr_new)
     end function
     
     logical function ioda_has_attributes_create_float(this,n,fstr,nd,dims,att) result(r)
@@ -253,9 +253,9 @@ contains
           integer(int64),dimension(:),intent(in) :: dims
           type(c_ptr) :: cstr
 
-          cstr = ioda_f_string_to_c_dup(fstr)
+          cstr = f_string_to_c_dup(fstr)
           r = ioda_has_attributes_c_create_float(this%data_ptr,n,cstr,nd,dims,att%data_ptr)
-	  call ioda_c_free(cstr) 
+	  call c_free(cstr) 
      end function
 
     logical function ioda_has_attributes_create_double(this,n,fstr,nd,dims,att) result(r)
@@ -267,9 +267,9 @@ contains
           integer(int64),dimension(:),intent(in) :: dims
           type(c_ptr) :: cstr
 
-          cstr = ioda_f_string_to_c_dup(fstr)
+          cstr = f_string_to_c_dup(fstr)
           r = ioda_has_attributes_c_create_double(this%data_ptr,n,cstr,nd,dims,att%data_ptr)
-	  call ioda_c_free(cstr) 
+	  call c_free(cstr) 
      end function
 
     logical function ioda_has_attributes_create_char(this,n,fstr,nd,dims,att) result(r)
@@ -281,9 +281,9 @@ contains
           integer(int64),dimension(:),intent(in) :: dims
           type(c_ptr) :: cstr
 
-          cstr = ioda_f_string_to_c_dup(fstr)
+          cstr = f_string_to_c_dup(fstr)
           r = ioda_has_attributes_c_create_char(this%data_ptr,n,cstr,nd,dims,att%data_ptr)
-	  call ioda_c_free(cstr) 
+	  call c_free(cstr) 
      end function
 
     logical function ioda_has_attributes_create_int16(this,n,fstr,nd,dims,att) result(r)
@@ -295,9 +295,9 @@ contains
           integer(int64),dimension(:),intent(in) :: dims
           type(c_ptr) :: cstr
 
-          cstr = ioda_f_string_to_c_dup(fstr)
+          cstr = f_string_to_c_dup(fstr)
           r = ioda_has_attributes_c_create_int16(this%data_ptr,n,cstr,nd,dims,att%data_ptr)
-	  call ioda_c_free(cstr) 
+	  call c_free(cstr) 
      end function
 
     logical function ioda_has_attributes_create_int32(this,n,fstr,nd,dims,att) result(r)
@@ -309,9 +309,9 @@ contains
           integer(int64),dimension(:),intent(in) :: dims
           type(c_ptr) :: cstr
 
-          cstr = ioda_f_string_to_c_dup(fstr)
+          cstr = f_string_to_c_dup(fstr)
           r = ioda_has_attributes_c_create_int32(this%data_ptr,n,cstr,nd,dims,att%data_ptr)
-	  call ioda_c_free(cstr) 
+	  call c_free(cstr) 
      end function
 
     logical function ioda_has_attributes_create_int64(this,n,fstr,nd,dims,att) result(r)
@@ -323,9 +323,9 @@ contains
           integer(int64),dimension(:),intent(in) :: dims
           type(c_ptr) :: cstr
 
-          cstr = ioda_f_string_to_c_dup(fstr)
+          cstr = f_string_to_c_dup(fstr)
           r = ioda_has_attributes_c_create_int64(this%data_ptr,n,cstr,nd,dims,att%data_ptr)
-	  call ioda_c_free(cstr) 
+	  call c_free(cstr) 
      end function
 
     logical function ioda_has_attributes_create_str(this,n,fstr,nd,dims,att) result(r)
@@ -337,9 +337,9 @@ contains
           integer(int64),dimension(:),intent(in) :: dims
           type(c_ptr) :: cstr
 
-          cstr = ioda_f_string_to_c_dup(fstr)
+          cstr = f_string_to_c_dup(fstr)
           r = ioda_has_attributes_c_create_str(this%data_ptr,n,cstr,nd,dims,att%data_ptr)
-	  call ioda_c_free(cstr) 
+	  call c_free(cstr) 
      end function
 
 end module

@@ -1,10 +1,10 @@
-#pragma once
 /*
  * (C) Copyright 2022-2023 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
+#pragma once
 #include <cstdlib>
 #include <iostream>
 #include <vector>
@@ -18,31 +18,24 @@
 #include "ioda/C/ioda_dimensions_c.hpp"
 #include "ioda/C/ioda_c_utils.hpp"
 
-
 extern "C" {
 
-//ioda_variable_t * 
-void * ioda_variable_c_alloc();
-
-void ioda_variable_c_dtor(void **p);
-
-void ioda_variable_c_clone(void **v,void *rhs);
-
-///ioda_has_attributes_t * 
-void * ioda_variable_c_has_attributes(void *p);
-//ioda_dimensions_t * 
-void * ioda_variable_c_get_dimensions(void *p);
-bool ioda_variable_c_resize(void *p,int64_t n,void *dim_ptr);
-bool ioda_variable_c_attach_dim_scale(void *p,int32_t dim_n,void *var_ptr);
-bool ioda_variable_detach_dim_scale(void *p,int32_t dim_n,void *var_ptr);
-bool ioda_variable_set_dim_scale(void *p,int64_t dim_n,void *var_ptr);
-int32_t ioda_variable_c_is_dim_scale(void *p);
-bool ioda_variable_c_set_is_dimension_scale(void *p,int64_t sz,void *name_p);
-int64_t ioda_variable_c_get_dimension_scale_name(void *p,int64_t n,void **out_p);
-int32_t ioda_variable_c_is_dimension_scale_attached(void *p,int32_t dim_num,void *scale_p);
+ioda_variable_t  ioda_variable_c_alloc();
+void ioda_variable_c_dtor(ioda_variable_t *p);
+void ioda_variable_c_clone(ioda_variable_t *t_p,ioda_variable_t rhs_p);
+ioda_has_attributes_t ioda_variable_c_has_attributes(ioda_variable_t p);
+ioda_dimensions_t ioda_variable_c_get_dimensions(ioda_variable_t p);
+bool ioda_variable_c_resize(ioda_variable_t p,int64_t n,void *dim_ptr);
+bool ioda_variable_c_attach_dim_scale(ioda_variable_t p,int32_t dim_n,ioda_variable_t var_ptr);
+bool ioda_variable_c_detach_dim_scale(ioda_variable_t p,int32_t dim_n,ioda_variable_t var_ptr);
+bool ioda_variable_c_set_dim_scale(ioda_variable_t p,int64_t ndim,ioda_variable_t *var_ptr);
+int32_t ioda_variable_c_is_dim_scale(ioda_variable_t p);
+bool ioda_variable_c_set_is_dimension_scale(ioda_variable_t p,int64_t sz,const char *name_p);
+int64_t ioda_variable_c_get_dimension_scale_name(ioda_variable_t p,int64_t n,char **out_p);
+int32_t ioda_variable_c_is_dimension_scale_attached(ioda_variable_t p,int32_t dim_num,ioda_variable_t scale_p);
 
 #define IODA_FUN(NAME,TYPE) \
-int32_t ioda_variable_c_is_a##NAME (void * p);
+int32_t ioda_variable_c_is_a##NAME (ioda_variable_t  p);
 
 IODA_FUN(_float,float)
 IODA_FUN(_double,double)
@@ -51,14 +44,14 @@ IODA_FUN(_char,char)
 IODA_FUN(_int16,int16_t)
 IODA_FUN(_int32,int32_t)
 IODA_FUN(_int64,int64_t)
-IODA_FUN(_int16,uint16_t)
-IODA_FUN(_int32,uint32_t)
-IODA_FUN(_int64,uint64_t)
+IODA_FUN(_uint16,uint16_t)
+IODA_FUN(_uint32,uint32_t)
+IODA_FUN(_uint64,uint64_t)
 IODA_FUN(_str,std::vector<std::string>)
 #undef IODA_FUN
     
 #define IODA_FUN(NAME,TYPE)\
-bool ioda_variable_c_write##NAME(void *p,int64_t n, const TYPE *data);
+bool ioda_variable_c_write##NAME(ioda_variable_t p,int64_t n, const TYPE *data);
 
 IODA_FUN(_float,float)
 IODA_FUN(_double,double)
@@ -67,19 +60,20 @@ IODA_FUN(_int32,int32_t)
 IODA_FUN(_int64,int64_t)
 #undef IODA_FUN
 
-bool ioda_variable_c_write_char(void *p,int64_t n,void * vptr);
+bool ioda_variable_c_write_char(ioda_variable_t p,int64_t n,const char * vptr);
+bool ioda_variable_c_write_str(ioda_variable_t p,cxx_vector_string_t vstr_p);
 
-bool ioda_variable_c_write_str(void *p,void *vstr_p);
+#define IODA_FUN(NAME,TYPE)\
+bool ioda_variable_c_read##NAME(ioda_variable_t p,int64_t n,void **dptr);
 
-#define IODA_FUN(NAME) bool ioda_variable_c_read##NAME (void *p,int64_t n, void **data);
-
-IODA_FUN(_float)
-IODA_FUN(_double)
-IODA_FUN(_char)
-IODA_FUN(_int16)
-IODA_FUN(_int32)
-IODA_FUN(_int64)
-IODA_FUN(_str)
+IODA_FUN(_float,float)
+IODA_FUN(_double,double)
+IODA_FUN(_int16,int16_t)
+IODA_FUN(_int32,int32_t)
+IODA_FUN(_int64,int64_t)
 #undef IODA_FUN
+
+bool ioda_variable_c_read_char(ioda_variable_t p,int64_t n,void **vstr);
+bool ioda_variable_c_read_str(void *p,int64_t n,cxx_vector_string_t *vstr);
 
 }

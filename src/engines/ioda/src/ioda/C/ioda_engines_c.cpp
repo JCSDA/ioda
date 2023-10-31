@@ -48,7 +48,7 @@ ioda::Engines::BackendOpenModes int_to_ioda_backend_open_mode(int x)
 
 extern "C" {
 
-void * ioda_engines_c_obstore_create_root_group()
+ioda_group_t ioda_engines_c_obstore_create_root_group()
 {
     try {
         return reinterpret_cast<void*>(new ioda::Group(ioda::Engines::ObsStore::createRootGroup()));
@@ -60,9 +60,8 @@ void * ioda_engines_c_obstore_create_root_group()
     return nullptr;
 }
 
-void * ioda_engines_c_hh_create_file(const void * name,int backend_mode) {
+ioda_group_t ioda_engines_c_hh_create_file(const char * fname,int backend_mode) {
     try {
-        VOID_TO_CXX(const char,name,fname);
         if (fname == nullptr || strlen(fname)==0) {
             std::cerr << "ioda_engines_c_hh_create_file null or zero filename\n";
             throw std::exception();
@@ -79,9 +78,8 @@ void * ioda_engines_c_hh_create_file(const void * name,int backend_mode) {
     return nullptr; 
 }
 
-void * ioda_engines_c_hh_open_file(const void * name,int backend_mode) {
+ioda_group_t ioda_engines_c_hh_open_file(const char * fname,int backend_mode) {
     try {
-        VOID_TO_CXX(const char,name,fname);
         if (fname == nullptr || strlen(fname)==0) {
             std::cerr << "ioda_engines_c_hh_open_file null or zero filename\n";
             throw std::exception();
@@ -97,9 +95,8 @@ void * ioda_engines_c_hh_open_file(const void * name,int backend_mode) {
     return nullptr;
 }
 
-void * ioda_engines_c_hh_create_memory_file(const void *name,int64_t increment_len) {	
+ioda_group_t ioda_engines_c_hh_create_memory_file(const char *fname,int64_t increment_len) {	
     try {
-        VOID_TO_CXX(const char,name,fname);
         if (fname == nullptr || strlen(fname)==0) {
             std::cerr << "ioda_engines_c_hh_create_memory_file null or zero filename\n";
             throw std::exception();
@@ -115,9 +112,8 @@ void * ioda_engines_c_hh_create_memory_file(const void *name,int64_t increment_l
     return nullptr;
 }
 
-void * ioda_engines_c_hh_open_memory_file(const void *name,int64_t increment_len) {	
+ioda_group_t ioda_engines_c_hh_open_memory_file(const char *fname,int64_t increment_len) {	
     try {
-        VOID_TO_CXX(const char,name,fname);
         if (fname == nullptr || strlen(fname)==0) {
             std::cerr << "ioda_engines_c_hh_create_memory_file null or zero filename\n";
             throw std::exception();
@@ -134,9 +130,8 @@ void * ioda_engines_c_hh_open_memory_file(const void *name,int64_t increment_len
     return nullptr;
 }
 
-void * ioda_engines_c_construct_from_command_line(void *vs,const void *def_name) {
+ioda_group_t ioda_engines_c_construct_from_command_line(cxx_vector_string_t vs,const char *default_filename) {
     try {
-        VOID_TO_CXX(const char,def_name,default_filename);
         VOID_TO_CXX(std::vector<std::string>,vs,vecstr);
         if (default_filename == nullptr) {
             std::cerr << "ioda_engines_c_construct_from_command_line file name null char * for filename\n";

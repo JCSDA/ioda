@@ -5,21 +5,22 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
+#include "ioda/C/ioda_decls.hpp"
 #include "ioda/C/ioda_dimensions_c.hpp"
 
 extern "C"
 {
 
-void * ioda_dimensions_c_alloc() {
+ioda_dimensions_t  ioda_dimensions_c_alloc() {
     return reinterpret_cast<void*>(new ioda::Dimensions());
 }
 
-void ioda_dimensions_c_set(void **v,
+void ioda_dimensions_c_set(ioda_dimensions_t *v,
     int64_t ndim,int64_t n_curr_dim,int64_t n_max_dim,
     int64_t * max_dims,
     int64_t * cur_dims)
 {
-    void * vp = *v;
+    ioda_dimensions_t  vp = *v;
     VOID_TO_CXX(ioda::Dimensions,vp,new_dims);    
     ioda::Dimensions_t nelem = 1;
     for (int64_t k=0;k<n_curr_dim;++k) nelem *= cur_dims[k];        
@@ -29,15 +30,15 @@ void ioda_dimensions_c_set(void **v,
             ioda::Dimensions_t(ndim),nelem);
 }
 
-void ioda_dimensions_c_dtor(void **v) {
+void ioda_dimensions_c_dtor(ioda_dimensions_t *v) {
     if ( !v ) return;
-    void * vp = *v;
+    ioda_dimensions_t  vp = *v;
     VOID_TO_CXX(ioda::Dimensions,vp,p);
     if (p) delete p;
     p = nullptr;
 }
 
-void ioda_dimensions_c_clone(void **t_p,void *rhs_p)
+void ioda_dimensions_c_clone(ioda_dimensions_t *t_p,ioda_dimensions_t rhs_p)
 {
     try {
         ioda::Dimensions ** t = 
@@ -50,7 +51,7 @@ void ioda_dimensions_c_clone(void **t_p,void *rhs_p)
             return;
         }
         *t = new ioda::Dimensions(*rhs);
-        t_p = reinterpret_cast< void ** >(t);
+        t_p = reinterpret_cast< ioda_dimensions_t * >(t);
         return;
     } catch ( std::exception& e) {
         std::cerr << "ioda_dimensions_c_clone exception " << e.what() << "\n";
@@ -58,7 +59,7 @@ void ioda_dimensions_c_clone(void **t_p,void *rhs_p)
     }
 }
 
-int64_t ioda_dimensions_c_get_dimensionality(void *v) {
+int64_t ioda_dimensions_c_get_dimensionality(ioda_dimensions_t v) {
     VOID_TO_CXX(ioda::Dimensions,v,p);
     if ( p == nullptr ) {
         std::cerr << "ioda_dimensions_c_get_dimensionality null pointer\n";
@@ -67,7 +68,7 @@ int64_t ioda_dimensions_c_get_dimensionality(void *v) {
     return (p->dimensionality);
 }
 
-int64_t ioda_dimensions_c_num_of_elements(void *v) {
+int64_t ioda_dimensions_c_num_of_elements(ioda_dimensions_t v) {
     VOID_TO_CXX(ioda::Dimensions,v,p);
     if ( p == nullptr ) {
         std::cerr << "ioda_dimensions_c_get_num_of_elements null pointer\n";
@@ -76,7 +77,7 @@ int64_t ioda_dimensions_c_num_of_elements(void *v) {
     return (p->numElements);
 }
 
-void ioda_dimensions_c_get_dims_cur(void *v,int64_t * dims,int *ndims_) {
+void ioda_dimensions_c_get_dims_cur(ioda_dimensions_t v,int64_t * dims,int *ndims_) {
     try {
         VOID_TO_CXX(ioda::Dimensions,v,p);
         if (p == nullptr || dims==nullptr || ndims_ == nullptr) {
@@ -95,7 +96,7 @@ void ioda_dimensions_c_get_dims_cur(void *v,int64_t * dims,int *ndims_) {
     }
 }
 
-void ioda_dimensions_c_get_dims_max(void *v,int64_t * dims,int *ndims_) {
+void ioda_dimensions_c_get_dims_max(ioda_dimensions_t v,int64_t * dims,int *ndims_) {
     try {
         VOID_TO_CXX(ioda::Dimensions,v,p);
         if (p == nullptr || dims==nullptr || ndims_ == nullptr) {
@@ -114,7 +115,7 @@ void ioda_dimensions_c_get_dims_max(void *v,int64_t * dims,int *ndims_) {
     }
 }
 
-int64_t ioda_dimensions_c_get_dims_cur_size(void *v) {
+int64_t ioda_dimensions_c_get_dims_cur_size(ioda_dimensions_t v) {
     try {
         VOID_TO_CXX(ioda::Dimensions,v,dims);
         if (dims == nullptr) {
@@ -131,7 +132,7 @@ int64_t ioda_dimensions_c_get_dims_cur_size(void *v) {
     return -1;
 }
 
-int64_t ioda_dimensions_c_get_dims_max_size(void *v) {
+int64_t ioda_dimensions_c_get_dims_max_size(ioda_dimensions_t v) {
     try {
         VOID_TO_CXX(ioda::Dimensions,v,dims);
         if (dims == nullptr) {

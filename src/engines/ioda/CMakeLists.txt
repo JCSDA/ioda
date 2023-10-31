@@ -20,9 +20,15 @@ list(APPEND SRCS_ATTRIBUTES
 	src/ioda/AttrUtils.cpp
 	)
 list(APPEND SRCS_C_BINDINGS
+	include/ioda/C/cxx_string.hpp
+	include/ioda/C/cxx_vector_string.hpp
+	include/ioda/C/cxx_vector_int.hpp
+	include/ioda/C/cxx_vector_dbl.hpp
+	include/ioda/C/ioda_group_c.hpp
+	include/ioda/C/ioda_has_attributes_c.hpp
 	include/ioda/C/ioda_attribute_c.hpp
-	include/ioda/C/ioda_vecstring_c.hpp
 	include/ioda/C/ioda_dimensions_c.hpp
+	include/ioda/C/ioda_decls.hpp
 	include/ioda/C/ioda_engines_c.hpp
 	include/ioda/C/ioda_group_c.hpp
 	include/ioda/C/ioda_has_attributes_c.hpp
@@ -30,9 +36,12 @@ list(APPEND SRCS_C_BINDINGS
 	include/ioda/C/ioda_c_utils.hpp
 	include/ioda/C/ioda_variable_c.hpp
 	include/ioda/C/ioda_variable_creation_parameters_c.hpp
+	src/ioda/C/cxx_string.cpp
+	src/ioda/C/cxx_vector_string.cpp
+	src/ioda/C/cxx_vector_int.cpp
+	src/ioda/C/cxx_vector_dbl.cpp
 	src/ioda/C/ioda_c_utils.cpp
 	src/ioda/C/ioda_attribute_c.cpp
-	src/ioda/C/ioda_vecstring_c.cpp
 	src/ioda/C/ioda_dimensions_c.cpp
 	src/ioda/C/ioda_engines_c.cpp
 	src/ioda/C/ioda_group_c.cpp

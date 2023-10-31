@@ -78,13 +78,9 @@ AddExample_CXX (ioda-engines-04 04-VariablesAttributesAndDimensions.cpp)
 AddExample_CXX (ioda-engines-05a 05a-ObsGroup.cpp)
 AddExample_CXX (ioda-engines-05b 05b-ObsGroupAppend.cpp)
 
-AddExample_C   (ioda-engines-00-Strings-C 00-Strings.c)
-AddExample_C   (ioda-engines-00-VecStrings-C 00-VecStrings.c)
-AddExample_C   (ioda-engines-01-C 01-GroupsAndObsSpaces.c)
-# Disabled, pending future PRs to update the C interfaces.
-#AddExample_C   (ioda-engines-02-C 02-Attributes.c)
-#AddExample_C   (ioda-engines-03-C 03-VariablesIntro.c)
-#AddExample_C   (ioda-engines-04-C 04-VariablesAttributesAndDimensions.c)
+#AddExample_C   (ioda-engines-00-Strings-C 00-Strings.c)
+#AddExample_C   (ioda-engines-00-VecStrings-C 00-VecStrings.c)
+#AddExample_C   (ioda-engines-01-C 01-GroupsAndObsSpaces.c)
 
 if (IODA_BUILD_LANGUAGE_FORTRAN)
 	AddExample_F   (ioda-engines-00-Strings-F 00-Strings.f90)

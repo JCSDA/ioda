@@ -1,10 +1,10 @@
-#pragma once
 /*
  * (C) Copyright 2022-2023 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
+#pragma once
 #include <cstdio>
 #include <cstdlib>
 #include <cerrno>
@@ -17,8 +17,6 @@
 #include <stdexcept>
 
 extern "C" {
-
-#define VOID_TO_CXX(TYPE,pin,pout) TYPE * pout = reinterpret_cast< TYPE * >(pin)
 
 void set_exit_fun( void (*f)() );
 

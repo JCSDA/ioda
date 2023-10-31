@@ -9,8 +9,9 @@
 
 program ioda_fortran_02_attributes
     use, intrinsic :: iso_fortran_env
-    use :: ioda_f_c_string_mod
-    use :: ioda_vecstring_mod
+    use :: f_c_string_mod
+    use :: cxx_string_mod
+    use :: cxx_vector_string_mod
     use :: ioda_group_mod
     use :: ioda_engines_mod
     use :: ioda_attribute_mod
@@ -21,8 +22,8 @@ program ioda_fortran_02_attributes
     type(ioda_group) :: grpFromFile
     type(ioda_has_attributes) :: g_has_att
     type(ioda_attribute) :: intatt1, intatt2, floatatt1, doubleatt1, stratt1, check_intatt2
-    type(ioda_vecstring) :: check_strs, att_list
-    type(ioda_string) :: xstr
+    type(cxx_vector_string) :: check_strs, att_list
+    type(cxx_string) :: xstr
     type(ioda_dimensions) :: dims
     logical :: res1     ! Return value. Mostly unchecked in this example.
     integer(int64),dimension(6) :: cdims
@@ -95,7 +96,6 @@ program ioda_fortran_02_attributes
         stop -1
     end if
 
-    call ioda_string_init(xstr)
     call xstr%set(test_str)
     res1 = stratt1%write_str(xstr)
     if ( res1 .eqv. .false.) then
@@ -110,7 +110,6 @@ program ioda_fortran_02_attributes
     end if
 
     ! List attributes
-    call ioda_vecstring_init(att_list);
     att_list = g_has_att%list()  
     if (att_list%size() /= 4) then
         write(error_unit,*)'Wrong number of attributes'

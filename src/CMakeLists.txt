@@ -74,10 +74,12 @@ ioPool/WriterSinglePool.h
 
 c_obsspace_get_group.cpp
 c_obsspace_get_group.hpp
+c_obsdatavector_int.hpp
+c_obsdatavector_int.cpp
 )
 
 if (IODA_BUILD_LANGUAGE_FORTRAN)
-  list( APPEND ioda_src_files obsspace_mod.F90 obsspace_group_mod.f90 )
+  list( APPEND ioda_src_files obsspace_mod.F90 obsspace_group_mod.f90 obsdatavector_int_mod.f90 )
 endif()
 
 list( APPEND ioda_fortran_interface_includes
