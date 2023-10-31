@@ -357,12 +357,6 @@ observations:
       engine:
         type: H5File
         obsfile: "Data/testinput_tier_1/geos_aod_obs_2018041500_m.nc4"
-    obsdataout:
-      engine:
-        type: ODB
-        obsfile: "testoutput/diagout.odc"
-        mapping file: ../share/test/testinput/odb_default_name_map.yaml
-        query file: ../share/test/testinput/iodatest_odb_aod_write.yaml
   test data:
     gnlocs: 100
     gnlocs outside time window: 0

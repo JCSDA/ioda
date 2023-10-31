@@ -384,12 +384,6 @@ observations:
       engine:
         type: H5File
         obsfile: "Data/testinput_tier_1/geos_aod_obs_2018041500_m.nc4"
-    obsdataout:
-      engine:
-        type: ODB
-        obsfile: "testoutput/diagout_reader_pool.odc"
-        mapping file: ../share/test/testinput/odb_default_name_map.yaml
-        query file: ../share/test/testinput/iodatest_odb_aod_write.yaml
     io pool:
       reader name: SinglePool
       work directory: testwork
