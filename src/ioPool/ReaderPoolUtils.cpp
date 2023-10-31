@@ -89,13 +89,9 @@ static void readerSaveDestVarLocal(
         const bool doLocSelection, std::vector<char> & destBuffer, ioda::Variable & destVar);
 
 /// @brief determine if location selection is required for the given variable
-/// @param srcNlocs number of locations in source group
-/// @param destNlocs number of locations in destination group
 /// @param varName variable name
 /// @param firstDimName name of first dimension of variable
-static bool setDoLocSelection(
-        const ioda::Dimensions_t & srcNlocs, const ioda::Dimensions_t & destNlocs,
-        const std::string & varName, const std::string & firstDimName);
+static bool setDoLocSelection(const std::string & varName, const std::string & firstDimName);
 
 /// @brief apply location index selection going from srcBuffer to destBuffer
 /// @param srcBuffer source memory buffer holding the source variable data
@@ -1126,8 +1122,7 @@ void readerInputFileTransferVarData(const ReaderPoolBase & ioPool,
         // first dimension be Location. That is why the firstDimName is passed into
         // the setDoLocSelection function.
         const std::string firstDimName = varObject.second[0].name;
-        const bool doLocSelection =
-            setDoLocSelection(srcNlocs, destNlocs, varName, firstDimName);
+        const bool doLocSelection = setDoLocSelection(varName, firstDimName);
 
         // Transfer the variable data. Skip the transfer if the destination variable
         // has zero elements. Saves some needless function calls, and helps support
@@ -1435,6 +1430,7 @@ ioda::Dimensions_t maxDimSize(const std::map<std::string, ioda::Dimensions_t> & 
 
 //------------------------------------------------------------------------------------
 ioda::Dimensions_t calcSourceMaxElements(const ReaderPoolBase & ioPool,
+                                         const std::size_t sourceNlocs,
                                          const eckit::YAMLConfiguration & config) {
     // Record the dimension sizes in the config, then look up which dimensions are
     // attached to each variable to get the total number of elements for that variable.
@@ -1450,7 +1446,7 @@ ioda::Dimensions_t calcSourceMaxElements(const ReaderPoolBase & ioPool,
     // since the associated srcBuffer will not be used.
     ioda::Dimensions_t sourceMaxElements = 0;
     if (ioPool.commPool() != nullptr) {
-        dimSizes["Location"] = ioPool.sourceNlocs();       // override as noted above
+        dimSizes["Location"] = sourceNlocs;       // override as noted above
         // Set sourceMaxElements after adjusting the Location dimension size
         sourceMaxElements = maxDimSize(dimSizes);
         std::vector<eckit::LocalConfiguration> varConfigs;
@@ -1518,18 +1514,13 @@ ioda::Dimensions_t calcDestMaxElements(const ReaderPoolBase & ioPool,
 }
 
 //--------------------------------------------------------------------------------
-bool setDoLocSelection(const ioda::Dimensions_t & srcNlocs,
-                       const ioda::Dimensions_t & destNlocs,
-                       const std::string & varName, const std::string & firstDimName) {
-    // Need to do location selection when destination nlocs is less than source nlocs and:
-    //    varName is Location or the firstDimName is Location
+bool setDoLocSelection(const std::string & varName, const std::string & firstDimName) {
+    // Need to do location selection when varName is Location or the firstDimName is Location
     bool doLocSelection = false;
-    if (destNlocs < srcNlocs) {
-        if (varName == "Location") {
-            doLocSelection = true;
-        } else if (firstDimName == "Location") {
-            doLocSelection = true;
-        }
+    if (varName == "Location") {
+        doLocSelection = true;
+    } else if (firstDimName == "Location") {
+        doLocSelection = true;
     }
     return doLocSelection;
 }
@@ -2069,16 +2060,23 @@ void readerTransferVarData(const ReaderPoolBase & ioPool,
     // Note that sourceMaxElements is based on the number of Locations in the file,
     // whereas destMaxElements is based on the number of Locations for the obs space
     // on each task.
-    const ioda::Dimensions_t sourceMaxElements = calcSourceMaxElements(ioPool, config);
+    std::size_t srcNlocs;
+    if (ioPool.commPool() != nullptr) {
+        // On a pool member, get the number of locations from the associated input file
+        srcNlocs = fileGroup.vars.open("Location").getDimensions().dimsCur[0];
+    } else {
+        // On a non-pool member, set the srcNlocs to zero (note that srcBuffer is not
+        // used on the non-pool members.
+        srcNlocs = 0;
+    }
+    const std::size_t destNlocs = memGroup.vars.open("Location").getDimensions().dimsCur[0];
+
+    const ioda::Dimensions_t sourceMaxElements =
+        calcSourceMaxElements(ioPool, srcNlocs, config);
     const ioda::Dimensions_t destMaxElements = calcDestMaxElements(ioPool, config);
     const ioda::Dimensions_t maxDataTypeSize = getMaxDataTypeSize();
     std::vector<char>srcBuffer(sourceMaxElements * maxDataTypeSize);
     std::vector<char>destBuffer(destMaxElements * maxDataTypeSize);
-
-    // Record the number of locations from the source (input file) and the number
-    // of locations for this rank.
-    const std::size_t srcNlocs = ioPool.sourceNlocs();
-    const std::size_t destNlocs = ioPool.nlocs();
 
     // Set up a variable number that will be used for the tag value for the
     // MPI send/recv calls. Need to start numbering at a specified value.
@@ -2094,7 +2092,7 @@ void readerTransferVarData(const ReaderPoolBase & ioPool,
         ioda::Variable destVar = memGroup.vars.open(dimName);
 
         // Determine if we need to do location selection on this variable.
-        const bool doLocSelection = setDoLocSelection(srcNlocs, destNlocs, dimName, dimName);
+        const bool doLocSelection = setDoLocSelection(dimName, dimName);
 
         // On pool members only, read in from the source into the source buffer
         // and save in the local obs space.
@@ -2142,8 +2140,7 @@ void readerTransferVarData(const ReaderPoolBase & ioPool,
         ioda::Variable destVar = memGroup.vars.open(varName);
 
         // Determine if we need to do location selection on this variable.
-        const bool doLocSelection =
-            setDoLocSelection(srcNlocs, destNlocs, varName, varDimNames[0]);
+        const bool doLocSelection = setDoLocSelection(varName, varDimNames[0]);
 
         // On pool members only, read in from the source into the source buffer
         // and save in the local obs space.
@@ -2347,8 +2344,7 @@ void readerCopyVarData(const ReaderPoolBase & ioPool,
             if (dimsAttachedToVars.find(srcNamedVar) != dimsAttachedToVars.end()) {
                 firstDimName = dimsAttachedToVars.at(srcNamedVar)[0].name;
             }
-            bool doLocSelection =
-                setDoLocSelection(srcNlocs, destNlocs, varName, firstDimName);
+            bool doLocSelection = setDoLocSelection(varName, firstDimName);
 
             // Transfer the variable data to this rank's obs space
             readerSaveDestVarLocal(varName, srcBuffer, locIndices, destNlocs,
