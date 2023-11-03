@@ -1018,8 +1018,8 @@ void writeODB(const size_t num_varnos, const int number_of_rows, odc::Writer<>::
               const std::vector<std::vector<std::vector<double>>> &data_body_store,
               const int num_indep, const int num_body,
               const int num_body_missing, const std::vector<int> &varnos) {
-  for (size_t varno = 0; varno < num_varnos; varno++) {
-    for (int row = 0; row < number_of_rows; row++) {
+  for (int row = 0; row < number_of_rows; row++) {
+    for (size_t varno = 0; varno < num_varnos; varno++) {
       int col_num = 0;
       // Varno independent variables
       for (int column = 0; column < num_indep; column++) {
@@ -1328,7 +1328,11 @@ ObsGroup openFile(const ODC_Parameters& odcparams,
     // For SurfaceCloud, channels dimension is being used for layer number for cloud layers
     } else if (column == "initial_vertco_reference" && sql_data.getObsgroup() == obsgroup_surfacecloud) {
       sql_data.assignChannelNumbersSeq(std::vector<int>({varno_cloud_fraction_covered}), og);
-    // ... no, it does not.
+    // When an ODB is written by IODA the Channel variable (and dimension)
+    // is written to vertco_reference_1.  This if statement then reads this back in.
+    } else if (column == "vertco_reference_1") {
+      sql_data.assignChannelNumbers(varnos[0], og, "vertco_reference_1");
+   // ... no, it does not.
     } else {      
       // This loop handles columns whose cells should be transferred in their entirety into ioda
       // variables (without splitting into bitfield members)

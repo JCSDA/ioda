@@ -242,7 +242,8 @@ public:
       ioda::ObsGroup og, const ioda::VariableCreationParameters &params) const;
 
   /// \brief Returns a list of channels associated with a particular varno.
-  ioda::Variable assignChannelNumbers(int varno, ioda::ObsGroup og) const;
+  ioda::Variable assignChannelNumbers(int varno, ioda::ObsGroup og,
+                                      const std::string &vertcoName = "initial_vertco_reference") const;
 
   /// \brief Returns a list of channels associated with a particular varno.
   ioda::Variable assignChannelNumbersSeq(const std::vector<int> varnos, const ioda::ObsGroup og) const;

@@ -3,7 +3,6 @@ where:
 variables:
 # varno dependent
 - name: initial_obsvalue
-- name: obsvalue
 - name: obs_error
 - name: effective_qc
 - name: bgvalue
@@ -12,7 +11,6 @@ variables:
 # varno independent
 - name: lat
 - name: lon
-- name: seqno
 - name: aircraft_data_relay_system
 - name: aircraft_tail_number
 - name: beacon_report_name

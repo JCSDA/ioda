@@ -758,9 +758,10 @@ void DataFromSQL::createVarnoIndependentIodaVariables(
   }
 }
 
-ioda::Variable DataFromSQL::assignChannelNumbers(const int varno, ioda::ObsGroup og) const {
+ioda::Variable DataFromSQL::assignChannelNumbers(const int varno, ioda::ObsGroup og,
+                                                 const std::string &vertcoName) const {
   const std::vector<int> varnos{varno};
-  Eigen::ArrayXi var = getVarnoColumn<int>(varnos, std::string("initial_vertco_reference"),
+  Eigen::ArrayXi var = getVarnoColumn<int>(varnos, vertcoName,
                                            numberOfLevels(varno), numberOfLevels(varno));
 
   size_t number_of_levels = numberOfLevels(varno);

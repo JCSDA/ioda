@@ -756,6 +756,12 @@ varno-independent columns:
     source: "sensor_chan_num"
   - name: "NewMetaData/variable_names"
     source: "var_names"
+  - name: "MetaData/surfaceQualifier"
+    source: "surface_type_indicator"
+  - name: "MetaData/sequenceNumber"
+    source: seqno
+  - name: "MetaData/observationTypeNum"
+    source: ops_obsgroup
 # The following are only for the ctests
   - name: "MetaData/DummyBoolVar"
     source: "dummyboolvar"
