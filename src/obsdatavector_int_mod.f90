@@ -20,7 +20,7 @@ module obsdatavector_mod
 		generic,public :: get_row => obsdatavector_int_get_row_i,&
 					obsdatavector_int_get_row_str,&
 					obsdatavector_int_get_row_cxx_str
-
+		procedure :: get => obsdatavector_int_get
 		procedure :: nvars => obsdatavector_int_nvars
 		procedure :: nlocs => obsdatavector_int_nlocs		
 	end type
@@ -76,10 +76,10 @@ contains
 		integer(int64),intent(in) :: i 
 		integer(int32),dimension(:),pointer :: r
 		type(c_ptr) :: r_ptr
-		integer(int64) :: j,nvars
+		integer(int64) :: i1,nvars
 		nvars = obsdatavector_int_c_nvars(this%data_ptr)
-		j = i - 1
-		r_ptr = obsdatavector_int_c_get_row_i(this%data_ptr,j)
+		i1 = i - 1
+		r_ptr = obsdatavector_int_c_get_row_i(this%data_ptr,i1)
 		call c_f_pointer(r_ptr,r,[nvars])
 	end function
 	function obsdatavector_int_get_row_cxx_str(this,str) result(r)
@@ -112,7 +112,10 @@ contains
 		class(obsdatavector_int),intent(in) :: this
 		integer(int64),intent(in) :: i,j 
 		integer(int32) :: r
-		r = obsdatavector_int_c_get(this%data_ptr,i,j)
+		integer(int64) :: i1,j1
+		i1 = i - 1
+		j1 = j - 1
+		r = obsdatavector_int_c_get(this%data_ptr,i1,j1)
 	end function
 	function obsdatavector_int_nvars(this) result(n)
 		implicit none

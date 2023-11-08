@@ -18,6 +18,7 @@ const int * obsdatavector_int_c_get_row_i(obsdatavector_int_t p, size_t i) {
         std::cerr << __FUNCTION__ << " exception " << e.what() << "\n";
         fatal_error();
     }
+    return nullptr;
 }
 
 const int * obsdatavector_int_c_get_row_cxx_str(obsdatavector_int_t p, cxx_string_t str) {
@@ -32,6 +33,7 @@ const int * obsdatavector_int_c_get_row_cxx_str(obsdatavector_int_t p, cxx_strin
         std::cerr << __FUNCTION__ << " exception " << e.what() << "\n";
         fatal_error();
     }
+    return nullptr;
 }
 
 const int * obsdatavector_int_c_get_row_str(obsdatavector_int_t p, const char* cstr) {
@@ -45,6 +47,7 @@ const int * obsdatavector_int_c_get_row_str(obsdatavector_int_t p, const char* c
         std::cerr << __FUNCTION__ << " exception " << e.what() << "\n";
         fatal_error();
     }
+    return nullptr;
 }
 
 int obsdatavector_int_c_get(obsdatavector_int_t p, int64_t i, int64_t j) {
@@ -56,6 +59,7 @@ int obsdatavector_int_c_get(obsdatavector_int_t p, int64_t i, int64_t j) {
         std::cerr << __FUNCTION__ << " exception " << e.what() << "\n";
         fatal_error();
     }
+    return -1;
 }
 
 int64_t obsdatavector_int_c_nvars(obsdatavector_int_t p) {
@@ -67,6 +71,7 @@ int64_t obsdatavector_int_c_nvars(obsdatavector_int_t p) {
         std::cerr << __FUNCTION__ << " exception " << e.what() << "\n";
         fatal_error();
     }
+    return -1L;
 }
 
 int64_t obsdatavector_int_c_nlocs(obsdatavector_int_t p) {
@@ -78,5 +83,6 @@ int64_t obsdatavector_int_c_nlocs(obsdatavector_int_t p) {
         std::cerr << __FUNCTION__ << " exception " << e.what() << "\n";
         fatal_error();
     }
+    return -1L;
 }
 }
