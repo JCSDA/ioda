@@ -298,7 +298,7 @@ int runTest(const std::string & backendType, const std::string & defaultMappingF
       } catch (const std::exception& e) {
         odbGroupFailedWithoutMapping = true;
       }
-      assert(odbGroupFailedWithoutMapping && failedWhenNotAllVarsRemapped);
+      ASSERT(odbGroupFailedWithoutMapping && failedWhenNotAllVarsRemapped);
     } else {
       throw ioda::Exception("Unrecognized backend type:", ioda_Here())
               .add("Backend type", backendType);

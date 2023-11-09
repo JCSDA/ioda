@@ -68,8 +68,8 @@ void GenRandom::genDistRandom(const GenRandom::Parameters_ & params) {
     const float lonEnd = params.lonEnd;
 
     std::string vcoordType = "Undefined";
-    float vcoordStart;
-    float vcoordEnd;
+    float vcoordStart = 0.0f;
+    float vcoordEnd = 0.0f;
     if ( params.vcoordType.value() != boost::none ) {
         vcoordType = params.vcoordType.value().get();        
 

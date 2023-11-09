@@ -79,8 +79,8 @@ CASE("ioda/WriterPoolFactoryMakers") {
             IoPool::WriterPoolFactory::create(configParams, createParams);
 
         // Check if various data members got set properly
-        int expectedCommAllRank = testDataConfig.getInt("comm all rank");
-        int expectedCommAllSize = testDataConfig.getInt("comm all size");
+        size_t expectedCommAllRank = testDataConfig.getInt("comm all rank");
+        size_t expectedCommAllSize = testDataConfig.getInt("comm all size");
         EXPECT(writerPool->commAll().rank() == expectedCommAllRank);
         EXPECT(writerPool->commAll().size() == expectedCommAllSize);
 
@@ -132,8 +132,8 @@ CASE("ioda/ReaderPoolFactoryMakers") {
             IoPool::ReaderPoolFactory::create(configParams, createParams);
 
         // Check if various data members got set properly
-        int expectedCommAllRank = testDataConfig.getInt("comm all rank");
-        int expectedCommAllSize = testDataConfig.getInt("comm all size");
+        size_t expectedCommAllRank = testDataConfig.getInt("comm all rank");
+        size_t expectedCommAllSize = testDataConfig.getInt("comm all size");
         EXPECT(readerPool->commAll().rank() == expectedCommAllRank);
         EXPECT(readerPool->commAll().size() == expectedCommAllSize);
 

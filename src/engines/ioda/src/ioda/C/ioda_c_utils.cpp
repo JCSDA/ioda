@@ -187,7 +187,7 @@ void BlockingRead(int fd,void *buff,size_t sz)
 void Fwrite(const void *p,size_t osize,size_t cnt,FILE *fp)
 {
     int64_t e = fwrite(p,osize,cnt,fp);
-    if (e==cnt) return;
+    if (e==static_cast<int64_t>(cnt)) return;
     fprintf(stderr,"Fwrite failed ferror = %s\n",strerror(e));
     fatal_error();
 }

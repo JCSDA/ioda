@@ -57,8 +57,8 @@ class Validator : public eckit::Main {
       std::string("    --ignore-error: ignore errors when forming the return code\n");
 
     int ret = 0;
-    bool ignoreWarn;
-    bool ignoreError;
+    bool ignoreWarn = false;
+    bool ignoreError = false;
     try {
       // Valid values for argc are 3 (no options), 4 (one option), 5 (both options)
       eckit::PathName yamlfilename;

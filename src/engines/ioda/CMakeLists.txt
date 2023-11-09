@@ -308,7 +308,9 @@ target_include_directories(ioda_engines PUBLIC
 	)
 
 # Mark Boost as a system library to silence compiler warnings from Boost headers
+# Ditto for Eigen
 target_include_directories( ioda_engines SYSTEM PUBLIC ${Boost_INCLUDE_DIRS} )
+target_include_directories( ioda_engines SYSTEM PUBLIC ${EIGEN3_INCLUDE_DIRS} )
 
 INSTALL(DIRECTORY include/ioda
 	DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}

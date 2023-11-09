@@ -146,7 +146,7 @@ std::shared_ptr<std::string> getMissingValue(const ReaderPoolBase & ioPool) {
 //--------------------------------------------------------------------------------
 // Special case for broadcasting a DateTimeFormat enum type via eckit broadcast.
 void broadcastDateTimeFormat(const eckit::mpi::Comm & comm, DateTimeFormat & enumVar,
-                             const int root) {
+                             const std::size_t root) {
     int tempInt;
     if (comm.rank() == root) {
         // Send enum as int since eckit MPI broadcast doesn't accept enum types
@@ -670,7 +670,7 @@ void setDistributionMap(const ReaderPoolBase & ioPool,
     // we are simply using the "Pool" communicator to identify if this rank is a
     // member of the io pool.
     int dataSize;
-    distributionMap.empty();
+    distributionMap.clear();
     if (ioPool.commPool() != nullptr) {
         // On an io pool member, save your own local indices, then collect the local
         // source indices from all of the associated non io pool members.
@@ -810,7 +810,7 @@ void readerGatherLocationIndices(const ReaderPoolBase & ioPool,
     int recvSize = locIndicesCounts[0];
     locIndicesStarts.resize(numTasks);
     locIndicesStarts[0] = 0;
-    for (std::size_t i = 1; i < numTasks; ++i) {
+    for (int i = 1; i < numTasks; ++i) {
         locIndicesStarts[i] = locIndicesStarts[i - 1] + locIndicesCounts[i - 1];
         recvSize += locIndicesCounts[i];
     }
@@ -836,7 +836,7 @@ void readerSetFileSelection(const int allRank,
     // push_back calls) and it is relying on the io pool not getting very
     // big (ie, 10s of ranks at the most).
     int start = 0;
-    for (int i = 0; i < assocAllRanks.size(); ++i) {
+    for (std::size_t i = 0; i < assocAllRanks.size(); ++i) {
         if (assocAllRanks[i] == allRank) {
             // Attach the entries in locIndices* to the output vectors.
             const int inputStart = locIndicesStarts[i];
@@ -1869,7 +1869,7 @@ int findMaxStringLength(std::vector<char> & destBuffer, const int numStrings) {
         reinterpret_cast<char **>(destBuffer.data()), numStrings);
     int maxStringLength = 0;
     for (const auto & stringElement : stringSpan) {
-        if (strlen(stringElement) > maxStringLength) {
+        if (static_cast<int>(strlen(stringElement)) > maxStringLength) {
             maxStringLength = strlen(stringElement);
         }
     }
@@ -1887,7 +1887,7 @@ void packStringsIntoCharArray(std::vector<char> & destBuffer,
         reinterpret_cast<char **>(destBuffer.data()), charArrayShape[0]);
     for (std::size_t i = 0; i < stringSpan.size(); ++i) {
         const int strLen = strlen(stringSpan[i]);
-        for (std::size_t j = 0; j < strLen; ++j) {
+        for (int j = 0; j < strLen; ++j) {
             strBuffer[(i * charArrayShape[1]) + j] = stringSpan[i][j];
         }
         strBuffer[strLen] = '\0';
@@ -1910,7 +1910,7 @@ void allocateStringMemForDestBuffer(std::vector<std::string> & strValues,
     // memory to the char * pointers in destBuffer.
     const gsl::span<char *> stringSpan(
         reinterpret_cast<char **>(destBuffer.data()), charArrayShape[0]);
-    for (std::size_t i = 0; i < charArrayShape[0]; ++i) {
+    for (int i = 0; i < charArrayShape[0]; ++i) {
         stringSpan[i] = strValues[i].data();
     }
 }
@@ -1925,7 +1925,7 @@ void unpackStringsFromCharArray(const std::vector<char> & strBuffer,
     // to facilitate the transfer of the string values.
     const gsl::span<char *> stringSpan(
         reinterpret_cast<char **>(destBuffer.data()), charArrayShape[0]);
-    for (size_t i = 0; i < charArrayShape[0]; ++i) {
+    for (int i = 0; i < charArrayShape[0]; ++i) {
         const int offset = i * charArrayShape[1];
         const auto strEnd = std::find(strBuffer.begin() + offset, strBuffer.end(), '\0');
         if (strEnd == strBuffer.end()) {
@@ -1964,7 +1964,7 @@ void readerSaveDestVarGlobal(const ReaderPoolBase & ioPool,
         // Transfer the variable data to the assigned ranks' obs spaces
         for (const auto & distMap : ioPool.distributionMap()) {
             // skip over the entry for this rank
-            if (distMap.first == ioPool.commAll().rank()) {
+            if (static_cast<size_t>(distMap.first) == ioPool.commAll().rank()) {
                 continue;
             }
             ioda::Dimensions_t destVarSize;
@@ -2185,7 +2185,7 @@ void readerAdjustDistributionMap(const ReaderPoolBase & ioPool,
             // to reserve the memory for the vectors in the distribution map. The second
             // pass is to copy the corresponding indices into the distribution map.
             std::map<int, int> destRankCounts;
-            for (int i = 0; i < destRankValues.size(); ++i) {
+            for (size_t i = 0; i < destRankValues.size(); ++i) {
                 int key = destRankValues[i];
                 if (destRankCounts.find(key) == destRankCounts.end()) {
                     // New entry, set count to 1
@@ -2196,7 +2196,7 @@ void readerAdjustDistributionMap(const ReaderPoolBase & ioPool,
                 }
             }
             distributionMap.clear();
-            for (int i = 0; i < destRankValues.size(); ++i) {
+            for (size_t i = 0; i < destRankValues.size(); ++i) {
                 int key = destRankValues[i];
                 if (distributionMap.find(key) == distributionMap.end()) {
                     // New entry, allocate vector

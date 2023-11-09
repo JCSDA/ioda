@@ -560,7 +560,7 @@ bool upgradeFile(const std::string& inputName, const std::string& outputName, co
   const Dimensions_t suggested_chan_chunking
     = (newscales.count("nchans")) ? newscales["nchans"].atts["suggested_chunk_dim"].read<Dimensions_t>() : defaultChunkSize;
   map<string, Named_Variable> new_grouped_vars;
-  Dimensions_t numChans;
+  Dimensions_t numChans = 0;
   if (old_grouped_vars.size() > 0) {
     numChans = out.vars.open("nchans").getDimensions().dimsCur[0];
   }

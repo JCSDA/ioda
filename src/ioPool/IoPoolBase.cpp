@@ -67,7 +67,7 @@ void IoPoolBase::setTargetPoolSize() {
         // The pool size will be the minimum of the maxPoolSize or the entire size of the
         // commAll_ communicator group
         int poolSize = maxPoolSize;
-        if (commAll().size() <= maxPoolSize) {
+        if (commAll().size() <= static_cast<std::size_t>(maxPoolSize)) {
             poolSize = commAll().size();
         }
 
