@@ -197,7 +197,7 @@ public:
   size_t numberOfMetadataRows() const;
 
   /// \brief Returns the dimensions for the ODB
-  NewDimensionScales_t getVertcos() const;
+  NewDimensionScales_t getVertcos(const int varno) const;
 
   /// \brief Populate structure with data from specified columns, file and varnos
   /// \param columns List of columns to extract
@@ -251,7 +251,8 @@ public:
   /// \brief Creates an ioda variable for a specified column
   void createVarnoDependentIodaVariable(std::string const &column, int varno,
                                         ioda::ObsGroup og,
-                                        const VariableCreationParameters &params) const;
+                                        const VariableCreationParameters &params,
+                                        const std::string &varname = "") const;
 
   /// \brief Converts specified varno-dependent bitfield column members into ioda variables
   /// containing the values from rows with a specified varno

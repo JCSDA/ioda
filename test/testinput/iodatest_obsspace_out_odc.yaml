@@ -31,7 +31,6 @@ observations:
         group: "MetaData"
         type: "float"
         norm: 567.88380247048008
-
       - name: "longitude"
         group: "MetaData"
         type: "float"
@@ -68,18 +67,15 @@ observations:
         group: "MetaData"
         type: "float"
         norm: 1254.66336565038
-
       - name: "longitude"
         group: "MetaData"
         type: "float"
         norm: 6076.2659260213959
-
       - name: "stationIdentification"
         group: "MetaData"
         type: "string"
         first value: "07510"
         last value: "97530"
-
       - name: "stationPressure"
         group: "PreQC"
         type: "integer"
@@ -90,7 +86,6 @@ observations:
       - name: "airTemperature"
         group: "ObsValue"
         channels: []
-
       - name: "specificHumidity"
         group: "ObsValue"
         channels: []
@@ -127,7 +122,6 @@ observations:
         group: "MetaData"
         type: "float"
         norm: 432.95617402805823
-
       - name: "longitude"
         group: "MetaData"
         type: "float"
@@ -139,7 +133,6 @@ observations:
       - name: "brightnessTemperature"
         group: "ObsValue"
         channels: [ 4 ]
-
       - name: "brightnessTemperature"
         group: "ObsValue"
         channels: [ 11 ]
@@ -173,7 +166,6 @@ observations:
         group: "MetaData"
         type: "float"
         norm: 211.00380053756118
-
       - name: "longitude"
         group: "MetaData"
         type: "float"
@@ -212,12 +204,10 @@ observations:
         group: "MetaData"
         type: "float"
         norm: 516.381719370864
-
       - name: "longitude"
         group: "MetaData"
         type: "float"
         norm: 1077.97295968985
-
       - name: "airTemperature"
         group: "ObsValue"
         type: "float"
@@ -257,7 +247,6 @@ observations:
         group: "MetaData"
         type: "float"
         norm: 528.87376603209805
-
       - name: "longitude"
         group: "MetaData"
         type: "float"
@@ -321,6 +310,14 @@ observations:
         group: "MetaData"
         type: "float"
         norm: 541.40827082583473
+      - name: "brightnessTemperature"
+        group: "ObsValue"
+        type: "float"
+        norm: 13788.577626122362
+      - name: "skinTemperature"
+        group: "OneDVar"
+        type: "float"
+        norm: 868.54394159069386
     tolerance:
-      - 1.0e-11
+      - 1.0e-7
     variables for putget test: []

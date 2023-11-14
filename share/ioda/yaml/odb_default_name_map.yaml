@@ -748,8 +748,9 @@ varno-independent columns:
     source: "height"
   - name: "OneDVar/emissivity"
     source: "emissivity_onedvar"
+    varno number with the same dimension: 119
   - name: "OneDVar/skinTemperature"
-    source: "skinT_onedvar"
+    source: "skint_onedvar"
   - name: "NewMetaData/sensorCentralWavenumber"
     source: "sensor_wvn"
   - name: "NewMetaData/sensorChannelNumber"

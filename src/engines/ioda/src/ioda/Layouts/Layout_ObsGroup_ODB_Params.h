@@ -42,6 +42,12 @@ OOPS_CONCRETE_PARAMETERS(VariableParameters, Parameters)
   /// store the value of a Boolean variable when writing an ODB file. Currently not used;
   /// will be used by the ODB writer.
   oops::OptionalParameter<int> bitIndex {"bit index", this};
+  /// \p Integer specifying the varno which has the same dimension as the array defined by
+  /// this VariableParameters.  The varno can be found in the mapping file.  As an example
+  /// OneDVar/emissivity has the same dimension as the brightnessTemperature arrays which
+  /// has varno = 119.
+  oops::OptionalParameter<int> varnoWithSameDimensionAsVariable {
+      "varno number with the same dimension", this};
 };
 
 class ComplementaryVariablesParameters : public oops::Parameters {

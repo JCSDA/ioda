@@ -14,7 +14,7 @@ variables:
 - name: lon
 - name: amsuscatindex
 - name: azimuth
-- name: initial_vertco_reference
+- name: vertco_reference_1
 - name: land_sea
 - name: qchirsfov
 - name: qcprepro
@@ -29,7 +29,7 @@ variables:
 - name: receipt_time
 - name: receipt_date
 - name: ops_subtype
-- name: skinT_onedvar
+- name: skint_onedvar
 - name: emissivity_onedvar
 - name: date
 - name: time

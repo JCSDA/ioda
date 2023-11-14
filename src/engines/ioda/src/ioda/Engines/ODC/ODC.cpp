@@ -223,6 +223,8 @@ public:
 
   void markAsVarnoIndependent() { varnoIndependent_ = true; }
 
+  void dimensionOfVarno(int varno) { dimensionOfVarno_ = varno; }
+
   void addVarno(int varno) {
     varnos_.insert(varno);
   }
@@ -240,7 +242,12 @@ public:
                            const VariableCreationParameters &creationParams,
                            ObsGroup &og) const {
     if (varnoIndependent_) {
-      sqlData.createVarnoIndependentIodaVariable(column, og, creationParams);
+      if (dimensionOfVarno_ == 0) {
+        sqlData.createVarnoIndependentIodaVariable(column, og, creationParams);
+      } else {
+        sqlData.createVarnoDependentIodaVariable(column, dimensionOfVarno_, og,
+                                                 creationParams, column);
+      }
     } else {
       for (int varno : varnoSelection) {
         if (varnos_.count(varno)) {
@@ -259,7 +266,7 @@ public:
   /// Otherwise the restriction of the column to each of the varnos `varnos_` is mapped to a
   /// separate ioda variable.
   bool varnoIndependent_ = false;
-
+  int dimensionOfVarno_ = 0;
   std::set<int> varnos_;
 };
 
@@ -347,6 +354,9 @@ ColumnMappings collectColumnMappings(const detail::ODBLayoutParameters &layoutPa
     ParsedColumnExpression parsedSource(columnParams.source);
     if (parsedSource.member.empty()) {
       mappings.nonbitfieldColumns[parsedSource.column].markAsVarnoIndependent();
+      if (columnParams.varnoWithSameDimensionAsVariable.value().has_value())
+        mappings.nonbitfieldColumns[parsedSource.column].dimensionOfVarno(
+                    columnParams.varnoWithSameDimensionAsVariable.value().get());
     } else {
       mappings.bitfieldColumns[parsedSource.column].addVarnoIndependentMember(parsedSource.member);
     }
@@ -965,7 +975,11 @@ void readBodyColumns(const Group &storageGroup, const ColumnInfo &column, const 
   }
   // Create data_store_tmp
   std::vector<double> data_store_tmp(number_of_rows);
-  if (obsspacename.substr(0, obsspacename.find("/")) == "DiagnosticFlags") {
+  if (column.column_type == TypeClass::Integer) {
+      fillIntArray(storageGroup, obsspacename,
+                   number_of_rows, column.column_size,
+                   data_store_tmp);
+  } else if (obsspacename.substr(0, obsspacename.find("/")) == "DiagnosticFlags") {
     std::vector<char> buf_char;
     storageGroup.vars[obsspacename].read<char>(buf_char);
     const ioda::Variable var = storageGroup.vars[obsspacename];
@@ -981,10 +995,6 @@ void readBodyColumns(const Group &storageGroup, const ColumnInfo &column, const 
   } else if (column.column_type == TypeClass::Float) {
     fillFloatArray(storageGroup, obsspacename,
                    number_of_rows, data_store_tmp);
-  } else if (column.column_type == TypeClass::Integer) {
-    fillIntArray(storageGroup, obsspacename,
-                 number_of_rows, column.column_size,
-                 data_store_tmp);
   } else if (column.column_type == TypeClass::String) {
     std::vector<std::string> buf;
     storageGroup.vars[obsspacename].read<std::string>(buf);
@@ -1236,7 +1246,7 @@ ObsGroup openFile(const ODC_Parameters& odcparams,
   if (constructStationID)
     ignores.push_back("MetaData/stationIdentification");
 
-  NewDimensionScales_t vertcos = sql_data.getVertcos();
+  NewDimensionScales_t vertcos = sql_data.getVertcos(varnos[0]);
 
   auto og = ObsGroup::generate(
     storageGroup,
