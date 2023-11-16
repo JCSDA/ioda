@@ -278,27 +278,40 @@ void createDimensionsFromConfig(ioda::Has_Variables & vars,
         // maxDimSize to a fixed value helps greatly with runtime performance.
         // For the Location dimension, we eventually want to be able to append more
         // locations so give this dimension unlimited size.
+        //
+        // TODO(srh) For now use a default chunk size (10000) for the chunk size in the
+        // creation parameters for the Location dimension variable. This is being done
+        // since the size of location can vary across MPI tasks, and we need it to be
+        // constant for the parallel io to work properly. The assigned chunk size may
+        // need to be optimized further than using a rough guess of 10000.
         ioda::Dimensions_t maxDimSize = dimSize;
+        std::vector<ioda::Dimensions_t> chunkSizes(1, dimSize);
         if (dimName == "Location") {
             maxDimSize = ioda::Unlimited;
+            chunkSizes[0] = DefaultChunkSize;
         }
         
         ioda::Variable dimVar;
         ioda::VariableCreationParameters params;
         if (dimDataType == "int") {
             setVarCreateParamsForMem<int>(params);
+            params.setChunks(chunkSizes);
             dimVar = vars.create<int>(dimName, { dimSize }, { maxDimSize }, params);
         } else if (dimDataType == "int64") {
             setVarCreateParamsForMem<int64_t>(params);
+            params.setChunks(chunkSizes);
             dimVar = vars.create<int64_t>(dimName, { dimSize }, { maxDimSize }, params);
         } else if (dimDataType == "float") {
             setVarCreateParamsForMem<float>(params);
+            params.setChunks(chunkSizes);
             dimVar = vars.create<float>(dimName, { dimSize }, { maxDimSize }, params);
         } else if (dimDataType == "string") {
             setVarCreateParamsForMem<std::string>(params);
+            params.setChunks(chunkSizes);
             dimVar = vars.create<std::string>(dimName, { dimSize }, { maxDimSize }, params);
         } else if (dimDataType == "char") {
             setVarCreateParamsForMem<char>(params);
+            params.setChunks(chunkSizes);
             dimVar = vars.create<char>(dimName, { dimSize }, { maxDimSize }, params);
         }
         dimVar.setIsDimensionScale(dimName);
@@ -323,27 +336,45 @@ void createVariablesFromConfig(ioda::Has_Variables & vars,
         oops::Log::trace() << "createVariablesFromConfig: varName: " << varName << std::endl;
 
         // Create a vector of variables from the vars container.
+        //
+        // TODO(srh) For now use a default chunk size (10000) for the chunk size in the
+        // creation parameters when the variable has Location for its first dimension.
+        // This is being done since the size of location can vary across MPI tasks,
+        // and we need it to be constant for the parallel io to work properly. The
+        // assigned chunk size may need to be optimized further than using a rough
+        // guess of 10000.
         std::vector<Variable> varDims(varDimNames.size());
+        std::vector<ioda::Dimensions_t> chunkSizes(varDims.size());
         for (std::size_t j = 0; j < varDimNames.size(); ++j) {
             varDims[j] = vars.open(varDimNames[j]);
+            if (varDimNames[j] == "Location") {
+                chunkSizes[j] = DefaultChunkSize;
+            } else {
+                chunkSizes[j] = varDims[j].getDimensions().dimsCur[0];
+            }
         }
 
         ioda::Variable memVar;
         ioda::VariableCreationParameters params;
         if (varDataType == "int") {
             setVarCreateParamsForMem<int>(params);
+            params.setChunks(chunkSizes);
             memVar = vars.createWithScales<int>(varName, varDims, params);
         } else if (varDataType == "int64") {
             setVarCreateParamsForMem<int64_t>(params);
+            params.setChunks(chunkSizes);
             memVar = vars.createWithScales<int64_t>(varName, varDims, params);
         } else if (varDataType == "float") {
             setVarCreateParamsForMem<float>(params);
+            params.setChunks(chunkSizes);
             memVar = vars.createWithScales<float>(varName, varDims, params);
         } else if (varDataType == "string") {
             setVarCreateParamsForMem<std::string>(params);
+            params.setChunks(chunkSizes);
             memVar = vars.createWithScales<std::string>(varName, varDims, params);
         } else if (varDataType == "char") {
             setVarCreateParamsForMem<char>(params);
+            params.setChunks(chunkSizes);
             memVar = vars.createWithScales<char>(varName, varDims, params);
         }
 

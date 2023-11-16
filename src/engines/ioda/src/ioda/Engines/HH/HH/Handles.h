@@ -151,7 +151,9 @@ struct CloseHDF5File {
     if (err != 0) throw Exception(std::string("H5Fclose failed, error code = ") + std::to_string(err), ioda_Here());
   }
   static inline void CloseP(hid_t* h) {
-    if (*h >= 0) H5Fclose(*h);
+    if (*h >= 0) {
+      if (H5Fclose(*h) < 0) throw Exception("H5Fclose failed", ioda_Here());
+    }
     delete h;
   }
 };

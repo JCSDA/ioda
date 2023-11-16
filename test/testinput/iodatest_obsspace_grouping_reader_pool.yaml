@@ -16,7 +16,6 @@ observations:
     io pool:
       reader name: SinglePool
       work directory: testwork
-      write multiple files: true
   test data:
     gnlocs: 10
     gnlocs outside time window: 0
@@ -56,7 +55,6 @@ observations:
     io pool:
       reader name: SinglePool
       work directory: testwork
-      write multiple files: true
   test data:
     gnlocs: 10
     gnlocs outside time window: 0
@@ -95,7 +93,6 @@ observations:
     io pool:
       reader name: SinglePool
       work directory: testwork
-      write multiple files: true
   test data:
     gnlocs: 10
     gnlocs outside time window: 0
@@ -134,7 +131,6 @@ observations:
     io pool:
       reader name: SinglePool
       work directory: testwork
-      write multiple files: true
   test data:
     gnlocs: 10
     gnlocs outside time window: 0
@@ -173,7 +169,6 @@ observations:
     io pool:
       reader name: SinglePool
       work directory: testwork
-      write multiple files: true
   test data:
     gnlocs: 10
     gnlocs outside time window: 0
@@ -212,7 +207,6 @@ observations:
     io pool:
       reader name: SinglePool
       work directory: testwork
-      write multiple files: true
   test data:
     gnlocs: 10
     gnlocs outside time window: 0
@@ -251,7 +245,6 @@ observations:
     io pool:
       reader name: SinglePool
       work directory: testwork
-      write multiple files: true
   test data:
     gnlocs: 10
     gnlocs outside time window: 0
@@ -290,7 +283,6 @@ observations:
     io pool:
       reader name: SinglePool
       work directory: testwork
-      write multiple files: true
   test data:
     gnlocs: 10
     gnlocs outside time window: 0
@@ -340,7 +332,6 @@ observations:
     io pool:
       reader name: SinglePool
       work directory: testwork
-      write multiple files: true
   test data:
     gnlocs: 6
     gnlocs outside time window: 0
@@ -389,7 +380,6 @@ observations:
     io pool:
       reader name: SinglePool
       work directory: testwork
-      write multiple files: true
   test data:
     gnlocs: 6
     gnlocs outside time window: 0
@@ -438,7 +428,6 @@ observations:
     io pool:
       reader name: SinglePool
       work directory: testwork
-      write multiple files: true
   test data:
     gnlocs: 6
     gnlocs outside time window: 0
