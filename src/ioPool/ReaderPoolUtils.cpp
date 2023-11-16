@@ -2167,6 +2167,7 @@ void readerTransferVarData(const ReaderPoolBase & ioPool,
 //------------------------------------------------------------------------------------
 void readerAdjustDistributionMap(const ReaderPoolBase & ioPool,
                                  const ioda::Group & fileGroup,
+                                 const std::vector<std::pair<int, int>> & rankAssignment,
                                  ReaderDistributionMap & distributionMap) {
     // The new mapping is located in the file top level variable "destinationRank".
     // Simply need to copy this information into the distributionMap.
@@ -2181,10 +2182,10 @@ void readerAdjustDistributionMap(const ReaderPoolBase & ioPool,
         // Don't alter the distributionMap if there are no obs left in this input file.
         if (destRankValues.size() > 0) {
             // Make two passes through the destination rank number. The first pass is to
-            // count up the number of occurrances of each rank number which is done
+            // count up the number of occurrences of each rank number which is done
             // to reserve the memory for the vectors in the distribution map. The second
             // pass is to copy the corresponding indices into the distribution map.
-            std::map<int, int> destRankCounts;
+            std::map<int, std::size_t> destRankCounts;
             for (size_t i = 0; i < destRankValues.size(); ++i) {
                 int key = destRankValues[i];
                 if (destRankCounts.find(key) == destRankCounts.end()) {
@@ -2204,6 +2205,23 @@ void readerAdjustDistributionMap(const ReaderPoolBase & ioPool,
                 }
                 // Add the index into the vector
                 distributionMap[key].push_back(i);
+            }
+
+            // At this point it is possible for the distribution map to be missing
+            // entries. This situation comes about when the filtering and distribution
+            // in the reader initialize step results in any of the processes in the
+            // rank assignment getting zero obs. The code above won't produce an entry
+            // for a rank with zero obs (including the pool member rank) and these cases
+            // need to have an entry (with an empty vector) in the new distribution map.
+            const int myRank = ioPool.commAll().rank();
+            if (distributionMap.find(myRank) == distributionMap.end()) {
+                distributionMap[myRank].clear();
+            }
+            for (const auto & rankAssign : rankAssignment) {
+                const int rank = rankAssign.first;
+                if (distributionMap.find(rank) == distributionMap.end()) {
+                    distributionMap[rank].clear();
+                }
             }
         }
     }

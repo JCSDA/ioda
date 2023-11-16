@@ -256,7 +256,7 @@ void ReaderSinglePool::load(Group & destGroup) {
         // maps calculated for the building the original input files
         // (during the initialization step) need to be adjusted to distribute the
         // locations in the new input files.
-        readerAdjustDistributionMap(*this, fileGroup, distributionMap_);
+        readerAdjustDistributionMap(*this, fileGroup, rankAssignment_, distributionMap_);
         readerTransferVarData(*this, fileGroup, destGroup, groupStructureYaml_);
     }
 
