@@ -115,9 +115,8 @@ CASE("ioda/ReaderPoolFactoryMakers") {
         IoPool::IoPoolParameters configParams;
         configParams.validateAndDeserialize(ioPoolConfig);
 
-        util::DateTime expectedWinStart(testDataConfig.getString("win start"));
-        util::DateTime expectedWinEnd(testDataConfig.getString("win end"));
-        const util::TimeWindow expectedTimeWindow(expectedWinStart, expectedWinEnd);
+        const util::TimeWindow expectedTimeWindow
+          (testDataConfig.getSubConfiguration("time window"));
         std::vector<std::string> expectedObsVarNames =
             testDataConfig.getStringVector("obs var names");
         std::shared_ptr<Distribution> distribution;
@@ -138,10 +137,10 @@ CASE("ioda/ReaderPoolFactoryMakers") {
         EXPECT(readerPool->commAll().size() == expectedCommAllSize);
 
         util::DateTime winStart = readerPool->timeWindow().start();
-        EXPECT(winStart == expectedWinStart);
+        EXPECT(winStart == expectedTimeWindow.start());
 
         util::DateTime winEnd = readerPool->timeWindow().end();
-        EXPECT(winEnd == expectedWinEnd);
+        EXPECT(winEnd == expectedTimeWindow.end());
 
         std::vector<std::string> obsVarNames = readerPool->obsVarNames();
         EXPECT(obsVarNames == expectedObsVarNames);

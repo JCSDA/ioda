@@ -387,10 +387,9 @@ void initSourceIndices(const ioda::Group & srcGroup, const eckit::mpi::Comm & co
                     // Check the timing window first since having a location outside the timing
                     // window likely occurs more than having issues with the lat and lon values.
                     // Note that a datetime that appears on the lower time boundary will be
-                    // rejected if the `window shift` parameter is false, and accepted if
-                    // `window shift` is true. The opposite logic applies on the upper time
-                    // boundary. This is done to prevent such a datetime appearing in two adjacent
-                    // windows.
+                    // accepted if the `bound to include` parameter is `begin`, and rejected
+                    // otherwise. The opposite logic applies on the upper time boundary.
+                    // This is done to prevent such a datetime appearing in two adjacent windows.
                     bool keepThisLocation = timeMask[i];
                     if (keepThisLocation) {
                         // Keep count of how many obs fall inside the time window

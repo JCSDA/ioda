@@ -71,18 +71,13 @@ module obsspace_mod
 contains
 !-------------------------------------------------------------------------------
 
-   type(c_ptr) function obsspace_construct(c_conf, tbegin, tend, winshift)
+   type(c_ptr) function obsspace_construct(c_obsconf, c_timewinconf)
       use fckit_configuration_module, only: fckit_configuration
       use datetime_mod, only: datetime
       implicit none
-      type(fckit_configuration), intent(in) :: c_conf
-      type(datetime), intent(in) :: tbegin, tend
-      type(c_ptr) :: c_tbegin, c_tend
-      logical(c_bool) :: winshift
-
-      call f_c_datetime(tbegin, c_tbegin)
-      call f_c_datetime(tend, c_tend)
-      obsspace_construct = c_obsspace_construct(c_conf%c_ptr(), c_tbegin, c_tend, winshift)
+      type(fckit_configuration), intent(in) :: c_obsconf
+      type(fckit_configuration), intent(in) :: c_timewinconf
+      obsspace_construct = c_obsspace_construct(c_obsconf%c_ptr(), c_timewinconf%c_ptr())
    end function obsspace_construct
 
 !-------------------------------------------------------------------------------

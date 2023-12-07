@@ -46,11 +46,8 @@ template <typename MODEL> class TimeIodaIO : public oops::Application {
 // -----------------------------------------------------------------------------
   int execute(const eckit::Configuration & fullConfig, bool /* validate */) const {
 //  Setup observation window
-    const util::DateTime winbgn(fullConfig.getString("window begin"));
-    const util::DateTime winend(fullConfig.getString("window end"));
-    const util::TimeWindow timeWindow(winbgn, winend);
-    oops::Log::info() << "Observation window begin:" << winbgn << std::endl;
-    oops::Log::info() << "Observation window end:" << winend << std::endl;
+    const util::TimeWindow timeWindow(fullConfig.getSubConfiguration("time window"));
+    oops::Log::info() << "Observation window: " << timeWindow << std::endl;
 
 //  Setup observations
     eckit::LocalConfiguration obsconf(fullConfig, "observations");

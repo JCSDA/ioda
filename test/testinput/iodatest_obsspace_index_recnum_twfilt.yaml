@@ -1,6 +1,7 @@
 ---
-window begin: "2021-01-15T15:14:00Z"
-window end: "2021-01-15T15:15:15Z"
+time window:
+  begin: "2021-01-15T15:14:00Z"
+  end: "2021-01-15T15:15:15Z"
 
 observations:
 - obs space:

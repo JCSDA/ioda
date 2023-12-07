@@ -42,9 +42,7 @@ class ObsDataVecTestFixture : private boost::noncopyable {
 
   ObsDataVecTestFixture() {
     const eckit::Configuration &conf = ::test::TestEnvironment::config();
-    const util::DateTime bgn(conf.getString("window begin"));
-    const util::DateTime end(conf.getString("window end"));
-    const util::TimeWindow timeWindow(bgn, end);
+    const util::TimeWindow timeWindow(conf.getSubConfiguration("time window"));
 
     eckit::LocalConfiguration obsconf(conf, "obs space");
     ioda::ObsTopLevelParameters obsparams;

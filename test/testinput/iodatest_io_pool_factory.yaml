@@ -40,8 +40,9 @@ reader pool factory tests:
         test data:
             comm all rank: 0
             comm all size: 1
-            win start: "1970-01-01T00:00:00Z"
-            win end: "1971-01-01T00:00:00Z"
+            time window:
+              begin: "1970-01-01T00:00:00Z"
+              end: "1971-01-01T00:00:00Z"
             obs var names: [ "var1", "var2", "var3" ]
             obs group var list: [ ]
             work directory: "myWorkDir"
@@ -56,8 +57,9 @@ reader pool factory tests:
         test data:
             comm all rank: 0
             comm all size: 1
-            win start: "2020-01-01T00:00:00Z"
-            win end: "2021-01-01T00:00:00Z"
+            time window:
+              begin: "2020-01-01T00:00:00Z"
+              end: "2021-01-01T00:00:00Z"
             obs var names: [ "var5", "var6", "var7" ]
             obs group var list: [ "stationIdentification" ]
             work directory: "myWorkDirSPAT"
@@ -72,8 +74,9 @@ reader pool factory tests:
         test data:
             comm all rank: 0
             comm all size: 1
-            win start: "1970-01-01T00:00:00Z"
-            win end: "1971-01-01T00:00:00Z"
+            time window:
+              begin: "1970-01-01T00:00:00Z"
+              end: "1971-01-01T00:00:00Z"
             obs var names: [ "var9", "var10", "var11" ]
             obs group var list: [ "stationIdentification", "stationLaunchTime" ]
             work directory: "myWorkDirSP"

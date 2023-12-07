@@ -22,14 +22,12 @@
 namespace ioda {
 
 // -----------------------------------------------------------------------------
-const ObsSpace * obsspace_construct_f(const eckit::Configuration * conf,
-                                      const util::DateTime * begin,
-                                      const util::DateTime * end,
-                                      const bool * winshift) {
+  const ObsSpace * obsspace_construct_f(const eckit::Configuration * obsconf,
+                                        const eckit::LocalConfiguration * timewinconf) {
   ObsTopLevelParameters params;
-  params.validateAndDeserialize(*conf);
+  params.validateAndDeserialize(*obsconf);
   return new ObsSpace(params, oops::mpi::world(),
-                      util::TimeWindow(*begin, *end, util::boolToWindowBound(*winshift)),
+                      util::TimeWindow(*timewinconf),
                       oops::mpi::myself());
 }
 

@@ -10,12 +10,12 @@
 interface
 !-------------------------------------------------------------------------------
 
-type(c_ptr) function c_obsspace_construct(conf, tbegin, tend, winshift) bind(C, name='obsspace_construct_f')
+type(c_ptr) function c_obsspace_construct(obsconf, timewinconf) bind(C, name='obsspace_construct_f')
   use, intrinsic :: iso_c_binding
   implicit none
 
-  type(c_ptr), value :: conf, tbegin, tend
-  logical(c_bool), intent(in) :: winshift
+  type(c_ptr), value :: obsconf
+  type(c_ptr), value :: timewinconf
 end function c_obsspace_construct
 
 subroutine c_obsspace_destruct(obss) bind(C, name='obsspace_destruct_f')

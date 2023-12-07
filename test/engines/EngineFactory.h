@@ -88,10 +88,13 @@ CASE("ioda/GlobalAttributeCheck") {
     std::unique_ptr<Engines::ReaderBase> testReaderEngine;
     std::unique_ptr<Engines::WriterBase> testWriterEngine;
     if (params.obsDataIn.value() != boost::none) {
+      eckit::LocalConfiguration timeWindowConfig;
+      timeWindowConfig.set("begin", "2018-04-14T21:00:00Z");
+      timeWindowConfig.set("end", "2018-04-15T03:00:00Z");
+
       Engines::ReaderCreationParameters createParams
-        (util::TimeWindow(util::DateTime("2018-04-14T21:00:00Z"),
-                          util::DateTime("2018-04-15T03:00:00Z")),
-          oops::mpi::world(), oops::mpi::myself(), params.obsVarNames, isParallelIo);
+        (util::TimeWindow(timeWindowConfig),
+         oops::mpi::world(), oops::mpi::myself(), params.obsVarNames, isParallelIo);
       testReaderEngine = Engines::ReaderFactory::create(
           params.obsDataIn.value()->engine.value().engineParameters, createParams);
       oops::Log::info() << "Reader source: " << *testReaderEngine << std::endl;

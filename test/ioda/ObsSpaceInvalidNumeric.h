@@ -53,9 +53,8 @@ class ObsSpaceTestFixture : private boost::noncopyable {
   }
 
   ObsSpaceTestFixture(): ospaces_() {
-    util::DateTime bgn(::test::TestEnvironment::config().getString("window begin"));
-    util::DateTime end(::test::TestEnvironment::config().getString("window end"));
-    const util::TimeWindow timeWindow(bgn, end);
+    const util::TimeWindow timeWindow
+      (::test::TestEnvironment::config().getSubConfiguration("time window"));
 
     std::vector<eckit::LocalConfiguration> conf;
     ::test::TestEnvironment::config().get("observations", conf);

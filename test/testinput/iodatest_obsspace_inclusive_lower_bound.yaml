@@ -1,7 +1,8 @@
 ---
-window begin: "2018-04-14T23:30:00Z"
-window end: "2018-04-15T03:00:00Z"
-window shift: true
+time window:
+  begin: "2018-04-14T23:30:00Z"
+  end: "2018-04-15T03:00:00Z"
+  bound to include: begin
 
 # There are 974 observations in the test file.
 # 786 of these lie within the window when an inclusive lower bound is used.

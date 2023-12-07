@@ -66,10 +66,8 @@ class ObsSpaceTestFixture : private boost::noncopyable {
   }
 
   ObsSpaceTestFixture(): ospaces_() {
-    util::DateTime bgn(::test::TestEnvironment::config().getString("window begin"));
-    util::DateTime end(::test::TestEnvironment::config().getString("window end"));
-    bool winshift(::test::TestEnvironment::config().getBool("window shift", false));
-    const util::TimeWindow timeWindow(bgn, end, util::boolToWindowBound(winshift));
+    const util::TimeWindow timeWindow
+      (::test::TestEnvironment::config().getSubConfiguration("time window"));
 
     ::test::TestEnvironment::config().get("observations", configs_);
 

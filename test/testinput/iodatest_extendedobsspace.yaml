@@ -6,8 +6,9 @@
 # If the number of PEs or the input data sets change then the expected numbers should be modified accordingly.
 
 extend obs space, RoundRobin, 71 entries per averaged profile:
-  window begin: 2018-04-14T20:30:00Z
-  window end: 2018-04-15T03:30:00Z
+  time window:
+    begin: 2018-04-14T20:30:00Z
+    end: 2018-04-15T03:30:00Z
   obs space:
     name: Sondes
     obsdatain:
@@ -59,8 +60,9 @@ extend obs space, RoundRobin, 71 entries per averaged profile:
     311.7622, 295.79, 177.45, 139.48, 159.07, 103.65, 102.33, 112.77, 134.05]
 
 extend obs space, InefficientDistribution, 71 entries per averaged profile:
-  window begin: 2018-04-14T20:30:00Z
-  window end: 2018-04-15T03:30:00Z
+  time window:
+    begin: 2018-04-14T20:30:00Z
+    end: 2018-04-15T03:30:00Z
   obs space:
     name: Sondes
     obsdatain:
@@ -100,8 +102,9 @@ extend obs space, InefficientDistribution, 71 entries per averaged profile:
   expected longitude: *expected_longitude
 
 extend obs space, 0 entries per averaged profile:
-  window begin: 2018-04-14T20:30:00Z
-  window end: 2018-04-15T03:30:00Z
+  time window:
+    begin: 2018-04-14T20:30:00Z
+    end: 2018-04-15T03:30:00Z
   obs space:
     name: Sondes
     obsdatain:
@@ -118,8 +121,9 @@ extend obs space, 0 entries per averaged profile:
   # the test exits if nlevs <= 0, so there are no expected values
 
 extend obs space, RoundRobin, 71 entries per averaged profile, alternative data set:
-  window begin: 2018-04-14T20:30:00Z
-  window end: 2018-04-15T03:30:00Z
+  time window:
+    begin: 2018-04-14T20:30:00Z
+    end: 2018-04-15T03:30:00Z
   obs space:
     name: Sondes
     obsdatain:
@@ -159,8 +163,9 @@ extend obs space, RoundRobin, 71 entries per averaged profile, alternative data 
   expected longitude: [144.9913, 120.33, 139.48, 112.77]
 
 extend obs space, RoundRobin, 71 entries per averaged profile, only pressure filled with non-missing values:
-  window begin: 2018-04-14T20:30:00Z
-  window end: 2018-04-15T03:30:00Z
+  time window:
+    begin: 2018-04-14T20:30:00Z
+    end: 2018-04-15T03:30:00Z
   obs space:
     name: Sondes
     obsdatain:
@@ -201,8 +206,9 @@ extend obs space, RoundRobin, 71 entries per averaged profile, only pressure fil
   expected longitude: *expected_longitude
 
 extend obs space, RoundRobin, 71 entries per averaged profile, no variables filled with non-missing values:
-  window begin: 2018-04-14T20:30:00Z
-  window end: 2018-04-15T03:30:00Z
+  time window:
+    begin: 2018-04-14T20:30:00Z
+    end: 2018-04-15T03:30:00Z
   obs space:
     name: Sondes
     obsdatain:

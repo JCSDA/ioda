@@ -3,8 +3,9 @@
 #
 
 Descending sort:
-  window begin: 2018-04-14T20:30:00Z
-  window end: 2018-04-15T03:30:00Z
+  time window:
+    begin: 2018-04-14T20:30:00Z
+    end: 2018-04-15T03:30:00Z
   obs space:
     name: Synthetic
     obsdatain:
@@ -19,8 +20,9 @@ Descending sort:
   expected indices name: expected_indices
 
 Descending sort, do not sort profile if any values of sort variable are missing:
-  window begin: 2018-04-14T20:30:00Z
-  window end: 2018-04-15T03:30:00Z
+  time window:
+    begin: 2018-04-14T20:30:00Z
+    end: 2018-04-15T03:30:00Z
   obs space:
     name: Synthetic
     obsdatain:
@@ -36,8 +38,9 @@ Descending sort, do not sort profile if any values of sort variable are missing:
   expected indices name: expected_indices_no_sort
 
 Descending sort, sort profiles but leave missing values where they are:
-  window begin: 2018-04-14T20:30:00Z
-  window end: 2018-04-15T03:30:00Z
+  time window:
+    begin: 2018-04-14T20:30:00Z
+    end: 2018-04-15T03:30:00Z
   obs space:
     name: Synthetic
     obsdatain:
@@ -53,8 +56,9 @@ Descending sort, sort profiles but leave missing values where they are:
   expected indices name: expected_indices_leave_missing
 
 Ascending sort, do not sort profiles with missing values:
-  window begin: 2000-01-01T00:00:00Z
-  window end: 2030-01-01T00:00:00Z
+  time window:
+    begin: 2000-01-01T00:00:00Z
+    end: 2030-01-01T00:00:00Z
   obs space:
     name: Synthetic
     obsdatain:
@@ -70,8 +74,9 @@ Ascending sort, do not sort profiles with missing values:
   expected indices name: indices_no_sort
 
 Ascending sort, sort includes missing values:
-  window begin: 2000-01-01T00:00:00Z
-  window end: 2030-01-01T00:00:00Z
+  time window:
+    begin: 2000-01-01T00:00:00Z
+    end: 2030-01-01T00:00:00Z
   obs space:
     name: Synthetic
     obsdatain:
@@ -87,8 +92,9 @@ Ascending sort, sort includes missing values:
   expected indices name: indices_sort_missing
 
 Ascending sort, ignore missing values when sorting:
-  window begin: 2000-01-01T00:00:00Z
-  window end: 2030-01-01T00:00:00Z
+  time window:
+    begin: 2000-01-01T00:00:00Z
+    end: 2030-01-01T00:00:00Z
   obs space:
     name: Synthetic
     obsdatain:

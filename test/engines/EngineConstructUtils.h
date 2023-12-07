@@ -97,9 +97,12 @@ CASE("ioda/engine/constructFileReaderFromConfig") {
     eckit::LocalConfiguration engineConfig =
         Engines::constructFileBackendConfig(fileType, fileName, mapFileName, queryFileName);
 
-    util::DateTime winStart("2018-04-14T21:00:00Z");
-    util::DateTime winEnd("2018-04-15T03:00:00Z");
-    const util::TimeWindow timeWindow(winStart, winEnd);
+    const util::DateTime winStart("2018-04-14T21:00:00Z");
+    const util::DateTime winEnd("2018-04-15T03:00:00Z");
+    eckit::LocalConfiguration timeWindowConfig;
+    timeWindowConfig.set("begin", winStart.toString());
+    timeWindowConfig.set("end", winEnd.toString());
+    const util::TimeWindow timeWindow(timeWindowConfig);
     std::vector<std::string> obsVarNames{ "airTemperature", "specificHumidity" };
     bool isParallelIo = false;
     std::unique_ptr<Engines::ReaderBase> readerEngine =

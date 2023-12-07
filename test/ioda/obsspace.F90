@@ -43,12 +43,7 @@ TEST(test_obsspace_construct)
   type(fckit_configuration), allocatable :: obsconfigs(:)
   type(fckit_configuration) :: obsconfig
   type(fckit_configuration) :: testconfig
-
-  character(kind=c_char,len=:), allocatable :: winbgnstr
-  character(kind=c_char,len=:), allocatable :: winendstr
-  type(datetime) :: winbgn, winend
-  character(kind=c_char,len=:), allocatable :: winshiftstr
-  logical(c_bool) :: winshift
+  type(fckit_configuration) :: timewinconfig
 
   type(c_ptr), allocatable, dimension(:) :: obsspace
   integer :: nlocs, nlocs_ref, location_id
@@ -62,21 +57,7 @@ TEST(test_obsspace_construct)
   call fckit_resource("--config", "", filename)
   config = fckit_YAMLConfiguration(fckit_pathname(filename))
 
-  call config%get_or_die("window begin", winbgnstr)
-  call config%get_or_die("window end", winendstr)
-  if (config%has("window shift")) then
-     call config%get_or_die("window shift", winshiftstr)
-     if (winshiftstr == "true") then
-        winshift = .true.
-     else
-        winshift = .false.
-     end if
-  else
-     winshift = .false.
-  endif
-
-  call datetime_create(winbgnstr, winbgn)
-  call datetime_create(winendstr, winend)
+  call config%get_or_die("time window", timewinconfig)
 
   !> allocate all ObsSpaces
   call config%get_or_die("observations", obsconfigs)
@@ -87,7 +68,7 @@ TEST(test_obsspace_construct)
     call obsconfigs(iobstype)%get_or_die("test data", testconfig)
 
     !> construct obsspace
-    obsspace(iobstype) = obsspace_construct(obsconfig, winbgn, winend, winshift)
+    obsspace(iobstype) = obsspace_construct(obsconfig, timewinconfig)
     call obsspace_obsname(obsspace(iobstype), obsname)
 
     !> test if obsname is the same as reference
@@ -129,14 +110,12 @@ TEST(test_obsspace_get_db_put_db)
   type(fckit_configuration) :: config
   type(fckit_configuration), allocatable :: obsconfigs(:)
   type(fckit_configuration) :: obsconfig
+  type(fckit_configuration) :: timewinconfig
 
   character(kind=c_char,len=:), allocatable :: winbgnstr
   character(kind=c_char,len=:), allocatable :: winendstr
-  type(datetime) :: winbgn, winend
   character(len=20) :: winbgnreadstr, winendreadstr
   type(datetime) :: winbgnread, winendread
-  character(kind=c_char,len=:), allocatable :: winshiftstr
-  logical(c_bool) :: winshift
 
   type(c_ptr), allocatable, dimension(:) :: obsspace
   integer :: nlocs, location_id
@@ -148,25 +127,14 @@ TEST(test_obsspace_get_db_put_db)
   real(c_double),     allocatable :: input_double_var(:), output_double_var(:)
   logical(c_bool),    allocatable :: input_bool_var(:),   output_bool_var(:)
 
-  !> initialize winbgn, winend, get config
+  !> get config
   call fckit_resource("--config", "", filename)
   config = fckit_YAMLConfiguration(fckit_pathname(filename))
 
-  call config%get_or_die("window begin", winbgnstr)
-  call config%get_or_die("window end", winendstr)
-  if (config%has("window shift")) then
-     call config%get_or_die("window shift", winshiftstr)
-     if (winshiftstr == "true") then
-        winshift = .true.
-     else
-        winshift = .false.
-     end if
-  else
-     winshift = .false.
-  endif
+  call config%get_or_die("time window", timewinconfig)
 
-  call datetime_create(winbgnstr, winbgn)
-  call datetime_create(winendstr, winend)
+  call timewinconfig%get_or_die("begin", winbgnstr)
+  call timewinconfig%get_or_die("end", winendstr)
 
   !> allocate all ObsSpaces
   call config%get_or_die("observations", obsconfigs)
@@ -176,7 +144,7 @@ TEST(test_obsspace_get_db_put_db)
     call obsconfigs(iobstype)%get_or_die("obs space", obsconfig)
 
     !> construct obsspace
-    obsspace(iobstype) = obsspace_construct(obsconfig, winbgn, winend, winshift)
+    obsspace(iobstype) = obsspace_construct(obsconfig, timewinconfig)
 
     location_id = obsspace_get_dim_id(obsspace(iobstype), "Location")
     nlocs = obsspace_get_dim_size(obsspace(iobstype), location_id)

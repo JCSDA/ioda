@@ -1,6 +1,7 @@
 ---
-window begin: 2021-01-15T00:00:00Z
-window end:   2021-01-16T00:00:00Z
+time window:
+  begin: 2021-01-15T00:00:00Z
+  end:   2021-01-16T00:00:00Z
 
 # Expected indices are based on 2 PE's during an MPI run. If you change
 # the number of PE in the ecbuild_add_test in the ../CMakeLists.txt file,

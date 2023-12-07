@@ -178,7 +178,10 @@ void WriteH5Proc::workaroundFixToVarLenStrings(const std::string & finalFileName
     const bool isParallel = false;
     const util::DateTime windowStart("1000-01-01T00:00:00Z");   // use a window that will
     const util::DateTime windowEnd("3000-01-01T00:00:00Z");     // accept all of the obs
-    const util::TimeWindow timeWindow(windowStart, windowEnd);
+    eckit::LocalConfiguration timeWindowConfig;
+    timeWindowConfig.set("begin", windowStart.toString());
+    timeWindowConfig.set("end", windowEnd.toString());
+    const util::TimeWindow timeWindow(timeWindowConfig);
     Engines::ReaderCreationParameters readerCreateParams(timeWindow,
         createParams_.comm, createParams_.timeComm, {}, isParallel);
     std::unique_ptr<Engines::ReaderBase> readerEngine = Engines::ReaderFactory::create(

@@ -288,9 +288,7 @@ void testDistributionConstructedManually() {
 void testDistributionConstructedByObsSpace() {
   const eckit::LocalConfiguration topLevelConf(::test::TestEnvironment::config());
 
-  const util::DateTime winBegin(topLevelConf.getString("window begin"));
-  const util::DateTime winEnd(topLevelConf.getString("window end"));
-  const util::TimeWindow timeWindow(winBegin, winEnd);
+  const util::TimeWindow timeWindow(topLevelConf.getSubConfiguration("time window"));
 
   const eckit::mpi::Comm & MpiComm = oops::mpi::world();
   const std::size_t MyRank = MpiComm.rank();

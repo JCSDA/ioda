@@ -35,9 +35,7 @@ CASE("ioda/ObsSpace/testPutDb") {
 
   const auto &topLevelConf = ::test::TestEnvironment::config();
 
-  util::DateTime bgn(topLevelConf.getString("window begin"));
-  util::DateTime end(topLevelConf.getString("window end"));
-  const util::TimeWindow timeWindow(bgn, end);
+  const util::TimeWindow timeWindow(topLevelConf.getSubConfiguration("time window"));
 
   std::vector<eckit::LocalConfiguration> confs;
   topLevelConf.get("observations", confs);

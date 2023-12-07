@@ -1,6 +1,7 @@
 ---
-window begin: "2010-04-14T21:00:00Z" # filters out all obs
-window end: "2010-04-15T03:00:00Z"
+time window:
+  begin: "2010-04-14T21:00:00Z" # filters out all obs
+  end: "2010-04-15T03:00:00Z"
 
 observations:
 - obs space:

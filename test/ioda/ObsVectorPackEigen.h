@@ -43,9 +43,8 @@ namespace test {
 void testPackEigen() {
   std::vector<eckit::LocalConfiguration> conf;
   ::test::TestEnvironment::config().get("observations", conf);
-  util::DateTime bgn((::test::TestEnvironment::config().getString("window begin")));
-  util::DateTime end((::test::TestEnvironment::config().getString("window end")));
-  const util::TimeWindow timeWindow(bgn, end);
+  const util::TimeWindow timeWindow
+    (::test::TestEnvironment::config().getSubConfiguration("time window"));
 
   for (std::size_t jj = 0; jj < conf.size(); ++jj) {
      eckit::LocalConfiguration obsconf(conf[jj], "obs space");

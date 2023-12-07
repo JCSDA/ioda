@@ -1,6 +1,7 @@
 ---
-window begin: "2015-08-09T21:00:00Z"
-window end: "2015-08-10T03:00:00Z"
+time window:
+  begin: "2015-08-09T21:00:00Z"
+  end: "2015-08-10T03:00:00Z"
 
 # Expected indices are based on 4 PE's during an MPI run. If you change
 # the number of PE in the ecbuild_add_test in the ../CMakeLists.txt file,
