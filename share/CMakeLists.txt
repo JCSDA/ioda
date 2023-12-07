@@ -29,6 +29,7 @@ set(
   ioda/yaml/iodatest_odb_gmihigh_write.yaml
   ioda/yaml/iodatest_odb_gmilow.yaml
   ioda/yaml/iodatest_odb_gnssro.yaml
+  ioda/yaml/iodatest_odb_gnssro_profile.yaml
   ioda/yaml/iodatest_odb_groundgps.yaml
   ioda/yaml/iodatest_odb_hirasfsr.yaml
   ioda/yaml/iodatest_odb_hloswind.yaml

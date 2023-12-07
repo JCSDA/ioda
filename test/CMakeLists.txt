@@ -156,7 +156,6 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsvector_packeigen.yaml
   testinput/iodatest_extendedobsspace.yaml
   testinput/iodatest_extendedobsspace_halo.yaml
-  testinput/iodatest_odb_gnssro_profile.yaml
   testinput/iodatest_odb_surface_with_query.yaml
   testinput/iodatest_sort.yaml
   testinput/iodatest_writer_sondes.yaml
@@ -1586,7 +1585,7 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
                             GNSSRO-profile
                             Data/testinput_tier_1/gnssro.odb
-                            ../share/test/testinput/odb_gnssro_profile_name_map.yaml testinput/iodatest_odb_gnssro_profile.yaml 333"
+                            ../share/test/testinput/odb_gnssro_profile_name_map.yaml ../share/test/testinput/iodatest_odb_gnssro_profile.yaml 333"
                             test-GNSSRO-profile.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
