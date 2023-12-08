@@ -57,7 +57,7 @@ module obsdatavector_mod
 			type(c_ptr),value :: p
 			integer(c_int64_t) :: n
 		end function
-		function obsdatavector_int_c_nvars(p) result(n) bind(C,name="obsdatavector_int_c_nlocs")
+		function obsdatavector_int_c_nvars(p) result(n) bind(C,name="obsdatavector_int_c_nvars")
 			import c_ptr,c_int64_t
 			type(c_ptr),value :: p
 			integer(c_int64_t) :: n
