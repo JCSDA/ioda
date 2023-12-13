@@ -143,6 +143,7 @@ NewDimensionScales_t DataFromSQL::getVertcos(const int varno) const {
              || obsgroup_ == obsgroup_airs || obsgroup_ == obsgroup_atms
              || obsgroup_ == obsgroup_gmihigh || obsgroup_ == obsgroup_gmilow
              || obsgroup_ == obsgroup_mwri || obsgroup_ == obsgroup_seviriclr
+             || obsgroup_ == obsgroup_amsub
              || obsgroup_ == obsgroup_ssmis) {
     const int number_of_levels = numberOfLevels(varno_rawbt);
     vertcos.push_back(NewDimensionScale<int>("Channel", number_of_levels,

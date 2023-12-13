@@ -1321,6 +1321,7 @@ ObsGroup openFile(const ODC_Parameters& odcparams,
                                                         sql_data.getObsgroup() == obsgroup_gmilow ||
                                                         sql_data.getObsgroup() == obsgroup_mwri ||
                                                         sql_data.getObsgroup() == obsgroup_seviriclr ||
+                                                        sql_data.getObsgroup() == obsgroup_amsub ||
                                                         sql_data.getObsgroup() == obsgroup_ssmis)) {
       sql_data.assignChannelNumbersSeq(std::vector<int>({varno_rawbt}), og);
     } else if (column == "initial_vertco_reference" && sql_data.getObsgroup() == obsgroup_atovs) {

@@ -15,6 +15,7 @@ set(
   ioda/yaml/iodatest_odb_airs.yaml
   ioda/yaml/iodatest_odb_altimeter.yaml
   ioda/yaml/iodatest_odb_amsr.yaml
+  ioda/yaml/iodatest_odb_amsub.yaml
   ioda/yaml/iodatest_odb_aod.yaml
   ioda/yaml/iodatest_odb_aod_write.yaml
   ioda/yaml/iodatest_odb_aod_write_testdatasets.yaml

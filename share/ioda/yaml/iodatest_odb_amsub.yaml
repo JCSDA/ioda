@@ -1,0 +1,28 @@
+where:
+  varno: [119]
+variables:
+
+- name: amsub_temp
+- name: azimuth
+- name: initial_obsvalue
+- name: initial_vertco_reference
+- name: land_sea
+- name: lat
+- name: lon
+- name: qcprepro
+- name: satellite_identifier
+- name: scanline
+- name: scanline_status
+- name: scanpos
+- name: solar_azimuth
+- name: solar_zenith
+- name: surface_height
+- name: vnatovspp
+- name: zenith
+- name: receipt_time
+- name: receipt_date
+- name: date
+- name: time
+- name: ops_obsgroup
+- name: varno
+- name: seqno

@@ -1618,7 +1618,17 @@ if (odc_FOUND)
                             ../share/test/testinput/odb_default_name_map.yaml ../share/test/testinput/iodatest_odb_atovs.yaml"
                             test-ATOVS.hdf
                     TEST_DEPENDS get_ioda_test_data )
-
+  ecbuild_add_test( TARGET  test_ioda-convert_amsub_odc
+                    TYPE    SCRIPT
+                    COMMAND bash
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                            hdf5
+                            "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
+                            AMSUB
+                            Data/testinput_tier_1/amsub.odb
+                            ../share/test/testinput/odb_default_name_map.yaml ../share/test/testinput/iodatest_odb_amsub.yaml"
+                            test-AMSUB.hdf
+                    TEST_DEPENDS get_ioda_test_data )
   ecbuild_add_test( TARGET  test_ioda-convert_gmihigh_odc
                     TYPE    SCRIPT
                     COMMAND bash

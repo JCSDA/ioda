@@ -40,6 +40,7 @@ namespace ODC {
   static constexpr int obsgroup_airs         = 16;
   static constexpr int obsgroup_gnssro       = 18;
   static constexpr int obsgroup_ssmis        = 19;
+  static constexpr int obsgroup_amsub        = 20;
   static constexpr int obsgroup_iasi         = 26;
   static constexpr int obsgroup_seviriclr    = 27;
   static constexpr int obsgroup_geocloud     = 28;
