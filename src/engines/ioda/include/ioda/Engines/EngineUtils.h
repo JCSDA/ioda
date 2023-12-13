@@ -13,7 +13,6 @@
  * \file EngineUtils.h
  * \brief Definitions for setting up backends with file and memory I/O.
  */
-#include <iostream>
 #include <mpi.h>
 #include <string>
 #include <vector>
@@ -146,6 +145,10 @@ IODA_DL eckit::LocalConfiguration constructFileBackendConfig(const std::string &
 ///   different backend based on a given name an parameters.
 /// \ingroup ioda_cxx_engines_pub
 IODA_DL Group constructBackend(BackendNames name, BackendCreationParameters& params);
+
+/// \brief check to see if a file can be opened for reading
+/// \param fileName path to input file name being tested
+IODA_DL bool openInputFileCheck(const std::string & fileName);
 
 /// stream operator
 IODA_DL std::ostream& operator<<(std::ostream& os, const BackendCreateModes& mode);

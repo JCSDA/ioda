@@ -27,6 +27,11 @@ class ReadH5FileParameters : public ReaderParametersBase {
   public:
     /// \brief Path to input file
     oops::RequiredParameter<std::string> fileName{"obsfile", this};
+
+    /// \brief action to take if input file is missing
+    /// \details the warning action is the default which will write a warning message
+    /// and continue with a representation of an empty file.
+    oops::Parameter<std::string> missingFileAction{"missing file action", "warn", this};
 };
 
 // Classes

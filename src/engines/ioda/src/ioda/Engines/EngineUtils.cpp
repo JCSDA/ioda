@@ -7,7 +7,7 @@
 
 #include "ioda/Engines/EngineUtils.h"
 
-#include <iostream>
+#include <fstream>
 #include <iomanip>
 #include <sstream>
 #include <string>
@@ -324,6 +324,22 @@ Group constructBackend(BackendNames name, BackendCreationParameters& params) {
   // If we get to here, then we have a backend name that is
   // not implemented yet.
   throw Exception("Backend not implemented yet", ioda_Here());
+}
+
+bool openInputFileCheck(const std::string & fileName) {
+  // return true if the file can be opened in read mode
+  bool fileCanBeOpened;
+  std::ifstream inputFile;
+  inputFile.open(fileName);
+  if (inputFile) {
+    // File was opened successfully
+    fileCanBeOpened = true;
+    inputFile.close();
+  } else {
+    // Unable to open file
+    fileCanBeOpened = false;
+  }
+  return fileCanBeOpened;
 }
 
 std::ostream& operator<<(std::ostream& os, const ioda::Engines::BackendCreateModes& mode)

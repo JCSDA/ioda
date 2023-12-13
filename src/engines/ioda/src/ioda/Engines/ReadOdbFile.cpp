@@ -32,19 +32,44 @@ ReadOdbFile::ReadOdbFile(const Parameters_ & params,
     Engines::BackendCreationParameters backendParams;
     Group backend = constructBackend(backendName, backendParams);
 
-    // And load the ODB file into it
-    Engines::ODC::ODC_Parameters odcparams;
-    odcparams.filename    = params.fileName;
-    odcparams.mappingFile = params.mappingFileName;
-    odcparams.queryFile   = params.queryFileName;
-    odcparams.maxNumberChannels = params.maxNumberChannels;
-    const util::DateTime missingDate = util::missingValue<util::DateTime>();
-    odcparams.timeWindowStart = createParams_.timeWindow.start();
-    odcparams.timeWindowExtendedLowerBound =
-      params.timeWindowExtendedLowerBound.value() != boost::none ?
-      params.timeWindowExtendedLowerBound.value().value() : missingDate;
-    obs_group_ = Engines::ODC::openFile(odcparams, backend);
-    oops::Log::trace() << "ioda::Engines::ReadOdbFile end constructor" << std::endl;
+    if (openInputFileCheck(fileName_)) {
+        // Have a file, load the ODB file contents into the memory backend
+        Engines::ODC::ODC_Parameters odcparams;
+        odcparams.filename    = params.fileName;
+        odcparams.mappingFile = params.mappingFileName;
+        odcparams.queryFile   = params.queryFileName;
+        odcparams.maxNumberChannels = params.maxNumberChannels;
+        const util::DateTime missingDate = util::missingValue<util::DateTime>();
+        odcparams.timeWindowStart = createParams_.timeWindow.start();
+        odcparams.timeWindowExtendedLowerBound =
+          params.timeWindowExtendedLowerBound.value() != boost::none ?
+          params.timeWindowExtendedLowerBound.value().value() : missingDate;
+        obs_group_ = Engines::ODC::openFile(odcparams, backend);
+        oops::Log::trace() << "ioda::Engines::ReadOdbFile end constructor" << std::endl;
+    } else {
+        // Input file does not exist (is not readable actually)
+        if (params.missingFileAction.value() == "warn") {
+            oops::Log::info() << "WARNING: input file is not readable, "
+               << "will continue with empty file representation" << std::endl
+               << "WARNING:     file: " << fileName_ << std::endl;
+
+            // Create the ObsGroup and attach the backend.
+            obs_group_ = ObsGroup::generate(backend, {});
+
+            // Create the Location dimension and set its size to zero.
+            obs_group_.vars.create<int64_t>("Location", { 0 })
+                .setIsDimensionScale("Location");
+        } else if (params.missingFileAction.value() == "error") {
+            std::string ErrMsg = std::string("Input file is not readable, ") +
+                std::string("will stop execution. File: ") + fileName_ + std::string("\n");
+            throw Exception(ErrMsg, ioda_Here());
+        } else {
+            std::string ErrMsg = std::string("Unrecognized input file missing action: ") +
+                params.missingFileAction.value();
+            throw Exception(ErrMsg, ioda_Here());
+        }
+
+    }
 }
 
 std::string ReadOdbFile::fileName() const {

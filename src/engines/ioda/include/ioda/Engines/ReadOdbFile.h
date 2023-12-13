@@ -43,6 +43,11 @@ class ReadOdbFileParameters : public ReaderParametersBase {
     /// \brief Extended lower bound of time window (datetime in ISO-8601 format).
     oops::OptionalParameter<util::DateTime>
       timeWindowExtendedLowerBound{"time window extended lower bound", this};
+
+    /// \brief action to take if input file is missing
+    /// \details the warning action is the default which will write a warning message
+    /// and continue with a representation of an empty file.
+    oops::Parameter<std::string> missingFileAction{"missing file action", "warn", this};
 };
 
 // Classes

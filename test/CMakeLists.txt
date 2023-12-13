@@ -120,6 +120,12 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsspace_empty_obs_file_mpi.yaml
   testinput/iodatest_obsspace_empty_obs_file_reader_pool.yaml
   testinput/iodatest_obsspace_empty_obs_file_mpi_reader_pool.yaml
+  testinput/iodatest_obsspace_missing_obs_file_warn.yaml
+  testinput/iodatest_obsspace_missing_obs_file_error.yaml
+  testinput/iodatest_obsspace_missing_obs_file_warn_odc.yaml
+  testinput/iodatest_obsspace_missing_obs_file_error_odc.yaml
+  testinput/iodatest_obsspace_missing_obs_file_error_odc_reader_pool.yaml
+  testinput/iodatest_obsspace_missing_obs_file_error_reader_pool.yaml
   testinput/iodatest_obsspace_out_dims_check.yaml
   testinput/iodatest_obsspace_grouping.yaml
   testinput/iodatest_obsspace_grouping_reader_pool.yaml
@@ -430,6 +436,114 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_empty_obs_file_mpi_reader_pool
                   ARGS    "testinput/iodatest_obsspace_empty_obs_file_mpi_reader_pool.yaml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
+
+ecbuild_add_test( TARGET  test_ioda_obsspace_missing_obs_file_warn
+                  COMMAND test_ioda_obsspace
+                  ARGS    "testinput/iodatest_obsspace_missing_obs_file_warn.yaml"
+                  LIBS  ioda_test
+                  TEST_DEPENDS get_ioda_test_data )
+
+ecbuild_add_test( TARGET  test_ioda_obsspace_missing_obs_file_warn_mpi
+                  MPI 4
+                  COMMAND test_ioda_obsspace
+                  ARGS    "testinput/iodatest_obsspace_missing_obs_file_warn.yaml"
+                  LIBS  ioda_test
+                  TEST_DEPENDS get_ioda_test_data )
+
+# The next two tests are verifying that an exception is thrown (ie, error) when the input
+# obs file is missing which the "missing file action: error" YAML spec is used.
+# This is accomplished by running the ioda_compare.sh script and telling that script
+# that an error return code (non-zero) is expected. The arguments to the ioda_compare.sh
+# script are:
+#      1 - type of file to compare (only hdf5 will check for error return code)
+#      2 - command to run (time_IodaIO.x with its single YAML file argument)
+#      3 - file to test
+#      4 - tolerance for comparing floating point values
+#      5 - verbosity (Y/N)
+#      6 - expect an error (Y/N)
+
+# old reader
+ecbuild_add_test( TARGET  test_ioda_obsspace_missing_obs_file_error
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          hdf5
+                          "${CMAKE_BINARY_DIR}/bin/time_IodaIO.x
+                          testinput/iodatest_obsspace_missing_obs_file_error.yaml"
+                          testoutput/ospace.missing_obs_file_error.nc4
+                          0.0
+                          N
+                          Y
+                  TEST_DEPENDS get_ioda_test_data )
+
+# new reader
+ecbuild_add_test( TARGET  test_ioda_obsspace_missing_obs_file_error_reader_pool
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          hdf5
+                          "${CMAKE_BINARY_DIR}/bin/time_IodaIO.x
+                          testinput/iodatest_obsspace_missing_obs_file_error_reader_pool.yaml"
+                          testoutput/ospace.missing_obs_file_error.nc4
+                          0.0
+                          N
+                          Y
+                  TEST_DEPENDS get_ioda_test_data )
+
+if (odc_FOUND)
+  ecbuild_add_test( TARGET  test_ioda_obsspace_missing_obs_file_warn_odc
+                    COMMAND test_ioda_obsspace
+                    ARGS    "testinput/iodatest_obsspace_missing_obs_file_warn_odc.yaml"
+                    LIBS  ioda_test
+                    TEST_DEPENDS get_ioda_test_data )
+
+  ecbuild_add_test( TARGET  test_ioda_obsspace_missing_obs_file_warn_odc_mpi
+                    MPI 4
+                    COMMAND test_ioda_obsspace
+                    ARGS    "testinput/iodatest_obsspace_missing_obs_file_warn_odc.yaml"
+                    LIBS  ioda_test
+                    TEST_DEPENDS get_ioda_test_data )
+
+  # The next two tests are verifying that an exception is thrown (ie, error) when the input
+  # obs file is missing which the "missing file action: error" YAML spec is used.
+  # This is accomplished by running the ioda_compare.sh script and telling that script
+  # that an error return code (non-zero) is expected. The arguments to the ioda_compare.sh
+  # script are:
+  #      1 - type of file to compare (only hdf5 will check for error return code)
+  #      2 - command to run (time_IodaIO.x with its single YAML file argument)
+  #      3 - file to test
+  #      4 - tolerance for comparing floating point values
+  #      5 - verbosity (Y/N)
+  #      6 - expect an error (Y/N)
+
+  # old reader
+  ecbuild_add_test( TARGET  test_ioda_obsspace_missing_obs_file_error_odc
+                    TYPE    SCRIPT
+                    COMMAND bash
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                            hdf5
+                            "${CMAKE_BINARY_DIR}/bin/time_IodaIO.x
+                            testinput/iodatest_obsspace_missing_obs_file_error_odc.yaml"
+                            testoutput/ospace.missing_obs_file_error.nc4
+                            0.0
+                            N
+                            Y
+                    TEST_DEPENDS get_ioda_test_data )
+
+  # old reader
+  ecbuild_add_test( TARGET  test_ioda_obsspace_missing_obs_file_error_odc_reader_pool
+                    TYPE    SCRIPT
+                    COMMAND bash
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                            hdf5
+                            "${CMAKE_BINARY_DIR}/bin/time_IodaIO.x
+                            testinput/iodatest_obsspace_missing_obs_file_error_odc_reader_pool.yaml"
+                            testoutput/ospace.missing_obs_file_error.nc4
+                            0.0
+                            N
+                            Y
+                    TEST_DEPENDS get_ioda_test_data )
+endif()
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_grouping
                   COMMAND test_ioda_obsspace
