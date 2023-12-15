@@ -63,9 +63,9 @@ AtlasDistribution::RecordAssigner::RecordAssigner(const Parameters_ & params)
   atlas::MeshGenerator generator(atlasConfig);
 
   mesh_ = generator.generate(grid);
-  if (static_cast<size_t>(mesh_.nb_partitions()) != atlas::mpi::comm().size()) {
+  if (static_cast<size_t>(mesh_.nb_parts()) != atlas::mpi::comm().size()) {
     std::stringstream msg;
-    msg << "The number of mesh partitions, " << mesh_.nb_partitions()
+    msg << "The number of mesh partitions, " << mesh_.nb_parts()
         << ", is different from the number of MPI processes, " << atlas::mpi::comm().size();
     throw eckit::Exception(msg.str(), Here());
   }
