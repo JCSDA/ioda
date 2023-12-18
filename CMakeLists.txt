@@ -55,7 +55,7 @@ find_package( udunits 2.2.0 REQUIRED )
 find_package( NetCDF REQUIRED COMPONENTS Fortran )  # No idea why oops is not importing this correctly
 
 # Optional
-find_package( odc 1.0.2 QUIET )   # Needed for odc
+find_package( odc 1.4.6 QUIET )   # Needed for odc
 find_package( Boost 1.64.0 )      # Provides an implementation of optional
 # Python-finding settings
 set(Python3_FIND_REGISTRY "LAST")
