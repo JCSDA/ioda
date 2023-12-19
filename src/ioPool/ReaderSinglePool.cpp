@@ -11,7 +11,6 @@
 
 #include <algorithm>
 #include <cstdio>
-#include <cstdlib>
 #include <memory>
 #include <numeric>
 #include <sstream>
@@ -207,7 +206,8 @@ void ReaderSinglePool::initialize() {
     // Generate and record the new input file name for use here and in the save function.
     // Then create the new input files (one for each pool member)
     this->setNewInputFileName();
-    readerCreateFileSet(*this, fileGroup, dtimeValues_, dtimeEpoch_, lonValues_, latValues_);
+    readerCreateFileSet(*this, fileGroup, dtimeValues_, dtimeEpoch_,
+                        lonValues_, latValues_, tempFileList_);
     oops::Log::trace() << "ReaderSinglePool::initialize, end" << std::endl;
 }
 
@@ -274,17 +274,22 @@ void ReaderSinglePool::finalize() {
     oops::Log::trace() << "ReaderSinglePool::finalize, start" << std::endl;
     // If we are not keeping the work directory contents, then remove them.
     if ((this->commAll().rank() == 0) && (!configParams_.keepWorkDirContents)) {
-        // Check for dangerous cases for an "rm -rf" command. If we have one of these,
-        // skip the remove step.
-        if ((workDir_ == "") || (workDir_ == ".") || (workDir_ == "./")) {
-            oops::Log::warning() << "WARNING: ReaderSinglePool::finalize: attempting to "
-                << "unsafely remove a work directory" << std::endl
-                << "WARNING:     Skipping removal of: '" << workDir_ << "'" << std::endl;
-        } else {
+        // Issue warnings and continue if the removal fails. In operational runs, we
+        // Don't want to stop the flow due to extra files being left around.
+        // First remove all of the files in the tempFileList
+        for (auto & tempFileName : this->tempFileList()) {
+            if (std::remove(tempFileName.c_str()) != 0) {
+                oops::Log::warning() << "WARNING: ReaderSinglePool::finalize: "
+                    << "Failed to remove file: " << tempFileName << std::endl;
+            }
+        }
+        // Then remove the work directory
+        // Check for cases to avoid when issuing a remove directory command
+        if ((workDir_ != "") && (workDir_ != ".") && (workDir_ != "./")) {
             // Okay to remove
-            std::string sysCommand = std::string("rm -rf ") + workDir_;
-            if (system(sysCommand.c_str()) != 0) {
-                throw Exception(std::string("Could not execute: ") + sysCommand, ioda_Here());
+            if (std::remove(workDir_.c_str()) != 0) {
+                oops::Log::warning() << "WARNING: ReaderSinglePool::finalize: "
+                    << "Failed to remove directory: " << workDir_ << std::endl;
             }
         }
     }

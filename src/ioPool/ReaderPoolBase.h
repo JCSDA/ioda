@@ -120,6 +120,9 @@ class ReaderPoolBase : public IoPoolBase {
   /// \brief full work directory
   const std::string & workDir() const { return workDir_; }
 
+  /// \brief list of temporary files
+  const std::vector<std::string> & tempFileList() const { return tempFileList_; }
+
   /// \brief missing value for string variables
   std::shared_ptr<std::string> stringMissingValue() const { return stringMissingValue_; }
 
@@ -178,6 +181,9 @@ class ReaderPoolBase : public IoPoolBase {
 
   /// \brief completed work directory
   std::string workDir_;
+
+  /// \brief list of temporary files
+  std::vector<std::string> tempFileList_;
 
   /// \brief missing value for string variables
   std::shared_ptr<std::string> stringMissingValue_;

@@ -1201,9 +1201,11 @@ void readerBuildInputFiles(const ReaderPoolBase & ioPool,
                            const std::vector<int64_t> & dtimeValues,
                            const std::string & dtimeEpoch,
                            const std::vector<float> & lonValues,
-                           const std::vector<float> & latValues) {
+                           const std::vector<float> & latValues,
+                           std::vector<std::string> & tempFileList) {
     // First identify which ranks, from the commAll communicator group, are io pool members.
     // These are the unique values in assocAllRanks.
+    tempFileList.clear();
     std::set<int> ioPoolMembers(assocAllRanks.begin(), assocAllRanks.end());
     for (const auto & i : ioPoolMembers) {
         // For this io pool member, record the io pool rank (for the file suffix),
@@ -1219,10 +1221,11 @@ void readerBuildInputFiles(const ReaderPoolBase & ioPool,
         readerSetFileSelection(allRank, assocAllRanks, locIndicesAllRanks, locIndicesStarts,
                                locIndicesCounts, indices, destAllRanks, starts, counts);
 
-        // Create the associate file
+        // Create the associate file, and record it for subsequent removal
         readerBuildAssocInputFile(ioPool, srcGroup, allRank, poolRank, inputFileName,
                                   indices, destAllRanks, starts, counts,
                                   dtimeValues, dtimeEpoch, lonValues, latValues);
+        tempFileList.push_back(inputFileName);
         oops::Log::info() << "readerBuildInputFiles: created new input file: "
                           << inputFileName << std::endl;
     }
@@ -1233,7 +1236,8 @@ void readerCreateFileSet(const ReaderPoolBase & ioPool, const Group & srcGroup,
                          const std::vector<int64_t> & dtimeValues,
                          const std::string & dtimeEpoch,
                          const std::vector<float> & lonValues,
-                         const std::vector<float> & latValues) {
+                         const std::vector<float> & latValues,
+                         std::vector<std::string> & tempFileList) {
     // We want to gather all the rank assignments and indices on rank 0 in the all
     // communicator, since rank 0 is rank that has the input file open. This can be
     // obtained from pairing up which ranks are grouped together, and then tagging on
@@ -1255,7 +1259,7 @@ void readerCreateFileSet(const ReaderPoolBase & ioPool, const Group & srcGroup,
     if (ioPool.commAll().rank() == 0) {
         readerBuildInputFiles(ioPool, srcGroup, assocAllRanks, ioPoolRanks, assocFileNames,
                               locIndicesAllRanks, locIndicesStarts, locIndicesCounts,
-                              dtimeValues, dtimeEpoch, lonValues, latValues);
+                              dtimeValues, dtimeEpoch, lonValues, latValues, tempFileList);
     }
 
     // Have the other MPI ranks wait for rank 0 to create the input files

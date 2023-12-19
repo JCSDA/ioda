@@ -217,11 +217,13 @@ void readerCreateWorkDirectory(const ReaderPoolBase & ioPool, const std::string 
 /// @param dtimeEpoch date time epoch string
 /// @param lonValues longitude values
 /// @param latValues latitude values
+/// @param tempFileList record list of temporary files for subsequent removal
 void readerCreateFileSet(const ReaderPoolBase & ioPool, const Group & srcGroup,
                          const std::vector<int64_t> & dtimeValues,
                          const std::string & dtimeEpoch,
                          const std::vector<float> & lonValues,
-                         const std::vector<float> & latValues);
+                         const std::vector<float> & latValues,
+                         std::vector<std::string> & tempFileList);
 
 /// @brief copy the groups and attributes from fileGroup to memGroup
 /// @param ioPool ioda ReaderPoolBase object
