@@ -15,7 +15,7 @@ if (IODA_BUILD_LANGUAGE_FORTRAN)
 	list( APPEND IODA_LANGUAGES Fortran)
 endif()
 
-project( ioda VERSION 2.7.0 LANGUAGES ${IODA_LANGUAGES} )
+project( ioda VERSION 2.8.0 LANGUAGES ${IODA_LANGUAGES} )
 
 include( FeatureSummary )
 
