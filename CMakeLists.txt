@@ -82,9 +82,9 @@ if (ENABLE_IODA_DATA)
 else()
   # Set values for downloading ioda test data from tarball
   set (ioda_data_download_url "https://bin.ssec.wisc.edu/pub/s4/CRTM/file")
-  set (ioda_data_tag "2.7.0")
+  set (ioda_data_tag "2.8.0")
   set (ioda_data_tarball_name "ioda_testinput_tier_1_${ioda_data_tag}.tar.gz")
-  set (ioda_data_tarball_hash "b74a3b6f5afbc9b1c94ef0b1ac58feb3")
+  set (ioda_data_tarball_hash "50dd08b1594b870ba0a7840e591b4dd3")
 endif()
 
 ## Sources
