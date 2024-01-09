@@ -521,15 +521,6 @@ namespace ioda {
         /// \brief indicator whether the data in recidx_ is sorted
         bool recidx_is_sorted_;
 
-        /// \brief map showing association of dim names with each variable name
-        VarUtils::VarDimMap dims_attached_to_vars_;
-
-        /// \brief cache for frontend selection
-        std::map<VarUtils::Vec_Named_Variable, Selection> known_fe_selections_;
-
-        /// \brief cache for backend selection
-        std::map<VarUtils::Vec_Named_Variable, Selection> known_be_selections_;
-
         /// \brief disable the "=" operator
         ObsSpace & operator= (const ObsSpace &) = delete;
 
@@ -569,16 +560,6 @@ namespace ioda {
         /// \param LocationSize new size to either append or reset
         /// \param append when true append LocationSize to current size, otherwise reset size
         void resizeLocation(const Dimensions_t LocationSize, const bool append);
-
-        /// \brief store a variable in the obs_group_ object
-        /// \param obsIo obs source object
-        /// \param varName Name of obs_group_ variable for obs_group_ object
-        /// \param varValues Values for obs_group_ variable
-        /// \param frameStart is the start of the ObsFrame
-        /// \param frameCount is the size of the ObsFrame
-        template<typename VarType>
-        void storeVar(const std::string & varName, std::vector<VarType> & varValues,
-                      const Dimensions_t frameStart, const Dimensions_t frameCount);
 
         /// \brief get fill value for use in the obs_group_ object
         template<typename DataType>

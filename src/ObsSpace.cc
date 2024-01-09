@@ -947,59 +947,6 @@ std::size_t ObsSpace::createChannelSelections(const Variable & variable,
     return numElements;
 }
 
-// -----------------------------------------------------------------------------
-// This function is for transferring data from a memory buffer into the ObsSpace
-// container. At this point, the time window filtering, obs grouping and MPI
-// distribution has been applied to the input memory buffer (varValues). Also,
-// the variable has been resized according to appending a new frame's worth of
-// data to the existing variable in the ObsSpace container.
-//
-// What this means is that you can always transfer the data as a single contiguous
-// block which can be accomplished with a single hyperslab selection. There should
-// be no need to cache these selections because of this.
-template<typename VarType>
-void ObsSpace::storeVar(const std::string & varName, std::vector<VarType> & varValues,
-                       const Dimensions_t frameStart, const Dimensions_t frameCount) {
-    // get the dimensions of the variable
-    Variable var = obs_group_.vars.open(varName);
-    std::vector<Dimensions_t> varDims = var.getDimensions().dimsCur;
-
-    // check the caches for the selectors
-    VarUtils::Vec_Named_Variable dims;
-    for (auto & ivar : dims_attached_to_vars_) {
-        if (ivar.first.name == varName) {
-            dims = ivar.second;
-            break;
-        }
-    }
-    if (!known_fe_selections_.count(dims)) {
-        // backend starts at frameStart, and the count for the first dimension
-        // is the frame count
-        std::vector<Dimensions_t> beCounts = varDims;
-        beCounts[0] = frameCount;
-        std::vector<Dimensions_t> beStarts(beCounts.size(), 0);
-        beStarts[0] = frameStart;
-
-        // front end always starts at zero, and the number of elements is equal to the
-        // product of the var dimensions (with the first dimension adjusted by
-        // the frame count)
-        std::vector<Dimensions_t> feCounts(1, std::accumulate(
-            beCounts.begin(), beCounts.end(), static_cast<Dimensions_t>(1),
-            std::multiplies<Dimensions_t>()));
-        std::vector<Dimensions_t> feStarts(1, 0);
-
-        known_fe_selections_[dims] = Selection()
-            .extent(feCounts).select({ SelectionOperator::SET, feStarts, feCounts });
-        known_be_selections_[dims] = Selection()
-            .extent(varDims).select({ SelectionOperator::SET, beStarts, beCounts });
-    }
-    Selection & feSelect = known_fe_selections_[dims];
-    Selection & beSelect = known_be_selections_[dims];
-
-    var.write<VarType>(varValues, feSelect, beSelect);
-}
-
-// -----------------------------------------------------------------------------
 void ObsSpace::fillChanNumToIndexMap() {
     // If there is a channels dimension, load up the channel number to index map
     // for channel selection feature.
