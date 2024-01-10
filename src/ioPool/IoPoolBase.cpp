@@ -28,7 +28,7 @@
 namespace ioda {
 namespace IoPool {
 
-constexpr int defaultMaxPoolSize = 10;
+constexpr int defaultMaxPoolSize = 4;
 
 //------------------------------------------------------------------------------------
 // Common io pool creation parameters
