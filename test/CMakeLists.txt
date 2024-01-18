@@ -169,6 +169,8 @@ list( APPEND ioda_test_input
   testinput/iodatest_time_io_odc.yaml
   testinput/iodatest_time_io_reader_pool.yaml
   testinput/iodatest_time_io_reader_pool_odc.yaml
+  testinput/iodatest_time_io_script.yaml
+  testinput/iodatest_time_io_script.py
 )
 
 add_library(ioda_test INTERFACE)
@@ -1148,6 +1150,17 @@ if (odc_FOUND)
                             "echo Checking time io (reader pool) ATMS"
                             atms_time_reader_pool.odb
                     TEST_DEPENDS get_ioda_test_data test_ioda_time_io_reader_pool_odc)
+endif()
+
+#####################################################################
+# Test the script backend
+#####################################################################
+
+if (${Python3_FOUND})
+  ecbuild_add_test( TARGET      test_ioda_time_io_script
+                    COMMAND     ${CMAKE_BINARY_DIR}/bin/time_IodaIO.x
+                    ARGS        "testinput/iodatest_time_io_script.yaml"
+                    ENVIRONMENT PYTHONPATH=${CMAKE_BINARY_DIR}/lib/python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}:$ENV{PYTHONPATH})
 endif()
 
 #####################################################################
