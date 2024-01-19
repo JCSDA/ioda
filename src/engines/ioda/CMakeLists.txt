@@ -256,7 +256,6 @@ list(APPEND SRCS_IODA_ENGINES
 	${SRCS_ENGINES_TOP}
 	${SRCS_ENGINES_OBS_STORE}
 	${SRCS_ENGINES_ODC}
-	${SRCS_ENGINES_SCRIPT}
 	${CMAKE_CURRENT_BINARY_DIR}/config/ioda/config.h
 	${CMAKE_CURRENT_BINARY_DIR}/config/ioda/testconfig.h
 	)
@@ -265,8 +264,13 @@ list(APPEND SRCS_IODA_ENGINES ${SRCS_LAYOUTS_ODB})
 if (odc_FOUND)
     list(APPEND SRCS_IODA_ENGINES ${SRCS_ENGINES_ODC_ODC_DEPENDENT})
 endif()
+
 if (HDF5_FOUND)
 	list(APPEND SRCS_IODA_ENGINES ${SRCS_ENGINES_HH})
+endif()
+
+if (BUILD_PYTHON_BINDINGS)
+	list(APPEND SRCS_IODA_ENGINES ${SRCS_ENGINES_SCRIPT})
 endif()
 
 ## Create options files that specify compilation options, available libraries,
