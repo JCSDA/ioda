@@ -18,7 +18,7 @@ observations:
     obsdataout:
       engine:
         type: H5File
-        obsfile: "testoutput/diagout.nc4"
+        obsfile: "testoutput/diagout-inclusive-lower-bound.nc4"
   test data:
     gnlocs: 786
     gnlocs outside time window: 188
