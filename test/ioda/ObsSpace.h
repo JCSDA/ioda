@@ -320,7 +320,11 @@ void testGetDb() {
         if (EmptyObsSpace) {
           EXPECT(TestVec.size() == 0);
         } else {
+          oops::Log::debug() << "FirstValue, ExpectedFirstValue: " << TestVec[0] << ", "
+                             << ExpectedFirstValue << std::endl;
           EXPECT(TestVec[0] == ExpectedFirstValue);
+          oops::Log::debug() << "LastValue, ExpectedLastValue: " << TestVec[Nlocs-1] << ", "
+                             << ExpectedLastValue << std::endl;
           EXPECT(TestVec[Nlocs-1] == ExpectedLastValue);
         }
       } else if (VarType == "datetime") {

@@ -1,0 +1,102 @@
+---
+time window:
+  begin: "2021-07-01T09:00:00Z"
+  end: "2021-07-01T15:00:00Z"
+
+observations:
+- obs space:
+    name: "Radiosonde"
+    simulated variables: ['airTemperature']
+    obsdatain:
+      engine:
+        type: ODB
+        obsfile: "Data/testinput_tier_1/jopa_sonde_20210701T1200Z_out2.odb"
+        mapping file: ../share/test/testinput/odb_sonde_name_map.yaml
+        query file: ../share/test/testinput/iodatest_odb_sonde.yaml
+    obsdataout:
+      engine:
+        type: ODB
+        obsfile: "testoutput/diagout-sonde-mixed.odc"
+        mapping file: ../share/test/testinput/odb_sonde_name_map.yaml
+        query file: ../share/test/testinput/iodatest_odb_sonde_write.yaml
+  test data:
+    gnlocs: 9234
+    gnlocs outside time window: 155
+    gnlocs rejected by qc: 0
+    nlocs from source: 9389
+    nrecs: 9234
+    obs perturbations seed: 0
+    expected group variables: []
+    expected sort variable: ""
+    expected sort order: "ascending"
+    variables for get test:
+      - name: "latitude"
+        group: "MetaData"
+        type: "float"
+        norm: 4870.5754523917794
+
+      - name: "longitude"
+        group: "MetaData"
+        type: "float"
+        norm: 875.37798612161407
+
+      - name: "stationIdentification"
+        group: "MetaData"
+        type: "string"
+        first value: "03005"
+        last value: "03808"
+    tolerance:
+      - 1.0e-11
+    variables for putget test:
+      - name: "airTemperature"
+        group: "ObsValue"
+        channels: []
+
+- obs space:
+    name: "Radiosonde derived"
+    simulated variables: ['airTemperature']
+    obsdatain:
+      engine:
+        type: ODB
+        obsfile: "Data/testinput_tier_1/jopa_sonde_20210701T1200Z_out2.odb"
+        mapping file: ../share/test/testinput/odb_sonde_name_map.yaml
+        query file: ../share/test/testinput/iodatest_odb_sonde.yaml
+    obsdataout:
+      engine:
+        type: ODB
+        obsfile: "testoutput/diagout-sonde-derived.odc"
+        mapping file: ../share/test/testinput/odb_sonde_name_map.yaml
+        query file: ../share/test/testinput/iodatest_odb_sonde_write.yaml
+        odb type: derived
+  test data:
+    gnlocs: 9234
+    gnlocs outside time window: 155
+    gnlocs rejected by qc: 0
+    nlocs from source: 9389
+    nrecs: 9234
+    obs perturbations seed: 0
+    expected group variables: []
+    expected sort variable: ""
+    expected sort order: "ascending"
+    variables for get test:
+      - name: "latitude"
+        group: "MetaData"
+        type: "float"
+        norm: 4870.5754523917794
+
+      - name: "longitude"
+        group: "MetaData"
+        type: "float"
+        norm: 875.37798612161407
+
+      - name: "stationIdentification"
+        group: "MetaData"
+        type: "string"
+        first value: "03005"
+        last value: "03808"
+    tolerance:
+      - 1.0e-11
+    variables for putget test:
+      - name: "airTemperature"
+        group: "ObsValue"
+        channels: []

@@ -49,9 +49,11 @@ set(
   ioda/yaml/iodatest_odb_seviriclr.yaml
   ioda/yaml/iodatest_odb_sonde.yaml
   ioda/yaml/iodatest_odb_sonde_history.yaml
+  ioda/yaml/iodatest_odb_sonde_mixed.yaml
   ioda/yaml/iodatest_odb_sonde_time_displacement.yaml
   ioda/yaml/iodatest_odb_sonde_truncate_profiles.yaml
   ioda/yaml/iodatest_odb_sonde_write.yaml
+  ioda/yaml/iodatest_odb_sonde_write_mixed.yaml
   ioda/yaml/iodatest_odb_ssmis.yaml
   ioda/yaml/iodatest_odb_surface.yaml
   ioda/yaml/iodatest_odb_surfacecloud.yaml

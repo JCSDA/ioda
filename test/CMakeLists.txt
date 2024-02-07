@@ -147,6 +147,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsspace_odc_atms_reader_pool.yaml
   testinput/iodatest_obsspace_fortran.yaml
   testinput/iodatest_obsspace_out_odc.yaml
+  testinput/iodatest_obsspace_out_odc_sonde_mixed.yaml
   testinput/iodatest_obsspace_out_odc_readbackin.yaml
   testinput/iodatest_obsspace_out_odc_mpi_2.yaml
   testinput/iodatest_obsspace_put_db_channels.yaml
@@ -322,7 +323,7 @@ if (odc_FOUND)
   ecbuild_add_test( TARGET  test_ioda_clean_obsspace_out_odc_files
                     COMMAND rm
                     ARGS    "-f" "testoutput/diagout-aircraft.odc" "testoutput/diagout-atms.odc" "testoutput/diagout-gmi.odc"
-                                 "testoutput/diagout-amsua.odc" "testoutput/diagout-sonde.odc" "testoutput/diagout-aod.odc"
+                                 "testoutput/diagout-amsua.odc" "testoutput/diagout-sonde.odc" "testoutput/diagout-sonde-mixed.odc" "testoutput/diagout-aod.odc"
                                  "testoutput/diagout-iasi.odc" "testoutput/diagout-aod-multifiles_0000.odc"
                                  "testoutput/diagout-aod-multifiles_0001.odc" "testoutput/diagout-aod-multifiles-oneiopool.odc"
                                  "testoutput/diagout-aod-singlefile-oneiopool.odc" "testoutput/diagout-aod-singlefile.odc" "testoutput/diagout-atms-readbackin.odc"
@@ -330,6 +331,11 @@ if (odc_FOUND)
   ecbuild_add_test( TARGET  test_ioda_obsspace_out_odc
                     COMMAND test_ioda_obsspace
                     ARGS    "testinput/iodatest_obsspace_out_odc.yaml"
+                    LIBS  ioda_test
+                    TEST_DEPENDS get_ioda_test_data test_ioda_clean_obsspace_out_odc_files )
+  ecbuild_add_test( TARGET  test_ioda_obsspace_out_odc_sonde_mixed
+                    COMMAND test_ioda_obsspace
+                    ARGS    "testinput/iodatest_obsspace_out_odc_sonde_mixed.yaml"
                     LIBS  ioda_test
                     TEST_DEPENDS get_ioda_test_data test_ioda_clean_obsspace_out_odc_files )
   ecbuild_add_test( TARGET  iodatest_obsspace_out_odc_readbackin
@@ -363,6 +369,14 @@ if (odc_FOUND)
                     COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
                     ARGS    "testoutput/diagout-sonde.odc" "Data/testinput_tier_1/test_reference/diagout-sonde.odc" ${ODC_TOOL_PATH}
                     TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_out_odc )
+  ecbuild_add_test( TARGET  test_ioda_obsspace_out_odc_compare_sonde_mixed
+                    COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
+                    ARGS    "testoutput/diagout-sonde-mixed.odc" "Data/testinput_tier_1/test_reference/diagout-sonde-mixed.odc" ${ODC_TOOL_PATH}
+                    TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_out_odc_sonde_mixed )
+  ecbuild_add_test( TARGET  test_ioda_obsspace_out_odc_compare_sonde_derived
+                    COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
+                    ARGS    "testoutput/diagout-sonde-derived.odc" "Data/testinput_tier_1/test_reference/diagout-sonde-derived.odc" ${ODC_TOOL_PATH}
+                    TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_out_odc_sonde_mixed )
   ecbuild_add_test( TARGET  test_ioda_obsspace_out_odc_compare_aod
                     COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
                     ARGS    "testoutput/diagout-aod.odc" "Data/testinput_tier_1/test_reference/diagout-aod.odc" ${ODC_TOOL_PATH}

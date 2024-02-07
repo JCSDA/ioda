@@ -258,7 +258,7 @@ Group constructFromCmdLine(int argc, char** argv, const std::string& defaultFile
 
 eckit::LocalConfiguration constructFileBackendConfig(const std::string & fileType,
                 const std::string & fileName, const std::string & mapFileName,
-                const std::string & queryFileName) {
+                const std::string & queryFileName, const std::string & odbType) {
     // For now, include just enough for file io:
     //    HDF5 read or write:
     //       engine:

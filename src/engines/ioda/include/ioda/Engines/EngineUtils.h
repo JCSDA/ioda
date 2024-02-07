@@ -139,7 +139,7 @@ IODA_DL Group constructFromCmdLine(int argc, char** argv, const std::string& def
 /// \ingroup ioda_cxx_engines_pub
 IODA_DL eckit::LocalConfiguration constructFileBackendConfig(const std::string & fileType,
                 const std::string & fileName, const std::string & mapFileName = "",
-                const std::string & queryFileName = "");
+                const std::string & queryFileName = "", const std::string & odbType = "");
 
 /// \brief This is a simple factory style function that will instantiate a
 ///   different backend based on a given name an parameters.
