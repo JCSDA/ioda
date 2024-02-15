@@ -1,0 +1,593 @@
+---
+time window:
+  begin: "2018-01-01T00:00:00Z"
+  end: "2022-01-01T00:00:00Z"
+
+observations:
+
+####################### 1D variables #######################
+
+- obs space:
+    name: "Reduce equal, 1D variables"
+    simulated variables: ['airTemperature']
+    distribution:
+      name: "RoundRobin"
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: "Data/testinput_tier_1/obsspace_reduce_1D.nc4"
+    obsdataout:
+      engine:
+        type: H5File
+        obsfile: "testoutput/obsspace_reduce_equal_1D_out.nc4"
+  test data:
+    gnlocs: 20
+    gnlocs outside time window: 0
+    nlocs: 20
+    nrecs: 20
+    obs are sorted: false
+
+    # reduce arguments and expected results
+    mpi size1:
+      rank0:
+        # arguments
+        reduce:
+          action: equal
+          threshold: 1
+          check vector: [ 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 1, 1, 1, 0, 1, 0, 1 ]
+
+        # expected results
+        nlocs: 9
+        nrecs: 9
+        gnlocs: 9
+        index: [ 2, 3, 8, 10, 13, 14, 15, 17, 19 ]
+        recnum: [ 2, 3, 8, 10, 13, 14, 15, 17, 19 ]
+        recidx:
+          rec2: [ 0 ]
+          rec3: [ 1 ]
+          rec8: [ 2 ]
+          rec10: [ 3 ]
+          rec13: [ 4 ]
+          rec14: [ 5 ]
+          rec15: [ 6 ]
+          rec17: [ 7 ]
+          rec19: [ 8 ]
+
+- obs space:
+    name: "Reduce not equal, 1D variables"
+    simulated variables: ['airTemperature']
+    distribution:
+      name: "RoundRobin"
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: "Data/testinput_tier_1/obsspace_reduce_1D.nc4"
+    obsdataout:
+      engine:
+        type: H5File
+        obsfile: "testoutput/obsspace_reduce_not_equal_1D_out.nc4"
+  test data:
+    gnlocs: 20
+    gnlocs outside time window: 0
+    nlocs: 20
+    nrecs: 20
+    obs are sorted: false
+
+    # reduce arguments and expected results
+    mpi size1:
+      rank0:
+        # arguments
+        reduce:
+          action: "not equal"
+          threshold: 5
+          check vector: [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0 ]
+
+        # expected results
+        nlocs: 18
+        nrecs: 18
+        gnlocs: 18
+        index: [ 0, 1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 12, 13, 15, 16, 17, 18, 19 ]
+        recnum: [ 0, 1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 12, 13, 15, 16, 17, 18, 19 ]
+        recidx:
+          rec0: [ 0 ]
+          rec1: [ 1 ]
+          rec2: [ 2 ]
+          rec3: [ 3 ]
+          rec4: [ 4 ]
+          rec6: [ 5 ]
+          rec7: [ 6 ]
+          rec8: [ 7 ]
+          rec9: [ 8 ]
+          rec10: [ 9 ]
+          rec11: [ 10 ]
+          rec12: [ 11 ]
+          rec13: [ 12 ]
+          rec15: [ 13 ]
+          rec16: [ 14 ]
+          rec17: [ 15 ]
+          rec18: [ 16 ]
+          rec19: [ 17 ]
+
+- obs space:
+    name: "Reduce, greater than, 1D variables"
+    simulated variables: ['airTemperature']
+    distribution:
+      name: "RoundRobin"
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: "Data/testinput_tier_1/obsspace_reduce_1D.nc4"
+    obsdataout:
+      engine:
+        type: H5File
+        obsfile: "testoutput/obsspace_reduce_greater_than_1D_out.nc4"
+  test data:
+    gnlocs: 20
+    gnlocs outside time window: 0
+    nlocs: 20
+    nrecs: 20
+    obs are sorted: false
+
+    # reduce arguments and expected results
+    mpi size1:
+      rank0:
+        # arguments
+        reduce:
+          action: "greater than"
+          threshold: 5
+          check vector: [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0 ]
+
+        # expected results
+        nlocs: 8
+        nrecs: 8
+        gnlocs: 8
+        index: [ 6, 7, 8, 9, 10, 11, 12, 13 ]
+        recnum: [ 6, 7, 8, 9, 10, 11, 12, 13 ]
+        recidx:
+          rec6: [ 0 ]
+          rec7: [ 1 ]
+          rec8: [ 2 ]
+          rec9: [ 3 ]
+          rec10: [ 4 ]
+          rec11: [ 5 ]
+          rec12: [ 6 ]
+          rec13: [ 7 ]
+
+- obs space:
+    name: "Reduce, less than, 1D variables"
+    simulated variables: ['airTemperature']
+    distribution:
+      name: "RoundRobin"
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: "Data/testinput_tier_1/obsspace_reduce_1D.nc4"
+    obsdataout:
+      engine:
+        type: H5File
+        obsfile: "testoutput/obsspace_reduce_less_than_1D_out.nc4"
+  test data:
+    gnlocs: 20
+    gnlocs outside time window: 0
+    nlocs: 20
+    nrecs: 20
+    obs are sorted: false
+
+    # reduce arguments and expected results
+    mpi size1:
+      rank0:
+        # arguments
+        reduce:
+          action: "less than"
+          threshold: 5
+          check vector: [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0 ]
+
+        # expected results
+        nlocs: 10
+        nrecs: 10
+        gnlocs: 10
+        index: [ 0, 1, 2, 3, 4, 15, 16, 17, 18, 19 ]
+        recnum: [ 0, 1, 2, 3, 4, 15, 16, 17, 18, 19 ]
+        recidx:
+          rec0: [ 0 ]
+          rec1: [ 1 ]
+          rec2: [ 2 ]
+          rec3: [ 3 ]
+          rec4: [ 4 ]
+          rec15: [ 5 ]
+          rec16: [ 6 ]
+          rec17: [ 7 ]
+          rec18: [ 8 ]
+          rec19: [ 9 ]
+
+- obs space:
+    name: "Reduce, greater than or equal, 1D variables"
+    simulated variables: ['airTemperature']
+    distribution:
+      name: "RoundRobin"
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: "Data/testinput_tier_1/obsspace_reduce_1D.nc4"
+    obsdataout:
+      engine:
+        type: H5File
+        obsfile: "testoutput/obsspace_reduce_greater_than_or_equal_1D_out.nc4"
+  test data:
+    gnlocs: 20
+    gnlocs outside time window: 0
+    nlocs: 20
+    nrecs: 20
+    obs are sorted: false
+
+    # reduce arguments and expected results
+    mpi size1:
+      rank0:
+        # arguments
+        reduce:
+          action: "greater than or equal"
+          threshold: 5
+          check vector: [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0 ]
+
+        # expected results
+        nlocs: 10
+        nrecs: 10
+        gnlocs: 10
+        index: [ 5, 6, 7, 8, 9, 10, 11, 12, 13, 14 ]
+        recnum: [ 5, 6, 7, 8, 9, 10, 11, 12, 13, 14 ]
+        recidx:
+          rec5: [ 0 ]
+          rec6: [ 1 ]
+          rec7: [ 2 ]
+          rec8: [ 3 ]
+          rec9: [ 4 ]
+          rec10: [ 5 ]
+          rec11: [ 6 ]
+          rec12: [ 7 ]
+          rec13: [ 8 ]
+          rec14: [ 9 ]
+
+- obs space:
+    name: "Reduce, less than or equal, 1D variables"
+    simulated variables: ['airTemperature']
+    distribution:
+      name: "RoundRobin"
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: "Data/testinput_tier_1/obsspace_reduce_1D.nc4"
+    obsdataout:
+      engine:
+        type: H5File
+        obsfile: "testoutput/obsspace_reduce_less_than_or_equal_1D_out.nc4"
+  test data:
+    gnlocs: 20
+    gnlocs outside time window: 0
+    nlocs: 20
+    nrecs: 20
+    obs are sorted: false
+
+    # reduce arguments and expected results
+    mpi size1:
+      rank0:
+        # arguments
+        reduce:
+          action: "less than or equal"
+          threshold: 5
+          check vector: [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0 ]
+
+        # expected results
+        nlocs: 12
+        nrecs: 12
+        gnlocs: 12
+        index: [ 0, 1, 2, 3, 4, 5, 14, 15, 16, 17, 18, 19 ]
+        recnum: [ 0, 1, 2, 3, 4, 5, 14, 15, 16, 17, 18, 19 ]
+        recidx:
+          rec0: [ 0 ]
+          rec1: [ 1 ]
+          rec2: [ 2 ]
+          rec3: [ 3 ]
+          rec4: [ 4 ]
+          rec5: [ 5 ]
+          rec14: [ 6 ]
+          rec15: [ 7 ]
+          rec16: [ 8 ]
+          rec17: [ 9 ]
+          rec18: [ 10 ]
+          rec19: [ 11 ]
+
+####################### 2D variables #######################
+- obs space:
+    name: "Reduce, equal 2D variables"
+    simulated variables: ['brightnessTemperature']
+    channels: 1-5
+    distribution:
+      name: "RoundRobin"
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: "Data/testinput_tier_1/obsspace_reduce_2D.nc4"
+    obsdataout:
+      engine:
+        type: H5File
+        obsfile: "testoutput/obsspace_reduce_equal_2D_out.nc4"
+  test data:
+    gnlocs: 20
+    gnlocs outside time window: 0
+    nlocs: 20
+    nrecs: 20
+    obs are sorted: false
+
+    # reduce arguments and expected results
+    mpi size1:
+      rank0:
+        # arguments
+        reduce:
+          action: equal
+          threshold: 1
+          check vector: [ 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 1, 1, 1, 0, 1, 0, 1 ]
+
+        # expected results
+        nlocs: 9
+        nrecs: 9
+        gnlocs: 9
+        index: [ 2, 3, 8, 10, 13, 14, 15, 17, 19 ]
+        recnum: [ 2, 3, 8, 10, 13, 14, 15, 17, 19 ]
+        recidx:
+          rec2: [ 0 ]
+          rec3: [ 1 ]
+          rec8: [ 2 ]
+          rec10: [ 3 ]
+          rec13: [ 4 ]
+          rec14: [ 5 ]
+          rec15: [ 6 ]
+          rec17: [ 7 ]
+          rec19: [ 8 ]
+
+- obs space:
+    name: "Reduce, not equal 2D variables"
+    simulated variables: ['brightnessTemperature']
+    channels: 1-5
+    distribution:
+      name: "RoundRobin"
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: "Data/testinput_tier_1/obsspace_reduce_2D.nc4"
+    obsdataout:
+      engine:
+        type: H5File
+        obsfile: "testoutput/obsspace_reduce_not_equal_2D_out.nc4"
+  test data:
+    gnlocs: 20
+    gnlocs outside time window: 0
+    nlocs: 20
+    nrecs: 20
+    obs are sorted: false
+
+    # reduce arguments and expected results
+    mpi size1:
+      rank0:
+        # arguments
+        reduce:
+          action: "not equal"
+          threshold: 5
+          check vector: [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0 ]
+
+        # expected results
+        nlocs: 18
+        nrecs: 18
+        gnlocs: 18
+        index: [ 0, 1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 12, 13, 15, 16, 17, 18, 19 ]
+        recnum: [ 0, 1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 12, 13, 15, 16, 17, 18, 19 ]
+        recidx:
+          rec0: [ 0 ]
+          rec1: [ 1 ]
+          rec2: [ 2 ]
+          rec3: [ 3 ]
+          rec4: [ 4 ]
+          rec6: [ 5 ]
+          rec7: [ 6 ]
+          rec8: [ 7 ]
+          rec9: [ 8 ]
+          rec10: [ 9 ]
+          rec11: [ 10 ]
+          rec12: [ 11 ]
+          rec13: [ 12 ]
+          rec15: [ 13 ]
+          rec16: [ 14 ]
+          rec17: [ 15 ]
+          rec18: [ 16 ]
+          rec19: [ 17 ]
+
+- obs space:
+    name: "Reduce, greater than, 2D variables"
+    simulated variables: ['brightnessTemperature']
+    channels: 1-5
+    distribution:
+      name: "RoundRobin"
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: "Data/testinput_tier_1/obsspace_reduce_2D.nc4"
+    obsdataout:
+      engine:
+        type: H5File
+        obsfile: "testoutput/obsspace_reduce_greater_than_2D_out.nc4"
+  test data:
+    gnlocs: 20
+    gnlocs outside time window: 0
+    nlocs: 20
+    nrecs: 20
+    obs are sorted: false
+
+    # reduce arguments and expected results
+    mpi size1:
+      rank0:
+        # arguments
+        reduce:
+          action: "greater than"
+          threshold: 5
+          check vector: [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0 ]
+
+        # expected results
+        nlocs: 8
+        nrecs: 8
+        gnlocs: 8
+        index: [ 6, 7, 8, 9, 10, 11, 12, 13 ]
+        recnum: [ 6, 7, 8, 9, 10, 11, 12, 13 ]
+        recidx:
+          rec6: [ 0 ]
+          rec7: [ 1 ]
+          rec8: [ 2 ]
+          rec9: [ 3 ]
+          rec10: [ 4 ]
+          rec11: [ 5 ]
+          rec12: [ 6 ]
+          rec13: [ 7 ]
+
+- obs space:
+    name: "Reduce, less than, 2D variables"
+    simulated variables: ['brightnessTemperature']
+    channels: 1-5
+    distribution:
+      name: "RoundRobin"
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: "Data/testinput_tier_1/obsspace_reduce_2D.nc4"
+    obsdataout:
+      engine:
+        type: H5File
+        obsfile: "testoutput/obsspace_reduce_less_than_2D_out.nc4"
+  test data:
+    gnlocs: 20
+    gnlocs outside time window: 0
+    nlocs: 20
+    nrecs: 20
+    obs are sorted: false
+
+    # reduce arguments and expected results
+    mpi size1:
+      rank0:
+        # arguments
+        reduce:
+          action: "less than"
+          threshold: 5
+          check vector: [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0 ]
+
+        # expected results
+        nlocs: 10
+        nrecs: 10
+        gnlocs: 10
+        index: [ 0, 1, 2, 3, 4, 15, 16, 17, 18, 19 ]
+        recnum: [ 0, 1, 2, 3, 4, 15, 16, 17, 18, 19 ]
+        recidx:
+          rec0: [ 0 ]
+          rec1: [ 1 ]
+          rec2: [ 2 ]
+          rec3: [ 3 ]
+          rec4: [ 4 ]
+          rec15: [ 5 ]
+          rec16: [ 6 ]
+          rec17: [ 7 ]
+          rec18: [ 8 ]
+          rec19: [ 9 ]
+
+- obs space:
+    name: "Reduce, greater than or equal, 2D variables"
+    simulated variables: ['brightnessTemperature']
+    channels: 1-5
+    distribution:
+      name: "RoundRobin"
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: "Data/testinput_tier_1/obsspace_reduce_2D.nc4"
+    obsdataout:
+      engine:
+        type: H5File
+        obsfile: "testoutput/obsspace_reduce_greater_than_or_equal_2D_out.nc4"
+  test data:
+    gnlocs: 20
+    gnlocs outside time window: 0
+    nlocs: 20
+    nrecs: 20
+    obs are sorted: false
+
+    # reduce arguments and expected results
+    mpi size1:
+      rank0:
+        # arguments
+        reduce:
+          action: "greater than or equal"
+          threshold: 5
+          check vector: [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0 ]
+
+        # expected results
+        nlocs: 10
+        nrecs: 10
+        gnlocs: 10
+        index: [ 5, 6, 7, 8, 9, 10, 11, 12, 13, 14 ]
+        recnum: [ 5, 6, 7, 8, 9, 10, 11, 12, 13, 14 ]
+        recidx:
+          rec5: [ 0 ]
+          rec6: [ 1 ]
+          rec7: [ 2 ]
+          rec8: [ 3 ]
+          rec9: [ 4 ]
+          rec10: [ 5 ]
+          rec11: [ 6 ]
+          rec12: [ 7 ]
+          rec13: [ 8 ]
+          rec14: [ 9 ]
+
+- obs space:
+    name: "Reduce, less than or equal, 2D variables"
+    simulated variables: ['brightnessTemperature']
+    channels: 1-5
+    distribution:
+      name: "RoundRobin"
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: "Data/testinput_tier_1/obsspace_reduce_2D.nc4"
+    obsdataout:
+      engine:
+        type: H5File
+        obsfile: "testoutput/obsspace_reduce_less_than_or_equal_2D_out.nc4"
+  test data:
+    gnlocs: 20
+    gnlocs outside time window: 0
+    nlocs: 20
+    nrecs: 20
+    obs are sorted: false
+
+    # reduce arguments and expected results
+    mpi size1:
+      rank0:
+        # arguments
+        reduce:
+          action: "less than or equal"
+          threshold: 5
+          check vector: [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0 ]
+
+        # expected results
+        nlocs: 12
+        nrecs: 12
+        gnlocs: 12
+        index: [ 0, 1, 2, 3, 4, 5, 14, 15, 16, 17, 18, 19 ]
+        recnum: [ 0, 1, 2, 3, 4, 5, 14, 15, 16, 17, 18, 19 ]
+        recidx:
+          rec0: [ 0 ]
+          rec1: [ 1 ]
+          rec2: [ 2 ]
+          rec3: [ 3 ]
+          rec4: [ 4 ]
+          rec5: [ 5 ]
+          rec14: [ 6 ]
+          rec15: [ 7 ]
+          rec16: [ 8 ]
+          rec17: [ 9 ]
+          rec18: [ 10 ]
+          rec19: [ 11 ]

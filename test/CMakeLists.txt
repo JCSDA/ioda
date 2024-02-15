@@ -152,6 +152,8 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsspace_out_odc_mpi_2.yaml
   testinput/iodatest_obsspace_put_db_channels.yaml
   testinput/iodatest_obsspace_put_db_channels_check.yaml
+  testinput/iodatest_obsspace_reduce.yaml
+  testinput/iodatest_obsspace_reduce_mpi.yaml
   testinput/iodatest_obsspace_zero_obs.yaml
   testinput/iodatest_obsspace_filter_to_zero_obs.yaml
   testinput/iodatest_obsspace_zero_obs_reader_pool.yaml
@@ -721,6 +723,165 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_put_db_channels_check
                   ARGS    "testinput/iodatest_obsspace_put_db_channels_check.yaml"
                   LIBS  ioda_test
                   TEST_DEPENDS test_ioda_obsspace_put_db_channels get_ioda_test_data )
+
+###################################################################
+##### The following tests check the ObsSpace::reduce function. ####
+###################################################################
+
+# this test removes the output files from prior testing
+ecbuild_add_test( TARGET  test_ioda_obsspace_reduce_clean_files
+                  COMMAND rm
+                  ARGS    "-f"
+                          "testoutput/obsspace_reduce_equal_1D_out.nc4"
+                          "testoutput/obsspace_reduce_not_equal_1D_out.nc4"
+                          "testoutput/obsspace_reduce_greater_than_1D_out.nc4"
+                          "testoutput/obsspace_reduce_less_than_1D_out.nc4"
+                          "testoutput/obsspace_reduce_greater_than_or_equal_1D_out.nc4"
+                          "testoutput/obsspace_reduce_less_than_or_equal_1D_out.nc4"
+                          "testoutput/obsspace_reduce_equal_2D_out.nc4"
+                          "testoutput/obsspace_reduce_not_equal_2D_out.nc4"
+                          "testoutput/obsspace_reduce_greater_than_2D_out.nc4"
+                          "testoutput/obsspace_reduce_less_than_2D_out.nc4"
+                          "testoutput/obsspace_reduce_greater_than_or_equal_2D_out.nc4"
+                          "testoutput/obsspace_reduce_less_than_or_equal_2D_out.nc4")
+
+# this test creates the output files, and checks that obs space data members got
+# properly updated
+ecbuild_add_test( TARGET  test_ioda_obsspace_reduce
+                  SOURCES mains/TestIodaObsSpaceReduce.cc
+                  ARGS    "testinput/iodatest_obsspace_reduce.yaml"
+                  LIBS  ioda_test
+                  ENVIRONMENT OOPS_DEBUG=1
+                  TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_reduce_clean_files )
+
+# the following tests compare the output files
+ecbuild_add_test( TARGET  test_ioda_obsspace_reduce_equal_1D_variables_cmp
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking reduce equal, 1D variables"
+                          obsspace_reduce_equal_1D_out.nc4
+                  TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_reduce)
+
+ecbuild_add_test( TARGET  test_ioda_obsspace_reduce_not_equal_1D_variables_cmp
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking reduce equal, 1D variables"
+                          obsspace_reduce_not_equal_1D_out.nc4
+                  TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_reduce)
+
+ecbuild_add_test( TARGET  test_ioda_obsspace_reduce_greater_than_1D_variables_cmp
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking reduce greater than, 1D variables"
+                          obsspace_reduce_greater_than_1D_out.nc4
+                  TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_reduce)
+
+ecbuild_add_test( TARGET  test_ioda_obsspace_reduce_less_than_1D_variables_cmp
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking reduce less than, 1D variables"
+                          obsspace_reduce_less_than_1D_out.nc4
+                  TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_reduce)
+
+ecbuild_add_test( TARGET  test_ioda_obsspace_reduce_greater_than_or_equal_1D_variables_cmp
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking reduce greater than_or_equal, 1D variables"
+                          obsspace_reduce_greater_than_or_equal_1D_out.nc4
+                  TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_reduce)
+
+ecbuild_add_test( TARGET  test_ioda_obsspace_reduce_less_than_or_equal_1D_variables_cmp
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking reduce less than_or_equal, 1D variables"
+                          obsspace_reduce_less_than_or_equal_1D_out.nc4
+                  TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_reduce)
+
+ecbuild_add_test( TARGET  test_ioda_obsspace_reduce_equal_2D_variables_cmp
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking reduce equal, 2D variables"
+                          obsspace_reduce_equal_2D_out.nc4
+                  TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_reduce)
+
+ecbuild_add_test( TARGET  test_ioda_obsspace_reduce_not_equal_2D_variables_cmp
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking reduce equal, 2D variables"
+                          obsspace_reduce_not_equal_2D_out.nc4
+                  TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_reduce)
+
+ecbuild_add_test( TARGET  test_ioda_obsspace_reduce_greater_than_2D_variables_cmp
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking reduce greater than, 2D variables"
+                          obsspace_reduce_greater_than_2D_out.nc4
+                  TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_reduce)
+
+ecbuild_add_test( TARGET  test_ioda_obsspace_reduce_less_than_2D_variables_cmp
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking reduce less than, 2D variables"
+                          obsspace_reduce_less_than_2D_out.nc4
+                  TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_reduce)
+
+ecbuild_add_test( TARGET  test_ioda_obsspace_reduce_greater_than_or_equal_2D_variables_cmp
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking reduce greater than_or_equal, 2D variables"
+                          obsspace_reduce_greater_than_or_equal_2D_out.nc4
+                  TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_reduce)
+
+ecbuild_add_test( TARGET  test_ioda_obsspace_reduce_less_than_or_equal_2D_variables_cmp
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking reduce less than_or_equal, 2D variables"
+                          obsspace_reduce_less_than_or_equal_2D_out.nc4
+                  TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_reduce)
+
+# The next two tests run with 2 and 3 MPI tasks repectively using the same input files
+# as test_ioda_obssspace_reduce and only checks the obs space data members (no output files).
+ecbuild_add_test( TARGET  test_ioda_obsspace_reduce_mpi_2
+                  MPI 2
+                  COMMAND test_ioda_obsspace_reduce
+                  ARGS    "testinput/iodatest_obsspace_reduce_mpi.yaml"
+                  LIBS  ioda_test
+                  TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_reduce)
+
+ecbuild_add_test( TARGET  test_ioda_obsspace_reduce_mpi_3
+                  MPI 3
+                  COMMAND test_ioda_obsspace_reduce
+                  ARGS    "testinput/iodatest_obsspace_reduce_mpi.yaml"
+                  LIBS  ioda_test
+                  TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_reduce)
+
+###################################################################
+################ End of reduce function tests #####################
+###################################################################
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_zero_obs
                   COMMAND test_ioda_obsspace

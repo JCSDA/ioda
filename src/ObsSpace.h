@@ -52,6 +52,37 @@ namespace ioda {
     class ObsVector;
 
     //-------------------------------------------------------------------------------------
+    /// Enum type for compare actions
+    enum class CompareAction {
+        Equal,
+        NotEqual,
+        GreaterThan,
+        LessThan,
+        GreaterThanOrEqual,
+        LessThanOrEqual
+    };
+
+    // override the << operator for compare actions
+    inline std::ostream & operator << (std::ostream & os, const CompareAction compareAction) {
+        std::string compareActionString;
+        if (compareAction == CompareAction::Equal) {
+            compareActionString = std::string("==");
+        } else if (compareAction == CompareAction::NotEqual) {
+            compareActionString = std::string("!=");
+        } else if (compareAction == CompareAction::GreaterThan) {
+            compareActionString = std::string(">");
+        } else if (compareAction == CompareAction::LessThan) {
+            compareActionString = std::string("<");
+        } else if (compareAction == CompareAction::GreaterThanOrEqual) {
+            compareActionString = std::string(">=");
+        } else if (compareAction == CompareAction::LessThanOrEqual) {
+            compareActionString = std::string("<=");
+        }
+        os << "action(" << compareActionString << ")";
+        return os;
+    }
+
+    //-------------------------------------------------------------------------------------
     /// Enum type for obs variable data types
     enum class ObsDtype {
         None,
@@ -445,6 +476,24 @@ namespace ioda {
         std::vector<std::size_t> recidx_all_recnums() const;
 
         /// @}
+        /// @name Resizing functions
+        /// @{
+
+        /// \brief Reduce obs space given a vector of int showing which values to remove
+        /// \details This function will use its input arguments to remove unwanted
+        /// values (along the Location dimension) from the obs space. This is being done
+        /// to help downstream operations run faster, eg the DA solver. The idea is to
+        /// keep all the corresponding locations in the checkValues vector of which return
+        /// true by applying the compare action along with the threshold.
+        /// \param compareAction enum type that defines how to compare the check values
+        /// with the threshold.
+        /// \param threshold limit being tested by the compare action
+        /// \param checkValues vector of QC values that are being tested with the compare action
+        void reduce(const ioda::CompareAction compareAction, const int threshold,
+                    const std::vector<int> & checkValues);
+
+        /// @}
+
 
      private:
         // ----------------------------- private data members ---------------------------
@@ -544,6 +593,12 @@ namespace ioda {
         /// in the ObsError or DerivedObsError group, create one, fill it with missing values
         /// and add it to the DerivedObsError group.
         void createMissingObsErrors();
+
+        /// \brief build the recidx_ data member
+        /// \details Build the recidx_ data member using the indx_ and recnums_
+        /// data members. The entries of the map have each existing record number as
+        /// keys, and the values are the location indices that belong to that record.
+        void buildRecIdx();
 
         /// \brief Create the recidx data structure holding sorted record groups
         /// \details This method will construct a data structure that holds the
@@ -687,6 +742,43 @@ namespace ioda {
         ///        of the number of records in the original ObsSpace.
         template <typename DataType>
         void extendVariable(Variable & extendVar, const size_t upperBoundOnGlobalNumOriginalRecs);
+
+        /// \brief reduce variable data values according to input parameters
+        /// \param compareAction enum type that defines how to compare the check values
+        /// with the threshold.
+        /// \param threshold limit being tested by the compare action
+        /// \param checkValues vector of QC values that are being tested with the compare action
+        /// \param keepLocs boolean vector, true in entries where that location is kept
+        void generateLocationsToKeep(const CompareAction compareAction, const int threshold,
+                                     const std::vector<int> & checkValues,
+                                     std::vector<bool> & keepLocs);
+
+        /// \brief reduce variable data values according to input parameters
+        /// \return resulting number of locations from performing the reduction
+        /// \param keepLocs boolean vector, true in entries where that location is kept
+        std::size_t reduceVarDataValues(const std::vector<bool> & keepLocs);
+
+        /// \brief reduce variable data values in place
+        /// \details This function will reduce the data in varValues by removing the locations
+        /// corresponding to false values in the keepNlocs vector. The locations that are
+        /// being kept will be moved to the "left" in varValues so that varValues can
+        /// be resized to free the unused entries at the end of varValues.
+        /// \param keepLocs where true, keep the corresponding location index in varValues
+        /// \param varValues variable values that will be reduced in place
+        /// \param varShape vector holding the sizes of each dimension of the variable
+        /// \param doResize if true, resize the output VarValues vector (default is false)
+        /// \return resulting number of locations from performing the reduction
+        template <typename DataType>
+        std::size_t reduceVarDataInPlace(const std::vector<bool> & keepLocs,
+                                         const std::vector<Dimensions_t> & varShape,
+                                         std::vector<DataType> & varValues,
+                                         const bool doResize = false);
+
+        /// \brief adjust data members after reduction
+        /// \details This function will adjust the data members affected by the removal
+        /// of locations from the data.
+        /// \param keepLocs boolean vector, true in entries where that location is kept
+        void adjustDataMembersAfterReduce(const std::vector<bool> & keepLocs);
     };
 
 }  // namespace ioda
