@@ -15,7 +15,7 @@ observations:
         query file: ../share/test/testinput/iodatest_odb_aircraft.yaml
     io pool:
       reader name: SinglePool
-      work directory: testwork
+      work directory: testwork/obsspace_odc_reader_pool
   test data:
     gnlocs: 157
     gnlocs outside time window: 43

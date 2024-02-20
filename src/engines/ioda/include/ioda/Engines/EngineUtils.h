@@ -146,9 +146,13 @@ IODA_DL eckit::LocalConfiguration constructFileBackendConfig(const std::string &
 /// \ingroup ioda_cxx_engines_pub
 IODA_DL Group constructBackend(BackendNames name, BackendCreationParameters& params);
 
-/// \brief check to see if a file can be opened for reading
-/// \param fileName path to input file name being tested
-IODA_DL bool openInputFileCheck(const std::string & fileName);
+/// \brief check to see if have read access to a file
+/// \param fileName path to file tested
+IODA_DL bool haveFileReadAccess(const std::string & fileName);
+
+/// \brief check to see if have write access to a directory
+/// \param dirName path to directory being tested
+IODA_DL bool haveDirRwxAccess(const std::string & dirName);
 
 /// stream operator
 IODA_DL std::ostream& operator<<(std::ostream& os, const BackendCreateModes& mode);

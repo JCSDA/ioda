@@ -15,7 +15,7 @@ observations:
     obs perturbations seed: 77
     io pool:
       reader name: SinglePool
-      work directory: testwork
+      work directory: testwork/obsspace_mpi_reader_pool
   test data:
     gnlocs: 100
     gnlocs outside time window: 0
@@ -55,7 +55,7 @@ observations:
         obsfile: "Data/testinput_tier_1/aod_viirs_obs_2018041500_sf42.nc4"
     io pool:
       reader name: SinglePool
-      work directory: testwork
+      work directory: testwork/obsspace_mpi_reader_pool
   test data:
     gnlocs: 42
     gnlocs outside time window: 0
@@ -97,7 +97,7 @@ observations:
         obsfile: "Data/testinput_tier_1/amsua_n19_obs_2018041500_m.nc4"
     io pool:
       reader name: SinglePool
-      work directory: testwork
+      work directory: testwork/obsspace_mpi_reader_pool
   test data:
     gnlocs: 100
     gnlocs outside time window: 0
@@ -132,7 +132,7 @@ observations:
         obsfile: "Data/testinput_tier_1/smap_obs_2018041500_m.nc4"
     io pool:
       reader name: SinglePool
-      work directory: testwork
+      work directory: testwork/obsspace_mpi_reader_pool
   test data:
     gnlocs: 100
     gnlocs outside time window: 0
@@ -168,7 +168,7 @@ observations:
     obs perturbations seed: -42
     io pool:
       reader name: SinglePool
-      work directory: testwork
+      work directory: testwork/obsspace_mpi_reader_pool
   test data:
     gnlocs: 12
     gnlocs outside time window: 0
@@ -207,7 +207,7 @@ observations:
         obsfile: "testoutput/diagout_mpi_reader_pool.nc4"
     io pool:
       reader name: SinglePool
-      work directory: testwork
+      work directory: testwork/obsspace_mpi_reader_pool
   test data:
     gnlocs: 974
     gnlocs outside time window: 0
@@ -264,7 +264,7 @@ observations:
         obsfile: "testoutput/ospace.generate.random.mpi_reader_pool.nc4"
     io pool:
       reader name: SinglePool
-      work directory: testwork
+      work directory: testwork/obsspace_mpi_reader_pool
   test data:
     gnlocs: 10
     gnlocs outside time window: 0
@@ -339,7 +339,7 @@ observations:
         obsfile: "testoutput/ospace.generate.list.mpi_reader_pool.nc4"
     io pool:
       reader name: SinglePool
-      work directory: testwork
+      work directory: testwork/obsspace_mpi_reader_pool
   test data:
     gnlocs: 11
     gnlocs outside time window: 0
@@ -402,7 +402,7 @@ observations:
         obsfile: "testoutput/diagout_with_groups_mpi_reader_pool.nc4"
     io pool:
       reader name: SinglePool
-      work directory: testwork
+      work directory: testwork/obsspace_mpi_reader_pool
   test data:
     gnlocs: 974
     gnlocs outside time window: 0
@@ -443,7 +443,7 @@ observations:
         obsfile: "testoutput/diagout_with_groups_twfilt_mpi_reader_pool.nc4"
     io pool:
       reader name: SinglePool
-      work directory: testwork
+      work directory: testwork/obsspace_mpi_reader_pool
   test data:
     gnlocs: 968
     gnlocs outside time window: 6
@@ -478,7 +478,7 @@ observations:
         obsfile: "Data/testinput_tier_1/geos_aod_obs_2018041500_m.nc4"
     io pool:
       reader name: SinglePool
-      work directory: testwork
+      work directory: testwork/obsspace_mpi_reader_pool
   test data:
     gnlocs: 100
     gnlocs outside time window: 0

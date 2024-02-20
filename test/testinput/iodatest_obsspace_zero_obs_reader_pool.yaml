@@ -19,7 +19,7 @@ observations:
         obsfile: "testoutput/zero_obs_v2_out_reader_pool.nc4"
     io pool:
       reader name: SinglePool
-      work directory: testwork
+      work directory: testwork/obsspace_zero_obs_reader_pool
   test data:
     gnlocs: 0
     gnlocs outside time window: 0

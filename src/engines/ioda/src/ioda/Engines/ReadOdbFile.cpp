@@ -32,7 +32,7 @@ ReadOdbFile::ReadOdbFile(const Parameters_ & params,
     Engines::BackendCreationParameters backendParams;
     Group backend = constructBackend(backendName, backendParams);
 
-    if (openInputFileCheck(fileName_)) {
+    if (haveFileReadAccess(fileName_)) {
         // Have a file, load the ODB file contents into the memory backend
         Engines::ODC::ODC_Parameters odcparams;
         odcparams.filename    = params.fileName;

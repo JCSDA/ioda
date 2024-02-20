@@ -116,7 +116,7 @@ observations:
     io pool:
       max pool size: 2
       reader name: SinglePool
-      work directory: testwork
+      work directory: testwork/obsspace_missing_obs_file_warn_odc
   test data:
     gnlocs: 0
     gnlocs outside time window: 0
@@ -169,7 +169,7 @@ observations:
     io pool:
       max pool size: 2
       reader name: SinglePool
-      work directory: testwork
+      work directory: testwork/obsspace_missing_obs_file_warn_odc
   test data:
     gnlocs: 0
     gnlocs outside time window: 0

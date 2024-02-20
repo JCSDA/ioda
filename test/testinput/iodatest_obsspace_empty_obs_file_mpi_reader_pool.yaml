@@ -19,7 +19,7 @@ observations:
     obs perturbations seed: 25
     io pool:
       reader name: SinglePool
-      work directory: testwork
+      work directory: testwork/obsspace_empty_obs_file_mpi_reader_pool
   test data:
     gnlocs: 0
     gnlocs outside time window: 0
@@ -71,7 +71,7 @@ observations:
         allow overwrite: true
     io pool:
       reader name: SinglePool
-      work directory: testwork
+      work directory: testwork/obsspace_empty_obs_file_mpi_reader_pool
   test data:
     gnlocs: 0
     gnlocs outside time window: 0

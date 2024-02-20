@@ -695,72 +695,6 @@ void setDistributionMap(const ReaderPoolBase & ioPool,
 }
 
 //--------------------------------------------------------------------------------
-void readerCreateWorkDirectory(const ReaderPoolBase & ioPool, const std::string & workDirBase,
-                               const std::string & fileName, std::string & workDir) {
-    if (ioPool.commAll().rank() == 0) {
-        // workDirBase can be either empty or a valid path to a directory that will contain
-        // the input file set.
-        //
-        // fileName can be from a generator or an input file. The generator backend will
-        // supply a representative file name that will be used for the input file set.
-        //
-        // Set workDir to workDirBase if workDirBase is not empty, otherwise use the dirname
-        // of the input file, or /tmp in the generator case. In both case, file or generator,
-        // create a subdirectory based on the file name or generator type.
-        const std::size_t lastSlash = fileName.find_last_of("/");
-        if (workDirBase == "") {
-            // Use the directory portion of the file name
-            if (lastSlash == std::string::npos) {
-                // fileName has no directory path specified --> use current directory
-                workDir = std::string(".");
-            } else {
-                workDir = fileName.substr(0, lastSlash);
-            }
-        } else {
-            workDir = workDirBase;
-        }
-
-        // Make sure workDir at this point exists. Note we still need to create a subdirectory
-        // of workDir, but we will use mkdtemp for that which does the directory creation after
-        // generating the unique name.
-        std::string sysCommand = std::string("mkdir -p ") + workDir;
-        if (system(sysCommand.c_str()) != 0) {
-            throw Exception(std::string("Could not execute: ") + sysCommand, ioda_Here());
-        }
-
-        // Generate the subdirectory name, based on the input file name,
-        // and create the subdirectory using mkdtemp.
-        std::string workDirTemplate = workDir;
-        if (lastSlash == std::string::npos) {
-            workDirTemplate += std::string("/") + fileName;
-        } else {
-            workDirTemplate += std::string("/") + fileName.substr(lastSlash + 1);
-        }
-        workDirTemplate += ".filesetXXXXXX";
-        const std::string workSubDir(mkdtemp(workDirTemplate.data()));
-        if (workSubDir.empty()) {
-            throw Exception(std::string("Could not build work subdirectory"), ioda_Here());
-        }
-
-        // mkdtemp creates the directory using mode 700, we want 755 so members in our group
-        // and other can see the directory contents
-        sysCommand = std::string("chmod 755 ") + workSubDir;
-        if (system(sysCommand.c_str()) != 0) {
-            throw Exception(std::string("Could not execute: ") + sysCommand, ioda_Here());
-        }
-
-        // return the full path to the work directory
-        workDir = workSubDir;
-
-        // Send the workDir path to the other ranks. This is done so that the pool
-        // members have the value of workDir for their setting of the new input file.
-        oops::mpi::broadcastString(ioPool.commAll(), workDir, 0);
-    } else {
-        oops::mpi::broadcastString(ioPool.commAll(), workDir, 0);
-    }
-}
-
-//--------------------------------------------------------------------------------
 void readerGatherAssociatedRanks(const ReaderPoolBase & ioPool,
                                  std::vector<int> & assocAllRanks,
                                  std::vector<int> & ioPoolRanks,
@@ -1201,11 +1135,9 @@ void readerBuildInputFiles(const ReaderPoolBase & ioPool,
                            const std::vector<int64_t> & dtimeValues,
                            const std::string & dtimeEpoch,
                            const std::vector<float> & lonValues,
-                           const std::vector<float> & latValues,
-                           std::vector<std::string> & tempFileList) {
+                           const std::vector<float> & latValues) {
     // First identify which ranks, from the commAll communicator group, are io pool members.
     // These are the unique values in assocAllRanks.
-    tempFileList.clear();
     std::set<int> ioPoolMembers(assocAllRanks.begin(), assocAllRanks.end());
     for (const auto & i : ioPoolMembers) {
         // For this io pool member, record the io pool rank (for the file suffix),
@@ -1225,7 +1157,6 @@ void readerBuildInputFiles(const ReaderPoolBase & ioPool,
         readerBuildAssocInputFile(ioPool, srcGroup, allRank, poolRank, inputFileName,
                                   indices, destAllRanks, starts, counts,
                                   dtimeValues, dtimeEpoch, lonValues, latValues);
-        tempFileList.push_back(inputFileName);
         oops::Log::info() << "readerBuildInputFiles: created new input file: "
                           << inputFileName << std::endl;
     }
@@ -1236,8 +1167,7 @@ void readerCreateFileSet(const ReaderPoolBase & ioPool, const Group & srcGroup,
                          const std::vector<int64_t> & dtimeValues,
                          const std::string & dtimeEpoch,
                          const std::vector<float> & lonValues,
-                         const std::vector<float> & latValues,
-                         std::vector<std::string> & tempFileList) {
+                         const std::vector<float> & latValues) {
     // We want to gather all the rank assignments and indices on rank 0 in the all
     // communicator, since rank 0 is rank that has the input file open. This can be
     // obtained from pairing up which ranks are grouped together, and then tagging on
@@ -1259,7 +1189,7 @@ void readerCreateFileSet(const ReaderPoolBase & ioPool, const Group & srcGroup,
     if (ioPool.commAll().rank() == 0) {
         readerBuildInputFiles(ioPool, srcGroup, assocAllRanks, ioPoolRanks, assocFileNames,
                               locIndicesAllRanks, locIndicesStarts, locIndicesCounts,
-                              dtimeValues, dtimeEpoch, lonValues, latValues, tempFileList);
+                              dtimeValues, dtimeEpoch, lonValues, latValues);
     }
 
     // Have the other MPI ranks wait for rank 0 to create the input files

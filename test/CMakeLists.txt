@@ -132,7 +132,11 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsspace_index_recnum.yaml
   testinput/iodatest_obsspace_index_recnum_twfilt.yaml
   testinput/iodatest_obsspace_index_recnum_reader_pool.yaml
+  testinput/iodatest_obsspace_index_recnum_mpi_2_reader_pool.yaml
+  testinput/iodatest_obsspace_index_recnum_mpi_4_reader_pool.yaml
   testinput/iodatest_obsspace_index_recnum_twfilt_reader_pool.yaml
+  testinput/iodatest_obsspace_index_recnum_twfilt_mpi_2_reader_pool.yaml
+  testinput/iodatest_obsspace_index_recnum_twfilt_mpi_4_reader_pool.yaml
   testinput/iodatest_obsspace_invalid_numeric.yaml
   testinput/iodatest_obsspace_io_pool_sondes_single_file.yaml
   testinput/iodatest_obsspace_io_pool_sondes_multi_files.yaml
@@ -174,6 +178,36 @@ list( APPEND ioda_test_input
   testinput/iodatest_time_io_reader_pool_odc.yaml
   testinput/iodatest_time_io_script.yaml
   testinput/iodatest_time_io_script.py
+)
+
+# Work directories for the new reader. Make one entry per test that is using
+# the work directory. This is done so that two tests running at the same time
+# (ie, running ctest -j8) do not collide.
+#
+# TODO(SRH) Need to add a macro that will define these along with the test name
+# and corresponding yaml config file.
+list( APPEND ioda_test_work_directories
+  testwork/obsspace_empty_obs_file_mpi_reader_pool
+  testwork/obsspace_empty_obs_file_reader_pool
+  testwork/obsspace_filter_to_zero_obs_reader_pool
+  testwork/obsspace_grouping_reader_pool
+  testwork/obsspace_index_recnum_reader_pool
+  testwork/obsspace_index_recnum_mpi_2_reader_pool
+  testwork/obsspace_index_recnum_mpi_4_reader_pool
+  testwork/obsspace_index_recnum_twfilt_reader_pool
+  testwork/obsspace_index_recnum_twfilt_mpi_2_reader_pool
+  testwork/obsspace_index_recnum_twfilt_mpi_4_reader_pool
+  testwork/obsspace_missing_obs_file_error_odc_reader_pool
+  testwork/obsspace_missing_obs_file_error_reader_pool
+  testwork/obsspace_missing_obs_file_warn
+  testwork/obsspace_missing_obs_file_warn_odc
+  testwork/obsspace_mpi_reader_pool
+  testwork/obsspace_odc_atms_reader_pool
+  testwork/obsspace_odc_reader_pool
+  testwork/obsspace_reader_pool
+  testwork/obsspace_zero_obs_reader_pool
+  testwork/time_io_reader_pool
+  testwork/time_io_reader_pool_odc
 )
 
 add_library(ioda_test INTERFACE)
@@ -502,7 +536,7 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_missing_obs_file_error_reader_pool
                           hdf5
                           "${CMAKE_BINARY_DIR}/bin/time_IodaIO.x
                           testinput/iodatest_obsspace_missing_obs_file_error_reader_pool.yaml"
-                          testoutput/ospace.missing_obs_file_error.nc4
+                          testoutput/ospace.missing_obs_file_error_reader_pool.nc4
                           0.0
                           N
                           Y
@@ -542,7 +576,7 @@ if (odc_FOUND)
                             hdf5
                             "${CMAKE_BINARY_DIR}/bin/time_IodaIO.x
                             testinput/iodatest_obsspace_missing_obs_file_error_odc.yaml"
-                            testoutput/ospace.missing_obs_file_error.nc4
+                            testoutput/ospace.missing_obs_file_error_odc.nc4
                             0.0
                             N
                             Y
@@ -556,7 +590,7 @@ if (odc_FOUND)
                             hdf5
                             "${CMAKE_BINARY_DIR}/bin/time_IodaIO.x
                             testinput/iodatest_obsspace_missing_obs_file_error_odc_reader_pool.yaml"
-                            testoutput/ospace.missing_obs_file_error.nc4
+                            testoutput/ospace.missing_obs_file_error_odc_reader_pool.nc4
                             0.0
                             N
                             Y
@@ -624,14 +658,14 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_index_recnum_reader_pool
 ecbuild_add_test( TARGET  test_ioda_obsspace_index_recnum_mpi_2_reader_pool
                   MPI 2
                   COMMAND test_ioda_obsspace_index_recnum
-                  ARGS    "testinput/iodatest_obsspace_index_recnum_reader_pool.yaml"
+                  ARGS    "testinput/iodatest_obsspace_index_recnum_mpi_2_reader_pool.yaml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_index_recnum_mpi_4_reader_pool
                   MPI 4
                   COMMAND test_ioda_obsspace_index_recnum
-                  ARGS    "testinput/iodatest_obsspace_index_recnum_reader_pool.yaml"
+                  ARGS    "testinput/iodatest_obsspace_index_recnum_mpi_4_reader_pool.yaml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
@@ -644,14 +678,14 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_index_recnum_twfilt_reader_pool
 ecbuild_add_test( TARGET  test_ioda_obsspace_index_recnum_twfilt_mpi_2_reader_pool
                   MPI 2
                   COMMAND test_ioda_obsspace_index_recnum
-                  ARGS    "testinput/iodatest_obsspace_index_recnum_twfilt_reader_pool.yaml"
+                  ARGS    "testinput/iodatest_obsspace_index_recnum_twfilt_mpi_2_reader_pool.yaml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_index_recnum_twfilt_mpi_4_reader_pool
                   MPI 4
                   COMMAND test_ioda_obsspace_index_recnum
-                  ARGS    "testinput/iodatest_obsspace_index_recnum_twfilt_reader_pool.yaml"
+                  ARGS    "testinput/iodatest_obsspace_index_recnum_twfilt_mpi_4_reader_pool.yaml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
@@ -2227,5 +2261,7 @@ file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/testoutput)
 ecbuild_add_resources( TARGET ioda_test_scripts
                        SOURCES_PACK ${ioda_test_input} )
 
-# Create a work directory for the io pool based reader
-file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/testwork)
+# Create work directories for the io pool based reader
+foreach(DIRNAME ${ioda_test_work_directories})
+    file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${DIRNAME})
+endforeach()
