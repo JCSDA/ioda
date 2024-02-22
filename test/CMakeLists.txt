@@ -121,8 +121,10 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsspace_empty_obs_file_reader_pool.yaml
   testinput/iodatest_obsspace_empty_obs_file_mpi_reader_pool.yaml
   testinput/iodatest_obsspace_missing_obs_file_warn.yaml
+  testinput/iodatest_obsspace_missing_obs_file_warn_mpi.yaml
   testinput/iodatest_obsspace_missing_obs_file_error.yaml
   testinput/iodatest_obsspace_missing_obs_file_warn_odc.yaml
+  testinput/iodatest_obsspace_missing_obs_file_warn_odc_mpi.yaml
   testinput/iodatest_obsspace_missing_obs_file_error_odc.yaml
   testinput/iodatest_obsspace_missing_obs_file_error_odc_reader_pool.yaml
   testinput/iodatest_obsspace_missing_obs_file_error_reader_pool.yaml
@@ -200,7 +202,9 @@ list( APPEND ioda_test_work_directories
   testwork/obsspace_missing_obs_file_error_odc_reader_pool
   testwork/obsspace_missing_obs_file_error_reader_pool
   testwork/obsspace_missing_obs_file_warn
+  testwork/obsspace_missing_obs_file_warn_mpi
   testwork/obsspace_missing_obs_file_warn_odc
+  testwork/obsspace_missing_obs_file_warn_odc_mpi
   testwork/obsspace_mpi_reader_pool
   testwork/obsspace_odc_atms_reader_pool
   testwork/obsspace_odc_reader_pool
@@ -498,7 +502,7 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_missing_obs_file_warn
 ecbuild_add_test( TARGET  test_ioda_obsspace_missing_obs_file_warn_mpi
                   MPI 4
                   COMMAND test_ioda_obsspace
-                  ARGS    "testinput/iodatest_obsspace_missing_obs_file_warn.yaml"
+                  ARGS    "testinput/iodatest_obsspace_missing_obs_file_warn_mpi.yaml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
@@ -552,7 +556,7 @@ if (odc_FOUND)
   ecbuild_add_test( TARGET  test_ioda_obsspace_missing_obs_file_warn_odc_mpi
                     MPI 4
                     COMMAND test_ioda_obsspace
-                    ARGS    "testinput/iodatest_obsspace_missing_obs_file_warn_odc.yaml"
+                    ARGS    "testinput/iodatest_obsspace_missing_obs_file_warn_odc_mpi.yaml"
                     LIBS  ioda_test
                     TEST_DEPENDS get_ioda_test_data )
 
