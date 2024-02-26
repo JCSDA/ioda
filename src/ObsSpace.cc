@@ -117,14 +117,14 @@ void ObsDimInfo::set_dim_size(const ObsDimensionId dimId, std::size_t dimSize) {
  *                   the product of the comm and time communicators hold all observations in the
  *                   ObsSpace.
  */
-ObsSpace::ObsSpace(const Parameters_ & params, const eckit::mpi::Comm & comm,
+ObsSpace::ObsSpace(const eckit::Configuration & config, const eckit::mpi::Comm & comm,
                    const util::TimeWindow timeWindow,
                    const eckit::mpi::Comm & timeComm)
-                     : oops::ObsSpaceBase(params, comm, timeWindow),
+                     : oops::ObsSpaceBase(config, comm, timeWindow),
                        timeWindow_(timeWindow),
                        commMPI_(comm), commTime_(timeComm),
                        gnlocs_(0), nrecs_(0),
-                       obs_group_(), obs_params_(params, timeWindow_, comm, timeComm),
+                       obs_group_(), obs_params_(config, timeWindow_, comm, timeComm),
                        obsvars_()
 {
     // Determine if run stats should be dumped out from the environment variable

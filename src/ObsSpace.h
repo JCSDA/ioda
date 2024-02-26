@@ -178,7 +178,7 @@ namespace ioda {
         /// \param bgn DateTime object holding the start of the DA timing window
         /// \param end DateTime object holding the end of the DA timing window
         /// \param timeComm MPI communicator for ensemble
-        ObsSpace(const Parameters_ & params, const eckit::mpi::Comm & comm,
+        ObsSpace(const eckit::Configuration &, const eckit::mpi::Comm & comm,
                  const util::TimeWindow timeWindow,
                  const eckit::mpi::Comm & timeComm);
         ObsSpace(const ObsSpace &);

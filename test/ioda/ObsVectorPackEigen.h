@@ -48,9 +48,7 @@ void testPackEigen() {
 
   for (std::size_t jj = 0; jj < conf.size(); ++jj) {
      eckit::LocalConfiguration obsconf(conf[jj], "obs space");
-     ioda::ObsTopLevelParameters obsparams;
-     obsparams.validateAndDeserialize(obsconf);
-     ioda::ObsSpace obsdb(obsparams, oops::mpi::world(), timeWindow, oops::mpi::myself());
+     ioda::ObsSpace obsdb(obsconf, oops::mpi::world(), timeWindow, oops::mpi::myself());
 
      const size_t rank = obsdb.distribution()->rank();
      ioda::ObsVector obsvec(obsdb, "ObsValue");

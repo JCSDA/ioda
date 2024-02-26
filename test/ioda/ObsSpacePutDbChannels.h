@@ -42,8 +42,6 @@ CASE("ioda/ObsSpace/testPutDb") {
 
   for (const eckit::LocalConfiguration & conf : confs) {
     eckit::LocalConfiguration obsconf(conf, "obs space");
-    ioda::ObsTopLevelParameters obsparams;
-    obsparams.validateAndDeserialize(obsconf);
 
     eckit::LocalConfiguration testconf(conf, "test data");
     bool createFile = testconf.getBool("create file", true);
@@ -55,7 +53,7 @@ CASE("ioda/ObsSpace/testPutDb") {
       // test with createFile set to false
 
       std::unique_ptr<ObsSpace> obsspace = boost::make_unique<ObsSpace>(
-            obsparams, oops::mpi::world(), timeWindow, oops::mpi::myself());
+            obsconf, oops::mpi::world(), timeWindow, oops::mpi::myself());
 
       const Dimensions_t nlocs = obsspace->nlocs();
       const Dimensions_t nchans = obsspace->nchans();
