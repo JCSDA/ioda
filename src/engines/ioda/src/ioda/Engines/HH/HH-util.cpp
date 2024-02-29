@@ -24,6 +24,7 @@
 #include "./HH/Handles.h"
 #include "./HH/HH-attributes.h"
 #include "./HH/HH-variables.h"
+#include "ioda/Misc/compat/std/source_location_compat.h"
 #include "ioda/Exception.h"
 
 namespace ioda {
@@ -37,7 +38,7 @@ herr_t iterate_find_attr(hid_t loc_id, const char* name, const H5A_info_t* info,
 #else
 herr_t iterate_find_attr(hid_t loc_id, const char* name, void* op_data) {
   H5A_info_t in_info;
-  H5Aget_info_by_name(loc_id, ".", name, &in_info, H5P_DEFAULT);)
+  H5Aget_info_by_name(loc_id, ".", name, &in_info, H5P_DEFAULT);
   H5A_info_t* info = &in_info;
 #endif
 
@@ -259,6 +260,71 @@ void attr_update_reference_list(HH_Variable* scale, const std::vector<ds_list_t>
   HH_Attribute newAtt(HH_hid_t(aid, Handles::Closers::CloseHDF5Attribute::CloseP));
   if (H5Awrite(newAtt.get()(), type(), static_cast<void*>(refs.data())) < 0)
     throw Exception("Cannot write REFERENCE_LIST attribute.", ioda_Here());
+}
+
+
+/// @brief Data passed around when iterating over the HDF5 error stack.
+struct NestedExceptions {
+  std::list<std::shared_ptr<Exception>> exceptions;
+};
+
+/// @brief Iteration function for the HDF5 error stack.
+herr_t hdf5_h5e_walk2(unsigned /*n*/, const H5E_error2_t *err_desc, void *client_data) {
+  try {
+    if (!err_desc || !client_data) return -1;
+    NestedExceptions *err_data = static_cast<NestedExceptions *>(client_data);
+
+    detail::compat::source_location::source_location
+      hdf_here(err_desc->line, 0, err_desc->file_name, err_desc->func_name);
+    err_data->exceptions.emplace_back(
+      std::make_shared<Exception>(err_desc->desc, hdf_here));
+
+    return 0;
+  } catch (...) {
+    return -1;
+  }
+}
+
+void hdf5_error_stack_recursively_reconstruct(
+  std::list<std::shared_ptr<Exception>> &exceptions) {
+  std::shared_ptr<Exception> cur;
+  bool throwing_cur = false;
+  try {
+    if (!exceptions.size()) return;  // Just in case.
+
+    cur = exceptions.back();
+    exceptions.pop_back();
+
+    if (exceptions.size()) hdf5_error_stack_recursively_reconstruct(exceptions);
+
+    throwing_cur = true;
+    throw(*cur);
+    //throw Exception<std::runtime_error>("Top of HDF5 exception stack", ioda_Here());
+    //std::rethrow_exception(cur);
+  } catch (...) {
+    if (throwing_cur) std::rethrow_exception(std::current_exception());
+    std::throw_with_nested(*cur);
+  }
+}
+
+void hdf5_error_check() {
+  try {
+    ssize_t num_errs = H5Eget_num(H5E_DEFAULT);
+    if (num_errs < 0) throw Exception("Cannot read HDF5 error stack", ioda_Here());
+    if (num_errs == 0) return;
+
+    NestedExceptions err_data;
+
+    herr_t res = H5Ewalk2(H5E_DEFAULT, H5E_WALK_DOWNWARD, hdf5_h5e_walk2, &err_data);
+    if (res < 0) throw Exception("Cannot read HDF5 error stack", ioda_Here());
+
+    hdf5_error_stack_recursively_reconstruct(err_data.exceptions);
+  } catch (...) {
+    // No stack trace:
+    // std::rethrow_exception(std::current_exception());
+    // With stack trace:
+    std::throw_with_nested(Exception("An HDF5 error was encountered.", ioda_Here()));
+  }
 }
 
 std::string getNameFromIdentifier(hid_t obj_id) {

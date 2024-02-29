@@ -8,23 +8,27 @@
 /// \brief Exception classes for IODA
 
 #include "ioda/Exception.h"
+#include "oops/util/Stacktrace.h"  // in oops/util
 
 namespace ioda {
 
 Exception::Exception(const ::ioda::source_location& loc, const Options& opts) : opts_{opts} {
   add_source_location(loc);
+  add_call_stack();
 }
 
 Exception::Exception(const char* msg, const ::ioda::source_location& loc, const Options& opts)
     : opts_{opts} {
   add("Reason", std::string(msg));
   add_source_location(loc);
+  add_call_stack();
 }
 
 Exception::Exception(std::string msg, const ::ioda::source_location& loc, const Options& opts)
     : opts_{opts} {
   add("Reason", msg);
   add_source_location(loc);
+  add_call_stack();
 }
 
 Exception::~Exception() noexcept = default;
@@ -36,6 +40,10 @@ void Exception::add_source_location(const ::ioda::source_location& loc) {
   add("source_line", loc.line());
   add("source_function", loc.function_name());
   add("source_column", loc.column());
+}
+
+void Exception::add_call_stack() {
+  add("stacktrace", std::string("\n") + util::stacktrace_current());
 }
 
 const char* Exception::what() const noexcept {

@@ -199,6 +199,11 @@ struct IODA_HIDDEN Vlen_data {
   hvl_t& operator[](size_t idx) { return (buf).get()[idx]; }
 };
 
+/// @brief Check for any HDF5-related errors and encapsulate these errors as an exception.
+/// @throws ioda::Exception if any exception was detected. The contents of the exception will
+///   contain the HDF5 error stack.
+IODA_HIDDEN void hdf5_error_check();
+
 /// @brief Gets a variable / group / link name from an id. Useful for debugging.
 /// @param obj_id is the object.
 /// @return One of the possible object names.
