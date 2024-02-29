@@ -19,6 +19,8 @@
 #include <typeinfo>
 #include <vector>
 
+#include "../HH/HH/HH-types.h"
+
 namespace ioda {
 namespace ObsStore {
 /// \brief ObsStore fundamental data type markers
@@ -136,6 +138,11 @@ class Type {
 
   /// \brief true if base data type is explicitly signed
   bool isTypeSigned() const { return is_signed_; }
+
+  /// \brief Convert this data type to an equivalent HDF5 type.
+  /// \details This is used to take advantage of HDF5's superior
+  ///   type conversion functions.
+  detail::Engines::HH::HH_Type getHDF5Type() const;
 
   /// \brief comparison operators
   bool operator==(const Type & rhs) const;

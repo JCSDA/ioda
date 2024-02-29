@@ -13,7 +13,10 @@
 #include <functional>
 #include <numeric>
 
+#include <hdf5.h>  // Type conversion support
+
 #include "./Attributes.hpp"
+#include "../HH/HH/HH-util.h"  // Error catching in H5T_convert
 #include "ioda/Exception.h"
 
 
@@ -42,9 +45,6 @@ bool Attribute::isOfType(const Type & dtype) const {
 
 std::shared_ptr<Attribute> Attribute::write(gsl::span<const char> data,
                                             const Type & dtype, const bool isFill) {
-  if (dtype != *dtype_)
-    throw Exception("Requested data type not equal to storage datatype.", ioda_Here());
-
   // Create select objects for all elements. Ie, attributes don't use
   // selection, but the VarAttrStore object is also used by variables which
   // do use selection.
@@ -55,14 +55,36 @@ std::shared_ptr<Attribute> Attribute::write(gsl::span<const char> data,
   }
   Selection m_select(start, npoints);
   Selection f_select(start, npoints);
-  attr_data_->write(data, m_select, f_select, isFill);
+
+  if (dtype == *dtype_) {
+    attr_data_->write(data, m_select, f_select, isFill);
+  } else {
+    // Convert the ObsStore data type into an HDF5 type equivalent.
+    // Then, convert the data to the requested type and return.
+    auto internal_type = dtype_->getHDF5Type();
+    auto from_type = dtype.getHDF5Type();
+
+    // Determine the necessary size for the converted data buffer. HDF5 uses
+    // an in-place conversion strategy.
+    size_t nelements = m_select.npoints();
+    size_t min_sz_type = std::max(internal_type.getSize(), from_type.getSize());
+    size_t buf_sz = nelements * min_sz_type;
+
+    std::vector<char> conversion_buffer(buf_sz);
+    std::copy(data.begin(), data.end(), conversion_buffer.begin());
+
+    herr_t cvt_res = H5Tconvert(from_type.handle(), internal_type.handle(),
+                                nelements, conversion_buffer.data(), nullptr, H5P_DEFAULT);
+    if (cvt_res < 0) ioda::detail::Engines::HH::hdf5_error_check();
+
+    attr_data_->write(gsl::span<const char>(conversion_buffer.data(), conversion_buffer.size()),
+                      m_select, f_select, isFill);
+  }
+
   return shared_from_this();
 }
 
 std::shared_ptr<Attribute> Attribute::read(gsl::span<char> data, const Type & dtype) {
-  if (dtype != *dtype_)
-    throw Exception("Requested data type not equal to storage datatype", ioda_Here());
- 
   // Create select objects for all elements. Ie, attributes don't use
   // selection, but the VarAttrStore object is also used by variables which
   // do use selection.
@@ -73,7 +95,32 @@ std::shared_ptr<Attribute> Attribute::read(gsl::span<char> data, const Type & dt
   }
   Selection m_select(start, npoints);
   Selection f_select(start, npoints);
-  attr_data_->read(data, m_select, f_select);
+
+  if (dtype == *dtype_) {
+    attr_data_->read(data, m_select, f_select);
+  } else {
+    // Convert the ObsStore data type into an HDF5 type equivalent.
+    // Then, convert the data to the requested type and return.
+    auto internal_type = dtype_->getHDF5Type();
+    auto to_type = dtype.getHDF5Type();
+
+    // Determine the necessary size for the converted data buffer. HDF5 uses
+    // an in-place conversion strategy.
+    size_t nelements = m_select.npoints();
+    size_t min_sz_type = std::max(internal_type.getSize(), to_type.getSize());
+    size_t buf_sz = nelements * min_sz_type;
+
+    std::vector<char> conversion_buffer(buf_sz);
+    attr_data_->read(gsl::span<char>(conversion_buffer.data(), conversion_buffer.size()),
+                     m_select, f_select);
+
+    herr_t cvt_res = H5Tconvert(internal_type.handle(), to_type.handle(),
+                                nelements, conversion_buffer.data(), nullptr, H5P_DEFAULT);
+    if (cvt_res < 0) ioda::detail::Engines::HH::hdf5_error_check();
+    std::copy_n(conversion_buffer.begin(), to_type.getSize() * nelements, data.begin());
+  }
+
+
   return shared_from_this();
 }
 

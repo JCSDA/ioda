@@ -99,6 +99,13 @@ int main(int argc, char** argv) {
     // but support for this depends on the backend.
     // We just wrote the data {1,2} using an initializer list also.
 
+    // We can always re-write an attribute with different data.
+    intatt2.write<int>({3,4});
+    // ioda is flexible enough to support reading and writing attributes when the
+    // data storage type is different than the data access type. For example, intatt2
+    // is stored as a 32-bit integer, but we can read and write 16-bit ints.
+    intatt2.write<int16_t>({5,6});
+
     // For convenience, Has_Attributes also provides a .add function that combines
     // .create and .write.
 
@@ -250,6 +257,12 @@ int main(int argc, char** argv) {
     // A valarray is like a vector. We can resize it automatically, and thus also specialize it.
     std::valarray<double> check_double_1_valarray;
     g.atts.read<double>("double-1", check_double_1_valarray);
+
+    // Type conversions are implicit
+    std::valarray<int16_t> check_intatt2;
+    g.atts.read<int16_t>("int-att-2", check_intatt2);
+    Expects(check_intatt2[0] == 5);
+    Expects(check_intatt2[1] == 6);
 
   } catch (const std::exception& e) {
     ioda::unwind_exception_stack(e);

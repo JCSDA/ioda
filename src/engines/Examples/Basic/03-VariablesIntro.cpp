@@ -70,18 +70,24 @@ int main(int argc, char** argv) {
 
     // The most basic creation function is .create<Type>(name, {dimensions}). Same as with creating
     // an attribute.
-    ioda::Variable intvar1 = g.vars.create<int>("var-1", {2, 3});
+    ioda::Variable intvar1 = g.vars.create<int32_t>("var-1", {2, 3});
     // The above creates a 2x3 variable that contains integers.
     // * First difference from attributes: multidimensional data is fully supported. You can create
     // points, 1-D, 2-D, 3-D, ..., n-dimensional data.
 
     // Writing a small amount of data is also easy.
-    intvar1.write<int>({1, 2, 3, 4, 5, 6});
+    intvar1.write<int32_t>({1, 2, 3, 4, 5, 6});
     // Just like with Attributes, you can use initializer lists and spans to write data.
     // Unlike with attributes, there is no ".add" function, so you always have to
     // use ".create" and ".write". This is deliberate, because variable creation can become much
     // more complicated than attribute creation.
 
+    // You can overwrite data easily. Also, you do not need to match the variable's storage type
+    // with the type used to store data in memory. ioda is smart enough to perform this
+    // conversion automatically.
+    intvar1.write<int16_t>({-1, -2, -3, -4, -5, -6});
+
+    //return 0;
     // However, you can still chain operations:
     g.vars.create<float>("var-2", {2, 3, 4}).write<float>({1.1f, 2.2f, 3.14159f, 4,  5,     6,
                                                            7,    8,    9,        10, 11.5f, 12.6f,
@@ -252,9 +258,20 @@ int main(int argc, char** argv) {
     // Reading an entire variable
 
     // Into a vector
-    std::vector<int> v_data_4_check;
-    g.vars["var-4"].read<int>(v_data_4_check);
-    Expects(v_data_4_check[3] == 4);
+    std::vector<int> v_data_1_check;
+    g.vars["var-1"].read<int>(v_data_1_check);
+    Expects(v_data_1_check[0] == -1);
+    Expects(v_data_1_check[1] == -2);
+    Expects(v_data_1_check[2] == -3);
+    Expects(v_data_1_check[3] == -4);
+    Expects(v_data_1_check[4] == -5);
+    Expects(v_data_1_check[5] == -6);
+
+    // Check type conversion. The internal storage
+    // type is int32_t, and we are reading into a vector of int64_t.
+    std::vector<int64_t> v_data_1_check_type_conversion;
+    g.vars["var-1"].read<int64_t>(v_data_1_check_type_conversion);
+    Expects(v_data_1_check_type_conversion[3] == -4);
 
     // Into a valarray
     std::valarray<int> va_data_4_check;
@@ -283,10 +300,11 @@ int main(int argc, char** argv) {
     Expects(data_4d_check(0, 1, 0) == 1);
     Expects(data_4d_check(0, 0, 1) == -1);
 
-    // If you read data into an object that has the wrong storage type, ioda-engines complains.
+    // If you try to read data into an object that has a truly incompatible
+    // storage type, such as reading ints into a string, then ioda-engines will complain.
     try {
-      std::vector<double> y1_check_bad;
-      y1.read<double>(y1_check_bad); // This will fail
+      std::vector<std::string> y1_check_bad;
+      y1.read<std::string>(y1_check_bad); // This will fail
     } catch (...) {
       // Silently catch in this example
     }
