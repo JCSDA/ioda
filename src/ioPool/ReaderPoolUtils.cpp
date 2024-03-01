@@ -1288,7 +1288,7 @@ void readerDefineYamlAnchors(const ReaderPoolBase & ioPool,
 }
 
 //--------------------------------------------------------------------------------
-void readerDeserializeGroupStructure(ioda::Group & memGroup,
+void readerDeserializeGroupStructure(const ReaderPoolBase & ioPool, ioda::Group & memGroup,
                                      const std::string & groupStructureYaml) {
     // Deserialize the yaml string into an eckit YAML configuration object. Then
     // walk through that structure building the structure as you go.
@@ -1313,12 +1313,12 @@ void readerDeserializeGroupStructure(ioda::Group & memGroup,
     // create dimensions from the "dimensions" section
     std::vector<eckit::LocalConfiguration> dimConfigs;
     config.get("dimensions", dimConfigs);
-    VarUtils::createDimensionsFromConfig(memGroup.vars, dimConfigs);
+    VarUtils::createDimensionsFromConfig(memGroup.vars, dimConfigs, ioPool.globalNlocs());
 
     // create variables from the "variables" section
     std::vector<eckit::LocalConfiguration> varConfigs;
     config.get("variables", varConfigs);
-    VarUtils::createVariablesFromConfig(memGroup.vars, varConfigs);
+    VarUtils::createVariablesFromConfig(memGroup.vars, varConfigs, ioPool.globalNlocs());
 }
 
 //--------------------------------------------------------------------------------
@@ -1334,7 +1334,7 @@ void readerCopyGroupStructure(const ReaderPoolBase & ioPool,
     readerDefineYamlAnchors(ioPool, groupStructureYaml);
 
     // Deserialize the YAML string into a constructed group structure in the memGroup
-    readerDeserializeGroupStructure(memGroup, groupStructureYaml);
+    readerDeserializeGroupStructure(ioPool, memGroup, groupStructureYaml);
 }
 
 //------------------------------------------------------------------------------------
@@ -2166,8 +2166,8 @@ void readerAdjustDistributionMap(const ReaderPoolBase & ioPool,
 //--------------------------------------------------------------------------------
 template <typename VarType>
 void readerCreateVariable(const std::string & varName, const Variable & srcVar,
-                          const ioda::Dimensions_t adjustNlocs, Has_Variables & destVars,
-                          ioda::Dimensions_t & globalMaxElements,
+                          const ioda::Dimensions_t adjustNlocs, const std::size_t globalNlocs,
+                          Has_Variables & destVars, ioda::Dimensions_t & globalMaxElements,
                           ioda::Dimensions_t & maxElements) {
     oops::Log::trace() << "readerCreateVariable: creating: " << varName << std::endl;
     // Record the max number of elements on the source side and on the destination side.
@@ -2199,14 +2199,9 @@ void readerCreateVariable(const std::string & varName, const Variable & srcVar,
     params.setFillValue<VarType>(getMissingValue<VarType>());
     // Don't want compression in the memory image.
     params.noCompress();
-    // TODO(srh) For now use a default chunk size (10000) for the chunk size in the creation
-    // parameters when the first dimension is Location. This is being done since the size
-    // of location can vary across MPI tasks, and we need it to be constant for the parallel
-    // io to work properly. The assigned chunk size may need to be optimized further than
-    // using a rough guess of 10000.
     std::vector<ioda::Dimensions_t> chunkDims = varDims.dimsCur;
     if (adjustNlocs >= 0) {
-        chunkDims[0] = VarUtils::DefaultChunkSize;
+        chunkDims[0] = VarUtils::getLocationChunkSize(globalNlocs);
     }
     params.setChunks(chunkDims);
 
@@ -2394,8 +2389,9 @@ void ioReadGroup(const ReaderPoolBase & ioPool, const ioda::Group& fileGroup,
            fileVar,
            [&](auto typeDiscriminator) {
                typedef decltype(typeDiscriminator) T;
-               readerCreateVariable<T>(srcVarName, fileVar, adjustNlocs, memGroup.vars,
-                                                   globalMaxElements, maxElements);
+               readerCreateVariable<T>(srcVarName, fileVar, adjustNlocs,
+                                       VarUtils::getLocationChunkSize(ioPool.globalNlocs()),
+                                       memGroup.vars, globalMaxElements, maxElements);
            },
            VarUtils::ThrowIfVariableIsOfUnsupportedType(srcVarName));
     }
@@ -2411,12 +2407,8 @@ void ioReadGroup(const ReaderPoolBase & ioPool, const ioda::Group& fileGroup,
             VariableCreationParameters::defaults<int64_t>();
         params.setFillValue<int64_t>(getMissingValue<int64_t>());
         params.noCompress();
-        // TODO(srh) For now use a default chunk size (10000) for the chunk size in the creation
-        // parameters when the first dimension is Location. This is being done since the size
-        // of location can vary across MPI tasks, and we need it to be constant for the parallel
-        // io to work properly. The assigned chunk size may need to be optimized further than
-        // using a rough guess of 10000.
-        std::vector<ioda::Dimensions_t> chunkDims(1, VarUtils::DefaultChunkSize);
+        std::vector<ioda::Dimensions_t> chunkDims(1,
+                                        VarUtils::getLocationChunkSize(ioPool.globalNlocs()));
         params.setChunks(chunkDims);
         ioda::Variable dtimeVar =
             memGroup.vars.create<int64_t>("MetaData/dateTime", varDims, params);

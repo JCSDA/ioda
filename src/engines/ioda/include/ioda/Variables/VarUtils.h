@@ -34,8 +34,6 @@ struct Named_Variable;
 
 namespace VarUtils {
 
-static const int DefaultChunkSize = 10000;
-
 /*! @brief Convenience lambda to hint if a variable @b might be a scale.
  *
  * @details This is not definitive,
@@ -212,14 +210,26 @@ void listVariablesAsYaml(const Vec_Named_Variable & regularVarList,
 /// \brief create dimensions from an eckit LocalConfiguration
 /// \param atts Has_Variables container
 /// \param dimConfigs vector of eckit LocalConfiguration (list of dimensions)
+/// \param globalNlocs total number of locations across all MPI tasks
 void createDimensionsFromConfig(ioda::Has_Variables & vars,
-                                const std::vector<eckit::LocalConfiguration> & dimConfigs);
+                                const std::vector<eckit::LocalConfiguration> & dimConfigs,
+                                const std::size_t globalNlocs);
 
 /// \brief create variables from an eckit LocalConfiguration
 /// \param atts Has_Variables container
 /// \param varConfigs vector of eckit LocalConfiguration (list of variables)
+/// \param globalNlocs total number of locations across all MPI tasks
 void createVariablesFromConfig(ioda::Has_Variables & vars,
-                               const std::vector<eckit::LocalConfiguration> & varConfigs);
+                               const std::vector<eckit::LocalConfiguration> & varConfigs,
+                               const std::size_t globalNlocs);
+
+/// \brief get a recommended chunk size along the Locations dimension for an output file
+/// \details This function will return the minimum of totalNumLocs and a built-in
+/// maximum chunk size (10,000 for now). This is intended to be applied to the Location
+/// dimension, and the totalNumLocs can vary according to the total number of locations
+/// going into the output file.
+/// \param totalNumLocs the total number of locations going into the target output file
+std::size_t getLocationChunkSize(const std::size_t totalNumLocs);
 
 }  // end namespace VarUtils
 }  // end namespace ioda

@@ -538,7 +538,7 @@ void ObsSpace::put_db(const std::string & group, const std::string & name,
     // epoch value for converting the data before calling saveVar. Use the epoch DateTime
     // parameter for the units if creating a new variable.
     Variable dtVar;
-    openCreateEpochDtimeVar(group, name, obs_params_.top_level_.epochDateTime,
+    openCreateEpochDtimeVar(group, name, gnlocs_, obs_params_.top_level_.epochDateTime,
                             dtVar, obs_group_.vars);
     util::DateTime epochDtime = getEpochAsDtime(dtVar);
     std::vector<int64_t> timeOffsets = convertDtimeToTimeOffsets(epochDtime, vdata);

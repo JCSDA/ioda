@@ -677,19 +677,12 @@ namespace ioda {
                 var = obs_group_.vars.open(varName);
             } else {
                 // Create a vector of the dimension variables
-                //
-                // TODO(srh) For now use a default chunk size (10000) for the chunk size
-                // in the creation parameters when the first dimension is Location.
-                // This is being done since the size of location can vary across MPI tasks,
-                // and we need it to be constant for the parallel io to work properly.
-                // The assigned chunk size may need to be optimized further than using a
-                // rough guess of 10000.
                 std::vector<ioda::Dimensions_t> chunkDims;
                 std::vector<Variable> varDims;
                 for (auto & dimName : varDimList) {
                     Variable dimVar = obs_group_.vars.open(dimName);
                     if (dimName == "Location") {
-                        chunkDims.push_back(VarUtils::DefaultChunkSize);
+                        chunkDims.push_back(VarUtils::getLocationChunkSize(gnlocs_));
                     } else {
                         chunkDims.push_back(dimVar.getDimensions().dimsCur[0]);
                     }
