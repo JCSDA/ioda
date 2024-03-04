@@ -92,6 +92,9 @@ add_subdirectory( share )         # no arch data
 add_subdirectory( src/engines )   # `ioda_engines` target
 add_subdirectory( src )           # `ioda` target
 add_subdirectory( src/mains )     # ioda executable targets
+if ( Python3_FOUND )
+    add_subdirectory( src/python ) # ioda python targets
+endif()
 add_subdirectory( test )          # ioda ctests
 add_subdirectory( tools )         # misc tools
 

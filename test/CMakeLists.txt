@@ -789,7 +789,6 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_reduce
                   SOURCES mains/TestIodaObsSpaceReduce.cc
                   ARGS    "testinput/iodatest_obsspace_reduce.yaml"
                   LIBS  ioda_test
-                  ENVIRONMENT OOPS_DEBUG=1
                   TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_reduce_clean_files )
 
 # the following tests compare the output files
@@ -2269,3 +2268,10 @@ ecbuild_add_resources( TARGET ioda_test_scripts
 foreach(DIRNAME ${ioda_test_work_directories})
     file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${DIRNAME})
 endforeach()
+
+#####################################################################
+# Set up testing of python utilities
+#####################################################################
+if (Python3_FOUND)
+    add_subdirectory( python )
+endif()

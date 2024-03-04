@@ -1,6 +1,7 @@
 #List of programs to install to build-tree
 set(_programs
     ioda_cpplint.py
+    ioda_pylint.sh
     check_ioda_nc.py
     ioda_compare.sh
     ioda_compare_odc_with_netcdf.py
