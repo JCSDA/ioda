@@ -295,7 +295,7 @@ target_link_libraries(ioda_engines PUBLIC udunits::udunits)
 target_link_libraries(ioda_engines PUBLIC eckit)
 
 if(BUILD_PYTHON_BINDINGS)
-	target_link_libraries(ioda_engines PRIVATE Python3::Python)
+	target_link_libraries(ioda_engines PRIVATE Python3::Python pybind11::headers)
 	target_include_directories(ioda_engines PRIVATE ${Python3_INCLUDE_DIRS})
 endif()
 
