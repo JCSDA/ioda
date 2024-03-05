@@ -94,7 +94,7 @@ interface
          type(c_ptr),value :: p
          type(c_ptr),value :: s
          type(c_ptr) :: a
-         integer(c_int64_t),dimension(:),intent(in) :: d
+         integer(c_int64_t),dimension(*),intent(in) :: d
          integer(c_int64_t),value :: n,nd
          logical(c_bool) :: r 
     end function
@@ -104,7 +104,7 @@ interface
          type(c_ptr),value :: p
          type(c_ptr),value :: s
          type(c_ptr) :: a
-         integer(c_int64_t),dimension(:),intent(in) :: d
+         integer(c_int64_t),dimension(*),intent(in) :: d
          integer(c_int64_t),value :: n,nd
          logical(c_bool) :: r 
     end function
@@ -114,7 +114,7 @@ interface
          type(c_ptr),value :: p
          type(c_ptr),value :: s
          type(c_ptr) :: a
-         integer(c_int64_t),dimension(:),intent(in) :: d
+         integer(c_int64_t),dimension(*),intent(in) :: d
          integer(c_int64_t),value :: n,nd
          logical(c_bool) :: r 
     end function
@@ -124,7 +124,7 @@ interface
          type(c_ptr),value :: p
          type(c_ptr),value :: s
          type(c_ptr) :: a
-         integer(c_int64_t),dimension(:),intent(in) :: d
+         integer(c_int64_t),dimension(*),intent(in) :: d
          integer(c_int64_t),value :: n,nd
          logical(c_bool) :: r 
     end function
@@ -134,7 +134,7 @@ interface
          type(c_ptr),value :: p
          type(c_ptr),value :: s
          type(c_ptr) :: a
-         integer(c_int64_t),dimension(:),intent(in) :: d
+         integer(c_int64_t),dimension(*),intent(in) :: d
          integer(c_int64_t),value :: n,nd
          logical(c_bool) :: r 
     end function
@@ -144,7 +144,7 @@ interface
          type(c_ptr),value :: p
          type(c_ptr),value :: s
          type(c_ptr) :: a
-         integer(c_int64_t),dimension(:),intent(in) :: d
+         integer(c_int64_t),dimension(*),intent(in) :: d
          integer(c_int64_t),value :: n,nd
          logical(c_bool) :: r 
     end function
@@ -154,7 +154,7 @@ interface
          type(c_ptr),value :: p
          type(c_ptr),value :: s
          type(c_ptr) :: a
-         integer(c_int64_t),dimension(:),intent(in) :: d
+         integer(c_int64_t),dimension(*),intent(in) :: d
          integer(c_int64_t),value :: n,nd
          logical(c_bool) :: r 
     end function

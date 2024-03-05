@@ -127,7 +127,7 @@ ioda_variable_t ioda_has_variables_c_open(void *p, int64_t n, const char *name) 
 
 #define IODA_FUN(NAME, TYPE)                                                                       \
   ioda_variable_t ioda_has_variables_c_create##NAME(void *p, int64_t name_sz, const char *name,    \
-                                                    int64_t ndims, void **dims_p) {                \
+                                                    int64_t ndims, int64_t *dims) {                \
     try {                                                                                          \
       VOID_TO_CXX(ioda::Has_Variables, p, has_var);                                                \
       if (has_var == nullptr) {                                                                    \
@@ -136,11 +136,6 @@ ioda_variable_t ioda_has_variables_c_open(void *p, int64_t n, const char *name) 
       }                                                                                            \
       if (name == nullptr) {                                                                       \
         std::cerr << "ioda_has_Variables_create name is null\n";                                   \
-        throw std::exception();                                                                    \
-      }                                                                                            \
-      VOID_TO_CXX(int64_t, *dims_p, dims);                                                         \
-      if (dims == nullptr) {                                                                       \
-        std::cerr << "ioda_has_Variables_create dims is null\n";                                   \
         throw std::exception();                                                                    \
       }                                                                                            \
       std::vector<ioda::Dimensions_t> vdims(dims, dims + ndims);                                   \
@@ -179,7 +174,7 @@ IODA_FUN(_str, std::vector<std::string>)
 
 #define IODA_FUN(NAME, TYPE)                                                                       \
   ioda_variable_t ioda_has_variables_c_create2##NAME(                                              \
-    void *p, int64_t name_sz, const char *name, int64_t ndims, void **dims_p, void **max_dims_p,   \
+    void *p, int64_t name_sz, const char *name, int64_t ndims, int64_t *dims, int64_t *max_dims,   \
     ioda_variable_creation_parameters_t creation_p) {                                              \
     try {                                                                                          \
       VOID_TO_CXX(ioda::Has_Variables, p, has_var);                                                \
@@ -191,17 +186,7 @@ IODA_FUN(_str, std::vector<std::string>)
         std::cerr << "ioda_has_Variables_create2 name is null\n";                                  \
         throw std::exception();                                                                    \
       }                                                                                            \
-      VOID_TO_CXX(int64_t, *dims_p, dims);                                                         \
-      if (dims == nullptr) {                                                                       \
-        std::cerr << "ioda_has_Variables_create dims is null\n";                                   \
-        throw std::exception();                                                                    \
-      }                                                                                            \
       std::vector<ioda::Dimensions_t> dvec(dims, dims + ndims);                                    \
-      VOID_TO_CXX(int64_t, *max_dims_p, max_dims);                                                 \
-      if (max_dims == nullptr) {                                                                   \
-        std::cerr << "ioda_has_Variables_create max dims is null\n";                               \
-        throw std::exception();                                                                    \
-      }                                                                                            \
       std::vector<ioda::Dimensions_t> max_dvec(max_dims, max_dims + ndims);                        \
       if (dims == nullptr || max_dims == nullptr) {                                                \
         std::cerr << "ioda_has_Variables_create2 dims is null\n";                                  \

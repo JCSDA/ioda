@@ -139,13 +139,8 @@ IODA_FUN(_char,char)
 #undef IODA_FUN
 
 #define IODA_FUN(NAME,TYPE)\
-bool ioda_attribute_c_write##NAME (ioda_attribute_t v,int64_t n, void ** data_p) {	\
+bool ioda_attribute_c_write##NAME (ioda_attribute_t v,int64_t n, TYPE * data) {	\
     try  { 										\
-        VOID_TO_CXX(TYPE,*data_p,data);							\
-        if ( data == nullptr) {								\
-            std::cerr << "ioda_attribute_c_write_str data ptr null\n";			\
-            throw std::exception();							\
-        }										\
         VOID_TO_CXX(ioda::Attribute,v,p);						\
         if (p==nullptr) { 								\
             std::cerr << "ioda_attribute_c_write attr ptr null\n";			\

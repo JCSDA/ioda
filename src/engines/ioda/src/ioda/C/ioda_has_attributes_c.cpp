@@ -108,7 +108,7 @@ ioda_has_attributes_t ioda_has_attributes_c_open(ioda_has_attributes_t v,int64_t
 
 #define IODA_FUN(NAME,TYPE)\
 bool ioda_has_attributes_c_create##NAME (ioda_has_attributes_t v,int64_t name_sz,	\
-    const char *name, int64_t sz,void **dims_p,ioda_attribute_t *Attr) { 		\
+    const char *name, int64_t sz,int64_t *dims,ioda_attribute_t *Attr) { 		\
     try {										\
         VOID_TO_CXX(ioda::Has_Attributes,v,p);  					\
         if ( p == nullptr ) {								\
@@ -119,15 +119,6 @@ bool ioda_has_attributes_c_create##NAME (ioda_has_attributes_t v,int64_t name_sz
         VOID_TO_CXX(ioda::Attribute,*Attr,attr);					\
         if ( attr != nullptr ) {							\
              delete attr;								\
-        }										\
-        if ( dims_p == nullptr ) {							\
-            std::cerr << "really bad error null array\n";				\
-            fatal_error(); 								\
-        }										\
-        VOID_TO_CXX(int64_t,(*dims_p),dims);						\
-        if ( dims == nullptr ) { 							\
-            std::cerr << "ioda_has_Variables_create dims is null\n";			\
-            throw std::exception();         						\
         }										\
         std::vector<ioda::Dimensions_t> vdims(dims,dims+sz);				\
         std::string vstr(name,name_sz);							\

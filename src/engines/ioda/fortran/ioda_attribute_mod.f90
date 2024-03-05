@@ -82,7 +82,7 @@ interface
     function ioda_attribute_c_write_float(p,n,data_) result(r) bind(C,name="ioda_attribute_c_write_float")
          import c_ptr,c_int64_t,c_bool,c_float
          type(c_ptr),value :: p
-         real(c_float),dimension(:),intent(in) :: data_
+         real(c_float),dimension(*),intent(in) :: data_
          integer(c_int64_t),value :: n
          logical(c_bool) :: r         
     end function
@@ -90,7 +90,7 @@ interface
     function ioda_attribute_c_write_double(p,n,data_) result(r) bind(C,name="ioda_attribute_c_write_double")
          import c_ptr,c_int64_t,c_bool,c_double
          type(c_ptr),value :: p
-         real(c_double),dimension(:),intent(in) :: data_
+         real(c_double),dimension(*),intent(in) :: data_
          integer(c_int64_t),value :: n
          logical(c_bool) :: r         
     end function
@@ -106,7 +106,7 @@ interface
     function ioda_attribute_c_write_int16(p,n,data_) result(r) bind(C,name="ioda_attribute_c_write_int16")
          import c_ptr,c_int64_t,c_bool,c_int16_t
          type(c_ptr),value :: p
-         integer(c_int16_t),dimension(:),intent(in) :: data_
+         integer(c_int16_t),dimension(*),intent(in) :: data_
          integer(c_int64_t),value :: n
          logical(c_bool) :: r         
     end function
@@ -114,7 +114,7 @@ interface
     function ioda_attribute_c_write_int32(p,n,data_) result(r) bind(C,name="ioda_attribute_c_write_int32")
          import c_ptr,c_int64_t,c_bool,c_int32_t
          type(c_ptr),value :: p
-         integer(c_int32_t),dimension(:),intent(in) :: data_
+         integer(c_int32_t),dimension(*),intent(in) :: data_
          integer(c_int64_t),value :: n
          logical(c_bool) :: r         
     end function
@@ -122,7 +122,7 @@ interface
     function ioda_attribute_c_write_int64(p,n,data_) result(r) bind(C,name="ioda_attribute_c_write_int64")
          import c_ptr,c_int64_t,c_bool
          type(c_ptr),value :: p
-         integer(c_int64_t),dimension(:),intent(in) :: data_
+         integer(c_int64_t),dimension(*),intent(in) :: data_
          integer(c_int64_t),value :: n
          logical(c_bool) :: r         
     end function
@@ -137,7 +137,7 @@ interface
     function ioda_attribute_c_read_float(p,n,data_) result(r) bind(C,name="ioda_attribute_c_read_float")
          import c_ptr,c_int64_t,c_bool,c_float
          type(c_ptr),value :: p
-         real(c_float),dimension(:),intent(out) :: data_
+         real(c_float),dimension(*),intent(out) :: data_
          integer(c_int64_t),value :: n
          logical(c_bool) :: r         
     end function
@@ -145,7 +145,7 @@ interface
     function ioda_attribute_c_read_double(p,n,data_) result(r) bind(C,name="ioda_attribute_c_read_double")
          import c_ptr,c_int64_t,c_bool,c_double
          type(c_ptr),value :: p
-         real(c_double),dimension(:),intent(out) :: data_
+         real(c_double),dimension(*),intent(out) :: data_
          integer(c_int64_t),value :: n
          logical(c_bool) :: r         
     end function
@@ -161,7 +161,7 @@ interface
     function ioda_attribute_c_read_int16(p,n,data_) result(r) bind(C,name="ioda_attribute_c_read_int16")
          import c_ptr,c_int64_t,c_bool,c_int16_t
          type(c_ptr),value :: p
-         integer(c_int16_t),dimension(:),intent(out) :: data_
+         integer(c_int16_t),dimension(*),intent(out) :: data_
          integer(c_int64_t),value :: n
          logical(c_bool) :: r         
     end function
@@ -169,7 +169,7 @@ interface
     function ioda_attribute_c_read_int32(p,n,data_) result(r) bind(C,name="ioda_attribute_c_read_int32")
          import c_ptr,c_int64_t,c_bool,c_int32_t
          type(c_ptr),value :: p
-         integer(c_int32_t),dimension(:),intent(out) :: data_
+         integer(c_int32_t),dimension(*),intent(out) :: data_
          integer(c_int64_t),value :: n
          logical(c_bool) :: r         
     end function
@@ -177,7 +177,7 @@ interface
     function ioda_attribute_c_read_int64(p,n,data_) result(r) bind(C,name="ioda_attribute_c_read_int64")
          import c_ptr,c_int64_t,c_bool
          type(c_ptr),value :: p
-         integer(c_int64_t),dimension(:),intent(out) :: data_
+         integer(c_int64_t),dimension(*),intent(out) :: data_
          integer(c_int64_t),value :: n
          logical(c_bool) :: r         
     end function

@@ -96,7 +96,7 @@ interface
     function ioda_variable_c_resize(p,n,dims) result(r) bind(C,name="ioda_variable_c_resize")
       import C_ptr,c_int64_t,c_bool
       type(C_ptr),value :: p
-      integer(c_int64_t),dimension(:),intent(in) :: dims	
+      integer(c_int64_t),dimension(*),intent(in) :: dims	
       integer(c_int64_t),value :: n
       logical(c_bool) :: r     
     end function
@@ -233,7 +233,7 @@ interface
         import C_ptr,c_bool,c_int64_t,c_float
         type(C_ptr),value :: p
 	integer(c_int64_t),value :: n
-	real(c_float),dimension(:),intent(out) :: data_
+	real(c_float),dimension(*),intent(out) :: data_
         logical(C_bool) :: r
     end function	
 
@@ -241,7 +241,7 @@ interface
         import C_ptr,c_bool,c_int64_t,c_double
         type(C_ptr),value :: p
 	integer(c_int64_t),value :: n
-	real(c_double),dimension(:),intent(out) :: data_
+	real(c_double),dimension(*),intent(out) :: data_
         logical(C_bool) :: r
     end function	
 
@@ -257,7 +257,7 @@ interface
         import C_ptr,c_bool,c_int64_t,c_int16_t
         type(C_ptr),value :: p
 	integer(c_int64_t),value :: n
-	integer(c_int16_t),dimension(:),intent(out) :: data_
+	integer(c_int16_t),dimension(*),intent(out) :: data_
         logical(C_bool) :: r
     end function	
 
@@ -265,7 +265,7 @@ interface
         import C_ptr,c_bool,c_int64_t,c_int32_t
         type(C_ptr),value :: p
 	integer(c_int64_t),value :: n
-	integer(c_int32_t),dimension(:),intent(out) :: data_
+	integer(c_int32_t),dimension(*),intent(out) :: data_
         logical(C_bool) :: r
     end function	
 
@@ -273,7 +273,7 @@ interface
         import C_ptr,c_bool,c_int64_t
         type(C_ptr),value :: p
 	integer(c_int64_t),value :: n
-	integer(c_int64_t),dimension(:),intent(out) :: data_
+	integer(c_int64_t),dimension(*),intent(out) :: data_
         logical(C_bool) :: r
     end function	
 
@@ -288,7 +288,7 @@ interface
         import C_ptr,c_bool,c_int64_t,c_float
         type(C_ptr),value :: p
 	integer(c_int64_t),value :: n
-	real(c_float),dimension(:),intent(out) :: data_
+	real(c_float),dimension(*),intent(out) :: data_
         logical(C_bool) :: r
     end function	
 
@@ -296,7 +296,7 @@ interface
         import C_ptr,c_bool,c_int64_t,c_double
         type(C_ptr),value :: p
 	integer(c_int64_t),value :: n
-	real(c_double),dimension(:),intent(out) :: data_
+	real(c_double),dimension(*),intent(out) :: data_
         logical(C_bool) :: r
     end function	
 
@@ -312,7 +312,7 @@ interface
         import C_ptr,c_bool,c_int64_t,c_int16_t
         type(C_ptr),value :: p
 	integer(c_int64_t),value :: n
-	integer(c_int16_t),dimension(:),intent(out) :: data_
+	integer(c_int16_t),dimension(*),intent(out) :: data_
         logical(C_bool) :: r
     end function	
 
@@ -320,7 +320,7 @@ interface
         import C_ptr,c_bool,c_int64_t,c_int32_t
         type(C_ptr),value :: p
 	integer(c_int64_t),value :: n
-	integer(c_int32_t),dimension(:),intent(out) :: data_
+	integer(c_int32_t),dimension(*),intent(out) :: data_
         logical(C_bool) :: r
     end function	
 
@@ -328,7 +328,7 @@ interface
         import C_ptr,c_bool,c_int64_t
         type(C_ptr),value :: p
 	integer(c_int64_t),value :: n
-	integer(c_int64_t),dimension(:),intent(out) :: data_
+	integer(c_int64_t),dimension(*),intent(out) :: data_
         logical(C_bool) :: r
     end function	
 

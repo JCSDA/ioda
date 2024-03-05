@@ -94,8 +94,8 @@ module ioda_has_variables_mod
          type(c_ptr) :: var
          integer(c_int64_t),value :: sz_name
          integer(c_int64_t),value :: n_dims
-         integer(c_int64_t), dimension(:), intent(in) :: dims
-         integer(c_int64_t), dimension(:), intent(in) :: max_dims
+         integer(c_int64_t), dimension(*), intent(in) :: dims
+         integer(c_int64_t), dimension(*), intent(in) :: max_dims
       end function
 
       function ioda_has_variables_c_create_float(p, sz_name, name, n_dims, dims) result(var) &
@@ -105,7 +105,7 @@ module ioda_has_variables_mod
          integer(c_int64_t),value :: sz_name
          type(c_ptr), value :: name
          integer(c_int64_t), value :: n_dims
-         integer(c_int64_t), dimension(:), intent(in) ::dims
+         integer(c_int64_t), dimension(*), intent(in) ::dims
          type(c_ptr) :: var
       end function
 
@@ -118,8 +118,8 @@ module ioda_has_variables_mod
          type(c_ptr) :: var
          integer(c_int64_t),value :: sz_name
          integer(c_int64_t),value :: n_dims
-         integer(c_int64_t), dimension(:), intent(in) :: dims
-         integer(c_int64_t), dimension(:), intent(in) :: max_dims
+         integer(c_int64_t), dimension(*), intent(in) :: dims
+         integer(c_int64_t), dimension(*), intent(in) :: max_dims
       end function
 
       function ioda_has_variables_c_create_double(p, sz_name, name, n_dims, dims) result(var) &
@@ -129,7 +129,7 @@ module ioda_has_variables_mod
          integer(c_int64_t),value :: sz_name
          type(c_ptr), value :: name
          integer(c_int64_t), value :: n_dims
-         integer(c_int64_t), dimension(:), intent(in) ::dims
+         integer(c_int64_t), dimension(*), intent(in) ::dims
          type(c_ptr) :: var
       end function
 
@@ -142,8 +142,8 @@ module ioda_has_variables_mod
          type(c_ptr) :: var
          integer(c_int64_t),value :: sz_name
          integer(c_int64_t),value :: n_dims
-         integer(c_int64_t), dimension(:), intent(in) :: dims
-         integer(c_int64_t), dimension(:), intent(in) :: max_dims
+         integer(c_int64_t), dimension(*), intent(in) :: dims
+         integer(c_int64_t), dimension(*), intent(in) :: max_dims
       end function
 
       function ioda_has_variables_c_create_char(p, sz_name, name, n_dims, dims) result(var) &
@@ -153,7 +153,7 @@ module ioda_has_variables_mod
          integer(c_int64_t),value :: sz_name
          type(c_ptr), value :: name
          integer(c_int64_t), value :: n_dims
-         integer(c_int64_t), dimension(:), intent(in) ::dims
+         integer(c_int64_t), dimension(*), intent(in) ::dims
          type(c_ptr) :: var
       end function
 
@@ -166,8 +166,8 @@ module ioda_has_variables_mod
          type(c_ptr) :: var
          integer(c_int64_t),value :: sz_name
          integer(c_int64_t),value :: n_dims
-         integer(c_int64_t), dimension(:), intent(in) :: dims
-         integer(c_int64_t), dimension(:), intent(in) :: max_dims
+         integer(c_int64_t), dimension(*), intent(in) :: dims
+         integer(c_int64_t), dimension(*), intent(in) :: max_dims
       end function
 
       function ioda_has_variables_c_create_int16(p, sz_name, name, n_dims, dims) result(var) &
@@ -177,7 +177,7 @@ module ioda_has_variables_mod
          integer(c_int64_t),value :: sz_name
          type(c_ptr), value :: name
          integer(c_int64_t), value :: n_dims
-         integer(c_int64_t), dimension(:), intent(in) ::dims
+         integer(c_int64_t), dimension(*), intent(in) ::dims
          type(c_ptr) :: var
       end function
 
@@ -190,8 +190,8 @@ module ioda_has_variables_mod
          type(c_ptr) :: var
          integer(c_int64_t),value :: sz_name
          integer(c_int64_t),value :: n_dims
-         integer(c_int64_t), dimension(:), intent(in) :: dims
-         integer(c_int64_t), dimension(:), intent(in) :: max_dims
+         integer(c_int64_t), dimension(*), intent(in) :: dims
+         integer(c_int64_t), dimension(*), intent(in) :: max_dims
       end function
 
       function ioda_has_variables_c_create_int32(p, sz_name, name, n_dims, dims) result(var) &
@@ -201,7 +201,7 @@ module ioda_has_variables_mod
          integer(c_int64_t),value :: sz_name
          type(c_ptr), value :: name
          integer(c_int64_t), value :: n_dims
-         integer(c_int64_t), dimension(:) ::dims
+         integer(c_int64_t), dimension(*) ::dims
          type(c_ptr) :: var
       end function
 
@@ -214,8 +214,8 @@ module ioda_has_variables_mod
          type(c_ptr) :: var
          integer(c_int64_t),value :: sz_name
          integer(c_int64_t),value :: n_dims
-         integer(c_int64_t), dimension(:), intent(in) :: dims
-         integer(c_int64_t), dimension(:), intent(in) :: max_dims
+         integer(c_int64_t), dimension(*), intent(in) :: dims
+         integer(c_int64_t), dimension(*), intent(in) :: max_dims
       end function
 
       function ioda_has_variables_c_create_int64(p, sz_name, name, n_dims, dims) result(var) &
@@ -225,7 +225,7 @@ module ioda_has_variables_mod
          integer(c_int64_t),value :: sz_name
          type(c_ptr), value :: name
          integer(c_int64_t), value :: n_dims
-         integer(c_int64_t), dimension(:), intent(in) ::dims
+         integer(c_int64_t), dimension(*), intent(in) ::dims
          type(c_ptr) :: var
       end function
 
@@ -238,8 +238,8 @@ module ioda_has_variables_mod
          type(c_ptr) :: var
          integer(c_int64_t),value :: sz_name
          integer(c_int64_t),value :: n_dims
-         integer(c_int64_t), dimension(:), intent(in) :: dims
-         integer(c_int64_t), dimension(:), intent(in) :: max_dims
+         integer(c_int64_t), dimension(*), intent(in) :: dims
+         integer(c_int64_t), dimension(*), intent(in) :: max_dims
       end function
 
       function ioda_has_variables_c_create_str(p, sz_name, name, n_dims, dims) result(var) &
@@ -249,7 +249,7 @@ module ioda_has_variables_mod
          integer(c_int64_t),value :: sz_name
          type(c_ptr), value :: name
          integer(c_int64_t), value :: n_dims
-         integer(c_int64_t), dimension(:), intent(in) ::dims
+         integer(c_int64_t), dimension(*), intent(in) ::dims
          type(c_ptr) :: var
       end function
 

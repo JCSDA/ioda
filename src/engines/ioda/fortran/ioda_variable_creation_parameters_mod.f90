@@ -60,7 +60,7 @@ module ioda_variable_creation_parameters_mod
          type(c_ptr), value :: p
          logical(c_bool), value :: do_chunk
          integer(c_int64_t), value :: ndim
-         integer(c_int64_t), dimension(:), intent(in) :: chunks
+         integer(c_int64_t), dimension(*), intent(in) :: chunks
       end subroutine
 
       subroutine ioda_variable_creation_parameters_c_compress_with_gzip(p, level) &
