@@ -1368,7 +1368,7 @@ endif()
 # Test the script backend
 #####################################################################
 
-if (${Python3_FOUND})
+if (BUILD_PYTHON_BINDINGS)
   ecbuild_add_test( TARGET      test_ioda_time_io_script
                     COMMAND     ${CMAKE_BINARY_DIR}/bin/time_IodaIO.x
                     ARGS        "testinput/iodatest_time_io_script.yaml"
