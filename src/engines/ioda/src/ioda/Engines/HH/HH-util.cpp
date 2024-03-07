@@ -299,8 +299,6 @@ void hdf5_error_stack_recursively_reconstruct(
 
     throwing_cur = true;
     throw(*cur);
-    //throw Exception<std::runtime_error>("Top of HDF5 exception stack", ioda_Here());
-    //std::rethrow_exception(cur);
   } catch (...) {
     if (throwing_cur) std::rethrow_exception(std::current_exception());
     std::throw_with_nested(*cur);
@@ -320,9 +318,6 @@ void hdf5_error_check() {
 
     hdf5_error_stack_recursively_reconstruct(err_data.exceptions);
   } catch (...) {
-    // No stack trace:
-    // std::rethrow_exception(std::current_exception());
-    // With stack trace:
     std::throw_with_nested(Exception("An HDF5 error was encountered.", ioda_Here()));
   }
 }
