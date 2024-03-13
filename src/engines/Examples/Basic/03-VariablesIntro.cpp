@@ -87,7 +87,6 @@ int main(int argc, char** argv) {
     // conversion automatically.
     intvar1.write<int16_t>({-1, -2, -3, -4, -5, -6});
 
-    //return 0;
     // However, you can still chain operations:
     g.vars.create<float>("var-2", {2, 3, 4}).write<float>({1.1f, 2.2f, 3.14159f, 4,  5,     6,
                                                            7,    8,    9,        10, 11.5f, 12.6f,
