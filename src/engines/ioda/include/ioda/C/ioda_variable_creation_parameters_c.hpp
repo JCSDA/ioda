@@ -21,7 +21,7 @@ void ioda_variable_creation_parameters_c_clone(ioda_variable_creation_parameters
     ioda_variable_creation_parameters_t rhs_p);
 
 void ioda_variable_creation_parameters_c_chunking(ioda_variable_creation_parameters_t p,
-    bool do_chunking,int64_t ndims,void **chunks_p);
+    bool do_chunking,int64_t ndims,int64_t *chunks);
 
 void ioda_variable_creation_parameters_c_no_compress(ioda_variable_creation_parameters_t p);
 

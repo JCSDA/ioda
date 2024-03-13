@@ -32,7 +32,7 @@ ioda_has_attributes_t ioda_has_attributes_c_open(ioda_has_attributes_t v,int64_t
 
 #define IODA_FUN(NAME,TYPE)\
 bool ioda_has_attributes_c_create##NAME (ioda_has_attributes_t v,int64_t name_sz,\
-    const char *name, int64_t sz,void **dims_p,ioda_attribute_t *Attr);
+    const char *name, int64_t sz,int64_t *dims,ioda_attribute_t *Attr);
 
 IODA_FUN(_float,float)
 IODA_FUN(_double,double)

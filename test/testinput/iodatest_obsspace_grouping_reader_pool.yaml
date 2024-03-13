@@ -16,7 +16,7 @@ observations:
         group variables: []
     io pool:
       reader name: SinglePool
-      work directory: testwork
+      work directory: testwork/obsspace_grouping_reader_pool
   test data:
     gnlocs: 10
     gnlocs outside time window: 0
@@ -55,7 +55,7 @@ observations:
     obs perturbations seed: 1001
     io pool:
       reader name: SinglePool
-      work directory: testwork
+      work directory: testwork/obsspace_grouping_reader_pool
   test data:
     gnlocs: 10
     gnlocs outside time window: 0
@@ -93,7 +93,7 @@ observations:
         group variables: [ "group_by_int" ]
     io pool:
       reader name: SinglePool
-      work directory: testwork
+      work directory: testwork/obsspace_grouping_reader_pool
   test data:
     gnlocs: 10
     gnlocs outside time window: 0
@@ -131,7 +131,7 @@ observations:
         group variables: [ "group_by_float" ]
     io pool:
       reader name: SinglePool
-      work directory: testwork
+      work directory: testwork/obsspace_grouping_reader_pool
   test data:
     gnlocs: 10
     gnlocs outside time window: 0
@@ -169,7 +169,7 @@ observations:
         group variables: [ "group_by_string", "group_by_int" ]
     io pool:
       reader name: SinglePool
-      work directory: testwork
+      work directory: testwork/obsspace_grouping_reader_pool
   test data:
     gnlocs: 10
     gnlocs outside time window: 0
@@ -207,7 +207,7 @@ observations:
         group variables: [ "group_by_string", "group_by_float" ]
     io pool:
       reader name: SinglePool
-      work directory: testwork
+      work directory: testwork/obsspace_grouping_reader_pool
   test data:
     gnlocs: 10
     gnlocs outside time window: 0
@@ -245,7 +245,7 @@ observations:
         group variables: [ "group_by_float", "group_by_int" ]
     io pool:
       reader name: SinglePool
-      work directory: testwork
+      work directory: testwork/obsspace_grouping_reader_pool
   test data:
     gnlocs: 10
     gnlocs outside time window: 0
@@ -283,7 +283,7 @@ observations:
         group variables: [ "group_by_string", "group_by_float", "group_by_int" ]
     io pool:
       reader name: SinglePool
-      work directory: testwork
+      work directory: testwork/obsspace_grouping_reader_pool
   test data:
     gnlocs: 10
     gnlocs outside time window: 0
@@ -332,7 +332,7 @@ observations:
         group variables: []
     io pool:
       reader name: SinglePool
-      work directory: testwork
+      work directory: testwork/obsspace_grouping_reader_pool
   test data:
     gnlocs: 6
     gnlocs outside time window: 0
@@ -380,7 +380,7 @@ observations:
         group variables: [ "latitude" ]
     io pool:
       reader name: SinglePool
-      work directory: testwork
+      work directory: testwork/obsspace_grouping_reader_pool
   test data:
     gnlocs: 6
     gnlocs outside time window: 0
@@ -428,7 +428,7 @@ observations:
         group variables: [ "latitude" ]
     io pool:
       reader name: SinglePool
-      work directory: testwork
+      work directory: testwork/obsspace_grouping_reader_pool
   test data:
     gnlocs: 6
     gnlocs outside time window: 0

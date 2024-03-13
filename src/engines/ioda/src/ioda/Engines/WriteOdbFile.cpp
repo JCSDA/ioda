@@ -6,6 +6,7 @@
  */
 
 #include <fstream>
+#include <boost/optional.hpp>
 
 #include "ioda/Engines/WriteOdbFile.h"
 
@@ -55,6 +56,7 @@ void WriteOdbFile::finalize() {
     odcparams.queryFile = params_.queryFileName;
     odcparams.mappingFile = params_.mappingFileName;
     odcparams.outputFile = outFileName;
+    odcparams.odbType = params_.odbType;
     odcparams.missingObsSpaceVariableAbort = params_.missingObsSpaceVariableAbort;
     Group writerGroup = ioda::Engines::ODC::createFile(odcparams, obs_group_);
 }

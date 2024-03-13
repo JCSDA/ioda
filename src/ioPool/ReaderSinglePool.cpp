@@ -46,6 +46,16 @@ ReaderSinglePool::ReaderSinglePool(const IoPoolParameters & configParams,
     // to this copy of the JEDI missing value to transfer that value to the obs space
     // container.
     stringMissingValue_ = std::make_shared<std::string>(util::missingValue<std::string>());
+
+    // Check to make sure the work directory parameter has been specified. Only the
+    // ReaderSinglePool requires this parameter (ie, WriterSingelPool and
+    // ReaderSinglePoolAllTasks do not).
+    if (configParams.workDir.value() == "") {
+        std::string errMsg =
+            std::string("ReaderSinglePool: Must specify a work directory in the ") +
+            std::string(" YAML configuration ('obs space.io pool.work directory' spec");
+        throw Exception(errMsg, ioda_Here());
+    }
 }
 
 //--------------------------------------------------------------------------------------
@@ -197,17 +207,19 @@ void ReaderSinglePool::initialize() {
     // which ranks are in the pool, and the non-pool ranks those pool ranks are associated with.
     setDistributionMap(*this, locIndices_, rankAssignment_, distributionMap_);
 
-    // Set up the working directory for the io pool, and create the input file set.
-    // Note only rank 0 runs the commands to create the directory.
-    readerCreateWorkDirectory(*this, configParams_.workDir, fileName_, workDir_);
+    // Make sure the work directory exists
+    if (!ioda::Engines::haveDirRwxAccess(this->workDir())) {
+        std::string errMsg =
+            std::string("Reader work directory is not accesible: ") + this->workDir();
+        throw Exception(errMsg, ioda_Here());
+    }
     oops::Log::info() << "ReaderSinglePool: reader work directory: "
-                      << workDir_ << std::endl;
+                      << this->workDir() << std::endl;
 
     // Generate and record the new input file name for use here and in the save function.
     // Then create the new input files (one for each pool member)
     this->setNewInputFileName();
-    readerCreateFileSet(*this, fileGroup, dtimeValues_, dtimeEpoch_,
-                        lonValues_, latValues_, tempFileList_);
+    readerCreateFileSet(*this, fileGroup, dtimeValues_, dtimeEpoch_, lonValues_, latValues_);
     oops::Log::trace() << "ReaderSinglePool::initialize, end" << std::endl;
 }
 
@@ -272,28 +284,6 @@ void ReaderSinglePool::load(Group & destGroup) {
 //--------------------------------------------------------------------------------------
 void ReaderSinglePool::finalize() {
     oops::Log::trace() << "ReaderSinglePool::finalize, start" << std::endl;
-    // If we are not keeping the work directory contents, then remove them.
-    if ((this->commAll().rank() == 0) && (!configParams_.keepWorkDirContents)) {
-        // Issue warnings and continue if the removal fails. In operational runs, we
-        // Don't want to stop the flow due to extra files being left around.
-        // First remove all of the files in the tempFileList
-        for (auto & tempFileName : this->tempFileList()) {
-            if (std::remove(tempFileName.c_str()) != 0) {
-                oops::Log::warning() << "WARNING: ReaderSinglePool::finalize: "
-                    << "Failed to remove file: " << tempFileName << std::endl;
-            }
-        }
-        // Then remove the work directory
-        // Check for cases to avoid when issuing a remove directory command
-        if ((workDir_ != "") && (workDir_ != ".") && (workDir_ != "./")) {
-            // Okay to remove
-            if (std::remove(workDir_.c_str()) != 0) {
-                oops::Log::warning() << "WARNING: ReaderSinglePool::finalize: "
-                    << "Failed to remove directory: " << workDir_ << std::endl;
-            }
-        }
-    }
-
     // At this point there are two split communicator groups: one for the io pool and the
     // other for the processes not included in the io pool.
     if (eckit::mpi::hasComm(poolCommName_)) {

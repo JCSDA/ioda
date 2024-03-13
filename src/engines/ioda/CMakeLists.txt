@@ -204,6 +204,7 @@ list(APPEND SRCS_ENGINES_ODC
 	include/ioda/Engines/ODC.h
 	src/ioda/Engines/ODC/ODC.cpp
 	)
+
 # Source files that should only be built when ODC is enabled
 list(APPEND SRCS_ENGINES_ODC_ODC_DEPENDENT
 	src/ioda/Engines/ODC/DataFromSQL.cpp
@@ -211,6 +212,13 @@ list(APPEND SRCS_ENGINES_ODC_ODC_DEPENDENT
 	src/ioda/Engines/ODC/OdbQueryParameters.h
 	src/ioda/Engines/ODC/OdbQueryParameters.cpp
 	)
+
+list(APPEND SRCS_ENGINES_SCRIPT
+		include/ioda/Engines/ReadScriptFile.h
+		src/ioda/Engines/ReadScriptFile.cpp
+		include/ioda/Engines/Script.h
+		src/ioda/Engines/Script/Script.cpp
+)
 
 source_group("Attributes" FILES ${SRCS_ATTRIBUTES})
 source_group("C Bindings" FILES ${SRCS_C_BINDINGS})
@@ -225,6 +233,10 @@ source_group("Engines\\HH" FILES ${SRCS_ENGINES_HH})
 source_group("Engines\\ObsStore" FILES ${SRCS_ENGINES_OBS_STORE})
 source_group("Engines\\ODC" FILES ${SRCS_ENGINES_ODC} ${SRCS_ENGINES_ODC_ODC_DEPENDENT})
 
+if (BUILD_PYTHON_BINDINGS)
+	source_group("Engines\\Script" FILES ${SRCS_ENGINES_SCRIPT})
+endif()
+
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/ioda/config.h.in
 	${CMAKE_CURRENT_BINARY_DIR}/config/ioda/config.h)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/ioda/testconfig.h.in
@@ -233,18 +245,32 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/ioda/testconfig.h.in
 ## Define which source files are compiled.
 
 list(APPEND SRCS_IODA_ENGINES
-	${SRCS_ATTRIBUTES} ${SRCS_C_BINDINGS} ${SRCS_GROUPS}
-	${SRCS_LAYOUTS} ${SRCS_MATH} ${SRCS_MISC} ${SRCS_TYPES} ${SRCS_VARIABLES}
-	${SRCS_ENGINES_TOP} ${SRCS_ENGINES_OBS_STORE} ${SRCS_ENGINES_ODC}
+	${SRCS_ATTRIBUTES}
+	${SRCS_C_BINDINGS}
+	${SRCS_GROUPS}
+	${SRCS_LAYOUTS}
+	${SRCS_MATH}
+	${SRCS_MISC}
+	${SRCS_TYPES}
+	${SRCS_VARIABLES}
+	${SRCS_ENGINES_TOP}
+	${SRCS_ENGINES_OBS_STORE}
+	${SRCS_ENGINES_ODC}
 	${CMAKE_CURRENT_BINARY_DIR}/config/ioda/config.h
 	${CMAKE_CURRENT_BINARY_DIR}/config/ioda/testconfig.h
 	)
+
 list(APPEND SRCS_IODA_ENGINES ${SRCS_LAYOUTS_ODB})
 if (odc_FOUND)
     list(APPEND SRCS_IODA_ENGINES ${SRCS_ENGINES_ODC_ODC_DEPENDENT})
 endif()
+
 if (HDF5_FOUND)
 	list(APPEND SRCS_IODA_ENGINES ${SRCS_ENGINES_HH})
+endif()
+
+if (BUILD_PYTHON_BINDINGS)
+	list(APPEND SRCS_IODA_ENGINES ${SRCS_ENGINES_SCRIPT})
 endif()
 
 ## Create options files that specify compilation options, available libraries,
@@ -266,9 +292,13 @@ AddLib(ioda_engines SHARED ioda ${PROJECT_NAME}-targets)
 target_link_libraries(ioda_engines PUBLIC gsl::gsl-lite)
 target_link_libraries(ioda_engines PUBLIC Eigen3::Eigen)
 target_link_libraries(ioda_engines PUBLIC udunits::udunits)
-
-
 target_link_libraries(ioda_engines PUBLIC eckit)
+
+if(BUILD_PYTHON_BINDINGS)
+	target_link_libraries(ioda_engines PRIVATE Python3::Python pybind11::headers)
+	target_include_directories(ioda_engines PRIVATE ${Python3_INCLUDE_DIRS})
+endif()
+
 ### find_package(HDF5) may set only a subset of these. Options depend on how HDF5 was built.
 if(DEFINED HDF5_C_DEFINITIONS)
 	target_compile_options(ioda_engines PRIVATE "${HDF5_C_DEFINITIONS}")

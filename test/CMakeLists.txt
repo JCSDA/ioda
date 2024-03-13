@@ -121,8 +121,10 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsspace_empty_obs_file_reader_pool.yaml
   testinput/iodatest_obsspace_empty_obs_file_mpi_reader_pool.yaml
   testinput/iodatest_obsspace_missing_obs_file_warn.yaml
+  testinput/iodatest_obsspace_missing_obs_file_warn_mpi.yaml
   testinput/iodatest_obsspace_missing_obs_file_error.yaml
   testinput/iodatest_obsspace_missing_obs_file_warn_odc.yaml
+  testinput/iodatest_obsspace_missing_obs_file_warn_odc_mpi.yaml
   testinput/iodatest_obsspace_missing_obs_file_error_odc.yaml
   testinput/iodatest_obsspace_missing_obs_file_error_odc_reader_pool.yaml
   testinput/iodatest_obsspace_missing_obs_file_error_reader_pool.yaml
@@ -132,7 +134,11 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsspace_index_recnum.yaml
   testinput/iodatest_obsspace_index_recnum_twfilt.yaml
   testinput/iodatest_obsspace_index_recnum_reader_pool.yaml
+  testinput/iodatest_obsspace_index_recnum_mpi_2_reader_pool.yaml
+  testinput/iodatest_obsspace_index_recnum_mpi_4_reader_pool.yaml
   testinput/iodatest_obsspace_index_recnum_twfilt_reader_pool.yaml
+  testinput/iodatest_obsspace_index_recnum_twfilt_mpi_2_reader_pool.yaml
+  testinput/iodatest_obsspace_index_recnum_twfilt_mpi_4_reader_pool.yaml
   testinput/iodatest_obsspace_invalid_numeric.yaml
   testinput/iodatest_obsspace_io_pool_sondes_single_file.yaml
   testinput/iodatest_obsspace_io_pool_sondes_multi_files.yaml
@@ -147,10 +153,13 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsspace_odc_atms_reader_pool.yaml
   testinput/iodatest_obsspace_fortran.yaml
   testinput/iodatest_obsspace_out_odc.yaml
+  testinput/iodatest_obsspace_out_odc_sonde_mixed.yaml
   testinput/iodatest_obsspace_out_odc_readbackin.yaml
   testinput/iodatest_obsspace_out_odc_mpi_2.yaml
   testinput/iodatest_obsspace_put_db_channels.yaml
   testinput/iodatest_obsspace_put_db_channels_check.yaml
+  testinput/iodatest_obsspace_reduce.yaml
+  testinput/iodatest_obsspace_reduce_mpi.yaml
   testinput/iodatest_obsspace_zero_obs.yaml
   testinput/iodatest_obsspace_filter_to_zero_obs.yaml
   testinput/iodatest_obsspace_zero_obs_reader_pool.yaml
@@ -169,6 +178,40 @@ list( APPEND ioda_test_input
   testinput/iodatest_time_io_odc.yaml
   testinput/iodatest_time_io_reader_pool.yaml
   testinput/iodatest_time_io_reader_pool_odc.yaml
+  testinput/iodatest_time_io_script.yaml
+  testinput/iodatest_time_io_script.py
+)
+
+# Work directories for the new reader. Make one entry per test that is using
+# the work directory. This is done so that two tests running at the same time
+# (ie, running ctest -j8) do not collide.
+#
+# TODO(SRH) Need to add a macro that will define these along with the test name
+# and corresponding yaml config file.
+list( APPEND ioda_test_work_directories
+  testwork/obsspace_empty_obs_file_mpi_reader_pool
+  testwork/obsspace_empty_obs_file_reader_pool
+  testwork/obsspace_filter_to_zero_obs_reader_pool
+  testwork/obsspace_grouping_reader_pool
+  testwork/obsspace_index_recnum_reader_pool
+  testwork/obsspace_index_recnum_mpi_2_reader_pool
+  testwork/obsspace_index_recnum_mpi_4_reader_pool
+  testwork/obsspace_index_recnum_twfilt_reader_pool
+  testwork/obsspace_index_recnum_twfilt_mpi_2_reader_pool
+  testwork/obsspace_index_recnum_twfilt_mpi_4_reader_pool
+  testwork/obsspace_missing_obs_file_error_odc_reader_pool
+  testwork/obsspace_missing_obs_file_error_reader_pool
+  testwork/obsspace_missing_obs_file_warn
+  testwork/obsspace_missing_obs_file_warn_mpi
+  testwork/obsspace_missing_obs_file_warn_odc
+  testwork/obsspace_missing_obs_file_warn_odc_mpi
+  testwork/obsspace_mpi_reader_pool
+  testwork/obsspace_odc_atms_reader_pool
+  testwork/obsspace_odc_reader_pool
+  testwork/obsspace_reader_pool
+  testwork/obsspace_zero_obs_reader_pool
+  testwork/time_io_reader_pool
+  testwork/time_io_reader_pool_odc
 )
 
 add_library(ioda_test INTERFACE)
@@ -320,7 +363,7 @@ if (odc_FOUND)
   ecbuild_add_test( TARGET  test_ioda_clean_obsspace_out_odc_files
                     COMMAND rm
                     ARGS    "-f" "testoutput/diagout-aircraft.odc" "testoutput/diagout-atms.odc" "testoutput/diagout-gmi.odc"
-                                 "testoutput/diagout-amsua.odc" "testoutput/diagout-sonde.odc" "testoutput/diagout-aod.odc"
+                                 "testoutput/diagout-amsua.odc" "testoutput/diagout-sonde.odc" "testoutput/diagout-sonde-mixed.odc" "testoutput/diagout-aod.odc"
                                  "testoutput/diagout-iasi.odc" "testoutput/diagout-aod-multifiles_0000.odc"
                                  "testoutput/diagout-aod-multifiles_0001.odc" "testoutput/diagout-aod-multifiles-oneiopool.odc"
                                  "testoutput/diagout-aod-singlefile-oneiopool.odc" "testoutput/diagout-aod-singlefile.odc" "testoutput/diagout-atms-readbackin.odc"
@@ -328,6 +371,11 @@ if (odc_FOUND)
   ecbuild_add_test( TARGET  test_ioda_obsspace_out_odc
                     COMMAND test_ioda_obsspace
                     ARGS    "testinput/iodatest_obsspace_out_odc.yaml"
+                    LIBS  ioda_test
+                    TEST_DEPENDS get_ioda_test_data test_ioda_clean_obsspace_out_odc_files )
+  ecbuild_add_test( TARGET  test_ioda_obsspace_out_odc_sonde_mixed
+                    COMMAND test_ioda_obsspace
+                    ARGS    "testinput/iodatest_obsspace_out_odc_sonde_mixed.yaml"
                     LIBS  ioda_test
                     TEST_DEPENDS get_ioda_test_data test_ioda_clean_obsspace_out_odc_files )
   ecbuild_add_test( TARGET  iodatest_obsspace_out_odc_readbackin
@@ -361,6 +409,14 @@ if (odc_FOUND)
                     COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
                     ARGS    "testoutput/diagout-sonde.odc" "Data/testinput_tier_1/test_reference/diagout-sonde.odc" ${ODC_TOOL_PATH}
                     TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_out_odc )
+  ecbuild_add_test( TARGET  test_ioda_obsspace_out_odc_compare_sonde_mixed
+                    COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
+                    ARGS    "testoutput/diagout-sonde-mixed.odc" "Data/testinput_tier_1/test_reference/diagout-sonde-mixed.odc" ${ODC_TOOL_PATH}
+                    TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_out_odc_sonde_mixed )
+  ecbuild_add_test( TARGET  test_ioda_obsspace_out_odc_compare_sonde_derived
+                    COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
+                    ARGS    "testoutput/diagout-sonde-derived.odc" "Data/testinput_tier_1/test_reference/diagout-sonde-derived.odc" ${ODC_TOOL_PATH}
+                    TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_out_odc_sonde_mixed )
   ecbuild_add_test( TARGET  test_ioda_obsspace_out_odc_compare_aod
                     COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
                     ARGS    "testoutput/diagout-aod.odc" "Data/testinput_tier_1/test_reference/diagout-aod.odc" ${ODC_TOOL_PATH}
@@ -446,7 +502,7 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_missing_obs_file_warn
 ecbuild_add_test( TARGET  test_ioda_obsspace_missing_obs_file_warn_mpi
                   MPI 4
                   COMMAND test_ioda_obsspace
-                  ARGS    "testinput/iodatest_obsspace_missing_obs_file_warn.yaml"
+                  ARGS    "testinput/iodatest_obsspace_missing_obs_file_warn_mpi.yaml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
@@ -484,7 +540,7 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_missing_obs_file_error_reader_pool
                           hdf5
                           "${CMAKE_BINARY_DIR}/bin/time_IodaIO.x
                           testinput/iodatest_obsspace_missing_obs_file_error_reader_pool.yaml"
-                          testoutput/ospace.missing_obs_file_error.nc4
+                          testoutput/ospace.missing_obs_file_error_reader_pool.nc4
                           0.0
                           N
                           Y
@@ -500,7 +556,7 @@ if (odc_FOUND)
   ecbuild_add_test( TARGET  test_ioda_obsspace_missing_obs_file_warn_odc_mpi
                     MPI 4
                     COMMAND test_ioda_obsspace
-                    ARGS    "testinput/iodatest_obsspace_missing_obs_file_warn_odc.yaml"
+                    ARGS    "testinput/iodatest_obsspace_missing_obs_file_warn_odc_mpi.yaml"
                     LIBS  ioda_test
                     TEST_DEPENDS get_ioda_test_data )
 
@@ -524,7 +580,7 @@ if (odc_FOUND)
                             hdf5
                             "${CMAKE_BINARY_DIR}/bin/time_IodaIO.x
                             testinput/iodatest_obsspace_missing_obs_file_error_odc.yaml"
-                            testoutput/ospace.missing_obs_file_error.nc4
+                            testoutput/ospace.missing_obs_file_error_odc.nc4
                             0.0
                             N
                             Y
@@ -538,7 +594,7 @@ if (odc_FOUND)
                             hdf5
                             "${CMAKE_BINARY_DIR}/bin/time_IodaIO.x
                             testinput/iodatest_obsspace_missing_obs_file_error_odc_reader_pool.yaml"
-                            testoutput/ospace.missing_obs_file_error.nc4
+                            testoutput/ospace.missing_obs_file_error_odc_reader_pool.nc4
                             0.0
                             N
                             Y
@@ -606,14 +662,14 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_index_recnum_reader_pool
 ecbuild_add_test( TARGET  test_ioda_obsspace_index_recnum_mpi_2_reader_pool
                   MPI 2
                   COMMAND test_ioda_obsspace_index_recnum
-                  ARGS    "testinput/iodatest_obsspace_index_recnum_reader_pool.yaml"
+                  ARGS    "testinput/iodatest_obsspace_index_recnum_mpi_2_reader_pool.yaml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_index_recnum_mpi_4_reader_pool
                   MPI 4
                   COMMAND test_ioda_obsspace_index_recnum
-                  ARGS    "testinput/iodatest_obsspace_index_recnum_reader_pool.yaml"
+                  ARGS    "testinput/iodatest_obsspace_index_recnum_mpi_4_reader_pool.yaml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
@@ -626,14 +682,14 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_index_recnum_twfilt_reader_pool
 ecbuild_add_test( TARGET  test_ioda_obsspace_index_recnum_twfilt_mpi_2_reader_pool
                   MPI 2
                   COMMAND test_ioda_obsspace_index_recnum
-                  ARGS    "testinput/iodatest_obsspace_index_recnum_twfilt_reader_pool.yaml"
+                  ARGS    "testinput/iodatest_obsspace_index_recnum_twfilt_mpi_2_reader_pool.yaml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_index_recnum_twfilt_mpi_4_reader_pool
                   MPI 4
                   COMMAND test_ioda_obsspace_index_recnum
-                  ARGS    "testinput/iodatest_obsspace_index_recnum_twfilt_reader_pool.yaml"
+                  ARGS    "testinput/iodatest_obsspace_index_recnum_twfilt_mpi_4_reader_pool.yaml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
@@ -705,6 +761,164 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_put_db_channels_check
                   ARGS    "testinput/iodatest_obsspace_put_db_channels_check.yaml"
                   LIBS  ioda_test
                   TEST_DEPENDS test_ioda_obsspace_put_db_channels get_ioda_test_data )
+
+###################################################################
+##### The following tests check the ObsSpace::reduce function. ####
+###################################################################
+
+# this test removes the output files from prior testing
+ecbuild_add_test( TARGET  test_ioda_obsspace_reduce_clean_files
+                  COMMAND rm
+                  ARGS    "-f"
+                          "testoutput/obsspace_reduce_equal_1D_out.nc4"
+                          "testoutput/obsspace_reduce_not_equal_1D_out.nc4"
+                          "testoutput/obsspace_reduce_greater_than_1D_out.nc4"
+                          "testoutput/obsspace_reduce_less_than_1D_out.nc4"
+                          "testoutput/obsspace_reduce_greater_than_or_equal_1D_out.nc4"
+                          "testoutput/obsspace_reduce_less_than_or_equal_1D_out.nc4"
+                          "testoutput/obsspace_reduce_equal_2D_out.nc4"
+                          "testoutput/obsspace_reduce_not_equal_2D_out.nc4"
+                          "testoutput/obsspace_reduce_greater_than_2D_out.nc4"
+                          "testoutput/obsspace_reduce_less_than_2D_out.nc4"
+                          "testoutput/obsspace_reduce_greater_than_or_equal_2D_out.nc4"
+                          "testoutput/obsspace_reduce_less_than_or_equal_2D_out.nc4")
+
+# this test creates the output files, and checks that obs space data members got
+# properly updated
+ecbuild_add_test( TARGET  test_ioda_obsspace_reduce
+                  SOURCES mains/TestIodaObsSpaceReduce.cc
+                  ARGS    "testinput/iodatest_obsspace_reduce.yaml"
+                  LIBS  ioda_test
+                  TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_reduce_clean_files )
+
+# the following tests compare the output files
+ecbuild_add_test( TARGET  test_ioda_obsspace_reduce_equal_1D_variables_cmp
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking reduce equal, 1D variables"
+                          obsspace_reduce_equal_1D_out.nc4
+                  TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_reduce)
+
+ecbuild_add_test( TARGET  test_ioda_obsspace_reduce_not_equal_1D_variables_cmp
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking reduce equal, 1D variables"
+                          obsspace_reduce_not_equal_1D_out.nc4
+                  TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_reduce)
+
+ecbuild_add_test( TARGET  test_ioda_obsspace_reduce_greater_than_1D_variables_cmp
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking reduce greater than, 1D variables"
+                          obsspace_reduce_greater_than_1D_out.nc4
+                  TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_reduce)
+
+ecbuild_add_test( TARGET  test_ioda_obsspace_reduce_less_than_1D_variables_cmp
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking reduce less than, 1D variables"
+                          obsspace_reduce_less_than_1D_out.nc4
+                  TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_reduce)
+
+ecbuild_add_test( TARGET  test_ioda_obsspace_reduce_greater_than_or_equal_1D_variables_cmp
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking reduce greater than_or_equal, 1D variables"
+                          obsspace_reduce_greater_than_or_equal_1D_out.nc4
+                  TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_reduce)
+
+ecbuild_add_test( TARGET  test_ioda_obsspace_reduce_less_than_or_equal_1D_variables_cmp
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking reduce less than_or_equal, 1D variables"
+                          obsspace_reduce_less_than_or_equal_1D_out.nc4
+                  TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_reduce)
+
+ecbuild_add_test( TARGET  test_ioda_obsspace_reduce_equal_2D_variables_cmp
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking reduce equal, 2D variables"
+                          obsspace_reduce_equal_2D_out.nc4
+                  TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_reduce)
+
+ecbuild_add_test( TARGET  test_ioda_obsspace_reduce_not_equal_2D_variables_cmp
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking reduce equal, 2D variables"
+                          obsspace_reduce_not_equal_2D_out.nc4
+                  TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_reduce)
+
+ecbuild_add_test( TARGET  test_ioda_obsspace_reduce_greater_than_2D_variables_cmp
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking reduce greater than, 2D variables"
+                          obsspace_reduce_greater_than_2D_out.nc4
+                  TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_reduce)
+
+ecbuild_add_test( TARGET  test_ioda_obsspace_reduce_less_than_2D_variables_cmp
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking reduce less than, 2D variables"
+                          obsspace_reduce_less_than_2D_out.nc4
+                  TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_reduce)
+
+ecbuild_add_test( TARGET  test_ioda_obsspace_reduce_greater_than_or_equal_2D_variables_cmp
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking reduce greater than_or_equal, 2D variables"
+                          obsspace_reduce_greater_than_or_equal_2D_out.nc4
+                  TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_reduce)
+
+ecbuild_add_test( TARGET  test_ioda_obsspace_reduce_less_than_or_equal_2D_variables_cmp
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking reduce less than_or_equal, 2D variables"
+                          obsspace_reduce_less_than_or_equal_2D_out.nc4
+                  TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_reduce)
+
+# The next two tests run with 2 and 3 MPI tasks repectively using the same input files
+# as test_ioda_obssspace_reduce and only checks the obs space data members (no output files).
+ecbuild_add_test( TARGET  test_ioda_obsspace_reduce_mpi_2
+                  MPI 2
+                  COMMAND test_ioda_obsspace_reduce
+                  ARGS    "testinput/iodatest_obsspace_reduce_mpi.yaml"
+                  LIBS  ioda_test
+                  TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_reduce)
+
+ecbuild_add_test( TARGET  test_ioda_obsspace_reduce_mpi_3
+                  MPI 3
+                  COMMAND test_ioda_obsspace_reduce
+                  ARGS    "testinput/iodatest_obsspace_reduce_mpi.yaml"
+                  LIBS  ioda_test
+                  TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_reduce)
+
+###################################################################
+################ End of reduce function tests #####################
+###################################################################
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_zero_obs
                   COMMAND test_ioda_obsspace
@@ -1148,6 +1362,17 @@ if (odc_FOUND)
                             "echo Checking time io (reader pool) ATMS"
                             atms_time_reader_pool.odb
                     TEST_DEPENDS get_ioda_test_data test_ioda_time_io_reader_pool_odc)
+endif()
+
+#####################################################################
+# Test the script backend
+#####################################################################
+
+if (BUILD_PYTHON_BINDINGS)
+  ecbuild_add_test( TARGET      test_ioda_time_io_script
+                    COMMAND     ${CMAKE_BINARY_DIR}/bin/time_IodaIO.x
+                    ARGS        "testinput/iodatest_time_io_script.yaml"
+                    ENVIRONMENT PYTHONPATH=${CMAKE_BINARY_DIR}/lib/python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}:$ENV{PYTHONPATH})
 endif()
 
 #####################################################################
@@ -2039,5 +2264,14 @@ file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/testoutput)
 ecbuild_add_resources( TARGET ioda_test_scripts
                        SOURCES_PACK ${ioda_test_input} )
 
-# Create a work directory for the io pool based reader
-file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/testwork)
+# Create work directories for the io pool based reader
+foreach(DIRNAME ${ioda_test_work_directories})
+    file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${DIRNAME})
+endforeach()
+
+#####################################################################
+# Set up testing of python utilities
+#####################################################################
+if (Python3_FOUND)
+    add_subdirectory( python )
+endif()

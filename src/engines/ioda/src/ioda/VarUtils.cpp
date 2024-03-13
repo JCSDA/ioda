@@ -18,6 +18,8 @@
 namespace ioda {
 namespace VarUtils {
 
+static const std::size_t MaxChunkSize = 10000;
+
 /// @brief Convenience set of "nlocs" & "Location", used by other functions in this namespace.
 const std::set<std::string>& LocationVarNames() {
   static const std::set<std::string> names{"nlocs", "Location"};
@@ -264,7 +266,8 @@ void setVarCreateParamsForMem(ioda::VariableCreationParameters & params) {
 
 //--------------------------------------------------------------------------------
 void createDimensionsFromConfig(ioda::Has_Variables & vars,
-                                const std::vector<eckit::LocalConfiguration> & dimConfigs) {
+                                const std::vector<eckit::LocalConfiguration> & dimConfigs,
+                                const std::size_t globalNlocs) {
     // Walk through the list of dimensions and create them as you go
     // This function assumes that the attributes are scalar.
     for (size_t i = 0; i < dimConfigs.size(); ++i) {
@@ -278,17 +281,11 @@ void createDimensionsFromConfig(ioda::Has_Variables & vars,
         // maxDimSize to a fixed value helps greatly with runtime performance.
         // For the Location dimension, we eventually want to be able to append more
         // locations so give this dimension unlimited size.
-        //
-        // TODO(srh) For now use a default chunk size (10000) for the chunk size in the
-        // creation parameters for the Location dimension variable. This is being done
-        // since the size of location can vary across MPI tasks, and we need it to be
-        // constant for the parallel io to work properly. The assigned chunk size may
-        // need to be optimized further than using a rough guess of 10000.
         ioda::Dimensions_t maxDimSize = dimSize;
         std::vector<ioda::Dimensions_t> chunkSizes(1, dimSize);
         if (dimName == "Location") {
             maxDimSize = ioda::Unlimited;
-            chunkSizes[0] = DefaultChunkSize;
+            chunkSizes[0] = getLocationChunkSize(globalNlocs);
         }
         
         ioda::Variable dimVar;
@@ -325,7 +322,8 @@ void createDimensionsFromConfig(ioda::Has_Variables & vars,
 
 //--------------------------------------------------------------------------------
 void createVariablesFromConfig(ioda::Has_Variables & vars,
-                               const std::vector<eckit::LocalConfiguration> & varConfigs) {
+                               const std::vector<eckit::LocalConfiguration> & varConfigs,
+                               const std::size_t globalNlocs) {
     // Walk through the list of variables and create them as you go
     // This function assumes that the attributes are scalar.
     for (size_t i = 0; i < varConfigs.size(); ++i) {
@@ -336,19 +334,12 @@ void createVariablesFromConfig(ioda::Has_Variables & vars,
         oops::Log::trace() << "createVariablesFromConfig: varName: " << varName << std::endl;
 
         // Create a vector of variables from the vars container.
-        //
-        // TODO(srh) For now use a default chunk size (10000) for the chunk size in the
-        // creation parameters when the variable has Location for its first dimension.
-        // This is being done since the size of location can vary across MPI tasks,
-        // and we need it to be constant for the parallel io to work properly. The
-        // assigned chunk size may need to be optimized further than using a rough
-        // guess of 10000.
         std::vector<Variable> varDims(varDimNames.size());
         std::vector<ioda::Dimensions_t> chunkSizes(varDims.size());
         for (std::size_t j = 0; j < varDimNames.size(); ++j) {
             varDims[j] = vars.open(varDimNames[j]);
             if (varDimNames[j] == "Location") {
-                chunkSizes[j] = DefaultChunkSize;
+                chunkSizes[j] = getLocationChunkSize(globalNlocs);
             } else {
                 chunkSizes[j] = varDims[j].getDimensions().dimsCur[0];
             }
@@ -383,6 +374,17 @@ void createVariablesFromConfig(ioda::Has_Variables & vars,
         varConfigs[i].get("variable.attributes", attrConfigs);
         AttrUtils::createAttributesFromConfig(memVar.atts, attrConfigs);
     }
+}
+
+//--------------------------------------------------------------------------------
+std::size_t getLocationChunkSize(const std::size_t totalNumLocs) {
+    // Use a simple algorithm for now which is to use the minimum of the totalNumLocs
+    // parameter and a somewhat arbitrary maximum (10,000 for now).
+    std::size_t chunkSize = MaxChunkSize;
+    if (totalNumLocs < MaxChunkSize) {
+        chunkSize = totalNumLocs;
+    }
+    return chunkSize;
 }
 
 }  // end namespace VarUtils

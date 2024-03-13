@@ -45,9 +45,7 @@ class ObsDataVecTestFixture : private boost::noncopyable {
     const util::TimeWindow timeWindow(conf.getSubConfiguration("time window"));
 
     eckit::LocalConfiguration obsconf(conf, "obs space");
-    ioda::ObsTopLevelParameters obsparams;
-    obsparams.validateAndDeserialize(obsconf);
-    obspace_ = boost::make_unique<ObsSpace_>(obsparams, oops::mpi::world(),
+    obspace_ = boost::make_unique<ObsSpace_>(obsconf, oops::mpi::world(),
                                              timeWindow, oops::mpi::myself());
   }
 

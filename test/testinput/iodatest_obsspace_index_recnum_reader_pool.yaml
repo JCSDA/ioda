@@ -15,7 +15,7 @@ observations:
         obsfile: "Data/testinput_tier_1/obsspace_index_recnum.nc4"
     io pool:
       reader name: SinglePool
-      work directory: testwork
+      work directory: testwork/obsspace_index_recnum_reader_pool
   test data:
     gnlocs: 16
     gnlocs outside time window: 4

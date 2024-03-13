@@ -73,9 +73,7 @@ class ObsSpaceTestFixture : private boost::noncopyable {
 
     for (std::size_t jj = 0; jj < configs_.size(); ++jj) {
       eckit::LocalConfiguration obsconf(configs_[jj], "obs space");
-      ioda::ObsTopLevelParameters obsparams;
-      obsparams.validateAndDeserialize(obsconf);
-      boost::shared_ptr<ioda::ObsSpace> tmp(new ioda::ObsSpace(obsparams, oops::mpi::world(),
+      boost::shared_ptr<ioda::ObsSpace> tmp(new ioda::ObsSpace(obsconf, oops::mpi::world(),
                                                                timeWindow, oops::mpi::myself()));
       ospaces_.push_back(tmp);
     }
@@ -320,7 +318,11 @@ void testGetDb() {
         if (EmptyObsSpace) {
           EXPECT(TestVec.size() == 0);
         } else {
+          oops::Log::debug() << "FirstValue, ExpectedFirstValue: " << TestVec[0] << ", "
+                             << ExpectedFirstValue << std::endl;
           EXPECT(TestVec[0] == ExpectedFirstValue);
+          oops::Log::debug() << "LastValue, ExpectedLastValue: " << TestVec[Nlocs-1] << ", "
+                             << ExpectedLastValue << std::endl;
           EXPECT(TestVec[Nlocs-1] == ExpectedLastValue);
         }
       } else if (VarType == "datetime") {

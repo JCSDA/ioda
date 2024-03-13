@@ -114,14 +114,8 @@ class ReaderPoolBase : public IoPoolBase {
   /// \brief name of pre-processed input file (which the load function uses)
   const std::string & newInputFileName() const { return newInputFileName_; }
 
-  /// \brief work directory base
-  const std::string & workDirBase() const { return configParams_.workDir; }
-
-  /// \brief full work directory
-  const std::string & workDir() const { return workDir_; }
-
-  /// \brief list of temporary files
-  const std::vector<std::string> & tempFileList() const { return tempFileList_; }
+  /// \brief work directory
+  const std::string & workDir() const { return configParams_.workDir; }
 
   /// \brief missing value for string variables
   std::shared_ptr<std::string> stringMissingValue() const { return stringMissingValue_; }
@@ -178,12 +172,6 @@ class ReaderPoolBase : public IoPoolBase {
 
   /// \brief file name for pre-processed input file
   std::string newInputFileName_;
-
-  /// \brief completed work directory
-  std::string workDir_;
-
-  /// \brief list of temporary files
-  std::vector<std::string> tempFileList_;
 
   /// \brief missing value for string variables
   std::shared_ptr<std::string> stringMissingValue_;

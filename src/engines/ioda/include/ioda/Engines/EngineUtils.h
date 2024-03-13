@@ -139,16 +139,20 @@ IODA_DL Group constructFromCmdLine(int argc, char** argv, const std::string& def
 /// \ingroup ioda_cxx_engines_pub
 IODA_DL eckit::LocalConfiguration constructFileBackendConfig(const std::string & fileType,
                 const std::string & fileName, const std::string & mapFileName = "",
-                const std::string & queryFileName = "");
+                const std::string & queryFileName = "", const std::string & odbType = "");
 
 /// \brief This is a simple factory style function that will instantiate a
 ///   different backend based on a given name an parameters.
 /// \ingroup ioda_cxx_engines_pub
 IODA_DL Group constructBackend(BackendNames name, BackendCreationParameters& params);
 
-/// \brief check to see if a file can be opened for reading
-/// \param fileName path to input file name being tested
-IODA_DL bool openInputFileCheck(const std::string & fileName);
+/// \brief check to see if have read access to a file
+/// \param fileName path to file tested
+IODA_DL bool haveFileReadAccess(const std::string & fileName);
+
+/// \brief check to see if have write access to a directory
+/// \param dirName path to directory being tested
+IODA_DL bool haveDirRwxAccess(const std::string & dirName);
 
 /// stream operator
 IODA_DL std::ostream& operator<<(std::ostream& os, const BackendCreateModes& mode);

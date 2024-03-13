@@ -27,7 +27,7 @@ ReadH5File::ReadH5File(const Parameters_ & params,
                        const ReaderCreationParameters & createParams)
                            : ReaderBase(createParams), fileName_(params.fileName) {
     oops::Log::trace() << "ioda::Engines::ReadH5File start constructor" << std::endl;
-    if (openInputFileCheck(fileName_)) {
+    if (haveFileReadAccess(fileName_)) {
         // Input file exists and is readable
         // Create a backend backed by an existing read-only hdf5 file
         Engines::BackendNames backendName = BackendNames::Hdf5File;

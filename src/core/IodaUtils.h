@@ -64,10 +64,12 @@ namespace ioda {
   /// \brief open or create an epoch style datetime variable
   /// \param groupName name of group in which to open or create variable
   /// \param varName name of variable to open or create
+  /// \param globalNlocs total number of locations across all MPI tasks
   /// \param newEpoch DateTime object used for the epoch if creating a new variable
   /// \param epochDtVar requested datetime variable
   /// \param destVarContainer Has_Variables object in which to open/create the variable
   void openCreateEpochDtimeVar(const std::string & groupName, const std::string & varName,
+                               const std::size_t globalNlocs,
                                const util::DateTime & newEpoch, Variable & epochDtVar,
                                Has_Variables & destVarContainer);
 

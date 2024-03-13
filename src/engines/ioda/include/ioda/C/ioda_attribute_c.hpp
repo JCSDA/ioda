@@ -40,7 +40,7 @@ IODA_FUN(_char,char)
 #undef IODA_FUN
 
 #define IODA_FUN(NAME,TYPE)\
-bool ioda_attribute_c_write##NAME (ioda_attribute_t v,int64_t n, void ** data_p);
+bool ioda_attribute_c_write##NAME (ioda_attribute_t v,int64_t n, TYPE * data);
 
 IODA_FUN(_float,float)
 IODA_FUN(_double,double)

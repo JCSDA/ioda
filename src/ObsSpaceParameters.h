@@ -20,7 +20,6 @@
 #include "eckit/exception/Exceptions.h"
 #include "eckit/mpi/Comm.h"
 
-#include "oops/base/ObsSpaceBase.h"  // for ObsSpaceParametersBase
 #include "oops/base/ParameterTraitsVariables.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
@@ -54,8 +53,8 @@ class ObsExtendParameters : public oops::Parameters {
             this};
 };
 
-class ObsTopLevelParameters : public oops::ObsSpaceParametersBase {
-    OOPS_CONCRETE_PARAMETERS(ObsTopLevelParameters, ObsSpaceParametersBase)
+class ObsTopLevelParameters : public oops::Parameters {
+    OOPS_CONCRETE_PARAMETERS(ObsTopLevelParameters, Parameters)
 
  public:
     /// name of obs space
@@ -90,6 +89,8 @@ class ObsTopLevelParameters : public oops::ObsSpaceParametersBase {
 
     /// output specification by writing to a file
     oops::OptionalParameter<ObsDataOutParameters> obsDataOut{"obsdataout", this};
+
+    oops::Parameter<int> obsPerturbationsSeed{"obs perturbations seed", 0, this};
 };
 
 class ObsSpaceParameters {
@@ -98,13 +99,14 @@ class ObsSpaceParameters {
     ObsTopLevelParameters top_level_;
 
     /// Constructor
-    ObsSpaceParameters(const ObsTopLevelParameters &topLevelParams,
+    ObsSpaceParameters(const eckit::Configuration &topConfig,
                        const util::TimeWindow timeWindow,
                        const eckit::mpi::Comm & comm, const eckit::mpi::Comm & timeComm) :
-                           top_level_(topLevelParams),
+                           top_level_(),
                            time_window_(timeWindow), comm_(comm),
                            time_comm_(timeComm),
                            new_dims_(), max_var_size_(0) {
+        top_level_.deserialize(topConfig);
         // Record the MPI rank number. The rank number is being saved during the
         // construction of the Parameters for the ObsSpace saveToFile routine.
         // (saveToFile will uniquify the output file name by tagging on the MPI rank

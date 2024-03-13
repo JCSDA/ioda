@@ -1,0 +1,93 @@
+---
+time window:
+  begin: "2021-01-15T15:14:00Z"
+  end: "2021-01-15T15:15:15Z"
+
+observations:
+- obs space:
+    name: "Round robin distribution"
+    simulated variables: ['eastward_wind']
+    distribution:
+      name: "RoundRobin"
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: "Data/testinput_tier_1/obsspace_index_recnum.nc4"
+    io pool:
+      reader name: SinglePool
+      work directory: testwork/obsspace_index_recnum_twfilt_mpi_2_reader_pool
+  test data:
+    gnlocs: 12
+    gnlocs outside time window: 8
+    nlocs: 12
+    nrecs: 12
+    obs are sorted: false
+    mpi size1:
+      rank0:
+        index: [ 0, 1, 3, 4, 5, 6, 8, 9, 10, 11, 14, 15]
+        recnum: [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+        recidx:
+          rec0: [ 0 ]
+          rec1: [ 1 ]
+          rec2: [ 2 ]
+          rec3: [ 3 ]
+          rec4: [ 4 ]
+          rec5: [ 5 ]
+          rec6: [ 6 ]
+          rec7: [ 7 ]
+          rec8: [ 8 ]
+          rec9: [ 9 ]
+          rec10: [ 10 ]
+          rec11: [ 11 ]
+
+    mpi size2:
+      rank0:
+        index: [ 0, 3, 5, 8, 10, 14]
+        recnum: [ 0, 2, 4, 6, 8, 10]
+        recidx:
+          rec0: [ 0 ]
+          rec2: [ 1 ]
+          rec4: [ 2 ]
+          rec6: [ 3 ]
+          rec8: [ 4 ]
+          rec10: [ 5 ]
+      rank1:
+        index: [ 1, 4, 6, 9, 11, 15]
+        recnum: [ 1, 3, 5, 7, 9, 11]
+        recidx:
+          rec1: [ 0 ]
+          rec3: [ 1 ]
+          rec5: [ 2 ]
+          rec7: [ 3 ]
+          rec9: [ 4 ]
+          rec11: [ 5 ]
+    mpi size4:
+      rank0:
+        index: [ 0, 5, 10]
+        recnum: [ 0, 4, 8]
+        recidx:
+          rec0: [ 0 ]
+          rec4: [ 1 ]
+          rec8: [ 2 ]
+      rank1:
+        index: [ 1, 6, 11]
+        recnum: [ 1, 5, 9]
+        recidx:
+          rec1: [ 0 ]
+          rec5: [ 1 ]
+          rec9: [ 2 ]
+      rank2:
+        index: [ 3, 8, 14]
+        recnum: [ 2, 6, 10]
+        recidx:
+          rec2: [ 0 ]
+          rec6: [ 1 ]
+          rec10: [ 2 ]
+      rank3:
+        index: [ 4, 9, 15]
+        recnum: [ 3, 7, 11]
+        recidx:
+          rec3: [ 0 ]
+          rec7: [ 1 ]
+          rec11: [ 2 ]
+

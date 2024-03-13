@@ -53,10 +53,10 @@ find_package( Eigen3 REQUIRED NO_MODULE HINTS
 find_package( gsl-lite REQUIRED HINTS $ENV{gsl_lite_DIR} )
 find_package( udunits 2.2.0 REQUIRED )
 find_package( NetCDF REQUIRED COMPONENTS Fortran )  # No idea why oops is not importing this correctly
+find_package( Boost 1.64.0 REQUIRED )
 
 # Optional
 find_package( odc 1.4.6 QUIET )   # Needed for odc
-find_package( Boost 1.64.0 )      # Provides an implementation of optional
 # Python-finding settings
 set(Python3_FIND_REGISTRY "LAST")
 set(Python3_FIND_FRAMEWORK "LAST")
@@ -92,6 +92,9 @@ add_subdirectory( share )         # no arch data
 add_subdirectory( src/engines )   # `ioda_engines` target
 add_subdirectory( src )           # `ioda` target
 add_subdirectory( src/mains )     # ioda executable targets
+if ( Python3_FOUND )
+    add_subdirectory( src/python ) # ioda python targets
+endif()
 add_subdirectory( test )          # ioda ctests
 add_subdirectory( tools )         # misc tools
 

@@ -148,8 +148,8 @@ CASE("ioda/ReaderPoolFactoryMakers") {
         std::vector<std::string> obsGroupVarList = readerPool->obsGroupVarList();
         EXPECT(obsGroupVarList == expectedObsGroupVarList);
 
-        std::string expectedWorkDirBase = testDataConfig.getString("work directory");
-        EXPECT(readerPool->workDirBase() == expectedWorkDirBase);
+        std::string expectedWorkDir = testDataConfig.getString("work directory");
+        EXPECT(readerPool->workDir() == expectedWorkDir);
     }
 }
 class IoPoolFactory : public oops::Test {

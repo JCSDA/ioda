@@ -46,6 +46,7 @@
 #include "ioda/ioPool/WriterPoolBase.h"
 #include "ioda/ioPool/WriterPoolFactory.h"
 #include "ioda/Variables/Variable.h"
+#include "ioda/Variables/VarUtils.h"
 
 namespace ioda {
 namespace {
@@ -116,14 +117,14 @@ void ObsDimInfo::set_dim_size(const ObsDimensionId dimId, std::size_t dimSize) {
  *                   the product of the comm and time communicators hold all observations in the
  *                   ObsSpace.
  */
-ObsSpace::ObsSpace(const Parameters_ & params, const eckit::mpi::Comm & comm,
+ObsSpace::ObsSpace(const eckit::Configuration & config, const eckit::mpi::Comm & comm,
                    const util::TimeWindow timeWindow,
                    const eckit::mpi::Comm & timeComm)
-                     : oops::ObsSpaceBase(params, comm, timeWindow),
+                     : oops::ObsSpaceBase(config, comm, timeWindow),
                        timeWindow_(timeWindow),
                        commMPI_(comm), commTime_(timeComm),
                        gnlocs_(0), nrecs_(0),
-                       obs_group_(), obs_params_(params, timeWindow_, comm, timeComm),
+                       obs_group_(), obs_params_(config, timeWindow_, comm, timeComm),
                        obsvars_()
 {
     // Determine if run stats should be dumped out from the environment variable
@@ -210,17 +211,8 @@ ObsSpace::ObsSpace(const Parameters_ & params, const eckit::mpi::Comm & comm,
       }
     }
 
-    if (this->obs_sort_var() != "") {
-      buildSortedObsGroups();
-      recidx_is_sorted_ = true;
-    } else {
-      // Fill the recidx_ map with indices that represent each group, but are not
-      // sorted. This is done so the recidx_ structure can be used to walk
-      // through the individual groups. For example, this can be used to calculate
-      // RMS values for each group.
-      buildRecIdxUnsorted();
-      recidx_is_sorted_ = false;
-    }
+    // Construct the recidx_ map
+    buildRecIdx();
 
     fillChanNumToIndexMap();
 
@@ -546,7 +538,7 @@ void ObsSpace::put_db(const std::string & group, const std::string & name,
     // epoch value for converting the data before calling saveVar. Use the epoch DateTime
     // parameter for the units if creating a new variable.
     Variable dtVar;
-    openCreateEpochDtimeVar(group, name, obs_params_.top_level_.epochDateTime,
+    openCreateEpochDtimeVar(group, name, gnlocs_, obs_params_.top_level_.epochDateTime,
                             dtVar, obs_group_.vars);
     util::DateTime epochDtime = getEpochAsDtime(dtVar);
     std::vector<int64_t> timeOffsets = convertDtimeToTimeOffsets(epochDtime, vdata);
@@ -612,6 +604,29 @@ std::vector<std::size_t> ObsSpace::recidx_all_recnums() const {
   }
   return RecNums;
 }
+
+// -----------------------------------------------------------------------------
+void ObsSpace::reduce(const ioda::CompareAction compareAction, const int threshold,
+                      const std::vector<int> & checkValues) {
+    ASSERT(checkValues.size() == this->nlocs());
+    // Transform the reduce specs into a boolean vector where true means keep,
+    // and false means remove.
+    std::vector<bool> keepLocs;
+    generateLocationsToKeep(compareAction, threshold, checkValues, keepLocs);
+
+    // Reduce the data values stored in the obs_group_ container
+    const std::size_t newNlocs = reduceVarDataValues(keepLocs);
+
+    // Resize the obs_group_ container according to the newNlocs value
+    Variable locVar = obs_group_.vars.open("Location");
+    obs_group_.resize({std::pair<Variable, Dimensions_t>(locVar, newNlocs)});
+    dim_info_.set_dim_size(ObsDimensionId::Location, newNlocs);
+
+    // Update the nrecs_ and recidx_ data members according to the reduce
+    // (ie, removed) locations.
+    adjustDataMembersAfterReduce(keepLocs);
+}
+
 
 // ----------------------------- private functions -----------------------------
 /*!
@@ -947,59 +962,6 @@ std::size_t ObsSpace::createChannelSelections(const Variable & variable,
     return numElements;
 }
 
-// -----------------------------------------------------------------------------
-// This function is for transferring data from a memory buffer into the ObsSpace
-// container. At this point, the time window filtering, obs grouping and MPI
-// distribution has been applied to the input memory buffer (varValues). Also,
-// the variable has been resized according to appending a new frame's worth of
-// data to the existing variable in the ObsSpace container.
-//
-// What this means is that you can always transfer the data as a single contiguous
-// block which can be accomplished with a single hyperslab selection. There should
-// be no need to cache these selections because of this.
-template<typename VarType>
-void ObsSpace::storeVar(const std::string & varName, std::vector<VarType> & varValues,
-                       const Dimensions_t frameStart, const Dimensions_t frameCount) {
-    // get the dimensions of the variable
-    Variable var = obs_group_.vars.open(varName);
-    std::vector<Dimensions_t> varDims = var.getDimensions().dimsCur;
-
-    // check the caches for the selectors
-    VarUtils::Vec_Named_Variable dims;
-    for (auto & ivar : dims_attached_to_vars_) {
-        if (ivar.first.name == varName) {
-            dims = ivar.second;
-            break;
-        }
-    }
-    if (!known_fe_selections_.count(dims)) {
-        // backend starts at frameStart, and the count for the first dimension
-        // is the frame count
-        std::vector<Dimensions_t> beCounts = varDims;
-        beCounts[0] = frameCount;
-        std::vector<Dimensions_t> beStarts(beCounts.size(), 0);
-        beStarts[0] = frameStart;
-
-        // front end always starts at zero, and the number of elements is equal to the
-        // product of the var dimensions (with the first dimension adjusted by
-        // the frame count)
-        std::vector<Dimensions_t> feCounts(1, std::accumulate(
-            beCounts.begin(), beCounts.end(), static_cast<Dimensions_t>(1),
-            std::multiplies<Dimensions_t>()));
-        std::vector<Dimensions_t> feStarts(1, 0);
-
-        known_fe_selections_[dims] = Selection()
-            .extent(feCounts).select({ SelectionOperator::SET, feStarts, feCounts });
-        known_be_selections_[dims] = Selection()
-            .extent(varDims).select({ SelectionOperator::SET, beStarts, beCounts });
-    }
-    Selection & feSelect = known_fe_selections_[dims];
-    Selection & beSelect = known_be_selections_[dims];
-
-    var.write<VarType>(varValues, feSelect, beSelect);
-}
-
-// -----------------------------------------------------------------------------
 void ObsSpace::fillChanNumToIndexMap() {
     // If there is a channels dimension, load up the channel number to index map
     // for channel selection feature.
@@ -1039,6 +1001,26 @@ void ObsSpace::splitChanSuffix(const std::string & group, const std::string & na
         int channelNumber;
         if (extractChannelSuffixIfPresent(name, nameToUse, channelNumber))
             chanSelectToUse = {channelNumber};
+    }
+}
+
+// -----------------------------------------------------------------------------
+void ObsSpace::buildRecIdx() {
+    if (this->obs_sort_var() != "") {
+        // Fill the recidx_ map with indices that represent each group, while the list
+        // of indices within each of the groups is sorted according to the obs space
+        // configuration. This is typically used to group obs into individual
+        // radiosonde soundings, and have each sounding sorted along the vertical
+        // (ie, pressure or height).
+        buildSortedObsGroups();
+        recidx_is_sorted_ = true;
+    } else {
+        // Fill the recidx_ map with indices that represent each group, but are not
+        // sorted. This is done so the recidx_ structure can be used to walk
+        // through the individual groups. For example, this can be used to calculate
+        // RMS values for each group.
+        buildRecIdxUnsorted();
+        recidx_is_sorted_ = false;
     }
 }
 
@@ -1123,6 +1105,7 @@ void ObsSpace::buildSortedObsGroups() {
     }
 
     // Copy indexing to the recidx_ data member.
+    recidx_.clear();
     for (TmpRecIdxIter irec = TmpRecIdx.begin(); irec != TmpRecIdx.end(); ++irec) {
         const size_t recnum = irec->first;
         recidx_[recnum].resize(irec->second.size());
@@ -1160,6 +1143,7 @@ void ObsSpace::buildSortedObsGroups() {
 
 // -----------------------------------------------------------------------------
 void ObsSpace::buildRecIdxUnsorted() {
+  recidx_.clear();
   std::size_t nLocs = this->nlocs();
   for (size_t iloc = 0; iloc < nLocs; iloc++) {
     recidx_[recnums_[iloc]].push_back(iloc);
@@ -1350,6 +1334,165 @@ void ObsSpace::createMissingObsErrors() {
     }
   }
 }
+
 // -----------------------------------------------------------------------------
+void ObsSpace::generateLocationsToKeep(const CompareAction compareAction, const int threshold,
+                                       const std::vector<int> & checkValues,
+                                       std::vector<bool> & keepLocs) {
+    // Form a boolean vector that shows which locations to keep from the specs for
+    // the reduction (input args).
+    keepLocs.resize(checkValues.size());
+    if (compareAction == CompareAction::Equal) {
+        for (std::size_t i = 0; i < checkValues.size(); ++i) {
+            keepLocs[i] = (checkValues[i] == threshold);
+        }
+    } else if (compareAction == CompareAction::NotEqual) {
+        for (std::size_t i = 0; i < checkValues.size(); ++i) {
+            keepLocs[i] = (checkValues[i] != threshold);
+        }
+    } else if (compareAction == CompareAction::GreaterThan) {
+        for (std::size_t i = 0; i < checkValues.size(); ++i) {
+            keepLocs[i] = (checkValues[i] > threshold);
+        }
+    } else if (compareAction == CompareAction::LessThan) {
+        for (std::size_t i = 0; i < checkValues.size(); ++i) {
+            keepLocs[i] = (checkValues[i] < threshold);
+        }
+    } else if (compareAction == CompareAction::GreaterThanOrEqual) {
+        for (std::size_t i = 0; i < checkValues.size(); ++i) {
+            keepLocs[i] = (checkValues[i] >= threshold);
+        }
+    } else if (compareAction == CompareAction::LessThanOrEqual) {
+        for (std::size_t i = 0; i < checkValues.size(); ++i) {
+            keepLocs[i] = (checkValues[i] <= threshold);
+        }
+    }
+}
+
+// -----------------------------------------------------------------------------
+std::size_t ObsSpace::reduceVarDataValues(const std::vector<bool> & keepLocs) {
+    // Walk through the variables in the obs_group_ container, and if a variable is
+    // dimensioned by Location then perform the reduction. This is done by:
+    //   1. read the variable data into a vector
+    //   2. reduce in place in this vector (don't resize since the obs_group_ resize will
+    //      do that step)
+    //   3. write the vector back into the variable
+    //
+    //   Skip over the dimension variables
+    //
+    std::size_t numLocs = this->nlocs();
+    std::size_t reducedNlocs = 0;
+    Variable locVar = obs_group_.vars.open("Location");
+    for (const auto & varName : obs_group_.listObjects<ObjectType::Variable>(true)) {
+        Variable var = obs_group_.vars.open(varName);
+
+        // skip if var is a dimension variable other than Location
+        if (var.isDimensionScale() && (varName != "Location")) {
+            continue;
+        }
+
+        // Process the variable if it is dimensioned by Location (which is always
+        // the first dimension) or the variable is Location
+        if (var.isDimensionScaleAttached(0, locVar) || (varName == "Location")) {
+            std::vector<Dimensions_t> varShape = var.getDimensions().dimsCur;
+            VarUtils::forAnySupportedVariableType(
+                var,
+                [&] (auto typeDiscriminator) {
+                    typedef decltype(typeDiscriminator) T;
+                    std::vector<T> varValues(numLocs);
+                    var.read<T>(varValues);
+                    reducedNlocs = reduceVarDataInPlace<T>(keepLocs, varShape, varValues);
+                    var.write<T>(varValues);
+                },
+                VarUtils::ThrowIfVariableIsOfUnsupportedType(varName));
+        }
+    }
+
+    // The adjusted number of locations is the count of true values in the keepLocs vector
+    return reducedNlocs;
+}
+
+// -----------------------------------------------------------------------------
+template <typename DataType>
+std::size_t ObsSpace::reduceVarDataInPlace(const std::vector<bool> & keepLocs,
+                                           const std::vector<Dimensions_t> & varShape,
+                                           std::vector<DataType> & varValues,
+                                           const bool doResize) {
+    // The idea here is to walk through the vector while checking keepLocs and at the
+    // same time keeping track of the next available index for moving the value to
+    // the "left" when necessary.
+    //
+    // We need to handle multidimensioned variables which is what the varShape argument
+    // is for. Since location is the first dimension, it will be the slowest varying
+    // (row-major) and each location contains a contiguous block of memory to the
+    // adjacent location. varShape can be used to figure out the size of these
+    // contiguous blocks which will be the product of the sizes of the second
+    // through N dimensions.
+    const std::size_t blockSize = std::accumulate(varShape.begin() + 1, varShape.end(), 1,
+                                                  std::multiplies<Dimensions_t>());
+    std::size_t nextAvailable = 0;
+    std::size_t iloc = 0;
+    const std::size_t nlocs = varShape[0];
+    while (iloc < nlocs) {
+        // If keepLocs[iloc] is false, we will throw away varValues[iloc], so have
+        // nextAvailable remain where it is. This is the next slot available for
+        // the next location block we keep.
+        if (keepLocs[iloc]) {
+            // If nextAvailable == iloc, there is no need to move, but we still want
+            // to advance nextAvailable to keep track of the next available slot
+            if (iloc != nextAvailable) {
+                const std::size_t locStart = iloc * blockSize;
+                const std::size_t moveStart = nextAvailable * blockSize;
+                for (size_t jloc = 0; jloc < blockSize; ++jloc) {
+                    varValues[moveStart + jloc] = varValues[locStart + jloc];
+                }
+            }
+            ++nextAvailable;
+        }
+        ++iloc;
+    }
+
+    // Note after exiting the loop above nextAvailable will be equal to the number
+    // of locations kept
+    if (doResize) {
+        varValues.resize(nextAvailable);
+    }
+    return nextAvailable;
+}
+
+// -----------------------------------------------------------------------------
+void ObsSpace::adjustDataMembersAfterReduce(const std::vector<bool> & keepLocs) {
+    // Need to adjust data members related to locations and records according
+    // to the locations that have been removed.
+
+    // The data members indx_ and recnums_ are both 1D vectors that are "dimensioned"
+    // by Location, so it is convenient to use the keepLocs vector and the
+    // reduceVarDataInPlace function to properly adjust their values.
+    // Note 4th arguement of reduceVarDataInPlace when set to true tells that function
+    // to resize the output vector.
+    std::size_t reducedNlocs = reduceVarDataInPlace<std::size_t>(keepLocs,
+        { static_cast<Dimensions_t>(indx_.size()) }, indx_, true);
+    reducedNlocs = reduceVarDataInPlace<std::size_t>(keepLocs,
+        { static_cast<Dimensions_t>(recnums_.size()) }, recnums_, true);
+
+    // Adjust gnlocs_, this is simply the sum across mpi tasks (allReduce) of the
+    // adjusted nlocs (reducedNlocs)
+    this->comm().allReduce(reducedNlocs, gnlocs_, eckit::mpi::sum());
+
+    // The adjusted nrecs_ is the number of unique values in recnums_ (which has
+    // already been adjusted).
+    std::set<std::size_t> uniqueRecNums;
+    for (auto & recNum : recnums_) {
+        uniqueRecNums.insert(recNum);
+    }
+    nrecs_ = uniqueRecNums.size();
+
+    // Rebuild the patch location information
+    dist_->computePatchLocs();
+
+    // Rebuild the recidx_ data member using the newly adjusted indx_ and recnums_
+    // data members.
+    buildRecIdx();
+}
 
 }  // namespace ioda

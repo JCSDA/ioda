@@ -46,16 +46,11 @@ void ioda_variable_creation_parameters_c_clone(ioda_variable_creation_parameters
 }
 
 void ioda_variable_creation_parameters_c_chunking(ioda_variable_creation_parameters_t p,
-    bool do_chunking,int64_t ndims,void **chunks_p) {
+    bool do_chunking,int64_t ndims,int64_t *chunks) {
     try {
         VOID_TO_CXX(ioda::VariableCreationParameters,p,c_params);
         if ( c_params == nullptr ) {
             std::cerr << "ioda_variable_creation_parameters nullptr\n";
-            throw std::exception();
-        }
-        VOID_TO_CXX(ioda::Dimensions_t,*chunks_p,chunks);
-        if ( chunks==nullptr) {
-            std::cerr << "ioda_variable_creation_parameters::chunking nullptr\n";
             throw std::exception();
         }
         c_params->chunk = do_chunking;

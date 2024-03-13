@@ -22,7 +22,7 @@ observations:
         query file: ../share/test/testinput/iodatest_odb_atms.yaml
     io pool:
       reader name: SinglePool
-      work directory: testwork
+      work directory: testwork/time_io_reader_pool_odc
 
 - obs space:
     name: "Aircraft"
@@ -41,4 +41,4 @@ observations:
         query file: ../share/test/testinput/iodatest_odb_aircraft.yaml
     io pool:
       reader name: SinglePool
-      work directory: testwork
+      work directory: testwork/time_io_reader_pool_odc

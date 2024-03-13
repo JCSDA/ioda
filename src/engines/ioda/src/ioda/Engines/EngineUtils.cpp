@@ -7,10 +7,11 @@
 
 #include "ioda/Engines/EngineUtils.h"
 
-#include <fstream>
 #include <iomanip>
 #include <sstream>
 #include <string>
+#include <sys/stat.h>
+#include <unistd.h>
 
 #include "ioda/defs.h"
 #include "ioda/Engines/HH.h"
@@ -258,7 +259,7 @@ Group constructFromCmdLine(int argc, char** argv, const std::string& defaultFile
 
 eckit::LocalConfiguration constructFileBackendConfig(const std::string & fileType,
                 const std::string & fileName, const std::string & mapFileName,
-                const std::string & queryFileName) {
+                const std::string & queryFileName, const std::string & odbType) {
     // For now, include just enough for file io:
     //    HDF5 read or write:
     //       engine:
@@ -326,20 +327,44 @@ Group constructBackend(BackendNames name, BackendCreationParameters& params) {
   throw Exception("Backend not implemented yet", ioda_Here());
 }
 
-bool openInputFileCheck(const std::string & fileName) {
-  // return true if the file can be opened in read mode
-  bool fileCanBeOpened;
-  std::ifstream inputFile;
-  inputFile.open(fileName);
-  if (inputFile) {
-    // File was opened successfully
-    fileCanBeOpened = true;
-    inputFile.close();
-  } else {
-    // Unable to open file
-    fileCanBeOpened = false;
+bool haveFileReadAccess(const std::string & fileName) {
+  // access function returns true if file has read access (R_OK)
+  // Want to allow the caller to be able to handle error (access returns non-zero).
+
+  // First make sure fileName is a path to a file. If so then check for read access.
+  struct stat sbuf;
+  const int status = stat(fileName.c_str(), &sbuf);
+  bool haveReadAccess = false;
+  if (status == 0) {
+      // fileName exists
+      if (S_ISREG(sbuf.st_mode)) {
+          // fileName is a regular file
+          // following is true if fileName has read access (R_OK)
+          haveReadAccess = (access(fileName.c_str(), R_OK) == 0);
+      }
   }
-  return fileCanBeOpened;
+  return haveReadAccess;
+}
+
+bool haveDirRwxAccess(const std::string & dirName) {
+  // access function returns true if directory has read write and execute access
+  // Want to allow the caller to be able to handle error (access returns non-zero).
+
+  // First make sure dirName is a path to a directory. If so then check for read, write
+  // and execute access.
+  struct stat sbuf;
+  const int status = stat(dirName.c_str(), &sbuf);
+  bool haveRwxAccess = false;
+  if (status == 0) {
+      // dirName exists
+      if (S_ISDIR(sbuf.st_mode)) {
+          // dirName is a directory
+          // following is true if dirName has read (R_OK), write (W_OK) and
+          // execute (X_OK) access
+          haveRwxAccess = (access(dirName.c_str(), R_OK | W_OK | X_OK) == 0);
+      }
+  }
+  return haveRwxAccess;
 }
 
 std::ostream& operator<<(std::ostream& os, const ioda::Engines::BackendCreateModes& mode)

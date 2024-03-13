@@ -52,6 +52,37 @@ namespace ioda {
     class ObsVector;
 
     //-------------------------------------------------------------------------------------
+    /// Enum type for compare actions
+    enum class CompareAction {
+        Equal,
+        NotEqual,
+        GreaterThan,
+        LessThan,
+        GreaterThanOrEqual,
+        LessThanOrEqual
+    };
+
+    // override the << operator for compare actions
+    inline std::ostream & operator << (std::ostream & os, const CompareAction compareAction) {
+        std::string compareActionString;
+        if (compareAction == CompareAction::Equal) {
+            compareActionString = std::string("==");
+        } else if (compareAction == CompareAction::NotEqual) {
+            compareActionString = std::string("!=");
+        } else if (compareAction == CompareAction::GreaterThan) {
+            compareActionString = std::string(">");
+        } else if (compareAction == CompareAction::LessThan) {
+            compareActionString = std::string("<");
+        } else if (compareAction == CompareAction::GreaterThanOrEqual) {
+            compareActionString = std::string(">=");
+        } else if (compareAction == CompareAction::LessThanOrEqual) {
+            compareActionString = std::string("<=");
+        }
+        os << "action(" << compareActionString << ")";
+        return os;
+    }
+
+    //-------------------------------------------------------------------------------------
     /// Enum type for obs variable data types
     enum class ObsDtype {
         None,
@@ -147,7 +178,7 @@ namespace ioda {
         /// \param bgn DateTime object holding the start of the DA timing window
         /// \param end DateTime object holding the end of the DA timing window
         /// \param timeComm MPI communicator for ensemble
-        ObsSpace(const Parameters_ & params, const eckit::mpi::Comm & comm,
+        ObsSpace(const eckit::Configuration &, const eckit::mpi::Comm & comm,
                  const util::TimeWindow timeWindow,
                  const eckit::mpi::Comm & timeComm);
         ObsSpace(const ObsSpace &);
@@ -445,6 +476,24 @@ namespace ioda {
         std::vector<std::size_t> recidx_all_recnums() const;
 
         /// @}
+        /// @name Resizing functions
+        /// @{
+
+        /// \brief Reduce obs space given a vector of int showing which values to remove
+        /// \details This function will use its input arguments to remove unwanted
+        /// values (along the Location dimension) from the obs space. This is being done
+        /// to help downstream operations run faster, eg the DA solver. The idea is to
+        /// keep all the corresponding locations in the checkValues vector of which return
+        /// true by applying the compare action along with the threshold.
+        /// \param compareAction enum type that defines how to compare the check values
+        /// with the threshold.
+        /// \param threshold limit being tested by the compare action
+        /// \param checkValues vector of QC values that are being tested with the compare action
+        void reduce(const ioda::CompareAction compareAction, const int threshold,
+                    const std::vector<int> & checkValues);
+
+        /// @}
+
 
      private:
         // ----------------------------- private data members ---------------------------
@@ -521,15 +570,6 @@ namespace ioda {
         /// \brief indicator whether the data in recidx_ is sorted
         bool recidx_is_sorted_;
 
-        /// \brief map showing association of dim names with each variable name
-        VarUtils::VarDimMap dims_attached_to_vars_;
-
-        /// \brief cache for frontend selection
-        std::map<VarUtils::Vec_Named_Variable, Selection> known_fe_selections_;
-
-        /// \brief cache for backend selection
-        std::map<VarUtils::Vec_Named_Variable, Selection> known_be_selections_;
-
         /// \brief disable the "=" operator
         ObsSpace & operator= (const ObsSpace &) = delete;
 
@@ -554,6 +594,12 @@ namespace ioda {
         /// and add it to the DerivedObsError group.
         void createMissingObsErrors();
 
+        /// \brief build the recidx_ data member
+        /// \details Build the recidx_ data member using the indx_ and recnums_
+        /// data members. The entries of the map have each existing record number as
+        /// keys, and the values are the location indices that belong to that record.
+        void buildRecIdx();
+
         /// \brief Create the recidx data structure holding sorted record groups
         /// \details This method will construct a data structure that holds the
         /// location order within each group sorted by the values of the specified
@@ -569,16 +615,6 @@ namespace ioda {
         /// \param LocationSize new size to either append or reset
         /// \param append when true append LocationSize to current size, otherwise reset size
         void resizeLocation(const Dimensions_t LocationSize, const bool append);
-
-        /// \brief store a variable in the obs_group_ object
-        /// \param obsIo obs source object
-        /// \param varName Name of obs_group_ variable for obs_group_ object
-        /// \param varValues Values for obs_group_ variable
-        /// \param frameStart is the start of the ObsFrame
-        /// \param frameCount is the size of the ObsFrame
-        template<typename VarType>
-        void storeVar(const std::string & varName, std::vector<VarType> & varValues,
-                      const Dimensions_t frameStart, const Dimensions_t frameCount);
 
         /// \brief get fill value for use in the obs_group_ object
         template<typename DataType>
@@ -641,19 +677,12 @@ namespace ioda {
                 var = obs_group_.vars.open(varName);
             } else {
                 // Create a vector of the dimension variables
-                //
-                // TODO(srh) For now use a default chunk size (10000) for the chunk size
-                // in the creation parameters when the first dimension is Location.
-                // This is being done since the size of location can vary across MPI tasks,
-                // and we need it to be constant for the parallel io to work properly.
-                // The assigned chunk size may need to be optimized further than using a
-                // rough guess of 10000.
                 std::vector<ioda::Dimensions_t> chunkDims;
                 std::vector<Variable> varDims;
                 for (auto & dimName : varDimList) {
                     Variable dimVar = obs_group_.vars.open(dimName);
                     if (dimName == "Location") {
-                        chunkDims.push_back(VarUtils::DefaultChunkSize);
+                        chunkDims.push_back(VarUtils::getLocationChunkSize(gnlocs_));
                     } else {
                         chunkDims.push_back(dimVar.getDimensions().dimsCur[0]);
                     }
@@ -706,6 +735,43 @@ namespace ioda {
         ///        of the number of records in the original ObsSpace.
         template <typename DataType>
         void extendVariable(Variable & extendVar, const size_t upperBoundOnGlobalNumOriginalRecs);
+
+        /// \brief reduce variable data values according to input parameters
+        /// \param compareAction enum type that defines how to compare the check values
+        /// with the threshold.
+        /// \param threshold limit being tested by the compare action
+        /// \param checkValues vector of QC values that are being tested with the compare action
+        /// \param keepLocs boolean vector, true in entries where that location is kept
+        void generateLocationsToKeep(const CompareAction compareAction, const int threshold,
+                                     const std::vector<int> & checkValues,
+                                     std::vector<bool> & keepLocs);
+
+        /// \brief reduce variable data values according to input parameters
+        /// \return resulting number of locations from performing the reduction
+        /// \param keepLocs boolean vector, true in entries where that location is kept
+        std::size_t reduceVarDataValues(const std::vector<bool> & keepLocs);
+
+        /// \brief reduce variable data values in place
+        /// \details This function will reduce the data in varValues by removing the locations
+        /// corresponding to false values in the keepNlocs vector. The locations that are
+        /// being kept will be moved to the "left" in varValues so that varValues can
+        /// be resized to free the unused entries at the end of varValues.
+        /// \param keepLocs where true, keep the corresponding location index in varValues
+        /// \param varValues variable values that will be reduced in place
+        /// \param varShape vector holding the sizes of each dimension of the variable
+        /// \param doResize if true, resize the output VarValues vector (default is false)
+        /// \return resulting number of locations from performing the reduction
+        template <typename DataType>
+        std::size_t reduceVarDataInPlace(const std::vector<bool> & keepLocs,
+                                         const std::vector<Dimensions_t> & varShape,
+                                         std::vector<DataType> & varValues,
+                                         const bool doResize = false);
+
+        /// \brief adjust data members after reduction
+        /// \details This function will adjust the data members affected by the removal
+        /// of locations from the data.
+        /// \param keepLocs boolean vector, true in entries where that location is kept
+        void adjustDataMembersAfterReduce(const std::vector<bool> & keepLocs);
     };
 
 }  // namespace ioda

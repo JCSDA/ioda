@@ -35,18 +35,16 @@ void testExtendedObsSpace(const eckit::LocalConfiguration &conf) {
   const util::TimeWindow timeWindow(conf.getSubConfiguration("time window"));
 
   const eckit::LocalConfiguration obsSpaceConf(conf, "obs space");
-  ioda::ObsTopLevelParameters obsParams;
-  obsParams.validateAndDeserialize(obsSpaceConf);
 
   // Instantiate ObsSpace, allowing for exceptions to be thrown.
   const bool expectThrows = conf.getBool("expectThrows", false);
   if (expectThrows) {
-    EXPECT_THROWS(ioda::ObsSpace obsDataThrow(obsParams,
+    EXPECT_THROWS(ioda::ObsSpace obsDataThrow(obsSpaceConf,
                                               oops::mpi::world(),
                                               timeWindow, oops::mpi::myself()));
     return;
   }
-  ioda::ObsSpace obsdata(obsParams, oops::mpi::world(), timeWindow, oops::mpi::myself());
+  ioda::ObsSpace obsdata(obsSpaceConf, oops::mpi::world(), timeWindow, oops::mpi::myself());
 
   // This test only works for grouped data.
   if (obsdata.obs_group_vars().empty())

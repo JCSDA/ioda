@@ -62,7 +62,9 @@ void setupEngines(pybind11::module& m) {
     py::arg("compat_range") = ioda::Engines::HH::defaultVersionRange());
   mEnginesHH.def(
     "createMemoryFile", ioda::Engines::HH::createMemoryFile, "Creates a ioda file in memory.",
-    py::arg("name") = "", py::arg("mode"), py::arg("flush_on_close") = false,
+    py::arg("name") = "",
+    py::arg("mode") = ioda::Engines::BackendCreateModes::Truncate_If_Exists,
+    py::arg("flush_on_close") = false,
     py::arg("increment_len_bytes") = 1000000,
     py::arg("compat_range") = ioda::Engines::HH::defaultVersionRange());
 

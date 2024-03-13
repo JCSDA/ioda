@@ -44,22 +44,22 @@ interface
              import c_ptr,c_int64_t
              type(c_ptr) :: p
              integer(c_int64_t),value,intent(in) :: ndim,n_curr_dim,n_max_dim
-             integer(c_int64_t),dimension(:),intent(in) :: max_dims
-             integer(c_int64_t),dimension(:),intent(in) :: cur_dims
+             integer(c_int64_t),dimension(*),intent(in) :: max_dims
+             integer(c_int64_t),dimension(*),intent(in) :: cur_dims
         end subroutine
         
         subroutine ioda_dimensions_c_get_dims_max(p,d,n) bind(C,name="ioda_dimensions_c_get_dims_max")
             import c_ptr,c_int64_t
             type(c_ptr),value :: p
             integer(c_int64_t),intent(out) :: n
-            integer(c_int64_t),dimension(:),intent(out) :: d
+            integer(c_int64_t),dimension(*),intent(out) :: d
         end subroutine
         
         subroutine ioda_dimensions_c_get_dims_cur(p,d,n) bind(C,name="ioda_dimensions_c_get_dims_cur")
             import c_ptr,c_int64_t
             type(c_ptr),value :: p
             integer(c_int64_t),intent(out) :: n
-            integer(c_int64_t),dimension(:),intent(out) :: d
+            integer(c_int64_t),dimension(*),intent(out) :: d
         end subroutine
 
         function ioda_dimensions_c_get_dimensionality(p) result(n)  &

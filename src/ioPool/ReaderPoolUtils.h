@@ -195,14 +195,6 @@ void setDistributionMap(const ReaderPoolBase & ioPool,
                         const std::vector<std::pair<int, int>> & rankAssignment,
                         ReaderDistributionMap & distributionMap);
 
-/// @brief set up the reader working directory
-/// @param ioPool reader pool object
-/// @param workDirBase specification for the work directory ("work directory" config value)
-/// @param fileName representative file name for the source of the obs data (generator or file)
-/// @param workDir full path to the work directory
-void readerCreateWorkDirectory(const ReaderPoolBase & ioPool, const std::string & workDirBase,
-                               const std::string & fileName, std::string & workDir);
-
 /// @brief create the pre-processed input files
 /// @detail This routine will create a file for each member of the io pool containing
 /// a copy of the original input file data, but containing only the locations that go
@@ -217,13 +209,11 @@ void readerCreateWorkDirectory(const ReaderPoolBase & ioPool, const std::string 
 /// @param dtimeEpoch date time epoch string
 /// @param lonValues longitude values
 /// @param latValues latitude values
-/// @param tempFileList record list of temporary files for subsequent removal
 void readerCreateFileSet(const ReaderPoolBase & ioPool, const Group & srcGroup,
                          const std::vector<int64_t> & dtimeValues,
                          const std::string & dtimeEpoch,
                          const std::vector<float> & lonValues,
-                         const std::vector<float> & latValues,
-                         std::vector<std::string> & tempFileList);
+                         const std::vector<float> & latValues);
 
 /// @brief copy the groups and attributes from fileGroup to memGroup
 /// @param ioPool ioda ReaderPoolBase object

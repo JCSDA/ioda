@@ -67,9 +67,7 @@ class ObsVecTestFixture : private boost::noncopyable {
 
     for (std::size_t jj = 0; jj < conf.size(); ++jj) {
       eckit::LocalConfiguration obsconf(conf[jj], "obs space");
-      ioda::ObsTopLevelParameters obsparams;
-      obsparams.validateAndDeserialize(obsconf);
-      boost::shared_ptr<ObsSpace_> tmp(new ObsSpace_(obsparams, oops::mpi::world(),
+      boost::shared_ptr<ObsSpace_> tmp(new ObsSpace_(obsconf, oops::mpi::world(),
                                                      timeWindow, oops::mpi::myself()));
       ospaces_.push_back(tmp);
     }
@@ -337,11 +335,8 @@ void testDistributedMath() {
            obsconf.set("obsdataout.obsfile", fileName);
        }
 
-       ioda::ObsTopLevelParameters obsparams;
-       obsparams.validateAndDeserialize(obsconf);
-
        // Instantiate the obs space with the distribution we are testing
-       std::shared_ptr<ObsSpace_> obsdb(new ObsSpace(obsparams, oops::mpi::world(),
+       std::shared_ptr<ObsSpace_> obsdb(new ObsSpace(obsconf, oops::mpi::world(),
                                                      timeWindow, oops::mpi::myself()));
        std::shared_ptr<ObsVector_> obsvec(new ObsVector_(*obsdb, "ObsValue"));
        oops::Log::debug() << dist_names[dd] << ": " << *obsvec << std::endl;
@@ -421,11 +416,8 @@ void testRandom() {
         obsconf.set("obsdataout.obsfile", fileName);
       }
 
-      ioda::ObsTopLevelParameters obsparams;
-      obsparams.validateAndDeserialize(obsconf);
-
       // Instantiate the obs space with the distribution we are testing
-      ObsSpace_ obsdb(obsparams, oops::mpi::world(), timeWindow, oops::mpi::myself());
+      ObsSpace_ obsdb(obsconf, oops::mpi::world(), timeWindow, oops::mpi::myself());
       ObsVector_ ov(obsdb);
 
       ov.random();

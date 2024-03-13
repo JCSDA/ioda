@@ -79,7 +79,7 @@ void DataLayoutPolicy_ObsGroup_ODB::parseNameChanges(const ODBLayoutParameters &
 /// all of the fundamental variables do not falsely throw an exception.
 void DataLayoutPolicy_ObsGroup_ODB::addUnchangedVariableName(const std::string &str) {
   if (isComplementary(str) || isMapped(str) || isMapOutput(str)) {
-    throw Exception("Attempting to re-add existing variable to mapping", ioda_Here());
+    throw Exception("Attempting to re-add existing variable to mapping: " + str, ioda_Here());
   }
   Mapping[str] = {str, {false, ""}};
 }

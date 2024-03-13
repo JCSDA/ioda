@@ -18,7 +18,7 @@ observations:
         obsfile: "testoutput/amsua_n19_obs_2018041500_m_time_reader_pool.nc4"
     io pool:
       reader name: SinglePool
-      work directory: testwork
+      work directory: testwork/time_io_reader_pool
 
 - obs space:
     name: "Radiosonde"
@@ -33,7 +33,7 @@ observations:
         obsfile: "testoutput/sondes_obs_2018041500_m_time_reader_pool.nc4"
     io pool:
       reader name: SinglePool
-      work directory: testwork
+      work directory: testwork/time_io_reader_pool
 
 - obs space:
     name: "GNSSRO"
@@ -48,4 +48,4 @@ observations:
         obsfile: "testoutput/gnssro_obs_2021080606_s_time_reader_pool.nc4"
     io pool:
       reader name: SinglePool
-      work directory: testwork
+      work directory: testwork/time_io_reader_pool

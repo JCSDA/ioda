@@ -61,9 +61,7 @@ class ObsSpaceTestFixture : private boost::noncopyable {
 
     for (std::size_t jj = 0; jj < conf.size(); ++jj) {
       eckit::LocalConfiguration obsconf(conf[jj], "obs space");
-      ioda::ObsTopLevelParameters obsparams;
-      obsparams.validateAndDeserialize(obsconf);
-      boost::shared_ptr<ioda::ObsSpace> tmp(new ioda::ObsSpace(obsparams, oops::mpi::world(),
+      boost::shared_ptr<ioda::ObsSpace> tmp(new ioda::ObsSpace(obsconf, oops::mpi::world(),
                                                                timeWindow, oops::mpi::myself()));
       ospaces_.push_back(tmp);
     }

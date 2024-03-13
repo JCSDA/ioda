@@ -34,6 +34,9 @@ class WriteOdbFileParameters : public WriterParametersBase {
     /// \brief Abort if a value is missing in the ObsSpace that is in the mapping map
     oops::Parameter<bool> missingObsSpaceVariableAbort{
         "abort when variable missing", false, this};
+
+    /// \brief Type of ODB
+    oops::Parameter<std::string> odbType{"odb type", "", this};
 };
 
 // Classes

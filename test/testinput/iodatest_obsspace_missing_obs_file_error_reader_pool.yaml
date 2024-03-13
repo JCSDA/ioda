@@ -17,4 +17,4 @@ observations:
         missing file action: error
     io pool:
       reader name: SinglePool
-      work directory: testwork
+      work directory: testwork/obsspace_missing_obs_file_error_reader_pool

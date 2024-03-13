@@ -620,6 +620,14 @@ void setupColumnInfo(const Group &storageGroup, const std::map<std::string, std:
       }
     } // end of if found
   } // end of map loop
+  // Add the processed data column
+  ColumnInfo col;
+  col.column_name = "processed_data";
+  col.column_type = TypeClass::Integer;
+  col.column_size = 4;
+  col.string_length = 0;
+  num_columns++;
+  column_infos.push_back(col);
 }
 
 void setupBodyColumnInfo(const Group &storageGroup, const std::map<std::string, std::string> &reverseColumnMap,
@@ -776,17 +784,40 @@ void setupVarnos(const Group &storageGroup, const std::vector<int> &listOfVarNos
 }
 
 void fillFloatArray(const Group & storageGroup, const std::string varname,
-                    const int numrows, std::vector<double> & outdata) {
+                    const int numrows, std::vector<double> & outdata, std::string odbType, std::vector<int> extendeds) {
+  const bool derived_varname = varname.rfind("Derived", 0) == 0;
+  const bool metadata_varname = varname.rfind("MetaData", 0) == 0;
+  const bool derived_odb = odbType == "derived";
   if (storageGroup.vars.exists(varname)) {
     std::vector<float> buffer;
     storageGroup.vars[varname].read<float>(buffer);
     const ioda::Variable var = storageGroup.vars[varname];
     const float fillValue  = ioda::detail::getFillValue<float>(var.getFillValue());
-    for (int j = 0; j < numrows; j++) {
-      if (fillValue == buffer[j]) {
-        outdata[j] = odb_missing_float;
+    if (derived_odb) {
+      if (metadata_varname) {
+        for (int j = 0; j < numrows; j++) {
+          if (fillValue == buffer[j]) {
+            outdata[j] = odb_missing_float;
+          } else {
+            outdata[j] = buffer[j];
+          }
+        }
       } else {
-        outdata[j] = buffer[j];
+        for (int j = 0; j < numrows; j++) {
+          if (derived_varname && extendeds[j] == 0 || (!derived_varname && extendeds[j] == 1) || fillValue == buffer[j]) {
+            outdata[j] = odb_missing_float;
+          } else {
+            outdata[j] = buffer[j];
+          }
+        }
+      }
+    } else {
+      for (int j = 0; j < numrows; j++) {
+        if (fillValue == buffer[j]) {
+          outdata[j] = odb_missing_float;
+        } else {
+          outdata[j] = buffer[j];
+        }
       }
     }
   } else {
@@ -841,7 +872,7 @@ void fillIntArray(const Group &storageGroup, const std::string varname,
 }
 
 void readColumn(const Group &storageGroup, const ColumnInfo column, std::vector<std::vector<double>> &data_store,
-                const int number_of_locations, const int number_of_channels) {
+                const int number_of_locations, const int number_of_channels, std::string odb_type, std::vector<int> extendeds) {
   if (column.column_name == "date" || column.column_name == "receipt_date") {
     std::string obsspacename = "MetaData/dateTime";
     if (column.column_name == "receipt_date") obsspacename = "MetaData/receiptdateTime";
@@ -917,11 +948,24 @@ void readColumn(const Group &storageGroup, const ColumnInfo column, std::vector<
       for (int i = 0; i < number_of_channels; i++)
         data_store_chan[j * number_of_channels + i] = static_cast<double>(buf[i]);
     data_store.push_back(data_store_chan);
+  } else if (column.column_name == "processed_data") {
+    if (number_of_channels > 0) {
+      std::vector<double> data_store_chan(number_of_locations * number_of_channels);
+      for (int j = 0; j < number_of_locations; j++)
+        for (int i = 0; i < number_of_channels; i++)
+          data_store_chan[j * number_of_channels + i] = extendeds[j * number_of_channels + i];
+      pushBackVector(data_store, data_store_chan, number_of_locations, number_of_channels);
+    } else {
+      std::vector<double> data_store_chan(number_of_locations);
+      for (int j = 0; j < number_of_locations; j++)
+          data_store_chan[j] = extendeds[j];
+      pushBackVector(data_store, data_store_chan, number_of_locations, number_of_channels);
+    }
   } else if (column.column_type == TypeClass::Float) {
     const int arraySize = storageGroup.vars[column.column_name].getDimensions().numElements;
     std::vector<double> data_store_float(arraySize);
     fillFloatArray(storageGroup, column.column_name,
-                   arraySize, data_store_float);
+                   arraySize, data_store_float, odb_type, extendeds);
     pushBackVector(data_store, data_store_float, number_of_locations, number_of_channels);
   } else if (column.column_type == TypeClass::Integer) {
     const int arraySize = storageGroup.vars[column.column_name].getDimensions().numElements;
@@ -964,7 +1008,7 @@ void readColumn(const Group &storageGroup, const ColumnInfo column, std::vector<
 void readBodyColumns(const Group &storageGroup, const ColumnInfo &column, const std::string v,
                      const int number_of_rows,
                      const std::map<std::string, std::string> &reverseMap,
-                     std::vector<std::vector<double>> &data_store) {
+                     std::vector<std::vector<double>> &data_store, std::string odb_type, std::vector<int> extendeds) {
   // Work out the correct ObsSpace variable to read
   std::string obsspacename;
   for (auto const& x : reverseMap) {
@@ -994,7 +1038,11 @@ void readBodyColumns(const Group &storageGroup, const ColumnInfo &column, const 
     }
   } else if (column.column_type == TypeClass::Float) {
     fillFloatArray(storageGroup, obsspacename,
-                   number_of_rows, data_store_tmp);
+                   number_of_rows, data_store_tmp, odb_type, extendeds);
+  } else if (column.column_type == TypeClass::Integer) {
+    fillIntArray(storageGroup, obsspacename,
+                 number_of_rows, column.column_size,
+                 data_store_tmp);
   } else if (column.column_type == TypeClass::String) {
     std::vector<std::string> buf;
     storageGroup.vars[obsspacename].read<std::string>(buf);
@@ -1065,12 +1113,18 @@ Group createFile(const ODC_Parameters& odcparams, Group storageGroup) {
 
 #if odc_FOUND
   const int number_of_locations = storageGroup.vars["Location"].getDimensions().dimsCur[0];
+  std::vector<int> extendeds;
   int number_of_rows = number_of_locations;
   int number_of_channels = 0;
   if (storageGroup.vars.exists("Channel")) {
      std::vector<int> channels = getChannelNumbers(storageGroup);
      number_of_rows *= channels.size();
      number_of_channels = channels.size();
+  }
+  if (storageGroup.vars.exists("MetaData/extendedObsSpace")) {
+    storageGroup.vars["MetaData/extendedObsSpace"].read<int>(extendeds);
+  } else {
+    extendeds.resize(number_of_rows, 0);
   }
 
   // Read in the query file
@@ -1101,7 +1155,7 @@ Group createFile(const ODC_Parameters& odcparams, Group storageGroup) {
   // access to this store is [col][rows]
   std::vector<std::vector<double>> data_store;
   for (const auto& v: column_infos) {
-    readColumn(storageGroup, v, data_store, number_of_locations, number_of_channels);
+    readColumn(storageGroup, v, data_store, number_of_locations, number_of_channels, odcparams.odbType, extendeds);
   }
 
   // Setup the varno dependent columns and vectors
@@ -1131,7 +1185,7 @@ Group createFile(const ODC_Parameters& odcparams, Group storageGroup) {
     std::vector<std::vector<double>> data_tmp;
     for (const auto &varno: varno_names) {
       readBodyColumns(storageGroup, col, varno, number_of_rows,
-                      columnMappings.varnoDependentColumnsNames, data_tmp);
+                      columnMappings.varnoDependentColumnsNames, data_tmp, odcparams.odbType, extendeds);
     }
     data_store_body.push_back(data_tmp);
   }
