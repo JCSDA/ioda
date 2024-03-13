@@ -56,6 +56,7 @@ class IODA_DL Exception : virtual public std::exception {
   mutable std::string emessage_;
   void invalidate();
   void add_source_location(const ::ioda::source_location& loc);
+  void add_call_stack();
 
 public:
   Exception(const ::ioda::source_location& loc = source_location::current(),
