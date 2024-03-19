@@ -13,8 +13,8 @@ observations:
         script file: "testinput/iodatest_time_io_script.py"
         args:
           varname: "testVar"
-          start: 0
-          stop: 10
-          var4: 3.14159
-          var5: false
+          start: "0"
+          stop: "10"
+          var4: "3.14159"
+          var5: "false"
 

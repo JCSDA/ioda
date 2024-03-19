@@ -106,7 +106,7 @@ class ObsSpaceParameters {
                            time_window_(timeWindow), comm_(comm),
                            time_comm_(timeComm),
                            new_dims_(), max_var_size_(0) {
-        top_level_.deserialize(topConfig);
+        top_level_.validateAndDeserialize(topConfig);
         // Record the MPI rank number. The rank number is being saved during the
         // construction of the Parameters for the ObsSpace saveToFile routine.
         // (saveToFile will uniquify the output file name by tagging on the MPI rank
