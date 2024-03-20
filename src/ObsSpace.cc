@@ -38,7 +38,6 @@
 #include "ioda/distribution/DistributionUtils.h"
 #include "ioda/distribution/PairOfDistributions.h"
 #include "ioda/Engines/EngineUtils.h"
-#include "ioda/Engines/HH.h"
 #include "ioda/Exception.h"
 #include "ioda/ioPool/IoPoolParameters.h"
 #include "ioda/ioPool/ReaderPoolBase.h"
@@ -701,7 +700,8 @@ void ObsSpace::load() {
         obs_params_.top_level_.obsDataIn.value().engine.value().engineParameters,
         obs_params_.timeWindow(),
         obs_params_.top_level_.simVars.value().variables(), dist_,
-        obs_params_.top_level_.obsDataIn.value().obsGrouping.value().obsGroupVars);
+        obs_params_.top_level_.obsDataIn.value().obsGrouping.value().obsGroupVars,
+        obs_params_.top_level_.obsDataIn.value().prepType);
 
     std::unique_ptr<IoPool::ReaderPoolBase> readPool =
             IoPool::ReaderPoolFactory::create(obs_params_.top_level_.ioPool, createParams);

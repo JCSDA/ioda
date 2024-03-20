@@ -25,7 +25,6 @@
 #include "ioda/Copying.h"
 #include "ioda/distribution/Distribution.h"
 #include "ioda/Engines/EngineUtils.h"
-#include "ioda/Engines/HH.h"
 #include "ioda/Exception.h"
 #include "ioda/ioPool/ReaderPoolFactory.h"
 #include "ioda/ioPool/ReaderPoolUtils.h"
@@ -57,26 +56,10 @@ ReaderSinglePoolAllTasks::ReaderSinglePoolAllTasks(
 void ReaderSinglePoolAllTasks::initialize() {
     oops::Log::trace() << "ReaderSinglePoolAllTasks::initialize, start" << std::endl;
     // TODO(srh) Until the actual reader pool is implemented we need to copy the
-    // commAll_ communicator to the commPool_ communicator. The following
-    // calls will fall into place for the io pool so use them now to accomplish the
-    // copy.
-
-    // This call will return a data structure that shows how to assign the ranks
-    // to the io pools, plus which non io pool ranks get associated with the io pool
-    // ranks. Only rank 0 needs to have this data since it will be used to form and
-    // send the assignments to the other ranks.
-    std::map<int, std::vector<int>> rankGrouping;
-    groupRanks(rankGrouping);
-
-    // This call will fill in the vector data member rank_assignment_, which holds all of
-    // the ranks each member of the io pool needs to communicate with to collect the
-    // variable data. Use the patch nlocs (ie, the number of locations "owned" by this
-    // rank) to represent the number of locations after any duplicated locations are
-    // removed.
-    assignRanksToIoPool(nlocs(), rankGrouping);
-
-    // Create the io pool communicator group using the split communicator command.
-    createIoPool(rankGrouping);
+    // commAll_ communicator to the commPool_ communicator. Two of the IoPoolBase
+    // virtual functions are being overridden here (setTargetPoolSize and groupRanks)
+    // to accomplish this.
+    buildIoPool(this->nlocs());
     oops::Log::trace() << "ReaderSinglePoolAllTasks::initialize, end" << std::endl;
 }
 
@@ -145,14 +128,8 @@ void ReaderSinglePoolAllTasks::load(Group & destGroup) {
     // Create the memory backend for the destGroup
     // TODO(srh) There needs to be a memory Engine structure created with ObsStore and
     // Hdf5Mem subclasses. Then call the corresponding factory function from here.
-    Engines::BackendNames backendName = Engines::BackendNames::ObsStore;  // Hdf5Mem; ObsStore;
+    Engines::BackendNames backendName = Engines::BackendNames::ObsStore;
     Engines::BackendCreationParameters backendParams;
-    // These parameters only matter if Hdf5Mem is the engine selected. ObsStore ignores.
-    backendParams.action = Engines::BackendFileActions::Create;
-    backendParams.createMode = Engines::BackendCreateModes::Truncate_If_Exists;
-    backendParams.fileName = ioda::Engines::HH::genUniqueName();
-    backendParams.allocBytes = 1024*1024*50;
-    backendParams.flush = false;
     Group backend = constructBackend(backendName, backendParams);
 
     // Create the ObsGroup and attach the backend.
@@ -189,6 +166,14 @@ void ReaderSinglePoolAllTasks::print(std::ostream & os) const {
     poolSize = this->commPool()->size();
   }
   os << readerSrc_ << " (io pool size: " << poolSize << ")";
+}
+
+//--------------------------------------------------------------------------------------
+void ReaderSinglePoolAllTasks::setTargetPoolSize() {
+    // TODO(srh) For now this reader is placing all tasks into the pool. This means
+    // that the desired number of pool member tasks is simply the size of the
+    // commAll communicator group.
+    targetPoolSize_ = commAll_.size();
 }
 
 //--------------------------------------------------------------------------------------

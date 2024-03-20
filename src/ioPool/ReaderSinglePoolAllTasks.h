@@ -79,8 +79,9 @@ class ReaderSinglePoolAllTasks : public ReaderPoolBase {
   void print(std::ostream & os) const override;
 
  private:
-  /// \brief reader engine source for printing (eg, input file name)
-  std::string readerSrc_;
+  /// \detail This function will determine the target pool size
+  /// \param rankGrouping structure that maps ranks outside the pool to ranks in the pool
+  void setTargetPoolSize() override;
 
   /// \detail This function will create a vector of vector of ints structure which
   /// shows how to form the io pool and how to assign the non io pool ranks to each

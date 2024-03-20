@@ -60,7 +60,8 @@ class ReaderPoolCreationParameters : public IoPoolCreationParameters {
             const util::TimeWindow timeWindow,
             const std::vector<std::string> & obsVarNames,
             const std::shared_ptr<Distribution> & distribution,
-            const std::vector<std::string> & obsGroupVarList);
+            const std::vector<std::string> & obsGroupVarList,
+            const std::string & inputFilePrepType);
     virtual ~ReaderPoolCreationParameters() {}
 
     /// \brief parameters to be sent to the reader engine factory
@@ -77,6 +78,13 @@ class ReaderPoolCreationParameters : public IoPoolCreationParameters {
 
     /// \brief list of variables used for the obs grouping function
     const std::vector<std::string> & obsGroupVarList;
+
+    /// \brief input file preparation type
+    /// \detail Allowed values are "internal" and "external". "internal" signifies that
+    /// the input file preparation is done during the reader initialize step, and "external"
+    /// signifies that the standalone application has already been run to prepare the input
+    /// files and they are ready to be used by the reader.
+    const std::string & inputFilePrepType;
 };
 
 //------------------------------------------------------------------------------------
@@ -108,11 +116,17 @@ class ReaderPoolBase : public IoPoolBase {
   /// \brief list of variables used for the obs grouping function
   const std::vector<std::string> & obsGroupVarList() const { return obsGroupVarList_; }
 
+  /// \brief input file prep type ("internal" or "external")
+  const std::string & inputFilePrepType() const { return inputFilePrepType_; }
+
   /// \brief file name passed in from YAML configuration
   const std::string & fileName() const { return fileName_; }
 
   /// \brief name of pre-processed input file (which the load function uses)
   const std::string & newInputFileName() const { return newInputFileName_; }
+
+  /// \brief name of prep info file (which the load function uses)
+  const std::string & prepInfoFileName() const { return prepInfoFileName_; }
 
   /// \brief work directory
   const std::string & workDir() const { return configParams_.workDir; }
@@ -144,6 +158,9 @@ class ReaderPoolBase : public IoPoolBase {
   /// \brief epoch string for date time variable
   std::string dtimeEpoch() const { return dtimeEpoch_; }
 
+  /// \brief string value representing the obs source (typically a file)
+  std::string readerSrc() const { return readerSrc_; }
+
   /// \brief save obs data to output file
   /// \param srcGroup source ioda group to be saved into the output file
   virtual void load(Group & destGroup) = 0;
@@ -167,11 +184,17 @@ class ReaderPoolBase : public IoPoolBase {
   /// \brief list of variables used for the obs grouping function
   const std::vector<std::string> & obsGroupVarList_;
 
-  /// \brief completed work directory
+  /// \brief list of variables used for the obs grouping function
+  const std::string & inputFilePrepType_;
+
+  /// \brief original input file name
   std::string fileName_;
 
   /// \brief file name for pre-processed input file
   std::string newInputFileName_;
+
+  /// \brief file name for pre-processed prep info file
+  std::string prepInfoFileName_;
 
   /// \brief missing value for string variables
   std::shared_ptr<std::string> stringMissingValue_;
@@ -199,6 +222,9 @@ class ReaderPoolBase : public IoPoolBase {
 
   /// \brief date time epoch string
   std::string dtimeEpoch_;
+
+  /// \brief reader engine source for printing (eg, input file name)
+  std::string readerSrc_;
 
   /// \brief mapping that shows which source location indices go to which ranks
   /// \detail This structure is a map of size_t vectors where the index of

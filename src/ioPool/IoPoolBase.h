@@ -205,6 +205,17 @@ class IODA_DL IoPoolBase : public util::Printable {
   /// set to nullptr, and both rank_pool_ and size_pool_ are set to -1.
   /// \param rankGrouping structure that maps ranks outside the pool to ranks in the pool
   virtual void createIoPool(IoPoolGroupMap & rankGrouping);
+
+  /// \brief build the io pool
+  /// \detail This function establishes the io pool assignments, ie which MPI ranks go
+  /// into the pool and which MPI ranks get associated with the io pool ranks.
+  /// The number of locations is passed into this function so that both the writer
+  /// and reader can utilize it. In the case of the writer the number of patch nlocs
+  /// needs to be passed in to avoid writing duplicate locations for overlapping
+  /// distributions (eg Halo). The reader simply passes in the nlocs from the pool object
+  /// since the number of patch nlocs gets determined downstream from calling this function.
+  /// \param numLocs number of locations
+  void buildIoPool(const std::size_t numLocs);
 };
 
 }  // namespace IoPool

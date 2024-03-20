@@ -79,23 +79,8 @@ class ReaderSinglePool : public ReaderPoolBase {
   void print(std::ostream & os) const override;
 
  private:
-  /// \brief reader engine source for printing (eg, input file name)
-  std::string readerSrc_;
-
   /// \brief input file is empty when true
   bool emptyFile_;
-
-  /// \brief input file date time format
-  DateTimeFormat dtimeFormat_;
-
-  /// \brief date time values converted to epoch representation
-  std::vector<int64_t> dtimeValues_;
-
-  /// \brief longitude values
-  std::vector<float> lonValues_;
-
-  /// \brief latitude values
-  std::vector<float> latValues_;
 
   /// \brief string holding YAML description of the file group structure
   /// \details The file group structure is everything in the file except for the variable
@@ -106,9 +91,29 @@ class ReaderSinglePool : public ReaderPoolBase {
 
   /// \brief generate and record the new input file name associated with this rank
   /// \detail The new input file name is set to an empty string for non pool members.
-  /// For poll members the new input file name is based on the work directory path
+  /// For pool members the new input file name is based on the work directory path
   /// and original file name. For now, an hdf5 file will always be used.
   void setNewInputFileName();
+
+  /// \brief generate and record the file prep info file name
+  void setPrepInfoFileName();
+
+  /// \brief restore information related to the prepared files
+  /// \param rankGrouping map holding io pool grouping information for the MPI ranks
+  /// \details the keys of the grouping map are the ranks in the io pool, and the non
+  /// pool member ranks associated with each key are in the values (vector of int,
+  /// ie rank numbers).
+  /// \param expectedIoPoolRank io pool rank from the prep info file
+  void restoreFilePrepInfo(std::map<int, std::vector<int>> & rankGrouping,
+                           int & expectedIoPoolRank);
+
+  /// \brief adjust the distribution map according to the new input file
+  /// \param fileGroup ioda Group object associated with the file backend
+  void adjustDistributionMap(const ioda::Group & fileGroup);
+
+  /// \brief restore the locIndices_ and recNums_ data members
+  /// \param fileGroup ioda Group object associated with the file backend
+  void restoreIndicesRecNums(const ioda::Group & fileGroup);
 };
 
 }  // namespace IoPool

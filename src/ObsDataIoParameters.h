@@ -77,6 +77,9 @@ class ObsDataInParameters : public oops::Parameters {
     /// options controlling obs record grouping
     oops::Parameter<ObsGroupingParameters> obsGrouping{"obsgrouping", { }, this};
 
+    /// type of file preparation, internal (by the reader) or external (before this run)
+    oops::Parameter<std::string> prepType{"file preparation type", "internal", this};
+
     /// option controlling the creation of the backend
     oops::RequiredParameter<Engines::ReaderParametersWrapper> engine{"engine", this};
 };
@@ -85,6 +88,9 @@ class ObsDataOutParameters : public oops::Parameters {
     OOPS_CONCRETE_PARAMETERS(ObsDataOutParameters, oops::Parameters)
 
  public:
+    /// size of MPI communicator that will be used in the DA run
+    oops::Parameter<int> prepMpiCommSize{"file preparation communicator size", 0, this};
+
     /// option controlling the creation of the backend
     oops::RequiredParameter<Engines::WriterParametersWrapper> engine{"engine", this};
 };

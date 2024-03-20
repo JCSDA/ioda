@@ -45,6 +45,7 @@ reader pool factory tests:
               end: "1971-01-01T00:00:00Z"
             obs var names: [ "var1", "var2", "var3" ]
             obs group var list: [ ]
+            file preparation type: internal
             work directory: "myWorkDir"
 
     # Reader Single Pool All Tasks
@@ -62,6 +63,7 @@ reader pool factory tests:
               end: "2021-01-01T00:00:00Z"
             obs var names: [ "var5", "var6", "var7" ]
             obs group var list: [ "stationIdentification" ]
+            file preparation type: internal
             work directory: "myWorkDirSPAT"
 
     # Reader Single Pool
@@ -79,4 +81,5 @@ reader pool factory tests:
               end: "1971-01-01T00:00:00Z"
             obs var names: [ "var9", "var10", "var11" ]
             obs group var list: [ "stationIdentification", "stationLaunchTime" ]
+            file preparation type: external
             work directory: "myWorkDirSP"

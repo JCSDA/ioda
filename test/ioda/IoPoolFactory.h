@@ -122,11 +122,13 @@ CASE("ioda/ReaderPoolFactoryMakers") {
         std::shared_ptr<Distribution> distribution;
         std::vector<std::string> expectedObsGroupVarList =
             testDataConfig.getStringVector("obs group var list");
+        std::string expectedInputFilePrepType =
+            testDataConfig.getString("file preparation type");
         IoPool::ReaderPoolCreationParameters createParams(
             oops::mpi::world(), oops::mpi::myself(),
             testEngineParams.readerEngine.value().engineParameters,
             expectedTimeWindow, expectedObsVarNames,
-            distribution, expectedObsGroupVarList);
+            distribution, expectedObsGroupVarList, expectedInputFilePrepType);
         std::unique_ptr<IoPool::ReaderPoolBase> readerPool =
             IoPool::ReaderPoolFactory::create(configParams, createParams);
 
@@ -147,6 +149,9 @@ CASE("ioda/ReaderPoolFactoryMakers") {
 
         std::vector<std::string> obsGroupVarList = readerPool->obsGroupVarList();
         EXPECT(obsGroupVarList == expectedObsGroupVarList);
+
+        std::string inputFilePrepType = readerPool->inputFilePrepType();
+        EXPECT(inputFilePrepType == expectedInputFilePrepType);
 
         std::string expectedWorkDir = testDataConfig.getString("work directory");
         EXPECT(readerPool->workDir() == expectedWorkDir);

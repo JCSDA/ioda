@@ -1,0 +1,57 @@
+---
+time window:
+  begin: "2018-01-01T00:00:00Z"
+  end:   "2022-01-01T00:00:00Z"
+
+observations:
+- obs space:
+    name: "AMSUA NOAA19"
+    simulated variables: ['brightnessTemperature']
+    channels: 1-15
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: "Data/testinput_tier_1/testwork/amsua_n19_obs_2018041500_m.nc4"
+      file preparation type: "external"
+    obsdataout:
+      engine:
+        type: H5File
+        obsfile: "testoutput/amsua_n19_obs_2018041500_m_time_reader_pool_ext_file_prep.nc4"
+    io pool:
+      reader name: SinglePool
+      max pool size: 4
+      work directory: "Data/testinput_tier_1/testwork"
+
+- obs space:
+    name: "Radiosonde"
+    simulated variables: ['airTemperature']
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: "Data/testinput_tier_1/testwork/sondes_obs_2018041500_m.nc4"
+      file preparation type: "external"
+    obsdataout:
+      engine:
+        type: H5File
+        obsfile: "testoutput/sondes_obs_2018041500_m_time_reader_pool_ext_file_prep.nc4"
+    io pool:
+      reader name: SinglePool
+      max pool size: 4
+      work directory: "Data/testinput_tier_1/testwork"
+
+- obs space:
+    name: "GNSSRO"
+    simulated variables: [ 'atmosphericRefractivity', 'bendingAngle' ]
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: "Data/testinput_tier_1/testwork/gnssro_obs_2021080606_s.nc4"
+      file preparation type: "external"
+    obsdataout:
+      engine:
+        type: H5File
+        obsfile: "testoutput/gnssro_obs_2021080606_s_time_reader_pool_ext_file_prep.nc4"
+    io pool:
+      reader name: SinglePool
+      max pool size: 4
+      work directory: "Data/testinput_tier_1/testwork"

@@ -22,7 +22,6 @@
 #include "ioda/Copying.h"
 #include "ioda/distribution/Distribution.h"
 #include "ioda/Engines/EngineUtils.h"
-#include "ioda/Engines/HH.h"
 #include "ioda/Exception.h"
 #include "ioda/ioPool/ReaderPoolUtils.h"
 
@@ -48,11 +47,12 @@ ReaderPoolCreationParameters::ReaderPoolCreationParameters(
             const util::TimeWindow timeWindow,
             const std::vector<std::string> & obsVarNames,
             const std::shared_ptr<Distribution> & distribution,
-            const std::vector<std::string> & obsGroupVarList)
+            const std::vector<std::string> & obsGroupVarList,
+            const std::string & inputFilePrepType)
                 : IoPoolCreationParameters(commAll, commTime),
                   readerParams(readerParams), timeWindow(timeWindow),
                   obsVarNames(obsVarNames), distribution(distribution),
-                  obsGroupVarList(obsGroupVarList) {
+                  obsGroupVarList(obsGroupVarList), inputFilePrepType(inputFilePrepType) {
 }
 
 //------------------------------------------------------------------------------------
@@ -68,6 +68,7 @@ ReaderPoolBase::ReaderPoolBase(const IoPoolParameters & configParams,
                       obsVarNames_(createParams.obsVarNames),
                       distribution_(createParams.distribution),
                       obsGroupVarList_(createParams.obsGroupVarList),
+                      inputFilePrepType_(createParams.inputFilePrepType),
                       sourceNlocs_(0), nrecs_(0), sourceNlocsInsideTimeWindow_(0),
                       sourceNlocsOutsideTimeWindow_(0), sourceNlocsRejectQC_(0) {
 }

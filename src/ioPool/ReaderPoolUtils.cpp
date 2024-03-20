@@ -117,6 +117,43 @@ ioda::Dimensions_t getDataTypeSize<std::string>();
 /// @brief calculate the maximum data type size from the set of all supported data types
 ioda::Dimensions_t getMaxDataTypeSize();
 
+/// @brief add supplemental attributes that come from the io pool object
+/// @param ioPool io pool object holding information to be saved in attributes
+/// @param destGroup output ioda Group object that will receive the new attributes
+void readerAddSupplementalAttributes(const ReaderPoolBase & ioPool, ioda::Group & destGroup);
+
+/// @brief remove the special file preparation group from the lists
+/// descibing the group structure
+/// @param varList is the list of variables (not dimension scales).
+/// @param dimVarList is the list of dimension scales.
+/// @param dimsAttachedToVars is the mapping of the scales attached to each variable.
+void readerRemoveFilePrepGroup(VarUtils::Vec_Named_Variable & varList,
+                               VarUtils::Vec_Named_Variable & dimVarList,
+                               VarUtils::VarDimMap & dimsAttachedToVars);
+
+/// @brief build file that holds file preparation information
+/// @details There needs to be a means for the standalone application to be run on a
+/// single process to prepare files for the downstream MPI configuration (which could
+/// be many MPI tasks, and multiple tasks be assigned to the io pool). In the standalone
+/// application case (ie, external file prep mode) there also exists information about
+/// the original source file that will not be visible in the prepared file set, so the
+/// prep info file also holds that information. An example is how many locations were
+/// in the original source file and of these location how many got filtered out due
+/// to the time window filter and QC checks (performed by the standalone app).
+/// @param ioPool ReaderPoolBase object
+/// @param allNlocs number of locations for each rank the commAll communicator group
+/// @param ioPoolRanks rank number in the commAll communicator group
+/// @details -1 indicates that a rank is not in the io pool
+/// @param assocRanks associated rank number
+/// @details Each io pool member is associated with itself, and the non io pool members
+/// is associated with a pool member rank. This allos the reconstruction of the rank
+/// assignments which then describe how the data in the prepared input files are mapped
+/// across MPI tasks in the commAll communicator group.
+void readerBuildPrepInfoFile(const ReaderPoolBase & ioPool,
+                             const std::vector<int> & allNlocs,
+                             const std::vector<int> & ioPoolRanks,
+                             const std::vector<int> & assocRanks);
+
 //--------------------------------------------------------------------------------
 // Definitions of private functions
 //--------------------------------------------------------------------------------
@@ -723,10 +760,11 @@ void readerGatherAssociatedRanks(const ReaderPoolBase & ioPool,
 }
 
 //--------------------------------------------------------------------------------
-void readerGatherLocationIndices(const ReaderPoolBase & ioPool,
-                                 std::vector<std::size_t> & locIndicesAllRanks,
-                                 std::vector<int> & locIndicesStarts,
-                                 std::vector<int> & locIndicesCounts) {
+void readerGatherLocationInfo(const ReaderPoolBase & ioPool,
+                              std::vector<std::size_t> & locIndicesAllRanks,
+                              std::vector<int> & locIndicesStarts,
+                              std::vector<int> & locIndicesCounts,
+                              std::vector<std::size_t> & recNumsAllRanks) {
     // Gather the list of indices. This requires a variable length gather where the
     // lists of starts and counts are given to the MPI gatherv command.
     //
@@ -751,6 +789,13 @@ void readerGatherLocationIndices(const ReaderPoolBase & ioPool,
     ioPool.commAll().allGatherv(ioPool.index().begin(), ioPool.index().end(),
                                 locIndicesAllRanks.begin(), locIndicesCounts.data(),
                                 locIndicesStarts.data());
+
+    // The same start, count pattern for the location indices als applies
+    // for the record numbers.
+    recNumsAllRanks.resize(recvSize);
+    ioPool.commAll().allGatherv(ioPool.recnums().begin(), ioPool.recnums().end(),
+                                recNumsAllRanks.begin(), locIndicesCounts.data(),
+                                locIndicesStarts.data());
 }
 
 //--------------------------------------------------------------------------------
@@ -759,7 +804,9 @@ void readerSetFileSelection(const int allRank,
                             const std::vector<std::size_t> & locIndicesAllRanks,
                             const std::vector<int> & locIndicesStarts,
                             const std::vector<int> & locIndicesCounts,
+                            const std::vector<std::size_t> & recNumsAllRanks,
                             std::vector<std::size_t> & indices,
+                            std::vector<std::size_t> & recnums,
                             std::vector<int> & destAllRanks,
                             std::vector<int> & starts,
                             std::vector<int> & counts) {
@@ -776,6 +823,8 @@ void readerSetFileSelection(const int allRank,
             const int inputCount = locIndicesCounts[i];
             indices.insert(indices.end(), locIndicesAllRanks.begin() + inputStart,
                            locIndicesAllRanks.begin() + inputStart + inputCount);
+            recnums.insert(recnums.end(), recNumsAllRanks.begin() + inputStart,
+                           recNumsAllRanks.begin() + inputStart + inputCount);
             std::vector<int> dest(inputCount, i);
             destAllRanks.insert(destAllRanks.end(), dest.begin(), dest.end());
             starts.push_back(start);
@@ -789,6 +838,7 @@ void readerSetFileSelection(const int allRank,
 void readerWriteInputFileMpiMapping(const ReaderPoolBase & ioPool,
                                     const Group & srcGroup,
                                     const std::vector<std::size_t> & indices,
+                                    const std::vector<std::size_t> & recnums,
                                     const std::vector<int> & destAllRanks,
                                     Group & destGroup) {
     ASSERT(indices.size() == destAllRanks.size());
@@ -803,12 +853,16 @@ void readerWriteInputFileMpiMapping(const ReaderPoolBase & ioPool,
     destLocVar.setIsDimensionScale("Location");
     Variable srcLocVar = srcGroup.vars.open("Location");
 
-    // Create and the destAllRanks variable in the top level group.
+    // Create the recordNumbers and destAllRanks variable in the top level group.
     VariableCreationParameters intParams = VariableCreationParameters::defaults<int>();
     intParams.setFillValue<int>(util::missingValue<int>());
     intParams.noCompress();
+    std::string varName = filePrepGroupName() + std::string("/destinationRank");
     Variable destRankVar = destGroup.vars.createWithScales<int>(
-                           "destinationRank", { destLocVar }, intParams);
+                           varName, { destLocVar }, intParams);
+    varName = filePrepGroupName() + std::string("/recordNumbers");
+    Variable recNumVar = destGroup.vars.createWithScales<int64_t>(
+                         varName, { destLocVar }, int64Params);
 
     // Only write out the values if nlocs > zero
     if (nlocs > 0) {
@@ -820,6 +874,10 @@ void readerWriteInputFileMpiMapping(const ReaderPoolBase & ioPool,
 
         // destinationRank
         destRankVar.write<int>(destAllRanks);
+
+        // recordNumbers
+        destInt64Values.assign(recnums.begin(), recnums.end());
+        recNumVar.write<int64_t>(destInt64Values);
     }
 }
 
@@ -1074,6 +1132,7 @@ void readerBuildAssocInputFile(const ReaderPoolBase & ioPool, const Group & srcG
                                const int allRank, const int poolRank,
                                const std::string & inputFileName,
                                const std::vector<std::size_t> & indices,
+                               const std::vector<std::size_t> & recnums,
                                const std::vector<int> & destAllRanks,
                                const std::vector<int> & starts,
                                const std::vector<int> & counts,
@@ -1100,10 +1159,12 @@ void readerBuildAssocInputFile(const ReaderPoolBase & ioPool, const Group & srcG
     // Copy the source group hierarchical structure (all subgroups and group attributes)
     copyGroupStructure(srcGroup, destGroup);
 
-    // Write out the mpi mapping data held in indices and destAllRanks. Place
+    // Write out the mpi mapping data held in indices, recnums and destAllRanks. Place
     // these variables in a special group in the output file.
     // Then write out the prepared variables (dateTime, latitude, longitude)
-    readerWriteInputFileMpiMapping(ioPool, srcGroup, indices, destAllRanks, destGroup);
+    const ioda::Group filePrepGroup = destGroup.create(filePrepGroupName());
+    readerWriteInputFileMpiMapping(ioPool, srcGroup, indices, recnums,
+                                   destAllRanks, destGroup);
     readerWriteInputFilePreparedVars(ioPool, srcGroup, indices, dtimeValues, dtimeEpoch,
                                      lonValues, latValues, destGroup);
 
@@ -1124,6 +1185,66 @@ void readerBuildAssocInputFile(const ReaderPoolBase & ioPool, const Group & srcG
 }
 
 //--------------------------------------------------------------------------------
+void readerBuildPrepInfoFile(const ReaderPoolBase & ioPool,
+                             const std::vector<int> & allNlocs,
+                             const std::vector<int> & ioPoolRanks,
+                             const std::vector<int> & assocRanks) {
+    // Need to form the name of the file which is based on the path and name of the
+    // prepared input files. The newInputFileName from the ioPool already has the
+    // rank number suffix attached. Want to replace that suffix with "_prep_file_info"
+    // to form the name of the prep info file.
+    const std::string prepInfoFileName = ioPool.prepInfoFileName();
+
+    // Open up an hdf5 writer backend and transfer the prep info data into the
+    // output file. We need to create a new eckit configuration for the writer
+    // engine factory.
+    // Third and fourth arguments to constructFileWriterFromConfig are
+    // "write multiple files" and "is parallel" respectively. We want
+    // "write multiple files" to be false since we are tagging on the io pool
+    // rank above.
+    eckit::LocalConfiguration engineConfig =
+        Engines::constructFileBackendConfig("hdf5", prepInfoFileName);
+    std::unique_ptr<Engines::WriterBase> writerEngine =
+        Engines::constructFileWriterFromConfig(ioPool.commAll(), ioPool.commTime(),
+                                               false, false, engineConfig);
+    Group destGroup = writerEngine->getObsGroup();
+
+    // Add global attributes containing global information from the source file
+    readerAddSupplementalAttributes(ioPool, destGroup);
+
+    // Add mpi and io pool related information
+    // Create the Rank dimension
+    const int numRanks = allNlocs.size();
+    VariableCreationParameters intParams = VariableCreationParameters::defaults<int>();
+    intParams.setFillValue<int>(util::missingValue<int>());
+    intParams.noCompress();
+    Variable rankVar = destGroup.vars.create<int>(
+                       "Rank", { numRanks }, { numRanks }, intParams);
+    rankVar.setIsDimensionScale("Rank");
+    std::vector<int> rankNumbers(numRanks);
+    std::iota(rankNumbers.begin(), rankNumbers.end(), 0);
+    rankVar.write<int>(rankNumbers);
+
+    // nlocs data
+    destGroup.vars
+        .createWithScales<int>("numberLocations", { rankVar }, intParams)
+        .write(allNlocs);
+
+    // rank allocation for the io pool that is consistent with the input file set
+    destGroup.vars
+        .createWithScales<int>("ioPoolRanks", { rankVar }, intParams)
+        .write(ioPoolRanks);
+
+    // association between pool member and non pool member ranks
+    destGroup.vars
+        .createWithScales<int>("rankAssociation", { rankVar }, intParams)
+        .write(assocRanks);
+
+    oops::Log::info() << "readerBuildPrepInfoFile: created prep info file: "
+                      << prepInfoFileName << std::endl;
+}
+
+//--------------------------------------------------------------------------------
 void readerBuildInputFiles(const ReaderPoolBase & ioPool,
                            const Group & srcGroup,
                            const std::vector<int> & assocAllRanks,
@@ -1132,11 +1253,17 @@ void readerBuildInputFiles(const ReaderPoolBase & ioPool,
                            const std::vector<std::size_t> & locIndicesAllRanks,
                            const std::vector<int> & locIndicesStarts,
                            const std::vector<int> & locIndicesCounts,
+                           const std::vector<std::size_t> & recNumsAllRanks,
                            const std::vector<int64_t> & dtimeValues,
                            const std::string & dtimeEpoch,
                            const std::vector<float> & lonValues,
                            const std::vector<float> & latValues) {
-    // First identify which ranks, from the commAll communicator group, are io pool members.
+    // Single file that supplements the input file set with global stats from the
+    // source file, and mpi, ioPool related information. Note that locIndicesCounts
+    // holds the nlocs value for each rank in the commAll communicator group.
+    readerBuildPrepInfoFile(ioPool, locIndicesCounts, ioPoolRanks, assocAllRanks);
+
+    // Identify which ranks, from the commAll communicator group, are io pool members.
     // These are the unique values in assocAllRanks.
     std::set<int> ioPoolMembers(assocAllRanks.begin(), assocAllRanks.end());
     for (const auto & i : ioPoolMembers) {
@@ -1149,13 +1276,14 @@ void readerBuildInputFiles(const ReaderPoolBase & ioPool,
         std::vector<int> starts;
         std::vector<int> counts;
         std::vector<std::size_t> indices;
+        std::vector<std::size_t> recnums;
         std::vector<int> destAllRanks;
         readerSetFileSelection(allRank, assocAllRanks, locIndicesAllRanks, locIndicesStarts,
-                               locIndicesCounts, indices, destAllRanks, starts, counts);
+            locIndicesCounts, recNumsAllRanks, indices, recnums, destAllRanks, starts, counts);
 
         // Create the associate file, and record it for subsequent removal
         readerBuildAssocInputFile(ioPool, srcGroup, allRank, poolRank, inputFileName,
-                                  indices, destAllRanks, starts, counts,
+                                  indices, recnums, destAllRanks, starts, counts,
                                   dtimeValues, dtimeEpoch, lonValues, latValues);
         oops::Log::info() << "readerBuildInputFiles: created new input file: "
                           << inputFileName << std::endl;
@@ -1181,19 +1309,70 @@ void readerCreateFileSet(const ReaderPoolBase & ioPool, const Group & srcGroup,
     std::vector<std::size_t> locIndicesAllRanks;
     std::vector<int> locIndicesStarts;
     std::vector<int> locIndicesCounts;
-    readerGatherLocationIndices(ioPool, locIndicesAllRanks,
-                                locIndicesStarts, locIndicesCounts);
+    std::vector<std::size_t> recNumsAllRanks;
+    readerGatherLocationInfo(ioPool, locIndicesAllRanks, locIndicesStarts,
+                             locIndicesCounts, recNumsAllRanks);
 
     // Build the files. One file per io pool member, location indices in the order of
     // the rank assignments starting with the pool member rank.
     if (ioPool.commAll().rank() == 0) {
         readerBuildInputFiles(ioPool, srcGroup, assocAllRanks, ioPoolRanks, assocFileNames,
-                              locIndicesAllRanks, locIndicesStarts, locIndicesCounts,
-                              dtimeValues, dtimeEpoch, lonValues, latValues);
+            locIndicesAllRanks, locIndicesStarts, locIndicesCounts, recNumsAllRanks,
+            dtimeValues, dtimeEpoch, lonValues, latValues);
     }
 
     // Have the other MPI ranks wait for rank 0 to create the input files
     ioPool.commAll().barrier();
+}
+
+//--------------------------------------------------------------------------------
+void readerAddSupplementalAttributes(const ReaderPoolBase & ioPool, ioda::Group & destGroup) {
+    // Add in information about the MPI communicator sizes
+    destGroup.atts.add<int>("mpiCommAllSize", ioPool.commAll().size());
+    destGroup.atts.add<int>("mpiCommPoolSize", ioPool.commPool()->size());
+
+    // Add in location information about the original source file.
+    destGroup.atts.add<int>("globalNlocs", ioPool.globalNlocs());
+    destGroup.atts.add<int>("sourceNlocs", ioPool.sourceNlocs());
+    destGroup.atts.add<int>("sourceNlocsInsideTimeWindow",
+                            ioPool.sourceNlocsInsideTimeWindow());
+    destGroup.atts.add<int>("sourceNlocsOutsideTimeWindow",
+                            ioPool.sourceNlocsOutsideTimeWindow());
+    destGroup.atts.add<int>("sourceNlocsRejectQC", ioPool.sourceNlocsRejectQC());
+
+    // date time epoch value
+    destGroup.atts.add<std::string>("dtimeEpoch", ioPool.dtimeEpoch());
+}
+
+//--------------------------------------------------------------------------------
+void readerRemoveFilePrepGroup(VarUtils::Vec_Named_Variable & varList,
+                               VarUtils::Vec_Named_Variable & dimVarList,
+                               VarUtils::VarDimMap & dimsAttachedToVars) {
+    // Go through each list and remove the variable entries that contain the
+    // group name given in filePrepGroupName
+
+    // dimension variables
+    auto dimPos = dimVarList.begin();
+    while (dimPos != dimVarList.end()) {
+        if (dimPos->name.find(filePrepGroupName()) != std::string::npos) {
+            dimVarList.erase(dimPos);
+        } else {
+            ++dimPos;
+        }
+    }
+
+    // non dimension variables
+    auto varPos = varList.begin();
+    while (varPos != varList.end()) {
+        if (varPos->name.find(filePrepGroupName()) != std::string::npos) {
+            if (dimsAttachedToVars.find(*varPos) != dimsAttachedToVars.end()) {
+                dimsAttachedToVars.erase(*varPos);
+            }
+            varList.erase(varPos);
+        } else {
+            ++varPos;
+        }
+    }
 }
 
 //--------------------------------------------------------------------------------
@@ -1227,6 +1406,10 @@ void readerSerializeGroupStructure(const ReaderPoolBase & ioPool,
             const auto groupObjects = fileGroup.listObjects(ObjectType::Group, true);
             yamlStream << "groups:" << std::endl;
             for (const auto & groupName : groupObjects.at(ObjectType::Group)) {
+                // Skip over the special file preparation group info
+                if (groupName == filePrepGroupName()) {
+                    continue;
+                }
                 yamlStream << constants::indent4 << "- group:" << std::endl
                            << constants::indent8 << "name: " << groupName << std::endl;
                 // subgroup attributes
@@ -1242,11 +1425,14 @@ void readerSerializeGroupStructure(const ReaderPoolBase & ioPool,
             VarUtils::collectVarDimInfo(fileGroup, regularVarList, dimVarList,
                                         dimsAttachedToVars, maxVarSize0);
 
+            // Remove the special file preparation info group
+            readerRemoveFilePrepGroup(regularVarList, dimVarList, dimsAttachedToVars);
+
             // List out dimension variables (these all belong in the top level group).
             yamlStream << "dimensions:" << std::endl;
             VarUtils::listDimensionsAsYaml(dimVarList, constants::indent4, yamlStream);
 
-            // List out regular variables
+            // List out regular variables.
             yamlStream << "variables:" << std::endl;
             VarUtils::listVariablesAsYaml(regularVarList, dimsAttachedToVars,
                                           constants::indent4, yamlStream);
@@ -2098,67 +2284,7 @@ void readerTransferVarData(const ReaderPoolBase & ioPool,
 }
 
 //------------------------------------------------------------------------------------
-void readerAdjustDistributionMap(const ReaderPoolBase & ioPool,
-                                 const ioda::Group & fileGroup,
-                                 const std::vector<std::pair<int, int>> & rankAssignment,
-                                 ReaderDistributionMap & distributionMap) {
-    // The new mapping is located in the file top level variable "destinationRank".
-    // Simply need to copy this information into the distributionMap.
-    // Only do this for the io pool member ranks.
-    if (ioPool.commPool() != nullptr) {
-        // Read in the destination rank values. Use destination rank values for the keys
-        // in the distributionMap, along with the corresponding index value for the data
-        // in the distributionMap.
-        std::vector<int> destRankValues;
-        fileGroup.vars.open("destinationRank").read<int>(destRankValues);
-
-        // Don't alter the distributionMap if there are no obs left in this input file.
-        if (destRankValues.size() > 0) {
-            // Make two passes through the destination rank number. The first pass is to
-            // count up the number of occurrences of each rank number which is done
-            // to reserve the memory for the vectors in the distribution map. The second
-            // pass is to copy the corresponding indices into the distribution map.
-            std::map<int, std::size_t> destRankCounts;
-            for (size_t i = 0; i < destRankValues.size(); ++i) {
-                int key = destRankValues[i];
-                if (destRankCounts.find(key) == destRankCounts.end()) {
-                    // New entry, set count to 1
-                    destRankCounts[key] = 1;
-                } else {
-                    // Existing entry, increment count
-                    destRankCounts[key] += 1;
-                }
-            }
-            distributionMap.clear();
-            for (size_t i = 0; i < destRankValues.size(); ++i) {
-                int key = destRankValues[i];
-                if (distributionMap.find(key) == distributionMap.end()) {
-                    // New entry, allocate vector
-                    distributionMap[key].reserve(destRankCounts[key]);
-                }
-                // Add the index into the vector
-                distributionMap[key].push_back(i);
-            }
-
-            // At this point it is possible for the distribution map to be missing
-            // entries. This situation comes about when the filtering and distribution
-            // in the reader initialize step results in any of the processes in the
-            // rank assignment getting zero obs. The code above won't produce an entry
-            // for a rank with zero obs (including the pool member rank) and these cases
-            // need to have an entry (with an empty vector) in the new distribution map.
-            const int myRank = ioPool.commAll().rank();
-            if (distributionMap.find(myRank) == distributionMap.end()) {
-                distributionMap[myRank].clear();
-            }
-            for (const auto & rankAssign : rankAssignment) {
-                const int rank = rankAssign.first;
-                if (distributionMap.find(rank) == distributionMap.end()) {
-                    distributionMap[rank].clear();
-                }
-            }
-        }
-    }
-}
+std::string filePrepGroupName() { return std::string("_iodaFilePrepInfo"); }
 
 //------------------------------------------------------------------------------------
 // Old reader functions

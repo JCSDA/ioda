@@ -225,15 +225,8 @@ void readerCopyGroupStructure(const ReaderPoolBase & ioPool,
                               const ioda::Group & fileGroup, const bool emptyFile,
                               ioda::Group & memGroup, std::string & groupStructureYaml);
 
-/// @brief adjust the distribution map according to the new input file
-/// @param ioPool ioda ReaderPoolBase object
-/// @param fileGroup is the source file group
-/// @param rankAssignment structure that indicates which ranks are associated with each other
-/// @param distributionMap io pool distribution map
-void readerAdjustDistributionMap(const ReaderPoolBase & ioPool,
-                                 const ioda::Group & fileGroup,
-                                 const std::vector<std::pair<int, int>> & rankAssignment,
-                                 ReaderDistributionMap & distributionMap);
+/// @brief return the name of the file prep group
+std::string filePrepGroupName();
 
 /// @brief transfer the variable data from fileGroup to memGroup
 /// @param ioPool ioda ReaderPoolBase object

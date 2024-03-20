@@ -20,7 +20,6 @@
 
 #include "ioda/Copying.h"
 #include "ioda/Engines/EngineUtils.h"
-#include "ioda/Engines/HH.h"
 #include "ioda/Exception.h"
 
 #include "oops/util/Logger.h"
@@ -219,6 +218,33 @@ void IoPoolBase::createIoPool(IoPoolGroupMap & rankGrouping) {
     } else {
         commPool_ = &(commAll().split(myColor, poolCommName_));
     }
+}
+
+//--------------------------------------------------------------------------------------
+void IoPoolBase::buildIoPool(const std::size_t numLocs) {
+    // Note that derived subclasses can override the functions being called in this
+    // function. The comments here are the default behaviors when there are no overrides.
+
+    // The target pool size is simply the minumum of the specified (or default) max
+    // pool size and the size of the comm_all_ communicator group.
+    setTargetPoolSize();
+
+    // This call will return a data structure that shows how to assign the ranks
+    // to the io pools, plus which non io pool ranks get associated with the io pool
+    // ranks. Only rank 0 needs to have this data since it will be used to form and
+    // send the assignments to the other ranks.
+    std::map<int, std::vector<int>> rankGrouping;
+    groupRanks(rankGrouping);
+
+    // This call will fill in the vector data member rank_assignment_, which holds all of
+    // the ranks each member of the io pool needs to communicate with to collect the
+    // variable data. Use the patch nlocs (ie, the number of locations "owned" by this
+    // rank) to represent the number of locations after any duplicated locations are
+    // removed.
+    assignRanksToIoPool(numLocs, rankGrouping);
+
+    // Create the io pool communicator group using the split communicator command.
+    createIoPool(rankGrouping);
 }
 
 }  // namespace IoPool

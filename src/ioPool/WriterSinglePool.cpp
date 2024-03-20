@@ -45,26 +45,10 @@ void WriterSinglePool::initialize() {
     nlocs_ = patchObsVec().size();
     patchNlocs_ = std::count(patchObsVec().begin(), patchObsVec().end(), true);
 
-    // For now, the target pool size is simply the minumum of the specified (or default) max
-    // pool size and the size of the comm_all_ communicator group.
-    setTargetPoolSize();
-
-    // This call will return a data structure that shows how to assign the ranks
-    // to the io pools, plus which non io pool ranks get associated with the io pool
-    // ranks. Only rank 0 needs to have this data since it will be used to form and
-    // send the assignments to the other ranks.
-    std::map<int, std::vector<int>> rankGrouping;
-    groupRanks(rankGrouping);
-
-    // This call will fill in the vector data member rank_assignment_, which holds all of
-    // the ranks each member of the io pool needs to communicate with to collect the
-    // variable data. Use the patch nlocs (ie, the number of locations "owned" by this
-    // rank) to represent the number of locations after any duplicated locations are
-    // removed.
-    assignRanksToIoPool(patchNlocs(), rankGrouping);
-
-    // Create the io pool communicator group using the split communicator command.
-    createIoPool(rankGrouping);
+    // Build the io pool. This call will set the pool size (how many MPI tasks belong to
+    // the pool), assign the other MPI tasks to each of the pool tasks, and then split
+    // the MPI commucator group to form the pool.
+    buildIoPool(patchNlocs());
 
     // Calculate the total nlocs for each rank in the io pool.
     // This sets the total_nlocs_ data member and that holds the sum of

@@ -178,6 +178,8 @@ list( APPEND ioda_test_input
   testinput/iodatest_time_io_odc.yaml
   testinput/iodatest_time_io_reader_pool.yaml
   testinput/iodatest_time_io_reader_pool_odc.yaml
+  testinput/iodatest_time_io_reader_pool_ext_file_prep.yaml
+  testinput/iodatest_time_io_reader_pool_ext_file_prep_mpi7.yaml
   testinput/iodatest_time_io_script.yaml
   testinput/iodatest_time_io_script.py
 )
@@ -1233,7 +1235,13 @@ ecbuild_add_test( TARGET  test_ioda_clean_time_io_files
                           "testoutput/gnssro_obs_2021080606_s_time.nc4"
                           "testoutput/amsua_n19_obs_2018041500_m_time_reader_pool.nc4"
                           "testoutput/sondes_obs_2018041500_m_time_reader_pool.nc4"
-                          "testoutput/gnssro_obs_2021080606_s_time_reader_pool.nc4" )
+                          "testoutput/gnssro_obs_2021080606_s_time_reader_pool.nc4"
+                          "testoutput/amsua_n19_obs_2018041500_m_time_reader_pool_ext_file_prep.nc4"
+                          "testoutput/sondes_obs_2018041500_m_time_reader_pool_ext_file_prep.nc4"
+                          "testoutput/gnssro_obs_2021080606_s_time_reader_pool_ext_file_prep.nc4"
+                          "testoutput/amsua_n19_obs_2018041500_m_time_reader_pool_ext_file_prep_mpi7.nc4"
+                          "testoutput/sondes_obs_2018041500_m_time_reader_pool_ext_file_prep_mpi7.nc4"
+                          "testoutput/gnssro_obs_2021080606_s_time_reader_pool_ext_file_prep_mpi7.nc4" )
 
 # this test creates new output files
 ecbuild_add_test( TARGET  test_ioda_time_io
@@ -1246,7 +1254,7 @@ ecbuild_add_test( TARGET  test_ioda_time_io_cmp_sondes
                   TYPE    SCRIPT
                   COMMAND bash
                   ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
-                          hdf5
+                          netcdf
                           "echo Checking time io sondes"
                           sondes_obs_2018041500_m_time.nc4
                   TEST_DEPENDS get_ioda_test_data test_ioda_time_io)
@@ -1255,7 +1263,7 @@ ecbuild_add_test( TARGET  test_ioda_time_io_cmp_amsua_n19
                   TYPE    SCRIPT
                   COMMAND bash
                   ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
-                          hdf5
+                          netcdf
                           "echo Checking time io AMSU-A NOAA19"
                           amsua_n19_obs_2018041500_m_time.nc4
                   TEST_DEPENDS get_ioda_test_data test_ioda_time_io)
@@ -1264,7 +1272,7 @@ ecbuild_add_test( TARGET  test_ioda_time_io_cmp_gnssro
                   TYPE    SCRIPT
                   COMMAND bash
                   ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
-                          hdf5
+                          netcdf
                           "echo Checking time io GNSSRO"
                           gnssro_obs_2021080606_s_time.nc4
                   TEST_DEPENDS get_ioda_test_data test_ioda_time_io)
@@ -1280,7 +1288,7 @@ ecbuild_add_test( TARGET  test_ioda_time_io_cmp_sondes_reader_pool
                   TYPE    SCRIPT
                   COMMAND bash
                   ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
-                          hdf5
+                          netcdf
                           "echo Checking time io (reader pool) sondes"
                           sondes_obs_2018041500_m_time_reader_pool.nc4
                   TEST_DEPENDS get_ioda_test_data test_ioda_time_io_reader_pool)
@@ -1289,7 +1297,7 @@ ecbuild_add_test( TARGET  test_ioda_time_io_cmp_amsua_n19_reader_pool
                   TYPE    SCRIPT
                   COMMAND bash
                   ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
-                          hdf5
+                          netcdf
                           "echo Checking time io (reader pool) AMSU-A NOAA19"
                           amsua_n19_obs_2018041500_m_time_reader_pool.nc4
                   TEST_DEPENDS get_ioda_test_data test_ioda_time_io_reader_pool)
@@ -1298,7 +1306,7 @@ ecbuild_add_test( TARGET  test_ioda_time_io_cmp_gnssro_reader_pool
                   TYPE    SCRIPT
                   COMMAND bash
                   ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
-                          hdf5
+                          netcdf
                           "echo Checking time io (reader pool) GNSSRO"
                           gnssro_obs_2021080606_s_time_reader_pool.nc4
                   TEST_DEPENDS get_ioda_test_data test_ioda_time_io_reader_pool)
@@ -1363,6 +1371,79 @@ if (odc_FOUND)
                             atms_time_reader_pool.odb
                     TEST_DEPENDS get_ioda_test_data test_ioda_time_io_reader_pool_odc)
 endif()
+
+#####################################################################
+# Test the new reader with externally prepared input files
+#####################################################################
+
+# this test creates new output files
+ecbuild_add_test( TARGET  test_ioda_time_io_reader_pool_ext_file_prep
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/time_IodaIO.x
+                  ARGS    "testinput/iodatest_time_io_reader_pool_ext_file_prep.yaml"
+                  TEST_DEPENDS get_ioda_test_data test_ioda_clean_time_io_files )
+
+# the following tests compare the output files
+ecbuild_add_test( TARGET  test_ioda_time_io_cmp_sondes_reader_pool_ext_file_prep
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking time io (reader pool ext file prep) sondes"
+                          sondes_obs_2018041500_m_time_reader_pool_ext_file_prep.nc4
+                  TEST_DEPENDS get_ioda_test_data test_ioda_time_io_reader_pool_ext_file_prep)
+
+ecbuild_add_test( TARGET  test_ioda_time_io_cmp_amsua_n19_reader_pool_ext_file_prep
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking time io (reader pool ext file prep) AMSU-A NOAA19"
+                          amsua_n19_obs_2018041500_m_time_reader_pool_ext_file_prep.nc4
+                  TEST_DEPENDS get_ioda_test_data test_ioda_time_io_reader_pool_ext_file_prep)
+
+ecbuild_add_test( TARGET  test_ioda_time_io_cmp_gnssro_reader_pool_ext_file_prep
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking time io (reader pool ext file prep) GNSSRO"
+                          gnssro_obs_2021080606_s_time_reader_pool_ext_file_prep.nc4
+                  TEST_DEPENDS get_ioda_test_data test_ioda_time_io_reader_pool_ext_file_prep)
+
+# this test creates new output files
+ecbuild_add_test( TARGET  test_ioda_time_io_reader_pool_ext_file_prep_mpi7
+                  MPI 7
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/time_IodaIO.x
+                  ARGS    "testinput/iodatest_time_io_reader_pool_ext_file_prep_mpi7.yaml"
+                  TEST_DEPENDS get_ioda_test_data test_ioda_clean_time_io_files )
+
+# the following tests compare the output files
+ecbuild_add_test( TARGET  test_ioda_time_io_cmp_sondes_reader_pool_ext_file_prep_mpi7
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking time io (reader pool ext file prep) sondes"
+                          sondes_obs_2018041500_m_time_reader_pool_ext_file_prep_mpi7.nc4
+                  TEST_DEPENDS get_ioda_test_data test_ioda_time_io_reader_pool_ext_file_prep_mpi7)
+
+ecbuild_add_test( TARGET  test_ioda_time_io_cmp_amsua_n19_reader_pool_ext_file_prep_mpi7
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking time io (reader pool ext file prep) AMSU-A NOAA19"
+                          amsua_n19_obs_2018041500_m_time_reader_pool_ext_file_prep_mpi7.nc4
+                  TEST_DEPENDS get_ioda_test_data test_ioda_time_io_reader_pool_ext_file_prep_mpi7)
+
+ecbuild_add_test( TARGET  test_ioda_time_io_cmp_gnssro_reader_pool_ext_file_prep_mpi7
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking time io (reader pool ext file prep) GNSSRO"
+                          gnssro_obs_2021080606_s_time_reader_pool_ext_file_prep_mpi7.nc4
+                  TEST_DEPENDS get_ioda_test_data test_ioda_time_io_reader_pool_ext_file_prep_mpi7)
 
 #####################################################################
 # Test the script backend
