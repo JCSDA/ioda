@@ -23,7 +23,6 @@
 #include "ioda/distribution/Distribution.h"
 #include "ioda/Engines/EngineUtils.h"
 #include "ioda/Exception.h"
-#include "ioda/ioPool/ReaderPoolUtils.h"
 
 #include "oops/util/Logger.h"
 #include "oops/util/missingValues.h"

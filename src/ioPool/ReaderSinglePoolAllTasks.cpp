@@ -83,43 +83,32 @@ void ReaderSinglePoolAllTasks::load(Group & destGroup) {
     ss << *readerEngine;
     readerSrc_ = ss.str();
 
+    // Extract and record global data from the input file. Call the extract utility from
+    // only rank 0, and then broadcast the data to the other ranks. This saves a bit on
+    // file IO.
+    bool emptyFile;
+    DateTimeFormat dtimeFormat;
+    std::string dtimeEpoch("");
+    std::vector<int64_t> dtimeValues;
+    std::vector<float> lonValues;
+    std::vector<float> latValues;
+    std::vector<std::size_t> sourceLocIndices;
+    std::vector<std::size_t> sourceRecNums;
     // Rank 0 does the preliminary checking and formation of the source location
     // indices and source record numbers. These are identical operations on each
     // MPI task so file io can be reduced by having rank 0 only do the io, generate
     // the indices and record numbers and broadcast that information to the other
     // ranks.
+    extractGlobalInfoFromSource(this->commAll(), fileGroup, readerSrc_, timeWindow_,
+       readerEngine->applyLocationsCheck(), obsGroupVarList_, dtimeValues,
+       lonValues, latValues, sourceLocIndices, sourceRecNums, emptyFile, dtimeFormat,
+       dtimeEpoch, globalNlocs_, sourceNlocs_, sourceNlocsInsideTimeWindow_,
+       sourceNlocsOutsideTimeWindow_, sourceNlocsRejectQC_);
 
-    // Check for required variables
-    DateTimeFormat dtimeFormat;  // which format the source date time variable is using
-    bool emptyFile;              // true if the source is empty
-    checkForRequiredVars(fileGroup, this->commAll(), readerSrc_, dtimeFormat, emptyFile);
-
-    // Read and convert the dtimeValues to the current epoch format if older formats are
-    // being used in the source.
-    std::vector<int64_t> dtimeValues;
-    std::string dtimeEpoch("");
-    readSourceDtimeVar(fileGroup, this->commAll(), emptyFile, dtimeFormat,
-                       dtimeValues, dtimeEpoch);
-
-
-    // Convert the window start and end times to int64_t offsets from the dtimeEpoch
-    // value. This will provide for a very fast "inside the timing window check".
-    util::DateTime epochDt;
-    convertEpochStringToDtime(dtimeEpoch, epochDt);
-    timeWindow_.setEpoch(epochDt);
-
-    // Determine which locations will be retained by this process for its obs space
-    // source_loc_indices_ holds the original source location index (position in
-    // the 1D Location variable) and recNums_ holds the assigned record number.
-    std::vector<float> lonValues;
-    std::vector<float> latValues;
-    setIndexAndRecordNums(fileGroup, this->commAll(), emptyFile, distribution_, dtimeValues,
-                          timeWindow_,
-                          readerEngine->applyLocationsCheck(), obsGroupVarList_,
-                          lonValues, latValues, sourceNlocs_,
-                          sourceNlocsInsideTimeWindow_, sourceNlocsOutsideTimeWindow_,
-                          sourceNlocsRejectQC_, locIndices_, recNums_,
-                          globalNlocs_, nlocs_, nrecs_);
+    // Calculate the MPI routing in a collective fashion using the
+    // entire commAll communicator group.
+    applyMpiDistribution(distribution_, emptyFile, lonValues, latValues, sourceLocIndices,
+                         sourceRecNums, locIndices_, recNums_, nlocs_, nrecs_);
 
     // Check for consistency of the set of nlocs counts.
     ASSERT(sourceNlocs_ == sourceNlocsInsideTimeWindow_ + sourceNlocsOutsideTimeWindow_);
