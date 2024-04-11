@@ -80,14 +80,15 @@ class ReaderSinglePoolAllTasks : public ReaderPoolBase {
 
  private:
   /// \detail This function will determine the target pool size
-  /// \param rankGrouping structure that maps ranks outside the pool to ranks in the pool
-  void setTargetPoolSize() override;
+  /// \param numMpiTasks total number of mpi tasks (typically, commAll().size())
+  void setTargetPoolSize(const int numMpiTasks) override;
 
   /// \detail This function will create a vector of vector of ints structure which
   /// shows how to form the io pool and how to assign the non io pool ranks to each
   /// of the ranks in the io pool.
   /// \param rankGrouping structure that maps ranks outside the pool to ranks in the pool
-  void groupRanks(IoPoolGroupMap & rankGrouping) override;
+  /// \param numMpiTasks total number of mpi tasks (typically, commAll().size())
+  void groupRanks(const int numMpiTasks, IoPoolGroupMap & rankGrouping) override;
 };
 
 }  // namespace IoPool

@@ -31,6 +31,7 @@
 #include "ioda/ioPool/IoPoolBase.h"
 #include "ioda/ioPool/IoPoolParameters.h"
 
+#include "oops/mpi/mpi.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/parameters/Parameters.h"
 #include "oops/util/parameters/OptionalParameter.h"
@@ -231,6 +232,21 @@ class ReaderPoolBase : public IoPoolBase {
   /// the outer vector denotes the rank in the commAll communicator, and the
   /// entries in the inner vector denote which locations need to go to that rank.
   ReaderDistributionMap distributionMap_;
+
+  /// @brief return prep info file suffix
+  std::string prepInfoFileSuffix();
+
+  /// \brief generate and record the file prep info file name
+  /// \param fileName file name including path
+  std::string setPrepInfoFileName(const std::string & fileName);
+
+  /// \brief generate and record the new input file name associated with this rank
+  /// \detail The new input file name is set to an empty string for non pool members.
+  /// For pool members the new input file name is based on the work directory path
+  /// and original file name. For now, an hdf5 file will always be used.
+  /// \param fileName file name including path
+  /// \param poolRankNumber MPI rank number in the io pool communicator group
+  std::string setNewInputFileName(const std::string & fileName, const int poolRankNumber);
 };
 
 }  // namespace IoPool

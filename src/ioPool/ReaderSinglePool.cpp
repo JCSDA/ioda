@@ -39,16 +39,9 @@ static const int msgIsVarSize = 0;
 static const int msgIsVarData = 0;
 
 //--------------------------------------------------------------------------------------
-ReaderSinglePool::ReaderSinglePool(const IoPoolParameters & configParams,
-                                   const ReaderPoolCreationParameters & createParams)
-                                       : ReaderPoolBase(configParams, createParams) {
-    // Save a persistent copy of the JEDI missing value for a string variable that can
-    // be used to properly replace a string fill value from the obs source with this
-    // JEDI missing value. The replaceFillWithMissing function needs a char * pointing
-    // to this copy of the JEDI missing value to transfer that value to the obs space
-    // container.
-    stringMissingValue_ = std::make_shared<std::string>(util::missingValue<std::string>());
-
+ReaderSinglePool::ReaderSinglePool(
+    const IoPoolParameters & configParams, const ReaderPoolCreationParameters & createParams)
+        : ReaderPoolBase(configParams, createParams) {
     // Check that we have a valid entry for the file preparation type
     if ((createParams.inputFilePrepType != "external") &&
         (createParams.inputFilePrepType != "internal")) {
@@ -69,123 +62,6 @@ ReaderSinglePool::ReaderSinglePool(const IoPoolParameters & configParams,
             std::string("ReaderSinglePool: Must specify a work directory in the ") +
             std::string(" YAML configuration ('obs space.io pool.work directory' spec");
         throw Exception(errMsg, ioda_Here());
-    }
-}
-
-//--------------------------------------------------------------------------------------
-void ReaderSinglePool::setNewInputFileName() {
-    if (this->commPool() != nullptr) {
-        // Determine the time communicator rank number. A value of -1 tells the
-        // uniquifyFileName routing to not add a suffix for the time communicator rank.
-        int timeRankNum = -1;
-        if (this->commTime().size() > 1) {
-            timeRankNum = this->commTime().rank();
-        }
-
-        if (inputFilePrepType_ == "internal") {
-            // Construct the path, name to the new input file. Strip off the trailing suffix
-            // (.nc4, .odb, .nc, etc) and replace with "_<ioPoolRank>.nc4". For now, we will
-            // always use the hdf5 backend for these files.
-
-            // Get "basename" of the path in fileName
-            std::size_t pos = this->fileName().find_last_of('/');
-            if (pos == std::string::npos) {
-                newInputFileName_ = this->fileName();
-            } else {
-                // fileName contains path information, strip off every character leading
-                // up to the last '/'.
-                newInputFileName_ = this->fileName().substr(pos + 1);
-            }
-
-            // Replace the file extension with .nc4
-            pos = newInputFileName_.find_last_of('.');
-            if (pos == std::string::npos) {
-                // No file extension, simply add the ".nc4"
-                newInputFileName_ += std::string(".nc4");
-            } else {
-                // Replace the extension with ".nc4"
-                newInputFileName_ = newInputFileName_.substr(0, pos) + std::string(".nc4");
-            }
-
-            // Generate a file name using the poolRank number, and the time communicator
-            // rank number. The second argument to uniquifyFileName is "write multiple files"
-            // which needs to be true to allow uniquifyFileName to tag on the poolRank number.
-            newInputFileName_ = this->workDir() + std::string("/") + newInputFileName_;
-            newInputFileName_ = Engines::uniquifyFileName(
-                newInputFileName_, true, this->commPool()->rank(), timeRankNum);
-        } else {
-            // fileName_ already has the correct path, only need to uniquify that name.
-
-            // Replace the file extension with .nc4
-            const std::size_t pos = fileName_.find_last_of('.');
-            if (pos == std::string::npos) {
-                // No file extension, simply add the ".nc4"
-                newInputFileName_ = fileName_ + std::string(".nc4");
-            } else {
-                // Replace the extension with ".nc4"
-                newInputFileName_ = fileName_.substr(0, pos) + std::string(".nc4");
-            }
-
-            // add on the rank number suffixes
-            newInputFileName_ = Engines::uniquifyFileName(
-                fileName_, true, this->commPool()->rank(), timeRankNum);
-        }
-    } else {
-        newInputFileName_ = std::string("");
-    }
-}
-
-//--------------------------------------------------------------------------------------
-void ReaderSinglePool::setPrepInfoFileName() {
-    if (this->commAll().rank() == 0) {
-        std::string prepInfoFileSuffix("_prep_file_info");
-        if (inputFilePrepType_ == "internal") {
-            // Construct the path, name to the new input file. Strip off the trailing suffix
-            // (.nc4, .odb, .nc, etc) and replace with "_<ioPoolRank>.nc4". For now, we will
-            // always use the hdf5 backend for these files.
-
-            // Get "basename" of the path in fileName
-            std::size_t pos = this->fileName().find_last_of('/');
-            if (pos == std::string::npos) {
-                prepInfoFileName_ = this->fileName();
-            } else {
-                // fileName contains path information, strip off every character leading
-                // up to the last '/'.
-                prepInfoFileName_ = this->fileName().substr(pos + 1);
-            }
-
-            // Replace the file extension with .nc4
-            pos = prepInfoFileName_.find_last_of('.');
-            if (pos == std::string::npos) {
-                // No file extension, simply add the prep info file suffix and ".nc4"
-                prepInfoFileName_ = prepInfoFileName_ +
-                                    prepInfoFileSuffix + std::string(".nc4");
-            } else {
-                // Replace the extension with the prep info file suffix and ".nc4"
-                prepInfoFileName_ = prepInfoFileName_.substr(0, pos) +
-                                   prepInfoFileSuffix + std::string(".nc4");
-            }
-
-            // Add the path to the work directory to the base file name and to
-            // the prep info file name.
-            prepInfoFileName_ = this->workDir() + std::string("/") + prepInfoFileName_;
-        } else {
-            // fileName_ already has the correct path, only need to uniquify that name.
-
-            // Replace the file extension with .nc4
-            const std::size_t pos = fileName_.find_last_of('.');
-            if (pos == std::string::npos) {
-                // No file extension, simply add the prep info file suffix and ".nc4"
-                prepInfoFileName_ = fileName_ + prepInfoFileSuffix + std::string(".nc4");
-            } else {
-                // Replace the extension with the prep info file suffix and ".nc4"
-                prepInfoFileName_ = fileName_.substr(0, pos) +
-                                   prepInfoFileSuffix + std::string(".nc4");
-            }
-        }
-        oops::mpi::broadcastString(this->commAll(), prepInfoFileName_, 0);
-    } else {
-        oops::mpi::broadcastString(this->commAll(), prepInfoFileName_, 0);
     }
 }
 
@@ -484,17 +360,51 @@ void ReaderSinglePool::initialize() {
 
         // Generate and record the new input file name for use here and in the save function.
         // Then create the new input files (one for each pool member)
-        this->setPrepInfoFileName();
-        this->setNewInputFileName();
-        readerCreateFileSet(*this, fileGroup, dtimeValues, dtimeEpoch_,
-                            lonValues, latValues);
+        const std::string prepOutputFile =
+            Engines::formFileWithPath(this->workDir(), this->fileName());
+        prepInfoFileName_ = this->setPrepInfoFileName(prepOutputFile);
+        if (this->commPool() != nullptr) {
+            newInputFileName_ =
+                this->setNewInputFileName(prepOutputFile, this->commPool()->rank());
+        } else {
+            newInputFileName_ = std::string("");
+        }
+
+        // We want to gather all the rank assignments and indices on rank 0 in the all
+        // communicator, since rank 0 is rank that has the input file open. This can be
+        // obtained from pairing up which ranks are grouped together, and then tagging on
+        // their location indices. Note, an entry in ioPoolRank for ranks not in the ioPool
+        // will be set to -1.
+        std::vector<int> assocAllRanks;
+        std::vector<int> ioPoolRanks;
+        std::vector<std::string> assocFileNames;
+        readerGatherAssociatedRanks(*this, assocAllRanks, ioPoolRanks, assocFileNames);
+
+        std::vector<std::size_t> locIndicesAllRanks;
+        std::vector<int> locIndicesStarts;
+        std::vector<int> locIndicesCounts;
+        std::vector<std::size_t> recNumsAllRanks;
+        readerGatherLocationInfo(*this, locIndicesAllRanks, locIndicesStarts,
+                                 locIndicesCounts, recNumsAllRanks);
+
+        // Build the files. One file per io pool member, location indices in the order of
+        // the rank assignments starting with the pool member rank.
+        if (this->commAll().rank() == 0) {
+            readerBuildInputFiles(*this, this->commAll().size(), this->commPool()->size(),
+                fileGroup, assocAllRanks, ioPoolRanks, assocFileNames,
+                locIndicesAllRanks, locIndicesStarts, locIndicesCounts, recNumsAllRanks,
+                dtimeValues, this->dtimeEpoch(), lonValues, latValues);
+        }
+
+        // Have the other MPI ranks wait for rank 0 to create the input files
+        this->commAll().barrier();
     } else {
         // fileName_ can be set directly from the obsfile spec since we are using externally
         // prepared files.
         eckit::LocalConfiguration backendParamsConfig;
         this->readerParams_.serialize(backendParamsConfig);
         fileName_ = backendParamsConfig.getString("obsfile");
-        this->setPrepInfoFileName();
+        prepInfoFileName_ = this->setPrepInfoFileName(this->fileName());
 
         // Restore the file prep information
         std::map<int, std::vector<int>> rankGrouping;
@@ -521,7 +431,12 @@ void ReaderSinglePool::initialize() {
         // Need to create new input file names (ie, with the rank numbers appended).
         // First query the configuration in the reader parameters given to this io pool object
         // and set the fileName_ data member accordingly.
-        this->setNewInputFileName();
+        if (this->commPool() != nullptr) {
+            newInputFileName_ =
+                this->setNewInputFileName(this->fileName(), this->commPool()->rank());
+        } else {
+            newInputFileName_ = std::string("");
+        }
     }
     oops::Log::trace() << "ReaderSinglePool::initialize, end" << std::endl;
 }

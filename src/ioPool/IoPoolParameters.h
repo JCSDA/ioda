@@ -33,18 +33,23 @@ namespace eckit {
 namespace ioda {
 namespace IoPool {
 
+class IoPoolPrepFileParameters : public oops::Parameters {
+     OOPS_CONCRETE_PARAMETERS(IoPoolPrepFileParameters, oops::Parameters)
+
+ public:
+    /// size of MPI communicator that will be used in the DA run
+    oops::RequiredParameter<int> mpiCommSize{"mpi communicator size", this};
+
+    /// output path and base name for the file set produced by the standalone app
+    oops::RequiredParameter<std::string> outputFile{"output file", this};
+};
+
 class IoPoolParameters : public oops::Parameters {
      OOPS_CONCRETE_PARAMETERS(IoPoolParameters, oops::Parameters)
 
  public:
     /// maximum pool size in number of MPI processes
     oops::Parameter<int> maxPoolSize{"max pool size", -1, this};
-
-    /// chunk size in bytes
-    oops::OptionalParameter<std::size_t> chunkSize{"chunk size", this};
-
-    /// chunk cache size in bytes
-    oops::OptionalParameter<std::size_t> chunkCacheSize{"chunk cache size", this};
 
     /// maximum file size in megabytes
     oops::OptionalParameter<std::size_t> maxFileSize{"max file size", this};
@@ -76,10 +81,9 @@ class IoPoolParameters : public oops::Parameters {
     /// is set to true)
     oops::Parameter<std::string> workDir{"work directory", "", this};
 
-    /// If true, then keep the working directory contents after they are used. Note
-    /// that since workDir can be set to an existing directory with other contents
-    /// than what the io pool uses, then we don't want to blanket clear away workdDir.
-    oops::Parameter<bool> keepWorkDirContents{"keep work directory contents", false, this};
+    // For the standalone file preparation applications
+    oops::OptionalParameter<IoPoolPrepFileParameters>
+        prepFileParameters{"file preparation", this};
 };
 
 }  // namespace IoPool

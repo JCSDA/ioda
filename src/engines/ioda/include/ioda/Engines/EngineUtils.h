@@ -98,6 +98,36 @@ public:
 std::string uniquifyFileName(const std::string & fileName, const bool createMultipleFiles,
                              const std::size_t rankNum, const int timeRankNum);
 
+/// \brief form a file suffix based on MPI task numbers
+/// \param createMultipleFiles if true need to append rankNum to the file name
+/// \param rankNum MPI group communicator rank number
+/// \param timeRankNum MPI time communicator rank number
+std::string formFileSuffixFromRankNums(const bool createMultipleFiles,
+                                       const std::size_t rankNum, const int timeRankNum);
+
+/// \brief form a file with path by combining the given directory and file name
+/// \details This function forms a new file path using the given directory and the
+/// basename from a given file name (which can include a path)
+/// \param newDirectory path to the destination directory
+/// \param fileName file name, which can include a directory path (which gets replaced)
+std::string formFileWithPath(const std::string & newDirectory, const std::string & fileName);
+
+/// \brief replace the file extension with a given new file extension
+/// \details This function forms a new file name where that file name's extension is replaced
+/// with a new given file extension. If the input file name does not contain an extension,
+/// then the new given extension is appended to the file name.
+/// \param fileName file name
+/// \param newExtension new extension for file name
+std::string formFileWithNewExtension(const std::string & fileName,
+                                     const std::string & newExtension);
+
+/// @brief form a new file name by inserting a suffix
+/// @details This function will form a new file name by inserting the given suffix
+/// immediately before the file name's extension
+/// @param fileName file name
+/// @param fileSuffix suffix to attach to fileName
+std::string formFileWithSuffix(const std::string & fileName, const std::string & fileSuffix);
+
 /// \brief store generated data into an ObsGroup
 /// \param latVals vector of latitude values
 /// \param lonVals vector of longitude values

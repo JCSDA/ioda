@@ -11,7 +11,7 @@ observations:
     obsdatain:
       engine:
         type: H5File
-        obsfile: "Data/testinput_tier_1/testwork/amsua_n19_obs_2018041500_m.nc4"
+        obsfile: "./testwork/build_file_set/amsua_n19_obs_2018041500_m.nc4"
       file preparation type: "external"
     obsdataout:
       engine:
@@ -20,7 +20,6 @@ observations:
     io pool:
       reader name: SinglePool
       max pool size: 4
-      work directory: "Data/testinput_tier_1/testwork"
 
 - obs space:
     name: "Radiosonde"
@@ -28,7 +27,7 @@ observations:
     obsdatain:
       engine:
         type: H5File
-        obsfile: "Data/testinput_tier_1/testwork/sondes_obs_2018041500_m.nc4"
+        obsfile: "./testwork/build_file_set/sondes_obs_2018041500_m.nc4"
       file preparation type: "external"
     obsdataout:
       engine:
@@ -37,7 +36,6 @@ observations:
     io pool:
       reader name: SinglePool
       max pool size: 4
-      work directory: "Data/testinput_tier_1/testwork"
 
 - obs space:
     name: "GNSSRO"
@@ -45,7 +43,7 @@ observations:
     obsdatain:
       engine:
         type: H5File
-        obsfile: "Data/testinput_tier_1/testwork/gnssro_obs_2021080606_s.nc4"
+        obsfile: "./testwork/build_file_set/gnssro_obs_2021080606_s.nc4"
       file preparation type: "external"
     obsdataout:
       engine:
@@ -54,4 +52,3 @@ observations:
     io pool:
       reader name: SinglePool
       max pool size: 4
-      work directory: "Data/testinput_tier_1/testwork"

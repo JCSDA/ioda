@@ -57,6 +57,8 @@ class IoPoolCreationParameters {
 // Io pool base class
 //------------------------------------------------------------------------------------
 
+typedef std::map<int, std::vector<int>> IoPoolGroupMap;
+
 /// \brief IO pool base class
 /// \details This class holds a single io pool which consists of a small number of MPI tasks.
 /// The tasks assigned to an io pool object are selected from the total MPI tasks working on
@@ -111,6 +113,12 @@ class IODA_DL IoPoolBase : public util::Printable {
   /// \brief global number of locations (total across MPI tasks)
   std::size_t globalNlocs() const { return globalNlocs_; }
 
+  /// \brief parallel io flag, true -> read/write in parallel mode
+  bool isParallelIo() const { return isParallelIo_; }
+
+  /// \brief target pool size
+  int targetPoolSize() const { return targetPoolSize_; }
+
   /// \brief initialize the io pool after construction
   virtual void initialize() = 0;
 
@@ -121,8 +129,6 @@ class IODA_DL IoPoolBase : public util::Printable {
   virtual void print(std::ostream & os) const = 0;
 
  protected:
-  typedef std::map<int, std::vector<int>> IoPoolGroupMap;
-
   /// \brief io pool parameters
   const IoPoolParameters & configParams_;
 
@@ -177,15 +183,21 @@ class IODA_DL IoPoolBase : public util::Printable {
 
   /// \brief set the pool size (number of MPI processes) for this instance
   /// \detail This function sets the data member targetPoolSize_ to the minumum of
-  /// the specified maximum pool size or the size of the commAll_ communicator group.
-  virtual void setTargetPoolSize();
+  /// the specified maximum pool size or the numMpiTasks argument. The normal invocation
+  /// of this function is to set the numMpiTasks argument to the size of the commAll
+  /// communicator group. However, this doesn't work for the standalone app, so in that
+  /// case the numMpiTasks argument is set to the target number of MPI tasks that the
+  /// input file set is being create for.
+  /// \param numMpiTasks number of tasks in the "all" communicator group
+  virtual void setTargetPoolSize(const int numMpiTasks);
 
   /// \brief group ranks into sets for the io pool assignments
   /// \detail This function will create a vector of vector of ints structure which
   /// shows how to form the io pool and how to assign the non io pool ranks to each
   /// of the ranks in the io pool.
   /// \param rankGrouping structure that maps ranks outside the pool to ranks in the pool
-  virtual void groupRanks(IoPoolGroupMap & rankGrouping);
+  /// \param numMpiTasks number of tasks in the "all" communicator group
+  virtual void groupRanks(const int numMpiTasks, IoPoolGroupMap & rankGrouping);
 
   /// \brief assign ranks in the comm_all_ comm group to each of the ranks in the io pool
   /// \detail This function will dole out the ranks within the comm_all_ group, that are

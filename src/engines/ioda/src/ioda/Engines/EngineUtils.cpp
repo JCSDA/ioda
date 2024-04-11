@@ -33,6 +33,68 @@ namespace Engines {
 //----------------------------------------------------------------------
 
 // -----------------------------------------------------------------------------
+std::string formFileSuffixFromRankNums(const bool createMultipleFiles,
+                                       const std::size_t rankNum, const int timeRankNum) {
+    // optionally include the rankNum and/or timeRankNum suffixes
+    std::ostringstream ss;
+    ss << "";
+    if (createMultipleFiles) {
+        ss << "_" << std::setw(4) << std::setfill('0') << rankNum;
+    }
+    if (timeRankNum >= 0) {
+        // reset the width and fill character just in case they were changed above
+        ss << std::setw(0) << std::setfill(' ');
+        ss << "_" << std::setw(4) << std::setfill('0') << timeRankNum;
+    }
+    return ss.str();
+}
+
+//------------------------------------------------------------------------------------
+std::string formFileWithPath(const std::string & newDirectory, const std::string & fileName) {
+    // Get "basename" of the path in inputFileName
+    std::string newFileName;
+    const std::size_t pos = fileName.find_last_of('/');
+    if (pos == std::string::npos) {
+        // fileName is just a file name without a directory path, use as is
+        newFileName = fileName;
+    } else {
+        // fileName contains path information, strip off the directory path part
+        newFileName = fileName.substr(pos + 1);
+    }
+    newFileName = newDirectory + std::string("/") + newFileName;
+    return newFileName;
+}
+
+//------------------------------------------------------------------------------------
+std::string formFileWithNewExtension(const std::string & fileName,
+                                     const std::string & newExtension) {
+    std::string newFileName;
+    const std::size_t pos = fileName.find_last_of('.');
+    if (pos == std::string::npos) {
+        // No file extension, simply add the file extension
+        newFileName = fileName + newExtension;
+    } else {
+        // Replace the extension with the new file extension
+        newFileName = fileName.substr(0, pos) + newExtension;
+    }
+    return newFileName;
+}
+
+//------------------------------------------------------------------------------------
+std::string formFileWithSuffix(const std::string & fileName, const std::string & fileSuffix) {
+    std::string newFileName = fileName;
+    const std::size_t pos = newFileName.find_last_of('.');
+    if (pos == std::string::npos) {
+        // No file extension, simply add the file suffix
+        newFileName += fileSuffix;
+    } else {
+        // Insert the file suffix right before the extension
+        newFileName.insert(pos, fileSuffix);
+    }
+    return newFileName;
+}
+
+// -----------------------------------------------------------------------------
 std::string uniquifyFileName(const std::string & fileName, const bool createMultipleFiles,
                              const std::size_t rankNum, const int timeRankNum) {
     // The format for the output file name is:
@@ -58,20 +120,12 @@ std::string uniquifyFileName(const std::string & fileName, const bool createMult
     std::size_t found = uniqueFileName.find_last_of(".");
     if (found == std::string::npos) found = uniqueFileName.length();
 
-    // optionally include the rankNum and/or timeRankNum suffixes
-    std::ostringstream ss;
-    ss << "";
-    if (createMultipleFiles) {
-        ss << "_" << std::setw(4) << std::setfill('0') << rankNum;
-    }
-    if (timeRankNum >= 0) {
-        // reset the width and fill character just in case they were changed above
-        ss << std::setw(0) << std::setfill(' ');
-        ss << "_" << std::setw(4) << std::setfill('0') << timeRankNum;
-    }
+    // Form the file suffix out of the rank numbers
+    const std::string fileSuffix =
+        formFileSuffixFromRankNums(createMultipleFiles, rankNum, timeRankNum);
 
     // Construct the output file name
-    return uniqueFileName.insert(found, ss.str());
+    return uniqueFileName.insert(found, fileSuffix);
 }
 
 // -----------------------------------------------------------------------------

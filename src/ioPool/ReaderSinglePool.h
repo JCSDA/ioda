@@ -89,15 +89,6 @@ class ReaderSinglePool : public ReaderPoolBase {
   /// the variable attributes.
   std::string groupStructureYaml_;
 
-  /// \brief generate and record the new input file name associated with this rank
-  /// \detail The new input file name is set to an empty string for non pool members.
-  /// For pool members the new input file name is based on the work directory path
-  /// and original file name. For now, an hdf5 file will always be used.
-  void setNewInputFileName();
-
-  /// \brief generate and record the file prep info file name
-  void setPrepInfoFileName();
-
   /// \brief restore information related to the prepared files
   /// \param rankGrouping map holding io pool grouping information for the MPI ranks
   /// \details the keys of the grouping map are the ranks in the io pool, and the non

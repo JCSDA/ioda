@@ -174,6 +174,12 @@ list( APPEND ioda_test_input
   testinput/iodatest_odb_surface_with_query.yaml
   testinput/iodatest_sort.yaml
   testinput/iodatest_writer_sondes.yaml
+  testinput/iodatest_build_amsua_n19_file_set.yaml
+  testinput/iodatest_build_sondes_file_set.yaml
+  testinput/iodatest_build_gnssro_file_set.yaml
+  testinput/iodatest_build_amsua_n19_file_set_mpi7.yaml
+  testinput/iodatest_build_sondes_file_set_mpi7.yaml
+  testinput/iodatest_build_gnssro_file_set_mpi7.yaml
   testinput/iodatest_time_io.yaml
   testinput/iodatest_time_io_odc.yaml
   testinput/iodatest_time_io_reader_pool.yaml
@@ -214,6 +220,8 @@ list( APPEND ioda_test_work_directories
   testwork/obsspace_zero_obs_reader_pool
   testwork/time_io_reader_pool
   testwork/time_io_reader_pool_odc
+  testwork/build_file_set
+  testwork/build_file_set_mpi7
 )
 
 add_library(ioda_test INTERFACE)
@@ -1380,7 +1388,7 @@ endif()
 ecbuild_add_test( TARGET  test_ioda_time_io_reader_pool_ext_file_prep
                   COMMAND ${CMAKE_BINARY_DIR}/bin/time_IodaIO.x
                   ARGS    "testinput/iodatest_time_io_reader_pool_ext_file_prep.yaml"
-                  TEST_DEPENDS get_ioda_test_data test_ioda_clean_time_io_files )
+                  TEST_DEPENDS get_ioda_test_data test_ioda_clean_time_io_files test_ioda_build_amsua_n19_file_set test_ioda_build_gnssro_file_set test_ioda_build_sondes_file_set )
 
 # the following tests compare the output files
 ecbuild_add_test( TARGET  test_ioda_time_io_cmp_sondes_reader_pool_ext_file_prep
@@ -1390,7 +1398,7 @@ ecbuild_add_test( TARGET  test_ioda_time_io_cmp_sondes_reader_pool_ext_file_prep
                           netcdf
                           "echo Checking time io (reader pool ext file prep) sondes"
                           sondes_obs_2018041500_m_time_reader_pool_ext_file_prep.nc4
-                  TEST_DEPENDS get_ioda_test_data test_ioda_time_io_reader_pool_ext_file_prep)
+                  TEST_DEPENDS get_ioda_test_data test_ioda_time_io_reader_pool_ext_file_prep )
 
 ecbuild_add_test( TARGET  test_ioda_time_io_cmp_amsua_n19_reader_pool_ext_file_prep
                   TYPE    SCRIPT
@@ -1399,7 +1407,7 @@ ecbuild_add_test( TARGET  test_ioda_time_io_cmp_amsua_n19_reader_pool_ext_file_p
                           netcdf
                           "echo Checking time io (reader pool ext file prep) AMSU-A NOAA19"
                           amsua_n19_obs_2018041500_m_time_reader_pool_ext_file_prep.nc4
-                  TEST_DEPENDS get_ioda_test_data test_ioda_time_io_reader_pool_ext_file_prep)
+                  TEST_DEPENDS get_ioda_test_data test_ioda_time_io_reader_pool_ext_file_prep )
 
 ecbuild_add_test( TARGET  test_ioda_time_io_cmp_gnssro_reader_pool_ext_file_prep
                   TYPE    SCRIPT
@@ -1415,7 +1423,7 @@ ecbuild_add_test( TARGET  test_ioda_time_io_reader_pool_ext_file_prep_mpi7
                   MPI 7
                   COMMAND ${CMAKE_BINARY_DIR}/bin/time_IodaIO.x
                   ARGS    "testinput/iodatest_time_io_reader_pool_ext_file_prep_mpi7.yaml"
-                  TEST_DEPENDS get_ioda_test_data test_ioda_clean_time_io_files )
+                  TEST_DEPENDS get_ioda_test_data test_ioda_clean_time_io_files test_ioda_build_amsua_n19_file_set_mpi7 test_ioda_build_gnssro_file_set_mpi7 test_ioda_build_sondes_file_set_mpi7 )
 
 # the following tests compare the output files
 ecbuild_add_test( TARGET  test_ioda_time_io_cmp_sondes_reader_pool_ext_file_prep_mpi7
@@ -1444,6 +1452,72 @@ ecbuild_add_test( TARGET  test_ioda_time_io_cmp_gnssro_reader_pool_ext_file_prep
                           "echo Checking time io (reader pool ext file prep) GNSSRO"
                           gnssro_obs_2021080606_s_time_reader_pool_ext_file_prep_mpi7.nc4
                   TEST_DEPENDS get_ioda_test_data test_ioda_time_io_reader_pool_ext_file_prep_mpi7)
+
+#####################################################################
+# Test the ioda-buildInputFileSet.x app
+#####################################################################
+
+# this test removes the output files from prior testing
+ecbuild_add_test( TARGET  test_ioda_clean_build_file_set_files
+                  COMMAND rm
+                  ARGS    "-f"
+                    "testwork/build_file_set/amsua_n19_obs_2018041500_m_prep_file_info.nc4"
+                    "testwork/build_file_set/amsua_n19_obs_2018041500_m_0000.nc4"
+                    "testwork/build_file_set/sondes_obs_2018041500_m_prep_file_info.nc4"
+                    "testwork/build_file_set/sondes_obs_2018041500_m_0000.nc4"
+                    "testwork/build_file_set/gnssro_obs_2021080606_s_prep_file_info.nc4"
+                    "testwork/build_file_set/gnssro_obs_2021080606_s_0000.nc4"
+                    "testwork/build_file_set_mpi7/amsua_n19_obs_2018041500_m_prep_file_info_mpi7.nc4"
+                    "testwork/build_file_set_mpi7/amsua_n19_obs_2018041500_m_mpi7_0000.nc4"
+                    "testwork/build_file_set_mpi7/amsua_n19_obs_2018041500_m_mpi7_0001.nc4"
+                    "testwork/build_file_set_mpi7/amsua_n19_obs_2018041500_m_mpi7_0002.nc4"
+                    "testwork/build_file_set_mpi7/amsua_n19_obs_2018041500_m_mpi7_0003.nc4"
+                    "testwork/build_file_set_mpi7/sondes_obs_2018041500_m_prep_file_info_mpi7.nc4"
+                    "testwork/build_file_set_mpi7/sondes_obs_2018041500_m_mpi7_0000.nc4"
+                    "testwork/build_file_set_mpi7/sondes_obs_2018041500_m_mpi7_0001.nc4"
+                    "testwork/build_file_set_mpi7/sondes_obs_2018041500_m_mpi7_0002.nc4"
+                    "testwork/build_file_set_mpi7/sondes_obs_2018041500_m_mpi7_0003.nc4"
+                    "testwork/build_file_set_mpi7/gnssro_obs_2021080606_s_prep_file_info_mpi7.nc4"
+                    "testwork/build_file_set_mpi7/gnssro_obs_2021080606_s_mpi7_0000.nc4"
+                    "testwork/build_file_set_mpi7/gnssro_obs_2021080606_s_mpi7_0001.nc4"
+                    "testwork/build_file_set_mpi7/gnssro_obs_2021080606_s_mpi7_0002.nc4"
+                    "testwork/build_file_set_mpi7/gnssro_obs_2021080606_s_mpi7_0003.nc4" )
+
+# amsua n19, communicator target size 1
+ecbuild_add_test( TARGET  test_ioda_build_amsua_n19_file_set
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/ioda-buildInputFileSet.x
+                  ARGS    "testinput/iodatest_build_amsua_n19_file_set.yaml"
+                  TEST_DEPENDS get_ioda_test_data test_ioda_clean_build_file_set_files )
+
+# sondes, communicator target size 1
+ecbuild_add_test( TARGET  test_ioda_build_sondes_file_set
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/ioda-buildInputFileSet.x
+                  ARGS    "testinput/iodatest_build_sondes_file_set.yaml"
+                  TEST_DEPENDS get_ioda_test_data test_ioda_clean_build_file_set_files )
+
+# gnssro, communicator target size 1
+ecbuild_add_test( TARGET  test_ioda_build_gnssro_file_set
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/ioda-buildInputFileSet.x
+                  ARGS    "testinput/iodatest_build_gnssro_file_set.yaml"
+                  TEST_DEPENDS get_ioda_test_data test_ioda_clean_build_file_set_files )
+
+# amsua n19, communicator target size 7
+ecbuild_add_test( TARGET  test_ioda_build_amsua_n19_file_set_mpi7
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/ioda-buildInputFileSet.x
+                  ARGS    "testinput/iodatest_build_amsua_n19_file_set_mpi7.yaml"
+                  TEST_DEPENDS get_ioda_test_data test_ioda_clean_build_file_set_files )
+
+# sondes, communicator target size 7
+ecbuild_add_test( TARGET  test_ioda_build_sondes_file_set_mpi7
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/ioda-buildInputFileSet.x
+                  ARGS    "testinput/iodatest_build_sondes_file_set_mpi7.yaml"
+                  TEST_DEPENDS get_ioda_test_data test_ioda_clean_build_file_set_files )
+
+# gnssro, communicator target size 7
+ecbuild_add_test( TARGET  test_ioda_build_gnssro_file_set_mpi7
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/ioda-buildInputFileSet.x
+                  ARGS    "testinput/iodatest_build_gnssro_file_set_mpi7.yaml"
+                  TEST_DEPENDS get_ioda_test_data test_ioda_clean_build_file_set_files )
 
 #####################################################################
 # Test the script backend

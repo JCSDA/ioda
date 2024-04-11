@@ -54,7 +54,7 @@ IoPoolBase::IoPoolBase(
 }
 
 //--------------------------------------------------------------------------------------
-void IoPoolBase::setTargetPoolSize() {
+void IoPoolBase::setTargetPoolSize(const int numMpiTasks) {
     if (commAll().rank() == 0) {
         // Determine the maximum pool size. Use the default if the io pool spec is not
         // present, which is done for backward compatibility.
@@ -63,24 +63,21 @@ void IoPoolBase::setTargetPoolSize() {
             maxPoolSize = configParams_.maxPoolSize.value();
         }
 
-        // The pool size will be the minimum of the maxPoolSize or the entire size of the
-        // commAll_ communicator group
+        // The pool size will be the minimum of the maxPoolSize or the numMpiTasks
+        // argument.
         int poolSize = maxPoolSize;
-        if (commAll().size() <= static_cast<std::size_t>(maxPoolSize)) {
-            poolSize = commAll().size();
+        if (numMpiTasks <= static_cast<std::size_t>(maxPoolSize)) {
+            poolSize = numMpiTasks;
         }
 
         // Broadcast the target pool size to the other ranks
         targetPoolSize_ = poolSize;
-        commAll().broadcast(targetPoolSize_, 0);
-    } else {
-        // Receive the broadcast of the target pool size
-        commAll().broadcast(targetPoolSize_, 0);
     }
+    commAll().broadcast(targetPoolSize_, 0);
 }
 
 //--------------------------------------------------------------------------------------
-void IoPoolBase::groupRanks(IoPoolGroupMap & rankGrouping) {
+void IoPoolBase::groupRanks(const int numMpiTasks, IoPoolGroupMap & rankGrouping) {
     rankGrouping.clear();
     if (commAll().rank() == 0) {
         // This default grouping preserves the ordering that we had before the io pool
@@ -104,8 +101,8 @@ void IoPoolBase::groupRanks(IoPoolGroupMap & rankGrouping) {
         // it on the number of locations instead of the ranks which will make the MPI
         // transfers more complicated.
         ASSERT(targetPoolSize_ != 0);
-        int base_assign_size = commAll().size() / targetPoolSize_;
-        int rem_assign_size = commAll().size() % targetPoolSize_;
+        int base_assign_size = numMpiTasks / targetPoolSize_;
+        int rem_assign_size = numMpiTasks % targetPoolSize_;
         int start = 0;
         for (int i = 0; i < targetPoolSize_; ++i) {
             int count = base_assign_size;
@@ -227,14 +224,14 @@ void IoPoolBase::buildIoPool(const std::size_t numLocs) {
 
     // The target pool size is simply the minumum of the specified (or default) max
     // pool size and the size of the comm_all_ communicator group.
-    setTargetPoolSize();
+    setTargetPoolSize(commAll().size());
 
     // This call will return a data structure that shows how to assign the ranks
     // to the io pools, plus which non io pool ranks get associated with the io pool
     // ranks. Only rank 0 needs to have this data since it will be used to form and
     // send the assignments to the other ranks.
-    std::map<int, std::vector<int>> rankGrouping;
-    groupRanks(rankGrouping);
+    IoPoolGroupMap rankGrouping;
+    groupRanks(commAll().size(), rankGrouping);
 
     // This call will fill in the vector data member rank_assignment_, which holds all of
     // the ranks each member of the io pool needs to communicate with to collect the

@@ -88,9 +88,6 @@ class ObsDataOutParameters : public oops::Parameters {
     OOPS_CONCRETE_PARAMETERS(ObsDataOutParameters, oops::Parameters)
 
  public:
-    /// size of MPI communicator that will be used in the DA run
-    oops::Parameter<int> prepMpiCommSize{"file preparation communicator size", 0, this};
-
     /// option controlling the creation of the backend
     oops::RequiredParameter<Engines::WriterParametersWrapper> engine{"engine", this};
 };

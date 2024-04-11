@@ -41,15 +41,8 @@ static ReaderPoolMaker<ReaderSinglePoolAllTasks>
 
 //--------------------------------------------------------------------------------------
 ReaderSinglePoolAllTasks::ReaderSinglePoolAllTasks(
-                            const IoPoolParameters & configParams,
-                            const ReaderPoolCreationParameters & createParams)
-                   : ReaderPoolBase(configParams, createParams) {
-    // Save a persistent copy of the JEDI missing value for a string variable that can
-    // be used to properly replace a string fill value from the obs source with this
-    // JEDI missing value. The replaceFillWithMissing function needs a char * pointing
-    // to this copy of the JEDI missing value to transfer that value to the obs space
-    // container.
-    stringMissingValue_ = std::make_shared<std::string>(util::missingValue<std::string>());
+    const IoPoolParameters & configParams, const ReaderPoolCreationParameters & createParams)
+        : ReaderPoolBase(configParams, createParams) {
 }
 
 //--------------------------------------------------------------------------------------
@@ -158,15 +151,16 @@ void ReaderSinglePoolAllTasks::print(std::ostream & os) const {
 }
 
 //--------------------------------------------------------------------------------------
-void ReaderSinglePoolAllTasks::setTargetPoolSize() {
+void ReaderSinglePoolAllTasks::setTargetPoolSize(const int numMpiTasks) {
     // TODO(srh) For now this reader is placing all tasks into the pool. This means
     // that the desired number of pool member tasks is simply the size of the
     // commAll communicator group.
-    targetPoolSize_ = commAll_.size();
+    targetPoolSize_ = numMpiTasks;
 }
 
 //--------------------------------------------------------------------------------------
-void ReaderSinglePoolAllTasks::groupRanks(IoPoolGroupMap & rankGrouping) {
+void ReaderSinglePoolAllTasks::groupRanks(const int numMpiTasks,
+                                          IoPoolGroupMap & rankGrouping) {
     // TODO(srh) Until the actual reader pool is implemented we need to copy the
     // commAll_ communicator to the commPool_ communicator. This can be accomplished
     // by constructing the rankGrouping map with each commAll_ rank assigned only
@@ -174,7 +168,7 @@ void ReaderSinglePoolAllTasks::groupRanks(IoPoolGroupMap & rankGrouping) {
     // since these vectors represent the other ranks associated with each pool member.
     // Ie, all ranks are in the pool, and each rank has no associated ranks.
     rankGrouping.clear();
-    for (std::size_t i = 0; i < commAll_.size(); ++i) {
+    for (std::size_t i = 0; i < numMpiTasks; ++i) {
         rankGrouping[i] = std::vector<int>(0);
     }
 }

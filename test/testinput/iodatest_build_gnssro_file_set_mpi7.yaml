@@ -1,0 +1,18 @@
+---
+time window:
+  begin: "2018-01-01T00:00:00Z"
+  end: "2022-01-01T00:00:00Z"
+
+obs space:
+  name: "GNSSRO"
+  simulated variables: [ 'atmosphericRefractivity', 'bendingAngle' ]
+  obsdatain:
+    engine:
+      type: H5File
+      obsfile: "Data/testinput_tier_1/gnssro_obs_2021080606_s.nc4"
+  io pool:
+    reader name: PrepInputFiles
+    max pool size: 4
+    file preparation:
+      output file: "testwork/build_file_set_mpi7/gnssro_obs_2021080606_s_mpi7.nc4"
+      mpi communicator size: 7

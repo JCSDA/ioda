@@ -59,6 +59,8 @@ ioPool/ReaderPoolFactory.cpp
 ioPool/ReaderPoolFactory.h
 ioPool/ReaderPoolUtils.cpp
 ioPool/ReaderPoolUtils.h
+ioPool/ReaderPrepInputFiles.cpp
+ioPool/ReaderPrepInputFiles.h
 ioPool/ReaderSinglePool.cpp
 ioPool/ReaderSinglePool.h
 ioPool/ReaderSinglePoolAllTasks.cpp
