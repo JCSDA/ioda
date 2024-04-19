@@ -3,6 +3,11 @@
 # This software is licensed under the terms of the Apache Licence Version 2.0
 # which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
 
+find_program (NCCMP_EXE nccmp)
+if (NOT NCCMP_EXE)
+  message (FATAL_ERROR "nccmp needs to be available to run ioda tests.")
+endif()
+
 # Test data - from ioda-data repo if found, from local directory, or from tarball (release/develop-in-future?)
 if (ioda-data_FOUND)
   message(STATUS "Use test data from ioda-data repository")
