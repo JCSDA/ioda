@@ -11,12 +11,19 @@
  * \brief ODB / ODC engine bindings
  */
 #include <algorithm>
-#include <regex>
 #include <set>
 #include <string>
 #include <typeinfo>
 #include <vector>
 #include <ctime>
+
+#if USE_BOOST_REGEX
+#include <boost/regex.hpp>
+#define REGEX_NAMESPACE boost
+#else
+#include <regex>
+#define REGEX_NAMESPACE std
+#endif
 
 #include "DataFromSQL.h"
 
@@ -101,9 +108,9 @@ struct ParsedColumnExpression {
   /// where `@table` is optional), split it into the column name `column[@table]` and member
   /// name `member`. Otherwise leave it unchanged.
   explicit ParsedColumnExpression(const std::string &expression) {
-    static const std::regex re("(\\w+)(?:\\.(\\w+))?(?:@(.+))?");
-    std::smatch match;
-    if (std::regex_match(expression, match, re)) {
+    static const REGEX_NAMESPACE::regex re("(\\w+)(?:\\.(\\w+))?(?:@(.+))?");
+    REGEX_NAMESPACE::smatch match;
+    if (REGEX_NAMESPACE::regex_match(expression, match, re)) {
       // This is an identifier of the form column[.member][@table]
       column += match[1].str();
       if (match[3].length()) {
