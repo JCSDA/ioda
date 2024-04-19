@@ -35,3 +35,4 @@ variables:
 - name: varno
 - name: seqno
 truncate profiles to numlev: true
+construct station ID: true

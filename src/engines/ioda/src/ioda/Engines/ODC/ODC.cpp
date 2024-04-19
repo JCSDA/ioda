@@ -1292,14 +1292,6 @@ ObsGroup openFile(const ODC_Parameters& odcparams,
     ignores.push_back("MetaData/initialDateTime");
   ignores.push_back("Channel");
 
-  // Station ID is constructed from other variables for certain observation types.
-  const bool constructStationID =
-    sql_data.getObsgroup() == obsgroup_sonde ||
-    sql_data.getObsgroup() == obsgroup_oceansound ||
-    sql_data.getObsgroup() == obsgroup_surface;
-  if (constructStationID)
-    ignores.push_back("MetaData/stationIdentification");
-
   NewDimensionScales_t vertcos = sql_data.getVertcos(varnos[0]);
 
   auto og = ObsGroup::generate(
@@ -1352,12 +1344,6 @@ ObsGroup openFile(const ODC_Parameters& odcparams,
                                 getEpochAsDtime(v),
                                 queryParameters.variableCreation.missingInt64));
     }
-  }
-
-  if (constructStationID) {
-    ioda::Variable v = og.vars.createWithScales<std::string>(
-    "MetaData/stationIdentification", {og.vars["Location"]}, params);
-    v.write(sql_data.getStationIDs());
   }
 
   for (const std::string &column : sql_data.getColumns()) {
@@ -1421,6 +1407,15 @@ ObsGroup openFile(const ODC_Parameters& odcparams,
   }
 
   og.vars.stitchComplementaryVariables();
+
+  // If requested to do so, fill `MetaData/stationIdentification` with values constructed from
+  // several (observation-dependent) input variables using the `getStationIDs()` function.
+  // `MetaData/stationIdentification` must be mapped to an ODB variable (typically `statid`)
+  // for this to be possible.
+  if (queryParameters.constructStationID) {
+    ioda::Variable v = og.vars["MetaData/stationIdentification"];
+    v.write(sql_data.getStationIDs());
+  }
 
   return og;
 #else

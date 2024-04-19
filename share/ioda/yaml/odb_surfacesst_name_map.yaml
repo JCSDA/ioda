@@ -13,6 +13,8 @@ varno-independent columns:
     source: "pressure_sensor_alt"
   - name: "MetaData/stationType"
     source: "station_type"
+  - name: "MetaData/stationIdentification"
+    source: "statid"
   - name: "MetaData/buoyIdentifier"
     source: "buoy_identifier"
   - name: "MetaData/wmoBlockNumber"

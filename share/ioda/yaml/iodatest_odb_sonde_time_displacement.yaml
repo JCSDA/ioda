@@ -37,3 +37,4 @@ variables:
 - name: seqno
 truncate profiles to numlev: true
 time displacement variable: initial_level_time
+construct station ID: true

@@ -27,3 +27,4 @@ variables:
 - name: ops_obsgroup
 - name: varno
 - name: seqno
+construct station ID: true

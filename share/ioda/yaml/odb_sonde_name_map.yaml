@@ -39,6 +39,8 @@ varno-independent columns:
     source: "sonde_type"
   - name: "MetaData/stationElevation"
     source: "stalt"
+  - name: "MetaData/stationIdentification"
+    source: "statid"
   - name: "MetaData/station_type"
     source: "station_type"
   - name: "MetaData/winpro_flags_eu"
