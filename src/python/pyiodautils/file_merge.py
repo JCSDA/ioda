@@ -152,7 +152,7 @@ class fileMerge(object):
         # Get the total Location value from the input data files, create that
         # dimension in the output data file, and fill with a range of 1 to size+1
         nlocs_total_size = 0
-        location_data_array = numpy.array([], dtype=numpy.int)
+        location_data_array = numpy.array([], dtype=numpy.int32)
         for in_file in in_files:
             in_file_dataset = Dataset(in_file, 'r')
             for dim in in_file_dataset.dimensions:
