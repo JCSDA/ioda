@@ -22,17 +22,17 @@ namespace Engines {
   {
     try
     {
-      return std::stod(argValue);
+      return Script::Script_Parameters::ArgType(std::stod(argValue));
     }
     catch (...) {}
 
     try
     {
-      return std::stoi(argValue);
+      return Script::Script_Parameters::ArgType(std::stoi(argValue));
     }
     catch (...) {}
 
-    return argValue;
+    return Script::Script_Parameters::ArgType(argValue);
   }
 
   ReadScriptFile::ReadScriptFile(const Parameters_ & params,
