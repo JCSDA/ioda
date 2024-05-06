@@ -2019,6 +2019,17 @@ if (odc_FOUND)
                             ../share/test/testinput/odb_default_name_map.yaml ../share/test/testinput/iodatest_odb_amsub.yaml"
                             test-AMSUB.hdf
                     TEST_DEPENDS get_ioda_test_data )
+  ecbuild_add_test( TARGET  test_ioda-convert_ascatsm_odc
+                    TYPE    SCRIPT
+                    COMMAND bash
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                            hdf5
+                            "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
+                            ASCATSM
+                            Data/testinput_tier_1/ascatsm.odb
+                            ../share/test/testinput/odb_default_name_map.yaml ../share/test/testinput/iodatest_odb_ascatsm.yaml"
+                            test-ASCATSM.hdf
+                    TEST_DEPENDS get_ioda_test_data )  
   ecbuild_add_test( TARGET  test_ioda-convert_gmihigh_odc
                     TYPE    SCRIPT
                     COMMAND bash

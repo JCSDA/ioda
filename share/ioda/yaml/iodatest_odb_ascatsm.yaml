@@ -1,0 +1,24 @@
+where:
+  varno: [298]
+  query: initial_obsvalue is not null
+variables:
+- name: initial_obsvalue
+- name: lat
+- name: lon
+- name: satellite_identifier
+- name: soil_moisture_est_error
+- name: mean_surface_soil_moisture
+- name: soil_moisture_processing_flag
+- name: soil_moisture_correction_flag
+- name: soil_moisture_quality
+- name: indtn_and_wtld_fraction
+- name: topographic_complexity
+- name: cellno
+- name: receipt_time
+- name: receipt_date
+- name: date
+- name: time
+- name: ops_obsgroup
+- name: ops_subtype
+- name: varno
+- name: seqno

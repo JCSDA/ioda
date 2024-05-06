@@ -631,6 +631,16 @@ varno-independent columns:
     source: "sel_wnd_indx"
   - name: "MetaData/software_identifier"
     source: "software_identifier"
+  - name: "MetaData/soilMoistureCorrectionFlags"
+    source: "soil_moisture_correction_flag"
+  - name: "MetaData/soilMoistureEstError"
+    source: "soil_moisture_est_error"
+  - name: "MetaData/soilMoistureClimoMean"
+    source: "mean_surface_soil_moisture"
+  - name: "MetaData/soilMoistureProcessingFlags"
+    source: "soil_moisture_processing_flag"
+  - name: "MetaData/soilMoistureQuality"
+    source: "soil_moisture_quality"
   - name: "MetaData/solarAzimuthAngle"
     source: "solar_azimuth"
   - name: "MetaData/solarZenithAngle"
@@ -699,6 +709,8 @@ varno-independent columns:
     source: "surface_land_indicator"
   - name: "MetaData/timeOffset"
     source: "time_difference"
+  - name: "MetaData/topographyComplexity"
+    source: "topographic_complexity"
   - name: "MetaData/undulation"
     source: "undulation"
   - name: "MetaData/viewing_zenith_angle"
@@ -741,6 +753,8 @@ varno-independent columns:
     source: "sensorviewangle"
   - name: "MetaData/sensorChannelNumber"
     source: "chans"
+  - name: "MetaData/wetlandFraction"
+    source: "indtn_and_wtld_fraction"
 # Added specifically for ODB write
   - name: "MetaData/pressure"
     source: "initial_vertco_reference"
@@ -876,6 +890,9 @@ varno-dependent columns:
       - name: "cloudAmountOfLowestLayer"
         varno: 295
         unit: percentage
+      - name: "soilMoistureNormalized"
+        varno: 298
+        unit: "percentage"
   # Map initial_obsvalue at varno 235 to MetaData/air_pressure rather than ObsValue/air_pressure
   - source: "initial_obsvalue"
     group name: "MetaData"

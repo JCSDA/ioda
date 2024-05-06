@@ -1132,7 +1132,7 @@ Variables:
     Dimensions: [ [ "Location" ], [ "Location", "dim_2" ] ]
     MetaData: true
     Attributes: { units: "1" }
-  # Scatterometer
+  # Scatterometer windvector product
   - Variable: [ "crossTrackCellNumber", "cross_track_cell_number" ]
     Type: UInt32
     MetaData: true
@@ -1141,6 +1141,23 @@ Variables:
     MetaData: true
   - Variable: [ "selectedWindVectorIndex", "selected_wind_vector_index" ]
     Type: UInt32
+  # Scatterometer soil wetness index product
+  - Variable: [ "soilMoistureEstError" ]
+    MetaData: true
+    Attributes: { units: "percent" }
+  - Variable: [ "soilMoistureClimoMean" ]
+    MetaData: true
+    Attributes: { units: "1" }
+  - Variable: [ "soilMoistureProcessingFlags" ]
+    Type: UInt32
+    MetaData: true
+  - Variable: [ "soilMoistureCorrectionFlags" ]
+    Type: UInt32
+    MetaData: true
+  - Variable: [ "soilMoistureQuality" ]
+    MetaData: true
+    Attributes: { units: "percent" }
+  # endof Scatterometer
   - Variable: [ "qiRecursiveFilterFunction", "QI_recursive_filter_function" ]
     MetaData: true
     Attributes: { units: "percent" }
