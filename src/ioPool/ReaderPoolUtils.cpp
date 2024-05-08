@@ -2207,10 +2207,11 @@ void packStringsIntoCharArray(std::vector<char> & destBuffer,
         reinterpret_cast<char **>(destBuffer.data()), charArrayShape[0]);
     for (std::size_t i = 0; i < stringSpan.size(); ++i) {
         const int strLen = strlen(stringSpan[i]);
+        const int offset = i * charArrayShape[1];
         for (int j = 0; j < strLen; ++j) {
-            strBuffer[(i * charArrayShape[1]) + j] = stringSpan[i][j];
+            strBuffer[offset + j] = stringSpan[i][j];
         }
-        strBuffer[strLen] = '\0';
+        strBuffer[offset + strLen] = '\0';
     }
 }
 
