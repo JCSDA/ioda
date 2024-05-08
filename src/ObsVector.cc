@@ -147,6 +147,30 @@ void ObsVector::axpy(const std::vector<double> & beta, const ObsVector & y) {
   }
 }
 // -----------------------------------------------------------------------------
+void ObsVector::axpy_byrecord(const std::vector<double> & beta, const ObsVector & y) {
+  const size_t nrecs = obsdb_.nrecs();
+  ASSERT(y.values_.size() == values_.size());
+  ASSERT(beta.size() == nrecs * nvars_);
+
+  // all record numbers on this task (the values of the record numbers are global)
+  const std::vector<size_t> recnums = obsdb_.recidx_all_recnums();
+  size_t ivec = 0;
+  for (size_t jloc = 0; jloc < nlocs_; ++jloc) {
+    // rec_value is the global record number at this location
+    const std::size_t rec_value = obsdb_.recnum()[jloc];
+    // map between the global record numbers and the index in the records on this MPI task
+    const std::size_t recidxLocal = std::distance(recnums.begin(),
+                                    std::find(recnums.begin(), recnums.end(), rec_value));
+    for (size_t jvar = 0; jvar < nvars_; ++jvar, ++ivec) {
+      if (values_[ivec] == missing_ || y.values_[ivec] == missing_) {
+        values_[ivec] = missing_;
+      } else {
+        values_[ivec] += beta[recidxLocal * nvars_ + jvar] * y.values_[ivec];
+      }
+    }
+  }
+}
+// -----------------------------------------------------------------------------
 void ObsVector::invert() {
   for (size_t jj = 0; jj < values_.size() ; ++jj) {
     if (values_[jj] != missing_) {
@@ -192,6 +216,34 @@ std::vector<double> ObsVector::multivar_dot_product_with(const ObsVector & other
       x2[jloc] = other.values_[jvar + (jloc*nvars_)];
     }
     result[jvar] = dotProduct(*obsdb_.distribution(), 1, x1, x2);
+  }
+  // Communication between time subwindows is handled at oops level for `dot_product_with`,
+  // but is not handled for this method which is used in ufo to compute the bias correction
+  // coefficients updates. Handle it here.
+  // TODO(Someone): the time communicator handling needs to only happen at the oops level, the
+  // code here should not handle this at all. The code that calls this method needs refactoring.
+  obsdb_.commTime().allReduceInPlace(result.begin(), result.end(), eckit::mpi::sum());
+  return result;
+}
+// -----------------------------------------------------------------------------
+std::vector<double> ObsVector::multivarrec_dot_product_with(const ObsVector & other) const {
+  const size_t nrecs = obsdb_.nrecs();
+  std::vector<double> result(nrecs * nvars_, 0);
+  size_t recidxLocal = 0;
+  // loop over records on this task; irec is for indexing within recidx_vector,
+  // recidxLocal is the local record index
+  for (auto irec = obsdb_.recidx_begin(); irec != obsdb_.recidx_end();
+       ++irec, ++recidxLocal) {
+    std::vector<size_t> rec_idx = obsdb_.recidx_vector(irec);
+    const size_t nlocsInRec = rec_idx.size();
+    for (size_t jvar = 0; jvar < nvars_; ++jvar) {
+      // Note: no communication is needed here since the dot product is done record by
+      // record, and locations within a given record cannot be split up across MPI tasks.
+      for (size_t jloc = 0; jloc < nlocsInRec; ++jloc) {
+        result[recidxLocal * nvars_ + jvar] += values_[rec_idx[jloc] * nvars_ + jvar] *
+                                               other.values_[rec_idx[jloc] * nvars_ + jvar];
+      }
+    }
   }
   // Communication between time subwindows is handled at oops level for `dot_product_with`,
   // but is not handled for this method which is used in ufo to compute the bias correction

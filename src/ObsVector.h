@@ -49,22 +49,35 @@ class ObsVector : public util::Printable,
   ObsVector & operator = (const ObsDataVector<float> &);
 
   void zero();
-  /// set all elements to one (used in tests)
+
+  /// Set all elements to one (used in tests)
   void ones();
-  /// adds \p beta * \p y to the current vector
+
+  /// Add \p beta * \p y to the current vector
   void axpy(const double & beta, const ObsVector & y);
-  /// adds \p beta[ivar] * \p y[ivar] for each variable in the current
-  /// vector. \p beta has to be size of variables
+
+  /// For each variable jvar in the current vector, add \p beta[jvar] * \p y[jloc * nvars_ + jvar]
+  /// (i.e. \p beta[jvar] * \p y restricted to that variable). \p beta has to be of size nvars_.
   void axpy(const std::vector<double> & beta, const ObsVector & y);
+
+  /// For each variable jvar and each location jloc in the current vector,
+  /// add \p beta[jrec * nvars + jvar] * \p y[jloc * nvars + jvar], where jrec is the
+  /// record number associated with jloc. \p beta has to be of size nrecs() * nvars_,
+  void axpy_byrecord(const std::vector<double> & beta, const ObsVector & y);
 
   void invert();
   void random();
 
-  /// global (across all MPI tasks) dot product of this with \p other
+  /// Global (across all MPI tasks) dot product of this with \p other
   double dot_product_with(const ObsVector & other) const;
-  /// global (across all MPI tasks) dot product of this with \p other,
-  /// variable by variable. Returns vectors size of nvars_
+
+  /// Global (across all MPI tasks) dot product of this with \p other,
+  /// variable by variable. Returns a vector of size nvars_.
   std::vector<double> multivar_dot_product_with(const ObsVector & other) const;
+
+  /// Dot product of this with \p other, for each variable-record combination.
+  /// Returns a vector of size recs() * nvars_.
+  std::vector<double> multivarrec_dot_product_with(const ObsVector & other) const;
 
   double rms() const;
 

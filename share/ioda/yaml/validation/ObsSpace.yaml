@@ -101,6 +101,8 @@ Groups:
   - Group: [ "EffectiveObsValue" ]
   - Group: [ "ObsError" ]
   - Group: [ "EffectiveError" ]
+  - Group: [ "BiasCoefficients" ]
+  - Group: [ "BiasCoefficientErrors" ]
   - Group: [ "QualityMarker" ]
     OverrideType: Enum
   - Group: [ "QualityInformation" ]
@@ -147,9 +149,11 @@ Dimensions:
     Required: true
     Type: Int64
   - Dimension: [ "Channel", "nchans" ]
+  - Dimension: [ "Record", "nrecs"]
   - Dimension: [ "Level", "nlevs", "Levels" ]
   - Dimension: [ "Layer", "nlays", "Layers" ]
   - Dimension: [ "Depth" ]
+  - Dimension: [ "Variable" ]     # Used in VarBC as variable-length strings of variable names.
   - Dimension: [ "SoilLayer" ]
   - Dimension: [ "OceanLayer" ]
   - Dimension: [ "Confidence" ]   # Satellite-derived winds (AMV) typically have up to 4 values for this.
@@ -805,6 +809,9 @@ Variables:
     Force Units: false
     Type: UInt32
     MetaData: true
+  - Variable: [ "numberObservationsUsed" ]
+    Force Units: false
+    Type: UInt32
   - Variable: [ "geoidUndulation", "geoid_height_above_reference_ellipsoid" ]
     Attributes: { units: "m" }
     MetaData: true
@@ -838,7 +845,7 @@ Variables:
   - Variable: [ "sensorAzimuthAngle", "sensor_azimuth_angle" ]
     MetaData: true
     Attributes: { units: "degree" }
-  - Variable: [ "sensorZenithAngle", "sensor_zenith_angle" ]
+  - Variable: [ "sensorZenithAngle", "sensor_zenith_angle", "zenith_angle"]
     MetaData: true
     Attributes: { units: "degree" }
   - Variable: [ "sensorZenithAngle1", "sensor_zenith_angle1" ]
@@ -868,7 +875,7 @@ Variables:
   - Variable: [ "sensorViewAngle", "sensor_view_angle" ]
     MetaData: true
     Attributes: { units: "degree" }
-  - Variable: [ "sensorScanAngle", "sensor_scan_angle" ]
+  - Variable: [ "sensorScanAngle", "sensor_scan_angle", "scanAngle", "scan_angle" ]
     MetaData: true
     Attributes: { units: "degree" }
   - Variable: [ "sensorScanPosition", "scan_position" ]
@@ -891,7 +898,7 @@ Variables:
     Dimensions: [ [ "Location" ], [ "Location", "Cluster" ] ]
     MetaData: true
     Attributes: { units: "1" }
-  - Variable: [ "sensorChannelNumber", "sensor_channel", "sensor_chan", "chans", "channel_number" ]  # chans from geos aod
+  - Variable: [ "sensorChannelNumber", "sensor_channel", "sensor_chan", "chans", "channel_number", "channels" ]  # chans from geos aod
     Dimensions: [ [ "Channel" ], [ "Location" ], [ "Location", "Channel" ] ]
     MetaData: true
     Type: UInt32
@@ -1324,6 +1331,54 @@ Variables:
     Attributes: { units: "percent" }
   - Variable: [ "OPS_observationReport", "OPS_observation_report" ]
     Type: UInt32
+
+  # Bias correction predictor names (some names above already match, so do not show repeats)
+  - Variable: [ "constant" ]
+  - Variable: [ "legendre", "Legendre" ]
+  - Variable: [ "legendre_order_1" ]
+  - Variable: [ "legendre_order_2" ]
+  - Variable: [ "legendre_order_3" ]
+  - Variable: [ "legendre_order_4" ]
+  - Variable: [ "legendre_order_5" ]
+  - Variable: [ "legendre_order_6" ]
+  - Variable: [ "thickness_850_300hPa" ]
+  - Variable: [ "thickness_200_50hPa" ]
+  - Variable: [ "cosineOfLatitudeTimesOrbitNode", "cosine_of_latitude_times_orbit_node" ]
+  - Variable: [ "sineOfLatitude", "sine_of_latitude" ]
+  - Variable: [ "lapseRate", "lapse_rate" ]
+  - Variable: [ "lapseRate_order_2", "lapse_rate_order_2", "lapse_rate_squared" ]
+  - Variable: [ "emissivityJacobian" ]
+  - Variable: [ "cloudWaterContent_order_2" , "cloud_liquid_water_order_2"]
+  - Variable: [ "satelliteSelector", "satellite_selector" ]
+    Type: UInt32
+  - Variable: [ "obsMetadataPredictor", "obs_metadata_predictor" ]
+  - Variable: [ "sensorScanAngle_order_2", "scan_angle_order_2" ]
+  - Variable: [ "sensorScanAngle_order_3", "scan_angle_order_3" ]
+  - Variable: [ "sensorScanAngle_order_4", "scan_angle_order_4" ]
+  - Variable: [ "sensorZenithAngle_order_2", "zenith_angle_order_2", "satellite_zenith_angle_order_2" ]
+  - Variable: [ "sensorZenithAngle_order_3", "zenith_angle_order_3", "satellite_zenith_angle_order_3" ]
+  - Variable: [ "sensorZenithAngle_order_4", "zenith_angle_order_4", "satellite_zenith_angle_order_4" ]
+  - Variable: [ "satelliteOrbitalAngle", "satellite_orbital_angle", "orbital_angle" ]
+  - Variable: [ "satelliteOrbitalAngle_order_1_cos", "satellite_orbital_angle_order_1_cos" ]
+  - Variable: [ "satelliteOrbitalAngle_order_1_sin", "satellite_orbital_angle_order_1_sin" ]
+  - Variable: [ "satelliteOrbitalAngle_order_2_cos", "satellite_orbital_angle_order_2_cos" ]
+  - Variable: [ "satelliteOrbitalAngle_order_2_sin", "satellite_orbital_angle_order_2_sin" ]
+  - Variable: [ "satelliteOrbitalAngle_order_3_cos", "satellite_orbital_angle_order_3_cos" ]
+  - Variable: [ "satelliteOrbitalAngle_order_3_sin", "satellite_orbital_angle_order_3_sin" ]
+  - Variable: [ "satelliteOrbitalAngle_order_4_cos", "satellite_orbital_angle_order_4_cos" ]
+  - Variable: [ "satelliteOrbitalAngle_order_4_sin", "satellite_orbital_angle_order_4_sin" ]
+  - Variable: [ "satelliteOrbitalAngle_order_5_cos", "satellite_orbital_angle_order_5_cos" ]
+  - Variable: [ "satelliteOrbitalAngle_order_5_sin", "satellite_orbital_angle_order_5_sin" ]
+  - Variable: [ "satelliteOrbitalAngle_order_6_cos", "satellite_orbital_angle_order_6_cos" ]
+  - Variable: [ "satelliteOrbitalAngle_order_6_sin", "satellite_orbital_angle_order_6_sin" ]
+  - Variable: [ "satelliteOrbitalAngle_order_7_cos", "satellite_orbital_angle_order_7_cos" ]
+  - Variable: [ "satelliteOrbitalAngle_order_7_sin", "satellite_orbital_angle_order_7_sin" ]
+  - Variable: [ "satelliteOrbitalAngle_order_8_cos", "satellite_orbital_angle_order_8_cos" ]
+  - Variable: [ "satelliteOrbitalAngle_order_8_sin", "satellite_orbital_angle_order_8_sin" ]
+  - Variable: [ "satelliteOrbitalAngle_order_9_cos", "satellite_orbital_angle_order_9_cos" ]
+  - Variable: [ "satelliteOrbitalAngle_order_9_sin", "satellite_orbital_angle_order_9_sin" ]
+  - Variable: [ "satelliteOrbitalAngle_order_10_cos", "satellite_orbital_angle_order_10_cos" ]
+  - Variable: [ "satelliteOrbitalAngle_order_10_sin", "satellite_orbital_angle_order_10_sin" ]
 
   # Intended for any quality flags needed, but probably should use the group for QualityInformation instead of this.
   - Variable: [ "qualityFlags", "quality_flags", "qc_flags" ]

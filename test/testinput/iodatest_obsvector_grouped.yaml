@@ -1,0 +1,80 @@
+---
+time window:
+  begin: '2018-04-14T21:00:00Z'
+  end: '2018-04-15T03:00:00Z'
+observations:
+- obs space:
+    name: "Radiosonde_1var"
+    simulated variables:
+    - airTemperature
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: Data/testinput_tier_1/sondes_obs_2018041500_m.nc4
+      obsgrouping:
+        group variables: [ "stationIdentification" ]
+        sort variable: "pressure"
+        sort order: "descending"
+    obsdataout: 
+      engine:
+        type: H5File
+        obsfile: testoutput/sondes_obs_2018041500_m.nc4
+  test data:
+    rms ref: 216.91619057593934
+    tolerance: 1.0e-14
+  reference nobs: 974
+  reference global nobs: 974
+  mask variable: GsiUseFlag
+  reference global masked nobs: 30
+  reference local masked nobs: [10, 6, 7, 7]
+
+- obs space:
+    name: "Radiosonde_2vars"
+    simulated variables:
+    - airTemperature
+    - specificHumidity
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: Data/testinput_tier_1/sondes_obs_2018041500_m.nc4
+      obsgrouping:
+        group variables: [ "stationIdentification" ]
+        sort variable: "pressure"
+        sort order: "descending"
+  test data:
+    rms ref: 124.96816071306155
+    tolerance: 1.0e-14
+  reference nobs: 1948
+  reference global nobs: 1948
+  mask variable: GsiUseFlag
+  reference global masked nobs: 182
+  reference local masked nobs: [49, 47, 45, 41]
+
+- obs space:
+    name: "Radiosonde_4vars"
+    simulated variables:
+    - airTemperature
+    - specificHumidity
+    - windEastward
+    - windNorthward
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: Data/testinput_tier_1/sondes_obs_2018041500_m.nc4
+      obsgrouping:
+        group variables: [ "stationIdentification" ]
+        sort variable: "pressure"
+        sort order: "descending"
+  test data:
+    rms ref: 71.324181693818431
+    tolerance: 1.0e-14
+  reference nobs: 3896
+  reference global nobs: 3896
+  mask variable: GsiUseFlag
+  reference global masked nobs: 232
+  reference local masked nobs: [63, 63, 53, 53]
+
+distributions:
+  - RoundRobin
+  - InefficientDistribution
+  - Halo
