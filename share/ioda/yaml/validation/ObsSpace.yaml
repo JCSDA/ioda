@@ -682,7 +682,7 @@ Variables:
     Attributes: { units: "g kg-1 s-1" }
   - Variable: [ "lightningStroke" ]
     Type: Enum
-  - Variable: [ "lightningFlashDensity" ]
+  - Variable: [ "lightningFlashExtentDensity" ]
     Attributes: { units: "m-2" }
   - Variable: [ "lightningDischargePolarity" ]
     Type: Enum
