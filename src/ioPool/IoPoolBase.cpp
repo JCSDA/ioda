@@ -66,7 +66,7 @@ void IoPoolBase::setTargetPoolSize(const int numMpiTasks) {
         // The pool size will be the minimum of the maxPoolSize or the numMpiTasks
         // argument.
         int poolSize = maxPoolSize;
-        if (numMpiTasks <= static_cast<std::size_t>(maxPoolSize)) {
+        if (numMpiTasks <= maxPoolSize) {
             poolSize = numMpiTasks;
         }
 

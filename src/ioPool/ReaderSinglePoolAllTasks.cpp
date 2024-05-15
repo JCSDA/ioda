@@ -168,7 +168,7 @@ void ReaderSinglePoolAllTasks::groupRanks(const int numMpiTasks,
     // since these vectors represent the other ranks associated with each pool member.
     // Ie, all ranks are in the pool, and each rank has no associated ranks.
     rankGrouping.clear();
-    for (std::size_t i = 0; i < numMpiTasks; ++i) {
+    for (int i = 0; i < numMpiTasks; ++i) {
         rankGrouping[i] = std::vector<int>(0);
     }
 }

@@ -784,7 +784,7 @@ void emulateRoundRobinDist(const int targetCommSize,
         locIndicesCounts[destRank] += 1;
     }
     // Note locIndicesStarts[0] is already set to zero
-    for (std::size_t i = 1; i < targetCommSize; ++i) {
+    for (int i = 1; i < targetCommSize; ++i) {
         locIndicesStarts[i] = locIndicesStarts[i - 1] + locIndicesCounts[i - 1];
     }
 
@@ -820,7 +820,7 @@ void emulateMpiSplitComm(const int targetCommSize, const IoPoolGroupMap & rankGr
     // Note that the MPI split command is using the commAll rank number as a key so
     // the assigned pool ranks increase as the commAll rank numbers increase.
     int poolRank = 0;
-    for (std::size_t i = 0; i < targetCommSize; ++i) {
+    for (int i = 0; i < targetCommSize; ++i) {
         if (assocAllRanks[i] == i) {
             // On a pool rank
             ioPoolRanks[i] = poolRank;

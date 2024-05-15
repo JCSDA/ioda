@@ -111,9 +111,9 @@ void ReaderSinglePool::restoreFilePrepInfo(std::map<int, std::vector<int>> & ran
         fileGroup.vars.open("numberLocations").read<std::size_t>(numberLocations);
         fileGroup.vars.open("ioPoolRanks").read<int>(ioPoolRanks);
         fileGroup.vars.open("rankAssociation").read<int>(rankAssociation);
-        ASSERT(numberLocations.size() == numRanks);
-        ASSERT(ioPoolRanks.size() == numRanks);
-        ASSERT(rankAssociation.size() == numRanks);
+        ASSERT(numberLocations.size() == static_cast<size_t>(numRanks));
+        ASSERT(ioPoolRanks.size() == static_cast<size_t>(numRanks));
+        ASSERT(rankAssociation.size() == static_cast<size_t>(numRanks));
 
         // restore nlocs values to all ranks
         this->commAll().scatter(numberLocations, nlocs_, 0);
@@ -128,7 +128,7 @@ void ReaderSinglePool::restoreFilePrepInfo(std::map<int, std::vector<int>> & ran
 
         // restore rankGrouping - only need this on rank 0;
         for (std::size_t i = 0; i < rankAssociation.size(); ++i) {
-            int poolRank = rankAssociation[i];
+            std::size_t poolRank = rankAssociation[i];
             if (i == poolRank) {
                 // On an io pool rank, create a new entry in the map
                 rankGrouping.insert(std::pair<int, std::vector<int>>(poolRank, {}));
@@ -422,7 +422,7 @@ void ReaderSinglePool::initialize() {
         createIoPool(rankGrouping);
         if (this->commPool() != nullptr) {
             // this rank is in the io pool
-            ASSERT(this->commPool()->rank() == expectedIoPoolRank);
+            ASSERT(this->commPool()->rank() == static_cast<size_t>(expectedIoPoolRank));
         } else {
             // this rank is not int the io pool
             ASSERT(expectedIoPoolRank == -1);
