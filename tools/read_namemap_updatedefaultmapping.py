@@ -1,9 +1,12 @@
+#!/usr/bin/env python3
+
 # Script kindly provided by Mike Cooke (Met Office)
 # Some modifications by Anna Shlyaeva (JCSDA)
 
 import csv
 import sys
 import os
+
 
 def create_map(inmapfile):
     mappingFile = open(inmapfile, 'r')
@@ -14,16 +17,17 @@ def create_map(inmapfile):
             varslist = strippedLine.split(":")[1].replace('[', '').replace(']', '').replace('"', '').strip().split("#")[0]
             if ("," in varslist):
                 csvarray = varslist.split(",")
-                for aa in range(1,len(csvarray)):
+                for aa in range(1, len(csvarray)):
                     mapping[csvarray[aa].strip()] = csvarray[0].strip()
     mappingFile.close()
     return mapping
-  
+
+
 def create_new_file(inputfile, outputfile, map):
     infile = open(inputfile, 'r')
     outfile = open(outputfile, 'w')
     # Known issues that might need correcting
-    correctingmap = {"satelliteIdentifierentifier" : "satelliteIdentifier"}
+    correctingmap = {"satelliteIdentifierentifier": "satelliteIdentifier"}
     # Lines which contain any in this will be checked
     strings = ("name:", "simulated variables:", "derived variables:",
                "observed variables:", "MetaData", "filter variables:",
@@ -43,7 +47,8 @@ def create_new_file(inputfile, outputfile, map):
         outfile.write(outline)
     outfile.close()
     infile.close()
-    
+
+
 def at_to_slash_new_file(infile, outfile):
     infile = open(infile, 'r')
     outfile = open(outfile, 'w')
@@ -60,7 +65,8 @@ def at_to_slash_new_file(infile, outfile):
         outfile.write(outline)
     outfile.close()
     infile.close()
-    
+
+
 def remap_odb_mapping(inputfile, outputfile, map):
     # Read in default odb file
     odbfile = open(inputfile, 'r')
@@ -92,6 +98,7 @@ def remap_odb_mapping(inputfile, outputfile, map):
     odbfile.close()
     sys.stdout = original_stdout
 
+
 def main(obsspaceyaml, inputfile, doODB=False):
     # Create mapping
     mapping = create_map(obsspaceyaml)
@@ -108,6 +115,7 @@ def main(obsspaceyaml, inputfile, doODB=False):
 
         # Remove tmp.tmp file
         os.remove("tmp.tmp")
+
 
 if __name__ == "__main__":
     print(len(sys.argv))
