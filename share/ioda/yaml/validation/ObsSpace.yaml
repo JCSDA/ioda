@@ -1227,6 +1227,7 @@ Variables:
     Type: Enum
   - Variable: [ "surfaceQualifier", "surface_type" ]  # 0=land, 1=sea, 2=seaice
     MetaData: true
+    Force Units: false
     Type: Enum
   - Variable: [ "earthSurfaceType" ]  # TODO:  BUFR table 008029 or 013040 (among others)
     MetaData: true
