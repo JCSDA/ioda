@@ -207,6 +207,34 @@ Variables:
     Dimensions: [ [ "Location" ], [ "Location", "Level" ] ]
     MetaData: true
     Attributes: { units: "degree_east" }
+  - Variable: [ "xECEFPosition" ]
+    Dimensions: [ [ "Location" ], [ "Location", "Level" ] ]
+    MetaData: true
+    Attributes: { units: "km" }
+  - Variable: [ "yECEFPosition" ]
+    Dimensions: [ [ "Location" ], [ "Location", "Level" ] ]
+    MetaData: true
+    Attributes: { units: "km" }
+  - Variable: [ "zECEFPosition" ]
+    Dimensions: [ [ "Location" ], [ "Location", "Level" ] ]
+    MetaData: true
+    Attributes: { units: "km" }
+  - Variable: [ "xECEFPositionGNSS" ]
+    Dimensions: [ [ "Location" ], [ "Location", "Level" ] ]
+    MetaData: true
+    Attributes: { units: "km" }
+  - Variable: [ "yECEFPositionGNSS" ]
+    Dimensions: [ [ "Location" ], [ "Location", "Level" ] ]
+    MetaData: true
+    Attributes: { units: "km" }
+  - Variable: [ "zECEFPositionGNSS" ]
+    Dimensions: [ [ "Location" ], [ "Location", "Level" ] ]
+    MetaData: true
+    Attributes: { units: "km" }
+  - Variable: [ "elevationAngleGNSS" ]
+    Dimensions: [ [ "Location" ], [ "Location", "Level" ] ]
+    MetaData: true
+    Attributes: { units: "degree" }
   - Variable: [ "dateTime" ]
     Dimensions: [ [ "Location" ], [ "Location", "Level" ] ]
     MetaData: true
@@ -253,6 +281,10 @@ Variables:
     Attributes: { units: "1" }
   - Variable: [ "bendingAngle", "bending_angle" ]
     Attributes: { units: "radians" }
+  - Variable: [ "totalElectronContent" ]
+    Force Units: false
+    Type: UInt32
+    MetaData: true
   - Variable: [ "zenithTotalDelay", "ZTD", "zenith_total_delay", "total_zenith_delay" ]
     Attributes: { units: "m" }
   - Variable: [ "slantPathDelay" ]
