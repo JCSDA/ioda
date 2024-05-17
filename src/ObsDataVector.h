@@ -19,7 +19,7 @@
 #include "eckit/exception/Exceptions.h"
 #include "eckit/mpi/Comm.h"
 
-#include "oops/base/Variables.h"
+#include "oops/base/ObsVariables.h"
 #include "oops/util/Logger.h"
 #include "oops/util/missingValues.h"
 #include "oops/util/ObjectCounter.h"
@@ -45,7 +45,7 @@ class ObsDataVector: public util::Printable,
  public:
   static const std::string classname() {return "ioda::ObsDataVector";}
 
-  ObsDataVector(ObsSpace &, const oops::Variables &,
+  ObsDataVector(ObsSpace &, const oops::ObsVariables &,
                 const std::string & grp = "", const bool fail = true,
                 const bool skipDerived = false);
   ObsDataVector(ObsSpace &, const std::string &,
@@ -87,13 +87,13 @@ class ObsDataVector: public util::Printable,
   ObsDataRow<DATATYPE> & operator[](const std::string var) {return rows_.at(obsvars_.find(var));}
 
   const std::string & obstype() const {return obsdb_.obsname();}
-  const oops::Variables & varnames() const {return obsvars_;}
+  const oops::ObsVariables & varnames() const {return obsvars_;}
 
  private:
   void print(std::ostream &) const;
 
   ObsSpace & obsdb_;
-  oops::Variables obsvars_;
+  oops::ObsVariables obsvars_;
   size_t nvars_;
   size_t nlocs_;
   std::vector<ObsDataRow<DATATYPE> > rows_;
@@ -102,7 +102,7 @@ class ObsDataVector: public util::Printable,
 
 // -----------------------------------------------------------------------------
 template <typename DATATYPE>
-ObsDataVector<DATATYPE>::ObsDataVector(ObsSpace & obsdb, const oops::Variables & vars,
+ObsDataVector<DATATYPE>::ObsDataVector(ObsSpace & obsdb, const oops::ObsVariables & vars,
                                        const std::string & grp, const bool fail,
                                        const bool skipDerived)
   : obsdb_(obsdb), obsvars_(vars), nvars_(obsvars_.size()),

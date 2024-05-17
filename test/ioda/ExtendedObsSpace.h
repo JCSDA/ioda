@@ -102,7 +102,7 @@ void testExtendedObsSpace(const eckit::LocalConfiguration &conf) {
   const float missingValueFloat = util::missingValue<float>();
   std::vector <float> val(nlocs);
   std::vector <float> err(nlocs);
-  const oops::Variables& obsvars = obsdata.obsvariables();
+  const oops::ObsVariables& obsvars = obsdata.obsvariables();
   for (size_t ivar = 0; ivar < obsvars.size(); ++ivar) {
     const std::string varname = obsvars[ivar];
     obsdata.get_db("ObsValue", varname, val);

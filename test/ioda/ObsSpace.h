@@ -756,9 +756,9 @@ void testObsVariables() {
     ObsTopLevelParameters obsparams;
     obsparams.validateAndDeserialize(Test_::config(jj));
 
-    const oops::Variables & allSimVars = Odb.obsvariables();
-    const oops::Variables & initialSimVars = Odb.initial_obsvariables();
-    const oops::Variables & derivedSimVars = Odb.derived_obsvariables();
+    const oops::ObsVariables & allSimVars = Odb.obsvariables();
+    const oops::ObsVariables & initialSimVars = Odb.initial_obsvariables();
+    const oops::ObsVariables & derivedSimVars = Odb.derived_obsvariables();
 
     EXPECT_EQUAL(initialSimVars, obsparams.simVars);
     EXPECT_EQUAL(derivedSimVars, obsparams.derivedSimVars);
@@ -776,7 +776,7 @@ void testDerivedObsError() {
   for (std::size_t jj = 0; jj < Test_::size(); ++jj) {
     const ioda::ObsSpace & Odb = Test_::obspace(jj);
 
-    const oops::Variables & derivedSimVars = Odb.derived_obsvariables();
+    const oops::ObsVariables & derivedSimVars = Odb.derived_obsvariables();
     for (size_t i = 0; i < derivedSimVars.size(); ++i) {
       EXPECT(Odb.has("ObsError", derivedSimVars[i]));
       std::vector<float> values(Odb.nlocs());

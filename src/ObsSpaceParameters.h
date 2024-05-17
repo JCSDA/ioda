@@ -20,7 +20,7 @@
 #include "eckit/exception/Exceptions.h"
 #include "eckit/mpi/Comm.h"
 
-#include "oops/base/ParameterTraitsVariables.h"
+#include "oops/base/ParameterTraitsObsVariables.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
 #include "oops/util/parameters/OptionalParameter.h"
@@ -64,14 +64,14 @@ class ObsTopLevelParameters : public oops::Parameters {
     oops::Parameter<DistributionParametersWrapper> distribution{"distribution", {}, this};
 
     /// simulated variables
-    oops::RequiredParameter<oops::Variables> simVars{"simulated variables", this};
+    oops::RequiredParameter<oops::ObsVariables> simVars{"simulated variables", this};
 
     /// Simulated variables whose observed values may be absent from the input file, but must be
     /// created (computed) by the start of the data assimilation stage.
-    oops::Parameter<oops::Variables> derivedSimVars{"derived variables", {}, this};
+    oops::Parameter<oops::ObsVariables> derivedSimVars{"derived variables", {}, this};
 
     /// Observation variables whose observed values are to be processed.
-    oops::Parameter<oops::Variables> ObservedVars{"observed variables", {}, this};
+    oops::Parameter<oops::ObsVariables> ObservedVars{"observed variables", {}, this};
 
     /// Io pool parameters
     oops::Parameter<IoPool::IoPoolParameters> ioPool{"io pool", {}, this};

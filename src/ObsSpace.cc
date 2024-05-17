@@ -176,7 +176,7 @@ ObsSpace::ObsSpace(const eckit::Configuration & config, const eckit::mpi::Comm &
                 allObsVars = obsValueGroup.listObjects<ObjectType::Variable>(false);
         // ToDo (JAW): Get the channels from the input file (currently using the ones from simVars)
         std::vector<int> channels = obs_params_.top_level_.simVars.value().channels();
-        oops::Variables obVars(allObsVars, channels);
+        oops::ObsVariables obVars(allObsVars, channels);
         obsvars_ = obVars;
       } else {
         obsvars_ = obs_params_.top_level_.simVars;

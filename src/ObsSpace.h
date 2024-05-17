@@ -31,7 +31,7 @@
 #include "eckit/mpi/Comm.h"
 
 #include "oops/base/ObsSpaceBase.h"
-#include "oops/base/Variables.h"
+#include "oops/base/ObsVariables.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
 #include "oops/util/TimeWindow.h"
@@ -342,19 +342,19 @@ namespace ioda {
 
         /// \brief return the collection of all variables to be processed
         /// (observed + derived variables)
-        const oops::Variables & obsvariables() const {return obsvars_;}
+        const oops::ObsVariables & obsvariables() const {return obsvars_;}
 
         /// \brief return the collection of observed variables loaded from the input file
-        const oops::Variables & initial_obsvariables() const
+        const oops::ObsVariables & initial_obsvariables() const
         { return initial_obsvars_; }
 
         /// \brief return the collection of derived variables (variables computed
         /// after loading the input file)
-        const oops::Variables & derived_obsvariables() const
+        const oops::ObsVariables & derived_obsvariables() const
         { return derived_obsvars_; }
 
         /// \brief return the collection of simulated variables
-        const oops::Variables & assimvariables() const
+        const oops::ObsVariables & assimvariables() const
         { return assimvars_;}
 
         /// @}
@@ -543,17 +543,17 @@ namespace ioda {
 
         /// \brief Initial observation variables to be processed (observations
         /// present in input file)
-        oops::Variables initial_obsvars_;
+        oops::ObsVariables initial_obsvars_;
 
         /// \brief Derived observation variables to be processed (variables computed
         /// after loading the input file)
-        oops::Variables derived_obsvars_;
+        oops::ObsVariables derived_obsvars_;
 
         /// \brief Observation variables to be processed
-        oops::Variables obsvars_;
+        oops::ObsVariables obsvars_;
 
         /// \brief Observation variables to be simulated
-        oops::Variables assimvars_;
+        oops::ObsVariables assimvars_;
 
         /// \brief MPI distribution object
         std::shared_ptr<Distribution> dist_;

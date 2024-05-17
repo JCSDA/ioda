@@ -14,7 +14,7 @@
 #include <vector>
 
 #include "ioda/ObsSpace.h"
-#include "oops/base/Variables.h"
+#include "oops/base/ObsVariables.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
 
@@ -103,7 +103,7 @@ class ObsVector : public util::Printable,
   const ObsSpace & space() const {return obsdb_;}
   std::vector<double> data() const {return values_;}
   const std::string & obstype() const {return obsdb_.obsname();}
-  const oops::Variables & varnames() const {return obsvars_;}
+  const oops::ObsVariables & varnames() const {return obsvars_;}
   std::size_t nvars() const {return nvars_;}
   std::size_t nlocs() const {return nlocs_;}
 
@@ -125,7 +125,7 @@ class ObsVector : public util::Printable,
   ObsSpace & obsdb_;
 
   /*! \brief Variables */
-  oops::Variables obsvars_;
+  oops::ObsVariables obsvars_;
 
   /*! \brief Number of variables */
   std::size_t nvars_;

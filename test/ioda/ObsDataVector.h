@@ -65,7 +65,7 @@ template <typename T>
 void testPrint(const std::string &datatype) {
   eckit::LocalConfiguration conf(::test::TestEnvironment::config(), "print." + datatype);
 
-  const oops::Variables vars(conf, "variables");
+  const oops::ObsVariables vars(conf, "variables");
   const std::string group = conf.getString("group");
   const ioda::ObsDataVector<T> vector(ObsDataVecTestFixture::obspace(), vars, group);
 
@@ -80,7 +80,7 @@ void testAssignToExistingVariables(const std::string &testtype) {
   eckit::LocalConfiguration conf(::test::TestEnvironment::config(),
                                 "assignToExistingVariables." + testtype);
 
-  const oops::Variables ObsDataVectorVars(conf, "ObsDataVector variables");
+  const oops::ObsVariables ObsDataVectorVars(conf, "ObsDataVector variables");
   const std::string group = conf.getString("group");
   // known good output:
   const ioda::ObsDataVector<float> ObsDataVect(ObsDataVecTestFixture::obspace(),
@@ -110,7 +110,7 @@ void testAssignToExistingVariables(const std::string &testtype) {
 void testRead(const std::string & description) {
   eckit::LocalConfiguration conf(::test::TestEnvironment::config(), "read." + description);
 
-  const oops::Variables vars(conf, "variables");
+  const oops::ObsVariables vars(conf, "variables");
   const std::string group = conf.getString("group");
   ioda::ObsDataVector<float> vector(ObsDataVecTestFixture::obspace(), vars, group);
 

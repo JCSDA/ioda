@@ -9,7 +9,7 @@
 #define CORE_OBSSPACE_F_H_
 
 #include "ioda/ObsSpace.h"
-#include "oops/base/Variables.h"
+#include "oops/base/ObsVariables.h"
 #include "oops/mpi/mpi.h"
 #include "oops/util/DateTime.h"
 
@@ -23,7 +23,7 @@ extern "C" {
   const ObsSpace * obsspace_construct_f(const eckit::Configuration *,
                                         const eckit::LocalConfiguration *);
   void obsspace_destruct_f(ObsSpace *);
-  const oops::Variables * obsspace_obsvariables_f(const ObsSpace &);
+  const oops::ObsVariables * obsspace_obsvariables_f(const ObsSpace &);
   std::size_t obsspace_get_gnlocs_f(const ObsSpace &);
   std::size_t obsspace_get_nlocs_f(const ObsSpace &);
   std::size_t obsspace_get_nchans_f(const ObsSpace &);
