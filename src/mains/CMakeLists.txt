@@ -12,3 +12,4 @@ ecbuild_add_executable( TARGET  ioda-buildInputFileSet.x
                         LIBS    ioda )
 
 add_subdirectory( validator )
+add_subdirectory( odfDemo )

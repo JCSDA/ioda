@@ -106,6 +106,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_fileformat.yaml
   testinput/iodatest_remove_hdf5_variable.yaml
   testinput/iodatest_copy_attributes.yaml
+  testinput/iodatest_obs_data_frame.yaml
   testinput/iodatest_obserror.yaml
   testinput/iodatest_distribution.yaml
   testinput/iodatest_distribution_masterandreplica_mpi_2.yaml
@@ -355,6 +356,15 @@ ecbuild_add_test( TARGET  test_ioda_copy_attributes
                   SOURCES mains/TestCopyAttributes.cc
                   ARGS    "testinput/iodatest_copy_attributes.yaml"
                   LIBS  ioda_engines ioda_test )
+
+#####################################################################
+# ObsDataFrame tests
+#####################################################################
+
+ecbuild_add_test( TARGET  test_ioda_obs_data_frame
+                  SOURCES mains/TestObsDataFrame.cc
+                  ARGS    "testinput/iodatest_obs_data_frame.yaml"
+                  LIBS  ioda_test )
 
 #####################################################################
 # ObsSpace tests

@@ -1,0 +1,17 @@
+---
+row priority:
+   column data:
+     - name: "MetaData/intVariable"
+       type: "int"
+       values: [ 1, 2, 3, 4, 5 ]
+     - name: "MetaData/floatVariable"
+       type: "float"
+       values: [ 1.5, 2.5, 3.5, 4.5, 5.5 ]
+     - name: "MetaData/stringVariable"
+       type: "string"
+       values: [ "abc", "def", "ghi", "jkl", "mnopqrst" ]
+     - name: "MetaData/doubleVariable"
+       type: "double"
+       values: [ 10.5, 20.5, 30.5, 40.5, 50.5 ]
+   tolerance: 1.0e-6
+
