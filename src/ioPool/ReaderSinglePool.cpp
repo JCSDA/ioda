@@ -490,6 +490,14 @@ void ReaderSinglePool::load(Group & destGroup) {
     adjustDistributionMap(fileGroup);
     restoreIndicesRecNums(fileGroup);
 
+    // If in external mode, the MPI distribution assignRecord function was not called since
+    // the standalone app emulated that step. In external mode, we need to set
+    // the nlocs count in the distribution which is what was missed by not
+    // calling assignRecord.
+    if (this->inputFilePrepType() == "external") {
+        this->distribution()->setNumberLocations(this->nlocs());
+    }
+
     // Copy the group structure (groups and their attributes) contained in the fileGroup
     // to the destGroup. Note that the readerCopyGroupStructure function will generate
     // a string holding YAML that describes the input file group structure.

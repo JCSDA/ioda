@@ -1,0 +1,29 @@
+---
+time window:
+  begin: 2021-01-15T00:00:00Z
+  end:   2021-01-16T00:00:00Z
+
+# Expected indices are based on 2 PE's during an MPI run. If you change
+# the number of PE in the ecbuild_add_test in the ../CMakeLists.txt file,
+# then the expected indices below need to change accordingly.
+
+observations:
+
+obs space:
+  name: RoundRobin, with extension
+  obsdatain:
+    engine:
+      type: H5File
+      obsfile: Data/testinput_tier_1/obsspace_grouping.nc4
+    obsgrouping:
+      group variables: [group_by_int]
+      # MetaData/group_by_int = 1, 1, 1, 2, 3, 3, 1, 1, 1, 1 ;
+  simulated variables: [temperature]
+  distribution:
+    name: RoundRobin
+  io pool:
+    reader name: PrepInputFiles
+    max pool size: 1
+    file preparation:
+      output file: testwork/distribution_mpi_4/obsspace_grouping_round_robin.nc4
+      mpi communicator size: 4

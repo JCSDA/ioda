@@ -114,6 +114,12 @@ list( APPEND ioda_test_input
   testinput/iodatest_distribution_masterandreplica_mpi_4.yaml
   testinput/iodatest_distribution_methods.yaml
   testinput/iodatest_distribution_timewindow.yaml
+  testinput/iodatest_distribution_build_round_robin_mpi_2.yaml
+  testinput/iodatest_distribution_build_round_robin_mpi_3.yaml
+  testinput/iodatest_distribution_build_round_robin_mpi_4.yaml
+  testinput/iodatest_distribution_masterandreplica_io_pool_mpi_2.yaml
+  testinput/iodatest_distribution_masterandreplica_io_pool_mpi_3.yaml
+  testinput/iodatest_distribution_masterandreplica_io_pool_mpi_4.yaml
   testinput/iodatest_engine_construct_utils.yaml
   testinput/iodatest_engine_construct_utils_odc.yaml
   testinput/iodatest_engine_factory.yaml
@@ -236,6 +242,9 @@ list( APPEND ioda_test_work_directories
   testwork/time_io_reader_pool_odc
   testwork/build_file_set
   testwork/build_file_set_mpi7
+  testwork/distribution_mpi_2
+  testwork/distribution_mpi_3
+  testwork/distribution_mpi_4
 )
 
 add_library(ioda_test INTERFACE)
@@ -291,6 +300,61 @@ ecbuild_add_test( TARGET  test_ioda_distribution_methods
                   ARGS    "testinput/iodatest_distribution_methods.yaml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
+
+###### Repeat the masterandreplica tests using the new io pool based reader #####
+ecbuild_add_test( TARGET  test_ioda_distribution_clean_build_file_set_files
+                  COMMAND rm
+                  ARGS    "-f"
+                    "testwork/distribution_mpi_2/obsspace_grouping_round_robin_prep_file_info.nc4"
+                    "testwork/distribution_mpi_2/obsspace_grouping_round_robin_0000.nc4"
+                    "testwork/distribution_mpi_3/obsspace_grouping_round_robin_prep_file_info.nc4"
+                    "testwork/distribution_mpi_3/obsspace_grouping_round_robin_0000.nc4"
+                    "testwork/distribution_mpi_4/obsspace_grouping_round_robin_prep_file_info.nc4"
+                    "testwork/distribution_mpi_4/obsspace_grouping_round_robin_0000.nc4" )
+
+# build file sets for obsspace_grouping, communicator target sizes 2, 3, 4
+ecbuild_add_test( TARGET  test_ioda_distribution_build_round_robin_mpi_2_file_set
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/ioda-buildInputFileSet.x
+                  ARGS    "testinput/iodatest_distribution_build_round_robin_mpi_2.yaml"
+                  TEST_DEPENDS get_ioda_test_data
+                               test_ioda_distribution_clean_build_file_set_files )
+
+ecbuild_add_test( TARGET  test_ioda_distribution_build_round_robin_mpi_3_file_set
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/ioda-buildInputFileSet.x
+                  ARGS    "testinput/iodatest_distribution_build_round_robin_mpi_3.yaml"
+                  TEST_DEPENDS get_ioda_test_data
+                               test_ioda_distribution_clean_build_file_set_files )
+
+ecbuild_add_test( TARGET  test_ioda_distribution_build_round_robin_mpi_4_file_set
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/ioda-buildInputFileSet.x
+                  ARGS    "testinput/iodatest_distribution_build_round_robin_mpi_4.yaml"
+                  TEST_DEPENDS get_ioda_test_data
+                               test_ioda_distribution_clean_build_file_set_files )
+
+# run distribution tests using the input file sets generated in the above tests
+ecbuild_add_test( TARGET  test_ioda_distribution_masterandreplica_io_pool_mpi_2
+                  MPI     2
+                  COMMAND test_ioda_distribution
+                  ARGS    "testinput/iodatest_distribution_masterandreplica_io_pool_mpi_2.yaml"
+                  LIBS  ioda_test
+                  TEST_DEPENDS get_ioda_test_data
+                               test_ioda_distribution_build_round_robin_mpi_2_file_set )
+
+ecbuild_add_test( TARGET  test_ioda_distribution_masterandreplica_io_pool_mpi_3
+                  MPI     3
+                  COMMAND test_ioda_distribution
+                  ARGS    "testinput/iodatest_distribution_masterandreplica_io_pool_mpi_3.yaml"
+                  LIBS  ioda_test
+                  TEST_DEPENDS get_ioda_test_data
+                  test_ioda_distribution_build_round_robin_mpi_3_file_set )
+
+ecbuild_add_test( TARGET  test_ioda_distribution_masterandreplica_io_pool_mpi_4
+                  MPI     4
+                  COMMAND test_ioda_distribution
+                  ARGS    "testinput/iodatest_distribution_masterandreplica_io_pool_mpi_4.yaml"
+                  LIBS  ioda_test
+                  TEST_DEPENDS get_ioda_test_data
+                               test_ioda_distribution_build_round_robin_mpi_4_file_set )
 
 #####################################################################
 # ioda engines tests

@@ -1,0 +1,58 @@
+---
+time window:
+  begin: 2021-01-15T00:00:00Z
+  end:   2021-01-16T00:00:00Z
+
+# Expected indices are based on 3 PE's during an MPI run. If you change
+# the number of PE in the ecbuild_add_test in the ../CMakeLists.txt file,
+# then the expected indices below need to change accordingly.
+#
+# The test is coded so that the keyword "rank" + (MPI Rank Number) is used from this
+# file to get the expected result. If you are MPI rank 0, then you read the keywords
+# under "rank0:" from this file; MPI rank 1, keywords from "rank1:"; etc.
+
+observations:
+
+- obs space:
+    name: RoundRobin, with extension
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: testwork/distribution_mpi_3/obsspace_grouping_round_robin.nc4
+      obsgrouping:
+        group variables: [group_by_int]
+        # MetaData/group_by_int = 1, 1, 1, 2, 3, 3, 1, 1, 1, 1 ;
+      file preparation type: external
+    simulated variables: [temperature]
+    distribution:
+      name: RoundRobin
+    extension:
+      allocate companion records with length: 3
+    io pool:
+      reader name: SinglePool
+      max pool size: 1
+  specs:
+    gnlocs: 19  # 10 original obs + 9 averaged obs (3 levels * 3 records)
+    allgatherv: [ 0, 1, 2, 6, 7, 8, 9, 3, 4, 5, 10, 11, 12, 13, 14, 15, 16, 17, 18 ]
+    rank0:
+      nlocs: 10
+      nrecs: 2
+      nPatchLocs: 10
+      index: [ 0, 1, 2, 6, 7, 8, 9, 10, 11, 12 ]
+      recnums: [ 0, 0, 0, 0, 0, 0, 0, 3, 3, 3 ]
+      patchIndex: [ 0, 1, 2, 6, 7, 8, 9, 10, 11, 12 ]
+    rank1:
+      nlocs: 4
+      nrecs: 2
+      nPatchLocs: 4
+      index: [ 3, 13, 14, 15 ]
+      recnums: [ 1, 4, 4, 4 ]
+      patchIndex: [ 3, 13, 14, 15 ]
+    rank2:
+      nlocs: 5
+      nrecs: 2
+      nPatchLocs: 5
+      index: [ 4, 5, 16, 17, 18 ]
+      recnums: [ 2, 2, 5, 5, 5 ]
+      patchIndex: [ 4, 5, 16, 17, 18 ]
+

@@ -31,6 +31,7 @@ class NonoverlappingDistribution : public Distribution {
 
     void assignRecord(const std::size_t RecNum, const std::size_t LocNum,
                       const eckit::geometry::Point2 & point) override;
+    void setNumberLocations(const std::size_t numLocs) override;
     void patchObs(std::vector<bool> & patchObsVec) const override;
     void computePatchLocs() override;
 

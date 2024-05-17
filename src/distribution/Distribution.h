@@ -90,6 +90,17 @@ class Distribution {
     virtual bool isMyRecord(std::size_t RecNum) const = 0;
 
     /*!
+     * \brief directly set the number of locations
+     * \details This function allows the direct setting of the number of locations for
+     * those subclasses that need this information. Currently this is only needed by the
+     * NonoverlappingDistribution class for its allGatherv functions. The idea is to
+     * provide an empty function by default in the Distribtuion base class, and have
+     * that be overridden where necessary.
+     *
+     */
+    virtual void setNumberLocations(const std::size_t numLocs) {}
+
+    /*!
      * \brief If necessary, identifies locations of "patch obs", i.e. locations belonging to
      * records owned by this PE.
      *

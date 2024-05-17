@@ -42,6 +42,11 @@ void NonoverlappingDistribution::assignRecord(const std::size_t RecNum,
 }
 
 // -----------------------------------------------------------------------------
+void NonoverlappingDistribution::setNumberLocations(const std::size_t numLocs) {
+    numLocationsOnThisRank_ = numLocs;
+}
+
+// -----------------------------------------------------------------------------
 void NonoverlappingDistribution::computePatchLocs() {
   numLocationsOnLowerRanks_ = numLocationsOnThisRank_;
   oops::mpi::exclusiveScan(comm_, numLocationsOnLowerRanks_);
