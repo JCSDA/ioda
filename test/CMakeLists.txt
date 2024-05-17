@@ -189,9 +189,11 @@ list( APPEND ioda_test_input
   testinput/iodatest_build_amsua_n19_file_set.yaml
   testinput/iodatest_build_sondes_file_set.yaml
   testinput/iodatest_build_gnssro_file_set.yaml
+  testinput/iodatest_build_windborne_file_set.yaml
   testinput/iodatest_build_amsua_n19_file_set_mpi7.yaml
   testinput/iodatest_build_sondes_file_set_mpi7.yaml
   testinput/iodatest_build_gnssro_file_set_mpi7.yaml
+  testinput/iodatest_build_windborne_file_set_mpi7.yaml
   testinput/iodatest_time_io.yaml
   testinput/iodatest_time_io_odc.yaml
   testinput/iodatest_time_io_reader_pool.yaml
@@ -1409,7 +1411,12 @@ endif()
 ecbuild_add_test( TARGET  test_ioda_time_io_reader_pool_ext_file_prep
                   COMMAND ${CMAKE_BINARY_DIR}/bin/time_IodaIO.x
                   ARGS    "testinput/iodatest_time_io_reader_pool_ext_file_prep.yaml"
-                  TEST_DEPENDS get_ioda_test_data test_ioda_clean_time_io_files test_ioda_build_amsua_n19_file_set test_ioda_build_gnssro_file_set test_ioda_build_sondes_file_set )
+                  TEST_DEPENDS get_ioda_test_data
+                               test_ioda_clean_time_io_files
+                               test_ioda_build_amsua_n19_file_set
+                               test_ioda_build_gnssro_file_set
+                               test_ioda_build_windborne_file_set
+                               test_ioda_build_sondes_file_set )
 
 # the following tests compare the output files
 ecbuild_add_test( TARGET  test_ioda_time_io_cmp_sondes_reader_pool_ext_file_prep
@@ -1439,12 +1446,26 @@ ecbuild_add_test( TARGET  test_ioda_time_io_cmp_gnssro_reader_pool_ext_file_prep
                           gnssro_obs_2021080606_s_time_reader_pool_ext_file_prep.nc4
                   TEST_DEPENDS get_ioda_test_data test_ioda_time_io_reader_pool_ext_file_prep)
 
+ecbuild_add_test( TARGET  test_ioda_time_io_cmp_windborne_reader_pool_ext_file_prep
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking time io (reader pool ext file prep) Windborne"
+                          windborne_obs_2022021600_s_time_reader_pool_ext_file_prep.nc4
+                  TEST_DEPENDS get_ioda_test_data test_ioda_time_io_reader_pool_ext_file_prep)
+
 # this test creates new output files
 ecbuild_add_test( TARGET  test_ioda_time_io_reader_pool_ext_file_prep_mpi7
                   MPI 7
                   COMMAND ${CMAKE_BINARY_DIR}/bin/time_IodaIO.x
                   ARGS    "testinput/iodatest_time_io_reader_pool_ext_file_prep_mpi7.yaml"
-                  TEST_DEPENDS get_ioda_test_data test_ioda_clean_time_io_files test_ioda_build_amsua_n19_file_set_mpi7 test_ioda_build_gnssro_file_set_mpi7 test_ioda_build_sondes_file_set_mpi7 )
+                  TEST_DEPENDS get_ioda_test_data
+                               test_ioda_clean_time_io_files
+                               test_ioda_build_amsua_n19_file_set_mpi7
+                               test_ioda_build_gnssro_file_set_mpi7
+                               test_ioda_build_windborne_file_set_mpi7
+                               test_ioda_build_sondes_file_set_mpi7 )
 
 # the following tests compare the output files
 ecbuild_add_test( TARGET  test_ioda_time_io_cmp_sondes_reader_pool_ext_file_prep_mpi7
@@ -1474,6 +1495,15 @@ ecbuild_add_test( TARGET  test_ioda_time_io_cmp_gnssro_reader_pool_ext_file_prep
                           gnssro_obs_2021080606_s_time_reader_pool_ext_file_prep_mpi7.nc4
                   TEST_DEPENDS get_ioda_test_data test_ioda_time_io_reader_pool_ext_file_prep_mpi7)
 
+ecbuild_add_test( TARGET  test_ioda_time_io_cmp_windborne_reader_pool_ext_file_prep_mpi7
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking time io (reader pool ext file prep) Windborne"
+                          windborne_obs_2022021600_s_time_reader_pool_ext_file_prep_mpi7.nc4
+                  TEST_DEPENDS get_ioda_test_data test_ioda_time_io_reader_pool_ext_file_prep_mpi7)
+
 #####################################################################
 # Test the ioda-buildInputFileSet.x app
 #####################################################################
@@ -1488,6 +1518,8 @@ ecbuild_add_test( TARGET  test_ioda_clean_build_file_set_files
                     "testwork/build_file_set/sondes_obs_2018041500_m_0000.nc4"
                     "testwork/build_file_set/gnssro_obs_2021080606_s_prep_file_info.nc4"
                     "testwork/build_file_set/gnssro_obs_2021080606_s_0000.nc4"
+                    "testwork/build_file_set/windborne_obs_20220216T00_s_prep_file_info.nc4"
+                    "testwork/build_file_set/windborne_obs_20220216T00_s_0000.nc4"
                     "testwork/build_file_set_mpi7/amsua_n19_obs_2018041500_m_prep_file_info_mpi7.nc4"
                     "testwork/build_file_set_mpi7/amsua_n19_obs_2018041500_m_mpi7_0000.nc4"
                     "testwork/build_file_set_mpi7/amsua_n19_obs_2018041500_m_mpi7_0001.nc4"
@@ -1502,7 +1534,11 @@ ecbuild_add_test( TARGET  test_ioda_clean_build_file_set_files
                     "testwork/build_file_set_mpi7/gnssro_obs_2021080606_s_mpi7_0000.nc4"
                     "testwork/build_file_set_mpi7/gnssro_obs_2021080606_s_mpi7_0001.nc4"
                     "testwork/build_file_set_mpi7/gnssro_obs_2021080606_s_mpi7_0002.nc4"
-                    "testwork/build_file_set_mpi7/gnssro_obs_2021080606_s_mpi7_0003.nc4" )
+                    "testwork/build_file_set_mpi7/gnssro_obs_2021080606_s_mpi7_0003.nc4"
+                    "testwork/build_file_set_mpi7/windborne_obs_2021080606_s_mpi7_0000.nc4"
+                    "testwork/build_file_set_mpi7/windborne_obs_2021080606_s_mpi7_0001.nc4"
+                    "testwork/build_file_set_mpi7/windborne_obs_2021080606_s_mpi7_0002.nc4"
+                    "testwork/build_file_set_mpi7/windborne_obs_2021080606_s_mpi7_0003.nc4" )
 
 # amsua n19, communicator target size 1
 ecbuild_add_test( TARGET  test_ioda_build_amsua_n19_file_set
@@ -1522,6 +1558,12 @@ ecbuild_add_test( TARGET  test_ioda_build_gnssro_file_set
                   ARGS    "testinput/iodatest_build_gnssro_file_set.yaml"
                   TEST_DEPENDS get_ioda_test_data test_ioda_clean_build_file_set_files )
 
+# windborne, communicator target size 1
+ecbuild_add_test( TARGET  test_ioda_build_windborne_file_set
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/ioda-buildInputFileSet.x
+                  ARGS    "testinput/iodatest_build_windborne_file_set.yaml"
+                  TEST_DEPENDS get_ioda_test_data test_ioda_clean_build_file_set_files )
+
 # amsua n19, communicator target size 7
 ecbuild_add_test( TARGET  test_ioda_build_amsua_n19_file_set_mpi7
                   COMMAND ${CMAKE_BINARY_DIR}/bin/ioda-buildInputFileSet.x
@@ -1538,6 +1580,12 @@ ecbuild_add_test( TARGET  test_ioda_build_sondes_file_set_mpi7
 ecbuild_add_test( TARGET  test_ioda_build_gnssro_file_set_mpi7
                   COMMAND ${CMAKE_BINARY_DIR}/bin/ioda-buildInputFileSet.x
                   ARGS    "testinput/iodatest_build_gnssro_file_set_mpi7.yaml"
+                  TEST_DEPENDS get_ioda_test_data test_ioda_clean_build_file_set_files )
+
+# windborne, communicator target size 7
+ecbuild_add_test( TARGET  test_ioda_build_windborne_file_set_mpi7
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/ioda-buildInputFileSet.x
+                  ARGS    "testinput/iodatest_build_windborne_file_set_mpi7.yaml"
                   TEST_DEPENDS get_ioda_test_data test_ioda_clean_build_file_set_files )
 
 #####################################################################

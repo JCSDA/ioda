@@ -52,3 +52,27 @@ observations:
     io pool:
       reader name: SinglePool
       max pool size: 4
+
+- obs space:
+    name: "Windborne, with obs grouping"
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: "./testwork/build_file_set_mpi7/windborne_obs_2022021600_s_mpi7.nc4"
+      obsgrouping:
+        group variables:
+        - flight_name
+        sort variable: pressure
+        sort order: descending
+      file preparation type: external
+    obsdataout:
+      engine:
+        type: H5File
+        obsfile: "testoutput/windborne_obs_2022021600_s_time_reader_pool_ext_file_prep_mpi7.nc4"
+    io pool:
+      reader name: SinglePool
+      max pool size: 4
+    simulated variables:
+    - airTemperature
+    - windEastward
+    - windNorthward

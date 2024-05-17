@@ -1,0 +1,26 @@
+---
+time window:
+  begin: "2018-01-01T00:00:00Z"
+  end: "2023-01-01T00:00:00Z"
+
+obs space:
+  name: "Windborne, with obs grouping"
+  obsdatain:
+    engine:
+      type: H5File
+      obsfile: "Data/testinput_tier_1/windborne_obs_2022021600_s.nc4"
+    obsgrouping:
+      group variables:
+      - flight_name
+      sort variable: pressure
+      sort order: descending
+  io pool:
+    reader name: PrepInputFiles
+    max pool size: 4
+    file preparation:
+      mpi communicator size: 7
+      output file: "testwork/build_file_set_mpi7/windborne_obs_2022021600_s_mpi7.nc4"
+  simulated variables:
+  - airTemperature
+  - windEastward
+  - windNorthward

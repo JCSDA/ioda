@@ -198,22 +198,22 @@ void ReaderSinglePool::adjustDistributionMap(const ioda::Group & fileGroup) {
                 // Add the index into the vector
                 distributionMap_[key].push_back(i);
             }
+        }
 
-            // At this point it is possible for the distribution map to be missing
-            // entries. This situation comes about when the filtering and distribution
-            // in the reader initialize step results in any of the processes in the
-            // rank assignment getting zero obs. The code above won't produce an entry
-            // for a rank with zero obs (including the pool member rank) and these cases
-            // need to have an entry (with an empty vector) in the new distribution map.
-            const int myRank = this->commAll().rank();
-            if (distributionMap_.find(myRank) == distributionMap_.end()) {
-                distributionMap_[myRank].clear();
-            }
-            for (const auto & rankAssign : rankAssignment_) {
-                const int rank = rankAssign.first;
-                if (distributionMap_.find(rank) == distributionMap_.end()) {
-                    distributionMap_[rank].clear();
-                }
+        // At this point it is possible for the distribution map to be missing
+        // entries. This situation comes about when the filtering and distribution
+        // in the reader initialize step results in any of the processes in the
+        // rank assignment getting zero obs. The code above won't produce an entry
+        // for a rank with zero obs (including the pool member rank) and these cases
+        // need to have an entry (with an empty vector) in the new distribution map.
+        const int myRank = this->commAll().rank();
+        if (distributionMap_.find(myRank) == distributionMap_.end()) {
+            distributionMap_[myRank].clear();
+        }
+        for (const auto & rankAssign : rankAssignment_) {
+            const int rank = rankAssign.first;
+            if (distributionMap_.find(rank) == distributionMap_.end()) {
+                distributionMap_[rank].clear();
             }
         }
     }
@@ -231,25 +231,32 @@ void ReaderSinglePool::restoreIndicesRecNums(const ioda::Group & fileGroup) {
             .read<std::size_t>(recNumsAllRanks);
 
         // First save the location indices and record numbers belonging to this task
-        int start = distributionMap_.at(this->commAll().rank())[0];
         int count = distributionMap_.at(this->commAll().rank()).size();
-        locIndices_.assign(locIndicesAllRanks.begin() + start,
-                           locIndicesAllRanks.begin() + start + count);
-        recNums_.assign(recNumsAllRanks.begin() + start,
-                        recNumsAllRanks.begin() + start + count);
+        if (count > 0) {
+            const int start = distributionMap_.at(this->commAll().rank())[0];
+            locIndices_.assign(locIndicesAllRanks.begin() + start,
+                               locIndicesAllRanks.begin() + start + count);
+            recNums_.assign(recNumsAllRanks.begin() + start,
+                            recNumsAllRanks.begin() + start + count);
+        } else {
+            locIndices_.resize(0);
+            recNums_.resize(0);
+        }
 
         // Send the location indices and record numbers to the non pool members
         for (const auto & rankAssign : rankAssignment_) {
             const int toRank = rankAssign.first;
-            start = distributionMap_.at(toRank)[0];
             count = distributionMap_.at(toRank).size();
 
             // First send the count, then send the data
             this->commAll().send(&count, 1, toRank, msgIsVarSize);
-            this->commAll().send(locIndicesAllRanks.data() + start, count,
-                                 toRank, msgIsVarSize);
-            this->commAll().send(recNumsAllRanks.data() + start, count,
-                                 toRank, msgIsVarData);
+            if (count > 0) {
+                const int start = distributionMap_.at(toRank)[0];
+                this->commAll().send(locIndicesAllRanks.data() + start, count,
+                                     toRank, msgIsVarSize);
+                this->commAll().send(recNumsAllRanks.data() + start, count,
+                                     toRank, msgIsVarData);
+            }
         }
     } else {
         // Receive the location indices and record numbers from the associated pool member rank
@@ -259,8 +266,10 @@ void ReaderSinglePool::restoreIndicesRecNums(const ioda::Group & fileGroup) {
             this->commAll().receive(&count, 1, fromRank, msgIsVarSize);
             locIndices_.resize(count);
             recNums_.resize(count);
-            this->commAll().receive(locIndices_.data(), count, fromRank, msgIsVarSize);
-            this->commAll().receive(recNums_.data(), count, fromRank, msgIsVarData);
+            if (count > 0) {
+                this->commAll().receive(locIndices_.data(), count, fromRank, msgIsVarSize);
+                this->commAll().receive(recNums_.data(), count, fromRank, msgIsVarData);
+            }
         }
     }
 
@@ -478,10 +487,8 @@ void ReaderSinglePool::load(Group & destGroup) {
     // maps calculated for the building the original input files
     // (during the initialization step) need to be adjusted to distribute the
     // locations in the new input files.
-    if (nlocs_ > 0) {
-        adjustDistributionMap(fileGroup);
-        restoreIndicesRecNums(fileGroup);
-    }
+    adjustDistributionMap(fileGroup);
+    restoreIndicesRecNums(fileGroup);
 
     // Copy the group structure (groups and their attributes) contained in the fileGroup
     // to the destGroup. Note that the readerCopyGroupStructure function will generate

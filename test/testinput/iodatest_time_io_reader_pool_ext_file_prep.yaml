@@ -1,7 +1,7 @@
 ---
 time window:
   begin: "2018-01-01T00:00:00Z"
-  end:   "2022-01-01T00:00:00Z"
+  end:   "2023-01-01T00:00:00Z"
 
 observations:
 - obs space:
@@ -52,3 +52,27 @@ observations:
     io pool:
       reader name: SinglePool
       max pool size: 4
+
+- obs space:
+    name: "Windborne, with obs grouping"
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: "./testwork/build_file_set/windborne_obs_2022021600_s.nc4"
+      obsgrouping:
+        group variables:
+        - flight_name
+        sort variable: pressure
+        sort order: descending
+      file preparation type: external
+    obsdataout:
+      engine:
+        type: H5File
+        obsfile: "testoutput/windborne_obs_2022021600_s_time_reader_pool_ext_file_prep.nc4"
+    io pool:
+      reader name: SinglePool
+      max pool size: 4
+    simulated variables:
+    - airTemperature
+    - windEastward
+    - windNorthward
