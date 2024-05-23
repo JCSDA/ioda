@@ -122,9 +122,9 @@ ObsSpace::ObsSpace(const eckit::Configuration & config, const eckit::mpi::Comm &
                      : oops::ObsSpaceBase(config, comm, timeWindow),
                        timeWindow_(timeWindow),
                        commMPI_(comm), commTime_(timeComm),
-                       gnlocs_(0), nrecs_(0),
-                       obs_group_(), obs_params_(config, timeWindow_, comm, timeComm),
-                       obsvars_()
+                       source_nlocs_(0), gnlocs_(0), gnlocs_outside_timewindow_(0),
+                       gnlocs_reject_qc_(0), nrecs_(0), obs_group_(),
+                       obs_params_(config, timeWindow_, comm, timeComm), obsvars_()
 {
     // Determine if run stats should be dumped out from the environment variable
     // IODA_PRINT_RUNSTATS.
@@ -149,8 +149,44 @@ ObsSpace::ObsSpace(const eckit::Configuration & config, const eckit::mpi::Comm &
         util::printRunStats("ioda::ObsSpace::ObsSpace: start " + obsname_ + ": ", true, comm);
     }
 
+    // Create an MPI distribution object
+    const auto & distParams = obs_params_.top_level_.distribution.value().params.value();
+    dist_ = DistributionFactory::create(obs_params_.comm(), distParams);
+
+    // Create a vector of obsdatain configs (one per input file) for the loop below
+    std::vector<eckit::LocalConfiguration> obsDataInConfigs =
+        expandInputFileConfigs(obs_params_.top_level_.obsDataIn.value());
+
     // Load the obs space data (into obs_group_) from the obs source (file or generator)
-    load();
+    dim_info_.set_dim_size(ObsDimensionId::Location, 0);
+    indx_.clear();
+    recnums_.clear();
+    ObsGroup tempObsGroup;
+    ObsSourceStats obsSourceStats;
+    for (int i = 0; i < obsDataInConfigs.size(); ++i) {
+        load(obsDataInConfigs[i], tempObsGroup, obsSourceStats);
+        appendObsGroup(tempObsGroup, obsSourceStats);
+    }
+
+    // Assign Location variable with the source index numbers that were kept
+    assignLocationValues();
+
+    // The distribution object has a notion of patch obs which are the observations
+    // "owned" by the corresponding obs space. When an overlapping distribution (eg, Halo)
+    // is used, there is a need to identify all the unique obs (ie, locations) for functions
+    // that access obs across the MPI tasks. Computing an ObsVector dot product, and
+    // output IO are two examples. The ownership (patch) marks which obs participate in
+    // the MPI distributed functions, and collectively make up a total set of obs that contain
+    // no duplicates.
+    //
+    // Take the Halo distribution for an example. Each MPI task holds locations (obs) that
+    // are within a horizontal radius from a given center point. This brings up the situation
+    // where multiple obs spaces (geographic neighbors) can both contain the same locations
+    // since their spatial coverages can overlap. The ownership is given to the MPI task whose
+    // center is closer to that location. That way one MPI task owns the obs and the other
+    // does not which is then used to make sure the duplicate location is not used in
+    // MPI collective operations (such as the dot product function).
+    dist_->computePatchLocs();
 
     // Get list of observed variables
     // Either read from yaml list, use all variables in input file if 'obsdatain' is specified
@@ -681,24 +717,21 @@ void ObsSpace::assignLocationValues() {
 }
 
 // -----------------------------------------------------------------------------
-void ObsSpace::load() {
+void ObsSpace::load(const eckit::LocalConfiguration & obsDataInConfig,
+                    ioda::ObsGroup & destObsGroup, ObsSourceStats & obsSourceStats) {
     if (print_run_stats_ > 0) {
         util::printRunStats("ioda::ObsSpace::load: start " + obsname_ + ": ", true, comm());
     }
 
-    // Create an MPI distribution object
-    const auto & distParams = obs_params_.top_level_.distribution.value().params.value();
-    dist_ = DistributionFactory::create(obs_params_.comm(), distParams);
-
-    // Open the source of the data for initializing the obs_group_
+    // Open the source of the data for initializing the destObsGroup
     // Temporarily allow for the new reader to be selected. This is done to allow
     // the new reader to be developed in parallel with the current reader. When the
     // new reader becomes fully functional it will replace the current reader.
-
+    ObsDataInParameters readerParams;
+    readerParams.deserialize(obsDataInConfig);
     IoPool::ReaderPoolCreationParameters createParams(
         obs_params_.comm(), obs_params_.timeComm(),
-        obs_params_.top_level_.obsDataIn.value().engine.value().engineParameters,
-        obs_params_.timeWindow(),
+        readerParams.engine.value().engineParameters, obs_params_.timeWindow(),
         obs_params_.top_level_.simVars.value().variables(), dist_,
         obs_params_.top_level_.obsDataIn.value().obsGrouping.value().obsGroupVars,
         obs_params_.top_level_.obsDataIn.value().prepType);
@@ -713,54 +746,21 @@ void ObsSpace::load() {
     this->comm().barrier();
 
     // Transfer the obs data from the source to the obs space container (ObsGroup)
-    readPool->load(obs_group_);
+    readPool->load(destObsGroup);
 
-    // Record locations and channels dimension sizes
-    // The HDF library has an issue when a dimension marked UNLIMITED is queried for its
-    // size a zero is returned instead of the proper current size. As a workaround for this
-    // ask the frame how many locations it kept instead of asking the Location dimension for
-    // its size.
-    std::size_t nLocs = readPool->nlocs();
-    dim_info_.set_dim_size(ObsDimensionId::Location, nLocs);
-
-    std::string ChannelName = dim_info_.get_dim_name(ObsDimensionId::Channel);
-    if (obs_group_.vars.exists(ChannelName)) {
-        std::size_t nChans = obs_group_.vars.open(ChannelName).getDimensions().dimsCur[0];
-        dim_info_.set_dim_size(ObsDimensionId::Channel, nChans);
-    }
-
-    // Record "record" information
-    nrecs_ = readPool->nrecs();
-    indx_ = readPool->index();
-    recnums_ = readPool->recnums();
-
-    // Assign Location variable with the source index numbers that were kept
-    assignLocationValues();
-
-    // The distribution object has a notion of patch obs which are the observations
-    // "owned" by the corresponding obs space. When an overlapping distribution (eg, Halo)
-    // is used, there is a need to identify all the unique obs (ie, locations) for functions
-    // that access obs across the MPI tasks. Computing an ObsVector dot product, and
-    // output IO are two examples. The ownership (patch) marks which obs participate in
-    // the MPI distributed functions, and collectively make up a total set of obs that contain
-    // no duplicates.
-    //
-    // Take the Halo distribution for an example. Each MPI task holds locations (obs) that
-    // are within a horizontal radius from a given center point. This brings up the situation
-    // where multiple obs spaces (geographic neighbors) can both contain the same locations
-    // since their spatial coverages can overlap. The ownership is given to the MPI task whose
-    // center is closer to that location. That way one MPI task owns the obs and the other
-    // does not which is then used to make sure the duplicate location is not used in
-    // MPI collective operations (such as the dot product function).
-    dist_->computePatchLocs();
+    // Record location and record information
+    obsSourceStats.nlocs = readPool->nlocs();
+    obsSourceStats.nrecs = readPool->nrecs();
+    obsSourceStats.locIndices = readPool->index();
+    obsSourceStats.recNums = readPool->recnums();
 
     // After loading the obs data, gnlocs_ and gnlocs_outside_timewindow_
     // are set representing the entire obs source. This is because they are calculated
     // before distributing the data to all of the MPI tasks.
-    gnlocs_ = readPool->globalNlocs();
-    gnlocs_outside_timewindow_ = readPool->sourceNlocsOutsideTimeWindow();
-    gnlocs_reject_qc_ = readPool->sourceNlocsRejectQC();
-    source_nlocs_ = readPool->sourceNlocs();
+    obsSourceStats.gNlocs = readPool->globalNlocs();
+    obsSourceStats.gNlocsOutsideTimewindow = readPool->sourceNlocsOutsideTimeWindow();
+    obsSourceStats.gNlocsRejectQc = readPool->sourceNlocsRejectQC();
+    obsSourceStats.sourceNlocs = readPool->sourceNlocs();
 
     // Wait for all processes to finish the load call so that we know the file
     // is complete and closed.
@@ -772,6 +772,49 @@ void ObsSpace::load() {
         util::printRunStats("ioda::ObsSpace::load: end " + obsname_ + ": ", true, comm());
     }
 }
+
+// -----------------------------------------------------------------------------
+void ObsSpace::appendObsGroup(const ObsGroup & appendObsGroup, ObsSourceStats & obsSourceStats) {
+    // append the ObsGroup (save for now)
+    obs_group_.append(appendObsGroup);
+
+    // accumulate stats from the obs source
+    nrecs_ += obsSourceStats.nrecs;
+    gnlocs_ += obsSourceStats.gNlocs;
+    gnlocs_outside_timewindow_ += obsSourceStats.gNlocsOutsideTimewindow;
+    gnlocs_reject_qc_ += obsSourceStats.gNlocsRejectQc;
+    source_nlocs_ += obsSourceStats.sourceNlocs;
+    indx_.insert(indx_.end(), obsSourceStats.locIndices.begin(), obsSourceStats.locIndices.end());
+    recnums_.insert(recnums_.end(), obsSourceStats.recNums.begin(), obsSourceStats.recNums.end());
+
+    // Record locations and channels dimension sizes
+    // The HDF library has an issue when a dimension marked UNLIMITED is queried for its
+    // size a zero is returned instead of the proper current size. As a workaround for this
+    // ask the frame how many locations it kept instead of asking the Location dimension for
+    // its size.
+    std::size_t nlocs = dim_info_.get_dim_size(ObsDimensionId::Location) + obsSourceStats.nlocs;
+    dim_info_.set_dim_size(ObsDimensionId::Location, nlocs);
+
+    std::string ChannelName = dim_info_.get_dim_name(ObsDimensionId::Channel);
+    if (obs_group_.vars.exists(ChannelName)) {
+        std::size_t nChans = obs_group_.vars.open(ChannelName).getDimensions().dimsCur[0];
+        dim_info_.set_dim_size(ObsDimensionId::Channel, nChans);
+    }
+}
+
+// -----------------------------------------------------------------------------
+std::vector<eckit::LocalConfiguration> ObsSpace::expandInputFileConfigs(
+                                           const ObsDataInParameters & obsDatainParams) {
+    // TODO(srh) For now we are still allowing only one input file, so it is sufficient
+    // to just create a single LocalConfiguration (vector of size 1) to pass to the
+    // ObsSpace::load function. Eventually we want an entry in the vector of
+    // LocalConfiguration for each specified input file.
+    std::vector<eckit::LocalConfiguration> obsDataInConfigs(1);
+    obsDatainParams.serialize(obsDataInConfigs[0]);
+
+    return obsDataInConfigs;
+}
+
 
 // -----------------------------------------------------------------------------
 void ObsSpace::resizeLocation(const Dimensions_t LocationSize, const bool append) {
@@ -1035,20 +1078,20 @@ void ObsSpace::buildSortedObsGroups() {
       obs_params_.top_level_.obsDataIn.value().obsGrouping.value().missingSortValueTreatment;
 
     // Get the sort variable from the data store, and convert to a vector of floats.
-    std::size_t nLocs = this->nlocs();
-    std::vector<float> SortValues(nLocs);
-    std::vector<bool> sortValueMissing(nLocs, false);
+    std::size_t nlocs = this->nlocs();
+    std::vector<float> SortValues(nlocs);
+    std::vector<bool> sortValueMissing(nlocs, false);
     if (this->obs_sort_var() == "dateTime") {
-        std::vector<util::DateTime> Dates(nLocs);
+        std::vector<util::DateTime> Dates(nlocs);
         get_db("MetaData", this->obs_sort_var(), Dates);
-        for (std::size_t iloc = 0; iloc < nLocs; iloc++) {
+        for (std::size_t iloc = 0; iloc < nlocs; iloc++) {
             SortValues[iloc] = (Dates[iloc] - Dates[0]).toSeconds();
             if (Dates[iloc] == missingDateTime)
               sortValueMissing[iloc] = true;
         }
     } else {
         get_db(this->obs_sort_group(), this->obs_sort_var(), SortValues);
-        for (std::size_t iloc = 0; iloc < nLocs; iloc++) {
+        for (std::size_t iloc = 0; iloc < nlocs; iloc++) {
           if (SortValues[iloc] == missingFloat)
             sortValueMissing[iloc] = true;
         }
@@ -1064,7 +1107,7 @@ void ObsSpace::buildSortedObsGroups() {
     // Indicates whether a particular record has at least one missing sort value.
     std::map<std::size_t, bool> recordContainsAtLeastOneMissingSortValue;
 
-    for (size_t iloc = 0; iloc < nLocs; iloc++) {
+    for (size_t iloc = 0; iloc < nlocs; iloc++) {
         const std::size_t recnum = recnums_[iloc];
         if (missingSortValueTreatment == MissingSortValueTreatment::SORT) {
           TmpRecIdx[recnum].push_back(std::make_pair(SortValues[iloc], iloc));
@@ -1144,8 +1187,8 @@ void ObsSpace::buildSortedObsGroups() {
 // -----------------------------------------------------------------------------
 void ObsSpace::buildRecIdxUnsorted() {
   recidx_.clear();
-  std::size_t nLocs = this->nlocs();
-  for (size_t iloc = 0; iloc < nLocs; iloc++) {
+  std::size_t nlocs = this->nlocs();
+  for (size_t iloc = 0; iloc < nlocs; iloc++) {
     recidx_[recnums_[iloc]].push_back(iloc);
   }
 }

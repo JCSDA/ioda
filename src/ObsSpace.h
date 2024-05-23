@@ -28,6 +28,7 @@
 #include <utility>
 #include <vector>
 
+#include "eckit/config/LocalConfiguration.h"
 #include "eckit/mpi/Comm.h"
 
 #include "oops/base/ObsSpaceBase.h"
@@ -50,6 +51,36 @@ namespace eckit {
 
 namespace ioda {
     class ObsVector;
+
+    //-------------------------------------------------------------------------------------
+    struct ObsSourceStats {
+      /// \brief total number of locations from the input source (file or generator)
+      std::size_t nlocs;
+
+      /// \brief total number of locations from the input source (file or generator)
+      std::size_t nchans;
+
+      /// \brief total number of locations from the input source (file or generator)
+      std::size_t sourceNlocs;
+
+      /// \brief total number of locations across all MPI tasks
+      std::size_t gNlocs;
+
+      /// \brief number of nlocs from the obs source that are outside the time window
+      std::size_t gNlocsOutsideTimewindow;
+
+      /// \brief number of nlocs from the obs source that are outside the time window
+      std::size_t gNlocsRejectQc;
+
+      /// \brief number of records
+      std::size_t nrecs;
+
+      /// \brief indexes of locations to extract from the input obs file
+      std::vector<std::size_t> locIndices;
+
+      /// \brief record numbers associated with the location indexes
+      std::vector<std::size_t> recNums;
+    };
 
     //-------------------------------------------------------------------------------------
     /// Enum type for compare actions
@@ -582,7 +613,32 @@ namespace ioda {
         void assignLocationValues();
 
         /// \brief load the obs space data from an obs source (file or generator)
-        void load();
+        /// \param backendConfig eckit::LocalConfiguration object for obs source backend
+        /// \param destObsGroup destination ObsGroup object
+        /// \param obsSourceStats struct holding counts, etc. that describe the contents
+        /// of the obs source
+        void load(const eckit::LocalConfiguration & backendConfig, ObsGroup & destObsGroup,
+                  ObsSourceStats & obsSourceStats);
+
+        /// \brief expand the obsdatain parameter to a vector of obsdatain configs
+        /// \details This function will take the obsdatain ObsDataInParameters object
+        /// from deserializing the original obsdatain spec, and construct a vector
+        /// of obsdatain configs where each elemnt is a copy of the obsdatain config
+        /// with the obsfile spec replaced with each file name in the list. The original
+        /// config can have either an obsfile (scalar) or obsfiles (vector), these both
+        /// default to empty values, and this routine simply concatenates obsfile and
+        /// obsfiles to form the vector obsdatain specs.
+        std::vector<eckit::LocalConfiguration>
+            expandInputFileConfigs(const ObsDataInParameters &obsDatainParams);
+
+        /// \brief append the given ObsGroup and update the obs source stats
+        /// \details This function will append the given ObsGroup to the ObsSpace::obs_group_
+        /// data member. It will also update the obs suorce stats data members
+        /// (nlocs, gnlocs, etc.) from the given ObsSourceStats struct.
+        /// \param appendObsGroup ObsGroup to be appended to obs_group_
+        /// \param obsSourceStats struct holding counts, etc. that describe the contents
+        /// of the obs source
+        void appendObsGroup(const ObsGroup & appendObsGroup, ObsSourceStats & obsSourceStats);
 
         /// \brief Extend the ObsSpace according to the method requested in
         ///  the configuration file.

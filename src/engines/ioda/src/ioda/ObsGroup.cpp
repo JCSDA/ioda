@@ -136,4 +136,13 @@ void ObsGroup::resizeVars(Group& g,
       "An exception occurred inside ioda while resizing an ObsGroup.", ioda_Here()));
   }
 }
+
+//-------------------------------------------------------------------------------
+void ObsGroup::append(const Group & appendGroup) {
+    // TODO(srh) For now assume that this group is empty and simply move the appendGroup
+    // to this group. We eventually need to make this a real append operation which can
+    // handle the case where this group is not empty.
+    *this = appendGroup;
+}
+
 }  // namespace ioda
