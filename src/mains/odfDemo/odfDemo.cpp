@@ -13,8 +13,7 @@
 #include "ioda/containers/Constants.h"
 #include "ioda/containers/ObsDataFrameRows.h"
 
-#include "ioda/containers/DatumDouble.h"
-#include "ioda/containers/DatumInt32.h"
+#include "ioda/containers/Datum.h"
 
 std::int32_t main() {
   ObsDataFrameRows dfRow;
@@ -100,8 +99,10 @@ std::int32_t main() {
     std::shared_ptr<DatumBase> datumA = dataRowA.getColumn(columnIndex);
     std::shared_ptr<DatumBase> datumB = dataRowB.getColumn(columnIndex);
 
-    std::shared_ptr<DatumInt32> datumAInt32 = std::static_pointer_cast<DatumInt32>(datumA);
-    std::shared_ptr<DatumInt32> datumBInt32 = std::static_pointer_cast<DatumInt32>(datumB);
+    std::shared_ptr<Datum<std::int32_t>> datumAInt32 =
+            std::static_pointer_cast<Datum<std::int32_t>>(datumA);
+    std::shared_ptr<Datum<std::int32_t>> datumBInt32 =
+            std::static_pointer_cast<Datum<std::int32_t>>(datumB);
     return datumAInt32->getDatum() < datumBInt32->getDatum();
   });
   dfRow.print();
@@ -114,7 +115,7 @@ std::int32_t main() {
   std::cout  << std::endl << "test slice 2" << std::endl;
   std::shared_ptr<ObsDataFrame> test2 = dfRow.slice([&](DataRow& dataRow) {
     std::shared_ptr<DatumBase> datum = dataRow.getColumn(0);
-    std::shared_ptr<DatumDouble> datumDouble = std::static_pointer_cast<DatumDouble>(datum);
+    std::shared_ptr<Datum<double>> datumDouble = std::static_pointer_cast<Datum<double>>(datum);
     double datumValue = datumDouble->getDatum();
     return datumValue < -70.;
   });

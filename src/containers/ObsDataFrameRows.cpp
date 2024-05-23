@@ -12,14 +12,8 @@
 #include <string>
 
 #include "Constants.h"
+#include "Datum.h"
 #include "DatumBase.h"
-#include "DatumDouble.h"
-#include "DatumFloat.h"
-#include "DatumInt8.h"
-#include "DatumInt16.h"
-#include "DatumInt32.h"
-#include "DatumInt64.h"
-#include "DatumString.h"
 
 ObsDataFrameRows::ObsDataFrameRows() : ObsDataFrame(consts::eRowPriority) {}
 
@@ -141,7 +135,7 @@ void ObsDataFrameRows::setColumn(const std::string& name,
 template<>
 std::shared_ptr<DatumBase> ObsDataFrameRows::createDatum<std::int8_t>(
                                       const std::int32_t& columnIndex, std::int8_t value) {
-  std::shared_ptr<DatumInt8> datum = std::make_shared<DatumInt8>(value);
+  std::shared_ptr<Datum<std::int8_t>> datum = std::make_shared<Datum<std::int8_t>>(value);
   columnMetadata_.updateColumnWidth(columnIndex, std::to_string(value).size());
   return datum;
 }
@@ -149,7 +143,7 @@ std::shared_ptr<DatumBase> ObsDataFrameRows::createDatum<std::int8_t>(
 template<>
 std::shared_ptr<DatumBase> ObsDataFrameRows::createDatum<std::int16_t>(
                                       const std::int32_t& columnIndex, std::int16_t value) {
-  std::shared_ptr<DatumInt16> datum = std::make_shared<DatumInt16>(value);
+  std::shared_ptr<Datum<std::int16_t>> datum = std::make_shared<Datum<std::int16_t>>(value);
   columnMetadata_.updateColumnWidth(columnIndex, std::to_string(value).size());
   return datum;
 }
@@ -157,7 +151,7 @@ std::shared_ptr<DatumBase> ObsDataFrameRows::createDatum<std::int16_t>(
 template<>
 std::shared_ptr<DatumBase> ObsDataFrameRows::createDatum<std::int32_t>(
                                       const std::int32_t& columnIndex, std::int32_t value) {
-  std::shared_ptr<DatumInt32> datum = std::make_shared<DatumInt32>(value);
+  std::shared_ptr<Datum<std::int32_t>> datum = std::make_shared<Datum<std::int32_t>>(value);
   columnMetadata_.updateColumnWidth(columnIndex, std::to_string(value).size());
   return datum;
 }
@@ -165,7 +159,7 @@ std::shared_ptr<DatumBase> ObsDataFrameRows::createDatum<std::int32_t>(
 template<>
 std::shared_ptr<DatumBase> ObsDataFrameRows::createDatum<std::int64_t>(
                                       const std::int32_t& columnIndex, std::int64_t value) {
-  std::shared_ptr<DatumInt64> datum = std::make_shared<DatumInt64>(value);
+  std::shared_ptr<Datum<std::int64_t>> datum = std::make_shared<Datum<std::int64_t>>(value);
   columnMetadata_.updateColumnWidth(columnIndex, std::to_string(value).size());
   return datum;
 }
@@ -173,7 +167,7 @@ std::shared_ptr<DatumBase> ObsDataFrameRows::createDatum<std::int64_t>(
 template<>
 std::shared_ptr<DatumBase> ObsDataFrameRows::createDatum<float>(
                                       const std::int32_t& columnIndex, float value) {
-  std::shared_ptr<DatumFloat> datum = std::make_shared<DatumFloat>(value);
+  std::shared_ptr<Datum<float>> datum = std::make_shared<Datum<float>>(value);
   columnMetadata_.updateColumnWidth(columnIndex, std::to_string(value).size());
   return datum;
 }
@@ -181,7 +175,7 @@ std::shared_ptr<DatumBase> ObsDataFrameRows::createDatum<float>(
 template<>
 std::shared_ptr<DatumBase> ObsDataFrameRows::createDatum<double>(
                                       const std::int32_t& columnIndex, double value) {
-  std::shared_ptr<DatumDouble> datum = std::make_shared<DatumDouble>(value);
+  std::shared_ptr<Datum<double>> datum = std::make_shared<Datum<double>>(value);
   columnMetadata_.updateColumnWidth(columnIndex, std::to_string(value).size());
   return datum;
 }
@@ -189,7 +183,7 @@ std::shared_ptr<DatumBase> ObsDataFrameRows::createDatum<double>(
 template<>
 std::shared_ptr<DatumBase> ObsDataFrameRows::createDatum<std::string>(
                                       const std::int32_t& columnIndex, std::string value) {
-  std::shared_ptr<DatumString> datum = std::make_shared<DatumString>(value);
+  std::shared_ptr<Datum<std::string>> datum = std::make_shared<Datum<std::string>>(value);
   columnMetadata_.updateColumnWidth(columnIndex, value.size());
   return datum;
 }
@@ -198,7 +192,7 @@ template<>
 std::shared_ptr<DatumBase> ObsDataFrameRows::createDatum<char const*>(
                                       const std::int32_t& columnIndex, char const* value) {
   std::string valStr = std::string(value);
-  std::shared_ptr<DatumString> datum = std::make_shared<DatumString>(valStr);
+  std::shared_ptr<Datum<std::string>> datum = std::make_shared<Datum<std::string>>(valStr);
   columnMetadata_.updateColumnWidth(columnIndex, valStr.size());
   return datum;
 }
@@ -206,49 +200,54 @@ std::shared_ptr<DatumBase> ObsDataFrameRows::createDatum<char const*>(
 template<>
 void ObsDataFrameRows::getDatumValue<std::int8_t>(
                                std::shared_ptr<DatumBase> datum, std::int8_t& var) const {
-  std::shared_ptr<DatumInt8> datumInt8 = std::static_pointer_cast<DatumInt8>(datum);
+  std::shared_ptr<Datum<std::int8_t>> datumInt8 =
+          std::static_pointer_cast<Datum<std::int8_t>>(datum);
   var = datumInt8->getDatum();
 }
 
 template<>
 void ObsDataFrameRows::getDatumValue<std::int16_t>(
                                std::shared_ptr<DatumBase> datum, std::int16_t& var) const {
-  std::shared_ptr<DatumInt16> datumInt16 = std::static_pointer_cast<DatumInt16>(datum);
+  std::shared_ptr<Datum<std::int16_t>> datumInt16 =
+          std::static_pointer_cast<Datum<std::int16_t>>(datum);
   var = datumInt16->getDatum();
 }
 
 template<>
 void ObsDataFrameRows::getDatumValue<std::int32_t>(
                                std::shared_ptr<DatumBase> datum, std::int32_t& var) const {
-  std::shared_ptr<DatumInt32> datumInt32 = std::static_pointer_cast<DatumInt32>(datum);
+  std::shared_ptr<Datum<std::int32_t>> datumInt32 =
+          std::static_pointer_cast<Datum<std::int32_t>>(datum);
   var = datumInt32->getDatum();
 }
 
 template<>
 void ObsDataFrameRows::getDatumValue<std::int64_t>(
                                std::shared_ptr<DatumBase> datum, std::int64_t& var) const {
-  std::shared_ptr<DatumInt64> datumInt64 = std::static_pointer_cast<DatumInt64>(datum);
+  std::shared_ptr<Datum<std::int64_t>> datumInt64 =
+          std::static_pointer_cast<Datum<std::int64_t>>(datum);
   var = datumInt64->getDatum();
 }
 
 template<>
 void ObsDataFrameRows::getDatumValue<float>(
                                std::shared_ptr<DatumBase> datum, float& var) const {
-  std::shared_ptr<DatumFloat> datumFloat = std::static_pointer_cast<DatumFloat>(datum);
+  std::shared_ptr<Datum<float>> datumFloat = std::static_pointer_cast<Datum<float>>(datum);
   var = datumFloat->getDatum();
 }
 
 template<>
 void ObsDataFrameRows::getDatumValue<double>(
                                std::shared_ptr<DatumBase> datum, double& var) const {
-  std::shared_ptr<DatumDouble> datumDouble = std::static_pointer_cast<DatumDouble>(datum);
+  std::shared_ptr<Datum<double>> datumDouble = std::static_pointer_cast<Datum<double>>(datum);
   var = datumDouble->getDatum();
 }
 
 template<>
 void ObsDataFrameRows::getDatumValue<std::string>(
                                std::shared_ptr<DatumBase> datum, std::string& var) const {
-  std::shared_ptr<DatumString> datumString = std::static_pointer_cast<DatumString>(datum);
+  std::shared_ptr<Datum<std::string>> datumString =
+          std::static_pointer_cast<Datum<std::string>>(datum);
   var = datumString->getDatum();
 }
 
@@ -256,49 +255,54 @@ void ObsDataFrameRows::getDatumValue<std::string>(
 template<>
 void ObsDataFrameRows::setDatumValue<std::int8_t>(
                                std::shared_ptr<DatumBase> datum, const std::int8_t& var) const {
-  std::shared_ptr<DatumInt8> datumInt8 = std::static_pointer_cast<DatumInt8>(datum);
+  std::shared_ptr<Datum<std::int8_t>> datumInt8 =
+          std::static_pointer_cast<Datum<std::int8_t>>(datum);
   datumInt8->setDatum(var);
 }
 
 template<>
 void ObsDataFrameRows::setDatumValue<std::int16_t>(
                                std::shared_ptr<DatumBase> datum, const std::int16_t& var) const {
-  std::shared_ptr<DatumInt16> datumInt16 = std::static_pointer_cast<DatumInt16>(datum);
+  std::shared_ptr<Datum<std::int16_t>> datumInt16 =
+          std::static_pointer_cast<Datum<std::int16_t>>(datum);
   datumInt16->setDatum(var);
 }
 
 template<>
 void ObsDataFrameRows::setDatumValue<std::int32_t>(
                                std::shared_ptr<DatumBase> datum, const std::int32_t& var) const {
-  std::shared_ptr<DatumInt32> datumInt32 = std::static_pointer_cast<DatumInt32>(datum);
+  std::shared_ptr<Datum<std::int32_t>> datumInt32 =
+          std::static_pointer_cast<Datum<std::int32_t>>(datum);
   datumInt32->setDatum(var);
 }
 
 template<>
 void ObsDataFrameRows::setDatumValue<std::int64_t>(
                                std::shared_ptr<DatumBase> datum, const std::int64_t& var) const {
-  std::shared_ptr<DatumInt64> datumInt64 = std::static_pointer_cast<DatumInt64>(datum);
+  std::shared_ptr<Datum<std::int64_t>> datumInt64 =
+          std::static_pointer_cast<Datum<std::int64_t>>(datum);
   datumInt64->setDatum(var);
 }
 
 template<>
 void ObsDataFrameRows::setDatumValue<float>(
                                std::shared_ptr<DatumBase> datum, const float& var) const {
-  std::shared_ptr<DatumFloat> datumFloat = std::static_pointer_cast<DatumFloat>(datum);
+  std::shared_ptr<Datum<float>> datumFloat = std::static_pointer_cast<Datum<float>>(datum);
   datumFloat->setDatum(var);
 }
 
 template<>
 void ObsDataFrameRows::setDatumValue<double>(
                                std::shared_ptr<DatumBase> datum, const double& var) const {
-  std::shared_ptr<DatumDouble> datumDouble = std::static_pointer_cast<DatumDouble>(datum);
+    std::shared_ptr<Datum<double>> datumDouble = std::static_pointer_cast<Datum<double>>(datum);
   datumDouble->setDatum(var);
 }
 
 template<>
 void ObsDataFrameRows::setDatumValue<std::string>(
                                std::shared_ptr<DatumBase> datum, const std::string& var) const {
-  std::shared_ptr<DatumString> datumString = std::static_pointer_cast<DatumString>(datum);
+    std::shared_ptr<Datum<std::string>> datumString =
+            std::static_pointer_cast<Datum<std::string>>(datum);
   datumString->setDatum(var);
 }
 
@@ -411,7 +415,8 @@ std::shared_ptr<ObsDataFrame> ObsDataFrameRows::slice(const std::string& columnN
       std::copy_if(dataRows_.begin(), dataRows_.end(), std::back_inserter(newDataRows),
                    [&](DataRow& row) {
         std::shared_ptr<DatumBase> datum = row.getColumn(columnIndex);
-        std::shared_ptr<DatumInt8> datumInt8 = std::static_pointer_cast<DatumInt8>(datum);
+        std::shared_ptr<Datum<std::int8_t>> datumInt8 =
+                std::static_pointer_cast<Datum<std::int8_t>>(datum);
         std::int8_t datumValue = datumInt8->getDatum();
         return compareDatumToThreshold(comparison, threshold, datumValue);
       });
@@ -436,7 +441,8 @@ std::shared_ptr<ObsDataFrame> ObsDataFrameRows::slice(const std::string& columnN
       std::copy_if(dataRows_.begin(), dataRows_.end(),
                    std::back_inserter(newDataRows), [&](DataRow& row) {
         std::shared_ptr<DatumBase> datum = row.getColumn(columnIndex);
-        std::shared_ptr<DatumInt16> datumInt16 = std::static_pointer_cast<DatumInt16>(datum);
+        std::shared_ptr<Datum<std::int16_t>> datumInt16 =
+                std::static_pointer_cast<Datum<std::int16_t>>(datum);
         std::int16_t datumValue = datumInt16->getDatum();
         return compareDatumToThreshold(comparison, threshold, datumValue);
       });
@@ -460,7 +466,8 @@ std::shared_ptr<ObsDataFrame> ObsDataFrameRows::slice(const std::string& columnN
       std::copy_if(dataRows_.begin(), dataRows_.end(),
                    std::back_inserter(newDataRows), [&](DataRow& row) {
         std::shared_ptr<DatumBase> datum = row.getColumn(columnIndex);
-        std::shared_ptr<DatumInt32> datumInt32 = std::static_pointer_cast<DatumInt32>(datum);
+        std::shared_ptr<Datum<std::int32_t>> datumInt32 =
+                std::static_pointer_cast<Datum<std::int32_t>>(datum);
         std::int32_t datumValue = datumInt32->getDatum();
         return compareDatumToThreshold(comparison, threshold, datumValue);
       });
@@ -484,7 +491,8 @@ std::shared_ptr<ObsDataFrame> ObsDataFrameRows::slice(const std::string& columnN
       std::copy_if(dataRows_.begin(), dataRows_.end(),
                    std::back_inserter(newDataRows), [&](DataRow& row) {
         std::shared_ptr<DatumBase> datum = row.getColumn(columnIndex);
-        std::shared_ptr<DatumInt64> datumInt64 = std::static_pointer_cast<DatumInt64>(datum);
+        std::shared_ptr<Datum<std::int64_t>> datumInt64 =
+                std::static_pointer_cast<Datum<std::int64_t>>(datum);
         std::int64_t datumValue = datumInt64->getDatum();
         return compareDatumToThreshold(comparison, threshold, datumValue);
       });
@@ -508,7 +516,7 @@ std::shared_ptr<ObsDataFrame> ObsDataFrameRows::slice(const std::string& columnN
       std::copy_if(dataRows_.begin(), dataRows_.end(),
                    std::back_inserter(newDataRows), [&](DataRow& row) {
         std::shared_ptr<DatumBase> datum = row.getColumn(columnIndex);
-        std::shared_ptr<DatumFloat> datumFloat = std::static_pointer_cast<DatumFloat>(datum);
+        std::shared_ptr<Datum<float>> datumFloat = std::static_pointer_cast<Datum<float>>(datum);
         float datumValue = datumFloat->getDatum();
         return compareDatumToThreshold(comparison, threshold, datumValue);
       });
@@ -532,7 +540,7 @@ std::shared_ptr<ObsDataFrame> ObsDataFrameRows::slice(const std::string& columnN
       std::copy_if(dataRows_.begin(), dataRows_.end(),
                    std::back_inserter(newDataRows), [&](DataRow& row) {
         std::shared_ptr<DatumBase> datum = row.getColumn(columnIndex);
-        std::shared_ptr<DatumDouble> datumDouble = std::static_pointer_cast<DatumDouble>(datum);
+        std::shared_ptr<Datum<double>> datumDouble = std::static_pointer_cast<Datum<double>>(datum);
         double datumValue = datumDouble->getDatum();
         return compareDatumToThreshold(comparison, threshold, datumValue);
       });
@@ -556,7 +564,8 @@ std::shared_ptr<ObsDataFrame> ObsDataFrameRows::slice(const std::string& columnN
       std::copy_if(dataRows_.begin(), dataRows_.end(),
                    std::back_inserter(newDataRows), [&](DataRow& row) {
         std::shared_ptr<DatumBase> datum = row.getColumn(columnIndex);
-        std::shared_ptr<DatumString> datumString = std::static_pointer_cast<DatumString>(datum);
+        std::shared_ptr<Datum<std::string>> datumString =
+                std::static_pointer_cast<Datum<std::string>>(datum);
         std::string datumValue = datumString->getDatum();
         return compareDatumToThreshold(comparison, threshold, datumValue);
       });
@@ -603,38 +612,48 @@ std::int8_t ObsDataFrameRows::compareDatums(std::shared_ptr<DatumBase> datumA,
   std::int8_t type = datumA->getType();
   switch (type) {
     case consts::eInt8: {
-      std::shared_ptr<DatumInt8> datumAInt8 = std::static_pointer_cast<DatumInt8>(datumA);
-      std::shared_ptr<DatumInt8> datumBInt8 = std::static_pointer_cast<DatumInt8>(datumB);
+      std::shared_ptr<Datum<std::int8_t>> datumAInt8 =
+              std::static_pointer_cast<Datum<std::int8_t>>(datumA);
+      std::shared_ptr<Datum<std::int8_t>> datumBInt8 =
+              std::static_pointer_cast<Datum<std::int8_t>>(datumB);
       return datumAInt8->getDatum() < datumBInt8->getDatum();
     }
     case consts::eInt16: {
-      std::shared_ptr<DatumInt16> datumAInt16 = std::static_pointer_cast<DatumInt16>(datumA);
-      std::shared_ptr<DatumInt16> datumBInt16 = std::static_pointer_cast<DatumInt16>(datumB);
+      std::shared_ptr<Datum<std::int16_t>> datumAInt16 =
+              std::static_pointer_cast<Datum<std::int16_t>>(datumA);
+      std::shared_ptr<Datum<std::int16_t>> datumBInt16 =
+              std::static_pointer_cast<Datum<std::int16_t>>(datumB);
       return datumAInt16->getDatum() < datumBInt16->getDatum();
     }
     case consts::eInt32: {
-      std::shared_ptr<DatumInt32> datumAInt32 = std::static_pointer_cast<DatumInt32>(datumA);
-      std::shared_ptr<DatumInt32> datumBInt32 = std::static_pointer_cast<DatumInt32>(datumB);
+      std::shared_ptr<Datum<std::int32_t>> datumAInt32 =
+              std::static_pointer_cast<Datum<std::int32_t>>(datumA);
+      std::shared_ptr<Datum<std::int32_t>> datumBInt32 =
+              std::static_pointer_cast<Datum<std::int32_t>>(datumB);
       return datumAInt32->getDatum() < datumBInt32->getDatum();
     }
     case consts::eInt64: {
-      std::shared_ptr<DatumInt64> datumAInt64 = std::static_pointer_cast<DatumInt64>(datumA);
-      std::shared_ptr<DatumInt64> datumBInt64 = std::static_pointer_cast<DatumInt64>(datumB);
+      std::shared_ptr<Datum<std::int64_t>> datumAInt64 =
+              std::static_pointer_cast<Datum<std::int64_t>>(datumA);
+      std::shared_ptr<Datum<std::int64_t>> datumBInt64 =
+              std::static_pointer_cast<Datum<std::int64_t>>(datumB);
       return datumAInt64->getDatum() < datumBInt64->getDatum();
     }
     case consts::eFloat: {
-      std::shared_ptr<DatumFloat> datumAFloat = std::static_pointer_cast<DatumFloat>(datumA);
-      std::shared_ptr<DatumFloat> datumBFloat = std::static_pointer_cast<DatumFloat>(datumB);
+      std::shared_ptr<Datum<float>> datumAFloat = std::static_pointer_cast<Datum<float>>(datumA);
+      std::shared_ptr<Datum<float>> datumBFloat = std::static_pointer_cast<Datum<float>>(datumB);
       return datumAFloat->getDatum() < datumBFloat->getDatum();
     }
     case consts::eDouble: {
-      std::shared_ptr<DatumDouble> datumADouble = std::static_pointer_cast<DatumDouble>(datumA);
-      std::shared_ptr<DatumDouble> datumBDouble = std::static_pointer_cast<DatumDouble>(datumB);
+      std::shared_ptr<Datum<double>> datumADouble = std::static_pointer_cast<Datum<double>>(datumA);
+      std::shared_ptr<Datum<double>> datumBDouble = std::static_pointer_cast<Datum<double>>(datumB);
       return datumADouble->getDatum() < datumBDouble->getDatum();
     }
     case consts::eString: {
-      std::shared_ptr<DatumString> datumAString = std::static_pointer_cast<DatumString>(datumA);
-      std::shared_ptr<DatumString> datumBString = std::static_pointer_cast<DatumString>(datumB);
+      std::shared_ptr<Datum<std::string>> datumAString =
+              std::static_pointer_cast<Datum<std::string>>(datumA);
+      std::shared_ptr<Datum<std::string>> datumBString =
+              std::static_pointer_cast<Datum<std::string>>(datumB);
       return datumAString->getDatum() < datumBString->getDatum();
     }
     default:

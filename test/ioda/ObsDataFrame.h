@@ -20,11 +20,7 @@
 
 #include "ioda/containers/ColumnMetadata.h"
 #include "ioda/containers/Constants.h"
-#include "ioda/containers/DatumDouble.h"
-#include "ioda/containers/DatumFloat.h"
-#include "ioda/containers/DatumInt32.h"
-#include "ioda/containers/DatumInt64.h"
-#include "ioda/containers/DatumString.h"
+#include "ioda/containers/Datum.h"
 #include "ioda/containers/ObsDataFrameRows.h"
 #include "ioda/Exception.h"
 
