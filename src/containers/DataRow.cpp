@@ -7,10 +7,10 @@
 
 #include "DataRow.h"
 
-#include <iostream>
 #include <string>
 
 #include "Constants.h"
+#include "oops/util/Logger.h"
 
 namespace {
   std::string padString(std::string str, const std::int32_t columnWidth) {
@@ -58,13 +58,13 @@ void DataRow::remove(const std::int32_t& index) {
 
 void DataRow::print(const std::vector<ColumnMetadatum>& columnMetadata,
                     const std::int32_t& rowStringSize) const {
-  std::cout << padString(std::to_string(id_), rowStringSize);
+  oops::Log::info() << padString(std::to_string(id_), rowStringSize);
   std::int32_t columnIndex = 0;
-  for (const auto& datum : dataColumns_) {
-    std::cout << consts::kBigSpace << padString(datum->getDatumStr(),
-                                                columnMetadata[columnIndex].getWidth());
+  for (const std::shared_ptr<DatumBase>& datum : dataColumns_) {
+    oops::Log::info() << consts::kBigSpace
+                      << padString(datum->getDatumStr(), columnMetadata[columnIndex].getWidth());
     columnIndex++;
   }
-  std::cout << std::endl;
+  oops::Log::info() << std::endl;
 }
 

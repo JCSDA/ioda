@@ -11,6 +11,8 @@
 
 #include "Constants.h"
 
+#include "oops/util/Logger.h"
+
 namespace {
   std::string padString(std::string str, const std::int16_t width) {
     std::int32_t diff = width - str.size();
@@ -20,6 +22,8 @@ namespace {
     return str;
   }
 }  // anonymous namespace
+
+ColumnMetadata::ColumnMetadata(): maxId_(0) {}
 
 std::int8_t ColumnMetadata::exists(const std::string& name) {
   auto it = std::find_if(columnMetadata_.begin(), columnMetadata_.end(),
@@ -33,7 +37,7 @@ std::int8_t ColumnMetadata::exists(const std::string& name) {
   }
 }
 
-std::int64_t ColumnMetadata::add(const ColumnMetadatum col) {
+const std::int64_t ColumnMetadata::add(const ColumnMetadatum col) {
   if (exists(col.getName()) == false) {
     const std::int64_t index = columnMetadata_.size();
     columnMetadata_.push_back(col);
@@ -44,16 +48,26 @@ std::int64_t ColumnMetadata::add(const ColumnMetadatum col) {
   }
 }
 
-std::int64_t ColumnMetadata::add(const std::vector<ColumnMetadatum> cols) {
+const std::int64_t ColumnMetadata::add(const std::vector<ColumnMetadatum> columnMetadatums) {
   const std::int64_t index = columnMetadata_.size();
-  for (const auto& col : cols) {
-    add(col);
+  for (const ColumnMetadatum& columnMetadatum : columnMetadatums) {
+    add(columnMetadatum);
   }
   return index;
 }
 
 const std::vector<ColumnMetadatum>& ColumnMetadata::get() const {
   return columnMetadata_;
+}
+
+void ColumnMetadata::resetMaxId() {
+  maxId_ = 0;
+}
+
+void ColumnMetadata::updateMaxId(const std::int64_t& id) {
+  if (id > maxId_) {
+    maxId_ = id;
+  }
 }
 
 void ColumnMetadata::updateColumnWidth(const std::string& name, const std::int16_t& valueWidth) {
@@ -65,7 +79,9 @@ void ColumnMetadata::updateColumnWidth(const std::string& name, const std::int16
 
 void ColumnMetadata::updateColumnWidth(const std::int32_t& index, const std::int16_t& valueWidth) {
   const std::int16_t currentWidth = columnMetadata_[index].getWidth();
-  if (valueWidth > currentWidth) columnMetadata_[index].setWidth(valueWidth);
+  if (valueWidth > currentWidth) {
+    columnMetadata_[index].setWidth(valueWidth);
+  }
 }
 
 void ColumnMetadata::remove(const std::int32_t& index) {
@@ -100,14 +116,16 @@ const std::int32_t ColumnMetadata::getNumCols() const {
   return columnMetadata_.size();
 }
 
+const std::int64_t ColumnMetadata::getMaxId() const {
+  return maxId_;
+}
+
 void ColumnMetadata::print(const std::int32_t& rowStringSize) {
-  std::cout << padString(consts::kSpace, rowStringSize) << consts::kBigSpace;
-  std::int32_t columnIndex = 0;
-  for (const auto& col : columnMetadata_) {
-    const std::string name = columnMetadata_[columnIndex].getName();
-    const std::int16_t width = columnMetadata_[columnIndex].getWidth();
-    std::cout << padString(name, width) << consts::kBigSpace;
-    columnIndex++;
+  oops::Log::info() << padString(consts::kSpace, rowStringSize) << consts::kBigSpace;
+  for (const ColumnMetadatum& columnMetadatum : columnMetadata_) {
+    const std::string name = columnMetadatum.getName();
+    const std::int16_t width = columnMetadatum.getWidth();
+    oops::Log::info() << padString(name, width) << consts::kBigSpace;
   }
-  std::cout << std::endl;
+  oops::Log::info() << std::endl;
 }

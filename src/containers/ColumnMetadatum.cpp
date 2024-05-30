@@ -7,9 +7,10 @@
 
 #include "ColumnMetadatum.h"
 
-#include <stdexcept>
-
 #include "Constants.h"
+
+#include "ioda/Exception.h"
+#include "ioda/Group.h"
 
 ColumnMetadatum::ColumnMetadatum(std::string name, std::int8_t type, std::int8_t permission):
   name_(name), width_(name.size()), type_(validateType(type)),
@@ -63,7 +64,7 @@ std::int8_t ColumnMetadatum::validateType(const std::int8_t& type) {
     case consts::eFloat: break;
     case consts::eDouble: break;
     case consts::eString: break;
-    default: throw std::runtime_error("ERROR: Type set not recognised.");
+    default: throw ioda::Exception("ERROR: Type set not recognised.", ioda_Here());
   }
   return type;
 }
@@ -72,7 +73,7 @@ std::int8_t ColumnMetadatum::validatePermission(const std::int8_t& permission) {
   switch (permission) {
     case consts::eReadOnly: break;
     case consts::eReadWrite: break;
-    default: throw std::runtime_error("ERROR: Permission set not recognised.");
+    default: throw ioda::Exception("ERROR: Permission set not recognised.", ioda_Here());
   }
   return permission;
 }

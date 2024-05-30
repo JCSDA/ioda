@@ -7,13 +7,15 @@
 
 #include "ObsDataFrameRows.h"
 
-#include <iostream>
 #include <memory>
 #include <string>
 
 #include "Constants.h"
 #include "Datum.h"
 #include "DatumBase.h"
+
+#include "ioda/Exception.h"
+#include "ioda/Group.h"
 
 ObsDataFrameRows::ObsDataFrameRows() : ObsDataFrame(consts::eRowPriority) {}
 
@@ -57,6 +59,7 @@ void ObsDataFrameRows::appendNewColumn(const std::string& name,
 
 void ObsDataFrameRows::appendNewRow(DataRow& newRow) {
   std::string rowStr = std::to_string(newRow.getId());
+  columnMetadata_.updateMaxId(newRow.getId());
   columnMetadata_.updateColumnWidth(newRow.getId(), rowStr.size());
   dataRows_.push_back(std::move(newRow));
 }
@@ -317,12 +320,12 @@ void ObsDataFrameRows::removeColumn(const std::string& name) {
         dataRows_[rowIndex].remove(columnIndex);
       }
     } else {
-      std::cout << "ERROR: The column \"" << name
-                << "\" is set to read-only." << std::endl;
+      oops::Log::error() << "ERROR: The column \"" << name
+                         << "\" is set to read-only." << std::endl;
     }
   } else {
-    std::cout << "ERROR: Column named \"" << name
-              << "\" not found in current data frame." << std::endl;
+    oops::Log::error() << "ERROR: Column named \"" << name
+                       << "\" not found in current data frame." << std::endl;
   }
 }
 
@@ -335,8 +338,8 @@ void ObsDataFrameRows::removeRow(const std::int64_t& index) {
       std::string columnName = columnMetadata_.getName(columnIndex);
       std::int8_t permission = columnMetadata_.getPermission(columnIndex);
       if (permission == consts::eReadOnly) {
-        std::cout << "ERROR: The column \"" << columnName
-                  << "\" is set to read-only." << std::endl;
+        oops::Log::error() << "ERROR: The column \"" << columnName
+                           << "\" is set to read-only." << std::endl;
         canRemove = false;
         break;
       }
@@ -345,7 +348,7 @@ void ObsDataFrameRows::removeRow(const std::int64_t& index) {
       dataRows_.erase(std::next(dataRows_.begin(), index));
     }
   } else {
-    std::cout << "ERROR: Row index is incompatible with current data frame." << std::endl;
+    oops::Log::error() << "ERROR: Row index is incompatible with current data frame." << std::endl;
   }
 }
 
@@ -366,12 +369,12 @@ void ObsDataFrameRows::sort(const std::string& columnName, const std::int8_t ord
         });
       }
     } else {
-      std::cout << "ERROR: The column \"" << columnName
-                << "\" is set to read-only." << std::endl;
+      oops::Log::error() << "ERROR: The column \"" << columnName
+                         << "\" is set to read-only." << std::endl;
     }
   } else {
-    std::cout << "ERROR: Column named \"" << columnName
-              << "\" not found in current data frame." << std::endl;
+    oops::Log::error() << "ERROR: Column named \"" << columnName
+                       << "\" not found in current data frame." << std::endl;
   }
 }
 
@@ -400,8 +403,8 @@ void ObsDataFrameRows::sort(std::function<std::int8_t(DataRow&, DataRow&)> func)
       }
     }
   } else {
-    std::cout << "ERROR: One or more columns in the current data table are set to read-only."
-              << std::endl;
+    oops::Log::error() << "ERROR: One or more columns in the current data table are set to "
+                          "read-only." << std::endl;
   }
 }
 
@@ -410,10 +413,13 @@ std::shared_ptr<ObsDataFrame> ObsDataFrameRows::slice(const std::string& columnN
                                                       std::int8_t threshold) {
   std::vector<DataRow> newDataRows;
   std::int32_t columnIndex = columnMetadata_.getIndex(columnName);
-  if (columnIndex != consts::kErrorValue)  {
+  ColumnMetadata newColumnMetadata = columnMetadata_;
+  newColumnMetadata.resetMaxId();  // Only relevant for column alignment when printing
+  if (columnIndex != consts::kErrorValue) {
     if (columnMetadata_.getType(columnIndex) == consts::eInt8) {
       std::copy_if(dataRows_.begin(), dataRows_.end(), std::back_inserter(newDataRows),
                    [&](DataRow& row) {
+        newColumnMetadata.updateMaxId(row.getId());
         std::shared_ptr<DatumBase> datum = row.getColumn(columnIndex);
         std::shared_ptr<Datum<std::int8_t>> datumInt8 =
                 std::static_pointer_cast<Datum<std::int8_t>>(datum);
@@ -421,14 +427,14 @@ std::shared_ptr<ObsDataFrame> ObsDataFrameRows::slice(const std::string& columnN
         return compareDatumToThreshold(comparison, threshold, datumValue);
       });
     } else {
-      std::cout << "ERROR: Column and threshold data type misconfiguration."
-                << std::endl;
+      oops::Log::error() << "ERROR: Column and threshold data type misconfiguration."
+                         << std::endl;
     }
   } else {
-    std::cout << "ERROR: Column named \"" << columnName
-              << "\" not found in current data frame." << std::endl;
+    oops::Log::error() << "ERROR: Column named \"" << columnName
+                       << "\" not found in current data frame." << std::endl;
   }
-  return std::make_shared<ObsDataFrameRows>(columnMetadata_, newDataRows);
+  return std::make_shared<ObsDataFrameRows>(newColumnMetadata, newDataRows);
 }
 
 std::shared_ptr<ObsDataFrame> ObsDataFrameRows::slice(const std::string& columnName,
@@ -436,10 +442,13 @@ std::shared_ptr<ObsDataFrame> ObsDataFrameRows::slice(const std::string& columnN
                                                       std::int16_t threshold) {
   std::vector<DataRow> newDataRows;
   std::int32_t columnIndex = columnMetadata_.getIndex(columnName);
-  if (columnIndex != consts::kErrorValue)  {
+  ColumnMetadata newColumnMetadata = columnMetadata_;
+  newColumnMetadata.resetMaxId();  // Only relevant for column alignment when printing
+  if (columnIndex != consts::kErrorValue) {
     if (columnMetadata_.getType(columnIndex) == consts::eInt16) {
       std::copy_if(dataRows_.begin(), dataRows_.end(),
                    std::back_inserter(newDataRows), [&](DataRow& row) {
+        newColumnMetadata.updateMaxId(row.getId());
         std::shared_ptr<DatumBase> datum = row.getColumn(columnIndex);
         std::shared_ptr<Datum<std::int16_t>> datumInt16 =
                 std::static_pointer_cast<Datum<std::int16_t>>(datum);
@@ -447,13 +456,13 @@ std::shared_ptr<ObsDataFrame> ObsDataFrameRows::slice(const std::string& columnN
         return compareDatumToThreshold(comparison, threshold, datumValue);
       });
     } else {
-      std::cout << "ERROR: Column and threshold data type misconfiguration." << std::endl;
+      oops::Log::error() << "ERROR: Column and threshold data type misconfiguration." << std::endl;
     }
   } else {
-    std::cout << "ERROR: Column named \"" << columnName
+    oops::Log::error() << "ERROR: Column named \"" << columnName
               << "\" not found in current data frame." << std::endl;
   }
-  return std::make_shared<ObsDataFrameRows>(columnMetadata_, newDataRows);
+  return std::make_shared<ObsDataFrameRows>(newColumnMetadata, newDataRows);
 }
 
 std::shared_ptr<ObsDataFrame> ObsDataFrameRows::slice(const std::string& columnName,
@@ -461,10 +470,13 @@ std::shared_ptr<ObsDataFrame> ObsDataFrameRows::slice(const std::string& columnN
                                                       std::int32_t threshold) {
   std::vector<DataRow> newDataRows;
   std::int32_t columnIndex = columnMetadata_.getIndex(columnName);
-  if (columnIndex != consts::kErrorValue)  {
+  ColumnMetadata newColumnMetadata = columnMetadata_;
+  newColumnMetadata.resetMaxId();  // Only relevant for column alignment when printing
+  if (columnIndex != consts::kErrorValue) {
     if (columnMetadata_.getType(columnIndex) == consts::eInt32) {
       std::copy_if(dataRows_.begin(), dataRows_.end(),
                    std::back_inserter(newDataRows), [&](DataRow& row) {
+        newColumnMetadata.updateMaxId(row.getId());
         std::shared_ptr<DatumBase> datum = row.getColumn(columnIndex);
         std::shared_ptr<Datum<std::int32_t>> datumInt32 =
                 std::static_pointer_cast<Datum<std::int32_t>>(datum);
@@ -472,13 +484,13 @@ std::shared_ptr<ObsDataFrame> ObsDataFrameRows::slice(const std::string& columnN
         return compareDatumToThreshold(comparison, threshold, datumValue);
       });
     } else {
-      std::cout << "ERROR: Column and threshold data type misconfiguration." << std::endl;
+      oops::Log::error() << "ERROR: Column and threshold data type misconfiguration." << std::endl;
     }
   } else {
-    std::cout << "ERROR: Column named \"" << columnName
-              << "\" not found in current data frame." << std::endl;
+    oops::Log::error() << "ERROR: Column named \"" << columnName
+                       << "\" not found in current data frame." << std::endl;
   }
-  return std::make_shared<ObsDataFrameRows>(columnMetadata_, newDataRows);
+  return std::make_shared<ObsDataFrameRows>(newColumnMetadata, newDataRows);
 }
 
 std::shared_ptr<ObsDataFrame> ObsDataFrameRows::slice(const std::string& columnName,
@@ -486,10 +498,13 @@ std::shared_ptr<ObsDataFrame> ObsDataFrameRows::slice(const std::string& columnN
                                                       std::int64_t threshold) {
   std::vector<DataRow> newDataRows;
   std::int32_t columnIndex = columnMetadata_.getIndex(columnName);
-  if (columnIndex != consts::kErrorValue)  {
+  ColumnMetadata newColumnMetadata = columnMetadata_;
+  newColumnMetadata.resetMaxId();  // Only relevant for column alignment when printing
+  if (columnIndex != consts::kErrorValue) {
     if (columnMetadata_.getType(columnIndex) == consts::eInt64) {
       std::copy_if(dataRows_.begin(), dataRows_.end(),
                    std::back_inserter(newDataRows), [&](DataRow& row) {
+        newColumnMetadata.updateMaxId(row.getId());
         std::shared_ptr<DatumBase> datum = row.getColumn(columnIndex);
         std::shared_ptr<Datum<std::int64_t>> datumInt64 =
                 std::static_pointer_cast<Datum<std::int64_t>>(datum);
@@ -497,13 +512,13 @@ std::shared_ptr<ObsDataFrame> ObsDataFrameRows::slice(const std::string& columnN
         return compareDatumToThreshold(comparison, threshold, datumValue);
       });
     } else {
-      std::cout << "ERROR: Column and threshold data type misconfiguration." << std::endl;
+      oops::Log::error() << "ERROR: Column and threshold data type misconfiguration." << std::endl;
     }
   } else {
-    std::cout << "ERROR: Column named \"" << columnName
-              << "\" not found in current data frame." << std::endl;
+    oops::Log::error() << "ERROR: Column named \"" << columnName
+                       << "\" not found in current data frame." << std::endl;
   }
-  return std::make_shared<ObsDataFrameRows>(columnMetadata_, newDataRows);
+  return std::make_shared<ObsDataFrameRows>(newColumnMetadata, newDataRows);
 }
 
 std::shared_ptr<ObsDataFrame> ObsDataFrameRows::slice(const std::string& columnName,
@@ -511,23 +526,26 @@ std::shared_ptr<ObsDataFrame> ObsDataFrameRows::slice(const std::string& columnN
                                                       float threshold) {
   std::vector<DataRow> newDataRows;
   std::int32_t columnIndex = columnMetadata_.getIndex(columnName);
-  if (columnIndex != consts::kErrorValue)  {
+  ColumnMetadata newColumnMetadata = columnMetadata_;
+  newColumnMetadata.resetMaxId();  // Only relevant for column alignment when printing
+  if (columnIndex != consts::kErrorValue) {
     if (columnMetadata_.getType(columnIndex) == consts::eFloat) {
       std::copy_if(dataRows_.begin(), dataRows_.end(),
                    std::back_inserter(newDataRows), [&](DataRow& row) {
+        newColumnMetadata.updateMaxId(row.getId());
         std::shared_ptr<DatumBase> datum = row.getColumn(columnIndex);
         std::shared_ptr<Datum<float>> datumFloat = std::static_pointer_cast<Datum<float>>(datum);
         float datumValue = datumFloat->getDatum();
         return compareDatumToThreshold(comparison, threshold, datumValue);
       });
     } else {
-      std::cout << "ERROR: Column and threshold data type misconfiguration." << std::endl;
+      oops::Log::error() << "ERROR: Column and threshold data type misconfiguration." << std::endl;
     }
   } else {
-    std::cout << "ERROR: Column named \"" << columnName
-              << "\" not found in current data frame." << std::endl;
+    oops::Log::error() << "ERROR: Column named \"" << columnName
+                       << "\" not found in current data frame." << std::endl;
   }
-  return std::make_shared<ObsDataFrameRows>(columnMetadata_, newDataRows);
+  return std::make_shared<ObsDataFrameRows>(newColumnMetadata, newDataRows);
 }
 
 std::shared_ptr<ObsDataFrame> ObsDataFrameRows::slice(const std::string& columnName,
@@ -535,23 +553,26 @@ std::shared_ptr<ObsDataFrame> ObsDataFrameRows::slice(const std::string& columnN
                                                       double threshold) {
   std::vector<DataRow> newDataRows;
   std::int32_t columnIndex = columnMetadata_.getIndex(columnName);
-  if (columnIndex != consts::kErrorValue)  {
+  ColumnMetadata newColumnMetadata = columnMetadata_;
+  newColumnMetadata.resetMaxId();  // Only relevant for column alignment when printing
+  if (columnIndex != consts::kErrorValue) {
     if (columnMetadata_.getType(columnIndex) == consts::eDouble) {
       std::copy_if(dataRows_.begin(), dataRows_.end(),
                    std::back_inserter(newDataRows), [&](DataRow& row) {
+        newColumnMetadata.updateMaxId(row.getId());
         std::shared_ptr<DatumBase> datum = row.getColumn(columnIndex);
         std::shared_ptr<Datum<double>> datumDouble = std::static_pointer_cast<Datum<double>>(datum);
         double datumValue = datumDouble->getDatum();
         return compareDatumToThreshold(comparison, threshold, datumValue);
       });
     } else {
-      std::cout << "ERROR: Column and threshold data type misconfiguration." << std::endl;
+      oops::Log::error() << "ERROR: Column and threshold data type misconfiguration." << std::endl;
     }
   } else {
-    std::cout << "ERROR: Column named \"" << columnName
-              << "\" not found in current data frame." << std::endl;
+    oops::Log::error() << "ERROR: Column named \"" << columnName
+                       << "\" not found in current data frame." << std::endl;
   }
-  return std::make_shared<ObsDataFrameRows>(columnMetadata_, newDataRows);
+  return std::make_shared<ObsDataFrameRows>(newColumnMetadata, newDataRows);
 }
 
 std::shared_ptr<ObsDataFrame> ObsDataFrameRows::slice(const std::string& columnName,
@@ -559,10 +580,13 @@ std::shared_ptr<ObsDataFrame> ObsDataFrameRows::slice(const std::string& columnN
                                                       std::string threshold) {
   std::vector<DataRow> newDataRows;
   std::int32_t columnIndex = columnMetadata_.getIndex(columnName);
-  if (columnIndex != consts::kErrorValue)  {
+  ColumnMetadata newColumnMetadata = columnMetadata_;
+  newColumnMetadata.resetMaxId();  // Only relevant for column alignment when printing
+  if (columnIndex != consts::kErrorValue) {
     if (columnMetadata_.getType(columnIndex) == consts::eString) {
       std::copy_if(dataRows_.begin(), dataRows_.end(),
                    std::back_inserter(newDataRows), [&](DataRow& row) {
+        newColumnMetadata.updateMaxId(row.getId());
         std::shared_ptr<DatumBase> datum = row.getColumn(columnIndex);
         std::shared_ptr<Datum<std::string>> datumString =
                 std::static_pointer_cast<Datum<std::string>>(datum);
@@ -570,22 +594,25 @@ std::shared_ptr<ObsDataFrame> ObsDataFrameRows::slice(const std::string& columnN
         return compareDatumToThreshold(comparison, threshold, datumValue);
       });
     } else {
-      std::cout << "ERROR: Column and threshold data type misconfiguration." << std::endl;
+      oops::Log::error() << "ERROR: Column and threshold data type misconfiguration." << std::endl;
     }
   } else {
-    std::cout << "ERROR: Column named \"" << columnName
-              << "\" not found in current data frame." << std::endl;
+    oops::Log::error() << "ERROR: Column named \"" << columnName
+                       << "\" not found in current data frame." << std::endl;
   }
-  return std::make_shared<ObsDataFrameRows>(columnMetadata_, newDataRows);
+  return std::make_shared<ObsDataFrameRows>(newColumnMetadata, newDataRows);
 }
 
 std::shared_ptr<ObsDataFrame> ObsDataFrameRows::slice(std::function<std::int8_t(DataRow&)> func) {
   std::vector<DataRow> newDataRows;
+  ColumnMetadata newColumnMetadata = columnMetadata_;
+  newColumnMetadata.resetMaxId();  // Only relevant for column alignment when printing
   std::copy_if(dataRows_.begin(), dataRows_.end(),
                std::back_inserter(newDataRows), [&](DataRow& dataRow) {
+    newColumnMetadata.updateMaxId(dataRow.getId());
     return func(dataRow);
   });
-  return std::make_shared<ObsDataFrameRows>(columnMetadata_, newDataRows);
+  return std::make_shared<ObsDataFrameRows>(newColumnMetadata, newDataRows);
 }
 
 const std::int64_t ObsDataFrameRows::getNumRows() const {
@@ -594,11 +621,11 @@ const std::int64_t ObsDataFrameRows::getNumRows() const {
 
 void ObsDataFrameRows::print() {
   if (dataRows_.size() > 0) {
-    std::string rowStr = std::to_string(dataRows_.size());
-    std::int32_t rowStrSz = rowStr.size();
-    columnMetadata_.print(rowStrSz);
-    for (auto& dataRow : dataRows_) {
-      dataRow.print(columnMetadata_.get(), rowStrSz);
+    std::string maxRowIdString = std::to_string(columnMetadata_.getMaxId());
+    std::int32_t maxRowIdStringSize = maxRowIdString.size();
+    columnMetadata_.print(maxRowIdStringSize);
+    for (DataRow& dataRow : dataRows_) {
+      dataRow.print(columnMetadata_.get(), maxRowIdStringSize);
     }
   }
 }
@@ -657,7 +684,7 @@ std::int8_t ObsDataFrameRows::compareDatums(std::shared_ptr<DatumBase> datumA,
       return datumAString->getDatum() < datumBString->getDatum();
     }
     default:
-      throw std::runtime_error("ERROR: Missing type specification.");
+      throw ioda::Exception("ERROR: Missing type specification.", ioda_Here());
   }
 }
 
@@ -679,12 +706,12 @@ void ObsDataFrameRows::appendNewColumn(const std::string& name,
         rowIndex++;
       }
     } else {
-      std::cout
+      oops::Log::error()
         << "ERROR: Number of rows in new column incompatible with current ObsDataFrameRows."
         << std::endl;
     }
   } else {
-    std::cout << "ERROR: A column named \"" + name + "\" already exists." << std::endl;
+    oops::Log::error() << "ERROR: A column named \"" + name + "\" already exists." << std::endl;
   }
 }
 
@@ -722,13 +749,14 @@ void ObsDataFrameRows::addColumnToRow(DataRow& row, std::int8_t& isValid, const 
       if (newDatum->getType() == type) {
         row.insert(newDatum);
       } else {
-        std::cout << "ERROR: Data type for \"" << param
-                  << "\" is incompatible with the column \""
-                  << name << "\" of current ObsDataFrameRows" << std::endl;
+        oops::Log::error() << "ERROR: Data type for \"" << param
+                           << "\" is incompatible with the column \"" << name
+                           << "\" of current ObsDataFrameRows" << std::endl;
         isValid = false;
       }
     } else {
-      std::cout << "ERROR: The column \"" << name << "\" is set to read-only." << std::endl;
+      oops::Log::error() << "ERROR: The column \"" << name << "\" is set to read-only."
+                         << std::endl;
       isValid = false;
     }
   }
@@ -765,12 +793,12 @@ void ObsDataFrameRows::getColumn(const std::string& name, std::vector<T>& data,
         getDatumValue(datum, data[rowIndex]);
       }
     } else {
-      std::cout << "ERROR: Input vector for column \"" << name
-                << "\" is not the required data type." << std::endl;
+      oops::Log::error() << "ERROR: Input vector for column \"" << name
+                         << "\" is not the required data type." << std::endl;
     }
   } else {
-    std::cout << "ERROR: Column named \"" << name
-              << "\" not found in current data frame." << std::endl;
+    oops::Log::error() << "ERROR: Column named \"" << name
+                       << "\" not found in current data frame." << std::endl;
   }
 }
 
@@ -806,26 +834,26 @@ void ObsDataFrameRows::setColumn(const std::string& name, const std::vector<T>& 
       std::int8_t columnType = columnMetadata_.getType(columnIndex);
       if (type == columnType) {
         std::int64_t numberOfRows = dataRows_.size();
-        if (data.size() == numberOfRows) {
+        if ((std::int64_t)data.size() == numberOfRows) {
           for (std::int32_t rowIndex = 0; rowIndex < numberOfRows; ++rowIndex) {
             std::shared_ptr<DatumBase> datum = dataRows_[rowIndex].getColumn(columnIndex);
             setDatumValue(datum, data[rowIndex]);
           }
         } else {
-          std::cout << "ERROR: Input vector for column \"" << name
-                    << "\" is not the required size." << std::endl;
+          oops::Log::error() << "ERROR: Input vector for column \"" << name
+                             << "\" is not the required size." << std::endl;
         }
       } else {
-        std::cout << "ERROR: Input vector for column \"" << name
-                  << "\" is not the required data type." << std::endl;
+        oops::Log::error() << "ERROR: Input vector for column \"" << name
+                           << "\" is not the required data type." << std::endl;
       }
     } else {
-      std::cout << "ERROR: The column \"" << name
-                << "\" is set to read-only." << std::endl;
+      oops::Log::error() << "ERROR: The column \"" << name
+                         << "\" is set to read-only." << std::endl;
     }
   } else {
-    std::cout << "ERROR: Column named \"" << name
-              << "\" not found in current data frame." << std::endl;
+    oops::Log::error() << "ERROR: Column named \"" << name
+                       << "\" not found in current data frame." << std::endl;
   }
 }
 
@@ -859,7 +887,8 @@ template<typename T> std::int8_t ObsDataFrameRows::compareDatumToThreshold(
     case consts::eEqualTo: return datumValue == threshold;
     case consts::eGreaterThan: return datumValue > threshold;
     case consts::eGreaterThanOrEqualTo: return datumValue >= threshold;
-    default: throw std::runtime_error("ERROR: Invalid comparison operator specification.");
+    default: throw ioda::Exception("ERROR: Invalid comparison operator specification.",
+                                   ioda_Here());
   }
 }
 

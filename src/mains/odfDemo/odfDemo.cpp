@@ -15,6 +15,8 @@
 
 #include "ioda/containers/Datum.h"
 
+#include "oops/util/Logger.h"
+
 std::int32_t main() {
   ObsDataFrameRows dfRow;
 
@@ -71,29 +73,29 @@ std::int32_t main() {
   // Pass - with read-write columns
   dfRow.appendNewRow(-73., 128., "00010", 14, -25.6568, 1710460300);
 
-  std::cout << std::endl << "getColumn" << std::endl;
+  oops::Log::info() << std::endl << "getColumn" << std::endl;
   std::vector<std::string> vec;
   dfRow.getColumn("StatId", vec);              // Pass - with correct name/case and data type
   dfRow.print();
 
-  std::cout << std::endl << "setColumn" << std::endl;
+  oops::Log::info() << std::endl << "setColumn" << std::endl;
   std::vector<std::string> vec2{"3", "3"};
   dfRow.setColumn("StatId", vec2);
   dfRow.print();
 
-  std::cout << std::endl << "removeColumn" << std::endl;
+  oops::Log::info() << std::endl << "removeColumn" << std::endl;
   dfRow.removeColumn("StatId");
   dfRow.print();
 
-  std::cout  << std::endl << "removeRow" << std::endl;
+  oops::Log::info()  << std::endl << "removeRow" << std::endl;
   dfRow.removeRow(0);
   dfRow.print();
 
-  std::cout  << std::endl << "sort 1" << std::endl;
+  oops::Log::info()  << std::endl << "sort 1" << std::endl;
   dfRow.sort("channel", consts::eDescending);
   dfRow.print();
 
-  std::cout  << std::endl << "sort 2" << std::endl;
+  oops::Log::info()  << std::endl << "sort 2" << std::endl;
   std::int32_t columnIndex = 2;
   dfRow.sort([&](DataRow& dataRowA, DataRow& dataRowB){
     std::shared_ptr<DatumBase> datumA = dataRowA.getColumn(columnIndex);
@@ -107,12 +109,12 @@ std::int32_t main() {
   });
   dfRow.print();
 
-  std::cout  << std::endl << "test slice 1" << std::endl;
+  oops::Log::info()  << std::endl << "test slice 1" << std::endl;
   std::shared_ptr<ObsDataFrame> test1 = dfRow.slice("lat", consts::eLessThan, -70.);
   std::shared_ptr<ObsDataFrameRows> testRows1 = std::static_pointer_cast<ObsDataFrameRows>(test1);
   test1->print();
 
-  std::cout  << std::endl << "test slice 2" << std::endl;
+  oops::Log::info()  << std::endl << "test slice 2" << std::endl;
   std::shared_ptr<ObsDataFrame> test2 = dfRow.slice([&](DataRow& dataRow) {
     std::shared_ptr<DatumBase> datum = dataRow.getColumn(0);
     std::shared_ptr<Datum<double>> datumDouble = std::static_pointer_cast<Datum<double>>(datum);

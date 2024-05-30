@@ -11,16 +11,16 @@
 #include <algorithm>
 #include <cstdint>
 #include <functional>
-#include <iostream>
 #include <memory>
 #include <numeric>
-#include <tuple>
 #include <vector>
 
 #include "ColumnMetadatum.h"
 #include "Constants.h"
 #include "DataRow.h"
 #include "ObsDataFrame.h"
+
+#include "oops/util/Logger.h"
 
 class ObsDataFrameRows : public ObsDataFrame {
  public:
@@ -159,7 +159,6 @@ class ObsDataFrameRows : public ObsDataFrame {
   template<typename... T>
   void appendNewRow(T... args) {
     const std::int32_t numParams = sizeof...(T);
-    bool doAppendNewRow = true;
     if (columnMetadata_.getNumCols() > 0) {
       if (numParams == columnMetadata_.getNumCols()) {
         DataRow newRow(dataRows_.size());
@@ -171,12 +170,12 @@ class ObsDataFrameRows : public ObsDataFrame {
           appendNewRow(newRow);
         }
       } else {
-        std::cout << "ERROR: Number of columns in new row are incompatible with this data frame."
-                  << std::endl;
+        oops::Log::error() << "ERROR: Number of columns in new row are incompatible with this "
+                              "data frame." << std::endl;
       }
     } else {
-      std::cout << "ERROR: Cannot insert a new row without first setting column headings."
-                << std::endl;
+      oops::Log::error() << "ERROR: Cannot insert a new row without first setting column headings."
+                         << std::endl;
     }
   }
 
