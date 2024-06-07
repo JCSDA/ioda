@@ -11,6 +11,7 @@
 #include <cmath>
 #include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 #define ECKIT_TESTING_SELF_REGISTER_CASES 0
@@ -187,8 +188,31 @@ void testReduce() {
     const int reduceThreshold = testConfig.getInt(MyPath + ".reduce.threshold");
     const std::vector<int> reduceCheckVector =
         testConfig.getIntVector(MyPath + ".reduce.check vector");
-    Test_::obspace(jj).reduce(reduceAction, reduceThreshold, reduceCheckVector);
 
+    // Test that ObsVectors and ObsDataVectors created prior to reduce are reduced correctly
+    ioda::ObsVector vec_pre(Test_::obspace(jj), "ObsValue");
+    ioda::ObsVector vec_pre_copy(vec_pre);
+    ioda::ObsVector vec_pre_moved(vec_pre);
+    ioda::ObsVector vec_pre_move(std::move(vec_pre_moved));
+    ioda::ObsDataVector<double> obsvec_pre(Test_::obspace(jj), vec_pre.varnames(), "ObsValue");
+    ioda::ObsDataVector<double> obsvec_pre_copy(obsvec_pre);
+    ioda::ObsDataVector<double> obsvec_pre_moved(obsvec_pre);
+    ioda::ObsDataVector<double> obsvec_pre_move(std::move(obsvec_pre_moved));
+    {
+      // Test that ObsVectors and ObsDataVectors associated with ObsSpace get de-associated
+      // correctly when going out of scope
+      ioda::ObsVector vec_pre_local(Test_::obspace(jj), "ObsValue");
+      ioda::ObsVector vec_pre_local_copy(vec_pre_copy);
+      ioda::ObsVector vec_pre_local_move(std::move(vec_pre_local));
+      ioda::ObsDataVector<float> obsvec_pre_local(vec_pre);
+      ioda::ObsDataVector<float> obsvec_pre_local_move(std::move(obsvec_pre_local));
+    }
+    oops::Log::debug() << "ObsVector before reduce: " << vec_pre << std::endl;
+    oops::Log::debug() << "ObsDataVector before reduce: " << obsvec_pre << std::endl;
+    Test_::obspace(jj).reduce(reduceAction, reduceThreshold, reduceCheckVector);
+    // Test that ObsVectors and ObsDataVectors created after reduce use the reduced data
+    ioda::ObsVector vec_post(Test_::obspace(jj), "ObsValue");
+    ioda::ObsDataVector<double> obsvec_post(Test_::obspace(jj), vec_post.varnames(), "ObsValue");
     // Check that the nlocs and nrecs have been properly adjusted
     const std::size_t ExpectedNlocs = testConfig.getUnsigned(MyPath + ".nlocs");
     const std::size_t ExpectedNrecs = testConfig.getUnsigned(MyPath + ".nrecs");
@@ -202,9 +226,48 @@ void testReduce() {
                        << ExpectedNrecs << std::endl;
     oops::Log::debug() << "Gnlocs, ExpectedGnlocs: " << Gnlocs << ", "
                        << ExpectedGnlocs << std::endl;
+    oops::Log::debug() << "ObsVector after reduce (created before reduce): " << vec_pre
+                       << std::endl;
+    oops::Log::debug() << "ObsVector after reduce (copy-created before reduce): " << vec_pre_copy
+                       << std::endl;
+    oops::Log::debug() << "ObsVector after reduce (move-created before reduce): " << vec_pre_move
+                       << std::endl;
+    oops::Log::debug() << "ObsVector after reduce (created after reduce): " << vec_post
+                       << std::endl;
+    oops::Log::debug() << "ObsDataVector after reduce (created before reduce): " << obsvec_pre
+                       << std::endl;
+    oops::Log::debug() << "ObsDataVector after reduce (copy-created before reduce): "
+                       << obsvec_pre_copy << std::endl;
+    oops::Log::debug() << "ObsDataVector after reduce (move-created before reduce): "
+                       << obsvec_pre_move << std::endl;
+    oops::Log::debug() << "ObsDataVector after reduce (created after reduce): " << obsvec_post
+                       << std::endl;
     EXPECT(Nlocs == ExpectedNlocs);
     EXPECT(Nrecs == ExpectedNrecs);
     EXPECT(Gnlocs == ExpectedGnlocs);
+    EXPECT(vec_pre.nlocs() == ExpectedNlocs);
+    EXPECT(vec_pre_copy.nlocs() == ExpectedNlocs);
+    EXPECT(vec_pre_moved.nlocs() == 0);
+    EXPECT(vec_pre_move.nlocs() == ExpectedNlocs);
+    EXPECT(vec_post.nlocs() == ExpectedNlocs);
+    EXPECT(obsvec_pre.nlocs() == ExpectedNlocs);
+    EXPECT(obsvec_pre_copy.nlocs() == ExpectedNlocs);
+    EXPECT(obsvec_pre_moved.nlocs() == 0);
+    EXPECT(obsvec_pre_move.nlocs() == ExpectedNlocs);
+    EXPECT(obsvec_post.nlocs() == ExpectedNlocs);
+    // Check that the vectors created before and after the reduce are the same.
+    vec_pre -= vec_post;
+    EXPECT(vec_pre.rms() == 0.0);
+    vec_pre_moved = std::move(vec_post);
+    obsvec_pre_moved = std::move(obsvec_post);
+    oops::Log::debug() << "ObsVector after reduce (move-assigned after reduce): " << vec_pre_moved
+                       << std::endl;
+    oops::Log::debug() << "ObsDataVector after reduce (move-assigned after reduce): "
+                       << obsvec_pre_moved << std::endl;
+    EXPECT(vec_post.nlocs() == 0);
+    EXPECT(vec_pre_moved.nlocs() == ExpectedNlocs);
+    EXPECT(obsvec_post.nlocs() == 0);
+    EXPECT(obsvec_pre_moved.nlocs() == ExpectedNlocs);
 
     // Check that the index and recnum vectors have been properly adjusted
     const std::vector<std::size_t> ExpectedIndex =

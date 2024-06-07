@@ -29,6 +29,7 @@ ObsVector::ObsVector(ObsSpace & obsdb,
                          values_(nlocs_ * nvars_),
                          missing_(util::missingValue<double>()) {
   oops::Log::trace() << "ObsVector::ObsVector " << name << std::endl;
+  obsdb_.attach(*this);
   if (!name.empty()) this->read(name);
 }
 
@@ -37,14 +38,42 @@ ObsVector::ObsVector(const ObsVector & other)
   : obsdb_(other.obsdb_), obsvars_(other.obsvars_), nvars_(other.nvars_),
     nlocs_(other.nlocs_), values_(nlocs_ * nvars_), missing_(other.missing_) {
   values_ = other.values_;
+  obsdb_.attach(*this);
   oops::Log::trace() << "ObsVector copied " << std::endl;
 }
 // -----------------------------------------------------------------------------
+ObsVector::ObsVector(ObsVector && other)
+  : obsdb_(other.obsdb_), obsvars_(std::move(other.obsvars_)), nvars_(other.nvars_),
+    nlocs_(other.nlocs_), values_(std::move(other.values_)), missing_(other.missing_) {
+  obsdb_.detach(other);
+  obsdb_.attach(*this);
+  other.nvars_ = 0;
+  other.nlocs_ = 0;
+  oops::Log::trace() << "ObsVector moved " << std::endl;
+}
+// -----------------------------------------------------------------------------
 ObsVector::~ObsVector() {
+  obsdb_.detach(*this);
 }
 // -----------------------------------------------------------------------------
 ObsVector & ObsVector::operator= (const ObsVector & rhs) {
+  ASSERT(&obsdb_ == &rhs.obsdb_);
+  obsvars_ = rhs.obsvars_;
+  nvars_ = rhs.nvars_;
+  nlocs_ = rhs.nlocs_;
   values_ = rhs.values_;
+  return *this;
+}
+// -----------------------------------------------------------------------------
+ObsVector & ObsVector::operator= (ObsVector && rhs) {
+  ASSERT(&obsdb_ == &rhs.obsdb_);
+  obsvars_ = std::move(rhs.obsvars_);
+  nvars_ = rhs.nvars_;
+  nlocs_ = rhs.nlocs_;
+  values_ = std::move(rhs.values_);
+  rhs.nvars_ = 0;
+  rhs.nlocs_ = 0;
+  obsdb_.detach(rhs);
   return *this;
 }
 // -----------------------------------------------------------------------------
@@ -368,6 +397,17 @@ const double & ObsVector::toFortran() const {
 // -----------------------------------------------------------------------------
 double & ObsVector::toFortran() {
   return values_[0];
+}
+// -----------------------------------------------------------------------------
+void ObsVector::reduce(const std::vector<bool> & keepLocs) {
+  ASSERT(keepLocs.size() == nlocs_);
+  auto newEnd = std::remove_if(values_.begin(), values_.end(),
+                               [&](const auto& element) {
+                                  return !keepLocs[(&element - &values_[0]) / nvars_];
+                               });
+  values_.erase(newEnd, values_.end());
+  ASSERT(values_.size() % nvars_ == 0);
+  nlocs_ = values_.size() / nvars_;
 }
 // -----------------------------------------------------------------------------
 void ObsVector::print(std::ostream & os) const {

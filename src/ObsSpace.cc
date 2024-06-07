@@ -648,7 +648,11 @@ void ObsSpace::reduce(const ioda::CompareAction compareAction, const int thresho
     // and false means remove.
     std::vector<bool> keepLocs;
     generateLocationsToKeep(compareAction, threshold, checkValues, keepLocs);
+    this->reduce(keepLocs);
+}
 
+// -----------------------------------------------------------------------------
+void ObsSpace::reduce(const std::vector<bool> & keepLocs) {
     // Reduce the data values stored in the obs_group_ container
     const std::size_t newNlocs = reduceVarDataValues(keepLocs);
 
@@ -660,8 +664,12 @@ void ObsSpace::reduce(const ioda::CompareAction compareAction, const int thresho
     // Update the nrecs_ and recidx_ data members according to the reduce
     // (ie, removed) locations.
     adjustDataMembersAfterReduce(keepLocs);
-}
 
+    // Reduce all the associated data structures
+    for (auto & data : obs_space_associated_) {
+      data.get().reduce(keepLocs);
+    }
+}
 
 // ----------------------------- private functions -----------------------------
 /*!

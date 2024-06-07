@@ -175,6 +175,16 @@ namespace ioda {
       typedef float to_type;
     };
 
+    /// \brief Base class for data structures associated with ObsSpace.
+    /// \details The  associated data structure change their state (e.g. reduce)
+    /// when ObsSpace changes its state. ObsSpaceAssociated is equivalent to Observer
+    /// in the Observer pattern (don't confuse with oops::Observer!)
+    class ObsSpaceAssociated {
+     public:
+      virtual ~ObsSpaceAssociated() = default;
+      virtual void reduce(const std::vector<bool> & keepLocs) = 0;
+    };
+
     /// \brief Observation data class for IODA
     ///
     /// \details This class handles the memory store of observation data. It handles
@@ -512,16 +522,44 @@ namespace ioda {
 
         /// \brief Reduce obs space given a vector of int showing which values to remove
         /// \details This function will use its input arguments to remove unwanted
-        /// values (along the Location dimension) from the obs space. This is being done
-        /// to help downstream operations run faster, eg the DA solver. The idea is to
-        /// keep all the corresponding locations in the checkValues vector of which return
-        /// true by applying the compare action along with the threshold.
+        /// values (along the Location dimension) from the obs space. It will also call
+        /// reduce method on all the existing data structures associated with this ObsSpace.
+        /// This is being done to help downstream operations run faster, eg the DA solver.
+        /// The idea is to keep all the corresponding locations in the checkValues vector
+        /// of which return true by applying the compare action along with the threshold.
         /// \param compareAction enum type that defines how to compare the check values
         /// with the threshold.
         /// \param threshold limit being tested by the compare action
         /// \param checkValues vector of QC values that are being tested with the compare action
         void reduce(const ioda::CompareAction compareAction, const int threshold,
                     const std::vector<int> & checkValues);
+
+        /// \brief Reduce obs space given a vector of bool showing which values to keep.
+        /// \details This function will use its input argument to remove unwanted
+        /// values (along the Location dimension) from the obs space. It will also call
+        /// reduce method on all the existing data structures associated with this ObsSpace.
+        /// This is being done to help downstream operations run faster, eg the DA solver.
+        void reduce(const std::vector<bool> & keepLocs);
+
+        /// \brief Registers a data structure associated with the current ObsSpace.
+        /// \details The associated data structures change their state (e.g. reduce) when
+        /// ObsSpace changes its state.
+        void attach(ObsSpaceAssociated & data) {
+          obs_space_associated_.push_back(std::ref(data));
+        }
+
+        /// \brief Un-registers a data structure that was associated with the current ObsSpace.
+        void detach(ObsSpaceAssociated & data) {
+          auto it = std::find_if(obs_space_associated_.begin(),
+                                 obs_space_associated_.end(),
+                                 [&](const auto& ref) {
+                                     return &ref.get() == &data;
+                                 });
+          if (it != obs_space_associated_.end()) {
+            obs_space_associated_.erase(it);
+          }
+        }
+
 
         /// @}
 
@@ -600,6 +638,12 @@ namespace ioda {
 
         /// \brief indicator whether the data in recidx_ is sorted
         bool recidx_is_sorted_;
+
+        /// \brief all data structures currently associated with this ObsSpace.
+        /// \details This is used so associated data structures can change their state
+        ///          (e.g. reduce) when ObsSpace changes its state. ObsSpaceAssociated
+        ///          is Observer in the Observer pattern.
+        std::vector<std::reference_wrapper<ObsSpaceAssociated>> obs_space_associated_;
 
         /// \brief disable the "=" operator
         ObsSpace & operator= (const ObsSpace &) = delete;

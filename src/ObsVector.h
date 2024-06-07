@@ -30,16 +30,19 @@ namespace ioda {
  *           dot product) are capable of handling missing values in the obs data.
  */
 
-class ObsVector : public util::Printable,
+class ObsVector : public ObsSpaceAssociated,
+                  public util::Printable,
                   private util::ObjectCounter<ObsVector> {
  public:
   static const std::string classname() {return "ioda::ObsVector";}
 
   explicit ObsVector(ObsSpace &, const std::string & name = "");
   ObsVector(const ObsVector &);
+  ObsVector(ObsVector &&);
   ~ObsVector();
 
   ObsVector & operator = (const ObsVector &);
+  ObsVector & operator = (ObsVector &&);
   ObsVector & operator*= (const double &);
   ObsVector & operator+= (const ObsVector &);
   ObsVector & operator-= (const ObsVector &);
@@ -117,6 +120,8 @@ class ObsVector : public util::Printable,
 // I/O
   void save(const std::string &) const;
   void read(const std::string &);
+
+  void reduce(const std::vector<bool> & keepLocs) override;
 
  private:
   void print(std::ostream &) const;
