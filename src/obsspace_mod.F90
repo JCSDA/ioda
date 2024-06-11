@@ -117,12 +117,12 @@ contains
 
 !> Get obsvariables from ObsSpace
 
-   type(oops_variables) function obsspace_obsvariables(obss)
-      use oops_variables_mod
+   type(obs_variables) function obsspace_obsvariables(obss)
+      use obs_variables_mod
       implicit none
       type(c_ptr), value, intent(in) :: obss
 
-      obsspace_obsvariables = oops_variables(c_obsspace_obsvariables(obss))
+      obsspace_obsvariables = obs_variables(c_obsspace_obsvariables(obss))
    end function obsspace_obsvariables
 
 !-------------------------------------------------------------------------------

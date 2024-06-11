@@ -34,7 +34,7 @@ TEST(test_obsspace_construct)
   use fckit_module
   use datetime_mod
   use obsspace_mod
-  use oops_variables_mod
+  use obs_variables_mod
   use, intrinsic :: iso_c_binding
   implicit none
 
@@ -51,7 +51,7 @@ TEST(test_obsspace_construct)
   integer :: iobstype
   character(len=100) :: obsname
   character(kind=c_char,len=:), allocatable :: obsname_ref
-  type(oops_variables) :: vars
+  type(obs_variables) :: vars
 
   !> initialize winbgn, winend, get config
   call fckit_resource("--config", "", filename)
@@ -102,7 +102,7 @@ TEST(test_obsspace_get_db_put_db)
   use fckit_module
   use datetime_mod
   use obsspace_mod
-  use oops_variables_mod
+  use obs_variables_mod
   use, intrinsic :: iso_c_binding
   implicit none
 
