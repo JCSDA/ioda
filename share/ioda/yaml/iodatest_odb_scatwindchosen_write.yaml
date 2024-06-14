@@ -1,0 +1,15 @@
+where:
+  varno: [41,42]
+variables:
+# varno dependent
+- name: obsvalue
+# varno independent
+- name: nretr_amb
+- name: satellite_identifier
+- name: lat
+- name: lon
+- name: sel_wnd_indx
+- name: wvc_qf
+- name: date
+- name: time
+- name: varno

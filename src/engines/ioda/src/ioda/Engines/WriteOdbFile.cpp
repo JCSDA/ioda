@@ -58,6 +58,7 @@ void WriteOdbFile::finalize() {
     odcparams.outputFile = outFileName;
     odcparams.odbType = params_.odbType;
     odcparams.missingObsSpaceVariableAbort = params_.missingObsSpaceVariableAbort;
+    odcparams.ignoreChannelDimensionWrite = params_.ignoreChannelDimensionWrite;
     Group writerGroup = ioda::Engines::ODC::createFile(odcparams, obs_group_);
 }
 

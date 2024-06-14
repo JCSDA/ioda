@@ -530,7 +530,7 @@ std::vector<int> getChannelNumbers(const Group &storageGroup) {
 
 void setupColumnInfo(const Group &storageGroup, const std::map<std::string, std::string> &reverseColumnMap,
                      std::vector<ColumnInfo> &column_infos, int &num_columns,
-                     const bool errorWithColumnNotInObsSpace) {
+                     const bool errorWithColumnNotInObsSpace, const bool ignoreChannels) {
   const auto objs = storageGroup.listObjects(ObjectType::Variable, true);
   for (auto it = objs.cbegin(); it != objs.cend(); it++) {
     for (size_t i = 0; i < it->second.size(); i++) {
@@ -602,7 +602,7 @@ void setupColumnInfo(const Group &storageGroup, const std::map<std::string, std:
           column_infos.push_back(col);
         }
       }
-      if (!it->second[i].compare("Channel")) {
+      if (!it->second[i].compare("Channel") && !ignoreChannels) {
         ColumnInfo col;
         col.column_name = "vertco_reference_1";
         col.column_type = storageGroup.vars["Channel"].getType().getClass();
@@ -1123,7 +1123,7 @@ Group createFile(const ODC_Parameters& odcparams, Group storageGroup) {
   std::vector<int> extendeds;
   int number_of_rows = number_of_locations;
   int number_of_channels = 0;
-  if (storageGroup.vars.exists("Channel")) {
+  if (storageGroup.vars.exists("Channel") &&  !odcparams.ignoreChannelDimensionWrite) {
      std::vector<int> channels = getChannelNumbers(storageGroup);
      number_of_rows *= channels.size();
      number_of_channels = channels.size();
@@ -1155,7 +1155,8 @@ Group createFile(const ODC_Parameters& odcparams, Group storageGroup) {
   int num_varnoIndependnet_columns = 0;
   std::vector<ColumnInfo> column_infos;
   setupColumnInfo(storageGroup, columnMappings.varnoIndependentColumns,
-                  column_infos, num_varnoIndependnet_columns, odcparams.missingObsSpaceVariableAbort);
+                  column_infos, num_varnoIndependnet_columns, odcparams.missingObsSpaceVariableAbort,
+                  odcparams.ignoreChannelDimensionWrite);
   if (num_varnoIndependnet_columns == 0) return storageGroup;
 
   // Fill data_store with varno independent data

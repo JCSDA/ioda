@@ -31,31 +31,32 @@ namespace ODC {
   // TODO(DJDavies2): Take these obsgroup and varno
   // definitions and encapsulate these into the YAML
   // file structure.
-  static constexpr int obsgroup_surface      = 1;
-  static constexpr int obsgroup_scatwind     = 2;
-  static constexpr int obsgroup_aircraft     = 4;
-  static constexpr int obsgroup_sonde        = 5;
-  static constexpr int obsgroup_atovs        = 7;
-  static constexpr int obsgroup_oceansound   = 11;
-  static constexpr int obsgroup_airs         = 16;
-  static constexpr int obsgroup_gnssro       = 18;
-  static constexpr int obsgroup_ssmis        = 19;
-  static constexpr int obsgroup_amsub        = 20;
-  static constexpr int obsgroup_iasi         = 26;
-  static constexpr int obsgroup_seviriclr    = 27;
-  static constexpr int obsgroup_geocloud     = 28;
-  static constexpr int obsgroup_amsr         = 29;
-  static constexpr int obsgroup_abiclr       = 37;
-  static constexpr int obsgroup_atms         = 38;
-  static constexpr int obsgroup_cris         = 39;
-  static constexpr int obsgroup_surfacecloud = 42;
-  static constexpr int obsgroup_mwsfy3       = 44;
-  static constexpr int obsgroup_ahiclr       = 51;
-  static constexpr int obsgroup_mwri         = 55;
-  static constexpr int obsgroup_gmilow       = 56;
-  static constexpr int obsgroup_gmihigh      = 57;
-  static constexpr int obsgroup_sattcwv      = 58;
-  static constexpr int obsgroup_hiras        = 60;
+  static constexpr int obsgroup_surface        = 1;
+  static constexpr int obsgroup_scatwind       = 2;
+  static constexpr int obsgroup_aircraft       = 4;
+  static constexpr int obsgroup_sonde          = 5;
+  static constexpr int obsgroup_atovs          = 7;
+  static constexpr int obsgroup_oceansound     = 11;
+  static constexpr int obsgroup_airs           = 16;
+  static constexpr int obsgroup_gnssro         = 18;
+  static constexpr int obsgroup_ssmis          = 19;
+  static constexpr int obsgroup_amsub          = 20;
+  static constexpr int obsgroup_iasi           = 26;
+  static constexpr int obsgroup_seviriclr      = 27;
+  static constexpr int obsgroup_geocloud       = 28;
+  static constexpr int obsgroup_amsr           = 29;
+  static constexpr int obsgroup_abiclr         = 37;
+  static constexpr int obsgroup_atms           = 38;
+  static constexpr int obsgroup_cris           = 39;
+  static constexpr int obsgroup_surfacecloud   = 42;
+  static constexpr int obsgroup_mwsfy3         = 44;
+  static constexpr int obsgroup_ahiclr         = 51;
+  static constexpr int obsgroup_mwri           = 55;
+  static constexpr int obsgroup_gmilow         = 56;
+  static constexpr int obsgroup_gmihigh        = 57;
+  static constexpr int obsgroup_sattcwv        = 58;
+  static constexpr int obsgroup_hiras          = 60;
+  static constexpr int obsgroup_scatwindchosen = 64;
 
   static constexpr int varno_dd                     = 111;
   static constexpr int varno_ff                     = 112;

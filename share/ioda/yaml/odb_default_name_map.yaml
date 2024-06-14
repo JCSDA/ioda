@@ -813,9 +813,9 @@ varno-dependent columns:
         varno: 39
       - name: "dewPointTemperature"
         varno: 40
-      - name: "u10_wind_component"
+      - name: "windEastwardAt10M"
         varno: 41
-      - name: "v10_wind_component"
+      - name: "windNorthwardAt10M"
         varno: 42
       - name: "relativeHumidity"
         varno: 58

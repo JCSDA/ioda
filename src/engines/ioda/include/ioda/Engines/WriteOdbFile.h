@@ -35,6 +35,10 @@ class WriteOdbFileParameters : public WriterParametersBase {
     oops::Parameter<bool> missingObsSpaceVariableAbort{
         "abort when variable missing", false, this};
 
+    /// \brief Ignore the ObsSpace Channel dimension when writing the output file
+    oops::Parameter<bool> ignoreChannelDimensionWrite{
+        "ignore channel dimension write", false, this};
+
     /// \brief Type of ODB
     oops::Parameter<std::string> odbType{"odb type", "", this};
 };

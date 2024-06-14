@@ -1,0 +1,20 @@
+---
+time window:
+  begin: 2022-06-02T09:00:00Z
+  end: 2022-06-02T15:00:00Z
+observations:
+- obs space:
+    name: ScatwindChosen
+    simulated variables: ['windEastwardAt10M', 'windNorthwardAt10M']
+    derived variables: ['windEastwardAt10M', 'windNorthwardAt10M']
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: Data/testinput_tier_1/scatwindchosen_obs_20220602T1200Z.nc4
+    obsdataout:
+      engine:
+        type: ODB
+        obsfile: testoutput/ioda_writer_scatwindchosen.odb
+        mapping file: ../share/test/testinput/odb_default_name_map.yaml
+        query file: ../share/test/testinput/iodatest_odb_scatwindchosen_write.yaml
+        ignore channel dimension write: true

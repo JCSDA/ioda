@@ -192,6 +192,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_odb_surface_with_query.yaml
   testinput/iodatest_sort.yaml
   testinput/iodatest_writer_sondes.yaml
+  testinput/iodatest_writer_scatwindchosen.yaml
   testinput/iodatest_build_amsua_n19_file_set.yaml
   testinput/iodatest_build_sondes_file_set.yaml
   testinput/iodatest_build_gnssro_file_set.yaml
@@ -1086,6 +1087,16 @@ ecbuild_add_test( TARGET  test_ioda_writer_sondes
                           "${CMAKE_CURRENT_BINARY_DIR}/test_ioda_oops_obsspace
                           testinput/iodatest_writer_sondes.yaml"
                           ioda_writer_sondes.nc4
+                  TEST_DEPENDS get_ioda_test_data )
+
+ecbuild_add_test( TARGET  test_ioda_writer_scatwindchosen
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          odb
+                          "${CMAKE_CURRENT_BINARY_DIR}/test_ioda_oops_obsspace
+                          testinput/iodatest_writer_scatwindchosen.yaml"
+                          ioda_writer_scatwindchosen.odb
                   TEST_DEPENDS get_ioda_test_data )
 
 # This tests creates a single output file (7 tasks, 4 tasks in the io pool)

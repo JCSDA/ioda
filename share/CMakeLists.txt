@@ -46,6 +46,7 @@ set(
   ioda/yaml/iodatest_odb_sattcwv.yaml
   ioda/yaml/iodatest_odb_satwind.yaml
   ioda/yaml/iodatest_odb_scatwind.yaml
+  ioda/yaml/iodatest_odb_scatwindchosen_write.yaml
   ioda/yaml/iodatest_odb_seaice.yaml
   ioda/yaml/iodatest_odb_seviriclr.yaml
   ioda/yaml/iodatest_odb_sonde.yaml
