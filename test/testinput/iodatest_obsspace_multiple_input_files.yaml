@@ -1,0 +1,36 @@
+---
+time window:
+  begin: "2018-04-14T21:00:00Z"
+  end: "2018-04-15T03:00:00Z"
+
+observations:
+- obs space:
+    name: "AMSUA NOAA19"
+    simulated variables: ['brightnessTemperature']
+    channels: 1-15
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: "Data/testinput_tier_1/amsua_n19_obs_2018041500_m.nc4"
+  test data:
+    nlocs: 100
+
+- obs space:
+    name: "Radiosonde"
+    simulated variables: ['airTemperature']
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: "Data/testinput_tier_1/sondes_obs_2018041500_m.nc4"
+  test data:
+    nlocs: 974
+
+- obs space:
+    name: "AOD GOES"
+    simulated variables: ['aerosolOpticalDepth']
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: "Data/testinput_tier_1/geos_aod_obs_2018041500_m.nc4"
+  test data:
+    nlocs: 100

@@ -782,8 +782,8 @@ void ObsSpace::load(const eckit::LocalConfiguration & obsDataInConfig,
 }
 
 // -----------------------------------------------------------------------------
-void ObsSpace::appendObsGroup(const ObsGroup & appendObsGroup, ObsSourceStats & obsSourceStats) {
-    // append the ObsGroup (save for now)
+void ObsSpace::appendObsGroup(ObsGroup & appendObsGroup, ObsSourceStats & obsSourceStats) {
+    // append the ObsGroup
     obs_group_.append(appendObsGroup);
 
     // accumulate stats from the obs source

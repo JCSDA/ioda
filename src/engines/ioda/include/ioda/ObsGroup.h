@@ -69,7 +69,8 @@ public:
   void resize(const std::vector<std::pair<Variable, ioda::Dimensions_t>>& newDims);
 
   /// \brief append the given group to this group
-  void append(const Group & appendGroup);
+  /// \param appendGroup group to be appended to this group
+  void append(ObsGroup & appendGroup);
 
 private:
   /// \brief recusively visit all groups and resize variables according

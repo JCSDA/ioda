@@ -682,7 +682,7 @@ namespace ioda {
         /// \param appendObsGroup ObsGroup to be appended to obs_group_
         /// \param obsSourceStats struct holding counts, etc. that describe the contents
         /// of the obs source
-        void appendObsGroup(const ObsGroup & appendObsGroup, ObsSourceStats & obsSourceStats);
+        void appendObsGroup(ObsGroup & appendObsGroup, ObsSourceStats & obsSourceStats);
 
         /// \brief Extend the ObsSpace according to the method requested in
         ///  the configuration file.
