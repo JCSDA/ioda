@@ -558,7 +558,7 @@ public:
   Variable_Implementation read(std::vector<DataType>& data,
                                const Selection& mem_selection  = Selection::all,
                                const Selection& file_selection = Selection::all) const {
-    data.resize(getDimensions().numElements); // TODO(Ryan): remove
+    data.resize(getDimensions().numElements);
     return read<DataType, Marshaller, TypeWrapper>(gsl::make_span(data.data(), data.size()),
                                                    mem_selection, file_selection);
   }

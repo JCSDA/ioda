@@ -412,8 +412,9 @@ namespace ioda {
         /// \brief transfer data from the obs container to vdata
         ///
         /// \details The following get_db methods are the same except for the data type
-        /// of the data being transferred (integer, float, double, string, DateTime). The
-        /// caller needs to allocate the memory that the vdata parameter points to
+        /// of the data being transferred (integer, float, double, string, DateTime). Note
+        /// that get_db will resize the vdata (vector) arguement according to the size
+        /// of the variable in the obs container.
         ///
         /// \param group Name of container group (ObsValue, ObsError, MetaData, etc.)
         /// \param name  Name of container variable
