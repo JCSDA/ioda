@@ -198,6 +198,9 @@ void testReduce() {
     ioda::ObsDataVector<double> obsvec_pre_copy(obsvec_pre);
     ioda::ObsDataVector<double> obsvec_pre_moved(obsvec_pre);
     ioda::ObsDataVector<double> obsvec_pre_move(std::move(obsvec_pre_moved));
+    // Test that Distribution::allGatherv works before reduce
+    std::vector<double> test = obsvec_pre[0];
+    Test_::obspace(jj).distribution()->allGatherv(test);
     {
       // Test that ObsVectors and ObsDataVectors associated with ObsSpace get de-associated
       // correctly when going out of scope
@@ -246,10 +249,14 @@ void testReduce() {
     EXPECT(Nrecs == ExpectedNrecs);
     EXPECT(Gnlocs == ExpectedGnlocs);
     EXPECT(vec_pre.nlocs() == ExpectedNlocs);
+    EXPECT(vec_pre.nobs()/vec_pre.nvars() == ExpectedGnlocs);
     EXPECT(vec_pre_copy.nlocs() == ExpectedNlocs);
+    EXPECT(vec_pre_copy.nobs()/vec_pre_copy.nvars() == ExpectedGnlocs);
     EXPECT(vec_pre_moved.nlocs() == 0);
     EXPECT(vec_pre_move.nlocs() == ExpectedNlocs);
+    EXPECT(vec_pre_move.nobs()/vec_pre_move.nvars() == ExpectedGnlocs);
     EXPECT(vec_post.nlocs() == ExpectedNlocs);
+    EXPECT(vec_post.nobs()/vec_post.nvars() == ExpectedGnlocs);
     EXPECT(obsvec_pre.nlocs() == ExpectedNlocs);
     EXPECT(obsvec_pre_copy.nlocs() == ExpectedNlocs);
     EXPECT(obsvec_pre_moved.nlocs() == 0);
@@ -266,8 +273,13 @@ void testReduce() {
                        << obsvec_pre_moved << std::endl;
     EXPECT(vec_post.nlocs() == 0);
     EXPECT(vec_pre_moved.nlocs() == ExpectedNlocs);
+    EXPECT(vec_pre_moved.nobs()/vec_pre_moved.nvars() == ExpectedGnlocs);
     EXPECT(obsvec_post.nlocs() == 0);
     EXPECT(obsvec_pre_moved.nlocs() == ExpectedNlocs);
+
+    // Test that distribution::allGatherv works after reduce
+    test = obsvec_pre_moved[0];
+    Test_::obspace(jj).distribution()->allGatherv(test);
 
     // Check that the index and recnum vectors have been properly adjusted
     const std::vector<std::size_t> ExpectedIndex =

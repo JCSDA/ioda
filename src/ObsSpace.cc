@@ -1540,6 +1540,7 @@ void ObsSpace::adjustDataMembersAfterReduce(const std::vector<bool> & keepLocs) 
     nrecs_ = uniqueRecNums.size();
 
     // Rebuild the patch location information
+    dist_->setNumberLocations(reducedNlocs);
     dist_->computePatchLocs();
 
     // Rebuild the recidx_ data member using the newly adjusted indx_ and recnums_
