@@ -401,13 +401,14 @@ ObsDtype ObsSpace::dtype(const std::string & group, const std::string & name,
                       VarType = ObsDtype::Integer;
                   },
                   [&] (int64_t)   {
-                      if ((group == "MetaData") && (nameToUse == "dateTime")) {
-                          VarType = ObsDtype::DateTime;
+                      try {
                           // TODO(srh) Workaround to cover when datetime was stored
                           // as a util::DateTime object (back when the obs space container
                           // was a boost::multiindex container). For now, ioda accepts
                           // int64_t offset times with its epoch datetime representation.
-                      } else {
+                          const util::DateTime epoch = ioda::getEpochAsDtime(var);
+                          VarType = ObsDtype::DateTime;
+                      } catch (ioda::Exception&) {
                           VarType = ObsDtype::Integer_64;
                       }
                   },
