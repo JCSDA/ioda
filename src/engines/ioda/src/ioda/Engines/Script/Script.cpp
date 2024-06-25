@@ -236,7 +236,24 @@ namespace Script {
     // Add the script file to the python path
     py::object scope = py::globals();
     scope["__file__"] = scriptParams.scriptFile;
-    py::eval_file(scriptParams.scriptFile, scope);
+
+    try 
+    {
+        py::gil_scoped_acquire acquire;
+        py::eval_file(scriptParams.scriptFile, scope);
+    } 
+    catch (const py::error_already_set& e) 
+    {
+        std::cerr << "Python error: " << e.what() << std::endl;
+    } 
+    catch (const std::exception& e) 
+    {
+        std::cerr << "Standard exception: " << e.what() << std::endl;
+    } 
+    catch (...) 
+    {
+        std::cerr << "Unknown exception occurred." << std::endl;
+    }
 
     // Get a reference to the function
     auto func = py::cast<py::function>(scope[funcName]);

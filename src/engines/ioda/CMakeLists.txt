@@ -127,6 +127,7 @@ list(APPEND SRCS_ENGINES_TOP
 	include/ioda/Engines/ReaderBase.h
 	include/ioda/Engines/ReadH5File.h
 	include/ioda/Engines/ReadOdbFile.h
+	include/ioda/Engines/ReadBufrFile.h
 	include/ioda/Engines/ReaderFactory.h
 	include/ioda/Engines/WriterBase.h
 	include/ioda/Engines/WriteH5File.h
@@ -138,6 +139,7 @@ list(APPEND SRCS_ENGINES_TOP
 	src/ioda/Engines/ReaderBase.cpp
 	src/ioda/Engines/ReadH5File.cpp
 	src/ioda/Engines/ReadOdbFile.cpp
+	src/ioda/Engines/ReadBufrFile.cpp
 	src/ioda/Engines/ReaderFactory.cpp
 	src/ioda/Engines/WriterBase.cpp
 	src/ioda/Engines/WriteH5File.cpp
@@ -213,6 +215,16 @@ list(APPEND SRCS_ENGINES_ODC_ODC_DEPENDENT
 	src/ioda/Engines/ODC/OdbQueryParameters.cpp
 	)
 
+list(APPEND SRCS_ENGINES_BUFR
+		include/ioda/Engines/Bufr.h
+		src/ioda/Engines/Bufr/Bufr.cpp
+)
+
+list(APPEND SRCS_ENGINES_BUFR_DEPENDENT
+		include/ioda/Engines/Bufr/Encoder.h
+		src/ioda/Engines/Bufr/Encoder.cpp
+)
+
 list(APPEND SRCS_ENGINES_SCRIPT
 		include/ioda/Engines/ReadScriptFile.h
 		src/ioda/Engines/ReadScriptFile.cpp
@@ -232,6 +244,7 @@ source_group("Engines" FILES ${SRCS_ENGINES_TOP})
 source_group("Engines\\HH" FILES ${SRCS_ENGINES_HH})
 source_group("Engines\\ObsStore" FILES ${SRCS_ENGINES_OBS_STORE})
 source_group("Engines\\ODC" FILES ${SRCS_ENGINES_ODC} ${SRCS_ENGINES_ODC_ODC_DEPENDENT})
+source_group("Engines\\Bufr" FILES ${SRCS_ENGINES_BUFR} ${SRCS_ENGINES_BUFR_DEPENDENT})
 
 if (BUILD_PYTHON_BINDINGS)
 	source_group("Engines\\Script" FILES ${SRCS_ENGINES_SCRIPT})
@@ -256,6 +269,7 @@ list(APPEND SRCS_IODA_ENGINES
 	${SRCS_ENGINES_TOP}
 	${SRCS_ENGINES_OBS_STORE}
 	${SRCS_ENGINES_ODC}
+	${SRCS_ENGINES_BUFR}
 	${CMAKE_CURRENT_BINARY_DIR}/config/ioda/config.h
 	${CMAKE_CURRENT_BINARY_DIR}/config/ioda/testconfig.h
 	)
@@ -267,6 +281,10 @@ endif()
 
 if (HDF5_FOUND)
 	list(APPEND SRCS_IODA_ENGINES ${SRCS_ENGINES_HH})
+endif()
+
+if (bufr_query_FOUND)
+	list(APPEND SRCS_IODA_ENGINES ${SRCS_ENGINES_BUFR_DEPENDENT})
 endif()
 
 if (BUILD_PYTHON_BINDINGS)
@@ -319,6 +337,11 @@ endif()
 if (odc_FOUND)
 	target_link_libraries(ioda_engines PUBLIC odccore)
 endif()
+
+if (bufr_query_FOUND)
+	target_link_libraries(ioda_engines PUBLIC bufr_query)
+endif()
+
 target_link_libraries(ioda_engines PUBLIC oops)
 
 ## Include directories

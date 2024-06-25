@@ -21,9 +21,16 @@
 #include "ioda/Layout.h"
 #include "ioda/Misc/DimensionScales.h"
 #include "ioda/ObsGroup.h"
+#include "ioda/config.h"
 
 namespace py = pybind11;
 using namespace ioda;
+
+
+#if bufr_query_FOUND
+void setupBufrIodaEncoder(py::module& m);
+#endif
+
 
 void setupEngines(pybind11::module& m) {
   using namespace ioda::Engines;
@@ -72,4 +79,8 @@ void setupEngines(pybind11::module& m) {
   mEnginesObsStore.doc() = "Default in-memory engine. MPI capable.";
   mEnginesObsStore.def("createRootGroup", ioda::Engines::ObsStore::createRootGroup,
                        "Create a new ObsStore-backed group.");
+
+#if bufr_query_FOUND
+  setupBufrIodaEncoder(mEngines);
+#endif
 }

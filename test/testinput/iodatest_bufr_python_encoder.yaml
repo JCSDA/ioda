@@ -1,0 +1,19 @@
+---
+time window:
+  begin: "2018-04-14T21:00:00Z"
+  end: "2023-12-15T03:00:00Z"
+
+observations:
+- obs space:
+    name: "MHS"
+    simulated variables: ['antennaTemperature']
+    obsdatain:
+      engine:
+        type: script
+        script file: "testinput/iodatest_bufr_python_encoder.py"
+        args:
+          input_path: "Data/testinput_tier_1/gdas.t18z.1bmhs.tm00.bufr_d"
+    obsdataout:
+      engine:
+        type: H5File
+        obsfile: "testoutput/iodatest_bufr_mhs.nc"

@@ -1,9 +1,30 @@
 include(Targets)
 
+# list of the python source files
+list(APPEND python_srcs
+	py_ioda.cpp
+	py_types.cpp
+	py_dimensions.cpp
+	py_attributes.cpp
+	py_has_attributes.cpp
+	py_selections.cpp
+	py_variables.cpp
+	py_vcps.cpp
+	py_has_variables.cpp
+	py_groups.cpp
+	py_engines.cpp
+	py_dlp.cpp
+	py_scales.cpp
+	py_obsgroup.cpp
+	)
+
+if(bufr_query_FOUND)
+	list(APPEND python_srcs py_bufr_ioda_encoder.cpp)
+endif ()
+
 # We cannot call ecbuild_add_library here since it conflicts with pybind11_add_module.
-pybind11_add_module(_ioda_python py_ioda.cpp py_types.cpp py_dimensions.cpp py_attributes.cpp
-	py_has_attributes.cpp py_selections.cpp py_variables.cpp py_vcps.cpp py_has_variables.cpp
-	py_groups.cpp py_engines.cpp py_dlp.cpp py_scales.cpp py_obsgroup.cpp)
+pybind11_add_module(_ioda_python ${python_srcs})
+
 target_link_libraries(_ioda_python PUBLIC ioda_engines Python3::Module)
 target_link_libraries(_ioda_python PUBLIC Eigen3::Eigen)
 set(pyver python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR})
@@ -43,20 +64,18 @@ endif()
 
 set(PYIODA_DIR "$<TARGET_FILE_DIR:_ioda_python>/..")
 add_custom_command(TARGET _ioda_python POST_BUILD
-	COMMAND ${CMAKE_COMMAND} -E copy
-	${CMAKE_CURRENT_SOURCE_DIR}/pyioda/ioda/__init__.py ${PYIODA_DIR}/ioda/__init__.py)
+		COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/pyioda/ioda ${PYIODA_DIR}/ioda)
 
 add_custom_command(TARGET _ioda_python POST_BUILD
 	COMMAND ${CMAKE_COMMAND} -E copy
 	${CMAKE_CURRENT_SOURCE_DIR}/pyioda/ioda_obs_space/__init__.py ${PYIODA_DIR}/ioda_obs_space/__init__.py)
 
-install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/pyioda/ioda/__init__.py
-	DESTINATION ${CMAKE_INSTALL_LIBDIR}/${pyver}/pyioda/ioda/
-        COMPONENT Python
-	)
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/pyioda/ioda
+	    DESTINATION ${CMAKE_INSTALL_LIBDIR}/${pyver}/pyioda/
+	 	COMPONENT Python
+	    FILES_MATCHING PATTERN "*.py")
 
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/pyioda/ioda_obs_space/__init__.py
-	DESTINATION ${CMAKE_INSTALL_LIBDIR}/${pyver}/pyioda/ioda_obs_space/
-        COMPONENT Python
-	)
+		DESTINATION ${CMAKE_INSTALL_LIBDIR}/${pyver}/pyioda/ioda_obs_space/
+        COMPONENT Python)
 

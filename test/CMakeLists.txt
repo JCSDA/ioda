@@ -210,6 +210,10 @@ list( APPEND ioda_test_input
   testinput/iodatest_time_io_reader_pool_ext_file_prep_mpi7.yaml
   testinput/iodatest_time_io_script.yaml
   testinput/iodatest_time_io_script.py
+  testinput/iodatest_bufr_mhs.yaml
+  testinput/iodatest_bufr_mhs_mapping.yaml
+  testinput/iodatest_bufr_python_encoder.yaml
+  testinput/iodatest_bufr_python_encoder.py
 )
 
 # Work directories for the new reader. Make one entry per test that is using
@@ -2531,6 +2535,29 @@ if (odc_FOUND)
     TEST_NAME varno_dependent_bitfield_column_members
     ODB_FILE  sonde.odb )
 endif()
+
+#####################################################################
+# BUFR tests
+#####################################################################
+
+if (bufr_query_FOUND)
+  ecbuild_add_test( TARGET  test_ioda_bufr_mhs
+          TYPE    SCRIPT
+          COMMAND bash
+          ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+          netcdf
+          "${CMAKE_BINARY_DIR}/bin/time_IodaIO.x testinput/iodatest_bufr_mhs.yaml"
+          iodatest_bufr_mhs.nc)
+
+  ecbuild_add_test( TARGET  test_ioda_bufr_python_encoder
+          TYPE    SCRIPT
+          COMMAND bash
+          ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+          netcdf
+          "${CMAKE_BINARY_DIR}/bin/time_IodaIO.x testinput/iodatest_bufr_python_encoder.yaml"
+          iodatest_bufr_mhs.nc
+          ENVIRONMENT PYTHONPATH=${CMAKE_BINARY_DIR}/lib/python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}:$ENV{PYTHONPATH})
+endif ()
 
 #####################################################################
 # String-to-enum conversion tests

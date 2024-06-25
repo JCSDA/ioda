@@ -57,11 +57,16 @@ find_package( Boost 1.64.0 REQUIRED )
 
 # Optional
 find_package( odc 1.4.6 QUIET )   # Needed for odc
+find_package( bufr 12.0.1 QUIET )
+find_package( NetCDF OPTIONAL_COMPONENTS CXX ) # Needed for bufr-query
+find_package( bufr_query QUIET )
+
 # Python-finding settings
 set(Python3_FIND_REGISTRY "LAST")
 set(Python3_FIND_FRAMEWORK "LAST")
 find_package( Python3 COMPONENTS Interpreter Development)
 find_package( pybind11 QUIET)
+
 
 if (pybind11_FOUND)
   option(BUILD_PYTHON_BINDINGS "Build Python bindings using pybind11?" ON)

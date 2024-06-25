@@ -24,5 +24,6 @@
 #cmakedefine01 Eigen3_FOUND
 #cmakedefine01 HDF5_FOUND
 #cmakedefine01 odc_FOUND
+#cmakedefine01 bufr_query_FOUND
 #cmakedefine01 Python3_FOUND
 #cmakedefine01 pybind11_FOUND
