@@ -124,7 +124,7 @@ class ObsVector : public ObsSpaceAssociated,
   void reduce(const std::vector<bool> & keepLocs) override;
 
  private:
-  void print(std::ostream &) const;
+  void print(std::ostream &) const override;
 
   /*! \brief Associate ObsSpace object */
   ObsSpace & obsdb_;
