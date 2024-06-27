@@ -1,0 +1,27 @@
+where:
+  varno: [259]
+variables:
+- name: date
+- name: initial_obsvalue
+- name: lat
+- name: lon
+- name: ops_obsgroup
+- name: ops_subtype
+- name: radar_altitude_above_mean_sea_level
+- name: radar_beam_elevation
+- name: radar_gate_res
+- name: radar_identifier
+- name: radar_nb_gate
+- name: radar_nb_ray
+- name: radar_ob_azimuth
+- name: radar_ob_range
+- name: radar_range_start
+- name: radar_ray_res
+- name: radar_site_latitude
+- name: radar_site_longitude
+- name: radar_unf_vel
+- name: receipt_date
+- name: receipt_time
+- name: seqno
+- name: time
+- name: varno
