@@ -5,37 +5,37 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#include "ColumnMetadatum.h"
+#include "ioda/containers/ColumnMetadatum.h"
 
-#include "Constants.h"
+#include "ioda/containers/Constants.h"
 
 #include "ioda/Exception.h"
 #include "ioda/Group.h"
 
-ColumnMetadatum::ColumnMetadatum(std::string name, std::int8_t type, std::int8_t permission):
+osdf::ColumnMetadatum::ColumnMetadatum(std::string name, std::int8_t type, std::int8_t permission):
   name_(name), width_(name.size()), type_(validateType(type)),
   permission_(validatePermission(permission)) {}
 
-ColumnMetadatum::ColumnMetadatum(std::string name, std::int8_t type):
+osdf::ColumnMetadatum::ColumnMetadatum(std::string name, std::int8_t type):
   name_(name), width_(name.size()), type_(validateType(type)), permission_(consts::eReadWrite) {}
 
-const std::string& ColumnMetadatum::getName() const {
+const std::string& osdf::ColumnMetadatum::getName() const {
   return name_;
 }
 
-const std::int16_t& ColumnMetadatum::getWidth() const {
+const std::int16_t& osdf::ColumnMetadatum::getWidth() const {
   return width_;
 }
 
-const std::int8_t& ColumnMetadatum::getType() const {
+const std::int8_t& osdf::ColumnMetadatum::getType() const {
   return type_;
 }
 
-const std::int8_t& ColumnMetadatum::getPermission() const {
+const std::int8_t& osdf::ColumnMetadatum::getPermission() const {
   return permission_;
 }
 
-bool ColumnMetadatum::setName(const std::string& name) {
+std::int8_t osdf::ColumnMetadatum::setName(const std::string& name) {
   if (permission_ == consts::eReadWrite) {
     name_ = name;
     return true;
@@ -43,7 +43,7 @@ bool ColumnMetadatum::setName(const std::string& name) {
   return false;
 }
 
-bool ColumnMetadatum::setPermission(const std::int8_t& permission) {
+std::int8_t osdf::ColumnMetadatum::setPermission(const std::int8_t& permission) {
   if (permission_ == consts::eReadWrite) {
     permission_ = permission;
     return true;
@@ -51,11 +51,11 @@ bool ColumnMetadatum::setPermission(const std::int8_t& permission) {
   return false;
 }
 
-void ColumnMetadatum::setWidth(const std::int16_t& width) {
+void osdf::ColumnMetadatum::setWidth(const std::int16_t& width) {
   width_ = width;
 }
 
-std::int8_t ColumnMetadatum::validateType(const std::int8_t& type) {
+std::int8_t osdf::ColumnMetadatum::validateType(const std::int8_t& type) {
   switch (type) {
     case consts::eInt8: break;
     case consts::eInt16: break;
@@ -69,7 +69,7 @@ std::int8_t ColumnMetadatum::validateType(const std::int8_t& type) {
   return type;
 }
 
-std::int8_t ColumnMetadatum::validatePermission(const std::int8_t& permission) {
+std::int8_t osdf::ColumnMetadatum::validatePermission(const std::int8_t& permission) {
   switch (permission) {
     case consts::eReadOnly: break;
     case consts::eReadWrite: break;

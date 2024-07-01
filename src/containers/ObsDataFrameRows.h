@@ -5,28 +5,31 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#ifndef DATAFRAME_H
-#define DATAFRAME_H
+#ifndef OBSDATAFRAMEROWS_H
+#define OBSDATAFRAMEROWS_H
 
 #include <algorithm>
 #include <cstdint>
 #include <functional>
 #include <memory>
 #include <numeric>
+#include <string>
 #include <vector>
 
-#include "ColumnMetadatum.h"
-#include "Constants.h"
-#include "DataRow.h"
-#include "ObsDataFrame.h"
+#include "ioda/containers/ColumnMetadatum.h"
+#include "ioda/containers/Constants.h"
+#include "ioda/containers/DataRow.h"
+#include "ioda/containers/Datum.h"
+#include "ioda/containers/DatumBase.h"
+#include "ioda/containers/ObsDataFrame.h"
 
 #include "oops/util/Logger.h"
 
+namespace osdf {
 class ObsDataFrameRows : public ObsDataFrame {
  public:
   /// \brief constructor for an empy container
   ObsDataFrameRows();
-
   /// \brief generic container constructor
   /// \details This constructor can be used for making a copy, but also
   /// can handle a container from scratch, or a slice from another
@@ -39,14 +42,6 @@ class ObsDataFrameRows : public ObsDataFrame {
   ObsDataFrameRows(const ObsDataFrameRows&)             = delete;   //!< Deleted copy constructor
   ObsDataFrameRows& operator=(ObsDataFrameRows&&)       = delete;   //!< Deleted move assignment
   ObsDataFrameRows& operator=(const ObsDataFrameRows&)  = delete;   //!< Deleted copy assignment
-
-  /// From base class
-  /// \brief set the column meta data from a list
-  /// \param list (vector) of column meta datum values
-  void configColumns(std::vector<ColumnMetadatum>) override;
-  /// \brief set the column meta data from an initializer list
-  /// \param initializer list (vector) of column meta datum values
-  void configColumns(std::initializer_list<ColumnMetadatum>) override;
 
   /// \brief add a new column to the container
   /// \details The column values parameter of these functions needs to be matched
@@ -64,7 +59,7 @@ class ObsDataFrameRows : public ObsDataFrame {
 
   /// \brief add a new row to the container
   /// \param list of values for the new row
-  void appendNewRow(DataRow&) override;
+  void appendNewRow(const DataRow&) override;
 
   /// \brief read from an existing column
   /// \note The data type of the output vector must match the data type of the column
@@ -82,17 +77,18 @@ class ObsDataFrameRows : public ObsDataFrame {
   /// \note The data type of the input vector must match the data type of the column
   /// \param column name
   /// \param input vector containing the new column values
-  void setColumn(const std::string&, std::vector<std::int8_t>&) const override;
-  void setColumn(const std::string&, std::vector<std::int16_t>&) const override;
-  void setColumn(const std::string&, std::vector<std::int32_t>&) const override;
-  void setColumn(const std::string&, std::vector<std::int64_t>&) const override;
-  void setColumn(const std::string&, std::vector<float>&) const override;
-  void setColumn(const std::string&, std::vector<double>&) const override;
-  void setColumn(const std::string&, std::vector<std::string>&) const override;
+  void setColumn(const std::string&, const std::vector<std::int8_t>&) const override;
+  void setColumn(const std::string&, const std::vector<std::int16_t>&) const override;
+  void setColumn(const std::string&, const std::vector<std::int32_t>&) const override;
+  void setColumn(const std::string&, const std::vector<std::int64_t>&) const override;
+  void setColumn(const std::string&, const std::vector<float>&) const override;
+  void setColumn(const std::string&, const std::vector<double>&) const override;
+  void setColumn(const std::string&, const std::vector<std::string>&) const override;
 
   /// \brief remove the column given the column name
   /// \param column name
   void removeColumn(const std::string&) override;
+
   /// \brief remove the row given by the row index
   /// \details The index is numbers from zero to n-1, where n is the current
   /// number of rows in the container. Eg, if the given row index is zero then
@@ -113,7 +109,8 @@ class ObsDataFrameRows : public ObsDataFrame {
   /// \details This function will sort given af function that defines
   /// how to compare two rows.
   /// \param compare function
-  void sort(std::function<std::int8_t(DataRow&, DataRow&)>) override;
+  void sort(const std::string&, const std::function<std::int8_t(const std::shared_ptr<DatumBase>,
+                                                                const std::shared_ptr<DatumBase>)>);
 
   /// \brief slice the container given a column and selection criteria
   /// \details This function will apply the selection criteria to each value in the given
@@ -124,31 +121,33 @@ class ObsDataFrameRows : public ObsDataFrame {
   /// \param comparison operator
   /// \param threshold value
   /// \return A new (deep copy) container is returned that holds the selected rows
-  std::shared_ptr<ObsDataFrame> slice(const std::string&, const std::int8_t, std::int8_t) override;
-  std::shared_ptr<ObsDataFrame> slice(const std::string&, const std::int8_t, std::int16_t) override;
-  std::shared_ptr<ObsDataFrame> slice(const std::string&, const std::int8_t, std::int32_t) override;
-  std::shared_ptr<ObsDataFrame> slice(const std::string&, const std::int8_t, std::int64_t) override;
-  std::shared_ptr<ObsDataFrame> slice(const std::string&, const std::int8_t, float) override;
-  std::shared_ptr<ObsDataFrame> slice(const std::string&, const std::int8_t, double) override;
-  std::shared_ptr<ObsDataFrame> slice(const std::string&, const std::int8_t, std::string) override;
+  std::shared_ptr<ObsDataFrame> slice(const std::string&, const std::int8_t&,
+                                      const std::int8_t&) override;
+  std::shared_ptr<ObsDataFrame> slice(const std::string&, const std::int8_t&,
+                                      const std::int16_t&) override;
+  std::shared_ptr<ObsDataFrame> slice(const std::string&, const std::int8_t&,
+                                      const std::int32_t&) override;
+  std::shared_ptr<ObsDataFrame> slice(const std::string&, const std::int8_t&,
+                                      const std::int64_t&) override;
+  std::shared_ptr<ObsDataFrame> slice(const std::string&, const std::int8_t&,
+                                      const float&) override;
+  std::shared_ptr<ObsDataFrame> slice(const std::string&, const std::int8_t&,
+                                      const double&) override;
+  std::shared_ptr<ObsDataFrame> slice(const std::string&, const std::int8_t&,
+                                      const std::string&) override;
 
   /// \brief slice the container given a selection function
   /// \details This function uses a general function to determine how to select
   /// a row from the container.
   /// \param selection function
   /// \return A new (deep copy) container is returned that holds the selected rows
-  std::shared_ptr<ObsDataFrame> slice(std::function<std::int8_t(DataRow&)>) override;
-
-  /// \brief return the number of rows in the container
-  const std::int64_t getNumRows() const override;
+  std::shared_ptr<ObsDataFrame> slice(const std::function<const std::int8_t(const DataRow&)>);
 
   /// \brief print the contents of the container in a tabular format
   void print() override;
 
   /// \brief return a reference (view) to the data rows in the container
   std::vector<DataRow>& getDataRows();
-
-  /// Templated functions - These cannot be specified in base class
 
   /// \brief add a new row to the end of the container
   /// \details This function takes a variable number of parameters, but the nubmer
@@ -161,21 +160,20 @@ class ObsDataFrameRows : public ObsDataFrame {
     const std::int32_t numParams = sizeof...(T);
     if (columnMetadata_.getNumCols() > 0) {
       if (numParams == columnMetadata_.getNumCols()) {
-        DataRow newRow(dataRows_.size());
+        DataRow newRow(columnMetadata_.getMaxId() + 1);
         std::int8_t typeMatch = true;
         // Iterative function call to unpack variadic template
         ((void) addColumnToRow(newRow, typeMatch, std::forward<T>(args)), ...);
-
         if (typeMatch == true) {
           appendNewRow(newRow);
         }
       } else {
-        oops::Log::error() << "ERROR: Number of columns in new row are incompatible with this "
-                              "data frame." << std::endl;
+        oops::Log::error() << "ERROR: Number of columns in new row are "
+                              "incompatible with this data frame." << std::endl;
       }
     } else {
-      oops::Log::error() << "ERROR: Cannot insert a new row without first setting column headings."
-                         << std::endl;
+      oops::Log::error() << "ERROR: Cannot insert a new row without "
+                            "first setting column headings." << std::endl;
     }
   }
 
@@ -185,20 +183,20 @@ class ObsDataFrameRows : public ObsDataFrame {
   /// \param index of column being used to determine the sorting
   /// \param comparison function
   template <typename F>
-  void sortRows(std::int64_t columnIndex, F&& func) {
+  void sortRows(const std::int64_t columnIndex, const F&& func) {
     std::int64_t numberOfRows = dataRows_.size();
     std::vector<std::int64_t> indices(numberOfRows, 0);
     std::iota(std::begin(indices), std::end(indices), 0);  // Build initial list of indices.
-    std::sort(std::begin(indices), std::end(indices),
-              [&](const std::int64_t& a, const std::int64_t& b) {
-      std::shared_ptr<DatumBase> datumA = dataRows_[a].getColumn(columnIndex);
-      std::shared_ptr<DatumBase> datumB = dataRows_[b].getColumn(columnIndex);
+    std::sort(std::begin(indices), std::end(indices), [&](const std::int64_t& i,
+                                                          const std::int64_t& j) {
+      std::shared_ptr<DatumBase> datumA = dataRows_.at(i).getColumn(columnIndex);
+      std::shared_ptr<DatumBase> datumB = dataRows_.at(j).getColumn(columnIndex);
       return func(datumA, datumB);
     });
     for (std::int64_t i = 0; i < numberOfRows; ++i) {
-      while (indices[i] != indices[indices[i]]) {
-        std::swap(dataRows_[indices[i]], dataRows_[indices[indices[i]]]);
-        std::swap(indices[i], indices[indices[i]]);
+      while (indices.at(i) != indices.at(indices.at(i))) {
+        std::swap(dataRows_.at(indices.at(i)), dataRows_.at(indices.at(indices.at(i))));
+        std::swap(indices.at(i), indices.at(indices.at(i)));
       }
     }
   }
@@ -208,7 +206,8 @@ class ObsDataFrameRows : public ObsDataFrame {
   /// \details Using this function will result in an ascending sort order.
   /// \param first datum value
   /// \param second datum value
-  std::int8_t compareDatums(std::shared_ptr<DatumBase>, std::shared_ptr<DatumBase>);
+  const int8_t compareDatums(const std::shared_ptr<DatumBase>,
+                             const std::shared_ptr<DatumBase>) const;
 
   /// Functions that serve the base class overrides
 
@@ -218,8 +217,8 @@ class ObsDataFrameRows : public ObsDataFrame {
   /// \param name for the new column
   /// \param vector of column values
   /// \param column data type
-  template<typename T> void appendNewColumn(const std::string&,
-                                            const std::vector<T>&, const std::int8_t);
+  template<typename T> void appendNewColumn(const std::string&, const std::vector<T>&,
+                                            const std::int8_t);
 
   /// \brief add datum for a new column in a row
   /// \details This is a helper function for appending a new column. For the i-th row,
@@ -234,52 +233,46 @@ class ObsDataFrameRows : public ObsDataFrame {
   /// \param column name
   /// \param output vector that will contain the column values
   /// \param column data type
-  template<typename T> void getColumn(const std::string&,
-                                      std::vector<T>&, const std::int8_t) const;
+  template<typename T> void getColumn(const std::string&, std::vector<T>&, const std::int8_t) const;
 
   /// \brief write into an existing column
   /// \details This is a helper function for the public setColumn function.
   /// \param column name
   /// \param input vector containing the new column values
   /// \param column data type
-  template<typename T> void setColumn(const std::string&,
-                                      const std::vector<T>&, const std::int8_t) const;
+  template<typename T> void setColumn(const std::string&, const std::vector<T>&,
+                                      const std::int8_t) const;
+
+  template<typename T> std::shared_ptr<ObsDataFrame> slice(const std::string&, const std::int8_t&,
+                                                           const T&, const std::int8_t&);
 
   /// Helper functions
-
-  /// \brief get a single datum value
-  /// \param datum object holding the value we want to get
-  /// \param output datum value
-  template<typename T> void getDatumValue(std::shared_ptr<DatumBase>, T&) const;
 
   /// \brief set a single datum value
   /// \param datum object holding the value we want to set
   /// \param input datum value
-  template<typename T> void setDatumValue(std::shared_ptr<DatumBase>, const T&) const;
+  template<typename T> void getDatumValue(const std::shared_ptr<DatumBase>, T&) const;
+
+  /// \brief set a single datum value
+  /// \param datum object holding the value we want to set
+  /// \param input datum value
+  template<typename T> void setDatumValue(const std::shared_ptr<DatumBase>, const T&) const;
 
   /// \brief comparison function for the public slice function
   /// \param comparison operator
   /// \param threshold value
   /// \param datum value
-  template<typename T> std::int8_t compareDatumToThreshold(std::int8_t, T, T);
+  template<typename T> const std::int8_t compareDatumToThreshold(const std::int8_t,
+                                                                 const T, const T) const;
 
-  /// \brief helper function for the public appendNewColumn function
-  /// \param column index
-  /// \param data value
-  template<typename T> std::shared_ptr<DatumBase> createDatum(const std::int32_t&, T);
-
-  /// \brief construct a new DataRow and add it to the container
-  /// \details This function only constructs the DataRow object but does not
-  /// populate it.
-  void createNewRow();
   /// \brief add the given number of rows to the container
   /// \details This function will add new DataRow objects to the container,
   /// but does not populate them.
   /// \param nubmer of rows to add
   void initialise(const std::int64_t&);
 
-  /// \brief container rows
   std::vector<DataRow> dataRows_;
 };
+}  // namespace osdf
 
-#endif  // DATAFRAME_H
+#endif  // OBSDATAFRAMEROWS_H

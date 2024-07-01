@@ -12,9 +12,10 @@
 #include <memory>
 #include <vector>
 
-#include "ColumnMetadatum.h"
-#include "DatumBase.h"
+#include "ioda/containers/ColumnMetadata.h"
+#include "ioda/containers/DatumBase.h"
 
+namespace osdf {
 class DataRow {
  public:
   /// \brief row constructor
@@ -25,9 +26,9 @@ class DataRow {
   DataRow() = delete;  //!< Deleted default constructor
 
   /// \brief return the row id
-  const std::int64_t getId();
+  const std::int64_t getId() const;
   /// \brief return the number of columns
-  const std::int32_t getSize();
+  const std::int32_t getSize() const;
 
   /// \brief get the column datum given the column index
   /// \param column index
@@ -46,7 +47,7 @@ class DataRow {
   /// \details This funcion uses the column metadata row to access the column widths.
   /// \param column metadata row
   /// \param width for printing the row id
-  void print(const std::vector<ColumnMetadatum>&, const std::int32_t&) const;
+  void print(const ColumnMetadata&, const std::int32_t) const;
 
  private:
   /// \brief single row (set of single values for each column, disparate data types)
@@ -55,4 +56,6 @@ class DataRow {
   /// \brief row id number
   std::int64_t id_;
 };
+}  // namespace osdf
+
 #endif  // DATAROW_H

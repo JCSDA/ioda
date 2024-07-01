@@ -13,8 +13,9 @@
 #include <tuple>
 #include <vector>
 
-#include "ColumnMetadatum.h"
+#include "ioda/containers/ColumnMetadatum.h"
 
+namespace osdf {
 class ColumnMetadata {
  public:
   ColumnMetadata();
@@ -35,8 +36,11 @@ class ColumnMetadata {
   ///         was added (at the end)
   const std::int64_t add(const std::vector<ColumnMetadatum>);
 
-  /// \brief return a copy of the column meta data row
   const std::vector<ColumnMetadatum>& get() const;
+
+  /// \brief return a reference tothe column meta datum
+  /// \param column index
+  const ColumnMetadatum& get(const std::int32_t) const;
 
   /// \brief reset the highest ID - used when copying data frame metadata.
   void resetMaxId();
@@ -91,5 +95,6 @@ class ColumnMetadata {
   /// columnn name, data type, etc.
   std::vector<ColumnMetadatum> columnMetadata_;
 };
+}  // namespace osdf
 
 #endif  // COLUMNMETADATA_H

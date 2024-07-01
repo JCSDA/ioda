@@ -11,6 +11,7 @@
 #include <cstdint>
 #include <string>
 
+namespace osdf {
 namespace consts {
   /// \brief supported column data types
   enum eDataTypes : std::int8_t {
@@ -64,5 +65,6 @@ namespace consts {
   /// \brief ObsDataFrame error code
   const std::int32_t kErrorValue = -9999;
 }  // namespace consts
+}  // namespace osdf
 
 #endif  // CONSTANTS_H

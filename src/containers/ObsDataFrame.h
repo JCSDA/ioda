@@ -11,9 +11,12 @@
 #include <cstdint>
 #include <functional>
 
-#include "ColumnMetadata.h"
-#include "DataRow.h"
+#include "ioda/containers/ColumnMetadata.h"
+#include "ioda/containers/DataBase.h"
+#include "ioda/containers/DataRow.h"
+#include "ioda/containers/DatumBase.h"
 
+namespace osdf {
 class ObsDataFrame {
  public:
   /// \brief constructor for empty container
@@ -33,10 +36,10 @@ class ObsDataFrame {
   /// From base class
   /// \brief set the column meta data from a list
   /// \param list (vector) of column meta datum values
-  virtual void configColumns(std::vector<ColumnMetadatum>) = 0;
+  virtual void configColumns(std::vector<ColumnMetadatum>);
   /// \brief set the column meta data from an initializer list
   /// \param initializer list (vector) of column meta datum values
-  virtual void configColumns(std::initializer_list<ColumnMetadatum>) = 0;
+  virtual void configColumns(std::initializer_list<ColumnMetadatum>);
 
   /// \brief add a new column to the container
   /// \details The column values parameter of these functions needs to be matched
@@ -54,7 +57,7 @@ class ObsDataFrame {
 
   /// \brief add a new row to the container
   /// \param list of values for the new row
-  virtual void appendNewRow(DataRow&) = 0;
+  virtual void appendNewRow(const DataRow&) = 0;
 
   /// \brief read from an existing column
   /// \note The data type of the output vector must match the data type of the column
@@ -72,13 +75,13 @@ class ObsDataFrame {
   /// \note The data type of the input vector must match the data type of the column
   /// \param column name
   /// \param input vector containing the new column values
-  virtual void setColumn(const std::string&, std::vector<std::int8_t>&) const = 0;
-  virtual void setColumn(const std::string&, std::vector<std::int16_t>&) const = 0;
-  virtual void setColumn(const std::string&, std::vector<std::int32_t>&) const = 0;
-  virtual void setColumn(const std::string&, std::vector<std::int64_t>&) const = 0;
-  virtual void setColumn(const std::string&, std::vector<float>&) const = 0;
-  virtual void setColumn(const std::string&, std::vector<double>&) const = 0;
-  virtual void setColumn(const std::string&, std::vector<std::string>&) const = 0;
+  virtual void setColumn(const std::string&, const std::vector<std::int8_t>&) const = 0;
+  virtual void setColumn(const std::string&, const std::vector<std::int16_t>&) const = 0;
+  virtual void setColumn(const std::string&, const std::vector<std::int32_t>&) const = 0;
+  virtual void setColumn(const std::string&, const std::vector<std::int64_t>&) const = 0;
+  virtual void setColumn(const std::string&, const std::vector<float>&) const = 0;
+  virtual void setColumn(const std::string&, const std::vector<double>&) const = 0;
+  virtual void setColumn(const std::string&, const std::vector<std::string>&) const = 0;
 
   /// \brief remove the column given the column name
   /// \param column name
@@ -98,11 +101,6 @@ class ObsDataFrame {
   /// \param column name
   /// \param sort order
   virtual void sort(const std::string&, const std::int8_t) = 0;
-  /// \brief sort the rows in the container
-  /// \details This function will sort given af function that defines
-  /// how to compare two rows.
-  /// \param compare function
-  virtual void sort(std::function<std::int8_t(DataRow&, DataRow&)>) = 0;
 
   /// \brief slice the container given a column and selection criteria
   /// \details This function will apply the selection criteria to each value in the given
@@ -114,32 +112,22 @@ class ObsDataFrame {
   /// \param threshold value
   /// \return A new (deep copy) container is returned that holds the selected rows
   virtual std::shared_ptr<ObsDataFrame>
-      slice(const std::string&, const std::int8_t, std::int8_t) = 0;
+      slice(const std::string&, const std::int8_t&, const std::int8_t&) = 0;
   virtual std::shared_ptr<ObsDataFrame>
-      slice(const std::string&, const std::int8_t, std::int16_t) = 0;
+      slice(const std::string&, const std::int8_t&, const std::int16_t&) = 0;
   virtual std::shared_ptr<ObsDataFrame>
-      slice(const std::string&, const std::int8_t, std::int32_t) = 0;
+      slice(const std::string&, const std::int8_t&, const std::int32_t&) = 0;
   virtual std::shared_ptr<ObsDataFrame>
-      slice(const std::string&, const std::int8_t, std::int64_t) = 0;
+      slice(const std::string&, const std::int8_t&, const std::int64_t&) = 0;
   virtual std::shared_ptr<ObsDataFrame>
-      slice(const std::string&, const std::int8_t, float) = 0;
+      slice(const std::string&, const std::int8_t&, const float&) = 0;
   virtual std::shared_ptr<ObsDataFrame>
-      slice(const std::string&, const std::int8_t, double) = 0;
+      slice(const std::string&, const std::int8_t&, const double&) = 0;
   virtual std::shared_ptr<ObsDataFrame>
-      slice(const std::string&, const std::int8_t, std::string) = 0;
-
-  /// \brief slice the container given a selection function
-  /// \details This function uses a general function to determine how to select
-  /// a row from the container.
-  /// \param selection function
-  /// \return A new (deep copy) container is returned that holds the selected rows
-  virtual std::shared_ptr<ObsDataFrame> slice(std::function<std::int8_t(DataRow&)>) = 0;
+      slice(const std::string&, const std::int8_t&, const std::string&) = 0;
 
   /// \brief print out the container contents in a tabular form
   virtual void print() = 0;
-
-  /// \brief return the number of rows in the container
-  virtual const std::int64_t getNumRows() const = 0;
 
   /// \brief return the container type
   const std::int8_t getType();
@@ -155,5 +143,17 @@ class ObsDataFrame {
   /// \details current types are row priority, column priority, row view and column view
   const std::int8_t type_;
 };
+
+namespace funcs {
+// Non-member functions that serve derivatives of the ObsDataFrame base class
+template<typename T> std::shared_ptr<DataBase> createData(const std::int32_t&,
+                                                          const std::vector<T>&);
+
+  /// \brief helper function for the public appendNewColumn function
+  /// \param column index
+  /// \param data value
+template<typename T> std::shared_ptr<DatumBase> createDatum(const std::int32_t&, const T);
+}  // namespace funcs
+}  // namespace osdf
 
 #endif  // OBSDATAFRAME_H

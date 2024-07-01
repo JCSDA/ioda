@@ -10,13 +10,13 @@
 
 #include <string>
 
-#include "Constants.h"
-#include "DatumBase.h"
+#include "ioda/containers/DatumBase.h"
 
+namespace osdf {
 template<class T>
 class Datum : public DatumBase {
  public:
-  explicit Datum(T datum);
+  explicit Datum(const T&);
 
   virtual ~Datum() = default;
 
@@ -27,21 +27,22 @@ class Datum : public DatumBase {
   Datum& operator=(const Datum&)  = delete;  //!< Deleted copy assignment
 
   const T getDatum() const {
-    return datum_;
+    return value_;
   }
 
   T getDatum() {
-    return datum_;
+    return value_;
   }
 
   const std::string getDatumStr() const;
 
-  void setDatum(T datum) {
-    datum_ = datum;
+  void setDatum(const T value) {
+    value_ = value;
   }
 
  private:
-  T datum_;
+  T value_;
 };
+}  // namespace osdf
 
 #endif  // DATUM_H

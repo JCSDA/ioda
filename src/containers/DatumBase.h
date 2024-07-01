@@ -11,11 +11,12 @@
 #include <cstdint>
 #include <string>
 
+namespace osdf {
 class DatumBase {
  public:
   /// \brief constructor with data type
   /// \param data type
-  explicit DatumBase(const std::int8_t type);
+  explicit DatumBase(const std::int8_t type) : type_(type) {}
   virtual ~DatumBase() = default;
 
   DatumBase()                             = delete;  //!< Deleted default constructor
@@ -28,11 +29,14 @@ class DatumBase {
   virtual const std::string getDatumStr() const = 0;
 
   /// \brief return data type
-  const std::int8_t getType() const;
+  const std::int8_t getType() const {
+    return type_;
+  }
 
  protected:
   /// \brief data type
   std::int8_t type_;
 };
+}  // namespace osdf
 
 #endif  // DATUMBASE_H

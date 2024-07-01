@@ -44,7 +44,7 @@ void testRowPriority() {
   // Instantiate a row priority data frame, and fill it in by appending
   // column data from the test config. After the column is appended, check
   // to see if you get the same data after reading the column
-  ObsDataFrameRows dfRow;
+  osdf::ObsDataFrameRows dfRow;
 
   for (std::size_t i = 0; i < configColumnData.size(); ++i) {
     std::string name = configColumnData[i].getString("name");

@@ -15,11 +15,13 @@ containers/ColumnMetadata.h
 containers/ColumnMetadatum.cpp
 containers/ColumnMetadatum.h
 containers/Constants.h
+containers/Data.cpp
+containers/Data.h
+containers/DataBase.h
 containers/DataRow.cpp
 containers/DataRow.h
 containers/Datum.cpp
 containers/Datum.h
-containers/DatumBase.cpp
 containers/DatumBase.h
 containers/ObsDataFrame.cpp
 containers/ObsDataFrame.h

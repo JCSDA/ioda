@@ -5,38 +5,40 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#include "Datum.h"
+#include "ioda/containers/Datum.h"
 
 #include <cstdint>
 
-template<>
-  Datum<std::int8_t>::Datum(std::int8_t datum): DatumBase(consts::eInt8), datum_(datum) {}
-template<>
-  Datum<std::int16_t>::Datum(std::int16_t datum): DatumBase(consts::eInt16), datum_(datum) {}
-template<>
-  Datum<std::int32_t>::Datum(std::int32_t datum): DatumBase(consts::eInt32), datum_(datum) {}
-template<>
-  Datum<std::int64_t>::Datum(std::int64_t datum): DatumBase(consts::eInt64), datum_(datum) {}
-template<>
-  Datum<float>::Datum(float datum): DatumBase(consts::eFloat), datum_(datum) {}
-template<>
-  Datum<double>::Datum(double datum): DatumBase(consts::eDouble), datum_(datum) {}
-template<>
-  Datum<std::string>::Datum(std::string datum): DatumBase(consts::eString), datum_(datum) {}
+#include "ioda/containers/Constants.h"
+
+template<> osdf::Datum<std::int8_t>::Datum(const std::int8_t& value):
+           DatumBase(consts::eInt8), value_(value) {}
+template<> osdf::Datum<std::int16_t>::Datum(const std::int16_t& value):
+           DatumBase(consts::eInt16), value_(value) {}
+template<> osdf::Datum<std::int32_t>::Datum(const std::int32_t& value):
+           DatumBase(consts::eInt32), value_(value) {}
+template<> osdf::Datum<std::int64_t>::Datum(const std::int64_t& value):
+           DatumBase(consts::eInt64), value_(value) {}
+template<> osdf::Datum<float>::Datum(const float& value):
+           DatumBase(consts::eFloat), value_(value) {}
+template<> osdf::Datum<double>::Datum(const double& value):
+           DatumBase(consts::eDouble), value_(value) {}
+template<> osdf::Datum<std::string>::Datum(const std::string& value):
+           DatumBase(consts::eString), value_(value) {}
 
 template<class T>
-const std::string Datum<T>::getDatumStr() const {
-  return std::to_string(datum_);
+const std::string osdf::Datum<T>::getDatumStr() const {
+  return std::to_string(value_);
 }
 
-template const std::string Datum<std::int8_t>::getDatumStr() const;
-template const std::string Datum<std::int16_t>::getDatumStr() const;
-template const std::string Datum<std::int32_t>::getDatumStr() const;
-template const std::string Datum<std::int64_t>::getDatumStr() const;
-template const std::string Datum<float>::getDatumStr() const;
-template const std::string Datum<double>::getDatumStr() const;
+template const std::string osdf::Datum<std::int8_t>::getDatumStr() const;
+template const std::string osdf::Datum<std::int16_t>::getDatumStr() const;
+template const std::string osdf::Datum<std::int32_t>::getDatumStr() const;
+template const std::string osdf::Datum<std::int64_t>::getDatumStr() const;
+template const std::string osdf::Datum<float>::getDatumStr() const;
+template const std::string osdf::Datum<double>::getDatumStr() const;
 
 template<>
-const std::string Datum<std::string>::getDatumStr() const {
-  return datum_;
+const std::string osdf::Datum<std::string>::getDatumStr() const {
+  return value_;
 }

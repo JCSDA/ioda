@@ -11,6 +11,7 @@
 #include <cstdint>
 #include <string>
 
+namespace osdf {
 class ColumnMetadatum {
  public:
   /// \brief constructor using full specification
@@ -42,11 +43,11 @@ class ColumnMetadatum {
   /// \brief set column name
   /// \details This function will throw an exception for a read-only column
   /// \param column name
-  bool setName(const std::string&);
+  std::int8_t setName(const std::string&);
   /// \brief set column permission
   /// \details This function will throw an exception for a read-only column
   /// \param column permission
-  bool setPermission(const std::int8_t&);
+  std::int8_t setPermission(const std::int8_t&);
 
   /// \brief set the print format width for this column
   /// \details This function set the width regardless of permission since
@@ -79,5 +80,6 @@ class ColumnMetadatum {
   /// \brief column permission (read only, read write)
   std::int8_t permission_;
 };
+}  // namespace osdf
 
 #endif  // COLUMNMETADATUM_H
