@@ -48,6 +48,8 @@ class GenListParameters : public ReaderParametersBase {
 
     /// \brief obs error estimates
     oops::Parameter<std::vector<float>> obsErrors{"obs errors", { }, this};
+
+    bool isFileBackend() const override { return false; }
 };
 
 // Classes

@@ -673,8 +673,9 @@ namespace ioda {
         /// config can have either an obsfile (scalar) or obsfiles (vector), these both
         /// default to empty values, and this routine simply concatenates obsfile and
         /// obsfiles to form the vector obsdatain specs.
+        /// \param obsDataInParams parameters generated from original "obsdatain" config
         std::vector<eckit::LocalConfiguration>
-            expandInputFileConfigs(const ObsDataInParameters &obsDatainParams);
+            expandInputFileConfigs(const ObsDataInParameters & obsDataInParams);
 
         /// \brief append the given ObsGroup and update the obs source stats
         /// \details This function will append the given ObsGroup to the ObsSpace::obs_group_

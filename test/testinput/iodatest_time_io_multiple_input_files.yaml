@@ -1,0 +1,54 @@
+---
+time window:
+  begin: "2018-01-01T00:00:00Z"
+  end: "2022-01-01T00:00:00Z"
+
+observations:
+- obs space:
+    name: "AMSUA NOAA19"
+    simulated variables: ['brightnessTemperature']
+    channels: 1-15
+    obsdatain:
+      engine:
+        type: H5File
+        obsfiles:
+        - "Data/testinput_tier_1/amsua_n19_obs_2018041500_m_p1.nc4"
+        - "Data/testinput_tier_1/amsua_n19_obs_2018041500_m_p2.nc4"
+        - "Data/testinput_tier_1/amsua_n19_obs_2018041500_m_p3.nc4"
+        missing file action: error
+    obsdataout:
+      engine:
+        type: H5File
+        obsfile: "testoutput/amsua_n19_obs_2018041500_m_time_multi_files.nc4"
+
+- obs space:
+    name: "Radiosonde"
+    simulated variables: ['airTemperature']
+    obsdatain:
+      engine:
+        type: H5File
+        obsfiles:
+        - "Data/testinput_tier_1/sondes_obs_2018041500_m_p1.nc4"
+        - "Data/testinput_tier_1/sondes_obs_2018041500_m_p2.nc4"
+        - "Data/testinput_tier_1/sondes_obs_2018041500_m_p3.nc4"
+        missing file action: error
+    obsdataout:
+      engine:
+        type: H5File
+        obsfile: "testoutput/sondes_obs_2018041500_m_time_multi_files.nc4"
+
+- obs space:
+    name: "GNSSRO"
+    simulated variables: [ 'atmosphericRefractivity', 'bendingAngle' ]
+    obsdatain:
+      engine:
+        type: H5File
+        obsfiles:
+        - "Data/testinput_tier_1/gnssro_obs_2021080606_s_p1.nc4"
+        - "Data/testinput_tier_1/gnssro_obs_2021080606_s_p2.nc4"
+        - "Data/testinput_tier_1/gnssro_obs_2021080606_s_p3.nc4"
+        missing file action: error
+    obsdataout:
+      engine:
+        type: H5File
+        obsfile: "testoutput/gnssro_obs_2021080606_s_time_multi_files.nc4"

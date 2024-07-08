@@ -787,6 +787,17 @@ void ObsSpace::appendObsGroup(ObsGroup & appendObsGroup, ObsSourceStats & obsSou
     // append the ObsGroup
     obs_group_.append(appendObsGroup);
 
+    // Need to keep indx_ and recnums_ unique and the load function will number these
+    // starting with zero. Simply add in the offset given by the current values of
+    // source_nlocs_ and gNrecs (MPI all reduce summation of the local nrecs_ value)
+    // before those get updated.
+    std::for_each(obsSourceStats.locIndices.begin(), obsSourceStats.locIndices.end(),
+                  [&](std::size_t &n) { n += source_nlocs_; });
+    std::size_t gNrecs;
+    this->comm().allReduce(nrecs_, gNrecs, eckit::mpi::Operation::SUM);
+    std::for_each(obsSourceStats.recNums.begin(), obsSourceStats.recNums.end(),
+                  [&](std::size_t &n) { n += gNrecs; });
+
     // accumulate stats from the obs source
     nrecs_ += obsSourceStats.nrecs;
     gnlocs_ += obsSourceStats.gNlocs;
@@ -813,14 +824,74 @@ void ObsSpace::appendObsGroup(ObsGroup & appendObsGroup, ObsSourceStats & obsSou
 
 // -----------------------------------------------------------------------------
 std::vector<eckit::LocalConfiguration> ObsSpace::expandInputFileConfigs(
-                                           const ObsDataInParameters & obsDatainParams) {
-    // TODO(srh) For now we are still allowing only one input file, so it is sufficient
-    // to just create a single LocalConfiguration (vector of size 1) to pass to the
-    // ObsSpace::load function. Eventually we want an entry in the vector of
-    // LocalConfiguration for each specified input file.
-    std::vector<eckit::LocalConfiguration> obsDataInConfigs(1);
-    obsDatainParams.serialize(obsDataInConfigs[0]);
+                                           const ObsDataInParameters & obsDataInParams) {
+    // If we have a generator backend, then we just want a single entry in the
+    // list of obsDataInConfigs. Otherwise (file backend) we want to expand
+    // the obsfile and obsfiles specs into a list of configs (one for each
+    // file).
+    std::vector<eckit::LocalConfiguration> obsDataInConfigs;
+    if (obsDataInParams.isFileBackend()) {
+      // File backend.
+      // Form a list (vector) of input files. Simply concatenate the "obsfile" and
+      // "obsfiles" specs in the "obsdatain" config.
+      eckit::LocalConfiguration origOdataInConfig;
+      obsDataInParams.serialize(origOdataInConfig);
 
+      // The default for the obsfile spec is an empty string, and the default
+      // for obsfiles is an empty vector.
+      std::string obsFileSpec;
+      if (origOdataInConfig.has("engine.obsfile")) {
+          obsFileSpec = origOdataInConfig.getString("engine.obsfile");
+      }
+      std::vector<std::string> obsFileListSpec(0);
+      if (origOdataInConfig.has("engine.obsfiles")) {
+          obsFileListSpec = origOdataInConfig.getStringVector("engine.obsfiles");
+      }
+
+      // Make sure one and only one of "obsfile" and "obsfiles" is specified
+      // "specified" means not the default value
+      const bool haveObsFile = (obsFileSpec.size() > 0);
+      const bool haveObsFiles = (obsFileListSpec.size() > 0);
+
+      if (!haveObsFile && !haveObsFiles) {
+          // Neither were specified
+          std::string errMsg =
+              std::string("Must specify at least one of 'obsfile' or 'obsfiles' ") +
+              std::string("with the 'obsdatain' configuration");
+          throw(ioda::Exception(errMsg, ioda_Here()));
+      } else if (haveObsFile && haveObsFiles) {
+          // both were specfied
+          std::string errMsg =
+              std::string("Must specify one and only one of 'obsfile' or 'obsfiles' ") +
+              std::string("with the 'obsdatain' configuration");
+          throw(ioda::Exception(errMsg, ioda_Here()));
+      }
+
+      // We have either obsfile or obsfiles specified at this point
+      std::vector<std::string> fileList;
+      if (haveObsFile) {
+          fileList.push_back(obsFileSpec);
+      } else {
+          // have obsfiles
+          fileList.insert(fileList.end(), obsFileListSpec.begin(), obsFileListSpec.end());
+      }
+
+      // Form a list of configurations using each file in fileList once (obsfile spec)
+      for (auto & fileName : fileList) {
+        // Use the existing obsdatain config as a template for the vector of configs.
+        // Use the "obsfile" config to specify one file at a time.
+        eckit::LocalConfiguration tempOdataInConfig = origOdataInConfig;
+        if (tempOdataInConfig.has("engine.obsfiles")) {
+          tempOdataInConfig.set("engine.obsfiles", std::vector<std::string>(0));
+        }
+        tempOdataInConfig.set("engine.obsfile", fileName);
+        obsDataInConfigs.push_back(tempOdataInConfig);
+      }
+    } else {
+      // Generator backend.
+      obsDataInConfigs.resize(1);
+      obsDataInParams.serialize(obsDataInConfigs[0]);
+    }
     return obsDataInConfigs;
 }
 

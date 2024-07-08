@@ -33,6 +33,8 @@ public:
 
   /// \brief Path to odc query specs
   oops::RequiredParameter<std::string> scriptFile{"script file", this};
+
+  bool isFileBackend() const override { return false; }
 };
 
 // Classes

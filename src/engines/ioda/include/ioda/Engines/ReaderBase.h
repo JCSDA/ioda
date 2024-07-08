@@ -40,6 +40,11 @@ class ReaderParametersBase : public oops::Parameters {
  public:
     /// \brief Type of the ReaderBase subclass to use.
     oops::RequiredParameter<std::string> type{"type", this};
+
+    /// \brief return true if the backend uses an input file
+    /// \details This is true for file backends and false for generator
+    /// backends.
+    virtual bool isFileBackend() const = 0;
 };
 
 //----------------------------------------------------------------------------------------

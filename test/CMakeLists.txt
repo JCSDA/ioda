@@ -145,7 +145,6 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsspace_missing_obs_file_error_odc.yaml
   testinput/iodatest_obsspace_missing_obs_file_error_odc_reader_pool.yaml
   testinput/iodatest_obsspace_missing_obs_file_error_reader_pool.yaml
-  testinput/iodatest_obsspace_multiple_input_files.yaml
   testinput/iodatest_obsspace_out_dims_check.yaml
   testinput/iodatest_obsspace_grouping.yaml
   testinput/iodatest_obsspace_grouping_reader_pool.yaml
@@ -157,6 +156,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsspace_index_recnum_twfilt_reader_pool.yaml
   testinput/iodatest_obsspace_index_recnum_twfilt_mpi_2_reader_pool.yaml
   testinput/iodatest_obsspace_index_recnum_twfilt_mpi_4_reader_pool.yaml
+  testinput/iodatest_obsspace_index_recnum_multiple_input_files.yaml
   testinput/iodatest_obsspace_invalid_numeric.yaml
   testinput/iodatest_obsspace_io_pool_sondes_single_file.yaml
   testinput/iodatest_obsspace_io_pool_sondes_multi_files.yaml
@@ -210,6 +210,9 @@ list( APPEND ioda_test_input
   testinput/iodatest_time_io_reader_pool_ext_file_prep_mpi7.yaml
   testinput/iodatest_time_io_script.yaml
   testinput/iodatest_time_io_script.py
+  testinput/iodatest_time_io_multiple_input_files.yaml
+  testinput/iodatest_time_io_multiple_input_files_mpi_2.yaml
+  testinput/iodatest_time_io_multiple_input_files_mpi_4.yaml
   testinput/iodatest_bufr_mhs.yaml
   testinput/iodatest_bufr_mhs_mapping.yaml
   testinput/iodatest_bufr_python_encoder.yaml
@@ -704,12 +707,6 @@ if (odc_FOUND)
                     TEST_DEPENDS get_ioda_test_data )
 endif()
 
-ecbuild_add_test( TARGET  test_ioda_obsspace_multiple_input_files
-                  SOURCES mains/TestIodaObsSpaceMultiFiles.cc
-                  ARGS    "testinput/iodatest_obsspace_multiple_input_files.yaml"
-                  LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data )
-
 ecbuild_add_test( TARGET  test_ioda_obsspace_grouping
                   COMMAND test_ioda_obsspace
                   ARGS    "testinput/iodatest_obsspace_grouping.yaml"
@@ -799,6 +796,26 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_index_recnum_twfilt_mpi_4_reader_po
                   MPI 4
                   COMMAND test_ioda_obsspace_index_recnum
                   ARGS    "testinput/iodatest_obsspace_index_recnum_twfilt_mpi_4_reader_pool.yaml"
+                  LIBS  ioda_test
+                  TEST_DEPENDS get_ioda_test_data )
+
+ecbuild_add_test( TARGET  test_ioda_obsspace_index_recnum_multiple_input_files
+                  SOURCES mains/TestIodaObsSpaceIndexRecnum.cc
+                  ARGS    "testinput/iodatest_obsspace_index_recnum_multiple_input_files.yaml"
+                  LIBS  ioda_test
+                  TEST_DEPENDS get_ioda_test_data )
+
+ecbuild_add_test( TARGET  test_ioda_obsspace_index_recnum_multiple_input_files_mpi_2
+                  MPI 2
+                  SOURCES mains/TestIodaObsSpaceIndexRecnum.cc
+                  ARGS    "testinput/iodatest_obsspace_index_recnum_multiple_input_files.yaml"
+                  LIBS  ioda_test
+                  TEST_DEPENDS get_ioda_test_data )
+
+ecbuild_add_test( TARGET  test_ioda_obsspace_index_recnum_multiple_input_files_mpi_4
+                  MPI 4
+                  SOURCES mains/TestIodaObsSpaceIndexRecnum.cc
+                  ARGS    "testinput/iodatest_obsspace_index_recnum_multiple_input_files.yaml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
@@ -1684,6 +1701,124 @@ if (BUILD_PYTHON_BINDINGS)
                     ARGS        "testinput/iodatest_time_io_script.yaml"
                     ENVIRONMENT PYTHONPATH=${CMAKE_BINARY_DIR}/lib/python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}:$ENV{PYTHONPATH})
 endif()
+
+#####################################################################
+# Test reading multiple input files
+#####################################################################
+
+# this test removes the output files from prior testing
+ecbuild_add_test( TARGET  test_ioda_clean_time_io_multiple_input_files
+                  COMMAND rm
+                  ARGS    "-f"
+                    "testoutput/amsua_n19_obs_2018041500_m_time_multi_files.nc4"
+                    "testoutput/sondes_obs_2018041500_m_time_multi_files.nc4"
+                    "testoutput/gnssro_obs_2021080606_s_time_multi_files.nc4"
+                    "testoutput/amsua_n19_obs_2018041500_m_time_multi_files_mpi_2.nc4"
+                    "testoutput/sondes_obs_2018041500_m_time_multi_files_mpi_2.nc4"
+                    "testoutput/gnssro_obs_2021080606_s_time_multi_files_mpi_2.nc4"
+                    "testoutput/amsua_n19_obs_2018041500_m_time_multi_files_mpi_4.nc4"
+                    "testoutput/sondes_obs_2018041500_m_time_multi_files_mpi_4.nc4"
+                    "testoutput/gnssro_obs_2021080606_s_time_multi_files_mpi_4.nc4" )
+
+# the following tests read multiple input files and create a single output file for each test
+ecbuild_add_test( TARGET      test_ioda_time_io_multiple_input_files
+                  COMMAND     ${CMAKE_BINARY_DIR}/bin/time_IodaIO.x
+                  ARGS        "testinput/iodatest_time_io_multiple_input_files.yaml"
+                  TEST_DEPENDS get_ioda_test_data test_ioda_clean_time_io_multiple_input_files )
+
+ecbuild_add_test( TARGET      test_ioda_time_io_multiple_input_files_mpi_2
+                  MPI 2
+                  COMMAND     ${CMAKE_BINARY_DIR}/bin/time_IodaIO.x
+                  ARGS        "testinput/iodatest_time_io_multiple_input_files_mpi_2.yaml"
+                  TEST_DEPENDS get_ioda_test_data test_ioda_clean_time_io_multiple_input_files )
+
+ecbuild_add_test( TARGET      test_ioda_time_io_multiple_input_files_mpi_4
+                  MPI 4
+                  COMMAND     ${CMAKE_BINARY_DIR}/bin/time_IodaIO.x
+                  ARGS        "testinput/iodatest_time_io_multiple_input_files_mpi_4.yaml"
+                  TEST_DEPENDS get_ioda_test_data test_ioda_clean_time_io_multiple_input_files )
+
+# the following tests compare the output files
+ecbuild_add_test( TARGET  test_ioda_time_io_multiple_input_files_amsua_cmp
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking time io amsua (multiple input files)"
+                          amsua_n19_obs_2018041500_m_time_multi_files.nc4
+                  TEST_DEPENDS get_ioda_test_data test_ioda_time_io_multiple_input_files )
+
+ecbuild_add_test( TARGET  test_ioda_time_io_multiple_input_files_amsua_mpi_2_cmp
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking time io amsua (multiple input files, mpi 2)"
+                          amsua_n19_obs_2018041500_m_time_multi_files_mpi_2.nc4
+                  TEST_DEPENDS get_ioda_test_data test_ioda_time_io_multiple_input_files_mpi_2 )
+
+ecbuild_add_test( TARGET  test_ioda_time_io_multiple_input_files_amsua_mpi_4_cmp
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking time io amsua (multiple input files, mpi 4)"
+                          amsua_n19_obs_2018041500_m_time_multi_files_mpi_4.nc4
+                  TEST_DEPENDS get_ioda_test_data test_ioda_time_io_multiple_input_files_mpi_4 )
+
+ecbuild_add_test( TARGET  test_ioda_time_io_multiple_input_files_sondes_cmp
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking time io sondes (multiple input files)"
+                          sondes_obs_2018041500_m_time_multi_files.nc4
+                  TEST_DEPENDS get_ioda_test_data test_ioda_time_io_multiple_input_files )
+
+ecbuild_add_test( TARGET  test_ioda_time_io_multiple_input_files_sondes_mpi_2_cmp
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking time io sondes (multiple input files, mpi 2)"
+                          sondes_obs_2018041500_m_time_multi_files_mpi_2.nc4
+                  TEST_DEPENDS get_ioda_test_data test_ioda_time_io_multiple_input_files_mpi_2 )
+
+ecbuild_add_test( TARGET  test_ioda_time_io_multiple_input_files_sondes_mpi_4_cmp
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking time io sondes (multiple input files, mpi 4)"
+                          sondes_obs_2018041500_m_time_multi_files_mpi_4.nc4
+                  TEST_DEPENDS get_ioda_test_data test_ioda_time_io_multiple_input_files_mpi_4 )
+
+ecbuild_add_test( TARGET  test_ioda_time_io_multiple_input_files_gnssro_cmp
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking time io gnssro (multiple input files)"
+                          gnssro_obs_2021080606_s_time_multi_files.nc4
+                  TEST_DEPENDS get_ioda_test_data test_ioda_time_io_multiple_input_files )
+
+ecbuild_add_test( TARGET  test_ioda_time_io_multiple_input_files_gnssro_mpi_2_cmp
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking time io gnssro (multiple input files, mpi 2)"
+                          gnssro_obs_2021080606_s_time_multi_files_mpi_2.nc4
+                  TEST_DEPENDS get_ioda_test_data test_ioda_time_io_multiple_input_files_mpi_2 )
+
+ecbuild_add_test( TARGET  test_ioda_time_io_multiple_input_files_gnssro_mpi_4_cmp
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking time io gnssro (multiple input files, mpi 4)"
+                          gnssro_obs_2021080606_s_time_multi_files_mpi_4.nc4
+                  TEST_DEPENDS get_ioda_test_data test_ioda_time_io_multiple_input_files_mpi_4 )
 
 #####################################################################
 # Test the ioda-upgrade-v1-to-v2.x app

@@ -28,7 +28,10 @@ class ReadBufrFileParameters : public ReaderParametersBase {
 
 public:
   /// \brief Path to input file
-  oops::RequiredParameter<std::string> fileName{"obsfile", this};
+  oops::Parameter<std::string> fileName{"obsfile", "", this};
+
+  /// \brief Paths to multiple input file
+  oops::Parameter<std::vector<std::string>> fileNames{"obsfiles", { }, this};
 
   /// \brief Path to BUFR query specs
   oops::RequiredParameter<std::string> mappingFile{"mapping file", this};
@@ -42,6 +45,8 @@ public:
   /// \brief Categories to cache to DataCache tracks to figure out when to dump the cache
   oops::OptionalParameter<std::vector<std::vector<std::string>>>
     cacheCategories{"cache categories", this};
+
+  bool isFileBackend() const override { return true; }
 };
 
 // Classes

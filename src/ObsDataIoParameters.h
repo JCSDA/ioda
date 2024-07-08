@@ -82,6 +82,11 @@ class ObsDataInParameters : public oops::Parameters {
 
     /// option controlling the creation of the backend
     oops::RequiredParameter<Engines::ReaderParametersWrapper> engine{"engine", this};
+
+    /// true if underlying engine is a file backend
+    bool isFileBackend() const {
+      return this->engine.value().engineParameters.value().isFileBackend();
+    }
 };
 
 class ObsDataOutParameters : public oops::Parameters {
