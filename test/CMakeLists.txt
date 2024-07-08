@@ -2703,7 +2703,8 @@ if (bufr_query_FOUND)
           netcdf
           "${CMAKE_BINARY_DIR}/bin/time_IodaIO.x testinput/iodatest_bufr_python_encoder.yaml"
           iodatest_bufr_mhs.nc
-          ENVIRONMENT PYTHONPATH=${CMAKE_BINARY_DIR}/lib/python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}:$ENV{PYTHONPATH})
+          ENVIRONMENT PYTHONPATH=${CMAKE_BINARY_DIR}/lib/python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}:$ENV{PYTHONPATH}
+          TEST_DEPENDS test_ioda_bufr_mhs)
 endif ()
 
 #####################################################################

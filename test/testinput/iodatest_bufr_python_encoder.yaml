@@ -16,4 +16,4 @@ observations:
     obsdataout:
       engine:
         type: H5File
-        obsfile: "testoutput/iodatest_bufr_mhs_python.nc"
+        obsfile: "testoutput/iodatest_bufr_mhs.nc"
