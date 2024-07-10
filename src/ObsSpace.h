@@ -399,13 +399,6 @@ namespace ioda {
         { return assimvars_;}
 
         /// @}
-        /// @name Functions to access the behind-the-scenes ObsGroup
-        /// @{
-
-        /// \brief return the ObsGroup that stores the data
-        ObsGroup getObsGroup() const { return ObsGroup(obs_group_); }
-
-        /// @}
         /// @name IO functions
         /// @{
 
