@@ -1046,6 +1046,9 @@ Variables:
   - Variable: [ "stationACCombined", "full_site_name" ]
     MetaData: true
     Type: StringFixedLen
+  - Variable: [ "roadSiteIdentifier" ]
+    MetaData: true
+    Type: StringVLen  # Usually 5-character string
   - Variable: [ "instantaneousAltitudeRate" ]
     MetaData: true
     Attributes: { units: "m s-1" }
