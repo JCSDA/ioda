@@ -8,6 +8,8 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/embed.h>
 
+#include <memory>
+
 #include "ioda/Exception.h"
 #include "ioda/ObsGroup.h"
 #include "ioda/Group.h"
@@ -21,33 +23,55 @@ namespace ioda {
 namespace Engines {
 namespace Script {
 
+namespace details {
+  class ScriptInterpreter {
+  public:
+    ScriptInterpreter() : guard(std::make_shared<py::scoped_interpreter>()) {}
+
+    ~ScriptInterpreter() {
+      guard.reset();
+      guard = nullptr;
+    }
+
+    static std::shared_ptr<ScriptInterpreter> instance() {
+      static auto instance = std::make_shared<ScriptInterpreter>();
+      return instance;
+    }
+
+    ScriptInterpreter& operator=(const ScriptInterpreter&) = delete;
+
+  private:
+    std::shared_ptr<py::scoped_interpreter> guard;
+  };
+
   struct Arg
   {
-        std::string name;
-        std::string type;
-        std::string defaultValue;
+    std::string name;
+    std::string type;
+    std::string defaultValue;
 
-        bool hasDefault() const
-        {
-          return defaultValue != "";
-        }
+    bool hasDefault() const
+    {
+      return defaultValue != "";
+    }
   };
+}  // namespace details
 
   /// \brief Get the arguments of a python function.
   /// \param func The python function.
   /// \return A vector of Arg objects.
-  std::vector<Arg> getArgs(py::function func)
+  std::vector<details::Arg> getArgs(py::function func)
   {
     py::module inspect = py::module::import("inspect");
     py::object signature = inspect.attr("signature")(func);
     py::dict parameters = signature.attr("parameters");
 
-    std::vector<Arg> result;
+    std::vector<details::Arg> result;
     for (auto item : parameters)
     {
       auto param = item.second;
 
-      auto arg = Arg();
+      auto arg = details::Arg();
       arg.name = py::str(param.attr("name"));
 
       py::object annotation = param.attr("annotation");
@@ -95,7 +119,8 @@ namespace Script {
   /// \param scriptParams The parameters to the script.
   /// \param args The arguments of the function.
   /// \return A python dict containing the kwargs.
-  py::dict makePythonKwArgs(const Script_Parameters& scriptParams, const std::vector<Arg>& args)
+  py::dict makePythonKwArgs(const Script_Parameters& scriptParams,
+                            const std::vector<details::Arg>& args)
   {
     py::dict kwargs;
 
@@ -191,7 +216,8 @@ namespace Script {
   /// \brief Warn about unused arguments
   /// \param scriptParams The parameters to the script.
   /// \param args The arguments of the function.
-  void warnAboutUnusedArgs(const Script_Parameters& scriptParams, const std::vector<Arg>& args)
+  void warnAboutUnusedArgs(const Script_Parameters& scriptParams,
+                           const std::vector<details::Arg>& args)
   {
     for (const auto& arg : scriptParams.args)
     {
@@ -230,29 +256,28 @@ namespace Script {
 
     const char* funcName = "create_obs_group";
 
-    // Start the python interpreter
-    py::scoped_interpreter guard{};
+    ObsGroup* obsGroup;
+    py::object result;
+
+    auto interp = details::ScriptInterpreter::instance();
+
+    // Capture the state of the interpreter
+    std::vector<std::string> defualtGlobals;
+    for (const auto& global : py::globals())
+    {
+      defualtGlobals.push_back(py::str(global.first));
+    }
 
     // Add the script file to the python path
-    py::object scope = py::globals();
+    py::object scope  = py::globals();
     scope["__file__"] = scriptParams.scriptFile;
+    scope["__name__"] = py::str("ioda_script");
 
-    try 
-    {
-        py::gil_scoped_acquire acquire;
+    try {
+        // Execute the script
         py::eval_file(scriptParams.scriptFile, scope);
-    } 
-    catch (const py::error_already_set& e) 
-    {
-        std::cerr << "Python error: " << e.what() << std::endl;
-    } 
-    catch (const std::exception& e) 
-    {
-        std::cerr << "Standard exception: " << e.what() << std::endl;
-    } 
-    catch (...) 
-    {
-        std::cerr << "Unknown exception occurred." << std::endl;
+    } catch (const py::error_already_set& e) {
+        throw Exception("Python error: " + std::string(e.what()), ioda_Here());
     }
 
     // Get a reference to the function
@@ -267,23 +292,30 @@ namespace Script {
     // Make kwargs to call the python function
     py::dict kwargs = makePythonKwArgs(scriptParams, args);
 
-    py::object result;
-    try
-    {
-      // Call the python function
-      result = func(**kwargs);
-    }
-    catch (const py::error_already_set& e)
-    {
-      throw Exception("Python error: " + std::string(e.what()), ioda_Here());
+    try {
+        // Call the python function
+        result = func(**kwargs);
+    } catch (const py::error_already_set& e) {
+        throw Exception("Python error: " + std::string(e.what()), ioda_Here());
     }
 
     // Check that the python function returned an ObsGroup object
-    auto obsGroup = py::cast<ObsGroup*>(result);
-    if (obsGroup == nullptr)
+    obsGroup = py::cast<ObsGroup*>(result);
+    if (obsGroup == nullptr) {
+        throw Exception("Function \"create_obs_group\" did not return an ObsGroup object.",
+                        ioda_Here());
+    }
+
+    // Return the interpreter back to its initial state
+    for (const auto& global : py::globals())
     {
-      throw Exception("Function \"create_obs_group\" did not return an ObsGroup object.",
-                      ioda_Here());
+        std::string globalName = py::str(global.first);
+        if (std::find(defualtGlobals.begin(),
+                      defualtGlobals.end(),
+                      globalName) == defualtGlobals.end())
+        {
+          py::globals().attr("pop")(globalName);
+        }
     }
 
     return *obsGroup;
