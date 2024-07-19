@@ -741,8 +741,9 @@ Variables:
   - Variable: [ "ozoneProfile" ]
     Dimensions: [ [ "Location" ], [ "Location", "Level" ] ]
     Attributes: { units: "mol mol-1" }
-  - Variable: [ "ozoneSurface" ]
-    Attributes: { units: "kg kg-1" }
+  - Variable: [ "ozoneInsitu" ]
+    Dimensions: [ [ "Location" ], [ "Location", "Level" ] ]
+    Attributes: { units: "mol mol-1" }
     Force Units: false
   - Variable: [ "nitrogendioxideColumn", "nitrogen_dioxide_in_tropospheric_column" ]
     Dimensions: [ [ "Location" ], [ "Location", "Layer" ] ]
@@ -750,24 +751,27 @@ Variables:
   - Variable: [ "nitrogendioxideProfile" ]
     Dimensions: [ [ "Location" ], [ "Location", "Level" ] ]
     Attributes: { units: "mol mol-1" }
-  - Variable: [ "nitrogendioxideSurface" ]
-    Attributes: { units: "kg kg-1" }
+  - Variable: [ "nitrogendioxideInsitu" ]
+    Dimensions: [ [ "Location" ], [ "Location", "Level" ] ]
+    Attributes: { units: "mol mol-1" }
   - Variable: [ "carbonmonoxideColumn" ]
     Dimensions: [ [ "Location" ], [ "Location", "Layer" ] ]
     Attributes: { units: "mol m-2" }
   - Variable: [ "carbonmonoxideProfile" ]
     Dimensions: [ [ "Location" ], [ "Location", "Level" ] ]
     Attributes: { units: "mol mol-1" }
-  - Variable: [ "carbonmonoxideSurface" ]
-    Attributes: { units: "kg kg-1" }
+  - Variable: [ "carbonmonoxideInsitu" ]
+    Dimensions: [ [ "Location" ], [ "Location", "Level" ] ]
+    Attributes: { units: "mol mol-1" }
   - Variable: [ "sulfurdioxideColumn" ]
     Dimensions: [ [ "Location" ], [ "Location", "Layer" ] ]
     Attributes: { units: "mol m-2" }
   - Variable: [ "sulfurdioxideProfile" ]
     Dimensions: [ [ "Location" ], [ "Location", "Level" ] ]
     Attributes: { units: "mol mol-1" }
-  - Variable: [ "sulfurdioxideSurface" ]
-    Attributes: { units: "kg kg-1" }
+  - Variable: [ "sulfurdioxideInsitu" ]
+    Dimensions: [ [ "Location" ], [ "Location", "Level" ] ]
+    Attributes: { units: "mol mol-1" }
   - Variable: [ "carbondioxideColumn" ]
     Dimensions: [ [ "Location" ], [ "Location", "Layer" ] ]
     Attributes: { units: "mol m-2" }
@@ -777,13 +781,18 @@ Variables:
   - Variable: [ "formaldehydeColumn" ]
     Dimensions: [ [ "Location" ], [ "Location", "Layer" ] ]
     Attributes: { units: "mol m-2" }
+  - Variable: [ "formaldehydeInsitu" ]
+    Dimensions: [ [ "Location" ], [ "Location", "Level" ] ]
+    Attributes: { units: "mol mol-1" }
   - Variable: [ "nitricacidProfile" ]
     Dimensions: [ [ "Location" ], [ "Location", "Level" ] ]
     Attributes: { units: "mol mol-1" }
-  - Variable: [ "particulatematter2p5Surface" ]
+  - Variable: [ "particulatematter2p5Insitu" ]
+    Dimensions: [ [ "Location" ], [ "Location", "Level" ] ]
     Attributes: { units: "kg m-3" }
     Check Exact Units: false
-  - Variable: [ "particulatematter10Surface" ]
+  - Variable: [ "particulatematter10Insitu" ]
+    Dimensions: [ [ "Location" ], [ "Location", "Level" ] ]
     Attributes: { units: "kg m-3" }
   - Variable: [ "observationTypeNum", "observation_type" ]
     MetaData: true
