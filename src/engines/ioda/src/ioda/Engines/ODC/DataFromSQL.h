@@ -51,6 +51,7 @@ namespace ODC {
   static constexpr int obsgroup_surfacecloud   = 42;
   static constexpr int obsgroup_mwsfy3         = 44;
   static constexpr int obsgroup_ahiclr         = 51;
+  static constexpr int obsgroup_seviriasr      = 53;
   static constexpr int obsgroup_mwri           = 55;
   static constexpr int obsgroup_gmilow         = 56;
   static constexpr int obsgroup_gmihigh        = 57;
@@ -70,6 +71,7 @@ namespace ODC {
   static constexpr int varno_rawbt_amsr_89ghz       = 267;
   static constexpr int varno_rawbt_mwts             = 274;
   static constexpr int varno_rawbt_mwhs             = 275;
+  static constexpr int varno_cloud_fraction_asr     = 295;
 
   static constexpr int odb_type_int      = 1;
   static constexpr int odb_type_real     = 2;

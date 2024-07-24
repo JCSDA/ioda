@@ -69,8 +69,26 @@ bool DataFromSQL::hasVarno(const int varno) const {
 
 size_t DataFromSQL::numberOfLevels(const int varno) const {
   if (hasVarno(varno) && number_of_metadata_rows_ > 0) {
-    if (obsgroup_ == obsgroup_surfacecloud) {
-      return varnos_and_levels_.at(varno);
+    if (obsgroup_ == obsgroup_surfacecloud 
+        || obsgroup_ == obsgroup_seviriclr
+        || obsgroup_ == obsgroup_seviriasr) {
+      // At the Met Office two products called SEVIRIClr are
+      // used. One is used in the Global model, and the
+      // other in the UK local area model, UKV. These are from
+      // the same instrument, but are different products,
+      // so the processing is also different. Here, and in
+      // other places throughout, we need to identify each
+      // and process the associated varnos differently.
+      // We therefore make use of the fact that the Global product
+      // has a unique varno, 295, named here `varno_cloud_fraction_asr`
+      // to separate the processing.
+      // This has been named after the Global product MSGASR, and has
+      // nothing to do with the SEVIRIASR stream used in the UKV.
+      if (hasVarno(varno_cloud_fraction_asr)) {
+        return varnos_and_levels_to_use_.at(varno);
+      } else {
+        return varnos_and_levels_.at(varno);
+      }
     } else {
       return varnos_and_levels_to_use_.at(varno);
     }
@@ -143,7 +161,7 @@ NewDimensionScales_t DataFromSQL::getVertcos(const int varno) const {
              || obsgroup_ == obsgroup_airs || obsgroup_ == obsgroup_atms
              || obsgroup_ == obsgroup_gmihigh || obsgroup_ == obsgroup_gmilow
              || obsgroup_ == obsgroup_mwri || obsgroup_ == obsgroup_seviriclr
-             || obsgroup_ == obsgroup_amsub
+             || obsgroup_ == obsgroup_amsub || obsgroup_ == obsgroup_seviriasr
              || obsgroup_ == obsgroup_ssmis) {
     const int number_of_levels = numberOfLevels(varno_rawbt);
     vertcos.push_back(NewDimensionScale<int>("Channel", number_of_levels,
@@ -316,8 +334,14 @@ Eigen::Array<T, Eigen::Dynamic, 1> DataFromSQL::getVarnoColumn(const std::vector
   // Number of entries for each varno.
   std::map <int, int> varno_size;
   for (const int varno : varnos) {
-    if (obsgroup_ == obsgroup_surfacecloud) {
-      varno_size[varno] = numberOfRowsForVarno(varno) / number_of_metadata_rows_;
+    if (obsgroup_ == obsgroup_surfacecloud 
+        || obsgroup_ == obsgroup_seviriclr
+        || obsgroup_ == obsgroup_seviriasr) {
+      if (hasVarno(varno_cloud_fraction_asr)) {
+        varno_size[varno] = std::max(1,static_cast<int>(numberOfRowsForVarno(varno) / number_of_metadata_rows_));
+      } else {
+        varno_size[varno] = numberOfRowsForVarno(varno) / number_of_metadata_rows_;
+      }
     } else {
       varno_size[varno] = std::max(1,static_cast<int>(numberOfRowsForVarno(varno) / number_of_metadata_rows_));
     }
@@ -877,6 +901,13 @@ std::vector<ioda::Variable> DataFromSQL::getVarnoDependentVariableDimensionScale
   size_t number_of_levels;
   if (obsgroup_ == obsgroup_geocloud || obsgroup_ == obsgroup_surfacecloud) {
     number_of_levels = numberOfLevels(varno_cloud_fraction_covered);
+  } else if (obsgroup_ == obsgroup_seviriclr || 
+             obsgroup_ == obsgroup_seviriasr) {
+    if (hasVarno(varno_cloud_fraction_asr)) {
+      number_of_levels = numberOfLevels(varno);
+    } else {
+      number_of_levels = numberOfLevels(varno_rawbt);
+    }
   } else {
     number_of_levels = numberOfLevels(varno);
   }
@@ -915,6 +946,12 @@ void DataFromSQL::getVarnoColumnCallArguments(int varno, std::vector<int> &varno
   } else if (obsgroup_ == obsgroup_geocloud || obsgroup_ == obsgroup_surfacecloud) {
     nchans = numberOfLevels(varno_cloud_fraction_covered);
     nchans_actual = numberOfLevels(varno);
+  } else if (obsgroup_ == obsgroup_seviriclr || 
+             obsgroup_ == obsgroup_seviriasr) {
+    if (!hasVarno(varno_cloud_fraction_asr)) {
+      nchans = numberOfLevels(varno_rawbt);
+      nchans_actual = numberOfLevels(varno);
+    }
   } else if (obsgroup_ == obsgroup_gnssro) {
     nchans = numberOfLevels(varno_bending_angle);
     nchans_actual = numberOfLevels(varno);

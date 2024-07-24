@@ -1368,6 +1368,7 @@ ObsGroup openFile(const ODC_Parameters& odcparams,
                                                         sql_data.getObsgroup() == obsgroup_gmihigh ||
                                                         sql_data.getObsgroup() == obsgroup_gmilow ||
                                                         sql_data.getObsgroup() == obsgroup_mwri ||
+                                                        sql_data.getObsgroup() == obsgroup_seviriasr ||
                                                         sql_data.getObsgroup() == obsgroup_seviriclr ||
                                                         sql_data.getObsgroup() == obsgroup_amsub ||
                                                         sql_data.getObsgroup() == obsgroup_ssmis)) {
