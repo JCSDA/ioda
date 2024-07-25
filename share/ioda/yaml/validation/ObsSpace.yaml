@@ -420,6 +420,8 @@ Variables:
     Attributes: { units: "m3 m-3" }
   - Variable: [ "soilMoistureNormalized" ]
     Attributes: { units: "1" }
+  - Variable: [ "soilMoistureContentSurface" ]
+    Attributes: { units: "kg m-2" }
   - Variable: [ "leafAreaIndex", "leaf_area_index" ]
     Attributes: { units: "1" }
   - Variable: [ "depthBelowSoilSurface" ]
