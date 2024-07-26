@@ -5,54 +5,6 @@ time window:
 
 observations:
 - obs space:
-    name: "Missing ODB file - warning (by default)"
-    simulated variables: ['brightnessTemperature']
-    observed variables: ['brightnessTemperature']
-    channels: 1, 3, 10, 999
-    obsdatain:
-      engine:
-        type: ODB
-        # Intentionally points to a non-existent file
-        obsfile: "Data/testinput_tier_1/Missing_Obs_File.odb"
-        mapping file: ../share/test/testinput/odb_default_name_map.yaml
-        query file: ../share/test/testinput/iodatest_odb_atms.yaml
-  test data:
-    gnlocs: 0
-    gnlocs outside time window: 0
-    gnlocs rejected by qc: 0
-    nlocs from source: 0
-    nrecs: 0
-    obs perturbations seed: 0
-    expected group variables: []
-    expected sort variable: ""
-    expected sort order: "ascending"
-    variables for get test:
-    - name: "dateTime"
-      group: "MetaData"
-      type: "datetime"
-      first value: "none"
-      last value: "none"
-
-    - name: "latitude"
-      group: "MetaData"
-      type: "float"
-      norm: 0.0
-
-    - name: "longitude"
-      group: "MetaData"
-      type: "float"
-      norm: 0.0
-
-    - name: "brightnessTemperature"
-      group: "ObsValue"
-      type: "float"
-      norm: 0.0
-
-    tolerance:
-      - 1.0e-14
-    variables for putget test: []
-
-- obs space:
     name: "Missing ODB file - warning"
     simulated variables: ['brightnessTemperature']
     observed variables: ['brightnessTemperature']
@@ -65,58 +17,6 @@ observations:
         mapping file: ../share/test/testinput/odb_default_name_map.yaml
         query file: ../share/test/testinput/iodatest_odb_atms.yaml
         missing file action: warn
-  test data:
-    gnlocs: 0
-    gnlocs outside time window: 0
-    gnlocs rejected by qc: 0
-    nlocs from source: 0
-    nrecs: 0
-    obs perturbations seed: 0
-    expected group variables: []
-    expected sort variable: ""
-    expected sort order: "ascending"
-    variables for get test:
-    - name: "dateTime"
-      group: "MetaData"
-      type: "datetime"
-      first value: "none"
-      last value: "none"
-
-    - name: "latitude"
-      group: "MetaData"
-      type: "float"
-      norm: 0.0
-
-    - name: "longitude"
-      group: "MetaData"
-      type: "float"
-      norm: 0.0
-
-    - name: "brightnessTemperature"
-      group: "ObsValue"
-      type: "float"
-      norm: 0.0
-
-    tolerance:
-      - 1.0e-14
-    variables for putget test: []
-
-- obs space:
-    name: "Missing ODB file - warning (by default), new reader"
-    simulated variables: ['brightnessTemperature']
-    observed variables: ['brightnessTemperature']
-    channels: 1, 3, 10, 999
-    obsdatain:
-      engine:
-        type: ODB
-        # Intentionally points to a non-existent file
-        obsfile: "Data/testinput_tier_1/Missing_Obs_File.odb"
-        mapping file: ../share/test/testinput/odb_default_name_map.yaml
-        query file: ../share/test/testinput/iodatest_odb_atms.yaml
-    io pool:
-      max pool size: 2
-      reader name: SinglePool
-      work directory: testwork/obsspace_missing_obs_file_warn_odc_mpi
   test data:
     gnlocs: 0
     gnlocs outside time window: 0

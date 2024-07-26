@@ -49,9 +49,9 @@ class ReadOdbFileParameters : public ReaderParametersBase {
       timeWindowExtendedLowerBound{"time window extended lower bound", this};
 
     /// \brief action to take if input file is missing
-    /// \details the warning action is the default which will write a warning message
-    /// and continue with a representation of an empty file.
-    oops::Parameter<std::string> missingFileAction{"missing file action", "warn", this};
+    /// \details the error action is the default which will write an error message
+    /// and throw an exception stopping the execution.
+    oops::Parameter<std::string> missingFileAction{"missing file action", "error", this};
 
     bool isFileBackend() const override { return true; }
 };

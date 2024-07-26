@@ -139,12 +139,16 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsspace_empty_obs_file_mpi_reader_pool.yaml
   testinput/iodatest_obsspace_missing_obs_file_warn.yaml
   testinput/iodatest_obsspace_missing_obs_file_warn_mpi.yaml
-  testinput/iodatest_obsspace_missing_obs_file_error.yaml
   testinput/iodatest_obsspace_missing_obs_file_warn_odc.yaml
   testinput/iodatest_obsspace_missing_obs_file_warn_odc_mpi.yaml
+  testinput/iodatest_obsspace_missing_obs_file_error.yaml
   testinput/iodatest_obsspace_missing_obs_file_error_odc.yaml
   testinput/iodatest_obsspace_missing_obs_file_error_odc_reader_pool.yaml
   testinput/iodatest_obsspace_missing_obs_file_error_reader_pool.yaml
+  testinput/iodatest_obsspace_missing_obs_file_error_def.yaml
+  testinput/iodatest_obsspace_missing_obs_file_error_def_odc.yaml
+  testinput/iodatest_obsspace_missing_obs_file_error_def_odc_reader_pool.yaml
+  testinput/iodatest_obsspace_missing_obs_file_error_def_reader_pool.yaml
   testinput/iodatest_obsspace_out_dims_check.yaml
   testinput/iodatest_obsspace_grouping.yaml
   testinput/iodatest_obsspace_grouping_reader_pool.yaml
@@ -238,6 +242,8 @@ list( APPEND ioda_test_work_directories
   testwork/obsspace_index_recnum_twfilt_mpi_4_reader_pool
   testwork/obsspace_missing_obs_file_error_odc_reader_pool
   testwork/obsspace_missing_obs_file_error_reader_pool
+  testwork/obsspace_missing_obs_file_error_def_odc_reader_pool
+  testwork/obsspace_missing_obs_file_error_def_reader_pool
   testwork/obsspace_missing_obs_file_warn
   testwork/obsspace_missing_obs_file_warn_mpi
   testwork/obsspace_missing_obs_file_warn_odc
@@ -638,6 +644,19 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_missing_obs_file_error
                           Y
                   TEST_DEPENDS get_ioda_test_data )
 
+ecbuild_add_test( TARGET  test_ioda_obsspace_missing_obs_file_error_def
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          hdf5
+                          "${CMAKE_BINARY_DIR}/bin/time_IodaIO.x
+                          testinput/iodatest_obsspace_missing_obs_file_error_def.yaml"
+                          testoutput/ospace.missing_obs_file_error_def.nc4
+                          0.0
+                          N
+                          Y
+                  TEST_DEPENDS get_ioda_test_data )
+
 # new reader
 ecbuild_add_test( TARGET  test_ioda_obsspace_missing_obs_file_error_reader_pool
                   TYPE    SCRIPT
@@ -647,6 +666,19 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_missing_obs_file_error_reader_pool
                           "${CMAKE_BINARY_DIR}/bin/time_IodaIO.x
                           testinput/iodatest_obsspace_missing_obs_file_error_reader_pool.yaml"
                           testoutput/ospace.missing_obs_file_error_reader_pool.nc4
+                          0.0
+                          N
+                          Y
+                  TEST_DEPENDS get_ioda_test_data )
+
+ecbuild_add_test( TARGET  test_ioda_obsspace_missing_obs_file_error_def_reader_pool
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          hdf5
+                          "${CMAKE_BINARY_DIR}/bin/time_IodaIO.x
+                          testinput/iodatest_obsspace_missing_obs_file_error_def_reader_pool.yaml"
+                          testoutput/ospace.missing_obs_file_error_def_reader_pool.nc4
                           0.0
                           N
                           Y
@@ -692,7 +724,20 @@ if (odc_FOUND)
                             Y
                     TEST_DEPENDS get_ioda_test_data )
 
-  # old reader
+  ecbuild_add_test( TARGET  test_ioda_obsspace_missing_obs_file_error_def_odc
+                    TYPE    SCRIPT
+                    COMMAND bash
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                            hdf5
+                            "${CMAKE_BINARY_DIR}/bin/time_IodaIO.x
+                            testinput/iodatest_obsspace_missing_obs_file_error_def_odc.yaml"
+                            testoutput/ospace.missing_obs_file_error_def_odc.nc4
+                            0.0
+                            N
+                            Y
+                    TEST_DEPENDS get_ioda_test_data )
+
+  # new reader
   ecbuild_add_test( TARGET  test_ioda_obsspace_missing_obs_file_error_odc_reader_pool
                     TYPE    SCRIPT
                     COMMAND bash
@@ -701,6 +746,19 @@ if (odc_FOUND)
                             "${CMAKE_BINARY_DIR}/bin/time_IodaIO.x
                             testinput/iodatest_obsspace_missing_obs_file_error_odc_reader_pool.yaml"
                             testoutput/ospace.missing_obs_file_error_odc_reader_pool.nc4
+                            0.0
+                            N
+                            Y
+                    TEST_DEPENDS get_ioda_test_data )
+
+  ecbuild_add_test( TARGET  test_ioda_obsspace_missing_obs_file_error_def_odc_reader_pool
+                    TYPE    SCRIPT
+                    COMMAND bash
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                            hdf5
+                            "${CMAKE_BINARY_DIR}/bin/time_IodaIO.x
+                            testinput/iodatest_obsspace_missing_obs_file_error_def_odc_reader_pool.yaml"
+                            testoutput/ospace.missing_obs_file_error_def_odc_reader_pool.nc4
                             0.0
                             N
                             Y
