@@ -22,10 +22,14 @@
 #include "ioda/containers/Datum.h"
 #include "ioda/containers/DatumBase.h"
 #include "ioda/containers/ObsDataFrame.h"
+#include "ioda/containers/ObsDataFrameCols.h"
+#include "ioda/containers/ObsDataViewRows.h"
 
 #include "oops/util/Logger.h"
 
 namespace osdf {
+class ObsDataFrameCols;
+
 class ObsDataFrameRows : public ObsDataFrame {
  public:
   /// \brief constructor for an empy container
@@ -37,6 +41,7 @@ class ObsDataFrameRows : public ObsDataFrame {
   /// \param column meta data row
   /// \param list of data rows to insert into the container
   explicit ObsDataFrameRows(ColumnMetadata, std::vector<DataRow>);
+  explicit ObsDataFrameRows(const ObsDataFrameCols&);
 
   ObsDataFrameRows(ObsDataFrameRows&&)                  = delete;   //!< Deleted move constructor
   ObsDataFrameRows(const ObsDataFrameRows&)             = delete;   //!< Deleted copy constructor
@@ -143,11 +148,15 @@ class ObsDataFrameRows : public ObsDataFrame {
   /// \return A new (deep copy) container is returned that holds the selected rows
   std::shared_ptr<ObsDataFrame> slice(const std::function<const std::int8_t(const DataRow&)>);
 
+  void clear() override;
+
   /// \brief print the contents of the container in a tabular format
   void print() override;
 
+  const std::int64_t getNumRows() const override;
+
   /// \brief return a reference (view) to the data rows in the container
-  std::vector<DataRow>& getDataRows();
+  const std::vector<DataRow>& getDataRows() const;
 
   /// \brief add a new row to the end of the container
   /// \details This function takes a variable number of parameters, but the nubmer
@@ -200,6 +209,8 @@ class ObsDataFrameRows : public ObsDataFrame {
       }
     }
   }
+
+  std::shared_ptr<ObsDataViewRows> makeView();
 
  private:
   /// \brief default comparison function for the sort function

@@ -83,6 +83,7 @@ class ColumnMetadata {
   /// \brief return the the highest row ID in this data frame
   const std::int64_t getMaxId() const;
 
+  void clear();
   /// \brief print out the row contents for an overall tabular format
   /// \param width for the row number annotation on the left side of the table
   void print(const std::int32_t&);

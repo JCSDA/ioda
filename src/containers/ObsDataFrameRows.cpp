@@ -12,13 +12,60 @@
 #include <string>
 
 #include "ioda/containers/Constants.h"
+#include "ioda/containers/Data.h"
 #include "ioda/containers/DatumBase.h"
 
 osdf::ObsDataFrameRows::ObsDataFrameRows() : ObsDataFrame(consts::eRowPriority) {}
 
 osdf::ObsDataFrameRows::ObsDataFrameRows(ColumnMetadata columnMetadata,
                                          std::vector<DataRow> dataRows) :
-  ObsDataFrame(columnMetadata, consts::eRowPriority), dataRows_(dataRows) {}
+      ObsDataFrame(columnMetadata, consts::eRowPriority), dataRows_(dataRows) {}
+
+osdf::ObsDataFrameRows::ObsDataFrameRows(const ObsDataFrameCols& obsDataFrameCols) :
+      ObsDataFrame(consts::eRowPriority) {
+  std::int64_t numRows = obsDataFrameCols.getNumRows();
+  dataRows_.reserve(numRows);
+  initialise(numRows);
+
+  // Columns are read-write and do not inherit any read-only permissions
+  ColumnMetadata columnMetadata = obsDataFrameCols.getColumnMetadata();
+  for (const ColumnMetadatum& columnMetadatum : columnMetadata.get()) {
+    std::string columnName = columnMetadatum.getName();
+    std::int32_t columnIndex = columnMetadata.getIndex(columnName);
+    const std::shared_ptr<DataBase>& data = obsDataFrameCols.getDataColumns().at(columnIndex);
+    std::int8_t type = data->getType();
+    switch (type) {
+      case consts::eInt8: {
+        appendNewColumn<std::int8_t>(columnName, funcs::getData<std::int8_t>(data), type);
+        break;
+      }
+      case consts::eInt16: {
+        appendNewColumn<std::int16_t>(columnName, funcs::getData<std::int16_t>(data), type);
+        break;
+      }
+      case consts::eInt32: {
+        appendNewColumn<std::int32_t>(columnName, funcs::getData<std::int32_t>(data), type);
+        break;
+      }
+      case consts::eInt64: {
+        appendNewColumn<std::int64_t>(columnName, funcs::getData<std::int64_t>(data), type);
+        break;
+      }
+      case consts::eFloat: {
+        appendNewColumn<float>(columnName, funcs::getData<float>(data), type);
+        break;
+      }
+      case consts::eDouble: {
+        appendNewColumn<double>(columnName, funcs::getData<double>(data), type);
+        break;
+      }
+      case consts::eString: {
+        appendNewColumn<std::string>(columnName, funcs::getData<std::string>(data), type);
+        break;
+      }
+    }
+  }
+}
 
 void osdf::ObsDataFrameRows::appendNewColumn(const std::string& name,
                                              const std::vector<std::int8_t>& data) {
@@ -63,72 +110,72 @@ void osdf::ObsDataFrameRows::appendNewRow(const DataRow& newRow) {
 
 void osdf::ObsDataFrameRows::getColumn(const std::string& name,
                                        std::vector<std::int8_t>& data) const {
-  getColumn(name, data, consts::eInt8);
+  getColumn<std::int8_t>(name, data, consts::eInt8);
 }
 
 void osdf::ObsDataFrameRows::getColumn(const std::string& name,
                                        std::vector<std::int16_t>& data) const {
-  getColumn(name, data, consts::eInt16);
+  getColumn<std::int16_t>(name, data, consts::eInt16);
 }
 
 void osdf::ObsDataFrameRows::getColumn(const std::string& name,
                                        std::vector<std::int32_t>& data) const {
-  getColumn(name, data, consts::eInt32);
+  getColumn<std::int32_t>(name, data, consts::eInt32);
 }
 
 void osdf::ObsDataFrameRows::getColumn(const std::string& name,
                                        std::vector<std::int64_t>& data) const {
-  getColumn(name, data, consts::eInt64);
+  getColumn<std::int64_t>(name, data, consts::eInt64);
 }
 
 void osdf::ObsDataFrameRows::getColumn(const std::string& name,
                                        std::vector<float>& data) const {
-  getColumn(name, data, consts::eFloat);
+  getColumn<float>(name, data, consts::eFloat);
 }
 
 void osdf::ObsDataFrameRows::getColumn(const std::string& name,
                                        std::vector<double>& data) const {
-  getColumn(name, data, consts::eDouble);
+  getColumn<double>(name, data, consts::eDouble);
 }
 
 void osdf::ObsDataFrameRows::getColumn(const std::string& name,
                                        std::vector<std::string>& data) const {
-  getColumn(name, data, consts::eString);
+  getColumn<std::string>(name, data, consts::eString);
 }
 
 void osdf::ObsDataFrameRows::setColumn(const std::string& name,
                                        const std::vector<std::int8_t>& data) const {
-  setColumn(name, data, consts::eInt8);
+  setColumn<std::int8_t>(name, data, consts::eInt8);
 }
 
 void osdf::ObsDataFrameRows::setColumn(const std::string& name,
                                        const std::vector<std::int16_t>& data) const {
-  setColumn(name, data, consts::eInt16);
+  setColumn<std::int16_t>(name, data, consts::eInt16);
 }
 
 void osdf::ObsDataFrameRows::setColumn(const std::string& name,
                                        const std::vector<std::int32_t>& data) const {
-  setColumn(name, data, consts::eInt32);
+  setColumn<std::int32_t>(name, data, consts::eInt32);
 }
 
 void osdf::ObsDataFrameRows::setColumn(const std::string& name,
                                        const std::vector<std::int64_t>& data) const {
-  setColumn(name, data, consts::eInt64);
+  setColumn<std::int64_t>(name, data, consts::eInt64);
 }
 
 void osdf::ObsDataFrameRows::setColumn(const std::string& name,
                                        const std::vector<float>& data) const {
-  setColumn(name, data, consts::eFloat);
+  setColumn<float>(name, data, consts::eFloat);
 }
 
 void osdf::ObsDataFrameRows::setColumn(const std::string& name,
                                        const std::vector<double>& data) const {
-  setColumn(name, data, consts::eDouble);
+  setColumn<double>(name, data, consts::eDouble);
 }
 
 void osdf::ObsDataFrameRows::setColumn(const std::string& name,
                                        const std::vector<std::string>& data) const {
-  setColumn(name, data, consts::eString);
+  setColumn<std::string>(name, data, consts::eString);
 }
 
 template<>
@@ -356,43 +403,43 @@ void osdf::ObsDataFrameRows::sort(const std::string& columnName,
 std::shared_ptr<osdf::ObsDataFrame> osdf::ObsDataFrameRows::slice(const std::string& columnName,
                                                                   const std::int8_t& comparison,
                                                                   const std::int8_t& threshold) {
-  return slice(columnName, comparison, threshold, consts::eInt8);
+  return slice<std::int8_t>(columnName, comparison, threshold, consts::eInt8);
 }
 
 std::shared_ptr<osdf::ObsDataFrame> osdf::ObsDataFrameRows::slice(const std::string& columnName,
                                                                   const std::int8_t& comparison,
                                                                   const std::int16_t& threshold) {
-  return slice(columnName, comparison, threshold, consts::eInt16);
+  return slice<std::int16_t>(columnName, comparison, threshold, consts::eInt16);
 }
 
 std::shared_ptr<osdf::ObsDataFrame> osdf::ObsDataFrameRows::slice(const std::string& columnName,
                                                                   const std::int8_t& comparison,
                                                                   const std::int32_t& threshold) {
-  return slice(columnName, comparison, threshold, consts::eInt32);
+  return slice<std::int32_t>(columnName, comparison, threshold, consts::eInt32);
 }
 
 std::shared_ptr<osdf::ObsDataFrame> osdf::ObsDataFrameRows::slice(const std::string& columnName,
                                                                   const std::int8_t& comparison,
                                                                   const std::int64_t& threshold) {
-  return slice(columnName, comparison, threshold, consts::eInt64);
+  return slice<std::int64_t>(columnName, comparison, threshold, consts::eInt64);
 }
 
 std::shared_ptr<osdf::ObsDataFrame> osdf::ObsDataFrameRows::slice(const std::string& columnName,
                                                                   const std::int8_t& comparison,
                                                                   const float& threshold) {
-  return slice(columnName, comparison, threshold, consts::eFloat);
+  return slice<float>(columnName, comparison, threshold, consts::eFloat);
 }
 
 std::shared_ptr<osdf::ObsDataFrame> osdf::ObsDataFrameRows::slice(const std::string& columnName,
                                                                   const std::int8_t& comparison,
                                                                   const double& threshold) {
-  return slice(columnName, comparison, threshold, consts::eDouble);
+  return slice<double>(columnName, comparison, threshold, consts::eDouble);
 }
 
 std::shared_ptr<osdf::ObsDataFrame> osdf::ObsDataFrameRows::slice(const std::string& columnName,
                                                                   const std::int8_t& comparison,
                                                                   const std::string& threshold) {
-  return slice(columnName, comparison, threshold, consts::eString);
+  return slice<std::string>(columnName, comparison, threshold, consts::eString);
 }
 
 std::shared_ptr<osdf::ObsDataFrame> osdf::ObsDataFrameRows::slice(const std::function<
@@ -410,6 +457,14 @@ std::shared_ptr<osdf::ObsDataFrame> osdf::ObsDataFrameRows::slice(const std::fun
   return std::make_shared<ObsDataFrameRows>(newColumnMetadata, newDataRows);
 }
 
+void osdf::ObsDataFrameRows::clear() {
+  for (DataRow& dataRow : dataRows_) {
+    dataRow.clear();
+  }
+  dataRows_.clear();
+  columnMetadata_.clear();
+}
+
 void osdf::ObsDataFrameRows::print() {
   if (dataRows_.size() > 0) {
     std::string maxRowIdString = std::to_string(columnMetadata_.getMaxId());
@@ -421,62 +476,49 @@ void osdf::ObsDataFrameRows::print() {
   }
 }
 
-std::vector<osdf::DataRow>& osdf::ObsDataFrameRows::getDataRows() {
+const std::int64_t osdf::ObsDataFrameRows::getNumRows() const {
+  return dataRows_.size();
+}
+
+const std::vector<osdf::DataRow>& osdf::ObsDataFrameRows::getDataRows() const {
   return dataRows_;
 }
 
-const std::int8_t osdf::ObsDataFrameRows::compareDatums(const std::shared_ptr<DatumBase> datumA,
-                                                  const std::shared_ptr<DatumBase> datumB) const {
+std::shared_ptr<osdf::ObsDataViewRows> osdf::ObsDataFrameRows::makeView() {
+  std::vector<std::shared_ptr<DataRow>> newDataRows;
+  newDataRows.reserve(dataRows_.size());
+  ColumnMetadata newColumnMetadata = columnMetadata_;
+  for (DataRow& dataRow : dataRows_) {
+    std::shared_ptr<DataRow> dataRowView = std::make_shared<DataRow>(dataRow);
+    newDataRows.push_back(dataRowView);
+  }
+  return std::make_shared<osdf::ObsDataViewRows>(newColumnMetadata, newDataRows);
+}
+
+const std::int8_t osdf::ObsDataFrameRows::compareDatums(
+    const std::shared_ptr<osdf::DatumBase> datumA, const std::shared_ptr<DatumBase> datumB) const {
   std::int8_t type = datumA->getType();
   switch (type) {
     case consts::eInt8: {
-      std::shared_ptr<Datum<std::int8_t>> datumAInt8 =
-          std::static_pointer_cast<Datum<std::int8_t>>(datumA);
-      std::shared_ptr<Datum<std::int8_t>> datumBInt8 =
-          std::static_pointer_cast<Datum<std::int8_t>>(datumB);
-      return datumAInt8->getDatum() < datumBInt8->getDatum();
+      return funcs::compareDatum<std::int8_t>(datumA, datumB);
     }
     case consts::eInt16: {
-      std::shared_ptr<Datum<std::int16_t>> datumAInt16 =
-          std::static_pointer_cast<Datum<std::int16_t>>(datumA);
-      std::shared_ptr<Datum<std::int16_t>> datumBInt16 =
-          std::static_pointer_cast<Datum<std::int16_t>>(datumB);
-      return datumAInt16->getDatum() < datumBInt16->getDatum();
+      return funcs::compareDatum<std::int16_t>(datumA, datumB);
     }
     case consts::eInt32: {
-      std::shared_ptr<Datum<std::int32_t>> datumAInt32 =
-          std::static_pointer_cast<Datum<std::int32_t>>(datumA);
-      std::shared_ptr<Datum<std::int32_t>> datumBInt32 =
-          std::static_pointer_cast<Datum<std::int32_t>>(datumB);
-      return datumAInt32->getDatum() < datumBInt32->getDatum();
+      return funcs::compareDatum<std::int32_t>(datumA, datumB);
     }
     case consts::eInt64: {
-      std::shared_ptr<Datum<std::int64_t>> datumAInt64 =
-          std::static_pointer_cast<Datum<std::int64_t>>(datumA);
-      std::shared_ptr<Datum<std::int64_t>> datumBInt64 =
-          std::static_pointer_cast<Datum<std::int64_t>>(datumB);
-      return datumAInt64->getDatum() < datumBInt64->getDatum();
+      return funcs::compareDatum<std::int64_t>(datumA, datumB);
     }
     case consts::eFloat: {
-      std::shared_ptr<Datum<float>> datumAFloat =
-          std::static_pointer_cast<Datum<float>>(datumA);
-      std::shared_ptr<Datum<float>> datumBFloat =
-          std::static_pointer_cast<Datum<float>>(datumB);
-      return datumAFloat->getDatum() < datumBFloat->getDatum();
+      return funcs::compareDatum<float>(datumA, datumB);
     }
     case consts::eDouble: {
-      std::shared_ptr<Datum<double>> datumADouble =
-          std::static_pointer_cast<Datum<double>>(datumA);
-      std::shared_ptr<Datum<double>> datumBDouble =
-          std::static_pointer_cast<Datum<double>>(datumB);
-      return datumADouble->getDatum() < datumBDouble->getDatum();
+      return funcs::compareDatum<double>(datumA, datumB);
     }
     case consts::eString: {
-      std::shared_ptr<Datum<std::string>> datumAString =
-          std::static_pointer_cast<Datum<std::string>>(datumA);
-      std::shared_ptr<Datum<std::string>> datumBString =
-          std::static_pointer_cast<Datum<std::string>>(datumB);
-      return datumAString->getDatum() < datumBString->getDatum();
+      return funcs::compareDatum<std::string>(datumA, datumB);
     }
     default:
       throw std::runtime_error("ERROR: Missing type specification.");
@@ -484,8 +526,7 @@ const std::int8_t osdf::ObsDataFrameRows::compareDatums(const std::shared_ptr<Da
 }
 
 template <typename T>
-void osdf::ObsDataFrameRows::appendNewColumn(const std::string& name,
-                                             const std::vector<T>& values,
+void osdf::ObsDataFrameRows::appendNewColumn(const std::string& name, const std::vector<T>& values,
                                              const std::int8_t type) {
   std::int8_t columnExists = columnMetadata_.exists(name);
   if (columnExists == false) {
@@ -498,7 +539,7 @@ void osdf::ObsDataFrameRows::appendNewColumn(const std::string& name,
         std::int32_t columnIndex = columnMetadata_.add(ColumnMetadatum(name, type));
         for (const T& value : values) {
           DataRow& dataRow = dataRows_.at(rowIndex);
-          std::shared_ptr<DatumBase> datum = osdf::funcs::createDatum(columnIndex, value);
+          std::shared_ptr<DatumBase> datum = funcs::createDatum(columnIndex, value);
           dataRow.insert(datum);
           rowIndex++;
         }
@@ -514,21 +555,6 @@ void osdf::ObsDataFrameRows::appendNewColumn(const std::string& name,
   }
 }
 
-template void osdf::ObsDataFrameRows::appendNewColumn<std::int8_t>(
-              const std::string&, const std::vector<std::int8_t>&, const std::int8_t);
-template void osdf::ObsDataFrameRows::appendNewColumn<std::int16_t>(
-              const std::string&, const std::vector<std::int16_t>&, const std::int8_t);
-template void osdf::ObsDataFrameRows::appendNewColumn<std::int32_t>(
-              const std::string&, const std::vector<std::int32_t>&, const std::int8_t);
-template void osdf::ObsDataFrameRows::appendNewColumn<std::int64_t>(
-              const std::string&, const std::vector<std::int64_t>&, const std::int8_t);
-template void osdf::ObsDataFrameRows::appendNewColumn<float>(
-              const std::string&, const std::vector<float>&, const std::int8_t);
-template void osdf::ObsDataFrameRows::appendNewColumn<double>(
-              const std::string&, const std::vector<double>&, const std::int8_t);
-template void osdf::ObsDataFrameRows::appendNewColumn<std::string>(
-              const std::string&, const std::vector<std::string>&, const std::int8_t);
-
 template<typename T>
 void osdf::ObsDataFrameRows::addColumnToRow(DataRow& row, std::int8_t& isValid, const T param) {
   if (isValid == true) {
@@ -537,7 +563,7 @@ void osdf::ObsDataFrameRows::addColumnToRow(DataRow& row, std::int8_t& isValid, 
     std::int8_t permission = columnMetadata_.getPermission(columnIndex);
     if (permission == consts::eReadWrite) {
       std::int8_t type = columnMetadata_.getType(columnIndex);
-      std::shared_ptr<DatumBase> newDatum = osdf::funcs::createDatum(columnIndex, param);
+      std::shared_ptr<DatumBase> newDatum = funcs::createDatum(columnIndex, param);
       columnMetadata_.updateColumnWidth(columnIndex, newDatum->getDatumStr().size());
       if (newDatum->getType() == type) {
         row.insert(newDatum);
@@ -595,21 +621,6 @@ void osdf::ObsDataFrameRows::getColumn(const std::string& name, std::vector<T>& 
   }
 }
 
-template void osdf::ObsDataFrameRows::getColumn<std::int8_t>(
-              const std::string&, std::vector<std::int8_t>&, const std::int8_t) const;
-template void osdf::ObsDataFrameRows::getColumn<std::int16_t>(
-              const std::string&, std::vector<std::int16_t>&, const std::int8_t) const;
-template void osdf::ObsDataFrameRows::getColumn<std::int32_t>(
-              const std::string&,  std::vector<std::int32_t>&, const std::int8_t) const;
-template void osdf::ObsDataFrameRows::getColumn<std::int64_t>(
-              const std::string&, std::vector<std::int64_t>&, const std::int8_t) const;
-template void osdf::ObsDataFrameRows::getColumn<float>(
-              const std::string&, std::vector<float>&, const std::int8_t) const;
-template void osdf::ObsDataFrameRows::getColumn<double>(
-              const std::string&, std::vector<double>&, const std::int8_t) const;
-template void osdf::ObsDataFrameRows::getColumn<std::string>(
-              const std::string&, std::vector<std::string>&, const std::int8_t) const;
-
 template<typename T>
 void osdf::ObsDataFrameRows::setColumn(const std::string& name, const std::vector<T>& data,
                                  const std::int8_t type) const {
@@ -643,21 +654,6 @@ void osdf::ObsDataFrameRows::setColumn(const std::string& name, const std::vecto
   }
 }
 
-template void osdf::ObsDataFrameRows::setColumn<std::int8_t>(
-              const std::string&, const std::vector<std::int8_t>&, const std::int8_t) const;
-template void osdf::ObsDataFrameRows::setColumn<std::int16_t>(
-              const std::string&, const std::vector<std::int16_t>&, const std::int8_t) const;
-template void osdf::ObsDataFrameRows::setColumn<std::int32_t>(
-              const std::string&, const std::vector<std::int32_t>&, const std::int8_t) const;
-template void osdf::ObsDataFrameRows::setColumn<std::int64_t>(
-              const std::string&, const std::vector<std::int64_t>&, const std::int8_t) const;
-template void osdf::ObsDataFrameRows::setColumn<float>(
-              const std::string&, const std::vector<float>&, const std::int8_t) const;
-template void osdf::ObsDataFrameRows::setColumn<double>(
-              const std::string&, const std::vector<double>&, const std::int8_t) const;
-template void osdf::ObsDataFrameRows::setColumn<std::string>(
-              const std::string&, const std::vector<std::string>&, const std::int8_t) const;
-
 template<typename T>
 std::shared_ptr<osdf::ObsDataFrame> osdf::ObsDataFrameRows::slice(const std::string& columnName,
                                                                   const std::int8_t& comparison,
@@ -690,21 +686,6 @@ std::shared_ptr<osdf::ObsDataFrame> osdf::ObsDataFrameRows::slice(const std::str
   newDataRows.shrink_to_fit();
   return std::make_shared<ObsDataFrameRows>(newColumnMetadata, newDataRows);
 }
-
-template std::shared_ptr<osdf::ObsDataFrame> osdf::ObsDataFrameRows::slice<std::int8_t>(
-         const std::string&, const std::int8_t&, const std::int8_t&, const std::int8_t&);
-template std::shared_ptr<osdf::ObsDataFrame> osdf::ObsDataFrameRows::slice<std::int16_t>(
-         const std::string&, const std::int8_t&, const std::int16_t&, const std::int8_t&);
-template std::shared_ptr<osdf::ObsDataFrame> osdf::ObsDataFrameRows::slice<std::int32_t>(
-         const std::string&, const std::int8_t&, const std::int32_t&, const std::int8_t&);
-template std::shared_ptr<osdf::ObsDataFrame> osdf::ObsDataFrameRows::slice<std::int64_t>(
-         const std::string&, const std::int8_t&, const std::int64_t&, const std::int8_t&);
-template std::shared_ptr<osdf::ObsDataFrame> osdf::ObsDataFrameRows::slice<float>(
-         const std::string&, const std::int8_t&, const float&, const std::int8_t&);
-template std::shared_ptr<osdf::ObsDataFrame> osdf::ObsDataFrameRows::slice<double>(
-         const std::string&, const std::int8_t&, const double&, const std::int8_t&);
-template std::shared_ptr<osdf::ObsDataFrame> osdf::ObsDataFrameRows::slice<std::string>(
-         const std::string&, const std::int8_t&, const std::string&, const std::int8_t&);
 
 template<typename T>
 const std::int8_t osdf::ObsDataFrameRows::compareDatumToThreshold(const std::int8_t comparison,

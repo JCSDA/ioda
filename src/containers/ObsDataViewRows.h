@@ -5,49 +5,35 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#ifndef OBSDATAFRAMECOLS_H
-#define OBSDATAFRAMECOLS_H
+#ifndef OBSDATAVIEWROWS_H
+#define OBSDATAVIEWROWS_H
 
+#include <algorithm>
 #include <cstdint>
+#include <functional>
+#include <iostream>
 #include <memory>
 #include <numeric>
 #include <string>
+#include <vector>
 
-#include "ioda/containers/ColumnMetadata.h"
-#include "ioda/containers/DataBase.h"
+#include "ioda/containers/DataRow.h"
+#include "ioda/containers/DatumBase.h"
 #include "ioda/containers/ObsDataFrame.h"
 
-#include "oops/util/Logger.h"
-
 namespace osdf {
-class ObsDataFrameRows;
-
-class ObsDataFrameCols : public ObsDataFrame {
+class ObsDataViewRows : public ObsDataFrame {
  public:
-  /// \brief constructor for an empy container
-  ObsDataFrameCols();
-  /// \brief generic container constructor
-  /// \details This constructor can be used for making a copy, but also
-  /// can handle a container from scratch, or a slice from another
-  /// container.
-  /// \param column meta data row
-  /// \param list of data columns to insert into the container
-  explicit ObsDataFrameCols(ColumnMetadata, std::vector<std::shared_ptr<DataBase>>);
-  explicit ObsDataFrameCols(const ObsDataFrameRows&);
+  ObsDataViewRows();
+  explicit ObsDataViewRows(ColumnMetadata, std::vector<std::shared_ptr<DataRow>>);
 
-  ObsDataFrameCols(ObsDataFrameCols&&)                  = delete;   //!< Deleted move constructor
-  ObsDataFrameCols(const ObsDataFrameCols&)             = delete;   //!< Deleted copy constructor
-  ObsDataFrameCols& operator=(ObsDataFrameCols&&)       = delete;   //!< Deleted move assignment
-  ObsDataFrameCols& operator=(const ObsDataFrameCols&)  = delete;   //!< Deleted copy assignment
+  ObsDataViewRows(ObsDataViewRows&&)                  = delete;   //!< Deleted move constructor
+  ObsDataViewRows(const ObsDataViewRows&)             = delete;   //!< Deleted copy constructor
+  ObsDataViewRows& operator=(ObsDataViewRows&&)       = delete;   //!< Deleted move assignment
+  ObsDataViewRows& operator=(const ObsDataViewRows&)  = delete;   //!< Deleted copy assignment
 
-  /// \brief add a new column to the container
-    /// \details The column values parameter of these functions needs to be matched
-    /// in length with the number of rows in the container. The data type for the
-    /// column is determined from the data type of the column values parameter.
-    /// \param name for the new column
-    /// \param vector of column values
-  void appendNewColumn(const std::string&, const std::vector<std::int8_t>&)  override;
-  void appendNewColumn(const std::string&, const std::vector<std::int16_t>&)  override;
+  void appendNewColumn(const std::string&, const std::vector<std::int8_t>&) override;
+  void appendNewColumn(const std::string&, const std::vector<std::int16_t>&) override;
   void appendNewColumn(const std::string&, const std::vector<std::int32_t>&) override;
   void appendNewColumn(const std::string&, const std::vector<std::int64_t>&) override;
   void appendNewColumn(const std::string&, const std::vector<float>&) override;
@@ -76,6 +62,8 @@ class ObsDataFrameCols : public ObsDataFrame {
   void removeRow(const std::int64_t&) override;
 
   void sort(const std::string&, const std::int8_t) override;
+  void sort(const std::string&, const std::function<std::int8_t(
+              const std::shared_ptr<DatumBase>, const std::shared_ptr<DatumBase>)>);
 
   std::shared_ptr<ObsDataFrame> slice(const std::string&, const std::int8_t&,
                                       const std::int8_t&) override;
@@ -92,12 +80,16 @@ class ObsDataFrameCols : public ObsDataFrame {
   std::shared_ptr<ObsDataFrame> slice(const std::string&, const std::int8_t&,
                                       const std::string&) override;
 
+  std::shared_ptr<ObsDataFrame> slice(const std::function<const std::int8_t(
+                                        const std::shared_ptr<DataRow>)>);
+
   void clear() override;
   void print() override;
 
   const std::int64_t getNumRows() const override;
 
-  const std::vector<std::shared_ptr<DataBase>>& getDataColumns() const;
+  /// Public member functions
+  std::vector<std::shared_ptr<DataRow>>& getDataRows();
 
   /// Templated functions - Cannot be specified in base class
   template<typename... T>
@@ -113,56 +105,61 @@ class ObsDataFrameCols : public ObsDataFrame {
           appendNewRow(newRow);
         }
       } else {
-        oops::Log::error() << "ERROR: Number of columns in new row are incompatible with this data "
-                              "frame." << std::endl;
+        std::cout << "ERROR: Number of columns in new row are "
+                     "incompatible with this data frame." << std::endl;
       }
     } else {
-      oops::Log::error() << "ERROR: Cannot insert a new row without first setting column headings."
-                << std::endl;
+      std::cout << "ERROR: Cannot insert a new row without "
+                   "first setting column headings." << std::endl;
+    }
+  }
+
+  template <typename F>
+  void sortRows(const std::int64_t columnIndex, const F&& func) {
+    std::int64_t numberOfRows = dataRows_.size();
+    std::vector<std::int64_t> indices(numberOfRows, 0);
+    std::iota(std::begin(indices), std::end(indices), 0);  // Build initial list of indices.
+    std::sort(std::begin(indices), std::end(indices), [&](const std::int64_t& i,
+                                                          const std::int64_t& j) {
+      std::shared_ptr<DatumBase> datumA = dataRows_.at(i)->getColumn(columnIndex);
+      std::shared_ptr<DatumBase> datumB = dataRows_.at(j)->getColumn(columnIndex);
+      return func(datumA, datumB);
+    });
+    for (std::int64_t i = 0; i < numberOfRows; ++i) {
+      while (indices.at(i) != indices.at(indices.at(i))) {
+        std::swap(dataRows_.at(indices.at(i)), dataRows_.at(indices.at(indices.at(i))));
+        std::swap(indices.at(i), indices.at(indices.at(i)));
+      }
     }
   }
 
  private:
+  const std::int8_t compareDatums(const std::shared_ptr<DatumBase>,
+                                  const std::shared_ptr<DatumBase>) const;
+
   /// Functions that serve the base class overrides
   template<typename T> void appendNewColumn(const std::string&, const std::vector<T>&,
                                             const std::int8_t);
   template<typename T> void addColumnToRow(DataRow&, std::int8_t&, const T);
-  template<typename T> void getColumn(const std::string&, std::vector<T>&, const std::int8_t) const;
-  template<typename T> void setColumn(const std::string&, const std::vector<T>&,
-                                      const std::int8_t) const;
+  template<typename T> void getColumn(const std::string&,
+                                      std::vector<T>&, const std::int8_t) const;
+  template<typename T> void setColumn(const std::string&,
+                                      const std::vector<T>&, const std::int8_t) const;
 
-  template<typename T> std::shared_ptr<ObsDataFrameCols> slice(const std::string&,
-                                                               const std::int8_t&, const T&,
-                                                               const std::int8_t&);
-
-  template<typename T> void clearData(std::shared_ptr<DataBase>&);
+  template<typename T> std::shared_ptr<ObsDataFrame> slice(const std::string&, const std::int8_t&,
+                                                           const T&, const std::int8_t&);
 
   /// Helper functions
-  template<typename T> void getDataValue(std::shared_ptr<DataBase>, std::vector<T>&) const;
-  template<typename T> void setDataValue(std::shared_ptr<DataBase>, const std::vector<T>&) const;
+  template<typename T> void getDatumValue(const std::shared_ptr<DatumBase>, T&) const;
+  template<typename T> void setDatumValue(const std::shared_ptr<DatumBase>, const T&) const;
 
-  template<typename T> void populateIndices(std::vector<std::int64_t>&, const std::vector<T>&,
-                                            const std::int8_t);
-  template<typename T> void swapData(std::vector<std::int64_t>&, std::vector<T>&);
-
-  template<typename T> const std::int8_t compareDatumToThreshold(const std::int8_t,
-                                                                 const T, const T) const;
-
-  template<typename T> void sliceData(const std::shared_ptr<DataBase>&, std::vector<std::int64_t>&,
-                                      std::vector<std::shared_ptr<DataBase>>&);
-
-  template<typename T> void removeDatum(std::shared_ptr<DataBase>&, const std::int64_t&);
-  template<typename T> void addDatum(std::shared_ptr<DataBase>&, std::shared_ptr<DatumBase>&);
-  template<typename T> void construct(std::shared_ptr<DatumBase>&, std::int8_t&,
-                                      std::int64_t, std::int32_t);
-
-  template<typename T> std::vector<T>& getData(std::shared_ptr<DataBase>) const;
+  template<typename T> const std::int8_t compareDatumToThreshold(
+      const std::int8_t, const T, const T) const;
 
   void initialise(const std::int64_t&);
 
-  std::vector<std::int64_t> ids_;
-  std::vector<std::shared_ptr<DataBase>> dataColumns_;
+  std::vector<std::shared_ptr<DataRow>> dataRows_;
 };
 }  // namespace osdf
 
-#endif  // OBSDATAFRAMECOLS_H
+#endif  // OBSDATAVIEWROWS_H

@@ -126,6 +126,10 @@ const std::int64_t osdf::ColumnMetadata::getMaxId() const {
   return maxId_;
 }
 
+void osdf::ColumnMetadata::clear() {
+  columnMetadata_.clear();
+}
+
 void osdf::ColumnMetadata::print(const std::int32_t& rowStringSize) {
   oops::Log::info() << padString(consts::kSpace, rowStringSize) << consts::kBigSpace;
   for (const ColumnMetadatum& columnMetadatum : columnMetadata_) {

@@ -55,6 +55,14 @@ class Data : public DataBase {
     size_--;
   }
 
+  void reserve(std::int64_t size) {
+    values_.reserve(size);
+  }
+
+  void clear() {
+    values_.clear();
+  }
+
  private:
   std::vector<T> values_;
 };

@@ -10,6 +10,8 @@
 #include "ioda/containers/Data.h"
 #include "ioda/containers/Datum.h"
 
+/// ObsDataFrame base class ////////////////////////////////////////////////////////////////////////
+
 osdf::ObsDataFrame::ObsDataFrame(const std::int8_t type) : type_(type) {}
 
 osdf::ObsDataFrame::ObsDataFrame(ColumnMetadata columnMetadata, const std::int8_t type) :
@@ -28,6 +30,35 @@ void osdf::ObsDataFrame::configColumns(std::initializer_list<ColumnMetadatum> in
 const std::int8_t osdf::ObsDataFrame::getType() {
   return type_;
 }
+
+const osdf::ColumnMetadata& osdf::ObsDataFrame::getColumnMetadata() const {
+  return columnMetadata_;
+}
+
+/// Namespace funcs ////////////////////////////////////////////////////////////////////////////////
+
+template<typename T>
+std::int8_t osdf::funcs::compareDatum(const std::shared_ptr<DatumBase> datumA,
+                                      const std::shared_ptr<DatumBase> datumB) {
+  std::shared_ptr<Datum<T>> datumAType = std::static_pointer_cast<Datum<T>>(datumA);
+  std::shared_ptr<Datum<T>> datumBType = std::static_pointer_cast<Datum<T>>(datumB);
+  return datumAType->getDatum() < datumBType->getDatum();
+}
+
+template std::int8_t osdf::funcs::compareDatum<std::int8_t>(const std::shared_ptr<DatumBase>,
+                                                            const std::shared_ptr<DatumBase>);
+template std::int8_t osdf::funcs::compareDatum<std::int16_t>(const std::shared_ptr<DatumBase>,
+                                                             const std::shared_ptr<DatumBase>);
+template std::int8_t osdf::funcs::compareDatum<std::int32_t>(const std::shared_ptr<DatumBase>,
+                                                             const std::shared_ptr<DatumBase>);
+template std::int8_t osdf::funcs::compareDatum<std::int64_t>(const std::shared_ptr<DatumBase>,
+                                                             const std::shared_ptr<DatumBase>);
+template std::int8_t osdf::funcs::compareDatum<float>(const std::shared_ptr<DatumBase>,
+                                                      const std::shared_ptr<DatumBase>);
+template std::int8_t osdf::funcs::compareDatum<double>(const std::shared_ptr<DatumBase>,
+                                                       const std::shared_ptr<DatumBase>);
+template std::int8_t osdf::funcs::compareDatum<std::string>(const std::shared_ptr<DatumBase>,
+                                                            const std::shared_ptr<DatumBase>);
 
 template<typename T>
 std::shared_ptr<osdf::DataBase> osdf::funcs::createData(const std::int32_t& columnIndex,
@@ -92,3 +123,24 @@ std::shared_ptr<osdf::DatumBase> osdf::funcs::createDatum<char const*>(
   std::shared_ptr<Datum<std::string>> datum = std::make_shared<Datum<std::string>>(valStr);
   return datum;
 }
+
+template<typename T> const std::vector<T>& osdf::funcs::getData(
+                                           const std::shared_ptr<DataBase> data) {
+  std::shared_ptr<Data<T>> dataType = std::static_pointer_cast<Data<T>>(data);
+  return dataType->getData();
+}
+
+template const std::vector<std::int8_t>& osdf::funcs::getData<std::int8_t>(
+                                         const std::shared_ptr<DataBase>);
+template const std::vector<std::int16_t>& osdf::funcs::getData<std::int16_t>(
+                                          const std::shared_ptr<DataBase>);
+template const std::vector<std::int32_t>& osdf::funcs::getData<std::int32_t>(
+                                          const std::shared_ptr<DataBase>);
+template const std::vector<std::int64_t>& osdf::funcs::getData<std::int64_t>(
+                                          const std::shared_ptr<DataBase>);
+template const std::vector<float>& osdf::funcs::getData<float>(
+                                   const std::shared_ptr<DataBase>);
+template const std::vector<double>& osdf::funcs::getData<double>(
+                                    const std::shared_ptr<DataBase>);
+template const std::vector<std::string>& osdf::funcs::getData<std::string>(
+                                         const std::shared_ptr<DataBase>);

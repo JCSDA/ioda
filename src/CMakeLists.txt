@@ -29,6 +29,8 @@ containers/ObsDataFrameCols.cpp
 containers/ObsDataFrameCols.h
 containers/ObsDataFrameRows.cpp
 containers/ObsDataFrameRows.h
+containers/ObsDataViewRows.cpp
+containers/ObsDataViewRows.h
 
 core/FileFormat.cc
 core/FileFormat.h

@@ -13,6 +13,7 @@
 #include "ioda/containers/Constants.h"
 #include "ioda/containers/Data.h"
 #include "ioda/containers/Datum.h"
+#include "ioda/containers/ObsDataFrameRows.h"
 
 namespace {
   std::string padString(std::string str, const std::int32_t columnWidth) {
@@ -28,43 +29,102 @@ osdf::ObsDataFrameCols::ObsDataFrameCols() : ObsDataFrame(consts::eRowPriority) 
 
 osdf::ObsDataFrameCols::ObsDataFrameCols(ColumnMetadata columnMetadata,
                                          std::vector<std::shared_ptr<DataBase>> dataColumns) :
-  ObsDataFrame(columnMetadata, consts::eRowPriority), dataColumns_(dataColumns) {
+      ObsDataFrame(columnMetadata, consts::eRowPriority), dataColumns_(dataColumns) {
   initialise((std::int64_t)dataColumns_.size());
+}
+
+osdf::ObsDataFrameCols::ObsDataFrameCols(const ObsDataFrameRows& obsDataFrameRows) :
+      ObsDataFrame(consts::eColumnPriority) {
+  std::int64_t numRows = obsDataFrameRows.getNumRows();
+  initialise(numRows);
+  // Create metadata - columns are read-write and do not inherit any read-only permissions
+  ColumnMetadata columnMetadata = obsDataFrameRows.getColumnMetadata();
+  for (const ColumnMetadatum& columnMetadatum : columnMetadata.get()) {
+    std::string name = columnMetadatum.getName();
+    std::int8_t type = columnMetadatum.getType();
+    // Ignore returned column index
+    static_cast<void>(columnMetadata_.add(ColumnMetadatum(name, type)));
+  }
+  // Create data
+  for (const DataRow& dataRow : obsDataFrameRows.getDataRows()) {
+    std::int64_t id = dataRow.getId();
+    columnMetadata_.updateMaxId(id);
+
+    std::int32_t rowColumns = dataRow.getSize();
+    std::int8_t initColumn = false;
+    if (dataColumns_.size() == 0) {
+      initColumn = true;
+    }
+    for (std::int32_t columnIndex = 0; columnIndex < rowColumns; ++columnIndex) {
+      std::shared_ptr<DatumBase> datum = dataRow.getColumn(columnIndex);
+      std::int8_t type = datum->getType();
+      switch (type) {
+        case consts::eInt8: {
+          construct<std::int8_t>(datum, initColumn, numRows, columnIndex);
+          break;
+        }
+        case consts::eInt16: {
+          construct<std::int16_t>(datum, initColumn, numRows, columnIndex);
+          break;
+        }
+        case consts::eInt32: {
+          construct<std::int32_t>(datum, initColumn, numRows, columnIndex);
+          break;
+        }
+        case consts::eInt64: {
+          construct<std::int64_t>(datum, initColumn, numRows, columnIndex);
+          break;
+        }
+        case consts::eFloat: {
+          construct<float>(datum, initColumn, numRows, columnIndex);
+          break;
+        }
+        case consts::eDouble: {
+          construct<double>(datum, initColumn, numRows, columnIndex);
+          break;
+        }
+        case consts::eString: {
+          construct<std::string>(datum, initColumn, numRows, columnIndex);
+          break;
+        }
+      }
+    }
+  }
 }
 
 void osdf::ObsDataFrameCols::appendNewColumn(const std::string& name,
                                              const std::vector<std::int8_t>& values) {
-  appendNewColumn(name, values, consts::eInt8);
+  appendNewColumn<std::int8_t>(name, values, consts::eInt8);
 }
 
 void osdf::ObsDataFrameCols::appendNewColumn(const std::string& name,
                                              const std::vector<std::int16_t>& values) {
-  appendNewColumn(name, values, consts::eInt16);
+  appendNewColumn<std::int16_t>(name, values, consts::eInt16);
 }
 
 void osdf::ObsDataFrameCols::appendNewColumn(const std::string& name,
                                              const std::vector<std::int32_t>& values) {
-  appendNewColumn(name, values, consts::eInt32);
+  appendNewColumn<std::int32_t>(name, values, consts::eInt32);
 }
 
 void osdf::ObsDataFrameCols::appendNewColumn(const std::string& name,
                                              const std::vector<std::int64_t>& values) {
-  appendNewColumn(name, values, consts::eInt64);
+  appendNewColumn<std::int64_t>(name, values, consts::eInt64);
 }
 
 void osdf::ObsDataFrameCols::appendNewColumn(const std::string& name,
                                              const std::vector<float>& values) {
-  appendNewColumn(name, values, consts::eFloat);
+  appendNewColumn<float>(name, values, consts::eFloat);
 }
 
 void osdf::ObsDataFrameCols::appendNewColumn(const std::string& name,
                                              const std::vector<double>& values) {
-  appendNewColumn(name, values, consts::eDouble);
+  appendNewColumn<double>(name, values, consts::eDouble);
 }
 
 void osdf::ObsDataFrameCols::appendNewColumn(const std::string& name,
                                              const std::vector<std::string>& values) {
-  appendNewColumn(name, values, consts::eString);
+  appendNewColumn<std::string>(name, values, consts::eString);
 }
 
 void osdf::ObsDataFrameCols::appendNewRow(const DataRow& newRow) {
@@ -77,59 +137,31 @@ void osdf::ObsDataFrameCols::appendNewRow(const DataRow& newRow) {
     std::int8_t type = datum->getType();  // Previously checked for type compatibility
     switch (type) {
       case consts::eInt8: {
-        std::shared_ptr<Datum<std::int8_t>> datumInt8 =
-            std::static_pointer_cast<Datum<std::int8_t>>(datum);
-        std::shared_ptr<Data<std::int8_t>> dataInt8 =
-            std::static_pointer_cast<Data<std::int8_t>>(data);
-        dataInt8->addDatum(datumInt8->getDatum());
+        addDatum<std::int8_t>(data, datum);
         break;
       }
       case consts::eInt16: {
-        std::shared_ptr<Datum<std::int16_t>> datumInt16 =
-            std::static_pointer_cast<Datum<std::int16_t>>(datum);
-        std::shared_ptr<Data<std::int16_t>> dataInt16 =
-            std::static_pointer_cast<Data<std::int16_t>>(data);
-        dataInt16->addDatum(datumInt16->getDatum());
+        addDatum<std::int16_t>(data, datum);
         break;
       }
       case consts::eInt32: {
-        std::shared_ptr<Datum<std::int32_t>> datumInt32 =
-            std::static_pointer_cast<Datum<std::int32_t>>(datum);
-        std::shared_ptr<Data<std::int32_t>> dataInt32 =
-            std::static_pointer_cast<Data<std::int32_t>>(data);
-        dataInt32->addDatum(datumInt32->getDatum());
+        addDatum<std::int32_t>(data, datum);
         break;
       }
       case consts::eInt64: {
-        std::shared_ptr<Datum<std::int64_t>> datumInt64 =
-            std::static_pointer_cast<Datum<std::int64_t>>(datum);
-        std::shared_ptr<Data<std::int64_t>> dataInt64 =
-            std::static_pointer_cast<Data<std::int64_t>>(data);
-        dataInt64->addDatum(datumInt64->getDatum());
+        addDatum<std::int64_t>(data, datum);
         break;
       }
       case consts::eFloat: {
-        std::shared_ptr<Datum<float>> datumFloat =
-            std::static_pointer_cast<Datum<float>>(datum);
-        std::shared_ptr<Data<float>> dataFloat =
-            std::static_pointer_cast<Data<float>>(data);
-        dataFloat->addDatum(datumFloat->getDatum());
+        addDatum<float>(data, datum);
         break;
       }
       case consts::eDouble: {
-        std::shared_ptr<Datum<double>> datumDouble =
-            std::static_pointer_cast<Datum<double>>(datum);
-        std::shared_ptr<Data<double>> dataDouble =
-            std::static_pointer_cast<Data<double>>(data);
-        dataDouble->addDatum(datumDouble->getDatum());
+        addDatum<double>(data, datum);
         break;
       }
       case consts::eString: {
-        std::shared_ptr<Datum<std::string>> datumString =
-            std::static_pointer_cast<Datum<std::string>>(datum);
-        std::shared_ptr<Data<std::string>> dataString =
-            std::static_pointer_cast<Data<std::string>>(data);
-        dataString->addDatum(datumString->getDatum());
+        addDatum<std::string>(data, datum);
         break;
       }
     }
@@ -138,176 +170,86 @@ void osdf::ObsDataFrameCols::appendNewRow(const DataRow& newRow) {
 
 void osdf::ObsDataFrameCols::getColumn(const std::string& name,
                                        std::vector<std::int8_t>& data) const {
-  getColumn(name, data, consts::eInt8);
+  getColumn<std::int8_t>(name, data, consts::eInt8);
 }
 
 void osdf::ObsDataFrameCols::getColumn(const std::string& name,
                                        std::vector<std::int16_t>& data) const {
-  getColumn(name, data, consts::eInt16);
+  getColumn<std::int16_t>(name, data, consts::eInt16);
 }
 
 void osdf::ObsDataFrameCols::getColumn(const std::string& name,
                                        std::vector<std::int32_t>& data) const {
-  getColumn(name, data, consts::eInt32);
+  getColumn<std::int32_t>(name, data, consts::eInt32);
 }
 
 void osdf::ObsDataFrameCols::getColumn(const std::string& name,
                                        std::vector<std::int64_t>& data) const {
-  getColumn(name, data, consts::eInt64);
+  getColumn<std::int64_t>(name, data, consts::eInt64);
 }
 
 void osdf::ObsDataFrameCols::getColumn(const std::string& name,
                                        std::vector<float>& data) const {
-  getColumn(name, data, consts::eFloat);
+  getColumn<float>(name, data, consts::eFloat);
 }
 
 void osdf::ObsDataFrameCols::getColumn(const std::string& name,
                                        std::vector<double>& data) const {
-  getColumn(name, data, consts::eDouble);
+  getColumn<double>(name, data, consts::eDouble);
 }
 
 void osdf::ObsDataFrameCols::getColumn(const std::string& name,
                                        std::vector<std::string>& data) const {
-  getColumn(name, data, consts::eString);
+  getColumn<std::string>(name, data, consts::eString);
 }
 
 void osdf::ObsDataFrameCols::setColumn(const std::string& name,
                                        const std::vector<std::int8_t>& data) const {
-  setColumn(name, data, consts::eInt8);
+  setColumn<std::int8_t>(name, data, consts::eInt8);
 }
 
 void osdf::ObsDataFrameCols::setColumn(const std::string& name,
                                        const std::vector<std::int16_t>& data) const {
-  setColumn(name, data, consts::eInt16);
+  setColumn<std::int16_t>(name, data, consts::eInt16);
 }
 
 void osdf::ObsDataFrameCols::setColumn(const std::string& name,
                                        const std::vector<std::int32_t>& data) const {
-  setColumn(name, data, consts::eInt32);
+  setColumn<std::int32_t>(name, data, consts::eInt32);
 }
 
 void osdf::ObsDataFrameCols::setColumn(const std::string& name,
                                        const std::vector<std::int64_t>& data) const {
-  setColumn(name, data, consts::eInt64);
+  setColumn<std::int64_t>(name, data, consts::eInt64);
 }
 
 void osdf::ObsDataFrameCols::setColumn(const std::string& name,
                                        const std::vector<float>& data) const {
-  setColumn(name, data, consts::eFloat);
+  setColumn<float>(name, data, consts::eFloat);
 }
 
 void osdf::ObsDataFrameCols::setColumn(const std::string& name,
                                        const std::vector<double>& data) const {
-  setColumn(name, data, consts::eDouble);
+  setColumn<double>(name, data, consts::eDouble);
 }
 
 void osdf::ObsDataFrameCols::setColumn(const std::string& name,
                                        const std::vector<std::string>& data) const {
-  setColumn(name, data, consts::eString);
+  setColumn<std::string>(name, data, consts::eString);
 }
 
-template<>
-void osdf::ObsDataFrameCols::getDataValue<std::int8_t>(std::shared_ptr<DataBase> data,
-                                                       std::vector<std::int8_t>& vars) const {
-  std::shared_ptr<Data<std::int8_t>> dataInt8 = std::static_pointer_cast<Data<std::int8_t>>(data);
-  vars = dataInt8->getData();
+template<typename T>
+void osdf::ObsDataFrameCols::getDataValue(std::shared_ptr<DataBase> data,
+                                          std::vector<T>& vars) const {
+  std::shared_ptr<Data<T>> dataType = std::static_pointer_cast<Data<T>>(data);
+  vars = dataType->getData();
 }
 
-template<>
-void osdf::ObsDataFrameCols::getDataValue<std::int16_t>(std::shared_ptr<DataBase> data,
-                                                        std::vector<std::int16_t>& vars) const {
-  std::shared_ptr<Data<std::int16_t>> dataInt16 =
-      std::static_pointer_cast<Data<std::int16_t>>(data);
-  vars = dataInt16->getData();
-}
-
-template<>
-void osdf::ObsDataFrameCols::getDataValue<std::int32_t>(std::shared_ptr<DataBase> data,
-                                                        std::vector<std::int32_t>& vars) const {
-  std::shared_ptr<Data<std::int32_t>> dataInt32 =
-      std::static_pointer_cast<Data<std::int32_t>>(data);
-  vars = dataInt32->getData();
-}
-
-template<>
-void osdf::ObsDataFrameCols::getDataValue<std::int64_t>(std::shared_ptr<DataBase> data,
-                                                        std::vector<std::int64_t>& vars) const {
-  std::shared_ptr<Data<std::int64_t>> dataInt64 =
-      std::static_pointer_cast<Data<std::int64_t>>(data);
-  vars = dataInt64->getData();
-}
-
-template<>
-void osdf::ObsDataFrameCols::getDataValue<float>(std::shared_ptr<DataBase> data,
-                                                 std::vector<float>& vars) const {
-  std::shared_ptr<Data<float>> dataFloat = std::static_pointer_cast<Data<float>>(data);
-  vars = dataFloat->getData();
-}
-
-template<>
-void osdf::ObsDataFrameCols::getDataValue<double>(std::shared_ptr<DataBase> data,
-                                                  std::vector<double>& vars) const {
-  std::shared_ptr<Data<double>> dataDouble = std::static_pointer_cast<Data<double>>(data);
-  vars = dataDouble->getData();
-}
-
-template<>
-void osdf::ObsDataFrameCols::getDataValue<std::string>(std::shared_ptr<DataBase> data,
-                                                       std::vector<std::string>& vars) const {
-  std::shared_ptr<Data<std::string>> dataString = std::static_pointer_cast<Data<std::string>>(data);
-  vars = dataString->getData();
-}
-
-template<>
-void osdf::ObsDataFrameCols::setDataValue<std::int8_t>(std::shared_ptr<DataBase> data,
-                                                 const std::vector<std::int8_t>& vars) const {
-  std::shared_ptr<Data<std::int8_t>> dataInt8 = std::static_pointer_cast<Data<std::int8_t>>(data);
-  dataInt8->setData(vars);
-}
-
-template<>
-void osdf::ObsDataFrameCols::setDataValue<std::int16_t>(std::shared_ptr<DataBase> data,
-                                                  const std::vector<std::int16_t>& vars) const {
-  std::shared_ptr<Data<std::int16_t>> dataInt16 =
-      std::static_pointer_cast<Data<std::int16_t>>(data);
-  dataInt16->setData(vars);
-}
-
-template<>
-void osdf::ObsDataFrameCols::setDataValue<std::int32_t>(std::shared_ptr<DataBase> data,
-                                                  const std::vector<std::int32_t>& vars) const {
-  std::shared_ptr<Data<std::int32_t>> dataInt32 =
-      std::static_pointer_cast<Data<std::int32_t>>(data);
-  dataInt32->setData(vars);
-}
-
-template<>
-void osdf::ObsDataFrameCols::setDataValue<std::int64_t>(std::shared_ptr<DataBase> data,
-                                                  const std::vector<std::int64_t>& vars) const {
-  std::shared_ptr<Data<std::int64_t>> dataInt64 =
-      std::static_pointer_cast<Data<std::int64_t>>(data);
-  dataInt64->setData(vars);
-}
-
-template<>
-void osdf::ObsDataFrameCols::setDataValue<float>(std::shared_ptr<DataBase> data,
-                                           const std::vector<float>& vars) const {
-  std::shared_ptr<Data<float>> dataFloat = std::static_pointer_cast<Data<float>>(data);
-  dataFloat->setData(vars);
-}
-
-template<>
-void osdf::ObsDataFrameCols::setDataValue<double>(std::shared_ptr<DataBase> data,
-                                            const std::vector<double>& vars) const {
-  std::shared_ptr<Data<double>> dataDouble = std::static_pointer_cast<Data<double>>(data);
-  dataDouble->setData(vars);
-}
-
-template<>
-void osdf::ObsDataFrameCols::setDataValue<std::string>(std::shared_ptr<DataBase> data,
-                                                 const std::vector<std::string>& vars) const {
-  std::shared_ptr<Data<std::string>> dataString = std::static_pointer_cast<Data<std::string>>(data);
-  dataString->setData(vars);
+template<typename T>
+void osdf::ObsDataFrameCols::setDataValue(std::shared_ptr<DataBase> data,
+                                          const std::vector<T>& vars) const {
+  std::shared_ptr<Data<T>> dataType = std::static_pointer_cast<Data<T>>(data);
+  dataType->setData(vars);
 }
 
 void osdf::ObsDataFrameCols::removeColumn(const std::string& name) {
@@ -346,45 +288,31 @@ void osdf::ObsDataFrameCols::removeRow(const std::int64_t& index) {
         std::int8_t type = data->getType();
         switch (type) {
           case consts::eInt8: {
-            std::shared_ptr<Data<std::int8_t>> dataInt8 =
-                std::static_pointer_cast<Data<std::int8_t>>(data);
-            dataInt8->removeDatum(index);
+            removeDatum<std::int8_t>(data, index);
             break;
           }
           case consts::eInt16: {
-            std::shared_ptr<Data<std::int16_t>> dataInt16 =
-                std::static_pointer_cast<Data<std::int16_t>>(data);
-            dataInt16->removeDatum(index);
+            removeDatum<std::int16_t>(data, index);
             break;
           }
           case consts::eInt32: {
-            std::shared_ptr<Data<std::int32_t>> dataInt32 =
-                std::static_pointer_cast<Data<std::int32_t>>(data);
-            dataInt32->removeDatum(index);
+            removeDatum<std::int32_t>(data, index);
             break;
           }
           case consts::eInt64: {
-            std::shared_ptr<Data<std::int64_t>> dataInt64 =
-                std::static_pointer_cast<Data<std::int64_t>>(data);
-            dataInt64->removeDatum(index);
+            removeDatum<std::int64_t>(data, index);
             break;
           }
           case consts::eFloat: {
-            std::shared_ptr<Data<float>> dataFloat =
-                std::static_pointer_cast<Data<float>>(data);
-            dataFloat->removeDatum(index);
+            removeDatum<float>(data, index);
             break;
           }
           case consts::eDouble: {
-            std::shared_ptr<Data<double>> dataDouble =
-                std::static_pointer_cast<Data<double>>(data);
-            dataDouble->removeDatum(index);
+            removeDatum<double>(data, index);
             break;
           }
           case consts::eString: {
-            std::shared_ptr<Data<std::string>> dataString =
-                std::static_pointer_cast<Data<std::string>>(data);
-            dataString->removeDatum(index);
+            removeDatum<std::string>(data, index);
             break;
           }
         }
@@ -413,90 +341,62 @@ void osdf::ObsDataFrameCols::sort(const std::string& columnName, const std::int8
       std::shared_ptr<DataBase> data = dataColumns_.at(columnIndex);
       switch (data->getType()) {
         case consts::eInt8: {
-          std::shared_ptr<Data<std::int8_t>> dataInt8 =
-              std::static_pointer_cast<Data<std::int8_t>>(data);
-          populateIndices(indices, dataInt8->getData(), order);
+          populateIndices<std::int8_t>(indices, funcs::getData<std::int8_t>(data), order);
           break;
         }
         case consts::eInt16: {
-          std::shared_ptr<Data<std::int16_t>> dataInt16 =
-              std::static_pointer_cast<Data<std::int16_t>>(data);
-          populateIndices(indices, dataInt16->getData(), order);
+          populateIndices<std::int16_t>(indices, funcs::getData<std::int16_t>(data), order);
           break;
         }
         case consts::eInt32: {
-          std::shared_ptr<Data<std::int32_t>> dataInt32 =
-              std::static_pointer_cast<Data<std::int32_t>>(data);
-          populateIndices(indices, dataInt32->getData(), order);
+          populateIndices<std::int32_t>(indices, funcs::getData<std::int32_t>(data), order);
           break;
         }
         case consts::eInt64: {
-          std::shared_ptr<Data<std::int64_t>> dataInt64 =
-              std::static_pointer_cast<Data<std::int64_t>>(data);
-          populateIndices(indices, dataInt64->getData(), order);
+          populateIndices<std::int64_t>(indices, funcs::getData<std::int64_t>(data), order);
           break;
         }
         case consts::eFloat: {
-          std::shared_ptr<Data<float>> dataFloat =
-              std::static_pointer_cast<Data<float>>(data);
-          populateIndices(indices, dataFloat->getData(), order);
+          populateIndices<float>(indices, funcs::getData<float>(data), order);
           break;
         }
         case consts::eDouble: {
-          std::shared_ptr<Data<double>> dataDouble =
-              std::static_pointer_cast<Data<double>>(data);
-          populateIndices(indices, dataDouble->getData(), order);
+          populateIndices<double>(indices, funcs::getData<double>(data), order);
           break;
         }
         case consts::eString: {
-          std::shared_ptr<Data<std::string>> dataString =
-              std::static_pointer_cast<Data<std::string>>(data);
-          populateIndices(indices, dataString->getData(), order);
+          populateIndices<std::string>(indices, funcs::getData<std::string>(data), order);
           break;
         }
       }
       for (std::shared_ptr<DataBase>& data : dataColumns_) {
         switch (data->getType()) {
           case consts::eInt8: {
-            std::shared_ptr<Data<std::int8_t>> dataInt8 =
-                std::static_pointer_cast<Data<std::int8_t>>(data);
-            swapData(indices, dataInt8->getData());
+            swapData<std::int8_t>(indices, getData<std::int8_t>(data));
             break;
           }
           case consts::eInt16: {
-            std::shared_ptr<Data<std::int16_t>> dataInt16 =
-                std::static_pointer_cast<Data<std::int16_t>>(data);
-            swapData(indices, dataInt16->getData());
+            swapData<std::int16_t>(indices, getData<std::int16_t>(data));
             break;
           }
           case consts::eInt32: {
-            std::shared_ptr<Data<std::int32_t>> dataInt32 =
-                std::static_pointer_cast<Data<std::int32_t>>(data);
-            swapData(indices, dataInt32->getData());
+            swapData<std::int32_t>(indices, getData<std::int32_t>(data));
             break;
           }
           case consts::eInt64: {
-            std::shared_ptr<Data<std::int64_t>> dataInt64 =
-                std::static_pointer_cast<Data<std::int64_t>>(data);
-            swapData(indices, dataInt64->getData());
+            swapData<std::int64_t>(indices, getData<std::int64_t>(data));
             break;
           }
           case consts::eFloat: {
-            std::shared_ptr<Data<float>> dataFloat =
-                std::static_pointer_cast<Data<float>>(data);
-            swapData(indices, dataFloat->getData());
+            swapData<float>(indices, getData<float>(data));
             break;
           }
           case consts::eDouble: {
-            std::shared_ptr<Data<double>> dataDouble =
-                std::static_pointer_cast<Data<double>>(data);
-            swapData(indices, dataDouble->getData());
+            swapData<double>(indices, getData<double>(data));
             break;
           }
           case consts::eString: {
-            std::shared_ptr<Data<std::string>> dataString =
-                std::static_pointer_cast<Data<std::string>>(data);
-            swapData(indices, dataString->getData());
+            swapData<std::string>(indices, getData<std::string>(data));
             break;
           }
         }
@@ -578,28 +478,6 @@ void osdf::ObsDataFrameCols::appendNewColumn(const std::string& name, const std:
   }
 }
 
-template void osdf::ObsDataFrameCols::appendNewColumn<std::int8_t>(const std::string&,
-                                                             const std::vector<std::int8_t>&,
-                                                             const std::int8_t);
-template void osdf::ObsDataFrameCols::appendNewColumn<std::int16_t>(const std::string&,
-                                                             const std::vector<std::int16_t>&,
-                                                             const std::int8_t);
-template void osdf::ObsDataFrameCols::appendNewColumn<std::int32_t>(const std::string&,
-                                                             const std::vector<std::int32_t>&,
-                                                             const std::int8_t);
-template void osdf::ObsDataFrameCols::appendNewColumn<std::int64_t>(const std::string&,
-                                                             const std::vector<std::int64_t>&,
-                                                             const std::int8_t);
-template void osdf::ObsDataFrameCols::appendNewColumn<float>(const std::string&,
-                                                             const std::vector<float>&,
-                                                             const std::int8_t);
-template void osdf::ObsDataFrameCols::appendNewColumn<double>(const std::string&,
-                                                             const std::vector<double>&,
-                                                             const std::int8_t);
-template void osdf::ObsDataFrameCols::appendNewColumn<std::string>(const std::string&,
-                                                             const std::vector<std::string>&,
-                                                             const std::int8_t);
-
 template<typename T>
 void osdf::ObsDataFrameCols::addColumnToRow(DataRow& row, std::int8_t& isValid, const T param) {
   if (isValid == true) {
@@ -608,7 +486,7 @@ void osdf::ObsDataFrameCols::addColumnToRow(DataRow& row, std::int8_t& isValid, 
     std::int8_t permission = columnMetadata_.getPermission(columnIndex);
     if (permission == consts::eReadWrite) {
       std::int8_t type = columnMetadata_.getType(columnIndex);
-      std::shared_ptr<DatumBase> newDatum = osdf::funcs::createDatum(columnIndex, param);
+      std::shared_ptr<DatumBase> newDatum = funcs::createDatum(columnIndex, param);
       columnMetadata_.updateColumnWidth(columnIndex, newDatum->getDatumStr().size());
       if (newDatum->getType() == type) {
         row.insert(newDatum);
@@ -645,7 +523,7 @@ template void osdf::ObsDataFrameCols::addColumnToRow<const char*>(
 
 template<typename T>
 void osdf::ObsDataFrameCols::getColumn(const std::string& name, std::vector<T>& data,
-                                 const std::int8_t type) const {
+                                       const std::int8_t type) const {
   std::int64_t columnIndex = columnMetadata_.getIndex(name);
   if (columnIndex != consts::kErrorValue)  {
     std::int8_t columnType = columnMetadata_.getType(columnIndex);
@@ -662,21 +540,6 @@ void osdf::ObsDataFrameCols::getColumn(const std::string& name, std::vector<T>& 
                        << "\" not found in current data frame." << std::endl;
   }
 }
-
-template void osdf::ObsDataFrameCols::getColumn<std::int8_t>(
-              const std::string&, std::vector<std::int8_t>&, const std::int8_t) const;
-template void osdf::ObsDataFrameCols::getColumn<std::int16_t>(
-              const std::string&, std::vector<std::int16_t>&, const std::int8_t) const;
-template void osdf::ObsDataFrameCols::getColumn<std::int32_t>(
-              const std::string&, std::vector<std::int32_t>&, const std::int8_t) const;
-template void osdf::ObsDataFrameCols::getColumn<std::int64_t>(
-              const std::string&, std::vector<std::int64_t>&, const std::int8_t) const;
-template void osdf::ObsDataFrameCols::getColumn<float>(
-              const std::string&, std::vector<float>&, const std::int8_t) const;
-template void osdf::ObsDataFrameCols::getColumn<double>(
-              const std::string&, std::vector<double>&, const std::int8_t) const;
-template void osdf::ObsDataFrameCols::getColumn<std::string>(
-              const std::string&, std::vector<std::string>&, const std::int8_t) const;
 
 template<typename T>
 void osdf::ObsDataFrameCols::setColumn(const std::string& name, const std::vector<T>& data,
@@ -708,21 +571,6 @@ void osdf::ObsDataFrameCols::setColumn(const std::string& name, const std::vecto
   }
 }
 
-template void osdf::ObsDataFrameCols::setColumn<std::int8_t>(
-              const std::string&, const std::vector<std::int8_t>&, const std::int8_t) const;
-template void osdf::ObsDataFrameCols::setColumn<std::int16_t>(
-              const std::string&, const std::vector<std::int16_t>&, const std::int8_t) const;
-template void osdf::ObsDataFrameCols::setColumn<std::int32_t>(
-              const std::string&, const std::vector<std::int32_t>&, const std::int8_t) const;
-template void osdf::ObsDataFrameCols::setColumn<std::int64_t>(
-              const std::string&, const std::vector<std::int64_t>&, const std::int8_t) const;
-template void osdf::ObsDataFrameCols::setColumn<float>(
-              const std::string&, const std::vector<float>&, const std::int8_t) const;
-template void osdf::ObsDataFrameCols::setColumn<double>(
-              const std::string&, const std::vector<double>&, const std::int8_t) const;
-template void osdf::ObsDataFrameCols::setColumn<std::string>(
-              const std::string&, const std::vector<std::string>&, const std::int8_t) const;
-
 template<typename T>
 std::shared_ptr<osdf::ObsDataFrameCols> osdf::ObsDataFrameCols::slice(const std::string& columnName,
                                                                       const std::int8_t& comparison,
@@ -750,97 +598,31 @@ std::shared_ptr<osdf::ObsDataFrameCols> osdf::ObsDataFrameCols::slice(const std:
       for (const std::shared_ptr<DataBase>& data : dataColumns_) {
         switch (data->getType()) {
           case consts::eInt8: {
-            std::shared_ptr<Data<std::int8_t>> dataInt8 =
-                std::static_pointer_cast<Data<std::int8_t>>(data);
-            std::vector<std::int8_t>& values = dataInt8->getData();
-            std::vector<std::int8_t> newValues(indices.size());
-            std::transform(indices.begin(), indices.end(),
-                           newValues.begin(), [values](size_t index) {
-              return values[index];
-            });
-            std::shared_ptr<Data<std::int8_t>> newData =
-                std::make_shared<Data<std::int8_t>>(newValues);
-            newDataColumns.push_back(newData);
+            sliceData<std::int8_t>(data, indices, newDataColumns);
             break;
           }
           case consts::eInt16: {
-            std::shared_ptr<Data<std::int16_t>> dataInt16 =
-                std::static_pointer_cast<Data<std::int16_t>>(data);
-            std::vector<std::int16_t>& values = dataInt16->getData();
-            std::vector<std::int16_t> newValues(indices.size());
-            std::transform(indices.begin(), indices.end(),
-                           newValues.begin(), [values](size_t index) {
-              return values[index];
-            });
-            std::shared_ptr<Data<std::int16_t>> newData =
-                std::make_shared<Data<std::int16_t>>(newValues);
-            newDataColumns.push_back(newData);
+            sliceData<std::int16_t>(data, indices, newDataColumns);
             break;
           }
           case consts::eInt32: {
-            std::shared_ptr<Data<std::int32_t>> dataInt32 =
-                std::static_pointer_cast<Data<std::int32_t>>(data);
-            std::vector<std::int32_t>& values = dataInt32->getData();
-            std::vector<std::int32_t> newValues(indices.size());
-            std::transform(indices.begin(), indices.end(),
-                           newValues.begin(), [values](size_t index) {
-              return values[index];
-            });
-            std::shared_ptr<Data<std::int32_t>> newData =
-                std::make_shared<Data<std::int32_t>>(newValues);
-            newDataColumns.push_back(newData);
+            sliceData<std::int32_t>(data, indices, newDataColumns);
             break;
           }
           case consts::eInt64: {
-            std::shared_ptr<Data<std::int64_t>> dataInt64 =
-                std::static_pointer_cast<Data<std::int64_t>>(data);
-            std::vector<std::int64_t>& values = dataInt64->getData();
-            std::vector<std::int64_t> newValues(indices.size());
-            std::transform(indices.begin(), indices.end(),
-                           newValues.begin(), [values](size_t index) {
-              return values[index];
-            });
-            std::shared_ptr<Data<std::int64_t>> newData =
-                std::make_shared<Data<std::int64_t>>(newValues);
-            newDataColumns.push_back(newData);
+            sliceData<std::int64_t>(data, indices, newDataColumns);
             break;
           }
           case consts::eFloat: {
-            std::shared_ptr<Data<float>> dataFloat = std::static_pointer_cast<Data<float>>(data);
-            std::vector<float>& values = dataFloat->getData();
-            std::vector<float> newValues(indices.size());
-            std::transform(indices.begin(), indices.end(),
-                           newValues.begin(), [values](size_t index) {
-              return values[index];
-            });
-            std::shared_ptr<Data<float>> newData = std::make_shared<Data<float>>(newValues);
-            newDataColumns.push_back(newData);
+            sliceData<float>(data, indices, newDataColumns);
             break;
           }
           case consts::eDouble: {
-            std::shared_ptr<Data<double>> dataDouble = std::static_pointer_cast<Data<double>>(data);
-            std::vector<double>& values = dataDouble->getData();
-            std::vector<double> newValues(indices.size());
-            std::transform(indices.begin(), indices.end(),
-                           newValues.begin(), [values](size_t index) {
-              return values[index];
-            });
-            std::shared_ptr<Data<double>> newData = std::make_shared<Data<double>>(newValues);
-            newDataColumns.push_back(newData);
+            sliceData<double>(data, indices, newDataColumns);
             break;
           }
           case consts::eString: {
-            std::shared_ptr<Data<std::string>> dataString =
-                std::static_pointer_cast<Data<std::string>>(data);
-            std::vector<std::string>& values = dataString->getData();
-            std::vector<std::string> newValues(indices.size());
-            std::transform(indices.begin(), indices.end(),
-                           newValues.begin(), [values](size_t index) {
-              return values[index];
-            });
-            std::shared_ptr<Data<std::string>> newData =
-                std::make_shared<Data<std::string>>(newValues);
-            newDataColumns.push_back(newData);
+            sliceData<std::string>(data, indices, newDataColumns);
             break;
           }
         }
@@ -853,6 +635,49 @@ std::shared_ptr<osdf::ObsDataFrameCols> osdf::ObsDataFrameCols::slice(const std:
                        << "\" not found in current data frame." << std::endl;
   }
   return std::make_shared<ObsDataFrameCols>(newColumnMetadata, newDataColumns);
+}
+
+template<typename T> void osdf::ObsDataFrameCols::clearData(std::shared_ptr<DataBase>& data) {
+  std::shared_ptr<Data<T>> dataType = std::static_pointer_cast<Data<T>>(data);
+  dataType->clear();
+}
+
+void osdf::ObsDataFrameCols::clear() {
+  for (std::shared_ptr<DataBase>& data : dataColumns_) {
+    switch (data->getType()) {
+      case consts::eInt8: {
+        clearData<std::int8_t>(data);
+        break;
+      }
+      case consts::eInt16: {
+        clearData<std::int16_t>(data);
+        break;
+      }
+      case consts::eInt32: {
+        clearData<std::int32_t>(data);
+        break;
+      }
+      case consts::eInt64: {
+        clearData<std::int64_t>(data);
+        break;
+      }
+      case consts::eFloat: {
+        clearData<float>(data);
+        break;
+      }
+      case consts::eDouble: {
+        clearData<double>(data);
+        break;
+      }
+      case consts::eString: {
+        clearData<std::string>(data);
+        break;
+      }
+    }
+  }
+  dataColumns_.clear();
+  ids_.clear();
+  columnMetadata_.clear();
 }
 
 void osdf::ObsDataFrameCols::print() {
@@ -877,6 +702,10 @@ const std::int64_t osdf::ObsDataFrameCols::getNumRows() const {
   return ids_.size();
 }
 
+const std::vector<std::shared_ptr<osdf::DataBase>>& osdf::ObsDataFrameCols::getDataColumns() const {
+  return dataColumns_;
+}
+
 template<typename T>
 void osdf::ObsDataFrameCols::populateIndices(std::vector<std::int64_t>& indices,
                                        const std::vector<T>& data, const std::int8_t order) {
@@ -893,21 +722,6 @@ void osdf::ObsDataFrameCols::populateIndices(std::vector<std::int64_t>& indices,
   }
 }
 
-template void osdf::ObsDataFrameCols::populateIndices(
-              std::vector<std::int64_t>&, const std::vector<std::int8_t>&, const std::int8_t);
-template void osdf::ObsDataFrameCols::populateIndices<std::int16_t>(
-              std::vector<std::int64_t>&, const std::vector<std::int16_t>&, const std::int8_t);
-template void osdf::ObsDataFrameCols::populateIndices<std::int32_t>(
-              std::vector<std::int64_t>&, const std::vector<std::int32_t>&, const std::int8_t);
-template void osdf::ObsDataFrameCols::populateIndices<std::int64_t>(
-              std::vector<std::int64_t>&, const std::vector<std::int64_t>&, const std::int8_t);
-template void osdf::ObsDataFrameCols::populateIndices<float>(
-              std::vector<std::int64_t>&, const std::vector<float>&, const std::int8_t);
-template void osdf::ObsDataFrameCols::populateIndices<double>(
-              std::vector<std::int64_t>&, const std::vector<double>&, const std::int8_t);
-template void osdf::ObsDataFrameCols::populateIndices<std::string>(
-              std::vector<std::int64_t>&, const std::vector<std::string>&, const std::int8_t);
-
 template<typename T>
 void osdf::ObsDataFrameCols::swapData(std::vector<std::int64_t>& indices, std::vector<T>& data) {
   for (std::int64_t i = 0; i < (std::int64_t)ids_.size(); ++i) {
@@ -917,21 +731,6 @@ void osdf::ObsDataFrameCols::swapData(std::vector<std::int64_t>& indices, std::v
     }
   }
 }
-
-template void osdf::ObsDataFrameCols::swapData(
-              std::vector<std::int64_t>&, std::vector<std::int8_t>&);
-template void osdf::ObsDataFrameCols::swapData<std::int16_t>(
-              std::vector<std::int64_t>&, std::vector<std::int16_t>&);
-template void osdf::ObsDataFrameCols::swapData<std::int32_t>(
-              std::vector<std::int64_t>&, std::vector<std::int32_t>&);
-template void osdf::ObsDataFrameCols::swapData<std::int64_t>(
-              std::vector<std::int64_t>&, std::vector<std::int64_t>&);
-template void osdf::ObsDataFrameCols::swapData<float>(
-              std::vector<std::int64_t>&, std::vector<float>&);
-template void osdf::ObsDataFrameCols::swapData<double>(
-              std::vector<std::int64_t>&, std::vector<double>&);
-template void osdf::ObsDataFrameCols::swapData<std::string>(
-              std::vector<std::int64_t>&, std::vector<std::string>&);
 
 template<typename T>
 const std::int8_t osdf::ObsDataFrameCols::compareDatumToThreshold(const std::int8_t comparison,
@@ -961,6 +760,55 @@ template const std::int8_t osdf::ObsDataFrameCols::compareDatumToThreshold<doubl
                            const std::int8_t, const double, const double) const;
 template const std::int8_t osdf::ObsDataFrameCols::compareDatumToThreshold<std::string>(
                            const std::int8_t, const std::string, const std::string) const;
+
+template<typename T> void osdf::ObsDataFrameCols::sliceData(const std::shared_ptr<DataBase>& data,
+      std::vector<std::int64_t>& indices, std::vector<std::shared_ptr<DataBase>>& newDataColumns) {
+  std::vector<T>& values = getData<T>(data);
+  std::vector<T> newValues(indices.size());
+  std::transform(indices.begin(), indices.end(), newValues.begin(), [values](size_t index) {
+    return values[index];
+  });
+  std::shared_ptr<Data<T>> newData = std::make_shared<Data<T>>(newValues);
+  newDataColumns.push_back(newData);
+}
+
+template<typename T> void osdf::ObsDataFrameCols::removeDatum(std::shared_ptr<DataBase>& data,
+                                                              const std::int64_t& index) {
+  std::shared_ptr<Data<T>> dataType = std::static_pointer_cast<Data<T>>(data);
+  dataType->removeDatum(index);
+}
+
+template<typename T> void osdf::ObsDataFrameCols::addDatum(std::shared_ptr<DataBase>& data,
+                                                           std::shared_ptr<DatumBase>& datum) {
+  std::shared_ptr<Data<T>> dataType = std::static_pointer_cast<Data<T>>(data);
+  std::shared_ptr<Datum<T>> datumType = std::static_pointer_cast<Datum<T>>(datum);
+  dataType->addDatum(datumType->getDatum());
+}
+
+template<typename T> void osdf::ObsDataFrameCols::construct(std::shared_ptr<DatumBase>& datum,
+                                                            std::int8_t& initColumn,
+                                                            std::int64_t numRows,
+                                                            std::int32_t columnIndex) {
+  std::shared_ptr<Datum<T>> datumType = std::static_pointer_cast<Datum<T>>(datum);
+  std::shared_ptr<Data<T>> dataType;
+  if (initColumn == false) {
+    std::shared_ptr<DataBase> data = dataColumns_.at(columnIndex);
+    dataType = std::static_pointer_cast<Data<T>>(data);
+  } else {
+    std::vector<T> values;
+    dataType = std::make_shared<Data<T>>(values);
+    dataType->reserve(numRows);
+    dataColumns_.push_back(dataType);
+  }
+  columnMetadata_.updateColumnWidth(columnIndex, datum->getDatumStr().size());
+  dataType->addDatum(datumType->getDatum());
+}
+
+template<typename T>
+std::vector<T>& osdf::ObsDataFrameCols::getData(std::shared_ptr<DataBase> data) const {
+  std::shared_ptr<Data<T>> dataType = std::static_pointer_cast<Data<T>>(data);
+  return dataType->getData();
+}
 
 void osdf::ObsDataFrameCols::initialise(const std::int64_t& numRows) {
   for (std::int64_t index = 0; index < numRows; ++index) {

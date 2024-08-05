@@ -10,6 +10,7 @@
 
 #include <cstdint>
 #include <functional>
+#include <string>
 
 #include "ioda/containers/ColumnMetadata.h"
 #include "ioda/containers/DataBase.h"
@@ -126,11 +127,15 @@ class ObsDataFrame {
   virtual std::shared_ptr<ObsDataFrame>
       slice(const std::string&, const std::int8_t&, const std::string&) = 0;
 
+  virtual void clear() = 0;
   /// \brief print out the container contents in a tabular form
   virtual void print() = 0;
 
+  virtual const std::int64_t getNumRows() const = 0;
+
   /// \brief return the container type
   const std::int8_t getType();
+  const ColumnMetadata& getColumnMetadata() const;
 
  protected:
   /// \brief column meta data
@@ -145,14 +150,19 @@ class ObsDataFrame {
 };
 
 namespace funcs {
-// Non-member functions that serve derivatives of the ObsDataFrame base class
-template<typename T> std::shared_ptr<DataBase> createData(const std::int32_t&,
-                                                          const std::vector<T>&);
+  // Non-member functions that serve derivatives of the ObsDataFrame base class
+  template<typename T> std::int8_t compareDatum(const std::shared_ptr<DatumBase>,
+                                                const std::shared_ptr<DatumBase>);
 
-  /// \brief helper function for the public appendNewColumn function
-  /// \param column index
-  /// \param data value
-template<typename T> std::shared_ptr<DatumBase> createDatum(const std::int32_t&, const T);
+  template<typename T> std::shared_ptr<DataBase> createData(const std::int32_t&,
+                                                            const std::vector<T>&);
+
+    /// \brief helper function for the public appendNewColumn function
+    /// \param column index
+    /// \param data value
+  template<typename T> std::shared_ptr<DatumBase> createDatum(const std::int32_t&, const T);
+
+  template<typename T> const std::vector<T>& getData(const std::shared_ptr<DataBase>);
 }  // namespace funcs
 }  // namespace osdf
 

@@ -13,6 +13,7 @@
 #include "ioda/containers/Constants.h"
 #include "ioda/containers/ObsDataFrameCols.h"
 #include "ioda/containers/ObsDataFrameRows.h"
+#include "ioda/containers/ObsDataViewRows.h"
 
 #include "ioda/containers/Datum.h"
 
@@ -191,6 +192,116 @@ std::int32_t main() {
   oops::Log::info() << std::endl << "test slice 1" << std::endl;
   std::shared_ptr<osdf::ObsDataFrame> test3 = dfCols.slice("lat", osdf::consts::eLessThan, -70.);
   test3->print();
+
+
+  // std::cout  << std::endl << "clear" << std::endl;
+  // dfCols.clear();
+  // dfCols.print();
+
+  /// Column Priority //////////////////////////////////////////////////////////////////////////////
+  std::cout  << std::endl << "### ObsDataViewRows ################"
+                             "####################################" << std::endl;
+
+  std::shared_ptr<osdf::ObsDataViewRows> dfRowsView = dfRows.makeView();
+  dfRowsView->print();
+
+  std::cout  << std::endl << "appendNewColumn StatId" << std::endl;
+  std::vector<std::string> statIds2 = {"00001", "00002", "00003", "00004", "00005", "00006",
+                                       "00007", "00008", "00009", "00010",  "00011"};
+  dfRowsView->appendNewColumn("StatId", statIds2);
+  dfRowsView->print();
+
+  std::cout  << std::endl << "ObsDataFrameRows print" << std::endl;
+  dfRows.print();
+
+  std::cout << std::endl << "getColumn lon" << std::endl;
+  std::vector<double> vec7;
+  dfRowsView->getColumn("lon", vec7);
+  dfRowsView->print();
+
+  std::cout << std::endl << "setColumn time" << std::endl;
+  std::vector<std::int32_t> times2 = {1810460225, 1810460225, 1810460225, 1810460225, 1810460226,
+                                      1810460226, 1810460226, 1810460226, 1810460226, 1810460227,
+                                      1810460228};
+  dfRowsView->setColumn("time", times2);
+  dfRowsView->print();
+
+  std::cout << std::endl << "removeColumn lon" << std::endl;
+  dfRowsView->removeColumn("lon");
+  dfRowsView->print();
+
+  std::cout  << std::endl << "ObsDataFrameRows print" << std::endl;
+  dfRows.print();
+
+  std::cout  << std::endl << "removeRow 0" << std::endl;
+  dfRowsView->removeRow(0);
+  dfRowsView->appendNewRow(-173., 14, -25.6568, 1910460301, "00012");
+  dfRowsView->print();
+  std::cout  << std::endl << "removeRow2 9" << std::endl;
+  dfRowsView->removeRow(9);
+  dfRowsView->appendNewRow(-173., 14, -25.6568, 1910460301, "00013");
+  dfRowsView->print();
+
+  std::cout  << std::endl << "ObsDataFrameRows print" << std::endl;
+  dfRows.print();
+
+  std::cout  << std::endl << "sort 1" << std::endl;
+  dfRowsView->sort("channel", osdf::consts::eDescending);
+  dfRowsView->print();
+
+  std::cout  << std::endl << "sort 2" << std::endl;
+  dfRowsView->sort("channel", [&](std::shared_ptr<osdf::DatumBase> datumA,
+                                  std::shared_ptr<osdf::DatumBase> datumB) {
+    std::shared_ptr<osdf::Datum<std::int32_t>> datumAInt32 =
+        std::static_pointer_cast<osdf::Datum<std::int32_t>>(datumA);
+    std::shared_ptr<osdf::Datum<std::int32_t>> datumBInt32 =
+        std::static_pointer_cast<osdf::Datum<std::int32_t>>(datumB);
+    return datumAInt32->getDatum() < datumBInt32->getDatum();
+  });
+  dfRowsView->print();
+
+  std::cout  << std::endl << "clear" << std::endl;
+  dfRowsView->clear();
+  dfRowsView->print();
+
+  std::cout  << std::endl << "test slice 1" << std::endl;
+  std::shared_ptr<osdf::ObsDataFrame> test5 =
+      dfRowsView->slice("lat", osdf::consts::eLessThan, -70.);
+  test1->print();
+
+  std::cout  << std::endl << "test slice 2" << std::endl;
+  std::shared_ptr<osdf::ObsDataFrame> test6 =
+      dfRowsView->slice([&](const std::shared_ptr<osdf::DataRow> dataRow) {
+    std::shared_ptr<osdf::DatumBase> datum = dataRow->getColumn(0);
+    std::shared_ptr<osdf::Datum<double>> datumDouble =
+        std::static_pointer_cast<osdf::Datum<double>>(datum);
+    double datumValue = datumDouble->getDatum();
+    return datumValue < -70.;
+  });
+  test2->print();
+
+  std::cout  << std::endl << "ObsDataFrameRows print" << std::endl;
+  dfRows.print();
+
+  std::cout  << std::endl << "ObsDataFrameCols to ObsDataFrameRows" << std::endl;
+  osdf::ObsDataFrameRows dfRows2(dfCols);
+  dfRows2.print();
+
+  std::cout << std::endl << "ObsDataFrameRows to ObsDataFrameCols" << std::endl;
+
+  osdf::ObsDataFrameCols dfCols2(dfRows2);
+
+  // ObsDataFrameCols dfCols2;
+  // dfCols2.configColumns({{"lat", consts::eDouble},
+  //                       {"lon", consts::eDouble},
+  //                       {"StatId", consts::eString},
+  //                       {"channel", consts::eInt32},
+  //                       {"temp", consts::eDouble},
+  //                       {"time", consts::eInt32}});
+  //
+
+  // dfCols2.appendNewRow(-73., 128., "00010", 14, -25.6568, 1710460300);
+  dfCols2.print();
 
   return 0;
 }

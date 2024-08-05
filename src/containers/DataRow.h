@@ -43,6 +43,8 @@ class DataRow {
   /// \param column index
   void remove(const std::int32_t&);
 
+  void clear();
+
   /// \brief print row values
   /// \details This funcion uses the column metadata row to access the column widths.
   /// \param column metadata row

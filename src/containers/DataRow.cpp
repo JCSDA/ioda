@@ -56,6 +56,10 @@ void osdf::DataRow::remove(const std::int32_t& index) {
   dataColumns_.erase(std::next(dataColumns_.begin(), index));
 }
 
+void osdf::DataRow::clear() {
+  dataColumns_.clear();
+}
+
 void osdf::DataRow::print(const ColumnMetadata& columnMetadata,
                           const std::int32_t rowStringSize) const {
   oops::Log::info() << padString(std::to_string(id_), rowStringSize);
