@@ -4,10 +4,12 @@
 # This software is licensed under the terms of the Apache Licence Version 2.0
 # which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
 
-add_library( ioda::ioda ALIAS ioda )
-add_library( ioda::engines ALIAS ioda_engines )
-
-if( TARGET _ioda_python )
-	add_library( ioda::Python ALIAS _ioda_python )
+if( (TARGET ioda) AND NOT (TARGET ioda::ioda) )
+  add_library( ioda::ioda ALIAS ioda )
 endif()
-
+if( (TARGET ioda_engines) AND NOT (TARGET ioda::engines) )
+  add_library( ioda::engines ALIAS ioda_engines )
+endif()
+if( (TARGET _ioda_python) AND NOT (TARGET ioda::Python) )
+  add_library( ioda::Python ALIAS _ioda_python )
+endif()
