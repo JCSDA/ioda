@@ -45,6 +45,11 @@ class ReaderParametersBase : public oops::Parameters {
     /// \details This is true for file backends and false for generator
     /// backends.
     virtual bool isFileBackend() const = 0;
+
+    /// \brief return specified file name
+    /// \details the "obsfile:" specification will be returned for file badckends
+    /// and an empty string will be returned for generator backends
+    virtual std::string getFileName() const = 0;
 };
 
 //----------------------------------------------------------------------------------------

@@ -35,6 +35,8 @@ public:
   oops::RequiredParameter<std::string> scriptFile{"script file", this};
 
   bool isFileBackend() const override { return false; }
+
+  std::string getFileName() const override { return std::string(""); }
 };
 
 // Classes

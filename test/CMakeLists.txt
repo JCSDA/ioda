@@ -130,6 +130,8 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsdtype.yaml
   testinput/iodatest_obsspace.yaml
   testinput/iodatest_obsspace_reader_pool.yaml
+  testinput/iodatest_obsspace_append.yaml
+  testinput/iodatest_obsspace_append_mpi.yaml
   testinput/iodatest_obsspace_datetime.yaml
   testinput/iodatest_obsspace_dist_write.yaml
   testinput/iodatest_obsspace_default_fill_values.yaml
@@ -945,6 +947,69 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_put_db_channels_check
                   ARGS    "testinput/iodatest_obsspace_put_db_channels_check.yaml"
                   LIBS  ioda_test
                   TEST_DEPENDS test_ioda_obsspace_put_db_channels get_ioda_test_data )
+
+###################################################################
+##### The following tests check the ObsSpace::append function. ####
+###################################################################
+
+# this test removes the output files from prior testing
+ecbuild_add_test( TARGET  test_ioda_obsspace_append_clean_files
+                  COMMAND rm
+                  ARGS    "-f"
+                          "testoutput/obsspace_append_1D_out.nc4"
+                          "testoutput/obsspace_append_2D_out.nc4"
+                          "testoutput/obsspace_append_no_obsserror_out.nc4" )
+
+# this test creates the output files, and checks that obs space data members got
+# properly updated
+ecbuild_add_test( TARGET  test_ioda_obsspace_append
+                  SOURCES mains/TestIodaObsSpaceAppend.cc
+                  ARGS    "testinput/iodatest_obsspace_append.yaml"
+                  LIBS  ioda_test
+                  TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_append_clean_files )
+
+# the following tests compare the output files
+ecbuild_add_test( TARGET  test_ioda_obsspace_append_1D_variables_cmp
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking append, 1D variables"
+                          obsspace_append_1D_out.nc4
+                  TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_append )
+
+ecbuild_add_test( TARGET  test_ioda_obsspace_append_2D_variables_cmp
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking append, 2D variables"
+                          obsspace_append_2D_out.nc4
+                  TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_append )
+
+ecbuild_add_test( TARGET  test_ioda_obsspace_append_no_obserrors_variables_cmp
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking append, no ObsError group"
+                          obsspace_append_no_obserror_out.nc4
+                  TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_append )
+
+# the following tests check that append across multiple mpi tasks is working
+ecbuild_add_test( TARGET  test_ioda_obsspace_append_mpi_2
+                  MPI     2
+                  COMMAND test_ioda_obsspace_append
+                  ARGS    "testinput/iodatest_obsspace_append_mpi.yaml"
+                  LIBS  ioda_test
+                  TEST_DEPENDS get_ioda_test_data )
+
+ecbuild_add_test( TARGET  test_ioda_obsspace_append_mpi_4
+                  MPI     4
+                  COMMAND test_ioda_obsspace_append
+                  ARGS    "testinput/iodatest_obsspace_append_mpi.yaml"
+                  LIBS  ioda_test
+                  TEST_DEPENDS get_ioda_test_data )
 
 ###################################################################
 ##### The following tests check the ObsSpace::reduce function. ####

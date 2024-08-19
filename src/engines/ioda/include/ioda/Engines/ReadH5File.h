@@ -37,6 +37,8 @@ class ReadH5FileParameters : public ReaderParametersBase {
     oops::Parameter<std::string> missingFileAction{"missing file action", "error", this};
 
     bool isFileBackend() const override { return true; }
+
+    std::string getFileName() const override { return fileName.value(); }
 };
 
 // Classes

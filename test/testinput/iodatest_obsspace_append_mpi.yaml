@@ -1,0 +1,249 @@
+---
+time window:
+  begin: "2018-01-01T00:00:00Z"
+  end: "2022-01-01T00:00:00Z"
+
+observations:
+
+####################### 1D variables #######################
+
+- obs space:
+    name: "Append 1D variables"
+    simulated variables: ['airTemperature']
+    distribution:
+      name: "RoundRobin"
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: "Data/testinput_tier_1/test_append1/obsspace_append_1D.nc4"
+  test data:
+    after constructor:
+      gnlocs: 7
+      gnlocs outside time window: 0
+      nrecs: 7
+      obs are sorted: false
+    append sequence:
+    - append directory: "Data/testinput_tier_1/test_append2"
+      gnlocs: 12
+      gnlocs outside time window: 0
+      nrecs: 12
+      obs are sorted: false
+    - append directory: "Data/testinput_tier_1/test_append3"
+      gnlocs: 20
+      gnlocs outside time window: 0
+      nrecs: 20
+      obs are sorted: false
+
+    # expected results at end of append sequence
+    mpi size2:
+      rank0:
+        nlocs: 11
+        nrecs: 11
+        gnlocs: 11
+        index: [ 0, 2, 4, 6, 7, 9, 11, 12, 14, 16, 18 ]
+        recnum: [ 0, 2, 4, 6, 7, 9, 11, 12, 14, 16, 18 ]
+        recidx:
+          rec0: [ 0 ]
+          rec2: [ 1 ]
+          rec4: [ 2 ]
+          rec6: [ 3 ]
+          rec7: [ 4 ]
+          rec9: [ 5 ]
+          rec11: [ 6 ]
+          rec12: [ 7 ]
+          rec14: [ 8 ]
+          rec16: [ 9 ]
+          rec18: [ 10 ]
+        patch obs: [ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ]
+      rank1:
+        nlocs: 9
+        nrecs: 9
+        gnlocs: 9
+        index: [ 1, 3, 5, 8, 10, 13, 15, 17, 19 ]
+        recnum: [ 1, 3, 5, 8, 10, 13, 15, 17, 19 ]
+        recidx:
+          rec1: [ 0 ]
+          rec3: [ 1 ]
+          rec5: [ 2 ]
+          rec8: [ 3 ]
+          rec10: [ 4 ]
+          rec13: [ 5 ]
+          rec15: [ 6 ]
+          rec17: [ 7 ]
+          rec19: [ 8 ]
+        patch obs: [ 1, 1, 1, 1, 1, 1, 1, 1, 1 ]
+
+    mpi size4:
+      rank0:
+        nlocs: 6
+        nrecs: 6
+        gnlocs: 6
+        index: [ 0, 4, 7, 11, 12, 16 ]
+        recnum: [ 0, 4, 7, 11, 12, 16 ]
+        recidx:
+          rec0: [ 0 ]
+          rec4: [ 1 ]
+          rec7: [ 2 ]
+          rec11: [ 3 ]
+          rec12: [ 4 ]
+          rec16: [ 5 ]
+        patch obs: [ 1, 1, 1, 1, 1, 1 ]
+      rank1:
+        nlocs: 5
+        nrecs: 5
+        gnlocs: 5
+        index: [ 1, 5, 8, 13, 17 ]
+        recnum: [ 1, 5, 8, 13, 17 ]
+        recidx:
+          rec1: [ 0 ]
+          rec5: [ 1 ]
+          rec8: [ 2 ]
+          rec13: [ 3 ]
+          rec17: [ 4 ]
+        patch obs: [ 1, 1, 1, 1, 1 ]
+      rank2:
+        nlocs: 5
+        nrecs: 5
+        gnlocs: 5
+        index: [ 2, 6, 9, 14, 18 ]
+        recnum: [ 2, 6, 9, 14, 18 ]
+        recidx:
+          rec2: [ 0 ]
+          rec6: [ 1 ]
+          rec9: [ 2 ]
+          rec14: [ 3 ]
+          rec18: [ 4 ]
+        patch obs: [ 1, 1, 1, 1, 1 ]
+      rank3:
+        nlocs: 4
+        nrecs: 4
+        gnlocs: 4
+        index: [ 3, 10, 15, 19 ]
+        recnum: [ 3, 10, 15, 19 ]
+        recidx:
+          rec3: [ 0 ]
+          rec10: [ 1 ]
+          rec15: [ 2 ]
+          rec19: [ 3 ]
+        patch obs: [ 1, 1, 1, 1 ]
+
+- obs space:
+    name: "Append 2D variables"
+    simulated variables: ['brightnessTemperature']
+    channels: 1-5
+    distribution:
+      name: "RoundRobin"
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: "Data/testinput_tier_1/test_append1/obsspace_append_2D.nc4"
+  test data:
+    after constructor:
+      gnlocs: 7
+      gnlocs outside time window: 0
+      nrecs: 7
+      obs are sorted: false
+    append sequence:
+    - append directory: "Data/testinput_tier_1/test_append2"
+      gnlocs: 12
+      gnlocs outside time window: 0
+      nrecs: 12
+      obs are sorted: false
+    - append directory: "Data/testinput_tier_1/test_append3"
+      gnlocs: 20
+      gnlocs outside time window: 0
+      nrecs: 20
+      obs are sorted: false
+
+    # expected results at end of append sequence
+    mpi size2:
+      rank0:
+        nlocs: 11
+        nrecs: 11
+        gnlocs: 11
+        index: [ 0, 2, 4, 6, 7, 9, 11, 12, 14, 16, 18 ]
+        recnum: [ 0, 2, 4, 6, 7, 9, 11, 12, 14, 16, 18 ]
+        recidx:
+          rec0: [ 0 ]
+          rec2: [ 1 ]
+          rec4: [ 2 ]
+          rec6: [ 3 ]
+          rec7: [ 4 ]
+          rec9: [ 5 ]
+          rec11: [ 6 ]
+          rec12: [ 7 ]
+          rec14: [ 8 ]
+          rec16: [ 9 ]
+          rec18: [ 10 ]
+        patch obs: [ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ]
+      rank1:
+        nlocs: 9
+        nrecs: 9
+        gnlocs: 9
+        index: [ 1, 3, 5, 8, 10, 13, 15, 17, 19 ]
+        recnum: [ 1, 3, 5, 8, 10, 13, 15, 17, 19 ]
+        recidx:
+          rec1: [ 0 ]
+          rec3: [ 1 ]
+          rec5: [ 2 ]
+          rec8: [ 3 ]
+          rec10: [ 4 ]
+          rec13: [ 5 ]
+          rec15: [ 6 ]
+          rec17: [ 7 ]
+          rec19: [ 8 ]
+        patch obs: [ 1, 1, 1, 1, 1, 1, 1, 1, 1 ]
+
+    mpi size4:
+      rank0:
+        nlocs: 6
+        nrecs: 6
+        gnlocs: 6
+        index: [ 0, 4, 7, 11, 12, 16 ]
+        recnum: [ 0, 4, 7, 11, 12, 16 ]
+        recidx:
+          rec0: [ 0 ]
+          rec4: [ 1 ]
+          rec7: [ 2 ]
+          rec11: [ 3 ]
+          rec12: [ 4 ]
+          rec16: [ 5 ]
+        patch obs: [ 1, 1, 1, 1, 1, 1 ]
+      rank1:
+        nlocs: 5
+        nrecs: 5
+        gnlocs: 5
+        index: [ 1, 5, 8, 13, 17 ]
+        recnum: [ 1, 5, 8, 13, 17 ]
+        recidx:
+          rec1: [ 0 ]
+          rec5: [ 1 ]
+          rec8: [ 2 ]
+          rec13: [ 3 ]
+          rec17: [ 4 ]
+        patch obs: [ 1, 1, 1, 1, 1 ]
+      rank2:
+        nlocs: 5
+        nrecs: 5
+        gnlocs: 5
+        index: [ 2, 6, 9, 14, 18 ]
+        recnum: [ 2, 6, 9, 14, 18 ]
+        recidx:
+          rec2: [ 0 ]
+          rec6: [ 1 ]
+          rec9: [ 2 ]
+          rec14: [ 3 ]
+          rec18: [ 4 ]
+        patch obs: [ 1, 1, 1, 1, 1 ]
+      rank3:
+        nlocs: 4
+        nrecs: 4
+        gnlocs: 4
+        index: [ 3, 10, 15, 19 ]
+        recnum: [ 3, 10, 15, 19 ]
+        recidx:
+          rec3: [ 0 ]
+          rec10: [ 1 ]
+          rec15: [ 2 ]
+          rec19: [ 3 ]
+        patch obs: [ 1, 1, 1, 1 ]

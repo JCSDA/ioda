@@ -47,6 +47,8 @@ public:
     cacheCategories{"cache categories", this};
 
   bool isFileBackend() const override { return true; }
+
+  std::string getFileName() const override { return fileName.value(); }
 };
 
 // Classes

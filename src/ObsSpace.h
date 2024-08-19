@@ -514,6 +514,13 @@ namespace ioda {
         /// @name Resizing functions
         /// @{
 
+        /// \brief Append new data to an existing ObsSpace
+        /// \details This function is given a directory path where it is expected that a
+        /// new file (matching the original file name used by the ObsSpace constructor)
+        /// exists that contains the obs data to be appended.
+        /// \param appendDir directory holding the file containing the new obs data
+        void append(const std::string & appendDir);
+
         /// \brief Reduce obs space given a vector of int showing which values to remove
         /// \details This function will use its input arguments to remove unwanted
         /// values (along the Location dimension) from the obs space. It will also call
@@ -688,6 +695,13 @@ namespace ioda {
         /// in the ObsError or DerivedObsError group, create one, fill it with missing values
         /// and add it to the DerivedObsError group.
         void createMissingObsErrors();
+
+        /// \brief For each simulated variable that has a derived error
+        /// (DerivedObsError group), fill the newly appended locations with
+        /// missing values
+        /// \param obsSourceStats struct holding counts, etc. that describe the contents
+        /// of the obs source
+        void appendMissingObsErrors(ObsSourceStats & obsSourceStats);
 
         /// \brief build the recidx_ data member
         /// \details Build the recidx_ data member using the indx_ and recnums_

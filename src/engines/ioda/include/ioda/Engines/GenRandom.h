@@ -65,6 +65,8 @@ class GenRandomParameters : public ReaderParametersBase {
     oops::Parameter<std::vector<float>> obsErrors{"obs errors", { }, this};
 
     bool isFileBackend() const override { return false; }
+
+    std::string getFileName() const override { return std::string(""); }
 };
 
 // Classes

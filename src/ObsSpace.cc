@@ -642,6 +642,57 @@ std::vector<std::size_t> ObsSpace::recidx_all_recnums() const {
 }
 
 // -----------------------------------------------------------------------------
+void ObsSpace::append(const std::string & appendDir) {
+  // For now, only allow append to run on non-overlapping distributions
+  if (!(dist_->isNonoverlapping())) {
+    std::string errMsg = std::string("ObsSpace::append: Distribution '") + dist_->name() +
+                         std::string("' is not yet supported.\n") +
+                         std::string("    Must use a non-overlapping distribution for now");
+    throw Exception(errMsg, ioda_Here());
+  }
+  if (obs_params_.top_level_.obsDataIn.value().isFileBackend()) {
+    // Grab the file name from the ObsSpace parameters and combine it with the appendDir
+    std::string origFileName = obs_params_.top_level_.obsDataIn.value().engine.value().
+                                           engineParameters.value().getFileName();
+    if (origFileName == "") {
+      std::string errMsg =
+          std::string("ObsSpace::append: file backend is missing a file name specification");
+      throw Exception(errMsg, ioda_Here());
+    }
+    std::string newFileName = appendDir;
+    auto pos = origFileName.find_last_of("/");
+    if (pos == std::string::npos) {
+      newFileName += "/" + origFileName;
+    } else {
+      newFileName += "/" + origFileName.substr(pos + 1);
+    }
+    oops::Log::info() << this->obsname() << ": Appending obs data: " << newFileName << std::endl;
+
+    // Load data into a temporary ObsGroup object and append that to the obs_group_
+    // data member.
+    eckit::LocalConfiguration obsDataInConfig;
+    obs_params_.top_level_.obsDataIn.value().serialize(obsDataInConfig);
+    obsDataInConfig.set("engine.obsfile", newFileName);
+    ObsSourceStats obsSourceStats;
+    ObsGroup tempObsGroup;
+    load(obsDataInConfig, tempObsGroup, obsSourceStats);
+    appendObsGroup(tempObsGroup, obsSourceStats);
+
+    // Rebuild Location values, and ObsSpace data members dist_ (rebuild patch locations)
+    // and recidx_
+    assignLocationValues();
+    dist_->setNumberLocations(this->nlocs());
+    dist_->computePatchLocs();
+    buildRecIdx();
+    appendMissingObsErrors(obsSourceStats);
+  } else {
+    oops::Log::info() << "WARNING: ObsSpace::append is being used with a generator "
+                      << "backend constructed ObsSpace - skipping the append action"
+                      << std::endl;
+  }
+}
+
+// -----------------------------------------------------------------------------
 void ObsSpace::reduce(const ioda::CompareAction compareAction, const int threshold,
                       const std::vector<int> & checkValues) {
     ASSERT(checkValues.size() == this->nlocs());
@@ -1454,6 +1505,28 @@ void ObsSpace::createMissingObsErrors() {
       if (obserror.empty())
         obserror.assign(nlocs(), util::missingValue<float>());
       put_db("DerivedObsError", obsvars_[i], obserror);
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+void ObsSpace::appendMissingObsErrors(ObsSourceStats & obsSourceStats) {
+  // First check if there are any of the simulated variables in the DerivedObsError
+  // group. If so read in the variable and assign missing values to the locations
+  // that were just appended.
+  for (size_t i = 0; i < obsvars_.size(); ++i) {
+    // Third argument to has() is skipDerived. If true don't look in the
+    // given group name with "Derived" prepended to the name (in this case
+    // don't look for "DerivedDerivedObsError").
+    if (has("DerivedObsError", obsvars_[i], true)) {
+      std::vector<float> obsError(nlocs());
+      get_db("DerivedObsError", obsvars_[i], obsError);
+      std::size_t indx = obsError.size() - obsSourceStats.nlocs;
+      for (std::size_t i = 0; i < obsSourceStats.nlocs; ++i) {
+        obsError[indx] = util::missingValue<float>();
+        ++indx;
+      }
+      put_db("DerivedObsError", obsvars_[i], obsError);
     }
   }
 }

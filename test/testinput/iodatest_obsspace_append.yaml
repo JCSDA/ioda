@@ -1,0 +1,222 @@
+---
+time window:
+  begin: "2018-01-01T00:00:00Z"
+  end: "2022-01-01T00:00:00Z"
+
+observations:
+
+- obs space:
+    name: "Append 1D variables"
+    simulated variables: ['airTemperature']
+    distribution:
+      name: "RoundRobin"
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: "Data/testinput_tier_1/test_append1/obsspace_append_1D.nc4"
+    obsdataout:
+      engine:
+        type: H5File
+        obsfile: "testoutput/obsspace_append_1D_out.nc4"
+  test data:
+    # These input files contain ObsError variables so there is
+    # no need to work with DerivedObsError, thus no need to update
+    # the missing values that are placed into DerivedObsError
+    after constructor:
+      gnlocs: 7
+      gnlocs outside time window: 0
+      nrecs: 7
+      obs are sorted: false
+      update derived obs error: [ ]
+    append sequence:
+    - append directory: "Data/testinput_tier_1/test_append2"
+      gnlocs: 12
+      gnlocs outside time window: 0
+      nrecs: 12
+      obs are sorted: false
+      update derived obs error: [ ]
+    - append directory: "Data/testinput_tier_1/test_append3"
+      gnlocs: 20
+      gnlocs outside time window: 0
+      nrecs: 20
+      obs are sorted: false
+      update derived obs error: [ ]
+
+    # expected results at end of append sequence
+    mpi size1:
+      rank0:
+        nlocs: 20
+        nrecs: 20
+        gnlocs: 20
+        index: [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19 ]
+        recnum: [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19 ]
+        recidx:
+          rec0: [ 0 ]
+          rec1: [ 1 ]
+          rec2: [ 2 ]
+          rec3: [ 3 ]
+          rec4: [ 4 ]
+          rec5: [ 5 ]
+          rec6: [ 6 ]
+          rec7: [ 7 ]
+          rec8: [ 8 ]
+          rec9: [ 9 ]
+          rec10: [ 10 ]
+          rec11: [ 11 ]
+          rec12: [ 12 ]
+          rec13: [ 13 ]
+          rec14: [ 14 ]
+          rec15: [ 15 ]
+          rec16: [ 16 ]
+          rec17: [ 17 ]
+          rec18: [ 18 ]
+          rec19: [ 19 ]
+        patch obs: [ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ]
+
+- obs space:
+    name: "Append 2D variables"
+    simulated variables: ['brightnessTemperature']
+    channels: 1-5
+    distribution:
+      name: "RoundRobin"
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: "Data/testinput_tier_1/test_append1/obsspace_append_2D.nc4"
+    obsdataout:
+      engine:
+        type: H5File
+        obsfile: "testoutput/obsspace_append_2D_out.nc4"
+  test data:
+    # These input files contain ObsError variables so there is
+    # no need to work with DerivedObsError, thus no need to update
+    # the missing values that are placed into DerivedObsError
+    after constructor:
+      gnlocs: 7
+      gnlocs outside time window: 0
+      nrecs: 7
+      obs are sorted: false
+      update derived obs error: [ ]
+    append sequence:
+    - append directory: "Data/testinput_tier_1/test_append2"
+      gnlocs: 12
+      gnlocs outside time window: 0
+      nrecs: 12
+      obs are sorted: false
+      update derived obs error: [ ]
+    - append directory: "Data/testinput_tier_1/test_append3"
+      gnlocs: 20
+      gnlocs outside time window: 0
+      nrecs: 20
+      obs are sorted: false
+      update derived obs error: [ ]
+
+    # expected results at end of append sequence
+    mpi size1:
+      rank0:
+        nlocs: 20
+        nrecs: 20
+        gnlocs: 20
+        index: [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19 ]
+        recnum: [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19 ]
+        recidx:
+          rec0: [ 0 ]
+          rec1: [ 1 ]
+          rec2: [ 2 ]
+          rec3: [ 3 ]
+          rec4: [ 4 ]
+          rec5: [ 5 ]
+          rec6: [ 6 ]
+          rec7: [ 7 ]
+          rec8: [ 8 ]
+          rec9: [ 9 ]
+          rec10: [ 10 ]
+          rec11: [ 11 ]
+          rec12: [ 12 ]
+          rec13: [ 13 ]
+          rec14: [ 14 ]
+          rec15: [ 15 ]
+          rec16: [ 16 ]
+          rec17: [ 17 ]
+          rec18: [ 18 ]
+          rec19: [ 19 ]
+        patch obs: [ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ]
+
+- obs space:
+    name: "Append no ObsError"
+    simulated variables: ['airTemperature']
+    distribution:
+      name: "RoundRobin"
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: "Data/testinput_tier_1/test_append1/obsspace_append_no_obserror.nc4"
+    obsdataout:
+      engine:
+        type: H5File
+        obsfile: "testoutput/obsspace_append_no_obserror_out.nc4"
+  test data:
+    # These files do not contain variables in the ObsError group, thus
+    # the DerivedObsError is being used. Emulate the update of the
+    # DerivedObsError after each of the append calls (and before the
+    # next append calll). The values in the "update derived obs error"
+    # specs are used for this purpose.
+    after constructor:
+      gnlocs: 7
+      gnlocs outside time window: 0
+      nrecs: 7
+      obs are sorted: false
+      update derived obs error:
+        - group: DerivedObsError
+          name: airTemperature
+          values: [ 0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5 ]
+    append sequence:
+    - append directory: "Data/testinput_tier_1/test_append2"
+      gnlocs: 12
+      gnlocs outside time window: 0
+      nrecs: 12
+      obs are sorted: false
+      update derived obs error:
+        - group: DerivedObsError
+          name: airTemperature
+          values: [ 7.5, 8.5, 9.5, 10.5, 11.5 ]
+    - append directory: "Data/testinput_tier_1/test_append3"
+      gnlocs: 20
+      gnlocs outside time window: 0
+      nrecs: 20
+      obs are sorted: false
+      update derived obs error:
+        - group: DerivedObsError
+          name: airTemperature
+          values: [ 12.5, 13.5, 14.5, 15.5, 16.5, 17.5, 18.5, 19.5 ]
+
+    # expected results at end of append sequence
+    mpi size1:
+      rank0:
+        nlocs: 20
+        nrecs: 20
+        gnlocs: 20
+        index: [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19 ]
+        recnum: [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19 ]
+        recidx:
+          rec0: [ 0 ]
+          rec1: [ 1 ]
+          rec2: [ 2 ]
+          rec3: [ 3 ]
+          rec4: [ 4 ]
+          rec5: [ 5 ]
+          rec6: [ 6 ]
+          rec7: [ 7 ]
+          rec8: [ 8 ]
+          rec9: [ 9 ]
+          rec10: [ 10 ]
+          rec11: [ 11 ]
+          rec12: [ 12 ]
+          rec13: [ 13 ]
+          rec14: [ 14 ]
+          rec15: [ 15 ]
+          rec16: [ 16 ]
+          rec17: [ 17 ]
+          rec18: [ 18 ]
+          rec19: [ 19 ]
+        patch obs: [ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ]
