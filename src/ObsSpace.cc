@@ -695,6 +695,13 @@ void ObsSpace::append(const std::string & appendDir) {
 // -----------------------------------------------------------------------------
 void ObsSpace::reduce(const ioda::CompareAction compareAction, const int threshold,
                       const std::vector<int> & checkValues) {
+    // For now, only allow append to run on non-overlapping distributions
+    if (!(dist_->isNonoverlapping())) {
+        std::string errMsg = std::string("ObsSpace::reduce: Distribution '") + dist_->name() +
+                             std::string("' is not yet supported.\n") +
+                             std::string("    Must use a non-overlapping distribution for now");
+        throw Exception(errMsg, ioda_Here());
+    }
     ASSERT(checkValues.size() == this->nlocs());
     // Transform the reduce specs into a boolean vector where true means keep,
     // and false means remove.
