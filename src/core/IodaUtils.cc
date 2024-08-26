@@ -325,6 +325,17 @@ std::string convertNewVnameToOldVname(const std::string & varName) {
     }
     return oldFormat;
 }
+// -----------------------------------------------------------------------------
+bool checkFileExists(const std::string & filePathToCheck) {
+  bool fileExists;
+  std::ifstream filePath(filePathToCheck);
+  if (filePath) {
+    fileExists = true;
+  } else {
+    fileExists = false;
+  }
+  return fileExists;
+}
 
 // -----------------------------------------------------------------------------
 }  // namespace ioda

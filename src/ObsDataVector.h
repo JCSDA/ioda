@@ -93,6 +93,7 @@ class ObsDataVector: public ObsSpaceAssociated,
   const oops::ObsVariables & varnames() const {return obsvars_;}
 
   void reduce(const std::vector<bool> & keepLocs) override;
+  void append() override;
 
  private:
   void print(std::ostream &) const override;
@@ -309,6 +310,11 @@ void ObsDataVector<DATATYPE>::reduce(const std::vector<bool> & keepLocs) {
     row = std::move(masked_row);
   }
   nlocs_ = nlocs_new;
+}
+// -----------------------------------------------------------------------------
+template <typename DATATYPE>
+void ObsDataVector<DATATYPE>::append() {
+  throw eckit::NotImplemented("ObsDataVector::append() is not implemented.", Here());
 }
 
 // -----------------------------------------------------------------------------

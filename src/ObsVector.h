@@ -122,6 +122,7 @@ class ObsVector : public ObsSpaceAssociated,
   void read(const std::string &);
 
   void reduce(const std::vector<bool> & keepLocs) override;
+  void append() override;
 
  private:
   void print(std::ostream &) const override;

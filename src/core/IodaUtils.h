@@ -8,6 +8,7 @@
 #ifndef CORE_IODAUTILS_H_
 #define CORE_IODAUTILS_H_
 
+#include <fstream>
 #include <map>
 #include <string>
 #include <typeinfo>
@@ -117,6 +118,10 @@ namespace ioda {
   /// \brief convert the new format varible name to the old format
   /// \param varName new format variable name
   std::string convertNewVnameToOldVname(const std::string & varName);
+
+  /// \brief check if a file exists and return true if it does
+  /// \param filePathToCheck
+  bool checkFileExists(const std::string & filePathToCheck);
 
   // -----------------------------------------------------------------------------
   /*!

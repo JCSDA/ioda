@@ -410,6 +410,10 @@ void ObsVector::reduce(const std::vector<bool> & keepLocs) {
   nlocs_ = values_.size() / nvars_;
 }
 // -----------------------------------------------------------------------------
+void ObsVector::append() {
+  throw eckit::NotImplemented("ObsVector::append() is not implemented.", Here());
+}
+// -----------------------------------------------------------------------------
 void ObsVector::print(std::ostream & os) const {
   double zmin = std::numeric_limits<double>::max();
   double zmax = std::numeric_limits<double>::lowest();

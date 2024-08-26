@@ -650,46 +650,61 @@ void ObsSpace::append(const std::string & appendDir) {
                          std::string("    Must use a non-overlapping distribution for now");
     throw Exception(errMsg, ioda_Here());
   }
-  if (obs_params_.top_level_.obsDataIn.value().isFileBackend()) {
-    // Grab the file name from the ObsSpace parameters and combine it with the appendDir
-    std::string origFileName = obs_params_.top_level_.obsDataIn.value().engine.value().
-                                           engineParameters.value().getFileName();
-    if (origFileName == "") {
-      std::string errMsg =
-          std::string("ObsSpace::append: file backend is missing a file name specification");
-      throw Exception(errMsg, ioda_Here());
-    }
-    std::string newFileName = appendDir;
-    auto pos = origFileName.find_last_of("/");
-    if (pos == std::string::npos) {
-      newFileName += "/" + origFileName;
+    if (obs_params_.top_level_.obsDataIn.value().isFileBackend()) {
+        // Grab the file name from the ObsSpace parameters and combine it with the appendDir
+        std::string origFileName = obs_params_.top_level_.obsDataIn.value().engine.value().
+                                            engineParameters.value().getFileName();
+        if (origFileName == "") {
+        std::string errMsg =
+            std::string("ObsSpace::append: file backend is missing a file name specification");
+        throw Exception(errMsg, ioda_Here());
+        }
+        std::string newFileName = appendDir;
+        auto pos = origFileName.find_last_of("/");
+        if (pos == std::string::npos) {
+        newFileName += "/" + origFileName;
+        } else {
+        newFileName += "/" + origFileName.substr(pos + 1);
+        }
+        if (checkFileExists(newFileName)) {
+            oops::Log::info() << this->obsname() << ": Appending obs data: "
+                                                    << newFileName << std::endl;
+
+            // Load data into a temporary ObsGroup object and append that to the obs_group_
+            // data member.
+            eckit::LocalConfiguration obsDataInConfig;
+            obs_params_.top_level_.obsDataIn.value().serialize(obsDataInConfig);
+            obsDataInConfig.set("engine.obsfile", newFileName);
+            ObsSourceStats obsSourceStats;
+            ObsGroup tempObsGroup;
+            load(obsDataInConfig, tempObsGroup, obsSourceStats);
+            appendObsGroup(tempObsGroup, obsSourceStats);
+
+            // Rebuild Location values, and ObsSpace data members dist_ (rebuild patch locations)
+            // and recidx_
+            assignLocationValues();
+            dist_->setNumberLocations(this->nlocs());
+            dist_->computePatchLocs();
+            buildRecIdx();
+            appendMissingObsErrors(obsSourceStats);
+            this->append();
+        } else {
+            oops::Log::info() << this->obsname() << ":WARNING no new obs found,"
+                                << "Nothing Appended For: "<< newFileName << std::endl;
+        }
     } else {
-      newFileName += "/" + origFileName.substr(pos + 1);
+        oops::Log::info() << "WARNING: ObsSpace::append is being used with a generator "
+                        << "backend constructed ObsSpace - skipping the append action"
+                        << std::endl;
     }
-    oops::Log::info() << this->obsname() << ": Appending obs data: " << newFileName << std::endl;
+}
 
-    // Load data into a temporary ObsGroup object and append that to the obs_group_
-    // data member.
-    eckit::LocalConfiguration obsDataInConfig;
-    obs_params_.top_level_.obsDataIn.value().serialize(obsDataInConfig);
-    obsDataInConfig.set("engine.obsfile", newFileName);
-    ObsSourceStats obsSourceStats;
-    ObsGroup tempObsGroup;
-    load(obsDataInConfig, tempObsGroup, obsSourceStats);
-    appendObsGroup(tempObsGroup, obsSourceStats);
 
-    // Rebuild Location values, and ObsSpace data members dist_ (rebuild patch locations)
-    // and recidx_
-    assignLocationValues();
-    dist_->setNumberLocations(this->nlocs());
-    dist_->computePatchLocs();
-    buildRecIdx();
-    appendMissingObsErrors(obsSourceStats);
-  } else {
-    oops::Log::info() << "WARNING: ObsSpace::append is being used with a generator "
-                      << "backend constructed ObsSpace - skipping the append action"
-                      << std::endl;
-  }
+void ObsSpace::append() {
+     // Call append on any persisting data members
+    for (auto & data : obs_space_associated_) {
+      data.get().append();
+    }
 }
 
 // -----------------------------------------------------------------------------

@@ -176,13 +176,14 @@ namespace ioda {
     };
 
     /// \brief Base class for data structures associated with ObsSpace.
-    /// \details The  associated data structure change their state (e.g. reduce)
+    /// \details The  associated data structure change their state (e.g. reduce or append)
     /// when ObsSpace changes its state. ObsSpaceAssociated is equivalent to Observer
     /// in the Observer pattern (don't confuse with oops::Observer!)
     class ObsSpaceAssociated {
      public:
       virtual ~ObsSpaceAssociated() = default;
       virtual void reduce(const std::vector<bool> & keepLocs) = 0;
+      virtual void append() = 0;
     };
 
     /// \brief Observation data class for IODA
@@ -521,6 +522,10 @@ namespace ioda {
         /// \param appendDir directory holding the file containing the new obs data
         void append(const std::string & appendDir);
 
+        /// \brief Observer pattern for the append function, currently only produces
+        /// a warrning that an ObsVector or ObsDataVector persisted when append was called
+        void append();
+
         /// \brief Reduce obs space given a vector of int showing which values to remove
         /// \details This function will use its input arguments to remove unwanted
         /// values (along the Location dimension) from the obs space. It will also call
@@ -543,7 +548,7 @@ namespace ioda {
         void reduce(const std::vector<bool> & keepLocs);
 
         /// \brief Registers a data structure associated with the current ObsSpace.
-        /// \details The associated data structures change their state (e.g. reduce) when
+        /// \details The associated data structures change their state (e.g. reduce or append) when
         /// ObsSpace changes its state.
         void attach(ObsSpaceAssociated & data) {
           obs_space_associated_.push_back(std::ref(data));
