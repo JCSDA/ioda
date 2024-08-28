@@ -2769,6 +2769,18 @@ if (odc_FOUND)
                             test-RadarDopplerWind.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
+  ecbuild_add_test( TARGET  test_ioda-convert_radar_reflectivity_odc
+                    TYPE    SCRIPT
+                    COMMAND bash
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                            hdf5
+                            "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
+                            RadarReflectivity
+                            Data/testinput_tier_1/radar_reflectivity.odb
+                            ../share/test/testinput/odb_default_name_map.yaml ../share/test/testinput/iodatest_odb_radar_reflectivity.yaml"
+                            test-RadarReflectivity.hdf
+                    TEST_DEPENDS get_ioda_test_data )
+
   ecbuild_add_test( TARGET  test_ioda-convert_oceansound_odc
                     TYPE    SCRIPT
                     COMMAND bash

@@ -43,6 +43,7 @@ set(
   ioda/yaml/iodatest_odb_oceansound.yaml
   ioda/yaml/iodatest_odb_oceansound_truncate_profiles.yaml
   ioda/yaml/iodatest_odb_radar_doppler_wind.yaml
+  ioda/yaml/iodatest_odb_radar_reflectivity.yaml
   ioda/yaml/iodatest_odb_satsst.yaml
   ioda/yaml/iodatest_odb_sattcwv.yaml
   ioda/yaml/iodatest_odb_satwind.yaml
