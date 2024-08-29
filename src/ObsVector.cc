@@ -411,7 +411,10 @@ void ObsVector::reduce(const std::vector<bool> & keepLocs) {
 }
 // -----------------------------------------------------------------------------
 void ObsVector::append() {
-  throw eckit::NotImplemented("ObsVector::append() is not implemented.", Here());
+  const size_t newnlocs = obsdb_.nlocs();
+  values_.reserve(newnlocs);
+  values_.insert(values_.end(), (newnlocs - nlocs_) * nvars_, missing_);
+  nlocs_ = newnlocs;
 }
 // -----------------------------------------------------------------------------
 void ObsVector::print(std::ostream & os) const {

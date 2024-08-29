@@ -185,6 +185,10 @@ void testAppend() {
     oops::Log::debug() << "Test data configuration: " << testConfig << std::endl;
 
     ObsSpace &odb = Test_::obspace(jj);
+    ioda::ObsVector vec(Test_::obspace(jj), "ObsValue");
+    std::vector<double> vec_data = vec.data();    // all variables
+    ioda::ObsDataVector<double> obsvec(Test_::obspace(jj), vec.varnames(), "ObsValue");
+    std::vector<double> obsvec_data = obsvec[0];  // just one variable
 
     // First, update the variables in derived obs error group (if any)
     updateDerivedObsError(odb, testConfig, "after constructor.update derived obs error");
@@ -273,6 +277,21 @@ void testAppend() {
     oops::Log::debug() << "patchObsInt, expectedPatchObs: " << patchObsInt << ", "
                        << expectedPatchObs << std::endl;
     EXPECT(patchObsInt == expectedPatchObs);
+
+    const size_t expectedNlocs = testConfig.getInt(MyPath + ".nlocs");
+    EXPECT_EQUAL(vec.nlocs(), expectedNlocs);
+    EXPECT_EQUAL(obsvec.nlocs(), expectedNlocs);
+
+    std::vector<double> vec_data_appended = vec.data();
+    std::vector<double> obsvec_data_appended = obsvec[0];
+    EXPECT(std::equal(vec_data.begin(), vec_data.end(), vec_data_appended.begin()));
+    EXPECT(std::equal(obsvec_data.begin(), obsvec_data.end(), obsvec_data_appended.begin()));
+    double missing = util::missingValue<double>();
+    EXPECT(std::all_of(vec_data_appended.begin() + vec_data.size(), vec_data_appended.end(),
+                       [missing](double elem) {return elem == missing;}));
+    EXPECT(std::all_of(obsvec_data_appended.begin() + obsvec_data.size(),
+                       obsvec_data_appended.end(),
+                       [missing](double elem) {return elem == missing;}));
   }
 }
 

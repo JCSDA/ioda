@@ -687,7 +687,9 @@ void ObsSpace::append(const std::string & appendDir) {
             dist_->computePatchLocs();
             buildRecIdx();
             appendMissingObsErrors(obsSourceStats);
-            this->append();
+            for (auto & data : obs_space_associated_) {
+              data.get().append();
+            }
         } else {
             oops::Log::info() << this->obsname() << ":WARNING no new obs found,"
                                 << "Nothing Appended For: "<< newFileName << std::endl;
@@ -696,14 +698,6 @@ void ObsSpace::append(const std::string & appendDir) {
         oops::Log::info() << "WARNING: ObsSpace::append is being used with a generator "
                         << "backend constructed ObsSpace - skipping the append action"
                         << std::endl;
-    }
-}
-
-
-void ObsSpace::append() {
-     // Call append on any persisting data members
-    for (auto & data : obs_space_associated_) {
-      data.get().append();
     }
 }
 

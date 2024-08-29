@@ -522,10 +522,6 @@ namespace ioda {
         /// \param appendDir directory holding the file containing the new obs data
         void append(const std::string & appendDir);
 
-        /// \brief Observer pattern for the append function, currently only produces
-        /// a warrning that an ObsVector or ObsDataVector persisted when append was called
-        void append();
-
         /// \brief Reduce obs space given a vector of int showing which values to remove
         /// \details This function will use its input arguments to remove unwanted
         /// values (along the Location dimension) from the obs space. It will also call

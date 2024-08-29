@@ -314,7 +314,12 @@ void ObsDataVector<DATATYPE>::reduce(const std::vector<bool> & keepLocs) {
 // -----------------------------------------------------------------------------
 template <typename DATATYPE>
 void ObsDataVector<DATATYPE>::append() {
-  throw eckit::NotImplemented("ObsDataVector::append() is not implemented.", Here());
+  const size_t newnlocs = obsdb_.nlocs();
+  for (auto & row : rows_) {
+    row.reserve(newnlocs);
+    row.insert(row.end(), newnlocs - nlocs_, missing_);
+  }
+  nlocs_ = newnlocs;
 }
 
 // -----------------------------------------------------------------------------
