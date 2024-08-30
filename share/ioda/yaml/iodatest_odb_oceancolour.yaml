@@ -1,5 +1,6 @@
 where:
   varno: [288,289]
+  query: initial_obsvalue is not null
 variables:
 - name: receipt_time
 - name: receipt_date
