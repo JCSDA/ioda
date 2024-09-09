@@ -21,7 +21,7 @@
 #include "ioda/containers/ColumnMetadata.h"
 #include "ioda/containers/Constants.h"
 #include "ioda/containers/Datum.h"
-#include "ioda/containers/ObsDataFrameRows.h"
+#include "ioda/containers/FrameRows.h"
 #include "ioda/Exception.h"
 
 #include "oops/runs/Test.h"
@@ -44,7 +44,7 @@ void testRowPriority() {
   // Instantiate a row priority data frame, and fill it in by appending
   // column data from the test config. After the column is appended, check
   // to see if you get the same data after reading the column
-  osdf::ObsDataFrameRows dfRow;
+  osdf::FrameRows dfRow;
 
   for (std::size_t i = 0; i < configColumnData.size(); ++i) {
     std::string name = configColumnData[i].getString("name");

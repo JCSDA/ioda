@@ -5,39 +5,33 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#ifndef DATABASE_H
-#define DATABASE_H
+#ifndef CONTAINERS_DATABASE_H_
+#define CONTAINERS_DATABASE_H_
 
 #include <cstdint>
 #include <string>
-#include <vector>
 
 namespace osdf {
 class DataBase {
  public:
-  DataBase(const std::int8_t type, const std::int64_t size) : type_(type), size_(size) {}
+  explicit DataBase(const std::int8_t type) : type_(type) {}
   virtual ~DataBase() = default;
 
-  DataBase()                            = delete;  //!< Deleted default constructor
-  DataBase(DataBase&&)                  = delete;  //!< Deleted move constructor
-  DataBase(const DataBase&)             = delete;  //!< Deleted copy constructor
-  DataBase& operator=(DataBase&&)       = delete;  //!< Deleted move assignment
-  DataBase& operator=(const DataBase&)  = delete;  //!< Deleted copy assignment
+  DataBase()                           = delete;
+  DataBase(DataBase&&)                 = delete;
+  DataBase(const DataBase&)            = delete;
+  DataBase& operator=(DataBase&&)      = delete;
+  DataBase& operator=(const DataBase&) = delete;
 
-  virtual const std::string getDatumStr(const std::int64_t) const = 0;
+  virtual const std::string getValueStr(const std::int64_t) const = 0;
 
   const std::int8_t getType() const {
     return type_;
   }
 
-  const std::int64_t getSize() const {
-    return size_;
-  }
-
  protected:
   std::int8_t type_;
-  std::int64_t size_;
 };
 }  // namespace osdf
 
-#endif  // DATABASE_H
+#endif  // CONTAINERS_DATABASE_H_

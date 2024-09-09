@@ -9,47 +9,17 @@
 #include <string>
 #include <vector>
 
+#include "oops/util/Logger.h"
+
 #include "ioda/containers/ColumnMetadatum.h"
 #include "ioda/containers/Constants.h"
-#include "ioda/containers/ObsDataFrameCols.h"
-#include "ioda/containers/ObsDataFrameRows.h"
-#include "ioda/containers/ObsDataViewRows.h"
+#include "ioda/containers/FrameCols.h"
+#include "ioda/containers/FrameRows.h"
+#include "ioda/containers/ViewRows.h"
 
 #include "ioda/containers/Datum.h"
 
-#include "oops/util/Logger.h"
-
 std::int32_t main() {
-  /// Row Priority /////////////////////////////////////////////////////////////////////////////////
-  oops::Log::info()<< std::endl << "### ObsDataFrameRows ###############"
-                                   "####################################" << std::endl;
-  osdf::ObsDataFrameRows dfRows;
-
-  // dfRows.addColumnMetadata({{"lat", consts::eDouble},
-  //                          {"lon", consts::eDouble},
-  //                          {"StatId", consts::eString},
-  //                          {"channel", consts::eInt32},
-  //                          {"temp", consts::eDouble},
-  //                          {"time", consts::eInt32}});
-
-  // dfRows.addColumnMetadata({ColumnMetadatum("lat", consts::eDouble),
-  //                          ColumnMetadatum("lon", 1),
-  //                          ColumnMetadatum("StatId", 1),
-  //                          ColumnMetadatum("channel", 1),
-  //                          ColumnMetadatum("temp", 1)});
-
-  // std::vector<ColumnMetadatum> cols;
-  // cols.push_back(ColumnMetadatum("lat", consts::eDouble));
-  // cols.push_back(ColumnMetadatum("lon", consts::eDouble));
-  // cols.push_back(ColumnMetadatum("StatId", consts::eString));
-  // cols.push_back(ColumnMetadatum("channel", consts::eInt32));
-  // cols.push_back(ColumnMetadatum("temp", consts::eDouble));
-  // cols.push_back(ColumnMetadatum("time", consts::eInt32));
-  // dfRows.configColumns(cols);
-
-  // Fail, without existing columns
-  dfRows.appendNewRow(-73., 128., "00000", 11, -25.6568, 1710460200);
-
   std::vector<double> lats = {-65.0, -66.6, -67.2, -68.6, -69.1,
                               -70.9, -71.132, -72.56, -73.0, -73.1};
   std::vector<double> lons = {120.0, 121.1, 122.2, 123.3, 124.4,
@@ -62,246 +32,228 @@ std::int32_t main() {
   std::vector<std::int32_t> times = {1710460225, 1710460225, 1710460225, 1710460225, 1710460226,
                                      1710460226, 1710460226, 1710460226, 1710460226, 1710460227};
 
-  dfRows.appendNewColumn("lat", lats);                                         // Pass
-  dfRows.appendNewColumn("lon", lons);                                         // Pass
-  dfRows.appendNewColumn("StatId", statIds);                                   // Pass
-  dfRows.appendNewColumn("channel", channels);                                 // Pass
-  dfRows.appendNewColumn("temp", temps);                                       // Pass
-  dfRows.appendNewColumn("time", times);                                       // Pass
-  dfRows.print();
+  oops::Log::info() << std::endl << "### FrameRows ################################################"
+                    << std::endl;
+  osdf::FrameRows frameRows;
 
-  // Fail - Too fiew columns
-  dfRows.appendNewRow("00010", 11, -25.6568, 1710460270);
-  // Fail - too many columns
-  dfRows.appendNewRow(-73, 128, -73, 128, "00010", 11, -25.6568, 1710460280);
-  // Fail - wrong order
-  dfRows.appendNewRow("00010", -73, 128, 11, -25.6568, 1710460290);
-  // Pass - with read-write columns
-  dfRows.appendNewRow(-73., 128., "00010", 14, -25.6568, 1710460300);
-  dfRows.print();
+  // frameRows.configColumns({{"lat", osdf::consts::eDouble},
+  //                          {"lon", osdf::consts::eDouble},
+  //                          {"StatId", osdf::consts::eString},
+  //                          {"channel", osdf::consts::eInt32},
+  //                          {"temp", osdf::consts::eDouble},
+  //                          {"time", osdf::consts::eInt32}});
 
-  oops::Log::info()<< std::endl << "getColumn" << std::endl;
-  std::vector<std::string> vec;
-  dfRows.getColumn("StatId", vec);  // Pass - with correct name/case and data type
-  dfRows.print();
+  // frameRows.configColumns({osdf::ColumnMetadatum("lat", osdf::consts::eDouble),
+  //                          osdf::ColumnMetadatum("lon", osdf::consts::eDouble),
+  //                          osdf::ColumnMetadatum("StatId", osdf::consts::eString),
+  //                          osdf::ColumnMetadatum("channel", osdf::consts::eInt32),
+  //                          osdf::ColumnMetadatum("temp", osdf::consts::eDouble),
+  //                          osdf::ColumnMetadatum("time", osdf::consts::eInt32)});
 
-  oops::Log::info()<< std::endl << "setColumn" << std::endl;
-  std::vector<std::string> vec2{"3", "3"};
-  dfRows.setColumn("StatId", vec2);
+  frameRows.appendNewRow(-73., 128., "00000", 11, -25.6568, 1710460200);
+  frameRows.print();
 
-  std::vector<std::string> vec3{"3", "3", "3", "3", "3", "3", "3", "3", "3", "3", "3"};
-  dfRows.setColumn("StatId", vec3);
-  dfRows.print();
+  frameRows.appendNewColumn("lat", lats);
+  frameRows.appendNewColumn("lon", lons);
+  frameRows.appendNewColumn("StatId", statIds);
+  frameRows.appendNewColumn("channel", channels);
+  frameRows.appendNewColumn("temp", temps);
+  frameRows.appendNewColumn("time", times);
+  frameRows.print();
 
-  oops::Log::info()<< std::endl << "removeColumn" << std::endl;
-  dfRows.removeColumn("StatId");
-  dfRows.print();
+  frameRows.appendNewRow("00010", 11, -25.6568, 1710460270);
+  frameRows.appendNewRow(-73, 128, -73, 128, "00010", 11, -25.6568, 1710460280);
+  frameRows.appendNewRow("00010", -73, 128, 11, -25.6568, 1710460290);
+  frameRows.appendNewRow(-73., 128., "00010", 14, -25.6568, 1710460300);
+  frameRows.print();
+
+  oops::Log::info() << std::endl << "getColumn" << std::endl;
+  std::vector<std::int32_t> vec;
+  frameRows.getColumn("time", vec);
+
+  oops::Log::info() << std::endl << "setColumn" << std::endl;
+  std::vector<std::string> wec{"3", "3"};
+  frameRows.setColumn("StatId", wec);
+
+  wec = {"3", "3", "3", "3", "3", "3", "3", "3", "3", "3", "3"};
+  frameRows.setColumn("StatId", wec);
+  frameRows.print();
+
+  oops::Log::info() << std::endl << "removeColumn" << std::endl;
+  frameRows.removeColumn("StatId");
+  frameRows.print();
 
   oops::Log::info() << std::endl << "removeRow" << std::endl;
-  dfRows.removeRow(0);
-  dfRows.appendNewRow(-73., 128., 14, -25.6568, 1710460301);
-  dfRows.print();
+  frameRows.removeRow(0);
+  frameRows.appendNewRow(-73., 128., 14, -25.6568, 1710460301);
+  frameRows.print();
   oops::Log::info() << std::endl << "removeRow2" << std::endl;
-  dfRows.removeRow(9);
-  dfRows.appendNewRow(-74., 129., 15, -25.6567, 1710460302);
-  dfRows.print();
+  frameRows.removeRow(9);
+  frameRows.appendNewRow(-74., 129., 15, -25.6567, 1710460302);
+  frameRows.print();
 
   oops::Log::info() << std::endl << "sort 1" << std::endl;
-  dfRows.sort("channel", osdf::consts::eDescending);
-  dfRows.print();
+  frameRows.sortRows("channel", osdf::consts::eDescending);
+  frameRows.print();
 
   oops::Log::info() << std::endl << "sort 2" << std::endl;
-  dfRows.sort("channel", [&](std::shared_ptr<osdf::DatumBase> datumA,
-              std::shared_ptr<osdf::DatumBase> datumB){
-    std::shared_ptr<osdf::Datum<std::int32_t>> datumAInt32 =
-        std::static_pointer_cast<osdf::Datum<std::int32_t>>(datumA);
-    std::shared_ptr<osdf::Datum<std::int32_t>> datumBInt32 =
-        std::static_pointer_cast<osdf::Datum<std::int32_t>>(datumB);
-    return datumAInt32->getDatum() < datumBInt32->getDatum();
+  frameRows.sortRows("channel", [&](std::shared_ptr<osdf::DatumBase> datumA,
+                                    std::shared_ptr<osdf::DatumBase> datumB){
+    std::shared_ptr<osdf::Datum<std::int32_t>> datumAType =
+                                std::static_pointer_cast<osdf::Datum<std::int32_t>>(datumA);
+    std::shared_ptr<osdf::Datum<std::int32_t>> datumBType =
+                                std::static_pointer_cast<osdf::Datum<std::int32_t>>(datumB);
+    return datumAType->getValue() < datumBType->getValue();
   });
-  dfRows.print();
+  frameRows.print();
 
   oops::Log::info() << std::endl << "test slice 1" << std::endl;
-  std::shared_ptr<osdf::ObsDataFrame> test1 = dfRows.slice("lat", osdf::consts::eLessThan, -70.);
-  test1->print();
+  frameRows.sliceRows("lat", osdf::consts::eLessThan, -70.).print();
 
   oops::Log::info() << std::endl << "test slice 2" << std::endl;
-  std::shared_ptr<osdf::ObsDataFrame> test2 = dfRows.slice([&](const osdf::DataRow& dataRow) {
+  frameRows.sliceRows([&](const osdf::DataRow& dataRow) {
     std::shared_ptr<osdf::DatumBase> datum = dataRow.getColumn(0);
-    std::shared_ptr<osdf::Datum<double>> datumDouble =
-      std::static_pointer_cast<osdf::Datum<double>>(datum);
-    double datumValue = datumDouble->getDatum();
-    return datumValue < -70.;
-  });
-  test2->print();
+    std::shared_ptr<osdf::Datum<double>> datumType =
+                                         std::static_pointer_cast<osdf::Datum<double>>(datum);
+    return datumType->getValue() < -70.;
+  }).print();
 
-  /// Column Priority //////////////////////////////////////////////////////////////////////////////
-  oops::Log::info() << std::endl << "### ObsDataFrameCols ###############"
-                                    "####################################" << std::endl;
+  // oops::Log::info() << std::endl << "clear" << std::endl;
+  // frameRows.clear();
+  // frameRows.print();
 
-  osdf::ObsDataFrameCols dfCols;
+  oops::Log::info() << std::endl << "### FrameCols ################################################"
+                     << std::endl;
+  osdf::FrameCols frameCols;
 
-  dfCols.appendNewColumn("lat", lats);                                         // Pass
-  dfCols.appendNewColumn("lon", lons);                                         // Pass
-  dfCols.appendNewColumn("StatId", statIds);                                   // Pass
-  dfCols.appendNewColumn("channel", channels);                                 // Pass
-  dfCols.appendNewColumn("temp", temps);                                       // Pass
-  dfCols.appendNewColumn("time", times);                                       // Pass
-  dfCols.print();
+  // frameCols.configColumns({{"lat", osdf::consts::eDouble},
+  //                          {"lon", osdf::consts::eDouble},
+  //                          {"StatId", osdf::consts::eString},
+  //                          {"channel", osdf::consts::eInt32},
+  //                          {"temp", osdf::consts::eDouble},
+  //                          {"time", osdf::consts::eInt32}});
 
-  // Fail - Too fiew columns
-  dfCols.appendNewRow("00010", 11, -25.6568, 1710460270);
-  // Fail - too many columns
-  dfCols.appendNewRow(-73, 128, -73, 128, "00010", 11, -25.6568, 1710460280);
-  // Fail - wrong order
-  dfCols.appendNewRow("00010", -73, 128, 11, -25.6568, 1710460290);
-  // Pass - with read-write columns
-  dfCols.appendNewRow(-73., 128., "00010", 14, -25.6568, 1710460300);
-  dfCols.print();
+  // frameCols.configColumns({osdf::ColumnMetadatum("lat", osdf::consts::eDouble),
+  //                          osdf::ColumnMetadatum("lon", osdf::consts::eDouble),
+  //                          osdf::ColumnMetadatum("StatId", osdf::consts::eString),
+  //                          osdf::ColumnMetadatum("channel", osdf::consts::eInt32),
+  //                          osdf::ColumnMetadatum("temp", osdf::consts::eDouble),
+  //                          osdf::ColumnMetadatum("time", osdf::consts::eInt32)});
 
-  oops::Log::info()<< std::endl << "getColumn" << std::endl;
-  std::vector<std::string> vec4;
-  dfCols.getColumn("StatId", vec4);  // Pass - with correct name/case and data type
-  dfCols.print();
+  frameCols.appendNewRow(-73., 128., "00000", 11, -25.6568, 1710460200);
+  frameCols.print();
 
-  oops::Log::info()<< std::endl << "setColumn" << std::endl;
-  std::vector<std::string> vec5{"3", "3"};
-  dfCols.setColumn("StatId", vec5);
+  frameCols.appendNewColumn("lat", lats);
+  frameCols.appendNewColumn("lon", lons);
+  frameCols.appendNewColumn("StatId", statIds);
+  frameCols.appendNewColumn("channel", channels);
+  frameCols.appendNewColumn("temp", temps);
+  frameCols.appendNewColumn("time", times);
+  frameCols.print();
 
-  std::vector<std::string> vec6{"3", "3", "3", "3", "3", "3", "3", "3", "3", "3", "3"};
-  dfCols.setColumn("StatId", vec6);
-  dfCols.print();
+  frameCols.appendNewRow("00010", 11, -25.6568, 1710460270);
+  frameCols.appendNewRow(-73, 128, -73, 128, "00010", 11, -25.6568, 1710460280);
+  frameCols.appendNewRow("00010", -73, 128, 11, -25.6568, 1710460290);
+  frameCols.appendNewRow(-73., 128., "00010", 14, -25.6568, 1710460300);
+  frameCols.print();
 
-  oops::Log::info()<< std::endl << "removeColumn" << std::endl;
-  dfCols.removeColumn("StatId");
-  dfCols.print();
+  oops::Log::info() << std::endl << "getColumn" << std::endl;
+  std::vector<std::int32_t> vec2;
+  frameCols.getColumn("time", vec2);
 
-  oops::Log::info()<< std::endl << "removeRow" << std::endl;
-  dfCols.removeRow(0);
-  dfCols.appendNewRow(-73., 128., 14, -25.6568, 1710460301);
-  dfCols.print();
+  oops::Log::info() << std::endl << "setColumn" << std::endl;
+  std::vector<std::string> wec2{"3", "3"};
+  frameCols.setColumn("StatId", wec2);
+
+  wec2 = {"3", "3", "3", "3", "3", "3", "3", "3", "3", "3", "3"};
+  frameCols.setColumn("StatId", wec2);
+  frameCols.print();
+
+  oops::Log::info() << std::endl << "removeColumn" << std::endl;
+  frameCols.removeColumn("StatId");
+  frameCols.print();
+
+  oops::Log::info() << std::endl << "removeRow" << std::endl;
+  frameCols.removeRow(0);
+  frameCols.appendNewRow(-73., 128., 14, -25.6568, 1710460301);
+  frameCols.print();
   oops::Log::info() << std::endl << "removeRow2" << std::endl;
-  dfCols.removeRow(9);
-  dfCols.appendNewRow(-74., 129., 15, -25.6567, 1710460302);
-  dfCols.print();
+  frameCols.removeRow(9);
+  frameCols.appendNewRow(-74., 129., 15, -25.6567, 1710460302);
+  frameCols.print();
 
   oops::Log::info() << std::endl << "sort 1" << std::endl;
-  dfCols.sort("channel", osdf::consts::eDescending);
-  dfCols.print();
+  frameCols.sortRows("channel", osdf::consts::eAscending);
+  frameCols.print();
 
   oops::Log::info() << std::endl << "test slice 1" << std::endl;
-  std::shared_ptr<osdf::ObsDataFrame> test3 = dfCols.slice("lat", osdf::consts::eLessThan, -70.);
-  test3->print();
+  frameCols.sliceRows("lat", osdf::consts::eLessThan, -70.).print();
 
+  // oops::Log::info() << std::endl << "clear" << std::endl;
+  // frameCols.clear();
+  // frameCols.print();
 
-  // std::cout  << std::endl << "clear" << std::endl;
-  // dfCols.clear();
-  // dfCols.print();
+  oops::Log::info() << std::endl << "### ViewRows #################################################"
+             << std::endl;
+  osdf::ViewRows viewRows = frameRows.makeView();
+  viewRows.print();
 
-  /// Column Priority //////////////////////////////////////////////////////////////////////////////
-  std::cout  << std::endl << "### ObsDataViewRows ################"
-                             "####################################" << std::endl;
+  oops::Log::info() << std::endl << "getColumn" << std::endl;
+  std::vector<std::int32_t> vec3;
+  viewRows.getColumn("time", vec3);
 
-  std::shared_ptr<osdf::ObsDataViewRows> dfRowsView = dfRows.makeView();
-  dfRowsView->print();
+  oops::Log::info() << std::endl << "sort 1" << std::endl;
+  viewRows.sortRows("channel", osdf::consts::eDescending);
+  viewRows.print();
 
-  std::cout  << std::endl << "appendNewColumn StatId" << std::endl;
-  std::vector<std::string> statIds2 = {"00001", "00002", "00003", "00004", "00005", "00006",
-                                       "00007", "00008", "00009", "00010",  "00011"};
-  dfRowsView->appendNewColumn("StatId", statIds2);
-  dfRowsView->print();
-
-  std::cout  << std::endl << "ObsDataFrameRows print" << std::endl;
-  dfRows.print();
-
-  std::cout << std::endl << "getColumn lon" << std::endl;
-  std::vector<double> vec7;
-  dfRowsView->getColumn("lon", vec7);
-  dfRowsView->print();
-
-  std::cout << std::endl << "setColumn time" << std::endl;
-  std::vector<std::int32_t> times2 = {1810460225, 1810460225, 1810460225, 1810460225, 1810460226,
-                                      1810460226, 1810460226, 1810460226, 1810460226, 1810460227,
-                                      1810460228};
-  dfRowsView->setColumn("time", times2);
-  dfRowsView->print();
-
-  std::cout << std::endl << "removeColumn lon" << std::endl;
-  dfRowsView->removeColumn("lon");
-  dfRowsView->print();
-
-  std::cout  << std::endl << "ObsDataFrameRows print" << std::endl;
-  dfRows.print();
-
-  std::cout  << std::endl << "removeRow 0" << std::endl;
-  dfRowsView->removeRow(0);
-  dfRowsView->appendNewRow(-173., 14, -25.6568, 1910460301, "00012");
-  dfRowsView->print();
-  std::cout  << std::endl << "removeRow2 9" << std::endl;
-  dfRowsView->removeRow(9);
-  dfRowsView->appendNewRow(-173., 14, -25.6568, 1910460301, "00013");
-  dfRowsView->print();
-
-  std::cout  << std::endl << "ObsDataFrameRows print" << std::endl;
-  dfRows.print();
-
-  std::cout  << std::endl << "sort 1" << std::endl;
-  dfRowsView->sort("channel", osdf::consts::eDescending);
-  dfRowsView->print();
-
-  std::cout  << std::endl << "sort 2" << std::endl;
-  dfRowsView->sort("channel", [&](std::shared_ptr<osdf::DatumBase> datumA,
-                                  std::shared_ptr<osdf::DatumBase> datumB) {
-    std::shared_ptr<osdf::Datum<std::int32_t>> datumAInt32 =
-        std::static_pointer_cast<osdf::Datum<std::int32_t>>(datumA);
-    std::shared_ptr<osdf::Datum<std::int32_t>> datumBInt32 =
-        std::static_pointer_cast<osdf::Datum<std::int32_t>>(datumB);
-    return datumAInt32->getDatum() < datumBInt32->getDatum();
+  oops::Log::info() << std::endl << "sort 2" << std::endl;
+  viewRows.sortRows("channel", [&](std::shared_ptr<osdf::DatumBase> datumA,
+                               std::shared_ptr<osdf::DatumBase> datumB){
+    std::shared_ptr<osdf::Datum<std::int32_t>> datumAType =
+                                std::static_pointer_cast<osdf::Datum<std::int32_t>>(datumA);
+    std::shared_ptr<osdf::Datum<std::int32_t>> datumBType =
+                                std::static_pointer_cast<osdf::Datum<std::int32_t>>(datumB);
+    return datumAType->getValue() < datumBType->getValue();
   });
-  dfRowsView->print();
+  viewRows.print();
 
-  std::cout  << std::endl << "clear" << std::endl;
-  dfRowsView->clear();
-  dfRowsView->print();
+  oops::Log::info() << std::endl << "test slice 1" << std::endl;
+  viewRows.sliceRows("lat", osdf::consts::eLessThan, -70.).print();
 
-  std::cout  << std::endl << "test slice 1" << std::endl;
-  std::shared_ptr<osdf::ObsDataFrame> test5 =
-      dfRowsView->slice("lat", osdf::consts::eLessThan, -70.);
-  test1->print();
+  oops::Log::info() << std::endl << "test slice 2" << std::endl;
+  frameRows.sliceRows([&](const osdf::DataRow& dataRow) {
+    std::shared_ptr<osdf::DatumBase> datum = dataRow.getColumn(0);
+    std::shared_ptr<osdf::Datum<double>> datumType =
+                                         std::static_pointer_cast<osdf::Datum<double>>(datum);
+    return datumType->getValue() < -70.;
+  }).print();
 
-  std::cout  << std::endl << "test slice 2" << std::endl;
-  std::shared_ptr<osdf::ObsDataFrame> test6 =
-      dfRowsView->slice([&](const std::shared_ptr<osdf::DataRow> dataRow) {
-    std::shared_ptr<osdf::DatumBase> datum = dataRow->getColumn(0);
-    std::shared_ptr<osdf::Datum<double>> datumDouble =
-        std::static_pointer_cast<osdf::Datum<double>>(datum);
-    double datumValue = datumDouble->getDatum();
-    return datumValue < -70.;
-  });
-  test2->print();
+  oops::Log::info() << std::endl << "### ViewCols #################################################"
+             << std::endl;
+  osdf::ViewCols viewCols = frameCols.makeView();
+  viewCols.print();
 
-  std::cout  << std::endl << "ObsDataFrameRows print" << std::endl;
-  dfRows.print();
+  oops::Log::info() << std::endl << "getColumn" << std::endl;
+  std::vector<std::int32_t> vec4;
+  viewCols.getColumn("time", vec4);
 
-  std::cout  << std::endl << "ObsDataFrameCols to ObsDataFrameRows" << std::endl;
-  osdf::ObsDataFrameRows dfRows2(dfCols);
-  dfRows2.print();
+  // Sort on ViewCols modified original container and so has been removed
+  // oops::Log::info() << std::endl << "sort 1" << std::endl;
+  // viewCols.sortRows("channel", osdf::consts::eAscending);
+  // viewCols.print();
 
-  std::cout << std::endl << "ObsDataFrameRows to ObsDataFrameCols" << std::endl;
+  oops::Log::info() << std::endl << "test slice 1" << std::endl;
+  viewCols.sliceRows("lat", osdf::consts::eLessThan, -70.).print();
 
-  osdf::ObsDataFrameCols dfCols2(dfRows2);
+  oops::Log::info() << std::endl << "### FrameRows(FrameCols) #####################################"
+             << std::endl;
+  osdf::FrameRows frameRows3(frameCols);
+  frameRows3.print();
 
-  // ObsDataFrameCols dfCols2;
-  // dfCols2.configColumns({{"lat", consts::eDouble},
-  //                       {"lon", consts::eDouble},
-  //                       {"StatId", consts::eString},
-  //                       {"channel", consts::eInt32},
-  //                       {"temp", consts::eDouble},
-  //                       {"time", consts::eInt32}});
-  //
-
-  // dfCols2.appendNewRow(-73., 128., "00010", 14, -25.6568, 1710460300);
-  dfCols2.print();
+  oops::Log::info() << std::endl << "### FrameCols(FrameRows) #####################################"
+                    << std::endl;
+  osdf::FrameCols frameCols3(frameRows);
+  frameCols3.print();
 
   return 0;
 }

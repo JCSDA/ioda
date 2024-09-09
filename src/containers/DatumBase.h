@@ -5,8 +5,8 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#ifndef DATAUMBASE_H
-#define DATAUMBASE_H
+#ifndef CONTAINERS_DATUMBASE_H_
+#define CONTAINERS_DATUMBASE_H_
 
 #include <cstdint>
 #include <string>
@@ -14,29 +14,24 @@
 namespace osdf {
 class DatumBase {
  public:
-  /// \brief constructor with data type
-  /// \param data type
   explicit DatumBase(const std::int8_t type) : type_(type) {}
   virtual ~DatumBase() = default;
 
-  DatumBase()                             = delete;  //!< Deleted default constructor
-  DatumBase(DatumBase&&)                  = delete;  //!< Deleted move constructor
-  DatumBase(const DatumBase&)             = delete;  //!< Deleted copy constructor
-  DatumBase& operator=(DatumBase&&)       = delete;  //!< Deleted move assignment
-  DatumBase& operator=(const DatumBase&)  = delete;  //!< Deleted copy assignment
+  DatumBase()                            = delete;
+  DatumBase(DatumBase&&)                 = delete;
+  DatumBase(const DatumBase&)            = delete;
+  DatumBase& operator=(DatumBase&&)      = delete;
+  DatumBase& operator=(const DatumBase&) = delete;
 
-  /// \brief return string representation for the datum value (used for printing)
-  virtual const std::string getDatumStr() const = 0;
+  virtual const std::string getValueStr() const = 0;
 
-  /// \brief return data type
   const std::int8_t getType() const {
     return type_;
   }
 
  protected:
-  /// \brief data type
   std::int8_t type_;
 };
 }  // namespace osdf
 
-#endif  // DATUMBASE_H
+#endif  // CONTAINERS_DATUMBASE_H_

@@ -5,8 +5,8 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#ifndef DATUM_H
-#define DATUM_H
+#ifndef CONTAINERS_DATUM_H_
+#define CONTAINERS_DATUM_H_
 
 #include <string>
 
@@ -20,23 +20,23 @@ class Datum : public DatumBase {
 
   virtual ~Datum() = default;
 
-  Datum()                         = delete;  //!< Deleted default constructor
-  Datum(Datum&&)                  = delete;  //!< Deleted move constructor
-  Datum(const Datum&)             = delete;  //!< Deleted copy constructor
-  Datum& operator=(Datum&&)       = delete;  //!< Deleted move assignment
-  Datum& operator=(const Datum&)  = delete;  //!< Deleted copy assignment
+  Datum()                        = delete;
+  Datum(Datum&&)                 = delete;
+  Datum(const Datum&)            = delete;
+  Datum& operator=(Datum&&)      = delete;
+  Datum& operator=(const Datum&) = delete;
 
-  const T getDatum() const {
+  const T getValue() const {
     return value_;
   }
 
-  T getDatum() {
+  T getValue() {
     return value_;
   }
 
-  const std::string getDatumStr() const;
+  const std::string getValueStr() const;
 
-  void setDatum(const T value) {
+  void setValue(const T value) {
     value_ = value;
   }
 
@@ -45,4 +45,4 @@ class Datum : public DatumBase {
 };
 }  // namespace osdf
 
-#endif  // DATUM_H
+#endif  // CONTAINERS_DATUM_H_
