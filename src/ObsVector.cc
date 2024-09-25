@@ -26,7 +26,7 @@ ObsVector::ObsVector(ObsSpace & obsdb,
                      const std::string & name)
                        : obsdb_(obsdb), obsvars_(obsdb.assimvariables()),
                          nvars_(obsvars_.variables().size()), nlocs_(obsdb_.nlocs()),
-                         values_(nlocs_ * nvars_),
+                         indexAppend_(nlocs_), values_(nlocs_ * nvars_),
                          missing_(util::missingValue<double>()) {
   oops::Log::trace() << "ObsVector::ObsVector " << name << std::endl;
   obsdb_.attach(*this);
@@ -36,7 +36,8 @@ ObsVector::ObsVector(ObsSpace & obsdb,
 // -----------------------------------------------------------------------------
 ObsVector::ObsVector(const ObsVector & other)
   : obsdb_(other.obsdb_), obsvars_(other.obsvars_), nvars_(other.nvars_),
-    nlocs_(other.nlocs_), values_(nlocs_ * nvars_), missing_(other.missing_) {
+    nlocs_(other.nlocs_), indexAppend_(other.indexAppend_),
+    values_(nlocs_ * nvars_), missing_(other.missing_) {
   values_ = other.values_;
   obsdb_.attach(*this);
   oops::Log::trace() << "ObsVector copied " << std::endl;
@@ -44,11 +45,13 @@ ObsVector::ObsVector(const ObsVector & other)
 // -----------------------------------------------------------------------------
 ObsVector::ObsVector(ObsVector && other)
   : obsdb_(other.obsdb_), obsvars_(std::move(other.obsvars_)), nvars_(other.nvars_),
-    nlocs_(other.nlocs_), values_(std::move(other.values_)), missing_(other.missing_) {
+    nlocs_(other.nlocs_), indexAppend_(other.indexAppend_),
+    values_(std::move(other.values_)), missing_(other.missing_) {
   obsdb_.detach(other);
   obsdb_.attach(*this);
   other.nvars_ = 0;
   other.nlocs_ = 0;
+  other.indexAppend_ = 0;
   oops::Log::trace() << "ObsVector moved " << std::endl;
 }
 // -----------------------------------------------------------------------------
@@ -61,6 +64,7 @@ ObsVector & ObsVector::operator= (const ObsVector & rhs) {
   obsvars_ = rhs.obsvars_;
   nvars_ = rhs.nvars_;
   nlocs_ = rhs.nlocs_;
+  indexAppend_ = rhs.indexAppend_;
   values_ = rhs.values_;
   return *this;
 }
@@ -70,9 +74,11 @@ ObsVector & ObsVector::operator= (ObsVector && rhs) {
   obsvars_ = std::move(rhs.obsvars_);
   nvars_ = rhs.nvars_;
   nlocs_ = rhs.nlocs_;
+  indexAppend_ = rhs.indexAppend_;
   values_ = std::move(rhs.values_);
   rhs.nvars_ = 0;
   rhs.nlocs_ = 0;
+  rhs.indexAppend_ = 0;
   obsdb_.detach(rhs);
   return *this;
 }
@@ -291,8 +297,8 @@ double ObsVector::rms() const {
   return zrms;
 }
 // -----------------------------------------------------------------------------
-void ObsVector::read(const std::string & name) {
-  oops::Log::trace() << "ObsVector::read, name = " << name << std::endl;
+void ObsVector::doRead(const std::string & name, const std::size_t stloc) {
+  oops::Log::trace() << "ObsVector::doRead, name = " << name << std::endl;
 
   // Read in the variables stored in obsvars_ from the group given by "name".
   //
@@ -307,11 +313,21 @@ void ObsVector::read(const std::string & name) {
   for (std::size_t jv = 0; jv < nvars_; ++jv) {
     obsdb_.get_db(name, obsvars_.variables()[jv], tmp);
 
-    for (std::size_t jj = 0; jj < nlocs; ++jj) {
+    for (std::size_t jj = stloc; jj < nlocs; ++jj) {
       std::size_t ivec = jv + (jj * nvars_);
       values_[ivec] = tmp[jj];
     }
   }
+}
+// -----------------------------------------------------------------------------
+void ObsVector::read(const std::string & name) {
+  oops::Log::trace() << "ObsVector::Read, name = " << name << std::endl;
+  this->doRead(name);
+}
+// -----------------------------------------------------------------------------
+void ObsVector::readAppended(const std::string & name) {
+  oops::Log::trace() << "ObsVector::readAppended, name = " << name << std::endl;
+  this->doRead(name, indexAppend_);
 }
 // -----------------------------------------------------------------------------
 void ObsVector::save(const std::string & name) const {
@@ -401,6 +417,8 @@ double & ObsVector::toFortran() {
 // -----------------------------------------------------------------------------
 void ObsVector::reduce(const std::vector<bool> & keepLocs) {
   ASSERT(keepLocs.size() == nlocs_);
+  // Reducing after appending not implemented yet (but can be!)
+  ASSERT(nlocs_ == indexAppend_);
   auto newEnd = std::remove_if(values_.begin(), values_.end(),
                                [&](const auto& element) {
                                   return !keepLocs[(&element - &values_[0]) / nvars_];
@@ -408,12 +426,14 @@ void ObsVector::reduce(const std::vector<bool> & keepLocs) {
   values_.erase(newEnd, values_.end());
   ASSERT(values_.size() % nvars_ == 0);
   nlocs_ = values_.size() / nvars_;
+  indexAppend_ = nlocs_;
 }
 // -----------------------------------------------------------------------------
 void ObsVector::append() {
   const size_t newnlocs = obsdb_.nlocs();
   values_.reserve(newnlocs);
   values_.insert(values_.end(), (newnlocs - nlocs_) * nvars_, missing_);
+  indexAppend_ = nlocs_;
   nlocs_ = newnlocs;
 }
 // -----------------------------------------------------------------------------

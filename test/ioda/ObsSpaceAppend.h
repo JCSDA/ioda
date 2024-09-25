@@ -186,6 +186,7 @@ void testAppend() {
 
     ObsSpace &odb = Test_::obspace(jj);
     ioda::ObsVector vec(Test_::obspace(jj), "ObsValue");
+    vec *= 2.0;
     std::vector<double> vec_data = vec.data();    // all variables
     ioda::ObsDataVector<double> obsvec(Test_::obspace(jj), vec.varnames(), "ObsValue");
     std::vector<double> obsvec_data = obsvec[0];  // just one variable
@@ -220,6 +221,49 @@ void testAppend() {
 
       // Update the variables in derived obs error group (if any)
       updateDerivedObsError(odb, appendSequence[iapp], "update derived obs error");
+
+      // Test appending ObsVector and ObsDataVector
+      std::vector<double> vec_data_appended = vec.data();
+      std::vector<double> obsvec_data_appended = obsvec[0];
+      // expect the first parts of vectors to be the same, and the last to have
+      // missing values
+      EXPECT(std::equal(vec_data.begin(), vec_data.end(), vec_data_appended.begin()));
+      EXPECT(std::equal(obsvec_data.begin(), obsvec_data.end(), obsvec_data_appended.begin()));
+      double missing = util::missingValue<double>();
+      EXPECT(std::all_of(vec_data_appended.begin() + vec_data.size(), vec_data_appended.end(),
+                         [missing](double elem) {return elem == missing;}));
+      EXPECT(std::all_of(obsvec_data_appended.begin() + obsvec_data.size(),
+                         obsvec_data_appended.end(),
+                         [missing](double elem) {return elem == missing;}));
+      // get a new ObsVector from the appended ObsSpace and read ObsValue in it
+      ioda::ObsVector vec_afterappend(Test_::obspace(jj), "ObsValue");
+      std::vector<double> vec_afterappend_data = vec_afterappend.data();
+      oops::Log::info() << "Vector created before append with doubled values: "
+                        << vec << std::endl;
+      oops::Log::info() << "Vector created after append: "
+                        << vec_afterappend << std::endl;
+      // read values only in the appended part of the ObsVector
+      vec.readAppended("ObsValue");
+      oops::Log::info() << "Vector created before append with doubled values after "
+                        << "reading values in the appended part: " << vec << std::endl;
+      vec_data_appended = vec.data();
+      // expect the first part of vector to be the same as before (2 * ObsValue), and
+      // the rest to have ObsValue
+      EXPECT(std::equal(vec_data.begin(), vec_data.end(), vec_data_appended.begin()));
+      EXPECT(std::equal(vec_data_appended.begin() + vec_data.size(), vec_data_appended.end(),
+                        vec_afterappend_data.begin() + vec_data.size()));
+      // now read values in all of the ObsVector
+      // expect the whole vector to have ObsValue
+      vec.read("ObsValue");
+      oops::Log::info() << "Vector created before append after reading all values: "
+                        << vec << std::endl;
+      vec_data_appended = vec.data();
+      EXPECT(std::equal(vec_data_appended.begin(), vec_data_appended.end(),
+                        vec_afterappend_data.begin()));
+      // update data vectors to compare after the next append call
+      vec *= 2.0;
+      vec_data = vec.data();
+      obsvec_data = obsvec[0];
     }
 
     // Get the expected index and recnum vectors from the obspace object's configuration
@@ -281,17 +325,6 @@ void testAppend() {
     const size_t expectedNlocs = testConfig.getInt(MyPath + ".nlocs");
     EXPECT_EQUAL(vec.nlocs(), expectedNlocs);
     EXPECT_EQUAL(obsvec.nlocs(), expectedNlocs);
-
-    std::vector<double> vec_data_appended = vec.data();
-    std::vector<double> obsvec_data_appended = obsvec[0];
-    EXPECT(std::equal(vec_data.begin(), vec_data.end(), vec_data_appended.begin()));
-    EXPECT(std::equal(obsvec_data.begin(), obsvec_data.end(), obsvec_data_appended.begin()));
-    double missing = util::missingValue<double>();
-    EXPECT(std::all_of(vec_data_appended.begin() + vec_data.size(), vec_data_appended.end(),
-                       [missing](double elem) {return elem == missing;}));
-    EXPECT(std::all_of(obsvec_data_appended.begin() + obsvec_data.size(),
-                       obsvec_data_appended.end(),
-                       [missing](double elem) {return elem == missing;}));
   }
 }
 

@@ -120,6 +120,7 @@ class ObsVector : public ObsSpaceAssociated,
 // I/O
   void save(const std::string &) const;
   void read(const std::string &);
+  void readAppended(const std::string &);
 
   void reduce(const std::vector<bool> & keepLocs) override;
   void append() override;
@@ -135,13 +136,22 @@ class ObsVector : public ObsSpaceAssociated,
 
   /*! \brief Number of variables */
   std::size_t nvars_;
+
+  /*! \brief Number of locations on this rank */
   std::size_t nlocs_;
+
+  /*! \brief Index of the first observation that was last appended;
+             equal to nlocs_ before the first append is called */
+  std::size_t indexAppend_;
 
   /*! \brief Vector data */
   std::vector<double> values_;
 
   /*! \brief Missing data mark */
   const double missing_;
+
+  /*! \brief private function to read values */
+  void doRead(const std::string &, const std::size_t stloc = 0);
 };
 // -----------------------------------------------------------------------------
 
