@@ -72,24 +72,23 @@ void collectVarDimInfo(const ioda::Group& obsGroup, Vec_Named_Variable& varList,
   // A sorted list of all variable names that will help optimize the actual processing.
   std::list<std::string> sortedAllVars = preferentialSortVariableNames(allVars);
   
-  // TODO(ryan): refactor
-  // GeoVaLs fix: all variables appear at the same level, and this is problematic.
-  // Detect these files and do some extra sorting.
-  if (obsGroup.list().empty()) { // No Groups under the ObsGroup
-    std::list<std::string> fix_known_scales, fix_known_nonscales;
-    for (const auto& vname : sortedAllVars) {
-      Named_Variable v{vname, obsGroup.vars.open(vname)};
-      if (v.var.isDimensionScale()) {
-        (LocationVarNames().count(v.name))  // true / false ternary
-          ? fix_known_scales.push_front(v.name)
-          : fix_known_scales.push_back(v.name);
-      } else
-        fix_known_nonscales.push_back(v.name);
-    }
-    sortedAllVars.clear();
-    for (const auto& e : fix_known_scales) sortedAllVars.push_back(e);
-    for (const auto& e : fix_known_nonscales) sortedAllVars.push_back(e);
+  // GeoVaLs and Bias Correction files can have a mix of dimension scale and non-dimension
+  // scale variables in the top level group. The main processing loop below depends on the
+  // sortedAllVars container to have all of the dimension scale variables listed first
+  // followed by all the non-dimension scale variables.
+  std::list<std::string> fix_known_scales, fix_known_nonscales;
+  for (const auto& vname : sortedAllVars) {
+    Named_Variable v{vname, obsGroup.vars.open(vname)};
+    if (v.var.isDimensionScale()) {
+      (LocationVarNames().count(v.name))  // true / false ternary
+        ? fix_known_scales.push_front(v.name)
+        : fix_known_scales.push_back(v.name);
+    } else
+      fix_known_nonscales.push_back(v.name);
   }
+  sortedAllVars.clear();
+  for (const auto& e : fix_known_scales) sortedAllVars.push_back(e);
+  for (const auto& e : fix_known_nonscales) sortedAllVars.push_back(e);
 
   // Now for the main processing loop.
   // We separate dimension scales from non-dimension scale variables.
