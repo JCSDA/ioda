@@ -582,6 +582,7 @@ void DataFromSQL::select(const std::vector<std::string>& columns, const std::str
     number_of_metadata_rows_ = number_of_rows_ / number_of_varnos_;
   }
 
+  std::map<int, size_t> varnos_and_counts;
   // Check number of rows is consistent for each varno.
   for (const int varno : varnos_) {
     if (hasVarno(varno) && number_of_metadata_rows_ > 0) {
@@ -590,8 +591,17 @@ void DataFromSQL::select(const std::vector<std::string>& columns, const std::str
         varnos_and_levels_to_use_[varno] = max_number_channels_;
       } else {
         const size_t number_of_varno_rows = numberOfRowsForVarno(varno);
+        varnos_and_counts[varno] = number_of_varno_rows;
         varnos_and_levels_[varno] = number_of_varno_rows / number_of_metadata_rows_;
         varnos_and_levels_to_use_[varno] = std::max(1,static_cast<int>(varnos_and_levels_[varno]));
+      }
+    }
+  }
+  if (sql.find("is not null") != std::string::npos) {
+    for (size_t i = 0; i < varnos_.size(); i++) {
+      std::cerr << "in select, i = " << i << " varnos_[i] = " << varnos_[i] << " varnos_and_counts[varnos_[i]] = " << varnos_and_counts[varnos_[i]] << std::endl;
+      if (i > 0) {
+        ASSERT(varnos_and_counts[varnos_[0]] == varnos_and_counts[varnos_[i]]);
       }
     }
   }
