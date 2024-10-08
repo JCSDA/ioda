@@ -273,6 +273,18 @@ void testDotProduct() {
     vec1.random();
     ObsVector_ vec2(obspace);
     vec2.random();
+    oops::Log::info() << "Random vector 1: " << vec1 << std::endl;
+    oops::Log::info() << "Random vector 2: " << vec2 << std::endl;
+    // throw in some missing values
+    const size_t nvars = vec1.nvars();
+    const size_t nlocs = vec1.nlocs();
+    const double missing = util::missingValue<double>();
+    for (size_t jloc = 0; jloc + 1 < nlocs; jloc+=5) {
+      vec1[jloc*nvars] = missing;
+      vec2[(jloc+1)*nvars] = missing;
+    }
+    oops::Log::info() << "Random vector 1 with missing values: " << vec1 << std::endl;
+    oops::Log::info() << "Random vector 2 with missing values: " << vec2 << std::endl;
 
     double dp1 = vec1.dot_product_with(vec2);
     std::vector<double> dp2 = vec1.multivar_dot_product_with(vec2);

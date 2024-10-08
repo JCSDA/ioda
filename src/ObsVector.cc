@@ -275,8 +275,11 @@ std::vector<double> ObsVector::multivarrec_dot_product_with(const ObsVector & ot
       // Note: no communication is needed here since the dot product is done record by
       // record, and locations within a given record cannot be split up across MPI tasks.
       for (size_t jloc = 0; jloc < nlocsInRec; ++jloc) {
-        result[recidxLocal * nvars_ + jvar] += values_[rec_idx[jloc] * nvars_ + jvar] *
-                                               other.values_[rec_idx[jloc] * nvars_ + jvar];
+        if ((values_[rec_idx[jloc] * nvars_ + jvar] != missing_) &&
+            (other.values_[rec_idx[jloc] * nvars_ + jvar] != missing_)) {
+          result[recidxLocal * nvars_ + jvar] += values_[rec_idx[jloc] * nvars_ + jvar] *
+                                                 other.values_[rec_idx[jloc] * nvars_ + jvar];
+        }
       }
     }
   }
