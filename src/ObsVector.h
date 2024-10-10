@@ -53,6 +53,9 @@ class ObsVector : public ObsSpaceAssociated,
 
   void zero();
 
+  /// Zero values appended form ObsSpace
+  void zeroAppended();
+
   /// Set all elements to one (used in tests)
   void ones();
 

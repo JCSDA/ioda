@@ -66,6 +66,9 @@ class ObsDataVector: public ObsSpaceAssociated,
   // Read ObsDataVector.
   void read(const std::string &, const bool fail = true,
             const bool skipDerived = false);
+  // Read appended ObsData.
+  void readAppended(const std::string &, const bool fail = true,
+            const bool skipDerived = false);
   void save(const std::string &) const;
 
 /// \brief   Assign to all variables of this ObsDataVector, the values in the ObsVector vect
@@ -93,15 +96,20 @@ class ObsDataVector: public ObsSpaceAssociated,
   const oops::ObsVariables & varnames() const {return obsvars_;}
 
   void reduce(const std::vector<bool> & keepLocs) override;
-  void append() override;
+  void append();
+  void zeroAppended();
 
  private:
   void print(std::ostream &) const override;
+  // Carry out reading of the ObsDataVector.
+  void doRead(const std::string &, const bool fail = true,
+            const bool skipDerived = false, const std::size_t & stloc = 0);
 
   ObsSpace & obsdb_;
   oops::ObsVariables obsvars_;
   size_t nvars_;
   size_t nlocs_;
+  std::size_t indexAppend_;
   std::vector<ObsDataRow<DATATYPE> > rows_;
   const DATATYPE missing_;
 };
@@ -112,7 +120,7 @@ ObsDataVector<DATATYPE>::ObsDataVector(ObsSpace & obsdb, const oops::ObsVariable
                                        const std::string & grp, const bool fail,
                                        const bool skipDerived)
   : obsdb_(obsdb), obsvars_(vars), nvars_(obsvars_.size()),
-    nlocs_(obsdb_.nlocs()), rows_(nvars_),
+    nlocs_(obsdb_.nlocs()), indexAppend_(nlocs_), rows_(nvars_),
     missing_(util::missingValue<DATATYPE>())
 {
   oops::Log::trace() << "ObsDataVector::ObsDataVector start" << std::endl;
@@ -129,7 +137,7 @@ ObsDataVector<DATATYPE>::ObsDataVector(ObsSpace & obsdb, const std::string & var
                                        const std::string & grp, const bool fail,
                                        const bool skipDerived)
   : obsdb_(obsdb), obsvars_(std::vector<std::string>(1, var)), nvars_(1),
-    nlocs_(obsdb_.nlocs()), rows_(1),
+    nlocs_(obsdb_.nlocs()), indexAppend_(nlocs_), rows_(1),
     missing_(util::missingValue<DATATYPE>())
 {
   oops::Log::trace() << "ObsDataVector::ObsDataVector start" << std::endl;
@@ -141,7 +149,8 @@ ObsDataVector<DATATYPE>::ObsDataVector(ObsSpace & obsdb, const std::string & var
 // -----------------------------------------------------------------------------
 template <typename DATATYPE>
 ObsDataVector<DATATYPE>::ObsDataVector(ObsVector & vect)
-  : obsdb_(vect.space()), obsvars_(vect.varnames()), nvars_(vect.nvars()), nlocs_(vect.nlocs()),
+  : obsdb_(vect.space()), obsvars_(vect.varnames()), nvars_(vect.nvars()),
+    nlocs_(vect.nlocs()), indexAppend_(nlocs_),
     rows_(nvars_), missing_(util::missingValue<DATATYPE>())
 {
   oops::Log::trace() << "ObsDataVector::ObsDataVector ObsVector start" << std::endl;
@@ -167,7 +176,8 @@ ObsDataVector<DATATYPE>::ObsDataVector(ObsVector & vect)
 template <typename DATATYPE>
 ObsDataVector<DATATYPE>::ObsDataVector(const ObsDataVector & other)
   : obsdb_(other.obsdb_), obsvars_(other.obsvars_), nvars_(other.nvars_),
-    nlocs_(other.nlocs_), rows_(other.rows_), missing_(util::missingValue<DATATYPE>()) {
+    nlocs_(other.nlocs_), indexAppend_(other.indexAppend_),
+    rows_(other.rows_), missing_(util::missingValue<DATATYPE>()) {
   obsdb_.attach(*this);
   oops::Log::trace() << "ObsDataVector copied" << std::endl;
 }
@@ -175,7 +185,8 @@ ObsDataVector<DATATYPE>::ObsDataVector(const ObsDataVector & other)
 template <typename DATATYPE>
 ObsDataVector<DATATYPE>::ObsDataVector(ObsDataVector && other)
   : obsdb_(other.obsdb_), obsvars_(std::move(other.obsvars_)), nvars_(other.nvars_),
-    nlocs_(other.nlocs_), rows_(std::move(other.rows_)), missing_(util::missingValue<DATATYPE>()) {
+    nlocs_(other.nlocs_), indexAppend_(other.indexAppend_),
+    rows_(std::move(other.rows_)), missing_(util::missingValue<DATATYPE>()) {
   obsdb_.detach(other);
   other.nvars_ = 0;
   other.nlocs_ = 0;
@@ -195,6 +206,7 @@ ObsDataVector<DATATYPE> & ObsDataVector<DATATYPE>::operator= (const ObsDataVecto
   obsvars_ = rhs.obsvars_;
   nvars_ = rhs.nvars_;
   nlocs_ = rhs.nlocs_;
+  indexAppend_ = rhs.indexAppend_;
   rows_ = rhs.rows_;
   oops::Log::trace() << "ObsDataVector::operator= done" << std::endl;
   return *this;
@@ -207,9 +219,11 @@ ObsDataVector<DATATYPE> & ObsDataVector<DATATYPE>::operator= (ObsDataVector<DATA
   obsvars_ = std::move(rhs.obsvars_);
   nvars_ = rhs.nvars_;
   nlocs_ = rhs.nlocs_;
+  indexAppend_ = rhs.indexAppend_;
   rows_ = std::move(rhs.rows_);
   rhs.nvars_ = 0;
   rhs.nlocs_ = 0;
+  rhs.indexAppend_ = 0;
   obsdb_.detach(rhs);
   oops::Log::trace() << "ObsDataVector::operator= done" << std::endl;
   return *this;
@@ -236,9 +250,9 @@ void ObsDataVector<DATATYPE>::mask(const ObsDataVector<int> & flags) {
 }
 // -----------------------------------------------------------------------------
 template <typename DATATYPE>
-void ObsDataVector<DATATYPE>::read(const std::string & name, const bool fail,
-                                   const bool skipDerived) {
-  oops::Log::trace() << "ObsDataVector::read, name = " << name << std::endl;
+void ObsDataVector<DATATYPE>::doRead(const std::string & name, const bool fail,
+                                   const bool skipDerived, const std::size_t & stloc ) {
+  oops::Log::trace() << "ObsDataVector::doRead, name = " << name << std::endl;
 
   // Only need to read data when nlocs_ is greater than 0.
   // e.g. if there is no obs. on current MPI task, no read needed.
@@ -248,12 +262,26 @@ void ObsDataVector<DATATYPE>::read(const std::string & name, const bool fail,
     for (size_t jv = 0; jv < nvars_; ++jv) {
       if (fail || obsdb_.has(name, obsvars_.variables()[jv])) {
         obsdb_.get_db(name, obsvars_.variables()[jv], tmp, {}, skipDerived);
-        for (size_t jj = 0; jj < nlocs_; ++jj) {
+        for (size_t jj = stloc; jj < nlocs_; ++jj) {
           rows_.at(jv).at(jj) = tmp.at(jj);
         }
       }
     }
   }
+}
+// -----------------------------------------------------------------------------
+template <typename DATATYPE>
+void ObsDataVector<DATATYPE>::read(const std::string & name, const bool fail,
+                                   const bool skipDerived) {
+  oops::Log::trace() << "ObsDataVector::read, name = " << name << std::endl;
+  this->doRead(name, fail, skipDerived);
+}
+// -----------------------------------------------------------------------------
+template <typename DATATYPE>
+void ObsDataVector<DATATYPE>::readAppended(const std::string & name, const bool fail,
+                                   const bool skipDerived) {
+  oops::Log::trace() << "ObsDataVector::read, name = " << name << std::endl;
+  this->doRead(name, fail, skipDerived, indexAppend_);
 }
 // -----------------------------------------------------------------------------
 template <typename DATATYPE>
@@ -319,9 +347,18 @@ void ObsDataVector<DATATYPE>::append() {
     row.reserve(newnlocs);
     row.insert(row.end(), newnlocs - nlocs_, missing_);
   }
+  indexAppend_ = nlocs_;
   nlocs_ = newnlocs;
 }
-
+// -----------------------------------------------------------------------------
+template <typename DATATYPE>
+void ObsDataVector<DATATYPE>::zeroAppended() {
+  for (size_t jv = 0; jv < nvars_; ++jv) {
+    for (size_t jj = indexAppend_; jj < nlocs_; ++jj) {
+      rows_.at(jv).at(jj) = static_cast<DATATYPE>(0);
+    }
+  }
+}
 // -----------------------------------------------------------------------------
 /// Print statistics describing a vector \p obsdatavector of observations taken from \p obsdb
 /// to the stream \p os.

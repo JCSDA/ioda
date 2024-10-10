@@ -150,6 +150,16 @@ void ObsVector::zero() {
   }
 }
 // -----------------------------------------------------------------------------
+void ObsVector::zeroAppended() {
+  std::size_t nlocs = obsdb_.nlocs();
+    for (std::size_t jv = 0; jv < nvars_; ++jv) {
+      for (std::size_t jj = indexAppend_; jj < nlocs; ++jj) {
+      std::size_t ivec = jv + (jj * nvars_);
+      values_[ivec] = 0;
+    }
+  }
+}
+// -----------------------------------------------------------------------------
 void ObsVector::ones() {
   std::fill(values_.begin(), values_.end(), 1.0);
 }
