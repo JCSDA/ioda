@@ -960,6 +960,22 @@ Variables:
     Dimensions: [ [ "Location", "Band" ] ]
     MetaData: true
     Force Units: false
+  - Variable: [ "detectorQuality"]
+    Dimensions: [ [ "Location" ] ]
+    MetaData: true
+    Force Units: false
+  - Variable: [ "spatialQuality", ]
+    Dimensions: [ [ "Location" ] ]
+    MetaData: true
+    Force Units: false
+  - Variable: [ "reconstructionFlag" ]
+    Dimensions: [ [ "Location" ] ]
+    MetaData: true
+    Force Units: false
+  - Variable: [ "reconstructionScore" ]
+    Dimensions: [ [ "Location" ] ]
+    MetaData: true
+    Force Units: false
   - Variable: [ "sensorCentralFrequency", "sensor_band_central_radiation_frequency", "frequency", "sensor_central_frequency" ]
     Dimensions: [ [ "Channel" ], [ "Location" ], [ "Location", "Channel" ] ]
     MetaData: true
