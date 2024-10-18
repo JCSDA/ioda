@@ -8,7 +8,8 @@
 
 module obsspace_mod
 
-   use, intrinsic :: iso_c_binding
+   use, intrinsic :: iso_c_binding, only: c_ptr, c_null_ptr, c_char, c_size_t, &
+       & c_int, c_int32_t, c_int64_t, c_float, c_double, c_bool
    use kinds
    use string_f_c_mod
    use datetime_mod
