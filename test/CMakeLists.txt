@@ -2615,6 +2615,18 @@ if (odc_FOUND)
                             test-IASI.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
+  ecbuild_add_test( TARGET  test_ioda-convert_mtgirs_odc
+                    TYPE    SCRIPT
+                    COMMAND bash
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                            hdf5
+                            "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
+                            MTGIRS
+                            Data/testinput_tier_1/mtgirs.odb
+                            ../share/test/testinput/odb_radiance_name_map.yaml ../share/test/testinput/iodatest_odb_mtgirs.yaml"
+                            test-MTGIRS.hdf
+                    TEST_DEPENDS get_ioda_test_data )
+
   ecbuild_add_test( TARGET  test_ioda-convert_mwsfy3_odc
                     TYPE    SCRIPT
                     COMMAND bash

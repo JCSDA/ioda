@@ -1360,7 +1360,8 @@ ObsGroup openFile(const ODC_Parameters& odcparams,
       sql_data.assignChannelNumbers(varno_rawbt, og);
     } else if (column == "initial_vertco_reference" && (sql_data.getObsgroup() == obsgroup_iasi ||
                                                            sql_data.getObsgroup() == obsgroup_cris ||
-                                                           sql_data.getObsgroup() == obsgroup_hiras)) {
+                                                           sql_data.getObsgroup() == obsgroup_hiras ||
+                                                           sql_data.getObsgroup() == obsgroup_mtgirs)) {
       sql_data.assignChannelNumbers(varno_rawsca, og);
     } else if (column == "initial_vertco_reference" && (sql_data.getObsgroup() == obsgroup_abiclr ||
                                                         sql_data.getObsgroup() == obsgroup_ahiclr ||

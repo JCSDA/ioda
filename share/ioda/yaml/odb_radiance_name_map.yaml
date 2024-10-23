@@ -61,6 +61,22 @@ varno-independent columns:
     source: "field_of_regard"
   - name: "MetaData/general_quality_flag"
     source: "general_quality_flag"
+  - name: "MetaData/detectorQuality1"
+    source: "detector_quality_1"
+  - name: "MetaData/detectorQuality2"
+    source: "detector_quality_2"
+  - name: "MetaData/reconstructionFlag1"
+    source: "recon_flag_1"
+  - name: "MetaData/reconstructionFlag2"
+    source: "recon_flag_2"
+  - name: "MetaData/reconstructionScore1"
+    source: "recon_score_1"
+  - name: "MetaData/reconstructionScore2"
+    source: "recon_score_2"
+  - name: "MetaData/spatialQuality1"
+    source: "spatial_quality_1"
+  - name: "MetaData/spatialQuality2"
+    source: "spatial_quality_2"
   - name: "MetaData/landOrSeaQualifier"
     source: "land_sea"
   - name: "MetaData/latitude"
@@ -123,6 +139,8 @@ varno-dependent columns:
         varno: 119
       - name: "radiance"
         varno: 233
+      - name: "pcScore"
+        varno: 238
       - name: "brightnessTemperature_amsu"
         varno: 249
   - source: "obs_error"

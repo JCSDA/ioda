@@ -145,7 +145,8 @@ NewDimensionScales_t DataFromSQL::getVertcos(const int varno) const {
   const int num_rows = number_of_metadata_rows_;
   vertcos.push_back(
     NewDimensionScale<int>("Location", num_rows, num_rows, num_rows));
-  if (obsgroup_ == obsgroup_iasi || obsgroup_ == obsgroup_cris || obsgroup_ == obsgroup_hiras) {
+  if (obsgroup_ == obsgroup_iasi || obsgroup_ == obsgroup_cris || obsgroup_ == obsgroup_hiras ||
+      obsgroup_ == obsgroup_mtgirs) {
     const int number_of_levels = numberOfLevels(varno);
     vertcos.push_back(NewDimensionScale<int>("Channel", number_of_levels,
                                              number_of_levels, number_of_levels));
@@ -950,7 +951,8 @@ void DataFromSQL::getVarnoColumnCallArguments(int varno, std::vector<int> &varno
     varnos = {varno_rawbt_mwts, varno_rawbt_mwhs};
   } else if (obsgroup_ == obsgroup_mwsfy3 && varno != varno_rawbt_mwts) {
     varnos = {varno_rawbt_mwts, varno_rawbt_mwhs};
-  } else if (obsgroup_ == obsgroup_cris || obsgroup_ == obsgroup_hiras || obsgroup_ == obsgroup_iasi) {
+  } else if (obsgroup_ == obsgroup_cris || obsgroup_ == obsgroup_hiras || obsgroup_ == obsgroup_iasi ||
+             obsgroup_ == obsgroup_mtgirs) {
     nchans = numberOfLevels(varnos[0]);
     nchans_actual = numberOfLevels(varno);
   } else if (obsgroup_ == obsgroup_geocloud || obsgroup_ == obsgroup_surfacecloud) {
