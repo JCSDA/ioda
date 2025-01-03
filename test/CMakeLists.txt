@@ -224,6 +224,8 @@ list( APPEND ioda_test_input
   testinput/iodatest_filter_obs_multi_file_twfilt_rtfilt.yaml
   testinput/iodatest_filter_obs_single_file_twfilt_rtfiltwindow.yaml
   testinput/iodatest_filter_obs_multi_file_twfilt_rtfiltwindow.yaml
+  testinput/iodatest_filter_obs_sondes.yaml
+  testinput/iodatest_filter_obs_amsua.yaml
   testinput/iodatest_time_io.yaml
   testinput/iodatest_time_io_odc.yaml
   testinput/iodatest_time_io_reader_pool.yaml
@@ -1861,6 +1863,8 @@ ecbuild_add_test( TARGET  test_ioda_clean_filter_obs_files
                           "testoutput/filter_obs_multi_file_input_twfilt_rtfilt.nc4"
                           "testoutput/filter_obs_single_file_input_twfilt_rtfiltwindow.nc4"
                           "testoutput/filter_obs_multi_file_input_twfilt_rtfiltwindow.nc4"
+                          "testoutput/filter_obs_sondes_obs_2018041500_m.nc4"
+                          "testoutput/filter_obs_amsua_n19_obs_2018041500_m.nc4"
                 )
 
 # following tests run the filter app and create output files
@@ -1892,6 +1896,16 @@ ecbuild_add_test( TARGET  test_ioda_filter_obs_single_file_input_twfilt_rtfiltwi
 ecbuild_add_test( TARGET  test_ioda_filter_obs_multi_file_input_twfilt_rtfiltwindow
                   COMMAND ${CMAKE_BINARY_DIR}/bin/ioda-filterObs.x
                   ARGS    "testinput/iodatest_filter_obs_multi_file_twfilt_rtfiltwindow.yaml"
+                  TEST_DEPENDS get_ioda_test_data test_ioda_clean_filter_obs_files )
+
+ecbuild_add_test( TARGET  test_ioda_filter_obs_sondes
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/ioda-filterObs.x
+                  ARGS    "testinput/iodatest_filter_obs_sondes.yaml"
+                  TEST_DEPENDS get_ioda_test_data test_ioda_clean_filter_obs_files )
+
+ecbuild_add_test( TARGET  test_ioda_filter_obs_amsua
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/ioda-filterObs.x
+                  ARGS    "testinput/iodatest_filter_obs_amsua.yaml"
                   TEST_DEPENDS get_ioda_test_data test_ioda_clean_filter_obs_files )
 
 # following tests compare the output files of the filter app
@@ -1948,6 +1962,24 @@ ecbuild_add_test( TARGET  test_ioda_filter_obs_cmp_multi_file_input_twfilt_rtfil
                           "echo Checking filter obs (twindow + rtime, multiple file input)"
                           filter_obs_multi_file_input_twfilt_rtfiltwindow.nc4
                   TEST_DEPENDS get_ioda_test_data test_ioda_filter_obs_multi_file_input_twfilt_rtfiltwindow )
+
+ecbuild_add_test( TARGET  test_ioda_filter_obs_cmp_sondes
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking filter obs (sondes)"
+                          filter_obs_sondes_obs_2018041500_m.nc4
+                  TEST_DEPENDS get_ioda_test_data test_ioda_filter_obs_sondes )
+
+ecbuild_add_test( TARGET  test_ioda_filter_obs_cmp_amsua
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking filter obs (amsua)"
+                          filter_obs_amsua_n19_obs_2018041500_m.nc4
+                  TEST_DEPENDS get_ioda_test_data test_ioda_filter_obs_amsua )
 
 #####################################################################
 # Test the script backend

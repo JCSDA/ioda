@@ -9,6 +9,7 @@
 #define MAINS_FILTEROBS_H_
 
 #include <algorithm>
+#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -35,6 +36,98 @@
 // Currently, the time window filtering is the only filtering operation.
 
 // -----------------------------------------------------------------------------
+/// \brief split full variable name into a group and name
+/// \details This function will take a ioda variable name in the form of "group/variable"
+/// and split it into the two pieces "group" and "variable". If fullVarName is set
+/// to a string without a "/", then it is assumed that the groupName is "MetaData"
+/// and varName is equal to fullVarName.
+/// \param fullVarName full variable name in the format "group/variable"
+/// \param groupName leading name before the "/" in the full name
+/// \param varName leading name after the "/" in the full name
+static void splitVarName(const std::string & fullVarName, std::string & groupName,
+                         std::string & varName) {
+  std::size_t slashPos = fullVarName.find("/");
+  if (slashPos != std::string::npos) {
+    groupName = fullVarName.substr(0, slashPos);
+    varName = fullVarName.substr(slashPos + 1);
+  } else {
+    groupName = "MetaData";
+    varName = fullVarName;
+  }
+}
+
+// -----------------------------------------------------------------------------
+  /// \brief generate receipt times
+  /// \details This function will generate a contrived set of receipt times (for
+  /// testing and demo purposes) by adding a delay, constrained by the delayMin
+  /// and delayMax parameters, to each obs time stamp (MetaData/dateTime values).
+  /// A modulo function will be applied to the dateTime values to determine a
+  /// reproducible delay for each location, while making the delays added somewhat
+  /// random-like.
+  /// \param delayMin integer minimum delay value, in seconds
+  /// \param delayMax integer maximum delay value, in seconds
+  /// \param numDelayBins integer number of bins to split the delay range into
+  /// \param receiptVarName name of new receipt time variable
+static void generateReceiptTimes(const std::int64_t delayMin, const std::int64_t delayMax,
+                          const int numDelayBins, const std::string & receiptVarName,
+                          ioda::ObsSpace & obsdb) {
+  // Check the parameters
+  //     1. delayMin is less than delayMax
+  //     2. numDelayBins is positive
+  //     3. receiptVarName does not exist - if it does, issue a warning and
+  //        skip the generation of receipt times
+  bool paramsOkay = true;
+  if (delayMin >= delayMax) {
+    oops::Log::info() << "ERROR: generateReceiptTimes: YAML configuration 'delay min' must "
+                      << "be less than 'delay max'" << std::endl;
+    paramsOkay = false;
+  }
+  if (numDelayBins < 1) {
+    oops::Log::info() << "ERROR: generateReceiptTimes: YAML configuration 'number of delay bins' "
+                      << "must be a positive integer greater than zero" << std::endl;
+    paramsOkay = false;
+  }
+  if (!paramsOkay) {
+    throw eckit::BadParameter("Errors in YAML configuration", Here());
+  }
+
+  std::string grpName;
+  std::string varName;
+  splitVarName(receiptVarName, grpName, varName);
+  if (obsdb.has(grpName, varName)) {
+    oops::Log::info() << "WARNING: generateReceiptTimes: Receipt time variable already exists: "
+                      << receiptVarName << std::endl
+                      << "WARNING: Skipping the generate receipts times step." << std::endl;
+  }
+
+  // Get the time stamps for all of the locations, which are contained
+  // in the MetaData/dateTime variable.
+  if (!obsdb.has("MetaData", "dateTime")) {
+    // MetaData/dateTime is expected to be in the input file
+    std::string errMsg("input file does not contain the MetaData/dateTime variable");
+    throw eckit::ReadError(errMsg, Here());
+  }
+  std::vector<util::DateTime> dateTimeVals;
+  obsdb.get_db("MetaData", "dateTime", dateTimeVals);
+
+  // Add the reproducible, but random-like, delays to the dateTimeVals
+  // and write that out into the ObsSpace using the new variable name.
+  util::DateTime refDateTime("1970-01-01T00:00:00Z");
+  for (std::size_t i = 0; i < dateTimeVals.size(); ++i) {
+    // Create a delay value that is inside the range delayMin to delayMax, then
+    // add that value to the dateTime value, and simply write out the updated
+    // dateTime values into the new receipt time variable.
+    const std::int64_t modResult = (dateTimeVals[i] - refDateTime).toSeconds() % numDelayBins;
+    const float modRangeFrac =
+        static_cast<float>(modResult) / static_cast<float>(numDelayBins);
+    const std::int64_t delay =
+        delayMin + int64_t(modRangeFrac * static_cast<float>(delayMax - delayMin));
+    dateTimeVals[i] += util::Duration(delay);
+  }
+  obsdb.put_db(grpName, varName, dateTimeVals);
+}
+
+// -----------------------------------------------------------------------------
   /// \brief Implementation of the receipt time filter.
   /// \details This filter is primarily (solely?) for dealing with contrived
   /// data that is being created for demo or research purposes. The idea is to
@@ -57,15 +150,8 @@
     // the receiptTimeVariable exists, and if so apply the filter.
     std::string grpName;
     std::string varName;
-    std::size_t slashPos = receiptVarName.find("/");
-    if (slashPos != std::string::npos) {
-      grpName = receiptVarName.substr(0, slashPos);
-      varName = receiptVarName.substr(slashPos + 1);
-    } else {
-      grpName = "MetaData";
-      varName = receiptVarName;
-    }
     std::vector<util::DateTime> receiptTimes;
+    splitVarName(receiptVarName, grpName, varName);
     if (obsdb.has(grpName, varName)) {
       obsdb.get_db(grpName, varName, receiptTimes);
     } else {
@@ -109,7 +195,6 @@ template <typename OBS> class FilterObs : public oops::Application {
     // optional but in this case we want to make sure it is
     // included since we need to produce an output file.
     const eckit::LocalConfiguration obsconf(fullConfig, "obs space");
-    oops::Log::debug() << "ObsSpace configuration is:" << obsconf << std::endl;
     if (!obsconf.has("obsdataout")) {
       std::string errMsg =
         std::string("ioda-filterObs: Must include 'obsdataout' spec ") +
@@ -126,11 +211,38 @@ template <typename OBS> class FilterObs : public oops::Application {
     int numReceiptTimeRejected = -1;
     const std::string receiptTimeFilterSpec("receipt time filter");
     if (fullConfig.has(receiptTimeFilterSpec)) {
+      // Collect the configuration specs:
+      //   variable name:
+      //       name of the variable in the ObsSpace that holds the receipt times
+      //   accept window:
+      //       keep location if its receipt time is inside this window
+      //   generate receipt times:
+      //       optional spec that tells this filter to first generate (contrived) receipt times
       const eckit::LocalConfiguration filterConfig =
           fullConfig.getSubConfiguration(receiptTimeFilterSpec);
       const util::TimeWindow receiptAcceptWindow(
           filterConfig.getSubConfiguration("accept window"));
       const std::string receiptVarName = filterConfig.getString("variable name");
+
+      // If there is a generate receipt times spec, do the generate action before
+      // applying the filter. The generate receipt times section has two specs that
+      // define a range of delays for constraining the generated times.
+      //     delay min:
+      //         minimum delay to add to the obs time stamp
+      //     delay max:
+      //         maximum delay to add to the obs time stamp
+      //     module divisor:
+      //         divisor to be used in the modulo method for generating times
+      const std::string generateSpec("generate receipt times");
+      if (filterConfig.has(generateSpec)) {
+        const eckit::LocalConfiguration generateConfig =
+            filterConfig.getSubConfiguration(generateSpec);
+        std::int64_t delayMin = generateConfig.getInt64("delay min");
+        std::int64_t delayMax = generateConfig.getInt64("delay max");
+        int numDelayBins = generateConfig.getInt("number of delay bins");
+        generateReceiptTimes(delayMin, delayMax, numDelayBins, receiptVarName, obsdb.obsspace());
+      }
+
       numReceiptTimeRejected = applyReceiptTimeFilter(receiptVarName,
           receiptAcceptWindow, obsdb.obsspace());
     }
