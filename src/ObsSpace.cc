@@ -1625,19 +1625,19 @@ void ObsSpace::appendMissingObsErrors(ObsSourceStats & obsSourceStats) {
   // First check if there are any of the simulated variables in the DerivedObsError
   // group. If so read in the variable and assign missing values to the locations
   // that were just appended.
-  for (size_t i = 0; i < obsvars_.size(); ++i) {
+  for (size_t ivar = 0; ivar < obsvars_.size(); ++ivar) {
     // Third argument to has() is skipDerived. If true don't look in the
     // given group name with "Derived" prepended to the name (in this case
     // don't look for "DerivedDerivedObsError").
-    if (has("DerivedObsError", obsvars_[i], true)) {
+    if (has("DerivedObsError", obsvars_[ivar], true)) {
       std::vector<float> obsError(nlocs());
-      get_db("DerivedObsError", obsvars_[i], obsError);
+      get_db("DerivedObsError", obsvars_[ivar], obsError);
       std::size_t indx = obsError.size() - obsSourceStats.nlocs;
-      for (std::size_t i = 0; i < obsSourceStats.nlocs; ++i) {
+      for (std::size_t iloc = 0; iloc < obsSourceStats.nlocs; ++iloc) {
         obsError[indx] = util::missingValue<float>();
         ++indx;
       }
-      put_db("DerivedObsError", obsvars_[i], obsError);
+      put_db("DerivedObsError", obsvars_[ivar], obsError);
     }
   }
 }
