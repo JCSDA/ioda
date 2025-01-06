@@ -199,8 +199,7 @@ void testAppend() {
     testConfig.get("append sequence", appendSequence);
     for (std::size_t iapp = 0; iapp < appendSequence.size(); ++iapp) {
       // get the expected append directory and call the append function
-      const std::string appendDir = appendSequence[iapp].getString("append directory");
-      odb.append(appendDir);
+      odb.updateObsSpace(appendSequence[iapp]);
 
       // get the expected values and compare
       const std::size_t expectedGlobalNlocs = appendSequence[iapp].getUnsigned("gnlocs");

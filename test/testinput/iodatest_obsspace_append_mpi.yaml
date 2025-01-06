@@ -23,12 +23,12 @@ observations:
       nrecs: 7
       obs are sorted: false
     append sequence:
-    - append directory: "Data/testinput_tier_1/test_append2"
+    - obs append directory: "Data/testinput_tier_1/test_append2"
       gnlocs: 12
       gnlocs outside time window: 0
       nrecs: 12
       obs are sorted: false
-    - append directory: "Data/testinput_tier_1/test_append3"
+    - obs append directory: "Data/testinput_tier_1/test_append3"
       gnlocs: 20
       gnlocs outside time window: 0
       nrecs: 20
@@ -144,12 +144,12 @@ observations:
       nrecs: 7
       obs are sorted: false
     append sequence:
-    - append directory: "Data/testinput_tier_1/test_append2"
+    - obs append directory: "Data/testinput_tier_1/test_append2"
       gnlocs: 12
       gnlocs outside time window: 0
       nrecs: 12
       obs are sorted: false
-    - append directory: "Data/testinput_tier_1/test_append3"
+    - obs append directory: "Data/testinput_tier_1/test_append3"
       gnlocs: 20
       gnlocs outside time window: 0
       nrecs: 20

@@ -539,7 +539,7 @@ namespace ioda {
         /// new file (matching the original file name used by the ObsSpace constructor)
         /// exists that contains the obs data to be appended.
         /// \param appendDir directory holding the file containing the new obs data
-        void append(const std::string & appendDir);
+        void updateObsSpace(const eckit::Configuration &);
 
         /// \brief Reduce obs space given a vector of int showing which values to remove
         /// \details This function will use its input arguments to remove unwanted
@@ -588,7 +588,7 @@ namespace ioda {
      private:
         // ----------------------------- private data members ---------------------------
         /// Time window class
-        const util::TimeWindow timeWindow_;
+        util::TimeWindow timeWindow_;
 
         /// \brief MPI communicator
         const eckit::mpi::Comm & commMPI_;

@@ -161,8 +161,14 @@ class ObsSpaceParameters {
     /// \brief get the MPI rank number
     int getMpiTimeRank() const { return mpi_time_rank_; }
 
+    /// \brief update function for continuous DA
+    void updateWindow(const eckit::Configuration & cdaConfig) {
+      util::TimeWindow newWindow(cdaConfig.getSubConfiguration("time window"));
+      time_window_ = newWindow;
+    }
+
  private:
-    const util::TimeWindow time_window_;
+    util::TimeWindow time_window_;
 
     /// \brief MPI group communicator
     const eckit::mpi::Comm & comm_;

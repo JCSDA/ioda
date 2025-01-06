@@ -29,13 +29,13 @@ observations:
       obs are sorted: false
       update derived obs error: [ ]
     append sequence:
-    - append directory: "Data/testinput_tier_1/test_append2"
+    - obs append directory: "Data/testinput_tier_1/test_append2"
       gnlocs: 12
       gnlocs outside time window: 0
       nrecs: 12
       obs are sorted: false
       update derived obs error: [ ]
-    - append directory: "Data/testinput_tier_1/test_append3"
+    - obs append directory: "Data/testinput_tier_1/test_append3"
       gnlocs: 20
       gnlocs outside time window: 0
       nrecs: 20
@@ -98,13 +98,13 @@ observations:
       obs are sorted: false
       update derived obs error: [ ]
     append sequence:
-    - append directory: "Data/testinput_tier_1/test_append2"
+    - obs append directory: "Data/testinput_tier_1/test_append2"
       gnlocs: 12
       gnlocs outside time window: 0
       nrecs: 12
       obs are sorted: false
       update derived obs error: [ ]
-    - append directory: "Data/testinput_tier_1/test_append3"
+    - obs append directory: "Data/testinput_tier_1/test_append3"
       gnlocs: 20
       gnlocs outside time window: 0
       nrecs: 20
@@ -171,7 +171,7 @@ observations:
           name: airTemperature
           values: [ 0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5 ]
     append sequence:
-    - append directory: "Data/testinput_tier_1/test_append2"
+    - obs append directory: "Data/testinput_tier_1/test_append2"
       gnlocs: 12
       gnlocs outside time window: 0
       nrecs: 12
@@ -180,7 +180,7 @@ observations:
         - group: DerivedObsError
           name: airTemperature
           values: [ 7.5, 8.5, 9.5, 10.5, 11.5 ]
-    - append directory: "Data/testinput_tier_1/test_append3"
+    - obs append directory: "Data/testinput_tier_1/test_append3"
       gnlocs: 20
       gnlocs outside time window: 0
       nrecs: 20

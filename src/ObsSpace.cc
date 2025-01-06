@@ -737,8 +737,14 @@ std::vector<std::size_t> ObsSpace::recidx_all_recnums() const {
 }
 
 // -----------------------------------------------------------------------------
-void ObsSpace::append(const std::string & appendDir) {
+void ObsSpace::updateObsSpace(const eckit::Configuration & cdaConfig) {
   // For now, only allow append to run on non-overlapping distributions
+  std::string appendDir = cdaConfig.getString("obs append directory");
+  if (cdaConfig.has("time window")) {
+    util::TimeWindow newWindow(cdaConfig.getSubConfiguration("time window"));
+    timeWindow_ = newWindow;
+    obs_params_.updateWindow(cdaConfig);
+  }
   if (!(dist_->isNonoverlapping())) {
     std::string errMsg = std::string("ObsSpace::append: Distribution '") + dist_->name() +
                          std::string("' is not yet supported.\n") +
@@ -764,7 +770,6 @@ void ObsSpace::append(const std::string & appendDir) {
         if (checkFileExists(newFileName)) {
             oops::Log::info() << this->obsname() << ": Appending obs data: "
                                                     << newFileName << std::endl;
-
             // Load data into a temporary ObsGroup object and append that to the obs_group_
             // data member.
             eckit::LocalConfiguration obsDataInConfig;
