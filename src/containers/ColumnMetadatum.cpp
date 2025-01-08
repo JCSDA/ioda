@@ -49,6 +49,7 @@ std::int8_t osdf::ColumnMetadatum::validateType(const std::int8_t type) {
     case consts::eInt64: break;
     case consts::eFloat: break;
     case consts::eDouble: break;
+    case consts::eChar: break;
     case consts::eString: break;
     default: throw ioda::Exception("ERROR: Type set not recognised.", ioda_Here());
   }

@@ -604,9 +604,14 @@ void ObsSpace::get_db(const std::string & group, const std::string & name,
         vdata.resize(0);
     } else {
         std::vector<int64_t> timeOffsets;
+        util::DateTime epochDt;
         loadVar<int64_t>(group, name, chanSelect, timeOffsets, skipDerived);
-        Variable dtVar = obs_group_.vars.open(group + std::string("/") + name);
-        util::DateTime epochDt = getEpochAsDtime(dtVar);
+        if (use_dataframe_) {
+            epochDt = obs_params_.top_level_.epochDateTime;
+        } else {
+            Variable dtVar = obs_group_.vars.open(group + std::string("/") + name);
+            epochDt = getEpochAsDtime(dtVar);
+        }
         vdata = convertEpochDtToDtime(epochDt, timeOffsets);
     }
 }
@@ -668,11 +673,17 @@ void ObsSpace::put_db(const std::string & group, const std::string & name,
     // of through the openCreateVar call in saveVar because of the need to get the
     // epoch value for converting the data before calling saveVar. Use the epoch DateTime
     // parameter for the units if creating a new variable.
-    Variable dtVar;
-    openCreateEpochDtimeVar(group, name, gnlocs_, obs_params_.top_level_.epochDateTime,
-                            dtVar, obs_group_.vars);
-    util::DateTime epochDtime = getEpochAsDtime(dtVar);
-    std::vector<int64_t> timeOffsets = convertDtimeToTimeOffsets(epochDtime, vdata);
+    std::vector<int64_t> timeOffsets;
+    util::DateTime paramsEpochDtime = obs_params_.top_level_.epochDateTime;
+    if (use_dataframe_) {
+        timeOffsets = convertDtimeToTimeOffsets(paramsEpochDtime, vdata);
+    } else {
+        Variable dtVar;
+        openCreateEpochDtimeVar(group, name, gnlocs_, paramsEpochDtime,
+                                dtVar, obs_group_.vars);
+        util::DateTime epochDtime = getEpochAsDtime(dtVar);
+        timeOffsets = convertDtimeToTimeOffsets(epochDtime, vdata);
+    }
     saveVar(group, name, timeOffsets, dimList);
 }
 
@@ -1144,49 +1155,58 @@ void ObsSpace::saveVar(const std::string & group, std::string name,
 
     std::vector<int> channels;
 
-    const std::string ChannelVarName = this->get_dim_name(ObsDimensionId::Channel);
-    if (group != "MetaData" && obs_group_.vars.exists(ChannelVarName)) {
-        // If the variable does not already exist and its name ends with an underscore followed by
-        // a number, interpret the latter as a channel number selecting a slice of the "Channel"
-        // dimension.
-        std::string nameToUse;
-        splitChanSuffix(group, name, {}, nameToUse, channels);
-        name = std::move(nameToUse);
-    }
-
-    const std::string fullName = fullVarName(group, name);
-
-    std::vector<std::string> dimListToUse = dimList;
-    if (!obs_group_.vars.exists(fullName) && !channels.empty()) {
-        // Append "channels" to the dimensions list if not already present.
-        const size_t ChannelDimIndex =
-            std::find(dimListToUse.begin(), dimListToUse.end(), ChannelVarName) -
-            dimListToUse.begin();
-        if (ChannelDimIndex == dimListToUse.size())
-            dimListToUse.push_back(ChannelVarName);
-    }
-    Variable var = openCreateVar<VarType>(fullName, dimListToUse);
-
-    if (channels.empty()) {
-        var.write<VarType>(varValues);
+    if (use_dataframe_) {
+        std::string fullName = fullVarName(group, name);
+        if (osdf_->hasColumn(fullName)) {
+            osdf_->setColumn(fullName, varValues);
+        } else {
+            osdf_->appendNewColumn(fullName, varValues);
+        }
     } else {
-        // Find the index of the Channel dimension
-        Variable ChannelVar = obs_group_.vars.open(ChannelVarName);
-        std::vector<std::vector<Named_Variable>> dimScales =
-            var.getDimensionScaleMappings({Named_Variable(ChannelVarName, ChannelVar)});
-        size_t ChannelDimIndex = std::find_if(dimScales.begin(), dimScales.end(),
-                                             [](const std::vector<Named_Variable> &x)
-                                             { return !x.empty(); }) - dimScales.begin();
-        if (ChannelDimIndex == dimScales.size())
-            throw eckit::UserError("Variable " + fullName +
-                                   " is not indexed by channel numbers", Here());
+        const std::string ChannelVarName = this->get_dim_name(ObsDimensionId::Channel);
+        if (group != "MetaData" && obs_group_.vars.exists(ChannelVarName)) {
+            // If the variable does not already exist and its name ends with an underscore followed
+            // by a number, interpret the latter as a channel number selecting a slice of the
+            // "Channel" dimension.
+            std::string nameToUse;
+            splitChanSuffix(group, name, {}, nameToUse, channels);
+            name = std::move(nameToUse);
+        }
 
-        Selection memSelect;
-        Selection obsGroupSelect;
-        createChannelSelections(var, ChannelDimIndex, channels,
-                                memSelect, obsGroupSelect);
-        var.write<VarType>(varValues, memSelect, obsGroupSelect);
-    }
+        const std::string fullName = fullVarName(group, name);
+
+        std::vector<std::string> dimListToUse = dimList;
+        if (!obs_group_.vars.exists(fullName) && !channels.empty()) {
+            // Append "channels" to the dimensions list if not already present.
+            const size_t ChannelDimIndex =
+                std::find(dimListToUse.begin(), dimListToUse.end(), ChannelVarName) -
+                dimListToUse.begin();
+            if (ChannelDimIndex == dimListToUse.size())
+                dimListToUse.push_back(ChannelVarName);
+        }
+        Variable var = openCreateVar<VarType>(fullName, dimListToUse);
+
+        if (channels.empty()) {
+            var.write<VarType>(varValues);
+        } else {
+            // Find the index of the Channel dimension
+            Variable ChannelVar = obs_group_.vars.open(ChannelVarName);
+            std::vector<std::vector<Named_Variable>> dimScales =
+                var.getDimensionScaleMappings({Named_Variable(ChannelVarName, ChannelVar)});
+            size_t ChannelDimIndex = std::find_if(dimScales.begin(), dimScales.end(),
+                                                [](const std::vector<Named_Variable> &x)
+                                                { return !x.empty(); }) - dimScales.begin();
+            if (ChannelDimIndex == dimScales.size())
+                throw eckit::UserError("Variable " + fullName +
+                                    " is not indexed by channel numbers", Here());
+
+            Selection memSelect;
+            Selection obsGroupSelect;
+            createChannelSelections(var, ChannelDimIndex, channels,
+                                    memSelect, obsGroupSelect);
+            var.write<VarType>(varValues, memSelect, obsGroupSelect);
+        }
+    }  // if (use_dataframe_)
 }
 
 // -----------------------------------------------------------------------------

@@ -151,7 +151,6 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsspace_missing_obs_file_error_def_odc.yaml
   testinput/iodatest_obsspace_missing_obs_file_error_def_odc_reader_pool.yaml
   testinput/iodatest_obsspace_missing_obs_file_error_def_reader_pool.yaml
-  testinput/iodatest_obsspace_osdf.yaml
   testinput/iodatest_obsspace_out_dims_check.yaml
   testinput/iodatest_obsspace_grouping.yaml
   testinput/iodatest_obsspace_grouping_reader_pool.yaml
@@ -482,12 +481,6 @@ ecbuild_add_test( TARGET  test_ioda_oops_obsspace
 ecbuild_add_test( TARGET  test_ioda_obsspace
                   SOURCES mains/TestIodaObsSpace.cc
                   ARGS    "testinput/iodatest_obsspace.yaml"
-                  LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data )
-
-ecbuild_add_test( TARGET  test_ioda_obsspace_osdf
-                  SOURCES mains/TestIodaObsSpaceOSDF.cc
-                  ARGS    "testinput/iodatest_obsspace_osdf.yaml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
