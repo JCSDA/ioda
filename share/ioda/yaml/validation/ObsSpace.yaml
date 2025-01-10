@@ -168,6 +168,18 @@ Groups:
     OverrideType: Char
   - Group: [ "DiagnosticFlags/StationPressureUsedInSurfacePressureCalculation" ]
     OverrideType: Char
+  - Group: [ "DiagnosticFlags/DensitySpike" ]
+    OverrideType: Char
+  - Group: [ "DiagnosticFlags/DensityStep" ]
+    OverrideType: Char
+  - Group: [ "DiagnosticFlags/ProfileSpike" ]
+    OverrideType: Char
+  - Group: [ "DiagnosticFlags/ProfileStep" ]
+    OverrideType: Char
+  - Group: [ "DiagnosticFlags/MetarQNHUnitsInchesOfMercury" ]
+    OverrideType: Char
+  - Group: [ "DiagnosticFlags/MetarQNHUnitsHPa" ]
+    OverrideType: Char
   # Deprecated
   - Group: [ "VarMetaData" ]
     Remove: "Variables in this group should be relocated to MetaData."
