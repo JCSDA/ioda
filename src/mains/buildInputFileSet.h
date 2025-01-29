@@ -38,7 +38,7 @@ class BuildInputFileSet : public oops::Application {
   virtual ~BuildInputFileSet() {}
 
   // -----------------------------------------------------------------------------
-  int execute(const eckit::Configuration & fullConfig) const {
+  int execute(const eckit::Configuration & fullConfig) const override {
       // Get the observation time window
       const util::TimeWindow timeWindow(fullConfig.getSubConfiguration("time window"));
       oops::Log::info() << "Observation window: " << timeWindow << std::endl;
@@ -81,7 +81,7 @@ class BuildInputFileSet : public oops::Application {
 
 // -----------------------------------------------------------------------------
  private:
-  std::string appname() const {
+  std::string appname() const override {
     return "ioda::BuildInputFileSet";
   }
 // -----------------------------------------------------------------------------

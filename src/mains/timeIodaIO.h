@@ -44,7 +44,7 @@ template <typename MODEL> class TimeIodaIO : public oops::Application {
 // -----------------------------------------------------------------------------
   virtual ~TimeIodaIO() {}
 // -----------------------------------------------------------------------------
-  int execute(const eckit::Configuration & fullConfig) const {
+  int execute(const eckit::Configuration & fullConfig) const override {
 //  Setup observation window
     const util::TimeWindow timeWindow(fullConfig.getSubConfiguration("time window"));
     oops::Log::info() << "Observation window: " << timeWindow << std::endl;
@@ -71,7 +71,7 @@ template <typename MODEL> class TimeIodaIO : public oops::Application {
 
 // -----------------------------------------------------------------------------
  private:
-  std::string appname() const {
+  std::string appname() const override {
     return "oops::TimeIodaIO<" + MODEL::name() + ">";
   }
 // -----------------------------------------------------------------------------
