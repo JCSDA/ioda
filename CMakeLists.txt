@@ -52,14 +52,23 @@ find_package( Eigen3 REQUIRED NO_MODULE HINTS
               $ENV{Eigen3_PATH} $ENV{EIGEN3_PATH} $ENV{Eigen_PATH} $ENV{EIGEN_PATH} )
 find_package( gsl-lite REQUIRED HINTS $ENV{gsl_lite_DIR} )
 find_package( udunits 2.2.0 REQUIRED )
-find_package( NetCDF REQUIRED COMPONENTS Fortran )  # No idea why oops is not importing this correctly
 find_package( Boost 1.64.0 REQUIRED )
 
 # Optional
 find_package( odc 1.4.6 QUIET )   # Needed for odc
 find_package( bufr 12.0.1 QUIET )
-find_package( NetCDF OPTIONAL_COMPONENTS CXX ) # Needed for bufr-query
 find_package( bufr_query QUIET )
+
+# Netcdf requirements according to optional packages above
+# There seems to be issues with imported targets not propagating correctly
+# from ioda dependencies (oops, bufr-query) and, for now, the workaround
+# is to run a find_package on netcdf again.
+list(APPEND IODA_NETCDF_COMPONENTS C Fortran)
+if (bufr_query_FOUND)
+  list(APPEND IODA_NETCDF_COMPONENTS CXX)
+endif()
+message(STATUS "IODA required NetCDF components: ${IODA_NETCDF_COMPONENTS}")
+find_package( NetCDF REQUIRED COMPONENTS ${IODA_NETCDF_COMPONENTS} )
 
 # Python-finding settings
 set(Python3_FIND_REGISTRY "LAST")
