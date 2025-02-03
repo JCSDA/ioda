@@ -210,6 +210,7 @@ ObsSpace::ObsSpace(const eckit::Configuration & config, const eckit::mpi::Comm &
         }
     } else {
         // Load the obs space data (into obs_group_) from the obs source (file or generator)
+        obs_group_ = std::make_unique<ObsGroup>();
         dim_info_.set_dim_size(ObsDimensionId::Location, 0);
         indx_.clear();
         recnums_.clear();
@@ -258,8 +259,8 @@ ObsSpace::ObsSpace(const eckit::Configuration & config, const eckit::mpi::Comm &
         } else {
             // Use all variables found in the ObsValue group in the file. If there is no ObsValue
             // group (rare), then copy the simulated variables list.
-            if (obs_group_.exists("ObsValue")) {
-                Group obsValueGroup = obs_group_.open("ObsValue");
+            if (obs_group_->exists("ObsValue")) {
+                Group obsValueGroup = obs_group_->open("ObsValue");
                 const std::vector<std::string>
                         allObsVars = obsValueGroup.listObjects<ObjectType::Variable>(false);
                 // ToDo (JAW): Get the channels from the input file (currently using the ones from
@@ -339,7 +340,7 @@ void ObsSpace::save() {
             IoPool::WriterPoolFactory::create(obs_params_.top_level_.ioPool, createParams);
 
         writePool->initialize();
-        writePool->save(obs_group_);
+        writePool->save(*obs_group_);
         // Wait for all processes to finish the save call so that we know the file
         // is complete and closed.
         oops::Log::info() << obsname() << ": save database to " << *writePool << std::endl;
@@ -374,10 +375,10 @@ std::size_t ObsSpace::nvars() const {
     // Because of the generator case above, query ObsValue first and if ObsValue doesn't
     // exist query ObsError.
     std::size_t numVars = 0;
-    if (obs_group_.exists("ObsValue")) {
-         numVars = obs_group_.open("ObsValue").vars.list().size();
-    } else if (obs_group_.exists("ObsError")) {
-         numVars = obs_group_.open("ObsError").vars.list().size();
+    if (obs_group_->exists("ObsValue")) {
+         numVars = obs_group_->open("ObsValue").vars.list().size();
+    } else if (obs_group_->exists("ObsError")) {
+         numVars = obs_group_->open("ObsError").vars.list().size();
     }
     return numVars;
 }
@@ -418,8 +419,8 @@ bool ObsSpace::strictHas(const std::string & group, const std::string & name,
         returnVal = osdf_->hasColumn(fullVarName(group, name)) ||
                 (!skipDerived && osdf_->hasColumn(fullVarName("Derived" + group, name)));
     } else {
-        returnVal = obs_group_.vars.exists(fullVarName(group, name)) ||
-            (!skipDerived && obs_group_.vars.exists(fullVarName("Derived" + group, name)));
+        returnVal = obs_group_->vars.exists(fullVarName(group, name)) ||
+            (!skipDerived && obs_group_->vars.exists(fullVarName("Derived" + group, name)));
     }
     return returnVal;
 }
@@ -496,7 +497,7 @@ ObsDtype ObsSpace::dtype(const std::string & group, const std::string & name,
             //             was returned by groupToUse above. It's already been verified to exist.
             if (has(groupToUse, nameToUse, skipDerived)) {
                 const std::string varNameToUse = fullVarName(groupToUse, nameToUse);
-                Variable var = obs_group_.vars.open(varNameToUse);
+                Variable var = obs_group_->vars.open(varNameToUse);
                 VarUtils::switchOnSupportedVariableType(
                     var,
                     [&] (int)   {
@@ -617,7 +618,7 @@ void ObsSpace::get_db(const std::string & group, const std::string & name,
         if (use_dataframe_) {
             epochDt = obs_params_.top_level_.epochDateTime;
         } else {
-            Variable dtVar = obs_group_.vars.open(group + std::string("/") + name);
+            Variable dtVar = obs_group_->vars.open(group + std::string("/") + name);
             epochDt = getEpochAsDtime(dtVar);
         }
         vdata = convertEpochDtToDtime(epochDt, timeOffsets);
@@ -688,7 +689,7 @@ void ObsSpace::put_db(const std::string & group, const std::string & name,
     } else {
         Variable dtVar;
         openCreateEpochDtimeVar(group, name, gnlocs_, paramsEpochDtime,
-                                dtVar, obs_group_.vars);
+                                dtVar, obs_group_->vars);
         util::DateTime epochDtime = getEpochAsDtime(dtVar);
         timeOffsets = convertDtimeToTimeOffsets(epochDtime, vdata);
     }
@@ -844,8 +845,8 @@ void ObsSpace::reduce(const std::vector<bool> & keepLocs) {
     const std::size_t newNlocs = reduceVarDataValues(keepLocs);
 
     // Resize the obs_group_ container according to the newNlocs value
-    Variable locVar = obs_group_.vars.open("Location");
-    obs_group_.resize({std::pair<Variable, Dimensions_t>(locVar, newNlocs)});
+    Variable locVar = obs_group_->vars.open("Location");
+    obs_group_->resize({std::pair<Variable, Dimensions_t>(locVar, newNlocs)});
     dim_info_.set_dim_size(ObsDimensionId::Location, newNlocs);
 
     // Update the nrecs_ and recidx_ data members according to the reduce
@@ -876,7 +877,7 @@ void ObsSpace::print(std::ostream & os) const {
 void ObsSpace::assignLocationValues() {
     // Only do the assignment if the Location variable exists and if there
     // are more that zero locations.
-    if ((indx_.size() > 0) && (obs_group_.vars.exists("Location"))) {
+    if ((indx_.size() > 0) && (obs_group_->vars.exists("Location"))) {
         // (TODO: srh) the location variable is getting defined as different types
         // by the ioda converters. The converters need to converge on the convention
         // type which is int64_t. But for now, Location can be int64_t, int, float.
@@ -886,7 +887,7 @@ void ObsSpace::assignLocationValues() {
         // the type in the input file (float: 6 or 7 digits of precision,
         // int: ~2 billion, etc) and we are static_cast'ing to the same type as what
         // is in the file.
-        Variable locVar = obs_group_.vars.open("Location");
+        Variable locVar = obs_group_->vars.open("Location");
         if (locVar.isA<int>()) {
             std::vector<int> locValues(indx_.size());
             for (std::size_t i = 0; i < indx_.size(); ++i) {
@@ -971,7 +972,7 @@ void ObsSpace::load(const eckit::LocalConfiguration & obsDataInConfig,
 // -----------------------------------------------------------------------------
 void ObsSpace::appendObsGroup(ObsGroup & appendObsGroup, ObsSourceStats & obsSourceStats) {
     // append the ObsGroup
-    obs_group_.append(appendObsGroup);
+    obs_group_->append(appendObsGroup);
 
     // Need to keep indx_ and recnums_ unique and the load function will number these
     // starting with zero. Simply add in the offset given by the current values of
@@ -1002,8 +1003,8 @@ void ObsSpace::appendObsGroup(ObsGroup & appendObsGroup, ObsSourceStats & obsSou
     dim_info_.set_dim_size(ObsDimensionId::Location, nlocs);
 
     std::string ChannelName = dim_info_.get_dim_name(ObsDimensionId::Channel);
-    if (obs_group_.vars.exists(ChannelName)) {
-        std::size_t nChans = obs_group_.vars.open(ChannelName).getDimensions().dimsCur[0];
+    if (obs_group_->vars.exists(ChannelName)) {
+        std::size_t nChans = obs_group_->vars.open(ChannelName).getDimensions().dimsCur[0];
         dim_info_.set_dim_size(ObsDimensionId::Channel, nChans);
     }
 }
@@ -1084,14 +1085,14 @@ std::vector<eckit::LocalConfiguration> ObsSpace::expandInputFileConfigs(
 
 // -----------------------------------------------------------------------------
 void ObsSpace::resizeLocation(const Dimensions_t LocationSize, const bool append) {
-    Variable LocationVar = obs_group_.vars.open(dim_info_.get_dim_name(ObsDimensionId::Location));
+    Variable LocationVar = obs_group_->vars.open(dim_info_.get_dim_name(ObsDimensionId::Location));
     Dimensions_t LocationResize;
     if (append) {
         LocationResize = LocationVar.getDimensions().dimsCur[0] + LocationSize;
     } else {
         LocationResize = LocationSize;
     }
-    obs_group_.resize(
+    obs_group_->resize(
         { std::pair<Variable, Dimensions_t>(LocationVar, LocationResize) });
 }
 
@@ -1115,14 +1116,14 @@ void ObsSpace::loadVar(const std::string & group, const std::string & name,
         osdf_->getColumn(fullVarName(groupToUse, nameToUse), varValues);
     } else {
         // Try to open the variable.
-        ioda::Variable var = obs_group_.vars.open(fullVarName(groupToUse, nameToUse));
+        ioda::Variable var = obs_group_->vars.open(fullVarName(groupToUse, nameToUse));
 
         std::string ChannelVarName = this->get_dim_name(ObsDimensionId::Channel);
 
         // In the following code, assume that if a variable has channels, the
         // Channel dimension will be the second dimension.
-        if (obs_group_.vars.exists(ChannelVarName)) {
-            Variable ChannelVar = obs_group_.vars.open(ChannelVarName);
+        if (obs_group_->vars.exists(ChannelVarName)) {
+            Variable ChannelVar = obs_group_->vars.open(ChannelVarName);
             if (var.getDimensions().dimensionality > 1) {
                 if (var.isDimensionScaleAttached(1, ChannelVar) &&
                 (chanSelectToUse.size() > 0)) {
@@ -1172,7 +1173,7 @@ void ObsSpace::saveVar(const std::string & group, std::string name,
         }
     } else {
         const std::string ChannelVarName = this->get_dim_name(ObsDimensionId::Channel);
-        if (group != "MetaData" && obs_group_.vars.exists(ChannelVarName)) {
+        if (group != "MetaData" && obs_group_->vars.exists(ChannelVarName)) {
             // If the variable does not already exist and its name ends with an underscore followed
             // by a number, interpret the latter as a channel number selecting a slice of the
             // "Channel" dimension.
@@ -1184,7 +1185,7 @@ void ObsSpace::saveVar(const std::string & group, std::string name,
         const std::string fullName = fullVarName(group, name);
 
         std::vector<std::string> dimListToUse = dimList;
-        if (!obs_group_.vars.exists(fullName) && !channels.empty()) {
+        if (!obs_group_->vars.exists(fullName) && !channels.empty()) {
             // Append "channels" to the dimensions list if not already present.
             const size_t ChannelDimIndex =
                 std::find(dimListToUse.begin(), dimListToUse.end(), ChannelVarName) -
@@ -1198,7 +1199,7 @@ void ObsSpace::saveVar(const std::string & group, std::string name,
             var.write<VarType>(varValues);
         } else {
             // Find the index of the Channel dimension
-            Variable ChannelVar = obs_group_.vars.open(ChannelVarName);
+            Variable ChannelVar = obs_group_->vars.open(ChannelVarName);
             std::vector<std::vector<Named_Variable>> dimScales =
                 var.getDimensionScaleMappings({Named_Variable(ChannelVarName, ChannelVar)});
             size_t ChannelDimIndex = std::find_if(dimScales.begin(), dimScales.end(),
@@ -1286,9 +1287,9 @@ void ObsSpace::fillChanNumToIndexMap() {
     // If there is a channels dimension, load up the channel number to index map
     // for channel selection feature.
     std::string ChannelVarName = this->get_dim_name(ObsDimensionId::Channel);
-    if (obs_group_.vars.exists(ChannelVarName)) {
+    if (obs_group_->vars.exists(ChannelVarName)) {
         // Get the vector of channel numbers
-        Variable ChannelVar = obs_group_.vars.open(ChannelVarName);
+        Variable ChannelVar = obs_group_->vars.open(ChannelVarName);
         std::vector<int> chanNumbers;
         if (ChannelVar.isA<int>()) {
             ChannelVar.read<int>(chanNumbers);
@@ -1598,10 +1599,10 @@ void ObsSpace::extendObsSpace(const ObsExtendParameters & params) {
       // It is implied that these variables are in the MetaData group
       const std::string groupName = "MetaData";
       const std::string fullVname = fullVarName(groupName, varName);
-      if (obs_group_.vars.exists(fullVname)) {
+      if (obs_group_->vars.exists(fullVname)) {
         // Note Location at this point holds the original size before extending.
         // The numOriginalLocs argument passed to extendVariable indicates where to start filling.
-        Variable extendVar = obs_group_.vars.open(fullVname);
+        Variable extendVar = obs_group_->vars.open(fullVname);
         VarUtils::forAnySupportedVariableType(
               extendVar,
               [&](auto typeDiscriminator) {
@@ -1722,9 +1723,9 @@ std::size_t ObsSpace::reduceVarDataValues(const std::vector<bool> & keepLocs) {
     //
     std::size_t numLocs = this->nlocs();
     std::size_t reducedNlocs = 0;
-    Variable locVar = obs_group_.vars.open("Location");
-    for (const auto & varName : obs_group_.listObjects<ObjectType::Variable>(true)) {
-        Variable var = obs_group_.vars.open(varName);
+    Variable locVar = obs_group_->vars.open("Location");
+    for (const auto & varName : obs_group_->listObjects<ObjectType::Variable>(true)) {
+        Variable var = obs_group_->vars.open(varName);
 
         // skip if var is a dimension variable other than Location
         if (var.isDimensionScale() && (varName != "Location")) {
@@ -1847,7 +1848,7 @@ std::string ObsSpace::groupToUse(const std::string & group,
             if (!osdf_->hasColumn(fullVarName(groupToUse, name)))
                 groupToUse = group;
         } else {
-            if (!obs_group_.vars.exists(fullVarName(groupToUse, name)))
+            if (!obs_group_->vars.exists(fullVarName(groupToUse, name)))
                 groupToUse = group;
         }
     }

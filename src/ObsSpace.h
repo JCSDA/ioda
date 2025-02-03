@@ -412,11 +412,11 @@ namespace ioda {
 
         /// \brief return a list of names of the groups contained in the ObsSpace.
         std::vector<std::string> listGroups() const
-          {return obs_group_.listObjects<ObjectType::Group>(true);}
+          {return obs_group_->listObjects<ObjectType::Group>(true);}
 
         /// \brief return a list of names of the variables contained in the ObsSpace.
         std::vector<std::string> listVariables() const
-          {return obs_group_.listObjects<ObjectType::Variable>(true);}
+          {return obs_group_->listObjects<ObjectType::Variable>(true);}
 
         /// @}
         /// @name IO functions
@@ -620,7 +620,7 @@ namespace ioda {
         std::map<int, int> chan_num_to_index_;
 
         /// \brief legacy observation data store
-        ObsGroup obs_group_;
+        std::unique_ptr<ObsGroup> obs_group_;
 
         /// \brief pointer to DataFrame observation data store
         std::unique_ptr<osdf::IFrame> osdf_;
@@ -811,14 +811,14 @@ namespace ioda {
         Variable openCreateVar(const std::string & varName,
                                const std::vector<std::string> & varDimList) {
             Variable var;
-            if (obs_group_.vars.exists(varName)) {
-                var = obs_group_.vars.open(varName);
+            if (obs_group_->vars.exists(varName)) {
+                var = obs_group_->vars.open(varName);
             } else {
                 // Create a vector of the dimension variables
                 std::vector<ioda::Dimensions_t> chunkDims;
                 std::vector<Variable> varDims;
                 for (auto & dimName : varDimList) {
-                    Variable dimVar = obs_group_.vars.open(dimName);
+                    Variable dimVar = obs_group_->vars.open(dimName);
                     if (dimName == "Location") {
                         chunkDims.push_back(VarUtils::getLocationChunkSize(gnlocs_));
                     } else {
@@ -836,7 +836,7 @@ namespace ioda {
                 params.compressWithGZIP();
                 params.setFillValue<VarType>(fillVal);
 
-                var = obs_group_.vars.createWithScales<VarType>(varName, varDims, params);
+                var = obs_group_->vars.createWithScales<VarType>(varName, varDims, params);
             }
             return var;
         }
