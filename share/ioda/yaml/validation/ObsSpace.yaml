@@ -352,6 +352,22 @@ Variables:
     Force Units: false
     Type: UInt32
     MetaData: true
+  - Variable: [ "latitudeIPP" ]
+    Attributes: { units: "degree_north" }
+  - Variable: [ "longitudeIPP" ]
+    Attributes: { units: "degree_east" }
+  - Variable: [ "heightF2Peak" ]
+    Attributes: { units: "km" }
+  - Variable: [ "criticalF2Frequency" ]
+    Attributes: { units: "MHz" }
+  - Variable: [ "peakF2Density" ]
+    Attributes: { units: "number m-3" }
+  - Variable: [ "electronDensity" ]
+    Dimensions: [ [ "Location", "Level" ] ]
+    Attributes: { units: "number cm-3" }
+  - Variable: [ "criticalFrequency" ]
+    Dimensions: [ [ "Location", "Level" ] ]
+    Attributes: { units: "MHz" }
   - Variable: [ "zenithTotalDelay", "ZTD", "zenith_total_delay", "total_zenith_delay" ]
     Attributes: { units: "m" }
   - Variable: [ "slantPathDelay" ]
