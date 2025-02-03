@@ -93,6 +93,8 @@ class ObsTopLevelParameters : public oops::Parameters {
     oops::Parameter<int> obsPerturbationsSeed{"obs perturbations seed", 0, this};
 
     oops::Parameter<bool> useDataFrame{"use data frame container", false, this};
+
+    oops::Parameter<std::string> dataFrameType{"data frame type", "FrameCols", this};
 };
 
 class ObsSpaceParameters {

@@ -590,7 +590,7 @@ observations:
     variables for putget test: []
 
 - obs space:
-    name: "Hardcode_dataframe"
+    name: "Hardcode_dataframe (FrameCols)"
     simulated variables: ['temps']
     observed variables: ['temps']
     obsdatain:
@@ -600,6 +600,43 @@ observations:
       file preparation type: hardcoded
     obs perturbations seed: 25
     use data frame container: true
+  test data:
+    gnlocs: 10
+    gnlocs outside time window: 0
+    gnlocs rejected by qc: 0
+    nlocs from source: 10
+    nrecs: 5
+    obs perturbations seed: 25
+    expected group variables: []
+    expected sort variable: ""
+    expected sort order: "ascending"
+    variables for get test:
+      - name: "latitude"
+        group: "MetaData"
+        type: "float"
+        norm: 220.63840138949399
+
+      - name: "longitude"
+        group: "MetaData"
+        type: "float"
+        norm: 394.92537024564496
+
+    tolerance:
+      - 1.0e-14
+    variables for putget test: []
+
+- obs space:
+    name: "Hardcode_dataframe (FrameRows)"
+    simulated variables: ['temps']
+    observed variables: ['temps']
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: "Data/testinput_tier_1/aod_obs_2018041500_m.nc4"
+      file preparation type: hardcoded
+    obs perturbations seed: 25
+    use data frame container: true
+    data frame type: FrameRows
   test data:
     gnlocs: 10
     gnlocs outside time window: 0

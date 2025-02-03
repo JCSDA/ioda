@@ -666,6 +666,9 @@ namespace ioda {
         /// \brief indicator whether to use the new dataframe container
         bool use_dataframe_;
 
+        /// \brief data frame type (i.e. FrameCols or FrameRows)
+        std::string dataframe_type_;
+
         /// \brief all data structures currently associated with this ObsSpace.
         /// \details This is used so associated data structures can change their state
         ///          (e.g. reduce) when ObsSpace changes its state. ObsSpaceAssociated

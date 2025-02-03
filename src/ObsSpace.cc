@@ -186,7 +186,15 @@ ObsSpace::ObsSpace(const eckit::Configuration & config, const eckit::mpi::Comm &
         expandInputFileConfigs(obs_params_.top_level_.obsDataIn.value());
 
     if (use_dataframe_) {
-        osdf_.reset(new osdf::FrameCols());
+        dataframe_type_ = obs_params_.top_level_.dataFrameType.value();
+        if (dataframe_type_ == "FrameCols") {
+            osdf_ = std::make_unique<osdf::FrameCols>();
+        } else if (dataframe_type_ == "FrameRows") {
+            osdf_ = std::make_unique<osdf::FrameRows>();
+        } else {
+            throw eckit::UserError("Unknown data frame type: " + dataframe_type_,
+                                   Here());
+        }
         if (obsDataInConfigs.size() > 0) {
             ObsDataInParameters readerParams;
             readerParams.deserialize(obsDataInConfigs[0]);
@@ -207,7 +215,7 @@ ObsSpace::ObsSpace(const eckit::Configuration & config, const eckit::mpi::Comm &
         recnums_.clear();
         ObsGroup tempObsGroup;
         ObsSourceStats obsSourceStats;
-        for (int i = 0; i < obsDataInConfigs.size(); ++i) {
+        for (size_t i = 0; i < obsDataInConfigs.size(); ++i) {
             load(obsDataInConfigs[i], tempObsGroup, obsSourceStats);
             appendObsGroup(tempObsGroup, obsSourceStats);
         }
