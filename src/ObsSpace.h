@@ -371,6 +371,9 @@ namespace ioda {
         /// `ObsSpace::index()` will return `0, 1, 4, 5, 6, 8, 9`.
         const std::vector<std::size_t> & index() const {return indx_;}
 
+        /// Check if group exists
+        bool has(const std::string & group) const;
+
         /// \brief return true if variable `name` exists in group `group` or (unless `skipDerived`
         /// is set to true) `"Derived" + `group`. Also returns true if ObsSpace is empty.
         /// Backward compatible with names with channel suffixes.

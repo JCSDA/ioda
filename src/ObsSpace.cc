@@ -449,6 +449,13 @@ bool ObsSpace::has(const std::string & group, const std::string & name, bool ski
 }
 
 // -----------------------------------------------------------------------------
+bool ObsSpace::has(const std::string & group) const {
+    std::vector<std::string> grps = this->listGroups();
+    bool hasgrp = std::find(grps.begin(), grps.end(), group) != grps.end();
+    return hasgrp;
+}
+
+// -----------------------------------------------------------------------------
 ObsDtype ObsSpace::dtype(const std::string & group, const std::string & name,
                          bool skipDerived) const {
     // Set the type to None if there is no type from the backend

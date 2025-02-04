@@ -416,7 +416,6 @@ void ObsVector::mask(const ObsVector & mask) {
 // -----------------------------------------------------------------------------
 unsigned int ObsVector::nobs() const {
   int nobs = globalNumNonMissingObs(*obsdb_.distribution(), nvars_, values_);
-
   return nobs;
 }
 // -----------------------------------------------------------------------------
@@ -470,6 +469,105 @@ void ObsVector::print(std::ostream & os) const {
        << zmin << ", Max=" << zmax << ", RMS=" << zrms << std::endl;
   } else {
     os << obsdb_.obsname() << ": No observations." << std::endl;
+  }
+}
+// -----------------------------------------------------------------------------
+std::string ObsVector::info() const {
+  std::vector<double> mins(nvars_, std::numeric_limits<double>::max());
+  std::vector<double> maxs(nvars_, std::numeric_limits<double>::lowest());
+  std::vector<double> rmss(nvars_, 0.0);
+  std::vector<size_t> nval(nvars_, 0);
+  size_t indx = 0;
+  for (size_t jloc = 0; jloc < nlocs_; ++jloc) {
+    for (size_t jvar = 0; jvar < nvars_; ++jvar) {
+      if (values_[indx] != missing_) {
+        if (values_[indx] < mins[jvar]) mins[jvar] = values_[indx];
+        if (values_[indx] > maxs[jvar]) maxs[jvar] = values_[indx];
+        rmss[jvar] += values_[indx] * values_[indx];
+        ++nval[jvar];
+      }
+      ++indx;
+    }
+  }
+
+  std::stringstream ss;
+  this->infoImpl(mins, maxs, rmss, nval, ss);
+
+  return ss.str();
+}
+// -----------------------------------------------------------------------------
+std::string ObsVector::info(const ObsDataVector<int> & flags) const {
+  ASSERT(&flags.space() == &obsdb_);
+  ASSERT(flags.nlocs() == nlocs_);
+
+  // Local stats
+  std::vector<double> mins(nvars_, std::numeric_limits<double>::max());
+  std::vector<double> maxs(nvars_, std::numeric_limits<double>::lowest());
+  std::vector<double> rmss(nvars_, 0.0);
+  std::vector<size_t> nval(nvars_, 0);
+  size_t indx = 0;
+  for (size_t jloc = 0; jloc < nlocs_; ++jloc) {
+    for (size_t jvar = 0; jvar < nvars_; ++jvar) {
+      if (flags[this->obsvars_[jvar]][jloc] == 0 && values_[indx] != missing_) {
+        if (values_[indx] < mins[jvar]) mins[jvar] = values_[indx];
+        if (values_[indx] > maxs[jvar]) maxs[jvar] = values_[indx];
+        rmss[jvar] += values_[indx] * values_[indx];
+        ++nval[jvar];
+      }
+      ++indx;
+    }
+  }
+
+  std::stringstream ss;
+  this->infoImpl(mins, maxs, rmss, nval, ss);
+
+  return ss.str();
+}
+// -----------------------------------------------------------------------------
+void ObsVector::infoImpl(const std::vector<double> & mins, const std::vector<double> & maxs,
+                         const std::vector<double> & rmss, const std::vector<size_t> & nval,
+                         std::stringstream & ss) const {
+  std::vector<double> stats(4 * nvars_);
+  size_t ii = 0;
+  for (size_t jvar = 0; jvar < nvars_; ++jvar) {
+    stats[ii] = static_cast<double>(nval[jvar]);
+    stats[ii+1] = rmss[jvar];
+    stats[ii+2] = mins[jvar];
+    stats[ii+3] = maxs[jvar];
+    ii += 4;
+  }
+
+  // Gather info
+  std::vector<double> allstats(4 * nvars_ * obsdb_.comm().size());
+  obsdb_.comm().gather(stats, allstats, 0);
+
+  // Global stats
+  ss << std::scientific << std::setprecision(6);
+  ii = 0;
+  for (size_t jvar = 0; jvar < nvars_; ++jvar) {
+    size_t nobs = 0;
+    double zrms = 0.0;
+    double zmin = std::numeric_limits<double>::max();
+    double zmax = std::numeric_limits<double>::lowest();
+    size_t ioff = ii;
+    for (size_t jp = 0; jp < obsdb_.comm().size(); ++jp) {
+      nobs += static_cast<size_t>(allstats[ioff]);
+      zrms += allstats[ioff + 1];
+      zmin = std::min(allstats[ioff + 2], zmin);
+      zmax = std::max(allstats[ioff + 3], zmax);
+      ioff += 4 * nvars_;
+    }
+    ii += 4;
+    ss << "\n" << std::left << std::setw(40) << obsdb_.obsname() + ":" + obsvars_[jvar];
+    if (nobs > 0) {
+      ss << std::right
+         << std::setw(0) << ": Nobs=" << std::setw(9) << nobs
+         << std::setw(0) << ", Min=" << std::setw(13) << zmin
+         << std::setw(0) << ", Max=" << std::setw(13) << zmax
+         << std::setw(0) << ", RMS=" << std::setw(13) << std::sqrt(zrms/static_cast<double>(nobs));
+    } else {
+      ss << ": No observations.";
+    }
   }
 }
 // -----------------------------------------------------------------------------
