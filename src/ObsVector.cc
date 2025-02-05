@@ -8,7 +8,9 @@
 #include "ioda/ObsVector.h"
 
 #include <math.h>
+#include <algorithm>
 #include <limits>
+#include <string>
 
 #include "eckit/config/LocalConfiguration.h"
 #include "ioda/distribution/DistributionUtils.h"
@@ -472,7 +474,7 @@ void ObsVector::print(std::ostream & os) const {
   }
 }
 // -----------------------------------------------------------------------------
-std::string ObsVector::info() const {
+std::string ObsVector::info(const std::string & prefix) const {
   std::vector<double> mins(nvars_, std::numeric_limits<double>::max());
   std::vector<double> maxs(nvars_, std::numeric_limits<double>::lowest());
   std::vector<double> rmss(nvars_, 0.0);
@@ -491,12 +493,12 @@ std::string ObsVector::info() const {
   }
 
   std::stringstream ss;
-  this->infoImpl(mins, maxs, rmss, nval, ss);
+  this->infoImpl(prefix, mins, maxs, rmss, nval, ss);
 
   return ss.str();
 }
 // -----------------------------------------------------------------------------
-std::string ObsVector::info(const ObsDataVector<int> & flags) const {
+std::string ObsVector::info(const std::string & prefix, const ObsDataVector<int> & flags) const {
   ASSERT(&flags.space() == &obsdb_);
   ASSERT(flags.nlocs() == nlocs_);
 
@@ -519,14 +521,19 @@ std::string ObsVector::info(const ObsDataVector<int> & flags) const {
   }
 
   std::stringstream ss;
-  this->infoImpl(mins, maxs, rmss, nval, ss);
+  this->infoImpl(prefix, mins, maxs, rmss, nval, ss);
 
   return ss.str();
 }
 // -----------------------------------------------------------------------------
-void ObsVector::infoImpl(const std::vector<double> & mins, const std::vector<double> & maxs,
+void ObsVector::infoImpl(const std::string & prefix,
+                         const std::vector<double> & mins, const std::vector<double> & maxs,
                          const std::vector<double> & rmss, const std::vector<size_t> & nval,
                          std::stringstream & ss) const {
+  std::string grep = prefix;
+  if (!grep.empty() && std::isalnum(grep.back())) grep += ": ";
+
+  // Local stats
   std::vector<double> stats(4 * nvars_);
   size_t ii = 0;
   for (size_t jvar = 0; jvar < nvars_; ++jvar) {
@@ -558,7 +565,7 @@ void ObsVector::infoImpl(const std::vector<double> & mins, const std::vector<dou
       ioff += 4 * nvars_;
     }
     ii += 4;
-    ss << "\n" << std::left << std::setw(40) << obsdb_.obsname() + ":" + obsvars_[jvar];
+    ss << "\n" << std::left << grep << std::setw(40) << obsdb_.obsname() + ":" + obsvars_[jvar];
     if (nobs > 0) {
       ss << std::right
          << std::setw(0) << ": Nobs=" << std::setw(9) << nobs
