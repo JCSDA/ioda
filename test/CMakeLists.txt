@@ -140,10 +140,12 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsspace_empty_obs_file_reader_pool.yaml
   testinput/iodatest_obsspace_empty_obs_file_mpi_reader_pool.yaml
   testinput/iodatest_obsspace_missing_obs_file_warn.yaml
+  testinput/iodatest_obsspace_missing_obs_file_warn_bufr.yaml
   testinput/iodatest_obsspace_missing_obs_file_warn_mpi.yaml
   testinput/iodatest_obsspace_missing_obs_file_warn_odc.yaml
   testinput/iodatest_obsspace_missing_obs_file_warn_odc_mpi.yaml
   testinput/iodatest_obsspace_missing_obs_file_error.yaml
+  testinput/iodatest_obsspace_missing_obs_file_error_bufr.yaml
   testinput/iodatest_obsspace_missing_obs_file_error_odc.yaml
   testinput/iodatest_obsspace_missing_obs_file_error_odc_reader_pool.yaml
   testinput/iodatest_obsspace_missing_obs_file_error_reader_pool.yaml
@@ -639,6 +641,12 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_missing_obs_file_warn
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 
+ecbuild_add_test( TARGET  test_ioda_obsspace_missing_obs_file_warn_bufr
+                  COMMAND test_ioda_obsspace
+                  ARGS    "testinput/iodatest_obsspace_missing_obs_file_warn_bufr.yaml"
+                  LIBS  ioda_test
+                  TEST_DEPENDS get_ioda_test_data )
+
 ecbuild_add_test( TARGET  test_ioda_obsspace_missing_obs_file_warn_mpi
                   MPI 4
                   COMMAND test_ioda_obsspace
@@ -666,6 +674,19 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_missing_obs_file_error
                           hdf5
                           "${CMAKE_BINARY_DIR}/bin/time_IodaIO.x
                           testinput/iodatest_obsspace_missing_obs_file_error.yaml"
+                          testoutput/ospace.missing_obs_file_error.nc4
+                          0.0
+                          N
+                          Y
+                  TEST_DEPENDS get_ioda_test_data )
+
+ecbuild_add_test( TARGET  test_ioda_obsspace_missing_obs_file_error_bufr
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          hdf5
+                          "${CMAKE_BINARY_DIR}/bin/time_IodaIO.x
+                          testinput/iodatest_obsspace_missing_obs_file_error_bufr.yaml"
                           testoutput/ospace.missing_obs_file_error.nc4
                           0.0
                           N
