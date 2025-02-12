@@ -14,15 +14,13 @@ if (NOT PYCODESTYLE_EXE)
 endif()
 
 # Test data - from ioda-data repo if found, from local directory, or from tarball (release/develop-in-future?)
-if (ioda-data_FOUND)
+if (DEFINED ENV{IODA_TESTFILES})
+  message(STATUS "Use test data from local directory $ENV{IODA_TESTFILES}")
+  # A bit of guesswork here, I don't know if folks using this option stored it in the same directory structure
+  set (ioda_data_testinput_tier_1_local "$ENV{IODA_TESTFILES}/ioda-data/testinput_tier_1")
+elseif (ioda-data_FOUND)
   message(STATUS "Use test data from ioda-data repository")
   set (ioda_data_testinput_tier_1_local "${CMAKE_SOURCE_DIR}/ioda-data/testinput_tier_1")
-# It's unclear if anyone is using the local data functionality, therefore comment it out
-# for now and add in if someone complains / remove if completely if not.
-#elseif (DEFINED ENV{IODA_TESTFILES})
-#  message(STATUS "Use test data from local directory $ENV{IODA_TESTFILES}")
-#  # A bit of guesswork here, I don't know if folks using this option stored it in the same directory structure
-#  set (ioda_data_testinput_tier_1_local "$ENV{IODA_TESTFILES}/ioda-data/testinput_tier_1")
 else()
   set (ioda_data_testinput_tier_1_local "${CMAKE_SOURCE_DIR}/test-data-release/ioda/${ioda_data_tag}/testinput_tier_1")
   if (EXISTS ${ioda_data_testinput_tier_1_local})
