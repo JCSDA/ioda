@@ -2840,6 +2840,30 @@ if (odc_FOUND)
                             test-SatTCWV.hdf
                     TEST_DEPENDS get_ioda_test_data )
 
+  ecbuild_add_test( TARGET  test_ioda-convert_fciasr_odc
+                    TYPE    SCRIPT
+                    COMMAND bash
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                            hdf5
+                            "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
+                            FCIASR
+                            Data/testinput_tier_1/fciasr.odb
+                            ../share/test/testinput/odb_default_name_map.yaml ../share/test/testinput/iodatest_odb_fciasr.yaml"
+                            test-FCIASR.hdf
+                    TEST_DEPENDS get_ioda_test_data )
+
+  ecbuild_add_test( TARGET  test_ioda-convert_fciclr_odc
+                    TYPE    SCRIPT
+                    COMMAND bash
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                            hdf5
+                            "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
+                            FCIClr
+                            Data/testinput_tier_1/fciclr.odb
+                            ../share/test/testinput/odb_default_name_map.yaml ../share/test/testinput/iodatest_odb_fciclr.yaml"
+                            test-FCIClr.hdf
+                    TEST_DEPENDS get_ioda_test_data )
+
   ecbuild_add_test( TARGET  test_ioda-convert_seviriasr_odc
                     TYPE    SCRIPT
                     COMMAND bash

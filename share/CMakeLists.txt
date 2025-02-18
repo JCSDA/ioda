@@ -26,6 +26,8 @@ set(
   ioda/yaml/iodatest_odb_atovs_write.yaml
   ioda/yaml/iodatest_odb_cris.yaml
   ioda/yaml/iodatest_odb_crisfsr.yaml
+  ioda/yaml/iodatest_odb_fciasr.yaml
+  ioda/yaml/iodatest_odb_fciclr.yaml
   ioda/yaml/iodatest_odb_geocloud.yaml
   ioda/yaml/iodatest_odb_gmihigh.yaml
   ioda/yaml/iodatest_odb_gmihigh_write.yaml
