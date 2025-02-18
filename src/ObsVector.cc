@@ -363,27 +363,16 @@ void ObsVector::save(const std::string & name) const {
   }
 }
 // -----------------------------------------------------------------------------
-size_t ObsVector::packEigenSize(const ObsVector & mask) const {
+void ObsVector::maskAndSerialize(const ObsVector & mask,
+                                 std::vector<double> & valid_values) const {
   const size_t nn = values_.size();
   assert(mask.values_.size() == nn);
-  size_t nlocs = 0;
-  for (size_t jj = 0; jj < nn; ++jj) {
-    if ((mask.values_[jj] != missing_) && (values_[jj] != missing_)) nlocs++;
-  }
-  return nlocs;
-}
-// -----------------------------------------------------------------------------
-Eigen::VectorXd ObsVector::packEigen(const ObsVector & mask) const {
-  const size_t nn = values_.size();
-  assert(mask.values_.size() == nn);
-  Eigen::VectorXd vec(packEigenSize(mask));
-  size_t vecindex = 0;
+  valid_values.reserve(valid_values.size() + nn);
   for (size_t jj = 0; jj < nn; ++jj) {
     if ((mask.values_[jj] != missing_) && (values_[jj] != missing_)) {
-      vec(vecindex++) = values_[jj];
+      valid_values.push_back(values_[jj]);
     }
   }
-  return vec;
 }
 // -----------------------------------------------------------------------------
 ObsVector & ObsVector::operator=(const ObsDataVector<float> & rhs) {

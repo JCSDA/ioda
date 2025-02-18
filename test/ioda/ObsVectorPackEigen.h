@@ -32,11 +32,9 @@ namespace test {
 
 // -----------------------------------------------------------------------------
 
-/// \brief tests ObsVector::packEigen, packEigenSize methods and mask methods
+/// \brief tests ObsVector::maskAndSerialize method and mask methods
 /// \details Tests that:
-/// - number of local masked obs returned by ObsVector::packEigenSize is the same
-///   as reference in yaml (reference local masked nobs);
-/// - norm of Eigen::VectorXd returned by ObsVector::packEigen is close to the
+/// - norm of the vector returned by ObsVector::maskAndSerialize is close to the
 ///   reference specified in yaml (reference local masked norm);
 /// - norm of a random vector with mask applied is different from the same vector
 ///   before mask application;
@@ -53,7 +51,6 @@ void testPackEigen() {
      const size_t rank = obsdb.distribution()->rank();
      ioda::ObsVector obsvec(obsdb, "ObsValue");
 
-     // test packEigenSize
      const std::string maskname = conf[jj].getString("mask variable");
      ioda::ObsDataVector<int> mask(obsdb, obsdb.assimvariables(), maskname);
      // emulate the flow in the applications: ObsDataVector<float> obs errors
@@ -63,16 +60,17 @@ void testPackEigen() {
      ioda::ObsVector maskvector(obsdb);
      masked.mask(mask);
      maskvector = masked;
-     const size_t size = obsvec.packEigenSize(maskvector);
-     const std::vector<size_t> ref_sizes =
-                       conf[jj].getUnsignedVector("reference local masked nobs");
-     EXPECT_EQUAL(size, ref_sizes[rank]);
 
-     // test packEigen
-     Eigen::VectorXd packed = obsvec.packEigen(maskvector);
+     // test maskAndSerialize
+     std::vector<double> packed;
+     obsvec.maskAndSerialize(maskvector, packed);
      const std::vector<double> ref_norms =
                        conf[jj].getDoubleVector("reference local masked norm");
-     EXPECT(oops::is_close(packed.norm(), ref_norms[rank], 1.e-5));
+     const std::vector<size_t> ref_sizes =
+                       conf[jj].getUnsignedVector("reference local masked nobs");
+     EXPECT_EQUAL(packed.size(), ref_sizes[rank]);
+     double norm = std::sqrt(std::inner_product(packed.begin(), packed.end(), packed.begin(), 0.0));
+     EXPECT(oops::is_close(norm, ref_norms[rank], 1.e-5));
   }
 }
 

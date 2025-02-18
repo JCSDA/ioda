@@ -94,13 +94,10 @@ class ObsVector : public ObsSpaceAssociated,
   /// Number of active observations (missing values not included) across all MPI tasks
   unsigned int nobs() const;
 
-  /// Pack observations local to this MPI task into an Eigen vector
+  /// Serialize observations local to this MPI task into a \p values vector
   /// (excluding vector elements that are missing values, or where mask is equal to
   /// missing values
-  Eigen::VectorXd packEigen(const ObsVector & mask) const;
-  /// Number of non-masked out observations local to this MPI task
-  /// (size of an Eigen vector returned by `packEigen`)
-  size_t packEigenSize(const ObsVector & mask) const;
+  void maskAndSerialize(const ObsVector & mask, std::vector<double> & values) const;
 
   const double & toFortran() const;
   double & toFortran();
@@ -112,6 +109,7 @@ class ObsVector : public ObsSpaceAssociated,
   const oops::ObsVariables & varnames() const {return obsvars_;}
   std::size_t nvars() const {return nvars_;}
   std::size_t nlocs() const {return nlocs_;}
+  size_t serialSize() const {return nlocs_*nvars_;}
 
   /// Set this ObsVector values to missing where \p mask has missing values
   void mask(const ObsVector & mask);
