@@ -69,6 +69,64 @@ bool extractChannelSuffixIfPresent(const std::string &name,
     return false;
 }
 
+//--------------------------------------------------------------------------
+/// \brief place name and numerical suffix list into a canonical form
+/// \param name input name
+/// \param suffixList input suffix (numerical) list
+/// \param canonicalName canonical form of the name
+/// \param canonicalSuffixList canonical form of the suffix list
+void genCanonicalNameAndSuffixList(const std::string & name,
+                                   const std::vector<int> & suffixList,
+                                   std::string & canonicalName,
+                                   std::vector<int> & canonicalSuffixList) {
+    // There are four combinations of name and suffixList to consider
+    //           name               suffixList
+    //     1.   var (no _n suffix)    [ ]  (empty)
+    //     2.   var                   [ i, j, k ] (not empty)
+    //     3.   var_n (with suffix)   [ ]
+    //     4.   var_n                 [ i, j, k ]
+    //
+    // Note that 4 is an ambiguous specification. Issue a warning so we
+    // can track down any usage of this.
+
+    // The canonical form is:
+    //       name         suffixList
+    //   1.   var            [ ]
+    //   2.   var            [ i, j, k ]
+    //   3.   var            [ n ]
+    //   4.   var            [ n ]
+
+    // Check to see if the variable has a numerical suffix (_n). Note that
+    // extractChannelSuffixIfPresent will not set nameWithoutNumSuffix and
+    // suffixNum if the suffix is not present. However, these variables
+    // are only used when the variable does have a numerical suffix (in which
+    // case these variables will be set properly).
+    int suffixNum = -1;
+    std::string nameWithoutNumSuffix("");
+    const bool nameHasNumericalSuffix = extractChannelSuffixIfPresent(
+                                            name, nameWithoutNumSuffix, suffixNum);
+
+    // Issue a warning for the ambiguous spec where the input argument name has
+    // a numerical suffix and the input argument suffixList is not empty.
+    if (nameHasNumericalSuffix && (!suffixList.empty())) {
+    // Ambiguous case where both variable numerical suffix and suffixList are specified.
+    // The numerical suffix will be used and the suffixList will be ignored.
+        oops::Log::info()
+            << "WARNING: get_db was called with ambiguous arguments: " << std::endl
+            << "    name = " << name << std::endl
+            << "    suffixList = " << suffixList << std::endl
+            << "    Execution will continue and suffixList will be ignored." << std::endl;
+    }
+
+    if (nameHasNumericalSuffix) {
+        canonicalName = nameWithoutNumSuffix;
+        canonicalSuffixList = { suffixNum };
+    } else {
+        canonicalName = name;
+        canonicalSuffixList = suffixList;
+    }
+}
+
 // -----------------------------------------------------------------------------
 std::vector<float> lats = {-65.0, -66.6, -67.2, -68.6, -69.1,
                             -70.9, -71.132, -72.56, -73.0, -73.1};
@@ -77,6 +135,16 @@ std::vector<float> lons = {120.0, 121.1, 122.2, 123.3, 124.4,
 std::vector<std::string> statIds = {"00001", "00001", "00002", "00001", "00004",
                                     "00002", "00005", "00005", "00009", "00009"};
 std::vector<std::int32_t> channels = {10, 10, 11, 11, 12, 12, 11, 15, 11, 13};
+std::vector<float> brightnessTemperature_1 = {201.0, 201.0, 202.0, 203.0, 204.0,
+                                              205.0, 206.0, 207.0, 208.0, 209.0};
+std::vector<float> brightnessTemperature_2 = {202.0, 201.0, 202.0, 203.0, 204.0,
+                                              205.0, 206.0, 207.0, 208.0, 209.0};
+std::vector<float> brightnessTemperature_3 = {203.0, 201.0, 202.0, 203.0, 204.0,
+                                              205.0, 206.0, 207.0, 208.0, 209.0};
+std::vector<float> brightnessTemperature_4 = {204.0, 201.0, 202.0, 203.0, 204.0,
+                                              205.0, 206.0, 207.0, 208.0, 209.0};
+std::vector<float> brightnessTemperature_5 = {205.0, 201.0, 202.0, 203.0, 204.0,
+                                              205.0, 206.0, 207.0, 208.0, 209.0};
 std::vector<float> temps = {-10.231, -15.68, -15.54, -14.98, -16.123,
                             -19.11, -22.3324, -22.667, -25.6568, -25.63211};
 std::vector<std::int32_t> times = {1710460225, 1710460225, 1710460225, 1710460225, 1710460226,
@@ -87,6 +155,11 @@ void testPopulateFrame(const std::unique_ptr<osdf::IFrame> & osdf) {
   osdf->appendNewColumn("MetaData/longitude", lons);
   osdf->appendNewColumn("StatId", statIds);
   osdf->appendNewColumn("channel", channels);
+  osdf->appendNewColumn("ObsValue/brightnessTemperature_1", brightnessTemperature_1);
+  osdf->appendNewColumn("ObsValue/brightnessTemperature_2", brightnessTemperature_2);
+  osdf->appendNewColumn("ObsValue/brightnessTemperature_3", brightnessTemperature_3);
+  osdf->appendNewColumn("ObsValue/brightnessTemperature_4", brightnessTemperature_4);
+  osdf->appendNewColumn("ObsValue/brightnessTemperature_5", brightnessTemperature_5);
   osdf->appendNewColumn("temp", temps);
   osdf->appendNewColumn("time", times);
 }
@@ -203,8 +276,12 @@ ObsSpace::ObsSpace(const eckit::Configuration & config, const eckit::mpi::Comm &
                 source_nlocs_ = gnlocs_ = 10;
                 nrecs_ = 5;
                 dim_info_.set_dim_size(ObsDimensionId::Location, 10);
+                dim_info_.set_dim_size(ObsDimensionId::Channel, 5);
                 recnums_.clear();
                 recnums_ = {0, 0, 1, 0, 2, 1, 3, 3, 4, 4};
+                osdf_chan_nums_ = { 1, 2, 3, 4, 5 };
+                osdf_vars_with_chans_ = { "ObsValue/brightnessTemperature" };
+                obsvars_ = obs_params_.top_level_.ObservedVars;
             }
             osdf_->print();
         }
@@ -438,12 +515,32 @@ bool ObsSpace::has(const std::string & group, const std::string & name, bool ski
     if (this->empty()) {
         returnVal = true;
     } else {
-        // For backward compatibility, recognize and handle appropriately variable names with
-        // channel suffixes.
-        std::string nameToUse;
-        std::vector<int> chanSelectToUse;
-        splitChanSuffix(group, name, { }, nameToUse, chanSelectToUse, skipDerived);
-        returnVal = strictHas(group, nameToUse, skipDerived);
+        if (use_dataframe_) {
+            if (!(returnVal = strictHas(group, name, skipDerived))) {
+                // name is not present. Check if it exists with a channel suffix for all channels.
+                std::string baseName;
+                int nameChannel;
+                if (!extractChannelSuffixIfPresent(name, baseName, nameChannel)) {
+                    const std::vector<int> channels =
+                        obs_params_.top_level_.simVars.value().channels();
+                    for (int channel : channels) {
+                        const std::string nameToUse =
+                            name + std::string("_") + std::to_string(channel);
+                        returnVal = strictHas(group, nameToUse, skipDerived);
+                        if (!returnVal) {
+                            break;
+                        }
+                    }
+                }
+            }
+        } else {  // ObsGroup
+            // For backward compatibility, recognize and handle appropriately variable names with
+            // channel suffixes.
+            std::string nameToUse;
+            std::vector<int> chanSelectToUse;
+            splitChanSuffix(group, name, { }, nameToUse, chanSelectToUse, skipDerived);
+            returnVal = strictHas(group, nameToUse, skipDerived);
+        }
     }
     return returnVal;
 }
@@ -453,6 +550,37 @@ bool ObsSpace::has(const std::string & group) const {
     std::vector<std::string> grps = this->listGroups();
     bool hasgrp = std::find(grps.begin(), grps.end(), group) != grps.end();
     return hasgrp;
+}
+
+// -----------------------------------------------------------------------------
+// When we want to look up the type of a variable with channels when using OSDF,
+// we can't look up using the "base" variable name (e.g., "brightnessTemperature"),
+// So we instead need look up the type of one of the channel variables (e.g.,
+// brightnessTemperature_1). This function returns the name of the variable to use
+// to look up the type.
+std::string ObsSpace::dtypeName(const std::string & group, const std::string & name,
+                                bool skipDerived) const {
+    std::string nameToUse;
+    if (use_dataframe_) {
+        if (strictHas(group, name, skipDerived)) {
+            nameToUse = name;
+        } else {
+            const std::vector<int> channels =
+                obs_params_.top_level_.simVars.value().channels();
+            if (channels.size() > 0) {
+                const std::string potentialName =
+                    name + std::string("_") + std::to_string(channels[0]);
+                if (strictHas(group, potentialName, skipDerived)) {
+                    nameToUse = potentialName;
+                } else {
+                    nameToUse = name;
+                }
+            }
+        }
+    } else {
+        nameToUse = name;
+    }
+    return fullVarName(group, nameToUse);
 }
 
 // -----------------------------------------------------------------------------
@@ -468,7 +596,7 @@ ObsDtype ObsSpace::dtype(const std::string & group, const std::string & name,
         VarType = ObsDtype::Empty;
     } else {
         if (use_dataframe_) {
-            switch (osdf_->getColumnType(fullVarName(group, name))) {
+            switch (osdf_->getColumnType(dtypeName(group, name, skipDerived))) {
                 case osdf::consts::eDataTypes::eInt8:
                 case osdf::consts::eDataTypes::eInt16:
                 case osdf::consts::eDataTypes::eInt32:
@@ -1110,27 +1238,114 @@ void ObsSpace::loadVar(const std::string & group, const std::string & name,
                        const std::vector<int> & chanSelect,
                        std::vector<VarType> & varValues,
                        bool skipDerived) const {
-    // For backward compatibility, recognize and handle appropriately variable names with
-    // channel suffixes.
     std::string nameToUse;
+    std::string groupToUse;
     std::vector<int> chanSelectToUse;
-    splitChanSuffix(group, name, chanSelect, nameToUse, chanSelectToUse);
-
-    // Prefer variables from Derived* groups.
-    std::string groupToUse = this->groupToUse(group, nameToUse, skipDerived);
-
     if (use_dataframe_) {
-        osdf_->getColumn(fullVarName(groupToUse, nameToUse), varValues);
+        // Figure out the name, group and chanSelect that will be necessary to read
+        // the proper columns. Note that an empty canonical suffixList means all
+        // channels when a variable has channels (and is meaningless when a variable
+        // does not have channels).
+        std::string canonicalName;
+        std::vector<int> canonicalSuffixList;
+        genCanonicalNameAndSuffixList(
+                        name, chanSelect, canonicalName, canonicalSuffixList);
+
+        const bool varHasChans = osdfVarHasChannels(group, canonicalName, skipDerived);
+
+        if (varHasChans) {
+            // variable has channels so we want to use the canonical name
+            // and canonical suffix list. If the canonical suffix list is
+            // empty, then we want to replace it with the full list of
+            // channels
+            nameToUse = canonicalName;
+            if (canonicalSuffixList.empty()) {
+                chanSelectToUse = osdf_chan_nums_;
+            } else {
+                chanSelectToUse = canonicalSuffixList;
+            }
+        } else {
+            // variable does not have channels so the canonicalSuffixList
+            // should either be empty or consist of one element (which was
+            // the original variable name that happened to have a numeric
+            // suffix)
+            if (canonicalSuffixList.size() == 0) {
+                nameToUse = canonicalName;
+            } else {
+                // Print a warning and use the first entry if the size
+                // of the canonicalSuffixList is > 1.
+                if (canonicalSuffixList.size() > 1) {
+                    oops::Log::info()
+                        << "WARNING: loadVar: (internal) osdf malformed variable "
+                        << "and numeric suffix list: suffix list size not <= 1"
+                        << std::endl
+                        << "    canonical name: " << canonicalName << std::endl
+                        << "    canonical suffix list: " << canonicalSuffixList
+                        << std::endl
+                        << "Using first entry in canonical suffix list" << std::endl;
+                }
+                nameToUse = canonicalName + std::string("_") +
+                            std::to_string(canonicalSuffixList[0]);
+            }
+            chanSelectToUse = { };
+        }
+
+        // Resolve group vs derived group
+        groupToUse = this->groupToUse(group, nameToUse, skipDerived);
+
+        // At this point, we should have the variable name with the channel
+        // suffix removed, and a non-empty channel select list with all of
+        // the channels that are to be read. Simply walk through the
+        // list of channels and read them in one-by-one and copy the values
+        // appropriately to the output varValues.
+        std::size_t numLocs = 0;
+        const std::size_t numChans = chanSelectToUse.size();
+        const std::string groupVarName = fullVarName(groupToUse, nameToUse);
+        if (varHasChans) {
+            for (std::size_t i = 0; i < numChans; ++i) {
+                // Read in the column corresponding to the i-th channel number
+                std::vector<VarType> singleChanData;
+                osdf_->getColumn(
+                    groupVarName + std::string("_") + std::to_string(chanSelectToUse[i]),
+                    singleChanData);
+
+                // If on the first iteration, resize the output vector
+                // and set up the number of location for the indexing
+                // into the output vector.
+                if (i == 0) {
+                    numLocs = singleChanData.size();
+                    varValues.resize(numLocs * numChans);
+                }
+
+                // Place the single channel data into the output vector
+                for (std::size_t j = 0; j < numLocs; ++j) {
+                    const size_t indx = i + (j * numChans);
+                    varValues[indx] = singleChanData[j];
+                }
+            }
+        } else {
+            // Var does not have channels
+            osdf_->getColumn(groupVarName, varValues);
+        }
     } else {
+        // Using an ObsGroup
+
+        // For backward compatibility, recognize and handle appropriately variable names with
+        // channel suffixes.
+        splitChanSuffix(group, name, chanSelect, nameToUse, chanSelectToUse);
+
+        // Prefer variables from Derived* groups.
+        const std::string groupToUse = this->groupToUse(group, nameToUse, skipDerived);
+
         // Try to open the variable.
         ioda::Variable var = obs_group_->vars.open(fullVarName(groupToUse, nameToUse));
 
-        std::string ChannelVarName = this->get_dim_name(ObsDimensionId::Channel);
+        const std::string ChannelVarName = this->get_dim_name(ObsDimensionId::Channel);
 
         // In the following code, assume that if a variable has channels, the
         // Channel dimension will be the second dimension.
         if (obs_group_->vars.exists(ChannelVarName)) {
-            Variable ChannelVar = obs_group_->vars.open(ChannelVarName);
+            const Variable ChannelVar = obs_group_->vars.open(ChannelVarName);
             if (var.getDimensions().dimensionality > 1) {
                 if (var.isDimensionScaleAttached(1, ChannelVar) &&
                 (chanSelectToUse.size() > 0)) {
@@ -1172,11 +1387,75 @@ void ObsSpace::saveVar(const std::string & group, std::string name,
     std::vector<int> channels;
 
     if (use_dataframe_) {
-        std::string fullName = fullVarName(group, name);
-        if (osdf_->hasColumn(fullName)) {
-            osdf_->setColumn(fullName, varValues);
+        const std::size_t numLocs = this->nlocs();
+        const std::size_t numChans = this->nchans();
+
+        // The variable has channels if the dimList has "Channel"
+        // as the second dimension.
+        bool varHasChans = false;
+        if (dimList.size() > 1) {
+            if (dimList[1] == "Channel") {
+                varHasChans = true;
+            }
+        }
+
+        // strip off the "_n" suffix from name if it exists
+        std::string baseName;
+        std::vector<int> chanSelect;
+        splitChanSuffix(group, name, { }, baseName, chanSelect);
+
+        // Missing values for creation of columns
+        const std::vector<VarType> missingValues(numLocs, util::missingValue<VarType>());
+
+        // First create the variable if it doesn't exist.
+        if (!this->has(group, name)) {
+            if (varHasChans) {
+                // Walk through the osdf_chan_nums_ list and create
+                // new columns for every channel.
+                const std::string fullName = fullVarName(group, baseName);
+                for (auto & chanNum : osdf_chan_nums_) {
+                    const std::string varName = fullName + std::string("_") +
+                                                std::to_string(chanNum);
+                    osdf_->appendNewColumn(varName, missingValues);
+                }
+
+                // Add the new variable to the osdf_vars_with_chans_ list
+                osdf_vars_with_chans_.push_back(fullName);
+            } else {
+                // Use name as is and create a single column
+                const std::string fullName = fullVarName(group, name);
+                osdf_->appendNewColumn(fullName, missingValues);
+            }
+        }
+
+        // Write the data to the variable
+        if (varHasChans) {
+            int chanNum;
+            const bool varHasChanSuffix = extractChannelSuffixIfPresent(name, baseName, chanNum);
+            if (varHasChanSuffix) {
+                // Name had an "_n" suffix, writing to a single channel
+                const std::string fullName = fullVarName(group, name);
+                osdf_->setColumn(fullName, varValues);
+            } else {
+                // Name did not have a suffix, writing to the entire
+                // set of columns
+                const std::string fullName = fullVarName(group, name);
+                for (std::size_t i = 0; i < osdf_chan_nums_.size(); ++i) {
+                    const std::string varName = fullName + std::string("_") +
+                                                std::to_string(osdf_chan_nums_[i]);
+                    std::vector<VarType> columnData(numLocs);
+                    for (std::size_t j = 0; j < numLocs; ++j) {
+                        const std::size_t indx = i + (j * numChans);
+                        columnData[j] = varValues[indx];
+                    }
+                    osdf_->setColumn(varName, columnData);
+                }
+            }
+
         } else {
-            osdf_->appendNewColumn(fullName, varValues);
+            // No channels, use name as is
+            const std::string fullName = fullVarName(group, name);
+            osdf_->setColumn(fullName, varValues);
         }
     } else {
         const std::string ChannelVarName = this->get_dim_name(ObsDimensionId::Channel);
@@ -1206,10 +1485,10 @@ void ObsSpace::saveVar(const std::string & group, std::string name,
             var.write<VarType>(varValues);
         } else {
             // Find the index of the Channel dimension
-            Variable ChannelVar = obs_group_->vars.open(ChannelVarName);
-            std::vector<std::vector<Named_Variable>> dimScales =
+            const Variable ChannelVar = obs_group_->vars.open(ChannelVarName);
+            const std::vector<std::vector<Named_Variable>> dimScales =
                 var.getDimensionScaleMappings({Named_Variable(ChannelVarName, ChannelVar)});
-            size_t ChannelDimIndex = std::find_if(dimScales.begin(), dimScales.end(),
+            const size_t ChannelDimIndex = std::find_if(dimScales.begin(), dimScales.end(),
                                                 [](const std::vector<Named_Variable> &x)
                                                 { return !x.empty(); }) - dimScales.begin();
             if (ChannelDimIndex == dimScales.size())
@@ -1860,6 +2139,31 @@ std::string ObsSpace::groupToUse(const std::string & group,
         }
     }
     return groupToUse;
+}
+
+//------------------------------------------------------------------------
+bool ObsSpace::osdfVarHasChannels(const std::string & group,
+                                  const std::string & canonicalName,
+                                  const bool skipDerived) const {
+    // The canonical form of name and suffixList does not include the numeric
+    // suffix on the name. This is also how the name is stored in the
+    // osdf_vars_with_chans_ list. Simply check to see if name is in the list.
+    const std::string derivedGroup = std::string("Derived") + group;
+    bool hasChannels = false;
+    if (!skipDerived) {
+        hasChannels = (std::find(osdf_vars_with_chans_.begin(),
+            osdf_vars_with_chans_.end(), fullVarName(derivedGroup, canonicalName)) !=
+            osdf_vars_with_chans_.end());
+    }
+
+    if (!hasChannels) {
+        // Try the main group too
+        hasChannels = (std::find(osdf_vars_with_chans_.begin(),
+            osdf_vars_with_chans_.end(), fullVarName(group, canonicalName)) !=
+            osdf_vars_with_chans_.end());
+    }
+
+    return hasChannels;
 }
 
 }  // namespace ioda

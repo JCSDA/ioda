@@ -396,6 +396,9 @@ namespace ioda {
         ObsDtype dtype(const std::string & group, const std::string & name,
                        bool skipDerived = false) const;
 
+        std::string dtypeName(const std::string & group, const std::string & name,
+                              bool skipDerived = false) const;
+
         /// \brief return the collection of all variables to be processed
         /// (observed + derived variables)
         const oops::ObsVariables & obsvariables() const {return obsvars_;}
@@ -672,6 +675,12 @@ namespace ioda {
         /// \brief data frame type (i.e. FrameCols or FrameRows)
         std::string dataframe_type_;
 
+        /// \brief data frame channel numbers
+        std::vector<int> osdf_chan_nums_;
+
+        /// \brief data frame variables with channels
+        std::vector<std::string> osdf_vars_with_chans_;
+
         /// \brief all data structures currently associated with this ObsSpace.
         /// \details This is used so associated data structures can change their state
         ///          (e.g. reduce) when ObsSpace changes its state. ObsSpaceAssociated
@@ -921,6 +930,14 @@ namespace ioda {
         std::string groupToUse(const std::string & group,
                                const std::string & variable,
                                bool skipDerived) const;
+
+        /// \brief determine if the osdf variable (column) has channels
+        /// \param group group name
+        /// \param canonicalName canonical variable name
+        /// \param skipDerived if false, also check for var in derived group
+        bool osdfVarHasChannels(const std::string & group,
+                                const std::string & canonicalName,
+                                const bool skipDerived) const;
     };
 
 }  // namespace ioda

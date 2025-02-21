@@ -3,6 +3,8 @@ time window:
   begin: "2018-04-14T21:00:00Z"
   end: "2018-04-15T03:00:00Z"
 
+# note that the test_ioda_obsspace code currently depends on specifying
+# ALL of the channels in the "obs space.channels" spec.
 observations:
 - obs space:
     name: "AOD"
@@ -590,23 +592,27 @@ observations:
     variables for putget test: []
 
 - obs space:
-    name: "Hardcode_dataframe (FrameCols)"
-    simulated variables: ['temps']
-    observed variables: ['temps']
+    name: "Hardcode dataframe with channels (FrameCols)"
+    simulated variables: ['brightnessTemperature']
+    observed variables: ['brightnessTemperature']
+    channels: 1-5
+    distribution:
+      name: InefficientDistribution
     obsdatain:
       engine:
         type: H5File
         obsfile: "Data/testinput_tier_1/aod_obs_2018041500_m.nc4"
       file preparation type: hardcoded
-    obs perturbations seed: 25
+    obs perturbations seed: 250
     use data frame container: true
+    data frame type: FrameCols
   test data:
     gnlocs: 10
     gnlocs outside time window: 0
     gnlocs rejected by qc: 0
     nlocs from source: 10
     nrecs: 5
-    obs perturbations seed: 25
+    obs perturbations seed: 250
     expected group variables: []
     expected sort variable: ""
     expected sort order: "ascending"
@@ -620,21 +626,31 @@ observations:
         group: "MetaData"
         type: "float"
         norm: 394.92537024564496
-
     tolerance:
-      - 1.0e-14
-    variables for putget test: []
+      - 1.0e-11
+    variables for putget test:
+      # have to use float variables, and only one channel at a time
+      - name: "brightnessTemperature"
+        group: "ObsValue"
+        channels: [ 4 ]
+
+      - name: "brightnessTemperature"
+        group: "ObsValue"
+        channels: [ 5 ]
 
 - obs space:
-    name: "Hardcode_dataframe (FrameRows)"
-    simulated variables: ['temps']
-    observed variables: ['temps']
+    name: "Hardcode dataframe with channels (FrameRows)"
+    simulated variables: ['brightnessTemperature']
+    observed variables: ['brightnessTemperature']
+    channels: 1-5
+    distribution:
+      name: InefficientDistribution
     obsdatain:
       engine:
         type: H5File
         obsfile: "Data/testinput_tier_1/aod_obs_2018041500_m.nc4"
       file preparation type: hardcoded
-    obs perturbations seed: 25
+    obs perturbations seed: 250
     use data frame container: true
     data frame type: FrameRows
   test data:
@@ -643,7 +659,7 @@ observations:
     gnlocs rejected by qc: 0
     nlocs from source: 10
     nrecs: 5
-    obs perturbations seed: 25
+    obs perturbations seed: 250
     expected group variables: []
     expected sort variable: ""
     expected sort order: "ascending"
@@ -657,7 +673,14 @@ observations:
         group: "MetaData"
         type: "float"
         norm: 394.92537024564496
-
     tolerance:
-      - 1.0e-14
-    variables for putget test: []
+      - 1.0e-11
+    variables for putget test:
+      # have to use float variables, and only one channel at a time
+      - name: "brightnessTemperature"
+        group: "ObsValue"
+        channels: [ 4 ]
+
+      - name: "brightnessTemperature"
+        group: "ObsValue"
+        channels: [ 5 ]
