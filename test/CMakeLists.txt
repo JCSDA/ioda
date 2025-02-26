@@ -190,6 +190,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsspace_filter_to_zero_obs_reader_pool.yaml
   testinput/iodatest_obsspace_fill_value.yaml
   testinput/iodatest_obsspace_inclusive_lower_bound.yaml
+  testinput/iodatest_obsspace_osdf.yaml
   testinput/iodatest_obsvector.yaml
   testinput/iodatest_obsvector_grouped.yaml
   testinput/iodatest_obsvector_missing_locs.yaml
@@ -992,6 +993,16 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_put_db_channels_check
                   ARGS    "testinput/iodatest_obsspace_put_db_channels_check.yaml"
                   LIBS  ioda_test
                   TEST_DEPENDS test_ioda_obsspace_put_db_channels get_ioda_test_data )
+
+#########################################################################
+##### The following tests check the ObsSpace using an OSDF container ####
+#########################################################################
+
+ecbuild_add_test( TARGET  test_ioda_obsspace_osdf
+                  COMMAND test_ioda_obsspace
+                  ARGS    "testinput/iodatest_obsspace_osdf.yaml"
+                  LIBS  ioda_test
+                  TEST_DEPENDS get_ioda_test_data )
 
 ###################################################################
 ##### The following tests check the ObsSpace::append function. ####

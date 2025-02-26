@@ -1,0 +1,159 @@
+---
+time window:
+  begin: "2018-04-14T21:00:00Z"
+  end: "2018-04-15T03:00:00Z"
+
+# note that the test_ioda_obsspace code currently depends on specifying
+# ALL of the channels in the "obs space.channels" spec.
+observations:
+- obs space:
+    name: "Contrived data with channels for OSDF"
+    simulated variables: ['brightnessTemperature']
+    observed variables: ['brightnessTemperature']
+    channels: 1-5
+    distribution:
+      name: InefficientDistribution
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: "Data/testinput_tier_1/obsspace_osdf.nc4"
+    obs perturbations seed: 250
+    use data frame container: true
+  test data:
+    gnlocs: 10
+    gnlocs outside time window: 0
+    gnlocs rejected by qc: 0
+    nlocs from source: 10
+    nrecs: 10
+    obs perturbations seed: 250
+    expected group variables: []
+    expected sort variable: ""
+    expected sort order: "ascending"
+    variables for get test:
+      - name: "latitude"
+        group: "MetaData"
+        type: "float"
+        norm: 220.63840138949399
+
+      - name: "longitude"
+        group: "MetaData"
+        type: "float"
+        norm: 394.92537024564496
+    tolerance:
+      - 1.0e-11
+    variables for putget test:
+      # have to use float variables, and only one channel at a time
+      - name: "brightnessTemperature"
+        group: "ObsValue"
+        channels: [ 4 ]
+
+      - name: "brightnessTemperature"
+        group: "ObsValue"
+        channels: [ 5 ]
+
+- obs space:
+    name: "OSDF Sondes (FrameCols)"
+    simulated variables: ['airTemperature']
+    observed variables: ['airTemperature']
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: "Data/testinput_tier_1/obsspace_osdf_sondes.nc4"
+    obs perturbations seed: 25
+    use data frame container: true
+  test data:
+    gnlocs: 10
+    gnlocs outside time window: 0
+    gnlocs rejected by qc: 0
+    nlocs from source: 10
+    nrecs: 10
+    obs perturbations seed: 25
+    expected group variables: []
+    expected sort variable: ""
+    expected sort order: "ascending"
+    variables for get test:
+      - name: "latitude"
+        group: "MetaData"
+        type: "float"
+        norm: 220.63840138949399
+
+      - name: "longitude"
+        group: "MetaData"
+        type: "float"
+        norm: 394.92537024564496
+
+    tolerance:
+      - 1.0e-14
+    variables for putget test: []
+
+- obs space:
+    name: "OSDF Sondes (FrameRows)"
+    simulated variables: ['airTemperature']
+    observed variables: ['airTemperature']
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: "Data/testinput_tier_1/obsspace_osdf_sondes.nc4"
+    obs perturbations seed: 25
+    use data frame container: true
+    data frame type: FrameRows
+  test data:
+    gnlocs: 10
+    gnlocs outside time window: 0
+    gnlocs rejected by qc: 0
+    nlocs from source: 10
+    nrecs: 10
+    obs perturbations seed: 25
+    expected group variables: []
+    expected sort variable: ""
+    expected sort order: "ascending"
+    variables for get test:
+      - name: "latitude"
+        group: "MetaData"
+        type: "float"
+        norm: 220.63840138949399
+
+      - name: "longitude"
+        group: "MetaData"
+        type: "float"
+        norm: 394.92537024564496
+
+    tolerance:
+      - 1.0e-14
+    variables for putget test: []
+
+- obs space:
+    name: "OSDF AMSU-A (FrameCols)"
+    simulated variables: ['brightnessTemperature']
+    observed variables: ['brightnessTemperature']
+    channels: 1-15
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: "Data/testinput_tier_1/obsspace_osdf_amsua.nc4"
+    obs perturbations seed: 25
+    use data frame container: true
+  test data:
+    gnlocs: 10
+    gnlocs outside time window: 0
+    gnlocs rejected by qc: 0
+    nlocs from source: 10
+    nrecs: 10
+    obs perturbations seed: 25
+    expected group variables: []
+    expected sort variable: ""
+    expected sort order: "ascending"
+    variables for get test:
+      - name: "latitude"
+        group: "MetaData"
+        type: "float"
+        norm: 174.58956191760421
+
+      - name: "longitude"
+        group: "MetaData"
+        type: "float"
+        norm: 84.797943041426024
+
+    tolerance:
+      - 1.0e-14
+    variables for putget test: []

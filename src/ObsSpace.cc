@@ -127,43 +127,6 @@ void genCanonicalNameAndSuffixList(const std::string & name,
     }
 }
 
-// -----------------------------------------------------------------------------
-std::vector<float> lats = {-65.0, -66.6, -67.2, -68.6, -69.1,
-                            -70.9, -71.132, -72.56, -73.0, -73.1};
-std::vector<float> lons = {120.0, 121.1, 122.2, 123.3, 124.4,
-                            125.5, 126.6, 127.7, 128.8, 128.9};
-std::vector<std::string> statIds = {"00001", "00001", "00002", "00001", "00004",
-                                    "00002", "00005", "00005", "00009", "00009"};
-std::vector<std::int32_t> channels = {10, 10, 11, 11, 12, 12, 11, 15, 11, 13};
-std::vector<float> brightnessTemperature_1 = {201.0, 201.0, 202.0, 203.0, 204.0,
-                                              205.0, 206.0, 207.0, 208.0, 209.0};
-std::vector<float> brightnessTemperature_2 = {202.0, 201.0, 202.0, 203.0, 204.0,
-                                              205.0, 206.0, 207.0, 208.0, 209.0};
-std::vector<float> brightnessTemperature_3 = {203.0, 201.0, 202.0, 203.0, 204.0,
-                                              205.0, 206.0, 207.0, 208.0, 209.0};
-std::vector<float> brightnessTemperature_4 = {204.0, 201.0, 202.0, 203.0, 204.0,
-                                              205.0, 206.0, 207.0, 208.0, 209.0};
-std::vector<float> brightnessTemperature_5 = {205.0, 201.0, 202.0, 203.0, 204.0,
-                                              205.0, 206.0, 207.0, 208.0, 209.0};
-std::vector<float> temps = {-10.231, -15.68, -15.54, -14.98, -16.123,
-                            -19.11, -22.3324, -22.667, -25.6568, -25.63211};
-std::vector<std::int32_t> times = {1710460225, 1710460225, 1710460225, 1710460225, 1710460226,
-                                    1710460226, 1710460226, 1710460226, 1710460226, 1710460227};
-
-void testPopulateFrame(const std::unique_ptr<osdf::IFrame> & osdf) {
-  osdf->appendNewColumn("MetaData/latitude", lats);
-  osdf->appendNewColumn("MetaData/longitude", lons);
-  osdf->appendNewColumn("StatId", statIds);
-  osdf->appendNewColumn("channel", channels);
-  osdf->appendNewColumn("ObsValue/brightnessTemperature_1", brightnessTemperature_1);
-  osdf->appendNewColumn("ObsValue/brightnessTemperature_2", brightnessTemperature_2);
-  osdf->appendNewColumn("ObsValue/brightnessTemperature_3", brightnessTemperature_3);
-  osdf->appendNewColumn("ObsValue/brightnessTemperature_4", brightnessTemperature_4);
-  osdf->appendNewColumn("ObsValue/brightnessTemperature_5", brightnessTemperature_5);
-  osdf->appendNewColumn("temp", temps);
-  osdf->appendNewColumn("time", times);
-}
-
 }  // namespace
 
 // ----------------------------- public functions ------------------------------
@@ -241,9 +204,6 @@ ObsSpace::ObsSpace(const eckit::Configuration & config, const eckit::mpi::Comm &
         print_run_stats_ = std::strtol(iodaPrintRunstats, nullptr, 10);
     }
 
-    // Read container toggle flag
-    use_dataframe_ = obs_params_.top_level_.useDataFrame.value();
-
     // Read the obs space name
     obsname_ = obs_params_.top_level_.obsSpaceName;
     if (print_run_stats_ > 0) {
@@ -258,141 +218,158 @@ ObsSpace::ObsSpace(const eckit::Configuration & config, const eckit::mpi::Comm &
     std::vector<eckit::LocalConfiguration> obsDataInConfigs =
         expandInputFileConfigs(obs_params_.top_level_.obsDataIn.value());
 
+    // If wanting an OSDF container, check to make sure we have a
+    // valid data frame type. Do this before reading the data into an
+    // ObsGroup container so that we can skip that step (which could execute
+    // for a long time) if an invalid dataframe type was specified.
+    if (obs_params_.top_level_.useDataFrame.value()) {
+        dataframe_type_ = obs_params_.top_level_.dataFrameType.value();
+        if ((dataframe_type_ != "FrameCols") && (dataframe_type_ != "FrameRows")) {
+            throw eckit::UserError("Unknown data frame type: " + dataframe_type_,
+                                   Here());
+        }
+    }
+
+    // Load the obs space data (into obs_group_) from the obs source (file or generator)
+    // For now always read into the ObsGroup container, but if we are asking
+    // for an OSDF container, instantiate an OSDF container after the read,
+    // transfer the contents of the ObsGroup container to the OSDF and then
+    // destruct the ObsGroup container. Temporarily set use_dataframe_ to false
+    // so that the read using the ObsGroup container can complete. After the read
+    // completes, set use_dataframe_ according to the useDataFrame parameter.
+    use_dataframe_ = false;
+    obs_group_ = std::make_unique<ObsGroup>();
+    dim_info_.set_dim_size(ObsDimensionId::Location, 0);
+    indx_.clear();
+    recnums_.clear();
+    ObsGroup tempObsGroup;
+    ObsSourceStats obsSourceStats;
+    for (size_t i = 0; i < obsDataInConfigs.size(); ++i) {
+        load(obsDataInConfigs[i], tempObsGroup, obsSourceStats);
+        appendObsGroup(tempObsGroup, obsSourceStats);
+    }
+
+    // Assign Location variable with the source index numbers that were kept
+    assignLocationValues();
+
+    // The distribution object has a notion of patch obs which are the observations
+    // "owned" by the corresponding obs space. When an overlapping distribution (eg, Halo)
+    // is used, there is a need to identify all the unique obs (ie, locations) for functions
+    // that access obs across the MPI tasks. Computing an ObsVector dot product, and
+    // output IO are two examples. The ownership (patch) marks which obs participate in
+    // the MPI distributed functions, and collectively make up a total set of obs that contain
+    // no duplicates.
+    //
+    // Take the Halo distribution for an example. Each MPI task holds locations (obs) that
+    // are within a horizontal radius from a given center point. This brings up the situation
+    // where multiple obs spaces (geographic neighbors) can both contain the same locations
+    // since their spatial coverages can overlap. The ownership is given to the MPI task whose
+    // center is closer to that location. That way one MPI task owns the obs and the other
+    // does not which is then used to make sure the duplicate location is not used in
+    // MPI collective operations (such as the dot product function).
+    dist_->computePatchLocs();
+
+    // Get list of observed variables
+    // Either read from yaml list, use all variables in input file if 'obsdatain' is specified
+    // or set to simulated variables if 'generate' is specified.
+    const bool usingObsGenerator =
+        ((obs_params_.top_level_.obsDataIn.value().engine.value()
+                    .engineParameters.value().type.value() == "GenList") ||
+        (obs_params_.top_level_.obsDataIn.value().engine.value()
+                    .engineParameters.value().type.value() == "GenRandom"));
+
+    if (obs_params_.top_level_.ObservedVars.value().size()
+            + obs_params_.top_level_.derivedSimVars.value().size() != 0) {
+        // Read from yaml
+        obsvars_ = obs_params_.top_level_.ObservedVars;
+    } else if (usingObsGenerator) {
+        obsvars_ = obs_params_.top_level_.simVars;
+    } else {
+        // Use all variables found in the ObsValue group in the file. If there is no ObsValue
+        // group (rare), then copy the simulated variables list.
+        if (obs_group_->exists("ObsValue")) {
+            Group obsValueGroup = obs_group_->open("ObsValue");
+            const std::vector<std::string>
+                    allObsVars = obsValueGroup.listObjects<ObjectType::Variable>(false);
+            // ToDo (JAW): Get the channels from the input file (currently using the ones from
+            //             simVars)
+            std::vector<int> channels = obs_params_.top_level_.simVars.value().channels();
+            oops::ObsVariables obVars(allObsVars, channels);
+            obsvars_ = obVars;
+        } else {
+            obsvars_ = obs_params_.top_level_.simVars;
+        }
+    }
+
+    // Store the intial list of variables read from the yaml of input file.
+    initial_obsvars_ = obsvars_;
+
+    // Add derived varible names to observed variables list
+    if (obs_params_.top_level_.derivedSimVars.value().size() != 0) {
+        // As things stand, this assert cannot fail, since both variables take the list of
+        // channels from the same "channels" YAML option.
+        ASSERT(obs_params_.top_level_.derivedSimVars.value().channels() == obsvars_.channels());
+        obsvars_ += obs_params_.top_level_.derivedSimVars;
+        derived_obsvars_ = obs_params_.top_level_.derivedSimVars;
+    }
+
+    // Get list of variables to be simulated
+    assimvars_ = obs_params_.top_level_.simVars;
+
+
+    oops::Log::info() << this->obsname() << " processed vars: " << obsvars_ << std::endl;
+    oops::Log::info() << this->obsname() << " assimilated vars: " << assimvars_ << std::endl;
+
+    for (size_t jv = 0; jv < assimvars_.size(); ++jv) {
+        if (!obsvars_.has(assimvars_[jv])) {
+            throw eckit::UserError(assimvars_[jv] + " is specified as a simulated variable"
+                                    " but it has not been specified as an observed or"
+                                    " a derived variable." , Here());
+        }
+    }
+
+    // Construct the recidx_ map
+    buildRecIdx();
+
+    fillChanNumToIndexMap();
+
+    if (obs_params_.top_level_.obsExtend.value() != boost::none) {
+        extendObsSpace(*(obs_params_.top_level_.obsExtend.value()));
+    }
+
+    createMissingObsErrors();
+
+    oops::Log::debug() << obsname() << ": " << globalNumLocsOutsideTimeWindow()
+    << " observations are outside of time window out of " << sourceNumLocs() << std::endl;
+    oops::Log::debug() << obsname() << ": " << globalNumLocsRejectQC()
+    << " observations were rejected by QC checks out of " << sourceNumLocs() << std::endl;
+
+    // Restore the use_dataframe_ according to the useDataFrame parameter setting
+    use_dataframe_ = obs_params_.top_level_.useDataFrame.value();
+
+    // If wanting an OSDF, swap in an OSDF for the ObsGroup container
     if (use_dataframe_) {
+        // Form an instance of the OSDF container. Already checked above that
+        // we have a valid dataframe type.
         dataframe_type_ = obs_params_.top_level_.dataFrameType.value();
         if (dataframe_type_ == "FrameCols") {
             osdf_ = std::make_unique<osdf::FrameCols>();
         } else if (dataframe_type_ == "FrameRows") {
             osdf_ = std::make_unique<osdf::FrameRows>();
-        } else {
-            throw eckit::UserError("Unknown data frame type: " + dataframe_type_,
-                                   Here());
-        }
-        if (obsDataInConfigs.size() > 0) {
-            ObsDataInParameters readerParams;
-            readerParams.deserialize(obsDataInConfigs[0]);
-            if (readerParams.prepType.value() == "hardcoded") {
-                testPopulateFrame(osdf_);
-                source_nlocs_ = gnlocs_ = 10;
-                nrecs_ = 5;
-                dim_info_.set_dim_size(ObsDimensionId::Location, 10);
-                dim_info_.set_dim_size(ObsDimensionId::Channel, 5);
-                recnums_.clear();
-                recnums_ = {0, 0, 1, 0, 2, 1, 3, 3, 4, 4};
-                osdf_chan_nums_ = { 1, 2, 3, 4, 5 };
-                osdf_vars_with_chans_ = { "ObsValue/brightnessTemperature" };
-                obsvars_ = obs_params_.top_level_.ObservedVars;
-            }
-            osdf_->print();
-        }
-    } else {
-        // Load the obs space data (into obs_group_) from the obs source (file or generator)
-        obs_group_ = std::make_unique<ObsGroup>();
-        dim_info_.set_dim_size(ObsDimensionId::Location, 0);
-        indx_.clear();
-        recnums_.clear();
-        ObsGroup tempObsGroup;
-        ObsSourceStats obsSourceStats;
-        for (size_t i = 0; i < obsDataInConfigs.size(); ++i) {
-            load(obsDataInConfigs[i], tempObsGroup, obsSourceStats);
-            appendObsGroup(tempObsGroup, obsSourceStats);
         }
 
-        // Assign Location variable with the source index numbers that were kept
-        assignLocationValues();
+        // Popluate the OSDF from the ObsGroup
+        // At this point, we have processed the entire input file and have
+        // the number of locations and number of channels recorded in the
+        // dim_info_ data member.
+        osdfTransferDataFromObsGroup(dim_info_.get_dim_size(ObsDimensionId::Location),
+                                     dim_info_.get_dim_size(ObsDimensionId::Channel),
+                                     obs_group_, osdf_);
 
-        // The distribution object has a notion of patch obs which are the observations
-        // "owned" by the corresponding obs space. When an overlapping distribution (eg, Halo)
-        // is used, there is a need to identify all the unique obs (ie, locations) for functions
-        // that access obs across the MPI tasks. Computing an ObsVector dot product, and
-        // output IO are two examples. The ownership (patch) marks which obs participate in
-        // the MPI distributed functions, and collectively make up a total set of obs that contain
-        // no duplicates.
-        //
-        // Take the Halo distribution for an example. Each MPI task holds locations (obs) that
-        // are within a horizontal radius from a given center point. This brings up the situation
-        // where multiple obs spaces (geographic neighbors) can both contain the same locations
-        // since their spatial coverages can overlap. The ownership is given to the MPI task whose
-        // center is closer to that location. That way one MPI task owns the obs and the other
-        // does not which is then used to make sure the duplicate location is not used in
-        // MPI collective operations (such as the dot product function).
-        dist_->computePatchLocs();
-
-        // Get list of observed variables
-        // Either read from yaml list, use all variables in input file if 'obsdatain' is specified
-        // or set to simulated variables if 'generate' is specified.
-        const bool usingObsGenerator =
-            ((obs_params_.top_level_.obsDataIn.value().engine.value()
-                        .engineParameters.value().type.value() == "GenList") ||
-            (obs_params_.top_level_.obsDataIn.value().engine.value()
-                        .engineParameters.value().type.value() == "GenRandom"));
-
-        if (obs_params_.top_level_.ObservedVars.value().size()
-                + obs_params_.top_level_.derivedSimVars.value().size() != 0) {
-            // Read from yaml
-            obsvars_ = obs_params_.top_level_.ObservedVars;
-        } else if (usingObsGenerator) {
-            obsvars_ = obs_params_.top_level_.simVars;
-        } else {
-            // Use all variables found in the ObsValue group in the file. If there is no ObsValue
-            // group (rare), then copy the simulated variables list.
-            if (obs_group_->exists("ObsValue")) {
-                Group obsValueGroup = obs_group_->open("ObsValue");
-                const std::vector<std::string>
-                        allObsVars = obsValueGroup.listObjects<ObjectType::Variable>(false);
-                // ToDo (JAW): Get the channels from the input file (currently using the ones from
-                //             simVars)
-                std::vector<int> channels = obs_params_.top_level_.simVars.value().channels();
-                oops::ObsVariables obVars(allObsVars, channels);
-                obsvars_ = obVars;
-            } else {
-                obsvars_ = obs_params_.top_level_.simVars;
-            }
-        }
-
-        // Store the intial list of variables read from the yaml of input file.
-        initial_obsvars_ = obsvars_;
-
-        // Add derived varible names to observed variables list
-        if (obs_params_.top_level_.derivedSimVars.value().size() != 0) {
-            // As things stand, this assert cannot fail, since both variables take the list of
-            // channels from the same "channels" YAML option.
-            ASSERT(obs_params_.top_level_.derivedSimVars.value().channels() == obsvars_.channels());
-            obsvars_ += obs_params_.top_level_.derivedSimVars;
-            derived_obsvars_ = obs_params_.top_level_.derivedSimVars;
-        }
-
-        // Get list of variables to be simulated
-        assimvars_ = obs_params_.top_level_.simVars;
-
-
-        oops::Log::info() << this->obsname() << " processed vars: " << obsvars_ << std::endl;
-        oops::Log::info() << this->obsname() << " assimilated vars: " << assimvars_ << std::endl;
-
-        for (size_t jv = 0; jv < assimvars_.size(); ++jv) {
-            if (!obsvars_.has(assimvars_[jv])) {
-                throw eckit::UserError(assimvars_[jv] + " is specified as a simulated variable"
-                                        " but it has not been specified as an observed or"
-                                        " a derived variable." , Here());
-            }
-        }
-
-        // Construct the recidx_ map
-        buildRecIdx();
-
-        fillChanNumToIndexMap();
-
-        if (obs_params_.top_level_.obsExtend.value() != boost::none) {
-            extendObsSpace(*(obs_params_.top_level_.obsExtend.value()));
-        }
-
-        createMissingObsErrors();
-
-        oops::Log::debug() << obsname() << ": " << globalNumLocsOutsideTimeWindow()
-        << " observations are outside of time window out of " << sourceNumLocs() << std::endl;
-        oops::Log::debug() << obsname() << ": " << globalNumLocsRejectQC()
-        << " observations were rejected by QC checks out of " << sourceNumLocs() << std::endl;
+        // Destruct the ObsGroup container
+        obs_group_.reset(nullptr);
     }
+
     oops::Log::trace() << "ObsSpace::ObsSpace constructed name = " << obsname() << std::endl;
     if (print_run_stats_ > 0) {
         util::printRunStats("ioda::ObsSpace::ObsSpace: end " + obsname_ + ": ", true, comm);
@@ -452,10 +429,14 @@ std::size_t ObsSpace::nvars() const {
     // Because of the generator case above, query ObsValue first and if ObsValue doesn't
     // exist query ObsError.
     std::size_t numVars = 0;
-    if (obs_group_->exists("ObsValue")) {
-         numVars = obs_group_->open("ObsValue").vars.list().size();
-    } else if (obs_group_->exists("ObsError")) {
-         numVars = obs_group_->open("ObsError").vars.list().size();
+    if (use_dataframe_) {
+        numVars = osdf_num_vars_;
+    } else {
+        if (obs_group_->exists("ObsValue")) {
+             numVars = obs_group_->open("ObsValue").vars.list().size();
+        } else if (obs_group_->exists("ObsError")) {
+             numVars = obs_group_->open("ObsError").vars.list().size();
+        }
     }
     return numVars;
 }
@@ -547,8 +528,21 @@ bool ObsSpace::has(const std::string & group, const std::string & name, bool ski
 
 // -----------------------------------------------------------------------------
 bool ObsSpace::has(const std::string & group) const {
-    std::vector<std::string> grps = this->listGroups();
-    bool hasgrp = std::find(grps.begin(), grps.end(), group) != grps.end();
+    bool hasgrp;
+    if (use_dataframe_) {
+        // TODO(srh) Placeholder for now to enable the ability to
+        // do preliminary profiling of the OSDF container. The impact
+        // on the OSDF profiling with the hofx3d application by
+        // always returning false is to forego some diagnostic
+        // printing near the end.
+        //
+        // https://github.com/JCSDA-internal/ioda/issues/1433 has
+        // been created to remind us to fill this part in.
+        hasgrp = false;
+    } else {
+        std::vector<std::string> grps = this->listGroups();
+        hasgrp = std::find(grps.begin(), grps.end(), group) != grps.end();
+    }
     return hasgrp;
 }
 
@@ -672,6 +666,35 @@ ObsDtype ObsSpace::dtype(const std::string & group, const std::string & name,
         }  // !use_dataframe_
     }  // !empty()
     return VarType;
+}
+
+// -----------------------------------------------------------------------------
+std::vector<std::string> ObsSpace::listGroups() const {
+    // TODO(srh) This function eventually needs an OSDF
+    // implementation. The lack of such implementation is
+    // not impacting the hofx applications, so no immediate
+    // change is needed for the OSDF profiling effort.
+    //
+    // https://github.com/JCSDA-internal/ioda/issues/1433 has
+    // been created to remind us to fill this part in.
+    return obs_group_->listObjects<ObjectType::Group>(true);
+}
+
+// -----------------------------------------------------------------------------
+std::vector<std::string> ObsSpace::listVariables() const {
+    std::vector<std::string> varList;
+    if (use_dataframe_) {
+        // TODO(srh) To enable the OSDF profiling, for now return
+        // an empty list. This should have the impact of disabling
+        // some print statements near the end of the hofx application.
+        //
+        // https://github.com/JCSDA-internal/ioda/issues/1433 has
+        // been created to remind us to fill this part in.
+        varList.clear();
+    } else {
+        varList = obs_group_->listObjects<ObjectType::Variable>(true);
+    }
+    return varList;
 }
 
 // -----------------------------------------------------------------------------
@@ -1426,6 +1449,12 @@ void ObsSpace::saveVar(const std::string & group, std::string name,
                 const std::string fullName = fullVarName(group, name);
                 osdf_->appendNewColumn(fullName, missingValues);
             }
+
+            // If we just created a new variable inside the ObsValue group,
+            // then increment the variable count (osdf_num_vars_).
+            if (group.find("ObsValue") != std::string::npos) {
+                ++osdf_num_vars_;
+            }
         }
 
         // Write the data to the variable
@@ -2165,5 +2194,117 @@ bool ObsSpace::osdfVarHasChannels(const std::string & group,
 
     return hasChannels;
 }
+
+// ------------------------------------------------------------------
+// Temporary functions to support the quick-and-dirty OSDF reader.
+// ------------------------------------------------------------------
+
+template<typename VarType>
+void ObsSpace::osdfTransferVariableFromObsGroup(const Variable & srcVar,
+                                    const std::string & varName,
+                                    const std::vector<int> & chanNums,
+                                    const Dimensions_t numLocs,
+                                    std::unique_ptr<osdf::IFrame> & destOSDF) {
+    // Read in the source ObsGroup data, then write into the OSDF. If
+    // we have channels, then the data is 2D (Location X Channel). In this
+    // case, walk through each channel, pick out the corresponding data for
+    // that channel in the 2D data, and write that into a variable name with
+    // the channel number appended to the end.
+    std::vector<VarType> data;
+    srcVar.read(data);
+
+    std::size_t chanDimSize = chanNums.size();
+    if (chanDimSize > 0) {
+        for (std::size_t i = 0; i < chanDimSize; ++i) {
+            auto first = data.begin() + (numLocs * i);
+            auto last = data.begin() + (numLocs * (i + 1));
+            std::vector<VarType> dataChannel(first, last);
+            destOSDF->appendNewColumn(
+                varName + std::string("_") + std::to_string(chanNums[i]),
+                dataChannel);
+            osdf_vars_with_chans_.push_back(varName);
+        }
+    } else {
+        destOSDF->appendNewColumn(varName, data);
+    }
+
+    // If we just created a new variable inside the ObsValue group, then
+    // increment the variable count (osdf_num_vars_).
+    if (varName.find("ObsValue/") != std::string::npos) {
+        ++osdf_num_vars_;
+    }
+}
+
+void ObsSpace::osdfTransferDataFromObsGroup(const std::size_t numLocs,
+                                const std::size_t numChans,
+                                const std::unique_ptr<ObsGroup> & srcObsGroup,
+                                std::unique_ptr<osdf::IFrame> & destOSDF) {
+    // Walk through the complete list of variables in the source ObsGroup
+    // and copy these to the destination OSDF. Skip dimension variables
+    // for now.
+    osdf_num_vars_ = 0;
+    for (auto & varName : srcObsGroup->listObjects<ObjectType::Variable>(true)) {
+        Variable srcVar = srcObsGroup->vars.open(varName);
+        if (srcVar.isDimensionScale()) {
+            oops::Log::debug() << "osdfTransferDataFromObsGroup: skipping dimension: "
+                               << varName << std::endl;
+            continue;
+        }
+        oops::Log::debug() << "osdfTransferDataFromObsGroup: copying variable: "
+                           << varName << ", ";
+
+        // For now only support 1D vars (Location) and 2D vars (Location X Channel)
+        // Skip other variables and write out a warning for these.
+        std::vector<Dimensions_t> srcVarDims = srcVar.getDimensions().dimsCur;
+        Dimensions_t numDims = srcVar.getDimensions().dimensionality;
+        Dimensions_t numElements = srcVar.getDimensions().numElements;
+        std::vector<int> chanNums(0);
+        if (numDims == 1) {
+            if (srcVarDims[0] == numLocs) {
+                oops::Log::debug() << "1D (Location)" << std::endl;
+            } else {
+                oops::Log::debug() << std::endl;
+                oops::Log::info() << "WARNING: osdfTransferDataFromObsGroup: "
+                    << "support for 1D variables is currently limited to variables"
+                    << "with dimension: (Location): " << varName << std::endl;
+            }
+        } else if (numDims == 2) {
+            if (numElements == numLocs * numChans) {
+                oops::Log::debug() << "2D (Location X Channel)" << std::endl;
+                // Read in the channel numbers. The chanNums vector can be
+                // used to signal the osdfTransferVariableFromObsGroup function
+                // whether the variable is 1D (Location) or 2D (Location X Channel)
+                Variable srcChanVar = srcObsGroup->vars.open("Channel");
+                srcChanVar.read(chanNums);
+                if (osdf_chan_nums_.empty()) {
+                    osdf_chan_nums_ = chanNums;
+                }
+            } else {
+                oops::Log::debug() << std::endl;
+                oops::Log::info() << "WARNING: osdfTransferDataFromObsGroup: "
+                    << "support for 2D variables is currently limited to variables"
+                    << "with dimensions: (Location X Channel): " << varName << std::endl;
+            }
+        } else {
+            oops::Log::info() << "WARNING: osdfTransferDataFromObsGroup: "
+                << "currently not supporting 3D and higher dimensionality "
+                << "variables: " << varName << std::endl;
+        }
+
+        // transfer the variable data
+        VarUtils::forAnySupportedVariableType(
+            srcVar,
+            [&](auto typeDiscriminator) {
+                typedef decltype(typeDiscriminator) T;
+                osdfTransferVariableFromObsGroup<T>(srcVar, varName, chanNums,
+                                                    numLocs, destOSDF);
+             },
+             VarUtils::ThrowIfVariableIsOfUnsupportedType(varName));
+    }
+}
+
+// ------------------------------------------------------------------
+// End of temporary functions for the quick-and-dirty OSF reader.
+// ------------------------------------------------------------------
 
 }  // namespace ioda

@@ -417,12 +417,10 @@ namespace ioda {
         { return assimvars_;}
 
         /// \brief return a list of names of the groups contained in the ObsSpace.
-        std::vector<std::string> listGroups() const
-          {return obs_group_->listObjects<ObjectType::Group>(true);}
+        std::vector<std::string> listGroups() const;
 
         /// \brief return a list of names of the variables contained in the ObsSpace.
-        std::vector<std::string> listVariables() const
-          {return obs_group_->listObjects<ObjectType::Variable>(true);}
+        std::vector<std::string> listVariables() const;
 
         /// @}
         /// @name IO functions
@@ -681,6 +679,9 @@ namespace ioda {
         /// \brief data frame variables with channels
         std::vector<std::string> osdf_vars_with_chans_;
 
+        /// \brief data frame number of variables
+        int osdf_num_vars_;
+
         /// \brief all data structures currently associated with this ObsSpace.
         /// \details This is used so associated data structures can change their state
         ///          (e.g. reduce) when ObsSpace changes its state. ObsSpaceAssociated
@@ -938,6 +939,29 @@ namespace ioda {
         bool osdfVarHasChannels(const std::string & group,
                                 const std::string & canonicalName,
                                 const bool skipDerived) const;
+
+        /// \brief transfer data from an ObsGroup to an OSDF
+        /// \param numLocs number of locations (size of Location dimension)
+        /// \param numChans number of channels (size of Channel dimension)
+        /// \param srcObsGroup source ObsGroup container
+        /// \param destOSDF destination OSDF container
+        void osdfTransferDataFromObsGroup(const std::size_t numLocs,
+                                    const std::size_t numChans,
+                                    const std::unique_ptr<ObsGroup> & srcObsGroup,
+                                    std::unique_ptr<osdf::IFrame> & destOSDF);
+
+        /// \param srcVar ioda::Variable object from the source ObsGroup
+        /// \param varName variable name
+        /// \param chanNums numbers of all the channels
+        /// \param destOSDF destination OSDF container
+        /// \param numLocs number of locations (size of Location dimension)
+        /// \param destOSDF destination OSDF container
+        template<typename VarType>
+        void osdfTransferVariableFromObsGroup(const Variable & srcVar,
+                                    const std::string & varName,
+                                    const std::vector<int> & chanNums,
+                                    const Dimensions_t numLocs,
+                                    std::unique_ptr<osdf::IFrame> & destOSDF);
     };
 
 }  // namespace ioda
