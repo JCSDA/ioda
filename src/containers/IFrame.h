@@ -104,6 +104,14 @@ class IFrame {
   /// \param The row index - not the ID which is output alongside the row on a call to print.
   virtual void removeRow(const std::int64_t) = 0;
 
+  /// \brief Remove a set of rows according to an input vector<bool>
+  /// \details This function takes a vector<bool> which has a length equal to the
+  /// number of rows in the frame. The vector denotes the rows to keep (true entries)
+  /// and the the rows to remove (false entries).
+  /// \param keepRows vector<bool> where true elements indicate rows to keep, and
+  ///                 false elements indicate rows to remove
+  virtual void removeRows(const std::vector<bool> &) = 0;
+
   /// \brief Sorts the order of the rows based on how the values in a target column compare.
   /// \param The target column name.
   /// \param The comparator operator, specified in osdf::Constants::eComparisons.

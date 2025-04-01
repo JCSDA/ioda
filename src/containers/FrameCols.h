@@ -94,6 +94,7 @@ class FrameCols : public IFrame {
   std::int8_t getColumnType(const std::string&) const override;
 
   void removeRow(const std::int64_t) override;
+  void removeRows(const std::vector<bool> &) override;
 
   void sortRows(const std::string&, const std::int8_t) override;
 

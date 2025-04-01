@@ -226,6 +226,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_filter_obs_multi_file_twfilt_rtfiltwindow.yaml
   testinput/iodatest_filter_obs_sondes.yaml
   testinput/iodatest_filter_obs_amsua.yaml
+  testinput/iodatest_reader_filter.yaml
   testinput/iodatest_time_io.yaml
   testinput/iodatest_time_io_odc.yaml
   testinput/iodatest_time_io_reader_pool.yaml
@@ -1534,6 +1535,15 @@ ecbuild_add_test( TARGET  test_ioda_obsdatavector
 ecbuild_add_test( TARGET  test_ioda_oops_obserrorcovariance
                   SOURCES mains/TestObsErrorCovariance.cc
                   ARGS    "testinput/iodatest_obserror.yaml"
+                  LIBS  ioda_test
+                  TEST_DEPENDS get_ioda_test_data )
+
+#####################################################################
+# Test the reader filter step
+#####################################################################
+ecbuild_add_test( TARGET  test_ioda_reader_filter
+                  SOURCES mains/TestReaderFilter.cc
+                  ARGS    "testinput/iodatest_reader_filter.yaml"
                   LIBS  ioda_test
                   TEST_DEPENDS get_ioda_test_data )
 

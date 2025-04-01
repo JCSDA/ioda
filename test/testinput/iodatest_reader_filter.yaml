@@ -1,0 +1,46 @@
+---
+time window:
+  begin: "1970-01-01T00:00:00Z"
+  end: "1970-01-01T00:01:30Z"
+
+test column data:
+    # Columns 0, 1, and 9 are outside the time window
+    # Columns 3 and 4 have missing lat/lon values
+    # Column 6 has a missing dateTime value
+    # Note that the test code parses the "values:" entries
+    # as strings, converts the values to the target "type:", and
+    # replaces "missing" with the corresponding JEDI missing value.
+  - name: "MetaData/dateTime"
+    type: "int64"
+    values: [ -1, 0, 20, 30, 40, 50, missing, 80, 90, 91 ]
+  - name: "MetaData/latitude"
+    type: "float"
+    values: [ 1.5, 2.5, 3.5, missing, 5.5, 6.5, 7.5, 8.5, 9.5, 10.5 ]
+  - name: "MetaData/longitude"
+    type: "float"
+    values: [ 11.5, 12.5, 13.5, 14.5, missing, 16.5, 17.5, 18.5, 19.5, 110.5 ]
+  - name: "MetaData/stationIdentification"
+    type: "string"
+    values: [ "sta100", "sta101", "sta102", "sta103", "sta104",
+              "sta104", "sta105", "missing", "sta107", "sta108" ]
+  - name: "ObsValue/myObsInst"
+    type: "double"
+    values: [ 10.5, 20.5, 30.5, 40.5, 50.5, 60.5, 70.5, 80.5, missing, 100.5 ]
+expected filtered data:
+    # Columns 2, 5, 7, and 8 are within the time window and have no missing required values
+  - name: "MetaData/dateTime"
+    type: "int64"
+    values: [ 20, 50, 80, 90 ]
+  - name: "MetaData/latitude"
+    type: "float"
+    values: [ 3.5, 6.5, 8.5, 9.5 ]
+  - name: "MetaData/longitude"
+    type: "float"
+    values: [ 13.5, 16.5, 18.5, 19.5 ]
+  - name: "MetaData/stationIdentification"
+    type: "string"
+    values: [ "sta102", "sta104", "MISSING*", "sta107" ]
+  - name: "ObsValue/myObsInst"
+    type: "double"
+    values: [ 30.5, 60.5, 80.5, missing ]
+tolerance: 1.0e-6

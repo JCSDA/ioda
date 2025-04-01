@@ -7,6 +7,8 @@
 
 #include "ioda/containers/FrameRows.h"
 
+#include "eckit/exception/Exceptions.h"
+
 #include "ioda/containers/Constants.h"
 #include "ioda/containers/Data.h"
 #include "ioda/containers/DatumBase.h"
@@ -255,6 +257,20 @@ void osdf::FrameRows::removeRow(const std::int64_t index) {
   } else {
     oops::Log::error() << "ERROR: Row index \"" << index
                        << "\" is incompatible with current data frame." << std::endl;
+  }
+}
+
+void osdf::FrameRows::removeRows(const std::vector<bool> & keepRows) {
+  if (keepRows.size() == data_.getSizeRows()) {
+    for (std::int64_t i = (keepRows.size() - 1); i >= 0; --i) {
+      if (!keepRows[i]) {
+          removeRow(i);
+      }
+    }
+  } else {
+    const std::string errMsg = std::string("keepRows vector size does not match ") +
+        std::string("the number of rows in the current data frame.");
+    throw eckit::BadValue(errMsg, Here());
   }
 }
 

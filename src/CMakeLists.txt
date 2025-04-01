@@ -113,6 +113,9 @@ ioPool/WriterPoolUtils.h
 ioPool/WriterSinglePool.cpp
 ioPool/WriterSinglePool.h
 
+reader/filter/filterObsContainer.cpp
+reader/filter/filterObsContainer.hpp
+
 c_obsdatavector_int.hpp
 c_obsdatavector_int.cpp
 )
