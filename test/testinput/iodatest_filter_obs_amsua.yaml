@@ -24,5 +24,4 @@ receipt time filter:
   generate receipt times:
     delay min: 300
     delay max: 900
-    number of delay bins: 150
 

@@ -66,28 +66,16 @@ static void splitVarName(const std::string & fullVarName, std::string & groupNam
   /// random-like.
   /// \param delayMin integer minimum delay value, in seconds
   /// \param delayMax integer maximum delay value, in seconds
-  /// \param numDelayBins integer number of bins to split the delay range into
   /// \param receiptVarName name of new receipt time variable
 static void generateReceiptTimes(const std::int64_t delayMin, const std::int64_t delayMax,
-                          const int numDelayBins, const std::string & receiptVarName,
-                          ioda::ObsSpace & obsdb) {
+                          const std::string & receiptVarName, ioda::ObsSpace & obsdb) {
   // Check the parameters
   //     1. delayMin is less than delayMax
-  //     2. numDelayBins is positive
-  //     3. receiptVarName does not exist - if it does, issue a warning and
+  //     2. receiptVarName does not exist - if it does, issue a warning and
   //        skip the generation of receipt times
-  bool paramsOkay = true;
   if (delayMin >= delayMax) {
     oops::Log::info() << "ERROR: generateReceiptTimes: YAML configuration 'delay min' must "
                       << "be less than 'delay max'" << std::endl;
-    paramsOkay = false;
-  }
-  if (numDelayBins < 1) {
-    oops::Log::info() << "ERROR: generateReceiptTimes: YAML configuration 'number of delay bins' "
-                      << "must be a positive integer greater than zero" << std::endl;
-    paramsOkay = false;
-  }
-  if (!paramsOkay) {
     throw eckit::BadParameter("Errors in YAML configuration", Here());
   }
 
@@ -113,15 +101,13 @@ static void generateReceiptTimes(const std::int64_t delayMin, const std::int64_t
   // Add the reproducible, but random-like, delays to the dateTimeVals
   // and write that out into the ObsSpace using the new variable name.
   util::DateTime refDateTime("1970-01-01T00:00:00Z");
+  const std::int64_t delayRange = delayMax - delayMin;
   for (std::size_t i = 0; i < dateTimeVals.size(); ++i) {
     // Create a delay value that is inside the range delayMin to delayMax, then
     // add that value to the dateTime value, and simply write out the updated
     // dateTime values into the new receipt time variable.
-    const std::int64_t modResult = (dateTimeVals[i] - refDateTime).toSeconds() % numDelayBins;
-    const float modRangeFrac =
-        static_cast<float>(modResult) / static_cast<float>(numDelayBins);
-    const std::int64_t delay =
-        delayMin + int64_t(modRangeFrac * static_cast<float>(delayMax - delayMin));
+    const std::int64_t delay = delayMin +
+        ((dateTimeVals[i] - refDateTime).toSeconds() % delayRange);
     dateTimeVals[i] += util::Duration(delay);
   }
   obsdb.put_db(grpName, varName, dateTimeVals);
@@ -231,16 +217,13 @@ template <typename OBS> class FilterObs : public oops::Application {
       //         minimum delay to add to the obs time stamp
       //     delay max:
       //         maximum delay to add to the obs time stamp
-      //     module divisor:
-      //         divisor to be used in the modulo method for generating times
       const std::string generateSpec("generate receipt times");
       if (filterConfig.has(generateSpec)) {
         const eckit::LocalConfiguration generateConfig =
             filterConfig.getSubConfiguration(generateSpec);
         std::int64_t delayMin = generateConfig.getInt64("delay min");
         std::int64_t delayMax = generateConfig.getInt64("delay max");
-        int numDelayBins = generateConfig.getInt("number of delay bins");
-        generateReceiptTimes(delayMin, delayMax, numDelayBins, receiptVarName, obsdb.obsspace());
+        generateReceiptTimes(delayMin, delayMax, receiptVarName, obsdb.obsspace());
       }
 
       numReceiptTimeRejected = applyReceiptTimeFilter(receiptVarName,
