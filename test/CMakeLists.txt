@@ -172,9 +172,16 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsspace_mpi.yaml
   testinput/iodatest_obsspace_mpi_reader_pool.yaml
   testinput/iodatest_obsspace_odc.yaml
+  testinput/iodatest_obsspace_odc_multiple_channels.yaml
   testinput/iodatest_obsspace_odc_reader_pool.yaml
   testinput/iodatest_obsspace_odc_atms.yaml
   testinput/iodatest_obsspace_odc_atms_reader_pool.yaml
+  testinput/iodatest_obsspace_odc_atms_parallel_io.yaml
+  testinput/iodatest_obsspace_odc_empty_obs_file.yaml
+  testinput/iodatest_obsspace_odc_empty_obs_file_parallel_io.yaml
+  testinput/iodatest_obsspace_odc_single_frame_parallel_io.yaml
+  testinput/iodatest_obsspace_odc_single_frame_multiple_channels_parallel_io.yaml
+  testinput/iodatest_obsspace_odc_two_frames_parallel_io.yaml
   testinput/iodatest_obsspace_fortran.yaml
   testinput/iodatest_obsspace_out_odc.yaml
   testinput/iodatest_obsspace_out_odc_sonde_mixed.yaml
@@ -207,6 +214,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_odb_sonde_keep_only_reported_levels_but_missing_numlev.yaml
   testinput/iodatest_odb_sonde_split_by_seqno_then_counter_of_rows_with_varno_but_missing_seqno.yaml
   testinput/iodatest_odb_sonde_split_by_seqno_then_counter_of_rows_with_varno_but_missing_varno.yaml
+  testinput/iodatest_odb_tables_iterator.yaml
   testinput/iodatest_sort.yaml
   testinput/iodatest_writer_sondes.yaml
   testinput/iodatest_writer_scatwindchosen.yaml
@@ -601,6 +609,12 @@ if (odc_FOUND)
                     COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
                     ARGS    "testoutput/diagout-groundgps-readbackin.odc" "Data/testinput_tier_1/test_reference/diagout-groundgps-readbackin.odc" ${ODC_TOOL_PATH}
                     TEST_DEPENDS get_ioda_test_data iodatest_obsspace_out_odc_readbackin )
+
+  ecbuild_add_test( TARGET  test_ioda_odb_tables_iterator
+                    SOURCES mains/TestOdbTablesIterator.cc
+                    LIBS    ioda_test
+                    ARGS    "testinput/iodatest_odb_tables_iterator.yaml"
+                    TEST_DEPENDS get_ioda_test_data )
 endif()
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_datetime
@@ -980,6 +994,53 @@ if (odc_FOUND)
   ecbuild_add_test( TARGET  test_ioda_obsspace_odc_atms_reader_pool
                     COMMAND test_ioda_obsspace
                     ARGS    "testinput/iodatest_obsspace_odc_atms_reader_pool.yaml"
+                    TEST_DEPENDS get_ioda_test_data )
+
+  ecbuild_add_test( TARGET  test_ioda_obsspace_odc_atms_parallel_io
+                    MPI     2
+                    COMMAND test_ioda_obsspace
+                    ARGS    "testinput/iodatest_obsspace_odc_atms_parallel_io.yaml"
+                    TEST_DEPENDS get_ioda_test_data )
+
+  ecbuild_add_test( TARGET  test_ioda_obsspace_odc_atms_parallel_io_single_process
+                    COMMAND test_ioda_obsspace
+                    ARGS    "testinput/iodatest_obsspace_odc_atms_parallel_io.yaml"
+                    TEST_DEPENDS get_ioda_test_data )
+
+  ecbuild_add_test( TARGET  test_ioda_obsspace_odc_empty_obs_file
+                    COMMAND test_ioda_obsspace
+                    ARGS    "testinput/iodatest_obsspace_odc_empty_obs_file.yaml"
+                    LIBS  ioda_test
+                    TEST_DEPENDS get_ioda_test_data )
+
+  ecbuild_add_test( TARGET  test_ioda_obsspace_odc_empty_obs_file_parallel_io
+                    MPI     2
+                    COMMAND test_ioda_obsspace
+                    ARGS    "testinput/iodatest_obsspace_odc_empty_obs_file_parallel_io.yaml"
+                    LIBS    ioda_test
+                    TEST_DEPENDS get_ioda_test_data )
+
+  ecbuild_add_test( TARGET  test_ioda_obsspace_odc_single_frame_parallel_io
+                    MPI     2
+                    COMMAND test_ioda_obsspace
+                    ARGS    "testinput/iodatest_obsspace_odc_single_frame_parallel_io.yaml"
+                    TEST_DEPENDS get_ioda_test_data )
+
+  ecbuild_add_test( TARGET  test_ioda_obsspace_odc_two_frames_parallel_io
+                    MPI     4
+                    COMMAND test_ioda_obsspace
+                    ARGS    "testinput/iodatest_obsspace_odc_two_frames_parallel_io.yaml"
+                    TEST_DEPENDS get_ioda_test_data )
+
+  ecbuild_add_test( TARGET  test_ioda_obsspace_odc_multiple_channels
+                    COMMAND test_ioda_obsspace
+                    ARGS    "testinput/iodatest_obsspace_odc_multiple_channels.yaml"
+                    TEST_DEPENDS get_ioda_test_data )
+
+  ecbuild_add_test( TARGET  test_ioda_obsspace_odc_single_frame_multiple_channels_parallel_io
+                    MPI     2
+                    COMMAND test_ioda_obsspace
+                    ARGS    "testinput/iodatest_obsspace_odc_single_frame_multiple_channels_parallel_io.yaml"
                     TEST_DEPENDS get_ioda_test_data )
 endif()
 

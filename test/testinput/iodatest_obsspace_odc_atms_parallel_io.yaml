@@ -1,0 +1,124 @@
+---
+time window:
+  begin: "2018-04-14T21:00:00Z"
+  end: "2018-04-15T03:00:00Z"
+
+observations:
+- obs space:
+    name: ATMS, frame distribution spread 1
+    simulated variables: [brightnessTemperature]
+    channels: 1-22
+    obsdatain:
+      engine:
+        type: ODB
+        obsfile: "Data/testinput_tier_1/atms-variable-sized-frames.odb"
+        mapping file: ../share/test/testinput/odb_default_name_map.yaml
+        query file: ../share/test/testinput/iodatest_odb_atms.yaml
+        frame distribution spread: 1
+    distribution:
+      name: ReaderDependentDistribution
+    io pool:
+      reader name: NonoverlappingPool
+  test data:
+    gnlocs: 68
+    gnlocs outside time window: 32
+    gnlocs rejected by qc: 0
+    nlocs from source: 100
+    nrecs: 68
+    obs perturbations seed: 0
+    expected group variables: []
+    expected sort variable: ""
+    expected sort order: "ascending"
+    variables for get test:
+      - name: "latitude"
+        group: "MetaData"
+        type: "float"
+        norm: 528.87376603209805
+
+      - name: "longitude"
+        group: "MetaData"
+        type: "float"
+        norm: 709.35601984373704
+    tolerance:
+      - 1.0e-7
+    variables for putget test: []
+
+- obs space:
+    name: ATMS, frame distribution spread 3
+    simulated variables: [brightnessTemperature]
+    channels: 1-22
+    obsdatain:
+      engine:
+        type: ODB
+        obsfile: "Data/testinput_tier_1/atms-variable-sized-frames.odb"
+        mapping file: ../share/test/testinput/odb_default_name_map.yaml
+        query file: ../share/test/testinput/iodatest_odb_atms.yaml
+        frame distribution spread: 3
+    distribution:
+      name: ReaderDependentDistribution
+    io pool:
+      reader name: NonoverlappingPool
+  test data:
+    gnlocs: 68
+    gnlocs outside time window: 32
+    gnlocs rejected by qc: 0
+    nlocs from source: 100
+    nrecs: 68
+    obs perturbations seed: 0
+    expected group variables: []
+    expected sort variable: ""
+    expected sort order: "ascending"
+    variables for get test:
+      - name: "latitude"
+        group: "MetaData"
+        type: "float"
+        norm: 528.87376603209805
+
+      - name: "longitude"
+        group: "MetaData"
+        type: "float"
+        norm: 709.35601984373704
+    tolerance:
+      - 1.0e-7
+    variables for putget test: []
+
+- obs space:
+    name: ATMS, frame distribution spread 100
+    simulated variables: [brightnessTemperature]
+    channels: 1-22
+    obsdatain:
+      engine:
+        type: ODB
+        obsfile: "Data/testinput_tier_1/atms-variable-sized-frames.odb"
+        mapping file: ../share/test/testinput/odb_default_name_map.yaml
+        query file: ../share/test/testinput/iodatest_odb_atms.yaml
+        # This exceeds the number of frames in the input file; this test case verifies such a
+        # situation is handled correctly.
+        frame distribution spread: 100
+    distribution:
+      name: ReaderDependentDistribution
+    io pool:
+      reader name: NonoverlappingPool
+  test data:
+    gnlocs: 68
+    gnlocs outside time window: 32
+    gnlocs rejected by qc: 0
+    nlocs from source: 100
+    nrecs: 68
+    obs perturbations seed: 0
+    expected group variables: []
+    expected sort variable: ""
+    expected sort order: "ascending"
+    variables for get test:
+      - name: "latitude"
+        group: "MetaData"
+        type: "float"
+        norm: 528.87376603209805
+
+      - name: "longitude"
+        group: "MetaData"
+        type: "float"
+        norm: 709.35601984373704
+    tolerance:
+      - 1.0e-7
+    variables for putget test: []

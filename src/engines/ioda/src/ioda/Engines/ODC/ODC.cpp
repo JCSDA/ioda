@@ -19,6 +19,7 @@
 #include <ctime>
 
 #include "eckit/io/MemoryHandle.h"
+#include "eckit/mpi/Comm.h"
 #include "eckit/utils/StringTools.h"
 #include "ioda/Engines/ODC.h"
 #include "ioda/Exception.h"
@@ -1264,8 +1265,8 @@ Group createFile(const ODC_Parameters& odcparams, Group storageGroup) {
   return storageGroup;
 }
 
-ObsGroup openFile(const ODC_Parameters& odcparams,
-  Group storageGroup)
+ObsGroup openFile(const ODC_Parameters& odcparams, Group storageGroup,
+                  const eckit::mpi::Comm *comm)
 {
   // 1. Check first that the ODB engine is enabled. If the engine
   // is not enabled, then throw an exception.
@@ -1303,24 +1304,17 @@ ObsGroup openFile(const ODC_Parameters& odcparams,
   // TODO(someone): Handle the case of the 'varno' option being set to ALL.
   const vector<int> &varnos = queryParameters.where.value().varno.value().as<std::vector<int>>();
 
-  // 5. Perform the SQL query.
-
-  DataFromSQL sql_data;
-  sql_data.select(columnsToSelect,
-                  odcparams.filename,
-                  varnos,
-                  queryParameters.where.value().query);
-
-  // 6. Associate rows selected by the query with individual ioda locations.
-  //    Create a channel indexer.
+  // 5. Create an object associating rows returned by the query with individual ioda locations
+  //    and a channel indexer.
 
   const std::unique_ptr<RowsIntoLocationsSplitterBase> rowsIntoLocationsSplitter =
       RowsIntoLocationsSplitterFactory::create(
         queryParameters.variableCreation.rowsIntoLocationsSplit.value().params);
-  const RowsByLocation rowsByLocation = rowsIntoLocationsSplitter->groupRowsByLocation(sql_data);
 
-  if (rowsByLocation.empty())
-    return storageGroup;
+  if (comm && comm->size() > 1 &&
+      !rowsIntoLocationsSplitter->assignsRowsWithDifferentSeqnosToDifferentLocations())
+    throw eckit::UserError("The selected RowsIntoLocationsSplitter is incompatible with parallel "
+                           "I/O. Use a different ReaderPool to read the ODB file serially.");
 
   std::unique_ptr<ChannelIndexerBase> channelIndexer;
   if (queryParameters.variableCreation.channelIndexing.value()) {
@@ -1328,8 +1322,20 @@ ObsGroup openFile(const ODC_Parameters& odcparams,
           queryParameters.variableCreation.channelIndexing.value()->params);
   }
 
+  // 6. Perform the SQL query.
+
+  DataFromSQL sql_data;
+  sql_data.select(columnsToSelect,
+                  odcparams.filename,
+                  varnos,
+                  queryParameters.where.value().query,
+                  comm,
+                  odcparams.chunksPerProcess);
+
   // 7. Create an ObsGroup, using the mapping file to set up the translation of ODB column names
   // to ioda variable names
+
+  const RowsByLocation rowsByLocation = rowsIntoLocationsSplitter->groupRowsByLocation(sql_data);
 
   NewDimensionScales_t dimensionScales = makeDimensionScales(
     rowsByLocation, channelIndexer.get(), sql_data);
@@ -1362,6 +1368,13 @@ ObsGroup openFile(const ODC_Parameters& odcparams,
     dimensionScales,
     detail::DataLayoutPolicy::generate(
       detail::DataLayoutPolicy::Policies::ObsGroupODB, odcparams.mappingFile, ignores));
+
+  if (rowsByLocation.empty()) {
+    // Returning here means that all dimension variables are defined but other variables aren't.
+    // (Definition of other variables would require knowledge of their types, but if the input file
+    // is empty, these are not known.)
+    return og;
+  }
 
   // 8. Populate the ObsGroup with variables
 

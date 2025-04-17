@@ -70,21 +70,26 @@ void ReaderPrepInputFiles::initialize() {
         // Store the engine applyLocationsCheck() from the reader engine
         applyLocationsCheck = readerEngine->applyLocationsCheck();
 
+        // Check if the obs source contains any locations
+        const bool emptyFile = fileGroup.vars.open("Location").getDimensions().dimsCur[0] == 0;
+        if (emptyFile)
+            oops::Log::warning() << "WARNING: Input file " << readerSrc_
+                                 << " contains zero observations" << std::endl;
+
         // Rank 0 does the preliminary checking and formation of the source location
         // indices and source record numbers. These are identical operations on each
         // MPI task so file io can be reduced by having rank 0 only do the io, generate
         // the indices and record numbers and broadcast that information to the other
         // ranks.
-        bool emptyFile;
         DateTimeFormat dtimeFormat;
         std::vector<int64_t> dtimeValues;
         std::vector<float> lonValues;
         std::vector<float> latValues;
         std::vector<std::size_t> sourceLocIndices;
         std::vector<std::size_t> sourceRecNums;
-        extractGlobalInfoFromSource(this->commAll(), fileGroup, readerSrc_, timeWindow_,
+        extractGlobalInfoFromSource(this->commAll(), fileGroup, emptyFile, timeWindow_,
             applyLocationsCheck, obsGroupVarList_, dtimeValues, lonValues, latValues,
-            sourceLocIndices, sourceRecNums, emptyFile, dtimeFormat, dtimeEpoch_, globalNlocs_,
+            sourceLocIndices, sourceRecNums, dtimeFormat, dtimeEpoch_, globalNlocs_,
             sourceNlocs_, sourceNlocsInsideTimeWindow_, sourceNlocsOutsideTimeWindow_,
             sourceNlocsRejectQC_);
 

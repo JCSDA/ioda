@@ -54,6 +54,13 @@ public:
   /// ignored when importing data from the ODB file into an ObsSpace. In principle, rows may also
   /// be associated with more than one location, although this should rarely be needed in practice.
   virtual RowsByLocation groupRowsByLocation(const DataFromSQL &sqlData) const = 0;
+
+  /// \brief Returns true if this splitter always assigns rows with different values in the `seqno`
+  /// column to different locations, false otherwise.
+  ///
+  /// Subclasses in which this function returns false cannot be used when reading ODB files in
+  /// parallel.
+  virtual bool assignsRowsWithDifferentSeqnosToDifferentLocations() const = 0;
 };
 
 }  // namespace ODC

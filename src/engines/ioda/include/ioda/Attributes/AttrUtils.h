@@ -159,8 +159,12 @@ void listAttributesAsYaml(const ioda::Has_Attributes& atts, const std::string & 
 /// \brief create attributes from an eckit LocalConfiguration
 /// \param atts Has_Attributes container
 /// \param config eckit LocalConfiguration (list of attributes)
+/// \param overwrite if true, existing attributes with names matching those specified in
+///                  `config` with be removed and replaced with new ones created according to
+///                  these specifications; if false, they will be left in place
 void createAttributesFromConfig(ioda::Has_Attributes & atts,
-                                const std::vector<eckit::LocalConfiguration> & attsConfig);
+                                const std::vector<eckit::LocalConfiguration> & attsConfig,
+                                bool overwrite = false);
 
 }  // end namespace AttrUtils
 }  // end namespace ioda

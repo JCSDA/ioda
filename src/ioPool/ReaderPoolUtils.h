@@ -90,10 +90,62 @@ void emulateMpiDistribution(const std::string & distName, const bool emptyFile,
                             std::vector<int> & locIndicesCounts,
                             std::vector<std::size_t> & recNumsAllRanks);
 
+/// @brief Serialize the structure of `fileGroup` to a YAML string.
+///
+/// @param fileGroup group whose structure should be serialized
+/// @param emptyFile whether the group was loaded from an empty file. If so, only the single
+///                  dimension Location is listed in the YAML
+std::string serializeGroupStructure(const ioda::Group & fileGroup, const bool emptyFile);
+
+/// @brief Complement a YAML definition of a Group structure with anchors (e.g. `numLocations`)
+/// dependent on a ReaderPool's attributes.
+///
+/// @param ioPool ReaderPool from which anchor values will be retrieved
+/// @param groupStructureYaml[inout] YAML string to which anchor definitions will be prepended
+void readerDefineYamlAnchors(const ReaderPoolBase & ioPool, std::string & groupStructureYaml);
+
+/// @brief Extend a Group with variables, variable groups, dimensions and attributes specified in a
+/// YAML string.
+///
+/// @param ioPool ReaderPool that created the `memGroup`
+/// @param memGroup[inout] group to be extended
+/// @param groupStructureYaml YAML string specifying entities to be added to `memGroup`
+/// @param overwrite if true, existing variables, dimensions and attributes with names matching
+///                  those specified in `groupStructureYaml` will be removed and replaced with new
+///                  ones created according to these specifications; if false, they will be left
+///                  in place
+void readerDeserializeGroupStructure(const ReaderPoolBase & ioPool, ioda::Group & memGroup,
+                                     const std::string & groupStructureYaml,
+                                     bool overwrite = false);
+
+/// @brief Get the size, in bytes, of a single element stored in a specified variable.
+///
+/// @param var variable
+/// @param varName variable name
+ioda::Dimensions_t getVarDataTypeSize(const ioda::Variable & var, const std::string & varName);
+
+/// @brief Transfer variable data into a buffer while replacing fill with missing
+///
+/// @param ioPool reader io pool object
+/// @param srcVar source variable object
+/// @param srcVarName source variable name
+/// @param srcBuffer source memory buffer to hold srcVar data
+void readerLoadSourceVarReplaceFill(
+            const ReaderPoolBase & ioPool, const Variable & srcVar,
+            const std::string & srcVarName, std::vector<char> & srcBuffer);
+
+/// @brief Transfer data from a buffer into a destination variable
+///
+/// @param varName name of the variable to fill.
+/// @param destBuffer buffer from which variable values will be loaded.
+/// @param destVar variable to fill.
+void readerSaveDestVar(const std::string & varName, const std::vector<char> & destBuffer,
+                       ioda::Variable & destVar);
+
 /// @brief extract global information from the input source (file or generator)
 /// @param comm MPI communicator group
 /// @param srcGroup ioda Group object holding obs source data (file or generator)
-/// @param readerSource name of source data (typically path to input file)
+/// @param emptyFile true if the input source did not contain any locations
 /// @param timeWindow DA time window
 /// @param applyLocCheck true means to apply the location quality checks
 /// @param obsGroupVarList list of variables for obs grouping feature
@@ -102,7 +154,6 @@ void emulateMpiDistribution(const std::string & distName, const bool emptyFile,
 /// @param latValues vector of latitude values
 /// @param sourceLocIndices vector of location indices selected from input file
 /// @param sourceRecNums vector of record numbers corresponding to sourceLocIndices
-/// @param emptyFile true means the input file has zero locations
 /// @param dtimeFormat denotes the date time format in the input file
 /// @param dtimeEpoch reference date time value
 /// @param globalNlocs total number of locations distributed across all MPI processes
@@ -111,12 +162,12 @@ void emulateMpiDistribution(const std::string & distName, const bool emptyFile,
 /// @param sourceNlocsOutsideTimeWindow number of locations outside the DA time window
 /// @param sourceNlocsRejectQC number of locations rejected by location quality check
 void extractGlobalInfoFromSource(const eckit::mpi::Comm & comm,
-    const ioda::Group & srcGroup, const std::string & readerSource,
+    const ioda::Group & srcGroup, const bool emptyFile,
     const util::TimeWindow & timeWindow, const bool applyLocCheck,
     const std::vector<std::string> & obsGroupVarList, std::vector<int64_t> & dtimeValues,
     std::vector<float> & lonValues, std::vector<float> & latValues,
     std::vector<std::size_t> & sourceLocIndices, std::vector<std::size_t> & sourceRecNums,
-    bool & emptyFile, DateTimeFormat & dtimeFormat, std::string & dtimeEpoch,
+    DateTimeFormat & dtimeFormat, std::string & dtimeEpoch,
     std::size_t & globalNlocs, std::size_t & sourceNlocs,
     std::size_t & sourceNlocsInsideTimeWindow, std::size_t & sourceNlocsOutsideTimeWindow,
     std::size_t & sourceNlocsRejectQC);

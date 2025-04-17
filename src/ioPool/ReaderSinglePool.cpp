@@ -317,9 +317,16 @@ void ReaderSinglePool::initialize() {
 
             // Store the engine applyLocationsCheck() from the reader engine
             applyLocationsCheck = readerEngine->applyLocationsCheck();
+
+            // Check if the obs source contains any locations
+            emptyFile_ = fileGroup.vars.open("Location").getDimensions().dimsCur[0] == 0;
+            if (emptyFile_)
+                oops::Log::warning() << "WARNING: Input file " << readerSrc_
+                                     << " contains zero observations" << std::endl;
         }
         oops::mpi::broadcastString(this->commAll(), fileName_, 0);
         oops::mpi::broadcastBool(this->commAll(), applyLocationsCheck, 0);
+        oops::mpi::broadcastBool(this->commAll(), emptyFile_, 0);
 
         // Rank 0 does the preliminary checking and formation of the source location
         // indices and source record numbers. These are identical operations on each
@@ -332,9 +339,9 @@ void ReaderSinglePool::initialize() {
         std::vector<float> latValues;
         std::vector<std::size_t> sourceLocIndices;
         std::vector<std::size_t> sourceRecNums;
-        extractGlobalInfoFromSource(this->commAll(), fileGroup, readerSrc_, timeWindow_,
+        extractGlobalInfoFromSource(this->commAll(), fileGroup, emptyFile_, timeWindow_,
             applyLocationsCheck, obsGroupVarList_, dtimeValues, lonValues, latValues,
-            sourceLocIndices, sourceRecNums, emptyFile_, dtimeFormat, dtimeEpoch_, globalNlocs_,
+            sourceLocIndices, sourceRecNums, dtimeFormat, dtimeEpoch_, globalNlocs_,
             sourceNlocs_, sourceNlocsInsideTimeWindow_, sourceNlocsOutsideTimeWindow_,
             sourceNlocsRejectQC_);
 

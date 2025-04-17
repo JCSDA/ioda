@@ -1,0 +1,110 @@
+mergeSeqnosSplitAcrossChunks:
+- total number of chunks: 0
+  chunks on ranks at input:
+  - []
+  - []
+  - []
+  expected chunks on ranks at output:
+  - []
+  - []
+  - []
+- total number of chunks: 1
+  chunks on ranks at input:
+  -
+    - seqno:       [2, 2, 3, 3, 3]
+      temperature: [1, 2, 3, 4, 5]
+  - []
+  - []
+  expected chunks on ranks at output:
+  -
+    - seqno:       [2, 2, 3, 3, 3]
+      temperature: [1, 2, 3, 4, 5]
+  - []
+  - []
+- total number of chunks: 3
+  chunks on ranks at input:
+  -
+    - seqno:       [2, 2]
+      temperature: [1, 2]
+  - []
+  -
+    - seqno:       [3, 3]
+      temperature: [3, 4]
+  expected chunks on ranks at output:
+  -
+    - seqno:       [2, 2]
+      temperature: [1, 2]
+  - []
+  -
+    - seqno:       [3, 3]
+      temperature: [3, 4]
+- total number of chunks: 10
+  chunks on ranks at input:
+  - # rank 0
+    - seqno:       [2, 2, 3]
+      temperature: [1, 2, 3]
+    - seqno:       [5, 5]
+      temperature: [10, 11]
+    - seqno:       []
+      temperature: []
+    - seqno:       [7, 7, 7]
+      temperature: [19, 20, 21]
+  - # rank 1
+    - seqno:       [3, 3, 4]
+      temperature: [4, 5, 6]
+    - seqno:       []
+      temperature: []
+    - seqno:       [5, 5]
+      temperature: [14, 15]
+  - # rank 2
+    - seqno:       [4, 5, 5]
+      temperature: [7, 8, 9]
+    - seqno:       [5, 5]
+      temperature: [12, 13]
+    - seqno:       [5, 6, 7]
+      temperature: [16, 17, 18]
+  expected chunks on ranks at output:
+  - # rank 0
+    - seqno:       [2, 2, 3, 3, 3]
+      temperature: [1, 2, 3, 4, 5]
+    - seqno:       []
+      temperature: []
+    - seqno:       []
+      temperature: []
+    - seqno:       []
+      temperature: []
+  - # rank 1
+    - seqno:       [4, 4]
+      temperature: [6, 7]
+    - seqno:       []
+      temperature: []
+    - seqno:       []
+      temperature: []
+  - # rank 2
+    - seqno:       [5, 5, 5, 5, 5, 5, 5, 5, 5]
+      temperature: [8, 9, 10, 11, 12, 13, 14, 15, 16]
+    - seqno:       []
+      temperature: []
+    - seqno:       [6, 7, 7, 7, 7]
+      temperature: [17, 18, 19, 20, 21]
+- total number of chunks: 3
+  chunks on ranks at input:
+  -
+    - seqno:       [2, 3]
+      temperature: [1, 2]
+  -
+    - seqno:       [3, 4, 3]  # seqno 3 reappears; it is to be treated as if it was a new seqno
+      temperature: [3, 4, 5]
+  -
+    - seqno:       [3, 5, 5, 6]
+      temperature: [6, 7, 8, 9]
+  expected chunks on ranks at output:
+  -
+    - seqno:       [2, 3, 3]
+      temperature: [1, 2, 3]
+  -
+    - seqno:       [4, 3, 3]
+      temperature: [4, 5, 6]
+  -
+    - seqno:       [5, 5, 6]
+      temperature: [7, 8, 9]

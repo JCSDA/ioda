@@ -48,6 +48,12 @@ class ReadOdbFileParameters : public ReaderParametersBase {
     /// and throw an exception stopping the execution.
     oops::Parameter<std::string> missingFileAction{"missing file action", "error", this};
 
+    /// \brief Maximum number of disjoint sequences of ODB frames read by an individual MPI process.
+    ///
+    /// Only relevant when parallel I/O is in use. Increasing this number will improve load
+    /// balancing but increase MPI communication costs.
+    oops::Parameter<int> frameDistributionSpread{"frame distribution spread", 4, this};
+
     bool isFileBackend() const override { return true; }
 
     std::string getFileName() const override { return fileName.value(); }

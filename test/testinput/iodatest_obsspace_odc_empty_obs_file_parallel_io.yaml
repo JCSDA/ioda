@@ -1,0 +1,49 @@
+---
+time window:
+  begin: "2018-04-14T21:00:00Z"
+  end: "2018-04-15T03:00:00Z"
+
+observations:
+- obs space:
+    name: "Empty ODC obs file"
+    simulated variables: ['height']
+    obsdatain:
+      engine:
+        type: ODB
+        obsfile: "Data/testinput_tier_1/surface-empty.odb"
+        mapping file: ../share/test/testinput/odb_surface_name_map.yaml
+        query file: ../share/test/testinput/iodatest_odb_surface.yaml
+    distribution:
+      name: ReaderDependentDistribution
+    io pool:
+      reader name: NonoverlappingPool
+    obs perturbations seed: 25
+  test data:
+    gnlocs: 0
+    gnlocs outside time window: 0
+    gnlocs rejected by qc: 0
+    nlocs from source: 0
+    nrecs: 0
+    obs perturbations seed: 25
+    expected group variables: []
+    expected sort variable: ""
+    expected sort order: "ascending"
+    variables for get test:
+    - name: "dateTime"
+      group: "MetaData"
+      type: "datetime"
+      first value: "none"
+      last value: "none"
+
+    - name: "latitude"
+      group: "MetaData"
+      type: "float"
+      norm: 0.0
+
+    - name: "longitude"
+      group: "MetaData"
+      type: "float"
+      norm: 0.0
+    tolerance:
+      - 1.0e-14
+    variables for putget test: []

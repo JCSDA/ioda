@@ -211,17 +211,25 @@ void listVariablesAsYaml(const Vec_Named_Variable & regularVarList,
 /// \param atts Has_Variables container
 /// \param dimConfigs vector of eckit LocalConfiguration (list of dimensions)
 /// \param globalNlocs total number of locations across all MPI tasks
+/// \param overwrite if true, existing dimensions with names matching those specified in
+///                  `dimConfigs` with be removed and replaced with new ones created according to
+///                  these specifications; if false, they will be left in place
 void createDimensionsFromConfig(ioda::Has_Variables & vars,
                                 const std::vector<eckit::LocalConfiguration> & dimConfigs,
-                                const std::size_t globalNlocs);
+                                const std::size_t globalNlocs,
+                                bool overwrite = false);
 
 /// \brief create variables from an eckit LocalConfiguration
 /// \param atts Has_Variables container
 /// \param varConfigs vector of eckit LocalConfiguration (list of variables)
 /// \param globalNlocs total number of locations across all MPI tasks
+/// \param overwrite if true, existing variables with names matching those specified in
+///                  `varConfigs` with be removed and replaced with new ones created according to
+///                  these specifications; if false, they will be left in place
 void createVariablesFromConfig(ioda::Has_Variables & vars,
                                const std::vector<eckit::LocalConfiguration> & varConfigs,
-                               const std::size_t globalNlocs);
+                               const std::size_t globalNlocs,
+                               bool overwrite = false);
 
 /// \brief get a recommended chunk size along the Locations dimension for an output file
 /// \details This function will return the minimum of totalNumLocs and a built-in

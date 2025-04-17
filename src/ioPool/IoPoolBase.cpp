@@ -50,7 +50,7 @@ IoPoolBase::IoPoolBase(
                    : configParams_(configParams), commAll_(commAll), commTime_(commTime),
                      poolColor_(poolColor), nonPoolColor_(nonPoolColor),
                      poolCommName_(poolCommName), nonPoolCommName_(nonPoolCommName),
-                     targetPoolSize_(0), nlocs_(0), globalNlocs_(0) {
+                     isParallelIo_(false), targetPoolSize_(0), nlocs_(0), globalNlocs_(0) {
 }
 
 //--------------------------------------------------------------------------------------

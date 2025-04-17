@@ -63,6 +63,8 @@ core/ParameterTraitsObsDtype.h
 distribution/Accumulator.h
 distribution/AtlasDistribution.cc
 distribution/AtlasDistribution.h
+distribution/ReaderDependentDistribution.cc
+distribution/ReaderDependentDistribution.h
 distribution/Distribution.cc
 distribution/Distribution.h
 distribution/DistributionFactory.cc
@@ -92,6 +94,8 @@ distribution/RoundRobin.h
 ioPool/IoPoolBase.cpp
 ioPool/IoPoolBase.h
 ioPool/IoPoolParameters.h
+ioPool/NonoverlappingReaderPool.cpp
+ioPool/NonoverlappingReaderPool.h
 ioPool/ReaderPoolBase.cpp
 ioPool/ReaderPoolBase.h
 ioPool/ReaderPoolFactory.cpp

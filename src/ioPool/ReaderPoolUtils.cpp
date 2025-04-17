@@ -73,15 +73,6 @@ static const int mpiVariableNumberStart = 1;
 void broadcastDateTimeFormat(const eckit::mpi::Comm & comm, DateTimeFormat & enumVar,
                              const std::size_t root);
 
-/// @brief Transfer source variable data into source buffer while replacing fill with missing
-/// @param ioPool reader io pool object
-/// @param srcVar source variable object
-/// @param srcVarName source variable name
-/// @param srcBuffer source memory buffer to hold srcVar data
-static void readerLoadSourceVarReplaceFill(
-            const ReaderPoolBase & ioPool, const Variable & srcVar,
-            const std::string & srcVarName, std::vector<char> & srcBuffer);
-
 /// @brief Transfer data from the source buffer to the destination variable
 /// @param varName variable name
 /// @param srcBuffer source memory buffer holding the source variable data
@@ -177,11 +168,10 @@ void convertEpochStringToDtime(const std::string & epochString, util::DateTime &
 
 /// @brief Check obs source for required variables
 /// @param srcGroup ioda Group object holding obs source data (file or generator)
-/// @param sourceName name of the input obs source
+/// @param emptyFile true if the obs source did not contain any locations
 /// @param dtimeFormat format of the datetime variable in the obs source
-/// @param emptyFile flag when true have a file with zero obs
-void checkForRequiredVars(const ioda::Group & srcGroup, const std::string & sourceName,
-                          DateTimeFormat & dtimeFormat, bool & emptyFile);
+void checkForRequiredVars(const ioda::Group & srcGroup, bool emptyFile,
+                          DateTimeFormat & dtimeFormat);
 
 /// @brief Read date time variable values from obs source
 /// @param obsSource ioda Group object holding obs source data (file or generator)
@@ -326,17 +316,8 @@ void convertEpochStringToDtime(const std::string & epochString, util::DateTime &
 }
 
 //--------------------------------------------------------------------------------
-void checkForRequiredVars(const ioda::Group & srcGroup, const std::string & sourceName,
-                          DateTimeFormat & dtimeFormat, bool & emptyFile) {
-    // Get number of locations from obs source
-    const std::size_t sourceNlocs = srcGroup.vars.open("Location").getDimensions().dimsCur[0];
-    emptyFile = false;
-    if (sourceNlocs == 0) {
-        emptyFile = true;
-        oops::Log::warning() << "WARNING: Input file " << sourceName
-                             << " contains zero observations" << std::endl;
-    }
-
+void checkForRequiredVars(const ioda::Group & srcGroup, bool emptyFile,
+                          DateTimeFormat & dtimeFormat) {
     // Check to see which format the source data time is in. There are two old formats
     // that need to be obsoleted soon, plus the conventional format.
     //
@@ -372,11 +353,11 @@ void checkForRequiredVars(const ioda::Group & srcGroup, const std::string & sour
     haveRequiredMetadata = haveRequiredMetadata && srcGroup.vars.exists("MetaData/latitude");
     haveRequiredMetadata = haveRequiredMetadata && srcGroup.vars.exists("MetaData/longitude");
 
-    // Only do this check if there are more than zero obs in the file (sourceNlocs > 0)
+    // Only do this check if there are more than zero obs in the file.
     // When a file does contain zero obs, we want to allow for an "empty" file with
     // no variables. This makes it easier for r2d2 to provide a valid "empty" file when there
     // are no obs available.
-    if ((sourceNlocs > 0) && (!haveRequiredMetadata)) {
+    if ((!emptyFile) && (!haveRequiredMetadata)) {
       const std::string errorMsg =
           std::string("\nOne or more of the following metadata variables are missing ") +
           std::string("from the input obs data source:\n") +
@@ -868,19 +849,19 @@ void emulateMpiDistribution(const std::string & distName, const bool emptyFile,
 
 //--------------------------------------------------------------------------------
 void extractGlobalInfoFromSource(const eckit::mpi::Comm & comm,
-    const ioda::Group & srcGroup, const std::string & readerSource,
+    const ioda::Group & srcGroup, const bool emptyFile,
     const util::TimeWindow & timeWindow, const bool applyLocCheck,
     const std::vector<std::string> & obsGroupVarList, std::vector<int64_t> & dtimeValues,
     std::vector<float> & lonValues, std::vector<float> & latValues,
     std::vector<std::size_t> & sourceLocIndices, std::vector<std::size_t> & sourceRecNums,
-    bool & emptyFile, DateTimeFormat & dtimeFormat, std::string & dtimeEpoch,
+    DateTimeFormat & dtimeFormat, std::string & dtimeEpoch,
     std::size_t & globalNlocs, std::size_t & sourceNlocs,
     std::size_t & sourceNlocsInsideTimeWindow, std::size_t & sourceNlocsOutsideTimeWindow,
     std::size_t & sourceNlocsRejectQC) {
 
     if (comm.rank() == 0) {
         // Check for required variables
-        checkForRequiredVars(srcGroup, readerSource, dtimeFormat, emptyFile);
+        checkForRequiredVars(srcGroup, emptyFile, dtimeFormat);
 
         // Read and convert the dtimeValues to the current epoch format if older formats are
         // being used in the source.
@@ -910,7 +891,6 @@ void extractGlobalInfoFromSource(const eckit::mpi::Comm & comm,
     }
 
     // broadcast variables
-    oops::mpi::broadcastBool(comm, emptyFile, 0);
     broadcastDateTimeFormat(comm, dtimeFormat, 0);
     oops::mpi::broadcastString(comm, dtimeEpoch, 0);
     comm.broadcast(globalNlocs, 0);
@@ -1589,58 +1569,8 @@ void readerSerializeGroupStructure(const ReaderPoolBase & ioPool,
     // single dimension Location. Otherwise inspect the input file and dump
     // out according to what is found in the input file.
     if (ioPool.commPool() != nullptr) {
-        std::stringstream yamlStream;
-        if (emptyFile) {
-            // list out the one dimension (Location) of zero size.
-            yamlStream << "dimensions:" << std::endl
-                       << constants::indent4 << "- dimension:" << std::endl
-                       << constants::indent8 << "name: Location" << std::endl
-                       << constants::indent8 << "data type: int" << std::endl
-                       << constants::indent8 << "size: 0" << std::endl;
-        } else {
-            // First describe the group structure, list out group names and attributes
-            // associated with those groups.
-
-            // Top level group attributes
-            AttrUtils::listAttributesAsYaml(fileGroup.atts, constants::indent0, yamlStream);
-
-            const auto groupObjects = fileGroup.listObjects(ObjectType::Group, true);
-            yamlStream << "groups:" << std::endl;
-            for (const auto & groupName : groupObjects.at(ObjectType::Group)) {
-                // Skip over the special file preparation group info
-                if (groupName == filePrepGroupName()) {
-                    continue;
-                }
-                yamlStream << constants::indent4 << "- group:" << std::endl
-                           << constants::indent8 << "name: " << groupName << std::endl;
-                // subgroup attributes
-                AttrUtils::listAttributesAsYaml(fileGroup.open(groupName).atts,
-                                                constants::indent8, yamlStream);
-            }
-
-            // query fileGroup for variable lists and dimension mappings
-            VarUtils::Vec_Named_Variable regularVarList;
-            VarUtils::Vec_Named_Variable dimVarList;
-            VarUtils::VarDimMap dimsAttachedToVars;
-            Dimensions_t maxVarSize0;  // unused in this function
-            VarUtils::collectVarDimInfo(fileGroup, regularVarList, dimVarList,
-                                        dimsAttachedToVars, maxVarSize0);
-
-            // Remove the special file preparation info group
-            readerRemoveFilePrepGroup(regularVarList, dimVarList, dimsAttachedToVars);
-
-            // List out dimension variables (these all belong in the top level group).
-            yamlStream << "dimensions:" << std::endl;
-            VarUtils::listDimensionsAsYaml(dimVarList, constants::indent4, yamlStream);
-
-            // List out regular variables.
-            yamlStream << "variables:" << std::endl;
-            VarUtils::listVariablesAsYaml(regularVarList, dimsAttachedToVars,
-                                          constants::indent4, yamlStream);
-        }
-
-        // convert the stream to a string and send it to the assigned ranks
-        groupStructureYaml = yamlStream.str();
+        // describe the group structure and send it to the assigned ranks
+        groupStructureYaml = serializeGroupStructure(fileGroup, emptyFile);
         for (auto & rankAssign : ioPool.rankAssignment()) {
             oops::mpi::sendString(ioPool.commAll(), groupStructureYaml, rankAssign.first);
         }
@@ -1650,6 +1580,62 @@ void readerSerializeGroupStructure(const ReaderPoolBase & ioPool,
             oops::mpi::receiveString(ioPool.commAll(), groupStructureYaml, rankAssign.first);
         }
     }
+}
+
+//--------------------------------------------------------------------------------
+std::string serializeGroupStructure(const ioda::Group & fileGroup, const bool emptyFile) {
+    std::stringstream yamlStream;
+    if (emptyFile) {
+        // list out the one dimension (Location) of zero size.
+        yamlStream << "dimensions:" << std::endl
+                   << constants::indent4 << "- dimension:" << std::endl
+                   << constants::indent8 << "name: Location" << std::endl
+                   << constants::indent8 << "data type: int" << std::endl
+                   << constants::indent8 << "size: 0" << std::endl;
+    } else {
+        // First describe the group structure, list out group names and attributes
+        // associated with those groups.
+
+        // Top level group attributes
+        AttrUtils::listAttributesAsYaml(fileGroup.atts, constants::indent0, yamlStream);
+
+        const auto groupObjects = fileGroup.listObjects(ObjectType::Group, true);
+        yamlStream << "groups:" << std::endl;
+        for (const auto & groupName : groupObjects.at(ObjectType::Group)) {
+            // Skip over the special file preparation group info
+            if (groupName == filePrepGroupName()) {
+                continue;
+            }
+            yamlStream << constants::indent4 << "- group:" << std::endl
+                       << constants::indent8 << "name: " << groupName << std::endl;
+            // subgroup attributes
+            AttrUtils::listAttributesAsYaml(fileGroup.open(groupName).atts,
+                                            constants::indent8, yamlStream);
+        }
+
+        // query fileGroup for variable lists and dimension mappings
+        VarUtils::Vec_Named_Variable regularVarList;
+        VarUtils::Vec_Named_Variable dimVarList;
+        VarUtils::VarDimMap dimsAttachedToVars;
+        Dimensions_t maxVarSize0;  // unused in this function
+        VarUtils::collectVarDimInfo(fileGroup, regularVarList, dimVarList,
+                                    dimsAttachedToVars, maxVarSize0);
+
+        // Remove the special file preparation info group
+        readerRemoveFilePrepGroup(regularVarList, dimVarList, dimsAttachedToVars);
+
+        // List out dimension variables (these all belong in the top level group).
+        yamlStream << "dimensions:" << std::endl;
+        VarUtils::listDimensionsAsYaml(dimVarList, constants::indent4, yamlStream);
+
+        // List out regular variables.
+        yamlStream << "variables:" << std::endl;
+        VarUtils::listVariablesAsYaml(regularVarList, dimsAttachedToVars,
+                                      constants::indent4, yamlStream);
+    }
+
+    // convert the stream to a string
+    return yamlStream.str();
 }
 
 //--------------------------------------------------------------------------------
@@ -1676,7 +1662,8 @@ void readerDefineYamlAnchors(const ReaderPoolBase & ioPool,
 
 //--------------------------------------------------------------------------------
 void readerDeserializeGroupStructure(const ReaderPoolBase & ioPool, ioda::Group & memGroup,
-                                     const std::string & groupStructureYaml) {
+                                     const std::string & groupStructureYaml,
+                                     bool overwrite) {
     // Deserialize the yaml string into an eckit YAML configuration object. Then
     // walk through that structure building the structure as you go.
     const eckit::YAMLConfiguration config(groupStructureYaml);
@@ -1684,7 +1671,7 @@ void readerDeserializeGroupStructure(const ReaderPoolBase & ioPool, ioda::Group 
     // create the top level group attributes from the "attributes" section
     std::vector<eckit::LocalConfiguration> attrConfigs;
     config.get("attributes", attrConfigs);
-    AttrUtils::createAttributesFromConfig(memGroup.atts, attrConfigs);
+    AttrUtils::createAttributesFromConfig(memGroup.atts, attrConfigs, overwrite);
 
     // create the sub groups from the "groups" section
     std::vector<eckit::LocalConfiguration> groupConfigs;
@@ -1694,18 +1681,19 @@ void readerDeserializeGroupStructure(const ReaderPoolBase & ioPool, ioda::Group 
         Group subGroup = memGroup.create(groupName);
         attrConfigs.clear();
         groupConfigs[i].get("group.attributes", attrConfigs);
-        AttrUtils::createAttributesFromConfig(subGroup.atts, attrConfigs);
+        AttrUtils::createAttributesFromConfig(subGroup.atts, attrConfigs, overwrite);
     }
 
     // create dimensions from the "dimensions" section
     std::vector<eckit::LocalConfiguration> dimConfigs;
     config.get("dimensions", dimConfigs);
-    VarUtils::createDimensionsFromConfig(memGroup.vars, dimConfigs, ioPool.globalNlocs());
+    VarUtils::createDimensionsFromConfig(memGroup.vars, dimConfigs, ioPool.globalNlocs(),
+                                         overwrite);
 
     // create variables from the "variables" section
     std::vector<eckit::LocalConfiguration> varConfigs;
     config.get("variables", varConfigs);
-    VarUtils::createVariablesFromConfig(memGroup.vars, varConfigs, ioPool.globalNlocs());
+    VarUtils::createVariablesFromConfig(memGroup.vars, varConfigs, ioPool.globalNlocs(), overwrite);
 }
 
 //--------------------------------------------------------------------------------

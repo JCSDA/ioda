@@ -20,8 +20,15 @@
 #include "ioda/defs.h"
 #include "ioda/ObsGroup.h"
 
-
 #include "unsupported/Eigen/CXX11/Tensor"
+
+namespace eckit::mpi {
+class Comm;
+}
+
+namespace odc::core {
+class MetaData;
+}
 
 namespace ioda {
 namespace Engines {
@@ -51,7 +58,20 @@ private:
   int obsgroup_                    = 0;
   /// \brief Populate structure with data from an sql
   /// \param sql The SQL string to generate the data for the structure
-  void setData(const std::string& sql);
+  /// \param filename Name of the file to extract data from.
+  /// \param comm
+  ///   (Optional) An MPI communicator. If it is non-null and its size is greater than 1, the ODB
+  ///   file will be read in parallel.
+  /// \param chunks_per_process
+  ///   Maximum number of disjoint sequences of ODB frames read by an individual MPI process.
+  ///   Ignored if `comm` is null.
+  void setData(const std::string& sql, const std::string& filename,
+               const eckit::mpi::Comm* comm = nullptr, int chunks_per_process = 1);
+
+  /// \brief Extract column types from SQL query metadata.
+  static std::vector<int> getColumnTypes(const odc::core::MetaData &metadata);
+  /// \brief Extract bitfield definitions from SQL query metadata.
+  static std::vector<Bitfield> getBitfieldDefs(const odc::core::MetaData &metadata);
 
 public:
   /// \brief Simple constructor
@@ -65,8 +85,17 @@ public:
   /// \param filename Extract from this file
   /// \param varnos List of varnos to extract
   /// \param query Selection criteria to apply
+  /// \param comm
+  ///   (Optional) An MPI communicator. If it is non-null and its size is greater than 1, the ODB
+  ///   file will be read in parallel, with each process in `comm` loading data from a subset of ODB
+  ///   frames and then exchanging a (typically) small amount of data with other processes to
+  ///   prevent rows associated with the same seqno from being split across multiple ranks.
+  /// \param chunks_per_process
+  ///   Maximum number of disjoint sequences of ODB frames read by an individual MPI process.
+  ///   Ignored if `comm` is null.
   void select(const std::vector<std::string>& columns, const std::string& filename,
-              const std::vector<int>& varnos, const std::string& query);
+              const std::vector<int>& varnos, const std::string& query,
+              const eckit::mpi::Comm* comm = nullptr, int chunks_per_process = 1);
 
   const std::vector<int> &getVarnos() const;
 

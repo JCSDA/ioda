@@ -83,6 +83,8 @@ public:
 
   RowsByLocation groupRowsByLocation(const DataFromSQL &sqlData) const override;
 
+  bool assignsRowsWithDifferentSeqnosToDifferentLocations() const override { return true; }
+
 private:
   Parameters_ parameters_;
 };
@@ -159,6 +161,8 @@ public:
   explicit RowsIntoLocationsSplitterBySeqno(const Parameters_ &parameters);
 
   RowsByLocation groupRowsByLocation(const DataFromSQL &sqlData) const override;
+
+  bool assignsRowsWithDifferentSeqnosToDifferentLocations() const override { return true; }
 
 private:
   /// Faster and simpler version used when there's no constraint on the maximum number of channels.

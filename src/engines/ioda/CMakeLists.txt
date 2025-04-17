@@ -219,6 +219,8 @@ list(APPEND SRCS_ENGINES_ODC_ODC_DEPENDENT
         include/ioda/Engines/ODC/OdbColumnUtils.h
         include/ioda/Engines/ODC/OdbConstants.h
         include/ioda/Engines/ODC/OdbQueryParameters.h
+        include/ioda/Engines/ODC/OdbTablesRange.h
+        include/ioda/Engines/ODC/ParallelIoUtils.h
         include/ioda/Engines/ODC/ParsedColumnExpression.h
         include/ioda/Engines/ODC/RowsIntoLocationsSplitter.h
         include/ioda/Engines/ODC/RowsIntoLocationsSplitterBase.h
@@ -235,6 +237,8 @@ list(APPEND SRCS_ENGINES_ODC_ODC_DEPENDENT
         src/ioda/Engines/ODC/ObsGroupTransformFactory.cpp
         src/ioda/Engines/ODC/OdbColumnUtils.cpp
         src/ioda/Engines/ODC/OdbQueryParameters.cpp
+        src/ioda/Engines/ODC/OdbTablesRange.cpp
+        src/ioda/Engines/ODC/ParallelIoUtils.cpp
         src/ioda/Engines/ODC/ParsedColumnExpression.cpp
         src/ioda/Engines/ODC/RowsIntoLocationsSplitter.cpp
         src/ioda/Engines/ODC/RowsIntoLocationsSplitterFactory.cpp

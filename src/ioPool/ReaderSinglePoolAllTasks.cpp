@@ -76,10 +76,19 @@ void ReaderSinglePoolAllTasks::load(Group & destGroup) {
     ss << *readerEngine;
     readerSrc_ = ss.str();
 
+    // Check if the obs source contains any locations
+    bool emptyFile = false;
+    if (this->commAll().rank() == 0) {
+        emptyFile = fileGroup.vars.open("Location").getDimensions().dimsCur[0] == 0;
+        if (emptyFile)
+            oops::Log::warning() << "WARNING: Input file " << readerSrc_
+                                 << " contains zero observations" << std::endl;
+    }
+    oops::mpi::broadcastBool(this->commAll(), emptyFile, 0);
+
     // Extract and record global data from the input file. Call the extract utility from
     // only rank 0, and then broadcast the data to the other ranks. This saves a bit on
     // file IO.
-    bool emptyFile;
     DateTimeFormat dtimeFormat;
     std::string dtimeEpoch("");
     std::vector<int64_t> dtimeValues;
@@ -92,9 +101,9 @@ void ReaderSinglePoolAllTasks::load(Group & destGroup) {
     // MPI task so file io can be reduced by having rank 0 only do the io, generate
     // the indices and record numbers and broadcast that information to the other
     // ranks.
-    extractGlobalInfoFromSource(this->commAll(), fileGroup, readerSrc_, timeWindow_,
+    extractGlobalInfoFromSource(this->commAll(), fileGroup, emptyFile, timeWindow_,
        readerEngine->applyLocationsCheck(), obsGroupVarList_, dtimeValues,
-       lonValues, latValues, sourceLocIndices, sourceRecNums, emptyFile, dtimeFormat,
+       lonValues, latValues, sourceLocIndices, sourceRecNums, dtimeFormat,
        dtimeEpoch, globalNlocs_, sourceNlocs_, sourceNlocsInsideTimeWindow_,
        sourceNlocsOutsideTimeWindow_, sourceNlocsRejectQC_);
 

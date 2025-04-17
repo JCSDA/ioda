@@ -8,6 +8,8 @@
 #include "ioda/Engines/ODC/OdbColumnUtils.h"
 
 #include "eckit/exception/Exceptions.h"
+#include "eckit/io/FileHandle.h"
+#include "ioda/Engines/ODC/OdbTablesRange.h"
 #include "odc/api/Odb.h"
 #include "odc/core/MetaData.h"
 #include "oops/util/Logger.h"
@@ -19,11 +21,12 @@ namespace ODC {
 OdbColumnsInfo getOdbColumnsInfo(const std::string &path) {
   OdbColumnsInfo result;
   try {
-    odc::api::Reader reader(path);
-    while (odc::api::Frame frame = reader.next()) {
-      for (const odc::api::ColumnInfo& info : frame.columnInfo()) {
+    for (const odc::core::Table &table :
+         OdbTablesRange(std::make_unique<eckit::FileHandle>(path))) {
+      for (const odc::core::Column* col : table.columns()) {
+        ASSERT(col);
         OdbColumnType type = odb_type_ignore;
-        switch (info.type) {
+        switch (col->type()) {
         case odc::api::INTEGER:
           type = odb_type_int;
           break;
@@ -40,11 +43,11 @@ OdbColumnsInfo getOdbColumnsInfo(const std::string &path) {
         default:
           type = odb_type_ignore;
         }
-        auto it = result.find(info.name);
+        auto it = result.find(col->name());
         if (it == result.end())
-          result[info.name] = type;
+          result[col->name()] = type;
         else if (it->second != type)
-          throw eckit::BadValue("The type of column '" + info.name +
+          throw eckit::BadValue("The type of column '" + col->name() +
                                 "' is not the same in all ODB frames containing that column",
                                 Here());
       }

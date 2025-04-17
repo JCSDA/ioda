@@ -5,6 +5,7 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
  */
 
+#include "oops/mpi/mpi.h"
 #include "oops/util/Logger.h"
 #include "oops/util/missingValues.h"
 
@@ -43,7 +44,10 @@ ReadOdbFile::ReadOdbFile(const Parameters_ & params,
         odcparams.timeWindowExtendedLowerBound =
           params.timeWindowExtendedLowerBound.value() != boost::none ?
           params.timeWindowExtendedLowerBound.value().value() : missingDate;
-        obs_group_ = Engines::ODC::openFile(odcparams, backend);
+        odcparams.chunksPerProcess = params.frameDistributionSpread;
+        const eckit::mpi::Comm * comm =
+            createParams_.isParallelIo ? &createParams.comm : nullptr;
+        obs_group_ = Engines::ODC::openFile(odcparams, backend, comm);
         oops::Log::trace() << "ioda::Engines::ReadOdbFile end constructor" << std::endl;
     } else {
         // Input file does not exist (is not readable actually)

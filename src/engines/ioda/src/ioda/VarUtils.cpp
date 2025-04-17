@@ -266,7 +266,8 @@ void setVarCreateParamsForMem(ioda::VariableCreationParameters & params) {
 //--------------------------------------------------------------------------------
 void createDimensionsFromConfig(ioda::Has_Variables & vars,
                                 const std::vector<eckit::LocalConfiguration> & dimConfigs,
-                                const std::size_t globalNlocs) {
+                                const std::size_t globalNlocs,
+                                bool overwrite) {
     // Walk through the list of dimensions and create them as you go
     // This function assumes that the attributes are scalar.
     for (size_t i = 0; i < dimConfigs.size(); ++i) {
@@ -287,6 +288,9 @@ void createDimensionsFromConfig(ioda::Has_Variables & vars,
             chunkSizes[0] = getLocationChunkSize(globalNlocs);
         }
         
+        if (overwrite && vars.exists(dimName))
+            vars.remove(dimName);
+
         ioda::Variable dimVar;
         ioda::VariableCreationParameters params;
         if (dimDataType == "int") {
@@ -322,7 +326,7 @@ void createDimensionsFromConfig(ioda::Has_Variables & vars,
 //--------------------------------------------------------------------------------
 void createVariablesFromConfig(ioda::Has_Variables & vars,
                                const std::vector<eckit::LocalConfiguration> & varConfigs,
-                               const std::size_t globalNlocs) {
+                               const std::size_t globalNlocs, bool overwrite) {
     // Walk through the list of variables and create them as you go
     // This function assumes that the attributes are scalar.
     for (size_t i = 0; i < varConfigs.size(); ++i) {
@@ -343,6 +347,9 @@ void createVariablesFromConfig(ioda::Has_Variables & vars,
                 chunkSizes[j] = varDims[j].getDimensions().dimsCur[0];
             }
         }
+
+        if (overwrite && vars.exists(varName))
+            vars.remove(varName);
 
         ioda::Variable memVar;
         ioda::VariableCreationParameters params;

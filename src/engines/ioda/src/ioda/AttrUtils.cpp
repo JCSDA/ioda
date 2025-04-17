@@ -127,12 +127,17 @@ void listAttributesAsYaml(const ioda::Has_Attributes& atts, const std::string & 
 
 //--------------------------------------------------------------------------------
 void createAttributesFromConfig(ioda::Has_Attributes & atts,
-                                const std::vector<eckit::LocalConfiguration> & attsConfig) {
+                                const std::vector<eckit::LocalConfiguration> & attsConfig,
+                                bool overwrite) {
     // Walk through the list of attributes and create them as you go
     // This function assumes that the attributes are scalar.
     for (size_t i = 0; i < attsConfig.size(); ++i) {
         std::string attrName = attsConfig[i].getString("attribute.name");
         std::string attrDataType = attsConfig[i].getString("attribute.data type");
+
+        if (overwrite && atts.exists(attrName))
+            atts.remove(attrName);
+
         if (attrDataType == "int") {
             std::vector<int> attrValue = attsConfig[i].getIntVector("attribute.value");
             atts.add<int>(attrName, attrValue);
