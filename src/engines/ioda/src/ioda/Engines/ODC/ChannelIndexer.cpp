@@ -9,6 +9,7 @@
 
 #include "ioda/Engines/ODC/ChannelIndexerFactory.h"
 #include "ioda/Engines/ODC/DataFromSQL.h"
+#include "oops/util/IntSetParser.h"
 
 namespace ioda {
 namespace Engines {
@@ -19,6 +20,7 @@ ChannelIndexerMaker<ConstantChannelIndexer> constantMaker("constant");
 ChannelIndexerMaker<SequentialChannelIndexer> sequentialMaker("sequential");
 ChannelIndexerMaker<ChannelIndexReaderFromFirstLocation>
   readerFromFirstLocationMaker("read from first location");
+ChannelIndexerMaker<ChannelIndexReaderFromYaml> readerFromYamlMaker("read from yaml");
 }  // namespace
 
 // -----------------------------------------------------------------------------
@@ -57,6 +59,24 @@ std::vector<int> ConstantChannelIndexer::channelIndices(
   return channels;
 }
 
+// -----------------------------------------------------------------------------
+
+ChannelIndexReaderFromYaml::ChannelIndexReaderFromYaml(const Parameters_ &parameters)
+  : parameters_(parameters)
+{}
+
+std::vector<int> ChannelIndexReaderFromYaml::channelIndices(
+    const RowsByLocation &rowsByLocation, const DataFromSQL &sqlData) const
+{
+  std::vector<int> channels;
+  if (rowsByLocation.empty())
+    return channels;
+  // Channel numbers are passed in as a string, this is converted to a set
+  // Then populate a vector of integers with this set.
+  const std::set<int> channelSet = oops::parseIntSet(parameters_.channelNumbers);
+  std::copy(channelSet.begin(), channelSet.end(), std::back_inserter(channels));
+  return channels;
+}
 // -----------------------------------------------------------------------------
 
 SequentialChannelIndexer::SequentialChannelIndexer(const Parameters_ &parameters)

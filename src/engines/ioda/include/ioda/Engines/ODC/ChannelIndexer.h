@@ -124,6 +124,33 @@ private:
   Parameters_ parameters_;
 };
 
+/// \brief Parameters controlling the behavior of ChannelIndexReaderFromYaml.
+class ChannelIndexReaderFromYamlParameters : public ChannelIndexerParametersBase {
+  OOPS_CONCRETE_PARAMETERS(ChannelIndexReaderFromYamlParameters,
+                           ChannelIndexerParametersBase)
+public:
+  /// \brief A vector of channel numbers to be created from the odb query file
+  oops::RequiredParameter<std::string> channelNumbers{"channel numbers", this};
+};
+
+/// \brief Reads channel indices from the odb query file
+///
+/// The channels must be passed in as a comma separated string
+class ChannelIndexReaderFromYaml : public ChannelIndexerBase {
+public:
+  typedef ChannelIndexReaderFromYamlParameters Parameters_;
+
+  explicit ChannelIndexReaderFromYaml(const Parameters_ &parameters);
+
+  std::vector<int> channelIndices(const RowsByLocation &rowsByLocation,
+                                  const DataFromSQL &sqlData) const override;
+
+private:
+  Parameters_ parameters_;
+};
+
+// -----------------------------------------------------------------------------
+
 }  // namespace ODC
 }  // namespace Engines
 }  // namespace ioda

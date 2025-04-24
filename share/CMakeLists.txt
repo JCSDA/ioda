@@ -40,6 +40,7 @@ set(
   ioda/yaml/iodatest_odb_hloswind.yaml
   ioda/yaml/iodatest_odb_iasi.yaml
   ioda/yaml/iodatest_odb_iasi_write.yaml
+  ioda/yaml/iodatest_odb_iasi_read_channels_from_yaml.yaml
   ioda/yaml/iodatest_odb_mtgirs.yaml
   ioda/yaml/iodatest_odb_mwri.yaml
   ioda/yaml/iodatest_odb_mwsfy3.yaml

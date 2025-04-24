@@ -3125,6 +3125,18 @@ if (odc_FOUND)
                             ../share/test/testinput/odb_oceansound_name_map.yaml ../share/test/testinput/iodatest_odb_oceansound_truncate_profiles.yaml"
                             test-OceanSound-truncate-profiles.hdf
                     TEST_DEPENDS get_ioda_test_data )
+                    
+  ecbuild_add_test( TARGET  test_ioda-convert_iasi_read_channels_from_yaml_odc
+                    TYPE    SCRIPT
+                    COMMAND bash
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                            hdf5
+                            "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
+                            IASI-read-channels-from-yaml
+                            Data/testinput_tier_1/iasi.odb
+                            ../share/test/testinput/odb_radiance_name_map.yaml ../share/test/testinput/iodatest_odb_iasi_read_channels_from_yaml.yaml"
+                            test-IASI-read-channels-from-yaml.hdf
+                    TEST_DEPENDS get_ioda_test_data )
 
   # The following tests verify that the correct exceptions are thrown when certain ODB columns are not present 
   # in the query (and presumably the same would happen if they weren't present in the input ODB file).
