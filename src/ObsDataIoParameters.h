@@ -95,6 +95,18 @@ class ObsDataOutParameters : public oops::Parameters {
  public:
     /// option controlling the creation of the backend
     oops::RequiredParameter<Engines::WriterParametersWrapper> engine{"engine", this};
+
+    /// action to take if there is an empty obs space
+    /// \details There are two valid settings for this parameter:
+    /// 1. "create output" - create an empty output file (default)
+    /// 2. "skip output" - skip the output file creation
+    /// If "skip output" is selected along with enabling the create multiple output
+    /// files mode, the creation of output files will only be skipped if there are
+    /// zero observations total across all MPI tasks. This is done to help downstream
+    /// tools by always providing either no files or a complete set of files (one
+    /// file per io pool task).
+    oops::Parameter<std::string>
+        emptyOspaceAction{"empty obs space action", std::string("create output"), this};
 };
 
 }  // namespace ioda

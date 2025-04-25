@@ -51,8 +51,26 @@ case $file_type in
     odc compare testoutput/$file_name $testRefDir/$file_name
     rc=${?}
     ;;
+   fileExists)
+    # Check if the file exists
+    if [[ -f testoutput/$file_name ]]; then
+        rc=0
+    else
+        echo "ERROR: ioda_compare.sh: File '${file_name}' does not exist when it should."
+        rc=1
+    fi
+    ;;
+   fileDoesNotExist)
+    # Check if the file does not exist
+    if [[ ! -f testoutput/$file_name ]]; then
+        rc=0
+    else
+        echo "ERROR: ioda_compare.sh: File '${file_name}' exists when it should not."
+        rc=1
+    fi
+    ;;
    *)
-    echo "ERROR: ioda_comp.sh: Unrecognized file type: ${file_type}"
+    echo "ERROR: ioda_compare.sh: Unrecognized file type: ${file_type}"
     rc="-2"
     ;;
 esac

@@ -246,6 +246,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_time_io_multiple_input_files.yaml
   testinput/iodatest_time_io_multiple_input_files_mpi_2.yaml
   testinput/iodatest_time_io_multiple_input_files_mpi_4.yaml
+  testinput/iodatest_time_io_empty_ospace.yaml
   testinput/iodatest_bufr_mhs.yaml
   testinput/iodatest_bufr_mhs_mapping.yaml
   testinput/iodatest_bufr_python_encoder.yaml
@@ -2203,6 +2204,53 @@ ecbuild_add_test( TARGET  test_ioda_time_io_multiple_input_files_gnssro_mpi_4_cm
                           "echo Checking time io gnssro (multiple input files, mpi 4)"
                           gnssro_obs_2021080606_s_time_multi_files_mpi_4.nc4
                   TEST_DEPENDS get_ioda_test_data test_ioda_time_io_multiple_input_files_mpi_4 )
+
+#####################################################################
+# Test writer empty obs space handling
+#####################################################################
+
+# this test removes the output files from prior testing
+ecbuild_add_test( TARGET  test_ioda_clean_time_io_empty_ospace
+                  COMMAND rm
+                  ARGS    "-f"
+                    "testoutput/empty_default_output.nc4"
+                    "testoutput/empty_create_output.nc4"
+                    "testoutput/empty_skip_output.nc4" )
+
+# the following test creates (or does not create) output files
+ecbuild_add_test( TARGET test_ioda_time_io_empty_ospace
+                  COMMAND     ${CMAKE_BINARY_DIR}/bin/time_IodaIO.x
+                  ARGS        "testinput/iodatest_time_io_empty_ospace.yaml"
+                  TEST_DEPENDS get_ioda_test_data test_ioda_clean_time_io_empty_ospace )
+
+# the following tests check to see if a file was created or if a file was not created
+# according to the empty obs space handling specification
+ecbuild_add_test( TARGET  test_ioda_time_io_empty_ospace_default_check
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          fileExists
+                          "echo Checking empty obs space handling (default)"
+                          empty_default_output.nc4
+                  TEST_DEPENDS get_ioda_test_data test_ioda_time_io_empty_ospace )
+
+ecbuild_add_test( TARGET  test_ioda_time_io_empty_ospace_create_check
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          fileExists
+                          "echo Checking empty obs space handling (create)"
+                          empty_create_output.nc4
+                  TEST_DEPENDS get_ioda_test_data test_ioda_time_io_empty_ospace )
+
+ecbuild_add_test( TARGET  test_ioda_time_io_empty_ospace_skip_check
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          fileDoesNotExist
+                          "echo Checking empty obs space handling (skip)"
+                          empty_skip_output.nc4
+                  TEST_DEPENDS get_ioda_test_data test_ioda_time_io_empty_ospace )
 
 #####################################################################
 # Test the ioda-upgrade-v1-to-v2.x app

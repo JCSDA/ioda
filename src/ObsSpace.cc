@@ -210,6 +210,24 @@ ObsSpace::ObsSpace(const eckit::Configuration & config, const eckit::mpi::Comm &
         util::printRunStats("ioda::ObsSpace::ObsSpace: start " + obsname_ + ": ", true, comm);
     }
 
+    // Check the empty obs space action to see if we should continue with the save operation.
+    // Want to do the check here for valid actions because we don't want to wait until the entire
+    // DA job is completed just to find there is a fault in the obsdataout spec.
+    create_empty_output_file_ = true;
+    if (obs_params_.top_level_.obsDataOut.value() != boost::none) {
+      if (obs_params_.top_level_.obsDataOut.value()->emptyOspaceAction.value() ==
+                                                                  "create output") {
+        create_empty_output_file_ = true;
+      } else if ( obs_params_.top_level_.obsDataOut.value()->emptyOspaceAction.value() ==
+                                                                            "skip output") {
+        create_empty_output_file_ = false;
+      } else {
+        throw eckit::UserError("Unknown empty obs space action: " +
+                               obs_params_.top_level_.obsDataOut.value()->emptyOspaceAction.value(),
+                               Here());
+      }
+    }
+
     // Create an MPI distribution object
     const auto & distParams = obs_params_.top_level_.distribution.value().params.value();
     dist_ = DistributionFactory::create(obs_params_.comm(), distParams);
@@ -378,7 +396,15 @@ ObsSpace::ObsSpace(const eckit::Configuration & config, const eckit::mpi::Comm &
 
 // -----------------------------------------------------------------------------
 void ObsSpace::save() {
+    // Determine if we should continue on to write out a file. Conditions for
+    // writing out a file are:
+    //     1. The obsdataout parameter is specified in the YAML configuration
+    //     2. The emptyOspaceAction is set to create output (create_empty_output_file_ == true)
+    //         OR
+    //        there are more than zero observations across all MPI ranks.
+
     if (obs_params_.top_level_.obsDataOut.value() != boost::none) {
+      if (create_empty_output_file_ || gnlocs_ > 0) {
         if (print_run_stats_ > 0) {
             util::printRunStats("ioda::ObsSpace::save: start " + obsname_ + ": ", true, comm());
         }
@@ -411,6 +437,10 @@ void ObsSpace::save() {
         if (print_run_stats_ > 0) {
             util::printRunStats("ioda::ObsSpace::save: end " + obsname_ + ": ", true, comm());
         }
+      } else {
+        oops::Log::info() << obsname() << " :  skipping output due to an empty obs space "
+                                       << "with the skip output action enabled" << std::endl;
+      }
     } else {
         oops::Log::info() << obsname() << " :  no output" << std::endl;
     }

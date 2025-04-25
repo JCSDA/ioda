@@ -667,6 +667,10 @@ namespace ioda {
         /// \brief indicator whether the data in recidx_ is sorted
         bool recidx_is_sorted_;
 
+        /// \brief indicator whether to create an output file when the
+        /// obs space is empty (gnlocs == 0)
+        bool create_empty_output_file_;
+
         /// \brief indicator whether to use the new dataframe container
         bool use_dataframe_;
 
