@@ -251,6 +251,8 @@ list( APPEND ioda_test_input
   testinput/iodatest_bufr_mhs_mapping.yaml
   testinput/iodatest_bufr_python_encoder.yaml
   testinput/iodatest_bufr_python_encoder.py
+  testinput/iodatest_bufr_python_parallel.yaml
+  testinput/iodatest_bufr_python_parallel.py
 )
 
 # Work directories for the new reader. Make one entry per test that is using
@@ -3326,13 +3328,16 @@ endif()
 #####################################################################
 
 if (bufr_query_FOUND)
+  #cmake python path relative too the install directory
+  #PYTHONPATH=${CMAKE_INSTALL_PREFIX}/lib/python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}:$ENV{PYTHONPATH}/site-packages
   ecbuild_add_test( TARGET  test_ioda_bufr_mhs
           TYPE    SCRIPT
           COMMAND bash
           ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
           netcdf
           "${CMAKE_BINARY_DIR}/bin/time_IodaIO.x testinput/iodatest_bufr_mhs.yaml"
-          iodatest_bufr_mhs.nc)
+          iodatest_bufr_mhs.nc
+          ENVIRONMENT PYTHONPATH=${CMAKE_BINARY_DIR}/lib/python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}:$ENV{PYTHONPATH})
 
   ecbuild_add_test( TARGET  test_ioda_bufr_python_encoder
           TYPE    SCRIPT
@@ -3341,8 +3346,17 @@ if (bufr_query_FOUND)
           netcdf
           "${CMAKE_BINARY_DIR}/bin/time_IodaIO.x testinput/iodatest_bufr_python_encoder.yaml"
           iodatest_bufr_mhs.nc
-          ENVIRONMENT PYTHONPATH=${CMAKE_BINARY_DIR}/lib/python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}:$ENV{PYTHONPATH}
-          TEST_DEPENDS test_ioda_bufr_mhs)
+          ENVIRONMENT PYTHONPATH=${CMAKE_BINARY_DIR}/lib/python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}:$ENV{PYTHONPATH})
+
+  ecbuild_add_test( TARGET  test_ioda_bufr_python_parallel
+          MPI 1
+          TYPE    SCRIPT
+          COMMAND bash
+          ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+          netcdf
+          "${CMAKE_BINARY_DIR}/bin/time_IodaIO.x testinput/iodatest_bufr_python_parallel.yaml"
+          iodatest_bufr_mhs.nc
+          ENVIRONMENT PYTHONPATH=${CMAKE_BINARY_DIR}/lib/python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}:$ENV{PYTHONPATH})
 endif ()
 
 #####################################################################

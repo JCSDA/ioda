@@ -5,17 +5,16 @@
 * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
 */
 
-#include <pybind11/pybind11.h>
-#include <pybind11/embed.h>
-
-#include <memory>
-
-#include "ioda/Exception.h"
-#include "ioda/ObsGroup.h"
-#include "ioda/Group.h"
 #include "ioda/Engines/Script.h"
-#include "oops/util/Logger.h"
+
+#include <pybind11/embed.h>
+#include <pybind11/pybind11.h>
+
 #include "eckit/config/YAMLConfiguration.h"
+#include "ioda/Exception.h"
+#include "ioda/Group.h"
+#include "ioda/ObsGroup.h"
+#include "oops/util/Logger.h"
 
 namespace py = pybind11;
 
@@ -120,12 +119,20 @@ namespace details {
   /// \param args The arguments of the function.
   /// \return A python dict containing the kwargs.
   py::dict makePythonKwArgs(const Script_Parameters& scriptParams,
-                            const std::vector<details::Arg>& args)
+                            const std::vector<details::Arg>& args,
+                            const py::dict env)
   {
     py::dict kwargs;
 
     for (const auto& arg : args)
     {
+      // add the env dictionary if the function uses it
+      if (arg.name == "env")
+      {
+        kwargs["env"] = env;
+        continue;
+      }
+
       if (scriptParams.args.find(arg.name) != scriptParams.args.end())
       {
         Script_Parameters::ArgType argVal = scriptParams.args.at(arg.name);
@@ -244,7 +251,9 @@ namespace details {
   /// \param scriptParams The parameters to the script.
   /// \param emptyStorageGroup is the initial (empty) group.
   /// \return The ObsGroup object returned by the python function.
-  ObsGroup openFile(const Script_Parameters& scriptParams, Group emptyStorageGroup)
+  ObsGroup openFile(const Script_Parameters& scriptParams,
+                    const ioda::Engines::ReaderCreationParameters& readerParams,
+                    Group emptyStorageGroup)
   {
     oops::Log::debug() << "Script called with " << scriptParams.scriptFile << std::endl;
 
@@ -268,20 +277,19 @@ namespace details {
       defualtGlobals.push_back(py::str(global.first));
     }
 
-    // Add the script file to the python path
-    py::object scope  = py::globals();
-    scope["__file__"] = scriptParams.scriptFile;
-    scope["__name__"] = py::str("ioda_script");
+    auto moduleName = py::str("ioda_script");
+    auto scope = py::globals();
+    py::module importlib_util = py::module::import("importlib.util");
+    py::object spec = importlib_util.attr("spec_from_file_location")\
+                        (moduleName, scriptParams.scriptFile);
+    py::object module = importlib_util.attr("module_from_spec")(spec);
+    py::module sys = py::module::import("sys");
 
-    try {
-        // Execute the script
-        py::eval_file(scriptParams.scriptFile, scope);
-    } catch (const py::error_already_set& e) {
-        throw Exception("Python error: " + std::string(e.what()), ioda_Here());
-    }
+    sys.attr("modules")[moduleName] = module;
+    scope[moduleName] = module;
+    spec.attr("loader").attr("exec_module")(module);
 
-    // Get a reference to the function
-    auto func = py::cast<py::function>(scope[funcName]);
+    auto func = py::cast<py::function>(module.attr(funcName));
 
     // Get the arguments of the function
     auto args = getArgs(func);
@@ -289,8 +297,19 @@ namespace details {
     // Warn about unused arguments
     warnAboutUnusedArgs(scriptParams, args);
 
+    auto pyDatetime = py::module::import("datetime").attr("datetime");
+    const py::dict env;
+
+    env["start_time"] =
+      pyDatetime.attr("strptime")(readerParams.timeWindow.start().toString(),
+                                  py::str("%Y-%m-%dT%H:%M:%SZ"));
+    env["end_time"] =
+      pyDatetime.attr("strptime")(readerParams.timeWindow.end().toString(),
+                                  py::str("%Y-%m-%dT%H:%M:%SZ"));
+    env["comm_name"] = py::str(readerParams.comm.name());
+
     // Make kwargs to call the python function
-    py::dict kwargs = makePythonKwArgs(scriptParams, args);
+    py::dict kwargs = makePythonKwArgs(scriptParams, args, env);
 
     try {
         // Call the python function
@@ -307,7 +326,7 @@ namespace details {
     }
 
     // Return the interpreter back to its initial state
-    for (const auto& global : py::globals())
+    for (const auto& global : scope)
     {
         std::string globalName = py::str(global.first);
         if (std::find(defualtGlobals.begin(),

@@ -23,6 +23,7 @@
 #include "../defs.h"
 #include "ObsStore.h"
 #include "../Group.h"
+#include "ioda/Engines/ReaderBase.h"
 
 namespace ioda {
 namespace Engines {
@@ -42,6 +43,7 @@ struct Script_Parameters {
 ///   by another engine (ObsStore) that will be populated with the
 ///   Bufr data.
 IODA_DL ObsGroup openFile(const Script_Parameters& params,
+                          const ioda::Engines::ReaderCreationParameters& readerParams,
                           ioda::Group emptyStorageGroup = ObsStore::createRootGroup());
 
 }  // namespace Script

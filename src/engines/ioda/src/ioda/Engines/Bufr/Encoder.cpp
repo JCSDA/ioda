@@ -12,13 +12,16 @@
 #include <memory>
 #include <sstream>
 #include <string>
+#include <cstdlib>
+#include <ctime>
+#include <unistd.h> // For getpid()
+#include <chrono>   // For high-resolution clock 
 
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/exception/Exceptions.h"
 #include "ioda/Layout.h"
 #include "ioda/Misc/DimensionScales.h"
 #include "oops/util/Logger.h"
-
 #include "bufr/DataObject.h"
 
 
@@ -352,15 +355,19 @@ namespace Bufr {
       }
 
       // Make the obsstore parameters
+      pid_t pid = getpid();
+      auto now = std::chrono::high_resolution_clock::now();
+      auto timestamp = static_cast<unsigned>(std::chrono::duration_cast<std::chrono::nanoseconds>(now.time_since_epoch()).count());
       backendParams.openMode   = ioda::Engines::BackendOpenModes::Read_Write;
       backendParams.createMode = ioda::Engines::BackendCreateModes::Truncate_If_Exists;
       backendParams.action     = append ? ioda::Engines::BackendFileActions::Open
                                         : ioda::Engines::BackendFileActions::Create;
-      backendParams.flush      = true;
-      //     backendParams.allocBytes = dataContainer->size();
-
+      backendParams.flush      = false;
+      backendParams.fileName   = "temp.hdf5." + std::to_string(timestamp) + std::to_string(pid);
+      backendParams.allocBytes = dataContainer->size(categories);
+  
       auto rootGroup
-        = ioda::Engines::constructBackend(ioda::Engines::BackendNames::ObsStore, backendParams);
+        = ioda::Engines::constructBackend(ioda::Engines::BackendNames::Hdf5Mem, backendParams);
 
       ioda::NewDimensionScales_t allDims;
       for (auto dimPair : dimMap)

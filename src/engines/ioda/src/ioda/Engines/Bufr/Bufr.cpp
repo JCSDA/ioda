@@ -13,6 +13,7 @@
  */
 
 #include <ostream>
+#include <chrono>
 
 #include "eckit/io/MemoryHandle.h"
 #include "ioda/Engines/Bufr.h"
@@ -46,7 +47,9 @@ const char bufrMissingMessage[] {
   "The Bufr engine is disabled."};
 #endif
 
-ObsGroup openFile(const Bufr_Parameters& bufrParams, Group emptyStorageGroup)
+ObsGroup openFile(const Bufr_Parameters& bufrParams,
+                  const ioda::Engines::ReaderCreationParameters& readerParams,
+                  Group emptyStorageGroup)
 {
 #if bufr_query_FOUND
   oops::Log::debug() << "BUFR called with " << bufrParams.mappingFile << std::endl;
@@ -84,9 +87,25 @@ ObsGroup openFile(const Bufr_Parameters& bufrParams, Group emptyStorageGroup)
   }
   else
   {
-    data = bufr::BufrParser(bufrParams.filename,
-                            yaml.getSubConfiguration("bufr"),
-                            bufrParams.tablePath).parse();
+    auto bufrParser = bufr::BufrParser(bufrParams.filename,
+                                       yaml.getSubConfiguration("bufr"),
+                                       bufrParams.tablePath);
+
+    oops::Log::info() << "Parsing BUFR file: " << bufrParams.filename << std::endl;
+
+    if (readerParams.comm.size() > 0)
+    {
+      oops::Log::info() << "Parsing in parallel" << std::endl;
+      data = bufrParser.parse(readerParams.comm);
+
+      // time the time it takes to run allGather
+      data->allGather(readerParams.comm);
+    }
+    else
+    {
+      oops::Log::info() << "Parsing in serial" << std::endl;
+      data = bufrParser.parse();
+    }
 
     if (!bufrParams.cacheCategories.empty())
     {
@@ -97,7 +116,8 @@ ObsGroup openFile(const Bufr_Parameters& bufrParams, Group emptyStorageGroup)
     }
   }
 
-  auto dataMap = Encoder(yaml.getSubConfiguration("encoder")).encode(data);
+  auto dataMap = Encoder(yaml.getSubConfiguration("encoder")).\
+                  encode(data->getSubContainer(bufrParams.category));
 
   ObsGroup result;
   if (!bufrParams.category.empty())

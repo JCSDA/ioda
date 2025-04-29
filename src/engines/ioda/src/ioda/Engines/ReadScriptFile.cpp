@@ -55,7 +55,7 @@ namespace Engines {
       scriptParams.args[arg.first] = convertArg(arg.second);
     }
 
-    obs_group_ = Engines::Script::openFile(scriptParams, backend);
+    obs_group_ = Engines::Script::openFile(scriptParams, createParams, backend);
 
     oops::Log::trace() << "ioda::Engines::ReadScriptFile end constructor" << std::endl;
   }

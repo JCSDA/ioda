@@ -53,7 +53,7 @@ namespace Engines {
       	  bufrparams.cacheCategories = params.cacheCategories.value().get();
     	}
 
-    	obs_group_ = Engines::Bufr::openFile(bufrparams, backend);
+        obs_group_ = Engines::Bufr::openFile(bufrparams, createParams, backend);
 
     	oops::Log::trace() << "ioda::Engines::ReadBufrFile end constructor" << std::endl;
   } else{
