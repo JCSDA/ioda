@@ -53,12 +53,12 @@ find_package( Eigen3 REQUIRED NO_MODULE HINTS
 find_package( gsl-lite REQUIRED HINTS $ENV{gsl_lite_DIR} )
 find_package( udunits 2.2.0 REQUIRED )
 find_package( Boost 1.64.0 REQUIRED )
-find_package( bufr_query 0.0.4 REQUIRED )
 find_package( NetCDF REQUIRED COMPONENTS C Fortran CXX )
-find_package( bufr 12.0.1 REQUIRED )
 
 # Optional
-find_package( odc 1.4.6 QUIET )   # Needed for odc
+find_package( odc 1.4.6 QUIET )        # Needed for odb backend
+find_package( bufr_query 0.0.4 QUIET ) # Needed for bufr backend
+find_package( bufr 12.0.1 QUIET )      # Needed for bufr backend
 
 # Python-finding settings
 set(Python3_FIND_REGISTRY "LAST")
