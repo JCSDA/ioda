@@ -119,6 +119,8 @@ ioPool/WriterSinglePool.h
 
 reader/filter/filterObsContainer.cpp
 reader/filter/filterObsContainer.hpp
+reader/load/loadObsContainerFromNetcdf.cpp
+reader/load/loadObsContainerFromNetcdf.hpp
 
 c_obsdatavector_int.hpp
 c_obsdatavector_int.cpp

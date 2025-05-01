@@ -42,6 +42,7 @@ endif()
 
 set(HDF5_PREFER_PARALLEL true) # CMake sometimes mistakenly finds a serial system-provided HDF5.
 find_package( HDF5 REQUIRED COMPONENTS C HL )
+find_package( NetCDF REQUIRED COMPONENTS C Fortran CXX )
 find_package( MPI REQUIRED )
 find_package( jedicmake REQUIRED )
 find_package( eckit 1.23.0 REQUIRED )

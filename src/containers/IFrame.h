@@ -117,6 +117,12 @@ class IFrame {
   /// \param The comparator operator, specified in osdf::Constants::eComparisons.
   virtual void sortRows(const std::string&, const std::int8_t) = 0;
 
+  /// \brief Returns the number of rows in the container.
+  virtual std::size_t numRows() const = 0;
+
+  /// \brief Returns the number of columns in the container.
+  virtual std::size_t numCols() const = 0;
+
   /// \brief Outputs the contents to screen. Used primarily for debugging and development.
   virtual void print() const = 0;
 };

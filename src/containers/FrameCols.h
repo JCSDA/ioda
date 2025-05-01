@@ -98,6 +98,9 @@ class FrameCols : public IFrame {
 
   void sortRows(const std::string&, const std::int8_t) override;
 
+  std::size_t numRows() const override { return data_.getSizeRows(); }
+  std::size_t numCols() const override { return data_.getSizeCols(); }
+
   void print() const override;
   void clear();
 

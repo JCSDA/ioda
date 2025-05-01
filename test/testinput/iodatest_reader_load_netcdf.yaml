@@ -1,0 +1,13 @@
+---
+
+input files:
+
+- file name: "Data/testinput_tier_1/sondes_obs_2018041500_m.nc4"
+  start location: 0
+  location count: 20
+  expected number of columns: 63
+
+- file name: "Data/testinput_tier_1/amsua_n19_obs_2018041500_m.nc4"
+  start location: 20
+  location count: 20
+  expected number of columns: 117

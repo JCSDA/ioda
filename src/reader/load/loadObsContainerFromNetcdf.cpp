@@ -1,0 +1,505 @@
+/*
+ * (C) Copyright 2025 UCAR
+ *
+ * This software is licensed under the terms of the Apache Licence Version 2.0
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ */
+
+#include "ioda/reader/load/loadObsContainerFromNetcdf.hpp"
+
+#include <netcdf>
+
+#include <map>
+#include <sstream>
+#include <stdexcept>
+#include <string>
+#include <vector>
+
+#include "ioda/containers/IFrame.h"
+
+#include "oops/util/Logger.h"
+#include "oops/util/missingValues.h"
+
+namespace ioda {
+namespace reader {
+
+//--------------------------------------------------------------------------------
+// Function declarations for "private" functions
+//--------------------------------------------------------------------------------
+
+/// \brief check an object for validity
+/// \details This function will throw a std::runtime_error exception if the object
+/// is invalid.
+/// \param ncObj netCDF object to check
+/// \param msg message to print if the object is invalid
+template <typename NcObjType>
+static void checkNcObj(const NcObjType & ncObj, const std::string & msg) {
+  if (ncObj.isNull()) {
+    throw std::runtime_error(msg);
+  }
+}
+
+/// \brief check if a netCDF variable is a dimension
+/// \param group netCDF group
+/// \param varName name of the variable to check
+static bool isNetcdfVarADimension(const netCDF::NcGroup & group, const std::string & varName);
+
+/// \brief check if we can keep a variable for loading into the OSDF container
+/// \details For now, the storage capability of the OSDF container is limited to
+/// 1D variables dimensioned by Location, or 2D variables dimensioned by Location and
+/// Channel. This function will check for this and return true if the variable can
+/// be loaded into the OSDF.
+/// \param varName hierarchical variable name
+/// \param var netCDF variable to check
+static bool keepNetcdfVarForOSDF(const std::string & varName, const netCDF::NcVar & var);
+
+/// \brief list out variable names in a recursive fashion
+/// \details This function will traverse the group hierarchy and return a vector
+/// of strings containing all of the variable names under the given group.
+/// The variable names will have the group path prepended to them in order
+/// to keep all the variable names unique, and to denote where they live in
+/// the group hierarchy.
+///
+/// The listDimensions flag indicates if the function should list the
+/// dimensions instead of the variables. If false list variables, if true
+/// list dimensions.
+/// \param group netCDF group
+/// \param groupPathPrefix leading group path for this level of the heirarchy
+/// \param listDimensions flag to indicate listing dimensions or variables
+static std::vector<std::string> listAllNetcdfVars(const netCDF::NcGroup& group,
+                                    const std::string & groupPathPrefix,
+                                    const bool listDimensions);
+
+/// \brief split a string on a given delimiter
+/// \param str string to split
+/// \param delim delimiter to split on
+static std::vector<std::string> splitString(const std::string & str, char delim);
+
+/// \brief load the variable (specified as a hierarchical path) from the netCDF file
+/// \details This function allows variable names with hierarchical paths to be
+/// loaded from the netCDF file.  The variable name is specified as a vector
+/// of strings, where the last entry is the variable and any leading entries are
+/// the group names leading to the variable.
+/// \param topGroup top level group object corresponding to varNameParts entreis
+/// \param varNameParts vector of strings containing the variable name and group names
+static netCDF::NcVar openHierarchialNetcdfVar(netCDF::NcGroup & topGroup,
+                                              const std::vector<std::string> & varNameParts);
+
+/// \brief transfer a block of data from a netCDF variable to a vector
+/// \details This is the "block of locations" signature for getting the netcdf
+/// variable data. The startLoc and locCount parameters are used to specify the
+/// block of data to read. The first dimension of the variable is assumed to be
+/// Location.
+/// \tparam VarType data type of the variable
+/// \param startLoc staring location (Location is the first dimension)
+/// \param locCount count of locations to read
+/// \param var netcdf variable
+template <typename VarType>
+static std::vector<VarType> getSelectNcVarData(const std::size_t startLoc,
+                                               const std::size_t locCount,
+                                               const netCDF::NcVar & var);
+
+/// \brief helper function for the getSelectNcVarData function
+/// \details This function is used by the getSelectNcVarData to make the call to
+/// the netCDF API to get the variable data. The function is specialized for
+/// std::string to handle the special case of string data in netCDF.
+/// \tparam VarType data type of the variable
+/// \param var netcdf variable
+/// \param start starting location for the data
+/// \param count count of locations to read
+/// \param varData vector to hold the variable data
+template <typename VarType>
+static void getNcVarData(const netCDF::NcVar & var, const std::vector<std::size_t> & start,
+                         const std::vector<std::size_t> & count, std::vector<VarType> & varData);
+
+/// \brief replace fill values with JEDI missing values
+/// \param var netCDF variable
+/// \param varData vector of variable data
+template <typename VarType>
+static void replaceFillValuesWithMissing(const netCDF::NcVar & var,
+                                         std::vector<VarType> & varData);
+
+/// \brief get the fill value for a netCDF variable
+/// \tparam VarType data type for variable
+/// \param var netcdf variable
+template <typename VarType>
+static VarType getNcVarFillValue(const netCDF::NcVar & var);
+
+/// \brief helper functions to get the default fill value for a netCDF variable
+/// \param fillValue
+static int getNcVarDefaultFillValue(const int & fillValue);
+static int64_t getNcVarDefaultFillValue(const int64_t & fillValue);
+static float getNcVarDefaultFillValue(const float & fillValue);
+static std::string getNcVarDefaultFillValue(const std::string & fillValue);
+
+/// \brief  transfer variable data to the destination OSDF container
+/// \tparam VarType
+/// \param varName hierarchical name of variable
+/// \param varData variable data
+/// \param chanNums channel numbers
+/// \param destOSDF destination OSDF container
+template <typename VarType>
+static void transferVarDataToOSDF(const std::string & varName,
+                                  const std::vector<VarType> & varData,
+                                  const std::size_t numlocs,
+                                  const std::vector<int> & chanNums,
+                                  std::unique_ptr<osdf::IFrame> & destOSDF);
+//--------------------------------------------------------------------------------
+// Function definitions for "private" functions
+//--------------------------------------------------------------------------------
+
+//---------------------------------------------------------------------
+bool isNetcdfVarADimension(const netCDF::NcGroup & group, const std::string & varName) {
+  // Get a map of dimensions from the group and check if varName exists as a key in the map
+  std::multimap<std::string, netCDF::NcDim> dimMap = group.getDims();
+  return (dimMap.find(varName) != dimMap.end());
+}
+
+//---------------------------------------------------------------------
+// TODO(srh): We eventually need to eliminate the variable limitations on storage
+// in the OSDF container. For now, we can make a lot of progress before these limitations
+// are removed.
+bool keepNetcdfVarForOSDF(const std::string & varName, const netCDF::NcVar & var) {
+  // Get a list of the dimensions attached to this variable. For now we want to keep
+  // only the variables that are dimensioned by Location, or dimensioned by Location and
+  // Channel.
+  bool keepVar = true;
+  const std::vector<netCDF::NcDim> varDims = var.getDims();
+  const std::size_t numDims = varDims.size();
+  if ((numDims == 0) || (numDims > 2)) {
+    oops::Log::info() << "WARNING: keepNetcdfVarForOSDF: Variable: " << varName
+              << " has no dimensions or more than 2 dimensions. Skipping." << std::endl;
+
+    keepVar = false;
+  } else if (numDims == 1) {
+    // 1D variable, check if it is dimensioned by Location
+    if (varDims[0].getName() != "Location") {
+      oops::Log::info() << "WARNING: keepNetcdfVarForOSDF: 1D Variable: " << varName
+                << " is not dimensioned by Location. Skipping." << std::endl;
+      keepVar = false;
+    }
+  } else {
+    // 2D variable, check if it is dimensioned by Location and Channel
+    if ((varDims[0].getName() != "Location") || (varDims[1].getName() != "Channel")) {
+      oops::Log::info() << "WARNING: keepNetcdfVarForOSDF: 2D Variable: " << varName
+                << " is not dimensioned by Location and Channel. Skipping." << std::endl;
+      keepVar = false;
+    }
+  }
+  return keepVar;
+}
+
+//---------------------------------------------------------------------
+std::vector<std::string> listAllNetcdfVars(const netCDF::NcGroup& group,
+                                           const std::string & groupPathPrefix,
+                                           const bool listDimensions) {
+  // List out this group's variables
+  std::string varName;
+  std::vector<std::string> varNames;
+  for (const auto & varInfo : group.getVars()) {
+    // Determine if the variable is a dimension or not.
+    const bool varIsDim = isNetcdfVarADimension(group, varInfo.first);
+
+    // Add the hierarchical variable name to the list according to the listDimensions flag.
+    if (groupPathPrefix.empty()) {
+      varName = varInfo.first;
+    } else {
+      varName = groupPathPrefix + std::string("/") + varInfo.first;
+    }
+    if (listDimensions) {
+      if (varIsDim) {
+        varNames.push_back(varName);
+      }
+    } else {
+      if (!varIsDim) {
+        varNames.push_back(varName);
+      }
+    }
+  }
+
+  // Traverse to all child groups and repeat.
+  for (const auto & groupInfo : group.getGroups()) {
+    std::string newGroupPath;
+    if (groupPathPrefix.empty()) {
+      // If the group path prefix is empty, just use the group name
+      // as the new group path prefix
+      newGroupPath = groupInfo.first;
+    } else {
+      // Otherwise, prepend the group path to the group name
+      newGroupPath = groupPathPrefix + std::string("/") + groupInfo.first;
+    }
+    const netCDF::NcGroup childGroup = group.getGroup(groupInfo.first);
+    const std::vector<std::string> childVarNames =
+        listAllNetcdfVars(childGroup, newGroupPath, listDimensions);
+    varNames.insert(varNames.end(), childVarNames.begin(), childVarNames.end());
+  }
+
+  // Return the list of variable names
+  return varNames;
+}
+
+//---------------------------------------------------------------------
+std::vector<std::string> splitString(const std::string & str, char delim) {
+  // Use a string stream with getline to pull out the tokens between the delimiters.
+  std::stringstream ss(str);
+  std::string item;
+  std::vector<std::string> tokens;
+  while (std::getline(ss, item, delim)) {
+    tokens.push_back(item);
+  }
+  return tokens;
+}
+
+//---------------------------------------------------------------------
+netCDF::NcVar openHierarchialNetcdfVar(netCDF::NcGroup & topGroup,
+                                       const std::vector<std::string> & varNameParts) {
+  // Use varNameParts to walk down the group hierarchy to get to the variable.
+  netCDF::NcVar var;
+  if (varNameParts.size() == 1) {
+    // If there is only one part, it's the variabe at the top level
+    var = topGroup.getVar(varNameParts[0]);
+  } else {
+    // Otherwise, walk through the groups and subgroups then get the variable
+    netCDF::NcGroup group = topGroup.getGroup(varNameParts[0]);
+    for (std::size_t i = 1; i < varNameParts.size() - 1; ++i) {
+      group = group.getGroup(varNameParts[i]);
+    }
+    var = group.getVar(varNameParts.back());
+  }
+  return var;
+}
+
+//--------------------------------------------------------------------------------
+template <typename VarType>
+std::vector<VarType> getSelectNcVarData(const std::size_t startLoc, const std::size_t locCount,
+                                        const netCDF::NcVar & var) {
+  // Location is the first dimeension in this form of reading. We want to use the hyperslab
+  // selection for the block of locations (first dimension) and select the entirety of any
+  // remaining dimesions.
+  std::vector<size_t> count(0);
+  const std::vector<netCDF::NcDim> varDims = var.getDims();
+  for (auto & dim : varDims) {
+    count.push_back(dim.getSize());
+  }
+  std::vector<size_t> start(count.size(), 0);
+  start[0] = startLoc;
+  count[0] = locCount;
+
+  std::size_t numElements = 1;
+  for (auto & dimSize : count) {
+    numElements *= dimSize;
+  }
+  std::vector<VarType> varData(numElements);
+  getNcVarData<VarType>(var, start, count, varData);
+  return varData;
+}
+
+//--------------------------------------------------------------------------------
+template <typename VarType>
+void getNcVarData(const netCDF::NcVar & var, const std::vector<std::size_t> & start,
+                  const std::vector<std::size_t> & count, std::vector<VarType> & varData) {
+  var.getVar(start, count, varData.data());
+}
+
+// Explicit specialization for std::string
+template <>
+void getNcVarData<std::string>(const netCDF::NcVar & var, const std::vector<std::size_t> & start,
+                   const std::vector<std::size_t> & count, std::vector<std::string> & varData) {
+  // The string type is a special case where the data in the netCDF variable is stored in
+  // allocated (heap) memory. The means for accessing this data a vector of char *
+  // pointers must be used. Then the data is transferred to a vector of std::string.
+  std::vector<char *> tmpVarData(varData.size());
+  var.getVar(start, count, tmpVarData.data());
+  for (std::size_t i = 0; i < varData.size(); ++i) {
+    varData[i] = std::string(tmpVarData[i]);
+  }
+}
+
+//--------------------------------------------------------------------------------
+template <typename VarType>
+void replaceFillValuesWithMissing(const netCDF::NcVar & var, std::vector<VarType> & varData) {
+  // Replace the fill values with the JEDI missing value. The fill value is
+  // determined by the type of the variable.
+  const VarType jediMissingValue = util::missingValue<VarType>();
+  const VarType fillValue = getNcVarFillValue<VarType>(var);
+  if (fillValue == jediMissingValue) {
+    // If the fill value is the same as the JEDI missing value, then there is
+    // nothing to do.
+    return;
+  }
+
+  // Otherwise, loop through the variable data and replace the fill values
+  // with the JEDI missing value.
+  for (auto & varVal : varData) {
+    if (varVal == fillValue) {
+      varVal = jediMissingValue;
+    }
+  }
+}
+
+//--------------------------------------------------------------------------------
+template <typename VarType>
+VarType getNcVarFillValue(const netCDF::NcVar & var) {
+  // Get the fill value for the variable. The fill value is stored as an attribute
+  // on the variable. The attribute name is _FillValue.
+  bool fillMode;
+  VarType fillValue;
+  var.getFillModeParameters(fillMode, fillValue);
+  if (!fillMode) {
+    // If there is no fill value attribute, return the default fill value
+    // Just need to call getNcVarDefaultFillValue with a variable of the desired
+    // data type to get the right overload function.
+    fillValue = getNcVarDefaultFillValue(fillValue);
+  }
+  return fillValue;
+}
+
+//--------------------------------------------------------------------------------
+int getNcVarDefaultFillValue(const int & fillValue) {
+  return NC_FILL_INT;
+}
+int64_t getNcVarDefaultFillValue(const int64_t & fillValue) {
+  return NC_FILL_INT64;
+}
+float getNcVarDefaultFillValue(const float & fillValue) {
+  return NC_FILL_FLOAT;
+}
+std::string getNcVarDefaultFillValue(const std::string & fillValue) {
+  return NC_FILL_STRING;
+}
+
+//--------------------------------------------------------------------------------
+template <typename VarType>
+void transferVarDataToOSDF(const std::string & varName,
+                           const std::vector<VarType> & varData,
+                           const std::size_t numLocs,
+                           const std::vector<int> & chanNums,
+                           std::unique_ptr<osdf::IFrame> & destOSDF) {
+  // varData should be the proper size. It is either 1D (Location)
+  // or 2D (Location X Channel). For the 2D variable, the number of
+  // channels can be inferred from the chanNums vector.
+  const std::size_t numChannels = chanNums.size();
+  if (varData.size() == numLocs) {
+    // 1D variable, ready to append to the OSDF container
+    destOSDF->appendNewColumn(varName, varData);
+  } else if (varData.size() == (numLocs * numChannels)) {
+    // 2D variable, expand into one column per channel
+    for (std::size_t i = 0; i < numChannels; ++i) {
+      auto first = varData.begin() + (numLocs * i);
+      auto last = varData.begin() + (numLocs * (i + 1));
+      std::vector<VarType> dataChannel(first, last);
+      destOSDF->appendNewColumn(
+        varName + std::string("_") + std::to_string(chanNums[i]),
+        dataChannel);
+    }
+  } else {
+    // The size of the variable data is not correct. This should never happen.
+    throw std::runtime_error("transferVarDataToOSDF: Variable data size is not correct.");
+  }
+}
+
+//--------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------
+// Function definitions for public functions
+//--------------------------------------------------------------------------------
+
+//---------------------------------------------------------------------
+int loadObsContainerFromNetcdf(const std::string & fileName,
+                               const std::size_t startLoc,
+                               const std::size_t locCount,
+                               std::unique_ptr<osdf::IFrame> & destOSDF) {
+  // The netcdf C++ API uses exceptions, so run in a try, catch fashion.
+  try {
+    oops::Log::info() << "loadObsContainerFromNetcdf: reading file: " << fileName << std::endl;
+    netCDF::NcFile inFile(fileName, netCDF::NcFile::read);
+    checkNcObj(inFile, "loadObsContainerFromNetcdf: Failed to open file: " + fileName);
+
+    // Get a list of all the dimensions in the file. We won't store dimensions directly in
+    // the destOSDF container, but we need to get the channel numbers if they exist.
+    // The number of locations that will be read from the file is given by the locCount
+    // parameter. But we want to check that locCount is not greater than the
+    // total number of locations in the file.
+    std::vector<int> chanNums;
+    const std::vector<std::string> allDims = listAllNetcdfVars(inFile, std::string(""), true);
+    for (const auto & dimName : allDims) {
+      // Look for the dimensions Location and Channel (in the top level group). For
+      // Location record the dimension size (number of Locations) and for Channel record
+      // the dimension size (number of Channels) and the channel numbers.
+      if (dimName == "Location") {
+        netCDF::NcDim dim = inFile.getDim(dimName);
+        checkNcObj(dim, "loadObsContainerFromNetcdf: Failed to get dimension: " + dimName);
+        const std::size_t numLocations = dim.getSize();
+        if (locCount > numLocations) {
+          throw std::runtime_error("loadObsContainerFromNetcdf: locCount is greater than "
+                                   "number of locations in the file.");
+        }
+      } else if (dimName == "Channel") {
+        netCDF::NcVar var = inFile.getVar(dimName);
+        if (var.getType() != netCDF::NcType::ncType::nc_INT) {
+          throw std::runtime_error("loadObsContainerFromNetcdf: Channel variable is not int type.");
+        }
+        chanNums.resize(var.getDim(0).getSize());
+        var.getVar(chanNums.data());
+      }
+    }
+
+    // Get a list of all variables in the file expressed as hierarchical paths. The
+    // herierchy is due to the netcdf group structure. Walk through all the variables
+    // and transfer the location block given by the startLoc and locCount parameters into
+    // the destination OSDF container.
+    const std::vector<std::string> allVars = listAllNetcdfVars(inFile, std::string(""), false);
+    for (const auto & varName : allVars) {
+      const std::vector<std::string> varNameParts = splitString(varName, '/');
+      netCDF::NcVar var = openHierarchialNetcdfVar(inFile, varNameParts);
+      checkNcObj(var, "loadObsContainerFromNetcdf: Failed to open variable: " + varName);
+
+      if (keepNetcdfVarForOSDF(varName, var)) {
+        // Get the variable type for transferring its data to the OSDF
+        const netCDF::NcType varType = var.getType();
+        if (varType.getName() == "int") {
+          std::vector<int> varData = getSelectNcVarData<int>(startLoc, locCount, var);
+          replaceFillValuesWithMissing<int>(var, varData);
+          transferVarDataToOSDF<int>(varName, varData, locCount, chanNums, destOSDF);
+        } else if (varType.getName() == "int64") {
+          std::vector<int64_t> varData = getSelectNcVarData<int64_t>(startLoc, locCount, var);
+          replaceFillValuesWithMissing<int64_t>(var, varData);
+          transferVarDataToOSDF<int64_t>(varName, varData, locCount, chanNums, destOSDF);
+        } else if (varType.getName() == "float") {
+          std::vector<float> varData = getSelectNcVarData<float>(startLoc, locCount, var);
+          replaceFillValuesWithMissing<float>(var, varData);
+          transferVarDataToOSDF<float>(varName, varData, locCount, chanNums, destOSDF);
+        } else if (varType.getName() == "string") {
+          std::vector<std::string> varData =
+                                   getSelectNcVarData<std::string>(startLoc, locCount, var);
+          replaceFillValuesWithMissing<std::string>(var, varData);
+          transferVarDataToOSDF<std::string>(varName, varData, locCount, chanNums, destOSDF);
+        } else {
+          oops::Log::info() << "WARNING: loadObsContainerFromNetcdf: Variable: "
+                            << varName << " is not int, int64, float or string. Skipping."
+                            << std::endl;
+        }
+      }
+    }
+    inFile.close();
+  }
+  catch(const netCDF::exceptions::NcException & e) {
+    oops::Log::error() << "loadObsContainerFromNetcdf: netCDF4 Exception: "
+                       << e.what() << std::endl;
+    return -1;
+  }
+  catch(const std::exception & e) {
+    oops::Log::error() << "loadObsContainerFromNetcdf: standard exception: "
+                       << e.what() << std::endl;
+    return -1;
+  }
+  catch(...) {
+    oops::Log::error() << "loadObsContainerFromNetcdf: Unknown exception"
+                       << std::endl;
+    return -1;
+  }
+
+  return 0;
+}
+
+}  // namespace reader
+}  // namespace ioda
