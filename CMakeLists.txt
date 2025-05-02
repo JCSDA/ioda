@@ -42,9 +42,9 @@ endif()
 
 set(HDF5_PREFER_PARALLEL true) # CMake sometimes mistakenly finds a serial system-provided HDF5.
 find_package( HDF5 REQUIRED COMPONENTS C HL )
-find_package( NetCDF REQUIRED COMPONENTS C Fortran CXX )
 find_package( MPI REQUIRED )
 find_package( jedicmake REQUIRED )
+find_package( NetCDF REQUIRED COMPONENTS C Fortran CXX )  # Prefer find NetCDF by jedicmake
 find_package( eckit 1.23.0 REQUIRED )
 find_package( fckit 0.10.1 REQUIRED )
 find_package( oops REQUIRED )
@@ -54,7 +54,6 @@ find_package( Eigen3 REQUIRED NO_MODULE HINTS
 find_package( gsl-lite REQUIRED HINTS $ENV{gsl_lite_DIR} )
 find_package( udunits 2.2.0 REQUIRED )
 find_package( Boost 1.64.0 REQUIRED )
-find_package( NetCDF REQUIRED COMPONENTS C Fortran CXX )
 
 # Optional
 find_package( odc 1.4.6 QUIET )        # Needed for odb backend

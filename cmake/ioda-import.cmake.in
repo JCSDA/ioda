@@ -25,7 +25,7 @@ if(NOT jedicmake_FOUND)
 endif()
 
 if(NOT NetCDF_C_FOUND)
-    find_dependency( NetCDF REQUIRED COMPONENTS C )
+    find_dependency( NetCDF REQUIRED COMPONENTS C CXX Fortran )
 endif()
 
 if(NOT eckit_FOUND)
