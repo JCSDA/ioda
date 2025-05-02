@@ -73,7 +73,7 @@ if (odc_FOUND)
                                 Data/testinput_tier_1/${_PAR_ODB_FILE}
                                 testinput/iodatest_odb_convert_${_PAR_TEST_NAME}_name_map.yaml
                                 testinput/iodatest_odb_convert_${_PAR_TEST_NAME}_query.yaml
-                        TEST_DEPENDS get_ioda_test_data )
+                        )
       set_tests_properties( test_ioda-convert_${_PAR_TEST_NAME}_odc
                             PROPERTIES FIXTURES_SETUP ioda-convert_${_PAR_TEST_NAME}_odc )
       ecbuild_add_test( TARGET  test_ioda-convert_${_PAR_TEST_NAME}_odc_compare
@@ -83,7 +83,7 @@ if (odc_FOUND)
                                 testinput/iodatest_odb_convert_${_PAR_TEST_NAME}_comparison.conf
                                 Data/testinput_tier_1/${_PAR_ODB_FILE}
                                 testoutput/test-convert_${_PAR_TEST_NAME}.hdf
-                        TEST_DEPENDS get_ioda_test_data )
+                        )
       set_tests_properties( test_ioda-convert_${_PAR_TEST_NAME}_odc_compare
                             PROPERTIES FIXTURES_REQUIRED ioda-convert_${_PAR_TEST_NAME}_odc )
     endif()
@@ -311,35 +311,35 @@ ecbuild_add_test( TARGET  test_ioda_distribution
                   SOURCES mains/TestDistribution.cc
                   ARGS    "testinput/iodatest_distribution.yaml"
                   LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 ecbuild_add_test( TARGET  test_ioda_distribution_masterandreplica_mpi_2
                   MPI     2
                   COMMAND test_ioda_distribution
                   ARGS    "testinput/iodatest_distribution_masterandreplica_mpi_2.yaml"
                   LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 ecbuild_add_test( TARGET  test_ioda_distribution_masterandreplica_mpi_3
                   MPI     3
                   COMMAND test_ioda_distribution
                   ARGS    "testinput/iodatest_distribution_masterandreplica_mpi_3.yaml"
                   LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 ecbuild_add_test( TARGET  test_ioda_distribution_masterandreplica_mpi_4
                   MPI     4
                   COMMAND test_ioda_distribution
                   ARGS    "testinput/iodatest_distribution_masterandreplica_mpi_4.yaml"
                   LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 ecbuild_add_test( TARGET  test_ioda_distribution_timewindow
                   MPI     4
                   COMMAND test_ioda_distribution
                   ARGS    "testinput/iodatest_distribution_timewindow.yaml"
                   LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 # Disrtibution method tests
 ecbuild_add_test( TARGET  test_ioda_distribution_methods
@@ -347,7 +347,7 @@ ecbuild_add_test( TARGET  test_ioda_distribution_methods
                   SOURCES mains/TestDistributionMethods.cc
                   ARGS    "testinput/iodatest_distribution_methods.yaml"
                   LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 ###### Repeat the masterandreplica tests using the new io pool based reader #####
 ecbuild_add_test( TARGET  test_ioda_distribution_clean_build_file_set_files
@@ -364,20 +364,17 @@ ecbuild_add_test( TARGET  test_ioda_distribution_clean_build_file_set_files
 ecbuild_add_test( TARGET  test_ioda_distribution_build_round_robin_mpi_2_file_set
                   COMMAND ${CMAKE_BINARY_DIR}/bin/ioda-buildInputFileSet.x
                   ARGS    "testinput/iodatest_distribution_build_round_robin_mpi_2.yaml"
-                  TEST_DEPENDS get_ioda_test_data
-                               test_ioda_distribution_clean_build_file_set_files )
+                  TEST_DEPENDS test_ioda_distribution_clean_build_file_set_files )
 
 ecbuild_add_test( TARGET  test_ioda_distribution_build_round_robin_mpi_3_file_set
                   COMMAND ${CMAKE_BINARY_DIR}/bin/ioda-buildInputFileSet.x
                   ARGS    "testinput/iodatest_distribution_build_round_robin_mpi_3.yaml"
-                  TEST_DEPENDS get_ioda_test_data
-                               test_ioda_distribution_clean_build_file_set_files )
+                  TEST_DEPENDS test_ioda_distribution_clean_build_file_set_files )
 
 ecbuild_add_test( TARGET  test_ioda_distribution_build_round_robin_mpi_4_file_set
                   COMMAND ${CMAKE_BINARY_DIR}/bin/ioda-buildInputFileSet.x
                   ARGS    "testinput/iodatest_distribution_build_round_robin_mpi_4.yaml"
-                  TEST_DEPENDS get_ioda_test_data
-                               test_ioda_distribution_clean_build_file_set_files )
+                  TEST_DEPENDS test_ioda_distribution_clean_build_file_set_files )
 
 # run distribution tests using the input file sets generated in the above tests
 ecbuild_add_test( TARGET  test_ioda_distribution_masterandreplica_io_pool_mpi_2
@@ -385,24 +382,21 @@ ecbuild_add_test( TARGET  test_ioda_distribution_masterandreplica_io_pool_mpi_2
                   COMMAND test_ioda_distribution
                   ARGS    "testinput/iodatest_distribution_masterandreplica_io_pool_mpi_2.yaml"
                   LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data
-                               test_ioda_distribution_build_round_robin_mpi_2_file_set )
+                  TEST_DEPENDS test_ioda_distribution_build_round_robin_mpi_2_file_set )
 
 ecbuild_add_test( TARGET  test_ioda_distribution_masterandreplica_io_pool_mpi_3
                   MPI     3
                   COMMAND test_ioda_distribution
                   ARGS    "testinput/iodatest_distribution_masterandreplica_io_pool_mpi_3.yaml"
                   LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data
-                  test_ioda_distribution_build_round_robin_mpi_3_file_set )
+                  TEST_DEPENDS test_ioda_distribution_build_round_robin_mpi_3_file_set )
 
 ecbuild_add_test( TARGET  test_ioda_distribution_masterandreplica_io_pool_mpi_4
                   MPI     4
                   COMMAND test_ioda_distribution
                   ARGS    "testinput/iodatest_distribution_masterandreplica_io_pool_mpi_4.yaml"
                   LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data
-                               test_ioda_distribution_build_round_robin_mpi_4_file_set )
+                  TEST_DEPENDS test_ioda_distribution_build_round_robin_mpi_4_file_set )
 
 #####################################################################
 # ioda engines tests
@@ -412,7 +406,7 @@ ecbuild_add_test( TARGET  test_ioda_remove_hdf5_variable
                   SOURCES mains/TestRemoveHdf5Variable.cc
                   ARGS    "testinput/iodatest_remove_hdf5_variable.yaml"
                   LIBS  ioda_engines ioda_test
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 ecbuild_add_test( TARGET  test_ioda_remove_hdf5_variable_cmp
                   TYPE    SCRIPT
@@ -421,45 +415,45 @@ ecbuild_add_test( TARGET  test_ioda_remove_hdf5_variable_cmp
                           hdf5
                           "echo Checking remove hdf5 variable test output"
                           remove_variable.hdf
-                  TEST_DEPENDS get_ioda_test_data test_ioda_remove_hdf5_variable )
+                  TEST_DEPENDS test_ioda_remove_hdf5_variable )
 
 ecbuild_add_test( TARGET  test_ioda_engine_construct_utils
                   SOURCES mains/TestEngineConstructUtils.cc
                   ARGS    "testinput/iodatest_engine_construct_utils.yaml"
                   LIBS  ioda_engines ioda_test
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 if (odc_FOUND)
   ecbuild_add_test( TARGET  test_ioda_engine_construct_utils_odc
                     SOURCES mains/TestEngineConstructUtils.cc
                     ARGS    "testinput/iodatest_engine_construct_utils_odc.yaml"
                     LIBS  ioda_engines ioda_test
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
 endif()
 
 ecbuild_add_test( TARGET  test_ioda_engine_factory
                   SOURCES mains/TestEngineFactory.cc
                   ARGS    "testinput/iodatest_engine_factory.yaml"
                   LIBS  ioda_engines ioda_test
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 ecbuild_add_test( TARGET  test_ioda_engine_uniquify_file_name
                   SOURCES mains/TestEngineUniquifyFileName.cc
                   ARGS    "testinput/iodatest_engine_uniquify_file_name.yaml"
                   LIBS  ioda_engines ioda_test
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 ecbuild_add_test( TARGET  test_ioda_io_pool_factory
                   SOURCES mains/TestIoPoolFactory.cc
                   ARGS    "testinput/iodatest_io_pool_factory.yaml"
                   LIBS  ioda_engines ioda_test
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 if (odc_FOUND)
     ecbuild_add_test( TARGET  test_ioda_engine_factory_odc
                       COMMAND test_ioda_engine_factory
                       ARGS    "testinput/iodatest_engine_factory_odc.yaml"
                       LIBS  ioda_engines ioda_test
-                      TEST_DEPENDS get_ioda_test_data test_ioda_engine_factory )
+                      TEST_DEPENDS test_ioda_engine_factory )
 endif()
 
 #####################################################################
@@ -489,20 +483,20 @@ ecbuild_add_test( TARGET  test_ioda_oops_obsspace
                   SOURCES mains/TestObsSpace.cc
                   ARGS    "testinput/iodatest.yaml"
                   LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 # IODA ObsSpace class
 ecbuild_add_test( TARGET  test_ioda_obsspace
                   SOURCES mains/TestIodaObsSpace.cc
                   ARGS    "testinput/iodatest_obsspace.yaml"
                   LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_reader_pool
                   SOURCES mains/TestIodaObsSpace.cc
                   ARGS    "testinput/iodatest_obsspace_reader_pool.yaml"
                   LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 if (odc_FOUND)
   ecbuild_add_test( TARGET  test_ioda_clean_obsspace_out_odc_files
@@ -518,159 +512,159 @@ if (odc_FOUND)
                     COMMAND test_ioda_obsspace
                     ARGS    "testinput/iodatest_obsspace_out_odc.yaml"
                     LIBS  ioda_test
-                    TEST_DEPENDS get_ioda_test_data test_ioda_clean_obsspace_out_odc_files )
+                    TEST_DEPENDS test_ioda_clean_obsspace_out_odc_files )
   ecbuild_add_test( TARGET  test_ioda_obsspace_out_odc_sonde_mixed
                     COMMAND test_ioda_obsspace
                     ARGS    "testinput/iodatest_obsspace_out_odc_sonde_mixed.yaml"
                     LIBS  ioda_test
-                    TEST_DEPENDS get_ioda_test_data test_ioda_clean_obsspace_out_odc_files )
+                    TEST_DEPENDS test_ioda_clean_obsspace_out_odc_files )
   ecbuild_add_test( TARGET  iodatest_obsspace_out_odc_readbackin
                     COMMAND test_ioda_obsspace
                     ARGS    "testinput/iodatest_obsspace_out_odc_readbackin.yaml"
                     LIBS  ioda_test
-                    TEST_DEPENDS test_ioda_obsspace_out_odc get_ioda_test_data test_ioda_obsspace_odc )
+                    TEST_DEPENDS test_ioda_obsspace_out_odc test_ioda_obsspace_odc )
   ecbuild_add_test( TARGET  test_ioda_obsspace_out_odc_mpi_2
                     MPI 2
                     COMMAND test_ioda_obsspace
                     ARGS    "testinput/iodatest_obsspace_out_odc_mpi_2.yaml"
                     LIBS  ioda_test
-                    TEST_DEPENDS get_ioda_test_data test_ioda_clean_obsspace_out_odc_files )
+                    TEST_DEPENDS test_ioda_clean_obsspace_out_odc_files )
   ecbuild_add_test( TARGET  test_ioda_obsspace_out_odc_compare_aircraft
                     COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
                     ARGS    "testoutput/diagout-aircraft.odc" "Data/testinput_tier_1/test_reference/diagout-aircraft.odc" ${ODC_TOOL_PATH}
-                    TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_out_odc )
+                    TEST_DEPENDS test_ioda_obsspace_out_odc )
   ecbuild_add_test( TARGET  test_ioda_obsspace_out_odc_compare_atms
                     COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
                     ARGS    "testoutput/diagout-atms.odc" "Data/testinput_tier_1/test_reference/diagout-atms.odc" ${ODC_TOOL_PATH}
-                    TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_out_odc )
+                    TEST_DEPENDS test_ioda_obsspace_out_odc )
   ecbuild_add_test( TARGET  test_ioda_obsspace_out_odc_compare_gmi
                     COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
                     ARGS    "testoutput/diagout-gmi.odc" "Data/testinput_tier_1/test_reference/diagout-gmi.odc" ${ODC_TOOL_PATH}
-                    TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_out_odc )
+                    TEST_DEPENDS test_ioda_obsspace_out_odc )
   ecbuild_add_test( TARGET  test_ioda_obsspace_out_odc_compare_amsua
                     COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
                     ARGS    "testoutput/diagout-amsua.odc" "Data/testinput_tier_1/test_reference/diagout-amsua.odc" ${ODC_TOOL_PATH}
-                    TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_out_odc )
+                    TEST_DEPENDS test_ioda_obsspace_out_odc )
   ecbuild_add_test( TARGET  test_ioda_obsspace_out_odc_compare_groundgps
                     COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
                     ARGS    "testoutput/diagout-groundgps.odc" "Data/testinput_tier_1/test_reference/diagout-groundgps.odc" ${ODC_TOOL_PATH}
-                    TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_out_odc )
+                    TEST_DEPENDS test_ioda_obsspace_out_odc )
   ecbuild_add_test( TARGET  test_ioda_obsspace_out_odc_compare_sonde
                     COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
                     ARGS    "testoutput/diagout-sonde.odc" "Data/testinput_tier_1/test_reference/diagout-sonde.odc" ${ODC_TOOL_PATH}
-                    TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_out_odc )
+                    TEST_DEPENDS test_ioda_obsspace_out_odc )
   ecbuild_add_test( TARGET  test_ioda_obsspace_out_odc_compare_sonde_mixed
                     COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
                     ARGS    "testoutput/diagout-sonde-mixed.odc" "Data/testinput_tier_1/test_reference/diagout-sonde-mixed.odc" ${ODC_TOOL_PATH}
-                    TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_out_odc_sonde_mixed )
+                    TEST_DEPENDS test_ioda_obsspace_out_odc_sonde_mixed )
   ecbuild_add_test( TARGET  test_ioda_obsspace_out_odc_compare_sonde_derived
                     COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
                     ARGS    "testoutput/diagout-sonde-derived.odc" "Data/testinput_tier_1/test_reference/diagout-sonde-derived.odc" ${ODC_TOOL_PATH}
-                    TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_out_odc_sonde_mixed )
+                    TEST_DEPENDS test_ioda_obsspace_out_odc_sonde_mixed )
   ecbuild_add_test( TARGET  test_ioda_obsspace_out_odc_compare_aod
                     COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
                     ARGS    "testoutput/diagout-aod.odc" "Data/testinput_tier_1/test_reference/diagout-aod.odc" ${ODC_TOOL_PATH}
-                    TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_out_odc )
+                    TEST_DEPENDS test_ioda_obsspace_out_odc )
   ecbuild_add_test( TARGET  test_ioda_obsspace_out_odc_compare_iasi
                     COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
                     ARGS    "testoutput/diagout-iasi.odc" "Data/testinput_tier_1/test_reference/diagout-iasi.odc" ${ODC_TOOL_PATH}
-                    TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_out_odc )
+                    TEST_DEPENDS test_ioda_obsspace_out_odc )
   ecbuild_add_test( TARGET  test_ioda_obsspace_out_odc_compare_aod_multifiles_0000
                     COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
                     ARGS    "testoutput/diagout-aod-multifiles_0000.odc" "Data/testinput_tier_1/test_reference/diagout-aod-multifiles_0000.odc" ${ODC_TOOL_PATH}
-                    TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_out_odc_mpi_2 )
+                    TEST_DEPENDS test_ioda_obsspace_out_odc_mpi_2 )
   ecbuild_add_test( TARGET  test_ioda_obsspace_out_odc_compare_aod_multifiles_0001
                     COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
                     ARGS    "testoutput/diagout-aod-multifiles_0001.odc" "Data/testinput_tier_1/test_reference/diagout-aod-multifiles_0001.odc" ${ODC_TOOL_PATH}
-                    TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_out_odc_mpi_2 )
+                    TEST_DEPENDS test_ioda_obsspace_out_odc_mpi_2 )
 
   ecbuild_add_test( TARGET  test_ioda_obsspace_out_odc_compare_aod_multifiles_oneiopool
                     COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
                     ARGS    "testoutput/diagout-aod-multifiles-oneiopool.odc" "Data/testinput_tier_1/test_reference/diagout-aod-2mpi.odc" ${ODC_TOOL_PATH}
-                    TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_out_odc_mpi_2 )
+                    TEST_DEPENDS test_ioda_obsspace_out_odc_mpi_2 )
 
   ecbuild_add_test( TARGET  test_ioda_obsspace_out_odc_compare_aod_singlefile
                     COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
                     ARGS    "testoutput/diagout-aod-singlefile.odc" "Data/testinput_tier_1/test_reference/diagout-aod-2mpi.odc" ${ODC_TOOL_PATH}
-                    TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_out_odc_mpi_2 )
+                    TEST_DEPENDS test_ioda_obsspace_out_odc_mpi_2 )
   ecbuild_add_test( TARGET  test_ioda_obsspace_out_odc_compare_aod_singlefile_oneiopool
                     COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
                     ARGS    "testoutput/diagout-aod-singlefile-oneiopool.odc" "Data/testinput_tier_1/test_reference/diagout-aod-2mpi.odc" ${ODC_TOOL_PATH}
-                    TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_out_odc_mpi_2 )
+                    TEST_DEPENDS test_ioda_obsspace_out_odc_mpi_2 )
   ecbuild_add_test( TARGET  test_ioda_obsspace_out_odc_compare_readbackin_aircraft
                     COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
                     ARGS    "testoutput/diagout-aircraft-readbackin.odc" "Data/testinput_tier_1/test_reference/diagout-aircraft-readbackin.odc" ${ODC_TOOL_PATH}
-                    TEST_DEPENDS get_ioda_test_data iodatest_obsspace_out_odc_readbackin )
+                    TEST_DEPENDS iodatest_obsspace_out_odc_readbackin )
   ecbuild_add_test( TARGET  test_ioda_obsspace_out_odc_compare_readbackin_atms
                     COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
                     ARGS    "testoutput/diagout-atms-readbackin.odc" "Data/testinput_tier_1/test_reference/diagout-atms-readbackin.odc" ${ODC_TOOL_PATH}
-                    TEST_DEPENDS get_ioda_test_data iodatest_obsspace_out_odc_readbackin )
+                    TEST_DEPENDS iodatest_obsspace_out_odc_readbackin )
   ecbuild_add_test( TARGET  test_ioda_obsspace_out_odc_compare_readbackin_iasi
                     COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
                     ARGS    "testoutput/diagout-iasi-readbackin.odc" "Data/testinput_tier_1/test_reference/diagout-iasi-readbackin.odc" ${ODC_TOOL_PATH}
-                    TEST_DEPENDS get_ioda_test_data iodatest_obsspace_out_odc_readbackin )
+                    TEST_DEPENDS iodatest_obsspace_out_odc_readbackin )
   ecbuild_add_test( TARGET  test_ioda_obsspace_out_odc_compare_readbackin_groundgps
                     COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
                     ARGS    "testoutput/diagout-groundgps-readbackin.odc" "Data/testinput_tier_1/test_reference/diagout-groundgps-readbackin.odc" ${ODC_TOOL_PATH}
-                    TEST_DEPENDS get_ioda_test_data iodatest_obsspace_out_odc_readbackin )
+                    TEST_DEPENDS iodatest_obsspace_out_odc_readbackin )
 
   ecbuild_add_test( TARGET  test_ioda_odb_tables_iterator
                     SOURCES mains/TestOdbTablesIterator.cc
                     LIBS    ioda_test
                     ARGS    "testinput/iodatest_odb_tables_iterator.yaml"
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
 endif()
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_datetime
                   COMMAND test_ioda_obsspace
                   ARGS    "testinput/iodatest_obsspace_datetime.yaml"
                   LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_empty_obs_file
                   COMMAND test_ioda_obsspace
                   ARGS    "testinput/iodatest_obsspace_empty_obs_file.yaml"
                   LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_empty_obs_file_mpi
                   MPI 4
                   COMMAND test_ioda_obsspace
                   ARGS    "testinput/iodatest_obsspace_empty_obs_file_mpi.yaml"
                   LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_empty_obs_file_reader_pool
                   COMMAND test_ioda_obsspace
                   ARGS    "testinput/iodatest_obsspace_empty_obs_file_reader_pool.yaml"
                   LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_empty_obs_file_mpi_reader_pool
                   MPI 4
                   COMMAND test_ioda_obsspace
                   ARGS    "testinput/iodatest_obsspace_empty_obs_file_mpi_reader_pool.yaml"
                   LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_missing_obs_file_warn
                   COMMAND test_ioda_obsspace
                   ARGS    "testinput/iodatest_obsspace_missing_obs_file_warn.yaml"
                   LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_missing_obs_file_warn_bufr
                   COMMAND test_ioda_obsspace
                   ARGS    "testinput/iodatest_obsspace_missing_obs_file_warn_bufr.yaml"
                   LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_missing_obs_file_warn_mpi
                   MPI 4
                   COMMAND test_ioda_obsspace
                   ARGS    "testinput/iodatest_obsspace_missing_obs_file_warn_mpi.yaml"
                   LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 # The next two tests are verifying that an exception is thrown (ie, error) when the input
 # obs file is missing which the "missing file action: error" YAML spec is used.
@@ -696,7 +690,7 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_missing_obs_file_error
                           0.0
                           N
                           Y
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_missing_obs_file_error_bufr
                   TYPE    SCRIPT
@@ -709,7 +703,7 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_missing_obs_file_error_bufr
                           0.0
                           N
                           Y
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_missing_obs_file_error_def
                   TYPE    SCRIPT
@@ -722,7 +716,7 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_missing_obs_file_error_def
                           0.0
                           N
                           Y
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 # new reader
 ecbuild_add_test( TARGET  test_ioda_obsspace_missing_obs_file_error_reader_pool
@@ -736,7 +730,7 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_missing_obs_file_error_reader_pool
                           0.0
                           N
                           Y
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_missing_obs_file_error_def_reader_pool
                   TYPE    SCRIPT
@@ -749,21 +743,21 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_missing_obs_file_error_def_reader_p
                           0.0
                           N
                           Y
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 if (odc_FOUND)
   ecbuild_add_test( TARGET  test_ioda_obsspace_missing_obs_file_warn_odc
                     COMMAND test_ioda_obsspace
                     ARGS    "testinput/iodatest_obsspace_missing_obs_file_warn_odc.yaml"
                     LIBS  ioda_test
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
 
   ecbuild_add_test( TARGET  test_ioda_obsspace_missing_obs_file_warn_odc_mpi
                     MPI 4
                     COMMAND test_ioda_obsspace
                     ARGS    "testinput/iodatest_obsspace_missing_obs_file_warn_odc_mpi.yaml"
                     LIBS  ioda_test
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
 
   # The next two tests are verifying that an exception is thrown (ie, error) when the input
   # obs file is missing which the "missing file action: error" YAML spec is used.
@@ -789,7 +783,7 @@ if (odc_FOUND)
                             0.0
                             N
                             Y
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
 
   ecbuild_add_test( TARGET  test_ioda_obsspace_missing_obs_file_error_def_odc
                     TYPE    SCRIPT
@@ -802,7 +796,7 @@ if (odc_FOUND)
                             0.0
                             N
                             Y
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
 
   # new reader
   ecbuild_add_test( TARGET  test_ioda_obsspace_missing_obs_file_error_odc_reader_pool
@@ -816,7 +810,7 @@ if (odc_FOUND)
                             0.0
                             N
                             Y
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
 
   ecbuild_add_test( TARGET  test_ioda_obsspace_missing_obs_file_error_def_odc_reader_pool
                     TYPE    SCRIPT
@@ -829,236 +823,236 @@ if (odc_FOUND)
                             0.0
                             N
                             Y
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
 endif()
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_grouping
                   COMMAND test_ioda_obsspace
                   ARGS    "testinput/iodatest_obsspace_grouping.yaml"
                   LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_grouping_reader_pool
                   COMMAND test_ioda_obsspace
                   ARGS    "testinput/iodatest_obsspace_grouping_reader_pool.yaml"
                   LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_index_recnum
                   SOURCES mains/TestIodaObsSpaceIndexRecnum.cc
                   ARGS    "testinput/iodatest_obsspace_index_recnum.yaml"
                   LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_index_recnum_mpi_2
                   MPI 2
                   COMMAND test_ioda_obsspace_index_recnum
                   ARGS    "testinput/iodatest_obsspace_index_recnum.yaml"
                   LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_index_recnum_mpi_4
                   MPI 4
                   COMMAND test_ioda_obsspace_index_recnum
                   ARGS    "testinput/iodatest_obsspace_index_recnum.yaml"
                   LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_index_recnum_twfilt
                   COMMAND test_ioda_obsspace_index_recnum
                   ARGS    "testinput/iodatest_obsspace_index_recnum_twfilt.yaml"
                   LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_index_recnum_twfilt_mpi_2
                   MPI 2
                   COMMAND test_ioda_obsspace_index_recnum
                   ARGS    "testinput/iodatest_obsspace_index_recnum_twfilt.yaml"
                   LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_index_recnum_twfilt_mpi_4
                   MPI 4
                   COMMAND test_ioda_obsspace_index_recnum
                   ARGS    "testinput/iodatest_obsspace_index_recnum_twfilt.yaml"
                   LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_index_recnum_reader_pool
                   COMMAND test_ioda_obsspace_index_recnum
                   ARGS    "testinput/iodatest_obsspace_index_recnum_reader_pool.yaml"
                   LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_index_recnum_mpi_2_reader_pool
                   MPI 2
                   COMMAND test_ioda_obsspace_index_recnum
                   ARGS    "testinput/iodatest_obsspace_index_recnum_mpi_2_reader_pool.yaml"
                   LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_index_recnum_mpi_4_reader_pool
                   MPI 4
                   COMMAND test_ioda_obsspace_index_recnum
                   ARGS    "testinput/iodatest_obsspace_index_recnum_mpi_4_reader_pool.yaml"
                   LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_index_recnum_twfilt_reader_pool
                   COMMAND test_ioda_obsspace_index_recnum
                   ARGS    "testinput/iodatest_obsspace_index_recnum_twfilt_reader_pool.yaml"
                   LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_index_recnum_twfilt_mpi_2_reader_pool
                   MPI 2
                   COMMAND test_ioda_obsspace_index_recnum
                   ARGS    "testinput/iodatest_obsspace_index_recnum_twfilt_mpi_2_reader_pool.yaml"
                   LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_index_recnum_twfilt_mpi_4_reader_pool
                   MPI 4
                   COMMAND test_ioda_obsspace_index_recnum
                   ARGS    "testinput/iodatest_obsspace_index_recnum_twfilt_mpi_4_reader_pool.yaml"
                   LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_index_recnum_multiple_input_files
                   SOURCES mains/TestIodaObsSpaceIndexRecnum.cc
                   ARGS    "testinput/iodatest_obsspace_index_recnum_multiple_input_files.yaml"
                   LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_index_recnum_multiple_input_files_mpi_2
                   MPI 2
                   SOURCES mains/TestIodaObsSpaceIndexRecnum.cc
                   ARGS    "testinput/iodatest_obsspace_index_recnum_multiple_input_files.yaml"
                   LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_index_recnum_multiple_input_files_mpi_4
                   MPI 4
                   SOURCES mains/TestIodaObsSpaceIndexRecnum.cc
                   ARGS    "testinput/iodatest_obsspace_index_recnum_multiple_input_files.yaml"
                   LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_locations_qc
                   COMMAND test_ioda_obsspace
                   ARGS    "testinput/iodatest_obsspace_locations_qc.yaml"
                   LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_locations_qc_twfilt
                   COMMAND test_ioda_obsspace
                   ARGS    "testinput/iodatest_obsspace_locations_qc_twfilt.yaml"
                   LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_invalid_numeric
                   SOURCES mains/TestObsSpaceInvalidNumeric.cc
                   ARGS    "testinput/iodatest_obsspace_invalid_numeric.yaml"
                   LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_mpi
                   MPI     2
                   COMMAND test_ioda_obsspace
                   ARGS    "testinput/iodatest_obsspace_mpi.yaml"
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_mpi_reader_pool
                   MPI     2
                   COMMAND test_ioda_obsspace
                   ARGS    "testinput/iodatest_obsspace_mpi_reader_pool.yaml"
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_marine
                   COMMAND test_ioda_obsspace
                   ARGS    "testinput/iodatest_obsspace_marine.yaml"
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 if (odc_FOUND)
   ecbuild_add_test( TARGET  test_ioda_obsspace_odc
                     COMMAND test_ioda_obsspace
                     ARGS    "testinput/iodatest_obsspace_odc.yaml"
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
 
   ecbuild_add_test( TARGET  test_ioda_obsspace_odc_reader_pool
                     COMMAND test_ioda_obsspace
                     ARGS    "testinput/iodatest_obsspace_odc_reader_pool.yaml"
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
 
   ecbuild_add_test( TARGET  test_ioda_obsspace_odc_atms
                     COMMAND test_ioda_obsspace
                     ARGS    "testinput/iodatest_obsspace_odc_atms.yaml"
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
 
   ecbuild_add_test( TARGET  test_ioda_obsspace_odc_atms_reader_pool
                     COMMAND test_ioda_obsspace
                     ARGS    "testinput/iodatest_obsspace_odc_atms_reader_pool.yaml"
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
 
   ecbuild_add_test( TARGET  test_ioda_obsspace_odc_atms_parallel_io
                     MPI     2
                     COMMAND test_ioda_obsspace
                     ARGS    "testinput/iodatest_obsspace_odc_atms_parallel_io.yaml"
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
 
   ecbuild_add_test( TARGET  test_ioda_obsspace_odc_atms_parallel_io_single_process
                     COMMAND test_ioda_obsspace
                     ARGS    "testinput/iodatest_obsspace_odc_atms_parallel_io.yaml"
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
 
   ecbuild_add_test( TARGET  test_ioda_obsspace_odc_empty_obs_file
                     COMMAND test_ioda_obsspace
                     ARGS    "testinput/iodatest_obsspace_odc_empty_obs_file.yaml"
                     LIBS  ioda_test
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
 
   ecbuild_add_test( TARGET  test_ioda_obsspace_odc_empty_obs_file_parallel_io
                     MPI     2
                     COMMAND test_ioda_obsspace
                     ARGS    "testinput/iodatest_obsspace_odc_empty_obs_file_parallel_io.yaml"
                     LIBS    ioda_test
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
 
   ecbuild_add_test( TARGET  test_ioda_obsspace_odc_single_frame_parallel_io
                     MPI     2
                     COMMAND test_ioda_obsspace
                     ARGS    "testinput/iodatest_obsspace_odc_single_frame_parallel_io.yaml"
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
 
   ecbuild_add_test( TARGET  test_ioda_obsspace_odc_two_frames_parallel_io
                     MPI     4
                     COMMAND test_ioda_obsspace
                     ARGS    "testinput/iodatest_obsspace_odc_two_frames_parallel_io.yaml"
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
 
   ecbuild_add_test( TARGET  test_ioda_obsspace_odc_multiple_channels
                     COMMAND test_ioda_obsspace
                     ARGS    "testinput/iodatest_obsspace_odc_multiple_channels.yaml"
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
 
   ecbuild_add_test( TARGET  test_ioda_obsspace_odc_single_frame_multiple_channels_parallel_io
                     MPI     2
                     COMMAND test_ioda_obsspace
                     ARGS    "testinput/iodatest_obsspace_odc_single_frame_multiple_channels_parallel_io.yaml"
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
 endif()
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_put_db_channels
                   SOURCES mains/TestIodaObsSpacePutDbChannels.cc
                   ARGS    "testinput/iodatest_obsspace_put_db_channels.yaml"
                   LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_put_db_channels_check
                   COMMAND test_ioda_obsspace_put_db_channels
                   ARGS    "testinput/iodatest_obsspace_put_db_channels_check.yaml"
                   LIBS  ioda_test
-                  TEST_DEPENDS test_ioda_obsspace_put_db_channels get_ioda_test_data )
+                  TEST_DEPENDS test_ioda_obsspace_put_db_channels )
 
 #########################################################################
 ##### The following tests check the ObsSpace using an OSDF container ####
@@ -1068,7 +1062,7 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_osdf
                   COMMAND test_ioda_obsspace
                   ARGS    "testinput/iodatest_obsspace_osdf.yaml"
                   LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 ###################################################################
 ##### The following tests check the ObsSpace::append function. ####
@@ -1088,7 +1082,7 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_append
                   SOURCES mains/TestIodaObsSpaceAppend.cc
                   ARGS    "testinput/iodatest_obsspace_append.yaml"
                   LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_append_clean_files )
+                  TEST_DEPENDS test_ioda_obsspace_append_clean_files )
 
 # the following tests compare the output files
 ecbuild_add_test( TARGET  test_ioda_obsspace_append_1D_variables_cmp
@@ -1098,7 +1092,7 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_append_1D_variables_cmp
                           netcdf
                           "echo Checking append, 1D variables"
                           obsspace_append_1D_out.nc4
-                  TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_append )
+                  TEST_DEPENDS test_ioda_obsspace_append )
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_append_2D_variables_cmp
                   TYPE    SCRIPT
@@ -1107,7 +1101,7 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_append_2D_variables_cmp
                           netcdf
                           "echo Checking append, 2D variables"
                           obsspace_append_2D_out.nc4
-                  TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_append )
+                  TEST_DEPENDS test_ioda_obsspace_append )
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_append_no_obserrors_variables_cmp
                   TYPE    SCRIPT
@@ -1116,7 +1110,7 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_append_no_obserrors_variables_cmp
                           netcdf
                           "echo Checking append, no ObsError group"
                           obsspace_append_no_obserror_out.nc4
-                  TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_append )
+                  TEST_DEPENDS test_ioda_obsspace_append )
 
 # the following tests check that append across multiple mpi tasks is working
 ecbuild_add_test( TARGET  test_ioda_obsspace_append_mpi_2
@@ -1124,14 +1118,14 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_append_mpi_2
                   COMMAND test_ioda_obsspace_append
                   ARGS    "testinput/iodatest_obsspace_append_mpi.yaml"
                   LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_append_mpi_4
                   MPI     4
                   COMMAND test_ioda_obsspace_append
                   ARGS    "testinput/iodatest_obsspace_append_mpi.yaml"
                   LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 ###################################################################
 ##### The following tests check the ObsSpace::reduce function. ####
@@ -1160,7 +1154,7 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_reduce
                   SOURCES mains/TestIodaObsSpaceReduce.cc
                   ARGS    "testinput/iodatest_obsspace_reduce.yaml"
                   LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_reduce_clean_files )
+                  TEST_DEPENDS test_ioda_obsspace_reduce_clean_files )
 
 # the following tests compare the output files
 ecbuild_add_test( TARGET  test_ioda_obsspace_reduce_equal_1D_variables_cmp
@@ -1170,7 +1164,7 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_reduce_equal_1D_variables_cmp
                           netcdf
                           "echo Checking reduce equal, 1D variables"
                           obsspace_reduce_equal_1D_out.nc4
-                  TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_reduce)
+                  TEST_DEPENDS test_ioda_obsspace_reduce)
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_reduce_not_equal_1D_variables_cmp
                   TYPE    SCRIPT
@@ -1179,7 +1173,7 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_reduce_not_equal_1D_variables_cmp
                           netcdf
                           "echo Checking reduce equal, 1D variables"
                           obsspace_reduce_not_equal_1D_out.nc4
-                  TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_reduce)
+                  TEST_DEPENDS test_ioda_obsspace_reduce)
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_reduce_greater_than_1D_variables_cmp
                   TYPE    SCRIPT
@@ -1188,7 +1182,7 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_reduce_greater_than_1D_variables_cm
                           netcdf
                           "echo Checking reduce greater than, 1D variables"
                           obsspace_reduce_greater_than_1D_out.nc4
-                  TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_reduce)
+                  TEST_DEPENDS test_ioda_obsspace_reduce)
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_reduce_less_than_1D_variables_cmp
                   TYPE    SCRIPT
@@ -1197,7 +1191,7 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_reduce_less_than_1D_variables_cmp
                           netcdf
                           "echo Checking reduce less than, 1D variables"
                           obsspace_reduce_less_than_1D_out.nc4
-                  TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_reduce)
+                  TEST_DEPENDS test_ioda_obsspace_reduce)
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_reduce_greater_than_or_equal_1D_variables_cmp
                   TYPE    SCRIPT
@@ -1206,7 +1200,7 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_reduce_greater_than_or_equal_1D_var
                           netcdf
                           "echo Checking reduce greater than_or_equal, 1D variables"
                           obsspace_reduce_greater_than_or_equal_1D_out.nc4
-                  TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_reduce)
+                  TEST_DEPENDS test_ioda_obsspace_reduce)
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_reduce_less_than_or_equal_1D_variables_cmp
                   TYPE    SCRIPT
@@ -1215,7 +1209,7 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_reduce_less_than_or_equal_1D_variab
                           netcdf
                           "echo Checking reduce less than_or_equal, 1D variables"
                           obsspace_reduce_less_than_or_equal_1D_out.nc4
-                  TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_reduce)
+                  TEST_DEPENDS test_ioda_obsspace_reduce)
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_reduce_equal_2D_variables_cmp
                   TYPE    SCRIPT
@@ -1224,7 +1218,7 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_reduce_equal_2D_variables_cmp
                           netcdf
                           "echo Checking reduce equal, 2D variables"
                           obsspace_reduce_equal_2D_out.nc4
-                  TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_reduce)
+                  TEST_DEPENDS test_ioda_obsspace_reduce)
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_reduce_not_equal_2D_variables_cmp
                   TYPE    SCRIPT
@@ -1233,7 +1227,7 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_reduce_not_equal_2D_variables_cmp
                           netcdf
                           "echo Checking reduce equal, 2D variables"
                           obsspace_reduce_not_equal_2D_out.nc4
-                  TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_reduce)
+                  TEST_DEPENDS test_ioda_obsspace_reduce)
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_reduce_greater_than_2D_variables_cmp
                   TYPE    SCRIPT
@@ -1242,7 +1236,7 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_reduce_greater_than_2D_variables_cm
                           netcdf
                           "echo Checking reduce greater than, 2D variables"
                           obsspace_reduce_greater_than_2D_out.nc4
-                  TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_reduce)
+                  TEST_DEPENDS test_ioda_obsspace_reduce)
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_reduce_less_than_2D_variables_cmp
                   TYPE    SCRIPT
@@ -1251,7 +1245,7 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_reduce_less_than_2D_variables_cmp
                           netcdf
                           "echo Checking reduce less than, 2D variables"
                           obsspace_reduce_less_than_2D_out.nc4
-                  TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_reduce)
+                  TEST_DEPENDS test_ioda_obsspace_reduce)
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_reduce_greater_than_or_equal_2D_variables_cmp
                   TYPE    SCRIPT
@@ -1260,7 +1254,7 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_reduce_greater_than_or_equal_2D_var
                           netcdf
                           "echo Checking reduce greater than_or_equal, 2D variables"
                           obsspace_reduce_greater_than_or_equal_2D_out.nc4
-                  TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_reduce)
+                  TEST_DEPENDS test_ioda_obsspace_reduce)
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_reduce_less_than_or_equal_2D_variables_cmp
                   TYPE    SCRIPT
@@ -1269,7 +1263,7 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_reduce_less_than_or_equal_2D_variab
                           netcdf
                           "echo Checking reduce less than_or_equal, 2D variables"
                           obsspace_reduce_less_than_or_equal_2D_out.nc4
-                  TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_reduce)
+                  TEST_DEPENDS test_ioda_obsspace_reduce)
 
 # The next two tests run with 2 and 3 MPI tasks repectively using the same input files
 # as test_ioda_obssspace_reduce and only checks the obs space data members (no output files).
@@ -1278,14 +1272,14 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_reduce_mpi_2
                   COMMAND test_ioda_obsspace_reduce
                   ARGS    "testinput/iodatest_obsspace_reduce_mpi.yaml"
                   LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_reduce)
+                  TEST_DEPENDS test_ioda_obsspace_reduce)
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_reduce_mpi_3
                   MPI 3
                   COMMAND test_ioda_obsspace_reduce
                   ARGS    "testinput/iodatest_obsspace_reduce_mpi.yaml"
                   LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_reduce)
+                  TEST_DEPENDS test_ioda_obsspace_reduce)
 
 ###################################################################
 ################ End of reduce function tests #####################
@@ -1295,43 +1289,43 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_zero_obs
                   COMMAND test_ioda_obsspace
                   ARGS    "testinput/iodatest_obsspace_zero_obs.yaml"
                   LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_filter_to_zero_obs
                   COMMAND test_ioda_obsspace
                   ARGS    "testinput/iodatest_obsspace_filter_to_zero_obs.yaml"
                   LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_zero_obs_reader_pool
                   COMMAND test_ioda_obsspace
                   ARGS    "testinput/iodatest_obsspace_zero_obs_reader_pool.yaml"
                   LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_filter_to_zero_obs_reader_pool
                   COMMAND test_ioda_obsspace
                   ARGS    "testinput/iodatest_obsspace_filter_to_zero_obs_reader_pool.yaml"
                   LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_fill_value
                   COMMAND test_ioda_obsspace
                   ARGS    "testinput/iodatest_obsspace_fill_value.yaml"
                   LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_default_fill_values
                   COMMAND test_ioda_obsspace
                   ARGS    "testinput/iodatest_obsspace_default_fill_values.yaml"
                   LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_inclusive_lower_bound
                   COMMAND test_ioda_obsspace
                   ARGS    "testinput/iodatest_obsspace_inclusive_lower_bound.yaml"
                   LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_default_fill_values_cmp
                   TYPE    SCRIPT
@@ -1340,7 +1334,7 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_default_fill_values_cmp
                           netcdf
                           "echo Checking io default fill values"
                           default_fill_values_out.nc4
-                  TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_default_fill_values )
+                  TEST_DEPENDS test_ioda_obsspace_default_fill_values )
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_out_dims_check
                   TYPE    SCRIPT
@@ -1350,7 +1344,7 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_out_dims_check
                           "${CMAKE_CURRENT_BINARY_DIR}/test_ioda_oops_obsspace
                           testinput/iodatest_obsspace_out_dims_check.yaml"
                           out_dims_check.nc4
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 ecbuild_add_test( TARGET  test_ioda_writer_sondes
                   TYPE    SCRIPT
@@ -1360,7 +1354,7 @@ ecbuild_add_test( TARGET  test_ioda_writer_sondes
                           "${CMAKE_CURRENT_BINARY_DIR}/test_ioda_oops_obsspace
                           testinput/iodatest_writer_sondes.yaml"
                           ioda_writer_sondes.nc4
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 if (odc_FOUND)
   ecbuild_add_test( TARGET  test_ioda_writer_scatwindchosen
@@ -1371,7 +1365,7 @@ if (odc_FOUND)
                             "${CMAKE_CURRENT_BINARY_DIR}/test_ioda_oops_obsspace
                             testinput/iodatest_writer_scatwindchosen.yaml"
                             ioda_writer_scatwindchosen.odb
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
 endif()
 
 # This tests creates a single output file (7 tasks, 4 tasks in the io pool)
@@ -1381,7 +1375,7 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_io_pool_sondes_single_file
                   COMMAND time_IodaIO.x
                   ARGS    "testinput/iodatest_obsspace_io_pool_sondes_single_file.yaml"
                   LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data test_ioda_time_io)
+                  TEST_DEPENDS test_ioda_time_io)
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_io_pool_sondes_single_file_check
                   TYPE    SCRIPT
@@ -1390,7 +1384,7 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_io_pool_sondes_single_file_check
                           netcdf
                           "echo Checking io pool io sondes"
                           io_pool_sondes_single_out.nc4
-                  TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_io_pool_sondes_single_file)
+                  TEST_DEPENDS test_ioda_obsspace_io_pool_sondes_single_file)
 
 
 # This test creates four output files (7 tasks, 4 tasks in the io pool)
@@ -1402,7 +1396,7 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_io_pool_sondes_multi_files
                   COMMAND time_IodaIO.x
                   ARGS    "testinput/iodatest_obsspace_io_pool_sondes_multi_files.yaml"
                   LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data test_ioda_time_io)
+                  TEST_DEPENDS test_ioda_time_io)
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_io_pool_sondes_multi_file_check_0000
                   TYPE    SCRIPT
@@ -1411,7 +1405,7 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_io_pool_sondes_multi_file_check_000
                           netcdf
                           "echo Checking io pool io sondes"
                           io_pool_sondes_multi_out_0000.nc4
-                  TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_io_pool_sondes_multi_files)
+                  TEST_DEPENDS test_ioda_obsspace_io_pool_sondes_multi_files)
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_io_pool_sondes_multi_file_check_0001
                   TYPE    SCRIPT
@@ -1420,7 +1414,7 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_io_pool_sondes_multi_file_check_000
                           netcdf
                           "echo Checking io pool io sondes"
                           io_pool_sondes_multi_out_0001.nc4
-                  TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_io_pool_sondes_multi_files)
+                  TEST_DEPENDS test_ioda_obsspace_io_pool_sondes_multi_files)
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_io_pool_sondes_multi_file_check_0002
                   TYPE    SCRIPT
@@ -1429,7 +1423,7 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_io_pool_sondes_multi_file_check_000
                           netcdf
                           "echo Checking io pool io sondes"
                           io_pool_sondes_multi_out_0002.nc4
-                  TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_io_pool_sondes_multi_files)
+                  TEST_DEPENDS test_ioda_obsspace_io_pool_sondes_multi_files)
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_io_pool_sondes_multi_file_check_0003
                   TYPE    SCRIPT
@@ -1438,7 +1432,7 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_io_pool_sondes_multi_file_check_000
                           netcdf
                           "echo Checking io pool io sondes"
                           io_pool_sondes_multi_out_0003.nc4
-                  TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_io_pool_sondes_multi_files)
+                  TEST_DEPENDS test_ioda_obsspace_io_pool_sondes_multi_files)
 
 # These tests check that the writer does not create duplicate obs for all of the
 # distribution types (currently, RoundRobin, Inefficient, Halo and Atlas).
@@ -1451,7 +1445,7 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_dist_write
                   COMMAND time_IodaIO.x
                   ARGS    "testinput/iodatest_obsspace_dist_write.yaml"
                   LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data test_ioda_time_io)
+                  TEST_DEPENDS test_ioda_time_io)
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_dist_write_round_robin
                   TYPE    SCRIPT
@@ -1460,7 +1454,7 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_dist_write_round_robin
                           netcdf
                           "echo Checking distributed write - Round Robin"
                           dist_write_round_robin_out.nc4
-                  TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_dist_write)
+                  TEST_DEPENDS test_ioda_obsspace_dist_write)
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_dist_write_inefficient
                   TYPE    SCRIPT
@@ -1469,7 +1463,7 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_dist_write_inefficient
                           netcdf
                           "echo Checking distributed write - Inefficient"
                           dist_write_inefficient_out.nc4
-                  TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_dist_write)
+                  TEST_DEPENDS test_ioda_obsspace_dist_write)
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_dist_write_halo
                   TYPE    SCRIPT
@@ -1478,7 +1472,7 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_dist_write_halo
                           netcdf
                           "echo Checking distributed write - Halo"
                           dist_write_halo_out.nc4
-                  TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_dist_write)
+                  TEST_DEPENDS test_ioda_obsspace_dist_write)
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_dist_write_atlas
                   TYPE    SCRIPT
@@ -1487,7 +1481,7 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_dist_write_atlas
                           netcdf
                           "echo Checking distributed write - Atlas"
                           dist_write_atlas_out.nc4
-                  TEST_DEPENDS get_ioda_test_data test_ioda_obsspace_dist_write)
+                  TEST_DEPENDS test_ioda_obsspace_dist_write)
 
 # IODA ObsSpace class - Fortran interface test
 add_fctest( TARGET  test_ioda_obsspace_fortran
@@ -1495,49 +1489,49 @@ add_fctest( TARGET  test_ioda_obsspace_fortran
             ARGS    --config testinput/iodatest_obsspace_fortran.yaml
             LINKER_LANGUAGE Fortran
             LIBS  ioda_test
-            TEST_DEPENDS get_ioda_test_data )
+            )
 
 # IODA ObsSpace sorting of obs groups
 ecbuild_add_test( TARGET  test_ioda_sort
                   SOURCES mains/TestSort.cc
                   ARGS    "testinput/iodatest_sort.yaml"
                   LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 # IODA extended ObsSpace
 ecbuild_add_test( TARGET  test_ioda_extendedobsspace
                   SOURCES mains/TestExtendedObsSpace.cc
                   ARGS    "testinput/iodatest_extendedobsspace.yaml"
                   LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 ecbuild_add_test( TARGET  test_ioda_extendedobsspace_MPI_2
                   MPI     2
                   COMMAND test_ioda_extendedobsspace
                   ARGS    "testinput/iodatest_extendedobsspace.yaml"
                   LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 ecbuild_add_test( TARGET  test_ioda_extendedobsspace_MPI_3
                   MPI     3
                   COMMAND test_ioda_extendedobsspace
                   ARGS    "testinput/iodatest_extendedobsspace.yaml"
                   LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 ecbuild_add_test( TARGET  test_ioda_extendedobsspace_halo_MPI_2
                   MPI     2
                   COMMAND test_ioda_extendedobsspace
                   ARGS    "testinput/iodatest_extendedobsspace_halo.yaml"
                   LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 ecbuild_add_test( TARGET  test_ioda_extendedobsspace_halo_MPI_3
                   MPI     3
                   COMMAND test_ioda_extendedobsspace
                   ARGS    "testinput/iodatest_extendedobsspace_halo.yaml"
                   LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 #####################################################################
 # ObsVector tests
@@ -1549,13 +1543,13 @@ ecbuild_add_test( TARGET  test_ioda_oops_obsvector
                   SOURCES mains/TestObsVector.cc
                   ARGS    "testinput/iodatest_obsvector.yaml"
                   LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 ecbuild_add_test( TARGET  test_ioda_oops_obsdatavector
                   SOURCES mains/TestObsDataVector.cc
                   ARGS    "testinput/iodatest_obsvector.yaml"
                   LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data test_ioda_oops_obsvector )
+                  TEST_DEPENDS test_ioda_oops_obsvector )
 
 # IODA ObsVector class
 ecbuild_add_test( TARGET  test_ioda_obsvector
@@ -1563,14 +1557,14 @@ ecbuild_add_test( TARGET  test_ioda_obsvector
                   SOURCES mains/TestIodaObsVector.cc
                   ARGS    "testinput/iodatest_obsvector_grouped.yaml"
                   LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data test_ioda_oops_obsvector test_ioda_oops_obsdatavector )
+                  TEST_DEPENDS test_ioda_oops_obsvector test_ioda_oops_obsdatavector )
 
 ecbuild_add_test( TARGET  test_ioda_obsvector_missing_locs
                   MPI     4
                   COMMAND test_ioda_obsvector
                   ARGS    "testinput/iodatest_obsvector_missing_locs.yaml"
                   LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data test_ioda_oops_obsvector test_ioda_oops_obsdatavector )
+                  TEST_DEPENDS test_ioda_oops_obsvector test_ioda_oops_obsdatavector )
 
 # IODA ObsVector class (packEigen method)
 ecbuild_add_test( TARGET  test_ioda_obsvector_packeigen
@@ -1578,7 +1572,7 @@ ecbuild_add_test( TARGET  test_ioda_obsvector_packeigen
                   SOURCES mains/TestIodaObsVectorPackEigen.cc
                   ARGS    "testinput/iodatest_obsvector_packeigen.yaml"
                   LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 #####################################################################
 # ObsDataVector tests
@@ -1590,7 +1584,7 @@ ecbuild_add_test( TARGET  test_ioda_obsdatavector
                   SOURCES mains/TestIodaObsDataVector.cc
                   ARGS    "testinput/iodatest_obsdatavector.yaml"
                   LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 #####################################################################
 # ObsErrorCovariance tests
@@ -1601,7 +1595,7 @@ ecbuild_add_test( TARGET  test_ioda_oops_obserrorcovariance
                   SOURCES mains/TestObsErrorCovariance.cc
                   ARGS    "testinput/iodatest_obserror.yaml"
                   LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 #####################################################################
 # Test the reader load step
@@ -1610,7 +1604,7 @@ ecbuild_add_test( TARGET  test_ioda_reader_load_netcdf
                   SOURCES mains/TestReaderLoadNetcdf.cc
                   ARGS    "testinput/iodatest_reader_load_netcdf.yaml"
                   LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 #####################################################################
 # Test the reader filter step
@@ -1619,7 +1613,7 @@ ecbuild_add_test( TARGET  test_ioda_reader_filter
                   SOURCES mains/TestReaderFilter.cc
                   ARGS    "testinput/iodatest_reader_filter.yaml"
                   LIBS  ioda_test
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 #####################################################################
 # Test the time_IodaIO.x app
@@ -1646,7 +1640,7 @@ ecbuild_add_test( TARGET  test_ioda_clean_time_io_files
 ecbuild_add_test( TARGET  test_ioda_time_io
                   COMMAND ${CMAKE_BINARY_DIR}/bin/time_IodaIO.x
                   ARGS    "testinput/iodatest_time_io.yaml"
-                  TEST_DEPENDS get_ioda_test_data test_ioda_clean_time_io_files )
+                  TEST_DEPENDS test_ioda_clean_time_io_files )
 
 # the following tests compare the output files
 ecbuild_add_test( TARGET  test_ioda_time_io_cmp_sondes
@@ -1656,7 +1650,7 @@ ecbuild_add_test( TARGET  test_ioda_time_io_cmp_sondes
                           netcdf
                           "echo Checking time io sondes"
                           sondes_obs_2018041500_m_time.nc4
-                  TEST_DEPENDS get_ioda_test_data test_ioda_time_io)
+                  TEST_DEPENDS test_ioda_time_io)
 
 ecbuild_add_test( TARGET  test_ioda_time_io_cmp_amsua_n19
                   TYPE    SCRIPT
@@ -1665,7 +1659,7 @@ ecbuild_add_test( TARGET  test_ioda_time_io_cmp_amsua_n19
                           netcdf
                           "echo Checking time io AMSU-A NOAA19"
                           amsua_n19_obs_2018041500_m_time.nc4
-                  TEST_DEPENDS get_ioda_test_data test_ioda_time_io)
+                  TEST_DEPENDS test_ioda_time_io)
 
 ecbuild_add_test( TARGET  test_ioda_time_io_cmp_gnssro
                   TYPE    SCRIPT
@@ -1674,13 +1668,13 @@ ecbuild_add_test( TARGET  test_ioda_time_io_cmp_gnssro
                           netcdf
                           "echo Checking time io GNSSRO"
                           gnssro_obs_2021080606_s_time.nc4
-                  TEST_DEPENDS get_ioda_test_data test_ioda_time_io)
+                  TEST_DEPENDS test_ioda_time_io)
 
 # this test creates new output files
 ecbuild_add_test( TARGET  test_ioda_time_io_reader_pool
                   COMMAND ${CMAKE_BINARY_DIR}/bin/time_IodaIO.x
                   ARGS    "testinput/iodatest_time_io_reader_pool.yaml"
-                  TEST_DEPENDS get_ioda_test_data test_ioda_clean_time_io_files )
+                  TEST_DEPENDS test_ioda_clean_time_io_files )
 
 # the following tests compare the output files
 ecbuild_add_test( TARGET  test_ioda_time_io_cmp_sondes_reader_pool
@@ -1690,7 +1684,7 @@ ecbuild_add_test( TARGET  test_ioda_time_io_cmp_sondes_reader_pool
                           netcdf
                           "echo Checking time io (reader pool) sondes"
                           sondes_obs_2018041500_m_time_reader_pool.nc4
-                  TEST_DEPENDS get_ioda_test_data test_ioda_time_io_reader_pool)
+                  TEST_DEPENDS test_ioda_time_io_reader_pool)
 
 ecbuild_add_test( TARGET  test_ioda_time_io_cmp_amsua_n19_reader_pool
                   TYPE    SCRIPT
@@ -1699,7 +1693,7 @@ ecbuild_add_test( TARGET  test_ioda_time_io_cmp_amsua_n19_reader_pool
                           netcdf
                           "echo Checking time io (reader pool) AMSU-A NOAA19"
                           amsua_n19_obs_2018041500_m_time_reader_pool.nc4
-                  TEST_DEPENDS get_ioda_test_data test_ioda_time_io_reader_pool)
+                  TEST_DEPENDS test_ioda_time_io_reader_pool)
 
 ecbuild_add_test( TARGET  test_ioda_time_io_cmp_gnssro_reader_pool
                   TYPE    SCRIPT
@@ -1708,7 +1702,7 @@ ecbuild_add_test( TARGET  test_ioda_time_io_cmp_gnssro_reader_pool
                           netcdf
                           "echo Checking time io (reader pool) GNSSRO"
                           gnssro_obs_2021080606_s_time_reader_pool.nc4
-                  TEST_DEPENDS get_ioda_test_data test_ioda_time_io_reader_pool)
+                  TEST_DEPENDS test_ioda_time_io_reader_pool)
 
 if (odc_FOUND)
   # this test removes the output files from prior testing
@@ -1724,7 +1718,7 @@ if (odc_FOUND)
   ecbuild_add_test( TARGET  test_ioda_time_io_odc
                     COMMAND ${CMAKE_BINARY_DIR}/bin/time_IodaIO.x
                     ARGS    "testinput/iodatest_time_io_odc.yaml"
-                    TEST_DEPENDS get_ioda_test_data test_ioda_clean_time_io_files_odc )
+                    TEST_DEPENDS test_ioda_clean_time_io_files_odc )
 
   # the following tests compare the output files
   ecbuild_add_test( TARGET  test_ioda_time_io_cmp_aircraft_odc
@@ -1734,7 +1728,7 @@ if (odc_FOUND)
                             odb
                             "echo Checking time io aircraft"
                             aircraft_time.odb
-                    TEST_DEPENDS get_ioda_test_data test_ioda_time_io_odc)
+                    TEST_DEPENDS test_ioda_time_io_odc)
 
   ecbuild_add_test( TARGET  test_ioda_time_io_cmp_atms_odc
                     TYPE    SCRIPT
@@ -1743,13 +1737,13 @@ if (odc_FOUND)
                             odb
                             "echo Checking time io ATMS"
                             atms_time.odb
-                    TEST_DEPENDS get_ioda_test_data test_ioda_time_io_odc)
+                    TEST_DEPENDS test_ioda_time_io_odc)
 
   # this test creates new output files
   ecbuild_add_test( TARGET  test_ioda_time_io_reader_pool_odc
                     COMMAND ${CMAKE_BINARY_DIR}/bin/time_IodaIO.x
                     ARGS    "testinput/iodatest_time_io_reader_pool_odc.yaml"
-                    TEST_DEPENDS get_ioda_test_data test_ioda_clean_time_io_files_odc )
+                    TEST_DEPENDS test_ioda_clean_time_io_files_odc )
 
   # the following tests compare the output files
   ecbuild_add_test( TARGET  test_ioda_time_io_cmp_aircraft_reader_pool_odc
@@ -1759,7 +1753,7 @@ if (odc_FOUND)
                             odb
                             "echo Checking time io (reader pool) aircraft"
                             aircraft_time_reader_pool.odb
-                    TEST_DEPENDS get_ioda_test_data test_ioda_time_io_reader_pool_odc)
+                    TEST_DEPENDS test_ioda_time_io_reader_pool_odc)
 
   ecbuild_add_test( TARGET  test_ioda_time_io_cmp_atms_reader_pool_odc
                     TYPE    SCRIPT
@@ -1768,7 +1762,7 @@ if (odc_FOUND)
                             odb
                             "echo Checking time io (reader pool) ATMS"
                             atms_time_reader_pool.odb
-                    TEST_DEPENDS get_ioda_test_data test_ioda_time_io_reader_pool_odc)
+                    TEST_DEPENDS test_ioda_time_io_reader_pool_odc)
 endif()
 
 #####################################################################
@@ -1779,8 +1773,7 @@ endif()
 ecbuild_add_test( TARGET  test_ioda_time_io_reader_pool_ext_file_prep
                   COMMAND ${CMAKE_BINARY_DIR}/bin/time_IodaIO.x
                   ARGS    "testinput/iodatest_time_io_reader_pool_ext_file_prep.yaml"
-                  TEST_DEPENDS get_ioda_test_data
-                               test_ioda_clean_time_io_files
+                  TEST_DEPENDS test_ioda_clean_time_io_files
                                test_ioda_build_amsua_n19_file_set
                                test_ioda_build_gnssro_file_set
                                test_ioda_build_windborne_file_set
@@ -1794,7 +1787,7 @@ ecbuild_add_test( TARGET  test_ioda_time_io_cmp_sondes_reader_pool_ext_file_prep
                           netcdf
                           "echo Checking time io (reader pool ext file prep) sondes"
                           sondes_obs_2018041500_m_time_reader_pool_ext_file_prep.nc4
-                  TEST_DEPENDS get_ioda_test_data test_ioda_time_io_reader_pool_ext_file_prep )
+                  TEST_DEPENDS test_ioda_time_io_reader_pool_ext_file_prep )
 
 ecbuild_add_test( TARGET  test_ioda_time_io_cmp_amsua_n19_reader_pool_ext_file_prep
                   TYPE    SCRIPT
@@ -1803,7 +1796,7 @@ ecbuild_add_test( TARGET  test_ioda_time_io_cmp_amsua_n19_reader_pool_ext_file_p
                           netcdf
                           "echo Checking time io (reader pool ext file prep) AMSU-A NOAA19"
                           amsua_n19_obs_2018041500_m_time_reader_pool_ext_file_prep.nc4
-                  TEST_DEPENDS get_ioda_test_data test_ioda_time_io_reader_pool_ext_file_prep )
+                  TEST_DEPENDS test_ioda_time_io_reader_pool_ext_file_prep )
 
 ecbuild_add_test( TARGET  test_ioda_time_io_cmp_gnssro_reader_pool_ext_file_prep
                   TYPE    SCRIPT
@@ -1812,7 +1805,7 @@ ecbuild_add_test( TARGET  test_ioda_time_io_cmp_gnssro_reader_pool_ext_file_prep
                           netcdf
                           "echo Checking time io (reader pool ext file prep) GNSSRO"
                           gnssro_obs_2021080606_s_time_reader_pool_ext_file_prep.nc4
-                  TEST_DEPENDS get_ioda_test_data test_ioda_time_io_reader_pool_ext_file_prep)
+                  TEST_DEPENDS test_ioda_time_io_reader_pool_ext_file_prep)
 
 ecbuild_add_test( TARGET  test_ioda_time_io_cmp_windborne_reader_pool_ext_file_prep
                   TYPE    SCRIPT
@@ -1821,15 +1814,14 @@ ecbuild_add_test( TARGET  test_ioda_time_io_cmp_windborne_reader_pool_ext_file_p
                           netcdf
                           "echo Checking time io (reader pool ext file prep) Windborne"
                           windborne_obs_2022021600_s_time_reader_pool_ext_file_prep.nc4
-                  TEST_DEPENDS get_ioda_test_data test_ioda_time_io_reader_pool_ext_file_prep)
+                  TEST_DEPENDS test_ioda_time_io_reader_pool_ext_file_prep)
 
 # this test creates new output files
 ecbuild_add_test( TARGET  test_ioda_time_io_reader_pool_ext_file_prep_mpi7
                   MPI 7
                   COMMAND ${CMAKE_BINARY_DIR}/bin/time_IodaIO.x
                   ARGS    "testinput/iodatest_time_io_reader_pool_ext_file_prep_mpi7.yaml"
-                  TEST_DEPENDS get_ioda_test_data
-                               test_ioda_clean_time_io_files
+                  TEST_DEPENDS test_ioda_clean_time_io_files
                                test_ioda_build_amsua_n19_file_set_mpi7
                                test_ioda_build_gnssro_file_set_mpi7
                                test_ioda_build_windborne_file_set_mpi7
@@ -1843,7 +1835,7 @@ ecbuild_add_test( TARGET  test_ioda_time_io_cmp_sondes_reader_pool_ext_file_prep
                           netcdf
                           "echo Checking time io (reader pool ext file prep) sondes"
                           sondes_obs_2018041500_m_time_reader_pool_ext_file_prep_mpi7.nc4
-                  TEST_DEPENDS get_ioda_test_data test_ioda_time_io_reader_pool_ext_file_prep_mpi7)
+                  TEST_DEPENDS test_ioda_time_io_reader_pool_ext_file_prep_mpi7)
 
 ecbuild_add_test( TARGET  test_ioda_time_io_cmp_amsua_n19_reader_pool_ext_file_prep_mpi7
                   TYPE    SCRIPT
@@ -1852,7 +1844,7 @@ ecbuild_add_test( TARGET  test_ioda_time_io_cmp_amsua_n19_reader_pool_ext_file_p
                           netcdf
                           "echo Checking time io (reader pool ext file prep) AMSU-A NOAA19"
                           amsua_n19_obs_2018041500_m_time_reader_pool_ext_file_prep_mpi7.nc4
-                  TEST_DEPENDS get_ioda_test_data test_ioda_time_io_reader_pool_ext_file_prep_mpi7)
+                  TEST_DEPENDS test_ioda_time_io_reader_pool_ext_file_prep_mpi7)
 
 ecbuild_add_test( TARGET  test_ioda_time_io_cmp_gnssro_reader_pool_ext_file_prep_mpi7
                   TYPE    SCRIPT
@@ -1861,7 +1853,7 @@ ecbuild_add_test( TARGET  test_ioda_time_io_cmp_gnssro_reader_pool_ext_file_prep
                           netcdf
                           "echo Checking time io (reader pool ext file prep) GNSSRO"
                           gnssro_obs_2021080606_s_time_reader_pool_ext_file_prep_mpi7.nc4
-                  TEST_DEPENDS get_ioda_test_data test_ioda_time_io_reader_pool_ext_file_prep_mpi7)
+                  TEST_DEPENDS test_ioda_time_io_reader_pool_ext_file_prep_mpi7)
 
 ecbuild_add_test( TARGET  test_ioda_time_io_cmp_windborne_reader_pool_ext_file_prep_mpi7
                   TYPE    SCRIPT
@@ -1870,7 +1862,7 @@ ecbuild_add_test( TARGET  test_ioda_time_io_cmp_windborne_reader_pool_ext_file_p
                           netcdf
                           "echo Checking time io (reader pool ext file prep) Windborne"
                           windborne_obs_2022021600_s_time_reader_pool_ext_file_prep_mpi7.nc4
-                  TEST_DEPENDS get_ioda_test_data test_ioda_time_io_reader_pool_ext_file_prep_mpi7)
+                  TEST_DEPENDS test_ioda_time_io_reader_pool_ext_file_prep_mpi7)
 
 #####################################################################
 # Test the ioda-buildInputFileSet.x app
@@ -1912,49 +1904,49 @@ ecbuild_add_test( TARGET  test_ioda_clean_build_file_set_files
 ecbuild_add_test( TARGET  test_ioda_build_amsua_n19_file_set
                   COMMAND ${CMAKE_BINARY_DIR}/bin/ioda-buildInputFileSet.x
                   ARGS    "testinput/iodatest_build_amsua_n19_file_set.yaml"
-                  TEST_DEPENDS get_ioda_test_data test_ioda_clean_build_file_set_files )
+                  TEST_DEPENDS test_ioda_clean_build_file_set_files )
 
 # sondes, communicator target size 1
 ecbuild_add_test( TARGET  test_ioda_build_sondes_file_set
                   COMMAND ${CMAKE_BINARY_DIR}/bin/ioda-buildInputFileSet.x
                   ARGS    "testinput/iodatest_build_sondes_file_set.yaml"
-                  TEST_DEPENDS get_ioda_test_data test_ioda_clean_build_file_set_files )
+                  TEST_DEPENDS test_ioda_clean_build_file_set_files )
 
 # gnssro, communicator target size 1
 ecbuild_add_test( TARGET  test_ioda_build_gnssro_file_set
                   COMMAND ${CMAKE_BINARY_DIR}/bin/ioda-buildInputFileSet.x
                   ARGS    "testinput/iodatest_build_gnssro_file_set.yaml"
-                  TEST_DEPENDS get_ioda_test_data test_ioda_clean_build_file_set_files )
+                  TEST_DEPENDS test_ioda_clean_build_file_set_files )
 
 # windborne, communicator target size 1
 ecbuild_add_test( TARGET  test_ioda_build_windborne_file_set
                   COMMAND ${CMAKE_BINARY_DIR}/bin/ioda-buildInputFileSet.x
                   ARGS    "testinput/iodatest_build_windborne_file_set.yaml"
-                  TEST_DEPENDS get_ioda_test_data test_ioda_clean_build_file_set_files )
+                  TEST_DEPENDS test_ioda_clean_build_file_set_files )
 
 # amsua n19, communicator target size 7
 ecbuild_add_test( TARGET  test_ioda_build_amsua_n19_file_set_mpi7
                   COMMAND ${CMAKE_BINARY_DIR}/bin/ioda-buildInputFileSet.x
                   ARGS    "testinput/iodatest_build_amsua_n19_file_set_mpi7.yaml"
-                  TEST_DEPENDS get_ioda_test_data test_ioda_clean_build_file_set_files )
+                  TEST_DEPENDS test_ioda_clean_build_file_set_files )
 
 # sondes, communicator target size 7
 ecbuild_add_test( TARGET  test_ioda_build_sondes_file_set_mpi7
                   COMMAND ${CMAKE_BINARY_DIR}/bin/ioda-buildInputFileSet.x
                   ARGS    "testinput/iodatest_build_sondes_file_set_mpi7.yaml"
-                  TEST_DEPENDS get_ioda_test_data test_ioda_clean_build_file_set_files )
+                  TEST_DEPENDS test_ioda_clean_build_file_set_files )
 
 # gnssro, communicator target size 7
 ecbuild_add_test( TARGET  test_ioda_build_gnssro_file_set_mpi7
                   COMMAND ${CMAKE_BINARY_DIR}/bin/ioda-buildInputFileSet.x
                   ARGS    "testinput/iodatest_build_gnssro_file_set_mpi7.yaml"
-                  TEST_DEPENDS get_ioda_test_data test_ioda_clean_build_file_set_files )
+                  TEST_DEPENDS test_ioda_clean_build_file_set_files )
 
 # windborne, communicator target size 7
 ecbuild_add_test( TARGET  test_ioda_build_windborne_file_set_mpi7
                   COMMAND ${CMAKE_BINARY_DIR}/bin/ioda-buildInputFileSet.x
                   ARGS    "testinput/iodatest_build_windborne_file_set_mpi7.yaml"
-                  TEST_DEPENDS get_ioda_test_data test_ioda_clean_build_file_set_files )
+                  TEST_DEPENDS test_ioda_clean_build_file_set_files )
 
 #####################################################################
 # Test the ioda-filterObs.x application
@@ -1978,42 +1970,42 @@ ecbuild_add_test( TARGET  test_ioda_clean_filter_obs_files
 ecbuild_add_test( TARGET  test_ioda_filter_obs_single_file_input_twfilt
                   COMMAND ${CMAKE_BINARY_DIR}/bin/ioda-filterObs.x
                   ARGS    "testinput/iodatest_filter_obs_single_file_twfilt.yaml"
-                  TEST_DEPENDS get_ioda_test_data test_ioda_clean_filter_obs_files )
+                  TEST_DEPENDS test_ioda_clean_filter_obs_files )
 
 ecbuild_add_test( TARGET  test_ioda_filter_obs_multi_file_input_twfilt
                   COMMAND ${CMAKE_BINARY_DIR}/bin/ioda-filterObs.x
                   ARGS    "testinput/iodatest_filter_obs_multi_file_twfilt.yaml"
-                  TEST_DEPENDS get_ioda_test_data test_ioda_clean_filter_obs_files )
+                  TEST_DEPENDS test_ioda_clean_filter_obs_files )
 
 ecbuild_add_test( TARGET  test_ioda_filter_obs_single_file_input_twfilt_rtfilt
                   COMMAND ${CMAKE_BINARY_DIR}/bin/ioda-filterObs.x
                   ARGS    "testinput/iodatest_filter_obs_single_file_twfilt_rtfilt.yaml"
-                  TEST_DEPENDS get_ioda_test_data test_ioda_clean_filter_obs_files )
+                  TEST_DEPENDS test_ioda_clean_filter_obs_files )
 
 ecbuild_add_test( TARGET  test_ioda_filter_obs_multi_file_input_twfilt_rtfilt
                   COMMAND ${CMAKE_BINARY_DIR}/bin/ioda-filterObs.x
                   ARGS    "testinput/iodatest_filter_obs_multi_file_twfilt_rtfilt.yaml"
-                  TEST_DEPENDS get_ioda_test_data test_ioda_clean_filter_obs_files )
+                  TEST_DEPENDS test_ioda_clean_filter_obs_files )
 
 ecbuild_add_test( TARGET  test_ioda_filter_obs_single_file_input_twfilt_rtfiltwindow
                   COMMAND ${CMAKE_BINARY_DIR}/bin/ioda-filterObs.x
                   ARGS    "testinput/iodatest_filter_obs_single_file_twfilt_rtfiltwindow.yaml"
-                  TEST_DEPENDS get_ioda_test_data test_ioda_clean_filter_obs_files )
+                  TEST_DEPENDS test_ioda_clean_filter_obs_files )
 
 ecbuild_add_test( TARGET  test_ioda_filter_obs_multi_file_input_twfilt_rtfiltwindow
                   COMMAND ${CMAKE_BINARY_DIR}/bin/ioda-filterObs.x
                   ARGS    "testinput/iodatest_filter_obs_multi_file_twfilt_rtfiltwindow.yaml"
-                  TEST_DEPENDS get_ioda_test_data test_ioda_clean_filter_obs_files )
+                  TEST_DEPENDS test_ioda_clean_filter_obs_files )
 
 ecbuild_add_test( TARGET  test_ioda_filter_obs_sondes
                   COMMAND ${CMAKE_BINARY_DIR}/bin/ioda-filterObs.x
                   ARGS    "testinput/iodatest_filter_obs_sondes.yaml"
-                  TEST_DEPENDS get_ioda_test_data test_ioda_clean_filter_obs_files )
+                  TEST_DEPENDS test_ioda_clean_filter_obs_files )
 
 ecbuild_add_test( TARGET  test_ioda_filter_obs_amsua
                   COMMAND ${CMAKE_BINARY_DIR}/bin/ioda-filterObs.x
                   ARGS    "testinput/iodatest_filter_obs_amsua.yaml"
-                  TEST_DEPENDS get_ioda_test_data test_ioda_clean_filter_obs_files )
+                  TEST_DEPENDS test_ioda_clean_filter_obs_files )
 
 # following tests compare the output files of the filter app
 ecbuild_add_test( TARGET  test_ioda_filter_obs_cmp_single_file_input_twfilt
@@ -2023,7 +2015,7 @@ ecbuild_add_test( TARGET  test_ioda_filter_obs_cmp_single_file_input_twfilt
                           netcdf
                           "echo Checking filter obs (twindow, single file input)"
                           filter_obs_single_file_input_twfilt.nc4
-                  TEST_DEPENDS get_ioda_test_data test_ioda_filter_obs_single_file_input_twfilt )
+                  TEST_DEPENDS test_ioda_filter_obs_single_file_input_twfilt )
 
 ecbuild_add_test( TARGET  test_ioda_filter_obs_cmp_multi_file_input_twfilt
                   TYPE    SCRIPT
@@ -2032,7 +2024,7 @@ ecbuild_add_test( TARGET  test_ioda_filter_obs_cmp_multi_file_input_twfilt
                           netcdf
                           "echo Checking filter obs (twindow, multiple file input)"
                           filter_obs_multi_file_input_twfilt.nc4
-                  TEST_DEPENDS get_ioda_test_data test_ioda_filter_obs_multi_file_input_twfilt )
+                  TEST_DEPENDS test_ioda_filter_obs_multi_file_input_twfilt )
 
 ecbuild_add_test( TARGET  test_ioda_filter_obs_cmp_single_file_input_twfilt_rtfilt
                   TYPE    SCRIPT
@@ -2041,7 +2033,7 @@ ecbuild_add_test( TARGET  test_ioda_filter_obs_cmp_single_file_input_twfilt_rtfi
                           netcdf
                           "echo Checking filter obs (twindow + rtime, single file input)"
                           filter_obs_single_file_input_twfilt_rtfilt.nc4
-                  TEST_DEPENDS get_ioda_test_data test_ioda_filter_obs_single_file_input_twfilt_rtfilt )
+                  TEST_DEPENDS test_ioda_filter_obs_single_file_input_twfilt_rtfilt )
 
 ecbuild_add_test( TARGET  test_ioda_filter_obs_cmp_multi_file_input_twfilt_rtfilt
                   TYPE    SCRIPT
@@ -2050,7 +2042,7 @@ ecbuild_add_test( TARGET  test_ioda_filter_obs_cmp_multi_file_input_twfilt_rtfil
                           netcdf
                           "echo Checking filter obs (twindow + rtime, multiple file input)"
                           filter_obs_multi_file_input_twfilt_rtfilt.nc4
-                  TEST_DEPENDS get_ioda_test_data test_ioda_filter_obs_multi_file_input_twfilt_rtfilt )
+                  TEST_DEPENDS test_ioda_filter_obs_multi_file_input_twfilt_rtfilt )
 
 ecbuild_add_test( TARGET  test_ioda_filter_obs_cmp_single_file_input_twfilt_rtfiltwindow
                   TYPE    SCRIPT
@@ -2059,7 +2051,7 @@ ecbuild_add_test( TARGET  test_ioda_filter_obs_cmp_single_file_input_twfilt_rtfi
                           netcdf
                           "echo Checking filter obs (twindow + rtime, single file input)"
                           filter_obs_single_file_input_twfilt_rtfiltwindow.nc4
-                  TEST_DEPENDS get_ioda_test_data test_ioda_filter_obs_single_file_input_twfilt_rtfiltwindow )
+                  TEST_DEPENDS test_ioda_filter_obs_single_file_input_twfilt_rtfiltwindow )
 
 ecbuild_add_test( TARGET  test_ioda_filter_obs_cmp_multi_file_input_twfilt_rtfiltwindow
                   TYPE    SCRIPT
@@ -2068,7 +2060,7 @@ ecbuild_add_test( TARGET  test_ioda_filter_obs_cmp_multi_file_input_twfilt_rtfil
                           netcdf
                           "echo Checking filter obs (twindow + rtime, multiple file input)"
                           filter_obs_multi_file_input_twfilt_rtfiltwindow.nc4
-                  TEST_DEPENDS get_ioda_test_data test_ioda_filter_obs_multi_file_input_twfilt_rtfiltwindow )
+                  TEST_DEPENDS test_ioda_filter_obs_multi_file_input_twfilt_rtfiltwindow )
 
 ecbuild_add_test( TARGET  test_ioda_filter_obs_cmp_sondes
                   TYPE    SCRIPT
@@ -2077,7 +2069,7 @@ ecbuild_add_test( TARGET  test_ioda_filter_obs_cmp_sondes
                           netcdf
                           "echo Checking filter obs (sondes)"
                           filter_obs_sondes_obs_2018041500_m.nc4
-                  TEST_DEPENDS get_ioda_test_data test_ioda_filter_obs_sondes )
+                  TEST_DEPENDS test_ioda_filter_obs_sondes )
 
 ecbuild_add_test( TARGET  test_ioda_filter_obs_cmp_amsua
                   TYPE    SCRIPT
@@ -2086,7 +2078,7 @@ ecbuild_add_test( TARGET  test_ioda_filter_obs_cmp_amsua
                           netcdf
                           "echo Checking filter obs (amsua)"
                           filter_obs_amsua_n19_obs_2018041500_m.nc4
-                  TEST_DEPENDS get_ioda_test_data test_ioda_filter_obs_amsua )
+                  TEST_DEPENDS test_ioda_filter_obs_amsua )
 
 #####################################################################
 # Test the script backend
@@ -2121,19 +2113,19 @@ ecbuild_add_test( TARGET  test_ioda_clean_time_io_multiple_input_files
 ecbuild_add_test( TARGET      test_ioda_time_io_multiple_input_files
                   COMMAND     ${CMAKE_BINARY_DIR}/bin/time_IodaIO.x
                   ARGS        "testinput/iodatest_time_io_multiple_input_files.yaml"
-                  TEST_DEPENDS get_ioda_test_data test_ioda_clean_time_io_multiple_input_files )
+                  TEST_DEPENDS test_ioda_clean_time_io_multiple_input_files )
 
 ecbuild_add_test( TARGET      test_ioda_time_io_multiple_input_files_mpi_2
                   MPI 2
                   COMMAND     ${CMAKE_BINARY_DIR}/bin/time_IodaIO.x
                   ARGS        "testinput/iodatest_time_io_multiple_input_files_mpi_2.yaml"
-                  TEST_DEPENDS get_ioda_test_data test_ioda_clean_time_io_multiple_input_files )
+                  TEST_DEPENDS test_ioda_clean_time_io_multiple_input_files )
 
 ecbuild_add_test( TARGET      test_ioda_time_io_multiple_input_files_mpi_4
                   MPI 4
                   COMMAND     ${CMAKE_BINARY_DIR}/bin/time_IodaIO.x
                   ARGS        "testinput/iodatest_time_io_multiple_input_files_mpi_4.yaml"
-                  TEST_DEPENDS get_ioda_test_data test_ioda_clean_time_io_multiple_input_files )
+                  TEST_DEPENDS test_ioda_clean_time_io_multiple_input_files )
 
 # the following tests compare the output files
 ecbuild_add_test( TARGET  test_ioda_time_io_multiple_input_files_amsua_cmp
@@ -2143,7 +2135,7 @@ ecbuild_add_test( TARGET  test_ioda_time_io_multiple_input_files_amsua_cmp
                           netcdf
                           "echo Checking time io amsua (multiple input files)"
                           amsua_n19_obs_2018041500_m_time_multi_files.nc4
-                  TEST_DEPENDS get_ioda_test_data test_ioda_time_io_multiple_input_files )
+                  TEST_DEPENDS test_ioda_time_io_multiple_input_files )
 
 ecbuild_add_test( TARGET  test_ioda_time_io_multiple_input_files_amsua_mpi_2_cmp
                   TYPE    SCRIPT
@@ -2152,7 +2144,7 @@ ecbuild_add_test( TARGET  test_ioda_time_io_multiple_input_files_amsua_mpi_2_cmp
                           netcdf
                           "echo Checking time io amsua (multiple input files, mpi 2)"
                           amsua_n19_obs_2018041500_m_time_multi_files_mpi_2.nc4
-                  TEST_DEPENDS get_ioda_test_data test_ioda_time_io_multiple_input_files_mpi_2 )
+                  TEST_DEPENDS test_ioda_time_io_multiple_input_files_mpi_2 )
 
 ecbuild_add_test( TARGET  test_ioda_time_io_multiple_input_files_amsua_mpi_4_cmp
                   TYPE    SCRIPT
@@ -2161,7 +2153,7 @@ ecbuild_add_test( TARGET  test_ioda_time_io_multiple_input_files_amsua_mpi_4_cmp
                           netcdf
                           "echo Checking time io amsua (multiple input files, mpi 4)"
                           amsua_n19_obs_2018041500_m_time_multi_files_mpi_4.nc4
-                  TEST_DEPENDS get_ioda_test_data test_ioda_time_io_multiple_input_files_mpi_4 )
+                  TEST_DEPENDS test_ioda_time_io_multiple_input_files_mpi_4 )
 
 ecbuild_add_test( TARGET  test_ioda_time_io_multiple_input_files_sondes_cmp
                   TYPE    SCRIPT
@@ -2170,7 +2162,7 @@ ecbuild_add_test( TARGET  test_ioda_time_io_multiple_input_files_sondes_cmp
                           netcdf
                           "echo Checking time io sondes (multiple input files)"
                           sondes_obs_2018041500_m_time_multi_files.nc4
-                  TEST_DEPENDS get_ioda_test_data test_ioda_time_io_multiple_input_files )
+                  TEST_DEPENDS test_ioda_time_io_multiple_input_files )
 
 ecbuild_add_test( TARGET  test_ioda_time_io_multiple_input_files_sondes_mpi_2_cmp
                   TYPE    SCRIPT
@@ -2179,7 +2171,7 @@ ecbuild_add_test( TARGET  test_ioda_time_io_multiple_input_files_sondes_mpi_2_cm
                           netcdf
                           "echo Checking time io sondes (multiple input files, mpi 2)"
                           sondes_obs_2018041500_m_time_multi_files_mpi_2.nc4
-                  TEST_DEPENDS get_ioda_test_data test_ioda_time_io_multiple_input_files_mpi_2 )
+                  TEST_DEPENDS test_ioda_time_io_multiple_input_files_mpi_2 )
 
 ecbuild_add_test( TARGET  test_ioda_time_io_multiple_input_files_sondes_mpi_4_cmp
                   TYPE    SCRIPT
@@ -2188,7 +2180,7 @@ ecbuild_add_test( TARGET  test_ioda_time_io_multiple_input_files_sondes_mpi_4_cm
                           netcdf
                           "echo Checking time io sondes (multiple input files, mpi 4)"
                           sondes_obs_2018041500_m_time_multi_files_mpi_4.nc4
-                  TEST_DEPENDS get_ioda_test_data test_ioda_time_io_multiple_input_files_mpi_4 )
+                  TEST_DEPENDS test_ioda_time_io_multiple_input_files_mpi_4 )
 
 ecbuild_add_test( TARGET  test_ioda_time_io_multiple_input_files_gnssro_cmp
                   TYPE    SCRIPT
@@ -2197,7 +2189,7 @@ ecbuild_add_test( TARGET  test_ioda_time_io_multiple_input_files_gnssro_cmp
                           netcdf
                           "echo Checking time io gnssro (multiple input files)"
                           gnssro_obs_2021080606_s_time_multi_files.nc4
-                  TEST_DEPENDS get_ioda_test_data test_ioda_time_io_multiple_input_files )
+                  TEST_DEPENDS test_ioda_time_io_multiple_input_files )
 
 ecbuild_add_test( TARGET  test_ioda_time_io_multiple_input_files_gnssro_mpi_2_cmp
                   TYPE    SCRIPT
@@ -2206,7 +2198,7 @@ ecbuild_add_test( TARGET  test_ioda_time_io_multiple_input_files_gnssro_mpi_2_cm
                           netcdf
                           "echo Checking time io gnssro (multiple input files, mpi 2)"
                           gnssro_obs_2021080606_s_time_multi_files_mpi_2.nc4
-                  TEST_DEPENDS get_ioda_test_data test_ioda_time_io_multiple_input_files_mpi_2 )
+                  TEST_DEPENDS test_ioda_time_io_multiple_input_files_mpi_2 )
 
 ecbuild_add_test( TARGET  test_ioda_time_io_multiple_input_files_gnssro_mpi_4_cmp
                   TYPE    SCRIPT
@@ -2215,7 +2207,7 @@ ecbuild_add_test( TARGET  test_ioda_time_io_multiple_input_files_gnssro_mpi_4_cm
                           netcdf
                           "echo Checking time io gnssro (multiple input files, mpi 4)"
                           gnssro_obs_2021080606_s_time_multi_files_mpi_4.nc4
-                  TEST_DEPENDS get_ioda_test_data test_ioda_time_io_multiple_input_files_mpi_4 )
+                  TEST_DEPENDS test_ioda_time_io_multiple_input_files_mpi_4 )
 
 #####################################################################
 # Test writer empty obs space handling
@@ -2233,7 +2225,7 @@ ecbuild_add_test( TARGET  test_ioda_clean_time_io_empty_ospace
 ecbuild_add_test( TARGET test_ioda_time_io_empty_ospace
                   COMMAND     ${CMAKE_BINARY_DIR}/bin/time_IodaIO.x
                   ARGS        "testinput/iodatest_time_io_empty_ospace.yaml"
-                  TEST_DEPENDS get_ioda_test_data test_ioda_clean_time_io_empty_ospace )
+                  TEST_DEPENDS test_ioda_clean_time_io_empty_ospace )
 
 # the following tests check to see if a file was created or if a file was not created
 # according to the empty obs space handling specification
@@ -2244,7 +2236,7 @@ ecbuild_add_test( TARGET  test_ioda_time_io_empty_ospace_default_check
                           fileExists
                           "echo Checking empty obs space handling (default)"
                           empty_default_output.nc4
-                  TEST_DEPENDS get_ioda_test_data test_ioda_time_io_empty_ospace )
+                  TEST_DEPENDS test_ioda_time_io_empty_ospace )
 
 ecbuild_add_test( TARGET  test_ioda_time_io_empty_ospace_create_check
                   TYPE    SCRIPT
@@ -2253,7 +2245,7 @@ ecbuild_add_test( TARGET  test_ioda_time_io_empty_ospace_create_check
                           fileExists
                           "echo Checking empty obs space handling (create)"
                           empty_create_output.nc4
-                  TEST_DEPENDS get_ioda_test_data test_ioda_time_io_empty_ospace )
+                  TEST_DEPENDS test_ioda_time_io_empty_ospace )
 
 ecbuild_add_test( TARGET  test_ioda_time_io_empty_ospace_skip_check
                   TYPE    SCRIPT
@@ -2262,7 +2254,7 @@ ecbuild_add_test( TARGET  test_ioda_time_io_empty_ospace_skip_check
                           fileDoesNotExist
                           "echo Checking empty obs space handling (skip)"
                           empty_skip_output.nc4
-                  TEST_DEPENDS get_ioda_test_data test_ioda_time_io_empty_ospace )
+                  TEST_DEPENDS test_ioda_time_io_empty_ospace )
 
 #####################################################################
 # Test the ioda-upgrade-v1-to-v2.x app
@@ -2277,7 +2269,7 @@ ecbuild_add_test( TARGET  test_ioda_upgrader_amsua_n19
                           Data/testinput_tier_1/upgrader_amsua_n19.nc4
                           testoutput/upgrader_amsua_n19.nc4"
                           upgrader_amsua_n19.nc4
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 ecbuild_add_test( TARGET  test_ioda_upgrader_gmi_gpm
                   TYPE    SCRIPT
@@ -2288,7 +2280,7 @@ ecbuild_add_test( TARGET  test_ioda_upgrader_gmi_gpm
                           Data/testinput_tier_1/upgrader_gmi_gpm.nc4
                           testoutput/upgrader_gmi_gpm.nc4"
                           upgrader_gmi_gpm.nc4
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 ecbuild_add_test( TARGET  test_ioda_upgrader_mhs_metop-b
                   TYPE    SCRIPT
@@ -2299,7 +2291,7 @@ ecbuild_add_test( TARGET  test_ioda_upgrader_mhs_metop-b
                           Data/testinput_tier_1/upgrader_mhs_metop-b.nc4
                           testoutput/upgrader_mhs_metop-b.nc4"
                           upgrader_mhs_metop-b.nc4
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 ecbuild_add_test( TARGET  test_ioda_upgrader_sondes
                   TYPE    SCRIPT
@@ -2310,7 +2302,7 @@ ecbuild_add_test( TARGET  test_ioda_upgrader_sondes
                           Data/testinput_tier_1/upgrader_sondes.nc4
                           testoutput/upgrader_sondes.nc4"
                           upgrader_sondes.nc4
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 ecbuild_add_test( TARGET  test_ioda_upgrader_aod
                   TYPE    SCRIPT
@@ -2321,7 +2313,7 @@ ecbuild_add_test( TARGET  test_ioda_upgrader_aod
                           Data/testinput_tier_1/upgrader_aod.nc4
                           testoutput/upgrader_aod.nc4"
                           upgrader_aod.nc4
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 ecbuild_add_test( TARGET  test_ioda_upgrader_gnssro
                   TYPE    SCRIPT
@@ -2332,7 +2324,7 @@ ecbuild_add_test( TARGET  test_ioda_upgrader_gnssro
                           Data/testinput_tier_1/upgrader_gnssro.nc4
                           testoutput/upgrader_gnssro.nc4"
                           upgrader_gnssro.nc4
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 ecbuild_add_test( TARGET  test_ioda_upgrader_met_office_gpsro
                   TYPE    SCRIPT
@@ -2343,7 +2335,7 @@ ecbuild_add_test( TARGET  test_ioda_upgrader_met_office_gpsro
                           Data/testinput_tier_1/upgrader_met_office_gpsro.nc4
                           testoutput/upgrader_met_office_gpsro.nc4"
                           upgrader_met_office_gpsro.nc4
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 ecbuild_add_test( TARGET  test_ioda_upgrader_zero_obs
                   TYPE    SCRIPT
@@ -2354,7 +2346,7 @@ ecbuild_add_test( TARGET  test_ioda_upgrader_zero_obs
                           Data/testinput_tier_1/upgrader_zero_obs.nc4
                           testoutput/upgrader_zero_obs.nc4"
                           upgrader_zero_obs.nc4
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 ecbuild_add_test( TARGET  test_ioda_upgrader_amsua_n19_nc_compat
                   TYPE    SCRIPT
@@ -2362,7 +2354,7 @@ ecbuild_add_test( TARGET  test_ioda_upgrader_amsua_n19_nc_compat
                   ARGS    netcdf
                           "echo INFO: amsua_n19 netcdf compatibility check"
                           upgrader_amsua_n19.nc4
-                  TEST_DEPENDS get_ioda_test_data test_ioda_upgrader_amsua_n19 )
+                  TEST_DEPENDS test_ioda_upgrader_amsua_n19 )
 
 ecbuild_add_test( TARGET  test_ioda_upgrader_gmi_gpm_nc_compat
                   TYPE    SCRIPT
@@ -2370,7 +2362,7 @@ ecbuild_add_test( TARGET  test_ioda_upgrader_gmi_gpm_nc_compat
                   ARGS    netcdf
                           "echo INFO: gmi_gpm netcdf compatibility check"
                           upgrader_gmi_gpm.nc4
-                  TEST_DEPENDS get_ioda_test_data test_ioda_upgrader_gmi_gpm )
+                  TEST_DEPENDS test_ioda_upgrader_gmi_gpm )
 
 ecbuild_add_test( TARGET  test_ioda_upgrader_mhs_metop-b_nc_compat
                   TYPE    SCRIPT
@@ -2378,7 +2370,7 @@ ecbuild_add_test( TARGET  test_ioda_upgrader_mhs_metop-b_nc_compat
                   ARGS    netcdf
                           "echo INFO: mhs_metop-b netcdf compatibility check"
                           upgrader_mhs_metop-b.nc4
-                  TEST_DEPENDS get_ioda_test_data test_ioda_upgrader_mhs_metop-b )
+                  TEST_DEPENDS test_ioda_upgrader_mhs_metop-b )
 
 ecbuild_add_test( TARGET  test_ioda_upgrader_sondes_nc_compat
                   TYPE    SCRIPT
@@ -2386,7 +2378,7 @@ ecbuild_add_test( TARGET  test_ioda_upgrader_sondes_nc_compat
                   ARGS    netcdf
                           "echo INFO: sondes netcdf compatibility check"
                           upgrader_sondes.nc4
-                  TEST_DEPENDS get_ioda_test_data test_ioda_upgrader_sondes )
+                  TEST_DEPENDS test_ioda_upgrader_sondes )
 
 ecbuild_add_test( TARGET  test_ioda_upgrader_aod_nc_compat
                   TYPE    SCRIPT
@@ -2394,7 +2386,7 @@ ecbuild_add_test( TARGET  test_ioda_upgrader_aod_nc_compat
                   ARGS    netcdf
                           "echo INFO: aod netcdf compatibility check"
                           upgrader_aod.nc4
-                  TEST_DEPENDS get_ioda_test_data test_ioda_upgrader_aod )
+                  TEST_DEPENDS test_ioda_upgrader_aod )
 
 ecbuild_add_test( TARGET  test_ioda_upgrader_gnssro_nc_compat
                   TYPE    SCRIPT
@@ -2402,7 +2394,7 @@ ecbuild_add_test( TARGET  test_ioda_upgrader_gnssro_nc_compat
                   ARGS    netcdf
                           "echo INFO: gnssro netcdf compatibility check"
                           upgrader_gnssro.nc4
-                  TEST_DEPENDS get_ioda_test_data test_ioda_upgrader_gnssro )
+                  TEST_DEPENDS test_ioda_upgrader_gnssro )
 
 ecbuild_add_test( TARGET  test_ioda_upgrader_met_office_gpsro_nc_compat
                   TYPE    SCRIPT
@@ -2410,7 +2402,7 @@ ecbuild_add_test( TARGET  test_ioda_upgrader_met_office_gpsro_nc_compat
                   ARGS    netcdf
                           "echo INFO: met_office_gpsro netcdf compatibility check"
                           upgrader_met_office_gpsro.nc4
-                  TEST_DEPENDS get_ioda_test_data test_ioda_upgrader_met_office_gpsro )
+                  TEST_DEPENDS test_ioda_upgrader_met_office_gpsro )
 
 ecbuild_add_test( TARGET  test_ioda_upgrader_zero_obs_compat
                   TYPE    SCRIPT
@@ -2418,7 +2410,7 @@ ecbuild_add_test( TARGET  test_ioda_upgrader_zero_obs_compat
                   ARGS    netcdf
                           "echo INFO: zero_obs netcdf compatibility check"
                           upgrader_zero_obs.nc4
-                  TEST_DEPENDS get_ioda_test_data test_ioda_upgrader_zero_obs )
+                  TEST_DEPENDS test_ioda_upgrader_zero_obs )
 
 #####################################################################
 # Test the ioda-upgrade-v2-to-v3.x app
@@ -2435,7 +2427,7 @@ ecbuild_add_test( TARGET  test_ioda_upgrader_dtime_offset_v2_to_v3
                           testoutput/upgrader_dtime_offset_v2_to_v3.nc4
                           ../share/test/testinput/validation/ObsSpace.yaml"
                           upgrader_dtime_offset_v2_to_v3.nc4
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 # test converting string date time to epoch datetime
 # when both offset and string exist in the input file
@@ -2449,7 +2441,7 @@ ecbuild_add_test( TARGET  test_ioda_upgrader_dtime_offstr_v2_to_v3
                           testoutput/upgrader_dtime_offstr_v2_to_v3.nc4
                           ../share/test/testinput/validation/ObsSpace.yaml"
                           upgrader_dtime_offstr_v2_to_v3.nc4
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 # test using epoch date time to epoch datetime
 # when all of offset, string and epoch exist in the input file
@@ -2463,7 +2455,7 @@ ecbuild_add_test( TARGET  test_ioda_upgrader_dtime_all_v2_to_v3
                           testoutput/upgrader_dtime_all_v2_to_v3.nc4
                           ../share/test/testinput/validation/ObsSpace.yaml"
                           upgrader_dtime_all_v2_to_v3.nc4
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 ecbuild_add_test( TARGET  test_ioda_upgrader_amsua_n19_v2_to_v3
                   TYPE    SCRIPT
@@ -2475,7 +2467,7 @@ ecbuild_add_test( TARGET  test_ioda_upgrader_amsua_n19_v2_to_v3
                           testoutput/upgrader_amsua_n19_v2_to_v3.nc4
                           ../share/test/testinput/validation/ObsSpace.yaml"
                           upgrader_amsua_n19_v2_to_v3.nc4
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 ecbuild_add_test( TARGET  test_ioda_upgrader_met_office_gpsro_v2_to_v3
                   TYPE    SCRIPT
@@ -2487,7 +2479,7 @@ ecbuild_add_test( TARGET  test_ioda_upgrader_met_office_gpsro_v2_to_v3
                           testoutput/upgrader_met_office_gpsro_v2_to_v3.nc4
                           ../share/test/testinput/validation/ObsSpace.yaml"
                           upgrader_met_office_gpsro_v2_to_v3.nc4
-                  TEST_DEPENDS get_ioda_test_data )
+                  )
 
 if (odc_FOUND)
   ecbuild_add_test( TARGET  test_ioda-convert_aircraft_odc
@@ -2500,7 +2492,7 @@ if (odc_FOUND)
                             Data/testinput_tier_1/aircraft.odb
                             ../share/test/testinput/odb_aircraft_name_map.yaml ../share/test/testinput/iodatest_odb_aircraft.yaml"
                             test-Aircraft.hdf
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
 
   ecbuild_add_test( TARGET  test_ioda-convert_aircraft_mixed_odc
                     TYPE    SCRIPT
@@ -2512,7 +2504,7 @@ if (odc_FOUND)
                             Data/testinput_tier_1/aircraft-mixed-elements.odb
                             ../share/test/testinput/odb_aircraft_name_map.yaml ../share/test/testinput/iodatest_odb_aircraft.yaml"
                             test-Mixed-Aircraft.hdf
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
 
   ecbuild_add_test( TARGET  test_ioda-convert_surface_odc
                     TYPE    SCRIPT
@@ -2524,7 +2516,7 @@ if (odc_FOUND)
                             Data/testinput_tier_1/surface.odb
                             ../share/test/testinput/odb_surface_name_map.yaml ../share/test/testinput/iodatest_odb_surface.yaml"
                             test-Surface.hdf
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
 
   ecbuild_add_test( TARGET  test_ioda-convert_surface_tcbogus_odc
                     TYPE    SCRIPT
@@ -2536,7 +2528,7 @@ if (odc_FOUND)
                             Data/testinput_tier_1/surface-tcbogus.odb
                             ../share/test/testinput/odb_surface_name_map.yaml ../share/test/testinput/iodatest_odb_surface.yaml"
                             test-Surface-TCBOGUS.hdf
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
 
   ecbuild_add_test( TARGET  test_ioda-convert_surface_with_query_odc
                     TYPE    SCRIPT
@@ -2548,7 +2540,7 @@ if (odc_FOUND)
                             Data/testinput_tier_1/surface.odb
                             ../share/test/testinput/odb_surface_name_map.yaml testinput/iodatest_odb_surface_with_query.yaml"
                             test-Surface-with-query.hdf
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
 
   ecbuild_add_test( TARGET  test_ioda-convert_surface_missing_odc
                     TYPE    SCRIPT
@@ -2556,7 +2548,7 @@ if (odc_FOUND)
                     ARGS    Surface-missing
                             Data/testinput_tier_1/surface-missing.odb
                             ../share/test/testinput/odb_default_name_map.yaml ../share/test/testinput/iodatest_odb_surface.yaml
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
 
   ecbuild_add_test( TARGET  test_ioda-convert_surface_empty_odc
                     TYPE    SCRIPT
@@ -2564,7 +2556,7 @@ if (odc_FOUND)
                     ARGS    Surface-empty
                             Data/testinput_tier_1/surface-empty.odb
                             ../share/test/testinput/odb_default_name_map.yaml ../share/test/testinput/iodatest_odb_surface.yaml
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
 
   ecbuild_add_test( TARGET  test_ioda-convert_sonde_odc
                     TYPE    SCRIPT
@@ -2576,7 +2568,7 @@ if (odc_FOUND)
                             Data/testinput_tier_1/sonde.odb
                             ../share/test/testinput/odb_sonde_name_map.yaml ../share/test/testinput/iodatest_odb_sonde.yaml"
                             test-Sonde.hdf
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
 
   ecbuild_add_test( TARGET  test_ioda-convert_sonde_artificial_odc
                     TYPE    SCRIPT
@@ -2588,7 +2580,7 @@ if (odc_FOUND)
                             Data/testinput_tier_1/sonde-artificial.odb
                             ../share/test/testinput/odb_sonde_name_map.yaml ../share/test/testinput/iodatest_odb_sonde.yaml"
                             test-Sonde-artificial.hdf
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
 
   ecbuild_add_test( TARGET  test_ioda-convert_sonde_truncate_profiles_odc
                     TYPE    SCRIPT
@@ -2600,7 +2592,7 @@ if (odc_FOUND)
                             Data/testinput_tier_1/sonde.odb
                             ../share/test/testinput/odb_sonde_name_map.yaml ../share/test/testinput/iodatest_odb_sonde_truncate_profiles.yaml"
                             test-Sonde-truncate-profiles.hdf
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
 
   ecbuild_add_test( TARGET  test_ioda-convert_sonde_history_odc
                     TYPE    SCRIPT
@@ -2612,7 +2604,7 @@ if (odc_FOUND)
                             Data/testinput_tier_1/sonde.odb
                             ../share/test/testinput/odb_sonde_name_map.yaml ../share/test/testinput/iodatest_odb_sonde_history.yaml"
                             test-Sonde-history.hdf
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
 
   ecbuild_add_test( TARGET  test_ioda-convert_sonde_time_displacement_odc
                     TYPE    SCRIPT
@@ -2624,7 +2616,7 @@ if (odc_FOUND)
                             Data/testinput_tier_1/sonde.odb
                             ../share/test/testinput/odb_sonde_name_map.yaml ../share/test/testinput/iodatest_odb_sonde_time_displacement.yaml"
                             test-Sonde-time-displacement.hdf
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
 
   ecbuild_add_test( TARGET  test_ioda-convert_sonde_time_displacement_odc_extended_time_window_equal_to_window_start
                     TYPE    SCRIPT
@@ -2637,7 +2629,7 @@ if (odc_FOUND)
                             ../share/test/testinput/odb_sonde_name_map.yaml ../share/test/testinput/iodatest_odb_sonde_time_displacement.yaml
                             2018-04-14T21:00:00Z 2018-04-14T21:00:00Z"
                             test-Sonde-time-displacement-extended-time-window-equal-to-window-start.hdf
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
 
   ecbuild_add_test( TARGET  test_ioda-convert_sonde_time_displacement_odc_extended_time_window_before_window_start
                     TYPE    SCRIPT
@@ -2650,7 +2642,7 @@ if (odc_FOUND)
                             ../share/test/testinput/odb_sonde_name_map.yaml ../share/test/testinput/iodatest_odb_sonde_time_displacement.yaml
                             2018-04-14T23:00:00Z 2018-04-14T21:00:00Z"
                             test-Sonde-time-displacement-extended-time-window-before-window-start.hdf
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
 
   # This test is designed to throw an exception.
   # The exception occurs because the extended lower bound of the time window has been set to
@@ -2671,7 +2663,7 @@ if (odc_FOUND)
                             0.0
                             N
                             Y
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
 
   ecbuild_add_test( TARGET  test_ioda-convert_abiclr_odc
                     TYPE    SCRIPT
@@ -2683,7 +2675,7 @@ if (odc_FOUND)
                             Data/testinput_tier_1/abiclr.odb
                             ../share/test/testinput/odb_default_name_map.yaml ../share/test/testinput/iodatest_odb_abiclr.yaml"
                             test-ABIClr.hdf
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
 
   ecbuild_add_test( TARGET  test_ioda-convert_ahiclr_odc
                     TYPE    SCRIPT
@@ -2695,7 +2687,7 @@ if (odc_FOUND)
                             Data/testinput_tier_1/ahiclr.odb
                             ../share/test/testinput/odb_default_name_map.yaml ../share/test/testinput/iodatest_odb_ahiclr.yaml"
                             test-AHIClr.hdf
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
 
   ecbuild_add_test( TARGET  test_ioda-convert_amsr_odc
                     TYPE    SCRIPT
@@ -2707,7 +2699,7 @@ if (odc_FOUND)
                             Data/testinput_tier_1/amsr.odb
                             ../share/test/testinput/odb_amsr_name_map.yaml ../share/test/testinput/iodatest_odb_amsr.yaml"
                             test-AMSR.hdf
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
 
   ecbuild_add_test( TARGET  test_ioda-convert_airs_odc
                     TYPE    SCRIPT
@@ -2719,7 +2711,7 @@ if (odc_FOUND)
                             Data/testinput_tier_1/airs.odb
                             ../share/test/testinput/odb_radiance_name_map.yaml ../share/test/testinput/iodatest_odb_airs.yaml"
                             test-AIRS.hdf
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
 
   ecbuild_add_test( TARGET  test_ioda-convert_atovs_odc
                     TYPE    SCRIPT
@@ -2731,7 +2723,7 @@ if (odc_FOUND)
                             Data/testinput_tier_1/atovs.odb
                             ../share/test/testinput/odb_default_name_map.yaml ../share/test/testinput/iodatest_odb_atovs.yaml"
                             test-ATOVS.hdf
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
   ecbuild_add_test( TARGET  test_ioda-convert_amsub_odc
                     TYPE    SCRIPT
                     COMMAND bash
@@ -2742,7 +2734,7 @@ if (odc_FOUND)
                             Data/testinput_tier_1/amsub.odb
                             ../share/test/testinput/odb_default_name_map.yaml ../share/test/testinput/iodatest_odb_amsub.yaml"
                             test-AMSUB.hdf
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
   ecbuild_add_test( TARGET  test_ioda-convert_ascatsm_odc
                     TYPE    SCRIPT
                     COMMAND bash
@@ -2753,7 +2745,7 @@ if (odc_FOUND)
                             Data/testinput_tier_1/ascatsm.odb
                             ../share/test/testinput/odb_default_name_map.yaml ../share/test/testinput/iodatest_odb_ascatsm.yaml"
                             test-ASCATSM.hdf
-                    TEST_DEPENDS get_ioda_test_data )  
+                    )  
   ecbuild_add_test( TARGET  test_ioda-convert_gmihigh_odc
                     TYPE    SCRIPT
                     COMMAND bash
@@ -2764,7 +2756,7 @@ if (odc_FOUND)
                             Data/testinput_tier_1/gmihigh.odb
                             ../share/test/testinput/odb_default_name_map.yaml ../share/test/testinput/iodatest_odb_gmihigh.yaml"
                             test-GMIHigh.hdf
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
 
   ecbuild_add_test( TARGET  test_ioda-convert_gmilow_odc
                     TYPE    SCRIPT
@@ -2776,7 +2768,7 @@ if (odc_FOUND)
                             Data/testinput_tier_1/gmilow.odb
                             ../share/test/testinput/odb_default_name_map.yaml ../share/test/testinput/iodatest_odb_gmilow.yaml"
                             test-GMILow.hdf
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
 
   ecbuild_add_test( TARGET  test_ioda-convert_ssmis_odc
                     TYPE    SCRIPT
@@ -2788,7 +2780,7 @@ if (odc_FOUND)
                             Data/testinput_tier_1/ssmis.odb
                             ../share/test/testinput/odb_default_name_map.yaml ../share/test/testinput/iodatest_odb_ssmis.yaml"
                             test-SSMIS.hdf
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
 
   ecbuild_add_test( TARGET  test_ioda-convert_satwind_odc
                     TYPE    SCRIPT
@@ -2800,7 +2792,7 @@ if (odc_FOUND)
                             Data/testinput_tier_1/satwind.odb
                             ../share/test/testinput/odb_default_name_map.yaml ../share/test/testinput/iodatest_odb_satwind.yaml"
                             test-Satwind.hdf
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
 
   ecbuild_add_test( TARGET  test_ioda-convert_scatwind_odc
                     TYPE    SCRIPT
@@ -2812,7 +2804,7 @@ if (odc_FOUND)
                             Data/testinput_tier_1/scatwind.odb
                             ../share/test/testinput/odb_default_name_map.yaml ../share/test/testinput/iodatest_odb_scatwind.yaml"
                             test-Scatwind.hdf
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
 
   ecbuild_add_test( TARGET  test_ioda-convert_gnssro_odc
                     TYPE    SCRIPT
@@ -2824,7 +2816,7 @@ if (odc_FOUND)
                             Data/testinput_tier_1/gnssro.odb
                             ../share/test/testinput/odb_gnssro_name_map.yaml ../share/test/testinput/iodatest_odb_gnssro.yaml"
                             test-GNSSRO.hdf
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
 
   ecbuild_add_test( TARGET  test_ioda-convert_gnssro_profile_333_odc
                     TYPE    SCRIPT
@@ -2836,7 +2828,7 @@ if (odc_FOUND)
                             Data/testinput_tier_1/gnssro.odb
                             ../share/test/testinput/odb_gnssro_profile_name_map.yaml ../share/test/testinput/iodatest_odb_gnssro_profile_333.yaml"
                             test-GNSSRO-profile-333.hdf
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
 
   ecbuild_add_test( TARGET  test_ioda-convert_gnssro_profile_100_odc
                     TYPE    SCRIPT
@@ -2848,7 +2840,7 @@ if (odc_FOUND)
                             Data/testinput_tier_1/gnssro.odb
                             ../share/test/testinput/odb_gnssro_profile_name_map.yaml ../share/test/testinput/iodatest_odb_gnssro_profile_100.yaml"
                             test-GNSSRO-profile-100.hdf
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
 
   ecbuild_add_test( TARGET  test_ioda-convert_groundgps_odc
                     TYPE    SCRIPT
@@ -2860,7 +2852,7 @@ if (odc_FOUND)
                             Data/testinput_tier_1/groundgps.odb
                             ../share/test/testinput/odb_default_name_map.yaml ../share/test/testinput/iodatest_odb_groundgps.yaml"
                             test-GroundGPS.hdf
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
 
   ecbuild_add_test( TARGET  test_ioda-convert_aod_odc
                     TYPE    SCRIPT
@@ -2872,7 +2864,7 @@ if (odc_FOUND)
                             Data/testinput_tier_1/aod.odb
                             ../share/test/testinput/odb_default_name_map.yaml ../share/test/testinput/iodatest_odb_aod.yaml"
                             test-AOD.hdf
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
 
   ecbuild_add_test( TARGET  test_ioda-convert_cris_odc
                     TYPE    SCRIPT
@@ -2884,7 +2876,7 @@ if (odc_FOUND)
                             Data/testinput_tier_1/cris.odb
                             ../share/test/testinput/odb_radiance_name_map.yaml ../share/test/testinput/iodatest_odb_cris.yaml"
                             test-CrIS.hdf
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
 
   ecbuild_add_test( TARGET  test_ioda-convert_crisfsr_odc
                     TYPE    SCRIPT
@@ -2896,7 +2888,7 @@ if (odc_FOUND)
                             Data/testinput_tier_1/crisfsr.odb
                             ../share/test/testinput/odb_radiance_name_map.yaml ../share/test/testinput/iodatest_odb_crisfsr.yaml"
                             test-CrISFSR.hdf
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
 
   ecbuild_add_test( TARGET  test_ioda-convert_hirasfsr_odc
                     TYPE    SCRIPT
@@ -2908,7 +2900,7 @@ if (odc_FOUND)
                             Data/testinput_tier_1/hirasfsr.odb
                             ../share/test/testinput/odb_radiance_name_map.yaml  ../share/test/testinput/iodatest_odb_hirasfsr.yaml"
                             test-HIRASFSR.hdf
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
 
   ecbuild_add_test( TARGET  test_ioda-convert_hloswind_odc
                     TYPE    SCRIPT
@@ -2920,7 +2912,7 @@ if (odc_FOUND)
                             Data/testinput_tier_1/hloswind.odb
                             ../share/test/testinput/odb_default_name_map.yaml ../share/test/testinput/iodatest_odb_hloswind.yaml"
                             test-HLOSWind.hdf
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
 
   ecbuild_add_test( TARGET  test_ioda-convert_mwri_odc
                     TYPE    SCRIPT
@@ -2932,7 +2924,7 @@ if (odc_FOUND)
                             Data/testinput_tier_1/mwri.odb
                             ../share/test/testinput/odb_default_name_map.yaml ../share/test/testinput/iodatest_odb_mwri.yaml"
                             test-MWRI.hdf
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
 
   ecbuild_add_test( TARGET  test_ioda-convert_iasi_odc
                     TYPE    SCRIPT
@@ -2944,7 +2936,7 @@ if (odc_FOUND)
                             Data/testinput_tier_1/iasi.odb
                             ../share/test/testinput/odb_radiance_name_map.yaml ../share/test/testinput/iodatest_odb_iasi.yaml"
                             test-IASI.hdf
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
 
   ecbuild_add_test( TARGET  test_ioda-convert_mtgirs_odc
                     TYPE    SCRIPT
@@ -2956,7 +2948,7 @@ if (odc_FOUND)
                             Data/testinput_tier_1/mtgirs.odb
                             ../share/test/testinput/odb_radiance_name_map.yaml ../share/test/testinput/iodatest_odb_mtgirs.yaml"
                             test-MTGIRS.hdf
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
 
   ecbuild_add_test( TARGET  test_ioda-convert_mwsfy3_odc
                     TYPE    SCRIPT
@@ -2968,7 +2960,7 @@ if (odc_FOUND)
                             Data/testinput_tier_1/mwsfy3.odb
                             ../share/test/testinput/odb_default_name_map.yaml ../share/test/testinput/iodatest_odb_mwsfy3.yaml"
                             test-MWSFY3.hdf
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
 
   ecbuild_add_test( TARGET  test_ioda-convert_sattcwv_odc
                     TYPE    SCRIPT
@@ -2980,7 +2972,7 @@ if (odc_FOUND)
                             Data/testinput_tier_1/sattcwv.odb
                             ../share/test/testinput/odb_default_name_map.yaml ../share/test/testinput/iodatest_odb_sattcwv.yaml"
                             test-SatTCWV.hdf
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
 
   ecbuild_add_test( TARGET  test_ioda-convert_fciasr_odc
                     TYPE    SCRIPT
@@ -2992,7 +2984,7 @@ if (odc_FOUND)
                             Data/testinput_tier_1/fciasr.odb
                             ../share/test/testinput/odb_default_name_map.yaml ../share/test/testinput/iodatest_odb_fciasr.yaml"
                             test-FCIASR.hdf
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
 
   ecbuild_add_test( TARGET  test_ioda-convert_fciclr_odc
                     TYPE    SCRIPT
@@ -3004,7 +2996,7 @@ if (odc_FOUND)
                             Data/testinput_tier_1/fciclr.odb
                             ../share/test/testinput/odb_default_name_map.yaml ../share/test/testinput/iodatest_odb_fciclr.yaml"
                             test-FCIClr.hdf
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
 
   ecbuild_add_test( TARGET  test_ioda-convert_seviriasr_odc
                     TYPE    SCRIPT
@@ -3016,7 +3008,7 @@ if (odc_FOUND)
                             Data/testinput_tier_1/seviriasr.odb
                             ../share/test/testinput/odb_default_name_map.yaml ../share/test/testinput/iodatest_odb_seviriasr.yaml"
                             test-SEVIRIASR.hdf
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
 
   ecbuild_add_test( TARGET  test_ioda-convert_seviriclr_odc
                     TYPE    SCRIPT
@@ -3028,7 +3020,7 @@ if (odc_FOUND)
                             Data/testinput_tier_1/seviriclr.odb
                             ../share/test/testinput/odb_default_name_map.yaml ../share/test/testinput/iodatest_odb_seviriclr.yaml"
                             test-SEVIRIClr.hdf
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
 
   ecbuild_add_test( TARGET  test_ioda-convert_atms_odc
                     TYPE    SCRIPT
@@ -3040,7 +3032,7 @@ if (odc_FOUND)
                             Data/testinput_tier_1/atms.odb
                             ../share/test/testinput/odb_default_name_map.yaml ../share/test/testinput/iodatest_odb_atms.yaml"
                             test-ATMS.hdf
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
 
   ecbuild_add_test( TARGET  test_ioda-convert_geocloud_odc
                     TYPE    SCRIPT
@@ -3052,7 +3044,7 @@ if (odc_FOUND)
                             Data/testinput_tier_1/geocloud.odb
                             ../share/test/testinput/odb_default_name_map.yaml ../share/test/testinput/iodatest_odb_geocloud.yaml"
                             test-GeoCloud.hdf
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
 
   ecbuild_add_test( TARGET  test_ioda-convert_surfacecloud_odc
                     TYPE    SCRIPT
@@ -3064,7 +3056,7 @@ if (odc_FOUND)
                             Data/testinput_tier_1/surfacecloud.odb
                             ../share/test/testinput/odb_default_name_map.yaml ../share/test/testinput/iodatest_odb_surfacecloud.yaml"
                             test-SurfaceCloud.hdf
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
 
   ecbuild_add_test( TARGET  test_ioda-convert_altimeter_odc
                     TYPE    SCRIPT
@@ -3076,7 +3068,7 @@ if (odc_FOUND)
                             Data/testinput_tier_1/altimeter.odb
                             ../share/test/testinput/odb_default_name_map.yaml ../share/test/testinput/iodatest_odb_altimeter.yaml"
                             test-Altimeter.hdf
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
 
   ecbuild_add_test( TARGET  test_ioda-convert_oceancolour_odc
                     TYPE    SCRIPT
@@ -3088,7 +3080,7 @@ if (odc_FOUND)
                             Data/testinput_tier_1/oceancol.odb
                             ../share/test/testinput/odb_default_name_map.yaml ../share/test/testinput/iodatest_odb_oceancolour.yaml"
                             test-OceanColour.hdf
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
 
   ecbuild_add_test( TARGET  test_ioda-convert_satsst_odc
                     TYPE    SCRIPT
@@ -3100,7 +3092,7 @@ if (odc_FOUND)
                             Data/testinput_tier_1/satsst.odb
                             ../share/test/testinput/odb_default_name_map.yaml ../share/test/testinput/iodatest_odb_satsst.yaml"
                             test-SatSST.hdf
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
 
   ecbuild_add_test( TARGET  test_ioda-convert_seaice_odc
                     TYPE    SCRIPT
@@ -3112,7 +3104,7 @@ if (odc_FOUND)
                             Data/testinput_tier_1/seaice.odb
                             ../share/test/testinput/odb_default_name_map.yaml ../share/test/testinput/iodatest_odb_seaice.yaml"
                             test-SeaIce.hdf
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
 
   ecbuild_add_test( TARGET  test_ioda-convert_surfacesst_odc
                     TYPE    SCRIPT
@@ -3124,7 +3116,7 @@ if (odc_FOUND)
                             Data/testinput_tier_1/surfacesst.odb
                             ../share/test/testinput/odb_surfacesst_name_map.yaml ../share/test/testinput/iodatest_odb_surfacesst.yaml"
                             test-SurfaceSST.hdf
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
 
   ecbuild_add_test( TARGET  test_ioda-convert_radar_doppler_wind_odc
                     TYPE    SCRIPT
@@ -3136,7 +3128,7 @@ if (odc_FOUND)
                             Data/testinput_tier_1/radar_doppler_wind.odb
                             ../share/test/testinput/odb_default_name_map.yaml ../share/test/testinput/iodatest_odb_radar_doppler_wind.yaml"
                             test-RadarDopplerWind.hdf
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
 
   ecbuild_add_test( TARGET  test_ioda-convert_radar_reflectivity_odc
                     TYPE    SCRIPT
@@ -3148,7 +3140,7 @@ if (odc_FOUND)
                             Data/testinput_tier_1/radar_reflectivity.odb
                             ../share/test/testinput/odb_default_name_map.yaml ../share/test/testinput/iodatest_odb_radar_reflectivity.yaml"
                             test-RadarReflectivity.hdf
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
 
   ecbuild_add_test( TARGET  test_ioda-convert_stationsnow_statid_odc
                     TYPE    SCRIPT
@@ -3160,7 +3152,7 @@ if (odc_FOUND)
                             Data/testinput_tier_1/stationsnow_statid.odb
                             ../share/test/testinput/odb_default_name_map.yaml ../share/test/testinput/iodatest_odb_stationsnow.yaml"
                             test-StationsnowStatid.hdf
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
 
   ecbuild_add_test( TARGET  test_ioda-convert_oceansound_odc
                     TYPE    SCRIPT
@@ -3172,7 +3164,7 @@ if (odc_FOUND)
                             Data/testinput_tier_1/oceansound.odb
                             ../share/test/testinput/odb_oceansound_name_map.yaml ../share/test/testinput/iodatest_odb_oceansound.yaml"
                             test-OceanSound.hdf
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
 
   ecbuild_add_test( TARGET  test_ioda-convert_oceansound_truncate_profiles_odc
                     TYPE    SCRIPT
@@ -3184,7 +3176,7 @@ if (odc_FOUND)
                             Data/testinput_tier_1/oceansound.odb
                             ../share/test/testinput/odb_oceansound_name_map.yaml ../share/test/testinput/iodatest_odb_oceansound_truncate_profiles.yaml"
                             test-OceanSound-truncate-profiles.hdf
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
                     
   ecbuild_add_test( TARGET  test_ioda-convert_iasi_read_channels_from_yaml_odc
                     TYPE    SCRIPT
@@ -3196,7 +3188,7 @@ if (odc_FOUND)
                             Data/testinput_tier_1/iasi.odb
                             ../share/test/testinput/odb_radiance_name_map.yaml ../share/test/testinput/iodatest_odb_iasi_read_channels_from_yaml.yaml"
                             test-IASI-read-channels-from-yaml.hdf
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
 
   # The following tests verify that the correct exceptions are thrown when certain ODB columns are not present 
   # in the query (and presumably the same would happen if they weren't present in the input ODB file).
@@ -3207,7 +3199,7 @@ if (odc_FOUND)
                             Data/testinput_tier_1/abiclr.odb
                             ../share/test/testinput/odb_default_name_map.yaml 
                             testinput/iodatest_odb_abiclr_sequential_channel_indexer_but_missing_varno.yaml
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
   set_tests_properties(test_ioda-convert_abiclr_sequential_channel_indexer_but_missing_varno_odc
                        PROPERTIES
                        PASS_REGULAR_EXPRESSION ".*'varno' column not found.*")                    
@@ -3219,7 +3211,7 @@ if (odc_FOUND)
                             Data/testinput_tier_1/airs.odb
                             ../share/test/testinput/odb_radiance_name_map.yaml 
                             testinput/iodatest_odb_airs_channel_index_reader_from_1st_loc_but_missing_varno.yaml
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
   set_tests_properties(test_ioda-convert_airs_channel_index_reader_from_1st_loc_but_missing_varno_odc
                        PROPERTIES
                        PASS_REGULAR_EXPRESSION ".*'varno' column not found.*")                    
@@ -3231,7 +3223,7 @@ if (odc_FOUND)
                             Data/testinput_tier_1/airs.odb
                             ../share/test/testinput/odb_radiance_name_map.yaml 
                             testinput/iodatest_odb_airs_channel_index_reader_from_missing_column.yaml
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
   set_tests_properties(test_ioda-convert_airs_channel_index_reader_from_missing_column_odc
                        PROPERTIES
                        PASS_REGULAR_EXPRESSION ".*'nonexisting_column' column, expected to contain channel indices, not found.*")                    
@@ -3243,7 +3235,7 @@ if (odc_FOUND)
                             Data/testinput_tier_1/airs.odb
                             ../share/test/testinput/odb_radiance_name_map.yaml 
                             testinput/iodatest_odb_airs_split_by_seqno_but_missing_seqno.yaml
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
   set_tests_properties(test_ioda-convert_airs_split_by_seqno_but_missing_seqno_odc
                        PROPERTIES
                        PASS_REGULAR_EXPRESSION ".*'seqno' column not found.*")                    
@@ -3255,7 +3247,7 @@ if (odc_FOUND)
                             Data/testinput_tier_1/geocloud.odb
                             ../share/test/testinput/odb_default_name_map.yaml
                             testinput/iodatest_odb_geocloud_constant_channel_indexer_but_missing_varno.yaml
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
   set_tests_properties(test_ioda-convert_geocloud_constant_channel_indexer_but_missing_varno_odc
                        PROPERTIES
                        PASS_REGULAR_EXPRESSION ".*'varno' column not found.*")                    
@@ -3267,7 +3259,7 @@ if (odc_FOUND)
                             Data/testinput_tier_1/gnssro.odb
                             ../share/test/testinput/odb_gnssro_name_map.yaml
                             testinput/iodatest_odb_gnssro_split_by_seqno_with_max_num_channels_but_missing_varno.yaml
-                    TEST_DEPENDS get_ioda_test_data )
+                    )
   set_tests_properties(test_ioda-convert_gnssro_split_by_seqno_with_max_num_channels_but_missing_varno_odc
                        PROPERTIES
                        PASS_REGULAR_EXPRESSION ".*'varno' column not found.*")                    
@@ -3279,7 +3271,7 @@ if (odc_FOUND)
                             Data/testinput_tier_1/sonde.odb
                             ../share/test/testinput/odb_sonde_name_map.yaml 
                             testinput/iodatest_odb_sonde_keep_only_reported_levels_but_missing_numlev.yaml
-                    TEST_DEPENDS get_ioda_test_data )                    
+                    )                    
   set_tests_properties(test_ioda-convert_sonde_keep_only_reported_levels_but_missing_numlev_odc
                        PROPERTIES
                        PASS_REGULAR_EXPRESSION ".*'numlev' column not found.*")                    
@@ -3291,7 +3283,7 @@ if (odc_FOUND)
                             Data/testinput_tier_1/sonde.odb
                             ../share/test/testinput/odb_sonde_name_map.yaml 
                             testinput/iodatest_odb_sonde_split_by_seqno_then_counter_of_rows_with_varno_but_missing_seqno.yaml
-                    TEST_DEPENDS get_ioda_test_data )                    
+                    )                    
   set_tests_properties(test_ioda-convert_sonde_split_by_seqno_then_counter_of_rows_with_varno_but_missing_seqno_odc
                        PROPERTIES
                        PASS_REGULAR_EXPRESSION ".*'seqno' column not found.*")                    
@@ -3303,7 +3295,7 @@ if (odc_FOUND)
                             Data/testinput_tier_1/sonde.odb
                             ../share/test/testinput/odb_sonde_name_map.yaml 
                             testinput/iodatest_odb_sonde_split_by_seqno_then_counter_of_rows_with_varno_but_missing_varno.yaml
-                    TEST_DEPENDS get_ioda_test_data )                    
+                    )                    
   set_tests_properties(test_ioda-convert_sonde_split_by_seqno_then_counter_of_rows_with_varno_but_missing_varno_odc
                        PROPERTIES
                        PASS_REGULAR_EXPRESSION ".*'varno' column not found.*")                    
