@@ -6,7 +6,7 @@ time window:
 observations:
 - obs space:
     name: "Round robin distribution"
-    simulated variables: ['eastward_wind']
+    simulated variables: ['windEastward']
     distribution:
       name: "RoundRobin"
     obsdatain:

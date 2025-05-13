@@ -14,9 +14,9 @@ Descending sort:
         obsfile: Data/testinput_tier_1/ioda_test_descending_sort.nc4
       obsgrouping:
         group variables: [ "group" ]
-        sort variable: "air_pressure"
+        sort variable: "pressure"
         sort order: "descending"
-    simulated variables: [air_temperature]
+    simulated variables: [airTemperature]
   expected indices name: expected_indices
 
 Descending sort, do not sort profile if any values of sort variable are missing:
@@ -31,10 +31,10 @@ Descending sort, do not sort profile if any values of sort variable are missing:
         obsfile: Data/testinput_tier_1/ioda_test_descending_sort.nc4
       obsgrouping:
         group variables: [ "group" ]
-        sort variable: "air_pressure"
+        sort variable: "pressure"
         sort order: "descending"
         missing sort value treatment: do not sort
-    simulated variables: [air_temperature]
+    simulated variables: [airTemperature]
   expected indices name: expected_indices_no_sort
 
 Descending sort, sort profiles but leave missing values where they are:
@@ -49,10 +49,10 @@ Descending sort, sort profiles but leave missing values where they are:
         obsfile: Data/testinput_tier_1/ioda_test_descending_sort.nc4
       obsgrouping:
         group variables: [ "group" ]
-        sort variable: "air_pressure"
+        sort variable: "pressure"
         sort order: "descending"
         missing sort value treatment: ignore missing
-    simulated variables: [air_temperature]
+    simulated variables: [airTemperature]
   expected indices name: expected_indices_leave_missing
 
 Ascending sort, do not sort profiles with missing values:
@@ -67,10 +67,10 @@ Ascending sort, do not sort profiles with missing values:
         obsfile: Data/testinput_tier_1/missing_sort_values_10profs_length100.nc4
       obsgrouping:
         group variables: [ "dateTime" ]
-        sort variable: "air_pressure"
+        sort variable: "pressure"
         sort order: "ascending"
         missing sort value treatment: do not sort
-    simulated variables: [air_temperature]
+    simulated variables: [airTemperature]
   expected indices name: indices_no_sort
 
 Ascending sort, sort includes missing values:
@@ -85,10 +85,10 @@ Ascending sort, sort includes missing values:
         obsfile: Data/testinput_tier_1/missing_sort_values_10profs_length100.nc4
       obsgrouping:
         group variables: [ "dateTime" ]
-        sort variable: "air_pressure"
+        sort variable: "pressure"
         sort order: "ascending"
         missing sort value treatment: sort
-    simulated variables: [air_temperature]
+    simulated variables: [airTemperature]
   expected indices name: indices_sort_missing
 
 Ascending sort, ignore missing values when sorting:
@@ -103,8 +103,8 @@ Ascending sort, ignore missing values when sorting:
         obsfile: Data/testinput_tier_1/missing_sort_values_10profs_length100.nc4
       obsgrouping:
         group variables: [ "dateTime" ]
-        sort variable: "air_pressure"
+        sort variable: "pressure"
         sort order: "ascending"
         missing sort value treatment: ignore missing
-    simulated variables: [air_temperature]
+    simulated variables: [airTemperature]
   expected indices name: indices_sort_non_missing

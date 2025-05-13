@@ -37,7 +37,7 @@ observations:
         type: "float"
         norm: 1981.4147543887036
 
-      - name: "surface_type"
+      - name: "surfaceQualifier"
         group: "MetaData"
         type: "integer"
         norm: 10.099504938362077
@@ -77,7 +77,7 @@ observations:
         type: "float"
         norm: 476.7772684375891
 
-      - name: "surface_type"
+      - name: "surfaceQualifier"
         group: "MetaData"
         type: "integer"
         norm: 6.4807406984078604
@@ -245,8 +245,8 @@ observations:
 
 - obs space:
     name: "Synthetic Random"
-    simulated variables: [air_temperature, eastward_wind]
-    observed variables: [air_temperature, eastward_wind]
+    simulated variables: [airTemperature, windEastward]
+    observed variables: [airTemperature, windEastward]
     obsdatain:
       engine:
         type: GenRandom
@@ -286,22 +286,22 @@ observations:
         type: "float"
         norm: 17.665391936071728
 
-      - name: "air_temperature"
+      - name: "airTemperature"
         group: "ObsValue"
         type: "float"
         norm: 9.4868329805051379
 
-      - name: "eastward_wind"
+      - name: "windEastward"
         group: "ObsValue"
         type: "float"
         norm: 12.649110640673517
 
-      - name: "air_temperature"
+      - name: "airTemperature"
         group: "ObsError"
         type: "float"
         norm: 3.1622776601683795
 
-      - name: "eastward_wind"
+      - name: "windEastward"
         group: "ObsError"
         type: "float"
         norm: 6.32455532034
@@ -311,8 +311,8 @@ observations:
 
 - obs space:
     name: "Synthetic List"
-    simulated variables: [air_temperature, eastward_wind]
-    observed variables: [air_temperature, eastward_wind]
+    simulated variables: [airTemperature, windEastward]
+    observed variables: [airTemperature, windEastward]
     obsdatain:
       engine:
         type: GenList
@@ -361,22 +361,22 @@ observations:
         type: "float"
         norm: 16.583123951777001
 
-      - name: "air_temperature"
+      - name: "airTemperature"
         group: "ObsValue"
         type: "float"
         norm: 9.9498743710661995
 
-      - name: "eastward_wind"
+      - name: "windEastward"
         group: "ObsValue"
         type: "float"
         norm: 13.266499161421599
 
-      - name: "air_temperature"
+      - name: "airTemperature"
         group: "ObsError"
         type: "float"
         norm: 3.3166247903553998
 
-      - name: "eastward_wind"
+      - name: "windEastward"
         group: "ObsError"
         type: "float"
         norm: 6.6332495807107996
@@ -436,7 +436,7 @@ observations:
         type: H5File
         obsfile: "Data/testinput_tier_1/sondes_obs_2018041500_m_twfilt.nc4"
       obsgrouping:
-        group variables: [ "station_id" ]
+        group variables: [ "stationIdentification" ]
     obsdataout:
       engine:
         type: H5File
@@ -451,7 +451,7 @@ observations:
     nlocs from source: 974
     nrecs: 31
     obs perturbations seed: 0
-    expected group variables: [ "station_id" ]
+    expected group variables: [ "stationIdentification" ]
     expected sort variable: ""
     expected sort order: "ascending"
     variables for get test:

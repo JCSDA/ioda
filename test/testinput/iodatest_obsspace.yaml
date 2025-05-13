@@ -36,15 +36,15 @@ observations:
         type: "float"
         norm: 1981.4147543887036
 
-      - name: "surface_type"
+      - name: "surfaceQualifier"
         group: "MetaData"
         type: "integer"
         norm: 10.099504938362077
     tolerance:
       - 1.0e-14
     variables for putget test: []
-    expected groups list: [DerivedObsError,GsiHofX,GsiHofXBc,GsiObsError,GsiQC,MetaData,ObsValue,PreQC,VarMetaData]
-    expected variables list: [Channel,Location,nobs,nrecs,nvars,DerivedObsError/temperature,GsiHofX/aerosol_optical_depth_4,GsiHofXBc/aerosol_optical_depth_4,GsiObsError/aerosol_optical_depth_4,GsiQC/aerosol_optical_depth_4,MetaData/DummyBoolVar,MetaData/DummyDateTimeVar,MetaData/DummyDoubleVar,MetaData/DummyFloatVar,MetaData/DummyIntVar,MetaData/DummyStringVar,MetaData/dateTime,MetaData/latitude,MetaData/longitude,MetaData/modis_deep_blue_flag,MetaData/solar_azimuth_angle,MetaData/solar_zenith_angle,MetaData/surface_type,ObsValue/aerosol_optical_depth_4,PreQC/aerosol_optical_depth_4,VarMetaData/frequency,VarMetaData/gsi_use_flag,VarMetaData/polarization,VarMetaData/sensor_channel,VarMetaData/wavenumber]
+    expected groups list: [DerivedObsError,GsiHofX,GsiHofXBc,GsiObsError,GsiQC,MetaData,ObsValue,PreQC]
+    expected variables list: [Channel,Location,DerivedObsError/temperature,GsiHofX/aerosol_optical_depth_4,GsiHofXBc/aerosol_optical_depth_4,GsiObsError/aerosol_optical_depth_4,GsiQC/aerosol_optical_depth_4,MetaData/DummyBoolVar,MetaData/DummyDateTimeVar,MetaData/DummyDoubleVar,MetaData/DummyFloatVar,MetaData/DummyIntVar,MetaData/DummyStringVar,MetaData/dateTime,MetaData/gsi_use_flag,MetaData/latitude,MetaData/longitude,MetaData/modis_deep_blue_flag,MetaData/sensorCentralFrequency,MetaData/sensorCentralWavenumber,MetaData/sensorChannelNumber,MetaData/sensorPolarizationDirection,MetaData/solarAzimuthAngle,MetaData/solarZenithAngle,MetaData/surfaceQualifier,ObsValue/aerosol_optical_depth_4,PreQC/aerosol_optical_depth_4]
 
 - obs space:
     name: "AOD VIIRS"
@@ -76,7 +76,7 @@ observations:
         type: "float"
         norm: 476.7772684375891
 
-      - name: "surface_type"
+      - name: "surfaceQualifier"
         group: "MetaData"
         type: "integer"
         norm: 6.4807406984078604
@@ -320,13 +320,13 @@ observations:
 
 - obs space:
     name: "Radiosonde with grouping and tw filtering"
-    simulated variables: ['air_temperature']
+    simulated variables: ['airTemperature']
     obsdatain:
       engine:
         type: H5File
         obsfile: "Data/testinput_tier_1/sondes_obs_2018041500_m_twfilt.nc4"
       obsgrouping:
-        group variables: [ "station_id" ]
+        group variables: [ "stationIdentification" ]
     obsdataout:
       engine:
         type: H5File
@@ -338,7 +338,7 @@ observations:
     nlocs from source: 974
     nrecs: 31
     obs perturbations seed: 0
-    expected group variables: [ "station_id" ]
+    expected group variables: [ "stationIdentification" ]
     expected sort variable: ""
     expected sort order: "ascending"
     variables for get test:
@@ -512,7 +512,7 @@ observations:
 
 - obs space:
     name: "Boolean variable"
-    simulated variables: [air_temperature]
+    simulated variables: [airTemperature]
     obsdatain:
       engine:
         type: H5File

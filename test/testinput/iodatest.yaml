@@ -62,22 +62,22 @@ observations:
         obsfile: Data/testinput_tier_1/profile_2018-04-15.nc
 - obs space:
     name: "Sea Surface Temp"
-    simulated variables: ['sea_surface_temperature']
+    simulated variables: ['seaSurfaceTemperature']
     obsdatain:
       engine:
         type: H5File
         obsfile: Data/testinput_tier_1/sst_obs-2018-04-15.nc4
 - obs space:
     name: "Sea Ice Fraction"
-    simulated variables: ['sea_ice_fraction']
-    observed variables: ['sea_ice_fraction']
+    simulated variables: ['seaIceFraction']
+    observed variables: ['seaIceFraction']
     obsdatain:
       engine:
         type: H5File
         obsfile: Data/testinput_tier_1/icec-2018-04-15.nc
 - obs space:
     name: "Sea Ice Thickness"
-    simulated variables: ['sea_ice_thickness']
+    simulated variables: ['iceThickness']
     obsdatain:
       engine:
         type: H5File

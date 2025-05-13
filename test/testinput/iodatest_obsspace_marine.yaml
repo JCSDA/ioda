@@ -71,7 +71,7 @@ observations:
 
 - obs space:
     name: SeaSurfaceTemp
-    simulated variables: ['sea_surface_temperature']
+    simulated variables: ['seaSurfaceTemperature']
     obsdatain:
       engine:
         type: H5File
@@ -103,8 +103,8 @@ observations:
 
 - obs space:
     name: SeaIceFraction
-    simulated variables: ['sea_ice_fraction']
-    observed variables: ['sea_ice_fraction']
+    simulated variables: ['seaIceFraction']
+    observed variables: ['seaIceFraction']
     obsdatain:
       engine:
         type: H5File
@@ -136,7 +136,7 @@ observations:
 
 - obs space:
     name: SeaIceThickness
-    simulated variables: ['sea_ice_thickness']
+    simulated variables: ['iceThickness']
     obsdatain:
       engine:
         type: H5File
@@ -168,7 +168,7 @@ observations:
 
 - obs space:
     name: SeaSurfaceSalinity
-    simulated variables: ['sea_surface_salinity']
+    simulated variables: ['seaSurfaceSalinity']
     obsdatain:
       engine:
         type: H5File
