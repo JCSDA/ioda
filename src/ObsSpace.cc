@@ -558,20 +558,24 @@ bool ObsSpace::has(const std::string & group, const std::string & name, bool ski
 
 // -----------------------------------------------------------------------------
 bool ObsSpace::has(const std::string & group) const {
-    bool hasgrp;
-    if (use_dataframe_) {
-        // TODO(srh) Placeholder for now to enable the ability to
-        // do preliminary profiling of the OSDF container. The impact
-        // on the OSDF profiling with the hofx3d application by
-        // always returning false is to forego some diagnostic
-        // printing near the end.
-        //
-        // https://github.com/JCSDA-internal/ioda/issues/1433 has
-        // been created to remind us to fill this part in.
-        hasgrp = false;
+    bool hasgrp = false;
+    if (this->empty()) {
+        hasgrp = true;
     } else {
-        std::vector<std::string> grps = this->listGroups();
-        hasgrp = std::find(grps.begin(), grps.end(), group) != grps.end();
+        if (use_dataframe_) {
+            // TODO(srh) Placeholder for now to enable the ability to
+             // do preliminary profiling of the OSDF container. The impact
+            // on the OSDF profiling with the hofx3d application by
+             // always returning false is to forego some diagnostic
+            // printing near the end.
+             //
+            // https://github.com/JCSDA-internal/ioda/issues/1433 has
+            // been created to remind us to fill this part in.
+            hasgrp = false;
+        } else {
+            std::vector<std::string> grps = this->listGroups();
+            hasgrp = std::find(grps.begin(), grps.end(), group) != grps.end();
+        }
     }
     return hasgrp;
 }
