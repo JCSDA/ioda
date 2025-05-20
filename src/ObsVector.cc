@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2017-2019 UCAR
+ * (C) Copyright 2017-2025 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -363,8 +363,20 @@ void ObsVector::save(const std::string & name) const {
   }
 }
 // -----------------------------------------------------------------------------
+void ObsVector::serialize(std::vector<double> & values) const {
+  values.reserve(values.size() + values_.size());
+  values.insert(values.end(), values_.begin(), values_.end());
+}
+// -----------------------------------------------------------------------------
+void ObsVector::deserialize(const std::vector<double> & values, size_t & index) {
+  for (size_t ii = 0; ii < values_.size(); ++ii) {
+    values_[ii] = values[index];
+    ++index;
+  }
+}
+// -----------------------------------------------------------------------------
 void ObsVector::maskAndSerialize(const ObsVector & mask,
-                                 std::vector<double> & valid_values) const {
+                              std::vector<double> & valid_values) const {
   const size_t nn = values_.size();
   assert(mask.values_.size() == nn);
   valid_values.reserve(valid_values.size() + nn);
@@ -373,6 +385,19 @@ void ObsVector::maskAndSerialize(const ObsVector & mask,
       valid_values.push_back(values_[jj]);
     }
   }
+}
+// -----------------------------------------------------------------------------
+std::vector<size_t> ObsVector::maskAndSerialIndices(const ObsVector & mask) const {
+  const size_t nn = values_.size();
+  assert(mask.values_.size() == nn);
+  std::vector<size_t> indices;
+  indices.reserve(nn);
+  for (size_t jj = 0; jj < nn; ++jj) {
+    if ((mask.values_[jj] != missing_) && (values_[jj] != missing_)) {
+        indices.push_back(jj);
+    }
+  }
+  return indices;
 }
 // -----------------------------------------------------------------------------
 ObsVector & ObsVector::operator=(const ObsDataVector<float> & rhs) {

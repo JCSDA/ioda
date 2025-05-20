@@ -106,6 +106,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_copy_attributes.yaml
   testinput/iodatest_obs_data_frame.yaml
   testinput/iodatest_obserror.yaml
+  testinput/iodatest_departuresensemble.yaml
   testinput/iodatest_distribution.yaml
   testinput/iodatest_distribution_masterandreplica_mpi_2.yaml
   testinput/iodatest_distribution_masterandreplica_mpi_3.yaml
@@ -1612,6 +1613,18 @@ ecbuild_add_test( TARGET  test_ioda_reader_load_netcdf
 ecbuild_add_test( TARGET  test_ioda_reader_filter
                   SOURCES mains/TestReaderFilter.cc
                   ARGS    "testinput/iodatest_reader_filter.yaml"
+                  LIBS  ioda_test
+                  )
+
+#####################################################################
+# DeparturesEnsemble tests
+#####################################################################
+
+# OOPS DeparturesEnsemble base (dependent on ObsSpace and ObsIterator)
+ecbuild_add_test( TARGET  test_ioda_oops_departuresensemble
+                  MPI     2
+                  SOURCES mains/TestDeparturesEnsemble.cc
+                  ARGS    "testinput/iodatest_departuresensemble.yaml"
                   LIBS  ioda_test
                   )
 

@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2017 UCAR
+ * (C) Copyright 2017-2025 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -97,7 +97,10 @@ class ObsVector : public ObsSpaceAssociated,
   /// Serialize observations local to this MPI task into a \p values vector
   /// (excluding vector elements that are missing values, or where mask is equal to
   /// missing values
+  void serialize(std::vector<double> & values) const;
+  void deserialize(const std::vector<double> & values, size_t & index);
   void maskAndSerialize(const ObsVector & mask, std::vector<double> & values) const;
+  std::vector<size_t> maskAndSerialIndices(const ObsVector & mask) const;
 
   const double & toFortran() const;
   double & toFortran();
