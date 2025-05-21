@@ -262,8 +262,15 @@ ObsSpace::ObsSpace(const eckit::Configuration & config, const eckit::mpi::Comm &
     recnums_.clear();
     ObsGroup tempObsGroup;
     ObsSourceStats obsSourceStats;
+    bool hasObservations = false;
     for (size_t i = 0; i < obsDataInConfigs.size(); ++i) {
         load(obsDataInConfigs[i], tempObsGroup, obsSourceStats);
+        if (obsSourceStats.gNlocs > 0) {
+            hasObservations = true;
+            appendObsGroup(tempObsGroup, obsSourceStats);
+        }
+    }
+    if (!hasObservations) {
         appendObsGroup(tempObsGroup, obsSourceStats);
     }
 
