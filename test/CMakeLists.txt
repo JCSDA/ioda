@@ -279,6 +279,7 @@ list( APPEND ioda_test_work_directories
   testwork/obsspace_missing_obs_file_error_def_odc_reader_pool
   testwork/obsspace_missing_obs_file_error_def_reader_pool
   testwork/obsspace_missing_obs_file_warn
+  testwork/obsspace_missing_obs_file_warn_bufr
   testwork/obsspace_missing_obs_file_warn_mpi
   testwork/obsspace_missing_obs_file_warn_odc
   testwork/obsspace_missing_obs_file_warn_odc_mpi
