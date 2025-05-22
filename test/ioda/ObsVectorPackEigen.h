@@ -71,6 +71,20 @@ void testPackEigen() {
      EXPECT_EQUAL(packed.size(), ref_sizes[rank]);
      double norm = std::sqrt(std::inner_product(packed.begin(), packed.end(), packed.begin(), 0.0));
      EXPECT(oops::is_close(norm, ref_norms[rank], 1.e-5));
+
+     // Test directly masking the ObsVector with the ObsDataVector<int> mask
+     ioda::ObsVector obsvec2(obsdb, "ObsValue");
+     ioda::ObsVector maskvector2(obsdb);
+     maskvector2.mask(mask);
+     std::vector<double> packed2;
+     obsvec2.maskAndSerialize(maskvector2, packed2);
+     const std::vector<double> ref_norms2 = conf[jj].getDoubleVector("reference local masked norm");
+     const std::vector<size_t> ref_sizes2
+       = conf[jj].getUnsignedVector("reference local masked nobs");
+     EXPECT_EQUAL(packed2.size(), ref_sizes2[rank]);
+     double norm2
+       = std::sqrt(std::inner_product(packed2.begin(), packed2.end(), packed2.begin(), 0.0));
+     EXPECT(oops::is_close(norm2, ref_norms2[rank], 1.e-5));
   }
 }
 

@@ -117,6 +117,9 @@ class ObsVector : public ObsSpaceAssociated,
   /// Set this ObsVector values to missing where \p mask has missing values
   void mask(const ObsVector & mask);
 
+  /// Set this ObsVector values to missing where \p mask is > 0
+  void mask(const ObsDataVector<int> & mask);
+
   bool has(const std::string & var) const {return obsvars_.has(var);}
 
   int64_t getSeed() const {return obsdb_.getSeed();}

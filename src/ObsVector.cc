@@ -430,6 +430,20 @@ void ObsVector::mask(const ObsVector & mask) {
   }
 }
 // -----------------------------------------------------------------------------
+void ObsVector::mask(const ObsDataVector<int> & mask) {
+  size_t ii = 0;
+  assert(mask.nlocs() == nlocs_);
+  assert(mask.nvars() == nvars_);
+  for (size_t jloc = 0; jloc < nlocs_; ++jloc) {
+    for (size_t jvar = 0; jvar < nvars_; ++jvar) {
+       if (mask[this->obsvars_[jvar]][jloc] > 0) {
+         values_.at(ii) = missing_;
+       }
+       ++ii;
+    }
+  }
+}
+// -----------------------------------------------------------------------------
 unsigned int ObsVector::nobs() const {
   int nobs = globalNumNonMissingObs(*obsdb_.distribution(), nvars_, values_);
   return nobs;
