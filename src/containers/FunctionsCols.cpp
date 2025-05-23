@@ -14,6 +14,7 @@
 #include "ioda/containers/Data.h"
 #include "ioda/containers/Datum.h"
 #include "ioda/containers/FrameColsData.h"
+#include "ioda/containers/FrameUtils.h"
 
 osdf::FunctionsCols::FunctionsCols() {}
 
@@ -177,40 +178,12 @@ template<typename T> void osdf::FunctionsCols::sliceRows(const osdf::IColsData* 
   indices.shrink_to_fit();
   newIds = getSlicedValues<std::int64_t>(ids, indices);
   for (const std::shared_ptr<DataBase>& dataCol : data->getDataCols()) {
-    switch (dataCol->getType()) {
-      case consts::eInt8: {
-        sliceData<std::int8_t>(newDataColumns, dataCol, indices);
-        break;
-      }
-      case consts::eInt16: {
-        sliceData<std::int16_t>(newDataColumns, dataCol, indices);
-        break;
-      }
-      case consts::eInt32: {
-        sliceData<std::int32_t>(newDataColumns, dataCol, indices);
-        break;
-      }
-      case consts::eInt64: {
-        sliceData<std::int64_t>(newDataColumns, dataCol, indices);
-        break;
-      }
-      case consts::eFloat: {
-        sliceData<float>(newDataColumns, dataCol, indices);
-        break;
-      }
-      case consts::eDouble: {
-        sliceData<double>(newDataColumns, dataCol, indices);
-        break;
-      }
-      case consts::eChar: {
-        sliceData<char>(newDataColumns, dataCol, indices);
-        break;
-      }
-      case consts::eString: {
-        sliceData<std::string>(newDataColumns, dataCol, indices);
-        break;
-      }
-    }
+    osdf::FrameUtils::callWithSupportedType(
+      dataCol->getType(),
+      [&](auto typeDiscriminator) {
+        using DT = decltype(typeDiscriminator);
+        sliceData<DT>(newDataColumns, dataCol, indices);
+      });
   }
 }
 
@@ -274,31 +247,6 @@ template<typename T> void osdf::FunctionsCols::sliceData(
   std::shared_ptr<Data<T>> newData = std::make_shared<Data<T>>(newValues);
   newDataColumns.push_back(newData);
 }
-
-template void osdf::FunctionsCols::sliceData<std::int8_t>(
-    std::vector<std::shared_ptr<DataBase>>&, const std::shared_ptr<DataBase>&,
-    const std::vector<std::int64_t>&) const;
-template void osdf::FunctionsCols::sliceData<std::int16_t>(
-    std::vector<std::shared_ptr<DataBase>>&, const std::shared_ptr<DataBase>&,
-    const std::vector<std::int64_t>&) const;
-template void osdf::FunctionsCols::sliceData<std::int32_t>(
-    std::vector<std::shared_ptr<DataBase>>&, const std::shared_ptr<DataBase>&,
-    const std::vector<std::int64_t>&) const;
-template void osdf::FunctionsCols::sliceData<std::int64_t>(
-    std::vector<std::shared_ptr<DataBase>>&, const std::shared_ptr<DataBase>&,
-    const std::vector<std::int64_t>&) const;
-template void osdf::FunctionsCols::sliceData<float>(
-    std::vector<std::shared_ptr<DataBase>>&, const std::shared_ptr<DataBase>&,
-    const std::vector<std::int64_t>&) const;
-template void osdf::FunctionsCols::sliceData<double>(
-    std::vector<std::shared_ptr<DataBase>>&, const std::shared_ptr<DataBase>&,
-    const std::vector<std::int64_t>&) const;
-template void osdf::FunctionsCols::sliceData<char>(
-    std::vector<std::shared_ptr<DataBase>>&, const std::shared_ptr<DataBase>&,
-    const std::vector<std::int64_t>&) const;
-template void osdf::FunctionsCols::sliceData<std::string>(
-    std::vector<std::shared_ptr<DataBase>>&, const std::shared_ptr<DataBase>&,
-    const std::vector<std::int64_t>&) const;
 
 template<typename T> void osdf::FunctionsCols::addValueToData(
     std::vector<std::shared_ptr<osdf::DataBase>>& dataCols, const std::shared_ptr<DatumBase>& datum,

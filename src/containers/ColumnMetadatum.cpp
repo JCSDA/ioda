@@ -10,6 +10,7 @@
 #include <stdexcept>
 
 #include "ioda/containers/Constants.h"
+#include "ioda/containers/FrameUtils.h"
 #include "ioda/Exception.h"
 
 osdf::ColumnMetadatum::ColumnMetadatum(const std::string& name, const std::int8_t type,
@@ -42,18 +43,11 @@ void osdf::ColumnMetadatum::setWidth(const std::int16_t width) {
 }
 
 std::int8_t osdf::ColumnMetadatum::validateType(const std::int8_t type) {
-  switch (type) {
-    case consts::eInt8: break;
-    case consts::eInt16: break;
-    case consts::eInt32: break;
-    case consts::eInt64: break;
-    case consts::eFloat: break;
-    case consts::eDouble: break;
-    case consts::eChar: break;
-    case consts::eString: break;
-    default: throw ioda::Exception("ERROR: Type set not recognised.", ioda_Here());
-  }
-  return type;
+  return osdf::FrameUtils::callWithSupportedType(
+    type,
+    [&](auto typeDiscriminator) {
+      return type;
+    });
 }
 
 std::int8_t osdf::ColumnMetadatum::validatePermission(const std::int8_t permission) {

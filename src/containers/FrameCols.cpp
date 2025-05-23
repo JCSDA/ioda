@@ -13,6 +13,7 @@
 #include "ioda/containers/Data.h"
 #include "ioda/containers/DatumBase.h"
 #include "ioda/containers/FrameRows.h"
+#include "ioda/containers/FrameUtils.h"
 
 osdf::FrameCols::FrameCols(const ColumnMetadata& columnMetadata,
                            const std::vector<std::int64_t>& ids,
@@ -264,94 +265,24 @@ void osdf::FrameCols::sortRows(const std::string& columnName, const std::int8_t 
       std::vector<std::int64_t> indices(static_cast<std::size_t>(sizeRows), 0);
       std::iota(std::begin(indices), std::end(indices), 0);  // Initial sequential list of indices.
       const std::shared_ptr<osdf::DataBase>& dataColRead = data_.getDataColumn(index);
-      switch (dataColRead->getType()) {
-        case consts::eInt8: {
-          const std::vector<std::int8_t>& values = funcs_.getDataValues<std::int8_t>(dataColRead);
-          funcs_.sequenceIndices<std::int8_t>(indices, values, order);
-          break;
-        }
-        case consts::eInt16: {
-          const std::vector<std::int16_t>& values = funcs_.getDataValues<std::int16_t>(dataColRead);
-          funcs_.sequenceIndices<std::int16_t>(indices, values, order);
-          break;
-        }
-        case consts::eInt32: {
-          const std::vector<std::int32_t>& values = funcs_.getDataValues<std::int32_t>(dataColRead);
-          funcs_.sequenceIndices<std::int32_t>(indices, values, order);
-          break;
-        }
-        case consts::eInt64: {
-          const std::vector<std::int64_t>& values = funcs_.getDataValues<std::int64_t>(dataColRead);
-          funcs_.sequenceIndices<std::int64_t>(indices, values, order);
-          break;
-        }
-        case consts::eFloat: {
-          const std::vector<float>& values = funcs_.getDataValues<float>(dataColRead);
-          funcs_.sequenceIndices<float>(indices, values, order);
-          break;
-        }
-        case consts::eDouble: {
-          const std::vector<double>& values = funcs_.getDataValues<double>(dataColRead);
-          funcs_.sequenceIndices<double>(indices, values, order);
-          break;
-        }
-        case consts::eChar: {
-          const std::vector<char>& values = funcs_.getDataValues<char>(dataColRead);
-          funcs_.sequenceIndices<char>(indices, values, order);
-          break;
-        }
-        case consts::eString: {
-          const std::vector<std::string>& values = funcs_.getDataValues<std::string>(dataColRead);
-          funcs_.sequenceIndices<std::string>(indices, values, order);
-          break;
-        }
-      }
+      osdf::FrameUtils::callWithSupportedType(
+        dataColRead->getType(),
+        [&](auto typeDiscriminator) {
+          using T = decltype(typeDiscriminator);
+          const std::vector<T>& values = funcs_.getDataValues<T>(dataColRead);
+          funcs_.sequenceIndices<T>(indices, values, order);
+        });
       // Swap data values for each individual column
       funcs_.reorderValues(indices, data_.getIds());
       for (std::int32_t colIndex = 0; colIndex < data_.getSizeCols(); ++colIndex) {
         std::shared_ptr<osdf::DataBase>& dataColWrite = data_.getDataColumn(colIndex);
-        switch (dataColWrite->getType()) {
-          case consts::eInt8: {
-            std::vector<std::int8_t>& values = funcs_.getDataValues<std::int8_t>(dataColWrite);
-            funcs_.reorderValues<std::int8_t>(indices, values);
-            break;
-          }
-          case consts::eInt16: {
-            std::vector<std::int16_t>& values = funcs_.getDataValues<std::int16_t>(dataColWrite);
-            funcs_.reorderValues<std::int16_t>(indices, values);
-            break;
-          }
-          case consts::eInt32: {
-            std::vector<std::int32_t>& values = funcs_.getDataValues<std::int32_t>(dataColWrite);
-            funcs_.reorderValues<std::int32_t>(indices, values);
-            break;
-          }
-          case consts::eInt64: {
-            std::vector<std::int64_t>& values = funcs_.getDataValues<std::int64_t>(dataColWrite);
-            funcs_.reorderValues<std::int64_t>(indices, values);
-            break;
-          }
-          case consts::eFloat: {
-            std::vector<float>& values = funcs_.getDataValues<float>(dataColWrite);
-            funcs_.reorderValues<float>(indices, values);
-            break;
-          }
-          case consts::eDouble: {
-            std::vector<double>& values = funcs_.getDataValues<double>(dataColWrite);
-            funcs_.reorderValues<double>(indices, values);
-            break;
-          }
-          case consts::eChar: {
-            std::vector<char>& values = funcs_.getDataValues<char>(dataColWrite);
-            funcs_.reorderValues<char>(indices, values);
-            break;
-          }
-          case consts::eString: {
-            std::vector<std::string>& values = funcs_.getDataValues<std::string>(dataColWrite);
-            funcs_.reorderValues<std::string>(indices, values);
-            break;
-          }
-        }
+        osdf::FrameUtils::callWithSupportedType(
+          dataColWrite->getType(),
+          [&](auto typeDiscriminator) {
+            using T = decltype(typeDiscriminator);
+            std::vector<T>& values = funcs_.getDataValues<T>(dataColWrite);
+            funcs_.reorderValues<T>(indices, values);
+          });
       }
       notify();
     }

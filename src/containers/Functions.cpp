@@ -11,6 +11,7 @@
 #include "ioda/containers/Constants.h"
 #include "ioda/containers/Data.h"
 #include "ioda/containers/Datum.h"
+#include "ioda/containers/FrameUtils.h"
 
 osdf::Functions::Functions() {}
 
@@ -120,66 +121,14 @@ const std::shared_ptr<osdf::DatumBase> osdf::Functions::createDatum<char const*>
 
 const std::int8_t osdf::Functions::compareDatums(const std::shared_ptr<osdf::DatumBase>& datumA,
     const std::shared_ptr<DatumBase>& datumB) const {
-  switch (datumA->getType()) {
-    case consts::eInt8: {
-      const std::shared_ptr<Datum<std::int8_t>>& datumAType =
-                                  std::static_pointer_cast<Datum<std::int8_t>>(datumA);
-      const std::shared_ptr<Datum<std::int8_t>>& datumBType =
-                                  std::static_pointer_cast<Datum<std::int8_t>>(datumB);
+  return osdf::FrameUtils::callWithSupportedType(
+    datumA->getType(),
+    [&](auto typeDiscriminator) {
+      using T = decltype(typeDiscriminator);
+      const std::shared_ptr<Datum<T>>& datumAType = std::static_pointer_cast<Datum<T>>(datumA);
+      const std::shared_ptr<Datum<T>>& datumBType = std::static_pointer_cast<Datum<T>>(datumB);
       return datumAType->getValue() < datumBType->getValue();
-    }
-    case consts::eInt16: {
-      const std::shared_ptr<Datum<std::int16_t>>& datumAType =
-                                  std::static_pointer_cast<Datum<std::int16_t>>(datumA);
-      const std::shared_ptr<Datum<std::int16_t>>& datumBType =
-                                  std::static_pointer_cast<Datum<std::int16_t>>(datumB);
-      return datumAType->getValue() < datumBType->getValue();
-    }
-    case consts::eInt32: {
-      const std::shared_ptr<Datum<std::int32_t>>& datumAType =
-                                  std::static_pointer_cast<Datum<std::int32_t>>(datumA);
-      const std::shared_ptr<Datum<std::int32_t>>& datumBType =
-                                  std::static_pointer_cast<Datum<std::int32_t>>(datumB);
-      return datumAType->getValue() < datumBType->getValue();
-    }
-    case consts::eInt64: {
-      const std::shared_ptr<Datum<std::int64_t>>& datumAType =
-                                  std::static_pointer_cast<Datum<std::int64_t>>(datumA);
-      const std::shared_ptr<Datum<std::int64_t>>& datumBType =
-                                  std::static_pointer_cast<Datum<std::int64_t>>(datumB);
-      return datumAType->getValue() < datumBType->getValue();
-    }
-    case consts::eFloat: {
-      const std::shared_ptr<Datum<float>>& datumAType =
-                                  std::static_pointer_cast<Datum<float>>(datumA);
-      const std::shared_ptr<Datum<float>>& datumBType =
-                                  std::static_pointer_cast<Datum<float>>(datumB);
-      return datumAType->getValue() < datumBType->getValue();
-    }
-    case consts::eDouble: {
-      const std::shared_ptr<Datum<double>>& datumAType =
-                                  std::static_pointer_cast<Datum<double>>(datumA);
-      const std::shared_ptr<Datum<double>>& datumBType =
-                                  std::static_pointer_cast<Datum<double>>(datumB);
-      return datumAType->getValue() < datumBType->getValue();
-    }
-    case consts::eChar: {
-      const std::shared_ptr<Datum<char>>& datumAType =
-                                  std::static_pointer_cast<Datum<char>>(datumA);
-      const std::shared_ptr<Datum<char>>& datumBType =
-                                  std::static_pointer_cast<Datum<char>>(datumB);
-      return datumAType->getValue() < datumBType->getValue();
-    }
-    case consts::eString: {
-      const std::shared_ptr<Datum<std::string>>& datumAType =
-                                  std::static_pointer_cast<Datum<std::string>>(datumA);
-      const std::shared_ptr<Datum<std::string>>& datumBType =
-                                  std::static_pointer_cast<Datum<std::string>>(datumB);
-      return datumAType->getValue() < datumBType->getValue();
-    }
-    default:
-      throw ioda::Exception("ERROR: Missing type specification.", ioda_Here());
-  }
+    });
 }
 
 

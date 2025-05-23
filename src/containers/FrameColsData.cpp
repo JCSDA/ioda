@@ -12,6 +12,7 @@
 
 #include "oops/util/Logger.h"
 #include "ioda/containers/Constants.h"
+#include "ioda/containers/FrameUtils.h"
 #include "ioda/Exception.h"
 
 osdf::FrameColsData::FrameColsData(const FunctionsCols& funcs,
@@ -29,49 +30,13 @@ osdf::FrameColsData::FrameColsData(const FunctionsCols& funcs) :
 void osdf::FrameColsData::configColumns(const std::vector<ColumnMetadatum> columns) {
   for (const ColumnMetadatum& column : columns) {
     std::shared_ptr<DataBase> data;
-    switch (column.getType()) {
-      case consts::eInt8: {
-        std::vector<std::int8_t> values;
-        data = funcs_.createData<std::int8_t>(values);
-        break;
-      }
-      case consts::eInt16: {
-        std::vector<std::int16_t> values;
-        data = funcs_.createData<std::int16_t>(values);
-        break;
-      }
-      case consts::eInt32: {
-        std::vector<std::int32_t> values;
-        data = funcs_.createData<std::int32_t>(values);
-        break;
-      }
-      case consts::eInt64: {
-        std::vector<std::int64_t> values;
-        data = funcs_.createData<std::int64_t>(values);
-        break;
-      }
-      case consts::eFloat: {
-        std::vector<float> values;
-        data = funcs_.createData<float>(values);
-        break;
-      }
-      case consts::eDouble: {
-        std::vector<double> values;
-        data = funcs_.createData<double>(values);
-        break;
-      }
-      case consts::eChar: {
-        std::vector<char> values;
-        data = funcs_.createData<char>(values);
-        break;
-      }
-      case consts::eString: {
-        std::vector<std::string> values;
-        data = funcs_.createData<std::string>(values);
-        break;
-      }
-      default: throw ioda::Exception("ERROR: Data type misconfiguration...", ioda_Here());
-    }
+    osdf::FrameUtils::callWithSupportedType(
+      column.getType(),
+      [&](auto typeDiscriminator) {
+        using T = decltype(typeDiscriminator);
+        std::vector<T> values;
+        data = funcs_.createData<T>(values);
+      });
     dataColumns_.push_back(data);
   }
   if (columnMetadata_.add(std::move(columns)) == consts::kErrorReturnValue) {
@@ -94,40 +59,12 @@ void osdf::FrameColsData::appendNewRow(const DataRow& newRow) {
     std::shared_ptr<DataBase>& data = dataColumns_.at(static_cast<std::size_t>(columnIndex));
     const std::int16_t datumSize = static_cast<std::int16_t>(datum->getValueStr().size());
     columnMetadata_.updateColumnWidth(columnIndex, datumSize);
-    switch (datum->getType()) {  // Previously checked for type compatibility
-      case consts::eInt8: {
-        funcs_.addDatumValue<std::int8_t>(data, datum);
-        break;
-      }
-      case consts::eInt16: {
-        funcs_.addDatumValue<std::int16_t>(data, datum);
-        break;
-      }
-      case consts::eInt32: {
-        funcs_.addDatumValue<std::int32_t>(data, datum);
-        break;
-      }
-      case consts::eInt64: {
-        funcs_.addDatumValue<std::int64_t>(data, datum);
-        break;
-      }
-      case consts::eFloat: {
-        funcs_.addDatumValue<float>(data, datum);
-        break;
-      }
-      case consts::eDouble: {
-        funcs_.addDatumValue<double>(data, datum);
-        break;
-      }
-      case consts::eChar: {
-        funcs_.addDatumValue<char>(data, datum);
-        break;
-      }
-      case consts::eString: {
-        funcs_.addDatumValue<std::string>(data, datum);
-        break;
-      }
-    }
+    osdf::FrameUtils::callWithSupportedType(
+      datum->getType(),
+      [&](auto typeDiscriminator) {
+        using T = decltype(typeDiscriminator);
+        funcs_.addDatumValue<T>(data, datum);
+      });
   }
 }
 
@@ -156,40 +93,12 @@ void osdf::FrameColsData::updateColumnWidth(const std::int32_t columnIndex,
 void osdf::FrameColsData::removeRow(const std::int64_t index) {
   ids_.erase(std::next(ids_.begin(), index));
   for (std::shared_ptr<DataBase>& data : dataColumns_) {
-    switch (data->getType()) {
-      case consts::eInt8: {
-        funcs_.removeDatum<std::int8_t>(data, index);
-        break;
-      }
-      case consts::eInt16: {
-        funcs_.removeDatum<std::int16_t>(data, index);
-        break;
-      }
-      case consts::eInt32: {
-        funcs_.removeDatum<std::int32_t>(data, index);
-        break;
-      }
-      case consts::eInt64: {
-        funcs_.removeDatum<std::int64_t>(data, index);
-        break;
-      }
-      case consts::eFloat: {
-        funcs_.removeDatum<float>(data, index);
-        break;
-      }
-      case consts::eDouble: {
-        funcs_.removeDatum<double>(data, index);
-        break;
-      }
-      case consts::eChar: {
-        funcs_.removeDatum<char>(data, index);
-        break;
-      }
-      case consts::eString: {
-        funcs_.removeDatum<std::string>(data, index);
-        break;
-      }
-    }
+    osdf::FrameUtils::callWithSupportedType(
+      data->getType(),
+      [&](auto typeDiscriminator) {
+        using T = decltype(typeDiscriminator);
+        funcs_.removeDatum<T>(data, index);
+      });
   }
 }
 
@@ -289,40 +198,12 @@ void osdf::FrameColsData::print() const {
 
 void osdf::FrameColsData::clear() {
   for (std::shared_ptr<DataBase>& data : dataColumns_) {
-    switch (data->getType()) {
-      case consts::eInt8: {
-        funcs_.clearData<std::int8_t>(data);
-        break;
-      }
-      case consts::eInt16: {
-        funcs_.clearData<std::int16_t>(data);
-        break;
-      }
-      case consts::eInt32: {
-        funcs_.clearData<std::int32_t>(data);
-        break;
-      }
-      case consts::eInt64: {
-        funcs_.clearData<std::int64_t>(data);
-        break;
-      }
-      case consts::eFloat: {
-        funcs_.clearData<float>(data);
-        break;
-      }
-      case consts::eDouble: {
-        funcs_.clearData<double>(data);
-        break;
-      }
-      case consts::eChar: {
-        funcs_.clearData<char>(data);
-        break;
-      }
-      case consts::eString: {
-        funcs_.clearData<std::string>(data);
-        break;
-      }
-    }
+    osdf::FrameUtils::callWithSupportedType(
+      data->getType(),
+      [&](auto typeDiscriminator) {
+        using T = decltype(typeDiscriminator);
+        funcs_.clearData<T>(data);
+      });
   }
   dataColumns_.clear();
   ids_.clear();

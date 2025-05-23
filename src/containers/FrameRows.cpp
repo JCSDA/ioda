@@ -13,6 +13,7 @@
 #include "ioda/containers/Data.h"
 #include "ioda/containers/DatumBase.h"
 #include "ioda/containers/FrameCols.h"
+#include "ioda/containers/FrameUtils.h"
 
 osdf::FrameRows::FrameRows() :
       IFrame(), data_(funcs_) {}
@@ -33,48 +34,13 @@ osdf::FrameRows::FrameRows(const FrameCols& frameCols) :
     const std::size_t colIdx = static_cast<std::size_t>(columnIndex);
     const std::shared_ptr<DataBase>& data = frameCols.getData().getDataCols().at(colIdx);
     const std::int8_t type = data->getType();
-    switch (type) {
-      case consts::eInt8: {
-        const std::vector<std::int8_t>& values = funcs_.getDataValues<std::int8_t>(data);
-        appendNewColumn<std::int8_t>(columnName, values, type);
-        break;
-      }
-      case consts::eInt16: {
-        const std::vector<std::int16_t>& values = funcs_.getDataValues<std::int16_t>(data);
-        appendNewColumn<std::int16_t>(columnName, values, type);
-        break;
-      }
-      case consts::eInt32: {
-        const std::vector<std::int32_t>& values = funcs_.getDataValues<std::int32_t>(data);
-        appendNewColumn<std::int32_t>(columnName, values, type);
-        break;
-      }
-      case consts::eInt64: {
-        const std::vector<std::int64_t>& values = funcs_.getDataValues<std::int64_t>(data);
-        appendNewColumn<std::int64_t>(columnName, values, type);
-        break;
-      }
-      case consts::eFloat: {
-        const std::vector<float>& values = funcs_.getDataValues<float>(data);
-        appendNewColumn<float>(columnName, values, type);
-        break;
-      }
-      case consts::eDouble: {
-        const std::vector<double>& values = funcs_.getDataValues<double>(data);
-        appendNewColumn<double>(columnName, values, type);
-        break;
-      }
-      case consts::eChar: {
-        const std::vector<char>& values = funcs_.getDataValues<char>(data);
-        appendNewColumn<char>(columnName, values, type);
-        break;
-      }
-      case consts::eString: {
-        const std::vector<std::string>& values = funcs_.getDataValues<std::string>(data);
-        appendNewColumn<std::string>(columnName, values, type);
-        break;
-      }
-    }
+    osdf::FrameUtils::callWithSupportedType(
+      type,
+      [&](auto typeDiscriminator) {
+        using T = decltype(typeDiscriminator);
+        const std::vector<T>& values = funcs_.getDataValues<T>(data);
+        appendNewColumn<T>(columnName, values, type);
+      });
   }
 }
 
