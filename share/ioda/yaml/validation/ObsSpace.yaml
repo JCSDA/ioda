@@ -93,7 +93,7 @@ Groups:
   - Group: [ "HofX" ]
   - Group: [ "MetaData" ]
     Required: true
-    Required Variables: [ "latitude", "longitude" ]  # "dateTime" is left out because the name changed from "datetime", and both are valid in ioda for now.
+    Required Variables: [ "dateTime", "latitude", "longitude" ]
   - Group: [ "RetrievalAncillaryData" ]
   - Group: [ "ObsBias" ]
   - Group: [ "ObsValue" ]
@@ -313,6 +313,7 @@ Variables:
   - Variable: [ "datetime" ]
     MetaData: true
     Type: StringVLen
+    Remove: true
   - Variable: [ "time" ]
     MetaData: true
     Remove: true
