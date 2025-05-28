@@ -100,6 +100,7 @@ class FrameCols : public IFrame {
 
   std::size_t numRows() const override { return data_.getSizeRows(); }
   std::size_t numCols() const override { return data_.getSizeCols(); }
+  std::vector<std::string> columnNames() const override;
 
   void print() const override;
   void clear();

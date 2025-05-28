@@ -26,6 +26,7 @@ class ColumnMetadata {
 
   const std::vector<ColumnMetadatum>& get() const;
   const ColumnMetadatum& get(const std::int32_t) const;
+  std::vector<std::string> columnNames() const;
 
   void resetMaxId();
   void updateMaxId(const std::int64_t);

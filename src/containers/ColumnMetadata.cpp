@@ -51,6 +51,15 @@ const std::vector<osdf::ColumnMetadatum>& osdf::ColumnMetadata::get() const {
   return columnMetadata_;
 }
 
+std::vector<std::string> osdf::ColumnMetadata::columnNames() const {
+  std::vector<std::string> names;
+  names.reserve(columnMetadata_.size());
+  for (const ColumnMetadatum& columnMetadatum : columnMetadata_) {
+    names.push_back(columnMetadatum.getName());
+  }
+  return names;
+}
+
 const osdf::ColumnMetadatum& osdf::ColumnMetadata::get(const std::int32_t columnIndex) const {
   return columnMetadata_.at(static_cast<std::size_t>(columnIndex));
 }

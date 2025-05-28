@@ -277,6 +277,10 @@ void osdf::FrameRows::sortRows(const std::string& columnName, const std::int8_t 
   }
 }
 
+std::vector<std::string> osdf::FrameRows::columnNames() const {
+  return data_.getColumnMetadata().columnNames();
+}
+
 void osdf::FrameRows::print() const {
   data_.print();
 }

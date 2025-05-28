@@ -123,6 +123,9 @@ class IFrame {
   /// \brief Returns the number of columns in the container.
   virtual std::size_t numCols() const = 0;
 
+  /// \brief Returns vector of strings containing the column names.
+  virtual std::vector<std::string> columnNames() const = 0;
+
   /// \brief Outputs the contents to screen. Used primarily for debugging and development.
   virtual void print() const = 0;
 };

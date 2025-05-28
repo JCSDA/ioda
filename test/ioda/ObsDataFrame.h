@@ -45,9 +45,10 @@ void testRowPriority() {
   // column data from the test config. After the column is appended, check
   // to see if you get the same data after reading the column
   osdf::FrameRows dfRow;
-
+  std::vector<std::string> expectedColumnNames(configColumnData.size());
   for (std::size_t i = 0; i < configColumnData.size(); ++i) {
     std::string name = configColumnData[i].getString("name");
+    expectedColumnNames[i] = name;
     std::string type = configColumnData[i].getString("type");
     if (type == "int") {
       // create and write column
@@ -93,6 +94,8 @@ void testRowPriority() {
       throw ioda::Exception(errMsg.c_str(), ioda_Here());
     }
   }
+  std::vector<std::string> columnNames = dfRow.columnNames();
+  EXPECT(columnNames == expectedColumnNames);
 }
 
 // -----------------------------------------------------------------------------
