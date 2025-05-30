@@ -63,12 +63,12 @@ Halo::Halo(const eckit::mpi::Comm & Comm,
   // The default value of params.haloSize is zero.
 
   radius_ = params.radius;
-  double haloSize = params.haloSize;
+  haloSize_ = params.haloSize;
 
-  radius_ += haloSize;
+  radius_ += haloSize_;
 
   oops::Log::debug() << "Halo constructed: center: " << center_ << " radius: "
-                     << radius_ << " haloSize: " << haloSize << std::endl;
+                     << radius_ << " haloSize: " << haloSize_ << std::endl;
 }
 
 // -----------------------------------------------------------------------------

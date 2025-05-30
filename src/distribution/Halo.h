@@ -84,6 +84,8 @@ class Halo: public Distribution {
 
      size_t globalUniqueConsecutiveLocationIndex(size_t loc) const override;
 
+     double haloSize() const {return haloSize_;}
+
      std::string name() const override {return distName_;}
 
  private:
@@ -126,6 +128,7 @@ class Halo: public Distribution {
          const std::vector<std::pair<double, int>> &dist_and_lidx_glb);
 
      double radius_;
+     double haloSize_;
      eckit::geometry::Point2 center_;
      // Record numbers held on this PE
      std::unordered_set<std::size_t> recordsInHalo_;
