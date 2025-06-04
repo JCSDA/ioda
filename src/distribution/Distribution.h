@@ -219,8 +219,10 @@ class Distribution {
      *   duplicates removed (i.e. if any observations are duplicated across multiple processes, the
      *   elements of `x` corresponding to these data are included only once).
      */
+    virtual void allGatherv(std::vector<char> &x) const = 0;
     virtual void allGatherv(std::vector<size_t> &x) const = 0;
     virtual void allGatherv(std::vector<int> &x) const = 0;
+    virtual void allGatherv(std::vector<int64_t> &x) const = 0;
     virtual void allGatherv(std::vector<float> &x) const = 0;
     virtual void allGatherv(std::vector<double> &x) const = 0;
     virtual void allGatherv(std::vector<util::DateTime> &x) const = 0;

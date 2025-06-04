@@ -46,8 +46,10 @@ class ReplicaOfGeneralDistribution : public Distribution {
   void max(std::vector<float> & x) const override;
   void max(std::vector<double> & x) const override;
 
+  void allGatherv(std::vector<char> &x) const override;
   void allGatherv(std::vector<size_t> &x) const override;
   void allGatherv(std::vector<int> &x) const override;
+  void allGatherv(std::vector<int64_t> &x) const override;
   void allGatherv(std::vector<float> &x) const override;
   void allGatherv(std::vector<double> &x) const override;
   void allGatherv(std::vector<util::DateTime> &x) const override;

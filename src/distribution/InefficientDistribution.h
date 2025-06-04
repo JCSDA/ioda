@@ -63,8 +63,10 @@ class InefficientDistribution: public Distribution {
      void max(std::vector<double> & x) const override {}
 
      // Similarly, allGatherv does nothing, since each processor has all observations.
+     void allGatherv(std::vector<char> &x) const override {}
      void allGatherv(std::vector<size_t> &x) const override {}
      void allGatherv(std::vector<int> &x) const override {}
+     void allGatherv(std::vector<int64_t> &x) const override {}
      void allGatherv(std::vector<float> &x) const override {}
      void allGatherv(std::vector<double> &x) const override {}
      void allGatherv(std::vector<util::DateTime> &x) const override {}

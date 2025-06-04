@@ -366,11 +366,19 @@ Halo::createAccumulatorImplT(const T &init) const {
 }
 
 // -----------------------------------------------------------------------------
+void Halo::allGatherv(std::vector<char> &x) const {
+  allGathervImpl(x);
+}
+
 void Halo::allGatherv(std::vector<size_t> &x) const {
   allGathervImpl(x);
 }
 
 void Halo::allGatherv(std::vector<int> &x) const {
+  allGathervImpl(x);
+}
+
+void Halo::allGatherv(std::vector<int64_t> &x) const {
   allGathervImpl(x);
 }
 
