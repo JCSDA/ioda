@@ -54,10 +54,6 @@ class IoPoolParameters : public oops::Parameters {
     /// maximum file size in megabytes
     oops::OptionalParameter<std::size_t> maxFileSize{"max file size", this};
 
-    /// write multiple files (write one file per io pool task)
-    /// default is false meaning a single output file will be written
-    oops::Parameter<bool> writeMultipleFiles{"write multiple files", false, this};
-
     /// Select the reader pool
     /// Two options for now:
     ///    SinglePoolAllTasks is for the current reader where every MPI task joins the

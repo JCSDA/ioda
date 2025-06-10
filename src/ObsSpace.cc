@@ -422,7 +422,7 @@ void ObsSpace::save() {
         IoPool::WriterPoolCreationParameters createParams(
             obs_params_.comm(), obs_params_.timeComm() ,
             obs_params_.top_level_.obsDataOut.value()->engine.value().engineParameters,
-            patchObsVec);
+            patchObsVec, obs_params_.top_level_.obsDataOut.value()->writeMultipleFiles);
         std::unique_ptr<IoPool::WriterPoolBase> writePool =
             IoPool::WriterPoolFactory::create(obs_params_.top_level_.ioPool, createParams);
 

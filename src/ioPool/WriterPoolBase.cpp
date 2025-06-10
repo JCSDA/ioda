@@ -41,9 +41,10 @@ WriterPoolCreationParameters::WriterPoolCreationParameters(
             const eckit::mpi::Comm & commAll, const eckit::mpi::Comm & commTime,
             const oops::RequiredPolymorphicParameter
                 <Engines::WriterParametersBase, Engines::WriterFactory> & writerParams,
-            const std::vector<bool> & patchObsVec)
+            const std::vector<bool> & patchObsVec, const bool writeMultipleFiles)
                 : IoPoolCreationParameters(commAll, commTime),
-                  writerParams(writerParams), patchObsVec(patchObsVec) {
+                  writerParams(writerParams), patchObsVec(patchObsVec),
+                  writeMultipleFiles(writeMultipleFiles) {
 }
 
 
@@ -59,6 +60,7 @@ WriterPoolBase::WriterPoolBase(const IoPoolParameters & configParams,
                              writerPoolCommName, writerNonPoolCommName),
                   writerParams_(createParams.writerParams),
                   patchObsVec_(createParams.patchObsVec),
+                  writeMultipleFiles_(createParams.writeMultipleFiles),
                   totalNlocs_(0), nlocsStart_(0), patchNlocs_(0) {
 }
 

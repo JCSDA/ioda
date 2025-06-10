@@ -18,6 +18,7 @@ writer pool factory tests:
             comm all rank: 0
             comm all size: 1
             patch obs vec: true
+            write multiple files: false
 
     # Writer Single Pool
     - case:
@@ -25,11 +26,11 @@ writer pool factory tests:
         io pool:
             writer name: "SinglePool"
             max pool size: 4
-            write multiple files: true
         test data:
             comm all rank: 0
             comm all size: 1
             patch obs vec: false
+            write multiple files: true
 
 reader pool factory tests:
     # Reader default

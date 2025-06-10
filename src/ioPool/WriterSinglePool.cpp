@@ -65,7 +65,7 @@ void WriterSinglePool::initialize() {
     // Set the isParallelIo_ flag. If a rank is not in the io pool, this gets set to
     // false, which is okay since the non io pool ranks do not use it.
     if (this->commPool() != nullptr) {
-        isParallelIo_ = ((!configParams_.writeMultipleFiles) && (this->commPool()->size() > 1));
+        isParallelIo_ = ((!this->writeMultipleFiles()) && (this->commPool()->size() > 1));
     } else {
         isParallelIo_ = false;
     }
@@ -74,7 +74,7 @@ void WriterSinglePool::initialize() {
     // set to false which is okay since the non io pool ranks do not use it.
     if (this->commPool() != nullptr) {
         createMultipleFiles_ =
-            ((configParams_.writeMultipleFiles) && (this->commPool()->size() > 1));
+            ((this->writeMultipleFiles()) && (this->commPool()->size() > 1));
     } else {
         createMultipleFiles_ = false;
     }

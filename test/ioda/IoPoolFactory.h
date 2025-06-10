@@ -72,9 +72,12 @@ CASE("ioda/WriterPoolFactoryMakers") {
         configParams.validateAndDeserialize(ioPoolConfig);
 
         std::vector<bool> expectedPatchObsVec(5, testDataConfig.getBool("patch obs vec"));
+        const bool expectedWriteMultipleFiles =
+            testDataConfig.getBool("write multiple files");
         IoPool::WriterPoolCreationParameters createParams(
             oops::mpi::world(), oops::mpi::myself(),
-            testEngineParams.writerEngine.value().engineParameters, expectedPatchObsVec);
+            testEngineParams.writerEngine.value().engineParameters,
+            expectedPatchObsVec, expectedWriteMultipleFiles);
         std::unique_ptr<IoPool::WriterPoolBase> writerPool =
             IoPool::WriterPoolFactory::create(configParams, createParams);
 
@@ -86,6 +89,9 @@ CASE("ioda/WriterPoolFactoryMakers") {
 
         std::vector<bool> patchObsVec = writerPool->patchObsVec();
         EXPECT(patchObsVec == expectedPatchObsVec);
+
+        const bool writeMultipleFiles = writerPool->writeMultipleFiles();
+        EXPECT(writeMultipleFiles == expectedWriteMultipleFiles);
     }
 }
 

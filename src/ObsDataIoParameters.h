@@ -96,6 +96,10 @@ class ObsDataOutParameters : public oops::Parameters {
     /// option controlling the creation of the backend
     oops::RequiredParameter<Engines::WriterParametersWrapper> engine{"engine", this};
 
+    /// write multiple files (write one file per io pool task)
+    /// default is false meaning a single output file will be written
+    oops::Parameter<bool> writeMultipleFiles{"write multiple files", false, this};
+
     /// action to take if there is an empty obs space
     /// \details There are two valid settings for this parameter:
     /// 1. "create output" - create an empty output file (default)

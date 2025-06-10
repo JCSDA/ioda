@@ -17,7 +17,6 @@ observations:
         obsfile: "testoutput/diagout-aod-multifiles.odc"
         mapping file: ../share/test/testinput/odb_default_name_map.yaml
         query file: ../share/test/testinput/iodatest_odb_aod_write_testdatasets.yaml
-    io pool:
       write multiple files: true
   test data:
     gnlocs: 100
@@ -56,8 +55,8 @@ observations:
         obsfile: "testoutput/diagout-aod-multifiles-oneiopool.odc"
         mapping file: ../share/test/testinput/odb_default_name_map.yaml
         query file: ../share/test/testinput/iodatest_odb_aod_write_testdatasets.yaml
-    io pool:
       write multiple files: true
+    io pool:
       max pool size: 1
   test data:
     gnlocs: 100
@@ -96,7 +95,6 @@ observations:
         obsfile: "testoutput/diagout-aod-singlefile.odc"
         mapping file: ../share/test/testinput/odb_default_name_map.yaml
         query file: ../share/test/testinput/iodatest_odb_aod_write_testdatasets.yaml
-    io pool:
       write multiple files: false
   test data:
     gnlocs: 100
@@ -135,8 +133,8 @@ observations:
         obsfile: "testoutput/diagout-aod-singlefile-oneiopool.odc"
         mapping file: ../share/test/testinput/odb_default_name_map.yaml
         query file: ../share/test/testinput/iodatest_odb_aod_write_testdatasets.yaml
-    io pool:
       write multiple files: false
+    io pool:
       max pool size: 1
   test data:
     gnlocs: 100

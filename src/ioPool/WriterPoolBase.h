@@ -47,7 +47,7 @@ class WriterPoolCreationParameters : public IoPoolCreationParameters {
             const eckit::mpi::Comm & commAll, const eckit::mpi::Comm & commTime,
             const oops::RequiredPolymorphicParameter
                 <Engines::WriterParametersBase, Engines::WriterFactory> & writerParams,
-            const std::vector<bool> & patchObsVec);
+            const std::vector<bool> & patchObsVec, const bool writeMultipleFiles);
     virtual ~WriterPoolCreationParameters() {}
 
     /// \brief parameters to be sent to the writer engine factory
@@ -56,6 +56,9 @@ class WriterPoolCreationParameters : public IoPoolCreationParameters {
 
     /// \brief patch vector for identifying "ownership" of locations by each MPI task
     const std::vector<bool> & patchObsVec;
+
+    /// \brief when true we are creating multiple files (one per rank in the io pool)
+    const bool writeMultipleFiles;
 };
 
 //------------------------------------------------------------------------------------
@@ -79,6 +82,9 @@ class IODA_DL WriterPoolBase : public IoPoolBase {
   /// \brief vector showing ownership of locations for this MPI task
   const std::vector<bool> & patchObsVec() const { return patchObsVec_; }
 
+  /// \brief when true we are creating multiple files (one per rank in the io pool)
+  bool writeMultipleFiles() const { return writeMultipleFiles_; }
+
   /// \brief total number of locations (sum of this rank nlocs + assigned ranks nlocs)
   std::size_t totalNlocs() const { return totalNlocs_; }
 
@@ -100,6 +106,9 @@ class IODA_DL WriterPoolBase : public IoPoolBase {
   /// \brief vector showing ownership of locations for this MPI task
   const std::vector<bool> & patchObsVec_;
 
+  /// \brief when true we are creating multiple files (one per rank in the io pool)
+  const bool writeMultipleFiles_;
+
   /// \brief total number of locations (sum of this rank nlocs + assigned ranks nlocs)
   std::size_t totalNlocs_;
 
@@ -109,7 +118,9 @@ class IODA_DL WriterPoolBase : public IoPoolBase {
   /// \brief number of locations "owned" by this MPI task
   std::size_t patchNlocs_;
 
-  /// \brief when true we are creating multiple files (one per rank in the io pool)
+  /// \brief when true we are telling the backend engine to create multiple files
+  /// \details Note that the writeMultipleFiles_ flag comes from the YAML config
+  /// and participates in the logic to determine the value for createMultipleFiles_.
   bool createMultipleFiles_;
 
   /// output file.
