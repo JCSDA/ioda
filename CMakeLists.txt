@@ -8,7 +8,7 @@
 # IODA
 ################################################################################
 
-cmake_minimum_required( VERSION 3.14 )
+cmake_minimum_required( VERSION 3.15 )
 option(IODA_BUILD_LANGUAGE_FORTRAN "Build Fortran bindings." ON)
 list( APPEND IODA_LANGUAGES CXX)
 if (IODA_BUILD_LANGUAGE_FORTRAN)
