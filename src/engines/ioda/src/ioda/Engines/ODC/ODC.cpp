@@ -130,6 +130,36 @@ std::vector<std::string> identifyColumnsToSelect(
   return orderedColumnsToSelect;
 }
 
+/// \brief Identify columns containing components of record IDs.
+///
+/// Consecutive rows with the same record ID should not be split across multiple MPI ranks.
+std::vector<std::string> identifyRecordIdColumns(
+    const OdbQueryParameters &queryParameters,
+    const std::vector<std::string> &defaultRecordIdColumns,
+    const std::map<std::string, std::vector<std::string>> &complementaryColumns) {
+  // Use the list specified in the query file or, if it's not present, the default list.
+  const std::vector<std::string> &recordIdColumns =
+      queryParameters.variableCreation.recordGroupingColumns.value().get_value_or(
+        defaultRecordIdColumns);
+
+  // If the list contains the names of any complementary columns, replace them with the names of
+  // their components.
+  std::vector<std::string> result;
+  for (const std::string &column : recordIdColumns) {
+    auto it = complementaryColumns.find(column);
+    if (it == complementaryColumns.end()) {
+      // This is not a column split into multiple complementary columns. Simply copy its name to
+      // the output vector.
+      result.push_back(column);
+    } else {
+      // This is a column split into multiple complementary columns. Copy the names of these columns
+      // into the output vector.
+      result.insert(result.end(), it->second.begin(), it->second.end());
+    }
+  }
+  return result;
+}
+
 /// \brief Creates dimension scales for the ObsGroup that will receive data loaded from an ODB file.
 NewDimensionScales_t makeDimensionScales(const RowsByLocation &rowsByLocation,
                                          const ChannelIndexerBase *channelIndexer,
@@ -1304,23 +1334,25 @@ ObsGroup openFile(const ODC_Parameters& odcparams, Group storageGroup,
   // TODO(someone): Handle the case of the 'varno' option being set to ALL.
   const vector<int> &varnos = queryParameters.where.value().varno.value().as<std::vector<int>>();
 
-  // 5. Create an object associating rows returned by the query with individual ioda locations
-  //    and a channel indexer.
+  // 5.1. Create an object associating rows returned by the query with individual ioda locations
+  //      and a channel indexer.
 
   const std::unique_ptr<RowsIntoLocationsSplitterBase> rowsIntoLocationsSplitter =
       RowsIntoLocationsSplitterFactory::create(
         queryParameters.variableCreation.rowsIntoLocationsSplit.value().params);
-
-  if (comm && comm->size() > 1 &&
-      !rowsIntoLocationsSplitter->assignsRowsWithDifferentSeqnosToDifferentLocations())
-    throw eckit::UserError("The selected RowsIntoLocationsSplitter is incompatible with parallel "
-                           "I/O. Use a different ReaderPool to read the ODB file serially.");
 
   std::unique_ptr<ChannelIndexerBase> channelIndexer;
   if (queryParameters.variableCreation.channelIndexing.value()) {
     channelIndexer = ChannelIndexerFactory::create(
           queryParameters.variableCreation.channelIndexing.value()->params);
   }
+
+  // 5.2. Identify columns containing components of record IDs; consecutive rows with the same
+  //      record ID should not be split across multiple MPI ranks.
+
+  const std::vector<std::string> recordIdColumns = identifyRecordIdColumns(
+        queryParameters, rowsIntoLocationsSplitter->defaultRecordIdColumns(),
+        complementarityInfo.complementaryColumns());
 
   // 6. Perform the SQL query.
 
@@ -1330,7 +1362,8 @@ ObsGroup openFile(const ODC_Parameters& odcparams, Group storageGroup,
                   varnos,
                   queryParameters.where.value().query,
                   comm,
-                  odcparams.chunksPerProcess);
+                  odcparams.chunksPerProcess,
+                  recordIdColumns);
 
   // 7. Create an ObsGroup, using the mapping file to set up the translation of ODB column names
   // to ioda variable names

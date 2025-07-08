@@ -24,7 +24,7 @@ namespace ODC {
 std::vector<size_t> splitIntoChunksAsEvenlyAsPossible(size_t total, size_t num_chunks);
 
 /// \brief Exchange data read from an ODB file by individual MPI processes so that all rows from
-/// each seqno end up on a single process.
+/// each record end up on a single process.
 ///
 /// \param comm
 ///   MPI communicator encompassing all processes participating in the parallel I/O.
@@ -32,19 +32,19 @@ std::vector<size_t> splitIntoChunksAsEvenlyAsPossible(size_t total, size_t num_c
 ///   Total number of chunks of ODB frames read by all the processes in `comm`.
 /// \param num_columns
 ///   Number of columns read from the ODB file.
-/// \param seqno_column_index
-///   Index of the `seqno` column.
+/// \param record_id_column_indices
+///   Indices of the columns storing components of record IDs.
 /// \param[inout] local_chunks
 ///   On input, the tables of data read from successive chunks of ODB frames by the calling process;
 ///   local_chunks[i][j][k] is the value in the kth row in the jth column of the ith chunk.
 ///   The number of columns in each chunk is expected to be `num_columns`.
-///   On output, these tables will be modified so that all consecutive rows with the same seqno end
-///   up in the table that, on input, contained the first of these rows.
-void mergeSeqnosSplitAcrossChunks(const eckit::mpi::Comm &comm,
-                                  size_t total_num_chunks,
-                                  size_t num_columns,
-                                  int seqno_column_index,
-                                  std::vector<std::vector<std::vector<double>>> &local_chunks);
+///   On output, these tables will be modified so that all consecutive rows with the same record ID
+///   end up in the table that, on input, contained the first of these rows.
+void mergeRecordsSplitAcrossChunks(const eckit::mpi::Comm &comm,
+                                   size_t total_num_chunks,
+                                   size_t num_columns,
+                                   const std::vector<int> &record_id_column_indices,
+                                   std::vector<std::vector<std::vector<double>>> &local_chunks);
 
 }  // namespace ODC
 }  // namespace Engines

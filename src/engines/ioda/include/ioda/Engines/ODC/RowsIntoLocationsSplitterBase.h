@@ -55,12 +55,16 @@ public:
   /// be associated with more than one location, although this should rarely be needed in practice.
   virtual RowsByLocation groupRowsByLocation(const DataFromSQL &sqlData) const = 0;
 
-  /// \brief Returns true if this splitter always assigns rows with different values in the `seqno`
-  /// column to different locations, false otherwise.
+  /// \brief Returns the default list of columns used to group *consecutive* ODB rows into records.
   ///
-  /// Subclasses in which this function returns false cannot be used when reading ODB files in
-  /// parallel.
-  virtual bool assignsRowsWithDifferentSeqnosToDifferentLocations() const = 0;
+  /// Sequences of consecutive ODB rows with identical values in all these columns will by default
+  /// be kept on a single MPI process even if parallel I/O is enabled. Users can override this
+  /// default by setting the `record grouping columns` option in the query file.
+  ///
+  /// Subclasses should implement this function by making it return a column or columns whose values
+  /// do not change in all rows belonging to a single location (very often, `{"seqno"}` is the right
+  /// choice). This will prevent locations from being split across MPI ranks.
+  virtual std::vector<std::string> defaultRecordIdColumns() const = 0;
 };
 
 }  // namespace ODC

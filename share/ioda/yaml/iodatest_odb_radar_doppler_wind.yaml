@@ -1,5 +1,10 @@
 where:
   varno: [259]
+record grouping columns:
+- date
+- time
+- radar_beam_elevation
+- radar_identifier
 variables:
 - name: date
 - name: initial_obsvalue

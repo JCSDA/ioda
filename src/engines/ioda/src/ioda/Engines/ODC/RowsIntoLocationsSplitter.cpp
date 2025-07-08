@@ -79,6 +79,11 @@ RowsIntoLocationsSplitterBySeqnoThenByCounterOfRowsWithVarno::groupRowsByLocatio
   return rowsByLocation;
 }
 
+std::vector<std::string>
+RowsIntoLocationsSplitterBySeqnoThenByCounterOfRowsWithVarno::defaultRecordIdColumns() const {
+  return {"seqno"};
+}
+
 // -----------------------------------------------------------------------------
 
 RowsIntoLocationsSplitterBySeqno::RowsIntoLocationsSplitterBySeqno(
@@ -161,6 +166,10 @@ RowsByLocation RowsIntoLocationsSplitterBySeqno::groupRowsByLocationWithMaxNumCh
   }
 
   return rowsByLocation;
+}
+
+std::vector<std::string> RowsIntoLocationsSplitterBySeqno::defaultRecordIdColumns() const {
+  return {"seqno"};
 }
 
 }  // namespace ODC

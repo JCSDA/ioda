@@ -55,7 +55,8 @@ const std::vector<int> &DataFromSQL::getVarnos() const {
 }
 
 void DataFromSQL::setData(const std::string& sql, const std::string &filename,
-                          const eckit::mpi::Comm* comm, int chunks_per_process) {
+                          const eckit::mpi::Comm* comm, int chunks_per_process,
+                          const std::vector<std::string>& record_id_columns) {
   const size_t num_processes = comm ? comm->size() : 1;
   const bool enable_parallel_io = num_processes > 1;
   std::vector<std::unique_ptr<eckit::DataHandle>> chunk_handles;
@@ -123,10 +124,16 @@ void DataFromSQL::setData(const std::string& sql, const std::string &filename,
   }
 
   if (enable_parallel_io) {
-    const int seqno_column_index = getColumnIndex("seqno");
-    if (seqno_column_index != -1)
-      mergeSeqnosSplitAcrossChunks(*comm, total_num_chunks, num_columns, seqno_column_index,
-                                   data_chunks);
+    std::vector<int> record_id_column_indices;
+    for (const std::string &column_name : record_id_columns) {
+      const int column_index = getColumnIndex(column_name);
+      if (column_index != -1)
+        record_id_column_indices.push_back(column_index);
+      else
+        throw eckit::UserError("Record grouping column '" + column_name + "' not found", Here());
+    }
+    mergeRecordsSplitAcrossChunks(*comm, total_num_chunks, num_columns, record_id_column_indices,
+                                  data_chunks);
   }
 
   size_t num_rows = 0;
@@ -222,7 +229,8 @@ const std::vector<std::string>& DataFromSQL::getColumns() const { return columns
 
 void DataFromSQL::select(const std::vector<std::string>& columns, const std::string& filename,
                          const std::vector<int>& varnos, const std::string& query,
-                         const eckit::mpi::Comm* comm, int chunks_per_process) {
+                         const eckit::mpi::Comm* comm, int chunks_per_process,
+                         const std::vector<std::string>& record_id_columns) {
   columns_ = columns;
   std::string sql = "select ";
   for (size_t i = 0; i < columns_.size(); i++) {
@@ -254,10 +262,9 @@ void DataFromSQL::select(const std::vector<std::string>& columns, const std::str
       ifile.close();
     } else {
       ifile.close();
-      setData(sql, filename, comm, chunks_per_process);
+      setData(sql, filename, comm, chunks_per_process, record_id_columns);
     }
   }
-  obsgroup_        = getData(0, getColumnIndex("ops_obsgroup"));
   number_of_rows_  = data_.empty() ? 0 : data_.front().size();
   int varno_column = getColumnIndex("varno");
   if (varno_column >= 0) {
@@ -269,8 +276,6 @@ void DataFromSQL::select(const std::vector<std::string>& columns, const std::str
     }
   }
 }
-
-int DataFromSQL::getObsgroup() const { return obsgroup_; }
 
 }  // namespace ODC
 }  // namespace Engines

@@ -1,0 +1,45 @@
+---
+time window:
+  begin: "2023-12-31T21:00:00Z"
+  end: "2024-01-01T03:00:00Z"
+
+observations:
+- obs space:
+    name: Radar
+    simulated variables: [radialVelocity]
+    obsdatain:
+      engine:
+        type: ODB
+        obsfile: "Data/testinput_tier_1/radar_doppler_wind_multiple_records.odb"
+        mapping file: ../share/test/testinput/odb_default_name_map.yaml
+        query file: ../share/test/testinput/iodatest_odb_radar_doppler_wind.yaml
+        frame distribution spread: 17  # The input file has 17 frames
+      obsgrouping:
+        group variables: [dateTime, beamTiltAngle, stationIdentification]
+    distribution:
+      name: ReaderDependentDistribution
+    io pool:
+      reader name: NonoverlappingPool
+  test data:
+    gnlocs: 495
+    gnlocs outside time window: 0
+    gnlocs rejected by qc: 0
+    nlocs from source: 495
+    nrecs: 5
+    obs perturbations seed: 0
+    expected group variables: [dateTime, beamTiltAngle, stationIdentification]
+    expected sort variable: ""
+    expected sort order: "ascending"
+    variables for get test:
+      - name: "latitude"
+        group: "MetaData"
+        type: "float"
+        norm: 1202.1851187482328
+
+      - name: "longitude"
+        group: "MetaData"
+        type: "float"
+        norm: 7958.6961460379634
+    tolerance:
+      - 1.0e-7
+    variables for putget test: []

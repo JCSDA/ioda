@@ -83,7 +83,7 @@ public:
 
   RowsByLocation groupRowsByLocation(const DataFromSQL &sqlData) const override;
 
-  bool assignsRowsWithDifferentSeqnosToDifferentLocations() const override { return true; }
+  std::vector<std::string> defaultRecordIdColumns() const override;
 
 private:
   Parameters_ parameters_;
@@ -162,7 +162,7 @@ public:
 
   RowsByLocation groupRowsByLocation(const DataFromSQL &sqlData) const override;
 
-  bool assignsRowsWithDifferentSeqnosToDifferentLocations() const override { return true; }
+  std::vector<std::string> defaultRecordIdColumns() const override;
 
 private:
   /// Faster and simpler version used when there's no constraint on the maximum number of channels.

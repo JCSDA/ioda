@@ -170,6 +170,16 @@ class OdbVariableCreationParameters : public oops::Parameters {
   oops::Parameter<RowsIntoLocationsSplitterParameters> rowsIntoLocationsSplit{
     "rows into locations split", {}, this};
 
+  /// List of columns used to group *consecutive* ODB rows into records.
+  ///
+  /// Sequences of consecutive ODB rows with identical values in all these columns will be kept on a
+  /// single MPI process even if parallel I/O is enabled.
+  ///
+  /// If not set, this list of columns will be determined automatically in a way that will ensure
+  /// all rows belonging to a single *location* are kept on the same MPI process.
+  oops::OptionalParameter<std::vector<std::string>> recordGroupingColumns{
+    "record grouping columns", this};
+
   /// List of multichannel varnos. Variables storing data extracted from rows containing these
   /// varnos in varno-dependent columns will be equipped with a Channel dimension.
   ///

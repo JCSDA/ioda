@@ -180,6 +180,8 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsspace_odc_atms_parallel_io.yaml
   testinput/iodatest_obsspace_odc_empty_obs_file.yaml
   testinput/iodatest_obsspace_odc_empty_obs_file_parallel_io.yaml
+  testinput/iodatest_obsspace_odc_radar.yaml
+  testinput/iodatest_obsspace_odc_radar_parallel_io.yaml
   testinput/iodatest_obsspace_odc_single_frame_parallel_io.yaml
   testinput/iodatest_obsspace_odc_single_frame_multiple_channels_parallel_io.yaml
   testinput/iodatest_obsspace_odc_two_frames_parallel_io.yaml
@@ -1005,6 +1007,17 @@ if (odc_FOUND)
   ecbuild_add_test( TARGET  test_ioda_obsspace_odc_atms_parallel_io_single_process
                     COMMAND test_ioda_obsspace
                     ARGS    "testinput/iodatest_obsspace_odc_atms_parallel_io.yaml"
+                    )
+
+  ecbuild_add_test( TARGET  test_ioda_obsspace_odc_radar
+                    COMMAND test_ioda_obsspace
+                    ARGS    "testinput/iodatest_obsspace_odc_radar.yaml"
+                    )
+
+  ecbuild_add_test( TARGET  test_ioda_obsspace_odc_radar_parallel_io
+                    MPI     2
+                    COMMAND test_ioda_obsspace
+                    ARGS    "testinput/iodatest_obsspace_odc_radar_parallel_io.yaml"
                     )
 
   ecbuild_add_test( TARGET  test_ioda_obsspace_odc_empty_obs_file

@@ -1,5 +1,7 @@
-mergeSeqnosSplitAcrossChunks:
-- total number of chunks: 0
+mergeRecordsSplitAcrossChunks:
+- columns: [seqno, temperature]
+  record id columns: [seqno]
+  total number of chunks: 0
   chunks on ranks at input:
   - []
   - []
@@ -8,7 +10,9 @@ mergeSeqnosSplitAcrossChunks:
   - []
   - []
   - []
-- total number of chunks: 1
+- columns: [seqno, temperature]
+  record id columns: [seqno]
+  total number of chunks: 1
   chunks on ranks at input:
   -
     - seqno:       [2, 2, 3, 3, 3]
@@ -21,7 +25,9 @@ mergeSeqnosSplitAcrossChunks:
       temperature: [1, 2, 3, 4, 5]
   - []
   - []
-- total number of chunks: 3
+- columns: [seqno, temperature]
+  record id columns: [seqno]
+  total number of chunks: 3
   chunks on ranks at input:
   -
     - seqno:       [2, 2]
@@ -38,7 +44,9 @@ mergeSeqnosSplitAcrossChunks:
   -
     - seqno:       [3, 3]
       temperature: [3, 4]
-- total number of chunks: 10
+- columns: [seqno, temperature]
+  record id columns: [seqno]
+  total number of chunks: 10
   chunks on ranks at input:
   - # rank 0
     - seqno:       [2, 2, 3]
@@ -87,7 +95,9 @@ mergeSeqnosSplitAcrossChunks:
       temperature: []
     - seqno:       [6, 7, 7, 7, 7]
       temperature: [17, 18, 19, 20, 21]
-- total number of chunks: 3
+- columns: [seqno, temperature]
+  record id columns: [seqno]
+  total number of chunks: 3
   chunks on ranks at input:
   -
     - seqno:       [2, 3]
@@ -108,3 +118,74 @@ mergeSeqnosSplitAcrossChunks:
   -
     - seqno:       [5, 5, 6]
       temperature: [7, 8, 9]
+- columns: [id_a, id_b, temperature]
+  record id columns: [id_a, id_b]
+  total number of chunks: 10
+  chunks on ranks at input:
+  - # rank 0
+    - id_a:        [2, 2, 2]
+      id_b:        [2, 2, 3]
+      temperature: [1, 2, 3]
+    - id_a:        [3, 3]
+      id_b:        [4, 4]
+      temperature: [10, 11]
+    - id_a:        []
+      id_b:        []
+      temperature: []
+    - id_a:        [4, 4, 4]
+      id_b:        [5, 5, 5]
+      temperature: [19, 20, 21]
+  - # rank 1
+    - id_a:        [2, 2, 3]
+      id_b:        [3, 3, 3]
+      temperature: [4, 5, 6]
+    - id_a:        []
+      id_b:        []
+      temperature: []
+    - id_a:        [3, 3]
+      id_b:        [4, 4]
+      temperature: [14, 15]
+  - # rank 2
+    - id_a:        [3, 3, 3]
+      id_b:        [3, 4, 4]
+      temperature: [7, 8, 9]
+    - id_a:        [3, 3]
+      id_b:        [4, 4]
+      temperature: [12, 13]
+    - id_a:        [3, 4, 4]
+      id_b:        [4, 4, 5]
+      temperature: [16, 17, 18]
+  expected chunks on ranks at output:
+  - # rank 0
+    - id_a:        [2, 2, 2, 2, 2]
+      id_b:        [2, 2, 3, 3, 3]
+      temperature: [1, 2, 3, 4, 5]
+    - id_a:        []
+      id_b:        []
+      temperature: []
+    - id_a:        []
+      id_b:        []
+      temperature: []
+    - id_a:        []
+      id_b:        []
+      temperature: []
+  - # rank 1
+    - id_a:        [3, 3]
+      id_b:        [3, 3]
+      temperature: [6, 7]
+    - id_a:        []
+      id_b:        []
+      temperature: []
+    - id_a:        []
+      id_b:        []
+      temperature: []
+  - # rank 2
+    - id_a:        [3, 3, 3, 3, 3, 3, 3, 3, 3]
+      id_b:        [4, 4, 4, 4, 4, 4, 4, 4, 4]
+      temperature: [8, 9, 10, 11, 12, 13, 14, 15, 16]
+    - id_a:        []
+      id_b:        []
+      temperature: []
+    - id_a:        [4, 4, 4, 4, 4]
+      id_b:        [4, 5, 5, 5, 5]
+      temperature: [17, 18, 19, 20, 21]
