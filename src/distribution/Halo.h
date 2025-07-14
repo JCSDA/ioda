@@ -86,6 +86,8 @@ class Halo: public Distribution {
 
      size_t globalUniqueConsecutiveLocationIndex(size_t loc) const override;
 
+     void reduce(const std::vector<bool> & keepLocs) override;
+
      double haloSize() const {return haloSize_;}
 
      std::string name() const override {return distName_;}

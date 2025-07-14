@@ -1023,13 +1023,6 @@ void ObsSpace::updateObsSpace(const eckit::Configuration & cdaConfig) {
 // -----------------------------------------------------------------------------
 void ObsSpace::reduce(const ioda::CompareAction compareAction, const int threshold,
                       const std::vector<int> & checkValues) {
-    // For now, only allow append to run on non-overlapping distributions
-    if (!(dist_->isNonoverlapping())) {
-        std::string errMsg = std::string("ObsSpace::reduce: Distribution '") + dist_->name() +
-                             std::string("' is not yet supported.\n") +
-                             std::string("    Must use a non-overlapping distribution for now");
-        throw Exception(errMsg, ioda_Here());
-    }
     ASSERT(checkValues.size() == this->nlocs());
     // Transform the reduce specs into a boolean vector where true means keep,
     // and false means remove.
@@ -2172,10 +2165,6 @@ void ObsSpace::adjustDataMembersAfterReduce(const std::vector<bool> & keepLocs) 
     reducedNlocs = reduceVarDataInPlace<std::size_t>(keepLocs,
         { static_cast<Dimensions_t>(recnums_.size()) }, recnums_, true);
 
-    // Adjust gnlocs_, this is simply the sum across mpi tasks (allReduce) of the
-    // adjusted nlocs (reducedNlocs)
-    this->comm().allReduce(reducedNlocs, gnlocs_, eckit::mpi::sum());
-
     // The adjusted nrecs_ is the number of unique values in recnums_ (which has
     // already been adjusted).
     std::set<std::size_t> uniqueRecNums;
@@ -2184,13 +2173,20 @@ void ObsSpace::adjustDataMembersAfterReduce(const std::vector<bool> & keepLocs) 
     }
     nrecs_ = uniqueRecNums.size();
 
-    // Rebuild the patch location information
-    dist_->setNumberLocations(reducedNlocs);
-    dist_->computePatchLocs();
+    // Update distribution
+    dist_->reduce(keepLocs);
 
     // Rebuild the recidx_ data member using the newly adjusted indx_ and recnums_
     // data members.
     buildRecIdx();
+
+    // Adjust gnlocs_, this is a sum across mpi tasks of the adjusted nlocs (reducedNlocs)
+    // taking into account the obs distribution
+    std::unique_ptr<Accumulator<size_t>> accumulator = dist_->createAccumulator<size_t>();
+    for (size_t loc = 0; loc < reducedNlocs; ++loc) {
+      accumulator->addTerm(loc, 1);
+    }
+    gnlocs_ = accumulator->computeResult();
 }
 
 std::string ObsSpace::groupToUse(const std::string & group,

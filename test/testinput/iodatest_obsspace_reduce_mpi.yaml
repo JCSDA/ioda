@@ -120,6 +120,285 @@ observations:
           rec17: [ 3 ]
 
 - obs space:
+    name: "Reduce equal, 1D variables, Halo"
+    simulated variables: ['airTemperature']
+    distribution:
+      name: "Halo"
+      halo size: 0
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: "Data/testinput_tier_1/obsspace_reduce_1D.nc4"
+  test data:
+    gnlocs: 20
+    gnlocs outside time window: 0
+    nlocs: 20
+    nrecs: 20
+    obs are sorted: false
+
+    # reduce arguments and expected results
+    mpi size2:
+      rank0:
+        # arguments
+        reduce:
+          action: equal
+          threshold: 1
+          check vector: [ 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 1, 1, 1, 0, 1, 0, 1 ]
+
+        # expected results
+        nlocs: 9
+        nrecs: 9
+        gnlocs: 9
+        index: [ 2, 3, 8, 10, 13, 14, 15, 17, 19 ]
+        recnum: [ 2, 3, 8, 10, 13, 14, 15, 17, 19 ]
+        recidx:
+          rec2: [ 0 ]
+          rec3: [ 1 ]
+          rec8: [ 2 ]
+          rec10: [ 3 ]
+          rec13: [ 4 ]
+          rec14: [ 5 ]
+          rec15: [ 6 ]
+          rec17: [ 7 ]
+          rec19: [ 8 ]
+
+      rank1:
+        # arguments
+        reduce:
+          action: equal
+          threshold: 1
+          check vector: [ 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 1, 1, 1, 0, 1, 0, 1 ]
+
+        # expected results
+        nlocs: 9
+        nrecs: 9
+        gnlocs: 9
+        index: [ 2, 3, 8, 10, 13, 14, 15, 17, 19 ]
+        recnum: [ 2, 3, 8, 10, 13, 14, 15, 17, 19 ]
+        recidx:
+          rec2: [ 0 ]
+          rec3: [ 1 ]
+          rec8: [ 2 ]
+          rec10: [ 3 ]
+          rec13: [ 4 ]
+          rec14: [ 5 ]
+          rec15: [ 6 ]
+          rec17: [ 7 ]
+          rec19: [ 8 ]
+
+    mpi size3:
+      rank0:
+        # arguments
+        reduce:
+          action: equal
+          threshold: 1
+          check vector: [ 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 1, 1, 1, 0, 1, 0, 1 ]
+
+        # expected results
+        nlocs: 9
+        nrecs: 9
+        gnlocs: 9
+        index: [ 2, 3, 8, 10, 13, 14, 15, 17, 19 ]
+        recnum: [ 2, 3, 8, 10, 13, 14, 15, 17, 19 ]
+        recidx:
+          rec2: [ 0 ]
+          rec3: [ 1 ]
+          rec8: [ 2 ]
+          rec10: [ 3 ]
+          rec13: [ 4 ]
+          rec14: [ 5 ]
+          rec15: [ 6 ]
+          rec17: [ 7 ]
+          rec19: [ 8 ]
+
+      rank1:
+        # arguments
+        reduce:
+          action: equal
+          threshold: 1
+          check vector: [ 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 1, 1, 1, 0, 1, 0, 1 ]
+
+        # expected results
+        nlocs: 9
+        nrecs: 9
+        gnlocs: 9
+        index: [ 2, 3, 8, 10, 13, 14, 15, 17, 19 ]
+        recnum: [ 2, 3, 8, 10, 13, 14, 15, 17, 19 ]
+        recidx:
+          rec2: [ 0 ]
+          rec3: [ 1 ]
+          rec8: [ 2 ]
+          rec10: [ 3 ]
+          rec13: [ 4 ]
+          rec14: [ 5 ]
+          rec15: [ 6 ]
+          rec17: [ 7 ]
+          rec19: [ 8 ]
+
+      rank2:
+        # arguments
+        reduce:
+          action: equal
+          threshold: 1
+          check vector: [ 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 1, 1, 1, 0, 1, 0, 1 ]
+
+        # expected results
+        nlocs: 9
+        nrecs: 9
+        gnlocs: 9
+        index: [ 2, 3, 8, 10, 13, 14, 15, 17, 19 ]
+        recnum: [ 2, 3, 8, 10, 13, 14, 15, 17, 19 ]
+        recidx:
+          rec2: [ 0 ]
+          rec3: [ 1 ]
+          rec8: [ 2 ]
+          rec10: [ 3 ]
+          rec13: [ 4 ]
+          rec14: [ 5 ]
+          rec15: [ 6 ]
+          rec17: [ 7 ]
+          rec19: [ 8 ]
+
+- obs space:
+    name: "Reduce equal, 1D variables, Inefficient distribution"
+    simulated variables: ['airTemperature']
+    distribution:
+      name: InefficientDistribution
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: "Data/testinput_tier_1/obsspace_reduce_1D.nc4"
+  test data:
+    gnlocs: 20
+    gnlocs outside time window: 0
+    nlocs: 20
+    nrecs: 20
+    obs are sorted: false
+
+    # reduce arguments and expected results
+    mpi size2:
+      rank0:
+        # arguments
+        reduce:
+          action: equal
+          threshold: 1
+          check vector: [ 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 1, 1, 1, 0, 1, 0, 1 ]
+
+        # expected results
+        nlocs: 9
+        nrecs: 9
+        gnlocs: 9
+        index: [ 2, 3, 8, 10, 13, 14, 15, 17, 19 ]
+        recnum: [ 2, 3, 8, 10, 13, 14, 15, 17, 19 ]
+        recidx:
+          rec2: [ 0 ]
+          rec3: [ 1 ]
+          rec8: [ 2 ]
+          rec10: [ 3 ]
+          rec13: [ 4 ]
+          rec14: [ 5 ]
+          rec15: [ 6 ]
+          rec17: [ 7 ]
+          rec19: [ 8 ]
+
+      rank1:
+        # arguments
+        reduce:
+          action: equal
+          threshold: 1
+          check vector: [ 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 1, 1, 1, 0, 1, 0, 1 ]
+
+        # expected results
+        nlocs: 9
+        nrecs: 9
+        gnlocs: 9
+        index: [ 2, 3, 8, 10, 13, 14, 15, 17, 19 ]
+        recnum: [ 2, 3, 8, 10, 13, 14, 15, 17, 19 ]
+        recidx:
+          rec2: [ 0 ]
+          rec3: [ 1 ]
+          rec8: [ 2 ]
+          rec10: [ 3 ]
+          rec13: [ 4 ]
+          rec14: [ 5 ]
+          rec15: [ 6 ]
+          rec17: [ 7 ]
+          rec19: [ 8 ]
+
+    mpi size3:
+      rank0:
+        # arguments
+        reduce:
+          action: equal
+          threshold: 1
+          check vector: [ 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 1, 1, 1, 0, 1, 0, 1 ]
+
+        # expected results
+        nlocs: 9
+        nrecs: 9
+        gnlocs: 9
+        index: [ 2, 3, 8, 10, 13, 14, 15, 17, 19 ]
+        recnum: [ 2, 3, 8, 10, 13, 14, 15, 17, 19 ]
+        recidx:
+          rec2: [ 0 ]
+          rec3: [ 1 ]
+          rec8: [ 2 ]
+          rec10: [ 3 ]
+          rec13: [ 4 ]
+          rec14: [ 5 ]
+          rec15: [ 6 ]
+          rec17: [ 7 ]
+          rec19: [ 8 ]
+
+      rank1:
+        # arguments
+        reduce:
+          action: equal
+          threshold: 1
+          check vector: [ 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 1, 1, 1, 0, 1, 0, 1 ]
+
+        # expected results
+        nlocs: 9
+        nrecs: 9
+        gnlocs: 9
+        index: [ 2, 3, 8, 10, 13, 14, 15, 17, 19 ]
+        recnum: [ 2, 3, 8, 10, 13, 14, 15, 17, 19 ]
+        recidx:
+          rec2: [ 0 ]
+          rec3: [ 1 ]
+          rec8: [ 2 ]
+          rec10: [ 3 ]
+          rec13: [ 4 ]
+          rec14: [ 5 ]
+          rec15: [ 6 ]
+          rec17: [ 7 ]
+          rec19: [ 8 ]
+
+      rank2:
+        # arguments
+        reduce:
+          action: equal
+          threshold: 1
+          check vector: [ 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 1, 1, 1, 0, 1, 0, 1 ]
+
+        # expected results
+        nlocs: 9
+        nrecs: 9
+        gnlocs: 9
+        index: [ 2, 3, 8, 10, 13, 14, 15, 17, 19 ]
+        recnum: [ 2, 3, 8, 10, 13, 14, 15, 17, 19 ]
+        recidx:
+          rec2: [ 0 ]
+          rec3: [ 1 ]
+          rec8: [ 2 ]
+          rec10: [ 3 ]
+          rec13: [ 4 ]
+          rec14: [ 5 ]
+          rec15: [ 6 ]
+          rec17: [ 7 ]
+          rec19: [ 8 ]
+
+- obs space:
     name: "Reduce not equal, 1D variables"
     simulated variables: ['airTemperature']
     distribution:

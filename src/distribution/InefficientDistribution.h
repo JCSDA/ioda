@@ -41,6 +41,9 @@ class InefficientDistribution: public Distribution {
 
      void patchObs(std::vector<bool> &) const override;
 
+     // Reduce is a no-op for the inefficient distribution.
+     void reduce(const std::vector<bool> & keepLocs) override {};
+
      // The min and max reductions do nothing for the inefficient distribution. Each processor has
      // all observations, so the local reduction is equal to the global reduction.
 

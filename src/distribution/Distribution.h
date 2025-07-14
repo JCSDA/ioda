@@ -118,6 +118,11 @@ class Distribution {
      */
     virtual void patchObs(std::vector<bool> & isPatchObs) const = 0;
 
+    virtual void reduce(const std::vector<bool> & keepLocs) {
+      throw eckit::NotImplemented("reduce() is not implemented for this Distribution subclass",
+                                  Here());
+    }
+
     /*!
      * \brief Calculates the global minimum (over all locations on all PEs) of a
      * location-dependent quantity.

@@ -58,6 +58,13 @@ void NonoverlappingDistribution::patchObs(std::vector<bool> & patchObsVec) const
 }
 
 // -----------------------------------------------------------------------------
+void NonoverlappingDistribution::reduce(const std::vector<bool> & keepLocs) {
+  numLocationsOnThisRank_ = std::count(keepLocs.begin(), keepLocs.end(), true);
+  numLocationsOnLowerRanks_ = numLocationsOnThisRank_;
+  oops::mpi::exclusiveScan(comm_, numLocationsOnLowerRanks_);
+}
+
+// -----------------------------------------------------------------------------
 void NonoverlappingDistribution::min(int & x) const {
   minImpl(x);
 }

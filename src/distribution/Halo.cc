@@ -110,6 +110,21 @@ bool Halo::isMyRecord(std::size_t RecNum) const {
 }
 
 // -----------------------------------------------------------------------------
+void Halo::reduce(const std::vector<bool> & keepLocs) {
+  auto newEnd = std::remove_if(haloLocVector_.begin(), haloLocVector_.end(),
+                               [&](const auto& element) {
+                                  return !keepLocs[(&element - &haloLocVector_[0])];
+                               });
+  haloLocVector_.erase(newEnd, haloLocVector_.end());
+  auto newEndRec = std::remove_if(haloLocRecords_.begin(), haloLocRecords_.end(),
+                                 [&](const auto& element) {
+                                     return !keepLocs[(&element - &haloLocRecords_[0])];
+                               });
+  haloLocRecords_.erase(newEndRec, haloLocRecords_.end());
+  this->computePatchLocs();
+}
+
+// -----------------------------------------------------------------------------
 void Halo::computePatchLocs() {
   // define some constants for this PE
   double inf = std::numeric_limits<double>::infinity();
@@ -154,6 +169,8 @@ void Halo::computePatchLocs() {
       }
     }
 
+    patchObsBool_.clear();
+    patchObsBool_.reserve(haloLocVector_.size());
     // convert storage from unodered sets to a bool vector
     for (size_t jj = 0; jj < haloLocVector_.size(); ++jj) {
       if ( patchObsLoc.count(haloLocVector_[jj]) ) {
@@ -164,19 +181,8 @@ void Halo::computePatchLocs() {
     }
 
     size_t npatchobs = std::count(patchObsBool_.begin(), patchObsBool_.end(), true);
-    oops::Log::debug() << "npatchobs: " << npatchobs << std::endl;
-    oops::Log::debug() << "patchObsBool_.size(): " << patchObsBool_.size() << std::endl;
-
-    // now that we have patchObsBool_ computed we can free memory occupied by some temp objects
-    recordDistancesFromCenter_.clear();
-    haloLocRecords_.clear();
-    haloLocRecords_.shrink_to_fit();
 
     computeGlobalUniqueConsecutiveLocIndices(dist_and_lidx_glb);
-
-    // and now the remaining temp object
-    haloLocVector_.clear();
-    haloLocVector_.shrink_to_fit();
   }
 }
 
@@ -184,7 +190,7 @@ void Halo::computePatchLocs() {
 void Halo::computeGlobalUniqueConsecutiveLocIndices(
     const std::vector<std::pair<double, int>> &dist_and_lidx_glb) {
   const double inf = std::numeric_limits<double>::infinity();
-
+  globalUniqueConsecutiveLocIndices_.clear();
   globalUniqueConsecutiveLocIndices_.reserve(haloLocVector_.size());
 
   // Step 0: enable quick checks of whether a location belongs to this rank's halo.

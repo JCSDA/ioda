@@ -35,6 +35,8 @@ class NonoverlappingDistribution : public Distribution {
     void patchObs(std::vector<bool> & patchObsVec) const override;
     void computePatchLocs() override;
 
+    void reduce(const std::vector<bool> & keepLocs) override;
+
     void min(int & x) const override;
     void min(std::size_t & x) const override;
     void min(float & x) const override;
