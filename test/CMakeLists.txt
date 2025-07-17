@@ -131,7 +131,6 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsspace_reader_pool.yaml
   testinput/iodatest_obsspace_append.yaml
   testinput/iodatest_obsspace_append_mpi.yaml
-  testinput/iodatest_obsspace_datetime.yaml
   testinput/iodatest_obsspace_dist_write.yaml
   testinput/iodatest_obsspace_default_fill_values.yaml
   testinput/iodatest_obsspace_empty_obs_file.yaml
@@ -618,12 +617,6 @@ if (odc_FOUND)
                     ARGS    "testinput/iodatest_odb_tables_iterator.yaml"
                     )
 endif()
-
-ecbuild_add_test( TARGET  test_ioda_obsspace_datetime
-                  COMMAND test_ioda_obsspace
-                  ARGS    "testinput/iodatest_obsspace_datetime.yaml"
-                  LIBS  ioda_test
-                  )
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_empty_obs_file
                   COMMAND test_ioda_obsspace

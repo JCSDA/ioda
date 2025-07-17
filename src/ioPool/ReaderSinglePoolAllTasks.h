@@ -41,7 +41,6 @@ namespace ioda {
 namespace IoPool {
 
 class Distribution;
-enum class DateTimeFormat;
 
 /// \brief Reader pool subclass
 /// \details This class holds a single io pool which consists of a small number of MPI tasks.

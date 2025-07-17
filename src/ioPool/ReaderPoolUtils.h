@@ -29,14 +29,6 @@ namespace IoPool {
 
 class ReaderPoolBase;
 
-/// Enum type for the different formats of the datetime variable
-enum class DateTimeFormat {
-    None,
-    Offset,
-    String,
-    Epoch
-};
-
 /// @brief return the name of the file prep group
 std::string filePrepGroupName();
 
@@ -154,7 +146,6 @@ void readerSaveDestVar(const std::string & varName, const std::vector<char> & de
 /// @param latValues vector of latitude values
 /// @param sourceLocIndices vector of location indices selected from input file
 /// @param sourceRecNums vector of record numbers corresponding to sourceLocIndices
-/// @param dtimeFormat denotes the date time format in the input file
 /// @param dtimeEpoch reference date time value
 /// @param globalNlocs total number of locations distributed across all MPI processes
 /// @param sourceNlocs total number of locations in the input source file
@@ -167,8 +158,7 @@ void extractGlobalInfoFromSource(const eckit::mpi::Comm & comm,
     const std::vector<std::string> & obsGroupVarList, std::vector<int64_t> & dtimeValues,
     std::vector<float> & lonValues, std::vector<float> & latValues,
     std::vector<std::size_t> & sourceLocIndices, std::vector<std::size_t> & sourceRecNums,
-    DateTimeFormat & dtimeFormat, std::string & dtimeEpoch,
-    std::size_t & globalNlocs, std::size_t & sourceNlocs,
+    std::string & dtimeEpoch, std::size_t & globalNlocs, std::size_t & sourceNlocs,
     std::size_t & sourceNlocsInsideTimeWindow, std::size_t & sourceNlocsOutsideTimeWindow,
     std::size_t & sourceNlocsRejectQC);
 
@@ -272,17 +262,16 @@ void readerTransferVarData(const ReaderPoolBase & ioPool,
 /// @param fileGroup is the source file group
 /// @param memGroup is the destination memory group
 /// @param dtimeFormat enum value denoting which datetime format exists in the obs source
-/// @param dtimeVals vector of int64_t to hold date time values
 /// @param dtimeEpoch string value for datetime variable units
 /// @param lonValues vector of float to hold longitude values
 /// @param latValues vector of float to hold latitude values
 /// @param isParallelIo true if reading the input file in parallel IO mode
 /// @param emptyFile true if reading from an empty file
 void ioReadGroup(const ReaderPoolBase & ioPool, const ioda::Group& fileGroup,
-                 ioda::Group& memGroup, const DateTimeFormat dtimeFormat,
-                 std::vector<int64_t> & dtimeVals, const std::string & dtimeEpoch,
-                 std::vector<float> & lonValues, std::vector<float> & latValues,
-                 const bool isParallelIo, const bool emptyFile);
+                 ioda::Group& memGroup, std::vector<int64_t> & dtimeVals,
+                 const std::string & dtimeEpoch, std::vector<float> & lonValues,
+                 std::vector<float> & latValues, const bool isParallelIo,
+                 const bool emptyFile);
 
 }  // namespace IoPool
 }  // namespace ioda

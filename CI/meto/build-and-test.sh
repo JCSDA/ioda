@@ -54,6 +54,7 @@ fi
 
 # -- Configure
 cmake -B . -S "${HERE}" -G "${GENERATOR}" -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_DISABLE_FIND_PACKAGE_bufr_query=ON \
     -DCMAKE_EXE_LINKER_FLAGS='-lmpi -lmpi_cxx -lmpi_mpifh -lgfortran -lquadmath -lstdc++'
 
 # -- Build

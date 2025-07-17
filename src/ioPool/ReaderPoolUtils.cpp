@@ -66,13 +66,6 @@ static const int mpiVariableNumberStart = 1;
 // Function declarations for "private" functions
 //--------------------------------------------------------------------------------
 
-/// @brief special MPI broadcast for the DateTimeFormat enum type.
-/// @param comm MPI communicator group
-/// @param enumVar DateTimeFormat enum variable
-/// @param root broadcast root rank
-void broadcastDateTimeFormat(const eckit::mpi::Comm & comm, DateTimeFormat & enumVar,
-                             const std::size_t root);
-
 /// @brief Transfer data from the source buffer to the destination variable
 /// @param varName variable name
 /// @param srcBuffer source memory buffer holding the source variable data
@@ -169,19 +162,15 @@ void convertEpochStringToDtime(const std::string & epochString, util::DateTime &
 /// @brief Check obs source for required variables
 /// @param srcGroup ioda Group object holding obs source data (file or generator)
 /// @param emptyFile true if the obs source did not contain any locations
-/// @param dtimeFormat format of the datetime variable in the obs source
-void checkForRequiredVars(const ioda::Group & srcGroup, bool emptyFile,
-                          DateTimeFormat & dtimeFormat);
+void checkForRequiredVars(const ioda::Group & srcGroup, bool emptyFile);
 
 /// @brief Read date time variable values from obs source
 /// @param obsSource ioda Group object holding obs source data (file or generator)
 /// @param emptyFile flag when true have a file with zero obs
-/// @param dtimeFormat enum value denoting which datetime format exists in the obs source
 /// @param dtimeVals vector of int64_t to hold date time values
 /// @param dtimeEpoch string value for datetime variable units
 void readSourceDtimeVar(const ioda::Group & srcGroup, const bool emptyFile,
-                        const DateTimeFormat dtimeFormat, std::vector<int64_t> & dtimeVals,
-                        std::string & dtimeEpoch);
+                        std::vector<int64_t> & dtimeVals, std::string & dtimeEpoch);
 
 /// @brief Initialize the location indices
 /// @detail If applyLocCheck is false, then sourceLocIndices is initialize to the entire
@@ -316,42 +305,12 @@ void convertEpochStringToDtime(const std::string & epochString, util::DateTime &
 }
 
 //--------------------------------------------------------------------------------
-void checkForRequiredVars(const ioda::Group & srcGroup, bool emptyFile,
-                          DateTimeFormat & dtimeFormat) {
-    // Check to see which format the source data time is in. There are two old formats
-    // that need to be obsoleted soon, plus the conventional format.
-    //
-    // Old formats
-    //    offset:
-    //        datetime refrenece is in global attribute "date_time"
-    //        variable values are float offset from reference in hours
-    //
-    //    string:
-    //        variable values are ISO 8601 formatted strings
-    //
-    // Conventional format
-    //    epoch:
-    //        datetime reference (epoch) is stored in variable attribute "units"
-    //            value is "seconds since <dtime>" where <dtime> is an
-    //            ISO 8601 formatted string
-    //        variable values are int64_t holding offset in seconds from the epoch
-    //
-    // TODO(srh) For now the old formats will be automatically converted to the epoch
-    // format before storing in the obs space container. Warnings will be issued if
-    // an old format is being used. Eventually, we need to turn the warnings into
-    // errors and only allow the epoch format moving forward.
-
-    // Check for datetime formats with lowest precedence first. That way subsequent
-    // (higher precedence) can override in case several formats exist in the file.
-    dtimeFormat = DateTimeFormat::None;
-    if (srcGroup.vars.exists("MetaData/time")) { dtimeFormat = DateTimeFormat::Offset; }
-    if (srcGroup.vars.exists("MetaData/datetime")) { dtimeFormat = DateTimeFormat::String; }
-    if (srcGroup.vars.exists("MetaData/dateTime")) { dtimeFormat = DateTimeFormat::Epoch; }
-
+void checkForRequiredVars(const ioda::Group & srcGroup, bool emptyFile) {
     // Check to see if required metadata variables exist
-    bool haveRequiredMetadata = dtimeFormat != DateTimeFormat::None;
-    haveRequiredMetadata = haveRequiredMetadata && srcGroup.vars.exists("MetaData/latitude");
-    haveRequiredMetadata = haveRequiredMetadata && srcGroup.vars.exists("MetaData/longitude");
+    const bool haveRequiredMetadata =
+        srcGroup.vars.exists("MetaData/dateTime") &&
+        srcGroup.vars.exists("MetaData/latitude") &&
+        srcGroup.vars.exists("MetaData/longitude");
 
     // Only do this check if there are more than zero obs in the file.
     // When a file does contain zero obs, we want to allow for an "empty" file with
@@ -361,82 +320,25 @@ void checkForRequiredVars(const ioda::Group & srcGroup, bool emptyFile,
       const std::string errorMsg =
           std::string("\nOne or more of the following metadata variables are missing ") +
           std::string("from the input obs data source:\n") +
-          std::string("    MetaData/dateTime (preferred) or MetaData/datetime ") +
-          std::string("or MetaData/time\n") +
+          std::string("    MetaData/dateTime\n") +
           std::string("    MetaData/latitude\n") +
           std::string("    MetaData/longitude\n");
       throw Exception(errorMsg.c_str(), ioda_Here());
-    }
-
-    if (dtimeFormat == DateTimeFormat::String) {
-      oops::Log::info() << "WARNING: string style datetime will cause performance degredation "
-                        << "and will eventually be deprecated." << std::endl
-                        << "WARNING: Please update your datetime data to the epoch style "
-                        << "representation using the new variable: MetaData/dateTime."
-                        << std::endl;
-    }
-
-    if (dtimeFormat == DateTimeFormat::Offset) {
-      oops::Log::info() << "WARNING: the reference/offset style datetime will "
-                        << "be deprecated soon."
-                        << std::endl
-                        << "WARNING: Please update your datetime data to the epoch style "
-                        << "representation using the new variable: MetaData/dateTime."
-                        << std::endl;
     }
 }
 
 //--------------------------------------------------------------------------------
 void readSourceDtimeVar(const ioda::Group & srcGroup, const bool emptyFile,
-                        const DateTimeFormat dtimeFormat, std::vector<int64_t> & dtimeVals,
-                        std::string & dtimeEpoch) {
+                        std::vector<int64_t> & dtimeVals, std::string & dtimeEpoch) {
     // Initialize the output variables to values corresponding to an empty file. That way
     // if we have an empty file, then we can skip the file read and broadcast steps.
     dtimeVals.resize(0);
     dtimeEpoch = "seconds since 1970-01-01T00:00:00Z";
 
     if (!emptyFile) {
-        // Read in variable data (converting if necessary) and determine epoch value
-        ioda::Variable dtimeVar;
-        if (dtimeFormat == DateTimeFormat::Epoch) {
-            // Simply read in var values and copy the units attribute
-            dtimeVar = srcGroup.vars.open("MetaData/dateTime");
-            dtimeVar.atts.open("units").read<std::string>(dtimeEpoch);
-            dtimeVar.read<int64_t>(dtimeVals);
-        } else if (dtimeFormat == DateTimeFormat::String) {
-            // Set the epoch to the linux standard epoch
-            const std::string epochDtimeString = std::string("1970-01-01T00:00:00Z");
-            dtimeEpoch = std::string("seconds since ") + epochDtimeString;
-
-            std::vector<std::string> dtStrings;
-            dtimeVar = srcGroup.vars.open("MetaData/datetime");
-            dtimeVar.read<std::string>(dtStrings);
-
-            const util::DateTime epochDtime(epochDtimeString);
-            dtimeVals =  convertDtStringsToTimeOffsets(epochDtime, dtStrings);
-        } else if (dtimeFormat == DateTimeFormat::Offset) {
-            // Set the epoch to the "date_time" global attribute
-            int refDtimeInt;
-            srcGroup.atts.open("date_time").read<int>(refDtimeInt);
-
-            const int year = refDtimeInt / 1000000;     // refDtimeInt contains YYYYMMDDhh
-            int tempInt = refDtimeInt % 1000000;
-            const int month = tempInt / 10000;       // tempInt contains MMDDhh
-            tempInt = tempInt % 10000;
-            const int day = tempInt / 100;           // tempInt contains DDhh
-            const int hour = tempInt % 100;
-            const util::DateTime refDtime(year, month, day, hour, 0, 0);
-
-            dtimeEpoch = std::string("seconds since ") + refDtime.toString();
-
-            std::vector<float> dtTimeOffsets;
-            dtimeVar = srcGroup.vars.open("MetaData/time");
-            dtimeVar.read<float>(dtTimeOffsets);
-            dtimeVals.resize(dtTimeOffsets.size());
-            for (std::size_t i = 0; i < dtTimeOffsets.size(); ++i) {
-                dtimeVals[i] = static_cast<int64_t>(lround(dtTimeOffsets[i] * 3600.0));
-            }
-        }
+        const ioda::Variable dtimeVar = srcGroup.vars.open("MetaData/dateTime");
+        dtimeVar.atts.open("units").read<std::string>(dtimeEpoch);
+        dtimeVar.read<int64_t>(dtimeVals);
     }
 }
 
@@ -672,21 +574,6 @@ void assignRecordNumbers(const ioda::Group & srcGroup, const bool emptyFile,
 }
 
 //--------------------------------------------------------------------------------
-// Special case for broadcasting a DateTimeFormat enum type via eckit broadcast.
-void broadcastDateTimeFormat(const eckit::mpi::Comm & comm, DateTimeFormat & enumVar,
-                             const std::size_t root) {
-    int tempInt;
-    if (comm.rank() == root) {
-        // Send enum as int since eckit MPI broadcast doesn't accept enum types
-        tempInt = static_cast<int>(enumVar);
-        comm.broadcast(tempInt, root);
-    } else {
-        comm.broadcast(tempInt, root);
-        enumVar = static_cast<DateTimeFormat>(tempInt);
-    }
-}
-
-//--------------------------------------------------------------------------------
 // Definitions of public functions
 //--------------------------------------------------------------------------------
 
@@ -854,18 +741,17 @@ void extractGlobalInfoFromSource(const eckit::mpi::Comm & comm,
     const std::vector<std::string> & obsGroupVarList, std::vector<int64_t> & dtimeValues,
     std::vector<float> & lonValues, std::vector<float> & latValues,
     std::vector<std::size_t> & sourceLocIndices, std::vector<std::size_t> & sourceRecNums,
-    DateTimeFormat & dtimeFormat, std::string & dtimeEpoch,
-    std::size_t & globalNlocs, std::size_t & sourceNlocs,
+    std::string & dtimeEpoch, std::size_t & globalNlocs, std::size_t & sourceNlocs,
     std::size_t & sourceNlocsInsideTimeWindow, std::size_t & sourceNlocsOutsideTimeWindow,
     std::size_t & sourceNlocsRejectQC) {
 
     if (comm.rank() == 0) {
         // Check for required variables
-        checkForRequiredVars(srcGroup, emptyFile, dtimeFormat);
+        checkForRequiredVars(srcGroup, emptyFile);
 
         // Read and convert the dtimeValues to the current epoch format if older formats are
         // being used in the source.
-        readSourceDtimeVar(srcGroup, emptyFile, dtimeFormat, dtimeValues, dtimeEpoch);
+        readSourceDtimeVar(srcGroup, emptyFile, dtimeValues, dtimeEpoch);
 
         // Convert the window start and end times to int64_t offsets from the dtimeEpoch
         // value. This will provide for a very fast "inside the timing window check".
@@ -891,7 +777,6 @@ void extractGlobalInfoFromSource(const eckit::mpi::Comm & comm,
     }
 
     // broadcast variables
-    broadcastDateTimeFormat(comm, dtimeFormat, 0);
     oops::mpi::broadcastString(comm, dtimeEpoch, 0);
     comm.broadcast(globalNlocs, 0);
     comm.broadcast(sourceNlocs, 0);
@@ -2652,10 +2537,10 @@ void readerCopyVarData(const ReaderPoolBase & ioPool,
 
 //--------------------------------------------------------------------------------
 void ioReadGroup(const ReaderPoolBase & ioPool, const ioda::Group& fileGroup,
-                 ioda::Group& memGroup, const DateTimeFormat dtimeFormat,
-                 std::vector<int64_t> & dtimeVals, const std::string & dtimeEpoch,
-                 std::vector<float> & lonVals, std::vector<float> & latVals,
-                 const bool isParallelIo, const bool emptyFile) {
+                 ioda::Group& memGroup, std::vector<int64_t> & dtimeVals,
+                 const std::string & dtimeEpoch, std::vector<float> & lonVals,
+                 std::vector<float> & latVals, const bool isParallelIo,
+                 const bool emptyFile) {
     // Query old data for variable lists and dimension mappings
     VarUtils::Vec_Named_Variable allVarsList;
     VarUtils::Vec_Named_Variable regularVarList;
@@ -2708,25 +2593,6 @@ void ioReadGroup(const ReaderPoolBase & ioPool, const ioda::Group& fileGroup,
            },
            VarUtils::ThrowIfVariableIsOfUnsupportedType(srcVarName));
     }
-    // If the obs source did not contain the epoch style date time format, then we
-    // need to create that variable here. Note that MetaData/dateTime has Location
-    // as the first (and only) dimension so it needs to be set for unlimited max
-    // size.
-    if ((dtimeFormat != DateTimeFormat::Epoch) && (dtimeFormat != DateTimeFormat::None)) {
-        std::vector<Dimensions_t> nlocsVec(1, numLocs);
-        std::vector<Dimensions_t> unlimVec(1, ioda::Unlimited);
-        ioda::Dimensions varDims(nlocsVec, unlimVec, 1, numLocs);
-        ioda::VariableCreationParameters params =
-            VariableCreationParameters::defaults<int64_t>();
-        params.setFillValue<int64_t>(getMissingValue<int64_t>());
-        params.noCompress();
-        std::vector<ioda::Dimensions_t> chunkDims(1,
-                                        VarUtils::getLocationChunkSize(ioPool.globalNlocs()));
-        params.setChunks(chunkDims);
-        ioda::Variable dtimeVar =
-            memGroup.vars.create<int64_t>("MetaData/dateTime", varDims, params);
-        dtimeVar.atts.add<std::string>("units", dtimeEpoch);
-    }
 
     // Make new dimension scales
     for (auto& dim : dimVarList) {
@@ -2747,13 +2613,6 @@ void ioReadGroup(const ReaderPoolBase & ioPool, const ioda::Group& fileGroup,
       for (const auto &old_dim : old.second) {
           new_dims.push_back(memGroup.vars[old_dim.name]);
       }
-      dimsAttachedToNewVars.push_back(make_pair(new_var, std::move(new_dims)));
-    }
-    // If the obs source did not contain the epoch style date time format, then we
-    // need to attach the dimension scales here.
-    if ((dtimeFormat != DateTimeFormat::Epoch) && (dtimeFormat != DateTimeFormat::None)) {
-      ioda::Variable new_var = memGroup.vars.open("MetaData/dateTime");
-      std::vector<ioda::Variable> new_dims(1, memGroup.vars.open("Location"));
       dimsAttachedToNewVars.push_back(make_pair(new_var, std::move(new_dims)));
     }
     memGroup.vars.attachDimensionScales(dimsAttachedToNewVars);

@@ -89,7 +89,6 @@ void ReaderSinglePoolAllTasks::load(Group & destGroup) {
     // Extract and record global data from the input file. Call the extract utility from
     // only rank 0, and then broadcast the data to the other ranks. This saves a bit on
     // file IO.
-    DateTimeFormat dtimeFormat;
     std::string dtimeEpoch("");
     std::vector<int64_t> dtimeValues;
     std::vector<float> lonValues;
@@ -103,7 +102,7 @@ void ReaderSinglePoolAllTasks::load(Group & destGroup) {
     // ranks.
     extractGlobalInfoFromSource(this->commAll(), fileGroup, emptyFile, timeWindow_,
        readerEngine->applyLocationsCheck(), obsGroupVarList_, dtimeValues,
-       lonValues, latValues, sourceLocIndices, sourceRecNums, dtimeFormat,
+       lonValues, latValues, sourceLocIndices, sourceRecNums,
        dtimeEpoch, globalNlocs_, sourceNlocs_, sourceNlocsInsideTimeWindow_,
        sourceNlocsOutsideTimeWindow_, sourceNlocsRejectQC_);
 
@@ -127,7 +126,7 @@ void ReaderSinglePoolAllTasks::load(Group & destGroup) {
     destGroup = ObsGroup::generate(backend, {});
 
     // Copy the ObsSpace ObsGroup to the output file Group.
-    ioReadGroup(*this, fileGroup, destGroup, dtimeFormat, dtimeValues, dtimeEpoch,
+    ioReadGroup(*this, fileGroup, destGroup, dtimeValues, dtimeEpoch,
                 lonValues, latValues, isParallelIo_, emptyFile);
 
     // Engine finalization

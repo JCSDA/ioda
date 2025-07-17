@@ -81,7 +81,6 @@ void ReaderPrepInputFiles::initialize() {
         // MPI task so file io can be reduced by having rank 0 only do the io, generate
         // the indices and record numbers and broadcast that information to the other
         // ranks.
-        DateTimeFormat dtimeFormat;
         std::vector<int64_t> dtimeValues;
         std::vector<float> lonValues;
         std::vector<float> latValues;
@@ -89,7 +88,7 @@ void ReaderPrepInputFiles::initialize() {
         std::vector<std::size_t> sourceRecNums;
         extractGlobalInfoFromSource(this->commAll(), fileGroup, emptyFile, timeWindow_,
             applyLocationsCheck, obsGroupVarList_, dtimeValues, lonValues, latValues,
-            sourceLocIndices, sourceRecNums, dtimeFormat, dtimeEpoch_, globalNlocs_,
+            sourceLocIndices, sourceRecNums, dtimeEpoch_, globalNlocs_,
             sourceNlocs_, sourceNlocsInsideTimeWindow_, sourceNlocsOutsideTimeWindow_,
             sourceNlocsRejectQC_);
 

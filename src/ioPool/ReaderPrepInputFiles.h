@@ -27,7 +27,6 @@ namespace ioda {
 namespace IoPool {
 
 class Distribution;
-enum class DateTimeFormat;
 
 /// \brief Reader prep input files
 /// \details This class is not a full reader, rather it is intended to be used by the

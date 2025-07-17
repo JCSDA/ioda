@@ -112,7 +112,6 @@ void NonoverlappingReaderPool::load(Group & destGroup) {
       oops::Log::warning() << "WARNING: Input file " << readerSrc_
                            << " contains zero observations" << std::endl;
 
-  DateTimeFormat dtimeFormat;
   std::vector<int64_t> dtimeValues;
   std::vector<float> lonValues;
   std::vector<float> latValues;
@@ -122,8 +121,8 @@ void NonoverlappingReaderPool::load(Group & destGroup) {
                                   readerEngine->applyLocationsCheck(),
                                   obsGroupVarList_,
                                   dtimeValues, lonValues, latValues, locIndices_, recNums_,
-                                  dtimeFormat, dtimeEpoch_, globalNlocs_,
-                                  sourceNlocs_, sourceNlocsInsideTimeWindow_,
+                                  dtimeEpoch_, globalNlocs_, sourceNlocs_,
+                                  sourceNlocsInsideTimeWindow_,
                                   sourceNlocsOutsideTimeWindow_, sourceNlocsRejectQC_);
 
   if (anyRankHasLocations && !allRanksHaveLocations) {
@@ -140,8 +139,8 @@ void NonoverlappingReaderPool::load(Group & destGroup) {
                                   readerEngine->applyLocationsCheck(),
                                   obsGroupVarList_,
                                   dtimeValues, lonValues, latValues, locIndices_, recNums_,
-                                  dtimeFormat, dtimeEpoch_, globalNlocs_,
-                                  sourceNlocs_, sourceNlocsInsideTimeWindow_,
+                                  dtimeEpoch_, globalNlocs_, sourceNlocs_,
+                                  sourceNlocsInsideTimeWindow_,
                                   sourceNlocsOutsideTimeWindow_, sourceNlocsRejectQC_);
 
   // Count locations and records held on this rank.
@@ -162,7 +161,7 @@ void NonoverlappingReaderPool::load(Group & destGroup) {
   destGroup = ObsGroup::generate(backend, {});
 
   // Copy the ObsSpace ObsGroup to the output file Group.
-  ioReadGroup(*this, srcGroup, destGroup, dtimeFormat, dtimeValues, dtimeEpoch_,
+  ioReadGroup(*this, srcGroup, destGroup, dtimeValues, dtimeEpoch_,
               lonValues, latValues, isParallelIo_, emptyFile_);
 
   // Add up the numbers of locations read/rejected/accepted on all MPI ranks.
