@@ -16,6 +16,10 @@
 #include "oops/runs/Run.h"
 #include "oops/runs/Test.h"
 #include "oops/test/TestEnvironment.h"
+#include "oops/util/parameters/OptionalParameter.h"
+#include "oops/util/parameters/Parameter.h"
+#include "oops/util/parameters/Parameters.h"
+#include "oops/util/parameters/RequiredParameter.h"
 
 // -----------------------------------------------------------------------------
 class TestsParameters : public oops::Parameters {
