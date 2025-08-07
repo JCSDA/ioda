@@ -7,10 +7,10 @@
 
 #include "ioda/Engines/Script.h"
 
+#include <algorithm>
 #include <pybind11/embed.h>
 #include <pybind11/pybind11.h>
 
-#include "eckit/config/YAMLConfiguration.h"
 #include "ioda/Exception.h"
 #include "ioda/Group.h"
 #include "ioda/ObsGroup.h"
@@ -43,7 +43,7 @@ namespace details {
     std::shared_ptr<py::scoped_interpreter> guard;
   };
 
-  struct Arg
+  struct ScriptArg
   {
     std::string name;
     std::string type;
@@ -59,18 +59,18 @@ namespace details {
   /// \brief Get the arguments of a python function.
   /// \param func The python function.
   /// \return A vector of Arg objects.
-  std::vector<details::Arg> getArgs(py::function func)
+  std::vector<details::ScriptArg> getArgs(py::function func)
   {
     py::module inspect = py::module::import("inspect");
     py::object signature = inspect.attr("signature")(func);
     py::dict parameters = signature.attr("parameters");
 
-    std::vector<details::Arg> result;
+    std::vector<details::ScriptArg> result;
     for (auto item : parameters)
     {
       auto param = item.second;
 
-      auto arg = details::Arg();
+      auto arg = details::ScriptArg();
       arg.name = py::str(param.attr("name"));
 
       py::object annotation = param.attr("annotation");
@@ -98,14 +98,13 @@ namespace details {
             throw Exception("Can't convert \"" + arg.type + "\" to acceptible type.", ioda_Here());
           }
         }
+
         if (arg.type == "bool")
         {
-//          arg.defaultValue = (py::str(default_value) == "True"));
+           arg.defaultValue  = py::str(default_value);
         }
-        else
-        {
-          arg.defaultValue = py::str(default_value);
-        }
+
+        arg.defaultValue = py::str(default_value);
       }
 
       result.push_back(arg);
@@ -116,104 +115,86 @@ namespace details {
 
   /// \brief Make kwargs to call the python function
   /// \param scriptParams The parameters to the script.
-  /// \param args The arguments of the function.
+  /// \param scriptArgs The arguments of the function.
   /// \return A python dict containing the kwargs.
   py::dict makePythonKwArgs(const Script_Parameters& scriptParams,
-                            const std::vector<details::Arg>& args,
+                            const std::vector<details::ScriptArg>& scriptArgs,
                             const py::dict env)
   {
+    // define lambda function to convert the args to the types defined in scriptArgs
+    auto convertArg = [](const details::ScriptArg& scriptArg, const py::object& value) -> py::object
+    {
+      if (scriptArg.type == "int")
+      {
+        return py::int_(value);
+      }
+
+      if (scriptArg.type == "float")
+      {
+        return py::float_(value);
+      }
+
+      if (scriptArg.type == "bool")
+      {
+        if (py::isinstance<py::str>(value))
+        {
+          if (py::str(value).attr("lower")().cast<std::string>() == "false" || \
+              py::str(value).cast<std::string>() == "0")
+          {
+            return py::bool_(false);
+          }
+
+          if (py::str(value).attr("lower")().cast<std::string>() == "true" || \
+              py::str(value).cast<std::string>() =="1")
+          {
+            return py::bool_(true);
+          }
+        }
+
+        if (py::isinstance<py::bool_>(value))
+        {
+          return value;  // already a boolean
+        }
+
+        if (py::isinstance<py::int_>(value))
+        {
+          return py::bool_(py::int_(value).cast<int>() != 0);
+        }
+
+        throw eckit::BadParameter("Invalid boolean value: " + py::str(value).cast<std::string>());
+      }
+
+      if (scriptArg.type == "string" || scriptArg.type == "str")
+      {
+        return py::str(value);
+      }
+
+      return value;  // assume it's a string or other type
+    };
+
     py::dict kwargs;
 
-    for (const auto& arg : args)
+    for (const auto& scriptArg : scriptArgs)
     {
       // add the env dictionary if the function uses it
-      if (arg.name == "env")
+      if (scriptArg.name == "env")
       {
         kwargs["env"] = env;
         continue;
       }
 
-      if (scriptParams.args.find(arg.name) != scriptParams.args.end())
+      if (scriptParams.args.find(scriptArg.name) != scriptParams.args.end())
       {
-        Script_Parameters::ArgType argVal = scriptParams.args.at(arg.name);
-
-        if (arg.type == "int")
-        {
-          std::visit([&kwargs, arg](const auto& paramArg)
-          {
-            using T = std::decay_t<decltype(paramArg)>;
-            if constexpr (std::is_same_v<T, int>)
-             kwargs[arg.name.c_str()] = paramArg;
-            else if constexpr (std::is_same_v<T, double>)
-             kwargs[arg.name.c_str()] = static_cast<int>(paramArg);
-            else
-             throw Exception("Can't convert \"" + arg.type + "\" to acceptible type.", ioda_Here());
-
-          }, argVal);
-        }
-        else if (arg.type == "float")
-        {
-          std::visit([&kwargs, arg](const auto& paramArg)
-          {
-            using T = std::decay_t<decltype(paramArg)>;
-            if constexpr (std::is_same_v<T, double>)
-             kwargs[arg.name.c_str()] = paramArg;
-            else if constexpr (std::is_same_v<T, int>)
-             kwargs[arg.name.c_str()] = paramArg;
-            else
-             throw Exception("Can't convert \"" + arg.type + "\" to acceptible type.", ioda_Here());
-
-          }, argVal);
-        }
-        else if (arg.type == "bool")
-        {
-          std::visit([&kwargs, arg](const auto& paramArg)
-          {
-           using T = std::decay_t<decltype(paramArg)>;
-           if constexpr (std::is_same_v<T, std::string>)
-             if (paramArg == "true" || paramArg == "True")
-             {
-               kwargs[arg.name.c_str()] = true;
-             }
-             else if (paramArg == "false" || paramArg == "False")
-             {
-               kwargs[arg.name.c_str()] = false;
-             }
-             else
-             {
-               throw Exception("Can't convert \"" + paramArg + "\" to bool.", ioda_Here());
-             }
-           else if constexpr (std::is_same_v<T, int>)
-             kwargs[arg.name.c_str()] = (paramArg != 0);
-           else
-             throw Exception("Can't convert \"" + arg.type + "\" to acceptible type.", ioda_Here());
-
-          }, argVal);
-        }
-        else
-        {
-          std::visit([&kwargs, arg](const auto& paramArg)
-          {
-            using T = std::decay_t<decltype(paramArg)>;
-            if constexpr (std::is_same_v<T, std::string>)
-              kwargs[arg.name.c_str()] = paramArg;
-            else if constexpr (std::is_same_v<T, int>)
-              kwargs[arg.name.c_str()] = paramArg;
-            else if constexpr (std::is_same_v<T, double>)
-              kwargs[arg.name.c_str()] = paramArg;
-            else
-             throw Exception("Can't convert \"" + arg.type + "\" to acceptible type.", ioda_Here());
-
-          }, argVal);
-        }
+        auto argVal = scriptParams.args.at(scriptArg.name);
+        kwargs[py::str(scriptArg.name)] = convertArg(scriptArg, argVal->getPyObject());
       }
-      else if (arg.hasDefault())
+      else if (scriptArg.hasDefault())
       {
         // Ignore if there is a default value
       }
       else
       {
-        throw Exception("Missing required argument \"" + arg.name + "\" from configuration.",
+        throw Exception("Missing required argument \"" + scriptArg.name + "\" from configuration.",
                         ioda_Here());
       }
     }
@@ -224,7 +205,7 @@ namespace details {
   /// \param scriptParams The parameters to the script.
   /// \param args The arguments of the function.
   void warnAboutUnusedArgs(const Script_Parameters& scriptParams,
-                           const std::vector<details::Arg>& args)
+                           const std::vector<details::ScriptArg>& args)
   {
     for (const auto& arg : scriptParams.args)
     {

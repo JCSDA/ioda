@@ -256,6 +256,8 @@ list( APPEND ioda_test_input
   testinput/iodatest_bufr_python_encoder.py
   testinput/iodatest_bufr_python_parallel.yaml
   testinput/iodatest_bufr_python_parallel.py
+  testinput/iodatest_script_args.yaml
+  testinput/iodatest_script_args.py
 )
 
 # Work directories for the new reader. Make one entry per test that is using
@@ -2108,6 +2110,12 @@ if (BUILD_PYTHON_BINDINGS)
   ecbuild_add_test( TARGET      test_ioda_time_io_script
                     COMMAND     ${CMAKE_BINARY_DIR}/bin/time_IodaIO.x
                     ARGS        "testinput/iodatest_time_io_script.yaml"
+                    ENVIRONMENT PYTHONPATH=${CMAKE_BINARY_DIR}/lib/python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}:$ENV{PYTHONPATH})
+
+  ecbuild_add_test( TARGET      test_ioda_script_args
+                    TYPE        SCRIPT
+                    COMMAND     ${CMAKE_BINARY_DIR}/bin/time_IodaIO.x
+                    ARGS        "testinput/iodatest_script_args.yaml"
                     ENVIRONMENT PYTHONPATH=${CMAKE_BINARY_DIR}/lib/python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}:$ENV{PYTHONPATH})
 endif()
 

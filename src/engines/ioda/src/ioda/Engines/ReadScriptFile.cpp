@@ -8,6 +8,7 @@
 #include "oops/util/Logger.h"
 #include "oops/util/missingValues.h"
 
+#include "ioda/Engines/ReaderFactory.h"
 #include "ioda/Engines/ReadScriptFile.h"
 
 namespace ioda {
@@ -18,25 +19,8 @@ namespace Engines {
 
   static ReaderMaker<ReadScriptFile> maker("script");
 
-  Script::Script_Parameters::ArgType ReadScriptFile::convertArg(const std::string& argValue) const
-  {
-    try
-    {
-      return Script::Script_Parameters::ArgType(std::stod(argValue));
-    }
-    catch (...) {}
-
-    try
-    {
-      return Script::Script_Parameters::ArgType(std::stoi(argValue));
-    }
-    catch (...) {}
-
-    return Script::Script_Parameters::ArgType(argValue);
-  }
-
-  ReadScriptFile::ReadScriptFile(const Parameters_ & params,
-                                 const ReaderCreationParameters & createParams)
+  ReadScriptFile::ReadScriptFile(const Parameters_& params,
+                                 const ReaderCreationParameters& createParams)
       : ReaderBase(createParams), fileName_(params.scriptFile)
   {
     oops::Log::trace() << "ioda::Engines::ReadScriptFile start constructor" << std::endl;
@@ -47,15 +31,11 @@ namespace Engines {
     Group backend = constructBackend(backendName, backendParams);
 
     // Load the BUFR file into the backend
-    Engines::Script::Script_Parameters scriptParams;
-    scriptParams.scriptFile = params.scriptFile;
+    Script::Script_Parameters scriptParams;
+    scriptParams.scriptFile = params.scriptFile.value();
+    scriptParams.args = params.args.values();
 
-    for (auto arg : params.args.value())
-    {
-      scriptParams.args[arg.first] = convertArg(arg.second);
-    }
-
-    obs_group_ = Engines::Script::openFile(scriptParams, createParams, backend);
+    obs_group_ = Script::openFile(scriptParams, createParams, backend);
 
     oops::Log::trace() << "ioda::Engines::ReadScriptFile end constructor" << std::endl;
   }
