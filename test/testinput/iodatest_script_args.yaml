@@ -28,8 +28,3 @@ observations:
                 nested_nested_int: 200
                 nested_nested_float: 3.14159
                 nested_nested_list_input: [7, 8]
-
-      obsdataout:
-        engine:
-          type: H5File
-          obsfile: "testoutput/iodatest_bufr_mhs.nc"
