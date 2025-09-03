@@ -332,7 +332,7 @@ public:
   /// Python compatability function
   inline Attribute _create_py(const std::string& attrname, BasicTypes dataType,
                               const std::vector<Dimensions_t>& dimensions = {1}) {
-    return create(attrname, ::ioda::Type(dataType, getTypeProvider()), dimensions);
+    return create(attrname, ::ioda::Type(dataType, gsl::not_null<::ioda::detail::Type_Provider*>(getTypeProvider())), dimensions);
   }
 
   /// \brief Create an Attribute without setting its data.
@@ -345,7 +345,7 @@ public:
   Attribute create(const std::string& attrname,
                    const std::vector<Dimensions_t>& dimensions = {1}) {
     try {
-      Type in_memory_dataType = TypeWrapper::GetType(getTypeProvider());
+      Type in_memory_dataType = TypeWrapper::GetType(gsl::not_null<const ::ioda::detail::Type_Provider*>(getTypeProvider()));
       auto att                = create(attrname, in_memory_dataType, dimensions);
       return att;
     } catch (...) {

@@ -302,7 +302,8 @@ bool ioda_variable_c_write_char(ioda_variable_t p,int64_t n,const char * vptr) {
              throw std::exception();      
         }
         std::string s(str,n);
-        auto v = var->write< std::string >(s);  
+        std::vector<std::string> vs = {s};
+        auto v = var->write< std::string >(vs);  
         return true;
     } catch (std::exception& e) {
         std::cerr << "ioda_variable_c_write_char failed\n";
@@ -323,7 +324,7 @@ bool ioda_variable_c_write_str(ioda_variable_t p,cxx_vector_string_t vstr_p) {
            std::cerr << "ioda_variable_c_write_str vecstring pointer is null\n";
            fatal_error();					
        } 			
-       ioda::Variable v = var->write< std::vector< std::string > >(*vstr);
+       ioda::Variable v = var->write< std::string >(*vstr);
        return true;						
     } catch (std::exception& e) {				
         std::cerr << "ioda_variable_c_write_str_full failed ";
@@ -411,7 +412,7 @@ bool ioda_variable_c_read_str(void *p,int64_t n,cxx_vector_string_t *vstr) {
           vs_p = reinterpret_cast<void*>(new std::vector<std::string>()); 
        }  
        VOID_TO_CXX(std::vector<std::string>,vs_p,vs);
-       auto vr = var->read< std::vector<std::string> >(*vs);
+       auto vr = var->read< std::string >(*vs);
        // make sure that vstr points to correct char *
        *vstr = reinterpret_cast<void*>(vs);
        return true;

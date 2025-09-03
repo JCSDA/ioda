@@ -162,7 +162,7 @@ Variable Has_Variables_Base::_create_py(const std::string& name, BasicTypes data
                              const VariableCreationParameters& params
                              ) {
   try {
-    Type typ = Type(dataType, getTypeProvider());
+    Type typ = Type(dataType, gsl::not_null<::ioda::detail::Type_Provider*>(getTypeProvider()));
     if (dimension_scales.size()) {
       std::vector<Dimensions_t> c_d, m_d, chunking_hints;
 

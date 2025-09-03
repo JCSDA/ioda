@@ -70,7 +70,7 @@ public:
   /// \returns <0 if an error occurred.
   template <class DataType>
   bool isA() const {
-    auto ttype = Types::GetType<DataType>(getTypeProvider());
+    auto ttype = Types::GetType<DataType>(gsl::not_null<const ::ioda::detail::Type_Provider*>(getTypeProvider()));
     return isA(ttype);
   }
 
@@ -86,7 +86,7 @@ public:
   /// \returns <0 if an error occurred.
   template <class DataType>
   bool isExactlyA() const {
-    auto ttype     = Types::GetType<DataType>(getTypeProvider());
+    auto ttype     = Types::GetType<DataType>(gsl::not_null<const ::ioda::detail::Type_Provider*>(getTypeProvider()));
     HH_hid_t otype = internalType();
     auto ret       = H5Tequal(ttype(), otype());
     if (ret < 0) throw Exception("Cannot check type equality. General failure.", ioda_Here());

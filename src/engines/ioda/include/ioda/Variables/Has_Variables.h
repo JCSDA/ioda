@@ -309,7 +309,7 @@ public:
     try {
       VariableCreationParameters params2 = params;
       FillValuePolicies::applyFillValuePolicy<DataType>(getFillValuePolicy(), params2.fillValue_);
-      Type in_memory_dataType = Types::GetType<DataType>(getTypeProvider());
+      Type in_memory_dataType = Types::GetType<DataType>(gsl::not_null<const ::ioda::detail::Type_Provider*>(getTypeProvider()));
       auto var                = create(name, in_memory_dataType, dimensions,
         max_dimensions, params2);
       return var;
@@ -343,7 +343,7 @@ public:
                             const VariableCreationParameters& params
                             = VariableCreationParameters::defaulted<DataType>()) {
     try {
-      Type in_memory_dataType = Types::GetType<DataType>(getTypeProvider());
+      Type in_memory_dataType = Types::GetType<DataType>(gsl::not_null<const ::ioda::detail::Type_Provider*>(getTypeProvider()));
 
       NewVariables_t newvars{NewVariable(name, in_memory_dataType, dimension_scales, params)};
       createWithScales(newvars);

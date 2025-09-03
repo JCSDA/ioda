@@ -104,7 +104,7 @@ public:
       auto d   = m.serialize(data);
       auto spn = gsl::make_span<const char>(reinterpret_cast<const char*>(d->DataPointers.data()),
                                             d->DataPointers.size() * Marshaller::bytesPerElement_);
-      write(spn, TypeWrapper::GetType(getTypeProvider()));
+      write(spn, TypeWrapper::GetType(gsl::not_null<const ::ioda::detail::Type_Provider*>(getTypeProvider())));
       return Attribute_Implementation{backend_};
     } catch (...) {
       std::throw_with_nested(Exception(ioda_Here()));
@@ -259,7 +259,7 @@ public:
       auto p = m.prep_deserialize(numObjects);
       read(gsl::make_span<char>(reinterpret_cast<char*>(p->DataPointers.data()),
                                 p->DataPointers.size() * Marshaller::bytesPerElement_),
-           TypeWrapper::GetType(getTypeProvider()));
+           TypeWrapper::GetType(gsl::not_null<const ::ioda::detail::Type_Provider*>(getTypeProvider())));
       m.deserialize(p, data);
 
       return Attribute_Implementation{backend_};
@@ -445,7 +445,7 @@ public:
   /// \throws ioda::Exception if an error occurred.
   template <class DataType>
   bool isA() const {
-    Type templateType = Types::GetType_Wrapper<DataType>::GetType(getTypeProvider());
+    Type templateType = Types::GetType_Wrapper<DataType>::GetType(gsl::not_null<const ::ioda::detail::Type_Provider*>(getTypeProvider()));
 
     return isA(templateType);
   }
@@ -453,7 +453,7 @@ public:
   virtual bool isA(Type lhs) const;
 
   /// Python compatability function
-  inline bool isA(BasicTypes dataType) { return isA(Type(dataType, getTypeProvider())); }
+  inline bool isA(BasicTypes dataType) { return isA(Type(dataType, gsl::not_null<::ioda::detail::Type_Provider*>(getTypeProvider()))); }
   /// \internal pybind11
   inline bool _py_isA2(BasicTypes dataType) { return isA(dataType); }
 
