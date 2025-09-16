@@ -10,12 +10,18 @@
 #include <netcdf>
 
 #include <map>
+#include <numeric>
 #include <sstream>
 #include <stdexcept>
 #include <string>
 #include <vector>
 
+#include "eckit/exception/Exceptions.h"
+#include "eckit/mpi/Comm.h"
+
 #include "ioda/containers/IFrame.h"
+#include "ioda/ObsDataIoParameters.h"
+#include "ioda/ioPool/IoPoolParameters.h"
 
 #include "oops/util/Logger.h"
 #include "oops/util/missingValues.h"
@@ -144,6 +150,25 @@ static void transferVarDataToOSDF(const std::string & varName,
                                   const std::size_t numlocs,
                                   const std::vector<int> & chanNums,
                                   std::unique_ptr<osdf::IFrame> & destOSDF);
+
+/// \brief load specified range of locations from the input file to the OSDF container
+/// \details This function is not MPI aware, rather it is the low level function that handles
+/// loading data from an input hdf5 file on a single process. It takes a range of locations
+/// which will allow it to be run on multiple processes where the range of locations point
+/// to different sections of the data for different ranks.
+/// Note that the specification of the location range is given as a start location number
+/// and a count. This lines up with the manner in which netcdf/hdf5 hyperslab block
+/// specification is made. The idea is to give the first N locations to rank 0, then the
+/// second N locations to rank 1, and so forth in a load balanced manner.
+/// \param inFile netcdf file object (opened in read mode)
+/// \param startLoc beginning of location range
+/// \param locCount number of locations in range
+/// \param destOSDF destination OSDF container object
+int loadObsBlockFromNetcdf(netCDF::NcFile & inFile,
+                           const std::size_t startLoc,
+                           const std::size_t locCount,
+                           std::unique_ptr<osdf::IFrame> & destOSDF);
+
 //--------------------------------------------------------------------------------
 // Function definitions for "private" functions
 //--------------------------------------------------------------------------------
@@ -167,21 +192,21 @@ bool keepNetcdfVarForOSDF(const std::string & varName, const netCDF::NcVar & var
   const std::vector<netCDF::NcDim> varDims = var.getDims();
   const std::size_t numDims = varDims.size();
   if ((numDims == 0) || (numDims > 2)) {
-    oops::Log::info() << "WARNING: keepNetcdfVarForOSDF: Variable: " << varName
+    oops::Log::info() << "WARNING: ioda::reader::keepNetcdfVarForOSDF: Variable: " << varName
               << " has no dimensions or more than 2 dimensions. Skipping." << std::endl;
 
     keepVar = false;
   } else if (numDims == 1) {
     // 1D variable, check if it is dimensioned by Location
     if (varDims[0].getName() != "Location") {
-      oops::Log::info() << "WARNING: keepNetcdfVarForOSDF: 1D Variable: " << varName
+      oops::Log::info() << "WARNING: ioda::reader::keepNetcdfVarForOSDF: 1D Variable: " << varName
                 << " is not dimensioned by Location. Skipping." << std::endl;
       keepVar = false;
     }
   } else {
     // 2D variable, check if it is dimensioned by Location and Channel
     if ((varDims[0].getName() != "Location") || (varDims[1].getName() != "Channel")) {
-      oops::Log::info() << "WARNING: keepNetcdfVarForOSDF: 2D Variable: " << varName
+      oops::Log::info() << "WARNING: ioda::reader::keepNetcdfVarForOSDF: 2D Variable: " << varName
                 << " is not dimensioned by Location and Channel. Skipping." << std::endl;
       keepVar = false;
     }
@@ -394,8 +419,85 @@ void transferVarDataToOSDF(const std::string & varName,
     }
   } else {
     // The size of the variable data is not correct. This should never happen.
-    throw std::runtime_error("transferVarDataToOSDF: Variable data size is not correct.");
+    throw std::runtime_error(
+      "ioda::reader::transferVarDataToOSDF: Variable data size is not correct.");
   }
+}
+
+//---------------------------------------------------------------------
+int loadObsBlockFromNetcdf(netCDF::NcFile & inFile,
+                           const std::size_t startLoc,
+                           const std::size_t locCount,
+                           std::unique_ptr<osdf::IFrame> & destOSDF) {
+  // Get a list of all the dimensions in the file. We won't store dimensions directly in
+  // the destOSDF container, but we need to get the channel numbers if they exist.
+  // The number of locations that will be read from the file is given by the locCount
+  // parameter. But we want to check that locCount is not greater than the
+  // total number of locations in the file.
+  std::vector<int> chanNums;
+  const std::vector<std::string> allDims = listAllNetcdfVars(inFile, std::string(""), true);
+  for (const auto & dimName : allDims) {
+    // Look for the dimensions Location and Channel (in the top level group). For
+    // Location record the dimension size (number of Locations) and for Channel record
+    // the dimension size (number of Channels) and the channel numbers.
+    if (dimName == "Location") {
+      netCDF::NcDim dim = inFile.getDim(dimName);
+      checkNcObj(dim, "ioda::reader::loadObsBlockFromNetcdf: Failed to get dimension: " + dimName);
+      const std::size_t numLocations = dim.getSize();
+      if (locCount > numLocations) {
+        throw std::runtime_error("ioda::reader::loadObsBlockFromNetcdf: locCount is greater than "
+                                 "number of locations in the file.");
+      }
+    } else if (dimName == "Channel") {
+      netCDF::NcVar var = inFile.getVar(dimName);
+      if (var.getType() != netCDF::NcType::ncType::nc_INT) {
+        throw std::runtime_error(
+          "ioda::reader::loadObsBlockFromNetcdf: Channel variable is not int type.");
+      }
+      chanNums.resize(var.getDim(0).getSize());
+      var.getVar(chanNums.data());
+    }
+  }
+
+  // Get a list of all variables in the file expressed as hierarchical paths. The
+  // herierchy is due to the netcdf group structure. Walk through all the variables
+  // and transfer the location block given by the startLoc and locCount parameters into
+  // the destination OSDF container.
+  const std::vector<std::string> allVars = listAllNetcdfVars(inFile, std::string(""), false);
+  for (const auto & varName : allVars) {
+    const std::vector<std::string> varNameParts = splitString(varName, '/');
+    netCDF::NcVar var = openHierarchialNetcdfVar(inFile, varNameParts);
+    checkNcObj(var, "ioda::reader::loadObsBlockFromNetcdf: Failed to open variable: " + varName);
+
+    if (keepNetcdfVarForOSDF(varName, var)) {
+      // Get the variable type for transferring its data to the OSDF
+      const netCDF::NcType varType = var.getType();
+      if (varType.getName() == "int") {
+        std::vector<int> varData = getSelectNcVarData<int>(startLoc, locCount, var);
+        replaceFillValuesWithMissing<int>(var, varData);
+        transferVarDataToOSDF<int>(varName, varData, locCount, chanNums, destOSDF);
+      } else if (varType.getName() == "int64") {
+        std::vector<int64_t> varData = getSelectNcVarData<int64_t>(startLoc, locCount, var);
+        replaceFillValuesWithMissing<int64_t>(var, varData);
+        transferVarDataToOSDF<int64_t>(varName, varData, locCount, chanNums, destOSDF);
+      } else if (varType.getName() == "float") {
+        std::vector<float> varData = getSelectNcVarData<float>(startLoc, locCount, var);
+        replaceFillValuesWithMissing<float>(var, varData);
+        transferVarDataToOSDF<float>(varName, varData, locCount, chanNums, destOSDF);
+      } else if (varType.getName() == "string") {
+        std::vector<std::string> varData =
+                                 getSelectNcVarData<std::string>(startLoc, locCount, var);
+        replaceFillValuesWithMissing<std::string>(var, varData);
+        transferVarDataToOSDF<std::string>(varName, varData, locCount, chanNums, destOSDF);
+      } else {
+        oops::Log::info() << "WARNING: ioda::reader::loadObsBlockFromNetcdf: Variable: "
+                          << varName << " is not int, int64, float or string. Skipping."
+                          << std::endl;
+      }
+    }
+  }
+
+  return 0;
 }
 
 //--------------------------------------------------------------------------------
@@ -403,101 +505,83 @@ void transferVarDataToOSDF(const std::string & varName,
 // Function definitions for public functions
 //--------------------------------------------------------------------------------
 
-//---------------------------------------------------------------------
-int loadObsContainerFromNetcdf(const std::string & fileName,
-                               const std::size_t startLoc,
-                               const std::size_t locCount,
-                               std::unique_ptr<osdf::IFrame> & destOSDF) {
+int loadOsdfFromNetcdf(const ObsDataInParameters & dataInParams,
+                       const eckit::mpi::Comm & ioPoolComm,
+                       std::unique_ptr<osdf::IFrame> & destOSDF) {
+  const int myMpiRank = ioPoolComm.rank();
+  const int myMpiSize = ioPoolComm.size();
+
+  // Check the parameters
+  const std::string engineType = dataInParams.engine.value().engineParameters.value().type.value();
+  const std::string fileName = dataInParams.engine.value().engineParameters.value().getFileName();
+  if (engineType != "H5File") {
+    oops::Log::error() << "ioda::reader::loadOsdfFromNetcdf: Unsupported engine type: "
+                       << engineType << std::endl;
+    oops::Log::error()
+        << "ioda::reader::loadOsdfFromNetcdf:    Must use H5File engine type with this function."
+        << std::endl;
+    return -1;
+  }
+
+  // Get the number of locations from the input file, then divide up the locations in
+  // contiguous blocks for each MPI rank to load.
+  //
   // The netcdf C++ API uses exceptions, so run in a try, catch fashion.
   try {
-    oops::Log::info() << "loadObsContainerFromNetcdf: reading file: " << fileName << std::endl;
+    oops::Log::info() << "INFO: ioda::reader::loadOsdfFromNetcdf: reading file: "
+                      << fileName << std::endl;
     netCDF::NcFile inFile(fileName, netCDF::NcFile::read);
-    checkNcObj(inFile, "loadObsContainerFromNetcdf: Failed to open file: " + fileName);
+    checkNcObj(inFile, "ioda::reader::loadOsdfFromNetcdf: Failed to open file: " + fileName);
 
-    // Get a list of all the dimensions in the file. We won't store dimensions directly in
-    // the destOSDF container, but we need to get the channel numbers if they exist.
-    // The number of locations that will be read from the file is given by the locCount
-    // parameter. But we want to check that locCount is not greater than the
-    // total number of locations in the file.
-    std::vector<int> chanNums;
-    const std::vector<std::string> allDims = listAllNetcdfVars(inFile, std::string(""), true);
-    for (const auto & dimName : allDims) {
-      // Look for the dimensions Location and Channel (in the top level group). For
-      // Location record the dimension size (number of Locations) and for Channel record
-      // the dimension size (number of Channels) and the channel numbers.
-      if (dimName == "Location") {
-        netCDF::NcDim dim = inFile.getDim(dimName);
-        checkNcObj(dim, "loadObsContainerFromNetcdf: Failed to get dimension: " + dimName);
-        const std::size_t numLocations = dim.getSize();
-        if (locCount > numLocations) {
-          throw std::runtime_error("loadObsContainerFromNetcdf: locCount is greater than "
-                                   "number of locations in the file.");
-        }
-      } else if (dimName == "Channel") {
-        netCDF::NcVar var = inFile.getVar(dimName);
-        if (var.getType() != netCDF::NcType::ncType::nc_INT) {
-          throw std::runtime_error("loadObsContainerFromNetcdf: Channel variable is not int type.");
-        }
-        chanNums.resize(var.getDim(0).getSize());
-        var.getVar(chanNums.data());
+    std::vector<int> starts(myMpiSize, 0);
+    std::vector<int> counts(myMpiSize, 0);
+    if (myMpiRank == 0) {
+      netCDF::NcDim dim = inFile.getDim("Location");
+      checkNcObj(dim, "ioda::reader::loadOsdfFromNetcdf: Failed to get dimension: Location");
+      const std::size_t numLocations = dim.getSize();
+
+      // Divide the locations evenly among the MPI ranks. Do an integer divide (nlocs / mpi size)
+      // to get the base size for all ranks. Then spread out any remainder among the first n ranks.
+      // Express this distribution in start and count values which are appropriate for calling
+      // the loadObsBlockFromNetcdf function. Use mpi scatter to distribute the start and
+      // count values to each rank.
+      const std::size_t locationsPerRank = numLocations / myMpiSize;
+      const std::size_t remainder = numLocations % myMpiSize;
+      counts.assign(myMpiSize, locationsPerRank);
+      for (std::size_t i = 0; i < remainder; ++i) {
+        counts[i]++;
       }
+      std::exclusive_scan(counts.begin(), counts.end(), starts.begin(), 0);
+    }
+    int start;
+    int count;
+    ioPoolComm.scatter(starts, start, 0);
+    ioPoolComm.scatter(counts, count, 0);
+    const int rc = loadObsBlockFromNetcdf(inFile, start, count, destOSDF);
+    if (rc != 0) {
+      const std::string errMsg = "loadOsdfFromNetcdf: Failed to load block: "
+                                 " start: " + std::to_string(start) +
+                                 " count: " + std::to_string(count);
+      throw eckit::Exception(errMsg, Here());
     }
 
-    // Get a list of all variables in the file expressed as hierarchical paths. The
-    // herierchy is due to the netcdf group structure. Walk through all the variables
-    // and transfer the location block given by the startLoc and locCount parameters into
-    // the destination OSDF container.
-    const std::vector<std::string> allVars = listAllNetcdfVars(inFile, std::string(""), false);
-    for (const auto & varName : allVars) {
-      const std::vector<std::string> varNameParts = splitString(varName, '/');
-      netCDF::NcVar var = openHierarchialNetcdfVar(inFile, varNameParts);
-      checkNcObj(var, "loadObsContainerFromNetcdf: Failed to open variable: " + varName);
-
-      if (keepNetcdfVarForOSDF(varName, var)) {
-        // Get the variable type for transferring its data to the OSDF
-        const netCDF::NcType varType = var.getType();
-        if (varType.getName() == "int") {
-          std::vector<int> varData = getSelectNcVarData<int>(startLoc, locCount, var);
-          replaceFillValuesWithMissing<int>(var, varData);
-          transferVarDataToOSDF<int>(varName, varData, locCount, chanNums, destOSDF);
-        } else if (varType.getName() == "int64") {
-          std::vector<int64_t> varData = getSelectNcVarData<int64_t>(startLoc, locCount, var);
-          replaceFillValuesWithMissing<int64_t>(var, varData);
-          transferVarDataToOSDF<int64_t>(varName, varData, locCount, chanNums, destOSDF);
-        } else if (varType.getName() == "float") {
-          std::vector<float> varData = getSelectNcVarData<float>(startLoc, locCount, var);
-          replaceFillValuesWithMissing<float>(var, varData);
-          transferVarDataToOSDF<float>(varName, varData, locCount, chanNums, destOSDF);
-        } else if (varType.getName() == "string") {
-          std::vector<std::string> varData =
-                                   getSelectNcVarData<std::string>(startLoc, locCount, var);
-          replaceFillValuesWithMissing<std::string>(var, varData);
-          transferVarDataToOSDF<std::string>(varName, varData, locCount, chanNums, destOSDF);
-        } else {
-          oops::Log::info() << "WARNING: loadObsContainerFromNetcdf: Variable: "
-                            << varName << " is not int, int64, float or string. Skipping."
-                            << std::endl;
-        }
-      }
-    }
     inFile.close();
   }
   catch(const netCDF::exceptions::NcException & e) {
-    oops::Log::error() << "loadObsContainerFromNetcdf: netCDF4 Exception: "
+    oops::Log::error() << "ioda::reader::loadOsdfFromNetcdf: netCDF4 Exception: "
                        << e.what() << std::endl;
     return -1;
   }
   catch(const std::exception & e) {
-    oops::Log::error() << "loadObsContainerFromNetcdf: standard exception: "
+    oops::Log::error() << "ioda::reader::loadOsdfFromNetcdf: standard exception: "
                        << e.what() << std::endl;
     return -1;
   }
   catch(...) {
-    oops::Log::error() << "loadObsContainerFromNetcdf: Unknown exception"
+    oops::Log::error() << "ioda::reader::loadOsdfFromNetcdf: Unknown exception"
                        << std::endl;
     return -1;
   }
-
   return 0;
 }
 

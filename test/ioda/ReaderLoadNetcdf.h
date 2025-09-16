@@ -24,8 +24,11 @@
 #include "ioda/containers/FrameCols.h"
 #include "ioda/containers/FrameRows.h"
 #include "ioda/containers/IFrame.h"
+#include "ioda/ioPool/ReaderPoolFactory.h"
+#include "ioda/ObsDataIoParameters.h"
 #include "ioda/reader/load/loadObsContainerFromNetcdf.hpp"
 
+#include "oops/mpi/mpi.h"
 #include "oops/runs/Test.h"
 #include "oops/test/TestEnvironment.h"
 #include "oops/util/Logger.h"
@@ -35,33 +38,80 @@
 namespace ioda {
 namespace test {
 
-// -----------------------------------------------------------------------------
-void populateOsdfFromNetcdf(const eckit::LocalConfiguration & loadConfig,
-                            std::unique_ptr<osdf::IFrame> & testOsdf) {
-  // Grab the configuration: file name, start location index, and location count
-  const std::string fileName = loadConfig.getString("file name");
-  const std::size_t startLoc = loadConfig.getLong("start location");
-  const std::size_t locCount = loadConfig.getLong("location count");
+constexpr const char _ioPoolCommName[] = "ioPool";
+constexpr const char _nonIoPoolCommName[] = "nonIoPool";
 
-  // Populate the data frame from the input file.
-  const int loadRc =
-    reader::loadObsContainerFromNetcdf(fileName, startLoc, locCount, testOsdf);
+// -----------------------------------------------------------------------------
+eckit::mpi::Comm & createIoPoolComm(const eckit::mpi::Comm & mainComm,
+                                    const eckit::LocalConfiguration & testConfig) {
+  const int mySize = mainComm.size();
+  const int myRank = mainComm.rank();
+
+  // Grab the configuration for this size and rank
+  const std::string sizeRankKey = "mpi size" + std::to_string(mySize) +
+                                  ".rank" + std::to_string(myRank);
+  const int mySplitColor = testConfig.getInt(sizeRankKey + ".comm split");
+
+  // Split the main communicator into io pool and non-io pool communicators
+  if (mySplitColor == 1) {
+    return mainComm.split(mySplitColor, _ioPoolCommName);
+  } else {
+    return mainComm.split(mySplitColor, _nonIoPoolCommName);
+  }
+}
+
+// -----------------------------------------------------------------------------
+void populateOsdfFromNetcdf(const ioda::ObsDataInParameters & dataInParams,
+                            const eckit::mpi::Comm & mainComm,
+                            const eckit::mpi::Comm & ioPoolComm,
+                            std::unique_ptr<osdf::IFrame> & testOsdf) {
+  // Collectively call the loadOsdfFromNetcdf function with all io pool members.
+  int loadRc = -1;
+  const int inIoPool = (ioPoolComm.name() == _ioPoolCommName) ? 1 : 0;
+  if (inIoPool == 1) {
+    loadRc = reader::loadOsdfFromNetcdf(dataInParams, ioPoolComm, testOsdf);
+  } else {
+    loadRc = 0;
+  }
   EXPECT_EQUAL(loadRc, 0);
 }
 
 // -----------------------------------------------------------------------------
-void checkOsdf(const eckit::LocalConfiguration & loadConfig,
+void checkOsdf(const eckit::LocalConfiguration & testConfig,
+               const eckit::mpi::Comm & mainComm,
+               const eckit::mpi::Comm & ioPoolComm,
                const std::unique_ptr<osdf::IFrame> & testOsdf) {
-  // Grab expected values from the configuration
-  const std::size_t expectedNumRows = loadConfig.getLong("location count");
-  const std::size_t expectedNumCols = loadConfig.getUnsigned("expected number of columns");
+  // Check if we are in the correct io pool communicator
+  const int myMainRank = mainComm.rank();
+  const int myMainSize = mainComm.size();
+  const int myPoolRank = ioPoolComm.rank();
+  const int myPoolSize = ioPoolComm.size();
 
-  // Number of rows in testOsdf should be equal to locCount
+  const std::string sizeRankKey = "mpi size" + std::to_string(myMainSize) +
+                                  ".rank" + std::to_string(myMainRank);
+  const int mySplitColor = testConfig.getInt(sizeRankKey + ".comm split");
+  if (mySplitColor == 1) {
+    EXPECT_EQUAL(ioPoolComm.name(), _ioPoolCommName);
+  } else {
+    EXPECT_EQUAL(ioPoolComm.name(), _nonIoPoolCommName);
+  }
+
+  // Grab the expected data config
+  const eckit::LocalConfiguration expectedDataConfig =
+      testConfig.getSubConfiguration(sizeRankKey + ".expected data");
+
+  // Verify the io pool size and rank
+  const int expectedPoolSize = expectedDataConfig.getInt("pool comm size");
+  const int expectedPoolRank = expectedDataConfig.getInt("pool comm rank");
+  EXPECT_EQUAL(myPoolSize, expectedPoolSize);
+  EXPECT_EQUAL(myPoolRank, expectedPoolRank);
+
+  // Verify the shape of the OSDF container
+  const std::size_t expectedNumRows = expectedDataConfig.getLong("nlocs");
+  const std::size_t expectedNumCols = expectedDataConfig.getUnsigned("nvars");
   const std::size_t numRows = testOsdf->numRows();
-  EXPECT_EQUAL(numRows, expectedNumRows);
-
-  // Number of columns
   const std::size_t numCols = testOsdf->numCols();
+  EXPECT_EQUAL(numRows, expectedNumRows);
   EXPECT_EQUAL(numCols, expectedNumCols);
 }
 
@@ -70,12 +120,32 @@ void testFrameRows() {
   // Configuration contains a list of subconfigs that each contain a file name,
   // start location index, and a location count
   const std::vector<eckit::LocalConfiguration> loadConfigs =
-      ::test::TestEnvironment::config().getSubConfigurations("input files");
+      ::test::TestEnvironment::config().getSubConfigurations("obs types");
+  const eckit::LocalConfiguration timeWindowConfig =
+      ::test::TestEnvironment::config().getSubConfiguration("time window");
 
   for (auto & config : loadConfigs) {
+    // Create parameters for obsdatain and io pool
+    oops::Log::info() << "testFrameRows: config = " << config << std::endl;
+    const eckit::LocalConfiguration obsDataInConfig = config.getSubConfiguration("obsdatain");
+    const eckit::LocalConfiguration testConfig = config.getSubConfiguration("test data");
+    ioda::ObsDataInParameters dataInParams;
+    dataInParams.deserialize(obsDataInConfig);
+
+    // Create an IoPool object, and pass the pool communicator to the
+    // populateOsdfFromNetcdf function.
+    const eckit::mpi::Comm & mainComm = oops::mpi::world();
+    eckit::mpi::Comm & ioPoolComm = createIoPoolComm(mainComm, testConfig);
+
+    // Create a row-oriented OSDF
     std::unique_ptr<osdf::IFrame> testOsdf = std::make_unique<osdf::FrameRows>();
-    populateOsdfFromNetcdf(config, testOsdf);
-    checkOsdf(config, testOsdf);
+
+    // Collectively call the populateOsdfFromNetcdf with all io pool members
+    populateOsdfFromNetcdf(dataInParams, mainComm, ioPoolComm, testOsdf);
+    checkOsdf(testConfig, mainComm, ioPoolComm, testOsdf);
+
+    // Clean up the io pool communicator
+    eckit::mpi::deleteComm(ioPoolComm.name());
   }
 }
 
@@ -84,12 +154,32 @@ void testFrameCols() {
   // Configuration contains a list of subconfigs that each contain a file name,
   // start location index, and a location count
   const std::vector<eckit::LocalConfiguration> loadConfigs =
-      ::test::TestEnvironment::config().getSubConfigurations("input files");
+      ::test::TestEnvironment::config().getSubConfigurations("obs types");
+  const eckit::LocalConfiguration timeWindowConfig =
+      ::test::TestEnvironment::config().getSubConfiguration("time window");
 
   for (auto & config : loadConfigs) {
+    // Create parameters for obsdatain and io pool
+    oops::Log::info() << "testFrameCols: config = " << config << std::endl;
+    const eckit::LocalConfiguration obsDataInConfig = config.getSubConfiguration("obsdatain");
+    const eckit::LocalConfiguration testConfig = config.getSubConfiguration("test data");
+    ioda::ObsDataInParameters dataInParams;
+    dataInParams.deserialize(obsDataInConfig);
+
+    // Create an IoPool object, and pass the pool communicator to the
+    // populateOsdfFromNetcdf function.
+    const eckit::mpi::Comm & mainComm = oops::mpi::world();
+    eckit::mpi::Comm & ioPoolComm = createIoPoolComm(mainComm, testConfig);
+
+    // Create a column-oriented OSDF
     std::unique_ptr<osdf::IFrame> testOsdf = std::make_unique<osdf::FrameCols>();
-    populateOsdfFromNetcdf(config, testOsdf);
-    checkOsdf(config, testOsdf);
+
+    // Collectively call the populateOsdfFromNetcdf with all io pool members
+    populateOsdfFromNetcdf(dataInParams, mainComm, ioPoolComm, testOsdf);
+    checkOsdf(testConfig, mainComm, ioPoolComm, testOsdf);
+
+    // Clean up the io pool communicator
+    eckit::mpi::deleteComm(ioPoolComm.name());
   }
 }
 

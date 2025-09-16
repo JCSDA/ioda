@@ -1615,6 +1615,18 @@ ecbuild_add_test( TARGET  test_ioda_reader_load_netcdf
                   ARGS    "testinput/iodatest_reader_load_netcdf.yaml"
                   LIBS  ioda_test
                   )
+ecbuild_add_test( TARGET  test_ioda_reader_load_netcdf_mpi_2
+                  COMMAND test_ioda_reader_load_netcdf
+                  MPI 2
+                  ARGS    "testinput/iodatest_reader_load_netcdf.yaml"
+                  LIBS  ioda_test
+                  )
+ecbuild_add_test( TARGET  test_ioda_reader_load_netcdf_mpi_4
+                  COMMAND test_ioda_reader_load_netcdf
+                  MPI 4
+                  ARGS    "testinput/iodatest_reader_load_netcdf.yaml"
+                  LIBS  ioda_test
+                  )
 
 #####################################################################
 # Test the reader filter step
