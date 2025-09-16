@@ -107,7 +107,7 @@ contains
       type(ioda_group) :: new_grp
       integer(int64) :: sz_fname
       character(len=*), intent(in) :: fname
-      integer(int32) :: create_mode
+      integer(int32), intent(inout) :: create_mode
       type(C_ptr) :: fname_p
 
       if (create_mode > 3) create_mode = 0

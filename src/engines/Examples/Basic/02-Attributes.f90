@@ -31,11 +31,13 @@ program ioda_fortran_02_attributes
     real(real32),dimension(4) :: fint
     integer(int64) :: ns,nd;
     character(len=256) :: test_str
+    integer(int32) :: create_mode
     
     test_str  = 'this is a test'         
     ! Create a file
     !grpFromFile = engines%obsstore%createRootGroup()
-    grpFromFile = ioda_engines_hh_create_file('Example-02-F.hdf5', 1)
+    create_mode = 1
+    grpFromFile = ioda_engines_hh_create_file('Example-02-F.hdf5', create_mode)
 
 !    call ioda_attribute_init(intatt1)
 !    call ioda_attribute_init(intatt2)
