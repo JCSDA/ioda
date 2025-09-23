@@ -119,6 +119,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_distribution_masterandreplica_io_pool_mpi_2.yaml
   testinput/iodatest_distribution_masterandreplica_io_pool_mpi_3.yaml
   testinput/iodatest_distribution_masterandreplica_io_pool_mpi_4.yaml
+  testinput/iodatest_osdf_dist_allgatherv.yaml
   testinput/iodatest_engine_construct_utils.yaml
   testinput/iodatest_engine_construct_utils_odc.yaml
   testinput/iodatest_engine_factory.yaml
@@ -364,6 +365,14 @@ ecbuild_add_test( TARGET  test_ioda_distribution_clean_build_file_set_files
                     "testwork/distribution_mpi_3/obsspace_grouping_round_robin_0000.nc4"
                     "testwork/distribution_mpi_4/obsspace_grouping_round_robin_prep_file_info.nc4"
                     "testwork/distribution_mpi_4/obsspace_grouping_round_robin_0000.nc4" )
+
+# OSDF distribute tests
+ecbuild_add_test( TARGET  test_ioda_osdf_dist_allgatherv
+                  MPI     2
+                  SOURCES mains/TestOsdfDistAllgatherv.cc
+                  ARGS    "testinput/iodatest_osdf_dist_allgatherv.yaml"
+                  LIBS  ioda_test
+                  )
 
 # build file sets for obsspace_grouping, communicator target sizes 2, 3, 4
 ecbuild_add_test( TARGET  test_ioda_distribution_build_round_robin_mpi_2_file_set

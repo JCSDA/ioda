@@ -90,7 +90,7 @@ void testFrameCols() {
   std::vector<std::string> testColumnNames;
   std::vector<std::string> testColumnTypes;
   populateFrame(configColumnData, testOsdf, testColumnNames, testColumnTypes);
-  oops::Log::info() << "testFrameRows: initial contents" << std::endl;
+  oops::Log::info() << "testFrameCols: initial contents" << std::endl;
   testOsdf->print();
 
   // Read in the expected results after filtering
