@@ -14,12 +14,9 @@
 namespace osdf {
 namespace consts {
   enum eDataTypes : std::int8_t {
-    eInt8,
-    eInt16,
-    eInt32,
+    eInt,
     eInt64,
     eFloat,
-    eDouble,
     eChar,
     eString,
     eNumberOfDataTypes

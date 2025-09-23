@@ -34,18 +34,18 @@ std::string getViewPrintText(osdf::IView* view) {
   return text;
 }
 
-std::int32_t main() {
+int main() {
   // Create data vectors
-  std::vector<double> lats = {-65.0, -66.6, -67.2, -68.6, -69.1,
-                              -70.9, -71.132, -72.56, -73.0, -73.1};
-  std::vector<double> lons = {120.0, 121.1, 122.2, 123.3, 124.4,
-                              125.5, 126.6, 127.7, 128.8, 128.9};
+  std::vector<float> lats = {-65.0, -66.6, -67.2, -68.6, -69.1,
+                             -70.9, -71.132, -72.56, -73.0, -73.1};
+  std::vector<float> lons = {120.0, 121.1, 122.2, 123.3, 124.4,
+                             125.5, 126.6, 127.7, 128.8, 128.9};
   std::vector<std::string> statIds = {"00001", "00001", "00002", "00001", "00004",
                                       "00002", "00005", "00005", "00009", "00009"};
-  std::vector<std::int32_t> channels = {10, 10, 11, 11, 12, 12, 11, 15, 11, 13};
-  std::vector<double> temps = {-10.231, -15.68, -15.54, -14.98, -16.123,
-                               -19.11, -22.3324, -22.667, -25.6568, -25.63211};
-  std::vector<std::int32_t> times = {1710460225, 1710460225, 1710460225, 1710460225, 1710460226,
+  std::vector<int> channels = {10, 10, 11, 11, 12, 12, 11, 15, 11, 13};
+  std::vector<float> temps = {-10.231, -15.68, -15.54, -14.98, -16.123,
+                              -19.11, -22.3324, -22.667, -25.6568, -25.63211};
+  std::vector<std::int64_t> times = {1710460225, 1710460225, 1710460225, 1710460225, 1710460226,
                                      1710460226, 1710460226, 1710460226, 1710460226, 1710460227};
   // Create data containers
   osdf::FrameRows frameRows1;
@@ -75,8 +75,8 @@ std::int32_t main() {
 
   ////////////////////////////////////////////////// Test 2: Comparison of Frame::getColumn()
   std::cout << "Test 2: Comparison of Frame::getColumn() - ";
-  std::vector<std::int32_t> vecRows1;
-  std::vector<std::int32_t> vecCols1;
+  std::vector<int64_t> vecRows1;
+  std::vector<int64_t> vecCols1;
   frameRows1.getColumn("time", vecRows1);
   frameCols1.getColumn("time", vecCols1);
   assert(vecRows1 == vecCols1);
@@ -113,8 +113,8 @@ std::int32_t main() {
 
   ////////////////////////////////////////////////// Test 6: Comparison of Frame::appendRow()
   std::cout << "Test 6: Comparison of Frame::appendRow() - ";
-  frameRows1.appendNewRow(-74., 129., 15, -25.6567, 1710460300);
-  frameCols1.appendNewRow(-74., 129., 15, -25.6567, 1710460300);
+  frameRows1.appendNewRow(-74.0f, 129.0f, 15, -25.6567f, 1710460300L);
+  frameCols1.appendNewRow(-74.0f, 129.0f, 15, -25.6567f, 1710460300L);
   std::string textRows6 = getFramePrintText(&frameRows1);
   std::string textCols6 = getFramePrintText(&frameCols1);
   assert(textRows6 == textCols6);
@@ -131,8 +131,8 @@ std::int32_t main() {
 
   ////////////////////////////////////////////////// Test 8: Comparison of Frame::sliceRows()
   std::cout << "Test 8: Comparison of Frame::sliceRows() - ";
-  osdf::FrameRows frameRows2 = frameRows1.sliceRows("lat", osdf::consts::eLessThan, -70.);
-  osdf::FrameCols frameCols2 = frameCols1.sliceRows("lat", osdf::consts::eLessThan, -70.);
+  osdf::FrameRows frameRows2 = frameRows1.sliceRows("lat", osdf::consts::eLessThan, -70.0f);
+  osdf::FrameCols frameCols2 = frameCols1.sliceRows("lat", osdf::consts::eLessThan, -70.0f);
   std::string textRows8 = getFramePrintText(&frameRows2);
   std::string textCols8 = getFramePrintText(&frameCols2);
   assert(textRows8 == textCols8);
@@ -152,8 +152,8 @@ std::int32_t main() {
 
   ////////////////////////////////////////////////// Test 10: Comparison of View::getColumn()
   std::cout << "Test 10: Comparison of View::getColumn() - ";
-  std::vector<std::int32_t> vecRows2;
-  std::vector<std::int32_t> vecCols2;
+  std::vector<int64_t> vecRows2;
+  std::vector<int64_t> vecCols2;
   viewRows1.getColumn("time", vecRows2);
   viewCols1.getColumn("time", vecCols2);
   std::string textFrameRows10 = getFramePrintText(&frameRows1);

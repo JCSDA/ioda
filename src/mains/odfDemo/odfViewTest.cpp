@@ -44,18 +44,18 @@ std::string getViewPrintText(osdf::IView* view) {
   return text;
 }
 
-std::int32_t main() {
+int main() {
   // Create data vectors
-  std::vector<double> lats = {-65.0, -66.6, -67.2, -68.6, -69.1,
-                              -70.9, -71.132, -72.56, -73.0, -73.1};
-  std::vector<double> lons = {120.0, 121.1, 122.2, 123.3, 124.4,
-                              125.5, 126.6, 127.7, 128.8, 128.9};
+  std::vector<float> lats = {-65.0, -66.6, -67.2, -68.6, -69.1,
+                             -70.9, -71.132, -72.56, -73.0, -73.1};
+  std::vector<float> lons = {120.0, 121.1, 122.2, 123.3, 124.4,
+                             125.5, 126.6, 127.7, 128.8, 128.9};
   std::vector<std::string> statIds = {"00001", "00001", "00002", "00001", "00004",
                                       "00002", "00005", "00005", "00009", "00009"};
-  std::vector<std::int32_t> channels = {10, 10, 11, 11, 12, 12, 11, 15, 11, 13};
-  std::vector<double> temps = {-10.231, -15.68, -15.54, -14.98, -16.123,
-                               -19.11, -22.3324, -22.667, -25.6568, -25.63211};
-  std::vector<std::int32_t> times = {1710460225, 1710460225, 1710460225, 1710460225, 1710460226,
+  std::vector<int> channels = {10, 10, 11, 11, 12, 12, 11, 15, 11, 13};
+  std::vector<float> temps = {-10.231, -15.68, -15.54, -14.98, -16.123,
+                              -19.11, -22.3324, -22.667, -25.6568, -25.63211};
+  std::vector<std::int64_t> times = {1710460225, 1710460225, 1710460225, 1710460225, 1710460226,
                                      1710460226, 1710460226, 1710460226, 1710460226, 1710460227};
   // Create data containers
   osdf::FrameCols frameCols;
@@ -95,8 +95,8 @@ std::int32_t main() {
   std::cout << "PASS" << std::endl;
 
   ////////////////////////////////////////////////// 2. Slice of ViewRows and ViewCols
-  osdf::ViewRows viewRows2 = viewRows1.sliceRows("lat", osdf::consts::eLessThan, -70.);
-  osdf::ViewCols viewCols2 = viewCols1.sliceRows("lat", osdf::consts::eLessThan, -70.);
+  osdf::ViewRows viewRows2 = viewRows1.sliceRows("lat", osdf::consts::eLessThan, -70.0f);
+  osdf::ViewCols viewCols2 = viewCols1.sliceRows("lat", osdf::consts::eLessThan, -70.0f);
 
   const std::string textFrameRows2 = getFramePrintText(&frameRows);
   const std::string textFrameCols2 = getFramePrintText(&frameCols);
@@ -124,10 +124,10 @@ std::int32_t main() {
 
   viewRows1.sortRows("channel", [&](std::shared_ptr<osdf::DatumBase> datumA,
                                     std::shared_ptr<osdf::DatumBase> datumB) {
-    std::shared_ptr<osdf::Datum<std::int32_t>> datumAType =
-                                std::static_pointer_cast<osdf::Datum<std::int32_t>>(datumA);
-    std::shared_ptr<osdf::Datum<std::int32_t>> datumBType =
-                                std::static_pointer_cast<osdf::Datum<std::int32_t>>(datumB);
+    std::shared_ptr<osdf::Datum<int>> datumAType =
+                                std::static_pointer_cast<osdf::Datum<int>>(datumA);
+    std::shared_ptr<osdf::Datum<int>> datumBType =
+                                std::static_pointer_cast<osdf::Datum<int>>(datumB);
     return datumAType->getValue() < datumBType->getValue();
   });
   const std::string textViewRows3c = getViewPrintText(&viewRows1);
@@ -149,11 +149,11 @@ std::int32_t main() {
   osdf::ViewCols viewCols3 = frameCols.makeView();
   osdf::ViewRows viewRows3 = frameRows.makeView();
 
-  osdf::ViewCols viewCols4 = viewCols3.sliceRows("lat", osdf::consts::eLessThan, -70.);
-  osdf::ViewRows viewRows4 = viewRows3.sliceRows("lat", osdf::consts::eLessThan, -70.);
+  osdf::ViewCols viewCols4 = viewCols3.sliceRows("lat", osdf::consts::eLessThan, -70.0f);
+  osdf::ViewRows viewRows4 = viewRows3.sliceRows("lat", osdf::consts::eLessThan, -70.0f);
 
-  frameCols.appendNewRow(-73., 128., "00010", 66, -25.6568, 1710460300);
-  frameRows.appendNewRow(-73., 128., "00010", 66, -25.6568, 1710460300);
+  frameCols.appendNewRow(-73.0f, 128.0f, "00010", 66, -25.6568f, 1710460300L);
+  frameRows.appendNewRow(-73.0f, 128.0f, "00010", 66, -25.6568f, 1710460300L);
 
   std::vector<std::string> vec = {"3", "3", "3", "3", "3", "3", "3", "3", "3", "3", "3"};
   frameCols.setColumn("StatId", vec);

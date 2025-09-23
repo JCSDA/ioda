@@ -35,18 +35,12 @@ namespace FrameUtils {
 template <typename Action>
 auto callWithSupportedType(const int8_t dtype, const Action &action) {
   switch (dtype) {
-    case consts::eInt8:
-      return action(int8_t());
-    case consts::eInt16:
-      return action(int16_t());
-    case consts::eInt32:
-      return action(int32_t());
+    case consts::eInt:
+      return action(int());
     case consts::eInt64:
       return action(int64_t());
     case consts::eFloat:
       return action(float());
-    case consts::eDouble:
-      return action(double());
     case consts::eChar:
       return action(char());
     case consts::eString:

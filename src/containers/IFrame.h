@@ -48,12 +48,9 @@ class IFrame {
   /// \brief The following functions are used to add a new column of data to the container.
   /// \param The target column name.
   /// \param A reference to a vector containing the data to populate the new column.
-  virtual void appendNewColumn(const std::string&, const std::vector<std::int8_t>&) = 0;
-  virtual void appendNewColumn(const std::string&, const std::vector<std::int16_t>&) = 0;
-  virtual void appendNewColumn(const std::string&, const std::vector<std::int32_t>&) = 0;
+  virtual void appendNewColumn(const std::string&, const std::vector<int>&) = 0;
   virtual void appendNewColumn(const std::string&, const std::vector<std::int64_t>&) = 0;
   virtual void appendNewColumn(const std::string&, const std::vector<float>&) = 0;
-  virtual void appendNewColumn(const std::string&, const std::vector<double>&) = 0;
   virtual void appendNewColumn(const std::string&, const std::vector<char>&) = 0;
   virtual void appendNewColumn(const std::string&, const std::vector<std::string>&) = 0;
 
@@ -63,24 +60,18 @@ class IFrame {
   /// Otherwise it would return a vector of copied data.
   /// \param The target column name.
   /// \param A reference to a vector that will be used to store the copied data.
-  virtual void getColumn(const std::string&, std::vector<std::int8_t>&) const = 0;
-  virtual void getColumn(const std::string&, std::vector<std::int16_t>&) const = 0;
-  virtual void getColumn(const std::string&, std::vector<std::int32_t>&) const = 0;
+  virtual void getColumn(const std::string&, std::vector<int>&) const = 0;
   virtual void getColumn(const std::string&, std::vector<std::int64_t>&) const = 0;
   virtual void getColumn(const std::string&, std::vector<float>&) const = 0;
-  virtual void getColumn(const std::string&, std::vector<double>&) const = 0;
   virtual void getColumn(const std::string&, std::vector<char>&) const = 0;
   virtual void getColumn(const std::string&, std::vector<std::string>&) const = 0;
 
   /// \brief The following functions are used to replace the data on an existing column.
   /// \param The target column name.
   /// \param A reference to a vector containing the data to overwrite the new column.
-  virtual void setColumn(const std::string&, const std::vector<std::int8_t>&) const = 0;
-  virtual void setColumn(const std::string&, const std::vector<std::int16_t>&) const = 0;
-  virtual void setColumn(const std::string&, const std::vector<std::int32_t>&) const = 0;
+  virtual void setColumn(const std::string&, const std::vector<int>&) const = 0;
   virtual void setColumn(const std::string&, const std::vector<std::int64_t>&) const = 0;
   virtual void setColumn(const std::string&, const std::vector<float>&) const = 0;
-  virtual void setColumn(const std::string&, const std::vector<double>&) const = 0;
   virtual void setColumn(const std::string&, const std::vector<char>&) const = 0;
   virtual void setColumn(const std::string&, const std::vector<std::string>&) const = 0;
 

@@ -23,16 +23,8 @@ osdf::ViewCols::~ViewCols() {
   clear();
 }
 
-void osdf::ViewCols::getColumn(const std::string& name, std::vector<std::int8_t>& values) const {
-  getColumn<std::int8_t>(name, values, consts::eInt8);
-}
-
-void osdf::ViewCols::getColumn(const std::string& name, std::vector<std::int16_t>& values) const {
-  getColumn<std::int16_t>(name, values, consts::eInt16);
-}
-
-void osdf::ViewCols::getColumn(const std::string& name, std::vector<std::int32_t>& values) const {
-  getColumn<std::int32_t>(name, values, consts::eInt32);
+void osdf::ViewCols::getColumn(const std::string& name, std::vector<int>& values) const {
+  getColumn<int>(name, values, consts::eInt);
 }
 
 void osdf::ViewCols::getColumn(const std::string& name, std::vector<std::int64_t>& values) const {
@@ -43,27 +35,13 @@ void osdf::ViewCols::getColumn(const std::string& name, std::vector<float>& valu
   getColumn<float>(name, values, consts::eFloat);
 }
 
-void osdf::ViewCols::getColumn(const std::string& name, std::vector<double>& values) const {
-  getColumn<double>(name, values, consts::eDouble);
-}
-
 void osdf::ViewCols::getColumn(const std::string& name, std::vector<std::string>& values) const {
   getColumn<std::string>(name, values, consts::eString);
 }
 
 osdf::ViewCols osdf::ViewCols::sliceRows(const std::string& name, const std::int8_t comparison,
-                                         const std::int8_t threshold) const {
-  return sliceRows<std::int8_t>(name, comparison, threshold);
-}
-
-osdf::ViewCols osdf::ViewCols::sliceRows(const std::string& name, const std::int8_t comparison,
-                                         const std::int16_t threshold) const {
-  return sliceRows<std::int16_t>(name, comparison, threshold);
-}
-
-osdf::ViewCols osdf::ViewCols::sliceRows(const std::string& name, const std::int8_t comparison,
-                                         const std::int32_t threshold) const {
-  return sliceRows<std::int32_t>(name, comparison, threshold);
+                                         const int threshold) const {
+  return sliceRows<int>(name, comparison, threshold);
 }
 
 osdf::ViewCols osdf::ViewCols::sliceRows(const std::string& name, const std::int8_t comparison,
@@ -74,11 +52,6 @@ osdf::ViewCols osdf::ViewCols::sliceRows(const std::string& name, const std::int
 osdf::ViewCols osdf::ViewCols::sliceRows(const std::string& name, const std::int8_t comparison,
                                          const float threshold) const {
   return sliceRows<float>(name, comparison, threshold);
-}
-
-osdf::ViewCols osdf::ViewCols::sliceRows(const std::string& name, const std::int8_t comparison,
-                                         const double threshold) const {
-  return sliceRows<double>(name, comparison, threshold);
 }
 
 osdf::ViewCols osdf::ViewCols::sliceRows(const std::string& name, const std::int8_t comparison,

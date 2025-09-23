@@ -37,18 +37,12 @@ void osdf::Functions::addColumnToRow(IFrameData* data, DataRow& row,
   }
 }
 
-template void osdf::Functions::addColumnToRow<std::int8_t>(IFrameData* data, DataRow& row,
-    std::int8_t& isValid, std::int32_t&, const std::int8_t param) const;
-template void osdf::Functions::addColumnToRow<std::int16_t>(IFrameData* data, DataRow& row,
-    std::int8_t& isValid, std::int32_t&, const std::int16_t param) const;
-template void osdf::Functions::addColumnToRow<std::int32_t>(IFrameData* data, DataRow& row,
-    std::int8_t& isValid, std::int32_t&, const std::int32_t param) const;
+template void osdf::Functions::addColumnToRow<>(IFrameData* data, DataRow& row,
+    std::int8_t& isValid, std::int32_t&, const int param) const;
 template void osdf::Functions::addColumnToRow<std::int64_t>(IFrameData* data, DataRow& row,
     std::int8_t& isValid, std::int32_t&, const std::int64_t param) const;
 template void osdf::Functions::addColumnToRow<float>(IFrameData* data, DataRow& row,
     std::int8_t& isValid, std::int32_t&, const float param) const;
-template void osdf::Functions::addColumnToRow<double>(IFrameData* data, DataRow& row,
-    std::int8_t& isValid, std::int32_t&, const double param) const;
 template void osdf::Functions::addColumnToRow<char>(IFrameData* data, DataRow& row,
     std::int8_t& isValid, std::int32_t&, const char param) const;
 template void osdf::Functions::addColumnToRow<std::string>(IFrameData* data, DataRow& row,
@@ -61,17 +55,11 @@ template<typename T> const std::shared_ptr<osdf::DataBase> osdf::Functions::crea
 }
 
 template const std::shared_ptr<osdf::DataBase>
-    osdf::Functions::createData<std::int8_t>(const std::vector<std::int8_t>&) const;
-template const std::shared_ptr<osdf::DataBase>
-    osdf::Functions::createData<std::int16_t>(const std::vector<std::int16_t>&) const;
-template const std::shared_ptr<osdf::DataBase>
-    osdf::Functions::createData<std::int32_t>(const std::vector<std::int32_t>&) const;
+    osdf::Functions::createData<int>(const std::vector<int>&) const;
 template const std::shared_ptr<osdf::DataBase>
     osdf::Functions::createData<std::int64_t>(const std::vector<std::int64_t>&) const;
 template const std::shared_ptr<osdf::DataBase>
     osdf::Functions::createData<float>(const std::vector<float>&) const;
-template const std::shared_ptr<osdf::DataBase>
-    osdf::Functions::createData<double>(const std::vector<double>&) const;
 template const std::shared_ptr<osdf::DataBase>
     osdf::Functions::createData<char>(const std::vector<char>&) const;
   template const std::shared_ptr<osdf::DataBase>
@@ -95,17 +83,11 @@ const std::shared_ptr<osdf::DatumBase> osdf::Functions::createDatum(const T valu
 }
 
 template const std::shared_ptr<osdf::DatumBase>
-    osdf::Functions::createDatum<std::int8_t>(const std::int8_t) const;
-template const std::shared_ptr<osdf::DatumBase>
-    osdf::Functions::createDatum<std::int16_t>(const std::int16_t) const;
-template const std::shared_ptr<osdf::DatumBase>
-    osdf::Functions::createDatum<std::int32_t>(const std::int32_t) const;
+    osdf::Functions::createDatum<int>(const int) const;
 template const std::shared_ptr<osdf::DatumBase>
     osdf::Functions::createDatum<std::int64_t>(const std::int64_t) const;
 template const std::shared_ptr<osdf::DatumBase>
     osdf::Functions::createDatum<float>(const float) const;
-template const std::shared_ptr<osdf::DatumBase>
-    osdf::Functions::createDatum<double>(const double) const;
 template const std::shared_ptr<osdf::DatumBase>
     osdf::Functions::createDatum<char>(const char) const;
 template const std::shared_ptr<osdf::DatumBase>
@@ -147,18 +129,12 @@ const std::int8_t osdf::Functions::compareToThreshold(const std::int8_t comparis
   }
 }
 
-template const std::int8_t osdf::Functions::compareToThreshold<std::int8_t>(
-                           const std::int8_t, const std::int8_t, const std::int8_t) const;
-template const std::int8_t osdf::Functions::compareToThreshold<std::int16_t>(
-                           const std::int8_t, const std::int16_t, const std::int16_t) const;
-template const std::int8_t osdf::Functions::compareToThreshold<std::int32_t>(
-                           const std::int8_t, const std::int32_t, const std::int32_t) const;
+template const std::int8_t osdf::Functions::compareToThreshold<int>(
+                           const std::int8_t, const int, const int) const;
 template const std::int8_t osdf::Functions::compareToThreshold<std::int64_t>(
                            const std::int8_t, const std::int64_t, const std::int64_t) const;
 template const std::int8_t osdf::Functions::compareToThreshold<float>(
                            const std::int8_t, const float, const float) const;
-template const std::int8_t osdf::Functions::compareToThreshold<double>(
-                           const std::int8_t, const double, const double) const;
 template const std::int8_t osdf::Functions::compareToThreshold<char>(
                            const std::int8_t, const char, const char) const;
 template const std::int8_t osdf::Functions::compareToThreshold<std::string>(
@@ -170,17 +146,11 @@ template<typename T> const std::vector<T>& osdf::Functions::getDataValues(
   return dataType->getValues();
 }
 
-template const std::vector<std::int8_t>& osdf::Functions::getDataValues<std::int8_t>(
-                                         const std::shared_ptr<DataBase>&) const;
-template const std::vector<std::int16_t>& osdf::Functions::getDataValues<std::int16_t>(
-                                         const std::shared_ptr<DataBase>&) const;
-template const std::vector<std::int32_t>& osdf::Functions::getDataValues<std::int32_t>(
+template const std::vector<int>& osdf::Functions::getDataValues<int>(
                                          const std::shared_ptr<DataBase>&) const;
 template const std::vector<std::int64_t>& osdf::Functions::getDataValues<std::int64_t>(
                                          const std::shared_ptr<DataBase>&) const;
 template const std::vector<float>& osdf::Functions::getDataValues<float>(
-                                         const std::shared_ptr<DataBase>&) const;
-template const std::vector<double>& osdf::Functions::getDataValues<double>(
                                          const std::shared_ptr<DataBase>&) const;
 template const std::vector<char>& osdf::Functions::getDataValues<char>(
                                          const std::shared_ptr<DataBase>&) const;
@@ -193,17 +163,11 @@ template<typename T> std::vector<T>& osdf::Functions::getDataValues(
   return dataType->getValues();
 }
 
-template std::vector<std::int8_t>& osdf::Functions::getDataValues<std::int8_t>(
-                                   std::shared_ptr<DataBase>&);
-template std::vector<std::int16_t>& osdf::Functions::getDataValues<std::int16_t>(
-                                   std::shared_ptr<DataBase>&);
-template std::vector<std::int32_t>& osdf::Functions::getDataValues<std::int32_t>(
+template std::vector<int>& osdf::Functions::getDataValues<int>(
                                    std::shared_ptr<DataBase>&);
 template std::vector<std::int64_t>& osdf::Functions::getDataValues<std::int64_t>(
                                    std::shared_ptr<DataBase>&);
 template std::vector<float>& osdf::Functions::getDataValues<float>(
-                                   std::shared_ptr<DataBase>&);
-template std::vector<double>& osdf::Functions::getDataValues<double>(
                                    std::shared_ptr<DataBase>&);
 template std::vector<char>& osdf::Functions::getDataValues<char>(
                                    std::shared_ptr<DataBase>&);

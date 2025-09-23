@@ -11,18 +11,12 @@
 
 #include "ioda/containers/Constants.h"
 
-template<> osdf::Datum<std::int8_t>::Datum(const std::int8_t& value):
-           DatumBase(consts::eInt8), value_(value) {}
-template<> osdf::Datum<std::int16_t>::Datum(const std::int16_t& value):
-           DatumBase(consts::eInt16), value_(value) {}
-template<> osdf::Datum<std::int32_t>::Datum(const std::int32_t& value):
-           DatumBase(consts::eInt32), value_(value) {}
+template<> osdf::Datum<int>::Datum(const int& value):
+           DatumBase(consts::eInt), value_(value) {}
 template<> osdf::Datum<std::int64_t>::Datum(const std::int64_t& value):
            DatumBase(consts::eInt64), value_(value) {}
 template<> osdf::Datum<float>::Datum(const float& value):
            DatumBase(consts::eFloat), value_(value) {}
-template<> osdf::Datum<double>::Datum(const double& value):
-           DatumBase(consts::eDouble), value_(value) {}
 template<> osdf::Datum<char>::Datum(const char& value):
            DatumBase(consts::eChar), value_(value) {}
 template<> osdf::Datum<std::string>::Datum(const std::string& value):
@@ -33,12 +27,9 @@ const std::string osdf::Datum<T>::getValueStr() const {
   return std::to_string(value_);
 }
 
-template const std::string osdf::Datum<std::int8_t>::getValueStr() const;
-template const std::string osdf::Datum<std::int16_t>::getValueStr() const;
-template const std::string osdf::Datum<std::int32_t>::getValueStr() const;
+template const std::string osdf::Datum<int>::getValueStr() const;
 template const std::string osdf::Datum<std::int64_t>::getValueStr() const;
 template const std::string osdf::Datum<float>::getValueStr() const;
-template const std::string osdf::Datum<double>::getValueStr() const;
 template const std::string osdf::Datum<char>::getValueStr() const;
 
 template<>

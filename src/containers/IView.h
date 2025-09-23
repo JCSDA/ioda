@@ -39,12 +39,9 @@ class IView {
   /// Otherwise it would return a vector of copied data.
   /// \param The target column name.
   /// \param A reference to a vector that will be used to store the copied data.
-  virtual void getColumn(const std::string&, std::vector<std::int8_t>&) const = 0;
-  virtual void getColumn(const std::string&, std::vector<std::int16_t>&) const = 0;
-  virtual void getColumn(const std::string&, std::vector<std::int32_t>&) const = 0;
+  virtual void getColumn(const std::string&, std::vector<int>&) const = 0;
   virtual void getColumn(const std::string&, std::vector<std::int64_t>&) const = 0;
   virtual void getColumn(const std::string&, std::vector<float>&) const = 0;
-  virtual void getColumn(const std::string&, std::vector<double>&) const = 0;
   virtual void getColumn(const std::string&, std::vector<std::string>&) const = 0;
 
   /// \brief Outputs the contents to screen. Used primarily for debugging and development.

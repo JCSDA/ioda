@@ -59,6 +59,15 @@ void testRowPriority() {
       std::vector<int> values;
       dfRow.getColumn(name, values);
       EXPECT(values == expectedValues);
+    } else if (type == "int64") {
+      // create and write column
+      std::vector<int64_t> expectedValues =
+        configColumnData[i].getInt64Vector("values");
+      dfRow.appendNewColumn(name, expectedValues);
+      // read column and check values
+      std::vector<int64_t> values;
+      dfRow.getColumn(name, values);
+      EXPECT(values == expectedValues);
     } else if (type == "float") {
       // create and write column
       std::vector<float> expectedValues =
@@ -69,16 +78,16 @@ void testRowPriority() {
       dfRow.getColumn(name, values);
       EXPECT(oops::are_all_close_relative<float>(
         values, expectedValues, tolerance));
-    } else if (type == "double") {
+    } else if (type == "char") {
       // create and write column
-      std::vector<double> expectedValues =
-        configColumnData[i].getDoubleVector("values");
+      std::string tempStr =
+        configColumnData[i].getString("values");
+      std::vector<char> expectedValues(tempStr.begin(), tempStr.end());
       dfRow.appendNewColumn(name, expectedValues);
       // read column and check values
-      std::vector<double> values;
+      std::vector<char> values;
       dfRow.getColumn(name, values);
-      EXPECT(oops::are_all_close_relative<double>(
-        values, expectedValues, tolerance));
+      EXPECT(values == expectedValues);
     } else if (type == "string") {
       // create and write column
       std::vector<std::string> expectedValues =
@@ -90,7 +99,7 @@ void testRowPriority() {
       EXPECT(values == expectedValues);
     } else {
       std::string errMsg = std::string("Unrecognized data type: ") + type +
-          std::string("\nMust use one of: 'int', 'float', 'double' or 'string'");
+          std::string("\nMust use one of: 'int', 'int64', 'float', 'char' or 'string'");
       throw ioda::Exception(errMsg.c_str(), ioda_Here());
     }
   }

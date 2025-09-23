@@ -10,8 +10,12 @@ row priority:
      - name: "MetaData/stringVariable"
        type: "string"
        values: [ "abc", "def", "ghi", "jkl", "mnopqrst" ]
-     - name: "MetaData/doubleVariable"
-       type: "double"
-       values: [ 10.5, 20.5, 30.5, 40.5, 50.5 ]
+     - name: "MetaData/int64Variable"
+       type: "int64"
+       values: [ 10, 20, 30, 40, 50 ]
+     - name: "MetaData/charVariable"
+       type: "char"
+       values: "abcde" # have to read in as string and convert to
+                       # vector of char
    tolerance: 1.0e-6
 

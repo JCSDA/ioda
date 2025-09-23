@@ -632,16 +632,13 @@ ObsDtype ObsSpace::dtype(const std::string & group, const std::string & name,
     } else {
         if (use_dataframe_) {
             switch (osdf_->getColumnType(dtypeName(group, name, skipDerived))) {
-                case osdf::consts::eDataTypes::eInt8:
-                case osdf::consts::eDataTypes::eInt16:
-                case osdf::consts::eDataTypes::eInt32:
+                case osdf::consts::eDataTypes::eInt:
                     VarType = ObsDtype::Integer;
                     break;
                 case osdf::consts::eDataTypes::eInt64:
                     VarType = ObsDtype::Integer_64;
                     break;
                 case osdf::consts::eDataTypes::eFloat:
-                case osdf::consts::eDataTypes::eDouble:
                     VarType = ObsDtype::Float;
                     break;
                 case osdf::consts::eDataTypes::eString:

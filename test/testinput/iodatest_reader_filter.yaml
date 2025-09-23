@@ -24,7 +24,7 @@ test column data:
     values: [ "sta100", "sta101", "sta102", "sta103", "sta104",
               "sta104", "sta105", "missing", "sta107", "sta108" ]
   - name: "ObsValue/myObsInst"
-    type: "double"
+    type: "float"
     values: [ 10.5, 20.5, 30.5, 40.5, 50.5, 60.5, 70.5, 80.5, missing, 100.5 ]
 expected filtered data:
     # Columns 2, 5, 7, and 8 are within the time window and have no missing required values
@@ -41,6 +41,6 @@ expected filtered data:
     type: "string"
     values: [ "sta102", "sta104", "MISSING*", "sta107" ]
   - name: "ObsValue/myObsInst"
-    type: "double"
+    type: "float"
     values: [ 30.5, 60.5, 80.5, missing ]
 tolerance: 1.0e-6

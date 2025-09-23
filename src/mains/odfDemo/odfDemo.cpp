@@ -20,16 +20,16 @@
 #include "ioda/containers/Datum.h"
 
 std::int32_t main() {
-  std::vector<double> lats = {-65.0, -66.6, -67.2, -68.6, -69.1,
+  std::vector<float> lats = {-65.0, -66.6, -67.2, -68.6, -69.1,
                               -70.9, -71.132, -72.56, -73.0, -73.1};
-  std::vector<double> lons = {120.0, 121.1, 122.2, 123.3, 124.4,
+  std::vector<float> lons = {120.0, 121.1, 122.2, 123.3, 124.4,
                               125.5, 126.6, 127.7, 128.8, 128.9};
   std::vector<std::string> statIds = {"00001", "00001", "00002", "00001", "00004",
                                       "00002", "00005", "00005", "00009", "00009"};
-  std::vector<std::int32_t> channels = {10, 10, 11, 11, 12, 12, 11, 15, 11, 13};
-  std::vector<double> temps = {-10.231, -15.68, -15.54, -14.98, -16.123,
+  std::vector<int> channels = {10, 10, 11, 11, 12, 12, 11, 15, 11, 13};
+  std::vector<float> temps = {-10.231, -15.68, -15.54, -14.98, -16.123,
                                -19.11, -22.3324, -22.667, -25.6568, -25.63211};
-  std::vector<std::int32_t> times = {1710460225, 1710460225, 1710460225, 1710460225, 1710460226,
+  std::vector<std::int64_t> times = {1710460225, 1710460225, 1710460225, 1710460225, 1710460226,
                                      1710460226, 1710460226, 1710460226, 1710460226, 1710460227};
 
   oops::Log::info() << std::endl << "### FrameRows ################################################"
@@ -50,7 +50,7 @@ std::int32_t main() {
   //                          osdf::ColumnMetadatum("temp", osdf::consts::eDouble),
   //                          osdf::ColumnMetadatum("time", osdf::consts::eInt32)});
 
-  frameRows.appendNewRow(-73., 128., "00000", 11, -25.6568, 1710460200);
+  frameRows.appendNewRow(-73.f, 128.f, "00000", 11, -25.6568f, 1710460200);
   frameRows.print();
 
   frameRows.appendNewColumn("lat", lats);
@@ -61,14 +61,14 @@ std::int32_t main() {
   frameRows.appendNewColumn("time", times);
   frameRows.print();
 
-  frameRows.appendNewRow("00010", 11, -25.6568, 1710460270);
-  frameRows.appendNewRow(-73, 128, -73, 128, "00010", 11, -25.6568, 1710460280);
-  frameRows.appendNewRow("00010", -73, 128, 11, -25.6568, 1710460290);
-  frameRows.appendNewRow(-73., 128., "00010", 14, -25.6568, 1710460300);
+  frameRows.appendNewRow("00010", 11, -25.6568f, 1710460270);
+  frameRows.appendNewRow(-73, 128, -73, 128, "00010", 11, -25.6568f, 1710460280);
+  frameRows.appendNewRow("00010", -73, 128, 11, -25.6568f, 1710460290);
+  frameRows.appendNewRow(-73.f, 128.f, "00010", 14, -25.6568f, 1710460300);
   frameRows.print();
 
   oops::Log::info() << std::endl << "getColumn" << std::endl;
-  std::vector<std::int32_t> vec;
+  std::vector<int> vec;
   frameRows.getColumn("time", vec);
 
   oops::Log::info() << std::endl << "setColumn" << std::endl;
@@ -85,11 +85,11 @@ std::int32_t main() {
 
   oops::Log::info() << std::endl << "removeRow" << std::endl;
   frameRows.removeRow(0);
-  frameRows.appendNewRow(-73., 128., 14, -25.6568, 1710460301);
+  frameRows.appendNewRow(-73.f, 128.f, 14, -25.6568f, 1710460301);
   frameRows.print();
   oops::Log::info() << std::endl << "removeRow2" << std::endl;
   frameRows.removeRow(9);
-  frameRows.appendNewRow(-74., 129., 15, -25.6567, 1710460302);
+  frameRows.appendNewRow(-74.f, 129.f, 15, -25.6567f, 1710460302);
   frameRows.print();
 
   oops::Log::info() << std::endl << "sort 1" << std::endl;
@@ -99,23 +99,23 @@ std::int32_t main() {
   oops::Log::info() << std::endl << "sort 2" << std::endl;
   frameRows.sortRows("channel", [&](std::shared_ptr<osdf::DatumBase> datumA,
                                     std::shared_ptr<osdf::DatumBase> datumB){
-    std::shared_ptr<osdf::Datum<std::int32_t>> datumAType =
-                                std::static_pointer_cast<osdf::Datum<std::int32_t>>(datumA);
-    std::shared_ptr<osdf::Datum<std::int32_t>> datumBType =
-                                std::static_pointer_cast<osdf::Datum<std::int32_t>>(datumB);
+    std::shared_ptr<osdf::Datum<int>> datumAType =
+                                std::static_pointer_cast<osdf::Datum<int>>(datumA);
+    std::shared_ptr<osdf::Datum<int>> datumBType =
+                                std::static_pointer_cast<osdf::Datum<int>>(datumB);
     return datumAType->getValue() < datumBType->getValue();
   });
   frameRows.print();
 
   oops::Log::info() << std::endl << "test slice 1" << std::endl;
-  frameRows.sliceRows("lat", osdf::consts::eLessThan, -70.).print();
+  frameRows.sliceRows("lat", osdf::consts::eLessThan, -70.f).print();
 
   oops::Log::info() << std::endl << "test slice 2" << std::endl;
   frameRows.sliceRows([&](const osdf::DataRow& dataRow) {
     std::shared_ptr<osdf::DatumBase> datum = dataRow.getColumn(0);
-    std::shared_ptr<osdf::Datum<double>> datumType =
-                                         std::static_pointer_cast<osdf::Datum<double>>(datum);
-    return datumType->getValue() < -70.;
+    std::shared_ptr<osdf::Datum<float>> datumType =
+                                         std::static_pointer_cast<osdf::Datum<float>>(datum);
+    return datumType->getValue() < -70.f;
   }).print();
 
   // oops::Log::info() << std::endl << "clear" << std::endl;
@@ -140,7 +140,7 @@ std::int32_t main() {
   //                          osdf::ColumnMetadatum("temp", osdf::consts::eDouble),
   //                          osdf::ColumnMetadatum("time", osdf::consts::eInt32)});
 
-  frameCols.appendNewRow(-73., 128., "00000", 11, -25.6568, 1710460200);
+  frameCols.appendNewRow(-73.f, 128.f, "00000", 11, -25.6568f, 1710460200);
   frameCols.print();
 
   frameCols.appendNewColumn("lat", lats);
@@ -151,14 +151,14 @@ std::int32_t main() {
   frameCols.appendNewColumn("time", times);
   frameCols.print();
 
-  frameCols.appendNewRow("00010", 11, -25.6568, 1710460270);
-  frameCols.appendNewRow(-73, 128, -73, 128, "00010", 11, -25.6568, 1710460280);
-  frameCols.appendNewRow("00010", -73, 128, 11, -25.6568, 1710460290);
-  frameCols.appendNewRow(-73., 128., "00010", 14, -25.6568, 1710460300);
+  frameCols.appendNewRow("00010", 11, -25.6568f, 1710460270);
+  frameCols.appendNewRow(-73, 128, -73, 128, "00010", 11, -25.6568f, 1710460280);
+  frameCols.appendNewRow("00010", -73, 128, 11, -25.6568f, 1710460290);
+  frameCols.appendNewRow(-73.f, 128.f, "00010", 14, -25.6568f, 1710460300);
   frameCols.print();
 
   oops::Log::info() << std::endl << "getColumn" << std::endl;
-  std::vector<std::int32_t> vec2;
+  std::vector<int> vec2;
   frameCols.getColumn("time", vec2);
 
   oops::Log::info() << std::endl << "setColumn" << std::endl;
@@ -175,11 +175,11 @@ std::int32_t main() {
 
   oops::Log::info() << std::endl << "removeRow" << std::endl;
   frameCols.removeRow(0);
-  frameCols.appendNewRow(-73., 128., 14, -25.6568, 1710460301);
+  frameCols.appendNewRow(-73.f, 128.f, 14, -25.6568f, 1710460301);
   frameCols.print();
   oops::Log::info() << std::endl << "removeRow2" << std::endl;
   frameCols.removeRow(9);
-  frameCols.appendNewRow(-74., 129., 15, -25.6567, 1710460302);
+  frameCols.appendNewRow(-74.f, 129.f, 15, -25.6567f, 1710460302);
   frameCols.print();
 
   oops::Log::info() << std::endl << "sort 1" << std::endl;
@@ -187,7 +187,7 @@ std::int32_t main() {
   frameCols.print();
 
   oops::Log::info() << std::endl << "test slice 1" << std::endl;
-  frameCols.sliceRows("lat", osdf::consts::eLessThan, -70.).print();
+  frameCols.sliceRows("lat", osdf::consts::eLessThan, -70.f).print();
 
   // oops::Log::info() << std::endl << "clear" << std::endl;
   // frameCols.clear();
@@ -199,7 +199,7 @@ std::int32_t main() {
   viewRows.print();
 
   oops::Log::info() << std::endl << "getColumn" << std::endl;
-  std::vector<std::int32_t> vec3;
+  std::vector<int> vec3;
   viewRows.getColumn("time", vec3);
 
   oops::Log::info() << std::endl << "sort 1" << std::endl;
@@ -209,23 +209,23 @@ std::int32_t main() {
   oops::Log::info() << std::endl << "sort 2" << std::endl;
   viewRows.sortRows("channel", [&](std::shared_ptr<osdf::DatumBase> datumA,
                                std::shared_ptr<osdf::DatumBase> datumB){
-    std::shared_ptr<osdf::Datum<std::int32_t>> datumAType =
-                                std::static_pointer_cast<osdf::Datum<std::int32_t>>(datumA);
-    std::shared_ptr<osdf::Datum<std::int32_t>> datumBType =
-                                std::static_pointer_cast<osdf::Datum<std::int32_t>>(datumB);
+    std::shared_ptr<osdf::Datum<int32_t>> datumAType =
+                                std::static_pointer_cast<osdf::Datum<int32_t>>(datumA);
+    std::shared_ptr<osdf::Datum<int32_t>> datumBType =
+                                std::static_pointer_cast<osdf::Datum<int32_t>>(datumB);
     return datumAType->getValue() < datumBType->getValue();
   });
   viewRows.print();
 
   oops::Log::info() << std::endl << "test slice 1" << std::endl;
-  viewRows.sliceRows("lat", osdf::consts::eLessThan, -70.).print();
+  viewRows.sliceRows("lat", osdf::consts::eLessThan, -70.f).print();
 
   oops::Log::info() << std::endl << "test slice 2" << std::endl;
   frameRows.sliceRows([&](const osdf::DataRow& dataRow) {
     std::shared_ptr<osdf::DatumBase> datum = dataRow.getColumn(0);
-    std::shared_ptr<osdf::Datum<double>> datumType =
-                                         std::static_pointer_cast<osdf::Datum<double>>(datum);
-    return datumType->getValue() < -70.;
+    std::shared_ptr<osdf::Datum<float>> datumType =
+                                         std::static_pointer_cast<osdf::Datum<float>>(datum);
+    return datumType->getValue() < -70.f;
   }).print();
 
   oops::Log::info() << std::endl << "### ViewCols #################################################"
@@ -234,7 +234,7 @@ std::int32_t main() {
   viewCols.print();
 
   oops::Log::info() << std::endl << "getColumn" << std::endl;
-  std::vector<std::int32_t> vec4;
+  std::vector<int> vec4;
   viewCols.getColumn("time", vec4);
 
   // Sort on ViewCols modified original container and so has been removed
@@ -243,7 +243,7 @@ std::int32_t main() {
   // viewCols.print();
 
   oops::Log::info() << std::endl << "test slice 1" << std::endl;
-  viewCols.sliceRows("lat", osdf::consts::eLessThan, -70.).print();
+  viewCols.sliceRows("lat", osdf::consts::eLessThan, -70.f).print();
 
   oops::Log::info() << std::endl << "### FrameRows(FrameCols) #####################################"
              << std::endl;
