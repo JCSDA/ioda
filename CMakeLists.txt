@@ -74,23 +74,6 @@ else()
 endif()
 add_feature_info(Python BUILD_PYTHON_BINDINGS "Build Python bindings using pybind11")
 
-## Test data
-
-# DH 2023/10/06 - this is unfortunately still true ...
-### The ioda_data package is problematic in bundles because it has some special CMake logic
-### at the root bundle location. So, we cannot find the ioda data while in ioda!
-### Basically, with the current logic we hack ioda-data_FOUND to match ENABLE_IODA_DATA
-#find_package( ioda-data QUIET )
-if (ENABLE_IODA_DATA)
-  set (ioda-data_FOUND TRUE)
-else()
-  # Set values for downloading ioda test data from tarball
-  set (ioda_data_download_url "https://bin.ssec.wisc.edu/pub/s4/CRTM/file")
-  set (ioda_data_tag "2.9.0")
-  set (ioda_data_tarball_name "ioda_testinput_tier_1_${ioda_data_tag}.tar.gz")
-  set (ioda_data_tarball_hash "94fc90a04f6587b9a07607dfadb04d94")
-endif()
-
 ## Sources
 add_subdirectory( share )         # no arch data
 add_subdirectory( src/engines )   # `ioda_engines` target
@@ -99,20 +82,29 @@ add_subdirectory( src/mains )     # ioda executable targets
 if ( Python3_FOUND )
     add_subdirectory( src/python ) # ioda python targets
 endif()
-add_subdirectory( test )          # ioda ctests
 add_subdirectory( tools )         # misc tools
 
 if( ENABLE_IODA_DOC )
     add_subdirectory( docs )
 endif()
 
-## Tests
-ecbuild_add_test( TARGET ${PROJECT_NAME}_coding_norms
-                  TYPE SCRIPT
-                  COMMAND ${PROJECT_NAME}_cpplint.py
-                  ARGS --quiet --recursive ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_SOURCE_DIR}/test
-                  WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/bin )
-set_tests_properties( ${PROJECT_NAME}_coding_norms PROPERTIES TIMEOUT 90 )
+if( BUILD_TESTING )
+  find_package( ioda-data QUIET )
+  if( NOT ioda-data_FOUND )
+    # Set values for downloading ioda test data from tarball
+    set( ioda_data_download_url "https://bin.ssec.wisc.edu/pub/s4/CRTM/file" )
+    set( ioda_data_tag "2.9.0" )
+    set( ioda_data_tarball_name "ioda_testinput_tier_1_${ioda_data_tag}.tar.gz" )
+    set( ioda_data_tarball_hash "94fc90a04f6587b9a07607dfadb04d94" )
+  endif()
+  add_subdirectory( test )      # ioda ctests
+  ecbuild_add_test( TARGET ${PROJECT_NAME}_coding_norms
+                    TYPE SCRIPT
+                    COMMAND ${PROJECT_NAME}_cpplint.py
+                    ARGS --quiet --recursive ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_SOURCE_DIR}/test
+                    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/bin )
+  set_tests_properties( ${PROJECT_NAME}_coding_norms PROPERTIES TIMEOUT 90 )
+endif()
 
 ## Package Config
 ecbuild_install_project( NAME ${PROJECT_NAME} )
