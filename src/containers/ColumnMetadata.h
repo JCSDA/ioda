@@ -28,6 +28,9 @@ class ColumnMetadata {
   const ColumnMetadatum& get(const std::int32_t) const;
   std::vector<std::string> columnNames() const;
 
+  std::string serialize() const;
+  void deserialize(const std::string & columnMetadataTokens);
+
   void resetMaxId();
   void updateMaxId(const std::int64_t);
   void updateColumnWidth(const std::int32_t, const std::int16_t);

@@ -20,6 +20,7 @@
 #include "eckit/mpi/Comm.h"
 
 #include "ioda/containers/IFrame.h"
+#include "ioda/core/IodaUtils.h"
 #include "ioda/ObsDataIoParameters.h"
 #include "ioda/ioPool/IoPoolParameters.h"
 
@@ -75,11 +76,6 @@ static bool keepNetcdfVarForOSDF(const std::string & varName, const netCDF::NcVa
 static std::vector<std::string> listAllNetcdfVars(const netCDF::NcGroup& group,
                                     const std::string & groupPathPrefix,
                                     const bool listDimensions);
-
-/// \brief split a string on a given delimiter
-/// \param str string to split
-/// \param delim delimiter to split on
-static std::vector<std::string> splitString(const std::string & str, char delim);
 
 /// \brief load the variable (specified as a hierarchical path) from the netCDF file
 /// \details This function allows variable names with hierarchical paths to be
@@ -261,18 +257,6 @@ std::vector<std::string> listAllNetcdfVars(const netCDF::NcGroup& group,
 
   // Return the list of variable names
   return varNames;
-}
-
-//---------------------------------------------------------------------
-std::vector<std::string> splitString(const std::string & str, char delim) {
-  // Use a string stream with getline to pull out the tokens between the delimiters.
-  std::stringstream ss(str);
-  std::string item;
-  std::vector<std::string> tokens;
-  while (std::getline(ss, item, delim)) {
-    tokens.push_back(item);
-  }
-  return tokens;
 }
 
 //---------------------------------------------------------------------
@@ -465,7 +449,7 @@ int loadObsBlockFromNetcdf(netCDF::NcFile & inFile,
   // the destination OSDF container.
   const std::vector<std::string> allVars = listAllNetcdfVars(inFile, std::string(""), false);
   for (const auto & varName : allVars) {
-    const std::vector<std::string> varNameParts = splitString(varName, '/');
+    const std::vector<std::string> varNameParts = ioda::splitString(varName, '/');
     netCDF::NcVar var = openHierarchialNetcdfVar(inFile, varNameParts);
     checkNcObj(var, "ioda::reader::loadObsBlockFromNetcdf: Failed to open variable: " + varName);
 

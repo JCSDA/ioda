@@ -93,6 +93,9 @@ class FrameRows : public IFrame {
   std::size_t numCols() const override { return data_.getSizeCols(); }
   std::vector<std::string> columnNames() const override;
 
+  std::string serializeColumnMetadata() const override;
+  void deserializeColumnMetadata(const std::string & columnMetadataTokens) override;
+
   void print() const override;
   void clear();
 

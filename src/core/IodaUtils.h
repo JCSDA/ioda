@@ -31,6 +31,11 @@
 namespace ioda {
   class ObsSpaceParameters;
 
+  /// \brief split a string on a given delimiter
+  /// \param str string to split
+  /// \param delim delimiter to split on
+  std::vector<std::string> splitString(const std::string & str, char delim);
+
   // Utilities for converting back and forth between vector of strings and
   // a 2D character array.
   std::vector<std::size_t> CharShapeFromStringVector(

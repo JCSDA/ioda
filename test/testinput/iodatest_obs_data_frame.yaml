@@ -1,6 +1,7 @@
 ---
-row priority:
-   column data:
+
+osdf test data:
+  columns:
      - name: "MetaData/intVariable"
        type: "int"
        values: [ 1, 2, 3, 4, 5 ]
@@ -17,5 +18,5 @@ row priority:
        type: "char"
        values: "abcde" # have to read in as string and convert to
                        # vector of char
-   tolerance: 1.0e-6
+  tolerance: 1.0e-6
 

@@ -254,6 +254,14 @@ std::vector<std::string> osdf::FrameCols::columnNames() const {
   return data_.getColumnMetadata().columnNames();
 }
 
+std::string osdf::FrameCols::serializeColumnMetadata() const {
+  return data_.getColumnMetadata().serialize();
+}
+
+void osdf::FrameCols::deserializeColumnMetadata(const std::string & columnMetadataTokens) {
+  data_.getColumnMetadata().deserialize(columnMetadataTokens);
+}
+
 void osdf::FrameCols::print() const {
   data_.print();
 }

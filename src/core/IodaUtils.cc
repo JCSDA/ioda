@@ -18,7 +18,18 @@
 namespace ioda {
 
 // -----------------------------------------------------------------------------
+std::vector<std::string> splitString(const std::string & str, char delim) {
+  // Use a string stream with getline to pull out the tokens between the delimiters.
+  std::stringstream ss(str);
+  std::string item;
+  std::vector<std::string> tokens;
+  while (std::getline(ss, item, delim)) {
+    tokens.push_back(item);
+  }
+  return tokens;
+}
 
+// -----------------------------------------------------------------------------
 std::vector<std::size_t> CharShapeFromStringVector(
                                   const std::vector<std::string> & StringVector) {
   std::size_t MaxStrLen = 0;
