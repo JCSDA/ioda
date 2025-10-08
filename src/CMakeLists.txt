@@ -119,6 +119,9 @@ ioPool/WriterPoolUtils.h
 ioPool/WriterSinglePool.cpp
 ioPool/WriterSinglePool.h
 
+obsIoPool/ObsIoPool.cpp
+obsIoPool/ObsIoPool.hpp
+
 reader/filter/filterObsContainer.cpp
 reader/filter/filterObsContainer.hpp
 reader/load/loadObsContainerFromNetcdf.cpp

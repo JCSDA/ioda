@@ -105,6 +105,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_remove_hdf5_variable.yaml
   testinput/iodatest_copy_attributes.yaml
   testinput/iodatest_obs_data_frame.yaml
+  testinput/iodatest_obs_io_pool.yaml
   testinput/iodatest_obserror.yaml
   testinput/iodatest_departuresensemble.yaml
   testinput/iodatest_distribution.yaml
@@ -486,6 +487,21 @@ ecbuild_add_test( TARGET  test_ioda_copy_attributes
 ecbuild_add_test( TARGET  test_ioda_obs_data_frame
                   SOURCES mains/TestObsDataFrame.cc
                   ARGS    "testinput/iodatest_obs_data_frame.yaml"
+                  LIBS  ioda_test )
+
+#####################################################################
+# ObsIoPool tests
+#####################################################################
+
+ecbuild_add_test( TARGET  test_ioda_obs_io_pool
+                  SOURCES mains/TestObsIoPool.cc
+                  ARGS    "testinput/iodatest_obs_io_pool.yaml"
+                  LIBS  ioda_test )
+
+ecbuild_add_test( TARGET  test_ioda_obs_io_pool_mpi_7
+                  MPI 7
+                  COMMAND test_ioda_obs_io_pool
+                  ARGS    "testinput/iodatest_obs_io_pool.yaml"
                   LIBS  ioda_test )
 
 #####################################################################

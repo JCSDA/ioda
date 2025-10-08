@@ -547,12 +547,14 @@ void loadOsdfFromNetcdf(const ObsDataInParameters & dataInParams,
 }
 
 //--------------------------------------------------------------------------------
-void distributeOsdfColumnMetadata(const eckit::mpi::Comm & mainComm, int inIoPool,
+void distributeOsdfColumnMetadata(const eckit::mpi::Comm & mainComm, bool inIoPool,
                                   std::unique_ptr<osdf::IFrame> & destOSDF) {
   // Find the rank in the io pool that will send the serialized column metadata
   // This will be the lowest rank in the main comm that is also in the io pool.
-  // Note that inIoPool is 1 if the rank is in the io pool, 0 otherwise.
-  std::vector<int> ioPoolMembers(1, inIoPool);
+  // Note that converting inIoPool to an integer value (1 == true, 0 == false)
+  // facilitates the MPI transfers (vector of bool implementation is platform
+  // dependent).
+  std::vector<int> ioPoolMembers(1, (inIoPool ? 1 : 0));
   oops::mpi::allGatherv(mainComm, ioPoolMembers);
   const int rootRank = std::distance(ioPoolMembers.begin(),
                                      std::find(ioPoolMembers.begin(), ioPoolMembers.end(), 1));
@@ -576,7 +578,7 @@ void distributeOsdfColumnMetadata(const eckit::mpi::Comm & mainComm, int inIoPoo
     } else {
       // Remaining ranks, some will be in the pool, but all of the non-pool ranks
       // will be here. Only the non-pool ranks will receive the metadata.
-      if (inIoPool == 0) {
+      if (!inIoPool) {
         int metadataSize;
         mainComm.receive(metadataSize, rootRank, 0);
         std::vector<char> serializedColMetadata(metadataSize);

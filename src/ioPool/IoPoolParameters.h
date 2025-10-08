@@ -49,7 +49,9 @@ class IoPoolParameters : public oops::Parameters {
 
  public:
     /// maximum pool size in number of MPI processes
-    oops::Parameter<int> maxPoolSize{"max pool size", -1, this};
+    /// The default for now is 4, but this is open for debate as we collect
+    /// more performance data.
+    oops::Parameter<int> maxPoolSize{"max pool size", 4, this};
 
     /// maximum file size in megabytes
     oops::OptionalParameter<std::size_t> maxFileSize{"max file size", this};

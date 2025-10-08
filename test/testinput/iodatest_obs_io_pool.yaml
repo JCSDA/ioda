@@ -1,0 +1,118 @@
+---
+
+constructor tests:
+- name: "Pool size 2" 
+  io pool:
+    max pool size: 2
+  test data:
+    mpi size1:
+      rank0:
+        comm pool size: 1
+        comm pool rank: 0
+        in io pool: true
+    mpi size7:
+      rank0:
+        comm pool size: 2
+        comm pool rank: 0
+        in io pool: true
+      rank1:
+        comm pool size: 5
+        comm pool rank: 0
+        in io pool: false
+      rank2:
+        comm pool size: 5
+        comm pool rank: 1
+        in io pool: false
+      rank3:
+        comm pool size: 5
+        comm pool rank: 2
+        in io pool: false
+      rank4:
+        comm pool size: 2
+        comm pool rank: 1
+        in io pool: true
+      rank5:
+        comm pool size: 5
+        comm pool rank: 3
+        in io pool: false
+      rank6:
+        comm pool size: 5
+        comm pool rank: 4
+        in io pool: false
+
+- name: "Pool size 3" 
+  io pool:
+    max pool size: 3
+  test data:
+    mpi size1:
+      rank0:
+        comm pool size: 1
+        comm pool rank: 0
+        in io pool: true
+    mpi size7:
+      rank0:
+        comm pool size: 3
+        comm pool rank: 0
+        in io pool: true
+      rank1:
+        comm pool size: 4
+        comm pool rank: 0
+        in io pool: false
+      rank2:
+        comm pool size: 4
+        comm pool rank: 1
+        in io pool: false
+      rank3:
+        comm pool size: 3
+        comm pool rank: 1
+        in io pool: true
+      rank4:
+        comm pool size: 4
+        comm pool rank: 2
+        in io pool: false
+      rank5:
+        comm pool size: 3
+        comm pool rank: 2
+        in io pool: true
+      rank6:
+        comm pool size: 4
+        comm pool rank: 3
+        in io pool: false
+
+- name: "Pool size 4 (default)" 
+  io pool:
+  test data:
+    mpi size1:
+      rank0:
+        comm pool size: 1
+        comm pool rank: 0
+        in io pool: true
+    mpi size7:
+      rank0:
+        comm pool size: 4
+        comm pool rank: 0
+        in io pool: true
+      rank1:
+        comm pool size: 3
+        comm pool rank: 0
+        in io pool: false
+      rank2:
+        comm pool size: 4
+        comm pool rank: 1
+        in io pool: true
+      rank3:
+        comm pool size: 3
+        comm pool rank: 1
+        in io pool: false
+      rank4:
+        comm pool size: 4
+        comm pool rank: 2
+        in io pool: true
+      rank5:
+        comm pool size: 3
+        comm pool rank: 2
+        in io pool: false
+      rank6:
+        comm pool size: 4
+        comm pool rank: 3
+        in io pool: true

@@ -10,6 +10,8 @@ obs types:
     engine:
       type: H5File
       obsfile: "Data/testinput_tier_1/sondes_obs_2018041500_m.nc4"
+  io pool:
+    max pool size: 2
   test data:
     sample column names:
     - "MetaData/dateTime"
@@ -18,62 +20,50 @@ obs types:
     - "ObsValue/airTemperature"
     mpi size1:
       rank0:
-        comm split: 1 # pool member
-        expected data:
-          pool comm size: 1
-          pool comm rank: 0
-          nlocs:  974
-          nvars:  63
+        pool comm size: 1
+        pool comm rank: 0
+        nlocs:  974
+        nvars:  63
     mpi size2:
       rank0:
-        comm split: 1 # pool member
-        expected data:
-          pool comm size: 2
-          pool comm rank: 0
-          nlocs:  487
-          nvars:  63
+        pool comm size: 2
+        pool comm rank: 0
+        nlocs:  487
+        nvars:  63
       rank1:
-        comm split: 1 # pool member
-        expected data:
-          pool comm size: 2
-          pool comm rank: 1
-          nlocs:  487
-          nvars:  63
+        pool comm size: 2
+        pool comm rank: 1
+        nlocs:  487
+        nvars:  63
     mpi size4:
       rank0:
-        comm split: 1 # pool member
-        expected data:
-          pool comm size: 2
-          pool comm rank: 0
-          nlocs:  487
-          nvars:  63
+        pool comm size: 2
+        pool comm rank: 0
+        nlocs:  487
+        nvars:  63
       rank1:
-        comm split: 0 # not a pool member
-        expected data:
-          pool comm size: 2
-          pool comm rank: 0
-          nlocs:  0
-          nvars:  63
+        pool comm size: 2
+        pool comm rank: 0
+        nlocs:  0
+        nvars:  63
       rank2:
-        comm split: 1 # pool member
-        expected data:
-          pool comm size: 2
-          pool comm rank: 1
-          nlocs:  487
-          nvars:  63
+        pool comm size: 2
+        pool comm rank: 1
+        nlocs:  487
+        nvars:  63
       rank3:
-        comm split: 0 # not a pool member
-        expected data:
-          pool comm size: 2
-          pool comm rank: 1
-          nlocs:  0
-          nvars:  63
+        pool comm size: 2
+        pool comm rank: 1
+        nlocs:  0
+        nvars:  63
 
 - name: "AMSU-A NOAA 19"
   obsdatain:
     engine:
       type: H5File
       obsfile: "Data/testinput_tier_1/amsua_n19_obs_2018041500_m.nc4"
+  io pool:
+    max pool size: 2
   test data:
     sample column names:
     - "MetaData/dateTime"
@@ -84,53 +74,39 @@ obs types:
     - "ObsValue/brightnessTemperature_15"
     mpi size1:
       rank0:
-        comm split: 1 # pool member
-        expected data:
-          pool comm size: 1
-          pool comm rank: 0
-          nlocs:  100
-          nvars:  116
+        pool comm size: 1
+        pool comm rank: 0
+        nlocs:  100
+        nvars:  116
     mpi size2:
       rank0:
-        comm split: 1 # pool member
-        expected data:
-          pool comm size: 2
-          pool comm rank: 0
-          nlocs:  50
-          nvars:  116
+        pool comm size: 2
+        pool comm rank: 0
+        nlocs:  50
+        nvars:  116
       rank1:
-        comm split: 1 # pool member
-        expected data:
-          pool comm size: 2
-          pool comm rank: 1
-          nlocs:  50
-          nvars:  116
+        pool comm size: 2
+        pool comm rank: 1
+        nlocs:  50
+        nvars:  116
     mpi size4:
       rank0:
-        comm split: 1 # pool member
-        expected data:
-          pool comm size: 2
-          pool comm rank: 0
-          nlocs:  50
-          nvars:  116
+        pool comm size: 2
+        pool comm rank: 0
+        nlocs:  50
+        nvars:  116
       rank1:
-        comm split: 1 # pool member
-        expected data:
-          pool comm size: 2
-          pool comm rank: 1
-          nlocs:  50
-          nvars:  116
+        pool comm size: 2
+        pool comm rank: 0
+        nlocs:  0
+        nvars:  116
       rank2:
-        comm split: 0 # not a pool member
-        expected data:
-          pool comm size: 2
-          pool comm rank: 0
-          nlocs:  0
-          nvars:  116
+        pool comm size: 2
+        pool comm rank: 1
+        nlocs:  50
+        nvars:  116
       rank3:
-        comm split: 0 # not a pool member
-        expected data:
-          pool comm size: 2
-          pool comm rank: 1
-          nlocs:  0
-          nvars:  116
+        pool comm size: 2
+        pool comm rank: 1
+        nlocs:  0
+        nvars:  116

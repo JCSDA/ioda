@@ -42,9 +42,9 @@ void loadOsdfFromNetcdf(const ObsDataInParameters & dataInParams,
 ///          ranks will then use that serialized data to configure their
 ///          columns to match those on the io pool ranks.
 /// \param mainComm eckit MPI communicator group for all ranks
-/// \param inIoPool integer flag indicating if this rank is in the io pool (1) or not (0)
+/// \param inIoPool flag indicating if this rank is in the io pool (true) or not (false)
 /// \param destOSDF destination OSDF container
-void distributeOsdfColumnMetadata(const eckit::mpi::Comm & mainComm, int inIoPool,
+void distributeOsdfColumnMetadata(const eckit::mpi::Comm & mainComm, bool inIoPool,
                                   std::unique_ptr<osdf::IFrame> & destOSDF);
 
 }  // namespace reader
