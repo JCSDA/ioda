@@ -6,11 +6,14 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
+#include <vector>
+
 #include "ioda/containers/Constants.h"
 
 #include "ioda/Exception.h"
 
 namespace osdf {
+  class ColumnMetadatum;
 
 namespace FrameUtils {
 
@@ -49,6 +52,18 @@ auto callWithSupportedType(const int8_t dtype, const Action &action) {
       throw ioda::Exception("ERROR: Data type misconfiguration...", ioda_Here());
   }
 }
+
+/// \brief Serialize a vector of ColumnMetadatum objects into a string
+/// containing column tokens.
+/// \param columnMetadata vector of ColumnMetadatum objects to serialize
+std::string serializeColumnMetadata(
+                const std::vector<ColumnMetadatum> & columnMetadata);
+
+/// \brief Return a vector of ColumnMetadatum objects deserialized from a string
+/// containing column tokens.
+/// \param columnMetadataTokens string containing serialized column metadata
+std::vector<ColumnMetadatum> deserializeColumnMetadataTokens(
+                                 const std::string & columnMetadataTokens);
 
 }  // end namespace FrameUtils
 }  // end namespace osdf

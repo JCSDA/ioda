@@ -24,6 +24,7 @@
 #include "ioda/ObsDataIoParameters.h"
 #include "ioda/ioPool/IoPoolParameters.h"
 
+#include "oops/mpi/mpi.h"
 #include "oops/util/Logger.h"
 #include "oops/util/missingValues.h"
 
@@ -489,9 +490,9 @@ int loadObsBlockFromNetcdf(netCDF::NcFile & inFile,
 // Function definitions for public functions
 //--------------------------------------------------------------------------------
 
-int loadOsdfFromNetcdf(const ObsDataInParameters & dataInParams,
-                       const eckit::mpi::Comm & ioPoolComm,
-                       std::unique_ptr<osdf::IFrame> & destOSDF) {
+void loadOsdfFromNetcdf(const ObsDataInParameters & dataInParams,
+                        const eckit::mpi::Comm & ioPoolComm,
+                        std::unique_ptr<osdf::IFrame> & destOSDF) {
   const int myMpiRank = ioPoolComm.rank();
   const int myMpiSize = ioPoolComm.size();
 
@@ -499,74 +500,94 @@ int loadOsdfFromNetcdf(const ObsDataInParameters & dataInParams,
   const std::string engineType = dataInParams.engine.value().engineParameters.value().type.value();
   const std::string fileName = dataInParams.engine.value().engineParameters.value().getFileName();
   if (engineType != "H5File") {
-    oops::Log::error() << "ioda::reader::loadOsdfFromNetcdf: Unsupported engine type: "
-                       << engineType << std::endl;
-    oops::Log::error()
-        << "ioda::reader::loadOsdfFromNetcdf:    Must use H5File engine type with this function."
-        << std::endl;
-    return -1;
+    const std::string errMsg = "ioda::reader::loadOsdfFromNetcdf: Unsupported engine type: "
+                               + engineType + " Must use H5File engine type with this function.";
+    throw eckit::BadParameter(errMsg, Here());
   }
 
   // Get the number of locations from the input file, then divide up the locations in
   // contiguous blocks for each MPI rank to load.
-  //
-  // The netcdf C++ API uses exceptions, so run in a try, catch fashion.
-  try {
-    oops::Log::info() << "INFO: ioda::reader::loadOsdfFromNetcdf: reading file: "
-                      << fileName << std::endl;
-    netCDF::NcFile inFile(fileName, netCDF::NcFile::read);
-    checkNcObj(inFile, "ioda::reader::loadOsdfFromNetcdf: Failed to open file: " + fileName);
+  oops::Log::info() << "INFO: ioda::reader::loadOsdfFromNetcdf: reading file: "
+                    << fileName << std::endl;
+  netCDF::NcFile inFile(fileName, netCDF::NcFile::read);
+  checkNcObj(inFile, "ioda::reader::loadOsdfFromNetcdf: Failed to open file: " + fileName);
 
-    std::vector<int> starts(myMpiSize, 0);
-    std::vector<int> counts(myMpiSize, 0);
-    if (myMpiRank == 0) {
-      netCDF::NcDim dim = inFile.getDim("Location");
-      checkNcObj(dim, "ioda::reader::loadOsdfFromNetcdf: Failed to get dimension: Location");
-      const std::size_t numLocations = dim.getSize();
+  std::vector<int> starts(myMpiSize, 0);
+  std::vector<int> counts(myMpiSize, 0);
+  if (myMpiRank == 0) {
+    netCDF::NcDim dim = inFile.getDim("Location");
+    checkNcObj(dim, "ioda::reader::loadOsdfFromNetcdf: Failed to get dimension: Location");
+    const std::size_t numLocations = dim.getSize();
 
-      // Divide the locations evenly among the MPI ranks. Do an integer divide (nlocs / mpi size)
-      // to get the base size for all ranks. Then spread out any remainder among the first n ranks.
-      // Express this distribution in start and count values which are appropriate for calling
-      // the loadObsBlockFromNetcdf function. Use mpi scatter to distribute the start and
-      // count values to each rank.
-      const std::size_t locationsPerRank = numLocations / myMpiSize;
-      const std::size_t remainder = numLocations % myMpiSize;
-      counts.assign(myMpiSize, locationsPerRank);
-      for (std::size_t i = 0; i < remainder; ++i) {
-        counts[i]++;
+    // Divide the locations evenly among the MPI ranks. Do an integer divide (nlocs / mpi size)
+    // to get the base size for all ranks. Then spread out any remainder among the first n ranks.
+    // Express this distribution in start and count values which are appropriate for calling
+    // the loadObsBlockFromNetcdf function. Use mpi scatter to distribute the start and
+    // count values to each rank.
+    const std::size_t locationsPerRank = numLocations / myMpiSize;
+    const std::size_t remainder = numLocations % myMpiSize;
+    counts.assign(myMpiSize, locationsPerRank);
+    for (std::size_t i = 0; i < remainder; ++i) {
+      counts[i]++;
+    }
+    std::exclusive_scan(counts.begin(), counts.end(), starts.begin(), 0);
+  }
+  int start;
+  int count;
+  ioPoolComm.scatter(starts, start, 0);
+  ioPoolComm.scatter(counts, count, 0);
+  const int rc = loadObsBlockFromNetcdf(inFile, start, count, destOSDF);
+  if (rc != 0) {
+    const std::string errMsg = "loadOsdfFromNetcdf: Failed to load block: "
+                               " start: " + std::to_string(start) +
+                               " count: " + std::to_string(count);
+    throw std::runtime_error(errMsg);
+  }
+  inFile.close();
+}
+
+//--------------------------------------------------------------------------------
+void distributeOsdfColumnMetadata(const eckit::mpi::Comm & mainComm, int inIoPool,
+                                  std::unique_ptr<osdf::IFrame> & destOSDF) {
+  // Find the rank in the io pool that will send the serialized column metadata
+  // This will be the lowest rank in the main comm that is also in the io pool.
+  // Note that inIoPool is 1 if the rank is in the io pool, 0 otherwise.
+  std::vector<int> ioPoolMembers(1, inIoPool);
+  oops::mpi::allGatherv(mainComm, ioPoolMembers);
+  const int rootRank = std::distance(ioPoolMembers.begin(),
+                                     std::find(ioPoolMembers.begin(), ioPoolMembers.end(), 1));
+
+  // Send the serialized column metadata from the rootRank to all non-io pool ranks
+  // During the send/recv sequence, the tag values are:
+  //  0 - send/receive the size of the serialized metadata
+  //  1 - send/receive the serialized metadata
+  const int myRank = mainComm.rank();
+  const int mySize = mainComm.size();
+  if (mySize > 1) {
+    if (myRank == rootRank) {
+      const std::string serializedColMetadata = destOSDF->serializeColumnMetadata();
+      const int metadataSize = serializedColMetadata.size();
+      for (std::size_t i = 0; i < mainComm.size(); ++i) {
+        if (ioPoolMembers[i] == 0) {
+          mainComm.send(metadataSize, i, 0);
+          mainComm.send(serializedColMetadata.data(), metadataSize, i, 1);
+        }
       }
-      std::exclusive_scan(counts.begin(), counts.end(), starts.begin(), 0);
+    } else {
+      // Remaining ranks, some will be in the pool, but all of the non-pool ranks
+      // will be here. Only the non-pool ranks will receive the metadata.
+      if (inIoPool == 0) {
+        int metadataSize;
+        mainComm.receive(metadataSize, rootRank, 0);
+        std::vector<char> serializedColMetadata(metadataSize);
+        mainComm.receive(serializedColMetadata.data(), metadataSize, rootRank, 1);
+        // Now deserialize the metadata into the destOSDF container
+        destOSDF->deserializeColumnMetadata(std::string(serializedColMetadata.data(),
+                                                        serializedColMetadata.size()));
+      }
     }
-    int start;
-    int count;
-    ioPoolComm.scatter(starts, start, 0);
-    ioPoolComm.scatter(counts, count, 0);
-    const int rc = loadObsBlockFromNetcdf(inFile, start, count, destOSDF);
-    if (rc != 0) {
-      const std::string errMsg = "loadOsdfFromNetcdf: Failed to load block: "
-                                 " start: " + std::to_string(start) +
-                                 " count: " + std::to_string(count);
-      throw eckit::Exception(errMsg, Here());
-    }
-
-    inFile.close();
+    mainComm.barrier();
   }
-  catch(const netCDF::exceptions::NcException & e) {
-    oops::Log::error() << "ioda::reader::loadOsdfFromNetcdf: netCDF4 Exception: "
-                       << e.what() << std::endl;
-    return -1;
-  }
-  catch(const std::exception & e) {
-    oops::Log::error() << "ioda::reader::loadOsdfFromNetcdf: standard exception: "
-                       << e.what() << std::endl;
-    return -1;
-  }
-  catch(...) {
-    oops::Log::error() << "ioda::reader::loadOsdfFromNetcdf: Unknown exception"
-                       << std::endl;
-    return -1;
-  }
-  return 0;
 }
 
 }  // namespace reader

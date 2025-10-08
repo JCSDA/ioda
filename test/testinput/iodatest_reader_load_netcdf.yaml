@@ -11,6 +11,11 @@ obs types:
       type: H5File
       obsfile: "Data/testinput_tier_1/sondes_obs_2018041500_m.nc4"
   test data:
+    sample column names:
+    - "MetaData/dateTime"
+    - "MetaData/latitude"
+    - "MetaData/longitude"
+    - "ObsValue/airTemperature"
     mpi size1:
       rank0:
         comm split: 1 # pool member
@@ -48,7 +53,7 @@ obs types:
           pool comm size: 2
           pool comm rank: 0
           nlocs:  0
-          nvars:  0
+          nvars:  63
       rank2:
         comm split: 1 # pool member
         expected data:
@@ -62,7 +67,7 @@ obs types:
           pool comm size: 2
           pool comm rank: 1
           nlocs:  0
-          nvars:  0
+          nvars:  63
 
 - name: "AMSU-A NOAA 19"
   obsdatain:
@@ -70,6 +75,13 @@ obs types:
       type: H5File
       obsfile: "Data/testinput_tier_1/amsua_n19_obs_2018041500_m.nc4"
   test data:
+    sample column names:
+    - "MetaData/dateTime"
+    - "MetaData/latitude"
+    - "MetaData/longitude"
+    - "ObsValue/brightnessTemperature_1"
+    - "ObsValue/brightnessTemperature_7"
+    - "ObsValue/brightnessTemperature_15"
     mpi size1:
       rank0:
         comm split: 1 # pool member
@@ -114,11 +126,11 @@ obs types:
           pool comm size: 2
           pool comm rank: 0
           nlocs:  0
-          nvars:  0
+          nvars:  116
       rank3:
         comm split: 0 # not a pool member
         expected data:
           pool comm size: 2
           pool comm rank: 1
           nlocs:  0
-          nvars:  0
+          nvars:  116

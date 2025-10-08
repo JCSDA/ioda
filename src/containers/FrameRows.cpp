@@ -240,11 +240,19 @@ std::vector<std::string> osdf::FrameRows::columnNames() const {
 }
 
 std::string osdf::FrameRows::serializeColumnMetadata() const {
-  return data_.getColumnMetadata().serialize();
+  return FrameUtils::serializeColumnMetadata(data_.getColumnMetadata().get());
 }
 
 void osdf::FrameRows::deserializeColumnMetadata(const std::string & columnMetadataTokens) {
-  data_.getColumnMetadata().deserialize(columnMetadataTokens);
+  // Don't allow deserialization into non-empty ColumnMetadata
+  if (data_.getColumnMetadata().get().size() != 0) {
+    const std::string errMsg =
+      std::string("ERROR: Column metadata can only be deserialized into an empty container.");
+    throw eckit::BadValue(errMsg, Here());
+  }
+  const std::vector<ColumnMetadatum> columnMetadata =
+          FrameUtils::deserializeColumnMetadataTokens(columnMetadataTokens);
+  data_.configColumns(columnMetadata);
 }
 
 void osdf::FrameRows::print() const {

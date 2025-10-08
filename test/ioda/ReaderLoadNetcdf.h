@@ -66,14 +66,14 @@ void populateOsdfFromNetcdf(const ioda::ObsDataInParameters & dataInParams,
                             const eckit::mpi::Comm & ioPoolComm,
                             std::unique_ptr<osdf::IFrame> & testOsdf) {
   // Collectively call the loadOsdfFromNetcdf function with all io pool members.
-  int loadRc = -1;
   const int inIoPool = (ioPoolComm.name() == _ioPoolCommName) ? 1 : 0;
   if (inIoPool == 1) {
-    loadRc = reader::loadOsdfFromNetcdf(dataInParams, ioPoolComm, testOsdf);
-  } else {
-    loadRc = 0;
+    reader::loadOsdfFromNetcdf(dataInParams, ioPoolComm, testOsdf);
   }
-  EXPECT_EQUAL(loadRc, 0);
+
+  // Distribute the column metadata (definitions) from an io pool rank to all
+  // non-io pool ranks so that all ranks have consistent column definitions.
+  reader::distributeOsdfColumnMetadata(mainComm, inIoPool, testOsdf);
 }
 
 // -----------------------------------------------------------------------------
@@ -113,6 +113,13 @@ void checkOsdf(const eckit::LocalConfiguration & testConfig,
   const std::size_t numCols = testOsdf->numCols();
   EXPECT_EQUAL(numRows, expectedNumRows);
   EXPECT_EQUAL(numCols, expectedNumCols);
+
+  // Check for the existence of a few sample columns
+  const std::vector<std::string> sampleColNames =
+      testConfig.getStringVector("sample column names");
+  for (const auto & colName : sampleColNames) {
+    EXPECT(testOsdf->hasColumn(colName));
+  }
 }
 
 // -----------------------------------------------------------------------------
