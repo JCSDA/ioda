@@ -50,7 +50,8 @@ std::int32_t main() {
   //                          osdf::ColumnMetadatum("temp", osdf::consts::eDouble),
   //                          osdf::ColumnMetadatum("time", osdf::consts::eInt32)});
 
-  frameRows.appendNewRow(-73.f, 128.f, "00000", 11, -25.6568f, 1710460200);
+  frameRows.appendNewRow(-73.f, 128.f, "00000", 11, -25.6568f,
+                         static_cast<int64_t>(1710460200));
   frameRows.print();
 
   frameRows.appendNewColumn("lat", lats);
@@ -61,10 +62,12 @@ std::int32_t main() {
   frameRows.appendNewColumn("time", times);
   frameRows.print();
 
-  frameRows.appendNewRow("00010", 11, -25.6568f, 1710460270);
-  frameRows.appendNewRow(-73, 128, -73, 128, "00010", 11, -25.6568f, 1710460280);
-  frameRows.appendNewRow("00010", -73, 128, 11, -25.6568f, 1710460290);
-  frameRows.appendNewRow(-73.f, 128.f, "00010", 14, -25.6568f, 1710460300);
+  frameRows.appendNewRow("00010", 11, -25.6568f, static_cast<int64_t>(1710460270));
+  frameRows.appendNewRow(-73, 128, -73, 128, "00010", 11, -25.6568f,
+                         static_cast<int64_t>(1710460280));
+  frameRows.appendNewRow("00010", -73, 128, 11, -25.6568f, static_cast<int64_t>(1710460290));
+  frameRows.appendNewRow(-73.f, 128.f, "00010", 14, -25.6568f,
+                         static_cast<int64_t>(1710460300));
   frameRows.print();
 
   oops::Log::info() << std::endl << "getColumn" << std::endl;
@@ -85,11 +88,11 @@ std::int32_t main() {
 
   oops::Log::info() << std::endl << "removeRow" << std::endl;
   frameRows.removeRow(0);
-  frameRows.appendNewRow(-73.f, 128.f, 14, -25.6568f, 1710460301);
+  frameRows.appendNewRow(-73.f, 128.f, 14, -25.6568f, static_cast<int64_t>(1710460301));
   frameRows.print();
   oops::Log::info() << std::endl << "removeRow2" << std::endl;
   frameRows.removeRow(9);
-  frameRows.appendNewRow(-74.f, 129.f, 15, -25.6567f, 1710460302);
+  frameRows.appendNewRow(-74.f, 129.f, 15, -25.6567f, static_cast<int64_t>(1710460302));
   frameRows.print();
 
   oops::Log::info() << std::endl << "sort 1" << std::endl;
@@ -140,7 +143,7 @@ std::int32_t main() {
   //                          osdf::ColumnMetadatum("temp", osdf::consts::eDouble),
   //                          osdf::ColumnMetadatum("time", osdf::consts::eInt32)});
 
-  frameCols.appendNewRow(-73.f, 128.f, "00000", 11, -25.6568f, 1710460200);
+  frameCols.appendNewRow(-73.f, 128.f, "00000", 11, -25.6568f, static_cast<int64_t>(1710460200));
   frameCols.print();
 
   frameCols.appendNewColumn("lat", lats);
@@ -151,10 +154,12 @@ std::int32_t main() {
   frameCols.appendNewColumn("time", times);
   frameCols.print();
 
-  frameCols.appendNewRow("00010", 11, -25.6568f, 1710460270);
-  frameCols.appendNewRow(-73, 128, -73, 128, "00010", 11, -25.6568f, 1710460280);
-  frameCols.appendNewRow("00010", -73, 128, 11, -25.6568f, 1710460290);
-  frameCols.appendNewRow(-73.f, 128.f, "00010", 14, -25.6568f, 1710460300);
+  frameCols.appendNewRow("00010", 11, -25.6568f, static_cast<int64_t>(1710460270));
+  frameCols.appendNewRow(-73, 128, -73, 128, "00010", 11, -25.6568f,
+                         static_cast<int64_t>(1710460280));
+  frameCols.appendNewRow("00010", -73, 128, 11, -25.6568f, static_cast<int64_t>(1710460290));
+  frameCols.appendNewRow(-73.f, 128.f, "00010", 14, -25.6568f,
+                         static_cast<int64_t>(1710460300));
   frameCols.print();
 
   oops::Log::info() << std::endl << "getColumn" << std::endl;
@@ -175,11 +180,11 @@ std::int32_t main() {
 
   oops::Log::info() << std::endl << "removeRow" << std::endl;
   frameCols.removeRow(0);
-  frameCols.appendNewRow(-73.f, 128.f, 14, -25.6568f, 1710460301);
+  frameCols.appendNewRow(-73.f, 128.f, 14, -25.6568f, static_cast<int64_t>(1710460301));
   frameCols.print();
   oops::Log::info() << std::endl << "removeRow2" << std::endl;
   frameCols.removeRow(9);
-  frameCols.appendNewRow(-74.f, 129.f, 15, -25.6567f, 1710460302);
+  frameCols.appendNewRow(-74.f, 129.f, 15, -25.6567f, static_cast<int64_t>(1710460302));
   frameCols.print();
 
   oops::Log::info() << std::endl << "sort 1" << std::endl;

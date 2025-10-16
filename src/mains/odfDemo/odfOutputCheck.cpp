@@ -113,8 +113,8 @@ int main() {
 
   ////////////////////////////////////////////////// Test 6: Comparison of Frame::appendRow()
   std::cout << "Test 6: Comparison of Frame::appendRow() - ";
-  frameRows1.appendNewRow(-74.0f, 129.0f, 15, -25.6567f, 1710460300L);
-  frameCols1.appendNewRow(-74.0f, 129.0f, 15, -25.6567f, 1710460300L);
+  frameRows1.appendNewRow(-74.0f, 129.0f, 15, -25.6567f, static_cast<int64_t>(1710460300L));
+  frameCols1.appendNewRow(-74.0f, 129.0f, 15, -25.6567f, static_cast<int64_t>(1710460300L));
   std::string textRows6 = getFramePrintText(&frameRows1);
   std::string textCols6 = getFramePrintText(&frameCols1);
   assert(textRows6 == textCols6);

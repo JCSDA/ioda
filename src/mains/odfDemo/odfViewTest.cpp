@@ -152,8 +152,8 @@ int main() {
   osdf::ViewCols viewCols4 = viewCols3.sliceRows("lat", osdf::consts::eLessThan, -70.0f);
   osdf::ViewRows viewRows4 = viewRows3.sliceRows("lat", osdf::consts::eLessThan, -70.0f);
 
-  frameCols.appendNewRow(-73.0f, 128.0f, "00010", 66, -25.6568f, 1710460300L);
-  frameRows.appendNewRow(-73.0f, 128.0f, "00010", 66, -25.6568f, 1710460300L);
+  frameCols.appendNewRow(-73.0f, 128.0f, "00010", 66, -25.6568f, static_cast<int64_t>(1710460300L));
+  frameRows.appendNewRow(-73.0f, 128.0f, "00010", 66, -25.6568f, static_cast<int64_t>(1710460300L));
 
   std::vector<std::string> vec = {"3", "3", "3", "3", "3", "3", "3", "3", "3", "3", "3"};
   frameCols.setColumn("StatId", vec);
