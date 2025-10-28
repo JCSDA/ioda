@@ -14,7 +14,6 @@ program vecstring_test
 	type(cxx_vector_string) :: v1
 	type(cxx_vector_string) :: v2
 	type(cxx_vector_string) :: v3
-	type(cxx_vector_string) :: v4
 	type(cxx_string) :: s1
 	type(cxx_string) :: s2
 	type(cxx_string) :: s3
@@ -25,7 +24,7 @@ program vecstring_test
 	character(len=256) :: a5
 	character(len=256),dimension(4) :: arr
 	integer(int64) :: i
-	integer(int64) :: n,j
+	integer(int64) :: j
 
 	a1 = 'this is a test'
 	a2 = 'this is a second test'

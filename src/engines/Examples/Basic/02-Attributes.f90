@@ -21,8 +21,8 @@ program ioda_fortran_02_attributes
 
     type(ioda_group) :: grpFromFile
     type(ioda_has_attributes) :: g_has_att
-    type(ioda_attribute) :: intatt1, intatt2, floatatt1, doubleatt1, stratt1, check_intatt2
-    type(cxx_vector_string) :: check_strs, att_list
+    type(ioda_attribute) :: intatt1, intatt2, floatatt1, stratt1, check_intatt2
+    type(cxx_vector_string) :: att_list
     type(cxx_string) :: xstr
     type(ioda_dimensions) :: dims
     logical :: res1     ! Return value. Mostly unchecked in this example.
@@ -43,7 +43,6 @@ program ioda_fortran_02_attributes
 !    call ioda_attribute_init(intatt2)
 !    call ioda_attribute_init(floatatt1)
 !    call ioda_attribute_init(stratt1)
-!    call ioda_attribute_init(doubleatt1)
 !    call ioda_attribute_init(check_intatt2)
 !    call ioda_has_attributes_init(g_has_att)
 

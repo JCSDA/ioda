@@ -136,7 +136,6 @@ contains
 		class(cxx_vector_string),intent(inout) :: this
 		integer(int64),intent(in) :: i
 		class(cxx_string),intent(in) :: str
-		type(c_ptr) :: cstr_ptr
 		integer(int64) :: j
 		j = i - 1
 		if ( .not. c_associated(this%data_ptr) ) then

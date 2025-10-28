@@ -6,7 +6,6 @@ program string_test
 	implicit none
 	type(cxx_string) :: s1
 	type(cxx_string) :: s2
-	type(cxx_string) :: s3
 	character(len=129) :: test1
 	character(len=129) :: test2
 	character(len=129) :: test3

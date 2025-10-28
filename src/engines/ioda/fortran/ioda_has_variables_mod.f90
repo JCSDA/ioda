@@ -82,7 +82,6 @@ module ioda_has_variables_mod
          type(c_ptr), value :: p, name_p
          integer(c_int64_t), value :: n
          type(c_ptr) :: var_p
-         logical(c_bool) :: r
       end function
 
       function ioda_has_variables_c_create2_float(p, sz_name, name, n_dims, dims, max_dims, c_param) &
