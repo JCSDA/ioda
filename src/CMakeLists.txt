@@ -23,6 +23,8 @@ containers/DataRow.h
 containers/Datum.cpp
 containers/Datum.h
 containers/DatumBase.h
+containers/FrameMetadata.cpp
+containers/FrameMetadata.h
 containers/FrameCols.cpp
 containers/FrameCols.h
 containers/FrameColsData.cpp
@@ -51,10 +53,13 @@ containers/ViewRows.h
 containers/ViewRowsData.cpp
 containers/ViewRowsData.h
 
+core/ObsDimInfo.h
+core/ObsDimInfo.cc
 core/FileFormat.cc
 core/FileFormat.h
 core/IodaUtils.cc
 core/IodaUtils.h
+core/ObsSourceStats.h
 core/obsspace_f.cc
 core/obsspace_f.h
 core/ParameterTraitsFileFormat.cc
