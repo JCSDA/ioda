@@ -17,7 +17,7 @@ macro(AddExample_Base ExName SourceFile )
 	#      RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/Examples"
 	#    )
 	#    endif()
-	set_target_properties( ${ExName} PROPERTIES FOLDER "Examples/ioda/Basic")
+	set_target_properties( ${ExName} PROPERTIES FOLDER "Examples/ioda/Basic" LINKER_LANGUAGE ${FORTRAN_LINKER_LANGUAGE})
 	target_link_libraries(${ExName} PUBLIC ioda_engines)
 endmacro()
 

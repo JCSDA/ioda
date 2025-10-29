@@ -23,7 +23,7 @@ list(APPEND SRCS_FORTRAN_BINDINGS
 
 ecbuild_add_library( TARGET ioda_fortran
                      SOURCES ${SRCS_FORTRAN_BINDINGS}
-                     LINKER_LANGUAGE Fortran )
+                     LINKER_LANGUAGE ${FORTRAN_LINKER_LANGUAGE} )
 add_library(ioda::ioda_fortran ALIAS ioda_fortran)
 
 set_target_properties(ioda_fortran PROPERTIES Fortran_PREPROCESS ON)

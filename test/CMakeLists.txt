@@ -1522,7 +1522,7 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_dist_write_atlas
 add_fctest( TARGET  test_ioda_obsspace_fortran
             SOURCES ioda/obsspace.F90
             ARGS    --config testinput/iodatest_obsspace_fortran.yaml
-            LINKER_LANGUAGE Fortran
+            LINKER_LANGUAGE ${FORTRAN_LINKER_LANGUAGE}
             LIBS  ioda_test
             )
 
